@@ -79,7 +79,10 @@
         mute.innerHTML = on ? MUTED_SVG : SOUND_SVG;
     }
 
+    // Nothing is drawn until the timeline's own `ready` (its icons) settles.
+    var settled = false;
     function paint() {
+        if (!settled) return;
         var tl = E.get(name), n = tl.length, b = E.beatAt(tl, frame);
         E.render(ctx, name, frame, { palette: P, blur: rec });
         scrub.style.setProperty('--p', (frame / (n - 1)).toFixed(4));
@@ -179,10 +182,18 @@
     seek(hashed && hashed[1] === name ? Number(hashed[2]) : 0);
 
     window.tour = { seek: seek, length: function (n) { return E.length(n); }, ready: false };
-    (document.fonts ? document.fonts.ready : Promise.resolve()).then(function () {
+    // A timeline may carry `ready`, a promise (promo30v5's icons): the first
+    // paint and tour.ready wait for it; a rejection names the icon on the
+    // canvas (data-error) and tour.ready stays false.
+    var tlReady = E.get(name).ready || Promise.resolve();
+    Promise.all([document.fonts ? document.fonts.ready : Promise.resolve(), tlReady]).then(function () {
+        settled = true;
         if (checking) check();
         paint();
         window.tour.ready = true;
         cv.dataset.ready = 'true';
+    }, function (e) {
+        cv.dataset.error = String((e && e.message) || e);
+        console.error('tour: ' + cv.dataset.error);
     });
 })();

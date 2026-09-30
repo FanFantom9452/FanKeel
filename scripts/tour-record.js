@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 'use strict';
 // scripts/tour-record.js: a tour timeline (`reel`, the kinetic promo, or
-// `promo30`, the 30-second film, `promo30v3`, its honeycomb-ring cut, or `promo30v4`, that cut at one minute) to an MP4 with its score, frame by frame, in
+// `promo30`, the 30-second film, `promo30v3`, its honeycomb-ring cut, or `promo30v4`, that cut at one minute, or `promo30v5`, the 74-second tour) to an MP4 with its score, frame by frame, in
 // one language.
 //
-//   node scripts/tour-record.js <reel|promo30|promo30v3|promo30v4> [--lang zh|en] [--out f.mp4]
+//   node scripts/tour-record.js <reel|promo30|promo30v3|promo30v4|promo30v5> [--lang zh|en] [--out f.mp4]
 //
 // --lang is zh unless given, and the file is .fankeel/build/tour/
-// <name>-<lang>.mp4 unless --out says. Opens
+// <name>-<lang>.mp4 unless --out says; promo30v5 goes to
+// F:/ymlab/fankeel-videos/v5/<name>-<lang>.mp4 (FANKEEL_VIDEOS_V5 overrides
+// the directory) and its intermediate .wav is deleted, the MP4 alone kept. Opens
 // assets/station/tour.html?record&lang=<lang>#<name>@0 in the Chromium-family
 // browser scripts/render.js finds, headless, with a DevTools port, and drives
 // it over Node's global WebSocket: for every frame, `tour.seek(n)` (record mode
@@ -27,7 +29,10 @@ const { pathToFileURL } = require('node:url');
 const { parseArgsOrExit } = require('../lib/cli.js');
 const { findBrowser } = require('./render.js');
 
-const NAMES = ['reel', 'promo30', 'promo30v3', 'promo30v4'];
+const NAMES = ['reel', 'promo30', 'promo30v3', 'promo30v4', 'promo30v5'];
+// The four names the usage line has always listed; promo30v5 follows on its own line.
+const OLD_NAMES = NAMES.slice(0, 4);
+const V5_DIR = 'F:/ymlab/fankeel-videos/v5';
 const LANGS = ['zh', 'en'];
 const SIZE = { width: 1280, height: 720 };
 const PAGE = path.join(__dirname, '..', 'assets', 'station', 'tour.html');
@@ -37,10 +42,12 @@ function parseArgs(argv) {
     const name = positionals[0];
     const lang = values.lang === undefined ? 'zh' : values.lang;
     if (positionals.length !== 1 || !NAMES.includes(name) || !LANGS.includes(lang)) {
-        process.stderr.write('usage: tour-record.js <' + NAMES.join('|') + '> [--lang ' + LANGS.join('|') + '] [--out f.mp4]\n');
+        process.stderr.write('usage: tour-record.js <' + OLD_NAMES.join('|') + '> [--lang ' + LANGS.join('|') + '] [--out f.mp4]\n'
+            + '       tour-record.js promo30v5 [--lang ' + LANGS.join('|') + '] [--out f.mp4]  (MP4 in ' + V5_DIR + ')\n');
         process.exit(2);
     }
-    return { name, lang, out: path.resolve(values.out || path.join('.fankeel', 'build', 'tour', name + '-' + lang + '.mp4')) };
+    const dir = name === 'promo30v5' ? (process.env.FANKEEL_VIDEOS_V5 || V5_DIR) : path.join('.fankeel', 'build', 'tour');
+    return { name, lang, out: path.resolve(values.out || path.join(dir, name + '-' + lang + '.mp4')) };
 }
 
 // FANKEEL_FFMPEG when set (and then only it), else the first PATH entry that
@@ -186,6 +193,7 @@ async function record(args, ffmpeg, browser) {
         const code = await done;
         c.close();
         if (code !== 0) throw new Error('tour-record: ffmpeg exited ' + code);
+        if (args.name === 'promo30v5') fs.rmSync(wav, { force: true });
         return total;
     } finally {
         child.kill();
