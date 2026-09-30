@@ -14,7 +14,7 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 ## Needs a decision
 
-- 〔controller〕主控回報用 entry 標題不用 await-1 這類代號；評估主 session 只負責轉述過程、其餘全派 brain agent 的平衡點 — [stages.js](lib/stages.js).
+- 〔controller〕主控回報用 entry 標題不用 await-1 這類代號；評估主 session 只負責轉述過程、其餘全派 brain agent 的平衡點；同一件事別疊開 await，前一個沒收就開新的，收工後還陸續冒出舊通知 — [stages.js](lib/stages.js).
 
 ## Blocked
 
