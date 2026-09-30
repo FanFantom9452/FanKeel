@@ -25,3 +25,18 @@ serve 測試自己的 diagnostic（`serve.json … ms after …`）：
 - run 3：`serve.json 1003 ms after the host started; the hook said started`
 
 test-3 verdict: not reproduced
+
+## tests-1：station-wizard-motion，HEAD 乾淨 worktree 全套三次
+
+指令：`git worktree add --detach F:/ymlab/fankeel-wt-head HEAD`，在 worktree 裡跑三次 `node --test --test-reporter=tap`。
+worktree 的 HEAD 是 commit 7359f74dd33fb11bfc85faed88045e432f32615f，`git status --porcelain` 0 行。
+
+| run | exit | tests | pass | fail | 開跑時的 node 行程數 | `fallback_task_provider` 行數 | 失敗的測試（`not ok` 行） |
+|---|---|---|---|---|---|---|---|
+| 1 | 1 | 2657 | 2656 | 1 | 22 | 0 | `not ok 1652 - every top-level report has exactly one row in docs/sources.md, and every row links a report that is there` |
+| 2 | 1 | 2657 | 2656 | 1 | 22 | 0 | 同上 |
+| 3 | 1 | 2657 | 2656 | 1 | 22 | 0 | 同上 |
+
+三次 station-wizard-motion 的測試（`the chosen card animates, and under reduced motion nothing is running`，`ok 2040`）都過。三次唯一的紅是 `tests/sources-doc.test.js`，與 station-wizard-motion 無關：它的 diff 顯示 `2026-09-30-ready-eleven-measurements.md` 在 HEAD 的 `docs/sources.md` 還沒有列。
+
+tests-1 verdict: not reproduced

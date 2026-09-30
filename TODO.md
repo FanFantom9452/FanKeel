@@ -18,8 +18,6 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔station〕取代 station-1 的 (b)：(1) 沒有任何單一 subagent 的 context 峰值超過 300k；(2) 佔比低於 15% 的目標只適用於 subagent ≥10 的 session。在 8806240d 之後的 session 重新量測。 — [station.md](docs/90-agent/reference/station.md).
 
-- 〔tests〕整套下偶發紅：09-27 四次紅兩次，09-30 land 又紅（與 test-3 同輪），單跑都綠 — [tests/station-wizard-motion.test.js](tests/station-wizard-motion.test.js).
-
 ## Needs a decision
 
 - 〔commit-3〕commit.js:147 reads profile values and drops .unreadable, so a malformed profile.json skips commit.format and sensitive.mode with no trace; decide refuse or warn
