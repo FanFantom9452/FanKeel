@@ -60,7 +60,7 @@ mockup 在 `.fankeel/build/2026-10-01-station-redesign/mockup.html`（gitignored
 - 儀表板卡片可選可排序：`data-block="dash-chooser"`，存 `localStorage` 的 `station.dash`，附「還原預設」；
   預設與今天的四卡加 TODO 卡相同。
 - 專案頁 `todo-done` 預設只列最新 10 條，「展開全部（N）」展開；`todoPanelHtml` 仍 export 給測試。
-- 整頁視覺跟著宣傳片（`assets/station/tour.css`）的色盤與字；舊樣式保留成可切換的「經典樣式」
+- 整頁視覺改成宣傳片 promo30 的語彙（10-01 使用者答「要換風格、和影片相關」）：色盤取 `assets/station/tour-keel.js:64` 的 `C`（paper `#F2F4F3`、ink `#18202C`、keel `#2D5BD8`），mast 用 v5 片頭的 glyph＋字標，nav 畫成片中的檔案樹卡，卡片用檔案卡標頭，live 列用 glyph 逐段填滿表示 stage，TODO 面板用 verify 格的證據表與 plan 格的虛線摺疊；舊樣式保留成可切換的「經典樣式」
   （`data-block="style-classic"`，存 `localStorage`），現有功能一項不減。
 - `docs/90-agent/reference/station.md:594-611`（「四張卡」）與 `:663`（「兩個 `localStorage` key」）隨改動更新。
 - 驗收：`tests/station-todo-panel.test.js` 與新的 dashboard 測試新增——dash-todo 的 Ready 數等於同一份 `S.projects[].todos` 裡 `state==='ready'` 的條數；
