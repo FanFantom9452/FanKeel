@@ -47,13 +47,6 @@ after: 跑過一次 stage.agents=all 的真實 task（main 含 08c4ecf、安裝�
 - 〔stage-agents〕接縫「在哪提交」：task 的 `project` 不是 cwd、或在 worktree 裡時跑受控 build，看 `scripts/commit.js` 提交到哪個 repo — [docs/subagents.md](docs/90-agent/reference/subagents.md).
 - 〔stage-agents〕verify 的 mutation 要不要專屬 agent（工具或模型跟 fankeel-brain 不同才拆）；等受控 verify 實跑、k 重跑後再定 — [docs/subagents.md](docs/90-agent/reference/subagents.md).
 
-### 影片定案
-after: 影片定案. 09-30.
-
-- 〔station〕STATION 整頁改版：todo-done 區塊捲動太長，影片定案後整頁重設計；現有功能一項不減、舊版保留可還原 — [scripts/station.js](scripts/station.js).
-- 〔station〕09-30 使用者提議：station 首頁儀表板列出每個 project 的 TODO，Ready 有幾條、各是什麼；隨 STATION 重新設計一起做 — [station.js](assets/station/station.js).
-- 〔station〕09-30 使用者提議：station 首頁讓使用者自己決定放哪些區塊；現有功能全部保留可還原，隨 STATION 重新設計一起做 — [station.js](assets/station/station.js).
-
 ## Watch
 
 ### 第二個平台的使用者
