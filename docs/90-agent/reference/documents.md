@@ -21,6 +21,7 @@ and the role says how long a document is meant to stay true:
 | `fixture` | a test's own input — describes nothing about the system, checked for links and line numbers only | n/a |
 | `data` | raw data — exports, recordings, source files — not a document. `docs-check` and `docs-audit` never check it, the index and the reading batches leave it out, and it is not counted as unfiled | n/a |
 | `todo` | one TODO entry, a file under the project's entry folder. Current, but checked like a fixture: links and line numbers, never symbols or `last_verified` — its date is its own `stamp`. Left out of the index and the audit's reading batches. | no — dated by its own stamp |
+| `data` | raw data, not a document: exports, recordings, source files. docs-check and docs-audit skip it, it is never counted unfiled, and the map marks it as data | n/a |
 
 A root `.ignore` holding `docs/99-archive/` keeps ripgrep — the `Grep` tool here —
 from searching it by default; naming `docs/99-archive` explicitly still searches
@@ -33,7 +34,9 @@ and counted on its `excluded:` line unless `--include-role` names that role.
 The three shapes that ship — `flat`, `phased` and `audience` — and what happens
 to a markdown file in no bucket are stated in [the skill](../../../skills/fankeel/SKILL.md),
 under *Where documents live*. What belongs here is why the question is put that
-way: it is asked once, at survey, and only where no `docs.json` exists.
+way: it is asked in two places — `fankeel-init`, on a project's first
+onboarding, and survey — both only where no `docs.json` exists, and both write
+the answer with `lib/docs.js`'s `write`.
 `audience` comes first because it is the one shape that says which reader each
 folder is for; `detect()`'s answer comes second, so a project that already has
 habits still sees its own shape on the list. A project with a `docs.json` is

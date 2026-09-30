@@ -255,7 +255,7 @@ entry — `guard.js` returns first otherwise — and all three of these are true
 set — present only inside a subagent, absent on the main thread of an
 `--agent` session — `payload.agent_type` — read bare or with a `fankeel:`
 prefix, `lib/guard.js`'s `readOnlyAgentType` —
-names `fankeel-reader`, `fankeel-reviewer`, `fankeel-judge`, `fankeel-render-reviewer` or `fankeel-slimmer`, and the command
+names `fankeel-reader`, `fankeel-reviewer`, `fankeel-judge`, `fankeel-render-reviewer`, `fankeel-slimmer` or `fankeel-init-scout`, and the command
 matches `writesFiles()`'s fixed list — a redirect to anywhere but `/dev/null`
 or `$null`, never counting `=>`, `->`, `>&` or a `>` inside quotes,
 `tee`, `rm`, `mv`, `cp`, `sed -i` or `--in-place`, a `git`
@@ -268,6 +268,11 @@ cmdlets, a `node -e`/`--eval` script that calls a write (`writeFile`,
 `write_text` or `os.remove`, or uses `shutil` at all (`lib/guard.js`'s
 `NODE_EVAL_WRITE` and `PYTHON_WRITE`). `fankeel-verifier` is not on the list —
 writing its own evidence file is what it is for.
+The same `Bash|PowerShell` entry scans every `git commit`, in a task or
+not: `lib/sensitive.js`'s `commitVerdict` reads `.fankeel/sensitive.txt` at the
+repository's top and the files the commit carries, and answers with
+`additionalContext` under `sensitive.mode` `warn` or a deny under `block`;
+`scripts/commit.js` runs the same `scan` before it stages anything.
 
 The list is a denylist rather than an allowlist for the reason the rejected
 2026-09-10 proposal already named: an allowlist would refuse the `npm test`
