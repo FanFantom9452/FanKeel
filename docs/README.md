@@ -192,8 +192,9 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | fankeel-upgrade 看現況、版本記在升級報告（09-30）：`upgrade.js` 判斷遷移不讀版本號，`--apply` 寫 `YYYY-MM-DD-fankeel-upgrade.md` 帶 `fankeel:`，`version.js --changes --since`；readTodo 缺陷與 serve.test 失敗另登 TODO | [decisions/2026-09-30-upgrade-reads-shape.md](03-decisions/2026-09-30-upgrade-reads-shape.md) — *繁體中文* |
 | 那份設計 | `docs/99-archive/2026-09-30-patrol-upgrade-design.md` — *built* |
 | 落地它的 8 個 task | `docs/99-archive/2026-09-30-patrol-upgrade.md` — *built* |
-| 首次使用的 init（09-30）怎麼做：`task.js start` 便宜檢查沒過就先跑 `fankeel-init`、原始資料的 `data` 角色、可見度與敏感詞、gate 重複問或少了暫停就拒絕 | [plans/2026-09-30-init-design.md](90-agent/plans/2026-09-30-init-design.md) — *design-intent, 繁體中文* |
-| 落地它的 16 個 task | [plans/2026-09-30-init.md](90-agent/plans/2026-09-30-init.md) — *design-intent* |
+| 首次使用的 init（09-30）定了什麼、在哪裡回頭：第一次接上自動叫、`data` 角色、敏感詞 warn/block 與 `sensitive.review`、gate-2 的拒絕規則、verify 退回五次 | [decisions/2026-09-30-init.md](03-decisions/2026-09-30-init.md) — *繁體中文* |
+| 首次使用的 init 的 design：便宜檢查、跳過、原始資料、工作區 CLAUDE.md、可見度與敏感詞、init 步驟、scout、gate-2 | `docs/99-archive/2026-09-30-init-design.md` — *built, 繁體中文* |
+| 落地它的 16 個 task | `docs/99-archive/2026-09-30-init.md` — *built* |
 | Needs-a-decision 六條怎麼定：拆出 fankeel-mockup、各角色 effort、docs tree 加「給誰看」軸、ADR 為 ≤7 條 binding 子集、station 看／答問題、tune 改完通知與自動刷新、設定精靈改卡片 | `docs/99-archive/2026-09-26-station-redesign-design.md` — *built, 繁體中文* |
 | 做它的 13 個 task——從 fankeel-mockup agent、effort、docs 軸與 binding 上限，到 station 答題、toast、模型版本、effort chip、設定精靈卡片，最後在真頁面上逐塊調整 | `docs/99-archive/2026-09-26-station-redesign.md` — *built, 繁體中文* |
 | 把上面那份設計拆成三個 task 的計畫 | `docs/99-archive/2026-09-25-todo-line-and-multiplier.md` — *built, 繁體中文* |

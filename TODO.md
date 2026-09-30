@@ -10,13 +10,11 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔await〕`kind` 只在測試裡驗過：重裝後看一次真實 `build close` brain 的 mark 是否帶 `kind: 'close'`、await 是否盯 `build.md` — [hooks/brief.js](hooks/brief.js).
 
+- 〔await〕09-30 約八次：stage agent 等子 agent（跑全套、實作者）或仍在跑時，`scripts/await.js` 回報 lost 並叫重派，ListAgents 顯示 running；lost 前應先確認 agent 狀態 — [await.js](scripts/await.js).
+
 - 〔collisions〕兩個 fankeel session 同時 commit 時：同一樹撞 `index.lock` 誰失敗、有無回報，及兩個 worktree land 回 main 同檔衝突怎麼處理，尚未查 — [collisions.md](docs/90-agent/reference/collisions.md).
 
 - 〔commit〕使用者問能否強制規定 commit 的輸出格式：commit.js 目前照 brain 寫的訊息原樣提交，沒有格式檢查；先查要擋在哪一層（commit.js 解析時拒絕、git commit-msg hook、或 profile 設定格式），再決定規則放 profile 還是固定 — [scripts/commit.js](scripts/commit.js).
-
-- 〔gate〕09-30 init-1 survey：brain 回答「先讀 map.js 計數」後改寫 survey.md，json gate 卻原封不動，同一題問了三次；那道 gate 也沒有暫停選項，還提供違反 class 下限的「改走 bounded」，`hooks/gate.js` 只比對抄本沒擋 — [hooks/gate.js](hooks/gate.js).
-
-- 〔init〕首次接上 fankeel 的引導：專屬唯讀 agent 排查現況，再一次一題帶過 docs.json、TODO、開發習慣（profile）、CLAUDE.md、memory、map；每步看現況判斷已完成，共用 upgrade.js 偵測。architectural，走七站 — [upgrade.js](scripts/upgrade.js).
 
 - 〔inject〕inject.js 閒置約 0.6s，但全套測試跑時（34 個 node）常超過 5s 被丟棄，該輪沒有 fankeel 區塊；先量負載下哪段最慢，再決定縮短工作或調高 timeout — [hooks/inject.js](hooks/inject.js).
 

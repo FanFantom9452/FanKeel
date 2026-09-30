@@ -2,8 +2,13 @@
 label: init
 title: 首次使用的 init skill
 description: 首次接上 fankeel 的引導：專屬唯讀 agent 排查現況，再一次一題帶過 docs.json、TODO、開發習慣（profile）、CLAUDE.md、memory、map；每步看現況判斷已完成，共用 upgrade.js 偵測。architectural，走七站
-state: ready
+state: done
 link: scripts/upgrade.js
+done:
+  at: 2026-09-30
+  sha: 3e558dfb
+  disposition: done
+  session: 5ba3e967-ce24-4b43-836e-aaf70c79740a
 ---
 
 ## 2026-09-30 討論定案
