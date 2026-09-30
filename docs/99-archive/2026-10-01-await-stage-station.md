@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # await-1、stage-1、station-8 Implementation Plan
