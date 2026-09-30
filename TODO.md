@@ -10,12 +10,6 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔await〕`kind` 只在測試裡驗過：重裝後看一次真實 `build close` brain 的 mark 是否帶 `kind: 'close'`、await 是否盯 `build.md` — [hooks/brief.js](hooks/brief.js).
 
-- 〔await〕09-30 約八次：stage agent 等子 agent（跑全套、實作者）或仍在跑時，`scripts/await.js` 回報 lost 並叫重派，ListAgents 顯示 running；lost 前應先確認 agent 狀態 — [await.js](scripts/await.js).
-
-- 〔collisions〕兩個 fankeel session 同時 commit 時：同一樹撞 `index.lock` 誰失敗、有無回報，及兩個 worktree land 回 main 同檔衝突怎麼處理，尚未查 — [collisions.md](docs/90-agent/reference/collisions.md).
-
-- 〔commit〕使用者問能否強制規定 commit 的輸出格式：commit.js 目前照 brain 寫的訊息原樣提交，沒有格式檢查；先查要擋在哪一層（commit.js 解析時拒絕、git commit-msg hook、或 profile 設定格式），再決定規則放 profile 還是固定 — [scripts/commit.js](scripts/commit.js).
-
 - 〔data〕資料放 NAS、有保留期限（09-30）；已決定只宣告位置、負責人、期限，survey 讀、audit 查路徑；NAS 存取已答：`data` bucket 保留 `access` 鍵、先不處理 — [documents.md](docs/90-agent/reference/documents.md).
 
 - 〔inject〕inject.js 閒置約 0.6s，但全套測試跑時（34 個 node）常超過 5s 被丟棄，該輪沒有 fankeel 區塊；先量負載下哪段最慢，再決定縮短工作或調高 timeout — [hooks/inject.js](hooks/inject.js).
@@ -24,15 +18,11 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔station〕取代 station-1 的 (b)：(1) 沒有任何單一 subagent 的 context 峰值超過 300k；(2) 佔比低於 15% 的目標只適用於 subagent ≥10 的 session。在 8806240d 之後的 session 重新量測。 — [station.md](docs/90-agent/reference/station.md).
 
-- 〔test〕09-30 land 前兩次全套各紅一次：`tests/serve.test.js`「a serve started detached outlives the process」，單獨跑 8/8 綠；負載下原因未證，先在乾淨 worktree 的 fed438fc 跑全套看是否早就存在 — [serve.test.js](tests/serve.test.js).
-
 - 〔tests〕整套下偶發紅：09-27 四次紅兩次，09-30 land 又紅（與 test-3 同輪），單跑都綠 — [tests/station-wizard-motion.test.js](tests/station-wizard-motion.test.js).
 
-- 〔tests〕`tests/contract.test.js:256` 的註解還寫「thirteen places」，在 init-1 之前就已過時（09-30 build close 發現）；改成現況或刪掉數字 — [tests/contract.test.js](tests/contract.test.js).
-
-- 〔upgrade〕09-30 verify 確認：`scripts/upgrade.js:34-39` readTodo 對讀不了的 TODO.md 也回 null，把錯藏起來；應只在 ENOENT 回 null、其餘重拋，先寫會紅的測試 — [upgrade.js](scripts/upgrade.js).
-
 ## Needs a decision
+
+- 〔commit-3〕commit.js:147 reads profile values and drops .unreadable, so a malformed profile.json skips commit.format and sensitive.mode with no trace; decide refuse or warn
 
 ## Blocked
 

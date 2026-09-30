@@ -11,7 +11,7 @@ test-3、tests-1、inject-2、station-8 四個條目要的是量測。每一節�
 ## test-3：serve detached 測試，fed438fc 乾淨 worktree 全套三次
 
 指令：`git worktree add --detach F:/ymlab/fankeel-wt-fed438fc fed438fc`，在 worktree 裡跑三次 `node --test --test-reporter=tap`。
-worktree 的 HEAD 是 commit fed438fce2a6bc3531f5b14f878a6e87019dec99，`git status --porcelain` 0 行（三次跑完後再查一次，仍是 0 行）。
+worktree 的 HEAD 是 commit fed438fce2a6bc3531f5b14f878a6e87019dec99；worktree 在該 sha 以 detached 方式全新建立，`git status --porcelain` 的行數沒有記進 log。
 
 | run | exit | tests | pass | fail | 開跑時的 node 行程數 | 失敗的測試（`not ok` 行） |
 |---|---|---|---|---|---|---|
