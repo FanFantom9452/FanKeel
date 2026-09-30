@@ -26,9 +26,9 @@ after: fankeel 其餘功能都落地、使用者換到新機器測試. 09-30.
 - 〔audit〕Trovara 的 docs 搬到 preset：在新機器的 Trovara 跑 `docs-move.js` 出搬移表、核可後 apply，再跑一次分批 `/fankeel-audit` — [scripts/docs-move.js](scripts/docs-move.js).
 
 ### knip 認得 CJS namespace
-upstream: knip 認得 CJS namespace property access. 09-30.
+upstream: knip 認得 CJS namespace property access. 10-01.
 
-- 〔build〕knip 的 unused exports 一格關著：6.38.0 仍認不得 CJS namespace 取用，開著回 178 個假陽性（09-28 重跑） — [docs/development.md](docs/01-guide/development.md).
+- 〔build〕knip 的 unused exports 一格關著：6.39.0 仍認不得 CJS namespace 取用（`clearBadge` 追不到），開著回 196 個假陽性（10-01 重跑） — [docs/development.md](docs/01-guide/development.md).
 
 ### gates 滿一週
 on: 10-02 起，registry 的 `gates` 累積滿一週. 09-30.
