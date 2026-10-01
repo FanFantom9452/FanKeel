@@ -17,7 +17,7 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 ## Blocked
 
 ### fankeel 功能全部完成
-after: fankeel 其餘功能都落地、使用者換到新機器測試. 09-30.
+after: fankeel 其餘功能都落地、使用者換到新機器測試. 10-01.
 
 - 〔audit〕Trovara 的 docs 搬到 preset：在新機器的 Trovara 跑 `docs-move.js` 出搬移表、核可後 apply，再跑一次分批 `/fankeel-audit` — [scripts/docs-move.js](scripts/docs-move.js).
 
@@ -27,12 +27,12 @@ upstream: knip 認得 CJS namespace property access. 10-01.
 - 〔build〕knip 的 unused exports 一格關著：6.39.0 仍認不得 CJS namespace 取用（`clearBadge` 追不到），開著回 196 個假陽性（10-01 重跑） — [docs/development.md](docs/01-guide/development.md).
 
 ### TokenBar 寫出真實序列
-after: `tokenbar-usage.jsonl` 有跨過一次 7d reset 的真實讀數；09-25 查到的 347 行全落在 09-22 的 15 分鐘內，是測試資料，09-23 起沒再寫. 09-30.
+after: `tokenbar-usage.jsonl` 有跨過一次 7d reset 的真實讀數；09-25 查到的 347 行全落在 09-22 的 15 分鐘內，是測試資料，09-23 起沒再寫. 10-01.
 
 - 〔quota〕7d 水位兩點差 4.7 倍，是延遲還是計別的：TokenBar 每次 render 已把 5h／7d 讀數 append 到 `<CLAUDE_CONFIG_DIR>/tokenbar-usage.jsonl`（TokenBar 的 `statusline.ps1`／`.sh`），拿第三點以後的序列來分 — [scripts/spend.js](scripts/spend.js).
 
 ### AI CODING SECURITY 定案
-upstream: 另一個專案 AI CODING SECURITY 定出共用的漏洞清單與掃描模型. 09-30.
+upstream: 另一個專案 AI CODING SECURITY 定出共用的漏洞清單與掃描模型. 10-01.
 
 - 〔security〕reviewer 的 `## Security` lens 可先交本地模型篩（`security.local`）；四類清單與 AI CODING SECURITY 對齊還沒做 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
 
