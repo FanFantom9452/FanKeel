@@ -39,7 +39,7 @@ status: design-intent
 
 ## 4. `commit.format` 在 init 時給預設
 
-- `lib/profile.js` 的推斷函式（:315 一帶，就是從 git log 推 `land.integration` 的那段）多推一個 `commit.format`。看最近 50 則非合併 commit 的第一行：80% 以上符合 `^[a-z]+(\([^)]+\))?: ` 時，用實際出現過的前綴組出正規式，例如 `^(feat|fix|chore|docs|merge)(\([^)]+\))?: `；不到 80% 就不推。
+- `lib/profile.js` 的推斷函式（:315 一帶，就是從 git log 推 `land.integration` 的那段）多推一個 `commit.format`。看最近 50 則非合併 commit 的第一行：80% 以上符合 `^[a-z]+(\([^)]+\))?: ` 時，用實際出現過的前綴組出正規式，不自動加 `merge`，例如 log 只用過 feat、fix、chore、docs 時是 `^(chore|docs|feat|fix)(\([^)]+\))?: `；不到 80% 就不推。
 - 推出的值和其他推斷值一樣，在 init 第 7 步交給使用者確認，不靜默寫入。
 - 測試：tests/profile-commit-format.test.js 加兩列 — 一份符合 conventional 格式的 fixture log 推出正規式，且每一則都符合；一份混雜的 log 不推。
 
