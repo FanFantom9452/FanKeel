@@ -6,8 +6,13 @@
 // picking are driven by dispatching events through the listeners the script
 // registered. Still not checked: a real browser, real hit-testing, layout,
 // pointer capture, focus, or how it looks. That is the render reviewer's
-// question, at verify. What stays as a text check is wording and endpoint
-// names only.
+// question, at verify. Text checks that remain: wording, endpoint names, and
+// three code shapes (the CSS pulse rule and its reduced-motion rule,
+// `q.editing`, `setInterval(refreshQueue, 2000)`), which assert the source
+// says so, not that it runs. Listeners no test dispatches: the logo's
+// pointercancel, the fold, clear and out buttons, document mousemove beyond the
+// one hover the wheel test fires, window blur, keyup and keypress, scroll and
+// resize.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -181,11 +186,12 @@ function makeEl(doc, tag) {
         (e._on[type] = e._on[type] || []).push({ fn, capture });
     };
     const match = (sel) => {
-        const m = /^(\w+)?((?:\.[\w-]+)*)(?:\[data-block="(.*)"\])?$/.exec(sel);
+        const m = /^(?:body > )?(\w+)?((?:\.[\w-]+)*)(?::nth-of-type\((\d+)\))?(?:\[data-block="(.*)"\])?$/.exec(sel);
         if (!m) return () => false;
         return (n) => (!m[1] || n.tagName === m[1].toUpperCase())
+            && (m[3] === undefined || (n.parentNode && n.parentNode.children.filter((k) => k.tagName === n.tagName).indexOf(n) === m[3] - 1))
             && m[2].split('.').filter(Boolean).every((c) => n.classList.includes(c))
-            && (m[3] === undefined || n.getAttribute('data-block') === m[3]);
+            && (m[4] === undefined || n.getAttribute('data-block') === m[4]);
     };
     e.querySelectorAll = (sel) => {
         const ok = match(sel), out = [];
@@ -198,7 +204,7 @@ function makeEl(doc, tag) {
 
 // Loads overlay.js into a fresh stub page: a 1280x800 viewport, a body with
 // three page blocks, and a recording fetch, localStorage and listener table.
-function loadOverlay() {
+function loadOverlay(shared) {
     const doc = { nodeType: 9, parentNode: null, _on: {}, activeElement: null };
     const win = { _on: {}, scrollX: 0, scrollY: 0, open() {} };
     for (const o of [doc, win]) {
@@ -229,7 +235,7 @@ function loadOverlay() {
         page[name] = p;
     }
     const store = () => { const m = {}; return { m, getItem: (k) => (k in m ? m[k] : null), setItem: (k, v) => { m[k] = String(v); }, removeItem: (k) => { delete m[k]; } }; };
-    const sessionStorage = store(), localStorage = store();
+    const sessionStorage = (shared && shared.sessionStorage) || store(), localStorage = store();
     const fetched = [];
     const fetchStub = (url, init) => {
         fetched.push({ url, init });
@@ -430,4 +436,50 @@ test('a draft with an empty note blocks sending, names the draft, and sends once
     assert.equal(posts.length, 1);
     assert.equal(JSON.parse(posts[0].init.body).items.length, 2);
     await t.tick();
+});
+
+test('the drafts are saved to sessionStorage as note and pick selectors, and a fresh overlay restores them into the tray', () => {
+    const a = loadOverlay();
+    a.openTray();
+    a.draft(['hero'], 'first');
+    a.draft(['card', 'foot'], 'second');
+    const saved = JSON.parse(a.sessionStorage.m['fk-live-drafts']);
+    assert.equal(saved.length, 2);
+    assert.equal(saved[0].note, 'first');
+    assert.deepEqual(saved[0].picks, ['section:nth-of-type(1)']);
+    assert.equal(saved[1].note, 'second');
+    assert.deepEqual(saved[1].picks, ['section:nth-of-type(2)', 'section:nth-of-type(3)']);
+    const b = loadOverlay({ sessionStorage: a.sessionStorage });
+    assert.equal(b.q('.fk-live-badge').textContent, '2', 'the restored drafts are not counted');
+    b.openTray();
+    assert.deepEqual(b.doc.all('textarea').map((x) => x.value), ['first', 'second']);
+    assert.equal(b.doc.all('.fk-live-chip').length, 3, 'the picks were not found again on the fresh page');
+});
+
+test('while picking, the wheel belongs to the assistant and walks the outline, and the page keeps it otherwise', () => {
+    const t = loadOverlay();
+    t.openTray();
+    assert.equal(t.fire(t.page.hero, 'wheel', { deltaY: -100 }).defaultPrevented, false, 'the wheel was swallowed while not picking');
+    t.fire(t.q('.fk-live-add'), 'click');
+    assert.equal(t.fire(t.page.hero, 'wheel', { deltaY: -100 }).defaultPrevented, false, 'the wheel was swallowed with nothing outlined');
+    t.fire(t.page.hero, 'mousemove');
+    assert.equal(t.fire(t.page.hero, 'wheel', { deltaY: -100 }).defaultPrevented, true, 'the wheel scrolled the page while picking');
+    assert.equal(t.fire(t.q('.fk-live-fin'), 'wheel', { deltaY: -100 }).defaultPrevented, false, 'the wheel over the assistant was swallowed');
+});
+
+test('Escape while picking drops the pick, removes a draft left with no element, and the page does not see the key', () => {
+    const t = loadOverlay();
+    t.openTray();
+    t.draft(['hero'], 'keep');
+    t.fire(t.q('.fk-live-add'), 'click');
+    t.fire(t.page.card, 'click');
+    assert.equal(t.doc.all('.fk-live-chip').length, 2);
+    const seen = [];
+    t.page.card.addEventListener('keydown', () => seen.push(1));
+    const ev = t.fire(t.page.card, 'keydown', { key: 'Escape' });
+    assert.equal(ev._stopNow, true);
+    assert.deepEqual(seen, []);
+    assert.equal(t.doc.all('.fk-live-chip').length, 1, 'the unfinished draft stayed');
+    assert.equal(t.q('.fk-live-badge').textContent, '1');
+    assert.equal(t.fire(t.page.card, 'keydown', { key: 'Escape' })._stopNow, false, 'Escape with nothing to end was swallowed');
 });
