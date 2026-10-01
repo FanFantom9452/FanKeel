@@ -11,7 +11,7 @@
 // `q.editing`, `setInterval(refreshQueue, 2000)`), which assert the source
 // says so, not that it runs. Listeners no test dispatches: the logo's
 // pointercancel, the fold, clear and out buttons, document mousemove beyond the
-// one hover the wheel test fires, window blur, keyup and keypress, scroll and
+// hovers the two wheel tests fire, window blur, keyup and keypress, scroll and
 // resize, the draft number button click (overlay.js:348), the chip remove x
 // click (:360), the draft delete button click (:373), the diff link click
 // (:769), and the keydown tray-close branch (Escape, or any keystroke from
@@ -321,6 +321,17 @@ test('dragging the logo moves it, clamps it inside the viewport, keeps the spot,
     t.release();
 });
 
+test('another pointer\'s move does not drag the logo', () => {
+    const t = loadOverlay();
+    t.press(1230, 750);
+    t.move(930, 550, 2);
+    assert.equal(t.ast.style.left, '1216px', 'a second pointer dragged the logo');
+    assert.ok(!t.logo.classList.contains('fk-live-drag'));
+    t.move(930, 550);
+    assert.equal(t.ast.style.left, '916px', 'the pressing pointer no longer drags');
+    t.release();
+});
+
 test('a plain press and release of the logo toggles the tray and aria-expanded, once, and a keyboard click does too', () => {
     const t = loadOverlay();
     assert.equal(t.logo.getAttribute('aria-expanded'), 'false');
@@ -468,6 +479,36 @@ test('while picking, the wheel belongs to the assistant and walks the outline, a
     t.fire(t.page.hero, 'mousemove');
     assert.equal(t.fire(t.page.hero, 'wheel', { deltaY: -100 }).defaultPrevented, true, 'the wheel scrolled the page while picking');
     assert.equal(t.fire(t.q('.fk-live-fin'), 'wheel', { deltaY: -100 }).defaultPrevented, false, 'the wheel over the assistant was swallowed');
+});
+
+// tune-2: the wheel test above asserts only defaultPrevented. This one asserts
+// where the walk goes — up is out to the parent, down is back in — and that a
+// click inside the outline takes the outlined element, not the one under it.
+test('while picking, the wheel walks out to the parent and back in, and a click inside the outline takes the outlined element', () => {
+    const withSpan = () => {
+        const t = loadOverlay();
+        const span = t.doc.createElement('span');
+        t.page.hero.appendChild(span);
+        t.openTray();
+        t.fire(t.q('.fk-live-add'), 'click');
+        return { t, span };
+    };
+    const chips = (t) => t.doc.all('.fk-live-chip').map((c) => c.textContent);
+    const ref = (pick) => { const { t, span } = withSpan(); t.fire(pick === 'span' ? span : t.page.hero, 'click'); return chips(t); };
+    const hero = ref('hero');
+    const inner = ref('span');
+    assert.notDeepEqual(hero, inner, 'the two picks must read differently for this test to tell them apart');
+
+    const { t, span } = withSpan();
+    t.fire(span, 'mousemove');
+    assert.equal(t.fire(span, 'wheel', { deltaY: -100 }).defaultPrevented, true);
+    t.fire(span, 'click');
+    assert.deepEqual(chips(t), hero, 'the wheel up did not walk out to the parent, or the click took the element under the pointer');
+    t.fire(span, 'click');
+    assert.deepEqual(chips(t), [], 'a second click inside the outline did not take it back');
+    t.fire(span, 'wheel', { deltaY: 100 });
+    t.fire(span, 'click');
+    assert.deepEqual(chips(t), inner, 'the wheel down did not walk back in');
 });
 
 test('Escape while picking drops the pick, removes a draft left with no element, and the page does not see the key', () => {
