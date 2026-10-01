@@ -383,12 +383,22 @@ then asks this stage's gate.
      actually dispatches the event, and a hit only in a render or view
      test (the selector string in HTML fixtures or assertions on
      rendered markup) is no coverage, so the selector stays a gap — a mutation run over only the handlers you were given cannot
-     find a listener nobody tests. (2026-10-01: verify's second return
+     find a listener nobody tests. Walk EVERY selector in the changed
+     listener (every closest, matches and event name in it), not only the
+     ones the brief named, and count a hit only when its test dispatches
+     that listener's OWN event type: a keydown test on a selector does
+     not cover the click branch with the same selector (a keydown test
+     of `[data-gop]` does not cover the click branch
+     `closest('[data-gop]')`). (2026-10-01: verify's second return
      to build listed ten such listeners; 2026-10-01: verify's fifth
      return found .fwrap, .pg input[name^="pg-"] and .tdf's [data-todo]
      with zero hits though the event names all had hits; 2026-10-01:
      verify's sixth return found ten click branches counted as covered
-     by render/view-test hits though no press reached them.)
+     by render/view-test hits though no press reached them; 2026-10-01:
+     verify's seventh return found `closest('[data-gop]')` and
+     `closest('[data-gho]')` untested — the review walked only the ten
+     branches it was handed, and counted a keydown test on the same
+     selector as covering the click branch.)
    Part 3 — every changed line traces to the task's text; the patterns
      already in the repository are followed. Then name the page this
      change makes false (a renamed export, a changed default, a removed

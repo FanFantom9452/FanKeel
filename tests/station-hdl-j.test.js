@@ -1,11 +1,13 @@
 'use strict';
-// Ten more branches of the page's big click listener in assets/station/station.js,
+// Twelve more branches of the page's big click listener in assets/station/station.js,
 // pressed through the listener itself with fake targets whose closest() answers
 // only the selector a test names: `[data-ph]`, `[data-ag]`, `[data-prm]` (a phase,
 // an agent, a prompt opens or shuts), `[data-rs]` (the replay jumps to a row),
 // `[data-xall]` (全部展開), `[data-rk]` (a replay kind hidden or shown),
 // `[data-seg] button` (a segmented control), `[data-wf]` (a workflow bar folds),
-// `[data-href]` (a row link) and `th[data-k]` (a column sort). One effect per
+// `[data-href]` (a row link), `th[data-k]` (a column sort), `[data-gop]` (the
+// floating gate's option posts an answer) and `[data-gho]` (its hand-off posts
+// handoff=terminal), the last two through gatePost's fetch. One effect per
 // test, so single-branch mutations of one branch redden different sets of tests.
 //
 // The listener keeps its state in a closure `view`; a setter for `ph` on the
@@ -25,8 +27,11 @@ const session = (id) => ({ id, pkey: PK, root: PK, task: 't-' + id, state: 'live
     stages: [], notes: [], claims: [], conflicts: [], burn: 0, backtracks: 0, updated: NOW - 1000, started: new Date(NOW - 120000).toISOString(), days: [] });
 
 // station.js booted on `hash`. p.byId overrides getElementById (null = absent),
-// p.qsa answers querySelectorAll, p.asked logs its selectors.
-function boot(hash) {
+// p.qsa answers querySelectorAll, p.asked logs its selectors. opts (optional):
+// { pending } gives session s1 that pending gate, { notification: true } gives the
+// window a Notification whose requestPermission counts in p.notified. p.fetched
+// logs every fetch as { url, method, body } (body as a string).
+function boot(hash, opts) {
     const listeners = {}, els = {}, writes = { page: 0 };
     const el = (tag) => ({ tagName: String(tag || 'div').toUpperCase(), innerHTML: '', textContent: '', className: '', title: '',
         placeholder: '', attrs: {}, style: {}, hidden: false, parentNode: null,
@@ -36,18 +41,20 @@ function boot(hash) {
     let html = '';
     Object.defineProperty(page, 'innerHTML', { get: () => html, set: (v) => { html = v; writes.page++; } });
     els.page = page;
-    const p = { writes, byId: {}, asked: [], qsa: () => [], els, view: null };
+    const p = { writes, byId: {}, asked: [], qsa: () => [], els, view: null, fetched: [], notified: 0 };
     const win = { location: { hash }, addEventListener() {}, scrollTo() {}, setInterval: () => 1, setTimeout: () => 1, clearTimeout() {},
         navigator: { language: 'zh-TW' }, localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
         STATION: { generatedAt: new Date(NOW).toISOString(), configDir: 'C:\\cfg', pricesVerified: '2026-09-24', serve: true, nonce: 'N0NCE',
             projects: [{ root: PK, gone: false, unreadable: 0, build: [], mapAt: null, docs: [] }],
             profiles: { machine: { values: {}, sources: {}, unreadable: [] }, projects: {} }, profileKeys: {}, classes: {},
             sessions: [session('s1')] } };
+    if (opts && opts.pending) win.STATION.sessions[0].pending = opts.pending;
+    if (opts && opts.notification) win.Notification = { requestPermission() { p.notified++; return Promise.resolve(); } };
     const doc = { hidden: false, documentElement: el('html'), body: el('body'), title: '', head: { appendChild() {} },
         getElementById: (id) => (id in p.byId ? p.byId[id] : els[id] || (els[id] = el())),
         addEventListener(type, fn) { (listeners[type] = listeners[type] || []).push(fn); }, createElement: el,
         querySelectorAll: (sel) => { p.asked.push(sel); return p.qsa(sel); }, querySelector: () => null };
-    const ctx = vm.createContext({ window: win, document: doc, URLSearchParams, fetch: () => Promise.resolve({ ok: true, status: 200, text: () => Promise.resolve('') }), module: { exports: {} }, grab: (v) => { p.view = v; } });
+    const ctx = vm.createContext({ window: win, document: doc, URLSearchParams, fetch: (url, init) => { p.fetched.push({ url, method: init && init.method, body: init && init.body ? init.body.toString() : null }); return Promise.resolve({ ok: true, status: 200, text: () => Promise.resolve('') }); }, module: { exports: {} }, grab: (v) => { p.view = v; } });
     vm.runInContext("Object.defineProperty(Object.prototype, 'ph', { configurable: true, set(v) { Object.defineProperty(this, 'ph', { value: v, writable: true, enumerable: true, configurable: true }); grab(this); } });", ctx);
     vm.runInContext(SRC, ctx);
     const fns = (listeners.click || []).filter((fn) => String(fn).includes('[data-tune-notify]'));
@@ -481,4 +488,120 @@ test('th: it returns before the later branch (a tr[data-id] answer selects no ro
     const p = boot('#/list');
     p.press(Object.assign(th('task'), { 'tr[data-id]': node({ 'data-id': 's1' }) }));
     assert.equal(p.asked.includes('#lb tr'), false);
+});
+
+// ---- [data-gop], [data-gho] --------------------------------------------------
+// gatePost reads the session named by the .gc's data-pg-id, needs its `pending`,
+// and POSTs to 'answer'. p.fetched logs the call; the .gend node takes the result.
+const PENDING = { questions: [{ question: 'Q?', options: [{ label: 'A' }, { label: 'B' }] }] };
+const gcOf = (id, root) => {
+    const gend = { className: '', textContent: '' };
+    return node({ 'data-pg-id': id === undefined ? 's1' : id, 'data-pg-root': root === undefined ? PK : root },
+        { querySelector: (sel) => (sel === '.gend' ? gend : null), gend });
+};
+// gop finds its .gc from the button (gop.closest); gho from the event target.
+const gopBtn = (i, gc) => node({ 'data-gop': String(i) }, { closest: (sel) => (sel === '.gc' ? gc : null) });
+const bodyOf = (call) => new URLSearchParams(call.body);
+const settle = () => new Promise((r) => setImmediate(r));
+
+test('gop: it posts once to answer with method POST', () => {
+    const p = boot('#/', { pending: PENDING });
+    p.press({ '[data-gop]': gopBtn(0, gcOf()) });
+    assert.deepEqual(p.fetched.map((c) => c.url + ' ' + c.method), ['answer POST']);
+});
+
+test('gop: option 0 answers the question with its label A', () => {
+    const p = boot('#/', { pending: PENDING });
+    p.press({ '[data-gop]': gopBtn(0, gcOf()) });
+    assert.deepEqual(JSON.parse(bodyOf(p.fetched[0]).get('answers')), { 'Q?': 'A' });
+});
+
+test('gop: option 1 answers the question with its label B', () => {
+    const p = boot('#/', { pending: PENDING });
+    p.press({ '[data-gop]': gopBtn(1, gcOf()) });
+    assert.deepEqual(JSON.parse(bodyOf(p.fetched[0]).get('answers')), { 'Q?': 'B' });
+});
+
+test('gop: the body carries the nonce, and the id and root of the .gc', () => {
+    const p = boot('#/', { pending: PENDING });
+    p.press({ '[data-gop]': gopBtn(0, gcOf('s1', 'F:\\other')) });
+    const b = bodyOf(p.fetched[0]);
+    assert.equal(b.get('nonce') + '|' + b.get('id') + '|' + b.get('root'), 'N0NCE|s1|F:\\other');
+});
+
+test('gop: it takes the .gc from the button, not from the event target', () => {
+    const p = boot('#/', { pending: PENDING });
+    p.press({ '[data-gop]': gopBtn(0, gcOf('s1', 'F:\\mine')), '.gc': gcOf('s1', 'F:\\wrong') });
+    assert.equal(bodyOf(p.fetched[0]).get('root'), 'F:\\mine');
+});
+
+test('gop: it returns before the later branches (a [data-gho] answer posts no second fetch)', () => {
+    const p = boot('#/', { pending: PENDING });
+    p.press({ '[data-gop]': gopBtn(0, gcOf()), '[data-gho]': node({}), '.gc': gcOf() });
+    assert.equal(p.fetched.length, 1);
+});
+
+test('gop: it returns before [data-tune-notify] (no permission request)', () => {
+    const p = boot('#/', { pending: PENDING, notification: true });
+    p.press({ '[data-gop]': gopBtn(0, gcOf()), '[data-tune-notify]': node({}) });
+    assert.equal(p.notified, 0);
+});
+
+test('gop: with no pending on the session nothing is fetched', () => {
+    const p = boot('#/');
+    p.press({ '[data-gop]': gopBtn(0, gcOf()) });
+    assert.equal(p.fetched.length, 0);
+});
+
+test('gop: once the fetch resolves .gend reads 已送出：', async () => {
+    const p = boot('#/', { pending: PENDING });
+    const gc = gcOf();
+    p.press({ '[data-gop]': gopBtn(0, gc) });
+    await settle();
+    assert.equal(gc.gend.textContent.startsWith('已送出：'), true);
+});
+
+test('gho: it posts once to answer with method POST', () => {
+    const p = boot('#/', { pending: PENDING });
+    p.press({ '[data-gho]': node({}), '.gc': gcOf() });
+    assert.deepEqual(p.fetched.map((c) => c.url + ' ' + c.method), ['answer POST']);
+});
+
+test('gho: the body says handoff=terminal', () => {
+    const p = boot('#/', { pending: PENDING });
+    p.press({ '[data-gho]': node({}), '.gc': gcOf() });
+    assert.equal(bodyOf(p.fetched[0]).get('handoff'), 'terminal');
+});
+
+test('gho: the body has no answers field', () => {
+    const p = boot('#/', { pending: PENDING });
+    p.press({ '[data-gho]': node({}), '.gc': gcOf() });
+    assert.equal(bodyOf(p.fetched[0]).has('answers'), false);
+});
+
+test('gho: the body carries the nonce, and the id and root of the .gc taken from the event target', () => {
+    const p = boot('#/', { pending: PENDING });
+    p.press({ '[data-gho]': node({}), '.gc': gcOf('s1', 'F:\\other') });
+    const b = bodyOf(p.fetched[0]);
+    assert.equal(b.get('nonce') + '|' + b.get('id') + '|' + b.get('root'), 'N0NCE|s1|F:\\other');
+});
+
+test('gho: it returns before [data-tune-notify] (no permission request)', () => {
+    const p = boot('#/', { pending: PENDING, notification: true });
+    p.press({ '[data-gho]': node({}), '.gc': gcOf(), '[data-tune-notify]': node({}) });
+    assert.equal(p.notified, 0);
+});
+
+test('gho: with no pending on the session nothing is fetched', () => {
+    const p = boot('#/');
+    p.press({ '[data-gho]': node({}), '.gc': gcOf() });
+    assert.equal(p.fetched.length, 0);
+});
+
+test('gho: once the fetch resolves .gend reads 已交給終端：', async () => {
+    const p = boot('#/', { pending: PENDING });
+    const gc = gcOf();
+    p.press({ '[data-gho]': node({}), '.gc': gc });
+    await settle();
+    assert.equal(gc.gend.textContent.startsWith('已交給終端：'), true);
 });
