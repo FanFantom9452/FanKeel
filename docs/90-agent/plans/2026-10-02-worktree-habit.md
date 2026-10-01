@@ -26,7 +26,7 @@ status: design-intent
 ## Risks
 
 - build brain brief 逼近 10,000 字上限 — Task 1 — 改完先跑 `node --test tests/brief.test.js`，cap 那條紅了就把加的子句縮短，不動其他句。
-- 推出來的 `commit.format` 若沒有 `merge`，land.js 的 `merge: <任務名>` 會被自己擋下 — Task 2 — 推斷一律把 `merge` 放進候選型別，測試斷言 `merge: x` 也符合。
+- 推出來的 `commit.format` 只含 log 用過的型別，不自動加 `merge`（使用者 2026-10-02 在 plan gate 選的）；repo 沒用過 `merge:` 時，land.js 的 `merge: <任務名>` 會被這個格式擋下 — Task 2、Task 6 — Task 2 的測試斷言 `merge: x` 不符合；Task 6 在 init 第 7 步把這個代價告訴使用者。
 - 改了 `worktree` 的 `values`/`desc` 而沒重產 profile.md 表 — Task 2 — 執行 `node scripts/profile-table.js` 後跑 `tests/profile-table.test.js`。
 - `git merge` 在非終端下仍開編輯器 — Task 4 — 帶 `--no-edit`。
 - `git branch -d` 的拒絕訊息依語系不同 — Task 4 — 測試只斷言 `land.js: ` 前綴與分支仍在，不比對 git 原文。
@@ -277,7 +277,7 @@ node --test tests/commit.test.js tests/commit-format.test.js tests/task-worktree
 
 **Interfaces:**
 - Consumes: `require('./stages.js').CLASSES`（在函式內 require，避免與 stages.js 互相載入）
-- Produces: `profile.wantsWorktree(value: true|false|'bounded'|'architectural', cls: string|null|undefined) -> boolean`；`profile.shellWord(value: any) -> string`；`profile.suggest(...).values['commit.format']`（string，只在推得出時存在）與一行 evidence `commit subjects: <n> of <m> read type(scope): `。
+- Produces: `profile.wantsWorktree(value: true|false|'bounded'|'architectural', cls: string|null|undefined) -> boolean`；`profile.shellWord(value: any) -> string`；`profile.suggest(...).values['commit.format']`（string，只在推得出時存在；只含 log 用過的型別）與一行 evidence `commit subjects: <n> of <m> read type(scope): `。
 
 **Dispatch:** implementer, sonnet — 程式碼都在計畫裡。
 
@@ -329,12 +329,15 @@ function history(subjects) {
     return d;
 }
 
-test('suggest infers commit.format from a conventional log, merge included, and every subject matches it', () => {
+// The plan gate of 2026-10-02 ruled `merge` is not added on its own: the
+// pattern holds the types the log used, and nothing else.
+test('suggest infers commit.format from a conventional log, from the types it used alone', () => {
     const subjects = ['feat: a', 'fix(x): b', 'docs: c', 'chore: d', 'feat(y): e'];
     const out = profile.suggest(history(subjects));
-    assert.equal(out.values['commit.format'], '^(chore|docs|feat|fix|merge)(\\([^)]+\\))?: ');
+    assert.equal(out.values['commit.format'], '^(chore|docs|feat|fix)(\\([^)]+\\))?: ');
     const format = new RegExp(out.values['commit.format']);
-    for (const s of subjects.concat('merge: ship it')) assert.ok(format.test(s), s);
+    for (const s of subjects) assert.ok(format.test(s), s);
+    assert.equal(format.test('merge: ship it'), false, 'merge is not added unless the log used it');
     assert.ok(out.evidence.includes('commit subjects: 5 of 5 read type(scope): '), out.evidence.join(' | '));
 });
 
@@ -390,15 +393,16 @@ function shellWord(value) {
 ```js
     // docs/90-agent/plans/2026-10-02-worktree-habit-design.md §4: the last
     // fifty subjects that are not merges, and a pattern only when four in five
-    // already read `type(scope): `. `merge` is always one of the types:
-    // scripts/land.js writes `merge: <task>`, and a pattern without it would
-    // refuse the first land. Offered like every value here, never written.
+    // already read `type(scope): `. Only the types the log used: the plan gate
+    // of 2026-10-02 ruled `merge` is not added on its own, so a repository that
+    // never wrote `merge:` gets a pattern scripts/land.js's subject fails, and
+    // init's step 7 says so. Offered like every value here, never written.
     const recent = (git(projectRoot, ['log', '--no-merges', '-n', '50', '--format=%s']) || '').split('\n').filter(Boolean);
     if (recent.length) {
         const shaped = recent.map((s) => /^([a-z]+)(\([^)]+\))?: /.exec(s)).filter(Boolean);
         evidence.push('commit subjects: ' + shaped.length + ' of ' + recent.length + ' read type(scope): ');
         if (shaped.length * 5 >= recent.length * 4) {
-            const types = [...new Set(shaped.map((m) => m[1]).concat('merge'))].sort();
+            const types = [...new Set(shaped.map((m) => m[1]))].sort();
             const candidate = '^(' + types.join('|') + ')(\\([^)]+\\))?: ';
             if (!parseValue('commit.format', candidate).error) values['commit.format'] = candidate;
         }
@@ -453,7 +457,7 @@ test('a suggested commit.format prints as one quoted shell word', () => {
   const dir = repo(null);
   for (const s of ['feat: a', 'fix(x): b', 'docs: c', 'chore: d']) git(dir, ['commit', '-q', '--allow-empty', '-m', s]);
   const { out } = run(dir, ['start', '--session', A, '--task', 't']);
-  assert.ok(out.includes("profile set commit.format '^(chore|docs|feat|fix|merge)(\\([^)]+\\))?: '"), out);
+  assert.ok(out.includes("profile set commit.format '^(chore|docs|feat|fix)(\\([^)]+\\))?: '"), out);
 });
 ```
 
@@ -944,6 +948,7 @@ test('init step 7 offers worktree\'s four values and the suggested commit.format
     assert.match(seven, /`worktree` — `false`.*`true`.*`bounded`.*`architectural`/);
     assert.match(seven, /task\.js profile suggest --project <name>/);
     assert.match(seven, /`commit\.format`/);
+    assert.match(seven, /a pattern without `merge` refuses `land\.js merge`/);
     assert.match(eight, /`worktrees` row/);
     assert.match(eight, /nothing is deleted unasked/);
 });
@@ -1011,8 +1016,10 @@ Two of them carry this repository's own evidence:
   (only those).
 - `commit.format` — `node <plugin>/scripts/task.js profile suggest --project <name>`
   prints one when four in five of the last fifty non-merge subjects read
-  `type(scope): `. Offer it as the recommended answer with its evidence line,
-  and write nothing the user did not pick.
+  `type(scope): `, built from the types the log used and no others. Offer it
+  as the recommended answer with its evidence line, and say that
+  `land.js merge` writes `merge: <task>`, so a pattern without `merge` refuses
+  `land.js merge` until the user adds it. Write nothing the user did not pick.
 ```
 
    In `skills/fankeel-init/SKILL.md`, under `## 8. Close`, add as the first bullet:
@@ -1085,7 +1092,7 @@ node --test tests/worktree-docs.test.js tests/init-skill.test.js tests/agents.te
 | 任務沒有 worktree：`merge` 印 `no worktree — nothing to merge` 並 exit 0。 | Task 4 |
 | skills/fankeel-land/SKILL.md:233-252 手動 `git merge fk/<id8>` 的那段，改成這兩個指令。 | Task 6 |
 | 測試：tests/land.test.js — fixture repo 跑 `merge` 後，`git log -1 --format=%P` 有兩個 parent， | Task 4 |
-| `lib/profile.js` 的推斷函式（:315 一帶，就是從 git log 推 `land.integration` 的那段）多推一個 `commit.format`。 | Task 2 |
+| `lib/profile.js` 的推斷函式（:315 一帶，就是從 git log 推 `land.integration` 的那段）多推一個 `commit.format`。 | Task 2 — 設計稿例子裡的 `merge` 不自動加，只放 log 用過的型別（2026-10-02 plan gate 的決定） |
 | 推出的值和其他推斷值一樣，在 init 第 7 步交給使用者確認，不靜默寫入。 | Task 2（只進 `suggest`）、Task 3（印成可貼的指令）、Task 6 |
 | 測試：tests/profile-commit-format.test.js 加兩列 — 一份符合 conventional 格式的 fixture log 推出正規式，且每一則都符合；一份混雜的 log 不推。 | Task 2 — 寫在新檔 `tests/profile-worktree.test.js` |
 | `scripts/residue.js` 多列一類：沒有 worktree 的 `worktree-agent-*` 分支，且它的 commit 都已進了 HEAD，標為 spent。 | Task 5 |
