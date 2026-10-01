@@ -4,12 +4,14 @@
 // targets whose closest() answers only the selector a test names. Every test
 // presses its selector; every test but the `guard:` ones asserts that branch's own
 // effect, one effect per test, so single-branch mutations of one branch redden
-// different sets of tests. A `guard:` test asserts only that something did NOT
-// happen (nothing thrown, nothing drawn, nothing fetched, a value left as it was):
-// it stays green when its branch is deleted, so it does not count as a hit for the
-// selector table. (Some non-guard tests also stay green on a deletion, e.g. "returns
-// before the later branches" and toggle-back ones; each asserts a positive effect that
-// a different mutation, the `return` removed or the toggle flipped, reddens.)
+// different sets of tests. A `guard:` test is any test that stays green when its own
+// branch is deleted (`if (false && ...)`), whatever it asserts: that something did NOT
+// happen (nothing thrown, nothing drawn, nothing fetched, a value left as it was), or a
+// positive count a later branch's fall-through produces just the same. It does not
+// count as a hit for the selector table. Every other test goes red on its branch's
+// deletion: the "returns before the later branches" and toggle-back tests also assert
+// the branch's own effect (the panel open, the key dimmed, the step moved) before the
+// count or the second press.
 //   `[data-tune-notify]`, `[data-answer]` (with its four fetch outcomes) and the
 //   `.gend` line gatePost writes after a `[data-gop]` / `[data-gho]` press;
 //   then the branches no earlier test pressed: `[data-fbtn]`, the legend's
@@ -129,7 +131,8 @@ test('guard: tune-notify: with no window Notification the press throws nothing a
     assert.doesNotThrow(() => p.press({ '[data-tune-notify]': {} }));
 });
 
-test('tune-notify: with no window Notification the press falls through to the later branches (a [data-wf] answer redraws once)', () => {
+// guard, not a hit for the selector table: it passes if the branch is deleted (no Notification skips the branch just as deleting it does).
+test('guard: tune-notify: with no window Notification the press falls through to the later branches (a [data-wf] answer redraws once)', () => {
     const p = boot('#/');
     p.reset();
     p.press({ '[data-tune-notify]': {}, '[data-wf]': wfProbe() });
@@ -356,6 +359,7 @@ test('fbtn: on the days page the press opens the 篩選 panel', () => {
 test('fbtn: a second press shuts the panel again', () => {
     const p = boot('#/days', { days: 2 });
     p.press(FB);
+    assert.equal(panelShown(p), true);
     p.press(FB);
     assert.equal(panelShown(p), false);
 });
@@ -385,6 +389,7 @@ test('fbtn: it returns before the later branches (a [data-wf] answer does not re
     const p = boot('#/days', { days: 2 });
     p.reset();
     p.press(Object.assign({}, FB, { '[data-wf]': wfProbe() }));
+    assert.equal(panelShown(p), true);
     assert.equal(p.writes.page, 1);
 });
 
@@ -402,6 +407,7 @@ test('legend: a press on a lit entry takes its key out (the entry is rebuilt dim
 test('legend: a press on a dimmed entry puts its key back', () => {
     const p = boot('#/days', { days: 2 });
     p.press({ [LEG]: entry({ 'data-key': 'opus-4-1' }) });
+    assert.equal(offKeys(p), 'opus-4-1');
     p.press({ [LEG]: entry({ 'data-key': 'opus-4-1', 'data-off': '' }) });
     assert.equal(offKeys(p), '');
 });
@@ -432,6 +438,7 @@ test('legend: it returns before the later branches (a [data-wf] answer does not 
     const p = boot('#/days', { days: 2 });
     p.reset();
     p.press({ [LEG]: entry({ 'data-key': 'opus-4-1' }), '[data-wf]': wfProbe() });
+    assert.equal(offKeys(p), 'opus-4-1');
     assert.equal(p.writes.page, 1);
 });
 
@@ -462,6 +469,7 @@ test('legend rest: the press on 其他 N 個 dims it (its members go out)', () =
 test('legend rest: the press on a dimmed 其他 N 個 lights it again', () => {
     const p = restBoot();
     p.press({ [LEG]: entry({ 'data-rest': '' }) });
+    assert.notEqual(restTag(p), '<span data-rest>');
     p.press({ [LEG]: entry({ 'data-rest': '', 'data-off': '' }) });
     assert.equal(restTag(p), '<span data-rest>');
 });
@@ -500,6 +508,7 @@ test('pick: a press on a facet trigger opens its popover', () => {
 test('pick: a second press on the same trigger shuts it', () => {
     const p = boot('#/list');
     p.press({ '[data-pick]': pickBtn('state') });
+    assert.equal(rpops(p), 1);
     p.press({ '[data-pick]': pickBtn('state') });
     assert.equal(rpops(p), 0);
 });
@@ -570,6 +579,7 @@ test('pick: it returns before the later branches (a [data-wf] answer does not re
     const p = boot('#/list');
     p.reset();
     p.press({ '[data-pick]': pickBtn('state'), '[data-wf]': wfProbe() });
+    assert.equal(rpops(p), 1);
     assert.equal(p.writes.page, 1);
 });
 
@@ -686,6 +696,7 @@ test('facet: with a popover open focus goes back to its trigger', () => {
 test('facet: with a popover open the pick redraws once and returns (a [data-wf] answer does not add a draw)', () => {
     const p = popOpen();
     p.press({ '[data-facet] button': facetBtn('state', 'live'), '.rpop': {}, '[data-wf]': wfProbe() });
+    assert.equal(rpops(p), 0);
     assert.equal(p.writes.page, 1);
 });
 
@@ -693,6 +704,7 @@ test('facet: with no popover open the pick returns before the later branches (a 
     const p = boot('#/list');
     p.reset();
     p.press({ '[data-facet] button': facetBtn('state', 'live'), '[data-wf]': wfProbe() });
+    assert.equal(cleared(p, 'state'), false);
     assert.equal(p.writes.page, 1);
 });
 
@@ -717,6 +729,7 @@ test('cmp: a tick redraws the table with that row ticked', () => {
 test('cmp: an un-tick takes the session off', () => {
     const p = withLb('#/list', { sessions: 3 });
     p.press(tick('s1', true));
+    assert.equal(ticks(p), 's1');
     p.press(tick('s1', false));
     assert.equal(ticks(p), '');
 });
@@ -857,6 +870,7 @@ test('wz: the wizard branch returns before the later branches (a [data-wf] answe
     const p = boot('#/settings');
     p.reset();
     p.press({ [WZ]: { dataset: { go: '3' } }, '[data-wf]': wfProbe() });
+    assert.match(p.html(), /data-step="agents"/);
     assert.equal(p.writes.page, 1);
 });
 

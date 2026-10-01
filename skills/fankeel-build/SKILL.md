@@ -398,10 +398,21 @@ then asks this stage's gate.
      in its return, not merely state that the rule holds: one row per
      closest, matches and event name in the changed listener — the
      selector, the test as `file:line`, the effect it asserts; a row with
-     no qualifying test is a finding. A test must fail on its own branch's
-     deletion: one whose only assertion is that something did not happen
-     (doesNotThrow, nothing fired, nothing fetched) is a guard, not a hit,
-     and a row backed only by guards is a finding. A mutation that reddens
+     no qualifying test is a finding. A hit must fail on its own branch's
+     deletion. A guard is ANY test that stays green when its own branch
+     is deleted (`if (false && ...)`), whatever it asserts: that something
+     did not happen (doesNotThrow, nothing fired, nothing fetched); a
+     positive count a later branch's fall-through produces just the same
+     (a "returns before the later branches" test asserting only
+     `writes.page == 1`); a toggle-back test whose second press only
+     restores the start state. Guards are titled `guard:` and never count
+     as hits, and a row backed only by guards is a finding. The reviewer
+     opens EVERY `path:line` the table cites at the committed sha
+     (`git show <sha>:<path>`, not the working tree) and confirms each
+     line is the test it claims. Before it accepts this wording it tests
+     it against ONE counter-example, a test that asserts a positive effect
+     yet stays green on its branch's deletion: if the wording would still
+     call that test a hit, the wording is wrong. A mutation that reddens
      every test in the file (it killed the harness, e.g. by deleting the
      text the harness finds the listener by) counts as dead, not red: redo
      it with `if (false && ...)` so the harness survives. (2026-10-01:
@@ -420,7 +431,12 @@ then asks this stage's gate.
      written but never applied to the listener it was written for;
      2026-10-01: verify's ninth return found hdl-k's doesNotThrow and
      nothing-fired tests counted as hits, and a block-delete mutation that
-     killed the harness read as red.)
+     killed the harness read as red; 2026-10-01: verify's tenth return
+     found the rule sentence ("must fail on its own branch's deletion")
+     contradicted by its definition, which called only assert-nothing
+     tests guards, so positive-count and toggle-back tests that stayed
+     green on deletion counted as hits, and the review never opened the
+     table's cited lines at the commit.)
    Part 3 — every changed line traces to the task's text; the patterns
      already in the repository are followed. Then name the page this
      change makes false (a renamed export, a changed default, a removed
