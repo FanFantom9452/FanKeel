@@ -500,6 +500,12 @@ then asks this stage's gate.
    `.fankeel/render.json` where the project has one — a page path otherwise.
    Its first line is `disposition: recapture`, `fix` or `ship`; anything but
    `ship` goes back to the implementer like the first reviewer's findings.
+   A page task runs it by default, every time. The exception is a task that is
+   one request of the tuning loop below: there the user is looking at the real
+   page and judging it, so the render reviewer is skipped for that request, and
+   a `fankeel-reviewer` alone reviews it. The user may also say, this session,
+   to skip it (or to run it) for any page task; that is a ruling, recorded once
+   like the no-dispatch one, not a stopper.
 
    **Where the task changed a page**, a tuning
    loop on the real page follows once it lands, served by the
