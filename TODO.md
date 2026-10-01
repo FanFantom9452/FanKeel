@@ -10,10 +10,6 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔await〕`kind` 讀不到時，await 改從 brain 自己的 transcript 第一行讀（commit a0187d9d769dd3eb0821a22e62ef3543739eef6d）：重裝後看一次真實 `build close` 的 await 是否盯 `build.md` — [scripts/await.js](scripts/await.js).
 
-- 〔gate〕10-01：同一 task 第二次以後進 verify，gate 被擋成 already answered，拿的是前一輪 verify 的答案，只能改用文字問 — [gate.js](hooks/gate.js).
-
-- 〔handoff〕10-01：交接選項只寫 next，新 session 分不出刻意交棒與廢棄 entry；加 handoff 標記，/fankeel 把 Adopt 排第一並帶任務名，開窗提示，仍需確認 — [task.js](scripts/task.js).
-
 ## Needs a decision
 
 ## Blocked
