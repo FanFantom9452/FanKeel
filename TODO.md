@@ -12,8 +12,6 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 ## Needs a decision
 
-- 〔tune〕10-01 使用者提議：右下角放 fankeel logo 當小助手，浮在最上層，按住可拖曳、點一下展開；展開後可一次圈選好幾塊、各寫修改，再一起送出；取代現在 Alt 點一塊送一次的 overlay — [overlay.js](assets/tune/overlay.js).
-
 ## Blocked
 
 ### fankeel 功能全部完成
