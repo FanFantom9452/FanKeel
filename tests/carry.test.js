@@ -154,11 +154,11 @@ test('nothing on stdin, and nothing that parses, are both survivable', () => {
   assert.equal(run('not json', tmp('fankeel-cfg-')), '');
 });
 
-test('the manifest runs it on a clear or a fork, and on nothing else', () => {
+test('the manifest runs it on a startup, a clear or a fork, and on nothing else', () => {
   const plugin = JSON.parse(fs.readFileSync(path.join(ROOT, '.claude-plugin', 'plugin.json'), 'utf8'));
   const starts = plugin.hooks.SessionStart;
   assert.equal(starts.length, 1);
-  assert.equal(starts[0].matcher, 'clear|fork');
+  assert.equal(starts[0].matcher, 'startup|clear|fork');
   assert.equal(starts[0].hooks.length, 1);
   assert.equal(starts[0].hooks[0].timeout, 5);
   assert.match(starts[0].hooks[0].command, /hooks\/carry\.js/);
@@ -176,4 +176,36 @@ test('the hook writes nothing to the registry it reads', () => {
 
   assert.equal(fs.readFileSync(file, 'utf8'), before);
   assert.equal(fs.existsSync(path.join(root, '.fankeel', 'sessions', NEW + '.json')), false);
+});
+
+test('a handed-off entry is offered at startup, even while its session still runs', () => {
+  const root = tmp('fankeel-carry-');
+  const cfg = tmp('fankeel-cfg-');
+  seed(root, GONE, { handoff: ago(5 * 60e3) });
+  seedLive(cfg, [[NEW, process.pid], [GONE, process.pid]]);
+
+  const out = context(run({ session_id: NEW, cwd: root, source: 'startup' }, cfg));
+  assert.match(out, /a task was handed off to a new session\. Ask the user before adopting it\./);
+  assert.match(out, /stage: build \(3 of 5\) {2}· {2}handed off <1h ago/);
+  assert.match(out, /next: {2}wire the badge word into TokenBar/);
+  assert.match(out, new RegExp('task\\.js adopt ' + GONE + ' --session ' + NEW));
+  assert.doesNotMatch(out, /left a task behind/);
+});
+
+test('startup offers no orphan: that is a clear\'s business', () => {
+  const root = tmp('fankeel-carry-');
+  const cfg = tmp('fankeel-cfg-');
+  seed(root, GONE);
+  seedLive(cfg, [[NEW, process.pid], [GONE, GONE_PID]]);
+
+  assert.equal(run({ session_id: NEW, cwd: root, source: 'startup' }, cfg), '');
+});
+
+test('a hand-off stamp with no next is not offered', () => {
+  const root = tmp('fankeel-carry-');
+  const cfg = tmp('fankeel-cfg-');
+  seed(root, GONE, { handoff: ago(60e3), next: undefined });
+  seedLive(cfg, [[NEW, process.pid], [GONE, process.pid]]);
+
+  assert.equal(run({ session_id: NEW, cwd: root, source: 'startup' }, cfg), '');
 });

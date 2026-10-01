@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 
-// SessionStart, matcher `clear|fork`. It exists because `/clear` is the one
+// SessionStart, matcher `startup|clear|fork`. It exists because `/clear` is the one
 // continuation that certainly changes the session id; whether `fork` does is
 // unmeasured.
 //
@@ -14,11 +14,14 @@
 // corrupted and no collision appears — the task simply stops being read, and
 // nothing said so.
 //
-// The matcher is the whole cost control, and it is exact rather than trusted:
-// Claude Code matches it against `source`, whose five values are `startup`,
-// `resume`, `clear`, `compact` and `fork`. On `clear` or `fork` this never runs
-// at an ordinary startup, and `tests/carry.test.js` asserts the manifest rather
-// than believing this comment. `fork` needed no new guard: keeping the session
+// The matcher and `source` together are the cost control. Claude Code matches
+// the matcher against `source`, whose five values are `startup`, `resume`,
+// `clear`, `compact` and `fork`. On `startup` only a hand-off is offered
+// (`task.js next --handoff`, lib/registry.js handoffOf): the user asked for
+// the task to move to a new window, and this is that window. An orphan is a
+// clear's or a fork's business and is never offered at startup.
+// `tests/carry.test.js` asserts the manifest rather than believing this
+// comment. `fork` needed no new guard: keeping the session
 // id is caught by the check below that skips a session's own entry, changing it
 // while the predecessor is still running is caught by `isLive` treating an
 // unreadable state as live rather than gone, and changing it once the
@@ -31,7 +34,7 @@
 
 const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
-const { renderCarry } = require('../lib/render.js');
+const { renderCarry, renderHandoff } = require('../lib/render.js');
 const { run, parse } = require('../lib/hook.js');
 
 // At most three, though in practice there is one: the session cleared a second
@@ -57,6 +60,8 @@ function main(raw) {
     const now = Date.now();
     const state = live.readLive(live.liveConfigDir(), sessionId);
 
+    const source = typeof payload.source === 'string' ? payload.source : '';
+    const handed = [];
     const orphans = [];
     for (const entry of registry.readActive(root)) {
         // Reading its own entry back would produce an adopt line naming the
@@ -64,6 +69,10 @@ function main(raw) {
         // there; a fork that keeps its old id is exactly what this check
         // answers, which is why it is not dead code.
         if (entry.sessionId === sessionId) continue;
+        // A hand-off is offered on every source and whether or not its session
+        // still runs: the window it came from may well still be open.
+        if (registry.handoffOf(entry.data)) { handed.push(entry); continue; }
+        if (source === 'startup') continue;
         if (live.isLive(state, entry.sessionId, entry.data.configDir)) continue;
         // Twelve hours is `registry.STALE_MS`, and it is what separates this
         // clear's casualty from a record abandoned last week. The second one is
@@ -71,13 +80,18 @@ function main(raw) {
         if (registry.isStale(entry.data, now)) continue;
         orphans.push(entry);
     }
-    if (!orphans.length) return;
+    if (!orphans.length && !handed.length) return;
 
     // `readActive` returns the directory sorted by session id, which is stable
     // and says nothing about which task was just put down. Recency does.
     orphans.sort((a, b) => (registry.updatedAt(b.data) || 0) - (registry.updatedAt(a.data) || 0));
 
-    const context = renderCarry({ orphans: orphans.slice(0, MOST), sessionId, now });
+    handed.sort((a, b) => Date.parse(b.data.handoff) - Date.parse(a.data.handoff));
+
+    const context = [
+        renderHandoff({ entries: handed.slice(0, MOST), sessionId, now }),
+        renderCarry({ orphans: orphans.slice(0, MOST), sessionId, now }),
+    ].filter(Boolean).join('\n\n');
     if (!context) return;
 
     process.stdout.write(JSON.stringify({

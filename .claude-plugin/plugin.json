@@ -11,13 +11,13 @@
   "hooks": {
     "SessionStart": [
       {
-        "matcher": "clear|fork",
+        "matcher": "startup|clear|fork",
         "hooks": [
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/carry.js\"",
             "timeout": 5,
-            "statusMessage": "Looking for the task the clear left behind..."
+            "statusMessage": "Looking for a task handed off or left behind..."
           }
         ]
       }
