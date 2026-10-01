@@ -2919,18 +2919,6 @@
             off: list.filter(function (c) { return !c.on; }).map(function (c) { return c.id; }),
         }));
     }
-    // The 經典樣式 switch's press (see styleSync): registered here, ahead of the
-    // page handlers, so a test that keeps only the last click listener still
-    // gets the page's own.
-    doc.addEventListener('click', function (e) {
-        var b = e.target && e.target.closest ? e.target.closest('#styletog') : null;
-        if (!b || !doc.documentElement) return;
-        var classic = doc.documentElement.getAttribute('data-style') === 'keel';
-        if (classic) doc.documentElement.removeAttribute('data-style');
-        else doc.documentElement.setAttribute('data-style', 'keel');
-        store('station.style', classic ? 'classic' : null);
-        styleSync();
-    });
     doc.addEventListener('click', function (e) {
         var b = e.target && e.target.closest ? e.target.closest('[data-dchtog], [data-dchmv], [data-dchreset], [data-dchdone]') : null;
         if (!b) return;
@@ -5172,22 +5160,9 @@
         set('servedown', function (el) { el.innerHTML = '<i class="dot down"></i>' + esc(loc('mast.serveDown', 'serve 已停')); });
         set('langzh', function (el) { el.setAttribute('aria-pressed', String(!en)); el.setAttribute('title', en ? '介面改用繁體中文' : '介面用繁體中文'); });
         set('langen', function (el) { el.setAttribute('aria-pressed', String(en)); el.setAttribute('title', en ? 'Interface is in English' : 'Switch the interface to English'); });
-        set('styletog', function (el) {
-            el.setAttribute('title', loc('mast.styleTitle', '換回 2026-09 的樣式；存在這個瀏覽器（station.style）'));
-            el.innerHTML = '<span class="sw2" aria-hidden="true"></span>' + esc(loc('mast.styleClassic', '經典樣式'));
-        });
+        set('appear', function (el) { el.setAttribute('aria-label', loc('mast.appearance', '外觀')); });
     }
     applyChrome();
-    // 經典樣式 (station-9): the keel look is `data-style="keel"` on <html>,
-    // set in assets/station/index.html and taken off there before first paint
-    // when `station.style` says `classic`. The switch is pressed while the look
-    // is classic; a press swaps the attribute and stores the choice.
-    function styleSync() {
-        var root = doc.documentElement, b = doc.getElementById('styletog');
-        if (!root || !root.getAttribute || !b || !b.setAttribute) return;
-        b.setAttribute('aria-pressed', String(root.getAttribute('data-style') !== 'keel'));
-    }
-    styleSync();
     // The film's click ring: a keel ring opens out from a pressed action button.
     doc.addEventListener('pointerdown', function (e) {
         var b = e.target && e.target.closest ? e.target.closest('.btn.go, #dchtog, .td-mb') : null;

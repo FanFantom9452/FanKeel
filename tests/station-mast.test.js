@@ -30,6 +30,7 @@ function boot(kept) {
         STATION: { generatedAt: new Date(NOW).toISOString(), configDir: 'cfg', pricesVerified: '2026-09-24', serve: false,
             projects: [{ root: 'F:\\ws', gone: false, unreadable: 0, build: [], mapAt: null, docs: [] }],
             profiles: { machine: { values: {}, sources: {}, unreadable: [] }, projects: {} }, profileKeys: {}, classes: {}, sessions: [] } };
+    win.FK_I18N = require('../assets/station/i18n.js').make(win);
     vm.runInNewContext(SRC, { window: win, document: doc, URLSearchParams, fetch: () => Promise.resolve({ ok: true }), module: { exports: {} } });
     const press = (btn) => {
         const target = { closest: (sel) => (sel.split(',').some((s) => s.trim() === '[data-themecycle]') ? btn : null), getAttribute: () => null, hasAttribute: () => false };
@@ -58,4 +59,13 @@ test('a press on the masthead\'s theme button switches data-theme, stores it, an
 test('index.html opens in keel and holds no switch, mark or script that could take it off', () => {
     assert.match(html, /<html lang="zh-Hant" data-style="keel">/);
     assert.doesNotMatch(html, /styletog|station\.style|classic-mark/);
+});
+
+test('keel is the only look: station.js keeps no classic switch, and a stored station.style=classic changes nothing', () => {
+    assert.doesNotMatch(SRC, /styletog|station\.style|styleSync|c-only/);
+    const kept = { 'station.style': 'classic' };
+    const p = boot(kept);
+    assert.equal(p.root.getAttribute('data-style'), 'keel');
+    assert.equal(kept['station.style'], 'classic', 'nothing reads or clears it');
+    assert.equal(p.els.appear.attrs['aria-label'], '外觀');
 });

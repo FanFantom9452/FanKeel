@@ -1,7 +1,7 @@
 'use strict';
 // The keel look's live parts (docs/90-agent/plans/2026-10-01-todo-sweep.md
 // Task 7): a live row drawn as the promo film's glyph, the recent row's stage
-// word, the all-clear check, and the 經典樣式 switch.
+// word, the all-clear check, and the click ring.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -70,115 +70,6 @@ test('the recent row names its stage for the underline, and the empty gate card 
     assert.match(V.dashGate([]), /沒有在等你的 gate/);
 });
 
-test('the switch reads pressed in classic; a press swaps the attribute and stores station.style, a second press undoes both', () => {
-    const p = boot({ style: 'keel', lang: 'zh' });
-    assert.equal(p.els.styletog.attrs['aria-pressed'], 'false');
-    const target = { closest: (sel) => (sel === '#styletog' ? p.els.styletog : null), getAttribute: () => null, hasAttribute: () => false };
-    const press = () => { for (const fn of p.listeners.click || []) fn({ target, preventDefault() {}, stopPropagation() {} }); };
-    press();
-    assert.equal(p.root.getAttribute('data-style'), null);
-    assert.equal(p.kept['station.style'], 'classic');
-    assert.equal(p.els.styletog.attrs['aria-pressed'], 'true');
-    press();
-    assert.equal(p.root.getAttribute('data-style'), 'keel');
-    assert.equal('station.style' in p.kept, false);
-    assert.equal(p.els.styletog.attrs['aria-pressed'], 'false');
-});
-
-// The 經典樣式 press, one effect per test: each is red under a different
-// single-branch mutation of the #styletog click listener.
-function pressSwitch(p, target) {
-    const t = target || { closest: (sel) => (sel === '#styletog' ? p.els.styletog : null), getAttribute: () => null, hasAttribute: () => false };
-    for (const fn of p.listeners.click || []) fn({ target: t, preventDefault() {}, stopPropagation() {} });
-}
-
-// The page's other click listeners do not guard a missing target, so the
-// malformed-event tests fire the switch's own listener alone: the one that
-// whose source names '#styletog'.
-function switchListener(p) {
-    const fns = (p.listeners.click || []).filter((fn) => fn.toString().includes("'#styletog'"));
-    assert.equal(fns.length, 1, 'the switch has one click listener');
-    return fns[0];
-}
-
-test('a click that is not on the switch leaves the style, the store and the pressed state alone', () => {
-    const p = boot({ style: 'keel', lang: 'zh' });
-    pressSwitch(p, { closest: () => null, getAttribute: () => null, hasAttribute: () => false });
-    assert.equal(p.root.getAttribute('data-style'), 'keel');
-    assert.equal('station.style' in p.kept, false);
-    assert.equal(p.els.styletog.attrs['aria-pressed'], 'false');
-});
-
-test('a click with no target at all does not throw', () => {
-    const p = boot({ style: 'keel', lang: 'zh' });
-    const fn = switchListener(p);
-    assert.doesNotThrow(() => fn({}));
-    assert.equal(p.root.getAttribute('data-style'), 'keel');
-});
-
-test('a click whose target has no closest does not throw or flip the style', () => {
-    const p = boot({ style: 'keel', lang: 'zh' });
-    const fn = switchListener(p);
-    assert.doesNotThrow(() => fn({ target: {} }));
-    assert.equal(p.root.getAttribute('data-style'), 'keel');
-});
-
-test('a press of the switch on a document with no root element does nothing and does not throw', () => {
-    const p = boot({ style: 'keel', lang: 'zh' });
-    p.doc.documentElement = null;
-    assert.doesNotThrow(() => pressSwitch(p));
-    assert.equal('station.style' in p.kept, false);
-});
-
-test('pressing the switch from classic with nothing stored stores nothing', () => {
-    const p = boot({ lang: 'zh' });
-    pressSwitch(p);
-    assert.equal('station.style' in p.kept, false);
-});
-
-test('pressing the switch from keel takes the style attribute off', () => {
-    const p = boot({ style: 'keel', lang: 'zh' });
-    pressSwitch(p);
-    assert.equal(p.root.hasAttribute('data-style'), false);
-});
-
-test('pressing the switch from classic puts an attribute on', () => {
-    const p = boot({ lang: 'zh', kept: { 'station.style': 'classic' } });
-    pressSwitch(p);
-    assert.equal(p.root.hasAttribute('data-style'), true);
-});
-
-test('pressing the switch from classic puts keel on, and only keel', () => {
-    const p = boot({ lang: 'zh', kept: { 'station.style': 'classic' } });
-    pressSwitch(p);
-    assert.equal(p.root.getAttribute('data-style'), 'keel');
-});
-
-test('pressing the switch from keel stores classic', () => {
-    const p = boot({ style: 'keel', lang: 'zh' });
-    pressSwitch(p);
-    assert.equal(p.kept['station.style'], 'classic');
-});
-
-test('pressing the switch from classic clears the stored style', () => {
-    const p = boot({ lang: 'zh', kept: { 'station.style': 'classic' } });
-    pressSwitch(p);
-    assert.equal('station.style' in p.kept, false);
-});
-
-test('pressing the switch from keel reads it pressed', () => {
-    const p = boot({ style: 'keel', lang: 'zh' });
-    pressSwitch(p);
-    assert.equal(p.els.styletog.attrs['aria-pressed'], 'true');
-});
-
-test('pressing the switch from classic reads it not pressed', () => {
-    const p = boot({ lang: 'zh', kept: { 'station.style': 'classic' } });
-    p.els.styletog.attrs['aria-pressed'] = 'true';
-    pressSwitch(p);
-    assert.equal(p.els.styletog.attrs['aria-pressed'], 'false');
-});
-
 test('a pointerdown on an action button opens the click ring, restarting it each time, and one on anything else does not', () => {
     const p = boot();
     const fire = (target) => { for (const fn of p.listeners.pointerdown || []) fn({ target }); };
@@ -201,9 +92,4 @@ test('a pointerdown on an action button opens the click ring, restarting it each
     Object.defineProperty(ring, 'offsetWidth', { get() { log.push('read'); return 1; } });
     fire(target('.btn.go'));
     assert.deepEqual(log, ['remove rip', 'read', 'add rip'], 'an old ring is taken off, the layout is read to restart it, then the new one is put on');
-});
-
-test('the switch speaks the page\'s language', () => {
-    assert.equal(boot({ style: 'keel', lang: 'en' }).els.styletog.innerHTML, '<span class="sw2" aria-hidden="true"></span>Classic style');
-    assert.equal(boot({ style: 'keel', lang: 'zh' }).els.styletog.innerHTML, '<span class="sw2" aria-hidden="true"></span>經典樣式');
 });
