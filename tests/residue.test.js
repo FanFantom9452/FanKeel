@@ -209,6 +209,18 @@ test('an agent branch checked out in the worktree scan runs from is not listed a
   assert.deepEqual(result.agentSpent, []);
 });
 
+// `git cherry` cannot be made to fail by history shape (unrelated histories
+// still compare); a branch ref that points at a blob, not a commit, is the
+// least artificial way to make it exit non-zero.
+test('an agent branch whose git cherry fails is listed unmerged, not dropped', () => {
+  const { root, git } = repo();
+  const blob = execFileSync('git', ['hash-object', '-w', 'kept.txt'], { cwd: root, encoding: 'utf8' }).trim();
+  fs.writeFileSync(path.join(root, '.git', 'refs', 'heads', 'worktree-agent-broken'), blob + '\n');
+  const result = scan(root);
+  assert.deepEqual(result.agentSpent, []);
+  assert.deepEqual(result.agentUnmerged, ['worktree-agent-broken']);
+});
+
 test('outside a repository the git sections are absent and the rest still runs', () => {
   const root = tmp('fankeel-norepo-');
   const result = scan(root);

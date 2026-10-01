@@ -299,7 +299,8 @@ function scan(root) {
     // is gone. scripts/commit.js lands one by cherry-pick, so it is never an
     // ancestor of HEAD: spent is an ancestor, or every line of
     // `git cherry HEAD <branch>` starting `-`, its patch already in HEAD. One
-    // `+` line and it holds work HEAD lacks — a human call, not a cleanup.
+    // `+` line and it holds work HEAD lacks — a human call, not a cleanup. A
+    // `git cherry` that fails lists the branch as unmerged: it cannot be shown spent.
     // `listed` drops the main checkout and the one we stand in, but
     // `git branch -D` refuses a branch checked out in either, so they count.
     const withTree = checkedOut(root);
@@ -308,8 +309,7 @@ function scan(root) {
     for (const name of (git(root, ['branch', '--list', 'worktree-agent-*', '--format=%(refname:short)']) || []).map((s) => s.trim()).filter(Boolean)) {
         if (withTree.has(name)) continue;
         const cherry = merged.has(name) ? [] : git(root, ['cherry', 'HEAD', name]);
-        if (cherry === null) continue;
-        (cherry.every((l) => l.startsWith('-')) ? agentSpent : agentUnmerged).push(name);
+        (cherry !== null && cherry.every((l) => l.startsWith('-')) ? agentSpent : agentUnmerged).push(name);
     }
 
     // Only the topmost ignored path earns a line, for the reason `emptyDirs` gives
