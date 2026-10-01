@@ -81,14 +81,21 @@ function charOverlap(a, b) {
 // does not. Picked against tests/gate.test.js's own cases.
 const ATTEMPT_THRESHOLD = 0.5;
 
+// How close a question has to be to one already answered to count as asking
+// it again. Higher than ATTEMPT_THRESHOLD: a re-ask is a copy of a settled
+// question, while two gates written in one house style share most of their
+// characters. Measured 2026-10-01 over the 278 gates in .fankeel/build: past
+// 0.5, 65 first questions read as repeats of an earlier answer; with each
+// gate's own opening question left out (`lead`) and 0.8, none did.
+const REPEAT_THRESHOLD = 0.8;
+
 // The answered question (lib/handoff.js answeredOf) that a question in `asked`
-// repeats, judged by the same charOverlap and threshold the attempt check
-// uses, or null. Question text only: option labels are what a re-ask changes.
+// repeats, judged by charOverlap past REPEAT_THRESHOLD, or null. Question text only: option labels are what a re-ask changes.
 function repeatOf(asked, answered) {
     for (const q of Array.isArray(asked) ? asked : []) {
         const text = q && q.question;
         if (typeof text !== 'string') continue;
-        const hit = answered.find((a) => charOverlap(text, a.question) > ATTEMPT_THRESHOLD);
+        const hit = answered.find((a) => charOverlap(text, a.question) > REPEAT_THRESHOLD);
         if (hit) return hit;
     }
     return null;
@@ -265,7 +272,9 @@ function main(raw) {
         // answer 0.70 on 2026-10-01. `answeredOf` still returns them, for the
         // brief.
         let answered = [];
-        try { answered = answeredOf(root, mine).filter((a) => !a.stale && a.stage !== mine.stage); } catch (e) { /* housekeeping */ }
+        // Nor is a gate's opening routing question (`lead`): it was about that
+        // gate's moment, and every later gate asks one like it.
+        try { answered = answeredOf(root, mine).filter((a) => !a.stale && !a.lead && a.stage !== mine.stage); } catch (e) { /* housekeeping */ }
         const again = repeatOf(asked, answered);
         if (again) {
             process.stdout.write(JSON.stringify({

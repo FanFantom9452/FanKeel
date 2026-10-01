@@ -573,6 +573,22 @@ test('guard: stage.agents: the same question answered at an earlier stage is sti
   assert.match(out.hookSpecificOutput.permissionDecisionReason, /already answered \(build\)/);
 });
 
+// The routing question a gate opens with is about that gate's moment; its
+// answer settles nothing a later gate asks.
+test('stage.agents: an earlier gate\'s routing question does not block a later one', () => {
+  const out = run(GATE, lapRoot('build', LAP_TWO, [{ question: LAP_TWO }]), { tool_input: askOf(LAP_ASK) });
+  assert.doesNotMatch(out, /already answered/);
+  assert.match(out, /gate not confirmed/);
+});
+
+// Two gates written in one house style share most of their characters: 0.70
+// here is two different questions, not one asked again.
+test('stage.agents: an earlier stage\'s question 0.70 alike is not a repeat', () => {
+  const out = run(GATE, lapRoot('build', LAP_ONE), { tool_input: askOf(LAP_ASK) });
+  assert.doesNotMatch(out, /already answered/);
+  assert.match(out, /gate not confirmed/);
+});
+
 // docs/90-agent/plans/2026-09-30-init-design.md §6 (gate-2): the stage agent
 // rewrote its report after the answer and handed back the gate it had asked.
 test('stage.agents: the same gate asked again after its answer is denied; a rewritten one goes out', () => {
