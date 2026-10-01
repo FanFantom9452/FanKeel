@@ -95,3 +95,11 @@ test('a suggested commit.format prints as one quoted shell word', () => {
   const { out } = run(dir, ['start', '--session', A, '--task', 't']);
   assert.ok(out.includes("profile set commit.format '^(chore|docs|feat|fix)(\\([^)]+\\))?: '"), out);
 });
+
+test('profile suggest prints commit.format as one single-quoted shell word', () => {
+  const dir = repo(null);
+  for (const s of ['feat: a', 'fix(x): b', 'docs: c', 'chore: d']) git(dir, ['commit', '-q', '--allow-empty', '-m', s]);
+  const { out, code } = run(dir, ['profile', 'suggest']);
+  assert.equal(code, 0, out);
+  assert.ok(out.includes("profile set commit.format '^(chore|docs|feat|fix)(\\([^)]+\\))?: '"), out);
+});
