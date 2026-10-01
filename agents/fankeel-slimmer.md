@@ -39,7 +39,7 @@ the CODE or document it cites. An entry the code now contradicts is listed
 under `needs approval:` with the line that is false; an entry whose subject is
 not in this repo is marked `unverifiable` and left alone. Look at this
 project's memory only: own project only by default; another project's memory
-is read only when the brief names it, and widening to the whole machine is the user's to ask.
+is read only when the brief names it, and widening beyond the own project needs the user asked first.
 
 ## Return
 

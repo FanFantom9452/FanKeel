@@ -412,6 +412,8 @@ test('the slimmer cuts fat hooks first, compares stale entries, returns a token 
     assert.match(job, /`needs approval:`/);
     assert.match(job, /`unverifiable`/);
     assert.match(job, /own project only/);
+    assert.match(job, /widening beyond the own project needs the user asked first/);
+    assert.match(job, /hook of eight words or fewer/);
     assert.match(ret, /`<MEMORY\.md path>: <before> → <after> tokens`/);
     assert.match(job, /not in file:/);
     assert.match(job, /`stale`/);
