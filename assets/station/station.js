@@ -1429,7 +1429,7 @@
     function navGroup(v) {
         return NAV_TREE.filter(function (g) { return (g.kids || []).some(function (k) { return k[0] === v; }); })[0] || null;
     }
-    // The three theme states the button at the foot of the bar cycles
+    // The three theme states the button in the masthead cycles
     // through: [state, icon, what it says, the state a click moves to].
     var THEMES = { system: ['auto', loc('nav.themeSystem', '跟隨系統'), 'light'], light: ['sun', loc('nav.themeLight', '淺色'), 'dark'], dark: ['moon', loc('nav.themeDark', '深色'), 'system'] };
     // The theme button, in the masthead's `#appear` since the 2026-10-01
