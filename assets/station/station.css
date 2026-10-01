@@ -1607,9 +1607,6 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
 .dsx-none span{display:block;margin-top:2px;color:var(--muted);font-size:12px}
 
 /* lang-switch: the incumbent .seg control, sat at the far end of the mast. */
-.mast .lang{flex:none}
-.mast .lang button{min-width:40px;font-size:12px}
-.mast .lang button:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
 
 /* TODO panel — the 2026-09-29 mockup's todo-head, todo-open, todo-done; tokens only. */
 .td{container-type:inline-size}
@@ -2030,3 +2027,22 @@ a.td-rf:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-rad
 :root[data-style=keel] .mast .appear{flex:none;display:inline-flex;align-items:center;gap:2px;padding:2px;border-radius:8px;background:var(--panel);box-shadow:inset 0 0 0 1px var(--rule)}
 :root[data-style=keel] .appear .themebtn{width:28px;height:28px;border-radius:6px}
 :root[data-style=keel] .appear .themebtn:focus-visible{outline-offset:-2px}
+/* ---- the masthead's language menu (r-0036): a globe button framed like .appear; the two languages are its items ---- */
+:root[data-style=keel] .mast .langsw{position:relative;flex:none;display:inline-flex;align-items:center;padding:2px;border-radius:8px;background:var(--panel);box-shadow:inset 0 0 0 1px var(--rule)}
+:root[data-style=keel] .langsw .langbtn{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 7px 0 8px;border:0;border-radius:6px;background:transparent;color:var(--ink2);cursor:pointer;font:600 12px var(--f-mono);letter-spacing:0}
+:root[data-style=keel] .langsw .langbtn:hover,:root[data-style=keel] .langsw .langbtn[aria-expanded="true"]{background:var(--wash);color:var(--ink)}
+:root[data-style=keel] .langsw .langbtn:focus-visible{outline:2px solid var(--keel);outline-offset:-2px}
+:root[data-style=keel] .langsw .langbtn .ico{width:16px;height:16px;flex:none}
+:root[data-style=keel] .langsw .langbtn .chev{width:12px;height:12px;color:var(--muted);transition:transform .18s ease-out}
+:root[data-style=keel] .langsw .langbtn[aria-expanded="true"] .chev{transform:rotate(180deg)}
+:root[data-style=keel] .langpop{position:absolute;top:calc(100% + 6px);right:0;z-index:20;min-width:184px;padding:6px;border-radius:var(--r);background:var(--panel);box-shadow:var(--lift),inset 0 0 0 1px var(--rule)}
+:root[data-style=keel] .langpop[hidden]{display:none}
+:root[data-style=keel] .langpop>*{display:grid;grid-template-columns:16px minmax(0,1fr) auto;align-items:center;column-gap:10px;width:100%;padding:7px 10px 7px 8px;border:0;border-radius:6px;background:transparent;color:var(--ink);cursor:pointer;font:500 13px var(--f-ui);text-align:left}
+:root[data-style=keel] .langpop>*:hover{background:var(--wash)}
+:root[data-style=keel] .langpop>*:focus-visible{outline:2px solid var(--keel);outline-offset:-2px}
+:root[data-style=keel] .langpop>* .ico{width:16px;height:16px;color:var(--keel);visibility:hidden}
+:root[data-style=keel] .langpop>*[aria-pressed="true"]{background:var(--keel-tint);color:var(--keel-deep);font-weight:700}
+:root[data-style=keel] .langpop>*[aria-pressed="true"] .ico{visibility:visible}
+:root[data-style=keel] .langpop>* i{font:600 11.5px var(--f-mono);font-style:normal;color:var(--muted)}
+:root[data-style=keel] .langpop>*[aria-pressed="true"] i{color:var(--keel-deep)}
+@media (prefers-reduced-motion:reduce){:root[data-style=keel] .langsw .langbtn .chev{transition:none}}

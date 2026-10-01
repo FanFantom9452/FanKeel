@@ -4693,6 +4693,25 @@
         if (!b || !I18N) return;
         if (I18N.set(b.getAttribute('data-lang'))) w.location.reload();
     });
+    // The language menu (r-0036): the globe button opens and shuts #langpop;
+    // a click anywhere else, or Escape, shuts it. Picking a language is the
+    // [data-lang] listener above.
+    function langMenu(open) {
+        var b = doc.getElementById('langbtn'), pop = doc.getElementById('langpop');
+        if (!b || !pop || !b.setAttribute) return;
+        b.setAttribute('aria-expanded', String(open));
+        pop.hidden = !open;
+    }
+    doc.addEventListener('click', function (e) {
+        var t = e && e.target && e.target.closest ? e.target : null;
+        if (t && t.closest('[data-langmenu]')) {
+            var b = doc.getElementById('langbtn');
+            langMenu(!(b && b.getAttribute && b.getAttribute('aria-expanded') === 'true'));
+        } else if (!(t && t.closest('#langpop'))) langMenu(false);
+    });
+    doc.addEventListener('keydown', function (e) {
+        if (e && e.key === 'Escape') langMenu(false);
+    });
     doc.addEventListener('click', function (e) {
         var wzt = route.view === 'settings' && e.target.closest
             ? e.target.closest('.wz [data-go], .wz [data-h], .wz [data-st], .wz [data-k], .wz [data-ask], .wz [data-scope]') : null;
@@ -5158,8 +5177,17 @@
             el.setAttribute('aria-label', loc('mast.search', '搜尋'));
         });
         set('servedown', function (el) { el.innerHTML = '<i class="dot down"></i>' + esc(loc('mast.serveDown', 'serve 已停')); });
-        set('langzh', function (el) { el.setAttribute('aria-pressed', String(!en)); el.setAttribute('title', en ? '介面改用繁體中文' : '介面用繁體中文'); });
-        set('langen', function (el) { el.setAttribute('aria-pressed', String(en)); el.setAttribute('title', en ? 'Interface is in English' : 'Switch the interface to English'); });
+        set('langzh', function (el) {
+            el.setAttribute('aria-pressed', String(!en));
+            el.setAttribute('aria-checked', String(!en));
+            el.setAttribute('title', en ? '介面改用繁體中文' : '介面用繁體中文');
+        });
+        set('langen', function (el) {
+            el.setAttribute('aria-pressed', String(en));
+            el.setAttribute('aria-checked', String(en));
+            el.setAttribute('title', en ? 'Interface is in English' : 'Switch the interface to English');
+        });
+        set('langcur', function (el) { el.textContent = en ? 'EN' : '繁中'; });
         set('appear', function (el) { el.setAttribute('aria-label', loc('mast.appearance', '外觀')); });
     }
     applyChrome();

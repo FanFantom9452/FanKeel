@@ -15,8 +15,8 @@ const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'sta
 const LINES = SRC.split('\n');
 const CJK = /[\u3400-\u9fff\uf900-\ufaff\u3000-\u303f\uff00-\uffef]/;
 const LIT = /'(?:[^'\\\n]|\\.)*'/g;
-// The switch's own titles are in the language they switch to, on purpose.
-const ALLOW = new Set(["'介面用繁體中文'", "'介面改用繁體中文'"]);
+// The switch's own titles, and the Chinese option's own name, are in the language they name, on purpose.
+const ALLOW = new Set(["'介面用繁體中文'", "'介面改用繁體中文'", "'繁中'"]);
 const KEYED = /\bloc\('([a-z]+\.[A-Za-z0-9]+)', '((?:[^'\\\n]|\\.)*)'/g;
 const LEAD = /\bloc\('[a-z]+\.[A-Za-z0-9]+',\s*$/;
 // Marker text → key prefix, in file order; `fmt` before the first marker.
@@ -140,6 +140,9 @@ test('EN: the left bar, the crumbs and the masthead carry no CJK character', () 
     assert.equal(p.root.attrs.lang, 'en');
     assert.equal(p.els.langen.attrs['aria-pressed'], 'true');
     assert.equal(p.els.langzh.attrs['aria-pressed'], 'false');
+    assert.equal(p.els.langcur.textContent, 'EN');
+    assert.equal(p.els.langen.attrs['aria-checked'], 'true');
+    assert.equal(p.els.langzh.attrs['aria-checked'], 'false');
 });
 
 test('zh: the same boot draws the Chinese bar and masthead (the control)', () => {
