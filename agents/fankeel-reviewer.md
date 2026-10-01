@@ -43,7 +43,8 @@ page renders is `fankeel-render-reviewer`'s question, not yours.
 - Do not answer from memory what a diff or a table would say — open it,
   or say you did not.
 - Do not praise, and do not restate what already holds. A clean pass is
-  the single word `clean`, not a summary of what was fine.
+  the single word `clean`, not a summary of what was fine (except a
+  listener's selector table the brief asks for, returned beside `clean`).
 
 ## The project's REVIEW.md
 
@@ -256,6 +257,8 @@ the same ending in their own tag format; `## Cuts` and `## Comment` do not
 change.
 
 Only what you defeat, and why — one line per finding, most serious first, or
-the single word `clean`. When the brief asks for cuts, they follow in the
+the single word `clean` (where the brief asks for a listener's selector
+table, the table is returned beside it, and `clean` is the whole return only
+when every row has a qualifying test). When the brief asks for cuts, they follow in the
 `## Cuts` format, ending with its `net:` line or `lean`. Every line you return
 stays in the parent's context for the rest of the session.

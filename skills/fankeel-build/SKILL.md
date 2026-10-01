@@ -457,8 +457,8 @@ then asks this stage's gate.
      return found the counter-example check had tried the rule against
      only one example, which never put the rule's two sentences against
      each other: "asserting that nothing happened does not count" and the
-     guard definition (green on deletion) disagreed, so hdl-k:121,
-     hdl-i:140 and hdl-j:385 were mis-judged, and hdl-k's header comment
+     guard definition (green on deletion) disagreed, so hdl-k:122,
+     hdl-i:141 and hdl-j:387 were mis-judged, and hdl-k's header comment
      claimed an assertion :121 did not make.)
    Part 3 — every changed line traces to the task's text; the patterns
      already in the repository are followed. Then name the page this

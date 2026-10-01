@@ -43,7 +43,7 @@ file, or by generating it from the profile; a profile key alone would change the
 model and leave the effort as pinned. Item c settles it: the pinned `effort:` stays,
 and a per-task raise goes through the override file. It is the plugin's own agent file
 with `model:`/`effort:` replaced and `generated_by: fankeel <version>` added
-(`lib/agentfile.js:60-69`); `profile unset` removes it (`lib/agentfile.js:81-85`);
+(`lib/agentfile.js:56-70`); `profile unset` removes it (`lib/agentfile.js:81-85`);
 `task.js start` rewrites one left by an older plugin version (`lib/agentfile.js:105-119`,
 called at `scripts/task.js:664`); and `hooks/title.js:28` (`overrideFor(input.subagent_type`)
 sends `fankeel:<name>` as `<name>` when such a marked file exists (`lib/title.js:106-121`), because
