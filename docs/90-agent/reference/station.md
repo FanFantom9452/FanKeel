@@ -198,7 +198,7 @@ time: every row's strip fills the same width, so a ten-minute session and a
 ten-hour one look the same size — only their segments' own widths differ.
 
 No stages at all draws no strip and no table, just one line —
-`沒有分階段紀錄` (`assets/station/station.js:3358`, `沒有分階段紀錄`) — a
+`沒有分階段紀錄` (`assets/station/station.js:3427`, `沒有分階段紀錄`) — a
 session that has not crossed a stage boundary has nothing to proportion.
 
 Below the strip is the table it is drawn from — one row per stage, with the
@@ -230,7 +230,7 @@ largest rises, plus the per-stage spend bar and the stage × model table that
 used to be 花費's own tab (see below). An old `#/s/<id>/cost` link still
 parses — `cost` stays a valid `TABS` value in `parseHash` — but now opens
 概覽 rather than a separate tab, since `tabsHtml`'s `TAB_SHOWN`
-(`assets/station/station.js:1280`, `['timeline', 'dispatch', 'events']`) maps
+(`assets/station/station.js:1292`, `['timeline', 'dispatch', 'events']`) maps
 `cost` back to `timeline`. 派工 gives
 every row its input and output tokens, read from `split`, and its dollars,
 read from `cost`; 事件 is the replay, each gate's row carrying how long it
@@ -264,15 +264,15 @@ agent's return entered the main context.
 
 Where a stage's dollars live is no longer its own tab: the stage × model
 table now sits inside 概覽, under a `<details>` element titled "stage × model
-明細" (`assets/station/station.js:3113`, `<details class="csmore">`). Above
+明細" (`assets/station/station.js:3179`, `<details class="csmore">`). Above
 it, when the session has a detail loaded, sits the timeline chart, which now
 also tints its background by stage; and above that sits `costShareHtml`
-(`assets/station/station.js:1184`, `function costShareHtml(L, hi) {`), a bar
+(`assets/station/station.js:1196`, `function costShareHtml(L, hi) {`), a bar
 with one segment per stage that has paid, each segment sized by its share of
 the session's total dollars — clicking a segment, or a row of the table under
 it, marks that stage on the timeline below (`data-hist`). 派工 also gets a
 small strip, `dispatchStagesHtml`
-(`assets/station/station.js:1214`, `function dispatchStagesHtml(L, id, hi) {`),
+(`assets/station/station.js:1226`, `function dispatchStagesHtml(L, id, hi) {`),
 linking each stage's agent dollars back to 概覽 with that stage marked. The
 table itself: a stage
 × model table summed from the session's `days`, with input, output,
@@ -533,18 +533,18 @@ is to change the profile and reload.
 
 The facets are on 清單, above its table — state and stage with a count on each
 button, registry with one button per root
-(`assets/station/station.js:3190`, `moved onto the page they narrow`) — and
+(`assets/station/station.js:3259`, `moved onto the page they narrow`) — and
 the search box in the top bar matches task, project, session id, registry
 label, model, state, next, the files touched and its notes — AND-ed.
 
 The same box also opens a grouped-results popover about 200 ms after typing
-stops (`assets/station/station.js:4969`, `}, 200)`): `qGroups`
-(`assets/station/station.js:4885`, `function qGroups(q) {`) buckets what
+stops (`assets/station/station.js:5067`, `}, 200)`): `qGroups`
+(`assets/station/station.js:4983`, `function qGroups(q) {`) buckets what
 matches into Sessions, 專案 and 文件, up to five rows each with a 看全部 link
 when there are more, and `qDraw`
-(`assets/station/station.js:4926`, `function qDraw() {`) draws it with each
+(`assets/station/station.js:5024`, `function qDraw() {`) draws it with each
 match highlighted. `/` focuses the box from anywhere on the page
-(`assets/station/station.js:5054`, `if (e.key === '/')`), the arrow keys
+(`assets/station/station.js:5152`, `if (e.key === '/')`), the arrow keys
 move the selection, Enter opens what is picked and Esc closes the popover.
 文件 in this popover matches only the paths and buckets the page's own data
 carries. The page bodies are searched on 文件 itself — see
@@ -557,14 +557,14 @@ above the list otherwise; it does not merely hide rows.
 A gone registry keeps its facet button, labelled `— gone`, rather than
 dropping off the row, so selecting one never returns a blank pane with nothing
 on the page saying why:
-`goneNote()` (`assets/station/station.js:2586`, `function goneNote(root)`) prints a
+`goneNote()` (`assets/station/station.js:2631`, `function goneNote(root)`) prints a
 card reading `gone — no sessions/ here any more` in its place, alongside the
 `--forget` that would drop it for good.
 
 A registry that is not gone gets its own card once it is the one selected on
 清單, and every project page carries the same card for its own registry no
 matter what is selected there: `registryNote()`
-(`assets/station/station.js:2603`, `function registryNote(root)`) prints its
+(`assets/station/station.js:2648`, `function registryNote(root)`) prints its
 own unreadable-session count, its `map.md` date — or `不存在` when there is
 none — and its build directories with each one's file count, or says there
 are none. The old page carried all three on a per-registry meta line; the
@@ -572,7 +572,7 @@ redesign dropped that line, and this card is where its contents live now. The
 footer's own unreadable count stays the total across every registry and is
 hidden only on 清單 once a registry there is selected: one that is not gone
 carries the same count on its own card
-(`assets/station/station.js:3392`, `a corrupt-entry count must`), and a gone
+(`assets/station/station.js:3461`, `a corrupt-entry count must`), and a gone
 one has no session files left to count
 (`lib/station.js:554`, `gone: true, unreadable: 0`); everywhere
 else — a project page included, whose own card shows only its registry's
@@ -593,7 +593,7 @@ root separates on its own and always did.
 
 `#/` is now **儀表板**, a dashboard of five cards, each reading the same rows
 its own full page reads so its numbers always match that page:
-`dashLive` (`assets/station/station.js:2686`, `function dashLive(R) {`)
+`dashLive` (`assets/station/station.js:2733`, `function dashLive(R) {`)
 counts today's `live` sessions and lists them, each row linking to `#/live`;
 `dashGate` (`assets/station/station.js`, `function dashGate(R, at) {`),
 `data-block="waiting-card"`, counts the sessions with a pending gate —
@@ -604,12 +604,12 @@ The wait runs from the row's `gateAt`, which `registry.gateOpen` stamps when
 the pending file's `at`, then to the last registry write. The tooltip names
 the send time and what is left before the gate's `until`. It links to
 #/live; `dashSpend`
-(`assets/station/station.js:2723`, `function dashSpend(R) {`) is a small bar
+(`assets/station/station.js:2767`, `function dashSpend(R) {`) is a small bar
 spark of the last 30 days' spend with today's and yesterday's figures beside
 it, linking to `#/days`; and `dashRecent`
-(`assets/station/station.js:2738`, `function dashRecent(R) {`) lists the 5
+(`assets/station/station.js:2782`, `function dashRecent(R) {`) lists the 5
 newest sessions out of the 30-day window, linking to `#/sessions`.
-`dashTodo` (`assets/station/station.js:2752`, `function dashTodo(projects) {`),
+`dashTodo` (`assets/station/station.js:2796`, `function dashTodo(projects) {`),
 `data-block="dash-todo"`, reads every project's `todos` rows off the data file
 — the rows the project page's TODO panel reads — and counts the entries whose
 `state` is `ready`: one row per project with any, most first, its first three
@@ -621,6 +621,24 @@ which cards show and move them with ↑ ↓. The choice is `station.dash`, read 
 `dashOrder`, which drops an id it does not know and appends one the stored
 order lacks; 還原預設 clears the key. The default is the five cards in the
 order 進行中, 等你回答, 可以開工, 近 30 天花費, 最近 sessions.
+
+Since the 2026-10-01 layout (`docs/90-agent/plans/2026-10-01-station-layout-design.md`)
+each page opens with the film's header lockup: a title, a rule, then one mono
+line of where things stand. On the dashboard it is `data-block="dash-head"` —
+live sessions, gates waiting, today's spend and the Ready count, each the
+figure its card counts (`dashStatus`), with 調整卡片 on the right — and the
+cards sit in two columns: 進行中, 最近 sessions and 近 30 天花費 in the wide one,
+等你回答 and 可以開工 in the narrow one, the chooser's order holding inside
+each. 進行中 and 等你回答 carry their count as a pill in the card head.
+最近 sessions opens with `data-block="sessions-head"` — the count, the live
+count, the Sessions tabs on its right — over one line a row, a stage on its
+route drawn as the film's glyph and `0N / 0M stage`. One session opens with
+`data-block="session-head"`, the 64px glyph filled as the route is and the
+count above the title; its tabs are `data-block="session-tabs"`. 現在 opens
+with `data-block="live-head"` — running, maybe stopped, the gate line, the
+tabs — and each running session is a raised card led by its glyph; the
+maybe-stopped ones share one card (`div.lv-card`).
+
 `#/live` (進行中) is `nowHtml`, four blocks top to bottom, each writing its
 own `data-block`: `live-gate`, the sessions whose `s.pending.questions` is
 non-empty, one row each naming the question and how long it has waited, or
@@ -649,7 +667,7 @@ Sessions subtabs strip above them (`subtabsHtml('live')`).
 
 The left nav (`navHtml`, `data-block="nav"`) no longer groups its links into
 three loose headings; `NAV_TREE`
-(`assets/station/station.js:1406`, `var NAV_TREE = [`) defines six ordered
+(`assets/station/station.js:1418`, `var NAV_TREE = [`) defines six ordered
 categories instead. 儀表板 is a single link, `#/`, with no sub-pages.
 Sessions is a folding category — its heading is a toggle button rather than
 a link — with four kids: 進行中 `#/live`, 最近 `#/sessions`, 全部清單
@@ -664,7 +682,7 @@ with `fold` is one button, the whole row, that only opens and shuts; its
 kids do the navigating (`assets/station/station.js:1444`), and it never
 navigates on its own. A folding category's kids
 also appear as a subtabs strip under the page itself
-(`assets/station/station.js:1457`, `function subtabsHtml(active) {`) — the
+(`assets/station/station.js:1474`, `function subtabsHtml(active) {`) — the
 same list drives both the nav and the strip, so they can never list
 different pages. Each badge is what
 `navCounts` counts off those same rows, except 進行中's, which counts only
@@ -672,28 +690,25 @@ different pages. Each badge is what
 which shows the window's spend rather than a count; 儀表板 itself carries no
 badge.
 
-Four keys in `localStorage` carry the reader's own state across visits, all
+Three keys in `localStorage` carry the reader's own state across visits, all
 read with `stored()`'s try/catch so a `file:` page or private mode with no
 `localStorage` just has no preference. `station.nav.collapsed` holds which
 categories are folded shut — read once into `navShut` on load and written
 back by `navFoldSet` on every press of a fold button
-(`assets/station/station.js:4518`, `JSON.parse(stored('station.nav.collapsed'))`). `station.theme`
-holds the three-state 跟隨系統/淺色/深色 button at the foot of the sidenav; a
-click cycles it and writes the new value
-(`assets/station/station.js:4554`, `store('station.theme', t === 'system' ? null : t);`), and the
+(`assets/station/station.js:4587`, `JSON.parse(stored('station.nav.collapsed'))`). `station.theme`
+holds the three-state 跟隨系統/淺色/深色 button in the masthead's
+`div.appear` (`id="appear"`, drawn by `drawTheme`); a click cycles it and
+writes the new value
+(`assets/station/station.js:4633`, `store('station.theme', t === 'system' ? null : t);`), and the
 stored value is read and set as `data-theme` on `<html>` before the page's
 first paint, so a reader on 深色 never sees a flash of light first
 (`assets/station/station.js:23`, `themeSet(stored('station.theme'));`).
 `station.dash` holds the dashboard's card order and the cards switched off,
-written by the chooser above. `station.style` holds `classic` once the reader
-has switched the promo film's look off with 經典樣式 in the masthead
-(`data-block="style-classic"`): an inline script in the head of
-`assets/station/index.html` reads it before first paint and takes
-`data-style="keel"` off `<html>`, so a classic reader never sees the keel look
-first. Every keel rule sits under `:root[data-style=keel]` at the end of
-`assets/station/station.css`, so without the attribute the page is the
-2026-09 stylesheet unchanged; in keel the masthead carries the film's glyph,
-and a live row on the dashboard fills that glyph stage by stage.
+written by the chooser above. The promo film's look is the only look:
+`assets/station/index.html` opens `<html data-style="keel">` and nothing takes
+it off, every keel rule sits under `:root[data-style=keel]` at the end of
+`assets/station/station.css` over the base rules above it, the masthead
+carries the film's glyph, and a live row fills that glyph stage by stage.
 
 The 30-day histogram that used to open the page is now **近 30 天**,
 `#/days` — one bar per local day, today at the
@@ -767,7 +782,7 @@ rather than expanding the row, so two sessions can be compared without
 scrolling. Sorting is by task, stage, context, cost, state, started or last
 action, clicking twice to reverse — `started` keeps a column and header of its
 own so it stays reachable as a sort key, the same reason the page this
-replaces sorted by it (`assets/station/station.js:3135`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
+replaces sorted by it (`assets/station/station.js:3204`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
 `updated` descending, so the page's first sort is the one it arrived in.
 
 **比較** is a third view. Tick two sessions on 清單 or a project page — only a
@@ -830,9 +845,9 @@ and the eyebrow's cannot disagree.
 
 Both decisions are pure functions above the `module.exports` guard, so both
 are unit tested: what to say
-(`assets/station/station.js:1344`, `function serveLost(lastOkMs, nowMs, genAbs, genRel) {`)
+(`assets/station/station.js:1356`, `function serveLost(lastOkMs, nowMs, genAbs, genRel) {`)
 and what the eyebrow reads
-(`assets/station/station.js:2343`, `function heroEyebrow(frozenAt) {`). The
+(`assets/station/station.js:2365`, `function heroEyebrow(frozenAt) {`). The
 fetch that feeds them, the bar they fill and the pill are the document half
 below the guard. The eyebrow is rendered rather than patched, so it takes a
 redraw — but only as the state flips, never on a poll that finds nothing
@@ -945,7 +960,7 @@ for the child cannot read the old url as the new one.
 `clearEntry` once per row so the checks are the same list rather than a
 second copy of them. A clean run redirects to `/?cleared=N`, and the reloaded
 page still prints that count in a banner above the rows
-(`assets/station/station.js:2633`, `cleared ' + S.cleared + ' stale rows`); a
+(`assets/station/station.js:2678`, `cleared ' + S.cleared + ' stale rows`); a
 refusal answers `409` with which rows it refused and why, since a redirect
 has nowhere to say it. It takes the same `force` tick and the same nonce as
 the single-row button, and the 可能已經停了 block carries one per registry with a stale row:
@@ -976,8 +991,12 @@ removed and the index rewritten. A clean one answers `201` with the new
 entry's id. The project page's TODO panel reads each project's `todos` row
 off the data file: open entries in the index's order, and done ones newest
 first where the project keeps entry files.
-The done list shows the newest ten; 展開全部（N） shows the rest below a cut,
-and the choice holds across the 3-second redraw until the page reloads.
+The panel sits right under the project's head, above the chart. Shut, the
+done list is one summary strip — how many, a bar for each of the newest three
+days and the rest as 更早, a count per disposition — over the newest three;
+展開全部（N） in the strip shows the rest below a cut, the strip stays on top
+with 收起, and the choice holds across the 3-second redraw until the page
+reloads.
 
 Both routes call the same `clearEntry`, which writes `active: false` and
 nothing else, so a session cleared by mistake can be adopted back with its
@@ -1081,8 +1100,9 @@ The page speaks 繁中 or English (`assets/station/i18n.js`). Every string
 `station.js` draws goes through `loc(key, zh, vars)`: the Chinese is written at
 the call, and `STRINGS.en[key]` replaces it when the language is English. The
 language is `localStorage['station.lang']` when it holds `zh` or `en`, else
-`navigator.language` — Chinese for any `zh*`, English otherwise. The 繁中 / EN
-switch at the end of the masthead stores the choice and reloads the page, so
+`navigator.language` — Chinese for any `zh*`, English otherwise. The globe
+button in the masthead opens a menu of 繁體中文 and English (`#langpop`); a
+pick stores the choice and reloads the page, so
 the tables built when the script loads — the left bar's labels among them —
 are built again in the new language. Without `i18n.js` the page is Chinese.
 `tests/station-i18n.test.js` holds the extraction to account: every CJK

@@ -46,3 +46,14 @@ test('every localStorage key station.js stores appears on docs/station.md', () =
     for (const k of keys) assert.ok(page.includes('`' + k + '`'), k + ' is on no page');
     assert.doesNotMatch(page, /Two keys in `localStorage`/);
 });
+
+// The 2026-10-01 layout: the page reference names each new page head, the
+// three newest done entries, the theme in the masthead, and no classic look.
+test('station.md describes the 2026-10-01 layout and no longer the classic look', () => {
+    const page = fs.readFileSync(path.join(ROOT, 'docs', '90-agent', 'reference', 'station.md'), 'utf8');
+    assert.doesNotMatch(page, /newest ten|station\.style|style-classic|foot of the sidenav/);
+    for (const b of ['dash-head', 'sessions-head', 'live-head', 'session-head', 'session-tabs']) {
+        assert.ok(page.includes('`data-block="' + b + '"`'), b + ' is not on the page');
+    }
+    assert.match(page, /newest three/);
+});
