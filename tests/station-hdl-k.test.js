@@ -2,8 +2,14 @@
 // Branches of the page's big click listener in assets/station/station.js (the one
 // holding `[data-tune-notify]`), pressed through the listener itself with fake
 // targets whose closest() answers only the selector a test names. Every test
-// presses its selector and asserts that branch's own effect; one effect per test,
-// so single-branch mutations of one branch redden different sets of tests.
+// presses its selector; every test but the `guard:` ones asserts that branch's own
+// effect, one effect per test, so single-branch mutations of one branch redden
+// different sets of tests. A `guard:` test asserts only that something did NOT
+// happen (nothing thrown, nothing drawn, nothing fetched, a value left as it was):
+// it stays green when its branch is deleted, so it does not count as a hit for the
+// selector table. (Some non-guard tests also stay green on a deletion, e.g. "returns
+// before the later branches" and toggle-back ones; each asserts a positive effect that
+// a different mutation, the `return` removed or the toggle flipped, reddens.)
 //   `[data-tune-notify]`, `[data-answer]` (with its four fetch outcomes) and the
 //   `.gend` line gatePost writes after a `[data-gop]` / `[data-gho]` press;
 //   then the branches no earlier test pressed: `[data-fbtn]`, the legend's
@@ -102,7 +108,8 @@ test('tune-notify: the page is drawn once the permission promise resolves', asyn
     assert.equal(p.writes.page, 1);
 });
 
-test('tune-notify: the page is not drawn before the promise resolves', () => {
+// guard, not a hit for the selector table: it passes if the branch is deleted.
+test('guard: tune-notify: the page is not drawn before the promise resolves', () => {
     const p = boot('#/', { notification: true });
     p.reset();
     p.press({ '[data-tune-notify]': {} });
@@ -116,7 +123,8 @@ test('tune-notify: it returns before the later branches (a [data-wf] answer does
     assert.equal(p.writes.page, 0);
 });
 
-test('tune-notify: with no window Notification the press throws nothing and asks nobody', () => {
+// guard, not a hit for the selector table: it passes if the branch is deleted.
+test('guard: tune-notify: with no window Notification the press throws nothing and asks nobody', () => {
     const p = boot('#/');
     assert.doesNotThrow(() => p.press({ '[data-tune-notify]': {} }));
 });
@@ -163,7 +171,8 @@ test('answer: with both questions open the result line counts 2', () => {
     assert.equal(box.pgr.textContent, '還有 2 題沒答');
 });
 
-test('answer: with a question open nothing is fetched', () => {
+// guard, not a hit for the selector table: it passes if the branch is deleted.
+test('guard: answer: with a question open nothing is fetched', () => {
     const p = boot('#/', { pending: PENDING });
     p.press(answerPress(pgBox([0])));
     assert.deepEqual(p.fetched, []);
@@ -366,7 +375,8 @@ test('fbtn: focus goes to the button found in the redrawn page', () => {
     assert.equal(btn.focused, 1);
 });
 
-test('fbtn: a press with no button in the new DOM does not throw', () => {
+// guard, not a hit for the selector table: it passes if the branch is deleted.
+test('guard: fbtn: a press with no button in the new DOM does not throw', () => {
     const p = boot('#/days', { days: 2 });
     assert.doesNotThrow(() => p.press({ '[data-fbtn]': {} }));
 });
@@ -425,7 +435,8 @@ test('legend: it returns before the later branches (a [data-wf] answer does not 
     assert.equal(p.writes.page, 1);
 });
 
-test('legend: off the days page a press on an entry redraws nothing', () => {
+// guard, not a hit for the selector table: it passes if the branch is deleted.
+test('guard: legend: off the days page a press on an entry redraws nothing', () => {
     const p = boot('#/', { days: 2 });
     p.reset();
     p.press({ [LEG]: entry({ 'data-key': 'opus-4-1' }) });
@@ -455,7 +466,8 @@ test('legend rest: the press on a dimmed 其他 N 個 lights it again', () => {
     assert.equal(restTag(p), '<span data-rest>');
 });
 
-test('legend rest: the entries with their own swatch stay lit', () => {
+// guard, not a hit for the selector table: it passes if the branch is deleted.
+test('guard: legend rest: the entries with their own swatch stay lit', () => {
     const p = restBoot();
     p.press({ [LEG]: entry({ 'data-rest': '' }) });
     assert.equal(offKeys(p), '');
@@ -514,7 +526,8 @@ test('pick: opening puts focus on the popover\'s first way in', () => {
     assert.equal(q.focused, 1);
 });
 
-test('pick: opening does not put focus on the trigger', () => {
+// guard, not a hit for the selector table: it passes if the branch is deleted.
+test('guard: pick: opening does not put focus on the trigger', () => {
     const p = boot('#/list');
     const btn = node({});
     p.named['[data-pick="state"]'] = btn;
@@ -522,7 +535,8 @@ test('pick: opening does not put focus on the trigger', () => {
     assert.equal(btn.focused, 0);
 });
 
-test('pick: shutting does not put focus into the popover', () => {
+// guard, not a hit for the selector table: it passes if the branch is deleted.
+test('guard: pick: shutting does not put focus into the popover', () => {
     const p = boot('#/list');
     const q = node({});
     p.named['.rpop [data-pickq]'] = q;
@@ -559,7 +573,8 @@ test('pick: it returns before the later branches (a [data-wf] answer does not re
     assert.equal(p.writes.page, 1);
 });
 
-test('pick: off the list page a press opens nothing', () => {
+// guard, not a hit for the selector table: it passes if the branch is deleted.
+test('guard: pick: off the list page a press opens nothing', () => {
     const p = boot('#/');
     p.reset();
     p.press({ '[data-pick]': pickBtn('state') });
@@ -593,19 +608,22 @@ test('rpop: the outside click redraws the page once', () => {
     assert.equal(p.writes.page, 1);
 });
 
-test('rpop: a click inside the open popover leaves it open', () => {
+// guard, not a hit for the selector table: it passes if the branch is deleted.
+test('guard: rpop: a click inside the open popover leaves it open', () => {
     const p = popOpen();
     p.press({ '.rpop': {} });
     assert.equal(rpops(p), 1);
 });
 
-test('rpop: a click inside the open popover redraws nothing', () => {
+// guard, not a hit for the selector table: it passes if the branch is deleted.
+test('guard: rpop: a click inside the open popover redraws nothing', () => {
     const p = popOpen();
     p.press({ '.rpop': {} });
     assert.equal(p.writes.page, 0);
 });
 
-test('rpop: an outside click with no popover open redraws nothing', () => {
+// guard, not a hit for the selector table: it passes if the branch is deleted.
+test('guard: rpop: an outside click with no popover open redraws nothing', () => {
     const p = boot('#/list');
     p.reset();
     p.press({});
@@ -618,7 +636,8 @@ test('rpop: an outside click still does what it was aimed at (a [data-wf] answer
     assert.equal(p.writes.page, 2);
 });
 
-test('rpop: off the list page an outside click redraws nothing', () => {
+// guard, not a hit for the selector table: it passes if the branch is deleted.
+test('guard: rpop: off the list page an outside click redraws nothing', () => {
     const p = boot('#/');
     p.reset();
     p.press({});
@@ -636,7 +655,8 @@ test('facet: a press on a value button sets that facet (its × appears)', () => 
     assert.equal(cleared(p, 'state'), false);
 });
 
-test('facet: the key comes from the parent, not another facet', () => {
+// guard, not a hit for the selector table: it passes if the branch is deleted.
+test('guard: facet: the key comes from the parent, not another facet', () => {
     const p = boot('#/list');
     p.press({ '[data-facet] button': facetBtn('state', 'live') });
     assert.equal(cleared(p, 'project'), true);
@@ -748,7 +768,8 @@ test('cmp: on a project page a tick redraws the page once', () => {
     assert.equal(p.writes.page, 1);
 });
 
-test('cmp: on a project page a tick does not run the in-place redraws', () => {
+// guard, not a hit for the selector table: it passes if the branch is deleted.
+test('guard: cmp: on a project page a tick does not run the in-place redraws', () => {
     const p = withLb('#/p/' + encodeURIComponent(PK), { sessions: 3 });
     p.reset();
     p.press(tick('s1', true));
@@ -798,7 +819,8 @@ test('tr: the detail pane shows the pressed session', () => {
     assert.doesNotMatch(p.els.det.innerHTML, /t-s2/);
 });
 
-test('tr: the press does not redraw the whole page', () => {
+// guard, not a hit for the selector table: it passes if the branch is deleted.
+test('guard: tr: the press does not redraw the whole page', () => {
     const p = boot('#/list', { sessions: 3 });
     p.reset();
     p.qsa = () => [];
@@ -806,7 +828,8 @@ test('tr: the press does not redraw the whole page', () => {
     assert.equal(p.writes.page, 0);
 });
 
-test('tr: off the list page a press selects no row', () => {
+// guard, not a hit for the selector table: it passes if the branch is deleted.
+test('guard: tr: off the list page a press selects no row', () => {
     const { p, rows } = trPress('#/', 's2');
     assert.equal(rows[1].attrs['aria-selected'], 'x');
     assert.equal(p.asked.includes('#lb tr'), false);
@@ -837,7 +860,8 @@ test('wz: the wizard branch returns before the later branches (a [data-wf] answe
     assert.equal(p.writes.page, 1);
 });
 
-test('wz: off the settings page the wizard selector is not read', () => {
+// guard, not a hit for the selector table: it passes if the branch is deleted.
+test('guard: wz: off the settings page the wizard selector is not read', () => {
     const p = boot('#/');
     p.reset();
     p.press({ [WZ]: { dataset: { go: '3' } } });

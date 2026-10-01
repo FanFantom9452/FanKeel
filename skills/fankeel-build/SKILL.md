@@ -398,7 +398,14 @@ then asks this stage's gate.
      in its return, not merely state that the rule holds: one row per
      closest, matches and event name in the changed listener — the
      selector, the test as `file:line`, the effect it asserts; a row with
-     no qualifying test is a finding. (2026-10-01: verify's second return
+     no qualifying test is a finding. A test must fail on its own branch's
+     deletion: one whose only assertion is that something did not happen
+     (doesNotThrow, nothing fired, nothing fetched) is a guard, not a hit,
+     and a row backed only by guards is a finding. A mutation that reddens
+     every test in the file (it killed the harness, e.g. by deleting the
+     text the harness finds the listener by) counts as dead, not red: redo
+     it with `if (false && ...)` so the harness survives. (2026-10-01:
+     verify's second return
      to build listed ten such listeners; 2026-10-01: verify's fifth
      return found .fwrap, .pg input[name^="pg-"] and .tdf's [data-todo]
      with zero hits though the event names all had hits; 2026-10-01:
@@ -410,7 +417,10 @@ then asks this stage's gate.
      selector as covering the click branch; 2026-10-01: verify's eighth
      return found `[data-answer]` and `[data-tune-notify]` with hits only
      in probes that assert the branch does not fire, and the rule had been
-     written but never applied to the listener it was written for.)
+     written but never applied to the listener it was written for;
+     2026-10-01: verify's ninth return found hdl-k's doesNotThrow and
+     nothing-fired tests counted as hits, and a block-delete mutation that
+     killed the harness read as red.)
    Part 3 — every changed line traces to the task's text; the patterns
      already in the repository are followed. Then name the page this
      change makes false (a renamed export, a changed default, a removed
@@ -420,11 +430,15 @@ then asks this stage's gate.
 
    RETURN, and nothing else: one line per finding as `path:line — <the
    problem>`, most serious first, then Part 4's cuts and their `net:` line —
-   or the single word `clean` when Parts 1-3 found nothing and Part 4 found
-   nothing to cut. Where the diff changes an event listener, the return
+   or the single word `clean` ONLY when Parts 1-3 found nothing, Part 4
+   found nothing to cut, AND (where the diff changes a listener) every row
+   of the selector table has a qualifying test; otherwise `clean` is never
+   the whole return. Where the diff changes an event listener, the return
    also carries that listener's selector table (Part 2's denominator),
-   one row per selector — its rows are evidence lines, not findings, and
-   only those selectors, nothing wider. Every line you return stays in a
+   one row per selector, even beside `clean`, and only those selectors,
+   nothing wider. Rows are evidence, but a row with no qualifying test is
+   also a finding line (`path:line — <problem>`) and stays in the table
+   marked NONE. Every line you return stays in a
    long-running parent context for the rest of the session.
    ```
 
