@@ -2,7 +2,7 @@
 name: fankeel-upgrade
 description: Bring a project up to what the installed fankeel expects — what changed since the last upgrade, which migrations are pending, and each one asked about before it runs. Use for /fankeel-upgrade, "升級 fankeel", or after updating the plugin.
 disable-model-invocation: true
-version: 0.87.0
+version: 0.88.0
 status: current
 last_verified: 2026-09-30
 source_of_truth: scripts/upgrade.js, scripts/version.js
