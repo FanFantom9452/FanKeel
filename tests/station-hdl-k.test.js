@@ -843,3 +843,56 @@ test('wz: off the settings page the wizard selector is not read', () => {
     p.press({ [WZ]: { dataset: { go: '3' } } });
     assert.equal(p.writes.page, 0);
 });
+
+const cardOn = (html, j) => new RegExp('data-h="' + j + '" aria-pressed="true"').test(html);
+
+test('wz: a [data-h] press picks that habit card (pressed on card 1, no longer on the preset card 3)', () => {
+    const p = boot('#/settings');
+    assert.equal(cardOn(p.html(), 3), true, 'card 3 (all unset) is the starting pick');
+    wz(p, { h: '1' });
+    assert.equal(cardOn(p.html(), 1), true);
+    assert.equal(cardOn(p.html(), 3), false);
+});
+
+test('wz: a [data-h] press writes the card values into the wizard (the summary has pr pressed for land.integration)', () => {
+    const p = boot('#/settings');
+    wz(p, { h: '1' });
+    wz(p, { go: '8' });
+    assert.match(p.html(), /data-k="land\.integration" data-o="pr" aria-pressed="true"/);
+});
+
+test('wz: a [data-st] press turns that station on (build pressed, survey not)', () => {
+    const p = boot('#/settings');
+    wz(p, { go: '3' });
+    wz(p, { k: 'stage.agents', st: 'build' });
+    assert.match(p.html(), /data-st="build" aria-pressed="true"/);
+    assert.match(p.html(), /data-st="survey" aria-pressed="false"/);
+});
+
+test('wz: a second [data-st] press on the same station turns it off again', () => {
+    const p = boot('#/settings');
+    wz(p, { go: '3' });
+    wz(p, { k: 'stage.agents', st: 'build' });
+    wz(p, { k: 'stage.agents', st: 'build' });
+    assert.match(p.html(), /data-st="build" aria-pressed="false"/);
+});
+
+test('wz: a [data-st] press on a station already on writes the shorter list (survey,build,verify then build leaves build unpressed)', () => {
+    const p = boot('#/settings');
+    wz(p, { go: '3' });
+    wz(p, { h: '2' });
+    assert.match(p.html(), /data-st="build" aria-pressed="true"/);
+    wz(p, { k: 'stage.agents', st: 'build' });
+    assert.match(p.html(), /data-st="build" aria-pressed="false"/);
+    assert.match(p.html(), /data-st="verify" aria-pressed="true"/);
+});
+
+test('wz: an [data-ask] press unsets that key (deny no longer pressed, the rail value reads (ask))', () => {
+    const p = boot('#/settings');
+    wz(p, { k: 'guard', o: 'deny' });
+    wz(p, { go: '4' });
+    assert.match(p.html(), /data-k="guard" data-o="deny" aria-pressed="true"/);
+    wz(p, { ask: 'guard' });
+    assert.match(p.html(), /data-k="guard" data-o="deny" aria-pressed="false"/);
+    assert.match(p.html(), /撞檔<\/span><span class="rv">\(ask\)<\/span>/);
+});
