@@ -184,6 +184,15 @@ for (const name of Object.keys(CALLERS)) {
         assert.equal(p.timers.length, 0);
         assert.equal(p.pop(), undefined, 'the popover was never drawn');
     });
+    test(name + ' -> qClose: a timer it cancelled is forgotten, a second close does not clear the stale id', () => {
+        const p = boot();
+        p.box.value = 'alpha';
+        p.fire(p.box, 'input');
+        const id = p.timers[0].id;
+        go(p);
+        go(p);
+        assert.deepEqual(p.cleared, [id]);
+    });
     test(name + ' -> qClose: a timer that already ran is not cleared again', () => {
         const p = boot();
         p.open('alpha');
