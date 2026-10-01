@@ -46,7 +46,7 @@ design 時開在 http://127.0.0.1:7862/.fankeel/build/2026-10-01-station-layout/
 ## 5. 外觀：只留 keel，主題鈕放進 mast（mockup 調整 r-0034、r-0035）
 
 使用者：「這兩個請你放在相同位置吧 設計部分」（r-0034），再來「不要經典樣式了 我們就用這個就好」（r-0035）。
-r-0035 在 mockup 上沒有畫出來：`lib/tune.js:55` 的 `outside()` 只要被點的 `data-block` 在編輯後消失就退回，刪除一個區塊過不了 `tune.js done`，所以 mockup 上仍看得到「經典樣式」鈕；以這一節為準。
+r-0035 刪的是整個區塊，`lib/tune.js:55` 的 `outside()` 會退回；使用者在 gate 選「先手動把經典樣式從 mockup 刪掉」，於是繞過 `tune.js done` 直接改檔，mockup 五個畫面的 mast 都只剩主題鈕。
 
 - 主題鈕（`button.themebtn[data-themecycle]`，今天在 nav 底的 `div.navfoot`，`station.js:1451`）移到 mast，包在 `<div class="appear" role="group" aria-label="外觀">`；`div.navfoot` 拿掉。
 - `station.js:4546` 的點擊委派今天只聽 `#nav [data-themecycle]`，改成不限 `#nav`，主題鈕移出 nav 後仍能切換。
@@ -60,5 +60,5 @@ r-0035 在 mockup 上沒有畫出來：`lib/tune.js:55` 的 `outside()` 只要�
 - 新測試：`dashPage` 的輸出含 `dash-head`，其 Ready 數等於同一份 `S.projects[].todos` 中 `state==='ready'` 的條數，且等於 `dash-todo` 各列 Ready 數之和。
 - 新測試：mast 裡的 `.appear` 含 `[data-themecycle]`，nav 裡沒有 `[data-themecycle]`；在 mast 的主題鈕上派 click 會切換 `data-theme`——改動前失敗（鈕在 nav、監聽限 `#nav`）。
 - 新測試：`index.html` 不含 `styletog` 與 `station.style`；`localStorage` 存了 `station.style=classic` 時載入頁面，`<html>` 仍是 `data-style="keel"`——改動前失敗（inline script 會拿掉 `data-style`）。
-- 渲染出的頁：mockup 上除 `style-classic` 外每個既有 `data-block` 在實頁上仍各出現一次。
+- 渲染出的頁：mockup 上每個 `data-block` 在實頁上仍各出現一次。
 - 全套 `node --test` 綠。
