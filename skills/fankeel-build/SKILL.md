@@ -391,17 +391,21 @@ then asks this stage's gate.
      of `[data-gop]` does not cover the click branch
      `closest('[data-gop]')`). A hit counts only when the test presses
      that selector through its listener's own event type AND asserts that
-     branch's effect: a probe that asserts the branch stays quiet — a test
-     aimed at another branch whose fixture merely includes this selector as
-     an unanswered or ignored key, or one asserting that nothing happened —
-     does not count. The reviewer must PRODUCE the selector-to-test table
+     branch's effect. ONE test decides whether it is a hit: delete the
+     branch (`if (false && ...)`) and the test goes red. A test aimed at
+     another branch whose fixture merely includes this selector as an
+     unanswered or ignored key stays green on deletion, so it is no hit. An
+     assertion that something did NOT happen is a hit when deleting the
+     branch lets a later branch act (so the assertion goes red), and a
+     guard only when it stays green on deletion. The reviewer must PRODUCE the selector-to-test table
      in its return, not merely state that the rule holds: one row per
      closest, matches and event name in the changed listener — the
      selector, the test as `file:line`, the effect it asserts; a row with
      no qualifying test is a finding. A hit must fail on its own branch's
      deletion. A guard is ANY test that stays green when its own branch
      is deleted (`if (false && ...)`), whatever it asserts: that something
-     did not happen (doesNotThrow, nothing fired, nothing fetched); a
+     did not happen and would not happen without the branch (doesNotThrow,
+     nothing fired, nothing fetched); a
      positive count a later branch's fall-through produces just the same
      (a "returns before the later branches" test asserting only
      `writes.page == 1`); a toggle-back test whose second press only
@@ -412,7 +416,11 @@ then asks this stage's gate.
      line is the test it claims. Before it accepts this wording it tests
      it against ONE counter-example, a test that asserts a positive effect
      yet stays green on its branch's deletion: if the wording would still
-     call that test a hit, the wording is wrong. A mutation that reddens
+     call that test a hit, the wording is wrong. When the rule has more than
+     one sentence, test one counter-example against EACH sentence, and check
+     that the sentences agree on every row the table cites (a "returns
+     before" test asserting only that nothing was drawn is the case where
+     two sentences disagree). A mutation that reddens
      every test in the file (it killed the harness, e.g. by deleting the
      text the harness finds the listener by) counts as dead, not red: redo
      it with `if (false && ...)` so the harness survives. (2026-10-01:
@@ -436,7 +444,13 @@ then asks this stage's gate.
      contradicted by its definition, which called only assert-nothing
      tests guards, so positive-count and toggle-back tests that stayed
      green on deletion counted as hits, and the review never opened the
-     table's cited lines at the commit.)
+     table's cited lines at the commit; 2026-10-01: verify's eleventh
+     return found the counter-example check had tried the rule against
+     only one example, which never put the rule's two sentences against
+     each other: "asserting that nothing happened does not count" and the
+     guard definition (green on deletion) disagreed, so hdl-k:121,
+     hdl-i:140 and hdl-j:385 were mis-judged, and hdl-k's header comment
+     claimed an assertion :121 did not make.)
    Part 3 — every changed line traces to the task's text; the patterns
      already in the repository are followed. Then name the page this
      change makes false (a renamed export, a changed default, a removed

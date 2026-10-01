@@ -122,6 +122,7 @@ test('tune-notify: it returns before the later branches (a [data-wf] answer does
     const p = boot('#/', { notification: true });
     p.reset();
     p.press({ '[data-tune-notify]': {}, '[data-wf]': wfProbe() });
+    assert.equal(p.notified, 1);
     assert.equal(p.writes.page, 0);
 });
 

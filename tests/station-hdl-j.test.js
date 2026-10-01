@@ -382,6 +382,8 @@ test('href: a click on a linked row sets the location hash to its data-href', ()
     assert.equal(p.hash(), '#/s/s1');
 });
 
+// A hit for the inner closest('a,button,input') row (that mutated to false navigates: red); against
+// the outer [data-href] branch it is a guard (hash stays '#/' when that branch is deleted too).
 test('href: a click that lands on a link, button or input inside the row does not navigate', () => {
     const p = boot('#/');
     p.press({ '[data-href]': href('#/s/s1'), 'a,button,input': {} });
