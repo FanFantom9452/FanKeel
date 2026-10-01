@@ -43,9 +43,15 @@ design 時開在 http://127.0.0.1:7862/.fankeel/build/2026-10-01-station-layout/
 - `live-maybe` 的各 lane 共用一張卡（`liveMaybe`，`station.js:1581`，加 `div.lv-card` 包層），每 lane 一列；keel 下該列隱藏 rail 與 root 路徑。
 - `float-icon`、`gate-countdown`、`live-idle` 不變。
 
-## 5. 驗收
+## 5. 外觀設定放在一起（mockup 調整 r-0034，使用者：「這兩個請你放在相同位置吧 設計部分」）
+
+- 主題鈕（`button.themebtn[data-themecycle]`，今天在 nav 底的 `div.navfoot`，`station.js:1451`）移到 mast，緊貼「經典樣式」（`#styletog`，`data-block="style-classic"`），兩者包在 `<div class="appear" role="group" aria-label="外觀">`；`div.navfoot` 拿掉。兩顆鈕的屬性一個不少。
+- `station.js:4546` 的點擊委派今天只聽 `#nav [data-themecycle]`，改成不限 `#nav`，主題鈕移出 nav 後仍能切換；`.appear` 另有一條不掛 keel 的 row 排版，經典樣式下兩鈕同一列。
+
+## 6. 驗收
 
 - `tests/station-todo-panel.test.js:49` 改為：done 超過 3 筆、未展開時只渲染 3 個 done `td-row` 加展開鈕，摘要列的 disposition 計數總和等於 `t.done.length`——改動前失敗（今天渲染 10 筆、沒有摘要列），改動後通過。
 - 新測試：`dashPage` 的輸出含 `dash-head`，其 Ready 數等於同一份 `S.projects[].todos` 中 `state==='ready'` 的條數，且等於 `dash-todo` 各列 Ready 數之和。
+- 新測試：mast 裡的 `.appear` 同時含 `[data-themecycle]` 與 `#styletog`，nav 裡沒有 `[data-themecycle]`；在 mast 的主題鈕上派 click 會切換 `data-theme`——改動前失敗（鈕在 nav、監聽限 `#nav`）。
 - 渲染出的頁（keel 與 classic 各一次）：mockup 上每個既有 `data-block` 在實頁上仍各出現一次；經典樣式下新頁首不改變既有版面。
 - 全套 `node --test` 綠。
