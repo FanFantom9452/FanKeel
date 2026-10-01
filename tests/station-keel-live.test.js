@@ -14,7 +14,7 @@ const NOW = Date.parse('2026-10-01T12:00:00.000Z');
 const ROUTE7 = ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land'];
 
 // station.js booted the way tests/station-i18n.test.js boots it, with the
-// document's listeners kept so a test can press the switch.
+// document's listeners kept so a test can press the click ring.
 function boot(opts) {
     const o = opts || {};
     const kept = Object.assign({}, o.kept);
