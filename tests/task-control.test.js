@@ -944,3 +944,14 @@ test('guard: adopt leaves the hand-off behind and keeps next', () => {
   assert.equal(entry(dir, A).next, 'pick up at verify');
   assert.equal(entry(dir, A).handoff, undefined);
 });
+
+test('show lists a handed-off entry once, ahead of the live ones, with its next', () => {
+  const dir = root();
+  run(dir, ['start', '--session', B, '--task', 'retune the ramp']);
+  run(dir, ['next', 'pick up at verify', '--handoff', '--session', B]);
+  run(dir, ['start', '--session', A, '--task', 'mine']);
+  const out = run(dir, ['show', '--session', A]);
+  assert.equal(out.code, 0, out.out);
+  assert.match(out.out, /handed off — offer Adopt first, naming the task:\n {2}- retune the ramp @ survey {2}\(handed off <1h ago\)\n {4}next: {2}pick up at verify\n {4}bbbbbbbb-1111-2222-3333-444444444444/);
+  assert.equal(out.out.split(B).length - 1, 1, 'listed once, not again under other live sessions');
+});

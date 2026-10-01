@@ -500,8 +500,25 @@ function cmdShow(root, opts) {
     // against its own directory, where the self-check here has nothing to say
     // either way. A session in another config dir is the case this list was
     // silently wrong about, so a real answer beats the fallback.
+    // A hand-off first, live or not: the user asked for the move, and the
+    // window it came from may well still be open. /fankeel offers Adopt for
+    // it as option one, and the user still confirms.
+    const handed = active.filter((e) => e.sessionId !== id && registry.handoffOf(e.data));
+    if (handed.length) {
+        lines.push('');
+        lines.push('handed off — offer Adopt first, naming the task:');
+        for (const h of handed) {
+            const age = registry.ageText({ updated: h.data.handoff }, Date.now());
+            lines.push('  - ' + (h.data.task || 'untitled') + ' @ ' + (h.data.stage || '?')
+                + (age ? '  (handed off ' + age + ' ago)' : ''));
+            lines.push('    next:  ' + registry.nextOf(h.data));
+            lines.push('    ' + h.sessionId);
+        }
+    }
+    const shown = new Set(handed.map((e) => e.sessionId));
+
     const liveState = live.readLive(live.liveConfigDir(), id);
-    const others = active.filter((e) => e.sessionId !== id
+    const others = active.filter((e) => e.sessionId !== id && !shown.has(e.sessionId)
         && live.isLive(liveState, e.sessionId, e.data && e.data.configDir));
     if (others.length) {
         lines.push('');
