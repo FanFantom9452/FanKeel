@@ -113,9 +113,24 @@ a slimmer cut, not a step-6 finding: it goes with step 5's dispatch.
 
 `node <plugin>/scripts/task.js profile show --project <name>`; the keys no
 earlier step settled are asked one at a time, the way `/fankeel` asks them.
+Two of them carry this repository's own evidence:
+
+- `worktree` — `false` (the builtin), `true` (every task opens its own
+  checkout), `bounded` (bounded and architectural tasks do) or `architectural`
+  (only those).
+- `commit.format` — `node <plugin>/scripts/task.js profile suggest --project <name>`
+  prints one when four in five of the last fifty non-merge subjects read
+  `type(scope): `, built from the types the log used and no others. Offer it
+  as the recommended answer with its evidence line, and say that
+  `land.js merge` writes `merge: <task>`, so a pattern without `merge` refuses
+  `land.js merge` until the user adds it. Write nothing the user did not pick.
 
 ## 8. Close
 
+- Residue: the scout's `worktrees` row says whether `.gitignore` holds
+  `.claude/worktrees/` and how many worktrees and spent `worktree-agent-*`
+  branches `residue.js` lists. Name each one and ask whether to clean it;
+  nothing is deleted unasked.
 - Drift: `node <plugin>/scripts/docs-audit.js --batches --root <project>` lists
   one batch per bucket. Each batch goes to one `subagent_type:
   fankeel:fankeel-reader`, at most four at once, with its pages and the

@@ -4,7 +4,7 @@ description: The land stage — a green suite, the documents closed, the map rew
 version: 0.90.0
 status: current
 last_verified: 2026-09-23
-source_of_truth: lib/stages.js, scripts/todo-check.js, scripts/map.js, hooks/carry.js
+source_of_truth: lib/stages.js, scripts/todo-check.js, scripts/map.js, hooks/carry.js, scripts/land.js
 ---
 
 # fankeel-land
@@ -232,12 +232,25 @@ investigate. Green, then clean the worktree, then `git branch -d`.
 
 **A task with its own worktree.** `node <plugin>/scripts/task.js show --session <id>`
 prints a `worktree:` line when `task.js start` opened one under
-`.fankeel/worktrees/<id8>/` on branch `fk/<id8>`. Merge from the main checkout,
-not from inside it: checkout the base there, `git merge fk/<id8>`, re-run the
-suite on the merged result, and only when it is green run
-`git worktree remove .fankeel/worktrees/<id8>` and then `git branch -d fk/<id8>`.
-A red suite leaves both in place, as above. `scripts/residue.js` lists that
-worktree as in use, not spent, for as long as the task's record is active.
+`.fankeel/worktrees/<id8>/` on branch `fk/<id8>`. Run
+`node <plugin>/scripts/land.js merge --session <id>`: it merges `fk/<id8>`
+into the branch the main checkout is on with `--no-ff`, the message
+`merge: <task>` and two trailers, `Fankeel-Task` and `Fankeel-Class`, and no
+tag, and prints `<base>..<sha>`. Uncommitted files in the worktree, a subject
+`commit.format` refuses, or `conflict <paths>` stop it with nothing merged and
+both left in place. Re-run the suite on the merged result, and only when it is
+green run `node <plugin>/scripts/land.js clean --session <id>`: it removes the
+worktree and runs `git branch -d fk/<id8>`, and a `-d` refusal is printed as
+git said it — never retried with `-D`. A red suite leaves both in place, as
+above. `scripts/residue.js` lists that worktree as in use, not spent, for as
+long as the task's record is active.
+
+**Agent branches.** `node <plugin>/scripts/residue.js` lists the
+`worktree-agent-*` branches with no worktree left and nothing HEAD lacks under
+spent agent branches. Offer those, and only those, for cleanup with
+`git branch -D <name>` — `scripts/commit.js` landed them by cherry-pick, so
+none is an ancestor and `-d` refuses it. One listed as holding commits HEAD
+lacks is the user's call.
 
 **PR:** push, open it against the base, report the URL. **Keep the worktree** —
 PR feedback gets fixed there.

@@ -22,6 +22,7 @@ opened in `<open>`. Run these in one Bash call, joined with `;`:
     node <plugin>/scripts/onboard.js --full --root <root>
     node <plugin>/scripts/input-check.js --root <open>
     node <plugin>/scripts/memory-check.js --root <open>
+    node <plugin>/scripts/residue.js --root <root>
     gh repo view --json visibility
 
 Then read what they name:
@@ -47,9 +48,12 @@ against the others and report three kinds, each with both sides' `path:line`:
 Two sections, nothing else.
 
 `status:` one row per step, in the skill's order — visibility, docs.json,
-TODO, tree, CLAUDE.md, memory, profile — each `done`, `partial` or `missing`
-with one line of evidence. The `docs.json`, `unfiled` and `tree` rows copy
-`onboard.js`'s own line.
+TODO, tree, CLAUDE.md, memory, profile, worktrees — each `done`, `partial` or
+`missing` with one line of evidence. The `docs.json`, `unfiled` and `tree`
+rows copy `onboard.js`'s own line. The `worktrees` row says whether
+`git -C <root> check-ignore -q .claude/worktrees/x` exits 0 — `.gitignore`
+holds `.claude/worktrees/` — and copies the worktree and spent agent-branch
+counts `residue.js` prints.
 
 `drafts:`
 - `tree <row> — <one-line responsibility>` for each row with none;
@@ -62,6 +66,6 @@ Paths relative to `<open>`, forward slashes.
 
 ## Refuse
 
-- Never run a command other than the four above, read-only `git`, and `node <plugin>/scripts/docs-audit.js --batches --root <root>`.
+- Never run a command other than the five above, read-only `git`, and `node <plugin>/scripts/docs-audit.js --batches --root <root>`.
 - Never write, move or delete a file; a redirect is refused by the guard.
 - Never decide for the user: every draft is a draft.
