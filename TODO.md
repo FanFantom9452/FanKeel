@@ -8,12 +8,6 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 ## Ready
 
-- 〔await〕10-01 再現兩次：close 時 group 1 的 mark 還在；已停的 brain 留下 mark，新 await 一直回 already awaiting — [await.js](scripts/await.js).
-
-- 〔gate〕選項只檢查 2 到 4 個，規則下限是三；10-01 build、verify、land 三次只給兩個都放行 — [handoff.js](lib/handoff.js).
-
-- 〔tune〕10-01 audit 留下：滾輪測試只斷言 defaultPrevented、未斷言走訪方向（`assets/tune/overlay.js:643`）；:565 pointer-id 檢查與 :668 外框內選外框兩個變異存活、檔頭缺口清單未列 — [tune-overlay.test.js](tests/tune-overlay.test.js).
-
 ## Needs a decision
 
 ## Blocked

@@ -2,8 +2,12 @@
 label: await
 title: 前一組 inflight mark 沒清
 description: 10-01 再現兩次：close 時 group 1 的 mark 還在；已停的 brain 留下 mark，新 await 一直回 already awaiting
-state: ready
+state: done
 link: scripts/await.js
+done:
+  at: 2026-10-01
+  sha: d2038a3027324382615a49706c4144111460b047
+  disposition: done
 ---
 
 Session a6409b07-9136-41b8-ba6d-173a1a676500（TODO 全表盤點，安裝版 0.88.0）看到兩次：

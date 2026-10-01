@@ -2,8 +2,12 @@
 label: gate
 title: gate 少於三選項沒擋
 description: 選項只檢查 2 到 4 個，規則下限是三；10-01 build、verify、land 三次只給兩個都放行
-state: ready
+state: done
 link: lib/handoff.js
+done:
+  at: 2026-10-01
+  sha: 3bf803d30833362ac92591b40fef6e77b1f5136e
+  disposition: done
 ---
 
 `gateProblem` 在 `lib/handoff.js` 第 270 行只要求選項有 2 到 4 個，但 `ALWAYS[0]` 與 fankeel skill 的 gate 規則寫的是至少三個，暫停那一項不能拿掉。
