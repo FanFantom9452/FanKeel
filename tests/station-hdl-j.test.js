@@ -416,7 +416,7 @@ test('href: a guarded click falls through to the later branches (a th[data-k] an
     assert.notEqual(p.els.lh.innerHTML, 'SENTINEL');
 });
 
-test('href: the press does not repaint the page', () => {
+test('guard: href: the press does not repaint the page', () => {
     const p = boot('#/');
     p.reset();
     p.press({ '[data-href]': href('#/s/s1') });

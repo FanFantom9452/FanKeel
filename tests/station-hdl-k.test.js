@@ -2,16 +2,16 @@
 // Branches of the page's big click listener in assets/station/station.js (the one
 // holding `[data-tune-notify]`), pressed through the listener itself with fake
 // targets whose closest() answers only the selector a test names. Every test
-// presses its selector; every test but the `guard:` ones asserts that branch's own
-// effect, one effect per test, so single-branch mutations of one branch redden
-// different sets of tests. A `guard:` test is any test that stays green when its own
-// branch is deleted (`if (false && ...)`), whatever it asserts: that something did NOT
-// happen (nothing thrown, nothing drawn, nothing fetched, a value left as it was), or a
-// positive count a later branch's fall-through produces just the same. It does not
-// count as a hit for the selector table. Every other test goes red on its branch's
-// deletion: the "returns before the later branches" and toggle-back tests also assert
-// the branch's own effect (the panel open, the key dimmed, the step moved) before the
-// count or the second press.
+// presses its selector; every test goes red when its own branch is deleted
+// (`if (false && ...)`) except the `guard:` ones, which stay green whatever they
+// assert (nothing thrown, drawn or fetched, a value left as it was, or a positive
+// count a later branch's fall-through produces just the same) and never count as
+// hits. The "returns before the later branches" tests of the answer and cmp
+// branches assert only that a later [data-wf] branch does not redraw
+// (`writes.page == 0`); they go red because the deleted branch lets it act. The
+// tune-notify one also asserts requestPermission was asked, and fbtn, legend,
+// pick, facet and wz assert the branch's effect before the page count; the fbtn
+// toggle-back test asserts the panel shown, then shut.
 //   `[data-tune-notify]`, `[data-answer]` (with its four fetch outcomes) and the
 //   `.gend` line gatePost writes after a `[data-gop]` / `[data-gho]` press;
 //   then the branches no earlier test pressed: `[data-fbtn]`, the legend's

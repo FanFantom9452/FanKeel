@@ -390,27 +390,27 @@ then asks this stage's gate.
      not cover the click branch with the same selector (a keydown test
      of `[data-gop]` does not cover the click branch
      `closest('[data-gop]')`). A hit counts only when the test presses
-     that selector through its listener's own event type AND asserts that
-     branch's effect. ONE test decides whether it is a hit: delete the
-     branch (`if (false && ...)`) and the test goes red. A test aimed at
-     another branch whose fixture merely includes this selector as an
-     unanswered or ignored key stays green on deletion, so it is no hit. An
-     assertion that something did NOT happen is a hit when deleting the
-     branch lets a later branch act (so the assertion goes red), and a
-     guard only when it stays green on deletion. The reviewer must PRODUCE the selector-to-test table
+     that selector through its listener's own event type AND goes red
+     when the branch is deleted (`if (false && ...)`); that is the ONLY
+     test. A test aimed at another branch whose fixture merely includes
+     this selector as an unanswered or ignored key stays green on
+     deletion, so it is no hit. An assertion that something did NOT
+     happen, or a positive count, is a hit when deleting the branch lets
+     a later branch act (so it goes red) and a guard when it stays green
+     (doesNotThrow, nothing fired, nothing fetched, a toggle-back whose
+     second press only restores the start state, a count the branch does
+     not change). A guard is titled `guard:` and never counts as a hit;
+     a row backed only by guards is a finding. ONE test can hold two
+     roles, a hit for the row it reddens on and a guard for a row it
+     stays green on: judge it per row, cite it in the table only for the
+     rows it is a hit for, and title `guard:` only a test that is a hit
+     for no row (hdl-j's inner `a,button,input` test, a hit for the inner
+     row and a guard for the outer `[data-href]`, carries a comment
+     instead). The reviewer must PRODUCE the selector-to-test table
      in its return, not merely state that the rule holds: one row per
      closest, matches and event name in the changed listener — the
      selector, the test as `file:line`, the effect it asserts; a row with
-     no qualifying test is a finding. A hit must fail on its own branch's
-     deletion. A guard is ANY test that stays green when its own branch
-     is deleted (`if (false && ...)`), whatever it asserts: that something
-     did not happen and would not happen without the branch (doesNotThrow,
-     nothing fired, nothing fetched); a
-     positive count a later branch's fall-through produces just the same
-     (a "returns before the later branches" test asserting only
-     `writes.page == 1`); a toggle-back test whose second press only
-     restores the start state. Guards are titled `guard:` and never count
-     as hits, and a row backed only by guards is a finding. The reviewer
+     no qualifying test is a finding. The reviewer
      opens EVERY `path:line` the table cites at the committed sha
      (`git show <sha>:<path>`, not the working tree) and confirms each
      line is the test it claims. Before it accepts this wording it tests
@@ -420,7 +420,16 @@ then asks this stage's gate.
      one sentence, test one counter-example against EACH sentence, and check
      that the sentences agree on every row the table cites (a "returns
      before" test asserting only that nothing was drawn is the case where
-     two sentences disagree). A mutation that reddens
+     two sentences disagree). The review also opens every header comment
+     of the changed test files and every cited line number against the
+     file at the commit, and fails a comment claiming an assertion the
+     tests do not make or a line number off from the file (2026-10-01:
+     verify's twelfth return found the rule's sentences contradicting
+     each other, "and asserts its own effect" against "red on deletion";
+     hdl-k's header comment claimed the returns-before tests assert their
+     branch's effect when hdl-k:185, :282 and :793 assert only
+     `writes.page == 0`; and table citations were offset by 2, hdl-j:385
+     being :387; build's review checked none of them). A mutation that reddens
      every test in the file (it killed the harness, e.g. by deleting the
      text the harness finds the listener by) counts as dead, not red: redo
      it with `if (false && ...)` so the harness survives. (2026-10-01:
