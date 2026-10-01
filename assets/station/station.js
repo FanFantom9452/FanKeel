@@ -2387,11 +2387,15 @@
                         + '</li>';
                 }).join('') + '</ul>';
         }).join('');
-        // The done list keeps its newest ten until 展開全部 is pressed
-        // (station-9: it scrolled too long); `doneOpen` is the project page's
-        // `view.tdOpen`. The keel look draws it as the verify frame's evidence
-        // table (the k-only column heads) and the fold as the plan frame's cut.
-        var NEWEST = 10, all = t.done.length, shut = all > NEWEST && !doneOpen;
+        // The done list keeps its newest three until 展開全部 is pressed
+        // (station-9; three since the 2026-10-01 layout, ten still scrolled
+        // too long); `doneOpen` is the project page's `view.tdOpen`. Above the
+        // list one strip sums all of it — how many, the newest three days and
+        // the rest, each disposition — and holds the button, so 收起 sits at
+        // the top of an open list. Open, the keel look draws the list as the
+        // verify frame's evidence table (the k-only column heads) and the fold
+        // as the plan frame's cut.
+        var NEWEST = 3, all = t.done.length, shut = all > NEWEST && !doneOpen;
         var doneRow = function (e, fold) {
             return '<li class="td-row' + (fold ? ' td-fold' : '') + '">' + todoChip(e.label) + '<span class="td-t">' + esc(e.title) + '</span>'
                 + '<span class="td-at mono">' + esc(e.at) + '</span><span class="td-dp mono" data-dp="' + esc(e.disposition) + '">' + esc(e.disposition) + '</span>'
@@ -2403,23 +2407,42 @@
         var doneHead = '<li class="td-row td-hd k-only" aria-hidden="true"><span class="td-lb">' + loc('proj.todoColLabel', '標籤') + '</span>'
             + '<span class="td-t">' + loc('proj.todoColEntry', '條目') + '</span><span class="td-at">' + loc('proj.todoColAt', '完成於') + '</span>'
             + '<span class="td-dp">' + loc('proj.todoColDisposition', '處置') + '</span><span class="td-rf">' + loc('proj.todoColRef', '出處') + '</span></li>';
-        var more = all <= NEWEST ? '' : '<div class="td-more"><button type="button" class="btn td-mb" data-tdmore="' + (shut ? '1' : '0') + '" aria-expanded="' + String(!shut) + '" aria-controls="donel">' + icon('chev')
-            + (shut ? loc('proj.todoShowAll', '展開全部（{n}）', { n: all }) : loc('proj.todoFoldBack', '收起，只留最新 {n} 筆', { n: NEWEST })) + '</button><span class="muted">'
-            + (shut ? loc('proj.todoNMore', '還有 {n} 筆，{from} 到 {to}', { n: all - NEWEST, from: esc(t.done[NEWEST].at), to: esc(t.done[all - 1].at) })
-                : loc('proj.todoFoldNote', '第 {n} 筆起是展開後才出現的', { n: NEWEST + 1 })) + '</span></div>';
-        var done = !all ? '' : '<div class="rgh td-grp"><b>' + loc('proj.todoDone', '已完成') + '</b><span class="mute">'
-            + loc('proj.todoDoneNewest', '{n} 筆，最新在上', { n: all }) + (shut ? ' · ' + loc('proj.todoShowingN', '顯示最新 {n} 筆', { n: NEWEST }) : '') + '</span></div>'
-            + '<ul class="td-rows donel" id="donel">' + doneHead + (shut ? t.done.slice(0, NEWEST) : t.done).map(function (e, i) {
+        var byDay = {}, byDp = {};
+        t.done.forEach(function (e) {
+            byDay[e.at] = (byDay[e.at] || 0) + 1;
+            byDp[e.disposition] = (byDp[e.disposition] || 0) + 1;
+        });
+        var days = Object.keys(byDay).sort().reverse();
+        var older = days.slice(3).reduce(function (n, d) { return n + byDay[d]; }, 0);
+        var sum = '<div class="td-sum"><b class="td-sum-h">' + loc('proj.todoDone', '已完成') + '</b>'
+            + '<span class="td-sum-n">' + loc('proj.todoSumN', '<b>{n}</b> 筆，最新在上', { n: all }) + '</span>'
+            + '<span class="td-days" role="img" aria-label="' + esc(loc('proj.todoDays', '完成日期：{list}', { list: days.map(function (d) {
+                return loc('proj.todoDayN', '{d} {n} 筆', { d: d, n: byDay[d] });
+            }).join(loc('proj.todoListSep', '、')) })) + '">'
+            + days.slice(0, 3).map(function (d) {
+                return '<span class="td-day"><i style="--n:' + byDay[d] + '"></i>' + esc(d.slice(5)) + ' <b>' + byDay[d] + '</b></span>';
+            }).join('')
+            + (older ? '<span class="td-day">' + loc('proj.todoEarlier', '更早') + ' <b>' + older + '</b></span>' : '') + '</span>'
+            + '<span class="td-dps">' + Object.keys(byDp).sort(function (a, b) { return byDp[b] - byDp[a]; }).map(function (k) {
+                return '<span class="td-dp mono" data-dp="' + esc(k) + '">' + esc(k) + ' <b>' + byDp[k] + '</b></span>';
+            }).join('') + '</span>'
+            + (all <= NEWEST ? '' : '<button type="button" class="btn td-mb" data-tdmore="' + (shut ? '1' : '0') + '" aria-expanded="' + String(!shut) + '" aria-controls="donel">' + icon('chev')
+                + (shut ? loc('proj.todoShowAll', '展開全部（{n}）', { n: all }) : loc('proj.todoFoldBack', '收起，只留最新 {n} 筆', { n: NEWEST })) + '</button>')
+            + '</div>';
+        var note = loc('proj.todoSessionNote', 'session 只在跑過它的那台機器上找得到；找不到時列出關掉它的 commit。');
+        var done = !all ? '' : sum
+            + '<ul class="td-rows donel" id="donel">' + (shut ? '' : doneHead) + (shut ? t.done.slice(0, NEWEST) : t.done).map(function (e, i) {
                 return (i === NEWEST ? '<li class="td-cut k-only" aria-hidden="true"><span>' + loc('proj.todoCut', '第 {n} 筆起，展開後才出現', { n: NEWEST + 1 }) + '</span></li>' : '')
                     + doneRow(e, i === NEWEST);
-            }).join('') + '</ul>' + more
-            + '<p class="note">' + loc('proj.todoSessionNote', 'session 只在跑過它的那台機器上找得到；找不到時列出關掉它的 commit。') + '</p>';
+            }).join('') + '</ul>'
+            + (shut ? '<p class="td-rest">' + loc('proj.todoNMore', '還有 {n} 筆，{from} 到 {to}', { n: all - NEWEST, from: esc(t.done[NEWEST].at), to: esc(t.done[all - 1].at) }) + ' · ' + note + '</p>'
+                : '<p class="note">' + note + '</p>');
         return '<section class="panel td" id="todo">'
             + '<div class="h2" data-block="todo-head">TODO <small><span class="num">' + loc('proj.todoOpenN', '未完成 {n}', { n: t.open.length }) + '</span>'
             + (t.mode === 'folder' ? ' · <span class="num">' + loc('proj.todoDoneN', '已完成 {n}', { n: t.done.length }) + '</span>' : '') + '</small>'
             + '<span class="td-src mono muted">' + esc(t.mode === 'folder' ? t.folder + '/' : 'TODO.md') + '</span></div>'
             + '<div data-block="todo-open">' + open + '</div>'
-            + (done ? '<div class="td-done" data-block="todo-done">' + done + '</div>' : '')
+            + (done ? '<div class="td-done' + (all > NEWEST && !shut ? ' is-open' : '') + '" data-block="todo-done">' + done + '</div>' : '')
             + '</section>';
     }
     // ---- tune: a block changed, continued: what the tests import -----------
@@ -3026,11 +3049,17 @@
         var others = PKEYS.filter(function (k) { return k !== r.pkey; });
         var list = mine.filter(inWindow).sort(function (a, b) { return Date.parse(b.started) - Date.parse(a.started); });
         var ro = function (l, v) { return '<div class="ro"><div class="l">' + l + '</div><div class="v">' + v + '</div></div>'; };
+        // The TODO panel sits right under the head (2026-10-01 layout), above
+        // the chart, the registry note and the session table.
+        var todo = todoPanelHtml((S.projects || []).reduce(function (hit, p) {
+            return hit || (p.todos || []).filter(function (x) { return x.pkey === r.pkey; })[0] || null;
+        }, null), S.sessions, !!view.tdOpen);
         return '<section class="panel"><div class="hero-top"><div><div class="eyebrow">' + loc('dash.project', '專案') + '</div>'
             + '<h1 class="s-title"><i class="sw" style="background:' + colorOf('project', r.pkey, PKEYS) + '"></i> '
             + esc(NAMES[r.pkey] || r.pkey) + '</h1><div class="mono muted">' + esc(r.pkey) + '</div></div>'
             + '<div class="readouts">' + ro(loc('dash.last30dCost', '近 30 天花費'), usd(head.usd)) + ro('token', tokens(head.tokens))
-            + ro(loc('dash.activeTime', 'active 時間'), hours(head.active)) + ro('session', head.n) + '</div></div>'
+            + ro(loc('dash.activeTime', 'active 時間'), hours(head.active)) + ro('session', head.n) + '</div></div></section>'
+            + todo + '<section class="panel">'
             + '<div class="controls"><div class="ctlgrp"><label>' + loc('dash.yAxis', '縱軸') + '</label>'
             + segHtml('pMetric', [['tokens', 'token'], ['usd', loc('dash.cost', '花費')]], view.pMetric) + '</div>'
             + (others.length ? '<div class="ctlgrp"><label>' + loc('dash.compareProject', '對照專案') + '</label>' + segHtml('compare', [['', loc('dash.none', '無')]].concat(others.map(function (k) {
@@ -3045,10 +3074,7 @@
             + registryNote(all[0].root)
             + '<section class="panel"><div class="h2">Sessions <small>' + loc('dash.last30dNSorted', '近 30 天 {n} 個，最新在上；勾兩列進比較', { n: list.length }) + '</small>'
             + '</div>' + projectSessionsHtml(list, picked) + selbarHtml() + '</section>'
-            + '<section class="panel"><div class="h2">' + loc('dash.stagesByRoute', '各 route 的階段') + ' <small>' + loc('dash.thisProjectOnly', '只算這個專案') + '</small></div>' + routeLedger(mine) + '</section>'
-            + todoPanelHtml((S.projects || []).reduce(function (hit, p) {
-                return hit || (p.todos || []).filter(function (x) { return x.pkey === r.pkey; })[0] || null;
-            }, null), S.sessions, !!view.tdOpen);
+            + '<section class="panel"><div class="h2">' + loc('dash.stagesByRoute', '各 route 的階段') + ' <small>' + loc('dash.thisProjectOnly', '只算這個專案') + '</small></div>' + routeLedger(mine) + '</section>';
     }
     VIEWS.project = projectPage;
     CRUMBS.project = function (r) { return [[NAMES[r.pkey] || r.pkey, null]]; };

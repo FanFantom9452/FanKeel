@@ -46,32 +46,42 @@ const MANY = Array.from({ length: 12 }, (_, i) => ({
 const LONG = { pkey: 'F:\\ws', mode: 'folder', folder: 'docs/todo', open: [ROW.open[0]], done: MANY };
 const doneOf = (html) => html.slice(html.indexOf('data-block="todo-done"'));
 
-test('the done list shows its newest ten and a button for the rest', () => {
+test('shut, the done list is a summary strip over its newest three, the button in the strip', () => {
     const done = doneOf(V.todoPanelHtml(LONG, []));
-    assert.equal((done.match(/<li class="td-row">/g) || []).length, 10);
-    assert.match(done, /Done 9</);
-    assert.doesNotMatch(done, /Done 10</);
-    assert.match(done, /data-tdmore="1" aria-expanded="false" aria-controls="donel">/);
-    assert.match(done, /展開全部（12）/);
-    assert.match(done, /還有 2 筆，2026-09-18 到 2026-09-17/);
-    assert.match(done, /12 筆，最新在上 · 顯示最新 10 筆/);
-    assert.match(done, /<li class="td-row td-hd k-only" aria-hidden="true">/);
-    assert.match(done, /data-dp="abandoned"/);
+    assert.equal((done.match(/<li class="td-row">/g) || []).length, 3);
+    assert.match(done, /Done 2</);
+    assert.doesNotMatch(done, /Done 3</);
+    const sum = done.slice(done.indexOf('<div class="td-sum">'), done.indexOf('<ul class="td-rows donel"'));
+    assert.match(sum, /data-tdmore="1" aria-expanded="false" aria-controls="donel">/);
+    assert.match(sum, /展開全部（12）/);
+    assert.match(sum, /<span class="td-sum-n"><b>12<\/b> 筆，最新在上<\/span>/);
+    const dps = [...sum.matchAll(/<span class="td-dp mono" data-dp="([^"]+)">[^<]* <b>(\d+)<\/b><\/span>/g)];
+    assert.deepEqual(dps.map((m) => m[1]), ['done', 'abandoned']);
+    assert.equal(dps.reduce((n, m) => n + Number(m[2]), 0), LONG.done.length, 'the disposition counts sum to every done entry');
+    assert.match(sum, /<span class="td-day"><i style="--n:1"><\/i>09-28 <b>1<\/b><\/span>/);
+    assert.match(sum, /<span class="td-day">更早 <b>9<\/b><\/span>/);
+    assert.match(done, /<p class="td-rest">還有 9 筆，2026-09-25 到 2026-09-17 · /);
+    assert.doesNotMatch(done, /td-hd/, 'the column heads come with the open list');
+    assert.doesNotMatch(done, /class="td-more"/);
 });
 
-test('expanded, the list shows every entry with a cut before the eleventh, and a button back', () => {
-    const done = doneOf(V.todoPanelHtml(LONG, [], true));
+test('expanded, the strip stays on top with 收起, the column heads return, and a cut sits before the fourth', () => {
+    const html = V.todoPanelHtml(LONG, [], true);
+    const done = doneOf(html);
+    assert.match(html, /<div class="td-done is-open" data-block="todo-done">/);
     assert.equal((done.match(/<li class="td-row">/g) || []).length, 11);
     assert.equal((done.match(/<li class="td-row td-fold">/g) || []).length, 1);
-    assert.match(done, /<li class="td-cut k-only" aria-hidden="true"><span>第 11 筆起，展開後才出現<\/span><\/li><li class="td-row td-fold">/);
+    assert.match(done, /<li class="td-cut k-only" aria-hidden="true"><span>第 4 筆起，展開後才出現<\/span><\/li><li class="td-row td-fold">/);
+    assert.match(done, /<li class="td-row td-hd k-only" aria-hidden="true">/);
     assert.match(done, /Done 11</);
-    assert.match(done, /data-tdmore="0" aria-expanded="true"/);
-    assert.match(done, /收起，只留最新 10 筆/);
+    assert.ok(done.indexOf('data-tdmore="0" aria-expanded="true"') < done.indexOf('<ul class="td-rows donel"'), 'the button is above the list');
+    assert.match(done, /收起，只留最新 3 筆/);
 });
 
-test('ten or fewer done entries carry no button, and each state group names its state', () => {
+test('three or fewer done entries carry no button, and each state group names its state', () => {
     const html = V.todoPanelHtml(ROW, []);
     assert.doesNotMatch(html, /data-tdmore/);
+    assert.match(html, /<div class="td-sum"><b class="td-sum-h">已完成<\/b>/);
     assert.match(html, /<div class="rgh td-grp" data-st="ready"><b class="mono">Ready<\/b>/);
     assert.match(html, /<div class="rgh td-grp" data-st="blocked"><b class="mono">Blocked<\/b>/);
 });
@@ -107,15 +117,18 @@ function projectBoot() {
     return { press, page: () => els.page.innerHTML };
 }
 
-test('pressing 展開全部 opens the whole done list and 收起 folds it back to ten rows', () => {
+test('pressing 展開全部 opens the whole done list and 收起 folds it back to three rows; the panel sits under the project head', () => {
     const p = projectBoot();
     const rows = () => (doneOf(p.page()).match(/<li class="td-row[^"]*">/g) || []).filter((r) => !/td-hd/.test(r)).length;
     assert.match(p.page(), /data-block="todo-done"/, 'the project page drew the panel');
-    assert.equal(rows(), 10);
+    const at = (s) => p.page().indexOf(s);
+    assert.ok(at('class="hero-top"') < at('data-block="todo-head"') && at('data-block="todo-head"') < at('<div class="chart">'),
+        'head, then TODO, then the chart');
+    assert.equal(rows(), 3);
     p.press('1');
     assert.equal(rows(), 12);
     assert.match(doneOf(p.page()), /data-tdmore="0"/);
     p.press('0');
-    assert.equal(rows(), 10);
+    assert.equal(rows(), 3);
     assert.match(doneOf(p.page()), /data-tdmore="1"/);
 });

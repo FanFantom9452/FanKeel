@@ -79,7 +79,7 @@ const doneRows = (p) => {
 
 test('tdmore: 展開全部 drawn at once — the page shows the whole list right after the press', () => {
     const p = tdBoot();
-    assert.equal(doneRows(p), 10);
+    assert.equal(doneRows(p), 3);
     tdPress(p, '1');
     assert.equal(doneRows(p), 12);
 });
@@ -95,7 +95,7 @@ test('tdmore: the open list is kept by a later redraw (the 3 s re-read), not onl
 test('tdmore: a press of 收起 on a list that is already shut leaves it shut', () => {
     const p = tdBoot();
     tdPress(p, '0');
-    assert.equal(doneRows(p), 10);
+    assert.equal(doneRows(p), 3);
 });
 
 test('tdmore: a click off the button draws nothing and does not throw', () => {
