@@ -249,7 +249,7 @@ long as the task's record is active.
 `worktree-agent-*` branches with no worktree left and nothing HEAD lacks under
 spent agent branches. Offer those, and only those, for cleanup with
 `git branch -D <name>` — `scripts/commit.js` landed them by cherry-pick, so
-none is an ancestor and `-d` refuses it. One listed as holding commits HEAD
+most are not ancestors and `-d` refuses them. One listed as holding commits HEAD
 lacks is the user's call.
 
 **PR:** push, open it against the base, report the URL. **Keep the worktree** —
