@@ -53,7 +53,7 @@ const QUESTIONS = [{
   question: 'survey 的結論可以進 design 嗎？',
   header: 'survey',
   multiSelect: false,
-  options: [{ label: '進 design', description: 'a' }, { label: '暫停', description: 'b' }],
+  options: [{ label: '進 design', description: 'a' }, { label: '暫停', description: 'b' }, { label: '再讀一輪', description: 'c' }],
 }];
 
 // Option one's label must name the next stage on the route (`design`, here),

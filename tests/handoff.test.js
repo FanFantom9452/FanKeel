@@ -491,3 +491,23 @@ test('with rules, a gate with no pause is refused, and one naming a class below 
   assert.match(low.detail, /bounded.*architectural/);
   assert.deepEqual(readGate(file, 'design', null, { pause: true, floor: 'bounded' }), g, 'the floor itself is not below it');
 });
+
+// gate-4: on 2026-10-01 three stage-agent gates with two options (build-2,
+// verify-2, land) passed hooks/gate.js; the stage rule is three at least.
+// Only the first question: a survey's per-entry questions keep 2 to 4.
+test('with rules, a first question with two options is refused, and a later question may keep two', () => {
+  const file = path.join(tmp('fankeel-handoff-'), 'build.md');
+  const g = gateOf('s');
+  g.questions[0].options[0].label = '進 verify';
+  g.questions[0].options[1].label = '暫停';
+  fs.writeFileSync(file, block(g));
+  assert.deepEqual(readGate(file, 'verify'), g, 'without rules two options still pass');
+  const two = readGate(file, 'verify', null, { pause: true });
+  assert.equal(two.invalid, 'questions[0].options');
+  assert.equal(two.detail, 'the first question has 2 options, 3 at least: the approval, the open decision or none, and the pause');
+
+  g.questions[0].options.splice(1, 0, { label: '回 build', description: 'b' });
+  g.questions.push({ question: 'entry?', header: 'entry', multiSelect: false, options: [{ label: 'now', description: 'a' }, { label: 'later', description: 'b' }] });
+  fs.writeFileSync(file, block(g));
+  assert.deepEqual(readGate(file, 'verify', null, { pause: true }), g, 'three on the first and two on the second pass');
+});

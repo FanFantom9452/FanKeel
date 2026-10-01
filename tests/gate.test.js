@@ -126,7 +126,7 @@ function handoff(root, gate) {
   const TICKS = '`'.repeat(3);
   fs.writeFileSync(file, '# report\n\n' + TICKS + 'json gate\n' + JSON.stringify(gate) + '\n' + TICKS + '\n');
 }
-const QUESTIONS = [{ question: 'survey 的結論可以進 design 嗎？', header: 'survey', multiSelect: false, options: [{ label: '進 design', description: 'a' }, { label: '暫停', description: 'b' }] }];
+const QUESTIONS = [{ question: 'survey 的結論可以進 design 嗎？', header: 'survey', multiSelect: false, options: [{ label: '進 design', description: 'a' }, { label: '暫停', description: 'b' }, { label: '再讀一輪', description: 'c' }] }];
 // What the controller now sends when it does its job correctly: an exact
 // copy of the handoff file's own `json gate` block, never a placeholder.
 const askOf = (questions) => ({ questions: JSON.parse(JSON.stringify(questions)) });
@@ -235,7 +235,7 @@ test('stage.agents: a gate asked with a multiSelect: false its file left out sti
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
   agentsOn(root);
-  const filed = [{ question: 'survey 的結論可以進 design 嗎？', header: '設計走向', options: [{ label: '進 design', description: 'a' }, { label: '暫停', description: 'b' }] }];
+  const filed = [{ question: 'survey 的結論可以進 design 嗎？', header: '設計走向', options: [{ label: '進 design', description: 'a' }, { label: '暫停', description: 'b' }, { label: '再讀一輪', description: 'c' }] }];
   const asked = [Object.assign({}, filed[0], { multiSelect: false })];
   handoff(root, { questions: filed, next: 'n' });
   brainStarts(root);
@@ -266,7 +266,7 @@ test('stage.agents: the answer to a matching gate is written though a SendMessag
 // The control: a question the controller wrote itself is not the gate, and
 // its answer is not the stage agent's — with the mark standing or not.
 test('stage.agents: a question the controller asked on its own writes nothing, in flight or not', () => {
-  const own = [{ header: '開新任務', question: '要不要先開一個新任務？', options: [{ label: '要', description: 'a' }, { label: '不要', description: 'b' }, { label: '再想想', description: 'c' }] }];
+  const own = [{ header: '開新任務', question: '要不要先開一個新任務？', options: [{ label: '要', description: 'a' }, { label: '不要', description: 'b' }] }];
   for (const inflight of [null, { stage: 'survey', at: 1758000000000, agentId: 'a3f9c2' }]) {
     const root = tmp('fankeel-gate-');
     seed(root, MINE, Object.assign({ stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') }, inflight ? { inflight } : {}));
@@ -297,7 +297,7 @@ test('a brain dispatched for a stage stage.agents does not name: the gate hook s
 function verifyGate(root, label) {
   const file = path.join(root, '.fankeel', 'build', 'task-20260919T093012', 'verify.md');
   fs.mkdirSync(path.dirname(file), { recursive: true });
-  const questions = [{ question: 'verify 抓到兩條，怎麼辦？', header: 'verify', multiSelect: false, options: [{ label, description: 'a' }, { label: '暫停', description: 'b' }] }];
+  const questions = [{ question: 'verify 抓到兩條，怎麼辦？', header: 'verify', multiSelect: false, options: [{ label, description: 'a' }, { label: '暫停', description: 'b' }, { label: '再讀一輪', description: 'c' }] }];
   fs.writeFileSync(file, '# report\n\n' + '`'.repeat(3) + 'json gate\n' + JSON.stringify({ questions, next: 'n' }) + '\n' + '`'.repeat(3) + '\n');
   return questions;
 }
@@ -496,7 +496,7 @@ test('stage.agents: a matching gate clears every mark on the record for this sta
 
 // gate answers: a question the user already answered at an earlier stage's
 // gate is denied when the controller asks it again.
-const DESIGN_GATE = [{ question: 'design 的結論可以進 plan 嗎？', header: 'design', multiSelect: false, options: [{ label: '進 plan', description: 'a' }, { label: '暫停', description: 'b' }] }];
+const DESIGN_GATE = [{ question: 'design 的結論可以進 plan 嗎？', header: 'design', multiSelect: false, options: [{ label: '進 plan', description: 'a' }, { label: '暫停', description: 'b' }, { label: '再讀一輪', description: 'c' }] }];
 const PALETTE = 'Which palette base should the ramp use?';
 const REASK = [{ question: PALETTE, header: 'Palette', multiSelect: false, options: [{ label: 'OKLCH', description: 'a' }, { label: 'sRGB', description: 'b' }] }];
 function reaskRoot() {
