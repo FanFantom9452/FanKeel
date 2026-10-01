@@ -492,14 +492,6 @@ function cmdShow(root, opts) {
         lines.push('this session: no entry — not in the mode.');
     }
 
-    // The header says live, so the list has to mean it. With no --session there
-    // is no id to self-check against, `readLive` reports unknown, and unknown is
-    // every entry — the same loud side every other reader of this falls back to.
-    //
-    // Except for an entry recording a config dir of its own: that one is measured
-    // against its own directory, where the self-check here has nothing to say
-    // either way. A session in another config dir is the case this list was
-    // silently wrong about, so a real answer beats the fallback.
     // A hand-off first, live or not: the user asked for the move, and the
     // window it came from may well still be open. /fankeel offers Adopt for
     // it as option one, and the user still confirms.
@@ -517,6 +509,14 @@ function cmdShow(root, opts) {
     }
     const shown = new Set(handed.map((e) => e.sessionId));
 
+    // The header says live, so the list has to mean it. With no --session there
+    // is no id to self-check against, `readLive` reports unknown, and unknown is
+    // every entry — the same loud side every other reader of this falls back to.
+    //
+    // Except for an entry recording a config dir of its own: that one is measured
+    // against its own directory, where the self-check here has nothing to say
+    // either way. A session in another config dir is the case this list was
+    // silently wrong about, so a real answer beats the fallback.
     const liveState = live.readLive(live.liveConfigDir(), id);
     const others = active.filter((e) => e.sessionId !== id && !shown.has(e.sessionId)
         && live.isLive(liveState, e.sessionId, e.data && e.data.configDir));
