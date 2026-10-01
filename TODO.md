@@ -10,8 +10,6 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔await〕10-01 再現兩次：close 時 group 1 的 mark 還在；已停的 brain 留下 mark，新 await 一直回 already awaiting — [await.js](scripts/await.js).
 
-- 〔brief〕10-01 build 重訪：prompt 是 build 加一行說明時，兩個 brain 都說沒收到 brief、沒寫 handoff；只寫 build 就正常 — [brief.js](hooks/brief.js).
-
 - 〔gate〕選項只檢查 2 到 4 個，規則下限是三；10-01 build、verify、land 三次只給兩個都放行 — [handoff.js](lib/handoff.js).
 
 - 〔tune〕10-01 audit 留下：滾輪測試只斷言 defaultPrevented、未斷言走訪方向（`assets/tune/overlay.js:643`）；:565 pointer-id 檢查與 :668 外框內選外框兩個變異存活、檔頭缺口清單未列 — [tune-overlay.test.js](tests/tune-overlay.test.js).
@@ -24,6 +22,11 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 after: fankeel 其餘功能都落地、使用者換到新機器測試. 10-01.
 
 - 〔audit〕Trovara 的 docs 搬到 preset：在新機器的 Trovara 跑 `docs-move.js` 出搬移表、核可後 apply，再跑一次分批 `/fankeel-audit` — [scripts/docs-move.js](scripts/docs-move.js).
+
+### 存檔 brief 被讀到
+after: 一次受控 build 的 brain 收到存成檔的 brief，而 prompt 不只 `build`. 10-01.
+
+- 〔brief〕10-01 build 重訪：brief 約 10.6KB，Claude Code 存成檔、只給 2KB 預覽，prompt 是 build 加說明的兩個 brain 沒開那個檔；brain 的 agent 檔已加「先讀存檔」，等一次實跑確認 — [fankeel-brain.md](agents/fankeel-brain.md).
 
 ### knip 認得 CJS namespace
 upstream: knip 認得 CJS namespace property access. 10-01.

@@ -14,6 +14,14 @@ dispatches, relays a path and asks the user. The judgement is yours.
 
 ## Job
 
+Your brief arrives as SubagentStart context. When it is over Claude Code's
+inline limit, that context reads `Output too large` with a
+`Full output saved to: <file>` line and a 2KB preview: Read that file, whole,
+before anything else — the preview is not the brief, and a prompt that reads
+complete on its own does not replace it. 2026-10-01: two build brains sent
+`build` plus a paragraph never opened it, edited files and wrote no handoff;
+the one sent a bare `build` read it and finished.
+
 Your brief — `renderBrief` in `lib/render.js` — carries the stage's rules,
 its output shape, the path of the stage's skill and the file to write. Read
 the skill first. Do the stage, write the report to that file with its

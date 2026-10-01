@@ -147,6 +147,17 @@ test('the stage agent writes its handoff and dispatches readers, on sonnet', () 
     assert.equal(f.effort, 'medium');
 });
 
+// brief-2: a brief over Claude Code's inline limit reaches the brain as a 2KB
+// preview and a saved file. On 2026-10-01 two build brains sent `build` plus a
+// paragraph never opened the file; the one sent a bare `build` did.
+test('the stage agent reads a brief saved to a file before anything else', () => {
+    const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-brain.md'), 'utf8');
+    const job = text.split('\n## Job\n')[1].split('\n## ')[0];
+    assert.match(job, /`Output too large`/);
+    assert.match(job, /`Full output saved to: <file>`/);
+    assert.match(job, /Read that file, whole,\s+before anything else/);
+});
+
 // Its brief says to read cited lines with `sed -n` in one Bash call; a Tools
 // section keeping Bash to git and the plugin's scripts would forbid exactly that.
 test('the stage agent may read with sed in Bash', () => {
