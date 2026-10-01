@@ -400,3 +400,19 @@ test('the init scout is read-only, runs onboard.js, and returns status and draft
     const { READ_ONLY_AGENTS } = require('../lib/guard.js');
     assert.ok(READ_ONLY_AGENTS.has('fankeel-init-scout'));
 });
+
+// MEMORY.md is an index; the slimmer proposes, the fixer applies.
+test('the slimmer cuts fat hooks first, compares stale entries, returns a token line and hands the diff to the fixer', () => {
+    const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-slimmer.md'), 'utf8').replace(/\s+/g, ' ');
+    const job = text.slice(text.indexOf('## Job'), text.indexOf('## Return'));
+    const ret = text.slice(text.indexOf('## Return'), text.indexOf('## Refuse'));
+    const refuse = text.slice(text.indexOf('## Refuse'));
+    assert.match(job, /the first cut, before any other, is `fat hook`/);
+    assert.match(job, /memory-check\.js --root <root>/);
+    assert.match(job, /`needs approval:`/);
+    assert.match(job, /`unverifiable`/);
+    assert.match(job, /own project only/);
+    assert.match(ret, /`<MEMORY\.md path>: <before> → <after> tokens`/);
+    assert.match(ret, /subagent_type: fankeel:fankeel-fixer/);
+    assert.match(refuse, /memory-check\.js/);
+});

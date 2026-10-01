@@ -575,7 +575,7 @@ test('the init block carries the station line when it is given one, and stays un
 test('the init block warns once CLAUDE.md and MEMORY.md pass INPUT_WARN_TOKENS, and only then', () => {
   assert.equal(INPUT_WARN_TOKENS, 4000);
   const over = renderInit({ sessionId: MINE, input: { tokens: 4107 } });
-  assert.match(over, /^input: 4107 tok\/turn from CLAUDE\.md\+MEMORY\.md — offer to slim it at a gate \(fankeel-slimmer\)$/m);
+  assert.match(over, /^input: 4107 tok\/turn from CLAUDE\.md\+MEMORY\.md — offer to slim it at a gate \(fankeel-slimmer proposes, fankeel-fixer applies\)$/m);
   assert.ok(sizeAtReference(over) < 2400, 'init with the input line is ' + sizeAtReference(over) + ' chars');
   assert.doesNotMatch(renderInit({ sessionId: MINE, input: { tokens: 100 } }), /^input:/m);
   assert.doesNotMatch(renderInit({ sessionId: MINE, input: { tokens: 4000 } }), /^input:/m, 'the threshold is exclusive');

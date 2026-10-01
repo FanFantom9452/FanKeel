@@ -50,3 +50,7 @@ test('CLAUDE.md cuts go to fankeel-slimmer, and memory is reported, never merged
   assert.match(f, /memory-check\.js --root <open>/);
   assert.match(f, /nothing is merged/);
 });
+
+test('a fat MEMORY.md line is a slimmer cut, not a step-6 finding', () => {
+  assert.match(flat(), /A `MEMORY\.md` line that carries more than its title, link and a short hook is a slimmer cut, not a step-6 finding: it goes with step 5's dispatch\./);
+});

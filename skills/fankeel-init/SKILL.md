@@ -106,6 +106,8 @@ diff, and take the user's approval row by row before writing it into the file
 `node <plugin>/scripts/memory-check.js --root <open>`, and name every other
 open location under this workspace that keeps a memory of its own. Report only:
 nothing is merged, and no entry is written in advance.
+A `MEMORY.md` line that carries more than its title, link and a short hook is
+a slimmer cut, not a step-6 finding: it goes with step 5's dispatch.
 
 ## 7. Profile
 
