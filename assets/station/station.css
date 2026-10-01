@@ -836,7 +836,6 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
 .sidenav .navcat.in.shut .navhd{background:var(--ink);color:var(--panel)}
 .sidenav .navcat.in.shut .navhd .ico{color:inherit}
 .sidenav .navcat.in.shut .navhd:hover{background:var(--ink2);color:var(--panel)}
-.navfoot{display:flex;margin-top:6px;padding:0 4px}
 .themebtn{all:unset;box-sizing:border-box;display:grid;place-items:center;width:28px;height:28px;border-radius:7px;color:var(--muted);cursor:pointer}
 .themebtn:hover{background:var(--wash);color:var(--ink)}
 @media (prefers-reduced-motion:reduce){.navchev .ico,.sidenav .navwrap{transition:none}}
@@ -1616,7 +1615,6 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
 .td{container-type:inline-size}
 .td .h2{margin-bottom:6px}
 .td-done{margin-top:28px}
-.td-done .td-grp{margin-top:0}
 .td-src{margin-left:auto;font-size:11.5px}
 .td-grp{margin-top:18px}
 .td-rows{list-style:none;margin:0;padding:0;border-top:1px solid var(--rule2)}
@@ -1687,9 +1685,6 @@ a.td-rf:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-rad
   --dot:rgba(201,209,220,.08);
   --lift:0 1px 0 rgba(201,209,220,.04) inset,0 14px 30px -10px rgba(0,0,0,.6);
 }
-/* keel-only parts vanish in classic; classic-only parts vanish in keel */
-:root:not([data-style=keel]) .k-only{display:none}
-:root[data-style=keel] .c-only{display:none}
 
 /* ---- the film's ground: dot paper, 22px pitch (tour-ring.js ground(), 11 film units) ---- */
 :root[data-style=keel] body{background:var(--ground) radial-gradient(circle,var(--dot) 1.2px,transparent 1.7px) 11px 11px/22px 22px}
@@ -1736,7 +1731,6 @@ a.td-rf:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-rad
 /* where you are: the survey frame's selected row — keel tint, keel bar under it */
 :root[data-style=keel] .sidenav a[aria-current="page"]{background:var(--keel-tint);color:var(--keel-deep);border-radius:6px 6px 0 0;box-shadow:inset 0 -2.5px 0 var(--keel)}
 :root[data-style=keel] .sidenav a[aria-current="page"] .ico{color:var(--keel)}
-:root[data-style=keel] .navfoot{padding:0 8px}
 
 /* ---- page head and the film's action button (keel fill, the click ring) ---- */
 :root[data-style=keel] .phead h1{font-weight:700;font-size:24px;letter-spacing:-.01em}
@@ -1865,7 +1859,6 @@ a.td-rf:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-rad
 :root[data-style=keel] .trl .tlb{padding:0 5px;border-radius:4px;box-shadow:inset 0 0 0 1px var(--rule2);color:var(--ink2)}
 
 /* ---- the TODO panel ---- */
-.td-more{display:flex;align-items:center;gap:12px;padding:10px 0 2px;font-size:12px}
 .td-mb{font-weight:600;color:var(--ink)}
 .td-mb .ico{width:14px;height:14px}
 .td-mb-top{margin-left:auto}
@@ -1905,8 +1898,6 @@ a.td-rf:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-rad
 .td-cut{list-style:none;position:relative;height:22px;margin:4px 0 0}
 .td-cut::before{content:"";position:absolute;left:0;right:0;top:11px;border-top:1.5px dashed var(--keel)}
 .td-cut span{position:relative;display:inline-block;margin-left:8px;padding:1px 9px;border-radius:5px;background:var(--keel);color:var(--on-keel);font-size:11px;font-weight:700;line-height:20px}
-:root[data-style=keel] .td-more{padding-top:14px}
-:root[data-style=keel] .td-more .muted{font-family:var(--f-mono);font-size:11.5px}
 
 /* ---- the bell, floating like the film's cards ---- */
 :root[data-style=keel] .fkb{background:var(--panel);box-shadow:inset 0 0 0 1px var(--rule),var(--lift)}
@@ -1914,19 +1905,128 @@ a.td-rf:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-rad
 :root[data-style=keel] .fkn{background:var(--keel);color:var(--on-keel)}
 :root[data-style=keel] .foot{font-family:var(--f-mono);font-size:11.5px}
 
-/* ---- style-classic: one switch in the mast ---- */
-.styletog{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 10px 0 6px;border-radius:8px;cursor:pointer;font-size:12.5px;color:var(--ink2);white-space:nowrap}
-.styletog:hover{background:var(--wash);color:var(--ink)}
-.styletog:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
-.styletog .sw2{position:relative;width:30px;height:18px;border-radius:9px;background:var(--inset);box-shadow:inset 0 0 0 1px var(--rule2);flex:none}
-.styletog .sw2::after{content:"";position:absolute;left:3px;top:3px;width:12px;height:12px;border-radius:50%;background:var(--muted);transition:transform .18s ease-out}
-.styletog[aria-pressed="true"] .sw2{background:var(--ink)}
-.styletog[aria-pressed="true"] .sw2::after{transform:translateX(12px);background:var(--panel)}
-:root[data-style=keel] .styletog .sw2{background:var(--panel)}
 
 @media (prefers-reduced-motion:reduce){
-  .styletog .sw2::after{transition:none}
   .glyph .gseg,.glyph .gcore,.glyph .gedge,:root[data-style=keel] .rip::after{animation:none}
 }
 /* the one chevron icon, turned up for 收起 and for a chooser's move-up */
 .td-mb[aria-expanded="true"] .ico,.dch-b[data-dchmv="-1"] .ico{transform:rotate(180deg)}
+
+/* ==== keel layout (2026-10-01): page heads, grids, density ==================
+   The approved mockup's own rules (.fankeel/build/2026-10-01-station-layout/
+   src/keel-layout.css), less its mk-* chrome. Tokens only. */
+
+/* ---- page head: the film's header lockup — title, a rule, then one line of where things stand ---- */
+:root[data-style=keel] .phead.khead{gap:16px;margin:2px 0 18px;min-height:44px;align-items:center}
+:root[data-style=keel] .khead h1{margin:0;display:flex;align-items:center;gap:10px;font-size:26px;font-weight:700;letter-spacing:-.015em;line-height:1.1}
+:root[data-style=keel] .khead h1 .ico{width:22px;height:22px;color:var(--keel)}
+:root[data-style=keel] .khead .kcap{display:flex;align-items:center;min-width:0;height:28px;margin:0;padding-left:16px;border-left:1.2px solid var(--rule2);
+  font:500 12.5px var(--f-mono);color:var(--muted);white-space:nowrap;overflow:hidden}
+:root[data-style=keel] .khead .kcap b{color:var(--ink);font-weight:700;margin:0 4px}
+:root[data-style=keel] .khead .kcap>span+span::before{content:"·";margin:0 10px;color:var(--faint)}
+:root[data-style=keel] .khead .kcap .ok{color:var(--pass-ink)}
+:root[data-style=keel] .khead .subtabs{margin:0;background:var(--panel);box-shadow:inset 0 0 0 1px var(--rule)}
+:root[data-style=keel] .khead .subtabs a[aria-current="page"]{background:var(--keel-tint);color:var(--keel-deep);box-shadow:inset 0 -2.5px 0 var(--keel);border-radius:6px 6px 2px 2px}
+
+/* ---- dashboard: two columns, the wide one for what moves, the narrow one for what waits ---- */
+:root[data-style=keel] .dash.kdash{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:18px;align-items:start}
+:root[data-style=keel] .kdash .dcol{display:flex;flex-direction:column;gap:18px;min-width:0}
+@media (max-width:1180px){:root[data-style=keel] .dash.kdash{grid-template-columns:minmax(0,1fr)}}
+:root[data-style=keel] .kdash .dcard-h{height:42px}
+:root[data-style=keel] .dcard-h .kn{font:700 11.5px var(--f-mono);padding:1px 7px;border-radius:5px;background:var(--keel-tint);color:var(--keel-deep)}
+:root[data-style=keel] .kdash .dlist{margin-top:4px}
+:root[data-style=keel] .kdash .dlist>.drow:first-child{border-top:0}
+/* waiting-card: nothing waiting is one line under the head, not a big zero; a gate waiting turns the pill to signal */
+:root[data-style=keel] .kdash [data-block=waiting-card] .dcard-h .kn{background:var(--pass-tint);color:var(--pass-ink)}
+:root[data-style=keel] .kdash [data-block=waiting-card] .dcard-h .kn.warn{background:var(--signal-tint);color:var(--signal-ink)}
+:root[data-style=keel] .kdash [data-block=waiting-card] .dnone{border-top:0;padding:12px 0 0;display:flex;align-items:center}
+/* dash-spend: the figure and the bars side by side, so the card is one band */
+:root[data-style=keel] .kdash [data-block=dash-spend]{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"h h" "big bars" "kv bars";column-gap:28px;align-items:end}
+:root[data-style=keel] .kdash [data-block=dash-spend] .dcard-h{grid-area:h}
+:root[data-style=keel] .kdash [data-block=dash-spend] .dbig{grid-area:big;margin:14px 0 4px}
+:root[data-style=keel] .kdash [data-block=dash-spend] .dspark{grid-area:bars;height:72px;margin-top:14px}
+:root[data-style=keel] .kdash [data-block=dash-spend] .dkv{grid-area:kv;margin:0;gap:14px}
+
+/* ---- sessions list: one line a row; the stage as the film's glyph and count ---- */
+:root[data-style=keel] .panel.ksess{padding:4px 18px 8px}
+:root[data-style=keel] .ksess .t{table-layout:fixed}
+:root[data-style=keel] .ksess .t th{height:38px;padding:0 10px;font:400 11.5px var(--f-ui);color:var(--muted);border-bottom-color:var(--rule)}
+:root[data-style=keel] .ksess .t td{height:42px;padding:0 10px}
+:root[data-style=keel] .ksess .t td.task{max-width:none;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:root[data-style=keel] .ksess .t td.task a{font-weight:600;color:var(--ink)}
+:root[data-style=keel] .ksess .pchip{font:700 12px var(--f-mono);color:var(--ink)}
+:root[data-style=keel] .ksess .kstage{display:flex;align-items:center;gap:9px}
+:root[data-style=keel] .ksess .glyph.prog{width:24px;height:24px;flex:none}
+:root[data-style=keel] .ksess .t td.r{font:500 12px var(--f-mono)}
+:root[data-style=keel] .ksess .t td.c-state{overflow:hidden}
+:root[data-style=keel] .ksess .t tr.link:hover td{background:var(--wash)}
+
+/* ---- live: running sessions float as the film's file cards; maybe-stopped ones share one quiet card ---- */
+:root[data-style=keel] .lv.klv{max-width:none;gap:26px}
+:root[data-style=keel] .klv .lv-grp{background:none;padding:0}
+:root[data-style=keel] .klv .lv-h{padding:0 2px 10px;align-items:center}
+:root[data-style=keel] .klv .lv-h h2{font-size:15px;font-weight:700}
+:root[data-style=keel] .klv .lv-n{font:700 11.5px var(--f-mono);padding:1px 7px;border-radius:5px;background:var(--keel-tint);color:var(--keel-deep)}
+:root[data-style=keel] .klv .lv-gate.is-empty{background:var(--panel);box-shadow:inset 0 0 0 1px var(--rule);color:var(--ink2)}
+:root[data-style=keel] .klv .lane{border-top:0}
+:root[data-style=keel] .klv .lane.live{background:var(--panel);box-shadow:var(--lift);border-radius:var(--r);padding:16px 20px 16px;margin-bottom:14px;
+  grid-template-columns:40px auto minmax(0,1fr) auto;grid-template-areas:"g st who when" "g task task when" ". rail rail rail" "subs subs subs subs";column-gap:14px;row-gap:6px}
+:root[data-style=keel] .klv .lane.live:hover{background:var(--panel);box-shadow:var(--lift),inset 0 0 0 1px var(--keel-mid)}
+:root[data-style=keel] .klv .lane .glyph.prog{grid-area:g;width:40px;height:40px;align-self:start}
+:root[data-style=keel] .klv .lane-who{grid-area:who;flex-direction:row;align-items:baseline;gap:8px;align-self:center}
+:root[data-style=keel] .klv .lane-who b{font:700 12px var(--f-mono)}
+:root[data-style=keel] .klv .lane.live .lane-task{font-size:15px;font-weight:700;color:var(--ink)}
+:root[data-style=keel] .klv .lane.live .lrail{margin-top:8px}
+:root[data-style=keel] .klv .lane-subs{margin-top:12px;padding:8px 14px 6px;border-top:0;border-radius:8px;background:var(--inset)}
+:root[data-style=keel] .klv .sa{grid-template-columns:minmax(0,196px) minmax(0,170px) minmax(0,1fr) 52px}
+:root[data-style=keel] .klv .lane-subs .sa+.sa{border-top-color:var(--rule)}
+:root[data-style=keel] .klv .lv-card{background:var(--panel);box-shadow:var(--lift);border-radius:var(--r);padding:4px 10px}
+:root[data-style=keel] .klv .lv-card .lane.unsure{grid-template-columns:24px auto minmax(0,150px) minmax(0,1fr) auto;grid-template-areas:"g st who task when";
+  column-gap:14px;padding:10px 8px;border-top:1px solid var(--rule);align-items:center}
+:root[data-style=keel] .klv .lv-card .lane.unsure:first-child{border-top:0}
+:root[data-style=keel] .klv .lane.unsure .glyph.prog{width:24px;height:24px;align-self:center}
+:root[data-style=keel] .klv .lane.unsure .lrail,:root[data-style=keel] .klv .lane.unsure .lane-who .mono{display:none}
+:root[data-style=keel] .klv .lane.unsure .lane-who b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+:root[data-style=keel] .klv .lane.unsure .lane-when{flex-direction:row;align-items:center;gap:10px;align-self:center}
+:root[data-style=keel] .klv .lane.unsure .lane-when b{font-size:12.5px}
+:root[data-style=keel] .klv .lv-idle a{background:var(--panel)}
+
+/* ---- one session: the head is the film's header — the glyph fills as the route does ---- */
+:root[data-style=keel] .panel.kshead{padding:20px 28px 22px;box-shadow:var(--lift)}
+:root[data-style=keel] .ks-top{display:grid;grid-template-columns:64px minmax(0,1fr);grid-template-areas:"g t" "g m";column-gap:18px;row-gap:8px;align-items:center;margin:12px 0 20px}
+:root[data-style=keel] .ks-top .glyph.prog{grid-area:g;width:64px;height:64px}
+:root[data-style=keel] .ks-t{grid-area:t;display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0}
+:root[data-style=keel] .ks-t .s-title{margin:0;font-size:26px;font-weight:700;letter-spacing:-.01em}
+:root[data-style=keel] .ks-top .s-meta{grid-area:m;margin:0}
+:root[data-style=keel] .kshead .rail{max-width:none;margin:0 0 20px}
+:root[data-style=keel] .kshead .readouts{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));row-gap:14px;padding-top:16px;border-top:1px solid var(--rule)}
+:root[data-style=keel] .kshead .ro{margin:0;padding:0 16px}
+:root[data-style=keel] .kshead .ro:first-child{padding-left:0}
+:root[data-style=keel] .kshead .ro .v{font-size:28px;font-weight:600;font-stretch:normal;font-variant-numeric:tabular-nums}
+:root[data-style=keel] .kshead .ro .d{white-space:normal}
+:root[data-style=keel] .tabs{margin:20px 0 -1px 8px;gap:4px}
+:root[data-style=keel] .tabs a{border-radius:8px 8px 0 0;font-weight:600}
+:root[data-style=keel] .tabs a.on{background:var(--panel);color:var(--keel-deep);box-shadow:inset 0 2.5px 0 var(--keel)}
+:root[data-style=keel] .rpf button[aria-pressed=true]{background:var(--keel-tint);color:var(--keel-deep);border-color:transparent}
+
+/* ---- project TODO: done shut is a summary strip and the newest three ---- */
+:root[data-style=keel] .td-sum{display:flex;align-items:center;flex-wrap:wrap;gap:8px 16px;padding:9px 12px;margin:0 0 4px;border-radius:8px;background:var(--inset)}
+:root[data-style=keel] .td-sum-h{font:700 12px var(--f-mono);padding:2px 9px;border-radius:5px;background:var(--pass-tint);color:var(--pass-ink)}
+:root[data-style=keel] .td-sum-n{font:500 12px var(--f-mono);color:var(--ink2)}
+:root[data-style=keel] .td-sum-n b{color:var(--ink)}
+:root[data-style=keel] .td-days{display:flex;align-items:center;gap:14px;font:500 11.5px var(--f-mono);color:var(--ink2)}
+:root[data-style=keel] .td-day{display:inline-flex;align-items:center;gap:6px}
+:root[data-style=keel] .td-day i{display:block;height:8px;width:calc(var(--n) * 2.4px);border-radius:2px;background:var(--keel-mid)}
+:root[data-style=keel] .td-day:first-child i{background:var(--keel)}
+:root[data-style=keel] .td-day b{color:var(--ink)}
+:root[data-style=keel] .td-dps{display:flex;gap:6px}
+:root[data-style=keel] .td-sum .td-mb{margin-left:auto}
+:root[data-style=keel] .td-done .donel .td-row{padding:6px 8px}
+:root[data-style=keel] .td-rest{margin:8px 0 0;font:11.5px var(--f-mono);color:var(--muted)}
+:root[data-style=keel] .td-done.is-open .td-sum{position:sticky;top:0;z-index:1}
+
+/* ---- the masthead's appearance group (r-0034): the theme cycle, framed like the language .seg ---- */
+.appear{display:inline-flex;align-items:center;gap:2px}
+:root[data-style=keel] .mast .appear{flex:none;display:inline-flex;align-items:center;gap:2px;padding:2px;border-radius:8px;background:var(--panel);box-shadow:inset 0 0 0 1px var(--rule)}
+:root[data-style=keel] .appear .themebtn{width:28px;height:28px;border-radius:6px}
+:root[data-style=keel] .appear .themebtn:focus-visible{outline-offset:-2px}

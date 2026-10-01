@@ -27,13 +27,19 @@ test('the masthead carries the film glyph and the appearance group, and no class
     assert.match(html, /<div class="appear" id="appear" role="group" aria-label="外觀"><\/div>\n<\/header>/);
 });
 
-test('every keel rule is scoped, classic parts hide in keel and keel parts hide in classic', () => {
+test('every keel rule is scoped, and no rule is left for a part only the classic look had', () => {
     assert.match(css, /^:root\[data-style=keel\]\{/m);
-    assert.match(css, /^:root:not\(\[data-style=keel\]\) \.k-only\{display:none\}$/m);
-    assert.match(css, /^:root\[data-style=keel\] \.c-only\{display:none\}$/m);
+    assert.doesNotMatch(css, /:root:not\(\[data-style=keel\]\)|\.c-only|\.styletog|\.navfoot|\.classic-mark|\.td-more|\.td-done \.td-grp/);
     assert.match(css, /\.td-mb\[aria-expanded="true"\] \.ico,\.dch-b\[data-dchmv="-1"\] \.ico\{transform:rotate\(180deg\)\}/);
-    assert.doesNotMatch(css, /^\.mk\{/m, 'the mockup-only label rules stay out');
+    assert.doesNotMatch(css, /^\.mk\{|\.mk-/m, 'the mockup-only label rules stay out');
     const before = css.slice(0, css.indexOf('/* ==== keel:'));
     assert.ok(before.length > 1000, 'the keel block was not found');
-    assert.doesNotMatch(before, /data-style/, 'the classic sheet above the keel block is untouched');
+    assert.doesNotMatch(before, /data-style/, 'the base sheet above the keel block carries no keel rule');
+});
+
+test('the approved mockup\'s layout rules are in, under keel', () => {
+    for (const sel of ['.phead.khead', '.dash.kdash', '.panel.ksess', '.lv.klv', '.klv .lv-card', '.panel.kshead', '.td-sum', '.mast .appear',
+        '.kdash [data-block=waiting-card] .dcard-h .kn.warn']) {
+        assert.ok(css.includes(':root[data-style=keel] ' + sel), sel);
+    }
 });
