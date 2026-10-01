@@ -162,6 +162,36 @@ test('a merged worktree with uncommitted changes is dirty context, not a spent w
   assert.match(report(result), /not clean/);
 });
 
+// docs/90-agent/plans/2026-10-02-worktree-habit-design.md §5: commit.js lands
+// an agent branch by cherry-pick, so it is never an ancestor of HEAD.
+test('an agent branch whose patch HEAD already holds is spent; one with a commit HEAD lacks is not', () => {
+  const { root, git } = repo();
+  const out = (args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
+  const home = out(['rev-parse', '--abbrev-ref', 'HEAD']);
+  git(['checkout', '-q', '-b', 'worktree-agent-picked']);
+  fs.writeFileSync(path.join(root, 'picked.txt'), 'p\n');
+  git(['add', 'picked.txt']);
+  git(['commit', '-qm', 'picked']);
+  const sha = out(['rev-parse', 'HEAD']);
+  git(['checkout', '-q', home]);
+  git(['checkout', '-q', '-b', 'worktree-agent-open']);
+  fs.writeFileSync(path.join(root, 'open.txt'), 'o\n');
+  git(['add', 'open.txt']);
+  git(['commit', '-qm', 'open']);
+  git(['checkout', '-q', home]);
+  git(['cherry-pick', sha]);
+  git(['branch', 'worktree-agent-ancestor']);
+  git(['branch', 'unrelated']);
+
+  const result = scan(root);
+  assert.deepEqual(result.agentSpent.slice().sort(), ['worktree-agent-ancestor', 'worktree-agent-picked']);
+  assert.deepEqual(result.agentUnmerged, ['worktree-agent-open']);
+  assert.equal(defects(result), 2);
+  const text = report(result);
+  assert.match(text, /2 spent agent branches/);
+  assert.match(text, /worktree-agent-open/);
+});
+
 test('outside a repository the git sections are absent and the rest still runs', () => {
   const root = tmp('fankeel-norepo-');
   const result = scan(root);

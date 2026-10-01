@@ -239,7 +239,7 @@ function scan(root) {
     const empty = emptyDirs(root);
 
     if (!isRepo(root)) {
-        return { repo: false, branch: null, undecided: [], worktrees: [], inUse: [], dirty: [], weight: [], empty, orphans };
+        return { repo: false, branch: null, undecided: [], worktrees: [], inUse: [], dirty: [], agentSpent: [], agentUnmerged: [], weight: [], empty, orphans };
     }
 
     const branch = ((git(root, ['rev-parse', '--abbrev-ref', 'HEAD']) || [])[0] || 'HEAD').trim();
@@ -285,6 +285,22 @@ function scan(root) {
     const worktrees = candidates.filter((w) => !dirtySet.has(w.path)).map((w) => ({ path: w.path, branch: w.branch }));
     const inUse = listed.filter((w) => w.inUse).map((w) => ({ path: w.path, branch: w.branch }));
 
+    // docs/90-agent/plans/2026-10-02-worktree-habit-design.md §5: the
+    // branches Agent isolation leaves, `worktree-agent-*`, once their worktree
+    // is gone. scripts/commit.js lands one by cherry-pick, so it is never an
+    // ancestor of HEAD: spent is an ancestor, or every line of
+    // `git cherry HEAD <branch>` starting `-`, its patch already in HEAD. One
+    // `+` line and it holds work HEAD lacks — a human call, not a cleanup.
+    const withTree = new Set(listed.map((w) => w.branch).filter(Boolean));
+    const agentSpent = [];
+    const agentUnmerged = [];
+    for (const name of (git(root, ['branch', '--list', 'worktree-agent-*', '--format=%(refname:short)']) || []).map((s) => s.trim()).filter(Boolean)) {
+        if (withTree.has(name)) continue;
+        const cherry = merged.has(name) ? [] : git(root, ['cherry', 'HEAD', name]);
+        if (cherry === null) continue;
+        (cherry.every((l) => l.startsWith('-')) ? agentSpent : agentUnmerged).push(name);
+    }
+
     // Only the topmost ignored path earns a line, for the reason `emptyDirs` gives
     // and one more. That same collapsed parent is listed beside the pattern that
     // matched inside it — `.claude/` and `.claude/worktrees/` are one directory
@@ -311,7 +327,7 @@ function scan(root) {
         .filter(Boolean)
         .sort((a, b) => b.bytes - a.bytes);
 
-    return { repo: true, branch, undecided, worktrees, inUse, dirty, weight, empty, orphans };
+    return { repo: true, branch, undecided, worktrees, inUse, dirty, agentSpent, agentUnmerged, weight, empty, orphans };
 }
 
 
@@ -319,7 +335,7 @@ function scan(root) {
 // has an exit code that means nothing, and the weight of a build directory is a
 // fact about the project rather than a fault in it.
 function defects(result) {
-    return result.undecided.length + result.worktrees.length + result.orphans.length;
+    return result.undecided.length + result.worktrees.length + result.agentSpent.length + result.orphans.length;
 }
 
 function report(result) {
@@ -338,6 +354,10 @@ function report(result) {
         lines.push(...section(plural(result.inUse.length, 'worktree is', 'worktrees are')
             + ' in use by a live task, merged or not:',
             result.inUse.map((w) => w.path + '  (' + w.branch + ')')));
+        lines.push(...section(plural(result.agentSpent.length, 'spent agent branch has', 'spent agent branches have')
+            + ' no worktree and nothing ' + result.branch + ' lacks — `git branch -D` clears each:', result.agentSpent));
+        lines.push(...section(plural(result.agentUnmerged.length, 'agent branch is', 'agent branches are')
+            + ' holding commits HEAD lacks — a human call, not a default cleanup:', result.agentUnmerged));
     } else {
         lines.push('fankeel residue — not a git repository.',
             'What is committed and what is ignored are what three of the five sections',
@@ -362,7 +382,7 @@ function report(result) {
             ? 'Nothing undecided and no spent worktrees, and every environment can be rebuilt.'
             : 'Every environment here can be rebuilt and run.');
     }
-    lines.push('', 'Undecided paths, merged worktrees and orphaned environments are defects:');
+    lines.push('', 'Undecided paths, merged worktrees, spent agent branches and orphaned environments are defects:');
     lines.push('somebody has to commit, ignore, rebuild or delete each one. Weight and empty');
     lines.push('directories are context. Nothing here is deleted by this command — the audit');
     lines.push('gate offers the cleanup.');
