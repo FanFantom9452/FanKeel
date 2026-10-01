@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # TODO 盤點四筆 Ready Implementation Plan

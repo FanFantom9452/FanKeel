@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # TODO 全表盤點：Blocked 蓋章、stage-agents 前提、〔await〕實跑觀察 Implementation Plan

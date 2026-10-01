@@ -195,10 +195,12 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | TODO 全表盤點（10-01）的 design：退回 build 的 brain 自己寫 gate、主控用標題轉述且 await 不疊、`suggest` 推 `class.default`、STATION 改成宣傳片風格並保留經典樣式 | [plans/2026-10-01-todo-sweep-design.md](90-agent/plans/2026-10-01-todo-sweep-design.md) — *design-intent, 繁體中文* |
 | 那份設計的十個 task | [plans/2026-10-01-todo-sweep.md](90-agent/plans/2026-10-01-todo-sweep.md) — *design-intent, 繁體中文* |
 | 10-01 盤點四件 do-now（commit-3 改 warn、關 data、試 knip 6.39.0、重量 station-8）的 plan，以及盤點列出 `TODO.md` 全表、主控在 gate 前印出全表 | [plans/2026-10-01-patrol-four.md](90-agent/plans/2026-10-01-patrol-four.md) — *design-intent, 繁體中文* |
-| tune 小助手（10-01）的 plan：右下 fankeel logo 可拖曳、展開後多則修改項一起送出、`items` 酬載與 `done` 以聯集判越界，取代 Alt 圈選 | [99-archive/2026-10-01-tune-assistant.md](99-archive/2026-10-01-tune-assistant.md) — *built, 繁體中文* |
+| TODO 盤點四筆 Ready（10-01）的 plan：await-5 舊 waiter 擋新 brain、brief-2 brain 沒讀存成檔的 brief、gate-4 第一題兩選項也放行、tune-2 overlay 三個存活變異 | `docs/99-archive/2026-10-01-ready-four.md` — *built, 繁體中文* |
+| TODO 全表盤點（10-01）的 plan：Blocked 群組與九個 stage-agents 條目重新蓋章、改 stage-agents-1 過時前提、〔await〕實跑觀察 | `docs/99-archive/2026-10-01-todo-stamps.md` — *built, 繁體中文* |
+| tune 小助手（10-01）的 plan：右下 fankeel logo 可拖曳、展開後多則修改項一起送出、`items` 酬載與 `done` 以聯集判越界，取代 Alt 圈選 | `docs/99-archive/2026-10-01-tune-assistant.md` — *built, 繁體中文* |
 | tune 小助手（10-01）：overlay 由 Alt 點選改成右下角可拖曳 logo，展開後多則修改項一次 POST `items`，伺服器收成一筆 request，`done` 以區塊聯集判越界；真實瀏覽器渲染未看過 | [decisions/2026-10-01-tune-assistant.md](03-decisions/2026-10-01-tune-assistant.md) — *繁體中文* |
-| STATION 版面重排（10-01）的 design：總覽兩欄與狀態頁首、sessions／session／現在換片中頁首、專案頁 TODO 收成摘要列加最新 3 筆、主題鈕進 mast、只留 keel | [99-archive/2026-10-01-station-layout-design.md](99-archive/2026-10-01-station-layout-design.md) — *built, 繁體中文* |
-| 那份設計的 task | [99-archive/2026-10-01-station-layout.md](99-archive/2026-10-01-station-layout.md) — *built, 繁體中文* |
+| STATION 版面重排（10-01）的 design：總覽兩欄與狀態頁首、sessions／session／現在換片中頁首、專案頁 TODO 收成摘要列加最新 3 筆、主題鈕進 mast、只留 keel | `docs/99-archive/2026-10-01-station-layout-design.md` — *built, 繁體中文* |
+| 那份設計的 task | `docs/99-archive/2026-10-01-station-layout.md` — *built, 繁體中文* |
 | 盤點併入 Ready（09-30）：開場不再單列 `## Ready`，「TODO 全表盤點」固定走 `survey,plan,build,verify,land`、盤完直接做；todo-3 以 station 已有的已完成區塊結案 | [decisions/2026-09-30-patrol-takes-ready.md](03-decisions/2026-09-30-patrol-takes-ready.md) — *繁體中文* |
 | 那份設計 | `docs/99-archive/2026-09-30-patrol-takes-ready-design.md` — *built* |
 | 落地它的 5 個 task | `docs/99-archive/2026-09-30-patrol-takes-ready.md` — *built* |

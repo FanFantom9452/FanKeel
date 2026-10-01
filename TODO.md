@@ -10,6 +10,14 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 ## Needs a decision
 
+- 〔json〕lib/json.js 加 readObject，取代約 23 處 JSON.parse(readFileSync)（registry.js:145、agentfile.js:37、serve.js:28、station.js:63、handoff.js），net 約 -92；先逐一核對各處 fallback 值。 — [registry.js](lib/registry.js).
+
+- 〔sessions〕10-01 audit：全檔 183 行加 tests/sessions.test.js，唯一 code 呼叫者是自己的測試，但它是帶 shebang 的 CLI，人可以手動跑；09-11 todo-split 記為 promote it 仍未定案。刪之前先確認使用者是否手動使用。 — [sessions.js](scripts/sessions.js).
+
+- 〔station〕10-01 audit：assets/station/station.js 約 2040-2045 的 WIZ_FE_NO、WIZ_FE_YES 兩個 SVG 常數無引用（adversary 確認）；刪除前再 grep 一次。 — [station.js](assets/station/station.js).
+
+- 〔tour〕10-01 audit：assets/station/tour-ring.js:765-910 約 146 行，加 tour-record.js 的 NAMES、OLD_NAMES、usage 與 v4 測試；v4 是 09-29 決定留下的封存版本，audit 未核對該決定，是判斷題。 — [tour-ring.js](assets/station/tour-ring.js).
+
 ## Blocked
 
 ### fankeel 功能全部完成
