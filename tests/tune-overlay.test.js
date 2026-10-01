@@ -1,8 +1,13 @@
 'use strict';
-// assets/tune/overlay.js runs in a browser that this suite does not have, so
-// what is checked here is what can be checked without one: it parses, it
-// talks to the endpoints scripts/tune.js serves, and scripts/tune.js serves
-// it. What it looks like is the render reviewer's question, at verify.
+// assets/tune/overlay.js has two halves. The pure helpers (itemsOf, clampTo,
+// selectorOf...) are called directly. The DOM half is EXECUTED here against a
+// small hand-written stub document (no jsdom): the logo's drag and click, the
+// tray, the per-item notes, 全部送出, and the capture-phase swallowing while
+// picking are driven by dispatching events through the listeners the script
+// registered. Still not checked: a real browser, real hit-testing, layout,
+// pointer capture, focus, or how it looks. That is the render reviewer's
+// question, at verify. What stays as a text check is wording and endpoint
+// names only.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -67,33 +72,13 @@ test('toggleIn adds an element once and a second toggle removes it', () => {
     assert.deepEqual(toggleIn([a, b], a), [b]);
 });
 
-test('a click reaches the page: the click and wheel handlers return first unless the assistant is picking, and Alt is gone', () => {
-    const text = fs.readFileSync(SRC, 'utf8');
-    assert.match(text, /addEventListener\('click', function \(ev\) \{\s*if \(picking < 0\) return;/);
-    assert.match(text, /addEventListener\('wheel', function \(ev\) \{\s*if \(picking < 0/);
-    assert.ok(!text.includes('altKey'), 'an Alt handler is still there');
-    assert.ok(!text.includes('fk-live-toggle') && !text.includes('fk-live-off'), 'the live toggle is still there');
-});
-
-test('the assistant carries the words the approved mockup shows, the station glyph, and remembers where it was dragged', () => {
+test('the assistant carries the words the approved mockup shows, and the station glyph', () => {
     const text = fs.readFileSync(SRC, 'utf8');
     for (const s of ['修改項', '新增一則', '收合', '刪除這則', '塊共用一段備註，要怎麼改？', '圈選第 ', '往外一層', '或滾輪：上 往外，下 往內', '完成這則', '全部送出（', '清空', '則待送', '按住拖曳']) {
         assert.ok(text.includes(s), 'overlay.js is missing ' + s);
     }
-    assert.match(text, /localStorage\.setItem\(POS/);
-    assert.match(text, /sessionStorage\.setItem\(SAVE/);
-    assert.match(text, /setPointerCapture/);
     assert.ok(text.includes('M60.00 39.00L78.19 49.50L78.19 70.50L60.00 81.00L41.81 70.50L41.81 49.50Z'), 'the logo is not the station glyph');
     assert.ok(!/class="g(seg|edge|core)"/.test(text), 'a glyph class without the fk-live- prefix picks up the page\'s own .gseg rules');
-});
-
-test('the request is one POST of every item, each element described by block, selector, classes and text', () => {
-    const text = fs.readFileSync(SRC, 'utf8');
-    assert.match(text, /var payload = \{ page: location\.pathname, items: itemsOf\(/);
-    const desc = /function describe\(node\) \{[\s\S]*?\n    \}/.exec(text);
-    assert.ok(desc, 'no describe()');
-    for (const k of ['block:', 'selector:', 'classes:', 'text:']) assert.ok(desc[0].includes(k), 'describe() has no ' + k);
-    assert.match(desc[0], /\.slice\(0, 80\)/);
 });
 
 test('itemsOf keeps drafts with a note and an element, the first element on the item, every block once', () => {
@@ -117,11 +102,6 @@ test('clampTo keeps the logo inside the viewport', () => {
     assert.deepEqual(clampTo(600, 300, 48, 48, 1280, 800), { x: 600, y: 300 });
 });
 
-test('the capture loop swallows auxclick whatever its button', () => {
-    const text = fs.readFileSync(SRC, 'utf8');
-    assert.ok(text.includes("type !== 'auxclick' && ev.button !== 0"), 'the button check must exempt auxclick');
-});
-
 test('the header says the button goes out only and the wheel goes both ways', () => {
     const head = fs.readFileSync(SRC, 'utf8').split('\n').slice(0, 12).join('\n');
     assert.ok(head.includes('(out only)') && head.includes('the wheel goes both ways'), 'header must say the button is out only');
@@ -137,4 +117,317 @@ test('the design and build skills and the mockup agent describe the assistant an
         assert.match(text, /`items`/, p + ' does not name the items field');
     }
     assert.match(read('agents/fankeel-mockup.md'), /A request with `items` is several changes sent together/);
+});
+
+// ---- The DOM half, executed against a hand-written stub document. ----------
+// OVERLAY_SRC lets a mutated copy of overlay.js be run through the same tests.
+const DOM_SRC = process.env.OVERLAY_SRC || SRC;
+
+function makeEl(doc, tag) {
+    const e = {
+        nodeType: 1, tagName: String(tag).toUpperCase(), id: '', children: [], parentNode: null,
+        style: {}, hidden: false, disabled: false, value: '', _text: '', _attrs: {}, _on: {},
+        rect: { left: 0, top: 0, width: 0, height: 0 }, offsetHeight: 0,
+    };
+    const cl = [];
+    cl.add = (c) => { if (!cl.includes(c)) cl.push(c); };
+    cl.remove = (c) => { const i = cl.indexOf(c); if (i >= 0) cl.splice(i, 1); };
+    cl.contains = (c) => cl.includes(c);
+    cl.toggle = (c, force) => { const on = force === undefined ? !cl.includes(c) : !!force; if (on) cl.add(c); else cl.remove(c); return on; };
+    e.classList = cl;
+    Object.defineProperty(e, 'className', {
+        get: () => cl.join(' '),
+        set: (v) => { cl.length = 0; String(v).split(/\s+/).filter(Boolean).forEach((c) => cl.push(c)); },
+    });
+    Object.defineProperty(e, 'textContent', {
+        get: () => e._text + e.children.map((k) => k.textContent).join(''),
+        set: (v) => { e.children.length = 0; e._text = String(v); },
+    });
+    Object.defineProperty(e, 'innerHTML', {
+        get: () => '',
+        set: (html) => {
+            e.children.length = 0; e._text = '';
+            const stack = [e];
+            const re = /<(\/?)([a-zA-Z][\w-]*)([^>]*?)(\/?)>|([^<]+)/g;
+            let m;
+            while ((m = re.exec(String(html)))) {
+                const top = stack[stack.length - 1];
+                if (m[5] !== undefined) { top._text += m[5]; continue; }
+                if (m[1]) { if (stack.length > 1) stack.pop(); continue; }
+                const k = makeEl(doc, m[2]);
+                const ar = /([\w-]+)(?:="([^"]*)")?/g;
+                let a;
+                while ((a = ar.exec(m[3]))) {
+                    if (a[1] === 'class') k.className = a[2];
+                    else if (a[1] === 'hidden') k.hidden = true;
+                    else k.setAttribute(a[1], a[2] === undefined ? '' : a[2]);
+                }
+                k.parentNode = top; top.children.push(k);
+                if (!m[4]) stack.push(k);
+            }
+        },
+    });
+    e.setAttribute = (k, v) => { e._attrs[k] = String(v); };
+    e.getAttribute = (k) => (k in e._attrs ? e._attrs[k] : null);
+    e.hasAttribute = (k) => k in e._attrs;
+    e.appendChild = (k) => { if (k.parentNode) k.remove(); k.parentNode = e; e.children.push(k); return k; };
+    e.remove = () => { if (e.parentNode) { e.parentNode.children.splice(e.parentNode.children.indexOf(e), 1); e.parentNode = null; } };
+    e.contains = (n) => { for (; n; n = n.parentNode) if (n === e) return true; return false; };
+    e.getBoundingClientRect = () => e.rect;
+    e.focus = () => { doc.activeElement = e; };
+    e.setPointerCapture = () => {};
+    e.addEventListener = (type, fn, opts) => {
+        const capture = opts === true || !!(opts && opts.capture);
+        (e._on[type] = e._on[type] || []).push({ fn, capture });
+    };
+    const match = (sel) => {
+        const m = /^(\w+)?((?:\.[\w-]+)*)(?:\[data-block="(.*)"\])?$/.exec(sel);
+        if (!m) return () => false;
+        return (n) => (!m[1] || n.tagName === m[1].toUpperCase())
+            && m[2].split('.').filter(Boolean).every((c) => n.classList.includes(c))
+            && (m[3] === undefined || n.getAttribute('data-block') === m[3]);
+    };
+    e.querySelectorAll = (sel) => {
+        const ok = match(sel), out = [];
+        (function walk(n) { for (const k of n.children) { if (ok(k)) out.push(k); walk(k); } }(e));
+        return out;
+    };
+    e.querySelector = (sel) => e.querySelectorAll(sel)[0] || null;
+    return e;
+}
+
+// Loads overlay.js into a fresh stub page: a 1280x800 viewport, a body with
+// three page blocks, and a recording fetch, localStorage and listener table.
+function loadOverlay() {
+    const doc = { nodeType: 9, parentNode: null, _on: {}, activeElement: null };
+    const win = { _on: {}, scrollX: 0, scrollY: 0, open() {} };
+    for (const o of [doc, win]) {
+        o.addEventListener = (type, fn, opts) => {
+            const capture = opts === true || !!(opts && opts.capture);
+            (o._on[type] = o._on[type] || []).push({ fn, capture });
+        };
+    }
+    doc.createElement = (t) => makeEl(doc, t);
+    doc.documentElement = makeEl(doc, 'html');
+    doc.documentElement.clientWidth = 1280;
+    doc.documentElement.clientHeight = 800;
+    doc.documentElement.parentNode = doc;
+    doc.head = doc.createElement('head');
+    doc.body = doc.createElement('body');
+    doc.documentElement.appendChild(doc.head);
+    doc.documentElement.appendChild(doc.body);
+    doc.querySelector = (sel) => doc.documentElement.querySelector(sel);
+    doc.all = (sel) => doc.documentElement.querySelectorAll(sel);
+    doc.contains = (n) => doc.documentElement.contains(n);
+    const page = {};
+    for (const [name, text] of [['hero', 'Welcome'], ['card', 'Card one'], ['foot', 'Footer']]) {
+        const p = doc.createElement('section');
+        p.className = name + '-c';
+        p.setAttribute('data-block', name);
+        p.textContent = text;
+        doc.body.appendChild(p);
+        page[name] = p;
+    }
+    const store = () => { const m = {}; return { m, getItem: (k) => (k in m ? m[k] : null), setItem: (k, v) => { m[k] = String(v); }, removeItem: (k) => { delete m[k]; } }; };
+    const sessionStorage = store(), localStorage = store();
+    const fetched = [];
+    const fetchStub = (url, init) => {
+        fetched.push({ url, init });
+        const body = url === '/__live/request' ? { id: 'r1' } : { pending: 0, editing: [] };
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(body), text: () => Promise.resolve('') });
+    };
+    function EventSource() {}
+    new Function('window', 'document', 'sessionStorage', 'localStorage', 'fetch', 'location', 'EventSource', 'setInterval', 'setTimeout',
+        fs.readFileSync(DOM_SRC, 'utf8'))(win, doc, sessionStorage, localStorage, fetchStub, { pathname: '/p.html', reload() {} }, EventSource, () => 0, () => 0);
+
+    // Capture pass window -> target's parent, then the target, then bubbling.
+    function fire(target, type, props) {
+        const ev = Object.assign({
+            type, target, button: 0, detail: 1, defaultPrevented: false, _stop: false, _stopNow: false,
+            preventDefault() { this.defaultPrevented = true; },
+            stopPropagation() { this._stop = true; },
+            stopImmediatePropagation() { this._stop = true; this._stopNow = true; },
+        }, props);
+        const chain = [];
+        for (let n = target; n; n = n.parentNode) chain.push(n);
+        chain.push(win);
+        const run = (n, capture) => {
+            for (const l of (n._on[type] || []).filter((x) => x.capture === capture)) { l.fn(ev); if (ev._stopNow) break; }
+        };
+        for (let i = chain.length - 1; i > 0 && !ev._stop; i--) run(chain[i], true);
+        if (!ev._stop) run(target, true);
+        if (!ev._stopNow) run(target, false);
+        for (let i = 1; i < chain.length && !ev._stop; i++) run(chain[i], false);
+        return ev;
+    }
+    const q = (sel) => doc.querySelector(sel);
+    const logo = q('.fk-live-logo');
+    const t = {
+        doc, win, page, fire, q, logo, fetched, localStorage, sessionStorage, tray: q('.fk-live-tray'), ast: q('.fk-live-ast'),
+        press: (x, y, id = 1) => fire(logo, 'pointerdown', { clientX: x, clientY: y, pointerId: id }),
+        move: (x, y, id = 1) => fire(logo, 'pointermove', { clientX: x, clientY: y, pointerId: id }),
+        release: (id = 1) => fire(logo, 'pointerup', { pointerId: id }),
+        tick: () => new Promise((r) => setImmediate(r)),
+    };
+    t.openTray = () => { t.press(5, 5); t.release(); };
+    // 新增一則, click each block, 完成這則, then write the note when given one.
+    t.draft = (blocks, note) => {
+        fire(q('.fk-live-add'), 'click');
+        for (const b of blocks) fire(page[b], 'click');
+        fire(q('.fk-live-fin'), 'click');
+        const areas = doc.all('textarea');
+        const area = areas[areas.length - 1];
+        if (note !== undefined) { area.value = note; fire(area, 'input'); }
+        return area;
+    };
+    return t;
+}
+
+test('dragging the logo moves it, clamps it inside the viewport, keeps the spot, and the click that ends a drag does not open the tray', () => {
+    const t = loadOverlay();
+    assert.equal(t.ast.style.left, '1216px');
+    assert.equal(t.ast.style.top, '736px');
+    t.press(1230, 750);
+    t.move(1231, 751);
+    assert.equal(t.ast.style.left, '1216px', 'a move under 5px is still a click');
+    t.move(930, 550);
+    assert.equal(t.ast.style.left, '916px');
+    assert.equal(t.ast.style.top, '536px');
+    assert.ok(t.logo.classList.contains('fk-live-drag'));
+    t.release();
+    assert.ok(!t.logo.classList.contains('fk-live-drag'));
+    assert.deepEqual(JSON.parse(t.localStorage.m['fk-live-ast-pos']), { x: 916, y: 536 });
+    t.fire(t.logo, 'click', { detail: 1 });
+    assert.equal(t.tray.hidden, true, 'the click that ends a drag opened the tray');
+    assert.equal(t.logo.getAttribute('aria-expanded'), 'false');
+    t.press(930, 550);
+    t.move(2930, 2550);
+    assert.equal(t.ast.style.left, '1232px');
+    assert.equal(t.ast.style.top, '752px');
+    t.release();
+    t.press(1240, 760);
+    t.move(-3000, -3000);
+    assert.equal(t.ast.style.left, '0px');
+    assert.equal(t.ast.style.top, '0px');
+    t.release();
+});
+
+test('a plain press and release of the logo toggles the tray and aria-expanded, once, and a keyboard click does too', () => {
+    const t = loadOverlay();
+    assert.equal(t.logo.getAttribute('aria-expanded'), 'false');
+    t.press(5, 5);
+    t.release();
+    t.fire(t.logo, 'click', { detail: 1 });
+    assert.equal(t.tray.hidden, false);
+    assert.equal(t.logo.getAttribute('aria-expanded'), 'true');
+    t.press(5, 5);
+    t.release();
+    t.fire(t.logo, 'click', { detail: 1 });
+    assert.equal(t.tray.hidden, true);
+    assert.equal(t.logo.getAttribute('aria-expanded'), 'false');
+    t.fire(t.logo, 'click', { detail: 0 });
+    assert.equal(t.logo.getAttribute('aria-expanded'), 'true');
+    t.press(5, 5, 7);
+    t.release(8);
+    assert.equal(t.logo.getAttribute('aria-expanded'), 'true', 'another pointer\'s release must not toggle');
+});
+
+test('while picking, the capture listeners swallow the page\'s pointer and click events, never the overlay\'s own, and never when not picking', () => {
+    const TYPES = ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'dblclick', 'auxclick', 'click'];
+    const t = loadOverlay();
+    const seen = [];
+    for (const type of TYPES) t.page.hero.addEventListener(type, () => seen.push(type));
+    const own = [];
+    for (const type of TYPES) t.logo.addEventListener(type, () => own.push(type));
+
+    // Not picking: all of it is the page's, Alt or not.
+    for (const type of TYPES) {
+        const ev = t.fire(t.page.hero, type, { button: type === 'auxclick' ? 1 : 0, altKey: type === 'click' });
+        assert.equal(ev.defaultPrevented, false, type + ' prevented while not picking');
+    }
+    assert.deepEqual(seen, TYPES, 'the page missed an event while not picking');
+    assert.equal(t.q('.fk-live-badge').hidden, true, 'an Alt click picked something');
+
+    t.openTray();
+    t.fire(t.q('.fk-live-add'), 'click');
+    seen.length = 0;
+    for (const type of TYPES) {
+        const ev = t.fire(t.page.hero, type, { button: type === 'auxclick' ? 2 : 0 });
+        assert.equal(ev._stopNow, true, type + ' reached the page while picking');
+        assert.equal(ev.defaultPrevented, type === 'mousedown' || type === 'click', type + ' preventDefault');
+    }
+    assert.deepEqual(seen, [], 'the page saw ' + seen);
+    assert.equal(t.fire(t.page.hero, 'pointerdown', { button: 2 })._stopNow, false, 'a right-button press is not the assistant\'s');
+
+    // The overlay's own elements are never swallowed.
+    own.length = 0;
+    for (const type of TYPES) {
+        const ev = t.fire(t.logo, type, { button: type === 'auxclick' ? 1 : 0 });
+        assert.equal(ev.defaultPrevented, false, type + ' on the logo was prevented');
+    }
+    assert.deepEqual(own, TYPES, 'the logo missed an event while picking');
+    assert.equal(t.fire(t.q('.fk-live-fin'), 'click').defaultPrevented, false);
+});
+
+test('while picking, a click on a page element picks it, a second click takes it back, and an Alt click is the same click', () => {
+    const t = loadOverlay();
+    t.openTray();
+    t.fire(t.q('.fk-live-add'), 'click');
+    const chips = () => t.doc.all('.fk-live-chip').length;
+    t.fire(t.page.hero, 'click');
+    assert.equal(chips(), 1);
+    t.fire(t.page.card, 'click', { altKey: true });
+    assert.equal(chips(), 2);
+    t.fire(t.page.hero, 'click');
+    assert.equal(chips(), 1);
+    t.fire(t.doc.body, 'click');
+    assert.equal(chips(), 1, 'the body is not pickable');
+});
+
+test('全部送出 posts every draft as items in one /__live/request, with no altKey', async () => {
+    const t = loadOverlay();
+    t.openTray();
+    t.draft(['hero'], ' first ');
+    t.draft(['card', 'foot'], 'second');
+    assert.equal(t.q('.fk-live-badge').textContent, '2');
+    assert.equal(t.q('.fk-live-all').textContent, '全部送出（2 則）');
+    t.fire(t.q('.fk-live-all'), 'click');
+    const posts = t.fetched.filter((f) => f.url === '/__live/request');
+    assert.equal(posts.length, 1);
+    assert.equal(posts[0].init.method, 'POST');
+    assert.ok(!/altKey/i.test(posts[0].init.body));
+    const body = JSON.parse(posts[0].init.body);
+    assert.equal(body.page, '/p.html');
+    assert.equal(body.items.length, 2);
+    assert.equal(body.items[0].note, 'first');
+    assert.equal(body.items[0].block, 'hero');
+    assert.equal(body.items[0].text, 'Welcome');
+    assert.deepEqual(body.items[0].classes, ['hero-c']);
+    assert.match(body.items[0].selector, /section:nth-of-type\(1\)$/);
+    assert.equal(body.items[1].note, 'second');
+    assert.deepEqual(body.items[1].blocks, ['card', 'foot']);
+    assert.equal(body.items[1].selectors.length, 2);
+    await t.tick();
+    assert.equal(t.q('.fk-live-badge').hidden, true, 'the sent drafts stayed');
+    assert.ok(t.fetched.indexOf(t.fetched.filter((f) => f.url === '/__live/queue').pop()) > t.fetched.indexOf(posts[0]), 'the queue was not read after sending');
+});
+
+test('a draft with an empty note blocks sending, names the draft, and sends once it is written', async () => {
+    const t = loadOverlay();
+    t.openTray();
+    t.draft(['hero'], 'ok');
+    const blank = t.draft(['card']);
+    t.fire(t.q('.fk-live-all'), 'click');
+    assert.equal(t.fetched.filter((f) => f.url === '/__live/request').length, 0, 'an empty note was sent');
+    assert.equal(t.q('.fk-live-queue').querySelector('span').textContent, '第 2 則還沒寫備註');
+    assert.ok(blank.classList.contains('fk-live-err'));
+    assert.equal(t.doc.activeElement, blank);
+    blank.value = 'now';
+    t.fire(blank, 'input');
+    assert.ok(!blank.classList.contains('fk-live-err'));
+    t.fire(t.q('.fk-live-all'), 'click');
+    const posts = t.fetched.filter((f) => f.url === '/__live/request');
+    assert.equal(posts.length, 1);
+    assert.equal(JSON.parse(posts[0].init.body).items.length, 2);
+    await t.tick();
 });
