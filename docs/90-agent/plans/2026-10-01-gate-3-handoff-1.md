@@ -5,7 +5,7 @@ status: design-intent
 # gate-3 與 handoff-1 Implementation Plan
 
 **Goal:** 重訪同一站時，gate 不再被同站前一輪的答案擋成 already answered（gate-3）；交接成為登記簿上的標記，`task.js show` 與新視窗把它排在最前面、帶任務名，接手仍要使用者確認（handoff-1）。
-**Architecture:** gate-3 只動 `hooks/gate.js` 的過濾：`answeredOf` 照舊回傳每站每輪（brief 仍把前一輪的答案當背景帶給 brain），repeat 檢查排除「正在做的這一站」的所有輪。handoff-1 在 `next` 旁多一個 `handoff` 時間戳：`task.js next --handoff` 寫入、不帶旗標的 `next` 收回、`adopt` 不帶過去；`registry.handoffOf()` 是唯一的讀法，`task.js show` 與 `hooks/carry.js`（matcher 加上 `startup`）都用它；技能與 `context:` 行的交接指示改成這個指令。
+**Architecture:** gate-3 只動 `hooks/gate.js` 的過濾：`answeredOf` 照舊回傳每站每輪（brief 仍把前一輪的答案當背景帶給 brain），repeat 檢查排除「正在做的這一站」的所有輪（Task 1）；使用者在 plan gate 選了連跨站近似一起修，所以再排除每個 gate 開頭的路由題、門檻改成自己的 `REPEAT_THRESHOLD` 0.8（Task 6）。handoff-1 在 `next` 旁多一個 `handoff` 時間戳：`task.js next --handoff` 寫入、不帶旗標的 `next` 收回、`adopt` 不帶過去；`registry.handoffOf()` 是唯一的讀法，`task.js show` 與 `hooks/carry.js`（matcher 加上 `startup`）都用它；技能與 `context:` 行的交接指示改成這個指令。
 **Tech Stack:** Node v24.9.0（CommonJS、`'use strict'`、只用內建模組——`package.json` 沒有 dependencies），`node --test`，fankeel 0.87.0。
 **Spec:** [survey.md](../../../.fankeel/build/task-20261001T093601/survey.md)
 
@@ -31,7 +31,7 @@ gate-3 的事證（本機量，`.fankeel/build/task-20260930T204318/`）：verif
 ## Risks
 
 - 主控的提問為何沒逐字對上 gate 不明 — Task 1 — fixture 用「檔案的 gate 沒有 `multiSelect`、主控的有」造出不相符，這只是構造方式，不是事故原因的斷言；測試第一條另外斷言 `gate not confirmed`，確認走的是 repeat 檢查之後的路徑，而不是 gate 無效被擋。
-- 跨站的近似仍在：build-6 的答案對 verify-5 的題目是 0.52，只差一點就會被當成重問 — Task 1 — 本計畫只修同站前一輪（TODO 寫的事故）；跨站的門檻留在報告裡交給使用者，不在這裡改。
+- 跨站的近似：build-6 的答案對 verify-5 的題目是 0.52。量過 `.fankeel/build/` 全部 278 個 gate 的第一題對它之前的所有答案：現行規則（0.5）65 個會被當重問；只排除同站前一輪 50 個；再排除每個 gate 的開頭路由題 20 個；路由題排除加 0.8 是 0 個。量測腳本 `.fankeel/build/task-20261001T093601/measure2.js`（沒套 `stale`，所以是上界） — Task 6 — 用最後那組；真正的重問是照抄（1.0），0.8 仍會擋，既有的 PALETTE 測試守住這點。
 - `--handoff` 是 `lib/argv.js` 不認得的布林旗標，在 verb 後第一個位置時會留在 positional — Task 2 — `cmdNext` 先把 `--handoff`、`--from-gate` 從 positional 濾掉；測試同時跑旗標在前與在後兩種寫法。
 - `hooks/carry.js` 加上 `startup` 後每個新 session 都會跑 — Task 4 — 只讀一次 `readActive`；沒有交接標記時 `startup` 什麼都不印，測試「startup 不提孤兒」守住這點。
 - `context:` 行變長約 40 字元 — Task 5 — 跑 `tests/render.test.js`、`tests/context.test.js`、`tests/resume.test.js`；`resume.test.js:107` 的 regex 停在 `hand off: set next`，新句保留這個開頭。
@@ -64,7 +64,7 @@ const VERIFY_GATE = [{ question: LAP_TWO, header: 'verify 結果', options: [{ l
 // for word, and its header is not the stage's name, so only the repeat check
 // stands between it and the user.
 const LAP_ASK = [Object.assign({}, VERIFY_GATE[0], { multiSelect: false })];
-function lapRoot(earlier) {
+function lapRoot(earlier, answered = LAP_ONE, questions = []) {
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'verify', started: '2026-09-19T09:30:12.345Z', route: ['build', 'verify', 'land'], moves: [['build', 1], ['verify', 2], ['build', 3], ['verify', 4]], configDir: tmp('fankeel-cfg-') });
   fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': 'build,verify' }));
@@ -72,7 +72,7 @@ function lapRoot(earlier) {
   fs.mkdirSync(dir, { recursive: true });
   const TICKS = '`'.repeat(3);
   fs.writeFileSync(path.join(dir, 'verify-2.md'), '# report\n\n' + TICKS + 'json gate\n' + JSON.stringify({ questions: VERIFY_GATE, next: 'n' }) + '\n' + TICKS + '\n');
-  fs.writeFileSync(path.join(dir, earlier + '-answer.md'), JSON.stringify({ questions: [], answers: { [LAP_ONE]: '回 build' } }));
+  fs.writeFileSync(path.join(dir, earlier + '-answer.md'), JSON.stringify({ questions, answers: { [answered]: '回 build' } }));
   return root;
 }
 
@@ -83,7 +83,7 @@ test('stage.agents: an earlier lap of the stage being worked does not block its 
 });
 
 test('guard: stage.agents: the same question answered at an earlier stage is still denied', () => {
-  const out = JSON.parse(run(GATE, lapRoot('build'), { tool_input: askOf(LAP_ASK) }));
+  const out = JSON.parse(run(GATE, lapRoot('build', LAP_TWO), { tool_input: askOf(LAP_ASK) }));
   assert.equal(out.hookSpecificOutput.permissionDecision, 'deny');
   assert.match(out.hookSpecificOutput.permissionDecisionReason, /already answered \(build\)/);
 });
@@ -633,14 +633,130 @@ docs(handoff): the hand-off option runs next --handoff, and Adopt goes first
 - tests/context.test.js: the line carries the command
 ```
 
-## Task 6: 關 gate-3 與 handoff-1
+## Task 6: 跨站近似——路由題不算已答，重問門檻 0.8
+
+**Files:**
+- Modify: `hooks/gate.js` — 新常數 `REPEAT_THRESHOLD`，`repeatOf` 改用它；repeat 過濾再排除 `lead`
+- Modify: `lib/handoff.js:123-155` — `answeredOf` 每筆多一個 `lead`
+- Modify: `docs/90-agent/reference/subagents.md` — 549 行 gate 列改寫括號裡那句
+- Test: `tests/gate.test.js`
+
+**Interfaces:**
+- Consumes: `gate-3` — Task 1（`LAP_ONE`、`LAP_TWO`、`LAP_ASK`、`lapRoot(earlier, answered = LAP_ONE, questions = [])` 都在 `tests/gate.test.js`，Task 1 加的）
+- Produces: `gate-repeat` — `answeredOf(root, data)` 的每筆多 `lead: boolean`（那個答案檔 `questions[0].question` 等於這題時為 true）；`hooks/gate.js` 的 `REPEAT_THRESHOLD = 0.8`。
+
+**Dispatch:** implementer, sonnet
+
+1. 在 `tests/gate.test.js` 中，Task 1 加的 `guard: stage.agents: the same question answered at an earlier stage is still denied` 之後加入：
+
+```js
+// The routing question a gate opens with is about that gate's moment; its
+// answer settles nothing a later gate asks.
+test('stage.agents: an earlier gate\'s routing question does not block a later one', () => {
+  const out = run(GATE, lapRoot('build', LAP_TWO, [{ question: LAP_TWO }]), { tool_input: askOf(LAP_ASK) });
+  assert.doesNotMatch(out, /already answered/);
+  assert.match(out, /gate not confirmed/);
+});
+
+// Two gates written in one house style share most of their characters: 0.70
+// here is two different questions, not one asked again.
+test('stage.agents: an earlier stage\'s question 0.70 alike is not a repeat', () => {
+  const out = run(GATE, lapRoot('build', LAP_ONE), { tool_input: askOf(LAP_ASK) });
+  assert.doesNotMatch(out, /already answered/);
+  assert.match(out, /gate not confirmed/);
+});
+```
+
+2. 跑，看兩個新測試都紅（今天兩者都被擋成 `already answered (build)`），其餘綠：
+
+```sh
+node --test tests/gate.test.js
+```
+
+3. 在 `lib/handoff.js` 的 `answeredOf` 裡，把：
+
+```js
+            const report = mtimeOf(handoffPath(root, data, stage, lap));
+            const stale = report !== null && report > at;
+            for (const [question, value] of Object.entries(answers)) {
+                out.push({ stage, question, answer: Array.isArray(value) ? value.join(', ') : String(value), stale });
+            }
+```
+
+   在 `lib/handoff.js` 換成：
+
+```js
+            const report = mtimeOf(handoffPath(root, data, stage, lap));
+            const stale = report !== null && report > at;
+            // The question the gate opened with: its routing question, about
+            // that gate's moment and nothing a later gate asks.
+            const head = Array.isArray(got.questions) && got.questions[0] && typeof got.questions[0].question === 'string'
+                ? got.questions[0].question : null;
+            for (const [question, value] of Object.entries(answers)) {
+                out.push({ stage, question, answer: Array.isArray(value) ? value.join(', ') : String(value), stale, lead: question === head });
+            }
+```
+
+   並在 `lib/handoff.js` 該函式上方註解的 `` `answers` object, contributes nothing. `` 之後接一句 ``// `lead` is true for the question the gate opened with (`questions[0]`).``（新的一行註解）。
+
+4. 在 `hooks/gate.js` 的 `const ATTEMPT_THRESHOLD = 0.5;` 之後加入：
+
+```js
+
+// How close a question has to be to one already answered to count as asking
+// it again. Higher than ATTEMPT_THRESHOLD: a re-ask is a copy of a settled
+// question, while two gates written in one house style share most of their
+// characters. Measured 2026-10-01 over the 278 gates in .fankeel/build: past
+// 0.5, 65 first questions read as repeats of an earlier answer; with each
+// gate's own opening question left out (`lead`) and 0.8, none did.
+const REPEAT_THRESHOLD = 0.8;
+```
+
+   在 `hooks/gate.js` 的 `repeatOf` 裡把 `charOverlap(text, a.question) > ATTEMPT_THRESHOLD` 換成 `charOverlap(text, a.question) > REPEAT_THRESHOLD`，並把它上方註解的 `judged by the same charOverlap and threshold the attempt check` 與下一行開頭 `// uses, or null.` 換成 `judged by charOverlap past REPEAT_THRESHOLD, or null.`（兩行併成一行或照原折行皆可）。
+
+5. 在 `hooks/gate.js`，把 Task 1 寫的這行：
+
+```js
+        try { answered = answeredOf(root, mine).filter((a) => !a.stale && a.stage !== mine.stage); } catch (e) { /* housekeeping */ }
+```
+
+   在 `hooks/gate.js` 換成：
+
+```js
+        // Nor is a gate's opening routing question (`lead`): it was about that
+        // gate's moment, and every later gate asks one like it.
+        try { answered = answeredOf(root, mine).filter((a) => !a.stale && !a.lead && a.stage !== mine.stage); } catch (e) { /* housekeeping */ }
+```
+
+6. 在 `docs/90-agent/reference/subagents.md` 把 Task 1 改成的 `(overlap past 0.5, stale answers and the stage's own earlier laps skipped)` 換成 `(overlap past 0.8, `REPEAT_THRESHOLD`; stale answers, the stage's own earlier laps and each gate's opening routing question skipped)`。
+
+7. 再跑，全綠——既有的 `a question the user already answered at an earlier gate is denied, naming the answer`（照抄的題目，重疊 1.0）必須仍綠：
+
+```sh
+node --test tests/gate.test.js tests/brief.test.js tests/handoff.test.js
+```
+
+8. 兩個 mutation，一次一個：(a) 刪掉第 5 步的 `!a.lead && `，跑 `tests/gate.test.js`，routing 那個測試要紅；還原。(b) 把 `REPEAT_THRESHOLD` 改回 `0.5`，0.70 那個測試要紅；還原。再跑一次全綠。三次輸出的最後 8 行貼進回報。
+
+9. 不 commit。回報要提交的路徑：`hooks/gate.js`、`lib/handoff.js`、`tests/gate.test.js`、`docs/90-agent/reference/subagents.md`；訊息：
+
+```text
+fix(gate): a gate's routing question settles nothing later, and a repeat must be 0.8 alike
+
+- lib/handoff.js: answeredOf marks the question a gate opened with as lead
+- hooks/gate.js: REPEAT_THRESHOLD 0.8, lead answers skipped; over 278 gates the old rule read 65 as repeats, this reads none
+- tests/gate.test.js: an earlier routing question and a 0.70-alike question both go out
+- docs/90-agent/reference/subagents.md: the gate row names the threshold and what is skipped
+```
+
+## Task 7: 關 gate-3 與 handoff-1
 
 **Files:**
 - Modify: `docs/90-agent/todo/gate-3.md` — `todo.js done`
 - Modify: `docs/90-agent/todo/handoff-1.md` — `todo.js done`
 
 **Interfaces:**
-- Consumes: `gate-3` — Task 1；`handoff-1` — Task 5（Task 5 本身在 Task 2、3 之後）
+- Consumes: `gate-3` — Task 1；`gate-repeat` — Task 6；`handoff-1` — Task 5（Task 5 本身在 Task 2、3 之後）
 - Produces: none
 
 **Dispatch:** implementer, sonnet
@@ -648,7 +764,7 @@ docs(handoff): the hand-off option runs next --handoff, and Adopt goes first
 1. 找出 Task 1 與 Task 5 在 HEAD 上的 commit，確認訊息對得上：
 
 ```sh
-G3=$(git log -1 --format=%H -- hooks/gate.js); git log -1 --format='%H %s' "$G3"
+G3=$(git log -1 --format=%H --grep='^fix(gate): an earlier lap'); git log -1 --format='%H %s' "$G3"
 H1=$(git log -1 --format=%H -- lib/context.js); git log -1 --format='%H %s' "$H1"
 ```
 
@@ -677,10 +793,11 @@ docs: close gate-3 and handoff-1
 
 | promise | task |
 |---|---|
-| gate-3：同一 task 第二次以後進 verify，gate 被擋成 already answered，拿的是前一輪 verify 的答案 | Task 1、Task 6 |
+| gate-3：同一 task 第二次以後進 verify，gate 被擋成 already answered，拿的是前一輪 verify 的答案 | Task 1、Task 7 |
+| 使用者 plan gate 指示：連跨站近似一起修（build-6 對 verify-5 重疊 0.52） | Task 6 |
 | handoff-1：交接選項只寫 next，新 session 分不出刻意交棒與廢棄 entry；加 handoff 標記 | Task 2 |
 | handoff-1：/fankeel 把 Adopt 排第一並帶任務名 | Task 3、Task 5 |
 | handoff-1：開窗提示 | Task 4 |
 | handoff-1：仍需確認 | Task 4（`Ask the user before adopting it.`）、Task 5（Adopt 列「never adopted unasked」） |
-| handoff-1 關條目 | Task 6 |
+| handoff-1 關條目 | Task 7 |
 | await-1：重裝後的真實 build close | struck — survey gate 選了只做 gate-3 與 handoff-1；await-1 等重裝 |
