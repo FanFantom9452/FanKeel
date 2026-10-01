@@ -365,6 +365,24 @@ test('a marker whose pid is gone is no waiter', async () => {
     assert.equal(fs.existsSync(path.join(f.task, 'build.md.await')), false);
 });
 
+// await-5: on 2026-10-01 a stopped brain's waiter outlived it, and every await
+// for the brain sent after it read `already awaiting <the old agent>` until the
+// old waiter happened on the new brain's handoff.
+test('a live marker held for another agent is no waiter for this one', async () => {
+    const f = fixture({ inflight: { stage: 'build', at: 1, agentId: 'a2' } });
+    at(path.join(f.task, 'build.md.await'), Date.now(), JSON.stringify({ pid: process.pid, agentId: 'a1' }));
+    at(path.join(f.task, 'build.md'), Date.now());
+    const out = await awaitCli.main(['--session', SID, '--root', f.root, '--timeout', '2'], f.env);
+    assert.match(out.text, /^handoff /, out.text);
+});
+
+test('a live marker held for this same agent is still a waiter', async () => {
+    const f = fixture({ inflight: { stage: 'build', at: 1, agentId: 'a1' } });
+    at(path.join(f.task, 'build.md.await'), Date.now(), JSON.stringify({ pid: process.pid, agentId: 'a1' }));
+    const out = await awaitCli.main(['--session', SID, '--root', f.root, '--timeout', '2'], f.env);
+    assert.match(out.text, /^already awaiting a1 /, out.text);
+});
+
 test('a stage agent starting stamps the lap its brief named on the in-flight mark', () => {
     const f = fixture({ moves: [['build', 1], ['build', 2]] });
     const r = spawnSync(process.execPath, [path.join(__dirname, '..', 'hooks', 'brief.js')], {

@@ -151,10 +151,15 @@ function alive(pid) {
     }
 }
 
-function holder(file) {
+// await-5: a marker held by a live waiter for another agent is no waiter for
+// this one. On 2026-10-01 a stopped brain's waiter outlived its brain, and every
+// await for the brain sent after it read `already awaiting <the old agent>`.
+// Either side with no agentId reads as it always did.
+function holder(file, agentId) {
     try {
         const m = JSON.parse(fs.readFileSync(file, 'utf8'));
-        return m && alive(m.pid) ? m : null;
+        if (!m || !alive(m.pid)) return null;
+        return m.agentId && agentId && m.agentId !== agentId ? null : m;
     } catch (e) {
         return null;
     }
@@ -166,7 +171,7 @@ function main(argv, env) {
     const o = waitFor(opts, env || process.env);
     if (o.error) return Promise.resolve({ text: 'await.js: ' + o.error, code: 1 });
     const marker = o.handoff + '.await';
-    const live = holder(marker);
+    const live = holder(marker, o.agentId);
     if (live) return Promise.resolve({ text: 'already awaiting ' + (live.agentId || o.agentId || '?') + ' — another await is waiting on this agent already: end your turn; its line will come.' });
     try {
         fs.mkdirSync(path.dirname(marker), { recursive: true });
