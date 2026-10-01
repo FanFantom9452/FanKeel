@@ -389,7 +389,16 @@ then asks this stage's gate.
      that listener's OWN event type: a keydown test on a selector does
      not cover the click branch with the same selector (a keydown test
      of `[data-gop]` does not cover the click branch
-     `closest('[data-gop]')`). (2026-10-01: verify's second return
+     `closest('[data-gop]')`). A hit counts only when the test presses
+     that selector through its listener's own event type AND asserts that
+     branch's effect: a probe that asserts the branch stays quiet — a test
+     aimed at another branch whose fixture merely includes this selector as
+     an unanswered or ignored key, or one asserting that nothing happened —
+     does not count. The reviewer must PRODUCE the selector-to-test table
+     in its return, not merely state that the rule holds: one row per
+     closest, matches and event name in the changed listener — the
+     selector, the test as `file:line`, the effect it asserts; a row with
+     no qualifying test is a finding. (2026-10-01: verify's second return
      to build listed ten such listeners; 2026-10-01: verify's fifth
      return found .fwrap, .pg input[name^="pg-"] and .tdf's [data-todo]
      with zero hits though the event names all had hits; 2026-10-01:
@@ -398,7 +407,10 @@ then asks this stage's gate.
      verify's seventh return found `closest('[data-gop]')` and
      `closest('[data-gho]')` untested — the review walked only the ten
      branches it was handed, and counted a keydown test on the same
-     selector as covering the click branch.)
+     selector as covering the click branch; 2026-10-01: verify's eighth
+     return found `[data-answer]` and `[data-tune-notify]` with hits only
+     in probes that assert the branch does not fire, and the rule had been
+     written but never applied to the listener it was written for.)
    Part 3 — every changed line traces to the task's text; the patterns
      already in the repository are followed. Then name the page this
      change makes false (a renamed export, a changed default, a removed
@@ -409,8 +421,11 @@ then asks this stage's gate.
    RETURN, and nothing else: one line per finding as `path:line — <the
    problem>`, most serious first, then Part 4's cuts and their `net:` line —
    or the single word `clean` when Parts 1-3 found nothing and Part 4 found
-   nothing to cut. Every line you return stays in a long-running parent
-   context for the rest of the session.
+   nothing to cut. Where the diff changes an event listener, the return
+   also carries that listener's selector table (Part 2's denominator),
+   one row per selector — its rows are evidence lines, not findings, and
+   only those selectors, nothing wider. Every line you return stays in a
+   long-running parent context for the rest of the session.
    ```
 
    Give it the brief path and the range — never a paste of the session's
