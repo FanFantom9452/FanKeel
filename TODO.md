@@ -39,7 +39,7 @@ upstream: 另一個專案 AI CODING SECURITY 定出共用的漏洞清單與掃�
 ### 受控 build/verify 實跑
 after: 跑過一次 stage.agents=all 的真實 task（main 含 08c4ecf、安裝版 0.80.0 兩半 09-28 已達成）. 09-30.
 
-- 〔stage-agents〕安裝版還沒這次改動、本 session 的 hook 也釘死在 0.74.0，都量不了：新 terminal 更新插件、`stage.agents` 設 all、跑真實 task，用 `ctx.js --by-stage` 與 `modelUsage` 讀 — [subagents.md](docs/90-agent/reference/subagents.md).
+- 〔stage-agents〕安裝版 10-01 已是 0.88.0、`stage.agents` 列了全部站，前提已達成；剩下的是拿一次真實 task 用 `ctx.js --by-stage` 與 `modelUsage` 讀各站 context — [subagents.md](docs/90-agent/reference/subagents.md).
 - 〔stage-agents〕design 站跨輪對話已寫（`lib/stages.js` 的 `controlFor`）但沒實跑；build 每個 task 的提交要經 controller 兩回合，省不省 context 由同一次實跑的 `ctx.js --by-stage` 讀 — [lib/stages.js](lib/stages.js).
 - 〔stage-agents〕接縫「站 agent 做不到的事」：受控 build 開跑時看 brain 在 main 上有沒有先問同意、開 worktree、加 TODO 行、續用同一個 implementer — [docs/subagents.md](docs/90-agent/reference/subagents.md).
 - 〔stage-agents〕接縫「第二個 agent」：gate 選 option one 以外、主控 SendMessage 同一個 agent 時看 `inflight` 是否已清；殺掉 agent 後看標記留多久 — [docs/subagents.md](docs/90-agent/reference/subagents.md).
