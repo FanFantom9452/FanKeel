@@ -3,8 +3,8 @@
 // assistant is the fankeel logo in the bottom-right corner: drag it anywhere
 // (the spot is kept in localStorage), click it to open the tray of drafted
 // changes. 新增一則 starts picking: a click on the page then toggles that
-// element in or out of the item, the wheel or 往外一層 walks out to its
-// parents and back, 完成這則 ends it and Esc throws the pick away. Each item
+// element in or out of the item, 往外一層 goes out to its parents (out only),
+// the wheel goes both ways, 完成這則 ends it and Esc throws the pick away. Each item
 // is one note for one or more elements; 全部送出 sends every item as one POST
 // /__live/request with `items`, which `tune.js wait` hands out as one job. The
 // drafts outlive a reload in sessionStorage. The server's events reload the
@@ -650,7 +650,7 @@
     // document-level listeners.
     ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'dblclick', 'auxclick'].forEach(function (type) {
         window.addEventListener(type, function (ev) {
-            if (picking < 0 || ev.button !== 0 || ours(ev.target)) return;
+            if (picking < 0 || (type !== 'auxclick' && ev.button !== 0) || ours(ev.target)) return;
             if (type === 'mousedown') ev.preventDefault();
             ev.stopImmediatePropagation();
         }, true);

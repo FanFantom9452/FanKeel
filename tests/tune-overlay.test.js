@@ -116,3 +116,13 @@ test('clampTo keeps the logo inside the viewport', () => {
     assert.deepEqual(clampTo(-20, 900, 48, 48, 1280, 800), { x: 0, y: 752 });
     assert.deepEqual(clampTo(600, 300, 48, 48, 1280, 800), { x: 600, y: 300 });
 });
+
+test('the capture loop swallows auxclick whatever its button', () => {
+    const text = fs.readFileSync(SRC, 'utf8');
+    assert.ok(text.includes("type !== 'auxclick' && ev.button !== 0"), 'the button check must exempt auxclick');
+});
+
+test('the header says the button goes out only and the wheel goes both ways', () => {
+    const head = fs.readFileSync(SRC, 'utf8').split('\n').slice(0, 12).join('\n');
+    assert.ok(head.includes('(out only)') && head.includes('the wheel goes both ways'), 'header must say the button is out only');
+});
