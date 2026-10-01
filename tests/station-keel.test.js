@@ -1,7 +1,6 @@
 'use strict';
 // The promo film's look (docs/90-agent/plans/2026-10-01-todo-sweep.md Task 6):
-// on by default under :root[data-style=keel], and the 2026-09 stylesheet one
-// attribute away.
+// the only look, under :root[data-style=keel].
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -15,18 +14,17 @@ test('the masthead carries its data-block', () => {
     assert.ok(html.includes('<header class="mast" data-block="mast">'));
 });
 
-test('the shell opens in the keel look and reads a classic choice before the body is drawn', () => {
+test('the shell opens in the keel look, and nothing in its head takes keel off', () => {
     assert.match(html, /<html lang="zh-Hant" data-style="keel">/);
     const head = html.slice(0, html.indexOf('<body>'));
-    assert.match(head, /localStorage\.getItem\('station\.style'\)==='classic'/);
-    assert.match(head, /document\.documentElement\.removeAttribute\('data-style'\)/);
+    assert.doesNotMatch(head, /station\.style|removeAttribute\('data-style'\)/);
 });
 
-test('the masthead carries the film glyph, the classic mark, and the 經典樣式 switch', () => {
+test('the masthead carries the film glyph and the appearance group, and no classic mark or switch', () => {
     assert.match(html, /<a class="brand" href="#\/" id="brand"[^>]*><svg class="glyph k-only mark b1" viewBox="0 0 120 120"/);
     assert.equal((html.match(/class="gseg done"/g) || []).length, 6);
-    assert.match(html, /<svg class="classic-mark c-only" viewBox="0 0 20 20"/);
-    assert.match(html, /<button type="button" class="styletog" id="styletog" data-block="style-classic" aria-pressed="false"/);
+    assert.doesNotMatch(html, /classic-mark|styletog|style-classic/);
+    assert.match(html, /<div class="appear" id="appear" role="group" aria-label="外觀"><\/div>\n<\/header>/);
 });
 
 test('every keel rule is scoped, classic parts hide in keel and keel parts hide in classic', () => {

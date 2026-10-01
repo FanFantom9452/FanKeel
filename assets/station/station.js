@@ -1432,11 +1432,19 @@
     // The three theme states the button at the foot of the bar cycles
     // through: [state, icon, what it says, the state a click moves to].
     var THEMES = { system: ['auto', loc('nav.themeSystem', '跟隨系統'), 'light'], light: ['sun', loc('nav.themeLight', '淺色'), 'dark'], dark: ['moon', loc('nav.themeDark', '深色'), 'system'] };
-    // `ui.shut` holds the `fold` keys the reader collapsed; `ui.theme` is one
-    // of THEMES. A category with `fold` is one button, the whole row, that only
+    // The theme button, in the masthead's `#appear` since the 2026-10-01
+    // layout (r-0034): one press steps 跟隨系統 → 淺色 → 深色; its icon and
+    // title name the theme now and the next one.
+    function themeBtnHtml(theme) {
+        var t = THEMES[THEMES[theme] ? theme : 'system'];
+        return '<button type="button" class="themebtn" data-themecycle="' + t[2] + '"'
+            + ' title="' + loc('nav.themeTitle', '主題：{cur}（按一下換{next}）', { cur: t[1], next: THEMES[t[2]][1] }) + '" aria-label="' + loc('nav.themeAriaLabel', '主題：{cur}，按一下換{next}', { cur: t[1], next: THEMES[t[2]][1] }) + '">'
+            + icon(t[0]) + '</button>';
+    }
+    // `ui.shut` holds the `fold` keys the reader collapsed. A category with `fold` is one button, the whole row, that only
     // opens and shuts; its kids do the navigating. The chevron shows which.
     function navHtml(active, c, ui) {
-        var on = navOn(active), shut = (ui && ui.shut) || {}, th = THEMES[ui && ui.theme] ? ui.theme : 'system';
+        var on = navOn(active), shut = (ui && ui.shut) || {};
         // Each badge sits on the page whose rows it counts.
         var badges = { now: null, live: [c.live + ' live', c.live ? 'live' : ''], days: [usd(c.usd)], sessions: [c.sessions],
             projects: [c.projects], docs: [c.docs] };
@@ -1445,7 +1453,6 @@
             return '<a href="' + href + '"' + (on === v ? ' aria-current="page"' : '') + (title ? ' title="' + esc(title) + '"' : '') + '>' + inner
                 + (b ? '<span class="nb' + (b[1] ? ' ' + b[1] : '') + '">' + b[0] + '</span>' : '') + '</a>';
         };
-        var t = THEMES[th];
         return '<nav class="sidenav" data-block="nav" aria-label="' + loc('nav.functions', '功能') + '"><ul>' + NAV_TREE.map(function (g) {
             if (!g.kids) {
                 return '<li class="navcat"' + (g.block ? ' data-block="' + g.block + '"' : '') + '>'
@@ -1460,9 +1467,7 @@
                     + ' aria-controls="navkids-' + g.fold + '" aria-expanded="' + !closed + '">' + icon(g.ico) + '<span>' + g.label + '</span>'
                     + '<span class="navchev">' + icon('chev') + '</span></button>'
                     : '<a class="navhd" href="' + g.kids[0][1] + '">' + icon(g.ico) + '<span>' + g.label + '</span></a>') + (g.fold ? '<div class="navwrap">' + kids + '</div>' : kids) + '</li>';
-        }).join('') + '</ul><div class="navfoot"><button type="button" class="themebtn" data-themecycle="' + t[2] + '"'
-            + ' title="' + loc('nav.themeTitle', '主題：{cur}（按一下換{next}）', { cur: t[1], next: THEMES[t[2]][1] }) + '" aria-label="' + loc('nav.themeAriaLabel', '主題：{cur}，按一下換{next}', { cur: t[1], next: THEMES[t[2]][1] }) + '">'
-            + icon(t[0]) + '</button></div></nav>';
+        }).join('') + '</ul></nav>';
     }
     // The tab strip under a Sessions or 花費 page's header: its category's
     // kids, the current one marked. Empty for a page with no siblings.
@@ -4598,13 +4603,23 @@
         var g = navGroup(navOn(route.view)), fold = g && g.fold || null;
         if (fold && fold !== navFold && navShut[fold]) { delete navShut[fold]; navSave(); }
         navFold = fold;
-        // A redraw under a focused chevron or theme button keeps the focus.
+        // A redraw under a focused chevron keeps the focus.
         var a = doc.activeElement && doc.activeElement.getAttribute ? doc.activeElement : null;
-        var keep = a && a.hasAttribute('data-navfold') ? '[data-navfold="' + a.getAttribute('data-navfold') + '"]'
-            : a && a.hasAttribute('data-themecycle') ? '[data-themecycle]' : null;
-        doc.getElementById('nav').innerHTML = navHtml(route.view, navCounts(homeRows(), S.projects, DAYS),
-            { shut: navShut, theme: stored('station.theme') });
+        var keep = a && a.hasAttribute('data-navfold') ? '[data-navfold="' + a.getAttribute('data-navfold') + '"]' : null;
+        doc.getElementById('nav').innerHTML = navHtml(route.view, navCounts(homeRows(), S.projects, DAYS), { shut: navShut });
         var back = keep && doc.querySelector ? doc.querySelector('#nav ' + keep) : null;
+        if (back) back.focus();
+        drawTheme();
+    }
+    // The masthead's theme button: drawn with the bar, and again on its own
+    // press. A redraw under the focused button keeps the focus.
+    function drawTheme() {
+        var box = doc.getElementById('appear');
+        if (!box) return;
+        var a = doc.activeElement && doc.activeElement.getAttribute ? doc.activeElement : null;
+        var had = Boolean(a && a.hasAttribute('data-themecycle'));
+        box.innerHTML = themeBtnHtml(stored('station.theme'));
+        var back = had && box.querySelector ? box.querySelector('[data-themecycle]') : null;
         if (back) back.focus();
     }
     // Folding changes the class on the row already drawn rather than
@@ -4619,7 +4634,7 @@
         if (b) b.setAttribute('aria-expanded', String(!closed));
     }
     doc.addEventListener('click', function (e) {
-        var n = e.target.closest ? e.target.closest('#nav [data-navfold], #nav [data-themecycle]') : null;
+        var n = e.target.closest ? e.target.closest('#nav [data-navfold], [data-themecycle]') : null;
         if (!n) return;
         if (n.hasAttribute('data-navfold')) {
             var fold = n.getAttribute('data-navfold');
@@ -4629,7 +4644,7 @@
         var t = n.getAttribute('data-themecycle');
         store('station.theme', t === 'system' ? null : t);
         themeSet(t);
-        drawNav();
+        drawTheme();
     });
     // 概覽's stage mark. Set from the bar, the table, the timeline or 派工's
     // chips; a second press on the same stage clears it. Keyed to the session

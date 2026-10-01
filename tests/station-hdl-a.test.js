@@ -116,7 +116,7 @@ test('tdmore: a click whose target has no closest does not throw', () => {
 });
 
 // ---- #nav fold and theme -------------------------------------------------
-const NAV = "'#nav [data-navfold], #nav [data-themecycle]'";
+const NAV = "'#nav [data-navfold], [data-themecycle]'";
 const SHUT = { 'station.nav.collapsed': '{"sessions":true}' };
 const navBtn = (attrs) => ({ attrs, getAttribute(k) { return k in this.attrs ? this.attrs[k] : null; }, hasAttribute(k) { return k in this.attrs; },
     setAttribute(k, v) { this.attrs[k] = String(v); } });
@@ -127,9 +127,9 @@ function foldRig(p, o) {
     const li = { shut: !!o.liShut, classList: { toggle(c, f) { li.shut = f === undefined ? !li.shut : !!f; return li.shut; } },
         querySelector: (sel) => (sel === '[data-navfold]' && !o.noBtn ? btn : null) };
     p.qs = (sel) => (sel === '#nav [data-fold="sessions"]' && !o.noLi ? li : null);
-    return { btn, li, press: () => fire(pick(p, 'click', NAV), tgt({ '#nav [data-navfold], #nav [data-themecycle]': btn })) };
+    return { btn, li, press: () => fire(pick(p, 'click', NAV), tgt({ '#nav [data-navfold], [data-themecycle]': btn })) };
 }
-const themePress = (p, v) => fire(pick(p, 'click', NAV), tgt({ '#nav [data-navfold], #nav [data-themecycle]': navBtn({ 'data-themecycle': v }) }));
+const themePress = (p, v) => fire(pick(p, 'click', NAV), tgt({ '#nav [data-navfold], [data-themecycle]': navBtn({ 'data-themecycle': v }) }));
 const COLL = 'station.nav.collapsed';
 
 test('nav fold: shutting a fold stores it in station.nav.collapsed', () => {
@@ -255,12 +255,12 @@ test('nav theme: the page takes the theme at once, and system takes the attribut
     assert.equal('data-theme' in p.root.attrs, false);
 });
 
-test('nav theme: the bar is redrawn so the button names the next theme', () => {
+test('nav theme: the masthead button is redrawn so it names the next theme, and the bar is left alone', () => {
     const p = boot();
-    const before = p.els.nav.innerHTML;
+    p.els.nav.innerHTML = 'SENTINEL';
     themePress(p, 'light');
-    assert.notEqual(p.els.nav.innerHTML, before);
-    assert.match(p.els.nav.innerHTML, /data-themecycle=/);
+    assert.match(p.els.appear.innerHTML, /data-themecycle="dark"/);
+    assert.equal(p.els.nav.innerHTML, 'SENTINEL');
 });
 
 test('nav: a click off the bar, or with no closest, changes nothing and does not throw', () => {
