@@ -130,19 +130,25 @@ whatever the value.
 Then the path goes on the `spec:` line, and option one's description points at
 the page. The gate approves the page, not the paragraph.
 
-**Before the gate, the page can be tuned one block at a time.** The url the
+**Before the gate, the page can be tuned block by block.** The url the
 agent returned is already a `tune.js serve`, overlay and all; give the user
-that url: a plain click still reaches the page, holding Alt
-outlines the element under the pointer, Alt+wheel walks out to its parents,
-and Alt+click opens a panel for what to change. List what you see, block by
+that url: a click reaches the page until the fankeel logo in the
+bottom-right corner asks for one. The logo drags anywhere and opens a tray
+on a click; 新增一則 starts an item, and while it picks, a click on the page
+adds an element or takes it back out, the wheel or 往外一層 walks out to its
+parents, and Esc drops the pick. Each item is one or more elements under one
+note, and 全部送出 sends every item as one request. List what you see, block by
 block, before asking which one
 to change — a list is easier to answer than an empty question. Then loop:
-`node <plugin>/scripts/tune.js wait` prints the next request as JSON;
+`node <plugin>/scripts/tune.js wait` prints the next request as JSON, with
+`items`, one entry per item carrying its own `note`, `block` and, for several
+elements, `blocks`;
 dispatch one `subagent_type: fankeel:fankeel-mockup` — no model, the same
 rule as above — to rewrite only the
-element carrying that `data-block` in the file it names; then
-`node <plugin>/scripts/tune.js done <id>`. Either way the page reloads — a
-kept edit flashes its block, a stray one is put back and the page marks the
+elements carrying those `data-block` names in the file it names; then
+`node <plugin>/scripts/tune.js done <id>`, which holds the edit to every
+item's blocks at once. Either way the page reloads — a
+kept edit flashes its blocks, a stray one is put back and the page marks the
 blocks it touched. In this form the page is static HTML: a block has to be
 written literally in the served file.
 

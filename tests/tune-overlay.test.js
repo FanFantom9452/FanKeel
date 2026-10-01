@@ -126,3 +126,15 @@ test('the header says the button goes out only and the wheel goes both ways', ()
     const head = fs.readFileSync(SRC, 'utf8').split('\n').slice(0, 12).join('\n');
     assert.ok(head.includes('(out only)') && head.includes('the wheel goes both ways'), 'header must say the button is out only');
 });
+
+test('the design and build skills and the mockup agent describe the assistant and items, not Alt', () => {
+    const read = (p) => fs.readFileSync(path.join(__dirname, '..', p), 'utf8').replace(/\s+/g, ' ');
+    for (const p of ['skills/fankeel-design/SKILL.md', 'skills/fankeel-build/SKILL.md']) {
+        const text = read(p);
+        assert.doesNotMatch(text, /Alt\+click|Alt\+wheel|holding Alt/, p + ' still describes the Alt overlay');
+        assert.match(text, /fankeel logo/, p + ' does not name the assistant');
+        assert.match(text, /全部送出/, p + ' does not say how the items are sent');
+        assert.match(text, /`items`/, p + ' does not name the items field');
+    }
+    assert.match(read('agents/fankeel-mockup.md'), /A request with `items` is several changes sent together/);
+});

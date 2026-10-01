@@ -507,13 +507,15 @@ then asks this stage's gate.
    `node <plugin>/scripts/tune.js serve --proxy <the server's url> --src <the
    files that draw it>` — add `--rebuild "<cmd>"` only where the server does
    not read those files on every request — and the url it prints goes to the
-   user. Every route, form and poll on that page is the real one; a plain
-   click still reaches the page, and Alt+click picks any element, with
-   Alt+wheel walking out to its parents. Loop until the user says the page is
-   done: `node <plugin>/scripts/tune.js wait` prints the next request with the
-   element's `selector`, `classes` and `text`, and `sources`, up to ten
-   `file:line` places — its `data-block` first, then the lines naming its
-   classes; dispatch one `subagent_type: fankeel:fankeel-mockup` per request —
+   user. Every route, form and poll on that page is the real one; a click
+   still reaches the page until the fankeel logo in its bottom-right corner
+   asks for one — its tray drafts items, each one or more picked elements
+   under one note, and 全部送出 sends them all as one request. Loop until the
+   user says the page is done: `node <plugin>/scripts/tune.js wait` prints the
+   next request with the element's `selector`, `classes` and `text`, and
+   `sources`, up to ten `file:line` places — its `data-block` first, then the
+   lines naming its classes — and `items`, those fields and `sources` for
+   every item; dispatch one `subagent_type: fankeel:fankeel-mockup` per request —
    no model unless `design.mockup` names one other than opus — to
    change the source there and nothing else; then
    `node <plugin>/scripts/tune.js done <id>`, which puts back and refuses an
