@@ -378,11 +378,17 @@ then asks this stage's gate.
      each one's event name or selector string — a test that reaches a
      data- branch through its dataset key (data-ask tested as
      dataset.ask) counts as reached — and count a zero-hit one as a
-     gap — a mutation run over only the handlers you were given cannot
+     gap; a counted hit must be a press key (a test passing the
+     selector as a key to a press harness) or a `closest` stub that
+     actually dispatches the event, and a hit only in a render or view
+     test (the selector string in HTML fixtures or assertions on
+     rendered markup) is no coverage, so the selector stays a gap — a mutation run over only the handlers you were given cannot
      find a listener nobody tests. (2026-10-01: verify's second return
      to build listed ten such listeners; 2026-10-01: verify's fifth
      return found .fwrap, .pg input[name^="pg-"] and .tdf's [data-todo]
-     with zero hits though the event names all had hits.)
+     with zero hits though the event names all had hits; 2026-10-01:
+     verify's sixth return found ten click branches counted as covered
+     by render/view-test hits though no press reached them.)
    Part 3 — every changed line traces to the task's text; the patterns
      already in the repository are followed. Then name the page this
      change makes false (a renamed export, a changed default, a removed
