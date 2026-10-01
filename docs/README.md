@@ -190,6 +190,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 它的 design 與 14 個 task | `docs/99-archive/2026-09-30-ready-eleven-design.md`、`docs/99-archive/2026-09-30-ready-eleven.md` — *built* |
 | await-1、stage-1、station-8（10-01）定了什麼、沒做什麼：`language` profile 鍵、station-8 門檻改 40% 判 pass、await-1 留在 Ready | [decisions/2026-10-01-await-stage-station.md](03-decisions/2026-10-01-await-stage-station.md) — *繁體中文* |
 | 它的 4 個 task | `docs/99-archive/2026-10-01-await-stage-station.md` — *built* |
+| gate-3、handoff-1（10-01）定了什麼、沒做什麼：repeat 過濾排除當前站、交接標記 `next --handoff` | [decisions/2026-10-01-gate-3-handoff-1.md](03-decisions/2026-10-01-gate-3-handoff-1.md) — *繁體中文* |
+| 它的 7 個 task | `docs/99-archive/2026-10-01-gate-3-handoff-1.md` — *built* |
 | TODO 全表盤點（10-01）的 design：退回 build 的 brain 自己寫 gate、主控用標題轉述且 await 不疊、`suggest` 推 `class.default`、STATION 改成宣傳片風格並保留經典樣式 | [plans/2026-10-01-todo-sweep-design.md](90-agent/plans/2026-10-01-todo-sweep-design.md) — *design-intent, 繁體中文* |
 | 那份設計的十個 task | [plans/2026-10-01-todo-sweep.md](90-agent/plans/2026-10-01-todo-sweep.md) — *design-intent, 繁體中文* |
 | 10-01 盤點四件 do-now（commit-3 改 warn、關 data、試 knip 6.39.0、重量 station-8）的 plan，以及盤點列出 `TODO.md` 全表、主控在 gate 前印出全表 | [plans/2026-10-01-patrol-four.md](90-agent/plans/2026-10-01-patrol-four.md) — *design-intent, 繁體中文* |
