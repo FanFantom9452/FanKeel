@@ -43,7 +43,7 @@ function boot(opts) {
 const live = (route, stage) => ({ id: 'k1', pkey: 'F:\\ws\\alpha', task: 'keel one', state: 'live', updated: NOW - 1000, started: NOW - 120000, route, stage });
 const count = (s, re) => (s.match(re) || []).length;
 
-test('a live row carries the glyph filled to its stage and the film\'s 0N / 0M count; the route dots stay for classic', () => {
+test('a live row carries the glyph filled to its stage and the film\'s 0N / 0M count, and no classic route dots', () => {
     const html = boot().V.dashLive([live(ROUTE7, 'build')]);
     assert.equal(count(html, /class="gseg done"/g), 3);
     assert.equal(count(html, /class="gseg now"/g), 1);
@@ -52,7 +52,7 @@ test('a live row carries the glyph filled to its stage and the film\'s 0N / 0M c
     assert.match(html, /<svg class="glyph k-only prog" viewBox="0 0 120 120" aria-hidden="true" style="--c:var\(--st-build\)">/);
     assert.match(html, /d="M56\.50 107\.98L20\.20 87\.02L36\.65 77\.52L56\.50 88\.98Z"/, 'segment 0 is the film glyph\'s own path');
     assert.match(html, /<span class="kst k-only" style="--c:var\(--st-build\)"><b>04<\/b><i>&nbsp;\/&nbsp;07<\/i><u>build<\/u><\/span>/);
-    assert.match(html, /<span class="route c-only"/);
+    assert.doesNotMatch(html, /class="route/);
 });
 
 test('a stage the route skips is left out of the glyph, and a route with no land has no edge', () => {

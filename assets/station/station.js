@@ -2662,8 +2662,10 @@
     function msOf(t) { return typeof t === 'number' ? t : Date.parse(t); }
     // Each card writes its own `data-block` literally, so the tune proxy and
     // tests/station-dispatch-view.test.js can find it in this file.
-    function dashHead(ico, title, href) {
-        return '<div class="dcard-h">' + icon(ico) + '<b>' + title + '</b><span class="spacer"></span>'
+    function dashHead(ico, title, href, n, cls) {
+        return '<div class="dcard-h">' + icon(ico) + '<b>' + title + '</b>'
+            + (n === undefined ? '' : '<span class="kn' + (cls ? ' ' + cls : '') + '">' + n + '</span>')
+            + '<span class="spacer"></span>'
             + '<a class="dmore" href="' + href + '">' + loc('dash.seeAll', '查看全部 →') + '</a></div>';
     }
     function dashRowName(s) { return esc(shortLabel(NAMES[s.pkey] || s.pkey)); }
@@ -2708,11 +2710,10 @@
     }
     function dashLive(R) {
         var live = R.filter(function (s) { return s.state === 'live'; });
-        return '<section class="dcard" data-block="dash-live">' + dashHead('now', loc('dash.inProgress', '進行中'), '#/live')
-            + '<div class="dbig">' + live.length + '<small>' + loc('dash.nLiveSessions', '個 live session') + '</small></div>'
+        return '<section class="dcard" data-block="dash-live">' + dashHead('now', loc('dash.inProgress', '進行中'), '#/live', live.length)
             + (live.length ? '<div class="dlist">' + live.map(function (s) {
                 return '<a class="drow" href="' + sessionHash(s.id) + '"><span class="dp">' + dashRowName(s) + '</span>'
-                    + '<span class="dt">' + esc(s.task || loc('dash.unnamed', '（未命名）')) + '</span>' + routeDots(s, true).replace('class="route"', 'class="route c-only"') + keelProgress(s) + keelStage(s)
+                    + '<span class="dt">' + esc(s.task || loc('dash.unnamed', '（未命名）')) + '</span>' + keelProgress(s) + keelStage(s)
                     + '<span class="dr mono">' + mins(Date.now() - msOf(s.started)) + '</span></a>';
             }).join('') + '</div>' : '<p class="dnone">' + loc('dash.noneInProgress', '沒有進行中的 session') + '</p>') + '</section>';
     }
@@ -2730,9 +2731,7 @@
     function dashGate(R, at) {
         var now = isFinite(at) ? at : S.serve ? Date.now() : NOW;
         var rows = R.filter(function (s) { return s.pending && s.pending.questions && s.pending.questions.length; });
-        return '<section class="dcard" data-block="waiting-card">' + dashHead('gate', loc('dash.waitingOnYou', '等你回答'), '#/live')
-            + '<div class="dbig' + (rows.length ? ' warn' : '') + '">' + rows.length + '<small>' + loc('dash.gatesWaiting', '個 gate 在等')
-            + (rows.length ? '<span class="dfrom">' + loc('dash.sinceQuestionSent', '從問題送出那一刻算起') + '</span>' : '') + '</small></div>'
+        return '<section class="dcard" data-block="waiting-card">' + dashHead('gate', loc('dash.waitingOnYou', '等你回答'), '#/live', rows.length, rows.length ? 'warn' : '')
             + (rows.length ? '<div class="dlist">' + rows.map(function (s) {
                 var since = msOf(s.gateAt || s.pending.at || s.updated), q = s.pending.questions[0];
                 var left = isFinite(s.pending.until) ? loc('dash.leftT', '，還剩 {t}', { t: waitFor(Math.max(0, s.pending.until - now)) }) : '';
@@ -2845,17 +2844,48 @@
             + '<button type="button" class="btn" data-dchreset="1"' + (same ? ' disabled' : '') + '>' + loc('dash.chooserReset', '還原預設') + '</button>'
             + '<button type="button" class="btn go" data-dchdone="1">' + loc('dash.chooserDone', '完成') + '</button></div></section>';
     }
+    // dash-head's one line: each figure the one its card counts — live rows
+    // as 進行中, pending gates as 等你回答, the last day of 近 30 天花費's
+    // bars, and every Ready entry 可以開工 lists.
+    function dashStatus(R, projects) {
+        var list = dayBars(R, 'usd', 'project', DAYS).days, last = list[list.length - 1], ready = 0;
+        (projects || []).forEach(function (p) {
+            (p.todos || []).forEach(function (t) {
+                if (t && t.open) ready += t.open.filter(function (x) { return x.state === 'ready'; }).length;
+            });
+        });
+        return {
+            live: R.filter(function (s) { return s.state === 'live'; }).length,
+            gates: R.filter(function (s) { return s.pending && s.pending.questions && s.pending.questions.length; }).length,
+            today: last ? last.total : 0,
+            ready: ready,
+        };
+    }
+    // The film's header lockup over two columns (2026-10-01 layout): the wide
+    // one for what moves, the narrow one for what waits; the chooser's order
+    // holds inside each.
     function dashPage() {
-        var R = homeRows(), list = dashOrder(stored('station.dash'));
+        var R = homeRows(), list = dashOrder(stored('station.dash')), st = dashStatus(R, S.projects);
         var card = {
             'dash-live': dashLive, 'waiting-card': function (rows) { return dashGate(rows); }, 'dash-todo': function () { return dashTodo(S.projects); },
             'dash-spend': dashSpend, 'dash-recent': dashRecent,
         };
-        return '<div class="phead"><h1>' + icon('dash') + loc('dash.dashboard', '儀表板') + '</h1><span class="spacer"></span>'
+        var side = { 'waiting-card': true, 'dash-todo': true };
+        var on = list.filter(function (c) { return c.on; });
+        var col = function (wide) {
+            return '<div class="dcol" data-col="' + (wide ? 'main' : 'side') + '">'
+                + on.filter(function (c) { return !side[c.id] === wide; }).map(function (c) { return card[c.id](R); }).join('') + '</div>';
+        };
+        return '<div class="phead khead" data-block="dash-head"><h1>' + icon('dash') + loc('dash.dashboard', '儀表板') + '</h1>'
+            + '<p class="kcap"><span>' + loc('dash.capLive', '<b>{n}</b>個 live session', { n: st.live }) + '</span>'
+            + '<span' + (st.gates ? '' : ' class="ok"') + '>' + (st.gates ? loc('dash.capGates', '<b>{n}</b>個 gate 在等你', { n: st.gates }) : loc('dash.capNoGates', '沒有 gate 在等你')) + '</span>'
+            + '<span>' + loc('dash.capToday', '今天<b>{v}</b>', { v: usd(st.today) }) + '</span>'
+            + '<span>' + loc('dash.capReady', '<b>{n}</b>筆 Ready 可以開工', { n: st.ready }) + '</span></p>'
+            + '<span class="spacer"></span>'
             + '<button type="button" class="btn' + (view.dchOpen ? ' on' : '') + '" id="dchtog" data-dchtog="1" data-key="dchtog" aria-expanded="' + String(!!view.dchOpen) + '" aria-controls="dchooser">'
             + icon('settings') + loc('dash.chooserOpen', '調整卡片') + '</button></div>'
             + (view.dchOpen ? dashChooserHtml(list) : '')
-            + '<div class="dash" data-block="dashboard">' + list.filter(function (c) { return c.on; }).map(function (c) { return card[c.id](R); }).join('') + '</div>';
+            + '<div class="dash kdash" data-block="dashboard">' + col(true) + col(false) + '</div>';
     }
     // The chooser's presses: 調整卡片 and 完成 open and shut it, ↑ ↓ move a
     // card, 還原預設 clears `station.dash`, a checkbox shows or hides a card.

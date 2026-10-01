@@ -38,7 +38,7 @@ const gated = (extra) => Object.assign({ id: 'w1', pkey: 'F:\\ws\\alpha', task: 
 test('the waiting card counts a gate from gateAt, not from the pending file or the last write', () => {
     const html = DASH.dashGate([gated({ gateAt: NOW - 12 * MIN })], NOW);
     assert.match(html, /<section class="dcard" data-block="waiting-card">/);
-    assert.match(html, /<div class="dbig warn">1<small>個 gate 在等<span class="dfrom">從問題送出那一刻算起<\/span><\/small><\/div>/);
+    assert.match(html, /<b>等你回答<\/b><span class="kn warn">1<\/span>/);
     assert.ok(html.includes('<a class="drow" href="#/s/w1"><span class="dp">'), html);
     assert.ok(html.includes('<span class="chip dstage"><i class="sw" style="background:var(--st-design)"></i>design</span>'
         + '<span class="dt">design done</span><span class="dw" title="問題 15:48 送出，還剩 48 分">等了 12 分</span></a>'), html);
@@ -49,7 +49,7 @@ test('without gateAt the wait falls back to pending.at, then to the last write; 
     assert.match(DASH.dashGate([gated({ pending: { questions: [{ header: 'h' }] } })], NOW), /等了 1 時 30 分<\/span>/);
     assert.match(DASH.dashGate([gated({ gateAt: NOW - 65 * MIN })], NOW), /等了 1 時 5 分<\/span>/);
     assert.match(DASH.dashGate([gated({ gateAt: NOW - 120 * MIN })], NOW), /等了 2 時<\/span>/);
-    assert.match(DASH.dashGate([], NOW), /<div class="dbig">0<small>個 gate 在等<\/small><\/div>/);
+    assert.match(DASH.dashGate([], NOW), /<b>等你回答<\/b><span class="kn">0<\/span>/);
 });
 
 test('#/live counts its gate rows from gateAt too', () => {

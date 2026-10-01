@@ -110,8 +110,26 @@ test('dashPage draws the cards in the stored order, leaves a switched-off card o
     assert.doesNotMatch(html, /data-block="dash-chooser"/, 'the chooser opens on a press');
     assert.doesNotMatch(html, /data-block="dash-spend"/);
     const at = (k) => html.indexOf('data-block="' + k + '"');
-    assert.ok(at('dash-todo') < at('dash-recent') && at('dash-recent') < at('dash-live') && at('dash-live') < at('waiting-card'), html);
+    assert.ok(at('dash-recent') < at('dash-live'), 'the wide column keeps the stored order');
+    assert.ok(at('dash-todo') < at('waiting-card'), 'and so does the narrow one');
     assert.match(html, /<div class="dbig">5<small>/, 'the TODO card reads S.projects');
+});
+
+test('dash-head reads the rows the cards read: its Ready is the TODO card\'s, and the cards sit in two columns', () => {
+    const X = page({});
+    const html = X.dashPage();
+    const head = html.slice(html.indexOf('data-block="dash-head"'), html.indexOf('data-block="dashboard"'));
+    const ready = PROJECTS.reduce((n, p) => n + p.todos.reduce((m, t) => m + t.open.filter((x) => x.state === 'ready').length, 0), 0);
+    assert.match(head, new RegExp('<span><b>' + ready + '</b>筆 Ready 可以開工</span>'));
+    const card = html.slice(html.indexOf('data-block="dash-todo"'));
+    const rows = [...card.matchAll(/<span class="tn">(\d+)<\/span>/g)].reduce((n, m) => n + Number(m[1]), 0);
+    assert.equal(rows, ready, 'the head and the card rows agree');
+    assert.match(head, /<span><b>0<\/b>個 live session<\/span><span class="ok">沒有 gate 在等你<\/span>/);
+    assert.match(head, /id="dchtog"/);
+    assert.match(html, /<div class="dash kdash" data-block="dashboard"><div class="dcol" data-col="main">/);
+    const side = html.slice(html.indexOf('data-col="side"'));
+    assert.ok(side.includes('data-block="waiting-card"') && side.includes('data-block="dash-todo"'), 'the narrow column holds what waits');
+    assert.ok(!side.includes('data-block="dash-live"') && !side.includes('data-block="dash-spend"'), 'and only that');
 });
 
 // station.js booted as page() does, but with the document's listeners kept,
@@ -194,7 +212,7 @@ test('moving a card stores its order as station.dash, moving it back stores no k
 test('ticking a card off stores it in off and the page leaves it out, ticking it on stores no key again', () => {
     const kept = {};
     const c = chooser(kept);
-    const drawn = /<div class="dash" data-block="dashboard">[\s\S]*data-block="dash-spend"/;
+    const drawn = /<div class="dash kdash" data-block="dashboard">[\s\S]*data-block="dash-spend"/;
     assert.match(c.page(), drawn, 'dash-spend is drawn while it is on');
     c.tick('dash-spend', false);
     assert.equal(kept['station.dash'], '{"order":["dash-live","waiting-card","dash-todo","dash-spend","dash-recent"],"off":["dash-spend"]}');

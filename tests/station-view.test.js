@@ -1337,7 +1337,8 @@ const DASH_LIVE = [
 test('dashLive counts and lists only the live rows, each linking to its session hash', () => {
     const html = DASH.dashLive(DASH_LIVE);
     assert.match(html, /data-block="dash-live"/);
-    assert.match(html, /<div class="dbig">1<small>個 live session<\/small><\/div>/);
+    assert.match(html, /<b>進行中<\/b><span class="kn">1<\/span>/);
+    assert.doesNotMatch(html, /class="dbig"/);
     assert.equal(count(html, /class="drow"/g), 1);
     assert.match(html, /<a class="drow" href="#\/s\/dl-live"/);
     assert.doesNotMatch(html, /#\/s\/dl-stale|#\/s\/dl-down/);
@@ -1354,7 +1355,7 @@ const DASH_GATE = [
 test('dashGate counts and lists only rows with a non-empty pending.questions', () => {
     const html = DASH.dashGate(DASH_GATE);
     assert.match(html, /data-block="waiting-card"/);
-    assert.match(html, /<div class="dbig warn">1<small>個 gate 在等<span class="dfrom">從問題送出那一刻算起<\/span><\/small><\/div>/);
+    assert.match(html, /<b>等你回答<\/b><span class="kn warn">1<\/span>/);
     assert.equal(count(html, /class="drow"/g), 1);
     assert.match(html, /<a class="drow" href="#\/s\/dg-open"/);
     assert.doesNotMatch(html, /#\/s\/dg-none|#\/s\/dg-empty/);
@@ -1405,9 +1406,10 @@ test('dashPage assembles all four cards in dashLive, dashGate, dashSpend, dashRe
     for (const key of ['dash-live', 'waiting-card', 'dash-spend', 'dash-recent']) {
         assert.match(html, new RegExp('data-block="' + key + '"'));
     }
-    assert.ok(html.indexOf('dash-live') < html.indexOf('waiting-card'));
-    assert.ok(html.indexOf('waiting-card') < html.indexOf('dash-spend'));
-    assert.ok(html.indexOf('dash-spend') < html.indexOf('dash-recent'));
+    const wide = html.slice(0, html.indexOf('data-col="side"'));
+    assert.ok(wide.indexOf('dash-live') < wide.indexOf('dash-spend'));
+    assert.ok(wide.indexOf('dash-spend') < wide.indexOf('dash-recent'));
+    assert.ok(html.indexOf('data-col="side"') < html.indexOf('waiting-card'), 'the gate card sits in the narrow column');
 });
 
 test('recentRows keeps what spent inside the window or is still live, newest first', () => {
