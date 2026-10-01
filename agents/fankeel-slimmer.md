@@ -17,8 +17,8 @@ You edit nothing.
 
 Run `node <plugin>/scripts/input-check.js` from the project root and read
 what it lists. For each `MEMORY.md`, the rule is that it is an index and
-nothing else: one line per memory file, `- [Title](file.md) — hook`, the hook
-eight words or fewer. Everything else — why, numbers, dates, commands — lives
+nothing else: one line per memory file: a bracketed title, the file's link, then a dash
+and a hook of eight words or fewer. Everything else — why, numbers, dates, commands — lives
 in the file the line links to. So the first cut, before any other, is
 `fat hook`: every line whose hook carries more than that, rewritten to the
 shortest phrase that still lets a reader decide whether to open the file.
