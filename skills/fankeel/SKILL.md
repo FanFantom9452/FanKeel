@@ -401,8 +401,8 @@ Three is the floor, not a quota — which is why the rule says *at least*. Dropp
 the pause is how a gate stops being one, so nothing goes below three.
 `AskUserQuestion` caps `options` at four, and the fourth is free for a decision
 that genuinely has one. A busy or compacted stage gets one: hand off, offered
-whenever the `context:` line has appeared this stage — its description sets
-`next`, then a new terminal and `/fankeel` → **Adopt**. Nothing else ships a
+whenever the `context:` line has appeared this stage — picking it runs
+`task.js next --handoff --from-gate`, which sets `next` and marks the entry handed off, then a new terminal and `/fankeel` → **Adopt**. Nothing else ships a
 fourth; `survey` used to for a different reason, asking whether to read
 further, and that is dispatched now rather than asked.
 
@@ -680,7 +680,7 @@ decision, which is why the check reads the role and not a `last_verified` date.
 ## On `/fankeel`
 
 Run `task.js show --session <id>`, which lists this session's entry and every
-other live one. Add `--all` for the registry itself: every entry the directory
+other live one — and first, under `handed off`, any entry passed on with `task.js next --handoff`, live or not. Add `--all` for the registry itself: every entry the directory
 holds, stood down included, newest first, with the stage each reached and what it
 cost. Nothing here deletes, so that is a month of finished tasks and the only
 view of them.
@@ -801,7 +801,7 @@ Then ask, with these options and no others:
 |---|---|
 | **Carry on** | This session already owns an active task. Nothing to write. |
 | **Start** | Ask for a one-line `task`. Pass `--project` only when the root holds more than one project — the registry root is a legitimate project, and a session opened inside one already implies it. Then `task.js start`. |
-| **Adopt** | `task.js adopt <other-session-id>`, which copies the task over and stands the source down in one run. From a **stale** entry, offer it plainly. From a **live** one, confirm first with the other session named — that is exactly the case this registry exists to make visible. |
+| **Adopt** | When `task.js show` prints `handed off`, this is option one, its label naming the task (`Adopt：<task>`) — still a question, never adopted unasked. `task.js adopt <other-session-id>`, which copies the task over and stands the source down in one run. From a **stale** entry, offer it plainly. From a **live** one, confirm first with the other session named — that is exactly the case this registry exists to make visible. |
 | **Stand down** | `task.js down`. Ask first whether anything in `notes` belongs somewhere more durable; the script prints them, and they die with the task. |
 | **Clear out** | List the stale entries with their ages, let the user pick, then `task.js clear <that id>` for each one picked — `down` prints text addressed to the owner about notes that are not the caller's, which `clear` does not. Never for ones they did not pick. |
 
@@ -860,7 +860,7 @@ and the one after an answered question — because the gate itself is an
 `AskUserQuestion`, and a session doing nothing but answer it would otherwise
 never see the line at all. Pass it on rather than ignoring it: the statusline
 shows a percentage, but only this knows there is a task in flight, and that
-this stage's gate should offer a fourth option — hand off — that sets `next`,
+this stage's gate should offer a fourth option — hand off — that runs `task.js next --handoff --from-gate`,
 then a new terminal and `/fankeel` → **Adopt** carries it — task, project,
 claims, stage, route, notes, `next` and what the stages have cost in
 wall-clock — into a fresh session in one step. Not `burn`: that measures a

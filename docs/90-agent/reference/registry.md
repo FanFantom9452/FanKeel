@@ -442,8 +442,8 @@ never takes the task with it.
 ```
 context: 1.1M tokens dropped to compaction so far, 308k in play now,
 --session 302790e6-e652-4cab-af1c-e45d239516cc. Start a fresh session before the
-next one. This stage's gate gets a fourth option, hand off: set next, then a new
-terminal and /fankeel → Adopt.
+next one. This stage's gate gets a fourth option, hand off: set next with task.js
+next --handoff --from-gate, then a new terminal and /fankeel → Adopt.
 ```
 
 Read from the transcript, which records what every compaction cost:
@@ -478,6 +478,14 @@ A statusline can show the percentage. What it cannot know is that there is a tas
 in flight, or that **Adopt** moves it — task, project, claims, stage, route, notes,
 `next`, and what the stages have cost in wall-clock — into a fresh session in one
 step.
+
+A hand-off on purpose leaves a mark. `task.js next --handoff` (with
+`--from-gate` for the stage agent's own line) stamps `handoff` beside `next`;
+any later `next` without the flag takes it back, and `adopt` does not carry it.
+`task.js show` lists such an entry first, under `handed off`, whether or not
+its session still runs, and `hooks/carry.js` — on `startup` as well as `clear`
+and `fork` — puts it in front of a new window. Adopting still waits for the
+user.
 
 **The cost history is where that list stops being a copy.** `clock` and `waited`
 measure the wall, which does not care which session read it, so they go over.

@@ -63,6 +63,7 @@ test('the line names what was lost and how to carry the task over', () => {
   assert.match(line, /327k tokens dropped/);
   assert.match(line, /288k in play/);
   assert.match(line, /fourth option, hand off: set next/);
+  assert.match(line, /set next with task\.js next --handoff --from-gate, then a new terminal/);
   assert.match(line, /\/fankeel → Adopt/);
   // Not yet the stronger wording: one compaction is a fact, not an emergency.
   assert.doesNotMatch(line, /Start a fresh session before the next one/);
