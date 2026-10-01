@@ -413,6 +413,10 @@ test('the slimmer cuts fat hooks first, compares stale entries, returns a token 
     assert.match(job, /`unverifiable`/);
     assert.match(job, /own project only/);
     assert.match(ret, /`<MEMORY\.md path>: <before> → <after> tokens`/);
+    assert.match(job, /not in file:/);
+    assert.match(job, /`stale`/);
+    assert.match(ret, /fankeel-fixer/);
+    assert.match(ret, /the fixer has no Bash, so a file to delete is left for the session's one `rm`/);
     assert.match(ret, /subagent_type: fankeel:fankeel-fixer/);
     assert.match(refuse, /memory-check\.js/);
 });

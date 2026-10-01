@@ -29,15 +29,17 @@ Then, in order of yield: a section another file already says (`duplicate`),
 a link whose target is gone (`dead link`), a section past the size limit that
 a path could replace (`big section`). Two memory files on one subject are a
 `merge` candidate — listed under `needs approval:`, never in the diff. Read
-each `CLAUDE.md` it names and each memory file a `MEMORY.md` line links to.
+what `input-check.js` names — every `CLAUDE.md` above the root, the global
+one, each project's own `CLAUDE.md` (root and sub-projects) — and each memory
+file a `MEMORY.md` line links to.
 
 Then run `node <plugin>/scripts/memory-check.js --root <root>` and, for each
 `stale` entry it lists, read the memory file and compare what it claims with
 the CODE or document it cites. An entry the code now contradicts is listed
 under `needs approval:` with the line that is false; an entry whose subject is
 not in this repo is marked `unverifiable` and left alone. Look at this
-project's memory own project only; another project's memory is read only when
-the brief names it, and widening to the whole machine is the user's to ask.
+project's memory only: own project only by default; another project's memory
+is read only when the brief names it, and widening to the whole machine is the user's to ask.
 
 ## Return
 
