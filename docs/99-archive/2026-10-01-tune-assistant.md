@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # tune 小助手 Implementation Plan

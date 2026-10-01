@@ -10,6 +10,8 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔await〕`kind` 讀不到時，await 改從 brain 自己的 transcript 第一行讀（commit a0187d9d769dd3eb0821a22e62ef3543739eef6d）：重裝後看一次真實 `build close` 的 await 是否盯 `build.md` — [scripts/await.js](scripts/await.js).
 
+- 〔tune〕10-01 audit 留下：滾輪測試只斷言 defaultPrevented、未斷言走訪方向（assets/tune/overlay.js:643）；:565 pointer-id 檢查與 :668 外框內選外框兩個變異存活、檔頭缺口清單未列 — [tune-overlay.test.js](tests/tune-overlay.test.js).
+
 ## Needs a decision
 
 ## Blocked

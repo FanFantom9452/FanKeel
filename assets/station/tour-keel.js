@@ -646,7 +646,7 @@
         });
     }
 
-    // design: the mockup page; the cursor Alt-clicks the hero block and only
+    // design: the mockup page; the cursor picks the hero block with the tune assistant and only
     // it is rewritten, with a flash; then a red acceptance test beside it.
     function design(ctx, P, l) {
         var click = 72, done = l >= click;
