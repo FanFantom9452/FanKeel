@@ -1552,7 +1552,7 @@
     // carries its state pill instead of how long it has been open.
     function liveLane(s, name, now) {
         var sure = s.state === 'live' && !s.unknown;
-        return '<a class="lane ' + (sure ? 'live wsubs' : 'unsure') + '" data-state="' + esc(s.state) + '" href="' + sessionHash(s.id) + '">'
+        return '<a class="lane ' + (sure ? 'live wsubs' : 'unsure') + '" data-state="' + esc(s.state) + '" href="' + sessionHash(s.id) + '">' + keelProgress(s) + keelStage(s)
             + '<div class="lane-who"><b>' + esc(name(s)) + '</b><span class="mono" title="' + esc(s.root) + '">' + esc(s.root) + '</span></div>'
             + '<div class="lane-task" title="' + esc(s.task || '') + '">' + esc(s.task || loc('nav.unnamed', '（未命名）')) + '</div>'
             + liveRail(s, sure, now)
@@ -1599,7 +1599,7 @@
         return '<section class="lv-grp" data-block="live-maybe" aria-labelledby="h-maybe"><div class="lv-h"><h2 id="h-maybe">' + loc('nav.mayHaveStopped', '可能已經停了') + '</h2>'
             + '<span class="lv-n mono">' + maybe.length + '</span><span class="lv-note">' + loc('nav.registryUnconfirmedProcess', 'registry 還標著進行中，但確認不了 process 還在') + '</span>'
             + (clears ? '<span class="spacer"></span>' + clears : '') + '</div>'
-            + maybe.map(function (s) { return liveLane(s, name, now); }).join('') + '</section>';
+            + '<div class="lv-card">' + maybe.map(function (s) { return liveLane(s, name, now); }).join('') + '</div></section>';
     }
     function liveIdle(idle, lab) {
         if (!idle.length) return '';
@@ -1621,7 +1621,12 @@
         var idle = open.filter(function (p) { return !rows.some(function (s) { return s.root === p.root; }); });
         var now = S.serve || !isFinite(NOW) ? Date.now() : NOW;
         var name = function (s) { return s.project || lab[s.root] || s.root; };
-        return '<div class="phead"><h1>' + icon('now') + loc('nav.now', '現在') + '</h1></div>' + (tabs || '') + '<div class="lv" data-block="now">'
+        var gates = rows.filter(function (s) { return s.pending && s.pending.questions && s.pending.questions.length; }).length;
+        return '<div class="phead khead" data-block="live-head"><h1>' + icon('now') + loc('nav.now', '現在') + '</h1>'
+            + '<p class="kcap"><span>' + loc('nav.capRunning', '正在跑<b>{n}</b>', { n: run.length }) + '</span>'
+            + '<span>' + loc('nav.capMaybe', '可能已經停了<b>{n}</b>', { n: maybe.length }) + '</span>'
+            + '<span' + (gates ? '' : ' class="ok"') + '>' + (gates ? loc('nav.capGates', '<b>{n}</b>個 gate 在等你', { n: gates }) : loc('nav.capNoGates', '沒有 gate 在等你')) + '</span></p>'
+            + '<span class="spacer"></span>' + (tabs || '') + '</div><div class="lv klv" data-block="now">'
             + (open.length ? liveGate(rows, name, now) + liveRun(run, name, now) + liveMaybe(maybe, open, name, now) + liveIdle(idle, lab)
                 : '<p class="mute">' + loc('nav.noRegistry', '沒有 registry') + '</p>') + '</div>';
     }

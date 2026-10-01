@@ -243,6 +243,10 @@
             'nav.registryUnconfirmedProcess': 'the registry still marks it in progress, but the process could not be confirmed',
             'nav.registriesNoSessions': 'Registries with no sessions',
             'nav.now': 'Now',
+            'nav.capRunning': 'Running <b>{n}</b>',
+            'nav.capMaybe': 'May have stopped <b>{n}</b>',
+            'nav.capGates': '<b>{n}</b> gates waiting on you',
+            'nav.capNoGates': 'No gate waiting on you',
             'nav.noRegistry': 'No registry',
             // wiz — the settings wizard
             'wiz.local': 'local',
