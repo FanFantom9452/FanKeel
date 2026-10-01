@@ -38,21 +38,6 @@ function node(tag, attrs, kids) {
     return n;
 }
 
-test('a plain click reaches the page: the click handler returns before anything else unless Alt is held', () => {
-    const text = fs.readFileSync(SRC, 'utf8');
-    assert.match(text, /addEventListener\('click', function \(ev\) \{\s*if \(!ev\.altKey\) return;/);
-    assert.match(text, /addEventListener\('wheel', function \(ev\) \{\s*if \(!ev\.altKey/);
-    assert.ok(!text.includes('fk-live-toggle') && !text.includes('fk-live-off'), 'the live toggle is still there');
-});
-
-test('the request carries selector, classes, text and the nearest block', () => {
-    const text = fs.readFileSync(SRC, 'utf8');
-    const call = /var payload = \{[\s\S]*?\};/.exec(text);
-    assert.ok(call, 'no request is sent');
-    for (const k of ['page:', 'note:', 'block:', 'selector:', 'classes:', 'text:']) assert.ok(call[0].includes(k), 'the request has no ' + k);
-    assert.match(text, /\.slice\(0, 80\)/);
-});
-
 test('a block tune is editing carries a quiet pulse and its round, and none under reduced motion', () => {
     const text = fs.readFileSync(SRC, 'utf8');
     assert.match(text, /\.fk-live-edp\{[^}]*animation:fk-live-edp /);
@@ -80,4 +65,54 @@ test('toggleIn adds an element once and a second toggle removes it', () => {
     assert.deepEqual(toggleIn([], a), [a]);
     assert.deepEqual(toggleIn([a], b), [a, b]);
     assert.deepEqual(toggleIn([a, b], a), [b]);
+});
+
+test('a click reaches the page: the click and wheel handlers return first unless the assistant is picking, and Alt is gone', () => {
+    const text = fs.readFileSync(SRC, 'utf8');
+    assert.match(text, /addEventListener\('click', function \(ev\) \{\s*if \(picking < 0\) return;/);
+    assert.match(text, /addEventListener\('wheel', function \(ev\) \{\s*if \(picking < 0/);
+    assert.ok(!text.includes('altKey'), 'an Alt handler is still there');
+    assert.ok(!text.includes('fk-live-toggle') && !text.includes('fk-live-off'), 'the live toggle is still there');
+});
+
+test('the assistant carries the words the approved mockup shows, the station glyph, and remembers where it was dragged', () => {
+    const text = fs.readFileSync(SRC, 'utf8');
+    for (const s of ['修改項', '新增一則', '收合', '刪除這則', '塊共用一段備註，要怎麼改？', '圈選第 ', '往外一層', '或滾輪：上 往外，下 往內', '完成這則', '全部送出（', '清空', '則待送', '按住拖曳']) {
+        assert.ok(text.includes(s), 'overlay.js is missing ' + s);
+    }
+    assert.match(text, /localStorage\.setItem\(POS/);
+    assert.match(text, /sessionStorage\.setItem\(SAVE/);
+    assert.match(text, /setPointerCapture/);
+    assert.ok(text.includes('M60.00 39.00L78.19 49.50L78.19 70.50L60.00 81.00L41.81 70.50L41.81 49.50Z'), 'the logo is not the station glyph');
+    assert.ok(!/class="g(seg|edge|core)"/.test(text), 'a glyph class without the fk-live- prefix picks up the page\'s own .gseg rules');
+});
+
+test('the request is one POST of every item, each element described by block, selector, classes and text', () => {
+    const text = fs.readFileSync(SRC, 'utf8');
+    assert.match(text, /var payload = \{ page: location\.pathname, items: itemsOf\(/);
+    const desc = /function describe\(node\) \{[\s\S]*?\n    \}/.exec(text);
+    assert.ok(desc, 'no describe()');
+    for (const k of ['block:', 'selector:', 'classes:', 'text:']) assert.ok(desc[0].includes(k), 'describe() has no ' + k);
+    assert.match(desc[0], /\.slice\(0, 80\)/);
+});
+
+test('itemsOf keeps drafts with a note and an element, the first element on the item, every block once', () => {
+    const { itemsOf } = require('../assets/tune/overlay.js');
+    const p = (block, selector) => ({ block, selector, classes: ['c'], text: 't' });
+    const got = itemsOf([
+        { note: ' one ', picks: [p('hero', 'section:nth-of-type(1)')] },
+        { note: 'two', picks: [p('card', 'article#a'), p('card', 'article#b'), p('foot', 'footer')] },
+        { note: '   ', picks: [p('x', 'div')] },
+        { note: 'no element', picks: [] },
+    ]);
+    assert.deepEqual(got, [
+        { note: 'one', block: 'hero', selector: 'section:nth-of-type(1)', classes: ['c'], text: 't' },
+        { note: 'two', block: 'card', selector: 'article#a', classes: ['c'], text: 't', blocks: ['card', 'foot'], selectors: ['article#a', 'article#b', 'footer'] },
+    ]);
+});
+
+test('clampTo keeps the logo inside the viewport', () => {
+    const { clampTo } = require('../assets/tune/overlay.js');
+    assert.deepEqual(clampTo(-20, 900, 48, 48, 1280, 800), { x: 0, y: 752 });
+    assert.deepEqual(clampTo(600, 300, 48, 48, 1280, 800), { x: 600, y: 300 });
 });
