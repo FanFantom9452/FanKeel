@@ -19,6 +19,8 @@ const NOW = Date.parse('2026-10-01T12:00:00.000Z');
 // order (station.js registers them in a fixed order, so a mutation of a
 // listener's own text cannot lose it).
 const KEY_FBAR = 1, KEY_BIG = 2, KEY_GATE = 3, CLICK_WZ = 6;
+// A literal unique to each document listener in station.js, so a listener added or reordered ahead of one fails loudly.
+const MARKERS = { 'keydown:1': '.wz .fbar .fsg', 'keydown:2': '.rpop, .rwrap', 'keydown:3': 'data-gop', 'click:6': '.wz [data-go]' };
 
 // station.js booted on `hash`, with every document listener kept by type, the
 // `#page` element counting its redraws, and `doc.querySelector` answering only
@@ -54,6 +56,9 @@ function boot(hash, profiles) {
     const find = (type, n) => {
         const fn = (listeners[type] || [])[n];
         assert.equal(typeof fn, 'function', 'the ' + type + ' listener number ' + n + ' exists');
+        const mark = MARKERS[type + ':' + n];
+        assert.ok(mark, 'the ' + type + ' listener number ' + n + ' has a marker');
+        assert.ok(String(fn).includes(mark), 'the ' + type + ' listener number ' + n + ' is the one holding ' + mark);
         return fn;
     };
     return { doc, els, win, asked, page, draws: () => draws, html: () => html, find, named,

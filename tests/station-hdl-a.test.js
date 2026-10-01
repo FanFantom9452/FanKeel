@@ -404,7 +404,7 @@ test('hist: whatever button the lookup finds takes the focus', () => {
     assert.equal(back.focused, 1);
 });
 
-test('hist: the selector that finds the button again names the first class word, not the second', () => {
+test('hist: a class string of several words is split, so the selector that finds the button again is built from a single word', () => {
     const p = hBoot();
     const el = histEl('build', 'csseg csseg');
     const back = histEl('build');
