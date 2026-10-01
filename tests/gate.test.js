@@ -544,6 +544,8 @@ test('stage.agents: an answer older than its stage report does not block the que
 // overlapped verify-4's answer 0.70 and was denied as already answered.
 const LAP_ONE = '全套全綠、12 個 mutation 全紅，但有 10 處 listener／branch 完全沒測試，怎麼走？';
 const LAP_TWO = '全套 3087 全綠、6 個 mutation 全紅，但 click handler 還有 3 個選擇器零測試，怎麼走？';
+// The same question with two numbers changed: 0.96 alike to LAP_TWO, past the 0.8 REPEAT_THRESHOLD.
+const LAP_TWO_NEAR = '全套 3092 全綠、7 個 mutation 全紅，但 click handler 還有 3 個選擇器零測試，怎麼走？';
 const VERIFY_GATE = [{ question: LAP_TWO, header: 'verify 結果', options: [{ label: 'land：收尾 (Recommended)', description: 'a' }, { label: '回 build：補測試', description: 'b' }, { label: '暫停', description: 'c' }] }];
 // The controller's copy differs from the filed gate (one option description is
 // reworded), so it is not the filed gate word for word and the hook does not
@@ -562,7 +564,7 @@ function lapRoot(earlier, answered = LAP_ONE, questions = []) {
 }
 
 test('stage.agents: an earlier lap of the stage being worked does not block its new gate', () => {
-  const out = run(GATE, lapRoot('verify'), { tool_input: askOf(LAP_ASK) });
+  const out = run(GATE, lapRoot('verify', LAP_TWO_NEAR), { tool_input: askOf(LAP_ASK) });
   assert.doesNotMatch(out, /already answered/);
   assert.match(out, /gate not confirmed/);
 });
@@ -576,9 +578,17 @@ test('guard: stage.agents: the same question answered at an earlier stage is sti
 // The routing question a gate opens with is about that gate's moment; its
 // answer settles nothing a later gate asks.
 test('stage.agents: an earlier gate\'s routing question does not block a later one', () => {
-  const out = run(GATE, lapRoot('build', LAP_TWO, [{ question: LAP_TWO }]), { tool_input: askOf(LAP_ASK) });
+  const out = run(GATE, lapRoot('build', LAP_TWO, [{ question: LAP_TWO }, { question: 'Which tasks next?' }]), { tool_input: askOf(LAP_ASK) });
   assert.doesNotMatch(out, /already answered/);
   assert.match(out, /gate not confirmed/);
+});
+
+// A gate that asked one question has no routing question beside it: its
+// verbatim re-ask is a repeat.
+test('guard: stage.agents: a single-question gate re-ask is denied as already answered', () => {
+  const out = JSON.parse(run(GATE, lapRoot('build', LAP_TWO, [{ question: LAP_TWO }]), { tool_input: askOf(LAP_ASK) }));
+  assert.equal(out.hookSpecificOutput.permissionDecision, 'deny');
+  assert.match(out.hookSpecificOutput.permissionDecisionReason, /already answered \(build\)/);
 });
 
 // Two gates written in one house style share most of their characters: 0.70

@@ -272,8 +272,8 @@ function main(raw) {
         // answer 0.70 on 2026-10-01. `answeredOf` still returns them, for the
         // brief.
         let answered = [];
-        // Nor is a gate's opening routing question (`lead`): it was about that
-        // gate's moment, and every later gate asks one like it.
+        // Nor is a multi-question gate's opening routing question (`lead`): it
+        // was about that gate's moment. A single-question gate has none.
         try { answered = answeredOf(root, mine).filter((a) => !a.stale && !a.lead && a.stage !== mine.stage); } catch (e) { /* housekeeping */ }
         const again = repeatOf(asked, answered);
         if (again) {
