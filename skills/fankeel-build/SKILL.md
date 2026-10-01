@@ -505,7 +505,8 @@ then asks this stage's gate.
    page and judging it, so the render reviewer is skipped for that request, and
    a `fankeel-reviewer` alone reviews it. The user may also say, this session,
    to skip it (or to run it) for any page task; that is a ruling, recorded once
-   like the no-dispatch one, not a stopper.
+   at the top of the ledger, or in the response and then the commit message
+   where a `bounded` task has none, not once per task and not a stopper.
 
    **Where the task changed a page**, a tuning
    loop on the real page follows once it lands, served by the
