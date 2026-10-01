@@ -1208,7 +1208,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 **Files:**
 - Modify: `assets/station/index.html` — `div.seg.lang` 換成 `div.langsw`
 - Modify: `assets/station/station.js:4605-5111` — 選單的開關監聽、`applyChrome` 的語言段
-- Modify: `assets/station/station.css:1600-2100` — 刪 `.mast .lang` 三行，檔尾加 `.langsw`／`.langpop` 規則
+- Modify: `assets/station/station.css:1600-2046` — 刪 `.mast .lang` 三行，檔尾加 `.langsw`／`.langpop` 規則
 - Test: `tests/station-lang-menu.test.js`
 - Test: `tests/station-i18n.test.js`
 

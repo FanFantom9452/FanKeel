@@ -473,7 +473,7 @@ otherwise point outside the repository it sits in.
 
 Before `station-data.js` arrives the shell has nothing to draw, so
 `station.css` alone fills that wait
-(`assets/station/station.css:1394`, `first load`): CSS-only placeholders
+(`assets/station/station.css:1393`, `first load`): CSS-only placeholders
 stand in for the nav and the page, with a `計算中…` spinner beside where the
 side panel would sit, and the placeholders hold still rather than animate
 under `prefers-reduced-motion`.
