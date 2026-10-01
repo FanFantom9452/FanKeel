@@ -37,7 +37,7 @@ upstream: 另一個專案 AI CODING SECURITY 定出共用的漏洞清單與掃�
 - 〔security〕reviewer 的 `## Security` lens 可先交本地模型篩（`security.local`）；四類清單與 AI CODING SECURITY 對齊還沒做 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
 
 ### 受控 build/verify 實跑
-after: 跑過一次 stage.agents=all 的真實 task（main 含 08c4ecf、安裝版 0.80.0 兩半 09-28 已達成）. 09-30.
+after: 跑過一次 stage.agents=all 的真實 task（main 含 08c4ecf、安裝版 0.80.0 兩半 09-28 已達成）. 10-01.
 
 - 〔stage-agents〕安裝版 10-01 已是 0.88.0、`stage.agents` 列了全部站，前提已達成；剩下的是拿一次真實 task 用 `ctx.js --by-stage` 與 `modelUsage` 讀各站 context — [subagents.md](docs/90-agent/reference/subagents.md).
 - 〔stage-agents〕design 站跨輪對話已寫（`lib/stages.js` 的 `controlFor`）但沒實跑；build 每個 task 的提交要經 controller 兩回合，省不省 context 由同一次實跑的 `ctx.js --by-stage` 讀 — [lib/stages.js](lib/stages.js).
