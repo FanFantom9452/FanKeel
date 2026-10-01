@@ -710,19 +710,31 @@
                     + '<span class="r muted">' + ago(r.last) + '</span></a>';
             }).join('') : '<p class="note">' + loc('shared.machineNoSessions', '這台機器上沒有 session') + '</p>');
     }
-    function recentHtml(list, o) {
-        return '<div class="h2">' + icon('sessions') + loc('shared.recentSessionsHeading', '最近 sessions <small>依最後動作，最新在上</small>') + '<span class="spacer"></span>'
-            + '<a class="btn" href="#/list">' + loc('shared.seeAll', '看全部 →') + '</a></div>'
-            + '<div class="tbl-wrap"><table class="t"><thead><tr><th>' + loc('shared.thTask', '任務') + '</th><th>' + loc('shared.thProject', '專案') + '</th><th>stage</th><th class="r">' + loc('shared.cost', '花費') + '</th>'
+    // 最近 sessions (`#/sessions`): the film's header lockup — the title, a
+    // rule, the counts, `tabs` (the Sessions tab strip) and 看全部 on the
+    // right — over one line a row. A stage on the row's route is the film's
+    // glyph and `0N / 0M stage`; one the route does not name keeps its dots
+    // and its name (`stageNow`).
+    function recentHtml(list, o, tabs) {
+        var live = list.filter(function (s) { return s.state === 'live'; }).length;
+        return '<div class="phead khead" data-block="sessions-head"><h1>' + icon('sessions') + loc('shared.recentSessions', '最近 sessions') + '</h1>'
+            + '<p class="kcap"><span>' + loc('shared.capSessions', '<b>{n}</b>個 session', { n: list.length }) + '</span>'
+            + '<span>' + loc('shared.capLive', '<b>{n}</b>個 live', { n: live }) + '</span>'
+            + '<span>' + loc('shared.capByLast', '依最後動作，最新在上') + '</span></p>'
+            + '<span class="spacer"></span>' + (tabs || '') + '<a class="btn" href="#/list">' + loc('shared.seeAll', '看全部 →') + '</a></div>'
+            + '<section class="panel ksess" data-block="sessions"><div class="tbl-wrap"><table class="t">'
+            + '<colgroup><col><col style="width:150px"><col style="width:200px"><col style="width:84px"><col style="width:72px"><col style="width:168px"></colgroup>'
+            + '<thead><tr><th>' + loc('shared.thTask', '任務') + '</th><th>' + loc('shared.thProject', '專案') + '</th><th>stage</th><th class="r">' + loc('shared.cost', '花費') + '</th>'
             + '<th class="r">token</th><th>' + loc('shared.thState', '狀態') + '</th></tr></thead><tbody>'
             + list.map(function (s) {
                 var t = sessionTotals(s);
-                return '<tr class="link" data-href="' + sessionHash(s.id) + '"><td class="task"><a href="' + sessionHash(s.id) + '">'
+                return '<tr class="link" data-href="' + sessionHash(s.id) + '"><td class="task"><a href="' + sessionHash(s.id) + '" title="' + esc(s.task || '') + '">'
                     + esc(s.task || loc('shared.unnamed', '（未命名）')) + '</a></td><td><span class="pchip"><i class="sw" style="background:'
                     + colorOf('project', s.pkey, o.pkeys) + '"></i>' + esc(o.names[s.pkey] || s.pkey) + '</span></td>'
-                    + '<td class="c-stage">' + stageNow(s) + '</td><td class="r">' + usd(t.usd) + '</td><td class="r muted">' + tokens(t.tokens) + '</td>'
+                    + '<td class="c-stage">' + (keelStage(s) ? '<span class="kstage">' + keelProgress(s) + keelStage(s) + '</span>' : stageNow(s)) + '</td>'
+                    + '<td class="r">' + usd(t.usd) + '</td><td class="r muted">' + tokens(t.tokens) + '</td>'
                     + '<td class="c-state">' + statePill(s) + runningTag(s) + '</td></tr>';
-            }).join('') + '</tbody></table></div>';
+            }).join('') + '</tbody></table></div></section>';
     }
     // The 文件 card: one section per project whose `.fankeel/map.md` was
     // found, quoting `parseMapCard`'s own reading of it rather than
@@ -1283,7 +1295,7 @@
         var n = { dispatch: x ? x.rows.length : null, events: x ? x.events.length : null };
         var run = x ? x.rows.filter(function (r) { return agentState(x, r, s) === 'running'; }).length : 0;
         if (tab === 'cost') tab = 'timeline';
-        return '<nav class="tabs" aria-label="' + loc('ses.sessionView', 'session 檢視') + '">' + TAB_SHOWN.map(function (k) {
+        return '<nav class="tabs" data-block="session-tabs" aria-label="' + loc('ses.sessionView', 'session 檢視') + '">' + TAB_SHOWN.map(function (k) {
             return '<a href="' + sessionHash(s.id, k) + '"' + (k === tab ? ' class="on" aria-current="page"' : '') + '>' + label[k]
                 + (n[k] !== null && n[k] !== undefined ? '<small>' + n[k] + '</small>' : '')
                 + (k === 'dispatch' && run ? '<i class="dot live" title="' + loc('ses.nAgentsRunning', '{n} 個 agent running', { n: run }) + '"></i>' : '') + '</a>';
@@ -3046,7 +3058,7 @@
             + '<div class="chart">' + histSvg(bars, o) + '</div></section>';
     }
     function sessionsPage() {
-        return subtabsHtml('sessions') + '<section class="panel" data-block="sessions">' + recentHtml(recentRows(homeRows(), DAYS), homeOpts(null)) + '</section>';
+        return recentHtml(recentRows(homeRows(), DAYS), homeOpts(null), subtabsHtml('sessions'));
     }
     function projectsPage() {
         return subtabsHtml('projects') + '<section class="panel" data-block="projects">' + projectsHtml(projectRows(homeRows(), DAYS), homeOpts(null)) + '</section>';
@@ -3172,12 +3184,15 @@
         var body = r.tab === 'dispatch' ? (x ? dispatchStagesHtml(L, s.id, hi) + '<div class="det">' + dispatchHtml(x, s, dispatchUi(s)) + '</div>' : detailNote(s))
             : r.tab === 'events' ? (x ? '<div class="det">' + replayHtml(x, view.kinds, s) + '</div>' : detailNote(s))
                 : overview;
-        return '<section class="panel"><div class="eyebrow">session <span class="mono">' + esc(String(s.id).slice(0, 8)) + '</span> · '
+        // The film's header (2026-10-01 layout): the glyph filled as the route
+        // is, `0N / 0M stage` over the title, the meta chips beside them.
+        return '<section class="panel kshead" data-block="session-head"><div class="eyebrow">session <span class="mono">' + esc(String(s.id).slice(0, 8)) + '</span> · '
             + '<a href="' + projectHash(s.pkey) + '">' + esc(NAMES[s.pkey] || s.pkey) + '</a> · ' + stamp(Date.parse(s.started)) + '</div>'
-            + '<h1 class="s-title">' + esc(s.task || loc('dash.unnamed', '（未命名）')) + '</h1>'
+            + '<div class="ks-top">' + keelProgress(s) + '<div class="ks-t">' + keelStage(s)
+            + '<h1 class="s-title">' + esc(s.task || loc('dash.unnamed', '（未命名）')) + '</h1></div>'
             + '<div class="s-meta">' + statePill(s) + (S.serve ? liveTag(s.state === 'live', polledAt, Date.now()) : '')
             + (s.model ? '<span class="chip"><i class="sw" style="background:var(--m-' + family(s.model) + ')"></i>' + loc('dash.mainSession', '主 session') + ' <span class="mono">'
-                + esc(s.model) + '</span></span>' : '') + effortChip(s.effort) + '</div>'
+                + esc(s.model) + '</span></span>' : '') + effortChip(s.effort) + '</div></div>'
             + railHtml(s, Boolean(S.serve) && s.state === 'live', S.serve ? Date.now() : NOW)
             + sessionHeadHtml(s, x) + '</section>'
             + tabsHtml(s, r.tab, x) + '<section class="panel"' + (r.tab === 'dispatch' ? ' data-block="dispatch"' : '') + '>' + body + '</section>';

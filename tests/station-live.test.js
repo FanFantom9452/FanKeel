@@ -25,15 +25,16 @@ const ROW = {
 };
 const O = { names: {}, pkeys: [] };
 
-test('a live row rings the stage it is in, names it with its number, and says how many agents are running', () => {
+test('a live row draws its stage as the film\'s glyph and count, and says how many agents are running', () => {
     const html = V.recentHtml([ROW], O);
-    assert.match(html, /<i title="build（現在）" class="now" style="--c:var\(--st-build\);background:var\(--c\)"><\/i>/);
-    assert.match(html, /<span class="stname">build<span class="of">3\/4<\/span><\/span>/);
+    assert.match(html, /<span class="kstage"><svg class="glyph k-only prog"[^>]*style="--c:var\(--st-build\)">/);
+    assert.match(html, /<span class="kst k-only" style="--c:var\(--st-build\)"><b>03<\/b><i>&nbsp;\/&nbsp;04<\/i><u>build<\/u><\/span><\/span>/);
     assert.match(html, /<span class="runn" title="此刻有 2 個 agent 是 running"><i class="dot live"><\/i>running 2<\/span>/);
     assert.match(V.recentHtml([Object.assign({}, ROW, { running: 0 })], O), /<span class="runn zero"[^>]*>running 0<\/span>/);
     const stale = V.recentHtml([Object.assign({}, ROW, { state: 'stale', running: null })], O);
-    assert.doesNotMatch(stale, /class="now"|runn/, 'a row that is not live rings nothing and counts nothing');
-    assert.match(stale, /<span class="stname">build/, 'and still names its stage');
+    assert.doesNotMatch(stale, /runn/, 'a row that is not live counts nothing');
+    const off = V.recentHtml([Object.assign({}, ROW, { stage: 'audit' })], O);
+    assert.match(off, /<span class="stname">audit/, 'a stage the route does not name keeps its name');
 });
 
 test('the rail times each stage behind the current one, and counts the current one up from when it was entered while live', () => {
