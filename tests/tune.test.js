@@ -396,6 +396,16 @@ test('--proxy: a request with classes and no block gets the class lines as sourc
     assert.equal((await request(base + '__live/request', 'POST', { page: '/', note: 'x' })).status, 400, 'neither a block nor a selector');
 });
 
+test('--proxy: a selector-only item beside one block still holds the edit to that one block', async (t) => {
+    const cwd = liveRepo();
+    const up = await upstreamServer(t);
+    const base = await startProxy(t, cwd, ['--proxy', up.url, '--src', 'src/view.js']);
+    const made = await request(base + '__live/request', 'POST', { page: '/', items: [{ note: 'a', selector: 'body > b' }, { note: 'b', block: 'b' }] });
+    assert.equal(made.status, 200, made.text);
+    const job = JSON.parse(spawnSync(process.execPath, [CLI, 'wait', '--timeout', '5'], { cwd, encoding: 'utf8' }).stdout);
+    assert.deepEqual(job.blocks, ['b']);
+});
+
 // docs/plans/2026-09-26-ready-five-design.md §3, editing-pulse: the overlay
 // rings the block tune is working on, so the queue has to say which it is.
 test('the queue names the block being edited and which round of it this is', async (t) => {

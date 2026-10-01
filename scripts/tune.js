@@ -178,7 +178,7 @@ function serve(dir, port, live, upstream) {
                 const first = items[0];
                 const note = items.length > 1 ? items.map((it, i) => (i + 1) + '. ' + it.note).join('\n') : first.note;
                 const id = 'r-' + String(requests().length + 1).padStart(4, '0');
-                append(Object.assign({ id, status: 'queued', page: upstream ? page : relPath(root, file), file, block: first.block, selector: first.selector, classes: first.classes, text: first.text, note }, union.length > 1 ? { blocks: union } : {}, many ? { items } : {}));
+                append(Object.assign({ id, status: 'queued', page: upstream ? page : relPath(root, file), file, block: first.block, selector: first.selector, classes: first.classes, text: first.text, note }, union.length > 1 || (union.length === 1 && union[0] !== first.block) ? { blocks: union } : {}, many ? { items } : {}));
                 send(res, 200, TYPES['.json'], JSON.stringify({ id }));
                 return broadcast({ type: 'queued', id, block: first.block, selector: first.selector });
             });
