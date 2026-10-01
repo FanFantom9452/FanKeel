@@ -370,7 +370,13 @@ then asks this stage's gate.
      has not shown it can. Then compare, for every pair of mutations the
      diff's tests name, the set of tests each one reddens: two mutations
      that redden exactly the same tests are a gap — one test that tells
-     them apart is missing.
+     them apart is missing. Then the denominator: list every
+     addEventListener and every branch selector (each closest('...') or
+     [data-...] a handler tests) in the changed file, grep tests/ for
+     each one's event name or attribute string, and count a zero-hit
+     one as a gap — a mutation run over only the handlers you were
+     given cannot find a listener nobody tests. (2026-10-01: verify's
+     second return to build listed ten such listeners.)
    Part 3 — every changed line traces to the task's text; the patterns
      already in the repository are followed. Then name the page this
      change makes false (a renamed export, a changed default, a removed
