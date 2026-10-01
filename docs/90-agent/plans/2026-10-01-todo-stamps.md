@@ -27,10 +27,10 @@ Spec 是本 task survey 站的報告（gitignored，只在主 checkout）；這�
 
 ## Risks
 
-- 兩個 worktree 各自重生 `TODO.md`，提交時互撞 — Task 2、Task 5 — Task 2 的 `Consumes:` 宣告 Task 1 的 `TODO.md`，Task 5 宣告 Task 2、3、4 的產出，`ledger.js ready` 等它們完成才派；Task 3、4 的 `index` 不改 `TODO.md`（群組還有 `09-30` 的條目），它們若發現 `TODO.md` 變了，就停手回報。
+- 兩個 worktree 各自重生 `TODO.md`，提交時互撞 — Task 2、Task 5 — Task 2 的 `Consumes:` 宣告 Task 1 的 `TODO.md`，Task 5 宣告 Task 2、3、4 的產出，`ledger.js ready` 等它們完成才派；Task 3、4 的 `index` 不改 `TODO.md`（群組還有 `09-30` 的條目），它們若發現 `TODO.md` 變了，就停手回報。Task 6 也重生並提交 `TODO.md`，但它是主控在 build close 回報之後才做，那時 Task 5 早已提交，不會同時跑。
 - Task 5 開工時，worktree 的 sha 沒含 Task 2、3、4 的 commit，`### 受控 build/verify 實跑` 仍印 `09-30.` — Task 5 — 第一步先 grep 另外七個 stage-agents 條目的 `stamp`，不是全部 `2026-10-01` 就停手回報。
 - `build close` 的 brain 如果沒經 await（主控沒跑 `scripts/await.js`，或 await 印的是 `timeout`／`lost`），就沒有可讀的那一行 — Task 6 — 第一步先找主控自己這次 build close 的 await 輸出；找不到或不是 `handoff` 行，就不關條目，把找到的原樣寫進條目正文。
-- `stage-agents-1` 新的 description 超過 200 字元 — Task 2 — `todo-check` 會擋；照步驟裡的字串寫，印出來 182 字元。
+- `stage-agents-1` 新的 description 超過 200 字元 — Task 2 — `todo-check` 會擋；照步驟裡的字串寫，description 166 字元，連 label 印出來 180 字元。
 
 ## Task 1: 三個 Blocked 群組重新蓋章 10-01
 
