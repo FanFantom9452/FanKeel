@@ -270,8 +270,9 @@ then asks this stage's gate.
    `fankeel-brain` asks `ledger.js --plan <f> ready --worktree` instead: there
    two tasks sharing a `Modify:` or `Test:` file go out together, and a
    `Read:` of a neighbour's file or a `Consumes`/`Produces` edge still holds
-   one back. It sends every implementer with `isolation: "worktree"`, and each
-   task's block in its commit file opens with `worktree <path>`, the path that
+   one back. It sends every implementer with `isolation: "worktree"`; the commit
+   file's first line is `into <path>`, the main tree the cherry-pick lands on, and each
+   task's block opens with `worktree <path>`, the path that
    implementer's Agent result names. `scripts/commit.js` commits the block in
    that worktree and cherry-picks it onto HEAD. A reply `conflict <paths>`
    means that task is not in HEAD: send it once more, fresh, on the new HEAD,

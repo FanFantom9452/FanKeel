@@ -192,6 +192,23 @@ test('an agent branch whose patch HEAD already holds is spent; one with a commit
   assert.match(text, /worktree-agent-open/);
 });
 
+// `git branch -D` refuses a branch checked out anywhere, the main tree included.
+test('an agent branch checked out in the main tree is not listed as spent', () => {
+  const { root, git } = repo();
+  git(['checkout', '-q', '-b', 'worktree-agent-here']);
+  const result = scan(root);
+  assert.deepEqual(result.agentSpent, []);
+  assert.deepEqual(result.agentUnmerged, []);
+});
+
+test('an agent branch checked out in the worktree scan runs from is not listed as spent', () => {
+  const { root, git } = repo();
+  const wt = path.join(root, '..', path.basename(root) + '-linked');
+  git(['worktree', 'add', '-q', '-b', 'worktree-agent-linked', wt]);
+  const result = scan(wt);
+  assert.deepEqual(result.agentSpent, []);
+});
+
 test('outside a repository the git sections are absent and the rest still runs', () => {
   const root = tmp('fankeel-norepo-');
   const result = scan(root);

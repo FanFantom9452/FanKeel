@@ -206,6 +206,15 @@ function worktreesInUse(root) {
     return out;
 }
 
+// Every branch checked out in any worktree, the main one and this one included.
+function checkedOut(root) {
+    const out = new Set();
+    for (const line of git(root, ['worktree', 'list', '--porcelain']) || []) {
+        if (line.startsWith('branch ')) out.add(line.slice('branch '.length).replace(/^refs\/heads\//, ''));
+    }
+    return out;
+}
+
 function worktreesOf(root) {
     const lines = git(root, ['worktree', 'list', '--porcelain']);
     if (!lines) return [];
@@ -291,7 +300,9 @@ function scan(root) {
     // ancestor of HEAD: spent is an ancestor, or every line of
     // `git cherry HEAD <branch>` starting `-`, its patch already in HEAD. One
     // `+` line and it holds work HEAD lacks — a human call, not a cleanup.
-    const withTree = new Set(listed.map((w) => w.branch).filter(Boolean));
+    // `listed` drops the main checkout and the one we stand in, but
+    // `git branch -D` refuses a branch checked out in either, so they count.
+    const withTree = checkedOut(root);
     const agentSpent = [];
     const agentUnmerged = [];
     for (const name of (git(root, ['branch', '--list', 'worktree-agent-*', '--format=%(refname:short)']) || []).map((s) => s.trim()).filter(Boolean)) {
