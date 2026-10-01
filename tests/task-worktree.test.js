@@ -76,3 +76,22 @@ test('the block and a subagent brief both name the worktree', () => {
   assert.match(render({ mine: { sessionId: A, data }, others: [], now: Date.now(), root: '/r' }), line);
   assert.match(renderBrief({ mine: { sessionId: A, data }, agentType: 'fankeel-reader', root: '/r', profile: { values: {} } }), line);
 });
+
+// docs/90-agent/plans/2026-10-02-worktree-habit-design.md §2: start decides
+// once, from the class it starts at; a later `route` up opens nothing.
+test('worktree=bounded opens for bounded and not for spike; worktree=architectural skips bounded', () => {
+  const cases = [['bounded', 'spike', false], ['bounded', 'bounded', true], ['architectural', 'bounded', false], ['architectural', 'architectural', true]];
+  for (const [value, cls, opens] of cases) {
+    const dir = repo({ worktree: value });
+    const { out, code } = run(dir, ['start', '--session', A, '--task', 't', '--class', cls]);
+    assert.equal(code, 0, out);
+    assert.equal(Boolean(registry.readSession(dir, A).worktree), opens, value + ' / ' + cls);
+  }
+});
+
+test('a suggested commit.format prints as one quoted shell word', () => {
+  const dir = repo(null);
+  for (const s of ['feat: a', 'fix(x): b', 'docs: c', 'chore: d']) git(dir, ['commit', '-q', '--allow-empty', '-m', s]);
+  const { out } = run(dir, ['start', '--session', A, '--task', 't']);
+  assert.ok(out.includes("profile set commit.format '^(chore|docs|feat|fix)(\\([^)]+\\))?: '"), out);
+});

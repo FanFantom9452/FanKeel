@@ -689,7 +689,10 @@ function cmdStart(root, opts) {
     // Its own checkout, where the profile asks for one. A git that refuses
     // leaves the task on the main tree and says why, rather than refusing it.
     let worktreeNote = null;
-    if (prof.values.worktree === true) {
+    // docs/90-agent/plans/2026-10-02-worktree-habit-design.md §2: `true`
+    // always, `bounded` / `architectural` from that class up, decided once
+    // here from the class the task starts at.
+    if (profile.wantsWorktree(prof.values.worktree, cls || classForRoute(route))) {
         const made = openWorktree(root, projectRootFor(root, opts), id);
         if (made.worktree) data.worktree = made.worktree;
         else worktreeNote = 'worktree: not opened — ' + made.error;
@@ -756,7 +759,7 @@ function cmdStart(root, opts) {
         const keys = Object.keys(suggested);
         if (keys.length) {
             for (const k of keys) {
-                lines.push('  node ' + __filename + ' profile set ' + k + ' ' + suggested[k]
+                lines.push('  node ' + __filename + ' profile set ' + k + ' ' + profile.shellWord(suggested[k])
                     + (opts.project ? ' --project ' + opts.project : ''));
             }
         } else {
@@ -1139,7 +1142,7 @@ function cmdProfile(root, opts) {
         const keys = Object.keys(values);
         if (!keys.length) { lines.push('  nothing the history answers'); return lines.join('\n'); }
         lines.push('', JSON.stringify(values, null, 2), '');
-        for (const k of keys) lines.push('node ' + path.relative(process.cwd(), __filename).split(path.sep).join('/') + ' profile set ' + k + ' ' + values[k] + (opts.project ? ' --project ' + opts.project : ''));
+        for (const k of keys) lines.push('node ' + path.relative(process.cwd(), __filename).split(path.sep).join('/') + ' profile set ' + k + ' ' + profile.shellWord(values[k]) + (opts.project ? ' --project ' + opts.project : ''));
         return lines.join('\n');
     }
     fail('profile is one of: show, set <key> <value> [--default], unset <key> [--default], suggest');
