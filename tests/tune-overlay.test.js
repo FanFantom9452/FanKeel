@@ -12,7 +12,10 @@
 // says so, not that it runs. Listeners no test dispatches: the logo's
 // pointercancel, the fold, clear and out buttons, document mousemove beyond the
 // one hover the wheel test fires, window blur, keyup and keypress, scroll and
-// resize.
+// resize, the draft number button click (overlay.js:348), the chip remove x
+// click (:360), the draft delete button click (:373), the diff link click
+// (:769), and the keydown tray-close branch (Escape, or any keystroke from
+// inside the assistant when not picking, overlay.js:676-686).
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
