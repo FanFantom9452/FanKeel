@@ -10,7 +10,11 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔await〕`kind` 讀不到時，await 改從 brain 自己的 transcript 第一行讀（commit a0187d9d769dd3eb0821a22e62ef3543739eef6d）：重裝後看一次真實 `build close` 的 await 是否盯 `build.md` — [scripts/await.js](scripts/await.js).
 
+- 〔gate〕10-01：同一 task 第二次以後進 verify，gate 被擋成 already answered，拿的是前一輪 verify 的答案，只能改用文字問 — [gate.js](hooks/gate.js).
+
 - 〔review〕10-01 使用者要求：TODO 全表盤點 build↔verify 來回多輪；render reviewer 302 份 transcript 僅派 10 次。複盤哪些檢查該前移、是否腳本強制或補 render.json — [render-reviewer](agents/fankeel-render-reviewer.md).
+
+- 〔review〕10-01 使用者要求：TODO 全表盤點 build↔verify 來回 7 輪，每輪 verify 才找到下一批未測 click 分支；分母應在第一輪一次列全，或設回合上限 — [SKILL.md](skills/fankeel-build/SKILL.md).
 
 ## Needs a decision
 
