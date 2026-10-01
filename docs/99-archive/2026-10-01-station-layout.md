@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # STATION 版面重排（承接 promo v5）Implementation Plan

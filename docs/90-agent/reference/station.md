@@ -622,7 +622,7 @@ which cards show and move them with ↑ ↓. The choice is `station.dash`, read 
 order lacks; 還原預設 clears the key. The default is the five cards in the
 order 進行中, 等你回答, 可以開工, 近 30 天花費, 最近 sessions.
 
-Since the 2026-10-01 layout (`docs/90-agent/plans/2026-10-01-station-layout-design.md`)
+Since the 2026-10-01 layout (`docs/99-archive/2026-10-01-station-layout-design.md`)
 each page opens with the film's header lockup: a title, a rule, then one mono
 line of where things stand. On the dashboard it is `data-block="dash-head"` —
 live sessions, gates waiting, today's spend and the Ready count, each the
