@@ -246,6 +246,7 @@ function parseArgs(head, whole) {
     if (whole.includes('--push')) opts.push = true;
     if (whole.includes('--no-push')) opts.push = false;
     if (whole.includes('--from-gate')) opts.fromGate = true;
+    if (whole.includes('--handoff')) opts.handoff = true;
     return opts;
 }
 
@@ -999,7 +1000,9 @@ function cmdNote(root, opts) {
 
 function cmdNext(root, opts) {
     const id = requireSession(opts);
-    let text = opts.positional.join(' ');
+    // Both flags are booleans the argv split may leave among the words when
+    // one comes first after the verb; neither is part of the line.
+    let text = opts.positional.filter((w) => w !== '--handoff' && w !== '--from-gate').join(' ');
     // `--from-gate`: the line a stage agent wrote for a pause, read from its
     // handoff rather than retyped by the controller.
     if (opts.fromGate === true) {
@@ -1009,8 +1012,14 @@ function cmdNext(root, opts) {
         if (!gate || typeof gate.next !== 'string' || !gate.next.trim()) fail('No gate block with a next line in ' + (file || 'this task\'s handoff'));
         text = gate.next;
     }
-    if (!registry.setNext(root, id, text)) fail('No entry for this session under ' + root);
-    return text.trim() ? 'fankeel — next: ' + registry.nextOf(registry.readSession(root, id)) : 'fankeel — next cleared.';
+    // `--handoff`: the user picked hand off at a gate. The stamp is what lets
+    // `show` and a new window tell this entry from an abandoned one.
+    const handoff = opts.handoff === true;
+    if (handoff && !text.trim()) fail('A hand-off needs a next line: give it, or --from-gate.');
+    if (!registry.setNext(root, id, text, handoff ? now() : undefined)) fail('No entry for this session under ' + root);
+    if (!text.trim()) return 'fankeel — next cleared.';
+    const out = 'fankeel — next: ' + registry.nextOf(registry.readSession(root, id));
+    return handoff ? out + NL + 'handed off: in a new terminal, /fankeel offers Adopt first.' : out;
 }
 
 // The values the hooks see for a session: its record's project and config dir,

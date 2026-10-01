@@ -896,3 +896,51 @@ test('next --from-gate with no gate block refuses and leaves next alone', () => 
   assert.match(out.out, /No gate block with a next line in/);
   assert.equal(registry.nextOf(registry.readSession(dir, A)), 'keep this');
 });
+
+test('next --handoff stamps the hand-off; a plain next takes it back', () => {
+  const dir = root();
+  run(dir, ['start', '--session', A, '--task', 'ship it']);
+  const out = run(dir, ['next', 'pick up at verify', '--handoff', '--session', A]);
+  assert.equal(out.code, 0, out.out);
+  assert.match(out.out, /handed off: in a new terminal, \/fankeel offers Adopt first\./);
+  const data = entry(dir, A);
+  assert.equal(data.next, 'pick up at verify');
+  assert.equal(Number.isFinite(Date.parse(data.handoff)), true);
+  assert.equal(registry.handoffOf(data), data.handoff);
+  run(dir, ['next', 'something else', '--session', A]);
+  assert.equal(entry(dir, A).handoff, undefined);
+  assert.equal(registry.handoffOf(entry(dir, A)), null);
+});
+
+test('next --from-gate --handoff takes the gate line and stamps the hand-off', () => {
+  const { handoffPath } = require('../lib/handoff.js');
+  const dir = root();
+  run(dir, ['start', '--session', A, '--task', 'survey brain', '--route', 'survey,design']);
+  const file = handoffPath(dir, registry.readSession(dir, A), 'survey');
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const TICKS = '`'.repeat(3);
+  const gate = { questions: [{ question: 'q', header: 'h', multiSelect: false, options: [{ label: 'a', description: 'a' }, { label: 'b', description: 'b' }] }], next: 'survey 待核可：讀 survey.md' };
+  fs.writeFileSync(file, 'report\n\n' + TICKS + 'json gate\n' + JSON.stringify(gate) + '\n' + TICKS + '\n');
+  const out = run(dir, ['next', '--from-gate', '--handoff', '--session', A]);
+  assert.equal(out.code, 0, out.out);
+  assert.equal(entry(dir, A).next, 'survey 待核可：讀 survey.md');
+  assert.equal(Number.isFinite(Date.parse(entry(dir, A).handoff)), true);
+});
+
+test('next --handoff with no line refuses and writes nothing', () => {
+  const dir = root();
+  run(dir, ['start', '--session', A, '--task', 'ship it']);
+  const out = run(dir, ['next', '--handoff', '--session', A]);
+  assert.notEqual(out.code, 0);
+  assert.match(out.out, /A hand-off needs a next line/);
+  assert.equal(entry(dir, A).handoff, undefined);
+});
+
+test('guard: adopt leaves the hand-off behind and keeps next', () => {
+  const dir = root();
+  run(dir, ['start', '--session', B, '--task', 'theirs']);
+  run(dir, ['next', 'pick up at verify', '--handoff', '--session', B]);
+  assert.equal(run(dir, ['adopt', B, '--session', A]).code, 0);
+  assert.equal(entry(dir, A).next, 'pick up at verify');
+  assert.equal(entry(dir, A).handoff, undefined);
+});
