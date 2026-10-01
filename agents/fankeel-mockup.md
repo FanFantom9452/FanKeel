@@ -46,6 +46,11 @@ When the prompt names a `data-block` and a request, change the element
 carrying that name and nothing outside it. An edit that reaches a neighbour
 is put back by `tune.js done`, and the request comes back to you.
 
+A request with `items` is several changes sent together: each item's `note`
+applies to its own `block` — or to every name in its `blocks` — and
+`tune.js done` holds the edit to all of them at once. Make every item's
+change in the one pass, and leave a block no item names alone.
+
 ## Check it served
 
 The page is checked where the user will open it: through a server, never a

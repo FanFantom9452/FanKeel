@@ -5,7 +5,7 @@
 //   node scripts/tune.js serve <dir> [--port 7819]   serve <dir> with the overlay injected
 //   node scripts/tune.js serve <dir> --src <file,...> --rebuild "<cmd>"   live mode: the page is built from --src
 //   node scripts/tune.js serve --proxy <url> --src <file,...> [--rebuild "<cmd>"]   the real server's pages, overlay spliced into its HTML
-//   node scripts/tune.js wait [--timeout 600]          block until the next request; print it as JSON
+//   node scripts/tune.js wait [--timeout 600]          block until the next request; print it as JSON, with its items
 //   node scripts/tune.js done <id>                     check the edit stayed in its block; tell the page
 //
 // State lives in `.fankeel/build/tune/` under the cwd: `queue.jsonl`, a
@@ -127,7 +127,7 @@ function serve(dir, port, live, upstream) {
             // What `wait` has handed out and `done` has not settled, with how
             // many times that block has been asked for so far — the round.
             const editing = rows.filter((r) => r.status === 'taken')
-                .map((r) => ({ id: r.id, block: r.block, round: rows.filter((x) => x.block === r.block && x.id <= r.id).length }));
+                .map((r) => Object.assign({ id: r.id, block: r.block, round: rows.filter((x) => x.block === r.block && x.id <= r.id).length }, r.blocks ? { blocks: r.blocks } : {}));
             return send(res, 200, TYPES['.json'], JSON.stringify({ pending, editing }));
         }
         const diff = /^\/__live\/diff\/(r-\d+)$/.exec(pathname);
@@ -136,7 +136,7 @@ function serve(dir, port, live, upstream) {
             return fs.existsSync(f) ? send(res, 200, TYPES['.txt'], fs.readFileSync(f)) : send(res, 404, TYPES['.txt'], 'no diff');
         }
         if (req.method === 'POST' && (pathname === '/__live/request' || pathname === '/__live/result')) {
-            readBody(req, { destroyOnOverflow: true }).then((body) => {
+            readBody(req, { max: 262144, destroyOnOverflow: true }).then((body) => {
                 let data;
                 try {
                     data = JSON.parse(body);
@@ -150,20 +150,37 @@ function serve(dir, port, live, upstream) {
                 const page = String(data.page || '');
                 const file = upstream ? null : resolveInside(root, page);
                 const str = (v, n) => (typeof v === 'string' ? v.trim().slice(0, n) : '');
-                const block = str(data.block, 200);
-                const note = str(data.note, 4000);
-                const selector = str(data.selector, 500);
-                const text = str(data.text, 80);
-                const classes = Array.isArray(data.classes) ? data.classes.filter((c) => typeof c === 'string').slice(0, 20) : [];
-                const blocks = Array.isArray(data.blocks) ? data.blocks.map((b) => str(b, 200)).filter(Boolean).slice(0, 20) : [];
-                if (!note || (!block && !selector)) return send(res, 400, TYPES['.txt'], 'a note, and a block or a selector, are required');
-                if (!upstream && (!file || !/\.html?$/i.test(file) || !fs.existsSync(file) || !block)) {
+                const strs = (v, n) => (Array.isArray(v) ? v.map((x) => str(x, n)).filter(Boolean).slice(0, 20) : []);
+                // One change: a note for one element, or for several — then
+                // `blocks` and `selectors` name every one of them.
+                const itemOf = (d) => {
+                    const one = { note: str(d.note, 4000), block: str(d.block, 200), selector: str(d.selector, 500), classes: Array.isArray(d.classes) ? d.classes.filter((c) => typeof c === 'string').slice(0, 20) : [], text: str(d.text, 80) };
+                    const blocks = strs(d.blocks, 200);
+                    const selectors = strs(d.selectors, 500);
+                    if (blocks.length > 1) one.blocks = blocks;
+                    if (selectors.length > 1) one.selectors = selectors;
+                    return one;
+                };
+                const many = Array.isArray(data.items);
+                if (many && (data.items.length < 1 || data.items.length > 20)) return send(res, 400, TYPES['.txt'], 'items takes 1 to 20 changes');
+                const items = many ? data.items.map((d) => itemOf(d && typeof d === 'object' ? d : {})) : [itemOf(data)];
+                const bad = items.findIndex((it) => !it.note || (!it.block && !it.selector));
+                if (bad >= 0) return send(res, 400, TYPES['.txt'], (many ? 'item ' + (bad + 1) + ': ' : '') + 'a note, and a block or a selector, are required');
+                if (!upstream && (!file || !/\.html?$/i.test(file) || !fs.existsSync(file) || items.some((it) => !it.block))) {
                     return send(res, 400, TYPES['.txt'], 'a static page takes a data-block element on an html file under the served directory');
                 }
+                // Every block the request names, once each: what `done` holds
+                // the edit to. The first item's fields stay on the row, so a
+                // reader that knows one block still finds it, and with more
+                // than one item the note numbers every item's note.
+                const union = [];
+                for (const it of items) for (const b of it.blocks || [it.block]) if (b && !union.includes(b)) union.push(b);
+                const first = items[0];
+                const note = items.length > 1 ? items.map((it, i) => (i + 1) + '. ' + it.note).join('\n') : first.note;
                 const id = 'r-' + String(requests().length + 1).padStart(4, '0');
-                append(Object.assign({ id, status: 'queued', page: upstream ? page : relPath(root, file), file, block, selector, classes, text, note }, blocks.length > 1 ? { blocks } : {}));
+                append(Object.assign({ id, status: 'queued', page: upstream ? page : relPath(root, file), file, block: first.block, selector: first.selector, classes: first.classes, text: first.text, note }, union.length > 1 ? { blocks: union } : {}, many ? { items } : {}));
                 send(res, 200, TYPES['.json'], JSON.stringify({ id }));
-                return broadcast({ type: 'queued', id, block, selector });
+                return broadcast({ type: 'queued', id, block: first.block, selector: first.selector });
             });
             return undefined;
         }
@@ -195,7 +212,9 @@ function wait(timeoutSec) {
             append({ id: next.id, status: 'taken' });
             const job = { id: next.id, page: next.page, file: next.file, block: next.block, selector: next.selector || '', classes: next.classes || [], text: next.text || '', note: next.note };
             if (next.blocks) job.blocks = next.blocks;
-            if (live) job.sources = rankSources(live.src.map((f) => ({ file: f, text: fs.readFileSync(f, 'utf8') })), { block: next.block, classes: next.classes || [] });
+            const texts = live ? live.src.map((f) => ({ file: f, text: fs.readFileSync(f, 'utf8') })) : null;
+            if (live) job.sources = rankSources(texts, { block: next.block, classes: next.classes || [] });
+            if (next.items) job.items = next.items.map((it) => (live ? Object.assign({}, it, { sources: rankSources(texts, { block: it.block, classes: it.classes || [] }) }) : it));
             process.stdout.write(JSON.stringify(job) + '\n');
             return;
         }
@@ -322,6 +341,7 @@ function settle(r, ok, touched, message) {
     const type = ok ? 'done' : 'rejected';
     append({ id: r.id, status: type, touched });
     const event = ok ? { type, id: r.id, block: r.block, selector: r.selector || '' } : { type, id: r.id, block: r.block, touched, selector: r.selector || '' };
+    if (r.blocks) event.blocks = r.blocks;
     notify(event, () => {
         if (ok) {
             process.stdout.write('tune: ' + r.id + ' done — ' + message + '\n');

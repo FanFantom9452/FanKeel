@@ -423,3 +423,88 @@ test('--proxy and <dir> are one or the other, and --proxy needs --src', () => {
     assert.equal(bare.status, 2);
     assert.match(bare.stderr, /--proxy needs --src/);
 });
+
+test('a request with items: wait hands out every item, and done holds the edit to the blocks of all of them', async (t) => {
+    const cwd = tmp('fankeel-tune-');
+    fs.mkdirSync(path.join(cwd, 'site'));
+    const file = path.join(cwd, 'site', 'page.html');
+    const page = '<!DOCTYPE html><html><body>'
+        + '<section data-block="a"><p>1</p></section><section data-block="b"><p>2</p></section>'
+        + '<section data-block="c"><p>3</p></section><section data-block="d"><p>4</p></section>'
+        + '</body></html>\n';
+    fs.writeFileSync(file, page);
+    const base = await startServer(t, cwd);
+    const events = [];
+    const sse = http.get(base + '__live/events', (res) => res.on('data', (d) => events.push(String(d))));
+    t.after(() => sse.destroy());
+    const items = [
+        { note: '第一則', block: 'a', selector: 'section:nth-of-type(1)', classes: [], text: '1' },
+        { note: '第二則', block: 'b', blocks: ['b', 'c'], selector: 'section:nth-of-type(2)', selectors: ['section:nth-of-type(2)', 'section:nth-of-type(3)'], classes: [], text: '2' },
+    ];
+    const ask = () => request(base + '__live/request', 'POST', { page: '/page.html', items });
+    const wait = () => JSON.parse(spawnSync(process.execPath, [CLI, 'wait', '--timeout', '5'], { cwd, encoding: 'utf8' }).stdout);
+    const done = (id) => spawnSync(process.execPath, [CLI, 'done', id], { cwd, encoding: 'utf8' });
+
+    assert.equal(JSON.parse((await ask()).text).id, 'r-0001');
+    const job = wait();
+    assert.deepEqual(job.items.map((it) => it.note), ['第一則', '第二則']);
+    assert.deepEqual(job.items[1].blocks, ['b', 'c']);
+    assert.deepEqual(job.items[1].selectors, ['section:nth-of-type(2)', 'section:nth-of-type(3)']);
+    assert.deepEqual(job.blocks, ['a', 'b', 'c']);
+    assert.equal(job.note, '1. 第一則\n2. 第二則');
+
+    const inside = page.replace('<p>1</p>', '<p>one</p>').replace('<p>3</p>', '<p>three</p>');
+    fs.writeFileSync(file, inside);
+    const kept = done('r-0001');
+    assert.equal(kept.status, 0, kept.stderr);
+    assert.equal(fs.readFileSync(file, 'utf8'), inside);
+
+    await ask();
+    wait();
+    fs.writeFileSync(file, inside.replace('<p>4</p>', '<p>four</p>'));
+    const refused = done('r-0002');
+    assert.equal(refused.status, 1);
+    assert.match(refused.stderr, /changed d;/);
+    assert.equal(fs.readFileSync(file, 'utf8'), inside, 'the edit outside every item was not put back');
+
+    await new Promise((r) => setTimeout(r, 200));
+    assert.match(events.join(''), /"type":"done","id":"r-0001","block":"a","selector":"section:nth-of-type\(1\)","blocks":\["a","b","c"\]/);
+});
+
+test('items are refused when empty, over twenty, or missing a note or an element, and on a static page every item needs a block', async (t) => {
+    const cwd = tmp('fankeel-tune-');
+    fs.mkdirSync(path.join(cwd, 'site'));
+    fs.writeFileSync(path.join(cwd, 'site', 'page.html'), PAGE);
+    const base = await startServer(t, cwd);
+    const ask = (items) => request(base + '__live/request', 'POST', { page: '/page.html', items });
+    const one = { note: 'x', block: 'now' };
+    assert.equal((await ask([])).status, 400);
+    assert.match((await ask(Array(21).fill(one))).text, /1 to 20/);
+    assert.equal((await ask([one, { note: '', block: 'now' }])).text, 'item 2: a note, and a block or a selector, are required');
+    assert.match((await ask([one, { note: 'y', selector: 'main > footer' }])).text, /a static page takes a data-block element/);
+    const ok = await ask(Array(20).fill(one));
+    assert.equal(ok.status, 200, ok.text);
+    assert.equal(JSON.parse((await request(base + '__live/queue', 'GET')).text).pending, 1);
+});
+
+test('the queue names every block of an items request it is editing', async (t) => {
+    const cwd = tmp('fankeel-tune-');
+    fs.mkdirSync(path.join(cwd, 'site'));
+    fs.writeFileSync(path.join(cwd, 'site', 'page.html'), PAGE);
+    const base = await startServer(t, cwd);
+    await request(base + '__live/request', 'POST', { page: '/page.html', items: [{ note: 'x', block: 'now' }, { note: 'y', block: 'sessions' }] });
+    spawnSync(process.execPath, [CLI, 'wait', '--timeout', '5'], { cwd, encoding: 'utf8' });
+    const q = JSON.parse((await request(base + '__live/queue', 'GET')).text);
+    assert.deepEqual(q.editing, [{ id: 'r-0001', block: 'now', round: 1, blocks: ['now', 'sessions'] }]);
+});
+
+test('live mode: wait ranks the sources of every item', async (t) => {
+    const cwd = liveRepo();
+    const base = await startServer(t, cwd, ['--src', 'src/view.js', '--rebuild', 'node build.js']);
+    await request(base + '__live/request', 'POST', { page: '/page.html', items: [{ note: 'x', block: 'now' }, { note: 'y', block: 'page', classes: [] }] });
+    const waited = spawnSync(process.execPath, [CLI, 'wait', '--timeout', '5'], { cwd, encoding: 'utf8' });
+    assert.equal(waited.status, 0, waited.stderr);
+    const job = JSON.parse(waited.stdout);
+    assert.deepEqual(job.items[0].sources, ['src/view.js:2']);
+    assert.deepEqual(job.items[1].sources, []);
+});
