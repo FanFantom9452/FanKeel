@@ -258,9 +258,14 @@ function main(raw) {
         }
         // A question the user already answered at an earlier stage's gate is
         // the user's to settle once. Answers whose stage report was rewritten
-        // after them (`stale`) are exempt: the gate may be a new question.
+        // after them (`stale`) are exempt: the gate may be a new question. So
+        // are the earlier laps of the stage being worked (gate-3): a stage
+        // entered again asks its gate about new work, and its last visit's
+        // question reads like this one — verify-5 overlapped verify-4's
+        // answer 0.70 on 2026-10-01. `answeredOf` still returns them, for the
+        // brief.
         let answered = [];
-        try { answered = answeredOf(root, mine).filter((a) => !a.stale); } catch (e) { /* housekeeping */ }
+        try { answered = answeredOf(root, mine).filter((a) => !a.stale && a.stage !== mine.stage); } catch (e) { /* housekeeping */ }
         const again = repeatOf(asked, answered);
         if (again) {
             process.stdout.write(JSON.stringify({

@@ -539,6 +539,40 @@ test('stage.agents: an answer older than its stage report does not block the que
   assert.doesNotMatch(run(GATE, root, { tool_input: askOf(REASK) }), /already answered/);
 });
 
+// gate-3: a stage entered again asks its gate about new work, and its last
+// visit's question reads like this one. On 2026-10-01 verify-5's question
+// overlapped verify-4's answer 0.70 and was denied as already answered.
+const LAP_ONE = '全套全綠、12 個 mutation 全紅，但有 10 處 listener／branch 完全沒測試，怎麼走？';
+const LAP_TWO = '全套 3087 全綠、6 個 mutation 全紅，但 click handler 還有 3 個選擇器零測試，怎麼走？';
+const VERIFY_GATE = [{ question: LAP_TWO, header: 'verify 結果', options: [{ label: 'land：收尾 (Recommended)', description: 'a' }, { label: '回 build：補測試', description: 'b' }, { label: '暫停', description: 'c' }] }];
+// The controller's copy differs from the filed gate (one option description is
+// reworded), so it is not the filed gate word for word and the hook does not
+// exit early: only the repeat check stands between it and the user.
+const LAP_ASK = [Object.assign({}, VERIFY_GATE[0], { options: [VERIFY_GATE[0].options[0], Object.assign({}, VERIFY_GATE[0].options[1], { description: 'b, reworded' }), VERIFY_GATE[0].options[2]] })];
+function lapRoot(earlier, answered = LAP_ONE, questions = []) {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'verify', started: '2026-09-19T09:30:12.345Z', route: ['build', 'verify', 'land'], moves: [['build', 1], ['verify', 2], ['build', 3], ['verify', 4]], configDir: tmp('fankeel-cfg-') });
+  fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': 'build,verify' }));
+  const dir = path.join(root, '.fankeel', 'build', 'task-20260919T093012');
+  fs.mkdirSync(dir, { recursive: true });
+  const TICKS = '`'.repeat(3);
+  fs.writeFileSync(path.join(dir, 'verify-2.md'), '# report\n\n' + TICKS + 'json gate\n' + JSON.stringify({ questions: VERIFY_GATE, next: 'n' }) + '\n' + TICKS + '\n');
+  fs.writeFileSync(path.join(dir, earlier + '-answer.md'), JSON.stringify({ questions, answers: { [answered]: '回 build' } }));
+  return root;
+}
+
+test('stage.agents: an earlier lap of the stage being worked does not block its new gate', () => {
+  const out = run(GATE, lapRoot('verify'), { tool_input: askOf(LAP_ASK) });
+  assert.doesNotMatch(out, /already answered/);
+  assert.match(out, /gate not confirmed/);
+});
+
+test('guard: stage.agents: the same question answered at an earlier stage is still denied', () => {
+  const out = JSON.parse(run(GATE, lapRoot('build', LAP_TWO), { tool_input: askOf(LAP_ASK) }));
+  assert.equal(out.hookSpecificOutput.permissionDecision, 'deny');
+  assert.match(out.hookSpecificOutput.permissionDecisionReason, /already answered \(build\)/);
+});
+
 // docs/90-agent/plans/2026-09-30-init-design.md §6 (gate-2): the stage agent
 // rewrote its report after the answer and handed back the gate it had asked.
 test('stage.agents: the same gate asked again after its answer is denied; a rewritten one goes out', () => {
