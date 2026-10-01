@@ -372,11 +372,17 @@ then asks this stage's gate.
      that redden exactly the same tests are a gap — one test that tells
      them apart is missing. Then the denominator: list every
      addEventListener and every branch selector (each closest('...') or
-     [data-...] a handler tests) in the changed file, grep tests/ for
-     each one's event name or attribute string, and count a zero-hit
-     one as a gap — a mutation run over only the handlers you were
-     given cannot find a listener nobody tests. (2026-10-01: verify's
-     second return to build listed ten such listeners.)
+     matches('...') a handler tests, class and attribute selectors
+     included, e.g. closest('.fwrap'), closest('.pg input[name^="pg-"]'),
+     as well as [data-...] strings) in the changed file, grep tests/ for
+     each one's event name or selector string — a test that reaches a
+     data- branch through its dataset key (data-ask tested as
+     dataset.ask) counts as reached — and count a zero-hit one as a
+     gap — a mutation run over only the handlers you were given cannot
+     find a listener nobody tests. (2026-10-01: verify's second return
+     to build listed ten such listeners; 2026-10-01: verify's fifth
+     return found .fwrap, .pg input[name^="pg-"] and .tdf's [data-todo]
+     with zero hits though the event names all had hits.)
    Part 3 — every changed line traces to the task's text; the patterns
      already in the repository are followed. Then name the page this
      change makes false (a renamed export, a changed default, a removed
