@@ -9,6 +9,8 @@
 // Once every block has committed, the file is renamed to `<name>.done.md`.
 // A block whose first line is `worktree <path>` is committed in that worktree
 // and cherry-picked here; a conflict prints `conflict <paths>` and exits 1.
+// A first line `into <path>` above every block commits the whole file in that
+// worktree of this repository instead of the one it was started in.
 // `git commit -o`
 // takes only the listed paths, so whatever else is staged or dirty stays as it
 // was. It runs `git` from the top of the repository the current directory is
@@ -124,6 +126,15 @@ function landWorktree(top, block, run, oneLine) {
     return {};
 }
 
+// commit-2's check, shared with scripts/land.js: null when `commit.format` is
+// unset or `subject` matches it, else the sentence that refuses it.
+// lib/profile.js stores only a pattern that compiles.
+function formatMiss(values, subject) {
+    const format = values && values['commit.format'];
+    if (!format || new RegExp(format).test(subject)) return null;
+    return 'the subject "' + subject + '" does not match commit.format ' + format;
+}
+
 function main(argv, cwd) {
     if (argv.length !== 1) return { text: 'commit.js: usage: commit.js <commit file>', code: 2 };
     let raw;
@@ -132,17 +143,37 @@ function main(argv, cwd) {
     } catch (e) {
         return { text: 'commit.js: cannot read ' + argv[0], code: 1 };
     }
-    const parsed = parse(raw.trimStart());
+    // A first line `into <path>` belongs to the whole file, not to one block.
+    const body = raw.trimStart();
+    const into = /^into[ \t]+(\S[^\r\n]*?)[ \t]*(?:\r?\n|$)/.exec(body);
+    const parsed = parse(into ? body.slice(into[0].length).trimStart() : body);
     if (parsed.error) return { text: 'commit.js: ' + parsed.error, code: 1 };
 
     const run = (dir, args, input) => spawnSync('git', args, { cwd: dir, encoding: 'utf8', input });
     const top = run(cwd, ['rev-parse', '--show-toplevel']);
     if (top.status !== 0) return { text: 'commit.js: not inside a git repository', code: 1 };
-    const git = (args, input) => run(top.stdout.trim(), args, input);
+    // Where the profile and .fankeel/sensitive.txt are read: the checkout this
+    // was started in, which is the main one when the controller runs it.
+    const home = top.stdout.trim();
+    // `into <path>`: every block lands in that worktree of this repository
+    // rather than here. The controller runs this from the main checkout with
+    // no cd (lib/stages.js COMMIT_RULE), so without the line a task with its
+    // own worktree had its cherry-pick land on main.
+    // docs/90-agent/plans/2026-10-02-worktree-habit-design.md §1.
+    let topDir = home;
+    if (into) {
+        const want = path.resolve(home, into[1]);
+        const there = fs.existsSync(want) ? run(want, ['rev-parse', '--show-toplevel']) : null;
+        const mine = commonDir(run, home);
+        if (!there || there.status !== 0 || !mine || commonDir(run, want) !== mine) {
+            return { text: 'commit.js: into names no worktree of this repository: ' + into[1], code: 1 };
+        }
+        topDir = there.stdout.trim();
+    }
+    const git = (args, input) => run(topDir, args, input);
     if (git(['rev-parse', 'HEAD']).status !== 0) return { text: 'commit.js: the repository has no commit yet', code: 1 };
     // docs/90-agent/plans/2026-09-30-init-design.md §2c: the same scan the
     // shell hook runs, over the paths this file names, before they are staged.
-    const topDir = top.stdout.trim();
     let values = {};
     // commit-3: a profile layer that does not parse is skipped, as every other
     // reader of the profile skips it, but said on its own line after the
@@ -151,7 +182,7 @@ function main(argv, cwd) {
     // are the agent's work, and the profile is the user's to fix.
     let notice = [];
     try {
-        const read = profile.read(topDir, profile.configDirOf());
+        const read = profile.read(home, profile.configDirOf());
         values = read.values;
         notice = read.unreadable.map((file) => 'profile: ' + file + ' does not parse — its values were skipped');
     } catch (e) { /* the builtins */ }
@@ -160,17 +191,13 @@ function main(argv, cwd) {
     // checked before any block is staged, so one bad block in a batch commits
     // nothing; unset, nothing is checked. lib/profile.js stores only a
     // pattern that compiles.
-    if (values['commit.format']) {
-        const format = new RegExp(values['commit.format']);
-        for (let i = 0; i < parsed.blocks.length; i++) {
-            const subject = parsed.blocks[i].message.split(/\r?\n/)[0];
-            if (!format.test(subject)) {
-                return {
-                    text: ['commit.js: ' + (parsed.blocks.length > 1 ? 'block ' + (i + 1) + ': ' : '')
-                        + 'the subject "' + subject + '" does not match commit.format ' + values['commit.format']].concat(notice).join('\n'),
-                    code: 1,
-                };
-            }
+    for (let i = 0; i < parsed.blocks.length; i++) {
+        const miss = formatMiss(values, parsed.blocks[i].message.split(/\r?\n/)[0]);
+        if (miss) {
+            return {
+                text: ['commit.js: ' + (parsed.blocks.length > 1 ? 'block ' + (i + 1) + ': ' : '') + miss].concat(notice).join('\n'),
+                code: 1,
+            };
         }
     }
     // What the controller relays is one bounded line, whatever git printed.
@@ -188,11 +215,11 @@ function main(argv, cwd) {
         if (parsed.blocks[i].worktree) {
             const label = many ? paths.join(', ') + ': ' : '';
             // The paths sit in the worktree; the word list stays in the main checkout.
-            const seen = sensitive.scan(path.resolve(topDir, parsed.blocks[i].worktree), paths, topDir);
+            const seen = sensitive.scan(path.resolve(topDir, parsed.blocks[i].worktree), paths, home);
             if (seen.length && mode === 'block') {
                 return fail('sensitive: ' + sensitive.listed(seen) + ' — words from .fankeel/sensitive.txt, and sensitive.mode is block');
             }
-            const r = landWorktree(top.stdout.trim(), parsed.blocks[i], run, oneLine);
+            const r = landWorktree(topDir, parsed.blocks[i], run, oneLine);
             if (r.error) return fail(r.error);
             if (r.conflict) return { text: out.concat(label + 'conflict ' + r.conflict.join(' '), notice).join('\n'), code: 1 };
             out.push(label + base + '..' + git(['rev-parse', 'HEAD']).stdout.trim());
@@ -202,7 +229,7 @@ function main(argv, cwd) {
         }
         // Read before `add`: `add` restages `paths` at their current working-tree content, which
         // can outweigh a `git mv`'s untouched blob and cost the rename its similarity match.
-        const hits = sensitive.scan(topDir, paths);
+        const hits = sensitive.scan(topDir, paths, home);
         if (hits.length && mode === 'block') {
             return fail('sensitive: ' + sensitive.listed(hits) + ' — words from .fankeel/sensitive.txt, and sensitive.mode is block');
         }
@@ -234,4 +261,4 @@ if (require.main === module) {
     if (code) process.exitCode = code;
 }
 
-module.exports = { main, foldRenames };
+module.exports = { main, foldRenames, formatMiss };

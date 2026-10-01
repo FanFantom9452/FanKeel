@@ -338,3 +338,61 @@ test('a worktree line naming something that is not a worktree of this repository
     assert.equal(commit.main([requestFile('worktree ' + dir + '\n\nfeat: x\n')], dir).text, 'commit.js: no paths after the worktree line');
     assert.equal(git(dir, 'rev-parse', 'HEAD'), before);
 });
+
+// docs/90-agent/plans/2026-10-02-worktree-habit-design.md §1: a commit file
+// opening `into <path>` lands in that worktree, wherever commit.js runs.
+function taskTree(dir) {
+    const fk = path.join(tmp('fankeel-commit-fk-'), 'fk');
+    // A global core.autocrlf=true would check fk out as CRLF, which the
+    // cherry-pick's own autocrlf=false then reads as local changes.
+    git(dir, 'config', 'core.autocrlf', 'false');
+    git(dir, 'worktree', 'add', '-q', '-b', 'fk/xxxxxxxx', fk);
+    return fk;
+}
+
+test('into <path>: a worktree block is cherry-picked onto that worktree, and main\'s HEAD stays', () => {
+    const { dir, wt } = worktreeRepo();
+    const fk = taskTree(dir);
+    const mainBefore = git(dir, 'rev-parse', 'HEAD');
+    const fkBefore = git(fk, 'rev-parse', 'HEAD');
+    // wt was checked out before autocrlf went off: redo its files as LF, so it is clean once committed.
+    for (const f of ['a.txt', 'b.txt']) fs.rmSync(path.join(wt, f));
+    git(wt, 'checkout', '--', 'a.txt', 'b.txt');
+    setLine(path.join(wt, 'a.txt'), 9, 'worktree 9');
+    const res = commit.main([requestFile('into ' + fk + '\nworktree ' + wt + '\na.txt\n\nfeat: line 9\n')], dir);
+    assert.ok(!res.code, res.text);
+    assert.equal(res.text, fkBefore + '..' + git(fk, 'rev-parse', 'HEAD'));
+    assert.equal(git(dir, 'rev-parse', 'HEAD'), mainBefore, 'main did not move');
+    assert.equal(git(fk, 'log', '-1', '--format=%s'), 'feat: line 9');
+    assert.equal(fs.readFileSync(path.join(fk, 'a.txt'), 'utf8').split('\n')[8], 'worktree 9');
+    assert.equal(fs.existsSync(wt), false, 'the agent worktree is removed');
+});
+
+test('into <path>: a plain block commits in that worktree', () => {
+    const { dir } = worktreeRepo();
+    const fk = taskTree(dir);
+    const mainBefore = git(dir, 'rev-parse', 'HEAD');
+    fs.writeFileSync(path.join(fk, 'b.txt'), 'b2\n');
+    const res = commit.main([requestFile('into ' + fk + '\n\nb.txt\n\nfeat: change b\n')], dir);
+    assert.ok(!res.code, res.text);
+    assert.equal(git(fk, 'show', '--name-only', '--format=', 'HEAD'), 'b.txt');
+    assert.equal(git(dir, 'rev-parse', 'HEAD'), mainBefore);
+});
+
+test('into naming no worktree of this repository commits nothing', () => {
+    const { dir } = worktreeRepo();
+    const other = repo();
+    const before = git(dir, 'rev-parse', 'HEAD');
+    for (const where of [tmp('fankeel-commit-none-'), other]) {
+        const res = commit.main([requestFile('into ' + where + '\nb.txt\n\nfeat: x\n')], dir);
+        assert.equal(res.code, 1, where);
+        assert.equal(res.text, 'commit.js: into names no worktree of this repository: ' + where);
+    }
+    assert.equal(git(dir, 'rev-parse', 'HEAD'), before);
+});
+
+test('formatMiss: null when commit.format is unset or matches, the refusal otherwise', () => {
+    assert.equal(commit.formatMiss({}, 'anything'), null);
+    assert.equal(commit.formatMiss({ 'commit.format': '^feat: ' }, 'feat: x'), null);
+    assert.equal(commit.formatMiss({ 'commit.format': '^feat: ' }, 'wip'), 'the subject "wip" does not match commit.format ^feat: ');
+});

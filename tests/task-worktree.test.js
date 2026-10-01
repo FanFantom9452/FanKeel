@@ -72,7 +72,7 @@ test('adopt carries the worktree across', () => {
 
 test('the block and a subagent brief both name the worktree', () => {
   const data = { task: 't', stage: 'build', active: true, started: new Date().toISOString(), worktree: WT };
-  const line = /^worktree: \/r\/\.fankeel\/worktrees\/aaaaaaaa \(fk\/aaaaaaaa\) — edit there, and run commit\.js from there$/m;
+  const line = /^worktree: \/r\/\.fankeel\/worktrees\/aaaaaaaa \(fk\/aaaaaaaa\) — edit there; a commit file opens with the line `into \/r\/\.fankeel\/worktrees\/aaaaaaaa`$/m;
   assert.match(render({ mine: { sessionId: A, data }, others: [], now: Date.now(), root: '/r' }), line);
   assert.match(renderBrief({ mine: { sessionId: A, data }, agentType: 'fankeel-reader', root: '/r', profile: { values: {} } }), line);
 });

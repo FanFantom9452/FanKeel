@@ -758,6 +758,7 @@ test('a build brain asks for a commit only when none of its implementers is runn
   const build = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
   assert.match(build, /Ask for a commit only when none of your implementers is still running, never per task: then write /);
   assert.match(build, /one block per task that returned since the last commit, the paths it owns one per line, a blank line, then its commit message, and a line `---` between blocks/);
+  assert.match(build, /a line `---` between blocks, under a first line `into <path>` when this brief has a `worktree:` line/);
   assert.doesNotMatch(build, /once per group `ledger\.js groups`/);
   assert.doesNotMatch(build, /may share one file/);
   const file = fs.readFileSync(path.join(__dirname, '..', 'agents', 'fankeel-brain.md'), 'utf8');
