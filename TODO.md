@@ -12,6 +12,8 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔gate〕10-01：同一 task 第二次以後進 verify，gate 被擋成 already answered，拿的是前一輪 verify 的答案，只能改用文字問 — [gate.js](hooks/gate.js).
 
+- 〔handoff〕10-01：交接選項只寫 next，新 session 分不出刻意交棒與廢棄 entry；加 handoff 標記，/fankeel 把 Adopt 排第一並帶任務名，開窗提示，仍需確認 — [task.js](scripts/task.js).
+
 - 〔review〕10-01 使用者要求：TODO 全表盤點 build↔verify 來回多輪；render reviewer 302 份 transcript 僅派 10 次。複盤哪些檢查該前移、是否腳本強制或補 render.json — [render-reviewer](agents/fankeel-render-reviewer.md).
 
 - 〔review〕10-01 使用者要求：TODO 全表盤點 build↔verify 來回 7 輪，每輪 verify 才找到下一批未測 click 分支；分母應在第一輪一次列全，或設回合上限 — [SKILL.md](skills/fankeel-build/SKILL.md).
