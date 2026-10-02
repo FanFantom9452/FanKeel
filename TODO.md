@@ -12,10 +12,6 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔docs-check〕10-02 討論：開放中的 todo 條目照 reference 跑 gone、symbol、quote，todo.js new 寫入即擋；零依賴。graph／SQLite 索引類暫不引入。 — [docs-check.js](scripts/docs-check.js).
 
-- 〔json〕lib/json.js 加 readObject，取代約 23 處 JSON.parse(readFileSync)（registry.js:145、agentfile.js:37、serve.js:28、station.js:63、handoff.js），net 約 -92；先逐一核對各處 fallback 值。 — [registry.js](lib/registry.js).
-
-- 〔station〕10-01 audit：`assets/station/station.js` 約 2040-2045 的 WIZ_FE_NO、WIZ_FE_YES 兩個 SVG 常數無引用（adversary 確認）；刪除前再 grep 一次。 — [station.js](assets/station/station.js).
-
 ## Blocked
 
 ### fankeel 功能全部完成
