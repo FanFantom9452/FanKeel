@@ -3,7 +3,7 @@ name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, moving to the next stage, or the station — "show all sessions", "which sessions are still open", "clean up old sessions", "監控站". Runs a task through a route it picks from survey, design, plan, build, verify, audit and land, and warns — optionally blocks — when another live session shares your files.
 version: 0.91.0
 status: current
-last_verified: 2026-09-21
+last_verified: 2026-10-02
 source_of_truth: lib/stages.js, lib/registry.js, lib/live.js, scripts/task.js, lib/guard.js, docs/90-agent/reference/collisions.md, docs/90-agent/reference/registry.md, docs/90-agent/reference/station.md, docs/90-agent/reference/statusline.md
 ---
 
@@ -649,7 +649,7 @@ instead:
 | A project convention that will outlive this task | `CLAUDE.md` |
 | A durable fact about the user or the repository | the memory directory |
 | Why a change was made | the commit message |
-| Work deliberately deferred | one entry: `node <plugin>/scripts/todo.js new` where the project keeps a `todo` bucket — `TODO.md` is then generated, never edited — otherwise one `TODO.md` line, linking to the detail, under the heading for what it is short of — under `## Blocked`, beneath a `### <timing>` whose next line is `on: MM-DD`, `after: <what>` or `upstream: <what>`; under `## Watch`, one whose next line is `if: <the event>`; either line ending in a `MM-DD` stamp |
+| Work deliberately deferred | one entry: `node <plugin>/scripts/todo.js new ... --body <text>` where the project keeps a `todo` bucket — no `TODO.md` is generated, and the body says where it came from, what it should become and what counts as done, at least 200 characters — otherwise one `TODO.md` line, linking to the detail, under the heading for what it is short of — under `## Blocked`, beneath a `### <timing>` whose next line is `on: MM-DD`, `after: <what>` or `upstream: <what>`; under `## Watch`, one whose next line is `if: <the event>`; either line ending in a `MM-DD` stamp |
 | A plan whose work has landed | the `archive` bucket, after asking |
 | What was tried and failed, mid-task | a **note** |
 | What to pick up next | **next** |
@@ -663,7 +663,7 @@ Notes are never version-controlled and die with the task. If a note still matter
 after the task lands, it was never a note — move it to one of the four above
 during `land`.
 
-`TODO.md` is an index whose bullets `init` also offers as the task options when a
+The TODO — the todo bucket's entries, or a hand-written `TODO.md` — is an index whose entries `init` also offers as the task options when a
 session starts, so what it offers is read twice: the bullet is short and the
 detail lives in a file it links to. The heading it sits under is the third half
 of that convention — `## Ready`, `## Needs a decision`, `## Blocked`, `## Watch` — and it
@@ -748,8 +748,7 @@ listed, in the order it listed them. No preamble and no explanation of
 consequences: picking a project has none. Skip the question entirely when there
 is only one.
 
-Then `What is the task?`, in the same call. **Read `TODO.md` first where the root
-has one**: its headings are the clustering, so there is nothing to derive.
+Then `What is the task?`, in the same call. **Read the TODO first — `orient`'s `todo:` block, from the todo bucket or a root `TODO.md`**: its headings are the clustering, so there is nothing to derive.
 `## Ready` is never an option of its own: the patrol builds it, and one entry
 is still reachable by name through **Other**. The patrol's route carries `plan`,
 because the plan file is the only place N tasks are written down durably — with
@@ -759,7 +758,7 @@ the patrol takes the last — one
 option each, because each is a
 different question for a person, with the rest reachable by name through
 **Other**. The last option is always the patrol, labelled `TODO 全表盤點`, whenever
-`TODO.md` has an entry: it walks every heading, Ready and Needs a decision
+the TODO has an entry: it walks every heading, Ready and Needs a decision
 included, and builds Ready and whatever else it finds buildable. Blocked and Watch timings are never options one by one — six
 unpickable rows are how a menu stops being read — but every one is listed in
 that block each time, so what is waiting is on screen whether or not it is
@@ -768,8 +767,7 @@ offered. Picking the patrol starts a task with `--route "survey,plan,build,verif
 `skills/fankeel-survey/SKILL.md`'s `## The patrol` and
 `skills/fankeel-build/SKILL.md`'s `## The patrol`. `land` runs `todo-check`. Any other heading, or
 none, means clustering by hand — two bullets touching the same file or settling
-the same question are one task and one option, not two. A repository with no
-`TODO.md` is where guessing from the recent commits belongs, one option each,
+the same question are one task and one option, not two. A repository with no TODO — no `todo:` block — is where guessing from the recent commits belongs, one option each,
 phrased as a task and not as a commit subject. **Other** is always there for the
 real answer.
 Where `orient`'s `todo:` line names a folder, it prints the id of each entry

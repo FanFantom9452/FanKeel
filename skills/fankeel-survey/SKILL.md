@@ -3,7 +3,7 @@ name: fankeel-survey
 description: The survey stage — read the project's own map before reading its code, classify the work, and report what is already here. Use for the survey stage of a fankeel task, "what is already here", starting work in an unfamiliar repository, or when a task needs classifying as spike, bounded or architectural.
 version: 0.91.0
 status: current
-last_verified: 2026-09-21
+last_verified: 2026-10-02
 source_of_truth: lib/stages.js, lib/map.js, scripts/map.js, scripts/survey.js, scripts/layout.js
 ---
 
@@ -311,18 +311,20 @@ re-route with `task.js route`. Nothing downgrades mid-task.
 ## The patrol
 
 A task started by picking the patrol at `/fankeel` — the last option,
-labelled `TODO 全表盤點`, offered whenever `TODO.md` has an entry — arrives on
-`--route "survey,plan,build,verify,land"`, and this stage walks every entry in `TODO.md`,
+labelled `TODO 全表盤點`, offered whenever the TODO has an entry — arrives on
+`--route "survey,plan,build,verify,land"`, and this stage walks every entry —
+each open entry file in the todo bucket, or each bullet of a hand-written `TODO.md` —
 not only the timings.
 
-**Every entry, one line each.** The report lists every bullet in `TODO.md` —
+**Every entry, one line each.** The report lists every entry —
 `## Ready`, `## Needs a decision`, `## Blocked` and `## Watch`, none skipped —
 one line per entry under its heading: its label, what was checked (the
 `path:line` opened, the registry or `git log` read, the upstream looked at),
 and its disposition — `do now`, `needs the user`, `waiting on <what>`, or
 `keep` for a Watch entry whose event has not come. Above the list goes a count
-line, `entries: <n> listed, <m> in TODO.md`, where `<m>` is what
-`grep -c '^- ' TODO.md` prints; the two are equal, or the missing entries are
+line, `entries: <n> listed, <m> in TODO`, where `<m>` is the total on the
+last line of `node <plugin>/scripts/todo.js list` in folder mode, and what
+`grep -c '^- ' TODO.md` prints in a hand-written one; the two are equal, or the missing entries are
 named under it. A controlled survey's controller prints the report above its
 gate block as written (`controlRules` in `lib/stages.js`), so this list is
 what the user reads before the gate. 2026-10-01: a patrol that re-checked only
@@ -363,7 +365,7 @@ knows, and they move the entry themselves when they do. What it is asked is
 whether to keep it. The stale ones ride this stage's own gate call in
 the slots the needs-the-user questions left — `questions[0]` stays the gate,
 the only question whose option one must name the next stage — each holding at most four timings in
-`TODO.md`'s own order, `multiSelect: true`, each option's `label` the timing's
+the order `orient` lists them in, `multiSelect: true`, each option's `label` the timing's
 title and its `description` the `if:` event, the question asking which to
 keep. That is at most twelve per patrol, fewer when the slots ran out; the rest wait for the next one. Every
 question in the call is validated, not only the first: a header at most 12 columns, a CJK character

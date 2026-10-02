@@ -1342,11 +1342,12 @@ test('survey and build each carry their own half of the patrol; fankeel points a
 
 // 2026-10-01: a patrol that re-checked only Ready and part of Blocked, and
 // relayed only its path, was sent back by the user — every entry, with a count.
-test('the patrol lists every TODO.md entry with a count, and says the controller prints it', () => {
+test('the patrol lists every TODO entry with a count, and says the controller prints it', () => {
   const survey = read('fankeel-survey');
   const section = /\n## The patrol\n[\s\S]*?\n## /.exec(survey)[0];
   assert.match(section, /`## Ready`, `## Needs a decision`, `## Blocked` and `## Watch`, none skipped/);
-  assert.match(section, /`entries: <n> listed, <m> in TODO\.md`/);
+  assert.match(section, /`entries: <n> listed, <m> in TODO`, where `<m>` is the total/);
+  assert.match(section, /todo\.js list/);
   assert.match(section, /`keep`/);
   assert.match(section, /prints the report above its\s+gate block/);
   assert.match(survey, /a patrol's entry list is findings and does not count toward them/);
