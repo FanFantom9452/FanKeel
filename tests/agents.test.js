@@ -7,7 +7,7 @@ const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
 const FRONT = /^---\r?\n([\s\S]*?)\r?\n---/;
-const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-verifier', 'fankeel-fixer', 'fankeel-brain', 'fankeel-render-reviewer', 'fankeel-mockup', 'fankeel-slimmer', 'fankeel-init-scout'];
+const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-verifier', 'fankeel-fixer', 'fankeel-brain', 'fankeel-render-reviewer', 'fankeel-mockup', 'fankeel-slimmer', 'fankeel-init-scout', 'fankeel-writer', 'fankeel-implementer'];
 
 // `fankeel-verifier` is the one named exception: it writes evidence rows to a
 // file for the Workflow join, and `Write` is what that takes. It is not less
@@ -29,7 +29,7 @@ const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-v
 // `fankeel-mockup` is the fourth: it draws the design stage's mockup page and,
 // in a tuning loop, rewrites the one block it is sent — `Edit` and `Write` on
 // that page, which is the whole of its job.
-const MAY_WRITE = { 'fankeel-verifier': ['Write'], 'fankeel-fixer': ['Edit', 'Write'], 'fankeel-brain': ['Write'], 'fankeel-mockup': ['Edit', 'Write'] };
+const MAY_WRITE = { 'fankeel-verifier': ['Write'], 'fankeel-fixer': ['Edit', 'Write'], 'fankeel-brain': ['Write'], 'fankeel-mockup': ['Edit', 'Write'], 'fankeel-writer': ['Edit', 'Write'], 'fankeel-implementer': ['Edit', 'Write'] };
 
 function front(file) {
     const m = FRONT.exec(fs.readFileSync(file, 'utf8'));
@@ -227,6 +227,7 @@ const EFFORT = {
     'fankeel-reader': 'medium', 'fankeel-reviewer': 'medium', 'fankeel-verifier': 'medium',
     'fankeel-render-reviewer': 'medium', 'fankeel-fixer': 'low', 'fankeel-judge': 'xhigh',
     'fankeel-brain': 'medium', 'fankeel-mockup': 'high', 'fankeel-slimmer': 'low', 'fankeel-init-scout': 'medium',
+    'fankeel-writer': 'medium', 'fankeel-implementer': 'medium',
 };
 test('every agent names its effort, and none of them is max', () => {
     for (const name of NAMES) {
@@ -421,4 +422,23 @@ test('the slimmer cuts fat hooks first, compares stale entries, returns a token 
     assert.match(ret, /the fixer has no Bash, so a file to delete is left for the session's one `rm`/);
     assert.match(ret, /subagent_type: fankeel:fankeel-fixer/);
     assert.match(refuse, /memory-check\.js/);
+});
+
+// docs/90-agent/plans/2026-10-02-docs-writer-design.md §4-§5: the writer writes
+// for a person, the implementer writes short code; both say where they start
+// and record what they read in context.md.
+test('the writer and the implementer each say where they start, what they refuse, and how they return', () => {
+    const writer = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-writer.md'), 'utf8');
+    for (const h of ['## Where you start', '## Before you write', '## Every section', '## Refusals', '## Return']) {
+        assert.ok(writer.includes('\n' + h + '\n'), 'writer lacks ' + h);
+    }
+    assert.match(writer, /docs\/01-guide\//);
+    assert.match(writer, /context\.js add/);
+    const impl = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-implementer.md'), 'utf8');
+    for (const h of ['## Where you start', '## The ladder', '## Comments', '## Never cut', '## Return']) {
+        assert.ok(impl.includes('\n' + h + '\n'), 'implementer lacks ' + h);
+    }
+    assert.match(impl, /grep every caller/);
+    assert.match(impl, /context\.js add/);
+    assert.match(impl, /--root <main tree>/);
 });
