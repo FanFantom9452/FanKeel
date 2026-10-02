@@ -639,6 +639,13 @@ test('the bare agent name and the Task tool name are read the same way', () => {
   assert.equal(decisionOf(run(root, dispatch(root, 'fankeel-brain', 'Task'))), 'deny');
 });
 
+test('an effort variant of the brain is read as the brain', () => {
+  const root = tmp();
+  seed(root, MINE, { stage: 'design', claims: [] });
+  agentsOn(root, 'survey');
+  assert.equal(decisionOf(run(root, dispatch(root, 'fankeel:fankeel-brain-xhigh'))), 'deny');
+});
+
 test('with stage.agents unset, a fankeel-brain is denied', () => {
   const root = tmp();
   seed(root, MINE, { stage: 'survey', claims: [] });

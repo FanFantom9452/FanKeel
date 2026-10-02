@@ -16,6 +16,7 @@ const live = require('../lib/live.js');
 const { decide, guardMode, targetOf, readOnlyAgentType, writesFiles, brainWriteReason } = require('../lib/guard.js');
 const profileLib = require('../lib/profile.js');
 const { controlling } = require('../lib/stages.js');
+const { baseAgent } = require('../lib/agentfile.js');
 const { run, parse } = require('../lib/hook.js');
 const { isCommit, commitVerdict } = require('../lib/sensitive.js');
 
@@ -146,7 +147,7 @@ function main(raw) {
     // controller's placeholder (2026-09-23, design). Denied before it starts.
     // A profile that cannot be read lets the dispatch through, as above.
     if (payload.tool_name === 'Agent' || payload.tool_name === 'Task') {
-        const type = String((payload.tool_input && payload.tool_input.subagent_type) || '').replace(/^fankeel:/, '');
+        const type = baseAgent((payload.tool_input && payload.tool_input.subagent_type) || '');
         if (type !== 'fankeel-brain') return;
         let values;
         try {
