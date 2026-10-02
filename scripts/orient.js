@@ -19,6 +19,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { readObject } = require('../lib/json.js');
 const { execFileSync } = require('node:child_process');
 const { parseArgs: parseArgv } = require('node:util');
 
@@ -65,12 +66,8 @@ const OVERLAPS = [
 // repository with no `docs.json`.
 function overlapsIn(configDir) {
     const file = path.join(String(configDir == null ? '' : configDir), 'plugins', 'installed_plugins.json');
-    let data;
-    try {
-        data = JSON.parse(fs.readFileSync(file, 'utf8'));
-    } catch (e) {
-        return [];
-    }
+    const data = readObject(file);
+    if (!data) return [];
     const plugins = data && typeof data === 'object' ? data.plugins : null;
     if (!plugins || typeof plugins !== 'object') return [];
 
@@ -496,12 +493,9 @@ const TODO_ENTRY_WIDTH = 100;
 // opens; up to it, and with no stamp at all, it says nothing.
 const AUDIT_DAYS = 14;
 function auditLine(dir, now) {
-    let last;
-    try {
-        last = JSON.parse(fs.readFileSync(path.join(dir, '.fankeel', 'audit.json'), 'utf8')).last;
-    } catch (e) {
-        return null;
-    }
+    const rec = readObject(path.join(dir, '.fankeel', 'audit.json'));
+    if (!rec) return null;
+    const last = rec.last;
     const at = Date.parse(last);
     if (!Number.isFinite(at)) return null;
     const days = Math.floor((now - at) / 86400000);

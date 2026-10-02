@@ -18,6 +18,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { readObject } = require('../lib/json.js');
 const registry = require('../lib/registry.js');
 const { handoffPath, commitPath, ledgerCommitPath, answerPath, awaitHandoff, newestCommit, caseOfPrompt, promptOf } = require('../lib/handoff.js');
 const { newestPlan } = require('../lib/render.js');
@@ -156,13 +157,9 @@ function alive(pid) {
 // await for the brain sent after it read `already awaiting <the old agent>`.
 // Either side with no agentId reads as it always did.
 function holder(file, agentId) {
-    try {
-        const m = JSON.parse(fs.readFileSync(file, 'utf8'));
-        if (!m || !alive(m.pid)) return null;
-        return m.agentId && agentId && m.agentId !== agentId ? null : m;
-    } catch (e) {
-        return null;
-    }
+    const m = readObject(file);
+    if (!m || !alive(m.pid)) return null;
+    return m.agentId && agentId && m.agentId !== agentId ? null : m;
 }
 
 function main(argv, env) {
@@ -178,9 +175,9 @@ function main(argv, env) {
         fs.writeFileSync(marker, JSON.stringify({ pid: process.pid, agentId: o.agentId }));
     } catch (e) { /* unmarked: this wait still runs, only unguarded */ }
     const release = () => {
-        try {
-            if (JSON.parse(fs.readFileSync(marker, 'utf8')).pid === process.pid) fs.unlinkSync(marker);
-        } catch (e) { /* gone already */ }
+        const m = readObject(marker);
+        if (!m || m.pid !== process.pid) return;
+        try { fs.unlinkSync(marker); } catch (e) { /* gone already */ }
     };
     return awaitHandoff(o).then((state) => {
         release();

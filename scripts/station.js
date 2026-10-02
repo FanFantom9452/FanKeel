@@ -30,6 +30,7 @@
 // this port; the address is loopback so nothing off this machine reaches it.
 const fs = require('node:fs');
 const path = require('node:path');
+const { readObject } = require('../lib/json.js');
 const http = require('node:http');
 const crypto = require('node:crypto');
 const { spawn } = require('node:child_process');
@@ -108,13 +109,7 @@ function parseArgs(argv) {
 function forget(configDir, dir) {
     const target = path.resolve(dir);
     const file = station.rootsPath(configDir);
-    let before;
-    try {
-        before = JSON.parse(fs.readFileSync(file, 'utf8'));
-    } catch (e) {
-        before = {};
-    }
-    if (!before || typeof before !== 'object' || Array.isArray(before)) before = {};
+    const before = readObject(file) || {};
     const known = Object.prototype.hasOwnProperty.call(before, target);
     const after = Object.assign({}, before);
     delete after[target];
@@ -197,13 +192,7 @@ function autoScan() {
 // until the first prompt after the scan.
 function writeScanRecord(configDir, record) {
     const file = station.rootsPath(configDir);
-    let data;
-    try {
-        data = JSON.parse(fs.readFileSync(file, 'utf8'));
-    } catch (e) {
-        data = {};
-    }
-    if (!data || typeof data !== 'object' || Array.isArray(data)) data = {};
+    const data = readObject(file) || {};
     data.scannedAt = record;
     fs.mkdirSync(path.dirname(file), { recursive: true });
     registry.writeAtomic(file, JSON.stringify(data, null, 2) + '\n');
