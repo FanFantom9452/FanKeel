@@ -8,3 +8,9 @@ group: 受控 build/verify 實跑
 timing: after: 跑過一次 stage.agents=all 的真實 task（main 含 08c4ecf、安裝版 0.80.0 兩半 09-28 已達成）
 stamp: 2026-10-01
 ---
+
+來源：db16197d（2026-09-24）把 subagents.md 的六個接縫各拆成一條 TODO.md bullet，「在哪提交」是其中一條；當時受控 build 剛能派 agent，還沒在 task 的 `project` 不是 cwd 或身在 worktree 時真跑過。
+
+要做成：在這兩種情形下跑一次受控 build，看 `scripts/commit.js` 實際提交到哪個 repo，把結果寫回 subagents.md 該接縫。
+
+完成條件：跑過一次 stage.agents=all 的真實 task（見 timing），並記下提交落在哪個 repo、與 project 是否一致。
