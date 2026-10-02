@@ -83,11 +83,12 @@ function commonDir(run, dir) {
 // the commit from HEAD and the working tree, and with core.fileMode=false it
 // reads no executable bit off the working tree, so these are what it drops.
 function stagedModes(git, paths) {
-    const r = git(['diff', '--cached', '--summary', '--'].concat(paths));
+    const r = git(['-c', 'core.quotePath=false', 'diff', '--cached', '--summary', '--'].concat(paths));
+    if (r.status !== 0) return r;
     const out = new Map();
-    if (r.status !== 0) return out;
     for (const line of r.stdout.split(/\r?\n/)) {
-        const m = /^ mode change \d{6} => (\d{6}) (.+)$/.exec(line) || /^ create mode (100755) (.+)$/.exec(line);
+        // Only the two file modes update-index --chmod can set; a typechange or gitlink commits as before.
+        const m = /^ mode change 100(?:644|755) => (100(?:644|755)) (.+)$/.exec(line) || /^ create mode (100755) (.+)$/.exec(line);
         if (m) out.set(m[2], m[1]);
     }
     return out;
@@ -100,6 +101,7 @@ function stagedModes(git, paths) {
 // keeps what it had, which for these paths now matches HEAD.
 function commitPaths(git, dir, paths, message) {
     const modes = stagedModes(git, paths);
+    if (modes.status !== undefined) return modes;
     if (!modes.size) return git(['commit', '-o', '-F', '-', '--'].concat(paths), message + '\n');
     const where = git(['rev-parse', '--git-path', 'fankeel-commit-index']);
     if (where.status !== 0) return where;

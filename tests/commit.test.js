@@ -427,3 +427,29 @@ test('a new file staged executable keeps its mode beside a content change, under
     assert.match(git(dir, 'ls-tree', 'HEAD', 'new.sh'), /^100755 /);
     assert.equal(git(dir, 'show', 'HEAD:a.txt'), 'a2');
 });
+
+test('a worktree block keeps a mode staged in the worktree, under core.fileMode=false', () => {
+    const { dir, wt } = worktreeRepo();
+    git(dir, 'config', 'core.fileMode', 'false');
+    fs.writeFileSync(path.join(dir, 'run.sh'), 'echo hi\n');
+    git(dir, 'add', 'run.sh');
+    git(dir, 'commit', '-qm', 'add run.sh');
+    git(wt, 'merge', '-q', '--ff-only', git(dir, 'rev-parse', 'HEAD'));
+    git(wt, 'update-index', '--chmod=+x', 'run.sh');
+    const res = commit.main([requestFile('worktree ' + wt + '\nrun.sh\n\nchore: make run.sh executable\n')], dir);
+    assert.ok(!res.code, res.text);
+    assert.match(git(dir, 'ls-tree', 'HEAD', 'run.sh'), /^100755 /);
+});
+
+test('a mode staged 100755 => 100644 stays 100644 after the commit', () => {
+    const dir = repo();
+    git(dir, 'config', 'core.fileMode', 'false');
+    fs.writeFileSync(path.join(dir, 'run.sh'), 'echo hi\n');
+    git(dir, 'add', 'run.sh');
+    git(dir, 'update-index', '--chmod=+x', 'run.sh');
+    git(dir, 'commit', '-qm', 'add run.sh');
+    git(dir, 'update-index', '--chmod=-x', 'run.sh');
+    const res = commit.main([requestFile('run.sh\n\nchore: run.sh not executable\n')], dir);
+    assert.ok(!res.code, res.text);
+    assert.match(git(dir, 'ls-tree', 'HEAD', 'run.sh'), /^100644 /);
+});
