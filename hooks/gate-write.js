@@ -8,9 +8,12 @@
 // own context is over, and a bad gate only surfaces once the controller has
 // to bounce the handoff file back to a fresh agent. This hook is the earlier
 // half: the moment a stage agent's own Write lands the handoff file, the same
-// `readGate` check runs against it, and a `systemMessage` reaches that
-// agent's own transcript this same turn, before it hands the path back to
-// whoever dispatched it.
+// `readGate` check runs against it, and `additionalContext` reaches that
+// agent's own model this same turn, before it hands the path back to
+// whoever dispatched it — measured for PostToolUse in
+// docs/90-agent/reports/2026-09-28-subagent-hook-probe.md. It was a
+// `systemMessage` until 2026-10-03, which only the user is shown: three bad
+// gates still reached the controller on 2026-10-02/03.
 //
 // Same two rules as every other hook here: exit 0 on every path, and cost
 // nothing for a session, or a write, this is not about. Silent unless the
@@ -71,7 +74,7 @@ function main(raw) {
     process.stdout.write(JSON.stringify({
         hookSpecificOutput: {
             hookEventName: 'PostToolUse',
-            systemMessage: 'fankeel: the json gate block just written to ' + file + ' is invalid at '
+            additionalContext: 'fankeel: the json gate block just written to ' + file + ' is invalid at '
                 + result.invalid + ': ' + result.detail + ' — rewrite the block before returning this path.',
         },
     }));

@@ -67,7 +67,7 @@ function gateBlock(optionOneLabel) {
 const AGENT = 'a3f9c2';
 const MARK = { stage: 'survey', at: 1758000000000, agentId: AGENT };
 
-test('a valid gate written to the session\'s own current-stage handoff produces no systemMessage', () => {
+test('a valid gate written to the session\'s own current-stage handoff produces nothing', () => {
   const root = tmp('fankeel-gate-write-');
   const data = seed(root, MINE, { inflight: MARK });
   const file = handoffPath(root, data, 'survey');
@@ -78,7 +78,7 @@ test('a valid gate written to the session\'s own current-stage handoff produces 
   assert.equal(out.trim(), '');
 });
 
-test('an invalid gate written to that same path produces a systemMessage naming the field', () => {
+test('an invalid gate written to that same path hands the agent additionalContext naming the field', () => {
   const root = tmp('fankeel-gate-write-');
   const data = seed(root, MINE, { inflight: MARK });
   const file = handoffPath(root, data, 'survey');
@@ -87,8 +87,8 @@ test('an invalid gate written to that same path produces a systemMessage naming 
 
   const out = JSON.parse(run(root, { agent_id: AGENT, tool_input: { file_path: file } }));
   assert.equal(out.hookSpecificOutput.hookEventName, 'PostToolUse');
-  assert.match(out.hookSpecificOutput.systemMessage, /questions\[0\]\.options\[0\]\.label/);
-  assert.match(out.hookSpecificOutput.systemMessage, new RegExp(file.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  assert.match(out.hookSpecificOutput.additionalContext, /questions\[0\]\.options\[0\]\.label/);
+  assert.match(out.hookSpecificOutput.additionalContext, new RegExp(file.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
 });
 
 test('the same invalid content written to an unrelated file produces nothing', () => {
@@ -152,5 +152,5 @@ test('a gate naming a class below the task\'s floor is flagged when it is writte
   questions[0].options.splice(1, 0, { label: '改走 bounded', description: 'c' });
   fs.writeFileSync(file, '# report\n\n' + TICKS + 'json gate\n' + JSON.stringify({ questions, next: 'design' }) + '\n' + TICKS + '\n');
   const out = JSON.parse(run(root, { agent_id: AGENT, tool_input: { file_path: file } }));
-  assert.match(out.hookSpecificOutput.systemMessage, /questions\[0\]\.options\[1\]\.label/);
+  assert.match(out.hookSpecificOutput.additionalContext, /questions\[0\]\.options\[1\]\.label/);
 });
