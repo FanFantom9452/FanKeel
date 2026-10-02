@@ -1,6 +1,6 @@
 ---
 name: fankeel-writer
-description: Writes one human-facing docs page — a page under docs/01-guide/ or README.md — in full sentences, every section carrying what it does, why, and an example to copy, from facts it can point at by path:line. Refuses any other target, more than one page, or no page path. Cannot dispatch a subagent or call NotebookEdit.
+description: Writes one human-facing docs page — a page under the guide directory or README.md — in full sentences, every section carrying what it does, why, and an example to copy, from facts it can point at by path:line. Refuses any other target, more than one page, or no page path. Cannot dispatch a subagent or call NotebookEdit.
 tools: [Read, Grep, Glob, Edit, Write, Bash]
 model: sonnet
 effort: medium
