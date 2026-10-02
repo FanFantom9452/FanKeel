@@ -19,7 +19,7 @@ session 15377bbe-2490-4bc7-a303-dbbdb6c1c290 的 design。survey（`.fankeel/bui
 - 先讀同一個目錄兩到三頁當語氣基準，`docs/02-architecture/pipeline.md` 是 fankeel 自己的標準；不照搬 sepia 的數字門檻。
 - 繁中排版只收 `languages/zh.md` §0 與技術文件有關的四列：引號「」『』、破折號──、刪節號……、中文旁的括號用全形（　）；路徑、指令、識別字照原樣，用 code 寫，不翻譯。
 - 範圍：`docs/01-guide/` 與 `README.md`。`docs/90-agent/`、`agents/`、`skills/` 是給 agent 讀的，維持壓縮，skill 明說不適用。
-- 寫 code 的 agent 不載入它：implementer 改程式時不碰這個 skill，程式碼註解也不在範圍內——註解的讀者是下一個改程式的人或 agent，維持現有寫法（記事故與理由的短註解）。
+- 分工：docs 頁走 writer（補寫）；寫 code 的 agent 不載入這個 skill，提煉走 fankeel 已有、源自 ponytail 的兩處——reviewer 的 `## Cuts`（build Part 4 與 audit 的三個 code lens，刪多餘的程式）與 `## Comment` lens（註解寫錯或過時）。不新增 coding agent，也不重新依賴 ponytail：2026-09-12 已收編並解依賴（`docs/03-decisions/fankeel-shell.md:338-341`），`tests/source.test.js:220` 禁止出貨檔再提它的名字。
 - 生成區塊不動：`<!-- PROFILE_TABLE:START -->` 到 `END` 這類標記之間是腳本寫的，只能改標記外的文字。
 
 ## 2. fankeel-writer agent
