@@ -17,6 +17,7 @@ const { decide, guardMode, targetOf, readOnlyAgentType, writesFiles, brainWriteR
 const profileLib = require('../lib/profile.js');
 const { controlling } = require('../lib/stages.js');
 const { baseAgent } = require('../lib/agentfile.js');
+const { caseOfPrompt } = require('../lib/handoff.js');
 const { run, parse } = require('../lib/hook.js');
 const { isCommit, commitVerdict } = require('../lib/sensitive.js');
 
@@ -153,7 +154,7 @@ function main(raw) {
         try {
             values = profileLib.profileFor(root, mine).values;
         } catch (e) { return; }
-        if (controlling(mine.stage, values)) return;
+        if (controlling(mine.stage, values)) return noteDispatch(root, payload, mine);
         const listed = Array.isArray(values['stage.agents']) && values['stage.agents'].length ? values['stage.agents'].join(',') : 'none';
         process.stdout.write(JSON.stringify({
             hookSpecificOutput: {
@@ -193,6 +194,17 @@ function main(raw) {
             permissionDecisionReason: verdict.reason,
         },
     }));
+}
+
+// build-4: a controlled build's brain dispatch is noted with what its prompt
+// sends it for, so hooks/brief.js can number the mark from the prompt though
+// the brain's transcript is not on disk when that hook runs. Prints nothing:
+// the dispatch goes ahead.
+function noteDispatch(root, payload, mine) {
+    if (mine.stage !== 'build') return;
+    try {
+        registry.queueDispatch(root, payload.session_id, caseOfPrompt(payload.tool_input && payload.tool_input.prompt));
+    } catch (e) { /* housekeeping */ }
 }
 
 // Deliberately silent. Whatever went wrong, the edit still has to be allowed

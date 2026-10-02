@@ -126,7 +126,14 @@ function main(raw) {
         const sentFor = stageOfPrompt(prompt);
         if (sentFor && sentFor !== mine.stage) return;
         try {
-            const sent = mine.stage === 'build' ? caseOfPrompt(prompt) : null;
+            let sent = mine.stage === 'build' ? caseOfPrompt(prompt) : null;
+            // build-4: a fresh brain's prompt is rarely on disk yet, so the case
+            // hooks/guard.js noted off the controller's Agent call is taken
+            // instead; a prompt that could be read takes its own note.
+            if (mine.stage === 'build') {
+                const noted = registry.takeDispatch(root, payload.session_id, sent);
+                if (!sent) sent = noted;
+            }
             group = registry.markInflight(root, payload.session_id, mine.stage, payload.agent_id, lapOf(mine, mine.stage), sent && sent.group, sent && sent.kind);
         } catch (e) { /* housekeeping */ }
     }
