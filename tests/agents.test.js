@@ -7,7 +7,7 @@ const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
 const FRONT = /^---\r?\n([\s\S]*?)\r?\n---/;
-const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-verifier', 'fankeel-fixer', 'fankeel-brain', 'fankeel-render-reviewer', 'fankeel-mockup', 'fankeel-slimmer', 'fankeel-init-scout', 'fankeel-writer', 'fankeel-implementer', 'fankeel-mutator', 'fankeel-mover', 'fankeel-implementer-high', 'fankeel-implementer-xhigh', 'fankeel-brain-high', 'fankeel-brain-xhigh'];
+const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-verifier', 'fankeel-fixer', 'fankeel-brain', 'fankeel-render-reviewer', 'fankeel-mockup', 'fankeel-slimmer', 'fankeel-init-scout', 'fankeel-writer', 'fankeel-implementer', 'fankeel-mutator', 'fankeel-mover', 'fankeel-implementer-high', 'fankeel-implementer-xhigh', 'fankeel-brain-high', 'fankeel-brain-xhigh', 'fankeel-reviewer-high', 'fankeel-reviewer-xhigh'];
 
 // `fankeel-verifier` is the one named exception: it writes evidence rows to a
 // file for the Workflow join, and `Write` is what that takes. It is not less
@@ -229,7 +229,7 @@ const EFFORT = {
     'fankeel-brain': 'medium', 'fankeel-mockup': 'high', 'fankeel-slimmer': 'low', 'fankeel-init-scout': 'medium',
     'fankeel-writer': 'medium', 'fankeel-implementer': 'medium',
     'fankeel-mutator': 'low', 'fankeel-mover': 'low',
-    'fankeel-implementer-high': 'high', 'fankeel-implementer-xhigh': 'xhigh', 'fankeel-brain-high': 'high', 'fankeel-brain-xhigh': 'xhigh',
+    'fankeel-implementer-high': 'high', 'fankeel-implementer-xhigh': 'xhigh', 'fankeel-brain-high': 'high', 'fankeel-brain-xhigh': 'xhigh', 'fankeel-reviewer-high': 'high', 'fankeel-reviewer-xhigh': 'xhigh',
 };
 test('every agent names its effort, and none of them is max', () => {
     for (const name of NAMES) {
@@ -484,7 +484,7 @@ test('the brain names the dedicated agents, records survey and design facts, wri
 // docs/90-agent/plans/2026-10-02-docs-writer.md Tasks 7-9: a variant is
 // generated, never hand-edited. Edit the base file, then run
 // `node scripts/variants.js --base <name>`.
-const VARIANT_BASES = ['fankeel-implementer', 'fankeel-brain'];
+const VARIANT_BASES = ['fankeel-implementer', 'fankeel-brain', 'fankeel-reviewer'];
 test('each effort variant is its base file with name and effort changed', () => {
     const { VARIANT_EFFORTS, renderVariant } = require('../lib/agentfile.js');
     for (const name of VARIANT_BASES) {
@@ -494,4 +494,7 @@ test('each effort variant is its base file with name and effort changed', () => 
             assert.equal(fs.readFileSync(path.join(ROOT, rel), 'utf8'), renderVariant(base, effort), rel + ' differs: run node scripts/variants.js --base ' + name);
         }
     }
+});
+test('every base scripts/variants.js knows has its variants shipped', () => {
+    assert.deepEqual([...VARIANT_BASES].sort(), [...require('../scripts/variants.js').BASES].sort());
 });
