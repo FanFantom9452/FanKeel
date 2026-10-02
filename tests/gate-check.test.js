@@ -14,12 +14,12 @@ const tmp = require('./tmp.js');
 const SESSION = 'aaaaaaaa-0000-4000-8000-000000000001';
 const TICKS = '```';
 
-function project(stage) {
+function project(stage, extra) {
     const root = tmp('fankeel-gate-check-');
     fs.mkdirSync(path.join(root, '.fankeel', 'sessions'), { recursive: true });
     fs.writeFileSync(path.join(root, '.fankeel', 'sessions', SESSION + '.json'), JSON.stringify({
         task: 't', claims: [], stage, active: true, route: ['survey', 'plan', 'build', 'verify', 'land'],
-        started: '2026-09-19T09:30:12.345Z', updated: new Date().toISOString(),
+        started: '2026-09-19T09:30:12.345Z', updated: new Date().toISOString(), ...extra,
     }));
     return root;
 }
@@ -58,4 +58,25 @@ test('no gate block, or no such session: exit 1; no file named: usage, exit 2', 
     assert.equal(main(['--session', SESSION, '--root', root, bare]).code, 1);
     assert.equal(main(['--session', 'bbbbbbbb-0000-4000-8000-000000000002', '--root', root, bare]).code, 1);
     assert.equal(main(['--session', SESSION]).code, 2);
+});
+
+test('three options with no pause label: refused', () => {
+    const root = project('plan');
+    const out = main(['--session', SESSION, '--root', root, handoff(root, ['build (Recommended)', '沒有未決事項', '改天再說'])]);
+    assert.equal(out.code, 1);
+    assert.match(out.text, /invalid at questions: no option says pause/);
+});
+
+test('a session with a floor refuses an option naming a lighter class', () => {
+    const root = project('plan', { floor: 'architectural' });
+    const out = main(['--session', SESSION, '--root', root, handoff(root, ['build (Recommended)', '改走 bounded 路線', '暫停'])]);
+    assert.equal(out.code, 1);
+    assert.match(out.text, /names bounded, below this task's floor architectural/);
+});
+
+test('a session record with no stage: exit 1', () => {
+    const root = project(undefined);
+    const out = main(['--session', SESSION, '--root', root, handoff(root, ['build (Recommended)', '沒有未決事項', '暫停'])]);
+    assert.equal(out.code, 1);
+    assert.match(out.text, /no session .* with a stage/);
 });
