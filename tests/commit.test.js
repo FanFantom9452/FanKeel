@@ -396,3 +396,34 @@ test('formatMiss: null when commit.format is unset or matches, the refusal other
     assert.equal(commit.formatMiss({ 'commit.format': '^feat: ' }, 'feat: x'), null);
     assert.equal(commit.formatMiss({ 'commit.format': '^feat: ' }, 'wip'), 'the subject "wip" does not match commit.format ^feat: ');
 });
+
+// commit-3: with core.fileMode=false, `git commit -o` read no executable bit off
+// the working tree and dropped a mode staged by `update-index --chmod=+x`; a
+// block that changed only that mode committed nothing (2026-10-02, station.sh,
+// landed by hand as commit f3867143).
+test('a mode staged with update-index --chmod=+x is committed under core.fileMode=false', () => {
+    const dir = repo();
+    git(dir, 'config', 'core.fileMode', 'false');
+    fs.writeFileSync(path.join(dir, 'run.sh'), 'echo hi\n');
+    git(dir, 'add', 'run.sh');
+    git(dir, 'commit', '-qm', 'add run.sh');
+    git(dir, 'update-index', '--chmod=+x', 'run.sh');
+    git(dir, 'add', 'b.txt');
+    const res = commit.main([requestFile('run.sh\n\nchore: make run.sh executable\n')], dir);
+    assert.ok(!res.code, res.text);
+    assert.match(git(dir, 'ls-tree', 'HEAD', 'run.sh'), /^100755 /);
+    assert.equal(git(dir, 'show', '--name-only', '--format=', 'HEAD'), 'run.sh');
+    assert.equal(git(dir, 'diff', '--cached', '--name-only'), 'b.txt', 'what else was staged stays staged');
+});
+
+test('a new file staged executable keeps its mode beside a content change, under core.fileMode=false', () => {
+    const dir = repo();
+    git(dir, 'config', 'core.fileMode', 'false');
+    fs.writeFileSync(path.join(dir, 'new.sh'), 'echo new\n');
+    git(dir, 'add', 'new.sh');
+    git(dir, 'update-index', '--chmod=+x', 'new.sh');
+    const res = commit.main([requestFile('new.sh\na.txt\n\nfeat: add new.sh\n')], dir);
+    assert.ok(!res.code, res.text);
+    assert.match(git(dir, 'ls-tree', 'HEAD', 'new.sh'), /^100755 /);
+    assert.equal(git(dir, 'show', 'HEAD:a.txt'), 'a2');
+});

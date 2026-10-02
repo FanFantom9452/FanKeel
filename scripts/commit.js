@@ -78,6 +78,45 @@ function commonDir(run, dir) {
     }
 }
 
+// commit-3: the modes staged for `paths` that differ from HEAD — a mode change,
+// or a new file staged executable — as path to mode. `git commit -o` rebuilds
+// the commit from HEAD and the working tree, and with core.fileMode=false it
+// reads no executable bit off the working tree, so these are what it drops.
+function stagedModes(git, paths) {
+    const r = git(['diff', '--cached', '--summary', '--'].concat(paths));
+    const out = new Map();
+    if (r.status !== 0) return out;
+    for (const line of r.stdout.split(/\r?\n/)) {
+        const m = /^ mode change \d{6} => (\d{6}) (.+)$/.exec(line) || /^ create mode (100755) (.+)$/.exec(line);
+        if (m) out.set(m[2], m[1]);
+    }
+    return out;
+}
+
+// One block's commit. `-o` takes only the listed paths, so whatever else is
+// staged stays staged; but where a staged mode would be dropped (station.sh on
+// 2026-10-02 committed nothing) the block is committed from a scratch index
+// instead: HEAD, the paths added, the staged modes set again. The real index
+// keeps what it had, which for these paths now matches HEAD.
+function commitPaths(git, dir, paths, message) {
+    const modes = stagedModes(git, paths);
+    if (!modes.size) return git(['commit', '-o', '-F', '-', '--'].concat(paths), message + '\n');
+    const where = git(['rev-parse', '--git-path', 'fankeel-commit-index']);
+    if (where.status !== 0) return where;
+    const env = { GIT_INDEX_FILE: path.resolve(dir, where.stdout.trim()) };
+    try {
+        const steps = [['read-tree', 'HEAD'], ['add', '--'].concat(paths)]
+            .concat([...modes].map(([file, mode]) => ['update-index', '--chmod=' + (mode === '100755' ? '+x' : '-x'), '--', file]));
+        for (const args of steps) {
+            const r = git(args, undefined, env);
+            if (r.status !== 0) return r;
+        }
+        return git(['commit', '-F', '-'], message + '\n', env);
+    } finally {
+        try { fs.unlinkSync(env.GIT_INDEX_FILE); } catch (e) { /* never written */ }
+    }
+}
+
 // A `worktree <path>` block: commit its paths in that worktree with `commit -o`,
 // then cherry-pick the commit onto this repository's HEAD. A conflict is
 // aborted, so HEAD and the working tree are as they were, and the worktree is
@@ -91,14 +130,14 @@ function landWorktree(top, block, run, oneLine) {
     if (!real || real === fs.realpathSync.native(top) || !mine || commonDir(run, wt) !== mine) {
         return { error: 'not a worktree of this repository: ' + block.worktree };
     }
-    const here = (args, input) => run(wt, args, input);
+    const here = (args, input, env) => run(wt, args, input, env);
     const branch = here(['symbolic-ref', '--quiet', '--short', 'HEAD']);
     const renamed = here(['diff', '--cached', '-M', '--name-status']);
     const add = here(['add', '--'].concat(block.paths));
     if (add.status !== 0) return { error: 'git add failed: ' + oneLine(add.stderr) };
     if (here(['diff', '--cached', '--quiet', '--'].concat(block.paths)).status === 0) return { error: 'nothing to commit in ' + block.paths.join(', ') };
     const withOld = foldRenames(block.paths, renamed.status === 0 ? renamed.stdout.split(/\r?\n/) : []);
-    const made = here(['commit', '-o', '-F', '-', '--'].concat(withOld), block.message + '\n');
+    const made = commitPaths(here, wt, withOld, block.message);
     if (made.status !== 0) return { error: 'git commit failed: ' + oneLine(made.stderr || made.stdout) };
     const sha = here(['rev-parse', 'HEAD']).stdout.trim();
     // core.autocrlf off for this one call: cherry-pick writes the paths into
@@ -149,7 +188,7 @@ function main(argv, cwd) {
     const parsed = parse(into ? body.slice(into[0].length).trimStart() : body);
     if (parsed.error) return { text: 'commit.js: ' + parsed.error, code: 1 };
 
-    const run = (dir, args, input) => spawnSync('git', args, { cwd: dir, encoding: 'utf8', input });
+    const run = (dir, args, input, env) => spawnSync('git', args, { cwd: dir, encoding: 'utf8', input, env: env ? Object.assign({}, process.env, env) : process.env });
     const top = run(cwd, ['rev-parse', '--show-toplevel']);
     if (top.status !== 0) return { text: 'commit.js: not inside a git repository', code: 1 };
     // Where the profile and .fankeel/sensitive.txt are read: the checkout this
@@ -170,7 +209,7 @@ function main(argv, cwd) {
         }
         topDir = there.stdout.trim();
     }
-    const git = (args, input) => run(topDir, args, input);
+    const git = (args, input, env) => run(topDir, args, input, env);
     if (git(['rev-parse', 'HEAD']).status !== 0) return { text: 'commit.js: the repository has no commit yet', code: 1 };
     // docs/90-agent/plans/2026-09-30-init-design.md §2c: the same scan the
     // shell hook runs, over the paths this file names, before they are staged.
@@ -239,7 +278,7 @@ function main(argv, cwd) {
         const withOld = foldRenames(paths, renamed.status === 0 ? renamed.stdout.split(/\r?\n/) : []);
         // Said here rather than left to `git commit`, whose text for this case depends on the rest of the tree.
         if (git(['diff', '--cached', '--quiet', '--'].concat(paths)).status === 0) return fail('nothing to commit in ' + paths.join(', '));
-        const made = git(['commit', '-o', '-F', '-', '--'].concat(withOld), message + '\n');
+        const made = commitPaths(git, topDir, withOld, message);
         if (made.status !== 0) return fail('git commit failed: ' + oneLine(made.stderr || made.stdout));
         out.push((many ? paths.join(', ') + ': ' : '') + base + '..' + git(['rev-parse', 'HEAD']).stdout.trim());
         if (hits.length) out.push('sensitive: ' + sensitive.listed(hits));
