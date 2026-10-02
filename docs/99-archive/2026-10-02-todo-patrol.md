@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # TODO 巡檢 10-02：readObject 收掉重複的 JSON 讀檔、刪兩個死常數 Implementation Plan
