@@ -457,3 +457,25 @@ test('the mutator applies one mutation and restores it, the mover moves without 
         assert.match(fs.readFileSync(path.join(ROOT, 'agents', name + '.md'), 'utf8'), /context\.js add/, name);
     }
 });
+
+// docs/90-agent/plans/2026-10-02-docs-writer-design.md §2-§3 and §8, and the
+// plan gates' effort rulings (docs/90-agent/plans/2026-10-02-docs-writer.md).
+test('the brain names the dedicated agents, records survey and design facts, writes for a person, and knows how effort is chosen', () => {
+    const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-brain.md'), 'utf8');
+    const tools = text.split('\n## Tools\n')[1].split('\n## Refusals\n')[0];
+    for (const a of ['fankeel:fankeel-writer', 'fankeel:fankeel-mutator', 'fankeel:fankeel-mover', '`fankeel:fankeel-implementer`', 'fankeel:fankeel-implementer-<effort>']) {
+        assert.ok(tools.includes(a), 'Tools lacks ' + a);
+    }
+    assert.doesNotMatch(tools, /\(`general-purpose`, on the model/);
+    const section = (h) => (text.split('\n## ' + h + '\n')[1] || '').split('\n## ')[0];
+    const ctx = section('Context');
+    assert.match(ctx, /survey/);
+    assert.match(ctx, /design/);
+    assert.match(ctx, /context\.js add "<fact>" --at <path:line> --session <id>/);
+    assert.match(text, /^## Reports are read by a person$/m);
+    const effort = section('Effort');
+    assert.match(effort, /`fankeel:fankeel-brain-high`/);
+    assert.match(effort, /The controller/);
+    assert.match(effort, /`fankeel:fankeel-reviewer-<effort>`/);
+    assert.match(effort, /ask in your report's gate/);
+});

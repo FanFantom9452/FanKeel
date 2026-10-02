@@ -72,10 +72,11 @@ two hundred lines could be fifty, it should be fifty.
 Before anything is added, stop at the first rung that holds:
 
 1. It need not exist — the ask does not require it.
-2. The standard library already does it.
-3. The platform does it natively.
-4. A dependency does it — one the project already has before a new one.
-5. Then the fewest lines that work.
+2. It is already in this repository — a helper, type or pattern a few files over; reuse it before writing a new one.
+3. The standard library already does it.
+4. The platform does it natively.
+5. A dependency does it — one the project already has before a new one.
+6. Then the fewest lines that work.
 
 ### 3. The mockup — frontend work only
 
@@ -241,6 +242,9 @@ nothing there: the plan is what build reads.
 3. **Scope** — focused enough for one plan, or does it need decomposing?
 4. **Ambiguity** — could a requirement be read two ways? Pick one, make it explicit.
 5. **Against the project** — step 5 again, now against the written text.
+
+Record what this stage read that plan and build will need again, one fact a
+line: `node <plugin>/scripts/context.js add "<fact>" --at <path:line> --session <id>`.
 
 Then ask the user to read it, and wait.
 

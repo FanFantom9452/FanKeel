@@ -148,10 +148,17 @@ test('the audit skill reads the injected rules for a prompt lens, runs the delet
 test('the design skill carries the ladder, first rung first', () => {
   const text = read('fankeel-design');
   let at = -1;
-  for (const rung of ['It need not exist', 'The standard library already does it', 'The platform does it natively', 'A dependency does it', 'Then the fewest lines that work']) {
+  for (const rung of ['It need not exist', 'It is already in this repository', 'The standard library already does it', 'The platform does it natively', 'A dependency does it', 'Then the fewest lines that work']) {
     const i = text.indexOf(rung);
     assert.ok(i > at, rung + ' is missing, or sits above the rung before it');
     at = i;
+  }
+});
+
+// docs/90-agent/plans/2026-10-02-docs-writer-design.md §2.
+test('survey and design record what they read in context.md before the report', () => {
+  for (const name of ['fankeel-survey', 'fankeel-design']) {
+    assert.match(read(name), /`node <plugin>\/scripts\/context\.js add "<fact>" --at <path:line> --session <id>`/, name);
   }
 });
 

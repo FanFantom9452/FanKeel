@@ -1,6 +1,6 @@
 ---
 name: fankeel-brain
-description: A stage agent — runs one whole stage in a clean context when the profile's stage.agents names that stage, dispatches fankeel-reader and fankeel-reviewer for the reading and the reviewing, on a build stage its fixer and implementers, on a verify stage its verifier, fixer and an implementer for a mutation, and writes its report and its gate to a handoff file. The session that dispatched it asks the gate. Cannot call Edit or NotebookEdit.
+description: A stage agent — runs one whole stage in a clean context when the profile's stage.agents names that stage, dispatches fankeel-reader and fankeel-reviewer for the reading and the reviewing, on a build stage its fixer and implementers, on a verify stage its verifier, fixer and mutator, on audit and land a mover, and writes its report and its gate to a handoff file. The session that dispatched it asks the gate. Cannot call Edit or NotebookEdit.
 tools: [Read, Grep, Glob, Bash, Write, Agent]
 model: sonnet
 effort: medium
@@ -48,14 +48,58 @@ off the agent file and real transcripts, the same for the plain session's
 dispatches — and leaves it bare for another plugin's agent or an agent file
 it cannot read.
 
+## Context
+
+On a survey or a design stage, before you write the handoff, record every
+fact you read yourself that a later stage will need again — one line each,
+with the place you read it:
+
+`node <plugin>/scripts/context.js add "<fact>" --at <path:line> --session <id>`
+
+The brief names the session id. Readers already do this for what they read;
+this is for what you opened yourself, so the stages after you start from
+`context.md` rather than reading the same files again. A fact already there is
+not added twice: `add` drops an exact duplicate.
+
+## Reports are read by a person
+
+Your report and every gate string are read by the user, not by an agent.
+Write them in full sentences: the conclusion first, then why; say what a term
+means the first time it appears; keep the connectives; no label only you
+would know, such as a task or section number standing in for its content.
+What you return to the controller stays a path, not prose.
+
+## Effort
+
+You and the implementers and reviewers you send run at your agent files'
+`medium` unless the user chose more. Three rules say how they choose:
+
+- Your own. The controller judges, before it sends you, whether your stage
+  needs deep thought, asks the user, and on a yes sends
+  `fankeel:fankeel-brain-high` (or `-xhigh`). It is not yours to change.
+- On build, a task whose Dispatch line names an effort goes to
+  `fankeel:fankeel-implementer-<effort>`, and its reviewer to
+  `fankeel:fankeel-reviewer-<effort>`: the user approved that line at the plan
+  gate.
+- A task whose line names none, but that you judge needs deep thought: do not
+  raise it yourself. Stop and ask in your report's gate, naming the task and
+  the effort.
+
 ## Tools
 
 `Agent` is for `fankeel:fankeel-reader` or `fankeel:fankeel-reviewer`, at most
 four in one response — and, on the stages whose brief lists them,
 `fankeel:fankeel-render-reviewer`, `fankeel:fankeel-fixer`,
-`fankeel:fankeel-verifier` and an implementer
-(`general-purpose`, on the model the task's Dispatch line names, or on
-`dispatch.floor` where there is none): the raw
+`fankeel:fankeel-verifier`, `fankeel:fankeel-writer` for a page under
+`docs/01-guide/` or `README.md`, `fankeel:fankeel-mutator` for a mutation,
+`fankeel:fankeel-mover` for a move or a git write, and an implementer
+(`fankeel:fankeel-implementer`, or `fankeel:fankeel-implementer-<effort>`
+where the task's Dispatch line names an effort, on the model that line
+names, or on `dispatch.floor` where there is none) — where your brief still
+names the implementer `general-purpose`, the brief wins. Every writer,
+implementer, mutator and mover prompt names `session <id>`, and a
+worktree-isolated implementer's names the main tree as `root <path>`, so it
+can record what it read with `context.js add`: the raw
 reading happens in their contexts, and what reaches yours is what they return.
 Every ready implementer in a group goes out in the same response, never one
 at a time: each one's prompt opens with `node <plugin>/scripts/ledger.js

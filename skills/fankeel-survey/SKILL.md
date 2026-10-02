@@ -303,6 +303,12 @@ allowed only from the seven-stage default nobody said — a class someone said a
 Nothing declares a file list: the files this task touches are recorded as the
 edits land.
 
+Before the report, record what this stage read for the stages after it — one
+line per fact a later stage will need again, with the place you read it:
+`node <plugin>/scripts/context.js add "<fact>" --at <path:line> --session <id>`.
+`context.md` is what every later brief carries; a fact left out of it is read
+again by design, by plan and by every implementer.
+
 ## The ratchet
 
 One-way. Hidden complexity found mid-task upgrades the route — stop, say so, and
