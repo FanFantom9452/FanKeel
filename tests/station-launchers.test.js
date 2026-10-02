@@ -1,26 +1,62 @@
 'use strict';
 
-// The two launchers at the repository root: each runs the station.js beside it
-// with serve --detach --open (docs/90-agent/plans/2026-10-02-todo-folder-only-design.md §5).
+// lib/launchers.js: the two station launchers every registry gets under
+// `.fankeel/` (docs/90-agent/plans/2026-10-02-station-launchers.md, Task 1).
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { execFileSync } = require('node:child_process');
 
-const ROOT = path.join(__dirname, '..');
+const launchers = require('../lib/launchers.js');
+const tmp = require('./tmp.js');
 
-test('station.bat runs scripts\\station.js beside it, serve --detach --open', () => {
-    const text = fs.readFileSync(path.join(ROOT, 'station.bat'), 'utf8');
-    assert.match(text, /^@node "%~dp0scripts\\station\.js" serve --detach --open %\*\r?\n?$/);
+const PLUGIN = path.join(__dirname, '..');
+const read = (root, name) => fs.readFileSync(path.join(root, '.fankeel', name), 'utf8');
+
+test('NAMES is the two launchers, and PLUGIN is this install', () => {
+    assert.deepEqual(launchers.NAMES, ['station.bat', 'station.sh']);
+    assert.equal(launchers.PLUGIN, PLUGIN);
 });
 
-test('station.sh runs scripts/station.js beside it, serve --detach --open', () => {
-    const text = fs.readFileSync(path.join(ROOT, 'station.sh'), 'utf8');
-    assert.match(text, /^#!\/bin\/sh\nexec node "\$\(dirname "\$0"\)\/scripts\/station\.js" serve --detach --open "\$@"\n$/);
+test('write puts station.bat and station.sh under .fankeel/ and names both', () => {
+    const root = tmp('fankeel-launchers-');
+    assert.deepEqual(launchers.write(root), ['station.bat', 'station.sh']);
+    for (const name of launchers.NAMES) assert.ok(fs.existsSync(path.join(root, '.fankeel', name)), name);
 });
 
-test('station.sh is committed executable (index mode 100755)', () => {
-    const out = execFileSync('git', ['ls-files', '-s', 'station.sh'], { cwd: ROOT, encoding: 'utf8' });
-    assert.ok(out.startsWith('100755'), 'index mode was: ' + out.slice(0, 6));
+test('station.bat runs this install\'s station.js, serve --detach --open, --root on the project', () => {
+    const root = tmp('fankeel-launchers-');
+    launchers.write(root);
+    const script = path.join(PLUGIN, 'scripts', 'station.js');
+    assert.equal(read(root, 'station.bat'), '@node "' + script + '" serve --detach --open --root "%~dp0.." %*\r\n');
+});
+
+test('station.sh runs the same script with forward slashes and --root on the project', () => {
+    const root = tmp('fankeel-launchers-');
+    launchers.write(root);
+    const script = path.join(PLUGIN, 'scripts', 'station.js').split(path.sep).join('/');
+    assert.equal(read(root, 'station.sh'),
+        '#!/bin/sh\nexec node "' + script + '" serve --detach --open --root "$(dirname "$0")/.." "$@"\n');
+});
+
+test('a second write with the same install writes nothing', () => {
+    const root = tmp('fankeel-launchers-');
+    launchers.write(root);
+    const before = read(root, 'station.bat');
+    assert.deepEqual(launchers.write(root), []);
+    assert.equal(read(root, 'station.bat'), before);
+});
+
+test('a moved install rewrites both, so an upgrade reaches them', () => {
+    const root = tmp('fankeel-launchers-');
+    launchers.write(root);
+    const moved = path.join(root, 'elsewhere', 'fankeel');
+    assert.deepEqual(launchers.write(root, moved), ['station.bat', 'station.sh']);
+    assert.ok(read(root, 'station.bat').includes(path.join(moved, 'scripts', 'station.js')));
+});
+
+test('station.sh is executable', { skip: process.platform === 'win32' }, () => {
+    const root = tmp('fankeel-launchers-');
+    launchers.write(root);
+    assert.equal(fs.statSync(path.join(root, '.fankeel', 'station.sh')).mode & 0o777, 0o755);
 });
