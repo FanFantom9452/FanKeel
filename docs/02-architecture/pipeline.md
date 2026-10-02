@@ -46,7 +46,7 @@ this morning is almost always the one being asked about.
 
 The skill asks with `AskUserQuestion` rather than in prose — which project and
 what the task is, in one call with the options already on screen. Where the root
-has a `TODO.md`, that is where the task options come from, and its headings do
+has a TODO folder (`docs/90-agent/todo`) or a hand-written `TODO.md`, that is where the task options come from, and its headings do
 the clustering: `## Ready` is built by the patrol, on `survey,plan,build,verify,land`,
 `## Needs a decision` as the newest few by last edit, one task each, the rest
 through Other, and `## Blocked` and `## Watch` walked by the patrol, always the last option. A root
@@ -123,7 +123,7 @@ stage rules:
   - Background belongs in the option descriptions, never in the stem, which is one line.
   - Say what you actually did — a skipped step, a failed test, a thing you could not check — and a dispatch before it goes: how many, which model. Where a rule and the shape conflict, the constraint wins and the shape stays.
   - Write tool input in literal characters, never as \uXXXX escapes: escaped calls corrupt mid-word and fail to parse. Name a code concept in code — `overdue`, not a translation of it.
-  - Do not stop where the happy path works and the rest is "later". That, and a new ask that neither blocks nor belongs, is one TODO.md line at the detail. Say which; ambiguous, ask that turn.
+  - Do not stop where the happy path works and the rest is "later". That, and a new ask that neither blocks nor belongs, is one TODO entry at the detail. Say which; ambiguous, ask that turn.
   - From a plan: `node <plugin>/scripts/ledger.js --plan <f> show` first; never redo a task it lists complete. One fankeel-reviewer per task or fix, then `complete <n>` or `fix`.
   - Decide, record `Ruling:`. Stop where git cannot revert: irreversible, security-sensitive, out-of-workspace, every path a guess.
   - Every changed line traces to the ask. Follow the patterns here; do not improve adjacent code. Remove what your own change orphaned.
@@ -136,7 +136,7 @@ output shape:
   - path (new) — what it is
 
   done: <n> of <m> — ledger or file table
-  deferred: <heading> — <TODO.md line, or omit this line>
+  deferred: <heading> — <TODO entry, or omit this line>
   then AskUserQuestion
 ```
 
@@ -206,7 +206,7 @@ stage rules:
   - Background belongs in the option descriptions, never in the stem, which is one line.
   - Say what you actually did — a skipped step, a failed test, a thing you could not check — and a dispatch before it goes: how many, which model. Where a rule and the shape conflict, the constraint wins and the shape stays.
   - Write tool input in literal characters, never as \uXXXX escapes: escaped calls corrupt mid-word and fail to parse. Name a code concept in code — `overdue`, not a translation of it.
-  - Do not stop where the happy path works and the rest is "later". That, and a new ask that neither blocks nor belongs, is one TODO.md line at the detail. Say which; ambiguous, ask that turn.
+  - Do not stop where the happy path works and the rest is "later". That, and a new ask that neither blocks nor belongs, is one TODO entry at the detail. Say which; ambiguous, ask that turn.
   - From a plan: `node <plugin>/scripts/ledger.js --plan <f> show` first; never redo a task it lists complete. One fankeel-reviewer per task or fix, then `complete <n>` or `fix`.
   - Decide, record `Ruling:`. Stop where git cannot revert: irreversible, security-sensitive, out-of-workspace, every path a guess.
   - Every changed line traces to the ask. Follow the patterns here; do not improve adjacent code. Remove what your own change orphaned.
@@ -219,7 +219,7 @@ output shape:
   - path (new) — what it is
 
   done: <n> of <m> — ledger or file table
-  deferred: <heading> — <TODO.md line, or omit this line>
+  deferred: <heading> — <TODO entry, or omit this line>
   then AskUserQuestion
 ```
 
@@ -759,7 +759,7 @@ flowchart TD
     A1["<b>report the failures and stop.</b><br/>The menu comes after a green run."]
     B["<b>2 · close the documents</b><br/>todo-check · last_verified on every page<br/>re-read and found true · archive the<br/>landed plan, after asking"]
     C["<b>3 · rewrite the map</b><br/>node map.js — the next task<br/>starts from this file"]
-    D["<b>4 · land the notes</b><br/>a convention → CLAUDE.md · a durable fact<br/>→ memory · why → the commit message ·<br/>deferred work → TODO.md<br/><i>stand down first, /clear after</i>"]
+    D["<b>4 · land the notes</b><br/>a convention → CLAUDE.md · a durable fact<br/>→ memory · why → the commit message ·<br/>deferred work → a TODO entry<br/><i>stand down first, /clear after</i>"]
     E["<b>5 · detect the workspace,<br/>confirm the base</b>"]
     F{"<b>6 · the menu</b><br/><i>integration is the user's decision</i>"}
     F1["merge back to base locally"]
