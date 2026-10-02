@@ -88,7 +88,8 @@ test('three or fewer done entries carry no button, and each state group names it
 
 // station.js booted on the project page with its document's listeners kept,
 // so a test can press 展開全部 / 收起 and read what the page drew.
-function projectBoot() {
+function projectBoot(todo) {
+    todo = todo || LONG;
     const vm = require('node:vm');
     const fs = require('node:fs');
     const path = require('node:path');
@@ -102,11 +103,11 @@ function projectBoot() {
     const doc = { hidden: false, documentElement: el(), title: '', getElementById: (id) => els[id] || (els[id] = el()),
         addEventListener(type, fn) { (listeners[type] = listeners[type] || []).push(fn); }, createElement: el, querySelectorAll: () => [],
         querySelector: () => null, head: { appendChild() {} } };
-    const win = { location: { hash: '#/p/' + encodeURIComponent(LONG.pkey), protocol: 'file:' }, addEventListener() {}, scrollTo() {},
+    const win = { location: { hash: '#/p/' + encodeURIComponent(todo.pkey), protocol: 'file:' }, addEventListener() {}, scrollTo() {},
         setInterval: () => 1, setTimeout: () => 1, clearTimeout() {}, navigator: { language: 'zh-TW' },
         localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
         STATION: { generatedAt: new Date(NOW).toISOString(), configDir: 'cfg', pricesVerified: '2026-09-24', serve: false,
-            projects: [{ root: LONG.pkey, gone: false, unreadable: 0, build: [], mapAt: null, docs: [], todos: [LONG] }],
+            projects: [{ root: LONG.pkey, gone: false, unreadable: 0, build: [], mapAt: null, docs: [], todos: [todo] }],
             profiles: { machine: { values: {}, sources: {}, unreadable: [] }, projects: {} }, profileKeys: {}, classes: {},
             sessions: [{ id: 'k1', pkey: LONG.pkey, root: LONG.pkey, task: 'one', state: 'live', route: ['survey', 'build'], stage: 'build', stages: [], backtracks: 0, updated: NOW - 1000, started: new Date(NOW - 120000).toISOString(), days: [] }] } };
     vm.runInNewContext(SRC, { window: win, document: doc, URLSearchParams, fetch: () => Promise.resolve({ ok: true }), module: { exports: {} } });
@@ -114,7 +115,13 @@ function projectBoot() {
         const target = { closest: (sel) => (sel === '[data-tdmore]' ? { getAttribute: () => v } : null), getAttribute: () => null, hasAttribute: () => false };
         for (const fn of listeners.click || []) fn({ target, preventDefault() {}, stopPropagation() {} });
     };
-    return { press, page: () => els.page.innerHTML };
+    // A click or key on the TODO row `id`; `inLink` puts a link under the pointer.
+    const fire = (type, id, key, inLink) => {
+        const row = { getAttribute: (k) => (k === 'data-tdbody' ? id : null) };
+        const target = { closest: (sel) => (sel === '[data-tdbody]' ? row : (sel === 'a,button' && inLink ? { tag: 'a' } : null)), getAttribute: () => null, hasAttribute: () => false };
+        for (const fn of listeners[type] || []) fn({ type, key, target, preventDefault() {}, stopPropagation() {} });
+    };
+    return { press, fire, page: () => els.page.innerHTML };
 }
 
 test('pressing 展開全部 opens the whole done list and 收起 folds it back to three rows; the panel sits under the project head', () => {
@@ -147,4 +154,38 @@ test('a row with a body is clickable and opens a todo-body block under it; one w
     assert.match(open, /aria-expanded="true">/);
     assert.match(open, /<li class="td-body" data-block="todo-body">From <code>x<\/code>\.\nSecond line &lt;b&gt;<\/li>/);
     assert.equal((open.match(/data-block="todo-body"/g) || []).length, 1);
+});
+
+const WITH_BODY = Object.assign({}, LONG, { open: [Object.assign({}, ROW.open[0], { body: 'why it is open' })] });
+const bodyShown = (p) => (p.page().match(/data-block="todo-body"/g) || []).length;
+
+test('clicking a row with a body opens its todo-body and a second click shuts it, and a redraw keeps it open', () => {
+    const p = projectBoot(WITH_BODY);
+    assert.equal(bodyShown(p), 0);
+    p.fire('click', 'a-1');
+    assert.equal(bodyShown(p), 1);
+    p.press('1');
+    assert.equal(bodyShown(p), 1, 'the redraw from another button keeps the body open');
+    p.fire('click', 'a-1');
+    assert.equal(bodyShown(p), 0);
+});
+
+test('Enter and Space on a row toggle its body, any other key leaves it alone', () => {
+    const p = projectBoot(WITH_BODY);
+    p.fire('keydown', 'a-1', 'a');
+    assert.equal(bodyShown(p), 0);
+    p.fire('keydown', 'a-1', 'Enter');
+    assert.equal(bodyShown(p), 1);
+    p.fire('keydown', 'a-1', ' ');
+    assert.equal(bodyShown(p), 0);
+});
+
+test('a press whose target is a link inside the row does not toggle the body', () => {
+    const p = projectBoot(WITH_BODY);
+    p.fire('click', 'a-1', undefined, true);
+    assert.equal(bodyShown(p), 0);
+    p.fire('keydown', 'a-1', 'Enter', true);
+    assert.equal(bodyShown(p), 0);
+    p.fire('click', 'a-1');
+    assert.equal(bodyShown(p), 1, 'the row itself still toggles');
 });

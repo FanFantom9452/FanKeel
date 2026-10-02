@@ -3137,6 +3137,9 @@
     var tdBody = function (e) {
         var b = e.target && e.target.closest ? e.target.closest('[data-tdbody]') : null;
         if (!b) return;
+        // A link or button inside the row (the done row's session link) is its own control.
+        var inner = e.target.closest('a,button');
+        if (inner && inner !== b) return;
         if (e.type === 'keydown') {
             if (e.key !== 'Enter' && e.key !== ' ') return;
             e.preventDefault();
