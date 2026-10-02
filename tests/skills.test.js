@@ -1402,3 +1402,12 @@ test('fankeel-verify always runs the project\'s declared build, test and lint, a
   assert.match(body, /Makefile/);
   assert.match(body, /none declared/);
 });
+
+// docs/90-agent/plans/2026-10-02-docs-writer.md Task 10.
+test('build sends implementers as fankeel-implementer, the effort variant when the Dispatch line names one, and its reviewer at the same effort', () => {
+  const build = read('fankeel-build');
+  assert.match(build, /`subagent_type: fankeel:fankeel-implementer`/);
+  assert.match(build, /`fankeel:fankeel-implementer-<effort>`/);
+  assert.match(build, /`fankeel:fankeel-reviewer-<effort>`/);
+  assert.match(read('fankeel-plan'), /\*\*Dispatch:\*\* implementer, sonnet, high —/);
+});

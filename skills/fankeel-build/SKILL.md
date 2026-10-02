@@ -210,7 +210,10 @@ then asks this stage's gate.
    before it are already in HEAD, and a BASE taken at dispatch time would pull
    their diffs into this task's review.
 2. Do what the task's `**Dispatch:**` line says. `in-session` means implement it
-   here; `implementer, <model>` means dispatch one — **pass the model
+   here; `implementer, <model>` means dispatch one as
+   `subagent_type: fankeel:fankeel-implementer` — or
+   `fankeel:fankeel-implementer-<effort>` when the line carries a third field,
+   `implementer, sonnet, high` — **pass the model
    explicitly**, an omitted one inherits this session's, and say how many
    and on which model in the response that sends it. Either way: every
    changed line traces to the plan's task, follow the patterns already in this
@@ -483,7 +486,7 @@ then asks this stage's gate.
    ```
 
    Give it the brief path and the range — never a paste of the session's
-   history. Dispatch it as `subagent_type: fankeel:fankeel-reviewer`; the model
+   history. Dispatch it as `subagent_type: fankeel:fankeel-reviewer` — `fankeel:fankeel-reviewer-<effort>` when the task's Dispatch line names an effort; the model
    comes from that agent file, not typed by hand here.
 
    Before dispatching, run `node <plugin>/scripts/lenses.js <BASE>..<sha>` and

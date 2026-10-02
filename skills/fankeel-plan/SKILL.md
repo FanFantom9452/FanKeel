@@ -199,6 +199,20 @@ not transcribed.
 ```
 
 ```markdown
+**Dispatch:** implementer, sonnet, high — the retry protocol has to be reasoned about; sonnet at high effort is cheaper than opus for it.
+```
+
+A third field after the model raises the effort: `high` or `xhigh`
+(`VARIANT_EFFORTS` in `lib/agentfile.js`), sent as
+`fankeel:fankeel-implementer-<effort>`, and the task's reviewer as
+`fankeel:fankeel-reviewer-<effort>` — shipped copies of the agent files with
+their `name:` and `effort:` lines changed, because the Agent tool cannot set
+effort (`docs/90-agent/reference/model-choice.md:40`). Leave it off for the
+agent files' own `medium`. It is above the floor like a stronger model, so it
+names why on that line, and the user approves it at the plan gate;
+`ledger.js lint` lists any other value by task number.
+
+```markdown
 **Dispatch:** user — run `/doctor` in this session and say when it is done; no
 subagent can run a slash command.
 ```
