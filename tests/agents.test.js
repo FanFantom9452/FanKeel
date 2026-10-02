@@ -7,7 +7,7 @@ const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
 const FRONT = /^---\r?\n([\s\S]*?)\r?\n---/;
-const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-verifier', 'fankeel-fixer', 'fankeel-brain', 'fankeel-render-reviewer', 'fankeel-mockup', 'fankeel-slimmer', 'fankeel-init-scout', 'fankeel-writer', 'fankeel-implementer', 'fankeel-mutator', 'fankeel-mover', 'fankeel-implementer-high', 'fankeel-implementer-xhigh'];
+const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-verifier', 'fankeel-fixer', 'fankeel-brain', 'fankeel-render-reviewer', 'fankeel-mockup', 'fankeel-slimmer', 'fankeel-init-scout', 'fankeel-writer', 'fankeel-implementer', 'fankeel-mutator', 'fankeel-mover', 'fankeel-implementer-high', 'fankeel-implementer-xhigh', 'fankeel-brain-high', 'fankeel-brain-xhigh'];
 
 // `fankeel-verifier` is the one named exception: it writes evidence rows to a
 // file for the Workflow join, and `Write` is what that takes. It is not less
@@ -29,7 +29,7 @@ const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-v
 // `fankeel-mockup` is the fourth: it draws the design stage's mockup page and,
 // in a tuning loop, rewrites the one block it is sent — `Edit` and `Write` on
 // that page, which is the whole of its job.
-const MAY_WRITE = { 'fankeel-verifier': ['Write'], 'fankeel-fixer': ['Edit', 'Write'], 'fankeel-brain': ['Write'], 'fankeel-mockup': ['Edit', 'Write'], 'fankeel-writer': ['Edit', 'Write'], 'fankeel-implementer': ['Edit', 'Write'], 'fankeel-mutator': ['Edit'], 'fankeel-implementer-high': ['Edit', 'Write'], 'fankeel-implementer-xhigh': ['Edit', 'Write'] };
+const MAY_WRITE = { 'fankeel-verifier': ['Write'], 'fankeel-fixer': ['Edit', 'Write'], 'fankeel-brain': ['Write'], 'fankeel-mockup': ['Edit', 'Write'], 'fankeel-writer': ['Edit', 'Write'], 'fankeel-implementer': ['Edit', 'Write'], 'fankeel-mutator': ['Edit'], 'fankeel-implementer-high': ['Edit', 'Write'], 'fankeel-implementer-xhigh': ['Edit', 'Write'], 'fankeel-brain-high': ['Write'], 'fankeel-brain-xhigh': ['Write'] };
 
 function front(file) {
     const m = FRONT.exec(fs.readFileSync(file, 'utf8'));
@@ -229,7 +229,7 @@ const EFFORT = {
     'fankeel-brain': 'medium', 'fankeel-mockup': 'high', 'fankeel-slimmer': 'low', 'fankeel-init-scout': 'medium',
     'fankeel-writer': 'medium', 'fankeel-implementer': 'medium',
     'fankeel-mutator': 'low', 'fankeel-mover': 'low',
-    'fankeel-implementer-high': 'high', 'fankeel-implementer-xhigh': 'xhigh',
+    'fankeel-implementer-high': 'high', 'fankeel-implementer-xhigh': 'xhigh', 'fankeel-brain-high': 'high', 'fankeel-brain-xhigh': 'xhigh',
 };
 test('every agent names its effort, and none of them is max', () => {
     for (const name of NAMES) {
@@ -484,7 +484,7 @@ test('the brain names the dedicated agents, records survey and design facts, wri
 // docs/90-agent/plans/2026-10-02-docs-writer.md Tasks 7-9: a variant is
 // generated, never hand-edited. Edit the base file, then run
 // `node scripts/variants.js --base <name>`.
-const VARIANT_BASES = ['fankeel-implementer'];
+const VARIANT_BASES = ['fankeel-implementer', 'fankeel-brain'];
 test('each effort variant is its base file with name and effort changed', () => {
     const { VARIANT_EFFORTS, renderVariant } = require('../lib/agentfile.js');
     for (const name of VARIANT_BASES) {
