@@ -1,7 +1,7 @@
 ---
 label: gate
 title: brain 交出不合格的 gate
-description: stage brain 寫的 gate 三次被 hooks/gate.js 擋下（兩次只有兩選項、一次選項一沒寫站名或收工），每次多一輪 SendMessage 重寫 — [fankeel-brain](agents/fankeel-brain.md).
+description: stage brain 寫的 gate 三次被 gate hook 擋下（兩次只有兩選項、一次選項一沒寫站名或收工），每次多一輪 SendMessage 重寫 — [fankeel-brain](agents/fankeel-brain.md).
 state: ready
 link: agents/fankeel-brain.md
 ---

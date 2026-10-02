@@ -24,9 +24,9 @@
     },
     {
       "name": "build",
-      "entry_condition": "worktree consent, brief file, reviewer template, fix rows, five rounds, commit shape.",
+      "entry_condition": "worktree consent, brief file, reviewer template, fix rows, five rounds, commit shape. At close: suite, then docs-check.",
       "stop_condition": "Done when the denominator lists nothing open, each piece has had its review as it landed, and the whole-branch review has run.",
-      "prompt_bytes": 2312,
+      "prompt_bytes": 2393,
       "prompt_byte_budget": 2400
     },
     {

@@ -1,7 +1,7 @@
 ---
 label: budget
 title: stage brain 撞上限沒規則
-description: stage brain 撞 hooks/budget.js HARD 只留 relay 檔，控制器規則沒寫怎麼接
+description: stage brain 撞 budget 的 HARD 上限 只留 relay 檔，控制器規則沒寫怎麼接
 state: done
 done:
   at: 2026-10-03
