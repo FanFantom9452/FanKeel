@@ -10,6 +10,8 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 ## Needs a decision
 
+- 〔docs-check〕10-02 討論：開放中的 todo 條目照 reference 跑 gone、symbol、quote，todo.js new 寫入即擋；零依賴。graph／SQLite 索引類暫不引入。 — [docs-check.js](scripts/docs-check.js).
+
 - 〔json〕lib/json.js 加 readObject，取代約 23 處 JSON.parse(readFileSync)（registry.js:145、agentfile.js:37、serve.js:28、station.js:63、handoff.js），net 約 -92；先逐一核對各處 fallback 值。 — [registry.js](lib/registry.js).
 
 - 〔sessions〕10-01 audit：全檔 183 行加 `tests/sessions.test.js`，唯一 code 呼叫者是自己的測試，但它是帶 shebang 的 CLI，人可以手動跑；09-11 todo-split 記為 promote it 仍未定案。刪之前先確認使用者是否手動使用。 — [sessions.js](scripts/sessions.js).
