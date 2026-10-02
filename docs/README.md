@@ -206,6 +206,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 落地它的 task | `docs/99-archive/2026-10-02-todo-patrol.md` — *built, 繁體中文* |
 | 啟動檔改由外掛在每個專案的 .fankeel/ 產生（10-02）定了什麼、沒做什麼：lib/launchers.js 產生 station.bat／station.sh、ensureLayout 每次建立時寫入並 gitignore、port 去重沿用 serve --detach 的 probe | [decisions/2026-10-02-station-launchers.md](03-decisions/2026-10-02-station-launchers.md) — *繁體中文* |
 | 落地它的三個 task | `docs/99-archive/2026-10-02-station-launchers.md` — *built, 繁體中文* |
+| TODO 九條一次建完（10-03）定了什麼、沒做什麼：await、commit、gate、build、relay 重派、docs-check 對開放條目的檢查與 docs-moved 引文改寫；四個小缺口記在 todo-check-1 | [decisions/2026-10-03-todo-nine.md](03-decisions/2026-10-03-todo-nine.md) — *繁體中文* |
+| 落地它的 14 個 task | `docs/99-archive/2026-10-03-todo-nine.md` — *built, 繁體中文* |
 | TODO 盤點四筆 Ready（10-01）的 plan：await-5 舊 waiter 擋新 brain、brief-2 brain 沒讀存成檔的 brief、gate-4 第一題兩選項也放行、tune-2 overlay 三個存活變異 | `docs/99-archive/2026-10-01-ready-four.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-01）的 plan：Blocked 群組與九個 stage-agents 條目重新蓋章、改 stage-agents-1 過時前提、〔await〕實跑觀察 | `docs/99-archive/2026-10-01-todo-stamps.md` — *built, 繁體中文* |
 | tune 小助手（10-01）的 plan：右下 fankeel logo 可拖曳、展開後多則修改項一起送出、`items` 酬載與 `done` 以聯集判越界，取代 Alt 圈選 | `docs/99-archive/2026-10-01-tune-assistant.md` — *built, 繁體中文* |

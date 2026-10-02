@@ -2,8 +2,13 @@
 label: build
 title: build close 先跑 docs-check
 description: build close 只跑 npm test，沒跑 docs-check；10-02 改版刪了 TODO.md，死連結與 35 行位移都是 verify 才抓到，退回 build 兩次 — [fankeel-build](skills/fankeel-build/SKILL.md).
-state: ready
+state: done
 link: skills/fankeel-build/SKILL.md
+done:
+  at: 2026-10-03
+  sha: 4aab8b9df66e1c0dc2ed9bc162206a7fd8cf0bfa
+  disposition: done
+  session: 8237ef1b-a525-4764-9ea4-7eeb0f3de502
 ---
 
 來源：2026-10-02 TODO folder-only 改版。build close 跑完整套測試（3396 全過）就寫關卡，沒跑 scripts/docs-check.js；結果 verify 第一輪抓到 pipeline.md 8 處舊 TODO.md 規則、station.md 35 行 moved 行號，第二輪又抓到 development.md:76 連到已刪的 TODO.md 與 plan 頁 past-end 引用，前後退回 build 兩次。task.js 在第二次退回時印出「name what verify caught that build's review did not, and add that check to the review」，這就是那個檢查。

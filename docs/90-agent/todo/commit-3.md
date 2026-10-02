@@ -2,8 +2,13 @@
 label: commit
 title: commit.js 漏掉 mode 變更
 description: commit.js 用 git commit -o，core.fileMode=false 下只改檔案權限（+x）的變更會被丟掉、回 nothing to commit；10-02 station.sh 只能繞過它直接 commit — [scripts/commit.js](scripts/commit.js).
-state: ready
+state: done
 link: scripts/commit.js
+done:
+  at: 2026-10-03
+  sha: 4aab8b9df66e1c0dc2ed9bc162206a7fd8cf0bfa
+  disposition: done
+  session: 8237ef1b-a525-4764-9ea4-7eeb0f3de502
 ---
 
 來源：2026-10-02 TODO folder-only 改版的 build 第二輪。stage agent 用 git update-index --chmod=+x 把 station.sh 設成 100755 並已暫存，commit.js 卻回「nothing to commit」。原因是 scripts/commit.js:101 與 :242 都跑 git commit -o，-o 會用 HEAD 加工作樹重組提交，而這台 Windows 的 core.fileMode=false 讀不到工作樹的執行位元，暫存區裡的 mode 變更就被丟掉。agent 誤判成「還沒暫存」要求重試，重試只會同樣失敗；最後由主 session 直接 git commit 暫存區落地（f3867143）。
