@@ -452,7 +452,7 @@ function gitRepo() {
   g(['config', 'commit.gpgsign', 'false']);
   fs.writeFileSync(path.join(dir, 'kept.js'), 'one\n');
   fs.mkdirSync(path.join(dir, '.fankeel'), { recursive: true });
-  fs.writeFileSync(path.join(dir, '.fankeel', '.gitignore'), 'sessions/\n');
+  fs.writeFileSync(path.join(dir, '.fankeel', '.gitignore'), 'sessions/\nstation.bat\nstation.sh\n');
   g(['add', '-A']);
   g(['commit', '-qm', 'base']);
   return dir;

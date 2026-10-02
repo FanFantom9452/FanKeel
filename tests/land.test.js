@@ -29,7 +29,7 @@ function started(extra) {
     git(dir, 'config', 'commit.gpgsign', 'false');
     fs.writeFileSync(path.join(dir, 'a.txt'), 'one\ntwo\nthree\n');
     fs.mkdirSync(path.join(dir, '.fankeel'), { recursive: true });
-    fs.writeFileSync(path.join(dir, '.fankeel', '.gitignore'), 'sessions/\nworktrees/\n');
+    fs.writeFileSync(path.join(dir, '.fankeel', '.gitignore'), 'sessions/\nworktrees/\nstation.bat\nstation.sh\n');
     fs.writeFileSync(path.join(dir, '.fankeel', 'profile.json'), JSON.stringify(Object.assign({ worktree: 'true' }, extra)) + '\n');
     git(dir, 'add', '-A');
     git(dir, 'commit', '-qm', 'base');

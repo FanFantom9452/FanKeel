@@ -35,7 +35,7 @@ function repo() {
   // controlled and `sessions/` is the one thing under it that is not. Leaving it
   // untracked would make the registry's own file read as a write of this task's.
   fs.mkdirSync(path.join(dir, '.fankeel'), { recursive: true });
-  fs.writeFileSync(path.join(dir, '.fankeel', '.gitignore'), 'sessions/\n');
+  fs.writeFileSync(path.join(dir, '.fankeel', '.gitignore'), 'sessions/\nstation.bat\nstation.sh\n');
   git(dir, ['add', '-A']);
   git(dir, ['commit', '-qm', 'base']);
   return dir;

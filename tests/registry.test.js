@@ -214,7 +214,7 @@ test('writing an entry lays down .fankeel/.gitignore so only sessions/ is exclud
   const root = tmpRoot();
   registry.writeSession(root, SID, task());
   const ignore = path.join(root, '.fankeel', '.gitignore');
-  assert.equal(fs.readFileSync(ignore, 'utf8'), 'sessions/\n');
+  assert.equal(fs.readFileSync(ignore, 'utf8'), 'sessions/\nstation.bat\nstation.sh\n');
 });
 
 test('an existing .fankeel/.gitignore is never overwritten', () => {
@@ -224,6 +224,27 @@ test('an existing .fankeel/.gitignore is never overwritten', () => {
   fs.writeFileSync(ignore, 'sessions/\nscratch/\n');
   registry.writeSession(root, SID, task());
   assert.equal(fs.readFileSync(ignore, 'utf8'), 'sessions/\nscratch/\n');
+});
+
+// lib/launchers.js rides on the layout: every registry gets the two station
+// launchers, and they are per machine, so they are ignored.
+test('ensureLayout writes the station launchers and keeps them out of git', () => {
+  const root = tmpRoot();
+  registry.ensureLayout(root);
+  for (const name of ['station.bat', 'station.sh']) {
+    assert.ok(fs.existsSync(path.join(root, '.fankeel', name)), name);
+  }
+  assert.equal(fs.readFileSync(path.join(root, '.fankeel', '.gitignore'), 'utf8'),
+    'sessions/\nstation.bat\nstation.sh\n');
+});
+
+// A launcher is a convenience; the session write it rides on is not. A
+// directory where the file should be makes `writeFileSync` throw EISDIR.
+test('a launcher that cannot be written does not cost the session write', () => {
+  const root = tmpRoot();
+  fs.mkdirSync(path.join(root, '.fankeel', 'station.bat'), { recursive: true });
+  assert.equal(registry.writeSession(root, SID, task()), true);
+  assert.ok(registry.readSession(root, SID));
 });
 
 // The append `scripts/map.js` had for `map.md`, lifted here so the station's
