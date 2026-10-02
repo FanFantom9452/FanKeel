@@ -3,24 +3,23 @@
 
 // The one writer of TODO entry files, a thin wrapper over lib/todo.js.
 //
-//   node todo.js index   [--root <dir>]
-//   node todo.js new     --label <w> --title <t> --description <d> --state <s>
+//   node todo.js list    [--root <dir>]
+//   node todo.js new     --label <w> --title <t> --description <d> --state <s> --body <text>
 //                        [--link <path>] [--group <title> --timing <cond> --stamp YYYY-MM-DD] [--id <id>]
 //   node todo.js done    <id> --sha <sha> [--session <id>] [--disposition done] [--at YYYY-MM-DD]
 //   node todo.js migrate [--root <dir>]
 
-const path = require('node:path');
 const { parseArgs } = require('node:util');
 
 const todo = require('../lib/todo.js');
 const { resolveRoot } = require('../lib/registry.js');
 
 const USAGE = [
-    'usage: todo.js index | new --label --title --description --state [--link --group --timing --stamp --id]',
+    'usage: todo.js list | new --label --title --description --state --body [--link --group --timing --stamp --id]',
     '       | done <id> --sha <sha> [--session <id>] [--disposition done] | migrate    [--root <dir>]',
 ].join('\n');
 
-const FLAGS = ['root', 'label', 'title', 'description', 'state', 'link', 'group', 'timing', 'stamp', 'id',
+const FLAGS = ['root', 'label', 'title', 'description', 'state', 'body', 'link', 'group', 'timing', 'stamp', 'id',
     'sha', 'session', 'disposition', 'at'];
 
 function main(argv, now) {
@@ -32,15 +31,31 @@ function main(argv, now) {
     const root = resolveRoot(str('root') || undefined);
     const [cmd, arg] = positionals;
     try {
-        if (cmd === 'index') {
-            todo.writeIndex(root);
-            return { text: 'fankeel todo: wrote ' + path.join(root, 'TODO.md'), ok: true };
+        if (cmd === 'list') {
+            const loaded = todo.load(root, at);
+            if (!loaded || loaded.mode !== 'folder') {
+                return { text: 'fankeel todo: no todo folder under ' + root + ' — list reads entry files only', ok: false };
+            }
+            const open = loaded.all.filter((e) => e.state !== 'done');
+            const lines = open.map((e) => e.state + ' ' + e.id + ' — ' + e.title);
+            lines.push(open.length + ' open');
+            return { text: lines.join('\n'), ok: true };
         }
         if (cmd === 'new') {
             const state = str('state') || 'decision';
+            const body = str('body');
+            if (!body.trim()) {
+                return { text: 'fankeel todo: --body <text> is required — where it came from, what it should become,'
+                    + ' and what counts as done', ok: false };
+            }
+            const n = todo.bodyChars(body);
+            if (n < todo.MIN_BODY_CHARS) {
+                return { text: 'fankeel todo: --body is ' + n + ' characters, at least ' + todo.MIN_BODY_CHARS
+                    + ' — where it came from, what it should become, and what counts as done', ok: false };
+            }
             const made = todo.add(root, {
                 id: str('id'), label: str('label'), title: str('title'), description: str('description'), state,
-                link: str('link'), group: str('group'), timing: str('timing'),
+                link: str('link'), group: str('group'), timing: str('timing'), body,
                 stamp: str('stamp') || (state === 'blocked' || state === 'watch' ? todo.isoDay(at) : ''),
             });
             return { text: 'fankeel todo: ' + made.file, ok: true };
@@ -54,7 +69,7 @@ function main(argv, now) {
         if (cmd === 'migrate') {
             const r = todo.migrate(root, at);
             const lines = ['fankeel todo migrate: ' + r.open + ' open, ' + r.done + ' done, ' + r.left.length
-                + ' not migrated' + (r.left.length ? ' — under no known heading; re-add each with todo.js new:' : '')];
+                + ' not migrated, TODO.md removed' + (r.left.length ? ' — under no known heading; re-add each with todo.js new:' : '')];
             for (const l of r.left) lines.push('  TODO.md:' + l.line + '  ' + l.text);
             for (const w of r.warned) lines.push('  could not date ' + w.sha + ': ' + w.why + ' — used today');
             return { text: lines.join('\n'), ok: true };

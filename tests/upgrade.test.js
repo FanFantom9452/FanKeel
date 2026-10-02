@@ -107,7 +107,7 @@ test('a project already on entry files has nothing pending', () => {
   const dir = project(null);
   fs.mkdirSync(path.join(dir, 'docs', 'todo'), { recursive: true });
   lib.add(dir, { label: 'a', title: 'one', description: 'first', state: 'ready' });
-  assert.match(fs.readFileSync(path.join(dir, 'TODO.md'), 'utf8'), /one/, 'the fixture has entries in TODO.md');
+  assert.equal(fs.existsSync(path.join(dir, 'TODO.md')), false, 'add writes no TODO.md');
   const r = upgrade.run(dir, { plugin: plugin('1.2.3'), now: NOW });
   assert.equal(r.code, 0, r.text);
   assert.match(r.text, /nothing pending/);

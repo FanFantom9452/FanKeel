@@ -60,3 +60,15 @@ test('todo.js migrate prints a line for each record it could not date', () => {
   const out = execFileSync(process.execPath, [SCRIPT, 'migrate', '--root', dir], { encoding: 'utf8', cwd: dir });
   assert.match(out, /could not date abcdef1/);
 });
+
+test('migrate removes TODO.md once every entry file is written, each body the original line first', () => {
+  const dir = tmp('fankeel-migrate-rm-');
+  fs.mkdirSync(path.join(dir, '.fankeel'), { recursive: true });
+  fs.writeFileSync(path.join(dir, '.fankeel', 'docs.json'), JSON.stringify({ buckets: [{ path: 'docs/todo', role: 'todo' }] }));
+  fs.writeFileSync(path.join(dir, 'TODO.md'), ['# TODO', '', '## Ready', '', '- one thing', '- two things', ''].join('\n'));
+  const r = lib.migrate(dir, Date.parse('2026-09-29T00:00:00Z'));
+  assert.equal(r.open, 2);
+  assert.equal(fs.existsSync(path.join(dir, 'TODO.md')), false);
+  const bodies = lib.readFolder(dir, 'docs/todo').map((e) => e.body.split('\n')[0]);
+  assert.deepEqual(bodies, ['one thing', 'two things']);
+});
