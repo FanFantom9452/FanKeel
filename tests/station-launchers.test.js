@@ -60,3 +60,12 @@ test('station.sh is executable', { skip: process.platform === 'win32' }, () => {
     launchers.write(root);
     assert.equal(fs.statSync(path.join(root, '.fankeel', 'station.sh')).mode & 0o777, 0o755);
 });
+
+// The three pages a user reads to reopen the station name the launcher.
+test('README, getting-started and the station skill name .fankeel/station.bat', () => {
+    for (const rel of ['README.md', 'docs/01-guide/getting-started.md', 'skills/fankeel-station/SKILL.md']) {
+        const text = fs.readFileSync(path.join(PLUGIN, rel), 'utf8');
+        assert.ok(text.includes('.fankeel/station.bat'), rel + ' does not name .fankeel/station.bat');
+        assert.ok(text.includes('station.sh'), rel + ' does not name station.sh');
+    }
+});

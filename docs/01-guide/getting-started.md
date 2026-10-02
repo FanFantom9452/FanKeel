@@ -53,4 +53,6 @@ claude plugin install fankeel@fankeel
 node <plugin>/scripts/station.js serve --open
 ```
 
+不想打指令的話，每個專案的 `.fankeel/` 底下都有外掛產生的啟動檔：Windows 雙擊 `.fankeel/station.bat`，其他系統執行 `.fankeel/station.sh`。station 已經在跑時，它只會打開瀏覽器，不會再開一個 port。
+
 每個 view 看什麼、數字怎麼讀，在 [station.md](station.md)。
