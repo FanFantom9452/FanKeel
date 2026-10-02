@@ -250,27 +250,26 @@ function addTodo(file, entry) {
 }
 
 // 記成 TODO where the project keeps entry files: the entry is written through
-// `lib/todo.js`'s `add`, the one writer, and the same before-and-after
-// `check()` decides — a problem the tree has now that it did not have before
-// is the refusal, and the file comes out again with the index rewritten.
-function addTodoFile(dir, text, link) {
+// `lib/todo.js`'s `add`, the one writer, with the body the form sent, and the
+// same before-and-after `check()` on the project directory decides — a
+// problem the folder has now that it did not have before (a `thin body`, a
+// dead link) is the refusal, and the file comes out again.
+function addTodoFile(dir, text, link, body) {
     if (!String(text || '').trim()) return { status: 400, text: 'empty entry — nothing to write' };
-    const file = path.join(dir, 'TODO.md');
     const key = (p) => p.kind + '\n' + p.detail;
     const had = new Map();
-    for (const p of todoCheck.check(file).problems) had.set(key(p), (had.get(key(p)) || 0) + 1);
+    for (const p of todoCheck.check(dir).problems) had.set(key(p), (had.get(key(p)) || 0) + 1);
     let made;
     try {
-        made = todoFiles.add(dir, todoFiles.fromLine(text, link, 'decision'));
+        made = todoFiles.add(dir, Object.assign(todoFiles.fromLine(text, link, 'decision'), { body: String(body || '').trim() }));
     } catch (e) {
         return { status: 400, text: e.message };
     }
     const seen = new Map();
-    for (const p of todoCheck.check(file).problems) {
+    for (const p of todoCheck.check(dir).problems) {
         seen.set(key(p), (seen.get(key(p)) || 0) + 1);
         if (seen.get(key(p)) > (had.get(key(p)) || 0)) {
             fs.unlinkSync(made.path);
-            todoFiles.writeIndex(dir);
             return { status: 400, text: p.kind + ' — ' + p.detail };
         }
     }
@@ -536,14 +535,13 @@ async function serve(opts) {
                 fail(404, 'no such session on this page');
                 return;
             }
-            // The session's own project when it names one with a TODO.md, and
-            // the registry's root otherwise.
-            const own = path.join(reg.root, row.project || '', 'TODO.md');
-            const file = fs.existsSync(own) ? own : path.join(reg.root, 'TODO.md');
-            const dir = path.dirname(file);
+            // The session's own project when it keeps a todo folder or a
+            // TODO.md, and the registry's root otherwise.
+            const own = path.join(reg.root, row.project || '');
+            const dir = todoFiles.folderOf(own) || fs.existsSync(path.join(own, 'TODO.md')) ? own : reg.root;
             const out = todoFiles.folderOf(dir)
-                ? addTodoFile(dir, form.get('text') || '', form.get('link') || '')
-                : addTodo(file, view.todoEntry(form.get('text') || '', form.get('link') || ''));
+                ? addTodoFile(dir, form.get('text') || '', form.get('link') || '', form.get('body') || '')
+                : addTodo(path.join(dir, 'TODO.md'), view.todoEntry(form.get('text') || '', form.get('link') || ''));
             res.writeHead(out.status, { 'content-type': 'text/plain; charset=utf-8' });
             res.end(out.text + '\n');
             return;

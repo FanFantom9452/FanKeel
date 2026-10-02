@@ -13,6 +13,10 @@ const tmp = require('./tmp.js');
 
 global.window = { STATION: { serve: false } };
 
+const BODY = 'From the station, 2026-10-02: a question raised in the middle of a session and parked here. '
+    + 'It should become one decided change, written down where the next session can pick it up. '
+    + 'Done when the change lands and this entry is closed by the sha that landed it.';
+
 const SID = 'eeeeeeee-7777-4777-8777-777777777777';
 
 function fixture() {
@@ -27,9 +31,9 @@ function fixture() {
     fs.writeFileSync(path.join(r1, 'docs', 'station.md'), '# station\n');
     fs.writeFileSync(path.join(r1, '.fankeel', 'docs.json'), JSON.stringify({ buckets: [
         { path: 'docs', role: 'reference', depth: 1 }, { path: 'docs/todo', role: 'todo' }] }));
-    lib.add(r1, { label: 'a', title: 'one', description: 'first — [station.md](docs/station.md).', state: 'ready' });
-    lib.add(r1, { label: 'a', title: 'two', description: 'second', state: 'decision' });
-    lib.add(r1, { label: 'b', title: 'three', description: 'third', state: 'ready' });
+    lib.add(r1, { label: 'a', title: 'one', description: 'first — [station.md](docs/station.md).', state: 'ready', body: BODY });
+    lib.add(r1, { label: 'a', title: 'two', description: 'second', state: 'decision', body: BODY });
+    lib.add(r1, { label: 'b', title: 'three', description: 'third', state: 'ready', body: BODY });
     lib.close(r1, 'b-1', { sha: 'abcdef1', session: SID, at: '2026-09-29' });
     fs.mkdirSync(path.join(cfg, 'fankeel'), { recursive: true });
     fs.writeFileSync(path.join(cfg, 'fankeel', 'roots.json'), JSON.stringify({ [path.resolve(r1)]: '2026-09-11T10:00:00.000Z' }) + '\n');
@@ -64,7 +68,7 @@ test('serialize carries each project\'s open and done entries, done with its sha
     assert.deepEqual(t.open.map((e) => [e.id, e.state]), [['a-1', 'ready'], ['a-2', 'decision']]);
 });
 
-test('POST /todo in folder mode writes an entry file and regenerates TODO.md; a refused one leaves no file', async () => {
+test('POST /todo in folder mode writes an entry file with its body and no TODO.md; a refused one leaves no file', async () => {
     const f = fixture();
     const { serve } = require('../scripts/station.js');
     const s = await serve({ configDir: f.cfg, roots: [f.r1], port: 0, idleMs: 60e3, open: false });
@@ -74,18 +78,20 @@ test('POST /todo in folder mode writes an entry file and regenerates TODO.md; a 
         const post = (o) => request(s.url + 'todo', new URLSearchParams(Object.assign({ nonce, root: f.r1, id: SID }, o)).toString());
         const dir = path.join(f.r1, 'docs', 'todo');
         const before = fs.readdirSync(dir).sort();
-        const long = await post({ text: 'x'.repeat(250), link: 'docs/station.md' });
+        const long = await post({ text: 'x'.repeat(250), link: 'docs/station.md', body: BODY });
         assert.deepEqual([long.status, long.text.startsWith('too long — ')], [400, true]);
-        const dead = await post({ text: 'x', link: 'docs/nope.md' });
+        const dead = await post({ text: 'x', link: 'docs/nope.md', body: BODY });
         assert.deepEqual([dead.status, dead.text.startsWith('dead link — docs/nope.md')], [400, true]);
         assert.deepEqual(fs.readdirSync(dir).sort(), before, 'a refused entry leaves no file');
-        const ok = await post({ text: '〔station〕a new question', link: 'docs/station.md' });
+        const thin = await post({ text: '〔station〕a new question', link: 'docs/station.md', body: 'too short' });
+        assert.deepEqual([thin.status, thin.text.startsWith('thin body — ')], [400, true]);
+        assert.deepEqual(fs.readdirSync(dir).sort(), before, 'a thin body leaves no file');
+        const ok = await post({ text: '〔station〕a new question', link: 'docs/station.md', body: BODY });
         assert.equal(ok.status, 201);
         assert.equal(ok.text.trim(), 'station-1');
         const made = lib.parse(fs.readFileSync(path.join(dir, 'station-1.md'), 'utf8'));
-        assert.deepEqual([made.label, made.state, made.link], ['station', 'decision', 'docs/station.md']);
-        assert.match(fs.readFileSync(path.join(f.r1, 'TODO.md'), 'utf8'),
-            /^- 〔station〕a new question — \[station\.md\]\(docs\/station\.md\)\.$/m);
+        assert.deepEqual([made.label, made.state, made.link, made.body], ['station', 'decision', 'docs/station.md', BODY]);
+        assert.equal(fs.existsSync(path.join(f.r1, 'TODO.md')), false, 'no TODO.md is written');
     } finally {
         s.close();
     }
@@ -106,4 +112,15 @@ test('an unreadable entry file gives an error row and a visible panel line, not 
     const html = V.todoPanelHtml(t, []);
     assert.match(html, /data-block="todo-head"/);
     assert.match(html, /無法讀取 TODO：.*EISDIR/);
+});
+
+test('the project row carries each entry\'s body, open and done', () => {
+    const f = fixture();
+    const model = station.gather({ configDir: f.cfg, roots: [f.r1], scan: [], cwd: f.r1 });
+    const text = station.serialize(model);
+    const data = JSON.parse(text.slice('window.STATION = '.length, text.lastIndexOf(';')));
+    const row = data.projects.find((p) => path.resolve(p.root) === path.resolve(f.r1));
+    const t = row.todos[0];
+    assert.deepEqual(t.open.map((e) => e.body), [BODY, BODY]);
+    assert.deepEqual(t.done.map((e) => e.body), [BODY]);
 });
