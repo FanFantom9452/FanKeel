@@ -1102,3 +1102,18 @@ test('every controller names a TODO entry by its title, never by its id', () => 
     assert.ok(first.endsWith('dispatch, relay a path, ask. Name TODO entries by title, never by id.'), stage + ': ' + first);
   }
 });
+
+// docs/90-agent/plans/2026-10-02-docs-writer.md Task 11: the controller judges
+// whether a stage needs deep thought and asks the user before it sends the
+// brain's high or xhigh variant. Two options, so hooks/resume.js never files
+// the answer as a stage gate's (a gate's first question carries three or more).
+test('every controlled stage tells the controller to ask before sending a brain variant', () => {
+  const { controlFor } = require('../lib/stages.js');
+  const all = ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land'];
+  for (const stage of all) {
+    const rules = controlFor(stage, { 'stage.agents': all }, {}).rules;
+    const dispatch = rules.find((r) => r.startsWith('Dispatch one Agent'));
+    assert.ok(dispatch.endsWith(' Deep thought? AskUserQuestion first, two options; yes sends its `-high`/`-xhigh`.'), stage + ': ' + dispatch);
+    assert.equal(rules.some((r) => r.includes('hooks/gate.js')), false, stage);
+  }
+});
