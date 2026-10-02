@@ -9,7 +9,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { awaitState, awaitHandoff, pendingTool } = require('../lib/handoff.js');
+const { awaitState, awaitHandoff, pendingTool, owesReply } = require('../lib/handoff.js');
 const tmp = require('./tmp.js');
 
 const T = 1800000000000;
@@ -92,4 +92,27 @@ test('pendingTool: an unreadable file (EACCES) is assumed pending, only a missin
         fs.openSync = real;
     }
     assert.equal(pendingTool(path.join(dir, 'none.jsonl')), false);
+});
+
+// await-6: a plan brain woken by SendMessage was read `lost` three times on
+// 2026-10-02 while ListAgents showed it running. A transcript whose last turn is
+// the user's — the message it was woken with, or a tool result it is answering —
+// owes a reply, and a long reply writes no line until it is whole.
+const woken = (text) => line({ type: 'user', message: { role: 'user', content: text } });
+
+test('owesReply: the user spoke last, so a reply is owed; the agent spoke last, none is', () => {
+    assert.equal(owesReply(transcript(DONE + woken('The user\'s answer is in a.md.'))), true, 'woken by SendMessage');
+    assert.equal(owesReply(transcript(WAITING + result('t1'))), true, 'a tool result it has not answered yet');
+    assert.equal(owesReply(transcript(DONE)), false, 'it ended its turn');
+    assert.equal(owesReply(transcript('')), false);
+    assert.equal(owesReply(path.join(tmp('fankeel-await-pending-'), 'none.jsonl')), false, 'no file');
+});
+
+test('awaitState: an agent woken by SendMessage is not lost before busyMs', () => {
+    const dir = tmp('fankeel-await-pending-');
+    const base = { handoff: path.join(dir, 'plan.md'), commit: path.join(dir, 'plan-commit.md'), since: T, idleMs: 180000, busyMs: 660000, started: T - 900000 };
+    const wokenFile = transcript(DONE + woken('The user\'s answer is in a.md.'), T - 200000);
+    assert.equal(awaitState({ ...base, activity: [wokenFile], now: T }), null, '200 s into its reply is busy, not lost');
+    assert.equal(awaitState({ ...base, activity: [wokenFile], now: T + 470000 }), 'lost', '670 s is past busyMs');
+    assert.equal(awaitState({ ...base, activity: [transcript(DONE, T - 200000)], now: T }), 'lost', 'the control: it spoke last, and stopped');
 });
