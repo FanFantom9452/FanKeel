@@ -34,4 +34,4 @@ if (require.main === module) {
     process.stdout.write(write(values.root || PLUGIN_ROOT, values.base).join('\n') + '\n');
 }
 
-module.exports = { BASES, write };
+module.exports = { BASES };
