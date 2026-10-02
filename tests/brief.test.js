@@ -919,6 +919,8 @@ test('an effort variant of the brain gets the brain brief', () => {
   const root = tmp();
   seedProfile(root, { 'stage.agents': ['build'] });
   seed(root, { stage: 'build', started: '2026-09-19T09:30:12.345Z' });
-  const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain-xhigh' })));
+  const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain-xhigh', agent_id: 'v1' })));
   assert.match(text, /You cannot run Workflow\. Dispatch/);
+  const mark = JSON.parse(fs.readFileSync(path.join(root, '.fankeel', 'sessions', SESSION + '.json'), 'utf8')).inflight;
+  assert.equal([].concat(mark).some((m) => m && m.agentId === 'v1'), true, 'the variant is marked in flight');
 });
