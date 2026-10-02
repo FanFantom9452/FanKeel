@@ -4374,7 +4374,7 @@
     }
 
     // ---- 記成 TODO -------------------------------------------------------
-    // One line for TODO.md's `## Needs a decision`, in the shape todo-check
+    // One TODO line — an entry's description, or a TODO.md bullet — in the shape todo-check
     // reads: the text, then the link it points at. `scripts/station.js`
     // builds the line it writes with this same function.
     function todoEntry(text, link) {
@@ -4396,13 +4396,14 @@
     function todoSpot(text, link, s) {
         if (!S.serve) {
             return '<div class="td"><div class="tdc"><code>- ' + esc(todoEntry(text, link)) + '</code></div>'
-                + '<div class="tds">' + loc('todo.staticPageCopyLine', '靜態頁不寫檔：複製這一行，貼進 TODO.md 的 ## Needs a decision。') + '</div></div>';
+                + '<div class="tds">' + loc('todo.staticPageCopyLine', '靜態頁不寫檔：有 todo 資料夾就用 todo.js new 記下這一行，否則貼進 TODO.md 的 ## Needs a decision。') + '</div></div>';
         }
         return '<details class="td"><summary class="tdb">' + loc('todo.recordAsTodo', '記成 TODO') + ' <span class="m">POST /todo</span></summary>'
             + '<div class="tdf" data-todo-root="' + esc(s.root) + '" data-todo-id="' + esc(s.id) + '">'
-            + '<label>' + loc('todo.entryLabel', '條目（寫進 TODO.md 的 ## Needs a decision）') + '</label><textarea rows="2" spellcheck="false">'
+            + '<label>' + loc('todo.entryLabel', '條目（一行：todo 資料夾的 description，或 TODO.md 的 ## Needs a decision）') + '</label><textarea rows="2" spellcheck="false">'
             + esc(text) + '</textarea><label>' + loc('todo.link', '連結') + '</label><input type="text" spellcheck="false" value="' + esc(link) + '">'
-            + '<div class="help">' + loc('todo.checkedBeforeSubmit', '送出前跑 todo-check 的同一套規則：≤ 200 字元、連結要存在、不指向 plan、decision、report、archive。') + '</div>'
+            + '<label>' + loc('todo.bodyLabel', 'body（有 todo 資料夾時必填，至少 200 字元：從哪來、要做成什麼樣、怎樣算完成）') + '</label><textarea class="tdbd" rows="5" spellcheck="false"></textarea>'
+            + '<div class="help">' + loc('todo.checkedBeforeSubmit', '送出前跑 todo-check 的同一套規則：條目 ≤ 200 字元、連結要存在、不指向 plan、decision、report、archive；有 todo 資料夾時 body 至少 200 字元。') + '</div>'
             + '<div class="act"><button type="button" class="go" data-todo>' + loc('todo.submit', '送出') + '</button></div>'
             + '<div class="tdr" role="status" aria-live="polite"></div></div></details>';
     }
@@ -4824,10 +4825,11 @@
             body.set('id', box.getAttribute('data-todo-id'));
             body.set('text', box.querySelector('textarea').value);
             body.set('link', box.querySelector('input').value);
+            body.set('body', box.querySelector('textarea.tdbd').value);
             fetch('todo', { method: 'POST', body: body }).then(function (r) {
                 return r.text().then(function (t) {
                     said.className = 'tdr ' + (r.ok ? 'ok' : 'bad');
-                    said.textContent = (r.ok ? loc('cmp.writtenToTodoColon', '寫進 TODO.md：') : r.status + loc('cmp.dashNotWrittenColon', ' — 沒有寫進去：')) + t.trim();
+                    said.textContent = (r.ok ? loc('cmp.writtenToTodoColon', '記下了：') : r.status + loc('cmp.dashNotWrittenColon', ' — 沒有寫進去：')) + t.trim();
                 });
             }, function () {
                 said.className = 'tdr bad';

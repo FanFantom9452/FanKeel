@@ -66,6 +66,9 @@ test('the file on disk prints the line to copy; the served page a form carrying 
     const form = V.todoSpot('x', 'docs/station.md', { root: 'R', id: 'I' });
     assert.match(form, /data-todo-root="R" data-todo-id="I"/);
     assert.match(form, /data-todo>送出/);
+    assert.match(form, /<textarea class="tdbd" rows="5" spellcheck="false"><\/textarea>/);
+    assert.match(form, /body（有 todo 資料夾時必填，至少 200 字元/);
+    assert.match(onDisk, /todo\.js new/, 'the copy line names both modes');
     global.window.STATION.serve = false;
 });
 

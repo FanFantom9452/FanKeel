@@ -163,7 +163,7 @@ function todoBox() {
     const attrs = { 'data-todo-root': 'R:\\proj', 'data-todo-id': 'sid-9' };
     const box = { said,
         getAttribute: (k) => (k in attrs ? attrs[k] : null),
-        querySelector(sel) { return sel === '.tdr' ? said : sel === 'textarea' ? { value: 'the line' } : sel === 'input' ? { value: 'docs/x.md#y' } : null; } };
+        querySelector(sel) { return sel === '.tdr' ? said : sel === 'textarea' ? { value: 'the line' } : sel === 'textarea.tdbd' ? { value: 'the body' } : sel === 'input' ? { value: 'docs/x.md#y' } : null; } };
     return { '[data-todo]': { closest: (sel) => (sel === '.tdf' ? box : null) }, box };
 }
 const todoPress = async (p, answer) => {
@@ -214,16 +214,22 @@ test('todo: the body carries the input value as link', async () => {
     assert.equal(sent(p, 'link'), 'docs/x.md#y');
 });
 
+test('todo: the body carries the tdbd textarea value as body', async () => {
+    const p = boot('#/');
+    await todoPress(p);
+    assert.equal(sent(p, 'body'), 'the body');
+});
+
 test('todo: an ok answer sets the class tdr ok', async () => {
     const p = boot('#/');
     const box = await todoPress(p, answers(true, 200, 'done'));
     assert.equal(box.said.className, 'tdr ok');
 });
 
-test('todo: an ok answer shows 寫進 TODO.md： and the trimmed body', async () => {
+test('todo: an ok answer shows 記下了： and the trimmed body', async () => {
     const p = boot('#/');
     const box = await todoPress(p, answers(true, 200, '  - the line \n'));
-    assert.equal(box.said.textContent, '寫進 TODO.md：- the line');
+    assert.equal(box.said.textContent, '記下了：- the line');
 });
 
 test('todo: a refused answer sets the class tdr bad', async () => {
