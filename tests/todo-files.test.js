@@ -209,3 +209,22 @@ test('load: a TODO.md that cannot be read throws, and only a missing one is "no 
   fs.mkdirSync(path.join(dir, 'TODO.md'));
   assert.throws(() => lib.load(dir), (e) => e.code === 'EISDIR');
 });
+
+// docs-check-1: an open entry is checked as a reference page is when it is
+// filed; a path that is gone refuses it and leaves no file behind.
+test('new refuses an entry naming a path the tree does not have, and leaves no file', () => {
+  const dir = project(true);
+  lib.migrate(dir, NOW);
+  fs.mkdirSync(path.join(dir, 'lib'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'lib', 'here.js'), 'function here() {}\n');
+  execFileSync('git', ['init', '-q'], { cwd: dir });
+  execFileSync('git', ['add', '-A'], { cwd: dir });
+  const base = ['new', '--root', dir, '--label', 'eps', '--state', 'ready', '--body', BODY];
+  const out = main(base.concat(['--title', 'Gone path', '--description', 'names `lib/gone.js`']), NOW);
+  assert.equal(out.ok, false, out.text);
+  assert.match(out.text, /^fankeel todo: not filed/);
+  assert.match(out.text, /gone: names lib\/gone\.js/);
+  assert.equal(fs.existsSync(path.join(dir, 'docs', 'todo', 'eps-1.md')), false, 'the refused entry is not left on disk');
+  const ok = main(base.concat(['--title', 'Here path', '--description', 'names `lib/here.js`']), NOW);
+  assert.equal(ok.ok, true, ok.text);
+});

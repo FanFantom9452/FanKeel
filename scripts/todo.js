@@ -11,6 +11,8 @@
 
 const { parseArgs } = require('node:util');
 
+const fs = require('node:fs');
+const { checkFile } = require('./docs-check.js');
 const todo = require('../lib/todo.js');
 const { resolveRoot } = require('../lib/registry.js');
 
@@ -58,6 +60,17 @@ function main(argv, now) {
                 link: str('link'), group: str('group'), timing: str('timing'), body,
                 stamp: str('stamp') || (state === 'blocked' || state === 'watch' ? todo.isoDay(at) : ''),
             });
+            // docs-check-1: an open entry is checked as a reference page is the
+            // moment it is filed — a path that is gone, a symbol nothing
+            // declares, a cited line that no longer holds its quote — and
+            // refused, with its file removed, rather than read later with
+            // confidence. A file still to be written is named without backticks.
+            const found = checkFile(root, made.file, 'todo');
+            if (found.length) {
+                fs.unlinkSync(made.path);
+                return { text: ['fankeel todo: not filed — the entry names what the tree does not have:']
+                    .concat(found.map((f) => '  ' + f.tag + ': ' + f.what)).join('\n'), ok: false };
+            }
             return { text: 'fankeel todo: ' + made.file, ok: true };
         }
         if (cmd === 'done') {
