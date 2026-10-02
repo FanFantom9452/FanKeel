@@ -29,6 +29,7 @@ const profileLib = require('../lib/profile.js');
 const { lapOf, caseOfPrompt } = require('../lib/handoff.js');
 const { run, parse } = require('../lib/hook.js');
 const { sessionDirOf } = require('../lib/usage.js');
+const { baseAgent } = require('../lib/agentfile.js');
 
 // A `fankeel-brain` dispatching a nested `fankeel-brain` of its own — build's
 // fixer-round resume does this — fires this same SubagentStart for the inner
@@ -105,7 +106,7 @@ function main(raw) {
     // `group` is the one it names in a build's brief: `markInflight` assigns
     // it, so this is the one place both the mark and the brief agree on it.
     let group = null;
-    if (mine.stage && String(payload.agent_type || '').replace(/^fankeel:/, '') === 'fankeel-brain' && !nestedBrain(payload)) {
+    if (mine.stage && baseAgent(payload.agent_type) === 'fankeel-brain' && !nestedBrain(payload)) {
         try {
             const sent = mine.stage === 'build' ? caseOf(payload) : null;
             group = registry.markInflight(root, payload.session_id, mine.stage, payload.agent_id, lapOf(mine, mine.stage), sent && sent.group, sent && sent.kind);

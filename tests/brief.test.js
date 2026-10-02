@@ -913,3 +913,12 @@ test('a build brain sent a bare `build` is marked close, so the await watches th
   assert.equal(marks.find((m) => m.agentId === 'r2').kind, 'close');
   assert.equal('kind' in marks.find((m) => m.agentId === 'r3'), false, 'a line that says more than `build` is not the bare case');
 });
+
+// docs/90-agent/plans/2026-10-02-docs-writer.md Task 5.
+test('an effort variant of the brain gets the brain brief', () => {
+  const root = tmp();
+  seedProfile(root, { 'stage.agents': ['build'] });
+  seed(root, { stage: 'build', started: '2026-09-19T09:30:12.345Z' });
+  const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain-xhigh' })));
+  assert.match(text, /You cannot run Workflow\. Dispatch/);
+});
