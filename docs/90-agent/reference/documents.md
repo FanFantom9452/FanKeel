@@ -185,7 +185,7 @@ report where a real parser would cost a dependency this plugin does not have.
 - `lib/docs.js:254` 是 `const listed = require('./tracked.js').trackedFiles(root);`
 - `lib/map.js:237` 是 `const found = trackedFiles(root);`
 - `lib/map.js:325` 是 `const found = trackedFiles(root);`
-- `lib/plantasks.js:295` 是 `const found = trackedFiles(root);`
+- `lib/plantasks.js:299` 是 `const found = trackedFiles(root);`
 - `scripts/docs-audit.js:416` 是 `const listed = trackedFiles(root);`
 - `scripts/docs-audit.js:456` 是 `const listed = trackedFiles(root);`
 - `scripts/docs-check.js:152` 是 `const result = trackedFiles(root);`
