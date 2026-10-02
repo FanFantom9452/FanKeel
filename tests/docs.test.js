@@ -679,10 +679,10 @@ test('the lifetime section lists every trackedFiles call site in scripts/ and li
     + ', bullets pointing at no call site: ' + JSON.stringify(declared.filter((x) => !a.has(x))));
 });
 
-test('there are fourteen trackedFiles call sites, ten under scripts/ and four under lib/', () => {
+test('there are fifteen trackedFiles call sites, eleven under scripts/ and four under lib/', () => {
   const actual = callSites(path.join(__dirname, '..'));
-  assert.equal(actual.length, 14, 'call sites: ' + JSON.stringify(actual));
-  assert.equal(actual.filter((s) => s.startsWith('scripts/')).length, 10,
+  assert.equal(actual.length, 15, 'call sites: ' + JSON.stringify(actual));
+  assert.equal(actual.filter((s) => s.startsWith('scripts/')).length, 11,
     'under scripts/: ' + JSON.stringify(actual));
   assert.equal(actual.filter((s) => s.startsWith('lib/')).length, 4,
     'under lib/: ' + JSON.stringify(actual));
@@ -693,14 +693,14 @@ test('there are fourteen trackedFiles call sites, ten under scripts/ and four un
 // The section is whitespace-stripped first: that sentence is hard-wrapped, and
 // pinning one wrap position makes this go red for the wrong reason the next
 // time the paragraph reflows.
-test('the sentence above the list says fourteen, and ten under scripts/', () => {
+test('the sentence above the list says fifteen, and eleven under scripts/', () => {
   const flat = lifetimeSection(path.join(__dirname, '..')).replace(/\s+/g, '');
-  assert.ok(flat.includes('其後十四條是它的十四個呼叫端'),
-    'the sentence above the list does not say 其後十四條 / 十四個呼叫端');
-  assert.ok(flat.includes('`scripts/`十處與`lib/`四處'),
-    'the sentence does not say scripts/ 十處與 lib/ 四處');
-  assert.ok(flat.includes('十四個之中只有這一處自己（`scan`函式本身）直接讀'),
-    'the survey.js bullet does not say 十四個之中');
+  assert.ok(flat.includes('其後十五條是它的十五個呼叫端'),
+    'the sentence above the list does not say 其後十五條 / 十五個呼叫端');
+  assert.ok(flat.includes('`scripts/`十一處與`lib/`四處'),
+    'the sentence does not say scripts/ 十一處與 lib/ 四處');
+  assert.ok(flat.includes('十五個之中只有這一處自己（`scan`函式本身）直接讀'),
+    'the survey.js bullet does not say 十五個之中');
 });
 
 // docs/plans/2026-09-26-station-redesign.md Task 6. A decision marked
