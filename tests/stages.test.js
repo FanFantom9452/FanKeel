@@ -1117,3 +1117,11 @@ test('every controlled stage tells the controller to ask before sending a brain 
     assert.equal(rules.some((r) => r.includes('hooks/gate.js')), false, stage);
   }
 });
+
+// build-3: on 2026-10-02 build closed on a green suite, and verify's docs-check
+// sent the work back twice for a dead link and 35 moved line numbers.
+test('build runs docs-check at close, and its shape has a line for it', () => {
+  const { rulesFor, templateFor } = require('../lib/stages.js');
+  assert.match(rulesFor('build').join(' '), /At close: suite, then docs-check\./);
+  assert.match(templateFor('build'), /^docs-check: clean, or <n> fixed and <n> left$/m);
+});

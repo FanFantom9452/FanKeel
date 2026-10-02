@@ -600,6 +600,25 @@ third return to build was made of their defects; `--range` is required on
 
 Then one whole-branch review when the last task is done.
 
+**Then docs-check, at close.** After the full suite, run
+`node <plugin>/scripts/docs-check.js` — the check verify runs — and treat what
+it finds as this stage's own, in three tiers, each run once and never looped:
+
+1. A `moved` finding that names one new line (`— it is at :N`) is rewritten
+   by `node <plugin>/scripts/docs-moved.js`, with no agent; it prints `fixed`
+   or `left` for each.
+2. Every other `gone`, `moved`, `past-end` or `orphan` finding goes to one
+   `fankeel:fankeel-fixer` round; docs-check then runs once more, and what is
+   still there goes into the report for the user, never to a second round.
+3. A finding docs-check gets wrong — a symbol matched to the wrong file — and
+   a historical citation in a write-once page (a decision, an archive, a
+   report) is recorded as a ruling with `ledger.js ruling`, never edited to
+   turn the check green.
+
+The `docs-check:` line of the output says what came of it. On 2026-10-02
+build closed on 3396 passing tests without this step, and verify sent the
+work back twice — a dead `TODO.md` link, then 35 moved line numbers.
+
 ## Rulings, not stalls
 
 A running plan does not wait on a person. Conflicts, ambiguities, plan defects —
@@ -752,6 +771,7 @@ that meets the event an `if:` names moves the entry to `## Ready` or
 - path (new) — what it is
 
 done: <n> of <m> — ledger or file table
+docs-check: clean, or <n> fixed and <n> left
 deferred: <heading> — <TODO entry, or omit this line>
 then AskUserQuestion
 ```
