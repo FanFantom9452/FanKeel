@@ -482,9 +482,9 @@ const TODO_ENTRY_WIDTH = 100;
 // into options, ordered by which entry was touched most recently, plus the
 // count of what got left out rather than a silent drop of it.
 // Blocked and Watch are listed in full, one line per timing, and the patrol,
-// `TODO 全表盤點`, is always the last option while TODO.md has an entry, and it builds `## Ready`.
+// `TODO 全表盤點`, is always the last option while there is an entry, and it builds `## Ready`.
 //
-// null when there is nothing to say: no TODO.md at `dir`, or it could not be
+// null when there is nothing to say: no TODO folder or TODO.md at `dir`, or it could not be
 // read. The `readFileSync` below is the only check that needs to exist for
 // that — a second, earlier one reading the same path could only ever agree
 // with it or be wrong.
@@ -507,7 +507,12 @@ function todoBlock(dir, now) {
     try {
         loaded = todoFiles.load(dir, now);
     } catch (e) {
-        return ['todo: TODO.md', '  unreadable — ' + String((e && e.message) || e)];
+        let name = 'TODO.md';
+        try {
+            const f = todoFiles.folderOf(dir);
+            if (f) name = f + '/';
+        } catch (x) { /* the load error below is the one to show */ }
+        return ['todo: ' + name, '  unreadable — ' + String((e && e.message) || e)];
     }
     if (!loaded) return null;
     // Folder mode prints each offered entry's id, which is what
@@ -532,12 +537,12 @@ function todoBlock(dir, now) {
     const patrol = all.length > 0;
     const needsCount = needs.length;
     // AskUserQuestion takes four. `## Ready` is no option of its own — the
-    // patrol builds it — and the patrol is always the last one while TODO.md
+    // patrol builds it — and the patrol is always the last one while the TODO
     // has any.
     const limit = 4 - (patrol ? 1 : 0);
     const shown = ordered.slice(0, limit);
 
-    const lines = ['todo: TODO.md' + (folder ? ', from ' + loaded.folder + '/' : ''),
+    const lines = ['todo: ' + (folder ? loaded.folder + '/' : 'TODO.md'),
         '  Ready ' + readyCount];
     if (folder) for (const e of ready) lines.push('    [' + e.id + ']' + (e.title ? ' ' + e.title : ''));
     if (needsCount === 0) {
@@ -573,7 +578,7 @@ function todoBlock(dir, now) {
             + ' — retired heading, not offered; run todo-check --migrate');
     }
     lines.push('  patrol: ' + (patrol ? 'always offered last as "TODO 全表盤點", builds Ready — ' + dueCount + ' due + ' + staleCount + ' stale'
-        : 'TODO.md has no entries, not offered'));
+        : (folder ? loaded.folder + '/' : 'TODO.md') + ' has no entries, not offered'));
     if (folder) {
         lines.push('  start: `task.js start --todo <id>` for each entry the picked option covers — the one entry,'
             + ' or every Ready id when the patrol is picked');

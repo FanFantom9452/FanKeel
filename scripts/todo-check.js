@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 
-// Whether TODO.md is still an index.
+// Whether the TODO entries are still an index.
 //
 // R5 asks for one convention and a way to tell when it has been broken, because
 // an index pointing at things that no longer exist is worse than no index — it
@@ -54,7 +54,7 @@ const { PATHISH, lineCount } = require('./docs-check.js');
 // the station reaches them too; this file keeps the rules.
 const {
     MAX_ENTRY_CHARS, SECTIONS, TIMED, RETIRED, STALE_DAYS, REREAD_DAYS, MAX_TITLE_WIDTH, COMPLETIONS_PAGE,
-    DATE, conditionAt, mmdd, linksIn, entries, timings, STATES, ID, ISO, folderOf, load,
+    DATE, conditionAt, mmdd, linksIn, entries, timings, STATES, ID, ISO, folderOf, load, MIN_BODY_CHARS, bodyChars,
 } = require('../lib/todo.js');
 
 const CONDITIONS = { Blocked: ['on', 'after', 'upstream'], Watch: ['if'] };
@@ -173,10 +173,11 @@ function citationsIn(text) {
     return out;
 }
 
-// Folder mode's own rules, one `{ line: 1, file }` problem per entry file
-// except the index's, which is TODO.md's. The index is generated, so any
-// difference from what `render` writes is a hand edit; an entry file is never
-// deleted, so one that was committed and is gone lost its record.
+// Folder mode's own rules, one `{ line: 1, file }` problem per entry file.
+// Nothing is generated, so a TODO.md at the root is a hand-written file that
+// nothing reads; an entry file is never deleted, so one that was committed and
+// is gone lost its record; an open entry's body is what a reader weeks later
+// has instead of git, so a thin one is refused.
 const TIMED_STATES = ['blocked', 'watch'];
 const SHA = /^[0-9a-f]{7,40}$/;
 
@@ -201,9 +202,10 @@ function trackedIn(base, folder) {
 function folderProblems(base, folder, loaded, disk) {
     const out = [];
     const on = (file, kind, detail) => out.push({ line: 1, file, kind, detail });
-    if (disk === null || disk.replace(/\r\n/g, '\n') !== loaded.text) {
-        out.push({ line: 1, kind: 'stale index', detail: 'TODO.md is not what `todo.js index` writes from ' + folder
-            + '/. It is generated: run `todo.js index`, and change entries through `todo.js new` and `todo.js done`.' });
+    if (disk !== null) {
+        out.push({ line: 1, file: 'TODO.md', kind: 'hand TODO.md', detail: 'this project keeps its entries under ' + folder
+            + '/, so a root TODO.md is read by nothing. Move its lines in — `todo.js migrate` into an empty folder,'
+            + ' `todo.js new` one by one otherwise — then delete it.' });
     }
     for (const e of loaded.all) {
         if (!ID.test(e.id)) on(e.file, 'bad id', '"' + e.id + '" is not a lowercase kebab slug.');
@@ -212,7 +214,11 @@ function folderProblems(base, folder, loaded, disk) {
         else if (width(e.title) > MAX_TITLE_WIDTH) {
             on(e.file, 'long title', width(e.title) + ' columns, cap is ' + MAX_TITLE_WIDTH + ' — a CJK character counts two.');
         }
-        if (!e.description) on(e.file, 'no description', 'the description is the line TODO.md prints.');
+        if (!e.description) on(e.file, 'no description', 'the description is the line the index shows.');
+        if (e.state !== 'done' && bodyChars(e.body) < MIN_BODY_CHARS) {
+            on(e.file, 'thin body', bodyChars(e.body) + ' characters, at least ' + MIN_BODY_CHARS + ' — where it came from'
+                + ' (an incident, a session or a sha), what it should become, and what counts as done.');
+        }
         if (TIMED_STATES.includes(e.state) && !ISO.test(e.stamp)) {
             on(e.file, 'undated', 'a ' + e.state + ' entry carries stamp: YYYY-MM-DD, the day somebody last agreed its timing holds.');
         }
@@ -234,13 +240,19 @@ function folderProblems(base, folder, loaded, disk) {
     return out;
 }
 
-function check(file, now) {
+// `target` is a TODO.md path, or a project directory: a directory reads as its
+// own `TODO.md` in hand-written mode, and as its todo folder in folder mode.
+function check(target, now) {
     const at = now === undefined ? Date.now() : now;
-    const base = path.dirname(file);
+    let isDir = false;
+    try {
+        isDir = fs.statSync(target).isDirectory();
+    } catch (e) { /* not there: a file path, and the read below says missing */ }
+    const base = isDir ? target : path.dirname(target);
+    let file = isDir ? path.join(target, 'TODO.md') : target;
     // Folder mode: the entries are the files under the project's `todo`
-    // bucket and TODO.md is what `todo.js index` writes from them, so the
-    // rules below read the index as it should be, and the file on disk is
-    // compared with it rather than read.
+    // bucket, read through `load`; a TODO.md on disk is only asked whether it
+    // is there.
     const folder = folderOf(base);
     let disk = null;
     try {
@@ -256,6 +268,7 @@ function check(file, now) {
             return { file, problems: [{ line: 1, file: folder, kind: 'unreadable folder', detail: e.message }], overdue: [], stale: [] };
         }
     }
+    if (folder) file = path.join(base, folder);
     const text = loaded ? loaded.text : disk;
     // No `docs.json` is not a failure. `read` hands back a null tree, `roleOf`
     // answers null for everything under it, and the role check reports nothing —
@@ -658,7 +671,8 @@ function main(argv, now) {
     // own "needs a value" refusal.
     const root = typeof values.root === 'string' ? values.root : '';
     // A positional argument is still a path to a file. A flag's value is not one.
-    const at = positionals[0] || path.join(resolveRoot(root || undefined), 'TODO.md');
+    const resolved = resolveRoot(root || undefined);
+    const at = positionals[0] || (folderOf(resolved) ? resolved : path.join(resolved, 'TODO.md'));
     const file = path.resolve(at);
     // `--migrate` writes first and then checks what it wrote, so what it could
     // not place still fails the run.
