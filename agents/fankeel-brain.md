@@ -151,6 +151,15 @@ user's answer is in a file, read it, rewrite the report and its gate — the gat
 too, taking out the options that answer settled, because `hooks/gate.js`
 refuses a gate asked again unchanged — and return the path again.
 
+Before you return a path whose file holds a `json gate` block, check it:
+`node <plugin>/scripts/gate-check.js --session <id> <handoff path>` runs the
+check `hooks/gate.js` runs when the controller asks it — three options at
+least on the first question, option one naming the next stage, a pause — and
+exits non-zero naming the field. Fix the block and run it again; return the
+path once it prints `gate ok`. On 2026-10-02/03 three gates, two with two
+options and one whose option one named no stage, were refused only at the
+controller's question, each costing a round of SendMessage.
+
 Return once, when the stage is done or blocked, and
 never while an agent you dispatched has not returned — end the turn with `waiting` until it has. When you must wait for an
 agent you dispatched, end your turn with the single word `waiting` — no tool

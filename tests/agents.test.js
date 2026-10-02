@@ -508,3 +508,12 @@ test('the implementer keeps scratch files out of the tree', () => {
         assert.match(text, /never in the\s+repository's root/, name);
     }
 });
+
+// gate-5: three gates on 2026-10-02/03 were refused only when the controller
+// asked them, each costing a SendMessage round to the brain that wrote it.
+test('the brain checks its own gate with gate-check.js before it returns the path', () => {
+    for (const name of ['fankeel-brain', 'fankeel-brain-high', 'fankeel-brain-xhigh']) {
+        const text = fs.readFileSync(path.join(ROOT, 'agents', name + '.md'), 'utf8');
+        assert.match(text, /node <plugin>\/scripts\/gate-check\.js --session <id> <handoff path>/, name);
+    }
+});
