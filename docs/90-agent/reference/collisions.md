@@ -170,7 +170,7 @@ only when this session holds the file too:
   that both reached it cannot block each other into a stalemate.
 
 A task never blocking itself is a separate mechanism, and it runs before
-`blockers()` ever sees the other side: `hooks/guard.js:174` filters `others`
+`blockers()` ever sees the other side: `hooks/guard.js:175` filters `others`
 down to entries whose `sessionId` is not this one's, so every rule above is
 already between *sessions* by the time it runs. A subagent inherits its
 parent's session id, so two implementers dispatched by one session are
@@ -188,7 +188,7 @@ them at once.
 ## What the guard does not watch
 
 The scope guard's collision check is wired to one matcher: `.claude-plugin/plugin.json:96` reads `"matcher": "Edit|Write|NotebookEdit"`.
-Inside it, `hooks/guard.js:171` calls `targetOf(payload)`, which reads only
+Inside it, `hooks/guard.js:172` calls `targetOf(payload)`, which reads only
 `tool_input.file_path` and `tool_input.notebook_path`, and `hooks/guard.js:173` is the whole branch for anything else: `if (!file) return;`.
 The same hook has a second entry, `.claude-plugin/plugin.json:118` `"matcher": "Bash|PowerShell"`, and it stops short of that check:
 `hooks/guard.js:77` `if (shell) {` — where `hooks/guard.js:54` `const shell = payload.tool_name === 'Bash' || payload.tool_name === 'PowerShell';` sets it — ends in a `return` of its own, and
