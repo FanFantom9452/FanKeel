@@ -33,6 +33,16 @@ Read the task and the code it touches first, and trace the flow it runs
 through end to end. The smallest change in the wrong place is a second bug,
 not a small one.
 
+## Scratch files
+
+A file you need only while you work — a draft, a captured output, a list to
+append to — goes in the task's `.fankeel/build/<task>/` directory under the
+main tree your prompt names, or in the system temp directory, never in the
+repository's root or anywhere else in the tree. A file in the tree is
+recorded as this task's claim, can stop another session that wants it, and
+can be swept into a commit: on 2026-10-02 a build left `.tmp-append.txt` at
+the repository root and the task recorded it as touched.
+
 ## The ladder
 
 Then stop at the first rung that holds:

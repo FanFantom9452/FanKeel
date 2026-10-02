@@ -498,3 +498,13 @@ test('each effort variant is its base file with name and effort changed', () => 
 test('every base scripts/variants.js knows has its variants shipped', () => {
     assert.deepEqual([...VARIANT_BASES].sort(), [...require('../scripts/variants.js').BASES].sort());
 });
+// implementer-1: a build left .tmp-append.txt at the repository root on
+// 2026-10-02, and the task recorded it as touched.
+test('the implementer keeps scratch files out of the tree', () => {
+    for (const name of ['fankeel-implementer', 'fankeel-implementer-high', 'fankeel-implementer-xhigh']) {
+        const text = fs.readFileSync(path.join(ROOT, 'agents', name + '.md'), 'utf8');
+        assert.match(text, /## Scratch files/, name);
+        assert.match(text, /`\.fankeel\/build\/<task>\/`/, name);
+        assert.match(text, /never in the\s+repository's root/, name);
+    }
+});
