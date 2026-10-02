@@ -3,7 +3,7 @@ name: fankeel-init
 description: First-use onboarding for a project fankeel has not organised — its docs tree, raw data, TODO, directory tree, CLAUDE.md, memory and a sensitive-word list — one question at a time until the onboarding checks pass. Use when `task.js start` prints an `onboard:` line, or for /fankeel-init.
 version: 0.91.0
 status: current
-last_verified: 2026-09-30
+last_verified: 2026-10-02
 source_of_truth: scripts/onboard.js, lib/onboard.js, agents/fankeel-init-scout.md
 ---
 
@@ -78,9 +78,18 @@ First, because everything this skill writes is committed afterwards.
 
 ## 3. TODO
 
-- A `TODO.md` already there: declare a `role: todo` bucket —
-  `docs/90-agent/todo` under `audience` — then
-  `node <plugin>/scripts/todo.js migrate --root <project>`.
+- A `TODO.md` already there: ask one question first, two options.
+  **Move it into docs**: declare a `role: todo` bucket — `docs/90-agent/todo`
+  under `audience` — run `node <plugin>/scripts/todo.js migrate --root <project>`
+  (each line becomes an entry file whose body is that line and a source line,
+  and `TODO.md` is removed; its text stays in git history), then
+  `node <plugin>/scripts/todo-check.js --root <project>`. Every open entry it
+  names `thin body` gets its body written from that line's history — `git log`
+  on the old `TODO.md` finds the commit that brought the line in — in three
+  parts: where it came from, what it should become, what counts as done, at
+  least 200 characters together. **Keep the hand-written `TODO.md`**: declare
+  no bucket; `orient`, todo-check and the station go on reading it, and
+  `todo.js migrate` can move it in any later day.
 - None: declare the same bucket and create its empty folder.
 
 ## 4. The directory tree
