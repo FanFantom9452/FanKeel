@@ -1053,7 +1053,7 @@ node scripts/docs-check.js
 **Files:**
 - Modify: `lib/stages.js:150-395` — lines 154, 163, 303, 317, 392, each shorter than before; line 154 keeps `TODO.md`
 - Modify: `README.md` — the build template's `deferred:` line (130), the intro sentence (34), the `todo-check.js` tree row (244)
-- Modify: `skills/fankeel-build/SKILL.md:30-760` — lines 38, 645, 752 and the frontmatter
+- Modify: `skills/fankeel-build/SKILL.md:30-758` — lines 38, 645, 752 and the frontmatter
 - Test: `tests/task-todo.test.js`
 - Read: `tests/stages.test.js` — line 633 asserts INIT names TODO.md
 - Read: `tests/inject.test.js` — line 437 asserts the same of the injected init rules

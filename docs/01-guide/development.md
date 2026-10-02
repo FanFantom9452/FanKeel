@@ -71,9 +71,9 @@ throws blocks the edit, and a plugin that can wedge your terminal is worse than 
 plugin. The other six are not load-bearing that way, but a stack trace in front of
 the user in the middle of somebody else's turn is its own kind of broken.
 
-## `todo-check.js` — whether `TODO.md` is still an index
+## `todo-check.js` — whether the TODO entries still hold
 
-`node scripts/todo-check.js` says whether [TODO.md](../../TODO.md) is still an index —
+`node scripts/todo-check.js` says whether the TODO entries (a hand-written project's `TODO.md`, or this repository's folder docs/90-agent/todo/) still hold —
 every link resolving, none of them landing on a document whose declared role
 records a moment rather than the present, no entry carrying detail that belongs
 in the file it points at, and every entry filed under `## Ready`, `## Needs a decision`, `## Blocked` or `## Watch`, which is what says whether it can be started today. A link that
@@ -89,13 +89,13 @@ prints the split, so the ready count is on screen without opening the file. The
 just moved.
 
 Where `.fankeel/docs.json` declares a bucket with role `todo` and its folder
-exists, `TODO.md` is generated: each entry is a file there — in this
-repository `docs/90-agent/todo/` — and `node scripts/todo.js index` writes
-`TODO.md` from them. todo-check then reads the folder and adds the rules the
-files carry: a `TODO.md` that differs from what `index` writes, a committed
-entry file that is gone, a title over 28 columns, a state outside the five,
-a `blocked` or `watch` entry with no `stamp`, and a `done` entry with no
-`sha`. The contract is on
+exists, each entry is a file there — in this repository
+`docs/90-agent/todo/` — and there is no generated `TODO.md`. todo-check then
+reads the folder and adds the rules the files carry: a committed entry file
+that is gone, a title over 28 columns, a state outside the five, a `blocked`
+or `watch` entry with no `stamp`, a `done` entry with no `sha`, an open entry
+whose body is under the minimum length, and a hand-written root `TODO.md`
+left beside the folder, which is rejected. The contract is on
 [docs/90-agent/reference/todo.md](../90-agent/reference/todo.md).
 
 Under `## Blocked` and `## Watch`, entries are grouped by what they wait for: a
@@ -225,7 +225,7 @@ returns `import[badgeWord] ⎆ ✓`; `knip --trace-export clearBadge`, reached a
 and `hooks/inject.js:74` call it. The shape is not rare here: counting lines
 under `tests/` that bind a module from `../lib/`, `../scripts/` or `../hooks/`
 to a plain identifier rather than destructuring it gives 60 lines across 40 of
-the 74 test files, against 35 destructured lines across 26. `TODO.md` carries
+the 74 test files, against 35 destructured lines across 26. a TODO entry carries
 what would lift the exclusion.
 
 **A green run has to be able to go red.** An `ignore` wide enough to silence 228
