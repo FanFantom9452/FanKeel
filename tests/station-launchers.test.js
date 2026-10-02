@@ -6,6 +6,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { execFileSync } = require('node:child_process');
 
 const ROOT = path.join(__dirname, '..');
 
@@ -17,4 +18,9 @@ test('station.bat runs scripts\\station.js beside it, serve --detach --open', ()
 test('station.sh runs scripts/station.js beside it, serve --detach --open', () => {
     const text = fs.readFileSync(path.join(ROOT, 'station.sh'), 'utf8');
     assert.match(text, /^#!\/bin\/sh\nexec node "\$\(dirname "\$0"\)\/scripts\/station\.js" serve --detach --open "\$@"\n$/);
+});
+
+test('station.sh is committed executable (index mode 100755)', () => {
+    const out = execFileSync('git', ['ls-files', '-s', 'station.sh'], { cwd: ROOT, encoding: 'utf8' });
+    assert.ok(out.startsWith('100755'), 'index mode was: ' + out.slice(0, 6));
 });

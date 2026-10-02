@@ -47,6 +47,14 @@ test('with a todo folder the folder alone is clean, and a root TODO.md is refuse
   assert.deepEqual(kinds(dir), []);
 });
 
+test('--migrate on a folder root says nothing to migrate, and still checks', () => {
+  const dir = root();
+  lib.add(dir, { label: 'a', title: 'one', description: 'first — [a.md](docs/a.md).', state: 'ready', body: BODY });
+  const out = check.main(['--root', dir, '--migrate']);
+  assert.match(out.text, /^fankeel todo-check --migrate: nothing to migrate - .* is a folder of entries, not a TODO\.md\./);
+  assert.equal(out.ok, true);
+});
+
 test('an open entry needs a body of 200 characters; a done one needs none', () => {
   const dir = root();
   lib.add(dir, { label: 'a', title: 'thin', description: 'thin one', state: 'decision', body: 'b'.repeat(199) });

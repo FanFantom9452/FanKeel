@@ -681,7 +681,13 @@ function main(argv, now) {
         let before = null;
         try {
             before = fs.readFileSync(file, 'utf8');
-        } catch (e) { /* no file: the check below says so */ }
+        } catch (e) {
+            // No file: the check below says so. A folder is not that — say why nothing moves.
+            if (e && e.code === 'EISDIR') {
+                head.push('fankeel todo-check --migrate: nothing to migrate - ' + file + ' is a folder of entries, not a TODO.md.');
+                head.push('');
+            }
+        }
         if (before !== null) {
             const moved = migrate(before);
             if (moved.text !== before) fs.writeFileSync(file, moved.text);
