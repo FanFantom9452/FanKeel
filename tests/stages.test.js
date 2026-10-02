@@ -941,7 +941,7 @@ test('the controller waits out a return that is not a path, and sends a finished
   const { controlFor } = require('../lib/stages.js');
   const c = controlFor('survey', { 'stage.agents': ['survey'] }, { task: 't', await: 'w', handoff: '/r/h.md', answer: '/r/a.md', session: 'sid' });
   const text = c.rules.join('\n');
-  assert.match(text, /not a path or `commit <path>` is not its report: relay nothing and wait/);
+  assert.match(text, /no path at all: relay nothing, wait\./);
   assert.doesNotMatch(text, /if \/r\/h\.md exists, ask the same way/);
   assert.match(text, /a no-path finish notification, run `node w --session sid`/);
 });
@@ -1032,7 +1032,7 @@ test('an in-flight mark for the stage says to SendMessage the running agent; one
   const values = { 'stage.agents': ['survey', 'build'] };
   const line = (c) => c.rules.find((r) => r.includes('already running'));
   const on = controlFor('build', values, {}, { stage: 'build', at: 1, agentId: 'a3f9c2' });
-  assert.equal(line(on), 'A build stage agent is already running (`a3f9c2`): SendMessage it the user\'s new line and wait for it. Do not dispatch another unless SendMessage says it is gone.');
+  assert.equal(line(on), 'A build stage agent is already running (`a3f9c2`): SendMessage it the user\'s new line; wait. Dispatch no other unless SendMessage says it is gone.');
   assert.ok(on.rules.indexOf(line(on)) < on.rules.findIndex((r) => r.startsWith('Dispatch one Agent')), 'the line comes before the dispatch line');
   assert.equal(line(controlFor('build', values, {}, { stage: 'survey', at: 1, agentId: 'a3f9c2' })), undefined);
   assert.equal(line(controlFor('build', values, {})), undefined);
@@ -1090,7 +1090,7 @@ test('two marks for build each get their own SendMessage line, naming their grou
   const rules = controlFor('build', values, {}, marks).rules;
   const lines = rules.filter((r) => r.includes('already running'));
   assert.equal(lines.length, 2);
-  assert.equal(lines[0], 'A build stage agent is already running for group 1 (`g1`): SendMessage it the user\'s new line and wait for it. Do not dispatch another for that group unless SendMessage says it is gone.');
+  assert.equal(lines[0], 'A build stage agent is already running for group 1 (`g1`): SendMessage it the user\'s new line; wait. Dispatch no other for that group unless SendMessage says it is gone.');
   assert.match(lines[1], /for group 2 \(`g2`\)/);
 });
 
@@ -1124,4 +1124,15 @@ test('build runs docs-check at close, and its shape has a line for it', () => {
   const { rulesFor, templateFor } = require('../lib/stages.js');
   assert.match(rulesFor('build').join(' '), /At close: suite, then docs-check\./);
   assert.match(templateFor('build'), /^docs-check: clean, or <n> fixed and <n> left$/m);
+});
+
+// budget-1: on 2026-10-02 a plan brain hit hooks/budget.js's HARD at about 320k
+// tokens, wrote relay-<agentId>.md and stopped; the controller's rules said to
+// wait on anything that was not a report path, and nothing more came.
+test('a stage agent that returns a relay file is replaced by a fresh one carrying that path', () => {
+  const { controlFor } = require('../lib/stages.js');
+  for (const stage of ['survey', 'plan', 'build', 'land']) {
+    const text = controlFor(stage, { 'stage.agents': [stage] }, { task: 't', await: 'w', handoff: '/r/h.md', answer: '/r/a.md', session: 'sid' }).rules.join('\n');
+    assert.match(text, /A `relay-<id>\.md` path: dispatch a fresh one, prompt plus that path; no path at all: relay nothing, wait\./, stage);
+  }
 });

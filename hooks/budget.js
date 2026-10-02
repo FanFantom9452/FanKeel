@@ -55,6 +55,9 @@ function main(raw) {
 
     if (payload.hook_event_name === 'PreToolUse') {
         if (info.used < HARD) return;
+        // budget-1: a brain returns its relay path through SubagentHandback;
+        // refusing that leaves its controller nothing to dispatch a fresh one from.
+        if (payload.tool_name === 'SubagentHandback') return;
         if (RELAY_TOOLS.has(payload.tool_name)) {
             const target = String(targetOf(payload) || '').replace(/\\/g, '/');
             if (target.includes('.fankeel/build/')) return;

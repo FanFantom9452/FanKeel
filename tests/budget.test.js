@@ -136,3 +136,13 @@ test('parent at 460k, no subagent file written: nothing', () => {
     const out = run({ session_id: MINE, cwd: root, agent_id: AGENT, hook_event_name: 'PreToolUse', tool_name: 'Read', tool_input: { file_path: 'lib/x.js' }, transcript_path: t });
     assert.equal(out, '');
 });
+
+// budget-1: a brain hands its relay path back through SubagentHandback; refused
+// at HARD, it leaves the controller nothing to dispatch from.
+test('460k on PreToolUse: SubagentHandback is let through', () => {
+    const root = tmp('fankeel-budget-');
+    seed(root, MINE);
+    const t = withSubagent(root, 1000, 460000);
+    const out = run({ session_id: MINE, cwd: root, agent_id: AGENT, hook_event_name: 'PreToolUse', tool_name: 'SubagentHandback', tool_input: { message: 'relay' }, transcript_path: t });
+    assert.equal(out, '');
+});
