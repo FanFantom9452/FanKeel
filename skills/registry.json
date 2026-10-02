@@ -26,7 +26,7 @@
       "name": "build",
       "entry_condition": "worktree consent, brief file, reviewer template, fix rows, five rounds, commit shape.",
       "stop_condition": "Done when the denominator lists nothing open, each piece has had its review as it landed, and the whole-branch review has run.",
-      "prompt_bytes": 2318,
+      "prompt_bytes": 2312,
       "prompt_byte_budget": 2400
     },
     {
@@ -39,7 +39,7 @@
     {
       "name": "audit",
       "entry_condition": "todo-check after a move.",
-      "stop_condition": "Done when the five scanners have been run and quoted, the adversary has read the findings, and everything not being fixed here carries a `routed:` line naming its `TODO.md` heading.",
+      "stop_condition": "Done when the five scanners have been run and quoted, the adversary has read the findings, and everything not being fixed here carries a `routed:` line naming its TODO state — the entry's `state`, or its `TODO.md` heading.",
       "prompt_bytes": 2430,
       "prompt_byte_budget": 2500
     },
@@ -47,7 +47,7 @@
       "name": "land",
       "entry_condition": "worktree, base, release.",
       "stop_condition": "Done when the suite is green, the documents are closed, the map is rewritten and `todo-check` passes.",
-      "prompt_bytes": 2443,
+      "prompt_bytes": 2440,
       "prompt_byte_budget": 2500
     }
   ]

@@ -12,7 +12,7 @@ const vm = require('node:vm');
 
 const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
 const NOW = Date.parse('2026-10-01T12:00:00.000Z');
-const CLICK_PAGE = 6;
+const CLICK_PAGE = 7;
 const MARK = '.wz [data-go]';
 
 // station.js booted on `hash` with every document listener kept, the `#page`
