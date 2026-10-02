@@ -2037,14 +2037,6 @@
     // is yes, small under them. Every button is a habit (`data-h`), so a click
     // records the pick and the values stay the four design.mockup already
     // takes. design.skill waits under 進階.
-    var WIZ_FE_NO = '<svg class="vg" viewBox="0 0 220 80" aria-hidden="true">'
-        + '<rect class="box" x="72" y="10" width="76" height="50" rx="4"/><path class="ln" d="M100 70H120M110 60V70"/>'
-        + '<text class="lbl" x="82" y="30">$ _</text><path class="ln" d="M64 70 156 6"/></svg>';
-    var WIZ_FE_YES = '<svg class="vg" viewBox="0 0 220 80" aria-hidden="true">'
-        + '<rect class="box" x="72" y="10" width="76" height="50" rx="4"/><path class="ln" d="M100 70H120M110 60V70"/>'
-        + '<g class="scene"><path class="br dr d1" pathLength="1" d="M79 18H141"/>'
-        + '<rect class="box hot dr d2" pathLength="1" x="79" y="25" width="26" height="28" rx="2"/>'
-        + '<path class="docl dr d3" pathLength="1" d="M111 28H141M111 36H137M111 44H131"/></g></svg>';
     var WIZ_FE_MODELS = [
         { o: 'sonnet', h: 1, d: loc('wiz.feSonnet', '省額度'), cost: 1 },
         { o: 'opus', h: 2, d: loc('wiz.feOpus', '平衡'), cost: 2 },
