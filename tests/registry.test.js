@@ -239,12 +239,14 @@ test('ensureLayout writes the station launchers and keeps them out of git', () =
 });
 
 // A launcher is a convenience; the session write it rides on is not. A
-// directory where the file should be makes `writeFileSync` throw EISDIR.
+// directory where the file should be makes `writeFileSync` throw EISDIR. The
+// launchers are still ignored, because ensureLayout ignores them before it writes them.
 test('a launcher that cannot be written does not cost the session write', () => {
   const root = tmpRoot();
   fs.mkdirSync(path.join(root, '.fankeel', 'station.bat'), { recursive: true });
   assert.equal(registry.writeSession(root, SID, task()), true);
   assert.ok(registry.readSession(root, SID));
+  assert.match(fs.readFileSync(path.join(root, '.fankeel', '.gitignore'), 'utf8'), /station\.sh/);
 });
 
 // The append `scripts/map.js` had for `map.md`, lifted here so the station's
