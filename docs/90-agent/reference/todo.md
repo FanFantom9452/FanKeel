@@ -44,6 +44,14 @@ three parts, so that a reader weeks later need not go to git for the reason:
 2. what it should become — the change, in a sentence or two;
 3. what counts as done — the check that says it is finished.
 
+A number the tree can recount goes on a line of its own, so `todo-check`
+recounts it instead of trusting it. ``count: <n> `<text>` `` — with
+``in `<path>` `` after it to look only there — is how many lines of the
+tracked files that are not markdown hold `<text>`: "about 23 places".
+``refs: <n> `<name>` `` is how many of those files name `<name>` as a word,
+beside the ones that declare it: `refs: 1` is "the only caller", `refs: 0`
+"nothing uses it". A count the tree no longer agrees with fails the check.
+
 A `done` entry needs none. The station's project page opens a row's body
 under it on click. A reference page about the system is not where the work's
 own detail goes.
@@ -107,7 +115,7 @@ under 200 characters; a committed entry file that is gone; an id that is not a
 kebab slug; a state outside the five; a missing title or one over 28 columns;
 a missing description; a line over 200 characters; a `blocked` or `watch`
 entry with no `stamp`, no `group`, or a timing of the other state's kind; an
-`on:` with no `MM-DD`; a `done` entry with no `sha`; a link that does not
+`on:` with no `MM-DD`; a `done` entry with no `sha`; an open entry's `count:` or `refs:` line the tree no longer agrees with; a link that does not
 resolve or lands on a plan, decision, report or archive. It prints, without
 failing, the due and stale timings and the `decision` entries whose file
 nobody has committed in seven days. A hand-written `TODO.md` is checked by the

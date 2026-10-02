@@ -45,6 +45,7 @@ const { execFileSync } = require('node:child_process');
 const docs = require('../lib/docs.js');
 const { resolveRoot } = require('../lib/registry.js');
 const { blameTimes, fileTime } = require('../lib/blame.js');
+const { trackedFiles, SKIP_EXT } = require('../lib/tracked.js');
 // A line cited past the end of its file is a citation that moved. The pattern
 // and the count are docs-check's, so the two scripts agree on what `path:12-30`
 // means and on how a trailing newline counts.
@@ -199,6 +200,60 @@ function trackedIn(base, folder) {
     }
 }
 
+// docs-check-1, second step: a body line `count: <n> `<text>`[ in `<path>`]`
+// or `refs: <n> `<name>`` states a number the tree can recount — "about 23
+// places", "the only caller", "nothing uses it" — and is recounted here, so
+// a claim that stopped being true fails rather than being read with
+// confidence. `count:` is the lines holding <text> in tracked files that are
+// not markdown, under <path> when one is given; `refs:` is the tracked
+// non-markdown files naming <name> as a word, beside the ones declaring it.
+const CLAIM = /^(count|refs):\s*(\d+)\s+`([^`]+)`(?:\s+in\s+`([^`]+)`)?$/;
+
+function readText(base, rel) {
+    try { return fs.readFileSync(path.join(base, rel), 'utf8'); } catch (e) { return ''; }
+}
+
+function countLines(base, files, needle, under) {
+    const prefix = under ? under.replace(/\\/g, '/') : '';
+    let n = 0;
+    for (const rel of files) {
+        if (prefix && !rel.startsWith(prefix)) continue;
+        for (const l of readText(base, rel).split('\n')) if (l.includes(needle)) n++;
+    }
+    return n;
+}
+
+function countRefs(base, files, name) {
+    const esc = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const word = new RegExp('(^|[^\\w$])' + esc + '($|[^\\w$])');
+    const decl = new RegExp('\\b(?:function\\s*\\*?|const|let|var|class)\\s+' + esc + '(?![\\w$])');
+    let n = 0;
+    for (const rel of files) {
+        const text = readText(base, rel);
+        if (word.test(text) && !decl.test(text)) n++;
+    }
+    return n;
+}
+
+function claimProblems(base, body) {
+    const out = [];
+    let files = null;
+    for (const raw of String(body || '').split(/\r?\n/)) {
+        const line = raw.trim();
+        const m = CLAIM.exec(line);
+        if (!m) continue;
+        if (files === null) {
+            const t = trackedFiles(base);
+            files = (t ? t.files : []).filter((f) => !f.toLowerCase().endsWith('.md') && !SKIP_EXT.has(path.extname(f).toLowerCase()));
+        }
+        const found = m[1] === 'count' ? countLines(base, files, m[3], m[4]) : countRefs(base, files, m[3]);
+        if (found !== Number(m[2])) {
+            out.push({ kind: 'stale ' + m[1], detail: '`' + line + '` — the tree has ' + found + ' now. Recount it, and fix the sentence it stands behind.' });
+        }
+    }
+    return out;
+}
+
 function folderProblems(base, folder, loaded, disk) {
     const out = [];
     const on = (file, kind, detail) => out.push({ line: 1, file, kind, detail });
@@ -225,6 +280,7 @@ function folderProblems(base, folder, loaded, disk) {
         if (e.state === 'done' && !(e.done && SHA.test(e.done.sha))) {
             on(e.file, 'bad done', 'a done entry carries done: with at, sha — the commit that closed it — and disposition.');
         }
+        if (e.state !== 'done') for (const p of claimProblems(base, e.body)) on(e.file, p.kind, p.detail);
     }
     let tracked = [];
     try {
