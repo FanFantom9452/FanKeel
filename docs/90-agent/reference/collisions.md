@@ -189,10 +189,10 @@ them at once.
 
 The scope guard's collision check is wired to one matcher: `.claude-plugin/plugin.json:96` reads `"matcher": "Edit|Write|NotebookEdit"`.
 Inside it, `hooks/guard.js:171` calls `targetOf(payload)`, which reads only
-`tool_input.file_path` and `tool_input.notebook_path`, and `hooks/guard.js:172` is the whole branch for anything else: `if (!file) return;`.
+`tool_input.file_path` and `tool_input.notebook_path`, and `hooks/guard.js:173` is the whole branch for anything else: `if (!file) return;`.
 The same hook has a second entry, `.claude-plugin/plugin.json:118` `"matcher": "Bash|PowerShell"`, and it stops short of that check:
-`hooks/guard.js:76` `if (shell) {` — where `hooks/guard.js:53` `const shell = payload.tool_name === 'Bash' || payload.tool_name === 'PowerShell';` sets it — ends in a `return` of its own, and
-`hooks/guard.js:85` `if (payload.agent_id && readOnlyAgentType(payload.agent_type) && writesFiles(command)) {` denies only when there is an `agent_id` — a session with none, the main thread of an `--agent` session, is not a subagent and passes — and the type is a read-only one and the command writes; every other call falls through to `emitCommit` and the `return` after it. Both fields are checked because `agent_type` alone is a trap: it is set inside a subagent and on the main thread of an `--agent` session alike, and only `agent_id` tells those two apart — see [subagents.md](subagents.md).
+`hooks/guard.js:77` `if (shell) {` — where `hooks/guard.js:54` `const shell = payload.tool_name === 'Bash' || payload.tool_name === 'PowerShell';` sets it — ends in a `return` of its own, and
+`hooks/guard.js:86` `if (payload.agent_id && readOnlyAgentType(payload.agent_type) && writesFiles(command)) {` denies only when there is an `agent_id` — a session with none, the main thread of an `--agent` session, is not a subagent and passes — and the type is a read-only one and the command writes; every other call falls through to `emitCommit` and the `return` after it. Both fields are checked because `agent_type` alone is a trap: it is set inside a subagent and on the main thread of an `--agent` session alike, and only `agent_id` tells those two apart — see [subagents.md](subagents.md).
 So a `Bash` or `PowerShell` call never reaches `blockers()` — and on this machine
 that is two tools, not one: Windows hands a subagent a `PowerShell` the collision
 matcher does not name either.

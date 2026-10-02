@@ -54,9 +54,9 @@ matcher `Bash|PowerShell`, and it denies a command that writes files —
 `fankeel-reader`, `fankeel-reviewer`, `fankeel-judge`, `fankeel-render-reviewer`, `fankeel-slimmer` or `fankeel-init-scout`. The id is the half that
 says this is a subagent at all: the main thread of a session started with
 `--agent` carries the type without it and must be able to write, so the id is
-checked in the same condition as the type (`hooks/guard.js:85`, `if (payload.agent_id && readOnlyAgentType(payload.agent_type) && writesFiles(command)) {`).
+checked in the same condition as the type (`hooks/guard.js:86`, `if (payload.agent_id && readOnlyAgentType(payload.agent_type) && writesFiles(command)) {`).
 Before any of that, `hooks/guard.js` stops unless the dispatching session has an
-active registry entry (`hooks/guard.js:54`, `if (!mine || mine.active !== true) {`; the block only lets a commit through).
+active registry entry (`hooks/guard.js:55`, `if (!mine || mine.active !== true) {`; the block only lets a commit through).
 The return applies only to a session with no active entry at all, one that never
 sent `/fankeel`; a session that has sent it has an active `init` entry
 (`hooks/inject.js` writes it), so its read-only subagents are denied.
@@ -74,17 +74,17 @@ load the design skill its prompt names.
 just described: when `agent_id` is absent — the main thread, read the same
 way the `Bash|PowerShell` matcher above reads it — and the task's own stage
 is on `stage.agents`'s list, an `Edit`, `Write` or `NotebookEdit` from the
-controller is denied outright (`hooks/guard.js:124`, `if (!payload.agent_id && WRITE_TOOLS.has(payload.tool_name))`),
+controller is denied outright (`hooks/guard.js:125`, `if (!payload.agent_id && WRITE_TOOLS.has(payload.tool_name))`),
 ahead of both `guard` mode and the collision guard below it. That ordering is
 deliberate: the check runs before `guardMode(mine)` is even read
-(`hooks/guard.js:169`, `if (!guardMode(mine)) return;`), so a controller set
+(`hooks/guard.js:170`, `if (!guardMode(mine)) return;`), so a controller set
 to `guard: off` is not exempt from it. `Bash` and `PowerShell` are
-deliberately left out of the set it tests (`hooks/guard.js:27`, `const WRITE_TOOLS = new Set(['Edit', 'Write', 'NotebookEdit']);`):
+deliberately left out of the set it tests (`hooks/guard.js:28`, `const WRITE_TOOLS = new Set(['Edit', 'Write', 'NotebookEdit']);`):
 the controller still has to run `scripts/task.js` to dispatch, relay a path
 and ask — and, on `build`, `design` and `plan`, `scripts/commit.js` — and those run through `Bash`;
 the matcher above, not this one, still governs them.
 A `fankeel-brain` `Write` under `.fankeel/build/task-*/` is checked too
-(`hooks/guard.js:106`, `if (payload.tool_name === 'Write') {`): when the task directory it targets is not the
+(`hooks/guard.js:107`, `if (payload.tool_name === 'Write') {`): when the task directory it targets is not the
 one `handoff.dirFor` gives for its own session's record, it is denied, and the
 reason names both directories (`lib/guard.js:369`, `return 'fankeel: a fankeel-brain writes only under its own session\'s task directory. '`).
 
