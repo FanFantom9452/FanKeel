@@ -184,7 +184,7 @@ outside this file
 There is no trace on
 the page that a project was left out: no count, no note on the footer. `station.js`'s own text
 summary — not the served page — does print how many projects it excluded
-(`scripts/station.js:857`, `hidden by station.hide`), but names none of
+(`scripts/station.js:846`, `hidden by station.hide`), but names none of
 them; the terminal is the only place the fact surfaces at all.
 
 ### The stage strip
