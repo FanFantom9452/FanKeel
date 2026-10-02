@@ -9,7 +9,7 @@ timing: if: 放行規則存在下 no verdict 再發生一次
 stamp: 2026-09-29
 ---
 
-來源：e60ac583（2026-09-28）寫回 watch-three 的探測結果；報告 docs/90-agent/reports/2026-09-28-allow-rule-probe.md 用 10 次 headless claude -p（A 帶 local 設定、B 不帶）量 `Edit(/.fankeel/build/**)`，兩組都 5/5 寫成功，重現不出 auto mode 在 09-22 對站 agent 回的 no verdict。
+來源：報告 docs/90-agent/reports/2026-09-28-allow-rule-probe.md 隨 45e53abe（2026-09-28）進來，「watch-three」這個標籤出自 docs/90-agent/plans/2026-09-28-watch-three.md（e60ac583 只改寫 TODO.md 的 bullet 與 subagents.md）；報告用 10 次 headless claude -p（A 帶 local 設定、B 不帶）量 `Edit(/.fankeel/build/**)`，兩組都 5/5 寫成功，重現不出 auto mode 在 09-22 對站 agent 回的 no verdict。
 
 要做成：規則先留著，不再另做探測；下次 no verdict 發生時，查當時有沒有讀到這條規則，把證據補進報告。
 
