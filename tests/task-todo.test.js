@@ -80,7 +80,7 @@ test('with no entry folder stage land prints no todo.js line', () => {
 });
 
 test('the land rule names the todo.js done lines and still runs todo-check', () => {
-  const rule = byName('land').rules.find((r) => r.includes('TODO.md entries'));
+  const rule = byName('land').rules.find((r) => r.includes('Close the TODO entries'));
   assert.match(rule, /`todo\.js done`/);
   assert.match(rule, /`node \{\{TODO_CHECK\}\}`/);
 });
@@ -93,4 +93,9 @@ test('adopt carries the todo ids to the successor session', () => {
   execFileSync(process.execPath, [SCRIPT, 'adopt', A, '--session', B, '--root', dir, '--claude-dir', cfg],
     { encoding: 'utf8', cwd: dir, env: Object.assign({}, process.env, { CLAUDE_CONFIG_DIR: cfg }) });
   assert.deepEqual(registry.todosOf(registry.readSession(dir, B)), ['a', 'b']);
+});
+
+test('the stage rules say TODO, not TODO.md, where both modes are meant', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'lib', 'stages.js'), 'utf8');
+  assert.doesNotMatch(src, /Read `TODO\.md` at the root|TODO\.md clusters|one TODO\.md entry|<TODO\.md entry|Close the TODO\.md entries/);
 });

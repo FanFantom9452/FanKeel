@@ -3,7 +3,7 @@ name: fankeel-build
 description: The build stage — run a plan's tasks, or a design's file table where there is no plan, in a loop that does not stop to ask, keeping its place in a ledger and reviewing each task as it lands. Use for the build stage of a fankeel task, implementing an approved plan, resuming build work after a compaction, or when a task loop needs a ledger.
 version: 0.91.0
 status: current
-last_verified: 2026-09-26
+last_verified: 2026-10-02
 source_of_truth: lib/stages.js, lib/ledger.js, lib/plantasks.js, scripts/ledger.js
 ---
 
@@ -35,7 +35,7 @@ ledger where there is a plan**, the same way the decomposition is `plan`'s — a
 | Looks like a finding | Why it is not |
 |---|---|
 | Dead code left in the diff, not deleted | Only dead code this change created gets removed — `lib/stages.js:306` (`Remove what your own change orphaned`), so an orphan predating this task is correctly still there, just named: the injected rule lost its "dead code you did not create gets mentioned, not deleted" clause to the cap on 2026-09-09, and this row is where that half now lives. |
-| A new ask from mid-build routed to `TODO.md` instead of built | That is the routing rule working, not the ask dropped — `lib/stages.js:303` (`is one TODO.md entry at the detail`), not silence. |
+| A new ask from mid-build routed to a TODO entry instead of built | That is the routing rule working, not the ask dropped — `lib/stages.js:303` (`is one TODO entry at the detail`), not silence. |
 | A ruling recorded instead of a fifth stopper firing | `lib/stages.js:305` names deciding as the normal outcome (`Decide`) — only irreversible, security-sensitive, out-of-workspace or every-path-a-guess actually stop the loop. |
 
 Why each rule is what it is, under the same headings: [rationale.md](rationale.md).
@@ -642,7 +642,7 @@ is the ruling it lands on.
 A request the user raises mid-build is routed **in the turn it arrives**, one of
 three ways:
 
-1. **It neither blocks this task nor belongs to it** — one TODO entry (`todo.js new` in folder mode; a `TODO.md` line in legacy mode) under
+1. **It neither blocks this task nor belongs to it** — one TODO entry (`todo.js new --body` in folder mode; a `TODO.md` line in hand-written mode) under
    the heading that says what it is still short of, pointing at the detail. Do
    not start it.
 2. **It blocks this task, or belongs here** — do it now, as part of this task.
@@ -749,7 +749,7 @@ that meets the event an `if:` names moves the entry to `## Ready` or
 - path (new) — what it is
 
 done: <n> of <m> — ledger or file table
-deferred: <heading> — <TODO.md entry, or omit this line>
+deferred: <heading> — <TODO entry, or omit this line>
 then AskUserQuestion
 ```
 

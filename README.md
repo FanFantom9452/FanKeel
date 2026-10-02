@@ -31,7 +31,7 @@ the tests run on `node --test`, which is built in. Then, in any project:
 It looks before it asks — what is under this directory, which of them is a
 repository, which was touched today — and then asks at most two questions with
 the options already on screen: which project, skipped when there is only one, and
-what the task is, read from `TODO.md` where the root has one. It never asks which
+what the task is, read from the project's TODO — its todo folder, or a root `TODO.md`. It never asks which
 files you will touch; those are recorded as the edits land.
 
 > The repository is `FanKeel` and everything you type is `fankeel`. Plugin and
@@ -127,7 +127,7 @@ of one — the shape `build` ships:
 - path (new) — what it is
 
 done: <n> of <m> — ledger or file table
-deferred: <heading> — <TODO.md entry, or omit this line>
+deferred: <heading> — <TODO entry, or omit this line>
 then AskUserQuestion
 ```
 
@@ -241,7 +241,7 @@ fankeel/
 │   ├── docs-check.js  every reference in the documents still resolves
 │   ├── docs-audit.js  which pages stopped being true, and which two disagree
 │   ├── residue.js     what is in the tree that nobody decided about
-│   ├── todo-check.js  whether TODO.md is still an index
+│   ├── todo-check.js  whether the TODO entries are still an index
 │   ├── judge.js       files what a fankeel-judge answered, verbatim
 │   ├── upgrade.js     which migrations an older project still needs, and --apply for the safe one
 │   └── version.js     the release number, in every place that carries it

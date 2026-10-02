@@ -229,7 +229,7 @@ test('the discipline covers the captured requirements', () => {
   assert.match(text, /never end a stage silently or in prose/);
   assert.match(text, /background belongs in the option descriptions/);
   assert.match(text, /do not stop where the happy path works/);
-  assert.match(text, /todo\.md entry at the detail/);
+  assert.match(text, /todo entry at the detail/);
   assert.match(text, /leaves a decision record behind/);
   assert.match(text, /then is archived, after asking/);
   // The code half is a fixed sentence: nothing about it depends on the machine.
@@ -345,7 +345,7 @@ test('no rule is a placeholder', () => {
   // a plan full of TBDs, with nothing forbidding it.
   const unquoted = (r) => r.replace(/"[^"]*"/g, '');
   for (const r of ALWAYS.concat(...STAGES.map((s) => s.rules))) {
-    assert.equal(/\bTODO\b(?!\.|-check)|\bTBD\b|placeholder|fill in/i.test(unquoted(r)), false, r);
+    assert.equal(/\bTODO\b(?!\.|-check| entry| entries| clusters| means)|\bTBD\b|placeholder|fill in/i.test(unquoted(r)), false, r);
   }
 });
 
