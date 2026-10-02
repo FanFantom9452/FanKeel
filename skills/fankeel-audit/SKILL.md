@@ -4,7 +4,7 @@ description: Audit documentation against the code it describes — dead referenc
 argument-hint: "[--root <dir>] [--since <days>]"
 version: 0.91.0
 status: current
-last_verified: 2026-09-21
+last_verified: 2026-10-02
 source_of_truth: scripts/docs-check.js, scripts/docs-audit.js, scripts/residue.js, scripts/memory-check.js
 ---
 
@@ -16,7 +16,7 @@ stopped being true, and which two of them disagree.**
 
 **Done when** the five scanners have been run and quoted, the adversary has read
 the findings, and everything not being fixed here carries a `routed:` line naming
-its `TODO.md` heading. Nothing found is a finding — say what you read and stop.
+its TODO state — the entry's `state`, or its `TODO.md` heading. Nothing found is a finding — say what you read and stop.
 The condition is the same whichever way this page is read; only the gate under it
 differs.
 
@@ -206,7 +206,7 @@ wrong. The row lists what actually happened to the code afterward — read the
 commit subjects it carries. One that already says it means to change this
 behaviour is the page's fix: bring the page in line with it. No commit says
 so, and the code itself is the suspect: leave the page alone and open a
-TODO entry (folder mode: `todo.js new --state decision`; legacy `TODO.md`: under `## Needs a decision`) naming what looks wrong, rather
+TODO entry (folder mode: `todo.js new --state decision --body <text>`; hand-written `TODO.md`: under `## Needs a decision`) naming what looks wrong, rather
 than rewriting the page to match a change nobody meant to make.
 
 So dispatch it: one reader per pair, **several in one response** so they run at
@@ -279,7 +279,7 @@ Not archiving a landed plan, not deleting an orphan, not merging a pair. Every
 one of those is a link somebody else may be holding. Report, then ask, then act
 on what was picked.
 
-`TODO.md` entries point at plans. Moving a plan changes an address, so run
+TODO entries point at plans — an entry's `link`, or a `TODO.md` line's. Moving a plan changes an address, so run
 `node <plugin>/scripts/todo-check.js` after anything moves.
 
 ## Output
