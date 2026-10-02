@@ -195,6 +195,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | TODO 全表盤點（10-01）的 design：退回 build 的 brain 自己寫 gate、主控用標題轉述且 await 不疊、`suggest` 推 `class.default`、STATION 改成宣傳片風格並保留經典樣式 | [plans/2026-10-01-todo-sweep-design.md](90-agent/plans/2026-10-01-todo-sweep-design.md) — *design-intent, 繁體中文* |
 | 那份設計的十個 task | [plans/2026-10-01-todo-sweep.md](90-agent/plans/2026-10-01-todo-sweep.md) — *design-intent, 繁體中文* |
 | 10-01 盤點四件 do-now（commit-3 改 warn、關 data、試 knip 6.39.0、重量 station-8）的 plan，以及盤點列出 `TODO.md` 全表、主控在 gate 前印出全表 | [plans/2026-10-01-patrol-four.md](90-agent/plans/2026-10-01-patrol-four.md) — *design-intent, 繁體中文* |
+| TODO 機制改版的 design：TODO.md 去除、只留 docs/90-agent/todo/ 資料夾條目、條目內容加厚、與 station 的關係 | `docs/99-archive/2026-10-02-todo-folder-only-design.md` — *built, 繁體中文* |
+| 那份設計的十六個 task | `docs/99-archive/2026-10-02-todo-folder-only.md` — *built, 繁體中文* |
 | worktree 開發習慣（10-02）定了什麼、沒做什麼：cherry-pick 與 `--no-ff` 分兩層並存、`land.js` 合併加 trailer、`worktree` 鍵依 class、residue 列 spent 分支 | [decisions/2026-10-02-worktree-habit.md](03-decisions/2026-10-02-worktree-habit.md) — *繁體中文* |
 | worktree 開發習慣（10-02）的 design：任務依 class 開 worktree、commit 檔 `into <path>` 指名落點、`scripts/land.js` 以 `--no-ff` 合併並帶 `Fankeel-Task`／`Fankeel-Class` trailer、`commit.format` 在 init 推預設、殘留 `worktree-agent-*` 分支納入 residue | `docs/99-archive/2026-10-02-worktree-habit-design.md` — *built, 繁體中文* |
 | 那份設計的六個 task | `docs/99-archive/2026-10-02-worktree-habit.md` — *built, 繁體中文* |

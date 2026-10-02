@@ -504,7 +504,7 @@ and the plan [2026-09-05-skill-split.md](../99-archive/2026-09-05-skill-split.md
 
 The stage list. Five, named for what they produce, is a first cut; whether
 `survey` earns its place and whether the rules fire at the right moments are
-questions only real use answers. Tracked in [TODO.md](../../TODO.md).
+questions only real use answers. Tracked in [TODO.md](../90-agent/todo/).
 
 Whether `PreToolUse` fires for `AskUserQuestion` at all. `hooks/gate.js` was
 written to mark the moment a gate opened; `hooks/resume.js` is the other end and
@@ -552,7 +552,7 @@ The shape of the mistake was the same both times: a measurement that was real
 was made to carry a conclusion one step wider than it reaches. The second time
 it was a single word.
 
-What settles it is in [TODO.md](../../TODO.md): a process started after the
+What settles it is in [TODO.md](../90-agent/todo/): a process started after the
 install, one question asked, and `gateAt` read **while that question is still
 open**. Since the run above, that one probe answers both halves. A `gateAt` there
 proves the event fires, which leaves the `/clear` silence with nothing but the

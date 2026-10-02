@@ -9,7 +9,7 @@ source_of_truth: this file is the design; lib/stages.js and the stage skills are
 ## The ask
 
 One rule for where a rule lives, and the ten `## Needs a decision` entries in
-[TODO.md](../../TODO.md) — 10, 11 and 14 to 21 — settled by applying it, each
+[TODO.md](../90-agent/todo/) — 10, 11 and 14 to 21 — settled by applying it, each
 with what it displaces. Every stage's injection sits at 2382 to 2398 characters
 of a 2400 cap (`tests/render.test.js`, run 2026-09-05), so nothing is added
 without naming what leaves.
