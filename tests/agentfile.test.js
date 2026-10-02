@@ -89,3 +89,40 @@ test('refresh rewrites a marked file from another version and leaves a current o
     assert.deepEqual(refresh({ pluginRoot: PLUGIN_ROOT, version: VERSION, targets }), [], 'already at this version');
     assert.equal(syncAgent({ pluginRoot: PLUGIN_ROOT, profileFile, agentsDir, name: 'fankeel-brain', version: VERSION }).state, 'absent');
 });
+
+// docs/90-agent/plans/2026-10-02-docs-writer.md Task 3: a per-dispatch effort is
+// a shipped copy of the agent file under <name>-<effort>; the Agent tool cannot
+// set effort, only an agent file's frontmatter can.
+test('renderVariant renames the agent and sets its effort, body untouched; other efforts are refused', () => {
+    const { renderVariant, VARIANT_EFFORTS } = require('../lib/agentfile.js');
+    assert.deepEqual(VARIANT_EFFORTS, ['high', 'xhigh']);
+    const source = '---\nname: fankeel-x\ndescription: d\nmodel: sonnet\neffort: medium\n---\nbody\n';
+    assert.equal(renderVariant(source, 'high'), '---\nname: fankeel-x-high\ndescription: d\nmodel: sonnet\neffort: high\n---\nbody\n');
+    assert.equal(renderVariant('---\nname: fankeel-x\n---\nb\n', 'xhigh'), '---\nname: fankeel-x-xhigh\neffort: xhigh\n---\nb\n');
+    assert.equal(renderVariant(source, 'medium'), null);
+    assert.equal(renderVariant(source, 'max'), null);
+    assert.equal(renderVariant('no frontmatter\n', 'high'), null);
+});
+
+test('baseAgent strips the plugin prefix and an effort suffix', () => {
+    const { baseAgent } = require('../lib/agentfile.js');
+    assert.equal(baseAgent('fankeel:fankeel-brain-xhigh'), 'fankeel-brain');
+    assert.equal(baseAgent('fankeel-reviewer-high'), 'fankeel-reviewer');
+    assert.equal(baseAgent('fankeel:fankeel-reader'), 'fankeel-reader');
+    assert.equal(baseAgent(undefined), '');
+});
+
+test('scripts/variants.js writes agents/<base>-<effort>.md, every base or the one --base names', () => {
+    const d = tmp('fankeel-variants-');
+    fs.mkdirSync(path.join(d, 'agents'));
+    for (const n of ['fankeel-brain', 'fankeel-implementer', 'fankeel-reviewer']) {
+        fs.writeFileSync(path.join(d, 'agents', n + '.md'), '---\nname: ' + n + '\neffort: medium\n---\nb\n');
+    }
+    const script = path.join(__dirname, '..', 'scripts', 'variants.js');
+    const one = execFileSync(process.execPath, [script, '--root', d, '--base', 'fankeel-implementer'], { encoding: 'utf8' });
+    assert.equal(one, 'wrote agents/fankeel-implementer-high.md\nwrote agents/fankeel-implementer-xhigh.md\n');
+    assert.equal(fs.existsSync(path.join(d, 'agents', 'fankeel-brain-high.md')), false);
+    assert.equal(fs.readFileSync(path.join(d, 'agents', 'fankeel-implementer-xhigh.md'), 'utf8'), '---\nname: fankeel-implementer-xhigh\neffort: xhigh\n---\nb\n');
+    const all = execFileSync(process.execPath, [script, '--root', d], { encoding: 'utf8' });
+    assert.equal(all.trim().split('\n').length, 6);
+});
