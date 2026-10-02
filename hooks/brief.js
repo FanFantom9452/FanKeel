@@ -129,8 +129,9 @@ function main(raw) {
             let sent = mine.stage === 'build' ? caseOfPrompt(prompt) : null;
             // build-4: a fresh brain's prompt is rarely on disk yet, so the case
             // hooks/guard.js noted off the controller's Agent call is taken
-            // instead; a prompt that could be read takes its own note.
-            if (mine.stage === 'build') {
+            // instead; a prompt that could be read takes its own note, and one
+            // that names no case takes none (the oldest is another brain's).
+            if (mine.stage === 'build' && (prompt == null || sent)) {
                 const noted = registry.takeDispatch(root, payload.session_id, sent);
                 if (!sent) sent = noted;
             }

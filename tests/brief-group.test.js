@@ -80,3 +80,15 @@ test('a brain whose prompt can be read takes its own note, not the oldest', () =
   start(root, 'f2');
   assert.deepEqual(marks(root).map((m) => [m.agentId, m.group]), [['r5', 5], ['f2', 2]]);
 });
+
+test('a brain whose readable prompt names no case takes no note', () => {
+  const root = project();
+  dispatch(root, 'build group 2');
+  const sub = path.join(root, 'sess', 'subagents');
+  fs.mkdirSync(sub, { recursive: true });
+  fs.writeFileSync(path.join(sub, 'agent-rs.jsonl'), JSON.stringify({ type: 'user', message: { role: 'user', content: 'build resume' } }) + '\n');
+  start(root, 'rs');
+  assert.deepEqual(marks(root).map((m) => [m.agentId, m.group]), [['rs', 1]]);
+  start(root, 'f2');
+  assert.deepEqual(marks(root).map((m) => [m.agentId, m.group]), [['rs', 1], ['f2', 2]]);
+});
