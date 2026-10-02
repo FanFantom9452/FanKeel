@@ -1,7 +1,7 @@
 ---
 name: fankeel-init
 description: First-use onboarding for a project fankeel has not organised — its docs tree, raw data, TODO, directory tree, CLAUDE.md, memory and a sensitive-word list — one question at a time until the onboarding checks pass. Use when `task.js start` prints an `onboard:` line, or for /fankeel-init.
-version: 0.90.0
+version: 0.91.0
 status: current
 last_verified: 2026-09-30
 source_of_truth: scripts/onboard.js, lib/onboard.js, agents/fankeel-init-scout.md
