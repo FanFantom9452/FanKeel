@@ -127,6 +127,7 @@ of one — the shape `build` ships:
 - path (new) — what it is
 
 done: <n> of <m> — ledger or file table
+docs-check: clean, or <n> fixed and <n> left
 deferred: <heading> — <TODO entry, or omit this line>
 then AskUserQuestion
 ```
