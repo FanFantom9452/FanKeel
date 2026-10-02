@@ -333,8 +333,8 @@ test('the three presets set exactly what the design says, and null is what clear
         'land.integration': null, 'land.push': null, 'land.archivePlan': null, 'class.default': null, guard: 'ask', 'stage.agents': 'false',
     });
     const habit = { 'land.integration': 'merge', 'land.push': 'false', 'land.archivePlan': 'true', guard: 'ask' };
-    assert.deepEqual(profile.PRESETS.balanced.set, Object.assign({}, habit, { 'stage.agents': 'survey' }));
-    assert.deepEqual(profile.PRESETS.lean.set, Object.assign({}, habit, { 'stage.agents': 'survey,build,verify' }));
+    assert.deepEqual(profile.PRESETS.balanced.set, Object.assign({}, habit, { 'stage.agents': 'survey,build,verify' }));
+    assert.deepEqual(profile.PRESETS.lean.set, Object.assign({}, habit, { 'stage.agents': 'all' }));
     assert.equal('class.default' in profile.PRESETS.balanced.set, false, 'balanced leaves class.default untouched');
 });
 
