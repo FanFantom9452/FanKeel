@@ -48,3 +48,14 @@ with `model:`/`effort:` replaced and `generated_by: fankeel <version>` added
 called at `scripts/task.js:721`); and `hooks/title.js:28` (`overrideFor(input.subagent_type`)
 sends `fankeel:<name>` as `<name>` when such a marked file exists (`lib/title.js:106-121`), because
 only the bare name reaches it.
+
+A raise for one dispatch is shipped rather than generated: `-high` and `-xhigh`
+copies of `fankeel-brain`, `fankeel-implementer` and `fankeel-reviewer`
+(`renderVariant` in `lib/agentfile.js`, written by `scripts/variants.js`),
+because a plugin agent loads at startup and a file written mid-session was
+never measured to resolve. A plan's `**Dispatch:**` line
+`implementer, <model>, <effort>` sends the implementer and its reviewer at that
+effort, approved at the plan gate; `ledger.js lint` refuses any other value.
+The controller asks the user before it sends a brain at `high` or `xhigh`, and
+only for a stage it judges needs deep thought (`controlRules` in
+`lib/stages.js`). The override file above stays the per-role route.

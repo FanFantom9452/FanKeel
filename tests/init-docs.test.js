@@ -19,8 +19,18 @@ test('documents.md: the docs.json question is asked at init and at survey, and d
 });
 
 test('subagents.md and collisions.md name fankeel-init-scout as read-only', () => {
-    assert.match(flat('subagents.md'), /## The ten agents this plugin defines/);
+    assert.match(flat('subagents.md'), /## The twenty agents this plugin defines/);
     assert.match(flat('subagents.md'), /`fankeel-slimmer` and `fankeel-init-scout` — carry `tools: \[Read, Grep, Glob, Bash\]`/);
     assert.match(flat('collisions.md'), /`fankeel-slimmer` or `fankeel-init-scout`, and the command/);
     assert.match(flat('collisions.md'), /\.fankeel\/sensitive\.txt/);
+});
+
+// docs/90-agent/plans/2026-10-02-docs-writer.md Task 12.
+test('subagents.md names every agent the plugin ships', () => {
+    const text = flat('subagents.md');
+    const names = fs.readdirSync(path.join(__dirname, '..', 'agents')).filter((f) => f.endsWith('.md')).map((f) => f.slice(0, -3));
+    assert.equal(names.length, 20);
+    for (const n of names) assert.ok(text.includes('`' + n + '`'), n);
+    assert.match(flat('model-choice.md'), /implementer, <model>, <effort>/);
+    assert.match(flat('model-choice.md'), /asks the user before it sends a brain/);
 });

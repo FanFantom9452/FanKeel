@@ -25,11 +25,11 @@ reproduce whatever had been put in front of them, with no needle in the prompt t
 find — a third never launched, and a cell that did not run is not a result
 ([reports/2026-09-04-subagent-brief-probe.md](../reports/2026-09-04-subagent-brief-probe.md)).
 
-## The ten agents this plugin defines
+## The twenty agents this plugin defines
 
-Ten subagent types are not just described in prose — they are declared as
+Twenty subagent types are not just described in prose — they are declared as
 `agents` in `.claude-plugin/plugin.json` and shipped as files under `agents/`:
-`fankeel-reader`, `fankeel-judge`, `fankeel-reviewer`, `fankeel-verifier`, `fankeel-fixer`, `fankeel-brain`, `fankeel-render-reviewer`, `fankeel-mockup`, `fankeel-slimmer` and `fankeel-init-scout`.
+`fankeel-reader`, `fankeel-judge`, `fankeel-reviewer`, `fankeel-verifier`, `fankeel-fixer`, `fankeel-brain`, `fankeel-render-reviewer`, `fankeel-mockup`, `fankeel-slimmer`, `fankeel-init-scout`, `fankeel-writer`, `fankeel-implementer`, `fankeel-mutator`, `fankeel-mover`, `fankeel-implementer-high`, `fankeel-implementer-xhigh`, `fankeel-brain-high`, `fankeel-brain-xhigh`, `fankeel-reviewer-high` and `fankeel-reviewer-xhigh`.
 Six of them — `fankeel-reader`, `fankeel-judge`, `fankeel-reviewer`,
 `fankeel-render-reviewer`, `fankeel-slimmer` and `fankeel-init-scout` — carry `tools: [Read, Grep, Glob, Bash]` — Edit, Write and
 NotebookEdit are simply absent from the list, so calling any of them to change
@@ -61,11 +61,11 @@ The return applies only to a session with no active entry at all, one that never
 sent `/fankeel`; a session that has sent it has an active `init` entry
 (`hooks/inject.js` writes it), so its read-only subagents are denied.
 [collisions.md](collisions.md)
-carries what that denylist actually matches, not restated here. Nine of
-the ten agents hold `Bash`; `fankeel-fixer` is the one that does not,
+carries what that denylist actually matches, not restated here. Nineteen of
+the twenty agents hold `Bash`; `fankeel-fixer` is the one that does not,
 because it edits the file itself rather than returning something for the
-parent to run a test against. `tests/agents.test.js` names all four writers as
-exemptions, each with its argument beside it, rather than dropping the assertion.
+parent to run a test against. `tests/agents.test.js` names every writer as an
+exemption, each with its argument beside it, rather than dropping the assertion.
 `fankeel-mockup` carries `Edit` and `Write` for the mockup page it draws under
 `.fankeel/build/` and the one block a tuning request names, and `Skill`, to
 load the design skill its prompt names.
@@ -100,6 +100,28 @@ its own question directly instead — what happened at `design` on 2026-09-23.
 The reason it gives names the stage and the list and says to do the stage in
 this session. Every other subagent type passes, and a profile that cannot be
 read lets the dispatch through.
+
+`fankeel-writer`, `fankeel-implementer`, `fankeel-mutator` and `fankeel-mover`
+are a stage's hands, one per kind of write, and each replaces a
+`general-purpose` implementer its stage used to send (`lib/stages.js`,
+`STAGE_AGENTS`; [the design](../plans/2026-10-02-docs-writer-design.md)). The
+writer rewrites one page under `docs/01-guide/` or `README.md` for a person.
+The implementer builds one plan task. The mutator applies one mutation, runs
+one `node --test` command and restores the file, with `Read`, `Edit` and `Bash`
+only. The mover runs a `git mv`, a merge or a deletion it is given, with `Read`
+and `Bash` and no `Edit` or `Write`. All four record what they read with
+`context.js add` when the prompt names a session id.
+
+The six `-high` and `-xhigh` files are `fankeel-brain`, `fankeel-implementer`
+and `fankeel-reviewer` with `name:` and `effort:` changed — written by
+`node scripts/variants.js`, held byte for byte to `renderVariant` by
+`tests/agents.test.js` — because the Agent tool cannot set effort. Every check
+that compares an agent type reads a variant as its base (`baseAgent` in
+`lib/agentfile.js`): the reviewer's variants are guarded read-only, the brain's
+get its brief and guards. An implementer and its reviewer run at a variant when
+the task's `**Dispatch:**` line names one; a brain when the controller, judging
+that the stage needs deep thought, asked the user first and the user said yes
+(`controlRules` in `lib/stages.js`).
 
 `fankeel-reader` runs at `model: sonnet` by default — the profile's
 `dispatch.floor`, which the survey, verify and audit skills ask their reader
