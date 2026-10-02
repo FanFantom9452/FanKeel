@@ -22,6 +22,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { readObject } = require('../lib/json.js');
 const registry = require('../lib/registry.js');
 const { renderBrief } = require('../lib/render.js');
 const profileLib = require('../lib/profile.js');
@@ -44,12 +45,8 @@ function nestedBrain(payload) {
     const dir = sessionDirOf(payload.transcript_path);
     if (!dir) return false;
     const metaFile = path.join(dir, 'subagents', 'agent-' + payload.agent_id + '.meta.json');
-    let meta;
-    try {
-        meta = JSON.parse(fs.readFileSync(metaFile, 'utf8'));
-    } catch (e) {
-        return false;
-    }
+    const meta = readObject(metaFile);
+    if (!meta) return false;
     if (typeof meta.spawnDepth === 'number') return meta.spawnDepth >= 2;
     if (typeof meta.parentAgentId === 'string' && meta.parentAgentId) return true;
     return false;
