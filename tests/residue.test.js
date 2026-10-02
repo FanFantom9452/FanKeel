@@ -162,7 +162,7 @@ test('a merged worktree with uncommitted changes is dirty context, not a spent w
   assert.match(report(result), /not clean/);
 });
 
-// docs/90-agent/plans/2026-10-02-worktree-habit-design.md §5: commit.js lands
+// docs/99-archive/2026-10-02-worktree-habit-design.md §5: commit.js lands
 // an agent branch by cherry-pick, so it is never an ancestor of HEAD.
 test('an agent branch whose patch HEAD already holds is spent; one with a commit HEAD lacks is not', () => {
   const { root, git } = repo();

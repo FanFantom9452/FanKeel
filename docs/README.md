@@ -195,6 +195,9 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | TODO 全表盤點（10-01）的 design：退回 build 的 brain 自己寫 gate、主控用標題轉述且 await 不疊、`suggest` 推 `class.default`、STATION 改成宣傳片風格並保留經典樣式 | [plans/2026-10-01-todo-sweep-design.md](90-agent/plans/2026-10-01-todo-sweep-design.md) — *design-intent, 繁體中文* |
 | 那份設計的十個 task | [plans/2026-10-01-todo-sweep.md](90-agent/plans/2026-10-01-todo-sweep.md) — *design-intent, 繁體中文* |
 | 10-01 盤點四件 do-now（commit-3 改 warn、關 data、試 knip 6.39.0、重量 station-8）的 plan，以及盤點列出 `TODO.md` 全表、主控在 gate 前印出全表 | [plans/2026-10-01-patrol-four.md](90-agent/plans/2026-10-01-patrol-four.md) — *design-intent, 繁體中文* |
+| worktree 開發習慣（10-02）定了什麼、沒做什麼：cherry-pick 與 `--no-ff` 分兩層並存、`land.js` 合併加 trailer、`worktree` 鍵依 class、residue 列 spent 分支 | [decisions/2026-10-02-worktree-habit.md](03-decisions/2026-10-02-worktree-habit.md) — *繁體中文* |
+| worktree 開發習慣（10-02）的 design：任務依 class 開 worktree、commit 檔 `into <path>` 指名落點、`scripts/land.js` 以 `--no-ff` 合併並帶 `Fankeel-Task`／`Fankeel-Class` trailer、`commit.format` 在 init 推預設、殘留 `worktree-agent-*` 分支納入 residue | `docs/99-archive/2026-10-02-worktree-habit-design.md` — *built, 繁體中文* |
+| 那份設計的六個 task | `docs/99-archive/2026-10-02-worktree-habit.md` — *built, 繁體中文* |
 | TODO 盤點四筆 Ready（10-01）的 plan：await-5 舊 waiter 擋新 brain、brief-2 brain 沒讀存成檔的 brief、gate-4 第一題兩選項也放行、tune-2 overlay 三個存活變異 | `docs/99-archive/2026-10-01-ready-four.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-01）的 plan：Blocked 群組與九個 stage-agents 條目重新蓋章、改 stage-agents-1 過時前提、〔await〕實跑觀察 | `docs/99-archive/2026-10-01-todo-stamps.md` — *built, 繁體中文* |
 | tune 小助手（10-01）的 plan：右下 fankeel logo 可拖曳、展開後多則修改項一起送出、`items` 酬載與 `done` 以聯集判越界，取代 Alt 圈選 | `docs/99-archive/2026-10-01-tune-assistant.md` — *built, 繁體中文* |

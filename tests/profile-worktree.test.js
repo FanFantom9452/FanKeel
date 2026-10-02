@@ -1,6 +1,6 @@
 'use strict';
 
-// docs/90-agent/plans/2026-10-02-worktree-habit-design.md §2 and §4.
+// docs/99-archive/2026-10-02-worktree-habit-design.md §2 and §4.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');

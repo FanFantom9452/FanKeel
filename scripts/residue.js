@@ -294,7 +294,7 @@ function scan(root) {
     const worktrees = candidates.filter((w) => !dirtySet.has(w.path)).map((w) => ({ path: w.path, branch: w.branch }));
     const inUse = listed.filter((w) => w.inUse).map((w) => ({ path: w.path, branch: w.branch }));
 
-    // docs/90-agent/plans/2026-10-02-worktree-habit-design.md §5: the
+    // docs/99-archive/2026-10-02-worktree-habit-design.md §5: the
     // branches Agent isolation leaves, `worktree-agent-*`, once their worktree
     // is gone. scripts/commit.js lands one by cherry-pick, so it is never an
     // ancestor of HEAD: spent is an ancestor, or every line of

@@ -8,7 +8,7 @@
 // branch with `-d`. It never tags, never pushes and never forces.
 // scripts/commit.js is the other layer: it cherry-picks an implementer's
 // agent worktree into the task's checkout, and merges nothing.
-// docs/90-agent/plans/2026-10-02-worktree-habit-design.md §3.
+// docs/99-archive/2026-10-02-worktree-habit-design.md §3.
 
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');

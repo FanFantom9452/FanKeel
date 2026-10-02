@@ -77,7 +77,7 @@ test('the block and a subagent brief both name the worktree', () => {
   assert.match(renderBrief({ mine: { sessionId: A, data }, agentType: 'fankeel-reader', root: '/r', profile: { values: {} } }), line);
 });
 
-// docs/90-agent/plans/2026-10-02-worktree-habit-design.md §2: start decides
+// docs/99-archive/2026-10-02-worktree-habit-design.md §2: start decides
 // once, from the class it starts at; a later `route` up opens nothing.
 test('worktree=bounded opens for bounded and not for spike; worktree=architectural skips bounded', () => {
   const cases = [['bounded', 'spike', false], ['bounded', 'bounded', true], ['architectural', 'bounded', false], ['architectural', 'architectural', true]];

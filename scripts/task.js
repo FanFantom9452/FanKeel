@@ -689,7 +689,7 @@ function cmdStart(root, opts) {
     // Its own checkout, where the profile asks for one. A git that refuses
     // leaves the task on the main tree and says why, rather than refusing it.
     let worktreeNote = null;
-    // docs/90-agent/plans/2026-10-02-worktree-habit-design.md §2: `true`
+    // docs/99-archive/2026-10-02-worktree-habit-design.md §2: `true`
     // always, `bounded` / `architectural` from that class up, decided once
     // here from the class the task starts at.
     if (profile.wantsWorktree(prof.values.worktree, cls || classForRoute(route))) {

@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # worktree 開發習慣 Implementation Plan

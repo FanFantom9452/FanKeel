@@ -339,7 +339,7 @@ test('a worktree line naming something that is not a worktree of this repository
     assert.equal(git(dir, 'rev-parse', 'HEAD'), before);
 });
 
-// docs/90-agent/plans/2026-10-02-worktree-habit-design.md §1: a commit file
+// docs/99-archive/2026-10-02-worktree-habit-design.md §1: a commit file
 // opening `into <path>` lands in that worktree, wherever commit.js runs.
 function taskTree(dir) {
     const fk = path.join(tmp('fankeel-commit-fk-'), 'fk');

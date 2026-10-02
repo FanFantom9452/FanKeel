@@ -159,7 +159,7 @@ function main(argv, cwd) {
     // rather than here. The controller runs this from the main checkout with
     // no cd (lib/stages.js COMMIT_RULE), so without the line a task with its
     // own worktree had its cherry-pick land on main.
-    // docs/90-agent/plans/2026-10-02-worktree-habit-design.md §1.
+    // docs/99-archive/2026-10-02-worktree-habit-design.md §1.
     let topDir = home;
     if (into) {
         const want = path.resolve(home, into[1]);
