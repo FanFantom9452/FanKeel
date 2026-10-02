@@ -18,7 +18,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
-const { report, scan, parseArgs, docsFor, parseDocsForArgs, reportDocsFor, declaredSymbols } = require('../scripts/docs-check.js');
+const { report, scan, parseArgs, docsFor, parseDocsForArgs, reportDocsFor, declaredSymbols, checkFile } = require('../scripts/docs-check.js');
 const tmp = require('./tmp.js');
 
 const result = (over) => ({
@@ -380,4 +380,38 @@ test('an underscore in a code span or a word stays in the slug; one marking emph
   });
   const gone = scan(root, []).findings.filter((f) => f.tag === 'gone');
   assert.deepEqual(gone.map((f) => f.text || f.ref || f.line), []);
+});
+
+// docs-check-1: an open todo entry names the tree as it is today, so it is
+// checked as a reference page is; a done one keeps the files of its day.
+function todoRepo(prefix, files) {
+  const root = repoWith(prefix, files);
+  fs.writeFileSync(path.join(root, '.fankeel', 'docs.json'), JSON.stringify({
+    preset: 'flat', index: 'docs/README.md',
+    buckets: [{ path: 'docs', role: 'reference', depth: 1 }, { path: 'docs/todo', role: 'todo' }],
+  }));
+  return root;
+}
+
+const ENTRY = (state) => '---\nlabel: x\ntitle: t\ndescription: d\nstate: ' + state + '\n---\n\n'
+  + 'Names `lib/gone.js`, calls `missing()`, and cites `lib/foo.js:3`, which sets `const target`.\n';
+const tagsOf = (findings) => findings.map((f) => f.tag).sort();
+
+test('an open todo entry is checked like a reference page: gone, orphan and moved', () => {
+  const root = todoRepo('fankeel-docscheck-todo-open-', { 'docs/README.md': '# index\n', 'lib/foo.js': FOO, 'docs/todo/x-1.md': ENTRY('ready') });
+  assert.deepEqual(tagsOf(scan(root, []).findings.filter((f) => f.file === 'docs/todo/x-1.md')), ['gone', 'moved', 'orphan']);
+});
+
+test('a done todo entry is not: it names the files of the day it closed', () => {
+  const root = todoRepo('fankeel-docscheck-todo-done-', { 'docs/README.md': '# index\n', 'lib/foo.js': FOO, 'docs/todo/x-1.md': ENTRY('done') });
+  assert.deepEqual(scan(root, []).findings.filter((f) => f.file === 'docs/todo/x-1.md'), []);
+});
+
+test('checkFile checks one entry not yet tracked, the way todo.js new asks it to', () => {
+  const root = todoRepo('fankeel-docscheck-todo-file-', { 'docs/README.md': '# index\n', 'lib/foo.js': FOO });
+  fs.mkdirSync(path.join(root, 'docs', 'todo'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'docs', 'todo', 'x-2.md'), ENTRY('ready'));
+  assert.deepEqual(tagsOf(checkFile(root, 'docs/todo/x-2.md', 'todo')), ['gone', 'moved', 'orphan']);
+  fs.writeFileSync(path.join(root, 'docs', 'todo', 'x-3.md'), ENTRY('done'));
+  assert.deepEqual(checkFile(root, 'docs/todo/x-3.md', 'todo'), []);
 });

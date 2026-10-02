@@ -9,6 +9,6 @@ timing: after: 跑過一次 stage.agents=all 的真實 task（main 含 08c4ecf�
 stamp: 2026-10-01
 ---
 
-來源：09-24 的 db16197d 把 `docs/subagents.md` 的接縫拆成六條 TODO.md bullet，這是「第二個 agent」：db16197d 只記了「插話會起第二個」；`inflight` 標記由 `hooks/brief.js:111` 的 markInflight 寫、`hooks/gate.js:324` 的 clearInflight 清。
+來源：09-24 的 db16197d 把當時的 docs/subagents.md（今 `docs/90-agent/reference/subagents.md`）的接縫拆成六條 TODO.md bullet，這是「第二個 agent」：db16197d 只記了「插話會起第二個」；`inflight` 標記由 `hooks/brief.js:111` 的 markInflight 寫、`hooks/gate.js:324` 的 clearInflight 清。
 要做成：實跑時選 gate 的 option one 以外、讓主控 SendMessage 同一個 agent，看 `inflight` 是否已清；殺掉 agent 後看標記留多久。
 完成條件：兩個情境的 `inflight` 實際行為記錄下來，標記該清沒清的有修法或寫進 `subagents.md`。

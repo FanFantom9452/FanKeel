@@ -386,13 +386,13 @@ function checkDoc(root, rel, role, symbols, roots) {
             // `evals/one-call-not-agent/prompt.md` naming `lib/thing.js`, which
             // this tree never has, is exactly that.
             //
-            // Nor for a todo entry: a done one names the files of the day it
+            // Nor for a done todo entry: it names the files of the day it
             // closed, which is the record being honest about its date.
             //
             // Links are still checked in all three. A document nobody can
             // navigate is broken whatever its role; what it says about code is
             // history, or somebody else's tree.
-            if (role !== 'plan' && role !== 'decision' && role !== 'fixture' && role !== 'todo' && roots.has(ref.split('/')[0])) {
+            if (role !== 'plan' && role !== 'decision' && role !== 'fixture' && (role !== 'todo' || openTodo(text)) && roots.has(ref.split('/')[0])) {
                 out.push({ file: rel, line: lineOf(m.index), tag: 'gone', what: 'names ' + ref });
             }
             continue;
@@ -406,7 +406,7 @@ function checkDoc(root, rel, role, symbols, roots) {
                 out.push({ file: rel, line: lineOf(m.index), tag: 'past-end', what: label + ' — the range starts after it ends' });
             } else if (n !== null && (wantedEnd || wanted) > n) {
                 out.push({ file: rel, line: lineOf(m.index), tag: 'past-end', what: label + ' but the file ends at ' + n });
-            } else if (role === 'reference') {
+            } else if (role === 'reference' || (role === 'todo' && openTodo(text))) {
                 // Reference only. A plan cites lines it is about to change, and
                 // a decision cites the lines that existed the day it was
                 // written; both are the role working, exactly as with `gone`.
@@ -454,7 +454,7 @@ function checkDoc(root, rel, role, symbols, roots) {
     // a function that was later renamed is not wrong — it is a record of the day
     // it was written, and rewriting it to match would destroy the only thing it
     // was for.
-    if (role === 'reference') {
+    if (role === 'reference' || (role === 'todo' && openTodo(text))) {
         CODE.lastIndex = 0;
         while ((m = CODE.exec(text)) !== null) {
             const span = m[1].trim();
@@ -629,6 +629,25 @@ function main(argv) {
     return { text: quiet && !bad ? '' : text, code: bad ? 1 : 0 };
 }
 
+// docs-check-1 (2026-10-02): an open todo entry — any state but `done` — names
+// the tree as it is today, so it is checked as a reference page is: a path
+// that is gone, a symbol nothing declares, a cited line that no longer holds
+// its quote. A done entry keeps the files of the day it closed.
+function openTodo(text) {
+    const head = /^---\r?\n([\s\S]*?)\r?\n---/.exec(String(text));
+    return !head || !/^state:\s*done\s*$/m.test(head[1]);
+}
+
+// One file's failing findings, checked as a file of `role`, for `todo.js new`
+// to ask before an entry is filed. The file need not be tracked yet; the
+// symbols and the roots are the repository's.
+function checkFile(root, rel, role) {
+    const result = trackedFiles(root);
+    const files = result ? result.files : [];
+    const roots = new Set(files.map((f) => f.split('/')[0]));
+    return checkDoc(root, rel, role, declaredSymbols(root, files), roots).filter((f) => f.tag !== 'unquoted');
+}
+
 if (require.main === module) {
     const { text, code } = main(process.argv.slice(2));
     if (text) process.stdout.write(text + '\n');
@@ -637,5 +656,5 @@ if (require.main === module) {
 
 module.exports = {
     scan, report, parseArgs, resolveRef, LINK, CODE, PATHISH, external, readFile, isMarkdown, lineCount,
-    docsFor, reportDocsFor, parseDocsForArgs, declaredSymbols,
+    docsFor, reportDocsFor, parseDocsForArgs, declaredSymbols, checkFile,
 };
