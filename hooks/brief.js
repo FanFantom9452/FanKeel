@@ -30,6 +30,7 @@ const { lapOf, caseOfPrompt } = require('../lib/handoff.js');
 const { run, parse } = require('../lib/hook.js');
 const { sessionDirOf } = require('../lib/usage.js');
 const { baseAgent } = require('../lib/agentfile.js');
+const { NAMES } = require('../lib/stages.js');
 
 // A `fankeel-brain` dispatching a nested `fankeel-brain` of its own — build's
 // fixer-round resume does this — fires this same SubagentStart for the inner
@@ -53,11 +54,12 @@ function nestedBrain(payload) {
     return false;
 }
 
-// What a build brain was sent for: line 1 of its own transcript is the
-// dispatch prompt, which names `build group <n>` or `build close`. Unreadable
-// — no path, no file yet, bad JSON, neither phrase — is null, and the mark is
-// then made the way it always was.
-function caseOf(payload) {
+// Line 1 of a brain's own transcript is its dispatch prompt: that prompt as
+// text, or null when it cannot be read — no path, no file yet (a fresh
+// dispatch: Claude Code writes the transcript after this hook returns, as it
+// does the meta file, docs/90-agent/reports/2026-09-28-spawndepth-timing.md),
+// bad JSON.
+function promptOfAgent(payload) {
     const dir = sessionDirOf(payload.transcript_path);
     if (!dir || !payload.agent_id) return null;
     let line;
@@ -74,15 +76,26 @@ function caseOf(payload) {
         process.stderr.write('fankeel brief: transcript of ' + payload.agent_id + ' unreadable: ' + e.message + '\n');
         return null;
     }
-    let text = '';
     try {
         const content = JSON.parse(line).message.content;
-        text = typeof content === 'string' ? content : (Array.isArray(content) ? content.map((p) => (p && p.text) || '').join('\n') : '');
+        return typeof content === 'string' ? content : (Array.isArray(content) ? content.map((p) => (p && p.text) || '').join('\n') : '');
     } catch (e) {
         process.stderr.write('fankeel brief: line 1 of transcript of ' + payload.agent_id + ' is not readable JSON: ' + e.message + '\n');
         return null;
     }
-    return caseOfPrompt(text);
+}
+
+// await-7: the stage a brain was sent for is its prompt's first word — the
+// controller dispatches it with the stage's name (`controlRules` in
+// lib/stages.js), `build group <n>` and `build close` included. SubagentStart
+// fires again on every SendMessage to a running or resumed agent, so a brain
+// that handed its report back can start again after the task has moved on:
+// on 2026-10-02/03 a build brain woke at audit and was marked audit's agent.
+// Null when the first word names no stage.
+function stageOfPrompt(text) {
+    const first = /^\s*([a-z]+)\b/i.exec(String(text || '').split(/\r?\n/, 1)[0]);
+    const word = first ? first[1].toLowerCase() : '';
+    return NAMES.includes(word) ? word : null;
 }
 
 function main(raw) {
@@ -107,8 +120,13 @@ function main(raw) {
     // it, so this is the one place both the mark and the brief agree on it.
     let group = null;
     if (mine.stage && baseAgent(payload.agent_type) === 'fankeel-brain' && !nestedBrain(payload)) {
+        const prompt = promptOfAgent(payload);
+        // A brain sent for another stage is a late wake: no mark, and no brief,
+        // since it already holds the one it started with.
+        const sentFor = stageOfPrompt(prompt);
+        if (sentFor && sentFor !== mine.stage) return;
         try {
-            const sent = mine.stage === 'build' ? caseOf(payload) : null;
+            const sent = mine.stage === 'build' ? caseOfPrompt(prompt) : null;
             group = registry.markInflight(root, payload.session_id, mine.stage, payload.agent_id, lapOf(mine, mine.stage), sent && sent.group, sent && sent.kind);
         } catch (e) { /* housekeeping */ }
     }
