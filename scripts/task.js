@@ -20,6 +20,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { readObject } = require('../lib/json.js');
 const { parseArgs: parseArgv } = require('node:util');
 const { execFileSync } = require('node:child_process');
 
@@ -48,11 +49,8 @@ const PLUGIN = path.resolve(__dirname, '..');
 // installed cache has no .git and scripts/version.js does not bake one in at
 // release time.
 function pluginVersion() {
-    try {
-        return JSON.parse(fs.readFileSync(path.join(PLUGIN, 'package.json'), 'utf8')).version;
-    } catch (e) {
-        return undefined;
-    }
+    const pkg = readObject(path.join(PLUGIN, 'package.json'));
+    return pkg ? pkg.version : undefined;
 }
 
 // Minutes, rounded, with hours above sixty of them. Seconds are not offered: a

@@ -17,6 +17,7 @@
 // all back and refuses when anything outside --src changed, then runs --rebuild.
 const fs = require('node:fs');
 const path = require('node:path');
+const { readObject } = require('../lib/json.js');
 const http = require('node:http');
 const crypto = require('node:crypto');
 const { execFileSync, spawnSync } = require('node:child_process');
@@ -229,12 +230,8 @@ function wait(timeoutSec) {
 // serve, whose record carries neither — so a static serve started later
 // turns live mode off again.
 function liveOf() {
-    try {
-        const rec = JSON.parse(fs.readFileSync(SERVE, 'utf8'));
-        return Array.isArray(rec.src) && rec.src.length ? { src: rec.src, rebuild: typeof rec.rebuild === 'string' ? rec.rebuild : null } : null;
-    } catch (e) {
-        return null;
-    }
+    const rec = readObject(SERVE);
+    return rec && Array.isArray(rec.src) && rec.src.length ? { src: rec.src, rebuild: typeof rec.rebuild === 'string' ? rec.rebuild : null } : null;
 }
 
 function rel(p) {
@@ -326,12 +323,9 @@ function restore(id, snap, paths) {
 }
 
 function notify(event, then) {
-    let port;
-    try {
-        port = JSON.parse(fs.readFileSync(SERVE, 'utf8')).port;
-    } catch (e) {
-        return then();
-    }
+    const rec = readObject(SERVE);
+    if (!rec) return then();
+    const port = rec.port;
     fetch('http://127.0.0.1:' + port + '/__live/result', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(event) }).then(() => then(), () => then());
 }
 
