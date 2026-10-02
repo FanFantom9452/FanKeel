@@ -1017,12 +1017,12 @@ test('the controller passes model opus for design and plan and no model for the 
   }
 });
 
-test('audit may dispatch a fixer and an implementer, land only an implementer', () => {
+test('audit may dispatch a fixer and a mover, land only a mover', () => {
   const { agentsFor } = require('../lib/stages.js');
   assert.ok(agentsFor('audit').includes('fankeel:fankeel-fixer'));
-  assert.ok(agentsFor('audit').some((a) => a.startsWith('an implementer')));
+  assert.ok(agentsFor('audit').some((a) => a.startsWith('a mover')));
   assert.equal(agentsFor('land').includes('fankeel:fankeel-fixer'), false);
-  assert.ok(agentsFor('land').some((a) => a.startsWith('an implementer')));
+  assert.ok(agentsFor('land').some((a) => a.startsWith('a mover')));
 });
 
 // An interjection mid-stage re-injects the controller's block; with a stage

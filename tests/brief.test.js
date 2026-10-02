@@ -476,9 +476,9 @@ test('a build brain may dispatch a fixer and an implementer, a verify brain a ve
   const build = dispatchLine('build');
   assert.match(build, /fankeel:fankeel-fixer/);
   assert.match(build, /implementer/);
-  assert.match(build, /`fankeel:fankeel-reviewer`, `fankeel:fankeel-render-reviewer`, `fankeel:fankeel-fixer` or an implementer/);
+  assert.match(build, /`fankeel:fankeel-reviewer`, `fankeel:fankeel-render-reviewer`, `fankeel:fankeel-fixer`, `fankeel:fankeel-writer` or an implementer/);
   assert.match(dispatchLine('verify'), /fankeel:fankeel-verifier/);
-  assert.match(dispatchLine('verify'), /`fankeel:fankeel-render-reviewer`, `fankeel:fankeel-verifier`, `fankeel:fankeel-fixer` or an implementer \(`general-purpose`, on the `dispatch.floor` model/);
+  assert.match(dispatchLine('verify'), /`fankeel:fankeel-render-reviewer`, `fankeel:fankeel-verifier`, `fankeel:fankeel-fixer` or a mutator \(`fankeel:fankeel-mutator`, on the `dispatch.floor` model/);
   const survey = dispatchLine('survey');
   assert.match(survey, /fankeel:fankeel-reader/);
   assert.match(survey, /Dispatch `fankeel:fankeel-reader` or `fankeel:fankeel-reviewer` with the Agent tool/);
@@ -496,14 +496,14 @@ test('a build brain is told to ask for its commits through a commit file, a veri
   const build = brief('build');
   assert.match(build, /You cannot commit: `git commit` and `git add` are refused to you\. Ask for a commit only when none of your implementers is still running[^\n]*write [^\n]*build-g1-commit\.md[^\n]*return `commit [^\n]*build-g1-commit\.md` and nothing else\. The controller commits and messages you `<base>\.\.<sha>`/);
   assert.match(build, commitFile);
-  assert.match(build, /You have no Edit\. A task whose Dispatch line says in-session goes to an implementer on model `sonnet` like any other: send it the task's brief\./);
+  assert.match(build, /You have no Edit\. A task whose Dispatch line says in-session goes to `fankeel:fankeel-implementer` on model `sonnet` like any other: send it the task's brief\./);
   assert.match(build, /relative to the repository root\. The reply is those lines or one line `commit\.js: <why>`; a failure stops at `commit\.js: block <n>: <why>` after the lines that landed\. A further line `profile: <file> does not parse — its values were skipped` may follow the range lines: a warning, not a failure, so name it in your report and do not treat it as a refusal\. If <why> is about your file or the paths you listed \([^)]*nothing to commit, cannot read\): fix it and ask again, but the same error twice means the stage is blocked\. If it is anything else \([^)]*usage\): the stage is blocked, so say so in the report\. Return the report path when the whole stage is done or blocked\./);
   assert.doesNotMatch(build, /You cannot edit or restore a file/);
   for (const stage of ['design', 'plan']) {
     assert.match(brief(stage), /A further line `profile: <file> does not parse — its values were skipped` may follow: a warning, not a failure/);
   }
   const verify = brief('verify');
-  assert.match(verify, /You cannot edit or restore a file\. To apply a mutation, run the test and restore the file, send an implementer on model `sonnet`: it does all three, and you read what it returns/);
+  assert.match(verify, /You cannot edit or restore a file\. To apply a mutation, run the test and restore the file, send `fankeel:fankeel-mutator` on model `sonnet`: it does all three, and you read what it returns/);
   assert.doesNotMatch(verify, /You cannot commit|You have no Edit/);
   assert.doesNotMatch(brief('survey'), /You cannot commit|You cannot edit or restore|You have no Edit/);
 });
@@ -515,9 +515,9 @@ test('a brain is told the profile\'s dispatch.floor as the model for the impleme
     seed(root, { stage, started: '2026-09-19T09:30:12.345Z' });
     return contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
   };
-  assert.match(brief('verify', {}), /send an implementer on model `sonnet`: it does all three/);
-  assert.match(brief('verify', { 'dispatch.floor': 'opus' }), /send an implementer on model `opus`: it does all three/);
-  assert.match(brief('build', { 'dispatch.floor': 'opus' }), /in-session goes to an implementer on model `opus` like any other/);
+  assert.match(brief('verify', {}), /send `fankeel:fankeel-mutator` on model `sonnet`: it does all three/);
+  assert.match(brief('verify', { 'dispatch.floor': 'opus' }), /send `fankeel:fankeel-mutator` on model `opus`: it does all three/);
+  assert.match(brief('build', { 'dispatch.floor': 'opus' }), /in-session goes to `fankeel:fankeel-implementer` on model `opus` like any other/);
 });
 
 test('the brain agent file names the commit file it may write and refuses to run commit.js itself', () => {
@@ -689,9 +689,9 @@ test('no stage besides design and plan may write an artifact', () => {
 });
 
 test('an audit brain sends page corrections to the fixer, a land brain sends moves and git to an implementer', () => {
-  assert.match(briefFor('audit'), /You cannot edit a page or run a git write\. Send one change at a time to `fankeel:fankeel-fixer` \(a page correction\) or an implementer on model `sonnet` \(a move, a merge, a cleanup\), and read what it returns before you send the next\./);
+  assert.match(briefFor('audit'), /You cannot edit a page or run a git write\. Send one change at a time to `fankeel:fankeel-fixer` \(a page correction\) or `fankeel:fankeel-mover` on model `sonnet` \(a move, a merge, a cleanup\), and read what it returns before you send the next\./);
   const land = briefFor('land', { 'dispatch.floor': 'opus' });
-  assert.match(land, /You cannot edit a page or run a git write\. Send one change at a time to an implementer on model `opus` \(a move, a merge, a cleanup\)/);
+  assert.match(land, /You cannot edit a page or run a git write\. Send one change at a time to `fankeel:fankeel-mover` on model `opus` \(a move, a merge, a cleanup\)/);
   assert.doesNotMatch(land, /fankeel-fixer` \(a page correction\)/);
   assert.ok(land.length < 10000, 'land brief is ' + land.length + ' chars');
   for (const stage of ['survey', 'build']) assert.doesNotMatch(briefFor(stage), /You cannot edit a page or run a git write/, stage);
@@ -778,7 +778,7 @@ test('a build brain sends implementers into worktrees, names the worktree in the
   assert.match(build, /`conflict <paths>`[^\n]*dispatch it once more, fresh, on the new HEAD, without asking\. The same task conflicting a second time: stop the build/);
   assert.match(build, /`ledger\.js --plan <f> ready --worktree`/);
   assert.match(build, /`kept <path> — <why>`/);
-  assert.match(build, /an implementer \(`general-purpose`, on the model named in the task Dispatch line, with `isolation: "worktree"`\)/);
+  assert.match(build, /an implementer \(`fankeel:fankeel-implementer`, or `fankeel:fankeel-implementer-<effort>` where the task Dispatch line names an effort, on the model named there, with `isolation: "worktree"`\)/);
   assert.match(build, /run `git rev-parse HEAD` yourself and tell every worktree-isolated implementer, before its first edit, to run `git reset --hard <that sha>` in its own worktree.*origin\/main/);
   assert.doesNotMatch(briefFor('verify'), /isolation: "worktree"/);
   const file = fs.readFileSync(path.join(__dirname, '..', 'agents', 'fankeel-brain.md'), 'utf8');
@@ -923,4 +923,16 @@ test('an effort variant of the brain gets the brain brief', () => {
   assert.match(text, /You cannot run Workflow\. Dispatch/);
   const mark = JSON.parse(fs.readFileSync(path.join(root, '.fankeel', 'sessions', SESSION + '.json'), 'utf8')).inflight;
   assert.equal([].concat(mark).some((m) => m && m.agentId === 'v1'), true, 'the variant is marked in flight');
+});
+
+// docs/90-agent/plans/2026-10-02-docs-writer-design.md §8.
+test('no stage agent is told to send general-purpose; each names its dedicated agent', () => {
+  const { agentsFor } = require('../lib/stages.js');
+  for (const stage of ['build', 'verify', 'audit', 'land']) {
+    assert.ok(!agentsFor(stage).some((a) => a.includes('general-purpose')), stage);
+  }
+  assert.ok(agentsFor('build').some((a) => a.includes('`fankeel:fankeel-implementer`')));
+  assert.ok(agentsFor('verify').some((a) => a.includes('`fankeel:fankeel-mutator`')));
+  for (const stage of ['audit', 'land']) assert.ok(agentsFor(stage).some((a) => a.includes('`fankeel:fankeel-mover`')), stage);
+  for (const stage of ['build', 'audit']) assert.ok(agentsFor(stage).includes('fankeel:fankeel-writer'), stage);
 });
