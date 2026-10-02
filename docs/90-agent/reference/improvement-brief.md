@@ -990,7 +990,7 @@ call、subagent 無 registry entry）今天全部沒被驗證過。A11–A14 全
 
 - 本專案 09-11 的索引有 76 條，多數引了檔名、旗標、行號或量測數字，正是最會過期的那一類。
 - fankeel 只負責把耐久的事實送去那裡：`skills/fankeel/SKILL.md:631`（`## Task memory`）那一節的路由表把
-  durable fact 指向 memory 目錄，`lib/registry.js:19`（`Task memory is two fields on the entry`）的註解說明 fankeel 不另開一份記憶。
+  durable fact 指向 memory 目錄，`lib/registry.js:24`（`Task memory is two fields on the entry`）的註解說明 fankeel 不另開一份記憶。
   讀、稽核、清理那個目錄的程式碼一行都沒有。
 
 **待決**（Needs a decision 那條要回答的）：
@@ -1048,12 +1048,12 @@ call、subagent 無 registry entry）今天全部沒被驗證過。A11–A14 全
 | 缺口 | 現況 |
 |---|---|
 | (a) plan 的 task 與各自做了什麼 | 沒有：`lib/station.js` 完全不讀 build ledger（2026-09-12 backlog-all build 已關閉：Task 23、25 加了 `tasksOf`，由 `lib/station.js` 讀取；現況見 `docs/90-agent/reference/station.md`「任務」節） |
-| (b) 主 agent 怎麼切派工 | 只有總數：`lib/usage.js:331` 的 `agentsOf` 只回一個數字（2026-09-11 已關閉：90be646 加了 `dispatchesOf`，`lib/usage.js:554`（`surface: flow ? 'workflow'`）為每筆派工標出 agent、agents 或 workflow） |
+| (b) 主 agent 怎麼切派工 | 只有總數：`lib/usage.js:334` 的 `agentsOf` 只回一個數字（2026-09-11 已關閉：90be646 加了 `dispatchesOf`，`lib/usage.js:549`（`surface: flow ? 'workflow'`）為每筆派工標出 agent、agents 或 workflow） |
 | (c) 每個 stage 花多少錢 | 刻意拿掉：`docs/90-agent/reference/station.md` 當時說 a stage's own cost surfaces only in the aggregate，只出現在總覽的總帳（2026-09-14 已關閉：session 頁的花費分頁從 `days` 列出 stage × model 的金額；現況見 `docs/90-agent/reference/station.md`「The session page」） |
-| (d) stage 來回 | 結構上看不到：`lib/registry.js:450` 的 `touch` 以 stage 名為鍵，只存最早與最近兩個時間 |
+| (d) stage 來回 | 結構上看不到：`lib/registry.js:435` 的 `touch` 以 stage 名為鍵，只存最早與最近兩個時間 |
 | (e) 哪一段可以平行 | 沒有 |
 
-(b) 還少一層：`lib/usage.js:168` 的 `agentFiles` 把一般 agent 和 workflow 裡的 agent 攤成
+(b) 還少一層：`lib/usage.js:171` 的 `agentFiles` 把一般 agent 和 workflow 裡的 agent 攤成
 同一個清單，派工的形狀（agent、agents、workflow）在這裡就丟了。這一層也由 90be646 關閉：
 `dispatchesOf` 把形狀接回 `agentFiles` 的每一列。
 
