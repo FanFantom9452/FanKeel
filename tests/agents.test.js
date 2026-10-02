@@ -7,7 +7,7 @@ const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
 const FRONT = /^---\r?\n([\s\S]*?)\r?\n---/;
-const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-verifier', 'fankeel-fixer', 'fankeel-brain', 'fankeel-render-reviewer', 'fankeel-mockup', 'fankeel-slimmer', 'fankeel-init-scout', 'fankeel-writer', 'fankeel-implementer'];
+const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-verifier', 'fankeel-fixer', 'fankeel-brain', 'fankeel-render-reviewer', 'fankeel-mockup', 'fankeel-slimmer', 'fankeel-init-scout', 'fankeel-writer', 'fankeel-implementer', 'fankeel-mutator', 'fankeel-mover'];
 
 // `fankeel-verifier` is the one named exception: it writes evidence rows to a
 // file for the Workflow join, and `Write` is what that takes. It is not less
@@ -29,7 +29,7 @@ const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-v
 // `fankeel-mockup` is the fourth: it draws the design stage's mockup page and,
 // in a tuning loop, rewrites the one block it is sent — `Edit` and `Write` on
 // that page, which is the whole of its job.
-const MAY_WRITE = { 'fankeel-verifier': ['Write'], 'fankeel-fixer': ['Edit', 'Write'], 'fankeel-brain': ['Write'], 'fankeel-mockup': ['Edit', 'Write'], 'fankeel-writer': ['Edit', 'Write'], 'fankeel-implementer': ['Edit', 'Write'] };
+const MAY_WRITE = { 'fankeel-verifier': ['Write'], 'fankeel-fixer': ['Edit', 'Write'], 'fankeel-brain': ['Write'], 'fankeel-mockup': ['Edit', 'Write'], 'fankeel-writer': ['Edit', 'Write'], 'fankeel-implementer': ['Edit', 'Write'], 'fankeel-mutator': ['Edit'] };
 
 function front(file) {
     const m = FRONT.exec(fs.readFileSync(file, 'utf8'));
@@ -228,6 +228,7 @@ const EFFORT = {
     'fankeel-render-reviewer': 'medium', 'fankeel-fixer': 'low', 'fankeel-judge': 'xhigh',
     'fankeel-brain': 'medium', 'fankeel-mockup': 'high', 'fankeel-slimmer': 'low', 'fankeel-init-scout': 'medium',
     'fankeel-writer': 'medium', 'fankeel-implementer': 'medium',
+    'fankeel-mutator': 'low', 'fankeel-mover': 'low',
 };
 test('every agent names its effort, and none of them is max', () => {
     for (const name of NAMES) {
@@ -441,4 +442,18 @@ test('the writer and the implementer each say where they start, what they refuse
     assert.match(impl, /grep every caller/);
     assert.match(impl, /context\.js add/);
     assert.match(impl, /--root <main tree>/);
+});
+
+// docs/90-agent/plans/2026-10-02-docs-writer-design.md §6-§7.
+test('the mutator applies one mutation and restores it, the mover moves without editing', () => {
+    const mut = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-mutator.md'), 'utf8');
+    assert.equal(front(path.join(ROOT, 'agents', 'fankeel-mutator.md')).tools, '[Read, Edit, Bash]');
+    assert.match(mut, /`node --test`/);
+    assert.match(mut, /git diff --stat/);
+    const mover = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-mover.md'), 'utf8');
+    assert.equal(front(path.join(ROOT, 'agents', 'fankeel-mover.md')).tools, '[Read, Bash]');
+    assert.match(mover, /git mv/);
+    for (const name of ['fankeel-mutator', 'fankeel-mover']) {
+        assert.match(fs.readFileSync(path.join(ROOT, 'agents', name + '.md'), 'utf8'), /context\.js add/, name);
+    }
 });
