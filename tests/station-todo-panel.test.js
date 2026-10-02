@@ -132,3 +132,19 @@ test('pressing 展開全部 opens the whole done list and 收起 folds it back t
     assert.equal(rows(), 3);
     assert.match(doneOf(p.page()), /data-tdmore="1"/);
 });
+
+test('a row with a body is clickable and opens a todo-body block under it; one without stays plain', () => {
+    const row = Object.assign({}, ROW, { open: [
+        Object.assign({}, ROW.open[0], { body: 'From `x`.\nSecond line <b>' }),
+        ROW.open[1],
+    ], done: [Object.assign({}, ROW.done[0], { body: 'closed because' }), ROW.done[1]] });
+    const shut = V.todoPanelHtml(row, []);
+    assert.match(shut, /<li class="td-row td-has" data-tdbody="a-1" role="button" tabindex="0" aria-expanded="false">/);
+    assert.match(shut, /data-tdbody="c-1"/);
+    assert.doesNotMatch(shut, /data-tdbody="b-1"|data-tdbody="c-2"/);
+    assert.doesNotMatch(shut, /data-block="todo-body"/);
+    const open = V.todoPanelHtml(row, [], false, { 'a-1': true });
+    assert.match(open, /aria-expanded="true">/);
+    assert.match(open, /<li class="td-body" data-block="todo-body">From <code>x<\/code>\.\nSecond line &lt;b&gt;<\/li>/);
+    assert.equal((open.match(/data-block="todo-body"/g) || []).length, 1);
+});

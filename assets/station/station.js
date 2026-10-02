@@ -2374,7 +2374,7 @@
         return label ? '<span class="chip td-lb">' + esc(label) + '</span>'
             : '<span class="td-lb td-nolb" aria-label="' + loc('proj.todoNoLabel', '沒有 label') + '"></span>';
     }
-    function todoPanelHtml(t, sessions, doneOpen) {
+    function todoPanelHtml(t, sessions, doneOpen, bodyOpen) {
         if (t && t.mode === 'error') {
             return '<section class="panel td" id="todo">'
                 + '<div class="h2" data-block="todo-head">TODO</div>'
@@ -2385,6 +2385,16 @@
         var known = {};
         (sessions || []).forEach(function (s) { known[s.id] = true; });
         var md = function (s) { return esc(s).replace(/`([^`]+)`/g, '<code>$1</code>'); };
+        // A row with a body opens under itself on click or Enter; which are
+        // open is the project page's `view.tdBody`, so a 3 s redraw keeps it.
+        var opened = bodyOpen || {};
+        var rowOpen = function (e, cls) {
+            var has = !!(e.body && e.id), on = has && !!opened[e.id];
+            return { on: on, head: '<li class="' + cls + (has ? ' td-has" data-tdbody="' + esc(e.id) + '" role="button" tabindex="0" aria-expanded="' + String(on) + '">' : '">') };
+        };
+        var bodyRow = function (e, r) {
+            return r.on ? '<li class="td-body" data-block="todo-body">' + md(e.body) + '</li>' : '';
+        };
         var open = TODO_STATES.map(function (st) {
             var list = t.open.filter(function (e) { return e.state === st[0]; });
             if (!list.length) return '';
@@ -2394,11 +2404,12 @@
                 + '<ul class="td-rows' + (timed ? ' timed' : '') + '">' + list.map(function (e) {
                     var rep = timed && e.condition === prev;
                     prev = timed ? e.condition : null;
-                    return '<li class="td-row">' + todoChip(e.label) + '<span class="td-t">' + esc(e.title) + '</span>'
+                    var r = rowOpen(e, 'td-row');
+                    return r.head + todoChip(e.label) + '<span class="td-t">' + esc(e.title) + '</span>'
                         + '<span class="td-d" title="' + esc(e.description) + '">' + md(e.description) + '</span>'
                         + (timed ? '<span class="td-tm' + (rep ? ' rep' : '') + '" title="' + esc(e.condition || '') + '">' + esc(e.condition || '') + '</span>'
                             + '<span class="td-st" title="stamp ' + esc(e.stamp || '') + '">' + esc(String(e.stamp || '').slice(5)) + '</span>' : '')
-                        + '</li>';
+                        + '</li>' + bodyRow(e, r);
                 }).join('') + '</ul>';
         }).join('');
         // The done list keeps its newest three until 展開全部 is pressed
@@ -2411,12 +2422,13 @@
         // as the plan frame's cut.
         var NEWEST = 3, all = t.done.length, shut = all > NEWEST && !doneOpen;
         var doneRow = function (e, fold) {
-            return '<li class="td-row' + (fold ? ' td-fold' : '') + '">' + todoChip(e.label) + '<span class="td-t">' + esc(e.title) + '</span>'
+            var r = rowOpen(e, 'td-row' + (fold ? ' td-fold' : ''));
+            return r.head + todoChip(e.label) + '<span class="td-t">' + esc(e.title) + '</span>'
                 + '<span class="td-at mono">' + esc(e.at) + '</span><span class="td-dp mono" data-dp="' + esc(e.disposition) + '">' + esc(e.disposition) + '</span>'
                 + (e.session && known[e.session]
                     ? '<a class="td-rf mono" href="' + sessionHash(e.session) + '" title="' + loc('proj.todoOpenSession', '開啟 session {id}', { id: esc(e.session) }) + '">session ' + esc(e.session.slice(0, 8)) + '</a>'
                     : '<span class="td-rf mono muted" title="' + loc('proj.todoNoSessionHere', '這台機器沒有這個 session；commit {sha}', { sha: esc(e.sha) }) + '">sha ' + esc(String(e.sha).slice(0, 7)) + '</span>')
-                + '</li>';
+                + '</li>' + bodyRow(e, r);
         };
         var doneHead = '<li class="td-row td-hd k-only" aria-hidden="true"><span class="td-lb">' + loc('proj.todoColLabel', '標籤') + '</span>'
             + '<span class="td-t">' + loc('proj.todoColEntry', '條目') + '</span><span class="td-at">' + loc('proj.todoColAt', '完成於') + '</span>'
@@ -3085,7 +3097,7 @@
         // the chart, the registry note and the session table.
         var todo = todoPanelHtml((S.projects || []).reduce(function (hit, p) {
             return hit || (p.todos || []).filter(function (x) { return x.pkey === r.pkey; })[0] || null;
-        }, null), S.sessions, !!view.tdOpen);
+        }, null), S.sessions, !!view.tdOpen, view.tdBody);
         return '<section class="panel"><div class="hero-top"><div><div class="eyebrow">' + loc('dash.project', '專案') + '</div>'
             + '<h1 class="s-title"><i class="sw" style="background:' + colorOf('project', r.pkey, PKEYS) + '"></i> '
             + esc(NAMES[r.pkey] || r.pkey) + '</h1><div class="mono muted">' + esc(r.pkey) + '</div></div>'
@@ -3119,6 +3131,22 @@
         view.tdOpen = b.getAttribute('data-tdmore') === '1';
         repaint();
     });
+    // A TODO row with a body: click, Enter or Space flips it in
+    // `view.tdBody`, which, like `view.tdOpen`, holds across the redraw.
+    view.tdBody = {};
+    var tdBody = function (e) {
+        var b = e.target && e.target.closest ? e.target.closest('[data-tdbody]') : null;
+        if (!b) return;
+        if (e.type === 'keydown') {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            e.preventDefault();
+        }
+        var id = b.getAttribute('data-tdbody');
+        view.tdBody[id] = !view.tdBody[id];
+        repaint();
+    };
+    doc.addEventListener('click', tdBody);
+    doc.addEventListener('keydown', tdBody);
     view.closed = {};
     // What 派工 and 事件 are showing, kept across every redraw: the agents and
     // prompts opened, the phases opened, the state filter, the replay's hidden

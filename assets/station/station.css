@@ -1621,6 +1621,11 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
 .td-t{grid-area:tt;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .td-d{grid-area:ds;color:var(--ink2);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .td-d code{font-family:var(--f-mono);font-size:.92em}
+.td-row.td-has{cursor:pointer}
+.td-row.td-has:hover .td-t{text-decoration:underline;text-underline-offset:3px}
+.td-row.td-has:focus-visible{outline:2px solid var(--ink);outline-offset:-2px}
+.td-body{padding:8px 10px 12px 136px;border-bottom:1px solid var(--rule);font-size:12.5px;line-height:1.6;color:var(--ink2);white-space:pre-wrap;overflow-wrap:anywhere}
+.td-body code{font-family:var(--f-mono);font-size:.92em}
 .td-tm{grid-area:tm;font-family:var(--f-mono);font-size:12px;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .td-tm.rep{color:var(--muted)}
 .td-st{grid-area:st;font-family:var(--f-mono);font-size:12px;color:var(--muted);text-align:right}
@@ -1634,6 +1639,7 @@ a.td-rf:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-rad
   .td-rows.timed .td-row{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"lb tt st" "ds ds ds" "tm tm tm"}
   .donel .td-row{grid-template-columns:auto auto minmax(0,1fr);grid-template-areas:"lb tt tt" "at dp rf"}
   .td-d,.td-tm{margin-top:2px}
+  .td-body{padding-left:10px}
 }
 
 /* ==== keel: the promo film's look, as station tokens ==========================
