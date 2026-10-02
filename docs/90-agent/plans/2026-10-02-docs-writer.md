@@ -4,8 +4,8 @@ status: design-intent
 
 # Dedicated agents per kind of write, and effort by task — Implementation Plan
 
-**Goal:** build, verify, audit and land send a dedicated plugin agent for each kind of write — `fankeel-writer`, `fankeel-implementer`, `fankeel-mutator`, `fankeel-mover` — instead of `general-purpose`; survey and design record what they read in `context.md`; and the brain, the implementer and the reviewer can each run at `high` or `xhigh` effort for one dispatch, chosen by the user at a gate.
-**Architecture:** four new agent files carry each role's rules in their body, which is the only text a dispatched agent always receives. Effort: the Agent tool cannot set it, only an agent file's `effort:` line can (`docs/90-agent/reference/model-choice.md:40`), so `scripts/variants.js` writes `-high` and `-xhigh` copies of `fankeel-brain`, `fankeel-implementer` and `fankeel-reviewer` (`renderVariant` in `lib/agentfile.js`) and they ship as plugin agents. Who picks, ruled by the user at the plan gate on 2026-10-02 ("brain、implementer、reviewer 三種"): for an implementer and its reviewer, the plan's `**Dispatch:**` line (`implementer, <model>, <effort>`), approved at the plan gate; for a brain, the stage before it judges the difficulty and offers a gate option ending `effort: high`, and `hooks/title.js` sends the next `fankeel:fankeel-brain` dispatch as the variant the user picked (`effortVariantFor` in `lib/title.js`). The controller's own rules are not touched: its block sits within a few dozen characters of the 2400 cap (`lib/stages.js:669-670`). Every check that compares an agent type — the read-only guard, the brain's write guard and dispatch guard, the brain brief — reads a variant as its base (`baseAgent`). The briefs switch to the new agents last (Task 13), and Task 14 relaunches so they load.
+**Goal:** build, verify, audit and land send a dedicated plugin agent for each kind of write — `fankeel-writer`, `fankeel-implementer`, `fankeel-mutator`, `fankeel-mover` — instead of `general-purpose`; survey and design record what they read in `context.md`; and the brain, the implementer and the reviewer can each run at `high` or `xhigh` effort for one dispatch, chosen by the user.
+**Architecture:** four new agent files carry each role's rules in their body, which is the only text a dispatched agent always receives. Effort: the Agent tool cannot set it, only an agent file's `effort:` line can (`docs/90-agent/reference/model-choice.md:40`), so `scripts/variants.js` writes `-high` and `-xhigh` copies of `fankeel-brain`, `fankeel-implementer` and `fankeel-reviewer` (`renderVariant` in `lib/agentfile.js`) and they ship as plugin agents. Who picks, ruled by the user at the plan gates on 2026-10-02 ("brain、implementer、reviewer 三種", then "brain 的 effort 改由主控問"): for an implementer and its reviewer, the plan's `**Dispatch:**` line (`implementer, <model>, <effort>`), approved at the plan gate; for a brain, the controller judges before it dispatches whether the stage needs deep thought, asks the user with AskUserQuestion, and on a yes sends `fankeel:fankeel-brain-high` or `-xhigh` (Task 11, one sentence in `controlRules` in `lib/stages.js`). That block sits 18 characters under its 2400 cap (`tests/render.test.js:759`, 2382 measured 2026-10-02), so Task 11 cuts as many characters as it adds. Every check that compares an agent type — the read-only guard, the brain's write guard and dispatch guard, the brain brief — reads a variant as its base (`baseAgent`). The briefs switch to the new agents last (Task 13), and Task 14 relaunches so they load.
 **Tech Stack:** Node.js built-ins only, `node --test`; no dependencies (`package.json` has none).
 **Spec:** [2026-10-02-docs-writer-design.md](2026-10-02-docs-writer-design.md)
 
@@ -18,7 +18,7 @@ status: design-intent
 - No shipped file under `lib`, `scripts`, `hooks`, `agents`, `skills`, `assets`, `.claude-plugin` may contain the word "ponytail" in any case (`tests/source.test.js:220`).
 - Every agent names an `effort:` and none is `max` (`tests/agents.test.js:228-240`); `.claude-plugin/plugin.json`'s `agents` array equals `NAMES` in order (`tests/agents.test.js:61-66`) and `agents/` holds exactly those files.
 - A variant file is generated, never hand-edited: after any edit to `agents/fankeel-brain.md`, `agents/fankeel-implementer.md` or `agents/fankeel-reviewer.md` once its variants exist, run `node scripts/variants.js --base <name>`.
-- The stage rules in `lib/stages.js` `STAGES` and the controller rules in `controlRules` are not edited: the injection is capped at 2400 (`tests/render.test.js`) and never raised. Only `STAGE_AGENTS` (`lib/stages.js:702-713`) changes.
+- The stage rules in `lib/stages.js` `STAGES` are not edited. `controlRules` is edited by Task 11 alone, and only by the three line replacements it gives: the injection is capped at 2400 (`tests/render.test.js`) and never raised. Otherwise only `STAGE_AGENTS` (`lib/stages.js:702-713`) changes.
 - A brain brief stays under 10,000 characters (`tests/brief.test.js:536-538`).
 - `lib/agentfile.js:50-64`, `:68-86`, `:75-79` and `:99-113` are cited by `docs/90-agent/reference/model-choice.md`: add code only after `refresh` (line 113), never above it.
 - Test temp dirs come from `tests/tmp.js` (`const tmp = require('./tmp.js'); tmp(prefix)`).
@@ -26,9 +26,10 @@ status: design-intent
 
 ## Risks
 
-- A plugin agent loads at startup, so the session running this build has none of the new agents; a brief naming them makes a dispatch fail — Task 13 — it is the last dispatched task, the only one that changes what a brief tells a brain to send; until then a brief still says `general-purpose`, and the brain's rule "where the brief and the skill disagree, the brief wins" covers the skill and agent-file edits of Tasks 6 and 10. Task 11's routing also sends only to a variant that exists after a relaunch, and Task 14 relaunches before build's gate.
+- A plugin agent loads at startup, so the session running this build has none of the new agents; a brief naming them makes a dispatch fail — Task 13 — it is the last dispatched task, the only one that changes what a brief tells a brain to send; until then a brief still says `general-purpose`, and the brain's rule "where the brief and the skill disagree, the brief wins" covers the skill and agent-file edits of Tasks 6 and 10. Task 11's controller sentence names `fankeel:fankeel-brain-high`, which also exists only after a relaunch; the hooks run from the installed plugin copy, so the sentence reaches a controller only after the reinstall and relaunch of Task 14.
 - A brain variant left unrecognised by one check would slip a guard: `fankeel-reviewer-high` writing through Bash, or `fankeel-brain-high` getting the ordinary brief — Tasks 4 and 5 — they move all five comparisons (`hooks/brief.js:108`, `hooks/guard.js:150`, `lib/guard.js:303`, `lib/guard.js:361`, `lib/render.js:665`) onto `baseAgent` before any variant ships (Tasks 7-9).
-- The answer file Task 11 reads is found through `answeredOf` (`lib/handoff.js:134-159`); its fixture in `tests/title-effort.test.js` copies the registry layout of `tests/guard-brain-dir.test.js:21-27` — Task 11 — if `effortVariantFor` returns null on the positive case, check `registry.resolveRoot('.', root)` finds the fixture's `.fankeel/` first.
+- The controller block is 18 characters under the cap with an in-flight mark (2382, `tests/render.test.js:759`) — Task 11 — it adds 82 characters and cuts 76 (`Its brief carries the rules.`, `` `hooks/gate.js` validates the match``, and `what its agent wrote` shortened to `its report`), about 2388 after; it runs `tests/render.test.js`, and a size over 2399 there is a `blocked:` return, not a reason to cut another rule.
+- The controller's own effort question passes `hooks/gate.js` unchecked when the new stage has no handoff yet, which is the normal order (`task.js stage`, then the dispatch). With an older handoff of the same stage on disk, `hooks/resume.js:95` files an answer only when the question and option counts match the gate's — Task 11 — the sentence asks for two options, and a stage gate's first question carries at least three.
 - Six more agent descriptions ride every session's Agent tool list, roughly 600 tokens — Tasks 7-9 — accepted by the user at the gate.
 - The build brain brief grows by about 150 characters — Task 13 — it runs `tests/brief.test.js`, whose line 536 asserts `< 10000`.
 - A plugin agent sent with `isolation: "worktree"` was never measured — Task 13 — nothing in this repository can check it; the first build after the Task 14 relaunch is the probe, and verify records it.
@@ -387,13 +388,13 @@ Nothing else.
 ## Task 3: effort helpers in `lib/agentfile.js` and `scripts/variants.js`
 
 **Files:**
-- Modify: `lib/agentfile.js` — `VARIANT_EFFORTS`, `renderVariant`, `baseAgent`, `variantFromAnswers`, appended after `refresh` (line 113), all exported
+- Modify: `lib/agentfile.js` — `VARIANT_EFFORTS`, `renderVariant`, `baseAgent`, appended after `refresh` (line 113), all exported
 - Modify: `scripts/variants.js` — new: writes `agents/<base>-<effort>.md`
 - Test: `tests/agentfile.test.js`
 
 **Interfaces:**
 - Consumes: none
-- Produces: from `lib/agentfile.js`: `VARIANT_EFFORTS` → `['high', 'xhigh']`; `renderVariant(source: string, effort: string): string | null` — `name: <n>` → `name: <n>-<effort>` and `effort:` set, body untouched, `null` for an effort not in `VARIANT_EFFORTS` or no frontmatter; `baseAgent(type: string): string` — the type without `fankeel:` and without a `-high`/`-xhigh` suffix; `variantFromAnswers(answers: {stage, answer, stale}[], stage: string, route: string[]): 'high' | 'xhigh' | null` — the effort named (`effort: high`, `effort：xhigh`) by the last non-stale answer of the stage just before `stage` on `route`. From `scripts/variants.js`: `{ BASES: ['fankeel-brain', 'fankeel-implementer', 'fankeel-reviewer'], write(root: string, only?: string): string[] }`; CLI `node scripts/variants.js [--root <plugin root>] [--base <name>]`, one `wrote agents/<base>-<effort>.md` line per file.
+- Produces: from `lib/agentfile.js`: `VARIANT_EFFORTS` → `['high', 'xhigh']`; `renderVariant(source: string, effort: string): string | null` — `name: <n>` → `name: <n>-<effort>` and `effort:` set, body untouched, `null` for an effort not in `VARIANT_EFFORTS` or no frontmatter; `baseAgent(type: string): string` — the type without `fankeel:` and without a `-high`/`-xhigh` suffix. From `scripts/variants.js`: `{ BASES: ['fankeel-brain', 'fankeel-implementer', 'fankeel-reviewer'], write(root: string, only?: string): string[] }`; CLI `node scripts/variants.js [--root <plugin root>] [--base <name>]`, one `wrote agents/<base>-<effort>.md` line per file.
 
 **Dispatch:** implementer, sonnet — the plan carries the code; transcription plus tests.
 
@@ -422,18 +423,6 @@ test('baseAgent strips the plugin prefix and an effort suffix', () => {
     assert.equal(baseAgent('fankeel-reviewer-high'), 'fankeel-reviewer');
     assert.equal(baseAgent('fankeel:fankeel-reader'), 'fankeel-reader');
     assert.equal(baseAgent(undefined), '');
-});
-
-test('variantFromAnswers takes the last non-stale answer of the stage before, high or xhigh only', () => {
-    const { variantFromAnswers } = require('../lib/agentfile.js');
-    const route = ['plan', 'build', 'verify'];
-    const a = (stage, answer, stale) => ({ stage, answer, stale: !!stale });
-    assert.equal(variantFromAnswers([a('plan', 'build：開工 effort: xhigh')], 'build', route), 'xhigh');
-    assert.equal(variantFromAnswers([a('build', 'verify effort：high')], 'verify', route), 'high');
-    assert.equal(variantFromAnswers([a('plan', 'effort: high'), a('plan', 'build')], 'build', route), null);
-    assert.equal(variantFromAnswers([a('plan', 'effort: high', true)], 'build', route), null);
-    assert.equal(variantFromAnswers([a('plan', 'effort: max')], 'build', route), null);
-    assert.equal(variantFromAnswers([a('plan', 'effort: high')], 'plan', route), null);
 });
 
 test('scripts/variants.js writes agents/<base>-<effort>.md, every base or the one --base names', () => {
@@ -481,30 +470,12 @@ function renderVariant(source, effort) {
 function baseAgent(type) {
     return String(type || '').replace(/^fankeel:/, '').replace(/-(high|xhigh)$/, '');
 }
-
-// The effort the user picked at the gate before `stage`: the last non-stale
-// answer of the stage just before it on the route decides, and it names one
-// only as `effort: high` or `effort: xhigh` (either colon).
-const EFFORT_ANSWER = /effort[:：]\s*(high|xhigh)\b/i;
-function variantFromAnswers(answers, stage, route) {
-    const r = Array.isArray(route) ? route : [];
-    const at = r.indexOf(stage);
-    const prev = at > 0 ? r[at - 1] : null;
-    if (!prev) return null;
-    let found = null;
-    for (const a of answers || []) {
-        if (!a || a.stage !== prev || a.stale) continue;
-        const m = EFFORT_ANSWER.exec(String(a.answer || ''));
-        found = m ? m[1].toLowerCase() : null;
-    }
-    return found;
-}
 ```
 
 and change the export line of `lib/agentfile.js` to:
 
 ```js
-module.exports = { PLUGIN_ROOT, EFFORTS, VARIANT_EFFORTS, agentKey, agentNames, generatedVersion, syncAgent, syncLine, refresh, renderVariant, baseAgent, variantFromAnswers };
+module.exports = { PLUGIN_ROOT, EFFORTS, VARIANT_EFFORTS, agentKey, agentNames, generatedVersion, syncAgent, syncLine, refresh, renderVariant, baseAgent };
 ```
 
 4. Create `scripts/variants.js`:
@@ -672,7 +643,7 @@ test('an effort variant of the brain gets the brain brief', () => {
 
 5. Run it and watch it pass: `node --test tests/brief.test.js` — `ℹ fail 0`. The parent commits.
 
-## Task 6: the brain records what it read, writes for a person, and decides effort
+## Task 6: the brain records what it read, writes for a person, and knows how effort is chosen
 
 **Files:**
 - Modify: `agents/fankeel-brain.md` — description, `## Tools` names the dedicated agents, new `## Context`, `## Reports are read by a person` and `## Effort`
@@ -682,8 +653,8 @@ test('an effort variant of the brain gets the brain brief', () => {
 - Test: `tests/skills.test.js`
 
 **Interfaces:**
-- Consumes: the agent names from Tasks 1 and 2 (`fankeel:fankeel-writer`, `fankeel:fankeel-implementer`, `fankeel:fankeel-mutator`, `fankeel:fankeel-mover`) and the variant names Tasks 7-9 ship (`fankeel:fankeel-implementer-<effort>`, `fankeel:fankeel-reviewer-<effort>`, `fankeel:fankeel-brain-<effort>`)
-- Produces: `agents/fankeel-brain.md` sections `## Context`, `## Reports are read by a person` and `## Effort`, between `## Job` and `## Tools`; the gate-label convention `effort: high` / `effort: xhigh` that Task 11 reads.
+- Consumes: the agent names from Tasks 1 and 2 (`fankeel:fankeel-writer`, `fankeel:fankeel-implementer`, `fankeel:fankeel-mutator`, `fankeel:fankeel-mover`) and the variant names Tasks 7-9 ship (`fankeel:fankeel-implementer-<effort>`, `fankeel:fankeel-reviewer-<effort>`, `fankeel:fankeel-brain-high`)
+- Produces: `agents/fankeel-brain.md` sections `## Context`, `## Reports are read by a person` and `## Effort`, between `## Job` and `## Tools`.
 
 **Dispatch:** implementer, sonnet — the plan carries every sentence; transcription plus tests.
 
@@ -693,8 +664,8 @@ Steps:
 
 ```js
 // docs/90-agent/plans/2026-10-02-docs-writer-design.md §2-§3 and §8, and the
-// plan gate's effort ruling (docs/90-agent/plans/2026-10-02-docs-writer.md).
-test('the brain names the dedicated agents, records survey and design facts, writes for a person, and asks for effort', () => {
+// plan gates' effort rulings (docs/90-agent/plans/2026-10-02-docs-writer.md).
+test('the brain names the dedicated agents, records survey and design facts, writes for a person, and knows how effort is chosen', () => {
     const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-brain.md'), 'utf8');
     const tools = text.split('\n## Tools\n')[1].split('\n## Refusals\n')[0];
     for (const a of ['fankeel:fankeel-writer', 'fankeel:fankeel-mutator', 'fankeel:fankeel-mover', '`fankeel:fankeel-implementer`', 'fankeel:fankeel-implementer-<effort>']) {
@@ -708,8 +679,8 @@ test('the brain names the dedicated agents, records survey and design facts, wri
     assert.match(ctx, /context\.js add "<fact>" --at <path:line> --session <id>/);
     assert.match(text, /^## Reports are read by a person$/m);
     const effort = section('Effort');
-    assert.match(effort, /`effort: high`/);
-    assert.match(effort, /hooks\/title\.js/);
+    assert.match(effort, /`fankeel:fankeel-brain-high`/);
+    assert.match(effort, /The controller/);
     assert.match(effort, /`fankeel:fankeel-reviewer-<effort>`/);
     assert.match(effort, /ask in your report's gate/);
 });
@@ -780,13 +751,9 @@ What you return to the controller stays a path, not prose.
 You and the implementers and reviewers you send run at your agent files'
 `medium` unless the user chose more. Three rules say how they choose:
 
-- The next stage's brain. When the stage after yours needs deep thought — a
-  protocol to reason about, a design judgement, a change whose shape is not
-  yet written down — give your gate an option whose label ends `effort: high`
-  (or `effort: xhigh`), its description saying why and that it costs more.
-  `hooks/title.js` reads the answer and sends the next brain as
-  `fankeel:fankeel-brain-high` (or `-xhigh`); any other answer sends the plain
-  brain.
+- Your own. The controller judges, before it sends you, whether your stage
+  needs deep thought, asks the user, and on a yes sends
+  `fankeel:fankeel-brain-high` (or `-xhigh`). It is not yours to change.
 - On build, a task whose Dispatch line names an effort goes to
   `fankeel:fankeel-implementer-<effort>`, and its reviewer to
   `fankeel:fankeel-reviewer-<effort>`: the user approved that line at the plan
@@ -1107,122 +1074,67 @@ with these, in `skills/fankeel-build/SKILL.md`:
 
 6. Run them and watch them pass: `node --test tests/plantasks-effort.test.js tests/plantasks-haiku.test.js tests/skills.test.js` — `ℹ fail 0`. The parent commits.
 
-## Task 11: the next brain runs at the effort its gate answer picked
+## Task 11: the controller asks before it sends a brain at a raised effort
 
 **Files:**
-- Modify: `lib/title.js` — `effortVariantFor(type, cwd, sessionId)`
-- Modify: `hooks/title.js` — swaps `fankeel:fankeel-brain` for the variant before the override and the title
-- Test: `tests/title-effort.test.js`
-- Read: `lib/agentfile.js` — `variantFromAnswers`
-- Read: `lib/handoff.js` — `answeredOf` (lines 134-159), `answerPath`
-- Read: `lib/registry.js` — `resolveRoot` (line 119), `readSession` (line 148)
-- Read: `tests/guard-brain-dir.test.js` — the registry fixture layout at lines 21-27
+- Modify: `lib/stages.js:673-683` — three lines of `controlRules`: the opening line, the dispatch line, the gate line
+- Test: `tests/stages.test.js`
+- Read: `tests/render.test.js` — the 2400 cap assertions it must keep green (line 759 is the tightest controlled block, 2382 before this task)
+- Read: `hooks/resume.js` — line 95: an answer is filed only when question and option counts match the handoff's gate
 
 **Interfaces:**
-- Consumes: `variantFromAnswers(answers, stage, route)` from Task 3; the `effort: high` label convention from Task 6; the variants from Task 8
-- Produces: `require('./title.js').effortVariantFor(type: string, cwd: string, sessionId: string): string | null` — `'fankeel:fankeel-brain-high'` / `'-xhigh'` or null.
+- Consumes: the variant names Task 8 ships (`fankeel:fankeel-brain-high`, `fankeel:fankeel-brain-xhigh`)
+- Produces: every controlled stage's `Dispatch one Agent` rule ends ` Deep thought? AskUserQuestion first, two options; yes sends its \`-high\`/\`-xhigh\`.`
 
-**Dispatch:** implementer, sonnet — the plan carries the code; transcription plus tests.
+**Dispatch:** implementer, sonnet — the plan carries the three lines whole; transcription plus a test and the cap tests.
 
 Steps:
 
-1. Write the failing test. Create `tests/title-effort.test.js`:
+1. Write the failing test. In `tests/stages.test.js`, append:
 
 ```js
-'use strict';
-
-// docs/90-agent/plans/2026-10-02-docs-writer.md Task 11: the stage before
-// offers `effort: high` at its gate; the answer reroutes the next brain.
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
-const tmp = require('./tmp.js');
-const { effortVariantFor } = require('../lib/title.js');
-const { answerPath } = require('../lib/handoff.js');
-
-const SID = 'aaaaaaaa-0000-4000-8000-000000000002';
-const STARTED = '2026-10-02T09:02:38.000Z';
-
-function world(answer) {
-    const root = tmp('fankeel-title-effort-');
-    const data = { task: 't', stage: 'build', route: ['plan', 'build'], active: true, started: STARTED, updated: STARTED };
-    fs.mkdirSync(path.join(root, '.fankeel', 'sessions'), { recursive: true });
-    fs.writeFileSync(path.join(root, '.fankeel', 'sessions', SID + '.json'), JSON.stringify(data, null, 2) + '\n');
-    if (answer !== undefined) {
-        const file = answerPath(root, data, 'plan', 1);
-        fs.mkdirSync(path.dirname(file), { recursive: true });
-        fs.writeFileSync(file, JSON.stringify({ questions: [], answers: { 'q?': answer } }));
-    }
-    return root;
-}
-
-test('a gate answer naming effort: high sends the next brain as fankeel-brain-high', () => {
-    assert.equal(effortVariantFor('fankeel:fankeel-brain', world('build：開工 effort: high'), SID), 'fankeel:fankeel-brain-high');
-});
-
-test('no effort in the answer, no answer, another agent or no session: no variant', () => {
-    assert.equal(effortVariantFor('fankeel:fankeel-brain', world('build：開工'), SID), null);
-    assert.equal(effortVariantFor('fankeel:fankeel-brain', world(), SID), null);
-    assert.equal(effortVariantFor('fankeel:fankeel-reader', world('effort: high'), SID), null);
-    assert.equal(effortVariantFor('fankeel:fankeel-brain', world('effort: high'), undefined), null);
+// docs/90-agent/plans/2026-10-02-docs-writer.md Task 11: the controller judges
+// whether a stage needs deep thought and asks the user before it sends the
+// brain's high or xhigh variant. Two options, so hooks/resume.js never files
+// the answer as a stage gate's (a gate's first question carries three or more).
+test('every controlled stage tells the controller to ask before sending a brain variant', () => {
+  const { controlFor } = require('../lib/stages.js');
+  const all = ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land'];
+  for (const stage of all) {
+    const rules = controlFor(stage, { 'stage.agents': all }, {}).rules;
+    const dispatch = rules.find((r) => r.startsWith('Dispatch one Agent'));
+    assert.ok(dispatch.endsWith(' Deep thought? AskUserQuestion first, two options; yes sends its `-high`/`-xhigh`.'), stage + ': ' + dispatch);
+    assert.equal(rules.some((r) => r.includes('hooks/gate.js')), false, stage);
+  }
 });
 ```
 
-2. Run it and watch it fail: `node --test tests/title-effort.test.js`.
+2. Run it and watch it fail: `node --test tests/stages.test.js`.
 
-3. In `lib/title.js`, change `const { generatedVersion } = require('./agentfile.js');` to `const { generatedVersion, variantFromAnswers } = require('./agentfile.js');`, add below it `const registry = require('./registry.js');` and `const { answeredOf } = require('./handoff.js');`, and above `module.exports` add:
-
-```js
-// The brain variant the user picked at the previous stage's gate: an option
-// labelled `effort: high` (agents/fankeel-brain.md, ## Effort). The controller's
-// own block sits at the 2400 cap, so the swap happens here rather than in a
-// rule it reads. null for any other type, no session, or no such answer.
-function effortVariantFor(type, cwd, sessionId) {
-    if (type !== 'fankeel:fankeel-brain' || !sessionId) return null;
-    try {
-        const root = registry.resolveRoot('.', cwd);
-        const mine = registry.readSession(root, sessionId);
-        if (!mine) return null;
-        const effort = variantFromAnswers(answeredOf(root, mine), mine.stage, mine.route);
-        return effort ? type + '-' + effort : null;
-    } catch (e) {
-        return null;
-    }
-}
-```
-
-and change the export line of `lib/title.js` to:
+3. In `lib/stages.js`, inside `controlRules`, replace the opening line (it starts `'You are the controller for ' + stage`) with:
 
 ```js
-module.exports = { parseModel, prefixFor, retitle, overrideFor, effortVariantFor };
+    'You are the controller for ' + stage + '. Do not do its work or restate its report: dispatch, relay a path, ask. Name TODO entries by title, never by id.',
 ```
 
-4. In `hooks/title.js`, change `const { prefixFor, retitle, overrideFor } = require('../lib/title.js');` to `const { prefixFor, retitle, overrideFor, effortVariantFor } = require('../lib/title.js');`, and replace these lines of `hooks/title.js`:
+Replace the dispatch line of `lib/stages.js` (it starts `'Dispatch one Agent:`) with this, and put the comment above it:
 
 ```js
-    const bare = overrideFor(input.subagent_type, payload.cwd, configDir);
-    const next = bare ? { ...input, subagent_type: bare } : input;
+    // A brain at high or xhigh effort is a shipped variant
+    // (agents/fankeel-brain-high.md), sent only after the user said yes. Two
+    // options, so hooks/resume.js never files the answer as a stage gate's.
+    // The block sits under the 2400 cap: this sentence was paid for by
+    // `Its brief carries the rules.` and the gate line's hooks/gate.js clause.
+    'Dispatch one Agent: `subagent_type: fankeel:fankeel-brain`, prompt `' + stage + '`, plus one line only when the user has just given a new instruction for it; ' + (['design', 'plan'].includes(stage) ? '`model: opus`, replacing its file\'s pin.' : 'no model.') + ' Deep thought? AskUserQuestion first, two options; yes sends its `-high`/`-xhigh`.',
 ```
 
-with these, in `hooks/title.js`:
+Replace the gate line of `lib/stages.js` (it starts `'When it returns a path, print it'`) with:
 
 ```js
-    // The gate before this stage may have picked a brain variant; it wins over
-    // a per-role override, which answers only the base name.
-    const variant = effortVariantFor(input.subagent_type, payload.cwd, payload.session_id);
-    const bare = variant ? null : overrideFor(input.subagent_type, payload.cwd, configDir);
-    const swapped = variant || bare;
-    const next = swapped ? { ...input, subagent_type: swapped } : input;
+    'When it returns a path, print it' + (stage === 'survey' ? ' and the report\'s text above its gate block, as written' : '') + ', then read {{HANDOFF}}\'s last `json gate` block and call AskUserQuestion with `questions` copied verbatim. A return that is not a path or `commit <path>` is not its report: relay nothing and wait.',
 ```
 
-and replace `if (!bare && description === input.description) return;` in `hooks/title.js` with:
-
-```js
-    if (!swapped && description === input.description) return;
-```
-
-5. Run it and watch it pass: `node --test tests/title-effort.test.js tests/title.test.js tests/title-hook.test.js` — `ℹ fail 0`. The parent commits.
+4. Run it and watch it pass: `node --test tests/stages.test.js tests/render.test.js` — `ℹ fail 0`. The cap assertions in `tests/render.test.js` must stay green as they are; a size of 2400 or more is returned as `blocked:` with the size, not fixed by cutting another rule. The parent commits.
 
 ## Task 12: the reference pages name the new agents
 
@@ -1231,10 +1143,10 @@ and replace `if (!bare && description === input.description) return;` in `hooks/
 - Modify: `docs/90-agent/reference/model-choice.md` — effort per dispatch under `## Constraint on c`
 - Modify: `docs/README.md` — index rows for the design and this plan
 - Test: `tests/init-docs.test.js`
-- Read: `lib/title.js` — `effortVariantFor`, named in the inserted paragraph
+- Read: `lib/stages.js` — `controlRules`, named in the inserted paragraphs
 
 **Interfaces:**
-- Consumes: the agent names from Tasks 1, 2 and 7-9; `renderVariant`, `scripts/variants.js` from Task 3; `effortVariantFor` from Task 11
+- Consumes: the agent names from Tasks 1, 2 and 7-9; `renderVariant`, `scripts/variants.js` from Task 3; the controller sentence from Task 11
 - Produces: none
 
 **Dispatch:** implementer, sonnet — the plan carries every sentence; transcription plus a test.
@@ -1251,7 +1163,7 @@ test('subagents.md names every agent the plugin ships', () => {
     assert.equal(names.length, 20);
     for (const n of names) assert.ok(text.includes('`' + n + '`'), n);
     assert.match(flat('model-choice.md'), /implementer, <model>, <effort>/);
-    assert.match(flat('model-choice.md'), /effort: high/);
+    assert.match(flat('model-choice.md'), /asks the user before it sends a brain/);
 });
 ```
 
@@ -1285,9 +1197,9 @@ and `fankeel-reviewer` with `name:` and `effort:` changed — written by
 that compares an agent type reads a variant as its base (`baseAgent` in
 `lib/agentfile.js`): the reviewer's variants are guarded read-only, the brain's
 get its brief and guards. An implementer and its reviewer run at a variant when
-the task's `**Dispatch:**` line names one; a brain when the previous stage's
-gate answer ends `effort: high` or `effort: xhigh`, which `hooks/title.js`
-reads (`effortVariantFor` in `lib/title.js`).
+the task's `**Dispatch:**` line names one; a brain when the controller, judging
+that the stage needs deep thought, asked the user first and the user said yes
+(`controlRules` in `lib/stages.js`).
 ```
 
 5. In `docs/90-agent/reference/model-choice.md`, after the paragraph of `## Constraint on c` that ends `only the bare name reaches it.`, add to `docs/90-agent/reference/model-choice.md`:
@@ -1299,10 +1211,10 @@ copies of `fankeel-brain`, `fankeel-implementer` and `fankeel-reviewer`
 because a plugin agent loads at startup and a file written mid-session was
 never measured to resolve. A plan's `**Dispatch:**` line
 `implementer, <model>, <effort>` sends the implementer and its reviewer at that
-effort, approved at the plan gate; `ledger.js lint` refuses any other value. A
-gate answer ending `effort: high` or `effort: xhigh` sends the next stage's
-brain at it (`effortVariantFor` in `lib/title.js`). The override file above
-stays the per-role route.
+effort, approved at the plan gate; `ledger.js lint` refuses any other value.
+The controller asks the user before it sends a brain at `high` or `xhigh`, and
+only for a stage it judges needs deep thought (`controlRules` in
+`lib/stages.js`). The override file above stays the per-role route.
 ```
 
 6. In `docs/README.md`, after the row for the 10-01 patrol-four plan, add to `docs/README.md`:
@@ -1322,7 +1234,6 @@ stays the per-role route.
 - Test: `tests/brief.test.js`
 - Test: `tests/stages.test.js`
 - Read: `lib/plantasks.js` — lands before this; Task 13 goes last
-- Read: `lib/title.js` — lands before this; Task 13 goes last
 - Read: `docs/90-agent/reference/subagents.md` — lands before this; Task 13 goes last
 
 **Interfaces:**
@@ -1378,7 +1289,7 @@ test('audit may dispatch a fixer and a mover, land only a mover', () => {
 
 2. Run them and watch them fail: `node --test tests/brief.test.js tests/stages.test.js`.
 
-3. In `lib/stages.js`, replace the comment and `STAGE_AGENTS` (lines 702-713, from `// The agents a stage agent may dispatch.` to the closing `};`) with:
+3. In `lib/stages.js`, replace the comment and `STAGE_AGENTS` (lines 702-713, from `// The agents a stage agent may dispatch.` to the closing `};`; Task 11 moved them down by five lines) with:
 
 ```js
 // The agents a stage agent may dispatch. It has no Workflow tool, so a stage that
@@ -1466,4 +1377,4 @@ Steps, run with the user in the relaunched session:
 | 現在失敗、之後通過：`tests/agents.test.js` 的 `NAMES` 加四個新名字；`tests/brief.test.js` 斷言 build、verify、audit、land 的可派名單不含 `general-purpose`，且各含對應的專屬 agent；`tests/agents.test.js` 斷言 `agents/fankeel-brain.md` 的 survey、design 段含 `context.js add`。 | Task 1, Task 2, Task 6, Task 13 |
 | 全套 `node --test` 顯示 `ℹ fail 0`；`node scripts/docs-check.js` 不報新 agent。 | the parent's full suite after each group; Task 12 runs docs-check |
 | 產出物那一列：第 9 節的盲測；另跑一次 survey，結束時 `context.md` 至少有一行來自 survey brain。 | Task 14 (blind test); struck from build — the survey rerun needs a new task, so verify runs it |
-| 按任務的做法：每個 agent 預先生成幾個 effort 版本的覆寫檔，plan 的 Dispatch 行多寫一個 effort，`hooks/title.js` 照它改寫 `subagent_type`。動到 `lib/agentfile.js`、`lib/plantasks.js`、`hooks/title.js`，與本設計不共用檔案，另開一輪 design。 | Tasks 3-5 and 7-11 — folded in at the design gate and widened at the plan gate to brain, implementer and reviewer; variants shipped rather than generated; the plan names the implementer's and reviewer's effort, and `hooks/title.js` reroutes the brain from the previous gate's answer (see Architecture) |
+| 按任務的做法：每個 agent 預先生成幾個 effort 版本的覆寫檔，plan 的 Dispatch 行多寫一個 effort，`hooks/title.js` 照它改寫 `subagent_type`。動到 `lib/agentfile.js`、`lib/plantasks.js`、`hooks/title.js`，與本設計不共用檔案，另開一輪 design。 | Tasks 3-5 and 7-11 — folded in at the design gate and widened at the plan gates to brain, implementer and reviewer; variants shipped rather than generated; the plan names the implementer's and reviewer's effort, and the controller asks the user before it sends a brain variant (Task 11), so `hooks/title.js` is not changed |
