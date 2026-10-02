@@ -61,6 +61,16 @@ test('station.sh is executable', { skip: process.platform === 'win32' }, () => {
     assert.equal(fs.statSync(path.join(root, '.fankeel', 'station.sh')).mode & 0o777, 0o755);
 });
 
+// Red when the loop goes back to one try around everything: station.sh is never tried.
+test('a launcher that cannot be written does not stop the other, and write throws after', () => {
+    const root = tmp('fankeel-launchers-');
+    fs.mkdirSync(path.join(root, '.fankeel', 'station.bat'), { recursive: true });
+    assert.throws(() => launchers.write(root), /station\.bat/);
+    const script = path.join(PLUGIN, 'scripts', 'station.js').split(path.sep).join('/');
+    assert.equal(read(root, 'station.sh'),
+        '#!/bin/sh\nexec node "' + script + '" serve --detach --open --root "$(dirname "$0")/.." "$@"\n');
+});
+
 // The three pages a user reads to reopen the station name the launcher.
 test('README, getting-started and the station skill name .fankeel/station.bat', () => {
     for (const rel of ['README.md', 'docs/01-guide/getting-started.md', 'skills/fankeel-station/SKILL.md']) {

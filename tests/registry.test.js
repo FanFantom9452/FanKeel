@@ -218,12 +218,14 @@ test('writing an entry lays down .fankeel/.gitignore so only sessions/ is exclud
 });
 
 test('an existing .fankeel/.gitignore is never overwritten', () => {
+  // Created before any ensureLayout: scratch/ is kept, the launchers are appended.
+  // Red when the launcher ensureIgnored call is removed, or ensureIgnored overwrites.
   const root = tmpRoot();
-  registry.ensureLayout(root);
+  fs.mkdirSync(path.join(root, '.fankeel'), { recursive: true });
   const ignore = path.join(root, '.fankeel', '.gitignore');
   fs.writeFileSync(ignore, 'sessions/\nscratch/\n');
   registry.writeSession(root, SID, task());
-  assert.equal(fs.readFileSync(ignore, 'utf8'), 'sessions/\nscratch/\n');
+  assert.equal(fs.readFileSync(ignore, 'utf8'), 'sessions/\nscratch/\nstation.bat\nstation.sh\n');
 });
 
 // lib/launchers.js rides on the layout: every registry gets the two station
