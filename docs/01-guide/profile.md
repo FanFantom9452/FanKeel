@@ -53,7 +53,7 @@ profile 是 gate 的常備答案：先寫好，fankeel 就不再問那一題。g
 | `commit.format` | commit.js 提交前，每則訊息第一行要符合的正規式；不設就不檢查 | 一個 JavaScript 正規式，比對訊息第一行 | 不設 |
 <!-- PROFILE_TABLE:END -->
 
-`stage.agents` 建議打開，理由記在 `lib/profile.js:414-418`，`the user, 2026-10-02`（使用者，2026-10-02）：主 session 跑長任務時，用 remote control 的人看不到它的 context 堆了多少，除非手動 compact；Claude 本身沒有 context 回收機制，所以最好的做法是開背景的站 agent，每一站在自己的乾淨 context 裡跑，靠檔案互相傳遞資訊，主控只轉路徑。內建值仍是 `false`（`lib/profile.js:37`，`builtin: 'false'`），要打開得自己設。兩組精靈組合交出去的範圍不同（`lib/profile.js:432`，`'stage.agents': 'survey,build,verify'`；`lib/profile.js:437`，`'stage.agents': 'all'`）：「平衡」只把 survey、build、verify 三站交出去，其餘幾站仍由主控自己跑；「省 context」設成 `all`，每一站都交出去。`true` 是舊寫法，只等於只交 survey。要自己設，把站名用逗號串起來：
+`stage.agents` 建議打開，理由記在 `lib/profile.js:414-418`，`the user, 2026-10-02`（使用者，2026-10-02）：主 session 跑長任務時，用 remote control 的人看不到它的 context 堆了多少，除非手動 compact；Claude 本身沒有 context 回收機制，所以最好的做法是開背景的站 agent，每一站在自己的乾淨 context 裡跑，靠檔案互相傳遞資訊，主控只轉路徑。內建值仍是 `false`（`lib/profile.js:37`，`builtin: 'false'`），要打開得自己設。這段理由支持的是「把站交給 agent」這個方向，以及 `all`（每一站都交出去）；它沒有解釋為什麼「建議」欄只挑 survey、build、verify 這三站。精靈 agents 那一步有三顆會交出站的按鈕：「只交出 survey」設 `survey`；「省 context」設 `survey,build,verify`（`assets/station/station.js:1814`），其餘幾站仍由主控自己跑；「全部交出去」設 `all`（`assets/station/station.js:1815`），七站都交出去。程式碼裡另有兩組預設：`PRESETS.balanced` 是 `survey,build,verify`（`lib/profile.js:432`），`PRESETS.lean`（標籤也叫「省 context」）是 `all`（`lib/profile.js:437`）；現在的站頁不再套用這兩組，實際寫入值的是精靈的按鈕，所以在精靈按「省 context」得到的是三站，不是 `all`。`true` 是舊寫法，只等於只交 survey。要自己設，把站名用逗號串起來：
 
 ```
 node <plugin>/scripts/task.js profile set stage.agents survey,build,verify
