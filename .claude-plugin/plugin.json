@@ -7,7 +7,7 @@
     "url": "https://github.com/FanFantom9452"
   },
   "skills": "./skills/",
-  "agents": ["./agents/fankeel-reader.md", "./agents/fankeel-judge.md", "./agents/fankeel-reviewer.md", "./agents/fankeel-verifier.md", "./agents/fankeel-fixer.md", "./agents/fankeel-brain.md", "./agents/fankeel-render-reviewer.md", "./agents/fankeel-mockup.md", "./agents/fankeel-slimmer.md", "./agents/fankeel-init-scout.md", "./agents/fankeel-writer.md", "./agents/fankeel-implementer.md", "./agents/fankeel-mutator.md", "./agents/fankeel-mover.md"],
+  "agents": ["./agents/fankeel-reader.md", "./agents/fankeel-judge.md", "./agents/fankeel-reviewer.md", "./agents/fankeel-verifier.md", "./agents/fankeel-fixer.md", "./agents/fankeel-brain.md", "./agents/fankeel-render-reviewer.md", "./agents/fankeel-mockup.md", "./agents/fankeel-slimmer.md", "./agents/fankeel-init-scout.md", "./agents/fankeel-writer.md", "./agents/fankeel-implementer.md", "./agents/fankeel-mutator.md", "./agents/fankeel-mover.md", "./agents/fankeel-implementer-high.md", "./agents/fankeel-implementer-xhigh.md"],
   "hooks": {
     "SessionStart": [
       {
