@@ -8,3 +8,7 @@ group: 受控 build/verify 實跑
 timing: after: 跑過一次 stage.agents=all 的真實 task（main 含 08c4ecf、安裝版 0.80.0 兩半 09-28 已達成）
 stamp: 2026-10-01
 ---
+
+來源：09-24 的 db16197d 把 `docs/subagents.md` 的接縫拆成六條 TODO.md bullet，這是「第二個 agent」：每次使用者送出提示都重注入「派一個 agent」，插話會起第二個；`inflight` 標記由 `hooks/brief.js` 寫、`hooks/gate.js` 清。
+要做成：實跑時選 gate 的 option one 以外、讓主控 SendMessage 同一個 agent，看 `inflight` 是否已清；殺掉 agent 後看標記留多久。
+完成條件：兩個情境的 `inflight` 實際行為記錄下來，標記該清沒清的有修法或寫進 `subagents.md`。
