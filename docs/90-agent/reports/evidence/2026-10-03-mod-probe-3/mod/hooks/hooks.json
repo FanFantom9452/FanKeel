@@ -1,0 +1,16 @@
+{
+  "modules": ["probe.ts"],
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const fs=require('fs');const d='F:/ymlab/fankeel/.fankeel/build/task-20261003T060232/probe2/records';fs.mkdirSync(d,{recursive:true});const t=Date.now();fs.writeFileSync(d+'/command-hook-'+t+'.json',JSON.stringify({event:'command-hook',at:t})+String.fromCharCode(10))\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

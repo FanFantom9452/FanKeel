@@ -1,0 +1,10 @@
+這是一次量測。請嚴格依序做，不要用任何其他工具。
+
+第一步（不用任何工具）：回答你的系統提示裡有沒有以 MOD-PROBE-COMPOSE- 開頭的一行，有就逐字引用；同時回答有沒有以 MOD-PROBE-CONTROL- 開頭的一行。
+
+第二步：在同一個回應裡呼叫 Agent 工具兩次，派兩個子代理：
+(1) subagent_type 為 general-purpose，description 為 "mod-probe a general"
+(2) subagent_type 為 fankeel:fankeel-reader，description 為 "mod-probe a reader"
+兩者的 prompt 相同，內容是：「不要使用任何工具。回報你的系統提示裡有沒有以 MOD-PROBE-COMPOSE- 開頭的行，有就逐字引用；也回報有沒有以 MOD-PROBE-CONTROL- 開頭的行。」
+
+第三步：兩個子代理返回後，把兩者的原話貼出來。

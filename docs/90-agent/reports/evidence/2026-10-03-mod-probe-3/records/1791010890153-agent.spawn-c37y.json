@@ -1,0 +1,1 @@
+{"event":"agent.spawn","at":1791010890153,"startedAt":1791010890146,"tool_use_id":"toolu_01J2T7xK5yMHDXdJiVz2qtLS","description":"sonnet · medium: mod-probe a reader","subagentType":"fankeel:fankeel-reader","parentAgentId":null,"promptLengthBefore":86,"promptLengthAfter":86,"agentId":"a6baeb54230af2eb4","model":"claude-sonnet-5-5","deny":null}

@@ -1,0 +1,4 @@
+這是一次量測，請嚴格依序做，不要用本任務以外的工具。
+第一步：呼叫 Agent 工具派一個子代理：subagent_type 為 fankeel:fankeel-reader，name 為 mod-probe-b，description 為 "mod-probe b"，prompt 為「不用任何工具，逐字回覆你收到的任務 prompt 的最後一行」。等它返回。
+第二步：用 SendMessage 工具對 mod-probe-b 送「不用任何工具，再逐字回覆一次你原始任務 prompt 的最後一行」，等第二次返回。
+第三步：把兩次的回覆原話貼出來。若沒有 SendMessage 工具，就明說沒有。

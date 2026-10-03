@@ -1,0 +1,21 @@
+Warning: no stdin data received in 3s, proceeding without it. If piping from a slow command, redirect stdin explicitly: < /dev/null to skip, or wait longer.
+**第三步：兩個子代理的原話**
+
+兩個子代理都說系統提示裡沒有 `MOD-PROBE-COMPOSE-` 開頭的行，也沒有 `MOD-PROBE-CONTROL-` 開頭的行。主 session 這邊則兩行 COMPOSE 標記都有，連 `SHARED` 那行也在。所以這次量測的結果是：標記進了主 session，沒有進到任何一個子代理。
+
+**(1) general-purpose（"mod-probe a general"）：**
+
+> 我沒有用任何工作工具。這次唯一的呼叫是 SubagentHandback，因為報告只能經由它交回。
+>
+> - **MOD-PROBE-COMPOSE-**：沒有。我的系統提示裡沒有任何一行以這個字串開頭，所以沒有可逐字引用的內容。
+> - **MOD-PROBE-CONTROL-**：也沒有。
+>
+> 我的系統提示裡和這次探測沾得上邊的，只有 gitStatus 區塊裡的一則 commit 訊息：`6bcacccb docs: mod probe round 2, prompt.compose reaches the request when the mod is enabled at startup`。它是小寫的 commit 標題，不是以上面任一個前綴開頭的行，不算命中。
+>
+> 結論：在這個子代理的上下文裡，兩個標記都沒有被注入。
+
+**(2) fankeel:fankeel-reader（"mod-probe a reader"）：**
+
+> 我的系統提示裡沒有任何以 MOD-PROBE-COMPOSE- 開頭的行，所以沒有可逐字引用的內容。我的系統提示裡也沒有任何以 MOD-PROBE-CONTROL- 開頭的行。我沒有使用任何工具，這個結論只來自我對自己系統提示內容的檢視。(INFERRED：我沒有對系統提示做字串搜尋，只是通讀後判斷。)
+
+兩邊的 `tool_uses` 都是 1。general 自己說明了這一次是 SubagentHandback，報告只能經由它交回。reader 說它沒用任何工具，但它的報告也是經同一個交回通道送來的，所以那一次應該也是 SubagentHandback。兩邊都沒有呼叫讀檔或搜尋之類的工作工具。

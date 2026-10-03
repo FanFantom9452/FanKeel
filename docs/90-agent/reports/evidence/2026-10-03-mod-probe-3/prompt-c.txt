@@ -1,0 +1,8 @@
+這是一次量測，請嚴格依序做。在同一個回應裡呼叫 Agent 工具兩次，各派一個 subagent_type 為 fankeel:fankeel-reader 的子代理：
+(1) description 為 "mod-probe c low"，prompt 為：
+MOD-PROBE-EFFORT=low
+不用任何工具。17 乘以 23 等於多少？簡短回答。
+(2) description 為 "mod-probe c high"，prompt 為：
+MOD-PROBE-EFFORT=high
+不用任何工具。17 乘以 23 等於多少？簡短回答。
+兩個都返回後，貼出它們的回覆。

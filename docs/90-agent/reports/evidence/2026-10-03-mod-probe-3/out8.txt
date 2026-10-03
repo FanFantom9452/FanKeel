@@ -1,0 +1,15 @@
+兩次回報的原話一字不差，最後一行都是 `MOD-PROBE-SPAWN-1b465a1a-03bf-4625-b98b-641da37268c9`。
+
+**第一次（Agent 派出後返回）：**
+```
+MOD-PROBE-SPAWN-1b465a1a-03bf-4625-b98b-641da37268c9
+```
+
+**第二次（SendMessage 送出後返回）：**
+```
+MOD-PROBE-SPAWN-1b465a1a-03bf-4625-b98b-641da37268c9
+```
+
+有一處和指示不同：Agent 工具沒有 `name` 參數，所以子代理沒能命名為 `mod-probe-b`。我只帶了 `subagent_type`、`description` 和 `prompt`。第二步改用它返回的 agentId `abf9b1b4f04d06294` 當 SendMessage 的收件對象。SendMessage 工具本身有，送出時回傳了 `"Resuming agent abf9b1b"`。
+
+另外，第一次返回時用量顯示 `tool_uses: 1`。兩次的回報都是經由 SubagentHandback 送回來的，所以這一次很可能就是那個回報呼叫，不是讀檔之類的工具。這點我沒有直接查證。
