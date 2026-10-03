@@ -1646,6 +1646,7 @@ test('quota share stays off the keel header caption and the sessions list cost c
     assert.ok(cap, 'the today caption is there');
     assert.match(cap[0], /<b>\$[\d.]+<\/b>/);
     assert.doesNotMatch(cap[0], /%\)/);
+    assert.equal(typeof V.drawList, 'function'); // tests/source.test.js counts an export as used only through V.<name>
     try {
         d.x.drawList();
     } catch (e) { /* drawDetail, run last, has no detail in this fixture; the list is written before it */ }
