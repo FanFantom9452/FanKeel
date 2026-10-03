@@ -955,3 +955,51 @@ test('show lists a handed-off entry once, ahead of the live ones, with its next'
   assert.match(out.out, /handed off — offer Adopt first, naming the task:\n {2}- retune the ramp @ survey {2}\(handed off <1h ago\)\n {4}next: {2}pick up at verify\n {4}bbbbbbbb-1111-2222-3333-444444444444/);
   assert.equal(out.out.split(B).length - 1, 1, 'listed once, not again under other live sessions');
 });
+
+// sessions-2: a session started from inside another Claude Code's shell wrote
+// no sessions/<pid>.json and was refused its own id. Its environment names the
+// session and its process; those two prove it, and only together.
+test('an id the shell\'s own environment proves running is let through when no liveness file names it', () => {
+  const dir = root();
+  const cfg = path.join(dir, 'cfg');
+  fs.mkdirSync(path.join(cfg, 'sessions'), { recursive: true });
+  fs.writeFileSync(path.join(cfg, 'sessions', 'other.json'),
+    JSON.stringify({ pid: process.pid, sessionId: B, cwd: '/somewhere/else' }));
+
+  const { out, code } = run(dir, ['start', '--session', A, '--task', 'x'],
+    { CLAUDE_CODE_SESSION_ID: A, CLAUDE_PID: String(process.pid) });
+  assert.equal(code, 0, out);
+  assert.notEqual(entry(dir, A), null);
+});
+
+test('the environment proves nothing with a dead pid, or with a liveness file under its pid naming someone else', () => {
+  const dir = root();
+  const cfg = path.join(dir, 'cfg');
+  fs.mkdirSync(path.join(cfg, 'sessions'), { recursive: true });
+  fs.writeFileSync(path.join(cfg, 'sessions', process.pid + '.json'),
+    JSON.stringify({ pid: process.pid, sessionId: B, cwd: '/somewhere/else' }));
+
+  const named = run(dir, ['start', '--session', A, '--task', 'x'],
+    { CLAUDE_CODE_SESSION_ID: A, CLAUDE_PID: String(process.pid) });
+  assert.equal(named.code, 1);
+  assert.match(named.out, /No running Claude Code session/);
+
+  const dead = spawnSync(process.execPath, ['-e', '0']).pid;
+  const gone = run(dir, ['start', '--session', A, '--task', 'x'],
+    { CLAUDE_CODE_SESSION_ID: A, CLAUDE_PID: String(dead) });
+  assert.equal(gone.code, 1);
+  assert.equal(entry(dir, A), null, 'refused, and nothing written');
+});
+
+test('a refusal names the session this shell belongs to', () => {
+  const dir = root();
+  const cfg = path.join(dir, 'cfg');
+  fs.mkdirSync(path.join(cfg, 'sessions'), { recursive: true });
+  fs.writeFileSync(path.join(cfg, 'sessions', process.pid + '.json'),
+    JSON.stringify({ pid: process.pid, sessionId: B, cwd: '/somewhere/else' }));
+
+  const { out, code } = run(dir, ['start', '--session', A, '--task', 'x'],
+    { CLAUDE_CODE_SESSION_ID: B, CLAUDE_PID: String(process.pid) });
+  assert.equal(code, 1);
+  assert.match(out, new RegExp('This shell belongs to ' + B));
+});

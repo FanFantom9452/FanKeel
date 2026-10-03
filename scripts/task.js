@@ -291,8 +291,8 @@ function requireSession(opts) {
     if (!id) fail('--session <id> is required. The /fankeel prompt makes the hook say it; use that one.');
     if (!registry.sessionPath(process.cwd(), id)) fail('Not a session id: ' + id);
     const rows = live.runningSessions(live.liveConfigDir());
-    if (rows && rows.length && !rows.some((row) => row.sessionId === id)) {
-        const lines = ['No running Claude Code session has the id ' + id + '.', ''];
+    if (rows && rows.length && !rows.some((row) => row.sessionId === id) && live.envSession(live.liveConfigDir(), process.env) !== id) {
+        const lines = ['No running Claude Code session has the id ' + id + '.' + (process.env.CLAUDE_CODE_SESSION_ID ? ' This shell belongs to ' + process.env.CLAUDE_CODE_SESSION_ID + '.' : ''), ''];
         lines.push('  running now:');
         for (const row of rows) lines.push('    ' + row.sessionId + (row.cwd ? '   ' + row.cwd : ''));
         lines.push('');
