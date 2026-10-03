@@ -149,7 +149,8 @@ than printing them side by side — `agentCost` is `usage.subagents`, priced
 the same way as the session's own `usage`. Opening a row appends how many
 agents ran, as a bare count beside the total rather than a request count or a
 wall-clock of its own. When the profile key `quota.week` is set (machine
-profile, shipped to the page as `STATION.profiles.machine`), `usd()` in the
+or project profile, shipped to the page as `STATION.profiles.machine` and
+`STATION.profiles.projects`), `usd()` in the
 page appends plain text ` (x%)` after each dollar figure, where x is the amount
 divided by `quota.week`; both are API-equivalent estimates, not a measured
 quota percentage, and with the key unset the page is unchanged.

@@ -53,11 +53,19 @@
         return Math.floor(h / 24) + 'd' + (h % 24 ? (h % 24) + 'h' : '');
     }
     function hours(ms) { return (ms / 3.6e6).toFixed(ms >= 3.6e7 ? 0 : 1) + 'h'; }
+    function quotaWeek() {
+        var P = S.profiles || {}, ps = P.projects || {}, ks = Object.keys(ps);
+        for (var i = 0; i < ks.length; i++) {
+            var e = ps[ks[i]] || {}, v = e.values && e.values['quota.week'];
+            if (e.sources && e.sources['quota.week'] === 'project' && typeof v === 'number' && v > 0) return v;
+        }
+        var m = P.machine && P.machine.values;
+        return m && m['quota.week'];
+    }
     function usd(n) {
         if (!n) return '—';
         var s = '$' + (n >= 100 ? n.toFixed(0) : n.toFixed(2));
-        var m = S.profiles && S.profiles.machine && S.profiles.machine.values;
-        var q = m && m['quota.week'];
+        var q = quotaWeek();
         if (typeof q !== 'number' || !(q > 0)) return s;
         var p = n / q * 100;
         return s + ' (' + (p >= 10 ? Math.round(p) : +p.toFixed(2)) + '%)';

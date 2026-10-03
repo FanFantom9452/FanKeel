@@ -1564,3 +1564,22 @@ test('usd appends the share of the weekly quota when profile quota.week is set, 
     } finally { S.profiles = undefined; }
 });
 
+test('usd reads a project-level quota.week: wins over machine, first project wins, inherited or invalid falls back', () => {
+    const S = global.window.STATION;
+    const pj = (v, src) => ({ values: { 'quota.week': v }, sources: { 'quota.week': src } });
+    try {
+        S.profiles = { machine: {}, projects: { a: pj(2000, 'project') } };
+        assert.equal(V.usd(20), '$20.00 (1%)');
+        S.profiles = { machine: { values: { 'quota.week': 4000 } }, projects: { a: pj(2000, 'project') } };
+        assert.equal(V.usd(20), '$20.00 (1%)', 'project beats machine');
+        S.profiles = { machine: { values: { 'quota.week': 4000 } }, projects: { a: pj(2000, 'project'), b: pj(1000, 'project') } };
+        assert.equal(V.usd(20), '$20.00 (1%)', 'first project with a value wins');
+        S.profiles = { machine: { values: { 'quota.week': 4000 } }, projects: { a: pj(2000, 'machine') } };
+        assert.equal(V.usd(20), '$20.00 (0.5%)', 'an inherited entry does not override machine');
+        for (const bad of [pj(0, 'project'), { values: {}, sources: { 'quota.week': 'project' } }]) {
+            S.profiles = { machine: { values: { 'quota.week': 4000 } }, projects: { a: bad } };
+            assert.equal(V.usd(20), '$20.00 (0.5%)');
+        }
+    } finally { S.profiles = undefined; }
+});
+

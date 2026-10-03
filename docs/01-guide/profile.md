@@ -68,7 +68,7 @@ node <plugin>/scripts/task.js profile set commit.format '^(feat|fix|docs)(\([^)]
 node <plugin>/scripts/task.js profile set language 繁體中文
 ```
 
-`quota.week` 也是自由填的值，但填的是數字：你的 Max 20x 一週額度等於多少美元（以 API 價格換算的估算值）。填了之後，監控站每個金額後面會接上「(x%)」，也就是那筆金額除以這個數字；沒填就不顯示比例。它沒有內建值，因為 transcript 與 registry 裡都沒有百分比欄位可以讀，所以只能自己量。校準報告（`docs/90-agent/reports/2026-09-21-quota-calibration.md`）量到的區間約 $2,619–4,584，而且那份報告也指出累積讀數與固定費率互相矛盾，這個區間只能當起點。值必須是大於 0 的數字。例：
+`quota.week` 也是自由填的值，但填的是數字：你的 Max 20x 一週額度等於多少美元（以 API 價格換算的估算值）。填了之後，監控站每個金額後面會接上「(x%)」，也就是那筆金額除以這個數字；沒填就不顯示比例。它沒有內建值，因為 transcript 與 registry 裡都沒有百分比欄位可以讀，所以只能自己量。校準報告（`docs/90-agent/reports/2026-09-21-quota-calibration.md`）量到的區間約 $2,619–4,584，而且那份報告也指出累積讀數與固定費率互相矛盾，這個區間只能當起點。值必須是大於 0 的數字。專案層（不加 --default）與機器層都可設，同一個 key 兩層都有時專案層優先，多個專案各設不同值時取登錄順序第一個有設的專案。例：
 
 ```
 node <plugin>/scripts/task.js profile set quota.week 3000
