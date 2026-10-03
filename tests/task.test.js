@@ -537,6 +537,16 @@ test("take records on the caller's own entry and leaves the source file byte-ide
   assert.notEqual(run(dir, ['take', 'dddddddd-1111-2222-3333-444444444444', 'x', '--session', B]).code, 0);
 });
 
+test('a rename drops the takes line with the rest of the old task', () => {
+  const dir = root();
+  started(dir, A, 'design the agent', 'Waypoint');
+  started(dir, B, 'write the launcher', 'Waypoint');
+  run(dir, ['take', A, '寫 agent', '--session', B]);
+  assert.equal(entry(dir, B).takes.length, 1);
+  assert.equal(run(dir, ['task', 'second', '--session', B]).code, 0);
+  assert.equal(entry(dir, B).takes, undefined);
+});
+
 // Re-stamping `started` handed every future tie-break to whoever started last,
 // which meant a session that inherited three days of work lost the file to a
 // task opened a minute ago.

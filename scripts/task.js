@@ -957,6 +957,7 @@ function cmdTask(root, opts) {
         delete d.scope;
         delete d.notes;
         delete d.next;
+        delete d.takes;
         // The stage names come round again, so a burn left here would give the
         // new task the old one's first sighting and report the difference
         // between two tasks as the cost of one stage.
