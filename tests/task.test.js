@@ -521,6 +521,22 @@ test('adopt copies the task over and stands the source down in the same run', ()
   assert.equal(entry(dir, A).active, false);
 });
 
+test("take records on the caller's own entry and leaves the source file byte-identical", () => {
+  const dir = root();
+  started(dir, A, 'design the agent', 'Waypoint');
+  started(dir, B, 'write the launcher', 'Waypoint');
+  const file = registry.sessionPath(dir, A);
+  const before = fs.readFileSync(file);
+
+  const { out, code } = run(dir, ['take', A, '寫 agent', '--session', B]);
+  assert.equal(code, 0, out);
+  assert.deepEqual(entry(dir, B).takes, [{ from: A, part: '寫 agent' }]);
+  assert.ok(fs.readFileSync(file).equals(before));
+
+  assert.notEqual(run(dir, ['take', B, 'x', '--session', B]).code, 0);
+  assert.notEqual(run(dir, ['take', 'dddddddd-1111-2222-3333-444444444444', 'x', '--session', B]).code, 0);
+});
+
 // Re-stamping `started` handed every future tie-break to whoever started last,
 // which meant a session that inherited three days of work lost the file to a
 // task opened a minute ago.

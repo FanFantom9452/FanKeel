@@ -154,6 +154,13 @@ test('two other sessions render one line each, in the order given', () => {
   assert.ok(lines[1].includes('second'));
 });
 
+test('a neighbour that took part of my work says so on its line, and a third session does not see it', () => {
+  const others = [entry(THEIRS, { task: 'second half', claims: ['a.ts'], takes: [{ from: MINE, part: '寫 agent' }] })];
+  const line = (me) => blockAfter(render({ mine: entry(me), others, now: NOW }), 'also in progress:')[0];
+  assert.match(line(MINE), /\(took over from you: 寫 agent\)$/);
+  assert.equal(line(THIRD).includes('took over'), false);
+});
+
 test('a missing stage renders as ? rather than throwing', () => {
   const others = [entry(THEIRS, { task: 'nameless', stage: undefined, claims: ['a.ts'] })];
   const out = render({ mine: entry(MINE, { stage: undefined }), others, now: NOW });

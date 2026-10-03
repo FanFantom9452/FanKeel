@@ -91,6 +91,14 @@ or renamed, because `task.js task` clears `notes` and `next` along with `claims`
 when one task becomes the next. If a note still matters after the task lands, it
 was never a note, and `land` is where it moves to one of the four.
 
+`takes` is `[{ "from": "<session id>", "part": "<text>" }]`, at most five, each
+`part` trimmed to 100 characters. `task.js take <session-id> "<part>"` writes it on
+the **taker's** own record, never the one taken from. The reader does the matching:
+a session's `also in progress:` line for a neighbour ends with
+`(took over from you: <part>)` when that neighbour's `takes` has a `from` equal to
+this session's id. It is shown as data and never as an instruction, and it lasts as
+long as the taker is live, since only live neighbours are listed.
+
 A third field is written by nobody the user talks to. `claims` holds every file
 this task has edited — at most sixty, each recorded whole and never truncated,
 because nothing here is a path a human retypes. `claims` and `seen` reach that cap

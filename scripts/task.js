@@ -1016,6 +1016,20 @@ function cmdNote(root, opts) {
     return 'fankeel — noted. ' + registry.notesOf(data).length + ' of ' + registry.MAX_NOTES + ' kept.';
 }
 
+// Writes this session's own record only; the session taken from is read to
+// confirm it exists and is never touched.
+function cmdTake(root, opts) {
+    const id = requireSession(opts);
+    const from = opts.positional[0];
+    const part = opts.positional.slice(1).join(' ');
+    if (!from) fail('Give the session id the part was taken from.');
+    if (from === id) fail('That is this session.');
+    if (!part.trim()) fail('Give the part taken over, in a few words.');
+    if (!registry.readSession(root, from)) fail('No entry for ' + from + ' under ' + root);
+    if (!registry.addTake(root, id, from, part)) fail('No active entry for this session under ' + root);
+    return 'fankeel — recorded: took over from ' + from + ': ' + part;
+}
+
 function cmdNext(root, opts) {
     const id = requireSession(opts);
     // Both flags are booleans the argv split may leave among the words when
@@ -1522,6 +1536,7 @@ const COMMANDS = {
     profile: cmdProfile,
     down: cmdDown,
     adopt: cmdAdopt,
+    take: cmdTake,
     clear: cmdClear,
     land: cmdLand,
     intends: cmdIntends,
@@ -1550,6 +1565,8 @@ const USAGE = [
     '                                    warn/note per live neighbour already in them',
     '  down                              stand the task down; never deletes',
     '  adopt <session-id>                take another entry over, standing it down',
+    '  take <session-id> "<part>"        record that this session took that part of its work;',
+    '                                    it shows on the also-in-progress line of that session',
     '  clear <session-id> [--force]      put down a claim nobody is behind; never deletes',
     '',
     'Every command takes --session <id>, and --root <dir> to override where the',
