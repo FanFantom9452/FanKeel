@@ -54,7 +54,7 @@ profile 是 gate 的常備答案：先寫好，fankeel 就不再問那一題。g
 | `commit.format` | commit.js 提交前，每則訊息第一行要符合的正規式；不設就不檢查 | 一個 JavaScript 正規式，比對訊息第一行 | 不設 |
 <!-- PROFILE_TABLE:END -->
 
-`stage.agents` 建議打開，理由記在 `lib/profile.js:424-428`，`the user, 2026-10-02`（使用者，2026-10-02）：主 session 跑長任務時，用 remote control 的人看不到它的 context 堆了多少，除非手動 compact；Claude 本身沒有 context 回收機制，所以最好的做法是開背景的站 agent，每一站在自己的乾淨 context 裡跑，靠檔案互相傳遞資訊，主控只轉路徑。內建值仍是 `false`（`lib/profile.js:39`，`builtin: 'false'`），要打開得自己設。這段理由支持的是「把站交給 agent」這個方向，以及 `all`（每一站都交出去）；它沒有解釋為什麼「建議」欄只挑 survey、build、verify 這三站。精靈 agents 那一步有三顆會交出站的按鈕：「只交出 survey」設 `survey`；「省 context」的值在 `assets/station/station.js:1830`，是 `survey,build,verify`，其餘幾站仍由主控自己跑；「全部交出去」的值在 `assets/station/station.js:1831`，是 `all`，七站都交出去。程式碼裡另有兩組預設：`PRESETS.balanced` 的值在 `lib/profile.js:442`，是 `survey,build,verify`，`PRESETS.lean`（標籤也叫「省 context」）的值在 `lib/profile.js:447`，是 `all`；現在的站頁不再套用這兩組，實際寫入值的是精靈的按鈕，所以在精靈按「省 context」得到的是三站，不是 `all`。`true` 是舊寫法，只等於只交 survey。要自己設，把站名用逗號串起來：
+`stage.agents` 建議打開，理由記在 `lib/profile.js:424-428`，`the user, 2026-10-02`（使用者，2026-10-02）：主 session 跑長任務時，用 remote control 的人看不到它的 context 堆了多少，除非手動 compact；Claude 本身沒有 context 回收機制，所以最好的做法是開背景的站 agent，每一站在自己的乾淨 context 裡跑，靠檔案互相傳遞資訊，主控只轉路徑。內建值仍是 `false`（`lib/profile.js:39`，`builtin: 'false'`），要打開得自己設。這段理由支持的是「把站交給 agent」這個方向，以及 `all`（每一站都交出去）；它沒有解釋為什麼「建議」欄只挑 survey、build、verify 這三站。精靈 agents 那一步有三顆會交出站的按鈕：「只交出 survey」設 `survey`；「省 context」的值在 `assets/station/station.js:1837`，是 `survey,build,verify`，其餘幾站仍由主控自己跑；「全部交出去」的值在 `assets/station/station.js:1838`，是 `all`，七站都交出去。程式碼裡另有兩組預設：`PRESETS.balanced` 的值在 `lib/profile.js:442`，是 `survey,build,verify`，`PRESETS.lean`（標籤也叫「省 context」）的值在 `lib/profile.js:447`，是 `all`；現在的站頁不再套用這兩組，實際寫入值的是精靈的按鈕，所以在精靈按「省 context」得到的是三站，不是 `all`。`true` 是舊寫法，只等於只交 survey。要自己設，把站名用逗號串起來：
 
 ```
 node <plugin>/scripts/task.js profile set stage.agents survey,build,verify
@@ -68,7 +68,7 @@ node <plugin>/scripts/task.js profile set commit.format '^(feat|fix|docs)(\([^)]
 node <plugin>/scripts/task.js profile set language 繁體中文
 ```
 
-`quota.week` 也是自由填的值，但填的是數字：你的 Max 20x 一週額度等於多少美元（以 API 價格換算的估算值）。填了之後，監控站每個金額後面會接上「(x%)」，也就是那筆金額除以這個數字；沒填就不顯示比例。它沒有內建值，因為 transcript 與 registry 裡都沒有百分比欄位可以讀，所以只能自己量。校準報告（`docs/90-agent/reports/2026-09-21-quota-calibration.md`）量到的區間約 $2,619–4,584，而且那份報告也指出累積讀數與固定費率互相矛盾，這個區間只能當起點。值必須是大於 0 的數字。專案層（不加 --default）與機器層都可設，同一個 key 兩層都有時專案層優先，多個專案各設不同值時取登錄順序第一個有設的專案。例：
+`quota.week` 也是自由填的值，但填的是數字：你的 Max 20x 一週額度等於多少美元（以 API 價格換算的估算值）。填了之後，監控站在多數金額後面會接上「(x%)」，也就是那筆金額除以這個數字；但日直方圖與專案圖的縱軸刻度和每根長條的合計、導覽列的天數徽章、花費佔比條的標籤、派工花費條的各段文字，以及 session 頁花費讀數本身都只顯示純金額，session 頁的花費讀數把比例放在下方說明行開頭，滑鼠停留的提示文字則仍保留比例；沒填就不顯示比例。它沒有內建值，因為 transcript 與 registry 裡都沒有百分比欄位可以讀，所以只能自己量。校準報告（`docs/90-agent/reports/2026-09-21-quota-calibration.md`）量到的區間約 $2,619–4,584，而且那份報告也指出累積讀數與固定費率互相矛盾，這個區間只能當起點。值必須是大於 0 的數字。專案層（不加 --default）與機器層都可設，同一個 key 兩層都有時專案層優先，多個專案各設不同值時取登錄順序第一個有設的專案。例：
 
 ```
 node <plugin>/scripts/task.js profile set quota.week 3000
