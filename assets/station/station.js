@@ -729,7 +729,7 @@
                 var c = colorOf('project', r.pkey, o.pkeys);
                 return '<a class="projrow" href="' + projectHash(r.pkey) + '"><span style="min-width:0"><span class="nm"><i class="sw" style="background:'
                     + c + '"></i>' + esc(o.names[r.pkey] || r.pkey) + '</span><span class="pth mono">' + esc(r.pkey) + '</span></span>'
-                    + '<span>' + spark(r.daily, c) + '</span><span class="r">' + usd(r.usd) + '</span><span class="r">' + r.n + '</span>'
+                    + '<span>' + spark(r.daily, c) + '</span><span class="r">' + usd(r.usd, true) + '</span><span class="r">' + r.n + '</span>'
                     + '<span class="r muted">' + ago(r.last) + '</span></a>';
             }).join('') : '<p class="note">' + loc('shared.machineNoSessions', '這台機器上沒有 session') + '</p>');
     }
@@ -2527,7 +2527,7 @@
             dashTodo: dashTodo, dashOrder: dashOrder, dashChooserHtml: dashChooserHtml,
             NAV_TREE: NAV_TREE,
             tuneOpen: tuneOpen, tuneEvents: tuneEvents, toastText: toastText, floatHtml: floatHtml, gateCountdownHtml: gateCountdownHtml, noteHtml: noteHtml, floatNotes: floatNotes, clock: gateClock,
-            changedParts: changedParts, seenHtml: seenHtml,
+            changedParts: changedParts, seenHtml: seenHtml, drawList: drawList,
         };
     }
     if (!doc) return;
@@ -2620,7 +2620,7 @@
                     + colour + '38"></span></div><div class="mute" style="font-size:10.5px;margin-top:4px">'
                     + loc('tune.workedWaitedN', '{a} 做事 · {b} 等你 · {n} 個', { a: hours(ms), b: hours(wait), n: n }) + '</div></td>'
                     + '<td class="r num mute">' + tokens(Math.round(x.burn / n)) + '</td>'
-                    + '<td class="r num">' + usd(x.usd / n) + '</td>'
+                    + '<td class="r num">' + usd(x.usd / n, true) + '</td>'
                     + '<td class="r num" style="color:' + (wait > ms ? 'var(--dn)' : 'var(--mute)') + '">'
                     + Math.round(wait / (ms + wait || 1) * 100) + '%</td></tr>';
             };
@@ -2928,7 +2928,7 @@
         return '<div class="phead khead" data-block="dash-head"><h1>' + icon('dash') + loc('dash.dashboard', '儀表板') + '</h1>'
             + '<p class="kcap"><span>' + loc('dash.capLive', '<b>{n}</b>個 live session', { n: st.live }) + '</span>'
             + '<span' + (st.gates ? '' : ' class="ok"') + '>' + (st.gates ? loc('dash.capGates', '<b>{n}</b>個 gate 在等你', { n: st.gates }) : loc('dash.capNoGates', '沒有 gate 在等你')) + '</span>'
-            + '<span>' + loc('dash.capToday', '今天<b>{v}</b>', { v: usd(st.today) }) + '</span>'
+            + '<span>' + loc('dash.capToday', '今天<b>{v}</b>', { v: usd(st.today, true) }) + '</span>'
             + '<span>' + loc('dash.capReady', '<b>{n}</b>筆 Ready 可以開工', { n: st.ready }) + '</span></p>'
             + '<span class="spacer"></span>'
             + '<button type="button" class="btn' + (view.dchOpen ? ' on' : '') + '" id="dchtog" data-dchtog="1" data-key="dchtog" aria-expanded="' + String(!!view.dchOpen) + '" aria-controls="dchooser">'
@@ -3383,7 +3383,7 @@
                 + (s.hasDetail ? '' : ' disabled title="' + loc('dash.noTranscriptToCompare', '沒有 transcript，沒有細節可比') + '"') + '></td>'
                 + '<td>' + taskCell(s) + '</td><td>' + stageCell(s) + '</td>'
                 + '<td class="r num mute">' + tokens(s.burn) + '</td>'
-                + '<td class="r num">' + usd(cost(s)) + '</td>'
+                + '<td class="r num">' + usd(cost(s), true) + '</td>'
                 + '<td class="c-state">' + statePill(s) + runningTag(s) + '</td>'
                 + '<td class="num mute" style="font-size:11.5px">' + day(s.started) + '</td>'
                 + '<td class="num mute" style="font-size:11.5px">' + ago(s.updated) + '</td></tr>';

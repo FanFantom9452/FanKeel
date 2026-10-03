@@ -1299,7 +1299,7 @@ test('subtabsHtml is empty for a single-link category and a strip with aria-curr
 // returns, so the closures `module.exports` captures are the ones with
 // `NAMES`/`DAYS` already filled in. `DASH.dashLive` etc. can then be called
 // directly, the same as any function on the plain `V`.
-const DASH = (() => {
+const mkDash = (sessions) => {
     const vm = require('node:vm');
     const fs = require('node:fs');
     const path = require('node:path');
@@ -1320,13 +1320,14 @@ const DASH = (() => {
             pricesVerified: '2026-09-04', serve: false,
             projects: [{ root: 'F:\\ws\\alpha', gone: false, unreadable: 0, build: [], mapAt: null }],
             profiles: { machine: { values: {}, sources: {}, unreadable: [] }, projects: {} },
-            profileKeys: {}, classes: {}, sessions: [],
+            profileKeys: {}, classes: {}, sessions,
         },
     };
     const sandbox = { window: win, document: doc, URLSearchParams, fetch() {}, module: { exports: {} } };
     vm.runInNewContext(src, sandbox);
-    return sandbox.module.exports;
-})();
+    return { x: sandbox.module.exports, els, S: win.STATION };
+};
+const DASH = mkDash([]).x;
 
 const DASH_LIVE = [
     { id: 'dl-live', pkey: 'F:\\ws\\alpha', task: 'live one', state: 'live', updated: NOW - 1000, started: NOW - 120000, route: [], stage: 'build' },
@@ -1621,6 +1622,36 @@ test('quota share stays off the event-page toc: the segment meta line is plain d
         assert.ok(ms.some((m) => /\$1500/.test(m)), 'a toc meta line carries the dollars');
         assert.doesNotMatch(ms.join(''), /%\)/);
     } finally { S.profiles = undefined; }
+});
+
+test('quota share stays off the projects table cost cell and the tune-table cost cell', () => {
+    const S = global.window.STATION;
+    try {
+        S.profiles = { machine: { values: { 'quota.week': 20 } } };
+        const proj = V.projectsHtml(V.projectRows(HOME, DAYS), O);
+        const cells = proj.match(/<span class="r">\$[^<]*<\/span>/g) || [];
+        assert.ok(cells.length, 'a project cost cell is there');
+        assert.doesNotMatch(cells.join(''), /%\)/);
+        const R = [{ id: 't1', pkey: 'p', route: ['build'], stage: 'verify', backtracks: 0, stages: [{ stage: 'build', from: T0, to: T0 + 3600000, waited: 0, burn: 10, usd: 5 }] }];
+        const led = V.routeLedger(R);
+        assert.match(led, /<td class="r num">\$[\d.]+<\/td>/, 'the tune cost cell is there');
+        assert.doesNotMatch(led, /%\)/);
+    } finally { S.profiles = undefined; }
+});
+
+test('quota share stays off the keel header caption and the sessions list cost cell', () => {
+    const d = mkDash([Object.assign({}, HOME[0], { id: 'cap-1', state: 'down' })]);
+    d.S.profiles = { machine: { values: { 'quota.week': 20 } }, projects: {} };
+    const cap = d.x.dashPage().match(/<p class="kcap">[\s\S]*?<\/p>/)[0].match(/<span>今天<b>[^<]*<\/b><\/span>/);
+    assert.ok(cap, 'the today caption is there');
+    assert.match(cap[0], /<b>\$[\d.]+<\/b>/);
+    assert.doesNotMatch(cap[0], /%\)/);
+    try {
+        d.x.drawList();
+    } catch (e) { /* drawDetail, run last, has no detail in this fixture; the list is written before it */ }
+    const cell = (d.els.lb.innerHTML.match(/<td class="r num">[^<]*<\/td>/) || [''])[0];
+    assert.match(cell, /\$[\d.]+/, 'the list cost cell is there');
+    assert.doesNotMatch(cell, /%\)/);
 });
 
 test('usd reads a project-level quota.week: wins over machine, first project wins, inherited or invalid falls back', () => {
