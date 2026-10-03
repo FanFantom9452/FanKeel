@@ -1257,7 +1257,7 @@
                 return '<a class="dsrow' + (on ? ' on' : '') + '" href="' + sessionHash(id) + '" data-hist="' + esc(g.stage) + '" aria-pressed="' + on + '"'
                     + ' title="' + esc(loc('ses.dispatchOfShare', '{nm} 派工 {v} · 占派工 {p}%', { nm: nm, v: usd(g.agent), p: Math.round(g.agent / sum * 1000) / 10 })) + '">'
                     + '<span class="dsl">' + esc(nm) + '</span><span class="dst"><i style="width:' + (g.agent / max * 88).toFixed(1)
-                    + '%;background:' + colorOf('stage', g.stage) + '"></i><b>' + usd(g.agent) + '</b></span></a>';
+                    + '%;background:' + colorOf('stage', g.stage) + '"></i><b>' + usd(g.agent, true) + '</b></span></a>';
             }).join('') + '</div>';
     }
     function costHtml(m, x) {
@@ -2504,7 +2504,7 @@
             statePill: statePill, clearStaleControl: clearStaleControl,
             openSections: openSections, downsample: downsample, lineChart: lineChart,
             riseText: riseText, ctxSection: ctxSection, seqHtml: seqHtml, orderSection: orderSection,
-            dur: dur, tasksHtml: tasksHtml, dispatchHtml: dispatchHtml, replayHtml: replayHtml, segmentsOf: segmentsOf, splitHtml: splitHtml,
+            dur: dur, tasksHtml: tasksHtml, dispatchHtml: dispatchHtml, replayHtml: replayHtml, dispatchStagesHtml: dispatchStagesHtml, segmentsOf: segmentsOf, splitHtml: splitHtml,
             splitCount: splitCount,
             pendingGateHtml: pendingGateHtml, pgAnswers: pgAnswers, todoEntry: todoEntry, riseTodo: riseTodo, backTodo: backTodo, todoSpot: todoSpot,
             figures: figures, compareHtml: compareHtml,
@@ -4368,7 +4368,7 @@
             var keys = g.rows.filter(function (r) { return KEY[r.e.kind]; });
             return '<li><button type="button" class="rs sg" data-rs="rs-' + k + '"><i class="bar" style="background:' + color(g) + '"></i><b>' + esc(name(g)) + '</b>'
                 + '<span class="d">' + took(span(g)) + '</span><span class="m">' + (isNum(g.from) ? stamp(g.from).slice(11, 16) + ' · ' : '')
-                + 'context ' + tokens(g.burn) + (g.usd === null ? '' : ' · ' + usd(g.usd)) + ' · ' + loc('disp.nRows2', '{n} 列', { n: g.rows.length }) + '</span></button>'
+                + 'context ' + tokens(g.burn) + (g.usd === null ? '' : ' · ' + usd(g.usd, true)) + ' · ' + loc('disp.nRows2', '{n} 列', { n: g.rows.length }) + '</span></button>'
                 + (keys.length ? '<ol>' + keys.map(function (r) {
                     return '<li><button type="button" class="rs" data-rs="rv-' + r.i + '"><span class="tm">' + (isFinite(r.e.t) ? stamp(r.e.t).slice(11, 16) : '—')
                         + '</span>' + rpTag(r.e.kind) + '<span class="kt">' + esc(keyText(r.e)) + '</span></button></li>';

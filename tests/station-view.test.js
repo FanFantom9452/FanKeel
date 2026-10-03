@@ -1599,6 +1599,30 @@ test('quota share stays off the dispatch cost strip: track label and segment tex
     } finally { S.profiles = undefined; }
 });
 
+test('quota share stays off the dispatch stage-bar label: the bold total is plain, only the hover title carries it', () => {
+    const S = global.window.STATION;
+    try {
+        S.profiles = { machine: { values: { 'quota.week': 4000 } } };
+        const html = V.dispatchStagesHtml({ rows: [{ stage: 'build', agent: 1500 }, { stage: 'verify', agent: 500 }] }, 's1', null);
+        const bare = html.replace(/ title="[^"]*"/g, '');
+        const labels = bare.match(/<b>[^<]*<\/b>/g) || [];
+        assert.deepEqual(labels, ['<b>$1500</b>', '<b>$500</b>'], 'the bar labels are plain dollars');
+        assert.match(html, /title="[^"]*\$1500 \([\d.]+%\)/, 'the hover title still does');
+    } finally { S.profiles = undefined; }
+});
+
+test('quota share stays off the event-page toc: the segment meta line is plain dollars', () => {
+    const S = global.window.STATION;
+    const stages = [{ stage: 'build', from: T0, to: T0 + 3000000, usd: 1500, burn: 1 }, { stage: 'verify', from: T0 + 3000000, to: T0 + 6000000, usd: 500, burn: 1 }];
+    try {
+        S.profiles = { machine: { values: { 'quota.week': 4000 } } };
+        const toc = V.replayHtml(DETAIL_X, {}, { stages, burn: 2 }).match(/<nav class="rptoc"[\s\S]*?<\/nav>/)[0];
+        const ms = toc.match(/<span class="m">[^<]*<\/span>/g) || [];
+        assert.ok(ms.some((m) => /\$1500/.test(m)), 'a toc meta line carries the dollars');
+        assert.doesNotMatch(ms.join(''), /%\)/);
+    } finally { S.profiles = undefined; }
+});
+
 test('usd reads a project-level quota.week: wins over machine, first project wins, inherited or invalid falls back', () => {
     const S = global.window.STATION;
     const pj = (v, src) => ({ values: { 'quota.week': v }, sources: { 'quota.week': src } });
