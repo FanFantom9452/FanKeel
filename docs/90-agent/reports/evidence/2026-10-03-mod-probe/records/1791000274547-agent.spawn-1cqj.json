@@ -1,0 +1,1 @@
+{"event":"agent.spawn","at":1791000274547,"startedAt":1791000274534,"tool_use_id":"toolu_01J8MdTLfR2YYmJ3WbusZ2sR","description":"sonnet 5.5 · inherit: mod-probe a general","subagentType":"general-purpose","parentAgentId":null,"promptLengthBefore":184,"promptLengthAfter":184,"agentId":"a1d8cad388b43dac5","model":"claude-sonnet-5-5","deny":null}
