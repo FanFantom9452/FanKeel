@@ -12,7 +12,7 @@ reverse-index column so that changing a figure says which pages have to
 change with it. This page is that mechanism for fankeel's own dated reports.
 
 Every row below is one of the dated reports at the top level of
-`docs/reports/`. Thirty-nine sit there and thirty-nine have a row; the heading
+`docs/reports/`. Forty-three sit there and forty-three have a row; the heading
 counts rows across both tables, not files. A row is still added by hand, and
 `tests/sources-doc.test.js` fails while a report there has none — the heading
 is the one number left to keep in step by hand.
@@ -36,7 +36,7 @@ dispatch-vs-inline residue (9.2× / 2.55× / 1.5×), which is one gradient, not
 three disagreeing numbers, once each row's Scope says which variable it held
 fixed.
 
-## The thirty-nine reports
+## The forty-two reports
 
 | ID | What it measured | Link | Checked | Evidence level | Scope | Cited by |
 |---|---|---|---|---|---|---|
@@ -79,6 +79,9 @@ fixed.
 | `ADVISOR-TOOL-260929` | 官方文件寫的 advisor 工具（API `advisor_20260301`、Claude Code `/advisor`）能不能拿來做 `/fankeel-ask` 現在做的事：一題具體問題交給比 session 強的模型判一次 | [reports/2026-09-29-advisor-tool.md](../reports/2026-09-29-advisor-tool.md) | 2026-09-29 | read only, n=1 read — 一個 `claude-code-guide` 讀者（sonnet）讀三頁官方文件逐條附來源；沒有實跑，沒有另外逐頁核對，release notes 與 changelog 沒讀 | 文件說：executor 自己決定要不要叫 advisor，`server_tool_use` input 是空的，server 把整段 transcript 交給 advisor，不能指定問題；advisor 不能用工具，只回建議文字；plugin／hook 文件沒寫能呼叫或傳問題。所以照文件看，它不是 `/fankeel-ask` 的替代品。這是文件的說法，不是實跑的結果 | `docs/90-agent/reference/model-choice.md`, `docs/README.md` |
 | `SUBAGENT-MODEL-ENV-260929` | 只設 `CLAUDE_CODE_SUBAGENT_MODEL`、agent 檔沒有 `model:` 時，subagent 實際跑的是哪個模型 | [reports/2026-09-29-subagent-model-env.md](../reports/2026-09-29-subagent-model-env.md) | 2026-09-29 | measured (兩次 headless `claude -p`，Claude Code 2.1.284，n=1 each) | 不設變數時 subagent transcript 的 `message.model` 是 `claude-opus-5-5`，設 `claude-haiku-4-5` 時是 `claude-haiku-4-5-20251001`。各只跑一次；只量了 agent 檔沒有 `model:` 的情況，有 `model:` 時的順序見 `TITLE-PROBE-260929`；只量了 2.1.284 | `docs/README.md` |
 | `READY-ELEVEN-260930` | TODO Ready 十一條裡要量測的四個條目（test-3、tests-1、inject-2、station-8）各自量到什麼 | [reports/2026-09-30-ready-eleven-measurements.md](../reports/2026-09-30-ready-eleven-measurements.md) | 2026-09-30 | measured (每節各自的 n：test-3 與 tests-1 各三次全套，inject-2 閒置與負載各 20 次，station-8 五個 session) | test-3、tests-1：三次都沒重現；inject-2：負載下（約 22 個 node process）沒超過 5 秒，timeout 維持 5；station-8：fail，兩個 session 峰值超過 300k，五個滿 10 個 subagent 的 session 有三個最貴佔比 15% 以上。 | `docs/03-decisions/2026-09-30-ready-eleven.md`, `docs/README.md`, `docs/99-archive/2026-09-30-ready-eleven.md`, `docs/99-archive/2026-09-30-ready-eleven-design.md`, `docs/90-agent/reports/2026-09-30-ready-eleven-measurements.md`, `docs/90-agent/todo/station-8.md` |
+| `MOD-PROBE-261003` | 子代理吃不吃得到 mod 的 prompt.compose | [reports/2026-10-03-mod-probe.md](../reports/2026-10-03-mod-probe.md) | 2026-10-03 | measured (拋棄式探針，n=1，主 session 正控制組三次失敗) | (a) 判無效，不是「否」：主 session 的控制組三次都答沒有，連從未注入的 CONTROL 行也答沒有，所以子代理的答案不能解讀。只量了一種探針設定。 | `docs/90-agent/plans/2026-10-03-mod-probe.md`, `docs/90-agent/reports/2026-10-03-mod-probe-2.md`, `docs/90-agent/todo/mod-1.md`, `docs/README.md` |
+| `MOD-PROBE-2-261003` | mod 啟動時啟用的情況下，prompt.compose 的結果有沒有進送出的請求 | [reports/2026-10-03-mod-probe-2.md](../reports/2026-10-03-mod-probe-2.md) | 2026-10-03 | measured (拋棄式探針與 proxy，n=1) | 進了：結果進送出請求的 system 區塊，模型也照實引用，所以上一輪控制組失敗不是引擎不採用 compose 的結果。只量了 mod 啟動時就啟用的情況。 | `docs/90-agent/reports/2026-10-03-mod-probe-3.md`, `docs/90-agent/todo/mod-1.md`, `docs/README.md` |
+| `MOD-PROBE-3-261003` | 子代理吃得到 prompt.compose 嗎（headless、互動式、熱重載），以及 turn.step 改的 effort 有沒有送出 | [reports/2026-10-03-mod-probe-3.md](../reports/2026-10-03-mod-probe-3.md) | 2026-10-03 | measured (拋棄式探針，每項 n=1，Claude Code 2.1.288) | 子代理收不到 prompt.compose 的結果，headless、互動式與熱重載三邊一致；turn.step 改的 effort 真的送進請求。每項 n=1。 | `docs/90-agent/todo/mod-1.md`, `docs/README.md` |
 
 ## Consulted with no usable numbers
 
