@@ -989,6 +989,18 @@ test('the environment proves nothing with a dead pid, or with a liveness file un
     { CLAUDE_CODE_SESSION_ID: A, CLAUDE_PID: String(dead) });
   assert.equal(gone.code, 1);
   assert.equal(entry(dir, A), null, 'refused, and nothing written');
+
+  // Control: a live pid with no liveness file contradicting it is proved by the
+  // environment alone. The code before envSession refused this.
+  const dir2 = root();
+  fs.mkdirSync(path.join(dir2, 'cfg', 'sessions'), { recursive: true });
+  // Some other session must be listed, or there is nothing to refuse against.
+  fs.writeFileSync(path.join(dir2, 'cfg', 'sessions', 'other.json'),
+    JSON.stringify({ pid: process.pid, sessionId: B, cwd: '/somewhere/else' }));
+  const proved = run(dir2, ['start', '--session', A, '--task', 'x'],
+    { CLAUDE_CODE_SESSION_ID: A, CLAUDE_PID: String(process.pid) });
+  assert.equal(proved.code, 0, proved.out);
+  assert.notEqual(entry(dir2, A), null);
 });
 
 test('a refusal names the session this shell belongs to', () => {
