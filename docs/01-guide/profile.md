@@ -67,6 +67,12 @@ node <plugin>/scripts/task.js profile set commit.format '^(feat|fix|docs)(\([^)]
 node <plugin>/scripts/task.js profile set language 繁體中文
 ```
 
+`quota.week` 也是自由填的值，但填的是數字：你的 Max 20x 一週額度等於多少美元（以 API 價格換算的估算值）。填了之後，監控站每個金額後面會接上「(x%)」，也就是那筆金額除以這個數字；沒填就不顯示比例。它沒有內建值，因為 transcript 與 registry 裡都沒有百分比欄位可以讀，所以只能自己量。校準報告（`docs/90-agent/reports/2026-09-21-quota-calibration.md`）量到的區間約 $2,619–4,584，而且那份報告也指出累積讀數與固定費率互相矛盾，這個區間只能當起點。值必須是大於 0 的數字。例：
+
+```
+node <plugin>/scripts/task.js profile set quota.week 3000
+```
+
 另外有一類不在表裡的 key：`agent.<name>.model` 與 `agent.<name>.effort`，`<name>` 是 plugin 裡某個 agent 的名字，用來單獨調那個 agent 的模型與思考力道。模型的可選值同 `dispatch.floor`，effort 是 Claude Code 接受的五級。設下去時指令會順便把覆寫檔寫到 `.claude/agents/`（加 `--default` 則寫到機器層的 `agents/`）。
 
 ## 在站頁精靈怎麼套
