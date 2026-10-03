@@ -53,7 +53,15 @@
         return Math.floor(h / 24) + 'd' + (h % 24 ? (h % 24) + 'h' : '');
     }
     function hours(ms) { return (ms / 3.6e6).toFixed(ms >= 3.6e7 ? 0 : 1) + 'h'; }
-    function usd(n) { return n ? '$' + (n >= 100 ? n.toFixed(0) : n.toFixed(2)) : '—'; }
+    function usd(n) {
+        if (!n) return '—';
+        var s = '$' + (n >= 100 ? n.toFixed(0) : n.toFixed(2));
+        var m = S.profiles && S.profiles.machine && S.profiles.machine.values;
+        var q = m && m['quota.week'];
+        if (typeof q !== 'number' || !(q > 0)) return s;
+        var p = n / q * 100;
+        return s + ' (' + (p >= 10 ? Math.round(p) : +p.toFixed(2)) + '%)';
+    }
     function ago(ms) {
         if (!ms) return '—';
         var d = Date.now() - ms;

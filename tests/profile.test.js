@@ -517,3 +517,12 @@ test('suggest offers class.default once three class records agree by a majority,
     assert.equal(profile.suggest(d, d).values['class.default'], undefined, 'three against three is no majority');
     assert.equal(profile.suggest(d).values['class.default'], undefined, 'no registry, no class records');
 });
+
+test('quota.week takes a number above zero, and stays off the wizard', () => {
+    assert.equal(profile.parseValue('quota.week', ' 2000 ').value, 2000);
+    assert.equal(profile.parseValue('quota.week', 2000).value, 2000);
+    for (const bad of ['0', '-5', 'abc', '', 'NaN', 'Infinity']) {
+        assert.ok(profile.parseValue('quota.week', bad).error, JSON.stringify(bad));
+    }
+    assert.ok(!Object.keys(profile.WIZARD_KEYS).includes('quota.week'));
+});

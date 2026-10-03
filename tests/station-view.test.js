@@ -1544,3 +1544,23 @@ test('segTip lists the day\'s segments, marks the hovered one, and its parts add
     assert.equal(V.segTip(bars, O, '1999-01-01', null), '');
 });
 
+test('usd appends the share of the weekly quota when profile quota.week is set, and only then', () => {
+    const S = global.window.STATION;
+    S.gates = undefined;
+    const html = () => V.kpiHtml(V.windowTotals(HOME, DAYS), V.windowTotals(HOME, PREV));
+    try {
+        S.profiles = { machine: { values: { 'quota.week': 2000 } } };
+        assert.equal(V.usd(20), '$20.00 (1%)');
+        assert.equal(V.usd(5.4), '$5.40 (0.27%)');
+        assert.equal(V.usd(0), '—');
+        const m = html().match(/30 天花費<\/div><div class="v">\$(\d+\.\d+) \((\d+(?:\.\d+)?)%\)/);
+        assert.ok(m, 'the spend readout carries its percent');
+        assert.ok(Math.abs(Number(m[2]) * 2000 / 100 - Number(m[1])) < 2000 * 0.005 / 100, 'percent times quota is the amount on the same row');
+        for (const none of [undefined, {}, { machine: {} }, { machine: { values: {} } }, { machine: { values: { 'quota.week': 0 } } }]) {
+            S.profiles = none;
+            assert.equal(V.usd(20), '$20.00');
+            assert.doesNotMatch(html(), /%\)/);
+        }
+    } finally { S.profiles = undefined; }
+});
+
