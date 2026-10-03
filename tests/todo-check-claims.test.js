@@ -57,3 +57,28 @@ test('a done entry\'s claims are of the day it closed, and are not recounted', (
   lib.close(dir, 'c-1', { sha: 'abcdef1', at: '2026-10-03' });
   assert.deepEqual(kinds(dir), []);
 });
+
+// todo-check-1: a claim recounted over a file it could not read, or over a
+// tree it could not list, passed as zero; and `in \`lib\`` reached into libx/.
+test('a claim over a tracked file that cannot be read is reported unreadable, not counted as empty', () => {
+  const dir = project();
+  fs.rmSync(path.join(dir, 'scripts', 'c.js'));
+  fs.mkdirSync(path.join(dir, 'scripts', 'c.js'));
+  entry(dir, 'count: 0 `JSON.parse(fs.readFileSync` in `scripts/`\n');
+  assert.deepEqual(kinds(dir), ['docs/todo/c-1.md unreadable claim']);
+  assert.match(check.check(dir).problems[0].detail, /scripts\/c\.js/);
+});
+
+test('a tree that cannot be listed reports the claim unreadable rather than recounting it as zero', () => {
+  const out = check.claimProblems('/nowhere', 'refs: 0 `helper`\n', () => null);
+  assert.deepEqual(out.map((p) => p.kind), ['unreadable claim']);
+});
+
+test('count: in `lib` is the lib directory, not libx beside it', () => {
+  const dir = project();
+  fs.mkdirSync(path.join(dir, 'libx'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'libx', 'd.js'), 'const w = JSON.parse(fs.readFileSync(k));\n');
+  execFileSync('git', ['add', '-A'], { cwd: dir });
+  entry(dir, 'count: 2 `JSON.parse(fs.readFileSync` in `lib`\n');
+  assert.deepEqual(kinds(dir), []);
+});

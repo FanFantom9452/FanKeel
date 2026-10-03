@@ -407,9 +407,9 @@ function checkDoc(root, rel, role, symbols, roots) {
             } else if (n !== null && (wantedEnd || wanted) > n) {
                 out.push({ file: rel, line: lineOf(m.index), tag: 'past-end', what: label + ' but the file ends at ' + n });
             } else if (role === 'reference' || (role === 'todo' && openTodo(text))) {
-                // Reference only. A plan cites lines it is about to change, and
-                // a decision cites the lines that existed the day it was
-                // written; both are the role working, exactly as with `gone`.
+                // Reference pages and open todo entries. A plan cites lines it
+                // is about to change, a decision or a closed entry the lines of
+                // the day it was written; each is the role working, as with `gone`.
                 const quote = quoteBeside(text, m.index + m[0].length);
                 const target = linesOf(root, found);
                 if (quote === null) {

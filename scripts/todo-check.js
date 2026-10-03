@@ -209,15 +209,25 @@ function trackedIn(base, folder) {
 // non-markdown files naming <name> as a word, beside the ones declaring it.
 const CLAIM = /^(count|refs):\s*(\d+)\s+`([^`]+)`(?:\s+in\s+`([^`]+)`)?$/;
 
+// A file git lists but that cannot be read is not a file with nothing in it:
+// counting it as empty is how `count: 0` passed over a tree it never read.
+// Gone from the working tree (ENOENT) is the one exception — it is not there
+// to count. Anything else throws, and the claim is reported unreadable.
 function readText(base, rel) {
-    try { return fs.readFileSync(path.join(base, rel), 'utf8'); } catch (e) { return ''; }
+    try {
+        return fs.readFileSync(path.join(base, rel), 'utf8');
+    } catch (e) {
+        if (e && e.code === 'ENOENT') return '';
+        throw new Error(rel + ' could not be read (' + (e && e.code ? e.code : String(e)) + ')');
+    }
 }
 
 function countLines(base, files, needle, under) {
-    const prefix = under ? under.replace(/\\/g, '/') : '';
+    // `lib` and `lib/` both mean the directory, never `libx/` beside it.
+    const prefix = under ? under.replace(/\\/g, '/').replace(/\/+$/, '') : '';
     let n = 0;
     for (const rel of files) {
-        if (prefix && !rel.startsWith(prefix)) continue;
+        if (prefix && rel !== prefix && !rel.startsWith(prefix + '/')) continue;
         for (const l of readText(base, rel).split('\n')) if (l.includes(needle)) n++;
     }
     return n;
@@ -235,7 +245,7 @@ function countRefs(base, files, name) {
     return n;
 }
 
-function claimProblems(base, body) {
+function claimProblems(base, body, list) {
     const out = [];
     let files = null;
     for (const raw of String(body || '').split(/\r?\n/)) {
@@ -243,10 +253,20 @@ function claimProblems(base, body) {
         const m = CLAIM.exec(line);
         if (!m) continue;
         if (files === null) {
-            const t = trackedFiles(base);
-            files = (t ? t.files : []).filter((f) => !f.toLowerCase().endsWith('.md') && !SKIP_EXT.has(path.extname(f).toLowerCase()));
+            const t = list ? list(base) : trackedFiles(base);
+            if (!t) {
+                out.push({ kind: 'unreadable claim', detail: '`' + line + '` — the tracked files could not be listed, so nothing was recounted.' });
+                return out;
+            }
+            files = t.files.filter((f) => !f.toLowerCase().endsWith('.md') && !SKIP_EXT.has(path.extname(f).toLowerCase()));
         }
-        const found = m[1] === 'count' ? countLines(base, files, m[3], m[4]) : countRefs(base, files, m[3]);
+        let found;
+        try {
+            found = m[1] === 'count' ? countLines(base, files, m[3], m[4]) : countRefs(base, files, m[3]);
+        } catch (e) {
+            out.push({ kind: 'unreadable claim', detail: '`' + line + '` — ' + e.message + ', so it was not recounted.' });
+            continue;
+        }
         if (found !== Number(m[2])) {
             out.push({ kind: 'stale ' + m[1], detail: '`' + line + '` — the tree has ' + found + ' now. Recount it, and fix the sentence it stands behind.' });
         }
@@ -765,4 +785,4 @@ if (require.main === module) {
     process.exit(ok ? 0 : 1);
 }
 
-module.exports = { trackedIn, MAX_ENTRY_CHARS, REREAD_DAYS, STALE_DAYS, SECTIONS, linksIn, entries, timings, width, mmdd, check, report, main };
+module.exports = { trackedIn, MAX_ENTRY_CHARS, REREAD_DAYS, STALE_DAYS, SECTIONS, linksIn, entries, timings, width, mmdd, claimProblems, check, report, main };
