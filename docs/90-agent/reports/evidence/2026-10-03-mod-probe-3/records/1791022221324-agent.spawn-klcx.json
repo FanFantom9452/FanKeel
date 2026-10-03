@@ -1,0 +1,1 @@
+{"event":"agent.spawn","at":1791022221324,"startedAt":1791022221309,"tool_use_id":"toolu_01VEyQxLQoue989ikfXQtf8e","description":"inherit · inherit: mod-probe a general","subagentType":"general-purpose","parentAgentId":null,"promptLengthBefore":86,"promptLengthAfter":86,"agentId":"a4c1d31c4f3a323fb","model":"claude-opus-5-5","deny":null}
