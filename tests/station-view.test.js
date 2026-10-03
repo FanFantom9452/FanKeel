@@ -1564,6 +1564,26 @@ test('usd appends the share of the weekly quota when profile quota.week is set, 
     } finally { S.profiles = undefined; }
 });
 
+test('quota share stays off text in a fixed box: ticks, bar totals, nav badge, cost-share bar; the session cost readout moves it to its sub-line', () => {
+    const S = global.window.STATION;
+    const bare = (h) => h.replace(/<title>[\s\S]*?<\/title>/g, '');
+    try {
+        S.profiles = { machine: { values: { 'quota.week': 2000 } } };
+        const hist = bare(V.histSvg(V.dayBars(HOME, 'usd', 'model', DAYS), O));
+        assert.match(hist, /class="tick"[^>]*>\$/, 'the usd ticks are still there');
+        assert.doesNotMatch(hist, /class="tick"[^>]*>[^<]*%\)/, 'no tick or bar total carries a share');
+        const t0 = V.dayStart(DAYS[0]), t1 = V.dayStart(DAYS[29]) + 864e5;
+        const pts = V.sessionPoints(HOME, 'usd', t0, t1);
+        const chart = V.projectChart([{ pkey: 'p', name: 'p', colour: 'var(--p-0)', points: pts }], { metric: 'usd', t0, t1, days: DAYS, today: DAYS[29] });
+        assert.match(bare(chart), /class="tick"[^>]*>\$/);
+        assert.doesNotMatch(bare(chart), /class="tick"[^>]*>[^<]*%\)/);
+        assert.match(V.navHtml('days', { live: 0, usd: 12.5, sessions: 0, projects: 0, docs: 0 }), /<span class="nb">\$12\.50<\/span>/);
+        const cs = V.costShareHtml(V.stageShare(STAGE_S, null), null);
+        assert.doesNotMatch(cs.replace(/<tr[\s\S]*<\/tr>/g, '').replace(/<small>[\s\S]*?<\/small>/, ''), /%\) ·/, 'bar label and title read "$ · stage share%", not two percents');
+        assert.match(V.sessionHeadHtml(HOME[0], DETAIL_X), /花費<\/div><div class="v">\$[\d.]+<\/div><div class="d">\([\d.]+%\) · /);
+    } finally { S.profiles = undefined; }
+});
+
 test('usd reads a project-level quota.week: wins over machine, first project wins, inherited or invalid falls back', () => {
     const S = global.window.STATION;
     const pj = (v, src) => ({ values: { 'quota.week': v }, sources: { 'quota.week': src } });

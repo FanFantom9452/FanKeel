@@ -62,13 +62,20 @@
         var m = P.machine && P.machine.values;
         return m && m['quota.week'];
     }
-    function usd(n) {
+    // The share of the weekly quota, as '(N%)', or '' when no quota is set.
+    function quotaPct(n) {
+        var q = quotaWeek();
+        if (!n || typeof q !== 'number' || !(q > 0)) return '';
+        var p = n / q * 100;
+        return '(' + (p >= 10 ? Math.round(p) : +p.toFixed(2)) + '%)';
+    }
+    // `plain` drops the share: axis ticks, per-bar labels and text drawn inside
+    // a fixed-width box have no room for it.
+    function usd(n, plain) {
         if (!n) return '—';
         var s = '$' + (n >= 100 ? n.toFixed(0) : n.toFixed(2));
-        var q = quotaWeek();
-        if (typeof q !== 'number' || !(q > 0)) return s;
-        var p = n / q * 100;
-        return s + ' (' + (p >= 10 ? Math.round(p) : +p.toFixed(2)) + '%)';
+        var q = plain ? '' : quotaPct(n);
+        return q ? s + ' ' + q : s;
     }
     function ago(ms) {
         if (!ms) return '—';
@@ -362,8 +369,8 @@
         var p = Math.pow(10, Math.floor(Math.log(v) / Math.LN10)), f = v / p;
         return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p;
     }
-    function metricText(metric, v) {
-        return metric === 'usd' ? (v ? usd(v) : '$0') : metric === 'tokens' ? tokens(v) : hours(v);
+    function metricText(metric, v, plain) {
+        return metric === 'usd' ? (v ? usd(v, plain) : '$0') : metric === 'tokens' ? tokens(v) : hours(v);
     }
     function sessionTotals(s) {
         var t = { usd: 0, tokens: 0, active: 0, main: 0, wait: 0, models: {} };
@@ -552,7 +559,7 @@
             var yy = (base - f * plotH).toFixed(1);
             out += '<line class="' + (f ? 'gridl' : 'base') + '" x1="' + L + '" x2="' + (W - R) + '" y1="' + yy + '" y2="' + yy + '"/>'
                 + '<text class="tick" x="' + (L - 10) + '" y="' + (Number(yy) + 4) + '" text-anchor="end">'
-                + metricText(o.metric, top * f) + '</text>';
+                + metricText(o.metric, top * f, true) + '</text>';
         });
         bars.days.forEach(function (b, i) {
             var cx = (L + i * slot + slot / 2).toFixed(1), x0 = (L + i * slot + slot / 2 - bw / 2).toFixed(1);
@@ -576,7 +583,7 @@
             });
             out += '</g>'
                 + (b.total ? '<text class="tick" x="' + cx + '" y="' + (base - c - 7).toFixed(1) + '" text-anchor="middle">'
-                    + metricText(o.metric, b.total) + '</text>' : '')
+                    + metricText(o.metric, b.total, true) + '</text>' : '')
                 + '<text class="tick" x="' + cx + '" y="' + (base + 17) + '" text-anchor="middle"'
                 + (mark ? ' style="fill:var(--ink);font-weight:600"' : '') + '>' + Number(b.day.slice(8)) + '</text>'
                 + (b.day === o.today || b.day.slice(8) === '01' || i === 0
@@ -873,7 +880,7 @@
         var out = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + loc('proj.perSessionByStart', '每個 session 的{metric}，依開始時間', { metric: METRIC_LABEL[o.metric] }) + '">';
         [0, 0.25, 0.5, 0.75, 1].forEach(function (f) {
             out += '<line class="' + (f ? 'gridl' : 'base') + '" x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(top * f) + '" y2="' + Y(top * f) + '"/>'
-                + '<text class="tick" x="' + (L - 10) + '" y="' + (Number(Y(top * f)) + 4) + '" text-anchor="end">' + metricText(o.metric, top * f) + '</text>';
+                + '<text class="tick" x="' + (L - 10) + '" y="' + (Number(Y(top * f)) + 4) + '" text-anchor="end">' + metricText(o.metric, top * f, true) + '</text>';
         });
         o.days.forEach(function (d, i) {
             var x = X(dayStart(d) + 432e5);
@@ -1218,8 +1225,8 @@
             + (paid.length ? '<div class="csbar" role="group" aria-label="' + loc('ses.costShareByStage', '各 stage 花費占比') + '">' + paid.map(function (g) {
                 var p = pct(g.usd), on = hi === g.stage;
                 return '<button type="button" class="csseg' + (on ? ' on' : '') + '" data-hist="' + esc(g.stage) + '" aria-pressed="' + on + '"'
-                    + ' title="' + esc(name(g.stage) + ' ' + usd(g.usd) + ' · ' + p + '%') + '" style="flex:' + g.usd + ' 1 0;background:'
-                    + colorOf('stage', g.stage) + '">' + (p >= 9 ? '<span>' + esc(name(g.stage)) + '</span><b>' + usd(g.usd) + ' · ' + p + '%</b>' : '')
+                    + ' title="' + esc(name(g.stage) + ' ' + usd(g.usd, true) + ' · ' + p + '%') + '" style="flex:' + g.usd + ' 1 0;background:'
+                    + colorOf('stage', g.stage) + '">' + (p >= 9 ? '<span>' + esc(name(g.stage)) + '</span><b>' + usd(g.usd, true) + ' · ' + p + '%</b>' : '')
                     + '</button>';
             }).join('') + '</div>' : '<p class="tally">' + loc('ses.noDailyCost', '這個 session 沒有按日的花費') + '</p>')
             + '<div class="tbl-wrap"><table class="t cstbl"><thead><tr><th>stage</th><th class="r">' + loc('ses.thTime', '時間') + '</th><th class="r">' + loc('ses.thCost', '花費') + '</th><th class="r">' + loc('ses.thShare', '占比') + '</th>'
@@ -1294,7 +1301,7 @@
         return '<div class="readouts">'
             + roHtml(loc('ses.elapsed', '歷時'), m && m.t1 > m.t0 ? mins(m.t1 - m.t0) : '—', 'active ' + hours(t.active))
             + roHtml('<i class="hatchsw"></i>' + loc('ses.waitingForYou', '等你回答'), mins(waited), m ? loc('ses.nGates', '{n} 次 gate', { n: m.waits.length }) : loc('ses.loadingDetail', '讀取細節…'))
-            + roHtml(loc('ses.cost', '花費'), usd(t.usd), t.usd ? loc('ses.dispatchShare', '派工佔 {p}%', { p: Math.round(agentUsd / t.usd * 100) }) : loc('ses.noDailyCost', '這個 session 沒有按日的花費'))
+            + roHtml(loc('ses.cost', '花費'), usd(t.usd, true), t.usd ? (quotaPct(t.usd) ? quotaPct(t.usd) + ' · ' : '') + loc('ses.dispatchShare', '派工佔 {p}%', { p: Math.round(agentUsd / t.usd * 100) }) : loc('ses.noDailyCost', '這個 session 沒有按日的花費'))
             + roHtml('token', tokens(t.tokens), x ? loc('ses.nMainSessionRequests', '{n} 次主 session 請求', { n: x.requests }) : '')
             + roHtml(loc('ses.dispatch', '派工'), x ? x.rows.length + '<span class="u">agent</span>' : '—', x ? agentCounts(x, s) + loc('ses.nWorkflows', '{n} 個 workflow', { n: x.runs.length }) : '')
             + roHtml(loc('ses.wakes', '叫醒'), wakes === null ? '—' : wakes + '<span class="u">' + loc('ses.times', '次') + '</span>', wakes === null ? '' : loc('ses.dispatchWokeMain', '派工回報叫醒主 session'))
@@ -1462,7 +1469,7 @@
     function navHtml(active, c, ui) {
         var on = navOn(active), shut = (ui && ui.shut) || {};
         // Each badge sits on the page whose rows it counts.
-        var badges = { now: null, live: [c.live + ' live', c.live ? 'live' : ''], days: [usd(c.usd)], sessions: [c.sessions],
+        var badges = { now: null, live: [c.live + ' live', c.live ? 'live' : ''], days: [usd(c.usd, true)], sessions: [c.sessions],
             projects: [c.projects], docs: [c.docs] };
         var link = function (v, href, inner, title) {
             var b = badges[v];
@@ -4345,7 +4352,7 @@
             + track(loc('disp.time2', '時間'), took(total), function (g) { return span(g) === null ? 0 : span(g) / total * 100; }, function (g) {
                 return esc(name(g)) + '<span class="v">' + took(span(g)) + '</span>';
             })
-            + (usdAll ? track(loc('disp.cost3', '花費'), usd(usdAll), function (g) { return (g.usd || 0) / usdAll * 100; }, function (g) { return usd(g.usd); }) : '')
+            + (usdAll ? track(loc('disp.cost3', '花費'), usd(usdAll), function (g) { return (g.usd || 0) / usdAll * 100; }, function (g) { return usd(g.usd, true); }) : '')
             + '<div class="key">' + (waitAll ? '<span><i class="sw hatch"></i>' + loc('disp.waitingOnYouGatePct', '等你回答 gate（{t}，佔 {p}%）', { t: took(waitAll), p: Math.round(waitAll / total * 100) }) + '</span>' : '') + '<span>' + loc('disp.clickJumpToStage', '點一段就跳到那個階段') + '</span></div></div>' : '')
             + (s ? '<p class="tally">' + loc('disp.segmentsSumB', '各段 context 相加 <b>{n}</b>', { n: comma(burnSum) }) + ' <span class="' + (burnSum === (s.burn || 0) ? 'eq">' + loc('disp.equalsSign', '＝') : 'ne">' + loc('disp.notEqualsSign', '≠'))
                 + '</span> ' + loc('disp.sessionsBurnN', '這個 session 的 burn {n}', { n: comma(s.burn || 0) }) + '</p>' : '') + '</div>';
