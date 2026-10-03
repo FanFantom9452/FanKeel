@@ -302,4 +302,4 @@ if (require.main === module) {
     if (code) process.exitCode = code;
 }
 
-module.exports = { main, foldRenames, formatMiss };
+module.exports = { main, foldRenames, formatMiss, stagedModes };

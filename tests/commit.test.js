@@ -453,3 +453,22 @@ test('a mode staged 100755 => 100644 stays 100644 after the commit', () => {
     assert.ok(!res.code, res.text);
     assert.match(git(dir, 'ls-tree', 'HEAD', 'run.sh'), /^100644 /);
 });
+
+// todo-check-1, third item: neither clause had a test that failed without it.
+test('stagedModes hands back a failed git diff --cached --summary as it came', () => {
+    const failed = { status: 128, stdout: '', stderr: 'fatal: bad revision' };
+    assert.equal(commit.stagedModes(() => failed, ['a.txt']), failed);
+});
+
+test('a non-ASCII path staged executable keeps its mode, even where core.quotePath is on', () => {
+    const dir = repo();
+    git(dir, 'config', 'core.fileMode', 'false');
+    git(dir, 'config', 'core.quotePath', 'true');
+    const name = '腳本.sh';
+    fs.writeFileSync(path.join(dir, name), 'echo hi\n');
+    git(dir, 'add', name);
+    git(dir, 'update-index', '--chmod=+x', name);
+    const res = commit.main([requestFile(name + '\n\nfeat: add a script with a non-ASCII name\n')], dir);
+    assert.ok(!res.code, res.text);
+    assert.match(git(dir, 'ls-tree', 'HEAD', name), /^100755 /);
+});
