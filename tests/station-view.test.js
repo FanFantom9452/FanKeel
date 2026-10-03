@@ -1584,6 +1584,21 @@ test('quota share stays off text in a fixed box: ticks, bar totals, nav badge, c
     } finally { S.profiles = undefined; }
 });
 
+test('quota share stays off the dispatch cost strip: track label and segment text are plain, only the hover title carries it', () => {
+    const S = global.window.STATION;
+    const stages = [{ stage: 'build', from: T0, to: T0 + 3000000, usd: 1500, burn: 1 }, { stage: 'verify', from: T0 + 3000000, to: T0 + 6000000, usd: 500, burn: 1 }];
+    try {
+        S.profiles = { machine: { values: { 'quota.week': 4000 } } };
+        const html = V.replayHtml(DETAIL_X, {}, { stages, burn: 2 });
+        const strip = html.match(/data-block="cost-strip">[\s\S]*?<p class="tally">/)[0];
+        const bare = strip.replace(/ title="[^"]*"/g, '');
+        assert.match(bare, /<span class="val">\$2000<\/span>/, 'the cost track label is the plain total');
+        assert.match(bare, /\$1500/, 'a segment text is there');
+        assert.doesNotMatch(bare, /%\)/, 'neither the label nor a segment text carries a share');
+        assert.match(strip, /title="[^"]*\$1500 \([\d.]+%\)"/, 'the hover title still does');
+    } finally { S.profiles = undefined; }
+});
+
 test('usd reads a project-level quota.week: wins over machine, first project wins, inherited or invalid falls back', () => {
     const S = global.window.STATION;
     const pj = (v, src) => ({ values: { 'quota.week': v }, sources: { 'quota.week': src } });

@@ -4352,7 +4352,7 @@
             + track(loc('disp.time2', '時間'), took(total), function (g) { return span(g) === null ? 0 : span(g) / total * 100; }, function (g) {
                 return esc(name(g)) + '<span class="v">' + took(span(g)) + '</span>';
             })
-            + (usdAll ? track(loc('disp.cost3', '花費'), usd(usdAll), function (g) { return (g.usd || 0) / usdAll * 100; }, function (g) { return usd(g.usd, true); }) : '')
+            + (usdAll ? track(loc('disp.cost3', '花費'), usd(usdAll, true), function (g) { return (g.usd || 0) / usdAll * 100; }, function (g) { return usd(g.usd, true); }) : '')
             + '<div class="key">' + (waitAll ? '<span><i class="sw hatch"></i>' + loc('disp.waitingOnYouGatePct', '等你回答 gate（{t}，佔 {p}%）', { t: took(waitAll), p: Math.round(waitAll / total * 100) }) + '</span>' : '') + '<span>' + loc('disp.clickJumpToStage', '點一段就跳到那個階段') + '</span></div></div>' : '')
             + (s ? '<p class="tally">' + loc('disp.segmentsSumB', '各段 context 相加 <b>{n}</b>', { n: comma(burnSum) }) + ' <span class="' + (burnSum === (s.burn || 0) ? 'eq">' + loc('disp.equalsSign', '＝') : 'ne">' + loc('disp.notEqualsSign', '≠'))
                 + '</span> ' + loc('disp.sessionsBurnN', '這個 session 的 burn {n}', { n: comma(s.burn || 0) }) + '</p>' : '') + '</div>';
