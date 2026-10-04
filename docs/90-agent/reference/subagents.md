@@ -818,8 +818,8 @@ Five finished tasks ran every stage controlled (2026-10-03/04), and
 [the measurement report](../reports/2026-10-04-controlled-stages.md) reads
 their transcripts and handoffs seam by seam. Each bullet below keeps how the
 seam works and ends with what those runs showed; a second agent, the profile
-moving mid-stage and claims were exercised by hand, in that report's last
-section.
+moving mid-stage and claims have not been run through yet; that report's last
+section is where the by-hand run will be recorded.
 
 - **What the stage agent cannot do.** It has no `AskUserQuestion`, `Edit` or
   `SendMessage`. `skills/fankeel-build/SKILL.md` tells whoever runs the stage to ask
@@ -854,7 +854,7 @@ section.
   reached since the last matching gate, not that one is working, and
   `hooks/resume.js` does not read it. An agent that died leaves its mark until the
   next gate or the SendMessage fallback.
-  Seen: a message sent while the brain was working was absorbed and the brain returned as usual; resuming a returned design brain after a gate other than option one did not occur, and the by-hand run is in the report's last section ([report](../reports/2026-10-04-controlled-stages.md#實跑觀察使用者親手)).
+  Seen: a message sent while the brain was working was absorbed and the brain returned as usual; resuming a returned design brain after a gate other than option one did not occur, and the by-hand run is still to be recorded in the report's last section ([report](../reports/2026-10-04-controlled-stages.md#實跑觀察使用者親手)).
 - **The profile moves under a running stage.** `hooks/inject.js` re-reads it on every
   prompt, `hooks/brief.js` on every subagent start, `hooks/gate.js` and
   `hooks/resume.js` on every call, `hooks/guard.js` on every main-thread `Edit`,
@@ -864,7 +864,7 @@ section.
   from the station mid-stage changes what those hooks do to that session's next call.
   The presets also write `guard: ask`, which lowers the project's stored `deny` for the
   sessions that start after it; a running session keeps the guard mode its record holds.
-  Seen: not exercised in the five tasks; the by-hand run is in the report's last section ([report](../reports/2026-10-04-controlled-stages.md#實跑觀察使用者親手)).
+  Seen: not exercised in the five tasks; the by-hand run is still to be recorded in the report's last section ([report](../reports/2026-10-04-controlled-stages.md#實跑觀察使用者親手)).
 - **Accounting.** A controlled build's commits run as `scripts/commit.js`, not as
   `git commit` in the main transcript, so the station's replay shows none of them, and
   the agents' own edits are sidechain and not replayed either. `scripts/ctx.js` prints
@@ -878,7 +878,7 @@ section.
 - **Claims.** A verify implementer's mutation edit carries the controller's session
   id, so the mutated file lands on its claims and a second live session sees a
   collision; the ordinary `verify` has the same effect from the parent's own mutation.
-  Seen: not exercised in the five tasks; the by-hand run is in the report's last section ([report](../reports/2026-10-04-controlled-stages.md#實跑觀察使用者親手)).
+  Seen: not exercised in the five tasks; the by-hand run is still to be recorded in the report's last section ([report](../reports/2026-10-04-controlled-stages.md#實跑觀察使用者親手)).
 - **Where it commits.** `scripts/commit.js` commits in the repository at the
   controller's working directory, and does not consult the task's `project`. A
   build brain sends every implementer with `isolation: "worktree"` and puts
