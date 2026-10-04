@@ -1,0 +1,12 @@
+=== 第一則：進受控 stage ===
+這是一次量測，請嚴格依序做。只用 Bash 工具，不要派任何 agent，不要執行任何 fankeel stage。
+1. 跑：echo "pid=$CLAUDE_PID session=$CLAUDE_CODE_SESSION_ID"，逐字貼出輸出。
+2. 跑：node scripts/task.js start --task "mod-probe d" --route survey --session "$CLAUDE_CODE_SESSION_ID"，逐字貼出完整輸出。失敗就停在這裡，不要重試、不要改指令。
+
+=== 第二則：派 reader ===
+這是一次量測。不要執行 survey，不要派 fankeel-brain，不要讀任何檔案。只呼叫 Agent 工具一次：subagent_type 為 fankeel:fankeel-reader，description 為 "mod-probe d reader"，prompt 為：
+不用任何工具。逐字貼出你收到的第一行文字，然後結束。
+它返回後，逐字貼出它的回覆，然後結束。
+
+=== 第三則：放下條目 ===
+只用 Bash 工具跑：node scripts/task.js down --session "$CLAUDE_CODE_SESSION_ID"，逐字貼出輸出，然後結束。
