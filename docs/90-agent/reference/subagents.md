@@ -864,7 +864,7 @@ section is where the by-hand run will be recorded.
   from the station mid-stage changes what those hooks do to that session's next call.
   The presets also write `guard: ask`, which lowers the project's stored `deny` for the
   sessions that start after it; a running session keeps the guard mode its record holds.
-  Seen: not exercised in the five tasks; the by-hand run is still to be recorded in the report's last section ([report](../reports/2026-10-04-controlled-stages.md#實跑觀察使用者親手)).
+  Seen: a mid-stage flip made `hooks/resume.js` read the new file while the guard kept the session's own recorded mode, and inject, brief and gate could not be told apart because the flip kept survey on `stage.agents` ([report](../reports/2026-10-04-controlled-stages.md#profile-中途翻轉)).
 - **Accounting.** A controlled build's commits run as `scripts/commit.js`, not as
   `git commit` in the main transcript, so the station's replay shows none of them, and
   the agents' own edits are sidechain and not replayed either. `scripts/ctx.js` prints

@@ -14,3 +14,5 @@ stamp: 2026-10-01
 要做成：在受控站跑到一半，從站頁套一個 preset，記下下一次 inject、brief、gate、resume、guard 各讀到新舊哪一份 profile，把結果寫進 subagents.md「The profile moves under a running stage」一節。
 
 完成條件：跑過一次 stage.agents=all 的真實 task 並在中途翻轉 profile，五個 hook 的實際行為寫進 subagents.md，這條 TODO 才關。
+
+2026-10-04 跑過一次：resume 與 guard 有了答案，inject、brief、gate 還要一次把在跑的站移出 `stage.agents` 的翻轉才分得出來；這條維持 blocked。

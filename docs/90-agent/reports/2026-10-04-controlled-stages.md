@@ -263,7 +263,7 @@ diff --stat lib/live.js printed nothing, same as the pre-mutation run (the file 
 
 ## 實跑觀察（使用者親手）
 
-（由這個 task 的使用者親手 task 補上：profile 中途翻轉、claims。）
+（由這個 task 的使用者親手 task 補上；還沒補的只剩 claims。）
 
 ### 第二個 agent
 
@@ -287,3 +287,44 @@ diff --stat lib/live.js printed nothing, same as the pre-mutation run (the file 
 第二次看到：本 task 的主控 `session 106c6f2b-ec35-4261-9bfe-0a40eba1459d`，build 第 1 至 5 組都由 brain 跑，第 2、3 組同時跑。第 1、3、4、5 組的標記清了；第 2 組的標記還在 `.fankeel/sessions/106c6f2b-ec35-4261-9bfe-0a40eba1459d.json`：`{"stage":"build","at":1791119768652,"group":2,"agentId":"a9422f42efcdab69d","lap":1,"kind":"group"}`，但它的交接檔 `build-g2.md` 21:16:18 就落地、agent 也收尾了。原因不是兩個 hook 互相蓋掉更新：group 標記只有 `await.js` 回報該組交接檔到了才清（`scripts/await.js:184-187`），這個 session 沒有任何一次 `await.js` 回報第 2 組的交接檔——第 2、3 組都在外面時跑的那次 `await.js` 回的是第 3 組的 commit 請求，第 2 組的報告路徑只以 agent 的回報訊息到主控，那不清任何東西。第 1、3、4、5 組各有一次 `await.js` 回報其交接檔，標記都清了。
 
 判定：（一）SendMessage 同一個 agent 會用同一個 `agentId` 與 `lap` 重新標記，`lap` 不因續用而加；（二）agent 被停掉後標記留到 `await.js` 判 `lost` 才清，約在 agent 停筆後 11 分鐘，idle 是 3 分鐘，原因不明；（三）group 標記只由 `await.js` 回報交接檔清，交接檔以別的路徑到主控時不清。已記為 TODO `stage-agents-14`。
+
+### profile 中途翻轉
+
+使用者在 B（`session c5f050e3-5f12-481a-a465-68725c68f38f`，task 接縫探測，受控 survey）跑到一半時翻轉 profile。證據：`.fankeel/build/2026-10-04-todo-patrol-five/flip-action.log`（翻轉動作）、`flip.log`（每 10 秒取樣 profile 與 B 的記錄）、`b-window-paste.txt`（B 的畫面，第三、第四次貼上）。時間皆 2026-10-04 +0800。
+
+`flip-action.log` 記下翻轉的時刻與寫入者：
+
+```text
+22:18:17 B inflight seen: {"stage":"survey","at":1791123496267,"group":1,"agentId":"a1753da44f3087db2","lap":1}
+fankeel — profile: guard = ask  → F:\ymlab\fankeel\.fankeel\profile.json
+fankeel — profile: stage.agents = survey,build,verify  → F:\ymlab\fankeel\.fankeel\profile.json
+22:18:18 flipped; profile.json now:
+```
+
+B 續用的 survey agent `a1753da44f3087db2` 一被標記為 in flight，watcher 就跑 `node scripts/task.js profile set guard ask` 與 `... stage.agents survey,build,verify`，這兩個值正是 `lib/profile.js` 的 `PRESETS.balanced`（平衡 preset）會改的兩項。`flip.log` 的取樣顯示翻轉前後：
+
+```text
+22:18:14 profile guard=deny agents=["survey","design","plan","build","verify","audit","land"] | B stage=survey active=true guard=deny recProfileAgents=["survey","design","plan","build","verify","audit","land"] inflight=null gateAt=undefined
+22:18:24 profile guard=ask agents=["survey","build","verify"] | B stage=survey active=true guard=deny recProfileAgents=["survey","design","plan","build","verify","audit","land"] inflight={"stage":"survey","at":1791123496267,"group":1,"agentId":"a1753da44f3087db2","lap":1} gateAt=undefined
+```
+
+檔案變了，B 的 session 記錄裡 `guard` 與 `profile.stage.agents` 沒變。
+
+| hook | 讀到 | 證據 |
+| --- | --- | --- |
+| resume（`hooks/resume.js`，post-answer hook） | 新 | B 的 post-answer 區塊翻轉前兩次印 `guard deny`，翻轉後印 `profile: land merge, no push · archive plan true · guard ask · design.mockup opus`（第四次貼上，B 引述） |
+| inject（`hooks/inject.js:225` 每個 prompt 讀 `profileFor`） | 分不出 | B 每個 prompt 的區塊沒有 `profile:` 行（B 列了區塊的各段）；survey 在新舊兩份 profile 的 `stage.agents` 裡都有，區塊的樣子不會不同 |
+| brief（`hooks/brief.js:148`） | 分不出 | fankeel-reader（`agent-abbfd8c576e59d2a3`，parent `a1753da44f3087db2`）22:18:27 啟動，在翻轉之後，但 reader 的 brief 沒有任何依 profile 而變的內容 |
+| gate（`hooks/gate.js:202` 讀 `profileFor` 判 `controlled`） | 分不出 | B 的 gate 在翻轉之後送出，而 survey 在新舊 profile 下都是受控 |
+| guard（`lib/guard.js:53`，`guardMode(data)` 讀 `data.guard`） | 舊 | B 派 fankeel-fixer 在 `lib/quota.js`（`session 106c6f2b` 已 claim）加 `// probe`，直接被拒、沒有權限提示：`fankeel: lib/quota.js is claimed by another live session.`，點名 `TODO 全表盤點 @ build`；`lib/quota.js` 沒變。模式來自 session 記錄自己的 `guard`，是 `task.js start` 從 profile 抄來的，仍是 deny；profile 新的 `guard: ask` 到不了在跑的 session。拒絕訊息的修法指令點的是 B 的 session，所以 subagent 的編輯算在 B 頭上 |
+
+另一個沒預期的觀察：B 的主控自己發現 profile 變了（`git diff -- .fankeel/profile.json`），說它分不出是誰寫的，沒有動它。
+
+與計畫不同的兩處：
+
+- 寫檔的是 CLI，不是站頁。B 的 agent 約 90 秒就跑完，使用者來不及到站頁套 preset，所以請控制者用 `task.js profile set` 做。檔案與鍵都一樣，但沒走站頁那條路。
+- 計畫的 `/resume` 步驟沒做。`hooks/resume.js` 是 post-answer hook，回答 gate 時已經跑過它。
+
+翻轉後立刻還原：`git show HEAD:.fankeel/profile.json > .fankeel/profile.json`，`flip-action.log` 記 `restored 22:24:17`，`git diff --stat` 什麼都沒印。
+
+缺口：inject、brief、gate 三個 hook 沒測到。這次翻轉讓 survey 留在 `stage.agents` 裡，三者的輸出新舊相同。要測得到，得翻成把在跑的站移出 `stage.agents` 的 profile，例如手動 preset（把 `stage.agents` 設為 false）。
