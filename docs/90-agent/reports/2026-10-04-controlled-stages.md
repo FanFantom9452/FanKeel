@@ -263,7 +263,7 @@ diff --stat lib/live.js printed nothing, same as the pre-mutation run (the file 
 
 ## 實跑觀察（使用者親手）
 
-（由這個 task 的使用者親手 task 補上；還沒補的只剩 claims。）
+（由這個 task 的使用者親手 task 補上。）
 
 ### 第二個 agent
 
@@ -328,3 +328,37 @@ B 續用的 survey agent `a1753da44f3087db2` 一被標記為 in flight，watcher
 翻轉後立刻還原：`git show HEAD:.fankeel/profile.json > .fankeel/profile.json`，`flip-action.log` 記 `restored 22:24:17`，`git diff --stat` 什麼都沒印。
 
 缺口：inject、brief、gate 三個 hook 沒測到。這次翻轉讓 survey 留在 `stage.agents` 裡，三者的輸出新舊相同。要測得到，得翻成把在跑的站移出 `stage.agents` 的 profile，例如手動 preset（把 `stage.agents` 設為 false）。
+
+### claims
+
+使用者在 B（`session c5f050e3-5f12-481a-a465-68725c68f38f`，task 接縫探測，受控 survey，guard deny）要 B 的主控派一個 `fankeel:fankeel-mutator`：把 `lib/live.js:42` 的 `pid <= 0` 改成 `pid < 0`，跑 `node --test tests/live.test.js`，然後還原。證據在 `.fankeel/build/2026-10-04-todo-patrol-five/`：`claims.log`（每秒取樣 B 的 claims 與 `git diff --stat -- lib/live.js`，只記有變的時候；`lib/live.js` 有 diff 時另跑本 session 的 `task.js show`，只留含 `clash`、`collid`、`also in progress`、`lib/live` 的行）、`claims-show-A.txt`（還原後本 session 的 `task.js show`）、`claims-refusal-A.txt`（本 session 那一刀的拒絕訊息全文）、`b-window-paste.txt`（B 的畫面，第五次貼上）。時間皆 2026-10-04 +0800。
+
+```text
+22:27:06 B claims lib/live.js=false n=1 | live.js diff: none
+22:29:44 B claims lib/live.js=true n=2 | live.js diff:  1 file changed, 1 insertion(+), 1 deletion(-)
+    - hands: flip recorded, -5 stays open; claims via lib/live.js
+  - 接縫探測：盤點 docs/90-agent/todo/ 裡 label 是 stage-agents 的條目 @ survey  (touched: .fankeel/build/task-20261004T134908/survey.md, lib/live.js)
+22:29:51 B claims lib/live.js=true n=2 | live.js diff: none
+```
+
+1. mutator 的編輯 22:29:44 落地，`lib/live.js` 同一秒進了 B 的 claims（n 由 1 變 2）。B 的 guard 是 deny，這一刀沒被擋，因為本 session 的 claims 沒有 `lib/live.js`。subagent 的編輯算在派它的 session 頭上，跟 `### profile 中途翻轉` 裡 fixer 被拒時點名 B 一致。
+2. 同一秒，本 session 的 `task.js show` 把 B 的 task 列在 also in progress，touched 含 `lib/live.js`，沒有任何 clash 行。兩邊不共用檔，所以沒有撞檔可報：`lib/guard.js` 的 `sharedWith` 只在兩邊都持有同一個檔時才算 `clash`。
+3. 22:29:51 檔案已還原（diff 為空），`lib/live.js` 仍在 B 的 claims。依 `skills/fankeel/SKILL.md`，claims 只有 `task.js task` 換 task 時才清。
+4. 還原之後約 22:32，本 session 派一個 `fankeel:fankeel-implementer` 在 `lib/live.js:42` 行尾加 ` // probe`，PreToolUse 直接拒絕，沒有權限提示；之後 `git diff --stat -- lib/live.js` 沒有輸出。拒絕訊息開頭：
+
+```text
+fankeel: lib/live.js is claimed by another live session.
+
+  - 接縫探測：盤點 docs/90-agent/todo/ 裡 label 是 stage-agents 的條目 @ survey
+    node F:\ymlab\fankeel\scripts\task.js clear c5f050e3-5f12-481a-a465-68725c68f38f --force --session 106c6f2b-ec35-4261-9bfe-0a40eba1459d
+```
+
+另外看到：mutation 活下來了。B 的 mutator 回報改前改後都是 `ℹ pass 19 / ℹ fail 0`。`tests/live.test.js` 沒有呼叫 `running(`；其他測試只有 `tests/serve.test.js:116` 與 `tests/serve.test.js:261` 以真的 pid 呼叫 `live.running`，碰不到 pid 為 0 的邊界。
+
+與計畫不同的三處：
+
+- 檔案與 mutation 換了。計畫寫的是 `lib/quota.js` 的 `MIN_POINTS`，但 `lib/quota.js` 已在本 session 的 claims，而 B 的 guard 是 deny，mutator 會被拒（`### profile 中途翻轉` 裡 B 的 fixer 就是這樣被拒的）；使用者改用 `lib/live.js`。
+- 不是受控 verify。B 在受控 survey，mutator 由 B 的主控直接派，不經 verify 的 brain。寫進 claims 的仍是同一條路：`hooks/touch.js` 把 subagent 的編輯記在派它的 session。
+- 計畫第 2 步要主控在改檔與還原之間手動讀 claims。改檔只維持約 7 秒，改由每秒取樣的 watcher 代讀。
+
+判定：（一）subagent 的 mutation 編輯讓被改的檔進了派它的 session 的 claims，還原之後 claim 還在；（二）另一個 live session 不會被主動告知撞檔，因為它自己的 claims 沒有那個檔，區塊只把那個檔列在對方的 touched；（三）它一動那個檔就撞上 guard，deny 下直接拒絕。

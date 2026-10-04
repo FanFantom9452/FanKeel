@@ -818,8 +818,8 @@ Five finished tasks ran every stage controlled (2026-10-03/04), and
 [the measurement report](../reports/2026-10-04-controlled-stages.md) reads
 their transcripts and handoffs seam by seam. Each bullet below keeps how the
 seam works and ends with what those runs showed; a second agent, the profile
-moving mid-stage and claims have not been run through yet; that report's last
-section is where the by-hand run will be recorded.
+moving mid-stage and claims were run by hand afterwards, and that report's last
+section records them.
 
 - **What the stage agent cannot do.** It has no `AskUserQuestion`, `Edit` or
   `SendMessage`. `skills/fankeel-build/SKILL.md` tells whoever runs the stage to ask
@@ -875,10 +875,13 @@ section is where the by-hand run will be recorded.
   a resume never re-injected the brief into the agent's context, and the
   transcript keeps the dispatch-time title.
   Seen: the three answers above ([report](../reports/2026-10-04-controlled-stages.md#記帳)).
-- **Claims.** A verify implementer's mutation edit carries the controller's session
-  id, so the mutated file lands on its claims and a second live session sees a
-  collision; the ordinary `verify` has the same effect from the parent's own mutation.
-  Seen: not exercised in the five tasks; the by-hand run is still to be recorded in the report's last section ([report](../reports/2026-10-04-controlled-stages.md#實跑觀察使用者親手)).
+- **Claims.** A subagent's mutation edit carries the session id of the session that
+  dispatched it, so the mutated file lands on that session's claims and stays there
+  after the mutation is restored; the ordinary `verify` has the same effect from the
+  parent's own mutation. A second live session is not told: the file is not on its own
+  claims, so its block lists it only under the other task's touched paths. It meets the
+  collision when it edits the file, and under `deny` that edit is refused.
+  Seen: a mutator dispatched from a second window put `lib/live.js` on that session's claims for the rest of its task, and an edit from this session was then refused under `deny` ([report](../reports/2026-10-04-controlled-stages.md#claims)).
 - **Where it commits.** `scripts/commit.js` commits in the repository at the
   controller's working directory, and does not consult the task's `project`. A
   build brain sends every implementer with `isolation: "worktree"` and puts
