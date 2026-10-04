@@ -30,6 +30,7 @@
             'shared.noTimeByModel': 'time has no model to split by: spans record only stage and who ran, not model',
             'shared.noTimeByKind': 'time has no kind to split by: spans record only stage and who ran, not token or cost',
             'shared.cost30d': '30-day cost',
+            'shared.quotaCalibrated': 'weekly quota calibrated {d}',
             'shared.activeTime': 'active time',
             'shared.waitShare': 'wait share',
             'shared.noPriorData': 'no prior data',

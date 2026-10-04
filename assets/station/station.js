@@ -490,7 +490,7 @@
     function kpiHtml(cur, prev) {
         var share = function (t) { return t.main + t.wait ? t.wait / (t.main + t.wait) : 0; };
         var out = '<div class="readouts">'
-            + roHtml(loc('shared.cost30d', '30 天花費'), usd(cur.usd), delta(cur.usd, prev.usd))
+            + roHtml(loc('shared.cost30d', '30 天花費'), usd(cur.usd), delta(cur.usd, prev.usd) + (quotaDay() ? ' · ' + loc('shared.quotaCalibrated', '週額度 {d} 校準', { d: quotaDay() }) : ''))
             + roHtml('token', tokens(cur.tokens), delta(cur.tokens, prev.tokens))
             + roHtml(loc('shared.activeTime', 'active 時間'), hours(cur.active), delta(cur.active, prev.active))
             + roHtml('<i class="hatchsw"></i>' + loc('shared.waitShare', '等待佔比'), Math.round(share(cur) * 1000) / 10 + '<span class="u">%</span>',
@@ -5529,6 +5529,15 @@
             });
         };
         w.setInterval(poll, 5000);
+    }
+
+    // spend-1: the day scripts/quota.js calibrated the quota in force, or null
+    // for a quota set by hand or a project's own, which carry no day.
+    function quotaDay() {
+        var m = S.profiles && S.profiles.machine && S.profiles.machine.values;
+        var d = m && m['quota.calibrated'];
+        var q = quotaWeek();
+        return typeof d === 'string' && q && q === m['quota.week'] ? d : null;
     }
 
     draw();

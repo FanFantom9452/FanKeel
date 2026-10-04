@@ -1674,3 +1674,20 @@ test('usd reads a project-level quota.week: wins over machine, first project win
     } finally { S.profiles = undefined; }
 });
 
+test('the 30-day spend readout names the day quota.week was calibrated, only for the machine quota quota.js wrote', () => {
+    const S = global.window.STATION;
+    S.gates = undefined;
+    const html = () => V.kpiHtml(V.windowTotals(HOME, DAYS), V.windowTotals(HOME, PREV));
+    try {
+        S.profiles = { machine: { values: { 'quota.week': 3000, 'quota.calibrated': '2026-09-23' } } };
+        assert.match(html(), /週額度 2026-09-23 校準/);
+        S.profiles = { machine: { values: { 'quota.week': 3000 } } };
+        assert.doesNotMatch(html(), /校準/);
+        S.profiles = { machine: { values: { 'quota.calibrated': '2026-09-23' } } };
+        assert.doesNotMatch(html(), /校準/);
+        S.profiles = { machine: { values: { 'quota.week': 3000, 'quota.calibrated': '2026-09-23' } },
+            projects: { p: { values: { 'quota.week': 500 }, sources: { 'quota.week': 'project' } } } };
+        assert.doesNotMatch(html(), /校準/, 'a project\'s own quota carries no calibration day');
+    } finally { S.profiles = undefined; }
+});
+
