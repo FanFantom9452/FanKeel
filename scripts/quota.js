@@ -43,9 +43,30 @@ function main(argv) {
     const warn = r.skipped ? '\nquota.js: warning: ' + r.skipped + ' transcript file(s) or directories could not be read; their spend is missing, so quota.week is too low' : '';
     if (values['dry-run']) return { text: line + warn, code: 0 };
     const file = profile.machineFile(dir);
-    for (const [key, value] of [['quota.week', r.week], ['quota.calibrated', r.day]]) {
+    const pairs = [['quota.week', r.week], ['quota.calibrated', r.day]];
+    for (const [key, value] of pairs) {
+        const p = profile.parseValue(key, value);
+        if (p.error) return { text: 'quota.js: ' + p.error, code: 1 };
+    }
+    // The pair is all-or-nothing: a second write that fails must not leave
+    // a file holding only quota.week.
+    let prior = null;
+    try {
+        prior = fs.readFileSync(file, 'utf8');
+    } catch (e) {
+        if (e.code !== 'ENOENT') return { text: 'quota.js: cannot read ' + file + ': ' + e.message, code: 1 };
+    }
+    for (const [key, value] of pairs) {
         const w = profile.write(file, key, value);
-        if (!w.ok) return { text: 'quota.js: ' + w.reason, code: 1 };
+        if (!w.ok) {
+            try {
+                if (prior === null) fs.rmSync(file, { force: true });
+                else fs.writeFileSync(file, prior);
+            } catch (e) {
+                return { text: 'quota.js: ' + w.reason + '; could not restore ' + file + ': ' + e.message, code: 1 };
+            }
+            return { text: 'quota.js: ' + w.reason, code: 1 };
+        }
     }
     return { text: line + warn + '\nwrote ' + file, code: 0 };
 }

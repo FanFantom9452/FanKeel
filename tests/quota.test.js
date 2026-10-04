@@ -132,3 +132,28 @@ test('spentBetween counts an unlistable subagents directory as skipped, a missin
         fs.readdirSync = real;
     }
 });
+
+test('quota.js restores the machine file when the second write fails, and removes it when there was none', () => {
+    const dir = account();
+    fs.writeFileSync(path.join(dir, 'tokenbar-usage.jsonl'), [line(100, 10, 9000), line(400, 40, 9000)].join('\n') + '\n');
+    const file = profile.machineFile(dir);
+    const realWrite = profile.write;
+    const failSecond = () => {
+        let n = 0;
+        profile.write = (...a) => (++n === 2 ? { ok: false, reason: 'disk full' } : realWrite(...a));
+    };
+    try {
+        failSecond();
+        const none = main(['--claude-dir', dir]);
+        assert.equal(none.code, 1);
+        assert.match(none.text, /disk full/);
+        assert.equal(fs.existsSync(file), false, 'no file before, none after');
+        const before = '{\n  "language": "x"\n}\n';
+        fs.writeFileSync(file, before);
+        failSecond();
+        assert.equal(main(['--claude-dir', dir]).code, 1);
+        assert.equal(fs.readFileSync(file, 'utf8'), before, 'byte-identical to before');
+    } finally {
+        profile.write = realWrite;
+    }
+});

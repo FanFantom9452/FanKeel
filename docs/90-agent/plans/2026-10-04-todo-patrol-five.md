@@ -77,7 +77,7 @@ refactor: drop guard.js's unused logicalPath
 ## Task 2: 刪 `lib/render.js` 的 `SURVEY_SCRIPT` 與 `TODO_CHECK_SCRIPT`（cleanup-1）
 
 **Files:**
-- Modify: `lib/render.js:20-710` — 刪兩個常數與它們的註解（十行）
+- Modify: `lib/render.js:20-701` — 刪兩個常數與它們的註解（十行）
 - Modify: `lib/map.js:34-46` — 第 37-45 行的註解不再指向 `lib/render.js:28`，行數不變
 - Modify: `docs/90-agent/reference/subagents.md:789-806` — 第 791、796、798、804 行的 `lib/render.js` 行號各減 10
 - Test: `tests/render.test.js` — 不再 import 兩個常數，改用 `PLUGIN_ROOT` 組路徑
@@ -151,7 +151,7 @@ refactor: drop render.js's SURVEY_SCRIPT and TODO_CHECK_SCRIPT
 ## Task 3: 刪 `lib/stages.js` 的 `SURVEY_TOKEN`（cleanup-1）
 
 **Files:**
-- Modify: `lib/stages.js:450-724` — 刪 `SURVEY_TOKEN` 那一行與匯出
+- Modify: `lib/stages.js:450-723` — 刪 `SURVEY_TOKEN` 那一行與匯出
 - Modify: `docs/90-agent/reference/subagents.md:559-562` — 第 561 行的 `lib/stages.js:695` 改成 `:694`
 - Test: `tests/render.test.js` — `SURVEY_TOKEN` 改用 `TOKENS.survey`
 

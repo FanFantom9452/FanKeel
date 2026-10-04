@@ -263,8 +263,6 @@ diff --stat lib/live.js printed nothing, same as the pre-mutation run (the file 
 
 ## 實跑觀察（使用者親手）
 
-（由這個 task 的使用者親手 task 補上。）
-
 ### 第二個 agent
 
 使用者在第二個視窗（B，`session c5f050e3-5f12-481a-a465-68725c68f38f`，task 接縫探測，route `survey`）跑；`.fankeel/build/2026-10-04-todo-patrol-five/b-inflight.log` 每 15 秒取樣、只記 B 的 `inflight` 有變的時候。時間皆 2026-10-04 +0800。
