@@ -20,7 +20,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { readObject } = require('../lib/json.js');
-const { execFileSync } = require('node:child_process');
 const { parseArgs: parseArgv } = require('node:util');
 
 const { trackedFiles, isRepo } = require('../lib/tracked.js');
@@ -28,7 +27,7 @@ const { isSubtree } = require('./survey.js');
 const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
 const { firstTable } = require('../lib/map.js');
-const { orderByEdit } = require('../lib/blame.js');
+const { git, orderByEdit } = require('../lib/blame.js');
 const { human } = require('../lib/report.js');
 // `require.main === module` guards its CLI body, so requiring it here does not
 // run `todo-check`'s own report — only `entries` gets used.
@@ -106,22 +105,6 @@ const NOT_PROJECTS = new Set([
     'dist', 'build', 'out', 'target', 'coverage', 'vendor',
     'bin', 'obj', 'Debug', 'Release',
 ]);
-
-function git(dir, args) {
-    try {
-        return execFileSync('git', args, {
-            cwd: dir,
-            encoding: 'utf8',
-            maxBuffer: 8 * 1024 * 1024,
-            // Same reasoning as survey.js: asking a directory that is not a
-            // repository is a normal step, and git's answer on stderr would be
-            // quoted back as if it were a finding.
-            stdio: ['ignore', 'pipe', 'ignore'],
-        });
-    } catch (e) {
-        return null;
-    }
-}
 
 // Branch and how dirty, or null for anything that is not a repository. A
 // detached HEAD reports as `HEAD`, which is what git calls it and what the user

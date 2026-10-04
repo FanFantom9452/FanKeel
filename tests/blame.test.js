@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
-const { blameTimes } = require('../lib/blame.js');
+const { blameTimes, git: gitOut } = require('../lib/blame.js');
 const mkTmp = require('./tmp.js');
 
 const JAN = '2026-01-01T00:00:00+0000';
@@ -53,4 +53,10 @@ test('blameTimes still dates an edited line to the edit', () => {
     const dir = repo([A, B, C]);
     recommit(dir, [A, B.replace('placement', 'placement, moved to the top'), C]);
     assert.deepEqual(blameTimes(dir, 'TODO.md'), [Date.parse(JAN), Date.parse(FEB), Date.parse(JAN)]);
+});
+
+test('git returns stdout in a repository and null outside one', () => {
+    const dir = repo([A]);
+    assert.match(gitOut(dir, ['log', '--format=%s']), /^one\n$/);
+    assert.equal(gitOut(mkTmp('fankeel-notrepo-'), ['rev-parse', 'HEAD']), null);
 });
