@@ -163,12 +163,11 @@ test('probe is true only for a listener naming the recorded pid, and false for a
 });
 
 // A hook calls fetchHealth and then has to exit on its own
-// (hooks/inject.js, through ensureServe): whatever the request leaves
-// behind must not hold the process open. The listener keeps an idle
-// connection for Node's default 5 s and undici's client keeps one 4 s, so
-// a referenced idle socket shows up as a child that takes seconds rather
-// than a fraction of one.
-test('a process that probes a station exits on its own, with no idle socket holding it open', async () => {
+// (hooks/inject.js, through ensureServe). This test guards the child's
+// exit time (under 3 s), not a particular cause: a mutation to http.get
+// with the default keep-alive agent was run and left it green, so it does
+// not prove an idle socket is caught.
+test('a process that probes a station exits on its own within 3 seconds', async () => {
     const mine = await listener({ pid: process.pid });
     try {
         const script = "require(process.argv[1]).probe({ pid: Number(process.argv[2]), url: process.argv[3] }, 2000).then((ok) => { process.stdout.write(String(ok)); });";
