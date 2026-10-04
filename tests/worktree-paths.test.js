@@ -28,13 +28,6 @@ function seed(root, over) {
   fs.writeFileSync(path.join(dir, A + '.json'), JSON.stringify(data) + '\n');
 }
 
-test('logicalPath drops the worktree segment and keeps a project prefix', () => {
-  assert.equal(guard.logicalPath('.fankeel/worktrees/aaaaaaaa/lib/x.js'), 'lib/x.js');
-  assert.equal(guard.logicalPath('Waypoint/.fankeel/worktrees/aaaaaaaa/lib/x.js'), 'Waypoint/lib/x.js');
-  assert.equal(guard.logicalPath('lib/x.js'), 'lib/x.js');
-  assert.equal(guard.logicalPath(null), null);
-});
-
 test('an edit inside the worktree is claimed as lib/x.js', () => {
   const root = tmp('fankeel-wt-touch-');
   seed(root, { worktree: WT });

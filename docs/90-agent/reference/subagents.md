@@ -86,7 +86,7 @@ the matcher above, not this one, still governs them.
 A `fankeel-brain` `Write` under `.fankeel/build/task-*/` is checked too
 (`hooks/guard.js:107`, `if (payload.tool_name === 'Write') {`): when the task directory it targets is not the
 one `handoff.dirFor` gives for its own session's record, it is denied, and the
-reason names both directories (`lib/guard.js:369`, `return 'fankeel: a fankeel-brain writes only under its own session\'s task directory. '`).
+reason names both directories (`lib/guard.js:365`, `return 'fankeel: a fankeel-brain writes only under its own session\'s task directory. '`).
 
 A fourth entry, matcher `Agent|Task` — both names, because which one the
 host sends for the subagent tool was not verified when it was added — sends
