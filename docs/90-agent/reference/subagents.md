@@ -542,20 +542,20 @@ when what you want is a second opinion on something you have already decided.
 ## A stage agent, behind `stage.agents`
 
 Everything above holds with the profile's `stage.agents` at its default,
-`false` — nothing is controlled (`lib/profile.js:37`, `'stage.agents': { values: ['false', 'true', 'all'], builtin: 'false',`).
+`false` — nothing is controlled (`lib/profile.js:39`, `'stage.agents': { values: ['false', 'true', 'all'], builtin: 'false',`).
 `parseStageAgents` in `lib/profile.js` reads the key as one of four forms:
-`false` controls no stage (`lib/profile.js:161`, `if (s === 'false' || s === '') return { value: [] };`);
+`false` controls no stage (`lib/profile.js:163`, `if (s === 'false' || s === '') return { value: [] };`);
 `true` controls `survey` alone — kept for that one meaning rather than "the
 route's first stage" because every existing doc and the 2026-09-20 A/B
-already mean survey by `true` (`lib/profile.js:162`, `if (s === 'true') return { value: ['survey'] };`);
+already mean survey by `true` (`lib/profile.js:164`, `if (s === 'true') return { value: ['survey'] };`);
 `all` controls every stage in `lib/stages.js`'s `FULL_ROUTE`
-(`lib/profile.js:164`, `if (s === 'all') return { value: canon.slice() };`);
+(`lib/profile.js:166`, `if (s === 'all') return { value: canon.slice() };`);
 and anything else is a comma-separated list of stage names, lowercased,
 deduped and reordered to `FULL_ROUTE`'s own order regardless of what order or
 how many repeats they arrived in, so two profiles naming the same set always
 compare equal — an unknown name in that list is refused with the one message an
 empty list is refused with, in the shape every other bad profile value takes
-(`lib/profile.js:170`, `'stage.agents is one of: false, true, all, or a comma-separated list of: '`).
+(`lib/profile.js:172`, `'stage.agents is one of: false, true, all, or a comma-separated list of: '`).
 `controlling()` and `controlFor()` in `lib/stages.js` read that array
 straight off the profile's `values` rather than off a fixed list only that
 file could change (`lib/stages.js:695`, `const raw = values && values['stage.agents'];`),
@@ -788,29 +788,29 @@ model name or `false`. Set `prompt.all` and any of `prompt.survey`, `prompt.desi
 is appended as the rules block's last line, `  - <sentence>`, on every prompt
 that block reaches — `prompt.all` first, then `prompt.<the current stage>`,
 so a task with both set carries two extra rule lines, not one
-(`lib/render.js:119`, `function promptRules(values, stage) {`). `parsePrompt`
+(`lib/render.js:124`, `function promptRules(values, stage) {`). `parsePrompt`
 in `lib/profile.js` holds it to one line and 200 characters — trimmed but not
 lowercased, and refused if it is empty, carries a newline, or runs long
-(`lib/profile.js:206`, `key + ' is one line of 1 to ' + PROMPT_MAX + ' characters' };`).
+(`lib/profile.js:208`, `key + ' is one line of 1 to ' + PROMPT_MAX + ' characters' };`).
 `promptRules` is called once, inside `rulesLines`
-(`lib/render.js:172`, `.concat(promptRules(values, data && data.stage));`),
+(`lib/render.js:177`, `.concat(promptRules(values, data && data.stage));`),
 and by `controlBlock` for a controlled stage's own block
-(`lib/render.js:136`, `return control && Object.assign({}, control, { rules: control.rules.concat(promptRules(values, stage)) });`),
+(`lib/render.js:141`, `return control && Object.assign({}, control, { rules: control.rules.concat(promptRules(values, stage)) });`),
 so `render`, `renderResume` and `renderBrainBrief` — every path that calls
 `rulesLines` — all carry it, controlled stage or not. `renderBrief`, the brief
 a reader, reviewer, fixer or implementer gets, never calls `rulesLines` and so
 never reaches `promptRules` — that return goes to the controller, not to
 whoever typed the sentence
-(`lib/render.js:117`, `never reaches this — a reader's return is`).
+(`lib/render.js:122`, `never reaches this — a reader's return is`).
 
 Setting the key prints what it costs: the estimated tokens the injected line
 adds per prompt, and each stage's remaining room under the reference-root
 2400-character cap with the profile as it now reads — a warning, never a
 refusal, since the cap belongs to the tests and the sentence belongs to the
-user (`scripts/task.js:1117`, `set anyway; this is a warning, not a refusal`)
+user (`scripts/task.js:1132`, `set anyway; this is a warning, not a refusal`)
 — computed in `cmdProfile`'s `set` branch off `input-check.js`'s
 `estimateTokens` and `lib/render.js`'s `blockSizes`
-(`scripts/task.js:1110`, `const n = estimateTokens('\n  - ' + out.value);`).
+(`scripts/task.js:1125`, `const n = estimateTokens('\n  - ' + out.value);`).
 
 ## What a controlled `build` and `verify` have not been run through
 
