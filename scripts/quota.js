@@ -40,13 +40,14 @@ function main(argv) {
     if (r.error) return { text: 'quota.js: ' + r.error + '; quota.week stays as it was', code: 1 };
     const line = 'quota.week ' + r.week + ' (calibrated ' + r.day + ': $' + r.usd.toFixed(2) + ' over ' + r.points + ' points'
         + (r.unpriced.length ? '; unpriced: ' + r.unpriced.join(', ') : '') + ')';
-    if (values['dry-run']) return { text: line, code: 0 };
+    const warn = r.skipped ? '\nquota.js: warning: ' + r.skipped + ' transcript file(s) or directories could not be read; their spend is missing, so quota.week is too low' : '';
+    if (values['dry-run']) return { text: line + warn, code: 0 };
     const file = profile.machineFile(dir);
     for (const [key, value] of [['quota.week', r.week], ['quota.calibrated', r.day]]) {
         const w = profile.write(file, key, value);
         if (!w.ok) return { text: 'quota.js: ' + w.reason, code: 1 };
     }
-    return { text: line + '\nwrote ' + file, code: 0 };
+    return { text: line + warn + '\nwrote ' + file, code: 0 };
 }
 
 if (require.main === module) {

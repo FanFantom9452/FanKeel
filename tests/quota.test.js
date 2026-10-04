@@ -75,3 +75,41 @@ test('quota.js with no log, or no window that moved enough, writes nothing and e
     assert.equal(fs.existsSync(profile.machineFile(dir)), false);
     assert.equal(main(['--bogus']).code, 2);
 });
+
+test('spentBetween counts an unreadable transcript as skipped and quota.js warns', () => {
+    const dir = account();
+    const bad = path.join(dir, 'projects', 'p', 's1.jsonl');
+    const log = path.join(dir, 'l.jsonl');
+    fs.writeFileSync(log, [line(100, 10, 9000), line(400, 40, 9000)].join('\n'));
+    assert.equal(quota.spentBetween(dir, 100e3, 400e3).skipped, 0);
+    const real = fs.readFileSync;
+    fs.readFileSync = (f, ...a) => {
+        if (f === bad) throw new Error('EACCES');
+        return real(f, ...a);
+    };
+    try {
+        const cost = quota.spentBetween(dir, 100e3, 400e3);
+        assert.equal(cost.skipped, 1);
+        assert.ok(cost.usd > 0, 'the agent transcript still prices');
+        const dry = main(['--claude-dir', dir, '--log', log, '--dry-run']);
+        assert.equal(dry.code, 0);
+        assert.match(dry.text, /warning: 1 transcript/);
+    } finally {
+        fs.readFileSync = real;
+    }
+});
+
+test('spentBetween does not throw when a project directory cannot be listed', () => {
+    const dir = account();
+    const bad = path.join(dir, 'projects', 'p');
+    const real = fs.readdirSync;
+    fs.readdirSync = (d, ...a) => {
+        if (d === bad) throw new Error('EACCES');
+        return real(d, ...a);
+    };
+    try {
+        assert.equal(quota.spentBetween(dir, 100e3, 400e3).skipped, 1);
+    } finally {
+        fs.readdirSync = real;
+    }
+});
