@@ -20,7 +20,7 @@ source_of_truth: 本頁是一次量測的記錄，不隨程式碼更新；資料
 |---|---|---|
 | session bc46cf1c-3fdc-4f2a-96e3-ae600e27ccf3 | task-20261004T094519 | 11（10 個有 transcript） |
 | session 6e131cdb-79f2-422b-bb7d-e815f9c5b759 | task-20261004T080357 | 10 |
-| session 180f8da4-5021-4358-8e91-ca7d3e3b3331 | task-20261003T121202 | 9 |
+| session 180f8da4-5021-4358-8e91-ca7d3e3b3331 | task-20261003T121202 | 10 |
 | session 099dfc40-dff8-4cb4-82a9-f4b0599e58dc | task-20261003T114747 | 12 |
 | session e22c11b3-34c0-4712-9761-ad692b11c8fe | task-20261003T112433 | 5 |
 
