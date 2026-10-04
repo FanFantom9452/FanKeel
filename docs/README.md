@@ -212,7 +212,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 落地它的 14 個 task | `docs/99-archive/2026-10-03-todo-nine.md` — *built, 繁體中文* |
 | mod 路線（10-03）定了什麼：擱置，不把 brief、effort 等功能做成 mod、繼續用 command hooks；量到可用的 agent.spawn 與 turn.step 記下備查 | [decisions/2026-10-03-mod-route.md](03-decisions/2026-10-03-mod-route.md) — *繁體中文* |
 | TODO 全表盤點（10-03）的 plan：子 session 由環境變數證明在跑、todo-check 讀不到就回報且前綴補斜線、commit.js 兩個子句補測試、balanced 註明無來源、mod 路線擱置 | [plans/2026-10-03-todo-patrol-three.md](90-agent/plans/2026-10-03-todo-patrol-three.md) — *design-intent, 繁體中文* |
-| balanced 三站明說是經驗選擇（10-04）的 plan：`PRESETS.balanced` 行尾註解、profile.md 補一句，profile-2 由 land 關 | [plans/2026-10-04-balanced-empirical.md](90-agent/plans/2026-10-04-balanced-empirical.md) — *design-intent, 繁體中文* |
+| balanced 三站明說是經驗選擇（10-04）的 plan：`PRESETS.balanced` 行尾註解、profile.md 補一句，profile-2 由 land 關 | `docs/99-archive/2026-10-04-balanced-empirical.md` — *built, 繁體中文* |
 | TODO 盤點四筆 Ready（10-01）的 plan：await-5 舊 waiter 擋新 brain、brief-2 brain 沒讀存成檔的 brief、gate-4 第一題兩選項也放行、tune-2 overlay 三個存活變異 | `docs/99-archive/2026-10-01-ready-four.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-01）的 plan：Blocked 群組與九個 stage-agents 條目重新蓋章、改 stage-agents-1 過時前提、〔await〕實跑觀察 | `docs/99-archive/2026-10-01-todo-stamps.md` — *built, 繁體中文* |
 | tune 小助手（10-01）的 plan：右下 fankeel logo 可拖曳、展開後多則修改項一起送出、`items` 酬載與 `done` 以聯集判越界，取代 Alt 圈選 | `docs/99-archive/2026-10-01-tune-assistant.md` — *built, 繁體中文* |

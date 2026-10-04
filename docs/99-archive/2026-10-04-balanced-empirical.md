@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # balanced 三站明說是經驗選擇 Implementation Plan
