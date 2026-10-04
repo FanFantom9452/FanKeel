@@ -8,7 +8,7 @@ const path = require('node:path');
 
 const { INPUT_WARN_TOKENS, render, renderInit, SCRIPTS, PLUGIN_ROOT, PLUGIN_MARK, planDir } = require('../lib/render.js');
 const tmp = require('./tmp.js');
-const { ALWAYS, NAMES, byName, rulesFor, SURVEY_TOKEN, TOKENS, SCRIPT_TOKENS, nextStage, templateFor } = require('../lib/stages.js');
+const { ALWAYS, NAMES, byName, rulesFor, TOKENS, SCRIPT_TOKENS, nextStage, templateFor } = require('../lib/stages.js');
 
 // The rendered block substitutes the next stage on the route, so a comparison
 // against the rules has to substitute it the same way. Going through `nextStage`
@@ -198,7 +198,7 @@ test('the rules sent are this stage’s, not another stage’s', () => {
 
 test('the survey rule names a runnable path, not a placeholder', () => {
   const out = render({ mine: entry(MINE, { stage: 'survey' }), others: [], now: NOW });
-  assert.equal(out.includes(SURVEY_TOKEN), false, 'the token survived into the output');
+  assert.equal(out.includes(TOKENS.survey), false, 'the token survived into the output');
   assert.match(out, /node .*survey\.js/);
   // The rule names the script the way every SKILL.md does, and the block resolves
   // the notation one line above the rules using it — so the command is still
@@ -374,8 +374,8 @@ test('the README shows the build template as build actually ships it', () => {
 });
 
 test('an unsubstituted rulesFor still returns the token, so callers cannot forget silently', () => {
-  assert.ok(byName('survey').rules.some((r) => r.includes(SURVEY_TOKEN)));
-  assert.ok(rulesFor('survey').some((r) => r.includes(SURVEY_TOKEN)));
+  assert.ok(byName('survey').rules.some((r) => r.includes(TOKENS.survey)));
+  assert.ok(rulesFor('survey').some((r) => r.includes(TOKENS.survey)));
   assert.ok(rulesFor('land').some((r) => r.includes(TOKENS.todoCheck)));
 });
 
