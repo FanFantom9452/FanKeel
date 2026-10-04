@@ -41,7 +41,8 @@ function writeRecord(cfg, rec) {
 // A listener in this process answering /station/health for `pid` — or, with
 // `hang`, taking the request and never answering it. `fingerprint`, when
 // given, rides along in the body the same way `scripts/station.js` puts one
-// there for real.
+// there for real. `delayMs` holds the answer back that long, for a probe that
+// must outwait it.
 function listener(opts) {
     const o = opts || {};
     let hits = 0;
@@ -53,10 +54,14 @@ function listener(opts) {
         }
         hits += 1;
         if (o.hang) return;
-        const body = { station: true, pid: o.pid, started: new Date().toISOString() };
-        if (o.fingerprint !== undefined) body.fingerprint = o.fingerprint;
-        res.writeHead(200, { 'content-type': 'application/json' });
-        res.end(JSON.stringify(body));
+        const answer = () => {
+            const body = { station: true, pid: o.pid, started: new Date().toISOString() };
+            if (o.fingerprint !== undefined) body.fingerprint = o.fingerprint;
+            res.writeHead(200, { 'content-type': 'application/json' });
+            res.end(JSON.stringify(body));
+        };
+        if (o.delayMs) setTimeout(answer, o.delayMs);
+        else answer();
     });
     return new Promise((resolve) => {
         server.listen(0, '127.0.0.1', () => {
@@ -197,6 +202,23 @@ test('a station that answers is running, and nothing is started', async () => {
         const got = await serve.ensureServe({ configDir: cfg, plugin: PLUGIN, start: (o) => { calls.push(o); } });
         assert.deepEqual(got, { state: 'running', url: st.url });
         assert.equal(calls.length, 0, 'a running station is not started again, so no browser opens');
+    } finally {
+        await st.close();
+    }
+});
+
+test('a deadline already spent still gives a live station its probe, so it is running and nothing is started', async () => {
+    // hooks/inject.js hands `until` in after a synchronous station.write; when
+    // that write ran long, `until` had passed and the probe got 1 ms, so a
+    // live station read as down and a second one was started.
+    const cfg = tmp('fankeel-serve-');
+    const st = await listener({ pid: process.pid, fingerprint: serve.diskFingerprint(PLUGIN), delayMs: 50 });
+    writeRecord(cfg, { pid: process.pid, port: 0, url: st.url, started: new Date().toISOString() });
+    const calls = [];
+    try {
+        const got = await serve.ensureServe({ configDir: cfg, plugin: PLUGIN, start: (o) => { calls.push(o); }, until: Date.now() - 1000 });
+        assert.deepEqual(got, { state: 'running', url: st.url });
+        assert.equal(calls.length, 0, 'a live station is not started again');
     } finally {
         await st.close();
     }
