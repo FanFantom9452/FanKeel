@@ -199,8 +199,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 那份設計的十四個 task，含 brain、implementer、reviewer 按次決定的 effort | [plans/2026-10-02-docs-writer.md](90-agent/plans/2026-10-02-docs-writer.md) — *design-intent* |
 | 極小實驗 mod 的 design：四項實測（子代理吃不吃得到 `prompt.compose`、`agent.spawn` 改寫後 SendMessage 再送達、`turn.step` 改 effort、mod 與 command hooks 並存）各自的判定、記錄與回退 | [plans/2026-10-03-mod-probe-design.md](90-agent/plans/2026-10-03-mod-probe-design.md) — *design-intent, 繁體中文* |
 | 那份設計的三個 task：寫 mod、加索引、主 session 實測；報告留給下一輪 | [plans/2026-10-03-mod-probe.md](90-agent/plans/2026-10-03-mod-probe.md) — *design-intent, 繁體中文* |
-| mod 探測第四輪的 design：兩臂對照（一臂載入 mod、一臂不載入）補測 (d)，只從請求本文判斷 fankeel 的注入與 brief 有沒有送到 | [plans/2026-10-04-mod-probe-4-design.md](90-agent/plans/2026-10-04-mod-probe-4-design.md) — *design-intent, 繁體中文* |
-| 那份設計的四個 task：儀器、使用者跑兩臂、報告與索引、證據帳與決策頁 | [plans/2026-10-04-mod-probe-4.md](90-agent/plans/2026-10-04-mod-probe-4.md) — *design-intent, 繁體中文* |
+| mod 探測第四輪的 design：兩臂對照（一臂載入 mod、一臂不載入）補測 (d)，只從請求本文判斷 fankeel 的注入與 brief 有沒有送到 | `docs/99-archive/2026-10-04-mod-probe-4-design.md` — *built, 繁體中文* |
+| 那份設計的四個 task：儀器、使用者跑兩臂、報告與索引、證據帳與決策頁 | `docs/99-archive/2026-10-04-mod-probe-4.md` — *built, 繁體中文* |
 | TODO 機制改版的 design：TODO.md 去除、只留 docs/90-agent/todo/ 資料夾條目、條目內容加厚、與 station 的關係 | `docs/99-archive/2026-10-02-todo-folder-only-design.md` — *built, 繁體中文* |
 | 那份設計的十六個 task | `docs/99-archive/2026-10-02-todo-folder-only.md` — *built, 繁體中文* |
 | worktree 開發習慣（10-02）定了什麼、沒做什麼：cherry-pick 與 `--no-ff` 分兩層並存、`land.js` 合併加 trailer、`worktree` 鍵依 class、residue 列 spent 分支 | [decisions/2026-10-02-worktree-habit.md](03-decisions/2026-10-02-worktree-habit.md) — *繁體中文* |
