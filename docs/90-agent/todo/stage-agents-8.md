@@ -2,11 +2,15 @@
 label: stage-agents
 title: 接縫「在哪提交」
 description: 接縫「在哪提交」：task 的 `project` 不是 cwd、或在 worktree 裡時跑受控 build，看 `scripts/commit.js` 提交到哪個 repo — [docs/subagents.md](docs/90-agent/reference/subagents.md).
-state: blocked
+state: done
 link: docs/90-agent/reference/subagents.md
 group: 受控 build/verify 實跑
 timing: after: 跑過一次 stage.agents=all 的真實 task（main 含 08c4ecf、安裝版 0.80.0 兩半 09-28 已達成）
 stamp: 2026-10-01
+done:
+  at: 2026-10-04
+  sha: 0bd3c17e24530c37e701aa80135faf624945f7d8
+  disposition: done
 ---
 
 來源：db16197d（2026-09-24）把 subagents.md 的六個接縫各拆成一條 TODO.md bullet，「在哪提交」是其中一條；該 bullet 只記了要檢查 `scripts/commit.js` 提交到哪個 repo，之後在 task 的 `project` 不是 cwd 或身在 worktree 時是否真跑過，目前沒有紀錄。
