@@ -162,6 +162,33 @@ test('probe is true only for a listener naming the recorded pid, and false for a
     }
 });
 
+// A hook calls fetchHealth and then has to exit on its own
+// (hooks/inject.js, through ensureServe): whatever the request leaves
+// behind must not hold the process open. The listener keeps an idle
+// connection for Node's default 5 s and undici's client keeps one 4 s, so
+// a referenced idle socket shows up as a child that takes seconds rather
+// than a fraction of one.
+test('a process that probes a station exits on its own, with no idle socket holding it open', async () => {
+    const mine = await listener({ pid: process.pid });
+    try {
+        const script = "require(process.argv[1]).probe({ pid: Number(process.argv[2]), url: process.argv[3] }, 2000).then((ok) => { process.stdout.write(String(ok)); });";
+        const began = Date.now();
+        const out = await new Promise((resolve) => {
+            const child = spawn(process.execPath, ['-e', script, LIB, String(process.pid), mine.url]);
+            let text = '';
+            child.stdout.setEncoding('utf8');
+            child.stdout.on('data', (c) => { text += c; });
+            const kill = setTimeout(() => child.kill(), 15000);
+            child.on('close', () => { clearTimeout(kill); resolve(text); });
+        });
+        const took = Date.now() - began;
+        assert.equal(out, 'true', 'the child reached the station');
+        assert.ok(took < 3000, 'the child exited on its own: ' + took + ' ms');
+    } finally {
+        await mine.close();
+    }
+});
+
 test('a station that answers is running, and nothing is started', async () => {
     const cfg = tmp('fankeel-serve-');
     const st = await listener({ pid: process.pid, fingerprint: serve.diskFingerprint(PLUGIN) });
