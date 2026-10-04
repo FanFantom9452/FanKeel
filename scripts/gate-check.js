@@ -10,21 +10,22 @@
 //
 //   node gate-check.js --session <id> [--root <dir>] <handoff file>
 
-const registry = require('../lib/registry.js');
+const { parseArgs } = require('node:util');
+const registry =require('../lib/registry.js');
 const { nextStage, normaliseRoute, FULL_ROUTE } = require('../lib/stages.js');
 const { readGate } = require('../lib/handoff.js');
 
 const USAGE = 'gate-check.js: usage: gate-check.js --session <id> [--root <dir>] <handoff file>';
 
 function main(argv) {
-    let session = null;
-    let root = null;
-    const files = [];
-    for (let i = 0; i < argv.length; i++) {
-        if (argv[i] === '--session') session = argv[++i];
-        else if (argv[i] === '--root') root = argv[++i];
-        else files.push(argv[i]);
+    let parsed;
+    try {
+        parsed = parseArgs({ args: argv, options: { session: { type: 'string' }, root: { type: 'string' } }, allowPositionals: true });
+    } catch (e) {
+        return { text: USAGE, code: 2 };
     }
+    const { session, root } = parsed.values;
+    const files = parsed.positionals;
     if (!session || files.length !== 1) return { text: USAGE, code: 2 };
     const at = root ? registry.resolveRoot(root) : registry.rootFor({ cwd: process.cwd() });
     const mine = registry.readSession(at, session);

@@ -22,7 +22,7 @@ const http = require('node:http');
 const crypto = require('node:crypto');
 const { execFileSync, spawnSync } = require('node:child_process');
 const { parseArgs } = require('node:util');
-const { inject, outside, diffLines, queueState, sourcesOf, changedPaths, rankSources } = require('../lib/tune.js');
+const { inject, outside, diffLines, queueState,changedPaths, rankSources } = require('../lib/tune.js');
 const { readBody } = require('../lib/body.js');
 const { relPath } = require('../lib/guard.js');
 

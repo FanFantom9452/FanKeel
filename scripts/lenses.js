@@ -14,26 +14,21 @@
 // finds; 1 when `git diff` fails; 2 on a usage error.
 
 const { execFileSync } = require('node:child_process');
+const util = require('node:util');
 const { lensesFor } = require('../lib/lenses.js');
 
 const USAGE = 'usage: lenses.js <range> [--root <dir>]';
 
 function parseArgs(argv) {
-    const out = { range: null, root: process.cwd() };
-    const positionals = [];
-    for (let i = 0; i < argv.length; i++) {
-        if (argv[i] === '--root') {
-            if (i + 1 >= argv.length) return { error: USAGE };
-            out.root = argv[++i];
-            continue;
-        }
-        positionals.push(argv[i]);
+    let parsed;
+    try {
+        parsed = util.parseArgs({ args: argv, options: { root: { type: 'string' } }, allowPositionals: true });
+    } catch (e) {
+        return { error: USAGE };
     }
-    out.range = positionals[0] || null;
-    if (!out.range) return { error: USAGE };
-    // Handed to git as an argument: one starting with `-` would be read as an option.
-    if (out.range.startsWith('-')) return { error: '<range> is <a>..<b>, not an option: ' + out.range };
-    return out;
+    const range = parsed.positionals[0] || null;
+    if (!range) return { error: USAGE };
+    return { range, root: parsed.values.root || process.cwd() };
 }
 
 function main(argv) {

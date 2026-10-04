@@ -74,6 +74,14 @@ test('a session with a floor refuses an option naming a lighter class', () => {
     assert.match(out.text, /names bounded, below this task's floor architectural/);
 });
 
+test('a flag given no value is a usage error, not a silent fallback to cwd', () => {
+    const root = project('plan');
+    const file = handoff(root, ['build (Recommended)', '沒有未決事項', '暫停']);
+    const out = main(['--session', SESSION, file, '--root']);
+    assert.equal(out.code, 2);
+    assert.match(out.text, /usage/);
+});
+
 test('a session record with no stage: exit 1', () => {
     const root = project(undefined);
     const out = main(['--session', SESSION, '--root', root, handoff(root, ['build (Recommended)', '沒有未決事項', '暫停'])]);
