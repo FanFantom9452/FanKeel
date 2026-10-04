@@ -52,6 +52,7 @@ profile 是 gate 的常備答案：先寫好，fankeel 就不再問那一題。g
 | `sensitive.mode` | commit 帶到 .fankeel/sensitive.txt 的詞時：warn 只提醒、block 擋下 | `warn`、`block`；內建 `warn` | 不設，維持內建 |
 | `sensitive.review` | reviewer 審查時要不要多跑 ## Sensitive lens，確認敏感資料沒寫進去 | `true`、`false`；內建 `false` | 不設，維持內建 |
 | `commit.format` | commit.js 提交前，每則訊息第一行要符合的正規式；不設就不檢查 | 一個 JavaScript 正規式，比對訊息第一行 | 不設 |
+| `quota.calibrated` | 最近一次自動校準 quota.week 的日期（YYYY-MM-DD），由 scripts/quota.js 寫入 |  | 不設 |
 <!-- PROFILE_TABLE:END -->
 
 `stage.agents` 建議打開，理由記在 `lib/profile.js:424-428`，`the user, 2026-10-02`（使用者，2026-10-02）：主 session 跑長任務時，用 remote control 的人看不到它的 context 堆了多少，除非手動 compact；Claude 本身沒有 context 回收機制，所以最好的做法是開背景的站 agent，每一站在自己的乾淨 context 裡跑，靠檔案互相傳遞資訊，主控只轉路徑。內建值仍是 `false`（`lib/profile.js:39`，`builtin: 'false'`），要打開得自己設。這段理由支持的是「把站交給 agent」這個方向，以及 `all`（每一站都交出去）；它沒有解釋為什麼「建議」欄只挑 survey、build、verify 這三站。這三站是經驗選擇：repo 裡沒有任何一處記下為什麼挑這三站，使用者 2026-10-02/03 裁定維持原樣、不補編理由；`PRESETS.balanced` 那一行的註解也這樣寫，精靈「省 context」按鈕的說明同樣只寫「三站交出去」，沒有理由。精靈 agents 那一步有三顆會交出站的按鈕：「只交出 survey」設 `survey`；「省 context」的值在 `assets/station/station.js:1837`，是 `survey,build,verify`，其餘幾站仍由主控自己跑；「全部交出去」的值在 `assets/station/station.js:1838`，是 `all`，七站都交出去。程式碼裡另有兩組預設：`PRESETS.balanced` 的值在 `lib/profile.js:442`，是 `survey,build,verify`，`PRESETS.lean`（標籤也叫「省 context」）的值在 `lib/profile.js:447`，是 `all`；現在的站頁不再套用這兩組，實際寫入值的是精靈的按鈕，所以在精靈按「省 context」得到的是三站，不是 `all`。`true` 是舊寫法，只等於只交 survey。要自己設，把站名用逗號串起來：
@@ -72,6 +73,12 @@ node <plugin>/scripts/task.js profile set language 繁體中文
 
 ```
 node <plugin>/scripts/task.js profile set quota.week 3000
+```
+
+`quota.calibrated` 是 `quota.week` 最近一次自動校準的日期（YYYY-MM-DD），由 `node <plugin>/scripts/quota.js` 寫進機器層，平常不用手填。這支腳本讀 TokenBar 的 statusline 每次渲染時寫在 Claude 設定目錄下的 tokenbar-usage.jsonl（`rate_limits.seven_day` 的百分比與重置時間），在最新一個動了 10 個百分點以上的 7 天視窗裡，拿頭尾兩筆讀數之間全機所有 transcript 的 API 等價花費，除以動了的百分點再乘 100，寫成 `quota.week`。只用同一視窗內的差值，不用讀數的絕對水位，因為絕對水位與 transcript 花費對不上（見 2026-09-21 的額度校準報告）。沒裝 TokenBar、或沒有夠大的視窗時，它什麼都不寫，`quota.week` 維持手填的值。要重新校準就再跑一次；加 `--dry-run` 只印結果、不寫。監控站在 30 天花費下方的說明行註明用的是哪一天的校準。例：
+
+```
+node <plugin>/scripts/quota.js --dry-run
 ```
 
 另外有一類不在表裡的 key：`agent.<name>.model` 與 `agent.<name>.effort`，`<name>` 是 plugin 裡某個 agent 的名字，用來單獨調那個 agent 的模型與思考力道。模型的可選值同 `dispatch.floor`，effort 是 Claude Code 接受的五級。設下去時指令會順便把覆寫檔寫到 `.claude/agents/`（加 `--default` 則寫到機器層的 `agents/`）。

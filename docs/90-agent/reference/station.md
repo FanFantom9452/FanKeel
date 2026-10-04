@@ -154,6 +154,7 @@ or project profile, shipped to the page as `STATION.profiles.machine` and
 page appends plain text ` (x%)` after a dollar figure, where x is the amount
 divided by `quota.week`, except the figures that call `usd(n, true)` (chart y ticks, bar totals, nav days badge, cost-share bar, dispatch cost-strip segments, session hero Cost value), which stay plain dollars; the hero sub-line begins `(x%) · ` and tooltips keep the ratio. Both are API-equivalent estimates, not a measured
 quota percentage, and with the key unset the page is unchanged.
+When the machine profile also holds `quota.calibrated` and the quota in force is the machine's, the 30-day spend readout's sub-line ends with ` · 週額度 <day> 校準`, the day `scripts/quota.js` calibrated it; a quota set by hand, or a project's own, shows no day.
 
 Every row also carries the registry it belongs to, as `root` on its session
 object (`lib/station.js:719`, `root: s.root`) — the raw path, not the

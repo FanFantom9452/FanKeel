@@ -526,3 +526,12 @@ test('quota.week takes a number above zero, and stays off the wizard', () => {
     }
     assert.ok(!Object.keys(profile.WIZARD_KEYS).includes('quota.week'));
 });
+
+test('quota.calibrated takes a real YYYY-MM-DD day, and stays off the wizard', () => {
+    assert.equal(profile.parseValue('quota.calibrated', ' 2026-10-04 ').value, '2026-10-04');
+    for (const bad of ['2026-02-30', '2026-13-01', '10-04', '', 'yesterday', '2026-10-4']) {
+        assert.ok(profile.parseValue('quota.calibrated', bad).error, JSON.stringify(bad));
+    }
+    assert.ok(profile.KEYS['quota.calibrated']);
+    assert.ok(!Object.keys(profile.WIZARD_KEYS).includes('quota.calibrated'));
+});
