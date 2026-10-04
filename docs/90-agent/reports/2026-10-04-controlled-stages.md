@@ -263,4 +263,27 @@ diff --stat lib/live.js printed nothing, same as the pre-mutation run (the file 
 
 ## 實跑觀察（使用者親手）
 
-（由這個 task 的使用者親手 task 補上：第二個 agent、profile 中途翻轉、claims。）
+（由這個 task 的使用者親手 task 補上：profile 中途翻轉、claims。）
+
+### 第二個 agent
+
+使用者在第二個視窗（B，`session c5f050e3-5f12-481a-a465-68725c68f38f`，task 接縫探測，route `survey`）跑；`.fankeel/build/2026-10-04-todo-patrol-five/b-inflight.log` 每 15 秒取樣、只記 B 的 `inflight` 有變的時候。時間皆 2026-10-04 +0800。
+
+```text
+21:49:48 {"stage":"survey","at":1791121767194,"group":1,"agentId":"ac92bbf3bbe0c911d","lap":1} stage=survey active=true
+21:50:19 null stage=survey active=true
+21:57:22 {"stage":"survey","at":1791122234629,"group":1,"agentId":"ac92bbf3bbe0c911d","lap":1} stage=survey active=true
+22:08:44 null stage=survey active=true
+```
+
+1. B 的 survey 站 agent `ac92bbf3bbe0c911d` 派出，標記出現，`lap 1`（`at` 換算是 21:49:27）。
+2. 交接檔 `survey.md` 21:49:58 落地、gate 顯示；21:50:19 的取樣標記已清。
+3. B 的 gate 第二個選項不是「留在 survey」而是改路線進 plan 與 build，使用者改打字回答（Type something），要求再讀一輪。B 的主控寫了 `survey-answer.md`（21:57:03）、SendMessage 同一個 agent（畫面印 "Resuming agent ac92bbf"）並在背景起 `await.js`。標記在 21:57:22 的取樣回來：`agentId` 相同、`at` 是新的（換算 21:57:14）、`lap` 仍是 1。
+4. 使用者約 21:58 停掉該 agent；B 的畫面印 "stopped by user"。停的方式沒有記下來。
+5. 22:07:48 的取樣，標記原封不動還在（停掉後約十分鐘），B 的 `await.js` 還在跑。22:08:32 `survey.md.await` 被移除（目錄 mtime），B 的 `await.js` 回報 `lost ac92bbf3bbe0c911d — the stage agent stopped with neither file written: dispatch a fresh one with the same line.`（出自 B 的 transcript），22:08:44 的取樣標記為 `null`——`scripts/await.js:187` 在 `lost` 時呼叫 `registry.clearInflight`。B 的記錄隨後有 `gateAt` 1791122927658（22:08:47），是判定之後問的問題。該 agent 自己的 transcript 最後一次變動在 21:57:32，所以判定比它停筆晚了約 11 分鐘，而 `await.js` 的 idle 預設是 180 秒（`scripts/await.js:43`）；為什麼拖到 11 分鐘，不知道。
+
+與計畫不同的兩處：gate 沒走 option one 以外的現成選項，而是使用者打字回答（結果相同：主控 SendMessage 同一個 agent）；計畫的 `/agents` 步驟已不存在，B 印 "The /agents wizard has been removed."，所以停 agent 的做法與計畫不同，細節見上。
+
+第二次看到：本 task 的主控 `session 106c6f2b-ec35-4261-9bfe-0a40eba1459d`，build 第 1 至 5 組都由 brain 跑，第 2、3 組同時跑。第 1、3、4、5 組的標記清了；第 2 組的標記還在 `.fankeel/sessions/106c6f2b-ec35-4261-9bfe-0a40eba1459d.json`：`{"stage":"build","at":1791119768652,"group":2,"agentId":"a9422f42efcdab69d","lap":1,"kind":"group"}`，但它的交接檔 `build-g2.md` 21:16:18 就落地、agent 也收尾了。原因不是兩個 hook 互相蓋掉更新：group 標記只有 `await.js` 回報該組交接檔到了才清（`scripts/await.js:184-187`），這個 session 沒有任何一次 `await.js` 回報第 2 組的交接檔——第 2、3 組都在外面時跑的那次 `await.js` 回的是第 3 組的 commit 請求，第 2 組的報告路徑只以 agent 的回報訊息到主控，那不清任何東西。第 1、3、4、5 組各有一次 `await.js` 回報其交接檔，標記都清了。
+
+判定：（一）SendMessage 同一個 agent 會用同一個 `agentId` 與 `lap` 重新標記，`lap` 不因續用而加；（二）agent 被停掉後標記留到 `await.js` 判 `lost` 才清，約在 agent 停筆後 11 分鐘，idle 是 3 分鐘，原因不明；（三）group 標記只由 `await.js` 回報交接檔清，交接檔以別的路徑到主控時不清。已記為 TODO `stage-agents-14`。

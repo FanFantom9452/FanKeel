@@ -854,7 +854,7 @@ section is where the by-hand run will be recorded.
   reached since the last matching gate, not that one is working, and
   `hooks/resume.js` does not read it. An agent that died leaves its mark until the
   next gate or the SendMessage fallback.
-  Seen: a message sent while the brain was working was absorbed and the brain returned as usual; resuming a returned design brain after a gate other than option one did not occur, and the by-hand run is still to be recorded in the report's last section ([report](../reports/2026-10-04-controlled-stages.md#實跑觀察使用者親手)).
+  Seen: a message sent while the brain was working was absorbed and the brain returned as usual; a survey agent resumed by `SendMessage` after a typed gate answer was re-marked with the same `agentId` and `lap`, and after the user stopped it the mark stayed until `await.js` judged the agent lost, about 11 minutes after its transcript stopped against a 3-minute idle; a group mark is cleared only when `await.js` reports that group's handoff, and one whose handoff reached the controller another way was left standing ([report](../reports/2026-10-04-controlled-stages.md#第二個-agent)).
 - **The profile moves under a running stage.** `hooks/inject.js` re-reads it on every
   prompt, `hooks/brief.js` on every subagent start, `hooks/gate.js` and
   `hooks/resume.js` on every call, `hooks/guard.js` on every main-thread `Edit`,
