@@ -812,12 +812,14 @@ user (`scripts/task.js:1132`, `set anyway; this is a warning, not a refusal`)
 `estimateTokens` and `lib/render.js`'s `blockSizes`
 (`scripts/task.js:1125`, `const n = estimateTokens('\n  - ' + out.value);`).
 
-## What a controlled `build` and `verify` have not been run through
+## What a controlled `build` and `verify` were run through
 
-`survey` is the only controlled stage anything has run end to end. A whole-branch
-audit of the seams for `build` and `verify` (2026-09-21) found these, none of them
-exercised by a test or a real session; they are listed here so an A/B run knows
-what to watch, and so the profile's `lean` preset is not read as proven.
+Five finished tasks ran every stage controlled (2026-10-03/04), and
+[the measurement report](../reports/2026-10-04-controlled-stages.md) reads
+their transcripts and handoffs seam by seam. Each bullet below keeps how the
+seam works and ends with what those runs showed; a second agent, the profile
+moving mid-stage and claims were exercised by hand, in that report's last
+section.
 
 - **What the stage agent cannot do.** It has no `AskUserQuestion`, `Edit` or
   `SendMessage`. `skills/fankeel-build/SKILL.md` tells whoever runs the stage to ask
@@ -825,6 +827,7 @@ what to watch, and so the profile's `lean` preset is not read as proven.
   to resume the same implementer for a fix round. The brief covers `in-session` rows
   (they go to an implementer) and questions (they go in the gate at the end); consent
   at the start, a worktree, a `TODO.md` line and a resumed implementer are not covered.
+  Seen: across nine build brains none asked consent (the plan gate did), implementers ran in worktrees, and one brain resumed its implementer with `SendMessage`, which `fankeel-brain.md` does not list yet it succeeded ([report](../reports/2026-10-04-controlled-stages.md#站-agent-做不到的事)).
 - **A second agent.** Every user prompt re-injects the controller's "dispatch one
   agent" line. `hooks/brief.js` now writes `inflight` — one mark `{ stage, at,
   agentId?, lap?, group?, kind? }` ([registry.md](registry.md) has the field), or, once a
@@ -851,6 +854,7 @@ what to watch, and so the profile's `lean` preset is not read as proven.
   reached since the last matching gate, not that one is working, and
   `hooks/resume.js` does not read it. An agent that died leaves its mark until the
   next gate or the SendMessage fallback.
+  Seen: a message sent while the brain was working was absorbed and the brain returned as usual; resuming a returned design brain after a gate other than option one did not occur, and the by-hand run is in the report's last section ([report](../reports/2026-10-04-controlled-stages.md#實跑觀察使用者親手)).
 - **The profile moves under a running stage.** `hooks/inject.js` re-reads it on every
   prompt, `hooks/brief.js` on every subagent start, `hooks/gate.js` and
   `hooks/resume.js` on every call, `hooks/guard.js` on every main-thread `Edit`,
@@ -860,18 +864,21 @@ what to watch, and so the profile's `lean` preset is not read as proven.
   from the station mid-stage changes what those hooks do to that session's next call.
   The presets also write `guard: ask`, which lowers the project's stored `deny` for the
   sessions that start after it; a running session keeps the guard mode its record holds.
+  Seen: not exercised in the five tasks; the by-hand run is in the report's last section ([report](../reports/2026-10-04-controlled-stages.md#實跑觀察使用者親手)).
 - **Accounting.** A controlled build's commits run as `scripts/commit.js`, not as
   `git commit` in the main transcript, so the station's replay shows none of them, and
   the agents' own edits are sidechain and not replayed either. `scripts/ctx.js` prints
   the controller's series and one summed figure for the agents by default; given a
   single agent's transcript file, `node scripts/ctx.js <agent 檔>` now prints that
   agent's own series directly, which covers the trigger in `TODO.md` for a stage
-  agent's own context past 400k. Whether a resumed agent's returns keep one
-  notification per dispatch in that accounting, and whether a resume re-fires the
-  subagent brief, have not been checked.
+  agent's own context past 400k. Of 24 resumed agents, 21 had one notification per dispatch (3 had one fewer),
+  a resume never re-injected the brief into the agent's context, and the
+  transcript keeps the dispatch-time title.
+  Seen: the three answers above ([report](../reports/2026-10-04-controlled-stages.md#記帳)).
 - **Claims.** A verify implementer's mutation edit carries the controller's session
   id, so the mutated file lands on its claims and a second live session sees a
   collision; the ordinary `verify` has the same effect from the parent's own mutation.
+  Seen: not exercised in the five tasks; the by-hand run is in the report's last section ([report](../reports/2026-10-04-controlled-stages.md#實跑觀察使用者親手)).
 - **Where it commits.** `scripts/commit.js` commits in the repository at the
   controller's working directory, and does not consult the task's `project`. A
   build brain sends every implementer with `isolation: "worktree"` and puts
@@ -897,6 +904,7 @@ what to watch, and so the profile's `lean` preset is not read as proven.
   worktree outside the root that shares its git-common-dir — so an implementer's
   edit in `isolation: "worktree"` collides with a neighbour exactly as the same
   edit in the main tree would.
+  Seen: all five commits of one task landed on main; four implementer worktrees of another were left behind, merged and empty of new work, and why `commit.js` did not remove them is not in the record; a task whose `project` differs from the cwd did not occur ([report](../reports/2026-10-04-controlled-stages.md#在哪提交)).
 
 # Telling a subagent apart, when a hook has to
 
