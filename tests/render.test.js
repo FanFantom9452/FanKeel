@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const { INPUT_WARN_TOKENS, render, renderInit, SCRIPTS, PLUGIN_ROOT, PLUGIN_MARK, SURVEY_SCRIPT, TODO_CHECK_SCRIPT, planDir } = require('../lib/render.js');
+const { INPUT_WARN_TOKENS, render, renderInit, SCRIPTS, PLUGIN_ROOT, PLUGIN_MARK, planDir } = require('../lib/render.js');
 const tmp = require('./tmp.js');
 const { ALWAYS, NAMES, byName, rulesFor, SURVEY_TOKEN, TOKENS, SCRIPT_TOKENS, nextStage, templateFor } = require('../lib/stages.js');
 
@@ -205,7 +205,7 @@ test('the survey rule names a runnable path, not a placeholder', () => {
   // pasteable without going and reading a document to find out what `<plugin>` is.
   assert.ok(out.includes('node ' + PLUGIN_MARK + '/scripts/survey.js'), 'the rule does not name the script');
   assert.ok(out.split('\n').includes(PLUGIN_MARK + ' = ' + PLUGIN_ROOT), 'the block never says what <plugin> is');
-  assert.ok(require('node:fs').existsSync(SURVEY_SCRIPT), SURVEY_SCRIPT + ' does not exist');
+  assert.ok(require('node:fs').existsSync(path.join(PLUGIN_ROOT, 'scripts', 'survey.js')), 'scripts/survey.js does not exist');
 });
 
 test('the plugin root is stated once per injection, and not at all when no rule needs it', () => {
@@ -221,7 +221,7 @@ test('the land rule names a runnable todo-check path, not a placeholder', () => 
   const out = render({ mine: entry(MINE, { stage: 'land' }), others: [], now: NOW });
   assert.equal(out.includes(TOKENS.todoCheck), false, 'the token survived into the output');
   assert.match(out, /node .*todo-check\.js/);
-  assert.ok(require('node:fs').existsSync(TODO_CHECK_SCRIPT), TODO_CHECK_SCRIPT + ' does not exist');
+  assert.ok(require('node:fs').existsSync(path.join(PLUGIN_ROOT, 'scripts', 'todo-check.js')), 'scripts/todo-check.js does not exist');
 });
 
 test('the land rule has each closed TODO entry named by its title', () => {

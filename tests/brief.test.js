@@ -407,7 +407,7 @@ test('a brain\'s stage rules are rendered with the profile: a land brain carries
 // stage's own rules can name a reviewer by name (`lib/stages.js:281,304`).
 // The brief's Workflow override used to name only the reader as what
 // replaces "one workflow" below, so a brain running `build` was handed a
-// rule it had no legal way to follow. lib/render.js:412 is the fix.
+// rule it had no legal way to follow. lib/render.js:550 is the fix.
 test('a brain running a stage whose rules name a reviewer may dispatch one', () => {
   const root = tmp();
   seedProfile(root, { 'stage.agents': ['build'] });
