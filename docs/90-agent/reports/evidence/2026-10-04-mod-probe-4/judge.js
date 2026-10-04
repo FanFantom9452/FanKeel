@@ -72,5 +72,3 @@ if (require.main === module) {
     }
     process.stdout.write(report(dir) + '\n');
 }
-
-module.exports = { scan, verdict, report, ACTIVE, BRIEF, LOADED };
