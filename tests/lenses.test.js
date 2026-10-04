@@ -90,3 +90,7 @@ test('scripts/lenses.js: no range is a usage error, exit 2, nothing run', () => 
     assert.equal(r.status, 2);
     assert.match(r.stderr, /usage: lenses\.js/);
 });
+
+test('a range after -- that starts with - is refused, not handed to git as an option', () => {
+    assert.ok(parseArgs(['--', '--output=x']).error);
+});

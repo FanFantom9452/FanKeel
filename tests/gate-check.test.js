@@ -88,3 +88,9 @@ test('a session record with no stage: exit 1', () => {
     assert.equal(out.code, 1);
     assert.match(out.text, /no session .* with a stage/);
 });
+
+test('an unknown flag is refused, the usage text naming the rejected flag', () => {
+    const r = main(['--sesion', 'x', 'f.md']);
+    assert.equal(r.code, 2);
+    assert.match(r.text, /--sesion/);
+});

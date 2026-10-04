@@ -11,7 +11,7 @@
 //   node gate-check.js --session <id> [--root <dir>] <handoff file>
 
 const { parseArgs } = require('node:util');
-const registry =require('../lib/registry.js');
+const registry = require('../lib/registry.js');
 const { nextStage, normaliseRoute, FULL_ROUTE } = require('../lib/stages.js');
 const { readGate } = require('../lib/handoff.js');
 
@@ -22,7 +22,7 @@ function main(argv) {
     try {
         parsed = parseArgs({ args: argv, options: { session: { type: 'string' }, root: { type: 'string' } }, allowPositionals: true });
     } catch (e) {
-        return { text: USAGE, code: 2 };
+        return { text: USAGE + ': ' + e.message, code: 2 };
     }
     const { session, root } = parsed.values;
     const files = parsed.positionals;

@@ -24,10 +24,12 @@ function parseArgs(argv) {
     try {
         parsed = util.parseArgs({ args: argv, options: { root: { type: 'string' } }, allowPositionals: true });
     } catch (e) {
-        return { error: USAGE };
+        return { error: USAGE + ': ' + e.message };
     }
     const range = parsed.positionals[0] || null;
     if (!range) return { error: USAGE };
+    // Handed to git as an argument: one starting with `-` would be read as an option.
+    if (range.startsWith('-')) return { error: '<range> is <a>..<b>, not an option: ' + range };
     return { range, root: parsed.values.root || process.cwd() };
 }
 
