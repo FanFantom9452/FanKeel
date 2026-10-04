@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # cleanup-2 的前兩項：fetchHealth 改用 fetch、profile.js 改用 blame.js 的 git Implementation Plan
