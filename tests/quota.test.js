@@ -94,6 +94,9 @@ test('spentBetween counts an unreadable transcript as skipped and quota.js warns
         const dry = main(['--claude-dir', dir, '--log', log, '--dry-run']);
         assert.equal(dry.code, 0);
         assert.match(dry.text, /warning: 1 transcript/);
+        const wrote = main(['--claude-dir', dir, '--log', log]);
+        assert.equal(wrote.code, 0);
+        assert.match(wrote.text, /warning: 1 transcript[^\n]*\nwrote /);
     } finally {
         fs.readFileSync = real;
     }
@@ -109,6 +112,22 @@ test('spentBetween does not throw when a project directory cannot be listed', ()
     };
     try {
         assert.equal(quota.spentBetween(dir, 100e3, 400e3).skipped, 1);
+    } finally {
+        fs.readdirSync = real;
+    }
+});
+
+test('spentBetween counts an unlistable subagents directory as skipped, a missing one not', () => {
+    const dir = account();
+    const bad = path.join(dir, 'projects', 'p', 's1', 'subagents');
+    fs.mkdirSync(path.join(dir, 'projects', 'p', 's2'));
+    const real = fs.readdirSync;
+    fs.readdirSync = (d, ...a) => {
+        if (d === bad) throw Object.assign(new Error('EACCES'), { code: 'EACCES' });
+        return real(d, ...a);
+    };
+    try {
+        assert.equal(quota.spentBetween(dir, 100e3, 400e3).skipped, 1, 's2 has no subagents dir (ENOENT) and is not counted');
     } finally {
         fs.readdirSync = real;
     }
