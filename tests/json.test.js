@@ -5,7 +5,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { readObject } = require('../lib/json.js');
+const { readObject, readText } = require('../lib/json.js');
 const tmp = require('./tmp.js');
 
 test('a file holding a JSON object reads as that object', () => {
@@ -38,4 +38,13 @@ test('a leading byte-order mark is dropped before parsing', () => {
     const file = path.join(dir, 'bom.json');
     fs.writeFileSync(file, Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), Buffer.from('{"a":1}')]));
     assert.deepEqual(readObject(file), { a: 1 });
+});
+
+test('readText gives a file\'s UTF-8 text, and null when it cannot be read', () => {
+    const dir = tmp('fankeel-json-');
+    const file = path.join(dir, 'a.md');
+    fs.writeFileSync(file, 'héllo\n');
+    assert.equal(readText(file), 'héllo\n');
+    assert.equal(readText(path.join(dir, 'missing.md')), null);
+    assert.equal(readText(dir), null);
 });

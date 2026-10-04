@@ -27,7 +27,7 @@ Today every agent file in `agents/` pins its own `model:` in frontmatter. Six pi
   files keep the `effort:` they pin. Raising one role's effort for a single task goes through
   `task.js profile set agent.<name>.effort <e>` (`--default` writes the config dir,
   otherwise the project), which writes `.claude/agents/<name>.md` outside the plugin
-  cache (`lib/agentfile.js:68-86`, `syncAgent`).
+  cache (`lib/agentfile.js:64-82`, `syncAgent`).
 - **d. Whether any role runs with an advisor.** Claude Code's `advisorModel` lets the
   executor consult a stronger model on its own initiative, with the whole transcript
   and no question of its own — so it cannot replace `/fankeel-ask`, which needs a
@@ -43,8 +43,8 @@ file, or by generating it from the profile; a profile key alone would change the
 model and leave the effort as pinned. Item c settles it: the pinned `effort:` stays,
 and a per-task raise goes through the override file. It is the plugin's own agent file
 with `model:`/`effort:` replaced and `generated_by: fankeel <version>` added
-(`lib/agentfile.js:50-64`); the profile unset command removes it (`lib/agentfile.js:75-79`);
-`task.js start` rewrites one left by an older plugin version (`lib/agentfile.js:99-113`,
+(`lib/agentfile.js:46-60`); the profile unset command removes it (`lib/agentfile.js:71-75`);
+`task.js start` rewrites one left by an older plugin version (`lib/agentfile.js:95-109`,
 called at `scripts/task.js:721`); and `hooks/title.js:28` (`overrideFor(input.subagent_type`)
 sends `fankeel:<name>` as `<name>` when such a marked file exists (`lib/title.js:106-121`), because
 only the bare name reaches it.
