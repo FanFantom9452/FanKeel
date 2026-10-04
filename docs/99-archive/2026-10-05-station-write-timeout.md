@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # /fankeel hook 逾時修正 — Implementation Plan

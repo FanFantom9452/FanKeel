@@ -47,6 +47,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | What the badge word means, and how to colour each stage | [statusline.md](90-agent/reference/statusline.md) |
 | Every session on this machine, where the page finds the registries, and what `stale` means | [station.md](90-agent/reference/station.md) |
 | Which model each role runs on, and the effort that goes with it — an open decision | [model-choice.md](90-agent/reference/model-choice.md) |
+| Why `buildDirs` stops following junctions, and why `ensureServe` probes at least 250ms | [decisions/2026-10-05-station-write-timeout.md](03-decisions/2026-10-05-station-write-timeout.md) |
 | Why fankeel ships no output style, and where its voice lives instead | [decisions/2026-09-13-no-output-styles.md](03-decisions/2026-09-13-no-output-styles.md) |
 | What caveman and SEPIA do that this plugin does not — gates, evals, an evidence ledger, thin wrappers — plus the user's own directions, three from 09-08 and five from 09-11 — the ones still open are `TODO.md` entries | [improvement-brief.md](90-agent/reference/improvement-brief.md) — *a backlog, 繁體中文* |
 | Every dated report's headline figure with a stable ID, what its scope does not cover, and which pages cite it | [sources.md](90-agent/reference/sources.md) — *the evidence ledger* |
