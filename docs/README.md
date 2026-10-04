@@ -208,6 +208,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 那份設計的六個 task | `docs/99-archive/2026-10-02-worktree-habit.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-02）定了什麼、沒做什麼：`lib/json.js` 加 `readObject` 收掉重複的 JSON 讀檔、刪掉沒人用的 `WIZ_FE_*`、四條 TODO 了結、文件行號引用重指 | [decisions/2026-10-02-todo-patrol.md](03-decisions/2026-10-02-todo-patrol.md) — *繁體中文* |
 | 落地它的 task | `docs/99-archive/2026-10-02-todo-patrol.md` — *built, 繁體中文* |
+| TODO 全表盤點（10-04）定了什麼、沒做什麼：程式碼可刪項做掉大半、`scripts/quota.js` 自動校準週額度、子 session 兩臂探測原因不成立、stage-agents 九條量測或轉交使用者 | [decisions/2026-10-04-todo-patrol-five.md](03-decisions/2026-10-04-todo-patrol-five.md) — *繁體中文* |
+| 落地它的 task | `docs/99-archive/2026-10-04-todo-patrol-five.md` — *built, 繁體中文* |
 | 啟動檔改由外掛在每個專案的 .fankeel/ 產生（10-02）定了什麼、沒做什麼：lib/launchers.js 產生 station.bat／station.sh、ensureLayout 每次建立時寫入並 gitignore、port 去重沿用 serve --detach 的 probe | [decisions/2026-10-02-station-launchers.md](03-decisions/2026-10-02-station-launchers.md) — *繁體中文* |
 | 落地它的三個 task | `docs/99-archive/2026-10-02-station-launchers.md` — *built, 繁體中文* |
 | TODO 九條一次建完（10-03）定了什麼、沒做什麼：await、commit、gate、build、relay 重派、docs-check 對開放條目的檢查與 docs-moved 引文改寫；四個小缺口記在 todo-check-1 | [decisions/2026-10-03-todo-nine.md](03-decisions/2026-10-03-todo-nine.md) — *繁體中文* |

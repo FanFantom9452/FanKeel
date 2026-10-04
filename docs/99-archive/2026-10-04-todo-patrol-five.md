@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # TODO 全表盤點（10-04）：程式碼可刪項、週額度自動校準、子 session 兩臂探測、stage-agents 九條 Implementation Plan
