@@ -1,0 +1,15 @@
+mod-off: bodies=20 loaded=false anyFankeel=12
+  active: 1791111505949-8.json, 1791111514384-10.json, 1791111518240-12.json, 1791111519011-13.json, 1791111522365-14.json, 1791111530236-15.json, 1791111531191-16.json, 1791111541380-17.json, 1791111553442-18.json, 1791111556137-19.json, 1791111557048-20.json
+  brief: 1791111514430-11.json, 1791111519011-13.json
+mod-on: bodies=20 loaded=true anyFankeel=12
+  active: 1791111922296-8.json, 1791111930288-10.json, 1791111932609-12.json, 1791111933533-13.json, 1791111935379-14.json, 1791111938886-15.json, 1791111939858-16.json, 1791111942140-17.json, 1791111952455-18.json, 1791111954481-19.json, 1791111955202-20.json
+  brief: 1791111930338-11.json, 1791111933533-13.json
+verdict: 沒有干擾
+head: 0601153e56213ed61b192c3535b2d453b5627fb4
+claude: 2.1.289 (Claude Code)
+mod-off session: 711ae249-41de-4516-8d2b-bf63bf667415
+mod-on session: 0dea9a70-7954-4343-967b-cc26e7b09cd5
+notes:
+- 兩臂的視窗都由 controller 用 Start-Process 開（計畫寫不用 Start-Process）。開之前先從 controller 的 pwsh 移除 CLAUDE*、CLAUDECODE、AI_AGENT、GIT_TERMINAL_PROMPT、GCM_INTERACTIVE、NO_COLOR、COREPACK_ENABLE_AUTO_PIN、PYTHONIOENCODING；兩臂開法相同。
+- 視窗標頭的 CLAUDE* 計數沒有印出（雙引號在啟動時被吃掉）。mod-on 臂請使用者手動跑 @(Get-ChildItem env:CLAUDE*).Count，結果沒有回報。兩臂的 task.js start 都被接受：registry 有兩筆 mod-probe d，都已 stood down。
+- mod-on 臂第一次啟動 claude 時指令貼上被斷行，--settings 缺參數，claude 沒有啟動、沒有產生本文；第二次用變數縮短的指令啟動。
