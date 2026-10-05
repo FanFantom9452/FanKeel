@@ -140,7 +140,7 @@ function main(argv) {
     const { root } = parseArgs(argv);
     const { findings } = run(root);
 
-    // exit code 由 fail 為真的 findings 決定，形狀照 scripts/docs-check.js:612-622。
+    // exit code 由 fail 為真的 findings 決定，形狀照 scripts/docs-check.js:612-625。
     // empty-scan 是 classify() 回來的其中一條，不是這裡另外判的——同一件事判兩次，零個
     // 引用就會印出兩行說同一件事，而互相矛盾的報告比沒有報告更難用。
     const bad = findings.some((f) => f.fail);
