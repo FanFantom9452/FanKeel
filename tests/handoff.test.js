@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const tmp = require('./tmp.js');
-const { handoffPath, commitPath, answerPath, readGate, writeAnswer, lapsUsed, readsOf, previousHandoff, ledgerCommitPath, newestCommit, skipReason, gateMatches, answersGate } = require('../lib/handoff.js');
+const { handoffPath, commitPath, answerPath, readGate, writeAnswer, lapsUsed, readsOf, previousHandoff, ledgerCommitPath, newestCommit, skipReason, gateMatches, answersGate, liveMarks } = require('../lib/handoff.js');
 
 const DATA = { started: '2026-09-19T09:30:12.345Z' };
 const TICKS = '`'.repeat(3);
@@ -510,4 +510,28 @@ test('with rules, a first question with two options is refused, and a later ques
   g.questions.push({ question: 'entry?', header: 'entry', multiSelect: false, options: [{ label: 'now', description: 'a' }, { label: 'later', description: 'b' }] });
   fs.writeFileSync(file, block(g));
   assert.deepEqual(readGate(file, 'verify', null, { pause: true }), g, 'three on the first and two on the second pass');
+});
+
+test('liveMarks drops a build group mark once its group handoff landed after it, and keeps the rest', () => {
+  const root = tmp('fankeel-livemarks-');
+  const data = Object.assign({}, DATA, { stage: 'build', inflight: [
+    { stage: 'build', at: 1, group: 2, kind: 'group', agentId: 'g2' },
+    { stage: 'build', at: 1, group: 3, kind: 'group', agentId: 'g3' },
+    { stage: 'build', at: 1, group: 4, kind: 'close', agentId: 'c' },
+  ] });
+  const file = handoffPath(root, data, 'build', undefined, 2);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, '# group 2\n');
+  assert.deepEqual(liveMarks(root, data).map((m) => m.agentId), ['g3', 'c']);
+});
+
+test('liveMarks keeps a group mark whose handoff is older than the mark, and reads a single mark', () => {
+  const root = tmp('fankeel-livemarks-');
+  const mark = { stage: 'build', at: Date.now() + 60000, group: 2, kind: 'group', agentId: 'g2' };
+  const data = Object.assign({}, DATA, { stage: 'build', inflight: mark });
+  const file = handoffPath(root, data, 'build', undefined, 2);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, '# an earlier lap\n');
+  assert.deepEqual(liveMarks(root, data), [mark]);
+  assert.deepEqual(liveMarks(root, Object.assign({}, DATA)), []);
 });

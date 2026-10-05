@@ -1136,3 +1136,10 @@ test('a stage agent that returns a relay file is replaced by a fresh one carryin
     assert.match(text, /A `relay-<id>\.md` path: dispatch a fresh one, prompt plus that path; no path at all: relay nothing, wait\./, stage);
   }
 });
+
+test('a close mark never names a group, even when it carries one', () => {
+  const { controlFor } = require('../lib/stages.js');
+  const values = { 'stage.agents': ['build'] };
+  const rules = controlFor('build', values, {}, [{ stage: 'build', at: 1, agentId: 'c1', group: 3, kind: 'close' }]).rules;
+  assert.equal(rules.find((r) => r.includes('already running')), 'A build stage agent is already running (`c1`): SendMessage it the user\'s new line; wait. Dispatch no other unless SendMessage says it is gone.');
+});
