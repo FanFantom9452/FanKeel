@@ -339,6 +339,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | mod 探測第四輪：兩臂對照補測 (d)，mod 載入時 fankeel 的 `inject.js` 與 `brief.js` 內文沒有被干擾（n=1） | [reports/2026-10-04-mod-probe-4.md](90-agent/reports/2026-10-04-mod-probe-4.md) — *a dated snapshot, 繁體中文* |
 | 受控站實跑量測：stage.agents 設全部站時，主控與 brain 各站的 context、站 agent 做不到的事、記帳、提交落點與 mutator（五個已收尾 task，n=5）；第二個 agent、profile 中途翻轉與 claims 由使用者親手補 | [reports/2026-10-04-controlled-stages.md](90-agent/reports/2026-10-04-controlled-stages.md) — *a dated snapshot, 繁體中文* |
 | 注入計時：UserPromptSubmit hook 一般 prompt、/fankeel prompt 與進行中任務各段的耗時，五秒逾時沒有在本機重現，最慢一段是 station 的 write，中位數約 1.76 秒 | [reports/2026-10-05-inject-timing.md](90-agent/reports/2026-10-05-inject-timing.md) — *a dated snapshot, 繁體中文* |
+| 注入冷啟動：/fankeel 在 station 沒在跑、在跑、同步 fs 放慢 2 與 5 毫秒四種情形下，先問 station 再寫頁前後的耗時，以及節流與 SessionStart 起 server 的結論 | [reports/2026-10-05-inject-cold-start.md](90-agent/reports/2026-10-05-inject-cold-start.md) — *a dated snapshot, 繁體中文* |
 | 同一題 Express middleware 用 `writer`、`plain`、`sepia` 三種風格寫成中英文六版，並用 `lib/plain.js` 量每版的句數、最長句與句長標準差：`prose.style` 選風格時的對照 | [reports/2026-10-05-prose-styles.md](90-agent/reports/2026-10-05-prose-styles.md) — *a dated snapshot, 繁體中文* |
 | 給人看的文字可選風格（10-05）的 design：profile key `prose.style`（`writer`、`plain`、`sepia`、`custom`，預設 `writer`），把所選風格的規則注入站 agent 與 writer 的 brief，build 站不注入 | `docs/99-archive/2026-10-05-prose-style-design.md` — *built, 繁體中文* |
 | 那份設計的四個 task | `docs/99-archive/2026-10-05-prose-style.md` — *built, 繁體中文* |
