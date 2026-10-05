@@ -48,13 +48,7 @@ function estimateTokens(text) {
     return wide + Math.ceil(other / 4);
 }
 
-function readFile(file) {
-    try {
-        return fs.readFileSync(file, 'utf8');
-    } catch (e) {
-        return null;
-    }
-}
+const { readText: readFile } = require('../lib/json.js');
 
 function projectsUnder(root) {
     const out = [root];

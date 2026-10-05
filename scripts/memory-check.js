@@ -45,13 +45,7 @@ function memoryDir(configDir, root) {
     return path.join(configDir, 'projects', projectSlug(root), 'memory');
 }
 
-function readFile(file) {
-    try {
-        return fs.readFileSync(file, 'utf8');
-    } catch (e) {
-        return null;
-    }
-}
+const { readText: readFile } = require('../lib/json.js');
 
 function lineCount(file) {
     const text = readFile(file);

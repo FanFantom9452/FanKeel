@@ -112,13 +112,8 @@ const CODE_EXT = new Set([
 
 const isMarkdown = (p) => p.toLowerCase().endsWith('.md');
 
-function readFile(root, rel) {
-    try {
-        return fs.readFileSync(path.join(root, rel), 'utf8');
-    } catch (e) {
-        return null;
-    }
-}
+const { readText } = require('../lib/json.js');
+const readFile = (root, rel) => readText(path.join(root, rel));
 
 // Every symbol the repository declares, gathered once, name to every file
 // that declares it. `docs-for` needs the files; the orphan check inside
