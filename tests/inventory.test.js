@@ -68,11 +68,14 @@ test('lib/stages.js exports NAMES, and every stage has its own skill directory',
 });
 
 test('hooks/*.js matches exactly what plugin.json references', () => {
-    // plugin.json is the source of truth for which hooks run. A
-    // hooks/hooks.json would be a second one, and there is none today —
-    // if this ever exists, read the hook list from there instead.
-    assert.ok(!fs.existsSync(path.join(ROOT, 'hooks', 'hooks.json')),
-        'hooks/hooks.json exists now — read the hook list from there, not from plugin.json');
+    // plugin.json is the source of truth for which command hooks run.
+    // hooks/hooks.json exists only to declare the engine module
+    // hooks/compact.ts; a `hooks` key there would be a second list, so it may
+    // hold `modules` and nothing else.
+    const declared = JSON.parse(fs.readFileSync(path.join(ROOT, 'hooks', 'hooks.json'), 'utf8'));
+    assert.deepEqual(Object.keys(declared), ['modules'],
+        'hooks/hooks.json holds more than modules — read the hook list from there too');
+    assert.deepEqual(declared.modules, ['compact.ts']);
 
     const hookFiles = fs.readdirSync(path.join(ROOT, 'hooks'))
         .filter((f) => f.endsWith('.js'))

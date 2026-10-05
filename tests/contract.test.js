@@ -316,8 +316,10 @@ test('the pages that count the hooks count as many as are registered', () => {
 
   // A file in hooks/ that nothing registers never runs, so a count taken from
   // either one alone can be right about a set the other does not have.
+  // hooks/compact.ts and hooks/hooks.json are the engine module and its
+  // declaration, not command hooks, so only the .js files are compared.
   assert.deepEqual([...eventOf.keys()].sort(),
-    fs.readdirSync(path.join(root, 'hooks')).sort(),
+    fs.readdirSync(path.join(root, 'hooks')).filter((f) => f.endsWith('.js')).sort(),
     'hooks/ and the manifest name different hooks');
 
   // README's own definition of load-bearing: the two events where a hook that
