@@ -1,0 +1,117 @@
+start 19.4
+require lib/registry.js 3.5
+require lib/blame.js 3.8
+require lib/profile.js 5.9
+require lib/stages.js 6.8
+require lib/usage.js 1.6
+require lib/plantasks.js 3.2
+require lib/detail.js 7.9
+require lib/todo.js 2.1
+require lib/station.js 21.5
+require lib/guard.js 1.7
+require lib/map.js 1.6
+require lib/render.js 5.2
+call lib/hook.js run 1.1
+require hooks/inject.js 36.1
+call lib/hook.js parse 0.0
+call lib/registry.js launchRoot 0.0
+call lib/registry.js rootFor 0.2
+call lib/registry.js readSession 0.3
+call lib/profile.js configDirOf 0.0
+call lib/badge.js readBadge 0.2
+exit 59.0
+---
+start 16.6
+require lib/registry.js 2.6
+require lib/blame.js 2.7
+require lib/profile.js 5.2
+require lib/stages.js 6.1
+require lib/usage.js 1.4
+require lib/plantasks.js 2.3
+require lib/detail.js 6.5
+require lib/todo.js 1.6
+require lib/station.js 18.3
+require lib/guard.js 1.7
+require lib/map.js 1.5
+require lib/render.js 4.8
+call lib/hook.js run 1.0
+require hooks/inject.js 30.8
+call lib/hook.js parse 0.0
+call lib/registry.js launchRoot 0.0
+call lib/registry.js rootFor 0.1
+call lib/registry.js readSession 0.2
+call lib/profile.js configDirOf 0.0
+call lib/badge.js readBadge 0.1
+exit 50.1
+---
+start 19.1
+require lib/registry.js 2.9
+require lib/blame.js 3.3
+require lib/profile.js 5.3
+require lib/stages.js 6.2
+require lib/usage.js 1.9
+require lib/plantasks.js 2.6
+require lib/detail.js 7.8
+require lib/todo.js 1.8
+require lib/station.js 20.2
+require lib/guard.js 1.6
+require lib/map.js 1.4
+require lib/render.js 4.9
+require lib/dirty.js 1.1
+call lib/hook.js run 1.1
+require hooks/inject.js 34.2
+call lib/hook.js parse 0.0
+call lib/registry.js launchRoot 0.0
+call lib/registry.js rootFor 0.1
+call lib/registry.js readSession 0.2
+call lib/profile.js configDirOf 0.0
+call lib/badge.js readBadge 0.1
+exit 56.2
+---
+start 18.0
+require lib/registry.js 2.7
+require lib/blame.js 3.2
+require lib/agentfile.js 1.2
+require lib/profile.js 5.7
+require lib/stages.js 6.6
+require lib/usage.js 1.6
+require lib/plantasks.js 2.7
+require lib/detail.js 7.4
+require lib/todo.js 1.8
+require lib/station.js 20.1
+require lib/guard.js 1.6
+require lib/map.js 1.4
+require lib/render.js 4.9
+call lib/hook.js run 1.2
+require hooks/inject.js 33.2
+call lib/hook.js parse 0.0
+call lib/registry.js launchRoot 0.0
+call lib/registry.js rootFor 0.2
+call lib/registry.js readSession 0.3
+call lib/profile.js configDirOf 0.0
+call lib/badge.js readBadge 0.2
+exit 55.6
+---
+start 17.1
+require lib/registry.js 2.6
+require lib/blame.js 2.9
+require lib/profile.js 5.3
+require lib/stages.js 6.2
+require lib/usage.js 1.6
+require lib/plantasks.js 2.5
+require lib/detail.js 7.0
+require lib/todo.js 1.7
+require lib/station.js 18.9
+require lib/guard.js 1.7
+require lib/map.js 1.3
+require lib/render.js 4.5
+call lib/hook.js run 1.0
+require hooks/inject.js 31.3
+call lib/hook.js parse 0.0
+call lib/registry.js launchRoot 0.0
+call lib/registry.js rootFor 0.1
+call lib/registry.js readSession 0.2
+call lib/profile.js configDirOf 0.0
+call lib/badge.js readBadge 0.1
+exit 51.5
+---
