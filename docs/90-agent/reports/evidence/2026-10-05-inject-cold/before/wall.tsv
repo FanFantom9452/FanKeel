@@ -1,0 +1,20 @@
+cold	1	2935	0		2844	station: 2 stale, 6 live — http://127.0.0.1:12053/ (serve started, browser opened).
+warm	1	2215	0			station: 3 stale, 6 live — http://127.0.0.1:12053/ (serve was running).
+slow-2	1	20028		SIGTERM		no block
+slow-5	1	20018		SIGTERM		no block
+slow-5	2	20016		SIGTERM		no block
+slow-2	2	20017		SIGTERM		no block
+warm	2	2025	0			station: 4 stale, 6 live — http://127.0.0.1:12053/ (serve was running).
+cold	2	3155	0		3058	station: 5 stale, 6 live — http://127.0.0.1:14738/ (serve started, browser opened).
+cold	3	3194	0		3104	station: 6 stale, 6 live — http://127.0.0.1:9285/ (serve started, browser opened).
+warm	3	3857	0			station: 7 stale, 6 live — http://127.0.0.1:9285/ (serve was running).
+slow-2	3	20016		SIGTERM		no block
+slow-5	3	20016		SIGTERM		no block
+slow-5	4	20018		SIGTERM		no block
+slow-2	4	20025		SIGTERM		no block
+warm	4	2010	0			station: 8 stale, 6 live — http://127.0.0.1:9285/ (serve was running).
+cold	4	2115	0		2029	station: 9 stale, 6 live — http://127.0.0.1:13287/ (serve started, browser opened).
+cold	5	3054	0		2955	station: 10 stale, 6 live — http://127.0.0.1:8798/ (serve started, browser opened).
+warm	5	3720	0			station: 11 stale, 6 live — http://127.0.0.1:8798/ (serve was running).
+slow-2	5	20023		SIGTERM		no block
+slow-5	5	20037		SIGTERM		no block

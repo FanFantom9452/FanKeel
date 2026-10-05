@@ -1,0 +1,7 @@
+date: 2026-10-05T09:33:01.267Z
+plugin: F:\ymlab\fankeel\.claude\worktrees\agent-a8d34f81a065ba7f8
+HEAD: f2b40621b7c3a3562ccb12df3029523624653e83
+porcelain:
+?? docs/90-agent/reports/evidence/2026-10-05-inject-cold/
+
+node: v24.9.0  runs: 5
