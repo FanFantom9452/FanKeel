@@ -2,7 +2,7 @@
 // lib/usage.js dispatchesOf(): a row already carries `requests` (design §7's
 // first bullet, half done); this adds `peak`, the largest single request's
 // context — the same measure lib/detail.js's extract() already takes across
-// a session's own requests (`points`/`peak`, lib/detail.js:639-640) — taken
+// a session's own requests (`points`/`peak`, lib/detail.js:632-633) — taken
 // here across one agent's own series instead. The third test checks the
 // field survives lib/station.js's serializeDetail(), a projection that can
 // drop a field gather() has: test what serialize() outputs, not what the raw
