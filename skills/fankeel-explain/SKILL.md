@@ -86,3 +86,11 @@ Never compress negations, numbers and units, identifiers, paths, flags, error
 strings or code blocks. Reply in the language the user writes in, whatever
 language this file is in, and name a code concept in code rather than
 translating it.
+
+## Controlled Chinese
+
+Where the profile's `language` is 繁體中文, prose for the user follows
+[plain-language.md](../../docs/90-agent/reference/plain-language.md): one
+thing per sentence, at most 160 columns, the result first, and a name instead
+of a code. A controlled stage's gate is sent back past either limit
+(`proseProblem` in `lib/plain.js`).
