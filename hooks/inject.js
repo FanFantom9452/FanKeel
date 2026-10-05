@@ -150,7 +150,8 @@ function main(raw) {
         // nothing else in this process moves: asked first, the station is
         // already starting when a slow disk stretches the write toward this
         // hook's five seconds (inject-3). A failure here is named on the station
-        // line, with its error, rather than dropping the line (inject-5).
+        // line, with its error, rather than dropping the line (inject-5), and the
+        // error is cut to 65 characters so the line stays under the init cap (inject-6).
         const writePage = () => {
             if (!starting || !dir) return null;
             try {

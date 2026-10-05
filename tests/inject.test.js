@@ -646,3 +646,18 @@ test('a /fankeel prompt whose page write fails says so on the station line', () 
   assert.match(text, new RegExp(MINE), 'the block itself still goes out');
   assert.match(text, /^station: the page was not written \(.+\)\.$/m);
 });
+
+// inject-6: the hook cuts a page write error to 65 characters, which is what
+// keeps the station line inside the init block's cap. A config directory named
+// with 80 characters puts that name in the mkdir error, so the message is
+// longer than 65 whatever the temp directory is.
+test('a page write error longer than 65 characters is cut to 65 on the station line', () => {
+  const dir = tmp('fankeel-hook-');
+  const cfg = path.join(tmp('fankeel-cfg-'), 'c'.repeat(80));
+  fs.mkdirSync(cfg);
+  fs.writeFileSync(path.join(cfg, 'fankeel'), 'not a directory');
+  const text = context(run({ session_id: MINE, cwd: dir, prompt: '/fankeel' }, cfg));
+  const line = text.match(/^station: the page was not written \((.*)\)\.$/m);
+  assert.ok(line, 'no unwritten-page station line in: ' + text);
+  assert.equal(line[1].length, 65, 'the error shown was: ' + line[1]);
+});
