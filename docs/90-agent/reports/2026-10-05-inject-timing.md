@@ -7,7 +7,7 @@ last_verified: 2026-10-05
 
 ## 結論
 
-五秒逾時沒有在本機重現：四個情境、各跑五次，牆鐘最長的是 `/fankeel`（station 在跑）約 2.0 秒。最慢的一段是 `call lib/station.js write`，中位數 1756.3ms、最大 1861.8ms（`fankeel` 情境；關掉 serve 的情境是中位數 1749.3ms），佔該情境 `exit` 時刻（中位數 1863.4ms）的 94%。其餘每段都在 50ms 以下：`require lib/station.js` 20.2ms、`call lib/serve.js ensureServe` 32.1ms（station 已在跑，所以只是問一次）、node 起到墊片 16.6ms。一般 prompt 與進行中任務的 prompt 都在 0.3 秒內。
+五秒逾時沒有在本機重現：四個情境、各跑五次，牆鐘最長的是 `/fankeel`（station 在跑）約 2.0 秒。最慢的一段是 `call lib/station.js write`，中位數 1756.3ms、最大 1861.8ms（`fankeel` 情境；關掉 serve 的情境是中位數 1749.3ms），佔該情境 `exit` 時刻（中位數 1863.4ms）的 94%。其餘每段都在 50ms 以下：`require lib/station.js` 20.2ms、`call lib/serve.js ensureServe` 32.1ms（station 已在跑，所以只是問一次）、node 起到墊片 16.6ms。一般 prompt 與進行中任務的 prompt 都在 0.33 秒內（進行中任務帶墊片的最大值是 328.9ms）。
 
 ## 環境
 
@@ -22,8 +22,8 @@ last_verified: 2026-10-05
 
 | 情境 | shim 中位數 | shim 最大 | bare 中位數 | bare 最大 |
 |---|---|---|---|---|
-| plain（`hello`，無任務） | 91.1 | 147.9 | 73.0 | 77.7 |
-| fankeel-serve-off（`/fankeel`，`FANKEEL_SERVE=off`） | 1953.3 | 1962.3 | 1849.7 | 1864.5 |
+| plain（`hello`，無任務） | 84.6 | 147.9 | 72.9 | 77.7 |
+| fankeel-serve-off（`/fankeel`，`FANKEEL_SERVE=off`） | 1866.4 | 1962.3 | 1849.7 | 1864.5 |
 | fankeel（`/fankeel`，station 在跑） | 1913.3 | 2032.7 | 1901.8 | 1991.3 |
 | active（`hello`，進行中任務） | 194.0 | 328.9 | 183.0 | 286.8 |
 
