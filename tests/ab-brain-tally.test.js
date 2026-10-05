@@ -59,6 +59,18 @@ test('a run is tallied from its stage files, its controller transcript and its s
     assert.equal(t.relays, 1);
 });
 
+test('a run with no brain transcript, or no verify stage json, is not valid in either arm', () => {
+    for (const arm of ['opus', 'sonnet']) {
+        const tag = 'r1-' + arm;
+        const { evid, run } = fixture(tag, arm + ' 5.5 · medium: build stage agent');
+        assert.equal(tallyRun(evid, run, tag).valid, true);
+        const empty = tmp('fankeel-ab-empty-');
+        assert.equal(tallyRun(evid, path.join(empty, tag), tag).valid, false);
+        fs.rmSync(path.join(evid, tag + '-verify.json'));
+        assert.equal(tallyRun(evid, run, tag).valid, false);
+    }
+});
+
 test('an opus run whose brain ran on sonnet is not valid, and main leaves it out of the arm', () => {
     const { evid, raw } = fixture('r1-opus', 'sonnet 5.5 · medium: build stage agent');
     const out = main([evid, raw]);

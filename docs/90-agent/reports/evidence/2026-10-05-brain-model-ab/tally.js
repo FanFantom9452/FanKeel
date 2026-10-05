@@ -6,7 +6,7 @@
 // `.fankeel/build` copied as `build/`. `--resume` reports cost cumulatively, so
 // a run's spend is its last stage file's, never a sum. A tool_use is counted
 // once by its id, however many transcript lines repeat it. A run is valid
-// only when its brains ran on its arm's model, read off each brain's meta
+// only when its verify stage json exists and its brains ran on its arm's model, read off each brain's meta
 // `description`, which hooks/title.js opens with the model.
 // usage: node tally.js <evidence dir> <raw dir>
 const fs = require('node:fs');
@@ -101,6 +101,12 @@ function wallSeconds(evid, tag) {
     return s;
 }
 
+// at least one brain on the arm's model, none on the other model or on none named
+function validRun(arm, brainModels) {
+    const other = arm === 'opus' ? 'sonnet' : 'opus';
+    return (brainModels[arm] || 0) >= 1 && !brainModels[other] && !brainModels.unknown;
+}
+
 function tallyRun(evid, rawRun, tag) {
     const arm = /-(opus|sonnet)$/.exec(tag)[1];
     let names = [];
@@ -131,7 +137,7 @@ function tallyRun(evid, rawRun, tag) {
     return Object.assign({
         tag,
         arm,
-        valid: arm === 'opus' ? !brainModels.sonnet : (brainModels.sonnet || 0) >= 1,
+        valid: validRun(arm, brainModels) && fs.existsSync(path.join(evid, tag + '-verify.json')),
         brainModels,
     }, spend(evid, tag), {
         wallSeconds: wallSeconds(evid, tag),
