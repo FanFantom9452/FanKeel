@@ -1,0 +1,23 @@
+HEAD db048e90bba5fd643cee0fda86c882e7944b4592
+porcelain: ?? docs/90-agent/reports/evidence/2026-10-05-sweep-red/
+
+control	tests/stages.test.js	pass
+control	tests/handoff.test.js	pass
+control	tests/todo-files.test.js	pass
+control	tests/station-todo-files.test.js	pass
+control	tests/gate-check.test.js	pass
+control	tests/docs-check.test.js	pass
+control	tests/plain.test.js	pass
+
+handoff marker	lib/stages.js	a close mark names its group again	tests/stages.test.js	red	✖ a close mark never names a group, even when it carries one (0.8444ms) | ✖ failing tests: | ✖ a close mark never names a group, even when it carries one (0.8444ms)
+handoff marker	lib/handoff.js	liveMarks drops close marks too	tests/handoff.test.js	red	✖ liveMarks drops a build group mark once its group handoff landed after it, and keeps the rest (3.22ms) | ✖ failing tests: | ✖ liveMarks drops a build group mark once its group handoff landed after it, and keeps the rest (3.22ms)
+handoff marker	lib/handoff.js	liveMarks keeps every mark, as before	tests/handoff.test.js	red	✖ liveMarks drops a build group mark once its group handoff landed after it, and keeps the rest (3.5385ms) | ✖ failing tests: | ✖ liveMarks drops a build group mark once its group handoff landed after it, and keeps the rest (3.5385ms)
+done record	lib/todo.js	a record with no --commits lists no sha	tests/todo-files.test.js	red	✖ close with a record and no commits lists the sha alone (7.0058ms) | ✖ failing tests: | ✖ close with a record and no commits lists the sha alone (7.0058ms)
+done record	lib/todo.js	a non-sha --commits entry is accepted	tests/todo-files.test.js	red	✖ close with a non-sha commits entry throws and leaves the entry unchanged (6.426ms) | ✖ failing tests: | ✖ close with a non-sha commits entry throws and leaves the entry unchanged (6.426ms)
+done record	lib/todo.js	recordOf never finds the record	tests/todo-files.test.js	red	✖ close with a record appends 完成紀錄 with every commit, and recordOf reads it back (8.9637ms) | ✖ failing tests: | ✖ close with a record appends 完成紀錄 with every commit, and recordOf reads it back (8.9637ms)
+station panel	lib/station.js	the panel shows the whole body, as before	tests/station-todo-files.test.js	red	✖ a done entry with a 完成紀錄 shows only the record on the panel; one without keeps its body (26.7313ms) | ✖ failing tests: | ✖ a done entry with a 完成紀錄 shows only the record on the panel; one without keeps its body (26.7313ms)
+plain check	lib/handoff.js	the gate runs no prose check, as before	tests/gate-check.test.js	red	✖ a sentence over 160 columns is refused, naming its field (4.0125ms) | ✖ a TODO id standing alone is refused; the entry named by its title passes (6.4829ms) | ✖ failing tests: | ✖ a sentence over 160 columns is refused, naming its field (4.0125ms) | ✖ a TODO id standing alone is refused; the entry named by its title passes (6.4829ms)
+plain check	scripts/docs-check.js	docs-check runs no prose check, as before	tests/docs-check.test.js	red	✖ a human guide page with a sentence over 160 columns gets long-sentence; an agent page does not (281.6161ms) | ✖ failing tests: | ✖ a human guide page with a sentence over 160 columns gets long-sentence; an agent page does not (281.6161ms)
+plain check	lib/plain.js	the sentence cap moves off 160	tests/plain.test.js	red	✖ a sentence is cut at 。！？；| and at . ! ? ; before a space, and a CJK character counts two (1.8516ms) | ✖ proseProblem names the first gate field that breaks a rule (0.6713ms) | ✖ proseFindings reads a human reference page, and a todo entry only under its record heading (1.0386ms) | ✖ failing tests: | ✖ a sentence is cut at 。！？；| and at . ! ? ; before a space, and a CJK character counts two (1.8516ms) | ✖ proseProblem names the first gate field that breaks a rule (0.6713ms) | ✖ proseFindings reads a human reference page, and a todo entry only under its record heading (1.0386ms)
+
+restored: every mutated file matches HEAD
