@@ -240,6 +240,15 @@ test('close with a record appends 完成紀錄 with every commit, and recordOf r
   assert.equal(lib.recordOf('no record here'), '');
 });
 
+test('close with a non-sha commits entry throws and leaves the entry unchanged', () => {
+  const dir = project(true);
+  fs.mkdirSync(path.join(dir, 'docs', 'todo'));
+  const made = lib.add(dir, { label: 'x', title: 'c thing', description: 'c thing', state: 'ready', link: 'docs/a.md' });
+  const before = fs.readFileSync(path.join(dir, made.file), 'utf8');
+  assert.throws(() => lib.close(dir, made.id, { sha: 'abcdef1', record: '做完了。', commits: ['1234', 'abcdef1'] }), /1234/);
+  assert.equal(fs.readFileSync(path.join(dir, made.file), 'utf8'), before);
+});
+
 test('close with a record and no commits lists the sha alone', () => {
   const dir = project(true);
   fs.mkdirSync(path.join(dir, 'docs', 'todo'));
