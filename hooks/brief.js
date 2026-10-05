@@ -17,8 +17,9 @@
 // A subagent started with an isolated context does not receive this, and that is
 // Claude Code's decision rather than something to work around.
 //
-// The agent type is passed through, and one type — fankeel-judge — gets a
-// line of its own in lib/render.js.
+// The agent type is passed through, and two types get lines of their own in
+// lib/render.js: fankeel-judge, and fankeel-writer, which gets the profile's
+// `prose.style` rules.
 
 const fs = require('node:fs');
 const path = require('node:path');
