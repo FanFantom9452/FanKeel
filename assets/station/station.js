@@ -3861,7 +3861,7 @@
         if (unpriced) tip.push(loc('det.priceListDoesNotKnow', '價目表不認得：{u}', { u: esc(unpriced) }));
         if (estimated) tip.push(loc('det.priceEstimated', '價目表沒有，照同家族最新一列估價：{u}', { u: esc(estimated) }));
         return '<td class="r">' + (time || dur(t.s)) + '</td><td class="r">' + comma(t.k) + 'k</td><td class="r"'
-            + (tip.length ? ' title="' + tip.join('；') + '"' : '') + '>'
+            + (tip.length ? ' title="' + tip.join('; ') + '"' : '') + '>'
             + (unpriced && !t.c ? 'unpriced' : cents(t.c)) + (estimated ? ' ' + loc('det.estShort', '估') : '') + '</td>'
             + '<td class="r">' + tokens(t.ti || 0) + '</td><td class="r">$' + (t.ci || 0).toFixed(2) + '</td>'
             + '<td class="r">' + tokens(t.to || 0) + '</td><td class="r">$' + (t.co || 0).toFixed(2) + '</td>'
