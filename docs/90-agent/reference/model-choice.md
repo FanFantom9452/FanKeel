@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-29
+last_verified: 2026-10-05
 source_of_truth: agents/*.md, lib/profile.js
 ---
 
@@ -59,3 +59,16 @@ effort, approved at the plan gate; `ledger.js lint` refuses any other value.
 The controller asks the user before it sends a brain at `high` or `xhigh`, and
 only for a stage it judges needs deep thought (`controlRules` in
 `lib/stages.js`). The override file above stays the per-role route.
+
+## Fast mode
+
+Fast mode cannot be given to some subagents and not to others (checked on
+2026-10-05 against Claude Code's fast mode documentation). It is one switch
+for the whole session, turned with `/fast`; neither the Agent tool's
+parameters, an agent file's frontmatter, nor a Workflow `agent()` call has a
+field for it. It runs only on Opus models — Opus 5.5, Opus 5 and Opus 4.8 — so
+a `sonnet` implementer, reader or reviewer has no fast version to be given.
+Whether a subagent with no `model` of its own inherits fast from a session
+that has it on is not documented and was not measured. Giving fast to the
+sonnet subagents alone waits upstream, in a blocked TODO entry, on Sonnet
+supporting fast or on fast being settable per agent.
