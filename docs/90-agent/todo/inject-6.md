@@ -1,7 +1,7 @@
 ---
 label: inject
 title: 站線 65 字元截斷沒有測試
-description: hooks/inject.js 把 station 行切在 65 字元，render 測試餵的已是 65 長的字串，改成 6500 也不會有測試變紅
+description: `hooks/inject.js` 把 station 行切在 65 字元，render 測試餵的已是 65 長的字串，改成 6500 也不會有測試變紅
 state: done
 link: hooks/inject.js
 done:

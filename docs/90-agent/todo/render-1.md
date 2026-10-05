@@ -1,7 +1,7 @@
 ---
 label: render
 title: stationLine 新分支沒做過變異
-description: lib/render.js 的 stationLine 只有 error 時、running 與 started 才帶網址、starting 不帶，這些分支只有 regex 斷言，沒證據它們能變紅
+description: `lib/render.js` 的 stationLine 只有 error 時、running 與 started 才帶網址、starting 不帶，這些分支只有 regex 斷言，沒證據它們能變紅
 state: done
 link: lib/render.js
 done:
