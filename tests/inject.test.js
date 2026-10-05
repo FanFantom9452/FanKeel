@@ -542,9 +542,11 @@ function runAsync(payload, claudeDir, env) {
 // code from before some edit and kills its pid, which is this test runner's.
 function fakeStation(cfg) {
   let hits = 0;
+  let first = null;
   const server = http.createServer((req, res) => {
     if (req.url !== '/station/health') { res.writeHead(404); res.end(); return; }
     hits += 1;
+    if (first === null) first = Date.now();
     res.writeHead(200, { 'content-type': 'application/json' });
     res.end(JSON.stringify({ station: true, pid: process.pid, started: new Date().toISOString(), fingerprint: serve.diskFingerprint(PLUGIN) }));
   });
@@ -554,7 +556,7 @@ function fakeStation(cfg) {
       fs.mkdirSync(path.join(cfg, 'fankeel'), { recursive: true });
       fs.writeFileSync(path.join(cfg, 'fankeel', 'serve.json'),
         JSON.stringify({ pid: process.pid, port: server.address().port, url, started: new Date().toISOString() }) + '\n');
-      resolve({ url, hits: () => hits, close: () => new Promise((r) => { server.close(r); }) });
+      resolve({ url, hits: () => hits, first: () => first, close: () => new Promise((r) => { server.close(r); }) });
     });
   });
 }
@@ -579,6 +581,24 @@ test('a /fankeel prompt names a station that answers by its url, and starts none
     assert.ok(st.hits() >= 1, 'the hook never asked the station');
     assert.equal(JSON.parse(fs.readFileSync(path.join(cfg, 'fankeel', 'serve.json'), 'utf8')).pid, process.pid,
       'a second station was started over one that answered');
+  } finally {
+    stopStarted(cfg);
+    await st.close();
+  }
+});
+
+// inject-3: `station.write` is synchronous and the longest part of a
+// `/fankeel` prompt, so it goes after the station has been asked — a slow
+// write can no longer keep a station from starting.
+test('a /fankeel prompt asks the station before it writes the page', async () => {
+  const root = tmp('fankeel-hook-');
+  const cfg = tmp('fankeel-cfg-');
+  const st = await fakeStation(cfg);
+  try {
+    await runAsync({ session_id: MINE, cwd: root, prompt: '/fankeel' }, cfg);
+    const written = fs.statSync(path.join(cfg, 'fankeel', 'station', 'station-data.js')).mtimeMs;
+    assert.notEqual(st.first(), null, 'the hook never asked the station');
+    assert.ok(st.first() <= written, 'the page was written ' + (st.first() - written).toFixed(0) + 'ms before the station was asked');
   } finally {
     stopStarted(cfg);
     await st.close();

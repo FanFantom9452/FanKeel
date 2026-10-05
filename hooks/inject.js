@@ -77,6 +77,16 @@ function initBadge(dir, sessionId, mine, starting, root) {
     } catch (e) { /* housekeeping */ }
 }
 
+// A station this prompt started but had not bound when `ensureServe` stopped
+// waiting (`starting`) may have bound while the page was being written: a
+// record whose pid is running is read as started. Anything else is `serve`
+// as it came.
+function boundSince(serveLib, dir, serve) {
+    if (!serve || serve.state !== 'starting') return serve;
+    const rec = serveLib.readServeRecord(dir);
+    return rec && typeof rec.url === 'string' && live.running(rec.pid) ? { state: 'started', url: rec.url } : serve;
+}
+
 function main(raw) {
     const began = Date.now();
     const payload = parse(raw);
@@ -97,16 +107,6 @@ function main(raw) {
     if (!mine || mine.active !== true || initOnly) {
         const starting = startsFankeel(payload.prompt);
         const dir = profileLib.configDirOf();
-
-        // The page, before the block that names it. `write` is a few hundred
-        // milliseconds against this hook's five-second budget, and a failure
-        // here costs one line of the block rather than the block.
-        let page = null;
-        if (starting && dir) {
-            try {
-                page = station.write({ configDir: dir, cwd: launch, root, plugin: PLUGIN_ROOT });
-            } catch (e) { /* housekeeping */ }
-        }
 
         // The one prompt where the id is about to be typed into `task.js`, and
         // the only moment anything here can say what it is. Nothing else on
@@ -144,7 +144,22 @@ function main(raw) {
             const { sources } = require('../scripts/input-check.js');
             input = { tokens: sources(root, live.liveConfigDir()).reduce((n, s) => n + s.tokens, 0) };
         } catch (e) { /* a failure means no line */ }
-        const finish = (serve) => {
+
+        // The page, once the station has been asked. `write` reads transcripts
+        // for up to `DETAIL_BUDGET_MS` and is synchronous, so while it runs
+        // nothing else in this process moves: asked first, the station is
+        // already starting when a slow disk stretches the write toward this
+        // hook's five seconds (inject-3). A failure here costs one line of the
+        // block rather than the block.
+        const writePage = () => {
+            if (!starting || !dir) return null;
+            try {
+                return station.write({ configDir: dir, cwd: launch, root, plugin: PLUGIN_ROOT });
+            } catch (e) {
+                return null;
+            }
+        };
+        const finish = (page, serve) => {
             if (speaks) {
                 process.stdout.write(JSON.stringify({
                     hookSpecificOutput: {
@@ -158,21 +173,27 @@ function main(raw) {
 
         // Whether a station is serving, asked only on the prompt whose block
         // names one; every other prompt stays two missing files. `ensureServe`
-        // gives `serve.json` a second to answer and starts `station.js serve
-        // --open` detached when nothing does, so the browser opens only when
-        // this prompt started the station, and `began + SERVE_BUDGET_MS`
-        // bounds the page write above and all of this together. Required here
-        // rather than at the top, so a prompt that never asks never loads it.
-        // It never rejects; the `catch` is for `finish`, since a rejection left
-        // unhandled would end this process non-zero. `FANKEEL_SERVE=off` turns
-        // the asking off and leaves the file on the line — the tests run so.
-        if (speaks && page && dir && process.env.FANKEEL_SERVE !== 'off') {
-            require('../lib/serve.js').ensureServe({ configDir: dir, plugin: PLUGIN_ROOT, until: began + SERVE_BUDGET_MS })
-                .then(finish, () => finish(null))
+        // starts `station.js serve --open` detached when nothing answers, so
+        // the browser opens only when this prompt started the station. It may
+        // spend what the page write's own threshold (`WRITE_THRESHOLD_MS`)
+        // leaves of `SERVE_BUDGET_MS`, the write gets the rest, and a station
+        // still binding when the write ends is read off its record once more
+        // (`boundSince`). Required here rather than at the top, so a prompt
+        // that never asks never loads it. It never rejects; the `catch` is for
+        // `finish`, since a rejection left unhandled would end this process
+        // non-zero. `FANKEEL_SERVE=off` turns the asking off and leaves the
+        // file on the line — the tests run so.
+        if (speaks && dir && process.env.FANKEEL_SERVE !== 'off') {
+            const serveLib = require('../lib/serve.js');
+            serveLib.ensureServe({ configDir: dir, plugin: PLUGIN_ROOT, until: began + SERVE_BUDGET_MS - station.WRITE_THRESHOLD_MS })
+                .then((serve) => {
+                    const page = writePage();
+                    finish(page, page ? boundSince(serveLib, dir, serve) : null);
+                }, () => finish(writePage(), null))
                 .catch(() => {});
             return;
         }
-        finish(null);
+        finish(writePage(), null);
         return;
     }
 
