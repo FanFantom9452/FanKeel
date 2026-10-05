@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # TODO 全表盤點（10-05）：注入計時、可刪項、死 agent 標記、write 門檻、看得懂的完成紀錄、fast 結案 Implementation Plan

@@ -23,7 +23,7 @@ Module._load = function (request, parent, isMain) {
     // A builtin resolves to its own name, which path.relative reads as a file under the cwd.
     if (Module.isBuiltin(request)) return out;
     let file = request;
-    try { file = Module._resolveFilename(request, parent, isMain); } catch (e) { /* unresolvable: leave file unset */ }
+    try { file = Module._resolveFilename(request, parent, isMain); } catch (e) { /* unresolvable:leave file as the request */ }
     const rel = path.relative(PLUGIN, String(file)).replace(/\\/g, '/');
     if (rel.startsWith('..') || path.isAbsolute(rel) || rel.includes('node_modules')) return out;
     if (ms >= 1) lines.push('require ' + rel + ' ' + ms.toFixed(1));
