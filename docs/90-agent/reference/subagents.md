@@ -855,6 +855,19 @@ section records them.
   `hooks/resume.js` does not read it. An agent that died leaves its mark until the
   next gate or the SendMessage fallback.
   Seen: a message sent while the brain was working was absorbed and the brain returned as usual; a survey agent resumed by `SendMessage` after a typed gate answer was re-marked with the same `agentId` and `lap`, and after the user stopped it the mark stayed until `await.js` judged the agent lost, about 11 minutes after its transcript stopped against a 3-minute idle; a group mark is cleared only when `await.js` reports that group's handoff, and one whose handoff reached the controller another way was left standing ([report](../reports/2026-10-04-controlled-stages.md#第二個-agent)).
+  Decided on 2026-10-05: the eleven minutes are `BUSY_MS` in `lib/handoff.js`.
+  A stopped agent's transcript ends in a tool call that never got its result,
+  and `awaitState` waits ten minutes and one more for such a call before it says
+  `lost`, because a foreground Bash call may run that long with nothing written.
+  That wait stays. No `SubagentStop` hook is added: whether it fires when a
+  stage agent ends its turn with `waiting` has not been measured, and clearing
+  the mark of an agent that is only waiting would let the controller send a
+  second one. A group mark whose group handoff reached the controller by any
+  path is no longer shown: `lib/render.js` reads the marks through `liveMarks`
+  in `lib/handoff.js`, which leaves out a build group mark whose `build-g<n>.md`
+  is newer than the mark. A close mark never names a group in the controller's
+  line any more (`inflightRule` in `lib/stages.js`); `markInflight` still gives
+  it the next free number, and nothing reads it.
 - **The profile moves under a running stage.** `hooks/inject.js` re-reads it on every
   prompt, `hooks/brief.js` on every subagent start, `hooks/gate.js` and
   `hooks/resume.js` on every call, `hooks/guard.js` on every main-thread `Edit`,
