@@ -94,3 +94,24 @@ test('an unknown flag is refused, the usage text naming the rejected flag', () =
     assert.equal(r.code, 2);
     assert.match(r.text, /--sesion/);
 });
+
+test('a sentence over 160 columns is refused, naming its field', () => {
+    const root = project('plan');
+    const out = main(['--session', SESSION, '--root', root, handoff(root, ['build (Recommended)', '這'.repeat(81), '暫停'])]);
+    assert.equal(out.code, 1);
+    assert.match(out.text, /invalid at questions\[0\]\.options\[1\]\.label: a sentence is 162 columns wide/);
+});
+
+test('a TODO id standing alone is refused; the entry named by its title passes', () => {
+    const root = project('plan');
+    fs.writeFileSync(path.join(root, '.fankeel', 'docs.json'), JSON.stringify({
+        preset: 'flat', index: 'docs/README.md', buckets: [{ path: 'docs/todo', role: 'todo' }],
+    }));
+    fs.mkdirSync(path.join(root, 'docs', 'todo'), { recursive: true });
+    fs.writeFileSync(path.join(root, 'docs', 'todo', 'cleanup-2.md'), '---\nlabel: cleanup\ntitle: 可刪項\ndescription: d\nstate: ready\n---\n\nbody\n');
+    const bad = main(['--session', SESSION, '--root', root, handoff(root, ['build：做 cleanup-2 (Recommended)', '沒有未決事項', '暫停'])]);
+    assert.equal(bad.code, 1);
+    assert.match(bad.text, /"cleanup-2" stands where its name should be/);
+    const good = main(['--session', SESSION, '--root', root, handoff(root, ['build：刪掉重複的讀檔函式 (Recommended)', '沒有未決事項', '暫停'])]);
+    assert.deepEqual(good, { text: 'gate ok', code: 0 });
+});

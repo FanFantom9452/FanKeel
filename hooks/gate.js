@@ -203,7 +203,7 @@ function main(raw) {
         controlled = controlling(mine.stage, values);
         agents = agentsText(values);
         file = handoffPath(root, mine, mine.stage);
-        if (controlled) gate = readGate(file, nextStage(mine.stage, mine.route), normaliseRoute(mine.route) || FULL_ROUTE, { pause: true, floor: mine.floor });
+        if (controlled) gate = readGate(file, nextStage(mine.stage, mine.route), normaliseRoute(mine.route) || FULL_ROUTE, { pause: true, floor: mine.floor, ids: require('../lib/plain.js').todoIds(root) });
         if (!gate) skip = skipReason({ stage: mine.stage, controlled, agents, inflight: runningMark(mine, mine.stage), handoff: file });
     } catch (e) { /* housekeeping */ }
 
