@@ -215,6 +215,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | cleanup-2 前兩項（10-05）定了什麼、沒做什麼：`fetchHealth` 改用全域 `fetch`、`lib/profile.js` 的 `git` 改用 `lib/blame.js` 匯出的；第三、四項沒做，留在 Ready | [decisions/2026-10-05-cleanup-two.md](03-decisions/2026-10-05-cleanup-two.md) — *繁體中文* |
 | TODO 全表盤點第五輪（10-05）定了什麼：十七個 task 做完、死 build agent 的標記改成交接檔落地就清、write 門檻定為 2800ms、中文受控規則由 `lib/plain.js` 擋在 gate 與 docs-check | [decisions/2026-10-05-todo-sweep-five.md](03-decisions/2026-10-05-todo-sweep-five.md) — *繁體中文* |
 | 函式 hook、注入節流與 gate 報告面板（10-05）定了什麼：都不做；函式 hook 就是擱置中的 mod 路線，面板已由 `gate.station` 的 station 頁提供，節流併進 inject-3 | [decisions/2026-10-05-inject-gate-mod.md](03-decisions/2026-10-05-inject-gate-mod.md) — *繁體中文* |
+| 站線補測試（10-06）定了什麼：65 字元截斷與 stationLine 五處分支都有會紅的測試，inject-6、render-1 關閉；inject-3 的過長句子沒做 | [decisions/2026-10-06-station-line-tests.md](03-decisions/2026-10-06-station-line-tests.md) — *繁體中文* |
 | 那份決定的 design：hooks module 仍受旗標控制、`station.write` 中位數 1.76 秒、`gate.station` 已能在頁面答 gate | `docs/99-archive/2026-10-05-inject-gate-mod-design.md` — *built, 繁體中文* |
 | 那份設計的一個 task：決策頁、inject-3 補節流、索引 | `docs/99-archive/2026-10-05-inject-gate-mod.md` — *built, 繁體中文* |
 | 啟動檔改由外掛在每個專案的 .fankeel/ 產生（10-02）定了什麼、沒做什麼：lib/launchers.js 產生 station.bat／station.sh、ensureLayout 每次建立時寫入並 gitignore、port 去重沿用 serve --detach 的 probe | [decisions/2026-10-02-station-launchers.md](03-decisions/2026-10-02-station-launchers.md) — *繁體中文* |
@@ -224,7 +225,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | mod 路線（10-03）定了什麼：擱置，不把 brief、effort 等功能做成 mod、繼續用 command hooks；量到可用的 agent.spawn 與 turn.step 記下備查 | [decisions/2026-10-03-mod-route.md](03-decisions/2026-10-03-mod-route.md) — *繁體中文* |
 | TODO 全表盤點（10-03）的 plan：子 session 由環境變數證明在跑、todo-check 讀不到就回報且前綴補斜線、commit.js 兩個子句補測試、balanced 註明無來源、mod 路線擱置 | [plans/2026-10-03-todo-patrol-three.md](90-agent/plans/2026-10-03-todo-patrol-three.md) — *design-intent, 繁體中文* |
 | TODO 全表盤點（10-05）的 plan：壓縮重試最多三次的測試、`/fankeel` 頁面寫不出來時 station 行說出來、兩處 timeout 與行號小錯、brain 選模型改放 Watch | [plans/2026-10-05-todo-patrol-ready-three.md](90-agent/plans/2026-10-05-todo-patrol-ready-three.md) — *design-intent, 繁體中文* |
-| TODO 全表盤點（10-05 第二輪）的 plan：站線的寫入錯誤切在 65 字元補測試、`stationLine` 各分支逐一變異並補帶 url 的 `starting` 斷言 | [plans/2026-10-05-station-line-tests.md](90-agent/plans/2026-10-05-station-line-tests.md) — *design-intent, 繁體中文* |
+| TODO 全表盤點（10-05 第二輪）的 plan：站線的寫入錯誤切在 65 字元補測試、`stationLine` 各分支逐一變異並補帶 url 的 `starting` 斷言 | `docs/99-archive/2026-10-05-station-line-tests.md` — *built, 繁體中文* |
 | balanced 三站明說是經驗選擇（10-04）的 plan：`PRESETS.balanced` 行尾註解、profile.md 補一句，profile-2 由 land 關 | `docs/99-archive/2026-10-04-balanced-empirical.md` — *built, 繁體中文* |
 | TODO 盤點四筆 Ready（10-01）的 plan：await-5 舊 waiter 擋新 brain、brief-2 brain 沒讀存成檔的 brief、gate-4 第一題兩選項也放行、tune-2 overlay 三個存活變異 | `docs/99-archive/2026-10-01-ready-four.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-01）的 plan：Blocked 群組與九個 stage-agents 條目重新蓋章、改 stage-agents-1 過時前提、〔await〕實跑觀察 | `docs/99-archive/2026-10-01-todo-stamps.md` — *built, 繁體中文* |

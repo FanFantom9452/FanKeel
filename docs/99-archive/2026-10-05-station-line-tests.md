@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # TODO 全表盤點（10-05 第二輪）：站線 65 字元截斷與 stationLine 分支補測試 Implementation Plan
