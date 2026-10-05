@@ -29,8 +29,10 @@ rather than copied into the skill.
 
 ## The `station:` line
 
-The `/fankeel` prompt writes the page, then asks whether a station is serving,
-and the `station:` line of the block it injects says what it found. The asking
+The `/fankeel` prompt asks `ensureServe` first (given what the write's threshold
+leaves of the budget), then writes the page, and reads the record once more
+(`boundSince` in `hooks/inject.js`) if the station was still binding. The
+`station:` line of the block it injects says what it found. The asking
 is `ensureServe` in `lib/serve.js`: `<configDir>/fankeel/serve.json`, then a
 `GET` of that record's `station/health`, which has to answer inside a
 second, name the record's pid, and carry a fingerprint matching what is on
@@ -49,9 +51,13 @@ ways:
 | `serve is starting; until then <file>.` | it was started, and had not written its record when the hook had to answer |
 | `<file>. Edit the profile with station.js serve --open.` | `FANKEEL_SERVE=off` is set, or the start itself failed |
 
-All of it — the page write, the probe and the wait for the record — stays
-inside four seconds of the hook starting, one short of the five
-`.claude-plugin/plugin.json` gives every hook but `SessionEnd`'s. A probe too slow to see a
+All of it — the page write, the probe and the wait for the record — aims at
+four seconds of the hook starting (`SERVE_BUDGET_MS` in `hooks/inject.js`), one
+short of the five `.claude-plugin/plugin.json` gives every hook but
+`SessionEnd`'s. That is a budget, not a bound: after the change writes measured
+a median of 3.0–3.3s and a max of 4.1s, and the warm run's wall-clock max was
+5460ms, over the 5 s timeout
+(`docs/90-agent/reports/2026-10-05-inject-cold-start.md`). A probe too slow to see a
 station that is running starts a second `serve`, and that is safe: a second
 `serve` joins the first (under *When it is written, and where*), opens the
 browser on its url and exits — the one case where a running station gets a
@@ -931,7 +937,7 @@ and a half on transcripts that the `/fankeel` write does (`DETAIL_BUDGET_MS` in
 reads the one session it was asked for rather than every session on the
 machine. Because the detail reading spends that whole budget, one `/fankeel`
 write takes about the budget itself — 1954–2664ms measured on 2026-10-05 — and
-its threshold is 2800ms (`WRITE_THRESHOLD_MS` in `lib/station.js`), which leaves slack over the slowest measured write.
+its threshold is 2800ms (`WRITE_THRESHOLD_MS` in `lib/station.js`), chosen when writes measured 1954–2664ms. Later runs measured write medians of 3.0–3.3s and a max of 4107ms, above it, so it no longer leaves slack (`docs/90-agent/reports/2026-10-05-inject-cold-start.md`).
 
 A second `serve` against the same config directory joins the first rather
 than starting one: `<configDir>/fankeel/serve.json` holds the pid, port, url

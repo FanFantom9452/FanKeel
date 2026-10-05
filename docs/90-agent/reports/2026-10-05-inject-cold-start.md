@@ -10,13 +10,15 @@ source_of_truth: 本頁是一次量測的紀錄，不隨程式碼更新；資料
 
 冷啟動（量測前先停 station）改之前牆鐘中位數 3054ms、最大 3194ms，station 綁好的中位數 2955ms；改之後牆鐘中位數 3630ms、最大 4701ms，station 綁好的中位數 278ms、最大 507ms。
 station 在 write 之前就開始起，所以綁好的時間縮短了約十倍；整個 hook 的牆鐘在這五輪裡數字變長，最大值超過四秒半，但不能讀成量到的退步。
-warm 臂改之後牆鐘中位數 3199ms、最大 5460ms，比改之前的 2215ms、3857ms 高；write 中位數 1870.1 -> 3015.1ms，同時 fs 呼叫次數從 14619 降到 8451。warm 路徑的程式碼這次沒有改，所以這個變慢無法用這次改動解釋；共用機器上五輪本來就容易有雜訊。資料顯示 station 綁好的時間縮短，不顯示總時間變好或變差。
+warm 臂改之後牆鐘中位數 3199ms、最大 5460ms，比改之前的 2215ms、3857ms 高；write 中位數 1870.1 -> 3015.1ms，同時 fs 呼叫次數從 14619 降到 8451。warm 路徑的程式碼這次有改（ensureServe 現在在寫頁面之前執行），所以不能排除這個變慢是這次改動造成的；共用機器上五輪也本來就容易有雜訊，資料分不出兩者。資料顯示 station 綁好的時間縮短，不顯示總時間變好或變差。
 slow-2 與 slow-5 兩臂改之前與改之後都沒有跑完：十輪全部撐到 20 秒被終止（SIGTERM），沒有輸出 station 行，所以「slow-5 的牆鐘最大值離五秒多遠」這次量不出來，只知道遠超過五秒。
+warm 臂改之後牆鐘最大值 5460ms 超過 `.claude-plugin/plugin.json:30-31` 給 inject hook 的 5 秒 `timeout`，cold 臂最大值 4701ms 也接近它；`cold.cjs` 每次 spawn 只限 20 秒，看不出 hook 在 5 秒是否已被終止。本報告不說任何一輪在實際使用中越過 5 秒，只說量到的牆鐘越過了。改之後 write 的最大值是 4101ms 與 4107ms（`after/summary.txt:46`），高於 2800ms 的門檻。
 
 ## 怎麼量的
 
 `cold.cjs` 跑四臂（cold、warm、slow-2、slow-5）各五輪，前後交替；cold 臂每輪先停 station；slow 臂用 `slow.cjs` 讓每個同步 fs 呼叫先等 2 或 5 毫秒，這是模擬，不是量到的慢磁碟。
 改之前的 HEAD 是 `f2b40621b7c3a3562ccb12df3029523624653e83`，porcelain 只有 `?? docs/90-agent/reports/evidence/2026-10-05-inject-cold/`；改之後的 HEAD 是 `65ebd7317c6938c7b6e5fea4bc89318793889189`，porcelain 只有 `?? docs/90-agent/reports/evidence/2026-10-05-inject-cold/after/`。兩次都是 node v24.9.0、五輪。
+改之前與改之後是從不同的 worktree 跑的（`before/provenance.txt` 與 `after/provenance.txt` 裡的 plugin 路徑不同），而且只記了 HEAD，所以 worktree 的差異（磁碟位置、快取）是沒有記錄的混淆因素。
 可能有其他工作同機執行，未記錄，牆鐘的雜訊因此不小。
 
 ## 數字
