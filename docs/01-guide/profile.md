@@ -69,13 +69,13 @@ node <plugin>/scripts/task.js profile set commit.format '^(feat|fix|docs)(\([^)]
 node <plugin>/scripts/task.js profile set language 繁體中文
 ```
 
-`quota.week` 也是自由填的值，但填的是數字：你的 Max 20x 一週額度等於多少美元（以 API 價格換算的估算值）。填了之後，監控站在多數金額後面會接上「(x%)」，也就是那筆金額除以這個數字；但日直方圖與專案圖的縱軸刻度和每根長條的合計、導覽列的天數徽章、花費佔比條的標籤、派工花費條的各段文字，以及 session 頁花費讀數本身都只顯示純金額，session 頁的花費讀數把比例放在下方說明行開頭，滑鼠停留的提示文字則仍保留比例；沒填就不顯示比例。它沒有內建值，因為 transcript 與 registry 裡都沒有百分比欄位可以讀，所以只能自己量。校準報告（`docs/90-agent/reports/2026-09-21-quota-calibration.md`）量到的區間約 $2,619–4,584，而且那份報告也指出累積讀數與固定費率互相矛盾，這個區間只能當起點。值必須是大於 0 的數字。專案層（不加 --default）與機器層都可設，同一個 key 兩層都有時專案層優先，多個專案各設不同值時取登錄順序第一個有設的專案。例：
+`quota.week` 也是自由填的值，但填的是數字：你的 Max 20x 一週額度等於多少美元（以 API 價格換算的估算值）。填了之後，監控站在多數金額後面會接上「(x%)」，也就是那筆金額除以這個數字。但日直方圖與專案圖的縱軸刻度和每根長條的合計、導覽列的天數徽章、花費佔比條的標籤、派工花費條的各段文字，以及 session 頁花費讀數本身都只顯示純金額。session 頁的花費讀數把比例放在下方說明行開頭，滑鼠停留的提示文字則仍保留比例。沒填就不顯示比例。它沒有內建值，因為 transcript 與 registry 裡都沒有百分比欄位可以讀，所以只能自己量。校準報告（`docs/90-agent/reports/2026-09-21-quota-calibration.md`）量到的區間約 $2,619–4,584，而且那份報告也指出累積讀數與固定費率互相矛盾，這個區間只能當起點。值必須是大於 0 的數字。專案層（不加 --default）與機器層都可設，同一個 key 兩層都有時專案層優先，多個專案各設不同值時取登錄順序第一個有設的專案。例：
 
 ```
 node <plugin>/scripts/task.js profile set quota.week 3000
 ```
 
-`quota.calibrated` 是 `quota.week` 最近一次自動校準的日期（YYYY-MM-DD），由 `node <plugin>/scripts/quota.js` 寫進機器層，平常不用手填。這支腳本讀 TokenBar 的 statusline 每次渲染時寫在 Claude 設定目錄下的 tokenbar-usage.jsonl（`rate_limits.seven_day` 的百分比與重置時間），在最新一個動了 10 個百分點以上的 7 天視窗裡，拿頭尾兩筆讀數之間全機所有 transcript 的 API 等價花費，除以動了的百分點再乘 100，寫成 `quota.week`。只用同一視窗內的差值，不用讀數的絕對水位，因為絕對水位與 transcript 花費對不上（見 2026-09-21 的額度校準報告）。沒裝 TokenBar、或沒有夠大的視窗時，它什麼都不寫，`quota.week` 維持手填的值。要重新校準就再跑一次；加 `--dry-run` 只印結果、不寫。監控站在 30 天花費下方的說明行註明用的是哪一天的校準。例：
+`quota.calibrated` 是 `quota.week` 最近一次自動校準的日期（YYYY-MM-DD），由 `node <plugin>/scripts/quota.js` 寫進機器層，平常不用手填。這支腳本讀 TokenBar 的 statusline 每次渲染時寫在 Claude 設定目錄下的 tokenbar-usage.jsonl（`rate_limits.seven_day` 的百分比與重置時間）。在最新一個動了 10 個百分點以上的 7 天視窗裡，它拿頭尾兩筆讀數之間全機所有 transcript 的 API 等價花費，除以動了的百分點再乘 100，寫成 `quota.week`。只用同一視窗內的差值，不用讀數的絕對水位，因為絕對水位與 transcript 花費對不上（見 2026-09-21 的額度校準報告）。沒裝 TokenBar、或沒有夠大的視窗時，它什麼都不寫，`quota.week` 維持手填的值。要重新校準就再跑一次；加 `--dry-run` 只印結果、不寫。監控站在 30 天花費下方的說明行註明用的是哪一天的校準。例：
 
 ```
 node <plugin>/scripts/quota.js --dry-run
@@ -106,6 +106,6 @@ node <plugin>/scripts/task.js profile suggest
 
 - `show` 列出每個 key 目前的值與它來自哪一層（`project`、`machine`、`builtin`，沒值的留空，值印成 `(ask)`），改完用它確認。
 - `unset` 把那個 key 從指定的檔案拿掉，讓下一層來回答；key 本來就不在檔案裡不算錯，也不會為了它新建檔案。要「退回問我」用它，而不是設成某個值。
-- `suggest` 只印不寫：它從 git 的 merge 紀錄、有沒有 remote、沒推出去的 commit 數、registry 裡過去收尾與類別的紀錄，推 `land.integration`、`land.push`、`class.default`，以及近 50 則 commit 有八成以上長得像 `type(scope): ` 時的 `commit.format`。證據不足（例如 merge 不到三次）就不建議，印「nothing the history answers」。每個建議都附一行可以直接複製去跑的 `profile set`，由你決定要不要採用。
+- `suggest` 只印不寫：它從 git 的 merge 紀錄、有沒有 remote、沒推出去的 commit 數、registry 裡過去收尾與類別的紀錄。它由這些紀錄推 `land.integration`、`land.push`、`class.default`，以及近 50 則 commit 有八成以上長得像 `type(scope): ` 時的 `commit.format`。證據不足（例如 merge 不到三次）就不建議，印「nothing the history answers」。每個建議都附一行可以直接複製去跑的 `profile set`，由你決定要不要採用。
 
 專案還沒有 `.fankeel/profile.json` 時，`task.js start` 會自己印出同樣的建議，所以第一次起任務多半不必手動跑 `suggest`。

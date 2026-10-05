@@ -498,7 +498,7 @@ function scan(root, roles) {
         if (!declared && rel.split('/')[0] === docRoot) unfiled.push(rel);
         if (!role) continue;
         counts[role] = (counts[role] || 0) + 1;
-        for (const f of checkDoc(root, rel, role, symbols, roots)) findings.push(Object.assign({ role }, f));
+        for (const f of checkDoc(root, rel, role, symbols, roots).concat(require('../lib/plain.js').proseFindings(rel, readFile(root, rel), role, (docs.bucketOf(tree, rel) || {}).audience))) findings.push(Object.assign({ role }, f));
     }
 
     // The one thing an archive is checked for, and it is checked from the other
@@ -552,7 +552,7 @@ function scan(root, roles) {
     };
 }
 
-const ORDER = ['open-fence', 'gone', 'past-end', 'moved', 'orphan', 'into-archive', 'binding'];
+const ORDER = ['open-fence', 'gone', 'past-end', 'moved', 'orphan', 'into-archive', 'binding', 'long-sentence', 'bare-code'];
 
 function report(result) {
     if (!result) return 'fankeel docs-check: nothing readable under this directory.';

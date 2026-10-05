@@ -415,3 +415,28 @@ test('checkFile checks one entry not yet tracked, the way todo.js new asks it to
   fs.writeFileSync(path.join(root, 'docs', 'todo', 'x-3.md'), ENTRY('done'));
   assert.deepEqual(checkFile(root, 'docs/todo/x-3.md', 'todo'), []);
 });
+
+test('a human guide page with a sentence over 160 columns gets long-sentence; an agent page does not', () => {
+  const root = tmp('fankeel-docscheck-prose-');
+  execFileSync('git', ['init', '-q'], { cwd: root });
+  fs.mkdirSync(path.join(root, 'docs', 'guide'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'docs', 'agent'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'docs', 'README.md'), '# index\n');
+  const long = '這'.repeat(81) + '\n';
+  fs.writeFileSync(path.join(root, 'docs', 'guide', 'a.md'), long);
+  fs.writeFileSync(path.join(root, 'docs', 'agent', 'b.md'), long);
+  fs.mkdirSync(path.join(root, '.fankeel'), { recursive: true });
+  fs.writeFileSync(path.join(root, '.fankeel', 'docs.json'), JSON.stringify({
+    preset: 'flat',
+    index: 'docs/README.md',
+    buckets: [
+      { path: 'docs/guide', role: 'reference', audience: 'human' },
+      { path: 'docs/agent', role: 'reference', audience: 'agent' },
+      { path: 'docs', role: 'reference', depth: 1 },
+    ],
+  }));
+  execFileSync('git', ['add', '-A'], { cwd: root });
+
+  const found = scan(root, []).findings.filter((f) => f.tag === 'long-sentence');
+  assert.deepEqual(found.map((f) => [f.file, f.line]), [['docs/guide/a.md', 1]]);
+});
