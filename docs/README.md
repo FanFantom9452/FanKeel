@@ -6,7 +6,7 @@ source_of_truth: this file is the index; each page below is its own source
 
 # FanKeel documentation
 
-Eighteen pages, one question each. The front page has install, update and
+Nineteen pages, one question each. The front page has install, update and
 uninstall, the two diagrams and a short introduction to each of these;
 everything that needs more than a paragraph is here. For a person who is not
 running a session, the station's 文件 page (`#/docs`) turns each project's own
