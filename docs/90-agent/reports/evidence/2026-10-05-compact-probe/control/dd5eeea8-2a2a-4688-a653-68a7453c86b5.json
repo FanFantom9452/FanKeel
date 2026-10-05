@@ -1,0 +1,90 @@
+{
+  "task": "compact probe control",
+  "project": "F:/ymlab/fankeel/.fankeel/build/compact-probe/control/proj",
+  "route": [
+    "build"
+  ],
+  "class": "bounded",
+  "floor": "bounded",
+  "stage": "build",
+  "active": true,
+  "started": "2026-10-05T12:13:31Z",
+  "updated": "2026-10-05T12:13:42.653Z",
+  "clock": {
+    "build": [
+      1791202413727,
+      1791202422653
+    ]
+  },
+  "moves": [
+    [
+      "build",
+      1791202413727,
+      35151
+    ]
+  ],
+  "burn": {
+    "build": [
+      35151,
+      35151
+    ]
+  },
+  "ended": {
+    "at": "2026-10-05T12:13:44.257Z",
+    "reason": "other"
+  },
+  "model": "claude-sonnet-5-5",
+  "usage": {
+    "requests": 3,
+    "models": {
+      "claude-sonnet-5-5": {
+        "input": 6,
+        "output": 187,
+        "cacheRead": 87046,
+        "cacheWrite5m": 0,
+        "cacheWrite1h": 19301
+      }
+    },
+    "wakes": 1,
+    "subagents": {
+      "agents": 1,
+      "requests": 2,
+      "models": {
+        "claude-sonnet-5-5": {
+          "input": 4,
+          "output": 152,
+          "cacheRead": 18106,
+          "cacheWrite5m": 8439,
+          "cacheWrite1h": 0
+        }
+      },
+      "wallMs": 5724
+    }
+  },
+  "spend": {
+    "build": {
+      "requests": 3,
+      "models": {
+        "claude-sonnet-5-5": {
+          "input": 6,
+          "output": 187,
+          "cacheRead": 87046,
+          "cacheWrite5m": 0,
+          "cacheWrite1h": 19301
+        }
+      },
+      "subagents": {
+        "requests": 2,
+        "models": {
+          "claude-sonnet-5-5": {
+            "input": 4,
+            "output": 152,
+            "cacheRead": 18106,
+            "cacheWrite5m": 8439,
+            "cacheWrite1h": 0
+          }
+        }
+      }
+    }
+  }
+}
