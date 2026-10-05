@@ -50,7 +50,8 @@ async function findEntry($: EngineInterface, id: string): Promise<Entry | null> 
     if (await $.fs.exists(file)) {
       try {
         return JSON.parse(String(await $.fs.read(file))) as Entry
-      } catch {
+      } catch (err) {
+        $.ui.log(`fankeel compact: unreadable session file ${file}: ${err}`, { to: 'debug' })
         return null
       }
     }
