@@ -6,7 +6,7 @@ state: blocked
 link: scripts/docs-move.js
 group: fankeel 功能全部完成
 timing: after: fankeel 其餘功能都落地、使用者換到新機器測試
-stamp: 2026-10-01
+stamp: 2026-10-05
 ---
 
 來源：c8f9c55e（2026-09-26）「Ready 五條 lands」收尾審查，把 audit 條目縮到只剩 Trovara 這一個專案；31395ab8（2026-10-01）重讀過時機，仍等新機器。

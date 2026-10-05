@@ -6,7 +6,7 @@ state: blocked
 link: docs/01-guide/development.md
 group: knip 認得 CJS namespace
 timing: upstream: knip 認得 CJS namespace property access
-stamp: 2026-10-01
+stamp: 2026-10-05
 ---
 
 來源：3dc97182（2026-09-13）寫下 knip.json 時，unused files 已解，剩 unused exports 一格因 knip 不認 CJS namespace 取用而關著；74e03177（2026-10-01）用 6.39.0 重測，`clearBadge` 仍追不到，開著回 196 個假陽性。
