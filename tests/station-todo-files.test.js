@@ -124,3 +124,16 @@ test('the project row carries each entry\'s body, open and done', () => {
     assert.deepEqual(t.open.map((e) => e.body), [BODY, BODY]);
     assert.deepEqual(t.done.map((e) => e.body), [BODY]);
 });
+
+test('a done entry with a 完成紀錄 shows only the record on the panel; one without keeps its body', () => {
+    const f = fixture();
+    const open = lib.load(f.r1).all.find((e) => e.state !== 'done');
+    lib.close(f.r1, open.id, { sha: 'abcdef1', at: '2026-10-05', record: '做完了，看得懂。' });
+    const model = station.gather({ configDir: f.cfg, roots: [f.r1], scan: [], cwd: f.r1 });
+    const text = station.serialize(model);
+    const data = JSON.parse(text.slice('window.STATION = '.length, text.lastIndexOf(';')));
+    const row = data.projects.find((p) => path.resolve(p.root) === path.resolve(f.r1));
+    const done = row.todos[0].done;
+    assert.equal(done.find((e) => e.id === open.id).body, '做完了，看得懂。\n\n- commit abcdef1');
+    assert.ok(done.filter((e) => e.id !== open.id).every((e) => e.body === BODY));
+});
