@@ -101,6 +101,26 @@ test('a rejected compaction is retried', async () => {
     assert.equal(calls.length, 2);
 });
 
+// compact-1: the retry loop stops after three tries. A compaction that keeps
+// rejecting until its eleventh call shows a lifted cap as eleven calls rather
+// than as a hang.
+test('a compaction rejected every time is tried three times, each one logged', async () => {
+    const { $, calls } = fake({ tokens: CONTEXT_HARD, files: entryAt('F:/proj', live) });
+    const logs = [];
+    let slept = 0;
+    $.ui.log = (text) => { logs.push(text); };
+    $.clock.sleep = async () => { slept++; };
+    $.session.compact = async (input) => {
+        calls.push(input);
+        if (calls.length <= 10) throw new Error('a turn is running');
+        return {};
+    };
+    await fire(handlerOf(await load()), $);
+    assert.equal(calls.length, 3);
+    assert.equal(slept, 3);
+    assert.deepEqual(logs.filter((l) => / rejected: /.test(l)).map((l) => l.match(/attempt (\d+)/)[1]), ['1', '2', '3']);
+});
+
 test('a second turn while one compaction is pending starts no other', async () => {
     const { $, calls } = fake({ tokens: CONTEXT_HARD, files: entryAt('F:/proj', live) });
     $.session.compact = (input) => { calls.push(input); return new Promise(() => {}); };

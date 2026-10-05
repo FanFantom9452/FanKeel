@@ -66,7 +66,7 @@ async function threshold($: EngineInterface): Promise<number> {
 }
 
 // Not awaited by the hook: compact rejects while a turn runs, and the turn may
-// still count as running until this hook returns. Three tries, a second apart.
+// still count as running until this hook returns. Three tries, a second apart; tests/compact.test.js pins the three.
 async function compactWithRetry($: EngineInterface, instructions: string): Promise<void> {
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
