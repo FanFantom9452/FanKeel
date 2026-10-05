@@ -3484,6 +3484,7 @@
             + (s.ended ? '<dt>' + loc('dash.ended', '結束') + '</dt><dd>' + esc(s.ended.reason) + '</dd>' : '')
             + '<dt>' + loc('dash.total', '總計') + '</dt><dd class="num">' + tokens(s.burn) + ' · ' + usd(cost(s))
             + (s.unpriced && s.unpriced.length ? ' (' + s.unpriced.length + ' unpriced)' : '')
+            + (s.estimated && s.estimated.length ? ' (' + s.estimated.length + ' est.)' : '')
             + (s.agents ? ' · ' + s.agents + ' agents' : '') + '</dd>'
             + (x ? '<dt>requests</dt><dd class="num">' + x.requests + '</dd>' : '')
             + '<dt>guard</dt><dd>' + esc(s.guard || loc('dash.askDefault', 'ask (預設)')) + '</dd></dl>'
@@ -3855,10 +3856,13 @@
             return a;
         }, { c: 0, k: 0, s: 0, ti: 0, to: 0, ci: 0, co: 0, requests: 0, peak: 0 });
     }
-    function numCells(t, unpriced, time) {
+    function numCells(t, unpriced, time, estimated) {
+        var tip = [];
+        if (unpriced) tip.push(loc('det.priceListDoesNotKnow', '價目表不認得：{u}', { u: esc(unpriced) }));
+        if (estimated) tip.push(loc('det.priceEstimated', '價目表沒有，照同家族最新一列估價：{u}', { u: esc(estimated) }));
         return '<td class="r">' + (time || dur(t.s)) + '</td><td class="r">' + comma(t.k) + 'k</td><td class="r"'
-            + (unpriced ? ' title="' + loc('det.priceListDoesNotKnow', '價目表不認得：{u}', { u: esc(unpriced) }) + '"' : '') + '>'
-            + (unpriced && !t.c ? 'unpriced' : cents(t.c)) + '</td>'
+            + (tip.length ? ' title="' + tip.join('；') + '"' : '') + '>'
+            + (unpriced && !t.c ? 'unpriced' : cents(t.c)) + (estimated ? ' ' + loc('det.estShort', '估') : '') + '</td>'
             + '<td class="r">' + tokens(t.ti || 0) + '</td><td class="r">$' + (t.ci || 0).toFixed(2) + '</td>'
             + '<td class="r">' + tokens(t.to || 0) + '</td><td class="r">$' + (t.co || 0).toFixed(2) + '</td>'
             + '<td class="r">' + tokens(t.peak || 0) + '</td><td class="r">' + comma(t.requests || 0) + '</td>';
@@ -3942,7 +3946,7 @@
             + '<button type="button" class="axt" data-ag="' + esc(r.id) + '" data-key="ag-' + esc(r.id) + '" aria-expanded="' + open + '"'
             + ' title="' + loc('disp.openPromptSteps', '{v} prompt 與步驟', { v: open ? loc('disp.collapse', '收起') : loc('disp.expand', '展開') }) + '"><span class="lab">' + esc(r.label || r.id) + '</span></button>'
             + '<div class="l2">' + esc(modelOf(r)) + '</div>' + nowLine(st, steps, u) + '</div></div></td>'
-            + numCells(sums([r]), (r.unpriced || []).join(', '), time) + '<td class="r rc"></td></tr>'
+            + numCells(sums([r]), (r.unpriced || []).join(', '), time, (r.estimated || []).join(', ')) + '<td class="r rc"></td></tr>'
             + (open ? agentBody(r, cls, x, st, steps, u) : '');
     }
     // One agent opened: when it started and how long it ran, what it was sent
@@ -4148,6 +4152,7 @@
             + loc('disp.workflowRowsVs', '；workflow 派工 {a} 列', { a: wfRows }) + ' ' + eq(wfRows, wfRun) + ' ' + loc('disp.runFileWorkflowAgentRows', 'run 檔的 workflow_agent {a} 列', { a: wfRun })
             + '</p>'
             + '<p class="tally">' + loc('disp.returnedCharsExplain', '回傳字元是派工的結果進入主 context 的長度：背景 agent 與 workflow 取 task-notification，前景的取 Agent 的 tool_result。背景啟動時回來的確認不算在內，這個 session 合計 {n} 字元。', { n: comma(launch) }) + loc('disp.usdByPriceList', '美元照價目表 {v}', { v: esc(S.pricesVerified || '—') }) + (x.unpriced.length ? loc('disp.unpricedList', '；價目表不認得、寫 unpriced 的：{list}', { list: x.unpriced.map(esc).join(loc('disp.listSep', '、')) }) : '')
+                + ((x.estimated || []).length ? loc('disp.estimatedList', '；價目表沒有、照同家族最新一列估價的：{list}', { list: x.estimated.map(esc).join(loc('disp.listSep', '、')) }) : '')
             + '</p>'
             + (n.running ? '<p class="tally">' + loc('disp.runningRowsAsOf', 'running 的 {n} 列是到 {t} 為止的 tokens 與美元，下一次重拉會再變；耗時照秒走。', { n: n.running, t: clockSec(isNum(x.at) ? x.at : u.now) }) + '</p>' : '')
             + (n.lost ? '<p class="tally">' + loc('disp.lostRowsNoChars', 'lost 的列沒有回傳字元：它的結果沒有進主 context。耗時算到它 transcript 的最後一行。') + '</p>' : '')

@@ -421,3 +421,11 @@ test('without a session row the replay is one segment, every row still there, wi
     assert.match(html, /data-block="filter-bar"/);
     assert.doesNotMatch(html, /各段 context 相加/, 'no session row, no burn to add up to');
 });
+
+test('a row priced by family fallback is marked 估 in its cost cell, and the tally names the model', () => {
+    const w3 = { id: 'w3', disp: 1, surface: 'workflow', label: 'check', agentType: 'fankeel:fankeel-reviewer', model: 'claude-fable-5-5', phase: 'Check', c: 500, k: 2, s: 5, unpriced: [], estimated: ['claude-fable-5-5'] };
+    const html = V.dispatchHtml(Object.assign({}, x, { rows: x.rows.slice(0, 3).concat(w3), unpriced: [], estimated: ['claude-fable-5-5'] }));
+    assert.match(html, /title="價目表沒有，照同家族最新一列估價：claude-fable-5-5">[^<]*估<\/td>/);
+    assert.match(html, /照同家族最新一列估價的：claude-fable-5-5/);
+    assert.doesNotMatch(html, />unpriced</);
+});

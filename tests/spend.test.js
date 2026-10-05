@@ -209,3 +209,20 @@ test('scripts/spend.js main --root prints the session and bucket tables for that
     assert.match(text, /buckets by request count/);
     assert.match(text, /\$2\.00/, 'the $2.00 session cost prints somewhere in the tables');
 });
+
+test('a model priced by family fallback is billed and named in estimated, not unpriced; the table prints it', () => {
+    const r = root();
+    registry.writeSession(r, ID9, base({
+        spend: { build: { requests: 1, models: {
+            'claude-fable-5-5': { input: 1_000_000, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 },
+        } } },
+    }));
+    const row = spend.sessionsOf([r]).rows[0];
+    assert.deepEqual(row.estimated, ['claude-fable-5-5']);
+    assert.deepEqual(row.unpriced, []);
+    assert.equal(row.cost.input, 10);
+    const lines = main(['--root', r]).text.split('\n');
+    const head = lines.find((l) => l.startsWith('session\t')).split('\t');
+    const cells = lines.find((l) => l.startsWith(ID9)).split('\t');
+    assert.equal(cells[head.indexOf('estimated')], 'claude-fable-5-5');
+});

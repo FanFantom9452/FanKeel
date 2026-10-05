@@ -41,7 +41,7 @@ const usd = (n) => (n == null ? '—' : '$' + n.toFixed(2));
 const pct = (n) => (n == null ? '—' : Math.round(n * 1000) / 10 + '%');
 
 function sessionsTable(rows) {
-    const header = ['session', 'root', 'version', 'requests', 'own', 'agents', 'input', 'output', 'cacheRead', 'cacheWrite', 'usd', 'unpriced'];
+    const header = ['session', 'root', 'version', 'requests', 'own', 'agents', 'input', 'output', 'cacheRead', 'cacheWrite', 'usd', 'unpriced', 'estimated'];
     const lines = [header.join('\t')];
     for (const r of rows) {
         lines.push([
@@ -49,6 +49,7 @@ function sessionsTable(rows) {
             usd(r.own), usd(r.subagents), usd(r.cost.input), usd(r.cost.output),
             usd(r.cost.cacheRead), usd(r.cost.cacheWrite), usd(r.usd),
             r.unpriced.length ? r.unpriced.join(',') : '—',
+            r.estimated.length ? r.estimated.join(',') : '—',
         ].join('\t'));
     }
     return lines.join('\n');

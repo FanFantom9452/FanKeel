@@ -74,5 +74,26 @@ test('costOf prices what it knows and names what it does not', () => {
     assert.equal(out.usd, 2 + 10 + 0.2 + 2.5 + 4);
     assert.deepEqual(out.priced, ['claude-sonnet-5']);
     assert.deepEqual(out.unpriced, ['claude-nothing-9']);
-    assert.deepEqual(prices.costOf(undefined), { usd: 0, priced: [], unpriced: [] });
+    assert.deepEqual(prices.costOf(undefined), { usd: 0, priced: [], unpriced: [], estimated: [] });
+});
+
+test('rateFor estimates an unknown id from the newest row of its family, as a flagged copy', () => {
+    const r = prices.rateFor('claude-haiku-5-5');
+    assert.deepEqual(r, { ...prices.perMillion['claude-haiku-4-5-20251001'], estimated: true });
+    assert.notEqual(r, prices.perMillion['claude-haiku-4-5-20251001']);
+    assert.equal(prices.perMillion['claude-haiku-4-5-20251001'].estimated, undefined);
+    assert.equal(prices.rateFor('claude-fable-5-5').cacheRead, prices.perMillion['claude-fable-5-1'].cacheRead);
+    assert.equal(prices.rateFor('claude-sonnet-5').estimated, undefined);
+    assert.equal(prices.rateFor('claude-nothing-9'), null);
+});
+
+test('costOf lists an estimated id in priced and estimated, not unpriced', () => {
+    const out = prices.costOf({
+        'claude-fable-5-5': { input: 1e6, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 },
+        'claude-sonnet-5': { input: 1e6, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 },
+    });
+    assert.equal(out.usd, 12);
+    assert.deepEqual(out.priced, ['claude-fable-5-5', 'claude-sonnet-5']);
+    assert.deepEqual(out.estimated, ['claude-fable-5-5']);
+    assert.deepEqual(out.unpriced, []);
 });
