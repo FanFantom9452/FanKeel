@@ -1,8 +1,8 @@
 'use strict';
 
 // The chosen prose style reaches the stage agent's brief (every stage but
-// build, whose brief sits 52 characters under SubagentStart's 10,000) and the
-// writer's, and nobody else's.
+// build, whose brief is the closest to SubagentStart's 10,000-character cap;
+// see tests/brief.test.js) and the writer's, and nobody else's.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
