@@ -54,8 +54,8 @@ ways:
 
 All of it — the page write, the probe and the wait for the record — aims at
 four seconds of the hook starting (`SERVE_BUDGET_MS` in `hooks/inject.js`), one
-short of the five `.claude-plugin/plugin.json` gives every hook but
-`SessionEnd`'s. That is a budget, not a bound: after the change writes measured
+short of the five `.claude-plugin/plugin.json:31` gives this hook
+(`gate.js` has 605). That is a budget, not a bound: after the change writes measured
 a median of 3.0–3.3s and a max of 4.1s, and the warm run's wall-clock max was
 5460ms, over the 5 s timeout
 (`docs/90-agent/reports/2026-10-05-inject-cold-start.md`). A probe too slow to see a
