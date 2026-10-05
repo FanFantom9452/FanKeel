@@ -36,7 +36,8 @@ mkdir -p "$EVID" "$WORK/raw"
 cd "$REPO" || exit 1
 LOG="$EVID/provenance.txt"
 logcmd () { printf '$'; printf ' %q' "$@"; printf '\n'; }
-spent () { node -e 'let s=0;for(const f of process.argv.slice(1)){try{s=Math.max(s,JSON.parse(require("fs").readFileSync(f,"utf8")).total_cost_usd||0)}catch(e){console.error("unparseable stage json: "+f)}}console.log(s.toFixed(4))' "$@"; }
+spent () { node -e 'const fs=require("fs");let s=0;for(const f of process.argv.slice(2)){let t;try{t=fs.readFileSync(f,"utf8")}catch(e){continue}try{s=Math.max(s,JSON.parse(t).total_cost_usd||0)}catch(e){fs.appendFileSync(process.argv[1],"unparseable stage json: "+f+"
+")}}console.log(s.toFixed(4))' "$LOG" "$@"; }
 
 {
   echo "=== $(date -u +%Y-%m-%dT%H:%M:%SZ)"

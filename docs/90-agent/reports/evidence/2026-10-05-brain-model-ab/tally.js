@@ -101,7 +101,9 @@ function wallSeconds(evid, tag) {
     return s;
 }
 
-// at least one brain on the arm's model, none on the other model or on none named
+// The controller sends the plan and design brains on `model: opus` in both arms
+// (lib/stages.js), so only the other stages' brains are judged: at least one on
+// the arm's model, none on the other model or on none named.
 function validRun(arm, brainModels) {
     const other = arm === 'opus' ? 'sonnet' : 'opus';
     return (brainModels[arm] || 0) >= 1 && !brainModels[other] && !brainModels.unknown;
@@ -116,6 +118,7 @@ function tallyRun(evid, rawRun, tag) {
     const bash = uses.filter((u) => u.name === 'Bash').map((u) => String((u.input && u.input.command) || ''));
     const agents = { brain: 0, reviewer: 0, fixer: 0, implementer: 0, other: 0 };
     const brainModels = {};
+    const judged = {};
     let gateCheckRefusals = 0;
     let handoffWithoutGate = 0;
     const subagents = session ? filesUnder(path.join(rawRun, session.slice(0, -'.jsonl'.length), 'subagents'), /^agent-.+\.jsonl$/) : [];
@@ -127,6 +130,7 @@ function tallyRun(evid, rawRun, tag) {
         if (role && role[1] === 'brain') {
             const word = (MODEL_WORD.exec(String(meta.description || '')) || [null, 'unknown'])[1].toLowerCase();
             brainModels[word] = (brainModels[word] || 0) + 1;
+            if (!/\b(plan|design)\b/i.test(String(meta.description || '').replace(MODEL_WORD, ''))) judged[word] = (judged[word] || 0) + 1;
         }
         for (const t of resultTexts(lines(file))) {
             if (t.includes('gate-check.js: invalid at')) gateCheckRefusals += 1;
@@ -137,7 +141,7 @@ function tallyRun(evid, rawRun, tag) {
     return Object.assign({
         tag,
         arm,
-        valid: validRun(arm, brainModels) && fs.existsSync(path.join(evid, tag + '-verify.json')),
+        valid: validRun(arm, judged) && fs.existsSync(path.join(evid, tag + '-verify.json')),
         brainModels,
     }, spend(evid, tag), {
         wallSeconds: wallSeconds(evid, tag),

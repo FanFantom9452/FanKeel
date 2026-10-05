@@ -80,3 +80,13 @@ test('an opus run whose brain ran on sonnet is not valid, and main leaves it out
     assert.deepEqual([parsed.arms.opus.runs, parsed.arms.opus.valid], [1, 0]);
     assert.equal(parsed.arms.opus.medianUsd, null);
 });
+
+test('a sonnet run whose plan brain ran on opus and whose build brain ran on sonnet is valid', () => {
+    const { evid, run } = fixture('r1-sonnet', 'sonnet 5.5 · medium: build stage agent');
+    const sub = path.join(run, U, 'subagents');
+    fs.writeFileSync(path.join(sub, 'agent-a4.meta.json'), JSON.stringify({ agentType: 'fankeel:fankeel-brain', description: 'opus 5.5 · medium: plan stage agent' }));
+    fs.writeFileSync(path.join(sub, 'agent-a4.jsonl'), '');
+    const t = tallyRun(evid, run, 'r1-sonnet');
+    assert.equal(t.valid, true);
+    assert.deepEqual(t.brainModels, { sonnet: 1, opus: 1 });
+});
