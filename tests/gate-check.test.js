@@ -115,3 +115,11 @@ test('a TODO id standing alone is refused; the entry named by its title passes',
     const good = main(['--session', SESSION, '--root', root, handoff(root, ['build：刪掉重複的讀檔函式 (Recommended)', '沒有未決事項', '暫停'])]);
     assert.deepEqual(good, { text: 'gate ok', code: 0 });
 });
+
+test('a TODO that cannot be read still prints gate ok, then a warning naming why', () => {
+    const root = project('plan');
+    fs.mkdirSync(path.join(root, 'TODO.md'));
+    const out = main(['--session', SESSION, '--root', root, handoff(root, ['build (Recommended)', '沒有未決事項', '暫停'])]);
+    assert.equal(out.code, 0);
+    assert.match(out.text, /^gate ok\nwarning: the TODO entries could not be read \(.+\), so a bare TODO id is not checked$/);
+});

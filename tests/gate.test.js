@@ -142,6 +142,17 @@ test('stage.agents at survey: a verbatim copy of the handoff gate produces no up
   assert.equal(Number.isFinite(readEntry(root, MINE).gateAt), true);
 });
 
+test('stage.agents: a TODO that cannot be read lets a matching gate through with a systemMessage naming why', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  agentsOn(root);
+  handoff(root, { questions: QUESTIONS, next: 'n' });
+  fs.mkdirSync(path.join(root, 'TODO.md'));
+  const out = JSON.parse(run(GATE, root, { tool_input: askOf(QUESTIONS) }));
+  assert.match(out.systemMessage, /^fankeel: the TODO entries could not be read \(.+\), so a bare TODO id is not checked\.$/);
+  assert.equal(out.hookSpecificOutput, undefined);
+});
+
 test('stage.agents: a gate AskUserQuestion would reject is denied, naming the field', () => {
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-gate-cfg-') });

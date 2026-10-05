@@ -197,13 +197,13 @@ function main(raw) {
     let file = null;
     let controlled = false;
     let agents = 'unset';
-    let values = null;
+    let values = null; let idsWarning = null;
     try {
         values = profileLib.profileFor(root, mine).values;
         controlled = controlling(mine.stage, values);
         agents = agentsText(values);
         file = handoffPath(root, mine, mine.stage);
-        if (controlled) gate = readGate(file, nextStage(mine.stage, mine.route), normaliseRoute(mine.route) || FULL_ROUTE, { pause: true, floor: mine.floor, ids: require('../lib/plain.js').todoIds(root) });
+        if (controlled) { const todo = require('../lib/plain.js').todoIds(root); idsWarning = todo.warning; gate = readGate(file, nextStage(mine.stage, mine.route), normaliseRoute(mine.route) || FULL_ROUTE, { pause: true, floor: mine.floor, ids: todo.ids }); }
         if (!gate) skip = skipReason({ stage: mine.stage, controlled, agents, inflight: runningMark(mine, mine.stage), handoff: file });
     } catch (e) { /* housekeeping */ }
 
@@ -323,7 +323,7 @@ function main(raw) {
     try {
         registry.clearInflight(root, payload.session_id);
     } catch (e) { /* housekeeping */ }
-    return emit({}, payload, root, mine, values);
+    return emit(idsWarning ? { systemMessage: 'fankeel: ' + idsWarning + '.' } : {}, payload, root, mine, values);
 }
 
 // Deliberately silent. Whatever went wrong, the question still has to reach

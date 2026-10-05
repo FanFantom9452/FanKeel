@@ -30,10 +30,12 @@ function main(argv) {
     const at = root ? registry.resolveRoot(root) : registry.rootFor({ cwd: process.cwd() });
     const mine = registry.readSession(at, session);
     if (!mine || !mine.stage) return { text: 'gate-check.js: no session ' + session + ' with a stage under ' + at, code: 1 };
-    const gate = readGate(files[0], nextStage(mine.stage, mine.route), normaliseRoute(mine.route) || FULL_ROUTE, { pause: true, floor: mine.floor, ids: require('../lib/plain.js').todoIds(at) });
-    if (!gate) return { text: 'gate-check.js: no readable `json gate` block in ' + files[0], code: 1 };
-    if (gate.invalid) return { text: 'gate-check.js: invalid at ' + gate.invalid + ': ' + gate.detail, code: 1 };
-    return { text: 'gate ok', code: 0 };
+    const todo = require('../lib/plain.js').todoIds(at);
+    const gate = readGate(files[0], nextStage(mine.stage, mine.route), normaliseRoute(mine.route) || FULL_ROUTE, { pause: true, floor: mine.floor, ids: todo.ids });
+    const warn = todo.warning ? '\nwarning: ' + todo.warning : '';
+    if (!gate) return { text: 'gate-check.js: no readable `json gate` block in ' + files[0] + warn, code: 1 };
+    if (gate.invalid) return { text: 'gate-check.js: invalid at ' + gate.invalid + ': ' + gate.detail + warn, code: 1 };
+    return { text: 'gate ok' + warn, code: 0 };
 }
 
 if (require.main === module) {

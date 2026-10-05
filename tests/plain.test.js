@@ -50,6 +50,16 @@ test('proseFindings reads a human reference page, and a todo entry only under it
     assert.deepEqual(proseFindings('docs/90-agent/todo/a-2.md', '---\nstate: ready\n---\n\n' + long + '\n', 'todo', 'agent'), []);
 });
 
-test('todoIds is empty for a directory with no todo bucket', () => {
-    assert.deepEqual(todoIds(require('node:os').tmpdir() + '/fankeel-no-such-root'), []);
+test('todoIds is empty, with no warning, for a directory with no todo bucket', () => {
+    assert.deepEqual(todoIds(require('node:os').tmpdir() + '/fankeel-no-such-root'), { ids: [], warning: null });
+});
+
+// plain-1: a TODO that could not be read used to come back as no ids at all,
+// and the gate then let every bare TODO id through without a word.
+test('todoIds names the failure when the TODO cannot be read', () => {
+    const root = require('./tmp.js')('fankeel-plain-todo-');
+    require('node:fs').mkdirSync(require('node:path').join(root, 'TODO.md'));
+    const out = todoIds(root);
+    assert.deepEqual(out.ids, []);
+    assert.match(out.warning, /^the TODO entries could not be read \(.+\), so a bare TODO id is not checked$/);
 });
