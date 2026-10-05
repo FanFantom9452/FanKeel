@@ -788,29 +788,29 @@ model name or `false`. Set `prompt.all` and any of `prompt.survey`, `prompt.desi
 is appended as the rules block's last line, `  - <sentence>`, on every prompt
 that block reaches — `prompt.all` first, then `prompt.<the current stage>`,
 so a task with both set carries two extra rule lines, not one
-(`lib/render.js:115`, `function promptRules(values, stage) {`). `parsePrompt`
+(`lib/render.js:116`, `function promptRules(values, stage) {`). `parsePrompt`
 in `lib/profile.js` holds it to one line and 200 characters — trimmed but not
 lowercased, and refused if it is empty, carries a newline, or runs long
 (`lib/profile.js:208`, `key + ' is one line of 1 to ' + PROMPT_MAX + ' characters' };`).
 `promptRules` is called once, inside `rulesLines`
-(`lib/render.js:168`, `.concat(promptRules(values, data && data.stage));`),
+(`lib/render.js:169`, `.concat(promptRules(values, data && data.stage));`),
 and by `controlBlock` for a controlled stage's own block
-(`lib/render.js:132`, `return control && Object.assign({}, control, { rules: control.rules.concat(promptRules(values, stage)) });`),
+(`lib/render.js:133`, `return control && Object.assign({}, control, { rules: control.rules.concat(promptRules(values, stage)) });`),
 so `render`, `renderResume` and `renderBrainBrief` — every path that calls
 `rulesLines` — all carry it, controlled stage or not. `renderBrief`, the brief
 a reader, reviewer, fixer or implementer gets, never calls `rulesLines` and so
 never reaches `promptRules` — that return goes to the controller, not to
 whoever typed the sentence
-(`lib/render.js:113`, `never reaches this — a reader's return is`).
+(`lib/render.js:114`, `never reaches this — a reader's return is`).
 
 Setting the key prints what it costs: the estimated tokens the injected line
 adds per prompt, and each stage's remaining room under the reference-root
 2400-character cap with the profile as it now reads — a warning, never a
 refusal, since the cap belongs to the tests and the sentence belongs to the
-user (`scripts/task.js:1132`, `set anyway; this is a warning, not a refusal`)
+user (`scripts/task.js:1137`, `set anyway; this is a warning, not a refusal`)
 — computed in `cmdProfile`'s `set` branch off `input-check.js`'s
 `estimateTokens` and `lib/render.js`'s `blockSizes`
-(`scripts/task.js:1125`, `const n = estimateTokens('\n  - ' + out.value);`).
+(`scripts/task.js:1130`, `const n = estimateTokens('\n  - ' + out.value);`).
 
 ## What a controlled `build` and `verify` were run through
 
