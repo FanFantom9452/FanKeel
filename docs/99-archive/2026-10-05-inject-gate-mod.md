@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # 函式 hook、注入節流與 gate 報告面板：不做，寫成決策 Implementation Plan

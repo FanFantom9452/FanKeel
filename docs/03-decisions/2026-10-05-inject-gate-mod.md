@@ -7,7 +7,7 @@ last_verified: 2026-10-05
 
 一句話：fankeel 不把 UserPromptSubmit 注入改成行程內的函式 hook，也不在終端或 Desktop 加 gate 報告面板；節流的想法併進 TODO 條目 inject-3「注入先開 server」，inject-4 與 gate-6 隨這份紀錄關閉。
 
-使用者在 2026-10-05 這個 task 的 design gate 選了這個方向。設計稿是 [2026-10-05-inject-gate-mod-design.md](../90-agent/plans/2026-10-05-inject-gate-mod-design.md)。
+使用者在 2026-10-05 這個 task 的 design gate 選了這個方向。設計稿是 [2026-10-05-inject-gate-mod-design.md](../99-archive/2026-10-05-inject-gate-mod-design.md)。
 
 ## 為什麼
 

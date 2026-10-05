@@ -215,8 +215,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | cleanup-2 前兩項（10-05）定了什麼、沒做什麼：`fetchHealth` 改用全域 `fetch`、`lib/profile.js` 的 `git` 改用 `lib/blame.js` 匯出的；第三、四項沒做，留在 Ready | [decisions/2026-10-05-cleanup-two.md](03-decisions/2026-10-05-cleanup-two.md) — *繁體中文* |
 | TODO 全表盤點第五輪（10-05）定了什麼：十七個 task 做完、死 build agent 的標記改成交接檔落地就清、write 門檻定為 2800ms、中文受控規則由 `lib/plain.js` 擋在 gate 與 docs-check | [decisions/2026-10-05-todo-sweep-five.md](03-decisions/2026-10-05-todo-sweep-five.md) — *繁體中文* |
 | 函式 hook、注入節流與 gate 報告面板（10-05）定了什麼：都不做；函式 hook 就是擱置中的 mod 路線，面板已由 `gate.station` 的 station 頁提供，節流併進 inject-3 | [decisions/2026-10-05-inject-gate-mod.md](03-decisions/2026-10-05-inject-gate-mod.md) — *繁體中文* |
-| 那份決定的 design：hooks module 仍受旗標控制、`station.write` 中位數 1.76 秒、`gate.station` 已能在頁面答 gate | [plans/2026-10-05-inject-gate-mod-design.md](90-agent/plans/2026-10-05-inject-gate-mod-design.md) — *design-intent, 繁體中文* |
-| 那份設計的一個 task：決策頁、inject-3 補節流、索引 | [plans/2026-10-05-inject-gate-mod.md](90-agent/plans/2026-10-05-inject-gate-mod.md) — *design-intent, 繁體中文* |
+| 那份決定的 design：hooks module 仍受旗標控制、`station.write` 中位數 1.76 秒、`gate.station` 已能在頁面答 gate | `docs/99-archive/2026-10-05-inject-gate-mod-design.md` — *built, 繁體中文* |
+| 那份設計的一個 task：決策頁、inject-3 補節流、索引 | `docs/99-archive/2026-10-05-inject-gate-mod.md` — *built, 繁體中文* |
 | 啟動檔改由外掛在每個專案的 .fankeel/ 產生（10-02）定了什麼、沒做什麼：lib/launchers.js 產生 station.bat／station.sh、ensureLayout 每次建立時寫入並 gitignore、port 去重沿用 serve --detach 的 probe | [decisions/2026-10-02-station-launchers.md](03-decisions/2026-10-02-station-launchers.md) — *繁體中文* |
 | 落地它的三個 task | `docs/99-archive/2026-10-02-station-launchers.md` — *built, 繁體中文* |
 | TODO 九條一次建完（10-03）定了什麼、沒做什麼：await、commit、gate、build、relay 重派、docs-check 對開放條目的檢查與 docs-moved 引文改寫；四個小缺口記在 todo-check-1 | [decisions/2026-10-03-todo-nine.md](03-decisions/2026-10-03-todo-nine.md) — *繁體中文* |
