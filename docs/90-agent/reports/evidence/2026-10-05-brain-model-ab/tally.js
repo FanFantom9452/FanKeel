@@ -6,8 +6,10 @@
 // `.fankeel/build` copied as `build/`. `--resume` reports cost cumulatively, so
 // a run's spend is its last stage file's, never a sum. A tool_use is counted
 // once by its id, however many transcript lines repeat it. A run is valid
-// only when its verify stage json exists and its brains ran on its arm's model, read off each brain's meta
-// `description`, which hooks/title.js opens with the model.
+// only when its verify stage json exists and its judged brains ran on its arm's
+// model, read off each brain's meta `description`, which hooks/title.js opens
+// with the model. A brain's stage is read off the controller's Agent tool_use
+// prompt, linked to the subagent through the tool_result's agentId.
 // usage: node tally.js <evidence dir> <raw dir>
 const fs = require('node:fs');
 const path = require('node:path');
@@ -55,6 +57,32 @@ function resultTexts(entries) {
             if (!c || c.type !== 'tool_result') continue;
             out.push(typeof c.content === 'string' ? c.content
                 : Array.isArray(c.content) ? c.content.map((x) => (x && x.text) || '').join('\n') : '');
+        }
+    }
+    return out;
+}
+
+// agentId -> stage word of the controller prompt that dispatched it. The id is
+// on the tool_result entry (`toolUseResult.agentId`) or, failing that, in its
+// text as `agentId: <id>`. Assumption: a brain with no link here is judged, not
+// skipped, so a plan brain that cannot be linked invalidates a run rather than
+// passing one.
+function stagesByAgent(entries) {
+    const stageOf = new Map();
+    for (const u of toolUses(entries)) {
+        if (u.name !== 'Agent') continue;
+        const m = /^\s*(plan|design|build|verify)\b/.exec(String((u.input && u.input.prompt) || ''));
+        if (m) stageOf.set(u.id, m[1]);
+    }
+    const out = new Map();
+    for (const e of entries) {
+        if (!e || e.type !== 'user' || !e.message || !Array.isArray(e.message.content)) continue;
+        for (const c of e.message.content) {
+            if (!c || c.type !== 'tool_result' || !stageOf.has(c.tool_use_id)) continue;
+            const text = typeof c.content === 'string' ? c.content
+                : Array.isArray(c.content) ? c.content.map((x) => (x && x.text) || '').join('\n') : '';
+            const id = (e.toolUseResult && e.toolUseResult.agentId) || (/agentId:\s*([\w-]+)/.exec(text) || [])[1];
+            if (id) out.set(id, stageOf.get(c.tool_use_id));
         }
     }
     return out;
@@ -114,7 +142,9 @@ function tallyRun(evid, rawRun, tag) {
     let names = [];
     try { names = fs.readdirSync(rawRun); } catch (e) { /* an empty run */ }
     const session = names.find((n) => n.endsWith('.jsonl'));
-    const uses = session ? toolUses(lines(path.join(rawRun, session))) : [];
+    const entries = session ? lines(path.join(rawRun, session)) : [];
+    const uses = toolUses(entries);
+    const stageOfAgent = stagesByAgent(entries);
     const bash = uses.filter((u) => u.name === 'Bash').map((u) => String((u.input && u.input.command) || ''));
     const agents = { brain: 0, reviewer: 0, fixer: 0, implementer: 0, other: 0 };
     const brainModels = {};
@@ -130,7 +160,8 @@ function tallyRun(evid, rawRun, tag) {
         if (role && role[1] === 'brain') {
             const word = (MODEL_WORD.exec(String(meta.description || '')) || [null, 'unknown'])[1].toLowerCase();
             brainModels[word] = (brainModels[word] || 0) + 1;
-            if (!/\b(plan|design)\b/i.test(String(meta.description || '').replace(MODEL_WORD, ''))) judged[word] = (judged[word] || 0) + 1;
+            const stage = stageOfAgent.get(path.basename(file).replace(/^agent-/, '').replace(/\.jsonl$/, ''));
+            if (stage !== 'plan' && stage !== 'design') judged[word] = (judged[word] || 0) + 1;
         }
         for (const t of resultTexts(lines(file))) {
             if (t.includes('gate-check.js: invalid at')) gateCheckRefusals += 1;

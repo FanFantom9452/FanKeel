@@ -81,12 +81,39 @@ test('an opus run whose brain ran on sonnet is not valid, and main leaves it out
     assert.equal(parsed.arms.opus.medianUsd, null);
 });
 
+// The controller transcript links a plan dispatch to its subagent by agentId.
+function planBrain(run, opusAgent) {
+    const f = path.join(run, U + '.jsonl');
+    fs.appendFileSync(f, jsonl([
+        use('tp', 'Agent', { subagent_type: 'fankeel:fankeel-brain', prompt: 'plan', model: 'opus' }),
+        { type: 'user', toolUseResult: { agentId: opusAgent }, message: { content: [{ type: 'tool_result', tool_use_id: 'tp', content: 'done' }] } },
+    ]));
+    const sub = path.join(run, U, 'subagents');
+    fs.writeFileSync(path.join(sub, 'agent-' + opusAgent + '.meta.json'), JSON.stringify({ agentType: 'fankeel:fankeel-brain', description: 'opus 5.5 · medium: plan' }));
+    fs.writeFileSync(path.join(sub, 'agent-' + opusAgent + '.jsonl'), '');
+}
+
 test('a sonnet run whose plan brain ran on opus and whose build brain ran on sonnet is valid', () => {
+    const { evid, run } = fixture('r1-sonnet', 'sonnet 5.5 · medium: build stage agent');
+    planBrain(run, 'a4');
+    const t = tallyRun(evid, run, 'r1-sonnet');
+    assert.equal(t.valid, true);
+    assert.deepEqual(t.brainModels, { sonnet: 1, opus: 1 });
+});
+
+test('an opus run with an opus plan brain and a sonnet build brain is not valid', () => {
+    const { evid, run } = fixture('r1-opus', 'sonnet 5.5 · medium: build stage agent');
+    planBrain(run, 'a4');
+    const sub = path.join(run, U, 'subagents');
+    fs.writeFileSync(path.join(sub, 'agent-a5.meta.json'), JSON.stringify({ agentType: 'fankeel:fankeel-brain', description: 'opus 5.5 · medium: build stage agent' }));
+    fs.writeFileSync(path.join(sub, 'agent-a5.jsonl'), '');
+    assert.equal(tallyRun(evid, run, 'r1-opus').valid, false);
+});
+
+test('a brain the transcript does not link to a plan or design dispatch is judged whatever its description says', () => {
     const { evid, run } = fixture('r1-sonnet', 'sonnet 5.5 · medium: build stage agent');
     const sub = path.join(run, U, 'subagents');
     fs.writeFileSync(path.join(sub, 'agent-a4.meta.json'), JSON.stringify({ agentType: 'fankeel:fankeel-brain', description: 'opus 5.5 · medium: plan stage agent' }));
     fs.writeFileSync(path.join(sub, 'agent-a4.jsonl'), '');
-    const t = tallyRun(evid, run, 'r1-sonnet');
-    assert.equal(t.valid, true);
-    assert.deepEqual(t.brainModels, { sonnet: 1, opus: 1 });
+    assert.equal(tallyRun(evid, run, 'r1-sonnet').valid, false);
 });
