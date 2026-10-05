@@ -6,7 +6,7 @@ state: blocked
 link: scripts/spend.js
 group: TokenBar 寫出真實序列
 timing: after: `tokenbar-usage.jsonl` 有跨過一次 7d reset 的真實讀數；09-25 查到的 347 行全落在 09-22 的 15 分鐘內，是測試資料，09-23 起沒再寫
-stamp: 2026-10-01
+stamp: 2026-10-05
 ---
 
 來源：6d8a5da5（2026-09-21）的額度校準報告 docs/90-agent/reports/2026-09-21-quota-calibration.md 第 3 節；5h 兩次讀數已按錢走，7d 兩個點卻差至少 4.7 倍，兩點共用不了同一個速率，兩點給不出原因。
