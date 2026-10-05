@@ -62,7 +62,7 @@ node <plugin>/scripts/todo-check.js [--root <dir>]
 ```
 
 Close the TODO entries this work finished — whoever finishes the work closes
-the entry in the same change (folder mode: `todo.js done <id> --sha <sha>`, the file stays; hand-written `TODO.md`: remove the line). A plan that just moved is a link that just changed
+the entry in the same change (folder mode: `todo.js done <id> --sha <sha> --record "<what the work did, in plain sentences>" --commits <sha,sha>`, the file stays and gains a `## 完成紀錄` section — written to [plain-language.md](../../docs/90-agent/reference/plain-language.md), no `path:line`, never edited after, `--commits` naming every commit of the work but not the one that writes the record; hand-written `TODO.md`: remove the line). A plan that just moved is a link that just changed
 address, so run this after anything moves.
 
 Update `last_verified` on every page you re-read and found true. That date is the

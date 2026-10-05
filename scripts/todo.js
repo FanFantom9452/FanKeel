@@ -18,11 +18,11 @@ const { resolveRoot } = require('../lib/registry.js');
 
 const USAGE = [
     'usage: todo.js list | new --label --title --description --state --body [--link --group --timing --stamp --id]',
-    '       | done <id> --sha <sha> [--session <id>] [--disposition done] | migrate    [--root <dir>]',
+    '       | done <id> --sha <sha> [--session <id>] [--disposition done] [--record <text> --commits <sha,sha>] | migrate    [--root <dir>]',
 ].join('\n');
 
 const FLAGS = ['root', 'label', 'title', 'description', 'state', 'body', 'link', 'group', 'timing', 'stamp', 'id',
-    'sha', 'session', 'disposition', 'at'];
+    'sha', 'session', 'disposition', 'at', 'record', 'commits'];
 
 function main(argv, now) {
     const at = now === undefined ? Date.now() : now;
@@ -76,7 +76,8 @@ function main(argv, now) {
         if (cmd === 'done') {
             if (!arg) return { text: USAGE, ok: false };
             const shut = todo.close(root, arg, { sha: str('sha'), session: str('session'),
-                disposition: str('disposition'), at: str('at') || todo.isoDay(at) });
+                disposition: str('disposition'), at: str('at') || todo.isoDay(at),
+                record: str('record'), commits: (str('commits') || '').split(',').map((s) => s.trim()).filter(Boolean) });
             return { text: 'fankeel todo: closed ' + shut.file, ok: true };
         }
         if (cmd === 'migrate') {

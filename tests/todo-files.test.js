@@ -228,3 +228,22 @@ test('new refuses an entry naming a path the tree does not have, and leaves no f
   const ok = main(base.concat(['--title', 'Here path', '--description', 'names `lib/here.js`']), NOW);
   assert.equal(ok.ok, true, ok.text);
 });
+
+test('close with a record appends 完成紀錄 with every commit, and recordOf reads it back', () => {
+  const dir = project(true);
+  fs.mkdirSync(path.join(dir, 'docs', 'todo'));
+  const made = lib.add(dir, { label: 'x', title: 'a thing', description: 'a thing', state: 'ready', link: 'docs/a.md' });
+  lib.close(dir, made.id, { sha: 'abcdef1', at: '2026-10-05', record: '刪掉了重複的讀檔函式。', commits: ['abcdef1', '1234abc'] });
+  const text = fs.readFileSync(path.join(dir, made.file), 'utf8');
+  assert.match(text, /\n## 完成紀錄\n\n刪掉了重複的讀檔函式。\n\n- commit abcdef1\n- commit 1234abc\n$/);
+  assert.equal(lib.recordOf(lib.parse(text).body), '刪掉了重複的讀檔函式。\n\n- commit abcdef1\n- commit 1234abc');
+  assert.equal(lib.recordOf('no record here'), '');
+});
+
+test('close with a record and no commits lists the sha alone', () => {
+  const dir = project(true);
+  fs.mkdirSync(path.join(dir, 'docs', 'todo'));
+  const made = lib.add(dir, { label: 'x', title: 'b thing', description: 'b thing', state: 'ready', link: 'docs/a.md' });
+  lib.close(dir, made.id, { sha: 'abcdef1', at: '2026-10-05', record: '做完了。' });
+  assert.match(fs.readFileSync(path.join(dir, made.file), 'utf8'), /\n- commit abcdef1\n$/);
+});
