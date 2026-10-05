@@ -517,12 +517,13 @@ test('liveMarks drops a build group mark once its group handoff landed after it,
   const data = Object.assign({}, DATA, { stage: 'build', inflight: [
     { stage: 'build', at: 1, group: 2, kind: 'group', agentId: 'g2' },
     { stage: 'build', at: 1, group: 3, kind: 'group', agentId: 'g3' },
-    { stage: 'build', at: 1, group: 4, kind: 'close', agentId: 'c' },
+    { stage: 'build', at: 1, group: 2, kind: 'close', agentId: 'c' },
+    { stage: 'verify', at: 1, group: 2, kind: 'group', agentId: 'v' },
   ] });
   const file = handoffPath(root, data, 'build', undefined, 2);
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, '# group 2\n');
-  assert.deepEqual(liveMarks(root, data).map((m) => m.agentId), ['g3', 'c']);
+  assert.deepEqual(liveMarks(root, data).map((m) => m.agentId), ['g3', 'c', 'v']);
 });
 
 test('liveMarks keeps a group mark whose handoff is older than the mark, and reads a single mark', () => {
