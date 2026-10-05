@@ -709,6 +709,18 @@ test('the station line names a page that was not written, and the url still serv
   assert.ok(size < 1400, 'init block with an unwritten-page line is ' + size + ' chars');
 });
 
+// render-1: only a station that is running or was started this prompt shows
+// the last page; one still starting, or one that failed, is not named even
+// when a url came back with it.
+test('the station line names no url for a station starting or failed, url or not', () => {
+  const failed = { error: "EEXIST: file already exists, mkdir 'C:/Users/you/.claude/fankeel'" };
+  for (const serve of [{ state: 'starting', url: 'http://127.0.0.1:7817/' }, { state: 'failed', url: 'http://127.0.0.1:7817/' }]) {
+    assert.match(renderInit({ sessionId: MINE, station: failed, serve }),
+      /^station: the page was not written \(EEXIST: file already exists, mkdir 'C:\/Users\/you\/\.claude\/fankeel'\)\.$/m,
+      'a ' + serve.state + ' station was named as still showing the last page');
+  }
+});
+
 test('stage.agents true at survey: the controller\'s block replaces the stage\'s', () => {
   const { renderResume } = require('../lib/render.js');
   const readRule = byName('survey').rules.find((r) => r.startsWith('Read whatever documents'));
