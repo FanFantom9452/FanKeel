@@ -1,12 +1,12 @@
 ---
 status: current
 last_verified: 2026-10-05
-source_of_truth: lib/plain.js
+source_of_truth: lib/plain.js, lib/prose.js
 ---
 
 # 中文受控規則
 
-寫給使用者看的中文照這頁寫：主 session 對使用者說的話、gate 的提問與選項、`docs/01-guide/` 的頁面、TODO 條目的完成紀錄。
+這頁的五條規則是 profile 的 `prose.style` 設成 `plain` 時的寫法，規則文字在 `lib/prose.js` 的 `STYLES.plain`。其中句長（第 2 條）和不用代號（第 4 條）由程式檢查，不論選哪種風格都適用：主 session 對使用者說的話、gate 的提問與選項、guide 目錄的頁面、TODO 條目的完成紀錄。
 
 做法取自航空維修文件用的受控英語（ASD-STE100）：句子短、一句一件事、用字固定。
 
