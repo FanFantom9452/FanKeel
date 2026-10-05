@@ -3723,7 +3723,7 @@
     }
     // 分工: a short prose account of how the main loop divided dispatch, one
     // line per stage in the order `seq` first entered it. A dispatch's stage
-    // is its `out` time run through the same rule as `lib/detail.js:397`'s
+    // is its `out` time run through the same rule as `lib/detail.js:390`'s
     // `stageWhen` — the last `seq` entry at or before it, or `task 開始前`
     // when there is none.
     function splitStage(seq, t) {
