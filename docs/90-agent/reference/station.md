@@ -931,7 +931,7 @@ and a half on transcripts that the `/fankeel` write does (`DETAIL_BUDGET_MS` in
 reads the one session it was asked for rather than every session on the
 machine. Because the detail reading spends that whole budget, one `/fankeel`
 write takes about the budget itself — 1954–2664ms measured on 2026-10-05 — and
-its threshold is 2800ms, which leaves slack over the slowest measured write.
+its threshold is 2800ms (`WRITE_THRESHOLD_MS` in `lib/station.js`), which leaves slack over the slowest measured write.
 
 A second `serve` against the same config directory joins the first rather
 than starting one: `<configDir>/fankeel/serve.json` holds the pid, port, url
