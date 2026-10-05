@@ -53,6 +53,7 @@ profile 是 gate 的常備答案：先寫好，fankeel 就不再問那一題。g
 | `sensitive.review` | reviewer 審查時要不要多跑 ## Sensitive lens，確認敏感資料沒寫進去 | `true`、`false`；內建 `false` | 不設，維持內建 |
 | `commit.format` | commit.js 提交前，每則訊息第一行要符合的正規式；不設就不檢查 | 一個 JavaScript 正規式，比對訊息第一行 | 不設 |
 | `quota.calibrated` | 最近一次自動校準 quota.week 的日期（YYYY-MM-DD），由 scripts/quota.js 寫入 |  | 不設 |
+| `prose.style` | 站 agent 與 writer 寫給人看的文字用哪種風格：writer 先結論再附例子、plain 白話短句、sepia 長短句交錯、custom 讀 .fankeel/prose.md | `writer`、`plain`、`sepia`、`custom`；內建 `writer` | 不設，維持內建 |
 <!-- PROFILE_TABLE:END -->
 
 `stage.agents` 建議打開，理由記在 `lib/profile.js:416-420`，`the user, 2026-10-02`（使用者，2026-10-02）：主 session 跑長任務時，用 remote control 的人看不到它的 context 堆了多少，除非手動 compact；Claude 本身沒有 context 回收機制，所以最好的做法是開背景的站 agent，每一站在自己的乾淨 context 裡跑，靠檔案互相傳遞資訊，主控只轉路徑。內建值仍是 `false`（`lib/profile.js:39`，`builtin: 'false'`），要打開得自己設。這段理由支持的是「把站交給 agent」這個方向，以及 `all`（每一站都交出去）；它沒有解釋為什麼「建議」欄只挑 survey、build、verify 這三站。這三站是經驗選擇：repo 裡沒有任何一處記下為什麼挑這三站，使用者 2026-10-02/03 裁定維持原樣、不補編理由；`PRESETS.balanced` 那一行的註解也這樣寫，精靈「省 context」按鈕的說明同樣只寫「三站交出去」，沒有理由。精靈 agents 那一步有三顆會交出站的按鈕：「只交出 survey」設 `survey`；「省 context」的值在 `assets/station/station.js:1837`，是 `survey,build,verify`，其餘幾站仍由主控自己跑；「全部交出去」的值在 `assets/station/station.js:1838`，是 `all`，七站都交出去。程式碼裡另有兩組預設：`PRESETS.balanced` 的值在 `lib/profile.js:434`，是 `survey,build,verify`，`PRESETS.lean`（標籤也叫「省 context」）的值在 `lib/profile.js:439`，是 `all`；現在的站頁不再套用這兩組，實際寫入值的是精靈的按鈕，所以在精靈按「省 context」得到的是三站，不是 `all`。`true` 是舊寫法，只等於只交 survey。要自己設，把站名用逗號串起來：
@@ -67,6 +68,13 @@ node <plugin>/scripts/task.js profile set stage.agents all --default
 ```
 node <plugin>/scripts/task.js profile set commit.format '^(feat|fix|docs)(\([^)]+\))?: '
 node <plugin>/scripts/task.js profile set language 繁體中文
+```
+
+`prose.style` 決定站 agent 和 writer 寫給人看的文字用哪種風格，內建 `writer`。`writer` 先講結論再講原因，每一節附一個可以照抄的例子。`plain` 是[中文受控規則](../90-agent/reference/plain-language.md)的白話短句。`sepia` 讓長句和短句交錯，規則改寫自 sepia 外掛的專業文體檢查。三種都不合用時，設成 `custom`，再把自己的規則寫進專案的 `.fankeel/prose.md`，整個檔案就是規則。設定時，指令會印出規則有幾個字、約多少 token，並和建議的 450 字比較；超過只警告。超過 1200 字的上限時，brief 改用 `writer`，檔案不存在時也一樣。build 站的 agent 不注入風格，因為它的 brief 已經貼近 10,000 字元的上限；它派出去的 writer 仍然照風格寫。不論選哪一種，句子不超過 160 欄和不用裸代號這兩項檢查都照舊擋 gate。例：
+
+```
+node <plugin>/scripts/task.js profile set prose.style sepia
+node <plugin>/scripts/task.js profile set prose.style custom
 ```
 
 `quota.week` 也是自由填的值，但填的是數字：你的 Max 20x 一週額度等於多少美元（以 API 價格換算的估算值）。填了之後，監控站在多數金額後面會接上「(x%)」，也就是那筆金額除以這個數字。但日直方圖與專案圖的縱軸刻度和每根長條的合計、導覽列的天數徽章、花費佔比條的標籤、派工花費條的各段文字，以及 session 頁花費讀數本身都只顯示純金額。session 頁的花費讀數把比例放在下方說明行開頭，滑鼠停留的提示文字則仍保留比例。沒填就不顯示比例。它沒有內建值，因為 transcript 與 registry 裡都沒有百分比欄位可以讀，所以只能自己量。校準報告（`docs/90-agent/reports/2026-09-21-quota-calibration.md`）量到的區間約 $2,619–4,584，而且那份報告也指出累積讀數與固定費率互相矛盾，這個區間只能當起點。值必須是大於 0 的數字。專案層（不加 --default）與機器層都可設，同一個 key 兩層都有時專案層優先，多個專案各設不同值時取登錄順序第一個有設的專案。例：

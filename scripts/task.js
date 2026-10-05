@@ -1116,6 +1116,11 @@ function cmdProfile(root, opts) {
             const agentsDir = opts.default ? path.join(cfg, 'agents') : path.join(projectRoot, '.claude', 'agents');
             return head + '\n' + agentfile.syncLine(agentfile.syncAgent({ pluginRoot: PLUGIN, profileFile: file, agentsDir, name: agent.name, version: pluginVersion() }));
         }
+        if (key === 'prose.style') {
+            // What the chosen rules cost each brief they join, said when set; a
+            // custom text over the suggestion is a warning, never a refusal.
+            return [head].concat(require('../lib/prose.js').costLines(projectRoot, out.value, estimateTokens)).join('\n');
+        }
         if (key.startsWith('prompt.')) {
             // What a `prompt.*` sentence costs, said when it is set: the tokens its
             // injected line adds to every prompt, by input-check.js's own estimate, and

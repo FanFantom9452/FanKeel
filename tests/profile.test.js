@@ -382,7 +382,9 @@ test('the station wizard gets every key that offers a choice: not the prompts, n
     const wizard = Object.keys(profile.WIZARD_KEYS);
     assert.ok(!wizard.some((k) => k.startsWith('prompt.')));
     assert.ok(!wizard.includes('security.local'));
-    assert.deepEqual(wizard, Object.keys(profile.KEYS).filter((k) => profile.KEYS[k].values.length > 0));
+    // `prose.style` offers a choice but is added after the literal, off the
+    // wizard: `task.js profile set` prints what its rules cost, and the wizard cannot.
+    assert.deepEqual(wizard, Object.keys(profile.KEYS).filter((k) => profile.KEYS[k].values.length > 0 && k !== 'prose.style'));
 });
 
 // docs/plans/2026-09-24-todo-clear.md, "起草時查到": the printed N is
