@@ -212,6 +212,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 落地它的 task | `docs/99-archive/2026-10-02-todo-patrol.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-04）定了什麼、沒做什麼：程式碼可刪項做掉大半、`scripts/quota.js` 自動校準週額度、子 session 兩臂探測原因不成立、stage-agents 九條量測或轉交使用者 | [decisions/2026-10-04-todo-patrol-five.md](03-decisions/2026-10-04-todo-patrol-five.md) — *繁體中文* |
 | 落地它的 task | `docs/99-archive/2026-10-04-todo-patrol-five.md` — *built, 繁體中文* |
+| cleanup-2 前兩項（10-05）定了什麼、沒做什麼：`fetchHealth` 改用全域 `fetch`、`lib/profile.js` 的 `git` 改用 `lib/blame.js` 匯出的；第三、四項沒做，留在 Ready | [decisions/2026-10-05-cleanup-two.md](03-decisions/2026-10-05-cleanup-two.md) — *繁體中文* |
+| TODO 全表盤點第五輪（10-05）定了什麼：十七個 task 做完、死 build agent 的標記改成交接檔落地就清、write 門檻定為 2800ms、中文受控規則由 `lib/plain.js` 擋在 gate 與 docs-check | [decisions/2026-10-05-todo-sweep-five.md](03-decisions/2026-10-05-todo-sweep-five.md) — *繁體中文* |
 | 啟動檔改由外掛在每個專案的 .fankeel/ 產生（10-02）定了什麼、沒做什麼：lib/launchers.js 產生 station.bat／station.sh、ensureLayout 每次建立時寫入並 gitignore、port 去重沿用 serve --detach 的 probe | [decisions/2026-10-02-station-launchers.md](03-decisions/2026-10-02-station-launchers.md) — *繁體中文* |
 | 落地它的三個 task | `docs/99-archive/2026-10-02-station-launchers.md` — *built, 繁體中文* |
 | TODO 九條一次建完（10-03）定了什麼、沒做什麼：await、commit、gate、build、relay 重派、docs-check 對開放條目的檢查與 docs-moved 引文改寫；四個小缺口記在 todo-check-1 | [decisions/2026-10-03-todo-nine.md](03-decisions/2026-10-03-todo-nine.md) — *繁體中文* |
@@ -335,6 +337,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 受控站實跑量測：stage.agents 設全部站時，主控與 brain 各站的 context、站 agent 做不到的事、記帳、提交落點與 mutator（五個已收尾 task，n=5）；第二個 agent、profile 中途翻轉與 claims 由使用者親手補 | [reports/2026-10-04-controlled-stages.md](90-agent/reports/2026-10-04-controlled-stages.md) — *a dated snapshot, 繁體中文* |
 | 注入計時：UserPromptSubmit hook 一般 prompt、/fankeel prompt 與進行中任務各段的耗時，五秒逾時沒有在本機重現，最慢一段是 station 的 write，中位數約 1.76 秒 | [reports/2026-10-05-inject-timing.md](90-agent/reports/2026-10-05-inject-timing.md) — *a dated snapshot, 繁體中文* |
 | 同一題 Express middleware 用 `writer`、`plain`、`sepia` 三種風格寫成中英文六版，並用 `lib/plain.js` 量每版的句數、最長句與句長標準差：`prose.style` 選風格時的對照 | [reports/2026-10-05-prose-styles.md](90-agent/reports/2026-10-05-prose-styles.md) — *a dated snapshot, 繁體中文* |
+| 給人看的文字可選風格（10-05）的 design：profile key `prose.style`（`writer`、`plain`、`sepia`、`custom`，預設 `writer`），把所選風格的規則注入站 agent 與 writer 的 brief，build 站不注入 | `docs/99-archive/2026-10-05-prose-style-design.md` — *built, 繁體中文* |
+| 那份設計的四個 task | `docs/99-archive/2026-10-05-prose-style.md` — *built, 繁體中文* |
 | 真的 `claude -p` 巢狀派兩個 agent 量出來：`SubagentStart` 觸發當下 `agent-<id>.meta.json` 兩個 agent 都還沒帶 `spawnDepth`（`atHook`／`depthAtHook` 一致為 `false`／`null`），`nestedBrain()` 退回 fallback 分支，事後檔案才補齊且巢狀關係正確 | [reports/2026-09-28-spawndepth-timing.md](90-agent/reports/2026-09-28-spawndepth-timing.md) — *a dated snapshot, 繁體中文* |
 | 真的 `claude -p` 派 `isolation: "worktree"` 的 subagent 量出來：回傳文字裡沒有路徑也沒有分支（`pathInResult`／`branchInResult` 皆 `false`），readable: no——brain 拿不到路徑可以直接寫進 commit file，`task.js` 的 `openWorktree` 退路還要 design 定義；留下的 worktree 開在 repo 根目錄之內，`lib/guard.js` 的 `relPath` 對不回主樹路徑 | [reports/2026-09-28-worktree-probe.md](90-agent/reports/2026-09-28-worktree-probe.md) — *a dated snapshot, 繁體中文* |
 | 本地 `moondream` 判斷十張 fankeel 測站截圖（五正常五破壞）：正常圖 5/5 判對、壞圖只抓到 1/5（全透明文字那張），平均 0.24 秒；`UI-TARS-1.5-7B-GGUF` 卡在下載時被擋跨主機 redirect，座標題沒問成 | [reports/2026-09-28-local-judge-trial.md](90-agent/reports/2026-09-28-local-judge-trial.md) — *a dated snapshot, 繁體中文* |

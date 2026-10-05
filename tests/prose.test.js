@@ -1,6 +1,6 @@
 'use strict';
 
-// docs/90-agent/plans/2026-10-05-prose-style-design.md: the style a stage
+// docs/99-archive/2026-10-05-prose-style-design.md: the style a stage
 // agent and a writer write in, chosen by `prose.style`.
 
 const test = require('node:test');
