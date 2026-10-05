@@ -41,7 +41,7 @@ disk right now — the mtime and size of `lib/station.js` and
 once when `scripts/station.js` started serving. A station answering with
 the old fingerprint counts the same as one not answering at all:
 `ensureServe` stops its pid and asks for a fresh one, rather than handing
-back a page a newer checkout no longer matches. The line ends one of four
+back a page a newer checkout no longer matches. The line ends one of five
 ways:
 
 | the line ends | when |
@@ -50,6 +50,7 @@ ways:
 | `<url> (serve started, browser opened).` | none answered, so the hook started `station.js serve --open` detached, and its `serve.json` appeared in time |
 | `serve is starting; until then <file>.` | it was started, and had not written its record when the hook had to answer |
 | `<file>. Edit the profile with station.js serve --open.` | `FANKEEL_SERVE=off` is set, or the start itself failed |
+| `(<error>).` or `(<error>); <url> still shows the last one written.` | the page write threw — a full disk, or a file sitting where `<configDir>/fankeel` belongs. The line then opens `station: the page was not written` instead of the counts, carries the error's first line (at most 65 characters), and names the url only when a station was running or started |
 
 All of it — the page write, the probe and the wait for the record — aims at
 four seconds of the hook starting (`SERVE_BUDGET_MS` in `hooks/inject.js`), one

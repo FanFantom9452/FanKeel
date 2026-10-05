@@ -691,6 +691,24 @@ test('the station line names the served url, a station still starting, or the fi
   }
 });
 
+// inject-5: a page that was not written is named on the line, with its error,
+// and with the url when a station is serving the last page it had.
+test('the station line names a page that was not written, and the url still serving', (t) => {
+  const failed = { error: "EEXIST: file already exists, mkdir 'C:/Users/you/.claude/fankeel'" };
+  assert.match(renderInit({ sessionId: MINE, station: failed }),
+    /^station: the page was not written \(EEXIST: file already exists, mkdir 'C:\/Users\/you\/\.claude\/fankeel'\)\.$/m);
+  for (const state of ['running', 'started']) {
+    assert.match(renderInit({ sessionId: MINE, station: failed, serve: { state, url: 'http://127.0.0.1:7817/' } }),
+      /^station: the page was not written \(.+\); http:\/\/127\.0\.0\.1:7817\/ still shows the last one written\.$/m);
+  }
+  assert.match(renderInit({ sessionId: MINE, station: failed, serve: { state: 'starting', url: null } }),
+    /^station: the page was not written \(.+\)\.$/m);
+  const longest = renderInit({ sessionId: MINE, station: { error: 'x'.repeat(65) }, serve: { state: 'running', url: 'http://127.0.0.1:7817/' } });
+  const size = sizeAtReference(longest);
+  t.diagnostic('init+unwritten'.padEnd(15) + size + ' chars at a ' + REFERENCE_ROOT + '-char root');
+  assert.ok(size < 1400, 'init block with an unwritten-page line is ' + size + ' chars');
+});
+
 test('stage.agents true at survey: the controller\'s block replaces the stage\'s', () => {
   const { renderResume } = require('../lib/render.js');
   const readRule = byName('survey').rules.find((r) => r.startsWith('Read whatever documents'));

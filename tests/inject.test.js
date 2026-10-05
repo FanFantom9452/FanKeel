@@ -634,3 +634,15 @@ test('FANKEEL_SERVE=off leaves the file on the station line and asks nothing', a
     await st.close();
   }
 });
+
+// inject-5: a page write that throws used to drop the station line, so the
+// block said nothing while a station could still open the browser. A file
+// where the station's directory belongs makes `station.write` throw.
+test('a /fankeel prompt whose page write fails says so on the station line', () => {
+  const dir = tmp('fankeel-hook-');
+  const cfg = tmp('fankeel-cfg-');
+  fs.writeFileSync(path.join(cfg, 'fankeel'), 'not a directory');
+  const text = context(run({ session_id: MINE, cwd: dir, prompt: '/fankeel' }, cfg));
+  assert.match(text, new RegExp(MINE), 'the block itself still goes out');
+  assert.match(text, /^station: the page was not written \(.+\)\.$/m);
+});

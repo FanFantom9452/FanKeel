@@ -149,14 +149,14 @@ function main(raw) {
         // for up to `DETAIL_BUDGET_MS` and is synchronous, so while it runs
         // nothing else in this process moves: asked first, the station is
         // already starting when a slow disk stretches the write toward this
-        // hook's five seconds (inject-3). A failure here costs one line of the
-        // block rather than the block.
+        // hook's five seconds (inject-3). A failure here is named on the station
+        // line, with its error, rather than dropping the line (inject-5).
         const writePage = () => {
             if (!starting || !dir) return null;
             try {
                 return station.write({ configDir: dir, cwd: launch, root, plugin: PLUGIN_ROOT });
             } catch (e) {
-                return null;
+                return { error: String((e && e.message) || e).split('\n')[0].slice(0, 65) };
             }
         };
         const finish = (page, serve) => {
