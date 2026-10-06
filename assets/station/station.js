@@ -1193,7 +1193,7 @@
     function stageShare(s, x) {
         var by = {}, order = [], total = 0;
         var row = function (k) {
-            if (!by[k]) { by[k] = { stage: k, ms: null, usd: 0, main: 0, agent: 0, req: x ? 0 : null }; order.push(k); }
+            if (!by[k]) { by[k] = { stage: k, ms: null, usd: 0, main: 0, agent: 0, req: x ? 0 : null, estimated: false }; order.push(k); }
             return by[k];
         };
         (s.days || []).forEach(function (r) {
@@ -1202,7 +1202,7 @@
             total += v;
             if (r.who === 'main') g.main += v; else g.agent += v;
         });
-        (s.stages || []).forEach(function (w) { var g = row(w.stage); g.ms = (g.ms || 0) + Math.max(w.to - w.from, 0); });
+        (s.stages || []).forEach(function (w) { var g = row(w.stage); if (w.estimated === true) g.estimated = true; g.ms = (g.ms || 0) + Math.max(w.to - w.from, 0); });
         if (x) {
             (x.points || []).forEach(function (pt) {
                 var k = 'none';
@@ -1225,8 +1225,8 @@
             + (paid.length ? '<div class="csbar" role="group" aria-label="' + loc('ses.costShareByStage', '各 stage 花費占比') + '">' + paid.map(function (g) {
                 var p = pct(g.usd), on = hi === g.stage;
                 return '<button type="button" class="csseg' + (on ? ' on' : '') + '" data-hist="' + esc(g.stage) + '" aria-pressed="' + on + '"'
-                    + ' title="' + esc(name(g.stage) + ' ' + usd(g.usd, true) + ' · ' + p + '%') + '" style="flex:' + g.usd + ' 1 0;background:'
-                    + colorOf('stage', g.stage) + '">' + (p >= 9 ? '<span>' + esc(name(g.stage)) + '</span><b>' + usd(g.usd, true) + ' · ' + p + '%</b>' : '')
+                    + ' title="' + esc(name(g.stage) + ' ' + usd(g.usd, true) + estMark(g) + ' · ' + p + '%') + '" style="flex:' + g.usd + ' 1 0;background:'
+                    + colorOf('stage', g.stage) + '">' + (p >= 9 ? '<span>' + esc(name(g.stage)) + '</span><b>' + usd(g.usd, true) + estMark(g) + ' · ' + p + '%</b>' : '')
                     + '</button>';
             }).join('') + '</div>' : '<p class="tally">' + loc('ses.noDailyCost', '這個 session 沒有按日的花費') + '</p>')
             + '<div class="tbl-wrap"><table class="t cstbl"><thead><tr><th>stage</th><th class="r">' + loc('ses.thTime', '時間') + '</th><th class="r">' + loc('ses.thCost', '花費') + '</th><th class="r">' + loc('ses.thShare', '占比') + '</th>'
@@ -1234,11 +1234,11 @@
                 var on = hi === g.stage;
                 return '<tr class="csrow' + (on ? ' on' : '') + '" data-hist="' + esc(g.stage) + '" tabindex="0" aria-pressed="' + on + '">'
                     + '<td><span class="pchip"><i class="sw" style="background:' + colorOf('stage', g.stage) + '"></i>' + esc(name(g.stage)) + '</span></td>'
-                    + '<td class="r muted">' + (g.ms === null ? '—' : mins(g.ms)) + '</td><td class="r">' + usd(g.usd) + '</td>'
+                    + '<td class="r muted">' + (g.ms === null ? '—' : mins(g.ms)) + '</td><td class="r">' + usd(g.usd) + estMark(g) + '</td>'
                     + '<td class="r muted">' + (g.usd ? pct(g.usd) + '%' : '—') + '</td>'
                     + '<td><span class="csplit"' + (g.usd ? '' : ' hidden') + '><i style="flex:' + g.main + ' 1 0;background:var(--s-main)"></i>'
                     + '<i style="flex:' + g.agent + ' 1 0;background:var(--s-agent)"></i></span>'
-                    + '<span class="muted">' + usd(g.main) + ' / ' + usd(g.agent) + '</span></td>'
+                    + '<span class="muted">' + usd(g.main) + ' / ' + usd(g.agent) + estMark(g) + '</span></td>'
                     + '<td class="r muted">' + (g.req === null ? '—' : g.req) + '</td></tr>';
             }).join('') + '</tbody></table></div></div>';
     }
@@ -1255,9 +1255,9 @@
             + paid.map(function (g) {
                 var nm = g.stage === 'none' ? loc('ses.beforeStepOne', '第一步之前') : g.stage, on = hi === g.stage;
                 return '<a class="dsrow' + (on ? ' on' : '') + '" href="' + sessionHash(id) + '" data-hist="' + esc(g.stage) + '" aria-pressed="' + on + '"'
-                    + ' title="' + esc(loc('ses.dispatchOfShare', '{nm} 派工 {v} · 占派工 {p}%', { nm: nm, v: usd(g.agent), p: Math.round(g.agent / sum * 1000) / 10 })) + '">'
+                    + ' title="' + esc(loc('ses.dispatchOfShare', '{nm} 派工 {v} · 占派工 {p}%', { nm: nm, v: usd(g.agent) + estMark(g), p: Math.round(g.agent / sum * 1000) / 10 })) + '">'
                     + '<span class="dsl">' + esc(nm) + '</span><span class="dst"><i style="width:' + (g.agent / max * 88).toFixed(1)
-                    + '%;background:' + colorOf('stage', g.stage) + '"></i><b>' + usd(g.agent, true) + '</b></span></a>';
+                    + '%;background:' + colorOf('stage', g.stage) + '"></i><b>' + usd(g.agent, true) + estMark(g) + '</b></span></a>';
             }).join('') + '</div>';
     }
     function costHtml(m, x) {

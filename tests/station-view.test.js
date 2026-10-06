@@ -1242,16 +1242,45 @@ test('stageShare sums usd across days, splits main/agent by who, sums ms across 
     const L = V.stageShare(STAGE_S, STAGE_X);
     assert.equal(L.total, 3.8, 'every days row\'s usd, regardless of stage');
     assert.deepEqual(L.rows.map((r) => r.stage), ['survey', 'build', 'verify'], 'ROUTE order (survey, build, verify), not insertion order, and design is gone');
-    assert.deepEqual(L.rows[0], { stage: 'survey', ms: null, usd: 0.3, main: 0.3, agent: 0, req: 1 });
-    assert.deepEqual(L.rows[1], { stage: 'build', ms: 900000, usd: 1.5, main: 1, agent: 0.5, req: 1 },
+    assert.deepEqual(L.rows[0], { stage: 'survey', ms: null, usd: 0.3, main: 0.3, agent: 0, req: 1, estimated: false });
+    assert.deepEqual(L.rows[1], { stage: 'build', ms: 900000, usd: 1.5, main: 1, agent: 0.5, req: 1, estimated: false },
         'build\'s two stages windows (600000 + 300000) summed onto one row — confirmed correct, not a bug');
-    assert.deepEqual(L.rows[2], { stage: 'verify', ms: 300000, usd: 2, main: 2, agent: 0, req: 1 });
+    assert.deepEqual(L.rows[2], { stage: 'verify', ms: 300000, usd: 2, main: 2, agent: 0, req: 1, estimated: false });
 });
 
 test('stageShare with x omitted leaves req null on every row rather than 0', () => {
     const L = V.stageShare(STAGE_S, null);
     assert.equal(L.rows.length, 3);
     for (const r of L.rows) assert.equal(r.req, null);
+});
+
+// build is visited twice and only its second window is estimated: any window counts.
+const EST_S = { days: STAGE_S.days, stages: STAGE_S.stages.map((w, i) => (i === 2 ? Object.assign({}, w, { estimated: true }) : w)) };
+
+test('stageShare flags a row estimated when any of its stage windows is, and leaves the others false', () => {
+    const L = V.stageShare(EST_S, null);
+    assert.deepEqual(L.rows.map((r) => [r.stage, r.estimated]), [['survey', false], ['build', true], ['verify', false]]);
+});
+
+test('costShareHtml marks 估 on the estimated segment title, label, cost cell and split line, and nowhere else', () => {
+    const html = V.costShareHtml(V.stageShare(EST_S, null), null);
+    const seg = (k) => html.match(new RegExp('<button[^>]*data-hist="' + k + '"[\\s\\S]*?</button>'))[0];
+    const row = (k) => html.match(new RegExp('<tr class="csrow[^>]*data-hist="' + k + '"[\\s\\S]*?</tr>'))[0];
+    assert.match(seg('build'), /title="[^"]*估[^"]*"/);
+    assert.match(seg('build'), /<b>[^<]*估[^<]*<\/b>/);
+    assert.match(row('build'), /<td class="r">[^<]*估<\/td>/);
+    assert.match(row('build'), /<span class="muted">[^<]*估[^<]*<\/span>/);
+    assert.doesNotMatch(seg('verify'), /估/);
+    assert.doesNotMatch(row('verify'), /估/);
+    assert.doesNotMatch(seg('survey') + row('survey'), /估/);
+});
+
+test('dispatchStagesHtml marks 估 on an estimated title and label only', () => {
+    const html = V.dispatchStagesHtml({ rows: [{ stage: 'build', agent: 1500, estimated: true }, { stage: 'verify', agent: 500, estimated: false }] }, 's1', null);
+    const a = (k) => html.match(new RegExp('<a [^>]*data-hist="' + k + '"[\\s\\S]*?</a>'))[0];
+    assert.match(a('build'), /title="[^"]*估[^"]*"/);
+    assert.match(a('build'), /<b>[^<]*估<\/b>/);
+    assert.doesNotMatch(a('verify'), /估/);
 });
 
 test('costShareHtml marks the bar segment and table row matching hi with on/aria-pressed, and leaves every other stage plain', () => {
