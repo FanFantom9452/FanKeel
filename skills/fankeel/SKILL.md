@@ -686,15 +686,17 @@ cost. Nothing here deletes, so that is a month of finished tasks and the only
 view of them.
 
 For every registry on the machine rather than this one, the station. The
-`/fankeel` prompt detects and opens it: the hook writes the page, asks
-`serve.json` whether a station answers, and when none does starts
+`/fankeel` prompt detects and opens it: the hook asks `serve.json` whether a
+station answers, and when none does starts
 `node <plugin>/scripts/station.js serve --open` detached, so the browser opens
-only when this prompt started it. The block's `station:` line counts the
-`stale` and `live` rows and names the served url — say it. A line ending
-`serve is starting` names the file until the server binds; one ending in the
-file and `serve --open` means nothing was started (`FANKEEL_SERVE=off`, or the
-start failed). `.fankeel/index.html` in the registry is the static copy beside
-you, written at this prompt. There is nothing to invoke;
+only when this prompt started it. While a station serves, the hook writes no
+page — the station renders every request itself. The block's `station:` line
+names the served url — say it. A line ending `serve is busy loading` means the
+station is mid-render and the page fills in on its own; `serve is starting`
+means the browser opens when it binds. A line with `stale` and `live` counts,
+the file and `serve --open` means nothing serves (`FANKEEL_SERVE=off`, or the
+start failed), so the hook wrote the page, and `.fankeel/index.html` beside you,
+instead. There is nothing to invoke;
 [docs/station.md](../../docs/90-agent/reference/station.md) is the reference.
 
 The page is also where a file that does not parse is counted. The hooks drop

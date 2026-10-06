@@ -540,13 +540,14 @@ function runAsync(payload, claudeDir, env) {
 // as `o.plugin` (`PLUGIN_ROOT` in lib/render.js, this repo's root) — without
 // it, `ensureServe`'s staleness check reads this fixture as a station running
 // code from before some edit and kills its pid, which is this test runner's.
-function fakeStation(cfg) {
+function fakeStation(cfg, opts) {
   let hits = 0;
   let first = null;
   const server = http.createServer((req, res) => {
     if (req.url !== '/station/health') { res.writeHead(404); res.end(); return; }
     hits += 1;
     if (first === null) first = Date.now();
+    if (opts && opts.hang) return;
     res.writeHead(200, { 'content-type': 'application/json' });
     res.end(JSON.stringify({ station: true, pid: process.pid, started: new Date().toISOString(), fingerprint: serve.diskFingerprint(PLUGIN) }));
   });
@@ -556,7 +557,7 @@ function fakeStation(cfg) {
       fs.mkdirSync(path.join(cfg, 'fankeel'), { recursive: true });
       fs.writeFileSync(path.join(cfg, 'fankeel', 'serve.json'),
         JSON.stringify({ pid: process.pid, port: server.address().port, url, started: new Date().toISOString() }) + '\n');
-      resolve({ url, hits: () => hits, first: () => first, close: () => new Promise((r) => { server.close(r); }) });
+      resolve({ url, hits: () => hits, first: () => first, close: () => new Promise((r) => { server.closeAllConnections(); server.close(r); }) });
     });
   });
 }
@@ -577,7 +578,7 @@ test('a /fankeel prompt names a station that answers by its url, and starts none
   try {
     const text = context(await runAsync({ session_id: MINE, cwd: root, prompt: '/fankeel' }, cfg));
     const url = st.url.replace(/[.]/g, '\\.');
-    assert.match(text, new RegExp('^station: \\d+ stale, \\d+ live — ' + url + ' \\(serve was running\\)\\.$', 'm'));
+    assert.match(text, new RegExp('^station: ' + url + ' \\(serve was running\\)\\.$', 'm'));
     assert.ok(st.hits() >= 1, 'the hook never asked the station');
     assert.equal(JSON.parse(fs.readFileSync(path.join(cfg, 'fankeel', 'serve.json'), 'utf8')).pid, process.pid,
       'a second station was started over one that answered');
@@ -587,18 +588,42 @@ test('a /fankeel prompt names a station that answers by its url, and starts none
   }
 });
 
-// inject-3: `station.write` is synchronous and the longest part of a
-// `/fankeel` prompt, so it goes after the station has been asked — a slow
-// write can no longer keep a station from starting.
-test('a /fankeel prompt asks the station before it writes the page', async () => {
+// The station renders every request from its own gather(), so a /fankeel
+// prompt that finds one running writes no page: station-data.js stays
+// unwritten, and the line names serve.json's url with no counts.
+test('a /fankeel prompt with a station running writes no page and names the recorded url', async () => {
   const root = tmp('fankeel-hook-');
   const cfg = tmp('fankeel-cfg-');
   const st = await fakeStation(cfg);
   try {
-    await runAsync({ session_id: MINE, cwd: root, prompt: '/fankeel' }, cfg);
-    const written = fs.statSync(path.join(cfg, 'fankeel', 'station', 'station-data.js')).mtimeMs;
-    assert.notEqual(st.first(), null, 'the hook never asked the station');
-    assert.ok(st.first() <= written, 'the page was written ' + (st.first() - written).toFixed(0) + 'ms before the station was asked');
+    const text = context(await runAsync({ session_id: MINE, cwd: root, prompt: '/fankeel' }, cfg));
+    const recorded = JSON.parse(fs.readFileSync(path.join(cfg, 'fankeel', 'serve.json'), 'utf8')).url;
+    const line = text.match(/^station: (\S+) \(serve was running\)\.$/m);
+    assert.ok(line, 'no running station line in: ' + text);
+    assert.equal(line[1], recorded, 'the line names a url serve.json does not');
+    assert.doesNotMatch(text, /^station: .*stale, /m, 'the line carries counts only write() can give');
+    assert.equal(fs.existsSync(path.join(cfg, 'fankeel', 'station', 'station-data.js')), false, 'the hook wrote the page anyway');
+    assert.equal(fs.existsSync(path.join(cfg, 'fankeel', 'index.html')), false, 'the hook wrote the file:// page anyway');
+  } finally {
+    stopStarted(cfg);
+    await st.close();
+  }
+});
+
+// A station mid-render takes the connection and does not answer. The hook reads
+// that as busy rather than dead: it names the recorded url, starts nothing,
+// and leaves serve.json naming the same pid.
+test('a /fankeel prompt finding the station busy names its url and starts no second one', async () => {
+  const root = tmp('fankeel-hook-');
+  const cfg = tmp('fankeel-cfg-');
+  const st = await fakeStation(cfg, { hang: true });
+  try {
+    const text = context(await runAsync({ session_id: MINE, cwd: root, prompt: '/fankeel' }, cfg));
+    const url = st.url.replace(/[.]/g, '\\.');
+    assert.match(text, new RegExp('^station: ' + url + ' \\(serve is busy loading; the page fills in when it finishes\\)\\.$', 'm'));
+    assert.equal(JSON.parse(fs.readFileSync(path.join(cfg, 'fankeel', 'serve.json'), 'utf8')).pid, process.pid,
+      'a second station was started over a busy one');
+    assert.equal(fs.existsSync(path.join(cfg, 'fankeel', 'station', 'station-data.js')), false, 'the hook wrote the page anyway');
   } finally {
     stopStarted(cfg);
     await st.close();

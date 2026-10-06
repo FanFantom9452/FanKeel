@@ -38,10 +38,10 @@ const startsFankeel = (prompt) =>
 // Flags belonging to sessions that ended a month ago are litter, not state.
 const BADGE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
-// What a `/fankeel` prompt may spend on the page, the probe and a station's
-// start together, counted from this hook's start: four of the five seconds
+// What a `/fankeel` prompt may spend on the probe and a station's start
+// together, counted from this hook's start: four of the five seconds
 // `.claude-plugin/plugin.json` gives it, the fifth being node starting and the
-// block going out.
+// block going out. The page is written only when no station serves it.
 const SERVE_BUDGET_MS = 4000;
 
 // The statusline for a session with no active entry, written once the block is
@@ -77,16 +77,6 @@ function initBadge(dir, sessionId, mine, starting, root) {
     } catch (e) { /* housekeeping */ }
 }
 
-// A station this prompt started but had not bound when `ensureServe` stopped
-// waiting (`starting`) may have bound while the page was being written: a
-// record whose pid is running is read as started. Anything else is `serve`
-// as it came.
-function boundSince(serveLib, dir, serve) {
-    if (!serve || serve.state !== 'starting') return serve;
-    const rec = serveLib.readServeRecord(dir);
-    return rec && typeof rec.url === 'string' && live.running(rec.pid) ? { state: 'started', url: rec.url } : serve;
-}
-
 function main(raw) {
     const began = Date.now();
     const payload = parse(raw);
@@ -118,7 +108,7 @@ function main(raw) {
         // a miss is what a session that never used the plugin looks like and
         // that is the common case worth staying quiet for.
         //
-        // The page is written before the output because the block names it;
+        // The page, when one is written, goes before the output because the block names it;
         // the badge and lead still come after the output, in `initBadge`, in
         // the order the injection below keeps and for the same reason.
         //
@@ -145,13 +135,14 @@ function main(raw) {
             input = { tokens: sources(root, live.liveConfigDir()).reduce((n, s) => n + s.tokens, 0) };
         } catch (e) { /* a failure means no line */ }
 
-        // The page, once the station has been asked. `write` reads transcripts
-        // for up to `DETAIL_BUDGET_MS` and is synchronous, so while it runs
-        // nothing else in this process moves: asked first, the station is
-        // already starting when a slow disk stretches the write toward this
-        // hook's five seconds (inject-3). A failure here is named on the station
-        // line, with its error, rather than dropping the line (inject-5), and the
-        // error is cut to 65 characters so the line stays under the init cap (inject-6).
+        // The page, written only where no station serves it: `FANKEEL_SERVE=off`,
+        // or a start that failed. A station renders every request from its own
+        // `gather()`, so writing here too only spent this hook's five seconds
+        // on a `file://` copy. `write` reads transcripts for up to
+        // `DETAIL_BUDGET_MS` and is synchronous. A failure here is named on the
+        // station line, with its error, rather than dropping the line
+        // (inject-5), and the error is cut to 65 characters so the line stays
+        // under the init cap (inject-6).
         const writePage = () => {
             if (!starting || !dir) return null;
             try {
@@ -175,21 +166,19 @@ function main(raw) {
         // Whether a station is serving, asked only on the prompt whose block
         // names one; every other prompt stays two missing files. `ensureServe`
         // starts `station.js serve --open` detached when nothing answers, so
-        // the browser opens only when this prompt started the station. It may
-        // spend what the page write's own threshold (`WRITE_THRESHOLD_MS`)
-        // leaves of `SERVE_BUDGET_MS`, the write gets the rest, and a station
-        // still binding when the write ends is read off its record once more
-        // (`boundSince`). Required here rather than at the top, so a prompt
-        // that never asks never loads it. It never rejects; the `catch` is for
-        // `finish`, since a rejection left unhandled would end this process
-        // non-zero. `FANKEEL_SERVE=off` turns the asking off and leaves the
-        // file on the line — the tests run so.
+        // the browser opens only when this prompt started the station, and it
+        // has the whole `SERVE_BUDGET_MS`. A station that is running, started,
+        // busy or still starting serves the page itself, so nothing is written;
+        // only a start that failed falls back to the page. Required here rather
+        // than at the top, so a prompt that never asks never loads it. It never
+        // rejects; the `catch` is for `finish`, since a rejection left
+        // unhandled would end this process non-zero. `FANKEEL_SERVE=off` turns
+        // the asking off and writes the page — the tests run so.
         if (speaks && dir && process.env.FANKEEL_SERVE !== 'off') {
             const serveLib = require('../lib/serve.js');
-            serveLib.ensureServe({ configDir: dir, plugin: PLUGIN_ROOT, until: began + SERVE_BUDGET_MS - station.WRITE_THRESHOLD_MS })
+            serveLib.ensureServe({ configDir: dir, plugin: PLUGIN_ROOT, until: began + SERVE_BUDGET_MS })
                 .then((serve) => {
-                    const page = writePage();
-                    finish(page, page ? boundSince(serveLib, dir, serve) : null);
+                    finish(serve && serve.state !== 'failed' ? null : writePage(), serve);
                 }, () => finish(writePage(), null))
                 .catch(() => {});
             return;

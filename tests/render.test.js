@@ -669,23 +669,29 @@ test('the profile reaches the rules, and never a line of its own', () => {
   assert.match(bad, /Integration — no land answer in the profile: open the menu\./);
 });
 
-// The `station:` line names where to look: the served url when a station
-// answered or this prompt started one, the file while one is still binding,
-// and the file with the command otherwise. Every form stays under the init cap.
-test('the station line names the served url, a station still starting, or the file', (t) => {
+// With a station serving, the hook wrote no page, so the line names the url
+// and carries no counts; with a page — FANKEEL_SERVE=off, or a start that
+// failed — it is that write's counts and the file. Every form stays under the
+// init cap.
+test('the station line names the served url without counts, a station busy or starting, or the file', (t) => {
   const page = { file: 'C:/Users/you/.claude/fankeel/station.html', live: 2, stale: 8, down: 131 };
-  const at = (serve) => renderInit({ sessionId: MINE, station: page, serve });
-  assert.match(at({ state: 'running', url: 'http://127.0.0.1:7817/' }),
-    /^station: 8 stale, 2 live — http:\/\/127\.0\.0\.1:7817\/ \(serve was running\)\.$/m);
-  assert.match(at({ state: 'started', url: 'http://127.0.0.1:7817/' }),
-    /^station: 8 stale, 2 live — http:\/\/127\.0\.0\.1:7817\/ \(serve started, browser opened\)\.$/m);
-  assert.match(at({ state: 'starting', url: null }),
-    /^station: 8 stale, 2 live — serve is starting; until then C:\/Users\/you\/\.claude\/fankeel\/station\.html\.$/m);
-  for (const serve of [null, undefined, { state: 'failed', url: null }]) {
-    assert.match(at(serve), /^station: 8 stale, 2 live — C:\/Users\/you\/\.claude\/fankeel\/station\.html\. Edit the profile with station\.js serve --open\.$/m);
+  const url = 'http://127.0.0.1:7817/';
+  const served = (serve) => renderInit({ sessionId: MINE, station: null, serve });
+  assert.match(served({ state: 'running', url }), /^station: http:\/\/127\.0\.0\.1:7817\/ \(serve was running\)\.$/m);
+  assert.match(served({ state: 'started', url }), /^station: http:\/\/127\.0\.0\.1:7817\/ \(serve started, browser opened\)\.$/m);
+  assert.match(served({ state: 'busy', url }),
+    /^station: http:\/\/127\.0\.0\.1:7817\/ \(serve is busy loading; the page fills in when it finishes\)\.$/m);
+  assert.match(served({ state: 'starting', url: null }), /^station: serve is starting; the browser opens when it binds\.$/m);
+  assert.match(served({ state: 'failed', url: null }), /^station: no page was written and no serve started\. Run station\.js serve --open\.$/m);
+  for (const state of ['running', 'started', 'busy']) {
+    assert.doesNotMatch(served({ state, url }), /stale, /, 'a ' + state + ' line carries counts only write() can give');
   }
-  for (const serve of [{ state: 'running', url: 'http://127.0.0.1:7817/' }, { state: 'started', url: 'http://127.0.0.1:7817/' }, { state: 'starting', url: null }]) {
-    const size = sizeAtReference(at(serve));
+  for (const serve of [null, undefined, { state: 'failed', url: null }]) {
+    assert.match(renderInit({ sessionId: MINE, station: page, serve }),
+      /^station: 8 stale, 2 live — C:\/Users\/you\/\.claude\/fankeel\/station\.html\. Edit the profile with station\.js serve --open\.$/m);
+  }
+  for (const serve of [{ state: 'running', url }, { state: 'started', url }, { state: 'busy', url }, { state: 'starting', url: null }]) {
+    const size = sizeAtReference(served(serve));
     t.diagnostic(('init+' + serve.state).padEnd(15) + size + ' chars at a ' + REFERENCE_ROOT + '-char root');
     assert.ok(size < 1400, 'init block with a ' + serve.state + ' station line is ' + size + ' chars');
   }
