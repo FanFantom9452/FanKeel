@@ -19,8 +19,8 @@ test('routeGroups: one group per route, a class route under its name, averages o
     const groups = V.routeGroups([bounded, clean, back, hand], classes);
     const arch = groups.find((g) => g.name === 'architectural');
     assert.deepEqual([arch.n, arch.clean, arch.backN, arch.backtracks], [2, 1, 1, 2]);
-    assert.deepEqual(arch.stages.survey, { n: 1, ms: 100000, wait: 0, burn: 1000, usd: 1 }, 'the backtracking session is not in the average');
-    assert.deepEqual(arch.back, { ms: 1800000, wait: 0, burn: 2000, usd: 18 });
+    assert.deepEqual(arch.stages.survey, { n: 1, ms: 100000, wait: 0, burn: 1000, usd: 1, estimated: false }, 'the backtracking session is not in the average');
+    assert.deepEqual(arch.back, { ms: 1800000, wait: 0, burn: 2000, usd: 18, estimated: false });
     assert.equal(groups.find((g) => g.name === 'bounded').stages.survey.usd, 0.5, 'no average crosses two groups');
     assert.ok(groups.some((g) => g.name === 'survey → build → land'), 'a hand-written route is named by its stages');
 });

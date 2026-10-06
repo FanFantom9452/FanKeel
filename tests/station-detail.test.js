@@ -127,7 +127,7 @@ test('station-data.js carries each session days and spans, a kept cache usd on i
     assert.ok(d.days.length > 0, 'the session with a transcript has days of its own');
     assert.deepEqual(plain([by[SID].days, by[SID].spans]), plain([d.days, d.spans]));
     assert.deepEqual(plain([by[KEPT].days, by[KEPT].spans]),
-        [[{ day: '2026-08-15', stage: null, model: 'claude-sonnet-5', who: 'main', tokens: null, cost: null, usd: 1.25 }], null]);
+        [[{ day: '2026-08-15', stage: null, model: 'claude-sonnet-5', who: 'main', tokens: null, cost: null, usd: 1.25, estimated: false }], null]);
     assert.deepEqual([by[BARE].days, by[BARE].spans], [null, null]);
     const root = path.resolve(f.r1);
     assert.deepEqual([by[SID].pkey, by[KEPT].pkey, by[OTHER].pkey], [root, root + '/app-a', root + '/app-b']);

@@ -259,3 +259,27 @@ test('a stage step long before the first request adds no days: steps are clipped
     assert.deepEqual(d.spans.map((s) => [s.day, s.stage, s.who, s.ms]),
         [['2026-09-11', 'survey', 'main', 10 * 60e3], ['2026-09-11', 'build', 'main', 20 * 60e3]]);
 });
+
+test('a day row is flagged estimated only for a model priced from its family, so the page can mark the money', () => {
+    const u = { input_tokens: 1000, output_tokens: 100 };
+    const cfg = onDisk([
+        req('m1', L(11, 10, 0), 'claude-opus-5', u),
+        req('m2', L(11, 10, 5), 'claude-opus-9', u),
+        req('m3', L(11, 10, 6), 'claude-mystery-1', u),
+    ]);
+    const d = detail.detailOf(cfg, SID, { route: ['build'], stage: 'build', moves: [['build', Date.parse(L(11, 9, 0))]] }).detail;
+    const flag = Object.fromEntries(d.days.map((r) => [r.model, r.estimated]));
+    assert.deepEqual(flag, { 'claude-opus-5': false, 'claude-opus-9': true, 'claude-mystery-1': false });
+});
+
+test('loopsOf flags a stage estimated when a BUSY-and-over turn in it was priced from a family, and not otherwise', () => {
+    const { BUSY } = require('../lib/context.js');
+    const seq = [{ stage: 'build', at: 0, source: 'cmd' }, { stage: 'verify', at: 100, source: 'cmd' }];
+    const tk = { input: 1000, output: 100, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 };
+    const out = detail.loopsOf([
+        { at: 10, model: 'claude-opus-9', context: BUSY, tokens: tk },
+        { at: 110, model: 'claude-opus-5', context: BUSY, tokens: tk },
+        { at: 120, model: 'claude-opus-9', context: 5, tokens: tk },
+    ], seq);
+    assert.deepEqual(out.map((r) => [r.stage, r.estimated]), [['build', true], ['verify', false]], 'a turn under BUSY is not an over-cost, so it does not mark');
+});

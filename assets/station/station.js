@@ -369,13 +369,17 @@
         var p = Math.pow(10, Math.floor(Math.log(v) / Math.LN10)), f = v / p;
         return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p;
     }
-    function metricText(metric, v, plain) {
-        return metric === 'usd' ? (v ? usd(v, plain) : '$0') : metric === 'tokens' ? tokens(v) : hours(v);
+    function partEst(b, k) { return Boolean(b.est && b.est[k]); }
+    // `est` marks a dollar figure that has an estimated-price request in it;
+    // an axis tick is a scale, not a spend, and passes none.
+    function metricText(metric, v, plain, est) {
+        return metric === 'usd' ? (v ? usd(v, plain) + (est ? estMark({ estimated: true }) : '') : '$0') : metric === 'tokens' ? tokens(v) : hours(v);
     }
     function sessionTotals(s) {
-        var t = { usd: 0, tokens: 0, active: 0, main: 0, wait: 0, models: {} };
+        var t = { usd: 0, tokens: 0, active: 0, main: 0, wait: 0, models: {}, estModels: {}, estimated: false };
         (s.days || []).forEach(function (r) {
             var m = family(r.model);
+            if (r.estimated && r.usd) { t.estimated = true; t.estModels[m] = true; }
             t.usd += r.usd || 0;
             t.tokens += tokenSum(r.tokens);
             t.models[m] = (t.models[m] || 0) + (r.usd || 0);
@@ -390,11 +394,12 @@
     // Time is main + agent + workflow, counted each on its own while they
     // overlap: it measures work, not the wall clock. Waiting is apart.
     function windowTotals(sessions, days) {
-        var inside = {}, t = { usd: 0, tokens: 0, active: 0, main: 0, wait: 0 };
+        var inside = {}, t = { usd: 0, tokens: 0, active: 0, main: 0, wait: 0, estimated: false };
         days.forEach(function (d) { inside[d] = true; });
         sessions.forEach(function (s) {
             (s.days || []).forEach(function (r) {
                 if (!inside[r.day]) return;
+                if (r.estimated && r.usd) t.estimated = true;
                 t.usd += r.usd || 0;
                 t.tokens += tokenSum(r.tokens);
             });
@@ -421,9 +426,10 @@
             return { days: [], keys: [], max: 0, disabled: loc('shared.noTimeByKind', '時間沒有成分可分：spans 只記 stage 與誰在跑，不記 token 或花費') };
         }
         var at = {}, seen = {};
-        days.forEach(function (d) { at[d] = { day: d, total: 0, parts: {} }; });
-        var add = function (d, key, v) {
+        days.forEach(function (d) { at[d] = { day: d, total: 0, parts: {}, est: {}, estimated: false }; });
+        var add = function (d, key, v, e) {
             if (!at[d] || !v) return;
+            if (e) { at[d].est[key] = true; at[d].estimated = true; }
             at[d].parts[key] = (at[d].parts[key] || 0) + v;
             at[d].total += v;
             seen[key] = (seen[key] || 0) + v;
@@ -444,13 +450,13 @@
                 if (dim === 'kind') {
                     var src = metric === 'usd' ? r.cost : r.tokens;
                     if (!src) return;
-                    add(r.day, 'input', src.input);
-                    add(r.day, 'output', src.output);
-                    add(r.day, 'cacheRead', src.cacheRead);
-                    add(r.day, 'cacheWrite', (src.cacheWrite5m || 0) + (src.cacheWrite1h || 0));
+                    add(r.day, 'input', src.input, r.estimated);
+                    add(r.day, 'output', src.output, r.estimated);
+                    add(r.day, 'cacheRead', src.cacheRead, r.estimated);
+                    add(r.day, 'cacheWrite', (src.cacheWrite5m || 0) + (src.cacheWrite1h || 0), r.estimated);
                     return;
                 }
-                add(r.day, dimKey(dim, s, r), metric === 'usd' ? r.usd || 0 : tokenSum(r.tokens));
+                add(r.day, dimKey(dim, s, r), metric === 'usd' ? r.usd || 0 : tokenSum(r.tokens), metric === 'usd' && r.estimated);
             });
         });
         var list = days.map(function (d) { return at[d]; });
@@ -467,13 +473,14 @@
         sessions.forEach(function (s) {
             var r = by[s.pkey];
             if (!r) {
-                r = by[s.pkey] = { pkey: s.pkey, root: s.root, project: s.project || null, usd: 0, n: 0, last: 0,
+                r = by[s.pkey] = { pkey: s.pkey, root: s.root, project: s.project || null, usd: 0, n: 0, last: 0, estimated: false,
                     daily: days.map(function () { return 0; }) };
                 list.push(r);
             }
             var touched = false;
             (s.days || []).forEach(function (x) {
                 if (!inside[x.day]) return;
+                if (x.estimated && x.usd) r.estimated = true;
                 r.usd += x.usd || 0;
                 r.daily[inside[x.day] - 1] += x.usd || 0;
                 touched = true;
@@ -490,7 +497,7 @@
     function kpiHtml(cur, prev) {
         var share = function (t) { return t.main + t.wait ? t.wait / (t.main + t.wait) : 0; };
         var out = '<div class="readouts">'
-            + roHtml(loc('shared.cost30d', '30 天花費'), usd(cur.usd), delta(cur.usd, prev.usd) + (quotaDay() ? ' · ' + loc('shared.quotaCalibrated', '週額度 {d} 校準', { d: quotaDay() }) : ''))
+            + roHtml(loc('shared.cost30d', '30 天花費'), usd(cur.usd) + estMark(cur), delta(cur.usd, prev.usd) + (quotaDay() ? ' · ' + loc('shared.quotaCalibrated', '週額度 {d} 校準', { d: quotaDay() }) : ''))
             + roHtml('token', tokens(cur.tokens), delta(cur.tokens, prev.tokens))
             + roHtml(loc('shared.activeTime', 'active 時間'), hours(cur.active), delta(cur.active, prev.active))
             + roHtml('<i class="hatchsw"></i>' + loc('shared.waitShare', '等待佔比'), Math.round(share(cur) * 1000) / 10 + '<span class="u">%</span>',
@@ -565,9 +572,9 @@
             var cx = (L + i * slot + slot / 2).toFixed(1), x0 = (L + i * slot + slot / 2 - bw / 2).toFixed(1);
             var c = 0, open = b.day === o.sel, mark = open || b.day === o.today;
             var href = open ? '#/' : '#/d/' + b.day;
-            var label = loc('shared.dayTotal', '{day} 合計 {total}', { day: b.day, total: metricText(o.metric, b.total) })
+            var label = loc('shared.dayTotal', '{day} 合計 {total}', { day: b.day, total: metricText(o.metric, b.total, false, b.estimated) })
                 + bars.keys.filter(function (k) { return b.parts[k]; })
-                    .map(function (k) { return loc('shared.dayTotalSeg', '；{key} {v}', { key: keyLabel(o.dim, k, o.names), v: metricText(o.metric, b.parts[k]) }); }).join('');
+                    .map(function (k) { return loc('shared.dayTotalSeg', '；{key} {v}', { key: keyLabel(o.dim, k, o.names), v: metricText(o.metric, b.parts[k], false, partEst(b, k)) }); }).join('');
             // The column's hit area goes first, so every segment drawn after it
             // sits on top and takes the hover itself.
             out += '<rect class="hit" data-href="' + href + '" data-day="' + b.day + '" data-cx="' + cx + '" x="' + (L + i * slot).toFixed(1)
@@ -583,7 +590,7 @@
             });
             out += '</g>'
                 + (b.total ? '<text class="tick" x="' + cx + '" y="' + (base - c - 7).toFixed(1) + '" text-anchor="middle">'
-                    + metricText(o.metric, b.total, true) + '</text>' : '')
+                    + metricText(o.metric, b.total, true, b.estimated) + '</text>' : '')
                 + '<text class="tick" x="' + cx + '" y="' + (base + 17) + '" text-anchor="middle"'
                 + (mark ? ' style="fill:var(--ink);font-weight:600"' : '') + '>' + Number(b.day.slice(8)) + '</text>'
                 + (b.day === o.today || b.day.slice(8) === '01' || i === 0
@@ -713,13 +720,13 @@
         return '<div class="tt-day">' + esc(day) + (day === o.today ? ' · ' + loc('shared.today', '今天') : '') + '</div>'
             + (key && b.parts[key]
                 ? '<div class="tt-main">' + sw(key) + '<b>' + esc(keyLabel(o.dim, key, o.names)) + '</b></div>'
-                    + '<div class="tt-val"><b>' + metricText(o.metric, b.parts[key]) + '</b><span>' + loc('shared.dayShare', '當天的 {p}', { p: pct(b.parts[key]) }) + '</span></div>'
+                    + '<div class="tt-val"><b>' + metricText(o.metric, b.parts[key], false, partEst(b, key)) + '</b><span>' + loc('shared.dayShare', '當天的 {p}', { p: pct(b.parts[key]) }) + '</span></div>'
                 : '')
             + '<ul class="tt-list">' + keys.reverse().map(function (k) {
                 return '<li' + (k === key ? ' data-hot' : '') + '>' + sw(k) + '<span>' + esc(keyLabel(o.dim, k, o.names))
-                    + '</span><span class="tt-n">' + metricText(o.metric, b.parts[k]) + '</span></li>';
+                    + '</span><span class="tt-n">' + metricText(o.metric, b.parts[k], false, partEst(b, k)) + '</span></li>';
             }).join('') + '</ul>'
-            + '<div class="tt-sum">' + loc('shared.dayTotalLabel', '當天合計') + ' <b>' + metricText(o.metric, b.total) + '</b></div>';
+            + '<div class="tt-sum">' + loc('shared.dayTotalLabel', '當天合計') + ' <b>' + metricText(o.metric, b.total, false, b.estimated) + '</b></div>';
     }
     function projectsHtml(rows, o) {
         return '<div class="h2">' + icon('projects') + loc('shared.projectsHeading', '專案 <small>近 30 天</small>') + '</div>'
@@ -729,7 +736,7 @@
                 var c = colorOf('project', r.pkey, o.pkeys);
                 return '<a class="projrow" href="' + projectHash(r.pkey) + '"><span style="min-width:0"><span class="nm"><i class="sw" style="background:'
                     + c + '"></i>' + esc(o.names[r.pkey] || r.pkey) + '</span><span class="pth mono">' + esc(r.pkey) + '</span></span>'
-                    + '<span>' + spark(r.daily, c) + '</span><span class="r">' + usd(r.usd, true) + '</span><span class="r">' + r.n + '</span>'
+                    + '<span>' + spark(r.daily, c) + '</span><span class="r">' + usd(r.usd, true) + estMark(r) + '</span><span class="r">' + r.n + '</span>'
                     + '<span class="r muted">' + ago(r.last) + '</span></a>';
             }).join('') : '<p class="note">' + loc('shared.machineNoSessions', '這台機器上沒有 session') + '</p>');
     }
@@ -755,7 +762,7 @@
                     + esc(s.task || loc('shared.unnamed', '（未命名）')) + '</a></td><td><span class="pchip"><i class="sw" style="background:'
                     + colorOf('project', s.pkey, o.pkeys) + '"></i>' + esc(o.names[s.pkey] || s.pkey) + '</span></td>'
                     + '<td class="c-stage">' + (keelStage(s) ? '<span class="kstage">' + keelProgress(s) + keelStage(s) + '</span>' : stageNow(s)) + '</td>'
-                    + '<td class="r">' + usd(t.usd) + '</td><td class="r muted">' + tokens(t.tokens) + '</td>'
+                    + '<td class="r">' + usd(t.usd) + estMark(t) + '</td><td class="r muted">' + tokens(t.tokens) + '</td>'
                     + '<td class="c-state">' + statePill(s) + runningTag(s) + '</td></tr>';
             }).join('') + '</tbody></table></div></section>';
     }
@@ -860,13 +867,13 @@
     function projectHead(sessions, pkey, days) {
         var mine = sessions.filter(function (s) { return s.pkey === pkey; });
         var t = windowTotals(mine, days), row = projectRows(mine, days)[0];
-        return { pkey: pkey, usd: t.usd, tokens: t.tokens, active: t.active, n: row ? row.n : 0 };
+        return { pkey: pkey, usd: t.usd, estimated: t.estimated, tokens: t.tokens, active: t.active, n: row ? row.n : 0 };
     }
     // A session's whole spend, at the moment it started.
     function sessionPoints(sessions, metric, t0, t1) {
         return sessions.map(function (s) {
             var t = sessionTotals(s);
-            return { id: s.id, task: s.task, t: Date.parse(s.started), v: metric === 'usd' ? t.usd : t.tokens };
+            return { id: s.id, task: s.task, t: Date.parse(s.started), v: metric === 'usd' ? t.usd : t.tokens, estimated: metric === 'usd' && t.estimated };
         }).filter(function (p) { return p.t >= t0 && p.t < t1; }).sort(function (a, b) { return a.t - b.t; });
     }
     // The 對照專案 line is a second series on the same axes, not a second chart.
@@ -896,16 +903,16 @@
             s.points.forEach(function (p) {
                 out += '<circle class="hit" data-href="' + sessionHash(p.id) + '" cx="' + X(p.t) + '" cy="' + Y(p.v) + '" r="5" style="fill:'
                     + s.colour + ';stroke:var(--panel);stroke-width:2"><title>' + esc(s.name + ' · ' + (p.task || p.id) + ' · ' + stamp(p.t)
-                    + ' · ' + metricText(o.metric, p.v)) + '</title></circle>';
+                    + ' · ' + metricText(o.metric, p.v, false, p.estimated)) + '</title></circle>';
             });
         });
         return out + '</svg>';
     }
-    function miniMix(models) {
+    function miniMix(models, est) {
         var keys = MODEL_KEYS.filter(function (k) { return models[k] > 0; });
         var tot = keys.reduce(function (n, k) { return n + models[k]; }, 0);
         if (!tot) return '<span class="muted">—</span>';
-        return '<span class="mini-mix" title="' + keys.map(function (k) { return k + ' ' + usd(models[k]); }).join(loc('proj.listSep', '、')) + '">'
+        return '<span class="mini-mix" title="' + keys.map(function (k) { return k + ' ' + usd(models[k]) + estMark({ estimated: est && est[k] }); }).join(loc('proj.listSep', '、')) + '">'
             + keys.map(function (k) {
                 return '<i style="width:' + (models[k] / tot * 100).toFixed(2) + '%;background:var(--m-' + k + ')"></i>';
             }).join('') + '</span>';
@@ -922,7 +929,7 @@
                     + '<td class="task"><a href="' + sessionHash(s.id) + '">' + esc(s.task || loc('proj.unnamed', '（未命名）')) + '</a></td>'
                     + '<td class="muted">' + stamp(started) + '</td><td class="r">' + mins((s.updated || started) - started) + '</td>'
                     + '<td>' + routeDots(s) + ' <span class="muted">' + esc(s.stage || '—') + '</span></td>'
-                    + '<td class="r">' + usd(t.usd) + '</td><td class="r muted">' + tokens(t.tokens) + '</td><td>' + miniMix(t.models) + '</td></tr>';
+                    + '<td class="r">' + usd(t.usd) + estMark(t) + '</td><td class="r muted">' + tokens(t.tokens) + '</td><td>' + miniMix(t.models, t.estModels) + '</td></tr>';
             }).join('') + '</tbody></table></div>';
     }
 
@@ -938,7 +945,7 @@
         var t1 = pts.length ? pts[pts.length - 1].t : t0;
         var agent = function (r, kind, key, ret) {
             return { kind: kind, key: key, label: r.label || r.id, model: r.model, from: r.from, to: r.to,
-                tokens: (r.k || 0) * 1000, cents: r.c || 0, ret: ret };
+                tokens: (r.k || 0) * 1000, cents: r.c || 0, ret: ret, estimated: (r.estimated || []).length > 0 };
         };
         (x.dispatches || []).forEach(function (d, i) {
             var kids = rows.filter(function (r) { return r.disp === i; });
@@ -948,7 +955,8 @@
             }
             bars.push({ kind: 'wf', key: 'wf-' + i, label: d.text, model: null, from: d.out, to: d.back, ret: d.ret, n: kids.length,
                 tokens: kids.reduce(function (n, r) { return n + (r.k || 0); }, 0) * 1000,
-                cents: kids.reduce(function (n, r) { return n + (r.c || 0); }, 0) });
+                cents: kids.reduce(function (n, r) { return n + (r.c || 0); }, 0),
+                estimated: kids.some(function (r) { return (r.estimated || []).length > 0; }) });
             kids.forEach(function (r) { bars.push(agent(r, 'kid', 'wf-' + i, null)); });
         });
         rows.filter(function (r) { return r.disp === null; }).forEach(function (r) { bars.push(agent(r, 'agent', r.id, null)); });
@@ -1116,7 +1124,7 @@
                     + (b.kind === 'kid' ? 'workflow' : 'agent') + ')"/>')
                 + barLabel(x0, x1, y + 17,
                     (b.kind === 'wf' ? 'workflow · ' + loc('ses.nAgents', '{n} 個 agent', { n: b.n }) + ' · ' : String(b.model || '—').replace(/^claude-/, '') + ' · ')
-                    + tokens(b.tokens) + ' tok · ' + cents(b.cents)
+                    + tokens(b.tokens) + ' tok · ' + cents(b.cents) + estMark(b)
                     + (b.ret !== null && b.ret !== undefined ? ' · ' + loc('ses.returnedChars', '回傳 {n} 字元', { n: comma(b.ret) }) : ''))
                 + '<line class="gridl" x1="0" x2="' + (W - R) + '" y1="' + (y + RH) + '" y2="' + (y + RH) + '"/>'
                 + (b.kind === 'wf' ? '<rect class="wf-toggle" data-wf="' + esc(b.key) + '" x="0" y="' + y + '" width="' + (W - R)
@@ -1128,7 +1136,7 @@
     // the session's `days` — the same rows the home page's bars add up.
     function costModel(days) {
         var cell = function () {
-            return { tokens: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, usd: 0 };
+            return { tokens: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, usd: 0, estimated: false };
         };
         var add = function (a, r) {
             var t = r.tokens || {}, c = r.cost || {};
@@ -1136,6 +1144,7 @@
             a.tokens.cacheWrite += (t.cacheWrite5m || 0) + (t.cacheWrite1h || 0);
             a.cost.cacheWrite += (c.cacheWrite5m || 0) + (c.cacheWrite1h || 0);
             a.usd += r.usd || 0;
+            if (r.estimated && r.usd) a.estimated = true;
         };
         var by = {}, order = [], out = { stages: [], main: cell(), agent: cell(), total: cell() };
         (days || []).forEach(function (r) {
@@ -1164,22 +1173,22 @@
     // `foot` is the tfoot row: its label takes the first cell, as 主 session,
     // agent and 合計 do, and its share is of the whole session.
     function loopRow(lp, stageUsd, foot) {
-        lp = lp || { turns: 0, over: 0, overUsd: 0 };
+        lp = lp || { turns: 0, over: 0, overUsd: 0, estimated: false };
         var pct = stageUsd ? lp.overUsd / stageUsd * 100 : 0;
         var z = lp.over === 0;
         return '<tr class="loop">' + (foot ? '<td><span class="lp">' + loc('ses.mainLoop', '主迴圈') + '</span></td><td></td>' : '<td></td><td><span class="lp">' + loc('ses.mainLoop', '主迴圈') + '</span></td>')
             + '<td colspan="8"><div class="lf">'
             + '<span><b>' + lp.turns + '</b>' + loc('ses.turns', '回合') + '</span>'
             + '<span' + (z ? ' class="zero"' : '') + '><b>' + lp.over + '</b>' + loc('ses.turnsOver400k', '回合 ≥ 400k') + '</span>'
-            + '<span' + (z ? ' class="zero"' : '') + '><b>' + usd(lp.overUsd) + '</b>' + loc('ses.thoseTurns', '那些回合') + '</span>'
+            + '<span' + (z ? ' class="zero"' : '') + '><b>' + usd(lp.overUsd) + (lp.overUsd ? estMark(lp) : '') + '</b>' + loc('ses.thoseTurns', '那些回合') + '</span>'
             + '<span' + (z ? ' class="zero"' : '') + '><i class="mini" style="display:inline-flex;width:72px;vertical-align:middle;margin-right:8px">'
             + '<span style="width:' + Math.round(pct) + '%"></span></i><b>' + Math.round(pct) + '%</b>' + (foot ? loc('ses.ofSession', '佔 session') : loc('ses.ofThisStage', '佔這一站')) + '</span>'
             + '</div></td><td class="r"></td></tr>';
     }
     function sumLoops(loops) {
         return (loops || []).reduce(function (a, r) {
-            return { turns: a.turns + r.turns, over: a.over + r.over, overUsd: a.overUsd + r.overUsd };
-        }, { turns: 0, over: 0, overUsd: 0 });
+            return { turns: a.turns + r.turns, over: a.over + r.over, overUsd: a.overUsd + r.overUsd, estimated: a.estimated || (r.estimated === true && r.overUsd > 0) };
+        }, { turns: 0, over: 0, overUsd: 0, estimated: false });
     }
     // `x` is the session's detail (as everywhere else on this page — see
     // `sessionHeadHtml(s, x)`, `ctxSection(s, x)`) — optional, since the cost
@@ -1211,8 +1220,9 @@
             });
         }
         var rank = function (k) { var i = ROUTE.indexOf(k); return i < 0 ? ROUTE.length : i; };
-        return { total: total, rows: order.sort(function (a, b) { return rank(a) - rank(b); }).map(function (k) { return by[k]; })
-            .filter(function (g) { return g.usd || g.ms || g.req; }) };
+        var rows = order.sort(function (a, b) { return rank(a) - rank(b); }).map(function (k) { return by[k]; })
+            .filter(function (g) { return g.usd || g.ms || g.req; });
+        return { total: total, estimated: rows.some(function (g) { return g.estimated && g.usd; }), rows: rows };
     }
     // One bar split by stage in the timeline's stage tints, and the table under
     // it. A segment or a row is a toggle: `hi` is the stage the timeline marks.
@@ -1221,7 +1231,7 @@
         var name = function (k) { return k === 'none' ? loc('ses.beforeStepOne', '第一步之前') : k; };
         var paid = L.rows.filter(function (g) { return g.usd > 0; });
         return '<div class="cshare" data-block="cost-share"><div class="h2">' + icon('spend') + loc('ses.costShareByStage', '各 stage 花費占比')
-            + '<small>' + loc('ses.costShareHint', '合計 {t}；點一段或一列，時間線標出那個 stage', { t: usd(L.total) }) + '</small></div>'
+            + '<small>' + loc('ses.costShareHint', '合計 {t}；點一段或一列，時間線標出那個 stage', { t: usd(L.total) + estMark(L) }) + '</small></div>'
             + (paid.length ? '<div class="csbar" role="group" aria-label="' + loc('ses.costShareByStage', '各 stage 花費占比') + '">' + paid.map(function (g) {
                 var p = pct(g.usd), on = hi === g.stage;
                 return '<button type="button" class="csseg' + (on ? ' on' : '') + '" data-hist="' + esc(g.stage) + '" aria-pressed="' + on + '"'
@@ -1251,7 +1261,7 @@
         if (!paid.length) return '';
         var max = Math.max.apply(null, paid.map(function (g) { return g.agent; }));
         var sum = paid.reduce(function (a, g) { return a + g.agent; }, 0);
-        return '<div class="dstg" data-block="dispatch-stages"><div class="dxh">' + loc('ses.dispatchCostByStage', '派工花費，依 stage') + ' <small>' + loc('ses.totalV', '合計 {v}', { v: usd(sum) }) + '</small></div>'
+        return '<div class="dstg" data-block="dispatch-stages"><div class="dxh">' + loc('ses.dispatchCostByStage', '派工花費，依 stage') + ' <small>' + loc('ses.totalV', '合計 {v}', { v: usd(sum) + estMark({ estimated: paid.some(function (g) { return g.estimated; }) }) }) + '</small></div>'
             + paid.map(function (g) {
                 var nm = g.stage === 'none' ? loc('ses.beforeStepOne', '第一步之前') : g.stage, on = hi === g.stage;
                 return '<a class="dsrow' + (on ? ' on' : '') + '" href="' + sessionHash(id) + '" data-hist="' + esc(g.stage) + '" aria-pressed="' + on + '"'
@@ -1265,16 +1275,16 @@
             ['cacheWrite', 'cache write', '--t-cw']];
         var cells = function (a, cls) {
             return KINDS.map(function (k) {
-                return '<td class="r muted">' + tokens(a.tokens[k[0]]) + '</td><td class="r">' + usd(a.cost[k[0]]) + '</td>';
-            }).join('') + '<td class="r' + (cls ? ' ' + cls : '') + '">' + usd(a.usd) + '</td>';
+                return '<td class="r muted">' + tokens(a.tokens[k[0]]) + '</td><td class="r">' + usd(a.cost[k[0]]) + (a.cost[k[0]] ? estMark(a) : '') + '</td>';
+            }).join('') + '<td class="r' + (cls ? ' ' + cls : '') + '">' + usd(a.usd) + estMark(a) + '</td>';
         };
         var share = function (v) { return m.total.usd ? Math.round(v / m.total.usd * 1000) / 10 + '%' : '—'; };
         var allTok = KINDS.reduce(function (n, k) { return n + m.total.tokens[k[0]]; }, 0);
         var loops = x && Array.isArray(x.loops) ? x.loops : null;
         var loopBy = {};
         (loops || []).forEach(function (r) { loopBy[r.stage === null ? 'none' : r.stage] = r; });
-        return '<div class="sumline"><div>' + loc('ses.totalCost', '合計花費') + '<b>' + usd(m.total.usd) + '</b></div><div>' + loc('ses.mainSession', '主 session') + '<b>' + usd(m.main.usd) + '</b></div>'
-            + '<div>' + loc('ses.dispatchAgentWorkflow', '派工（agent + workflow）') + '<b>' + usd(m.agent.usd) + '</b></div><div>' + loc('ses.outputShareOfCost', 'output 佔花費') + '<b>' + share(m.total.cost.output) + '</b></div>'
+        return '<div class="sumline"><div>' + loc('ses.totalCost', '合計花費') + '<b>' + usd(m.total.usd) + estMark(m.total) + '</b></div><div>' + loc('ses.mainSession', '主 session') + '<b>' + usd(m.main.usd) + estMark(m.main) + '</b></div>'
+            + '<div>' + loc('ses.dispatchAgentWorkflow', '派工（agent + workflow）') + '<b>' + usd(m.agent.usd) + estMark(m.agent) + '</b></div><div>' + loc('ses.outputShareOfCost', 'output 佔花費') + '<b>' + share(m.total.cost.output) + '</b></div>'
             + '<div>' + loc('ses.cacheReadShareOfTokens', 'cache read 佔 token') + '<b>' + (allTok ? Math.round(m.total.tokens.cacheRead / allTok * 1000) / 10 + '%' : '—') + '</b></div></div>'
             + '<div class="h2">stage × model <small>' + loc('ses.stageModelHint', 'token 與各自的 USD；stage 列是小計') + '</small></div>'
             + '<div class="tbl-wrap"><table class="t"><thead><tr><th rowspan="2">stage</th><th rowspan="2">' + loc('ses.modelOfSession', 'model · 佔 session') + '</th>'
@@ -1301,7 +1311,7 @@
         return '<div class="readouts">'
             + roHtml(loc('ses.elapsed', '歷時'), m && m.t1 > m.t0 ? mins(m.t1 - m.t0) : '—', 'active ' + hours(t.active))
             + roHtml('<i class="hatchsw"></i>' + loc('ses.waitingForYou', '等你回答'), mins(waited), m ? loc('ses.nGates', '{n} 次 gate', { n: m.waits.length }) : loc('ses.loadingDetail', '讀取細節…'))
-            + roHtml(loc('ses.cost', '花費'), usd(t.usd, true), t.usd ? (quotaPct(t.usd) ? quotaPct(t.usd) + ' · ' : '') + loc('ses.dispatchShare', '派工佔 {p}%', { p: Math.round(agentUsd / t.usd * 100) }) : loc('ses.noDailyCost', '這個 session 沒有按日的花費'))
+            + roHtml(loc('ses.cost', '花費'), usd(t.usd, true) + estMark(t), t.usd ? (quotaPct(t.usd) ? quotaPct(t.usd) + ' · ' : '') + loc('ses.dispatchShare', '派工佔 {p}%', { p: Math.round(agentUsd / t.usd * 100) }) : loc('ses.noDailyCost', '這個 session 沒有按日的花費'))
             + roHtml('token', tokens(t.tokens), x ? loc('ses.nMainSessionRequests', '{n} 次主 session 請求', { n: x.requests }) : '')
             + roHtml(loc('ses.dispatch', '派工'), x ? x.rows.length + '<span class="u">agent</span>' : '—', x ? agentCounts(x, s) + loc('ses.nWorkflows', '{n} 個 workflow', { n: x.runs.length }) : '')
             + roHtml(loc('ses.wakes', '叫醒'), wakes === null ? '—' : wakes + '<span class="u">' + loc('ses.times', '次') + '</span>', wakes === null ? '' : loc('ses.dispatchWokeMain', '派工回報叫醒主 session'))
@@ -1397,6 +1407,7 @@
         return {
             live: sessions.filter(function (s) { return s.state === 'live'; }).length,
             usd: windowTotals(sessions, days).usd,
+            estimated: windowTotals(sessions, days).estimated,
             sessions: recentRows(sessions, days).length,
             projects: projectRows(sessions, days).length,
             docs: [].concat.apply([], projects.map(function (p) { return p.docs || []; })).length,
@@ -1469,7 +1480,7 @@
     function navHtml(active, c, ui) {
         var on = navOn(active), shut = (ui && ui.shut) || {};
         // Each badge sits on the page whose rows it counts.
-        var badges = { now: null, live: [c.live + ' live', c.live ? 'live' : ''], days: [usd(c.usd, true)], sessions: [c.sessions],
+        var badges = { now: null, live: [c.live + ' live', c.live ? 'live' : ''], days: [usd(c.usd, true) + estMark(c)], sessions: [c.sessions],
             projects: [c.projects], docs: [c.docs] };
         var link = function (v, href, inner, title) {
             var b = badges[v];
@@ -2573,7 +2584,7 @@
             var name = routeName(s.route, classes);
             if (!by[name]) {
                 by[name] = { name: name, route: s.route || [], n: 0, clean: 0, backN: 0, backtracks: 0, stages: {},
-                    back: { ms: 0, wait: 0, burn: 0, usd: 0 } };
+                    back: { ms: 0, wait: 0, burn: 0, usd: 0, estimated: false } };
                 order.push(name);
             }
             var g = by[name];
@@ -2586,17 +2597,19 @@
                     g.back.wait += w.waited || 0;
                     g.back.burn += w.burn || 0;
                     g.back.usd += w.usd || 0;
+                    if (w.estimated && w.usd) g.back.estimated = true;
                 });
                 return;
             }
             g.clean++;
             s.stages.forEach(function (w) {
-                var x = g.stages[w.stage] || (g.stages[w.stage] = { n: 0, ms: 0, wait: 0, burn: 0, usd: 0 });
+                var x = g.stages[w.stage] || (g.stages[w.stage] = { n: 0, ms: 0, wait: 0, burn: 0, usd: 0, estimated: false });
                 x.n++;
                 x.ms += Math.max(w.to - w.from, 0);
                 x.wait += w.waited || 0;
                 x.burn += w.burn || 0;
                 x.usd += w.usd || 0;
+                if (w.estimated && w.usd) x.estimated = true;
             });
         });
         return order.map(function (k) { return by[k]; }).sort(function (a, b) { return b.n - a.n; });
@@ -2620,7 +2633,7 @@
                     + colour + '38"></span></div><div class="mute" style="font-size:10.5px;margin-top:4px">'
                     + loc('tune.workedWaitedN', '{a} 做事 · {b} 等你 · {n} 個', { a: hours(ms), b: hours(wait), n: n }) + '</div></td>'
                     + '<td class="r num mute">' + tokens(Math.round(x.burn / n)) + '</td>'
-                    + '<td class="r num">' + usd(x.usd / n, true) + '</td>'
+                    + '<td class="r num">' + usd(x.usd / n, true) + estMark(x) + '</td>'
                     + '<td class="r num" style="color:' + (wait > ms ? 'var(--dn)' : 'var(--mute)') + '">'
                     + Math.round(wait / (ms + wait || 1) * 100) + '%</td></tr>';
             };
@@ -2793,17 +2806,17 @@
     // The 近 30 天 chart's own bars, summed per day, drawn without axes.
     function dashSpend(R) {
         var list = dayBars(R, 'usd', 'project', DAYS).days, mx = Math.max.apply(null, list.map(function (b) { return b.total; }).concat([0])) || 1;
-        var W = 300, H = 56, bw = W / list.length, tot = windowTotals(R, DAYS).usd;
+        var W = 300, H = 56, bw = W / list.length, tot = windowTotals(R, DAYS).usd, totEst = windowTotals(R, DAYS).estimated;
         var svg = '<svg class="dspark" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" aria-label="' + loc('dash.dailyCostLast30d', '近 30 天每日花費') + '">'
             + list.map(function (b, i) {
                 var h = b.total ? Math.max(2, b.total / mx * (H - 2)) : 0;
                 return '<rect x="' + (i * bw + 1).toFixed(1) + '" y="' + (H - h).toFixed(1) + '" width="' + Math.max(1, bw - 2).toFixed(1)
                     + '" height="' + h.toFixed(1) + '" rx="1"' + (i === list.length - 1 ? ' class="today"' : '')
-                    + '><title>' + b.day + ' ' + usd(b.total) + '</title></rect>';
+                    + '><title>' + b.day + ' ' + usd(b.total) + estMark(b) + '</title></rect>';
             }).join('') + '<line x1="0" x2="' + W + '" y1="' + (H - .5) + '" y2="' + (H - .5) + '"/></svg>';
-        var at = function (i) { var b = list[list.length - i]; return b ? usd(b.total) : '—'; };
+        var at = function (i) { var b = list[list.length - i]; return b ? usd(b.total) + estMark(b) : '—'; };
         return '<section class="dcard" data-block="dash-spend">' + dashHead('spend', loc('dash.last30dCost', '近 30 天花費'), '#/days')
-            + '<div class="dbig">' + (tot ? usd(tot) : '$0') + '</div>' + svg
+            + '<div class="dbig">' + (tot ? usd(tot) + estMark({ estimated: totEst }) : '$0') + '</div>' + svg
             + '<div class="dkv"><span>' + loc('dash.today', '今天') + ' <b>' + at(1) + '</b></span><span>' + loc('dash.yesterday', '昨天') + ' <b>' + at(2) + '</b></span></div></section>';
     }
     function dashRecent(R) {
@@ -2812,7 +2825,7 @@
             + (list.length ? '<div class="dlist">' + list.map(function (s) {
                 return '<a class="drow" href="' + sessionHash(s.id) + '"><span class="dp">' + dashRowName(s) + '</span>'
                     + '<span class="dt">' + esc(s.task || loc('dash.unnamed', '（未命名）')) + '</span><span class="ds mono"' + (s.stage ? ' data-st="' + esc(s.stage) + '" style="--c:var(--st-' + esc(s.stage) + ')"' : '') + '>' + esc(s.stage || '—') + '</span>'
-                    + '<span class="dc mono">' + usd(sessionTotals(s).usd) + '</span><span class="dr">' + ago(s.updated) + '</span></a>';
+                    + '<span class="dc mono">' + usd(sessionTotals(s).usd) + estMark(sessionTotals(s)) + '</span><span class="dr">' + ago(s.updated) + '</span></a>';
             }).join('') + '</div>' : '<p class="dnone">' + loc('dash.noneLast30d', '近 30 天沒有 session') + '</p>') + '</section>';
     }
     // dash-todo (station-10): every project's `todos` rows off the data file,
@@ -2907,6 +2920,7 @@
             live: R.filter(function (s) { return s.state === 'live'; }).length,
             gates: R.filter(function (s) { return s.pending && s.pending.questions && s.pending.questions.length; }).length,
             today: last ? last.total : 0,
+            todayEstimated: last ? last.estimated : false,
             ready: ready,
         };
     }
@@ -2928,7 +2942,7 @@
         return '<div class="phead khead" data-block="dash-head"><h1>' + icon('dash') + loc('dash.dashboard', '儀表板') + '</h1>'
             + '<p class="kcap"><span>' + loc('dash.capLive', '<b>{n}</b>個 live session', { n: st.live }) + '</span>'
             + '<span' + (st.gates ? '' : ' class="ok"') + '>' + (st.gates ? loc('dash.capGates', '<b>{n}</b>個 gate 在等你', { n: st.gates }) : loc('dash.capNoGates', '沒有 gate 在等你')) + '</span>'
-            + '<span>' + loc('dash.capToday', '今天<b>{v}</b>', { v: usd(st.today, true) }) + '</span>'
+            + '<span>' + loc('dash.capToday', '今天<b>{v}</b>', { v: usd(st.today, true) + estMark({ estimated: st.todayEstimated }) }) + '</span>'
             + '<span>' + loc('dash.capReady', '<b>{n}</b>筆 Ready 可以開工', { n: st.ready }) + '</span></p>'
             + '<span class="spacer"></span>'
             + '<button type="button" class="btn' + (view.dchOpen ? ' on' : '') + '" id="dchtog" data-dchtog="1" data-key="dchtog" aria-expanded="' + String(!!view.dchOpen) + '" aria-controls="dchooser">'
@@ -3124,7 +3138,7 @@
         return '<section class="panel"><div class="hero-top"><div><div class="eyebrow">' + loc('dash.project', '專案') + '</div>'
             + '<h1 class="s-title"><i class="sw" style="background:' + colorOf('project', r.pkey, PKEYS) + '"></i> '
             + esc(NAMES[r.pkey] || r.pkey) + '</h1><div class="mono muted">' + esc(r.pkey) + '</div></div>'
-            + '<div class="readouts">' + ro(loc('dash.last30dCost', '近 30 天花費'), usd(head.usd)) + ro('token', tokens(head.tokens))
+            + '<div class="readouts">' + ro(loc('dash.last30dCost', '近 30 天花費'), usd(head.usd) + estMark(head)) + ro('token', tokens(head.tokens))
             + ro(loc('dash.activeTime', 'active 時間'), hours(head.active)) + ro('session', head.n) + '</div></div></section>'
             + todo + '<section class="panel">'
             + '<div class="controls"><div class="ctlgrp"><label>' + loc('dash.yAxis', '縱軸') + '</label>'
@@ -3383,7 +3397,7 @@
                 + (s.hasDetail ? '' : ' disabled title="' + loc('dash.noTranscriptToCompare', '沒有 transcript，沒有細節可比') + '"') + '></td>'
                 + '<td>' + taskCell(s) + '</td><td>' + stageCell(s) + '</td>'
                 + '<td class="r num mute">' + tokens(s.burn) + '</td>'
-                + '<td class="r num">' + usd(cost(s), true) + '</td>'
+                + '<td class="r num">' + usd(cost(s), true) + estMark({ estimated: s.estimated && s.estimated.length }) + '</td>'
                 + '<td class="c-state">' + statePill(s) + runningTag(s) + '</td>'
                 + '<td class="num mute" style="font-size:11.5px">' + day(s.started) + '</td>'
                 + '<td class="num mute" style="font-size:11.5px">' + ago(s.updated) + '</td></tr>';
@@ -3521,7 +3535,8 @@
             + (S.serve ? loc('dash.rereadEvery3s', ' · 每 3 秒重讀一次，最後一次 {t}', { t: clockSec(polledAt) }) : '');
     }
     // ---- the detail panel ----------------------------------------------
-    // A stage's dollars priced from a family fallback carry the same 估 the session row does.
+    // ' 估' after a dollar figure whose `g.estimated` is truthy: a stage, a day, a dispatch group or an aggregate
+    // that carries a request priced from a family fallback. A session's own total counts ids with `totalSuffix`.
     function estMark(g) { return g && g.estimated ? ' ' + loc('det.estShort', '估') : ''; }
     function totalSuffix(s) {
         return (s.unpriced && s.unpriced.length ? ' (' + s.unpriced.length + ' unpriced)' : '')
@@ -3556,7 +3571,7 @@
             + sec('s-order', loc('det.stageOrder', '階段順序'), loc('det.stepsBacktracks', '{n} 步 · 倒退 {b}', { n: x.seq.length, b: x.backtracks }), orderSection(s, x), open)
             + sec('s-split', loc('det.split', '分工'), splitCount(x), splitHtml(x), open)
             + sec('s-tasks', loc('det.tasks', '任務'), taskCount(x.tasks), tasksHtml(x.tasks), open)
-            + sec('s-disp', loc('det.dispatch', '派工'), loc('det.nAgentsCents', '{n} 個 agent · {c}', { n: x.rows.length, c: cents(x.agentCents) }), dispatchHtml(x, s, dispatchUi(s)), open)
+            + sec('s-disp', loc('det.dispatch', '派工'), loc('det.nAgentsCents', '{n} 個 agent · {c}', { n: x.rows.length, c: cents(x.agentCents) + estMark({ estimated: estOf(x.rows) }) }), dispatchHtml(x, s, dispatchUi(s)), open)
             + sec('s-rp', loc('det.replay', '過程還原'), loc('det.nRows', '{n} 列', { n: x.events.length }), replayHtml(x, view.kinds, s), open);
     }
 
@@ -3861,6 +3876,12 @@
             return a;
         }, { c: 0, k: 0, s: 0, ti: 0, to: 0, ci: 0, co: 0, requests: 0, peak: 0 });
     }
+    // The estimated ids of these dispatch rows, unique, as `numCells` prints them; '' when none.
+    function estOf(rows) {
+        var ids = [];
+        rows.forEach(function (r) { (r.estimated || []).forEach(function (id) { if (ids.indexOf(id) < 0) ids.push(id); }); });
+        return ids.join(', ');
+    }
     function numCells(t, unpriced, time, estimated) {
         var tip = [];
         if (unpriced) tip.push(loc('det.priceListDoesNotKnow', '價目表不認得：{u}', { u: esc(unpriced) }));
@@ -4095,7 +4116,7 @@
                     + ' / ' + list.length + ' done</span>' : '')
                 + '<span class="rt">' + (d && d.turn ? loc('disp.turnN2', '回合 {n}', { n: d.turn }) : '')
                 + (d && isNum(d.out) ? ' · ' + stamp(d.out).slice(11) + '→' + (isNum(d.back) ? stamp(d.back).slice(11) : gone ? loc('disp.notBack', '沒回來') : '…') : '')
-                + '</span></div></td>' + numCells(sums(fam(list)), '') + '<td class="r rc">'
+                + '</span></div></td>' + numCells(sums(fam(list)), '', null, estOf(fam(list))) + '<td class="r rc">'
                 + (d && d.ret !== null && d.ret !== undefined ? comma(d.ret) : d && !gone && !isNum(d.back) ? '…' : '—') + '</td></tr>';
             if (!wf) return lead + head + vis.map(function (r) { return withKids(r, 'ag', ''); }).join('');
             var phases = [];
@@ -4107,7 +4128,7 @@
                 var key = 'ph-' + k + '-' + i, open = !!u.ph[key] || filter !== 'all';
                 return '<tr class="phr"><td><div class="phl"><button type="button" class="phb" data-ph="' + key + '" data-key="' + key
                     + '" aria-expanded="' + open + '">' + esc(p) + '<span class="n">· ' + pr.length + ' agents</span></button>'
-                    + agdots(x, pr, s) + '<span class="phs">' + stateTally(x, pr, s) + '</span></div></td>' + numCells(sums(fam(pr)), '')
+                    + agdots(x, pr, s) + '<span class="phs">' + stateTally(x, pr, s) + '</span></div></td>' + numCells(sums(fam(pr)), '', null, estOf(fam(pr)))
                     + '<td class="r rc"></td></tr>'
                     + shown.map(function (r) { return withKids(r, 'wa', ' data-in="' + key + '"' + (open ? '' : ' hidden')); }).join('');
             }).join('');
@@ -4136,7 +4157,7 @@
             + '<th class="r">USD</th><th class="r">input</th><th class="r">input USD</th><th class="r">output</th><th class="r">output USD</th>'
             + '<th class="r">' + loc('disp.contextPeak', 'context 峰值') + '</th><th class="r">' + loc('disp.requests', '請求數') + '</th>'
             + '<th class="r rc" title="' + loc('disp.charsReturnedHint', '這次派工的結果進入主 context 的字元數') + '">' + loc('disp.charsReturned', '回傳字元') + '</th></tr></thead>'
-            + '<tbody>' + body + '</tbody><tfoot><tr><td>' + loc('disp.nAgents2', '{n} 個 agent', { n: x.rows.length }) + '</td>' + numCells(all, '')
+            + '<tbody>' + body + '</tbody><tfoot><tr><td>' + loc('disp.nAgents2', '{n} 個 agent', { n: x.rows.length }) + '</td>' + numCells(all, '', null, estOf(x.rows))
             + '<td class="r rc">' + comma(ret) + '</td></tr></tfoot></table>';
         // The chart has no row a running agent could stand in, so above it the
         // running ones keep their rows: the tool each is on, and the count the
@@ -4153,7 +4174,7 @@
         }
         return dhead + rows + chart
             + '<details class="dxnote" data-key="dx-note"><summary>' + loc('disp.reconciliationAndNotes', '對帳與說明') + ' ' + eq(all.c, x.agentsTotal.cents) + eq(wfRows, wfRun) + '</summary>'
-            + '<p class="tally">' + loc('disp.rowsUsdSum', '各列美元相加 <b>{a}</b>', { a: cents(all.c) }) + ' ' + eq(all.c, x.agentsTotal.cents) + ' ' + loc('disp.agentsOfSum', 'agentsOf() 的 {a}', { a: cents(x.agentsTotal.cents) })
+            + '<p class="tally">' + loc('disp.rowsUsdSum', '各列美元相加 <b>{a}</b>', { a: cents(all.c) + estMark({ estimated: estOf(x.rows) }) }) + ' ' + eq(all.c, x.agentsTotal.cents) + ' ' + loc('disp.agentsOfSum', 'agentsOf() 的 {a}', { a: cents(x.agentsTotal.cents) + estMark({ estimated: estOf(x.rows) }) })
             + loc('disp.workflowRowsVs', '；workflow 派工 {a} 列', { a: wfRows }) + ' ' + eq(wfRows, wfRun) + ' ' + loc('disp.runFileWorkflowAgentRows', 'run 檔的 workflow_agent {a} 列', { a: wfRun })
             + '</p>'
             + '<p class="tally">' + loc('disp.returnedCharsExplain', '回傳字元是派工的結果進入主 context 的長度：背景 agent 與 workflow 取 task-notification，前景的取 Agent 的 tool_result。背景啟動時回來的確認不算在內，這個 session 合計 {n} 字元。', { n: comma(launch) }) + loc('disp.usdByPriceList', '美元照價目表 {v}', { v: esc(S.pricesVerified || '—') }) + (x.unpriced.length ? loc('disp.unpricedList', '；價目表不認得、寫 unpriced 的：{list}', { list: x.unpriced.map(esc).join(loc('disp.listSep', '、')) }) : '')
@@ -4173,8 +4194,8 @@
         var FMT = { c: cents, k: function (v) { return comma(v) + 'k'; }, s: dur, r: function (v) { return loc('disp.nChars2', '{v} 字', { v: comma(v) }); },
             peak: tokens, requests: comma };
         var f = FMT[m] ? FMT[m] : (m = 'c', FMT.c);
-        var nums = function (t) {
-            return cents(t.c) + ' · ' + comma(t.k) + 'k token · ' + dur(t.s) + ' · input ' + tokens(t.ti || 0) + ' $' + (t.ci || 0).toFixed(2)
+        var nums = function (t, est) {
+            return cents(t.c) + estMark({ estimated: est }) + ' · ' + comma(t.k) + 'k token · ' + dur(t.s) + ' · input ' + tokens(t.ti || 0) + ' $' + (t.ci || 0).toFixed(2)
                 + ' · output ' + tokens(t.to || 0) + ' $' + (t.co || 0).toFixed(2);
         };
         var fams = {};
@@ -4189,7 +4210,7 @@
             var d = row.d, sf = d ? d.surface : 'agent';
             var tip = (d ? d.text : loc('disp.noMatchingDispatch2', '未對上派工')) + '\n' + (d && d.turn ? loc('disp.turnNDot', '回合 {n} · ', { n: d.turn }) : '')
                 + (d && isNum(d.out) ? stamp(d.out).slice(11) + '→' + (isNum(d.back) ? stamp(d.back).slice(11) : '…') + ' · ' : '')
-                + loc('disp.nAgentsNewline', '{n} 個 agent\n', { n: row.list.length }) + nums(row.t) + loc('disp.newlineReturned', '\n回傳 {v}', { v: row.r === null ? '—' : loc('disp.nCharsSuffix', '{n} 字元', { n: comma(row.r) }) });
+                + loc('disp.nAgentsNewline', '{n} 個 agent\n', { n: row.list.length }) + nums(row.t, estOf(row.list)) + loc('disp.newlineReturned', '\n回傳 {v}', { v: row.r === null ? '—' : loc('disp.nCharsSuffix', '{n} 字元', { n: comma(row.r) }) });
             var segs = m === 'r'
                 ? (row.v ? '<i style="flex:1 1 0;background:var(--s-' + (sf === 'workflow' ? 'workflow' : 'agent') + ')"></i>' : '')
                 : row.list.map(function (a) {
@@ -4197,12 +4218,12 @@
                     var fk = family(a.model || a.alias);
                     fams[fk] = true;
                     return '<i class="' + agentState(x, a, s) + (pass(a) ? '' : ' off') + '" style="flex:' + a[m] + ' 1 0;background:var(--m-' + fk + ')"'
-                        + ' title="' + esc((a.label || a.id) + '\n' + modelOf(a) + ' · ' + agentState(x, a, s) + '\n' + nums(sums([a]))) + '"></i>';
+                        + ' title="' + esc((a.label || a.id) + '\n' + modelOf(a) + ' · ' + agentState(x, a, s) + '\n' + nums(sums([a]), estOf([a]))) + '"></i>';
                 }).join('');
             return '<div class="dxr" role="listitem" title="' + esc(tip) + '"><span class="dxl"><span class="sf ' + esc(sf) + '">' + esc(d ? sf : '—') + '</span>'
                 + '<span class="dxn">' + esc(d ? d.text : loc('disp.noMatchingDispatch2', '未對上派工')) + '</span></span>'
                 + '<span class="dxt"><span class="dxb" style="width:' + (max ? row.v / max * 88 : 0).toFixed(1) + '%">' + segs + '</span>'
-                + '<b>' + (m === 'r' && row.r === null ? '—' : f(row.v)) + '</b></span></div>';
+                + '<b>' + (m === 'r' && row.r === null ? '—' : f(row.v)) + (m === 'c' ? estMark({ estimated: estOf(row.list) }) : '') + '</b></span></div>';
         }).join('');
         var legend = m === 'r'
             ? '<span><i class="sw" style="background:var(--s-agent)"></i>agent</span><span><i class="sw" style="background:var(--s-workflow)"></i>workflow</span>'
@@ -4213,7 +4234,7 @@
             peak: loc('disp.contextPeak', 'context 峰值'), requests: loc('disp.requests', '請求數') };
         return '<div class="dxc"><div class="dxch">'
             + segHtml('dxm', [['c', DXM.c], ['k', DXM.k], ['s', DXM.s], ['r', DXM.r], ['peak', DXM.peak], ['requests', DXM.requests]], m)
-            + '<span class="dxsum" title="' + esc(loc('disp.nAgentsTotal', '{n} 個 agent 合計\n', { n: x.rows.length }) + nums(all) + loc('disp.newlineReturned', '\n回傳 {v}', { v: loc('disp.nCharsSuffix', '{n} 字元', { n: comma(ret) }) })) + '">' + loc('disp.totalB', '合計 <b>{v}</b>', { v: f(total) }) + '</span>'
+            + '<span class="dxsum" title="' + esc(loc('disp.nAgentsTotal', '{n} 個 agent 合計\n', { n: x.rows.length }) + nums(all, estOf(x.rows)) + loc('disp.newlineReturned', '\n回傳 {v}', { v: loc('disp.nCharsSuffix', '{n} 字元', { n: comma(ret) }) })) + '">' + loc('disp.totalB', '合計 <b>{v}</b>', { v: f(total) + (m === 'c' ? estMark({ estimated: estOf(x.rows) }) : '') }) + '</span>'
             + '<span class="spacer"></span><span class="lane-legend">' + legend + '</span></div>'
             + '<div class="dxg" role="list" aria-label="' + loc('disp.perDispatchMetric', '每次派工的{m}', { m: DXM[m] }) + '">' + body + '</div>'
             + '<div class="note">' + loc('disp.oneRowOneDispatch', '一列一次派工，照回合先後；一段一個 agent。游標停在列或段上看全部數字。') + '</div></div>';
@@ -4362,7 +4383,7 @@
             + track(loc('disp.time2', '時間'), took(total), function (g) { return span(g) === null ? 0 : span(g) / total * 100; }, function (g) {
                 return esc(name(g)) + '<span class="v">' + took(span(g)) + '</span>';
             })
-            + (usdAll ? track(loc('disp.cost3', '花費'), usd(usdAll, true), function (g) { return (g.usd || 0) / usdAll * 100; }, function (g) { return usd(g.usd, true) + estMark(g); }) : '')
+            + (usdAll ? track(loc('disp.cost3', '花費'), usd(usdAll, true) + estMark({ estimated: segs.some(function (g) { return g.estimated; }) }), function (g) { return (g.usd || 0) / usdAll * 100; }, function (g) { return usd(g.usd, true) + estMark(g); }) : '')
             + '<div class="key">' + (waitAll ? '<span><i class="sw hatch"></i>' + loc('disp.waitingOnYouGatePct', '等你回答 gate（{t}，佔 {p}%）', { t: took(waitAll), p: Math.round(waitAll / total * 100) }) + '</span>' : '') + '<span>' + loc('disp.clickJumpToStage', '點一段就跳到那個階段') + '</span></div></div>' : '')
             + (s ? '<p class="tally">' + loc('disp.segmentsSumB', '各段 context 相加 <b>{n}</b>', { n: comma(burnSum) }) + ' <span class="' + (burnSum === (s.burn || 0) ? 'eq">' + loc('disp.equalsSign', '＝') : 'ne">' + loc('disp.notEqualsSign', '≠'))
                 + '</span> ' + loc('disp.sessionsBurnN', '這個 session 的 burn {n}', { n: comma(s.burn || 0) }) + '</p>' : '') + '</div>';
@@ -4448,7 +4469,7 @@
         var P = x.points;
         return {
             peak: x.peak, peakN: x.peakN, requests: x.requests, pts: P.length, noTime: x.noTime,
-            cents: x.rows.reduce(function (n, r) { return n + r.c; }, 0), agentCents: x.agentsTotal.cents,
+            cents: x.rows.reduce(function (n, r) { return n + r.c; }, 0), agentCents: x.agentsTotal.cents, estimated: estOf(x.rows),
             back: x.backtracks, t0: P.length ? P[0].t : 0, t1: P.length ? P[P.length - 1].t : 0,
         };
     }
@@ -4471,8 +4492,8 @@
             return '<tr><td class="sid">' + esc(String(s.id).slice(0, 8)) + '<span class="s2">' + esc(s.state + ' · ' + s.stage) + '</span></td>'
                 + '<td class="v r">' + tokens(f.peak) + '<span class="s2">' + (f.peakN ? loc('cmp.turnNDot', '回合 {n} · ', { n: f.peakN }) : '') + comma(f.peak) + '</span></td>'
                 + '<td class="v r">' + f.requests + '<span class="s2">' + loc('cmp.nPointsPlusNoTime', '{n} 點 ＋ {t} no time', { n: f.pts, t: f.noTime }) + '</span></td>'
-                + '<td class="v r">' + cents(f.cents) + '<span class="s2">' + (f.cents === f.agentCents ? loc('cmp.equalsSign', '＝') : loc('cmp.notEqualsSign', '≠'))
-                + ' agentsOf() ' + cents(f.agentCents) + '</span></td>'
+                + '<td class="v r">' + cents(f.cents) + estMark(f) + '<span class="s2">' + (f.cents === f.agentCents ? loc('cmp.equalsSign', '＝') : loc('cmp.notEqualsSign', '≠'))
+                + ' agentsOf() ' + cents(f.agentCents) + estMark(f) + '</span></td>'
                 + '<td class="v r">' + f.back + '</td></tr>';
         };
         return chart(a, xa, fa) + '<div style="height:14px"></div>' + chart(b, xb, fb)

@@ -443,8 +443,8 @@ test('windowTotals and the five readouts: thirty days against the thirty before,
     global.window.STATION.gates = undefined;
     const cur = V.windowTotals(HOME, DAYS);
     const prev = V.windowTotals(HOME, PREV);
-    assert.deepEqual(cur, { usd: 8.5, tokens: 42705, active: 8700000, main: 7800000, wait: 1800000 });
-    assert.deepEqual(prev, { usd: 8, tokens: 23400, active: 7200000, main: 7200000, wait: 7200000 });
+    assert.deepEqual(cur, { usd: 8.5, tokens: 42705, active: 8700000, main: 7800000, wait: 1800000, estimated: false });
+    assert.deepEqual(prev, { usd: 8, tokens: 23400, active: 7200000, main: 7200000, wait: 7200000, estimated: false });
     const html = V.kpiHtml(cur, prev);
     assert.match(html, /\$8\.50/);
     assert.doesNotMatch(html, /\$99|\$198/);
@@ -486,8 +486,8 @@ test('kpiHtml reads S.gates.swapped[0] for the fifth readout: which option one l
 
 test('sessionTotals and projectRows sum days and spans per session and per project key', () => {
     assert.deepEqual(V.sessionTotals(HOME[0]), { usd: 3.75, tokens: 35100, active: 6000000, main: 5400000, wait: 1200000,
-        models: { opus: 3.25, sonnet: 0.5 } });
-    assert.deepEqual(V.sessionTotals(HOME[2]), { usd: 0, tokens: 0, active: 0, main: 0, wait: 0, models: {} });
+        models: { opus: 3.25, sonnet: 0.5 }, estModels: {}, estimated: false });
+    assert.deepEqual(V.sessionTotals(HOME[2]), { usd: 0, tokens: 0, active: 0, main: 0, wait: 0, models: {}, estModels: {}, estimated: false });
     const rows = V.projectRows(HOME, DAYS);
     assert.deepEqual(rows.map((r) => [r.pkey, r.usd, r.n]),
         [['F:\\ws\\alpha/Beta', 4.75, 1], ['F:\\ws\\alpha', 3.75, 2], ['F:\\ws\\gamma', 0, 0]]);
@@ -516,8 +516,8 @@ test('a kept v1 cache\'s single row counts its dollars and zero tokens, and brea
     assert.deepEqual(V.dayBars([KEPT], 'time', 'who', DAYS).days[i].parts, {});
     const keptKind = V.dayBars([KEPT], 'usd', 'kind', DAYS);
     assert.deepEqual([keptKind.days[i].total, keptKind.keys], [0, []], 'a null cost split gives kind nothing, not a crash');
-    assert.deepEqual(V.sessionTotals(KEPT), { usd: 2.5, tokens: 0, active: 0, main: 0, wait: 0, models: { opus: 2.5 } });
-    assert.deepEqual(V.windowTotals([KEPT], DAYS), { usd: 2.5, tokens: 0, active: 0, main: 0, wait: 0 });
+    assert.deepEqual(V.sessionTotals(KEPT), { usd: 2.5, tokens: 0, active: 0, main: 0, wait: 0, models: { opus: 2.5 }, estModels: {}, estimated: false });
+    assert.deepEqual(V.windowTotals([KEPT], DAYS), { usd: 2.5, tokens: 0, active: 0, main: 0, wait: 0, estimated: false });
     assert.match(V.recentHtml([KEPT], O), /\$2\.50<\/td><td class="r muted">0<\/td>/);
     assert.equal(count(V.histSvg(V.dayBars([KEPT], 'tokens', 'model', DAYS), O), /<rect class="hit"/g), 30);
 });
@@ -669,7 +669,7 @@ test('a version split under 時間 comes from the spans, keeps the newest-first 
 // --- the three levels: project -----------------------------------------------
 test('projectHead and sessionPoints take one project key\'s figures from days, one point per session start', () => {
     assert.deepEqual(V.projectHead(HOME, 'F:\\ws\\alpha', DAYS),
-        { pkey: 'F:\\ws\\alpha', usd: 3.75, tokens: 35100, active: 6000000, n: 2 });
+        { pkey: 'F:\\ws\\alpha', usd: 3.75, estimated: false, tokens: 35100, active: 6000000, n: 2 });
     assert.equal(V.dayStart('2026-09-14'), new Date(2026, 8, 14).getTime());
     const t0 = V.dayStart(DAYS[0]), t1 = V.dayStart(DAYS[29]) + 864e5;
     const alpha = HOME.filter((s) => s.root === 'F:\\ws\\alpha');
@@ -1262,25 +1262,38 @@ test('stageShare flags a row estimated when any of its stage windows is, and lea
     assert.deepEqual(L.rows.map((r) => [r.stage, r.estimated]), [['survey', false], ['build', true], ['verify', false]]);
 });
 
-test('costShareHtml marks 估 on the estimated segment title, label, cost cell and split line, and nowhere else', () => {
-    const html = V.costShareHtml(V.stageShare(EST_S, null), null);
-    const seg = (k) => html.match(new RegExp('<button[^>]*data-hist="' + k + '"[\\s\\S]*?</button>'))[0];
-    const row = (k) => html.match(new RegExp('<tr class="csrow[^>]*data-hist="' + k + '"[\\s\\S]*?</tr>'))[0];
-    assert.match(seg('build'), /title="[^"]*估[^"]*"/);
-    assert.match(seg('build'), /<b>[^<]*估[^<]*<\/b>/);
-    assert.match(row('build'), /<td class="r">[^<]*估<\/td>/);
-    assert.match(row('build'), /<span class="muted">[^<]*估[^<]*<\/span>/);
-    assert.doesNotMatch(seg('verify'), /估/);
-    assert.doesNotMatch(row('verify'), /估/);
-    assert.doesNotMatch(seg('survey') + row('survey'), /估/);
+const estShare = () => V.costShareHtml(V.stageShare(EST_S, null), null);
+const shareSeg = (html, k) => html.match(new RegExp('<button[^>]*data-hist="' + k + '"[\\s\\S]*?</button>'))[0];
+const shareRow = (html, k) => html.match(new RegExp('<tr class="csrow[^>]*data-hist="' + k + '"[\\s\\S]*?</tr>'))[0];
+
+test('costShareHtml marks 估 on the estimated segment\'s title and on no other segment', () => {
+    assert.match(shareSeg(estShare(), 'build'), /title="[^"]*估[^"]*"/);
+    assert.doesNotMatch(shareSeg(estShare(), 'verify') + shareSeg(estShare(), 'survey'), /估/);
 });
 
-test('dispatchStagesHtml marks 估 on an estimated title and label only', () => {
-    const html = V.dispatchStagesHtml({ rows: [{ stage: 'build', agent: 1500, estimated: true }, { stage: 'verify', agent: 500, estimated: false }] }, 's1', null);
-    const a = (k) => html.match(new RegExp('<a [^>]*data-hist="' + k + '"[\\s\\S]*?</a>'))[0];
-    assert.match(a('build'), /title="[^"]*估[^"]*"/);
-    assert.match(a('build'), /<b>[^<]*估<\/b>/);
-    assert.doesNotMatch(a('verify'), /估/);
+test('costShareHtml marks 估 on the estimated segment\'s label', () => {
+    assert.match(shareSeg(estShare(), 'build'), /<b>[^<]*估[^<]*<\/b>/);
+});
+
+test('costShareHtml marks 估 on the estimated row\'s cost cell and on no other row', () => {
+    assert.match(shareRow(estShare(), 'build'), /<td class="r">[^<]*估<\/td>/);
+    assert.doesNotMatch(shareRow(estShare(), 'verify') + shareRow(estShare(), 'survey'), /估/);
+});
+
+test('costShareHtml marks 估 on the estimated row\'s main / agent split line', () => {
+    assert.match(shareRow(estShare(), 'build'), /<span class="muted">[^<]*估[^<]*<\/span>/);
+});
+
+const estDstg = () => V.dispatchStagesHtml({ rows: [{ stage: 'build', agent: 1500, estimated: true }, { stage: 'verify', agent: 500, estimated: false }] }, 's1', null);
+const dstgRow = (k) => estDstg().match(new RegExp('<a [^>]*data-hist="' + k + '"[\\s\\S]*?</a>'))[0];
+
+test('dispatchStagesHtml marks 估 on an estimated row\'s title and not a plain row\'s', () => {
+    assert.match(dstgRow('build'), /title="[^"]*估[^"]*"/);
+    assert.doesNotMatch(dstgRow('verify'), /估/);
+});
+
+test('dispatchStagesHtml marks 估 on an estimated row\'s label', () => {
+    assert.match(dstgRow('build'), /<b>[^<]*估<\/b>/);
 });
 
 test('costShareHtml marks the bar segment and table row matching hi with on/aria-pressed, and leaves every other stage plain', () => {
@@ -1720,14 +1733,22 @@ test('the 30-day spend readout names the day quota.week was calibrated, only for
     } finally { S.profiles = undefined; }
 });
 
-test('a stage priced from a family fallback is marked 估 in the timeline label and tooltip; one that is not, is not', () => {
-    const stages = (est) => [{ stage: 'build', usd: 1.5, estimated: est }, { stage: 'verify', usd: 0.5, estimated: false }];
-    const svgOf = (est) => V.timelineSvg(V.stageCost(V.timelineModel(DETAIL_X), { stages: stages(est) }), {});
-    const marked = svgOf(true), plain = svgOf(false);
-    assert.match(marked, /<title>build [^<]*\$1\.50 估<\/title>/);
-    assert.doesNotMatch(plain, /估/);
-    assert.doesNotMatch(marked, /verify [^<]*估/, 'only the estimated stage is marked');
-    const m = V.stageCost(V.timelineModel(DETAIL_X), { stages: stages(true) });
-    assert.deepEqual(m.segs.map((g) => g.estimated), [true, false], 'stageCost copies estimated beside usd');
+const tlStages = (est) => [{ stage: 'build', usd: 1.5, estimated: est }, { stage: 'verify', usd: 0.5, estimated: false }];
+const tlSvg = (est) => V.timelineSvg(V.stageCost(V.timelineModel(DETAIL_X), { stages: tlStages(est) }), {});
+
+test('the timeline marks 估 in the stage column\'s own <title>, and only the estimated stage\'s', () => {
+    assert.match(tlSvg(true), /<rect class="seg"[^>]*><title>build [^<]*\$1\.50 估<\/title>/);
+    assert.doesNotMatch(tlSvg(true), /<rect class="seg"[^>]*><title>verify [^<]*估/);
+    assert.doesNotMatch(tlSvg(false), /估/);
+});
+
+test('the timeline marks 估 in the hover reading of a point, apart from the column\'s title', () => {
+    assert.match(tlSvg(true), /<rect class="hitc"[^>]*><title>build · [^<]*這段 stage \$1\.50 估<\/title>/);
+    assert.doesNotMatch(tlSvg(true), /<rect class="hitc"[^>]*><title>verify [^<]*估/);
+});
+
+test('stageCost copies a stage\'s estimated flag beside its usd', () => {
+    const m = V.stageCost(V.timelineModel(DETAIL_X), { stages: tlStages(true) });
+    assert.deepEqual(m.segs.map((g) => g.estimated), [true, false]);
 });
 

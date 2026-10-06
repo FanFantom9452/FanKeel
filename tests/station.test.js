@@ -777,3 +777,29 @@ test('a session carries the ids priced from a family as estimated', () => {
 });
 
 
+
+test('a session\'s estimated also names an id only its agents ran on, so the total the page prints is marked', () => {
+    const m = chartFixture('99999999-aaaa-4aaa-8aaa-aaaaaaaaaaaa', {
+        task: 'estimated agents', stage: 'build', route: ['build'],
+        usage: { requests: 1, models: M('claude-opus-5', 500000), subagents: { agents: 1, requests: 1, models: M('claude-opus-9', 500000) } },
+    });
+    const ctx = { window: {} };
+    vm.runInNewContext(station.serialize(m, {}), ctx);
+    const s = JSON.parse(JSON.stringify(ctx.window.STATION.sessions[0]));
+    assert.ok(s.agentUsd > 0, 'the agents are priced in the figure the page prints');
+    assert.deepEqual(s.estimated, ['claude-opus-9']);
+});
+
+test('a kept cache with no days still hands the page its one row with the cache\'s estimated flag', () => {
+    const m = chartFixture('aaaaaaaa-bbbb-4bbb-8bbb-bbbbbbbbbbbb', { task: 'kept', stage: 'build', route: ['build'] });
+    const s = m.registries[0].sessions[0];
+    s.detail = { v: 1, usd: 2, model: 'claude-opus-9', estimated: ['claude-opus-9'], rows: [], points: [], seq: [], peak: 0, requests: 0 };
+    const ctx = { window: {} };
+    vm.runInNewContext(station.serialize(m, {}), ctx);
+    const days = JSON.parse(JSON.stringify(ctx.window.STATION.sessions[0].days));
+    assert.deepEqual(days.map((d) => [d.usd, d.estimated]), [[2, true]]);
+    s.detail.estimated = [];
+    const again = { window: {} };
+    vm.runInNewContext(station.serialize(m, {}), again);
+    assert.equal(JSON.parse(JSON.stringify(again.window.STATION.sessions[0].days))[0].estimated, false);
+});
