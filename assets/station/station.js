@@ -1025,7 +1025,7 @@
         var stRoom = labelRoom();
         m.segs.forEach(function (g) {
             var x0 = X(g.from), w = Math.max(X(g.to) - x0, 0.5), c = colorOf('stage', g.stage);
-            var text = g.stage + ' ' + mins(g.to - g.from) + (isFinite(g.usd) && g.usd ? ' · ' + usd(g.usd) : ''), lw = textW(g.stage, 11.5) + 12;
+            var text = g.stage + ' ' + mins(g.to - g.from) + (isFinite(g.usd) && g.usd ? ' · ' + usd(g.usd) + estMark(g) : ''), lw = textW(g.stage, 11.5) + 12;
             out += '<rect class="seg" x="' + f1(x0) + '" y="' + sl + '" width="' + f1(w) + '" height="' + (ctxB - sl) + '"'
                 + (hi === g.stage ? ' data-on' : '') + ' style="fill:' + c + '"><title>' + esc(text) + '</title></rect>'
                 + '<rect class="segcap" x="' + f1(x0) + '" y="' + sl + '" width="' + f1(w) + '" height="3" style="fill:' + c + '"/>'
@@ -1084,7 +1084,7 @@
                 + (g ? ' data-hist="' + esc(g.stage) + '"' : '') + '><title>'
                 + esc((g ? g.stage : '—') + ' · ' + stamp(p.t) + ' · context ' + comma(p.y) + ' tokens'
                     + (p.model ? ' · ' + String(p.model).replace(/^claude-/, '') : '')
-                    + (g && isFinite(g.usd) && g.usd ? ' · ' + loc('ses.thisStageCost', '這段 stage {v}', { v: usd(g.usd) }) : '')) + '</title></rect>';
+                    + (g && isFinite(g.usd) && g.usd ? ' · ' + loc('ses.thisStageCost', '這段 stage {v}', { v: usd(g.usd) + estMark(g) }) : '')) + '</title></rect>';
         });
         // The returns go over the reading columns, so each keeps its own title.
         var retRoom = labelRoom();
@@ -2504,7 +2504,7 @@
             statePill: statePill, clearStaleControl: clearStaleControl,
             openSections: openSections, downsample: downsample, lineChart: lineChart,
             riseText: riseText, ctxSection: ctxSection, seqHtml: seqHtml, orderSection: orderSection,
-            dur: dur, tasksHtml: tasksHtml, dispatchHtml: dispatchHtml, replayHtml: replayHtml, dispatchStagesHtml: dispatchStagesHtml, segmentsOf: segmentsOf, splitHtml: splitHtml,
+            dur: dur, tasksHtml: tasksHtml, dispatchHtml: dispatchHtml, replayHtml: replayHtml, dispatchStagesHtml: dispatchStagesHtml, segmentsOf: segmentsOf, stageCost: stageCost, totalSuffix: totalSuffix, splitHtml: splitHtml,
             splitCount: splitCount,
             pendingGateHtml: pendingGateHtml, pgAnswers: pgAnswers, todoEntry: todoEntry, riseTodo: riseTodo, backTodo: backTodo, todoSpot: todoSpot,
             figures: figures, compareHtml: compareHtml,
@@ -3193,10 +3193,10 @@
     // the session went through twice has one figure for both visits, so
     // neither column claims it.
     function stageCost(m, s) {
-        var by = {}, n = {};
-        (s.stages || []).forEach(function (w) { by[w.stage] = w.usd; });
+        var by = {}, est = {}, n = {};
+        (s.stages || []).forEach(function (w) { by[w.stage] = w.usd; est[w.stage] = w.estimated === true; });
         m.segs.forEach(function (g) { n[g.stage] = (n[g.stage] || 0) + 1; });
-        m.segs.forEach(function (g) { if (n[g.stage] === 1 && isFinite(by[g.stage])) g.usd = by[g.stage]; });
+        m.segs.forEach(function (g) { if (n[g.stage] === 1 && isFinite(by[g.stage])) { g.usd = by[g.stage]; g.estimated = est[g.stage]; } });
         return m;
     }
     function sessionPage(r) {
@@ -3483,8 +3483,7 @@
             + '<dt>' + loc('dash.last', '最後') + '</dt><dd class="num">' + stamp(s.updated) + '</dd>'
             + (s.ended ? '<dt>' + loc('dash.ended', '結束') + '</dt><dd>' + esc(s.ended.reason) + '</dd>' : '')
             + '<dt>' + loc('dash.total', '總計') + '</dt><dd class="num">' + tokens(s.burn) + ' · ' + usd(cost(s))
-            + (s.unpriced && s.unpriced.length ? ' (' + s.unpriced.length + ' unpriced)' : '')
-            + (s.estimated && s.estimated.length ? ' (' + s.estimated.length + ' est.)' : '')
+            + totalSuffix(s)
             + (s.agents ? ' · ' + s.agents + ' agents' : '') + '</dd>'
             + (x ? '<dt>requests</dt><dd class="num">' + x.requests + '</dd>' : '')
             + '<dt>guard</dt><dd>' + esc(s.guard || loc('dash.askDefault', 'ask (預設)')) + '</dd></dl>'
@@ -3522,6 +3521,12 @@
             + (S.serve ? loc('dash.rereadEvery3s', ' · 每 3 秒重讀一次，最後一次 {t}', { t: clockSec(polledAt) }) : '');
     }
     // ---- the detail panel ----------------------------------------------
+    // A stage's dollars priced from a family fallback carry the same 估 the session row does.
+    function estMark(g) { return g && g.estimated ? ' ' + loc('det.estShort', '估') : ''; }
+    function totalSuffix(s) {
+        return (s.unpriced && s.unpriced.length ? ' (' + s.unpriced.length + ' unpriced)' : '')
+            + (s.estimated && s.estimated.length ? ' (' + s.estimated.length + ' ' + loc('det.estShort', '估') + ')' : '');
+    }
     // One session's detail is a script of its own, `station/detail/<id>.js`,
     // loaded the first time the session is opened: `lib/station.js` keeps it
     // out of `station-data.js`, which every `/fankeel` prompt rewrites.
@@ -4254,7 +4259,7 @@
             .slice().sort(function (a, b) { return a.from - b.from; });
         var segs = st.map(function (w) {
             return { stage: w.stage, from: w.from, to: isNum(w.to) ? w.to : null, burn: isNum(w.burn) ? w.burn : null,
-                usd: isNum(w.usd) ? w.usd : null, waited: isNum(w.waited) ? w.waited : null, rows: [] };
+                usd: isNum(w.usd) ? w.usd : null, estimated: w.estimated === true, waited: isNum(w.waited) ? w.waited : null, rows: [] };
         });
         var loose = { stage: null, from: null, to: null, burn: null, usd: null, waited: null, rows: [] };
         (events || []).forEach(function (e, i) {
@@ -4349,7 +4354,7 @@
                 var w = share(g);
                 if (!w) return '';
                 return '<button type="button" class="rs" data-rs="rs-' + k + '" style="flex:0 0 ' + w.toFixed(1) + '%;background:' + color(g) + '" title="'
-                    + esc(name(g)) + ' · ' + took(span(g)) + ' · context ' + tokens(g.burn) + (g.usd === null ? '' : ' · ' + usd(g.usd)) + '">'
+                    + esc(name(g)) + ' · ' + took(span(g)) + ' · context ' + tokens(g.burn) + (g.usd === null ? '' : ' · ' + usd(g.usd) + estMark(g)) + '">'
                     + (w > 9 ? text(g) : '') + (label === loc('disp.time2', '時間') ? waits(g) : '') + '</button>';
             }).join('') + '</div><span class="val">' + value + '</span>';
         };
@@ -4357,7 +4362,7 @@
             + track(loc('disp.time2', '時間'), took(total), function (g) { return span(g) === null ? 0 : span(g) / total * 100; }, function (g) {
                 return esc(name(g)) + '<span class="v">' + took(span(g)) + '</span>';
             })
-            + (usdAll ? track(loc('disp.cost3', '花費'), usd(usdAll, true), function (g) { return (g.usd || 0) / usdAll * 100; }, function (g) { return usd(g.usd, true); }) : '')
+            + (usdAll ? track(loc('disp.cost3', '花費'), usd(usdAll, true), function (g) { return (g.usd || 0) / usdAll * 100; }, function (g) { return usd(g.usd, true) + estMark(g); }) : '')
             + '<div class="key">' + (waitAll ? '<span><i class="sw hatch"></i>' + loc('disp.waitingOnYouGatePct', '等你回答 gate（{t}，佔 {p}%）', { t: took(waitAll), p: Math.round(waitAll / total * 100) }) + '</span>' : '') + '<span>' + loc('disp.clickJumpToStage', '點一段就跳到那個階段') + '</span></div></div>' : '')
             + (s ? '<p class="tally">' + loc('disp.segmentsSumB', '各段 context 相加 <b>{n}</b>', { n: comma(burnSum) }) + ' <span class="' + (burnSum === (s.burn || 0) ? 'eq">' + loc('disp.equalsSign', '＝') : 'ne">' + loc('disp.notEqualsSign', '≠'))
                 + '</span> ' + loc('disp.sessionsBurnN', '這個 session 的 burn {n}', { n: comma(s.burn || 0) }) + '</p>' : '') + '</div>';
@@ -4373,7 +4378,7 @@
             var keys = g.rows.filter(function (r) { return KEY[r.e.kind]; });
             return '<li><button type="button" class="rs sg" data-rs="rs-' + k + '"><i class="bar" style="background:' + color(g) + '"></i><b>' + esc(name(g)) + '</b>'
                 + '<span class="d">' + took(span(g)) + '</span><span class="m">' + (isNum(g.from) ? stamp(g.from).slice(11, 16) + ' · ' : '')
-                + 'context ' + tokens(g.burn) + (g.usd === null ? '' : ' · ' + usd(g.usd, true)) + ' · ' + loc('disp.nRows2', '{n} 列', { n: g.rows.length }) + '</span></button>'
+                + 'context ' + tokens(g.burn) + (g.usd === null ? '' : ' · ' + usd(g.usd, true) + estMark(g)) + ' · ' + loc('disp.nRows2', '{n} 列', { n: g.rows.length }) + '</span></button>'
                 + (keys.length ? '<ol>' + keys.map(function (r) {
                     return '<li><button type="button" class="rs" data-rs="rv-' + r.i + '"><span class="tm">' + (isFinite(r.e.t) ? stamp(r.e.t).slice(11, 16) : '—')
                         + '</span>' + rpTag(r.e.kind) + '<span class="kt">' + esc(keyText(r.e)) + '</span></button></li>';
@@ -4393,7 +4398,7 @@
                 + '<div class="ct"><span><b>' + n('gate') + '</b> gate</span><span><b>' + n('out') + '</b> ' + loc('disp.dispatchedOut', '派出') + '</span><span><b>' + n('commit') + '</b> commit</span>'
                 + '<span>' + loc('disp.nRows2', '{n} 列', { n: g.rows.length }) + '</span></div></div>'
                 + '<dl class="m"><dt>' + loc('disp.timeSpent2', '耗時') + '</dt><dd class="big">' + took(span(g)) + '</dd><dt>context</dt><dd>' + tokens(g.burn) + '</dd>'
-                + (g.usd === null ? '' : '<dt>' + loc('disp.cost3', '花費') + '</dt><dd>' + usd(g.usd) + '</dd>')
+                + (g.usd === null ? '' : '<dt>' + loc('disp.cost3', '花費') + '</dt><dd>' + usd(g.usd) + estMark(g) + '</dd>')
                 + (g.waited ? '<dt>' + loc('disp.waitedGate', '等 gate') + '</dt><dd>' + took(g.waited) + '</dd>' : '') + '</dl></summary>'
                 + '<ol class="rp">' + g.rows.map(function (r) { return replayRow(x, r.e, r.i, off); }).join('') + '</ol></details>';
         }).join('');

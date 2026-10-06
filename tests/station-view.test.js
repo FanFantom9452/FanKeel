@@ -1691,3 +1691,14 @@ test('the 30-day spend readout names the day quota.week was calibrated, only for
     } finally { S.profiles = undefined; }
 });
 
+test('a stage priced from a family fallback is marked 估 in the timeline label and tooltip; one that is not, is not', () => {
+    const stages = (est) => [{ stage: 'build', usd: 1.5, estimated: est }, { stage: 'verify', usd: 0.5, estimated: false }];
+    const svgOf = (est) => V.timelineSvg(V.stageCost(V.timelineModel(DETAIL_X), { stages: stages(est) }), {});
+    const marked = svgOf(true), plain = svgOf(false);
+    assert.match(marked, /<title>build [^<]*\$1\.50 估<\/title>/);
+    assert.doesNotMatch(plain, /估/);
+    assert.doesNotMatch(marked, /verify [^<]*估/, 'only the estimated stage is marked');
+    const m = V.stageCost(V.timelineModel(DETAIL_X), { stages: stages(true) });
+    assert.deepEqual(m.segs.map((g) => g.estimated), [true, false], 'stageCost copies estimated beside usd');
+});
+

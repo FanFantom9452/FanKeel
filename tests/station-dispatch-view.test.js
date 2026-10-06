@@ -430,10 +430,20 @@ test('a row priced by family fallback is marked 估 in its cost cell, and the ta
     assert.doesNotMatch(html, />unpriced</);
 });
 
-// drawDetail lives inside the page's closure and needs a DOM, so the total's
-// "(n est.)" suffix is held where the dispatch blocks above are: in the
-// source that draws it.
-test('the session total in the detail panel carries an (n est.) suffix read from s.estimated', () => {
-    const src = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
-    assert.ok(src.includes("' (' + s.estimated.length + ' est.)'"));
+test('the session total suffix counts estimated models as n 估, after any unpriced count; empty adds nothing', () => {
+    assert.equal(V.totalSuffix({ estimated: ['x'] }), ' (1 估)');
+    assert.equal(V.totalSuffix({ unpriced: ['u'], estimated: ['x', 'y'] }), ' (1 unpriced) (2 估)');
+    assert.equal(V.totalSuffix({ estimated: [] }), '');
+    assert.equal(V.totalSuffix({}), '');
+});
+
+test('the dispatch stage views mark an estimated stage 估 and leave a plain one alone', () => {
+    const rowOf = (est) => Object.assign({}, ROW, { stages: ROW.stages.map((w, i) => Object.assign({}, w, { estimated: i === 1 && est })) });
+    const marked = V.replayHtml(x, {}, rowOf(true)), plain = V.replayHtml(x, {}, rowOf(false));
+    assert.match(marked, /<dt>花費<\/dt><dd>\$1\.25 估<\/dd>/);
+    assert.match(marked, /title="build · [^"]*\$1\.25 估"/);
+    assert.match(marked, /\$1\.25 估 · \d+ 列/);
+    assert.doesNotMatch(plain, /估/);
+    assert.equal(V.segmentsOf([], rowOf(true).stages)[1].estimated, true);
+    assert.equal(V.segmentsOf([], rowOf(false).stages)[1].estimated, false);
 });
