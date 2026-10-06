@@ -56,12 +56,13 @@ function sessionsTable(rows) {
 }
 
 function bucketsTable(list) {
-    const header = ['range', 'sessions', 'total', 'median', 'input%', 'output%', 'cacheRead%', 'cacheWrite%'];
+    const header = ['range', 'sessions', 'total', 'median', 'input%', 'output%', 'cacheRead%', 'cacheWrite%', 'estimated'];
     const lines = [header.join('\t')];
     for (const b of list) {
         lines.push([
             b.range, b.count, usd(b.total), usd(b.median),
             pct(b.share.input), pct(b.share.output), pct(b.share.cacheRead), pct(b.share.cacheWrite),
+            b.estimated.length ? b.estimated.join(',') : '—',
         ].join('\t'));
     }
     return lines.join('\n');

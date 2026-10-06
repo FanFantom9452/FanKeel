@@ -226,3 +226,41 @@ test('a model priced by family fallback is billed and named in estimated, not un
     const cells = lines.find((l) => l.startsWith(ID9)).split('\t');
     assert.equal(cells[head.indexOf('estimated')], 'claude-fable-5-5');
 });
+
+function sessionWith(r, id, requests, model) {
+    registry.writeSession(r, id, base({
+        spend: { build: { requests, models: {
+            [model]: { input: 1_000_000, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 },
+        } } },
+    }));
+}
+
+test('buckets reports the estimated ids of a family-priced session, and [] for an exact-priced bucket', () => {
+    const r = root();
+    sessionWith(r, ID1, 1, 'claude-fable-5-5');
+    sessionWith(r, ID2, 1, 'claude-sonnet-5');
+    sessionWith(r, ID3, 100, 'claude-sonnet-5');
+    const bs = spend.buckets(spend.sessionsOf([r]).rows);
+    const withData = bs.filter((b) => b.count > 0);
+    assert.equal(withData.length, 2, 'the fixture lands in two ranges');
+    const est = withData.find((b) => b.estimated.length);
+    const exact = withData.find((b) => !b.estimated.length);
+    assert.deepEqual(est.estimated, ['claude-fable-5-5']);
+    assert.deepEqual(exact.estimated, []);
+    assert.deepEqual(bs.find((b) => b.count === 0).estimated, []);
+});
+
+test('the bucket table marks a family-priced bucket in its estimated column and leaves an exact one at a dash', () => {
+    const r = root();
+    sessionWith(r, ID1, 1, 'claude-fable-5-5');
+    sessionWith(r, ID2, 100, 'claude-sonnet-5');
+    const lines = main(['--root', r]).text.split('\n');
+    const at = lines.findIndex((l) => l === 'buckets by request count');
+    const head = lines[at + 1].split('\t');
+    assert.ok(head.includes('estimated'));
+    const rows = lines.slice(at + 2).map((l) => l.split('\t')).filter((c) => c[1] !== '0');
+    assert.equal(rows.length, 2);
+    const col = head.indexOf('estimated');
+    const cells = rows.map((c) => c[col]).sort();
+    assert.deepEqual(cells, ['claude-fable-5-5', '—']);
+});
