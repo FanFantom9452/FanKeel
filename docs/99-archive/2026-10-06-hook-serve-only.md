@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # `/fankeel` hook 只確保 station 在跑 Implementation Plan

@@ -1,7 +1,7 @@
 ---
 label: build
 title: review 檢查寫進 build skill
-description: 五輪 verify 退回 build 時，controller 在 prompt 加的 review 檢查沒寫進 skills/fankeel-build/SKILL.md，下個 task 不沿用
+description: 五輪 verify 退回 build 時，controller 在 prompt 加的 review 檢查沒寫進 build skill，下個 task 不沿用
 state: ready
 link: skills/fankeel-build/SKILL.md
 ---

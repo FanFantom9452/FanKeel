@@ -64,7 +64,7 @@ The line ends one of six ways:
 
 The probe and the wait for the record aim at four seconds of the hook
 starting (`SERVE_BUDGET_MS` in `hooks/inject.js`), one short of the five
-`.claude-plugin/plugin.json:31` gives this hook (`gate.js` has 605). The page
+`.claude-plugin/plugin.json:31` gives this hook. The page
 write is no longer inside that budget while a station serves: writes measured
 a median of 3.0–3.3s and a max of 4.1s, and with the write the warm run's
 wall-clock max was 5460ms, over the 5 s timeout
