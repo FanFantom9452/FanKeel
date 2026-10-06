@@ -3883,14 +3883,14 @@
         return ids.join(', ');
     }
     function numCells(t, unpriced, time, estimated) {
-        var tip = [];
+        var tip = [], mark = estimated ? ' ' + loc('det.estShort', '估') : '';
         if (unpriced) tip.push(loc('det.priceListDoesNotKnow', '價目表不認得：{u}', { u: esc(unpriced) }));
         if (estimated) tip.push(loc('det.priceEstimated', '價目表沒有，照同家族最新一列估價：{u}', { u: esc(estimated) }));
         return '<td class="r">' + (time || dur(t.s)) + '</td><td class="r">' + comma(t.k) + 'k</td><td class="r"'
             + (tip.length ? ' title="' + tip.join('; ') + '"' : '') + '>'
-            + (unpriced && !t.c ? 'unpriced' : cents(t.c)) + (estimated ? ' ' + loc('det.estShort', '估') : '') + '</td>'
-            + '<td class="r">' + tokens(t.ti || 0) + '</td><td class="r">$' + (t.ci || 0).toFixed(2) + '</td>'
-            + '<td class="r">' + tokens(t.to || 0) + '</td><td class="r">$' + (t.co || 0).toFixed(2) + '</td>'
+            + (unpriced && !t.c ? 'unpriced' : cents(t.c)) + mark + '</td>'
+            + '<td class="r">' + tokens(t.ti || 0) + '</td><td class="r">$' + (t.ci || 0).toFixed(2) + mark + '</td>'
+            + '<td class="r">' + tokens(t.to || 0) + '</td><td class="r">$' + (t.co || 0).toFixed(2) + mark + '</td>'
             + '<td class="r">' + tokens(t.peak || 0) + '</td><td class="r">' + comma(t.requests || 0) + '</td>';
     }
     // `isFinite(null)` is true, and a dispatch that has not come back carries a
@@ -4195,8 +4195,9 @@
             peak: tokens, requests: comma };
         var f = FMT[m] ? FMT[m] : (m = 'c', FMT.c);
         var nums = function (t, est) {
-            return cents(t.c) + estMark({ estimated: est }) + ' · ' + comma(t.k) + 'k token · ' + dur(t.s) + ' · input ' + tokens(t.ti || 0) + ' $' + (t.ci || 0).toFixed(2)
-                + ' · output ' + tokens(t.to || 0) + ' $' + (t.co || 0).toFixed(2);
+            var mark = estMark({ estimated: est });
+            return cents(t.c) + mark + ' · ' + comma(t.k) + 'k token · ' + dur(t.s) + ' · input ' + tokens(t.ti || 0) + ' $' + (t.ci || 0).toFixed(2) + mark
+                + ' · output ' + tokens(t.to || 0) + ' $' + (t.co || 0).toFixed(2) + mark;
         };
         var fams = {};
         var rows = order.map(function (k) {

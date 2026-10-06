@@ -321,6 +321,52 @@ test('the dispatch chart marks only the cost metric, not tokens', () => {
     assert.doesNotMatch(chart.replace(/title="[^"]*"/g, ''), /估/);
 });
 
+// The input and output USD cells sit beside the cost cell and carry the same mark.
+const withUsd = (x) => Object.assign({}, x, { rows: x.rows.map((r) => Object.assign({}, r, { cost: { input: 1.11, output: 2.22 }, split: { input: 100, output: 50 } })) });
+const DXU = withUsd(DX), DXUP = withUsd(DXP);
+test('dispatchHtml marks the input and output USD cells of an estimated agent row', () => {
+    const row = cell(V.dispatchHtml(DXU), 'class="lab">Review task 1');
+    assert.match(row, /<td class="r">\$1\.11 估<\/td>/);
+    assert.match(row, /<td class="r">\$2\.22 估<\/td>/);
+    assert.doesNotMatch(cell(V.dispatchHtml(DXU), 'class="lab">check'), /估/);
+});
+
+test('dispatchHtml marks the input and output USD cells of the footer', () => {
+    const foot = V.dispatchHtml(DXU).match(/<tfoot>[\s\S]*<\/tfoot>/)[0];
+    assert.match(foot, /<td class="r">\$3\.33 估<\/td>/);
+    assert.match(foot, /<td class="r">\$6\.66 估<\/td>/);
+});
+
+test('dispatchHtml marks the input and output USD cells of a dispatch band', () => {
+    const band = V.dispatchHtml(DXU).match(/<tr class="band">(?:(?!<\/tr>)[\s\S])*Review task 1(?:(?!<\/tr>)[\s\S])*<\/tr>/)[0];
+    assert.match(band, /<td class="r">\$1\.11 估<\/td>/);
+    assert.match(band, /<td class="r">\$2\.22 估<\/td>/);
+});
+
+test('dispatchHtml marks the input and output USD cells of a phase row holding an estimated agent, and not a plain phase', () => {
+    const html = V.dispatchHtml(DXU);
+    const ph = (n) => html.match(new RegExp('<tr class="phr"><td><div class="phl"><button[^>]*>' + n + '[\\s\\S]*?</tr>'))[0];
+    assert.match(ph('Read'), /<td class="r">\$1\.11 估<\/td>/);
+    assert.match(ph('Read'), /<td class="r">\$2\.22 估<\/td>/);
+    assert.doesNotMatch(ph('Check'), /估/);
+});
+
+test('dispatchHtml with nothing estimated leaves the input and output USD cells bare', () => {
+    none(V.dispatchHtml(DXUP));
+    assert.match(V.dispatchHtml(DXUP), /<td class="r">\$1\.11<\/td>/);
+});
+
+test('the dispatch chart tooltip marks the input and output USD figures, not just the cost', () => {
+    assert.match(chartOf(DXU), /class="dxr" role="listitem" title="Review task 1[^"]*input \d+ \$1\.11 估 · output \d+ \$2\.22 估/);
+    assert.match(chartOf(DXU), /class="dxsum" title="[^"]*input \d+ \$3\.33 估 · output \d+ \$6\.66 估/);
+    assert.doesNotMatch(chartOf(DXU), /<i class="done"[^>]*title="check\n[^"]*估/);
+});
+
+test('the dispatch chart tooltip with nothing estimated carries no mark on input or output', () => {
+    assert.match(chartOf(DXUP), /input \d+ \$1\.11 · output \d+ \$2\.22/);
+    none(chartOf(DXUP));
+});
+
 const RP = { burn: 3500, stages: [
     { stage: 'survey', from: 0, to: 900, burn: 1000, usd: 0.5, waited: null, estimated: false },
     { stage: 'build', from: 900, to: 70000, burn: 2500, usd: 1.25, waited: 15000, estimated: true },
