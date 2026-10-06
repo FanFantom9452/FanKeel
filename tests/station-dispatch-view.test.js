@@ -429,3 +429,11 @@ test('a row priced by family fallback is marked 估 in its cost cell, and the ta
     assert.match(html, /照同家族最新一列估價的：claude-fable-5-5/);
     assert.doesNotMatch(html, />unpriced</);
 });
+
+// drawDetail lives inside the page's closure and needs a DOM, so the total's
+// "(n est.)" suffix is held where the dispatch blocks above are: in the
+// source that draws it.
+test('the session total in the detail panel carries an (n est.) suffix read from s.estimated', () => {
+    const src = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+    assert.ok(src.includes("' (' + s.estimated.length + ' est.)'"));
+});

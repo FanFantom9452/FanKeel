@@ -39,7 +39,8 @@ function main(argv) {
     const r = calibrate(dir, text);
     if (r.error) return { text: 'quota.js: ' + r.error + '; quota.week stays as it was', code: 1 };
     const line = 'quota.week ' + r.week + ' (calibrated ' + r.day + ': $' + r.usd.toFixed(2) + ' over ' + r.points + ' points'
-        + (r.unpriced.length ? '; unpriced: ' + r.unpriced.join(', ') : '') + ')';
+        + (r.unpriced.length ? '; unpriced: ' + r.unpriced.join(', ') : '')
+        + (r.estimated.length ? '; estimated: ' + r.estimated.join(', ') : '') + ')';
     const warn = r.skipped ? '\nquota.js: warning: ' + r.skipped + ' transcript file(s) or directories could not be read; their spend is missing, so quota.week is too low' : '';
     if (values['dry-run']) return { text: line + warn, code: 0 };
     const file = profile.machineFile(dir);

@@ -157,3 +157,31 @@ test('quota.js restores the machine file when the second write fails, and remove
         profile.write = realWrite;
     }
 });
+
+// An id the table lacks is priced from its family and counted in the dollars
+// the calibration turns into quota.week; both calibrate and the script line
+// must say so, as they already do for unpriced.
+function estimatedAccount() {
+    const dir = mkTmp('fankeel-quota-est-');
+    const file = path.join(dir, 'projects', 'p', 's1.jsonl');
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, JSON.stringify({
+        type: 'assistant', isSidechain: false, requestId: 'r1', timestamp: new Date(200e3).toISOString(),
+        message: { model: 'claude-opus-9', usage: { input_tokens: 0, output_tokens: 1e6 } },
+    }) + '\n');
+    fs.writeFileSync(path.join(dir, 'tokenbar-usage.jsonl'), [line(100, 10, 9000), line(400, 40, 9000)].join('\n') + '\n');
+    return dir;
+}
+
+test('calibrate returns the family-priced ids it counted as estimated', () => {
+    const dir = estimatedAccount();
+    const r = quota.calibrate(dir, fs.readFileSync(path.join(dir, 'tokenbar-usage.jsonl'), 'utf8'));
+    assert.deepEqual(r.estimated, ['claude-opus-9']);
+    assert.deepEqual(r.unpriced, []);
+});
+
+test('quota.js names the estimated ids in its calibration line', () => {
+    const out = main(['--claude-dir', estimatedAccount(), '--dry-run']);
+    assert.equal(out.code, 0, out.text);
+    assert.match(out.text, /\(calibrated [^)]*estimated: claude-opus-9\)/);
+});

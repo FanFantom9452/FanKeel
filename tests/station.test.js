@@ -750,4 +750,30 @@ test('gather reads each registry root\'s own map.md, and each named project\'s u
     assert.equal(two.docs.length, 0, 'r2 has no map.md anywhere, so no card for it');
 });
 
+test('a stage carries estimated when its own or its agents\' model is priced from a family', () => {
+    const m = chartFixture('77777777-eeee-4eee-8eee-eeeeeeeeeeee', {
+        task: 'estimated stages', stage: 'build', route: ['survey', 'build', 'verify'],
+        clock: { survey: [0, 1000], build: [1000, 2000], verify: [2000, 3000] },
+        burn: { survey: [0, 50000], build: [50000, 90000], verify: [90000, 140000] },
+        spend: {
+            survey: { requests: 1, models: M('claude-opus-9', 500000) },
+            build: { requests: 1, models: M('claude-opus-5', 500000), subagents: { requests: 1, models: M('claude-opus-9', 500000) } },
+            verify: { requests: 1, models: M('claude-opus-5', 500000) },
+        },
+    });
+    const stages = m.registries[0].sessions[0].stages;
+    assert.deepEqual(stages.map((s) => s.estimated), [true, true, false]);
+});
+
+test('a session carries the ids priced from a family as estimated', () => {
+    const m = chartFixture('88888888-ffff-4fff-8fff-ffffffffffff', {
+        task: 'estimated session', stage: 'build', route: ['build'],
+        usage: { requests: 1, models: M('claude-opus-9', 500000) },
+    });
+    assert.deepEqual(m.registries[0].sessions[0].cost.estimated, ['claude-opus-9']);
+    const ctx = { window: {} };
+    vm.runInNewContext(station.serialize(m, {}), ctx);
+    assert.deepEqual(JSON.parse(JSON.stringify(ctx.window.STATION.sessions[0].estimated)), ['claude-opus-9']);
+});
+
 

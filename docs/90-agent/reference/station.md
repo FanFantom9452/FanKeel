@@ -375,7 +375,10 @@ dispatch calls in one response) or `workflow` on it, and one row per agent: its
 state, its wall-clock from its own transcript, its tokens, and its dollars
 priced from its own per-kind counts — `workflow_agent.tokens` is one undivided
 number and cannot be priced — with the price table's `verified` date beside
-them and `unpriced` where the table does not know the model. Two more columns
+them and `unpriced` where the table does not know the model. A model id
+missing from the price table is priced from its family's newest row and marked
+`estimated` (shown as 估 / est.); the calibration in `scripts/quota.js` lists
+such ids too. Two more columns
 follow the dollars: the largest context a single one of its requests carried,
 and how many requests it made — every band and the footer sum the request
 column the way they sum every other, while the peak column takes the largest
