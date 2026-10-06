@@ -14,8 +14,9 @@ and, for how it is found and when it is written,
 for the curve, the controls and why a deadline replaced a depth,
 `docs/99-archive/2026-09-06-station-reads-back-design.md`.
 
-To open it: `/fankeel` does. The prompt writes the page, asks whether a
-station is serving, starts one when none is, and names the served page on the
+To open it: `/fankeel` does. The prompt asks whether a
+station is serving, starts one when none is, writes the page only when none
+serves, and names the served page on the
 block's `station:` line — the next section has how. `.fankeel/index.html` in
 the registry you are in is the static copy beside you,
 `node scripts/station.js --open` opens the newest as a file, and
@@ -59,7 +60,7 @@ The line ends one of six ways:
 | `station: <url> (serve is busy loading; the page fills in when it finishes).` | busy; `<url>` is the record's |
 | `station: serve is starting; the browser opens when it binds.` | it was started, and had not written its record when the hook had to answer |
 | `<n> stale, <n> live — <file>. Edit the profile with station.js serve --open.` | `FANKEEL_SERVE=off` is set, or the start itself failed: the hook wrote the page, and the counts are that write's |
-| `(<error>).` or `(<error>); <url> still shows the last one written.` | on those same two paths, the page write threw — a full disk, or a file sitting where `<configDir>/fankeel` belongs. The line then opens `station: the page was not written` instead of the counts, carries the error's first line (at most 65 characters), and names the url only when a station was running or started |
+| `(<error>).` | on those same two paths, the page write threw — a full disk, or a file sitting where `<configDir>/fankeel` belongs. The line then opens `station: the page was not written` instead of the counts and carries the error's first line (at most 65 characters). No station serves on these paths, so there is no url, and the `; <url> still shows the last one written.` ending is not reached from the hook |
 
 The probe and the wait for the record aim at four seconds of the hook
 starting (`SERVE_BUDGET_MS` in `hooks/inject.js`), one short of the five
@@ -99,7 +100,7 @@ the set:
 | `~/.claude/sessions/<pid>.json`, its `cwd`, walked up | every registry a running session is in, whether or not it has started a task |
 | the directory the command runs in, walked up — at `SessionEnd`, the ending session's own launch directory | the registry in front of you, including the one whose session is leaving the running set at that moment |
 | the registry the caller is writing into — a `task.js` verb's own | the one registry a verb can be sure of, whether or not anything else still points at it: `hideBadge` clears the lead before the page is written |
-| the first run, when there is no `roots.json` at all | one walk of every drive, under a five-second budget, on the default form only — `serve`, `--forget` and `--json` return before the check, so a first `serve` or `--json` on a machine sees only what the leads and running sessions point at. What stops it repeating is the file itself: `main()` runs the walk only when `roots.json` is absent, and every `write()` creates it. It runs from `scripts/station.js` only and never from `write()` — `hooks/inject.js` calls `write()` on every `/fankeel` prompt, and a walk this long inside a hook would stall the prompt that triggered it |
+| the first run, when there is no `roots.json` at all | one walk of every drive, under a five-second budget, on the default form only — `serve`, `--forget` and `--json` return before the check, so a first `serve` or `--json` on a machine sees only what the leads and running sessions point at. What stops it repeating is the file itself: `main()` runs the walk only when `roots.json` is absent, and every `write()` creates it. It runs from `scripts/station.js` only and never from `write()` — `hooks/inject.js` calls `write()` only when no station serves (`FANKEEL_SERVE=off` or a failed start), and a walk this long inside a hook would stall the prompt that triggered it |
 | `--scan <dir>` | a one-off walk of `<dir>`, eight levels deep, skipping `node_modules`, `.git` and dot-directories, under a sixty-second budget — a directory somebody named gets longer than one nobody asked about. What it finds is remembered, so it is run once per drive |
 | `--root <dir>` | anything else |
 | `--forget <dir>` | a remembered root a person tells the page to stop tracking |
@@ -520,8 +521,8 @@ loads a detail file. `lib/detail.js` reads the detail and caches it at
 of the transcript, its agents' files and its workflow run files: a session is
 read again only when one of them changed, and one that has ended is read once.
 A write spends at most a second and a half reading — the `/fankeel` prompt
-writes the page inside a five-second hook, and a changed session costs about
-half a second — and a session reached after that reuses its cache as it
+writes the page only when no station serves, otherwise the server reads per
+request, and a changed session costs about half a second — and a session reached after that reuses its cache as it
 stands. `node scripts/station.js` reads every changed session however long it
 takes, and `serve` answers the same file at `GET /station/detail/<id>.js`.
 Both the page and the cache sit where git does not look — the registry copy's
@@ -896,8 +897,8 @@ anything. Neither does the re-read, which also needs `window.STATION.serve`: dat
 ## When it is written, and where
 
 `lib/station.js`'s `write` runs at four moments: the `/fankeel` prompt
-(`hooks/inject.js`, which then names the page and its `stale` count in the
-block it injects), every `task.js` verb that moves an entry — `start`,
+(`hooks/inject.js`, which writes only when no station serves; when one serves,
+it names the served url and no counts), every `task.js` verb that moves an entry — `start`,
 `stage`, `task`, `route`, `guard`, `adopt`, `down` and `clear`, not `note` or
 `next` — every session end (`hooks/leave.js`), and `node scripts/station.js`.
 Each writes `~/.claude/fankeel/index.html`, the copy that is always newest,
