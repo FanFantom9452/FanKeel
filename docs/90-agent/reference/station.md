@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-27
+last_verified: 2026-10-06
 source_of_truth: lib/station.js, scripts/station.js, hooks/leave.js, lib/usage.js, lib/registry.js, lib/prices.js, lib/clear.js, lib/profile.js, lib/serve.js, hooks/inject.js, lib/detail.js, lib/replay.js, assets/station/station.js, lib/docsearch.js
 ---
 
@@ -29,50 +29,61 @@ rather than copied into the skill.
 
 ## The `station:` line
 
-The `/fankeel` prompt asks `ensureServe` first (given what the write's threshold
-leaves of the budget), then writes the page, and reads the record once more
-(`boundSince` in `hooks/inject.js`) if the station was still binding. The
-`station:` line of the block it injects says what it found. The asking
-is `ensureServe` in `lib/serve.js`: `<configDir>/fankeel/serve.json`, then a
-`GET` of that record's `station/health`, which has to answer inside a
-second, name the record's pid, and carry a fingerprint matching what is on
-disk right now — the mtime and size of `lib/station.js` and
-`assets/station/station.js`, and `package.json`'s `version`, all computed
-once when `scripts/station.js` started serving. A station answering with
-the old fingerprint counts the same as one not answering at all:
-`ensureServe` stops its pid and asks for a fresh one, rather than handing
-back a page a newer checkout no longer matches. The line ends one of five
-ways:
+The `/fankeel` prompt asks `ensureServe` and, while a station serves, writes
+no page: the station renders every request from its own `gather()`, so the
+page under `<configDir>/fankeel/` is only the `file://` fallback, written when
+nothing serves it. The asking is `ensureServe` in `lib/serve.js`:
+`<configDir>/fankeel/serve.json`, then a `GET` of that record's
+`station/health`, which has to answer inside a second. `health()` in the same
+file sorts what comes back three ways.
+
+- **answered** — the response names the record's pid. Its body then has to
+  carry a fingerprint matching what is on disk right now — the mtime and size
+  of `lib/station.js` and `assets/station/station.js`, and `package.json`'s
+  `version`, all computed once when `scripts/station.js` started serving. A
+  station answering with the old fingerprint is stopped and a fresh one
+  started, rather than handing back a page a newer checkout no longer matches.
+- **busy** — the record's pid is running and the request timed out. A station
+  inside a synchronous `gather()` cannot answer, though the OS still accepts
+  its connections, so nothing is started, stopped or deleted, and the next
+  `/fankeel` asks again.
+- **dead** — anything else: no running pid, a refused connection, a status
+  other than 200, a body that is not JSON, or another pid. One is started.
+
+The line ends one of six ways:
 
 | the line ends | when |
 |---|---|
-| `<url> (serve was running).` | a recorded station answered; nothing was started and no browser opened |
-| `<url> (serve started, browser opened).` | none answered, so the hook started `station.js serve --open` detached, and its `serve.json` appeared in time |
-| `serve is starting; until then <file>.` | it was started, and had not written its record when the hook had to answer |
-| `<file>. Edit the profile with station.js serve --open.` | `FANKEEL_SERVE=off` is set, or the start itself failed |
-| `(<error>).` or `(<error>); <url> still shows the last one written.` | the page write threw — a full disk, or a file sitting where `<configDir>/fankeel` belongs. The line then opens `station: the page was not written` instead of the counts, carries the error's first line (at most 65 characters), and names the url only when a station was running or started |
+| `station: <url> (serve was running).` | answered; nothing was started and no browser opened |
+| `station: <url> (serve started, browser opened).` | none answered, so the hook started `station.js serve --open` detached, and its `serve.json` appeared in time |
+| `station: <url> (serve is busy loading; the page fills in when it finishes).` | busy; `<url>` is the record's |
+| `station: serve is starting; the browser opens when it binds.` | it was started, and had not written its record when the hook had to answer |
+| `<n> stale, <n> live — <file>. Edit the profile with station.js serve --open.` | `FANKEEL_SERVE=off` is set, or the start itself failed: the hook wrote the page, and the counts are that write's |
+| `(<error>).` or `(<error>); <url> still shows the last one written.` | on those same two paths, the page write threw — a full disk, or a file sitting where `<configDir>/fankeel` belongs. The line then opens `station: the page was not written` instead of the counts, carries the error's first line (at most 65 characters), and names the url only when a station was running or started |
 
-All of it — the page write, the probe and the wait for the record — aims at
-four seconds of the hook starting (`SERVE_BUDGET_MS` in `hooks/inject.js`), one
-short of the five `.claude-plugin/plugin.json:31` gives this hook
-(`gate.js` has 605). That is a budget, not a bound: after the change writes measured
-a median of 3.0–3.3s and a max of 4.1s, and the warm run's wall-clock max was
-5460ms, over the 5 s timeout
-(`docs/90-agent/reports/2026-10-05-inject-cold-start.md`). A probe too slow to see a
-station that is running starts a second `serve`, and that is safe: a second
-`serve` joins the first (under *When it is written, and where*), opens the
-browser on its url and exits — the one case where a running station gets a
-second tab. No other prompt asks: an ordinary prompt, and every prompt of a
-session with a task, never loads `lib/serve.js` at all.
+The probe and the wait for the record aim at four seconds of the hook
+starting (`SERVE_BUDGET_MS` in `hooks/inject.js`), one short of the five
+`.claude-plugin/plugin.json:31` gives this hook (`gate.js` has 605). The page
+write is no longer inside that budget while a station serves: writes measured
+a median of 3.0–3.3s and a max of 4.1s, and with the write the warm run's
+wall-clock max was 5460ms, over the 5 s timeout
+(`docs/90-agent/reports/2026-10-05-inject-cold-start.md`). A busy station is
+not given a second: `serve()` in `scripts/station.js` reads the same three
+answers and joins a busy station as it joins one that answered (under *When
+it is written, and where*). The one misreading is a recycled pid with some
+other program hanging on the recorded port; it costs one prompt that starts
+nothing, and the next asks again. No other prompt asks: an ordinary prompt,
+and every prompt of a session with a task, never loads `lib/serve.js` at all.
 
 The station it starts is a process of its own — detached, with no console and
 no window — so it outlives the hook and the Claude Code session that ran it,
 and runs until stopped, like any `serve`, unless given `--idle`.
 `tests/serve.test.js` starts one from a process that exits at once, under a
-second process that exits too, and finds it answering afterwards.
-`FANKEEL_SERVE=off` in the environment turns the probe and the start off and
-leaves the file on the line; `tests/inject.test.js` runs the hook with it, since
-a test must not open a browser.
+second process that exits too, and finds it answering afterwards; it also
+blocks a station's own event loop in a process of its own and finds it read
+as busy. `FANKEEL_SERVE=off` in the environment turns the probe and the start
+off, and the hook writes the page and names the file; `tests/inject.test.js`
+runs the hook with it, since a test must not open a browser.
 
 ## Where the registries come from
 
@@ -935,27 +946,31 @@ it moved — an ended session held since after it ended without so much as a
 stat, any other once `keyOf()` in `lib/detail.js`, the size and mtime of the
 transcript and of every agent and run file, says what it said when the detail
 was read — so a re-read of an unchanged session reads neither the transcript
-nor the cache file, and computes nothing. A request spends at most the second
-and a half on transcripts that the `/fankeel` write does (`DETAIL_BUDGET_MS` in
-`lib/station.js`) and answers past it from what is cached; the detail route
-reads the one session it was asked for rather than every session on the
-machine. Because the detail reading spends that whole budget, one `/fankeel`
-write takes about the budget itself — 1954–2664ms measured on 2026-10-05 — and
-its threshold is 2800ms (`WRITE_THRESHOLD_MS` in `lib/station.js`), chosen when writes measured 1954–2664ms. Later runs measured write medians of 3.0–3.3s and a max of 4107ms, above it, so it no longer leaves slack (`docs/90-agent/reports/2026-10-05-inject-cold-start.md`).
+nor the cache file, and computes nothing. A request spends at most a second
+and a half on transcripts (`DETAIL_BUDGET_MS` in `lib/station.js`) and
+answers past it from what is cached; the detail route reads the one session it
+was asked for rather than every session on the machine. A `write()` —
+`hooks/leave.js` at session end, `task.js` on every verb, and the `/fankeel`
+prompt only when no station serves — spends the same budget and takes about
+that long: 1954–2664ms measured on 2026-10-05, medians of 3.0–3.3s and a max
+of 4107ms later (`docs/90-agent/reports/2026-10-05-inject-cold-start.md`).
+That is why the `/fankeel` hook stopped writing while a station serves.
 
 A second `serve` against the same config directory joins the first rather
 than starting one: `<configDir>/fankeel/serve.json` holds the pid, port, url
 and start time of the server already running, and a call that finds this
 file reads it before binding anything of its own. The record is taken at its
-word only after a probe: `GET <url>station/health` on the recorded port,
-half a second at most, has to answer `200` with a JSON `pid` equal to the one
-the record names. A refused connection, a timeout, any other status, a body
-that is not JSON or a pid that differs all count as **dead** — a recycled pid
-or a port some other program now holds fails the probe where the old
+word only after `health()` in `lib/serve.js`: `GET <url>station/health` on the
+recorded port, half a second at most. An answer naming the record's pid is
+joined, and so is a timeout while that pid is running — **busy**, a station
+inside a synchronous `gather()` — whose record is left as it is. A refused
+connection, any other status, a body that is not JSON, a pid that differs or
+a pid that is not running all count as **dead** — a recycled pid or a port
+some other program now holds fails the check where the old
 `live.running(pid)` check passed it — and a dead record is deleted before this
 call binds anything, so nothing later reads it as a station.
 
-The doubt goes to the dead side here, the opposite of the
+The doubt goes to the dead side here — except a timeout from a running pid, which is busy — the opposite of the
 doubt-goes-to-the-loud-side rule an unreadable config directory gets, and the
 difference is what the doubt is about. There it is another session's claim on
 a file, and guessing wrong takes work away from someone. Here it is a port
@@ -970,7 +985,7 @@ would otherwise lose is its own `cwd`, `--root` and `--scan`. It writes them
 into `roots.json` through `rememberRoots` before it returns, and `discover`
 reads that file on every render, so the running server sees the second
 registry on the next load. A fresh start does the same with its own leads.
-`--detach` runs the same probe before it spawns: a live station is joined and
+`--detach` runs the same `health()` check before it spawns: a live or busy station is joined and
 its url printed, and a dead record is deleted first so the poll that waits
 for the child cannot read the old url as the new one.
 
