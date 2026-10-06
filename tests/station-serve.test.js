@@ -349,6 +349,31 @@ test('serve() does not join a live pid whose port is not a station', async () =>
     }
 });
 
+// A station inside a synchronous gather() takes the connection and does not
+// answer. serve() joins it as it joins one that answered, and leaves its
+// record alone, rather than deleting it and binding a second port.
+test('serve() joins a station whose pid runs but whose health times out, and keeps its record', async () => {
+    const f = fixture();
+    const { serve } = require('../scripts/station.js');
+    const silent = http.createServer(() => { /* takes the request and never answers */ });
+    await new Promise((resolve) => silent.listen(0, '127.0.0.1', resolve));
+    const port = silent.address().port;
+    const url = 'http://127.0.0.1:' + port + '/';
+    const record = path.join(f.cfg, 'fankeel', 'serve.json');
+    fs.writeFileSync(record, JSON.stringify({ pid: process.pid, port, url, started: 'busy' }) + '\n');
+    let s = null;
+    try {
+        s = await serve({ configDir: f.cfg, port: 0, idleMs: 0, open: false });
+        assert.equal(s.joined, true, 'a busy station got a second one beside it');
+        assert.equal(s.url, url);
+        assert.equal(JSON.parse(fs.readFileSync(record, 'utf8')).started, 'busy', 'the busy station\'s record was removed or rewritten');
+    } finally {
+        if (s) s.close();
+        silent.closeAllConnections();
+        await new Promise((r) => silent.close(r));
+    }
+});
+
 test('a joining serve() writes its own leads into roots.json', async () => {
     const f = fixture();
     const { serve } = require('../scripts/station.js');

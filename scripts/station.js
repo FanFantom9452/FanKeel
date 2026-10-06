@@ -38,7 +38,7 @@ const { parseArgsOrExit } = require('../lib/cli.js');
 const station = require('../lib/station.js');
 const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
-const { serveRecordPath, readServeRecord, probe, diskFingerprint } = require('../lib/serve.js');
+const { serveRecordPath, readServeRecord, probe, health, diskFingerprint } = require('../lib/serve.js');
 const { readBody } = require('../lib/body.js');
 const { clearEntry } = require('../lib/clear.js');
 const profile = require('../lib/profile.js');
@@ -293,12 +293,12 @@ async function serve(opts) {
         } catch (e) { /* housekeeping; the join or bind above already succeeded */ }
     };
     // A second `serve` against the same configDir joins the first rather than
-    // binding a second port: read what the first one recorded, and take it at
-    // its word only once its own health route answers for the pid it names —
-    // a bare pid check passes a recycled pid, or a crashed station whose port
-    // some other process now holds. `probe` above is that check.
+    // binding a second port, and a busy one counts as there: `health` answers
+    // `answered` for a station naming the recorded pid, `busy` for that pid
+    // running while its health route times out mid-`gather()`, and `dead`
+    // otherwise — a recycled pid, or a port some other process now holds.
     const existing = readServeRecord(configDir);
-    if (existing && await probe(existing)) {
+    if (existing && (await health(existing, 500)).state !== 'dead') {
         if (opts.open) openInBrowser(existing.url);
         rememberLeads();
         return { url: existing.url, close() {}, joined: true };
@@ -763,7 +763,7 @@ function main() {
         // spawn one" rather than a false positive the poll would otherwise
         // hand back before it ever ran.
         const record = readServeRecord(configDir);
-        (record ? probe(record) : Promise.resolve(false)).then((alive) => {
+        (record ? health(record, 500).then((h) => h.state !== 'dead') : Promise.resolve(false)).then((alive) => {
             if (alive) {
                 process.stdout.write('fankeel station — ' + record.url + '\n');
                 if (args.open) openInBrowser(record.url);

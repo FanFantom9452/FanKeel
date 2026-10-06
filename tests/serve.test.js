@@ -256,21 +256,88 @@ test('a start whose record has not appeared by the deadline is starting, and a d
     assert.deepEqual(fresh, { state: 'started', url: 'http://127.0.0.1:7817/' });
 });
 
-test('a station that does not answer gets its second by default, and the start after it keeps to the deadline', async () => {
+// A station inside a synchronous gather() takes the connection and does not
+// answer. Its pid is running and the request times out: busy, not dead, so
+// nothing is started and its record stays.
+test('a station whose pid runs but whose health times out is busy: nothing is started and serve.json stays', async () => {
     const cfg = tmp('fankeel-serve-');
-    const silent = await listener({ hang: true });
-    writeRecord(cfg, { pid: process.pid, port: 0, url: silent.url, started: 'x' });
+    const slow = await listener({ pid: process.pid, fingerprint: serve.diskFingerprint(PLUGIN), delayMs: 3000 });
+    writeRecord(cfg, { pid: process.pid, port: 0, url: slow.url, started: 'busy' });
     const calls = [];
     try {
         const began = Date.now();
         const got = await serve.ensureServe({ configDir: cfg, plugin: PLUGIN, start: (o) => { calls.push(o); }, until: began + 1600 });
         const took = Date.now() - began;
-        assert.equal(calls.length, 1, 'a silent station counts as none, so one is started');
+        assert.deepEqual(got, { state: 'busy', url: slow.url });
+        assert.equal(calls.length, 0, 'a busy station got a second one started beside it');
         assert.ok(took >= 900, 'the probe waited its second: ' + took + ' ms');
         assert.ok(took < 2600, 'and the whole call kept to its deadline: ' + took + ' ms');
-        assert.deepEqual(got, { state: 'starting', url: null });
+        assert.equal(serve.readServeRecord(cfg).started, 'busy', 'the busy station\'s record was removed or replaced');
     } finally {
-        await silent.close();
+        await slow.close();
+    }
+});
+
+// The unverified half of the design, measured: a station whose own event loop
+// is blocked, in a process of its own, still has its connection accepted by
+// the OS, so the probe times out rather than being refused.
+test('a station whose own event loop is blocked is busy, not dead, and nothing is started', async () => {
+    const cfg = tmp('fankeel-serve-');
+    const portFile = path.join(cfg, 'port');
+    const script = "const http = require('node:http'); const fs = require('node:fs');"
+        + "const s = http.createServer((q, r) => { r.end('{}'); });"
+        + "s.listen(0, '127.0.0.1', () => { fs.writeFileSync(process.argv[1], String(s.address().port));"
+        + " const until = Date.now() + 4000; while (Date.now() < until) { /* a synchronous gather */ } process.exit(0); });";
+    const child = spawn(process.execPath, ['-e', script, portFile], { stdio: 'ignore' });
+    try {
+        let port = null;
+        for (let i = 0; i < 100 && !port; i++) {
+            try { port = Number(fs.readFileSync(portFile, 'utf8')) || null; } catch (e) { /* not yet */ }
+            if (!port) await sleep(50);
+        }
+        assert.ok(port, 'the child never bound');
+        const url = 'http://127.0.0.1:' + port + '/';
+        writeRecord(cfg, { pid: child.pid, port, url, started: 'blocked' });
+        const calls = [];
+        const got = await serve.ensureServe({ configDir: cfg, plugin: PLUGIN, start: (o) => { calls.push(o); }, until: Date.now() + 1600 });
+        assert.deepEqual(got, { state: 'busy', url });
+        assert.equal(calls.length, 0, 'a blocked station was read as dead and a second one started');
+        assert.equal(serve.readServeRecord(cfg).pid, child.pid);
+    } finally {
+        try { child.kill(); } catch (e) { /* already gone */ }
+    }
+});
+
+// The control for the two above: a running pid whose recorded port refuses
+// at once is dead, not busy — a timeout is what busy means, not any failure.
+test('a running pid whose recorded port refuses is dead, so one is started', async () => {
+    const cfg = tmp('fankeel-serve-');
+    const gone = await listener({ pid: process.pid });
+    const url = gone.url;
+    await gone.close();
+    writeRecord(cfg, { pid: process.pid, port: 0, url, started: 'refused' });
+    const calls = [];
+    const got = await serve.ensureServe({ configDir: cfg, plugin: PLUGIN, start: (o) => { calls.push(o); }, until: Date.now() + 300 });
+    assert.equal(calls.length, 1, 'a refused port was read as busy');
+    assert.deepEqual(got, { state: 'starting', url: null });
+});
+
+test('health answers answered, busy or dead, and never rejects', async () => {
+    const ok = await listener({ pid: process.pid });
+    const other = await listener({ pid: process.pid + 1 });
+    const hang = await listener({ hang: true });
+    try {
+        const a = await serve.health({ pid: process.pid, url: ok.url }, 500);
+        assert.equal(a.state, 'answered');
+        assert.equal(a.body.pid, process.pid);
+        assert.deepEqual(await serve.health({ pid: process.pid, url: hang.url }, 300), { state: 'busy' });
+        assert.deepEqual(await serve.health({ pid: GONE_PID, url: hang.url }, 300), { state: 'dead' });
+        assert.deepEqual(await serve.health({ pid: process.pid, url: other.url }, 300), { state: 'dead' });
+        assert.deepEqual(await serve.health(null, 300), { state: 'dead' });
+    } finally {
+        await ok.close();
+        await other.close();
+        await hang.close();
     }
 });
 
