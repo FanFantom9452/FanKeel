@@ -28,6 +28,7 @@ const ENTRIES = [
     claude('msg_2', [text('讀完了。')], 4),
     user('Base directory for this skill: skills/x', 5, { isMeta: true }),
     user('<task-notification>\n<tool-use-id>tu_9</tool-use-id>\n</task-notification>', 6),
+    user('background job finished', 6, { origin: { kind: 'task-notification' } }),
     { type: 'attachment', timestamp: T(7), attachment: { type: 'hook_additional_context', content: ['hook text'] } },
     queued('prompt', '順便看一下測試', 7),
     queued('prompt', '<agent-message from="a1">\n[Subagent hand-back] report', 8),
@@ -64,7 +65,7 @@ test('turnsOf keeps what the user typed and what Claude wrote, and marks the com
     assert.equal(c.trigger, 'manual');
     assert.equal(c.preTokens, 349064);
     assert.equal(turns[0].at, T(1));
-    assert.deepEqual(skipped, { meta: 2, tool: 1, notification: 2, agent: 1, local: 1, synthetic: 1, sidechain: 1 });
+    assert.deepEqual(skipped, { meta: 2, tool: 1, notification: 3, agent: 1, local: 1, synthetic: 1, sidechain: 1 });
 });
 
 test('one reply split across lines is one turn, and a slash command keeps its arguments', () => {
@@ -84,7 +85,7 @@ test('markdownOf puts every turn under its own heading, the compaction between t
     const md = conversation.markdownOf(conversation.turnsOf(ENTRIES), { session: 'abc', file: 'x.jsonl' });
     assert.match(md, /^# Conversation · session abc$/m);
     assert.match(md, /^compactions: 1 · user turns: 4 · Claude turns: 3$/m);
-    assert.match(md, /^left out: meta 2, tool 1, notification 2, agent 1, local 1, synthetic 1, sidechain 1$/m);
+    assert.match(md, /^left out: meta 2, tool 1, notification 3, agent 1, local 1, synthetic 1, sidechain 1$/m);
     const order = [
         '## User · 2026-10-01 10:01 UTC',
         '## Claude · 2026-10-01 10:02 UTC',
@@ -120,6 +121,7 @@ test('the CLI finds the session under projects, writes either format, and refuse
     assert.equal(md.status, 0, md.stderr);
     assert.match(md.stdout, /^# Conversation · session s1$/m);
     assert.match(md.stdout, /^## Compaction 1 · /m);
+    assert.match(md.stdout, /^left out: .*unparsed 0$/m);
 
     const out = path.join(cfg, 'out.jsonl');
     const jl = run(['--session', 's1', '--config-dir', cfg, '--format', 'jsonl', '--out', out]);
@@ -151,4 +153,15 @@ test('the CLI says so when a transcript it found cannot be read', () => {
     assert.equal(run.status, 1, run.stderr);
     assert.match(run.stderr, /conversation: cannot read /);
     assert.equal(run.stdout, '');
+});
+
+test('the CLI counts transcript lines that do not parse on the left out line', () => {
+    const cfg = tmp('fankeel-conversation-');
+    const dir = path.join(cfg, 'projects', 'F--proj');
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 's3.jsonl'), [JSON.stringify(user('hello', 1)), 'not json', JSON.stringify(claude('m1', [text('hi')], 2)), '{"type":"user"', ''].join('\n'));
+    const cli = path.join(__dirname, '..', 'scripts', 'conversation.js');
+    const run = spawnSync(process.execPath, [cli, '--session', 's3', '--config-dir', cfg], { encoding: 'utf8' });
+    assert.equal(run.status, 0, run.stderr);
+    assert.match(run.stdout, /^left out: .*unparsed 2$/m);
 });
