@@ -774,7 +774,7 @@ docs: draft how a Pane and the station page share one gate
 
 **Dispatch:** implementer, sonnet
 
-1. 讀 `F:/ymlab/fankeel/.fankeel/build/task-20261007T103757/plan-answer.md`，取 `answers` 裡這三題的答案：`station-15：每個專案的 Chartroom 白板檔放哪？`、`station-15：Chartroom 的寫入不帶 nonce，station 怎麼處理？`、`station-15：Chartroom 建好的頁面從哪裡來？`。檔案不存在、某題沒有答案、或答案不是下面對照表裡的任何一個 label，就停手回報，不寫任何檔。
+1. 讀 `F:/ymlab/fankeel/.fankeel/build/task-20261007T103757/plan-answer.md`，取 `answers` 裡這三題的答案：`監控站掛 Chartroom 白板：每個專案的白板檔放哪？`、`監控站掛 Chartroom 白板：Chartroom 的寫入不帶 nonce，station 怎麼處理？`、`監控站掛 Chartroom 白板：Chartroom 建好的頁面從哪裡來？`。檔案不存在、某題沒有答案、或答案不是下面對照表裡的任何一個 label，就停手回報，不寫任何檔。
 
 2. 建立 `docs/03-decisions/2026-10-07-station-chartroom.md`，三個裁定段各照第 1 步的答案從對照表取一句（label 以 `(Recommended)` 結尾的也照樣比對）：
 
