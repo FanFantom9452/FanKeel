@@ -2,10 +2,10 @@
 status: design-intent
 ---
 
-# TODO 全表盤點（10-07）：並行測試、當場寫 TODO、前後用量比對、Pane gate 草稿、compact 文件、白板裁定、拆 junction Implementation Plan
+# TODO 全表盤點（10-07）：並行測試、當場寫 TODO、前後用量比對、Pane gate 草稿、compact 文件、白板方向、拆 junction Implementation Plan
 
 **Goal:** 做完 10-07 盤點放行的四條（test-5、todo-5、spend-4、gate-7），並照使用者在 survey gate 的三項裁定處理 compact-2（改判準、改文件）、station-13（派 agent 拆 junction）與 station-15（先定三件事）。
-**Architecture:** Task 1 修掉全套測試裡唯一一處固定的暫存路徑（`tests/sensitive.test.js` 兩個測試共用 `%TEMP%` 下的同名檔與目錄），其餘並行紅是量牆鐘時間的測試，由 Task 2 在 README 寫明一次只跑一份全套；Task 2 同時補上 compact-mod 計畫留下的 README 目錄列，Task 3 改指南裡那句「Claude 沒有 context 回收機制」並寫進 10-07 的 `manual` 判準。Task 4 新增 `lib/compare.js` 與 `scripts/usage-compare.js`，以 `summarise()`／`agentsOf()` 按 session 算兩段日期。Task 5 在每個受控階段的 controller 規則加一句「TODO 當場寫入」，細節寫進 `skills/fankeel/SKILL.md`。Task 6 寫 Pane 與 station gate 面板分工的 design 草稿。Task 7 把 station-15 的三項裁定（本計畫 gate 的第二到第四題）寫成決策頁。Task 8 拆兩個 junction。TODO 條目由 land 依 registry 的 `todo` 欄關，本計畫不關。
+**Architecture:** Task 1 修掉全套測試裡唯一一處固定的暫存路徑（`tests/sensitive.test.js` 兩個測試共用 `%TEMP%` 下的同名檔與目錄），其餘並行紅是量牆鐘時間的測試，由 Task 2 在 README 寫明一次只跑一份全套；Task 2 同時補上 compact-mod 計畫留下的 README 目錄列，Task 3 改指南裡那句「Claude 沒有 context 回收機制」並寫進 10-07 的 `manual` 判準。Task 4 新增 `lib/compare.js` 與 `scripts/usage-compare.js`，以 `summarise()`／`agentsOf()` 按 session 算兩段日期。Task 5 在每個受控階段的 controller 規則加一句「TODO 當場寫入」，細節寫進 `skills/fankeel/SKILL.md`。Task 6 寫 Pane 與 station gate 面板分工的 design 草稿。Task 7 把使用者在本計畫 gate 上給 station-15 的方向（白板在 AI 要給人看時才出現、目標取代 Mermaid、整個併進 fankeel）與寫入規則的裁定寫成決策頁。Task 8 拆兩個 junction。TODO 條目由 land 依 registry 的 `todo` 欄關，本計畫不關。
 **Tech Stack:** Node v24.9.0（CommonJS、`'use strict'`、只用內建模組——`package.json` 沒有 dependencies），`node --test`，git 2.44.0.windows.1，fankeel 0.99.0，Windows 11 的 `cmd` 與 Git Bash。
 **Spec:** [survey.md](../../../.fankeel/build/task-20261007T103757/survey.md)
 
@@ -35,7 +35,7 @@ status: design-intent
 - controller 區塊只剩 163 字元，新規則 138 字元，加上換行與項目符號後約剩 20 — Task 5 — 實作者跑 `2,400-character cap` 那個測試看診斷行；超過就停手回報，不刪別的規則、不調上限。
 - 子代理跑 `todo.js` 曾被 auto mode 的 classifier 擋（2026-10-04，`todo.js done`，不是每次都擋）；`todo.js new` 會不會被擋只有實跑才知道 — Task 5 — 規則寫明被擋時 controller 不代跑，改給使用者一行 `!` 指令；第一次真的在受控階段要記 TODO 時就是實測，land 只在那次落成 commit 後才關 todo-5，否則留 ready 並寫下原因。
 - 使用者要的是「派 brain 查重複」；但 `hooks/guard.js:150-157` 把受控階段裡的每個 `fankeel-brain` 派遣都記成該站的 stage agent（`noteDispatch`），第二個 brain 會被當成站 agent — Task 5 — Ruling：查重複改派 `fankeel:fankeel-reader`（唯讀、跑得了 `todo.js list` 與 grep），寫入派 `fankeel:fankeel-implementer`。
-- Task 7 的決策頁內容取決於本計畫 gate 第二到第四題的答案 — Task 7 — 實作者先讀 plan gate 的答案檔的 `answers`，每題照對照表選句子；檔案不存在或某題的答案不在對照表裡，就停手回報，不自己猜。
+- 使用者在 plan gate 沒有從白板三題的選項裡挑，而是改了方向：白板在 AI 要給人看時才出現、目標取代 Mermaid、參考 answer-me-with-html、整個併進 fankeel；寫入規則交給 brain 看第一題後定 — Task 7 — 決策頁照錄使用者原話與 brain 的寫入裁定（併進來就照監控站的 nonce，不開例外）；板檔放哪與「併進來還維持沒有 dependency」留給下一份 design，不在這頁假裝定了。
 - `rmdir` 拆 junction 在 git 以外、無法還原；誤加 `/s` 會刪掉 junction 指向的 `~/.claude/projects` — Task 8 — 先用 `dir /AL` 確認兩個路徑都是 `<JUNCTION>` 且目標是 `C:\Users\Owner\.claude\projects`，前後各數一次目標目錄的項目數必須相等；指令只用 `rmdir` 不加 `/s`。使用者在 survey gate 選了派 agent 做。
 - land 會照 registry 的 `todo` 欄印出七行 `todo.js done`，其中 brief-3 本輪沒有做、gate-7 只寫了 design 草稿（完成條件是 design 核准後另開 task 實作）— land — land 只執行 test-5、spend-4、compact-2、station-13 四行，todo-5 照上一條的條件，brief-3 與 gate-7 留著；station-15 不在 registry 的 `todo` 欄，由 Task 7 的決策頁推進，條目本身留給下一次 design。
 
@@ -743,7 +743,7 @@ gate 照舊：gate.station 有設就等 station 頁，沒設或逾時就由 AskU
    在 `docs/README.md` 加兩列：
 
 ```md
-| TODO 全表盤點（10-07）的 plan：全套測試並行的固定暫存路徑、受控階段當場寫 TODO、前後兩段用量比對腳本、Pane gate design 草稿、compact 文件改判準、監控站白板三項裁定、拆 shots-v3 junction | [plans/2026-10-07-todo-patrol-seven.md](90-agent/plans/2026-10-07-todo-patrol-seven.md) — *design-intent, 繁體中文* |
+| TODO 全表盤點（10-07）的 plan：全套測試並行的固定暫存路徑、受控階段當場寫 TODO、前後兩段用量比對腳本、Pane gate design 草稿、compact 文件改判準、監控站白板的方向、拆 shots-v3 junction | [plans/2026-10-07-todo-patrol-seven.md](90-agent/plans/2026-10-07-todo-patrol-seven.md) — *design-intent, 繁體中文* |
 | Pane 上的 gate 介面（10-07）的 design 草稿：pending 與 answer 檔只有一份，station 頁面板與 Pane 都是它的畫面，mod 沒載入照舊 | [plans/2026-10-07-gate-pane-design.md](90-agent/plans/2026-10-07-gate-pane-design.md) — *design-intent, 繁體中文* |
 ```
 
@@ -759,12 +759,11 @@ docs: draft how a Pane and the station page share one gate
 - index rows for the draft and the 10-07 patrol plan — docs/README.md
 ```
 
-## Task 7: 監控站掛 Chartroom 白板的三項裁定寫成決策頁（station-15）
+## Task 7: 監控站白板的方向與寫入裁定寫成決策頁（station-15）
 
 **Files:**
 - Modify: `docs/03-decisions/2026-10-07-station-chartroom.md` — 新檔，`status: decision`
 - Modify: `docs/README.md` — 決策區補一列
-- Read: `F:/ymlab/fankeel/.fankeel/build/task-20261007T103757/plan-answer.md` — 本計畫 gate 的答案（在主工作樹，不在 worktree 裡）
 - Read: `scripts/station.js` — POST 一律驗表單欄位 `nonce`（383-389 行）
 - Read: `docs/99-archive/2026-10-07-mod-reopen.md` — 索引裡新列要插在連到它的那一列之後
 
@@ -774,9 +773,7 @@ docs: draft how a Pane and the station page share one gate
 
 **Dispatch:** implementer, sonnet
 
-1. 讀 `F:/ymlab/fankeel/.fankeel/build/task-20261007T103757/plan-answer.md`，取 `answers` 裡這三題的答案：`監控站掛 Chartroom 白板：每個專案的白板檔放哪？`、`監控站掛 Chartroom 白板：Chartroom 的寫入不帶 nonce，station 怎麼處理？`、`監控站掛 Chartroom 白板：Chartroom 建好的頁面從哪裡來？`。檔案不存在、某題沒有答案、或答案不是下面對照表裡的任何一個 label，就停手回報，不寫任何檔。
-
-2. 建立 `docs/03-decisions/2026-10-07-station-chartroom.md`，三個裁定段各照第 1 步的答案從對照表取一句（label 以 `(Recommended)` 結尾的也照樣比對）：
+1. 建立 `docs/03-decisions/2026-10-07-station-chartroom.md`，內容照抄（使用者原話一字不改）：
 
 ```md
 ---
@@ -784,66 +781,57 @@ status: decision
 last_verified: 2026-10-07
 ---
 
-# 監控站掛 Chartroom 白板（10-07）：三項裁定
+# 監控站掛 Chartroom 白板（10-07）：方向與寫入規則
 
-一句話：監控站要在 `/chartroom/<專案>/` 打開該專案的 Chartroom 架構白板，動手前先定三件事——白板檔放哪、寫入怎麼驗、頁面從哪來。這頁記使用者在 2026-10-07 TODO 全表盤點 plan gate 上的裁定；實作另開 design。
+一句話：白板不是每個專案常駐的一塊板，而是 AI 有東西要給人看時才拿出來的溝通面，目標是取代 Mermaid 在 AI 與人溝通上的位置；Chartroom 整個併進 fankeel、裝好就能用；白板的寫入照監控站既有的 nonce 規則，不開例外。這頁記使用者在 2026-10-07 TODO 全表盤點 plan gate 上的回答；怎麼做另開 design。
 
 ## 背景
 
-2026-10-06 的 spike（session 6247abb4）照 `scripts/station.js` 的寫法，用 CommonJS 的 require(esm) 載入 Chartroom 的 createHandler，剝掉 /chartroom 前綴再轉交，九項全過，監控站原本的路由與 404 不受影響。Chartroom 的 createHandler 一次只管一塊板（第一個參數就是 .board 檔的路徑），關閉時要呼叫它的 close()；它的 POST 擋 Origin 對不上 Host 的請求、只收 application/json，所有請求先過 loopback Host 清單，沒有 nonce。監控站的每個 POST 都要表單欄位 nonce 等於這次 serve 印出的值（`scripts/station.js`）。Chartroom 的頁面要先 npm run build 出 dist/app，fankeel 沒有 build 步驟，也沒有任何 dependency。
+2026-10-06 的 spike（session 6247abb4）照 `scripts/station.js` 的寫法，用 CommonJS 的 require(esm) 載入 Chartroom 的 createHandler，剝掉 /chartroom 前綴再轉交，九項全過，監控站原本的路由與 404 不受影響。Chartroom 是只用 React 與 Vite 的白板，createHandler 一次只管一塊板（第一個參數就是 .board 檔的路徑）；它的 POST 擋 Origin 對不上 Host 的請求、只收 application/json，所有請求先過 loopback Host 清單，沒有 nonce。監控站的每個 POST 都要表單欄位 nonce 等於這次 serve 印出的值（`scripts/station.js`）。fankeel 沒有 build 步驟，也沒有任何 dependency。plan gate 原本問的是三件事：每個專案的白板檔放哪、寫入不帶 nonce 怎麼處理、建好的頁面從哪來。
 
-## 1. 每個專案的白板檔放哪
+## 1. 白板什麼時候出現
 
-<對照表 1 的句子>
+使用者的回答：「白板功能是必要才拿出來 或是 AI 要呈現甚麼之類的才拿出來 你去參考這個 https://github.com/QingYunA/answer-me-with-html.git 我希望白板專攻 取代 MERMAID 就是取代他和人類溝通的地位 同時做出一個讓人類更好閱讀 根據大架構更好繪製圖的設計」
+
+所以「每個專案的白板檔放哪」這個問法不成立：白板跟著一次要給人看的內容出現，不是每個專案常駐一塊。它要取代的是 AI 現在用 Mermaid 畫給人看的那些圖，所以要比 Mermaid 好讀，也要能照大架構來畫。板檔放哪、什麼時候清掉，由下一份 design 參考 answer-me-with-html 的做法再定。
 
 ## 2. 寫入怎麼驗
 
-<對照表 2 的句子>
+使用者的回答：「你先看前一題目答案後決定」。
+
+裁定：白板的寫入走監控站既有的規則——每個 POST 帶這次 serve 印出的 nonce——不為白板開例外。理由是第 3 項：Chartroom 併進 fankeel 之後，前端就是 fankeel 自己的程式碼，可以改成照監控站的方式送 nonce；原本考慮開例外，是因為前端在別的 repo、改不動。程式碼都在同一處，就沒有理由維持兩套防跨來源寫入的規矩。
 
 ## 3. 頁面從哪來
 
-<對照表 3 的句子>
+使用者的回答：「我希望整個合併到 FANKEEL 這邊可以直接用」。
+
+裁定：Chartroom 的伺服器與頁面併進 fankeel，裝好 fankeel 就能用，不另裝 Chartroom、不引用它的安裝路徑。fankeel 現在沒有 build 步驟、沒有 dependency，Chartroom 卻用 React 與 Vite，所以「怎麼併進來還維持這兩點」——例如提交建好的頁面，或改寫成不需要 build 的版本——是下一份 design 第一個要回答的問題。
 
 ## 接下來
 
-另開 design，照這三項裁定寫：station 依專案各開一個 createHandler、關閉時呼叫 close()；路由掛在 /chartroom/<專案>/ 底下；算完成是監控站上點某個專案能打開它的白板，AI 改檔時畫面發光、出變更卡。
+另開 design：先讀 answer-me-with-html 怎麼在需要時產生給人看的頁面，再定白板何時出現、板檔放哪、怎麼併進 fankeel。算完成的樣子：AI 要把架構或流程畫給人看時，用白板而不是 Mermaid，人在監控站裡打開就能看、能拖。
 ```
 
-   對照表 1（白板檔放哪）：
-   - `<專案>/.fankeel/chartroom.board (Recommended)` → `白板檔放在專案自己的 .fankeel/chartroom.board：跟著專案走、可以進 git，AI 用 chartroom apply 改的與監控站打開的是同一個檔。`
-   - `~/.claude/fankeel/boards/<專案>.board` → `白板檔放在本機的 ~/.claude/fankeel/boards/<專案>.board：只屬於這台機器、不進專案的 repo，AI 用 chartroom apply 時要給這個路徑。`
-   - `由 profile 的 chartroom.board 指定` → `白板檔的路徑由每個專案的 profile 設定 chartroom.board 指定；沒設就不開白板，監控站上那個專案不顯示白板入口。`
-
-   對照表 2（寫入怎麼驗）：
-   - `/chartroom/ 例外，靠 Chartroom 自己的檢查 (Recommended)` → `/chartroom/ 底下的 POST 是 nonce 規則唯一的例外，明寫在 scripts/station.js 驗 nonce 的地方：Chartroom 已擋 Origin 對不上 Host、非 loopback Host 與非 JSON 的寫入，nonce 要防的也正是別的來源送來的 POST，兩者防的是同一件事。`
-   - `統一要 nonce` → `/chartroom/ 底下的 POST 也要帶 nonce，改成放在 header；這要改 Chartroom 的前端，由 Chartroom 那邊先開 task。`
-   - `監控站只開唯讀的板` → `監控站裡的白板只讀：/chartroom/ 底下的 POST 一律回 403，人在監控站裡看與拖但不存檔，AI 只用 chartroom apply 改檔。`
-
-   對照表 3（頁面從哪來）：
-   - `引用 Chartroom 的安裝路徑 (Recommended)` → `監控站引用 Chartroom 的安裝路徑：profile 填 Chartroom 的目錄，station 從那裡載入 createHandler 與 dist/app；fankeel 不加 build 步驟、不加 dependency，沒填就不開白板。`
-   - `把 dist/app 複製進 fankeel` → `把 Chartroom 建好的 dist/app 與 server 端檔案複製進 fankeel：不用另裝 Chartroom，但每次 Chartroom 改版都要重新複製，複製的版本記在檔頭。`
-   - `當成 npm 依賴` → `Chartroom 當成 fankeel 的 npm 依賴；這會打破 fankeel 沒有 dependencies 的現況，要另寫一份決策說明為什麼值得。`
-
-3. 在 `docs/README.md` 裡，這一列（連到 99-archive 裡 mod-reopen 計畫的那一列）之後：
+2. 在 `docs/README.md` 裡，這一列（連到 99-archive 裡 mod-reopen 計畫的那一列）之後：
 
 ```text
 | 那份設計的四個 task：拆 await-title、新決策與條目、取代舊決策與索引、使用者關閉 title-3 | `docs/99-archive/2026-10-07-mod-reopen.md` — *built, 繁體中文* |
 ```
 
-   在 `docs/README.md` 加一列（方括號換成三項裁定各自的短語，例如「白板放 .fankeel/chartroom.board、/chartroom/ 免 nonce、引用 Chartroom 安裝路徑」）：
+   在 `docs/README.md` 加一列：
 
 ```md
-| 監控站掛 Chartroom 白板（10-07）定了什麼：[三項裁定的短語]；實作另開 design | [decisions/2026-10-07-station-chartroom.md](03-decisions/2026-10-07-station-chartroom.md) — *繁體中文* |
+| 監控站掛 Chartroom 白板（10-07）定了什麼：白板在 AI 要給人看時才出現、目標取代 Mermaid；整個併進 fankeel 直接可用；寫入照監控站的 nonce，不開例外；怎麼做另開 design | [decisions/2026-10-07-station-chartroom.md](03-decisions/2026-10-07-station-chartroom.md) — *繁體中文* |
 ```
 
-4. 跑 `node scripts/docs-check.js`，exit 0；`grep -n "<對照表\|\[三項" docs/03-decisions/2026-10-07-station-chartroom.md docs/README.md` 沒有輸出。
+3. 跑 `node scripts/docs-check.js`，exit 0。
 
-5. 不 commit。回報兩個路徑：`docs/03-decisions/2026-10-07-station-chartroom.md`、`docs/README.md`；訊息：
+4. 不 commit。回報兩個路徑：`docs/03-decisions/2026-10-07-station-chartroom.md`、`docs/README.md`；訊息：
 
 ```text
-docs: record where a project's Chartroom board lives, how its writes are checked and where its page comes from
+docs: record the whiteboard's direction — shown when needed, in place of Mermaid, merged into fankeel
 
-- the user's three rulings at the 10-07 patrol plan gate, before a design mounts Chartroom in the station — docs/03-decisions/2026-10-07-station-chartroom.md
+- the user's answers at the 10-07 patrol plan gate, and the ruling that a merged board posts with the station's nonce — docs/03-decisions/2026-10-07-station-chartroom.md
 - index row — docs/README.md
 ```
 
@@ -908,7 +896,7 @@ chore: remove the two shots-v3 junctions, their target untouched
 | gate-7 — 讀條目與 `docs/03-decisions/2026-10-07-mod-reopen.md` 第五項：只是先寫 design 決定 Pane 與 station gate 面板分工 | Task 6 |
 | compact-2 — 讀條目與 `~/.claude/debug/3e1acf49-…txt`：互動式下 `$.session.compact` 從 turn.complete 呼叫成功 | Task 2（README 目錄列）、Task 3（指南改判準） |
 | station-13 — 讀 `.fankeel/build/task-20261003T114747/shots-v3/cfg/projects`：`dir /AL` 仍列為 JUNCTION | Task 8 |
-| station-15 — 讀條目：Chartroom 掛進監控站的 spike 已通過，三件事（板位置、nonce、dist 放哪）未裁定 | Task 7（裁定在本計畫 gate 第二到第四題） |
+| station-15 — 讀條目：Chartroom 掛進監控站的 spike 已通過，三件事（板位置、nonce、dist 放哪）未裁定 | Task 7（使用者在 plan gate 改了方向，決策頁照錄並定寫入規則） |
 | brief-3 — 讀條目：第一步是在互動式 session 按 Enable 後派三個以上子代理看 transcript 第 1 行 | struck — survey 說本輪沒有問題空位，留到下次盤點 |
 | Blocked 十條的 restamp（audit-1、brief-2、build-1、docs-1、model-4、quota-1、security-1、spend-2、stage-agents-5、stage-agents-8） | struck — 十條的 `stamp` 都是 2026-10-05，才兩天；60 天的規則要到 12-04 才會問，改成 10-07 什麼都不改變，卻因 `FILE_CAP` 3 要多派四個 task |
 | Watch 的八條 | struck — survey 判定 keep，等各自的事件，本計畫不動 |
