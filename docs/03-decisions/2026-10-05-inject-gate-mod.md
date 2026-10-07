@@ -1,6 +1,7 @@
 ---
 status: decision
 last_verified: 2026-10-05
+superseded_by: `docs/03-decisions/2026-10-07-mod-reopen.md`
 ---
 
 # 函式 hook、注入節流與 gate 報告面板（10-05）：決策紀錄
