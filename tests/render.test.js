@@ -3,7 +3,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
 const path = require('node:path');
 
 const { INPUT_WARN_TOKENS, render, renderInit, SCRIPTS, PLUGIN_ROOT, PLUGIN_MARK, planDir } = require('../lib/render.js');
@@ -461,7 +460,8 @@ test('the whole injection stays a readable size with everything populated', () =
   // every `task.js` call needs. Measured without it, this test was sizing every
   // block except the one that is actually biggest, and the margin it reported
   // was 64 characters wider than the real one.
-  const heavy = path.join(os.tmpdir(), 'fankeel-render-cap.jsonl');
+  // Per run: a fixed name was one every concurrent copy of the suite shared, and one unlinked it under another.
+  const heavy = path.join(tmp('render-cap-'), 'cap.jsonl');
   fs.writeFileSync(heavy,
     '{"type":"assistant","message":{"usage":{"input_tokens":2,'
     + '"cache_creation_input_tokens":2362,"cache_read_input_tokens":650000,"output_tokens":275}}}\n'

@@ -257,7 +257,7 @@ npm test
 claude plugin validate .
 ```
 
-Run one `npm test` at a time. A few tests time real work against budgets the code itself promises — the station's first scan of the drives (`tests/station-cli.test.js`), the 2.5 seconds a prompt waits for `git status` (`lib/dirty.js`), and the `/fankeel` probe of a busy station (`tests/inject.test.js`) — and three suites at once starve each other of CPU and disk, so one of them can fail with nothing wrong. Those bounds are the product's own, so they are not loosened to let parallel runs pass.
+Run one `npm test` at a time. Some tests used to share fixed temp file names, so concurrent suites unlinked each other's files; that is fixed in `tests/sensitive.test.js` and `tests/render.test.js`. A few tests still time real work against budgets the code itself promises — the station's first scan of the drives (`tests/station-cli.test.js`), the 2.5 seconds a prompt waits for `git status` (`lib/dirty.js`), and the `/fankeel` probe of a busy station (`tests/inject.test.js`) — and three suites at once can starve those of CPU, so one of them fails with nothing wrong. Those bounds are the product's own, so they are not loosened to let parallel runs pass.
 
 `lib/` is pure logic, tested directly; `hooks/` is where stdin, stdout and process
 exit live, and every hook exits 0 on every path, because a hook that throws blocks
