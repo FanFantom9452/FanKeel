@@ -1,3 +1,3 @@
 {
-  "modules": ["compact.ts"]
+  "modules": ["compact.ts", "await-title.ts"]
 }

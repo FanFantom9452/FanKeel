@@ -75,7 +75,7 @@ test('hooks/*.js matches exactly what plugin.json references', () => {
     const declared = JSON.parse(fs.readFileSync(path.join(ROOT, 'hooks', 'hooks.json'), 'utf8'));
     assert.deepEqual(Object.keys(declared), ['modules'],
         'hooks/hooks.json holds more than modules — read the hook list from there too');
-    assert.deepEqual(declared.modules, ['compact.ts']);
+    assert.deepEqual(declared.modules, ['compact.ts', 'await-title.ts']);
 
     const hookFiles = fs.readdirSync(path.join(ROOT, 'hooks'))
         .filter((f) => f.endsWith('.js'))
