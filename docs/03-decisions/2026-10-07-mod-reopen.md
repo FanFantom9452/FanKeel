@@ -7,7 +7,7 @@ last_verified: 2026-10-07
 
 一句話：fankeel 重開 mod 路線，mod 只做 command hook 做不到的事，command hook 照舊是底層；前提是使用者接受每個 session 在 `/plugin` 按一次 Enable for this session。這份紀錄取代 [10-03 的 mod 路線擱置](2026-10-03-mod-route.md) 與 [10-05 的函式 hook 與 gate 報告面板](2026-10-05-inject-gate-mod.md)，await-title 隨這份紀錄移除。
 
-設計稿是 [2026-10-07-mod-reopen-design.md](../90-agent/plans/2026-10-07-mod-reopen-design.md)，計畫是 [2026-10-07-mod-reopen.md](../90-agent/plans/2026-10-07-mod-reopen.md)。
+設計稿是 [2026-10-07-mod-reopen-design.md](../99-archive/2026-10-07-mod-reopen-design.md)，計畫是 [2026-10-07-mod-reopen.md](../99-archive/2026-10-07-mod-reopen.md)。
 
 ## 為什麼
 

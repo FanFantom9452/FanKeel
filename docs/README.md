@@ -225,8 +225,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 落地它的 14 個 task | `docs/99-archive/2026-10-03-todo-nine.md` — *built, 繁體中文* |
 | mod 路線（10-03）定了什麼：擱置，不把 brief、effort 等功能做成 mod、繼續用 command hooks；量到可用的 agent.spawn 與 turn.step 記下備查（10-07 起由 mod 重開決策取代） | [decisions/2026-10-03-mod-route.md](03-decisions/2026-10-03-mod-route.md) — *繁體中文* |
 | 重開 mod 路線（10-07）定了什麼：前提是每個 session 按一次 Enable；五項 mod 能力的先後（拆 await-title、compact、子代理 brief、每個子代理的 effort、Pane gate 介面）；mod 沒載入時照 command hook 跑；取代 10-03 與 10-05 兩份決策 | [decisions/2026-10-07-mod-reopen.md](03-decisions/2026-10-07-mod-reopen.md) — *繁體中文* |
-| 那份決定的 design：逐條回應 10-03 的三個理由、五項排序、拆 await-title 的範圍 | [plans/2026-10-07-mod-reopen-design.md](90-agent/plans/2026-10-07-mod-reopen-design.md) — *design-intent, 繁體中文* |
-| 那份設計的四個 task：拆 await-title、新決策與條目、取代舊決策與索引、使用者關閉 title-3 | [plans/2026-10-07-mod-reopen.md](90-agent/plans/2026-10-07-mod-reopen.md) — *design-intent, 繁體中文* |
+| 那份決定的 design：逐條回應 10-03 的三個理由、五項排序、拆 await-title 的範圍 | `docs/99-archive/2026-10-07-mod-reopen-design.md` — *built, 繁體中文* |
+| 那份設計的四個 task：拆 await-title、新決策與條目、取代舊決策與索引、使用者關閉 title-3 | `docs/99-archive/2026-10-07-mod-reopen.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-03）的 plan：子 session 由環境變數證明在跑、todo-check 讀不到就回報且前綴補斜線、commit.js 兩個子句補測試、balanced 註明無來源、mod 路線擱置 | [plans/2026-10-03-todo-patrol-three.md](90-agent/plans/2026-10-03-todo-patrol-three.md) — *design-intent, 繁體中文* |
 | TODO 全表盤點（10-05）的 plan：壓縮重試最多三次的測試、`/fankeel` 頁面寫不出來時 station 行說出來、兩處 timeout 與行號小錯、brain 選模型改放 Watch | [plans/2026-10-05-todo-patrol-ready-three.md](90-agent/plans/2026-10-05-todo-patrol-ready-three.md) — *design-intent, 繁體中文* |
 | TODO 全表盤點（10-07）的 plan：把 verify 五次退回時手加在 prompt 的五項 review 檢查寫進 build skill | `docs/99-archive/2026-10-07-review-checks-in-build.md` — *built, 繁體中文* |
