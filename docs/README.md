@@ -213,6 +213,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 落地它的 task | `docs/99-archive/2026-10-02-todo-patrol.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-04）定了什麼、沒做什麼：程式碼可刪項做掉大半、`scripts/quota.js` 自動校準週額度、子 session 兩臂探測原因不成立、stage-agents 九條量測或轉交使用者 | [decisions/2026-10-04-todo-patrol-five.md](03-decisions/2026-10-04-todo-patrol-five.md) — *繁體中文* |
 | 落地它的 task | `docs/99-archive/2026-10-04-todo-patrol-five.md` — *built, 繁體中文* |
+| TODO 全表盤點（10-07）定了什麼、沒做什麼：全套測試並行的固定暫存路徑收掉、前後兩段用量比對、受控階段當場寫 TODO、Pane 與 station 頁共用 gate 的草稿；brief-3 沒動 | [decisions/2026-10-07-todo-patrol-seven.md](03-decisions/2026-10-07-todo-patrol-seven.md) — *繁體中文* |
+| TODO 全表盤點（10-07）的 plan：全套測試並行的固定暫存路徑、受控階段當場寫 TODO、前後兩段用量比對腳本、Pane gate design 草稿、compact 文件改判準、監控站白板的方向、拆 shots-v3 junction | `docs/99-archive/2026-10-07-todo-patrol-seven.md` — *built, 繁體中文* |
 | cleanup-2 前兩項（10-05）定了什麼、沒做什麼：`fetchHealth` 改用全域 `fetch`、`lib/profile.js` 的 `git` 改用 `lib/blame.js` 匯出的；第三、四項沒做，留在 Ready | [decisions/2026-10-05-cleanup-two.md](03-decisions/2026-10-05-cleanup-two.md) — *繁體中文* |
 | TODO 全表盤點第五輪（10-05）定了什麼：十七個 task 做完、死 build agent 的標記改成交接檔落地就清、write 門檻定為 2800ms、中文受控規則由 `lib/plain.js` 擋在 gate 與 docs-check | [decisions/2026-10-05-todo-sweep-five.md](03-decisions/2026-10-05-todo-sweep-five.md) — *繁體中文* |
 | 函式 hook、注入節流與 gate 報告面板（10-05）定了什麼：都不做；函式 hook 就是擱置中的 mod 路線，面板已由 `gate.station` 的 station 頁提供，節流併進 inject-3（10-07 起由 mod 重開決策取代） | [decisions/2026-10-05-inject-gate-mod.md](03-decisions/2026-10-05-inject-gate-mod.md) — *繁體中文* |
@@ -230,7 +232,6 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 監控站掛 Chartroom 白板（10-07）定了什麼：白板在 AI 要給人看時才出現、目標取代 Mermaid；整個併進 fankeel 直接可用；寫入照監控站的 nonce，不開例外；怎麼做另開 design | [decisions/2026-10-07-station-chartroom.md](03-decisions/2026-10-07-station-chartroom.md) — *繁體中文* |
 | TODO 全表盤點（10-03）的 plan：子 session 由環境變數證明在跑、todo-check 讀不到就回報且前綴補斜線、commit.js 兩個子句補測試、balanced 註明無來源、mod 路線擱置 | [plans/2026-10-03-todo-patrol-three.md](90-agent/plans/2026-10-03-todo-patrol-three.md) — *design-intent, 繁體中文* |
 | TODO 全表盤點（10-05）的 plan：壓縮重試最多三次的測試、`/fankeel` 頁面寫不出來時 station 行說出來、兩處 timeout 與行號小錯、brain 選模型改放 Watch | [plans/2026-10-05-todo-patrol-ready-three.md](90-agent/plans/2026-10-05-todo-patrol-ready-three.md) — *design-intent, 繁體中文* |
-| TODO 全表盤點（10-07）的 plan：全套測試並行的固定暫存路徑、受控階段當場寫 TODO、前後兩段用量比對腳本、Pane gate design 草稿、compact 文件改判準、監控站白板的方向、拆 shots-v3 junction | [plans/2026-10-07-todo-patrol-seven.md](90-agent/plans/2026-10-07-todo-patrol-seven.md) — *design-intent, 繁體中文* |
 | Pane 上的 gate 介面（10-07）的 design 草稿：pending 與 answer 檔只有一份，station 頁面板與 Pane 都是它的畫面，mod 沒載入照舊 | [plans/2026-10-07-gate-pane-design.md](90-agent/plans/2026-10-07-gate-pane-design.md) — *design-intent, 繁體中文* |
 | TODO 全表盤點（10-07）的 plan：把 verify 五次退回時手加在 prompt 的五項 review 檢查寫進 build skill | `docs/99-archive/2026-10-07-review-checks-in-build.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-05 第二輪）的 plan：站線的寫入錯誤切在 65 字元補測試、`stationLine` 各分支逐一變異並補帶 url 的 `starting` 斷言 | `docs/99-archive/2026-10-05-station-line-tests.md` — *built, 繁體中文* |

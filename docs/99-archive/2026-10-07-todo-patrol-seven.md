@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # TODO 全表盤點（10-07）：並行測試、當場寫 TODO、前後用量比對、Pane gate 草稿、compact 文件、白板方向、拆 junction Implementation Plan
