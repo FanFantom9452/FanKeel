@@ -227,6 +227,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 重開 mod 路線（10-07）定了什麼：前提是每個 session 按一次 Enable；五項 mod 能力的先後（拆 await-title、compact、子代理 brief、每個子代理的 effort、Pane gate 介面）；mod 沒載入時照 command hook 跑；取代 10-03 與 10-05 兩份決策 | [decisions/2026-10-07-mod-reopen.md](03-decisions/2026-10-07-mod-reopen.md) — *繁體中文* |
 | 那份決定的 design：逐條回應 10-03 的三個理由、五項排序、拆 await-title 的範圍 | `docs/99-archive/2026-10-07-mod-reopen-design.md` — *built, 繁體中文* |
 | 那份設計的四個 task：拆 await-title、新決策與條目、取代舊決策與索引、使用者關閉 title-3 | `docs/99-archive/2026-10-07-mod-reopen.md` — *built, 繁體中文* |
+| 監控站掛 Chartroom 白板（10-07）定了什麼：白板在 AI 要給人看時才出現、目標取代 Mermaid；整個併進 fankeel 直接可用；寫入照監控站的 nonce，不開例外；怎麼做另開 design | [decisions/2026-10-07-station-chartroom.md](03-decisions/2026-10-07-station-chartroom.md) — *繁體中文* |
 | TODO 全表盤點（10-03）的 plan：子 session 由環境變數證明在跑、todo-check 讀不到就回報且前綴補斜線、commit.js 兩個子句補測試、balanced 註明無來源、mod 路線擱置 | [plans/2026-10-03-todo-patrol-three.md](90-agent/plans/2026-10-03-todo-patrol-three.md) — *design-intent, 繁體中文* |
 | TODO 全表盤點（10-05）的 plan：壓縮重試最多三次的測試、`/fankeel` 頁面寫不出來時 station 行說出來、兩處 timeout 與行號小錯、brain 選模型改放 Watch | [plans/2026-10-05-todo-patrol-ready-three.md](90-agent/plans/2026-10-05-todo-patrol-ready-three.md) — *design-intent, 繁體中文* |
 | TODO 全表盤點（10-07）的 plan：全套測試並行的固定暫存路徑、受控階段當場寫 TODO、前後兩段用量比對腳本、Pane gate design 草稿、compact 文件改判準、監控站白板的方向、拆 shots-v3 junction | [plans/2026-10-07-todo-patrol-seven.md](90-agent/plans/2026-10-07-todo-patrol-seven.md) — *design-intent, 繁體中文* |
