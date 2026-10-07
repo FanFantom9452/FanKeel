@@ -218,8 +218,7 @@ fankeel/
 │   ├── registry.js    one entry per session under .fankeel/sessions/, written by rename so no read is torn
 │   ├── stages.js      the seven stages, the three classes and their routes, every stage's rules and output shape
 │   ├── render.js      the injected blocks: every prompt, after a gate, on /fankeel, when a task is renamed, for a subagent, after /clear
-│   ├── live.js        which sessions are running, read from Claude Code's own sessions/<pid>.json
-│   ├── overlap.js     which live sessions have touched the same files
+│   ├── live.js        which sessions are running, read from Claude Code's own sessions/<pid>.json; overlap.js is which of them have touched the same files
 │   ├── guard.js       the scope guard's answer to an edit in another live session's files: nothing, ask or deny
 │   ├── badge.js       the statusline word and lead line TokenBar draws
 │   ├── map.js         .fankeel/map.md: the signpost, the filing, this tree, the planned and retired pages
