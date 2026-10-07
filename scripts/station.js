@@ -329,6 +329,10 @@ async function serve(opts) {
     // detail it shows while its session is live; without this each re-read
     // parsed every cached detail on the machine again.
     const memo = new Map();
+    // Every Chartroom handler this run has built, one per registry root,
+    // each on that root's first `/chartroom/<name>/` request; `close()`
+    // below closes them all.
+    const boards = new Map();
     // A deadline is an absolute moment, so it is taken per request rather than
     // once at listen: a `--scan` here is re-walked on every render, and one
     // timestamp fixed at startup would leave every later request walking with a
@@ -380,6 +384,38 @@ async function serve(opts) {
             res.writeHead(code, { 'content-type': 'text/plain' });
             res.end(msg + '\n');
         };
+        // `/chartroom/<name>/…` is a registry root's architecture board,
+        // handed to Chartroom before the nonce check below, on purpose:
+        // Chartroom guards its own routes — a Host that is not loopback is
+        // refused, and so is a POST whose Origin does not match its Host or
+        // whose body is not application/json — which a page on another
+        // origin cannot get past, while the AI posting ops from a shell has
+        // no nonce to send. `<name>` is the root's folder name. With
+        // `station.chartroom` unset this is the ordinary 404 at the end.
+        const chartroomHit = /^\/chartroom\/([^/?#]+)(.*)$/.exec(req.url);
+        const chartroomRoot = chartroomHit && profile.read(null, configDir).values['station.chartroom'];
+        if (chartroomRoot) {
+            let name;
+            try { name = decodeURIComponent(chartroomHit[1]); } catch (e) { name = chartroomHit[1]; }
+            const roots = sharedModel().registries.filter((r) => !r.gone && path.basename(r.root) === name).map((r) => r.root);
+            if (roots.length === 0) return fail(404, 'no registered project is named ' + name);
+            if (roots.length > 1) return fail(409, 'two registered projects are named ' + name + ': ' + roots.join(', '));
+            let board = boards.get(roots[0]);
+            if (!board) {
+                const file = station.boardPath(roots[0]);
+                if (!fs.existsSync(file)) return fail(404, 'no architecture board here: put one at ' + file);
+                const entry = path.join(chartroomRoot, 'src', 'server', 'handler.js');
+                try {
+                    board = require(entry).createHandler(file, { staticDir: 'dist/app' });
+                } catch (e) {
+                    return fail(500, 'Chartroom did not load from ' + entry + ': ' + e.message);
+                }
+                boards.set(roots[0], board);
+            }
+            const rest = chartroomHit[2];
+            req.url = rest.startsWith('/') ? rest : '/' + rest;
+            return board(req, res);
+        }
         // Every POST carries the nonce this server printed. One that does not is
         // refused before its form is read further; null tells the route to stop.
         const formOf = async () => {
@@ -707,6 +743,12 @@ async function serve(opts) {
                 close() {
                     if (timer) clearTimeout(timer);
                     if (retryTimer) clearInterval(retryTimer);
+                    // Before the server: a board's open event streams would
+                    // otherwise hold server.close() until they end.
+                    for (const board of boards.values()) {
+                        try { board.close(); } catch (e) { /* closing anyway */ }
+                    }
+                    boards.clear();
                     server.close();
                     if (fixedServer) fixedServer.close();
                     try { fs.unlinkSync(record); } catch (e) { /* already gone */ }

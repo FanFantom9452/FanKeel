@@ -928,7 +928,8 @@ and `--forget` with exit 2.
 every request, takes a POST from the clear button on a `stale` row, answers
 `409` for a `live` one and for a row touched in the last twelve hours unless
 `force` is ticked — the age-and-liveness rule is
-[collisions.md](collisions.md)'s — and `403` without the per-run nonce. It binds the fixed
+[collisions.md](collisions.md)'s — and `403` without the per-run nonce, on every POST but the
+`/chartroom/` route's below. It binds the fixed
 port `7817` by default, falling back to an ephemeral one only when `7817` is
 already taken — and then keeps trying `7817` every thirty seconds; the first
 time it binds, a second listener on the same handler takes it, `serve.json`
@@ -940,6 +941,40 @@ there is none unless it is given. `--detach` runs the server as a background
 process and returns once it has started, so closing the terminal does not
 take the station with it. The static copies carry the `task.js clear`
 command on each `stale` row instead of the button.
+
+Under `/chartroom/<name>/` the served station hands a request to
+Chartroom, the board editor installed elsewhere on this machine, so a
+project's architecture board opens inside the station. `<name>` is a
+registry root's folder name, and the board is that root's
+`.fankeel/architecture.board`, committed with the project like
+`.fankeel/profile.json`; the station never creates one, because a GET
+that writes a file is a side effect. The machine profile's
+`station.chartroom` names Chartroom's package root — for example
+`node scripts/task.js profile set station.chartroom F:/ymlab/Latex/production/Chartroom --default`
+— and the station loads Chartroom's server handler from under it with
+`require`, builds one handler per root on that root's first request
+(`boardPath()` in `lib/station.js` names the file), strips the
+`/chartroom/<name>` prefix before passing the request on, and closes
+every handler when it closes. The page is Chartroom's own build, its
+dist/app directory, so Chartroom answers 404 until `npm run build` has
+run there; fankeel carries no copy and adds no build step. With the key
+unset `/chartroom/` is the ordinary 404 and the project card shows no
+link. With it set, an unknown name or a root with no board is a 404
+naming the path, two roots with the same folder name are a 409 listing
+both, and a handler that will not load is a 500 naming the file, while
+the rest of the station keeps serving.
+
+This route alone skips the nonce, and Chartroom's own guard stands in
+for it: Chartroom refuses any Host that is not loopback, and any POST
+whose Origin does not match its Host or whose body is not
+`application/json`. A page on another origin can send a form POST,
+which is refused as not JSON, or a JSON one, which carries that page's
+Origin and is refused for it — the cross-site write the nonce stops
+everywhere else. The AI that posts `POST /api/ops` from a shell has no
+nonce to send in the first place. The project card's line
+`架構白板：開啟` links to `/chartroom/<name>/` in a new tab when the
+registry has a board, `station.chartroom` is set and the page is
+served rather than a static copy.
 
 Rendering afresh does not mean reading everything afresh. A running `serve`
 holds every session's detail in memory and answers from it while nothing under
