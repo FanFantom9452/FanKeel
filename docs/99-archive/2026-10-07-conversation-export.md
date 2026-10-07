@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # TODO 全表盤點（10-07 第二輪）：對話全文匯出，Blocked 十條重蓋章 Implementation Plan
