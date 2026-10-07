@@ -1,7 +1,7 @@
 ---
 label: brief
 title: 子代理 brief 改走 spawn
-description: 依 2026-10-07 mod 重開決策的第三項：以 agent.spawn 改寫 prompt 取代 hooks/brief.js 的一部分；第一步是互動式 n>1 探測，不是搬遷
+description: 依 2026-10-07 mod 重開決策的第三項：以 agent.spawn 改寫 prompt 取代 `hooks/brief.js` 的一部分；第一步是互動式 n>1 探測，不是搬遷
 state: ready
 link: hooks/brief.js
 ---

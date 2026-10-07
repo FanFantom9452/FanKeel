@@ -5,7 +5,7 @@ description: 實測不成立（2026-10-07）：mod 已載入，gate 等待中與
 state: done
 link: hooks/await-title.ts
 group: hooks.json 單一入口落地
-timing: after: 「hooks.json modules 只收一個」那個 session 收工，放開 hooks/mod.ts
+timing: after: 「hooks.json modules 只收一個」那個 session 收工，放開 `hooks/mod.ts`
 stamp: 2026-10-07
 done:
   at: 2026-10-07
