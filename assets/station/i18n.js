@@ -112,6 +112,8 @@
             'proj.todoNoSessionHere': 'This machine does not have this session; commit {sha}',
             'proj.todoSessionNote': 'A session can only be found on the machine that ran it; where it cannot, the commit that closed the entry is shown.',
             'proj.todoOpenN': '{n} open',
+            'proj.boardColon': 'Architecture board: ',
+            'proj.boardOpen': 'open',
             'proj.todoDoneN': '{n} done',
             'proj.todoReadError': 'Cannot read TODO: {msg}',
             'proj.todoColLabel': 'Label',

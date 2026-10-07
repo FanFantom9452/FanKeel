@@ -2505,11 +2505,26 @@
             + (done ? '<div class="td-done' + (all > NEWEST && !shut ? ' is-open' : '') + '" data-block="todo-done">' + done + '</div>' : '')
             + '</section>';
     }
+    // The project card's line to its architecture board. Only a served page
+    // has the `/chartroom/` route (a file:// copy has none), only a registry
+    // with `.fankeel/architecture.board` has a board (`board`, lib/station.js),
+    // and only a machine whose profile names a Chartroom install can open it
+    // (`station.chartroom`). The url segment is the root's folder name, the
+    // one scripts/station.js matches; the trailing slash keeps the board
+    // page's relative asset urls under its own prefix.
+    function boardLinkHtml(p, serve, machine) {
+        if (!serve || !p || !p.board || !machine || !machine['station.chartroom']) return '';
+        var name = String(p.root).split(/[\\/]/).filter(Boolean).pop() || '';
+        var href = '/chartroom/' + encodeURIComponent(name) + '/';
+        return '<p class="mute" style="margin:4px 0 0">' + loc('proj.boardColon', '架構白板：')
+            + '<a href="' + esc(href) + '" target="_blank" rel="noopener">' + loc('proj.boardOpen', '開啟') + '</a></p>';
+    }
     // ---- tune: a block changed, continued: what the tests import -----------
 
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
             todoPanelHtml: todoPanelHtml,
+            boardLinkHtml: boardLinkHtml,
             tokens: tokens, mins: mins, hours: hours, usd: usd, ago: ago, day: day,
             stamp: stamp, esc: esc, cost: cost, labels: labels, delta: delta, match: match,
             statePill: statePill, clearStaleControl: clearStaleControl,
@@ -2702,6 +2717,7 @@
                     return esc(b.name) + ' (' + b.files + ')';
                 }).join(loc('tune.listSep', '、')) + '</p>'
                 : '<p class="mute" style="margin:4px 0 0">' + loc('tune.noBuildFolder', '沒有 build 資料夾') + '</p>')
+            + boardLinkHtml(p, S.serve, S.profiles && S.profiles.machine && S.profiles.machine.values)
             + '</div></div>';
     }
 
