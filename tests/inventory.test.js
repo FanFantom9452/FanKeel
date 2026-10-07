@@ -70,7 +70,7 @@ test('lib/stages.js exports NAMES, and every stage has its own skill directory',
 test('hooks/*.js matches exactly what plugin.json references', () => {
     // plugin.json is the source of truth for which command hooks run.
     // hooks/hooks.json exists only to declare the engine module
-    // hooks/mod.ts (which imports compact.ts and await-title.ts); a `hooks` key there would be a second list, so it may
+    // hooks/mod.ts (which imports compact.ts); a `hooks` key there would be a second list, so it may
     // hold `modules` and nothing else.
     const declared = JSON.parse(fs.readFileSync(path.join(ROOT, 'hooks', 'hooks.json'), 'utf8'));
     assert.deepEqual(Object.keys(declared), ['modules'],
