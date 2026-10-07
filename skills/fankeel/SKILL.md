@@ -659,6 +659,24 @@ made that would otherwise have to be rediscovered. One line, no preamble. Set
 `task.js next "..."` before pausing, and whenever what comes next stops being
 obvious.
 
+A TODO the user asks for during a controlled stage lands that turn, not as a
+note waiting for down: the guard refuses this session's own Edit and Write
+there, and a note is re-injected on every prompt until it is moved. Dispatch
+one `fankeel:fankeel-reader` with the user's words, to run
+`node <plugin>/scripts/todo.js list` and grep the repository for what they
+describe, returning `duplicate <id>`, `exists <path:line>` or `new`. A
+duplicate or an existing feature goes back to the user as that one line. On
+`new`, dispatch one `fankeel:fankeel-implementer`, without a worktree, with
+the user's words and `session <id>`: it runs `node <plugin>/scripts/todo.js
+new` with a body of at least 200 characters saying where it came from, what
+it should become and what counts as done, runs `todo-check.js`, writes a
+commit file — the entry's path, a blank line, the message — and returns
+`commit <file>`. Run `node <plugin>/scripts/commit.js <file>` yourself:
+`commit -o` takes only that path, so whatever the stage agent has staged
+stays where it was. If the implementer reports its `todo.js` refused, do not
+run it in its place; give the user the exact `!` line to run. A note is for a
+dead end or a decision inside the task, never for a TODO.
+
 Notes are never version-controlled and die with the task. If a note still matters
 after the task lands, it was never a note — move it to one of the four above
 during `land`.

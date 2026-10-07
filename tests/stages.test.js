@@ -941,7 +941,7 @@ test('the controller waits out a return that is not a path, and sends a finished
   const { controlFor } = require('../lib/stages.js');
   const c = controlFor('survey', { 'stage.agents': ['survey'] }, { task: 't', await: 'w', handoff: '/r/h.md', answer: '/r/a.md', session: 'sid' });
   const text = c.rules.join('\n');
-  assert.match(text, /no path at all: relay nothing, wait\./);
+  assert.match(text, /no path: wait\./);
   assert.doesNotMatch(text, /if \/r\/h\.md exists, ask the same way/);
   assert.match(text, /a no-path finish notification, run `node w --session sid`/);
 });
@@ -999,7 +999,7 @@ test('a controlled stage\'s dispatch prompt is the stage name, plus one line whe
   const values = { 'stage.agents': ['survey', 'design', 'build', 'land'] };
   for (const stage of ['survey', 'build', 'land']) {
     const dispatch = controlFor(stage, values, {}).rules.find((r) => r.startsWith('Dispatch one Agent'));
-    assert.ok(dispatch.includes('prompt `' + stage + '`, plus one line only when the user has just given a new instruction for it; no model.'), stage + ': ' + dispatch);
+    assert.ok(dispatch.includes('prompt `' + stage + '`, plus any new user instruction; no model.'), stage + ': ' + dispatch);
   }
 });
 
@@ -1010,7 +1010,7 @@ test('the controller passes model opus for design and plan and no model for the 
   for (const stage of all) {
     const dispatch = controlFor(stage, values, {}).rules.find((r) => r.startsWith('Dispatch one Agent'));
     const opus = stage === 'design' || stage === 'plan';
-    assert.ok(dispatch.includes('prompt `' + stage + '`, plus one line only when the user has just given a new instruction for it; '), stage + ': ' + dispatch);
+    assert.ok(dispatch.includes('prompt `' + stage + '`, plus any new user instruction; '), stage + ': ' + dispatch);
     assert.equal(dispatch.includes('`model: opus`'), opus, stage + ': ' + dispatch);
     assert.equal(dispatch.includes('no model'), !opus, stage + ': ' + dispatch);
     assert.equal(dispatch.includes('opus'), opus, stage + ': ' + dispatch);
@@ -1103,6 +1103,20 @@ test('every controller names a TODO entry by its title, never by its id', () => 
   }
 });
 
+// todo-5: a TODO the user asks for mid-stage lands that turn, through a
+// reader and an implementer, rather than as a note that waits for down.
+test('every controller is told to land an asked-for TODO that turn, never as a note', () => {
+  const { controlFor } = require('../lib/stages.js');
+  const all = ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land'];
+  for (const stage of all) {
+    const rules = controlFor(stage, { 'stage.agents': all }, { handoff: '/r/h.md' }).rules;
+    assert.equal(rules[1], 'TODO wanted: reader checks it is new; implementer runs `todo.js new`, returns commit file; you run commit.js.', stage);
+  }
+  const skill = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'skills', 'fankeel', 'SKILL.md'), 'utf8');
+  assert.match(skill, /A TODO the user asks for during a controlled stage lands that turn/);
+  assert.match(skill, /A note is for a\s+dead end or a\s+decision inside the task, never for a TODO\./);
+});
+
 // docs/90-agent/plans/2026-10-02-docs-writer.md Task 11: the controller judges
 // whether a stage needs deep thought and asks the user before it sends the
 // brain's high or xhigh variant. Two options, so hooks/resume.js never files
@@ -1133,7 +1147,7 @@ test('a stage agent that returns a relay file is replaced by a fresh one carryin
   const { controlFor } = require('../lib/stages.js');
   for (const stage of ['survey', 'plan', 'build', 'land']) {
     const text = controlFor(stage, { 'stage.agents': [stage] }, { task: 't', await: 'w', handoff: '/r/h.md', answer: '/r/a.md', session: 'sid' }).rules.join('\n');
-    assert.match(text, /A `relay-<id>\.md` path: dispatch a fresh one, prompt plus that path; no path at all: relay nothing, wait\./, stage);
+    assert.match(text, /A `relay-<id>\.md` path: dispatch a fresh one, prompt plus that path; no path: wait\./, stage);
   }
 });
 
