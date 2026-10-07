@@ -204,9 +204,12 @@ test('a path after -- is scanned, untracked or not, and one outside the reposito
   assert.equal(denied(out), true);
   assert.match(out.permissionDecisionReason, /docs\/plan\.md:3/);
   assert.equal(hook(dir, 'Bash', 'git commit -m x -- base.txt'), '');
-  fs.writeFileSync(path.join(dir, '..', 'outside-acme.md'), 'acme\n');
-  assert.equal(hook(dir, 'Bash', 'git commit -m x -- ../outside-acme.md'), '');
-  fs.rmSync(path.join(dir, '..', 'outside-acme.md'));
+  // Named after this test's own scratch directory, so a second copy of the
+  // suite running at the same time never writes or removes the same file.
+  const outside = path.join(dir, '..', 'outside-' + path.basename(dir) + '.md');
+  fs.writeFileSync(outside, 'acme\n');
+  assert.equal(hook(dir, 'Bash', 'git commit -m x -- ../' + path.basename(outside)), '');
+  fs.rmSync(outside, { force: true });
 });
 
 test('the commit pattern takes -C and -c before commit, and not a lookalike', () => {
@@ -403,11 +406,12 @@ test('a commit under git -C resolves its -- paths against that directory, and a 
   assert.match(verdict(dir, 'git -C sub commit -m x -- inner').permissionDecisionReason, /sub\/inner\/deep\.md:1/, 'a directory under -C');
   assert.equal(hook(dir, 'Bash', 'git -C sub commit -m x -- clean.md'), '');
   assert.equal(hook(dir, 'Bash', 'git commit -m x -- secret.md'), '', 'secret.md is not at the top');
-  const out = path.join(dir, '..', 'outside-acme-dir');
-  fs.mkdirSync(out, { recursive: true });
+  // A directory of its own beside the repository: a fixed name here was one
+  // every concurrent copy of the suite created and removed under the others.
+  const out = tmp('outside-acme-dir-'); // tmp() puts it in os.tmpdir(), the parent of dir
   fs.writeFileSync(path.join(out, 'x.md'), 'acme\n');
   try {
-    assert.equal(hook(dir, 'Bash', 'git commit -m x -- ../outside-acme-dir'), '');
-    assert.equal(hook(dir, 'Bash', 'git commit -m "a; b" -- ../outside-acme-dir'), '');
-  } finally { fs.rmSync(out, { recursive: true }); }
+    assert.equal(hook(dir, 'Bash', 'git commit -m x -- ../' + path.basename(out)), '');
+    assert.equal(hook(dir, 'Bash', 'git commit -m "a; b" -- ../' + path.basename(out)), '');
+  } finally { fs.rmSync(out, { recursive: true, force: true }); }
 });
