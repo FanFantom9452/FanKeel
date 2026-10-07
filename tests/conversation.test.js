@@ -135,3 +135,20 @@ test('the CLI finds the session under projects, writes either format, and refuse
     assert.equal(bad.status, 2);
     assert.match(bad.stderr, /--format is md or jsonl/);
 });
+
+test('the CLI says so when a transcript it found cannot be read', () => {
+    const cfg = tmp('fankeel-conversation-');
+    const dir = path.join(cfg, 'projects', 'F--proj');
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 's2.jsonl'), '{}\n');
+    // A file that stats fine but fails to read (a lock, a permission) cannot be
+    // made the same way on Windows and Linux, so the read is made to throw.
+    const preload = path.join(cfg, 'unreadable.js');
+    fs.writeFileSync(preload, "const fs = require('node:fs'); const read = fs.readFileSync;\n" +
+        "fs.readFileSync = (f, ...a) => { if (String(f).endsWith('s2.jsonl')) throw new Error('EACCES'); return read(f, ...a); };\n");
+    const cli = path.join(__dirname, '..', 'scripts', 'conversation.js');
+    const run = spawnSync(process.execPath, ['--require', preload, cli, '--session', 's2', '--config-dir', cfg], { encoding: 'utf8' });
+    assert.equal(run.status, 1, run.stderr);
+    assert.match(run.stderr, /conversation: cannot read /);
+    assert.equal(run.stdout, '');
+});

@@ -19,7 +19,8 @@ const HELP = [
     'The whole conversation of one Claude Code session, read from',
     '<config dir>/projects/<project>/<id>.jsonl: what the user typed and what Claude',
     'wrote, in order, with every compaction and its summary marked where it happened.',
-    'Tool calls, system text, hook output and subagents are left out and counted.',
+    'System text, hook output, tool results and subagent lines are left out and counted',
+    'on a "left out:" line; thinking and tool calls are dropped without a count.',
     'md (the default) is for reading; jsonl is one turn a line, for analysis.',
     'Without --out it prints to stdout. In Windows PowerShell 5, use --out rather',
     'than >, which re-encodes the text.',
@@ -52,7 +53,12 @@ function main(argv) {
         process.stderr.write('conversation: no transcript for session ' + values.session + ' under ' + configDir + '/projects\n');
         return 1;
     }
-    const read = conversation.turnsOf(entriesOf(file) || []);
+    const entries = entriesOf(file);
+    if (!entries) {
+        process.stderr.write('conversation: cannot read ' + file + '\n');
+        return 1;
+    }
+    const read = conversation.turnsOf(entries);
     const text = format === 'jsonl' ? conversation.jsonlOf(read.turns) : conversation.markdownOf(read, { session: values.session, file });
     if (values.out) {
         fs.writeFileSync(values.out, text);
