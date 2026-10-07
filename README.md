@@ -212,6 +212,7 @@ fankeel/
 │   ├── touch.js       PostToolUse on Edit, Write, NotebookEdit: the files this task touched
 │   ├── brief.js       SubagentStart: what a subagent is told about the task it was sent from
 │   ├── carry.js       SessionStart on clear or fork: offers the task a /clear left behind
+│   ├── compact.ts     not a command hook: an engine module declared in hooks/hooks.json, compacting the main session at 450k tokens while it owns an active fankeel task, in an interactive session where the module was enabled
 │   └── leave.js       SessionEnd: how the session ended and what it spent, and the station rewritten
 ├── lib/               the logic, as functions tested directly; nothing here reaches into scripts/ or hooks/
 │   ├── registry.js    one entry per session under .fankeel/sessions/, written by rename so no read is torn
@@ -256,6 +257,8 @@ fankeel/
 npm test
 claude plugin validate .
 ```
+
+Run one `npm test` at a time. A few tests time real work against budgets the code itself promises — the station's first scan of the drives (`tests/station-cli.test.js`) and the `/fankeel` probe of a busy station (`tests/inject.test.js`) — and three suites at once starve each other of CPU and disk, so one of them can fail with nothing wrong. Those bounds are the product's own, so they are not loosened to let parallel runs pass.
 
 `lib/` is pure logic, tested directly; `hooks/` is where stdin, stdout and process
 exit live, and every hook exits 0 on every path, because a hook that throws blocks
