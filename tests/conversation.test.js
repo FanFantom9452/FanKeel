@@ -159,9 +159,9 @@ test('the CLI counts transcript lines that do not parse on the left out line', (
     const cfg = tmp('fankeel-conversation-');
     const dir = path.join(cfg, 'projects', 'F--proj');
     fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(path.join(dir, 's3.jsonl'), [JSON.stringify(user('hello', 1)), 'not json', JSON.stringify(claude('m1', [text('hi')], 2)), '{"type":"user"', ''].join('\n'));
+    fs.writeFileSync(path.join(dir, 's3.jsonl'), [JSON.stringify(user('hello', 1)), 'not json', '123', JSON.stringify(claude('m1', [text('hi')], 2)), '{"type":"user"', ''].join('\n'));
     const cli = path.join(__dirname, '..', 'scripts', 'conversation.js');
     const run = spawnSync(process.execPath, [cli, '--session', 's3', '--config-dir', cfg], { encoding: 'utf8' });
     assert.equal(run.status, 0, run.stderr);
-    assert.match(run.stdout, /^left out: .*unparsed 2$/m);
+    assert.match(run.stdout, /^left out: .*unparsed 3$/m);
 });
