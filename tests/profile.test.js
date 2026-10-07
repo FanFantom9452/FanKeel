@@ -537,3 +537,18 @@ test('quota.calibrated takes a real YYYY-MM-DD day, and stays off the wizard', (
     assert.ok(profile.KEYS['quota.calibrated']);
     assert.ok(!Object.keys(profile.WIZARD_KEYS).includes('quota.calibrated'));
 });
+
+test('station.chartroom takes one absolute path, kept as typed, and is not a wizard key', () => {
+    const abs = path.resolve('chartroom-here');
+    assert.equal(profile.parseValue('station.chartroom', ' ' + abs + ' ').value, abs);
+    for (const bad of ['', 'relative/dir', abs + '\n' + abs, path.resolve('x'.repeat(501))]) {
+        assert.ok(profile.parseValue('station.chartroom', bad).error, JSON.stringify(bad.slice(0, 20)));
+    }
+    assert.equal(profile.KEYS['station.chartroom'].values.length, 0);
+    assert.equal(profile.KEYS['station.chartroom'].builtin, null);
+    assert.equal(Object.prototype.hasOwnProperty.call(profile.WIZARD_KEYS, 'station.chartroom'), false);
+    const cfg = dir();
+    assert.equal(profile.read(null, cfg).values['station.chartroom'], undefined, 'unset by default');
+    assert.equal(profile.write(profile.machineFile(cfg), 'station.chartroom', abs).ok, true);
+    assert.equal(profile.read(null, cfg).values['station.chartroom'], abs, 'read back from the machine profile');
+});

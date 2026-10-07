@@ -42,6 +42,7 @@ profile 是 gate 的常備答案：先寫好，fankeel 就不再問那一題。g
 | `design.skill` | mockup 另外載入哪些 design skill，可多選（逗號分隔）；fankeel 指南一律載入 | `taste-skill:taste-skill`、`taste-skill:soft-skill`、`taste-skill:minimalist-skill`、`frontend-design:frontend-design`、`ui-ux-pro-max:ui-ux-pro-max`、`impeccable:impeccable` | 不設 |
 | `quota.week` | 一週額度等於多少美元（如 Max 20x），監控站在每筆花費旁顯示佔比 |  | 不設 |
 | `station.hide` | 這個專案要不要從監控站隱藏 | `true`、`false`；內建 `false` | 不設，維持內建 |
+| `station.chartroom` | 監控站從哪個 Chartroom 安裝路徑開架構白板（/chartroom/<專案>/）；沒設就沒有白板 | 一個絕對路徑：Chartroom 套件的根目錄 | 不設 |
 | `gate.station` | gate 發出後，等監控站作答幾秒；off 不等，逾時照常在 terminal 問 | `off`、`60`、`120`、`300`；內建 `off` | 不設，維持內建 |
 | `stage.agents` | 哪幾站交給站 agent 在乾淨 context 裡跑，主控只轉路徑 | `false`、`true`、`all`、或逗號分隔的站名清單；內建 `false` | `survey,build,verify` |
 | `security.local` | verify 的 security lens 先交給哪個本地 ollama 模型篩候選；沒設照原流程 | 一個 ollama 模型名稱 | 不設 |
