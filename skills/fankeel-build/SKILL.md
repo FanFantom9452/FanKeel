@@ -468,6 +468,24 @@ then asks this stage's gate.
      already in the repository are followed. Then name the page this
      change makes false (a renamed export, a changed default, a removed
      flag) as `page:line`.
+     Then, where the diff adds a data field or changes a value a person
+     sees, three more, over the whole repository and not the changed
+     file alone: (a) every surface that shows the record reads the new
+     field — grep its name across lib/, scripts/, hooks/ and assets/ and
+     name each page and CLI output that shows the record but never
+     reads it; (b) every new string a person reads goes through the
+     project's string table for translation, never written into a
+     render as a literal; (c) list every place a page or a CLI prints
+     the changed value, and for each mark the change adds there, the
+     test that renders it through its caller and goes red when the mark
+     is removed. A surface with no reader, a literal string, or a place
+     with no such test is a finding. (2026-10-06: the estimated mark on
+     family-priced spend reached the station page, the spend bucket
+     table, the quota calibration line and the stage curve one verify
+     return at a time — commits f25995cc, 02b1e174, 83f7710b, 2b5951df,
+     7b17034d, 05dd0250; f25995cc also gave day and loop rows a new
+     estimated field, and 7b17034d replaced a hard-coded "est." with
+     the page's string table.)
    Part 4 — cuts, over the lines this diff added and no others, in the
      format of the `## Cuts` section of your agent file. A cut is a finding.
 
@@ -557,6 +575,19 @@ then asks this stage's gate.
 6. Fix rounds are bounded at **five**. A finding you overrule is a ruling, not a
    silence.
 
+   **A finding that would defeat a verify row is fixed in this task, now.**
+   When a reviewer's finding — or one the parent sees in its return — names
+   something verify will test this task against (a mark missing from a
+   display, a test that stays green when its branch is removed, a citation
+   off by a line), it goes into this task's next fix round. It is never
+   written up as a note for the gate, a ruling, or a later task while
+   rounds remain: verify finds it again, and the work comes back to this
+   loop as a defeated row at the cost of a whole verify pass. (2026-10-06:
+   the task that prices an unknown model id from its family, commit
+   dde0f1fb, came back from verify five times; each time the controller
+   added one review check to the build prompt by hand, this one among
+   them, and each lived only for that round.)
+
    When the fifth round ends with findings still open, record what remains as
    rulings with their cost — `ledger.js ruling` — and mark the task complete
    with them named. A cap that silently drops what it caps is the failure
@@ -614,6 +645,14 @@ it finds as this stage's own, in three tiers, each run once and never looped:
    a historical citation in a write-once page (a decision, an archive, a
    report) is recorded as a ruling with `ledger.js ruling`, never edited to
    turn the check green.
+
+A finding the report would call older than this build — not this build's
+to fix — is checked on the build's first BASE before it is called that:
+open the citing page and its target with `git show <BASE>:<path>` at the
+cited line, and only a citation broken there too may be reported as
+earlier. One that held at BASE is this build's, and goes to the tiers
+above. (2026-10-06: the controller added this check to the build prompt
+by hand on one of the same five returns from verify.)
 
 The `docs-check:` line of the output says what came of it. On 2026-10-02
 build closed on 3396 passing tests without this step, and verify sent the

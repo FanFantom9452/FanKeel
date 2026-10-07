@@ -1411,3 +1411,24 @@ test('build sends implementers as fankeel-implementer, the effort variant when t
   assert.match(build, /`fankeel:fankeel-reviewer-<effort>`/);
   assert.match(read('fankeel-plan'), /\*\*Dispatch:\*\* implementer, sonnet, high —/);
 });
+
+// docs/90-agent/plans/2026-10-07-review-checks-in-build.md Task 1.
+// On 2026-10-06 verify sent one task back to build five times, and each time
+// the controller added a review check to the build prompt by hand; it lived
+// only for that round. Each check is pinned to the step that runs it.
+test('build review carries the five checks verify kept sending back on 2026-10-06', () => {
+  const build = read('fankeel-build');
+  const step6 = /\n6\. Fix rounds[\s\S]*?\n7\. /.exec(build);
+  assert.ok(step6, 'step 6 of the build loop is not where this test looks for it');
+  assert.match(step6[0].replace(/\s+/g, ' '), /A finding that would defeat a verify row is fixed in this task, now\./);
+  const part3 = /\n {3}Part 3 —[\s\S]*?\n {3}Part 4 —/.exec(build);
+  assert.ok(part3, 'Part 3 of the review template is not where this test looks for it');
+  const p3 = part3[0].replace(/\s+/g, ' ');
+  assert.match(p3, /not the changed file alone/);
+  assert.match(p3, /reads the new field/);
+  assert.match(p3, /string table for translation/);
+  assert.match(p3, /goes red when the mark is removed/);
+  const close = /\n\*\*Then docs-check, at close\.\*\*[\s\S]*?\n## /.exec(build);
+  assert.ok(close, 'the docs-check close is not where this test looks for it');
+  assert.match(close[0].replace(/\s+/g, ' '), /checked on the build's first BASE/);
+});
