@@ -5,6 +5,9 @@
 set -u
 proj="$1"
 here="$(cd "$(dirname "$0")" && pwd)"
-bash "$here/gen-spec.sh" "${BENCH_SEED:-1}" | cmp -s - "$proj/spec/range.spec.js" || { echo "spec/range.spec.js was changed"; exit 1; }
+want="$(mktemp)"
+trap 'rm -f "$want"' EXIT
+bash "$here/gen-spec.sh" "${BENCH_SEED:-1}" > "$want" || { echo "gen-spec.sh failed for seed ${BENCH_SEED:-1}"; exit 1; }
+cmp -s "$want" "$proj/spec/range.spec.js" || { echo "spec/range.spec.js was changed"; exit 1; }
 (cd "$proj" && env -u NODE_TEST_CONTEXT node --test "spec/*.spec.js" > /dev/null 2>&1) || { echo "node --test fails"; exit 1; }
 echo "pass"

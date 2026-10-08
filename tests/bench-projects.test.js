@@ -27,6 +27,37 @@ for (const p of projects) {
     });
 }
 
+// selftest only sees the exit code; a control that fails for another clause's
+// reason would leave its own clause unproven, so pin the message too.
+function checkOf(project, control, checkEnv) {
+    const dir = tmp('fankeel-bench-ctl-');
+    const full = { ...process.env, BENCH_SEED: '1', BENCH_IMPL: 'sonnet', BENCH_PLUGIN: bench.posix(ROOT) };
+    const s = spawnSync('bash', [bench.posix(path.join(BENCH, project, 'setup.sh'))], { cwd: dir, env: full, encoding: 'utf8' });
+    assert.equal(s.status, 0, s.stderr);
+    fs.cpSync(path.join(BENCH, project, 'controls', control), dir, { recursive: true });
+    const r = spawnSync('bash', [bench.posix(path.join(BENCH, project, 'check.sh')), bench.posix(dir)], { env: { ...full, ...checkEnv }, encoding: 'utf8' });
+    return { status: r.status, out: r.stdout.trim() };
+}
+
+const WHY = [
+    ['fix-bug', 'fail', 'spec/range.spec.js was changed'],
+    ['fix-bug', 'fail-unfixed', 'node --test fails'],
+    ['add-feature', 'fail', 'the hidden specs fail'],
+    ['add-feature', 'fail-slug-spec', 'spec/slug.spec.js was changed'],
+    ['add-feature', 'fail-no-truncate-spec', 'no spec/truncate.spec.js'],
+    ['add-feature', 'fail-one-test', 'spec/truncate.spec.js holds fewer than two tests'],
+];
+for (const [p, c, msg] of WHY) {
+    test(p + ' control ' + c + ' fails on its own clause: ' + msg, () => {
+        assert.deepEqual(checkOf(p, c), { status: 1, out: msg });
+    });
+}
+
+test('fix-bug: a gen-spec.sh failure is reported as its own, not as an edited spec', () => {
+    const r = checkOf('fix-bug', 'pass', { BENCH_SEED: 'abc' });
+    assert.deepEqual(r, { status: 1, out: 'gen-spec.sh failed for seed abc' });
+});
+
 // The repository's own `node --test` would run any of these, and a fixture
 // spec that needs BENCH_PROJ would fail the suite.
 test('no file under bench/ is one the repository\'s own node --test picks up', () => {
