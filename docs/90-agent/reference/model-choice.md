@@ -88,7 +88,7 @@ so its figures cannot be recomputed here.
 
 `scripts/bench.js` then measured fankeel's own subagents one role at a time, five runs of
 haiku against five of sonnet, counting only the subagent's own spend
-([the plan](../plans/2026-10-08-haiku-bench.md), [the report](../reports/2026-10-08-haiku-bench.md);
+(the plan `docs/99-archive/2026-10-08-haiku-bench.md`, [the report](../reports/2026-10-08-haiku-bench.md);
 the figures are in the report and are not retyped here). In the valid batches every role's
 haiku arm ran n/n valid. The mutator, mover and implementer verdict lines say `haiku`. The
 reader verdict line says `not haiku`: the rerun had one non-passing run per arm, a wrong
