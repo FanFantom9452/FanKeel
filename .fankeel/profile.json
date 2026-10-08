@@ -4,13 +4,7 @@
   "land.archivePlan": true,
   "design.mockup": "opus",
   "stage.agents": [
-    "survey",
-    "design",
-    "plan",
-    "build",
-    "verify",
-    "audit",
-    "land"
+    "survey"
   ],
   "guard": "deny",
   "gate.station": "off",
