@@ -349,6 +349,31 @@ test('role --dry prints one line per run: the relay on haiku, and the haiku arm\
     assert.match(bad.stderr, /not opus/);
 });
 
+test('roleSummaryMd: the verdict is haiku only when every haiku run was valid and passed', () => {
+    const raw = tmp('fankeel-bench-role-');
+    roleRaw(raw, 'r1-haiku', { prompts: [INPUT], agents: [['fankeel-reader', 'claude-haiku-5-5']], result: 'x' });
+    roleRaw(raw, 'r2-haiku', { prompts: [INPUT], agents: [['fankeel-reader', 'claude-haiku-5-5']], result: 'x' });
+    const base = { role: 'reader', agent: 'fankeel-reader', input: INPUT, claudeUsd: 0.01, arm: 'haiku' };
+    const md = (passes) => bench.roleSummaryMd(bench.roleTally(passes.map((pass, i) => ({ ...base, tag: 'r' + (i + 1) + '-haiku', pass })), raw));
+    assert.match(md([true, false]), /- reader: not haiku\n$/);
+    assert.match(md([true, true]), /- reader: haiku\n$/);
+});
+
+test('roleProject throws on a malformed role.json instead of treating it as no role', () => {
+    const root = project({ 'role.json': '{ not json' });
+    assert.throws(() => bench.roleProject(path.join(root, 'p')), SyntaxError);
+});
+
+test('role --dry with a malformed role.json exits 1 and names the parse error', () => {
+    const root = tmp('fankeel-bench-roles-');
+    fs.mkdirSync(path.join(root, 'roles', 'x'), { recursive: true });
+    fs.writeFileSync(path.join(root, 'roles', 'x', 'role.json'), '{ not json');
+    fs.writeFileSync(path.join(root, 'roles', 'x', 'input.md'), 'Q\n');
+    const r = spawnSync(process.execPath, [SCRIPT, 'role', 'x', '--dry', '--projects', root], { encoding: 'utf8' });
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /bench\.js: .*JSON/);
+});
+
 test('roleProject borrows the project a role.json names, and is the directory itself otherwise', () => {
     const root = project({ 'role.json': JSON.stringify({ agent: 'fankeel-implementer', project: 'add-feature' }) });
     assert.equal(bench.roleProject(path.join(root, 'p')), path.join(root, '..', 'add-feature'));

@@ -163,7 +163,8 @@ function readRole(projectsRoot, name) {
         const conf = JSON.parse(fs.readFileSync(path.join(dir, 'role.json'), 'utf8'));
         return { dir, conf, project: bench.roleProject(dir), input: fs.readFileSync(path.join(dir, 'input.md'), 'utf8') };
     } catch (e) {
-        return null;
+        if (e.code === 'ENOENT') return null;
+        throw e;
     }
 }
 
@@ -281,7 +282,13 @@ function cmdRun(a, projectsRoot) {
 
 function cmdRole(a, projectsRoot) {
     const name = a.positionals[1] || '';
-    const role = readRole(projectsRoot, name);
+    let role;
+    try {
+        role = readRole(projectsRoot, name);
+    } catch (e) {
+        console.error('bench.js: ' + e.message);
+        return 1;
+    }
     if (!role) {
         console.error('bench.js: no role.json and input.md under ' + path.join(projectsRoot, 'roles', name));
         return 1;
