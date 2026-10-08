@@ -278,10 +278,10 @@ the reader who follows it lands on a page that superseded nothing.
 A decision record whose premise is overturned by later code does not move to
 `superseded-by` or `archived`: the section is rewritten to the current
 decision, its reason and its source once each, `status` stays `current`, and
-the history stays in git. A paragraph that begins `Superseded` or `已取代` on a
-`decision` page is the `superseded` finding of `scripts/docs-check.js` (since
-2026-10-09; `docs/03-decisions/fankeel-shell.md` is the page rewritten that
-way).
+the history stays in git. A line that begins `Superseded` or `已取代`, after an
+optional `*(`, on a `decision` page is the `superseded` finding of
+`scripts/docs-check.js` (since 2026-10-09; `docs/03-decisions/fankeel-shell.md`
+is the page rewritten that way).
 
 The vocabulary is wider than those five words — `定案`, `活躍`, `draft`, `草稿`,
 `deprecated`, `historical`, `merged-into <path>` are all understood, and anything
