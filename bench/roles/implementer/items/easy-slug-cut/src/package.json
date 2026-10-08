@@ -1,1 +1,7 @@
-{ "name": "easy-slug-cut", "private": true }
+{
+  "name": "easy-slug-cut",
+  "private": true,
+  "scripts": {
+    "test": "node --test \"spec/*.spec.js\""
+  }
+}
