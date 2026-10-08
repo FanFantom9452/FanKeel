@@ -945,6 +945,7 @@ test('no stage agent is told to send general-purpose; each names its dedicated a
 // brain the brief fits under BRIEF_MAX, still names the context file, and
 // says how many facts it dropped; a reader's brief fits too.
 const OVERFLOW = path.join(__dirname, '..', 'docs', '90-agent', 'reports', 'evidence', '2026-10-09-brief-overflow');
+const LAST_CLAIM = fs.readFileSync(path.join(OVERFLOW, 'claims.txt'), 'utf8').trim().split(/\r?\n/).pop();
 
 function seedOverflow(root, stage, extra = {}) {
   const claims = fs.readFileSync(path.join(OVERFLOW, 'claims.txt'), 'utf8').split(/\r?\n/).filter(Boolean);
@@ -964,6 +965,10 @@ test('the 2026-10-08 brief that Claude Code saved to a file now fits for a build
     assert.ok(text.length <= BRIEF_MAX, stage + ' brain brief is ' + text.length + ' chars');
     assert.ok(text.includes(ctx), 'the context file is still named');
     assert.match(text, /… and \d+ older facts?, in /);
+    if (stage === 'build') {
+      assert.match(text, /^touched: … \d+ earlier \(node \S+\/scripts\/task\.js show --session \S+ lists them\), \S/m);
+      assert.ok(text.includes(LAST_CLAIM), 'the most recent touched path is kept');
+    }
   }
 });
 
@@ -989,9 +994,18 @@ test('the same task briefs a plain reader under the cap', () => {
 });
 
 test('a brief under the cap is left exactly as it was', () => {
-  const text = briefFor('survey');
-  assert.ok(text.length <= BRIEF_MAX);
-  assert.equal(text.includes('older fact'), false);
-  assert.equal(text.includes('touched: …'), false);
-  assert.equal(text.includes('earlier answer'), false);
+  const root = tmp();
+  seedProfile(root, { 'stage.agents': ['build'] });
+  const claims = ['lib/a.js', 'lib/b.js', 'lib/c.js', 'lib/d.js', 'lib/e.js'];
+  seed(root, { stage: 'build', started: '2026-09-19T09:30:12.345Z', route: ROUTE, claims });
+  fs.mkdirSync(TASK_DIR(root), { recursive: true });
+  const facts = ['- fact one — lib/a.js:1 @ 00000000', '- fact two — lib/b.js:2 @ 00000000'];
+  fs.writeFileSync(path.join(TASK_DIR(root), 'context.md'), facts.join('\n') + '\n');
+  answerFile(root, 'design', { 'Keep the ramp?': 'Yes', 'Ship it?': 'No' });
+  const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain', agent_id: 'a1' })));
+  assert.ok(text.length <= BRIEF_MAX, 'brain brief is ' + text.length + ' chars');
+  assert.ok(text.includes('touched: ' + claims.join(', ')), 'every touched path, in order');
+  for (const fact of facts) assert.ok(text.includes(fact), fact);
+  for (const line of ['already answered (design): Keep the ramp? -> Yes. Do not re-ask.', 'already answered (design): Ship it? -> No. Do not re-ask.']) assert.ok(text.includes(line), line);
+  for (const note of ['older fact', 'touched: …', 'earlier answer']) assert.equal(text.includes(note), false, note);
 });
