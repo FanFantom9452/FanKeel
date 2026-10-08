@@ -985,6 +985,26 @@ test('the same task with six long answers fits too, naming the answers it droppe
   assert.match(text, /… and \d+ older facts?, in /);
 });
 
+// A brief that is still over the cap once every step has reached its floor:
+// every fact and answer is gone and named by count, and touched keeps exactly
+// the most recent path. Claude Code will save this one to a file; what the
+// test pins is that fit() went as far as it can, and no further.
+test('a brief over the cap at the floor keeps one touched path and names every dropped fact and answer', () => {
+  const root = tmp();
+  seedProfile(root, { 'stage.agents': ['build'], language: '繁體中文' });
+  seedOverflow(root, 'build', { route: ROUTE, task: 'rework the ramp: ' + 'x'.repeat(1500) });
+  const answers = {};
+  for (let i = 1; i <= 6; i++) answers['Question ' + i + ': ' + 'q'.repeat(110)] = 'a'.repeat(150);
+  answerFile(root, 'design', answers);
+  const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain', agent_id: 'a1' })));
+  assert.ok(text.length > BRIEF_MAX, 'the fixture must still be over the cap at the floor: ' + text.length);
+  assert.match(text, /… and 18 older facts, in /);
+  assert.match(text, /… and 6 earlier answers, in /);
+  const touched = text.split('\n').find((l) => l.startsWith('touched:'));
+  assert.ok(touched.endsWith('lists them), ' + LAST_CLAIM), touched);
+  assert.match(touched, /^touched: … 59 earlier \(node /);
+});
+
 test('the same task briefs a plain reader under the cap', () => {
   const root = tmp();
   seedProfile(root, { 'stage.agents': ['build'] });
