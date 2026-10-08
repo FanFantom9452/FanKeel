@@ -173,6 +173,10 @@ test('mutator judge.js: a restored file, a clean tree and both runs pass; each m
     fs.writeFileSync(path.join(proj, 'lib', 'x.js'), 'y\n');
     assert.equal(run(ran(2), 'kill'), 'fail unrestored: lib/x.js was not restored');
     fs.writeFileSync(path.join(proj, 'lib', 'x.js'), 'x\n');
+    assert.equal(run('before: ℹ pass 2 ℹ fail 0\nmutated: nothing ran\n', 'kill'), 'fail format: no fail count under after:');
+    assert.equal(run('before: ℹ pass 2 ℹ fail 1\nmutated: ℹ pass 1 ℹ fail 2\n', 'kill'), 'fail wrong: the run before the mutation shows fail 1');
+    fs.rmSync(path.join(proj, '.bench', 'result.txt'));
+    assert.equal(judge(process.execPath, [path.join(ROLES, 'mutator', 'items', 'judge.js'), item, proj, 'lib/x.js', 'kill']).last, 'fail format: no .bench/result.txt');
     fs.writeFileSync(path.join(proj, 'lib', 'y.js'), 'y\n');
     assert.equal(run(ran(2), 'kill'), 'fail extra: the worktree is not clean — ?? lib/y.js');
 });
@@ -186,10 +190,10 @@ test('mover judge.sh: each clause passes on the move asked for and names its cla
     spawnSync('git', ['commit', '-q', '-m', 'docs: move n', '-m', 'Second paragraph.'], { cwd: proj });
     const scripts = tmp('fankeel-judge-mover-sh-');
     let n = 0;
-    const clause = (body) => {
+    const clause = (body, dir = proj) => {
         const file = path.join(scripts, 'c' + (n++) + '.sh');
         fs.writeFileSync(file, 'proj="$1"\n. "$2"\n' + body + '\necho pass\n');
-        return judge('bash', [bench.posix(file), bench.posix(proj), bench.posix(path.join(ROLES, 'mover', 'items', 'judge.sh'))]).last;
+        return judge('bash', [bench.posix(file), bench.posix(dir), bench.posix(path.join(ROLES, 'mover', 'items', 'judge.sh'))]).last;
     };
     assert.equal(clause([
         'want_commits 1',
@@ -205,6 +209,29 @@ test('mover judge.sh: each clause passes on the move asked for and names its cla
     assert.equal(clause('want_changes "$(printf \'A docs/m.md\\nD docs/drafts/n.md\')"'), 'fail wrong: the commits do not hold the change asked for: A docs/n.md;D docs/drafts/n.md');
     fs.writeFileSync(path.join(proj, 'x.txt'), 'x\n');
     assert.equal(clause('want_clean'), 'fail extra: the worktree is not clean');
+    const merged = tmp('fankeel-judge-mover-merge-');
+    fs.writeFileSync(path.join(merged, 'base.txt'), 'b\n');
+    repo(merged, true);
+    spawnSync('git', ['checkout', '-q', '-b', 'side'], { cwd: merged });
+    fs.writeFileSync(path.join(merged, 'side.txt'), 's\n');
+    spawnSync('git', ['add', '-A'], { cwd: merged });
+    spawnSync('git', ['commit', '-q', '-m', 'side'], { cwd: merged });
+    spawnSync('git', ['checkout', '-q', '-'], { cwd: merged });
+    fs.writeFileSync(path.join(merged, 'main.txt'), 'm\n');
+    spawnSync('git', ['add', '-A'], { cwd: merged });
+    spawnSync('git', ['commit', '-q', '-m', 'main'], { cwd: merged });
+    spawnSync('git', ['merge', '-q', '--no-ff', '-m', 'merge side', 'side'], { cwd: merged });
+    assert.equal(clause('want_merge', merged), 'pass');
+    assert.equal(clause('want_commits 2', merged), 'fail wrong: 3 commit(s) on top of the start, not 2');
+    const drifted = tmp('fankeel-judge-mover-same-');
+    fs.mkdirSync(path.join(drifted, 'docs', 'drafts'), { recursive: true });
+    fs.writeFileSync(path.join(drifted, 'docs', 'drafts', 'n.md'), 'n\n');
+    repo(drifted, true);
+    spawnSync('git', ['mv', 'docs/drafts/n.md', 'docs/n.md'], { cwd: drifted });
+    fs.writeFileSync(path.join(drifted, 'docs', 'n.md'), 'changed\n');
+    spawnSync('git', ['add', '-A'], { cwd: drifted });
+    spawnSync('git', ['commit', '-q', '-m', 'docs: move n'], { cwd: drifted });
+    assert.equal(clause('want_same docs/n.md docs/drafts/n.md', drifted), 'fail extra: docs/n.md is not docs/drafts/n.md unchanged');
 });
 
 test('implementer judge.js: the code blocks byte for byte, nothing beside the Files block, the specs green', () => {
@@ -235,4 +262,19 @@ test('implementer judge.js: the code blocks byte for byte, nothing beside the Fi
     fs.mkdirSync(path.join(want, 'lib'));
     fs.writeFileSync(path.join(want, 'lib', 'one.js'), 'other\n');
     assert.equal(node(item, proj, '--expect', want).last, 'fail wrong: lib/one.js differs from the plan — the first difference is at byte 0');
+    const red = tmp('fankeel-judge-impl-red-');
+    fs.writeFileSync(path.join(red, 'input.md'), fs.readFileSync(path.join(item, 'input.md'), 'utf8').replace('one(), 1))', 'one(), 2))'));
+    const failing = tmp('fankeel-judge-impl-failing-');
+    fs.writeFileSync(path.join(failing, 'README.md'), 'r\n');
+    repo(failing, true);
+    node('write', red, failing);
+    // Under this suite's own node --test, a nested node --test inherits
+    // NODE_TEST_CONTEXT and exits 0 on a failing spec, so the judge's child
+    // must be spawned without it.
+    const { NODE_TEST_CONTEXT, ...plainEnv } = process.env;
+    assert.equal(judge(process.execPath, [JUDGE, red, failing], { env: plainEnv }).last, 'fail wrong: node --test spec/one.spec.js fails');
+    const unwritten = tmp('fankeel-judge-impl-unwritten-');
+    fs.writeFileSync(path.join(unwritten, 'README.md'), 'r\n');
+    repo(unwritten, true);
+    assert.equal(node(item, unwritten).last, 'fail wrong: lib/one.js was not written');
 });
