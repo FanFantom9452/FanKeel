@@ -278,7 +278,7 @@ Anything else belongs to the host environment.
 <sha> <subject>
 shipped:
   - <what someone can now do that they could not>
-suite: <green>
+suite: <suite.js line>
 cost: <what it took>
 open: <what is still not done>
 then AskUserQuestion

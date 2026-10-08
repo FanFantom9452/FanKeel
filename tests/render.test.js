@@ -542,7 +542,7 @@ test('no stage’s rules cost more than a readable preamble', (t) => {
     assert.ok(!/fankeel-judge/.test(rulesFor(stage).join(' ')), stage + ' rules still name fankeel-judge');
     if (stage === 'survey') assert.match(rulesFor('survey').join(' '), /one workflow, every path:line checked/,
       'survey must name the check its readers run before returning');
-    assert.match(templateFor('land'), /^suite: <green>$/m,
+    assert.match(templateFor('land'), /^suite: <suite.js line>$/m,
       'land must report the suite run, or nothing catches it being skipped');
   }
 });
