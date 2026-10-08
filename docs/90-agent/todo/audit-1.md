@@ -17,4 +17,4 @@ stamp: 2026-10-07
 
 ## 為什麼還開著
 
-腳本已經在：499df36f（2026-09-26）加了 `scripts/docs-move.js`，其後沒有人再改它，所以卡住的不是程式，而是 Trovara 所在的新機器還沒到手，這裡的 repo 碰不到 Trovara 的 docs。要動手時，先在 Trovara 根目錄跑 `node scripts/docs-move.js plan --to <preset> --out moves.tsv`，把搬移表給使用者看過再跑 `apply`；搬完以 `node scripts/docs-check.js` 為準，輸出沒有 dead reference，才算 `.fankeel/docs.json` 換好，最後再跑分批 `/fankeel-audit` 一次。換機器之前不要在這台機器上對 Trovara 預演，因為路徑與已追蹤檔案會不同。
+動手時在這個 repo 跑 `node scripts/docs-move.js plan --to <preset> --out moves.tsv --root <Trovara 的路徑>`，核可後 `apply` 同一個 `--root`；搬完 `node scripts/docs-check.js --root <Trovara 的路徑>` 沒有 dead reference，才算 `.fankeel/docs.json` 換好。卡住的不是程式也不是權限：499df36f（2026-09-26）加了 `scripts/docs-move.js` 後沒人改它；等的是使用者的決定，記在 docs/03-decisions/2026-09-27-todo-clear.md:8，Trovara 的搬移照他的話延後，等他在另一台電腦測。

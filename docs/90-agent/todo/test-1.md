@@ -17,4 +17,4 @@ stamp: 2026-09-29
 
 ## 為什麼還開著
 
-候選原因至今仍在：`tests/todo-check-folder.test.js:216` 的「trackedIn asks git in the C locale」測試用 `fs.copyFileSync(process.execPath, …/git.exe)` 複製 node 執行檔，在 Windows 約 80 MB，整套並行跑時可能逾時或搶磁碟。fc59e8cf（2026-09-29）之後該測試沒被改過，而且沒有任何證據證明它就是那次紅燈的原因，所以不能當成已修好，也不該憑猜測先改測試。下次整套紅燈而單跑 `node --test tests/todo-check-folder.test.js` 全綠時，記下是哪個測試、花了多久；若正是這個測試，再改成不複製（例如 hard link 或 stub 腳本），改完整套連跑數次不再紅，才結案。
+候選原因還在，`tests/todo-check-folder.test.js:216` 仍是 `copyFileSync(process.execPath`，在 Windows 約複製 80 MB 的 node 執行檔到 git.exe；fc59e8cf（2026-09-29）之後該測試沒再改，也沒有證據證明它就是那次紅燈，所以不能算已修。若整套再紅而單跑這個檔全綠，且那次耗時指向它，就改成不複製（hard link 或 stub 腳本）；完成的標準是 `npm test`（package.json 的 `node --test`）連續五次全綠，五次都不再出現重跑不見的失敗。
