@@ -7,6 +7,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 const suite = require('../lib/suite.js');
+const registry = require('../lib/registry.js');
 const { main } = require('../scripts/suite.js');
 const tmp = require('./tmp.js');
 
@@ -18,6 +19,8 @@ const RED = "const test = require('node:test'); test('a', () => { throw new Erro
 function repo() {
   const dir = tmp('fankeel-suite-');
   git(dir, ['init', '-q']);
+  fs.mkdirSync(path.join(dir, '.fankeel'));
+  fs.writeFileSync(path.join(dir, '.fankeel', '.gitignore'), 'build/\n');
   fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ name: 'x', scripts: { test: 'node --test' } }));
   fs.writeFileSync(path.join(dir, 'a.test.js'), GREEN);
   git(dir, ['add', '.']);
@@ -51,6 +54,9 @@ test('blocker: no record where a suite is runnable; a red record; a record older
   assert.match(suite.blocker(dir, DATA, dir), /^suite is red at [0-9a-f]{8} \(2 fail\) — land stops$/);
   suite.record(dir, DATA, { sha, at: 'now', command: 'node --test', pass: 3, fail: 0, ok: true });
   assert.equal(suite.blocker(dir, DATA, dir), null);
+  suite.record(dir, DATA, { sha, at: 'now', command: 'x', pass: null, fail: null, ok: false });
+  assert.match(suite.blocker(dir, DATA, dir), /^suite is red at [0-9a-f]{8} — land stops$/);
+  suite.record(dir, DATA, { sha, at: 'now', command: 'node --test', pass: 3, fail: 0, ok: true });
   fs.writeFileSync(path.join(dir, 'README.md'), '# docs only\n');
   git(dir, ['add', '.']);
   git(dir, ['commit', '-qm', 'docs']);
@@ -59,6 +65,20 @@ test('blocker: no record where a suite is runnable; a red record; a record older
   git(dir, ['add', '.']);
   git(dir, ['commit', '-qm', 'code']);
   assert.match(suite.blocker(dir, DATA, dir), /^suite ran at [0-9a-f]{8}, and lib\.js changed since — run suite\.js again$/);
+  fs.writeFileSync(path.join(dir, 'lib2.js'), 'y\n');
+  git(dir, ['add', '.']);
+  git(dir, ['commit', '-qm', 'code2']);
+  assert.match(suite.blocker(dir, DATA, dir), /^suite ran at [0-9a-f]{8}, and lib\.js and 1 more changed since — run suite\.js again$/);
+});
+
+test('a package.json that does not parse is refused by name, by blocker and by the script', () => {
+  const dir = tmp('fankeel-suite-');
+  fs.writeFileSync(path.join(dir, 'package.json'), '{');
+  assert.match(suite.blocker(dir, DATA, dir), /^package\.json does not parse —/);
+  registry.writeSession(dir, 'abcdef0123', { ...DATA });
+  const r = main(['--session', 'abcdef0123', '--root', dir]);
+  assert.equal(r.ok, false);
+  assert.match(r.text, /package\.json does not parse/);
 });
 
 test('blocker is null with no record where nothing is runnable, and null where the entry has no started stamp', () => {

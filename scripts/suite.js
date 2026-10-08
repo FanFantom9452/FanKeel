@@ -23,7 +23,9 @@ function main(argv) {
     const data = registry.readSession(root, values.session);
     if (!data || data.active !== true) return { text: 'suite: no active entry for ' + values.session + ' under ' + root, ok: false };
     const projectRoot = docs.projectRootsFor(root, data.project ? [data.project] : [])[0] || root;
-    const command = values.command || suite.testCommand(projectRoot);
+    const found = values.command ? null : suite.testCommand(projectRoot);
+    if (found && found.error) return { text: 'suite: ' + found.error + ' — fix it or pass --command "<cmd>".', ok: false };
+    const command = values.command || found;
     if (!command) return { text: 'suite: no test command — package.json has no scripts.test; pass --command "<cmd>".', ok: false };
     const result = suite.runSuite(projectRoot, command);
     const file = suite.record(root, data, result);
