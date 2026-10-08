@@ -1,67 +1,92 @@
 ---
 status: design-intent
 last_verified: 2026-10-08
-source_of_truth: lib/prices.js, lib/usage.js, scripts/eval.js, docs/90-agent/reports/evidence/2026-10-05-brain-model-ab/ab.sh
+source_of_truth: lib/bench.js, scripts/bench.js, hooks/title.js, lib/prices.js, lib/usage.js
 ---
 
-# Haiku 5.5 的派工與可重置的模型實驗台
+# Haiku 5.5 的派工：按角色量
 
-這份設計回答兩件事。第一，Haiku 5.5 是不是只能當最簡單的子 agent。答案是不必：另一份外部實測（repo 根目錄的 `model-bench-report.md`，共 228 次）顯示，Haiku 5.5 在有硬門檻的任務形狀上，連寫腳本、審查、多來源驗證、agentic 修復都 n/n 全過，成本只有 Sonnet 5.5 的 1/15 到 1/25。它接不住的是約 45k token 以上、塞在 prompt 裡的計數。第二，怎麼做一個能重置、能重複、能算清 token 與錢的實驗台。做法是把專案現成的兩種重置方式（`scripts/eval.js` 的暫存目錄加 scaffold，以及 `ab.sh` 的 `git worktree add --detach <sha>`）收成一支 `scripts/bench.js`，借用外部實測的方法，量外部實測沒量到的那一段。
+這份設計是 2026-10-08 第二版。第一版（77aac5c4）用整次 session run 比較臂與臂；fix-bug 那一批跑完後，使用者裁定改成按角色量。結論是：每次只派一個角色、給固定的輸入，haiku 與 sonnet 各跑幾次，量那一個角色自己的花費與成功率；並先修好一個 bug，讓 profile 指定的 haiku 真的生效。使用者的原話是：「他只做簡單的事情 那他做簡單的事情一定比 sonnet 還省 … 他不可能當作 BRAIN 或是當作 撰寫程式的 他可能做最簡單的事情」。
 
-為什麼要自己再量：外部實測量的是「單一任務形狀」走 `claude -p` 的結果，它自己在第 10 節列為限制的，正好是 fankeel 派工真正走的路——Agent tool 子代理的前綴與快取沒量；也沒有量到「一個角色在完整工作流裡」的表現，例如 reader 要回傳帶目錄的 `path:line`，mutator 要還原檔案。2026-09-29「haiku 暫不用」的裁定（`docs/90-agent/reference/model-choice.md:23`）是針對 Haiku 4.5 做的，當時沒有任何數字；要推翻它，需要 fankeel 自己角色上的成對數字。外部報告的證據目錄 `model-bench/` 在另一個 repo 的分支上，這個 repo 裡沒有，所以它的數字只能參考，這裡無法重算。
+## 1. 已經做好、留下來的東西
 
-## 1. 先修量測：Haiku 5.5 的價錢
+第一版 build 到 Task 6 為止的成果全部保留，因為按角色量也用得到：
 
-今天 `lib/prices.js:31` 沒有 Haiku 5.5 這一列，它被當成 Haiku 4.5 以 $1/$5 計價並標 `estimated`，比實價 $0.10/$0.50 高十倍。Haiku 5.5 在 prompt 超過 100K 時改收 $0.50/$2.50，這條線是按每一個 request 算的。子 agent 的每個 request 都會重送整個 context，所以同一次 run 裡，前段的 request 便宜、後段的貴；只看整次 run 的 token 總數，分不出哪些 request 落在線的哪一邊。
+- `lib/prices.js` 的兩列 Haiku 5.5 價目，以及 `lib/usage.js` 把 prompt 超過 100K 的 request 記到 `claude-haiku-5-5>100k` 下。
+- `scripts/bench.js` 的 `probe`（確認 `haiku` 這個別名指向 Haiku 5.5）、`selftest`（每個 `check.sh` 對兩側控制組各跑一次）、`tally`，以及 f5d855de 的暫存目錄清除重試。
+- `bench/` 底下的三個專案。`add-feature` 會被 implementer 角色重用；`fix-bug` 與 `review-planted` 留著不跑。
+- 整次 run 的 `bench.js run` 不刪，但不再是這次的實驗：剩下的 add-feature、review-planted 兩批不跑。
 
-- `lib/prices.js` 加 `claude-haiku-5-5` 一列（input 0.10、output 0.50、cacheRead 0.01、cacheWrite5m 0.125、cacheWrite1h 0.2），另加 `claude-haiku-5-5>100k` 一列（0.50、2.50、0.05、0.625、1.0），`verified` 改成讀到這組數字的日期。一小時快取寫入計 2 倍 input，這和外部實測核對 228 列的結果一致，也是 `tests/prices.test.js` 已經對每一列檢查的比率。
-- `lib/usage.js` 的 `summarise` 記帳時，prompt 大小（`contextOf(usage)`，也就是 input、cache read、cache write 三者相加）超過 100,000 的 Haiku 5.5 request，改記在 `claude-haiku-5-5>100k` 這個 id 下，其餘照舊。這樣 station、`scripts/spend.js` 和實驗台都不必改，就會依每個 request 落在線的哪一邊計價，而且過線的 request 有幾個可以直接讀到。
-- 取捨：station 的模型欄會出現 `claude-haiku-5-5>100k` 這個不是真實模型的 id。這是刻意的，好讓過線的 request 看得見；代價是凡是用字串比對 model id 的地方都要認得這個後綴，所以 build 要 grep 一次 `claude-haiku` 的所有使用處。
+## 2. 為什麼整次 run 看不出差別
 
-## 2. 實驗專案：可重置的起點，每個檢查都有兩側控制組
+fix-bug 那一批（`.fankeel/build/bench/fix-bug-20261008T092518/`）每次 run 都通過 `check.sh`，但從 transcript 逐角色重算後，一次 run 花 $1.1 到 $1.9，其中主 session（sonnet）佔 $0.40 到 $0.91、brain 佔 $0.55 到 $0.85；換成 haiku 的 implementer 只佔 $0.002，換之前是 $0.030。haiku 的角色約是一次 run 的 2%，而主 session 每次 22 到 49 個 request 的起伏遠大於這 2%，所以整次 run 的總額比較不出省下的錢。
 
-一個實驗專案是 `bench/<name>/` 底下的四樣東西：`setup.sh` 從零建出專案，或把 fankeel 本身切到某個 sha；`task.md` 是交給 session 的任務原文；`check.sh` 判定任務有沒有完成，exit 0 才算過；`controls/` 放一份已知該過、一份已知該不過的終態。重置的方式是丟掉這次的目錄、重新跑 `setup.sh`，因此每次 run 都從同一個起點開始。
+同一批裡 `sub` 臂三次都無效：brain 派 mutator 時明寫了 `"model":"sonnet"`，蓋過了 profile 的 `agent.fankeel-mutator.model=haiku`；reader、mover、verifier 在這條流程裡根本沒被派出去。第 4 節修前一件事，第 3 節的做法讓後一件事不再發生。
 
-- 起手三個合成專案：一個是修一個有失敗測試的 bug；一個是照寫好的計畫加一個小功能並補測試；一個是審查專案，在一份 fixture diff 裡植入四個缺陷，給 reviewer 審。fankeel 本身在固定 sha 上做一條真實 TODO，則放到第二輪。
-- 審查專案的 `check.sh` 讀 reviewer 的回報：植入的四個缺陷至少命中三個、每條引文要逐字出現在所指的 `path:line`、假陽性不超過兩個，只要有一條捏造的引文就整份作廢。這是外部實測審查題的門檻，換成 fankeel reviewer 的回報格式。
-- 每個 `check.sh` 都必須有兩側控制組：`node scripts/bench.js selftest` 會對 `controls/pass` 與 `controls/fail` 各跑一次，缺一側或判錯一側就報錯。外部實測正是靠這一步，在第一輪就抓到兩個門檻缺陷（把 `__pycache__` 算成改了測試、把換行的引文判成不符）。
-- `check.sh` 放在 `bench/<name>/` 而不是複製進專案目錄，所以 agent 讀不到答案；測試檔用 sha256 鎖住，被改就判失敗。
-- 有 seed 的專案，第 2、3 次 run 換 seed 重新生成 fixture，避免模型只是記住了同一題。
+## 3. 候選角色：四個「最簡單的事」
 
-## 3. 實驗臂：Haiku 5.5 放在哪裡、effort 開多大
+一個角色要列入候選，條件是它的工作有一個不靠判斷的對錯：
 
-一個臂就是一組模型與 effort 的指派，臂與臂之間只差一個變數。指派方式用現成的 `task.js profile set agent.<name>.model <m>` 和 `agent.<name>.effort <e>`（`lib/profile.js:280` 已經接受 haiku 這個值），在重置後的目錄裡設好再開跑，和 `ab.sh` 的做法相同。
+- `fankeel-reader`：讀檔、回答有標準答案的問題，並附 `path:line`。
+- `fankeel-mutator`：在指定的 `path:line` 套一個變異、跑一條 `node --test`、還原檔案。
+- `fankeel-mover`：做一個 `git mv` 並以給定的訊息 commit。
+- `fankeel-implementer`，但只在計畫已經把程式碼寫好、它只是照抄的情況（計畫 Dispatch 行寫 `implementer, haiku` 的那種，`lib/plantasks.js:555` 已經為它設了窄門）。
 
-- 基準臂：今天的設定，也就是全部 sonnet，brain 在 design 與 plan 階段用 opus。
-- 子 agent 臂：reader、mover、mutator、verifier 改成 haiku@high，其餘不動。外部實測量到 Haiku 的 high 比 medium 只多 15% 成本，卻修掉了四分之三的失誤，xhigh 則完全沒有增益，所以預設用 high，不再另開 medium 臂。
-- 實作臂：build 的 implementer 改成 haiku@high，只用在計畫 Dispatch 行寫 `implementer, haiku` 的任務上；`lib/plantasks.js:555` 已經為這種任務設了窄門。這一臂量的就是「強模型規劃、便宜模型照計畫實作」這條路。
-- reviewer 臂：build 的 reviewer 改成 haiku@high，只在審查專案上跑。2026-10-08 使用者在 design 關卡選了加測 reviewer。外部實測裡 haiku 審查 4/4 命中、0 假陽性，但那不是 fankeel 的 reviewer 與它的回報格式，所以要在這裡量。
-- 不跑 brain 臂，也不跑整個 session 換 haiku 的臂：brain 背著長 context，正好是外部實測裡 haiku 在任何 effort 下都不穩的形狀（5/9），花錢去確認一個預期會輸的結果並不划算。
+不列入的是 brain、主 session、reviewer、verifier：它們的產出要靠判斷，正是使用者說 haiku 不該做的事。`review-planted` 專案已經建好，日後若要量 reviewer 可以直接用，這次不跑。
 
-## 4. 執行與記帳：`scripts/bench.js`
+## 4. 先修：profile 指定的模型要蓋過派工時明寫的模型
 
-用法是 `node scripts/bench.js <project> --arms <a,b> --runs <n> --cap <usd> [--dry]`：每個臂跑 n 次，同一批之內臂的順序依輪次奇偶交替。快取是按模型分開的，所以交替會讓每個模型各付一次冷啟；在一小時的 TTL 內這只發生一次，換來的是兩臂不會因為批次不同而漂移。每次 run 的流程是：重置、寫入這一臂的指派、以 `claude -p` 帶 `--setting-sources project --plugin-dir <tree> --max-budget-usd <剩餘預算>` 開跑、跑完執行 `check.sh`，再把 transcript 與 subagents 目錄複製到 `.fankeel/build/bench/<run>/`。
+今天每一份 skill 都要求派工時明寫模型（`skills/fankeel/SKILL.md:1071`，`dispatch.floor`，預設 sonnet），verify 與 audit 的 brief 也直接寫出 mutator、mover 用 `dispatch.floor`（`lib/render.js:587`、`lib/render.js:595`）。而 `task.js profile set agent.<name>.model haiku` 寫出的 override 檔，只改了 agent 檔的 `model:` 那一行；Agent tool 收到明寫的 `model` 時，以明寫的為準。所以 override 的 effort 會生效、model 不會，fix-bug 那批的 title 寫著「sonnet 5.5 · high」就是這樣來的。
 
-- 每次 run 記下：`check.sh` 過或不過；花費（以 `lib/usage.js` 加 `lib/prices.js` 從 transcript 算，按 `requestId` 去重）；每個模型的 token；過 100K 線的 request 數；子 agent 的固定前綴大小與快取命中率，這是外部實測沒量到的 Agent tool 路徑；殼層量到的牆鐘秒數；主控來回次數。
-- 只有當被指派 haiku 的角色真的跑在 `claude-haiku-5-5` 上，這次 run 才算有效。判斷方式是讀每個 subagent transcript 的 `message.model`；跑錯模型的 run 會列出來，但不計入結果。
-- 每批開跑前寫 provenance，內容是 HEAD、`git status --porcelain`、`claude --version` 和 bench.js 的 md5，寫進 `docs/90-agent/reports/evidence/<date>-haiku-bench/`。
-- `--dry` 不會呼叫 claude，只印出每次 run 的指令與指派，讓人在花錢前先檢查。
-- 裁定規則沿用外部實測：每個角色取最便宜、且 n/n 全過的臂；只要有一次失敗就不算乾淨。結論寫成報告放進 `docs/90-agent/reports/`，再據此改寫 `model-choice.md` 的 b 項。
+- `hooks/title.js` 已經在有 override 時把 `subagent_type` 從 `fankeel:<name>` 換成 `<name>`（`hooks/title.js:28`）。改成：override 檔的 frontmatter 有 `model:` 時，`updatedInput.model` 也換成那個值；title 也就跟著顯示 haiku。
+- 為什麼改在這裡而不是各個 brief：明寫模型的地方散在十幾份 skill 與 brief 裡，而 hook 是所有派工都會經過的唯一一點；`profile.read` 也讀不到 `agent.<name>.model`（`lib/profile.js:323` 只走 `KEYS`），改 brief 還得先改 profile。override 是使用者自己下的指令，比 floor 更具體，蓋過它是對的。
+- override 只設 effort、沒設 model 時，明寫的模型照舊。
 
-## 5. 使用者要決定的事
+## 5. 一個角色怎麼單獨量：`bench.js role`
 
-以下這些沒有對錯，是預算與風險的取捨，設計只給預設值：
+用法是 `node scripts/bench.js role <role> --arms sonnet,haiku --runs <n> --cap <usd> [--dry]`。每次 run 的流程是：
 
-- 每臂次數與每次預算上限：預設每臂 3 次、每次上限 $5。兩個實作專案各跑基準、子 agent、implementer 三臂，審查專案跑基準與 reviewer 兩臂，每臂三次，共 24 次，最壞約 $120；照外部實測的價差，haiku 臂實際會遠低於上限。
-- 權限模式：預設用 `--permission-mode bypassPermissions`，因為 headless run 沒有人可以按允許；只在暫存目錄或 detached worktree 裡跑，而且每批開跑前問一次。
+1. 在新的 mkdtemp 目錄跑該角色的 `setup.sh`，建出固定的起點。
+2. haiku 臂執行 `task.js profile set agent.fankeel-<role>.model haiku`；sonnet 臂什麼都不設。effort 兩臂都用 agent 檔自己的值，兩臂只差模型這一個變數。
+3. 以 `claude -p --model haiku` 開一個只負責轉交的主 session：它的 prompt 要它呼叫一次 Agent tool，`subagent_type` 是 `fankeel:fankeel-<role>`、`model` 是 `sonnet`（和 brain 今天的做法一樣），`prompt` 是該角色 `input.md` 的原文，然後結束。haiku 臂因此同時驗證了第 4 節的修正。
+4. 從主 transcript 取出那個 Agent 呼叫的 tool_result 原文，寫到 `<dir>/.bench/result.txt`，再跑 `check.sh <dir>`。
 
-## 6. 外部報告的歸檔
+一次 run 有效的條件有三個：主 session 恰好派了一次；派出去的 prompt 與 `input.md` 一字不差；那個子 agent 的 transcript 裡每個 `message.model` 都是該臂的模型（haiku 臂必須是 Haiku 5.5，沿用 `lib/bench.js` 的 `runFigures` 判斷）。無效的 run 會列出原因，但不計入結果。
 
-- `model-bench-report.md` 現在是 repo 根目錄裡一個未追蹤的檔案。把它移到 `docs/90-agent/reports/2026-10-08-external-model-bench.md`，開頭加一行，註明證據在另一個 repo、這裡無法重算，並在 `model-choice.md` 的 b 項引用它。
+## 6. 每個角色的輸入與成功檢查
+
+每個角色是 `bench/roles/<role>/` 底下的 `setup.sh`、`input.md`、`check.sh` 與 `controls/pass*`、`controls/fail*`；`bench.js selftest` 一併檢查它們，所以每個檢查都證明過自己能判過、也能判不過。
+
+| 角色 | 固定輸入 | 成功的條件 | 必須判不過的控制組 |
+|---|---|---|---|
+| reader | 約三十個檔的合成 repo，三個有標準答案的問題 | 三題答案都對；每個引用的 `path:line` 存在，且該行含有答案字串 | 一個捏造的 `path:line` |
+| mutator | 一個小 lib 與它的測試，一個指定的變異與 `node --test` 指令 | 回報變異前全過、變異後有測試失敗；跑完後 `git status --porcelain` 為空，檔案 sha256 與起點相同 | 檔案沒還原 |
+| mover | 一個小 git repo，一個 `git mv` 與 commit 訊息 | 新路徑的 blob 與原檔相同、舊路徑不在、HEAD 的訊息相符、其餘檔案沒變 | 搬的同時改了內容 |
+| implementer | 沿用 `bench/add-feature` 的 `setup.sh`；`input.md` 是它計畫裡那個 task 的原文 | 沿用 `bench/add-feature/check.sh` | 沿用 add-feature 既有的 fail 控制組 |
+
+## 7. 花費怎麼算
+
+角色的花費只算那一個子 agent 的 transcript，用 `lib/usage.js` 依 `requestId` 去重、再以 `lib/prices.js` 計價；轉交用的主 session 另列一欄，不算進角色。Claude Code 自己回報的 `total_cost_usd` 也記下來放在旁邊，但報告用的是重算值：fix-bug 那批顯示前者約比後者高 10%，報告要寫明用的是哪一個。
+
+- 彙整表一列是「角色 × 臂」：次數、有效次數、通過次數、角色花費的平均與總和、轉交 session 的花費。
+- 裁定規則：haiku 臂 n/n 有效且全過，該角色才可以改用 haiku；只要有一次失敗就不算。失敗的角色可以日後再開一個 haiku@high 臂，這次不跑。
+
+## 8. 角色改用 haiku 時，fankeel 要改什麼
+
+第 4 節修好之後，改一個角色不需要再改程式：使用者執行 `task.js profile set agent.fankeel-mutator.model haiku`（加 `--default` 則寫進整台機器的設定），之後所有 brain 派它時，不論寫了什麼模型都會跑在 haiku 上。implementer 照舊由計畫的 Dispatch 行決定。要不要直接改 `agents/*.md` 的 `model:` 讓所有使用者預設都用 haiku，由報告出來後的 `model-choice.md` b 項裁定，不在這次範圍。
+
+## 9. 使用者要決定的事
+
+- 次數與預算：預設每個角色每臂 5 次、每次上限 $1，四個角色共 40 次，最壞 $40。照 fix-bug 那批的數字，sonnet implementer 一次約 $0.03，所以實際應該只有幾塊美元。
+- 權限模式：沿用 `--permission-mode bypassPermissions`，只在 mkdtemp 目錄裡跑，每批開跑前問一次。
+
+## 10. 暫存目錄被鎖住
+
+fix-bug 那批每次 run 結束時，暫存目錄都被鎖住超過 5 × 500ms 的重試（EPERM），幾分鐘後才刪得掉。這不擋實驗：`cleanup` 已經把留下的目錄記在該次 run 的 `dir` 欄。這次不改，只在報告裡記一筆。
 
 ## 測試
 
-- `tests/prices.test.js`：`rateFor('claude-haiku-5-5')` 要回傳 input 0.1，而且沒有 `estimated`。現在會失敗，因為它回傳 Haiku 4.5 的 1 並帶 `estimated`。
-- `tests/usage.test.js`：一份有兩個 request 的 fixture transcript，prompt 分別是 90K 與 120K，都是 `claude-haiku-5-5`；`summarise` 要把第二個記在 `claude-haiku-5-5>100k` 下。現在會失敗。
-- `tests/bench.test.js`：`selftest` 遇到缺了 `controls/fail` 的專案要報錯；`--dry` 印出的每一行都要帶該臂的指派，而且臂的順序依奇偶輪交替。
-- 產物檢查：bench 彙整表上每個臂的錢，要等於它各次 run 的錢相加，也要等於從原始 transcript 重算的結果。
+- `tests/title-hook.test.js`：一個帶 `generated_by` 標記、`model: haiku` 的 override 檔，加上 `model: "sonnet"` 的派工輸入，`updatedInput.model` 要是 `haiku`，description 要以 haiku 開頭。現在會失敗，因為 `updatedInput` 保留了 `sonnet`。只設 effort 的 override 則必須保留 `sonnet`。
+- `tests/bench.test.js`：轉交 prompt 含 `input.md` 原文；派了零次或兩次、prompt 與 `input.md` 不同、子 agent 跑錯模型，各自讓 run 無效；角色花費不含轉交 session 的花費。
+- `node scripts/bench.js selftest` 印出含 `roles/reader`、`roles/mutator`、`roles/mover`、`roles/implementer` 的 `selftest ok`。
+- 產物檢查：角色彙整表上每列的花費，等於各次 run 的花費相加，也等於從原始子 agent transcript 重算的結果。
