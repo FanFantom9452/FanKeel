@@ -14,7 +14,7 @@ build 與 verify 加回 `stage.agents`，當且僅當兩條都成立：
 ## 用法
 
 ```
-DRY=1 BASE=HEAD TASK=t SURVEY=README.md bash ab.sh          # 只印命令，不跑 claude
+DRY=1 BASE=HEAD TASK=t SURVEY=README.md bash ab.sh          # 不跑 claude，命令寫進 $OUT/provenance.txt（OUT 預設是本目錄），stdout 無輸出
 BASE=<sha> TASK="…" SURVEY=<survey.md> CAP=30 bash ab.sh     # 實跑，使用者核准花費後
 ```
 

@@ -725,7 +725,8 @@ short sha it was read at. `scripts/context.js add "<fact>" --at <path:line>
 newest 40, dropping an exact duplicate and replacing a fact read again at a
 new sha. `context.js show` marks a line whose sha is not HEAD `(舊)`. The
 ordinary brief inlines the file's content — `renderBrief` and `renderBrainBrief`
-in `lib/render.js` paste it in whole rather than naming its path — so a
+in `lib/render.js` paste it in whole under `BRIEF_MAX`; over it `fit()` keeps the
+newest facts and names the file for the rest (`lib/render.js:701`, `' older ' + (n === 1 ? 'fact' : 'facts')`) — so a
 subagent no longer has to `Read` the file itself before using what it holds.
 
 Build now dispatches one `fankeel:fankeel-brain` per disjoint `ledger.js

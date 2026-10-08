@@ -114,7 +114,7 @@ machine has it and showing the short sha where it does not.
 
 `node scripts/todo-check.js` reads the folder and fails on: a `TODO.md` at the
 root beside a todo folder, which nothing reads; an open entry whose body is
-under 200 characters; a committed entry file that is gone; an id that is not a
+under 200 characters; an open entry whose text outside the migration template and its own description is under 200 characters (`no reason`: it has to say why it is still open); a committed entry file that is gone; an id that is not a
 kebab slug; a state outside the five; a missing title or one over 28 columns;
 a missing description; a line over 200 characters; a `blocked` or `watch`
 entry with no `stamp`, no `group`, or a timing of the other state's kind; an
