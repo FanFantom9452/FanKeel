@@ -117,12 +117,6 @@ test('main is exported and returns fankeelSessions from a session that ran task.
   assert.equal(out.out.fankeelSessions, 1);
 });
 
-// The four breakdowns the 2026-10-09 review asked to count on a project that
-// is not fankeel: verify sent back to build, a task stood down before land, a
-// tool call a fankeel hook refused, and a hook that timed out or failed. The
-// shapes of the last two in a transcript are the script's own header comment;
-// this proves the counting, and the week's run on another project is where
-// the shapes get checked against what Claude Code actually writes.
 // Shapes measured on real transcripts 2026-10-09: Claude Code wraps a hook
 // denial as `PreToolUse:<Tool> hook error: fankeel: …`, the gate hook's refusal
 // is bare, and a stop_hook_summary system line carries a hookErrors array.
@@ -142,6 +136,12 @@ test('--breakdowns counts the refusal and hook-error shapes real transcripts car
   assert.deepEqual(result.hookErrors, [{ at: '2026-10-09T01:03:00.000Z' }, { at: '2026-10-09T01:03:00.000Z' }]);
 });
 
+// The four breakdowns the 2026-10-09 review asked to count on a project that
+// is not fankeel: verify sent back to build, a task stood down before land, a
+// tool call a fankeel hook refused, and a hook that timed out or failed. The
+// shapes of the last two are the ones measured above; this proves the
+// counting, and the week's run on another project is where the item shape
+// inside a non-empty hookErrors gets checked, the one thing still assumed.
 test('--breakdowns counts the four kinds per transcript, each with its time', async () => {
   const cfg = tmp('fankeel-sessions-');
   const dir = path.join(cfg, 'projects', 'p');
