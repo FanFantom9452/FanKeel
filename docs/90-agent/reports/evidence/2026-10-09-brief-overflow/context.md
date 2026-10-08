@@ -1,0 +1,18 @@
+- haiku is a legal value of dispatch.floor, judge.model and agent.<name>.model; model-choice.md says haiku not allowed for now (09-29 user decision) — lib/profile.js:24 @ 943ee70d
+- plan Dispatch line 'implementer, haiku' is lint-gated: Modify reads <= READ_CAP/2 and a fence per Write step — lib/plantasks.js:555 @ 943ee70d
+- prices.js has no Haiku 5.5 row; it is priced at the Haiku 4.5 row ($1/$5) flagged estimated, 10x the $0.10/$0.50 for <=100K prompts — lib/prices.js:31 @ 943ee70d
+- brain-model-ab harness (ab.sh + tally.js) exists with worktree-per-run reset, alternating arms; no report/summary committed — docs/90-agent/reports/evidence/2026-10-05-brain-model-ab/ab.sh:1 @ 943ee70d
+- scripts/eval.js runs claude -p in a fresh mkdtemp dir with scaffold_script, --setting-sources project, required --model — scripts/eval.js:85 @ 943ee70d
+- prices.costOf prices per-model token totals, so a per-request price tier (Haiku 5.5 >100K prompt) cannot be applied there; usage.js contextOf(usage) gives each request's prompt size — lib/usage.js:75 @ 943ee70d
+- usage.summarise dedupes assistant lines by requestId, last line winning — lib/usage.js:108 @ 943ee70d
+- ab.sh resets per run with git worktree add --detach BASE, pins the arm via task.js profile set and commits it in the worktree, alternates arm order by round parity, caps each run with --max-budget-usd — docs/90-agent/reports/evidence/2026-10-05-brain-model-ab/ab.sh:55 @ 943ee70d
+- eval.js buildArgs: claude -p stream-json --setting-sources project --plugin-dir --model required; runOnce uses mkdtemp + scaffold_script — scripts/eval.js:102 @ 943ee70d
+- external model-bench-report.md (untracked, repo root; evidence model-bench/ not in this repo): haiku 5.5 n/n on scripts, review, multi-source verify, agentic fix; effort high +15% cost fixes 3/4 of medium misses, xhigh no gain; fails ~45k inline counting (5/9); claude -p path only, Agent tool path unmeasured — model-bench-report.md:5 @ 824cdc6b
+- hooks/title.js swaps fankeel:<name> to a bare override name via updatedInput but never touches input.model, so an explicit model beats the override's pinned model — hooks/title.js:28 @ f5d855de
+- lib/title.js prefixFor ranks input.model before the agent file's model, so the title shows the explicit model — lib/title.js:143 @ f5d855de
+- skills/fankeel/SKILL.md tells every dispatch to pass the model (dispatch.floor) except reviewer, render-reviewer and verifier — skills/fankeel/SKILL.md:1070 @ f5d855de
+- verify and audit brief lines name the mutator and mover on dispatch.floor explicitly — lib/render.js:587 @ f5d855de
+- profile.read loops only KEYS, so agent.<name>.model never appears in profile.values — lib/profile.js:322 @ f5d855de
+- fix-bug batch: mutator dispatched with model sonnet in sub and base runs; impl-arm implementers ran claude-haiku-5-5 under bare name fankeel-implementer; reader, mover, verifier never dispatched — .fankeel/build/bench/fix-bug-20261008T092518/raw/r1-sub:1 @ f5d855de
+- agent files pin mutator sonnet/low, mover sonnet/low, reader sonnet/medium, implementer sonnet/medium — agents/fankeel-mutator.md:5 @ f5d855de
+- lib/bench.js runFigures reads per-role subagent transcripts (roles, models, mismatched) and cleanup retries rmSync 5x500ms — lib/bench.js:179 @ f5d855de
