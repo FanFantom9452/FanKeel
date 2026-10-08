@@ -21,6 +21,6 @@ done:
 
 ## 完成紀錄
 
-station reads live subagents now: lib/station.js:532 fills subagents from agentsNow, which calls runningAgents (lib/usage.js:278) over subagents/*.meta.json, and lib/station.js:352 inflightOf reads the inflight marker.
+station reads live subagents now. lib/station.js:532 fills subagents from agentsNow, which calls runningAgents (lib/usage.js:278) over subagents/*.meta.json. lib/station.js:352 inflightOf reads the inflight marker.
 
 - commit e77cc85c4d85b5248427a362576ba314e6327cc6

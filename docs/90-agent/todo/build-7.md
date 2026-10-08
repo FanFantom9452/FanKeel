@@ -21,6 +21,6 @@ done:
 
 ## 完成紀錄
 
-scripts/tune.js:370 doneLive moves new untracked files outside --src aside (stray.every(isNew)) and keeps the --src edit, tests/tune.test.js:274 covers the .playwright-mcp case
+scripts/tune.js:370 doneLive moves new untracked files outside --src aside (stray.every(isNew)) and keeps the --src edit. tests/tune.test.js:274 covers the .playwright-mcp case
 
 - commit 601438d5a197fa5960ce1ab6b606647a2bca8b5e

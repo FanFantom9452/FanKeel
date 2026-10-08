@@ -21,6 +21,6 @@ done:
 
 ## 完成紀錄
 
-hooks/gate.js:135 writes at into the pending file, lib/handoff.js:109 reads it back, and assets/station/station.js:1614 counts the wait from gateAt then pending.at
+hooks/gate.js:135 writes at into the pending file and lib/handoff.js:109 reads it back. assets/station/station.js:1614 counts the wait from gateAt then pending.at
 
 - commit e77cc85c4d85b5248427a362576ba314e6327cc6

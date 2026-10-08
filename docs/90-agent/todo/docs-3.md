@@ -21,6 +21,6 @@ done:
 
 ## 完成紀錄
 
-docs/90-agent/reference/shared-libs.md:4 names lib/hook.js and lib/report.js in source_of_truth since 44d7b05d; docs-check.js docs-for lists it as owner of both
+docs/90-agent/reference/shared-libs.md:4 names lib/hook.js and lib/report.js in source_of_truth. That came with commit 44d7b05d, whose subject is: docs: shared-libs.md — name lib/hook.js and lib/report.js as reference. docs-check.js docs-for lists it as owner of both
 
 - commit b39e7f0dcdca414803b412a3c69ea6604d14943c

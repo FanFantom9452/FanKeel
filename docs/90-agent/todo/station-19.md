@@ -21,6 +21,6 @@ done:
 
 ## 完成紀錄
 
-full-text search exists: scripts/station.js:462 serves /station/search from lib/docsearch.js:121 search(), drawn under docs-search in docs/90-agent/reference/station.md:1076
+full-text search exists. scripts/station.js:462 serves /station/search from lib/docsearch.js:121 search(), drawn under docs-search in docs/90-agent/reference/station.md:1076
 
 - commit e77cc85c4d85b5248427a362576ba314e6327cc6
