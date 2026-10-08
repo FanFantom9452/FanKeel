@@ -18,6 +18,6 @@ done:
 
 ## 完成紀錄
 
-the #/live redesign step two landed in e7c52af4 (2026-09-27), which removed this line from TODO.md and drew the four blocks; assets/station/station.js:1609 live-gate and :1623 live-run render them.
+the #/live redesign step two landed in e7c52af4 (2026-09-27), which removed this line from TODO.md and drew the four blocks; assets/station/station.js renders them: live-gate at :1609 and :1612, live-run at :1623, live-maybe at :1638, live-idle at :1645.
 
 - commit e77cc85c4d85b5248427a362576ba314e6327cc6
