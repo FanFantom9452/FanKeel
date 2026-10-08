@@ -32,7 +32,7 @@ test('cleanup passes retry options and swallows a failing rm with one warning', 
     assert.match(warns[0], /D.*EPERM/);
 });
 
-const selfOpts =() => ({ mkdtemp: () => tmp('fankeel-bench-self-'), plugin: 'unused' });
+const selfOpts = () => tmp.selfOpts('unused');
 
 test('arms alternate by round parity, and the seed is the round', () => {
     assert.deepEqual(bench.order(['base', 'sub'], 3).map((x) => x.round + x.arm + x.seed),

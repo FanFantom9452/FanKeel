@@ -23,7 +23,7 @@ test('every bench project names a title, arms the bench knows, and its three fil
 
 for (const p of projects) {
     test(p + ': check.sh passes every pass control and fails every fail control', () => {
-        assert.deepEqual(bench.selftest(path.join(BENCH, p), { mkdtemp: () => tmp('fankeel-bench-self-'), plugin: bench.posix(ROOT) }), []);
+        assert.deepEqual(bench.selftest(path.join(BENCH, p), tmp.selfOpts(bench.posix(ROOT))), []);
     });
 }
 
@@ -116,7 +116,7 @@ test('the four roles each name a plugin agent, carry an input.md, and reach a se
 
 for (const r of roles) {
     test('roles/' + r + ': check.sh passes every pass control and fails every fail control', () => {
-        assert.deepEqual(bench.selftest(bench.roleProject(path.join(ROLES, r)), { mkdtemp: () => tmp('fankeel-bench-self-'), plugin: bench.posix(ROOT) }), []);
+        assert.deepEqual(bench.selftest(bench.roleProject(path.join(ROLES, r)), tmp.selfOpts(bench.posix(ROOT))), []);
     });
 }
 

@@ -30,4 +30,8 @@ function tmp(prefix) {
   return dir;
 }
 
+// The options object lib/bench.js selftest takes: it reads its scratch-directory
+// maker from the key named below, so the name lives here and nowhere else.
+tmp.selfOpts = (plugin) => ({ mkdtemp: () => tmp('fankeel-bench-self-'), plugin });
+
 module.exports = tmp;

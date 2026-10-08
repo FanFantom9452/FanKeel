@@ -202,6 +202,7 @@ fankeel/
 ├── .fankeel/          this repository's own settings: docs.json files each page, profile.json answers gates, .gitignore; and, generated and ignored, .fankeel/station.bat and station.sh, which open this machine's station
 ├── agents/            the eight subagents the stages dispatch — reader, reviewer, verifier, judge, fixer, brain, render-reviewer, mockup — with their tools and model
 ├── assets/            the station page: index.html, station.css and station.js, copied beside every page a write produces; tour.html, tour.css and tour*.js, the one-minute promo film
+├── bench/             the fixed inputs and two-sided controls scripts/bench.js runs a role against, one directory per role
 ├── docs/              reference pages by audience: 01-guide/, 02-architecture/, 03-decisions/, and 90-agent/ (reference/, plans/, reports/, judgements/) with 99-archive/ for what it retires
 ├── evals/             behaviour eval cases, one directory each, graded by scripts/eval.js with claude -p
 ├── hooks/             every hook Claude Code runs; each reads stdin, exits 0 on every path and leaves the work to lib/
@@ -243,7 +244,6 @@ fankeel/
 │   ├── docs-audit.js  which pages stopped being true, and which two disagree
 │   ├── residue.js     what is in the tree that nobody decided about
 │   ├── todo-check.js  whether the TODO entries are still an index
-│   ├── judge.js       files what a fankeel-judge answered, verbatim
 │   ├── upgrade.js     which migrations an older project still needs, and --apply for the safe one
 │   └── version.js     the release number, in every place that carries it
 ├── skills/            one directory per skill — fankeel, one per stage, ask, explain, init, station, upgrade — and registry.json
