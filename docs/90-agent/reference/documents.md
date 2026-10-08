@@ -189,8 +189,8 @@ report where a real parser would cost a dependency this plugin does not have.
 - `scripts/docs-audit.js:416` 是 `const listed = trackedFiles(root);`
 - `scripts/docs-audit.js:456` 是 `const listed = trackedFiles(root);`
 - `scripts/docs-check.js:132` 是 `const result = trackedFiles(root);`
-- `scripts/docs-check.js:419` 是 `const result = trackedFiles(root);`
-- `scripts/docs-check.js:590` 是 `const result = trackedFiles(root);`
+- `scripts/docs-check.js:432` 是 `const result = trackedFiles(root);`
+- `scripts/docs-check.js:603` 是 `const result = trackedFiles(root);`
 - `scripts/docs-move.js:74` 是 `const listed = trackedFiles(root);`
 - `scripts/docs-move.js:210` 是 `for (const rel of trackedFiles(root).files.filter(isMarkdown)) {`
 - `scripts/layout.js:51` 是 `const found = trackedFiles(root);`
