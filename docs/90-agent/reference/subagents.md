@@ -309,6 +309,8 @@ override (`hooks/title.js:29`, `const next = bare ? { ...input, subagent_type: b
 and where that override pins a model of its own — one that differs from the plugin file's — it also
 replaces a `model` the dispatch named, because the Agent tool's explicit model beats the file's; an
 override set for the effort alone leaves the named model alone (`overrideModel` in `lib/title.js`);
+a dispatch already under the bare `<name>` whose file carries that mark gets the same model
+replacement, and a same-name file without the mark is the user's own and keeps the named model;
 the returns must be
 **compared against each other**, because agents dispatched from one prompt style
 make correlated mistakes that per-agent reading will not catch; and the **return

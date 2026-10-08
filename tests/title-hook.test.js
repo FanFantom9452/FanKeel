@@ -118,3 +118,35 @@ test('an override that set only the effort keeps the model the dispatch named', 
     assert.equal(h.updatedInput.model, 'opus');
     assert.equal(h.updatedInput.description, 'opus · high: read the map');
 });
+
+const bareNamed = (f, model) => {
+    const p = named(f, model);
+    p.tool_input.subagent_type = 'fankeel-reader';
+    return p;
+};
+
+test('a bare name whose file is a generated override gets the pinned model too', () => {
+    const f = fixture();
+    override(f.dir, 'haiku', 'medium');
+    const h = fire(bareNamed(f, 'sonnet'), f.dir).hookSpecificOutput;
+    assert.equal(h.updatedInput.model, 'haiku');
+    assert.equal(h.updatedInput.description, 'haiku · medium: read the map');
+});
+
+test('a bare name with a description already titled still gets the pinned model', () => {
+    const f = fixture();
+    override(f.dir, 'haiku', 'medium');
+    const p = bareNamed(f, 'sonnet');
+    p.tool_input.description = 'haiku · medium: read the map';
+    const h = fire(p, f.dir).hookSpecificOutput;
+    assert.equal(h.updatedInput.model, 'haiku');
+});
+
+test('a bare name whose same-name file has no generated mark keeps the model the dispatch named', () => {
+    const f = fixture();
+    const file = path.join(f.dir, '.claude', 'agents', 'fankeel-reader.md');
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, '---\nname: fankeel-reader\nmodel: haiku\neffort: medium\n---\nbody\n');
+    const h = fire(bareNamed(f, 'sonnet'), f.dir).hookSpecificOutput;
+    assert.equal(h.updatedInput.model, 'sonnet');
+});

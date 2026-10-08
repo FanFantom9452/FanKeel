@@ -26,11 +26,15 @@ function main(raw) {
     // dispatch is sent under it and titled from it. Measured before this was
     // written: docs/90-agent/todo/station-6.md, `Verdict: honoured`.
     const bare = overrideFor(input.subagent_type, payload.cwd, configDir);
-    const next = bare ? { ...input, subagent_type: bare } : input;
+    const next = bare ? { ...input, subagent_type: bare } : { ...input };
     // An explicit `model` on the dispatch beats the agent file's, so an
     // override that pins a model of its own replaces it (fix-bug bench run,
     // 2026-10-08: `agent.fankeel-mutator.model=haiku` ran on sonnet).
-    const pinned = bare ? overrideModel(bare, path.join(__dirname, '..'), payload.cwd, configDir) : null;
+    // A dispatch already under the bare name (the brain read it from the
+    // generated file's name) is held to the same override.
+    const type = String(input.subagent_type || '');
+    const generated = bare || (type && !type.includes(':') ? overrideFor('fankeel:' + type, payload.cwd, configDir) : null);
+    const pinned = generated ? overrideModel(generated, path.join(__dirname, '..'), payload.cwd, configDir) : null;
     if (pinned && typeof input.model === 'string' && input.model !== pinned) next.model = pinned;
     const prefix = prefixFor({
         toolInput: next,
@@ -41,7 +45,7 @@ function main(raw) {
         env: process.env,
     });
     const description = prefix === null ? input.description : retitle(input.description, prefix);
-    if (!bare && description === input.description) return;
+    if (!bare && description === input.description && next.model === input.model) return;
     process.stdout.write(JSON.stringify({
         hookSpecificOutput: { hookEventName: 'PreToolUse', updatedInput: { ...next, description } },
     }));
