@@ -285,8 +285,9 @@ then AskUserQuestion
 ```
 
 Four lines and the list. `suite:` is `suite.js`'s line from the run in step 1,
-and a red one stops here: `task.js land` refuses without a green record, so
-this stage's own `Done when` is enforced rather than reported. `shipped:` is one line per thing someone can now do
+and a red one stops here: where the project has a suite, `task.js land`
+refuses without a green record, so this stage's own `Done when` is enforced
+rather than reported. `shipped:` is one line per thing someone can now do
 that they could not — from the ledger's completed entries where the task had a
 plan, listed by hand where it did not. A commit subject already holds the change;
 what it cannot hold is a task that shipped four of them. Not a tour of the diff.
