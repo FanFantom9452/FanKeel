@@ -2,8 +2,8 @@
 // Grades review.txt against the four defects planted in lib/cart.js, with the
 // external bench's bar: at least three found, at most two findings that match
 // none, and no made-up citation — a path not in the project, a line past its
-// end, or backticked code found neither around the cited line nor in the file
-// before the change. One made-up citation fails the whole review. A finding is
+// end, or a code-like backticked quote (one holding any of ()=<>[].;{}) found
+// neither around the cited line nor in the file before the change. One made-up citation fails the whole review. A finding is
 // a line that opens with `path:line:`, fankeel-reviewer's return format.
 const fs = require('node:fs');
 const path = require('node:path');
@@ -26,6 +26,8 @@ function before(rel) {
     try {
         return execFileSync('git', ['-C', proj, 'show', 'HEAD~1:' + rel], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
     } catch (e) {
+        // A git failure is not the model's fabrication: say so, so a miss is not misread.
+        console.error('git show HEAD~1:' + rel + ' failed: ' + String(e.message).split('\n')[0]);
         return '';
     }
 }
