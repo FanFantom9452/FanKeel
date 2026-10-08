@@ -298,4 +298,27 @@ test('report re-tallies the batches it is given and writes the page to --out', (
     assert.equal(spawnSync(process.execPath, [SCRIPT, 'report'], { encoding: 'utf8' }).status, 1);
 });
 
+test('a ruling with no valid run on one of its arms holds null, and the page says 無資料, not 不成立 or 成立', () => {
+    const cell = (arm, passed, clean, usdMean, valid = 10) => ({ arm, valid, passed, clean, usdMean });
+    assert.equal(drift.verdicts([]).longTask.holds, null);
+    assert.equal(drift.verdicts([cell('sonnet', 9, 8, 0.5)]).longTask.holds, null);
+    assert.equal(drift.verdicts([cell('sonnet', 9, 8, 0.5), cell('sonnet-reinject', 9, 10, 0.5, 0)]).worth.sonnet.holds, null);
+    const md = drift.reportMd({ date: '2026-10-10', roles: [], drift: null, batches: [] });
+    assert.match(md, /「haiku 能接長任務」無資料/);
+    assert.match(md, /「重注入值得」對 sonnet 無資料/);
+    assert.doesNotMatch(md, /成立/);
+});
+
+test('report refuses a single-project run batch and a second drift batch, with exit 1 and the reason', () => {
+    const run = tmp('fankeel-report-run-');
+    fs.writeFileSync(path.join(run, 'runs.jsonl'), JSON.stringify({ tag: 'r1-base', project: 'x', arm: 'base', round: 1, seed: 1,
+        pass: true, claudeUsd: 0.1, wallS: 1, error: null }) + '\n');
+    const a = spawnSync(process.execPath, [SCRIPT, 'report', run], { encoding: 'utf8' });
+    assert.equal(a.status, 1);
+    assert.match(a.stderr, /cannot go in a report/);
+    const two = spawnSync(process.execPath, [SCRIPT, 'report', driftBatch(), driftBatch()], { encoding: 'utf8' });
+    assert.equal(two.status, 1);
+    assert.match(two.stderr, /cannot go in a report/);
+});
+
 module.exports = { MODULES, keepAll, transcript, driftBatch };
