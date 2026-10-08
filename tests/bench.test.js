@@ -340,23 +340,6 @@ test('roleTally: each role × arm row sums its runs, equals the money recomputed
     assert.match(md, /- reader: not haiku\n$/);
 });
 
-test('role --dry prints one line per run: the relay on haiku, and the haiku arm\'s profile key', () => {
-    const root = tmp('fankeel-bench-roles-');
-    fs.mkdirSync(path.join(root, 'roles', 'x'), { recursive: true });
-    fs.writeFileSync(path.join(root, 'roles', 'x', 'role.json'), JSON.stringify({ agent: 'fankeel-reader' }));
-    fs.writeFileSync(path.join(root, 'roles', 'x', 'input.md'), 'Q\n');
-    const r = spawnSync(process.execPath, [SCRIPT, 'role', 'x', '--arms', 'sonnet,haiku', '--runs', '2', '--cap', '1', '--dry', '--projects', root], { encoding: 'utf8' });
-    assert.equal(r.status, 0, r.stderr);
-    const lines = r.stdout.trim().split(/\r?\n/);
-    assert.equal(lines.length, 4);
-    assert.match(lines[0], /^r1 x sonnet cap=\$1 claude -p .*--permission-mode bypassPermissions .*--model haiku .*profile: \(none\)$/);
-    assert.match(lines[1], /^r1 x haiku .*profile: agent\.fankeel-reader\.model=haiku$/);
-    assert.match(lines[2], /^r2 x haiku /);
-    const bad = spawnSync(process.execPath, [SCRIPT, 'role', 'x', '--arms', 'sonnet,opus', '--dry', '--projects', root], { encoding: 'utf8' });
-    assert.equal(bad.status, 1);
-    assert.match(bad.stderr, /not opus/);
-});
-
 test('roleSummaryMd: the verdict is haiku only when every haiku run was valid and passed', () => {
     const raw = tmp('fankeel-bench-role-');
     roleRaw(raw, 'r1-haiku', { prompts: [INPUT], agents: [['fankeel-reader', 'claude-haiku-5-5']], result: 'x' });
@@ -367,11 +350,6 @@ test('roleSummaryMd: the verdict is haiku only when every haiku run was valid an
     assert.match(md([true, true]), /- reader: haiku\n$/);
 });
 
-test('roleProject throws on a malformed role.json instead of treating it as no role', () => {
-    const root = project({ 'role.json': '{ not json' });
-    assert.throws(() => bench.roleProject(path.join(root, 'p')), SyntaxError);
-});
-
 test('role --dry with a malformed role.json exits 1 and names the parse error', () => {
     const root = tmp('fankeel-bench-roles-');
     fs.mkdirSync(path.join(root, 'roles', 'x'), { recursive: true });
@@ -380,13 +358,6 @@ test('role --dry with a malformed role.json exits 1 and names the parse error', 
     const r = spawnSync(process.execPath, [SCRIPT, 'role', 'x', '--dry', '--projects', root], { encoding: 'utf8' });
     assert.equal(r.status, 1);
     assert.match(r.stderr, /bench\.js: .*JSON/);
-});
-
-test('roleProject borrows the project a role.json names, and is the directory itself otherwise', () => {
-    const root = project({ 'role.json': JSON.stringify({ agent: 'fankeel-implementer', project: 'add-feature' }) });
-    assert.equal(bench.roleProject(path.join(root, 'p')), path.join(root, '..', 'add-feature'));
-    const plain = project({ 'setup.sh': 'true\n' });
-    assert.equal(bench.roleProject(path.join(plain, 'p')), path.join(plain, 'p'));
 });
 
 test('selftest runs a control\'s control.sh in the laid-out project and removes it before check.sh', () => {
@@ -486,4 +457,62 @@ test('roleTally counts each role × arm × tier, and each valid failure under th
     const md = bench.roleSummaryMd(t);
     assert.match(md, /\| reader \| haiku \| trap \| 2 \| 1 \| 0 \| 0 \| 1 \| 0 \| 0 \| 0 \| 0 \|/);
     assert.match(md, /\| trap-b-r1-haiku \| haiku \| true \| false \| fabricated \|/);
+});
+
+test('role --dry prints one line per run — each item × each round × each arm — naming the item, the relay on haiku and the haiku arm\'s profile key', () => {
+    const root = tmp('fankeel-bench-roles-');
+    for (const id of ['easy-a', 'trap-b']) {
+        fs.mkdirSync(path.join(root, 'roles', 'x', 'items', id), { recursive: true });
+        fs.writeFileSync(path.join(root, 'roles', 'x', 'items', id, 'input.md'), 'Q\n');
+    }
+    fs.writeFileSync(path.join(root, 'roles', 'x', 'role.json'), JSON.stringify({ agent: 'fankeel-reader' }));
+    const role = (...extra) => spawnSync(process.execPath, [SCRIPT, 'role', 'x', '--dry', '--projects', root, ...extra], { encoding: 'utf8' });
+    const r = role('--arms', 'sonnet,haiku', '--runs', '2', '--cap', '1', '--jobs', '2');
+    assert.equal(r.status, 0, r.stderr);
+    const lines = r.stdout.trim().split(/\r?\n/);
+    assert.equal(lines.length, 8);
+    assert.match(lines[0], /^easy-a-r1-sonnet x easy-a sonnet seed=1 cap=\$1 claude -p .*--permission-mode bypassPermissions .*--model haiku .*profile: \(none\)$/);
+    assert.match(lines[1], /^easy-a-r1-haiku .*profile: agent\.fankeel-reader\.model=haiku$/);
+    assert.match(lines[2], /^easy-a-r2-haiku x easy-a haiku seed=2 /);
+    assert.match(lines[4], /^trap-b-r1-sonnet /);
+    const bad = role('--arms', 'sonnet,opus');
+    assert.equal(bad.status, 1);
+    assert.match(bad.stderr, /not opus/);
+    assert.equal(role('--jobs', '0').status, 1);
+});
+
+test('pool keeps at most width jobs in flight and runs every one', async () => {
+    let live = 0;
+    let most = 0;
+    const done = [];
+    await bench.pool([1, 2, 3, 4, 5], 2, async (n) => {
+        live += 1;
+        most = Math.max(most, live);
+        await new Promise((r) => setTimeout(r, 5));
+        live -= 1;
+        done.push(n);
+    });
+    assert.equal(most, 2);
+    assert.deepEqual(done.sort(), [1, 2, 3, 4, 5]);
+});
+
+// The design's section 5: the haiku arm's override is written into its own
+// run directory, never another run's and never the config directory.
+test('two runs prepared side by side: only the haiku one holds an override, and nothing reaches the config dir', () => {
+    const { prepareRun } = require('../scripts/bench.js');
+    const { overrideFor } = require('../lib/title.js');
+    const root = project({ 'items/easy-a/setup.sh': 'git init -q\nmkdir -p .fankeel/sessions\n' });
+    const config = tmp('fankeel-bench-cfg-');
+    const ctx = { agent: 'fankeel-reader', env: { CLAUDE_CONFIG_DIR: config }, mkdtemp: () => tmp('fankeel-bench-prep-') };
+    const job = (arm) => ({ tag: 'easy-a-r1-' + arm, arm, model: arm, round: 1, seed: 1, itemDir: path.join(root, 'p', 'items', 'easy-a'),
+        row: { role: 'p', item: 'easy-a', tier: 'easy', input: 'Q' } });
+    const haiku = prepareRun(ctx, job('haiku'));
+    const sonnet = prepareRun(ctx, job('sonnet'));
+    assert.equal(haiku.row.error, null);
+    assert.equal(sonnet.row.error, null);
+    assert.match(fs.readFileSync(path.join(haiku.dir, '.claude', 'agents', 'fankeel-reader.md'), 'utf8'), /^model: haiku$/m);
+    assert.equal(fs.existsSync(path.join(sonnet.dir, '.claude', 'agents')), false);
+    assert.equal(fs.existsSync(path.join(config, 'agents')), false);
+    assert.equal(overrideFor('fankeel:fankeel-reader', haiku.dir, config), 'fankeel-reader');
+    assert.equal(overrideFor('fankeel:fankeel-reader', sonnet.dir, config), null);
 });

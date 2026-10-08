@@ -274,3 +274,20 @@ test('implementer judge.js: the code blocks byte for byte, nothing beside the Fi
     repo(unwritten, true);
     assert.equal(node(item, unwritten).last, 'fail wrong: lib/one.js was not written');
 });
+
+test('every role holds twelve items, four in each tier, and nothing beside items/ but a role.json naming only its agent', () => {
+    for (const r of roles) {
+        const tiers = bench.roleItems(path.join(ROLES, r)).map((i) => i.tier);
+        assert.deepEqual(bench.TIERS.map((t) => tiers.filter((x) => x === t).length), [4, 4, 4], r);
+        assert.deepEqual(fs.readdirSync(path.join(ROLES, r)).sort(), ['items', 'role.json'], r);
+        assert.deepEqual(Object.keys(JSON.parse(fs.readFileSync(path.join(ROLES, r, 'role.json'), 'utf8'))), ['agent'], r);
+    }
+});
+
+test('role --dry on each real role prints twenty-four runs at one round', () => {
+    for (const r of roles) {
+        const out = spawnSync(process.execPath, [path.join(ROOT, 'scripts', 'bench.js'), 'role', r, '--runs', '1', '--dry'], { encoding: 'utf8' });
+        assert.equal(out.status, 0, out.stderr);
+        assert.equal(out.stdout.trim().split(/\r?\n/).length, 24, r);
+    }
+});
