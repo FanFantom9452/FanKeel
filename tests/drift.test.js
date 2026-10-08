@@ -105,6 +105,7 @@ test('each constraint broken alone is the only one broken, at its own step', () 
 const ROOT = path.join(__dirname, '..');
 const DRIFT = path.join(ROOT, 'bench', 'drift');
 const SCRIPT = path.join(ROOT, 'scripts', 'bench.js');
+const cli = require('../scripts/bench.js');
 
 test('bench/drift: check.sh passes its pass control and fails each fail control on its own class', () => {
     assert.deepEqual(bench.selftest(DRIFT, { ...tmp.selfOpts(bench.posix(ROOT)), classes: true }), []);
@@ -220,6 +221,52 @@ test('tally on a drift batch writes the 2×2 summary', () => {
     assert.equal(r.status, 0, r.stderr);
     assert.match(r.stdout, /^\| arm \| runs \| valid \| task passed \|/);
     assert.match(r.stdout, /\| haiku \| 1 \| 1 \| 1 \| 1 \| - \|/);
+});
+
+test('a reinject run gets a settings file whose PostToolUse hook names reinject.js by absolute path, and --settings to that file', () => {
+    const dir = tmp('fankeel-drift-set-');
+    const args = drift.reinjectArgs(ROOT, dir, true);
+    const file = path.join(dir, '.bench', 'settings.json');
+    assert.deepEqual(args, ['--settings', bench.posix(file)]);
+    const hook = JSON.parse(fs.readFileSync(file, 'utf8')).hooks.PostToolUse[0].hooks[0].command;
+    assert.equal(hook, 'node "' + bench.posix(path.join(ROOT, 'bench', 'drift', 'reinject.js')) + '"');
+});
+
+test('a plain run gets no settings file and no --settings argument', () => {
+    const dir = tmp('fankeel-drift-plain-');
+    assert.deepEqual(drift.reinjectArgs(ROOT, dir, false), []);
+    assert.equal(fs.existsSync(path.join(dir, '.bench')), false);
+});
+
+test('keepReinjectLog copies a run\'s reinject.log into its raw directory, and does nothing when the run has none', () => {
+    const run = tmp('fankeel-drift-log-run-');
+    const raw = tmp('fankeel-drift-log-raw-');
+    drift.keepReinjectLog(run, raw);
+    assert.equal(fs.existsSync(path.join(raw, 'reinject.log')), false);
+    fs.mkdirSync(path.join(run, '.bench'));
+    fs.writeFileSync(path.join(run, '.bench', 'reinject.log'), '{"step":5,"chars":300}\n');
+    drift.keepReinjectLog(run, raw);
+    assert.equal(fs.readFileSync(path.join(raw, 'reinject.log'), 'utf8'), '{"step":5,"chars":300}\n');
+});
+
+test('runJob hands claude --settings, naming a file that points reinject.js in, for a reinject job and nothing for a plain one', async () => {
+    const item = tmp('fankeel-drift-item-');
+    fs.writeFileSync(path.join(item, 'setup.sh'), 'exit 0\n');
+    const seen = [];
+    const spawn = async (args) => {
+        const i = args.indexOf('--settings');
+        seen.push({ args, settings: i < 0 ? null : fs.readFileSync(args[i + 1], 'utf8') });
+        return { status: 0, stdout: '', stderr: '' };
+    };
+    const job = (arm, reinject) => ({ tag: 't-' + arm, arm, model: 'sonnet', round: 1, seed: 1, itemDir: item, reinject,
+        row: { kind: 'drift', reinject, input: 'P\n' } });
+    const ctx = { agent: 'fankeel-implementer', cap: 1, keep: false, timeoutMs: 1000, spawn,
+        batchDir: tmp('fankeel-drift-batch-'), mkdtemp: () => tmp('fankeel-drift-run-') };
+    await cli.runJob(ctx, job('sonnet-reinject', true));
+    await cli.runJob(ctx, job('sonnet', false));
+    const hook = JSON.parse(seen[0].settings).hooks.PostToolUse[0].hooks[0].command;
+    assert.equal(hook, 'node "' + bench.posix(path.join(ROOT, 'bench', 'drift', 'reinject.js')) + '"');
+    assert.equal(seen[1].args.includes('--settings'), false);
 });
 
 module.exports = { MODULES, keepAll, transcript, driftBatch };

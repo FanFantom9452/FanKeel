@@ -220,16 +220,11 @@ async function runJob(ctx, job) {
     const { row, dir, env } = prepareRun(ctx, job);
     try {
         if (row.error) return row;
-        const extra = [];
-        if (job.reinject) {
-            const settings = path.join(dir, '.bench', 'settings.json');
-            fs.mkdirSync(path.dirname(settings), { recursive: true });
-            fs.writeFileSync(settings, JSON.stringify(drift.reinjectSettings(ROOT), null, 2) + '\n');
-            extra.push('--settings', bench.posix(settings));
-        }
+        const extra = drift.reinjectArgs(ROOT, dir, job.reinject);
         const t0 = Date.now();
         const args = ['-p', '--session-id', row.session, '--max-budget-usd', ctx.cap.toFixed(2), ...bench.claudeArgs(ROOT, 'haiku'), ...extra];
-        const r = await spawnClaudeAsync(args, { cwd: dir, env, input: bench.relayPrompt(ctx.agent, row.input), timeout: ctx.timeoutMs });
+        // ctx.spawn lets a test record the args without a claude call; a run never sets it.
+        const r = await (ctx.spawn || spawnClaudeAsync)(args, { cwd: dir, env, input: bench.relayPrompt(ctx.agent, row.input), timeout: ctx.timeoutMs });
         row.wallS = Math.round((Date.now() - t0) / 1000);
         row.exit = r.status;
         const out = lastJson(r.stdout);
@@ -240,8 +235,7 @@ async function runJob(ctx, job) {
             row.error = row.error || 'no transcript for session ' + row.session;
             return row;
         }
-        const log = path.join(dir, '.bench', 'reinject.log');
-        if (fs.existsSync(log)) fs.copyFileSync(log, path.join(raw, 'reinject.log'));
+        drift.keepReinjectLog(dir, raw);
         const f = bench.roleFigures(raw, ctx.agent, job.model, row.input);
         fs.mkdirSync(path.join(dir, '.bench'), { recursive: true });
         fs.writeFileSync(path.join(dir, '.bench', 'result.txt'), f.result);
@@ -403,8 +397,8 @@ async function cmdRole(a, projectsRoot) {
     return 0;
 }
 
-// One batch read back: its kind, its tally and that tally's summary; null
-// when it has no runs.jsonl.
+// One batch read back: its tally and that tally's summary; null when it has
+// no runs.jsonl.
 function tallyBatch(batchDir) {
     let rows;
     try {
@@ -415,14 +409,14 @@ function tallyBatch(batchDir) {
     const raw = path.join(batchDir, 'raw');
     if (rows.length && rows[0].kind === 'drift') {
         const t = drift.driftTally(rows, raw);
-        return { kind: 'drift', t, md: drift.driftSummaryMd(t) };
+        return { t, md: drift.driftSummaryMd(t) };
     }
     if (rows.length && typeof rows[0].role === 'string') {
         const t = bench.roleTally(rows, raw);
-        return { kind: 'role', t, md: bench.roleSummaryMd(t) };
+        return { t, md: bench.roleSummaryMd(t) };
     }
     const t = bench.tally(rows, raw);
-    return { kind: 'run', t, md: bench.summaryMd(t) };
+    return { t, md: bench.summaryMd(t) };
 }
 
 function cmdTally(a) {
@@ -540,6 +534,6 @@ function main(argv) {
     return 1;
 }
 
-module.exports = { prepareRun, runAll };
+module.exports = { prepareRun, runJob, runAll };
 
 if (require.main === module) Promise.resolve(main(process.argv.slice(2))).then((code) => process.exit(code));
