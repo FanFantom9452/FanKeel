@@ -1,0 +1,93 @@
+=== 2026-10-08T09:04:32.764Z
+HEAD: 923c6881210477b2295a3e43c345472844d67bf1
+porcelain:
+?? tsconfig.json
+claude: 2.1.294 (Claude Code)
+scripts/bench.js md5: dccf25489ef40f2146479b824f99d727
+lib/bench.js md5: e53252dd6b094387b231ff0fb79e38fb
+batch: F:\ymlab\fankeel\.fankeel\build\bench\fix-bug-20261008T090429
+project: fix-bug  arms: base,sub,impl  runs: 3  cap: $5
+probe: haiku resolved to claude-haiku-5-5
+=== 2026-10-08T09:25:21.269Z
+HEAD: f5d855de3171516098304a931ec3414e55b928ef
+porcelain:
+?? docs/90-agent/reports/evidence/2026-10-08-haiku-bench/
+?? tsconfig.json
+claude: 2.1.294 (Claude Code)
+scripts/bench.js md5: 696211b69b4c72dc4723b660f7b78f3f
+lib/bench.js md5: bfdd124e9083c21c374b5bf24c824d20
+batch: F:\ymlab\fankeel\.fankeel\build\bench\fix-bug-20261008T092518
+project: fix-bug  arms: base,sub,impl  runs: 3  cap: $5
+probe: haiku resolved to claude-haiku-5-5
+=== 2026-10-08T13:08:32.609Z
+HEAD: 874885c76cb6ef74325854235c693d0812dc69b2
+porcelain:
+?? TODO.md
+?? docs/90-agent/reports/evidence/2026-10-08-haiku-bench/
+?? tsconfig.json
+claude: 2.1.294 (Claude Code)
+scripts/bench.js md5: 13274ff333db53db77aca9139cd392e0
+lib/bench.js md5: 16c30c1a242ed83288db2925e5272a38
+batch: F:\ymlab\fankeel\.fankeel\build\bench\role-mutator-20261008T130828
+role: mutator (fankeel-mutator)  arms: sonnet,haiku  runs: 5  cap: $1
+probe: haiku resolved to claude-haiku-5-5
+=== 2026-10-08T13:22:18.062Z
+HEAD: cb7c1506de72f08770d1b7b5c08496115fab1d79
+porcelain:
+?? TODO.md
+?? docs/90-agent/reports/evidence/2026-10-08-haiku-bench/
+?? tsconfig.json
+claude: 2.1.294 (Claude Code)
+scripts/bench.js md5: 13274ff333db53db77aca9139cd392e0
+lib/bench.js md5: 16c30c1a242ed83288db2925e5272a38
+batch: F:\ymlab\fankeel\.fankeel\build\bench\role-mutator-20261008T132213
+role: mutator (fankeel-mutator)  arms: sonnet,haiku  runs: 5  cap: $1
+probe: haiku resolved to claude-haiku-5-5
+=== 2026-10-08T14:14:29.929Z
+HEAD: 638adfddf1628ea606dff3446264a45a4335f255
+porcelain:
+?? TODO.md
+?? docs/90-agent/reports/evidence/2026-10-08-haiku-bench/
+?? tsconfig.json
+claude: 2.1.294 (Claude Code)
+scripts/bench.js md5: 13274ff333db53db77aca9139cd392e0
+lib/bench.js md5: 16c30c1a242ed83288db2925e5272a38
+batch: F:\ymlab\fankeel\.fankeel\build\bench\role-reader-20261008T141426
+role: reader (fankeel-reader)  arms: sonnet,haiku  runs: 5  cap: $1
+probe: haiku resolved to claude-haiku-5-5
+=== 2026-10-08T14:16:51.467Z
+HEAD: 638adfddf1628ea606dff3446264a45a4335f255
+porcelain:
+?? TODO.md
+?? docs/90-agent/reports/evidence/2026-10-08-haiku-bench/
+?? tsconfig.json
+claude: 2.1.294 (Claude Code)
+scripts/bench.js md5: 13274ff333db53db77aca9139cd392e0
+lib/bench.js md5: 16c30c1a242ed83288db2925e5272a38
+batch: F:\ymlab\fankeel\.fankeel\build\bench\role-mover-20261008T141648
+role: mover (fankeel-mover)  arms: sonnet,haiku  runs: 5  cap: $1
+probe: haiku resolved to claude-haiku-5-5
+=== 2026-10-08T14:19:20.825Z
+HEAD: 638adfddf1628ea606dff3446264a45a4335f255
+porcelain:
+?? TODO.md
+?? docs/90-agent/reports/evidence/2026-10-08-haiku-bench/
+?? tsconfig.json
+claude: 2.1.294 (Claude Code)
+scripts/bench.js md5: 13274ff333db53db77aca9139cd392e0
+lib/bench.js md5: 16c30c1a242ed83288db2925e5272a38
+batch: F:\ymlab\fankeel\.fankeel\build\bench\role-implementer-20261008T141917
+role: implementer (fankeel-implementer)  arms: sonnet,haiku  runs: 5  cap: $1
+probe: haiku resolved to claude-haiku-5-5
+=== 2026-10-08T14:32:00.966Z
+HEAD: 967fa8aedb2ec34d35067075a62e8551a14ca2f9
+porcelain:
+?? TODO.md
+?? docs/90-agent/reports/evidence/2026-10-08-haiku-bench/
+?? tsconfig.json
+claude: 2.1.294 (Claude Code)
+scripts/bench.js md5: 13274ff333db53db77aca9139cd392e0
+lib/bench.js md5: 4568150af46a61a00b5f964c67c8730c
+batch: F:\ymlab\fankeel\.fankeel\build\bench\role-reader-20261008T143157
+role: reader (fankeel-reader)  arms: sonnet,haiku  runs: 5  cap: $1
+probe: haiku resolved to claude-haiku-5-5

@@ -20,8 +20,11 @@ Today every agent file in `agents/` pins its own `model:` in frontmatter. Six pi
   file under `agents/` gets `agent.<name>.model` and `agent.<name>.effort`; a key
   replaces that line in a generated override file rather than in the plugin's own
   (`lib/agentfile.js`, item c below).
-- **b. Reopened 10-08: `haiku`, pending the bench report.** The 09-29 ruling was about Haiku 4.5;
-  Haiku 5.5 is re-measured, see the last section. Until then nothing sends it; it stays legal for `judge.model`.
+- **b. Settled 10-08: `haiku` for `fankeel-mutator`, `fankeel-mover`, `fankeel-implementer`
+  (only where the plan already holds the code, i.e. the plan Dispatch line `implementer, haiku`)
+  and `fankeel-reader`.** The 09-29 ruling was about Haiku 4.5; Haiku 5.5 is re-measured, see the
+  last section. Each is set by the user with `node scripts/task.js profile set agent.fankeel-<role>.model haiku`;
+  this page does not change the profile.
 - **c. Settled 09-29: a default effort per model.** Claude Code's model-config
   documents medium as the default effort of Sonnet 5.5 and Opus 5.5, and the agent
   files keep the `effort:` they pin. Raising one role's effort for a single task goes through
@@ -73,16 +76,31 @@ that has it on is not documented and was not measured. Giving fast to the
 sonnet subagents alone waits upstream, in a blocked TODO entry, on Sonnet
 supporting fast or on fast being settable per agent.
 
-## Haiku 5.5, reopened
+## Haiku 5.5, ruled onto four roles
 
 On 09-29 the user ruled `haiku` out ("not strong enough; use sonnet 5.5"). That ruling was
 about Haiku 4.5, and no figure stood behind it. An external measurement of Haiku 5.5,
 228 `claude -p` runs on single task shapes with two-sided controls
 ([2026-10-08 external model bench](../reports/2026-10-08-external-model-bench.md)), found it
 passing scripts, review, multi-source verification and agentic fixes n/n at effort `high`,
-and failing inline counting over about 45k tokens. It did not measure the Agent tool's
-subagent path or a role inside fankeel's own stages, and its evidence is in another
-repository, so its figures cannot be recomputed here. `scripts/bench.js` measures exactly
-that gap on fankeel's subagents, implementer and reviewer
-([the plan](../plans/2026-10-08-haiku-bench.md)). Until its report is in and the user has
-ruled again, no profile and no plan sends `haiku`.
+and failing inline counting over about 45k tokens. Its evidence is in another repository,
+so its figures cannot be recomputed here.
+
+`scripts/bench.js` then measured fankeel's own subagents one role at a time, five runs of
+haiku against five of sonnet, counting only the subagent's own spend
+([the plan](../plans/2026-10-08-haiku-bench.md), [the report](../reports/2026-10-08-haiku-bench.md);
+the figures are in the report and are not retyped here). In the valid batches every role's
+haiku arm ran n/n valid. The mutator, mover and implementer verdict lines say `haiku`. The
+reader verdict line says `not haiku`: the rerun had one non-passing run per arm, a wrong
+answer on sonnet and a too-strict path check on haiku, and the user overrode that verdict.
+The report says which batches are void and why.
+
+On 10-08 the user ruled `fankeel-mutator`, `fankeel-mover`, `fankeel-implementer` (only where
+the plan already holds the code) and `fankeel-reader` onto `haiku`. The user sets each with
+`node scripts/task.js profile set agent.fankeel-<role>.model haiku`; this page has not run
+it and does not change the profile. Since `hooks/title.js` replaces a dispatch's explicit
+model with a generated override's pinned model, the override wins over the model a dispatch
+names ([subagents](subagents.md)).
+
+Haiku 5.5 is not ruled for any other role (reviewer, verifier, brain, judge-excepted and the
+rest): no profile and no plan sends `haiku` for a role not listed above.

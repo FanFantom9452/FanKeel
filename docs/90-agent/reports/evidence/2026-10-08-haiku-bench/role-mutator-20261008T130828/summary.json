@@ -1,0 +1,246 @@
+{
+  "runs": [
+    {
+      "tag": "r1-sonnet",
+      "role": "mutator",
+      "agent": "fankeel-mutator",
+      "arm": "sonnet",
+      "round": 1,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.03479025,
+      "wallS": 33,
+      "error": null,
+      "session": "f328a3d5-c9a8-44b5-b8ad-9e18b0ffa884",
+      "dir": "C:\\Users\\Owner\\AppData\\Local\\Temp\\fankeel-bench-role-6vBFh8",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.0308158,
+      "relayUsd": 0.00397445,
+      "models": [
+        "claude-sonnet-5-5"
+      ]
+    },
+    {
+      "tag": "r1-haiku",
+      "role": "mutator",
+      "agent": "fankeel-mutator",
+      "arm": "haiku",
+      "round": 1,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.00558177,
+      "wallS": 19,
+      "error": null,
+      "session": "5184fc27-7755-4fa0-b694-f07850a979e2",
+      "dir": "C:\\Users\\Owner\\AppData\\Local\\Temp\\fankeel-bench-role-t7r6Ku",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.00211179,
+      "relayUsd": 0.00346998,
+      "models": [
+        "claude-haiku-5-5"
+      ]
+    },
+    {
+      "tag": "r2-haiku",
+      "role": "mutator",
+      "agent": "fankeel-mutator",
+      "arm": "haiku",
+      "round": 2,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.006056650000000001,
+      "wallS": 24,
+      "error": null,
+      "session": "a9b5a022-3d03-47ee-bb5e-540e5bd01c06",
+      "dir": "C:\\Users\\Owner\\AppData\\Local\\Temp\\fankeel-bench-role-NfSnsp",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.00187425,
+      "relayUsd": 0.0041824,
+      "models": [
+        "claude-haiku-5-5"
+      ]
+    },
+    {
+      "tag": "r2-sonnet",
+      "role": "mutator",
+      "agent": "fankeel-mutator",
+      "arm": "sonnet",
+      "round": 2,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.027060690000000002,
+      "wallS": 27,
+      "error": null,
+      "session": "712122f3-8b1c-441d-8023-044d44301394",
+      "dir": "C:\\Users\\Owner\\AppData\\Local\\Temp\\fankeel-bench-role-rXgLnr",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.0230876,
+      "relayUsd": 0.00397309,
+      "models": [
+        "claude-sonnet-5-5"
+      ]
+    },
+    {
+      "tag": "r3-sonnet",
+      "role": "mutator",
+      "agent": "fankeel-mutator",
+      "arm": "sonnet",
+      "round": 3,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.027728189999999996,
+      "wallS": 40,
+      "error": null,
+      "session": "8e32e285-a2ab-4cbd-8d04-0625f3352d2e",
+      "dir": "C:\\Users\\Owner\\AppData\\Local\\Temp\\fankeel-bench-role-qgGmrB",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.0238068,
+      "relayUsd": 0.00392139,
+      "models": [
+        "claude-sonnet-5-5"
+      ]
+    },
+    {
+      "tag": "r3-haiku",
+      "role": "mutator",
+      "agent": "fankeel-mutator",
+      "arm": "haiku",
+      "round": 3,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.00607554,
+      "wallS": 23,
+      "error": null,
+      "session": "da723f04-3ba7-4820-87b0-a8f120b9b730",
+      "dir": "C:\\Users\\Owner\\AppData\\Local\\Temp\\fankeel-bench-role-ZdGECb",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.0020993400000000003,
+      "relayUsd": 0.0039762,
+      "models": [
+        "claude-haiku-5-5"
+      ]
+    },
+    {
+      "tag": "r4-haiku",
+      "role": "mutator",
+      "agent": "fankeel-mutator",
+      "arm": "haiku",
+      "round": 4,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.025575920000000005,
+      "wallS": 47,
+      "error": null,
+      "session": "fc1c8c96-6e7a-4abd-8f4d-7cdbb8370546",
+      "dir": "C:\\Users\\Owner\\AppData\\Local\\Temp\\fankeel-bench-role-Z3DqTs",
+      "valid": false,
+      "why": [
+        "fankeel-mutator ran claude-sonnet-5-5, not the haiku arm"
+      ],
+      "roleUsd": 0.0216965,
+      "relayUsd": 0.00387942,
+      "models": [
+        "claude-sonnet-5-5"
+      ]
+    },
+    {
+      "tag": "r4-sonnet",
+      "role": "mutator",
+      "agent": "fankeel-mutator",
+      "arm": "sonnet",
+      "round": 4,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.024990180000000004,
+      "wallS": 25,
+      "error": null,
+      "session": "7db75081-724c-472b-967e-0636517a2d27",
+      "dir": "C:\\Users\\Owner\\AppData\\Local\\Temp\\fankeel-bench-role-05eZPg",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.02108,
+      "relayUsd": 0.00391018,
+      "models": [
+        "claude-sonnet-5-5"
+      ]
+    },
+    {
+      "tag": "r5-sonnet",
+      "role": "mutator",
+      "agent": "fankeel-mutator",
+      "arm": "sonnet",
+      "round": 5,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.02523605,
+      "wallS": 41,
+      "error": null,
+      "session": "a0b83d91-80db-429e-9d10-ea6528545514",
+      "dir": "C:\\Users\\Owner\\AppData\\Local\\Temp\\fankeel-bench-role-jerjSU",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.0214137,
+      "relayUsd": 0.0038223500000000004,
+      "models": [
+        "claude-sonnet-5-5"
+      ]
+    },
+    {
+      "tag": "r5-haiku",
+      "role": "mutator",
+      "agent": "fankeel-mutator",
+      "arm": "haiku",
+      "round": 5,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.006150760000000001,
+      "wallS": 31,
+      "error": null,
+      "session": "4e05a552-e5fb-4b57-b63f-0a70e50cfbf7",
+      "dir": "C:\\Users\\Owner\\AppData\\Local\\Temp\\fankeel-bench-role-0oIHdu",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.00223913,
+      "relayUsd": 0.00391163,
+      "models": [
+        "claude-haiku-5-5"
+      ]
+    }
+  ],
+  "arms": [
+    {
+      "role": "mutator",
+      "arm": "sonnet",
+      "runs": 5,
+      "valid": 5,
+      "passed": 5,
+      "roleUsd": 0.1202039,
+      "relayUsd": 0.01960146
+    },
+    {
+      "role": "mutator",
+      "arm": "haiku",
+      "runs": 5,
+      "valid": 4,
+      "passed": 4,
+      "roleUsd": 0.03002101,
+      "relayUsd": 0.01941963
+    }
+  ]
+}

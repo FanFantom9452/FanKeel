@@ -1,0 +1,234 @@
+{
+  "runs": [
+    {
+      "tag": "r1-sonnet",
+      "role": "reader",
+      "agent": "fankeel-reader",
+      "arm": "sonnet",
+      "round": 1,
+      "pass": false,
+      "check": "question 3: wrong answer",
+      "exit": 0,
+      "claudeUsd": 0.026602,
+      "wallS": 10,
+      "error": null,
+      "session": "ba3f0a1e-2e1e-457b-88ac-09b3f8a2025e",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.0226601,
+      "relayUsd": 0.0039419,
+      "models": [
+        "claude-sonnet-5-5"
+      ]
+    },
+    {
+      "tag": "r1-haiku",
+      "role": "reader",
+      "agent": "fankeel-reader",
+      "arm": "haiku",
+      "round": 1,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.006009690000000001,
+      "wallS": 13,
+      "error": null,
+      "session": "ec3d7265-ee4f-4d24-8fd7-02997fb5231d",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.0020683800000000003,
+      "relayUsd": 0.003941310000000001,
+      "models": [
+        "claude-haiku-5-5"
+      ]
+    },
+    {
+      "tag": "r2-haiku",
+      "role": "reader",
+      "agent": "fankeel-reader",
+      "arm": "haiku",
+      "round": 2,
+      "pass": false,
+      "check": "question 1: limits.js does not exist",
+      "exit": 0,
+      "claudeUsd": 0.004856385,
+      "wallS": 10,
+      "error": null,
+      "session": "242c90b0-203e-450f-88db-129a6e6f87d6",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.000893075,
+      "relayUsd": 0.00396331,
+      "models": [
+        "claude-haiku-5-5"
+      ]
+    },
+    {
+      "tag": "r2-sonnet",
+      "role": "reader",
+      "agent": "fankeel-reader",
+      "arm": "sonnet",
+      "round": 2,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.01781332,
+      "wallS": 11,
+      "error": null,
+      "session": "6276f38e-2c17-489b-a184-e1187893b953",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.0138978,
+      "relayUsd": 0.0039155200000000005,
+      "models": [
+        "claude-sonnet-5-5"
+      ]
+    },
+    {
+      "tag": "r3-sonnet",
+      "role": "reader",
+      "agent": "fankeel-reader",
+      "arm": "sonnet",
+      "round": 3,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.01825519,
+      "wallS": 31,
+      "error": null,
+      "session": "8d0c0f27-96ab-446d-b272-6014537cf2fa",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.0143607,
+      "relayUsd": 0.0038944900000000005,
+      "models": [
+        "claude-sonnet-5-5"
+      ]
+    },
+    {
+      "tag": "r3-haiku",
+      "role": "reader",
+      "agent": "fankeel-reader",
+      "arm": "haiku",
+      "round": 3,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.005351860000000001,
+      "wallS": 12,
+      "error": null,
+      "session": "d217e133-a915-42cf-87fd-a7cf433ebdc7",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.0013885599999999998,
+      "relayUsd": 0.0039633,
+      "models": [
+        "claude-haiku-5-5"
+      ]
+    },
+    {
+      "tag": "r4-haiku",
+      "role": "reader",
+      "agent": "fankeel-reader",
+      "arm": "haiku",
+      "round": 4,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.004834025,
+      "wallS": 11,
+      "error": null,
+      "session": "50f99eab-88a2-4a21-ac43-7206b1d3b1fd",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.001022645,
+      "relayUsd": 0.00381138,
+      "models": [
+        "claude-haiku-5-5"
+      ]
+    },
+    {
+      "tag": "r4-sonnet",
+      "role": "reader",
+      "agent": "fankeel-reader",
+      "arm": "sonnet",
+      "round": 4,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.01712348,
+      "wallS": 13,
+      "error": null,
+      "session": "f553d2be-e407-40e1-9914-3383f325ce92",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.0131946,
+      "relayUsd": 0.00392888,
+      "models": [
+        "claude-sonnet-5-5"
+      ]
+    },
+    {
+      "tag": "r5-sonnet",
+      "role": "reader",
+      "agent": "fankeel-reader",
+      "arm": "sonnet",
+      "round": 5,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.01832407,
+      "wallS": 18,
+      "error": null,
+      "session": "70ecc290-2173-48b0-9360-350b702819bb",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.014537399999999999,
+      "relayUsd": 0.0037866700000000002,
+      "models": [
+        "claude-sonnet-5-5"
+      ]
+    },
+    {
+      "tag": "r5-haiku",
+      "role": "reader",
+      "agent": "fankeel-reader",
+      "arm": "haiku",
+      "round": 5,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.0050114700000000005,
+      "wallS": 11,
+      "error": null,
+      "session": "6a1209ba-6989-46a6-9261-694061a3e434",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.0010985,
+      "relayUsd": 0.00391297,
+      "models": [
+        "claude-haiku-5-5"
+      ]
+    }
+  ],
+  "arms": [
+    {
+      "role": "reader",
+      "arm": "sonnet",
+      "runs": 5,
+      "valid": 5,
+      "passed": 4,
+      "roleUsd": 0.07865059999999999,
+      "relayUsd": 0.01946746
+    },
+    {
+      "role": "reader",
+      "arm": "haiku",
+      "runs": 5,
+      "valid": 5,
+      "passed": 4,
+      "roleUsd": 0.00647116,
+      "relayUsd": 0.019592270000000002
+    }
+  ]
+}

@@ -1,0 +1,930 @@
+{
+  "runs": [
+    {
+      "tag": "r1-base",
+      "project": "fix-bug",
+      "arm": "base",
+      "round": 1,
+      "seed": 1,
+      "requires": [],
+      "pass": true,
+      "check": "pass",
+      "exit": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "claudeUsd": 1.3470374999999999,
+      "wallS": 606,
+      "error": null,
+      "session": "0df74c1b-23ed-4cc0-b757-58955478fb07",
+      "dir": "C:\\Users\\Owner\\AppData\\Local\\Temp\\fankeel-bench-QFmaZl",
+      "usd": 1.3447375,
+      "unpriced": [],
+      "estimated": [],
+      "models": {
+        "claude-sonnet-5-5": {
+          "input": 126,
+          "output": 16430,
+          "cacheRead": 1999190,
+          "cacheWrite5m": 118411,
+          "cacheWrite1h": 50871
+        },
+        "claude-opus-5-5": {
+          "input": 22,
+          "output": 3828,
+          "cacheRead": 240490,
+          "cacheWrite5m": 31218,
+          "cacheWrite1h": 0
+        }
+      },
+      "over100k": 0,
+      "roles": {
+        "fankeel-brain": {
+          "dispatches": 4,
+          "prefix": [
+            13064,
+            11554,
+            12685,
+            11450
+          ],
+          "cacheRead": 694845,
+          "prompt": 806754,
+          "models": [
+            "claude-sonnet-5-5",
+            "claude-opus-5-5"
+          ],
+          "hitRate": 0.8612848526316572
+        },
+        "fankeel-implementer": {
+          "dispatches": 1,
+          "prefix": [
+            8345
+          ],
+          "cacheRead": 17691,
+          "prompt": 27497,
+          "models": [
+            "claude-sonnet-5-5"
+          ],
+          "hitRate": 0.6433792777393897
+        },
+        "fankeel-reviewer": {
+          "dispatches": 3,
+          "prefix": [
+            11072,
+            10876,
+            10941
+          ],
+          "cacheRead": 65810,
+          "prompt": 93808,
+          "models": [
+            "claude-sonnet-5-5"
+          ],
+          "hitRate": 0.7015393143441924
+        }
+      },
+      "wakes": 9,
+      "mismatched": [],
+      "unexercised": [],
+      "valid": true
+    },
+    {
+      "tag": "r1-sub",
+      "project": "fix-bug",
+      "arm": "sub",
+      "round": 1,
+      "seed": 1,
+      "requires": [],
+      "pass": true,
+      "check": "pass",
+      "exit": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "claudeUsd": 1.8219332000000004,
+      "wallS": 851,
+      "error": null,
+      "session": "e3b80327-2e7f-43f3-9e3a-a8ce7cbb3286",
+      "dir": "C:\\Users\\Owner\\AppData\\Local\\Temp\\fankeel-bench-q19VJU",
+      "usd": 1.8219332,
+      "unpriced": [],
+      "estimated": [],
+      "models": {
+        "claude-sonnet-5-5": {
+          "input": 166,
+          "output": 18956,
+          "cacheRead": 3181630,
+          "cacheWrite5m": 136320,
+          "cacheWrite1h": 63319
+        },
+        "claude-opus-5-5": {
+          "input": 26,
+          "output": 4914,
+          "cacheRead": 255801,
+          "cacheWrite5m": 50419,
+          "cacheWrite1h": 0
+        }
+      },
+      "over100k": 0,
+      "roles": {
+        "fankeel-brain": {
+          "dispatches": 5,
+          "prefix": [
+            13126,
+            12863,
+            12687,
+            11433,
+            11576
+          ],
+          "cacheRead": 833404,
+          "prompt": 983047,
+          "models": [
+            "claude-sonnet-5-5",
+            "claude-opus-5-5"
+          ],
+          "hitRate": 0.8477763525040003
+        },
+        "fankeel-reviewer": {
+          "dispatches": 2,
+          "prefix": [
+            10854,
+            11231
+          ],
+          "cacheRead": 59880,
+          "prompt": 80092,
+          "models": [
+            "claude-sonnet-5-5"
+          ],
+          "hitRate": 0.7476402137541827
+        },
+        "fankeel-mutator": {
+          "dispatches": 1,
+          "prefix": [
+            5191
+          ],
+          "cacheRead": 24783,
+          "prompt": 31954,
+          "models": [
+            "claude-sonnet-5-5"
+          ],
+          "hitRate": 0.7755836514990299
+        },
+        "fankeel-implementer": {
+          "dispatches": 1,
+          "prefix": [
+            8145
+          ],
+          "cacheRead": 17421,
+          "prompt": 27230,
+          "models": [
+            "claude-sonnet-5-5"
+          ],
+          "hitRate": 0.6397723099522585
+        }
+      },
+      "wakes": 15,
+      "mismatched": [
+        "agent-a42f3dbe6a9f1c003.jsonl fankeel-mutator ran claude-sonnet-5-5"
+      ],
+      "unexercised": [],
+      "valid": false
+    },
+    {
+      "tag": "r1-impl",
+      "project": "fix-bug",
+      "arm": "impl",
+      "round": 1,
+      "seed": 1,
+      "requires": [],
+      "pass": true,
+      "check": "pass",
+      "exit": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "claudeUsd": 1.8865100249999998,
+      "wallS": 883,
+      "error": null,
+      "session": "e0048d06-33e4-4d87-afaa-91262f73d867",
+      "dir": "C:\\Users\\Owner\\AppData\\Local\\Temp\\fankeel-bench-0oq2ME",
+      "usd": 1.886510025,
+      "unpriced": [],
+      "estimated": [],
+      "models": {
+        "claude-sonnet-5-5": {
+          "input": 148,
+          "output": 19219,
+          "cacheRead": 2999566,
+          "cacheWrite5m": 148415,
+          "cacheWrite1h": 66396
+        },
+        "claude-opus-5-5": {
+          "input": 30,
+          "output": 6317,
+          "cacheRead": 340922,
+          "cacheWrite5m": 52030,
+          "cacheWrite1h": 0
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 1815,
+          "cacheRead": 29300,
+          "cacheWrite5m": 11949,
+          "cacheWrite1h": 0
+        }
+      },
+      "over100k": 0,
+      "roles": {
+        "fankeel-brain": {
+          "dispatches": 6,
+          "prefix": [
+            12931,
+            11456,
+            11651,
+            11637,
+            13141,
+            12709
+          ],
+          "cacheRead": 947361,
+          "prompt": 1125057,
+          "models": [
+            "claude-opus-5-5",
+            "claude-sonnet-5-5"
+          ],
+          "hitRate": 0.8420560024958735
+        },
+        "fankeel-implementer": {
+          "dispatches": 1,
+          "prefix": [
+            7986
+          ],
+          "cacheRead": 29300,
+          "prompt": 41257,
+          "models": [
+            "claude-haiku-5-5"
+          ],
+          "hitRate": 0.7101825144823909
+        },
+        "fankeel-reviewer": {
+          "dispatches": 3,
+          "prefix": [
+            10947,
+            10997,
+            10822
+          ],
+          "cacheRead": 64892,
+          "prompt": 87731,
+          "models": [
+            "claude-sonnet-5-5"
+          ],
+          "hitRate": 0.7396701280049242
+        }
+      },
+      "wakes": 14,
+      "mismatched": [],
+      "unexercised": [],
+      "valid": true
+    },
+    {
+      "tag": "r2-impl",
+      "project": "fix-bug",
+      "arm": "impl",
+      "round": 2,
+      "seed": 2,
+      "requires": [],
+      "pass": true,
+      "check": "pass",
+      "exit": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "claudeUsd": 2.111187624999999,
+      "wallS": 1132,
+      "error": null,
+      "session": "8e3711c2-272c-4cea-a781-2d3ee7a3d037",
+      "dir": "C:\\Users\\Owner\\AppData\\Local\\Temp\\fankeel-bench-DTEXMS",
+      "usd": 2.110774125,
+      "unpriced": [],
+      "estimated": [],
+      "models": {
+        "claude-sonnet-5-5": {
+          "input": 176,
+          "output": 22170,
+          "cacheRead": 3610022,
+          "cacheWrite5m": 182300,
+          "cacheWrite1h": 69692
+        },
+        "claude-opus-5-5": {
+          "input": 32,
+          "output": 7906,
+          "cacheRead": 424557,
+          "cacheWrite5m": 37227,
+          "cacheWrite1h": 0
+        },
+        "claude-haiku-5-5": {
+          "input": 10,
+          "output": 1619,
+          "cacheRead": 43845,
+          "cacheWrite5m": 13251,
+          "cacheWrite1h": 0
+        }
+      },
+      "over100k": 0,
+      "roles": {
+        "fankeel-brain": {
+          "dispatches": 6,
+          "prefix": [
+            11577,
+            12689,
+            13572,
+            13359,
+            11661,
+            11431
+          ],
+          "cacheRead": 1269331,
+          "prompt": 1455229,
+          "models": [
+            "claude-sonnet-5-5",
+            "claude-opus-5-5"
+          ],
+          "hitRate": 0.872255157092114
+        },
+        "fankeel-reviewer": {
+          "dispatches": 3,
+          "prefix": [
+            11207,
+            10960,
+            11430
+          ],
+          "cacheRead": 72460,
+          "prompt": 106199,
+          "models": [
+            "claude-sonnet-5-5"
+          ],
+          "hitRate": 0.6823039764969538
+        },
+        "fankeel-implementer": {
+          "dispatches": 1,
+          "prefix": [
+            8606
+          ],
+          "cacheRead": 43845,
+          "prompt": 57106,
+          "models": [
+            "claude-haiku-5-5"
+          ],
+          "hitRate": 0.767782719854306
+        }
+      },
+      "wakes": 18,
+      "mismatched": [],
+      "unexercised": [],
+      "valid": true
+    },
+    {
+      "tag": "r2-sub",
+      "project": "fix-bug",
+      "arm": "sub",
+      "round": 2,
+      "seed": 2,
+      "requires": [],
+      "pass": true,
+      "check": "pass",
+      "exit": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "claudeUsd": 1.2218385999999997,
+      "wallS": 238,
+      "error": null,
+      "session": "8ac927ad-3564-453f-b37d-e0d8224de95c",
+      "dir": "C:\\Users\\Owner\\AppData\\Local\\Temp\\fankeel-bench-uhTgty",
+      "usd": 1.2218386,
+      "unpriced": [],
+      "estimated": [],
+      "models": {
+        "claude-sonnet-5-5": {
+          "input": 102,
+          "output": 14993,
+          "cacheRead": 1634147,
+          "cacheWrite5m": 84140,
+          "cacheWrite1h": 40811
+        },
+        "claude-opus-5-5": {
+          "input": 26,
+          "output": 6191,
+          "cacheRead": 343161,
+          "cacheWrite5m": 35745,
+          "cacheWrite1h": 0
+        }
+      },
+      "over100k": 0,
+      "roles": {
+        "fankeel-reviewer": {
+          "dispatches": 3,
+          "prefix": [
+            11078,
+            11106,
+            10880
+          ],
+          "cacheRead": 60823,
+          "prompt": 73588,
+          "models": [
+            "claude-sonnet-5-5"
+          ],
+          "hitRate": 0.8265342175354677
+        },
+        "fankeel-brain": {
+          "dispatches": 3,
+          "prefix": [
+            12685,
+            11454,
+            13115
+          ],
+          "cacheRead": 989413,
+          "prompt": 1086736,
+          "models": [
+            "claude-opus-5-5",
+            "claude-sonnet-5-5"
+          ],
+          "hitRate": 0.9104446710148555
+        },
+        "fankeel-implementer": {
+          "dispatches": 1,
+          "prefix": [
+            7972
+          ],
+          "cacheRead": 17347,
+          "prompt": 27228,
+          "models": [
+            "claude-sonnet-5-5"
+          ],
+          "hitRate": 0.6371015131482297
+        }
+      },
+      "wakes": 5,
+      "mismatched": [],
+      "unexercised": [
+        "none of fankeel-reader, fankeel-mover, fankeel-mutator, fankeel-verifier"
+      ],
+      "valid": false
+    },
+    {
+      "tag": "r2-base",
+      "project": "fix-bug",
+      "arm": "base",
+      "round": 2,
+      "seed": 2,
+      "requires": [],
+      "pass": true,
+      "check": "pass",
+      "exit": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "claudeUsd": 1.7275962999999999,
+      "wallS": 899,
+      "error": null,
+      "session": "8b792b49-91df-4039-b457-5faba6846d95",
+      "dir": "C:\\Users\\Owner\\AppData\\Local\\Temp\\fankeel-bench-9I9vLA",
+      "usd": 1.7275963,
+      "unpriced": [],
+      "estimated": [],
+      "models": {
+        "claude-sonnet-5-5": {
+          "input": 150,
+          "output": 19280,
+          "cacheRead": 2347956,
+          "cacheWrite5m": 118005,
+          "cacheWrite1h": 49296
+        },
+        "claude-opus-5-5": {
+          "input": 40,
+          "output": 8633,
+          "cacheRead": 425293,
+          "cacheWrite5m": 62966,
+          "cacheWrite1h": 0
+        }
+      },
+      "over100k": 0,
+      "roles": {
+        "fankeel-brain": {
+          "dispatches": 5,
+          "prefix": [
+            13151,
+            12674,
+            12853,
+            11490,
+            12896
+          ],
+          "cacheRead": 917038,
+          "prompt": 1045304,
+          "models": [
+            "claude-sonnet-5-5",
+            "claude-opus-5-5"
+          ],
+          "hitRate": 0.8772931128169413
+        },
+        "fankeel-reviewer": {
+          "dispatches": 5,
+          "prefix": [
+            11003,
+            10881,
+            10913,
+            11088,
+            10811
+          ],
+          "cacheRead": 148118,
+          "prompt": 183841,
+          "models": [
+            "claude-sonnet-5-5"
+          ],
+          "hitRate": 0.805685347664558
+        },
+        "fankeel-implementer": {
+          "dispatches": 1,
+          "prefix": [
+            7845
+          ],
+          "cacheRead": 17106,
+          "prompt": 26879,
+          "models": [
+            "claude-sonnet-5-5"
+          ],
+          "hitRate": 0.6364076044495703
+        },
+        "fankeel-mutator": {
+          "dispatches": 1,
+          "prefix": [
+            5187
+          ],
+          "cacheRead": 25354,
+          "prompt": 32681,
+          "models": [
+            "claude-sonnet-5-5"
+          ],
+          "hitRate": 0.7758024540252746
+        }
+      },
+      "wakes": 10,
+      "mismatched": [],
+      "unexercised": [],
+      "valid": true
+    },
+    {
+      "tag": "r3-base",
+      "project": "fix-bug",
+      "arm": "base",
+      "round": 3,
+      "seed": 3,
+      "requires": [],
+      "pass": true,
+      "check": "pass",
+      "exit": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "claudeUsd": 2.1856266,
+      "wallS": 373,
+      "error": null,
+      "session": "2db7ba76-61e4-4078-8bf9-3faa8d792a51",
+      "dir": "C:\\Users\\Owner\\AppData\\Local\\Temp\\fankeel-bench-WwOJLV",
+      "usd": 2.1856266000000004,
+      "unpriced": [],
+      "estimated": [],
+      "models": {
+        "claude-sonnet-5-5": {
+          "input": 202,
+          "output": 21424,
+          "cacheRead": 4525596,
+          "cacheWrite5m": 119540,
+          "cacheWrite1h": 81646
+        },
+        "claude-opus-5-5": {
+          "input": 24,
+          "output": 9098,
+          "cacheRead": 323667,
+          "cacheWrite5m": 38728,
+          "cacheWrite1h": 0
+        }
+      },
+      "over100k": 0,
+      "roles": {
+        "fankeel-mutator": {
+          "dispatches": 1,
+          "prefix": [
+            5180
+          ],
+          "cacheRead": 24652,
+          "prompt": 31770,
+          "models": [
+            "claude-sonnet-5-5"
+          ],
+          "hitRate": 0.7759521561221278
+        },
+        "fankeel-brain": {
+          "dispatches": 4,
+          "prefix": [
+            13131,
+            11424,
+            12689,
+            11502
+          ],
+          "cacheRead": 1027735,
+          "prompt": 1154805,
+          "models": [
+            "claude-sonnet-5-5",
+            "claude-opus-5-5"
+          ],
+          "hitRate": 0.88996410649417
+        },
+        "fankeel-implementer": {
+          "dispatches": 1,
+          "prefix": [
+            8172
+          ],
+          "cacheRead": 17346,
+          "prompt": 26990,
+          "models": [
+            "claude-sonnet-5-5"
+          ],
+          "hitRate": 0.6426824749907373
+        },
+        "fankeel-reviewer": {
+          "dispatches": 3,
+          "prefix": [
+            11152,
+            10878,
+            11046
+          ],
+          "cacheRead": 75164,
+          "prompt": 89706,
+          "models": [
+            "claude-sonnet-5-5"
+          ],
+          "hitRate": 0.8378926716161684
+        }
+      },
+      "wakes": 21,
+      "mismatched": [],
+      "unexercised": [],
+      "valid": true
+    },
+    {
+      "tag": "r3-sub",
+      "project": "fix-bug",
+      "arm": "sub",
+      "round": 3,
+      "seed": 3,
+      "requires": [],
+      "pass": true,
+      "check": "pass",
+      "exit": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "claudeUsd": 2.0814727000000004,
+      "wallS": 1125,
+      "error": null,
+      "session": "e15917f5-43c0-463e-81b6-a1b0f2e45358",
+      "dir": "C:\\Users\\Owner\\AppData\\Local\\Temp\\fankeel-bench-M0OhaX",
+      "usd": 2.0792726999999998,
+      "unpriced": [],
+      "estimated": [],
+      "models": {
+        "claude-sonnet-5-5": {
+          "input": 188,
+          "output": 22921,
+          "cacheRead": 3378310,
+          "cacheWrite5m": 193435,
+          "cacheWrite1h": 69460
+        },
+        "claude-opus-5-5": {
+          "input": 26,
+          "output": 6810,
+          "cacheRead": 293916,
+          "cacheWrite5m": 43502,
+          "cacheWrite1h": 0
+        }
+      },
+      "over100k": 0,
+      "roles": {
+        "fankeel-brain": {
+          "dispatches": 7,
+          "prefix": [
+            11425,
+            12907,
+            12700,
+            11460,
+            13142,
+            11525,
+            13034
+          ],
+          "cacheRead": 1010523,
+          "prompt": 1200885,
+          "models": [
+            "claude-sonnet-5-5",
+            "claude-opus-5-5"
+          ],
+          "hitRate": 0.8414819070935186
+        },
+        "fankeel-mutator": {
+          "dispatches": 1,
+          "prefix": [
+            5113
+          ],
+          "cacheRead": 25096,
+          "prompt": 32414,
+          "models": [
+            "claude-sonnet-5-5"
+          ],
+          "hitRate": 0.7742333559573024
+        },
+        "fankeel-reviewer": {
+          "dispatches": 4,
+          "prefix": [
+            10937,
+            11079,
+            10829,
+            10928
+          ],
+          "cacheRead": 128675,
+          "prompt": 157834,
+          "models": [
+            "claude-sonnet-5-5"
+          ],
+          "hitRate": 0.815255268193165
+        },
+        "fankeel-implementer": {
+          "dispatches": 1,
+          "prefix": [
+            8262
+          ],
+          "cacheRead": 27931,
+          "prompt": 38153,
+          "models": [
+            "claude-sonnet-5-5"
+          ],
+          "hitRate": 0.7320787356171206
+        }
+      },
+      "wakes": 19,
+      "mismatched": [
+        "agent-a30002a7d3f4c21be.jsonl fankeel-mutator ran claude-sonnet-5-5"
+      ],
+      "unexercised": [],
+      "valid": false
+    },
+    {
+      "tag": "r3-impl",
+      "project": "fix-bug",
+      "arm": "impl",
+      "round": 3,
+      "seed": 3,
+      "requires": [],
+      "pass": true,
+      "check": "pass",
+      "exit": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "claudeUsd": 1.9482200550000004,
+      "wallS": 1071,
+      "error": null,
+      "session": "e7f531c7-33ad-4c78-8721-fe6e37f9dec8",
+      "dir": "C:\\Users\\Owner\\AppData\\Local\\Temp\\fankeel-bench-2T3Bd4",
+      "usd": 1.9482200550000002,
+      "unpriced": [],
+      "estimated": [],
+      "models": {
+        "claude-sonnet-5-5": {
+          "input": 186,
+          "output": 21799,
+          "cacheRead": 3714873,
+          "cacheWrite5m": 165089,
+          "cacheWrite1h": 67963
+        },
+        "claude-opus-5-5": {
+          "input": 22,
+          "output": 4113,
+          "cacheRead": 247079,
+          "cacheWrite5m": 33442,
+          "cacheWrite1h": 0
+        },
+        "claude-haiku-5-5": {
+          "input": 10,
+          "output": 2284,
+          "cacheRead": 44503,
+          "cacheWrite5m": 13977,
+          "cacheWrite1h": 0
+        }
+      },
+      "over100k": 0,
+      "roles": {
+        "fankeel-brain": {
+          "dispatches": 6,
+          "prefix": [
+            13356,
+            13211,
+            12695,
+            11668,
+            11664,
+            11471
+          ],
+          "cacheRead": 1077600,
+          "prompt": 1246354,
+          "models": [
+            "claude-sonnet-5-5",
+            "claude-opus-5-5"
+          ],
+          "hitRate": 0.8646018707365644
+        },
+        "fankeel-reviewer": {
+          "dispatches": 3,
+          "prefix": [
+            10818,
+            10981,
+            11184
+          ],
+          "cacheRead": 78248,
+          "prompt": 101032,
+          "models": [
+            "claude-sonnet-5-5"
+          ],
+          "hitRate": 0.7744872911552776
+        },
+        "fankeel-mutator": {
+          "dispatches": 1,
+          "prefix": [
+            5238
+          ],
+          "cacheRead": 18149,
+          "prompt": 25248,
+          "models": [
+            "claude-sonnet-5-5"
+          ],
+          "hitRate": 0.7188292141951838
+        },
+        "fankeel-implementer": {
+          "dispatches": 1,
+          "prefix": [
+            7944
+          ],
+          "cacheRead": 44503,
+          "prompt": 58490,
+          "models": [
+            "claude-haiku-5-5"
+          ],
+          "hitRate": 0.7608651051461789
+        }
+      },
+      "wakes": 19,
+      "mismatched": [],
+      "unexercised": [],
+      "valid": true
+    }
+  ],
+  "arms": [
+    {
+      "project": "fix-bug",
+      "arm": "base",
+      "runs": 3,
+      "valid": 3,
+      "passed": 3,
+      "usd": 5.2579604
+    },
+    {
+      "project": "fix-bug",
+      "arm": "sub",
+      "runs": 3,
+      "valid": 0,
+      "passed": 0,
+      "usd": 5.1230445
+    },
+    {
+      "project": "fix-bug",
+      "arm": "impl",
+      "runs": 3,
+      "valid": 3,
+      "passed": 3,
+      "usd": 5.945504205
+    }
+  ]
+}

@@ -356,6 +356,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 注入冷啟動：/fankeel 在 station 沒在跑、在跑、同步 fs 放慢 2 與 5 毫秒四種情形下，先問 station 再寫頁前後的耗時，以及節流與 SessionStart 起 server 的結論 | [reports/2026-10-05-inject-cold-start.md](90-agent/reports/2026-10-05-inject-cold-start.md) — *a dated snapshot, 繁體中文* |
 | 同一題 Express middleware 用 `writer`、`plain`、`sepia` 三種風格寫成中英文六版，並用 `lib/plain.js` 量每版的句數、最長句與句長標準差：`prose.style` 選風格時的對照 | [reports/2026-10-05-prose-styles.md](90-agent/reports/2026-10-05-prose-styles.md) — *a dated snapshot, 繁體中文* |
 | 外部實測（另一個 repo，228 次 `claude -p`）：haiku 5.5 在寫腳本、審查、多來源驗證、agentic 修復上 n/n 全過，effort high 比 medium 多花 15% 修掉四分之三的失誤，接不住約 45k 的 inline 計數；證據不在本 repo，數字無法重算 | [reports/2026-10-08-external-model-bench.md](90-agent/reports/2026-10-08-external-model-bench.md) — *a dated snapshot, 繁體中文* |
+| Haiku 5.5 按角色量的結果：reader、mutator、mover、照抄計畫的 implementer 各 5 次 haiku 對 5 次 sonnet，只算那個子 agent 自己的花費，以及 fix-bug 那批整次 run 的表 | [reports/2026-10-08-haiku-bench.md](90-agent/reports/2026-10-08-haiku-bench.md) — *a dated snapshot, 繁體中文* |
 | 給人看的文字可選風格（10-05）的 design：profile key `prose.style`（`writer`、`plain`、`sepia`、`custom`，預設 `writer`），把所選風格的規則注入站 agent 與 writer 的 brief，build 站不注入 | `docs/99-archive/2026-10-05-prose-style-design.md` — *built, 繁體中文* |
 | 那份設計的四個 task | `docs/99-archive/2026-10-05-prose-style.md` — *built, 繁體中文* |
 | mod 自動壓縮的四個 task：`hooks/compact.ts` 在主 session 超過 450k 且有 fankeel 任務進行中時壓縮 | [plans/2026-10-05-compact-mod.md](90-agent/plans/2026-10-05-compact-mod.md) — *design-intent, 繁體中文* |
