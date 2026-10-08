@@ -43,6 +43,18 @@ test('claude-sonnet-5-5 carries the rates published 2026-09-29', () => {
         { input: 2, output: 10, cacheRead: 0.2, cacheWrite5m: 2.5, cacheWrite1h: 4 });
 });
 
+// Added 2026-10-08 from the approved design
+// docs/90-agent/plans/2026-10-08-haiku-bench-design.md, section 1: Haiku 5.5 is
+// $0.10 in and $0.50 out while a request's prompt is 100K tokens or less, and
+// $0.50 / $2.50 over it, with the cache multipliers every other row carries.
+test('claude-haiku-5-5 and its >100k tier carry their own rates, not an estimate', () => {
+    assert.deepEqual(prices.rateFor('claude-haiku-5-5'),
+        { input: 0.1, output: 0.5, cacheRead: 0.01, cacheWrite5m: 0.125, cacheWrite1h: 0.2 });
+    assert.deepEqual(prices.rateFor('claude-haiku-5-5>100k'),
+        { input: 0.5, output: 2.5, cacheRead: 0.05, cacheWrite5m: 0.625, cacheWrite1h: 1 });
+    assert.equal(prices.rateFor('claude-haiku-5-5-20261001'), prices.perMillion['claude-haiku-5-5']);
+});
+
 // The published multipliers, asserted over every row rather than row by row: a
 // cache read is 0.1x that row's own input, a five-minute write 1.25x and an hour
 // write 2x. Fable 5.1 is the single exception and the reason this is a ratio test
@@ -78,10 +90,10 @@ test('costOf prices what it knows and names what it does not', () => {
 });
 
 test('rateFor estimates an unknown id from the newest row of its family, as a flagged copy', () => {
-    const r = prices.rateFor('claude-haiku-5-5');
-    assert.deepEqual(r, { ...prices.perMillion['claude-haiku-4-5-20251001'], estimated: true });
-    assert.notEqual(r, prices.perMillion['claude-haiku-4-5-20251001']);
-    assert.equal(prices.perMillion['claude-haiku-4-5-20251001'].estimated, undefined);
+    const r = prices.rateFor('claude-haiku-6');
+    assert.deepEqual(r, { ...prices.perMillion['claude-haiku-5-5'], estimated: true });
+    assert.notEqual(r, prices.perMillion['claude-haiku-5-5']);
+    assert.equal(prices.perMillion['claude-haiku-5-5'].estimated, undefined);
     assert.equal(prices.rateFor('claude-fable-5-5').cacheRead, prices.perMillion['claude-fable-5-1'].cacheRead);
     assert.equal(prices.rateFor('claude-sonnet-5').estimated, undefined);
     assert.equal(prices.rateFor('claude-nothing-9'), null);
