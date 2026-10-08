@@ -358,10 +358,14 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 同一題 Express middleware 用 `writer`、`plain`、`sepia` 三種風格寫成中英文六版，並用 `lib/plain.js` 量每版的句數、最長句與句長標準差：`prose.style` 選風格時的對照 | [reports/2026-10-05-prose-styles.md](90-agent/reports/2026-10-05-prose-styles.md) — *a dated snapshot, 繁體中文* |
 | 外部實測（另一個 repo，228 次 `claude -p`）：haiku 5.5 在寫腳本、審查、多來源驗證、agentic 修復上 n/n 全過，effort high 比 medium 多花 15% 修掉四分之三的失誤，接不住約 45k 的 inline 計數；證據不在本 repo，數字無法重算 | [reports/2026-10-08-external-model-bench.md](90-agent/reports/2026-10-08-external-model-bench.md) — *a dated snapshot, 繁體中文* |
 | Haiku 5.5 按角色量的結果：reader、mutator、mover、照抄計畫的 implementer 各 5 次 haiku 對 5 次 sonnet，只算那個子 agent 自己的花費，以及 fix-bug 那批整次 run 的表 | [reports/2026-10-08-haiku-bench.md](90-agent/reports/2026-10-08-haiku-bench.md) — *a dated snapshot, 繁體中文* |
+| 外部評審原文與使用者指示（10-09）：六條建議各自怎麼變成腳本或測試 | [reports/2026-10-09-workflow-review.md](90-agent/reports/2026-10-09-workflow-review.md) — *a dated snapshot, 繁體中文* |
+| verify 十一次退回的記錄，從 build skill 的 reviewer 模板搬出 | [reports/2026-10-01-verify-eleven-returns.md](90-agent/reports/2026-10-01-verify-eleven-returns.md) — *a dated snapshot, 繁體中文* |
 | 給人看的文字可選風格（10-05）的 design：profile key `prose.style`（`writer`、`plain`、`sepia`、`custom`，預設 `writer`），把所選風格的規則注入站 agent 與 writer 的 brief，build 站不注入 | `docs/99-archive/2026-10-05-prose-style-design.md` — *built, 繁體中文* |
 | 那份設計的四個 task | `docs/99-archive/2026-10-05-prose-style.md` — *built, 繁體中文* |
 | mod 自動壓縮的四個 task：`hooks/compact.ts` 在主 session 超過 450k 且有 fankeel 任務進行中時壓縮 | [plans/2026-10-05-compact-mod.md](90-agent/plans/2026-10-05-compact-mod.md) — *design-intent, 繁體中文* |
 | 注入先開 server、gate 漏抓代號要出聲、brain 模型對照的三條 TODO：注入先量冷啟動與慢磁碟再讓 `/fankeel` 先問 station 再寫頁，`todoIds` 讀失敗浮出警告並把 2800 毫秒門檻寫成常數，brain 用 opus 或 sonnet 的對照腳本由使用者親手跑 | [plans/2026-10-05-inject-plain-brain.md](90-agent/plans/2026-10-05-inject-plain-brain.md) — *design-intent, 繁體中文* |
+| 工作流評審（10-09）的 design：能由腳本查的出口條件各變成一支會拒絕的腳本或一條會紅的測試 | [plans/2026-10-09-workflow-review-design.md](90-agent/plans/2026-10-09-workflow-review-design.md) — *design-intent, 繁體中文* |
+| 那份設計的 task | [plans/2026-10-09-workflow-review.md](90-agent/plans/2026-10-09-workflow-review.md) — *design-intent, 繁體中文* |
 | 監控站在 `/chartroom/<專案>/` 開架構白板（10-08）的 design：handler 在 nonce 檢查之前剝前綴，轉交該專案懶建的 Chartroom `createHandler`，Chartroom 路徑取自 profile `station.chartroom`，板子固定在 `<專案>/.fankeel/architecture.board` | `docs/99-archive/2026-10-08-station-chartroom-design.md` — *built, 繁體中文* |
 | 那份設計的三個 task：profile 鍵 `station.chartroom`、station 路由與 `close()`、專案卡片的「架構白板：開啟」連結 | `docs/99-archive/2026-10-08-station-chartroom.md` — *built, 繁體中文* |
 | Haiku 5.5 的派工與可重置的模型實驗台（10-08）的 design，第二版：按角色量，reader、mutator、mover、照抄計畫的 implementer 各自 haiku 對 sonnet，並先修好 profile 指定的模型被派工時明寫的模型蓋過 | `docs/99-archive/2026-10-08-haiku-bench-design.md` — *built, 繁體中文* |
