@@ -397,8 +397,8 @@ async function cmdRole(a, projectsRoot) {
     return 0;
 }
 
-// One batch read back: its tally and that tally's summary; null when it has
-// no runs.jsonl.
+// One batch read back: its kind, its tally and that tally's summary; null
+// when it has no runs.jsonl.
 function tallyBatch(batchDir) {
     let rows;
     try {
@@ -409,14 +409,14 @@ function tallyBatch(batchDir) {
     const raw = path.join(batchDir, 'raw');
     if (rows.length && rows[0].kind === 'drift') {
         const t = drift.driftTally(rows, raw);
-        return { t, md: drift.driftSummaryMd(t) };
+        return { kind: 'drift', t, md: drift.driftSummaryMd(t) };
     }
     if (rows.length && typeof rows[0].role === 'string') {
         const t = bench.roleTally(rows, raw);
-        return { t, md: bench.roleSummaryMd(t) };
+        return { kind: 'role', t, md: bench.roleSummaryMd(t) };
     }
     const t = bench.tally(rows, raw);
-    return { t, md: bench.summaryMd(t) };
+    return { kind: 'run', t, md: bench.summaryMd(t) };
 }
 
 function cmdTally(a) {
