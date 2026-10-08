@@ -296,6 +296,14 @@ test('roleFigures: no dispatch, two, a changed prompt, the role on the other arm
     assert.match(bench.roleFigures(path.join(raw, 'missing'), 'fankeel-reader', 'haiku', INPUT).why[0], /^no transcript in /);
 });
 
+test('roleFigures: a task-notification result keeps only the text inside <result>', () => {
+    const raw = tmp('fankeel-bench-role-');
+    roleRaw(raw, 'bg', { prompts: [INPUT], agents: [['fankeel-reader', 'claude-haiku-5-5']], result: 'Async agent launched',
+        notification: '<status>completed</status><result>1. A\n2. B</result><usage>x</usage>' });
+    const f = bench.roleFigures(path.join(raw, 'bg'), 'fankeel-reader', 'haiku', INPUT);
+    assert.equal(f.result, '1. A\n2. B');
+});
+
 test('roleFigures: a background dispatch\'s task-notification is the result, not the launch acknowledgement', () => {
     const raw = tmp('fankeel-bench-role-');
     roleRaw(raw, 'bg', { prompts: [INPUT], agents: [['fankeel-reader', 'claude-haiku-5-5']], result: 'Async agent launched', notification: 'THE ANSWER' });
