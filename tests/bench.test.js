@@ -402,3 +402,88 @@ test('selftest runs a control\'s control.sh in the laid-out project and removes 
     assert.match(bench.selftest(p, selfOpts())[0], /^p pass: control\.sh exited 4/);
     assert.match(bench.layControl(p, 'pass', tmp('fankeel-bench-lay-'), process.env), /^control\.sh exited 4/);
 });
+
+const PASSING_CHECK = 'grep -q good "$1/state.txt" && echo pass && exit 0\necho "fail wrong: state is not good"\nexit 1\n';
+
+// One item's files under items/<id>/: a setup that writes state.txt, the
+// check given, and per control a state.txt laid over it.
+const itemFiles = (id, check, controls) => ({
+    ['items/' + id + '/input.md']: 'Q\n',
+    ['items/' + id + '/setup.sh']: 'echo start > state.txt\n',
+    ['items/' + id + '/check.sh']: check,
+    ...Object.fromEntries(Object.entries(controls).map(([c, text]) => ['items/' + id + '/controls/' + c + '/state.txt', text])),
+});
+
+test('roleItems lists the directories under items/, sorted, each with its tier; a file there is no item', () => {
+    const root = project({ 'items/trap-b/input.md': 'B\n', 'items/easy-a/input.md': 'A\n', 'items/odd/input.md': 'O\n', 'items/judge.sh': 'true\n' });
+    assert.deepEqual(bench.roleItems(path.join(root, 'p')).map((i) => [i.id, i.tier, i.input]),
+        [['easy-a', 'easy', 'A\n'], ['odd', null, 'O\n'], ['trap-b', 'trap', 'B\n']]);
+    assert.deepEqual(bench.roleItems(path.join(root, 'none')), []);
+    assert.deepEqual(bench.TIERS, ['easy', 'mid', 'trap']);
+    assert.equal(bench.tierOf('mid-x'), 'mid');
+});
+
+test('checkClass reads the class off check.sh\'s last line; controlClass reads it off a control\'s name', () => {
+    assert.equal(bench.checkClass('noise\npass\n'), null);
+    assert.equal(bench.checkClass('fail fabricated: question 2: lib/a.js:4 does not hold the answer'), 'fabricated');
+    assert.equal(bench.checkClass('fail bogus: x'), 'unclassified');
+    assert.equal(bench.checkClass('the commit message differs'), 'unclassified');
+    assert.equal(bench.checkClass(''), 'unclassified');
+    assert.deepEqual(['fail-extra', 'fail-extra-2', 'fail', 'fail-bogus', 'pass'].map(bench.controlClass), ['extra', 'extra', null, null, null]);
+    assert.deepEqual(bench.CLASSES, ['wrong', 'fabricated', 'unrestored', 'extra', 'format']);
+});
+
+test('selftestRole passes an item whose controls draw their own classes, and names every way an item falls short', () => {
+    const good = project(itemFiles('easy-a', PASSING_CHECK, { pass: 'good\n', 'fail-wrong': 'bad\n' }));
+    assert.deepEqual(bench.selftestRole(path.join(good, 'p'), selfOpts()), []);
+    const bad = project({
+        ...itemFiles('easy-a', PASSING_CHECK, { pass: 'good\n', 'fail-extra': 'bad\n' }),
+        ...itemFiles('mid-b', PASSING_CHECK, { pass: 'good\n', fail: 'bad\n' }),
+        ...itemFiles('trap-c', 'grep -q good "$1/state.txt" && exit 0\necho "fail wrong: no"\nexit 1\n', { pass: 'good\n', 'fail-wrong': 'bad\n' }),
+        ...itemFiles('hard-d', PASSING_CHECK, { pass: 'good\n', 'fail-wrong': 'bad\n' }),
+        'items/easy-e/input.md': 'Q\n',
+    });
+    assert.deepEqual(bench.selftestRole(path.join(bad, 'p'), selfOpts()).map((e) => e.replace(/ — .*$/, '')), [
+        'p/easy-a fail-extra: check.sh\'s last line names wrong, wanted extra',
+        'p/easy-e: no setup.sh', 'p/easy-e: no check.sh', 'p/easy-e: no controls',
+        'p/hard-d: the name starts with none of easy-, mid-, trap-',
+        'p/mid-b fail: a fail control is named fail-<class>, the class one of wrong, fabricated, unrestored, extra, format',
+        'p/trap-c pass: check.sh\'s last line names unclassified, wanted pass',
+    ]);
+    assert.deepEqual(bench.selftestRole(path.join(project({}), 'p'), selfOpts()), ['p: no items under items/']);
+});
+
+test('selftestRole runs every seed it is given, and each control sees that seed', () => {
+    const root = project({
+        'items/easy-s/input.md': 'Q\n',
+        'items/easy-s/setup.sh': 'echo "$BENCH_SEED" > seed.txt\n',
+        'items/easy-s/check.sh': '[ "$(cat "$1/seed.txt")" = "$BENCH_SEED" ] && [ -f "$1/ok" ] && echo pass && exit 0\necho "fail wrong: no"\nexit 1\n',
+        'items/easy-s/controls/pass/control.sh': '[ "$(cat seed.txt)" = "$BENCH_SEED" ] && touch ok\n',
+        'items/easy-s/controls/fail-wrong/control.sh': 'true\n',
+    });
+    assert.deepEqual(bench.selftestRole(path.join(root, 'p'), { ...selfOpts(), seeds: [1, 2, 3] }), []);
+    fs.writeFileSync(path.join(root, 'p', 'items', 'easy-s', 'controls', 'pass', 'control.sh'), '[ "$BENCH_SEED" = 1 ] && touch ok\n');
+    assert.deepEqual(bench.selftestRole(path.join(root, 'p'), { ...selfOpts(), seeds: [1, 2] }).map((e) => e.replace(/:.*$/, '')), ['p/easy-s seed 2 pass']);
+});
+
+test('roleTally counts each role × arm × tier, and each valid failure under the class its check named', () => {
+    const raw = tmp('fankeel-bench-role-');
+    for (const tag of ['easy-a-r1-haiku', 'easy-a-r2-haiku', 'trap-b-r1-haiku', 'trap-b-r2-haiku']) {
+        roleRaw(raw, tag, { prompts: [INPUT], agents: [['fankeel-reader', 'claude-haiku-5-5']], result: 'x' });
+    }
+    const base = { role: 'reader', agent: 'fankeel-reader', input: INPUT, claudeUsd: 0.01, arm: 'haiku' };
+    const t = bench.roleTally([
+        { ...base, tag: 'easy-a-r1-haiku', item: 'easy-a', pass: true, check: 'pass' },
+        { ...base, tag: 'easy-a-r2-haiku', item: 'easy-a', pass: false, check: 'fail format: no answer line' },
+        { ...base, tag: 'trap-b-r1-haiku', item: 'trap-b', pass: false, check: 'fail fabricated: question 1: x' },
+        { ...base, tag: 'trap-b-r2-haiku', item: 'trap-b', pass: false, check: 'fail wrong: q', error: 'capped' },
+    ], raw);
+    assert.deepEqual(t.tiers.map((x) => [x.tier, x.runs, x.valid, x.passed, x.classes]), [
+        ['easy', 2, 2, 1, { format: 1 }],
+        ['trap', 2, 1, 0, { fabricated: 1 }],
+    ]);
+    assert.equal(t.runs[2].class, 'fabricated');
+    const md = bench.roleSummaryMd(t);
+    assert.match(md, /\| reader \| haiku \| trap \| 2 \| 1 \| 0 \| 0 \| 1 \| 0 \| 0 \| 0 \| 0 \|/);
+    assert.match(md, /\| trap-b-r1-haiku \| haiku \| true \| false \| fabricated \|/);
+});
