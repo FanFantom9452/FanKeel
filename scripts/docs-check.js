@@ -27,6 +27,7 @@ const docs = require('../lib/docs.js');
 const { section, plural } = require('../lib/report.js');
 const { trackedFiles } = require('../lib/tracked.js');
 const { resolveRoot } = require('../lib/registry.js');
+const { PATHISH, resolveRef, external, quoteBeside } = require('../lib/refs.js');
 
 const MAX_FINDINGS = 200;
 
@@ -86,12 +87,6 @@ function withoutFences(text) {
 // `Waypoint/web/src` in an example is describing somebody else's tree. Reported
 // as broken references they were nine findings out of ten, and a report that is
 // nine parts noise gets read once.
-//
-// A third, optional group: `path:N-M` holds a block rather than one line, so a
-// range has to be checked against a span rather than a single index. Both a
-// hyphen and an en dash close it, because the prose in this repository uses
-// both.
-const PATHISH = /^(?:\.\/)?([\w.-]+\/[\w./-]+)(?::(\d+)(?:[-–](\d+))?)?$/;
 
 // A declaration this repository makes somewhere. Deliberately shallow, the same
 // bargain survey.js makes: the goal is to notice a name exists, not to parse
@@ -248,41 +243,6 @@ function headingSlugs(root, rel) {
     }
     HEADINGS.set(key, slugs);
     return slugs;
-}
-
-// Resolve a reference the way a reader would: relative to the document it is
-// written in, then from the repository root. Both, because both conventions are
-// in use and guessing wrong turns a working link into a finding.
-function resolveRef(root, fromRel, ref) {
-    const base = path.posix.dirname(fromRel.replace(/\\/g, '/'));
-    const candidates = [];
-    if (ref.startsWith('/')) candidates.push(ref.slice(1));
-    else {
-        candidates.push(path.posix.normalize(path.posix.join(base, ref)));
-        candidates.push(path.posix.normalize(ref));
-    }
-    for (const c of candidates) {
-        if (c.startsWith('..')) continue;
-        try {
-            if (fs.existsSync(path.join(root, c))) return c;
-        } catch (e) { /* unreadable is not found */ }
-    }
-    return null;
-}
-
-const external = (ref) => /^[a-z][a-z0-9+.-]*:/i.test(ref) || ref.startsWith('#');
-
-// The page recorded what it meant to point at, right beside the citation. A
-// nearby symbol is a proxy for intent; this is the author's own note, on disk,
-// which is the thing `docs/decisions/fankeel-shell.md:435` said nothing records.
-// A second path is not a quote — `lib/a.js:10` beside `lib/b.js` is two
-// citations, not one citation and its evidence.
-function quoteBeside(text, from) {
-    const eol = text.indexOf('\n', from);
-    const rest = text.slice(from, eol === -1 ? undefined : eol);
-    const span = /`([^`\n]{2,120})`/.exec(rest);
-    if (!span) return null;
-    return PATHISH.test(span[1].trim()) ? null : span[1];
 }
 
 const flat = (s) => s.replace(/\s+/g, ' ').trim();
