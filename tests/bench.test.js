@@ -503,7 +503,7 @@ test('two runs prepared side by side: only the haiku one holds an override, and 
     const { overrideFor } = require('../lib/title.js');
     const root = project({ 'items/easy-a/setup.sh': 'git init -q\nmkdir -p .fankeel/sessions\n' });
     const config = tmp('fankeel-bench-cfg-');
-    const ctx = { agent: 'fankeel-reader', env: { CLAUDE_CONFIG_DIR: config }, mkdtemp: () => tmp('fankeel-bench-prep-') };
+    const ctx = { ...tmp.selfOpts(), agent: 'fankeel-reader', env: { CLAUDE_CONFIG_DIR: config } };
     const job = (arm) => ({ tag: 'easy-a-r1-' + arm, arm, model: arm, round: 1, seed: 1, itemDir: path.join(root, 'p', 'items', 'easy-a'),
         row: { role: 'p', item: 'easy-a', tier: 'easy', input: 'Q' } });
     const haiku = prepareRun(ctx, job('haiku'));

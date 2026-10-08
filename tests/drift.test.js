@@ -261,7 +261,7 @@ test('runJob hands claude --settings, naming a file that points reinject.js in, 
     const job = (arm, reinject) => ({ tag: 't-' + arm, arm, model: 'sonnet', round: 1, seed: 1, itemDir: item, reinject,
         row: { kind: 'drift', reinject, input: 'P\n' } });
     const ctx = { agent: 'fankeel-implementer', cap: 1, keep: false, timeoutMs: 1000, spawn,
-        batchDir: tmp('fankeel-drift-batch-'), mkdtemp: () => tmp('fankeel-drift-run-') };
+        batchDir: tmp('fankeel-drift-batch-'), ...tmp.selfOpts() };
     await cli.runJob(ctx, job('sonnet-reinject', true));
     await cli.runJob(ctx, job('sonnet', false));
     const hook = JSON.parse(seen[0].settings).hooks.PostToolUse[0].hooks[0].command;
