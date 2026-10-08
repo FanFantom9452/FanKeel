@@ -176,6 +176,16 @@ test('an optional call, a variable event and a test( split over two lines are ro
   assert.deepEqual(testRows(added, returned).map((r) => [r.line, r.name, r.red, r.finding]), [[7, 'split name', 'm1', null], [9, 'other', 'm2', null]]);
 });
 
+test('a test name holding an escaped quote is read whole, with the escape resolved', () => {
+  const added = [
+    { file: 'tests/a.test.js', line: 1, text: String.raw`test('orient\'s todo: "x"', () => {});` },
+    { file: 'tests/a.test.js', line: 2, text: 'test(' },
+    { file: 'tests/a.test.js', line: 3, text: String.raw`  'it\'s split', () => {}` },
+  ];
+  const returned = 'orient\'s todo: "x" — red when: m1\nit\'s split — red when: m2\n';
+  assert.deepEqual(testRows(added, returned).map((r) => [r.name, r.finding]), [['orient\'s todo: "x"', null], ['it\'s split', null]]);
+});
+
 test('a path:line inside code is not a citation; one in the returned file is', () => {
   const { dir, sha: prev } = repo();
   const sha = commit(dir, { 'tests/z.test.js': "const s = '`lib/page.js:2` `data-untested`';\n" });

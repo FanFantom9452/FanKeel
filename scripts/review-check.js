@@ -8,8 +8,8 @@
 // to <sha>^; <root> to the repository the cwd is in). Exit 0 when no row is a
 // finding, 1 when one is, 2 on a usage error, a git refusal or a fault in the
 // script itself (the message, or the stack, on stderr), so that 1 means
-// findings and only findings. The reviewer pastes the output and judges only what the tables
-// cannot: whether each cited test asserts the effect.
+// findings and only findings. The reviewer pastes the output and judges only
+// what the tables cannot: whether each cited test asserts the effect.
 const fs = require('node:fs');
 const { execFileSync } = require('node:child_process');
 const { parseArgs } = require('node:util');
@@ -36,14 +36,13 @@ function main(argv) {
         if (typeof values.returned !== 'string') return usage('--returned takes a file.');
         try { returned = fs.readFileSync(values.returned, 'utf8'); } catch (e) { return usage('cannot read ' + values.returned); }
     }
-    let t;
     try {
-        t = tables(values.root || topLevel(), { sha: values.sha, base: values.base || values.sha + '^', returned });
+        const t = tables(values.root || topLevel(), { sha: values.sha, base: values.base || values.sha + '^', returned });
+        return { text: render(t), ok: t.findings === 0, code: t.findings === 0 ? 0 : 1 };
     } catch (e) {
         // An uncaught throw exits 1, the findings code: a fault must not read as one.
         return usage(e.git ? 'git refused — ' + e.message : e.stack || String(e));
     }
-    return { text: render(t), ok: t.findings === 0, code: t.findings === 0 ? 0 : 1 };
 }
 
 if (require.main === module) {
