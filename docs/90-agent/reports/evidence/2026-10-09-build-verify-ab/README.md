@@ -6,10 +6,10 @@
 
 build 與 verify 加回 `stage.agents`，當且僅當兩條都成立：
 
-1. `agents` 臂主控的峰值 context（`<tag>-ctx.txt`，`node scripts/ctx.js <session> --by-stage` 的最大值）比 `main` 臂**低 30% 以上**；
-2. `agents` 臂的花費（`summary.json` 的 usd，與 `<tag>-verify.json` 的 `total_cost_usd` 一致）**不超過 `main` 臂的 1.1 倍**。
+1. `agents` 臂主控的峰值 context（`<tag>-ctx.txt`，`node scripts/ctx.js <session> --by-stage` 的最大值，由人從每臂的 `<tag>-ctx.txt` 讀出，沒有腳本算這個 30%）比 `main` 臂**低 30% 以上**；
+2. `agents` 臂的花費（`<tag>-verify.json` 的 `total_cost_usd`；--resume 下是累計值，最後一站的檔就是該臂總額）**不超過 `main` 臂的 1.1 倍**。
 
-否則 `stage.agents` 維持 `survey`，另開任務評估移除站 agent 層。n=1，所以規則偏向「不證明就不開」。報告 `docs/90-agent/reports/<date>-build-verify-ab.md` 的結論段用的數字必須和 `summary.json`、`*-ctx.txt` 算出來的一致，表改了結論段就一起改。
+否則 `stage.agents` 維持 `survey`，另開任務評估移除站 agent 層。n=1，所以規則偏向「不證明就不開」。報告 `docs/90-agent/reports/<date>-build-verify-ab.md` 的結論段用的數字必須和 `*-verify.json`、`*-ctx.txt` 算出來的一致，表改了結論段就一起改。
 
 ## 用法
 

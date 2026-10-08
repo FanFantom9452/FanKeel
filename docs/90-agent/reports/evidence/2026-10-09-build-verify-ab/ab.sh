@@ -15,7 +15,7 @@
 # Judged before it runs (README.md beside this file): build and verify go
 # back on stage.agents only if the agents arm's controller peak context
 # (node scripts/ctx.js <session> --by-stage) is at least 30% below the main
-# arm's AND its cost (summary) is at most 1.1x. n=1 per arm by default, so
+# arm's AND its cost (total_cost_usd in <tag>-verify.json) is at most 1.1x. n=1 per arm by default, so
 # the rule leans to "not proven, not opened".
 #
 # usage: BASE=<sha> TASK="…" SURVEY=<survey.md> [MODEL=opus] [CAP=30] [RUNS=1] [DRY=1] [OUT=<dir>] bash ab.sh
@@ -41,7 +41,9 @@ mkdir -p "$OUT" "$WORK/raw"
 cd "$REPO" || exit 1
 LOG="$OUT/provenance.txt"
 logcmd () { printf '$'; printf ' %q' "$@"; printf '\n'; }
-spent () { node -e 'const fs=require("fs");let s=0;for(const f of process.argv.slice(2)){let t;try{t=fs.readFileSync(f,"utf8")}catch(e){continue}try{s=Math.max(s,JSON.parse(t).total_cost_usd||0)}catch(e){fs.appendFileSync(process.argv[1],"unparseable stage json: "+f+"\n")}}console.log(s.toFixed(4))' "$LOG" "$@"; }
+spent () { node -e 'const fs=require("fs");let s=0;for(const f of process.argv.slice(2)){let t;try{t=fs.readFileSync(f,"utf8")}catch(e){fs.appendFileSync(process.argv[1],"unreadable stage json: "+f+"
+");continue}try{const c=JSON.parse(t).total_cost_usd;if(typeof c!=="number")fs.appendFileSync(process.argv[1],"no total_cost_usd: "+f+"
+");s=Math.max(s,c||0)}catch(e){fs.appendFileSync(process.argv[1],"unparseable stage json: "+f+"\n")}}console.log(s.toFixed(4))' "$LOG" "$@"; }
 
 {
   echo "=== $(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -65,15 +67,21 @@ run () {
     local pin; pin=$(bash "$PIN" "$wt" "$value" 2>> "$LOG" | tail -n 1)
     [ -n "$pin" ] || { echo "$tag: pin.sh failed — abort" >> "$LOG"; git worktree remove --force "$wt" >> "$LOG" 2>&1; return 1; }
     echo "$tag pin commit: $pin" >> "$LOG"
-    (cd "$wt" && node scripts/task.js profile show | grep '^  stage.agents' >> "$LOG")
+    (cd "$wt" && node scripts/task.js profile show | grep '^  stage.agents' >> "$LOG") || echo "$tag: no stage.agents line in profile show" >> "$LOG"
+    (cd "$wt" && node scripts/task.js profile show | grep -q "^  stage.agents  *$value") || { echo "$tag: stage.agents is not $value in $wt — abort" >> "$LOG"; git worktree remove --force "$wt" >> "$LOG" 2>&1; return 1; }
   fi
 
+  local rc
   local common=(--setting-sources project --plugin-dir "$wt" --permission-mode bypassPermissions --model "$MODEL" --output-format json)
   local c1=(claude -p "Run this command and report its output, nothing else: node scripts/task.js start --session $U --task \"$TASK\" --route $ROUTE" --session-id "$U" "${common[@]}")
   logcmd "${c1[@]}" >> "$LOG"
-  [ -z "$DRY" ] && (cd "$wt" && "${c1[@]}" > "$OUT/$tag-start.json" 2> "$OUT/$tag-start.err")
+  if [ -z "$DRY" ]; then
+    (cd "$wt" && "${c1[@]}" > "$OUT/$tag-start.json" 2> "$OUT/$tag-start.err"); rc=$?
+    echo "$tag start exit=$rc" >> "$LOG"
+    [ "$rc" -eq 0 ] || return 1
+  fi
 
-  local i next left t0 rc prompt
+  local i next left t0 prompt
   for i in "${!STAGES[@]}"; do
     next="${STAGES[$((i+1))]:-}"
     prompt="Do the ${STAGES[$i]} stage of this task. There is no user in this run: at the stage's gate do not call AskUserQuestion — take option one yourself"
@@ -116,6 +124,5 @@ for r in $(seq 1 "$RUNS"); do
   done
 done
 
-[ -z "$DRY" ] && node "$REPO/docs/90-agent/reports/evidence/2026-10-05-brain-model-ab/tally.js" "$OUT" "$WORK/raw" > "$OUT/summary.json" 2>> "$LOG"
 echo "porcelain after: $(git status --porcelain | wc -l) lines" >> "$LOG"
 echo "done" >> "$LOG"
