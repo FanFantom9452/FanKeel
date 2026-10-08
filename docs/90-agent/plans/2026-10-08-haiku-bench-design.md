@@ -22,7 +22,8 @@ source_of_truth: lib/prices.js, lib/usage.js, scripts/eval.js, docs/90-agent/rep
 
 一個實驗專案是 `bench/<name>/` 底下的四樣東西：`setup.sh` 從零建出專案，或把 fankeel 本身切到某個 sha；`task.md` 是交給 session 的任務原文；`check.sh` 判定任務有沒有完成，exit 0 才算過；`controls/` 放一份已知該過、一份已知該不過的終態。重置的方式是丟掉這次的目錄、重新跑 `setup.sh`，因此每次 run 都從同一個起點開始。
 
-- 起手兩個合成專案：一個是修一個有失敗測試的 bug，另一個是照寫好的計畫加一個小功能並補測試。fankeel 本身在固定 sha 上做一條真實 TODO，則放到第二輪。
+- 起手三個合成專案：一個是修一個有失敗測試的 bug；一個是照寫好的計畫加一個小功能並補測試；一個是審查專案，在一份 fixture diff 裡植入四個缺陷，給 reviewer 審。fankeel 本身在固定 sha 上做一條真實 TODO，則放到第二輪。
+- 審查專案的 `check.sh` 讀 reviewer 的回報：植入的四個缺陷至少命中三個、每條引文要逐字出現在所指的 `path:line`、假陽性不超過兩個，只要有一條捏造的引文就整份作廢。這是外部實測審查題的門檻，換成 fankeel reviewer 的回報格式。
 - 每個 `check.sh` 都必須有兩側控制組：`node scripts/bench.js selftest` 會對 `controls/pass` 與 `controls/fail` 各跑一次，缺一側或判錯一側就報錯。外部實測正是靠這一步，在第一輪就抓到兩個門檻缺陷（把 `__pycache__` 算成改了測試、把換行的引文判成不符）。
 - `check.sh` 放在 `bench/<name>/` 而不是複製進專案目錄，所以 agent 讀不到答案；測試檔用 sha256 鎖住，被改就判失敗。
 - 有 seed 的專案，第 2、3 次 run 換 seed 重新生成 fixture，避免模型只是記住了同一題。
@@ -34,7 +35,8 @@ source_of_truth: lib/prices.js, lib/usage.js, scripts/eval.js, docs/90-agent/rep
 - 基準臂：今天的設定，也就是全部 sonnet，brain 在 design 與 plan 階段用 opus。
 - 子 agent 臂：reader、mover、mutator、verifier 改成 haiku@high，其餘不動。外部實測量到 Haiku 的 high 比 medium 只多 15% 成本，卻修掉了四分之三的失誤，xhigh 則完全沒有增益，所以預設用 high，不再另開 medium 臂。
 - 實作臂：build 的 implementer 改成 haiku@high，只用在計畫 Dispatch 行寫 `implementer, haiku` 的任務上；`lib/plantasks.js:555` 已經為這種任務設了窄門。這一臂量的就是「強模型規劃、便宜模型照計畫實作」這條路。
-- 不跑 brain 臂，也不跑整個 session 換 haiku 的臂：brain 背著長 context，正好是外部實測裡 haiku 在任何 effort 下都不穩的形狀（5/9），花錢去確認一個預期會輸的結果並不划算。reviewer 也先不測，原因寫在第 5 節。
+- reviewer 臂：build 的 reviewer 改成 haiku@high，只在審查專案上跑。2026-10-08 使用者在 design 關卡選了加測 reviewer。外部實測裡 haiku 審查 4/4 命中、0 假陽性，但那不是 fankeel 的 reviewer 與它的回報格式，所以要在這裡量。
+- 不跑 brain 臂，也不跑整個 session 換 haiku 的臂：brain 背著長 context，正好是外部實測裡 haiku 在任何 effort 下都不穩的形狀（5/9），花錢去確認一個預期會輸的結果並不划算。
 
 ## 4. 執行與記帳：`scripts/bench.js`
 
@@ -50,8 +52,7 @@ source_of_truth: lib/prices.js, lib/usage.js, scripts/eval.js, docs/90-agent/rep
 
 以下這些沒有對錯，是預算與風險的取捨，設計只給預設值：
 
-- reviewer 要不要測：外部實測的審查題用植入缺陷加逐字引文當門檻，haiku 4/4 命中、0 假陽性。fankeel 的 reviewer 也能用同樣做法測，在 fixture 的 diff 裡植入缺陷；代價是要多寫一個專案。預設先不測。
-- 每臂次數與每次預算上限：預設每臂 3 次、每次上限 $5。三個臂乘兩個專案乘三次，最壞約 $90；照外部實測的價差，haiku 臂實際會遠低於上限。
+- 每臂次數與每次預算上限：預設每臂 3 次、每次上限 $5。兩個實作專案各跑基準、子 agent、implementer 三臂，審查專案跑基準與 reviewer 兩臂，每臂三次，共 24 次，最壞約 $120；照外部實測的價差，haiku 臂實際會遠低於上限。
 - 權限模式：預設用 `--permission-mode bypassPermissions`，因為 headless run 沒有人可以按允許；只在暫存目錄或 detached worktree 裡跑，而且每批開跑前問一次。
 
 ## 6. 外部報告的歸檔
