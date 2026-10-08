@@ -889,9 +889,9 @@ test('land refuses on a red suite record, and on no record where package.json ha
   assert.equal(out.code, 1);
   assert.match(out.out, /no suite record/);
   suite.record(dir, data, { sha: null, at: 'now', command: 'node --test', pass: 9, fail: 0, ok: true });
+  assert.equal(suite.readRecord(dir, data).ok, true, 'the record land is about to read is green');
   out = run(dir, ['land', 'merge', '--session', A]);
   assert.equal(out.code, 0);
-  assert.equal(suite.readRecord(dir, data).ok, true);
   assert.equal(entry(dir, A).land.integration, 'merge');
 });
 
