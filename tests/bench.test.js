@@ -226,3 +226,146 @@ test('stagePrompts with a single stage sends the task with it and names no next 
     assert.match(p[1], /^Do the build stage .* option one yourself and stop\.\n\nThe task:\nBODY$/);
     assert.doesNotMatch(p[1], /task\.js stage/);
 });
+
+const INPUT = 'Answer three questions.\n\n1. What is RETRY_LIMIT?\n';
+
+// One copied role run: the relay's transcript, holding one Agent tool_use per
+// prompt and the tool_result for each, then per agent its sidechain
+// transcript and the meta.json naming its type.
+function roleRaw(root, tag, { prompts, agents, result, notification }) {
+    const session = '11111111-2222-3333-4444-555555555555';
+    const dir = path.join(root, tag);
+    const sub = path.join(dir, session, 'subagents');
+    fs.mkdirSync(sub, { recursive: true });
+    const line = (o) => JSON.stringify(o) + '\n';
+    let text = line({ type: 'assistant', requestId: 'm1', message: { model: 'claude-haiku-5-5', usage: { input_tokens: 1000, output_tokens: 100 },
+        content: prompts.map((p, i) => ({ type: 'tool_use', id: 'tu' + i, name: 'Agent', input: { subagent_type: 'fankeel:fankeel-reader', model: 'sonnet', prompt: p } })) } });
+    prompts.forEach((p, i) => {
+        text += line({ type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 'tu' + i, content: [{ type: 'text', text: result }] }] } });
+    });
+    if (notification) {
+        text += line({ type: 'user', origin: { kind: 'task-notification' },
+            message: { content: '<task-notification><tool-use-id>tu0</tool-use-id>' + notification + '</task-notification>' } });
+    }
+    fs.writeFileSync(path.join(dir, session + '.jsonl'), text);
+    agents.forEach(([type, model], i) => {
+        fs.writeFileSync(path.join(sub, 'agent-a' + i + '.jsonl'), line({ type: 'assistant', isSidechain: true, requestId: 'r' + i,
+            message: { model, usage: { input_tokens: 10, output_tokens: 20 } } }));
+        fs.writeFileSync(path.join(sub, 'agent-a' + i + '.meta.json'), JSON.stringify({ agentType: type }));
+    });
+}
+
+test('relayPrompt carries input.md word for word between its markers, and names the plugin agent and sonnet', () => {
+    const p = bench.relayPrompt('fankeel-mutator', INPUT);
+    assert.ok(p.includes('<<<BENCH INPUT\n' + INPUT.trim() + '\nBENCH INPUT>>>'), p);
+    assert.match(p, /subagent_type "fankeel:fankeel-mutator", model "sonnet"/);
+    assert.deepEqual(bench.claudeArgs('/plug', 'haiku').slice(-4), ['--model', 'haiku', '--output-format', 'json']);
+    assert.deepEqual(bench.claudeArgs('/plug').slice(-4), ['--model', 'sonnet', '--output-format', 'json']);
+});
+
+test('roleFigures: one dispatch of input.md, on the arm\'s model, is valid; the role\'s money leaves the relay out', () => {
+    const raw = tmp('fankeel-bench-role-');
+    roleRaw(raw, 'r1-haiku', { prompts: [INPUT.replace(/\n/g, '\r\n') + '\n'], agents: [['fankeel:fankeel-reader', 'claude-haiku-5-5']], result: '1. 7 — lib/a.js:3' });
+    const f = bench.roleFigures(path.join(raw, 'r1-haiku'), 'fankeel-reader', 'haiku', INPUT);
+    assert.deepEqual(f.why, []);
+    assert.equal(f.valid, true);
+    assert.equal(f.result, '1. 7 — lib/a.js:3');
+    assert.deepEqual(f.models, ['claude-haiku-5-5']);
+    // By hand from the rates: the role on Haiku 5.5, the relay on Haiku 5.5.
+    near(f.roleUsd, (10 * 0.1 + 20 * 0.5) / 1e6);
+    near(f.relayUsd, (1000 * 0.1 + 100 * 0.5) / 1e6);
+});
+
+test('roleFigures: no dispatch, two, a changed prompt, the role on the other arm\'s model, or another agent each make the run invalid', () => {
+    const raw = tmp('fankeel-bench-role-');
+    const reader = [['fankeel:fankeel-reader', 'claude-haiku-5-5']];
+    roleRaw(raw, 'none', { prompts: [], agents: [], result: '' });
+    roleRaw(raw, 'two', { prompts: [INPUT, INPUT], agents: reader, result: 'x' });
+    roleRaw(raw, 'changed', { prompts: ['Answer three questions.'], agents: reader, result: 'x' });
+    roleRaw(raw, 'sonnet', { prompts: [INPUT], agents: [['fankeel:fankeel-reader', 'claude-sonnet-5-5']], result: 'x' });
+    roleRaw(raw, 'other', { prompts: [INPUT], agents: [['fankeel:fankeel-mover', 'claude-haiku-5-5']], result: 'x' });
+    roleRaw(raw, 'empty', { prompts: [INPUT], agents: reader, result: '' });
+    const fig = (tag) => bench.roleFigures(path.join(raw, tag), 'fankeel-reader', 'haiku', INPUT);
+    assert.match(fig('none').why.join('; '), /dispatched 0 times/);
+    assert.match(fig('two').why.join('; '), /dispatched 2 times/);
+    assert.match(fig('changed').why.join('; '), /differs from input\.md/);
+    assert.match(fig('sonnet').why.join('; '), /ran claude-sonnet-5-5, not the haiku arm/);
+    assert.match(fig('other').why.join('; '), /is fankeel-mover, not fankeel-reader/);
+    assert.match(fig('empty').why.join('; '), /returned no text/);
+    for (const tag of ['none', 'two', 'changed', 'sonnet', 'other', 'empty']) assert.equal(fig(tag).valid, false, tag);
+    assert.match(bench.roleFigures(path.join(raw, 'missing'), 'fankeel-reader', 'haiku', INPUT).why[0], /^no transcript in /);
+});
+
+test('roleFigures: a background dispatch\'s task-notification is the result, not the launch acknowledgement', () => {
+    const raw = tmp('fankeel-bench-role-');
+    roleRaw(raw, 'bg', { prompts: [INPUT], agents: [['fankeel-reader', 'claude-haiku-5-5']], result: 'Async agent launched', notification: 'THE ANSWER' });
+    const f = bench.roleFigures(path.join(raw, 'bg'), 'fankeel-reader', 'haiku', INPUT);
+    assert.match(f.result, /THE ANSWER/);
+    assert.doesNotMatch(f.result, /launched/);
+    assert.equal(f.valid, true);
+});
+
+test('roleTally: each role × arm row sums its runs, equals the money recomputed from the raw transcripts, and drops the input text', () => {
+    const raw = tmp('fankeel-bench-role-');
+    roleRaw(raw, 'r1-sonnet', { prompts: [INPUT], agents: [['fankeel:fankeel-reader', 'claude-sonnet-5-5']], result: 'x' });
+    roleRaw(raw, 'r1-haiku', { prompts: [INPUT], agents: [['fankeel-reader', 'claude-haiku-5-5']], result: 'x' });
+    roleRaw(raw, 'r2-haiku', { prompts: [INPUT], agents: [['fankeel-reader', 'claude-haiku-5-5']], result: 'x' });
+    roleRaw(raw, 'r3-haiku', { prompts: [INPUT], agents: [['fankeel-reader', 'claude-haiku-5-5']], result: 'x' });
+    const base = { role: 'reader', agent: 'fankeel-reader', input: INPUT, claudeUsd: 0.01 };
+    const t = bench.roleTally([
+        { ...base, tag: 'r1-sonnet', arm: 'sonnet', pass: true },
+        { ...base, tag: 'r1-haiku', arm: 'haiku', pass: true },
+        { ...base, tag: 'r2-haiku', arm: 'haiku', pass: false },
+        { ...base, tag: 'r3-haiku', arm: 'haiku', pass: true, error: 'capped' },
+    ], raw);
+    const haiku = t.arms.find((a) => a.arm === 'haiku');
+    assert.deepEqual([haiku.runs, haiku.valid, haiku.passed], [3, 2, 1]);
+    near(haiku.roleUsd, t.runs[1].roleUsd + t.runs[2].roleUsd + t.runs[3].roleUsd);
+    near(haiku.roleUsd, 3 * (10 * 0.1 + 20 * 0.5) / 1e6);
+    near(t.arms.find((a) => a.arm === 'sonnet').roleUsd, (10 * 2 + 20 * 10) / 1e6);
+    assert.equal(t.runs[3].valid, false);
+    assert.equal(t.runs[3].why[0], 'capped');
+    assert.equal(t.runs[0].input, undefined);
+    const md = bench.roleSummaryMd(t);
+    assert.match(md, /\| reader \| haiku \| 3 \| 2 \| 1 \| 0\.0000 \| 0\.0000 \| /);
+    assert.match(md, /\| r3-haiku \| haiku \| false \| true \| .* \| capped \|/);
+    assert.match(md, /- reader: not haiku\n$/);
+});
+
+test('role --dry prints one line per run: the relay on haiku, and the haiku arm\'s profile key', () => {
+    const root = tmp('fankeel-bench-roles-');
+    fs.mkdirSync(path.join(root, 'roles', 'x'), { recursive: true });
+    fs.writeFileSync(path.join(root, 'roles', 'x', 'role.json'), JSON.stringify({ agent: 'fankeel-reader' }));
+    fs.writeFileSync(path.join(root, 'roles', 'x', 'input.md'), 'Q\n');
+    const r = spawnSync(process.execPath, [SCRIPT, 'role', 'x', '--arms', 'sonnet,haiku', '--runs', '2', '--cap', '1', '--dry', '--projects', root], { encoding: 'utf8' });
+    assert.equal(r.status, 0, r.stderr);
+    const lines = r.stdout.trim().split(/\r?\n/);
+    assert.equal(lines.length, 4);
+    assert.match(lines[0], /^r1 x sonnet cap=\$1 claude -p .*--permission-mode bypassPermissions .*--model haiku .*profile: \(none\)$/);
+    assert.match(lines[1], /^r1 x haiku .*profile: agent\.fankeel-reader\.model=haiku$/);
+    assert.match(lines[2], /^r2 x haiku /);
+    const bad = spawnSync(process.execPath, [SCRIPT, 'role', 'x', '--arms', 'sonnet,opus', '--dry', '--projects', root], { encoding: 'utf8' });
+    assert.equal(bad.status, 1);
+    assert.match(bad.stderr, /not opus/);
+});
+
+test('roleProject borrows the project a role.json names, and is the directory itself otherwise', () => {
+    const root = project({ 'role.json': JSON.stringify({ agent: 'fankeel-implementer', project: 'add-feature' }) });
+    assert.equal(bench.roleProject(path.join(root, 'p')), path.join(root, '..', 'add-feature'));
+    const plain = project({ 'setup.sh': 'true\n' });
+    assert.equal(bench.roleProject(path.join(plain, 'p')), path.join(plain, 'p'));
+});
+
+test('selftest runs a control\'s control.sh in the laid-out project and removes it before check.sh', () => {
+    const root = project({
+        'setup.sh': 'echo start > state.txt\n',
+        'check.sh': '[ ! -e "$1/control.sh" ] && grep -q good "$1/state.txt"\n',
+        'controls/pass/control.sh': 'echo good > state.txt\n',
+        'controls/fail/control.sh': 'echo bad > state.txt\n',
+    });
+    const p = path.join(root, 'p');
+    assert.deepEqual(bench.selftest(p, selfOpts()), []);
+    fs.writeFileSync(path.join(p, 'controls', 'pass', 'control.sh'), 'exit 4\n');
+    assert.match(bench.selftest(p, selfOpts())[0], /^p pass: control\.sh exited 4/);
+    assert.match(bench.layControl(p, 'pass', tmp('fankeel-bench-lay-'), process.env), /^control\.sh exited 4/);
+});
