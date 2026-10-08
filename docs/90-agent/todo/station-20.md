@@ -1,7 +1,7 @@
 ---
 label: station
 title: gate 等待起點沒留 at
-description: dashboard 的『等你回答』卡片算等待時間，但 lib/handoff.js 沒留下 gate 的 `at`，量出來不是真的等待起點 — [lib/handoff.js](lib/handoff.js).
+description: dashboard 的『等你回答』卡片算等待時間，但 `lib/handoff.js` 沒留下 gate 的 `at`，量出來不是真的等待起點 — [lib/handoff.js](lib/handoff.js).
 state: watch
 link: lib/handoff.js
 group: gate 等待時間量不準

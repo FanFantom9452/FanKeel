@@ -1,7 +1,7 @@
 ---
 label: build
 title: commit.js 加不了 git mv 刪除
-description: scripts/commit.js 加不了 git mv 的刪除那一半 — [scripts/commit.js](scripts/commit.js).
+description: `scripts/commit.js` 加不了 git mv 的刪除那一半 — [scripts/commit.js](scripts/commit.js).
 state: watch
 link: scripts/commit.js
 group: git mv 漏一半提交

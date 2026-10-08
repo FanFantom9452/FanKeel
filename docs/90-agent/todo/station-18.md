@@ -1,7 +1,7 @@
 ---
 label: station
 title: station 介面只有中文
-description: assets/station/station.js 與 station.css 的介面文字（約 519 行 UI 字串）目前只有中文，沒有 i18n 機制 — [docs/station.md](docs/90-agent/reference/station.md).
+description: `assets/station/station.js` 與 station.css 的介面文字（約 519 行 UI 字串）目前只有中文，沒有 i18n 機制 — [docs/station.md](docs/90-agent/reference/station.md).
 state: watch
 link: docs/90-agent/reference/station.md
 group: 站頁介面只有中文
