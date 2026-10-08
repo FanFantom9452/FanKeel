@@ -196,4 +196,4 @@ if (require.main === module) {
     process.exit(main(process.argv.slice(2)));
 }
 
-module.exports = { usage, parseArgs, runOnce, render, verdict, main, cmdQuote, buildArgs };
+module.exports = { usage, parseArgs, runOnce, render, verdict, main, cmdQuote, buildArgs, spawnClaude };
