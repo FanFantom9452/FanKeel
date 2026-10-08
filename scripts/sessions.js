@@ -16,16 +16,27 @@ const FULL_ROUTE = ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'lan
 const routeIndex = new Map(FULL_ROUTE.map((s, i) => [s, i]));
 // 拿掉的那個提醒 hook 用的同一個門檻：改前改後量的就是它曾經提醒的那一種輸出。
 const BIG = 20000;
+// --breakdowns, 2026-10-09: four things that count as the discipline failing,
+// each kept with the transcript line's timestamp so it can be looked up.
+//   backToBuild  a `task.js stage build` after a `task.js stage verify`
+//   stoodDown    a `task.js down` in a transcript with no `task.js stage land`
+//   refused      a tool_result whose text starts `fankeel: ` — every refusal
+//                hooks/guard.js writes opens that way (its lines 91, 136, 163)
+//   hookErrors   a `system` line whose text says a hook timed out or failed
+// The last two are the shapes assumed, not measured; the first foreign-project
+// week (docs/90-agent/todo/foreign-1.md) is where they get checked.
+const REFUSED = /^fankeel: /;
+const HOOK_ERROR = /\bhook\b.*\b(timed out|failed|error)\b/i;
 
 function parseArgs(argv) {
   const { values } = parseArgv({
     args: argv, strict: false, allowPositionals: true,
-    options: { 'config-dir': { type: 'string' }, project: { type: 'string' }, since: { type: 'string' } },
+    options: { 'config-dir': { type: 'string' }, project: { type: 'string' }, since: { type: 'string' }, breakdowns: { type: 'boolean' } },
   });
   const configDir = values['config-dir'] || process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
   const since = values.since ? Date.parse(values.since) : null;
   if (Number.isNaN(since)) throw new Error('--since takes a date, YYYY-MM-DD.');
-  return { configDir, project: values.project || null, since };
+  return { configDir, project: values.project || null, since, breakdowns: Boolean(values.breakdowns) };
 }
 
 function dirFor({ configDir, project }) {
@@ -79,6 +90,8 @@ async function processFile(file) {
   let hadStart = false;
   const rawStages = [];
   const idKind = new Map();
+  const backToBuild = []; const stoodDown = []; const refused = []; const hookErrors = [];
+  let sawDown = null; let sawLand = false;
 
   for await (const line of rl) {
     if (!line) continue;
@@ -100,7 +113,12 @@ async function processFile(file) {
             const cmd = c.input && c.input.command;
             if (typeof cmd === 'string') {
               if (/task\.js\s+start(\s|$)/.test(cmd)) hadStart = true;
-              for (const s of extractStagesFromCommand(cmd)) rawStages.push(s);
+              for (const s of extractStagesFromCommand(cmd)) {
+                rawStages.push(s);
+                if (s === 'build' && rawStages.length > 1 && rawStages[rawStages.length - 2] === 'verify') backToBuild.push({ at: o.timestamp || null });
+                if (s === 'land') sawLand = true;
+              }
+              if (/task\.js\s+down(\s|$)/.test(cmd)) sawDown = { at: o.timestamp || null };
             }
           }
         }
@@ -117,6 +135,7 @@ async function processFile(file) {
           if (c.type !== 'tool_result') continue;
           const txt = contentText(c.content);
           allToolResultChars += txt.length;
+          if (REFUSED.test(txt)) refused.push({ at: o.timestamp || null });
           if (idKind.get(c.tool_use_id) === 'agent' && txt.indexOf('Async agent launched successfully') === -1) {
             subagentChars += txt.length;
           } else if (txt.length > BIG) {
@@ -125,8 +144,12 @@ async function processFile(file) {
           }
         }
       }
+    } else if (o.type === 'system') {
+      const txt = contentText(o.content !== undefined ? o.content : (o.message && o.message.content));
+      if (HOOK_ERROR.test(txt)) hookErrors.push({ at: o.timestamp || null });
     }
   }
+  if (sawDown && !sawLand) stoodDown.push(sawDown);
 
   let backwardCount = 0;
   for (let i = 1; i < rawStages.length; i++) {
@@ -135,7 +158,7 @@ async function processFile(file) {
     if (pi !== null && ci !== null && ci < pi) backwardCount++;
   }
 
-  return { size: stat.size, peakContext, agentCalls, subagentChars, allToolResultChars, bigToolResults, notifChars, hadStart, backwardCount };
+  return { size: stat.size, peakContext, agentCalls, subagentChars, allToolResultChars, bigToolResults, notifChars, hadStart, backwardCount, backToBuild, stoodDown, refused, hookErrors };
 }
 
 function percentile(arr, p) {
@@ -156,6 +179,12 @@ async function main(argv) {
 
   const results = [];
   for (const f of files) results.push(await processFile(f));
+  if (opts.breakdowns) {
+    const breakdowns = results.map((r, i) => ({ file: path.basename(files[i]), backToBuild: r.backToBuild, stoodDown: r.stoodDown, refused: r.refused, hookErrors: r.hookErrors }));
+    const sum = (k) => breakdowns.reduce((a, b) => a + b[k].length, 0);
+    const totals = { sessions: results.length, backToBuild: sum('backToBuild'), stoodDown: sum('stoodDown'), refused: sum('refused'), hookErrors: sum('hookErrors') };
+    return JSON.stringify({ breakdowns, totals }, null, 2);
+  }
 
   const out = {
     totalSessions: results.length,

@@ -116,3 +116,31 @@ test('main is exported and returns fankeelSessions from a session that ran task.
   assert.equal(out.out.totalSessions, 1);
   assert.equal(out.out.fankeelSessions, 1);
 });
+
+// The four breakdowns the 2026-10-09 review asked to count on a project that
+// is not fankeel: verify sent back to build, a task stood down before land, a
+// tool call a fankeel hook refused, and a hook that timed out or failed. The
+// shapes of the last two in a transcript are the script's own header comment;
+// this proves the counting, and the week's run on another project is where
+// the shapes get checked against what Claude Code actually writes.
+test('--breakdowns counts the four kinds per transcript, each with its time', async () => {
+  const cfg = tmp('fankeel-sessions-');
+  const dir = path.join(cfg, 'projects', 'p');
+  const bash = (command, t) => ({ type: 'assistant', timestamp: t, message: { usage: { input_tokens: 1 }, content: [{ type: 'tool_use', id: 'b', name: 'Bash', input: { command } }] } });
+  writeTranscript(dir, 'x.jsonl', [
+    bash('node scripts/task.js start --session s --task t', '2026-10-09T01:00:00.000Z'),
+    bash('node scripts/task.js stage verify --session s', '2026-10-09T02:00:00.000Z'),
+    bash('node scripts/task.js stage build --session s', '2026-10-09T03:00:00.000Z'),
+    { type: 'user', timestamp: '2026-10-09T03:30:00.000Z', message: { content: [{ type: 'tool_result', tool_use_id: 'e', content: 'fankeel: `build` is not on stage.agents (survey) — no fankeel-brain here' }] } },
+    { type: 'system', timestamp: '2026-10-09T03:40:00.000Z', content: 'UserPromptSubmit hook timed out after 5000ms' },
+    bash('node scripts/task.js down --session s', '2026-10-09T04:00:00.000Z'),
+  ]);
+  const result = await processFile(path.join(dir, 'x.jsonl'));
+  assert.deepEqual(result.backToBuild, [{ at: '2026-10-09T03:00:00.000Z' }]);
+  assert.deepEqual(result.stoodDown, [{ at: '2026-10-09T04:00:00.000Z' }]);
+  assert.deepEqual(result.refused, [{ at: '2026-10-09T03:30:00.000Z' }]);
+  assert.deepEqual(result.hookErrors, [{ at: '2026-10-09T03:40:00.000Z' }]);
+  const out = JSON.parse(execFileSync(process.execPath, [SCRIPT, '--config-dir', cfg, '--project', 'p', '--breakdowns'], { encoding: 'utf8' }));
+  assert.equal(out.breakdowns.length, 1);
+  assert.deepEqual(out.totals, { sessions: 1, backToBuild: 1, stoodDown: 1, refused: 1, hookErrors: 1 });
+});
