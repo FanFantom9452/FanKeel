@@ -516,3 +516,47 @@ test('two runs prepared side by side: only the haiku one holds an override, and 
     assert.equal(overrideFor('fankeel:fankeel-reader', haiku.dir, config), 'fankeel-reader');
     assert.equal(overrideFor('fankeel:fankeel-reader', sonnet.dir, config), null);
 });
+
+test('runAll: a job that throws still leaves a row naming it with the error, and the other jobs run', async () => {
+    const { runAll } = require('../scripts/bench.js');
+    const batchDir = tmp('fankeel-bench-batch-');
+    const jobs = ['a', 'b', 'c'].map((x, i) => ({ tag: 'easy-' + x + '-r1-haiku', arm: 'haiku', model: 'haiku', round: 1, seed: i + 1, row: { role: 'p', item: 'easy-' + x } }));
+    const log = console.log;
+    console.log = () => {};
+    try {
+        await runAll({ agent: 'fankeel-reader', batchDir }, jobs, 2, async (ctx, job) => {
+            if (job.tag === 'easy-b-r1-haiku') throw new Error('boom');
+            return { tag: job.tag, pass: true, claudeUsd: 0, wallS: 0, error: null };
+        });
+    } finally {
+        console.log = log;
+    }
+    const rows = fs.readFileSync(path.join(batchDir, 'runs.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+    assert.equal(rows.length, 3);
+    const bad = rows.find((r) => r.tag === 'easy-b-r1-haiku');
+    assert.match(bad.error, /boom/);
+    assert.deepEqual([bad.item, bad.arm, bad.seed, bad.pass], ['easy-b', 'haiku', 2, false]);
+    assert.equal(rows.filter((r) => r.pass).length, 2);
+});
+
+test('role refuses to start when a control is judged wrong: exits 1, names the selftest failure, writes no runs.jsonl and spawns no claude', () => {
+    const root = tmp('fankeel-bench-roles-');
+    const item = path.join(root, 'roles', 'x', 'items', 'easy-a');
+    fs.mkdirSync(path.join(item, 'controls', 'pass'), { recursive: true });
+    fs.mkdirSync(path.join(item, 'controls', 'fail-wrong'), { recursive: true });
+    fs.writeFileSync(path.join(root, 'roles', 'x', 'role.json'), JSON.stringify({ agent: 'fankeel-reader' }));
+    fs.writeFileSync(path.join(item, 'input.md'), 'Q\n');
+    fs.writeFileSync(path.join(item, 'setup.sh'), 'true\n');
+    fs.writeFileSync(path.join(item, 'check.sh'), 'echo pass\n'); // passes everything, so the fail control is judged wrong
+    fs.writeFileSync(path.join(item, 'controls', 'pass', 'f'), '1\n');
+    fs.writeFileSync(path.join(item, 'controls', 'fail-wrong', 'f'), '1\n');
+    // eval.js has no command override, so the child's PATH holds no claude.
+    const dirs = (process.env.PATH || '').split(path.delimiter).filter((d) => !['claude', 'claude.exe', 'claude.cmd'].some((n) => fs.existsSync(path.join(d, n))));
+    const before = new Set(fs.existsSync(path.join(path.join(__dirname, '..'), '.fankeel', 'build', 'bench')) ? fs.readdirSync(path.join(__dirname, '..', '.fankeel', 'build', 'bench')) : []);
+    const r = spawnSync(process.execPath, [SCRIPT, 'role', 'x', '--runs', '1', '--projects', root], { encoding: 'utf8', env: { ...process.env, PATH: dirs.join(path.delimiter) } });
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /control\(s\) judged wrong — no run started/);
+    const bdir = path.join(__dirname, '..', '.fankeel', 'build', 'bench');
+    const after = fs.existsSync(bdir) ? fs.readdirSync(bdir).filter((n) => !before.has(n)) : [];
+    assert.deepEqual(after, []);
+});

@@ -269,9 +269,18 @@ function startBatch(name, a, extra) {
 // Every job through the pool. This one parent process appends each row to
 // runs.jsonl as its run finishes, so the file is in finishing order and
 // tally reads tags, never positions.
-async function runAll(ctx, jobs, width) {
+// A job that throws still leaves a row — its tag, item, arm and seed with the
+// message as its error — so one bad run costs only itself, never the paid
+// runs still in flight.
+async function runAll(ctx, jobs, width, run = runJob) {
     await bench.pool(jobs, width, async (job) => {
-        const row = await runJob(ctx, job);
+        let row;
+        try {
+            row = await run(ctx, job);
+        } catch (e) {
+            row = { tag: job.tag, ...job.row, agent: ctx.agent, arm: job.arm, model: job.model, round: job.round, seed: job.seed,
+                pass: false, check: '', exit: null, claudeUsd: 0, wallS: 0, error: 'runner threw: ' + (e && e.message || e) };
+        }
         fs.appendFileSync(path.join(ctx.batchDir, 'runs.jsonl'), JSON.stringify(row) + '\n');
         console.log(row.tag + ' pass=' + row.pass + ' $' + row.claudeUsd.toFixed(4) + ' ' + row.wallS + 's' + (row.error ? ' — ' + row.error : ''));
     });
@@ -456,6 +465,6 @@ function main(argv) {
     return 1;
 }
 
-module.exports = { prepareRun };
+module.exports = { prepareRun, runAll };
 
 if (require.main === module) Promise.resolve(main(process.argv.slice(2))).then((code) => process.exit(code));
