@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-07
+last_verified: 2026-10-09
 source_of_truth: this file, no upstream — a decision record is not derived from anything
 ---
 
@@ -148,72 +148,29 @@ run returned eleven thousand files whose visible portion was entirely
 spreadsheets. That asymmetry is deliberate: inside a repository a tracked file is
 tracked on purpose, and outside one nothing has said what belongs.
 
-## Voice goes in the system prompt, not in the injection
+## Voice lives in the injected rules and one skill, not in an output style
 
-A ruleset injected at `SessionStart` lands in the conversation, which is exactly
-what compaction rewrites and what a long session pushes into the distance. That
-is the mechanism behind every "it worked at first and then faded" report about
-this kind of plugin.
-*(Superseded 2026-09-13: fankeel ships no output style. A plugin's styles show in
-every user's `/config` picker and reach no subagent, so the voice lives in the
-injected rules and the on-demand `fankeel-explain` skill —
-[2026-09-13-no-output-styles.md](2026-09-13-no-output-styles.md). The split below
-is what fankeel shipped until then.)*
+A ruleset injected at `SessionStart` lands in the conversation, which is
+exactly what compaction rewrites and what a long session pushes into the
+distance. That is the mechanism behind every "it worked at first and then
+faded" report about this kind of plugin, and it is why the voice is not
+injected once at the start.
 
-Claude Code has a native place for it. An output style is appended to the system
-prompt — sent verbatim on every request, never touched by compaction, and inside
-the cached prefix after the first turn. So fankeel ships `outputStyles/` rather
-than injecting a voice, and the split is:
+What fankeel shipped until 2026-09-13 was an output style, appended to the
+system prompt and so immune to compaction. It went for two reasons the
+mechanism could not fix: a plugin's styles show in every user's `/config`
+picker whether or not that session uses fankeel, and a style reaches no
+subagent, which is where more and more of the writing happens. Since then
+the voice is carried by the per-prompt injection — whose `output shape:`
+is the part that changes with the stage — and by the on-demand
+`fankeel-explain` skill for a presentation, a report or a status sync.
+The record of the removal, with the probe behind it, is
+[2026-09-13-no-output-styles.md](2026-09-13-no-output-styles.md).
 
-| | Where | Cost |
-|---|---|---|
-| How to talk — fixed for the session | output style, system prompt | Once, then cached |
-| What is being done now — changes | the per-turn injection | ~200 tokens a turn |
-
-Style does not go in the injection: that is paying every turn for something the
-system prompt carries for free.
-
-The dynamic half is the one line of output *shape* on each stage. A system prompt
-is fixed for the session and the stage is not, so "quote the scanner" at `survey`
-and "say almost nothing" at `build` can only live in the injection.
-
-### The style is set by a skill, not by sending people to /config
-
-An output style is the right mechanism and `/config` is where people never go.
-*(Superseded in 0.20.0: the `fankeel-style` skill was removed. The three styles
-still ship and are picked in `/config`; what came out was the skill that set one
-for you, and the entry field and injected digest that existed to cover the gap
-before it took effect.)*
-*(Superseded 2026-09-13: the three styles no longer ship either.)*
-
-They do not change settings; they say "answers are too long". So `fankeel-style`
-is a skill over a script that writes the same `outputStyle` field `/config`
-writes.
-
-Nothing about it is fankeel-specific, deliberately: a style set this way survives
-uninstalling the plugin, because it is the user's setting rather than this
-plugin's state. The script is defensive about `settings.json` for the same
-reason — other tools write that file, so unknown keys are preserved, the first
-change is backed up, a file that does not parse is reported rather than
-overwritten, and the write goes through a rename.
-
-**The gap.** A `settings.json` change may not reach a session already running.
-Rather than shipping a tool that says "it's set" when the user will not see it
-until they restart, one constant — `SETTINGS_RELOAD_IS_LIVE` — records the
-observed answer, and while it is false the script also writes a four-line digest
-onto the session entry for the hook to inject. Four lines rather than the whole
-style: a digest injected every turn accumulates in the transcript, and paying
-that to enforce brevity would be self-defeating.
-
-No `force-for-plugin: true`, because it overrides whatever the user chose and
-fankeel is opt-in per session. And the skill never picks a style on the user's
-behalf — it changes the voice of every session on the machine, including the
-ones they are not looking at.
-
-The always-on rules stay in the injection even though `fankeel-pipeline`
-repeats them. A style is the user's choice, a hook cannot see which one is active,
-and losing the rules whenever the user picks something else costs more than
-repeating them every turn.
+The always-on rules ride the injection every turn rather than living in any
+system-prompt mechanism: a hook cannot see what the user has chosen there,
+and losing the rules whenever they change something costs more than
+repeating them.
 
 ## A subagent gets a brief, and it is the best-value text here
 
@@ -309,36 +266,29 @@ version-controlled because it is a fact about the project rather than about a
 session. Two shapes ship, both copied from repositories that already existed
 rather than invented, and neither is imposed.
 
-## Other people's plugins get used when they are there
+## Other people's plugins: set aside while a task runs, queried when they can answer
 
-`audit` covers documents, which nothing else does. For the code half, ponytail
-already does it better than a reimplementation would, and graphify and codegraph
-answer a question this scanner cannot.
-
-Reading `installed_plugins.json` costs one file and makes the rule honest in both
-directions: use theirs when theirs is installed, say plainly when it is not.
-Depending on them outright would break for anyone without them; reimplementing
-them would be worse at it and would put fankeel in the business of being a plugin
+`audit` covers documents, which nothing else installed does. For the code
+half, reading `installed_plugins.json` costs one file and keeps the rule
+honest in both directions: graphify and codegraph are queried when they
+are installed, because they answer a structural question this scanner
+cannot, and the skill says plainly when they are not. Depending on them
+outright would break for anyone without them; reimplementing them would be
+worse at it and would put fankeel in the business of being a plugin
 directory.
 
-Where it lands is split, and the split is the budget. The injected block gets one
-clause — `audit`'s `{{PONYTAIL}}`, filled by `lib/render.js` from
-`lib/plugins.js` — because that block is sent every turn and has about two
-hundred characters of headroom. graphify and codegraph are named in
-[skills/fankeel/SKILL.md](../../skills/fankeel/SKILL.md) instead, which is read
-once on entering a stage and can afford a table. A catalogue of all three lived
-in code for a while with nowhere to be printed; it was deleted on 2026-08-29
-rather than given a home the block could not pay for.
+A process skill another plugin ships for the same step — brainstorming for
+`design`, a plan writer for `plan`, an executor for `build` — is set aside
+while a fankeel task is active, and named the first time it is: two
+procedures for one step is how a stage asks the user two questions.
+`orient.js`'s `overlap:` line lists the ones actually installed.
 
-Their *shape* was worth taking and their text was not — tags, one line per
-finding, an explicit boundary, and a sentence for when nothing was found. That is
-a way of writing a report, not anybody's property, and the subject differs enough
-that copying would not have helped.
-
-*(Superseded 2026-09-12: ponytail's review and audit became fankeel's own —
-the reviewer's `## Cuts` and fankeel-audit's three lenses — and `lib/plugins.js`
-was deleted with the render token it fed. See
-[the brief, §6.5](../90-agent/reference/improvement-brief.md#65-ponytail-去依賴).)*
+The code review and the over-engineering audit were ponytail's until
+2026-09-12 and are fankeel's own since: the reviewer's `## Cuts` section
+and fankeel-audit's three lenses took the *shape* — tags, one line per
+finding, an explicit boundary, a sentence for when nothing was found — and
+not the text, and `lib/plugins.js` went with the render token it fed
+([the brief, §6.5](../90-agent/reference/improvement-brief.md#65-ponytail-去依賴)).
 
 ## One caller is not evidence on its own
 

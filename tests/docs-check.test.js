@@ -98,6 +98,16 @@ test('a file outside the doc root gets no role, and no findings, once a tree is 
   assert.equal(hit, false, 'a page outside the doc root is not graded as reference just because a tree exists');
 });
 
+test('a decision page carrying a Superseded paragraph is a finding; a reference page is not', () => {
+  const root = tmp('fankeel-docscheck-');
+  fs.mkdirSync(path.join(root, 'docs', 'decisions'), { recursive: true });
+  const text = '# why\n\nThe decision.\n\n*(Superseded 2026-09-13: it changed. The paragraph below is history.)*\n\nOld text.\n\n已取代：另一段。\n';
+  fs.writeFileSync(path.join(root, 'docs', 'decisions', 'a.md'), text);
+  const got = checkFile(root, 'docs/decisions/a.md', 'decision').map((f) => [f.line, f.tag]);
+  assert.deepEqual(got, [[5, 'superseded'], [9, 'superseded']]);
+  assert.deepEqual(checkFile(root, 'docs/decisions/a.md', 'reference').filter((f) => f.tag === 'superseded'), []);
+});
+
 // The other half of the fix: `--root` is documented as overriding where the
 // registry is, not as a path re-based onto the project it names. Run from
 // inside the project a relative `--root` names, the old behaviour resolved to

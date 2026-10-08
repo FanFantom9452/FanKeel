@@ -254,6 +254,19 @@ function checkDoc(root, rel, role, symbols, roots) {
     // document at all.
     if (role === 'archive' || role === 'report' || role === 'data') return out;
 
+    // A decision record is written once and rewritten when it changes — never
+    // appended to. A paragraph announcing it supersedes one above leaves both
+    // on the page, and a reader has to work out which is current (the 2026-10-09
+    // review counted four on one page, with every superseded paragraph still
+    // there). The fix is to fold the current decision in; this names the lines.
+    if (role === 'decision') {
+        lines.forEach((l, i) => {
+            if (/^\*?\(?\s*(Superseded\b|已取代)/.test(l)) {
+                out.push({ file: rel, line: i + 1, tag: 'superseded', what: 'a decision page is rewritten, not appended: this paragraph supersedes one above — fold it in' });
+            }
+        });
+    }
+
     const lineOf = (index) => text.slice(0, index).split('\n').length;
 
     // Same line count, different offsets — so links are numbered against the
