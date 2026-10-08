@@ -551,9 +551,14 @@ test('role refuses to start when a control is judged wrong: exits 1, names the s
     fs.writeFileSync(path.join(item, 'controls', 'pass', 'f'), '1\n');
     fs.writeFileSync(path.join(item, 'controls', 'fail-wrong', 'f'), '1\n');
     // eval.js has no command override, so the child's PATH holds no claude.
-    const dirs = (process.env.PATH || '').split(path.delimiter).filter((d) => !['claude', 'claude.exe', 'claude.cmd'].some((n) => fs.existsSync(path.join(d, n))));
+    const dirs = (process.env.PATH || '').split(path.delimiter).filter((d) => {
+        try { return !fs.readdirSync(d).some((n) => { const l = n.toLowerCase(); return l === 'claude' || l.startsWith('claude.'); }); } catch { return true; } // unreadable or missing dir cannot be searched either: kept
+    });
+    const env = { ...process.env };
+    for (const k of Object.keys(env)) if (/^path$/i.test(k)) delete env[k];
+    env.PATH = dirs.join(path.delimiter);
     const before = new Set(fs.existsSync(path.join(path.join(__dirname, '..'), '.fankeel', 'build', 'bench')) ? fs.readdirSync(path.join(__dirname, '..', '.fankeel', 'build', 'bench')) : []);
-    const r = spawnSync(process.execPath, [SCRIPT, 'role', 'x', '--runs', '1', '--projects', root], { encoding: 'utf8', env: { ...process.env, PATH: dirs.join(path.delimiter) } });
+    const r = spawnSync(process.execPath, [SCRIPT, 'role', 'x', '--runs', '1', '--projects', root], { encoding: 'utf8', env });
     assert.equal(r.status, 1);
     assert.match(r.stderr, /control\(s\) judged wrong — no run started/);
     const bdir = path.join(__dirname, '..', '.fankeel', 'build', 'bench');
