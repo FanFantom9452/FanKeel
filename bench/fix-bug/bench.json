@@ -1,0 +1,7 @@
+{
+  "title": "Fix sumRange so npm test passes",
+  "route": "plan,build,verify",
+  "seeded": true,
+  "arms": ["base", "sub", "impl"],
+  "requires": []
+}

@@ -66,6 +66,10 @@
       "role": "fixture"
     },
     {
+      "path": "bench",
+      "role": "fixture"
+    },
+    {
       "path": "docs",
       "role": "reference",
       "depth": 1

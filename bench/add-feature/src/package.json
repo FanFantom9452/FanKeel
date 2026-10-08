@@ -1,0 +1,7 @@
+{
+  "name": "add-feature",
+  "private": true,
+  "scripts": {
+    "test": "node --test \"spec/*.spec.js\""
+  }
+}

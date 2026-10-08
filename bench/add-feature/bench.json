@@ -1,0 +1,7 @@
+{
+  "title": "Add maxLength to slugify",
+  "route": "build,verify",
+  "seeded": false,
+  "arms": ["base", "sub", "impl"],
+  "requires": []
+}

@@ -1,0 +1,7 @@
+{
+  "name": "fix-bug",
+  "private": true,
+  "scripts": {
+    "test": "node --test \"spec/*.spec.js\""
+  }
+}

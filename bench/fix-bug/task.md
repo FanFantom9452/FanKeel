@@ -1,0 +1,1 @@
+`npm test` fails in this project: `sumRange(a, b)` in `lib/range.js` must return the sum of every integer from a to b inclusive, and it does not. Find the cause and fix it under `lib/`; do not change any file under `spec/`. When the plan stage writes its task, that task's Dispatch line reads `implementer, @IMPL@`.
