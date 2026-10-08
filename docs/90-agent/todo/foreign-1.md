@@ -4,6 +4,7 @@ title: 在別的專案跑一週，數崩壞
 description: 評審第六條：證據幾乎全來自這一個 repo；挑 KilnPC、EMU3000_Web、PaperResearcher、claude-kit 或 sec-test 其中之一用 fankeel 跑一週，再用 `scripts/sessions.js --breakdowns` 數崩壞 — [sessions.js](scripts/sessions.js).
 state: blocked
 link: scripts/sessions.js
+group: 在別的專案跑一週
 timing: after: 一個不是 fankeel 的專案用 fankeel 跑滿一週
 stamp: 2026-10-09
 ---
