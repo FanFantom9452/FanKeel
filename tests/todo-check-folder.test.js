@@ -66,6 +66,23 @@ test('an open entry needs a body of 200 characters; a done one needs none', () =
   assert.match(problems(dir)[0].detail, /^199 characters, at least 200/);
 });
 
+
+// The 2026-10-08 migration wrote seventeen entries whose body is the template
+// and the description again: 來源…, 要做成…, 完成條件…. Those three
+// paragraphs and a repeat of the description do not count as a reason.
+const TEMPLATE = '來源：根目錄 TODO.md 第 89 行的條目（2026-09-26 記），改成逐條的 todo 檔，讓它被 todo-check 與 station 讀到，而不是只躺在根目錄一份沒人讀的清單裡。\n\n'
+  + '要做成：ab.sh 改成在 worktree 裡 commit profile（pin.sh）；修好的 script 還沒重跑，重跑要核准約 30 美元\n\n'
+  + '完成條件：條目所述的事做完，或查證後確認不必做；結果與證據，也就是（指令輸出、commit sha 或不做的理由）寫回這個檔案的正文，再用 todo.js done 結案。';
+
+test('an open entry whose body is the migration template and its description again has no reason', () => {
+  assert.equal(check.reasonChars(TEMPLATE, 'ab.sh 改成在 worktree 裡 commit profile（pin.sh）；修好的 script 還沒重跑，重跑要核准約 30 美元'), 0);
+  assert.equal(check.reasonChars(TEMPLATE + '\n\n' + 'r'.repeat(200), 'x'), 200);
+  const dir = root();
+  lib.add(dir, { label: 'a', title: 'template only', description: 'ab.sh 改成在 worktree 裡 commit profile（pin.sh）；修好的 script 還沒重跑，重跑要核准約 30 美元', state: 'decision', body: TEMPLATE });
+  lib.add(dir, { label: 'a', title: 'with a reason', description: 'has one', state: 'decision', body: TEMPLATE + '\n\n' + 'why '.repeat(60) });
+  assert.deepEqual(problems(dir).map((p) => p.file + ' ' + p.kind), ['docs/todo/a-1.md no reason']);
+  assert.match(problems(dir)[0].detail, /^0 characters of reason/);
+});
 test('frontmatter rules land on the entry file', () => {
   const dir = root();
   const put = (id, fields) => fs.writeFileSync(path.join(dir, 'docs', 'todo', id + '.md'), lib.serialize(Object.assign(

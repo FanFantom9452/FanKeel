@@ -274,6 +274,23 @@ function claimProblems(base, body, list) {
     return out;
 }
 
+// What is left of a body once the migration template is taken out: the three
+// paragraphs `todo.js migrate`'s hand-written successors carried on 2026-10-08
+// (where it came from, what to make, what counts as done) and any paragraph
+// that is the description again. An entry with nothing else has said what it
+// is, and not why it is still open.
+const TEMPLATE_HEADS = ['來源：根目錄 TODO.md', '要做成：', '完成條件：條目所述的事做完'];
+function reasonChars(body, description) {
+    const wanted = String(description || '').replace(/\s+/g, ' ').trim();
+    const kept = String(body || '').split(/\r?\n\s*\r?\n/).filter((p) => {
+        const flat = p.replace(/\s+/g, ' ').trim();
+        if (!flat) return false;
+        if (TEMPLATE_HEADS.some((h) => flat.startsWith(h))) return false;
+        return !(wanted && flat === wanted);
+    });
+    return bodyChars(kept.join(' '));
+}
+
 function folderProblems(base, folder, loaded, disk) {
     const out = [];
     const on = (file, kind, detail) => out.push({ line: 1, file, kind, detail });
@@ -293,6 +310,10 @@ function folderProblems(base, folder, loaded, disk) {
         if (e.state !== 'done' && bodyChars(e.body) < MIN_BODY_CHARS) {
             on(e.file, 'thin body', bodyChars(e.body) + ' characters, at least ' + MIN_BODY_CHARS + ' — where it came from'
                 + ' (an incident, a session or a sha), what it should become, and what counts as done.');
+        }
+        if (e.state !== 'done' && bodyChars(e.body) >= MIN_BODY_CHARS && reasonChars(e.body, e.description) < MIN_BODY_CHARS) {
+            on(e.file, 'no reason', reasonChars(e.body, e.description) + ' characters of reason once the migration template and the description are taken out, at least '
+                + MIN_BODY_CHARS + ' — say why it is still open: the incident, session or sha it came from, and what done looks like.');
         }
         if (TIMED_STATES.includes(e.state) && !ISO.test(e.stamp)) {
             on(e.file, 'undated', 'a ' + e.state + ' entry carries stamp: YYYY-MM-DD, the day somebody last agreed its timing holds.');
@@ -785,4 +806,4 @@ if (require.main === module) {
     process.exit(ok ? 0 : 1);
 }
 
-module.exports = { trackedIn, MAX_ENTRY_CHARS, REREAD_DAYS, STALE_DAYS, SECTIONS, linksIn, entries, timings, width, mmdd, claimProblems, check, report, main };
+module.exports = { reasonChars, trackedIn, MAX_ENTRY_CHARS, REREAD_DAYS, STALE_DAYS, SECTIONS, linksIn, entries, timings, width, mmdd, claimProblems, check, report, main };
