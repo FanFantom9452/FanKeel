@@ -123,6 +123,25 @@ test('main is exported and returns fankeelSessions from a session that ran task.
 // shapes of the last two in a transcript are the script's own header comment;
 // this proves the counting, and the week's run on another project is where
 // the shapes get checked against what Claude Code actually writes.
+// Shapes measured on real transcripts 2026-10-09: Claude Code wraps a hook
+// denial as `PreToolUse:<Tool> hook error: fankeel: …`, the gate hook's refusal
+// is bare, and a stop_hook_summary system line carries a hookErrors array.
+test('--breakdowns counts the refusal and hook-error shapes real transcripts carry', async () => {
+  const cfg = tmp('fankeel-sessions-');
+  const dir = path.join(cfg, 'projects', 'p');
+  const res = (content, t) => ({ type: 'user', timestamp: t, message: { content: [{ type: 'tool_result', tool_use_id: 'e', content }] } });
+  writeTranscript(dir, 'x.jsonl', [
+    res('PreToolUse:Write hook error: fankeel: build is a controlled stage — use fankeel-brain', '2026-10-09T01:00:00.000Z'),
+    res('fankeel: gate not confirmed — stage.agents names `build`, but nothing was confirmed', '2026-10-09T01:01:00.000Z'),
+    res('some other tool output mentioning fankeel: in the middle', '2026-10-09T01:02:00.000Z'),
+    { type: 'system', subtype: 'stop_hook_summary', timestamp: '2026-10-09T01:03:00.000Z', hookInfos: [], hookErrors: [{}, {}] },
+    { type: 'system', subtype: 'stop_hook_summary', timestamp: '2026-10-09T01:04:00.000Z', hookInfos: [], hookErrors: [] },
+  ]);
+  const result = await processFile(path.join(dir, 'x.jsonl'));
+  assert.deepEqual(result.refused, [{ at: '2026-10-09T01:00:00.000Z' }, { at: '2026-10-09T01:01:00.000Z' }]);
+  assert.deepEqual(result.hookErrors, [{ at: '2026-10-09T01:03:00.000Z' }, { at: '2026-10-09T01:03:00.000Z' }]);
+});
+
 test('--breakdowns counts the four kinds per transcript, each with its time', async () => {
   const cfg = tmp('fankeel-sessions-');
   const dir = path.join(cfg, 'projects', 'p');

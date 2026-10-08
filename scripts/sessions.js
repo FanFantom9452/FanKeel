@@ -20,12 +20,17 @@ const BIG = 20000;
 // each kept with the transcript line's timestamp so it can be looked up.
 //   backToBuild  a `task.js stage build` after a `task.js stage verify`
 //   stoodDown    a `task.js down` in a task (from one `task.js start` on) with no `task.js stage land`
-//   refused      a tool_result whose text starts `fankeel: ` — every refusal
-//                hooks/guard.js writes opens that way (its lines 91, 136, 163)
-//   hookErrors   a `system` line whose text says a hook timed out, failed or error
-// The last two are the shapes assumed, not measured; the first foreign-project
-// week (docs/90-agent/todo/foreign-1.md) is where they get checked.
-const REFUSED = /^fankeel: /;
+//   refused      a tool_result whose text starts `fankeel: ` (the gate hook, bare) or
+//                `PreToolUse:<Tool> hook error: fankeel: ` (a hooks/guard.js denial,
+//                which Claude Code wraps; guard writes the `fankeel: ` text at its lines 91, 136, 163)
+//   hookErrors   one per entry of a `system` line's hookErrors array (stop_hook_summary),
+//                plus one for a `system` line whose text says a hook timed out, failed or error
+// Measured 2026-10-09 on this machine's transcripts: both refusal shapes above;
+// 131 system lines with `"hookErrors":[]`, every one empty. Still assumed: the shape
+// of an item inside a non-empty hookErrors (only its length is used) and the
+// text form of a timeout notice. The first foreign-project week
+// (docs/90-agent/todo/foreign-1.md) is where those get checked.
+const REFUSED = /^(?:PreToolUse:\w+ hook error: )?fankeel: /;
 const HOOK_ERROR = /\bhook\b.*\b(timed out|failed|error)\b/i;
 
 function parseArgs(argv) {
@@ -150,6 +155,7 @@ async function processFile(file) {
       }
     } else if (o.type === 'system') {
       const txt = contentText(o.content !== undefined ? o.content : (o.message && o.message.content));
+      if (Array.isArray(o.hookErrors)) for (let i = 0; i < o.hookErrors.length; i++) hookErrors.push({ at: o.timestamp || null });
       if (HOOK_ERROR.test(txt)) hookErrors.push({ at: o.timestamp || null });
     }
   }
