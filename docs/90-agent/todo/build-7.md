@@ -23,4 +23,4 @@ done:
 
 scripts/tune.js:370 doneLive moves new untracked files outside --src aside (stray.every(isNew)) and keeps the --src edit, tests/tune.test.js:274 covers the .playwright-mcp case
 
-- commit e77cc85c4d85b5248427a362576ba314e6327cc6
+- commit 601438d5a197fa5960ce1ab6b606647a2bca8b5e

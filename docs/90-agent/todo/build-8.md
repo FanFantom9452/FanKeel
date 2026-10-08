@@ -23,4 +23,4 @@ done:
 
 scripts/commit.js:61 foldRenames carries a staged rename's deleted old path into the same commit, tests/commit.test.js:224 commits a git mv whole
 
-- commit e77cc85c4d85b5248427a362576ba314e6327cc6
+- commit 3827f1cee4d41c89e4b88f5638d3688bfb5782dd

@@ -21,6 +21,6 @@ done:
 
 ## 完成紀錄
 
-scripts/commit.js:34 parses a block's first line 'worktree <path>' and commits it there then cherry-picks onto HEAD, tests/commit.test.js:262 covers it, so commit.js recognises worktrees
+scripts/commit.js:34 parses a block's first line 'worktree <path>' and commits it there then cherry-picks onto HEAD, tests/commit.test.js:262 covers it, so commit.js recognises worktrees; the other two halves are settled in docs/90-agent/reference/subagents.md: :903-905 ("Where it commits") has the build brain send every implementer with isolation: "worktree" and put `worktree <path>` first in its block, and :579 (the "a commit" row) has the brain commit through the commit file commit.js runs, so it never runs git commit itself
 
-- commit e77cc85c4d85b5248427a362576ba314e6327cc6
+- commit a385e6c0ef9c657e1ddad129d945f11ff39c5cc9
