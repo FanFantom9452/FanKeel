@@ -28,6 +28,37 @@ test('a request written twice with growing output counts once, at the last line'
     assert.equal(summary.usage.models['claude-sonnet-5'].output, 100);
 });
 
+// Haiku 5.5's price is per request: a request whose prompt is over 100,000
+// tokens pays the over-100K row. 90K and 120K here, so the second crosses.
+test('a Haiku 5.5 request whose prompt is over 100K is filed under claude-haiku-5-5>100k', () => {
+    const file = transcript([
+        assistant('req_a', 'claude-haiku-5-5', { input_tokens: 10, output_tokens: 50, cache_read_input_tokens: 89990 }),
+        assistant('req_b', 'claude-haiku-5-5', { input_tokens: 10, output_tokens: 70, cache_read_input_tokens: 110000,
+            cache_creation: { ephemeral_5m_input_tokens: 0, ephemeral_1h_input_tokens: 9990 } }),
+    ]);
+    const s = usage.summarise(file);
+    assert.equal(s.model, 'claude-haiku-5-5');
+    assert.deepEqual(s.usage.models, {
+        'claude-haiku-5-5': { input: 10, output: 50, cacheRead: 89990, cacheWrite5m: 0, cacheWrite1h: 0 },
+        'claude-haiku-5-5>100k': { input: 10, output: 70, cacheRead: 110000, cacheWrite5m: 0, cacheWrite1h: 9990 },
+    });
+});
+
+test('the 100K line is strict, a dated id is tiered too, no other model is, and stage buckets tier the same way', () => {
+    const at = '2026-10-08T00:00:00Z';
+    const file = transcript([
+        assistant('req_c', 'claude-haiku-5-5-20261001', { input_tokens: 100000, output_tokens: 1 }, { timestamp: at }),
+        assistant('req_d', 'claude-sonnet-5-5', { input_tokens: 200000, output_tokens: 1 }, { timestamp: at }),
+        assistant('req_e', 'claude-haiku-5-5-20261001', { input_tokens: 100001, output_tokens: 1 }, { timestamp: at }),
+    ]);
+    const s = usage.summarise(file, { stages: [{ stage: 'build', from: 0, to: Infinity }] });
+    const want = ['claude-haiku-5-5-20261001', 'claude-haiku-5-5>100k', 'claude-sonnet-5-5'];
+    assert.deepEqual(Object.keys(s.usage.models).sort(), want);
+    assert.deepEqual(Object.keys(s.usage.stages.build.models).sort(), want);
+    assert.equal(s.usage.models['claude-haiku-5-5-20261001'].input, 100000);
+    assert.equal(s.usage.models['claude-haiku-5-5>100k'].input, 100001);
+});
+
 test('one request written three times counts once; the model with more output is the model', () => {
     const file = transcript([
         line({ type: 'user', message: { role: 'user', content: 'hi' } }),
