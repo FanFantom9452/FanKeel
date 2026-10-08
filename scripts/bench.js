@@ -110,8 +110,13 @@ function runOne(ctx, item) {
                 return row;
             }
         }
-        git(dir, ['add', '-A']);
-        git(dir, ['-c', 'user.name=bench', '-c', 'user.email=bench@localhost', 'commit', '-q', '--allow-empty', '-m', 'bench: arm ' + item.arm]);
+        for (const args of [['add', '-A'], ['-c', 'user.name=bench', '-c', 'user.email=bench@localhost', 'commit', '-q', '--allow-empty', '-m', 'bench: arm ' + item.arm]]) {
+            const g = git(dir, args);
+            if (g.status !== 0) {
+                row.error = 'baseline git ' + args.find((x) => x === 'add' || x === 'commit') + ' exited ' + g.status + ': ' + (g.stderr || '').trim();
+                return row;
+            }
+        }
         const task = fs.readFileSync(path.join(ctx.project, 'task.md'), 'utf8').trim().replace(/@IMPL@/g, arm.impl);
         const prompts = ctx.conf.route ? bench.stagePrompts(ctx.conf, task, row.session, ROOT) : [task];
         const t0 = Date.now();
@@ -128,6 +133,11 @@ function runOne(ctx, item) {
             // --resume reports cost cumulatively (ab.sh), so the run's spend is the largest seen.
             const out = lastJson(r.stdout);
             if (out && typeof out.total_cost_usd === 'number') row.claudeUsd = Math.max(row.claudeUsd, out.total_cost_usd);
+            const failed = bench.callError(r);
+            if (failed) {
+                row.error = 'call ' + (i + 1) + ' of ' + prompts.length + ': ' + failed;
+                break;
+            }
         }
         row.wallS = Math.round((Date.now() - t0) / 1000);
         const c = spawnSync('bash', [bench.posix(path.join(ctx.project, 'check.sh')), bench.posix(dir)], { env, encoding: 'utf8' });
@@ -214,6 +224,7 @@ function cmdTally(a) {
             evidence = fs.readFileSync(path.join(batchDir, 'evidence.txt'), 'utf8').trim();
         } catch (e) {
             evidence = defaultEvidence();
+            console.error('bench.js: no evidence.txt under ' + batchDir + '; writing to ' + evidence);
         }
     }
     const t = bench.tally(rows, path.join(batchDir, 'raw'));

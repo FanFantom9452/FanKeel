@@ -129,3 +129,89 @@ test('verdict picks the cheapest arm that passed n/n on valid runs', () => {
         { project: 'p', arm: 'impl', runs: 3, valid: 3, passed: 2, usd: 0.5 },
     ]), { p: 'sub' });
 });
+
+test('tally records each role\'s first-request prompt size and its cache hit rate', () => {
+    const raw = tmp('fankeel-bench-raw-');
+    rawRun(raw, 'r1-sub', [['fankeel:fankeel-verifier', 'claude-haiku-5-5', 120000]]);
+    const role = bench.tally([{ tag: 'r1-sub', project: 'p', arm: 'sub', pass: true, requires: [] }], raw).runs[0].roles['fankeel-verifier'];
+    assert.deepEqual(role.prefix, [120010]);
+    near(role.hitRate, 120000 / 120010);
+});
+
+test('tally: a required role that never ran, or an arm none of whose roles ran, makes the run invalid', () => {
+    const raw = tmp('fankeel-bench-raw-');
+    rawRun(raw, 'r1-base', [['fankeel:fankeel-verifier', 'claude-sonnet-5-5', 0]]);
+    rawRun(raw, 'r1-sub', [['fankeel:fankeel-implementer', 'claude-sonnet-5-5', 0]]);
+    const t = bench.tally([
+        { tag: 'r1-base', project: 'p', arm: 'base', pass: true, requires: ['fankeel-reviewer'] },
+        { tag: 'r1-sub', project: 'p', arm: 'sub', pass: true, requires: [] },
+    ], raw);
+    assert.equal(t.runs[0].valid, false);
+    assert.deepEqual(t.runs[0].unexercised, ['fankeel-reviewer']);
+    assert.equal(t.runs[1].valid, false);
+    assert.deepEqual(t.runs[1].unexercised, ['none of fankeel-reader, fankeel-mover, fankeel-mutator, fankeel-verifier']);
+});
+
+test('tally: a row already carrying an error, or with no transcript, is never valid', () => {
+    const raw = tmp('fankeel-bench-raw-');
+    rawRun(raw, 'r1-base', []);
+    const t = bench.tally([
+        { tag: 'r1-base', project: 'p', arm: 'base', pass: true, requires: [], error: 'capped' },
+        { tag: 'r2-base', project: 'p', arm: 'base', pass: true, requires: [] },
+    ], raw);
+    assert.equal(t.runs[0].valid, false);
+    assert.equal(t.runs[0].error, 'capped');
+    assert.equal(t.runs[1].valid, false);
+    assert.match(t.runs[1].error, /^no transcript in /);
+    assert.equal(t.arms[0].valid, 0);
+});
+
+test('tally: a sub-arm agent whose meta.json is missing or unparseable makes the run invalid', () => {
+    const raw = tmp('fankeel-bench-raw-');
+    rawRun(raw, 'r1-sub', [['fankeel:fankeel-verifier', 'claude-haiku-5-5', 0]]);
+    rawRun(raw, 'r2-sub', [['fankeel:fankeel-verifier', 'claude-haiku-5-5', 0], ['fankeel:fankeel-reader', 'claude-haiku-5-5', 0]]);
+    const sub = path.join(raw, 'r2-sub', '11111111-2222-3333-4444-555555555555', 'subagents');
+    fs.writeFileSync(path.join(sub, 'agent-a1.meta.json'), '{not json');
+    fs.rmSync(path.join(sub, 'agent-a0.meta.json'));
+    const t = bench.tally([
+        { tag: 'r1-sub', project: 'p', arm: 'sub', pass: true, requires: [] },
+        { tag: 'r2-sub', project: 'p', arm: 'sub', pass: true, requires: [] },
+    ], raw);
+    assert.equal(t.runs[0].valid, true);
+    assert.equal(t.runs[1].valid, false);
+    assert.equal(t.runs[1].mismatched.length, 2);
+    assert.match(t.runs[1].mismatched[0], /role unreadable/);
+});
+
+test('callError reports a spawn error, a null status and a non-zero exit, and passes a clean exit', () => {
+    assert.match(bench.callError({ error: new Error('ENOENT'), status: null }), /did not run: ENOENT/);
+    assert.match(bench.callError({ status: null, stderr: '' }), /exited null/);
+    assert.match(bench.callError({ status: 2, stderr: ' boom \n' }), /exited 2: boom$/);
+    assert.equal(bench.callError({ status: 0, stderr: 'warn' }), null);
+});
+
+test('summaryMd renders the arm table, the run table with why-not-valid, and the verdict', () => {
+    const arms = [{ project: 'p', arm: 'base', runs: 1, valid: 1, passed: 1, usd: 0.5 }, { project: 'q', arm: 'sub', runs: 1, valid: 0, passed: 0, usd: 1 }];
+    const md = bench.summaryMd({ arms, runs: [
+        { tag: 'r1-base', arm: 'base', valid: true, pass: true, usd: 0.5, over100k: 0, wakes: 0, wallS: 3 },
+        { tag: 'r1-sub', arm: 'sub', valid: false, pass: false, usd: 1, error: 'capped' },
+    ] });
+    assert.match(md, /\| p \| base \| 1 \| 1 \| 1 \| 0\.5000 \|/);
+    assert.match(md, /\| r1-base \| base \| true \| true \| 0\.5000 \| 0 \| 0 \| 3 \|  \|/);
+    assert.match(md, /\| r1-sub \| sub \| false \| false \| 1\.0000 \| 0 \| 0 \| 0 \| capped \|/);
+    assert.match(md, /- p: base\n- q: none\n$/);
+});
+
+test('selftest reports a setup.sh that fails, once per control', () => {
+    const root = project({ 'setup.sh': 'echo nope >&2\nexit 3\n', 'check.sh': 'exit 0\n', 'controls/pass/x': '1', 'controls/fail/x': '2' });
+    const errors = bench.selftest(path.join(root, 'p'), selfOpts());
+    assert.equal(errors.length, 2);
+    assert.match(errors[0], /^p pass: setup\.sh exited 3 — nope/);
+});
+
+test('stagePrompts with a single stage sends the task with it and names no next stage', () => {
+    const p = bench.stagePrompts({ title: 'T', route: 'build' }, 'BODY', 'U1', '/plug');
+    assert.equal(p.length, 2);
+    assert.match(p[1], /^Do the build stage .* option one yourself and stop\.\n\nThe task:\nBODY$/);
+    assert.doesNotMatch(p[1], /task\.js stage/);
+});
