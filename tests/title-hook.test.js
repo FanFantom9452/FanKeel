@@ -85,3 +85,36 @@ test('the agent file model: ranks above CLAUDE_CODE_SUBAGENT_MODEL', () => {
         tool_input: { subagent_type: 'pinned', description: 'look', prompt: 'p' } }, f.dir, 'claude-haiku-4-5');
     assert.equal(out.hookSpecificOutput.updatedInput.description, sonnet.alias + ' ' + sonnet.version + ' · inherit: look');
 });
+
+// A generated override as `task.js profile set agent.fankeel-reader.*` writes
+// it: the plugin's file with model and effort replaced. The plugin's own
+// agents/fankeel-reader.md pins `model: sonnet`, so an override written for
+// the effort alone carries `model: sonnet` too.
+function override(dir, model, effort) {
+    const file = path.join(dir, '.claude', 'agents', 'fankeel-reader.md');
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, '---\nname: fankeel-reader\nmodel: ' + model + '\neffort: ' + effort + '\ngenerated_by: fankeel 0.99.0\n---\nbody\n');
+}
+
+const named = (f, model) => ({ tool_name: 'Agent', cwd: f.dir, transcript_path: f.transcript,
+    tool_input: { subagent_type: 'fankeel:fankeel-reader', model, description: 'read the map', prompt: 'p' } });
+
+// The fix-bug bench run of 2026-10-08: a brain named `sonnet` on the dispatch
+// and `agent.fankeel-mutator.model=haiku` ran on sonnet.
+test('an override that pins haiku replaces the sonnet the dispatch named, and the title says haiku', () => {
+    const f = fixture();
+    override(f.dir, 'haiku', 'medium');
+    const h = fire(named(f, 'sonnet'), f.dir).hookSpecificOutput;
+    assert.equal(h.updatedInput.subagent_type, 'fankeel-reader');
+    assert.equal(h.updatedInput.model, 'haiku');
+    assert.equal(h.updatedInput.description, 'haiku · medium: read the map');
+});
+
+test('an override that set only the effort keeps the model the dispatch named', () => {
+    const f = fixture();
+    override(f.dir, 'sonnet', 'high');
+    const h = fire(named(f, 'opus'), f.dir).hookSpecificOutput;
+    assert.equal(h.updatedInput.subagent_type, 'fankeel-reader');
+    assert.equal(h.updatedInput.model, 'opus');
+    assert.equal(h.updatedInput.description, 'opus · high: read the map');
+});

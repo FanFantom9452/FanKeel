@@ -13,7 +13,7 @@
 const os = require('node:os');
 const path = require('node:path');
 const { run, parse } = require('../lib/hook.js');
-const { prefixFor, retitle, overrideFor } = require('../lib/title.js');
+const { prefixFor, retitle, overrideFor, overrideModel } = require('../lib/title.js');
 
 function main(raw) {
     const payload = parse(raw);
@@ -27,6 +27,11 @@ function main(raw) {
     // written: docs/90-agent/todo/station-6.md, `Verdict: honoured`.
     const bare = overrideFor(input.subagent_type, payload.cwd, configDir);
     const next = bare ? { ...input, subagent_type: bare } : input;
+    // An explicit `model` on the dispatch beats the agent file's, so an
+    // override that pins a model of its own replaces it (fix-bug bench run,
+    // 2026-10-08: `agent.fankeel-mutator.model=haiku` ran on sonnet).
+    const pinned = bare ? overrideModel(bare, path.join(__dirname, '..'), payload.cwd, configDir) : null;
+    if (pinned && typeof input.model === 'string' && input.model !== pinned) next.model = pinned;
     const prefix = prefixFor({
         toolInput: next,
         pluginRoot: path.join(__dirname, '..'),

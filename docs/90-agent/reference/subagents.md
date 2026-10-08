@@ -305,7 +305,10 @@ version the model inferred read `sonnet 5` for claude-sonnet-5-5 on
 (`.claude/agents/<name>.md` or the config dir's `agents/<name>.md` carrying `generated_by: fankeel …`,
 which `task.js profile set agent.<name>.model|effort` writes), the hook also rewrites `subagent_type`
 to the bare `<name>`, because only the bare name reaches that file, and reads the prefix from the
-override (`hooks/title.js:29`, `const next = bare ? { ...input, subagent_type: bare } : input;`);
+override (`hooks/title.js:29`, `const next = bare ? { ...input, subagent_type: bare } : input;`),
+and where that override pins a model of its own — one that differs from the plugin file's — it also
+replaces a `model` the dispatch named, because the Agent tool's explicit model beats the file's; an
+override set for the effort alone leaves the named model alone (`overrideModel` in `lib/title.js`);
 the returns must be
 **compared against each other**, because agents dispatched from one prompt style
 make correlated mistakes that per-agent reading will not catch; and the **return
