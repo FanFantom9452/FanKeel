@@ -41,9 +41,7 @@ mkdir -p "$OUT" "$WORK/raw"
 cd "$REPO" || exit 1
 LOG="$OUT/provenance.txt"
 logcmd () { printf '$'; printf ' %q' "$@"; printf '\n'; }
-spent () { node -e 'const fs=require("fs");let s=0;for(const f of process.argv.slice(2)){let t;try{t=fs.readFileSync(f,"utf8")}catch(e){fs.appendFileSync(process.argv[1],"unreadable stage json: "+f+"
-");continue}try{const c=JSON.parse(t).total_cost_usd;if(typeof c!=="number")fs.appendFileSync(process.argv[1],"no total_cost_usd: "+f+"
-");s=Math.max(s,c||0)}catch(e){fs.appendFileSync(process.argv[1],"unparseable stage json: "+f+"\n")}}console.log(s.toFixed(4))' "$LOG" "$@"; }
+spent () { node -e 'const fs=require("fs");let s=0;for(const f of process.argv.slice(2)){let t;try{t=fs.readFileSync(f,"utf8")}catch(e){continue}try{s=Math.max(s,JSON.parse(t).total_cost_usd||0)}catch(e){fs.appendFileSync(process.argv[1],"unparseable stage json: "+f+"\n")}}console.log(s.toFixed(4))' "$LOG" "$@"; }
 
 {
   echo "=== $(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -67,8 +65,8 @@ run () {
     local pin; pin=$(bash "$PIN" "$wt" "$value" 2>> "$LOG" | tail -n 1)
     [ -n "$pin" ] || { echo "$tag: pin.sh failed — abort" >> "$LOG"; git worktree remove --force "$wt" >> "$LOG" 2>&1; return 1; }
     echo "$tag pin commit: $pin" >> "$LOG"
-    (cd "$wt" && node scripts/task.js profile show | grep '^  stage.agents' >> "$LOG") || echo "$tag: no stage.agents line in profile show" >> "$LOG"
-    (cd "$wt" && node scripts/task.js profile show | grep -q "^  stage.agents  *$value") || { echo "$tag: stage.agents is not $value in $wt — abort" >> "$LOG"; git worktree remove --force "$wt" >> "$LOG" 2>&1; return 1; }
+    (cd "$wt" && node scripts/task.js profile show | grep '^  stage.agents' >> "$LOG")
+    (cd "$wt" && node scripts/task.js profile show | grep -q "^  stage.agents  *$value ") || { echo "$tag: stage.agents is not $value in $wt — abort" >> "$LOG"; git worktree remove --force "$wt" >> "$LOG" 2>&1; return 1; }
   fi
 
   local rc
