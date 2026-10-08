@@ -7,13 +7,16 @@
 // Prints one line — `suite: <pass> pass, <fail> fail @ <sha8>`, or `suite: ok @ <sha8>`
 // / `suite: red @ <sha8>` for a runner that is not node --test — writes
 // .fankeel/build/task-<started>/suite.json, and exits 0 for a green suite, 1 for
-// a red one, no active entry or a usage error. The suite runs in the entry's
-// worktree when it has one, else the project root; the sha is that tree's HEAD.
+// a red one, no active entry, a worktree that is gone or a usage error. The
+// suite runs in the entry's worktree when it has one, else the project root;
+// the sha is that tree's HEAD.
 // The command is --command, else that tree's package.json test script.
+const fs = require('node:fs');
 const { parseArgs } = require('node:util');
 const registry = require('../lib/registry.js');
 const docs = require('../lib/docs.js');
 const suite = require('../lib/suite.js');
+const { worktreeOf } = require('../lib/guard.js');
 
 function main(argv) {
     const { values } = parseArgs({
@@ -26,6 +29,8 @@ function main(argv) {
     if (!data || data.active !== true) return { text: 'suite: no active entry for ' + values.session + ' under ' + root, ok: false };
     const projectRoot = docs.projectRootsFor(root, data.project ? [data.project] : [])[0] || root;
     const tree = suite.treeFor(root, data, projectRoot);
+    const wt = worktreeOf(data);
+    if (wt && !fs.existsSync(tree)) return { text: 'suite: ' + wt.path + ' is not a worktree any more', ok: false };
     const found = values.command ? null : suite.testCommand(tree);
     if (found && found.error) return { text: 'suite: ' + found.error + ' — fix it or pass --command "<cmd>".', ok: false };
     const command = values.command || found;

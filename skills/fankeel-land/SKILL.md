@@ -245,7 +245,7 @@ into the branch the main checkout is on with `--no-ff`, the message
 `merge: <task>` and two trailers, `Fankeel-Task` and `Fankeel-Class`, and no
 tag, and prints `<base>..<sha>`. Uncommitted files in the worktree, a subject
 `commit.format` refuses, or `conflict <paths>` stop it with nothing merged and
-both left in place. Re-run the suite on the merged result, and only when it is
+both left in place. Re-run the suite on the merged result with the project's own test command (package.json's `test` script) from the main checkout, because `suite.js --session` runs in the worktree while it stands and its record is the gate before the merge, not after; only when that is
 green run `node <plugin>/scripts/land.js clean --session <id>`: it removes the
 worktree and runs `git branch -d fk/<id8>`, and a `-d` refusal is printed as
 git said it — never retried with `-D`. A red suite leaves both in place, as

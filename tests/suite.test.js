@@ -113,3 +113,14 @@ test('an entry with its own worktree: suite.js records that tree\'s HEAD and blo
   suite.record(dir, data, { sha: mainHead, at: 'now', command: 'node --test', pass: 1, fail: 0, ok: true });
   assert.match(suite.blocker(dir, data, dir), /^suite ran at [0-9a-f]{8}, and lib\.js changed since — run suite\.js again$/);
 });
+
+test('an entry whose worktree is gone: blocker refuses and suite.js records nothing', () => {
+  const dir = repo();
+  const data = { ...DATA, worktree: { path: '.fankeel/worktrees/gone', branch: 'fk/gone' } };
+  assert.match(suite.blocker(dir, data, dir), /\.fankeel\/worktrees\/gone is not a worktree any more — land stops$/);
+  registry.writeSession(dir, 'abcdef0123', data);
+  const r = main(['--session', 'abcdef0123', '--root', dir]);
+  assert.equal(r.ok, false);
+  assert.match(r.text, /^suite: \.fankeel\/worktrees\/gone is not a worktree any more$/);
+  assert.equal(suite.readRecord(dir, data), null);
+});
