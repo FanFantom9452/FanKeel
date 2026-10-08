@@ -27,6 +27,12 @@ test('resolveRef resolves beside the citing file first, then from the root, and 
   assert.equal(resolveRef(root, 'docs/b.md', 'top.md'), 'top.md');
   assert.equal(resolveRef(root, 'docs/b.md', '../../etc/passwd'), null);
   assert.equal(resolveRef(root, 'docs/b.md', 'gone.md'), null);
+  // A real file above the root, so only the '..' guard keeps it out.
+  const above = tmp('fankeel-refs-');
+  const inner = path.join(above, 'root');
+  fs.mkdirSync(path.join(inner, 'docs'), { recursive: true });
+  fs.writeFileSync(path.join(above, 'marker.md'), '# marker\n');
+  assert.equal(resolveRef(inner, 'docs/b.md', '../../marker.md'), null);
 });
 
 test('quoteBeside is the first code span on the line unless that span is itself a path; external refs are not paths', () => {

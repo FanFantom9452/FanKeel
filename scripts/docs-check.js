@@ -78,16 +78,6 @@ function withoutFences(text) {
     return { text: out.join('\n'), openedAt };
 }
 
-// Inside a code span, the things that are checkable claims about *this*
-// repository. A separator is required and the first segment has to be something
-// this tree actually has.
-//
-// Both conditions were learned by running it. A bare `settings.json` or
-// `CLAUDE.md` in prose is naming a kind of file, not pointing at one, and
-// `Waypoint/web/src` in an example is describing somebody else's tree. Reported
-// as broken references they were nine findings out of ten, and a report that is
-// nine parts noise gets read once.
-
 // A declaration this repository makes somewhere. Deliberately shallow, the same
 // bargain survey.js makes: the goal is to notice a name exists, not to parse
 // six languages.
