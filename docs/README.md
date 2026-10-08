@@ -362,6 +362,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 那份設計的四個 task | `docs/99-archive/2026-10-05-prose-style.md` — *built, 繁體中文* |
 | mod 自動壓縮的四個 task：`hooks/compact.ts` 在主 session 超過 450k 且有 fankeel 任務進行中時壓縮 | [plans/2026-10-05-compact-mod.md](90-agent/plans/2026-10-05-compact-mod.md) — *design-intent, 繁體中文* |
 | 注入先開 server、gate 漏抓代號要出聲、brain 模型對照的三條 TODO：注入先量冷啟動與慢磁碟再讓 `/fankeel` 先問 station 再寫頁，`todoIds` 讀失敗浮出警告並把 2800 毫秒門檻寫成常數，brain 用 opus 或 sonnet 的對照腳本由使用者親手跑 | [plans/2026-10-05-inject-plain-brain.md](90-agent/plans/2026-10-05-inject-plain-brain.md) — *design-intent, 繁體中文* |
+| Haiku 角色題庫、平行執行器與長任務飄移 2×2 的 design：每角色十二題分三層、`check.sh` 標出失敗類別、`bench.js role` 用 `--jobs` 平行跑、`drift` 量 haiku／sonnet × PostToolUse 重注入 | [plans/2026-10-09-haiku-bank-drift-design.md](90-agent/plans/2026-10-09-haiku-bank-drift-design.md) — *design-intent, 繁體中文* |
+| 那份設計的十二個 task：失敗類別與共用判分、四組題庫、平行執行器、逐步檢查與重注入、報告產生器，以及使用者親手跑的付費批次 | [plans/2026-10-09-haiku-bank-drift.md](90-agent/plans/2026-10-09-haiku-bank-drift.md) — *design-intent, 繁體中文* |
 | 監控站在 `/chartroom/<專案>/` 開架構白板（10-08）的 design：handler 在 nonce 檢查之前剝前綴，轉交該專案懶建的 Chartroom `createHandler`，Chartroom 路徑取自 profile `station.chartroom`，板子固定在 `<專案>/.fankeel/architecture.board` | `docs/99-archive/2026-10-08-station-chartroom-design.md` — *built, 繁體中文* |
 | 那份設計的三個 task：profile 鍵 `station.chartroom`、station 路由與 `close()`、專案卡片的「架構白板：開啟」連結 | `docs/99-archive/2026-10-08-station-chartroom.md` — *built, 繁體中文* |
 | Haiku 5.5 的派工與可重置的模型實驗台（10-08）的 design，第二版：按角色量，reader、mutator、mover、照抄計畫的 implementer 各自 haiku 對 sonnet，並先修好 profile 指定的模型被派工時明寫的模型蓋過 | `docs/99-archive/2026-10-08-haiku-bench-design.md` — *built, 繁體中文* |

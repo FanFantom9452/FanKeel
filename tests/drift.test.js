@@ -269,4 +269,33 @@ test('runJob hands claude --settings, naming a file that points reinject.js in, 
     assert.equal(seen[1].args.includes('--settings'), false);
 });
 
+test('verdicts apply the design\'s two rulings at their edges', () => {
+    const cell = (arm, passed, clean, usdMean) => ({ arm, valid: 10, passed, clean, usdMean });
+    const v = drift.verdicts([cell('sonnet', 9, 8, 0.5), cell('haiku', 8, 7, 0.05), cell('sonnet-reinject', 9, 10, 0.59), cell('haiku-reinject', 8, 8, 0.05)]);
+    assert.deepEqual([v.longTask.holds, v.worth.sonnet.holds, v.worth.haiku.holds], [true, true, false]);
+    assert.equal(drift.verdicts([cell('sonnet', 9, 8, 0.5), cell('haiku', 7, 8, 0.05)]).longTask.holds, false);
+    assert.equal(drift.verdicts([cell('sonnet', 9, 8, 0.5), cell('sonnet-reinject', 9, 10, 0.61)]).worth.sonnet.holds, false);
+});
+
+test('reportMd states both answers with the noise note beside each, and prints the bank table and the 2×2', () => {
+    const c = (arm, clean, usdMean) => ({ arm, model: arm.replace('-reinject', ''), reinject: arm.endsWith('-reinject'), runs: 10, valid: 10, passed: 9, clean,
+        medianFirst: 31, bySteps: [{ at: 1, kept: 9, applicable: 10 }], byContext: [{ at: 20000, kept: 1, applicable: 2 }],
+        injections: 0, injectedChars: 0, usdMean, promptMean: 900000 });
+    const roles = [{ tiers: [{ role: 'reader', arm: 'haiku', tier: 'trap', runs: 12, valid: 12, passed: 10, classes: { fabricated: 2 } }] }];
+    const md = drift.reportMd({ date: '2026-10-10', roles, drift: { cells: [c('sonnet', 8, 0.5), c('haiku', 7, 0.05)] }, batches: ['.fankeel/build/bench/drift-x'] });
+    assert.match(md, /^---\nstatus: current\nlast_verified: 2026-10-10\n/);
+    assert.equal(md.split('每格十次時，差一次只是雜訊。').length - 1, 3);
+    assert.match(md, /\| reader \| haiku \| trap \| 12 \| 12 \| 10 \| 0 \| 2 \| 0 \| 0 \| 0 \| 0 \|/);
+    assert.match(md, /\| sonnet \| 10 \| 10 \| 9 \| 8 \| 31 \| 1-10 90% \| 20K 50% \|/);
+    assert.match(md, /`node scripts\/bench\.js tally \.fankeel\/build\/bench\/drift-x`/);
+});
+
+test('report re-tallies the batches it is given and writes the page to --out', () => {
+    const out = path.join(tmp('fankeel-drift-out-'), 'r.md');
+    const r = spawnSync(process.execPath, [SCRIPT, 'report', driftBatch(), '--out', out], { encoding: 'utf8' });
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(fs.readFileSync(out, 'utf8'), /\| haiku \| 1 \| 1 \| 1 \| 1 \| - \|/);
+    assert.equal(spawnSync(process.execPath, [SCRIPT, 'report'], { encoding: 'utf8' }).status, 1);
+});
+
 module.exports = { MODULES, keepAll, transcript, driftBatch };

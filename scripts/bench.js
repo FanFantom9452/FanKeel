@@ -10,6 +10,7 @@
 //   node scripts/bench.js role <role> [--arms <sonnet,haiku>] [--runs <n>] [--jobs <n>] [--cap <usd>] [--dry] [--keep] [--evidence <dir>]
 //   node scripts/bench.js drift [--arms <a,b>] [--runs <n>] [--jobs <n>] [--cap <usd>] [--dry] [--keep] [--evidence <dir>]
 //   node scripts/bench.js tally <batch dir> [--evidence <dir>]
+//   node scripts/bench.js report <batch dir>... [--out <file>]
 //
 // Every run goes through --permission-mode bypassPermissions, so a run only
 // ever happens inside an mkdtemp directory; and `run` asks `probe` first
@@ -488,6 +489,36 @@ async function cmdDrift(a, projectsRoot) {
     return 0;
 }
 
+// Every batch named, re-tallied as tally does, then lib/drift.js reportMd
+// over the role batches and the drift batch, written to --out or printed.
+function cmdReport(a) {
+    const dirs = a.positionals.slice(1).map((d) => path.resolve(d));
+    if (!dirs.length) {
+        console.error('bench.js: report needs at least one batch dir');
+        return 1;
+    }
+    const roles = [];
+    let d = null;
+    for (const dir of dirs) {
+        const b = tallyBatch(dir);
+        if (!b) {
+            console.error('bench.js: no runs.jsonl under ' + dir);
+            return 1;
+        }
+        if (b.kind === 'role') roles.push(b.t);
+        else if (b.kind === 'drift' && !d) d = b.t;
+        else {
+            // A single-project batch, or a second drift batch: the page would drop its figures without saying so.
+            console.error('bench.js: ' + dir + ' cannot go in a report (a report takes role batches and one drift batch)');
+            return 1;
+        }
+    }
+    const md = drift.reportMd({ date: new Date().toISOString().slice(0, 10), roles, drift: d, batches: dirs.map((x) => bench.posix(path.relative(ROOT, x))) });
+    if (a.values.out) fs.writeFileSync(path.resolve(a.values.out), md);
+    else process.stdout.write(md);
+    return 0;
+}
+
 function cmdSelftest(a, projectsRoot) {
     const named = a.positionals.slice(1);
     const n = Number(a.values.seeds || 1);
@@ -517,6 +548,7 @@ function main(argv) {
     const a = parseArgs({ args: argv, allowPositionals: true, strict: false, options: {
         arms: { type: 'string' }, runs: { type: 'string' }, cap: { type: 'string' }, dry: { type: 'boolean' },
         keep: { type: 'boolean' }, jobs: { type: 'string' }, seeds: { type: 'string' }, evidence: { type: 'string' }, projects: { type: 'string' },
+        out: { type: 'string' },
     } });
     const projectsRoot = a.values.projects ? path.resolve(a.values.projects) : path.join(ROOT, 'bench');
     const verb = a.positionals[0];
@@ -530,7 +562,8 @@ function main(argv) {
     if (verb === 'role') return cmdRole(a, projectsRoot);
     if (verb === 'drift') return cmdDrift(a, projectsRoot);
     if (verb === 'tally') return cmdTally(a);
-    console.error('usage: node scripts/bench.js probe | selftest [<project>...] [--seeds <n>] | run <project> --arms <a,b> --runs <n> --cap <usd> [--dry] [--keep] [--evidence <dir>] | role <role> [--arms <sonnet,haiku>] [--runs <n>] [--jobs <n>] [--cap <usd>] [--dry] [--keep] [--evidence <dir>] | drift [--arms <a,b>] [--runs <n>] [--jobs <n>] [--cap <usd>] [--dry] [--keep] [--evidence <dir>] | tally <batch dir> [--evidence <dir>]');
+    if (verb === 'report') return cmdReport(a);
+    console.error('usage: node scripts/bench.js probe | selftest [<project>...] [--seeds <n>] | run <project> --arms <a,b> --runs <n> --cap <usd> [--dry] [--keep] [--evidence <dir>] | role <role> [--arms <sonnet,haiku>] [--runs <n>] [--jobs <n>] [--cap <usd>] [--dry] [--keep] [--evidence <dir>] | drift [--arms <a,b>] [--runs <n>] [--jobs <n>] [--cap <usd>] [--dry] [--keep] [--evidence <dir>] | tally <batch dir> [--evidence <dir>] | report <batch dir>... [--out <file>]');
     return 1;
 }
 
