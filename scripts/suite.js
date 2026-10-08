@@ -4,10 +4,12 @@
 //
 //   node scripts/suite.js --session <id> [--command "<test command>"] [--root <dir>]
 //
-// Prints one line — `suite: <pass> pass, <fail> fail @ <sha8>`, or `suite: ok`
+// Prints one line — `suite: <pass> pass, <fail> fail @ <sha8>`, or `suite: ok @ <sha8>`
 // / `suite: red @ <sha8>` for a runner that is not node --test — writes
-// .fankeel/build/task-<started>/suite.json, and exits with the suite's own
-// status. The command is --command, else package.json's test script.
+// .fankeel/build/task-<started>/suite.json, and exits 0 for a green suite, 1 for
+// a red one, no active entry or a usage error. The suite runs in the entry's
+// worktree when it has one, else the project root; the sha is that tree's HEAD.
+// The command is --command, else that tree's package.json test script.
 const { parseArgs } = require('node:util');
 const registry = require('../lib/registry.js');
 const docs = require('../lib/docs.js');
@@ -23,11 +25,12 @@ function main(argv) {
     const data = registry.readSession(root, values.session);
     if (!data || data.active !== true) return { text: 'suite: no active entry for ' + values.session + ' under ' + root, ok: false };
     const projectRoot = docs.projectRootsFor(root, data.project ? [data.project] : [])[0] || root;
-    const found = values.command ? null : suite.testCommand(projectRoot);
+    const tree = suite.treeFor(root, data, projectRoot);
+    const found = values.command ? null : suite.testCommand(tree);
     if (found && found.error) return { text: 'suite: ' + found.error + ' — fix it or pass --command "<cmd>".', ok: false };
     const command = values.command || found;
     if (!command) return { text: 'suite: no test command — package.json has no scripts.test; pass --command "<cmd>".', ok: false };
-    const result = suite.runSuite(projectRoot, command);
+    const result = suite.runSuite(tree, command);
     const file = suite.record(root, data, result);
     const sha = result.sha ? result.sha.slice(0, 8) : 'no repo';
     const line = result.pass != null

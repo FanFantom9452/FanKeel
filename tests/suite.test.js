@@ -92,3 +92,24 @@ test('scripts/suite.js needs a session', () => {
   assert.equal(r.ok, false);
   assert.match(r.text, /--session <id> is required/);
 });
+
+test('an entry with its own worktree: suite.js records that tree\'s HEAD and blocker checks against it', () => {
+  const dir = repo();
+  const mainHead = git(dir, ['rev-parse', 'HEAD']);
+  const rel = '.fankeel/worktrees/abcdef01';
+  git(dir, ['worktree', 'add', '-q', '-b', 'fk/abcdef01', path.join(dir, rel)]);
+  const wt = path.join(dir, rel);
+  fs.writeFileSync(path.join(wt, 'lib.js'), 'x\n');
+  git(wt, ['add', '.']);
+  git(wt, ['commit', '-qm', 'code']);
+  const wtHead = git(wt, ['rev-parse', 'HEAD']);
+  const data = { ...DATA, worktree: { path: rel, branch: 'fk/abcdef01' } };
+  registry.writeSession(dir, 'abcdef0123', data);
+  const r = main(['--session', 'abcdef0123', '--root', dir]);
+  assert.equal(r.ok, true);
+  assert.ok(r.text.endsWith('@ ' + wtHead.slice(0, 8)), r.text);
+  assert.equal(suite.readRecord(dir, data).sha, wtHead);
+  assert.equal(suite.blocker(dir, data, dir), null);
+  suite.record(dir, data, { sha: mainHead, at: 'now', command: 'node --test', pass: 1, fail: 0, ok: true });
+  assert.match(suite.blocker(dir, data, dir), /^suite ran at [0-9a-f]{8}, and lib\.js changed since — run suite\.js again$/);
+});
