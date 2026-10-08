@@ -1289,7 +1289,7 @@ not the text, and `lib/plugins.js` went with the render token it fed
 // and the description again: 來源…, 要做成…, 完成條件…. Those three
 // paragraphs and a repeat of the description do not count as a reason.
 const TEMPLATE = '來源：根目錄 TODO.md 第 89 行的條目（2026-09-26 記），改成逐條的 todo 檔，讓它被 todo-check 與 station 讀到，而不是只躺在根目錄一份沒人讀的清單裡。\n\n'
-  + '要做成：ab.sh 改成在 worktree 裡 commit profile\n\n'
+  + '要做成：ab.sh 改成在 worktree 裡 commit profile（pin.sh）；修好的 script 還沒重跑，重跑要核准約 30 美元\n\n'
   + '完成條件：條目所述的事做完，或查證後確認不必做；結果與證據，也就是（指令輸出、commit sha 或不做的理由）寫回這個檔案的正文，再用 todo.js done 結案。';
 
 test('an open entry whose body is the migration template and its description again has no reason', () => {
