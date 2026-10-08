@@ -1,0 +1,5 @@
+lib/cart.js:6: off-by-one `i <= lines.length` reads one line past the end — fails when the cart has any line → TypeError reading price of undefined.
+lib/cart.js:10: wrong-unit `sum * (discountPercent || 0)` treats the percentage as a fraction — fails when discountPercent is 10 → the total goes negative.
+lib/cart.js:17: mutation `lines.sort((a, b) => a.price - b.price)` sorts the caller's array in place — fails when the caller reuses lines → its order has changed.
+lib/cart.js:27: swallow `return {};` hides the failed fetch the comment promises to report — fails when fetchFn rejects → the cart shows empty prices as current.
+lib/cart.js:24: unchecked `res.status !== 200` is never tested — fails when the service answers 500 → the error body is parsed as prices.

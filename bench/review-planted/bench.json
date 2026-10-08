@@ -1,0 +1,7 @@
+{
+  "title": "Review the cart change",
+  "route": null,
+  "seeded": false,
+  "arms": ["base", "reviewer"],
+  "requires": ["fankeel-reviewer"]
+}

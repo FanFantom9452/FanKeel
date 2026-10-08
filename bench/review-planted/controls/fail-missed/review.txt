@@ -1,0 +1,2 @@
+lib/cart.js:6: off-by-one `i <= lines.length` reads one line past the end — fails when the cart has any line → TypeError reading price of undefined.
+lib/cart.js:17: mutation `lines.sort((a, b) => a.price - b.price)` sorts the caller's array in place — fails when the caller reuses lines → its order has changed.

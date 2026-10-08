@@ -1,0 +1,9 @@
+{
+  "file": "lib/cart.js",
+  "defects": [
+    { "id": "loop-past-end", "line": 6 },
+    { "id": "discount-not-a-percentage", "line": 10 },
+    { "id": "sort-mutates-input", "line": 17 },
+    { "id": "fetch-error-swallowed", "line": 27 }
+  ]
+}
