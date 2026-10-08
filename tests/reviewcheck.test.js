@@ -3,6 +3,7 @@
 // a listener with two selectors (one tested, one not), a new test with and one
 // without a red-when line, and a citation two lines off its quote.
 const test = require('node:test');
+const { mock } = test;
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -138,7 +139,7 @@ test('comment lines are not rows and not hits; a hit is a whole quoted literal o
   git(dir, ['add', 'tests/staged.test.js']);
   const t = tables(dir, { sha, base });
   assert.deepEqual(t.selectors.map((r) => [r.kind, r.value, r.hits.join(), r.finding]), [
-    ['closest', '[real]', '', 'NONE'], ['matches', '[opt]', 'tests/p.test.js:3', null], ['event', 'EV', '', 'NONE'],
+    ['closest', '[real]', '', 'NONE'], ['matches', '[opt]', 'tests/p.test.js:3', null], ['event', 'EV', '', null],
   ]);
 });
 
@@ -165,7 +166,7 @@ test('an optional call, a variable event and a test( split over two lines are ro
     { file: 'lib/a.js', line: 1, text: "x.closest?.('[q]')" },
     { file: 'lib/a.js', line: 2, text: 'el.addEventListener(EV, f)' },
   ], []);
-  assert.deepEqual(rows.map((r) => [r.kind, r.value, r.finding]), [['closest', '[q]', 'NONE'], ['event', 'EV', 'NONE']]);
+  assert.deepEqual(rows.map((r) => [r.kind, r.value, r.finding]), [['closest', '[q]', 'NONE'], ['event', 'EV', null]]);
   const added = [
     { file: 'tests/a.test.js', line: 7, text: 'test(' },
     { file: 'tests/a.test.js', line: 8, text: "  'split name', () => {}" },
@@ -202,6 +203,57 @@ test('the CLI exits 0 on a clean range, 1 on findings, 2 with one stderr line on
     assert.equal(r.status, 2, args.join(' '));
     assert.equal(r.stdout, '');
     assert.match(r.stderr, /^review-check: [^\n]+\n$/, args.join(' '));
+  }
+});
+
+test('a listener whose event is a variable is listed as not a literal and is not a finding', () => {
+  const { dir, base } = scratch({ 'lib/v.js': 'x\n' });
+  const sha = commit(dir, { 'lib/v.js': 'el.addEventListener(name, f);\n' });
+  const t = tables(dir, { sha, base });
+  assert.deepEqual(t.selectors.map((r) => [r.value, r.literal, r.finding]), [['name', false, null]]);
+  assert.equal(t.findings, 0);
+  assert.match(render(t), /event name {2}→ {2}not a literal/);
+});
+
+test('a test file whose path holds a space is read: git ends its +++ header with a tab', () => {
+  const { dir, base } = scratch({ 'lib/s.js': 'x\n' });
+  const sha = commit(dir, { 'tests/my space.test.js': "test('spaced', () => {});\n" });
+  const t = tables(dir, { sha, base, returned: 'spaced — red when: m' });
+  assert.deepEqual(t.tests.map((r) => [r.file, r.name, r.finding]), [['tests/my space.test.js', 'spaced', null]]);
+});
+
+// The pins of the diff command, each shown by a repository that would break it:
+// colour always on, a destination prefix other than b/ (git 2.45+), an external diff that fails, rename
+// detection on, and an untracked file named like the range (git calls the
+// range ambiguous without the trailing `--`).
+test('the diff is read the same under a user\'s color, prefix, external-diff and rename settings and a file named like the range', () => {
+  const old = ['// a', '// b', '// c', '// d', '// e', '// f', '// g', "test('old one', () => {});", ''].join('\n');
+  const { dir } = scratch({ 'tests/old.test.js': old });
+  git(dir, ['tag', 'base1']);
+  fs.rmSync(path.join(dir, 'tests/old.test.js'));
+  commit(dir, { 'tests/new.test.js': old + "test('added one', () => {});\n" });
+  git(dir, ['config', 'color.ui', 'always']);
+  git(dir, ['config', 'diff.dstPrefix', 'Z/']);
+  git(dir, ['config', 'diff.external', 'fankeel-no-such-diff-command']);
+  write(dir, 'base1..HEAD', 'x\n');
+  const t = tables(dir, { sha: 'HEAD', base: 'base1', returned: null });
+  assert.deepEqual(t.tests.map((r) => [r.file, r.line, r.name]), [
+    ['tests/new.test.js', 8, 'old one'], ['tests/new.test.js', 9, 'added one'],
+  ]);
+});
+
+test('a fault in the tables exits 2 and names itself, so that 1 stays the findings code', () => {
+  const lib = require('../lib/reviewcheck.js');
+  const file = require.resolve('../scripts/review-check.js');
+  mock.method(lib, 'tables', () => { throw new TypeError('boom'); });
+  delete require.cache[file];
+  try {
+    const r = require(file).main(['--sha', 'HEAD', '--root', process.cwd()]);
+    assert.equal(r.code, 2);
+    assert.match(r.text, /TypeError: boom/);
+  } finally {
+    mock.restoreAll();
+    delete require.cache[file];
   }
 });
 
