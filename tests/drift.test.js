@@ -136,13 +136,28 @@ test('reinject answers only a subagent, every fifth of its calls, with constrain
 
 test('reinject.js as a hook: silent on the relay, the fifth subagent call gets the constraints, bad input exits 0', () => {
     const dir = tmp('fankeel-drift-hook-');
-    const hook = (payload) => spawnSync(process.execPath, [path.join(DRIFT, 'reinject.js')], { input: payload, encoding: 'utf8' });
+    const env = { ...process.env, CLAUDE_PROJECT_DIR: '' };
+    const hook = (payload) => spawnSync(process.execPath, [path.join(DRIFT, 'reinject.js')], { input: payload, encoding: 'utf8', env });
     assert.equal(hook(JSON.stringify({ hook_event_name: 'PostToolUse', cwd: dir })).stdout, '');
     let last;
     for (let i = 0; i < 5; i++) last = hook(JSON.stringify({ hook_event_name: 'PostToolUse', agent_id: 'a1', cwd: dir }));
     assert.equal(last.status, 0);
     assert.equal(JSON.parse(last.stdout).hookSpecificOutput.additionalContext, fs.readFileSync(path.join(DRIFT, 'constraints.md'), 'utf8').trim());
     assert.equal(hook('{not json').status, 0);
+});
+
+test('reinject.js counts and logs under CLAUDE_PROJECT_DIR, not the cwd a payload carries after a cd', () => {
+    const dir = tmp('fankeel-drift-root-');
+    const sub = path.join(dir, 'lib');
+    fs.mkdirSync(sub, { recursive: true });
+    const env = { ...process.env, CLAUDE_PROJECT_DIR: dir };
+    const hook = (payload) => spawnSync(process.execPath, [path.join(DRIFT, 'reinject.js')], { input: JSON.stringify(payload), encoding: 'utf8', env });
+    let last;
+    for (let i = 0; i < 5; i++) last = hook({ hook_event_name: 'PostToolUse', agent_id: 'a1', cwd: sub });
+    assert.equal(last.status, 0);
+    assert.equal(JSON.parse(last.stdout).hookSpecificOutput.additionalContext, fs.readFileSync(path.join(DRIFT, 'constraints.md'), 'utf8').trim());
+    assert.equal(fs.readFileSync(path.join(dir, '.bench', 'reinject.log'), 'utf8').trim().split('\n').length, 1);
+    assert.equal(fs.existsSync(path.join(sub, '.bench')), false);
 });
 
 const SESSION = '11111111-2222-3333-4444-555555555555';

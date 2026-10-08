@@ -38,7 +38,7 @@ if (require.main === module) {
         try {
             const payload = JSON.parse(raw);
             const text = fs.readFileSync(path.join(__dirname, 'constraints.md'), 'utf8').trim();
-            const out = decide(payload, payload.cwd || process.cwd(), text);
+            const out = decide(payload, process.env.CLAUDE_PROJECT_DIR || payload.cwd || process.cwd(), text);
             if (out) process.stdout.write(JSON.stringify(out));
         } catch (e) {
             // A hook never fails the call it follows.
