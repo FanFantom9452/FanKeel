@@ -415,7 +415,7 @@ then asks this stage's gate.
    found nothing to cut, AND (where the diff changes a listener) every row
    of the selector table has a qualifying test; otherwise `clean` is never
    the whole return. Where the diff changes an event listener, the return
-   also carries that listener's selector table (Part 2's denominator),
+   also carries that listener's selector table (Part 2's table (a)),
    one row per selector, even beside `clean`, and only those selectors,
    nothing wider. Rows are evidence, but a row with no qualifying test is
    also a finding line (`path:line — <problem>`) and stays in the table
