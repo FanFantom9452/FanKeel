@@ -19,10 +19,10 @@ const BIG = 20000;
 // --breakdowns, 2026-10-09: four things that count as the discipline failing,
 // each kept with the transcript line's timestamp so it can be looked up.
 //   backToBuild  a `task.js stage build` after a `task.js stage verify`
-//   stoodDown    a `task.js down` in a transcript with no `task.js stage land`
+//   stoodDown    a `task.js down` in a task (from one `task.js start` on) with no `task.js stage land`
 //   refused      a tool_result whose text starts `fankeel: ` — every refusal
 //                hooks/guard.js writes opens that way (its lines 91, 136, 163)
-//   hookErrors   a `system` line whose text says a hook timed out or failed
+//   hookErrors   a `system` line whose text says a hook timed out, failed or error
 // The last two are the shapes assumed, not measured; the first foreign-project
 // week (docs/90-agent/todo/foreign-1.md) is where they get checked.
 const REFUSED = /^fankeel: /;
@@ -112,10 +112,14 @@ async function processFile(file) {
           else if (c.name === 'Bash') {
             const cmd = c.input && c.input.command;
             if (typeof cmd === 'string') {
-              if (/task\.js\s+start(\s|$)/.test(cmd)) hadStart = true;
+              if (/task\.js\s+start(\s|$)/.test(cmd)) {
+                hadStart = true;
+                if (sawDown && !sawLand) stoodDown.push(sawDown);
+                sawDown = null; sawLand = false;
+              }
               for (const s of extractStagesFromCommand(cmd)) {
                 rawStages.push(s);
-                if (s === 'build' && rawStages.length > 1 && rawStages[rawStages.length - 2] === 'verify') backToBuild.push({ at: o.timestamp || null });
+                if (s === 'build' && rawStages[rawStages.length - 2] === 'verify') backToBuild.push({ at: o.timestamp || null });
                 if (s === 'land') sawLand = true;
               }
               if (/task\.js\s+down(\s|$)/.test(cmd)) sawDown = { at: o.timestamp || null };

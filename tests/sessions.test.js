@@ -129,6 +129,8 @@ test('--breakdowns counts the four kinds per transcript, each with its time', as
   const bash = (command, t) => ({ type: 'assistant', timestamp: t, message: { usage: { input_tokens: 1 }, content: [{ type: 'tool_use', id: 'b', name: 'Bash', input: { command } }] } });
   writeTranscript(dir, 'x.jsonl', [
     bash('node scripts/task.js start --session s --task t', '2026-10-09T01:00:00.000Z'),
+    bash('node scripts/task.js stage survey --session s', '2026-10-09T01:30:00.000Z'),
+    bash('node scripts/task.js stage build --session s', '2026-10-09T01:40:00.000Z'),
     bash('node scripts/task.js stage verify --session s', '2026-10-09T02:00:00.000Z'),
     bash('node scripts/task.js stage build --session s', '2026-10-09T03:00:00.000Z'),
     { type: 'user', timestamp: '2026-10-09T03:30:00.000Z', message: { content: [{ type: 'tool_result', tool_use_id: 'e', content: 'fankeel: `build` is not on stage.agents (survey) — no fankeel-brain here' }] } },
@@ -143,4 +145,19 @@ test('--breakdowns counts the four kinds per transcript, each with its time', as
   const out = JSON.parse(execFileSync(process.execPath, [SCRIPT, '--config-dir', cfg, '--project', 'p', '--breakdowns'], { encoding: 'utf8' }));
   assert.equal(out.breakdowns.length, 1);
   assert.deepEqual(out.totals, { sessions: 1, backToBuild: 1, stoodDown: 1, refused: 1, hookErrors: 1 });
+  // A task that lands is not stood down; a stood-down task still counts when a
+  // later task in the same transcript lands.
+  writeTranscript(dir, 'y.jsonl', [
+    bash('node scripts/task.js start --session s --task t', '2026-10-09T05:00:00.000Z'),
+    bash('node scripts/task.js stage land --session s', '2026-10-09T05:10:00.000Z'),
+    bash('node scripts/task.js down --session s', '2026-10-09T05:20:00.000Z'),
+  ]);
+  assert.deepEqual((await processFile(path.join(dir, 'y.jsonl'))).stoodDown, []);
+  writeTranscript(dir, 'z.jsonl', [
+    bash('node scripts/task.js start --session s --task a', '2026-10-09T06:00:00.000Z'),
+    bash('node scripts/task.js down --session s', '2026-10-09T06:10:00.000Z'),
+    bash('node scripts/task.js start --session s --task b', '2026-10-09T06:20:00.000Z'),
+    bash('node scripts/task.js stage land --session s', '2026-10-09T06:30:00.000Z'),
+  ]);
+  assert.deepEqual((await processFile(path.join(dir, 'z.jsonl'))).stoodDown, [{ at: '2026-10-09T06:10:00.000Z' }]);
 });
