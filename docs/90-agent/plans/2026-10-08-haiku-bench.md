@@ -1823,6 +1823,8 @@ last_verified: 2026-10-08
 
 ## Task 7: 使用者親手跑：確認別名、24 次 run、報告與 b 項裁定
 
+> 取代於 2026-10-08：fix-bug 那批跑完後，使用者改成按角色量。這個 task 由 [2026-10-08-haiku-bench-roles.md](2026-10-08-haiku-bench-roles.md) 的 Task 4 取代；add-feature 與 review-planted 兩批整次 run 不跑。
+
 **Files:**
 - Modify: `docs/90-agent/reports/2026-10-08-haiku-bench.md` — 新檔：各批 `summary.md` 的表與裁定
 - Modify: `docs/90-agent/reference/model-choice.md` — 依使用者的裁定改寫 `## Haiku 5.5, reopened` 與 b 項

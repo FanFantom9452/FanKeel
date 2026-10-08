@@ -1,0 +1,9 @@
+before:
+tests 3
+pass 3
+fail 0
+after:
+tests 3
+pass 1
+fail 2
+ 0 files changed

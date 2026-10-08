@@ -34,7 +34,7 @@ function checkOf(project, control, checkEnv) {
     const full = { ...process.env, BENCH_SEED: '1', BENCH_IMPL: 'sonnet', BENCH_PLUGIN: bench.posix(ROOT) };
     const s = spawnSync('bash', [bench.posix(path.join(BENCH, project, 'setup.sh'))], { cwd: dir, env: full, encoding: 'utf8' });
     assert.equal(s.status, 0, s.stderr);
-    fs.cpSync(path.join(BENCH, project, 'controls', control), dir, { recursive: true });
+    assert.equal(bench.layControl(path.join(BENCH, project), control, dir, full), null);
     const r = spawnSync('bash', [bench.posix(path.join(BENCH, project, 'check.sh')), bench.posix(dir)], { env: { ...full, ...checkEnv }, encoding: 'utf8' });
     return { status: r.status, out: r.stdout.trim() };
 }
@@ -46,6 +46,12 @@ const WHY = [
     ['add-feature', 'fail-slug-spec', 'spec/slug.spec.js was changed'],
     ['add-feature', 'fail-no-truncate-spec', 'no spec/truncate.spec.js'],
     ['add-feature', 'fail-one-test', 'spec/truncate.spec.js holds fewer than two tests'],
+    ['roles/reader', 'fail', 'question 3: server/listen.js:2 does not hold the answer'],
+    ['roles/reader', 'fail-wrong', 'question 1: wrong answer'],
+    ['roles/mutator', 'fail', 'lib/clamp.js was not restored'],
+    ['roles/mutator', 'fail-no-kill', 'the reply shows no failing run after the mutation'],
+    ['roles/mover', 'fail', 'the moved file\'s content changed'],
+    ['roles/mover', 'fail-message', 'the commit message differs'],
 ];
 for (const [p, c, msg] of WHY) {
     test(p + ' control ' + c + ' fails on its own clause: ' + msg, () => {
@@ -91,4 +97,31 @@ test('add-feature: the fixture plan names BENCH_IMPL on its Dispatch line and pa
     assert.match(fs.readFileSync(path.join(dir, plan), 'utf8'), /^\*\*Dispatch:\*\* implementer, haiku$/m);
     const r = spawnSync(process.execPath, [path.join(ROOT, 'scripts', 'ledger.js'), '--plan', plan, 'lint'], { cwd: dir, encoding: 'utf8' });
     assert.equal(r.status, 0, r.stdout + r.stderr);
+});
+
+const ROLES = path.join(BENCH, 'roles');
+const roles = fs.existsSync(ROLES) ? fs.readdirSync(ROLES).filter((n) => fs.existsSync(path.join(ROLES, n, 'role.json'))).sort() : [];
+
+test('the four roles each name a plugin agent, carry an input.md, and reach a setup.sh and a check.sh', () => {
+    assert.deepEqual(roles, ['implementer', 'mover', 'mutator', 'reader']);
+    for (const r of roles) {
+        const conf = JSON.parse(fs.readFileSync(path.join(ROLES, r, 'role.json'), 'utf8'));
+        assert.equal(conf.agent, 'fankeel-' + r);
+        assert.ok(fs.existsSync(path.join(ROOT, 'agents', conf.agent + '.md')), r + ' names ' + conf.agent);
+        assert.ok(fs.readFileSync(path.join(ROLES, r, 'input.md'), 'utf8').trim(), r + '/input.md');
+        const dir = bench.roleProject(path.join(ROLES, r));
+        for (const f of ['setup.sh', 'check.sh']) assert.ok(fs.existsSync(path.join(dir, f)), r + ' reaches ' + f);
+    }
+});
+
+for (const r of roles) {
+    test('roles/' + r + ': check.sh passes every pass control and fails every fail control', () => {
+        assert.deepEqual(bench.selftest(bench.roleProject(path.join(ROLES, r)), { mkdtemp: () => tmp('fankeel-bench-self-'), plugin: bench.posix(ROOT) }), []);
+    });
+}
+
+test('roles/implementer: input.md is Task 1 of the add-feature plan, word for word, on haiku', () => {
+    const plan = fs.readFileSync(path.join(BENCH, 'add-feature', 'src', 'docs', 'plans', '2026-01-01-truncate.md'), 'utf8');
+    const task = plan.slice(plan.indexOf('## Task 1:'), plan.indexOf('## Coverage')).replace(/@IMPL@/g, 'haiku');
+    assert.equal(fs.readFileSync(path.join(ROLES, 'implementer', 'input.md'), 'utf8').trim(), task.trim());
 });
