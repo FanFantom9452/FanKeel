@@ -8,6 +8,7 @@
 //   node scripts/bench.js selftest [<project>...] [--seeds <n>]
 //   node scripts/bench.js run <project> --arms <a,b> --runs <n> --cap <usd> [--dry] [--keep] [--evidence <dir>]
 //   node scripts/bench.js role <role> [--arms <sonnet,haiku>] [--runs <n>] [--jobs <n>] [--cap <usd>] [--dry] [--keep] [--evidence <dir>]
+//   node scripts/bench.js drift [--arms <a,b>] [--runs <n>] [--jobs <n>] [--cap <usd>] [--dry] [--keep] [--evidence <dir>]
 //   node scripts/bench.js tally <batch dir> [--evidence <dir>]
 //
 // Every run goes through --permission-mode bypassPermissions, so a run only
@@ -21,6 +22,7 @@ const crypto = require('node:crypto');
 const { spawnSync } = require('node:child_process');
 const { parseArgs } = require('node:util');
 const bench = require('../lib/bench.js');
+const drift = require('../lib/drift.js');
 const { spawnClaude, spawnClaudeAsync } = require('./eval.js');
 
 const ROOT = path.join(__dirname, '..');
@@ -218,8 +220,15 @@ async function runJob(ctx, job) {
     const { row, dir, env } = prepareRun(ctx, job);
     try {
         if (row.error) return row;
+        const extra = [];
+        if (job.reinject) {
+            const settings = path.join(dir, '.bench', 'settings.json');
+            fs.mkdirSync(path.dirname(settings), { recursive: true });
+            fs.writeFileSync(settings, JSON.stringify(drift.reinjectSettings(ROOT), null, 2) + '\n');
+            extra.push('--settings', bench.posix(settings));
+        }
         const t0 = Date.now();
-        const args = ['-p', '--session-id', row.session, '--max-budget-usd', ctx.cap.toFixed(2), ...bench.claudeArgs(ROOT, 'haiku')];
+        const args = ['-p', '--session-id', row.session, '--max-budget-usd', ctx.cap.toFixed(2), ...bench.claudeArgs(ROOT, 'haiku'), ...extra];
         const r = await spawnClaudeAsync(args, { cwd: dir, env, input: bench.relayPrompt(ctx.agent, row.input), timeout: ctx.timeoutMs });
         row.wallS = Math.round((Date.now() - t0) / 1000);
         row.exit = r.status;
@@ -231,6 +240,8 @@ async function runJob(ctx, job) {
             row.error = row.error || 'no transcript for session ' + row.session;
             return row;
         }
+        const log = path.join(dir, '.bench', 'reinject.log');
+        if (fs.existsSync(log)) fs.copyFileSync(log, path.join(raw, 'reinject.log'));
         const f = bench.roleFigures(raw, ctx.agent, job.model, row.input);
         fs.mkdirSync(path.join(dir, '.bench'), { recursive: true });
         fs.writeFileSync(path.join(dir, '.bench', 'result.txt'), f.result);
@@ -392,12 +403,32 @@ async function cmdRole(a, projectsRoot) {
     return 0;
 }
 
-function cmdTally(a) {
-    const batchDir = path.resolve(a.positionals[1] || '');
+// One batch read back: its kind, its tally and that tally's summary; null
+// when it has no runs.jsonl.
+function tallyBatch(batchDir) {
     let rows;
     try {
         rows = fs.readFileSync(path.join(batchDir, 'runs.jsonl'), 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l));
     } catch (e) {
+        return null;
+    }
+    const raw = path.join(batchDir, 'raw');
+    if (rows.length && rows[0].kind === 'drift') {
+        const t = drift.driftTally(rows, raw);
+        return { kind: 'drift', t, md: drift.driftSummaryMd(t) };
+    }
+    if (rows.length && typeof rows[0].role === 'string') {
+        const t = bench.roleTally(rows, raw);
+        return { kind: 'role', t, md: bench.roleSummaryMd(t) };
+    }
+    const t = bench.tally(rows, raw);
+    return { kind: 'run', t, md: bench.summaryMd(t) };
+}
+
+function cmdTally(a) {
+    const batchDir = path.resolve(a.positionals[1] || '');
+    const b = tallyBatch(batchDir);
+    if (!b) {
         console.error('bench.js: no runs.jsonl under ' + batchDir);
         return 1;
     }
@@ -410,14 +441,56 @@ function cmdTally(a) {
             console.error('bench.js: no evidence.txt under ' + batchDir + '; writing to ' + evidence);
         }
     }
-    const isRole = rows.length > 0 && typeof rows[0].role === 'string';
-    const t = isRole ? bench.roleTally(rows, path.join(batchDir, 'raw')) : bench.tally(rows, path.join(batchDir, 'raw'));
     const out = path.join(evidence, path.basename(batchDir));
     fs.mkdirSync(out, { recursive: true });
-    fs.writeFileSync(path.join(out, 'summary.json'), JSON.stringify(t, null, 2) + '\n');
-    const md = isRole ? bench.roleSummaryMd(t) : bench.summaryMd(t);
-    fs.writeFileSync(path.join(out, 'summary.md'), md);
-    process.stdout.write(md);
+    fs.writeFileSync(path.join(out, 'summary.json'), JSON.stringify(b.t, null, 2) + '\n');
+    fs.writeFileSync(path.join(out, 'summary.md'), b.md);
+    process.stdout.write(b.md);
+    return 0;
+}
+
+// The drift 2×2 (design sections 6 and 8): one relay on haiku dispatches the
+// implementer once with constraints.md before input.md; the reinject arms
+// mount bench/drift/reinject.js on PostToolUse through --settings.
+async function cmdDrift(a, projectsRoot) {
+    const dir = path.join(projectsRoot, 'drift');
+    if (!fs.existsSync(path.join(dir, 'setup.sh'))) {
+        console.error('bench.js: no setup.sh under ' + dir);
+        return 1;
+    }
+    const names = Object.keys(drift.DRIFT_ARMS);
+    const arms = String(a.values.arms || names.join(',')).split(',').filter(Boolean);
+    const bad = arms.filter((x) => !drift.DRIFT_ARMS[x]);
+    if (!arms.length || bad.length) {
+        console.error('bench.js: --arms is a comma list of ' + names.join(', ') + (bad.length ? '; not ' + bad.join(', ') : ''));
+        return 1;
+    }
+    const runs = Number(a.values.runs || 10);
+    const cap = Number(a.values.cap || 3);
+    const width = Number(a.values.jobs || 4);
+    if (!(runs >= 1) || !(cap > 0) || !(Number.isInteger(width) && width >= 1)) {
+        console.error('bench.js: --runs and --jobs are at least 1, and --cap above 0');
+        return 1;
+    }
+    const input = drift.driftPrompt(dir);
+    const jobs = bench.order(arms, runs).map((s) => {
+        const arm = drift.DRIFT_ARMS[s.arm];
+        return { tag: 'drift-r' + s.round + '-' + s.arm, arm: s.arm, model: arm.model, reinject: arm.reinject, round: s.round, seed: s.seed,
+            itemDir: dir, row: { kind: 'drift', reinject: arm.reinject, input } };
+    });
+    if (a.values.dry) {
+        console.log(drift.driftDryLines(jobs, { cap, root: ROOT }).join('\n'));
+        return 0;
+    }
+    const self = bench.selftest(dir, { mkdtemp: selfDir, plugin: bench.posix(ROOT), classes: true });
+    if (self.length) {
+        for (const e of self) console.error(e);
+        console.error('bench.js: ' + self.length + ' control(s) judged wrong — no run started');
+        return 1;
+    }
+    const batchDir = startBatch('drift', a, ['drift  arms: ' + arms.join(',') + '  runs: ' + runs + '  jobs: ' + width + '  cap: $' + cap]);
+    if (!batchDir) return 1;
+    await runAll({ agent: 'fankeel-implementer', cap, keep: Boolean(a.values.keep), batchDir, timeoutMs: 60 * 60e3 }, jobs, width);
     return 0;
 }
 
@@ -432,13 +505,14 @@ function cmdSelftest(a, projectsRoot) {
     const roles = fs.existsSync(rolesDir)
         ? fs.readdirSync(rolesDir).filter((x) => fs.existsSync(path.join(rolesDir, x, 'role.json'))).map((x) => 'roles/' + x)
         : [];
+    const drifts = fs.existsSync(path.join(projectsRoot, 'drift', 'setup.sh')) ? ['drift'] : [];
     const all = named.length ? named
-        : [...fs.readdirSync(projectsRoot).filter((x) => fs.existsSync(path.join(projectsRoot, x, 'bench.json'))), ...roles];
+        : [...fs.readdirSync(projectsRoot).filter((x) => fs.existsSync(path.join(projectsRoot, x, 'bench.json'))), ...roles, ...drifts];
     const opts = { mkdtemp: selfDir, plugin: bench.posix(ROOT), seeds: Array.from({ length: n }, (_, i) => i + 1) };
     const errors = [];
     for (const x of all) {
         const dir = path.join(projectsRoot, x);
-        errors.push(...(x.startsWith('roles/') ? bench.selftestRole(dir, opts) : bench.selftest(dir, opts)));
+        errors.push(...(x.startsWith('roles/') ? bench.selftestRole(dir, opts) : bench.selftest(dir, x === 'drift' ? { ...opts, classes: true } : opts)));
     }
     for (const e of errors) console.log(e);
     console.log(errors.length ? errors.length + ' control(s) judged wrong' : 'selftest ok: ' + all.join(', '));
@@ -460,8 +534,9 @@ function main(argv) {
     if (verb === 'selftest') return cmdSelftest(a, projectsRoot);
     if (verb === 'run') return cmdRun(a, projectsRoot);
     if (verb === 'role') return cmdRole(a, projectsRoot);
+    if (verb === 'drift') return cmdDrift(a, projectsRoot);
     if (verb === 'tally') return cmdTally(a);
-    console.error('usage: node scripts/bench.js probe | selftest [<project>...] [--seeds <n>] | run <project> --arms <a,b> --runs <n> --cap <usd> [--dry] [--keep] [--evidence <dir>] | role <role> [--arms <sonnet,haiku>] [--runs <n>] [--jobs <n>] [--cap <usd>] [--dry] [--keep] [--evidence <dir>] | tally <batch dir> [--evidence <dir>]');
+    console.error('usage: node scripts/bench.js probe | selftest [<project>...] [--seeds <n>] | run <project> --arms <a,b> --runs <n> --cap <usd> [--dry] [--keep] [--evidence <dir>] | role <role> [--arms <sonnet,haiku>] [--runs <n>] [--jobs <n>] [--cap <usd>] [--dry] [--keep] [--evidence <dir>] | drift [--arms <a,b>] [--runs <n>] [--jobs <n>] [--cap <usd>] [--dry] [--keep] [--evidence <dir>] | tally <batch dir> [--evidence <dir>]');
     return 1;
 }
 

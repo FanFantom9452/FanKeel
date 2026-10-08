@@ -104,6 +104,7 @@ test('each constraint broken alone is the only one broken, at its own step', () 
 
 const ROOT = path.join(__dirname, '..');
 const DRIFT = path.join(ROOT, 'bench', 'drift');
+const SCRIPT = path.join(ROOT, 'scripts', 'bench.js');
 
 test('bench/drift: check.sh passes its pass control and fails each fail control on its own class', () => {
     assert.deepEqual(bench.selftest(DRIFT, { ...tmp.selfOpts(bench.posix(ROOT)), classes: true }), []);
@@ -143,4 +144,82 @@ test('reinject.js as a hook: silent on the relay, the fifth subagent call gets t
     assert.equal(hook('{not json').status, 0);
 });
 
-module.exports = { MODULES, keepAll, transcript };
+const SESSION = '11111111-2222-3333-4444-555555555555';
+
+// One copied drift run: the relay's transcript dispatching `prompt` once to
+// the implementer, the implementer's own transcript from `steps`, and the
+// reinjection log when one is given.
+function driftRaw(root, tag, { prompt, model, steps, log }) {
+    const dir = path.join(root, tag);
+    const sub = path.join(dir, SESSION, 'subagents');
+    fs.mkdirSync(sub, { recursive: true });
+    const line = (o) => JSON.stringify(o) + '\n';
+    fs.writeFileSync(path.join(dir, SESSION + '.jsonl'),
+        line({ type: 'assistant', requestId: 'm1', message: { model: 'claude-haiku-5-5', usage: { input_tokens: 100, output_tokens: 10 },
+            content: [{ type: 'tool_use', id: 'tu0', name: 'Agent', input: { subagent_type: 'fankeel:fankeel-implementer', prompt } }] } })
+        + line({ type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 'tu0', content: [{ type: 'text', text: 'DONE' }] }] } }));
+    fs.copyFileSync(transcript(steps, {}, DONE, model), path.join(sub, 'agent-a1.jsonl'));
+    fs.writeFileSync(path.join(sub, 'agent-a1.meta.json'), JSON.stringify({ agentType: 'fankeel:fankeel-implementer' }));
+    if (log) fs.writeFileSync(path.join(dir, 'reinject.log'), log.map((x) => JSON.stringify(x) + '\n').join(''));
+}
+
+// A batch directory holding one valid haiku drift run.
+function driftBatch() {
+    const batch = tmp('fankeel-drift-batch-');
+    driftRaw(path.join(batch, 'raw'), 'drift-r1-haiku', { prompt: 'P\n', model: 'claude-haiku-5-5', steps: keepAll() });
+    fs.writeFileSync(path.join(batch, 'runs.jsonl'), JSON.stringify({ kind: 'drift', tag: 'drift-r1-haiku', arm: 'haiku', model: 'haiku',
+        reinject: false, input: 'P\n', pass: true, check: 'pass', claudeUsd: 0.1 }) + '\n');
+    return batch;
+}
+
+test('driftTally: a valid run needs thirty calls, and an injection log only on a reinject arm; each arm sums its valid runs', () => {
+    const raw = tmp('fankeel-drift-raw-');
+    const prompt = 'CONSTRAINTS\n\nTASK\n';
+    const late = keepAll();
+    late[39] = ['Edit', { file_path: 'vendor/fmt/index.js' }];
+    driftRaw(raw, 'drift-r1-haiku', { prompt, model: 'claude-haiku-5-5', steps: keepAll() });
+    driftRaw(raw, 'drift-r1-haiku-reinject', { prompt, model: 'claude-haiku-5-5', steps: late, log: [{ step: 5, chars: 300 }, { step: 10, chars: 300 }] });
+    driftRaw(raw, 'drift-r2-haiku', { prompt, model: 'claude-haiku-5-5', steps: keepAll().slice(0, 20) });
+    driftRaw(raw, 'drift-r2-haiku-reinject', { prompt, model: 'claude-haiku-5-5', steps: keepAll() });
+    driftRaw(raw, 'drift-r1-sonnet', { prompt, model: 'claude-sonnet-5-5', steps: keepAll(), log: [{ step: 5, chars: 300 }] });
+    const row = (tag, arm, pass) => ({ kind: 'drift', tag, arm, model: drift.DRIFT_ARMS[arm].model, reinject: drift.DRIFT_ARMS[arm].reinject,
+        input: prompt, pass, check: pass ? 'pass' : 'fail wrong: x', claudeUsd: 0.1 });
+    const t = drift.driftTally([
+        row('drift-r1-haiku', 'haiku', true),
+        row('drift-r1-haiku-reinject', 'haiku-reinject', true),
+        row('drift-r2-haiku', 'haiku', true),
+        row('drift-r2-haiku-reinject', 'haiku-reinject', false),
+        row('drift-r1-sonnet', 'sonnet', true),
+    ], raw);
+    const why = (tag) => t.runs.find((r) => r.tag === tag).why.join('; ');
+    assert.equal(why('drift-r1-haiku'), '');
+    assert.match(why('drift-r2-haiku'), /made 20 tool calls, under 30/);
+    assert.match(why('drift-r2-haiku-reinject'), /no injection in its log/);
+    assert.match(why('drift-r1-sonnet'), /injection log on an arm without reinjection/);
+    const cell = (arm) => t.cells.find((c) => c.arm === arm);
+    assert.deepEqual([cell('haiku').runs, cell('haiku').valid, cell('haiku').passed, cell('haiku').clean], [2, 1, 1, 1]);
+    const re = cell('haiku-reinject');
+    assert.deepEqual([re.valid, re.clean, re.medianFirst, re.injections, re.injectedChars], [1, 0, 40, 2, 600]);
+    assert.equal(cell('sonnet').valid, 0);
+    assert.match(drift.driftSummaryMd(t), /\| haiku-reinject \| 2 \| 1 \| 1 \| 0 \| 40 \| /);
+});
+
+test('drift --dry prints one line per run, the reinject arms with --settings and the haiku arms with the override', () => {
+    const r = spawnSync(process.execPath, [SCRIPT, 'drift', '--runs', '1', '--dry'], { encoding: 'utf8' });
+    assert.equal(r.status, 0, r.stderr);
+    const lines = r.stdout.trim().split(/\r?\n/);
+    assert.equal(lines.length, 4);
+    assert.match(lines[0], /^drift-r1-sonnet model=sonnet reinject=false .*profile: \(none\)$/);
+    assert.match(lines[3], /^drift-r1-haiku-reinject model=haiku reinject=true .*--settings \.bench\/settings\.json profile: agent\.fankeel-implementer\.model=haiku$/);
+    assert.equal(drift.reinjectSettings('/plug').hooks.PostToolUse[0].hooks[0].command, 'node "/plug/bench/drift/reinject.js"');
+    assert.match(drift.driftPrompt(DRIFT), /^開始之前[\s\S]*\n\n## Task 1: format\(\) in place of oldFormat\(\)/);
+});
+
+test('tally on a drift batch writes the 2×2 summary', () => {
+    const r = spawnSync(process.execPath, [SCRIPT, 'tally', driftBatch(), '--evidence', tmp('fankeel-drift-ev-')], { encoding: 'utf8' });
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /^\| arm \| runs \| valid \| task passed \|/);
+    assert.match(r.stdout, /\| haiku \| 1 \| 1 \| 1 \| 1 \| - \|/);
+});
+
+module.exports = { MODULES, keepAll, transcript, driftBatch };
