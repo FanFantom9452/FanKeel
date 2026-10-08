@@ -21,6 +21,6 @@ done:
 
 ## 完成紀錄
 
-assets/station/i18n.js:1 holds the English for every loc(key, zh) call in assets/station/station.js:34, so the page is no longer Chinese-only (docs/90-agent/reference/station.md:1168)
+assets/station/i18n.js:10 holds the English for every loc(key, zh) call in assets/station/station.js:34, so the page is no longer Chinese-only (docs/90-agent/reference/station.md:1168)
 
 - commit e77cc85c4d85b5248427a362576ba314e6327cc6
