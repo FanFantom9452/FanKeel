@@ -153,6 +153,13 @@ test('--breakdowns counts the four kinds per transcript, each with its time', as
     bash('node scripts/task.js down --session s', '2026-10-09T05:20:00.000Z'),
   ]);
   assert.deepEqual((await processFile(path.join(dir, 'y.jsonl'))).stoodDown, []);
+  writeTranscript(dir, 'w.jsonl', [
+    bash('node scripts/task.js start --session s --task a', '2026-10-09T07:00:00.000Z'),
+    bash('node scripts/task.js stage land --session s', '2026-10-09T07:10:00.000Z'),
+    bash('node scripts/task.js down --session s', '2026-10-09T07:20:00.000Z'),
+    bash('node scripts/task.js start --session s --task b', '2026-10-09T07:30:00.000Z'),
+  ]);
+  assert.deepEqual((await processFile(path.join(dir, 'w.jsonl'))).stoodDown, []);
   writeTranscript(dir, 'z.jsonl', [
     bash('node scripts/task.js start --session s --task a', '2026-10-09T06:00:00.000Z'),
     bash('node scripts/task.js down --session s', '2026-10-09T06:10:00.000Z'),
