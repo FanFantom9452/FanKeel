@@ -3,7 +3,9 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { spawnSync } = require('node:child_process');
 const drift = require('../lib/drift.js');
+const bench = require('../lib/bench.js');
 const tmp = require('./tmp.js');
 
 const MODULES = ['invoice', 'receipt', 'refund', 'quote', 'ledger', 'payout', 'tax', 'discount'];
@@ -98,6 +100,47 @@ test('each constraint broken alone is the only one broken, at its own step', () 
         assert.equal(drift.driftSummary(rows).firstViolation, step, broke.join());
         assert.deepEqual(rows.flatMap((r) => r.broke), broke);
     }
+});
+
+const ROOT = path.join(__dirname, '..');
+const DRIFT = path.join(ROOT, 'bench', 'drift');
+
+test('bench/drift: check.sh passes its pass control and fails each fail control on its own class', () => {
+    assert.deepEqual(bench.selftest(DRIFT, { ...tmp.selfOpts(bench.posix(ROOT)), classes: true }), []);
+});
+
+test('bench/drift/input.md lets the implementer change the eight modules and their specs, and says nothing of the constraints', () => {
+    const md = fs.readFileSync(path.join(DRIFT, 'input.md'), 'utf8');
+    const listed = [...md.matchAll(/^- (?:Modify|Test): `([^`]+)`/gm)].map((m) => m[1]).sort();
+    assert.deepEqual(listed, MODULES.flatMap((m) => ['lib/' + m + '.js', 'spec/' + m + '.spec.js']).sort());
+    assert.doesNotMatch(md, /lint|drift\(|vendor|繁體/);
+});
+
+test('reinject answers only a subagent, every fifth of its calls, with constraints.md, and logs each injection', () => {
+    const reinject = require('../bench/drift/reinject.js');
+    const dir = tmp('fankeel-drift-re-');
+    const text = fs.readFileSync(path.join(DRIFT, 'constraints.md'), 'utf8').trim();
+    assert.ok(text.length <= 600, text.length + ' characters');
+    const call = (agent) => reinject.decide({ hook_event_name: 'PostToolUse', agent_id: agent }, dir, text);
+    assert.equal(reinject.decide({ hook_event_name: 'PostToolUse' }, dir, text), null);
+    const outs = Array.from({ length: 10 }, () => call('a1'));
+    assert.deepEqual(outs.map((o, i) => (o ? i + 1 : 0)).filter(Boolean), [5, 10]);
+    assert.equal(outs[4].hookSpecificOutput.additionalContext, text);
+    assert.equal(call('b2'), null);
+    const log = fs.readFileSync(path.join(dir, '.bench', 'reinject.log'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+    assert.deepEqual(log, [{ step: 5, chars: text.length }, { step: 10, chars: text.length }]);
+    assert.equal(reinject.EVERY, 5);
+});
+
+test('reinject.js as a hook: silent on the relay, the fifth subagent call gets the constraints, bad input exits 0', () => {
+    const dir = tmp('fankeel-drift-hook-');
+    const hook = (payload) => spawnSync(process.execPath, [path.join(DRIFT, 'reinject.js')], { input: payload, encoding: 'utf8' });
+    assert.equal(hook(JSON.stringify({ hook_event_name: 'PostToolUse', cwd: dir })).stdout, '');
+    let last;
+    for (let i = 0; i < 5; i++) last = hook(JSON.stringify({ hook_event_name: 'PostToolUse', agent_id: 'a1', cwd: dir }));
+    assert.equal(last.status, 0);
+    assert.equal(JSON.parse(last.stdout).hookSpecificOutput.additionalContext, fs.readFileSync(path.join(DRIFT, 'constraints.md'), 'utf8').trim());
+    assert.equal(hook('{not json').status, 0);
 });
 
 module.exports = { MODULES, keepAll, transcript };
