@@ -147,7 +147,10 @@ function runOne(ctx, item) {
         return row;
     } finally {
         if (ctx.keep) row.dir = dir;
-        else fs.rmSync(dir, { recursive: true, force: true });
+        else {
+            const left = bench.cleanup(dir);
+            if (left) row.dir = left;
+        }
     }
 }
 

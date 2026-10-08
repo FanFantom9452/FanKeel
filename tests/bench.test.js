@@ -21,7 +21,18 @@ function project(files) {
     return root;
 }
 
-const selfOpts = () => ({ mkdtemp: () => tmp('fankeel-bench-self-'), plugin: 'unused' });
+test('cleanup passes retry options and swallows a failing rm with one warning', () => {
+    const seen = [];
+    const warns = [];
+    assert.equal(bench.cleanup('D', (d, o) => seen.push([d, o]), (m) => warns.push(m)), null);
+    assert.equal(seen[0][1].maxRetries > 0 && seen[0][1].retryDelay > 0, true);
+    const left = bench.cleanup('D', () => { throw new Error('EPERM'); }, (m) => warns.push(m));
+    assert.equal(left, 'D');
+    assert.equal(warns.length, 1);
+    assert.match(warns[0], /D.*EPERM/);
+});
+
+const selfOpts =() => ({ mkdtemp: () => tmp('fankeel-bench-self-'), plugin: 'unused' });
 
 test('arms alternate by round parity, and the seed is the round', () => {
     assert.deepEqual(bench.order(['base', 'sub'], 3).map((x) => x.round + x.arm + x.seed),
