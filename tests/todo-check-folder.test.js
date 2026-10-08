@@ -75,10 +75,6 @@ const MAKE = '要做成：' + DESC;
 const DONE = '完成條件：條目所述的事做完，或查證後確認不必做；結果與證據，也就是（指令輸出、commit sha 或不做的理由）寫回這個檔案的正文，再用 todo.js done 結案。';
 const TEMPLATE = [FROM, MAKE, DONE].join('\n\n');
 
-test('reasonChars is exported from todo-check', () => {
-  assert.equal(typeof check.reasonChars, 'function');
-});
-
 test('a body of only the 來源 paragraph has no reason', () => {
   assert.equal(check.reasonChars(FROM, 'x'), 0);
 });
@@ -93,6 +89,9 @@ test('a body of only the 完成條件 paragraph has no reason', () => {
 
 test('a paragraph that is the description again has no reason', () => {
   assert.equal(check.reasonChars(DESC, DESC), 0);
+});
+
+test('a reason after the template is counted whole', () => {
   assert.equal(check.reasonChars(TEMPLATE + '\n\n' + 'r'.repeat(200), 'x'), 200);
 });
 
