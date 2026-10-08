@@ -88,7 +88,10 @@ function judge(itemDir, proj, expectDir) {
     const extra = changed(proj).filter((p) => !allowed.includes(p));
     if (extra.length) return 'fail extra: changed outside the Files block: ' + extra.join(', ');
     if (files.test.length) {
-        const r = spawnSync(process.execPath, ['--test', ...files.test], { cwd: proj, encoding: 'utf8' });
+        // Under the repo's own node --test, NODE_TEST_CONTEXT makes a nested
+        // run exit 0 on a failing spec; the child must not inherit it.
+        const { NODE_TEST_CONTEXT, ...env } = process.env;
+        const r = spawnSync(process.execPath, ['--test', ...files.test], { cwd: proj, encoding: 'utf8', env });
         if (r.status !== 0) return 'fail wrong: node --test ' + files.test.join(' ') + ' fails';
     }
     return 'pass';

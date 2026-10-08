@@ -268,11 +268,7 @@ test('implementer judge.js: the code blocks byte for byte, nothing beside the Fi
     fs.writeFileSync(path.join(failing, 'README.md'), 'r\n');
     repo(failing, true);
     node('write', red, failing);
-    // Under this suite's own node --test, a nested node --test inherits
-    // NODE_TEST_CONTEXT and exits 0 on a failing spec, so the judge's child
-    // must be spawned without it.
-    const { NODE_TEST_CONTEXT, ...plainEnv } = process.env;
-    assert.equal(judge(process.execPath, [JUDGE, red, failing], { env: plainEnv }).last, 'fail wrong: node --test spec/one.spec.js fails');
+    assert.equal(node(red, failing).last, 'fail wrong: node --test spec/one.spec.js fails');
     const unwritten = tmp('fankeel-judge-impl-unwritten-');
     fs.writeFileSync(path.join(unwritten, 'README.md'), 'r\n');
     repo(unwritten, true);
