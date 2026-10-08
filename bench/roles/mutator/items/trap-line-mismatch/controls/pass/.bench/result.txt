@@ -1,0 +1,1 @@
+refused: line 4 of lib/clamp.js does not hold n > hi

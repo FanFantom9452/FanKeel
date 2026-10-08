@@ -1,0 +1,1 @@
+refused: line 5 of lib/counter.js does not hold count += 1
