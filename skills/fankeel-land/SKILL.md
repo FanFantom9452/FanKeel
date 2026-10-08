@@ -3,8 +3,8 @@ name: fankeel-land
 description: The land stage — a green suite, the documents closed, the map rewritten, and the integration decision left to the user. Use for the land stage of a fankeel task, finishing a development branch, deciding between merge and PR, or cleaning up a worktree when work is complete.
 version: 0.99.0
 status: current
-last_verified: 2026-10-02
-source_of_truth: lib/stages.js, scripts/todo-check.js, scripts/map.js, hooks/carry.js, scripts/land.js
+last_verified: 2026-10-09
+source_of_truth: lib/stages.js, scripts/todo-check.js, scripts/map.js, hooks/carry.js, scripts/land.js, lib/suite.js
 ---
 
 # fankeel-land
@@ -38,11 +38,18 @@ what the gate asks — never something to settle first and report afterwards.
 
 ## 1. The full suite, on the tree you are about to integrate
 
-`npm test` / `cargo test` / `pytest` / `go test ./...` — whatever this project
-uses.
+```
+node <plugin>/scripts/suite.js --session <id>
+```
 
-**Red stops everything.** Report the failures and stop; the menu comes after a
-green run. A green run earlier in the session only proves the tree it ran on.
+It runs the project's test command — `package.json`'s `test` script, or
+`--command "<cmd>"` — prints `suite: <pass> pass, <fail> fail @ <sha>`, and
+records that beside the task's handoffs. **Red stops everything**, and since
+2026-10-09 that is a refusal rather than a sentence: `task.js land` in step
+6 will not record an integration without a green record at a sha no code
+has changed since (`lib/suite.js`, `blocker`). Report the failures and
+stop; the menu comes after a green run. A green run earlier in the session
+only proves the tree it ran on, and the record says which.
 
 ## 1a. The skills gate
 
