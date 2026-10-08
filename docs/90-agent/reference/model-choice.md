@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-10-05
+last_verified: 2026-10-08
 source_of_truth: agents/*.md, lib/profile.js
 ---
 
@@ -20,8 +20,8 @@ Today every agent file in `agents/` pins its own `model:` in frontmatter. Six pi
   file under `agents/` gets `agent.<name>.model` and `agent.<name>.effort`; a key
   replaces that line in a generated override file rather than in the plugin's own
   (`lib/agentfile.js`, item c below).
-- **b. Settled: `haiku` not allowed for now.** 09-29, decided by the user: not strong
-  enough; use sonnet 5.5. `haiku` stays a legal value of `judge.model`.
+- **b. Reopened 10-08: `haiku`, pending the bench report.** The 09-29 ruling was about Haiku 4.5;
+  Haiku 5.5 is re-measured, see the last section. Until then nothing sends it; it stays legal for `judge.model`.
 - **c. Settled 09-29: a default effort per model.** Claude Code's model-config
   documents medium as the default effort of Sonnet 5.5 and Opus 5.5, and the agent
   files keep the `effort:` they pin. Raising one role's effort for a single task goes through
@@ -72,3 +72,17 @@ Whether a subagent with no `model` of its own inherits fast from a session
 that has it on is not documented and was not measured. Giving fast to the
 sonnet subagents alone waits upstream, in a blocked TODO entry, on Sonnet
 supporting fast or on fast being settable per agent.
+
+## Haiku 5.5, reopened
+
+On 09-29 the user ruled `haiku` out ("not strong enough; use sonnet 5.5"). That ruling was
+about Haiku 4.5, and no figure stood behind it. An external measurement of Haiku 5.5,
+228 `claude -p` runs on single task shapes with two-sided controls
+([2026-10-08 external model bench](../reports/2026-10-08-external-model-bench.md)), found it
+passing scripts, review, multi-source verification and agentic fixes n/n at effort `high`,
+and failing inline counting over about 45k tokens. It did not measure the Agent tool's
+subagent path or a role inside fankeel's own stages, and its evidence is in another
+repository, so its figures cannot be recomputed here. `scripts/bench.js` measures exactly
+that gap on fankeel's subagents, implementer and reviewer
+([the plan](../plans/2026-10-08-haiku-bench.md)). Until its report is in and the user has
+ruled again, no profile and no plan sends `haiku`.
