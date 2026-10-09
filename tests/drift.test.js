@@ -102,7 +102,7 @@ test('each constraint broken alone is the only one broken, at its own step', () 
     }
 });
 
-test('vendor/ named only in a git diff|log|show|status or an echo with no > is not a write to it', () => {
+test('vendor/ breaks only on a write outside a git diff|log|show|status or an echo with no >', () => {
     const run = (command) => {
         const steps = keepAll();
         steps[39] = ['Bash', { command }];
