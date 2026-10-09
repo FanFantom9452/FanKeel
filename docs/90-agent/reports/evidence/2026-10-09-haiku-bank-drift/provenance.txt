@@ -1,0 +1,98 @@
+=== 2026-10-08T20:53:37.896Z
+HEAD: 6b5956462cd0870a014fbefa7c61441e7605570e
+porcelain:
+
+claude: 2.1.295 (Claude Code)
+scripts/bench.js md5: 387e2786a840bee0c0233a02cc83f58a
+lib/bench.js md5: 1772fd318dd031dbee3d7de478735736
+batch: F:\ymlab\fankeel\.fankeel\worktrees\8846548c\.fankeel\build\bench\drift-20261008T205334
+drift  arms: sonnet,haiku,sonnet-reinject,haiku-reinject  runs: 1  jobs: 4  cap: $3
+probe: haiku resolved to claude-haiku-5-5
+=== 2026-10-09T03:06:12.071Z
+HEAD: 6b5956462cd0870a014fbefa7c61441e7605570e
+porcelain:
+?? docs/90-agent/reports/evidence/2026-10-09-haiku-bank-drift/
+claude: 2.1.295 (Claude Code)
+scripts/bench.js md5: 387e2786a840bee0c0233a02cc83f58a
+lib/bench.js md5: 1772fd318dd031dbee3d7de478735736
+batch: F:\ymlab\fankeel\.fankeel\worktrees\8846548c\.fankeel\build\bench\role-reader-20261009T030608
+role: reader (fankeel-reader)  items: 12  arms: sonnet,haiku  runs: 3  jobs: 4  cap: $1
+probe: haiku resolved to claude-haiku-5-5
+=== 2026-10-09T03:11:38.071Z
+HEAD: 6b5956462cd0870a014fbefa7c61441e7605570e
+porcelain:
+ M bench/drift/check.sh
+ M bench/drift/controls/fail-extra/control.sh
+ M bench/drift/controls/fail-wrong/control.sh
+ M bench/drift/controls/pass/control.sh
+ M bench/drift/input.md
+ M bench/drift/setup.sh
+?? docs/90-agent/reports/evidence/2026-10-09-haiku-bank-drift/
+claude: 2.1.295 (Claude Code)
+scripts/bench.js md5: 387e2786a840bee0c0233a02cc83f58a
+lib/bench.js md5: 1772fd318dd031dbee3d7de478735736
+batch: F:\ymlab\fankeel\.fankeel\worktrees\8846548c\.fankeel\build\bench\role-mutator-20261009T031134
+role: mutator (fankeel-mutator)  items: 12  arms: sonnet,haiku  runs: 3  jobs: 4  cap: $1
+probe: haiku resolved to claude-haiku-5-5
+=== 2026-10-09T03:18:54.826Z
+HEAD: 8ee47d911d0ef34886a2f825a24ac985cc15fd93
+porcelain:
+?? docs/90-agent/reports/evidence/2026-10-09-haiku-bank-drift/
+claude: 2.1.295 (Claude Code)
+scripts/bench.js md5: 387e2786a840bee0c0233a02cc83f58a
+lib/bench.js md5: 1772fd318dd031dbee3d7de478735736
+batch: F:\ymlab\fankeel\.fankeel\worktrees\8846548c\.fankeel\build\bench\drift-20261009T031851
+drift  arms: sonnet,haiku,sonnet-reinject,haiku-reinject  runs: 1  jobs: 4  cap: $3
+probe: haiku resolved to claude-haiku-5-5
+=== 2026-10-09T03:19:31.159Z
+HEAD: 8ee47d911d0ef34886a2f825a24ac985cc15fd93
+porcelain:
+ M bench/roles/reader/items/answers.sh
+?? docs/90-agent/reports/evidence/2026-10-09-haiku-bank-drift/
+claude: 2.1.295 (Claude Code)
+scripts/bench.js md5: 387e2786a840bee0c0233a02cc83f58a
+lib/bench.js md5: 1772fd318dd031dbee3d7de478735736
+batch: F:\ymlab\fankeel\.fankeel\worktrees\8846548c\.fankeel\build\bench\role-mover-20261009T031927
+role: mover (fankeel-mover)  items: 12  arms: sonnet,haiku  runs: 3  jobs: 4  cap: $1
+probe: haiku resolved to claude-haiku-5-5
+=== 2026-10-09T03:26:02.412Z
+HEAD: b68b64c6fb5e6b36cb2de68bdca5a154c15e7fbc
+porcelain:
+?? docs/90-agent/reports/evidence/2026-10-09-haiku-bank-drift/
+claude: 2.1.295 (Claude Code)
+scripts/bench.js md5: 387e2786a840bee0c0233a02cc83f58a
+lib/bench.js md5: 1772fd318dd031dbee3d7de478735736
+batch: F:\ymlab\fankeel\.fankeel\worktrees\8846548c\.fankeel\build\bench\role-implementer-20261009T032559
+role: implementer (fankeel-implementer)  items: 12  arms: sonnet,haiku  runs: 3  jobs: 4  cap: $1
+probe: haiku resolved to claude-haiku-5-5
+=== 2026-10-09T03:33:58.326Z
+HEAD: b68b64c6fb5e6b36cb2de68bdca5a154c15e7fbc
+porcelain:
+?? docs/90-agent/reports/evidence/2026-10-09-haiku-bank-drift/
+claude: 2.1.295 (Claude Code)
+scripts/bench.js md5: 387e2786a840bee0c0233a02cc83f58a
+lib/bench.js md5: 1772fd318dd031dbee3d7de478735736
+batch: F:\ymlab\fankeel\.fankeel\worktrees\8846548c\.fankeel\build\bench\drift-20261009T033354
+drift  arms: sonnet,haiku,sonnet-reinject,haiku-reinject  runs: 10  jobs: 4  cap: $3
+probe: haiku resolved to claude-haiku-5-5
+=== 2026-10-09T03:35:17.915Z
+HEAD: b68b64c6fb5e6b36cb2de68bdca5a154c15e7fbc
+porcelain:
+ M bench/roles/mover/items/judge.sh
+?? docs/90-agent/reports/evidence/2026-10-09-haiku-bank-drift/
+claude: 2.1.295 (Claude Code)
+scripts/bench.js md5: 387e2786a840bee0c0233a02cc83f58a
+lib/bench.js md5: 1772fd318dd031dbee3d7de478735736
+batch: F:\ymlab\fankeel\.fankeel\worktrees\8846548c\.fankeel\build\bench\role-reader-20261009T033513
+role: reader (fankeel-reader)  items: 12  arms: sonnet,haiku  runs: 3  jobs: 4  cap: $1
+probe: haiku resolved to claude-haiku-5-5
+=== 2026-10-09T03:42:30.335Z
+HEAD: e516510070493f9977c92c5c23a5b3268f28a35a
+porcelain:
+?? docs/90-agent/reports/evidence/2026-10-09-haiku-bank-drift/
+claude: 2.1.295 (Claude Code)
+scripts/bench.js md5: 387e2786a840bee0c0233a02cc83f58a
+lib/bench.js md5: 1772fd318dd031dbee3d7de478735736
+batch: F:\ymlab\fankeel\.fankeel\worktrees\8846548c\.fankeel\build\bench\role-mover-20261009T034226
+role: mover (fankeel-mover)  items: 12  arms: sonnet,haiku  runs: 3  jobs: 4  cap: $1
+probe: haiku resolved to claude-haiku-5-5
