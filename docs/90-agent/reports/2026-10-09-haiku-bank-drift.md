@@ -75,12 +75,13 @@ source_of_truth: scripts/bench.js, lib/drift.js, lib/bench.js
 
 這一段是手寫的，`bench.js report` 不會產生它；重跑 report 之後要再補回來。
 
-- **sonnet 兩格各只有 3 次有效 run。** 兩臂各 10 次裡有 7 次只用了 3 到 10 次工具呼叫就做完整個長任務：先用一兩次呼叫讀完八個模組與規格，再用一個 shell 函式依序跑紅燈、改檔、綠燈、lint 與 commit。這些 run 任務都通過，但不到 30 步，依 `MIN_STEPS` 判為無效。有效的 6 次走了 45 到 61 步。所以上面「重注入值得」對 sonnet 的結論只建立在每格 3 次上，差 1 次就只是雜訊，不足以下判斷。haiku 兩臂 20 次全部有效，走了 42 到 63 步。
+- **sonnet 兩格各只有 3 次有效 run。** 兩臂各 10 次裡有 7 次只用了 3 到 10 次工具呼叫就做完整個長任務：先用一兩次呼叫讀完八個模組與規格，再用一個 shell 函式依序跑紅燈、改檔、綠燈、lint 與 commit。這 14 次裡有 12 次任務通過，另 2 次做成 9 個 commit 而沒通過；14 次都不到 30 步，依 `MIN_STEPS` 判為無效。有效的 6 次走了 45 到 61 步。haiku 兩臂 20 次全部有效，走了 42 到 63 步。
+- **兩個問題的判準比的是次數，不是比例。** 有效 run 數不同時，次數多的一臂占便宜。「haiku 能接長任務」比的是 haiku 的 10 次對 sonnet 的 3 次；改用比例，haiku 任務通過 100%、全程無違規 10%，sonnet 是 100%、0%，結論相同。「重注入值得」對 sonnet 寫的「不成立」是照判準套出來的，但它只建立在每格 3 次上，差 1 次就只是雜訊，所以應讀成證據不足，不是否定。
 - **違規幾乎都是 zh-Hant。** 在有效 run 裡，haiku 關閉臂的說明文字有 101/131 處不是繁體中文，重注入臂是 70/135；sonnet 兩臂分別是 18/21 與 5/26。vendor、lint-every-3 與 commit-format 三條加起來，四格都不到 1%。所以「守規」主要量的是說明文字的語言，不是檔案操作。
 - **`vendor` 的誤判已修正後重算。** 第一次算的時候，有三個 haiku 步驟是 commit 之後順手用 `git diff -- vendor/` 確認沒動到 vendor/，卻被記成寫入 vendor/。用 commit `caa23e21` 的 `lib/drift.js` 重算之後，haiku 重注入臂的全程無違規從 4 變成 5。只重算了 tally，模型沒有重跑。
 - **兩批題庫作廢後重跑。** reader 第一批的 easy-who-requires 只問「哪個檔案」，6 次裡有 4 次答對了檔名（例如 `signup.js`），卻因為判分要的是完整路徑（例如 `lib/signup.js`）而被判錯；題目改成要從 repo 根算起的路徑之後重跑。mover 第一批的 41 次失敗，全都是題目給的 commit 訊息後面多了一行 `Co-Authored-By`，那是 Claude Code 自己的 commit 規則要加的；判分改成不比那一行之後重跑。作廢的兩批和兩次飄移試跑都留在 `evidence/` 底下，上面的表沒有算進去。
 - **各角色的裁定**，判準是 haiku 臂每次 run 都有效而且全部通過：
   - implementer 與 mover 可以交給 haiku。
-  - reader 不行：mid-config-chain 三次都引到 re-export 那一行，mid-env-default 有一次答錯。
+  - reader 不行：mid-config-chain 三次都引到 `lib/config/index.js` 合併 overrides 與 defaults 的那一行，而不是值真正寫著的那一行，判分把它記成 `fabricated`；mid-env-default 有一次答錯。
   - mutator 不行：35 次有效 run 全部通過，但有 1 次被判無效，原因是 relay 改動了派出去的 prompt，不是 haiku 自己答錯。
 - **原始批次只在跑的那台機器上。** 它們放在 `.fankeel/build/bench/` 底下，不進 git。`evidence/` 只保留每一批的 `summary.json` 與 `summary.md`。
