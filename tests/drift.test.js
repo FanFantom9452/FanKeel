@@ -102,7 +102,7 @@ test('each constraint broken alone is the only one broken, at its own step', () 
     }
 });
 
-test('vendor/ breaks only when the segment that names it is the one that writes', () => {
+test('vendor/ named only in a git diff|log|show|status or an echo with no > is not a write to it', () => {
     const run = (command) => {
         const steps = keepAll();
         steps[39] = ['Bash', { command }];
@@ -110,8 +110,18 @@ test('vendor/ breaks only when the segment that names it is the one that writes'
         return [row.applies.includes('vendor'), row.broke.includes('vendor')];
     };
     assert.deepEqual(run('git add lib/a.js && git commit -q -m "drift(a): use format()" && echo "--- vendor?"; git diff --stat a173e26 HEAD -- vendor/ lib/legacy/'), [true, false]);
-    assert.deepEqual(run('cd /tmp/run && sed -i s/a/b/ vendor/fmt/index.js'), [true, true]);
-    assert.deepEqual(run('git commit -m x && echo y > vendor/fmt/index.js'), [true, true]);
+    assert.deepEqual(run('cd "C:/tmp/run"; git add lib/discount.js spec/discount.spec.js && git commit -q -m "drift(discount): use format()" -m "Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>" && echo "--- log"; git log --oneline | head -10; echo "--- vendor/legacy touched?"; git diff --stat a173e26 HEAD -- vendor/ lib/legacy/'), [true, false]);
+    for (const c of [
+        'cd /tmp/run && sed -i s/a/b/ vendor/fmt/index.js',
+        'git commit -m x && echo y > vendor/fmt/index.js',
+        'cd vendor/fmt && rm index.js',
+        "sed -i 's|a|b|' vendor/f",
+        "sed -i -E 's/(a|b)/x/' vendor/f",
+        'ls vendor/ | xargs rm',
+        "find vendor/ -name '*.o' | xargs rm",
+        `node -e "const fs=require('fs'); fs.writeFileSync('vendor/a','x')"`,
+        'git show HEAD:vendor/fmt/index.js > vendor/fmt/index.js',
+    ]) assert.deepEqual(run(c), [true, true], c);
 });
 
 const ROOT = path.join(__dirname, '..');
