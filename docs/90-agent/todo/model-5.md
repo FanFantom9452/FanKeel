@@ -2,7 +2,12 @@
 label: model
 title: 擴大 Haiku 角色測試與飄移
 description: 每角色一套分層題庫、平行跑，並以 2×2 量長任務會不會飄移：模型 haiku／sonnet × hook 重注入 關／開
-state: ready
+state: done
+done:
+  at: 2026-10-09
+  sha: 0aad58a6
+  disposition: done
+  session: 8846548c-26e8-4b4a-a6cd-c8d649c9de33
 ---
 
 來源：2026-10-08 session 49e93c6c-9f31-4839-8e3f-ef6adff80a17，在 Haiku 5.5 按角色測試的 build 中，使用者先問能不能不管成本大規模測試，又問題目要怎麼設計，最後補一句「順便要設計長任務會不會飄移，除非 hook 有持續注入」。
@@ -30,3 +35,56 @@ state: ready
 - 每個角色一套分層題庫，selftest 全過；
 - 有一個平行執行器；
 - 一份飄移 2×2 的報告，回答兩個問題：haiku 能不能接長任務？重注入值不值得它多花的 token？
+
+## 完成紀錄
+
+每個角色現在有十二題、分簡單、中等、陷阱三層的題庫，每題的檢查會標出失敗類別。bench.js role 可以用 --jobs 平行跑，drift 指令在一個長任務上逐步檢查四條約束，量 haiku 與 sonnet 各自在 PostToolUse 重注入開或關時會不會飄移。付費批次跑完：照事先寫定的規則，mover 與 implementer 可以用 haiku，reader 與 mutator 不行。使用者把 reader 改回 sonnet，其他三個留在 haiku。長任務上 haiku 撐得住，重注入對 haiku 值得；sonnet 多數 run 用腳本一次做完、不到 30 步，這些 run 算無效。七批共 472 次 run，花費 8.26 美元。
+
+- commit 5f818581
+- commit 98889416
+- commit efc2afd9
+- commit fd3d5486
+- commit 83eea5f6
+- commit d683eb87
+- commit e03be4fa
+- commit c8214d76
+- commit 7e5b5ea2
+- commit 5788a277
+- commit 23aeefdf
+- commit d1713e71
+- commit 2636785d
+- commit 8df7beb8
+- commit 0dda3a78
+- commit 6ddc9a78
+- commit 12874cd5
+- commit 7de37e4b
+- commit 3a3256c4
+- commit ea5429d5
+- commit c86ba08e
+- commit e35a4b38
+- commit cfc693e0
+- commit 6b595646
+- commit c2a670be
+- commit f3ce65e0
+- commit 8ee47d91
+- commit b68b64c6
+- commit e5165100
+- commit 91597d38
+- commit caa23e21
+- commit 32483761
+- commit 5cc9ed74
+- commit c840bbac
+- commit aeb15de3
+- commit c1020047
+- commit 0ebcdac4
+- commit bb0b8f15
+- commit 1e2b82fd
+- commit 2908a1c9
+- commit 3a9d24cf
+- commit aa5e25fd
+- commit 7697298c
+- commit 9205304c
+- commit 09d23770
+- commit f8761b3c
+- commit e650e434
+- commit 701e9a4a

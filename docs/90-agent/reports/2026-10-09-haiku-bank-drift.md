@@ -6,7 +6,7 @@ source_of_truth: scripts/bench.js, lib/drift.js, lib/bench.js
 
 # Haiku 角色題庫與長任務飄移（2026-10-09）
 
-這一頁由 `node scripts/bench.js report` 從各批的 `runs.jsonl` 重算後寫出。兩個問題的判準是設計頁 `docs/90-agent/plans/2026-10-09-haiku-bank-drift-design.md` 第 9 段事先寫定的，這裡只套用。
+這一頁由 `node scripts/bench.js report` 從各批的 `runs.jsonl` 重算後寫出。兩個問題的判準是設計頁 `docs/99-archive/2026-10-09-haiku-bank-drift-design.md` 第 9 段事先寫定的，這裡只套用。
 
 ## 兩個問題
 
