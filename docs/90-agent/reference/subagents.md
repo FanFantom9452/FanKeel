@@ -433,7 +433,7 @@ task it conflicts with is complete, so it no longer waits for a greedy group to
 close, and `TODO.md` and `docs/README.md` (`INDEX_FILES` in `lib/plantasks.js`)
 do not count as a shared file there — `Edit` refuses an `old_string` that moved,
 so a second implementer re-reads rather than writing over the first. The
-ceiling above still bounds how many are in flight.
+default above is still how many are in flight at once.
 It prints a fifth thing that is not a predicate and moves no
 task: a `Consumes:` entry whose text names a task already in its own group.
 Prose declares no identifier for a `Produces` to match, so the fourth predicate
