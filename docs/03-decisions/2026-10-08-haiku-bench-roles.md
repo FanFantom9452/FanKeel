@@ -4,7 +4,7 @@ last_verified: 2026-10-09
 source_of_truth: lib/bench.js, scripts/bench.js, hooks/title.js, docs/90-agent/reference/model-choice.md
 ---
 
-# 四個角色為什麼改跑 Haiku 5.5，按角色的實驗台量到什麼
+# 四個角色為什麼改跑 Haiku 5.5（10-09 起 reader 改回 sonnet），按角色的實驗台量到什麼
 
 ## 決定
 
