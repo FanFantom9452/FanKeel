@@ -16,6 +16,7 @@ const registry = require('../lib/registry.js');
 const { costOf } = require('../lib/prices.js');
 const { sessionDirOf, agentFiles } = require('../lib/usage.js');
 const { tailEntries } = require('../lib/handoff.js');
+const { readObject } = require('../lib/json.js');
 
 const DEFAULT = 4;
 const DISPATCH = new Set(['Agent', 'Task']);
@@ -79,8 +80,8 @@ function benchPerDispatch(evidenceRoot, role, model) {
         }
     }
     if (!best) return null;
-    let arms;
-    try { arms = JSON.parse(fs.readFileSync(best.file, 'utf8')).arms; } catch (e) { return null; }
+    const summary = readObject(best.file);
+    const arms = summary && summary.arms;
     if (!Array.isArray(arms)) return null;
     const own = arms.filter((a) => a && a.arm === model);
     const pick = own.length ? own : arms.filter(Boolean);

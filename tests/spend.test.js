@@ -264,3 +264,10 @@ test('the bucket table marks a family-priced bucket in its estimated column and 
     const cells = rows.map((c) => c[col]).sort();
     assert.deepEqual(cells, ['claude-fable-5-5', '—']);
 });
+
+test('median: middle value, mean of the two middles, null for none', () => {
+    const { median } = require('../lib/spend.js');
+    assert.equal(median([3, 1, 2]), 2);
+    assert.equal(median([4, 1, 3, 2]), 2.5);
+    assert.equal(median([]), null);
+});
