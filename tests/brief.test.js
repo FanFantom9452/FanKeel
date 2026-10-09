@@ -351,7 +351,7 @@ test('a stage agent gets its stage\'s rules and shape, its skill, and where to w
   for (const rule of expected) assert.ok(text.includes('  - ' + rule), 'missing rule: ' + rule.slice(0, 60));
   for (const line of templateFor('survey').split('\n').filter(Boolean)) assert.ok(text.includes('  ' + line), 'missing shape line: ' + line);
   assert.ok(text.includes(PLUGIN_ROOT + '/skills/fankeel-survey/SKILL.md'));
-  assert.ok(text.includes('/.fankeel/build/task-20260919T093012/survey.md'));
+  assert.ok(text.includes('Write your report to .fankeel/build/task-20260919T093012/survey.md'));
   assert.ok(text.includes(SESSION));
   assert.ok(!text.includes(RETURN_RULES[2]), 'the no-dispatch rule is left out');
   // The controller prints a survey's report above the gate, but the question
@@ -560,7 +560,7 @@ test('a brain is told what to read first: the last stage\'s report and the lines
   fs.mkdirSync(path.dirname(verifyFile), { recursive: true });
   fs.writeFileSync(verifyFile, 'report\n\nreads:\n- lib/a.js — the row that failed\n- docs/b.md — the contract it broke\n\n');
   const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
-  assert.match(text, /read first: \S+\/\.fankeel\/build\/task-20260919T093012\/verify\.md/);
+  assert.match(text, /read first: \.fankeel\/build\/task-20260919T093012\/verify\.md/);
   assert.ok(text.includes('lib/a.js — the row that failed'));
   assert.ok(text.includes('docs/b.md — the contract it broke'));
   assert.ok(text.includes('The next brief copies them for it'), 'the brain is told to write the block');
@@ -813,7 +813,7 @@ test('the file a design block names for a controlled build is what the build bra
   fs.writeFileSync(file, 'the approach, one sentence\n');
   seed(root, { stage: 'build', started, route, moves: [['survey', 1], ['design', 2], ['build', 3]] });
   const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
-  assert.match(text, /read first: \S+\/\.fankeel\/build\/task-20260919T093012\/design\.md — the last stage's report/);
+  assert.match(text, /read first: \.fankeel\/build\/task-20260919T093012\/design\.md — the last stage's report/);
 });
 
 // docs/90-agent/plans/2026-09-28-agent-lifetime.md Task 6 / lib/render.js's
@@ -963,7 +963,7 @@ test('the 2026-10-08 brief that Claude Code saved to a file now fits for a build
     const ctx = seedOverflow(root, stage);
     const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain', agent_id: 'a1' })));
     assert.ok(text.length <= BRIEF_MAX, stage + ' brain brief is ' + text.length + ' chars');
-    assert.ok(text.includes(ctx), 'the context file is still named');
+    assert.ok(text.includes('in ' + path.relative(root, ctx).split(path.sep).join('/')), 'the context file is still named, relative to the root');
     assert.match(text, /… and \d+ older facts?, in /);
     if (stage === 'build') {
       assert.match(text, /^touched: … \d+ earlier \(node \S+\/scripts\/task\.js show --session \S+ lists them\), \S/m);
@@ -1003,6 +1003,46 @@ test('a brief over the cap at the floor keeps one touched path and names every d
   const touched = text.split('\n').find((l) => l.startsWith('touched:'));
   assert.ok(touched.endsWith('lists them), ' + LAST_CLAIM), touched);
   assert.match(touched, /^touched: … 59 earlier \(node /);
+});
+
+// What `fit` cannot drop is the brief's fixed text, and that text wrote each
+// path under the workspace root absolute, so the same task overflowed at a long
+// checkout path (a tmp root brief of 10038 characters against the cap's 9950).
+// The brain's working directory is the root, so its brief writes those paths
+// relative to it.
+test('a build brain brief fits at a workspace root of 150 characters or more, its paths written relative to the root', () => {
+  const root = path.join(tmp(), 'w'.repeat(45), 'x'.repeat(45), 'y'.repeat(45));
+  fs.mkdirSync(root, { recursive: true });
+  assert.ok(root.length >= 150, 'the root must be long: ' + root.length);
+  seedProfile(root, { 'stage.agents': ['build'], language: '繁體中文' });
+  seedOverflow(root, 'build', { route: ROUTE });
+  const answers = {};
+  for (let i = 1; i <= 6; i++) answers['Question ' + i + ': ' + 'q'.repeat(110)] = 'a'.repeat(150);
+  answerFile(root, 'design', answers);
+  const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain', agent_id: 'a1' })));
+  assert.ok(text.length <= BRIEF_MAX, 'build brain brief is ' + text.length + ' chars');
+  assert.match(text, /… and \d+ older facts?, in \.fankeel\/build\/task-20260919T093012\/context\.md$/m);
+  assert.match(text, /… and \d+ earlier answers?, in \.fankeel\/build\/task-20260919T093012$/m);
+  assert.equal(text.includes(root.split(path.sep).join('/')), false, 'the root path is not in the brief');
+});
+
+// The reader brief of the test below is under the cap before `fit` runs, so
+// `renderBrief` returning its lines without `fit` left it green. This one holds
+// enough facts and answers to need it.
+test('a plain reader\'s brief, over the cap before fit, is cut to it and names the facts it dropped', () => {
+  const root = tmp();
+  seedProfile(root, { 'stage.agents': ['build'] });
+  const ctx = seedOverflow(root, 'build', { route: ROUTE });
+  const more = [];
+  for (let i = 1; i <= 20; i++) more.push('- fact ' + i + ' ' + 'f'.repeat(190) + ' — lib/render.js:' + i + ' @ 00000000');
+  fs.appendFileSync(ctx, more.join('\n') + '\n');
+  const answers = {};
+  for (let i = 1; i <= 6; i++) answers['Question ' + i + ': ' + 'q'.repeat(110)] = 'a'.repeat(150);
+  answerFile(root, 'design', answers);
+  const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-reader', agent_id: 'a2' })));
+  assert.ok(text.length <= BRIEF_MAX, 'reader brief is ' + text.length + ' chars');
+  assert.match(text, /… and \d+ older facts?, in /);
+  assert.ok(text.includes(ctx), 'the context file is named');
 });
 
 test('the same task briefs a plain reader under the cap', () => {
