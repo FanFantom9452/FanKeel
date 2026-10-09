@@ -46,6 +46,7 @@ const docs = require('../lib/docs.js');
 const { resolveRoot } = require('../lib/registry.js');
 const { blameTimes, fileTime } = require('../lib/blame.js');
 const { trackedFiles, SKIP_EXT } = require('../lib/tracked.js');
+const { escape } = require('../lib/reviewcheck.js');
 // A line cited past the end of its file is a citation that moved. The pattern
 // and the count are docs-check's, so the two scripts agree on what `path:12-30`
 // means and on how a trailing newline counts.
@@ -234,7 +235,7 @@ function countLines(base, files, needle, under) {
 }
 
 function countRefs(base, files, name) {
-    const esc = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const esc = escape(name);
     const word = new RegExp('(^|[^\\w$])' + esc + '($|[^\\w$])');
     const decl = new RegExp('\\b(?:function\\s*\\*?|const|let|var|class)\\s+' + esc + '(?![\\w$])');
     let n = 0;
