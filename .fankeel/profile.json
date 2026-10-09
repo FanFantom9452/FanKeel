@@ -12,5 +12,5 @@
   "agent.fankeel-mutator.model": "haiku",
   "agent.fankeel-mover.model": "haiku",
   "agent.fankeel-implementer.model": "haiku",
-  "agent.fankeel-reader.model": "haiku"
+  "agent.fankeel-reader.model": "sonnet"
 }

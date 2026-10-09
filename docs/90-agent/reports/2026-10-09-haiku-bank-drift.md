@@ -75,10 +75,10 @@ source_of_truth: scripts/bench.js, lib/drift.js, lib/bench.js
 
 這一段是手寫的，`bench.js report` 不會產生它；重跑 report 之後要再補回來。
 
-- **sonnet 兩格各只有 3 次有效 run。** 兩臂各 10 次裡有 7 次只用了 3 到 10 次工具呼叫就做完整個長任務：先用一兩次呼叫讀完八個模組與規格，再用一個 shell 函式依序跑紅燈、改檔、綠燈、lint 與 commit。這 14 次裡有 12 次任務通過，另 2 次做成 9 個 commit 而沒通過；14 次都不到 30 步，依 `MIN_STEPS` 判為無效。有效的 6 次走了 45 到 61 步。haiku 兩臂 20 次全部有效，走了 42 到 63 步。
+- **sonnet 兩格各只有 3 次有效 run。** 兩臂各 10 次裡有 7 次只用了 3 到 10 次工具呼叫就做完整個長任務，做法是把讀檔、紅燈、改檔、綠燈、lint 與 commit 併進少數幾次多行 shell 呼叫：其中 7 次先用一兩次呼叫讀完八個模組與規格，再用一個 shell 函式依序跑完；3 次先用五次呼叫讀檔，再定義函式；4 次沒有定義函式，把各步直接寫在多行 shell 裡。這 14 次裡有 12 次任務通過，另 2 次做成 9 個 commit 而沒通過；14 次都不到 30 步，依 `MIN_STEPS` 判為無效。有效的 6 次走了 45 到 61 步。haiku 兩臂 20 次全部有效，走了 42 到 63 步。
 - **兩個問題的判準比的是次數，不是比例。** 有效 run 數不同時，次數多的一臂占便宜。「haiku 能接長任務」比的是 haiku 的 10 次對 sonnet 的 3 次；改用比例，haiku 任務通過 10/10、全程無違規 1/10，sonnet 是 3/3、0/3，結論相同。上面「兩個問題」裡「重注入值得」對 sonnet 寫的「不成立」是程式照判準套出來的，不是這次的結論：它只建立在每格 3 次上，差 1 次就只是雜訊，重注入對 sonnet 值不值得，這批證據不足以回答。
 - **違規幾乎都是 zh-Hant。** 在有效 run 裡，haiku 關閉臂的說明文字有 101/131 處不是繁體中文，重注入臂是 70/135；sonnet 兩臂分別是 18/21 與 5/26。vendor、lint-every-3 與 commit-format 三條加起來，四格都不到 1%。所以「守規」主要量的是說明文字的語言，不是檔案操作。
-- **`vendor` 的誤判已修正後重算。** 第一次算的時候，有三個 haiku 步驟是 commit 之後順手用 `git diff -- vendor/` 確認沒動到 vendor/，卻被記成寫入 vendor/。用 commit `caa23e21` 的 `lib/drift.js` 重算之後，haiku 重注入臂的全程無違規從 4 變成 5。只重算了 tally，模型沒有重跑。
+- **`vendor` 的誤判已修正後重算。** 第一次算的時候，有三個 haiku 步驟是 commit 之後順手用 `git diff -- vendor/` 確認沒動到 vendor/，卻被記成寫入 vendor/。用 commit `91597d38` 的 `lib/drift.js` 重算之後，haiku 重注入臂的全程無違規從 4 變成 5；之後 `caa23e21` 改寫了同一個檢查，這批的數字沒有再變。只重算了 tally，模型沒有重跑。
 - **兩批題庫作廢後重跑。** reader 第一批的 easy-who-requires 只問「哪個檔案」，6 次裡有 4 次答對了檔名（例如 `signup.js`），卻因為判分要的是完整路徑（例如 `lib/signup.js`）而被判錯；題目改成要從 repo 根算起的路徑之後重跑。mover 第一批的 41 次失敗，全都是題目給的 commit 訊息後面多了一行 `Co-Authored-By`，那是 Claude Code 自己的 commit 規則要加的；判分改成不比那一行之後重跑。作廢的兩批和兩次飄移試跑都留在 `evidence/` 底下，上面的表沒有算進去。
 - **各角色的裁定**，判準是 haiku 臂每次 run 都有效而且全部通過：
   - implementer 與 mover 可以交給 haiku。
