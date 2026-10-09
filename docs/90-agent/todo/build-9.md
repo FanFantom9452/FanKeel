@@ -1,7 +1,7 @@
 ---
 label: build
 title: ledger 在 worktree 另開帳本
-description: 在 worktree 裡執行 ledger.js，會在 worktree 被忽略的 .fankeel/build/ 底下另寫一份帳本，跟主目錄那份分開 — [scripts/ledger.js](scripts/ledger.js)
+description: 在 worktree 裡執行 ledger.js，會在 worktree 被忽略的 `.fankeel/build/` 底下另寫一份帳本，跟主目錄那份分開 — [scripts/ledger.js](scripts/ledger.js)
 state: ready
 link: scripts/ledger.js
 ---

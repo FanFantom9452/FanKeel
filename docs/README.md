@@ -442,6 +442,6 @@ is explained, and it is the one thing to know before adding a page here.
 | `bench/` | fixture | n/a — the fixed inputs and two-sided controls `scripts/bench.js` runs: `add-feature/`, `fix-bug/` and `review-planted/`, the whole tasks `run` compares arms on; `roles/`, one directory per role; and `drift/`, the long task the drift 2×2 checks step by step; a test's own input, checked for links and line numbers only, never for symbols |
 | `evals/` | fixture | n/a — a test's own input; a prompt names paths only its scaffold has, so it is checked for links and line numbers only, never for symbols |
 | `.claude/agents/` | reference | no |
-| `agents/` | reference | no — the ten agents the plugin ships, read by Claude Code at process start |
+| `agents/` | reference | no — the agents the plugin ships, one file each, read by Claude Code at process start |
 
 [Back to the front page](../README.md)

@@ -205,14 +205,11 @@ fankeel/
 ├── bench/             the fixed inputs and two-sided controls scripts/bench.js runs: add-feature/, fix-bug/ and review-planted/, the whole tasks `run` compares arms on; roles/, one directory per role, each holding twelve items in three tiers; drift/, the long task the drift 2×2 checks step by step
 ├── docs/              reference pages by audience: 01-guide/, 02-architecture/, 03-decisions/, and 90-agent/ (reference/, plans/, reports/, judgements/) with 99-archive/ for what it retires
 ├── evals/             behaviour eval cases, one directory each, graded by scripts/eval.js with claude -p
-├── hooks/             every hook Claude Code runs; each reads stdin, exits 0 on every path and leaves the work to lib/
+├── hooks/             every hook Claude Code runs; each reads stdin, exits 0 on every path and leaves the work to lib/. Three are not rowed below: title.js (PreToolUse on Agent|Task: a dispatch's description opens with its model, version and effort, and a profile override's pinned model is swapped in), budget.js (PreToolUse and PostToolUse, subagents only: a soft context threshold nudges a handoff, the hard one refuses all but it) and gate-write.js (PostToolUse on Write: a stage agent's handoff gate is checked the moment it is written)
 │   ├── inject.js      UserPromptSubmit: the block on every prompt, the init block on /fankeel, the badge
 │   ├── resume.js      PostToolUse on AskUserQuestion: the stage's rules again once a gate is answered
 │   ├── gate.js        PreToolUse on AskUserQuestion: stamps when a gate opened, so the wait can be timed; on a controlled stage it also validates that the controller's own question copies the handoff's gate word for word, denying a botched attempt or a malformed file gate; with `gate.station` set, it first waits that many seconds for the station's answer
 │   ├── guard.js       PreToolUse on writes, shells and subagent dispatches: the scope guard, read-only agents kept read-only, and no fankeel-brain for a stage stage.agents does not name; and every git commit scanned for the words in .fankeel/sensitive.txt
-│   ├── title.js       PreToolUse on Agent|Task: opens a dispatch's description with its model, version and effort, and swaps in a profile override's pinned model
-│   ├── budget.js      PreToolUse and PostToolUse, subagents only: nudges a subagent to hand off at a soft context threshold and refuses all but the handoff at the hard one
-│   ├── gate-write.js  PostToolUse on Write: checks a stage agent's handoff gate the moment the agent writes it, so a malformed gate reaches that agent the same turn
 │   ├── touch.js       PostToolUse on Edit, Write, NotebookEdit: the files this task touched
 │   ├── brief.js       SubagentStart: what a subagent is told about the task it was sent from
 │   ├── carry.js       SessionStart on clear or fork: offers the task a /clear left behind
