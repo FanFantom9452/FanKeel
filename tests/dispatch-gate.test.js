@@ -58,6 +58,19 @@ test('the fifth Agent call in one message is asked, with the bench figure when n
     assert.match(out.reason, /\$0\.050 for these 5 dispatches/);
 });
 
+test('a -high or -xhigh variant is priced as its base role', () => {
+    const dir = tmp('fankeel-dispatch-gate-');
+    const root = evidence(dir, 0.05, 5);
+    const file = transcript(dir, five);
+    for (const type of ['fankeel:fankeel-reader-high', 'fankeel:fankeel-reader-xhigh']) {
+        const p = payload(file, 'toolu_5');
+        p.tool_input.subagent_type = type;
+        const out = decide(p, { data: null, evidenceRoot: root });
+        assert.match(out.reason, /\$0\.0100 each for reader in role-reader-20261009T033513/);
+        assert.doesNotMatch(out.reason, /No figure/);
+    }
+});
+
 test('four Agent calls in one message produce nothing', () => {
     const dir = tmp('fankeel-dispatch-gate-');
     const file = transcript(dir, five.slice(0, 4));
