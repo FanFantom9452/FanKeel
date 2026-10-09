@@ -4,7 +4,7 @@ description: Reopen the station by hand — every fankeel session on this machin
 disable-model-invocation: true
 version: 0.100.0
 status: current
-last_verified: 2026-09-19
+last_verified: 2026-10-09
 source_of_truth: scripts/station.js, lib/serve.js, docs/90-agent/reference/station.md
 ---
 
