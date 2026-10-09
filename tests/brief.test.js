@@ -1026,6 +1026,24 @@ test('a build brain brief fits at a workspace root of 150 characters or more, it
   assert.equal(text.includes(root.split(path.sep).join('/')), false, 'the root path is not in the brief');
 });
 
+// scripts/commit.js resolves a commit file's `into <path>` against the repo
+// top, so the brain brief's worktree line, which also tells the brain what to
+// put on that `into` line, stays absolute while every other root path is relative.
+test('a build brain brief at a 150-character root keeps its worktree line absolute, `into` path included', () => {
+  const root = path.join(tmp(), 'w'.repeat(45), 'x'.repeat(45), 'y'.repeat(45));
+  fs.mkdirSync(root, { recursive: true });
+  assert.ok(root.length >= 150, 'the root must be long: ' + root.length);
+  seedProfile(root, { 'stage.agents': ['build'], language: '繁體中文' });
+  seedOverflow(root, 'build', { route: ROUTE, worktree: { path: '.fankeel/worktrees/abcd1234', branch: 'fankeel/wt-test' } });
+  const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain', agent_id: 'a1' })));
+  const abs = path.resolve(root, '.fankeel/worktrees/abcd1234').split(path.sep).join('/');
+  const line = text.split('\n').find((l) => l.startsWith('worktree:'));
+  assert.ok(line, 'the brief has a worktree line');
+  assert.ok(line.startsWith('worktree: ' + abs + ' (fankeel/wt-test)'), line);
+  assert.ok(line.endsWith('`into ' + abs + '`'), line);
+  assert.ok(text.length <= BRIEF_MAX, 'build brain brief is ' + text.length + ' chars');
+});
+
 // The reader brief of the test below is under the cap before `fit` runs, so
 // `renderBrief` returning its lines without `fit` left it green. This one holds
 // enough facts and answers to need it.
