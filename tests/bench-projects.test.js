@@ -131,14 +131,15 @@ test('reader answers.sh: the exact answer at a line holding it passes, however t
     const proj = tmp('fankeel-judge-reader-');
     fs.mkdirSync(path.join(proj, 'lib'));
     fs.writeFileSync(path.join(proj, 'lib', 'a.js'), "'use strict';\n\nconst X = 8;\n");
-    const run = (reply) => {
+    const run = (reply, input = '1|8|X = 8\n2|none|\n') => {
         fs.mkdirSync(path.join(proj, '.bench'), { recursive: true });
         fs.writeFileSync(path.join(proj, '.bench', 'result.txt'), reply);
-        return judge('bash', [bench.posix(path.join(ROLES, 'reader', 'items', 'answers.sh')), bench.posix(proj)], { input: '1|8|X = 8\n2|none|\n' });
+        return judge('bash', [bench.posix(path.join(ROLES, 'reader', 'items', 'answers.sh')), bench.posix(proj)], { input });
     };
     assert.deepEqual(run('1. 8 — lib/a.js:3\n2. none\n'), { status: 0, last: 'pass' });
     assert.equal(run('1. `8` — lib\\a.js:3\r\n2. none\r\n').last, 'pass');
     assert.equal(run('1. 8 — ' + bench.posix(proj) + '/lib/a.js:3\n2. none\n').last, 'pass');
+    assert.equal(run('1. `./lib/a.js` — ./lib/a.js:3\n', '1|lib/a.js|X = 8\n').last, 'pass');
     assert.equal(run('1. 9 — lib/a.js:3\n2. none\n').last, 'fail wrong: question 1: 9, not 8');
     assert.equal(run('1. 8 — lib/a.js:1\n2. none\n').last, 'fail fabricated: question 1: lib/a.js:1 does not hold the answer');
     assert.equal(run('1. 8 — lib/b.js:3\n2. none\n').last, 'fail fabricated: question 1: lib/b.js does not exist');
@@ -187,7 +188,7 @@ test('mover judge.sh: each clause passes on the move asked for and names its cla
     fs.writeFileSync(path.join(proj, 'docs', 'drafts', 'n.md'), 'n\n');
     repo(proj, true);
     spawnSync('git', ['mv', 'docs/drafts/n.md', 'docs/n.md'], { cwd: proj });
-    spawnSync('git', ['commit', '-q', '-m', 'docs: move n', '-m', 'Second paragraph.'], { cwd: proj });
+    spawnSync('git', ['commit', '-q', '-m', 'docs: move n', '-m', 'Second paragraph.', '-m', 'Co-Authored-By: Claude <noreply@anthropic.com>'], { cwd: proj });
     const scripts = tmp('fankeel-judge-mover-sh-');
     let n = 0;
     const clause = (body, dir = proj) => {
