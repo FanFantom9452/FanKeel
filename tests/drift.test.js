@@ -102,6 +102,18 @@ test('each constraint broken alone is the only one broken, at its own step', () 
     }
 });
 
+test('vendor/ breaks only when the segment that names it is the one that writes', () => {
+    const run = (command) => {
+        const steps = keepAll();
+        steps[39] = ['Bash', { command }];
+        const row = drift.driftSteps(transcript(steps))[39];
+        return [row.applies.includes('vendor'), row.broke.includes('vendor')];
+    };
+    assert.deepEqual(run('git add lib/a.js && git commit -q -m "drift(a): use format()" && echo "--- vendor?"; git diff --stat a173e26 HEAD -- vendor/ lib/legacy/'), [true, false]);
+    assert.deepEqual(run('cd /tmp/run && sed -i s/a/b/ vendor/fmt/index.js'), [true, true]);
+    assert.deepEqual(run('git commit -m x && echo y > vendor/fmt/index.js'), [true, true]);
+});
+
 const ROOT = path.join(__dirname, '..');
 const DRIFT = path.join(ROOT, 'bench', 'drift');
 const SCRIPT = path.join(ROOT, 'scripts', 'bench.js');
