@@ -29,8 +29,8 @@ function repo() {
 }
 
 test('parseTap reads node --test totals and gives null where there are none', () => {
-  assert.deepEqual(suite.parseTap('TAP version 13\n# pass 12\n# fail 1\n'), { pass: 12, fail: 1 });
-  assert.deepEqual(suite.parseTap('ok\n'), { pass: null, fail: null });
+  assert.deepEqual(suite.parseTap('TAP version 13\n# pass 12\n# fail 1\n'), { pass: 12, fail: 1, failed: [] });
+  assert.deepEqual(suite.parseTap('ok\n'), { pass: null, fail: null, failed: [] });
 });
 
 test('runSuite records a green node --test run with its sha, and a red one as not ok', () => {
@@ -44,6 +44,21 @@ test('runSuite records a green node --test run with its sha, and a red one as no
   const red = suite.runSuite(dir, 'node --test');
   assert.equal(red.ok, false);
   assert.equal(red.fail, 1);
+});
+
+test('parseTap keeps the leaf name of each not ok line, not its failing parent, and no TODO', () => {
+  const tap = ['    not ok 1 - leaf one', '    ok 2 - leaf ok', 'not ok 1 - outer', 'not ok 2 - a', 'not ok 3 - b # TODO', '# pass 1', '# fail 3'].join('\n');
+  assert.deepEqual(suite.parseTap(tap).failed, ['leaf one', 'a']);
+});
+
+test('a red run records the failing test names in suite.json, a green one none', () => {
+  const dir = repo();
+  assert.deepEqual(suite.runSuite(dir, 'node --test').failed, []);
+  fs.writeFileSync(path.join(dir, 'a.test.js'), RED);
+  const red = suite.runSuite(dir, 'node --test');
+  assert.deepEqual(red.failed, ['a']);
+  const file = suite.record(dir, DATA, red);
+  assert.deepEqual(JSON.parse(fs.readFileSync(file, 'utf8')).failed, ['a']);
 });
 
 test('blocker: no record where a suite is runnable; a red record; a record older than a code change; null otherwise', () => {
