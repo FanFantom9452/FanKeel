@@ -242,6 +242,16 @@ test('driftTally: a valid run needs thirty calls, and an injection log only on a
     assert.match(drift.driftSummaryMd(t), /\| haiku-reinject \| 2 \| 1 \| 1 \| 0 \| 40 \| /);
 });
 
+test('driftTally: a reinject.log line that does not parse is named, and the lines that do still count', () => {
+    const raw = tmp('fankeel-drift-raw-');
+    const prompt = 'CONSTRAINTS\n\nTASK\n';
+    driftRaw(raw, 'drift-r1-haiku-reinject', { prompt, model: 'claude-haiku-5-5', steps: keepAll(), log: [{ step: 5, chars: 300 }] });
+    fs.appendFileSync(path.join(raw, 'drift-r1-haiku-reinject', 'reinject.log'), '{"step":10,"cha');
+    const t = drift.driftTally([{ kind: 'drift', tag: 'drift-r1-haiku-reinject', arm: 'haiku-reinject', model: 'haiku', reinject: true,
+        input: prompt, pass: true, check: 'pass', claudeUsd: 0.1 }], raw);
+    assert.deepEqual([t.runs[0].why, t.runs[0].injections], [['reinject.log has 1 line that does not parse'], 1]);
+});
+
 test('drift --dry prints one line per run, the reinject arms with --settings and the haiku arms with the override', () => {
     const r = spawnSync(process.execPath, [SCRIPT, 'drift', '--runs', '1', '--dry'], { encoding: 'utf8' });
     assert.equal(r.status, 0, r.stderr);
