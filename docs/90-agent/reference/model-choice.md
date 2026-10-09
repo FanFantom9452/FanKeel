@@ -8,11 +8,11 @@ source_of_truth: agents/*.md, lib/profile.js
 
 Open decision: which model each role runs on, and what effort each model runs at.
 
-Today every agent file in `agents/` pins its own `model:` in frontmatter. Six pin
-`sonnet` (brain, fixer, reader, render-reviewer, reviewer, verifier);
-`fankeel-judge` pins `fable` and `fankeel-mockup` pins `opus`. Each file also pins an
-`effort:`. The profile can already name a model for two roles, `judge.model` and
-`design.mockup`, and for no other agent.
+Today every agent file in `agents/` pins its own `model:` in frontmatter:
+`fankeel-judge` pins `fable`, `fankeel-mockup` pins `opus`, and every other one pins
+`sonnet`. Each file also pins an `effort:`. The profile names a model for two roles by
+keys of their own, `judge.model` and `design.mockup`, and for any agent by
+`agent.<name>.model` (item a below).
 
 ## To settle
 

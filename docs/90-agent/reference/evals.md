@@ -1,12 +1,12 @@
 ---
 status: current
-last_verified: 2026-09-18
+last_verified: 2026-10-09
 source_of_truth: scripts/eval.js, lib/eval.js, evals/route-typo/case.yaml
 ---
 
 # Behaviour evals
 
-Five cases in the layout `claude plugin eval` reads, a runner beside it that
+Ten cases in the layout `claude plugin eval` reads, a runner beside it that
 works without early access, and the six ways an operator's own machine can leak
 into a run.
 

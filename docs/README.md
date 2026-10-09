@@ -50,7 +50,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | How Chinese written for a person is checked: one thing per sentence, 160 columns at most, names instead of codes | [plain-language.md](90-agent/reference/plain-language.md) |
 | Why `buildDirs` stops following junctions, and why `ensureServe` probes at least 250ms | [decisions/2026-10-05-station-write-timeout.md](03-decisions/2026-10-05-station-write-timeout.md) |
 | Why the five review checks live in the build skill | [decisions/2026-10-07-review-checks-in-build.md](03-decisions/2026-10-07-review-checks-in-build.md) |
-| Why four roles run on Haiku 5.5, and what the per-role bench measured | [decisions/2026-10-08-haiku-bench-roles.md](03-decisions/2026-10-08-haiku-bench-roles.md) |
+| Why four roles moved to Haiku 5.5 (reader back on sonnet since 10-09), and what the per-role bench measured | [decisions/2026-10-08-haiku-bench-roles.md](03-decisions/2026-10-08-haiku-bench-roles.md) |
 | Why fankeel ships no output style, and where its voice lives instead | [decisions/2026-09-13-no-output-styles.md](03-decisions/2026-09-13-no-output-styles.md) |
 | What caveman and SEPIA do that this plugin does not — gates, evals, an evidence ledger, thin wrappers — plus the user's own directions, three from 09-08 and five from 09-11 — the ones still open are `TODO.md` entries | [improvement-brief.md](90-agent/reference/improvement-brief.md) — *a backlog, 繁體中文* |
 | Every dated report's headline figure with a stable ID, what its scope does not cover, and which pages cite it | [sources.md](90-agent/reference/sources.md) — *the evidence ledger* |
@@ -439,7 +439,7 @@ is explained, and it is the one thing to know before adding a page here.
 | `docs/90-agent/judgements/` | report | it is what `fankeel-judge` answered on that day, filed verbatim by `scripts/judge.js` |
 | `docs/90-agent/todo/` | todo | n/a — one TODO entry per file, current, checked for links and line numbers only; its date is its own `stamp` |
 | `skills/` | reference | no |
-| `bench/` | fixture | n/a — the fixed inputs and two-sided controls `scripts/bench.js` runs: `roles/`, one directory per role, and `drift/`, the long task the drift 2×2 checks step by step; a test's own input, checked for links and line numbers only, never for symbols |
+| `bench/` | fixture | n/a — the fixed inputs and two-sided controls `scripts/bench.js` runs: `add-feature/`, `fix-bug/` and `review-planted/`, the whole tasks `run` compares arms on; `roles/`, one directory per role; and `drift/`, the long task the drift 2×2 checks step by step; a test's own input, checked for links and line numbers only, never for symbols |
 | `evals/` | fixture | n/a — a test's own input; a prompt names paths only its scaffold has, so it is checked for links and line numbers only, never for symbols |
 | `.claude/agents/` | reference | no |
 | `agents/` | reference | no — the ten agents the plugin ships, read by Claude Code at process start |
