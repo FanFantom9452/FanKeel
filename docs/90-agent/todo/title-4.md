@@ -1,7 +1,7 @@
 ---
 label: title
 title: 覆寫檔要新行程才派得出
-description: profile set 產生的 .claude/agents 覆寫檔要新行程才讀得到，title hook 卻先把名字改成 bare，同一行程裡派工會失敗
+description: profile set 產生的 agents 覆寫檔要新行程才讀得到，title hook 卻先把名字改成 bare，同一行程裡派工會失敗
 state: decision
 ---
 

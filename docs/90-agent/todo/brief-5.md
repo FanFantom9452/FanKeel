@@ -2,8 +2,12 @@
 label: brief
 title: brief 測試在 worktree 裡會紅
 description: 150 字元 root 的 build brain brief 測試在 worktree 裡跑會超過 BRIEF_MAX：brief 印出 plugin 根目錄，worktree 的路徑比主目錄長 — [tests/brief.test.js](tests/brief.test.js)
-state: ready
+state: done
 link: tests/brief.test.js
+done:
+  at: 2026-10-09
+  sha: 4877bfe8
+  disposition: done
 ---
 
 來源：2026-10-09 擴大 Haiku 角色測試與飄移（session 8846548c）的 land。把 main 併進分支後，在 worktree（F:/ymlab/fankeel/.fankeel/worktrees/8846548c）跑整套測試，只紅一個：「a build brain brief at a 150-character root keeps its worktree line absolute, `into` path included」，訊息 build brain brief is 10049 chars，上限 BRIEF_MAX 是 9950。同一份程式碼（分支對 main 只動 lib/bench.js 與 lib/drift.js，brief 用不到）在主目錄 F:/ymlab/fankeel 跑是綠的。
