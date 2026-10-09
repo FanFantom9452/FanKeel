@@ -90,8 +90,7 @@ const mtime = (file) => { try { return fs.statSync(file).mtimeMs; } catch (e) { 
 // The brain brief for this stage, with `stage.agents` forced to it so
 // renderBrief takes the brain branch whatever the project's profile says.
 function briefFor(root, session, data) {
-    let profile;
-    try { profile = profileLib.profileFor(root, data); } catch (e) { profile = null; }
+    const profile = profileLib.profileFor(root, data);
     const values = Object.assign({}, profile && profile.values, { 'stage.agents': [data.stage] });
     return renderBrief({ mine: { sessionId: session, data }, agentType: 'fankeel:fankeel-brain', root, profile: Object.assign({}, profile, { values }), transcriptPath: null, group: null });
 }
@@ -130,40 +129,45 @@ async function drive(opts, deps = {}) {
     };
     let relay = null;
     for (;;) {
-        const data = registry.readSession(root, opts.session);
-        if (!data || data.active !== true) return stop('error', { detail: 'no active session ' + opts.session });
-        const stage = data.stage;
-        const deadline = state.start + opts.timeoutMs + state.waited;
-        const cap = capReason(state, opts, Date.now(), deadline);
-        if (cap) return stop(cap);
-        const brief = briefFor(root, opts.session, data);
-        if (!brief) return stop('error', { detail: 'no brief for ' + stage });
-        const file = handoff.handoffPath(root, data, stage, handoff.lapOf(data, stage));
-        const before = mtime(file);
-        const prompt = brief + '\n\n' + STATUS_RULE + (relay ? '\nThe user\'s answer is in ' + relay + '.' : '');
-        const r = await spawnClaudeAsync(argsFor(opts.maxUsd - state.usd), { cwd: root, env: opts.env, input: prompt, timeout: Math.max(1, deadline - Date.now()) }, d.spawn);
-        state.rounds++;
-        const out = lastJson(r.stdout);
-        if (out && Number.isFinite(out.total_cost_usd)) state.usd += out.total_cost_usd;
-        if (r.error && r.error.code === 'ETIMEDOUT') return stop('timeout');
-        const nextStage = data.route[data.route.indexOf(stage) + 1] || null;
-        const gate = mtime(file) > before ? handoff.readGate(file, nextStage, data.route) : null;
-        if (!gate || gate.invalid || !STATUSES.includes(gate.status)) return stop('status', { handoff: file });
-        const got = await waitAnswer(root, data, gate, opts, d);
-        state.waited += got.waited;
-        if (!got.answers) return stop('gate', { handoff: file });
-        const next = afterAnswer(gate, got.answers, data.route, stage);
-        if (next.kind === 'advance') {
-            d.task(['stage', next.to]);
-            relay = null;
-        } else if (next.kind === 'down') {
-            d.task(['down']);
-            return stop('down');
-        } else if (next.kind === 'pause') {
-            d.task(['next', gate.next || 'paused at ' + stage]);
-            return stop('pause');
-        } else {
-            relay = got.file;
+        try {
+            const data = registry.readSession(root, opts.session);
+            if (!data || data.active !== true) return stop('error', { detail: 'no active session ' + opts.session });
+            const stage = data.stage;
+            const deadline = state.start + opts.timeoutMs + state.waited;
+            const cap = capReason(state, opts, Date.now(), deadline);
+            if (cap) return stop(cap);
+            const brief = briefFor(root, opts.session, data);
+            if (!brief) return stop('error', { detail: 'no brief for ' + stage });
+            const file = handoff.handoffPath(root, data, stage, handoff.lapOf(data, stage));
+            const before = mtime(file);
+            const prompt = brief + '\n\n' + STATUS_RULE + (relay ? '\nThe user\'s answer is in ' + relay + '.' : '');
+            const r = await spawnClaudeAsync(argsFor(opts.maxUsd - state.usd), { cwd: root, env: opts.env, input: prompt, timeout: Math.max(1, deadline - Date.now()) }, d.spawn);
+            state.rounds++;
+            const out = lastJson(r.stdout);
+            if (out && Number.isFinite(out.total_cost_usd)) state.usd += out.total_cost_usd;
+            if (r.error && r.error.code === 'ETIMEDOUT') return stop('timeout');
+            if (r.error) return stop('error', { detail: r.error.message });
+            const nextStage = data.route[data.route.indexOf(stage) + 1] || null;
+            const gate = mtime(file) > before ? handoff.readGate(file, nextStage, data.route) : null;
+            if (!gate || gate.invalid || !STATUSES.includes(gate.status)) return stop('status', { handoff: file });
+            const got = await waitAnswer(root, data, gate, opts, d);
+            state.waited += got.waited;
+            if (!got.answers) return stop('gate', { handoff: file });
+            const next = afterAnswer(gate, got.answers, data.route, stage);
+            if (next.kind === 'advance') {
+                d.task(['stage', next.to]);
+                relay = null;
+            } else if (next.kind === 'down') {
+                d.task(['down']);
+                return stop('down');
+            } else if (next.kind === 'pause') {
+                d.task(['next', gate.next || 'paused at ' + stage]);
+                return stop('pause');
+            } else {
+                relay = got.file;
+            }
+        } catch (e) {
+            return stop('error', { detail: e.message });
         }
     }
 }

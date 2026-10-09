@@ -145,3 +145,26 @@ test('drive moves the stage on option one, and its stop line agrees with the reg
     assert.equal(out.stage, data.stage);
     assert.equal(out.usd, 0.5);
 });
+
+test('drive stops on error, naming the cause, when claude cannot be spawned', async () => {
+    const { root, env } = setup();
+    const spawn = () => {
+        const child = new EventEmitter();
+        child.stdout = new EventEmitter();
+        child.stderr = new EventEmitter();
+        child.stdin = Object.assign(new EventEmitter(), { end() {} });
+        setTimeout(() => child.emit('error', Object.assign(new Error('spawn claude ENOENT'), { code: 'ENOENT' })), 0);
+        return child;
+    };
+    const out = await drive(base(root, env), { spawn, sleep: answerer(root, () => '留在本站'), pollMs: 5 });
+    assert.equal(out.stopped, 'error');
+    assert.match(out.detail, /ENOENT/);
+});
+
+test('drive stops on error, not a rejection, when task.js refuses a move', async () => {
+    const { root, env } = setup();
+    const task = () => { throw new Error('task.js refused'); };
+    const out = await drive(base(root, env), { spawn: fakeSpawn(root), sleep: answerer(root, (q) => q.options[0].label), pollMs: 5, task });
+    assert.equal(out.stopped, 'error');
+    assert.equal(out.detail, 'task.js refused');
+});
