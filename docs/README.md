@@ -30,6 +30,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | How to read the whole registry without a session open, and where a corrupt entry surfaces | [registry.md](90-agent/reference/registry.md) — *reading it from outside* |
 | Why the mode never switches itself off | [registry.md](90-agent/reference/registry.md) |
 | What the `context:` line in the injected block means | [registry.md](90-agent/reference/registry.md) |
+| How to run a task one headless `claude -p` per stage, and where it stops | [drive.md](90-agent/reference/drive.md) |
 | What `[FANKEEL:CLASH]` means | [collisions.md](90-agent/reference/collisions.md) |
 | Why an edit to a file another session holds asks first, and how to turn that off | [collisions.md](90-agent/reference/collisions.md) — *the scope guard* |
 | Why an abandoned terminal does not hold a file shut | [collisions.md](90-agent/reference/collisions.md) — *stale entries* |
@@ -364,6 +365,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 給人看的文字可選風格（10-05）的 design：profile key `prose.style`（`writer`、`plain`、`sepia`、`custom`，預設 `writer`），把所選風格的規則注入站 agent 與 writer 的 brief，build 站不注入 | `docs/99-archive/2026-10-05-prose-style-design.md` — *built, 繁體中文* |
 | 那份設計的四個 task | `docs/99-archive/2026-10-05-prose-style.md` — *built, 繁體中文* |
 | mod 自動壓縮的四個 task：`hooks/compact.ts` 在主 session 超過 450k 且有 fankeel 任務進行中時壓縮 | [plans/2026-10-05-compact-mod.md](90-agent/plans/2026-10-05-compact-mod.md) — *design-intent, 繁體中文* |
+| TODO 全表盤點（10-10）的 design：逐站開 headless `claude -p` 的 driver、三個上限與 `status` 欄位、重複 helper 合併 | [plans/2026-10-10-todo-patrol-drive-design.md](90-agent/plans/2026-10-10-todo-patrol-drive-design.md) — *design-intent, 繁體中文* |
+| 那份設計的五個 task | [plans/2026-10-10-todo-patrol-drive.md](90-agent/plans/2026-10-10-todo-patrol-drive.md) — *design-intent, 繁體中文* |
 | 注入先開 server、gate 漏抓代號要出聲、brain 模型對照的三條 TODO：注入先量冷啟動與慢磁碟再讓 `/fankeel` 先問 station 再寫頁，`todoIds` 讀失敗浮出警告並把 2800 毫秒門檻寫成常數，brain 用 opus 或 sonnet 的對照腳本由使用者親手跑 | [plans/2026-10-05-inject-plain-brain.md](90-agent/plans/2026-10-05-inject-plain-brain.md) — *design-intent, 繁體中文* |
 | TODO 全表盤點（10-09）定了什麼、沒做什麼：九條 Ready 做掉、四條待決定定案、brief-3 留給使用者、stage-agents-10 仍封鎖、rules-1 新開 | [decisions/2026-10-09-todo-patrol-nine.md](03-decisions/2026-10-09-todo-patrol-nine.md) — *繁體中文* |
 | TODO 全表盤點（10-09）的 plan：brief 散文搬進 brain 檔、ledger 走 registry 根、suite 記紅測名、壓縮 fixture、三頁更新、title hook 看 mtime、第五個 Agent 的 ask gate、四條結案、Pane 草稿核准 | `docs/99-archive/2026-10-09-todo-patrol.md` — *built, 繁體中文* |
