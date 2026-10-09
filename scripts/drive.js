@@ -181,6 +181,9 @@ if (require.main === module) {
     drive(opts).then((out) => {
         process.stdout.write(JSON.stringify(out) + '\n');
         process.exit(out.stopped === 'down' || out.stopped === 'pause' ? 0 : 1);
+    }).catch((e) => {
+        process.stdout.write(JSON.stringify({ stopped: 'error', detail: e.message }) + '\n');
+        process.exit(1);
     });
 }
 

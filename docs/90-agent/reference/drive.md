@@ -34,4 +34,4 @@ One JSON line, `{"stopped": <reason>, "rounds": n, "usd": x, "stage": s}`, exit 
 | `status` | no handoff written, a gate that does not read, or no `status` in it; the line names the handoff |
 | `gate` | `--gate-wait` seconds with no answer |
 | `pause`, `down` | the answer said so |
-| `error` | no active entry for `--session`, or no brief for its stage |
+| `error` | no active entry for `--session`, no brief for its stage, `claude` could not be started (any spawn error but a timeout), or anything thrown inside the loop — a profile that does not read, `task.js` refusing a move; the line's `detail` carries the message |
