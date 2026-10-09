@@ -187,3 +187,24 @@ test('--breakdowns counts the four kinds per transcript, each with its time', as
   ]);
   assert.deepEqual((await processFile(path.join(dir, 'z.jsonl'))).stoodDown, [{ at: '2026-10-09T06:10:00.000Z' }]);
 });
+
+// The land of one task must not swallow the stand-down of the next: a new
+// `task.js start` clears the land flag.
+test('--breakdowns counts a stand-down that follows another task\'s land', async () => {
+  const cfg = tmp('fankeel-sessions-');
+  const dir = path.join(cfg, 'projects', 'p');
+  const bash = (command, t) => ({ type: 'assistant', timestamp: t, message: { usage: { input_tokens: 1 }, content: [{ type: 'tool_use', id: 'b', name: 'Bash', input: { command } }] } });
+  writeTranscript(dir, 'a.jsonl', [
+    bash('node scripts/task.js start --session S --task "a"', '2026-10-09T08:00:00.000Z'),
+    bash('node scripts/task.js stage land --session S', '2026-10-09T08:10:00.000Z'),
+    bash('node scripts/task.js start --session S --task "b"', '2026-10-09T08:20:00.000Z'),
+    bash('node scripts/task.js down --session S', '2026-10-09T08:30:00.000Z'),
+  ]);
+  assert.deepEqual((await processFile(path.join(dir, 'a.jsonl'))).stoodDown, [{ at: '2026-10-09T08:30:00.000Z' }]);
+  writeTranscript(dir, 'b.jsonl', [
+    bash('node scripts/task.js start --session S --task "a"', '2026-10-09T09:00:00.000Z'),
+    bash('node scripts/task.js stage land --session S', '2026-10-09T09:10:00.000Z'),
+    bash('node scripts/task.js down --session S', '2026-10-09T09:20:00.000Z'),
+  ]);
+  assert.deepEqual((await processFile(path.join(dir, 'b.jsonl'))).stoodDown, []);
+});
