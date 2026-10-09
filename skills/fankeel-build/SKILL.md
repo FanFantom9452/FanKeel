@@ -3,8 +3,8 @@ name: fankeel-build
 description: The build stage — run a plan's tasks, or a design's file table where there is no plan, in a loop that does not stop to ask, keeping its place in a ledger and reviewing each task as it lands. Use for the build stage of a fankeel task, implementing an approved plan, resuming build work after a compaction, or when a task loop needs a ledger.
 version: 0.99.0
 status: current
-last_verified: 2026-10-02
-source_of_truth: lib/stages.js, lib/ledger.js, lib/plantasks.js, scripts/ledger.js
+last_verified: 2026-10-09
+source_of_truth: lib/stages.js, lib/ledger.js, lib/plantasks.js, scripts/ledger.js, scripts/review-check.js
 ---
 
 # fankeel-build
@@ -249,7 +249,9 @@ then asks this stage's gate.
    has committed. The mutation lines are the return contract's new half: a
    new test with no line naming what reddens it is a finding before the
    reviewer reads anything, and eight of them on 2026-09-06 cost five fix
-   rounds. And a brief whose task text names a file its Files block does not
+   rounds. Save the return as it came, to `.fankeel/build/task-<started>/review-<n>.txt`
+   where `<n>` is the task number, before the reviewer is sent: that is the
+   file `review-check.js --returned` reads for table (b). And a brief whose task text names a file its Files block does not
    list comes back as `blocked: <the file> is named but not declared` in the
    implementer's first turn, never built around — that is a plan defect, ruled
    on here, and a task built around it ships a feature nothing can reach.
@@ -364,106 +366,24 @@ then asks this stage's gate.
      Extra: a change no line of the task asks for — adjacent code improved,
        a file outside the Files block touched.
      Misunderstood: the right thing built the wrong way.
-   Part 2 — the tests: every new test in the diff has a mutation line.
-     Pick one, apply its mutation to a scratch copy of the file
-     (git show <sha>:<path> > <scratch>), and confirm the named test
-     reddens. A new test with no line, or a picked mutation that leaves
-     its test green, is a finding. A check the diff adds that is not a
-     test (a script, a guard, a verify line) needs the same: name an input
-     it must reject and confirm it rejects it. One that has never failed
-     has not shown it can. Then compare, for every pair of mutations the
-     diff's tests name, the set of tests each one reddens: two mutations
-     that redden exactly the same tests are a gap — one test that tells
-     them apart is missing. Then the denominator: list every
-     addEventListener and every branch selector (each closest('...') or
-     matches('...') a handler tests, class and attribute selectors
-     included, e.g. closest('.fwrap'), closest('.pg input[name^="pg-"]'),
-     as well as [data-...] strings) in the changed file, grep tests/ for
-     each one's event name or selector string — a test that reaches a
-     data- branch through its dataset key (data-ask tested as
-     dataset.ask) counts as reached — and count a zero-hit one as a
-     gap; a counted hit must be a press key (a test passing the
-     selector as a key to a press harness) or a `closest` stub that
-     actually dispatches the event, and a hit only in a render or view
-     test (the selector string in HTML fixtures or assertions on
-     rendered markup) is no coverage, so the selector stays a gap — a mutation run over only the handlers you were given cannot
-     find a listener nobody tests. Walk EVERY selector in the changed
-     listener (every closest, matches and event name in it), not only the
-     ones the brief named, and count a hit only when its test dispatches
-     that listener's OWN event type: a keydown test on a selector does
-     not cover the click branch with the same selector (a keydown test
-     of `[data-gop]` does not cover the click branch
-     `closest('[data-gop]')`). A hit counts only when the test presses
-     that selector through its listener's own event type AND goes red
-     when the branch is deleted (`if (false && ...)`); that is the ONLY
-     test. A test aimed at another branch whose fixture merely includes
-     this selector as an unanswered or ignored key stays green on
-     deletion, so it is no hit. An assertion that something did NOT
-     happen, or a positive count, is a hit when deleting the branch lets
-     a later branch act (so it goes red) and a guard when it stays green
-     (doesNotThrow, nothing fired, nothing fetched, a toggle-back whose
-     second press only restores the start state, a count the branch does
-     not change). A guard is titled `guard:` and never counts as a hit;
-     a row backed only by guards is a finding. ONE test can hold two
-     roles, a hit for the row it reddens on and a guard for a row it
-     stays green on: judge it per row, cite it in the table only for the
-     rows it is a hit for, and title `guard:` only a test that is a hit
-     for no row (hdl-j's inner `a,button,input` test, a hit for the inner
-     row and a guard for the outer `[data-href]`, carries a comment
-     instead). The reviewer must PRODUCE the selector-to-test table
-     in its return, not merely state that the rule holds: one row per
-     closest, matches and event name in the changed listener — the
-     selector, the test as `file:line`, the effect it asserts; a row with
-     no qualifying test is a finding. The reviewer
-     opens EVERY `path:line` the table cites at the committed sha
-     (`git show <sha>:<path>`, not the working tree) and confirms each
-     line is the test it claims. Before it accepts this wording it tests
-     it against ONE counter-example, a test that asserts a positive effect
-     yet stays green on its branch's deletion: if the wording would still
-     call that test a hit, the wording is wrong. When the rule has more than
-     one sentence, test one counter-example against EACH sentence, and check
-     that the sentences agree on every row the table cites (a "returns
-     before" test asserting only that nothing was drawn is the case where
-     two sentences disagree). The review also opens every header comment
-     of the changed test files and every cited line number against the
-     file at the commit, and fails a comment claiming an assertion the
-     tests do not make or a line number off from the file (2026-10-01:
-     verify's twelfth return found the rule's sentences contradicting
-     each other, "and asserts its own effect" against "red on deletion";
-     hdl-k's header comment claimed the returns-before tests assert their
-     branch's effect when hdl-k:185, :282 and :793 assert only
-     `writes.page == 0`; and table citations were offset by 2, hdl-j:385
-     being :387; build's review checked none of them). A mutation that reddens
-     every test in the file (it killed the harness, e.g. by deleting the
-     text the harness finds the listener by) counts as dead, not red: redo
-     it with `if (false && ...)` so the harness survives. (2026-10-01:
-     verify's second return
-     to build listed ten such listeners; 2026-10-01: verify's fifth
-     return found .fwrap, .pg input[name^="pg-"] and .tdf's [data-todo]
-     with zero hits though the event names all had hits; 2026-10-01:
-     verify's sixth return found ten click branches counted as covered
-     by render/view-test hits though no press reached them; 2026-10-01:
-     verify's seventh return found `closest('[data-gop]')` and
-     `closest('[data-gho]')` untested — the review walked only the ten
-     branches it was handed, and counted a keydown test on the same
-     selector as covering the click branch; 2026-10-01: verify's eighth
-     return found `[data-answer]` and `[data-tune-notify]` with hits only
-     in probes that assert the branch does not fire, and the rule had been
-     written but never applied to the listener it was written for;
-     2026-10-01: verify's ninth return found hdl-k's doesNotThrow and
-     nothing-fired tests counted as hits, and a block-delete mutation that
-     killed the harness read as red; 2026-10-01: verify's tenth return
-     found the rule sentence ("must fail on its own branch's deletion")
-     contradicted by its definition, which called only assert-nothing
-     tests guards, so positive-count and toggle-back tests that stayed
-     green on deletion counted as hits, and the review never opened the
-     table's cited lines at the commit; 2026-10-01: verify's eleventh
-     return found the counter-example check had tried the rule against
-     only one example, which never put the rule's two sentences against
-     each other: "asserting that nothing happened does not count" and the
-     guard definition (green on deletion) disagreed, so hdl-k:122,
-     hdl-i:141 and hdl-j:387 were mis-judged, and hdl-k's header comment
-     claimed an assertion :121 did not make.)
+   Part 2 — the tests, mechanically first: run
+     `node <plugin>/scripts/review-check.js --sha <sha> --base <BASE> --returned <the file the implementer's return was saved to>`
+     and paste its three tables into your return, as printed. Then judge
+     only what they cannot. (a): a row's test counts only when it presses
+     that selector through the listener's OWN event type and goes red when
+     the branch is deleted (`if (false && ...)`); a hit that only renders
+     the selector, or asserts that nothing happened and stays green on
+     deletion, is a guard, not a hit, and the row is a finding. (b): pick
+     one red-when line, apply its mutation to a scratch copy
+     (`git show <sha>:<path> > <scratch>`), and confirm the named test
+     reddens; a mutation that reddens every test in the file killed the
+     harness and counts as dead, not red. (c): every row that is not `ok`
+     is a finding as printed. A check the diff adds that is not a test (a
+     script, a guard, a verify line) needs one input it must reject and
+     proof it rejects it. Two mutations that redden exactly the same tests
+     are a gap — one test that tells them apart is missing. How this part
+     came to be written this way — verify's eleven returns on 2026-10-01 —
+     is docs/90-agent/reports/2026-10-01-verify-eleven-returns.md, not here.
    Part 3 — every changed line traces to the task's text; the patterns
      already in the repository are followed. Then name the page this
      change makes false (a renamed export, a changed default, a removed
@@ -495,7 +415,7 @@ then asks this stage's gate.
    found nothing to cut, AND (where the diff changes a listener) every row
    of the selector table has a qualifying test; otherwise `clean` is never
    the whole return. Where the diff changes an event listener, the return
-   also carries that listener's selector table (Part 2's denominator),
+   also carries that listener's selector table (Part 2's table (a)),
    one row per selector, even beside `clean`, and only those selectors,
    nothing wider. Rows are evidence, but a row with no qualifying test is
    also a finding line (`path:line — <problem>`) and stays in the table

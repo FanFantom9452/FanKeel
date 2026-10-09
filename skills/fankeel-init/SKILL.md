@@ -87,7 +87,10 @@ First, because everything this skill writes is committed afterwards.
   names `thin body` gets its body written from that line's history — `git log`
   on the old `TODO.md` finds the commit that brought the line in — in three
   parts: where it came from, what it should become, what counts as done, at
-  least 200 characters together. **Keep the hand-written `TODO.md`**: declare
+  least 200 characters together. An entry it names `no reason` (text outside the
+  migration template and its own description under 200 characters) needs a reason
+  written by hand, not derived from history: a `## 為什麼還開著` section naming the
+  incident, session or sha and what done looks like. **Keep the hand-written `TODO.md`**: declare
   no bucket; `orient`, todo-check and the station go on reading it, and
   `todo.js migrate` can move it in any later day.
 - None: declare the same bucket and create its empty folder.

@@ -873,6 +873,48 @@ test('land refuses a verb that is not merge, pr or keep', () => {
   assert.equal(out.code, 1);
 });
 
+test('land refuses on a red suite record, and on no record where package.json has a test script', () => {
+  const dir = root();
+  started(dir, A, 'ship it');
+  const suite = require('../lib/suite.js');
+  const data = entry(dir, A);
+  suite.record(dir, data, { sha: null, at: 'now', command: 'node --test', pass: 0, fail: 3, ok: false });
+  let out = run(dir, ['land', 'merge', '--session', A]);
+  assert.equal(out.code, 1);
+  assert.match(out.out, /suite is red/);
+  assert.equal('land' in entry(dir, A), false, 'nothing was recorded');
+  fs.unlinkSync(suite.recordPath(dir, data));
+  fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ scripts: { test: 'node --test' } }));
+  out = run(dir, ['land', 'merge', '--session', A]);
+  assert.equal(out.code, 1);
+  assert.match(out.out, /no suite record/);
+  suite.record(dir, data, { sha: null, at: 'now', command: 'node --test', pass: 9, fail: 0, ok: true });
+  assert.equal(suite.readRecord(dir, data).ok, true, 'the record land is about to read is green');
+  out = run(dir, ['land', 'merge', '--session', A]);
+  assert.equal(out.code, 0);
+  assert.equal(entry(dir, A).land.integration, 'merge');
+});
+
+test('land refuses when a .js file changed after the suite record was written', () => {
+  const dir = root();
+  started(dir, A, 'ship it');
+  const suite = require('../lib/suite.js');
+  const git = (args) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: dir, encoding: 'utf8' }).trim();
+  git(['init', '-q']);
+  fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ scripts: { test: 'node --test' } }));
+  fs.writeFileSync(path.join(dir, '.gitignore'), '.fankeel/\ncfg/\n');
+  git(['add', '.']);
+  git(['commit', '-qm', 'base']);
+  suite.record(dir, entry(dir, A), { sha: git(['rev-parse', 'HEAD']), at: 'now', command: 'node --test', pass: 1, fail: 0, ok: true });
+  fs.writeFileSync(path.join(dir, 'lib.js'), 'x\n');
+  git(['add', 'lib.js']);
+  git(['commit', '-qm', 'code']);
+  const out = run(dir, ['land', 'merge', '--session', A]);
+  assert.equal(out.code, 1);
+  assert.match(out.out, /suite ran at [0-9a-f]{8}, and lib\.js changed since/);
+  assert.equal('land' in entry(dir, A), false);
+});
+
 test('next --from-gate takes the pause line from the stage agent\'s gate', () => {
   const { handoffPath } = require('../lib/handoff.js');
   const dir = root();

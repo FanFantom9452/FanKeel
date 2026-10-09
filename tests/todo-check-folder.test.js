@@ -66,6 +66,66 @@ test('an open entry needs a body of 200 characters; a done one needs none', () =
   assert.match(problems(dir)[0].detail, /^199 characters, at least 200/);
 });
 
+// The 2026-10-08 migration wrote seventeen entries whose body is the template
+// and the description again: 來源…, 要做成…, 完成條件…. Those three
+// paragraphs and a repeat of the description do not count as a reason.
+const DESC = 'ab.sh 改成在 worktree 裡 commit profile（pin.sh）；修好的 script 還沒重跑，重跑要核准約 30 美元';
+const FROM = '來源：根目錄 TODO.md 第 89 行的條目（2026-09-26 記），改成逐條的 todo 檔，讓它被 todo-check 與 station 讀到，而不是只躺在根目錄一份沒人讀的清單裡。';
+const MAKE = '要做成：' + DESC;
+const DONE = '完成條件：條目所述的事做完，或查證後確認不必做；結果與證據，也就是（指令輸出、commit sha 或不做的理由）寫回這個檔案的正文，再用 todo.js done 結案。';
+const TEMPLATE = [FROM, MAKE, DONE].join('\n\n');
+
+test('a body of only the 來源 paragraph has no reason', () => {
+  assert.equal(check.reasonChars(FROM, 'x'), 0);
+});
+
+test('a body of only the 要做成 paragraph has no reason', () => {
+  assert.equal(check.reasonChars(MAKE, 'x'), 0);
+});
+
+test('a body of only the 完成條件 paragraph has no reason', () => {
+  assert.equal(check.reasonChars(DONE, 'x'), 0);
+});
+
+test('a paragraph that is the description again has no reason', () => {
+  assert.equal(check.reasonChars(DESC, DESC), 0);
+});
+
+test('a reason after the template is counted whole', () => {
+  assert.equal(check.reasonChars(TEMPLATE + '\n\n' + 'r'.repeat(200), 'x'), 200);
+});
+
+test('a paragraph that only begins with the description is kept as reason', () => {
+  assert.equal(check.reasonChars(DESC + ' 而且還有原因', DESC), Array.from(DESC + ' 而且還有原因').length);
+});
+
+test('a template head in the middle of a paragraph does not drop it', () => {
+  assert.equal(check.reasonChars('見 要做成：這句話是原因', 'x'), Array.from('見 要做成：這句話是原因').length);
+});
+
+test('an open entry with only the template is reported as no reason', () => {
+  const dir = root();
+  lib.add(dir, { label: 'a', title: 'template only', description: DESC, state: 'decision', body: TEMPLATE });
+  lib.add(dir, { label: 'a', title: 'with a reason', description: 'has one', state: 'decision', body: TEMPLATE + '\n\n' + 'why '.repeat(60) });
+  assert.deepEqual(problems(dir).map((p) => p.file + ' ' + p.kind), ['docs/todo/a-1.md no reason']);
+  assert.match(problems(dir)[0].detail, /^0 characters of reason/);
+});
+
+test('the reason threshold is 200 characters: 199 is flagged, 200 is clean', () => {
+  const dir = root();
+  lib.add(dir, { label: 'a', title: 'short', description: DESC, state: 'decision', body: TEMPLATE + '\n\n' + 'r'.repeat(199) });
+  lib.add(dir, { label: 'a', title: 'enough', description: DESC, state: 'decision', body: TEMPLATE + '\n\n' + 'r'.repeat(200) });
+  assert.deepEqual(problems(dir).map((p) => p.file + ' ' + p.kind), ['docs/todo/a-1.md no reason']);
+  assert.match(problems(dir)[0].detail, /^199 characters of reason/);
+});
+
+test('a done entry whose body is only the template raises no finding', () => {
+  const dir = root();
+  lib.add(dir, { label: 'a', title: 'shut', description: DESC, state: 'ready', body: TEMPLATE });
+  lib.close(dir, 'a-1', { sha: 'abcdef1', at: '2026-09-29' });
+  assert.deepEqual(problems(dir), []);
+});
+
 test('frontmatter rules land on the entry file', () => {
   const dir = root();
   const put = (id, fields) => fs.writeFileSync(path.join(dir, 'docs', 'todo', id + '.md'), lib.serialize(Object.assign(

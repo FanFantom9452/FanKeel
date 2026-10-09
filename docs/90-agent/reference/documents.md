@@ -177,7 +177,7 @@ report where a real parser would cost a dependency this plugin does not have.
 是純字串前綴比對，`skills`、`evals`、`agents` 都是 `docs/` 以外的 bucket。擋住
 的是列檔的那一層，而那一層是同一個函式：下面第一條是它跑的旗標，其後十六條是它
 的十六個呼叫端，`scripts/` 十二處與 `lib/` 四處。每一行的引文都必須
-跟它的行號同行。`scripts/docs-check.js:280` 是 `function quoteBeside(text, from) {`，
+跟它的行號同行。`lib/refs.js:54` 是 `function quoteBeside(text, from) {`，
 它只掃到換行為止，而同一行上的第二個路徑會被它自己的 `PATHISH` 擋掉——所以擠
 在一行的兩個引用等於兩個都沒有引文，而被硬換行拆開的引文等於沒寫。
 
@@ -188,9 +188,9 @@ report where a real parser would cost a dependency this plugin does not have.
 - `lib/plantasks.js:299` 是 `const found = trackedFiles(root);`
 - `scripts/docs-audit.js:416` 是 `const listed = trackedFiles(root);`
 - `scripts/docs-audit.js:456` 是 `const listed = trackedFiles(root);`
-- `scripts/docs-check.js:147` 是 `const result = trackedFiles(root);`
-- `scripts/docs-check.js:469` 是 `const result = trackedFiles(root);`
-- `scripts/docs-check.js:640` 是 `const result = trackedFiles(root);`
+- `scripts/docs-check.js:132` 是 `const result = trackedFiles(root);`
+- `scripts/docs-check.js:432` 是 `const result = trackedFiles(root);`
+- `scripts/docs-check.js:603` 是 `const result = trackedFiles(root);`
 - `scripts/docs-move.js:74` 是 `const listed = trackedFiles(root);`
 - `scripts/docs-move.js:210` 是 `for (const rel of trackedFiles(root).files.filter(isMarkdown)) {`
 - `scripts/layout.js:51` 是 `const found = trackedFiles(root);`
@@ -276,9 +276,12 @@ rather than at one that replaced it puts a third meaning under the word, and
 the reader who follows it lands on a page that superseded nothing.
 
 A decision record whose premise is overturned by later code does not move to
-`superseded-by` or `archived`, since the record is of a moment rather than a
-rewritten description — the specific sentence gets a parenthetical annotation
-in place, `status` stays `current`, and the rest of the body is untouched.
+`superseded-by` or `archived`: the section is rewritten to the current
+decision, its reason and its source once each, `status` stays `current`, and
+the history stays in git. A line that begins `Superseded` or `已取代`, after an
+optional `*(`, on a `decision` page is the `superseded` finding of
+`scripts/docs-check.js` (since 2026-10-09; `docs/03-decisions/fankeel-shell.md`
+is the page rewritten that way).
 
 The vocabulary is wider than those five words — `定案`, `活躍`, `draft`, `草稿`,
 `deprecated`, `historical`, `merged-into <path>` are all understood, and anything
@@ -415,7 +418,7 @@ writing anything.
 `docs-check` prints the findings themselves, not a summary of them — the role
 counts at the top are in addition to the list, not instead of it. The list is
 capped at `MAX_FINDINGS = 200`
-(`scripts/docs-check.js:31`, `const MAX_FINDINGS = 200`) and says so when it
+(`scripts/docs-check.js:32`, `const MAX_FINDINGS = 200`) and says so when it
 bites, so a run past that cap is the one case where the printed list is not the
 whole of it. Short of the cap, comparing two branches is a `diff` rather than a
 flag:

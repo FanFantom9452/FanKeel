@@ -49,7 +49,7 @@ and a per-task raise goes through the override file. It is the plugin's own agen
 with `model:`/`effort:` replaced and `generated_by: fankeel <version>` added
 (`lib/agentfile.js:46-60`); the profile unset command removes it (`lib/agentfile.js:71-75`);
 `task.js start` rewrites one left by an older plugin version (`lib/agentfile.js:95-109`,
-called at `scripts/task.js:721`); and `hooks/title.js:28` (`overrideFor(input.subagent_type`)
+called at `scripts/task.js:722`); and `hooks/title.js:28` (`overrideFor(input.subagent_type`)
 sends `fankeel:<name>` as `<name>` when such a marked file exists (`lib/title.js:106-121`), because
 only the bare name reaches it.
 

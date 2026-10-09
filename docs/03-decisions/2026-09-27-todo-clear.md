@@ -14,7 +14,7 @@ design 見 [../99-archive/2026-09-27-todo-clear-design.md](../99-archive/2026-09
 - plan 路徑是 render 時算的，不是寫在規則裡：`lib/render.js` 的 `planDir()` 讀 `role: plan` 的桶，沒宣告時退回 `docs/plans`，由 `{{PLAN_DIR}}` 帶進規則。template 不做替換，所以 template 裡只寫 `<plan path>`。
 - 深度巡檢放在這個 task 的 `audit` 站跑，不寫成 build 的 task。47 組對讀、121 頁分四批、三個 code 視角、一個 adversary。
 - adversary 擊倒唯一的刪減提案：四份 `git()` 包裝的 maxBuffer 和回傳形狀都不同，合併不是單純去重。
-- 決策紀錄被推翻時不加 `superseded_by`，在被推翻的句子後面加括號註記（`docs/90-agent/reference/documents.md` 的規矩）；09-04 station 設計的「不常駐 server」照這樣處理。
+- 決策紀錄被推翻時不加 `superseded_by`，把那一節改寫成現行決定、歷史留在 git；decision 頁裡開頭是 Superseded 或已取代的那一行由 `scripts/docs-check.js` 報 `superseded`（`docs/90-agent/reference/documents.md` 的規矩，2026-10-09 起）；09-04 station 設計的「不常駐 server」當時照舊規矩加了括號註記。
 
 ## 量到什麼
 

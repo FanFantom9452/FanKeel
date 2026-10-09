@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 last_verified: 2026-10-09
 source_of_truth: docs/90-agent/plans/2026-10-09-workflow-review-design.md
 ---
@@ -1289,14 +1289,14 @@ not the text, and `lib/plugins.js` went with the render token it fed
 // and the description again: 來源…, 要做成…, 完成條件…. Those three
 // paragraphs and a repeat of the description do not count as a reason.
 const TEMPLATE = '來源：根目錄 TODO.md 第 89 行的條目（2026-09-26 記），改成逐條的 todo 檔，讓它被 todo-check 與 station 讀到，而不是只躺在根目錄一份沒人讀的清單裡。\n\n'
-  + '要做成：ab.sh 改成在 worktree 裡 commit profile\n\n'
+  + '要做成：ab.sh 改成在 worktree 裡 commit profile（pin.sh）；修好的 script 還沒重跑，重跑要核准約 30 美元\n\n'
   + '完成條件：條目所述的事做完，或查證後確認不必做；結果與證據，也就是（指令輸出、commit sha 或不做的理由）寫回這個檔案的正文，再用 todo.js done 結案。';
 
 test('an open entry whose body is the migration template and its description again has no reason', () => {
-  assert.equal(check.reasonChars(TEMPLATE, 'ab.sh 改成在 worktree 裡 commit profile'), 0);
+  assert.equal(check.reasonChars(TEMPLATE, 'ab.sh 改成在 worktree 裡 commit profile（pin.sh）；修好的 script 還沒重跑，重跑要核准約 30 美元'), 0);
   assert.equal(check.reasonChars(TEMPLATE + '\n\n' + 'r'.repeat(200), 'x'), 200);
   const dir = root();
-  lib.add(dir, { label: 'a', title: 'template only', description: 'ab.sh 改成在 worktree 裡 commit profile', state: 'decision', body: TEMPLATE });
+  lib.add(dir, { label: 'a', title: 'template only', description: 'ab.sh 改成在 worktree 裡 commit profile（pin.sh）；修好的 script 還沒重跑，重跑要核准約 30 美元', state: 'decision', body: TEMPLATE });
   lib.add(dir, { label: 'a', title: 'with a reason', description: 'has one', state: 'decision', body: TEMPLATE + '\n\n' + 'why '.repeat(60) });
   assert.deepEqual(problems(dir).map((p) => p.file + ' ' + p.kind), ['docs/todo/a-1.md no reason']);
   assert.match(problems(dir)[0].detail, /^0 characters of reason/);
@@ -1822,7 +1822,7 @@ BASE=<sha> TASK="…" SURVEY=<survey.md> CAP=30 bash ab.sh     # 實跑，使用
 | 使用者在本站 gate 選 option one 時，controller 執行 `node scripts/task.js profile set stage.agents survey`，本任務從 plan 起各站在主 session 跑。 | done at the design gate, 2026-10-09 — the controller ran it and the plan stage commits `.fankeel/profile.json`; see Rulings |
 | 新增 `docs/90-agent/reports/evidence/2026-10-09-build-verify-ab/ab.sh`：以 `2026-09-26-ab-profile-pin/ab.sh` 的 worktree 與 `pin.sh` 為底，兩臂只差 `stage.agents`（`false` 對 `build,verify`），同一模型、同一任務、同一 base sha、同一份 survey 輸入。 | Task 17 (based on the 10-05 harness, same lineage; see Rulings) |
 | 判定規則在跑之前寫進腳本開頭與報告：受控臂的主控峰值 context 比對照臂低 30% 以上、且花費不超過 1.1 倍，才把 build、verify 加回 `stage.agents`；否則維持 survey，另開任務評估移除站 agent 層。 | Task 17 |
-| 實跑是 Dispatch `user` 的任務：花費經使用者核准才跑。結果寫成 `docs/90-agent/reports/<date>-build-verify-ab.md`，依結果關閉或改寫 `stage-agents-5`、`-8`、`-15`、`-16`。 | Task 18 |
+| 實跑是 Dispatch `user` 的任務：花費經使用者核准才跑。結果寫成 `docs/90-agent/reports/<date>-build-verify-ab.md`，依結果關閉或改寫 `stage-agents-5`、`-8`、`-15`、`-16`。 | Task 18 — deferred to `stage-agents-17`: build gate 10-09 未核准花費，未跑 |
 | `docs/01-guide/profile.md:60` 那段加兩句：本 repo 自 2026-10-09 起只交 survey，等這次量測；量測的報告路徑。 | Task 17 |
 | 新增 `lib/reviewcheck.js` 與 `scripts/review-check.js --sha <sha> [--base <sha>]`，印三張表 | Task 3 |
 | （c）重用 `scripts/docs-check.js` 的 `resolveRef` 與 `quoteBeside`：搬進 lib 由兩支腳本共用，不複製。 | Task 2 |
@@ -1850,4 +1850,4 @@ BASE=<sha> TASK="…" SURVEY=<survey.md> CAP=30 bash ab.sh     # 實跑，使用
 | docs-check 決策頁 | Task 8 |
 | todo-check `no reason` | Task 9 |
 | sessions `--breakdowns` | Task 16 |
-| 成品的一列：A/B 報告裡每臂的花費與峰值，要和 `summary.json` 算出來的一致，報告的結論段用的是同一組數字 | Task 18, and the README's rule in Task 17 |
+| 成品的一列：A/B 報告裡每臂的花費與峰值，要和 `summary.json` 算出來的一致，報告的結論段用的是同一組數字 | Task 18 — deferred to `stage-agents-17` (未跑); the README's rule is Task 17's |

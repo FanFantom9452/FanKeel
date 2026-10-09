@@ -95,7 +95,7 @@ reads the folder and adds the rules the files carry: a committed entry file
 that is gone, a title over 28 columns, a state outside the five, a `blocked`
 or `watch` entry with no `stamp`, a `done` entry with no `sha`, an open entry
 whose body is under the minimum length, and a hand-written root `TODO.md`
-left beside the folder, which is rejected. The contract is on
+left beside the folder, which is rejected. An open entry whose text outside the migration template and its own description is under that length is `no reason`: it has to say why it is still open. The contract is on
 [docs/90-agent/reference/todo.md](../90-agent/reference/todo.md).
 
 Under `## Blocked` and `## Watch`, entries are grouped by what they wait for: a

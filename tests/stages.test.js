@@ -311,7 +311,7 @@ test('the recommendation is a label, never a position', () => {
 test('every output rule names a line format, not only a length', () => {
   for (const s of STAGES) {
     const last = s.rules[s.rules.length - 1];
-    assert.match(last, /one line per|as a table|in a code block|the suite's green line/, s.name);
+    assert.match(last, /one line per|as a table|in a code block|{{SUITE}} --session <id>` first/, s.name);
   }
 });
 

@@ -3,8 +3,8 @@ name: fankeel-land
 description: The land stage — a green suite, the documents closed, the map rewritten, and the integration decision left to the user. Use for the land stage of a fankeel task, finishing a development branch, deciding between merge and PR, or cleaning up a worktree when work is complete.
 version: 0.99.0
 status: current
-last_verified: 2026-10-02
-source_of_truth: lib/stages.js, scripts/todo-check.js, scripts/map.js, hooks/carry.js, scripts/land.js
+last_verified: 2026-10-09
+source_of_truth: lib/stages.js, scripts/todo-check.js, scripts/map.js, hooks/carry.js, scripts/land.js, lib/suite.js
 ---
 
 # fankeel-land
@@ -38,11 +38,18 @@ what the gate asks — never something to settle first and report afterwards.
 
 ## 1. The full suite, on the tree you are about to integrate
 
-`npm test` / `cargo test` / `pytest` / `go test ./...` — whatever this project
-uses.
+```
+node <plugin>/scripts/suite.js --session <id>
+```
 
-**Red stops everything.** Report the failures and stop; the menu comes after a
-green run. A green run earlier in the session only proves the tree it ran on.
+It runs the project's test command — `package.json`'s `test` script, or
+`--command "<cmd>"` — prints `suite: <pass> pass, <fail> fail @ <sha>`, and
+records that beside the task's handoffs. **Red stops everything**, and since
+2026-10-09 that is a refusal rather than a sentence: `task.js land` in step
+6 will not record an integration without a green record at a sha no code
+has changed since (`lib/suite.js`, `blocker`). Report the failures and
+stop; the menu comes after a green run. A green run earlier in the session
+only proves the tree it ran on, and the record says which.
 
 ## 1a. The skills gate
 
@@ -238,7 +245,7 @@ into the branch the main checkout is on with `--no-ff`, the message
 `merge: <task>` and two trailers, `Fankeel-Task` and `Fankeel-Class`, and no
 tag, and prints `<base>..<sha>`. Uncommitted files in the worktree, a subject
 `commit.format` refuses, or `conflict <paths>` stop it with nothing merged and
-both left in place. Re-run the suite on the merged result, and only when it is
+both left in place. Re-run the suite on the merged result with the project's own test command (package.json's `test` script) from the main checkout, because `suite.js --session` runs in the worktree while it stands and its record is the gate before the merge, not after; only when that is
 green run `node <plugin>/scripts/land.js clean --session <id>`: it removes the
 worktree and runs `git branch -d fk/<id8>`, and a `-d` refusal is printed as
 git said it — never retried with `-D`. A red suite leaves both in place, as
@@ -271,15 +278,16 @@ Anything else belongs to the host environment.
 <sha> <subject>
 shipped:
   - <what someone can now do that they could not>
-suite: <green>
+suite: <suite.js line>
 cost: <what it took>
 open: <what is still not done>
 then AskUserQuestion
 ```
 
-Four lines and the list. `suite:` is the green line from the run in step 1 —
-this stage's own `Done when` puts a green suite first, and until it had a slot
-here nothing reported whether it happened. `shipped:` is one line per thing someone can now do
+Four lines and the list. `suite:` is `suite.js`'s line from the run in step 1,
+and a red one stops here: where the project has a suite, `task.js land`
+refuses without a green record, so this stage's own `Done when` is enforced
+rather than reported. `shipped:` is one line per thing someone can now do
 that they could not — from the ledger's completed entries where the task had a
 plan, listed by hand where it did not. A commit subject already holds the change;
 what it cannot hold is a task that shipped four of them. Not a tour of the diff.

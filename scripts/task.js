@@ -37,6 +37,7 @@ const { splitAroundVerb } = require('../lib/argv.js');
 const { byName: stageByName, NAMES: STAGE_NAMES, FULL_ROUTE, CLASSES, normaliseRoute, positionIn, routeForClass, classForRoute } = require('../lib/stages.js');
 const profile = require('../lib/profile.js');
 const docs = require('../lib/docs.js');
+const suite = require('../lib/suite.js');
 const { handoffPath, readGate, lapsUsed, contextPath } = require('../lib/handoff.js');
 const { controlRulesFor, PLUGIN_MARK, PLUGIN_ROOT, newestPlan, blockSizes, BLOCK_CAP } = require('../lib/render.js');
 const { estimateTokens } = require('./input-check.js');
@@ -1470,6 +1471,12 @@ function cmdLand(root, opts) {
     const id = requireSession(opts);
     const verb = String(opts.positional[0] || '').toLowerCase();
     if (!LAND_VERBS.includes(verb)) fail('land is one of: ' + LAND_VERBS.join(', '));
+
+    const current = registry.readSession(root, id);
+    if (!current || current.active !== true) fail('No active entry for this session under ' + root);
+    const projectRoot = docs.projectRootsFor(root, current.project ? [current.project] : [])[0] || root;
+    const why = suite.blocker(root, current, projectRoot);
+    if (why) fail(why);
 
     let data = null;
     const wrote = registry.update(root, id, (d) => {

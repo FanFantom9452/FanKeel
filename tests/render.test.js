@@ -497,9 +497,10 @@ test('no stage’s rules cost more than a readable preamble', (t) => {
   // stage rather than only on the one the fixture happens to sit in, and each
   // size is reported so the margin is visible without editing this file.
   //
-  // 2400 is the third raise on this branch and should be the last. `design`
-  // and `land` are the binding stage at 2396, with `audit` at 2391, `verify`
-  // at 2372, `survey` and `plan` at 2350 and `build` at 2254. This line said 2387, 2382 and 2364 until 2026-08-29, when the run
+  // 2400 is the third raise on this branch and should be the last. `land` is
+  // the binding stage at 2397, with `audit` at 2392, `design` at 2371, `build`
+  // at 2357, `plan` at 2356, `survey` at 2350 and `verify` at 2277. This line
+  // said 2387, 2382 and 2364 until 2026-08-29, when the run
   // said otherwise — the prose had been kept by hand and the diagnostics by the
   // machine, and only one of them was right. It is the same failure the plugin
   // exists to catch, in the file that reports the number. `build` reached 2399
@@ -542,7 +543,7 @@ test('no stage’s rules cost more than a readable preamble', (t) => {
     assert.ok(!/fankeel-judge/.test(rulesFor(stage).join(' ')), stage + ' rules still name fankeel-judge');
     if (stage === 'survey') assert.match(rulesFor('survey').join(' '), /one workflow, every path:line checked/,
       'survey must name the check its readers run before returning');
-    assert.match(templateFor('land'), /^suite: <green>$/m,
+    assert.match(templateFor('land'), /^suite: <suite.js line>$/m,
       'land must report the suite run, or nothing catches it being skipped');
   }
 });

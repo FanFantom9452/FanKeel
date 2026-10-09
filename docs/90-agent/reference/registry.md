@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-23
+last_verified: 2026-10-09
 source_of_truth: lib/registry.js, lib/station.js, lib/render.js, lib/context.js, lib/dirty.js, lib/live.js, lib/usage.js, lib/profile.js, lib/spend.js, scripts/task.js, scripts/spend.js, hooks/touch.js, hooks/inject.js, hooks/carry.js, hooks/gate.js, hooks/resume.js, hooks/leave.js
 ---
 
@@ -250,7 +250,7 @@ reports on 2026-09-24 — no longer moves the watch off the files the stage agen
 writes.
 
 None of the three reaches the injected block, which is capped at 2400 characters
-and renders its widest stages, `design` and `land`, at 2396 — `node --test tests/render.test.js` prints the
+and renders its widest stage, `land`, at 2397 (`design` is 2371) — `node --test tests/render.test.js` prints the
 figure for every stage, so the way to know it is to re-run it rather than to
 trust this line. `task.js show` prints `burn:` and `time:`, and the
 stage transition names what the stage it left cost, which is the one moment the

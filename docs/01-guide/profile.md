@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-27
+last_verified: 2026-10-09
 source_of_truth: lib/profile.js, docs/90-agent/reference/station.md, docs/90-agent/reference/registry.md, scripts/task.js
 ---
 
@@ -63,6 +63,8 @@ profile 是 gate 的常備答案：先寫好，fankeel 就不再問那一題。g
 node <plugin>/scripts/task.js profile set stage.agents survey,build,verify
 node <plugin>/scripts/task.js profile set stage.agents all --default
 ```
+
+本 repo 自 2026-10-09 起只交 `survey`：工作流評審指出 build 加 verify 占長任務花費的 63.9%，從沒量過交給站 agent 划不划算，唯一量過的 survey 打平。對照腳本在 `docs/90-agent/reports/evidence/2026-10-09-build-verify-ab/ab.sh`，判定規則寫在旁邊的 README；量完的報告會是 `docs/90-agent/reports/<date>-build-verify-ab.md`，到時依它決定 build、verify 要不要加回。
 
 `security.local`、`commit.format`、`language` 與 `prompt.all`、`prompt.<站>` 幾列是自由文字，精靈沒有欄位給它們，要用下面的指令設。自由文字各有限制，是因為它們會被注入每一輪或交給 `commit.js` 執行：`prompt.*` 與 `language` 限一行、200 字以內，因為每一輪都要付這段 token 的錢，而且各站的規則區塊已經接近上限；`commit.format` 同樣一行、200 字內，而且必須能編譯成正規式；`security.local` 必須是 `ollama list` 印出的模型名稱，例如 `qwen3:14b`，填 `false` 則關掉。設 `prompt.*` 時指令會當場印出多吃幾個 token、各站離上限還剩多少，超過只警告、不拒絕。例：
 

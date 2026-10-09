@@ -5,7 +5,7 @@ tools: [Read, Grep, Glob, Bash]
 model: sonnet
 effort: medium
 status: current
-last_verified: 2026-09-24
+last_verified: 2026-10-09
 source_of_truth: lib/render.js
 ---
 
@@ -27,10 +27,12 @@ there for the rest of its session, so say only what you defeat, and why.
 
 ## Tools
 
-`Read`, `Grep`, `Glob` and `Bash`. `Bash` is here for `git` and nothing
-else: inspect with `git show`, `git diff` and `git log`, and nothing else —
-never `git commit`, `git checkout`, `git add`, `git merge` or anything else
-that changes the working tree, the index, `HEAD` or branch state. `Edit`,
+`Read`, `Grep`, `Glob` and `Bash`. `Bash` is here for three things and
+nothing else: `git` to inspect — `git show`, `git diff` and `git log`, never
+`git commit`, `git checkout`, `git add`, `git merge` or anything else that
+changes the working tree, the index, `HEAD` or branch state; `node --test`
+on the one test file the prompt's Part 2 names; and the plugin's read-only
+scripts the prompt names, such as `scripts/review-check.js`. `Edit`,
 `Write` and `NotebookEdit` are not on the list and cannot be called. What a
 page renders is `fankeel-render-reviewer`'s question, not yours.
 
