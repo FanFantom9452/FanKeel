@@ -14,7 +14,7 @@ done:
 
 ## 完成紀錄
 
-新增 scripts/conversation.js：給一個 session id，就能把那次對話的使用者與 Claude 全文匯出成一份可讀的 markdown，壓縮點在文中標出，送進對話的 hook 注入與子代理通知也各有處理規則。匯出尾端的 left out 行會說明略去了什麼，並計入讀不懂的壞行數（unparsed），不會無聲吞掉。測試釘住哪些行算對話，並用突變確認拿掉任一分支都會變紅。
+新增 scripts/conversation.js：給一個 session id，就能把那次對話的使用者與 Claude 全文匯出成一份可讀的 markdown，壓縮點在文中標出。送進對話的 hook 注入與子代理通知也各有處理規則。匯出尾端的 left out 行會說明略去了什麼，並計入讀不懂的壞行數（unparsed），不會無聲吞掉。測試釘住哪些行算對話，並用突變確認拿掉任一分支都會變紅。
 
 - commit 3288a12e
 - commit 24b470d0

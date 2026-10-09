@@ -490,9 +490,9 @@ attributed to `survey` — the stage that opened the gate — rather than droppe
 deleted from `usage` when it is written, and why every existing reader still
 sees the shape it always had, is in [registry.md](registry.md).
 
-The page is four files and a directory. `index.html` is a shell with no session data in it,
+The page is five files and a directory. `index.html` is a shell with no session data in it,
 copied byte for byte from `assets/station/index.html`, at the top of
-`.fankeel/`; its three siblings live under `.fankeel/station/` —
+`.fankeel/`; its four siblings live under `.fankeel/station/` —
 `station.css`, `station.js` and `i18n.js` are copied the same way, and `station-data.js`
 is the only generated one, and holds `window.STATION` — the scan, and nothing
 else. The shell is copied rather than pointed at, because the plugin directory

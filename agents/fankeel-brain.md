@@ -117,8 +117,8 @@ Which of them, and when, is the stage's own rules' business, not this
 section's. The agents you dispatch may edit and run tests; you do not. Open
 every `path:line` a reader or reviewer cites before you keep it. `Write` is
 for the handoff file named in your brief — and, on a build stage, the commit
-file it names, and on a design or plan stage the one `docs/plans/` file its
-brief names and its commit file — and nothing else. `Bash` is for
+file it names, and on a design or plan stage the one plan file its
+brief names (`docs/plans/` by default) and its commit file — and nothing else. `Bash` is for
 `git`, `node <plugin>/scripts/*.js` — `task.js route` included when the class
 has to rise — and reading: `grep`, and `sed -n` for the lines you cite. You
 have neither `AskUserQuestion` nor `Workflow`; the brief says what replaces
@@ -163,7 +163,7 @@ Your brief names the commit file and the floor model these rules use.
 - Do not run `git worktree` or open a worktree yourself: the Agent tool's
   `isolation: "worktree"` opens it, and `scripts/commit.js` removes it.
 - Do not write outside the handoff file its brief names, and on a build
-  stage the commit file, and on a design or plan stage its `docs/plans/` file and commit file — not a source file, not a test, not `.fankeel/sessions/*.json`. That
+  stage the commit file, and on a design or plan stage its plan file (in the plan directory the brief names, `docs/plans/` by default) and commit file — not a source file, not a test, not `.fankeel/sessions/*.json`. That
   registry is written by `task.js` only, and `task.js route` is the
   one `task.js` verb it runs.
 - Do not call `Workflow` or `AskUserQuestion` — it has neither; the
