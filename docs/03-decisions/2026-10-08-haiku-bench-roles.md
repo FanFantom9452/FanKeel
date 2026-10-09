@@ -44,5 +44,5 @@ source_of_truth: lib/bench.js, scripts/bench.js, hooks/title.js, docs/90-agent/r
 - reader 的 haiku 臂沒有 n/n 過，是使用者推翻了報告的結論行；路徑檢查太嚴這點 10-09 修了（`bench/roles/reader/items/answers.sh` 先把反斜線換成 `/` 再比），但那一批是用舊的檢查跑的，所以仍不是乾淨的證明。
 - 三個批次（reader、mover、implementer）與 reader 重跑是在另一台機器 DESKTOP-DE33TOH 上跑的，那台載入了帳號的 claude.ai connector。報告記有一個 haiku run 在 Grep 結果裡看到要它建立文件的文字，agent 回報了並沒有照做；這個因素沒有控制。
 - 外部 228 次 `claude -p` 的測量證據在另一個 repository，本 repo 無法重算（`docs/90-agent/reports/2026-10-08-external-model-bench.md`）。
-- 寫這份決策時沒有跑 `profile set`，所以當時 profile 仍是 sonnet；同一天 `2e6a1295` 把四個角色設成 haiku，從那之後的 build 與 verify 才真正跑在 haiku 上。
+- 這份決策本身沒有跑 `profile set`；同一天稍早的 `2e6a1295` 已經把四個角色設成 haiku。
 - 計畫與設計存放在 `docs/99-archive/2026-10-08-haiku-bench-design.md`、`docs/99-archive/2026-10-08-haiku-bench.md`、`docs/99-archive/2026-10-08-haiku-bench-roles.md`。
