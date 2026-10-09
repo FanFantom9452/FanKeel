@@ -1142,9 +1142,10 @@ The surface is the batch shape, not the implementer decision: a task whose own
 `**Dispatch:**` line reads `in-session` is not dispatched at all, whatever
 surface its group carries.
 
-**The ceiling has one exception, and it is not yours to press.** Four is where
-guessing at the split begins; a script does not guess, because it holds the list
-and it holds the join. So the shape the ceiling cannot cover is a fan-out whose
+**Four is the default, and it has one exception that is not yours to press.**
+Four is where guessing at the split begins; a script does not guess, because it
+holds the list and it holds the join. So the shape a four-agent batch cannot
+express is a fan-out whose
 output feeds another fan-out — review six dimensions, then verify each finding
 one of them returned. As dispatches that is two round-trips through this context,
 and every intermediate finding stays in it for the rest of the session even
