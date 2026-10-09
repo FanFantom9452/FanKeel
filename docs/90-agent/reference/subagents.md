@@ -312,6 +312,11 @@ replaces a `model` the dispatch named, because the Agent tool's explicit model b
 override set for the effort alone leaves the named model alone (`overrideModel` in `lib/title.js`);
 a dispatch already under the bare `<name>` whose file carries that mark gets the same model
 replacement, and a same-name file without the mark is the user's own and keeps the named model;
+an override whose file is newer than this session's process — its mtime later than the session's
+`startedAt` in Claude Code's `sessions/<pid>.json`, read by `runningSessions` in `lib/live.js` — is left
+alone, name and model both, because Claude Code reads agent files only when it starts: the hook sends
+the dispatch under `fankeel:<name>` and tells the user a new terminal is needed, and
+`task.js profile set agent.<name>.*` says the same when it writes the file;
 the returns must be
 **compared against each other**, because agents dispatched from one prompt style
 make correlated mistakes that per-agent reading will not catch; and the **return
@@ -321,11 +326,11 @@ shape.
 
 ## The one thing four dispatches cannot do
 
-Four in one response is the working ceiling, and the reason is that past four you
+Four in one response is the default, not a cap, and the reason is that past four you
 are guessing at the split rather than deciding it. A script does not guess. It
 holds the list, and it holds the join.
 
-So there is exactly one shape the ceiling cannot cover: **a fan-out whose output
+So there is exactly one shape the default cannot cover: **a fan-out whose output
 feeds another fan-out.** Review six dimensions, then verify each finding the
 review returned. Run as dispatches, that is two round-trips through the parent's
 context, and every intermediate finding lands there permanently even though only

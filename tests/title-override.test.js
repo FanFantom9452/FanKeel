@@ -8,7 +8,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { spawnSync } = require('node:child_process');
+const { spawnSync, execFileSync } = require('node:child_process');
 const tmp = require('./tmp.js');
 const { overrideFor } = require('../lib/title.js');
 
@@ -58,6 +58,42 @@ test('with no override the name is left alone and the plugin file titles it', ()
     const h = fire(dispatch(f, 'read the map'), f.dir).hookSpecificOutput;
     assert.equal(h.updatedInput.subagent_type, 'fankeel:fankeel-reader');
     assert.equal(h.updatedInput.description, 'sonnet · medium: read the map');
+});
+
+const SID = 'aaaaaaaa-0000-4000-8000-000000000001';
+const TASK = path.join(__dirname, '..', 'scripts', 'task.js');
+
+// title-4: Claude Code's sessions/<pid>.json for this session, started at `ms`.
+function started(f, ms) {
+    const dir = path.join(f.dir, 'config', 'sessions');
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, process.pid + '.json'), JSON.stringify({ pid: process.pid, sessionId: SID, cwd: f.dir, startedAt: ms }));
+}
+const written = (f) => fs.statSync(path.join(f.dir, '.claude', 'agents', 'fankeel-reader.md')).mtimeMs;
+
+test('an override written after this session started keeps fankeel:fankeel-reader and says a new terminal is needed', () => {
+    const f = fixture(MARKED);
+    started(f, written(f) - 60000);
+    const out = fire({ ...dispatch(f, 'read the map'), session_id: SID }, f.dir);
+    assert.equal(out.hookSpecificOutput.updatedInput.subagent_type, 'fankeel:fankeel-reader');
+    assert.equal(out.hookSpecificOutput.updatedInput.description, 'sonnet · medium: read the map');
+    assert.match(out.systemMessage, /new terminal/);
+});
+
+test('an override written before this session started is still taken', () => {
+    const f = fixture(MARKED);
+    started(f, written(f) + 60000);
+    const out = fire({ ...dispatch(f, 'read the map'), session_id: SID }, f.dir);
+    assert.equal(out.hookSpecificOutput.updatedInput.subagent_type, 'fankeel-reader');
+    assert.equal(out.systemMessage, undefined);
+});
+
+test('profile set on an agent key says a new terminal is needed', () => {
+    const d = tmp('title-override-set-');
+    const cfg = path.join(d, 'cfg');
+    const out = execFileSync(process.execPath, [TASK, 'profile', 'set', 'agent.fankeel-reader.model', 'haiku', '--root', d, '--claude-dir', cfg],
+        { encoding: 'utf8', cwd: d, env: { ...process.env, CLAUDE_CONFIG_DIR: cfg } });
+    assert.match(out, /new terminal/);
 });
 
 test('a same-name file with no generated_by line is not taken over', () => {

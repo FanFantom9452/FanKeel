@@ -1115,7 +1115,8 @@ function cmdProfile(root, opts) {
         const agent = agentfile.agentKey(key);
         if (agent) {
             const agentsDir = opts.default ? path.join(cfg, 'agents') : path.join(projectRoot, '.claude', 'agents');
-            return head + '\n' + agentfile.syncLine(agentfile.syncAgent({ pluginRoot: PLUGIN, profileFile: file, agentsDir, name: agent.name, version: pluginVersion() }));
+            return head + '\n' + agentfile.syncLine(agentfile.syncAgent({ pluginRoot: PLUGIN, profileFile: file, agentsDir, name: agent.name, version: pluginVersion() }))
+                + '\nClaude Code reads agent files when a session starts: a session already running keeps sending fankeel:' + agent.name + ' — open a new terminal for this to take effect.';
         }
         if (key === 'prose.style') {
             // What the chosen rules cost each brief they join, said when set; a
