@@ -1,0 +1,3483 @@
+{
+  "runs": [
+    {
+      "tag": "drift-r1-sonnet",
+      "kind": "drift",
+      "reinject": false,
+      "agent": "fankeel-implementer",
+      "arm": "sonnet",
+      "model": "sonnet",
+      "round": 1,
+      "seed": 1,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.06192847,
+      "wallS": 44,
+      "error": null,
+      "session": "961f9ad2-b4e8-4708-b177-be2d1dc5e28b",
+      "valid": false,
+      "why": [
+        "the implementer made 4 tool calls, under 30"
+      ],
+      "roleUsd": 0.056759800000000006,
+      "relayUsd": 0.00516867,
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "summary": {
+        "steps": 4,
+        "firstViolation": 3,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 1,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 0,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 1,
+            "broke": 1
+          },
+          "zh-Hant": {
+            "applicable": 1,
+            "broke": 0
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 2,
+            "applicable": 3
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 2,
+            "applicable": 3
+          }
+        ]
+      },
+      "injections": 0,
+      "injectedChars": 0,
+      "promptTokens": 55687
+    },
+    {
+      "tag": "drift-r1-sonnet-reinject",
+      "kind": "drift",
+      "reinject": true,
+      "agent": "fankeel-implementer",
+      "arm": "sonnet-reinject",
+      "model": "sonnet",
+      "round": 1,
+      "seed": 1,
+      "pass": false,
+      "check": "fail wrong: 9 commits, not one per module",
+      "exit": 0,
+      "claudeUsd": 0.07937991,
+      "wallS": 53,
+      "error": null,
+      "session": "6569d44a-d3a0-4dd1-b6f5-622046a30798",
+      "valid": false,
+      "why": [
+        "the implementer made 6 tool calls, under 30"
+      ],
+      "roleUsd": 0.0742457,
+      "relayUsd": 0.00513421,
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "summary": {
+        "steps": 6,
+        "firstViolation": 4,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 3,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 0,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 3,
+            "broke": 1
+          },
+          "zh-Hant": {
+            "applicable": 1,
+            "broke": 0
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 6,
+            "applicable": 7
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 6,
+            "applicable": 7
+          }
+        ]
+      },
+      "injections": 1,
+      "injectedChars": 288,
+      "promptTokens": 81595
+    },
+    {
+      "tag": "drift-r2-sonnet-reinject",
+      "kind": "drift",
+      "reinject": true,
+      "agent": "fankeel-implementer",
+      "arm": "sonnet-reinject",
+      "model": "sonnet",
+      "round": 2,
+      "seed": 2,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.06826137999999998,
+      "wallS": 45,
+      "error": null,
+      "session": "c15d40f4-3c97-403c-b790-e8a5c77e5f1b",
+      "valid": false,
+      "why": [
+        "the implementer made 5 tool calls, under 30"
+      ],
+      "roleUsd": 0.0630172,
+      "relayUsd": 0.00524418,
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "summary": {
+        "steps": 5,
+        "firstViolation": 3,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 1,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 0,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 1,
+            "broke": 1
+          },
+          "zh-Hant": {
+            "applicable": 1,
+            "broke": 0
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 2,
+            "applicable": 3
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 2,
+            "applicable": 3
+          }
+        ]
+      },
+      "injections": 1,
+      "injectedChars": 288,
+      "promptTokens": 67829
+    },
+    {
+      "tag": "drift-r1-haiku-reinject",
+      "kind": "drift",
+      "reinject": true,
+      "agent": "fankeel-implementer",
+      "arm": "haiku-reinject",
+      "model": "haiku",
+      "round": 1,
+      "seed": 1,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.02214734,
+      "wallS": 105,
+      "error": null,
+      "session": "0ad5ce5e-9cf7-47ac-bf47-caeae15a161c",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.01676654,
+      "relayUsd": 0.0053808,
+      "models": [
+        "claude-haiku-5-5"
+      ],
+      "summary": {
+        "steps": 44,
+        "firstViolation": 5,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 24,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 16,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 8,
+            "broke": 0
+          },
+          "zh-Hant": {
+            "applicable": 14,
+            "broke": 14
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 8,
+            "applicable": 12
+          },
+          {
+            "at": 11,
+            "kept": 12,
+            "applicable": 16
+          },
+          {
+            "at": 21,
+            "kept": 12,
+            "applicable": 14
+          },
+          {
+            "at": 31,
+            "kept": 12,
+            "applicable": 15
+          },
+          {
+            "at": 41,
+            "kept": 4,
+            "applicable": 5
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 10,
+            "applicable": 15
+          },
+          {
+            "at": 20000,
+            "kept": 38,
+            "applicable": 47
+          }
+        ]
+      },
+      "injections": 8,
+      "injectedChars": 2304,
+      "promptTokens": 638011
+    },
+    {
+      "tag": "drift-r1-haiku",
+      "kind": "drift",
+      "reinject": false,
+      "agent": "fankeel-implementer",
+      "arm": "haiku",
+      "model": "haiku",
+      "round": 1,
+      "seed": 1,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.025332089999999998,
+      "wallS": 125,
+      "error": null,
+      "session": "f0550032-1d50-446f-9706-39a2e047cbc0",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.02005218,
+      "relayUsd": 0.00506941,
+      "models": [
+        "claude-haiku-5-5"
+      ],
+      "summary": {
+        "steps": 50,
+        "firstViolation": 1,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 24,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 16,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 8,
+            "broke": 0
+          },
+          "zh-Hant": {
+            "applicable": 19,
+            "broke": 18
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 6,
+            "applicable": 13
+          },
+          {
+            "at": 11,
+            "kept": 10,
+            "applicable": 13
+          },
+          {
+            "at": 21,
+            "kept": 10,
+            "applicable": 14
+          },
+          {
+            "at": 31,
+            "kept": 12,
+            "applicable": 14
+          },
+          {
+            "at": 41,
+            "kept": 11,
+            "applicable": 13
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 8,
+            "applicable": 16
+          },
+          {
+            "at": 20000,
+            "kept": 41,
+            "applicable": 51
+          }
+        ]
+      },
+      "injections": 0,
+      "injectedChars": 0,
+      "promptTokens": 834091
+    },
+    {
+      "tag": "drift-r2-sonnet",
+      "kind": "drift",
+      "reinject": false,
+      "agent": "fankeel-implementer",
+      "arm": "sonnet",
+      "model": "sonnet",
+      "round": 2,
+      "seed": 2,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.10356854000000001,
+      "wallS": 55,
+      "error": null,
+      "session": "8b75cbe2-b7a8-4b3a-8478-2fe6a7481161",
+      "valid": false,
+      "why": [
+        "the implementer made 10 tool calls, under 30"
+      ],
+      "roleUsd": 0.0983788,
+      "relayUsd": 0.00518974,
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "summary": {
+        "steps": 10,
+        "firstViolation": 7,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 6,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 0,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 6,
+            "broke": 0
+          },
+          "zh-Hant": {
+            "applicable": 3,
+            "broke": 2
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 13,
+            "applicable": 15
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 13,
+            "applicable": 15
+          }
+        ]
+      },
+      "injections": 0,
+      "injectedChars": 0,
+      "promptTokens": 120926
+    },
+    {
+      "tag": "drift-r3-sonnet",
+      "kind": "drift",
+      "reinject": false,
+      "agent": "fankeel-implementer",
+      "arm": "sonnet",
+      "model": "sonnet",
+      "round": 3,
+      "seed": 3,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.08946746000000001,
+      "wallS": 50,
+      "error": null,
+      "session": "d910b555-ba3b-4eba-b597-d6588b6d1616",
+      "valid": false,
+      "why": [
+        "the implementer made 8 tool calls, under 30"
+      ],
+      "roleUsd": 0.0843556,
+      "relayUsd": 0.00511186,
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "summary": {
+        "steps": 8,
+        "firstViolation": 6,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 4,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 0,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 4,
+            "broke": 0
+          },
+          "zh-Hant": {
+            "applicable": 3,
+            "broke": 1
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 10,
+            "applicable": 11
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 10,
+            "applicable": 11
+          }
+        ]
+      },
+      "injections": 0,
+      "injectedChars": 0,
+      "promptTokens": 89734
+    },
+    {
+      "tag": "drift-r2-haiku-reinject",
+      "kind": "drift",
+      "reinject": true,
+      "agent": "fankeel-implementer",
+      "arm": "haiku-reinject",
+      "model": "haiku",
+      "round": 2,
+      "seed": 2,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.031067705000000004,
+      "wallS": 136,
+      "error": null,
+      "session": "98a9eb65-a5ef-4f65-ab83-7c470c4f3e6a",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.026403345,
+      "relayUsd": 0.00466436,
+      "models": [
+        "claude-haiku-5-5"
+      ],
+      "summary": {
+        "steps": 62,
+        "firstViolation": null,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 24,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 16,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 8,
+            "broke": 0
+          },
+          "zh-Hant": {
+            "applicable": 16,
+            "broke": 0
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 7,
+            "applicable": 7
+          },
+          {
+            "at": 11,
+            "kept": 13,
+            "applicable": 13
+          },
+          {
+            "at": 21,
+            "kept": 9,
+            "applicable": 9
+          },
+          {
+            "at": 31,
+            "kept": 12,
+            "applicable": 12
+          },
+          {
+            "at": 41,
+            "kept": 10,
+            "applicable": 10
+          },
+          {
+            "at": 51,
+            "kept": 10,
+            "applicable": 10
+          },
+          {
+            "at": 61,
+            "kept": 3,
+            "applicable": 3
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 7,
+            "applicable": 7
+          },
+          {
+            "at": 20000,
+            "kept": 57,
+            "applicable": 57
+          }
+        ]
+      },
+      "injections": 12,
+      "injectedChars": 3456,
+      "promptTokens": 1363872
+    },
+    {
+      "tag": "drift-r2-haiku",
+      "kind": "drift",
+      "reinject": false,
+      "agent": "fankeel-implementer",
+      "arm": "haiku",
+      "model": "haiku",
+      "round": 2,
+      "seed": 2,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.024840974999999998,
+      "wallS": 122,
+      "error": null,
+      "session": "d29a1eae-bcc2-49d5-b778-0147ee9c78b4",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.019236315000000004,
+      "relayUsd": 0.00536166,
+      "models": [
+        "claude-haiku-5-5"
+      ],
+      "summary": {
+        "steps": 56,
+        "firstViolation": 3,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 24,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 16,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 8,
+            "broke": 0
+          },
+          "zh-Hant": {
+            "applicable": 15,
+            "broke": 1
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 5,
+            "applicable": 6
+          },
+          {
+            "at": 11,
+            "kept": 15,
+            "applicable": 15
+          },
+          {
+            "at": 21,
+            "kept": 11,
+            "applicable": 11
+          },
+          {
+            "at": 31,
+            "kept": 12,
+            "applicable": 12
+          },
+          {
+            "at": 41,
+            "kept": 12,
+            "applicable": 12
+          },
+          {
+            "at": 51,
+            "kept": 7,
+            "applicable": 7
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 11,
+            "applicable": 12
+          },
+          {
+            "at": 20000,
+            "kept": 51,
+            "applicable": 51
+          }
+        ]
+      },
+      "injections": 0,
+      "injectedChars": 0,
+      "promptTokens": 745845
+    },
+    {
+      "tag": "drift-r3-haiku",
+      "kind": "drift",
+      "reinject": false,
+      "agent": "fankeel-implementer",
+      "arm": "haiku",
+      "model": "haiku",
+      "round": 3,
+      "seed": 3,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.020478444999999994,
+      "wallS": 100,
+      "error": null,
+      "session": "b860b0bb-4f18-405b-bf01-8a8885211e7e",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.015772865,
+      "relayUsd": 0.00470558,
+      "models": [
+        "claude-haiku-5-5"
+      ],
+      "summary": {
+        "steps": 43,
+        "firstViolation": null,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 24,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 16,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 8,
+            "broke": 0
+          },
+          "zh-Hant": {
+            "applicable": 1,
+            "broke": 0
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 8,
+            "applicable": 8
+          },
+          {
+            "at": 11,
+            "kept": 12,
+            "applicable": 12
+          },
+          {
+            "at": 21,
+            "kept": 12,
+            "applicable": 12
+          },
+          {
+            "at": 31,
+            "kept": 12,
+            "applicable": 12
+          },
+          {
+            "at": 41,
+            "kept": 5,
+            "applicable": 5
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 14,
+            "applicable": 14
+          },
+          {
+            "at": 20000,
+            "kept": 35,
+            "applicable": 35
+          }
+        ]
+      },
+      "injections": 0,
+      "injectedChars": 0,
+      "promptTokens": 578563
+    },
+    {
+      "tag": "drift-r3-sonnet-reinject",
+      "kind": "drift",
+      "reinject": true,
+      "agent": "fankeel-implementer",
+      "arm": "sonnet-reinject",
+      "model": "sonnet",
+      "round": 3,
+      "seed": 3,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.21640997,
+      "wallS": 97,
+      "error": null,
+      "session": "183dbd44-e762-47da-ab0e-9b2b2afbaf12",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.21128429999999998,
+      "relayUsd": 0.00512567,
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "summary": {
+        "steps": 45,
+        "firstViolation": 13,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 32,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 24,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 8,
+            "broke": 0
+          },
+          "zh-Hant": {
+            "applicable": 5,
+            "broke": 4
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 6,
+            "applicable": 6
+          },
+          {
+            "at": 11,
+            "kept": 18,
+            "applicable": 19
+          },
+          {
+            "at": 21,
+            "kept": 16,
+            "applicable": 18
+          },
+          {
+            "at": 31,
+            "kept": 18,
+            "applicable": 19
+          },
+          {
+            "at": 41,
+            "kept": 7,
+            "applicable": 7
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 40,
+            "applicable": 43
+          },
+          {
+            "at": 20000,
+            "kept": 25,
+            "applicable": 26
+          }
+        ]
+      },
+      "injections": 9,
+      "injectedChars": 2592,
+      "promptTokens": 371710
+    },
+    {
+      "tag": "drift-r3-haiku-reinject",
+      "kind": "drift",
+      "reinject": true,
+      "agent": "fankeel-implementer",
+      "arm": "haiku-reinject",
+      "model": "haiku",
+      "round": 3,
+      "seed": 3,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.02297886,
+      "wallS": 107,
+      "error": null,
+      "session": "34be52f5-4a83-494d-bfde-48c2950ad2b5",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.01745567,
+      "relayUsd": 0.005144190000000001,
+      "models": [
+        "claude-haiku-5-5"
+      ],
+      "summary": {
+        "steps": 44,
+        "firstViolation": null,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 24,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 16,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 8,
+            "broke": 0
+          },
+          "zh-Hant": {
+            "applicable": 15,
+            "broke": 0
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 11,
+            "applicable": 11
+          },
+          {
+            "at": 11,
+            "kept": 16,
+            "applicable": 16
+          },
+          {
+            "at": 21,
+            "kept": 17,
+            "applicable": 17
+          },
+          {
+            "at": 31,
+            "kept": 14,
+            "applicable": 14
+          },
+          {
+            "at": 41,
+            "kept": 5,
+            "applicable": 5
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 14,
+            "applicable": 14
+          },
+          {
+            "at": 20000,
+            "kept": 49,
+            "applicable": 49
+          }
+        ]
+      },
+      "injections": 8,
+      "injectedChars": 2304,
+      "promptTokens": 645489
+    },
+    {
+      "tag": "drift-r4-haiku-reinject",
+      "kind": "drift",
+      "reinject": true,
+      "agent": "fankeel-implementer",
+      "arm": "haiku-reinject",
+      "model": "haiku",
+      "round": 4,
+      "seed": 4,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.022697864999999994,
+      "wallS": 106,
+      "error": null,
+      "session": "480a2b54-2d19-4774-9104-6cf90e589b65",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.018005485,
+      "relayUsd": 0.00469238,
+      "models": [
+        "claude-haiku-5-5"
+      ],
+      "summary": {
+        "steps": 48,
+        "firstViolation": 4,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 24,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 16,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 8,
+            "broke": 0
+          },
+          "zh-Hant": {
+            "applicable": 12,
+            "broke": 11
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 9,
+            "applicable": 11
+          },
+          {
+            "at": 11,
+            "kept": 10,
+            "applicable": 13
+          },
+          {
+            "at": 21,
+            "kept": 10,
+            "applicable": 12
+          },
+          {
+            "at": 31,
+            "kept": 12,
+            "applicable": 14
+          },
+          {
+            "at": 41,
+            "kept": 8,
+            "applicable": 10
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 13,
+            "applicable": 16
+          },
+          {
+            "at": 20000,
+            "kept": 36,
+            "applicable": 44
+          }
+        ]
+      },
+      "injections": 9,
+      "injectedChars": 2592,
+      "promptTokens": 733463
+    },
+    {
+      "tag": "drift-r4-sonnet",
+      "kind": "drift",
+      "reinject": false,
+      "agent": "fankeel-implementer",
+      "arm": "sonnet",
+      "model": "sonnet",
+      "round": 4,
+      "seed": 4,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.16787831,
+      "wallS": 73,
+      "error": null,
+      "session": "6a5710cd-a3b9-42c4-ba0f-9a70ac895e9f",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.1627429,
+      "relayUsd": 0.00513541,
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "summary": {
+        "steps": 46,
+        "firstViolation": 11,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 32,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 24,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 8,
+            "broke": 0
+          },
+          "zh-Hant": {
+            "applicable": 6,
+            "broke": 5
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 8,
+            "applicable": 8
+          },
+          {
+            "at": 11,
+            "kept": 16,
+            "applicable": 18
+          },
+          {
+            "at": 21,
+            "kept": 16,
+            "applicable": 18
+          },
+          {
+            "at": 31,
+            "kept": 16,
+            "applicable": 17
+          },
+          {
+            "at": 41,
+            "kept": 9,
+            "applicable": 9
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 58,
+            "applicable": 63
+          },
+          {
+            "at": 20000,
+            "kept": 7,
+            "applicable": 7
+          }
+        ]
+      },
+      "injections": 0,
+      "injectedChars": 0,
+      "promptTokens": 199003
+    },
+    {
+      "tag": "drift-r4-sonnet-reinject",
+      "kind": "drift",
+      "reinject": true,
+      "agent": "fankeel-implementer",
+      "arm": "sonnet-reinject",
+      "model": "sonnet",
+      "round": 4,
+      "seed": 4,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.28162606999999995,
+      "wallS": 113,
+      "error": null,
+      "session": "c1b0971c-7df5-41f7-b0aa-b25caf6020b0",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.27174129999999996,
+      "relayUsd": 0.00509477,
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "summary": {
+        "steps": 57,
+        "firstViolation": null,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 32,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 24,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 8,
+            "broke": 0
+          },
+          "zh-Hant": {
+            "applicable": 15,
+            "broke": 0
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 1,
+            "applicable": 1
+          },
+          {
+            "at": 11,
+            "kept": 3,
+            "applicable": 3
+          },
+          {
+            "at": 21,
+            "kept": 20,
+            "applicable": 20
+          },
+          {
+            "at": 31,
+            "kept": 19,
+            "applicable": 19
+          },
+          {
+            "at": 41,
+            "kept": 21,
+            "applicable": 21
+          },
+          {
+            "at": 51,
+            "kept": 15,
+            "applicable": 15
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 23,
+            "applicable": 23
+          },
+          {
+            "at": 20000,
+            "kept": 56,
+            "applicable": 56
+          }
+        ]
+      },
+      "injections": 11,
+      "injectedChars": 3168,
+      "promptTokens": 565111
+    },
+    {
+      "tag": "drift-r4-haiku",
+      "kind": "drift",
+      "reinject": false,
+      "agent": "fankeel-implementer",
+      "arm": "haiku",
+      "model": "haiku",
+      "round": 4,
+      "seed": 4,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.022764055000000002,
+      "wallS": 107,
+      "error": null,
+      "session": "db6e7aa8-5188-4ce7-a6cc-1657236f9b70",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.017460015,
+      "relayUsd": 0.005304040000000001,
+      "models": [
+        "claude-haiku-5-5"
+      ],
+      "summary": {
+        "steps": 46,
+        "firstViolation": 1,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 31,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 24,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 7,
+            "broke": 0
+          },
+          "zh-Hant": {
+            "applicable": 16,
+            "broke": 15
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 8,
+            "applicable": 13
+          },
+          {
+            "at": 11,
+            "kept": 16,
+            "applicable": 20
+          },
+          {
+            "at": 21,
+            "kept": 17,
+            "applicable": 18
+          },
+          {
+            "at": 31,
+            "kept": 16,
+            "applicable": 19
+          },
+          {
+            "at": 41,
+            "kept": 6,
+            "applicable": 8
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 16,
+            "applicable": 23
+          },
+          {
+            "at": 20000,
+            "kept": 47,
+            "applicable": 55
+          }
+        ]
+      },
+      "injections": 0,
+      "injectedChars": 0,
+      "promptTokens": 656192
+    },
+    {
+      "tag": "drift-r5-sonnet",
+      "kind": "drift",
+      "reinject": false,
+      "agent": "fankeel-implementer",
+      "arm": "sonnet",
+      "model": "sonnet",
+      "round": 5,
+      "seed": 5,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.21441230000000006,
+      "wallS": 90,
+      "error": null,
+      "session": "896b946f-c2b4-4088-9600-2b668981fb55",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.209869,
+      "relayUsd": 0.0045433,
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "summary": {
+        "steps": 46,
+        "firstViolation": 13,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 32,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 24,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 8,
+            "broke": 0
+          },
+          "zh-Hant": {
+            "applicable": 7,
+            "broke": 6
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 8,
+            "applicable": 8
+          },
+          {
+            "at": 11,
+            "kept": 16,
+            "applicable": 18
+          },
+          {
+            "at": 21,
+            "kept": 16,
+            "applicable": 18
+          },
+          {
+            "at": 31,
+            "kept": 16,
+            "applicable": 18
+          },
+          {
+            "at": 41,
+            "kept": 9,
+            "applicable": 9
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 50,
+            "applicable": 56
+          },
+          {
+            "at": 20000,
+            "kept": 15,
+            "applicable": 15
+          }
+        ]
+      },
+      "injections": 0,
+      "injectedChars": 0,
+      "promptTokens": 420455
+    },
+    {
+      "tag": "drift-r5-haiku",
+      "kind": "drift",
+      "reinject": false,
+      "agent": "fankeel-implementer",
+      "arm": "haiku",
+      "model": "haiku",
+      "round": 5,
+      "seed": 5,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.021358305,
+      "wallS": 100,
+      "error": null,
+      "session": "a60ae8d3-5cb1-4190-8e78-5003c7a07b90",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.016172575,
+      "relayUsd": 0.00518573,
+      "models": [
+        "claude-haiku-5-5"
+      ],
+      "summary": {
+        "steps": 42,
+        "firstViolation": 4,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 24,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 16,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 8,
+            "broke": 0
+          },
+          "zh-Hant": {
+            "applicable": 11,
+            "broke": 11
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 8,
+            "applicable": 11
+          },
+          {
+            "at": 11,
+            "kept": 12,
+            "applicable": 14
+          },
+          {
+            "at": 21,
+            "kept": 16,
+            "applicable": 18
+          },
+          {
+            "at": 31,
+            "kept": 12,
+            "applicable": 14
+          },
+          {
+            "at": 41,
+            "kept": 0,
+            "applicable": 2
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 16,
+            "applicable": 20
+          },
+          {
+            "at": 20000,
+            "kept": 32,
+            "applicable": 39
+          }
+        ]
+      },
+      "injections": 0,
+      "injectedChars": 0,
+      "promptTokens": 579538
+    },
+    {
+      "tag": "drift-r5-haiku-reinject",
+      "kind": "drift",
+      "reinject": true,
+      "agent": "fankeel-implementer",
+      "arm": "haiku-reinject",
+      "model": "haiku",
+      "round": 5,
+      "seed": 5,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.022737720000000003,
+      "wallS": 105,
+      "error": null,
+      "session": "3282ac39-15dc-4f44-b92e-cfce3eb0e788",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.017695669999999997,
+      "relayUsd": 0.00504205,
+      "models": [
+        "claude-haiku-5-5"
+      ],
+      "summary": {
+        "steps": 44,
+        "firstViolation": 1,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 24,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 16,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 8,
+            "broke": 0
+          },
+          "zh-Hant": {
+            "applicable": 20,
+            "broke": 20
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 6,
+            "applicable": 12
+          },
+          {
+            "at": 11,
+            "kept": 12,
+            "applicable": 16
+          },
+          {
+            "at": 21,
+            "kept": 14,
+            "applicable": 18
+          },
+          {
+            "at": 31,
+            "kept": 12,
+            "applicable": 16
+          },
+          {
+            "at": 41,
+            "kept": 4,
+            "applicable": 6
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 6,
+            "applicable": 12
+          },
+          {
+            "at": 20000,
+            "kept": 42,
+            "applicable": 56
+          }
+        ]
+      },
+      "injections": 8,
+      "injectedChars": 2304,
+      "promptTokens": 652423
+    },
+    {
+      "tag": "drift-r5-sonnet-reinject",
+      "kind": "drift",
+      "reinject": true,
+      "agent": "fankeel-implementer",
+      "arm": "sonnet-reinject",
+      "model": "sonnet",
+      "round": 5,
+      "seed": 5,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.30272974,
+      "wallS": 120,
+      "error": null,
+      "session": "5d49f043-dace-4eb6-8e7f-0811ce92c097",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.29770040000000003,
+      "relayUsd": 0.00502934,
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "summary": {
+        "steps": 61,
+        "firstViolation": 61,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 32,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 24,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 8,
+            "broke": 0
+          },
+          "zh-Hant": {
+            "applicable": 6,
+            "broke": 1
+          }
+        },
+        "bySteps": [
+          {
+            "at": 11,
+            "kept": 2,
+            "applicable": 2
+          },
+          {
+            "at": 21,
+            "kept": 15,
+            "applicable": 15
+          },
+          {
+            "at": 31,
+            "kept": 18,
+            "applicable": 18
+          },
+          {
+            "at": 41,
+            "kept": 17,
+            "applicable": 17
+          },
+          {
+            "at": 51,
+            "kept": 17,
+            "applicable": 17
+          },
+          {
+            "at": 61,
+            "kept": 0,
+            "applicable": 1
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 26,
+            "applicable": 26
+          },
+          {
+            "at": 20000,
+            "kept": 43,
+            "applicable": 44
+          }
+        ]
+      },
+      "injections": 12,
+      "injectedChars": 3456,
+      "promptTokens": 704696
+    },
+    {
+      "tag": "drift-r6-sonnet-reinject",
+      "kind": "drift",
+      "reinject": true,
+      "agent": "fankeel-implementer",
+      "arm": "sonnet-reinject",
+      "model": "sonnet",
+      "round": 6,
+      "seed": 6,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.06972386,
+      "wallS": 44,
+      "error": null,
+      "session": "750bb253-1959-4516-aefb-d4a742f7ff72",
+      "valid": false,
+      "why": [
+        "the implementer made 6 tool calls, under 30"
+      ],
+      "roleUsd": 0.0648208,
+      "relayUsd": 0.00490306,
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "summary": {
+        "steps": 6,
+        "firstViolation": 5,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 3,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 0,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 3,
+            "broke": 2
+          },
+          "zh-Hant": {
+            "applicable": 1,
+            "broke": 0
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 5,
+            "applicable": 7
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 5,
+            "applicable": 7
+          }
+        ]
+      },
+      "injections": 1,
+      "injectedChars": 288,
+      "promptTokens": 67643
+    },
+    {
+      "tag": "drift-r6-haiku-reinject",
+      "kind": "drift",
+      "reinject": true,
+      "agent": "fankeel-implementer",
+      "arm": "haiku-reinject",
+      "model": "haiku",
+      "round": 6,
+      "seed": 6,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.026606055,
+      "wallS": 116,
+      "error": null,
+      "session": "8a8597cf-7567-4907-9d9e-062533ef7bdc",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.021425955000000003,
+      "relayUsd": 0.0051801,
+      "models": [
+        "claude-haiku-5-5"
+      ],
+      "summary": {
+        "steps": 63,
+        "firstViolation": null,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 24,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 16,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 8,
+            "broke": 0
+          },
+          "zh-Hant": {
+            "applicable": 16,
+            "broke": 0
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 8,
+            "applicable": 8
+          },
+          {
+            "at": 11,
+            "kept": 12,
+            "applicable": 12
+          },
+          {
+            "at": 21,
+            "kept": 10,
+            "applicable": 10
+          },
+          {
+            "at": 31,
+            "kept": 9,
+            "applicable": 9
+          },
+          {
+            "at": 41,
+            "kept": 10,
+            "applicable": 10
+          },
+          {
+            "at": 51,
+            "kept": 10,
+            "applicable": 10
+          },
+          {
+            "at": 61,
+            "kept": 5,
+            "applicable": 5
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 14,
+            "applicable": 14
+          },
+          {
+            "at": 20000,
+            "kept": 50,
+            "applicable": 50
+          }
+        ]
+      },
+      "injections": 12,
+      "injectedChars": 3456,
+      "promptTokens": 866624
+    },
+    {
+      "tag": "drift-r7-sonnet",
+      "kind": "drift",
+      "reinject": false,
+      "agent": "fankeel-implementer",
+      "arm": "sonnet",
+      "model": "sonnet",
+      "round": 7,
+      "seed": 7,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.053815220000000004,
+      "wallS": 37,
+      "error": null,
+      "session": "2c6659d9-9d63-42c8-9ed0-7c996dd69a93",
+      "valid": false,
+      "why": [
+        "the implementer made 3 tool calls, under 30"
+      ],
+      "roleUsd": 0.0487285,
+      "relayUsd": 0.00508672,
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "summary": {
+        "steps": 3,
+        "firstViolation": 3,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 1,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 0,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 1,
+            "broke": 1
+          },
+          "zh-Hant": {
+            "applicable": 1,
+            "broke": 0
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 2,
+            "applicable": 3
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 2,
+            "applicable": 3
+          }
+        ]
+      },
+      "injections": 0,
+      "injectedChars": 0,
+      "promptTokens": 41706
+    },
+    {
+      "tag": "drift-r6-sonnet",
+      "kind": "drift",
+      "reinject": false,
+      "agent": "fankeel-implementer",
+      "arm": "sonnet",
+      "model": "sonnet",
+      "round": 6,
+      "seed": 6,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.09871455,
+      "wallS": 53,
+      "error": null,
+      "session": "cd2ab75b-cc9a-45ef-bd22-a137df3cdf62",
+      "valid": false,
+      "why": [
+        "the implementer made 8 tool calls, under 30"
+      ],
+      "roleUsd": 0.09361610000000001,
+      "relayUsd": 0.005098450000000001,
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "summary": {
+        "steps": 8,
+        "firstViolation": 5,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 5,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 0,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 5,
+            "broke": 0
+          },
+          "zh-Hant": {
+            "applicable": 5,
+            "broke": 3
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 12,
+            "applicable": 15
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 12,
+            "applicable": 15
+          }
+        ]
+      },
+      "injections": 0,
+      "injectedChars": 0,
+      "promptTokens": 105225
+    },
+    {
+      "tag": "drift-r6-haiku",
+      "kind": "drift",
+      "reinject": false,
+      "agent": "fankeel-implementer",
+      "arm": "haiku",
+      "model": "haiku",
+      "round": 6,
+      "seed": 6,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.02265525,
+      "wallS": 104,
+      "error": null,
+      "session": "325c8042-c3e1-41ef-951e-c80b1621a64f",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.01738611,
+      "relayUsd": 0.00506264,
+      "models": [
+        "claude-haiku-5-5"
+      ],
+      "summary": {
+        "steps": 46,
+        "firstViolation": 3,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 24,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 16,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 8,
+            "broke": 0
+          },
+          "zh-Hant": {
+            "applicable": 17,
+            "broke": 17
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 8,
+            "applicable": 13
+          },
+          {
+            "at": 11,
+            "kept": 12,
+            "applicable": 16
+          },
+          {
+            "at": 21,
+            "kept": 12,
+            "applicable": 14
+          },
+          {
+            "at": 31,
+            "kept": 12,
+            "applicable": 15
+          },
+          {
+            "at": 41,
+            "kept": 4,
+            "applicable": 7
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 14,
+            "applicable": 21
+          },
+          {
+            "at": 20000,
+            "kept": 34,
+            "applicable": 44
+          }
+        ]
+      },
+      "injections": 0,
+      "injectedChars": 0,
+      "promptTokens": 684211
+    },
+    {
+      "tag": "drift-r7-sonnet-reinject",
+      "kind": "drift",
+      "reinject": true,
+      "agent": "fankeel-implementer",
+      "arm": "sonnet-reinject",
+      "model": "sonnet",
+      "round": 7,
+      "seed": 7,
+      "pass": false,
+      "check": "fail wrong: 9 commits, not one per module",
+      "exit": 0,
+      "claudeUsd": 0.08373008000000001,
+      "wallS": 49,
+      "error": null,
+      "session": "89ba674b-cde3-44d7-b688-b9d504ba9886",
+      "valid": false,
+      "why": [
+        "the implementer made 9 tool calls, under 30"
+      ],
+      "roleUsd": 0.0785728,
+      "relayUsd": 0.005157280000000001,
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "summary": {
+        "steps": 9,
+        "firstViolation": 6,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 3,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 0,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 2,
+            "broke": 1
+          },
+          "zh-Hant": {
+            "applicable": 2,
+            "broke": 0
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 6,
+            "applicable": 7
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 6,
+            "applicable": 7
+          }
+        ]
+      },
+      "injections": 1,
+      "injectedChars": 288,
+      "promptTokens": 89025
+    },
+    {
+      "tag": "drift-r8-sonnet-reinject",
+      "kind": "drift",
+      "reinject": true,
+      "agent": "fankeel-implementer",
+      "arm": "sonnet-reinject",
+      "model": "sonnet",
+      "round": 8,
+      "seed": 8,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.05147881,
+      "wallS": 34,
+      "error": null,
+      "session": "4876f73b-e0b0-40dc-a16b-0eb53f184514",
+      "valid": false,
+      "why": [
+        "the implementer made 3 tool calls, under 30",
+        "a reinject arm with no injection in its log"
+      ],
+      "roleUsd": 0.046453,
+      "relayUsd": 0.00502581,
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "summary": {
+        "steps": 3,
+        "firstViolation": 3,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 1,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 0,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 1,
+            "broke": 1
+          },
+          "zh-Hant": {
+            "applicable": 1,
+            "broke": 0
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 2,
+            "applicable": 3
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 2,
+            "applicable": 3
+          }
+        ]
+      },
+      "injections": 0,
+      "injectedChars": 0,
+      "promptTokens": 42530
+    },
+    {
+      "tag": "drift-r7-haiku",
+      "kind": "drift",
+      "reinject": false,
+      "agent": "fankeel-implementer",
+      "arm": "haiku",
+      "model": "haiku",
+      "round": 7,
+      "seed": 7,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.021621280000000007,
+      "wallS": 98,
+      "error": null,
+      "session": "e2373927-3ea4-4edd-bad5-b91f1ba1790f",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.016244540000000002,
+      "relayUsd": 0.00516824,
+      "models": [
+        "claude-haiku-5-5"
+      ],
+      "summary": {
+        "steps": 48,
+        "firstViolation": 3,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 24,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 16,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 8,
+            "broke": 0
+          },
+          "zh-Hant": {
+            "applicable": 17,
+            "broke": 17
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 8,
+            "applicable": 13
+          },
+          {
+            "at": 11,
+            "kept": 10,
+            "applicable": 13
+          },
+          {
+            "at": 21,
+            "kept": 10,
+            "applicable": 12
+          },
+          {
+            "at": 31,
+            "kept": 12,
+            "applicable": 15
+          },
+          {
+            "at": 41,
+            "kept": 8,
+            "applicable": 12
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 14,
+            "applicable": 21
+          },
+          {
+            "at": 20000,
+            "kept": 34,
+            "applicable": 44
+          }
+        ]
+      },
+      "injections": 0,
+      "injectedChars": 0,
+      "promptTokens": 629198
+    },
+    {
+      "tag": "drift-r7-haiku-reinject",
+      "kind": "drift",
+      "reinject": true,
+      "agent": "fankeel-implementer",
+      "arm": "haiku-reinject",
+      "model": "haiku",
+      "round": 7,
+      "seed": 7,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.024533140000000002,
+      "wallS": 108,
+      "error": null,
+      "session": "84be9de4-3d46-4ee6-8a39-98d5561adb14",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.019863040000000002,
+      "relayUsd": 0.0046701,
+      "models": [
+        "claude-haiku-5-5"
+      ],
+      "summary": {
+        "steps": 55,
+        "firstViolation": 1,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 24,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 16,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 8,
+            "broke": 0
+          },
+          "zh-Hant": {
+            "applicable": 15,
+            "broke": 15
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 4,
+            "applicable": 9
+          },
+          {
+            "at": 11,
+            "kept": 10,
+            "applicable": 14
+          },
+          {
+            "at": 21,
+            "kept": 10,
+            "applicable": 11
+          },
+          {
+            "at": 31,
+            "kept": 8,
+            "applicable": 10
+          },
+          {
+            "at": 41,
+            "kept": 10,
+            "applicable": 12
+          },
+          {
+            "at": 51,
+            "kept": 6,
+            "applicable": 7
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 6,
+            "applicable": 12
+          },
+          {
+            "at": 20000,
+            "kept": 42,
+            "applicable": 51
+          }
+        ]
+      },
+      "injections": 11,
+      "injectedChars": 3168,
+      "promptTokens": 748845
+    },
+    {
+      "tag": "drift-r8-sonnet",
+      "kind": "drift",
+      "reinject": false,
+      "agent": "fankeel-implementer",
+      "arm": "sonnet",
+      "model": "sonnet",
+      "round": 8,
+      "seed": 8,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.07422397,
+      "wallS": 46,
+      "error": null,
+      "session": "3006dc3f-4996-4675-b54b-0df0feb86456",
+      "valid": false,
+      "why": [
+        "the implementer made 6 tool calls, under 30"
+      ],
+      "roleUsd": 0.0690423,
+      "relayUsd": 0.00518167,
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "summary": {
+        "steps": 6,
+        "firstViolation": 6,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 2,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 0,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 2,
+            "broke": 1
+          },
+          "zh-Hant": {
+            "applicable": 1,
+            "broke": 0
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 4,
+            "applicable": 5
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 4,
+            "applicable": 5
+          }
+        ]
+      },
+      "injections": 0,
+      "injectedChars": 0,
+      "promptTokens": 65657
+    },
+    {
+      "tag": "drift-r8-haiku-reinject",
+      "kind": "drift",
+      "reinject": true,
+      "agent": "fankeel-implementer",
+      "arm": "haiku-reinject",
+      "model": "haiku",
+      "round": 8,
+      "seed": 8,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.022724204999999994,
+      "wallS": 105,
+      "error": null,
+      "session": "3fa072ed-e649-46fe-8105-6fc23f8c7b85",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.018058825,
+      "relayUsd": 0.00466538,
+      "models": [
+        "claude-haiku-5-5"
+      ],
+      "summary": {
+        "steps": 48,
+        "firstViolation": 6,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 24,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 16,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 8,
+            "broke": 0
+          },
+          "zh-Hant": {
+            "applicable": 10,
+            "broke": 10
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 8,
+            "applicable": 10
+          },
+          {
+            "at": 11,
+            "kept": 10,
+            "applicable": 12
+          },
+          {
+            "at": 21,
+            "kept": 10,
+            "applicable": 12
+          },
+          {
+            "at": 31,
+            "kept": 12,
+            "applicable": 14
+          },
+          {
+            "at": 41,
+            "kept": 8,
+            "applicable": 10
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 14,
+            "applicable": 18
+          },
+          {
+            "at": 20000,
+            "kept": 34,
+            "applicable": 40
+          }
+        ]
+      },
+      "injections": 9,
+      "injectedChars": 2592,
+      "promptTokens": 728285
+    },
+    {
+      "tag": "drift-r9-sonnet",
+      "kind": "drift",
+      "reinject": false,
+      "agent": "fankeel-implementer",
+      "arm": "sonnet",
+      "model": "sonnet",
+      "round": 9,
+      "seed": 9,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.07499647999999999,
+      "wallS": 47,
+      "error": null,
+      "session": "f83ffcab-18ba-4ff0-9a78-2fd9e23be17d",
+      "valid": false,
+      "why": [
+        "the implementer made 8 tool calls, under 30"
+      ],
+      "roleUsd": 0.0698302,
+      "relayUsd": 0.0051662800000000005,
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "summary": {
+        "steps": 8,
+        "firstViolation": 6,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 2,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 0,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 2,
+            "broke": 2
+          },
+          "zh-Hant": {
+            "applicable": 1,
+            "broke": 1
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 2,
+            "applicable": 5
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 2,
+            "applicable": 5
+          }
+        ]
+      },
+      "injections": 0,
+      "injectedChars": 0,
+      "promptTokens": 71421
+    },
+    {
+      "tag": "drift-r9-sonnet-reinject",
+      "kind": "drift",
+      "reinject": true,
+      "agent": "fankeel-implementer",
+      "arm": "sonnet-reinject",
+      "model": "sonnet",
+      "round": 9,
+      "seed": 9,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.05502213,
+      "wallS": 37,
+      "error": null,
+      "session": "a0da66ed-3634-43f4-9d5b-5f82d568d06e",
+      "valid": false,
+      "why": [
+        "the implementer made 3 tool calls, under 30",
+        "a reinject arm with no injection in its log"
+      ],
+      "roleUsd": 0.0499289,
+      "relayUsd": 0.005093230000000001,
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "summary": {
+        "steps": 3,
+        "firstViolation": 3,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 1,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 0,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 1,
+            "broke": 1
+          },
+          "zh-Hant": {
+            "applicable": 1,
+            "broke": 0
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 2,
+            "applicable": 3
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 2,
+            "applicable": 3
+          }
+        ]
+      },
+      "injections": 0,
+      "injectedChars": 0,
+      "promptTokens": 41730
+    },
+    {
+      "tag": "drift-r8-haiku",
+      "kind": "drift",
+      "reinject": false,
+      "agent": "fankeel-implementer",
+      "arm": "haiku",
+      "model": "haiku",
+      "round": 8,
+      "seed": 8,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.020646244999999994,
+      "wallS": 104,
+      "error": null,
+      "session": "438a8cfd-0d2b-4a94-9586-2bf0fb0145a4",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.015471785,
+      "relayUsd": 0.0051744600000000005,
+      "models": [
+        "claude-haiku-5-5"
+      ],
+      "summary": {
+        "steps": 43,
+        "firstViolation": 3,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 24,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 16,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 8,
+            "broke": 0
+          },
+          "zh-Hant": {
+            "applicable": 14,
+            "broke": 1
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 13,
+            "applicable": 14
+          },
+          {
+            "at": 11,
+            "kept": 15,
+            "applicable": 15
+          },
+          {
+            "at": 21,
+            "kept": 14,
+            "applicable": 14
+          },
+          {
+            "at": 31,
+            "kept": 14,
+            "applicable": 14
+          },
+          {
+            "at": 41,
+            "kept": 5,
+            "applicable": 5
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 25,
+            "applicable": 26
+          },
+          {
+            "at": 20000,
+            "kept": 36,
+            "applicable": 36
+          }
+        ]
+      },
+      "injections": 0,
+      "injectedChars": 0,
+      "promptTokens": 570168
+    },
+    {
+      "tag": "drift-r9-haiku",
+      "kind": "drift",
+      "reinject": false,
+      "agent": "fankeel-implementer",
+      "arm": "haiku",
+      "model": "haiku",
+      "round": 9,
+      "seed": 9,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.01941819,
+      "wallS": 90,
+      "error": null,
+      "session": "7f526ccb-d1d6-4725-bb21-e5c3bdc75af8",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.014824120000000001,
+      "relayUsd": 0.00459407,
+      "models": [
+        "claude-haiku-5-5"
+      ],
+      "summary": {
+        "steps": 45,
+        "firstViolation": 3,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 25,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 17,
+            "broke": 1
+          },
+          "commit-format": {
+            "applicable": 8,
+            "broke": 0
+          },
+          "zh-Hant": {
+            "applicable": 13,
+            "broke": 13
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 9,
+            "applicable": 14
+          },
+          {
+            "at": 11,
+            "kept": 12,
+            "applicable": 15
+          },
+          {
+            "at": 21,
+            "kept": 12,
+            "applicable": 14
+          },
+          {
+            "at": 31,
+            "kept": 12,
+            "applicable": 14
+          },
+          {
+            "at": 41,
+            "kept": 4,
+            "applicable": 6
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 17,
+            "applicable": 24
+          },
+          {
+            "at": 20000,
+            "kept": 32,
+            "applicable": 39
+          }
+        ]
+      },
+      "injections": 0,
+      "injectedChars": 0,
+      "promptTokens": 482782
+    },
+    {
+      "tag": "drift-r10-sonnet-reinject",
+      "kind": "drift",
+      "reinject": true,
+      "agent": "fankeel-implementer",
+      "arm": "sonnet-reinject",
+      "model": "sonnet",
+      "round": 10,
+      "seed": 10,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.09338579000000001,
+      "wallS": 49,
+      "error": null,
+      "session": "fe75dcbf-9b4c-4b8e-84dd-89262cc45a80",
+      "valid": false,
+      "why": [
+        "the implementer made 9 tool calls, under 30"
+      ],
+      "roleUsd": 0.08872060000000001,
+      "relayUsd": 0.0046651900000000005,
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "summary": {
+        "steps": 9,
+        "firstViolation": 5,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 5,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 0,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 5,
+            "broke": 0
+          },
+          "zh-Hant": {
+            "applicable": 3,
+            "broke": 2
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 11,
+            "applicable": 13
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 11,
+            "applicable": 13
+          }
+        ]
+      },
+      "injections": 1,
+      "injectedChars": 288,
+      "promptTokens": 112687
+    },
+    {
+      "tag": "drift-r9-haiku-reinject",
+      "kind": "drift",
+      "reinject": true,
+      "agent": "fankeel-implementer",
+      "arm": "haiku-reinject",
+      "model": "haiku",
+      "round": 9,
+      "seed": 9,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.020615354999999995,
+      "wallS": 88,
+      "error": null,
+      "session": "cd7bca75-3732-439f-8c16-b8f8954b1114",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.015261965,
+      "relayUsd": 0.00513089,
+      "models": [
+        "claude-haiku-5-5"
+      ],
+      "summary": {
+        "steps": 46,
+        "firstViolation": null,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 24,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 16,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 8,
+            "broke": 0
+          },
+          "zh-Hant": {
+            "applicable": 1,
+            "broke": 0
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 8,
+            "applicable": 8
+          },
+          {
+            "at": 11,
+            "kept": 12,
+            "applicable": 12
+          },
+          {
+            "at": 21,
+            "kept": 10,
+            "applicable": 10
+          },
+          {
+            "at": 31,
+            "kept": 12,
+            "applicable": 12
+          },
+          {
+            "at": 41,
+            "kept": 7,
+            "applicable": 7
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 16,
+            "applicable": 16
+          },
+          {
+            "at": 20000,
+            "kept": 33,
+            "applicable": 33
+          }
+        ]
+      },
+      "injections": 9,
+      "injectedChars": 2592,
+      "promptTokens": 548067
+    },
+    {
+      "tag": "drift-r10-haiku-reinject",
+      "kind": "drift",
+      "reinject": true,
+      "agent": "fankeel-implementer",
+      "arm": "haiku-reinject",
+      "model": "haiku",
+      "round": 10,
+      "seed": 10,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.021976495000000002,
+      "wallS": 104,
+      "error": null,
+      "session": "d6a50904-4dfc-401c-a8a9-563177fc7f37",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.016789205,
+      "relayUsd": 0.005187290000000001,
+      "models": [
+        "claude-haiku-5-5"
+      ],
+      "summary": {
+        "steps": 42,
+        "firstViolation": null,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 24,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 16,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 8,
+            "broke": 0
+          },
+          "zh-Hant": {
+            "applicable": 16,
+            "broke": 0
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 15,
+            "applicable": 15
+          },
+          {
+            "at": 11,
+            "kept": 15,
+            "applicable": 15
+          },
+          {
+            "at": 21,
+            "kept": 16,
+            "applicable": 16
+          },
+          {
+            "at": 31,
+            "kept": 16,
+            "applicable": 16
+          },
+          {
+            "at": 41,
+            "kept": 2,
+            "applicable": 2
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 15,
+            "applicable": 15
+          },
+          {
+            "at": 20000,
+            "kept": 49,
+            "applicable": 49
+          }
+        ]
+      },
+      "injections": 8,
+      "injectedChars": 2304,
+      "promptTokens": 598470
+    },
+    {
+      "tag": "drift-r10-haiku",
+      "kind": "drift",
+      "reinject": false,
+      "agent": "fankeel-implementer",
+      "arm": "haiku",
+      "model": "haiku",
+      "round": 10,
+      "seed": 10,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.020883855000000003,
+      "wallS": 92,
+      "error": null,
+      "session": "c22fd8dc-32d9-47d7-ab14-45eebfb04366",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.016285265,
+      "relayUsd": 0.0045985900000000005,
+      "models": [
+        "claude-haiku-5-5"
+      ],
+      "summary": {
+        "steps": 48,
+        "firstViolation": 6,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 24,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 16,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 8,
+            "broke": 0
+          },
+          "zh-Hant": {
+            "applicable": 8,
+            "broke": 8
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 6,
+            "applicable": 8
+          },
+          {
+            "at": 11,
+            "kept": 10,
+            "applicable": 11
+          },
+          {
+            "at": 21,
+            "kept": 12,
+            "applicable": 14
+          },
+          {
+            "at": 31,
+            "kept": 12,
+            "applicable": 13
+          },
+          {
+            "at": 41,
+            "kept": 8,
+            "applicable": 10
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 18,
+            "applicable": 22
+          },
+          {
+            "at": 20000,
+            "kept": 30,
+            "applicable": 34
+          }
+        ]
+      },
+      "injections": 0,
+      "injectedChars": 0,
+      "promptTokens": 664944
+    },
+    {
+      "tag": "drift-r10-sonnet",
+      "kind": "drift",
+      "reinject": false,
+      "agent": "fankeel-implementer",
+      "arm": "sonnet",
+      "model": "sonnet",
+      "round": 10,
+      "seed": 10,
+      "pass": true,
+      "check": "pass",
+      "exit": 0,
+      "claudeUsd": 0.20803237000000002,
+      "wallS": 95,
+      "error": null,
+      "session": "76e30f8e-b1fb-415a-90e6-41c8c7211b85",
+      "valid": true,
+      "why": [],
+      "roleUsd": 0.20339220000000002,
+      "relayUsd": 0.00464017,
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "summary": {
+        "steps": 47,
+        "firstViolation": 9,
+        "byConstraint": {
+          "vendor": {
+            "applicable": 32,
+            "broke": 0
+          },
+          "lint-every-3": {
+            "applicable": 24,
+            "broke": 0
+          },
+          "commit-format": {
+            "applicable": 8,
+            "broke": 0
+          },
+          "zh-Hant": {
+            "applicable": 8,
+            "broke": 7
+          }
+        },
+        "bySteps": [
+          {
+            "at": 1,
+            "kept": 6,
+            "applicable": 7
+          },
+          {
+            "at": 11,
+            "kept": 16,
+            "applicable": 17
+          },
+          {
+            "at": 21,
+            "kept": 16,
+            "applicable": 19
+          },
+          {
+            "at": 31,
+            "kept": 16,
+            "applicable": 17
+          },
+          {
+            "at": 41,
+            "kept": 11,
+            "applicable": 12
+          }
+        ],
+        "byContext": [
+          {
+            "at": 0,
+            "kept": 50,
+            "applicable": 56
+          },
+          {
+            "at": 20000,
+            "kept": 15,
+            "applicable": 16
+          }
+        ]
+      },
+      "injections": 0,
+      "injectedChars": 0,
+      "promptTokens": 381730
+    }
+  ],
+  "cells": [
+    {
+      "arm": "sonnet",
+      "model": "sonnet",
+      "reinject": false,
+      "runs": 10,
+      "valid": 3,
+      "passed": 3,
+      "clean": 0,
+      "medianFirst": 11,
+      "bySteps": [
+        {
+          "at": 1,
+          "kept": 22,
+          "applicable": 23
+        },
+        {
+          "at": 11,
+          "kept": 48,
+          "applicable": 53
+        },
+        {
+          "at": 21,
+          "kept": 48,
+          "applicable": 55
+        },
+        {
+          "at": 31,
+          "kept": 48,
+          "applicable": 52
+        },
+        {
+          "at": 41,
+          "kept": 29,
+          "applicable": 30
+        }
+      ],
+      "byContext": [
+        {
+          "at": 0,
+          "kept": 158,
+          "applicable": 175
+        },
+        {
+          "at": 20000,
+          "kept": 37,
+          "applicable": 38
+        }
+      ],
+      "injections": 0,
+      "injectedChars": 0,
+      "usdMean": 0.19200136666666667,
+      "promptMean": 333729.3333333333
+    },
+    {
+      "arm": "haiku",
+      "model": "haiku",
+      "reinject": false,
+      "runs": 10,
+      "valid": 10,
+      "passed": 10,
+      "clean": 1,
+      "medianFirst": 3,
+      "bySteps": [
+        {
+          "at": 1,
+          "kept": 79,
+          "applicable": 113
+        },
+        {
+          "at": 11,
+          "kept": 124,
+          "applicable": 144
+        },
+        {
+          "at": 21,
+          "kept": 126,
+          "applicable": 141
+        },
+        {
+          "at": 31,
+          "kept": 126,
+          "applicable": 142
+        },
+        {
+          "at": 41,
+          "kept": 63,
+          "applicable": 80
+        },
+        {
+          "at": 51,
+          "kept": 7,
+          "applicable": 7
+        }
+      ],
+      "byContext": [
+        {
+          "at": 0,
+          "kept": 153,
+          "applicable": 199
+        },
+        {
+          "at": 20000,
+          "kept": 372,
+          "applicable": 428
+        }
+      ],
+      "injections": 0,
+      "injectedChars": 0,
+      "usdMean": 0.016890576999999997,
+      "promptMean": 642553.2
+    },
+    {
+      "arm": "sonnet-reinject",
+      "model": "sonnet",
+      "reinject": true,
+      "runs": 10,
+      "valid": 3,
+      "passed": 3,
+      "clean": 1,
+      "medianFirst": 37,
+      "bySteps": [
+        {
+          "at": 1,
+          "kept": 7,
+          "applicable": 7
+        },
+        {
+          "at": 11,
+          "kept": 23,
+          "applicable": 24
+        },
+        {
+          "at": 21,
+          "kept": 51,
+          "applicable": 53
+        },
+        {
+          "at": 31,
+          "kept": 55,
+          "applicable": 56
+        },
+        {
+          "at": 41,
+          "kept": 45,
+          "applicable": 45
+        },
+        {
+          "at": 51,
+          "kept": 32,
+          "applicable": 32
+        },
+        {
+          "at": 61,
+          "kept": 0,
+          "applicable": 1
+        }
+      ],
+      "byContext": [
+        {
+          "at": 0,
+          "kept": 89,
+          "applicable": 92
+        },
+        {
+          "at": 20000,
+          "kept": 124,
+          "applicable": 126
+        }
+      ],
+      "injections": 32,
+      "injectedChars": 9216,
+      "usdMean": 0.26024200000000003,
+      "promptMean": 547172.3333333334
+    },
+    {
+      "arm": "haiku-reinject",
+      "model": "haiku",
+      "reinject": true,
+      "runs": 10,
+      "valid": 10,
+      "passed": 10,
+      "clean": 5,
+      "medianFirst": 4,
+      "bySteps": [
+        {
+          "at": 1,
+          "kept": 84,
+          "applicable": 103
+        },
+        {
+          "at": 11,
+          "kept": 122,
+          "applicable": 139
+        },
+        {
+          "at": 21,
+          "kept": 118,
+          "applicable": 129
+        },
+        {
+          "at": 31,
+          "kept": 119,
+          "applicable": 132
+        },
+        {
+          "at": 41,
+          "kept": 68,
+          "applicable": 77
+        },
+        {
+          "at": 51,
+          "kept": 26,
+          "applicable": 27
+        },
+        {
+          "at": 61,
+          "kept": 8,
+          "applicable": 8
+        }
+      ],
+      "byContext": [
+        {
+          "at": 0,
+          "kept": 115,
+          "applicable": 139
+        },
+        {
+          "at": 20000,
+          "kept": 430,
+          "applicable": 476
+        }
+      ],
+      "injections": 94,
+      "injectedChars": 27072,
+      "usdMean": 0.01877257,
+      "promptMean": 752354.9
+    }
+  ]
+}

@@ -1,19 +1,20 @@
 ---
 status: current
-last_verified: 2026-10-08
+last_verified: 2026-10-09
 source_of_truth: lib/bench.js, scripts/bench.js, hooks/title.js, docs/90-agent/reference/model-choice.md
 ---
 
-# 四個角色為什麼改跑 Haiku 5.5，按角色的實驗台量到什麼
+# 四個角色為什麼改跑 Haiku 5.5（10-09 起 reader 改回 sonnet），按角色的實驗台量到什麼
 
 ## 決定
 
 - 2026-10-08 使用者裁定 `fankeel-mutator`、`fankeel-mover`、`fankeel-implementer`（只限計畫已經寫好程式碼的地方，也就是計畫 Dispatch 行的 `implementer, haiku`）和 `fankeel-reader` 改跑 haiku。出處是 `docs/90-agent/reference/model-choice.md` 的 b 項：「Settled 10-08: `haiku` for `fankeel-mutator`, `fankeel-mover`, `fankeel-implementer`」。
+- 2026-10-09 使用者依 10-09 題庫的結果把 `fankeel-reader` 改回 sonnet，mutator、mover、implementer 不變；理由見 `docs/90-agent/reference/model-choice.md` 的 b 項。
 - 其他角色（reviewer、verifier、brain 等）沒有裁定，沒有任何 profile 或計畫對它們送 `haiku`。
 - 09-29 的「haiku 不行」裁定針對的是 Haiku 4.5，當時沒有數字撐著。Haiku 5.5 改用 `scripts/bench.js`（邏輯在 `lib/bench.js`）重量一次，一次一個角色。
-- 實驗台的做法：每個 run 在可重置的暫存目錄裡跑，每個角色在 `bench/roles/<role>/` 下有及格與不及格的對照組，每個臂跑 5 次（haiku 對 sonnet），只算那個子 agent 自己的 token 與花費。
+- 實驗台的做法：每個 run 在可重置的暫存目錄裡跑，10-08 時每個角色在 `bench/roles/<role>/` 下有一組及格與不及格的對照組（10-09 起改成每題各有一組，放在 `bench/roles/<role>/items/<item>/controls/`），每個臂跑 5 次（haiku 對 sonnet），只算那個子 agent 自己的 token 與花費。
 - 量的過程中找到並修了一個 bug：派工上明寫的 `model` 會蓋過 profile override 釘的模型。`hooks/title.js:38` 現在是 `if (pinned && typeof input.model === 'string' && input.model !== pinned) next.model = pinned;`，讓 override 的模型取代明寫的模型。`lib/title.js:127` 的 `overrideModel` 負責讀出 override 釘的模型；若它與外掛檔案的模型相同，就視為不是使用者設的，回傳 null。
-- 使用者要自己用 `node scripts/task.js profile set agent.fankeel-<role>.model haiku` 逐一設定。這份決策與 model-choice 頁都沒有改 profile。
+- 使用者要自己用 `node scripts/task.js profile set agent.fankeel-<role>.model haiku` 逐一設定。這份決策與 model-choice 頁都沒有改 profile；設定是同一天另一個 commit（`2e6a1295`）做的，10-09 又把 reader 改回 sonnet。
 
 ## 為什麼
 
@@ -39,9 +40,9 @@ source_of_truth: lib/bench.js, scripts/bench.js, hooks/title.js, docs/90-agent/r
 - 沒量 Agent tool 路徑與 `claude -p` 路徑的差別。外部報告自己也寫「量的是 `claude -p` 路徑；Agent tool 子代理的前綴大小與快取行為可能不同，未量」；本實驗台的 run 是在 `claude -p` 底下派子 agent，沒有在互動 session 的 Agent tool 上重做。
 - 沒量價目頁。Haiku 5.5 的兩列價格出自 design，沒有對官方價目重讀；fix-bug 表的 over 100K 欄全是 0；角色批次的表沒有這一欄，我沒有核對。
 - 每個臂只有 5 次（fix-bug 是 3 次），n/n 全過不等於失敗率為零，也沒有統計檢定。
-- 角色輸入是單一任務形狀，每個角色一組輸入加兩側對照組。實際 build 裡更大、更雜的 mutator、reader、implementer 工作沒有量。implementer 只量了「計畫已有程式碼」那一種，不能推到要自己想的實作。
-- reader 的 haiku 臂沒有 n/n 過，是使用者推翻了報告的結論行；路徑檢查太嚴這點，我沒有看到修過的紀錄，所以那一批不是乾淨的證明。
+- 10-08 這批的角色輸入是單一任務形狀，每個角色一組輸入加兩側對照組，實際 build 裡更大、更雜的 mutator、reader、implementer 工作沒有量。10-09 把每個角色擴成三個難度共十二題重量，結果在 `docs/90-agent/reports/2026-10-09-haiku-bank-drift.md`。implementer 只量了「計畫已有程式碼」那一種，不能推到要自己想的實作。
+- reader 的 haiku 臂沒有 n/n 過，是使用者推翻了報告的結論行；路徑檢查太嚴這點 10-09 修了（`bench/roles/reader/items/answers.sh` 先把反斜線換成 `/` 再比），但那一批是用舊的檢查跑的，所以仍不是乾淨的證明。
 - 三個批次（reader、mover、implementer）與 reader 重跑是在另一台機器 DESKTOP-DE33TOH 上跑的，那台載入了帳號的 claude.ai connector。報告記有一個 haiku run 在 Grep 結果裡看到要它建立文件的文字，agent 回報了並沒有照做；這個因素沒有控制。
 - 外部 228 次 `claude -p` 的測量證據在另一個 repository，本 repo 無法重算（`docs/90-agent/reports/2026-10-08-external-model-bench.md`）。
-- 這份決策沒有跑 `profile set`，所以當下 profile 仍是 sonnet；四個角色真正跑在 haiku 要等使用者設定後，在實際的 build 與 verify 裡才看得到。
+- 這份決策本身沒有跑 `profile set`；同一天稍早的 `2e6a1295` 已經把四個角色設成 haiku。
 - 計畫與設計存放在 `docs/99-archive/2026-10-08-haiku-bench-design.md`、`docs/99-archive/2026-10-08-haiku-bench.md`、`docs/99-archive/2026-10-08-haiku-bench-roles.md`。

@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-10-08
+last_verified: 2026-10-09
 source_of_truth: agents/*.md, lib/profile.js
 ---
 
@@ -8,11 +8,11 @@ source_of_truth: agents/*.md, lib/profile.js
 
 Open decision: which model each role runs on, and what effort each model runs at.
 
-Today every agent file in `agents/` pins its own `model:` in frontmatter. Six pin
-`sonnet` (brain, fixer, reader, render-reviewer, reviewer, verifier);
-`fankeel-judge` pins `fable` and `fankeel-mockup` pins `opus`. Each file also pins an
-`effort:`. The profile can already name a model for two roles, `judge.model` and
-`design.mockup`, and for no other agent.
+Today every agent file in `agents/` pins its own `model:` in frontmatter:
+`fankeel-judge` pins `fable`, `fankeel-mockup` pins `opus`, and every other one pins
+`sonnet`. Each file also pins an `effort:`. The profile names a model for two roles by
+keys of their own, `judge.model` and `design.mockup`, and for any agent by
+`agent.<name>.model` (item a below).
 
 ## To settle
 
@@ -24,7 +24,8 @@ Today every agent file in `agents/` pins its own `model:` in frontmatter. Six pi
   (only where the plan already holds the code, i.e. the plan Dispatch line `implementer, haiku`)
   and `fankeel-reader`.** The 09-29 ruling was about Haiku 4.5; Haiku 5.5 is re-measured, see the
   last section. Each is set by the user with `node scripts/task.js profile set agent.fankeel-<role>.model haiku`;
-  this page does not change the profile.
+  this page does not change the profile. **Revised 10-09: `fankeel-reader` back to `sonnet`**,
+  the other three unchanged, after the twelve-item bank (last section).
 - **c. Settled 09-29: a default effort per model.** Claude Code's model-config
   documents medium as the default effort of Sonnet 5.5 and Opus 5.5, and the agent
   files keep the `effort:` they pin. Raising one role's effort for a single task goes through
@@ -101,6 +102,15 @@ the plan already holds the code) and `fankeel-reader` onto `haiku`. The user set
 it and does not change the profile. Since `hooks/title.js` replaces a dispatch's explicit
 model with a generated override's pinned model, the override wins over the model a dispatch
 names ([subagents](subagents.md)).
+
+On 10-09 `scripts/bench.js` measured the four roles again on twelve items each, in three tiers
+([the report](../reports/2026-10-09-haiku-bank-drift.md)). Its rule, every haiku run valid and
+passing, said `haiku` for mover and implementer and not for reader or mutator. Reader's haiku
+arm cited the line that merges the config three times on mid-config-chain, where the value is
+written one file over, and the judge marked it `fabricated`. Mutator's 35 valid haiku runs all
+passed; its one invalid run was the relay rewriting the prompt it dispatched. The user moved
+`fankeel-reader` back to `sonnet` and kept the other three on `haiku`; `.fankeel/profile.json`
+says `"agent.fankeel-reader.model": "sonnet"`.
 
 Haiku 5.5 is not ruled for any other role (reviewer, verifier, brain, judge-excepted and the
 rest): no profile and no plan sends `haiku` for a role not listed above.

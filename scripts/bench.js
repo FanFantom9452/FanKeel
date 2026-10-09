@@ -5,10 +5,12 @@
 // check.sh, with the transcript copied out for tally.
 //
 //   node scripts/bench.js probe
-//   node scripts/bench.js selftest [<project>...]
+//   node scripts/bench.js selftest [<project>...] [--seeds <n>]
 //   node scripts/bench.js run <project> --arms <a,b> --runs <n> --cap <usd> [--dry] [--keep] [--evidence <dir>]
-//   node scripts/bench.js role <role> --arms <sonnet,haiku> --runs <n> --cap <usd> [--dry] [--keep] [--evidence <dir>]
+//   node scripts/bench.js role <role> [--arms <sonnet,haiku>] [--runs <n>] [--jobs <n>] [--cap <usd>] [--dry] [--keep] [--evidence <dir>]
+//   node scripts/bench.js drift [--arms <a,b>] [--runs <n>] [--jobs <n>] [--cap <usd>] [--dry] [--keep] [--evidence <dir>]
 //   node scripts/bench.js tally <batch dir> [--evidence <dir>]
+//   node scripts/bench.js report <batch dir>... [--out <file>]
 //
 // Every run goes through --permission-mode bypassPermissions, so a run only
 // ever happens inside an mkdtemp directory; and `run` asks `probe` first
@@ -21,7 +23,8 @@ const crypto = require('node:crypto');
 const { spawnSync } = require('node:child_process');
 const { parseArgs } = require('node:util');
 const bench = require('../lib/bench.js');
-const { spawnClaude } = require('./eval.js');
+const drift = require('../lib/drift.js');
+const { spawnClaude, spawnClaudeAsync } = require('./eval.js');
 
 const ROOT = path.join(__dirname, '..');
 
@@ -155,63 +158,92 @@ function runOne(ctx, item) {
     }
 }
 
-// A role under bench/roles/: its role.json, its input.md, and the directory
-// its setup.sh, check.sh and controls live in.
+const selfDir = () => fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-bench-self-'));
+
+// A role under bench/roles/: its role.json, its directory and its items
+// (lib/bench.js roleItems). null when there is no role.json.
 function readRole(projectsRoot, name) {
     const dir = path.join(projectsRoot, 'roles', name);
     try {
         const conf = JSON.parse(fs.readFileSync(path.join(dir, 'role.json'), 'utf8'));
-        return { dir, conf, project: bench.roleProject(dir), input: fs.readFileSync(path.join(dir, 'input.md'), 'utf8') };
+        return { dir, conf, items: bench.roleItems(dir) };
     } catch (e) {
         if (e.code === 'ENOENT') return null;
         throw e;
     }
 }
 
-// One role run: a fresh setup, the haiku arm's override, one relay session on
-// haiku that dispatches the role once, then the role's return written to
-// .bench/result.txt for check.sh.
-function runRole(ctx, item) {
-    const tag = 'r' + item.round + '-' + item.arm;
-    const row = { tag, role: ctx.name, agent: ctx.role.conf.agent, arm: item.arm, round: item.round, input: ctx.role.input,
+// Every run of a role: each item × order(arms, runs), tagged
+// <item>-r<round>-<arm>, its seed the round.
+function roleJobs(name, role, arms, runs) {
+    const out = [];
+    for (const item of role.items) {
+        for (const s of bench.order(arms, runs)) {
+            out.push({ tag: item.id + '-r' + s.round + '-' + s.arm, arm: s.arm, model: s.arm, round: s.round, seed: s.seed, itemDir: item.dir,
+                row: { role: name, item: item.id, tier: item.tier, input: item.input } });
+        }
+    }
+    return out;
+}
+
+// The cheap half of one run, apart so a test can call it without spending
+// anything: a fresh directory, the item's setup.sh under this run's seed,
+// and — on the haiku model only — the agent's override, written by
+// `task.js profile set` into this directory's own .claude/agents/ and
+// checked there. Returns { row, dir, env }; row.error says why it stopped.
+function prepareRun(ctx, job) {
+    const row = { tag: job.tag, ...job.row, agent: ctx.agent, arm: job.arm, model: job.model, round: job.round, seed: job.seed,
         pass: false, check: '', exit: null, claudeUsd: 0, wallS: 0, error: null, session: crypto.randomUUID() };
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-bench-role-'));
-    const env = { ...process.env, BENCH_SEED: '1', BENCH_IMPL: 'sonnet', BENCH_PLUGIN: bench.posix(ROOT) };
+    const dir = (ctx.mkdtemp || (() => fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-bench-role-'))))();
+    const env = { ...process.env, ...(ctx.env || {}), BENCH_SEED: String(job.seed), BENCH_IMPL: 'sonnet', BENCH_PLUGIN: bench.posix(ROOT) };
+    const s = spawnSync('bash', [bench.posix(path.join(job.itemDir, 'setup.sh'))], { cwd: dir, env, encoding: 'utf8' });
+    if (s.status !== 0) {
+        row.error = 'setup.sh exited ' + s.status + ': ' + (s.stderr || '').trim();
+        return { row, dir, env };
+    }
+    if (job.model === 'haiku') {
+        const key = 'agent.' + ctx.agent + '.model';
+        const p = spawnSync(process.execPath, [path.join(ROOT, 'scripts', 'task.js'), 'profile', 'set', key, 'haiku'], { cwd: dir, env, encoding: 'utf8' });
+        const f = path.join(dir, '.claude', 'agents', ctx.agent + '.md');
+        if (p.status !== 0 || !/^model: haiku$/m.test(fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : '')) {
+            row.error = 'profile set ' + key + ' did not pin haiku: ' + (p.stderr || '').trim();
+        }
+    }
+    return { row, dir, env };
+}
+
+// One run start to finish: prepareRun, one relay session on haiku that
+// dispatches the agent once with the row's input, the agent's return written
+// to .bench/result.txt, then the item's check.sh — its stdout last in
+// row.check, so the class line is the last line. Only the claude call is
+// awaited; the rest is synchronous and blocks the pool while it runs — an
+// implementer item's check.sh runs node --test.
+async function runJob(ctx, job) {
+    const { row, dir, env } = prepareRun(ctx, job);
     try {
-        const s = spawnSync('bash', [bench.posix(path.join(ctx.role.project, 'setup.sh'))], { cwd: dir, env, encoding: 'utf8' });
-        if (s.status !== 0) {
-            row.error = 'setup.sh exited ' + s.status + ': ' + (s.stderr || '').trim();
-            return row;
-        }
-        if (item.arm === 'haiku') {
-            const key = 'agent.' + row.agent + '.model';
-            const p = spawnSync(process.execPath, [path.join(ROOT, 'scripts', 'task.js'), 'profile', 'set', key, 'haiku'], { cwd: dir, encoding: 'utf8' });
-            const f = path.join(dir, '.claude', 'agents', row.agent + '.md');
-            if (p.status !== 0 || !/^model: haiku$/m.test(fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : '')) {
-                row.error = 'profile set ' + key + ' did not pin haiku: ' + (p.stderr || '').trim();
-                return row;
-            }
-        }
+        if (row.error) return row;
+        const extra = drift.reinjectArgs(ROOT, dir, job.reinject);
         const t0 = Date.now();
-        const args = ['-p', '--session-id', row.session, '--max-budget-usd', ctx.cap.toFixed(2), ...bench.claudeArgs(ROOT, 'haiku')];
-        const r = spawnClaude(args, { cwd: dir, env, input: bench.relayPrompt(row.agent, row.input), encoding: 'utf8',
-            timeout: 20 * 60e3, maxBuffer: 64 * 1024 * 1024 });
+        const args = ['-p', '--session-id', row.session, '--max-budget-usd', ctx.cap.toFixed(2), ...bench.claudeArgs(ROOT, 'haiku'), ...extra];
+        // ctx.spawn lets a test record the args without a claude call; a run never sets it.
+        const r = await (ctx.spawn || spawnClaudeAsync)(args, { cwd: dir, env, input: bench.relayPrompt(ctx.agent, row.input), timeout: ctx.timeoutMs });
         row.wallS = Math.round((Date.now() - t0) / 1000);
         row.exit = r.status;
         const out = lastJson(r.stdout);
         if (out && typeof out.total_cost_usd === 'number') row.claudeUsd = out.total_cost_usd;
         row.error = bench.callError(r);
-        const raw = path.join(ctx.batchDir, 'raw', tag);
+        const raw = path.join(ctx.batchDir, 'raw', row.tag);
         if (!copyTranscript(row.session, raw)) {
             row.error = row.error || 'no transcript for session ' + row.session;
             return row;
         }
-        const f = bench.roleFigures(raw, row.agent, row.arm, row.input);
+        drift.keepReinjectLog(dir, raw);
+        const f = bench.roleFigures(raw, ctx.agent, job.model, row.input);
         fs.mkdirSync(path.join(dir, '.bench'), { recursive: true });
         fs.writeFileSync(path.join(dir, '.bench', 'result.txt'), f.result);
-        const c = spawnSync('bash', [bench.posix(path.join(ctx.role.project, 'check.sh')), bench.posix(dir)], { env, encoding: 'utf8' });
+        const c = spawnSync('bash', [bench.posix(path.join(job.itemDir, 'check.sh')), bench.posix(dir)], { env, encoding: 'utf8' });
         row.pass = c.status === 0;
-        row.check = ((c.stdout || '') + (c.stderr || '')).trim().slice(-500);
+        row.check = ((c.stderr || '') + (c.stdout || '')).trim().slice(-500);
         return row;
     } finally {
         if (ctx.keep) row.dir = dir;
@@ -220,6 +252,47 @@ function runRole(ctx, item) {
             if (left) row.dir = left;
         }
     }
+}
+
+// The batch directory, its evidence pointer and the provenance lines, after
+// the probe: the relay always runs on haiku, so an alias that resolves to
+// anything but Haiku 5.5 answers null and nothing is spent.
+function startBatch(name, a, extra) {
+    const stamp = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15);
+    const evidence = a.values.evidence ? path.resolve(a.values.evidence) : defaultEvidence();
+    const batchDir = path.join(ROOT, '.fankeel', 'build', 'bench', name + '-' + stamp);
+    fs.mkdirSync(evidence, { recursive: true });
+    fs.mkdirSync(batchDir, { recursive: true });
+    fs.writeFileSync(path.join(batchDir, 'evidence.txt'), evidence + '\n');
+    const v = probe();
+    provenance(path.join(evidence, 'provenance.txt'), ['batch: ' + batchDir, ...extra, 'probe: ' + v.why]);
+    if (!v.ok) {
+        console.error('bench.js: ' + v.why + ' — no run started');
+        return null;
+    }
+    return batchDir;
+}
+
+// Every job through the pool. This one parent process appends each row to
+// runs.jsonl as its run finishes, so the file is in finishing order and
+// tally reads tags, never positions.
+// A job that throws still leaves a row — its tag, item, arm and seed with the
+// message as its error — so one bad run costs only itself, never the paid
+// runs still in flight.
+async function runAll(ctx, jobs, width, run = runJob) {
+    await bench.pool(jobs, width, async (job) => {
+        let row;
+        try {
+            row = await run(ctx, job);
+        } catch (e) {
+            row = { tag: job.tag, ...job.row, agent: ctx.agent, arm: job.arm, model: job.model, round: job.round, seed: job.seed,
+                pass: false, check: '', exit: null, claudeUsd: 0, wallS: 0, error: 'runner threw: ' + (e && e.message || e) };
+        }
+        fs.appendFileSync(path.join(ctx.batchDir, 'runs.jsonl'), JSON.stringify(row) + '\n');
+        console.log(row.tag + ' pass=' + row.pass + ' $' + row.claudeUsd.toFixed(4) + ' ' + row.wallS + 's' + (row.error ? ' — ' + row.error : ''));
+    });
+    console.log('batch: ' + ctx.batchDir);
+    console.log('next: node scripts/bench.js tally ' + bench.posix(ctx.batchDir));
 }
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -280,7 +353,7 @@ function cmdRun(a, projectsRoot) {
     return 0;
 }
 
-function cmdRole(a, projectsRoot) {
+async function cmdRole(a, projectsRoot) {
     const name = a.positionals[1] || '';
     let role;
     try {
@@ -289,8 +362,8 @@ function cmdRole(a, projectsRoot) {
         console.error('bench.js: ' + e.message);
         return 1;
     }
-    if (!role) {
-        console.error('bench.js: no role.json and input.md under ' + path.join(projectsRoot, 'roles', name));
+    if (!role || !role.items.length) {
+        console.error('bench.js: no role.json and items/ under ' + path.join(projectsRoot, 'roles', name));
         return 1;
     }
     const arms = String(a.values.arms || 'sonnet,haiku').split(',').filter(Boolean);
@@ -301,47 +374,57 @@ function cmdRole(a, projectsRoot) {
     }
     const runs = Number(a.values.runs || 5);
     const cap = Number(a.values.cap || 1);
-    if (!(runs >= 1) || !(cap > 0)) {
-        console.error('bench.js: --runs is at least 1 and --cap above 0');
+    const width = Number(a.values.jobs || 4);
+    if (!(runs >= 1) || !(cap > 0) || !(Number.isInteger(width) && width >= 1)) {
+        console.error('bench.js: --runs and --jobs are at least 1, and --cap above 0');
         return 1;
     }
-    const schedule = bench.order(arms, runs);
+    const jobs = roleJobs(name, role, arms, runs);
     if (a.values.dry) {
-        console.log(bench.roleDryLines(name, role.conf.agent, schedule, { cap, root: ROOT }).join('\n'));
+        console.log(bench.roleDryLines(name, role.conf.agent, jobs, { cap, root: ROOT }).join('\n'));
         return 0;
     }
-    const stamp = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15);
-    const evidence = a.values.evidence ? path.resolve(a.values.evidence) : defaultEvidence();
-    const batchDir = path.join(ROOT, '.fankeel', 'build', 'bench', 'role-' + name + '-' + stamp);
-    fs.mkdirSync(evidence, { recursive: true });
-    fs.mkdirSync(batchDir, { recursive: true });
-    fs.writeFileSync(path.join(batchDir, 'evidence.txt'), evidence + '\n');
-    const log = path.join(evidence, 'provenance.txt');
-    const extra = ['batch: ' + batchDir, 'role: ' + name + ' (' + role.conf.agent + ')  arms: ' + arms.join(',') + '  runs: ' + runs + '  cap: $' + cap];
-    // The relay always runs on haiku, so the alias is settled before any run.
-    const v = probe();
-    extra.push('probe: ' + v.why);
-    provenance(log, extra);
-    if (!v.ok) {
-        console.error('bench.js: ' + v.why + ' — no run started');
+    // Every control of every item, under every seed this batch will use,
+    // before the first paid call: 10-08's batch (a) was the bench's own error.
+    const self = bench.selftestRole(role.dir, { mkdtemp: selfDir, plugin: bench.posix(ROOT), seeds: Array.from({ length: runs }, (_, i) => i + 1) });
+    if (self.length) {
+        for (const e of self) console.error(e);
+        console.error('bench.js: ' + self.length + ' control(s) judged wrong — no run started');
         return 1;
     }
-    for (const item of schedule) {
-        const row = runRole({ name, role, cap, keep: Boolean(a.values.keep), batchDir }, item);
-        fs.appendFileSync(path.join(batchDir, 'runs.jsonl'), JSON.stringify(row) + '\n');
-        console.log(row.tag + ' pass=' + row.pass + ' $' + row.claudeUsd.toFixed(4) + ' ' + row.wallS + 's' + (row.error ? ' — ' + row.error : ''));
-    }
-    console.log('batch: ' + batchDir);
-    console.log('next: node scripts/bench.js tally ' + bench.posix(batchDir));
+    const batchDir = startBatch('role-' + name, a, ['role: ' + name + ' (' + role.conf.agent + ')  items: ' + role.items.length
+        + '  arms: ' + arms.join(',') + '  runs: ' + runs + '  jobs: ' + width + '  cap: $' + cap]);
+    if (!batchDir) return 1;
+    await runAll({ agent: role.conf.agent, cap, keep: Boolean(a.values.keep), batchDir, timeoutMs: 20 * 60e3 }, jobs, width);
     return 0;
 }
 
-function cmdTally(a) {
-    const batchDir = path.resolve(a.positionals[1] || '');
+// One batch read back: its kind, its tally and that tally's summary; null
+// when it has no runs.jsonl.
+function tallyBatch(batchDir) {
     let rows;
     try {
         rows = fs.readFileSync(path.join(batchDir, 'runs.jsonl'), 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l));
     } catch (e) {
+        return null;
+    }
+    const raw = path.join(batchDir, 'raw');
+    if (rows.length && rows[0].kind === 'drift') {
+        const t = drift.driftTally(rows, raw);
+        return { kind: 'drift', t, md: drift.driftSummaryMd(t) };
+    }
+    if (rows.length && typeof rows[0].role === 'string') {
+        const t = bench.roleTally(rows, raw);
+        return { kind: 'role', t, md: bench.roleSummaryMd(t) };
+    }
+    const t = bench.tally(rows, raw);
+    return { kind: 'run', t, md: bench.summaryMd(t) };
+}
+
+function cmdTally(a) {
+    const batchDir = path.resolve(a.positionals[1] || '');
+    const b = tallyBatch(batchDir);
+    if (!b) {
         console.error('bench.js: no runs.jsonl under ' + batchDir);
         return 1;
     }
@@ -354,29 +437,108 @@ function cmdTally(a) {
             console.error('bench.js: no evidence.txt under ' + batchDir + '; writing to ' + evidence);
         }
     }
-    const isRole = rows.length > 0 && typeof rows[0].role === 'string';
-    const t = isRole ? bench.roleTally(rows, path.join(batchDir, 'raw')) : bench.tally(rows, path.join(batchDir, 'raw'));
     const out = path.join(evidence, path.basename(batchDir));
     fs.mkdirSync(out, { recursive: true });
-    fs.writeFileSync(path.join(out, 'summary.json'), JSON.stringify(t, null, 2) + '\n');
-    const md = isRole ? bench.roleSummaryMd(t) : bench.summaryMd(t);
-    fs.writeFileSync(path.join(out, 'summary.md'), md);
-    process.stdout.write(md);
+    fs.writeFileSync(path.join(out, 'summary.json'), JSON.stringify(b.t, null, 2) + '\n');
+    fs.writeFileSync(path.join(out, 'summary.md'), b.md);
+    process.stdout.write(b.md);
+    return 0;
+}
+
+// The drift 2×2 (design sections 6 and 8): one relay on haiku dispatches the
+// implementer once with constraints.md before input.md; the reinject arms
+// mount bench/drift/reinject.js on PostToolUse through --settings.
+async function cmdDrift(a, projectsRoot) {
+    const dir = path.join(projectsRoot, 'drift');
+    if (!fs.existsSync(path.join(dir, 'setup.sh'))) {
+        console.error('bench.js: no setup.sh under ' + dir);
+        return 1;
+    }
+    const names = Object.keys(drift.DRIFT_ARMS);
+    const arms = String(a.values.arms || names.join(',')).split(',').filter(Boolean);
+    const bad = arms.filter((x) => !drift.DRIFT_ARMS[x]);
+    if (!arms.length || bad.length) {
+        console.error('bench.js: --arms is a comma list of ' + names.join(', ') + (bad.length ? '; not ' + bad.join(', ') : ''));
+        return 1;
+    }
+    const runs = Number(a.values.runs || 10);
+    const cap = Number(a.values.cap || 3);
+    const width = Number(a.values.jobs || 4);
+    if (!(runs >= 1) || !(cap > 0) || !(Number.isInteger(width) && width >= 1)) {
+        console.error('bench.js: --runs and --jobs are at least 1, and --cap above 0');
+        return 1;
+    }
+    const input = drift.driftPrompt(dir);
+    const jobs = bench.order(arms, runs).map((s) => {
+        const arm = drift.DRIFT_ARMS[s.arm];
+        return { tag: 'drift-r' + s.round + '-' + s.arm, arm: s.arm, model: arm.model, reinject: arm.reinject, round: s.round, seed: s.seed,
+            itemDir: dir, row: { kind: 'drift', reinject: arm.reinject, input } };
+    });
+    if (a.values.dry) {
+        console.log(drift.driftDryLines(jobs, { cap, root: ROOT }).join('\n'));
+        return 0;
+    }
+    const self = bench.selftest(dir, { mkdtemp: selfDir, plugin: bench.posix(ROOT), classes: true });
+    if (self.length) {
+        for (const e of self) console.error(e);
+        console.error('bench.js: ' + self.length + ' control(s) judged wrong — no run started');
+        return 1;
+    }
+    const batchDir = startBatch('drift', a, ['drift  arms: ' + arms.join(',') + '  runs: ' + runs + '  jobs: ' + width + '  cap: $' + cap]);
+    if (!batchDir) return 1;
+    await runAll({ agent: 'fankeel-implementer', cap, keep: Boolean(a.values.keep), batchDir, timeoutMs: 60 * 60e3 }, jobs, width);
+    return 0;
+}
+
+// Every batch named, re-tallied as tally does, then lib/drift.js reportMd
+// over the role batches and the drift batch, written to --out or printed.
+function cmdReport(a) {
+    const dirs = a.positionals.slice(1).map((d) => path.resolve(d));
+    if (!dirs.length) {
+        console.error('bench.js: report needs at least one batch dir');
+        return 1;
+    }
+    const roles = [];
+    let d = null;
+    for (const dir of dirs) {
+        const b = tallyBatch(dir);
+        if (!b) {
+            console.error('bench.js: no runs.jsonl under ' + dir);
+            return 1;
+        }
+        if (b.kind === 'role') roles.push(b.t);
+        else if (b.kind === 'drift' && !d) d = b.t;
+        else {
+            // A single-project batch, or a second drift batch: the page would drop its figures without saying so.
+            console.error('bench.js: ' + dir + ' cannot go in a report (a report takes role batches and one drift batch)');
+            return 1;
+        }
+    }
+    const md = drift.reportMd({ date: new Date().toISOString().slice(0, 10), roles, drift: d, batches: dirs.map((x) => bench.posix(path.relative(ROOT, x))) });
+    if (a.values.out) fs.writeFileSync(path.resolve(a.values.out), md);
+    else process.stdout.write(md);
     return 0;
 }
 
 function cmdSelftest(a, projectsRoot) {
     const named = a.positionals.slice(1);
+    const n = Number(a.values.seeds || 1);
+    if (!(Number.isInteger(n) && n >= 1)) {
+        console.error('bench.js: --seeds is a whole number, at least 1');
+        return 1;
+    }
     const rolesDir = path.join(projectsRoot, 'roles');
     const roles = fs.existsSync(rolesDir)
-        ? fs.readdirSync(rolesDir).filter((n) => fs.existsSync(path.join(rolesDir, n, 'role.json'))).map((n) => 'roles/' + n)
+        ? fs.readdirSync(rolesDir).filter((x) => fs.existsSync(path.join(rolesDir, x, 'role.json'))).map((x) => 'roles/' + x)
         : [];
+    const drifts = fs.existsSync(path.join(projectsRoot, 'drift', 'setup.sh')) ? ['drift'] : [];
     const all = named.length ? named
-        : [...fs.readdirSync(projectsRoot).filter((n) => fs.existsSync(path.join(projectsRoot, n, 'bench.json'))), ...roles];
+        : [...fs.readdirSync(projectsRoot).filter((x) => fs.existsSync(path.join(projectsRoot, x, 'bench.json'))), ...roles, ...drifts];
+    const opts = { mkdtemp: selfDir, plugin: bench.posix(ROOT), seeds: Array.from({ length: n }, (_, i) => i + 1) };
     const errors = [];
-    for (const n of all) {
-        errors.push(...bench.selftest(bench.roleProject(path.join(projectsRoot, n)),
-            { mkdtemp: () => fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-bench-self-')), plugin: bench.posix(ROOT) }));
+    for (const x of all) {
+        const dir = path.join(projectsRoot, x);
+        errors.push(...(x.startsWith('roles/') ? bench.selftestRole(dir, opts) : bench.selftest(dir, x === 'drift' ? { ...opts, classes: true } : opts)));
     }
     for (const e of errors) console.log(e);
     console.log(errors.length ? errors.length + ' control(s) judged wrong' : 'selftest ok: ' + all.join(', '));
@@ -386,7 +548,8 @@ function cmdSelftest(a, projectsRoot) {
 function main(argv) {
     const a = parseArgs({ args: argv, allowPositionals: true, strict: false, options: {
         arms: { type: 'string' }, runs: { type: 'string' }, cap: { type: 'string' }, dry: { type: 'boolean' },
-        keep: { type: 'boolean' }, evidence: { type: 'string' }, projects: { type: 'string' },
+        keep: { type: 'boolean' }, jobs: { type: 'string' }, seeds: { type: 'string' }, evidence: { type: 'string' }, projects: { type: 'string' },
+        out: { type: 'string' },
     } });
     const projectsRoot = a.values.projects ? path.resolve(a.values.projects) : path.join(ROOT, 'bench');
     const verb = a.positionals[0];
@@ -398,9 +561,13 @@ function main(argv) {
     if (verb === 'selftest') return cmdSelftest(a, projectsRoot);
     if (verb === 'run') return cmdRun(a, projectsRoot);
     if (verb === 'role') return cmdRole(a, projectsRoot);
+    if (verb === 'drift') return cmdDrift(a, projectsRoot);
     if (verb === 'tally') return cmdTally(a);
-    console.error('usage: node scripts/bench.js probe | selftest [<project>...] | run <project> --arms <a,b> --runs <n> --cap <usd> [--dry] [--keep] [--evidence <dir>] | role <role> --arms <sonnet,haiku> --runs <n> --cap <usd> [--dry] [--keep] [--evidence <dir>] | tally <batch dir> [--evidence <dir>]');
+    if (verb === 'report') return cmdReport(a);
+    console.error('usage: node scripts/bench.js probe | selftest [<project>...] [--seeds <n>] | run <project> --arms <a,b> --runs <n> --cap <usd> [--dry] [--keep] [--evidence <dir>] | role <role> [--arms <sonnet,haiku>] [--runs <n>] [--jobs <n>] [--cap <usd>] [--dry] [--keep] [--evidence <dir>] | drift [--arms <a,b>] [--runs <n>] [--jobs <n>] [--cap <usd>] [--dry] [--keep] [--evidence <dir>] | tally <batch dir> [--evidence <dir>] | report <batch dir>... [--out <file>]');
     return 1;
 }
 
-if (require.main === module) process.exit(main(process.argv.slice(2)));
+module.exports = { prepareRun, runJob, runAll };
+
+if (require.main === module) Promise.resolve(main(process.argv.slice(2))).then((code) => process.exit(code));

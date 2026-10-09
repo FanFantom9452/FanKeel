@@ -50,7 +50,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | How Chinese written for a person is checked: one thing per sentence, 160 columns at most, names instead of codes | [plain-language.md](90-agent/reference/plain-language.md) |
 | Why `buildDirs` stops following junctions, and why `ensureServe` probes at least 250ms | [decisions/2026-10-05-station-write-timeout.md](03-decisions/2026-10-05-station-write-timeout.md) |
 | Why the five review checks live in the build skill | [decisions/2026-10-07-review-checks-in-build.md](03-decisions/2026-10-07-review-checks-in-build.md) |
-| Why four roles run on Haiku 5.5, and what the per-role bench measured | [decisions/2026-10-08-haiku-bench-roles.md](03-decisions/2026-10-08-haiku-bench-roles.md) |
+| Why four roles moved to Haiku 5.5 (reader back on sonnet since 10-09), and what the per-role bench measured | [decisions/2026-10-08-haiku-bench-roles.md](03-decisions/2026-10-08-haiku-bench-roles.md) |
 | Why fankeel ships no output style, and where its voice lives instead | [decisions/2026-09-13-no-output-styles.md](03-decisions/2026-09-13-no-output-styles.md) |
 | What caveman and SEPIA do that this plugin does not — gates, evals, an evidence ledger, thin wrappers — plus the user's own directions, three from 09-08 and five from 09-11 — the ones still open are `TODO.md` entries | [improvement-brief.md](90-agent/reference/improvement-brief.md) — *a backlog, 繁體中文* |
 | Every dated report's headline figure with a stable ID, what its scope does not cover, and which pages cite it | [sources.md](90-agent/reference/sources.md) — *the evidence ledger* |
@@ -360,6 +360,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | Haiku 5.5 按角色量的結果：reader、mutator、mover、照抄計畫的 implementer 各 5 次 haiku 對 5 次 sonnet，只算那個子 agent 自己的花費，以及 fix-bug 那批整次 run 的表 | [reports/2026-10-08-haiku-bench.md](90-agent/reports/2026-10-08-haiku-bench.md) — *a dated snapshot, 繁體中文* |
 | 外部評審原文與使用者指示（10-09）：六條建議各自怎麼變成腳本或測試 | [reports/2026-10-09-workflow-review.md](90-agent/reports/2026-10-09-workflow-review.md) — *a dated snapshot, 繁體中文* |
 | verify 十一次退回的記錄，從 build skill 的 reviewer 模板搬出 | [reports/2026-10-01-verify-eleven-returns.md](90-agent/reports/2026-10-01-verify-eleven-returns.md) — *a dated snapshot, 繁體中文* |
+| Haiku 角色題庫與長任務飄移：四個角色各 36 次 haiku 對 36 次 sonnet 分三層，以及 haiku／sonnet × PostToolUse 重注入的 2×2 各 10 次；haiku 撐得住長任務、重注入對 haiku 值得，sonnet 多數 run 用腳本做完、不足 30 步而無效 | [reports/2026-10-09-haiku-bank-drift.md](90-agent/reports/2026-10-09-haiku-bank-drift.md) — *a dated snapshot, 繁體中文* |
 | 給人看的文字可選風格（10-05）的 design：profile key `prose.style`（`writer`、`plain`、`sepia`、`custom`，預設 `writer`），把所選風格的規則注入站 agent 與 writer 的 brief，build 站不注入 | `docs/99-archive/2026-10-05-prose-style-design.md` — *built, 繁體中文* |
 | 那份設計的四個 task | `docs/99-archive/2026-10-05-prose-style.md` — *built, 繁體中文* |
 | mod 自動壓縮的四個 task：`hooks/compact.ts` 在主 session 超過 450k 且有 fankeel 任務進行中時壓縮 | [plans/2026-10-05-compact-mod.md](90-agent/plans/2026-10-05-compact-mod.md) — *design-intent, 繁體中文* |
@@ -367,6 +368,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 工作流評審（10-09）定了什麼、沒做什麼：六條建議全做——可查的出口條件改成會拒絕的腳本、站 agent 層縮回 survey、brief 上限、land 綠燈由 `task.js land` 守、決策頁不追加、todo-check 報 no reason；Task 18 對照沒跑、七個 commit 訊息留給 land | [decisions/2026-10-09-workflow-review.md](03-decisions/2026-10-09-workflow-review.md) — *繁體中文* |
 | 工作流評審（10-09）的 design：能由腳本查的出口條件各變成一支會拒絕的腳本或一條會紅的測試 | `docs/99-archive/2026-10-09-workflow-review-design.md` — *built, 繁體中文* |
 | 那份設計的 18 個 task | `docs/99-archive/2026-10-09-workflow-review.md` — *built, 繁體中文* |
+| Haiku 角色題庫、平行執行器與長任務飄移 2×2 的 design：每角色十二題分三層、`check.sh` 標出失敗類別、`bench.js role` 用 `--jobs` 平行跑、`drift` 量 haiku／sonnet × PostToolUse 重注入 | [plans/2026-10-09-haiku-bank-drift-design.md](90-agent/plans/2026-10-09-haiku-bank-drift-design.md) — *design-intent, 繁體中文* |
+| 那份設計的十二個 task：失敗類別與共用判分、四組題庫、平行執行器、逐步檢查與重注入、報告產生器，以及使用者親手跑的付費批次 | [plans/2026-10-09-haiku-bank-drift.md](90-agent/plans/2026-10-09-haiku-bank-drift.md) — *design-intent, 繁體中文* |
 | 監控站在 `/chartroom/<專案>/` 開架構白板（10-08）的 design：handler 在 nonce 檢查之前剝前綴，轉交該專案懶建的 Chartroom `createHandler`，Chartroom 路徑取自 profile `station.chartroom`，板子固定在 `<專案>/.fankeel/architecture.board` | `docs/99-archive/2026-10-08-station-chartroom-design.md` — *built, 繁體中文* |
 | 那份設計的三個 task：profile 鍵 `station.chartroom`、station 路由與 `close()`、專案卡片的「架構白板：開啟」連結 | `docs/99-archive/2026-10-08-station-chartroom.md` — *built, 繁體中文* |
 | Haiku 5.5 的派工與可重置的模型實驗台（10-08）的 design，第二版：按角色量，reader、mutator、mover、照抄計畫的 implementer 各自 haiku 對 sonnet，並先修好 profile 指定的模型被派工時明寫的模型蓋過 | `docs/99-archive/2026-10-08-haiku-bench-design.md` — *built, 繁體中文* |
@@ -441,9 +444,9 @@ is explained, and it is the one thing to know before adding a page here.
 | `docs/90-agent/judgements/` | report | it is what `fankeel-judge` answered on that day, filed verbatim by `scripts/judge.js` |
 | `docs/90-agent/todo/` | todo | n/a — one TODO entry per file, current, checked for links and line numbers only; its date is its own `stamp` |
 | `skills/` | reference | no |
-| `bench/` | fixture | n/a — the fixed inputs and two-sided controls `scripts/bench.js` runs a role against; a test's own input, checked for links and line numbers only, never for symbols |
+| `bench/` | fixture | n/a — the fixed inputs and two-sided controls `scripts/bench.js` runs: `add-feature/`, `fix-bug/` and `review-planted/`, the whole tasks `run` compares arms on; `roles/`, one directory per role; and `drift/`, the long task the drift 2×2 checks step by step; a test's own input, checked for links and line numbers only, never for symbols |
 | `evals/` | fixture | n/a — a test's own input; a prompt names paths only its scaffold has, so it is checked for links and line numbers only, never for symbols |
 | `.claude/agents/` | reference | no |
-| `agents/` | reference | no — the ten agents the plugin ships, read by Claude Code at process start |
+| `agents/` | reference | no — the agents the plugin ships, one file each, read by Claude Code at process start |
 
 [Back to the front page](../README.md)

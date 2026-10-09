@@ -19,7 +19,7 @@
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { spawnSync } = require('node:child_process');
+const { spawnSync, spawn: spawnChild } = require('node:child_process');
 const { parseArgs: parseArgv } = require('node:util');
 const ev = require('../lib/eval.js');
 
@@ -97,6 +97,47 @@ function spawnClaude(args, opts) {
         return spawnSync('claude', args.map(cmdQuote), { ...opts, shell: true });
     }
     return r;
+}
+
+// spawnClaude's asynchronous twin, for scripts/bench.js's parallel runs: the
+// same EINVAL retry through cmd.exe with quoted arguments, and a result in
+// spawnSync's shape — status, stdout, stderr, error — so callError and
+// lastJson read both alike. A run past opts.timeout is killed and resolves
+// with status null and an ETIMEDOUT error, as spawnSync's does.
+function spawnClaudeAsync(args, opts, spawn = spawnChild, platform = process.platform) {
+    const once = (argv, shell) => new Promise((resolve) => {
+        let child;
+        try {
+            child = spawn('claude', argv, { cwd: opts.cwd, env: opts.env, shell });
+        } catch (e) {
+            resolve({ status: null, stdout: '', stderr: '', error: e });
+            return;
+        }
+        const out = [];
+        const err = [];
+        let error = null;
+        let done = false;
+        const timer = opts.timeout ? setTimeout(() => {
+            error = Object.assign(new Error('spawn claude ETIMEDOUT'), { code: 'ETIMEDOUT' });
+            child.kill();
+        }, opts.timeout) : null;
+        const finish = (code) => {
+            if (done) return;
+            done = true;
+            if (timer) clearTimeout(timer);
+            resolve({ status: error ? null : code, stdout: Buffer.concat(out).toString('utf8'), stderr: Buffer.concat(err).toString('utf8'), error });
+        };
+        child.stdout.on('data', (d) => out.push(Buffer.from(d)));
+        child.stderr.on('data', (d) => err.push(Buffer.from(d)));
+        child.on('error', (e) => {
+            if (!error) error = e;
+            if (child.pid === undefined) finish(null);
+        });
+        child.on('close', finish);
+        child.stdin.on('error', () => {});
+        child.stdin.end(opts.input || '');
+    });
+    return once(args, false).then((r) => (r.error && r.error.code === 'EINVAL' && platform === 'win32' ? once(args.map(cmdQuote), true) : r));
 }
 
 // The argument list `runOnce` hands `claude -p`, pulled out on its own so a
@@ -196,4 +237,4 @@ if (require.main === module) {
     process.exit(main(process.argv.slice(2)));
 }
 
-module.exports = { usage, parseArgs, runOnce, render, verdict, main, cmdQuote, buildArgs, spawnClaude };
+module.exports = { usage, parseArgs, runOnce, render, verdict, main, cmdQuote, buildArgs, spawnClaude, spawnClaudeAsync };

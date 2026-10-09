@@ -1,0 +1,6 @@
+before:
+ℹ pass 2
+ℹ fail 0
+after:
+ℹ pass 1
+ℹ fail 1

@@ -172,7 +172,7 @@ const SCRIPT = path.join(__dirname, '..', 'scripts', 'eval.js');
 // Destructured on purpose: tests/source.test.js credits an export as imported
 // only when it sees `mod.name` or a destructuring require, and runOnce is the
 // one name nothing here can call without spending money.
-const { usage, parseArgs, runOnce, render, verdict, main, cmdQuote, buildArgs } = require('../scripts/eval.js');
+const { usage, parseArgs, runOnce, render, verdict, main, cmdQuote, buildArgs, spawnClaudeAsync } = require('../scripts/eval.js');
 
 // N15: `--allowedTools` never gated anything
 // (docs/reports/2026-09-15-waiting-probes.md §2); `--disallowedTools` does.
@@ -282,4 +282,55 @@ test('eval.js refuses to run without --model, before anything is spawned', () =>
     const r = spawnSync(process.execPath, [SCRIPT, 'evals/route-typo'], { encoding: 'utf8', cwd: path.join(__dirname, '..') });
     assert.equal(r.status, 1);
     assert.match(r.stdout + r.stderr, /--model/);
+});
+
+const { EventEmitter } = require('node:events');
+const { PassThrough } = require('node:stream');
+
+// A child process as spawnClaudeAsync reads one: stdio streams and the
+// `error` and `close` events.
+function fakeChild({ out = '', code = 0, error = null }) {
+    const c = new EventEmitter();
+    c.stdout = new PassThrough();
+    c.stderr = new PassThrough();
+    c.stdin = new PassThrough();
+    c.kill = () => {};
+    setImmediate(() => {
+        if (error) c.emit('error', error);
+        c.stdout.end(out);
+        c.stderr.end('');
+        setImmediate(() => c.emit('close', error ? null : code));
+    });
+    return c;
+}
+
+test('spawnClaudeAsync resolves in spawnSync\'s shape, and on Windows retries an EINVAL through the shell with quoted arguments', async () => {
+    const calls = [];
+    const spawn = (cmd, args, opts) => {
+        calls.push({ args, shell: Boolean(opts.shell) });
+        return calls.length === 1 ? fakeChild({ error: Object.assign(new Error('spawn EINVAL'), { code: 'EINVAL' }) }) : fakeChild({ out: '{"ok":1}\n' });
+    };
+    const r = await spawnClaudeAsync(['-p', 'a b'], { input: 'hi' }, spawn, 'win32');
+    assert.deepEqual([r.status, r.stdout, r.error], [0, '{"ok":1}\n', null]);
+    assert.deepEqual(calls.map((c) => c.shell), [false, true]);
+    assert.deepEqual(calls[1].args, ['"-p"', '"a b"']);
+    const linux = await spawnClaudeAsync(['-p'], {}, () => fakeChild({ error: Object.assign(new Error('x'), { code: 'EINVAL' }) }), 'linux');
+    assert.deepEqual([linux.status, linux.error.code], [null, 'EINVAL']);
+});
+
+test('spawnClaudeAsync kills a run past its timeout and reports ETIMEDOUT', async () => {
+    let killed = false;
+    const spawn = () => {
+        const c = new EventEmitter();
+        c.stdout = new PassThrough();
+        c.stderr = new PassThrough();
+        c.stdin = new PassThrough();
+        c.kill = () => {
+            killed = true;
+            setImmediate(() => c.emit('close', null));
+        };
+        return c;
+    };
+    const r = await spawnClaudeAsync(['-p'], { timeout: 20 }, spawn, 'linux');
+    assert.deepEqual([killed, r.status, r.error.code], [true, null, 'ETIMEDOUT']);
 });
