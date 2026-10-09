@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 last_verified: 2026-10-09
 source_of_truth: docs/90-agent/plans/2026-10-09-workflow-review-design.md
 ---

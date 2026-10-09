@@ -364,8 +364,9 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 那份設計的四個 task | `docs/99-archive/2026-10-05-prose-style.md` — *built, 繁體中文* |
 | mod 自動壓縮的四個 task：`hooks/compact.ts` 在主 session 超過 450k 且有 fankeel 任務進行中時壓縮 | [plans/2026-10-05-compact-mod.md](90-agent/plans/2026-10-05-compact-mod.md) — *design-intent, 繁體中文* |
 | 注入先開 server、gate 漏抓代號要出聲、brain 模型對照的三條 TODO：注入先量冷啟動與慢磁碟再讓 `/fankeel` 先問 station 再寫頁，`todoIds` 讀失敗浮出警告並把 2800 毫秒門檻寫成常數，brain 用 opus 或 sonnet 的對照腳本由使用者親手跑 | [plans/2026-10-05-inject-plain-brain.md](90-agent/plans/2026-10-05-inject-plain-brain.md) — *design-intent, 繁體中文* |
-| 工作流評審（10-09）的 design：能由腳本查的出口條件各變成一支會拒絕的腳本或一條會紅的測試 | [plans/2026-10-09-workflow-review-design.md](90-agent/plans/2026-10-09-workflow-review-design.md) — *design-intent, 繁體中文* |
-| 那份設計的 task | [plans/2026-10-09-workflow-review.md](90-agent/plans/2026-10-09-workflow-review.md) — *design-intent, 繁體中文* |
+| 工作流評審（10-09）定了什麼、沒做什麼：六條建議全做——可查的出口條件改成會拒絕的腳本、站 agent 層縮回 survey、brief 上限、land 綠燈由 `task.js land` 守、決策頁不追加、todo-check 報 no reason；Task 18 對照沒跑、七個 commit 訊息留給 land | [decisions/2026-10-09-workflow-review.md](03-decisions/2026-10-09-workflow-review.md) — *繁體中文* |
+| 工作流評審（10-09）的 design：能由腳本查的出口條件各變成一支會拒絕的腳本或一條會紅的測試 | `docs/99-archive/2026-10-09-workflow-review-design.md` — *built, 繁體中文* |
+| 那份設計的 18 個 task | `docs/99-archive/2026-10-09-workflow-review.md` — *built, 繁體中文* |
 | 監控站在 `/chartroom/<專案>/` 開架構白板（10-08）的 design：handler 在 nonce 檢查之前剝前綴，轉交該專案懶建的 Chartroom `createHandler`，Chartroom 路徑取自 profile `station.chartroom`，板子固定在 `<專案>/.fankeel/architecture.board` | `docs/99-archive/2026-10-08-station-chartroom-design.md` — *built, 繁體中文* |
 | 那份設計的三個 task：profile 鍵 `station.chartroom`、station 路由與 `close()`、專案卡片的「架構白板：開啟」連結 | `docs/99-archive/2026-10-08-station-chartroom.md` — *built, 繁體中文* |
 | Haiku 5.5 的派工與可重置的模型實驗台（10-08）的 design，第二版：按角色量，reader、mutator、mover、照抄計畫的 implementer 各自 haiku 對 sonnet，並先修好 profile 指定的模型被派工時明寫的模型蓋過 | `docs/99-archive/2026-10-08-haiku-bench-design.md` — *built, 繁體中文* |
