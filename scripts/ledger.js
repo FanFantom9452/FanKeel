@@ -498,7 +498,9 @@ function main(argv) {
     const { head, verb: named, text } = splitAroundVerb(argv, STRING_FLAGS, VERBS);
     const verb = String(named || 'show').toLowerCase();
     const opts = parseArgs(head, verb);
-    const root = path.resolve(opts.root || process.cwd());
+    // The registry's root, found as scripts/task.js rootOf finds it: run from
+    // a worktree under it, the ledger lands beside the registry (build-9).
+    const root = opts.root ? registry.resolveRoot(opts.root) : registry.rootFor({ cwd: process.cwd() });
     if (!opts.plan) fail('--plan <path to the plan file> is required.');
 
     if (verb === 'init') {

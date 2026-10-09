@@ -20,6 +20,8 @@ const root = () => tmp('fankeel-ledger-');
 // `groups` now reads the profile, and the machine profile lives under the
 // config directory: pinned to an empty one so no test reads the real machine's.
 process.env.CLAUDE_CONFIG_DIR = tmp('fankeel-ledger-cfg-');
+// rootFor reads it before cwd (lib/registry.js:68-70).
+delete process.env.CLAUDE_PROJECT_DIR;
 
 // `scripts/ledger.js` carries the same refusal as `scripts/task.js` -- a flag
 // declared to take a value, given none, is named rather than defaulted. Only
@@ -1053,4 +1055,16 @@ test('groups names a require edge inside its own group and keeps it off workflow
   assert.match(out, /1 groups over 3 tasks/);
   assert.match(out, /1: 1, 2, 3  — agents/);
   assert.match(out, /Task 1 `lib\/a\.js` requires Task 2 `lib\/b\.js` at line 2/);
+});
+
+// build-9: run from a worktree under the registry root, the ledger lands
+// beside the registry, not in the worktree that land will remove.
+test('ledger.js run from a worktree under the registry root writes the ledger beside the registry', () => {
+  const main = root();
+  fs.mkdirSync(path.join(main, '.fankeel', 'sessions'), { recursive: true });
+  const wt = path.join(main, '.fankeel', 'worktrees', 'abcd1234');
+  fs.mkdirSync(wt, { recursive: true });
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'docs/p.md', 'ruling', 'use the helper', 'one extractor', 'a rewrite'], { cwd: wt, encoding: 'utf8' });
+  assert.ok(fs.existsSync(path.join(main, '.fankeel', 'build', 'p', 'progress.md')), 'the ledger is beside the registry');
+  assert.equal(fs.existsSync(path.join(wt, '.fankeel', 'build', 'p', 'progress.md')), false, 'no second ledger in the worktree');
 });
