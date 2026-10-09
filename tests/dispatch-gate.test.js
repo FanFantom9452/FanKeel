@@ -89,3 +89,75 @@ test('as a hook: the fifth call prints ask with its reason, the fourth prints no
     assert.equal(quiet.status, 0);
     assert.equal(quiet.stdout, '');
 });
+
+const withArms = (dir, arms) => {
+    const batch = path.join(dir, 'evidence', '2026-10-09-arms', 'role-reader-20261009T033513');
+    fs.mkdirSync(batch, { recursive: true });
+    fs.writeFileSync(path.join(batch, 'summary.json'), JSON.stringify({ arms }));
+    return path.join(dir, 'evidence');
+};
+
+test('the bench figure comes from the arm of the dispatch\'s own model, all arms when none matches', () => {
+    const dir = tmp('fankeel-dispatch-gate-');
+    const root = withArms(dir, [
+        { role: 'reader', arm: 'haiku', runs: 5, roleUsd: 0.05 },
+        { role: 'reader', arm: 'sonnet', runs: 5, roleUsd: 0.5 },
+    ]);
+    assert.equal(benchPerDispatch(root, 'reader', 'haiku').usd, 0.01);
+    assert.equal(benchPerDispatch(root, 'reader', 'sonnet').usd, 0.1);
+    assert.ok(Math.abs(benchPerDispatch(root, 'reader', 'opus').usd - 0.055) < 1e-9);
+});
+
+test('a subagent\'s dispatches are counted in its own transcript, not the session\'s', () => {
+    const dir = tmp('fankeel-dispatch-gate-');
+    const main = transcript(dir, []);
+    const own = path.join(dir, SID, 'subagents');
+    fs.mkdirSync(own, { recursive: true });
+    fs.writeFileSync(path.join(own, 'agent-abc123.jsonl'), five.map((e) => JSON.stringify(e)).join('\n') + '\n');
+    const out = decide({ ...payload(main, 'toolu_5'), agent_id: 'abc123' }, { data: null, evidenceRoot: evidence(dir, 0.05, 5) });
+    assert.match(out.reason, /Agent call 5/);
+    assert.equal(decide(payload(main, 'toolu_5'), { data: null, evidenceRoot: evidence(dir, 0.05, 5) }), null);
+});
+
+test('a workflow agent\'s transcript under subagents/workflows/<run>/ is found', () => {
+    const dir = tmp('fankeel-dispatch-gate-');
+    const main = transcript(dir, []);
+    const wf = path.join(dir, SID, 'subagents', 'workflows', 'run1');
+    fs.mkdirSync(wf, { recursive: true });
+    fs.writeFileSync(path.join(wf, 'agent-def456.jsonl'), five.map((e) => JSON.stringify(e)).join('\n') + '\n');
+    const out = decide({ ...payload(main, 'toolu_5'), agent_id: 'def456' }, { data: null, evidenceRoot: evidence(dir, 0.05, 5) });
+    assert.match(out.reason, /Agent call 5/);
+});
+
+test('a Task call is gated like an Agent call', () => {
+    const dir = tmp('fankeel-dispatch-gate-');
+    const out = decide({ ...payload(transcript(dir, five), 'toolu_5'), tool_name: 'Task' }, { data: null, evidenceRoot: evidence(dir, 0.05, 5) });
+    assert.match(out.reason, /Agent call 5/);
+});
+
+test('an unreadable transcript fails open: nothing asked, nothing printed, exit 0', () => {
+    const dir = tmp('fankeel-dispatch-gate-');
+    const file = transcript(dir, five);
+    // A file that is there and cannot be opened (locked, no permission): the
+    // reader answers null for it, where a missing file answers [].
+    const open = fs.openSync;
+    fs.openSync = (p, ...rest) => {
+        if (p === file) throw Object.assign(new Error('locked'), { code: 'EACCES' });
+        return open(p, ...rest);
+    };
+    try {
+        assert.equal(decide(payload(file, 'toolu_5'), { data: null, evidenceRoot: evidence(dir, 0.05, 5) }), null);
+    } finally {
+        fs.openSync = open;
+    }
+    const r = spawnSync(process.execPath, [HOOK], { input: JSON.stringify(payload(path.join(dir, 'missing.jsonl'), 'toolu_5')), encoding: 'utf8',
+        env: { ...process.env, CLAUDE_PROJECT_DIR: dir } });
+    assert.equal(r.status, 0);
+    assert.equal(r.stdout, '');
+});
+
+test('with neither spend nor a bench report the reason says there is no figure', () => {
+    const dir = tmp('fankeel-dispatch-gate-');
+    const out = decide(payload(transcript(dir, five), 'toolu_5'), { data: null, evidenceRoot: path.join(dir, 'none') });
+    assert.match(out.reason, /No figure: no stage has recorded spend and no bench ran reader/);
+});

@@ -14,35 +14,12 @@ const path = require('node:path');
 const { run, parse } = require('../lib/hook.js');
 const registry = require('../lib/registry.js');
 const { costOf } = require('../lib/prices.js');
-const { sessionDirOf } = require('../lib/usage.js');
+const { sessionDirOf, agentFiles } = require('../lib/usage.js');
+const { tailEntries } = require('../lib/handoff.js');
 
 const DEFAULT = 4;
 const DISPATCH = new Set(['Agent', 'Task']);
-const TAIL = 256 * 1024;
 const EVIDENCE = path.join(__dirname, '..', 'docs', '90-agent', 'reports', 'evidence');
-
-// The parsed lines at the end of a transcript, read as lib/handoff.js
-// tailEntries reads them: the last TAIL bytes, a cut first line skipped.
-function tailOf(file) {
-    let fd;
-    try {
-        fd = fs.openSync(file, 'r');
-        const size = fs.fstatSync(fd).size;
-        const start = Math.max(0, size - TAIL);
-        const buf = Buffer.alloc(size - start);
-        fs.readSync(fd, buf, 0, buf.length, start);
-        const out = [];
-        for (const l of buf.toString('utf8').split('\n')) {
-            if (!l.trim()) continue;
-            try { out.push(JSON.parse(l)); } catch (e) { /* cut or half-written */ }
-        }
-        return out;
-    } catch (e) {
-        return [];
-    } finally {
-        if (fd !== undefined) fs.closeSync(fd);
-    }
-}
 
 const blocksOf = (e) => (e && e.message && Array.isArray(e.message.content) ? e.message.content : []);
 const callsIn = (e) => blocksOf(e).filter((b) => b && b.type === 'tool_use' && DISPATCH.has(b.name));
@@ -72,7 +49,13 @@ function transcriptFor(payload) {
     if (!main) return null;
     if (!payload.agent_id) return main;
     const dir = sessionDirOf(main);
-    return dir ? path.join(dir, 'subagents', 'agent-' + payload.agent_id + '.jsonl') : null;
+    if (!dir) return null;
+    // A workflow's agents write under subagents/workflows/<run>/ (hooks/budget.js
+    // walks there too); the direct path first, since the walk reads a directory.
+    const name = 'agent-' + payload.agent_id + '.jsonl';
+    const direct = path.join(dir, 'subagents', name);
+    if (fs.existsSync(direct)) return direct;
+    return agentFiles(dir).find((f) => path.basename(f) === name) || direct;
 }
 
 // `fankeel:fankeel-reader-high` is the bench's `reader`.
@@ -127,7 +110,7 @@ function decide(payload, opts) {
     if (!payload || !DISPATCH.has(payload.tool_name)) return null;
     const file = transcriptFor(payload);
     if (!file) return null;
-    const n = positionOf(tailOf(file), payload.tool_use_id);
+    const n = positionOf(tailEntries(file) || [], payload.tool_use_id);
     if (n <= DEFAULT) return null;
     const input = payload.tool_input && typeof payload.tool_input === 'object' ? payload.tool_input : {};
     const role = roleOf(input.subagent_type);
