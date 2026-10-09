@@ -20,8 +20,8 @@ git add lib/payout.js spec/payout.spec.js && git commit -q -m "drift(payout): us
 sed -i "s#{ oldFormat }#{ format }#; s#./legacy/format.js#./format.js#; s#oldFormat(item.amount \* item.rate)#format(item.amount * item.rate, { currency: 'USD' })#" lib/tax.js
 sed -i "s#'pen: \$5.00'#'pen: 5.00 USD'#" spec/tax.spec.js
 git add lib/tax.js spec/tax.spec.js && git commit -q -m "drift(tax): use format()"
-sed -i "s#{ oldFormat }#{ format }#; s#./legacy/format.js#./format.js#; s#oldFormat(-item.amount, 'eur')#format(-item.amount, { currency: 'EUR', negative: 'paren' })#" lib/discount.js
-sed -i "s#'pen: €-1.50'#'pen: (1.50 EUR)'#" spec/discount.spec.js
+sed -i "s#{ oldFormat }#{ format }#; s#./legacy/format.js#./format.js#; s#oldFormat(-item.amount, 'eur')#format(-item.amount, { currency: 'EUR' })#" lib/discount.js
+sed -i "s#'pen: €-1.50'#'pen: -1.50 EUR'#" spec/discount.spec.js
 git add lib/discount.js spec/discount.spec.js && git commit -q -m "drift(discount): use format()"
 printf '// patched\n' >> vendor/fmt/index.js
 git add vendor/fmt/index.js
