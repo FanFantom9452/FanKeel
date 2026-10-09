@@ -135,7 +135,7 @@ test('a Task call is gated like an Agent call', () => {
     assert.match(out.reason, /Agent call 5/);
 });
 
-test('an unreadable transcript fails open: nothing asked, nothing printed, exit 0', () => {
+test('an unreadable transcript fails open: nothing is asked', () => {
     const dir = tmp('fankeel-dispatch-gate-');
     const file = transcript(dir, five);
     // A file that is there and cannot be opened (locked, no permission): the
@@ -150,6 +150,10 @@ test('an unreadable transcript fails open: nothing asked, nothing printed, exit 
     } finally {
         fs.openSync = open;
     }
+});
+
+test('as a hook, a transcript that is not there prints nothing and exits 0', () => {
+    const dir = tmp('fankeel-dispatch-gate-');
     const r = spawnSync(process.execPath, [HOOK], { input: JSON.stringify(payload(path.join(dir, 'missing.jsonl'), 'toolu_5')), encoding: 'utf8',
         env: { ...process.env, CLAUDE_PROJECT_DIR: dir } });
     assert.equal(r.status, 0);
