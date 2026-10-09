@@ -31,11 +31,13 @@ still running, one block per task that returned since the last one, never per
 task; on design or plan once for its file. On build, what you send is what
 `ledger.js ready` lists: run it again each time a task is recorded complete and
 send what it newly lists in that same response — run it as
-`ledger.js --plan <f> ready --worktree`, and send every implementer with
+`ledger.js --plan <f> ready --worktree` (there two tasks sharing a file may
+run at once), and send every implementer with
 `isolation: "worktree"`: the commit file's first line is `into <path>`, the main
 tree the cherry-pick lands on, and its task's block opens with
 `worktree <path>`, the path its Agent result names. A reply `conflict <paths>`
-for a task: send it once more, fresh, without asking; the same task conflicting
+(or `<paths>: conflict <paths>`) for a task: send it once more, fresh, on the
+new HEAD, without asking; the same task conflicting
 twice stops the build, with the paths in your handoff. A
 `kept <path> — <why>` after a range means the worktree stayed: name it in your
 handoff. A task whose Dispatch line

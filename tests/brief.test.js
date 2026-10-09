@@ -786,7 +786,8 @@ test('a build brain asks for a commit only when none of its implementers is runn
 test('a build brain sends implementers into worktrees, names the worktree in the commit file, and re-dispatches a conflict once', () => {
   const build = briefFor('build');
   assert.match(brainRules(), /its task's block opens with `worktree <path>`/);
-  assert.match(brainRules(), /`conflict <paths>` for a task: send it once more, fresh, without asking; the same task conflicting twice stops the build/);
+  assert.match(brainRules(), /ready --worktree` \(there two tasks sharing a file may run at once\)/);
+  assert.match(brainRules(), /`conflict <paths>` \(or `<paths>: conflict <paths>`\) for a task: send it once more, fresh, on the new HEAD, without asking; the same task conflicting twice stops the build/);
   assert.match(brainRules(), /`kept <path> — <why>` after a range means the worktree stayed/);
   assert.match(build, /an implementer \(`fankeel:fankeel-implementer`, or `fankeel:fankeel-implementer-<effort>` where the task Dispatch line names an effort, on the model named there, with `isolation: "worktree"`\)/);
   assert.doesNotMatch(briefFor('verify'), /isolation: "worktree"/);
