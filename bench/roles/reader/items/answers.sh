@@ -6,7 +6,7 @@
 # `n. <answer> — <path>:<line>`. The answer must be the expected one, and the
 # cited file must exist with the needle on that line; a path written with
 # backslashes, or as an absolute path inside the project, reads as the
-# relative one. An empty needle means the thing asked about does not exist:
+# relative one, and an answer's leading ./ is dropped. An empty needle means the thing asked about does not exist:
 # the answer is `none`, with no path:line. The last line printed is `pass` or
 # `fail <class>: <why>`.
 set -u
@@ -17,7 +17,7 @@ while IFS='|' read -r n answer needle; do
     [ -n "$n" ] || continue
     line="$(tr -d '\r' < "$result" | tr '\\' '/' | grep -E "^[[:space:]]*${n}\. " | head -n 1)"
     [ -n "$line" ] || { echo "fail format: question $n: no answer line"; exit 1; }
-    got="$(printf '%s\n' "$line" | sed -E 's/^[[:space:]]*[0-9]+\.[[:space:]]*//; s/[[:space:]]+(—|–|-)[[:space:]].*$//; s/[[:space:]]+\(.*$//; s/[`*]//g; s/[[:space:]]+$//')"
+    got="$(printf '%s\n' "$line" | sed -E 's/^[[:space:]]*[0-9]+\.[[:space:]]*//; s/[[:space:]]+(—|–|-)[[:space:]].*$//; s/[[:space:]]+\(.*$//; s/[`*]//g; s/[[:space:]]+$//; s#^\./##')"
     cite="$(printf '%s\n' "$line" | grep -oE '[A-Za-z0-9_./-]+:[0-9]+' | tail -n 1)"
     if [ -z "$needle" ]; then
         [ "$got" = "none" ] || { echo "fail wrong: question $n: the answer is none, not $got"; exit 1; }
