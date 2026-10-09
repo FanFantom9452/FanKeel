@@ -58,7 +58,7 @@ gate 照舊：gate.station 有設就等 station 頁，沒設或逾時就由 AskU
 - mod 怎麼知道 pending 檔出現了：hooks/gate.js 等待時是同步迴圈（`hooks/gate.js:125`），mod 能不能在那段時間用 `$.clock.every`（`index.d.ts:3362`）輪詢、輪詢間隔多少，要實測。 決定（2026-10-09）：`$.clock.every` 每 250 ms 輪詢 pending 檔；實作時實測能否在 gate.js 的同步等待期間觸發。
 - 自己開的 Pane 在終端窄於 144 欄時不畫（`index.d.ts:7052-7056`）：這時是否改用 `$.ui.toast` 提示，或乾脆不開，待定。 決定（2026-10-09）：Pane 不畫時發一則 `$.ui.toast` 說 gate 在等，gate 照舊由 AskUserQuestion 或 station 頁回答。
 - 兩邊在同一個 200 ms 輪詢間隔內都寫了 answer 檔，後寫的蓋掉先寫的，hook 讀到的是後者；要不要讓 mod 寫前先比對 answer 檔的 mtime，待定。 決定（2026-10-09）：mod 寫 answer 檔前先 stat，已有檔或 pending 已消失就不寫並關 Pane。
-- 多選題與「其他」框在 Input 裡怎麼表達（逗號分隔或逐項一個 Input），要使用者定。 決定（2026-10-09）：逐項一個 Input，輸入 y 算選；「其他」是最後一個自由文字 Input，與 AskUserQuestion 的多選行為對齊。
+- 多選題與「其他」框在 Input 裡怎麼表達（逗號分隔或逐項一個 Input），要使用者定。 決定（2026-10-09）：逐項一個 Input，輸入 y 算選；「其他」是最後一個自由文字 Input。
 - Pane 在手機與 VS Code 上的實際樣子與 hotkey 是否可用，型別檔只說會顯示，要實測。 決定（2026-10-09）：實作時在手機與 VS Code 各答一次 gate，結果與 hotkey 可用性寫進 What proves it done；不可用就落到 toast 路線。
 
 ## What proves it done
