@@ -11,7 +11,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { execFileSync, spawnSync } = require('node:child_process');
 
-const { renderBrief, RETURN_RULES, ANSWERED_MAX, BRIEF_MAX } = require('../lib/render.js');
+const { renderBrief, RETURN_RULES, ANSWERED_MAX, BRIEF_MAX, sizeAtReference } = require('../lib/render.js');
 const { byName: stageByName } = require('../lib/stages.js');
 const mkTmp = require('./tmp.js');
 
@@ -74,6 +74,10 @@ function briefFor(stage, values) {
   return contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
 }
 
+// The build brain's fixed rules, from its agent file with the line wraps
+// flattened, so a regex written against one brief line matches a wrapped paragraph.
+const brainRules = () => fs.readFileSync(path.join(__dirname, '..', 'agents', 'fankeel-brain.md'), 'utf8').replace(/\s+/g, ' ');
+
 const entry = (over) => ({
   sessionId: SESSION,
   data: Object.assign({
@@ -123,10 +127,10 @@ test('a build brain\'s brief names its group and the file a group writes instead
   seedProfile(root, { 'stage.agents': ['build'] });
   seed(root, { stage: 'build', started: '2026-09-19T09:30:12.345Z' });
   const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain', agent_id: 'a1' })));
-  assert.match(text, /Your prompt names your case: task numbers for a group, or `build close`/);
-  assert.match(text, /build-g1\.md instead of \S*build\.md/);
-  assert.match(text, /the only gate this whole stage asks/);
-  assert.ok(text.length <= BRIEF_MAX, 'brain brief is ' + text.length + ' chars');
+  assert.match(brainRules(), /Your prompt names your case: task numbers for a group, or `build close`/);
+  assert.match(text, /group report: \S*build-g1\.md instead of \S*build\.md/);
+  assert.match(brainRules(), /the only gate this whole stage asks/);
+  assert.ok(sizeAtReference(text) <= BRIEF_MAX, 'brain brief is ' + sizeAtReference(text) + ' chars at the reference root');
 });
 
 test('a grouped build brain is told to write its own commit file, not the plain one', () => {
@@ -366,7 +370,7 @@ test('a stage agent gets its stage\'s rules and shape, its skill, and where to w
   assert.ok(text.includes('Read the lines you cite with `sed -n'), 'the brief must ask for cited lines read in Bash');
   // The shape's own word cap said nothing about the file, and the handoffs ran 6–9 KB.
   assert.ok(text.includes("The output rule's word count is this file's"), 'the brief must bind the word cap to the handoff');
-  assert.ok(text.length <= BRIEF_MAX, 'brain brief is ' + text.length + ' chars');
+  assert.ok(sizeAtReference(text) <= BRIEF_MAX, 'brain brief is ' + sizeAtReference(text) + ' chars at the reference root');
 });
 
 test('a brain\'s stage rules are rendered with the profile: a land brain carries the clause and the archive rule the profile answers, a controlled design brain never the mockup rule', () => {
@@ -494,10 +498,11 @@ test('a build brain is told to ask for its commits through a commit file, a veri
   };
   const commitFile = /\.fankeel\/build\/task-20260919T093012\/build-g1-commit\.md/;
   const build = brief('build');
-  assert.match(build, /You cannot commit: `git commit` and `git add` are refused to you\. Ask for a commit only when none of your implementers is still running[^\n]*write [^\n]*build-g1-commit\.md[^\n]*return `commit [^\n]*build-g1-commit\.md` and nothing else\. The controller commits and messages you `<base>\.\.<sha>`/);
+  assert.match(brainRules(), /You cannot commit: `git commit` and `git add` are refused to you\. Ask for a commit only when none of your implementers is still running[^\n]*write the commit file[^\n]*return `commit <that path>` and nothing else\. The controller commits and messages you `<base>\.\.<sha>`/);
   assert.match(build, commitFile);
-  assert.match(build, /You have no Edit\. A task whose Dispatch line says in-session goes to `fankeel:fankeel-implementer` on model `sonnet` like any other: send it the task's brief\./);
-  assert.match(build, /Paths are relative to the repository root\. The reply is those lines, or `commit\.js: <why>` \(`commit\.js: block <n>: <why>` after the blocks that landed\)\. A line `profile: <file> does not parse — its values were skipped` is a warning: name it in your report\. A <why> about your file or the paths you listed \([^)]*nothing to commit\): fix it and ask again; the same error twice, or any other <why> \([^)]*usage\), blocks the stage: say so in the report\. Return the report path when the whole stage is done or blocked\./);
+  assert.match(brainRules(), /You have no Edit\. A task whose Dispatch line says in-session goes to `fankeel:fankeel-implementer` on the floor model your brief names, like any other: send it the task's brief\./);
+  assert.match(build, /floor model: `sonnet`/);
+  assert.match(brainRules(), /Paths are relative to the repository root\. The reply is those lines, or `commit\.js: <why>` \(`commit\.js: block <n>: <why>` after the blocks that landed\)\. A line `profile: <file> does not parse — its values were skipped` is a warning: name it in your report\. A <why> about your file or the paths you listed \([^)]*nothing to commit\): fix it and ask again; the same error twice, or any other <why> \([^)]*usage\), blocks the stage: say so in the report\. Return the report path when the whole stage is done or blocked\./);
   assert.doesNotMatch(build, /You cannot edit or restore a file/);
   for (const stage of ['design', 'plan']) {
     assert.match(brief(stage), /A further line `profile: <file> does not parse — its values were skipped` may follow: a warning, not a failure/);
@@ -517,7 +522,7 @@ test('a brain is told the profile\'s dispatch.floor as the model for the impleme
   };
   assert.match(brief('verify', {}), /send `fankeel:fankeel-mutator` on model `sonnet`: it does all three/);
   assert.match(brief('verify', { 'dispatch.floor': 'opus' }), /send `fankeel:fankeel-mutator` on model `opus`: it does all three/);
-  assert.match(brief('build', { 'dispatch.floor': 'opus' }), /in-session goes to `fankeel:fankeel-implementer` on model `opus` like any other/);
+  assert.match(brief('build', { 'dispatch.floor': 'opus' }), /floor model: `opus`/);
 });
 
 test('the brain agent file names the commit file it may write and refuses to run commit.js itself', () => {
@@ -534,7 +539,14 @@ test('a controlled build\'s brain brief stays under the 10,000-character cap on 
   seedProfile(root, { 'stage.agents': ['build'] });
   seed(root, { stage: 'build', started: '2026-09-19T09:30:12.345Z' });
   const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
-  assert.ok(text.length <= BRIEF_MAX, 'brain brief is ' + text.length + ' chars');
+  assert.ok(sizeAtReference(text) <= BRIEF_MAX, 'brain brief is ' + sizeAtReference(text) + ' chars at the reference root');
+});
+
+// brief-4: with the build rules in agents/fankeel-brain.md, the bare build
+// brain brief is its paths and sits well under the cap.
+test('a bare build brain brief is under 7,000 characters at the reference root', () => {
+  const text = briefFor('build');
+  assert.ok(sizeAtReference(text) < 7000, 'build brain brief is ' + sizeAtReference(text) + ' chars at the reference root');
 });
 
 test('the brain\'s own ## Tools names every plugin agent its stage table lets it dispatch', () => {
@@ -564,7 +576,7 @@ test('a brain is told what to read first: the last stage\'s report and the lines
   assert.ok(text.includes('lib/a.js — the row that failed'));
   assert.ok(text.includes('docs/b.md — the contract it broke'));
   assert.ok(text.includes('The next brief copies them for it'), 'the brain is told to write the block');
-  assert.ok(text.length <= BRIEF_MAX, 'brain brief is ' + text.length + ' chars');
+  assert.ok(sizeAtReference(text) <= BRIEF_MAX, 'brain brief is ' + sizeAtReference(text) + ' chars at the reference root');
 });
 
 test('read first says none when no earlier stage left a report, and says how many lines it left out', () => {
@@ -756,9 +768,9 @@ test('a build brain asks for a commit only when none of its implementers is runn
   seedProfile(root, { 'stage.agents': ['build'] });
   seed(root, { stage: 'build', started: '2026-09-19T09:30:12.345Z' });
   const build = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
-  assert.match(build, /Ask for a commit only when none of your implementers is still running, never per task: then write /);
-  assert.match(build, /one block per task that returned since the last commit, the paths it owns one per line, a blank line, then its commit message, and a line `---` between blocks/);
-  assert.match(build, /a line `---` between blocks, under a first line `into <path>` when this brief has a `worktree:` line/);
+  assert.match(brainRules(), /Ask for a commit only when none of your implementers is still running, never per task: then write /);
+  assert.match(brainRules(), /one block per task that returned since the last commit, the paths it owns one per line, a blank line, then its commit message, and a line `---` between blocks/);
+  assert.match(brainRules(), /a line `---` between blocks, under a first line `into <path>` when your brief has a `worktree:` line/);
   assert.doesNotMatch(build, /once per group `ledger\.js groups`/);
   assert.doesNotMatch(build, /may share one file/);
   const file = fs.readFileSync(path.join(__dirname, '..', 'agents', 'fankeel-brain.md'), 'utf8');
@@ -773,13 +785,13 @@ test('a build brain asks for a commit only when none of its implementers is runn
 // the head of the task's block, and re-dispatches a conflict once on its own.
 test('a build brain sends implementers into worktrees, names the worktree in the commit file, and re-dispatches a conflict once', () => {
   const build = briefFor('build');
-  assert.match(build, /Send every implementer with `isolation: "worktree"`/);
-  assert.match(build, /the first line of its task's block is `worktree <path>`/);
-  assert.match(build, /`conflict <paths>`[^\n]*dispatch it once more, fresh, on the new HEAD, without asking\. The same task conflicting a second time: stop the build/);
-  assert.match(build, /`ledger\.js --plan <f> ready --worktree`/);
-  assert.match(build, /`kept <path> — <why>`/);
+  assert.match(brainRules(), /Send every implementer with `isolation: "worktree"`/);
+  assert.match(brainRules(), /the first line of its task's block is `worktree <path>`/);
+  assert.match(brainRules(), /`conflict <paths>`[^\n]*dispatch it once more, fresh, on the new HEAD, without asking\. The same task conflicting a second time: stop the build/);
+  assert.match(brainRules(), /`ledger\.js --plan <f> ready --worktree`/);
+  assert.match(brainRules(), /`kept <path> — <why>`/);
   assert.match(build, /an implementer \(`fankeel:fankeel-implementer`, or `fankeel:fankeel-implementer-<effort>` where the task Dispatch line names an effort, on the model named there, with `isolation: "worktree"`\)/);
-  assert.match(build, /run `git rev-parse HEAD` yourself and tell every worktree-isolated implementer, before its first edit, to run `git reset --hard <that sha>` in its own worktree.*origin\/main/);
+  assert.match(brainRules(), /run `git rev-parse HEAD` yourself and tell every worktree-isolated implementer, before its first edit, to run `git reset --hard <that sha>` in its own worktree.*origin\/main/);
   assert.doesNotMatch(briefFor('verify'), /isolation: "worktree"/);
   const file = fs.readFileSync(path.join(__dirname, '..', 'agents', 'fankeel-brain.md'), 'utf8');
   assert.match(file, /`ledger\.js --plan <f> ready --worktree`/);
@@ -793,7 +805,7 @@ test('a build brain is told a user task is not its to send', () => {
   seedProfile(root, { 'stage.agents': ['build'] });
   seed(root, { stage: 'build', started: '2026-09-19T09:30:12.345Z' });
   const build = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
-  assert.match(build, /One whose Dispatch line says user is not yours to send: `ledger\.js ready` never lists it, the controller runs it with the user after your report, and your report names it on a line `hands: <n>, <n>`\./);
+  assert.match(brainRules(), /One whose Dispatch line says user is not yours to send: `ledger\.js ready` never lists it, the controller runs it with the user after your report, and your report names it on a line `hands: <n>, <n>`\./);
 });
 
 // docs/plans/2026-09-26-three-ready.md Task 1, the artefact row: the path the
@@ -896,7 +908,8 @@ test('a bare `build`, a verify rework included, is told to close as `build close
   seedProfile(root, { 'stage.agents': ['build'] });
   seed(root, { stage: 'build', started: '2026-09-19T09:30:12.345Z', moves: [['build', 1], ['verify', 2], ['build', 3]] });
   const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain', agent_id: 'r0' })));
-  assert.match(text, /Neither — a bare `build`, a verify rework's included: do what is still open, then close as `build close` does: the full suite, then the report and gate to \S*\/build-2\.md\./);
+  assert.match(brainRules(), /Neither — a bare `build`, a verify rework's included: do what is still open, then close as `build close` does: the full suite, then the report and gate to the handoff file\./);
+  assert.match(text, /Write your report to \S*\/build-2\.md/);
 });
 
 test('a build brain sent a bare `build` is marked close, so the await watches the plain handoff', () => {
@@ -960,7 +973,8 @@ test('the 2026-10-08 brief that Claude Code saved to a file now fits for a build
   for (const stage of ['build', 'plan']) {
     const root = tmp();
     seedProfile(root, { 'stage.agents': ['build', 'plan'], language: '繁體中文' });
-    const ctx = seedOverflow(root, stage);
+    // The build rules left the brief for the agent file (brief-4); a longer task puts it over the cap again.
+    const ctx = seedOverflow(root, stage, { task: 'rework the ramp: ' + 'x'.repeat(1500) });
     const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain', agent_id: 'a1' })));
     assert.ok(text.length <= BRIEF_MAX, stage + ' brain brief is ' + text.length + ' chars');
     assert.ok(text.includes('in ' + path.relative(root, ctx).split(path.sep).join('/')), 'the context file is still named, relative to the root');
@@ -992,7 +1006,7 @@ test('the same task with six long answers fits too, naming the answers it droppe
 test('a brief over the cap at the floor keeps one touched path and names every dropped fact and answer', () => {
   const root = tmp();
   seedProfile(root, { 'stage.agents': ['build'], language: '繁體中文' });
-  seedOverflow(root, 'build', { route: ROUTE, task: 'rework the ramp: ' + 'x'.repeat(1500) });
+  seedOverflow(root, 'build', { route: ROUTE, task: 'rework the ramp: ' + 'x'.repeat(5000) });
   const answers = {};
   for (let i = 1; i <= 6; i++) answers['Question ' + i + ': ' + 'q'.repeat(110)] = 'a'.repeat(150);
   answerFile(root, 'design', answers);
@@ -1041,7 +1055,7 @@ test('a build brain brief at a 150-character root keeps its worktree line absolu
   assert.ok(line, 'the brief has a worktree line');
   assert.ok(line.startsWith('worktree: ' + abs + ' (fankeel/wt-test)'), line);
   assert.ok(line.endsWith('`into ' + abs + '`'), line);
-  assert.ok(text.length <= BRIEF_MAX, 'build brain brief is ' + text.length + ' chars');
+  assert.ok(sizeAtReference(text) <= BRIEF_MAX, 'brain brief is ' + sizeAtReference(text) + ' chars at the reference root');
 });
 
 // The reader brief of the test below is under the cap before `fit` runs, so

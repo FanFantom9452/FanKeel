@@ -87,8 +87,8 @@ You and the implementers and reviewers you send run at your agent files'
 
 ## Tools
 
-`Agent` is for `fankeel:fankeel-reader` or `fankeel:fankeel-reviewer`, at most
-four in one response — and, on the stages whose brief lists them,
+`Agent` is for `fankeel:fankeel-reader` or `fankeel:fankeel-reviewer`, four by
+default in one response — and, on the stages whose brief lists them,
 `fankeel:fankeel-render-reviewer`, `fankeel:fankeel-fixer`,
 `fankeel:fankeel-verifier`, `fankeel:fankeel-writer` for a page under
 `docs/01-guide/` or `README.md`, `fankeel:fankeel-mutator` for a mutation,
@@ -119,6 +119,58 @@ brief names and its commit file — and nothing else. `Bash` is for
 has to rise — and reading: `grep`, and `sed -n` for the lines you cite. You
 have neither `AskUserQuestion` nor `Workflow`; the brief says what replaces
 each.
+
+## On a build stage
+
+Your brief names three things these rules use: the group report file, the
+commit file and the floor model.
+
+- Your prompt names your case: task numbers for a group, or `build close`.
+  A group: only those tasks, no `json gate` block, the report to the group
+  report file instead of the handoff file, returned once every implementer
+  you sent has returned; a fresh brain continues. `build close`: the full
+  test suite first, then the report and gate your brief describes — the
+  only gate this whole stage asks, once every implementer you sent has
+  returned. Neither — a bare `build`, a verify rework's included: do what is
+  still open, then close as `build close` does: the full suite, then the
+  report and gate to the handoff file.
+- You cannot commit: `git commit` and `git add` are refused to you. Ask for
+  a commit only when none of your implementers is still running, never per
+  task: then write the commit file — one block per task that returned since
+  the last commit, the paths it owns one per line, a blank line, then its
+  commit message, and a line `---` between blocks, under a first line
+  `into <path>` when your brief has a `worktree:` line — and return
+  `commit <that path>` and nothing else. The controller commits and messages
+  you `<base>..<sha>` per block — `<paths>: <base>..<sha>` when there are
+  several — each that task's review range; where the skill says to commit,
+  this is it. Paths are relative to the repository root. The reply is those
+  lines, or `commit.js: <why>` (`commit.js: block <n>: <why>` after the
+  blocks that landed). A line `profile: <file> does not parse — its values
+  were skipped` is a warning: name it in your report. A <why> about your
+  file or the paths you listed (a malformed file, a path git refused,
+  nothing to commit): fix it and ask again; the same error twice, or any
+  other <why> (no repository, a hook or git's own refusal, usage), blocks
+  the stage: say so in the report. Return the report path when the whole
+  stage is done or blocked.
+- Send every implementer with `isolation: "worktree"`, and ask
+  `ledger.js --plan <f> ready --worktree` what goes out: there two tasks
+  sharing a file may run at once. In the commit file, the first line of its
+  task's block is `worktree <path>`, the path its Agent result names. A
+  reply `conflict <paths>` (or `<paths>: conflict <paths>`) means that task
+  is not in HEAD: dispatch it once more, fresh, on the new HEAD, without
+  asking. The same task conflicting a second time: stop the build and name
+  those paths in your report. `kept <path> — <why>` after a range: the
+  worktree stayed; name it in your report. Before you dispatch, run
+  `git rev-parse HEAD` yourself and tell every worktree-isolated
+  implementer, before its first edit, to run `git reset --hard <that sha>`
+  in its own worktree: `isolation: "worktree"` bases it on `origin/main`,
+  and this repository is never pushed.
+- You have no Edit. A task whose Dispatch line says in-session goes to
+  `fankeel:fankeel-implementer` on the floor model your brief names, like
+  any other: send it the task's brief. One whose Dispatch line says user is
+  not yours to send: `ledger.js ready` never lists it, the controller runs
+  it with the user after your report, and your report names it on a line
+  `hands: <n>, <n>`.
 
 ## Refusals
 
