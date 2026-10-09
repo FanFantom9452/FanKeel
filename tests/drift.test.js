@@ -327,6 +327,26 @@ test('reportMd states both answers with the noise note beside each, and prints t
     assert.match(md, /`node scripts\/bench\.js tally \.fankeel\/build\/bench\/drift-x`/);
 });
 
+const SHORT_LEAD = '這一題的數字只算有效 run：';
+
+function shortCells(valids) {
+    return ['sonnet', 'haiku', 'sonnet-reinject', 'haiku-reinject'].map((arm) => ({ arm, model: arm.replace('-reinject', ''), reinject: arm.endsWith('-reinject'),
+        runs: 10, valid: valids[arm] === undefined ? 10 : valids[arm], passed: 3, clean: 3, medianFirst: null, bySteps: [], byContext: [], injections: 0, injectedChars: 0, usdMean: 0.5, promptMean: 1 }));
+}
+
+test('a paragraph whose cells have fewer valid runs than runs names those cells, and only that paragraph', () => {
+    const md = drift.reportMd({ date: '2026-10-10', roles: [], drift: { cells: shortCells({ sonnet: 3, 'sonnet-reinject': 3 }) }, batches: [] });
+    const para = (head) => md.split('\n').find((l) => l.startsWith(head));
+    assert.match(para('「haiku 能接長任務」'), /每格十次時，差一次只是雜訊。這一題的數字只算有效 run：sonnet 10 次中 3 次有效。$/);
+    assert.match(para('「重注入值得」對 sonnet'), /這一題的數字只算有效 run：sonnet 10 次中 3 次有效，sonnet-reinject 10 次中 3 次有效。$/);
+    assert.doesNotMatch(para('「重注入值得」對 haiku'), /有效 run/);
+});
+
+test('a tally with every cell valid equal to runs has no valid-run sentence anywhere', () => {
+    const md = drift.reportMd({ date: '2026-10-10', roles: [], drift: { cells: shortCells({}) }, batches: [] });
+    assert.equal(md.includes(SHORT_LEAD), false);
+});
+
 test('report re-tallies the batches it is given and writes the page to --out', () => {
     const out = path.join(tmp('fankeel-drift-out-'), 'r.md');
     const r = spawnSync(process.execPath, [SCRIPT, 'report', driftBatch(), '--out', out], { encoding: 'utf8' });
