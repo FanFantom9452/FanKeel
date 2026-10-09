@@ -211,7 +211,7 @@ than rewriting the page to match a change nobody meant to make.
 
 So dispatch it: one reader per pair, **several in one response** so they run at
 once, each told the file they share and asked which page the code supports. Four
-in one response is the ceiling — the fankeel skill's *Dispatch by default, never
+in one response is the default — the fankeel skill's *Dispatch by default, never
 the filtering* says why, and pairs past that are one reader with a list. Pass
 `subagent_type: fankeel:fankeel-reader` and the model explicitly — the profile's
 `dispatch.floor`, `sonnet` by default — and compare what comes back
@@ -223,7 +223,7 @@ coming.
 **A large tree is read in batches, never truncated.**
 `node <plugin>/scripts/docs-audit.js --batches` lists them — one per bucket,
 at most 40 pages each, archive and fixture pages left out. Send one
-`fankeel:fankeel-reader` per batch, four in one response at most, each told
+`fankeel:fankeel-reader` per batch, four in one response by default, each told
 its batch number and to run `node <plugin>/scripts/docs-audit.js --batch <n>`
 for its pages, and asked which page describes something that no longer
 exists. 319 pages are eight readers, not one reader holding the first forty.

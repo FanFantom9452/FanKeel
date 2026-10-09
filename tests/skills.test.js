@@ -1432,3 +1432,16 @@ test('build review carries the five checks verify kept sending back on 2026-10-0
   assert.ok(close, 'the docs-check close is not where this test looks for it');
   assert.match(close[0].replace(/\s+/g, ' '), /checked on the build's first BASE/);
 });
+
+// dispatch-1 made four dispatches in one response a default, not a cap
+// (lib/render.js: "four by default in one response"); four skill pages kept
+// calling it the ceiling. The walk's file cap and AskUserQuestion's four
+// options are other ceilings and are not what this reads for.
+test('no skill page calls four dispatches a ceiling', () => {
+  for (const n of names) {
+    const flat = read(n).replace(/\s+/g, ' ');
+    assert.doesNotMatch(flat, /\b(four|4)\b[^.]{0,25}\bceiling\b/i, n + ' still calls four a ceiling');
+    assert.doesNotMatch(flat, /\bthe ceiling names\b/, n + ' still names a dispatch ceiling');
+    assert.doesNotMatch(flat, /\bfour in one response at most\b/, n + ' still caps dispatches at four');
+  }
+});
