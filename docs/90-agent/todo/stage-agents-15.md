@@ -2,8 +2,12 @@
 label: stage-agents
 title: ab.sh 改在 worktree 提交
 description: ab.sh 改成在 worktree 裡 commit profile（`pin.sh`）；修好的 script 還沒重跑，重跑要核准約 $30 — [ab.sh](docs/90-agent/reports/evidence/2026-09-26-ab-profile-pin/ab.sh).
-state: decision
+state: done
 link: docs/90-agent/reports/evidence/2026-09-26-ab-profile-pin/ab.sh
+done:
+  at: 2026-10-09
+  sha: 22ed37a7
+  disposition: done
 ---
 
 來源：根目錄 TODO.md 第 89 行的條目（2026-09-26 記），改成逐條的 todo 檔，讓它被 todo-check 與 station 讀到，而不是只躺在根目錄一份沒人讀的清單裡。
@@ -15,3 +19,9 @@ link: docs/90-agent/reports/evidence/2026-09-26-ab-profile-pin/ab.sh
 ## 為什麼還開著
 
 這條記的是 09-26 那次 A/B 的腳本修好了沒重跑。它比的是 controller 用 opus 對 sonnet，兩臂的 `stage.agents` 都是 `false`（ab.sh 開頭註解第 4 與 14 行；99 到 100 行只是 `arm opus` / `arm sonnet`），所以它量不到 2026-10-09 評審要的那個對照：build 與 verify 交給站 agent 對不交。那個對照是 `docs/90-agent/reports/evidence/2026-10-09-build-verify-ab/ab.sh`，由 2026-10-09 的工作流評審任務寫、使用者核准花費後跑。這條留著是因為 opus 對 sonnet 的問題（controller 用哪個模型）仍沒有 n>1 的答案；完成條件：10-09 那次對照跑完後，若它的 summary 順便給出 controller 模型的數字就關閉這條，否則由使用者決定要不要另花約 30 美元重跑 09-26 的腳本。
+
+## 完成紀錄
+
+not run: user declined the ~30 USD rerun on 2026-10-09; controller opus-vs-sonnet stays unmeasured
+
+- commit 22ed37a7

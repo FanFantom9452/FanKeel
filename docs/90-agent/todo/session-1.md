@@ -6,7 +6,7 @@ state: blocked
 link: scripts/station.js
 group: 交接後 context 仍過 400k
 timing: after: 交接選項（簡報 §6.2）實施後 context 仍常過 400k
-stamp: 2026-09-26
+stamp: 2026-10-09
 ---
 
 來源：根目錄 TODO.md 第 106 行的條目（2026-09-26 記），改成逐條的 todo 檔。

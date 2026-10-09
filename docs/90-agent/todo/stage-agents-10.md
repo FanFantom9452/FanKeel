@@ -2,9 +2,11 @@
 label: stage-agents
 title: allow 規則下 no verdict 再現
 description: 放行規則 `Edit(/.fankeel/build/**)` 在檔案裡，10-08 auto mode 仍對它涵蓋的路徑回 no verdict；待查規則當時有沒有被讀到 — [subagents.md](docs/90-agent/reference/subagents.md).
-state: ready
+state: blocked
 link: docs/90-agent/reference/subagents.md
 group: 放行規則有沒有效
+timing: after: claude --debug 實跑
+stamp: 2026-10-09
 ---
 
 來源：報告 docs/90-agent/reports/2026-09-28-allow-rule-probe.md 隨 45e53abe（2026-09-28）進來，「watch-three」這個標籤出自 docs/90-agent/plans/2026-09-28-watch-three.md（e60ac583 只改寫 TODO.md 的 bullet 與 subagents.md）；報告用 10 次 headless claude -p（A 帶 local 設定、B 不帶）量 `Edit(/.fankeel/build/**)`，兩組都 5/5 寫成功，重現不出 auto mode 在 09-22 對站 agent 回的 no verdict。
