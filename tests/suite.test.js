@@ -124,3 +124,32 @@ test('an entry whose worktree is gone: blocker refuses and suite.js records noth
   assert.match(r.text, /^suite: \.fankeel\/worktrees\/gone is not a worktree any more$/);
   assert.equal(suite.readRecord(dir, data), null);
 });
+
+test('a suite record that does not parse refuses where package.json has no test script', () => {
+  const dir = tmp('fankeel-suite-');
+  assert.equal(suite.blocker(dir, DATA, dir), null);
+  const file = suite.recordPath(dir, DATA);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, '{not json');
+  assert.match(suite.blocker(dir, DATA, dir), /^suite record at .*suite\.json does not parse — run suite\.js again$/);
+});
+
+test('a green record whose tree git cannot read HEAD in refuses', () => {
+  const dir = tmp('fankeel-suite-');
+  fs.mkdirSync(path.join(dir, 'plain'));
+  fs.writeFileSync(path.join(dir, 'plain', 'package.json'), JSON.stringify({ scripts: { test: 'node --test' } }));
+  const data = { ...DATA, worktree: { path: 'plain', branch: 'fk/plain' } };
+  suite.record(dir, data, { sha: 'a'.repeat(40), at: 'now', command: 'node --test', pass: 1, fail: 0, ok: true });
+  assert.match(suite.blocker(dir, data, dir), /^suite ran at aaaaaaaa and git cannot read HEAD in .*plain — run suite\.js again$/);
+});
+
+test('suite.js prints "suite: <pass> pass, <fail> fail @ <sha8>" with the record\'s own numbers', () => {
+  const dir = repo();
+  registry.writeSession(dir, 'abcdef0123', { ...DATA });
+  const r = main(['--session', 'abcdef0123', '--root', dir]);
+  const m = /^suite: (\d+) pass, (\d+) fail @ [0-9a-f]{8}$/.exec(r.text);
+  assert.ok(m, r.text);
+  const rec = suite.readRecord(dir, DATA);
+  assert.equal(Number(m[1]), rec.pass);
+  assert.equal(Number(m[2]), rec.fail);
+});
