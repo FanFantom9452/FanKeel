@@ -9,8 +9,9 @@ want_commits() {
     [ "$n" = "$1" ] || { echo "fail wrong: $n commit(s) on top of the start, not $1"; exit 1; }
 }
 
+# the Co-Authored-By trailer Claude Code's own commit rule appends is not part of the message the item gave.
 want_message() {
-    [ "$(g log -1 --format=%B)" = "$1" ] || { echo "fail wrong: the commit message differs"; exit 1; }
+    [ "$(g log -1 --format=%B | grep -vi '^co-authored-by: ')" = "$1" ] || { echo "fail wrong: the commit message differs"; exit 1; }
 }
 
 want_merge() {
