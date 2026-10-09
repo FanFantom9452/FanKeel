@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # 六處頁面仍把 4 說成上限 Implementation Plan

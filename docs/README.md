@@ -234,7 +234,6 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | TODO 全表盤點（10-03）的 plan：子 session 由環境變數證明在跑、todo-check 讀不到就回報且前綴補斜線、commit.js 兩個子句補測試、balanced 註明無來源、mod 路線擱置 | [plans/2026-10-03-todo-patrol-three.md](90-agent/plans/2026-10-03-todo-patrol-three.md) — *design-intent, 繁體中文* |
 | TODO 全表盤點（10-05）的 plan：壓縮重試最多三次的測試、`/fankeel` 頁面寫不出來時 station 行說出來、兩處 timeout 與行號小錯、brain 選模型改放 Watch | [plans/2026-10-05-todo-patrol-ready-three.md](90-agent/plans/2026-10-05-todo-patrol-ready-three.md) — *design-intent, 繁體中文* |
 | Pane 上的 gate 介面（10-07）的 design 草稿：pending 與 answer 檔只有一份，station 頁面板與 Pane 都是它的畫面，mod 沒載入照舊 | [plans/2026-10-07-gate-pane-design.md](90-agent/plans/2026-10-07-gate-pane-design.md) — *design-intent, 繁體中文* |
-| 六處頁面仍把 4 說成上限（10-09）的兩個 task：survey、audit、verify、init 四頁與 pipeline.md 三個圖節點把四個派工改成預設，各加一個會紅的測試 | [plans/2026-10-09-rules-ceiling.md](90-agent/plans/2026-10-09-rules-ceiling.md) — *design-intent, 繁體中文* |
 | TODO 全表盤點（10-07 第二輪）的 plan：一個 session 的對話全文匯出成 markdown 或 jsonl、標出每個壓縮點，Blocked 十條重蓋章 | `docs/99-archive/2026-10-07-conversation-export.md` — *built* |
 | TODO 全表盤點（10-07）的 plan：把 verify 五次退回時手加在 prompt 的五項 review 檢查寫進 build skill | `docs/99-archive/2026-10-07-review-checks-in-build.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-05 第二輪）的 plan：站線的寫入錯誤切在 65 字元補測試、`stationLine` 各分支逐一變異並補帶 url 的 `starting` 斷言 | `docs/99-archive/2026-10-05-station-line-tests.md` — *built, 繁體中文* |
@@ -368,6 +367,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 注入先開 server、gate 漏抓代號要出聲、brain 模型對照的三條 TODO：注入先量冷啟動與慢磁碟再讓 `/fankeel` 先問 station 再寫頁，`todoIds` 讀失敗浮出警告並把 2800 毫秒門檻寫成常數，brain 用 opus 或 sonnet 的對照腳本由使用者親手跑 | [plans/2026-10-05-inject-plain-brain.md](90-agent/plans/2026-10-05-inject-plain-brain.md) — *design-intent, 繁體中文* |
 | TODO 全表盤點（10-09）定了什麼、沒做什麼：九條 Ready 做掉、四條待決定定案、brief-3 留給使用者、stage-agents-10 仍封鎖、rules-1 新開 | [decisions/2026-10-09-todo-patrol-nine.md](03-decisions/2026-10-09-todo-patrol-nine.md) — *繁體中文* |
 | TODO 全表盤點（10-09）的 plan：brief 散文搬進 brain 檔、ledger 走 registry 根、suite 記紅測名、壓縮 fixture、三頁更新、title hook 看 mtime、第五個 Agent 的 ask gate、四條結案、Pane 草稿核准 | `docs/99-archive/2026-10-09-todo-patrol.md` — *built, 繁體中文* |
+| 六處頁面仍把 4 說成上限（10-09）定了什麼：七句與三個圖節點改成預設四個，哪些句子讀來像上限但沒改、為什麼 | [decisions/2026-10-09-rules-ceiling.md](03-decisions/2026-10-09-rules-ceiling.md) — *繁體中文* |
+| 六處頁面仍把 4 說成上限（10-09）的兩個 task：survey、audit、verify、init 四頁與 pipeline.md 三個圖節點把四個派工改成預設，各加一個會紅的測試 | `docs/99-archive/2026-10-09-rules-ceiling.md` — *built, 繁體中文* |
 | 工作流評審（10-09）定了什麼、沒做什麼：六條建議全做——可查的出口條件改成會拒絕的腳本、站 agent 層縮回 survey、brief 上限、land 綠燈由 `task.js land` 守、決策頁不追加、todo-check 報 no reason；Task 18 對照沒跑、七個 commit 訊息留給 land | [decisions/2026-10-09-workflow-review.md](03-decisions/2026-10-09-workflow-review.md) — *繁體中文* |
 | 工作流評審（10-09）的 design：能由腳本查的出口條件各變成一支會拒絕的腳本或一條會紅的測試 | `docs/99-archive/2026-10-09-workflow-review-design.md` — *built, 繁體中文* |
 | 那份設計的 18 個 task | `docs/99-archive/2026-10-09-workflow-review.md` — *built, 繁體中文* |
