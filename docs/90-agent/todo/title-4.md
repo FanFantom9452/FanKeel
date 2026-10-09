@@ -2,7 +2,12 @@
 label: title
 title: 覆寫檔要新行程才派得出
 description: profile set 產生的 agents 覆寫檔要新行程才讀得到，title hook 卻先把名字改成 bare，同一行程裡派工會失敗
-state: decision
+state: done
+done:
+  at: 2026-10-09
+  sha: 358736a7
+  disposition: done
+  session: 5045b7f4-e18a-4b77-8157-532128f425a9
 ---
 
 來源：2026-10-08 session d3ff9844-a061-4d09-9bbb-e959aa6148dd，Haiku 5.5 角色測試任務的 land 階段。使用者照裁定跑完四條 `profile set agent.fankeel-<role>.model haiku`，產生了 `.claude/agents/` 底下四個覆寫檔；之後 land 的 stage agent 派 `fankeel-reader` 與 `fankeel-mover` 都派不出去，只好改派 general-purpose。
@@ -12,3 +17,10 @@ state: decision
 要變成什麼：待決定。可能的做法：覆寫檔晚於行程啟動時，hook 不改寫名字並在 brief 提示要開新終端機；或 `profile set` 印出「開新終端機才生效」；或兩者都做。
 
 完成的標準：在同一個行程裡跑完 `profile set` 之後派工不會失敗（照原名派，或明確告知要重開）；有測試釘住；`docs/90-agent/reference/subagents.md` 寫明覆寫檔何時生效。
+
+## 完成紀錄
+
+agents 覆寫檔比這個行程啟動時間還新時，title hook 不改名；profile set 寫入覆寫後印出要開新終端機才生效的提示。決定：hook 不改名並提示重開。
+
+- commit 358736a7
+- commit 7763f01d

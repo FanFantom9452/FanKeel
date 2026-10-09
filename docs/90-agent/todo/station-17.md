@@ -2,7 +2,12 @@
 label: station
 title: 壓縮後 station 還原紀錄嗎
 description: 一個 session 被自動壓縮過後，station 的詳情面板是否仍正確算出整段紀錄：花費、context 曲線、turn 數與派工
-state: ready
+state: done
+done:
+  at: 2026-10-09
+  sha: 04a8730f
+  disposition: done
+  session: 5045b7f4-e18a-4b77-8157-532128f425a9
 ---
 
 來源：2026-10-08 使用者在 session 49e93c6c-9f31-4839-8e3f-ef6adff80a17 中問「現在已經有自動壓縮機制的話，我們 station 有辦法正常還原所有紀錄嗎？」
@@ -18,3 +23,10 @@ transcript 只增不減，壓縮前的行還留在檔案裡（`lib/conversation.
 要變成什麼：在這個 session 上，拿 station 面板的花費、context 曲線、turn 數、派工清單，和直接從 transcript 重算的值逐項比對。要特別看三件事：壓縮摘要那一行有沒有被算成一個使用者 turn；context 曲線在壓縮點有沒有正確掉下來；壓縮前的派工是不是都還列得出來。
 
 完成的標準：每一項都對得上，或者對不上的已經列成修正；面板要不要在壓縮點加標記，由使用者決定。
+
+## 完成紀錄
+
+detail 的快取版本升到 9，壓縮摘要不再被當作一般訊息計入；用兩份帶有壓縮點的 transcript 當 fixture 測試還原。
+
+- commit 04a8730f
+- commit 3b4cf498
