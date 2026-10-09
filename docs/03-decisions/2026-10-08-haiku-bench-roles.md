@@ -14,7 +14,7 @@ source_of_truth: lib/bench.js, scripts/bench.js, hooks/title.js, docs/90-agent/r
 - 09-29 的「haiku 不行」裁定針對的是 Haiku 4.5，當時沒有數字撐著。Haiku 5.5 改用 `scripts/bench.js`（邏輯在 `lib/bench.js`）重量一次，一次一個角色。
 - 實驗台的做法：每個 run 在可重置的暫存目錄裡跑，10-08 時每個角色在 `bench/roles/<role>/` 下有一組及格與不及格的對照組（10-09 起改成每題各有一組，放在 `bench/roles/<role>/items/<item>/controls/`），每個臂跑 5 次（haiku 對 sonnet），只算那個子 agent 自己的 token 與花費。
 - 量的過程中找到並修了一個 bug：派工上明寫的 `model` 會蓋過 profile override 釘的模型。`hooks/title.js:38` 現在是 `if (pinned && typeof input.model === 'string' && input.model !== pinned) next.model = pinned;`，讓 override 的模型取代明寫的模型。`lib/title.js:127` 的 `overrideModel` 負責讀出 override 釘的模型；若它與外掛檔案的模型相同，就視為不是使用者設的，回傳 null。
-- 使用者要自己用 `node scripts/task.js profile set agent.fankeel-<role>.model haiku` 逐一設定。這份決策與 model-choice 頁都沒有改 profile。
+- 使用者要自己用 `node scripts/task.js profile set agent.fankeel-<role>.model haiku` 逐一設定。這份決策與 model-choice 頁都沒有改 profile；設定是同一天另一個 commit（`2e6a1295`）做的，10-09 又把 reader 改回 sonnet。
 
 ## 為什麼
 
@@ -44,5 +44,5 @@ source_of_truth: lib/bench.js, scripts/bench.js, hooks/title.js, docs/90-agent/r
 - reader 的 haiku 臂沒有 n/n 過，是使用者推翻了報告的結論行；路徑檢查太嚴這點 10-09 修了（`bench/roles/reader/items/answers.sh` 先把反斜線換成 `/` 再比），但那一批是用舊的檢查跑的，所以仍不是乾淨的證明。
 - 三個批次（reader、mover、implementer）與 reader 重跑是在另一台機器 DESKTOP-DE33TOH 上跑的，那台載入了帳號的 claude.ai connector。報告記有一個 haiku run 在 Grep 結果裡看到要它建立文件的文字，agent 回報了並沒有照做；這個因素沒有控制。
 - 外部 228 次 `claude -p` 的測量證據在另一個 repository，本 repo 無法重算（`docs/90-agent/reports/2026-10-08-external-model-bench.md`）。
-- 這份決策沒有跑 `profile set`，所以當下 profile 仍是 sonnet；四個角色真正跑在 haiku 要等使用者設定後，在實際的 build 與 verify 裡才看得到。
+- 寫這份決策時沒有跑 `profile set`，所以當時 profile 仍是 sonnet；同一天 `2e6a1295` 把四個角色設成 haiku，從那之後的 build 與 verify 才真正跑在 haiku 上。
 - 計畫與設計存放在 `docs/99-archive/2026-10-08-haiku-bench-design.md`、`docs/99-archive/2026-10-08-haiku-bench.md`、`docs/99-archive/2026-10-08-haiku-bench-roles.md`。

@@ -217,7 +217,7 @@ function prepareRun(ctx, job) {
 // to .bench/result.txt, then the item's check.sh — its stdout last in
 // row.check, so the class line is the last line. Only the claude call is
 // awaited; the rest is synchronous and blocks the pool while it runs — an
-// implementer item's check.sh runs node --test, which takes seconds.
+// implementer item's check.sh runs node --test.
 async function runJob(ctx, job) {
     const { row, dir, env } = prepareRun(ctx, job);
     try {
