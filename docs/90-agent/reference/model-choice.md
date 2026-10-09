@@ -50,8 +50,11 @@ with `model:`/`effort:` replaced and `generated_by: fankeel <version>` added
 (`lib/agentfile.js:46-60`); the profile unset command removes it (`lib/agentfile.js:71-75`);
 `task.js start` rewrites one left by an older plugin version (`lib/agentfile.js:95-109`,
 called at `scripts/task.js:722`); and `hooks/title.js:28` (`overrideFor(input.subagent_type`)
-sends `fankeel:<name>` as `<name>` when such a marked file exists (`lib/title.js:106-121`), because
-only the bare name reaches it.
+sends `fankeel:<name>` as `<name>` when such a marked file exists (`lib/title.js:106-121`) and its
+mtime is not later than this session's `startedAt` (`unlessLate`, `hooks/title.js:60`), because
+only the bare name reaches it. An override written after the running process started is left as
+`fankeel:<name>` and the hook says a new terminal is needed, because Claude Code reads agent
+files only at process start.
 
 A raise for one dispatch is shipped rather than generated: `-high` and `-xhigh`
 copies of `fankeel-brain`, `fankeel-implementer` and `fankeel-reviewer`

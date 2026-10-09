@@ -88,6 +88,34 @@ test('an override written before this session started is still taken', () => {
     assert.equal(out.systemMessage, undefined);
 });
 
+test('a late override is not swapped when the session file names another session', () => {
+    const f = fixture(MARKED);
+    started(f, written(f) - 60000);
+    const out = fire({ ...dispatch(f, 'read the map'), session_id: 'bbbbbbbb-0000-4000-8000-000000000002' }, f.dir);
+    assert.equal(out.hookSpecificOutput.updatedInput.subagent_type, 'fankeel-reader');
+    assert.equal(out.systemMessage, undefined);
+});
+
+test('a late override is not swapped when no session file exists', () => {
+    const f = fixture(MARKED);
+    const out = fire({ ...dispatch(f, 'read the map'), session_id: SID }, f.dir);
+    assert.equal(out.hookSpecificOutput.updatedInput.subagent_type, 'fankeel-reader');
+    assert.equal(out.systemMessage, undefined);
+});
+
+test('a late override leaves the model the dispatch named, though the override pins another', () => {
+    const f = fixture(MARKED);
+    started(f, written(f) - 60000);
+    const payload = dispatch(f, 'read the map');
+    payload.tool_input.model = 'opus';
+    const out = fire({ ...payload, session_id: SID }, f.dir);
+    assert.equal(out.hookSpecificOutput.updatedInput.model, 'opus');
+});
+
+// The statSync catch in unlessLate has no test: the file must pass existsSync
+// and then fail statSync, which only a race or a permission change produces,
+// and neither can be arranged reliably on this platform.
+
 test('profile set on an agent key says a new terminal is needed', () => {
     const d = tmp('title-override-set-');
     const cfg = path.join(d, 'cfg');
