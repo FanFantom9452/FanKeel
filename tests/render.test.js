@@ -936,8 +936,21 @@ test('planDir reads the plan bucket off a project\'s docs.json, and falls back w
 
 test('a build brain\'s agent file says beside both the group return and the close return to return only once every implementer has returned', () => {
   const file = fs.readFileSync(path.join(__dirname, '..', 'agents', 'fankeel-brain.md'), 'utf8').replace(/\s+/g, ' ');
-  const from = file.indexOf('Your prompt names your case');
+  const from = file.indexOf('On a build stage whose prompt names a group');
   assert.ok(from >= 0, 'the group-and-close rule is missing from agents/fankeel-brain.md');
-  const rule = file.slice(from, file.indexOf('Neither —', from));
+  const rule = file.slice(from, file.indexOf('A bare `build`', from));
   assert.equal(rule.split('once every implementer you sent has returned').length - 1, 2, 'one for the group return, one for the close return');
+});
+
+// The build brief points a brain at two headings of its agent file by name; a heading
+// renamed on one side only would leave the brain looking for rules that are not there.
+test('the headings a build brain\'s brief names are headings of its agent file', () => {
+  const on = { values: { 'stage.agents': ['build'], 'dispatch.floor': 'sonnet' }, sources: {}, unreadable: [] };
+  const mine = entry(MINE, { stage: 'build', started: '2026-09-19T09:30:12.345Z' });
+  const brief = require('../lib/render.js').renderBrief({ mine, agentType: 'fankeel:fankeel-brain', root: '/r', profile: on });
+  const file = fs.readFileSync(path.join(__dirname, '..', 'agents', 'fankeel-brain.md'), 'utf8');
+  for (const heading of ['## On a build stage', '## Return']) {
+    assert.ok(brief.includes('`' + heading + '`'), 'the brief no longer names ' + heading);
+    assert.ok(file.split(/\r?\n/).includes(heading), heading + ' is not a heading of agents/fankeel-brain.md');
+  }
 });

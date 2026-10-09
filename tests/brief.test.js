@@ -127,9 +127,9 @@ test('a build brain\'s brief names its group and the file a group writes instead
   seedProfile(root, { 'stage.agents': ['build'] });
   seed(root, { stage: 'build', started: '2026-09-19T09:30:12.345Z' });
   const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain', agent_id: 'a1' })));
-  assert.match(brainRules(), /Your prompt names your case: task numbers for a group, or `build close`/);
+  assert.match(brainRules(), /On a build stage whose prompt names a group \(task numbers\) rather than `build close`, you do only those tasks/);
   assert.match(text, /group report: \S*build-g1\.md instead of \S*build\.md/);
-  assert.match(brainRules(), /the only gate this whole stage asks/);
+  assert.match(brainRules(), /only `build close` runs the full test suite first, then writes the gate, once every implementer you sent has returned/);
   assert.ok(sizeAtReference(text) <= BRIEF_MAX, 'brain brief is ' + sizeAtReference(text) + ' chars at the reference root');
 });
 
@@ -785,13 +785,10 @@ test('a build brain asks for a commit only when none of its implementers is runn
 // the head of the task's block, and re-dispatches a conflict once on its own.
 test('a build brain sends implementers into worktrees, names the worktree in the commit file, and re-dispatches a conflict once', () => {
   const build = briefFor('build');
-  assert.match(brainRules(), /Send every implementer with `isolation: "worktree"`/);
-  assert.match(brainRules(), /the first line of its task's block is `worktree <path>`/);
-  assert.match(brainRules(), /`conflict <paths>`[^\n]*dispatch it once more, fresh, on the new HEAD, without asking\. The same task conflicting a second time: stop the build/);
-  assert.match(brainRules(), /`ledger\.js --plan <f> ready --worktree`/);
-  assert.match(brainRules(), /`kept <path> — <why>`/);
+  assert.match(brainRules(), /its task's block opens with `worktree <path>`/);
+  assert.match(brainRules(), /`conflict <paths>` for a task: send it once more, fresh, without asking; the same task conflicting twice stops the build/);
+  assert.match(brainRules(), /`kept <path> — <why>` after a range means the worktree stayed/);
   assert.match(build, /an implementer \(`fankeel:fankeel-implementer`, or `fankeel:fankeel-implementer-<effort>` where the task Dispatch line names an effort, on the model named there, with `isolation: "worktree"`\)/);
-  assert.match(brainRules(), /run `git rev-parse HEAD` yourself and tell every worktree-isolated implementer, before its first edit, to run `git reset --hard <that sha>` in its own worktree.*origin\/main/);
   assert.doesNotMatch(briefFor('verify'), /isolation: "worktree"/);
   const file = fs.readFileSync(path.join(__dirname, '..', 'agents', 'fankeel-brain.md'), 'utf8');
   assert.match(file, /`ledger\.js --plan <f> ready --worktree`/);
@@ -908,7 +905,7 @@ test('a bare `build`, a verify rework included, is told to close as `build close
   seedProfile(root, { 'stage.agents': ['build'] });
   seed(root, { stage: 'build', started: '2026-09-19T09:30:12.345Z', moves: [['build', 1], ['verify', 2], ['build', 3]] });
   const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain', agent_id: 'r0' })));
-  assert.match(brainRules(), /Neither — a bare `build`, a verify rework's included: do what is still open, then close as `build close` does: the full suite, then the report and gate to the handoff file\./);
+  assert.match(brainRules(), /A bare `build`, which is what a verify rework sends, is worked as `build close`: do what is still open, then close\./);
   assert.match(text, /Write your report to \S*\/build-2\.md/);
 });
 

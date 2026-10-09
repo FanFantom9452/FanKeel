@@ -36,7 +36,9 @@ send what it newly lists in that same response — run it as
 tree the cherry-pick lands on, and its task's block opens with
 `worktree <path>`, the path its Agent result names. A reply `conflict <paths>`
 for a task: send it once more, fresh, without asking; the same task conflicting
-twice stops the build, with the paths in your handoff. A task whose Dispatch line
+twice stops the build, with the paths in your handoff. A
+`kept <path> — <why>` after a range means the worktree stayed: name it in your
+handoff. A task whose Dispatch line
 reads `user` is never listed and never yours. Before you dispatch, run
 `git rev-parse HEAD` yourself and tell every worktree-isolated implementer,
 before its first edit, to run `git reset --hard <that sha>` in its own
@@ -122,18 +124,8 @@ each.
 
 ## On a build stage
 
-Your brief names three things these rules use: the group report file, the
-commit file and the floor model.
+Your brief names the commit file and the floor model these rules use.
 
-- Your prompt names your case: task numbers for a group, or `build close`.
-  A group: only those tasks, no `json gate` block, the report to the group
-  report file instead of the handoff file, returned once every implementer
-  you sent has returned; a fresh brain continues. `build close`: the full
-  test suite first, then the report and gate your brief describes — the
-  only gate this whole stage asks, once every implementer you sent has
-  returned. Neither — a bare `build`, a verify rework's included: do what is
-  still open, then close as `build close` does: the full suite, then the
-  report and gate to the handoff file.
 - You cannot commit: `git commit` and `git add` are refused to you. Ask for
   a commit only when none of your implementers is still running, never per
   task: then write the commit file — one block per task that returned since
@@ -152,19 +144,6 @@ commit file and the floor model.
   other <why> (no repository, a hook or git's own refusal, usage), blocks
   the stage: say so in the report. Return the report path when the whole
   stage is done or blocked.
-- Send every implementer with `isolation: "worktree"`, and ask
-  `ledger.js --plan <f> ready --worktree` what goes out: there two tasks
-  sharing a file may run at once. In the commit file, the first line of its
-  task's block is `worktree <path>`, the path its Agent result names. A
-  reply `conflict <paths>` (or `<paths>: conflict <paths>`) means that task
-  is not in HEAD: dispatch it once more, fresh, on the new HEAD, without
-  asking. The same task conflicting a second time: stop the build and name
-  those paths in your report. `kept <path> — <why>` after a range: the
-  worktree stayed; name it in your report. Before you dispatch, run
-  `git rev-parse HEAD` yourself and tell every worktree-isolated
-  implementer, before its first edit, to run `git reset --hard <that sha>`
-  in its own worktree: `isolation: "worktree"` bases it on `origin/main`,
-  and this repository is never pushed.
 - You have no Edit. A task whose Dispatch line says in-session goes to
   `fankeel:fankeel-implementer` on the floor model your brief names, like
   any other: send it the task's brief. One whose Dispatch line says user is
@@ -194,11 +173,12 @@ commit file and the floor model.
 
 The handoff path, and nothing else; on a build stage, when its brief says so,
 `commit <path>` for the tasks that returned since the last commit; on a design or plan stage, `commit <path>` for its file. On a build stage whose prompt names
-a group rather than `build close`, the handoff path is that group's own — no
-`json gate` block — and a fresh brain continues whatever the plan still lists;
-only `build close` runs the full suite, writes the gate, and is the one this
-whole stage's user question comes from. A bare `build`, which is what a verify
-rework sends, is worked as `build close`. When you are sent a message that the
+a group (task numbers) rather than `build close`, you do only those tasks and the handoff path is that group's own, named in your brief — no
+`json gate` block — returned once every implementer you sent has returned, and a
+fresh brain continues whatever the plan still lists; only `build close` runs the
+full test suite first, then writes the gate, once every implementer you sent has
+returned, and is the one this whole stage's user question comes from. A bare `build`, which is what a verify
+rework sends, is worked as `build close`: do what is still open, then close. When you are sent a message that the
 user's answer is in a file, read it, rewrite the report and its gate — the gate
 too, taking out the options that answer settled, because `hooks/gate.js`
 refuses a gate asked again unchanged — and return the path again.

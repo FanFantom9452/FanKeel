@@ -370,9 +370,9 @@ test('the reader marks every line EXTRACTED or INFERRED, and writes a relationsh
 
 test('the stage agent\'s Return section says a group writes no gate, and only build close does', () => {
     const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-brain.md'), 'utf8');
-    const ret = text.split('\n## Return\n')[1];
-    assert.match(ret, /a group rather than `build close`, the handoff path is that group's own — no/);
-    assert.match(ret, /only `build close` runs the full suite, writes the gate/);
+    const ret = text.split('\n## Return\n')[1].replace(/\s+/g, ' ');
+    assert.match(ret, /a group \(task numbers\) rather than `build close`, you do only those tasks and the handoff path is that group's own, named in your brief — no `json gate` block/);
+    assert.match(ret, /only `build close` runs the full test suite first, then writes the gate/);
 });
 
 test('the stage agent\'s Return section forbids any return while a dispatched agent has not returned', () => {
