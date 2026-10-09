@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-10-09
-source_of_truth: docs/reports/*.md — each row transcribes that report's headline figure and its own frontmatter's provenance; this page is the index onto them, not a re-measurement. The reverse index (Cited by) is filled by hand from grep, not a script.
+source_of_truth: docs/90-agent/reports/*.md — each row transcribes that report's headline figure and its own frontmatter's provenance; this page is the index onto them, not a re-measurement. The reverse index (Cited by) is filled by hand from grep, not a script.
 ---
 
 # Sources
@@ -12,11 +12,11 @@ reverse-index column so that changing a figure says which pages have to
 change with it. This page is that mechanism for fankeel's own dated reports.
 
 Every row below is one of the dated reports at the top level of
-`docs/reports/`. Fifty-three sit there and fifty-three have a row; the heading
+`docs/90-agent/reports/`. Fifty-four sit there and fifty-four have a row; the heading
 counts rows across both tables, not files. A row is still added by hand, and
 `tests/sources-doc.test.js` fails while a report there has none — the heading
 is the one number left to keep in step by hand.
-The files under `docs/reports/evidence/` are the raw evidence behind a
+The files under `docs/90-agent/reports/evidence/` are the raw evidence behind a
 report, and what that is varies with the measurement: mostly
 `claude -p --output-format json` output beside the shell script that
 produced it, with one directory carrying a diff and one holding node
@@ -36,7 +36,7 @@ dispatch-vs-inline residue (9.2× / 2.55× / 1.5×), which is one gradient, not
 three disagreeing numbers, once each row's Scope says which variable it held
 fixed.
 
-## The fifty-three reports
+## The fifty-four reports
 
 | ID | What it measured | Link | Checked | Evidence level | Scope | Cited by |
 |---|---|---|---|---|---|---|

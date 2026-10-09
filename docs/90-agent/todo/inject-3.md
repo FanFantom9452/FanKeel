@@ -17,7 +17,7 @@ done:
 
 ## 完成紀錄
 
-Opening /fankeel now asks the station first: the hook starts the server before it writes the page, and the write is given only the budget that is left, so a slow disk or a failing write no longer holds the server back. The cold-start and slow-disk measurements are in the 2026-10-05 inject cold-start report; they showed the write itself is the slow part, so the write threshold was pinned as a named constant.
+Opening /fankeel now asks the station first: the hook starts the server before it writes the page. The write is given only the budget that is left, so a slow disk or a failing write no longer holds the server back. The cold-start and slow-disk measurements are in the 2026-10-05 inject cold-start report. They showed the write itself is the slow part, so the write threshold was pinned as a named constant.
 
 - commit 2ee64a2f
 - commit 65ebd731
