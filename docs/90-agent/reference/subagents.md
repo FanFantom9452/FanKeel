@@ -198,7 +198,7 @@ it every single time, and it is worth it even when nothing else about the
 delegation changes.
 
 The brief is capped, and the cap is a test rather than a habit:
-`tests/brief.test.js:258`, `assert.ok(text.length < 1400` (the first of three such assertions in that file). Measured 2026-09-11
+`tests/brief.test.js:262`, `assert.ok(text.length < 1400` (the first of three such assertions in that file). Measured 2026-09-11
 against that test's own seed, the rendered brief is 1,098 characters — 823 before
 the working-tree rule was added to `RETURN_RULES`. A `TODO.md` entry carried 777
 as the figure until it closed on 2026-09-11; it matched nothing, in the code or
@@ -819,10 +819,10 @@ Setting the key prints what it costs: the estimated tokens the injected line
 adds per prompt, and each stage's remaining room under the reference-root
 2400-character cap with the profile as it now reads — a warning, never a
 refusal, since the cap belongs to the tests and the sentence belongs to the
-user (`scripts/task.js:1138`, `set anyway; this is a warning, not a refusal`)
+user (`scripts/task.js:1139`, `set anyway; this is a warning, not a refusal`)
 — computed in `cmdProfile`'s `set` branch off `input-check.js`'s
 `estimateTokens` and `lib/render.js`'s `blockSizes`
-(`scripts/task.js:1131`, `const n = estimateTokens('\n  - ' + out.value);`).
+(`scripts/task.js:1132`, `const n = estimateTokens('\n  - ' + out.value);`).
 
 ## What a controlled `build` and `verify` were run through
 
