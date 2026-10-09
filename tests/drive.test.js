@@ -8,7 +8,7 @@ const { EventEmitter } = require('node:events');
 const registry = require('../lib/registry.js');
 const handoff = require('../lib/handoff.js');
 const tmp = require('./tmp.js');
-const { capReason, afterAnswer, lastJson, drive } = require('../scripts/drive.js');
+const { parse, capReason, afterAnswer, lastJson, argsFor, drive } = require('../scripts/drive.js');
 
 const ID = '11111111-2222-4333-8444-555555555555';
 const ROUTE = ['survey', 'plan', 'build'];
@@ -167,4 +167,21 @@ test('drive stops on error, not a rejection, when task.js refuses a move', async
     const out = await drive(base(root, env), { spawn: fakeSpawn(root), sleep: answerer(root, (q) => q.options[0].label), pollMs: 5, task });
     assert.equal(out.stopped, 'error');
     assert.equal(out.detail, 'task.js refused');
+});
+
+test('parse: the defaults, and a flag overrides one', () => {
+    const d = parse([]);
+    assert.equal(d.maxRounds, 12);
+    assert.equal(d.maxUsd, 20);
+    assert.equal(d.timeoutMs, 3600000);
+    assert.equal(d.gateWaitMs, 86400000);
+    assert.equal(parse(['--max-usd', '3']).maxUsd, 3);
+});
+
+test('argsFor: acceptEdits as an adjacent pair, the budget to cents, never bypassPermissions', () => {
+    const args = argsFor(1.234);
+    const pair = (a, b) => args.some((x, i) => x === a && args[i + 1] === b);
+    assert.ok(pair('--permission-mode', 'acceptEdits'));
+    assert.ok(pair('--max-budget-usd', '1.23'));
+    assert.ok(!args.includes('bypassPermissions'));
 });
