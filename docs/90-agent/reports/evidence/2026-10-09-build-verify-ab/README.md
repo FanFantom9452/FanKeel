@@ -19,3 +19,5 @@ BASE=<sha> TASK="…" SURVEY=<survey.md> CAP=30 bash ab.sh     # 實跑，使用
 ```
 
 `OUT` 可改輸出目錄；不改就寫在這個目錄。
+
+`bash ab.sh pin-check <worktree> <value>` 只跑每臂開跑前的那道檢查（worktree 的 `stage.agents` 剛好是 `<value>`）；`tests/ab-build-verify.test.js` 用它證明 `build,verify` 通過、`build,verify,land` 與 `build` 不通過。

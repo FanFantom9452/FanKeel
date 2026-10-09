@@ -18,11 +18,18 @@
 # arm's AND its cost (total_cost_usd in <tag>-verify.json) is at most 1.1x. n=1 per arm by default, so
 # the rule leans to "not proven, not opened".
 #
-# usage: BASE=<sha> TASK="…" SURVEY=<survey.md> [MODEL=opus] [CAP=30] [RUNS=1] [DRY=1] [OUT=<dir>] bash ab.sh
+# usage: BASE=<sha> TASK="…" SURVEY=<survey.md> [MODEL=opus] [CAP=30] [RUNS=1] [DRY=1] [OUT=<dir>] [WORK=<dir>] bash ab.sh
+#        bash ab.sh pin-check <worktree> <value>   exit 0 when the worktree's stage.agents is <value>
 set -u
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../../.." && pwd)"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# The run's one control: the arm's profile holds the value, the trailing space
+# keeps `build` from matching `build,verify`.
+pin_ok () { (cd "$1" && node scripts/task.js profile show | grep -q "^  stage.agents  *$2 "); }
+if [ "${1:-}" = pin-check ]; then cd "$REPO" || exit 1; pin_ok "${2:?pin-check <worktree> <value>}" "${3:?pin-check <worktree> <value>}"; exit $?; fi
+
 BASE="${BASE:?BASE=<sha> is required}"
 TASK="${TASK:?TASK=<one line> is required}"
 SURVEY="${SURVEY:?SURVEY=<path to the survey report> is required}"
@@ -31,7 +38,7 @@ CAP="${CAP:-30}"
 RUNS="${RUNS:-1}"
 DRY="${DRY:-}"
 OUT="${OUT:-$HERE}"
-WORK="$REPO/.fankeel/build/2026-10-09-build-verify-ab"
+WORK="${WORK:-$REPO/.fankeel/build/2026-10-09-build-verify-ab}"
 CFG="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 PIN="$REPO/docs/90-agent/reports/evidence/2026-09-26-ab-profile-pin/pin.sh"
 ROUTE="design,plan,build,verify"
@@ -66,7 +73,7 @@ run () {
     [ -n "$pin" ] || { echo "$tag: pin.sh failed — abort" >> "$LOG"; git worktree remove --force "$wt" >> "$LOG" 2>&1; return 1; }
     echo "$tag pin commit: $pin" >> "$LOG"
     (cd "$wt" && node scripts/task.js profile show | grep '^  stage.agents' >> "$LOG")
-    (cd "$wt" && node scripts/task.js profile show | grep -q "^  stage.agents  *$value ") || { echo "$tag: stage.agents is not $value in $wt — abort" >> "$LOG"; git worktree remove --force "$wt" >> "$LOG" 2>&1; return 1; }
+    pin_ok "$wt" "$value" || { echo "$tag: stage.agents is not $value in $wt — abort" >> "$LOG"; git worktree remove --force "$wt" >> "$LOG" 2>&1; return 1; }
   fi
 
   local rc
