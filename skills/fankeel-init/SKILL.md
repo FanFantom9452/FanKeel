@@ -145,7 +145,7 @@ Two of them carry this repository's own evidence:
   nothing is deleted unasked.
 - Drift: `node <plugin>/scripts/docs-audit.js --batches --root <project>` lists
   one batch per bucket. Each batch goes to one `subagent_type:
-  fankeel:fankeel-reader`, at most four at once, with its pages and the
+  fankeel:fankeel-reader`, four at once by default, with its pages and the
   question *which of these no longer describe the code*. A page it names is
   settled only when the user picks one of three: update the page, move its
   `last_verified`, or move it into the archive.

@@ -81,3 +81,11 @@ test('the overlap table under "Another plugin\'s process skill, for the same sta
 
   assert.deepEqual(table, OVERLAPS.map(function (o) { return [o.plugin, o.skill, o.stage]; }));
 });
+
+// Four dispatches in one response is a default since dispatch-1, not a cap;
+// three diagram nodes kept drawing it as one.
+test('no diagram draws four dispatches as a ceiling', () => {
+  const text = fs.readFileSync(PIPELINE, 'utf8');
+  assert.doesNotMatch(text, /four the ceiling/);
+  assert.doesNotMatch(text, /four in flight at most/);
+});

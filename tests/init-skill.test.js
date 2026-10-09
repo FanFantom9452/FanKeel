@@ -36,11 +36,11 @@ test('skipping takes two gates before init.skip is written, and a finished run w
   assert.match(f, /profile set init\.skip false/);
 });
 
-test('drift goes to fankeel-reader by batch, at most four at once, each page settled one of three ways', () => {
+test('drift goes to fankeel-reader by batch, four at once by default, each page settled one of three ways', () => {
   const f = flat();
   assert.match(f, /docs-audit\.js --batches --root <project>/);
   assert.match(f, /fankeel:fankeel-reader/);
-  assert.match(f, /at most four at once/);
+  assert.match(f, /four at once by default/);
   assert.match(f, /update the page, move its `last_verified`, or move it into the archive/);
 });
 

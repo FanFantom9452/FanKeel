@@ -145,7 +145,7 @@ same joint question — put the residue at about 11.46× rather than 9.2×, the
 money at 0.95×, and the wall-clock at 0.56× (`docs/90-agent/reports/2026-09-07-join-pair.md`).
 Dispatch it anyway, as `fankeel-reader`: one reader per page the change
 plausibly touched, several in one response so they run at once — four is the
-ceiling, and the fankeel skill's *Dispatch by default, never the filtering*
+default, and the fankeel skill's *Dispatch by default, never the filtering*
 says why — each given the **path** to a diff file
 and asked only what is now false and where. Never tell a reader what you
 expect it to find: a brief saying a page was less likely to have drifted got
@@ -175,7 +175,7 @@ which shape it found and what to do: send the containing row and drop the row
 it contains, send one of two rows recording the same range, send both where
 they cross because no single range names their union, and treat a range git
 could not read back as unverified rather than as disjoint. Where it finds none
-of that, **the verifiers go out in one response** — four is still the ceiling,
+of that, **the verifiers go out in one response** — four is still the default,
 and a plan of six goes four then two. Dispatch it as
 `subagent_type: fankeel:fankeel-verifier`; the model comes from that agent
 file, not typed by hand here. Say how many and on which model in the response
