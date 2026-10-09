@@ -290,7 +290,7 @@ then asks this stage's gate.
    so a worktree's HEAD can be many commits stale against what the brain just
    read.
 
-   **The ceiling of four in flight is still the ceiling**, and it binds only
+   **Four in flight is still the default**, and it binds only
    with a plan — with no plan one row is out at a time: `ready` listing six
    sends four, then one more as each returns. Three or more listed at once
    with nothing else in flight may go as one Workflow, step 4's `workflow`

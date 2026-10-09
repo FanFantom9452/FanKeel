@@ -1113,7 +1113,7 @@ Six rules that make it work, each of which fails silently when missed:
   exactly three. Same model, same shape of task. A contract without its reason is
   a preference.
 
-**Four in one response is the working ceiling.** Past that you are guessing at the
+**Four in one response is the default.** Past that you are guessing at the
 split rather than deciding it, and every reader costs a system prompt whether or
 not it had a distinct question. The test is what comes back: **if two readers
 would return the same shape of answer about different files, they are one reader
