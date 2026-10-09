@@ -274,6 +274,6 @@ test('the CLI refuses without --sha', () => {
 
 test('escape: every regex metacharacter is matched literally', () => {
   const { escape } = require('../lib/reviewcheck.js');
-  const s = 'a.b*c+d?e^f$g{h}i(j)k|l[m]n\o';
+  const s = 'a.b*c+d?e^f$g{h}i(j)k|l[m]n\\o';
   assert.ok(new RegExp('^' + escape(s) + '$').test(s));
 });
