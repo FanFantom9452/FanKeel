@@ -5,7 +5,7 @@ tools: [Read, Grep, Glob, Bash]
 model: sonnet
 effort: high
 status: current
-last_verified: 2026-09-24
+last_verified: 2026-10-09
 source_of_truth: lib/render.js
 ---
 

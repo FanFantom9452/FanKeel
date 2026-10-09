@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-23
+last_verified: 2026-10-09
 source_of_truth: lib/stages.js, lib/render.js, lib/profile.js, skills/fankeel-survey/SKILL.md, skills/fankeel-design/SKILL.md, skills/fankeel-plan/SKILL.md, skills/fankeel-build/SKILL.md, skills/fankeel-verify/SKILL.md, skills/fankeel-audit/SKILL.md, skills/fankeel-land/SKILL.md, scripts/residue.js, hooks/carry.js, scripts/orient.js
 ---
 
@@ -157,7 +157,7 @@ preamble is skimmed, and skimmed rules are no rules.
 Every stage's last rule is the shape of its output, and they are all the same
 shape: what the stage produced, then the question. What differs is the form and
 how much room it gets — 120 words for a survey, 200 for a design, 80 for a build,
-one line per finding for an audit, a six-line skeleton for a land. A number can be
+one line per finding for an audit, a seven-line skeleton for a land. A number can be
 missed; a direction cannot be, and *in the fewest words that let someone say yes
 or no* let a design stage run to nine hundred.
 
@@ -224,8 +224,8 @@ output shape:
 ```
 
 Where the task is, the rules for the stage, the shape — about 2,230 characters
-for the block above, roughly 600 tokens, and 2,204 to 2,381 across the three
-classes with no `profile:` line, 2,329 to 2,545 with one — plus one `gate:`
+for the block above, roughly 600 tokens, and 2,200 to 2,393 across the three
+classes with no `profile:` line, 2,325 to 2,557 with one — plus one `gate:`
 line of 226 characters, past the band, in the one case where the record
 carries no `gateAt` at the answer, which [registry.md](../90-agent/reference/registry.md) explains.
 Measured 2026-09-11 against the entry shown above, whose task line is the 35
@@ -240,13 +240,14 @@ so. That is exactly how three of the seven figures in this paragraph went
 stale at once on 2026-09-10 — nothing was there to redden. `node --test
 tests/resume.test.js` is what closes it. It prints every class, stage and
 profile combination on each run — `tests/resume.test.js:327`, `t.diagnostic(cls + '@' + stage` —
-and its own assertion holds the worst of them, `bounded@design` and
-`bounded@land` tied at 2,545, under 2,600 characters at the same 59-character
-reference root: `tests/resume.test.js:331`, `assert.ok(worst < 2600`. The 55
-characters of headroom are about three more profile keys.
+and its own assertion holds the worst of them, `bounded@land` with a
+profile line at 2,557 (`bounded@design` with one tops out at 2,531), under 2,600
+characters at the same 59-character
+reference root: `tests/resume.test.js:331`, `assert.ok(worst < 2600`. The 43
+characters of headroom are about two more profile keys.
 
 `tests/render.test.js` caps a narrower thing, the seven stage preambles alone,
-under 2,400 — `tests/render.test.js:540`, `assert.ok(size < 2400` — and a wider
+under 2,400 — `tests/render.test.js:541`, `assert.ok(size < 2400` — and a wider
 one, the whole worst-case block those preambles sit inside, five notes, a
 second session, a compacted transcript, none of which a resume answer ever
 carries, is capped separately under 3,000 in the same file:
@@ -796,8 +797,10 @@ The report `land` ends on carries a list nothing else in the pipeline does:
 <sha> <subject>
 shipped:
   - <what someone can now do that they could not>
+suite: <suite.js line>
 cost: <what it took>
 open: <what is still not done>
+then AskUserQuestion
 ```
 
 A commit subject holds one change. A task that shipped four of them had nowhere

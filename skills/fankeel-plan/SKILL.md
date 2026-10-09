@@ -3,7 +3,7 @@ name: fankeel-plan
 description: The plan stage — decompose an approved design into tasks someone with no context could execute, with constraints generated from the project rather than remembered. Use for the plan stage of a fankeel task, writing an implementation plan, or breaking a spec into tasks before any code is written.
 version: 0.99.0
 status: current
-last_verified: 2026-09-21
+last_verified: 2026-10-09
 source_of_truth: lib/stages.js, scripts/map.js, lib/plantasks.js, scripts/ledger.js
 ---
 
@@ -207,7 +207,7 @@ A third field after the model raises the effort: `high` or `xhigh`
 `fankeel:fankeel-implementer-<effort>`, and the task's reviewer as
 `fankeel:fankeel-reviewer-<effort>` — shipped copies of the agent files with
 their `name:` and `effort:` lines changed, because the Agent tool cannot set
-effort (`docs/90-agent/reference/model-choice.md:40`). Leave it off for the
+effort (`docs/90-agent/reference/model-choice.md:43`). Leave it off for the
 agent files' own `medium`. It is above the floor like a stronger model, so it
 names why on that line, and the user approves it at the plan gate;
 `ledger.js lint` lists any other value by task number.
