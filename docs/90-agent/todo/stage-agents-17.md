@@ -1,7 +1,7 @@
 ---
 label: stage-agents
 title: build/verify 對照跑待核准
-description: 10-09 評審第一條的 A/B：stage.agents 留 survey 的一臂對 build+verify 交給 brain 的一臂，各 CAP 30 約 60 美元；腳本已 DRY 跑過，build gate 使用者選了 verify、沒核准花費 — [docs/90-agent/reports/evidence/2026-10-09-build-verify-ab/README.md](docs/90-agent/reports/evidence/2026-10-09-build-verify-ab/README.md).
+description: 10-09 評審第一條的 A/B：survey 臂對 brain 臂，各 CAP 30 約 60 美元；腳本已 DRY 跑過，build gate 選了 verify、沒核准花費 — [ab README](docs/90-agent/reports/evidence/2026-10-09-build-verify-ab/README.md).
 state: decision
 link: docs/90-agent/reports/evidence/2026-10-09-build-verify-ab/README.md
 stamp: 2026-10-09
