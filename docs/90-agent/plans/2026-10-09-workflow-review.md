@@ -1822,7 +1822,7 @@ BASE=<sha> TASK="…" SURVEY=<survey.md> CAP=30 bash ab.sh     # 實跑，使用
 | 使用者在本站 gate 選 option one 時，controller 執行 `node scripts/task.js profile set stage.agents survey`，本任務從 plan 起各站在主 session 跑。 | done at the design gate, 2026-10-09 — the controller ran it and the plan stage commits `.fankeel/profile.json`; see Rulings |
 | 新增 `docs/90-agent/reports/evidence/2026-10-09-build-verify-ab/ab.sh`：以 `2026-09-26-ab-profile-pin/ab.sh` 的 worktree 與 `pin.sh` 為底，兩臂只差 `stage.agents`（`false` 對 `build,verify`），同一模型、同一任務、同一 base sha、同一份 survey 輸入。 | Task 17 (based on the 10-05 harness, same lineage; see Rulings) |
 | 判定規則在跑之前寫進腳本開頭與報告：受控臂的主控峰值 context 比對照臂低 30% 以上、且花費不超過 1.1 倍，才把 build、verify 加回 `stage.agents`；否則維持 survey，另開任務評估移除站 agent 層。 | Task 17 |
-| 實跑是 Dispatch `user` 的任務：花費經使用者核准才跑。結果寫成 `docs/90-agent/reports/<date>-build-verify-ab.md`，依結果關閉或改寫 `stage-agents-5`、`-8`、`-15`、`-16`。 | Task 18 |
+| 實跑是 Dispatch `user` 的任務：花費經使用者核准才跑。結果寫成 `docs/90-agent/reports/<date>-build-verify-ab.md`，依結果關閉或改寫 `stage-agents-5`、`-8`、`-15`、`-16`。 | Task 18 — deferred to `stage-agents-17`: build gate 10-09 未核准花費，未跑 |
 | `docs/01-guide/profile.md:60` 那段加兩句：本 repo 自 2026-10-09 起只交 survey，等這次量測；量測的報告路徑。 | Task 17 |
 | 新增 `lib/reviewcheck.js` 與 `scripts/review-check.js --sha <sha> [--base <sha>]`，印三張表 | Task 3 |
 | （c）重用 `scripts/docs-check.js` 的 `resolveRef` 與 `quoteBeside`：搬進 lib 由兩支腳本共用，不複製。 | Task 2 |
@@ -1850,4 +1850,4 @@ BASE=<sha> TASK="…" SURVEY=<survey.md> CAP=30 bash ab.sh     # 實跑，使用
 | docs-check 決策頁 | Task 8 |
 | todo-check `no reason` | Task 9 |
 | sessions `--breakdowns` | Task 16 |
-| 成品的一列：A/B 報告裡每臂的花費與峰值，要和 `summary.json` 算出來的一致，報告的結論段用的是同一組數字 | Task 18, and the README's rule in Task 17 |
+| 成品的一列：A/B 報告裡每臂的花費與峰值，要和 `summary.json` 算出來的一致，報告的結論段用的是同一組數字 | Task 18 — deferred to `stage-agents-17` (未跑); the README's rule is Task 17's |

@@ -34,9 +34,10 @@ Eight of them — `fankeel-reader`, `fankeel-judge`, `fankeel-reviewer`,
 `fankeel-render-reviewer`, `fankeel-slimmer`, `fankeel-init-scout`, `fankeel-reviewer-high` and `fankeel-reviewer-xhigh` — carry `tools: [Read, Grep, Glob, Bash]` — Edit, Write and
 NotebookEdit are simply absent from the list, so calling any of them to change
 a file is refused by the harness rather than left to a rule somebody has to
-remember. Bash stays on the list for `git` — and, for the reader, this plugin's
-own scripts — a named residual rather than a claim that any of the eight cannot
-write anything.
+remember. Bash stays on the list for `git` — and, for the reader and the
+reviewer, this plugin's own read-only scripts, the reviewer's `node --test` on the
+one file its prompt names included — a named residual rather than a claim that
+any of the eight cannot write anything.
 
 `fankeel-verifier` is no longer the only agent carrying `Write` —
 `fankeel-fixer` does too, with `Edit` beside it and no `Bash` at all,
