@@ -234,3 +234,13 @@ test('setting a number that moves a manifest ends on the line that says to run t
   assert.doesNotMatch(again.text, /suite:/, 'nothing moved, so no record went stale');
   assert.doesNotMatch(version.main([], root).text, /suite:/);
 });
+
+// Only a manifest is code to the record. A bump that rewrites the SKILL.md files alone
+// leaves every suite record standing, so no line is added.
+test('a bump that moves only SKILL.md files does not say to run the suite again', () => {
+  const root = tree({ 'package.json': '0.35.0', '.claude-plugin/plugin.json': '0.35.0' });
+  const r = version.main(['0.35.0'], root);
+  assert.equal(r.code, 0, r.text);
+  assert.match(r.text, /\(3 changed\)/);
+  assert.doesNotMatch(r.text, /suite:/);
+});
