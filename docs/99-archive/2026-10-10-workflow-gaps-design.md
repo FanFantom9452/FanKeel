@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # workflow-gaps：judge 的十筆，核對後全部修掉 — Design

@@ -20,3 +20,5 @@ stamp: 2026-10-10
 候選原因還在，`tests/todo-check-folder.test.js:216` 仍是 `copyFileSync(process.execPath`，在 Windows 約複製 80 MB 的 node 執行檔到 git.exe；fc59e8cf（2026-09-29）之後該測試沒再改，也沒有證據證明它就是那次紅燈，所以不能算已修。若整套再紅而單跑這個檔全綠，且那次耗時指向它，就改成不複製（hard link 或 stub 腳本）；完成的標準是 `npm test`（package.json 的 `node --test`）連續五次全綠，五次都不再出現重跑不見的失敗。
 
 2026-10-10：事件又發生一次。第二輪盤點的 land 站跑整套測試，3936 過、1 失敗，紅的是 serve 測試檔裡「pid 在跑但 health 逾時算忙碌」那一條，不是 trackedIn 測試；同一個 commit 重跑整套 3937 全過，那個檔單獨跑三次都綠，兩次之間只改了 markdown。到這次為止紅過的是三個不同的測試，使用者選擇記下證據、繼續觀察。
+
+2026-10-10（同一天稍晚）：事件又發生兩次，都在任務「核對 judge 的十筆 workflow-gaps」的同一個 commit 上，都不是 trackedIn 測試。第一次是 build 收尾跑整套，紅一條 tune 測試檔的 live mode 測試，單獨跑那個檔 26 條全過，重跑整套 3969 全過。第二次是 verify 站，整套和十二個各自跑測試的 verifier 同時進行，紅兩條：inject 測試檔的「a pass too big to record」與 tune 測試檔的「a request with items」；兩個檔單獨跑都綠，inject 連跑四次都是 50 條全過，機器安靜後重跑整套 3969 全過。到這次為止紅過的是六個不同的測試，其中三個在 tune 測試檔；第二次明顯和並行負載同時出現。suite 紀錄現在留下每一次執行，這兩次紅的測試名都在該任務的紀錄裡。

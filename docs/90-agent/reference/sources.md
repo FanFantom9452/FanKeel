@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-10-09
+last_verified: 2026-10-10
 source_of_truth: docs/90-agent/reports/*.md — each row transcribes that report's headline figure and its own frontmatter's provenance; this page is the index onto them, not a re-measurement. The reverse index (Cited by) is filled by hand from grep, not a script.
 ---
 
@@ -102,5 +102,6 @@ no row, so the next reader does not open it again to find that out.
 | `VERIFY-ELEVEN-RETURNS-261001` | verify 退回 build 的十一次，review 各漏掉了什麼 | [reports/2026-10-01-verify-eleven-returns.md](../reports/2026-10-01-verify-eleven-returns.md) | 2026-10-01 | none — 九條退回記錄逐字保留，沒有量測 | 原本嵌在 build skill reviewer 模板 Part 2 的那段，2026-10-09 搬成報告；模板只留規則，機械的三件事由 `scripts/review-check.js` 印表 | `docs/README.md`, `skills/fankeel-build/SKILL.md` |
 | `WORKFLOW-REVIEW-261009` | 外部評審對 fankeel 工作流的六條建議，與使用者「全做、再評整體設計」的指示 | [reports/2026-10-09-workflow-review.md](../reports/2026-10-09-workflow-review.md) | 2026-10-09 | none — 評審原文與指示的快照，沒有量測 | 六條各自落到腳本或測試：`stage.agents` 縮到 survey 並做 build/verify 對照、`scripts/review-check.js`、簡報上限以真實記錄測、HEAD 的紅測與 land 的綠套件拒絕、決策頁重寫與 17 條 TODO 補理由、在別的專案跑一週（`foreign-1`）。同名的 plan 檔在 `docs/90-agent/plans/` | `docs/README.md`, `docs/90-agent/todo/foreign-1.md`, `docs/90-agent/reports/2026-10-01-verify-eleven-returns.md`, `docs/03-decisions/2026-10-09-workflow-review.md` |
 | `HAIKU-BANK-DRIFT-261009` | 四個角色各十二題分三層的題庫，haiku 對 sonnet 各 36 次；長任務上 haiku／sonnet × PostToolUse 重注入的 2×2，每格 10 次 | [reports/2026-10-09-haiku-bank-drift.md](../reports/2026-10-09-haiku-bank-drift.md) | 2026-10-09 | measured (`scripts/bench.js` 的 `role`、`drift` 與 `report`；reader 與 mover 各作廢一批、判分修正後重跑，兩次飄移試跑不算) | implementer 與 mover haiku 全過；reader 與 mutator 不是 n/n。haiku 的飄移 20 次全部有效，重注入讓全程無違規從 1 次變 5 次、成本多 11%；sonnet 兩臂各 7 次用腳本在 30 步內做完而無效，每格只剩 3 次，重注入對 sonnet 的結論不足以判斷。違規幾乎都是說明文字不是繁體中文。 | `docs/README.md`, `docs/90-agent/reference/model-choice.md`, `docs/03-decisions/2026-10-08-haiku-bench-roles.md` |
+| `WORKFLOW-GAPS-LANDED-261010` | judge 盤點的十筆工作流缺口，核對後做了哪些、留了什麼 | [reports/2026-10-10-workflow-gaps-landed.md](../reports/2026-10-10-workflow-gaps-landed.md) | 2026-10-10 | none — land 的紀錄，沒有量測；verify 的 92 列證據在不進版控的 build 目錄 | 十筆全做、十條 TODO 結案；design 進 build 的規則塊沒有改成一律注入，One path 比對留三個洞，整套測試在同一個 commit 上兩次偶發紅 | `docs/README.md` |
 
 [Back to the index](../../README.md)
