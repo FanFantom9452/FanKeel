@@ -66,7 +66,7 @@ const mins = (ms) => {
 
 const GUARDS = ['ask', 'deny', 'off'];
 
-const LAND_VERBS = ['merge', 'pr', 'keep'];
+const LAND_VERBS = ['merge', 'pr', 'keep', 'direct'];
 
 // A refusal is often two sentences: what was wrong, and what to do instead.
 // Named because it is built into message strings all through this file.
@@ -1464,6 +1464,21 @@ function cmdRoute(root, opts) {
     return shown + NL + '           at ' + data.stage + ', ' + at.step + ' of ' + at.steps;
 }
 
+// The branch `dir` is checked out on when that branch is the one work lands
+// on, else null: a named branch, never one of fankeel's own `fk/` branches,
+// and the one origin/HEAD points at — `main` or `master` where the checkout
+// has no such ref.
+function onBase(dir) {
+    const git = (args) => {
+        try { return execFileSync('git', args, { cwd: dir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim(); } catch (e) { return null; }
+    };
+    const branch = git(['symbolic-ref', '--quiet', '--short', 'HEAD']);
+    if (!branch || branch.startsWith('fk/')) return null;
+    const remote = git(['symbolic-ref', '--quiet', '--short', 'refs/remotes/origin/HEAD']);
+    const base = remote && remote.startsWith('origin/') ? remote.slice('origin/'.length) : remote;
+    return (base ? branch === base : branch === 'main' || branch === 'master') ? branch : null;
+}
+
 // 使用者在 land 選單實際答的（或 profile 已經答的），寫一次進 entry。不動 stage、
 // 不動 badge——land 這個時間點通常已經在往 down 走，不是 collision 相關的欄位。
 // `profile.suggest` 讀回這裡的紀錄，是 `keep` 唯一能被建議出來的路徑：
@@ -1483,11 +1498,17 @@ function cmdLand(root, opts) {
     const last = rec && Array.isArray(rec.runs) ? rec.runs.length : 0;
     const reds = suite.redBefore(rec).map((r) => NL + 'suite: green on run ' + last + '; red on run ' + r.run + ' — '
         + (r.failed && r.failed.length ? r.failed.join(', ') : 'no names recorded')).join('');
+    // A `merge` typed where nothing was merged: no worktree on the entry, none
+    // named by the suite record, and the project root already on its base
+    // branch. Recorded as what happened.
+    const ownTree = (suite.readRecord(root, current) || {}).tree;
+    const landedOn = verb === 'merge' && !worktreeOf(current) && !ownTree ? onBase(projectRoot) : null;
+    const kind = landedOn ? 'direct' : verb;
 
     let data = null;
     const wrote = registry.update(root, id, (d) => {
         if (d.active !== true) return false;
-        const land = { integration: verb, at: now() };
+        const land = { integration: kind, at: now() };
         if (opts.push !== undefined) land.push = opts.push;
         d.land = land;
         data = d;
@@ -1496,7 +1517,7 @@ function cmdLand(root, opts) {
     if (!data) fail('No active entry for this session under ' + root);
     if (!wrote) fail('Could not write the entry.');
 
-    return 'fankeel — land: ' + verb + (opts.push === true ? ', push' : opts.push === false ? ', no push' : '') + reds;
+    return 'fankeel — land: ' + (landedOn ? 'direct (already on ' + landedOn + ', nothing to merge)' : verb) + (opts.push === true ? ', push' : opts.push === false ? ', no push' : '') + reds;
 }
 
 // The files this task means to edit, set as `intends` and compared with every
@@ -1578,7 +1599,7 @@ const USAGE = [
     '  profile show|set <key> <value>|unset <key>|suggest',
     '                                    the project\'s standing answers; --default writes the',
     '                                    machine file, --project <dir> picks a project under the root',
-    '  land <merge|pr|keep> [--push|--no-push]',
+    '  land <merge|pr|keep|direct> [--push|--no-push]',
     '                                    record the integration this task actually took',
     '  intends <plan-or-design>          the files it names become this task\'s intends;',
     '                                    warn/note per live neighbour already in them',

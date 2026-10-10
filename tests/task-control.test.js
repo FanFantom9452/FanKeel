@@ -915,6 +915,42 @@ test('land refuses when a .js file changed after the suite record was written', 
   assert.equal('land' in entry(dir, A), false);
 });
 
+// docs/90-agent/plans/2026-10-10-workflow-gaps-design.md §5.
+test('land merge on the base branch with no worktree is recorded as direct, and stays merge anywhere else', () => {
+  const dir = root();
+  const suite = require('../lib/suite.js');
+  const git = (args) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: dir, encoding: 'utf8' }).trim();
+  git(['init', '-q', '-b', 'main']);
+  git(['commit', '-q', '--allow-empty', '-m', 'base']);
+  started(dir, A, 'ship it');
+  let out = run(dir, ['land', 'merge', '--no-push', '--session', A]);
+  assert.equal(out.code, 0);
+  assert.match(out.out, /^fankeel — land: direct \(already on main, nothing to merge\), no push$/m);
+  assert.equal(entry(dir, A).land.integration, 'direct');
+  assert.equal(entry(dir, A).land.push, false);
+
+  git(['symbolic-ref', 'refs/remotes/origin/HEAD', 'refs/remotes/origin/develop']);
+  out = run(dir, ['land', 'merge', '--session', A]);
+  assert.match(out.out, /^fankeel — land: merge$/m, 'origin/HEAD names another branch');
+  assert.equal(entry(dir, A).land.integration, 'merge');
+  git(['symbolic-ref', '--delete', 'refs/remotes/origin/HEAD']);
+
+  suite.record(dir, entry(dir, A), { sha: null, at: 'now', command: 'node --test', pass: 1, fail: 0, ok: true, tree: dir });
+  out = run(dir, ['land', 'merge', '--session', A]);
+  assert.match(out.out, /^fankeel — land: merge$/m, 'the suite record names a tree of its own');
+  fs.unlinkSync(suite.recordPath(dir, entry(dir, A)));
+
+  git(['checkout', '-q', '-b', 'fk/x']);
+  out = run(dir, ['land', 'merge', '--session', A]);
+  assert.match(out.out, /^fankeel — land: merge$/m, 'an fk/ branch is never base');
+  assert.equal(entry(dir, A).land.integration, 'merge');
+
+  out = run(dir, ['land', 'direct', '--push', '--session', A]);
+  assert.equal(out.code, 0);
+  assert.match(out.out, /^fankeel — land: direct, push$/m, 'direct can be typed');
+  assert.equal(entry(dir, A).land.integration, 'direct');
+});
+
 test('next --from-gate takes the pause line from the stage agent\'s gate', () => {
   const { handoffPath } = require('../lib/handoff.js');
   const dir = root();

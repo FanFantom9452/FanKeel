@@ -260,12 +260,24 @@ project's past sessions, which is the only way `keep` ever becomes a
 suggested answer — git's merge history speaks to `merge`, and to `pr` where
 subjects read `Merge pull request`.
 
+**Already on base.** Where the task has no worktree and its commits went
+straight onto the base branch, there is nothing to merge: `task.js land merge`
+records `direct` and prints
+`fankeel — land: direct (already on <branch>, nothing to merge)`. `direct` can
+also be typed as the verb. `profile suggest` leaves those records out of
+`land.integration`, which takes `merge`, `pr` or `keep`.
+
 ## 7. Execute
 
 **Merge:** from the main repo root, checkout base, pull, merge, then **re-run the
 suite on the merged result**. A failure there stops everything — nothing has been
 pushed, so it is recoverable; leave the branch and worktree in place and
 investigate. Green, then clean the worktree, then `git branch -d`.
+
+**Recorded as `direct`.** None of the above runs: there is no branch to merge
+and no worktree to clean, and the suite record `task.js land` accepted was
+taken on the base branch itself. What is left of this step is the push, or
+not, as step 6 settled it.
 
 **A task with its own worktree.** `node <plugin>/scripts/task.js show --session <id>`
 prints a `worktree:` line when `task.js start` opened one under

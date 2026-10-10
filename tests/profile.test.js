@@ -188,6 +188,31 @@ test('suggest also counts this registry\'s own land records for the same project
     assert.ok(out.evidence.some((e) => e.startsWith('land records:') && /3 pr/.test(e)));
 });
 
+// docs/90-agent/plans/2026-10-10-workflow-gaps-design.md §5: `direct` is what
+// happened, not an answer land.integration can hold.
+test('suggest leaves direct land records out of land.integration', () => {
+    const d = dir();
+    const g = (...a) => execFileSync('git', a, { cwd: d, stdio: 'ignore' });
+    g('init', '-q', '-b', 'main');
+    g('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '--allow-empty', '-m', 'init');
+    const sessions = path.join(d, '.fankeel', 'sessions');
+    fs.mkdirSync(sessions, { recursive: true });
+    const write = (n, integration) => fs.writeFileSync(path.join(sessions, '11111111-0000-4000-8000-00000000000' + n + '.json'), JSON.stringify({
+        task: 't', active: false, started: new Date().toISOString(), updated: new Date().toISOString(),
+        land: { integration, at: new Date().toISOString() },
+    }));
+    for (const n of [1, 2, 3]) write(n, 'direct');
+    const three = profile.suggest(d, d);
+    assert.equal(three.values['land.integration'], undefined);
+    assert.equal(three.evidence.some((e) => e.startsWith('land records:')), false);
+    for (const n of [4, 5]) write(n, 'keep');
+    assert.equal(profile.suggest(d, d).values['land.integration'], undefined, 'two keeps beside three directs are still two');
+    write(6, 'keep');
+    const six = profile.suggest(d, d);
+    assert.equal(six.values['land.integration'], 'keep');
+    assert.ok(six.evidence.includes('land records: 3 keep'), six.evidence.join(' | '));
+});
+
 test('suggest with no second argument behaves exactly as before', () => {
     const d = dir();
     const out = profile.suggest(d);
