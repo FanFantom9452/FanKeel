@@ -7,7 +7,7 @@ last_verified: 2026-10-05
 
 一句話：十七個 task 做完；注入計時沒重現五秒逾時；「cleanup-1 剩下的可刪項」的第三、四項做完；死 build agent 的標記改成交接檔落地就清；write 的門檻定為 2800ms；中文受控規則由 `lib/plain.js` 擋在 gate 與 docs-check；todo 完成時寫白話紀錄；fast mode 的事實寫進 model-choice 並把條目移到 Blocked。
 
-計畫見 [../99-archive/2026-10-05-todo-sweep-five.md](../99-archive/2026-10-05-todo-sweep-five.md)。
+計畫見 [../99-archive/2026-10-05-todo-sweep-five.md](../../../99-archive/2026-10-05-todo-sweep-five.md)。
 
 ## 為什麼
 

@@ -12,7 +12,7 @@ plan 見 [../archive/2026-09-23-render-review.md](../99-archive/2026-09-23-rende
 
 | 項目 | 定案 | 為什麼 |
 |---|---|---|
-| 前端審查 agent | 另開 `fankeel-render-reviewer`（sonnet），推翻 [2026-09-23-todo-ten.md](2026-09-23-todo-ten.md) 的「不另開 agent」 | 使用者在 survey 關卡指出 reviewer 與 verifier 都不做「實際渲染後對照要求」；舊 `render` lens 只比同源數字。獨立的 agent 有自己的回傳格式（逐 `data-block` × 角色的表與 `recapture`／`fix`／`ship`），不和程式碼審查的規則混在一起 |
+| 前端審查 agent | 另開 `fankeel-render-reviewer`（sonnet），推翻 [2026-09-23-todo-ten.md](../90-agent/reports/patrols/2026-09-23-todo-ten.md) 的「不另開 agent」 | 使用者在 survey 關卡指出 reviewer 與 verifier 都不做「實際渲染後對照要求」；舊 `render` lens 只比同源數字。獨立的 agent 有自己的回傳格式（逐 `data-block` × 角色的表與 `recapture`／`fix`／`ship`），不和程式碼審查的規則混在一起 |
 | 出場點 | build 每個動到頁面的 task，加上 verify 的完整一輪 | 偏差在 build 就抓到，verify 補全部角色與頁面 |
 | 角色 | `.fankeel/render.json` 宣告頁面與角色；每個角色一個瀏覽器 profile（`--user-data-dir`），`render.js login` 手動登入一次 | browser-use 的做法可借、套件不借：它要 Python、Playwright 與 LLM API key，本專案零 npm 依賴 |
 | 逐塊即時調 | 注入式：`scripts/tune.js` 在送出 HTML 時注入 overlay，點區塊、寫要怎麼改，`done` 擋下區塊外的改動並還原 | 使用者在 design 關卡選了注入式而非輕量迴圈；注入在送出時做，原始檔不改，不用收尾 |

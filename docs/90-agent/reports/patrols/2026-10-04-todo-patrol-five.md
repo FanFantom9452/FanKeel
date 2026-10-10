@@ -7,7 +7,7 @@ last_verified: 2026-10-05
 
 一句話：程式碼可刪項做掉大半，週額度改由 `scripts/quota.js` 從 TokenBar 的 7 天讀數自動校準，子 session 兩臂探測得到「原因不成立」，stage-agents 九條裡能量的寫成一份報告、其餘改成由使用者親手做或標成等待。
 
-計畫見 [../99-archive/2026-10-04-todo-patrol-five.md](../99-archive/2026-10-04-todo-patrol-five.md)。
+計畫見 [../99-archive/2026-10-04-todo-patrol-five.md](../../../99-archive/2026-10-04-todo-patrol-five.md)。
 
 ## 為什麼
 

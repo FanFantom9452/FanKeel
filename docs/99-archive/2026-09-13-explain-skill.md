@@ -22,7 +22,7 @@ status: current
 - `tests/contract.test.js:262` counts the files that carry the version — two manifests and one `version:` line per skill — and six files say that count in words; `:354` counts the top-level pages of `docs/` against the word at `docs/README.md:9`.
 - Each stage's anchor in `tests/pipeline-doc.test.js:18-26` must be a contiguous substring of that stage's rules and of its `### <stage>` section in `docs/02-architecture/pipeline.md`, both flattened.
 - A page in `docs/archive/` carries `status: archived` (33 of the archive's pages do).
-- A decision record's frontmatter is `status`, `last_verified`, `source_of_truth` — `docs/03-decisions/2026-09-11-todo-split.md:1-5`.
+- A decision record's frontmatter is `status`, `last_verified`, `source_of_truth` — `docs/90-agent/reports/patrols/2026-09-11-todo-split.md:1-5`.
 - A line added to or removed from `lib/stages.js` moves every `lib/stages.js:N` citation below it: 18 of them across `skills/fankeel-{build,design,land,plan,survey,verify}/SKILL.md`. `node scripts/docs-check.js` prints each corrected number. A comment rewrite keeps its line count.
 - `scripts/todo-check.js:84` flags a bullet linking to a page whose role is in `STALE_ROLES = ['decision', 'plan', 'report', 'archive']`, and `:47` caps a bullet at `MAX_ENTRY_CHARS = 200`.
 - The test command is exactly `node --test` — `package.json:8`. There is no `dependencies` key, and none is added — `package.json:1-11`. There is no `CLAUDE.md`.

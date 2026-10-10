@@ -11,7 +11,7 @@ done:
   session: a6409b07-9136-41b8-ba6d-173a1a676500
 ---
 
-09-30 實跑（本 session 的 build close）：await 印出 `build.md` 成立；`inflight` 標記沒有 `kind`，帶 `group: 6`，前一組的標記沒被清掉。見 [決策紀錄](../../03-decisions/2026-09-30-ready-eleven.md)。
+09-30 實跑（本 session 的 build close）：await 印出 `build.md` 成立；`inflight` 標記沒有 `kind`，帶 `group: 6`，前一組的標記沒被清掉。見 [決策紀錄](../reports/patrols/2026-09-30-ready-eleven.md)。
 
 ## 修正 2026-10-01
 

@@ -39,7 +39,7 @@ survey 的證據在 `.fankeel/build/2026-09-18-skill-improvements/`:
 ## 2. TODO 條目:兩條 Ready、六條 Needs a decision、兩條 Waiting、一條修改
 
 - **`## Ready` 兩條**:〔release〕0.70.0 發版;〔docs〕修
-  `docs/03-decisions/2026-09-18-needs-decision-all.md` 的兩處假敘述。
+  `docs/90-agent/reports/patrols/2026-09-18-needs-decision-all.md` 的兩處假敘述。
 - **`## Needs a decision` 六條**:〔registry〕版本號欄位;〔caveman〕20 skill 挑哪些;
   〔session〕堆疊手段挑哪個;〔docs〕`.fankeel/build/` 的定位;〔skill〕唯讀 agent 的
   Bash;〔gates〕要不要存全部選項。

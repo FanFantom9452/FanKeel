@@ -5,8 +5,8 @@ last_verified: 2026-09-23
 
 # 清 TODO：三個決定與 Ready 11 項落地 — 決策紀錄
 
-design 見 [../archive/2026-09-22-todo-cleanup-design.md](../99-archive/2026-09-22-todo-cleanup-design.md)，
-plan 見 [../archive/2026-09-22-todo-cleanup.md](../99-archive/2026-09-22-todo-cleanup.md)（已落地封存）。
+design 見 [../archive/2026-09-22-todo-cleanup-design.md](../../../99-archive/2026-09-22-todo-cleanup-design.md)，
+plan 見 [../archive/2026-09-22-todo-cleanup.md](../../../99-archive/2026-09-22-todo-cleanup.md)（已落地封存）。
 
 ## 一、定案
 

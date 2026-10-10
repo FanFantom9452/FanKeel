@@ -3,7 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { MAX_SENTENCE_WIDTH, DONE_HEADING, longSentences, bareCodes, proseProblem, proseFindings, todoIds } = require('../lib/plain.js');
+const { MAX_SENTENCE_WIDTH, DECISION_RULE_FROM, DONE_HEADING, longSentences, bareCodes, proseProblem, proseFindings, todoIds } = require('../lib/plain.js');
 
 test('a sentence is cut at 。！？；| and at . ! ? ; before a space, and a CJK character counts two', () => {
     assert.equal(MAX_SENTENCE_WIDTH, 160);
@@ -62,4 +62,33 @@ test('todoIds names the failure when the TODO cannot be read', () => {
     const out = todoIds(root);
     assert.deepEqual(out.ids, []);
     assert.match(out.warning, /^the TODO entries could not be read \(.+\), so a bare TODO id is not checked$/);
+});
+
+test('a human decision page dated on or after DECISION_RULE_FROM is read plainly and needs its shape', () => {
+    assert.equal(DECISION_RULE_FROM, '2026-10-10');
+    const head = (d) => '---\nstatus: decision\nlast_verified: ' + d + '\n---\n\n# 標題\n\n';
+    const good = '一句話：選 A 不選 B。\n\n## 決定\n\n選 A。\n\n## 為什麼\n\n快。\n\n## 放棄了什麼\n\nB 的彈性。\n';
+    const bad = '這輪做了三件事。\n\n## 做了什麼\n\n- 一件。\n';
+    const tags = (text, audience) => proseFindings('docs/03-decisions/a.md', text, 'decision', audience || 'human').map((f) => f.tag);
+    assert.deepEqual(tags(head('2026-10-10') + good), []);
+    assert.deepEqual(tags(head('2026-10-10') + bad), ['decision-shape', 'decision-shape']);
+    assert.deepEqual(tags(head('2026-10-01') + bad), []);
+    assert.deepEqual(tags(head('2026-10-10') + good + '\n' + '這'.repeat(81) + '\n'), ['long-sentence']);
+    const en = '---\nlast_verified: 2026-10-11\n---\n\n# T\n\nIn one sentence: A over B.\n\n## Decision\n\nA.\n\n## Why\n\nFast.\n\n## Given up\n\nB.\n';
+    assert.deepEqual(proseFindings('docs/decisions/b.md', en, 'decision', 'human'), []);
+    assert.deepEqual(tags(head('2026-10-10') + bad, 'agent'), []);
+    // the date is read from the frontmatter block only
+    assert.deepEqual(tags('---\nstatus: decision\n---\n\n# T\n\nlast_verified: 2026-10-10\n\n' + bad), []);
+    assert.deepEqual(tags('# T\n\n---\nlast_verified: 2026-10-10\n---\n\n' + bad), []);
+    // quotes and unpadded months or days
+    assert.deepEqual(tags(head('"2026-10-10"') + bad), ['decision-shape', 'decision-shape']);
+    assert.deepEqual(tags(head('2026-10-9') + bad), []);
+    assert.deepEqual(tags(head('2026-9-30') + bad), []);
+    assert.deepEqual(tags('# T\nlast_verified: 2026-10-10\n---\n\n' + bad), []);
+    assert.deepEqual(tags(head('2026-11-1') + bad), ['decision-shape', 'decision-shape']);
+    const soon = proseFindings('docs/03-decisions/a.md', head('soon') + bad, 'decision', 'human');
+    assert.equal(soon.length, 1);
+    assert.equal(soon[0].tag, 'decision-shape');
+    assert.match(soon[0].what, /is not a date/);
+    assert.equal(soon[0].line, 3);
 });

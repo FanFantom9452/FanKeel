@@ -1513,7 +1513,7 @@ in the served file.
 - Modify: `docs/03-decisions/2026-09-23-render-review.md` — 新檔
 - Modify: `docs/README.md` — 決策紀錄的索引列
 - Modify: `TODO.md` — 移除三條、加一個 Waiting
-- Read: `docs/03-decisions/2026-09-23-todo-ten.md` — 被推翻的那一列（第 16 行），不修改
+- Read: `docs/90-agent/reports/patrols/2026-09-23-todo-ten.md` — 被推翻的那一列（第 16 行），不修改
 - Read: `docs/plans/2026-09-23-render-review-design.md` — 設計，不修改
 
 **Interfaces:**

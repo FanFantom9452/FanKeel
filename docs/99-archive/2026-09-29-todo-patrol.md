@@ -764,7 +764,7 @@ Steps:
 
 1. Check every incident before writing it. Candidates, each with where it is recorded; open each and confirm it says what the row will say:
    - polling with `sleep` — `agents/fankeel-brain.md` (`## Return`, the `261 of 295 Bash calls` sentence, 2026-09-23) and `docs/90-agent/reports/2026-09-23-brain-wakeup.md`.
-   - a stash that dropped neighbours — `docs/03-decisions/2026-09-25-todo-line-and-multiplier.md:23` (a `git stash push -u` then drop cleared an uncommitted override).
+   - a stash that dropped neighbours — `docs/90-agent/reports/patrols/2026-09-25-todo-line-and-multiplier.md:23` (a `git stash push -u` then drop cleared an uncommitted override).
    - searching the disk for a definition — `skills/fankeel-plan/SKILL.md:137` (`find /` sat 38 minutes on 2026-09-06).
    - a cost claim carried from memory — `skills/fankeel-build/SKILL.md`, section `## A cost claim is measured, not assumed`.
    - a suite green only with neighbours dirty — search `docs/` and `skills/` for it (`grep -rn "neighbours dirty\|neighbour.*dirty" docs skills`); if it is not recorded in the repository, drop the row rather than write it from memory.

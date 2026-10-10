@@ -18,7 +18,7 @@ class 已經買下全七站，用它。
 
 ## 1. 兩處假敘述用更正行，不改寫
 
-`docs/03-decisions/2026-09-18-needs-decision-all.md` 是 `decision` role，寫一次不維護。
+`docs/90-agent/reports/patrols/2026-09-18-needs-decision-all.md` 是 `decision` role，寫一次不維護。
 但「寫一次不維護」保護的是**過期**，不是**當時就寫錯**。這兩處是後者。
 
 - `:28` 的「其餘二十四條由 build 當場裁決，每一條都寫進 ledger 的 `Ruling:` 行」
@@ -68,7 +68,7 @@ TODO 那條說有三處重述。survey 查下來**只有一處成立**，另外�
 
 ## 4. 42 對 pair 是 audit 這一站的工作
 
-`scripts/docs-audit.js:399` 的 `sweep()` 回 43 對，`docs/03-decisions/2026-09-18-skill-improvements.md:83`
+`scripts/docs-audit.js:399` 的 `sweep()` 回 43 對，`docs/90-agent/reports/patrols/2026-09-18-skill-improvements.md:83`
 記著只有 `registry × station` 被讀過。42 對沒人開過。
 
 - 不在 build 裡拆。`skills/fankeel-audit/SKILL.md:186` 已經指名這條鏈是一個
@@ -130,7 +130,7 @@ N16 已經裁過的行為，不重開。現在的問題只是這 50 條今天要
 
 | file | change |
 |---|---|
-| `docs/03-decisions/2026-09-18-needs-decision-all.md` | `:11`、`:28` 各加一行 `**Corrected 2026-09-18:**`，原文不刪 |
+| `docs/90-agent/reports/patrols/2026-09-18-needs-decision-all.md` | `:11`、`:28` 各加一行 `**Corrected 2026-09-18:**`，原文不刪 |
 | `docs/90-agent/reference/documents.md` | `:287` 改連到 `development.md:35-40`，不再自己講 `todo-check.js` |
 | `lib/gates.js` | `gatesFrom()` 加一個欄位存選項文字 |
 | `lib/station.js` | `gateSummary()` 先讀持久化欄位，讀不到才回頭用 `replay` |

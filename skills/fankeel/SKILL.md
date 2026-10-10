@@ -597,7 +597,7 @@ a document is meant to stay true, and therefore what is worth checking.
 | Role | |
 |---|---|
 | `reference` | describes the system as it is now. Must match the code. |
-| `decision` | why something is the way it is. Written once, not maintained. May name code that has since gone — that is the record being honest about its date. |
+| `decision` | why something is the way it is. Written once, not maintained. May name code that has since gone — that is the record being honest about its date. In a human bucket it opens with one sentence and carries 決定, 為什麼 and 放棄了什麼 headings — docs-check's decision-shape. |
 | `plan` | what is about to be done. Stops being true the moment it lands. |
 | `report` | a dated snapshot: an audit, a benchmark, a meeting. Never edited after. |
 | `archive` | retired. Checked for one thing only — that nothing current still points at it. |

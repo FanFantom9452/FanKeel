@@ -7,7 +7,7 @@ last_verified: 2026-10-01
 
 一句話：使用者 10-01 選「做 gate-3 與 handoff-1」，兩條皆關閉；await-1 不在這輪，留在 Ready 等重裝後真實 build close。
 
-計畫見 [../99-archive/2026-10-01-gate-3-handoff-1.md](../99-archive/2026-10-01-gate-3-handoff-1.md)。
+計畫見 [../99-archive/2026-10-01-gate-3-handoff-1.md](../../../99-archive/2026-10-01-gate-3-handoff-1.md)。
 
 ## 為什麼
 
