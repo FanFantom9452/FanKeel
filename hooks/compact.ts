@@ -8,7 +8,7 @@ import type { Register, EngineInterface } from 'claude-code'
 export const HARD = 450000
 
 // lib/registry.js SESSION_ID: the registry file is named by this id.
-export const SESSION_ID =/^[0-9a-fA-F][0-9a-fA-F-]{7,63}$/
+export const SESSION_ID = /^[0-9a-fA-F][0-9a-fA-F-]{7,63}$/
 
 type Entry = { task?: unknown; stage?: unknown; class?: unknown; active?: unknown }
 
