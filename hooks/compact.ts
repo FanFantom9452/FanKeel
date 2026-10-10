@@ -44,13 +44,14 @@ export function instructionsFor(id: string, entry: Entry, pluginRoot: string): s
 // The registry root is the nearest ancestor holding .fankeel/sessions
 // (lib/registry.js findStateRoot); looking for this session's own file there
 // also skips a machine-wide registry that does not hold it.
-async function findEntry($: EngineInterface, id: string): Promise<Entry | null> {
+export async function findEntry($: EngineInterface, id: string): Promise<{ entry: Entry; root: string } | null> {
   let dir: string | null = await $.session.root()
   while (dir) {
-    const file = `${dir.replace(/[\\/]+$/, '')}/.fankeel/sessions/${id}.json`
+    const root = dir.replace(/[\\/]+$/, '')
+    const file = `${root}/.fankeel/sessions/${id}.json`
     if (await $.fs.exists(file)) {
       try {
-        return JSON.parse(String(await $.fs.read(file))) as Entry
+        return { entry: JSON.parse(String(await $.fs.read(file))) as Entry, root }
       } catch (err) {
         $.ui.log(`fankeel compact: unreadable session file ${file}: ${err}`, { to: 'debug' })
         return null
@@ -92,8 +93,9 @@ export const register: Register = (on) => {
       if (typeof context.tokens !== 'number' || context.tokens < at) return out
       const id = await $.session.id()
       if (!SESSION_ID.test(id)) return out
-      const entry = await findEntry($, id)
-      if (!entry || !isActive(entry)) return out
+      const found = await findEntry($, id)
+      if (!found || !isActive(found.entry)) return out
+      const entry = found.entry
       pending = true
       $.ui.log(`fankeel compact: ${context.tokens} tokens >= ${at}, compacting`, { to: 'debug' })
       void compactWithRetry($, instructionsFor(id, entry, $.plugin.root)).finally(() => {
