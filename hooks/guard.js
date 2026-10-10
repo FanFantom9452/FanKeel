@@ -96,6 +96,29 @@ function main(raw) {
             }));
             return;
         }
+        // docs/90-agent/plans/2026-10-10-workflow-gaps-design.md §12: the shell
+        // half of the controlled-stage rule below. The controller's Edit and
+        // Write are refused there; a `sed -i` or a redirect is the same write
+        // by another tool. `agent_id` absent is the main thread. A profile
+        // that cannot be read lets the command through.
+        if (!payload.agent_id && writesFiles(command)) {
+            let controlled = false;
+            try {
+                controlled = controlling(mine.stage, profileLib.profileFor(root, mine).values);
+            } catch (e) { /* housekeeping */ }
+            if (controlled) {
+                process.stdout.write(JSON.stringify({
+                    hookSpecificOutput: {
+                        hookEventName: 'PreToolUse',
+                        permissionDecision: 'deny',
+                        permissionDecisionReason: 'fankeel: ' + mine.stage + ' is a controlled stage — this command '
+                            + 'writes to disk, and its stage agent does the writing here, not the controller. '
+                            + 'Dispatch it, relay a path, ask.',
+                    },
+                }));
+                return;
+            }
+        }
         emitCommit(root, mine, payload);
         return;
     }

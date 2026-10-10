@@ -679,3 +679,74 @@ test('the manifest sends Agent and Task calls to the guard', () => {
   assert.ok(entry, 'no PreToolUse entry matches Agent|Task');
   assert.match(entry.hooks[0].command, /hooks\/guard\.js/);
 });
+
+// ---- the controlled-stage matcher, shell half: the controller's own command -
+
+const shellCall = (root, command, tool) => ({
+  session_id: MINE, cwd: root, tool_name: tool || 'Bash', tool_input: { command },
+});
+const CONTROLLED = (stage) => 'fankeel: ' + stage + ' is a controlled stage — this command writes to disk, and its stage agent '
+  + 'does the writing here, not the controller. Dispatch it, relay a path, ask.';
+
+test('a main-thread shell command that writes is denied while its stage is controlled', () => {
+  const root = tmp();
+  seed(root, MINE, { stage: 'build', claims: [] });
+  agentsOn(root, 'survey,build,verify');
+  const out = run(root, shellCall(root, 'sed -i s/a/b/ x.js'));
+  assert.equal(decisionOf(out), 'deny');
+  assert.equal(reasonOf(out), CONTROLLED('build'));
+  assert.equal(reasonOf(run(root, shellCall(root, 'Set-Content x.txt hi', 'PowerShell'))), CONTROLLED('build'));
+});
+
+test('a controlled stage lets the controller\'s read-only commands and its own scripts through', () => {
+  const root = tmp();
+  seed(root, MINE, { stage: 'build', claims: [] });
+  agentsOn(root, 'survey,build,verify');
+  for (const command of [
+    'git status',
+    'node scripts/task.js show --session x 2>&1 | head -40',
+    'node scripts/await.js --session x',
+    'node scripts/commit.js .fankeel/build/task-1/survey-commit.md',
+    'node scripts/task.js stage plan --session x',
+    'node scripts/todo.js list',
+  ]) {
+    assert.equal(run(root, shellCall(root, command)), '', command);
+  }
+});
+
+test('the same shell write is let through at a stage off stage.agents\'s list', () => {
+  const root = tmp();
+  seed(root, MINE, { stage: 'build', claims: [] });
+  agentsOn(root, 'true'); // true means survey only — build is not controlled
+  assert.equal(run(root, shellCall(root, 'sed -i s/a/b/ x.js')), '');
+});
+
+test('a subagent\'s shell write (agent_id set) is not the controller\'s, and is not denied by this rule', () => {
+  const root = tmp();
+  seed(root, MINE, { stage: 'build', claims: [] });
+  agentsOn(root, 'survey,build,verify');
+  const payload = shellCall(root, 'sed -i s/a/b/ x.js');
+  payload.agent_id = 'agt_01';
+  payload.agent_type = 'fankeel:fankeel-implementer';
+  assert.equal(run(root, payload), '');
+});
+
+test('a read-only agent on a controlled stage is still refused by its own rule, in its own words', () => {
+  const root = tmp();
+  seed(root, MINE, { stage: 'build', claims: [] });
+  agentsOn(root, 'survey,build,verify');
+  assert.match(reasonOf(run(root, bashCall('fankeel-reader', 'ls > files_ref.txt'))), /read-only agent_type fankeel-reader/);
+});
+
+test('a controller\'s git commit on a controlled stage is refused before the commit scan runs', () => {
+  const root = tmp();
+  seed(root, MINE, { stage: 'build', claims: [] });
+  agentsOn(root, 'survey,build,verify');
+  assert.equal(reasonOf(run(root, shellCall(root, 'git commit -m x'))), CONTROLLED('build'));
+});
+
+test('a profile read that throws lets the shell write through', () => {
+  const root = tmp();
+  seed(root, MINE, { stage: 'survey', claims: [], configDir: 123 });
+  assert.equal(run(root, shellCall(root, 'sed -i s/a/b/ x.js')), '');
+});
