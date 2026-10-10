@@ -2,7 +2,7 @@
 'use strict';
 // scripts/suite.js: run the full suite once and record it for `task.js land`.
 //
-//   node scripts/suite.js --session <id> [--command "<test command>"] [--root <dir>] [--tree <dir>]
+//   node scripts/suite.js --session <id> [--command "<test command>"] [--root <dir>] [--tree <dir>] [--check]
 //
 // Prints one line — `suite: <pass> pass, <fail> fail @ <sha8>`, or `suite: ok @ <sha8>`
 // / `suite: red @ <sha8>` for a runner that is not node --test — writes
@@ -12,6 +12,9 @@
 // path then goes into suite.json as `tree` — else the entry's worktree when it
 // has one, else the project root; the sha is that tree's HEAD.
 // The command is --command, else that tree's package.json test script.
+// --check runs no test and writes nothing: it asks lib/suite.js's blocker whether
+// the record already made still stands, and prints `suite: record stands @ <sha8>`
+// or `suite: no suite to run` with exit 0, `suite: <why not>` with exit 1.
 const fs = require('node:fs');
 const path = require('node:path');
 const { parseArgs } = require('node:util');
@@ -23,7 +26,7 @@ const { worktreeOf } = require('../lib/guard.js');
 function main(argv) {
     const { values } = parseArgs({
         args: argv, strict: false,
-        options: { session: { type: 'string' }, command: { type: 'string' }, root: { type: 'string' }, tree: { type: 'string' } },
+        options: { session: { type: 'string' }, command: { type: 'string' }, root: { type: 'string' }, tree: { type: 'string' }, check: { type: 'boolean' } },
     });
     if (!values.session) return { text: 'suite: --session <id> is required.', ok: false };
     if (values.tree !== undefined && typeof values.tree !== 'string') return { text: 'suite: --tree needs a directory.', ok: false };
@@ -31,6 +34,12 @@ function main(argv) {
     const data = registry.readSession(root, values.session);
     if (!data || data.active !== true) return { text: 'suite: no active entry for ' + values.session + ' under ' + root, ok: false };
     const projectRoot = docs.projectRootsFor(root, data.project ? [data.project] : [])[0] || root;
+    if (values.check) {
+        const why = suite.blocker(root, data, projectRoot);
+        if (why) return { text: 'suite: ' + why, ok: false };
+        const rec = suite.readRecord(root, data);
+        return { text: rec ? 'suite: record stands @ ' + (rec.sha ? rec.sha.slice(0, 8) : 'no repo') : 'suite: no suite to run', ok: true };
+    }
     const wt = worktreeOf(data);
     const given = values.tree ? path.resolve(values.tree) : null;
     if (given && !fs.existsSync(given)) return { text: 'suite: --tree ' + values.tree + ' does not exist', ok: false };

@@ -47,6 +47,12 @@ record — add `--tree <that worktree>`: the suite runs there, `suite.json`
 keeps the path, and `task.js land` checks the record against that tree's HEAD
 for as long as the directory exists.
 
+Where verify already ran it, ask before running it again:
+`node <plugin>/scripts/suite.js --session <id> --check` runs no test and
+writes nothing. `suite: record stands @ <sha>` with exit 0 means verify's
+record is green and no code changed since, and that line is this step's
+`suite:` line; exit 1 prints why, and the full run above is what answers it.
+
 It runs the project's test command — `package.json`'s `test` script, or
 `--command "<cmd>"` — prints `suite: <pass> pass, <fail> fail @ <sha>`, and
 records that beside the task's handoffs. **Red stops everything**, and since

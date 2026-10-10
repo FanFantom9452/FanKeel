@@ -248,3 +248,35 @@ test('record keeps every run: the top level is the last one, runs holds them in 
   assert.equal(kept.length, 20);
   assert.equal(kept[19].at, 'n24');
 });
+
+test('--check runs no test and writes nothing: a standing record exits 0, no record and a stale one exit 1, nothing to run exits 0', () => {
+  const dir = repo();
+  registry.writeSession(dir, 'abcdef0125', { ...DATA });
+  const none = main(['--session', 'abcdef0125', '--root', dir, '--check']);
+  assert.equal(none.ok, false);
+  assert.match(none.text, /^suite: no suite record — /);
+  assert.equal(suite.readRecord(dir, DATA), null, '--check wrote a record');
+  assert.equal(main(['--session', 'abcdef0125', '--root', dir]).ok, true);
+  const file = suite.recordPath(dir, DATA);
+  const before = fs.readFileSync(file, 'utf8');
+  const mtime = fs.statSync(file).mtimeMs;
+  // Red in the working tree and not committed: a run would fail on it, a check never sees it.
+  fs.writeFileSync(path.join(dir, 'a.test.js'), RED);
+  const stands = main(['--session', 'abcdef0125', '--root', dir, '--check']);
+  assert.equal(stands.ok, true);
+  assert.equal(stands.text, 'suite: record stands @ ' + git(dir, ['rev-parse', 'HEAD']).slice(0, 8));
+  assert.equal(fs.readFileSync(file, 'utf8'), before);
+  assert.equal(fs.statSync(file).mtimeMs, mtime);
+  fs.writeFileSync(path.join(dir, 'lib.js'), 'x\n');
+  git(dir, ['add', 'lib.js']);
+  git(dir, ['commit', '-qm', 'code']);
+  const stale = main(['--session', 'abcdef0125', '--root', dir, '--check']);
+  assert.equal(stale.ok, false);
+  assert.match(stale.text, /^suite: suite ran at [0-9a-f]{8}, and lib\.js changed since — run suite\.js again$/);
+  assert.equal(fs.readFileSync(file, 'utf8'), before);
+  const bare = tmp('fankeel-suite-');
+  registry.writeSession(bare, 'abcdef0126', { ...DATA });
+  const nothing = main(['--session', 'abcdef0126', '--root', bare, '--check']);
+  assert.equal(nothing.ok, true);
+  assert.equal(nothing.text, 'suite: no suite to run');
+});
