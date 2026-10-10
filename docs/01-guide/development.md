@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-26
+last_verified: 2026-10-10
 source_of_truth: package.json, .claude-plugin/plugin.json, knip.json, scripts/todo-check.js, scripts/version.js, scripts/skills-check.js, scripts/stage-registry.js
 ---
 
