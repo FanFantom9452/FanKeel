@@ -42,6 +42,11 @@ what the gate asks — never something to settle first and report afterwards.
 node <plugin>/scripts/suite.js --session <id>
 ```
 
+Where build ran in a git worktree opened by hand — one the entry does not
+record — add `--tree <that worktree>`: the suite runs there, `suite.json`
+keeps the path, and `task.js land` checks the record against that tree's HEAD
+for as long as the directory exists.
+
 It runs the project's test command — `package.json`'s `test` script, or
 `--command "<cmd>"` — prints `suite: <pass> pass, <fail> fail @ <sha>`, and
 records that beside the task's handoffs. **Red stops everything**, and since

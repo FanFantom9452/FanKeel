@@ -168,3 +168,27 @@ test('suite.js prints "suite: <pass> pass, <fail> fail @ <sha8>" with the record
   assert.equal(Number(m[1]), rec.pass);
   assert.equal(Number(m[2]), rec.fail);
 });
+
+test('--tree runs the suite in a worktree the entry does not know, and blocker checks against that tree while it exists', () => {
+  const dir = repo();
+  const wt = path.join(tmp('fankeel-suite-manual-'), 'wt');
+  git(dir, ['worktree', 'add', '-q', '-b', 'manual', wt]);
+  fs.writeFileSync(path.join(wt, 'lib.js'), 'x\n');
+  git(wt, ['add', '.']);
+  git(wt, ['commit', '-qm', 'code']);
+  const wtHead = git(wt, ['rev-parse', 'HEAD']);
+  registry.writeSession(dir, 'abcdef0124', DATA);
+  const missing = main(['--session', 'abcdef0124', '--root', dir, '--tree', path.join(wt, 'nope')]);
+  assert.equal(missing.ok, false);
+  assert.match(missing.text, /^suite: --tree .* does not exist$/);
+  assert.equal(suite.readRecord(dir, DATA), null);
+  const r = main(['--session', 'abcdef0124', '--root', dir, '--tree', wt]);
+  assert.equal(r.ok, true);
+  assert.ok(r.text.endsWith('@ ' + wtHead.slice(0, 8)), r.text);
+  const rec = suite.readRecord(dir, DATA);
+  assert.equal(rec.sha, wtHead);
+  assert.equal(rec.tree, path.resolve(wt));
+  assert.equal(suite.blocker(dir, DATA, dir), null);
+  git(dir, ['worktree', 'remove', '--force', wt]);
+  assert.match(suite.blocker(dir, DATA, dir), /^suite ran at [0-9a-f]{8}, and lib\.js changed since — run suite\.js again$/);
+});
