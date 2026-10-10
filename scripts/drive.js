@@ -144,9 +144,12 @@ async function drive(opts, deps = {}) {
             const r = await spawnClaudeAsync(argsFor(opts.maxUsd - state.usd), { cwd: root, env: opts.env, input: prompt, timeout: Math.max(1, deadline - Date.now()) }, d.spawn);
             state.rounds++;
             const out = lastJson(r.stdout);
-            if (out && Number.isFinite(out.total_cost_usd)) state.usd += out.total_cost_usd;
+            const cost = out && out.total_cost_usd;
+            if (Number.isFinite(cost)) state.usd += cost;
             if (r.error && r.error.code === 'ETIMEDOUT') return stop('timeout');
             if (r.error) return stop('error', { detail: r.error.message });
+            // A round that reports no cost would leave --max-usd unable to trip.
+            if (!Number.isFinite(cost)) return stop('error', { detail: 'the round reported no total_cost_usd' });
             const nextStage = data.route[data.route.indexOf(stage) + 1] || null;
             const gate = mtime(file) > before ? handoff.readGate(file, nextStage, data.route) : null;
             if (!gate || gate.invalid || !STATUSES.includes(gate.status)) return stop('status', { handoff: file });

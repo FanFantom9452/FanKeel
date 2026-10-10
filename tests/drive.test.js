@@ -61,7 +61,7 @@ function fakeSpawn(root, { status = 'done', usd = 0.1, delayMs = 0 } = {}) {
             const file = handoff.handoffPath(root, data, data.stage, handoff.lapOf(data, data.stage));
             fs.mkdirSync(path.dirname(file), { recursive: true });
             fs.writeFileSync(file, gateBlock(status, data.stage));
-            child.stdout.emit('data', Buffer.from(JSON.stringify({ type: 'result', total_cost_usd: usd }) + '\n'));
+            child.stdout.emit('data', Buffer.from(usd === null ? 'no json here\n' : JSON.stringify({ type: 'result', total_cost_usd: usd }) + '\n'));
             close(0);
         }, delayMs);
         return child;
@@ -167,6 +167,39 @@ test('drive stops on error, not a rejection, when task.js refuses a move', async
     const out = await drive(base(root, env), { spawn: fakeSpawn(root), sleep: answerer(root, (q) => q.options[0].label), pollMs: 5, task });
     assert.equal(out.stopped, 'error');
     assert.equal(out.detail, 'task.js refused');
+});
+
+test('drive stops on error, naming total_cost_usd, when a round reports no cost', async () => {
+    const { root, env } = setup();
+    const out = await drive(base(root, env), { spawn: fakeSpawn(root, { usd: null }), sleep: answerer(root, () => '留在本站'), pollMs: 5 });
+    assert.equal(out.stopped, 'error');
+    assert.equal(out.rounds, 1);
+    assert.match(out.detail, /total_cost_usd/);
+});
+
+test('drive pauses on a pause answer: next set from the gate, stop line pause', async () => {
+    const { root, env } = setup();
+    const out = await drive(base(root, env), { spawn: fakeSpawn(root), sleep: answerer(root, () => '暫停'), pollMs: 5 });
+    assert.equal(out.stopped, 'pause');
+    assert.equal(registry.readSession(root, ID).next, 'paused at survey');
+});
+
+test('drive stands down on option one at the route end: task.js down runs, stop down', async () => {
+    const { root, env } = setup();
+    const data = registry.readSession(root, ID);
+    registry.writeSession(root, ID, Object.assign({}, data, { stage: 'build', moves: [['build', Date.now(), null]] }));
+    const calls = [];
+    const out = await drive(base(root, env), { spawn: fakeSpawn(root), sleep: answerer(root, (q) => q.options[0].label), pollMs: 5, task: (args) => { calls.push(args); } });
+    assert.equal(out.stopped, 'down');
+    assert.deepEqual(calls, [['down']]);
+});
+
+test('drive stops on gate when no answer comes in time, and the pending file is gone', async () => {
+    const { root, env } = setup();
+    const out = await drive(base(root, env, { gateWaitMs: 60 }), { spawn: fakeSpawn(root), sleep: () => new Promise((r) => setTimeout(r, 10)), pollMs: 5 });
+    const data = registry.readSession(root, ID);
+    assert.equal(out.stopped, 'gate');
+    assert.ok(!fs.existsSync(handoff.pendingPath(root, data, 'survey')));
 });
 
 test('parse: the defaults, and a flag overrides one', () => {
