@@ -7,7 +7,7 @@ last_verified: 2026-09-29
 
 一句話：這輪修了五條 Ready：await 的 group 標記、同名 plan 的舊 ledger、gate 答案帶進後面的 brief、`/fankeel` 注入量提醒，以及 design 閘門拿掉「方向／逐塊」。另外實測同名 `.claude/agents` 覆寫檔，並關掉 promo30 v3 解除的條目。
 
-計畫見 [../99-archive/2026-09-29-todo-patrol-3.md](../99-archive/2026-09-29-todo-patrol-3.md)；design 只在 `.fankeel/build/task-20260929T122234/design.md`（gitignored），這份紀錄就是它留下的部分。
+計畫見 [../99-archive/2026-09-29-todo-patrol-3.md](../../../99-archive/2026-09-29-todo-patrol-3.md)；design 只在 `.fankeel/build/task-20260929T122234/design.md`（gitignored），這份紀錄就是它留下的部分。
 
 ## 為什麼
 

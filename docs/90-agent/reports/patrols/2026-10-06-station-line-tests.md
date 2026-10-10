@@ -7,7 +7,7 @@ last_verified: 2026-10-06
 
 一句話：`hooks/inject.js` 的 station 寫入錯誤 65 字元截斷與 `lib/render.js` 的 `stationLine` 五處分支都補上會紅的測試，inject-6 與 render-1 關閉；inject-3 的過長句子沒做。
 
-計畫見 [../99-archive/2026-10-05-station-line-tests.md](../99-archive/2026-10-05-station-line-tests.md)。
+計畫見 [../99-archive/2026-10-05-station-line-tests.md](../../../99-archive/2026-10-05-station-line-tests.md)。
 
 ## 為什麼
 

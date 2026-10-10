@@ -164,7 +164,7 @@ function shapeFindings(rel, body) {
 ## Task 3: 盤點日誌搬到 reports/patrols，加主題索引
 
 **Files:**
-- Modify: `docs/03-decisions/2026-09-10-todo-ten.md` — 由 `applyMoves` 連同下列清單其餘 33 頁 `git mv` 到 `docs/90-agent/reports/patrols/` 同名，不手改內容；指向它們的連結在任何 `.md` 裡都由腳本改寫
+- Modify: `docs/90-agent/reports/patrols/2026-09-10-todo-ten.md` — 由 `applyMoves` 連同下列清單其餘 33 頁 `git mv` 到 `docs/90-agent/reports/patrols/` 同名，不手改內容；指向它們的連結在任何 `.md` 裡都由腳本改寫
 - Modify: `docs/README.md` — 連結由腳本改寫，另手加 `## Decisions by topic`
 - Modify: `docs/90-agent/reference/sources.md` — 只有腳本改寫的 Cited by 路徑，不手改
 - Read: `scripts/docs-move.js` — `applyMoves(root, rows, toName)` 與 `writeTable`/`readTable` 的表格式

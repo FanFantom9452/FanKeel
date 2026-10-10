@@ -3547,7 +3547,7 @@ git commit -m "docs: dated correction blocks on the 09-25 and 09-28 controller-m
 ## Task 24: correction lines on the two decision records
 
 **Files:**
-- Modify: `docs/03-decisions/2026-09-25-todo-line-and-multiplier.md` — add a correction line after the one-sentence summary (near line 8)
+- Modify: `docs/90-agent/reports/patrols/2026-09-25-todo-line-and-multiplier.md` — add a correction line after the one-sentence summary (near line 8)
 - Modify: `docs/03-decisions/2026-09-28-guard-seen-ab-rerun.md` — add a correction line after the line naming the wrong totals (near line 21)
 
 **Interfaces:**
@@ -3565,7 +3565,7 @@ grep -n "更正 2026-09-28" docs/03-decisions/2026-09-25-todo-line-and-multiplie
 
    (exits 1, no match.)
 
-2. In `docs/03-decisions/2026-09-25-todo-line-and-multiplier.md`, line 8 and the blank line after it currently read:
+2. In `docs/90-agent/reports/patrols/2026-09-25-todo-line-and-multiplier.md`, line 8 and the blank line after it currently read:
 
 ```markdown
 一句話：`todo-check.js` 現在會檢查行號。`path:N`／`path:N-M` 形式的引用，行號超過檔尾就回報 `past end`；行數用 `docs-check.js` 匯出的 `lineCount` 算，不另寫一份。主控倍數 k 第一次實測結果：可比的三站 k 落在 2.29–2.74，破平衡點 2.5052 正好在這個範圍裡，一對數據定不了輸贏。
@@ -3573,7 +3573,7 @@ grep -n "更正 2026-09-28" docs/03-decisions/2026-09-25-todo-line-and-multiplie
 design 見 [../archive/2026-09-25-todo-line-and-multiplier-design.md](../99-archive/2026-09-25-todo-line-and-multiplier-design.md)，計畫見 [../archive/2026-09-25-todo-line-and-multiplier.md](../99-archive/2026-09-25-todo-line-and-multiplier.md)，量測結果見 [../reports/2026-09-25-controller-multiplier.md](../90-agent/reports/2026-09-25-controller-multiplier.md)。
 ```
 
-   in `docs/03-decisions/2026-09-25-todo-line-and-multiplier.md`, insert a correction line between them:
+   in `docs/90-agent/reports/patrols/2026-09-25-todo-line-and-multiplier.md`, insert a correction line between them:
 
 ```markdown
 一句話：`todo-check.js` 現在會檢查行號。`path:N`／`path:N-M` 形式的引用，行號超過檔尾就回報 `past end`；行數用 `docs-check.js` 匯出的 `lineCount` 算，不另寫一份。主控倍數 k 第一次實測結果：可比的三站 k 落在 2.29–2.74，破平衡點 2.5052 正好在這個範圍裡，一對數據定不了輸贏。
@@ -3892,6 +3892,6 @@ git commit -m "docs: close the context-budget Blocked entries; describe group br
 | `assets/station/station.js:3739-3745` 的派工表在 USD 後面加兩欄：「context 峰值」和「請求數」。表尾把請求數加總，圖的 `metric` 也多這兩個選項… | Task 21 |
 | `docs/90-agent/reports/evidence/2026-09-25-controller-multiplier/summarise.js:30-31` 把各站的 `+=` 改成只取最後一站的 `total_cost_usd`… | Task 22 |
 | 報告寫出去以後就不再改內文，所以 `docs/90-agent/reports/2026-09-25-controller-multiplier.md` 和 `2026-09-28-ab-profile-pin.md` 只在開頭加一個有日期的「更正」區塊… | Task 23 |
-| `docs/03-decisions/2026-09-25-todo-line-and-multiplier.md:8` 和 `2026-09-28-guard-seen-ab-rerun.md:21` 各加一行更正… | Task 24 |
+| `docs/90-agent/reports/patrols/2026-09-25-todo-line-and-multiplier.md:8` 和 `2026-09-28-guard-seen-ab-rerun.md:21` 各加一行更正… | Task 24 |
 | （同一句的後半）`docs/90-agent/reference/sources.md:70-71` 和 `docs/README.md:152,247,253` 是會持續維護的文件，直接改成正確的數字 | Task 25 |
 | `TODO.md` Blocked 底下的「brain 的 context 撐不住」和「交接後 context 仍過 400k」由這個 task 處理完，最後一個 task 把這兩條移除。另外在 Watch 新增一條… | Task 26 |

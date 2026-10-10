@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-09-18
-source_of_truth: 每一列的現況都回溯到一個 `path:line`、commit 或 session id（八碼的是 session id，transcript 在 `~/.claude/projects/F--ymlab-fankeel/`）；現況由四個 `sonnet` reader 對程式碼讀出、本 session 抽查；數字出自 `docs/03-decisions/2026-09-18-skill-improvements.md`、`docs/90-agent/reference/improvement-brief.md` §6.2、`docs/90-agent/reports/2026-09-03-dispatch-vs-inline.md` 與 `-named.md`、`TODO.md` 的〔session〕`hooks/size.js` 條目，價格出自 claude-api skill 的價目表（快取日 2026-06-24）；本頁不會重新產生
+source_of_truth: 每一列的現況都回溯到一個 `path:line`、commit 或 session id（八碼的是 session id，transcript 在 `~/.claude/projects/F--ymlab-fankeel/`）；現況由四個 `sonnet` reader 對程式碼讀出、本 session 抽查；數字出自 `docs/90-agent/reports/patrols/2026-09-18-skill-improvements.md`、`docs/90-agent/reference/improvement-brief.md` §6.2、`docs/90-agent/reports/2026-09-03-dispatch-vs-inline.md` 與 `-named.md`、`TODO.md` 的〔session〕`hooks/size.js` 條目，價格出自 claude-api skill 的價目表（快取日 2026-06-24）；本頁不會重新產生
 ---
 
 # 使用者 09-18 下午的十七項意見：逐條現況
@@ -9,7 +9,7 @@ source_of_truth: 每一列的現況都回溯到一個 `path:line`、commit 或 s
 **一句話：十七項裡十三項今天早上已經處理過，真正新的只有三項（給人讀的文件、context
 回收、Sonnet 主控），而 Sonnet 主控不建議當第一步——它省的是單價，不是堆疊。**
 
-早上那一輪是 `3e96a01`（決策紀錄 `docs/03-decisions/2026-09-18-skill-improvements.md`），
+早上那一輪是 `3e96a01`（決策紀錄 `docs/90-agent/reports/patrols/2026-09-18-skill-improvements.md`），
 之後 `todo-six` 發了 0.70.0，裝好的時間是 2026-09-18T04:47Z。所以早上寫「卡在發版」
 的兩件——唯讀 agent 的箭頭誤判修正、gate 記錄——現在都在跑了。
 

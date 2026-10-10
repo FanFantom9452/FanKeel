@@ -7,7 +7,7 @@ last_verified: 2026-09-26
 
 一句話：09-26 的五條 Ready 走完整條 route，14 個 task 落地了 13 個。audit 可以分批跑，也會提醒兩週沒跑。docs 改成先出搬移表、核可後再搬，fankeel 自己的 docs 已經搬到 audience preset。subagent 之間用 `context.md` 交換資料。design 站可以選 `design.mockup: auto`、多選 `design.skill`，也有了 fankeel 自帶的設計指南。station 換成浮動圖示、只重繪有變動的區塊，網頁答題可以交回終端。wizard-motion 測試改成每次 spawn 各用一個 `--user-data-dir`。Task 14（Trovara 的搬移）留給使用者在那個 repository 自己做。
 
-design 見 [../99-archive/2026-09-26-ready-five-design.md](../99-archive/2026-09-26-ready-five-design.md)，計畫見 [../99-archive/2026-09-26-ready-five.md](../99-archive/2026-09-26-ready-five.md)。
+design 見 [../99-archive/2026-09-26-ready-five-design.md](../../../99-archive/2026-09-26-ready-five-design.md)，計畫見 [../99-archive/2026-09-26-ready-five.md](../../../99-archive/2026-09-26-ready-five.md)。
 
 ## 定了什麼
 
@@ -20,7 +20,7 @@ design 見 [../99-archive/2026-09-26-ready-five-design.md](../99-archive/2026-09
 
 ## 量到什麼
 
-`context.md` 的 A/B 各跑一次，結果什麼都沒顯示。兩個 arm 都沒有派出 subagent，機制一次也沒觸發過。報告見 [../90-agent/reports/2026-09-26-context-md.md](../90-agent/reports/2026-09-26-context-md.md)。乾淨的那一次花了 $12.82；之前兩次碰撞作廢的執行約花 $5.50，原因是 `ab.sh` 的輸出檔沒帶 session id。
+`context.md` 的 A/B 各跑一次，結果什麼都沒顯示。兩個 arm 都沒有派出 subagent，機制一次也沒觸發過。報告見 [../90-agent/reports/2026-09-26-context-md.md](../2026-09-26-context-md.md)。乾淨的那一次花了 $12.82；之前兩次碰撞作廢的執行約花 $5.50，原因是 `ab.sh` 的輸出檔沒帶 session id。
 
 ## 回頭的地方
 

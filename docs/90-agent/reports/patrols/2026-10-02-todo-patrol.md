@@ -7,7 +7,7 @@ last_verified: 2026-10-02
 
 一句話：JSON 讀檔收進 `lib/json.js` 的 `readObject`，沒人用的常數刪掉，四條 TODO 了結，文件裡因行號位移而斷的引用全部重指。
 
-計畫見 [../99-archive/2026-10-02-todo-patrol.md](../99-archive/2026-10-02-todo-patrol.md)。
+計畫見 [../99-archive/2026-10-02-todo-patrol.md](../../../99-archive/2026-10-02-todo-patrol.md)。
 
 ## 為什麼
 

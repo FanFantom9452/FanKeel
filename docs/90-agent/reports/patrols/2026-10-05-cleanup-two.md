@@ -7,7 +7,7 @@ last_verified: 2026-10-05
 
 一句話：`fetchHealth` 改用全域 `fetch`，`lib/profile.js` 自己的 `git` 刪掉改用 `lib/blame.js` 匯出的；cleanup-2 的第三、四項沒做，model-3 與 stage-agents-14 照使用者在 survey 關卡的裁定留在 Ready。
 
-計畫見 [../99-archive/2026-10-05-cleanup-two.md](../99-archive/2026-10-05-cleanup-two.md)。
+計畫見 [../99-archive/2026-10-05-cleanup-two.md](../../../99-archive/2026-10-05-cleanup-two.md)。
 
 ## 為什麼
 

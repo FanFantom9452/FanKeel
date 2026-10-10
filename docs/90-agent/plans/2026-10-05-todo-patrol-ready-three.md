@@ -31,7 +31,7 @@ status: design-intent
 - 冷啟動報告是 report 角色，寫完不改；使用者 10-05 在 inject-plain-brain 計畫裡定過「報告與決策頁裡的舊行號是當時的紀錄，不改」— Task 4 — 這一條是 survey 選項一帶進來的，plan gate 另給一個不改報告的選項；實作者只改那一個引用，不動任何數字或結論。
 - 把迴圈上限拿掉時，一直 reject 的假 compact 會讓測試無限跑下去，掛住不等於紅 — Task 1 — 假 compact 在第 11 次呼叫起改為成功，上限拿掉時測到 11 次而紅，不會掛住。
 - 在 `<configDir>/fankeel` 放一個檔案讓 `station.write` 丟錯，hook 裡別處若也讀那個路徑而沒接住錯誤，整個區塊就會消失，測試紅的原因就不對 — Task 2 — 實作者先在改程式前跑新測試，確認紅的原因是「區塊在、只是沒有 `station:` 行」（失敗訊息裡的 actual 含 `fankeel: this session is`）；不是就停手回報。
-- `docs/90-agent/reference/station.md` 在表格加一列會讓其後的行號下移一行；`docs/03-decisions/2026-09-18-todo-six.md:77` 引 `station.md:287`，那是決策頁、本來就已不準 — Task 2 — 改完跑 `node scripts/docs-check.js`，exit 0 才算完成；docs-check 若點名別頁的 `station.md` 行號，實作者停手回報，那一頁不在本 task 的 Files 裡。
+- `docs/90-agent/reference/station.md` 在表格加一列會讓其後的行號下移一行；`docs/90-agent/reports/patrols/2026-09-18-todo-six.md:77` 引 `station.md:287`，那是決策頁、本來就已不準 — Task 2 — 改完跑 `node scripts/docs-check.js`，exit 0 才算完成；docs-check 若點名別頁的 `station.md` 行號，實作者停手回報，那一頁不在本 task 的 Files 裡。
 
 ## Task 1: 壓縮重試最多三次，補一個會紅的測試（compact-1）
 

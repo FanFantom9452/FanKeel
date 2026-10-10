@@ -453,7 +453,7 @@ module, and needs no change. Do not edit it.
    `docs/02-architecture/pipeline.md:4`, `docs/02-architecture/pipeline.md:301`, and the `TODO.md` bullet.
    (`docs/archive/`, `docs/decisions/` and `docs/plans/` are excluded on
    purpose: a decision record is written once and may name code that has since
-   gone — `docs/03-decisions/2026-09-18-needs-decision-all.md` keeps saying
+   gone — `docs/90-agent/reports/patrols/2026-09-18-needs-decision-all.md` keeps saying
    `lib/skill-overlap.js` because that was true the day it was written, and
    `docs-check` does not check paths in the decision role. Do not edit it.)
 
@@ -3877,7 +3877,7 @@ that prove each fact stopped being stated twice.
 `git show 728dd76` is the commit that filed all three (message: "development.md:79
 的十 vs contract.test.js:256 的十二、pipeline.md:985 與 fankeel-audit/rationale.md:65
 一段 25 字逐字複製、registry.md:246 與 station.md:287 都講完整 spend 的分桶規則").
-`docs/03-decisions/2026-09-18-todo-six.md`'s §五 is the fuller record: the
+`docs/90-agent/reports/patrols/2026-09-18-todo-six.md`'s §五 is the fuller record: the
 `development.md` vs `contract.test.js` pair is "同一則軼事兩套算法（skills−1 對
 檔案數−1，差兩份 manifest）" — two different counting bases for the same
 miss-one-edit anecdote, not one side simply wrong.
@@ -4080,7 +4080,7 @@ git commit -o docs/development.md docs/pipeline.md docs/station.md -m "Claude-Se
 **Dispatch:** implementer, sonnet — one new decision page in the established
 shape, plus two one-line pointers to it.
 
-`docs/03-decisions/fankeel-shell.md` and `docs/03-decisions/2026-09-18-todo-six.md`
+`docs/03-decisions/fankeel-shell.md` and `docs/90-agent/reports/patrols/2026-09-18-todo-six.md`
 are the shape to follow: frontmatter with `status`, `last_verified` (and
 `source_of_truth` naming what it compares, following `fankeel-shell.md`'s
 convention rather than leaving it out), a title, and `##` sections each

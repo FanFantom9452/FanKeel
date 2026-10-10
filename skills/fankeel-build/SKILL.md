@@ -720,7 +720,7 @@ that meets the event an `if:` names moves the entry to `## Ready` or
 | excuse | what happened |
 |---|---|
 | "I will poll until it returns" | 2026-09-23: a build agent spent 261 of 295 Bash calls on `sleep`/`echo` loops, each re-sending its whole context (`agents/fankeel-brain.md`, `## Return`). |
-| "A stash will set the neighbours aside" | 2026-09-25: a `git stash push -u` then drop cleared an uncommitted `stage.agents` override, and the verify station dispatched a brain it should not have (`docs/03-decisions/2026-09-25-todo-line-and-multiplier.md`). |
+| "A stash will set the neighbours aside" | 2026-09-25: a `git stash push -u` then drop cleared an uncommitted `stage.agents` override, and the verify station dispatched a brain it should not have (`docs/90-agent/reports/patrols/2026-09-25-todo-line-and-multiplier.md`). |
 | "I will find the definition on disk" | 2026-09-06: a reviewer not told where `tokens` lived ran `find /` and sat 38 minutes (`skills/fankeel-plan/SKILL.md`, `Read:`). |
 
 ## Output
