@@ -111,3 +111,34 @@ test('a script named only in frontmatter counts for discovery and is not bare-re
   assert.equal(findings.filter((f) => f.tag === 'bare-reference').length, 0);
   assert.equal(findings.filter((f) => f.tag === 'core-dropped').length, 0);
 });
+
+// The nine skills each carry the same `One path, never a search` bullet, and
+// four wordings of it had drifted apart with nothing to say so. Whitespace is
+// folded before the comparison, so a re-wrapped line is not a difference.
+function writeOnePath(dir, name, closing) {
+  fs.mkdirSync(path.join(dir, 'skills', name), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'skills', name, 'SKILL.md'), [
+    '# ' + name, '',
+    '- **One path, never a search.** `<plugin>` is two directories up from this',
+    '  file; resolve every script this skill names against that root and nowhere',
+    '  else. ' + closing,
+    '- **No fallback path.** Never the working directory.', '',
+  ].join('\n'));
+}
+
+test('a SKILL.md whose One path bullet differs by a word is named and the run fails; three alike are not', () => {
+  const dir = tmp('fankeel-skillscli-');
+  nameEveryCoreScript(dir);
+  for (const name of ['a', 'b', 'c']) writeOnePath(dir, name, 'One exception, and it is a different root.');
+  assert.deepEqual(run(dir).findings.filter((f) => f.tag === 'one-path'), []);
+  writeOnePath(dir, 'c', 'One exception, and it is a different folder.');
+  const found = run(dir).findings.filter((f) => f.tag === 'one-path');
+  assert.equal(found.length, 1);
+  assert.equal(found[0].file, 'skills/c/SKILL.md');
+  assert.equal(found[0].line, 3);
+  assert.equal(found[0].fail, true);
+  assert.equal(found[0].what, 'differs from the 2 that agree');
+  const { out, code } = runCli(dir);
+  assert.equal(code, 1);
+  assert.match(out, /^one-path: skills\/c\/SKILL\.md:3  differs from the 2 that agree$/m);
+});

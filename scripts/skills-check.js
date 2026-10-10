@@ -95,9 +95,38 @@ function splitFrontmatter(text) {
     };
 }
 
+// Every skill opens with the same `One path, never a search` bullet, and nine
+// copies of one paragraph drift: four wordings had, with nothing to say so. The
+// bullet runs from its line to the next line starting `- **`, whitespace folded
+// to single spaces so a re-wrapped line is not a difference. The wording most
+// files share is the one the others are measured against; on a tie, the first
+// in walk order.
+const ONE_PATH = '**One path, never a search.**';
+
+function onePathBullet(text) {
+    const lines = text.split('\n');
+    const start = lines.findIndex((l) => l.includes(ONE_PATH));
+    if (start === -1) return null;
+    let end = start + 1;
+    while (end < lines.length && !lines[end].startsWith('- **')) end++;
+    return { line: start + 1, text: lines.slice(start, end).join(' ').replace(/\s+/g, ' ').trim() };
+}
+
+function onePathFindings(bullets) {
+    const count = new Map();
+    for (const b of bullets) count.set(b.text, (count.get(b.text) || 0) + 1);
+    let agreed = null;
+    for (const [text, n] of count) if (agreed === null || n > count.get(agreed)) agreed = text;
+    return bullets.filter((b) => b.text !== agreed).map((b) => ({
+        tag: 'one-path', file: b.file, line: b.line, fail: true,
+        what: 'differs from the ' + count.get(agreed) + ' that agree',
+    }));
+}
+
 function run(root) {
     const files = scanTargets(root);
     const refs = { scripts: [], flags: [] };
+    const bullets = [];
     for (const file of files) {
         const rel = path.relative(root, file).split(path.sep).join('/');
         const text = fs.readFileSync(file, 'utf8');
@@ -108,6 +137,8 @@ function run(root) {
             continue;
         }
         const { body, frontmatter } = splitFrontmatter(text);
+        const bullet = onePathBullet(text);
+        if (bullet) bullets.push(Object.assign({ file: rel }, bullet));
         const found = references(body, rel);
         refs.scripts.push(...found.scripts);
         refs.flags.push(...found.flags);
@@ -132,7 +163,7 @@ function run(root) {
         accepted.set(name, acceptedFlags(fs.readFileSync(path.join(scriptsDir, name), 'utf8')));
     }
 
-    const findings = classify({ refs, present, accepted, core: REQUIRED_CORE });
+    const findings = classify({ refs, present, accepted, core: REQUIRED_CORE }).concat(onePathFindings(bullets));
     return { findings, scanned: { skills: files.length, scripts: present.size } };
 }
 
