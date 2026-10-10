@@ -17,7 +17,11 @@ survey reads as the present and repeats as fact.
 0. Short of that, the checks that failed are named and left at their step.
 
 - **One path, never a search.** `<plugin>` is two directories up from this
-  file; resolve every script against that root and nowhere else.
+  file; resolve every script this skill names against that root and nowhere
+  else. One exception, and it is a different root rather than a search for
+  one: where the registry root's own `package.json` names `fankeel`, the
+  scripts to run are the working tree's, because the installed copy lags it
+  by a release.
 - **`<project>` is the task's project**, the path the `onboard:` line names —
   never the workspace root above it unless that root is the project.
   `docs.json`, the TODO, the tree and the profile belong to `<project>`;
