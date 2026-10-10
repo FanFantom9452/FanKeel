@@ -81,7 +81,8 @@ export const register: Register = (on) => {
       const next = await look($, placed)
       const was = seen.pendingFile
       const now = JSON.stringify([next.entry, next.others, next.pending && next.pending.questions, next.pendingFile])
-      if (next.pendingFile && next.pendingFile !== was && !placed) {
+      // Asked again here, not `placed`: /fankeel-pane may have opened or closed the pane while `look` read files.
+      if (next.pendingFile && next.pendingFile !== was && !(await isOpen($))) {
         const opened = await $.ui.open({ id: PANE, title: 'fankeel' })
         // Its pane either way, placed now or when the terminal widens.
         mine = true

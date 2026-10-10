@@ -357,3 +357,35 @@ test('a short pane with a four-option gate stays inside its rows and keeps head,
     assert.match(all, /2 of 3/);
     assert.match(all, /abcdef12/);
 });
+
+// The command is not under `busy`, so it can run while a tick is reading files.
+function midTick($, run) {
+    const id = $.session.id;
+    let first = true;
+    $.session.id = async () => { if (first) { first = false; await run(); } return id(); };
+}
+
+test('a pane the user opens while a tick reads is not opened again, nor closed with the gate', async () => {
+    const hooks = await wired();
+    const files = Object.assign(entryFile(live), { [DIR + '/design-pending.json']: JSON.stringify(gate) });
+    const { $, log, store } = fake({ files });
+    await hooks['session.start']($, {}, async () => ({}));
+    midTick($, () => hooks['command.run']($, { command: 'fankeel-pane', args: '' }));
+    await log.ticks[0].fn();
+    assert.equal(log.opened.length, 1, 'the tick opened the pane the user had just opened');
+    delete store[DIR + '/design-pending.json'];
+    await log.ticks[0].fn();
+    assert.deepEqual(log.closed, [], 'the end of the gate closed the pane the user opened');
+});
+
+test('a pane the user closes while a tick reads is opened for the gate that tick first sees', async () => {
+    const hooks = await wired();
+    const { $, log, store } = fake({ files: entryFile(live) });
+    await hooks['session.start']($, {}, async () => ({}));
+    await hooks['command.run']($, { command: 'fankeel-pane', args: '' });
+    store[DIR + '/design-pending.json'] = JSON.stringify(gate);
+    midTick($, () => hooks['command.run']($, { command: 'fankeel-pane', args: '' }));
+    await log.ticks[0].fn();
+    assert.equal(log.closed.length, 1);
+    assert.equal(log.opened.length, 2, 'the gate got no pane after the user closed it mid-tick');
+});
