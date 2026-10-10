@@ -954,3 +954,35 @@ test('the headings a build brain\'s brief names are headings of its agent file',
     assert.ok(file.split(/\r?\n/).includes(heading), heading + ' is not a heading of agents/fankeel-brain.md');
   }
 });
+
+// docs/90-agent/plans/2026-10-10-workflow-gaps-design.md §7. `facts:`, not the
+// `context:` line lib/context.js writes about tokens.
+test('a task with facts in context.md gets a facts: line with the path and the count, never the content', () => {
+  const { renderResume } = require('../lib/render.js');
+  const { contextPath } = require('../lib/handoff.js');
+  const root = tmp('facts-');
+  const mine = entry(MINE, { stage: 'build', started: '2026-09-19T09:30:12.345Z' });
+  const block = (profile) => render({ mine, others: [], now: NOW, root, profile });
+  assert.equal(block().includes('facts:'), false, 'no context.md, no line');
+
+  const file = contextPath(root, mine.data);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, '# context\n\nnothing verified yet\n');
+  assert.equal(block().includes('facts:'), false, 'a file with no fact line, no line');
+
+  fs.writeFileSync(file, '- lib/x.js exports frob() — lib/x.js:12 @ abc1234\n- the cap is 2400 — lib/render.js:635 @ abc1234\n');
+  const line = 'facts: .fankeel/build/task-20260919T093012/context.md (2)';
+  const out = block();
+  assert.equal(out.split('\n').filter((l) => l.startsWith('facts:')).length, 1, out);
+  assert.ok(out.split('\n').includes(line), out);
+  assert.equal(out.includes('exports frob()'), false, 'the path, never the content');
+  assert.equal(out.split('\n').some((l) => l.startsWith('context:')), false, 'not the token line');
+  assert.ok(out.indexOf(line) < out.indexOf('stage rules:'), 'above the rules');
+
+  const resumed = renderResume({ mine, root });
+  assert.ok(resumed.split('\n').includes(line), 'the block sent back after an answer carries it too');
+  const controlled = block({ values: { 'stage.agents': ['build'] }, sources: {}, unreadable: [] });
+  assert.notEqual(controlled, out, 'this one is the controller\'s block');
+  assert.ok(controlled.split('\n').includes(line), 'the controller sees it');
+  assert.equal(render({ mine, others: [], now: NOW }).includes('facts:'), false, 'no registry root, no line');
+});
