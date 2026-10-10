@@ -216,7 +216,7 @@ fankeel/
 │   ├── compact.ts     not a command hook: an engine module that hooks/mod.ts, declared in hooks/hooks.json, registers, compacting the main session at 450k tokens while it owns an active fankeel task, in an interactive session where the module was enabled
 │   ├── pane.ts        the same engine module's Pane: /fankeel-pane opens it, it draws this session's task from its registry file and the gate hooks/gate.js is holding, and a press writes the answer file
 │   ├── pane-status.ts the Pane's status rows, from a registry entry; no engine call, so tests run it under node
-│   ├── pane-gate.ts   the Pane's gate rows and answer text, each rule pinned by test to the lib/handoff.js function it copies
+│   ├── pane-gate.ts   the Pane's gate rows and answer text; the rules it copies from lib/handoff.js are pinned to them by test
 │   └── leave.js       SessionEnd: how the session ended and what it spent, and the station rewritten
 ├── lib/               the logic, as functions tested directly; nothing here reaches into scripts/ or hooks/
 │   ├── registry.js    one entry per session under .fankeel/sessions/, written by rename so no read is torn
