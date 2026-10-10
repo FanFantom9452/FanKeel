@@ -6,6 +6,8 @@ last_verified: 2026-10-07
 
 # Pane 上的 gate 介面：與 station 頁的 gate 面板怎麼分工
 
+> 2026-10-11：[fankeel 面板的設計](2026-10-11-fankeel-pane-design.md) 改掉這頁兩件事——Pane 的 id 是共用的 `fankeel`，gate 是它的一個區塊，不是 `fankeel-gate`；多題與多選的 gate 先不畫 Input，Pane 只顯示並提供「交給終端」。其餘決定照這頁。
+
 session 2b986530-5d60-4247-8515-3b847b277508 的 design 草稿，來自 TODO 全表盤點（10-07）的 plan；依 [重開 mod 路線](../../03-decisions/2026-10-07-mod-reopen.md) 第五項。這頁是要做的事，不是現狀；核准之後另開 task 實作。
 
 一句話：gate 只有一份——hooks/gate.js 寫的 pending 檔與 answer 檔；station 頁的面板與 Pane 都只是它的兩個畫面，誰先寫進 answer 檔誰算數，mod 沒載入時一切照舊走 AskUserQuestion。
