@@ -102,6 +102,10 @@ test('the build block on the page carries every build rule and every build templ
     .replace(/\{\{([A-Z_]+)\}\}/g, (m, name) => '<plugin>/scripts/' + name.toLowerCase().replace(/_/g, '-') + '.js');
   const rules = rulesFor('build', {}, {}).map(onPage);
   const shape = templateFor('build').split('\n').filter(Boolean).map(onPage);
-  const missing = rules.concat(shape).filter((line) => !doc.includes(line));
-  assert.deepEqual(missing, []);
+  // Twice, because the page draws the block in two fences and a line in only one of them is half a fix.
+  const short = rules.concat(shape)
+    .map((line) => ({ line, count: doc.split(line).length - 1 }))
+    .filter((x) => x.count < 2)
+    .map((x) => x.line + ' — ' + x.count + ' on the page, need 2');
+  assert.deepEqual(short, []);
 });
