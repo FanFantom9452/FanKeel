@@ -311,7 +311,7 @@ test('the recommendation is a label, never a position', () => {
 test('every output rule names a line format, not only a length', () => {
   for (const s of STAGES) {
     const last = s.rules[s.rules.length - 1];
-    assert.match(last, /one line per|as a table|in a code block|{{SUITE}} --session <id>` first/, s.name);
+    assert.match(last, /one line per|as a table|in a code block|{{SUITE}} --session <id> --check` first/, s.name);
   }
 });
 
@@ -1165,5 +1165,22 @@ test('land sends a plan that chose nothing to a report, not a decision record', 
   for (const values of [{ 'land.archivePlan': true }, {}]) {
     const land = rulesFor('land', null, values).join(' ');
     assert.match(land, /A plan that chose an approach leaves a decision record behind, others a report/);
+  }
+});
+
+// 2026-10-10 workflow-gaps: verify ran the tests by hand and left no record, so
+// land ran the whole suite a second time to get one.
+test('verify runs the suite through suite.js, land asks --check first, and both stay inside their budgets', () => {
+  const { buildRegistry } = require('../lib/stage-registry.js');
+  assert.match(byName('verify').rules[0], /^Run `node \{\{SUITE\}\} --session <id>`/);
+  const land = byName('land').rules;
+  assert.match(land[land.length - 1], /^Output: `node \{\{SUITE\}\} --session <id> --check` first/);
+  for (const name of ['verify', 'land']) {
+    const stage = byName(name);
+    assert.ok(Buffer.byteLength(stage.rules.join('\n'), 'utf8') <= stage.budget, name + ' rules alone are over ' + stage.budget + ' bytes');
+  }
+  for (const s of buildRegistry(require('node:path').join(__dirname, '..')).stages) {
+    if (s.name !== 'verify' && s.name !== 'land') continue;
+    assert.ok(s.prompt_bytes <= s.prompt_byte_budget, s.name + ' spends ' + s.prompt_bytes + ' of ' + s.prompt_byte_budget + ' bytes');
   }
 });

@@ -86,6 +86,11 @@ the same rule as the table above. Find them with
 `grep -E '^(build|test|lint):' Makefile`. A project that declares none of the
 three says so in one line: `none declared`.
 
+The test row is `node <plugin>/scripts/suite.js --session <id>`, and the one
+line it prints is what gets quoted. That run is recorded beside the task's
+handoffs, so `land` does not run the suite a second time while the record
+stands — green, no code changed since: its `suite.js --check` says which.
+
 ## Red flags — stop
 
 "should", "probably", "seems to". Any expression of satisfaction before the

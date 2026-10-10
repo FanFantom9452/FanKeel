@@ -33,7 +33,7 @@
       "name": "verify",
       "entry_condition": "ledger ranges, red-green, line by line.",
       "stop_condition": "Done when every claim has a row with the evidence beside it, the adversary has read that table, and `docs-check` has been run.",
-      "prompt_bytes": 2311,
+      "prompt_bytes": 2313,
       "prompt_byte_budget": 2500
     },
     {
@@ -47,7 +47,7 @@
       "name": "land",
       "entry_condition": "worktree, base, release.",
       "stop_condition": "Done when the suite is green, the documents are closed, the map is rewritten and `todo-check` passes.",
-      "prompt_bytes": 2431,
+      "prompt_bytes": 2434,
       "prompt_byte_budget": 2500
     }
   ]
