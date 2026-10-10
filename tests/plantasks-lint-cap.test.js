@@ -73,3 +73,20 @@ test('ledger.js lint threads --root through to readSize', () => {
   assert.equal(code, 1);
   assert.match(out, /Task 1: reads 1600 lines across its `Modify:` files, over READ_CAP \(1500\)/);
 });
+
+test('ledger.js lint names a Modify: entry that is a directory instead of crashing on it', () => {
+  const dir = tmp('fankeel-ledger-lintdir-');
+  fs.writeFileSync(path.join(dir, 'design.md'), '# A design\n\n## File table\n\n| file | change | dispatch |\n|---|---|---|\n');
+  fs.mkdirSync(path.join(dir, 'lib'));
+  const plan = path.join(dir, 'plan.md');
+  fs.writeFileSync(plan, [
+    '# A plan', '', '**Spec:** design.md', '', '## Global Constraints', '', '- none', '',
+    '## Task 1: name', '', '**Files:**', '- Modify: `lib`', '',
+    '**Interfaces:**', '- Consumes: nothing.', '- Produces: nothing.', '',
+    '**Dispatch:** implementer, haiku — a rename.', '',
+  ].join('\n'));
+  const { out, code } = run(dir, plan, 'lint');
+  assert.equal(code, 1);
+  assert.match(out, /Task 1: `Modify:` names a directory, `lib` — list the files in it, or a file as `path:a-b`/);
+  assert.doesNotMatch(out, /EISDIR/);
+});
