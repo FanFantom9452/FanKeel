@@ -45,6 +45,8 @@ test('parsePending keeps what readPending keeps', async () => {
     const cases = [
         JSON.stringify({ questions: [one], at: 1000, until: 9000 }),
         JSON.stringify({ questions: [one], at: 1000, until: 4000 }),
+        JSON.stringify({ questions: [one], until: 9000 }),
+        JSON.stringify({ questions: [one], at: 'soon', until: 9000 }),
         JSON.stringify({ questions: 'no', until: 9000 }),
         '{ not json',
     ];
@@ -55,7 +57,10 @@ test('parsePending keeps what readPending keeps', async () => {
         const theirs = handoff.readPending(dir, entry, now);
         const ours = parsePending(body, now);
         assert.equal(ours === null, theirs === null, body);
-        if (ours) assert.deepEqual(ours.questions, theirs.questions);
+        if (ours) {
+            assert.deepEqual(ours.questions, theirs.questions);
+            assert.equal(ours.at, theirs.at, body);
+        }
     }
 });
 
@@ -68,7 +73,7 @@ test('a single single-select question is simple; anything else is not', async ()
 
 test('gateRows: one plain button a option with hotkeys from 1, then the terminal button', async () => {
     const { gateRows } = await load();
-    const rows = gateRows({ questions: [one], until: 1 }, 44, width, cut);
+    const rows = gateRows({ questions: [one], until: 1, at: null }, 44, 99, cut);
     const buttons = rows.filter((r) => r.press !== undefined);
     assert.deepEqual(buttons.map((r) => r.hotkey), ['1', '2', '3', 't']);
     assert.deepEqual(buttons.slice(0, 3).map((r) => r.press), one.options.map((o) => o.label));
@@ -80,7 +85,7 @@ test('gateRows: one plain button a option with hotkeys from 1, then the terminal
 
 test('gateRows for a gate that is not simple offers only the terminal', async () => {
     const { gateRows } = await load();
-    const rows = gateRows({ questions: [one, one], until: 1 }, 44, width, cut);
+    const rows = gateRows({ questions: [one, one], until: 1, at: null }, 44, 99, cut);
     assert.deepEqual(rows.filter((r) => r.press !== undefined).map((r) => r.hotkey), ['t']);
 });
 
@@ -111,6 +116,21 @@ test('a question with no options, or more than four, is not simple and offers on
     for (const q of [five, none]) {
         const pending = { questions: [q], until: 1 };
         assert.equal(simple(pending), false);
-        assert.deepEqual(gateRows(pending, 44, width, cut).filter((r) => r.press !== undefined).map((r) => r.hotkey), ['t']);
+        assert.deepEqual(gateRows(pending, 44, 99, cut).filter((r) => r.press !== undefined).map((r) => r.hotkey), ['t']);
     }
+});
+
+test('gateRows stays inside its room by dropping descriptions, then the hint, never a button', async () => {
+    const { gateRows } = await load();
+    const four = Object.assign({}, one, { options: ['a', 'b', 'c', 'd'].map((label) => ({ label, description: 'about ' + label })) });
+    const pending = { questions: [four], until: 1, at: null };
+    for (const [room, rows] of [[12, 12], [8, 8], [7, 7]]) {
+        const got = gateRows(pending, 44, room, cut);
+        assert.equal(got.length, rows, 'room ' + room);
+        assert.deepEqual(got.filter((r) => r.press !== undefined).map((r) => r.hotkey), ['1', '2', '3', '4', 't']);
+        assert.ok(got[0].bold && got[1].text === four.question);
+    }
+    assert.ok(gateRows(pending, 44, 8, cut).some((r) => r.text.includes('ctrl+x')));
+    assert.ok(!gateRows(pending, 44, 7, cut).some((r) => r.text.includes('ctrl+x')));
+    assert.ok(!gateRows(pending, 44, 8, cut).some((r) => r.text.includes('about')));
 });

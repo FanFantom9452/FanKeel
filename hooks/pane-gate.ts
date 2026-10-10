@@ -4,7 +4,7 @@
 // pins each one to the function it copies.
 
 export type Question = { question: string; header?: string; multiSelect?: boolean; options: { label: string; description?: string }[] }
-export type Pending = { questions: Question[]; until: number }
+export type Pending = { questions: Question[]; until: number; at: number | null }
 export type GateRow = { block: 'gate'; text: string; dim?: boolean; bold?: boolean; press?: string; hotkey?: string }
 
 // lib/handoff.js dirFor.
@@ -37,7 +37,8 @@ export function pendingName(names: string[], stage: string): string | null {
 // answer file is the pending file's name with its suffix swapped.
 export const answerName = (pending: string): string => pending.replace(/-pending\.json$/, '-answer.md')
 
-// lib/handoff.js readPending: no questions array or an `until` already past is no gate.
+// lib/handoff.js readPending: no questions array or an `until` already past is no gate;
+// `at` is when the wait began, or null.
 export function parsePending(text: string, now: number): Pending | null {
   let got: unknown
   try {
@@ -45,9 +46,9 @@ export function parsePending(text: string, now: number): Pending | null {
   } catch {
     return null
   }
-  const g = got as { questions?: unknown; until?: unknown } | null
+  const g = got as { questions?: unknown; until?: unknown; at?: unknown } | null
   if (!g || typeof g !== 'object' || !Array.isArray(g.questions) || !(typeof g.until === 'number' && g.until > now)) return null
-  return { questions: g.questions as Question[], until: g.until }
+  return { questions: g.questions as Question[], until: g.until, at: typeof g.at === 'number' && Number.isFinite(g.at) ? g.at : null }
 }
 
 // One single-select question is the shape a row of buttons can answer.
@@ -69,22 +70,29 @@ export function answerText(pending: Pending, label: string): string | null {
 }
 
 // `press` is the label a button answers with; '' is the terminal button.
-// `width` and `cut` are hooks/pane-status.ts's, passed in so this file imports nothing.
-export function gateRows(pending: Pending, cols: number, width: (s: string) => number, cut: (s: string, cols: number) => string): GateRow[] {
-  const rows: GateRow[] = []
-  const fit = (s: string, room: number): string => (width(s) <= room ? s : cut(s, room))
+// `room` is the rows it may use: over it, every option description goes, then
+// the hint; the header, the question and every button stay. `cut` is
+// hooks/pane-status.ts's, passed in so this file imports nothing.
+export function gateRows(pending: Pending, cols: number, room: number, cut: (s: string, cols: number) => string): GateRow[] {
   const q = pending.questions[0]
-  rows.push({ block: 'gate', text: fit(`gate · ${q && q.header ? q.header : ''}`, cols), bold: true })
-  if (simple(pending)) {
-    rows.push({ block: 'gate', text: fit(q.question, cols) })
-    q.options.forEach((o, i) => {
-      rows.push({ block: 'gate', text: fit(o.label, cols - 3), press: o.label, hotkey: String(i + 1) })
-      if (o.description) rows.push({ block: 'gate', text: fit(`   ${o.description}`, cols), dim: true })
-    })
-  } else {
-    rows.push({ block: 'gate', text: fit(`${pending.questions.length} 題，或有多選：在終端或 station 頁回答`, cols), dim: true })
+  const build = (descriptions: boolean, hint: boolean): GateRow[] => {
+    const rows: GateRow[] = []
+    rows.push({ block: 'gate', text: cut(`gate · ${q && q.header ? q.header : ''}`, cols), bold: true })
+    if (simple(pending)) {
+      rows.push({ block: 'gate', text: cut(q.question, cols) })
+      q.options.forEach((o, i) => {
+        rows.push({ block: 'gate', text: cut(o.label, cols - 3), press: o.label, hotkey: String(i + 1) })
+        if (descriptions && o.description) rows.push({ block: 'gate', text: cut(`   ${o.description}`, cols), dim: true })
+      })
+    } else {
+      rows.push({ block: 'gate', text: cut(`${pending.questions.length} 題，或有多選：在終端或 station 頁回答`, cols), dim: true })
+    }
+    rows.push({ block: 'gate', text: cut('交給終端', cols - 3), press: '', hotkey: 't' })
+    if (hint) rows.push({ block: 'gate', text: cut('ctrl+x tab 進面板，再按數字或 t', cols), dim: true })
+    return rows
   }
-  rows.push({ block: 'gate', text: fit('交給終端', cols - 3), press: '', hotkey: 't' })
-  rows.push({ block: 'gate', text: fit('ctrl+x tab 進面板，再按數字或 t', cols), dim: true })
-  return rows
+  const full = build(true, true)
+  if (full.length <= room) return full
+  const bare = build(false, true)
+  return bare.length <= room ? bare : build(false, false)
 }

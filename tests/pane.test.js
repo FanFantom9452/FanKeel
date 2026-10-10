@@ -13,11 +13,12 @@ const ROOT = 'F:/proj';
 const DIR = ROOT + '/.fankeel/build/task-20261010T203351';
 const live = { task: 'demo task', stage: 'design', class: 'bounded', active: true, guard: 'deny',
     route: ['survey', 'design', 'build'], started: '2026-10-10T20:33:51.000Z', claims: ['a.js'] };
-const gate = { questions: [{ question: 'Go on?', header: 'design', options: [{ label: 'Yes (Recommended)' }, { label: 'Stay' }, { label: 'Pause' }] }], at: 1, until: Date.now() + 600000 };
+const gate = { questions: [{ question: 'Go on?', header: 'design', options: [{ label: 'Yes (Recommended)' }, { label: 'Stay' }, { label: 'Pause' }] }], at: 1000, until: Date.now() + 600000 };
 
 function fake({ files = {}, placed = true } = {}) {
-    const log = { opened: [], closed: [], toasts: [], invalidated: 0, commands: [], ticks: [], ids: 0 };
+    const log = { opened: [], closed: [], toasts: [], invalidated: 0, commands: [], ticks: [], ids: 0, lists: [] };
     const store = Object.assign({}, files);
+    const mtimes = {};
     const $ = {
         plugin: { root: 'F:/plugin', name: 'fankeel' },
         session: { id: async () => { log.ids += 1; await new Promise((r) => setTimeout(r, 10)); return ID; }, root: async () => ROOT + '/sub' },
@@ -25,7 +26,11 @@ function fake({ files = {}, placed = true } = {}) {
             exists: async (p) => Object.keys(store).some((k) => k === p || k.startsWith(p + '/')),
             read: async (p) => store[p],
             write: async (p, text) => { store[p] = text; },
-            list: async (dir) => Object.keys(store).filter((p) => p.startsWith(dir + '/') && !p.slice(dir.length + 1).includes('/'))
+            stat: async (p) => {
+                if (!(p in store)) throw new Error('ENOENT ' + p);
+                return { kind: 'file', size: 1, mtimeMs: p in mtimes ? mtimes[p] : 1, isLink: false };
+            },
+            list: async (dir) => log.lists.push(dir) && Object.keys(store).filter((p) => p.startsWith(dir + '/') && !p.slice(dir.length + 1).includes('/'))
                 .map((p) => ({ name: p.slice(dir.length + 1), kind: 'file', size: 1, mtimeMs: 1, isLink: false })),
         },
         clock: { every: (ms, fn) => { log.ticks.push({ ms, fn }); return { cancel() {} }; } },
@@ -40,7 +45,7 @@ function fake({ files = {}, placed = true } = {}) {
             resolve: () => ({ Box: 'Box', Text: 'Text', Button: 'Button' }),
         },
     };
-    return { $, log, store };
+    return { $, log, store, mtimes };
 }
 
 async function wired() {
@@ -133,20 +138,53 @@ test('a pending gate opens the pane, draws buttons, and a press writes the answe
     assert.deepEqual(JSON.parse(store[DIR + '/design-answer.md']), { answers: { 'Go on?': 'Stay' } });
 });
 
-test('a press writes nothing once an answer is there or the gate is gone', async () => {
+test('a press writes nothing once the station answered, or the gate is gone', async () => {
     const hooks = await wired();
     const files = Object.assign(entryFile(live), { [DIR + '/design-pending.json']: JSON.stringify(gate) });
-    const { $, log, store } = fake({ files });
+    const { $, log, store, mtimes } = fake({ files });
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
     const bs = buttons(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
     store[DIR + '/design-answer.md'] = 'station got there first';
+    mtimes[DIR + '/design-answer.md'] = 2000;
     await bs[0].props.onPress({});
     assert.equal(store[DIR + '/design-answer.md'], 'station got there first');
     delete store[DIR + '/design-answer.md'];
     delete store[DIR + '/design-pending.json'];
     await bs[0].props.onPress({});
     assert.equal(store[DIR + '/design-answer.md'], undefined);
+});
+
+test('an answer file older than the gate is an earlier gate\'s: a press overwrites it, the terminal button too', async () => {
+    const hooks = await wired();
+    const files = Object.assign(entryFile(live), { [DIR + '/design-pending.json']: JSON.stringify(gate) });
+    const { $, log, store, mtimes } = fake({ files });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const bs = buttons(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
+    store[DIR + '/design-answer.md'] = 'an earlier gate';
+    mtimes[DIR + '/design-answer.md'] = 500;
+    await bs[1].props.onPress({});
+    assert.deepEqual(JSON.parse(store[DIR + '/design-answer.md']), { answers: { 'Go on?': 'Stay' } });
+    store[DIR + '/design-answer.md'] = 'an earlier gate';
+    await bs[3].props.onPress({});
+    assert.deepEqual(JSON.parse(store[DIR + '/design-answer.md']), { handoff: 'terminal' });
+});
+
+test('a gate with no `at` leaves any answer file alone', async () => {
+    const hooks = await wired();
+    const noAt = Object.assign({}, gate);
+    delete noAt.at;
+    const files = Object.assign(entryFile(live), { [DIR + '/design-pending.json']: JSON.stringify(noAt) });
+    const { $, log, store, mtimes } = fake({ files });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const bs = buttons(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
+    assert.equal(bs.length, 4);
+    store[DIR + '/design-answer.md'] = 'unknown age';
+    mtimes[DIR + '/design-answer.md'] = 0;
+    await bs[0].props.onPress({});
+    assert.equal(store[DIR + '/design-answer.md'], 'unknown age');
 });
 
 test('the terminal button writes the handoff', async () => {
@@ -201,6 +239,7 @@ test('neighbours are the other active entries in the same sessions directory', a
     });
     const { $, log } = fake({ files });
     await hooks['session.start']($, {}, async () => ({}));
+    await hooks['command.run']($, { command: 'fankeel-pane', args: '' });
     await log.ticks[0].fn();
     const seen = texts(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } })).join('\n');
     assert.match(seen, /someone else/);
@@ -282,4 +321,39 @@ test('two overlapping ticks read the files once', async () => {
     await hooks['session.start']($, {}, async () => ({}));
     await Promise.all([log.ticks[0].fn(), log.ticks[0].fn()]);
     assert.equal(log.ids, 1);
+});
+
+test('neighbours are read only while the pane is placed, and opening it redraws with them', async () => {
+    const hooks = await wired();
+    const other = { task: 'someone else', stage: 'build', active: true, updated: new Date().toISOString() };
+    const files = Object.assign(entryFile(live), { [ROOT + '/.fankeel/sessions/11111111-0000-4000-8000-000000000002.json']: JSON.stringify(other) });
+    const { $, log } = fake({ files });
+    const sessions = ROOT + '/.fankeel/sessions';
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    await log.ticks[0].fn();
+    assert.equal(log.lists.filter((d) => d === sessions).length, 0, 'the sessions directory was listed with the pane closed');
+    const before = log.invalidated;
+    await hooks['command.run']($, { command: 'fankeel-pane', args: '' });
+    assert.ok(log.invalidated > before, 'opening the pane did not redraw');
+    assert.ok(log.lists.filter((d) => d === sessions).length >= 1);
+    assert.match(texts(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } })).join('\n'), /someone else/);
+});
+
+test('a short pane with a four-option gate stays inside its rows and keeps head, route, foot and every button', async () => {
+    const hooks = await wired();
+    const four = { questions: [{ question: 'Which?', header: 'design', options: ['a', 'b', 'c', 'd'].map((label) => ({ label, description: 'about ' + label })) }], at: 1000, until: Date.now() + 600000 };
+    const tall = Object.assign({}, live, { task: 'x'.repeat(60) });
+    const files = Object.assign(entryFile(tall), { [DIR + '/design-pending.json']: JSON.stringify(four) });
+    const { $, log } = fake({ files });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const tree = await hooks['ui.render']($, { viewport: { columns: 44, rows: 18 } });
+    const seen = texts(tree);
+    assert.ok(seen.length <= 14, 'drew ' + seen.length + ' rows in 14');
+    assert.equal(buttons(tree).length, 5);
+    const all = seen.join('\n');
+    assert.match(all, /xxxx/);
+    assert.match(all, /2 of 3/);
+    assert.match(all, /abcdef12/);
 });
