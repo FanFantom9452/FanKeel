@@ -372,6 +372,9 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 工作流評審（10-09）定了什麼、沒做什麼：六條建議全做——可查的出口條件改成會拒絕的腳本、站 agent 層縮回 survey、brief 上限、land 綠燈由 `task.js land` 守、決策頁不追加、todo-check 報 no reason；Task 18 對照沒跑、七個 commit 訊息留給 land | [decisions/2026-10-09-workflow-review.md](03-decisions/2026-10-09-workflow-review.md) — *繁體中文* |
 | 工作流評審（10-09）的 design：能由腳本查的出口條件各變成一支會拒絕的腳本或一條會紅的測試 | `docs/99-archive/2026-10-09-workflow-review-design.md` — *built, 繁體中文* |
 | 那份設計的 18 個 task | `docs/99-archive/2026-10-09-workflow-review.md` — *built, 繁體中文* |
+| 03-decisions 只收決策（10-10）：land 只在做過取捨時寫決策頁，給人看的決策頁由 docs-check 守白話與骨架，34 頁盤點日誌搬到 reports/patrols | [decisions/2026-10-10-decisions-human.md](03-decisions/2026-10-10-decisions-human.md) — *繁體中文* |
+| 那份設計：land 的紀錄分流、`decision-shape` 檢查、日誌搬家 | `docs/99-archive/2026-10-10-decisions-human-design.md` — *built, 繁體中文* |
+| 那份設計的 3 個 task | `docs/99-archive/2026-10-10-decisions-human.md` — *built, 繁體中文* |
 | Haiku 角色題庫、平行執行器與長任務飄移 2×2 的 design：每角色十二題分三層、`check.sh` 標出失敗類別、`bench.js role` 用 `--jobs` 平行跑、`drift` 量 haiku／sonnet × PostToolUse 重注入 | `docs/99-archive/2026-10-09-haiku-bank-drift-design.md` — *built, 繁體中文* |
 | 那份設計的十二個 task：失敗類別與共用判分、四組題庫、平行執行器、逐步檢查與重注入、報告產生器，以及使用者親手跑的付費批次 | `docs/99-archive/2026-10-09-haiku-bank-drift.md` — *built, 繁體中文* |
 | 監控站在 `/chartroom/<專案>/` 開架構白板（10-08）的 design：handler 在 nonce 檢查之前剝前綴，轉交該專案懶建的 Chartroom `createHandler`，Chartroom 路徑取自 profile `station.chartroom`，板子固定在 `<專案>/.fankeel/architecture.board` | `docs/99-archive/2026-10-08-station-chartroom-design.md` — *built, 繁體中文* |
@@ -441,6 +444,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 - [首次使用的 init（09-30）：決策紀錄](03-decisions/2026-09-30-init.md)
 - [盤點併入 Ready（09-30）：決策紀錄](03-decisions/2026-09-30-patrol-takes-ready.md)
 - [fankeel-upgrade 看現況、版本記在報告（09-30）：決策紀錄](03-decisions/2026-09-30-upgrade-reads-shape.md)
+- [03-decisions 只收決策，並由腳本守成給人看的頁](03-decisions/2026-10-10-decisions-human.md)
 
 ### 模型選擇
 
