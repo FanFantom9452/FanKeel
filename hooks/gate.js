@@ -174,6 +174,25 @@ function hashOf(questions) {
     return crypto.createHash('sha1').update(JSON.stringify(seen)).digest('hex').slice(0, 16);
 }
 
+// docs/90-agent/plans/2026-10-10-workflow-gaps-design.md §11. The sentence a
+// gate under three options earns on a stage `stage.agents` does not name, or
+// null. A gate is told from a question asked mid-stage by its first option:
+// it names the next stage on the route as a whole word, or, at the route's
+// last stage, says `down` or 收工.
+function thinGate(mine, questions) {
+    const first = Array.isArray(questions) ? questions[0] : null;
+    const options = first && Array.isArray(first.options) ? first.options : null;
+    if (!options || options.length >= 3) return null;
+    const label = String((options[0] && options[0].label) || '');
+    const steps = normaliseRoute(mine.route) || FULL_ROUTE;
+    const stage = String(mine.stage || '').toLowerCase();
+    const next = nextStage(stage, mine.route);
+    const named = next
+        ? new RegExp('\\b' + next + '\\b', 'i').test(label)
+        : steps[steps.length - 1] === stage && (/\bdown\b/i.test(label) || label.includes('收工'));
+    return named ? 'fankeel: this gate has ' + options.length + ' options — three at least, never dropping the pause.' : null;
+}
+
 function main(raw) {
     const payload = parse(raw);
     if (!payload) return;
@@ -211,7 +230,16 @@ function main(raw) {
     // stage is not controlled. Silent before 2026-09-24, so a question that was
     // never checked left no trace of which condition failed. A message, not a
     // decision: the question still goes out.
-    if (!gate) return emit(skip ? { systemMessage: 'fankeel: gate not confirmed — ' + skip + '.' } : {}, payload, root, mine, values);
+    if (!gate) {
+        const said = skip ? ['fankeel: gate not confirmed — ' + skip + '.'] : [];
+        // `values` is null when the profile could not be read: nothing then
+        // says whether the stage is controlled, so nothing is said about it.
+        try {
+            const thin = values && !controlled ? thinGate(mine, payload.tool_input && payload.tool_input.questions) : null;
+            if (thin) said.push(thin);
+        } catch (e) { /* housekeeping */ }
+        return emit(said.length ? { systemMessage: said.join(' ') } : {}, payload, root, mine, values);
+    }
 
     // A gate AskUserQuestion would reject: the file's own gate must be
     // well-formed even though the controller is the one typing it now. Deny

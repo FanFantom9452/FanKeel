@@ -672,3 +672,73 @@ test('stage.agents: a survey gate with no pause, or naming bounded on an archite
   assert.equal(b.hookSpecificOutput.permissionDecision, 'deny');
   assert.match(b.hookSpecificOutput.permissionDecisionReason, /questions\[0\]\.options\[1\]\.label/);
 });
+
+// docs/90-agent/plans/2026-10-10-workflow-gaps-design.md §11: off stage.agents
+// nothing compares a gate with a file, so the option count is the one thing
+// left to say — as a message, never a decision.
+const THIN = [{ question: 'build 做完了，進 verify 嗎？', header: 'build', multiSelect: false, options: [{ label: 'verify (Recommended)', description: 'a' }, { label: '暫停', description: 'b' }] }];
+const agentsAt = (root, value) => fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': value }));
+
+test('an uncontrolled stage: a two-option gate naming the next stage gets a message and no decision', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'build', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  agentsAt(root, 'survey');
+  const out = JSON.parse(run(GATE, root, { tool_input: askOf(THIN) }));
+  assert.equal(out.systemMessage, 'fankeel: this gate has 2 options — three at least, never dropping the pause.');
+  assert.equal(out.hookSpecificOutput, undefined, 'a message, not a deny');
+  assert.equal(Number.isFinite(readEntry(root, MINE).gateAt), true, 'the gate still opened');
+});
+
+test('an uncontrolled stage: three options, or a first option that names no next stage, gets no message', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'build', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  agentsAt(root, 'survey');
+  const three = JSON.parse(JSON.stringify(THIN));
+  three[0].options.push({ label: '再做一輪', description: 'c' });
+  assert.equal(run(GATE, root, { tool_input: askOf(three) }).trim(), '', 'three options');
+  const mid = JSON.parse(JSON.stringify(THIN));
+  mid[0].options[0].label = '用 Map';
+  assert.equal(run(GATE, root, { tool_input: askOf(mid) }).trim(), '', 'a question in the middle of the stage');
+  const part = JSON.parse(JSON.stringify(THIN));
+  part[0].options[0].label = 'verifying it by hand';
+  assert.equal(run(GATE, root, { tool_input: askOf(part) }).trim(), '', 'the stage name inside a longer word');
+});
+
+test('an uncontrolled stage: the next stage is matched whatever its case, and the last stage answers to down or 收工', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'build', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  agentsAt(root, 'survey');
+  const upper = JSON.parse(JSON.stringify(THIN));
+  upper[0].options[0].label = '進 Verify';
+  assert.match(JSON.parse(run(GATE, root, { tool_input: askOf(upper) })).systemMessage, /this gate has 2 options/);
+  const last = tmp('fankeel-gate-');
+  seed(last, MINE, { stage: 'land', route: ['survey', 'build', 'land'], started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  agentsAt(last, 'survey');
+  for (const label of ['Down (Recommended)', '收工']) {
+    const ask = JSON.parse(JSON.stringify(THIN));
+    ask[0].options[0].label = label;
+    assert.match(JSON.parse(run(GATE, last, { tool_input: askOf(ask) })).systemMessage, /this gate has 2 options/, label);
+  }
+  const other = JSON.parse(JSON.stringify(THIN));
+  other[0].options[0].label = 'download the log';
+  assert.equal(run(GATE, last, { tool_input: askOf(other) }).trim(), '', 'down inside a longer word');
+});
+
+test('an uncontrolled stage: the option count joins a gate-not-confirmed message with one space', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'build', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-'), inflight: { stage: 'build', at: 1758000000000, agentId: 'b1' } });
+  agentsAt(root, 'survey');
+  const out = JSON.parse(run(GATE, root, { tool_input: askOf(THIN) }));
+  assert.match(out.systemMessage, /^fankeel: gate not confirmed — .*as the controller wrote it\. fankeel: this gate has 2 options — three at least, never dropping the pause\.$/);
+  assert.equal(out.hookSpecificOutput, undefined);
+});
+
+test('a controlled stage: the option count is not this check\'s to say', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'build', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  agentsAt(root, 'survey,build');
+  const out = JSON.parse(run(GATE, root, { tool_input: askOf(THIN) }));
+  assert.match(out.systemMessage, /^fankeel: gate not confirmed — .*build\.md does not exist yet\.$/);
+  assert.doesNotMatch(out.systemMessage, /this gate has/);
+  assert.equal(out.hookSpecificOutput, undefined);
+});
