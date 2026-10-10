@@ -96,3 +96,14 @@ test('foot names the session and the guard, ask when none is set', async () => {
     const bare = Object.assign({}, entry, { guard: undefined });
     assert.ok(text(statusRows(ID, bare, [], 44, 44, NOW), 'foot')[0].includes('guard ask'));
 });
+
+test('blocks drop in the order cost, touched, neighbours, memory', async () => {
+    const { statusRows } = await load();
+    const kept = (room) => [...new Set(statusRows(ID, entry, [other], 44, room, NOW).map((r) => r.block))];
+    assert.equal(statusRows(ID, entry, [other], 44, 60, NOW).length, 17);
+    assert.deepEqual(kept(17), ['head', 'route', 'memory', 'touched', 'cost', 'neighbours', 'foot']);
+    assert.deepEqual(kept(16), ['head', 'route', 'memory', 'touched', 'neighbours', 'foot']);
+    assert.deepEqual(kept(12), ['head', 'route', 'memory', 'neighbours', 'foot']);
+    assert.deepEqual(kept(10), ['head', 'route', 'memory', 'foot']);
+    assert.deepEqual(kept(7), ['head', 'route', 'foot']);
+});
