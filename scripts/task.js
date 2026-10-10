@@ -1478,6 +1478,11 @@ function cmdLand(root, opts) {
     const projectRoot = docs.projectRootsFor(root, current.project ? [current.project] : [])[0] || root;
     const why = suite.blocker(root, current, projectRoot);
     if (why) fail(why);
+    // A run that was red before the green one land accepts is said here, by name.
+    const rec = suite.readRecord(root, current);
+    const last = rec && Array.isArray(rec.runs) ? rec.runs.length : 0;
+    const reds = suite.redBefore(rec).map((r) => NL + 'suite: green on run ' + last + '; red on run ' + r.run + ' — '
+        + (r.failed && r.failed.length ? r.failed.join(', ') : 'no names recorded')).join('');
 
     let data = null;
     const wrote = registry.update(root, id, (d) => {
@@ -1491,7 +1496,7 @@ function cmdLand(root, opts) {
     if (!data) fail('No active entry for this session under ' + root);
     if (!wrote) fail('Could not write the entry.');
 
-    return 'fankeel — land: ' + verb + (opts.push === true ? ', push' : opts.push === false ? ', no push' : '');
+    return 'fankeel — land: ' + verb + (opts.push === true ? ', push' : opts.push === false ? ', no push' : '') + reds;
 }
 
 // The files this task means to edit, set as `intends` and compared with every

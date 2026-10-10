@@ -56,6 +56,12 @@ has changed since (`lib/suite.js`, `blocker`). Report the failures and
 stop; the menu comes after a green run. A green run earlier in the session
 only proves the tree it ran on, and the record says which.
 
+Where the suite was red on an earlier run of this task and is green now,
+`task.js land` says so under its own line — `suite: green on run <N>; red on
+run <n> — <the tests that failed>`, one line per red run. Copy those names
+onto the report's `suite:` line: the green line alone hides that a test
+failed on the way here.
+
 ## 1a. The skills gate
 
 ```

@@ -1057,3 +1057,30 @@ test('a refusal names the session this shell belongs to', () => {
   assert.equal(code, 1);
   assert.match(out, new RegExp('This shell belongs to ' + B));
 });
+
+test('land names the tests that were red on an earlier run of this task, one line per red run', () => {
+  const suite = require('../lib/suite.js');
+  const dir = root();
+  started(dir, A, 'ship it');
+  suite.record(dir, entry(dir, A), { sha: null, at: 'one', command: 'node --test', pass: 8, fail: 2, failed: ['flaky one', 'flaky two'], ok: false });
+  suite.record(dir, entry(dir, A), { sha: null, at: 'two', command: 'node --test', pass: 10, fail: 0, failed: [], ok: true });
+  let out = run(dir, ['land', 'merge', '--session', A]);
+  assert.equal(out.code, 0);
+  assert.match(out.out, /^fankeel — land: /);
+  assert.match(out.out, /\nsuite: green on run 2; red on run 1 — flaky one, flaky two\n/);
+
+  const unnamed = root();
+  started(unnamed, A, 'ship it');
+  suite.record(unnamed, entry(unnamed, A), { sha: null, at: 'one', command: 'make test', pass: null, fail: null, failed: null, ok: false });
+  suite.record(unnamed, entry(unnamed, A), { sha: null, at: 'two', command: 'make test', pass: null, fail: null, failed: null, ok: true });
+  out = run(unnamed, ['land', 'keep', '--session', A]);
+  assert.equal(out.code, 0);
+  assert.match(out.out, /\nsuite: green on run 2; red on run 1 — no names recorded\n/);
+
+  const clean = root();
+  started(clean, A, 'ship it');
+  suite.record(clean, entry(clean, A), { sha: null, at: 'one', command: 'node --test', pass: 10, fail: 0, failed: [], ok: true });
+  out = run(clean, ['land', 'merge', '--session', A]);
+  assert.equal(out.code, 0);
+  assert.doesNotMatch(out.out, /suite: green on run/);
+});

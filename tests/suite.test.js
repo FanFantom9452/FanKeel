@@ -224,3 +224,27 @@ test('--tree is refused for an entry with its own worktree, and for a directory 
   suite.record(dir, DATA, { sha: git(foreign, ['rev-parse', 'HEAD']), at: 'now', command: 'node --test', pass: 1, fail: 0, ok: true, tree: foreign });
   assert.notEqual(suite.blocker(dir, DATA, dir), null);
 });
+
+test('record keeps every run: the top level is the last one, runs holds them in order, and redBefore names the red ones before it', () => {
+  const dir = repo();
+  const sha = git(dir, ['rev-parse', 'HEAD']);
+  suite.record(dir, DATA, { sha, at: 'one', command: 'node --test', pass: 1, fail: 1, failed: ['flaky one'], ok: false });
+  suite.record(dir, DATA, { sha, at: 'two', command: 'node --test', pass: 2, fail: 0, failed: [], ok: true });
+  const rec = suite.readRecord(dir, DATA);
+  assert.equal(rec.ok, true);
+  assert.equal(rec.at, 'two');
+  assert.equal(rec.runs.length, 2);
+  assert.deepEqual(rec.runs.map((r) => r.at), ['one', 'two']);
+  assert.deepEqual(suite.redBefore(rec), [{ run: 1, sha, failed: ['flaky one'] }]);
+  assert.equal(suite.blocker(dir, DATA, dir), null, 'blocker still reads the last run off the top level');
+  suite.record(dir, DATA, rec);
+  const again = suite.readRecord(dir, DATA);
+  assert.equal(again.runs.length, 3);
+  assert.equal('runs' in again.runs[2], false, 'a run never carries the list it sits in');
+  assert.deepEqual(suite.redBefore({ sha, ok: true }), [], 'a record from before runs existed names nothing');
+  assert.deepEqual(suite.redBefore(null), []);
+  for (let i = 0; i < 25; i++) suite.record(dir, DATA, { sha, at: 'n' + i, command: 'x', pass: null, fail: null, failed: null, ok: true });
+  const kept = suite.readRecord(dir, DATA).runs;
+  assert.equal(kept.length, 20);
+  assert.equal(kept[19].at, 'n24');
+});
