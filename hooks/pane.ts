@@ -1,5 +1,5 @@
 import type { Register, EngineInterface } from 'claude-code'
-import { findEntry, isActive } from './compact.ts'
+import { findEntry, isActive, SESSION_ID } from './compact.ts'
 import { statusRows, width, cut } from './pane-status.ts'
 import type { Entry, Other } from './pane-status.ts'
 import { taskDir, pendingName, answerName, parsePending, gateRows, answerText, HANDOFF } from './pane-gate.ts'
@@ -11,11 +11,6 @@ import type { Pending } from './pane-gate.ts'
 export const PANE = 'fankeel'
 export const COMMAND = 'fankeel-pane'
 export const POLL_MS = 250
-
-// lib/registry.js SESSION_ID, as hooks/compact.ts has it.
-const SESSION_ID = /^[0-9a-fA-F][0-9a-fA-F-]{7,63}$/
-
-declare const h: (tag: unknown, props?: Record<string, unknown> | null, ...children: unknown[]) => unknown
 
 type Seen = {
   id: string
@@ -69,13 +64,12 @@ async function look($: EngineInterface): Promise<Seen> {
 export const register: Register = (on) => {
   let seen: Seen = { id: '', entry: null, others: [], pending: null, pendingFile: null }
   let print = ''
-  // Whether the pane up now is one the mod opened for a gate, and so its to close.
+  // Whether the pane up now is one the mod opened for a gate, and so it's to close.
   let mine = false
-  // The pending file a toast was already sent for.
-  let toasted: string | null = null
   let busy = false
 
-  const isOpen = async ($: EngineInterface): Promise<boolean> => (await $.ui.panes()).some((pane) => pane.id === PANE)
+  // An unplaced pane (narrow terminal) is registered but not drawn: not open.
+  const isOpen = async ($: EngineInterface): Promise<boolean> => (await $.ui.panes()).some((pane) => pane.id === PANE && pane.isPlaced)
 
   async function tick($: EngineInterface): Promise<void> {
     if (busy) return
@@ -84,22 +78,21 @@ export const register: Register = (on) => {
       const next = await look($)
       const was = seen.pendingFile
       const now = JSON.stringify([next.entry, next.others, next.pending && next.pending.questions, next.pendingFile])
+      if (next.pendingFile && next.pendingFile !== was && !(await isOpen($))) {
+        const opened = await $.ui.open({ id: PANE, title: 'fankeel' })
+        // Its pane either way, placed now or when the terminal widens.
+        mine = true
+        if (!opened.isPlaced) $.ui.toast('fankeel：有一個 gate 在等。/fankeel-pane 開面板，或在終端回答')
+      }
+      if (!next.pendingFile && was && mine) {
+        await $.ui.close({ id: PANE })
+        mine = false
+      }
+      // After the open and close: a rejected one leaves `seen` as it was, so the next tick sees the gate as new.
       seen = next
       if (now !== print) {
         print = now
         $.ui.invalidate('ui.render')
-      }
-      if (next.pendingFile && next.pendingFile !== was && !(await isOpen($))) {
-        const opened = await $.ui.open({ id: PANE, title: 'fankeel' })
-        if (opened.isPlaced) mine = true
-        else if (toasted !== next.pendingFile) {
-          toasted = next.pendingFile
-          $.ui.toast('fankeel：有一個 gate 在等。/fankeel-pane 開面板，或在終端回答')
-        }
-      }
-      if (!next.pendingFile && was && mine) {
-        mine = false
-        await $.ui.close({ id: PANE })
       }
     } catch (err) {
       $.ui.log(`fankeel pane: tick skipped, ${String(err)}`, { to: 'debug' })
@@ -117,6 +110,7 @@ export const register: Register = (on) => {
       await $.fs.write(file, text)
     } catch (err) {
       $.ui.log(`fankeel pane: answer not written, ${String(err)}`, { to: 'debug' })
+      $.ui.toast('fankeel：答案沒寫成，請在終端回答')
     }
   }
 
@@ -127,12 +121,11 @@ export const register: Register = (on) => {
   })
 
   on('command.run', { command: COMMAND }, async ($) => {
+    mine = false
     if (await isOpen($)) {
-      mine = false
       await $.ui.close({ id: PANE })
       return { text: 'fankeel 面板已關閉。' }
     }
-    mine = false
     const opened = await $.ui.open({ id: PANE, title: 'fankeel' })
     await tick($)
     return { text: opened.isPlaced ? 'fankeel 面板已開啟。' : 'fankeel 面板開不了：終端太窄。' }
