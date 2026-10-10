@@ -7,7 +7,7 @@ last_verified: 2026-09-27
 
 一句話：這一輪走完 survey 到 land 六站。`#/live` 改成四塊：等你的 gate、正在跑、可能停了、閒置的 registry。wizard-motion 的瞬斷沒有重現，所以沒改程式。另外新增四頁給人讀的 01-guide，把 ab.sh 的 evidence 路徑修正到 `docs/90-agent/reports/evidence/`，並讓 mockup agent 回傳網址前先自己開 serve 驗收。
 
-design 見 [../99-archive/2026-09-27-five-items-design.md](../99-archive/2026-09-27-five-items-design.md)，計畫見 [../99-archive/2026-09-27-five-items.md](../99-archive/2026-09-27-five-items.md)。
+design 見 [../99-archive/2026-09-27-five-items-design.md](../../../99-archive/2026-09-27-five-items-design.md)，計畫見 [../99-archive/2026-09-27-five-items.md](../../../99-archive/2026-09-27-five-items.md)。
 
 ## 定了什麼
 

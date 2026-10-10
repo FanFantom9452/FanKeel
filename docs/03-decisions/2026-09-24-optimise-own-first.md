@@ -11,7 +11,7 @@ design 見 [../archive/2026-09-24-todo-sweep-design.md](../99-archive/2026-09-24
 
 ## 規則
 
-- 使用者 2026-09-24 在 verify gate 定調：以優化自己為主，對方的功能只是參考（[needs-a-decision-batch](2026-09-24-needs-a-decision-batch.md) 的〔method〕那條）。
+- 使用者 2026-09-24 在 verify gate 定調：以優化自己為主，對方的功能只是參考（[needs-a-decision-batch](../90-agent/reports/patrols/2026-09-24-needs-a-decision-batch.md) 的〔method〕那條）。
 - 一條候選要先對到 fankeel 的一個問題才問：對得上，寫成 `TODO.md` 的一條；對不上，記在下表，寫「不問」和原因。
 - 不再列「收哪幾條」讓使用者挑。上面兩頁是那種寫法留下的 decision 與 report，照角色不改寫；它們留白的「挑選」與「使用者的回答」由這份紀錄回答。
 - 同一條規則挑出了這一批的五條 shrink：audit 的三個 code lens 在 fankeel 自己的碼裡找到重複，ponytail 的 `## Cuts` 只是那幾個 lens 的來源。

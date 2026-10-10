@@ -7,7 +7,7 @@ last_verified: 2026-10-07
 
 一句話：這一輪盤點把全套測試並行時的固定暫存路徑收掉、補上前後兩段用量比對、讓受控階段當場寫下被要求的 TODO，並留下 Pane 與 station 頁共用一道 gate 的草稿；brief-3、compact-2 的一項確認與並行測試的三次全綠條件沒有做。
 
-計畫在 [2026-10-07-todo-patrol-seven.md](../99-archive/2026-10-07-todo-patrol-seven.md)。
+計畫在 [2026-10-07-todo-patrol-seven.md](../../../99-archive/2026-10-07-todo-patrol-seven.md)。
 
 ## 做了什麼
 
@@ -17,7 +17,7 @@ last_verified: 2026-10-07
 - station-13：拆掉兩個 shots-v3 的 junction，它們指向的目標沒有動。
 - 受控階段的規則：被要求的 TODO 當回合就寫下。派 fankeel-reader 查有沒有重複，再派 implementer 寫入，全程守在 2400 字元的注入上限內。todo-5 仍開著，要等一次真實的受控階段證明分類器不會擋 `todo.js new` 才能結案。
 - gate-7：寫了 Pane 與 station 頁共用一道 gate 的草稿。gate-7 仍開著，要等 design 被核准。
-- 白板方向：決策頁已經寫好，見 [2026-10-07-station-chartroom.md](2026-10-07-station-chartroom.md)。
+- 白板方向：決策頁已經寫好，見 [2026-10-07-station-chartroom.md](../../../03-decisions/2026-10-07-station-chartroom.md)。
 
 ## 沒做什麼
 

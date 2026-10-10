@@ -1658,7 +1658,7 @@ status: current
    ```
 
    再讀各自的 README 與兩三份有代表性的 `SKILL.md`（`raw.githubusercontent.com/<repo>/HEAD/<path>`）。repo 不存在或改名就照實寫在頁上，不找替代品。
-2. 寫 `docs/03-decisions/2026-09-24-skill-repos.md`：frontmatter 照 `docs/03-decisions/2026-09-23-todo-ten.md` 的鍵；一句結論先；一張表三個軸——skill 怎麼切與寫、版本怎麼管、agent 怎麼派——每列 fankeel／addyosmani／mattpocock 三欄，各格有出處路徑；表下每個「對方有、fankeel 沒有」的做法編號列出，一句說它解決什麼、搬過來要動哪個檔。
+2. 寫 `docs/03-decisions/2026-09-24-skill-repos.md`：frontmatter 照 `docs/90-agent/reports/patrols/2026-09-23-todo-ten.md` 的鍵；一句結論先；一張表三個軸——skill 怎麼切與寫、版本怎麼管、agent 怎麼派——每列 fankeel／addyosmani／mattpocock 三欄，各格有出處路徑；表下每個「對方有、fankeel 沒有」的做法編號列出，一句說它解決什麼、搬過來要動哪個檔。
 3. 用 AskUserQuestion（header `對照`，`multiSelect: true`）列出那些做法，最多四個一題，超過就分題；加一個「都不收」。
 4. 把使用者挑的結果逐字寫進頁尾 `## 挑選` 一節；挑中的各加一條到 `TODO.md` 的 `## Needs a decision`（連到 `skills/fankeel/SKILL.md`，不連到這頁：todo-check 不收指向 decision 的連結）。`docs/README.md` 加一列。
 5. 刪 TODO 那條（開頭「〔method〕開發方法要和使用者討論」），跑：

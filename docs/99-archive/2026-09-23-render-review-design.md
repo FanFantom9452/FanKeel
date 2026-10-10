@@ -8,7 +8,7 @@ status: current
 `scripts/render.js` 一次只截一頁、沒有角色；`fankeel-reviewer` 的 `render`
 lens 只比對同源數字，不對照 mockup；`data-block` 已在
 `assets/station/station.js` 上，但沒有只重寫一塊的機制。這份設計推翻
-[2026-09-23-todo-ten.md](../03-decisions/2026-09-23-todo-ten.md) 的「前端審查
+[2026-09-23-todo-ten.md](../90-agent/reports/patrols/2026-09-23-todo-ten.md) 的「前端審查
 agent：不另開 agent」一列——使用者在本 task 的 survey 關卡改判為獨立 agent。
 
 mockup：`.fankeel/build/2026-09-23-render-review/mockup.html`（不提交），

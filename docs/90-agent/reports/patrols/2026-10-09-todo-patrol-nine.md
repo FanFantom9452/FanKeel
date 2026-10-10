@@ -7,7 +7,7 @@ last_verified: 2026-10-09
 
 一句話：這一輪盤點把十條 Ready 裡的九條做掉，另替四條待決定的條目做了決定；brief-3 要使用者在互動 session 親手探測，沒有動；stage-agents-10 補了 10-08 的證據後仍然封鎖，等一次 `claude --debug` 的實跑。
 
-計畫在 [2026-10-09-todo-patrol.md](../99-archive/2026-10-09-todo-patrol.md)。
+計畫在 [2026-10-09-todo-patrol.md](../../../99-archive/2026-10-09-todo-patrol.md)。
 
 ## 做了什麼
 

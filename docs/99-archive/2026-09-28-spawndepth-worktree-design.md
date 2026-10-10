@@ -22,7 +22,7 @@ status: current
 
 ## 2. implementer 各在自己的 worktree 裡改
 
-背景：`docs/03-decisions/2026-09-24-todo-four.md` 記錄七個 task 裡有五輪因為共用檔被迫
+背景：`docs/90-agent/reports/patrols/2026-09-24-todo-four.md` 記錄七個 task 裡有五輪因為共用檔被迫
 串行；`plantasks.conflict()` 的 `files` 那一條就是造成串行的原因。
 
 - build 的 brain 派 implementer 時一律帶 `isolation: "worktree"`（Agent 工具內建），不自己開 worktree。

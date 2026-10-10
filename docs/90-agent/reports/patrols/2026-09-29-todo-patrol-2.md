@@ -7,7 +7,7 @@ last_verified: 2026-09-29
 
 一句話：一個 session 一打 `/fankeel` 就在 registry 寫一筆沒有 task、stage 為 `init` 的 entry，同台其他 session 從那一刻就看得到它；另補三個測試缺口，並把 advisor、model 兩筆待決定條目了結。
 
-design 見 [../99-archive/2026-09-29-todo-patrol-2-design.md](../99-archive/2026-09-29-todo-patrol-2-design.md)，計畫見 [../99-archive/2026-09-29-todo-patrol-2.md](../99-archive/2026-09-29-todo-patrol-2.md)，現行說明見 [../90-agent/reference/registry.md](../90-agent/reference/registry.md) 與 [../90-agent/reference/collisions.md](../90-agent/reference/collisions.md)。
+design 見 [../99-archive/2026-09-29-todo-patrol-2-design.md](../../../99-archive/2026-09-29-todo-patrol-2-design.md)，計畫見 [../99-archive/2026-09-29-todo-patrol-2.md](../../../99-archive/2026-09-29-todo-patrol-2.md)，現行說明見 [../90-agent/reference/registry.md](../../reference/registry.md) 與 [../90-agent/reference/collisions.md](../../reference/collisions.md)。
 
 ## 為什麼
 

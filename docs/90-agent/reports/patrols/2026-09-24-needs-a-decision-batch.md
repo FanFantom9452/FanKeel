@@ -5,8 +5,8 @@ last_verified: 2026-09-24
 
 # Needs a decision 十五條一次定案 — 決策紀錄
 
-design 見 [../archive/2026-09-23-needs-a-decision-batch-design.md](../99-archive/2026-09-23-needs-a-decision-batch-design.md)，
-計畫見 [../archive/2026-09-24-needs-a-decision-batch.md](../99-archive/2026-09-24-needs-a-decision-batch.md)。
+design 見 [../archive/2026-09-23-needs-a-decision-batch-design.md](../../../99-archive/2026-09-23-needs-a-decision-batch-design.md)，
+計畫見 [../archive/2026-09-24-needs-a-decision-batch.md](../../../99-archive/2026-09-24-needs-a-decision-batch.md)。
 十四個 task 在 `6808b39..5b7bafe`，audit 的修正在 `0cd23c9`。
 
 ## 定了什麼

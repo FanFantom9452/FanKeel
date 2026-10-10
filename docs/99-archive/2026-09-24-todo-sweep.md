@@ -1076,7 +1076,7 @@ tool_name: <第 2 步最後一個指令印出的名字；印了兩個不同的�
 
 ## Task 9: 決策紀錄、文件、行號與 TODO 收尾
 
-設計 §10、§11、§12。新的決策紀錄寫下「從自己的問題出發」的規則、共用詞彙那條為什麼關掉，以及 skill-repos 六條與 ponytail 六條逐條對照的結果。對照是照 `docs/03-decisions/2026-09-24-needs-a-decision-batch.md` 記的規則做的：先有 fankeel 自己的問題——`TODO.md` 的一條或記錄過的一次事故——才問。十二條都對不上，所以 `TODO.md` 沒有新條目，`## Ready` 與 `## Needs a decision` 在這一批做完後都是空的（`scripts/todo-check.js` 只對空的 `###` timing 報錯，不管空的 `##`）。這個結論在 plan 關卡給使用者看；使用者要推翻哪一條，那一條就改寫成 `TODO.md` 的一條、從下表移走。兩份來源頁照角色不改。
+設計 §10、§11、§12。新的決策紀錄寫下「從自己的問題出發」的規則、共用詞彙那條為什麼關掉，以及 skill-repos 六條與 ponytail 六條逐條對照的結果。對照是照 `docs/90-agent/reports/patrols/2026-09-24-needs-a-decision-batch.md` 記的規則做的：先有 fankeel 自己的問題——`TODO.md` 的一條或記錄過的一次事故——才問。十二條都對不上，所以 `TODO.md` 沒有新條目，`## Ready` 與 `## Needs a decision` 在這一批做完後都是空的（`scripts/todo-check.js` 只對空的 `###` timing 報錯，不管空的 `##`）。這個結論在 plan 關卡給使用者看；使用者要推翻哪一條，那一條就改寫成 `TODO.md` 的一條、從下表移走。兩份來源頁照角色不改。
 
 這個 task 也收下 Task 1–8 留下的所有文件工作：`docs/90-agent/reference/subagents.md` 的 gate 那一列加題數上限、只換佔位題、brain 派工擋下，另兩處舊的「一起派的整批交一次」改成一組一次，並加上描述 `Agent|Task` matcher 的新段落（照 Task 8 的實測填）；`README.md` 目錄樹裡 `guard.js` 的說明；Task 1、3、4、5 讓文件引用移位的每一條行號；以及十一條 `TODO.md` 條目的刪除。它消費 Task 1–8 產出的每一個名字，所以排在最後。
 
@@ -1095,7 +1095,7 @@ tool_name: <第 2 步最後一個指令印出的名字；印了兩個不同的�
 - Modify: `TODO.md` — 刪掉十一條：`## Ready` 五條、`## Needs a decision` 六條
 - Read: `docs/03-decisions/2026-09-24-skill-repos.md` — 六條候選
 - Read: `docs/90-agent/reports/2026-09-24-ponytail-remainder.md` — 六條候選
-- Read: `docs/03-decisions/2026-09-24-needs-a-decision-batch.md` — 〔method〕的規則原文
+- Read: `docs/90-agent/reports/patrols/2026-09-24-needs-a-decision-batch.md` — 〔method〕的規則原文
 - Read: `hooks/gate.js` — Task 2 之後的行為，文件照它寫
 - Read: `lib/handoff.js` — Task 2 之後的 `isPlaceholder` 與 `skipReason`，gate 那一列照它寫
 - Read: `hooks/guard.js` — Task 3 之後的行為

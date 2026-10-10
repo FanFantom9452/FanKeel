@@ -92,7 +92,7 @@ last_verified: 2026-09-18
 ```markdown
 - 〔release〕0.70.0 發版:HEAD 領先 `origin/main` 30 個 commit,裝著的副本凍在 `70771cd`,所以 N23 修好的 guard 箭頭誤判與 `lib/gates.js` 都沒在跑 — [scripts/version.js](scripts/version.js). 推送後要換終端機。
 
-- 〔docs〕`docs/03-decisions/2026-09-18-needs-decision-all.md` 兩處假敘述:ledger 只有 21 條 `Ruling:`、3 條點名編號,實質定案在 design 文件;送關卡的是四個編號不是三個 — [docs/registry.md](docs/registry.md).
+- 〔docs〕`docs/90-agent/reports/patrols/2026-09-18-needs-decision-all.md` 兩處假敘述:ledger 只有 21 條 `Ruling:`、3 條點名編號,實質定案在 design 文件;送關卡的是四個編號不是三個 — [docs/registry.md](docs/registry.md).
 ```
 
 兩條都不帶 `MM-DD` 戳記 —— 戳記只在 `## Waiting` 底下被要求。
@@ -151,7 +151,7 @@ node scripts/orient.js
 |---|---|
 | **發版寫成 `## Ready` 的條目,不在這個任務執行。** 推送 30 個 commit 到公開的 GitHub repo 是對外且難以回復的動作 | Task 1 |
 | **關卡上明確問一次。** 這條卡住使用者十五項裡的兩項(第 5 條的誤判修正、第 15 條的 | struck — 已在 design 關卡問過,使用者選「先不發,只寫成 TODO 條目」 |
-| **`## Ready` 兩條**:〔release〕0.70.0 發版;〔docs〕修 `docs/03-decisions/2026-09-18-needs-decision-all.md` 的兩處假敘述 | Task 1 |
+| **`## Ready` 兩條**:〔release〕0.70.0 發版;〔docs〕修 `docs/90-agent/reports/patrols/2026-09-18-needs-decision-all.md` 的兩處假敘述 | Task 1 |
 | **`## Needs a decision` 六條**:〔registry〕版本號欄位;〔caveman〕20 skill 挑哪些;〔session〕堆疊手段挑哪個;〔docs〕`.fankeel/build/` 的定位;〔skill〕唯讀 agent 的 Bash;〔gates〕要不要存全部選項。 | Task 1 |
 | **`## Waiting` 兩條**:〔caveman〕解除安裝(等挑功能定案);〔gates〕第一筆資料(等發版加換終端機)。 | Task 1 |
 | **修一條既有的**:`## Waiting` 的 design class 那條,補上它引用的三份必讀來源已經不存在 | Task 1 |

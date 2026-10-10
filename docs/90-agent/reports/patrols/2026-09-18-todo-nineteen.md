@@ -28,7 +28,7 @@ task，build 跑了九個 fix round，verify 打回三條，audit 再抓到一�
 | 13 | session 頁的花費分頁每站多一列主迴圈 | `lib/detail.js`、`assets/station/station.js` |
 | 14 | `docs-check` 驗 `#fragment`，slug 照 GitHub 的規則 | `scripts/docs-check.js` |
 | 15 | 三段重述改成連回來源頁 | `docs/01-guide/development.md`、`docs/02-architecture/pipeline.md`、`docs/90-agent/reference/station.md` |
-| 16 | caveman 一樣都不吸收 | [caveman-absorb-none](2026-09-18-caveman-absorb-none.md) |
+| 16 | caveman 一樣都不吸收 | [caveman-absorb-none](../../../03-decisions/2026-09-18-caveman-absorb-none.md) |
 | 17 | `sources.md` 的 Cited by 補齊，並有雙向測試 | `docs/90-agent/reference/sources.md`、`tests/sources-doc.test.js` |
 | 18 | 根目錄 `.ignore` 排除 `docs/archive/` | `.ignore`、`docs/90-agent/reference/documents.md` |
 | 19 | 十九條從 `TODO.md` 關掉；caveman 解除安裝移到 `## Ready`，沒有執行 | `TODO.md` |

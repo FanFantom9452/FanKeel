@@ -7,7 +7,7 @@ last_verified: 2026-09-26
 
 一句話：`TODO.md` 的兩條 Ready 和「design 核准後怎麼交給 build 站 agent」這個待決問題，這次都處理完了。bounded route 上，如果 build 由站 agent 跑，design 在 gate 前把核准的設計寫到 `.fankeel/build/task-<started>/design.md`，build 站 agent 就讀得到。設了 `security.local` 時，verify 會先用 ollama 掃一遍，reviewer 只逐條確認它找到的候選。`ab.sh` 的 profile 釘選改在 worktree 裡 commit，stash 就清不掉它。
 
-design 見 [../archive/2026-09-26-three-ready-design.md](../99-archive/2026-09-26-three-ready-design.md)，計畫見 [../archive/2026-09-26-three-ready.md](../99-archive/2026-09-26-three-ready.md)。
+design 見 [../archive/2026-09-26-three-ready-design.md](../../../99-archive/2026-09-26-three-ready-design.md)，計畫見 [../archive/2026-09-26-three-ready.md](../../../99-archive/2026-09-26-three-ready.md)。
 
 ## 選了什麼，為什麼
 

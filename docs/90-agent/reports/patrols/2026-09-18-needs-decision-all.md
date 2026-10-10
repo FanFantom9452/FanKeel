@@ -68,7 +68,7 @@ porcelain 為空的定義。它證明不了 log 跑的當下那個檔案的內�
 三個都是綠的突變——改壞了程式，測試照樣過。補上斷言後各自由綠轉紅。
 
 另外兩條是假敘述：`docs/90-agent/reference/station.md` 沒把 `gates` 列進 `hooks/leave.js` 寫的
-欄位，`docs/03-decisions/2026-09-11-todo-eight.md` 的兩個引用指到無關的行。
+欄位，`docs/90-agent/reports/patrols/2026-09-11-todo-eight.md` 的兩個引用指到無關的行。
 
 ## audit 找到的，與 reviewer 打掉的
 

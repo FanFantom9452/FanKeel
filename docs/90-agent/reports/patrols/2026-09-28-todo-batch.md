@@ -7,7 +7,7 @@ last_verified: 2026-09-28
 
 一句話：這一輪走完七站，一個 plan 20 個 task，清掉 Needs a decision 九條、Blocked 兩段、Watch 七段，外加 docs-audit 報的 `hook.js`／`report.js` 沒有頁面點名那段。內容包括 station 更新（等待卡、即時 subagent、文件全文搜尋、`#/tour`、中英介面、server 端 memo）、三個工具修補（`commit.js` 的 git mv、`tune.js` 還原 untracked、`residue.js` 的髒 worktree）、reviewer 的失敗情境與排除清單、docs 工具（`docs-for`、profile 表從程式碼產生、`shared-libs.md`），以及 require 圖的三個用法。ab.sh 重跑（約 $30，已核准）和 station 對 mockup 的 render review 兩件，這一輪都沒有做。
 
-design 見 [../99-archive/2026-09-27-todo-batch-design.md](../99-archive/2026-09-27-todo-batch-design.md)，計畫見 [../99-archive/2026-09-27-todo-batch.md](../99-archive/2026-09-27-todo-batch.md)。
+design 見 [../99-archive/2026-09-27-todo-batch-design.md](../../../99-archive/2026-09-27-todo-batch-design.md)，計畫見 [../99-archive/2026-09-27-todo-batch.md](../../../99-archive/2026-09-27-todo-batch.md)。
 
 ## 定了什麼
 

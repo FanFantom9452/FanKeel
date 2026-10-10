@@ -173,8 +173,8 @@ design 的 gate 上說的是約 $4，實際約 $6.4，超支約 $2.4。
 | `skills/fankeel-build/SKILL.md:41`、`fankeel-plan:42`、`fankeel-audit:51` | 「Why each rule is what it is, under the same headings: [rationale.md](rationale.md)」——這行指向的東西模型到不了 |
 | `tests/skills.test.js:232-233` | 「a reader looking for the why of a section finds it under the section's own name」——對人成立，對模型不成立，而讀技能的是模型。assertion 本身沒錯，錯的是這句註解 |
 | `docs/03-decisions/fankeel-shell.md:480-482` | 「Two sonnet readers … followed the link …, 2 of 2」——沒有任何逐字記錄，而被注入的那一種是 0 of 4 |
-| `docs/03-decisions/2026-09-11-todo-eight.md:27-29` | 逐字抄進第二頁的同一句但書——與上面第一列同樣的一半一半 |
-| `docs/03-decisions/2026-09-10-todo-ten.md:35-36` | 「`route-typo` 自己的分數還在跳」——那是不做成對跑的理由，而前提不成立 |
+| `docs/90-agent/reports/patrols/2026-09-11-todo-eight.md:27-29` | 逐字抄進第二頁的同一句但書——與上面第一列同樣的一半一半 |
+| `docs/90-agent/reports/patrols/2026-09-10-todo-ten.md:35-36` | 「`route-typo` 自己的分數還在跳」——那是不做成對跑的理由，而前提不成立 |
 | `evals/subagent-no-entry/prompt.md:8` | `allowed_tools` 清單沒有限制住任何工具 |
 | `evals/pipe-not-agent/graders/no-agent-dispatch.md:6-8` | 「a dispatch tool stays in `prompt.md`'s `allowed_tools` precisely so this assertion has something to fail against」——那個機制不存在，`max: 0` 不管清單寫什麼都有路可以掉 |
 

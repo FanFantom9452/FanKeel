@@ -7,7 +7,7 @@ last_verified: 2026-09-30
 
 一句話：Ready 十一條處理完九條。五條修了程式或測試，三條量測後不用改，一條實跑確認。另外兩條留在 Ready：await-1 只過一半，station-8 量測沒過。data-1 從 Needs a decision 轉進 Ready，只加了一個保留欄位。
 
-計畫見 [../99-archive/2026-09-30-ready-eleven.md](../99-archive/2026-09-30-ready-eleven.md)，design 見 [../99-archive/2026-09-30-ready-eleven-design.md](../99-archive/2026-09-30-ready-eleven-design.md)，量測見 [../90-agent/reports/2026-09-30-ready-eleven-measurements.md](../90-agent/reports/2026-09-30-ready-eleven-measurements.md)。
+計畫見 [../99-archive/2026-09-30-ready-eleven.md](../../../99-archive/2026-09-30-ready-eleven.md)，design 見 [../99-archive/2026-09-30-ready-eleven-design.md](../../../99-archive/2026-09-30-ready-eleven-design.md)，量測見 [../90-agent/reports/2026-09-30-ready-eleven-measurements.md](../2026-09-30-ready-eleven-measurements.md)。
 
 ## 為什麼
 

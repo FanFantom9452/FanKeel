@@ -7,7 +7,7 @@ last_verified: 2026-09-27
 
 一句話：這一輪走完七站。plan 和 design 站的規則改成讀 `docs.json` 的 plan 桶，不再寫死 `docs/plans/`；wizard 的 `auto` 選項補上 mockup 畫過的外開圖示；fankeel 第一次深度巡檢跑完並記錄，修掉四個發現。Trovara 的 docs 搬移照使用者的話延後，等他在另一台電腦測。
 
-design 見 [../99-archive/2026-09-27-todo-clear-design.md](../99-archive/2026-09-27-todo-clear-design.md)，計畫見 [../99-archive/2026-09-27-todo-clear.md](../99-archive/2026-09-27-todo-clear.md)。
+design 見 [../99-archive/2026-09-27-todo-clear-design.md](../../../99-archive/2026-09-27-todo-clear-design.md)，計畫見 [../99-archive/2026-09-27-todo-clear.md](../../../99-archive/2026-09-27-todo-clear.md)。
 
 ## 定了什麼
 

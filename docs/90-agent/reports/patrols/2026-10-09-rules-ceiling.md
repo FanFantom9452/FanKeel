@@ -7,7 +7,7 @@ last_verified: 2026-10-09
 
 一句話：dispatch-1 把「一次派四個」從上限改成預設之後，survey、audit、verify、init 四張 skill 頁還有七句、pipeline.md 還有三個圖節點照舊寫成上限；這一輪全部改成「預設四個」，並各加一個測試，以後再寫回「上限」就會紅。
 
-計畫在 [2026-10-09-rules-ceiling.md](../99-archive/2026-10-09-rules-ceiling.md)。
+計畫在 [2026-10-09-rules-ceiling.md](../../../99-archive/2026-10-09-rules-ceiling.md)。
 
 ## 做了什麼
 

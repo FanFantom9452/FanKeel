@@ -61,7 +61,7 @@ status: current
 ## 8. `judge.js record` 拒收空答案（#10）
 
 - `record()`（`scripts/judge.js:68`）讀完答案後，`answer.trim()` 為空就 `fail(...)` 並 exit 1，而且在 `mkdirSync` 之前發生：不建目錄、不寫檔、不動索引。
-- 錯誤訊息指出答案該去哪裡找：背景 judge 的答案在 `<session>/subagents/agent-<id>.jsonl` 的最後一則 assistant 訊息；`tasks/<id>.output` 是 0 bytes（`docs/03-decisions/2026-09-11-todo-split.md:37-43`）。
+- 錯誤訊息指出答案該去哪裡找：背景 judge 的答案在 `<session>/subagents/agent-<id>.jsonl` 的最後一則 assistant 訊息；`tasks/<id>.output` 是 0 bytes（`docs/90-agent/reports/patrols/2026-09-11-todo-split.md:37-43`）。
 - `skills/fankeel-ask/SKILL.md` 第 3 步加上同一句。
 
 ## What proves it done

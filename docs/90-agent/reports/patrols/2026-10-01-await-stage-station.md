@@ -7,7 +7,7 @@ last_verified: 2026-10-01
 
 一句話：使用者 10-01 選「三條都做」。stage-1 關閉，station-8 改門檻後判 pass 並關閉，await-1 修了一半，條目留在 Ready。
 
-計畫見 [../99-archive/2026-10-01-await-stage-station.md](../99-archive/2026-10-01-await-stage-station.md)。
+計畫見 [../99-archive/2026-10-01-await-stage-station.md](../../../99-archive/2026-10-01-await-stage-station.md)。
 
 ## 為什麼
 

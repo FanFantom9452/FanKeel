@@ -61,7 +61,7 @@ task: 減少 subagent context 堆疊：group 並排 brain、小 task、共用資
 
 - `docs/90-agent/reports/evidence/2026-09-25-controller-multiplier/summarise.js:30-31` 把各站的 `+=` 改成只取最後一站的 `total_cost_usd`，因為 `--resume` 給的本來就是累計值；改完重跑一次，把新的輸出存進同一個 evidence 目錄。
 - 報告寫出去以後就不再改內文，所以 `docs/90-agent/reports/2026-09-25-controller-multiplier.md` 和 `2026-09-28-ab-profile-pin.md` 只在開頭加一個有日期的「更正」區塊，寫出正確的數字：09-25 是 opus $6.36、sonnet $8.95，k = 1.71；09-28 是 opus $6.19、sonnet $8.60，k = 1.64。
-- `docs/03-decisions/2026-09-25-todo-line-and-multiplier.md:8` 和 `2026-09-28-guard-seen-ab-rerun.md:21` 各加一行更正。`docs/90-agent/reference/sources.md:70-71` 和 `docs/README.md:152,247,253` 是會持續維護的文件，直接改成正確的數字。
+- `docs/90-agent/reports/patrols/2026-09-25-todo-line-and-multiplier.md:8` 和 `2026-09-28-guard-seen-ab-rerun.md:21` 各加一行更正。`docs/90-agent/reference/sources.md:70-71` 和 `docs/README.md:152,247,253` 是會持續維護的文件，直接改成正確的數字。
 
 ## 收尾
 
