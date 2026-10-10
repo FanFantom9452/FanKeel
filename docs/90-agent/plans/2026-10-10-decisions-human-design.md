@@ -24,7 +24,7 @@ last_verified: 2026-10-10
 
 - `proseFindings` 對 `role === 'decision' && audience === 'human'` 的頁跑和 01、02 相同的長句與裸代碼檢查。
 - 新增 `decision-shape` finding：本文第一個非空行以 `一句話` 或 `In one sentence` 開頭，且有 `## 決定`、`## 為什麼`、`## 放棄了什麼` 三個標題（英文頁為 `## Decision`、`## Why`、`## Given up`）。
-- 只對 `last_verified` 不早於規則生效日（常數 `DECISION_RULE_FROM = '2026-10-10'`）的頁生效；舊頁改動時把日期改到當天，檢查就套上——這就是「碰到才改」。
+- 只對 `last_verified` 不早於規則生效日（常數 `DECISION_RULE_FROM = '2026-10-11'`，以實際落地日為準）的頁生效；舊頁改動時把日期改到當天，檢查就套上——這就是「碰到才改」。
 
 ## 3. 日誌搬出 03
 
