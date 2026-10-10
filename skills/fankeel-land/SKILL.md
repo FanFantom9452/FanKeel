@@ -42,6 +42,10 @@ what the gate asks — never something to settle first and report afterwards.
 node <plugin>/scripts/suite.js --session <id>
 ```
 
+When this land is a release, do step 2a first — set the number and commit
+it — and only then run this step: `package.json` is code to the record, so a
+suite run before the bump is stale after it and `task.js land` refuses on it.
+
 Where build ran in a git worktree opened by hand — one the entry does not
 record — add `--tree <that worktree>`: the suite runs there, `suite.json`
 keeps the path, and `task.js land` checks the record against that tree's HEAD

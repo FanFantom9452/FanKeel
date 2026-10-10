@@ -221,3 +221,16 @@ test('--since in a directory with no git history is the same exit 1 as --changes
   assert.equal(r.code, 1);
   assert.match(r.text, /no git history here/);
 });
+
+// A bump rewrites package.json, and that is code to lib/suite.js's blocker: the
+// suite record made before it is stale, and `task.js land` refuses on it.
+test('setting a number that moves a manifest ends on the line that says to run the suite again', () => {
+  const root = tree();
+  const r = version.main(['0.35.0'], root);
+  assert.equal(r.code, 0, r.text);
+  assert.equal(r.text.split('\n').pop(), 'suite: the manifests changed — run suite.js again before task.js land');
+  const again = version.main(['0.35.0'], root);
+  assert.equal(again.code, 0, again.text);
+  assert.doesNotMatch(again.text, /suite:/, 'nothing moved, so no record went stale');
+  assert.doesNotMatch(version.main([], root).text, /suite:/);
+});

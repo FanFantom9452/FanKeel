@@ -199,9 +199,12 @@ function main(argv, root) {
             code: 1,
         };
     }
+    // A manifest is code to lib/suite.js's blocker, a SKILL.md is not: a suite record made before the bump is stale.
+    const stale = changed.some((f) => MANIFESTS.includes(f));
     return {
         text: 'fankeel version — ' + next + ', in all ' + after.length + ' places'
-            + (changed.length ? ' (' + changed.length + ' changed)' : ' (already)') + '.',
+            + (changed.length ? ' (' + changed.length + ' changed)' : ' (already)') + '.'
+            + (stale ? '\nsuite: the manifests changed — run suite.js again before task.js land' : ''),
         code: 0,
     };
 }
