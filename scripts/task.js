@@ -906,6 +906,18 @@ function cmdStage(root, opts) {
                 + 're-derive them. `node ' + PLUGIN_ROOT + '/scripts/context.js add` records one.';
         }
     }
+    // A design run in the session leaves its file table in chat, which a build
+    // in the session loses at the first compaction. Where a controlled build
+    // follows, design's own rule already wrote the file (lib/stages.js's
+    // DESIGN_TO_BUILD); every other design → build move with no plan between
+    // them is told here. Warned, never blocked, like the two lines above.
+    if (from === 'design' && name === 'build' && !route.includes('plan')) {
+        const shape = handoffPath(root, data, 'design');
+        if (shape && !fs.existsSync(shape)) {
+            line += NL + 'design.md is missing — Write the approved file table to ' + path.relative(root, shape).split(path.sep).join('/')
+                + ' before building; build reads its denominator there after a compaction.';
+        }
+    }
     line += NL + effortHint(data.class || classForRoute(route), name);
     // The answer that sent the session here fired `resume.js` while the old stage
     // was still current, so nothing has injected the new stage's rules yet. Where

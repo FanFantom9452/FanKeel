@@ -139,3 +139,12 @@ test('parentOf walks both separators up to the root', async () => {
     assert.equal(parentOf('/'), null);
     assert.equal(isActive(null), false);
 });
+
+// docs/90-agent/plans/2026-10-10-workflow-gaps-design.md §6: a no-plan build
+// reads its denominator back from design.md once the summary has replaced the chat.
+test('the summary is told to keep the design.md and context.md paths', async () => {
+    const { instructionsFor } = await load();
+    const lines = instructionsFor(ID, live, 'F:/plugin').split('\n');
+    assert.ok(lines.includes('- the design.md and context.md paths under .fankeel/build/, when the conversation named them'), lines.join(' | '));
+    assert.equal(lines[lines.length - 1], '- the plugin scripts live under F:/plugin/scripts');
+});

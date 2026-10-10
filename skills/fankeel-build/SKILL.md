@@ -179,13 +179,16 @@ Global Constraints would be and the brief's footer rules said in the dispatch;
 and a return contract in place of a report path: a status line — `done`,
 `partial: <what>` or `blocked: <why>` — the paths written, one line on the tests
 and one per new test naming the mutation that reddens it, with no report file. A
-no-plan route keeps nothing on disk on purpose, with one exception: where build
-runs as a controlled stage agent, design's approved shape is already on disk at
-the handoff path build reads first
-([docs/subagents.md](../../docs/90-agent/reference/subagents.md)'s `DESIGN_TO_BUILD`) — otherwise
-`design` puts `plan` on the route the moment two rows are independent, so what
-runs without one is a short dependent chain, and the registry's `next` line is
-its ledger. The implementer
+no-plan route keeps one file on disk and no more: the approved file table, at
+`.fankeel/build/task-<started>/design.md`. Where build runs as a controlled
+stage agent, design wrote it by rule before its gate
+([docs/subagents.md](../../docs/90-agent/reference/subagents.md)'s `DESIGN_TO_BUILD`); on any other
+move from design to build, `task.js stage build` prints
+`design.md is missing` with the path, and the table is written there before
+the first row is built. After a compaction, read the denominator back from
+that file, never from the summary. `design` puts `plan` on the route the
+moment two rows are independent, so what runs without one is a short dependent
+chain, and the registry's `next` line is its ledger. The implementer
 does not commit; step 4 stages the paths in the row's `file` cell, which may name
 more than one, and step 5 reviews the range as it would a task's. A no-plan route
 runs one row per pass, and every other step of the loop is unchanged.

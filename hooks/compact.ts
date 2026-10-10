@@ -36,6 +36,7 @@ export function instructionsFor(id: string, entry: Entry, pluginRoot: string): s
     '- the plan file path, the build group in progress, and every task already recorded complete',
     '- the agentId of every dispatched agent that has not returned yet, and what it was sent to do',
     '- the last handoff and commit file paths named in the conversation',
+    '- the design.md and context.md paths under .fankeel/build/, when the conversation named them',
     `- the plugin scripts live under ${pluginRoot}/scripts`,
   ].join('\n')
 }

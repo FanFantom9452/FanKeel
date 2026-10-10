@@ -51,6 +51,40 @@ test('task.js stage says nothing about context once a fact is recorded', () => {
     assert.doesNotMatch(out, /context\.md has no facts/);
 });
 
+// docs/90-agent/plans/2026-10-10-workflow-gaps-design.md §6: a design → build
+// move with no plan between them is told to put the file table on disk.
+test('task.js stage build names a missing design.md on a route with no plan, and only there', () => {
+    const { handoffPath } = require('../lib/handoff.js');
+    const dir = tmp('fankeel-task-ctx-');
+    run(dir, ['start', '--session', A, '--task', 'a fixture task', '--route', 'survey,design,build,verify']);
+    run(dir, ['stage', 'design', '--session', A]);
+    const file = handoffPath(dir, registry.readSession(dir, A), 'design');
+    const rel = path.relative(dir, file).split(path.sep).join('/');
+    assert.match(rel, /^\.fankeel\/build\/task-\d{8}T\d{6}\/design\.md$/);
+    const missing = run(dir, ['stage', 'build', '--session', A]);
+    assert.equal(missing.code, 0);
+    assert.ok(missing.out.split('\n').includes('design.md is missing — Write the approved file table to ' + rel
+        + ' before building; build reads its denominator there after a compaction.'), missing.out);
+
+    run(dir, ['stage', 'verify', '--session', A]);
+    assert.doesNotMatch(run(dir, ['stage', 'build', '--session', A]).out, /design\.md is missing/, 'verify to build is not this move');
+
+    run(dir, ['stage', 'design', '--session', A]);
+    const again = handoffPath(dir, registry.readSession(dir, A), 'design');
+    fs.mkdirSync(path.dirname(again), { recursive: true });
+    fs.writeFileSync(again, '| file | change | dispatch |\n');
+    assert.doesNotMatch(run(dir, ['stage', 'build', '--session', A]).out, /design\.md is missing/, 'the file is there');
+});
+
+test('task.js stage build says nothing about design.md on a route with plan', () => {
+    const dir = tmp('fankeel-task-ctx-');
+    run(dir, ['start', '--session', A, '--task', 'a fixture task', '--route', 'survey,design,plan,build']);
+    run(dir, ['stage', 'design', '--session', A]);
+    const { out, code } = run(dir, ['stage', 'build', '--session', A]);
+    assert.equal(code, 0);
+    assert.doesNotMatch(out, /design\.md is missing/);
+});
+
 test('task.js stage says nothing leaving a stage section 5 does not name', () => {
     const dir = tmp('fankeel-task-ctx-');
     run(dir, ['start', '--session', A, '--task', 'a fixture task']);
