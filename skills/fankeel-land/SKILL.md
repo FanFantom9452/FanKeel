@@ -95,9 +95,14 @@ binding record, and design reads them there at its step 5.
 A landed plan whose design chose between approaches, or overturned an earlier
 decision, leaves a decision record behind — what was decided and why. Any other
 land — a TODO patrol, a batch of fixes — leaves a report in the `report` bucket
-instead, because a decision bucket a person reads is for decisions. Either way
-the plan is then archived — with no question when the profile's
-`land.archivePlan` is true, **after asking** when it is not. An unarchived plan gets read as current.
+instead, because a decision bucket a person reads is for decisions. In a human
+bucket the record opens with `一句話` (or `In one sentence`) and carries
+`## 決定`, `## 為什麼` and `## 放棄了什麼` (or `## Decision`, `## Why`,
+`## Given up`): docs-check's `decision-shape` refuses one dated from 2026-10-10
+without them ([plain-language.md](../../docs/90-agent/reference/plain-language.md)).
+Either way the plan is then archived — with no question when the profile's
+`land.archivePlan` is true, **after asking** when it is not. An unarchived plan
+gets read as current.
 Archive with the script, the plan and its design together:
 
 node <plugin>/scripts/archive.js <plan bucket>/<plan>.md <plan bucket>/<plan>-design.md
