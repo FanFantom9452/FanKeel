@@ -235,6 +235,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | TODO 全表盤點（10-03）的 plan：子 session 由環境變數證明在跑、todo-check 讀不到就回報且前綴補斜線、commit.js 兩個子句補測試、balanced 註明無來源、mod 路線擱置 | [plans/2026-10-03-todo-patrol-three.md](90-agent/plans/2026-10-03-todo-patrol-three.md) — *design-intent, 繁體中文* |
 | TODO 全表盤點（10-05）的 plan：壓縮重試最多三次的測試、`/fankeel` 頁面寫不出來時 station 行說出來、兩處 timeout 與行號小錯、brain 選模型改放 Watch | [plans/2026-10-05-todo-patrol-ready-three.md](90-agent/plans/2026-10-05-todo-patrol-ready-three.md) — *design-intent, 繁體中文* |
 | Pane 上的 gate 介面（10-07）的 design 草稿：pending 與 answer 檔只有一份，station 頁面板與 Pane 都是它的畫面，mod 沒載入照舊 | [plans/2026-10-07-gate-pane-design.md](90-agent/plans/2026-10-07-gate-pane-design.md) — *design-intent, 繁體中文* |
+| workflow-gaps（10-10）的 design：judge 的十筆核對後全做——suite 紀錄累加與 `--check`、`direct` 整合、design.md 一律寫出、`facts:` 行、pipeline 頁引文、One path 比對、未受控 gate 的選項數、受控站擋 shell 寫檔 | [plans/2026-10-10-workflow-gaps-design.md](90-agent/plans/2026-10-10-workflow-gaps-design.md) — *design-intent, 繁體中文* |
+| 那份設計的十二個 task | [plans/2026-10-10-workflow-gaps.md](90-agent/plans/2026-10-10-workflow-gaps.md) — *design-intent, 繁體中文* |
 | TODO 全表盤點（10-07 第二輪）的 plan：一個 session 的對話全文匯出成 markdown 或 jsonl、標出每個壓縮點，Blocked 十條重蓋章 | `docs/99-archive/2026-10-07-conversation-export.md` — *built* |
 | TODO 全表盤點（10-07）的 plan：把 verify 五次退回時手加在 prompt 的五項 review 檢查寫進 build skill | `docs/99-archive/2026-10-07-review-checks-in-build.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-05 第二輪）的 plan：站線的寫入錯誤切在 65 字元補測試、`stationLine` 各分支逐一變異並補帶 url 的 `starting` 斷言 | `docs/99-archive/2026-10-05-station-line-tests.md` — *built, 繁體中文* |
@@ -492,6 +494,7 @@ is corrected by the next one, not by rewriting this.
 | 判斷 6：subagent 的 Bash 與 PowerShell，白名單該擋到哪 | [judgements/2026-09-10-shell-whitelist.md](90-agent/judgements/2026-09-10-shell-whitelist.md) — *judged 2026-09-10, fable* |
 | 判斷 7：verify 的 verifier 要釘哪個 agent，Workflow 的寫檔要求要不要留 | [judgements/2026-09-10-verifier-agent.md](90-agent/judgements/2026-09-10-verifier-agent.md) — *judged 2026-09-10, fable* |
 | 判斷 8：09-11 的五個方向加上現有 8 條，怎麼拆成分群的 TODO | [judgements/2026-09-11-todo-split.md](90-agent/judgements/2026-09-11-todo-split.md) — *judged 2026-09-11, fable* |
+| fankeel 這套工作流現在哪些設計還能精進、哪些環節漏掉了？ | [90-agent/judgements/2026-10-10-workflow-gaps.md](90-agent/judgements/2026-10-10-workflow-gaps.md) — *judged 2026-10-10, fable* |
 
 ## The five scanners
 
