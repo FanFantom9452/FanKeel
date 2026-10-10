@@ -76,6 +76,13 @@ test('task.js stage build names a missing design.md on a route with no plan, and
     assert.doesNotMatch(run(dir, ['stage', 'build', '--session', A]).out, /design\.md is missing/, 'the file is there');
 });
 
+test('task.js stage verify after design says nothing about design.md, even with no plan on the route', () => {
+    const dir = tmp('fankeel-task-ctx-');
+    run(dir, ['start', '--session', A, '--task', 'a fixture task', '--route', 'survey,design,verify,land']);
+    run(dir, ['stage', 'design', '--session', A]);
+    assert.doesNotMatch(run(dir, ['stage', 'verify', '--session', A]).out, /design\.md is missing/);
+});
+
 test('task.js stage build says nothing about design.md on a route with plan', () => {
     const dir = tmp('fankeel-task-ctx-');
     run(dir, ['start', '--session', A, '--task', 'a fixture task', '--route', 'survey,design,plan,build']);

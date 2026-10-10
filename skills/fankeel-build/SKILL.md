@@ -181,8 +181,8 @@ and a return contract in place of a report path: a status line — `done`,
 and one per new test naming the mutation that reddens it, with no report file. A
 no-plan route keeps one file on disk and no more: the approved file table, at
 `.fankeel/build/task-<started>/design.md`. Where build runs as a controlled
-stage agent, design wrote it by rule before its gate
-([docs/subagents.md](../../docs/90-agent/reference/subagents.md)'s `DESIGN_TO_BUILD`); on any other
+stage agent and design does not, design wrote it by rule before its gate
+([docs/subagents.md](../../docs/90-agent/reference/subagents.md)'s `DESIGN_TO_BUILD`); on every other
 move from design to build, `task.js stage build` prints
 `design.md is missing` with the path, and the table is written there before
 the first row is built. After a compaction, read the denominator back from
