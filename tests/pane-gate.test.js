@@ -106,3 +106,14 @@ test('HANDOFF is what handedOffSince reads', async () => {
     assert.equal(handoff.handedOffSince(file, 0), true);
     fs.rmSync(dir, { recursive: true, force: true });
 });
+
+test('a question with no options, or more than four, is not simple and offers only the terminal', async () => {
+    const { simple, gateRows } = await load();
+    const five = Object.assign({}, one, { options: ['a', 'b', 'c', 'd', 'e'].map((label) => ({ label })) });
+    const none = Object.assign({}, one, { options: [] });
+    for (const q of [five, none]) {
+        const pending = { questions: [q], until: 1 };
+        assert.equal(simple(pending), false);
+        assert.deepEqual(gateRows(pending, 44, width, cut).filter((r) => r.press !== undefined).map((r) => r.hotkey), ['t']);
+    }
+});
