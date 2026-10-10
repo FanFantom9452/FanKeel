@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # TODO 全表盤點（10-10）：逐站 headless driver、合併三處 helper、knip 重蓋日期 — Design
