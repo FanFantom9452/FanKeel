@@ -195,7 +195,7 @@ function shapeFindings(rel, body) {
    搬前先記連結數：`for f in <34 個檔名>; do git grep -o -F "$f" -- '*.md' ':!docs/90-agent/reports/evidence'; done | wc -l`，寫下數字。
 3. 套用：`node -e "const m=require('./scripts/docs-move.js');console.log(m.applyMoves(process.cwd(), m.readTable(process.argv[1]), 'audience'))" "$TEMP/moves.tsv"`，然後 `git checkout -- .fankeel/docs.json`。
 4. 檢查：`ls docs/03-decisions | wc -l` 是 45；`ls docs/90-agent/reports/patrols | wc -l` 是 34；`git diff --stat .fankeel/docs.json` 為空；同一條連結數指令的結果與搬前相同；`node scripts/docs-check.js | grep -c decision-shape` 是 0；docs-check 的死連結數與搬前相同（搬前先跑一次記下）。
-5. 在 `docs/README.md` 的 `## Judgements` 之前加 `## Decisions by topic`：把留在 03 的 45 頁依主題分到六個小標——站 agent 與派工、監控站、注入與 gate、文件與 TODO、模型選擇、其他——每頁一行 `- [標題](03-decisions/<file>)`，標題取該頁的 `# ` 行。段末加一行：`盤點與批次的收尾紀錄在 [90-agent/reports/patrols/](90-agent/reports/patrols/)。`
+5. 在 `docs/README.md` 的 `## Judgements` 之前加 `## Decisions by topic`：把留在 03 的 45 頁依主題分到六個小標——站 agent 與派工、監控站、注入與 gate、文件與 TODO、模型選擇、其他——每頁一行清單項，連結文字是該頁的 `# ` 行，目標是 `03-decisions/` 下的檔名。段末加一行，說盤點與批次的收尾紀錄在 `90-agent/reports/patrols/`，並連過去。
 6. 跑 `node --test tests/sources-doc.test.js tests/source.test.js tests/docs.test.js`，全過；`node scripts/todo-check.js` 無死連結。
 7. Commit：`docs: 34 patrol logs move from decisions to reports`。
 
