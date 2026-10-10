@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # TODO 全表盤點（10-10 第二輪）：lint 目錄、suite 指定樹 Implementation Plan
@@ -235,9 +235,9 @@ node --test tests/suite.test.js
 | `lint` 對每個 task 的 `Modify:`，在有 `root` 時 stat 每個不帶行號範圍的路徑，是目錄就回報一條 finding：``Task N: `Modify:` names a directory, `<path>` — list the files in it, or a file as `path:a-b` ``。 | Task 1 |
 | 是目錄的那一筆不交給 `readSize` 計行數，所以 READ_CAP 與 haiku 兩處檢查都不再丟 EISDIR。 | Task 1 |
 | `readSize` 本身不改：直接呼叫它而給目錄時仍然丟例外，`tests/plantasks-readsize.test.js` 那條測試原樣保留。 | Task 1 |
-| `scripts/suite.js` 多一個 `--tree <dir>`：有給就在那個目錄跑 suite、取那裡的 HEAD，不看登記檔的 worktree 欄位；目錄不存在就以 `suite: --tree <dir> does not exist` 結束，exit 1，不寫紀錄。 | Task 2 |
+| `scripts/suite.js` 多一個 `--tree <dir>`：有給就在那個目錄跑 suite、取那裡的 HEAD；條目自己有登記 worktree、目錄不是本專案的 checkout、或沒帶值時拒絕，目錄不存在就以 `suite: --tree <dir> does not exist` 結束，都是 exit 1、不寫紀錄。 | Task 2 |
 | 有給 `--tree` 時，`suite.json` 多一個 `tree` 欄位，值是該目錄的絕對路徑；沒給時紀錄的形狀不變。 | Task 2 |
-| `blocker` 讀到的紀錄帶 `tree` 且該目錄還在時，用那棵樹取 HEAD、做 diff；`tree` 指的目錄不在了，就退回原本的 `treeFor`。 | Task 2 |
+| `blocker` 讀到的紀錄帶 `tree`、該目錄還在、是本專案的 checkout、且條目沒有自己的 worktree 時，用那棵樹取 HEAD、做 diff；否則退回原本的 `treeFor`。 | Task 2 |
 | `skills/fankeel-land/SKILL.md` 的 suite 指令下方加一句：build 在手動開的 git worktree 裡做時加 `--tree <那棵樹>`。 | Task 2 |
 | Modify 指向目錄時 lint 回一條 finding | Task 1 |
 | 手動 worktree 的綠燈紀錄被 land 接受 | Task 2 |

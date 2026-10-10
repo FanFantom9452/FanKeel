@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # TODO 全表盤點（10-10 第二輪）：lint 目錄、suite 指定樹 — Design
@@ -19,9 +19,9 @@ class 為 bounded：兩條都改既有流程，沒有前端。
 
 ## 2. suite.js 指定樹
 
-- `scripts/suite.js` 多一個 `--tree <dir>`：有給就在那個目錄跑 suite、取那裡的 HEAD，不看登記檔的 worktree 欄位；目錄不存在就以 `suite: --tree <dir> does not exist` 結束，exit 1，不寫紀錄。
+- `scripts/suite.js` 多一個 `--tree <dir>`：有給就在那個目錄跑 suite、取那裡的 HEAD；條目自己有登記 worktree、目錄不是本專案的 checkout、或沒帶值時拒絕，目錄不存在就以 `suite: --tree <dir> does not exist` 結束，都是 exit 1、不寫紀錄。
 - 有給 `--tree` 時，`suite.json` 多一個 `tree` 欄位，值是該目錄的絕對路徑；沒給時紀錄的形狀不變。
-- `blocker` 讀到的紀錄帶 `tree` 且該目錄還在時，用那棵樹取 HEAD、做 diff；`tree` 指的目錄不在了，就退回原本的 `treeFor`。
+- `blocker` 讀到的紀錄帶 `tree`、該目錄還在、是本專案的 checkout、且條目沒有自己的 worktree 時，用那棵樹取 HEAD、做 diff；否則退回原本的 `treeFor`。
 - `skills/fankeel-land/SKILL.md` 的 suite 指令下方加一句：build 在手動開的 git worktree 裡做時加 `--tree <那棵樹>`。
 
 ## What proves it done
@@ -44,4 +44,4 @@ class 為 bounded：兩條都改既有流程，沒有前端。
 
 ## Unverified
 
-- none
+- `sameRepo` 用 `git rev-parse --path-format=absolute`，要 git 2.31 以上；更舊的 git 上 `--tree` 一律被拒絕，沒有寫退路。

@@ -13,3 +13,5 @@ link: scripts/conversation.js
 要變成什麼：在站頁 session 詳情裡加一個「對話全文」視圖，直接用 `lib/conversation.js` 的 turnsOf 產出的 turn：使用者與 Claude 的全文依序列出、每個壓縮點標出位置並可展開當時的摘要、頂端顯示 `left out:` 的計數；長 session（例如 91cb51ef 有 210 turns、20 MB transcript）要能分頁或延後載入，並沿用 detail 的快取。可選：一鍵下載 md。
 
 完成的標準：在 91cb51ef 這個 session 上，站頁顯示的 turn 數、壓縮次數、left out 計數與 `scripts/conversation.js` 匯出的檔頭完全一致；有測試以帶 compact_boundary 的 fixture 釘住；Claude 的回覆文字在頁面上可讀到全文，不被截斷。
+
+2026-10-10 第二輪盤點：plan 站寫過一版做法（伺服器一條分頁的 JSON 路徑加 countsOf 與 pageOf，瀏覽器一個收合的區段、一次載入 100 則），使用者在關卡決定先畫 mockup 再做，所以拆出去。那一版連同測試碼留在 commit 321b0702 的 plan 檔裡，另開帶 design 站的任務時可以拿來當起點。

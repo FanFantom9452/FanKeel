@@ -368,8 +368,9 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | TODO 全表盤點（10-10）的 design：逐站開 headless `claude -p` 的 driver、三個上限與 `status` 欄位、重複 helper 合併 | `docs/99-archive/2026-10-10-todo-patrol-drive-design.md` — *built, 繁體中文* |
 | 那份設計的五個 task | `docs/99-archive/2026-10-10-todo-patrol-drive.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-10）定了什麼、沒做什麼：逐站 driver 做出來但沒實跑、三處 helper 合併、knip 重蓋日期、allow 規則實測沒重現 no verdict | [reports/patrols/2026-10-10-todo-patrol-drive.md](90-agent/reports/patrols/2026-10-10-todo-patrol-drive.md) — *繁體中文* |
-| TODO 全表盤點（10-10 第二輪）的 design：lint 遇到目錄回 finding、`suite.js --tree` | [plans/2026-10-10-todo-patrol-lint-suite-design.md](90-agent/plans/2026-10-10-todo-patrol-lint-suite-design.md) — *design-intent, 繁體中文* |
-| 那份設計的兩個 task | [plans/2026-10-10-todo-patrol-lint-suite.md](90-agent/plans/2026-10-10-todo-patrol-lint-suite.md) — *design-intent, 繁體中文* |
+| TODO 全表盤點（10-10 第二輪）的 design：lint 遇到目錄回 finding、`suite.js --tree` | `docs/99-archive/2026-10-10-todo-patrol-lint-suite-design.md` — *built, 繁體中文* |
+| 那份設計的兩個 task | `docs/99-archive/2026-10-10-todo-patrol-lint-suite.md` — *built, 繁體中文* |
+| TODO 全表盤點（10-10 第二輪）定了什麼、沒做什麼：lint 目錄與 `suite.js --tree` 做掉，站頁對話全文拆出去先畫 mockup，brief-3 留給使用者 | [reports/patrols/2026-10-10-todo-patrol-lint-suite.md](90-agent/reports/patrols/2026-10-10-todo-patrol-lint-suite.md) — *繁體中文* |
 | 注入先開 server、gate 漏抓代號要出聲、brain 模型對照的三條 TODO：注入先量冷啟動與慢磁碟再讓 `/fankeel` 先問 station 再寫頁，`todoIds` 讀失敗浮出警告並把 2800 毫秒門檻寫成常數，brain 用 opus 或 sonnet 的對照腳本由使用者親手跑 | [plans/2026-10-05-inject-plain-brain.md](90-agent/plans/2026-10-05-inject-plain-brain.md) — *design-intent, 繁體中文* |
 | TODO 全表盤點（10-09）定了什麼、沒做什麼：九條 Ready 做掉、四條待決定定案、brief-3 留給使用者、stage-agents-10 仍封鎖、rules-1 新開 | [reports/patrols/2026-10-09-todo-patrol-nine.md](90-agent/reports/patrols/2026-10-09-todo-patrol-nine.md) — *繁體中文* |
 | TODO 全表盤點（10-09）的 plan：brief 散文搬進 brain 檔、ledger 走 registry 根、suite 記紅測名、壓縮 fixture、三頁更新、title hook 看 mtime、第五個 Agent 的 ask gate、四條結案、Pane 草稿核准 | `docs/99-archive/2026-10-09-todo-patrol.md` — *built, 繁體中文* |
