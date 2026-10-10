@@ -944,10 +944,49 @@ test('land merge on the base branch with no worktree is recorded as direct, and 
   out = run(dir, ['land', 'merge', '--session', A]);
   assert.match(out.out, /^fankeel — land: merge$/m, 'an fk/ branch is never base');
   assert.equal(entry(dir, A).land.integration, 'merge');
+  git(['symbolic-ref', 'refs/remotes/origin/HEAD', 'refs/remotes/origin/fk/x']);
+  out = run(dir, ['land', 'merge', '--session', A]);
+  assert.match(out.out, /^fankeel — land: merge$/m, 'origin/HEAD names the fk/ branch HEAD is on');
+  assert.equal(entry(dir, A).land.integration, 'merge');
+  git(['symbolic-ref', '--delete', 'refs/remotes/origin/HEAD']);
 
   out = run(dir, ['land', 'direct', '--push', '--session', A]);
   assert.equal(out.code, 0);
   assert.match(out.out, /^fankeel — land: direct, push$/m, 'direct can be typed');
+  assert.equal(entry(dir, A).land.integration, 'direct');
+});
+
+test('land merge with a worktree on the entry is recorded as merge, though HEAD is on base with no tree on the record', () => {
+  const dir = root();
+  const suite = require('../lib/suite.js');
+  const git = (args) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: dir, encoding: 'utf8' }).trim();
+  git(['init', '-q', '-b', 'main']);
+  git(['commit', '-q', '--allow-empty', '-m', 'base']);
+  started(dir, A, 'ship it');
+  const rel = '.fankeel/worktrees/abcdef01';
+  fs.mkdirSync(path.join(dir, rel), { recursive: true });
+  const data = entry(dir, A);
+  data.worktree = { path: rel, branch: 'fk/abcdef01' };
+  registry.writeSession(dir, A, data);
+  suite.record(dir, entry(dir, A), { sha: null, at: 'now', command: 'node --test', pass: 1, fail: 0, ok: true });
+  const out = run(dir, ['land', 'merge', '--no-push', '--session', A]);
+  assert.equal(out.code, 0);
+  assert.match(out.out, /^fankeel — land: merge, no push$/m);
+  assert.equal(entry(dir, A).land.integration, 'merge');
+});
+
+test('land merge on main after a red run and a green one is direct, and names the red run', () => {
+  const dir = root();
+  const suite = require('../lib/suite.js');
+  const git = (args) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: dir, encoding: 'utf8' }).trim();
+  git(['init', '-q', '-b', 'main']);
+  git(['commit', '-q', '--allow-empty', '-m', 'base']);
+  started(dir, A, 'ship it');
+  suite.record(dir, entry(dir, A), { sha: null, at: 'one', command: 'node --test', pass: 8, fail: 2, failed: ['flaky one'], ok: false });
+  suite.record(dir, entry(dir, A), { sha: null, at: 'two', command: 'node --test', pass: 10, fail: 0, failed: [], ok: true });
+  const out = run(dir, ['land', 'merge', '--session', A]);
+  assert.equal(out.code, 0);
+  assert.match(out.out, /^fankeel — land: direct \(already on main, nothing to merge\)\nsuite: green on run 2; red on run 1 — flaky one\n/);
   assert.equal(entry(dir, A).land.integration, 'direct');
 });
 
