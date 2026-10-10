@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-10-05
+last_verified: 2026-10-10
 source_of_truth: lib/plain.js, lib/prose.js
 ---
 
@@ -22,6 +22,7 @@ source_of_truth: lib/plain.js, lib/prose.js
 
 - 受控 stage 的 gate：`lib/handoff.js` 的 `ruleProblem` 在最後呼叫 `proseProblem`，第一個違規的欄位會讓 gate 被退回，訊息寫出欄位與原因。
 - docs-check：`proseFindings` 檢查 audience 是 `human` 的 reference 頁，以及 TODO 條目 `## 完成紀錄` 以下的段落，回報 `long-sentence` 與 `bare-code`。
+- docs-check：audience 是 human 的決策頁，last_verified 不早於 2026-10-10（`DECISION_RULE_FROM`）時，同樣查句長與代號，另查 `decision-shape`：開頭一句「一句話」結論，並有「決定／為什麼／放棄了什麼」三個標題。舊頁改動時把日期改到當天，就會被查。
 
 程式碼片段（反引號裡的字）與連結的目標不算句子，也不算代號：寫在 code 裡的名字是引用，不是稱呼。
 
