@@ -280,3 +280,12 @@ test('--check runs no test and writes nothing: a standing record exits 0, no rec
   assert.equal(nothing.ok, true);
   assert.equal(nothing.text, 'suite: no suite to run');
 });
+
+test('--check on a green record with no sha says record stands @ no repo', () => {
+  const dir = tmp('fankeel-suite-');
+  registry.writeSession(dir, 'abcdef0127', { ...DATA });
+  suite.record(dir, DATA, { sha: null, at: 'now', command: 'x', pass: null, fail: null, failed: null, ok: true });
+  const r = main(['--session', 'abcdef0127', '--root', dir, '--check']);
+  assert.equal(r.ok, true);
+  assert.equal(r.text, 'suite: record stands @ no repo');
+});

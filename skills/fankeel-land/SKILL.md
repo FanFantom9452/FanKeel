@@ -52,6 +52,7 @@ Where verify already ran it, ask before running it again:
 writes nothing. `suite: record stands @ <sha>` with exit 0 means verify's
 record is green and no code changed since, and that line is this step's
 `suite:` line; exit 1 prints why, and the full run above is what answers it.
+`suite: no suite to run` also exits 0 and means the project has no test command, so there is no record to stand and nothing to run; copy that line to the report's `suite:` line as it is.
 
 It runs the project's test command — `package.json`'s `test` script, or
 `--command "<cmd>"` — prints `suite: <pass> pass, <fail> fail @ <sha>`, and
