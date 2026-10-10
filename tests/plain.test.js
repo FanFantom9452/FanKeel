@@ -83,6 +83,8 @@ test('a human decision page dated on or after DECISION_RULE_FROM is read plainly
     // quotes and unpadded months or days
     assert.deepEqual(tags(head('"2026-10-10"') + bad), ['decision-shape', 'decision-shape']);
     assert.deepEqual(tags(head('2026-10-9') + bad), []);
+    assert.deepEqual(tags(head('2026-9-30') + bad), []);
+    assert.deepEqual(tags('# T\nlast_verified: 2026-10-10\n---\n\n' + bad), []);
     assert.deepEqual(tags(head('2026-11-1') + bad), ['decision-shape', 'decision-shape']);
     const soon = proseFindings('docs/03-decisions/a.md', head('soon') + bad, 'decision', 'human');
     assert.equal(soon.length, 1);
