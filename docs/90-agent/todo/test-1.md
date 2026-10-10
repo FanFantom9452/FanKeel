@@ -6,7 +6,7 @@ state: watch
 link: tests/todo-check-folder.test.js
 group: 整套再紅一次
 timing: if: 整套測試再出現一次重跑不見的失敗
-stamp: 2026-09-29
+stamp: 2026-10-10
 ---
 
 來源：fc59e8cf（2026-09-29）landing todo patrol 2 時登記；那次整套測試跑出一個失敗，重跑不再出現，原因沒查到，只留下候選：trackedIn 測試複製 80 MB 的 node 執行檔，尚未證實。
@@ -18,3 +18,5 @@ stamp: 2026-09-29
 ## 為什麼還開著
 
 候選原因還在，`tests/todo-check-folder.test.js:216` 仍是 `copyFileSync(process.execPath`，在 Windows 約複製 80 MB 的 node 執行檔到 git.exe；fc59e8cf（2026-09-29）之後該測試沒再改，也沒有證據證明它就是那次紅燈，所以不能算已修。若整套再紅而單跑這個檔全綠，且那次耗時指向它，就改成不複製（hard link 或 stub 腳本）；完成的標準是 `npm test`（package.json 的 `node --test`）連續五次全綠，五次都不再出現重跑不見的失敗。
+
+2026-10-10：事件又發生一次。第二輪盤點的 land 站跑整套測試，3936 過、1 失敗，紅的是 serve 測試檔裡「pid 在跑但 health 逾時算忙碌」那一條，不是 trackedIn 測試；同一個 commit 重跑整套 3937 全過，那個檔單獨跑三次都綠，兩次之間只改了 markdown。到這次為止紅過的是三個不同的測試，使用者選擇記下證據、繼續觀察。
