@@ -1,7 +1,7 @@
 ---
 label: session
 title: drive.js 第一次實跑
-description: scripts/drive.js 只用假的 claude 測過；還沒用真的 claude -p 跑過一站，不知道 acceptEdits 下 brain 寫不寫得進 .fankeel/build/ 的 handoff，也不知道 total_cost_usd 是否每輪都有 — [drive.md](docs/90-agent/reference/drive.md).
+description: drive.js 只用假的 claude 測過；還沒用真的 claude -p 跑過一站，不知道 acceptEdits 下 brain 寫不寫得進 build 目錄的 handoff，也不知道 total_cost_usd 是否每輪都有 — [drive.md](docs/90-agent/reference/drive.md).
 state: blocked
 link: docs/90-agent/reference/drive.md
 group: driver 實跑
