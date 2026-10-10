@@ -11,7 +11,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { byName } = require('../lib/stages.js');
+const { byName, rulesFor, templateFor } = require('../lib/stages.js');
 const { OVERLAPS } = require('../scripts/orient.js');
 
 const PIPELINE = path.join(__dirname, '..', 'docs', '02-architecture', 'pipeline.md');
@@ -88,4 +88,20 @@ test('no diagram draws four dispatches as a ceiling', () => {
   const text = fs.readFileSync(PIPELINE, 'utf8');
   assert.doesNotMatch(text, /four the ceiling/);
   assert.doesNotMatch(text, /four in flight at most/);
+});
+
+// The anchors above pin one phrase per stage; the injected block the page draws
+// for build is pinned whole, because build's rules grew twice (`task.js intends`,
+// `At close: suite, then docs-check`) and the page kept the old sentences.
+// `{{NEXT}}` is `verify` on the page and a script token is `<plugin>/scripts/`
+// plus its name, so the rules are compared as the page prints them.
+test('the build block on the page carries every build rule and every build template line, verbatim', () => {
+  const doc = fs.readFileSync(PIPELINE, 'utf8');
+  const onPage = (s) => s
+    .replace(/\{\{NEXT\}\}/g, 'verify')
+    .replace(/\{\{([A-Z_]+)\}\}/g, (m, name) => '<plugin>/scripts/' + name.toLowerCase().replace(/_/g, '-') + '.js');
+  const rules = rulesFor('build', {}, {}).map(onPage);
+  const shape = templateFor('build').split('\n').filter(Boolean).map(onPage);
+  const missing = rules.concat(shape).filter((line) => !doc.includes(line));
+  assert.deepEqual(missing, []);
 });

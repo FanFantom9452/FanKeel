@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-10-09
+last_verified: 2026-10-10
 source_of_truth: lib/stages.js, lib/render.js, lib/profile.js, skills/fankeel-survey/SKILL.md, skills/fankeel-design/SKILL.md, skills/fankeel-plan/SKILL.md, skills/fankeel-build/SKILL.md, skills/fankeel-verify/SKILL.md, skills/fankeel-audit/SKILL.md, skills/fankeel-land/SKILL.md, scripts/residue.js, hooks/carry.js, scripts/orient.js
 ---
 
@@ -124,11 +124,11 @@ stage rules:
   - Say what you actually did — a skipped step, a failed test, a thing you could not check — and a dispatch before it goes: how many, which model. Where a rule and the shape conflict, the constraint wins and the shape stays.
   - Write tool input in literal characters, never as \uXXXX escapes: escaped calls corrupt mid-word and fail to parse. Name a code concept in code — `overdue`, not a translation of it.
   - Do not stop where the happy path works and the rest is "later". That, and a new ask that neither blocks nor belongs, is one TODO entry at the detail. Say which; ambiguous, ask that turn.
-  - From a plan: `node <plugin>/scripts/ledger.js --plan <f> show` first; never redo a task it lists complete. One fankeel-reviewer per task or fix, then `complete <n>` or `fix`.
+  - From a plan: `node <plugin>/scripts/ledger.js --plan <f> show` and `task.js intends <f>` first; never redo a task it lists complete. One fankeel-reviewer per task or fix, then `complete <n>` or `fix`.
   - Decide, record `Ruling:`. Stop where git cannot revert: irreversible, security-sensitive, out-of-workspace, every path a guess.
   - Every changed line traces to the ask. Follow the patterns here; do not improve adjacent code. Remove what your own change orphaned.
   - A new document is the last resort: use an existing page, or write a generator when it derives from code.
-  - Read the fankeel-build skill on entry: worktree consent, brief file, reviewer template, fix rows, five rounds, commit shape.
+  - Read the fankeel-build skill on entry: worktree consent, brief file, reviewer template, fix rows, five rounds, commit shape. At close: suite, then docs-check.
   - Output: one line per file, then the question. Under 80 words.
 
 output shape:
@@ -136,6 +136,7 @@ output shape:
   - path (new) — what it is
 
   done: <n> of <m> — ledger or file table
+  docs-check: clean, or <n> fixed and <n> left
   deferred: <heading> — <TODO entry, or omit this line>
   then AskUserQuestion
 ```
@@ -207,11 +208,11 @@ stage rules:
   - Say what you actually did — a skipped step, a failed test, a thing you could not check — and a dispatch before it goes: how many, which model. Where a rule and the shape conflict, the constraint wins and the shape stays.
   - Write tool input in literal characters, never as \uXXXX escapes: escaped calls corrupt mid-word and fail to parse. Name a code concept in code — `overdue`, not a translation of it.
   - Do not stop where the happy path works and the rest is "later". That, and a new ask that neither blocks nor belongs, is one TODO entry at the detail. Say which; ambiguous, ask that turn.
-  - From a plan: `node <plugin>/scripts/ledger.js --plan <f> show` first; never redo a task it lists complete. One fankeel-reviewer per task or fix, then `complete <n>` or `fix`.
+  - From a plan: `node <plugin>/scripts/ledger.js --plan <f> show` and `task.js intends <f>` first; never redo a task it lists complete. One fankeel-reviewer per task or fix, then `complete <n>` or `fix`.
   - Decide, record `Ruling:`. Stop where git cannot revert: irreversible, security-sensitive, out-of-workspace, every path a guess.
   - Every changed line traces to the ask. Follow the patterns here; do not improve adjacent code. Remove what your own change orphaned.
   - A new document is the last resort: use an existing page, or write a generator when it derives from code.
-  - Read the fankeel-build skill on entry: worktree consent, brief file, reviewer template, fix rows, five rounds, commit shape.
+  - Read the fankeel-build skill on entry: worktree consent, brief file, reviewer template, fix rows, five rounds, commit shape. At close: suite, then docs-check.
   - Output: one line per file, then the question. Under 80 words.
 
 output shape:
@@ -219,6 +220,7 @@ output shape:
   - path (new) — what it is
 
   done: <n> of <m> — ledger or file table
+  docs-check: clean, or <n> fixed and <n> left
   deferred: <heading> — <TODO entry, or omit this line>
   then AskUserQuestion
 ```
