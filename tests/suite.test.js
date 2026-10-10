@@ -178,6 +178,9 @@ test('--tree runs the suite in a worktree the entry does not know, and blocker c
   git(wt, ['commit', '-qm', 'code']);
   const wtHead = git(wt, ['rev-parse', 'HEAD']);
   registry.writeSession(dir, 'abcdef0124', DATA);
+  const bare = main(['--session', 'abcdef0124', '--root', dir, '--tree']);
+  assert.equal(bare.ok, false);
+  assert.equal(bare.text, 'suite: --tree needs a directory.');
   const missing = main(['--session', 'abcdef0124', '--root', dir, '--tree', path.join(wt, 'nope')]);
   assert.equal(missing.ok, false);
   assert.match(missing.text, /^suite: --tree .* does not exist$/);
@@ -191,4 +194,33 @@ test('--tree runs the suite in a worktree the entry does not know, and blocker c
   assert.equal(suite.blocker(dir, DATA, dir), null);
   git(dir, ['worktree', 'remove', '--force', wt]);
   assert.match(suite.blocker(dir, DATA, dir), /^suite ran at [0-9a-f]{8}, and lib\.js changed since — run suite\.js again$/);
+});
+
+test('--tree is refused for an entry with its own worktree, and for a directory that is not this project\'s checkout; blocker ignores a record\'s tree in both cases', () => {
+  const dir = repo();
+  const rel = '.fankeel/worktrees/abcdef01';
+  git(dir, ['worktree', 'add', '-q', '-b', 'fk/abcdef01', path.join(dir, rel)]);
+  const data = { ...DATA, worktree: { path: rel, branch: 'fk/abcdef01' } };
+  registry.writeSession(dir, 'abcdef0123', data);
+  const other = path.join(tmp('fankeel-suite-manual-'), 'wt');
+  git(dir, ['worktree', 'add', '-q', '-b', 'manual', other]);
+  const refused = main(['--session', 'abcdef0123', '--root', dir, '--tree', other]);
+  assert.equal(refused.ok, false);
+  assert.match(refused.text, /has its own worktree/);
+  fs.writeFileSync(path.join(dir, rel, 'lib.js'), 'x\n');
+  git(path.join(dir, rel), ['add', '.']);
+  git(path.join(dir, rel), ['commit', '-qm', 'code']);
+  suite.record(dir, data, { sha: git(other, ['rev-parse', 'HEAD']), at: 'now', command: 'node --test', pass: 1, fail: 0, ok: true, tree: other });
+  assert.match(suite.blocker(dir, data, dir), /changed since|run suite\.js again/);
+
+  const foreign = repo();
+  fs.writeFileSync(path.join(foreign, 'extra.js'), 'z\n');
+  git(foreign, ['add', '.']);
+  git(foreign, ['commit', '-qm', 'extra']);
+  registry.writeSession(dir, 'abcdef0124', DATA);
+  const notMine = main(['--session', 'abcdef0124', '--root', dir, '--tree', foreign]);
+  assert.equal(notMine.ok, false);
+  assert.match(notMine.text, /is not a checkout of/);
+  suite.record(dir, DATA, { sha: git(foreign, ['rev-parse', 'HEAD']), at: 'now', command: 'node --test', pass: 1, fail: 0, ok: true, tree: foreign });
+  assert.notEqual(suite.blocker(dir, DATA, dir), null);
 });

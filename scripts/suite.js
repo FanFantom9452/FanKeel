@@ -26,14 +26,17 @@ function main(argv) {
         options: { session: { type: 'string' }, command: { type: 'string' }, root: { type: 'string' }, tree: { type: 'string' } },
     });
     if (!values.session) return { text: 'suite: --session <id> is required.', ok: false };
+    if (values.tree !== undefined && typeof values.tree !== 'string') return { text: 'suite: --tree needs a directory.', ok: false };
     const root = registry.resolveRoot(values.root || undefined);
     const data = registry.readSession(root, values.session);
     if (!data || data.active !== true) return { text: 'suite: no active entry for ' + values.session + ' under ' + root, ok: false };
     const projectRoot = docs.projectRootsFor(root, data.project ? [data.project] : [])[0] || root;
+    const wt = worktreeOf(data);
     const given = values.tree ? path.resolve(values.tree) : null;
     if (given && !fs.existsSync(given)) return { text: 'suite: --tree ' + values.tree + ' does not exist', ok: false };
+    if (given && wt) return { text: 'suite: this entry has its own worktree, ' + wt.path + ' — --tree is for a tree the entry does not record', ok: false };
+    if (given && !suite.sameRepo(given, projectRoot)) return { text: 'suite: --tree ' + values.tree + ' is not a checkout of ' + projectRoot, ok: false };
     const tree = given || suite.treeFor(root, data, projectRoot);
-    const wt = worktreeOf(data);
     if (!given && wt && !fs.existsSync(tree)) return { text: 'suite: ' + wt.path + ' is not a worktree any more', ok: false };
     const found = values.command ? null : suite.testCommand(tree);
     if (found && found.error) return { text: 'suite: ' + found.error + ' — fix it or pass --command "<cmd>".', ok: false };
