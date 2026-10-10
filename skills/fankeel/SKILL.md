@@ -661,7 +661,7 @@ obvious.
 
 A TODO the user asks for during a controlled stage lands that turn, not as a
 note waiting for down: the guard refuses this session's own Edit and Write
-there, and a note is re-injected on every prompt until it is moved. Dispatch
+(or a shell write) there, and a note is re-injected on every prompt until it is moved. Dispatch
 one `fankeel:fankeel-reader` with the user's words, to run
 `node <plugin>/scripts/todo.js list` and grep the repository for what they
 describe, returning `duplicate <id>`, `exists <path:line>` or `new`. A
@@ -1188,7 +1188,7 @@ A plan task whose `**Dispatch:**` line reads `user` is this session's, never the
 stage agent's. `task.js stage build` lists them: ask the user right then —
 after the other tasks and before the stage's gate, they do it first, or skip —
 note the answer with `task.js note`, and run them with the user once the stage
-agent's report is in and before you ask its gate, sending any edit the guard
+agent's report is in and before you ask its gate, sending any edit or shell write the guard
 refuses you here to an implementer.
 
 `survey` dispatches readers; `build` dispatches per task, and the plan's

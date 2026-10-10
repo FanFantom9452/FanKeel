@@ -52,7 +52,7 @@ whose matcher is `Edit|Write|NotebookEdit`. `Bash` is matched now too:
 `.claude-plugin/plugin.json` registers `hooks/guard.js` a second time,
 matcher `Bash|PowerShell`, and it denies a command that writes files —
 `lib/guard.js`'s `writesFiles` — when `agent_id` is set **and** `agent_type` is
-`fankeel-reader`, `fankeel-reviewer`, `fankeel-judge`, `fankeel-render-reviewer`, `fankeel-slimmer` or `fankeel-init-scout`. The id is the half that
+`fankeel-reader`, `fankeel-reviewer`, `fankeel-judge`, `fankeel-render-reviewer`, `fankeel-slimmer` or `fankeel-init-scout`; it also denies the main thread's writing command (no `agent_id`) while the task's stage is a controlled one. The id is the half that
 says this is a subagent at all: the main thread of a session started with
 `--agent` carries the type without it and must be able to write, so the id is
 checked in the same condition as the type (`hooks/guard.js:86`, `if (payload.agent_id && readOnlyAgentType(payload.agent_type) && writesFiles(command)) {`).
@@ -80,10 +80,10 @@ ahead of both `guard` mode and the collision guard below it. That ordering is
 deliberate: the check runs before `guardMode(mine)` is even read
 (`hooks/guard.js:170`, `if (!guardMode(mine)) return;`), so a controller set
 to `guard: off` is not exempt from it. `Bash` and `PowerShell` are
-deliberately left out of the set it tests (`hooks/guard.js:28`, `const WRITE_TOOLS = new Set(['Edit', 'Write', 'NotebookEdit']);`):
+deliberately left out of the set it tests, since a read-only command must pass (`hooks/guard.js:28`, `const WRITE_TOOLS = new Set(['Edit', 'Write', 'NotebookEdit']);`):
 the controller still has to run `scripts/task.js` to dispatch, relay a path
 and ask — and, on `build`, `design` and `plan`, `scripts/commit.js` — and those run through `Bash`;
-the matcher above, not this one, still governs them.
+the matcher above, not this one, governs them, and refuses the controller's command only when it writes.
 A `fankeel-brain` `Write` under `.fankeel/build/task-*/` is checked too
 (`hooks/guard.js:107`, `if (payload.tool_name === 'Write') {`): when the task directory it targets is not the
 one `handoff.dirFor` gives for its own session's record, it is denied, and the
@@ -709,7 +709,7 @@ stages a default would actually move the number on.
 And `build` can be tried now, but has not been run end to end: `STAGE_AGENTS` in
 `lib/stages.js` gives its stage agent readers, reviewers, a render reviewer, a
 fixer and implementers, all through the `Agent` tool. The guard above locks the
-*controller* out of `Edit`, `Write` and `NotebookEdit`; the stage agent has no
+*controller* out of `Edit`, `Write` and `NotebookEdit`, and out of a shell command that writes; the stage agent has no
 `Edit` and no `Workflow`, and gets its edits made by the implementers it sends
 (`agents/fankeel-brain.md:4`, `tools: [Read, Grep, Glob, Bash, Write, Agent]`,
 where `Write` is for its handoff file). It is refused `git commit` too, so it
