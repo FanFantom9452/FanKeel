@@ -28,7 +28,7 @@ session f0a58f35-ae39-4954-89d6-e0b9129a4082 的 design。這頁是要做的事�
 
 ## 3. gate 區塊
 
-- pending 檔的找法、answer 檔的路徑、送出前的檢查、寫前先 stat、`交給終端` 寫 `{ "handoff": "terminal" }`，全照 gate Pane 設計第 3 節與第 6 節的決定。
+- pending 檔的找法、answer 檔的路徑、送出前的檢查、寫前先 stat、`交給終端` 寫 `{ "handoff": "terminal" }`，全照 gate Pane 設計第 3 節與第 6 節的決定。build 時改了一處：「已有檔就不寫」只對比這個 gate 的 `at` 更新的 answer 檔成立，否則同一個 stage 的第二個 gate 在 Pane 裡答不了。
 - 單選題每個選項一個 `plain` Button，hotkey 1 到 4；`交給終端` 的 hotkey 是 `t`。推薦的選項粗體。
 - hotkey 要 Pane 有焦點才有效，所以 gate 區塊底下有一行 dim 的提示說怎麼進面板。
 
