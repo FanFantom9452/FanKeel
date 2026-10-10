@@ -6,7 +6,7 @@ state: blocked
 link: scripts/quota.js
 group: quota.js 真實資料驗證
 timing: upstream: TokenBar 累積出跨 10 點以上的真實 7 天視窗
-stamp: 2026-10-09
+stamp: 2026-10-10
 ---
 
 來源：2026-10-05 build 退回，在真實 tokenbar-usage.jsonl 上實跑 quota.js --dry-run，exit 1：347 行中 81 行帶 seven_day_pct，涵蓋約 15 分鐘，各視窗內最多動 1 點。

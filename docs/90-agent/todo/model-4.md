@@ -6,7 +6,7 @@ state: blocked
 link: docs/90-agent/reference/model-choice.md
 group: fast 可依 agent 設定
 timing: upstream: Sonnet 支援 fast，或 fast 可依 agent 個別設定
-stamp: 2026-10-09
+stamp: 2026-10-10
 ---
 
 來源：2026-10-05 使用者在「修 /fankeel hook 逾時」任務的 build 階段提出（session 2f5b7e13）：fast mode 能不能只套用給子 agent，而且只限 sonnet；opus 不要 fast。
