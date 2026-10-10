@@ -38,27 +38,34 @@ what the gate asks — never something to settle first and report afterwards.
 
 ## 1. The full suite, on the tree you are about to integrate
 
+When this land is a release, do step 2a first — set the number and commit
+it — and only then run this step: `package.json` is code to the record, so a
+suite run before the bump is stale after it, `--check` below refuses on it,
+and so does `task.js land`.
+
+Verify already ran the suite, so ask before running it again:
+
+```
+node <plugin>/scripts/suite.js --session <id> --check
+```
+
+It runs no test and writes nothing. `suite: record stands @ <sha>` with exit
+0 means verify's record is green and no code changed since, and that line is
+this step's `suite:` line. `suite: no suite to run` also exits 0 and means
+the project has no test command, so there is no record to stand and nothing
+to run; copy that line to the report's `suite:` line as it is. Exit 1 prints
+why, and the full run is what answers it:
+
 ```
 node <plugin>/scripts/suite.js --session <id>
 ```
-
-When this land is a release, do step 2a first — set the number and commit
-it — and only then run this step: `package.json` is code to the record, so a
-suite run before the bump is stale after it and `task.js land` refuses on it.
 
 Where build ran in a git worktree opened by hand — one the entry does not
 record — add `--tree <that worktree>`: the suite runs there, `suite.json`
 keeps the path, and `task.js land` checks the record against that tree's HEAD
 for as long as the directory exists.
 
-Where verify already ran it, ask before running it again:
-`node <plugin>/scripts/suite.js --session <id> --check` runs no test and
-writes nothing. `suite: record stands @ <sha>` with exit 0 means verify's
-record is green and no code changed since, and that line is this step's
-`suite:` line; exit 1 prints why, and the full run above is what answers it.
-`suite: no suite to run` also exits 0 and means the project has no test command, so there is no record to stand and nothing to run; copy that line to the report's `suite:` line as it is.
-
-It runs the project's test command — `package.json`'s `test` script, or
+The full run executes the project's test command — `package.json`'s `test` script, or
 `--command "<cmd>"` — prints `suite: <pass> pass, <fail> fail @ <sha>`, and
 records that beside the task's handoffs. **Red stops everything**, and since
 2026-10-09 that is a refusal rather than a sentence: `task.js land` in step

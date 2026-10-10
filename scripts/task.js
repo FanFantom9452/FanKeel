@@ -1513,7 +1513,7 @@ function cmdLand(root, opts) {
     // A `merge` typed where nothing was merged: no worktree on the entry, none
     // named by the suite record, and the project root already on its base
     // branch. Recorded as what happened.
-    const ownTree = (suite.readRecord(root, current) || {}).tree;
+    const ownTree = (rec || {}).tree;
     const landedOn = verb === 'merge' && !worktreeOf(current) && !ownTree ? onBase(projectRoot) : null;
     const kind = landedOn ? 'direct' : verb;
 

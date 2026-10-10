@@ -75,17 +75,17 @@ load the design skill its prompt names.
 just described: when `agent_id` is absent — the main thread, read the same
 way the `Bash|PowerShell` matcher above reads it — and the task's own stage
 is on `stage.agents`'s list, an `Edit`, `Write` or `NotebookEdit` from the
-controller is denied outright (`hooks/guard.js:125`, `if (!payload.agent_id && WRITE_TOOLS.has(payload.tool_name))`),
+controller is denied outright (`hooks/guard.js:148`, `if (!payload.agent_id && WRITE_TOOLS.has(payload.tool_name))`),
 ahead of both `guard` mode and the collision guard below it. That ordering is
 deliberate: the check runs before `guardMode(mine)` is even read
-(`hooks/guard.js:170`, `if (!guardMode(mine)) return;`), so a controller set
+(`hooks/guard.js:193`, `if (!guardMode(mine)) return;`), so a controller set
 to `guard: off` is not exempt from it. `Bash` and `PowerShell` are
 deliberately left out of the set it tests, since a read-only command must pass (`hooks/guard.js:28`, `const WRITE_TOOLS = new Set(['Edit', 'Write', 'NotebookEdit']);`):
 the controller still has to run `scripts/task.js` to dispatch, relay a path
 and ask — and, on `build`, `design` and `plan`, `scripts/commit.js` — and those run through `Bash`;
 the matcher above, not this one, governs them, and refuses the controller's command only when it writes.
 A `fankeel-brain` `Write` under `.fankeel/build/task-*/` is checked too
-(`hooks/guard.js:107`, `if (payload.tool_name === 'Write') {`): when the task directory it targets is not the
+(`hooks/guard.js:130`, `if (payload.tool_name === 'Write') {`): when the task directory it targets is not the
 one `handoff.dirFor` gives for its own session's record, it is denied, and the
 reason names both directories (`lib/guard.js:365`, `return 'fankeel: a fankeel-brain writes only under its own session\'s task directory. '`).
 
@@ -175,7 +175,7 @@ the shape of the question: a reader is asked what a file says, a reviewer
 is asked what a diff, a table or the tree gets wrong — or, when the brief asks
 for cuts, what it could lose — and it returns only what it defeats and those
 cuts. It is one of several dispatches where nobody types a model at all —
-`fankeel-verifier` is another: `skills/fankeel-verify/SKILL.md:181`, `not typed by hand`,
+`fankeel-verifier` is another: `skills/fankeel-verify/SKILL.md:186`, `not typed by hand`,
 and it was added on the same branch as this sentence; the stage agent `fankeel-brain` and `fankeel-fixer` type none either —
 so the file's pin is the only floor — the literal `sonnet`, not `dispatch.floor`,
 which no reader or reviewer agent file and no hook reads to pin a model — only the
@@ -732,7 +732,7 @@ newest 40, dropping an exact duplicate and replacing a fact read again at a
 new sha. `context.js show` marks a line whose sha is not HEAD `(舊)`. The
 ordinary brief inlines the file's content — `renderBrief` and `renderBrainBrief`
 in `lib/render.js` paste it in whole under `BRIEF_MAX`; over it `fit()` keeps the
-newest facts and names the file for the rest (`lib/render.js:719`, `' older ' + (n === 1 ? 'fact' : 'facts')`) — so a
+newest facts and names the file for the rest (`lib/render.js:734`, `' older ' + (n === 1 ? 'fact' : 'facts')`) — so a
 subagent no longer has to `Read` the file itself before using what it holds.
 
 Build now dispatches one `fankeel:fankeel-brain` per disjoint `ledger.js
@@ -805,7 +805,7 @@ in `lib/profile.js` holds it to one line and 200 characters — trimmed but not
 lowercased, and refused if it is empty, carries a newline, or runs long
 (`lib/profile.js:213`, `key + ' is one line of 1 to ' + PROMPT_MAX + ' characters' };`).
 `promptRules` is called once, inside `rulesLines`
-(`lib/render.js:169`, `.concat(promptRules(values, data && data.stage));`),
+(`lib/render.js:182`, `.concat(promptRules(values, data && data.stage));`),
 and by `controlBlock` for a controlled stage's own block
 (`lib/render.js:133`, `return control && Object.assign({}, control, { rules: control.rules.concat(promptRules(values, stage)) });`),
 so `render`, `renderResume` and `renderBrainBrief` — every path that calls
@@ -819,10 +819,10 @@ Setting the key prints what it costs: the estimated tokens the injected line
 adds per prompt, and each stage's remaining room under the reference-root
 2400-character cap with the profile as it now reads — a warning, never a
 refusal, since the cap belongs to the tests and the sentence belongs to the
-user (`scripts/task.js:1139`, `set anyway; this is a warning, not a refusal`)
+user (`scripts/task.js:1151`, `set anyway; this is a warning, not a refusal`)
 — computed in `cmdProfile`'s `set` branch off `input-check.js`'s
 `estimateTokens` and `lib/render.js`'s `blockSizes`
-(`scripts/task.js:1132`, `const n = estimateTokens('\n  - ' + out.value);`).
+(`scripts/task.js:1144`, `const n = estimateTokens('\n  - ' + out.value);`).
 
 ## What a controlled `build` and `verify` were run through
 
