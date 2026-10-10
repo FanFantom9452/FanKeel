@@ -1157,3 +1157,13 @@ test('a close mark never names a group, even when it carries one', () => {
   const rules = controlFor('build', values, {}, [{ stage: 'build', at: 1, agentId: 'c1', group: 3, kind: 'close' }]).rules;
   assert.equal(rules.find((r) => r.includes('already running')), 'A build stage agent is already running (`c1`): SendMessage it the user\'s new line; wait. Dispatch no other unless SendMessage says it is gone.');
 });
+
+// 2026-10-10 decisions-human: a landed plan writes a decision record only when
+// it chose an approach; any other land leaves a report.
+test('land sends a plan that chose nothing to a report, not a decision record', () => {
+  const { rulesFor } = require('../lib/stages.js');
+  for (const values of [{ 'land.archivePlan': true }, {}]) {
+    const land = rulesFor('land', null, values).join(' ');
+    assert.match(land, /A plan that chose an approach leaves a decision record behind, others a report/);
+  }
+});

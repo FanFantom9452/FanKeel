@@ -92,9 +92,12 @@ done. `docs-check` refuses an eighth; when a record replaces another, give the
 old one `superseded_by: <path>` and it stops counting. The map lists every
 binding record, and design reads them there at its step 5.
 
-A landed plan leaves a decision record behind — what was decided and why — and is
-then archived — with no question when the profile's `land.archivePlan` is true,
-**after asking** when it is not. An unarchived plan gets read as current.
+A landed plan whose design chose between approaches, or overturned an earlier
+decision, leaves a decision record behind — what was decided and why. Any other
+land — a TODO patrol, a batch of fixes — leaves a report in the `report` bucket
+instead, because a decision bucket a person reads is for decisions. Either way
+the plan is then archived — with no question when the profile's
+`land.archivePlan` is true, **after asking** when it is not. An unarchived plan gets read as current.
 Archive with the script, the plan and its design together:
 
 node <plugin>/scripts/archive.js <plan bucket>/<plan>.md <plan bucket>/<plan>-design.md
