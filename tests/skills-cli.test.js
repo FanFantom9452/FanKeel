@@ -115,15 +115,20 @@ test('a script named only in frontmatter counts for discovery and is not bare-re
 // The nine skills each carry the same `One path, never a search` bullet, and
 // four wordings of it had drifted apart with nothing to say so. Whitespace is
 // folded before the comparison, so a re-wrapped line is not a difference.
-function writeOnePath(dir, name, closing) {
+function writeSkill(dir, name, lines) {
   fs.mkdirSync(path.join(dir, 'skills', name), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'skills', name, 'SKILL.md'), [
-    '# ' + name, '',
+  fs.writeFileSync(path.join(dir, 'skills', name, 'SKILL.md'), ['# ' + name, ''].concat(lines, ['']).join('\n'));
+}
+
+const NEXT_BULLET = '- **No fallback path.** Never the working directory.';
+
+function writeOnePath(dir, name, closing, next = NEXT_BULLET) {
+  writeSkill(dir, name, [
     '- **One path, never a search.** `<plugin>` is two directories up from this',
     '  file; resolve every script this skill names against that root and nowhere',
     '  else. ' + closing,
-    '- **No fallback path.** Never the working directory.', '',
-  ].join('\n'));
+    next,
+  ]);
 }
 
 test('a SKILL.md whose One path bullet differs by a word is named and the run fails; three alike are not', () => {
@@ -141,4 +146,27 @@ test('a SKILL.md whose One path bullet differs by a word is named and the run fa
   const { out, code } = runCli(dir);
   assert.equal(code, 1);
   assert.match(out, /^one-path: skills\/c\/SKILL\.md:3  differs from the 2 that agree$/m);
+});
+
+test('a re-wrapped One path bullet, same words and different line breaks, is not a difference', () => {
+  const dir = tmp('fankeel-skillscli-');
+  nameEveryCoreScript(dir);
+  const closing = 'One exception, and it is a different root.';
+  for (const name of ['a', 'b']) writeOnePath(dir, name, closing);
+  writeSkill(dir, 'c', [
+    '- **One path, never a search.** `<plugin>` is two directories up from this file;',
+    '    resolve every script this skill names against that root and nowhere else.',
+    '        ' + closing,
+    NEXT_BULLET,
+  ]);
+  assert.deepEqual(run(dir).findings.filter((f) => f.tag === 'one-path'), []);
+});
+
+test('a One path bullet is cut at the next bullet, so a difference after it is not counted', () => {
+  const dir = tmp('fankeel-skillscli-');
+  nameEveryCoreScript(dir);
+  const closing = 'One exception, and it is a different root.';
+  for (const name of ['a', 'b']) writeOnePath(dir, name, closing);
+  writeOnePath(dir, 'c', closing, '- **No fallback path.** Never the working folder.');
+  assert.deepEqual(run(dir).findings.filter((f) => f.tag === 'one-path'), []);
 });
