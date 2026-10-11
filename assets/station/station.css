@@ -2050,3 +2050,68 @@ a.td-rf:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-rad
 :root[data-style=keel] .langpop>* i{font:600 11.5px var(--f-mono);font-style:normal;color:var(--muted)}
 :root[data-style=keel] .langpop>*[aria-pressed="true"] i{color:var(--keel-deep)}
 @media (prefers-reduced-motion:reduce){:root[data-style=keel] .langsw .langbtn .chev{transition:none}}
+
+/* 「對話」分頁（#/s/<id>/talk）：顏色、字型、圓角全部用上面的 token。 */
+.tkc{margin:0;font-size:13px;line-height:1.7;color:var(--ink2)}
+.tkc b{font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.tkc code,.tk code,.tkmiss code{font:12px var(--f-mono)}
+.tkc .sep,.tk .sep{font-style:normal;color:var(--faint);margin:0 7px}
+.tkc .out{color:var(--muted)}
+
+/* 一輪一列：時間｜誰｜全文。列與列之間一條細線，不裝盒。 */
+.tk{list-style:none;margin:14px 0 0;padding:0;--gut:92px;--who:60px}
+.tk>li{display:grid;grid-template-columns:var(--gut) var(--who) minmax(0,1fr);gap:0 10px;align-items:start;
+  padding:9px 0;border-top:1px solid var(--rule)}
+.tk .tm{margin-top:7px;font:12px/22px var(--f-mono);font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+.tk .who{justify-self:start;margin-top:7px;font:600 12px/20px var(--f-ui);padding:0 7px;border:1px solid transparent;
+  border-radius:4px;white-space:nowrap}
+.tk .tx{min-width:0;padding:7px 12px;font-size:13.5px;line-height:1.65;color:var(--ink);overflow-wrap:anywhere}
+/* 原文照寫：換行保留，markdown 記號不轉換。 */
+.tk .t{max-width:46em;white-space:pre-wrap}
+.tk .t+.code,.tk .code+.t{margin-top:10px}
+.tk .code{margin:0;max-width:64em;padding:10px 12px;overflow-x:auto;border-radius:var(--r-sm);background:var(--inset);
+  font:12px/1.6 var(--f-mono);color:var(--ink);white-space:pre;tab-size:4}
+
+/* 使用者：實心標籤，全文放在凹下去的底上，寬度跟著字走。
+   Claude：空心標籤，全文直接落在面板上。標籤文字、標籤形狀、有沒有底，三樣都不同。 */
+.tk-user .who{background:var(--ink);color:var(--panel)}
+.tk-user .tx{justify-self:start;max-width:calc(46em + 24px);background:var(--inset);border-radius:var(--r-sm);font-weight:500}
+.tk-claude .who{border-color:var(--rule2);color:var(--ink2)}
+
+.tk>.tk-int{padding:3px 0}
+.tk-int .who{background:var(--stale-bg);color:var(--stale-ink)}
+.tk-int .tx{font-size:13px;color:var(--ink2)}
+.tk-int code{margin-left:10px;color:var(--muted)}
+
+/* compact：一條橫過對話的虛線，說這裡之前的 context 被壓縮過。
+   摘要還沒載進來時只有這條線（.cutbar），沒有「看摘要」。 */
+.tk>.tk-cut{grid-template-columns:var(--gut) minmax(0,1fr);padding:6px 0}
+.tk-cut .tm{margin-top:6px}
+.cut>summary,.cut>.cutbar{display:flex;align-items:center;gap:10px;min-height:34px;font-size:13px;color:var(--ink2)}
+.cut>summary{cursor:pointer;list-style:none}
+.cut>summary::-webkit-details-marker{display:none}
+.cut .ck{font:600 12px/20px var(--f-mono);padding:0 7px;border-radius:4px;border:1px dashed var(--muted);color:var(--ink)}
+.cut .cm b{font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.cut .ln{flex:1;min-width:24px;border-top:1px dashed var(--muted)}
+.cut .ct{display:inline-flex;align-items:center;gap:7px;color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+.cut .ct::before{content:"";width:6px;height:6px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;
+  transform:rotate(-45deg)}
+.cut[open] .ct::before{transform:rotate(45deg) translate(-1px,-1px)}
+.cut .c,.cut[open] .o{display:none}
+.cut[open] .c{display:inline}
+.cut .sum{margin:4px 0 8px;padding:2px 0 2px 14px;border-left:2px solid var(--rule2)}
+.cut .sl{font-size:12px;color:var(--muted);margin-bottom:4px}
+.cut .sum .t{font-size:13px;line-height:1.65;color:var(--ink2)}
+
+.tkmore{display:flex;align-items:center;justify-content:center;gap:14px;padding:16px 0 2px;border-top:1px solid var(--rule);
+  font-size:13px;color:var(--ink2)}
+.tkmore b{font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+
+.tkmiss{margin-top:0}
+.tkmiss .es{max-width:46em}
+
+/* 窄：時間欄收窄，日期與時間疊成兩行。 */
+@media (max-width:1100px){
+  .tk{--gut:46px}
+  .tk .tm{white-space:normal;line-height:16px}
+}

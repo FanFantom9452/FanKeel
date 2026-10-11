@@ -1335,6 +1335,147 @@
         }).join('') + '</nav>';
     }
 
+    // The 對話 tab. The turns come from `station/talk/<id>` (lib/conversation.js
+    // behind scripts/station.js), 100 at a time, and the caller keeps them as
+    // `{ turns, total, counts, skipped, state }`; everything here is a function
+    // of that, so a redraw fetches nothing. `state` is '' when there is nothing
+    // to say, `loading`, `failed`, `missing` (the transcript is not on this
+    // machine) or `static` (a written copy has no server to ask).
+    var TALK_PAGE = 100;
+    // `MM-DD HH:MM` in the reader's own time zone.
+    function talkStamp(at) {
+        var ms = typeof at === 'string' ? Date.parse(at) : NaN;
+        if (!isFinite(ms)) return '<time class="tm">—</time>';
+        var d = new Date(ms), two = function (n) { return String(n).padStart(2, '0'); };
+        return '<time class="tm" datetime="' + esc(at) + '">' + two(d.getMonth() + 1) + '-' + two(d.getDate()) + ' ' + two(d.getHours()) + ':' + two(d.getMinutes()) + '</time>';
+    }
+    // A turn's text as typed: line breaks kept (`.t` is pre-wrap) and no markdown
+    // converted. The one exception is a run between two ``` lines, which is a
+    // monospace block with the fence lines dropped; a fence never closed runs to
+    // the end of the text.
+    function talkBody(text) {
+        var out = [], run = [], code = null;
+        var flush = function () {
+            if (code !== null) {
+                out.push('<pre class="code"' + (code ? ' aria-label="' + loc('ses.talkCode', '程式碼區塊') + ' ' + esc(code) + '"' : '') + '>' + esc(run.join('\n')) + '</pre>');
+            } else {
+                var s = run.join('\n').replace(/^\n+|\n+$/g, '');
+                if (s) out.push('<div class="t">' + esc(s) + '</div>');
+            }
+            run = [];
+        };
+        String(text === null || text === undefined ? '' : text).split(/\r?\n/).forEach(function (line) {
+            if (code === null && /^\s*```/.test(line)) {
+                flush();
+                code = line.replace(/^\s*```/, '').trim().split(/\s+/)[0];
+            } else if (code !== null && /^\s*```\s*$/.test(line)) {
+                flush();
+                code = null;
+            } else {
+                run.push(line);
+            }
+        });
+        flush();
+        return out.join('');
+    }
+    // The line over the turns: the whole conversation's counts, then the lines
+    // the read left out, biggest first, a kind with none left unlisted.
+    function talkCounts(h) {
+        var b = function (n) { return '<b>' + comma(n) + '</b>'; };
+        var left = Object.keys(h.skipped || {}).map(function (k, i) { return { k: k, n: h.skipped[k], i: i }; })
+            .filter(function (e) { return e.n > 0; })
+            .sort(function (a, c) { return c.n - a.n || a.i - c.i; });
+        var parts = [
+            loc('ses.talkUsers', '使用者 {n} 輪', { n: b(h.counts.user) }),
+            loc('ses.talkClaudes', 'Claude {n} 輪', { n: b(h.counts.claude) }),
+            loc('ses.talkCompacts', '{k} {n} 次', { k: '<code>compact</code>', n: b(h.counts.compact) }),
+        ];
+        if (left.length) {
+            parts.push('<span class="out" title="' + loc('ses.talkSkipHint', 'transcript 裡沒有列進對話的行，依種類計數；0 筆的種類不列出') + '">'
+                + loc('ses.talkSkipped', '略過 {list}', { list: left.map(function (e) { return '<code>' + esc(e.k) + '</code> ' + b(e.n); }).join(loc('ses.talkListSep', '、')) }) + '</span>');
+        }
+        return '<p class="tkc" data-block="talk-counts">' + parts.join('<i class="sep">·</i>') + '</p>';
+    }
+    // One user turn, one Claude turn, or the interruption line.
+    function talkRow(t) {
+        if (t.kind === 'interrupt') {
+            return '<li class="tk-int" data-block="talk-turn-interrupt">' + talkStamp(t.at) + '<span class="who">' + loc('ses.talkWhoInt', '中斷') + '</span>'
+                + '<div class="tx"><div class="t">' + loc('ses.talkIntText', '使用者中斷了 Claude 這一輪') + '<code>' + esc(t.text) + '</code></div></div></li>';
+        }
+        var user = t.kind === 'user';
+        return '<li class="' + (user ? 'tk-user' : 'tk-claude') + '" data-block="talk-turn-' + (user ? 'user' : 'claude') + '">' + talkStamp(t.at)
+            + '<span class="who">' + (user ? loc('ses.talkWhoUser', '使用者') : 'Claude') + '</span><div class="tx">' + talkBody(t.text) + '</div></li>';
+    }
+    // A compaction and the summary right after it are one block: the break
+    // with its time, trigger and the context it compacted, the summary shut
+    // until opened. `c` is the compact turn, `sum` the summary turn, either
+    // may be missing — a summary not loaded yet draws the break alone — and
+    // `i` is where the block starts, which a redraw finds an opened one by.
+    function talkCut(c, sum, i) {
+        var meta = [];
+        if (c && c.trigger) meta.push('<code>' + esc(c.trigger) + '</code>');
+        if (c && c.preTokens !== null && c.preTokens !== undefined) meta.push(loc('ses.talkPreTokens', '壓縮前 context {n}', { n: '<b>' + tokens(c.preTokens) + '</b>' }));
+        var head = '<code class="ck">compact</code><span class="cm">' + meta.join('<i class="sep">·</i>') + '</span><i class="ln" aria-hidden="true"></i>';
+        var at = talkStamp((c || sum).at);
+        if (!sum) return '<li class="tk-cut" data-block="talk-compact">' + at + '<div class="cut"><div class="cutbar">' + head + '</div></div></li>';
+        return '<li class="tk-cut" data-block="talk-compact">' + at + '<details class="cut" data-key="talk-cut-' + i + '"><summary>' + head
+            + '<span class="ct"><span class="o">' + loc('ses.talkSumOpen', '看摘要') + '</span><span class="c">' + loc('ses.talkSumShut', '收起摘要') + '</span></span></summary>'
+            + '<div class="sum"><div class="sl">' + loc('ses.talkSumNote', 'Claude Code 在壓縮時寫的摘要，之後的對話從這段接下去') + '</div>'
+            + '<div class="t">' + esc(sum.text) + '</div></div></details></li>';
+    }
+    function talkRows(turns) {
+        var out = [];
+        for (var i = 0; i < turns.length; i++) {
+            var t = turns[i];
+            if (t.kind === 'compact') {
+                var next = turns[i + 1];
+                if (next && next.kind === 'summary') {
+                    out.push(talkCut(t, next, i));
+                    i += 1;
+                } else {
+                    out.push(talkCut(t, null, i));
+                }
+            } else if (t.kind === 'summary') {
+                out.push(talkCut(null, t, i));
+            } else {
+                out.push(talkRow(t));
+            }
+        }
+        return out.join('');
+    }
+    function talkNote(title, why) {
+        return '<div class="emptyd tkmiss" data-block="talk-missing"><p class="et">' + title + '</p><p class="es">' + why + '</p></div>';
+    }
+    // `held` is what the caller kept for this session, or nothing yet.
+    function talkHtml(id, held) {
+        var h = held || { turns: [], total: null, state: '' };
+        var loading = loc('ses.talkLoading', '讀取中…'), failed = loc('ses.talkFailed', '讀不到對話'), retry = loc('ses.talkRetry', '重試');
+        var btn = function (text) { return '<button type="button" class="ctl" data-talk="' + esc(id) + '">' + text + '</button>'; };
+        if (h.state === 'missing') {
+            return talkNote(loc('ses.talkMissing', '這台機器上已經沒有這個 session 的 transcript'),
+                loc('ses.talkMissingWhy', '對話是直接從 transcript 讀出來的，檔案不在就沒有內容可以列。之後的 session 想留久一點，把 {file} 的 {key} 調大。',
+                    { file: '<code>~/.claude/settings.json</code>', key: '<code>cleanupPeriodDays</code>' }));
+        }
+        if (h.state === 'static') {
+            return talkNote(loc('ses.talkStatic', '要從 serve 開的頁面才讀得到對話'),
+                loc('ses.talkStaticWhy', '對話不寫進這份檔案，全文只留在這台機器上，由 serve 讀 transcript 回答。用 {cmd} 開站，再回到這個分頁。',
+                    { cmd: '<code>node scripts/station.js serve --open</code>' }));
+        }
+        if (h.total === null) {
+            return h.state === 'failed'
+                ? '<div class="tkmore" data-block="talk-more"><span>' + failed + '</span>' + btn(retry) + '</div>'
+                : '<p class="tally">' + loading + '</p>';
+        }
+        var n = h.turns.length;
+        var tail = h.state === 'loading' ? '<span>' + loading + '</span>'
+            : h.state === 'failed' ? '<span>' + failed + '</span>' + btn(retry)
+                : n < h.total ? btn(loc('ses.talkMore', '再載入 {n} 輪', { n: TALK_PAGE })) : '';
+        if (h.total === 0) return talkCounts(h) + '<p class="tally">' + loc('ses.talkEmpty', 'transcript 裡沒有可列的對話') + '</p>';
+        return talkCounts(h) + '<ol class="tk" aria-label="' + loc('ses.talkList', '對話，依時間順序') + '">' + talkRows(h.turns) + '</ol>'
+            + '<div class="tkmore" data-block="talk-more"><span>' + loc('ses.talkShown', '已顯示 {n} / {m} 輪', { n: '<b>' + comma(n) + '</b>', m: '<b>' + comma(h.total) + '</b>' })
+            + '</span>' + tail + '</div>';
+    }
+
     // ---- the live page --------------------------------------------------------
     // A time to the second, for when the page last re-read and when a step began.
     function clockSec(ms) {
@@ -2541,7 +2682,7 @@
             dayStart: dayStart, projectHead: projectHead, sessionPoints: sessionPoints, projectChart: projectChart,
             projectSessionsHtml: projectSessionsHtml,
             timelineModel: timelineModel, timelineSvg: timelineSvg, costModel: costModel, costHtml: costHtml,
-            sessionHeadHtml: sessionHeadHtml, tabsHtml: tabsHtml, serveLost: serveLost,
+            sessionHeadHtml: sessionHeadHtml, tabsHtml: tabsHtml, serveLost: serveLost, talkHtml: talkHtml, talkBody: talkBody,
             heroEyebrow: heroEyebrow, effortChip: effortChip, docsCardHtml: docsCardHtml, docsSearchHtml: docsSearchHtml, tourPage: tourPage,
             railHtml: railHtml, liveTag: liveTag,
             navHtml: navHtml, navCounts: navCounts, recentRows: recentRows, nowHtml: nowHtml,
