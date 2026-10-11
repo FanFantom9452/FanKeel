@@ -22,7 +22,9 @@ const other = { id: 'aaaaaaaa-0000-4000-8000-000000000001', entry: { task: '別�
 const apart = { id: 'bbbbbbbb-0000-4000-8000-000000000002', entry: { task: '不相干', stage: 'plan', active: true, claims: ['lib/x.js'] } };
 const width = (s) => [...s].length;
 const rows = (m, e, others, gate, cols) => m.bandRows(e, others || [], gate === undefined ? null : gate, cols || 90, NOW);
-const used = (segs) => segs.reduce((n, seg) => n + (seg.gap || 0) + width(seg.text), 0);
+const used = (segs, w) => segs.reduce((n, seg) => n + (seg.gap || 0) + (w || width)(seg.text), 0);
+// The width bandRows itself cuts with: a CJK cell is two columns there, one in `width` above.
+const real = async () => (await import(pathToFileURL(path.join(__dirname, '..', 'hooks', 'pane-status.ts')).href)).width;
 
 test('the first row names the stage and draws the route as dots in its colour', async () => {
     const m = await load();
@@ -115,11 +117,12 @@ test('no entry is no band', async () => {
 
 test('neither row is wider than the band, and a long title, next or question is cut', async () => {
     const m = await load();
+    const w = await real();
     const long = Object.assign({}, entry, { task: '標題'.repeat(80), next: '下一步'.repeat(80) });
     for (const cols of [60, 79, 95]) {
         for (const gate of [null, '問題'.repeat(80)]) {
             const band = rows(m, long, [other], gate, cols);
-            for (const row of band) assert.ok(used(row) <= cols, cols + ' < ' + used(row));
+            for (const row of band) assert.ok(used(row, w) <= cols, cols + ' < ' + used(row, w));
             assert.ok(band[0][band[0].length - 1].text.endsWith('…'));
             assert.ok(band[1][2].text.endsWith('…'));
         }
