@@ -1,16 +1,23 @@
 import type { Register, EngineInterface } from 'claude-code'
-import { parentOf, isActive, SESSION_ID } from './compact.ts'
-import { statusRows, cut } from './pane-status.ts'
-import type { Entry, Other } from './pane-status.ts'
+import { parentOf, isActive, SESSION_ID, HARD } from './compact.ts'
+import { statusRows, width, cut, ledgerDone, planTotal } from './pane-status.ts'
+import type { Entry, Other, Context, PlanCount, Seg as StatusSeg } from './pane-status.ts'
 import { taskDir, pendingName, answerName, parsePending, gateRows, answerText, HANDOFF } from './pane-gate.ts'
 import type { Pending } from './pane-gate.ts'
+import { bandRows, stageColor, GUARD, FLAG, TITLE, WHERE, HOLLOW, INK } from './pane-band.ts'
+import type { Seg as BandSeg } from './pane-band.ts'
 
-// The fankeel Pane: this session's task on top of whatever gate is waiting.
-// docs/90-agent/plans/2026-10-11-fankeel-pane-design.md. Nothing here runs
-// unless the module was enabled, and nothing outside it depends on it.
+// The fankeel mod's two drawings: two rows above the prompt for what is always
+// wanted, and the Pane for what is looked up, with whatever gate is waiting on
+// top of it. docs/90-agent/plans/2026-10-11-fankeel-pane-design.md, section 6
+// over sections 1 to 5. Nothing here runs unless the module was enabled, and
+// nothing outside it depends on it.
 export const PANE = 'fankeel'
 export const COMMAND = 'fankeel-pane'
 export const POLL_MS = 250
+
+// The surfaces measured to draw a Pane. Remote Control attaches none of them, and the mobile app draws no mod.
+const PLACES = ['terminal', 'desktop']
 
 type Seen = {
   id: string
@@ -18,7 +25,18 @@ type Seen = {
   others: Other[]
   pending: Pending | null
   pendingFile: string | null
+  context: Context | null
+  plan: PlanCount | null
+  // The ledger's text, kept only so a line added to it redraws.
+  ledger: string
 }
+
+// What a file last parsed to, and the time and size it had then: the tick runs
+// four times a second in every session that enabled the mod, and a file that
+// has not moved is not read again.
+type Cache = Map<string, { stamp: string; value: unknown }>
+
+const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, pendingFile: null, context: null, plan: null, ledger: '' })
 
 async function readJson($: EngineInterface, file: string): Promise<Entry | null> {
   try {
@@ -45,23 +63,76 @@ async function findEntry($: EngineInterface, id: string): Promise<{ entry: Entry
   return null
 }
 
-// Everything the pane draws, read fresh: this session's entry, the other
-// active entries beside it, and the gate hooks/gate.js is holding, if any.
-// The neighbours are read only while the pane is placed: this runs every tick
-// of every session that enabled the mod.
-async function look($: EngineInterface, placed: boolean): Promise<Seen> {
+// The tokens in play and the count hooks/compact.ts compacts at: its
+// `threshold`, written again for the same reason as findEntry. Null while the
+// engine has no count, or cannot be asked.
+async function contextOf($: EngineInterface): Promise<Context | null> {
+  try {
+    const { context } = await $.session.usage()
+    if (typeof context.tokens !== 'number') return null
+    const raw = Number(await $.env.get('FANKEEL_COMPACT_AT'))
+    return { tokens: context.tokens, at: Number.isFinite(raw) && raw > 0 ? raw : HARD }
+  } catch {
+    return null
+  }
+}
+
+// The newest plan this task claimed that has a build ledger of its own: the
+// ledger is where lib/ledger.js ledgerPath puts it, and ledgerDone refuses one
+// whose first line names another plan. The total is the plan's own headings.
+async function planOf($: EngineInterface, root: string, entry: Entry, cache: Cache): Promise<{ plan: PlanCount | null; ledger: string }> {
+  const claims = Array.isArray(entry.claims) ? entry.claims : []
+  for (let i = claims.length - 1; i >= 0; i--) {
+    const claim = claims[i]
+    if (typeof claim !== 'string' || !claim.endsWith('.md')) continue
+    const name = claim.slice(Math.max(claim.lastIndexOf('/'), claim.lastIndexOf('\\')) + 1, -3)
+    const file = `${root}/.fankeel/build/${name}/progress.md`
+    if (!(await $.fs.exists(file))) continue
+    const ledger = String(await $.fs.read(file))
+    const done = ledgerDone(ledger, claim)
+    if (done === null) continue
+    let total = 0
+    try {
+      const planFile = `${root}/${claim}`
+      const stat = await $.fs.stat(planFile)
+      const stamp = `${stat.mtimeMs}:${stat.size}`
+      let hit = cache.get(planFile)
+      if (!hit || hit.stamp !== stamp) {
+        hit = { stamp, value: planTotal(String(await $.fs.read(planFile))) }
+        cache.set(planFile, hit)
+      }
+      total = hit.value as number
+    } catch {
+      total = 0
+    }
+    return { plan: total > 0 ? { name, done, total } : null, ledger }
+  }
+  return { plan: null, ledger: '' }
+}
+
+// Everything both drawings show, read fresh: this session's entry, the other
+// active entries beside it, the gate hooks/gate.js is holding, the context
+// count and the plan's ledger. The neighbours are read whether or not the
+// Pane is up, because the band's flag needs them.
+async function look($: EngineInterface, cache: Cache): Promise<Seen> {
   const id = await $.session.id()
-  const none: Seen = { id, entry: null, others: [], pending: null, pendingFile: null }
-  if (!SESSION_ID.test(id)) return none
+  if (!SESSION_ID.test(id)) return blank(id)
   const found = await findEntry($, id)
-  if (!found || !isActive(found.entry)) return none
+  if (!found || !isActive(found.entry)) return blank(id)
   const entry = found.entry as Entry
 
   const others: Other[] = []
   const sessions = `${found.root}/.fankeel/sessions`
-  for (const file of placed ? await $.fs.list(sessions) : []) {
+  for (const file of await $.fs.list(sessions)) {
     if (!file.name.endsWith('.json') || file.name === `${id}.json`) continue
-    const other = await readJson($, `${sessions}/${file.name}`)
+    const path = `${sessions}/${file.name}`
+    const stamp = `${file.mtimeMs}:${file.size}`
+    let hit = cache.get(path)
+    if (!hit || hit.stamp !== stamp) {
+      hit = { stamp, value: await readJson($, path) }
+      cache.set(path, hit)
+    }
+    const other = hit.value as Entry | null
     if (other && isActive(other)) others.push({ id: file.name.slice(0, -5), entry: other })
   }
 
@@ -76,7 +147,10 @@ async function look($: EngineInterface, placed: boolean): Promise<Seen> {
       if (!pending) pendingFile = null
     }
   }
-  return { id, entry, others, pending, pendingFile }
+
+  const context = await contextOf($)
+  const { plan, ledger } = await planOf($, found.root, entry, cache)
+  return { id, entry, others, pending, pendingFile, context, plan, ledger }
 }
 
 type State = {
@@ -85,6 +159,7 @@ type State = {
   // Whether the pane up now is one the mod opened for a gate, and so it's to close.
   mine: boolean
   busy: boolean
+  cache: Cache
 }
 
 // An unplaced pane (narrow terminal) is registered but not drawn: not open.
@@ -97,11 +172,12 @@ async function tick($: EngineInterface, state: State): Promise<void> {
   if (state.busy) return
   state.busy = true
   try {
-    const placed = await isOpen($)
-    const next = await look($, placed)
+    const next = await look($, state.cache)
     const was = state.seen.pendingFile
-    const now = JSON.stringify([next.entry, next.others, next.pending && next.pending.questions, next.pendingFile])
-    // Asked again here, not `placed`: /fankeel-pane may have opened or closed the pane while `look` read files.
+    // The minute is in the key so the band's minutes and the neighbours' ages move while nothing else does.
+    const minute = next.entry ? Math.floor((await $.clock.now()) / 60000) : 0
+    const now = JSON.stringify([next.entry, next.others, next.pending && next.pending.questions, next.pendingFile, next.context, next.plan, next.ledger, minute])
+    // Asked here, after `look`: /fankeel-pane may have opened or closed the pane while it read files.
     if (next.pendingFile && next.pendingFile !== was && !(await isOpen($))) {
       const opened = await $.ui.open({ id: PANE, title: 'fankeel' })
       // Its pane either way, placed now or when the terminal widens.
@@ -142,10 +218,10 @@ async function answer($: EngineInterface, pending: Pending, pendingFile: string,
 }
 
 export const register: Register = (on) => {
-  const state: State = { seen: { id: '', entry: null, others: [], pending: null, pendingFile: null }, print: '', mine: false, busy: false }
+  const state: State = { seen: blank(''), print: '', mine: false, busy: false, cache: new Map() }
 
   on('session.start', async ($, e, next) => {
-    await $.command.register({ name: COMMAND, description: 'fankeel 面板：這個 session 的任務、階段與等待中的 gate' })
+    await $.command.register({ name: COMMAND, description: 'fankeel 面板：等待中的 gate、context、plan 進度、notes、其他 session 與碰過的檔案' })
     $.clock.every(POLL_MS, () => tick($, state))
     return next(e)
   })
@@ -158,31 +234,66 @@ export const register: Register = (on) => {
     }
     const opened = await $.ui.open({ id: PANE, title: 'fankeel' })
     await tick($, state)
-    return { text: opened.isPlaced ? 'fankeel 面板已開啟。' : 'fankeel 面板開不了：終端太窄。' }
+    if (opened.isPlaced) return { text: 'fankeel 面板已開啟。' }
+    const surfaces = await $.session.surfaces()
+    return {
+      text: surfaces.some((surface) => PLACES.includes(surface))
+        ? 'fankeel 面板開不了：終端太窄。'
+        : 'fankeel 面板開不了：這裡畫不了面板。Remote Control 與手機不畫 mod，請在終端或 Claude Desktop 開。',
+    }
+  })
+
+  // Two rows while the session owns a task; otherwise the band is the next hook's, and with none it is not drawn.
+  on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
+    const seen = state.seen
+    const props = (e.props ?? {}) as { hasSurvey?: boolean; bodyColumns?: number }
+    if (!seen.entry || props.hasSurvey) return next(e)
+    const asked = seen.pending ? seen.pending.questions[0] : null
+    const gate = seen.pending ? String((asked && asked.question) ?? '') : null
+    // 5: the cells the engine keeps at the band's right end, where no surface has measured the body.
+    const cols = Math.max(20, props.bodyColumns ?? (e.viewport?.columns ?? 85) - 5)
+    const rows = bandRows(seen.entry, seen.others, gate, cols, Date.now(), width, cut)
+    if (!rows) return next(e)
+    const { Box, Text } = $.ui.resolve(e)
+    const cell = (seg: BandSeg) => {
+      const text = h(Text, { color: seg.color, backgroundColor: seg.backgroundColor, bold: seg.bold, wrap: 'truncate-end' }, seg.text)
+      return seg.gap ? [h(Text, {}, ' '.repeat(seg.gap)), text] : [text]
+    }
+    return h(Box, { flexDirection: 'column' }, ...rows.map((row) => h(Box, { flexDirection: 'row' }, ...row.flatMap(cell))))
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
     const { Box, Text, Button } = $.ui.resolve(e)
-    const cols = Math.max(20, (e.viewport?.columns ?? 44) - 2)
-    const room = Math.max(8, (e.viewport?.rows ?? 24) - 4)
-    const pending = state.seen.pending
-    const pendingFile = state.seen.pendingFile
-    // 7: the status rows that never drop (head up to 3, route 2, foot 2).
-    const gate = pending && pendingFile ? gateRows(pending, cols, room - 7, cut) : []
-    const status = statusRows(state.seen.id, state.seen.entry, state.seen.others, cols, room - gate.length, Date.now())
+    const seen = state.seen
+    const props = (e.props ?? {}) as { bodyColumns?: number; scroll?: { bodyRows?: number } }
+    // The body's own cells where the surface measured them (41 by 32 on Claude Desktop); the viewport is the whole surface.
+    const cols = Math.max(20, props.bodyColumns ?? (e.viewport?.columns ?? 44) - 2)
+    const room = Math.max(1, props.scroll?.bodyRows ?? (e.viewport?.rows ?? 24) - 4)
+    const pending = seen.pending
+    const pendingFile = seen.pendingFile
+    // The gate is drawn whole and the Pane scrolls over it; the status blocks take the rows it leaves.
+    const gate = pending && pendingFile ? gateRows(pending, cols, width) : []
+    const status = statusRows(seen.id, seen.entry, seen.others, seen.context, seen.plan, cols, room - gate.length - (gate.length ? 1 : 0), Date.now())
+    const stage = stageColor(String(seen.entry?.stage ?? ''))
+    const tones: Record<string, string | undefined> = { head: stage, plain: undefined, text: TITLE, dim: WHERE, amber: GUARD, clash: FLAG, hollow: HOLLOW }
+    const gap = () => h(Text, {}, ' ')
+    const piece = (seg: StatusSeg) => h(Text, { color: tones[seg.tone], bold: seg.bold, wrap: 'truncate-end' }, seg.text)
 
     const drawn = [
-      ...gate.map((row) =>
-        row.press === undefined || !pending || !pendingFile
-          ? h(Text, { bold: row.bold, dimColor: row.dim, wrap: 'truncate-end' }, row.text)
-          : h(Button, {
-              key: `gate:${row.hotkey}`,
-              hotkey: row.hotkey,
-              plain: true,
-              onPress: () => answer($, pending, pendingFile, row.press === '' ? HANDOFF : answerText(pending, row.press as string)),
-            }, row.text),
-      ),
-      ...status.map((row) => h(Text, { bold: row.bold, dimColor: row.dim, color: row.warn ? 'yellow' : undefined, wrap: 'truncate-end' }, row.text)),
+      ...gate.map((row) => {
+        if (row.press !== undefined && pending && pendingFile) {
+          return h(Button, {
+            key: `gate:${row.hotkey}`,
+            hotkey: row.hotkey,
+            plain: true,
+            onPress: () => answer($, pending, pendingFile, row.press === '' ? HANDOFF : answerText(pending, row.press as string)),
+          }, row.text)
+        }
+        if (row.badge) return h(Text, { backgroundColor: GUARD, color: INK, bold: true }, ` ${row.text} `)
+        return h(Text, { bold: row.bold, color: row.dim ? WHERE : undefined, wrap: 'truncate-end' }, row.text)
+      }),
+      ...(gate.length && status.length ? [gap()] : []),
+      ...status.map((row) => (row.segs.length === 0 ? gap() : row.segs.length === 1 ? piece(row.segs[0]) : h(Box, { flexDirection: 'row', gap: 1 }, ...row.segs.map(piece)))),
     ]
     return h(Box, { flexDirection: 'column' }, ...drawn)
   })
