@@ -100,6 +100,16 @@ test('ui.render draws the task from the registry file', async () => {
     assert.equal(buttons(tree).length, 0);
 });
 
+test('a session root ending in a backslash still finds the registry file', async () => {
+    const hooks = await wired();
+    const { $, log } = fake({ files: entryFile(live) });
+    $.session.root = async () => ROOT + '\\';
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const tree = await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } });
+    assert.match(texts(tree).join('\n'), /demo task/);
+});
+
 test('ui.render with no active entry draws the empty block', async () => {
     const hooks = await wired();
     const { $, log } = fake({ files: entryFile(Object.assign({}, live, { active: false })) });

@@ -34,7 +34,7 @@ async function readJson($: EngineInterface, file: string): Promise<Entry | null>
 async function findEntry($: EngineInterface, id: string): Promise<{ entry: Entry; root: string } | null> {
   let dir: string | null = await $.session.root()
   while (dir) {
-    const root = dir.replace(/[\/]+$/, '')
+    const root = dir.replace(/[\\/]+$/, '')
     const file = `${root}/.fankeel/sessions/${id}.json`
     if (await $.fs.exists(file)) {
       const entry = await readJson($, file)
