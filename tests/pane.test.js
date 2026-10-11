@@ -128,7 +128,7 @@ test('the band above the prompt draws the stage, the dots, the guard and the tas
     const tree = await hooks.band($, BAND, passed);
     assert.deepEqual(bandLines(tree), ['▌FANKEEL DESIGN  ●●○  ⚿ deny  demo task', '▌next  write the plan  1 檔  2 of 3']);
     assert.deepEqual(leaves(tree).filter((n) => n.props.color === '#5f5fd7').map((n) => n.children.join('')), ['▌', 'FANKEEL DESIGN', '●●', '▌']);
-    assert.equal(log.opened.length, 0);
+    assert.equal(log.opened.length, 1, 'drawing the band opened a pane beyond the one the task opened');
 });
 
 test('a session root ending in a backslash still finds the registry file', async () => {
@@ -253,12 +253,17 @@ test('the terminal button writes the handoff', async () => {
 test('a pane the mod opened for a gate closes with it; one the user opened stays', async () => {
     const hooks = await wired();
     const files = Object.assign(entryFile(live), { [DIR + '/design-pending.json']: JSON.stringify(gate) });
-    const mine = fake({ files });
+    // The task's own pane is the user's to close; the gate that comes after opens it again.
+    const mine = fake({ files: entryFile(live) });
     await hooks['session.start'](mine.$, {}, async () => ({}));
     await mine.log.ticks[0].fn();
+    await hooks['command.run'](mine.$, { command: 'fankeel-pane', args: '' });
+    mine.store[DIR + '/design-pending.json'] = JSON.stringify(gate);
+    await mine.log.ticks[0].fn();
+    assert.equal(mine.log.opened.length, 2, 'the gate got no pane after the user closed the task\'s');
     delete mine.store[DIR + '/design-pending.json'];
     await mine.log.ticks[0].fn();
-    assert.deepEqual(mine.log.closed.map((p) => p.id), ['fankeel']);
+    assert.equal(mine.log.closed.length, 2, 'the pane the gate opened stayed up after it');
 
     const hooks2 = await wired();
     const theirs = fake({ files });
@@ -307,9 +312,10 @@ test('narrow terminal: a gate gives one toast, and /fankeel-pane opens again ins
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
     assert.equal(log.toasts.length, 1);
+    const before = log.opened.length;
     const reply = await hooks['command.run']($, { command: 'fankeel-pane', args: '' });
     assert.deepEqual(log.closed, []);
-    assert.equal(log.opened.length, 2);
+    assert.equal(log.opened.length, before + 1);
     assert.doesNotMatch(reply.text, /已關閉/);
 });
 
@@ -326,16 +332,18 @@ test('narrow terminal: the unplaced pane the mod opened for a gate is closed whe
 
 test('a tick whose ui.open rejected is tried again, the gate still new', async () => {
     const hooks = await wired();
-    const files = Object.assign(entryFile(live), { [DIR + '/design-pending.json']: JSON.stringify(gate) });
-    const { $, log } = fake({ files });
+    const { $, log, store } = fake({ files: entryFile(live) });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    await hooks['command.run']($, { command: 'fankeel-pane', args: '' });
+    store[DIR + '/design-pending.json'] = JSON.stringify(gate);
     const open = $.ui.open;
     let calls = 0;
     $.ui.open = async (p) => { calls += 1; if (calls === 1) throw new Error('busy'); return open(p); };
-    await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
-    assert.deepEqual(log.opened, []);
+    assert.equal(log.opened.length, 1);
     await log.ticks[0].fn();
-    assert.deepEqual(log.opened.map((p) => p.id), ['fankeel']);
+    assert.equal(log.opened.length, 2);
 });
 
 test('a press whose write fails says so in a toast', async () => {
@@ -382,9 +390,11 @@ test('neighbours are read with the pane closed, for the band, and a file that ha
     const { $, log, store, mtimes } = fake({ files: Object.assign(entryFile(live), { [OTHER]: JSON.stringify(other) }) });
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
+    await hooks['command.run']($, { command: 'fankeel-pane', args: '' });
     await log.ticks[0].fn();
     await log.ticks[0].fn();
-    assert.deepEqual(log.opened, []);
+    assert.equal(log.opened.length, 1, 'only the pane the task opened, and the user closed');
+    assert.equal(log.closed.length, 1);
     assert.equal(log.reads.filter((p) => p === OTHER).length, 1, 'an unchanged neighbour was read again');
     assert.match(bandLines(await hooks.band($, BAND, passed))[0], /⚑1/);
     const before = log.invalidated;
@@ -644,4 +654,97 @@ test('a new minute redraws, so the band\'s minutes and the neighbours\' ages mov
     log.now += 60000;
     await log.ticks[0].fn();
     assert.equal(log.invalidated, after + 1);
+});
+
+const command = (hooks, $) => hooks['command.run']($, { command: 'fankeel-pane', args: '' });
+const SESSION = ROOT + '/.fankeel/sessions/' + ID + '.json';
+
+test('a session that comes to own a task has its pane opened, once', async () => {
+    for (const placed of [true, false]) {
+        const hooks = await wired();
+        const { $, log } = fake({ files: entryFile(live), placed });
+        await hooks['session.start']($, {}, async () => ({}));
+        assert.equal(log.opened.length, 0, 'the pane opened before any tick');
+        await log.ticks[0].fn();
+        assert.deepEqual(log.opened, [{ id: 'fankeel', title: 'fankeel' }]);
+        await log.ticks[0].fn();
+        await log.ticks[0].fn();
+        assert.equal(log.opened.length, 1, 'placed ' + placed + ': a later tick opened it again');
+        assert.deepEqual(log.toasts, []);
+    }
+});
+
+test('a pane the user closed with /fankeel-pane is not opened again for the same task', async () => {
+    const hooks = await wired();
+    const { $, log } = fake({ files: entryFile(live) });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    await command(hooks, $);
+    assert.equal(log.closed.length, 1);
+    await log.ticks[0].fn();
+    await log.ticks[0].fn();
+    assert.equal(log.opened.length, 1, 'the task opened the pane the user had closed');
+});
+
+test('a pane opened for the task stays up when a gate comes and goes', async () => {
+    const hooks = await wired();
+    const { $, log, store } = fake({ files: entryFile(live) });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    store[DIR + '/design-pending.json'] = JSON.stringify(gate);
+    await log.ticks[0].fn();
+    assert.equal(log.opened.length, 1, 'the gate opened a pane beside the task\'s');
+    delete store[DIR + '/design-pending.json'];
+    await log.ticks[0].fn();
+    assert.deepEqual(log.closed, [], 'the end of the gate closed the task\'s pane');
+});
+
+test('the task ending closes the pane the mod opened, and leaves one the user opened', async () => {
+    const ended = JSON.stringify(Object.assign({}, live, { active: false }));
+    const hooks = await wired();
+    const mine = fake({ files: entryFile(live) });
+    await hooks['session.start'](mine.$, {}, async () => ({}));
+    await mine.log.ticks[0].fn();
+    mine.store[SESSION] = ended;
+    await mine.log.ticks[0].fn();
+    assert.deepEqual(mine.log.closed.map((p) => p.id), ['fankeel']);
+    await mine.log.ticks[0].fn();
+    assert.equal(mine.log.closed.length, 1, 'closed again on a later tick');
+
+    const hooks2 = await wired();
+    const theirs = fake({ files: entryFile(live) });
+    await hooks2['session.start'](theirs.$, {}, async () => ({}));
+    await theirs.log.ticks[0].fn();
+    await command(hooks2, theirs.$);
+    await command(hooks2, theirs.$);
+    assert.equal(theirs.log.closed.length, 1);
+    theirs.store[SESSION] = ended;
+    await theirs.log.ticks[0].fn();
+    assert.equal(theirs.log.closed.length, 1, 'the end of the task closed a pane the user opened');
+
+    const hooks3 = await wired();
+    const gated = fake({ files: entryFile(live) });
+    await hooks3['session.start'](gated.$, {}, async () => ({}));
+    await gated.log.ticks[0].fn();
+    await command(hooks3, gated.$);
+    gated.store[DIR + '/design-pending.json'] = JSON.stringify(gate);
+    await gated.log.ticks[0].fn();
+    gated.store[SESSION] = ended;
+    await gated.log.ticks[0].fn();
+    assert.equal(gated.log.closed.length, 2, 'the pane a gate opened was left up, or closed twice, when the task ended');
+});
+
+test('an open that rejects on the task edge is tried again on the next tick', async () => {
+    const hooks = await wired();
+    const { $, log } = fake({ files: entryFile(live) });
+    const open = $.ui.open;
+    let calls = 0;
+    $.ui.open = async (p) => { calls += 1; if (calls === 1) throw new Error('busy'); return open(p); };
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    assert.equal(log.opened.length, 0);
+    await log.ticks[0].fn();
+    assert.equal(log.opened.length, 1);
+    await log.ticks[0].fn();
+    assert.equal(log.opened.length, 1);
 });

@@ -9,7 +9,8 @@ import type { Seg as BandSeg } from './pane-band.ts'
 
 // The fankeel mod's two drawings: two rows above the prompt for what is always
 // wanted, and the Pane for what is looked up, with whatever gate is waiting on
-// top of it. docs/90-agent/plans/2026-10-11-fankeel-pane-design.md, section 6
+// top of it. The Pane opens itself while the session owns a task, and again for
+// a gate if the user closed it; /fankeel-pane toggles it. docs/90-agent/plans/2026-10-11-fankeel-pane-design.md, section 6
 // over sections 1 to 5. Nothing here runs unless the module was enabled, and
 // nothing outside it depends on it.
 export const PANE = 'fankeel'
@@ -167,8 +168,8 @@ async function look($: EngineInterface, cache: Cache, logged: Logged): Promise<S
 type State = {
   seen: Seen
   print: string
-  // Whether the pane up now is one the mod opened for a gate, and so it's to close.
-  mine: boolean
+  // Why the pane up now is the mod's, and so when it is the mod's to close: 'task' closes with the task, 'gate' with its gate.
+  mine: false | 'task' | 'gate'
   busy: boolean
   cache: Cache
   logged: Logged
@@ -186,18 +187,28 @@ async function tick($: EngineInterface, state: State): Promise<void> {
   try {
     const next = await look($, state.cache, state.logged)
     const was = state.seen.pendingFile
+    const had = state.seen.entry
     // The minute is in the key so the band's minutes and the neighbours' ages move while nothing else does.
     const minute = next.entry ? Math.floor((await $.clock.now()) / 60000) : 0
     const now = JSON.stringify([next.entry, next.others, next.pending && next.pending.questions, next.pendingFile, next.context, next.plan, minute])
     // Asked here, after `look`: /fankeel-pane may have opened or closed the pane while it read files.
+    // A task appears: the pane opens, once; a pane the user then closes stays closed until a gate comes. No toast: the band shows the task.
+    if (!had && next.entry && !(await isOpen($))) {
+      await $.ui.open({ id: PANE, title: 'fankeel' })
+      state.mine = 'task'
+    }
     if (next.pendingFile && next.pendingFile !== was && !(await isOpen($))) {
       const opened = await $.ui.open({ id: PANE, title: 'fankeel' })
       // Its pane either way, placed now or when the terminal widens.
-      state.mine = true
+      state.mine = 'gate'
       if (!opened.isPlaced) $.ui.toast('fankeel：有一個 gate 在等。/fankeel-pane 開面板，或在終端回答')
     }
-    if (!next.pendingFile && was && state.mine) {
+    if (!next.pendingFile && was && state.mine === 'gate') {
       await $.ui.close({ id: PANE })
+      state.mine = false
+    }
+    if (had && !next.entry && state.mine) {
+      if (await isOpen($)) await $.ui.close({ id: PANE })
       state.mine = false
     }
     // After the open and close: a rejected one leaves `seen` as it was, so the next tick sees the gate as new.
