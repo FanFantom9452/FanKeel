@@ -136,6 +136,7 @@ export function statusRows(
   cols: number,
   room: number,
   now: number,
+  probe: string | null = null,
 ): Row[] {
   const one = (block: string, text: string, tone: Tone): Row => ({ block, segs: [{ text, tone }] })
   if (!entry) {
@@ -217,7 +218,9 @@ export function statusRows(
   const notes = list(entry.notes).slice(-3)
   if (notes.length) blocks.push([head('notes', 'notes'), ...notes.map((note) => one('notes', cut(`· ${note}`, cols), 'text'))])
 
-  blocks.push([one('foot', cut(`${id.slice(0, 8)} · /fankeel-panel 關閉`, cols), 'dim')])
+  // The probe is asked for by hand (hooks/pane.ts probeOf): it is drawn whole, in the block that never drops.
+  const probed = probe ? wrap(probe, cols).map((text) => one('foot', text, 'dim')) : []
+  blocks.push([...probed, one('foot', cut(`${id.slice(0, 8)} · /fankeel-panel 關閉`, cols), 'dim')])
 
   // Every block but the first costs a blank row above it.
   const size = (): number => blocks.reduce((n, block) => n + block.length, blocks.length - 1)

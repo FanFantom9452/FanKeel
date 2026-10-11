@@ -28,6 +28,8 @@ type Seen = {
   pendingFile: string | null
   context: Context | null
   plan: PlanCount | null
+  // What probeOf read, or null while FANKEEL_PANE_PROBE is unset.
+  probe: string | null
 }
 
 // What a file last parsed to, and the time and size it had then: the tick runs
@@ -36,7 +38,7 @@ type Seen = {
 // session's own registry file, the pending file and the ledger are read every tick.
 type Cache = Map<string, { stamp: string; value: unknown }>
 
-const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, pendingFile: null, context: null, plan: null })
+const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, pendingFile: null, context: null, plan: null, probe: null })
 
 // The last message each silent catch logged: the tick runs four times a second, and a failure that stays is said once.
 type Logged = { context: string; plan: string; open: string; registry: string; neighbour: string; gate: string }
@@ -92,6 +94,17 @@ async function contextOf($: EngineInterface, logged: Logged): Promise<Context | 
   } catch (err) {
     logOnce($, logged, 'context', `fankeel pane: no token count, ${String(err)}`)
     return null
+  }
+}
+
+// Where the engine says the session draws, read only while FANKEEL_PANE_PROBE is set: the mod API has no
+// Remote Control field, and whether these two answers move when it is switched on is what the probe is for.
+async function probeOf($: EngineInterface): Promise<string | null> {
+  if (!(await $.env.get('FANKEEL_PANE_PROBE'))) return null
+  try {
+    return `surfaces [${(await $.session.surfaces()).join(', ')}] · surface ${String(await $.session.surface())}`
+  } catch (err) {
+    return `surfaces ? · ${String(err)}`
   }
 }
 
@@ -185,7 +198,8 @@ async function look($: EngineInterface, cache: Cache, logged: Logged): Promise<S
 
   const context = await contextOf($, logged)
   const plan = await planOf($, found.root, entry, cache, logged)
-  return { id, entry, others, pending, pendingFile, context, plan }
+  const probe = await probeOf($)
+  return { id, entry, others, pending, pendingFile, context, plan, probe }
 }
 
 type State = {
@@ -228,7 +242,7 @@ async function tick($: EngineInterface, state: State): Promise<void> {
     }
     // The minute is in the key so the band's minutes and the neighbours' ages move while nothing else does.
     const minute = next.entry ? Math.floor((await $.clock.now()) / 60000) : 0
-    const now = JSON.stringify([next.entry, next.others, next.pending && next.pending.questions, next.pendingFile, next.context, next.plan, minute])
+    const now = JSON.stringify([next.entry, next.others, next.pending && next.pending.questions, next.pendingFile, next.context, next.plan, next.probe, minute])
     // The opens and closes have their own memory, `edge`, which moves only when they all went through: a rejected
     // one is met again next tick as the same edge, while `seen` and the redraw below never wait on them.
     try {
@@ -342,7 +356,7 @@ export const register: Register = (on) => {
     const pendingFile = seen.pendingFile
     // The gate is drawn whole, under the task block, and the Pane scrolls over it; the status blocks take the rows it leaves.
     const gate = pending && pendingFile ? gateRows(pending, cols, width) : []
-    const status = statusRows(seen.id, seen.entry, seen.others, seen.context, seen.plan, cols, room - gate.length - (gate.length ? 1 : 0), Date.now())
+    const status = statusRows(seen.id, seen.entry, seen.others, seen.context, seen.plan, cols, room - gate.length - (gate.length ? 1 : 0), Date.now(), seen.probe)
     const stage = stageColor(String(seen.entry?.stage ?? ''))
     const tones: Record<string, string | undefined> = {
       head: stage, plain: undefined, text: TITLE, dim: WHERE, amber: GUARD, clash: FLAG, hollow: HOLLOW,

@@ -206,6 +206,21 @@ test('foot is one row: the session and how to close the pane', async () => {
     assert.deepEqual(drawn(all(m, 44, 60), 'foot').map((r) => r.segs), [[{ text: 'f0a58f35 · /fankeel-panel 關閉', tone: 'dim' }]]);
 });
 
+test('a probe is drawn above the foot, whole, and is never dropped; with none the foot is one row', async () => {
+    const m = await load();
+    const probe = 'surfaces [terminal, desktop] · surface terminal';
+    const rows = (cols, room, said) => m.statusRows(ID, busy, [other], context, plan, cols, room, NOW, said);
+    assert.deepEqual(drawn(rows(60, 60, probe), 'foot').map((r) => r.segs), [
+        [{ text: probe, tone: 'dim' }],
+        [{ text: 'f0a58f35 · /fankeel-panel 關閉', tone: 'dim' }],
+    ]);
+    assert.equal(rows(60, 60, probe).length, rows(60, 60).length + 1, 'the probe is its own block, or more than a row');
+    assert.deepEqual(text(rows(30, 60, probe), 'foot'), ['surfaces [terminal, desktop] ·', 'surface terminal', 'f0a58f35 · /fankeel-panel 關閉']);
+    assert.deepEqual(text(rows(60, -9, probe), 'foot'), [probe, 'f0a58f35 · /fankeel-panel 關閉']);
+    for (const none of [undefined, null, '']) assert.deepEqual(text(rows(60, 60, none), 'foot'), ['f0a58f35 · /fankeel-panel 關閉']);
+    assert.deepEqual(m.statusRows(ID, null, [], null, null, 44, 44, NOW, probe).map((r) => r.block), ['empty', 'empty']);
+});
+
 test('blocks drop in the order notes, plan, agent, context, and task, neighbours and foot never do', async () => {
     const m = await load();
     const rows = (room) => m.statusRows(ID, busy, [other], context, plan, 44, room, NOW);

@@ -28,6 +28,7 @@ function fake({ files = {}, placed = true, surfaces = ['terminal'], tokens = 312
             root: async () => ROOT + '/sub',
             usage: async () => ({ startedAt: 0, context: { tokens: log.tokens === null ? undefined : log.tokens, window: 1000000, percent: 31 }, rateLimits: [] }),
             surfaces: async () => surfaces,
+            surface: async () => (surfaces.length ? surfaces[0] : null),
         },
         env: { get: async (name) => env[name] },
         fs: {
@@ -929,4 +930,39 @@ test('a registry file that fails, parses, and fails again is logged each time it
     await log.ticks[0].fn();
     await log.ticks[0].fn();
     assert.equal(log.logs.filter((m) => /registry file unreadable/.test(m)).length, 2, JSON.stringify(log.logs));
+});
+
+test('FANKEEL_PANE_PROBE draws what the engine says the session draws on above the foot, and redraws when it changes', async () => {
+    const hooks = await wired();
+    const surfaces = ['terminal', 'desktop'];
+    const { $, log } = fake({ files: entryFile(live), env: { FANKEEL_PANE_PROBE: '1' }, surfaces });
+    const draw = async () => texts(await hooks['ui.render']($, { viewport: { columns: 60, rows: 40 } }));
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    assert.deepEqual((await draw()).slice(-3), [' ', 'surfaces [terminal, desktop] · surface terminal', 'abcdef12 · /fankeel-panel 關閉']);
+    const after = log.invalidated;
+    await log.ticks[0].fn();
+    assert.equal(log.invalidated, after, 'the same surfaces redrew');
+    surfaces.length = 0;
+    await log.ticks[0].fn();
+    assert.equal(log.invalidated, after + 1);
+    assert.deepEqual((await draw()).slice(-2), ['surfaces [] · surface null', 'abcdef12 · /fankeel-panel 關閉']);
+    $.session.surface = async () => { throw new Error('gone'); };
+    await log.ticks[0].fn();
+    assert.deepEqual((await draw()).slice(-2), ['surfaces ? · Error: gone', 'abcdef12 · /fankeel-panel 關閉']);
+});
+
+test('with no FANKEEL_PANE_PROBE the Pane draws no probe row and the engine is not asked', async () => {
+    for (const env of [{}, { FANKEEL_PANE_PROBE: '' }]) {
+        const hooks = await wired();
+        const { $, log } = fake({ files: entryFile(live), env, surfaces: ['terminal', 'desktop'] });
+        let asked = 0;
+        $.session.surfaces = async () => { asked += 1; return ['terminal']; };
+        $.session.surface = async () => { asked += 1; return 'terminal'; };
+        await hooks['session.start']($, {}, async () => ({}));
+        await log.ticks[0].fn();
+        const seen = texts(await hooks['ui.render']($, { viewport: { columns: 60, rows: 40 } }));
+        assert.ok(!seen.some((t) => t.startsWith('surfaces')), seen.join(' | '));
+        assert.equal(asked, 0);
+    }
 });
