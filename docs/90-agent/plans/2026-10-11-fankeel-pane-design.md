@@ -1,6 +1,6 @@
 ---
 status: design-intent
-last_verified: 2026-10-11
+last_verified: 2026-10-12
 ---
 
 # fankeel 面板：一個 Pane，狀態在上，gate 在下
@@ -42,7 +42,23 @@ session f0a58f35-ae39-4954-89d6-e0b9129a4082 的 design。這頁是要做的事�
 
 - 不做設定鍵、不做分頁、不列 stood-down 的 session、不畫 station 頁已經有的花費曲線。
 - 不改 `hooks/gate.js`、不改 station 頁。
-- 不在 AbovePrompt 另做一份。
+- ~~不在 AbovePrompt 另做一份。~~ 10-12 改了，見第 6 節。
+
+## 6. 10-12 改版：輸入框上方的兩行，與重排的 Pane
+
+第 1 到 5 節做完之後，使用者在 Claude Desktop 實測，改了兩件事：隨時要看的資訊移到輸入框上方的 `AbovePrompt`，Pane 只放要查才看的。使用者核准的是畫在真機上的原型，不是 HTML mockup：原型的程式在 `.fankeel/build/task-20261010T203351/pane-prototype.ts.txt`（未進 git），Pane 的內容由 [judgement](../judgements/2026-10-11-pane-content.md) 定。這一節與前面衝突時，以這一節為準。
+
+- `ui.render` 多一個 `{ component: 'AbovePrompt' }` 的 hook：session 有 active 的 entry 時畫兩行，沒有就 `next(e)`，整條不出現。
+- 第一行：`▌FANKEEL <STAGE>`、route 長度個圓點（到目前階段為止實心）、`⚿ <guard>`、有別的 active session 的 `claims` 與自己的有交集時 `⚑<n>`、task 標題截尾。
+- 第二行：`next` 與最後一則 `next` 內容、`claims` 的數目、`N of M` 與這個階段到現在的分鐘；有 pending 檔時改成黃底的 `gate 在等` 與第一題的問題。
+- 顏色是 TokenBar 的 fankeel 色階，以 hex 寫在 `hooks/pane-band.ts`：`survey #5f5f87`、`design #5f5fd7`、`plan #5f87af`、`build #5f87d7`、`verify #5fafff`、`audit #5fd787`、`land #5fd7ff`；空心圓點 `#585858`、guard `#d7af5f`、`⚑` `#ff5f5f`、標題 `#bcbcbc`、次要字 `#8a8a8a`。左邊的色帶與階段同色，有 `⚑` 時是 `#ff0000`。
+- Pane 的區塊改成由上到下 `gate`、`context`、`plan`、`notes`、`neighbours`、`touched`、`foot`；`head`、`route`、`memory` 的 `next`、`cost`、`foot` 的 guard 拿掉，因為上面兩行已經有，`cost` 則是 station 頁已經畫了。列數不夠時的丟棄順序是 `touched`、`neighbours`、`notes`、`plan`、`context`；`gate` 與 `foot` 不丟。
+- `gate` 區塊畫完整的題目：每個選項的 `description` 折行畫在它的 Button 底下，不因列數不夠而丟掉。第 3 節與 `hooks/pane-gate.ts` 現在的「先丟 description」改掉；gate 比 Pane 高時由 Pane 自己的捲動處理。
+- `context` 兩列：`$.session.usage().context.tokens` 與自動 compact 的門檻（`FANKEEL_COMPACT_AT`，沒有就 `HARD`），到門檻時粗體；第二列是 compact 會留下的東西，與 `hooks/compact.ts` 的 `instructionsFor` 同一份清單。
+- `plan` 一列：`claims` 裡的 plan 檔在 `.fankeel/build/<basename>/progress.md` 有 ledger 時，畫完成的 task 數與總數；沒有 ledger 就沒有這個區塊。
+- 兩個畫面的資料都來自 `hooks/pane.ts` 同一個 `look`，重畫的比對鍵加上 token 數與 ledger 的內容。
+- `/fankeel-pane` 開不了時的訊息不再一律說終端太窄：`$.session.surfaces()` 沒有能放 Pane 的 surface 時，說這裡畫不了面板。
+- 文件寫明兩件實測到的事：Remote Control 與手機不畫 mod；Claude Desktop 讀的是安裝時的快照，改版後要 `claude plugin update fankeel@fankeel` 才看得到。
 
 ## What proves it done
 
@@ -55,3 +71,7 @@ session f0a58f35-ae39-4954-89d6-e0b9129a4082 的 design。這頁是要做的事�
 | mod 只多掛該掛的 | `tests/mod.test.js` 的事件清單改成新的一份，多一個少一個都紅 |
 | mod 沒載入時不變 | 不按 Enable 跑一次 gate，照舊由 AskUserQuestion 問 |
 | 真機 | 按 Enable、`/fankeel-pane`，Pane 畫出這個任務；答一次 gate；窄終端看到 toast |
+| 上方兩行讀得出 registry（10-12） | `tests/pane-band.test.js`：fixture entry 在 `build`、route 七站，第一行有 `FANKEEL BUILD`、四個 `#5f87d7` 的實心圓點與三個空心；現在沒有這個檔，紅 |
+| 上方兩行與 Pane 同源（10-12） | 同一個 fixture 畫兩個畫面：上方的 `N of M`、`claims` 數目、`⚑` 的數目，等於 Pane 的 `touched` 數目與 `neighbours` 的 clash 列數 |
+| gate 的 description 不丟（10-12） | `tests/pane-gate.test.js`：四個選項各帶 description、Pane 只有 18 列，每一個 description 的字都在樹裡；現在會被丟，紅 |
+| 真機（10-12） | 終端與 Claude Desktop 各開一個有任務的 session：上方兩行與 Pane 都畫出同一個階段；答一次 gate |

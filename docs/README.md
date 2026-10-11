@@ -500,6 +500,7 @@ is corrected by the next one, not by rewriting this.
 | 判斷 7：verify 的 verifier 要釘哪個 agent，Workflow 的寫檔要求要不要留 | [judgements/2026-09-10-verifier-agent.md](90-agent/judgements/2026-09-10-verifier-agent.md) — *judged 2026-09-10, fable* |
 | 判斷 8：09-11 的五個方向加上現有 8 條，怎麼拆成分群的 TODO | [judgements/2026-09-11-todo-split.md](90-agent/judgements/2026-09-11-todo-split.md) — *judged 2026-09-11, fable* |
 | fankeel 這套工作流現在哪些設計還能精進、哪些環節漏掉了？ | [90-agent/judgements/2026-10-10-workflow-gaps.md](90-agent/judgements/2026-10-10-workflow-gaps.md) — *judged 2026-10-10, fable* |
+| Brief: what the fankeel side Pane should show | [90-agent/judgements/2026-10-11-pane-content.md](90-agent/judgements/2026-10-11-pane-content.md) — *judged 2026-10-11, fable* |
 
 ## The five scanners
 
