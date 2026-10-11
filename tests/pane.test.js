@@ -319,7 +319,7 @@ test('narrow terminal: a gate gives one toast, and /fankeel-pane opens again ins
     assert.doesNotMatch(reply.text, /已關閉/);
 });
 
-test('narrow terminal: the unplaced pane the mod opened for a gate is closed when the gate ends', async () => {
+test('narrow terminal: the unplaced pane opened for the task is not the gate\'s to close', async () => {
     const hooks = await wired();
     const files = Object.assign(entryFile(live), { [DIR + '/design-pending.json']: JSON.stringify(gate) });
     const { $, log, store } = fake({ files, placed: false });
@@ -327,7 +327,10 @@ test('narrow terminal: the unplaced pane the mod opened for a gate is closed whe
     await log.ticks[0].fn();
     delete store[DIR + '/design-pending.json'];
     await log.ticks[0].fn();
-    assert.deepEqual(log.closed.map((p) => p.id), ['fankeel']);
+    assert.deepEqual(log.closed, [], 'the end of the gate closed the pane the task owns');
+    store[SESSION] = JSON.stringify(Object.assign({}, live, { active: false }));
+    await log.ticks[0].fn();
+    assert.deepEqual(log.closed.map((p) => p.id), ['fankeel'], 'the end of the task left its pane');
 });
 
 test('a tick whose ui.open rejected is tried again, the gate still new', async () => {
@@ -779,4 +782,39 @@ test('an open that rejects on the task edge is tried again on the next tick', as
     assert.equal(log.opened.length, 1);
     await log.ticks[0].fn();
     assert.equal(log.opened.length, 1);
+});
+
+test('an open that keeps rejecting does not keep the band off the screen', async () => {
+    const hooks = await wired();
+    const { $, log } = fake({ files: entryFile(live) });
+    $.ui.open = async () => { throw new Error('busy'); };
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    assert.match(bandLines(await hooks.band($, BAND, passed))[0], /demo task/, 'the band waited on an open that never went through');
+    assert.ok(log.invalidated >= 1, 'nothing was invalidated');
+    await log.ticks[0].fn();
+    await log.ticks[0].fn();
+    assert.equal(log.logs.filter((m) => /pane not opened or closed, .*busy/.test(m)).length, 1, JSON.stringify(log.logs));
+});
+
+test('a registry file that stays unreadable is logged once and, after twenty ticks, is no task', async () => {
+    const hooks = await wired();
+    const { $, log, store } = fake({ files: entryFile(live) });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const band = async () => { const drawn = await hooks.band($, BAND, passed); return typeof drawn === 'string' ? drawn : bandLines(drawn)[0]; };
+    store[SESSION] = '{"task": "demo task", "stag';
+    for (let i = 0; i < 19; i++) await log.ticks[0].fn();
+    assert.match(await band(), /demo task/, 'the task went before the twentieth tick');
+    assert.deepEqual(log.closed, []);
+    await log.ticks[0].fn();
+    assert.equal(await band(), 'passed', 'the band still draws a task whose file stayed unreadable');
+    assert.deepEqual(log.closed.map((p) => p.id), ['fankeel']);
+    for (let i = 0; i < 3; i++) await log.ticks[0].fn();
+    assert.equal(log.closed.length, 1, 'closed again on a later tick');
+    assert.equal(log.logs.filter((m) => /registry file unreadable/.test(m)).length, 1, JSON.stringify(log.logs));
+    assert.equal(log.logs.filter((m) => /tick skipped/.test(m)).length, 0);
+    store[SESSION] = JSON.stringify(live);
+    await log.ticks[0].fn();
+    assert.match(await band(), /demo task/, 'a file that parses again is not a task');
 });

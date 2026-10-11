@@ -38,7 +38,13 @@ type Cache = Map<string, { stamp: string; value: unknown }>
 const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, pendingFile: null, context: null, plan: null })
 
 // The last message each silent catch logged: the tick runs four times a second, and a failure that stays is said once.
-type Logged = { context: string; plan: string }
+type Logged = { context: string; plan: string; open: string; registry: string }
+
+// A registry file that is there and does not parse: told apart so `tick` can wait it out for a while, then give up on it.
+class Unreadable extends Error {}
+
+// Five seconds at POLL_MS: how many ticks in a row a registry file may stay unreadable before it counts as no task.
+const UNREADABLE_TICKS = 20
 
 function logOnce($: EngineInterface, logged: Logged, key: keyof Logged, text: string): void {
   if (logged[key] === text) return
@@ -64,8 +70,8 @@ async function findEntry($: EngineInterface, id: string): Promise<{ entry: Entry
     const file = `${root}/.fankeel/sessions/${id}.json`
     if (await $.fs.exists(file)) {
       const entry = await readJson($, file)
-      // A file that is there and does not parse is one caught mid-write, not a task that ended: the tick is skipped.
-      if (!entry) throw new Error('registry file unreadable: ' + file)
+      // A file that is there and does not parse is one caught mid-write, not a task that ended: `tick` waits for it.
+      if (!entry) throw new Unreadable('registry file unreadable: ' + file)
       return { entry, root }
     }
     dir = parentOf(dir)
@@ -170,8 +176,13 @@ async function look($: EngineInterface, cache: Cache, logged: Logged): Promise<S
 type State = {
   seen: Seen
   print: string
-  // Why the pane up now is the mod's, and so when it is the mod's to close: 'task' closes with the task, 'gate' with its gate.
+  // Why the pane up now is the mod's, and so when it is the mod's to close: 'task' closes with the task;
+  // 'gate' closes when its gate goes, or when the task ends first.
   mine: false | 'task' | 'gate'
+  // Whether a task was there, and which pending file, the last time the opens and closes for them went through.
+  edge: { task: boolean; gate: string | null }
+  // Ticks in a row the registry file was unreadable.
+  bad: number
   busy: boolean
   cache: Cache
   logged: Logged
@@ -187,34 +198,49 @@ async function tick($: EngineInterface, state: State): Promise<void> {
   if (state.busy) return
   state.busy = true
   try {
-    const next = await look($, state.cache, state.logged)
-    const was = state.seen.pendingFile
-    const had = state.seen.entry
+    let next: Seen
+    try {
+      next = await look($, state.cache, state.logged)
+      state.bad = 0
+    } catch (err) {
+      if (!(err instanceof Unreadable)) throw err
+      state.bad += 1
+      logOnce($, state.logged, 'registry', `fankeel pane: ${err.message}`)
+      // Caught mid-write: wait, with nothing changed. One that stays unreadable is no task.
+      if (state.bad < UNREADABLE_TICKS) return
+      next = blank(state.seen.id)
+    }
     // The minute is in the key so the band's minutes and the neighbours' ages move while nothing else does.
     const minute = next.entry ? Math.floor((await $.clock.now()) / 60000) : 0
     const now = JSON.stringify([next.entry, next.others, next.pending && next.pending.questions, next.pendingFile, next.context, next.plan, minute])
-    // Asked here, after `look`: /fankeel-pane may have opened or closed the pane while it read files.
-    // A task appears: the pane opens, once; a pane the user then closes stays closed until a gate comes. No toast: the band shows the task.
-    if (!had && next.entry && !(await isOpen($))) {
-      await $.ui.open({ id: PANE, title: 'fankeel' })
-      state.mine = 'task'
+    // The opens and closes have their own memory, `edge`, which moves only when they all went through: a rejected
+    // one is met again next tick as the same edge, while `seen` and the redraw below never wait on them.
+    try {
+      // Asked here, after `look`: /fankeel-pane may have opened or closed the pane while it read files.
+      // A task appears: the pane opens, once; a pane the user then closes stays closed until a gate comes. No toast: the band shows the task.
+      if (!state.edge.task && next.entry && !(await isOpen($))) {
+        await $.ui.open({ id: PANE, title: 'fankeel' })
+        state.mine = 'task'
+      }
+      if (next.pendingFile && next.pendingFile !== state.edge.gate && !(await isOpen($))) {
+        const opened = await $.ui.open({ id: PANE, title: 'fankeel' })
+        // Its pane either way, placed now or when the terminal widens; a pane the task owns stays the task's.
+        if (state.mine !== 'task') state.mine = 'gate'
+        if (!opened.isPlaced) $.ui.toast('fankeel：有一個 gate 在等。/fankeel-pane 開面板，或在終端回答')
+      }
+      if (!next.pendingFile && state.edge.gate && state.mine === 'gate') {
+        await $.ui.close({ id: PANE })
+        state.mine = false
+      }
+      if (state.edge.task && !next.entry && state.mine) {
+        // Not asked whether it is open: a pane registered but not placed (a narrow terminal) is still the mod's to close.
+        await $.ui.close({ id: PANE })
+        state.mine = false
+      }
+      state.edge = { task: !!next.entry, gate: next.pendingFile }
+    } catch (err) {
+      logOnce($, state.logged, 'open', `fankeel pane: pane not opened or closed, ${String(err)}`)
     }
-    if (next.pendingFile && next.pendingFile !== was && !(await isOpen($))) {
-      const opened = await $.ui.open({ id: PANE, title: 'fankeel' })
-      // Its pane either way, placed now or when the terminal widens.
-      state.mine = 'gate'
-      if (!opened.isPlaced) $.ui.toast('fankeel：有一個 gate 在等。/fankeel-pane 開面板，或在終端回答')
-    }
-    if (!next.pendingFile && was && state.mine === 'gate') {
-      await $.ui.close({ id: PANE })
-      state.mine = false
-    }
-    if (had && !next.entry && state.mine) {
-      // Not asked whether it is open: a pane registered but not placed (a narrow terminal) is still the mod's to close.
-      await $.ui.close({ id: PANE })
-      state.mine = false
-    }
-    // After the open and close: a rejected one leaves `seen` as it was, so the next tick sees the gate as new.
     state.seen = next
     if (now !== state.print) {
       state.print = now
@@ -244,7 +270,10 @@ async function answer($: EngineInterface, pending: Pending, pendingFile: string,
 }
 
 export const register: Register = (on) => {
-  const state: State = { seen: blank(''), print: '', mine: false, busy: false, cache: new Map(), logged: { context: '', plan: '' } }
+  const state: State = {
+    seen: blank(''), print: '', mine: false, edge: { task: false, gate: null }, bad: 0, busy: false, cache: new Map(),
+    logged: { context: '', plan: '', open: '', registry: '' },
+  }
 
   on('session.start', async ($, e, next) => {
     await $.command.register({ name: COMMAND, description: 'fankeel 面板：等待中的 gate、context、plan 進度、notes、其他 session 與碰過的檔案' })
