@@ -3,6 +3,8 @@
 // rules of lib/handoff.js are written again here and tests/pane-gate.test.js
 // pins each one to the function it copies.
 
+import { cut } from './pane-status.ts'
+
 export type Question = { question: string; header?: string; multiSelect?: boolean; options: { label: string; description?: string }[] }
 export type Pending = { questions: Question[]; until: number; at: number | null }
 export type GateRow = { block: 'gate'; text: string; dim?: boolean; bold?: boolean; badge?: boolean; press?: string; hotkey?: string }
@@ -84,38 +86,27 @@ function wrap(s: string, cols: number, width: (s: string) => number): string[] {
   return lines
 }
 
-// The head of `s` that fits `cols` cells, ending in an ellipsis when cut.
-function clip(s: string, cols: number, width: (s: string) => number): string {
-  if (width(s) <= cols) return s
-  let out = ''
-  for (const ch of s) {
-    if (width(out + ch) > cols - 1) break
-    out += ch
-  }
-  return out + '…'
-}
-
 // `press` is the label a button answers with; '' is the terminal button.
 // `badge` is the header, drawn on a coloured ground. Nothing is dropped for
 // lack of rows: the question and every option's description are wrapped
 // whole, and a gate taller than the Pane scrolls in it. `width` is
-// hooks/pane-status.ts's, passed in so this file imports nothing.
+// hooks/pane-status.ts's, which the caller passes in for `wrap`.
 export function gateRows(pending: Pending, cols: number, width: (s: string) => number): GateRow[] {
   const rows: GateRow[] = []
   const q = pending.questions[0]
   // 2: the badge's own space either side.
-  rows.push({ block: 'gate', text: clip(`gate · ${q && q.header ? q.header : ''}`, cols - 2, width), bold: true, badge: true })
+  rows.push({ block: 'gate', text: cut(`gate · ${q && q.header ? q.header : ''}`, cols - 2), bold: true, badge: true })
   if (simple(pending)) {
     for (const line of wrap(String(q.question ?? ''), cols, width)) rows.push({ block: 'gate', text: line, bold: true })
     q.options.forEach((o, i) => {
-      rows.push({ block: 'gate', text: clip(o.label, cols - 3, width), press: o.label, hotkey: String(i + 1) })
+      rows.push({ block: 'gate', text: cut(o.label, cols - 3), press: o.label, hotkey: String(i + 1) })
       const about = typeof o.description === 'string' ? o.description : ''
       for (const line of wrap(about, cols - 3, width)) rows.push({ block: 'gate', text: `   ${line}`, dim: true })
     })
   } else {
     for (const line of wrap(`${pending.questions.length} 題，或有多選：在終端或 station 頁回答`, cols, width)) rows.push({ block: 'gate', text: line, dim: true })
   }
-  rows.push({ block: 'gate', text: clip('交給終端', cols - 3, width), press: '', hotkey: 't' })
-  rows.push({ block: 'gate', text: clip('ctrl+x tab 進面板，再按數字或 t', cols, width), dim: true })
+  rows.push({ block: 'gate', text: cut('交給終端', cols - 3), press: '', hotkey: 't' })
+  rows.push({ block: 'gate', text: cut('ctrl+x tab 進面板，再按數字或 t', cols), dim: true })
   return rows
 }

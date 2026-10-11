@@ -1,7 +1,9 @@
 // The two rows above the prompt: this session's stage, guard and task, then
 // what comes next or the gate that is waiting. An entry in, segments out; no
-// engine call and no import here, so tests/pane-band.test.js runs it under
-// plain node. docs/90-agent/plans/2026-10-11-fankeel-pane-design.md section 6.
+// engine call here, so tests/pane-band.test.js runs it under plain node.
+// docs/90-agent/plans/2026-10-11-fankeel-pane-design.md section 6.
+
+import { str, list, width, cut } from './pane-status.ts'
 
 // `gap` is the cells of space before the segment; without one it sits against the last.
 export type Seg = { text: string; color?: string; backgroundColor?: string; bold?: boolean; gap?: number }
@@ -28,8 +30,6 @@ export const INK = '#000000'
 // A stage off the ramp (init, or one a later version adds) is drawn as secondary text.
 export const stageColor = (stage: string): string => (Object.hasOwn(RAMP, stage) ? RAMP[stage] : WHERE)
 
-const str = (v: unknown): string => (typeof v === 'string' ? v : '')
-const list = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [])
 const claimsOf = (entry: Entry): string[] => list(entry.claims ?? entry.scope)
 
 // How many other sessions hold a file this one holds.
@@ -52,17 +52,8 @@ function since(entry: Entry, stage: string): number | null {
   return Array.isArray(pair) && typeof pair[0] === 'number' ? pair[0] : null
 }
 
-// `gate` is the first question of the gate that is waiting, or null. `width`
-// and `cut` are hooks/pane-status.ts's, passed in so this file imports nothing.
-export function bandRows(
-  entry: Entry | null,
-  others: { entry: Entry }[],
-  gate: string | null,
-  cols: number,
-  now: number,
-  width: (s: string) => number,
-  cut: (s: string, cols: number) => string,
-): Seg[][] | null {
+// `gate` is the first question of the gate that is waiting, or null.
+export function bandRows(entry: Entry | null, others: { entry: Entry }[], gate: string | null, cols: number, now: number): Seg[][] | null {
   if (!entry) return null
   const stage = str(entry.stage)
   const route = list(entry.route)

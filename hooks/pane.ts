@@ -1,6 +1,6 @@
 import type { Register, EngineInterface } from 'claude-code'
 import { parentOf, isActive, SESSION_ID, HARD } from './compact.ts'
-import { statusRows, width, cut, ledgerDone, planTotal } from './pane-status.ts'
+import { statusRows, width, ledgerDone, planTotal } from './pane-status.ts'
 import type { Entry, Other, Context, PlanCount, Seg as StatusSeg } from './pane-status.ts'
 import { taskDir, pendingName, answerName, parsePending, gateRows, answerText, HANDOFF } from './pane-gate.ts'
 import type { Pending } from './pane-gate.ts'
@@ -122,7 +122,6 @@ async function planOf($: EngineInterface, root: string, entry: Entry, cache: Cac
       total = hit.value as number
     } catch (err) {
       logOnce($, logged, 'plan', `fankeel pane: plan file unreadable, ${String(err)}`)
-      total = 0
     }
     return total > 0 ? { name, done, total } : null
   }
@@ -322,7 +321,7 @@ export const register: Register = (on) => {
     const gate = seen.pending ? String((asked && asked.question) ?? '') : null
     // 5: the cells the engine keeps at the band's right end, where no surface has measured the body.
     const cols = Math.max(20, props.bodyColumns ?? (e.viewport?.columns ?? 85) - 5)
-    const rows = bandRows(seen.entry, seen.others, gate, cols, Date.now(), width, cut)
+    const rows = bandRows(seen.entry, seen.others, gate, cols, Date.now())
     if (!rows) return next(e)
     const { Box, Text } = $.ui.resolve(e)
     const cell = (seg: BandSeg) => {

@@ -21,8 +21,7 @@ const entry = {
 const other = { id: 'aaaaaaaa-0000-4000-8000-000000000001', entry: { task: '別的任務', stage: 'design', active: true, claims: ['hooks/mod.ts'] } };
 const apart = { id: 'bbbbbbbb-0000-4000-8000-000000000002', entry: { task: '不相干', stage: 'plan', active: true, claims: ['lib/x.js'] } };
 const width = (s) => [...s].length;
-const cut = (s, cols) => ([...s].length <= cols ? s : [...s].slice(0, cols - 1).join('') + '…');
-const rows = (m, e, others, gate, cols) => m.bandRows(e, others || [], gate === undefined ? null : gate, cols || 90, NOW, width, cut);
+const rows = (m, e, others, gate, cols) => m.bandRows(e, others || [], gate === undefined ? null : gate, cols || 90, NOW);
 const used = (segs) => segs.reduce((n, seg) => n + (seg.gap || 0) + width(seg.text), 0);
 
 test('the first row names the stage and draws the route as dots in its colour', async () => {

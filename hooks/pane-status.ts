@@ -17,8 +17,8 @@ export type PlanCount = { name: string; done: number; total: number }
 
 const WIDE = /[ᄀ-ᅟ⺀-꓏가-힣豈-﫿︰-﹏＀-｠￠-￦]/
 
-const str = (v: unknown): string => (typeof v === 'string' ? v : '')
-const list = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [])
+export const str = (v: unknown): string => (typeof v === 'string' ? v : '')
+export const list = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [])
 
 // Terminal cells: a CJK or full-width character takes two.
 export function width(s: string): number {
