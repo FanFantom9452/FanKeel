@@ -187,6 +187,7 @@
             'ses.tabOverview': 'Overview',
             'ses.tabDispatch': 'Dispatch',
             'ses.tabEvents': 'Events',
+            'ses.tabTalk': 'Conversation',
             'ses.sessionView': 'session view',
             'ses.nAgentsRunning': '{n} agent(s) running',
             'ses.talkUsers': '{n} user turns',

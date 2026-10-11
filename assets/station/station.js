@@ -202,7 +202,7 @@
     // from a session's `days` (dollars, tokens) and `spans` (milliseconds), split
     // by the local day each request happened on — never from the registry's
     // `usd`, which SessionEnd writes once and which is filed under the start day.
-    var TABS = ['timeline', 'cost', 'dispatch', 'events'];
+    var TABS = ['timeline', 'cost', 'dispatch', 'events', 'talk'];
     var MODEL_KEYS = ['fable', 'opus', 'sonnet', 'haiku', 'other'];
     var TOKEN_KEYS = ['input', 'output', 'cacheRead', 'cacheWrite5m', 'cacheWrite1h'];
     // `kind` splits a day's cost or tokens by where they went, folding the two
@@ -1318,14 +1318,16 @@
             + roHtml(loc('ses.contextPeak', 'context 峰值'), x ? tokens(x.peak) : '—', '')
             + '</div>';
     }
-    // Three tabs by what a reader comes for: 概覽 is the session's story —
-    // time, context and money stage by stage — and 派工 and 事件 are its two
-    // long lists. `cost` is still in TABS so an old `/cost` link parses; it
-    // opens 概覽, which now holds everything that tab showed.
-    var TAB_SHOWN = ['timeline', 'dispatch', 'events'];
-    function tabsHtml(s, tab, x) {
-        var label = { timeline: loc('ses.tabOverview', '概覽'), dispatch: loc('ses.tabDispatch', '派工'), events: loc('ses.tabEvents', '事件') };
-        var n = { dispatch: x ? x.rows.length : null, events: x ? x.events.length : null };
+    // Four tabs by what a reader comes for: 概覽 is the session's story —
+    // time, context and money stage by stage — 派工 and 事件 are its two
+    // long lists, and 對話 is what was said, read from the transcript on
+    // demand. `cost` is still in TABS so an old `/cost` link parses; it
+    // opens 概覽, which now holds everything that tab showed. `talk` is the
+    // 對話 tab's turn count, and nothing until its first page is in.
+    var TAB_SHOWN = ['timeline', 'dispatch', 'events', 'talk'];
+    function tabsHtml(s, tab, x, talk) {
+        var label = { timeline: loc('ses.tabOverview', '概覽'), dispatch: loc('ses.tabDispatch', '派工'), events: loc('ses.tabEvents', '事件'), talk: loc('ses.tabTalk', '對話') };
+        var n = { dispatch: x ? x.rows.length : null, events: x ? x.events.length : null, talk: talk };
         var run = x ? x.rows.filter(function (r) { return agentState(x, r, s) === 'running'; }).length : 0;
         if (tab === 'cost') tab = 'timeline';
         return '<nav class="tabs" data-block="session-tabs" aria-label="' + loc('ses.sessionView', 'session 檢視') + '">' + TAB_SHOWN.map(function (k) {
@@ -3396,9 +3398,15 @@
             + '<details class="csmore"><summary>' + loc('dash.stageModelDetail', 'stage × model 明細') + ' <small>' + loc('dash.tokenUsdMainLoop', 'token 與各自的 USD，主迴圈') + '</small></summary>'
             + costHtml(costModel(s.days), x) + '</details>'
             + (x ? '<div class="det">' + ctxSection(s, x, true) + tasksHtml(x.tasks) + '</div>' : '');
+        // 對話 is not in the detail script: its first visit asks the server for
+        // the first page (`talkLoad`), and what came back stays in TALK. A page
+        // written to a file has no server to ask.
+        if (r.tab === 'talk' && S.serve && !TALK[s.id]) talkLoad(s.id, true);
+        var talk = S.serve ? TALK[s.id] : { turns: [], total: null, state: 'static' };
         var body = r.tab === 'dispatch' ? (x ? dispatchStagesHtml(L, s.id, hi) + '<div class="det">' + dispatchHtml(x, s, dispatchUi(s)) + '</div>' : detailNote(s))
             : r.tab === 'events' ? (x ? '<div class="det">' + replayHtml(x, view.kinds, s) + '</div>' : detailNote(s))
-                : overview;
+                : r.tab === 'talk' ? talkHtml(s.id, talk)
+                    : overview;
         // The film's header (2026-10-01 layout): the glyph filled as the route
         // is, `0N / 0M stage` over the title, the meta chips beside them.
         return '<section class="panel kshead" data-block="session-head"><div class="eyebrow">session <span class="mono">' + esc(String(s.id).slice(0, 8)) + '</span> · '
@@ -3410,7 +3418,49 @@
                 + esc(s.model) + '</span></span>' : '') + effortChip(s.effort) + '</div></div>'
             + railHtml(s, Boolean(S.serve) && s.state === 'live', S.serve ? Date.now() : NOW)
             + sessionHeadHtml(s, x) + '</section>'
-            + tabsHtml(s, r.tab, x) + '<section class="panel"' + (r.tab === 'dispatch' ? ' data-block="dispatch"' : '') + '>' + body + '</section>';
+            + tabsHtml(s, r.tab, x, talk && talk.total !== null ? talk.total : null) + '<section class="panel"' + (r.tab === 'dispatch' ? ' data-block="dispatch"' : '') + '>' + body + '</section>';
+    }
+    // 對話's turns, per session id, for as long as the page lives: a redraw
+    // rewrites the panel, and what was fetched must not go with it. `talkLoad`
+    // asks for the 100 turns after the ones held; `quiet` is for a call made
+    // while a draw is under way, which must not start another. Its button is
+    // heard by a click listener added on the first call: a button exists only
+    // after one, and tests/station-hdl-c.test.js picks the page's document
+    // listeners by their place in the order they were added at load.
+    var TALK = {};
+    var talkHeard = false;
+    function talkLoad(id, quiet) {
+        if (!talkHeard) {
+            talkHeard = true;
+            doc.addEventListener('click', function (e) {
+                var t = e && e.target && e.target.closest ? e.target.closest('[data-talk]') : null;
+                if (t) talkLoad(t.getAttribute('data-talk'));
+            });
+        }
+        var held = TALK[id] || (TALK[id] = { turns: [], total: null, counts: null, skipped: null, state: '' });
+        if (held.state === 'loading') return;
+        held.state = 'loading';
+        var redraw = function () { if (route.view === 'session' && route.id === id) draw(); };
+        if (!quiet) redraw();
+        fetch('station/talk/' + encodeURIComponent(id) + '?from=' + held.turns.length).then(function (r) {
+            if (r.status === 404) return null;
+            if (!r.ok) throw new Error(String(r.status));
+            return r.json();
+        }).then(function (page) {
+            if (page) {
+                held.turns = held.turns.concat(page.turns);
+                held.total = page.total;
+                held.counts = page.counts;
+                held.skipped = page.skipped;
+                held.state = '';
+            } else {
+                held.state = 'missing';
+            }
+            redraw();
+        }, function () {
+            held.state = 'failed';
+            redraw();
+        });
     }
     VIEWS.session = sessionPage;
     CRUMBS.session = function (r) {

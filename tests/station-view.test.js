@@ -361,6 +361,7 @@ test('parseHash reads every route the three levels use and falls back to home', 
     assert.deepEqual(V.parseHash('#/p/' + encodeURIComponent(key)), { view: 'project', pkey: key });
     assert.deepEqual(V.parseHash('#/s/aaaa1111-0000'), { view: 'session', id: 'aaaa1111-0000', tab: 'timeline' });
     assert.deepEqual(V.parseHash('#/s/aaaa1111-0000/cost'), { view: 'session', id: 'aaaa1111-0000', tab: 'cost' });
+    assert.deepEqual(V.parseHash('#/s/aaaa1111-0000/talk'), { view: 'session', id: 'aaaa1111-0000', tab: 'talk' });
     assert.deepEqual(V.parseHash('#/s/aaaa1111-0000/nope'), { view: 'session', id: 'aaaa1111-0000', tab: 'timeline' });
     assert.deepEqual(V.parseHash('#/list'), { view: 'list' });
     assert.deepEqual(V.parseHash('#/cmp'), { view: 'cmp' });
@@ -892,8 +893,10 @@ test('the session header reads dollars from days and time from the timeline; the
     assert.doesNotMatch(head, /\$99|\$198/);
     const tabs = V.tabsHtml(HOME[0], 'dispatch', DETAIL_X);
     assert.deepEqual([...tabs.matchAll(/href="([^"]+)"/g)].map((x) => x[1]),
-        ['#/s/aaaa1111-0000', '#/s/aaaa1111-0000/dispatch', '#/s/aaaa1111-0000/events']);
+        ['#/s/aaaa1111-0000', '#/s/aaaa1111-0000/dispatch', '#/s/aaaa1111-0000/events', '#/s/aaaa1111-0000/talk']);
     assert.match(tabs, /<a href="#\/s\/aaaa1111-0000\/dispatch" class="on" aria-current="page">派工</);
+    assert.match(tabs, /<a href="#\/s\/aaaa1111-0000\/talk">對話<\/a>/, 'no count until the first page is in');
+    assert.match(V.tabsHtml(HOME[0], 'talk', DETAIL_X, 210), /<a href="#\/s\/aaaa1111-0000\/talk" class="on" aria-current="page">對話<small>210<\/small><\/a>/);
     // The 花費 tab folded into 概覽: an old `/cost` link still parses, and opens 概覽.
     assert.match(V.tabsHtml(HOME[0], V.parseHash('#/s/aaaa1111-0000/cost').tab, DETAIL_X),
         /<a href="#\/s\/aaaa1111-0000" class="on" aria-current="page">概覽</);
