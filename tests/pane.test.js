@@ -734,6 +734,38 @@ test('the task ending closes the pane the mod opened, and leaves one the user op
     assert.equal(gated.log.closed.length, 2, 'the pane a gate opened was left up, or closed twice, when the task ended');
 });
 
+test('a registry file that cannot be read for a tick neither closes nor reopens the pane', async () => {
+    const hooks = await wired();
+    const { $, log, store } = fake({ files: entryFile(live) });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    await command(hooks, $);
+    assert.equal(log.closed.length, 1);
+    const band = async () => bandLines(await hooks.band($, BAND, passed))[0];
+    assert.match(await band(), /demo task/);
+    store[SESSION] = '{"task": "demo task", "stag';
+    await log.ticks[0].fn();
+    assert.match(await band(), /demo task/, 'the band lost the task');
+    store[SESSION] = JSON.stringify(live);
+    await log.ticks[0].fn();
+    assert.match(await band(), /demo task/);
+    assert.equal(log.opened.length, 1, 'the task appeared again after an unreadable tick');
+    assert.equal(log.closed.length, 1, 'the unreadable tick ended the task');
+});
+
+test('the task ending closes a pane that was registered but never placed', async () => {
+    const hooks = await wired();
+    const { $, log, store } = fake({ files: entryFile(live), placed: false });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    assert.equal(log.opened.length, 1);
+    store[SESSION] = JSON.stringify(Object.assign({}, live, { active: false }));
+    await log.ticks[0].fn();
+    assert.deepEqual(log.closed.map((p) => p.id), ['fankeel']);
+    await log.ticks[0].fn();
+    assert.equal(log.closed.length, 1, 'closed again on a later tick');
+});
+
 test('an open that rejects on the task edge is tried again on the next tick', async () => {
     const hooks = await wired();
     const { $, log } = fake({ files: entryFile(live) });

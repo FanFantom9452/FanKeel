@@ -64,7 +64,9 @@ async function findEntry($: EngineInterface, id: string): Promise<{ entry: Entry
     const file = `${root}/.fankeel/sessions/${id}.json`
     if (await $.fs.exists(file)) {
       const entry = await readJson($, file)
-      return entry && { entry, root }
+      // A file that is there and does not parse is one caught mid-write, not a task that ended: the tick is skipped.
+      if (!entry) throw new Error('registry file unreadable: ' + file)
+      return { entry, root }
     }
     dir = parentOf(dir)
   }
@@ -208,7 +210,8 @@ async function tick($: EngineInterface, state: State): Promise<void> {
       state.mine = false
     }
     if (had && !next.entry && state.mine) {
-      if (await isOpen($)) await $.ui.close({ id: PANE })
+      // Not asked whether it is open: a pane registered but not placed (a narrow terminal) is still the mod's to close.
+      await $.ui.close({ id: PANE })
       state.mine = false
     }
     // After the open and close: a rejected one leaves `seen` as it was, so the next tick sees the gate as new.
