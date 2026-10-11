@@ -7,6 +7,8 @@ last_verified: 2026-10-07
 # Pane 上的 gate 介面：與 station 頁的 gate 面板怎麼分工
 
 > 2026-10-11：[fankeel 面板的設計](2026-10-11-fankeel-pane-design.md) 改掉這頁兩件事——Pane 的 id 是共用的 `fankeel`，gate 是它的一個區塊，不是 `fankeel-gate`；多題與多選的 gate 先不畫 Input，Pane 只顯示並提供「交給終端」。另外第 6 節「已有檔就不寫」改成只有比這個 gate 開始（pending 檔的 `at`）更新的 answer 檔才不寫：answer 檔在 gate 之間沒有人清，照原文 Pane 一個 stage 只答得了一次。其餘決定照這頁。
+>
+> 2026-10-12：同一份設計的[第 6 節](2026-10-11-fankeel-pane-design.md)再改一處——Pane 上每個選項的 `description` 折行畫在它的 Button 底下，不再因為列數不夠而丟掉；gate 比 Pane 高時由 Pane 自己捲動。
 
 session 2b986530-5d60-4247-8515-3b847b277508 的 design 草稿，來自 TODO 全表盤點（10-07）的 plan；依 [重開 mod 路線](../../03-decisions/2026-10-07-mod-reopen.md) 第五項。這頁是要做的事，不是現狀；核准之後另開 task 實作。
 
