@@ -1,12 +1,15 @@
 // The status half of the fankeel Pane: a registry entry in, rows out.
 // No engine call here, so tests/pane-status.test.js runs it under plain node.
-// What each block holds is docs/90-agent/judgements/2026-10-11-pane-content.md;
-// the stage, the route, `next` and the guard are the band's (hooks/pane-band.ts).
+// What each block holds is docs/90-agent/judgements/2026-10-11-pane-right.md;
+// the task block on top is the band's two rows (hooks/pane-band.ts) written out whole.
+
+import { since } from './pane-band.ts'
 
 export type Entry = Record<string, unknown>
 export type Other = { id: string; entry: Entry }
 // A colour by what it means; hooks/pane.ts turns each into a hex of hooks/pane-band.ts.
-export type Tone = 'head' | 'plain' | 'text' | 'dim' | 'amber' | 'clash' | 'hollow'
+// `heat<N>` is the context count from N percent of the threshold: one of HEAT below.
+export type Tone = 'head' | 'plain' | 'text' | 'dim' | 'amber' | 'clash' | 'hollow' | `heat${number}`
 export type Seg = { text: string; tone: Tone; bold?: boolean }
 // One drawn row, its segments a cell apart. No segments is the blank row above a block.
 export type Row = { block: string; segs: Seg[] }
@@ -49,14 +52,32 @@ function tail(s: string, cols: number): string {
   return '…' + out
 }
 
-function age(updated: unknown, now: number): string {
-  const at = Date.parse(str(updated))
-  if (!Number.isFinite(at)) return '?'
-  const min = Math.max(0, Math.round((now - at) / 60000))
-  if (min < 60) return `${min}m`
-  if (min < 1440) return `${Math.round(min / 60)}h`
-  return `${Math.round(min / 1440)}d`
+// `s` whole, in rows of at most `cols` cells: a row that fills inside a word of
+// narrow characters breaks at its last space, any other where it is full.
+function wrap(s: string, cols: number): string[] {
+  const rows: string[] = []
+  let row = ''
+  for (const ch of s) {
+    if (width(row + ch) <= cols) {
+      row += ch
+      continue
+    }
+    const at = row.lastIndexOf(' ')
+    const word = row.slice(at + 1)
+    if (ch !== ' ' && at > 0 && !WIDE.test(word + ch)) {
+      rows.push(row.slice(0, at).trimEnd())
+      row = word + ch
+    } else {
+      rows.push(row.trimEnd())
+      row = ch === ' ' ? '' : ch
+    }
+  }
+  if (row) rows.push(row)
+  return rows
 }
+
+// Whole minutes, or `?` where the registry has no reading.
+const mins = (ms: unknown): string => (typeof ms === 'number' && Number.isFinite(ms) ? String(Math.max(0, Math.floor(ms / 60000))) : '?')
 
 // What hooks/compact.ts instructionsFor tells the summary to keep, a word each;
 // tests/pane-status.test.js checks every word against that function's text.
@@ -93,8 +114,16 @@ export function planTotal(text: string): number {
   return total
 }
 
-// Dropped in this order when the rows do not fit; the gate (hooks/pane-gate.ts) and foot never are.
-const DROP = ['touched', 'neighbours', 'notes', 'plan', 'context']
+// Dropped in this order when the rows do not fit; the task, the gate (hooks/pane-gate.ts), the shared files and the foot never are.
+const DROP = ['notes', 'plan', 'agent', 'context']
+
+// TokenBar's context ramp, second tier: the percent of the threshold each colour starts at.
+const HEAT = [36, 40, 45, 50, 55, 60, 65, 70, 75]
+// The percent the count turns bold at, and the one the block says what a compact keeps at.
+const BOLD = 60
+const KEEP = 80
+// The minutes an agent is out before its row turns amber.
+const LONG = 20
 
 const thousands = (n: number): string => `${Math.round(n / 1000)}k`
 
@@ -114,17 +143,61 @@ export function statusRows(
   }
   const head = (block: string, text: string): Row => ({ block, segs: [{ text: cut(text, cols), tone: 'head', bold: true }] })
   const claims = list(entry.claims ?? entry.scope)
+  const stage = str(entry.stage)
+  const route = list(entry.route)
+  const at = route.indexOf(stage)
+  const record = (v: unknown): Record<string, unknown> => (v && typeof v === 'object' ? (v as Record<string, unknown>) : {})
+  const waited = record(entry.waited)
   const blocks: Row[][] = []
+
+  const spent = (label: string, name: string, ms: number | null): Row =>
+    one('task', cut(`${label} ${name} ${mins(ms)} 分 · 等你 ${mins(waited[name] ?? 0)} 分`, cols), 'dim')
+  const task: Row[] = wrap(str(entry.task), cols).map((text) => ({ block: 'task', segs: [{ text, tone: 'plain', bold: true }] }))
+  if (route.length) {
+    const stations = route.map((name) => (name === stage ? `[${name}]` : name)).join(' ▸ ')
+    task.push(...wrap(stations, cols).map((text) => one('task', text, 'text')))
+  }
+  const next = str(entry.next)
+  if (next) task.push(...wrap(`next: ${next}`, cols).map((text) => one('task', text, 'text')))
+  const started = since(entry, stage)
+  task.push(spent('本站', stage, started === null ? null : now - started))
+  if (at > 0) {
+    const pair = record(entry.clock)[route[at - 1]]
+    const ran = Array.isArray(pair) && typeof pair[0] === 'number' && typeof pair[1] === 'number' ? pair[1] - pair[0] : null
+    task.push(spent('上站', route[at - 1], ran))
+  }
+  blocks.push(task)
+
+  const shared = claims.filter((file) => others.some((other) => list(other.entry.claims ?? other.entry.scope).includes(file)))
+  // 2: the cells of `⚑ `.
+  if (shared.length) {
+    blocks.push(shared.map((file): Row => ({ block: 'neighbours', segs: [{ text: `⚑ ${tail(file, Math.max(4, cols - 2))}`, tone: 'clash', bold: true }] })))
+  }
+
+  // `inflight` is one mark, or a list of them once two agents are out (lib/registry.js inflights).
+  const marks = Array.isArray(entry.inflight) ? entry.inflight : [entry.inflight]
+  const mark = marks.map(record).find((m) => m.stage === stage)
+  if (mark) {
+    const out = Math.max(0, Math.floor((now - (Number(mark.at) || now)) / 60000))
+    const group = Number.isInteger(mark.group) ? ` · 第 ${mark.group} 組` : ''
+    blocks.push([one('agent', cut(`agent 出去 ${out} 分${group}`, cols), out >= LONG ? 'amber' : 'text')])
+  }
 
   if (context) {
     const count = thousands(context.tokens)
     const rest = cut(`· 到 ${thousands(context.at)} 自動 compact`, Math.max(4, cols - width(count) - 1))
     const hot = context.tokens >= context.at
-    blocks.push([
+    // Whole numbers on both sides: 0.55 * 100 is not 55.
+    const reached = (percent: number): boolean => context.tokens * 100 >= percent * context.at
+    const step = HEAT.filter(reached).pop()
+    const first: Seg = { text: count, tone: step ? `heat${step}` : 'plain' }
+    if (reached(BOLD)) first.bold = true
+    const rows: Row[] = [
       head('context', 'context'),
-      { block: 'context', segs: [{ text: count, tone: 'amber', bold: true }, hot ? { text: rest, tone: 'amber', bold: true } : { text: rest, tone: 'dim' }] },
-      one('context', cut(`留 ${KEPT.join(' · ')}`, cols), 'dim'),
-    ])
+      { block: 'context', segs: [first, hot ? { text: rest, tone: 'amber', bold: true } : { text: rest, tone: 'dim' }] },
+    ]
+    if (reached(KEEP)) rows.push(one('context', cut(`留 ${KEPT.join(' · ')}`, cols), 'dim'))
+    blocks.push(rows)
   }
 
   if (plan && plan.total > 0) {
@@ -140,24 +213,9 @@ export function statusRows(
     blocks.push([head('plan', 'plan'), { block: 'plan', segs }, one('plan', cut(plan.name, cols), 'dim')])
   }
 
-  const notes = list(entry.notes).slice(0, 5)
+  // The registry keeps the newest note last.
+  const notes = list(entry.notes).slice(-3)
   if (notes.length) blocks.push([head('notes', 'notes'), ...notes.map((note) => one('notes', cut(`· ${note}`, cols), 'text'))])
-
-  if (others.length) {
-    const rows: Row[] = [head('neighbours', '其他 session')]
-    for (const other of others) {
-      const tag = ` @ ${str(other.entry.stage) || '?'} · ${age(other.entry.updated, now)}`
-      rows.push(one('neighbours', cut(str(other.entry.task) || other.id.slice(0, 8), Math.max(4, cols - width(tag))) + tag, 'text'))
-      const shared = list(other.entry.claims ?? other.entry.scope).find((file) => claims.includes(file))
-      // 7: the cells of `⚑ 共用 `.
-      if (shared) rows.push({ block: 'neighbours', segs: [{ text: `⚑ 共用 ${tail(shared, Math.max(4, cols - 7))}`, tone: 'clash', bold: true }] })
-    }
-    blocks.push(rows)
-  }
-
-  if (claims.length) {
-    blocks.push([head('touched', `touched ${claims.length}`), ...claims.slice(-3).map((file) => one('touched', tail(file, cols), 'dim'))])
-  }
 
   blocks.push([one('foot', cut(`${id.slice(0, 8)} · /fankeel-panel 關閉`, cols), 'dim')])
 

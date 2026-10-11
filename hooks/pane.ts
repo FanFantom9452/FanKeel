@@ -1,7 +1,7 @@
 import type { Register, EngineInterface } from 'claude-code'
 import { parentOf, isActive, SESSION_ID, HARD } from './compact.ts'
 import { statusRows, width, ledgerDone, planTotal } from './pane-status.ts'
-import type { Entry, Other, Context, PlanCount, Seg as StatusSeg } from './pane-status.ts'
+import type { Entry, Other, Context, PlanCount, Seg as StatusSeg, Row as StatusRow } from './pane-status.ts'
 import { taskDir, pendingName, answerName, parsePending, gateRows, answerText, HANDOFF } from './pane-gate.ts'
 import type { Pending } from './pane-gate.ts'
 import { bandRows, stageColor, GUARD, FLAG, TITLE, WHERE, HOLLOW, INK } from './pane-band.ts'
@@ -293,7 +293,7 @@ export const register: Register = (on) => {
   }
 
   on('session.start', async ($, e, next) => {
-    await $.command.register({ name: COMMAND, description: 'fankeel 面板：等待中的 gate、context、plan 進度、notes、其他 session 與碰過的檔案' })
+    await $.command.register({ name: COMMAND, description: 'fankeel 面板：任務、等待中的 gate、撞檔、出去的 agent、context、plan 進度與 notes' })
     $.clock.every(POLL_MS, () => tick($, state))
     return next(e)
   })
@@ -340,15 +340,25 @@ export const register: Register = (on) => {
     const room = Math.max(1, props.scroll?.bodyRows ?? (e.viewport?.rows ?? 24) - 4)
     const pending = seen.pending
     const pendingFile = seen.pendingFile
-    // The gate is drawn whole and the Pane scrolls over it; the status blocks take the rows it leaves.
+    // The gate is drawn whole, under the task block, and the Pane scrolls over it; the status blocks take the rows it leaves.
     const gate = pending && pendingFile ? gateRows(pending, cols, width) : []
     const status = statusRows(seen.id, seen.entry, seen.others, seen.context, seen.plan, cols, room - gate.length - (gate.length ? 1 : 0), Date.now())
     const stage = stageColor(String(seen.entry?.stage ?? ''))
-    const tones: Record<string, string | undefined> = { head: stage, plain: undefined, text: TITLE, dim: WHERE, amber: GUARD, clash: FLAG, hollow: HOLLOW }
+    const tones: Record<string, string | undefined> = {
+      head: stage, plain: undefined, text: TITLE, dim: WHERE, amber: GUARD, clash: FLAG, hollow: HOLLOW,
+      // TokenBar's context ramp, second tier (xterm 190 226 220 214 208 196 198 199 200), as hex.
+      heat36: '#d7ff00', heat40: '#ffff00', heat45: '#ffd700', heat50: '#ffaf00', heat55: '#ff8700',
+      heat60: '#ff0000', heat65: '#ff0087', heat70: '#ff00af', heat75: '#ff00d7',
+    }
     const gap = () => h(Text, {}, ' ')
     const piece = (seg: StatusSeg) => h(Text, { color: tones[seg.tone], bold: seg.bold, wrap: 'truncate-end' }, seg.text)
+    const line = (row: StatusRow) => (row.segs.length === 0 ? gap() : row.segs.length === 1 ? piece(row.segs[0]) : h(Box, { flexDirection: 'row', gap: 1 }, ...row.segs.map(piece)))
+    // The task block stays on top; the blank row statusRows puts above the block after it parts the gate from the rest.
+    const top = status.filter((row) => row.block === 'task')
 
     const drawn = [
+      ...top.map(line),
+      ...(gate.length && top.length ? [gap()] : []),
       ...gate.map((row) => {
         if (row.press !== undefined && pending && pendingFile) {
           return h(Button, {
@@ -361,8 +371,7 @@ export const register: Register = (on) => {
         if (row.badge) return h(Text, { backgroundColor: GUARD, color: INK, bold: true }, ` ${row.text} `)
         return h(Text, { bold: row.bold, color: row.dim ? WHERE : undefined, wrap: 'truncate-end' }, row.text)
       }),
-      ...(gate.length && status.length ? [gap()] : []),
-      ...status.map((row) => (row.segs.length === 0 ? gap() : row.segs.length === 1 ? piece(row.segs[0]) : h(Box, { flexDirection: 'row', gap: 1 }, ...row.segs.map(piece)))),
+      ...status.filter((row) => row.block !== 'task').map(line),
     ]
     return h(Box, { flexDirection: 'column' }, ...drawn)
   })

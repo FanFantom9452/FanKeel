@@ -105,7 +105,7 @@ test('the command opens the pane, and closes it when it is open', async () => {
     assert.deepEqual(log.closed.map((p) => p.id), ['fankeel']);
 });
 
-test('the Pane draws what is looked up, and leaves the stage, the route and the task to the band', async () => {
+test('the Pane draws the task block on top, then what is looked up', async () => {
     const hooks = await wired();
     assert.deepEqual(hooks['ui.render:matcher'], { component: 'Pane', requestId: 'fankeel' });
     const { $, log } = fake({ files: entryFile(Object.assign({}, live, { notes: ['a note'] })) });
@@ -113,10 +113,10 @@ test('the Pane draws what is looked up, and leaves the stage, the route and the 
     await log.ticks[0].fn();
     const tree = await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } });
     const seen = texts(tree);
-    assert.deepEqual(seen.filter((t) => t.trim()), ['context', '312k', '· 到 450k 自動 compact', '留 task · stage · plan · agent · handoff',
-        'notes', '· a note', 'touched 1', 'a.js', 'abcdef12 · /fankeel-panel 關閉']);
+    assert.deepEqual(seen.filter((t) => t.trim()), ['demo task', 'survey ▸ [design] ▸ build', '本站 design ? 分 · 等你 0 分', '上站 survey ? 分 · 等你 0 分',
+        'context', '312k', '· 到 450k 自動 compact', 'notes', '· a note', 'abcdef12 · /fankeel-panel 關閉']);
     assert.equal(seen.filter((t) => !t.trim()).length, 3);
-    assert.doesNotMatch(seen.join('\n'), /demo task|2 of 3|guard|bounded/);
+    assert.doesNotMatch(seen.join('\n'), /touched|2 of 3|guard|bounded/);
     assert.equal(buttons(tree).length, 0);
 });
 
@@ -287,23 +287,21 @@ test('a gate with no room for the pane is one toast, not one a tick', async () =
     assert.match(log.toasts[0], /\/fankeel-panel/);
 });
 
-test('neighbours are the other active entries in the same sessions directory', async () => {
+test('neighbours are the other active entries in the same sessions directory, drawn as the files they share', async () => {
     const hooks = await wired();
     const other = { task: 'someone else', stage: 'build', active: true, updated: new Date().toISOString(), claims: ['a.js'] };
     const files = Object.assign(entryFile(live), {
         [ROOT + '/.fankeel/sessions/11111111-0000-4000-8000-000000000002.json']: JSON.stringify(other),
-        [ROOT + '/.fankeel/sessions/22222222-0000-4000-8000-000000000003.json']: JSON.stringify(Object.assign({}, other, { task: 'stood down', active: false })),
+        [ROOT + '/.fankeel/sessions/22222222-0000-4000-8000-000000000003.json']: JSON.stringify(Object.assign({}, other, { task: 'stood down', active: false, claims: ['a.js', 'gone.js'] })),
         [ROOT + '/.fankeel/sessions/broken.json']: '{ not json',
     });
     const { $, log } = fake({ files });
     await hooks['session.start']($, {}, async () => ({}));
     await hooks['command.run']($, { command: 'fankeel-panel', args: '' });
     await log.ticks[0].fn();
-    const seen = texts(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } })).join('\n');
-    assert.match(seen, /someone else/);
-    assert.match(seen, /共用 a\.js/);
-    assert.doesNotMatch(seen, /stood down/);
-    assert.doesNotMatch(seen, /@ design/, 'this session\'s own task is listed among its neighbours');
+    const seen = texts(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
+    assert.deepEqual(seen.filter((t) => t.startsWith('⚑')), ['⚑ a.js']);
+    assert.doesNotMatch(seen.join('\n'), /someone else|stood down|@ build|共用/);
 });
 
 test('narrow terminal: a gate gives one toast, and /fankeel-panel opens again instead of closing', async () => {
@@ -410,7 +408,7 @@ test('neighbours are read with the pane closed, for the band, and a file that ha
     assert.doesNotMatch(bandLines(await hooks.band($, BAND, passed))[0], /⚑/);
 });
 
-test('a short pane with a four-option gate keeps every description, every button and the foot', async () => {
+test('a short pane with a four-option gate keeps the task, every description, every button and the foot', async () => {
     const hooks = await wired();
     const options = ['a', 'b', 'c', 'd'].map((label) => ({ label, description: ('about ' + label + ' at some length, ').repeat(4) + 'end of ' + label }));
     const four = { questions: [{ question: 'Which?', header: 'design', options }], at: 1000, until: Date.now() + 600000 };
@@ -425,8 +423,11 @@ test('a short pane with a four-option gate keeps every description, every button
     assert.ok(seen.length > 14, 'the fixture fits the pane: ' + seen.length);
     assert.equal(buttons(tree).length, 5);
     assert.ok(seen.some((t) => t.startsWith('abcdef12')));
-    assert.ok(!seen.some((t) => t.startsWith('touched') || t === 'context'), 'a block that drops was kept beside a gate taller than the pane');
-    const badge = leaves(tree)[0];
+    assert.ok(!seen.includes('context'), 'a block that drops was kept beside a gate taller than the pane');
+    // The task block, a blank row, the gate, a blank row, the foot.
+    assert.deepEqual(seen.slice(0, 6), ['demo task', 'survey ▸ [design] ▸ build', '本站 design ? 分 · 等你 0 分', '上站 survey ? 分 · 等你 0 分', ' ', ' gate · design ']);
+    assert.deepEqual(seen.slice(-2), [' ', 'abcdef12 · /fankeel-panel 關閉']);
+    const badge = leaves(tree).find((n) => n.props.backgroundColor);
     assert.deepEqual([badge.children.join(''), badge.props.backgroundColor, badge.props.color, badge.props.bold], [' gate · design ', '#d7af5f', '#000000', true]);
 });
 
@@ -474,13 +475,13 @@ test('with a gate waiting the band\'s second row is the badge and the question',
     assert.deepEqual([badge.children.join(''), badge.props.backgroundColor, badge.props.color, badge.props.bold], [' gate 在等 ', '#d7af5f', '#000000', true]);
 });
 
-test('the band and the Pane count the same files and the same clashes', async () => {
+test('the band counts the sessions that clash, and the Pane names the files they share', async () => {
     const hooks = await wired();
-    const mine = Object.assign({}, live, { claims: ['a.js', 'b.js', 'c.js'] });
+    const mine = Object.assign({}, live, { claims: ['a.js', 'b.js', 'c.js', 'd.js'] });
     const peer = (task, claims) => JSON.stringify({ task, stage: 'build', active: true, updated: new Date().toISOString(), claims });
     const files = Object.assign(entryFile(mine), {
         [ROOT + '/.fankeel/sessions/11111111-0000-4000-8000-000000000002.json']: peer('shares b', ['b.js']),
-        [ROOT + '/.fankeel/sessions/22222222-0000-4000-8000-000000000003.json']: peer('shares c and a', ['c.js', 'a.js']),
+        [ROOT + '/.fankeel/sessions/22222222-0000-4000-8000-000000000003.json']: peer('shares c and a', ['c.js', 'a.js', 'b.js']),
         [ROOT + '/.fankeel/sessions/33333333-0000-4000-8000-000000000004.json']: peer('shares nothing', ['z.js']),
     });
     const { $, log } = fake({ files });
@@ -490,12 +491,10 @@ test('the band and the Pane count the same files and the same clashes', async ()
     const pane = texts(await hooks['ui.render']($, { viewport: { columns: 44, rows: 60 } }));
     const [, n, m] = band[1].match(/(\d+) of (\d+)/);
     assert.deepEqual([Number(n), Number(m)], [mine.route.indexOf(mine.stage) + 1, mine.route.length]);
-    const touched = Number(band[1].match(/(\d+) 檔/)[1]);
-    assert.equal(touched, 3);
-    assert.ok(pane.includes('touched ' + touched), pane.join(' | '));
-    const flags = Number(band[0].match(/⚑(\d+)/)[1]);
-    assert.equal(flags, 2);
-    assert.equal(pane.filter((t) => t.startsWith('⚑ 共用')).length, flags);
+    assert.equal(Number(band[1].match(/(\d+) 檔/)[1]), 4);
+    assert.equal(Number(band[0].match(/⚑(\d+)/)[1]), 2);
+    assert.deepEqual(pane.filter((t) => t.startsWith('⚑')), ['⚑ a.js', '⚑ b.js', '⚑ c.js']);
+    assert.doesNotMatch(pane.join('\n'), /touched|shares/);
 });
 
 test('the context block shows the tokens against FANKEEL_COMPACT_AT, and a new count redraws', async () => {
@@ -513,6 +512,29 @@ test('the context block shows the tokens against FANKEEL_COMPACT_AT, and a new c
     await log.ticks[0].fn();
     assert.equal(log.invalidated, after + 1);
     assert.ok(texts(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } })).includes('320k'));
+});
+
+test('the context count is coloured by how far it is to the threshold, bold from sixty percent', async () => {
+    const hooks = await wired();
+    const { $, log } = fake({ files: entryFile(live), env: { FANKEEL_COMPACT_AT: '100000' } });
+    await hooks['session.start']($, {}, async () => ({}));
+    const count = async (tokens) => {
+        log.tokens = tokens;
+        await log.ticks[0].fn();
+        const leaf = leaves(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } })).find((n) => n.children.join('') === Math.round(tokens / 1000) + 'k');
+        return [leaf.props.color, leaf.props.bold];
+    };
+    assert.deepEqual(await count(35000), [undefined, undefined]);
+    assert.deepEqual(await count(36000), ['#d7ff00', undefined]);
+    assert.deepEqual(await count(40000), ['#ffff00', undefined]);
+    assert.deepEqual(await count(45000), ['#ffd700', undefined]);
+    assert.deepEqual(await count(50000), ['#ffaf00', undefined]);
+    assert.deepEqual(await count(55000), ['#ff8700', undefined]);
+    assert.deepEqual(await count(60000), ['#ff0000', true]);
+    assert.deepEqual(await count(65000), ['#ff0087', true]);
+    assert.deepEqual(await count(70000), ['#ff00af', true]);
+    assert.deepEqual(await count(75000), ['#ff00d7', true]);
+    assert.deepEqual(await count(250000), ['#ff00d7', true]);
 });
 
 test('with no FANKEEL_COMPACT_AT the threshold is HARD, and with no token count there is no context block', async () => {
@@ -651,9 +673,9 @@ test('a pane that cannot open says what the engine said, or that nothing here dr
 test('the Pane is laid out in its own body columns and rows, and coloured by the stage', async () => {
     const { width } = await import(pathToFileURL(path.join(__dirname, '..', 'hooks', 'pane-status.ts')).href);
     const hooks = await wired();
-    const mine = Object.assign({}, live, { notes: ['一則很長的筆記，'.repeat(8)], claims: ['a.js', 'docs/a/very/long/path/that/goes/on/and/on/and/on/file.md'] });
+    const mine = Object.assign({}, live, { task: '一個很長的任務標題，'.repeat(6), notes: ['一則很長的筆記，'.repeat(8)], claims: ['a.js', 'docs/a/very/long/path/that/goes/on/and/on/and/on/file.md'] });
     const files = Object.assign(entryFile(mine), {
-        [ROOT + '/.fankeel/sessions/11111111-0000-4000-8000-000000000002.json']: JSON.stringify({ task: '另一個很長的任務標題，'.repeat(6), stage: 'build', active: true, updated: new Date().toISOString(), claims: ['a.js'] }),
+        [ROOT + '/.fankeel/sessions/11111111-0000-4000-8000-000000000002.json']: JSON.stringify({ task: '另一個很長的任務標題，'.repeat(6), stage: 'build', active: true, updated: new Date().toISOString(), claims: mine.claims }),
     });
     const { $, log } = fake({ files });
     await hooks['session.start']($, {}, async () => ({}));
@@ -664,13 +686,20 @@ test('the Pane is laid out in its own body columns and rows, and coloured by the
         const cells = row.tag === 'Text' ? width(row.children.join('')) : row.children.reduce((n, c) => n + width(c.children.join('')), row.children.length - 1);
         assert.ok(cells <= 41, '41 < ' + cells + ': ' + texts(row).join(' '));
     }
+    const title = leaves(tree).filter((n) => n.props.bold && n.props.color === undefined).map((n) => n.children.join(''));
+    assert.equal(title.join(''), mine.task, 'the title is not drawn whole');
+    assert.equal(title.length, 3);
     const heads = (t) => leaves(t).filter((n) => n.props.bold && n.props.color === '#5f5fd7').map((n) => n.children.join(''));
-    assert.deepEqual(heads(tree), ['context', 'notes', '其他 session', 'touched 2']);
-    const clash = leaves(tree).find((n) => n.children.join('').startsWith('⚑ 共用'));
-    assert.deepEqual([clash.props.color, clash.props.bold], ['#ff5f5f', true]);
+    assert.deepEqual(heads(tree), ['context', 'notes']);
+    const clash = leaves(tree).filter((n) => n.children.join('').startsWith('⚑ '));
+    assert.equal(clash.length, 2);
+    assert.deepEqual(clash.map((n) => [n.props.color, n.props.bold]), [['#ff5f5f', true], ['#ff5f5f', true]]);
+    assert.ok(clash[1].children.join('').startsWith('⚑ …') && clash[1].children.join('').endsWith('file.md'));
     const foot = leaves(tree).find((n) => n.children.join('').startsWith('abcdef12'));
     assert.equal(foot.props.color, '#8a8a8a');
-    assert.deepEqual(heads(await at(5)), ['context'], 'the room is the body rows the surface gave, not the viewport');
+    // 18 rows in all: the task 6, the files 2, context 2, notes 2, the foot 1, and four blank rows between.
+    assert.equal(texts(tree).length, 18);
+    assert.deepEqual(heads(await at(15)), ['context'], 'the room is the body rows the surface gave, not the viewport');
 });
 
 test('a new minute redraws, so the band\'s minutes and the neighbours\' ages move', async () => {

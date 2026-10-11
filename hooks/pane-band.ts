@@ -41,7 +41,7 @@ export function clashes(entry: Entry, others: { entry: Entry }[]): number {
 // When this visit to `stage` began: the last move into it, else the stage's
 // first clock mark. `clock` keeps one pair a stage, so a route-back reads
 // there as one long visit.
-function since(entry: Entry, stage: string): number | null {
+export function since(entry: Entry, stage: string): number | null {
   const moves = Array.isArray(entry.moves) ? entry.moves : []
   for (let i = moves.length - 1; i >= 0; i--) {
     const move = moves[i]
