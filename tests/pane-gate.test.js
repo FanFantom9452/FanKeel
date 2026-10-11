@@ -16,7 +16,6 @@ const one = { question: '接受這個方案，進入 plan 嗎？', header: 'desi
     { label: '暫停', description: 'next 設為看過預覽' },
 ] };
 const width = (s) => [...s].length;
-const cut = (s, cols) => ([...s].length <= cols ? s : [...s].slice(0, cols - 1).join('') + '…');
 
 test('taskDir is lib/handoff.js dirFor', async () => {
     const { taskDir } = await load();
@@ -73,20 +72,22 @@ test('a single single-select question is simple; anything else is not', async ()
 
 test('gateRows: one plain button a option with hotkeys from 1, then the terminal button', async () => {
     const { gateRows } = await load();
-    const rows = gateRows({ questions: [one], until: 1, at: null }, 44, 99, cut);
+    const rows = gateRows({ questions: [one], until: 1, at: null }, 44, width);
     const buttons = rows.filter((r) => r.press !== undefined);
     assert.deepEqual(buttons.map((r) => r.hotkey), ['1', '2', '3', 't']);
     assert.deepEqual(buttons.slice(0, 3).map((r) => r.press), one.options.map((o) => o.label));
     assert.equal(buttons[3].press, '');
     assert.ok(buttons.every((r) => !r.bold));
-    assert.ok(rows.some((r) => r.text.includes(one.question)));
+    assert.deepEqual(rows[0], { block: 'gate', text: 'gate · design', bold: true, badge: true });
+    assert.deepEqual(rows[1], { block: 'gate', text: one.question, bold: true });
     assert.ok(rows.every((r) => r.block === 'gate' && width(r.text) <= 44));
 });
 
 test('gateRows for a gate that is not simple offers only the terminal', async () => {
     const { gateRows } = await load();
-    const rows = gateRows({ questions: [one, one], until: 1, at: null }, 44, 99, cut);
+    const rows = gateRows({ questions: [one, one], until: 1, at: null }, 44, width);
     assert.deepEqual(rows.filter((r) => r.press !== undefined).map((r) => r.hotkey), ['t']);
+    assert.ok(rows.some((r) => r.dim && r.text.includes('2 題')));
 });
 
 test('answerText is read back by answersSince, and refuses a label nobody asked', async () => {
@@ -116,21 +117,33 @@ test('a question with no options, or more than four, is not simple and offers on
     for (const q of [five, none]) {
         const pending = { questions: [q], until: 1 };
         assert.equal(simple(pending), false);
-        assert.deepEqual(gateRows(pending, 44, 99, cut).filter((r) => r.press !== undefined).map((r) => r.hotkey), ['t']);
+        assert.deepEqual(gateRows(pending, 44, width).filter((r) => r.press !== undefined).map((r) => r.hotkey), ['t']);
     }
 });
 
-test('gateRows stays inside its room by dropping descriptions, then the hint, never a button', async () => {
+test('gateRows keeps the question and every description whole, wrapped under its button, however many rows that takes', async () => {
     const { gateRows } = await load();
-    const four = Object.assign({}, one, { options: ['a', 'b', 'c', 'd'].map((label) => ({ label, description: 'about ' + label })) });
-    const pending = { questions: [four], until: 1, at: null };
-    for (const [room, rows] of [[12, 12], [8, 8], [7, 7]]) {
-        const got = gateRows(pending, 44, room, cut);
-        assert.equal(got.length, rows, 'room ' + room);
-        assert.deepEqual(got.filter((r) => r.press !== undefined).map((r) => r.hotkey), ['1', '2', '3', '4', 't']);
-        assert.ok(got[0].bold && got[1].text === four.question);
-    }
-    assert.ok(gateRows(pending, 44, 8, cut).some((r) => r.text.includes('ctrl+x')));
-    assert.ok(!gateRows(pending, 44, 7, cut).some((r) => r.text.includes('ctrl+x')));
-    assert.ok(!gateRows(pending, 44, 8, cut).some((r) => r.text.includes('about')));
+    const options = ['a', 'b', 'c', 'd'].map((label) => ({ label: '選項 ' + label, description: ('關於 ' + label + ' 的說明，寫得比一列長；').repeat(6) + label + ' 結束' }));
+    const four = Object.assign({}, one, { question: '這一題的題目也比一列長，'.repeat(4) + '要選哪一個？', options });
+    const rows = gateRows({ questions: [four], until: 1, at: null }, 44, width);
+    const squash = (s) => s.replace(/\s+/g, '');
+    assert.ok(rows.length > 18, 'the fixture would fit an 18-row pane: ' + rows.length);
+    assert.ok(rows.every((r) => r.block === 'gate' && width(r.text) <= 44));
+    assert.equal(squash(rows.filter((r) => r.bold && !r.badge).map((r) => r.text).join('')), squash(four.question));
+    assert.deepEqual(rows.filter((r) => r.press !== undefined).map((r) => r.hotkey), ['1', '2', '3', '4', 't']);
+    options.forEach((o, i) => {
+        const under = [];
+        for (let k = rows.findIndex((r) => r.hotkey === String(i + 1)) + 1; rows[k].press === undefined; k++) under.push(rows[k]);
+        assert.ok(under.length > 1, 'the description of ' + o.label + ' took one row');
+        assert.ok(under.every((r) => r.dim && r.text.startsWith('   ')));
+        assert.equal(squash(under.map((r) => r.text).join('')), squash(o.description));
+    });
+    assert.ok(rows[rows.length - 1].dim && rows[rows.length - 1].text.includes('ctrl+x'));
+});
+
+test('an option with no description draws only its button', async () => {
+    const { gateRows } = await load();
+    const bare = Object.assign({}, one, { options: [{ label: 'Yes' }, { label: 'No', description: '' }] });
+    const rows = gateRows({ questions: [bare], until: 1, at: null }, 44, width);
+    assert.deepEqual(rows.map((r) => r.hotkey || (r.badge ? 'badge' : r.bold ? 'question' : 'hint')), ['badge', 'question', '1', '2', 't', 'hint']);
 });
