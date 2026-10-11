@@ -44,6 +44,9 @@ const { clearEntry } = require('../lib/clear.js');
 const profile = require('../lib/profile.js');
 const handoff = require('../lib/handoff.js');
 const docsearch = require('../lib/docsearch.js');
+const detail = require('../lib/detail.js');
+const conversation = require('../lib/conversation.js');
+const { entriesOf } = require('../lib/usage.js');
 const todoCheck = require('./todo-check.js');
 const todoFiles = require('../lib/todo.js');
 const view = require('../assets/station/station.js');
@@ -329,6 +332,10 @@ async function serve(opts) {
     // detail it shows while its session is live; without this each re-read
     // parsed every cached detail on the machine again.
     const memo = new Map();
+    // The one conversation last asked for, read once and held while `keyOf`
+    // says its transcript has not moved: turning a page must not parse a
+    // 20 MB transcript again.
+    let talked = null;
     // Every Chartroom handler this run has built, one per registry root,
     // each on that root's first `/chartroom/<name>/` request; `close()`
     // below closes them all.
@@ -465,6 +472,35 @@ async function serve(opts) {
             const out = docsearch.search(docsearch.searchDirs(sharedModel()), url.searchParams.get('q') || '');
             res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
             res.end(JSON.stringify(out));
+            return;
+        }
+        const talk = /^\/station\/talk\/([0-9A-Za-z-]+)$/.exec(url.pathname);
+        if (req.method === 'GET' && talk) {
+            // The 對話 tab: one page of a session's turns (lib/conversation.js)
+            // and the counts of the whole conversation, read from the config
+            // dir that session recorded. Not part of any written copy: the
+            // full text stays on this machine and is read per request.
+            const row = sharedModel().registries.flatMap((r) => r.sessions).find((s) => s.sessionId === talk[1]);
+            const file = detail.transcriptOf(row && row.configDir ? row.configDir : gatherOpts.configDir, talk[1]);
+            if (!file) {
+                fail(404, 'no transcript for that session');
+                return;
+            }
+            const key = detail.keyOf(file);
+            if (!talked || talked.id !== talk[1] || talked.key !== key) {
+                const stats = { unparsed: 0 };
+                const entries = entriesOf(file, stats);
+                if (!entries) {
+                    fail(404, 'cannot read that transcript');
+                    return;
+                }
+                const read = conversation.turnsOf(entries);
+                read.skipped.unparsed = stats.unparsed;
+                talked = { id: talk[1], key, read };
+            }
+            const from = Number(url.searchParams.get('from'));
+            res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
+            res.end(JSON.stringify(conversation.pageOf(talked.read, from, conversation.PAGE)));
             return;
         }
         const wanted = /^\/station\/detail\/([0-9A-Za-z-]+)\.js$/.exec(url.pathname);

@@ -109,6 +109,20 @@ test('jsonlOf writes one turn a line', () => {
     assert.deepEqual(lines.map((l) => JSON.parse(l)), turns);
 });
 
+test('countsOf is what the header prints, and pageOf slices the turns around the whole conversation\'s counts', () => {
+    const read = conversation.turnsOf(ENTRIES);
+    assert.deepEqual(conversation.countsOf(read.turns), { compact: 1, user: 4, claude: 3 });
+    const page = conversation.pageOf(read, 5, 3);
+    assert.deepEqual([page.total, page.from], [10, 5]);
+    assert.deepEqual(page.turns.map((t) => t.kind), ['compact', 'summary', 'interrupt']);
+    assert.deepEqual(page.counts, { compact: 1, user: 4, claude: 3 }, 'the whole conversation\'s counts, not the page\'s');
+    assert.equal(page.skipped, read.skipped);
+    assert.equal(conversation.pageOf(read, 8, conversation.PAGE).turns.length, 2);
+    assert.equal(conversation.pageOf(read, 99, 3).turns.length, 0);
+    for (const bad of [-5, NaN, undefined, '3', 1.5]) assert.equal(conversation.pageOf(read, bad, 2).from, 0);
+    assert.equal(conversation.PAGE, 100);
+});
+
 test('the CLI finds the session under projects, writes either format, and refuses what it cannot do', () => {
     const cfg = tmp('fankeel-conversation-');
     const dir = path.join(cfg, 'projects', 'F--proj');

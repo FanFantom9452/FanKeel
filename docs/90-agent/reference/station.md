@@ -247,20 +247,45 @@ combined figure, agents included.
 
 ### The session page
 
-A session also opens on a page of its own, `#/s/<id>`, in three tabs — 概覽,
-派工 and 事件 — and `#/s/<id>/<tab>` opens one directly, with `timeline`,
-`dispatch` or `events`. 概覽 is the default and now folds together what were
+A session also opens on a page of its own, `#/s/<id>`, in four tabs — 概覽,
+派工, 事件 and 對話 — and `#/s/<id>/<tab>` opens one directly, with `timeline`,
+`dispatch`, `events` or `talk`. 概覽 is the default and now folds together what were
 separately 時間線 and 花費: the context chart, 任務 and the list of the
 largest rises, plus the per-stage spend bar and the stage × model table that
 used to be 花費's own tab (see below). An old `#/s/<id>/cost` link still
 parses — `cost` stays a valid `TABS` value in `parseHash` — but now opens
 概覽 rather than a separate tab, since `tabsHtml`'s `TAB_SHOWN`
-(`assets/station/station.js:1325`, `['timeline', 'dispatch', 'events']`) maps
+(`assets/station/station.js:1327`, `['timeline', 'dispatch', 'events', 'talk']`) maps
 `cost` back to `timeline`. 派工 gives
 every row its input and output tokens, read from `split`, and its dollars,
 read from `cost`; 事件 is the replay, each gate's row carrying how long it
 waited. The side panel in the next section is the other way in, from 清單,
 and keeps its claims.
+
+對話 (`#/s/<id>/talk`) is what was said, read from the transcript when the
+tab is opened and not from the detail script. It lists the turns in order and
+whole, 100 at a time. The line over them counts the whole conversation: user
+turns, Claude turns and `compact` times, then the transcript lines the read
+left out, by kind (`tool`, `meta`, `notification`, `agent`, `local`,
+`synthetic`, `sidechain`, `unparsed`), biggest first, a kind with none left
+unlisted. Those numbers are the ones `node scripts/conversation.js` prints in
+its file header, because both come from `countsOf` in `lib/conversation.js`.
+Each turn carries a text tag, 使用者 or Claude, not colour alone, and
+`MM-DD HH:MM` in the reader's time zone; its text is shown as typed with the
+line breaks kept, and only a block fenced with three backticks becomes a
+monospace block, the fence lines dropped. An interruption is one line, 中斷. A
+compaction is one break carrying its time, its trigger and the context it
+compacted (`412k`), and the summary right after it is the same block, shut
+until opened. Under the turns `已顯示 N / M 輪` and a `再載入 100 輪` button; the
+button is gone once every turn is in. A 輪 there is any listed turn, so M is
+more than the user and Claude turns together by the interruptions, compactions
+and summaries. The tab's label carries M once the first page is in. What was
+fetched is kept in `TALK[id]` in the page's memory and every redraw is drawn
+from it, so the three-second re-read fetches nothing; turns written after the
+last page come with 再載入, and, once every turn is in, with a reload of the
+page. Where the transcript is not on this machine the tab says so, and a page
+written to a file, which has no server to ask, says it can only be read from
+`serve`.
 
 Under the title, the session's state and — served — how fresh the page is:
 `即時・剛更新`, then `即時・N 秒前更新`, while the session is live, and
@@ -527,7 +552,10 @@ stands. `node scripts/station.js` reads every changed session however long it
 takes, and `serve` answers the same file at `GET /station/detail/<id>.js`.
 Both the page and the cache sit where git does not look — the registry copy's
 `station/` is ignored and the cache is under the config directory — so the
-prompt fragments a replay quotes stay on this machine.
+prompt fragments a replay quotes stay on this machine. So does the full text of
+the 對話 tab, which is in neither: `GET /station/talk/<id>` (under Search, the
+tour and the served files) reads the transcript when asked, and no written copy
+holds it.
 
 `days` and `spans` are a second derivation, and they do not replace `spend`.
 `extract()` computes them in the same transcript read that fills the detail
@@ -1090,6 +1118,23 @@ frontmatter removed; pages sort by how often it occurs, and the answer carries
 the total `n` and the first 20, each with 60 characters either side of the
 first hit. The file `/fankeel` writes has no server to ask, so there the block
 is a note saying to open the page from `serve`.
+
+`GET /station/talk/<id>?from=<n>` is the 對話 tab's one request
+(`scripts/station.js`, the `/station/talk/` branch, matched by pattern because
+the session id is in the path). It finds the session's transcript under the
+config dir its registry entry recorded, this server's own when the entry has
+none, and answers JSON: `{ total, from, counts: { compact, user, claude },
+skipped, turns }`. `total` is every turn of the conversation; `counts` and
+`skipped` (`meta`, `tool`, `notification`, `agent`, `local`, `synthetic`,
+`sidechain`, `unparsed`) are the whole conversation's; `turns` is 100 of them
+from index `from` (`pageOf` in `lib/conversation.js`; a `from` that is not a
+whole number above 0 is 0). A turn is `{ kind, at, text }`, `kind` one of
+`user`, `claude`, `interrupt`, `summary` or `compact`, and a `compact` turn also
+carries `trigger` and `preTokens`. A session with no transcript here is a 404.
+The conversation last read is held in memory and parsed again only when
+`keyOf` (`lib/detail.js`) says the transcript moved. None of it is written to
+`station-data.js`, a detail script or any copy of the page: the full text stays
+on this machine.
 
 導覽 (`#/tour`) frames `station/tour.html`, the tour's own page
 (`assets/station/tour.html`). Only a served page can show it; the written file
