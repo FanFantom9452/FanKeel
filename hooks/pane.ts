@@ -202,6 +202,7 @@ async function tick($: EngineInterface, state: State): Promise<void> {
     try {
       next = await look($, state.cache, state.logged)
       state.bad = 0
+      state.logged.registry = ''
     } catch (err) {
       if (!(err instanceof Unreadable)) throw err
       state.bad += 1
@@ -238,6 +239,7 @@ async function tick($: EngineInterface, state: State): Promise<void> {
         state.mine = false
       }
       state.edge = { task: !!next.entry, gate: next.pendingFile }
+      state.logged.open = ''
     } catch (err) {
       logOnce($, state.logged, 'open', `fankeel pane: pane not opened or closed, ${String(err)}`)
     }

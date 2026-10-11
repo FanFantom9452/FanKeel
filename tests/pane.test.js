@@ -818,3 +818,58 @@ test('a registry file that stays unreadable is logged once and, after twenty tic
     await log.ticks[0].fn();
     assert.match(await band(), /demo task/, 'a file that parses again is not a task');
 });
+
+test('a readable tick starts the count of unreadable ticks again', async () => {
+    const hooks = await wired();
+    const { $, log, store } = fake({ files: entryFile(live) });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const torn = '{"task": "demo task", "stag';
+    store[SESSION] = torn;
+    for (let i = 0; i < 19; i++) await log.ticks[0].fn();
+    store[SESSION] = JSON.stringify(live);
+    await log.ticks[0].fn();
+    store[SESSION] = torn;
+    await log.ticks[0].fn();
+    assert.match(bandLines(await hooks.band($, BAND, passed))[0], /demo task/, 'the twentieth unreadable tick overall read as no task');
+    assert.deepEqual(log.closed, []);
+});
+
+test('a close that rejects when the gate goes is tried again on the next tick, once', async () => {
+    const hooks = await wired();
+    const { $, log, store } = fake({ files: entryFile(live) });
+    const close = $.ui.close;
+    let calls = 0;
+    $.ui.close = async (p) => { calls += 1; if (calls === 2) throw new Error('busy'); return close(p); };
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    await command(hooks, $);
+    assert.equal(log.closed.length, 1);
+    store[DIR + '/design-pending.json'] = JSON.stringify(gate);
+    await log.ticks[0].fn();
+    assert.equal(log.opened.length, 2, 'the gate got no pane after the user closed the task\'s');
+    delete store[DIR + '/design-pending.json'];
+    await log.ticks[0].fn();
+    assert.equal(log.closed.length, 1, 'the rejected close was recorded');
+    await log.ticks[0].fn();
+    assert.equal(log.closed.length, 2, 'the pane the gate opened stayed up after a close that rejected');
+    await log.ticks[0].fn();
+    assert.equal(log.closed.length, 2, 'closed again on a later tick');
+});
+
+test('a registry file that fails, parses, and fails again is logged each time it starts failing', async () => {
+    const hooks = await wired();
+    const { $, log, store } = fake({ files: entryFile(live) });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const torn = '{"task": "demo task", "stag';
+    store[SESSION] = torn;
+    await log.ticks[0].fn();
+    await log.ticks[0].fn();
+    store[SESSION] = JSON.stringify(live);
+    await log.ticks[0].fn();
+    store[SESSION] = torn;
+    await log.ticks[0].fn();
+    await log.ticks[0].fn();
+    assert.equal(log.logs.filter((m) => /registry file unreadable/.test(m)).length, 2, JSON.stringify(log.logs));
+});

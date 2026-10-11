@@ -1659,3 +1659,4 @@ Claude Desktop 不讀工作目錄：它載入的是安裝時的快照，在 `~/.
 | 上方兩行與 Pane 同源（10-12） | Task 4 |
 | gate 的 description 不丟（10-12） | Task 3（列超過 18 列仍然全在）、Task 4（Pane 只有 18 列時全在樹裡） |
 | 真機（10-12） | Task 6 |
+| session 有 active 的 entry 時 mod 自己開 Pane，一個任務只開一次：使用者關掉就不再為同一個任務開，新的 gate 來時才再開。任務結束時關掉 mod 自己開的；使用者開的不關。registry 檔連續 20 個 tick（五秒）讀不懂時算作沒有任務。使用者在真機看過之後要的（10-12）。 | Task 4 — 使用者在 Task 6 真機時要的，plan 核准之後才加；由 Task 4 的 fix round 2 到 5 做 |

@@ -15,7 +15,7 @@ session f0a58f35-ae39-4954-89d6-e0b9129a4082 的 design。這頁是要做的事�
 
 - `session.start` 以 `$.command.register` 註冊 `fankeel-pane`；`command.run` 開著就 `$.ui.close({ id: 'fankeel' })`，沒開就 `$.ui.open({ id: 'fankeel', title: 'fankeel' })`。使用者自己開的 Pane 任何寬度都落位。
 - ~~mod 不在 `session.start` 自己開 Pane：沒被要求的面板佔掉 44 欄。~~ 10-12 改了，見第 6 節。
-- pending 檔出現而 Pane 沒開時，mod 自己 `$.ui.open`；回 `isPlaced: false` 就發一則 `$.ui.toast`，說 gate 在等、`/fankeel-pane` 開面板。自己開的那一次，在 pending 檔消失時關掉；使用者開的不關。
+- pending 檔出現而 Pane 沒開時，mod 自己 `$.ui.open`；回 `isPlaced: false` 就發一則 `$.ui.toast`，說 gate 在等、`/fankeel-pane` 開面板。自己為 gate 開的那一次，在 pending 檔消失時關掉；使用者開的不關，為任務開的（第 6 節）也不關。
 
 ## 2. 狀態區塊
 
@@ -58,7 +58,7 @@ session f0a58f35-ae39-4954-89d6-e0b9129a4082 的 design。這頁是要做的事�
 - `plan` 兩列：`claims` 裡的 plan 檔在 `.fankeel/build/<basename>/progress.md` 有 ledger 時，畫完成的 task 數與總數（圓點與 `tasks N of M`），第二列是 plan 的檔名；沒有 ledger 就沒有這個區塊。
 - 兩個畫面的資料都來自 `hooks/pane.ts` 同一個 `look`，重畫的比對鍵加上 token 數與 ledger 的內容。
 - `/fankeel-pane` 開不了時的訊息不再一律說終端太窄：`$.session.surfaces()` 沒有能放 Pane 的 surface 時，說這裡畫不了面板。
-- session 有 active 的 entry 時 mod 自己開 Pane，一個任務只開一次：使用者關掉就不再為同一個任務開，新的 gate 來時才再開。任務結束時關掉 mod 自己開的；使用者開的不關。使用者在真機看過之後要的（10-12）。
+- session 有 active 的 entry 時 mod 自己開 Pane，一個任務只開一次：使用者關掉就不再為同一個任務開，新的 gate 來時才再開。任務結束時關掉 mod 自己開的；使用者開的不關。registry 檔連續 20 個 tick（五秒）讀不懂時算作沒有任務。使用者在真機看過之後要的（10-12）。
 - 文件寫明兩件實測到的事：Remote Control 與手機不畫 mod；Claude Desktop 讀的是安裝時的快照，改版後要 `claude plugin update fankeel@fankeel` 才看得到。
 
 ## What proves it done
