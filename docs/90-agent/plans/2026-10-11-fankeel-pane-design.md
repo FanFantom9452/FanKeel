@@ -76,3 +76,9 @@ session f0a58f35-ae39-4954-89d6-e0b9129a4082 的 design。這頁是要做的事�
 | 上方兩行與 Pane 同源（10-12） | 同一個 fixture 畫兩個畫面：上方的 `N of M`、`claims` 數目、`⚑` 的數目，等於 Pane 的 `touched` 數目與 `neighbours` 的 clash 列數 |
 | gate 的 description 不丟（10-12） | `tests/pane-gate.test.js`：四個選項各帶 description、Pane 只有 18 列，每一個 description 的字都在樹裡；現在會被丟，紅 |
 | 真機（10-12） | 終端與 Claude Desktop 各開一個有任務的 session：上方兩行與 Pane 都畫出同一個階段；答一次 gate |
+
+真機（10-12）的結果，Claude Desktop 2.31226.1 內建的 Claude Code 2.1.295：
+
+- 沒有任務的 session：上方兩行不出現，`/fankeel-pane` 開出的 Pane 畫 `empty`。看過。
+- 放一筆在 `build` 的 entry：上方兩行在一秒內出現（階段、四實三空的圓點、`⚿ deny`、標題；`next`、`2 檔`、`4 of 7 · 8 分`），Pane 畫出 `context`（60k 對 450k）、`notes`、其他 session、`touched 2` 與 session id。看過，用的是手寫的假 entry。
+- 沒看的，記在 TODO `pane-1`：`⚑` 與紅色色帶、gate 在 Pane 上的完整說明與作答、終端上的樣子、Pane 自己打開。使用者要等下一個真的任務一起看。
