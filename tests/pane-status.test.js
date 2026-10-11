@@ -166,6 +166,14 @@ test('plan is one dot a task, the count, and the plan\'s name; no ledger is no b
     assert.deepEqual(of(null), []);
 });
 
+test('an agent mark with no readable start draws ? minutes and is never amber', async () => {
+    const m = await load();
+    const out = (inflight) => drawn(alone(m, Object.assign({}, entry, { inflight })), 'agent').map((r) => r.segs);
+    assert.deepEqual(out({ stage: 'design' }), [[{ text: 'agent 出去 ? 分', tone: 'text' }]]);
+    assert.deepEqual(out({ stage: 'design', at: 'soon', group: 2 }), [[{ text: 'agent 出去 ? 分 · 第 2 組', tone: 'text' }]]);
+    assert.deepEqual(out({ stage: 'design', at: NOW }), [[{ text: 'agent 出去 0 分', tone: 'text' }]]);
+});
+
 test('notes are the newest three, each under the notes heading', async () => {
     const m = await load();
     const many = Object.assign({}, entry, { notes: ['a', 'b', 'c', 'd', 'e', 'f', 'g'] });

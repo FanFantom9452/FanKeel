@@ -179,16 +179,17 @@ export function statusRows(
   const marks = Array.isArray(entry.inflight) ? entry.inflight : [entry.inflight]
   const mark = marks.map(record).find((m) => m.stage === stage)
   if (mark) {
-    const out = Math.max(0, Math.floor((now - (Number(mark.at) || now)) / 60000))
+    const known = typeof mark.at === 'number' && Number.isFinite(mark.at)
+    const out = mins(known ? now - (mark.at as number) : null)
     const group = Number.isInteger(mark.group) ? ` · 第 ${mark.group} 組` : ''
-    blocks.push([one('agent', cut(`agent 出去 ${out} 分${group}`, cols), out >= LONG ? 'amber' : 'text')])
+    blocks.push([one('agent', cut(`agent 出去 ${out} 分${group}`, cols), known && Number(out) >= LONG ? 'amber' : 'text')])
   }
 
   if (context) {
     const count = thousands(context.tokens)
     const rest = cut(`· 到 ${thousands(context.at)} 自動 compact`, Math.max(4, cols - width(count) - 1))
     const hot = context.tokens >= context.at
-    // Whole numbers on both sides: 0.55 * 100 is not 55.
+    // Integer comparison, so a threshold needs no rounding.
     const reached = (percent: number): boolean => context.tokens * 100 >= percent * context.at
     const step = HEAT.filter(reached).pop()
     const first: Seg = { text: count, tone: step ? `heat${step}` : 'plain' }
