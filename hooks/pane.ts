@@ -27,8 +27,6 @@ type Seen = {
   pendingFile: string | null
   context: Context | null
   plan: PlanCount | null
-  // The ledger's text, kept only so a line added to it redraws.
-  ledger: string
 }
 
 // What a file last parsed to, and the time and size it had then: the tick runs
@@ -36,7 +34,16 @@ type Seen = {
 // has not moved is not read again.
 type Cache = Map<string, { stamp: string; value: unknown }>
 
-const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, pendingFile: null, context: null, plan: null, ledger: '' })
+const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, pendingFile: null, context: null, plan: null })
+
+// The last message each silent catch logged: the tick runs four times a second, and a failure that stays is said once.
+type Logged = { context: string; plan: string }
+
+function logOnce($: EngineInterface, logged: Logged, key: keyof Logged, text: string): void {
+  if (logged[key] === text) return
+  logged[key] = text
+  $.ui.log(text, { to: 'debug' })
+}
 
 async function readJson($: EngineInterface, file: string): Promise<Entry | null> {
   try {
@@ -66,13 +73,14 @@ async function findEntry($: EngineInterface, id: string): Promise<{ entry: Entry
 // The tokens in play and the count hooks/compact.ts compacts at: its
 // `threshold`, written again for the same reason as findEntry. Null while the
 // engine has no count, or cannot be asked.
-async function contextOf($: EngineInterface): Promise<Context | null> {
+async function contextOf($: EngineInterface, logged: Logged): Promise<Context | null> {
   try {
     const { context } = await $.session.usage()
     if (typeof context.tokens !== 'number') return null
     const raw = Number(await $.env.get('FANKEEL_COMPACT_AT'))
     return { tokens: context.tokens, at: Number.isFinite(raw) && raw > 0 ? raw : HARD }
-  } catch {
+  } catch (err) {
+    logOnce($, logged, 'context', `fankeel pane: no token count, ${String(err)}`)
     return null
   }
 }
@@ -80,7 +88,7 @@ async function contextOf($: EngineInterface): Promise<Context | null> {
 // The newest plan this task claimed that has a build ledger of its own: the
 // ledger is where lib/ledger.js ledgerPath puts it, and ledgerDone refuses one
 // whose first line names another plan. The total is the plan's own headings.
-async function planOf($: EngineInterface, root: string, entry: Entry, cache: Cache): Promise<{ plan: PlanCount | null; ledger: string }> {
+async function planOf($: EngineInterface, root: string, entry: Entry, cache: Cache, logged: Logged): Promise<PlanCount | null> {
   const claims = Array.isArray(entry.claims) ? entry.claims : []
   for (let i = claims.length - 1; i >= 0; i--) {
     const claim = claims[i]
@@ -102,19 +110,21 @@ async function planOf($: EngineInterface, root: string, entry: Entry, cache: Cac
         cache.set(planFile, hit)
       }
       total = hit.value as number
-    } catch {
+    } catch (err) {
+      logOnce($, logged, 'plan', `fankeel pane: plan file unreadable, ${String(err)}`)
       total = 0
     }
-    return { plan: total > 0 ? { name, done, total } : null, ledger }
+    return total > 0 ? { name, done, total } : null
   }
-  return { plan: null, ledger: '' }
+  return null
 }
 
-// Everything both drawings show, read fresh: this session's entry, the other
-// active entries beside it, the gate hooks/gate.js is holding, the context
-// count and the plan's ledger. The neighbours are read whether or not the
+// Everything both drawings show: this session's entry, the other active
+// entries beside it, the gate hooks/gate.js is holding, the context count and
+// the plan's ledger; the neighbours and the plan file are read again only when
+// their mtimeMs or size changes. The neighbours are read whether or not the
 // Pane is up, because the band's flag needs them.
-async function look($: EngineInterface, cache: Cache): Promise<Seen> {
+async function look($: EngineInterface, cache: Cache, logged: Logged): Promise<Seen> {
   const id = await $.session.id()
   if (!SESSION_ID.test(id)) return blank(id)
   const found = await findEntry($, id)
@@ -130,7 +140,8 @@ async function look($: EngineInterface, cache: Cache): Promise<Seen> {
     let hit = cache.get(path)
     if (!hit || hit.stamp !== stamp) {
       hit = { stamp, value: await readJson($, path) }
-      cache.set(path, hit)
+      // A file that did not parse may be one caught mid-write: it is read again next tick.
+      if (hit.value) cache.set(path, hit)
     }
     const other = hit.value as Entry | null
     if (other && isActive(other)) others.push({ id: file.name.slice(0, -5), entry: other })
@@ -148,9 +159,9 @@ async function look($: EngineInterface, cache: Cache): Promise<Seen> {
     }
   }
 
-  const context = await contextOf($)
-  const { plan, ledger } = await planOf($, found.root, entry, cache)
-  return { id, entry, others, pending, pendingFile, context, plan, ledger }
+  const context = await contextOf($, logged)
+  const plan = await planOf($, found.root, entry, cache, logged)
+  return { id, entry, others, pending, pendingFile, context, plan }
 }
 
 type State = {
@@ -160,6 +171,7 @@ type State = {
   mine: boolean
   busy: boolean
   cache: Cache
+  logged: Logged
 }
 
 // An unplaced pane (narrow terminal) is registered but not drawn: not open.
@@ -172,11 +184,11 @@ async function tick($: EngineInterface, state: State): Promise<void> {
   if (state.busy) return
   state.busy = true
   try {
-    const next = await look($, state.cache)
+    const next = await look($, state.cache, state.logged)
     const was = state.seen.pendingFile
     // The minute is in the key so the band's minutes and the neighbours' ages move while nothing else does.
     const minute = next.entry ? Math.floor((await $.clock.now()) / 60000) : 0
-    const now = JSON.stringify([next.entry, next.others, next.pending && next.pending.questions, next.pendingFile, next.context, next.plan, next.ledger, minute])
+    const now = JSON.stringify([next.entry, next.others, next.pending && next.pending.questions, next.pendingFile, next.context, next.plan, minute])
     // Asked here, after `look`: /fankeel-pane may have opened or closed the pane while it read files.
     if (next.pendingFile && next.pendingFile !== was && !(await isOpen($))) {
       const opened = await $.ui.open({ id: PANE, title: 'fankeel' })
@@ -218,7 +230,7 @@ async function answer($: EngineInterface, pending: Pending, pendingFile: string,
 }
 
 export const register: Register = (on) => {
-  const state: State = { seen: blank(''), print: '', mine: false, busy: false, cache: new Map() }
+  const state: State = { seen: blank(''), print: '', mine: false, busy: false, cache: new Map(), logged: { context: '', plan: '' } }
 
   on('session.start', async ($, e, next) => {
     await $.command.register({ name: COMMAND, description: 'fankeel 面板：等待中的 gate、context、plan 進度、notes、其他 session 與碰過的檔案' })
@@ -236,18 +248,15 @@ export const register: Register = (on) => {
     await tick($, state)
     if (opened.isPlaced) return { text: 'fankeel 面板已開啟。' }
     const surfaces = await $.session.surfaces()
-    return {
-      text: surfaces.some((surface) => PLACES.includes(surface))
-        ? 'fankeel 面板開不了：終端太窄。'
-        : 'fankeel 面板開不了：這裡畫不了面板。Remote Control 與手機不畫 mod，請在終端或 Claude Desktop 開。',
-    }
+    if (!surfaces.some((surface) => PLACES.includes(surface))) return { text: 'fankeel 面板開不了：這裡畫不了面板，請在終端或 Claude Desktop 開。' }
+    return { text: opened.reason ? `fankeel 面板開不了：${opened.reason}` : 'fankeel 面板開不了：終端太窄。' }
   })
 
   // Two rows while the session owns a task; otherwise the band is the next hook's, and with none it is not drawn.
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     const seen = state.seen
     const props = (e.props ?? {}) as { hasSurvey?: boolean; bodyColumns?: number }
-    if (!seen.entry || props.hasSurvey) return next(e)
+    if (props.hasSurvey) return next(e)
     const asked = seen.pending ? seen.pending.questions[0] : null
     const gate = seen.pending ? String((asked && asked.question) ?? '') : null
     // 5: the cells the engine keeps at the band's right end, where no surface has measured the body.

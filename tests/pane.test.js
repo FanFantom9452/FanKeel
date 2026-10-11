@@ -15,8 +15,8 @@ const live = { task: 'demo task', stage: 'design', class: 'bounded', active: tru
     route: ['survey', 'design', 'build'], started: '2026-10-10T20:33:51.000Z', claims: ['a.js'] };
 const gate = { questions: [{ question: 'Go on?', header: 'design', options: [{ label: 'Yes (Recommended)' }, { label: 'Stay' }, { label: 'Pause' }] }], at: 1000, until: Date.now() + 600000 };
 
-function fake({ files = {}, placed = true, surfaces = ['terminal'], tokens = 312400, env = {} } = {}) {
-    const log = { opened: [], closed: [], toasts: [], invalidated: 0, commands: [], ticks: [], ids: 0, lists: [], reads: [],
+function fake({ files = {}, placed = true, surfaces = ['terminal'], tokens = 312400, env = {}, reason = 'narrow' } = {}) {
+    const log = { opened: [], closed: [], toasts: [], invalidated: 0, commands: [], ticks: [], ids: 0, lists: [], reads: [], logs: [],
         tokens, now: Date.parse('2026-10-12T00:00:00.000Z') };
     const store = Object.assign({}, files);
     const mtimes = {};
@@ -44,12 +44,12 @@ function fake({ files = {}, placed = true, surfaces = ['terminal'], tokens = 312
         clock: { now: async () => log.now, every: (ms, fn) => { log.ticks.push({ ms, fn }); return { cancel() {} }; } },
         command: { register: async (c) => { log.commands.push(c); return { command: c.name }; } },
         ui: {
-            open: async (p) => { log.opened.push(p); return placed ? { isPlaced: true } : { isPlaced: false, reason: 'narrow' }; },
+            open: async (p) => { log.opened.push(p); return placed ? { isPlaced: true } : { isPlaced: false, reason }; },
             close: async (p) => { log.closed.push(p); },
             panes: async () => (log.opened.length > log.closed.length ? [{ id: 'fankeel', isPlaced: placed }] : []),
             toast: (t) => { log.toasts.push(t); },
             invalidate: () => { log.invalidated += 1; },
-            log: () => {},
+            log: (m) => { log.logs.push(m); },
             resolve: () => ({ Box: 'Box', Text: 'Text', Button: 'Button' }),
         },
     };
@@ -511,12 +511,56 @@ test('with no FANKEEL_COMPACT_AT the threshold is HARD, and with no token count 
     const rest = leaves(tree).find((n) => n.children.join('') === '· 到 ' + Math.round(HARD / 1000) + 'k 自動 compact');
     assert.ok(rest, texts(tree).join(' | '));
     assert.deepEqual([rest.props.color, rest.props.bold], ['#8a8a8a', undefined]);
+    // Number('Infinity') is not finite: the same rule as hooks/compact.ts threshold.
+    const inf = fake({ files: entryFile(live), env: { FANKEEL_COMPACT_AT: 'Infinity' } });
+    const infHooks = await wired();
+    await infHooks['session.start'](inf.$, {}, async () => ({}));
+    await inf.log.ticks[0].fn();
+    assert.ok(texts(await infHooks['ui.render'](inf.$, { viewport: { columns: 44, rows: 40 } })).includes('· 到 450k 自動 compact'));
     log.tokens = null;
     await log.ticks[0].fn();
     assert.ok(!texts(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } })).includes('context'));
     $.session.usage = async () => { throw new Error('not yet'); };
     await log.ticks[0].fn();
     assert.match(bandLines(await hooks.band($, BAND, passed))[0], /demo task/, 'a usage() that throws took the band with it');
+});
+
+test('a usage() that rejects drops the context block and nothing else of the tick', async () => {
+    const hooks = await wired();
+    const { $, log, store } = fake({ files: entryFile(live) });
+    const draw = async () => texts(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    assert.ok((await draw()).includes('context'));
+    $.session.usage = async () => { throw new Error('not yet'); };
+    store[ROOT + '/.fankeel/sessions/' + ID + '.json'] = JSON.stringify(Object.assign({}, live, { stage: 'build' }));
+    const before = log.invalidated;
+    await log.ticks[0].fn();
+    assert.ok(!(await draw()).includes('context'));
+    assert.equal(log.invalidated, before + 1, 'the tick stopped at the usage() that threw');
+    assert.match(bandLines(await hooks.band($, BAND, passed))[0], /FANKEEL BUILD/);
+});
+
+test('a usage() that rejects on three ticks is logged once', async () => {
+    const hooks = await wired();
+    const { $, log } = fake({ files: entryFile(live) });
+    $.session.usage = async () => { throw new Error('not yet'); };
+    await hooks['session.start']($, {}, async () => ({}));
+    for (let i = 0; i < 3; i++) await log.ticks[0].fn();
+    assert.equal(log.logs.filter((m) => /not yet/.test(m)).length, 1, JSON.stringify(log.logs));
+});
+
+test('a neighbour that first reads as unparsable is read again at the same mtime and size', async () => {
+    const hooks = await wired();
+    const OTHER = ROOT + '/.fankeel/sessions/11111111-0000-4000-8000-000000000002.json';
+    const valid = JSON.stringify({ task: 'someone else', stage: 'build', active: true, updated: new Date().toISOString(), claims: ['a.js'] });
+    const { $, log, store } = fake({ files: Object.assign(entryFile(live), { [OTHER]: 'x'.repeat(valid.length) }) });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    assert.doesNotMatch(bandLines(await hooks.band($, BAND, passed))[0], /⚑/);
+    store[OTHER] = valid;
+    await log.ticks[0].fn();
+    assert.match(bandLines(await hooks.band($, BAND, passed))[0], /⚑1/, 'a read that failed was cached');
 });
 
 test('a claimed plan with a build ledger draws its tasks done, and a line added to the ledger redraws', async () => {
@@ -546,14 +590,20 @@ test('a claimed plan with a build ledger draws its tasks done, and a line added 
     assert.ok(!(await draw()).some((t) => t.startsWith('tasks ')), 'another plan\'s ledger was counted');
 });
 
-test('a pane that cannot open says whether the terminal is narrow or nothing here draws panes', async () => {
-    for (const [surfaces, said, unsaid] of [[['terminal'], /終端太窄/, /畫不了面板/], [['desktop'], /終端太窄/, /畫不了面板/], [[], /畫不了面板/, /終端太窄/], [['mobile'], /畫不了面板/, /終端太窄/]]) {
+test('a pane that cannot open says what the engine said, or that nothing here draws panes', async () => {
+    const none = 'fankeel 面板開不了：這裡畫不了面板，請在終端或 Claude Desktop 開。';
+    for (const [surfaces, reason, said] of [
+        [['terminal'], 'under 144 columns, now 100', 'fankeel 面板開不了：under 144 columns, now 100'],
+        [['desktop'], 'under 144 columns, now 100', 'fankeel 面板開不了：under 144 columns, now 100'],
+        [['terminal'], '', 'fankeel 面板開不了：終端太窄。'],
+        [[], 'under 144 columns, now 100', none],
+        [['mobile'], 'under 144 columns, now 100', none],
+    ]) {
         const hooks = await wired();
-        const { $ } = fake({ files: entryFile(live), placed: false, surfaces });
+        const { $ } = fake({ files: entryFile(live), placed: false, surfaces, reason });
         await hooks['session.start']($, {}, async () => ({}));
         const reply = await hooks['command.run']($, { command: 'fankeel-pane', args: '' });
-        assert.match(reply.text, said, JSON.stringify(surfaces));
-        assert.doesNotMatch(reply.text, unsaid, JSON.stringify(surfaces));
+        assert.equal(reply.text, said, JSON.stringify([surfaces, reason]));
     }
 });
 
