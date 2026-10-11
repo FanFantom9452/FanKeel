@@ -54,8 +54,8 @@ session f0a58f35-ae39-4954-89d6-e0b9129a4082 的 design。這頁是要做的事�
 - 顏色是 TokenBar 的 fankeel 色階，以 hex 寫在 `hooks/pane-band.ts`：`survey #5f5f87`、`design #5f5fd7`、`plan #5f87af`、`build #5f87d7`、`verify #5fafff`、`audit #5fd787`、`land #5fd7ff`；空心圓點 `#585858`、guard `#d7af5f`、`⚑` `#ff5f5f`、標題 `#bcbcbc`、次要字 `#8a8a8a`。左邊的色帶與階段同色，有 `⚑` 時是 `#ff0000`。
 - Pane 的區塊改成由上到下 `gate`、`context`、`plan`、`notes`、`neighbours`、`touched`、`foot`；`head`、`route`、`memory` 的 `next`、`cost`、`foot` 的 guard 拿掉，因為上面兩行已經有，`cost` 則是 station 頁已經畫了。列數不夠時的丟棄順序是 `touched`、`neighbours`、`notes`、`plan`、`context`；`gate` 與 `foot` 不丟。
 - `gate` 區塊畫完整的題目：每個選項的 `description` 折行畫在它的 Button 底下，不因列數不夠而丟掉。第 3 節與 `hooks/pane-gate.ts` 現在的「先丟 description」改掉；gate 比 Pane 高時由 Pane 自己的捲動處理。
-- `context` 兩列：`$.session.usage().context.tokens` 與自動 compact 的門檻（`FANKEEL_COMPACT_AT`，沒有就 `HARD`），到門檻時粗體；第二列是 compact 會留下的東西，與 `hooks/compact.ts` 的 `instructionsFor` 同一份清單。
-- `plan` 一列：`claims` 裡的 plan 檔在 `.fankeel/build/<basename>/progress.md` 有 ledger 時，畫完成的 task 數與總數；沒有 ledger 就沒有這個區塊。
+- `context` 兩列：`$.session.usage().context.tokens` 與自動 compact 的門檻（`FANKEEL_COMPACT_AT`，沒有就 `HARD`）；數字一律粗體，到門檻時連整列粗體；第二列是 compact 會留下的東西，與 `hooks/compact.ts` 的 `instructionsFor` 同一份清單。
+- `plan` 兩列：`claims` 裡的 plan 檔在 `.fankeel/build/<basename>/progress.md` 有 ledger 時，畫完成的 task 數與總數（圓點與 `tasks N of M`），第二列是 plan 的檔名；沒有 ledger 就沒有這個區塊。
 - 兩個畫面的資料都來自 `hooks/pane.ts` 同一個 `look`，重畫的比對鍵加上 token 數與 ledger 的內容。
 - `/fankeel-pane` 開不了時的訊息不再一律說終端太窄：`$.session.surfaces()` 沒有能放 Pane 的 surface 時，說這裡畫不了面板。
 - 文件寫明兩件實測到的事：Remote Control 與手機不畫 mod；Claude Desktop 讀的是安裝時的快照，改版後要 `claude plugin update fankeel@fankeel` 才看得到。

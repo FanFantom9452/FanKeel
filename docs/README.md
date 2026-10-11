@@ -237,6 +237,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | Pane 上的 gate 介面（10-07）的 design 草稿：pending 與 answer 檔只有一份，station 頁面板與 Pane 都是它的畫面，mod 沒載入照舊 | [plans/2026-10-07-gate-pane-design.md](90-agent/plans/2026-10-07-gate-pane-design.md) — *design-intent, 繁體中文* |
 | fankeel 面板（10-11）的 design：一個 id 為 fankeel 的 Pane，/fankeel-pane 開關，狀態在上、gate 在下，改掉 10-07 那頁的 Pane id | [plans/2026-10-11-fankeel-pane-design.md](90-agent/plans/2026-10-11-fankeel-pane-design.md) — *design-intent, 繁體中文* |
 | fankeel 面板（10-11）的 plan：五個 task——狀態列、gate 列與 answer 檔、接線、文件、真機 | [plans/2026-10-11-fankeel-pane.md](90-agent/plans/2026-10-11-fankeel-pane.md) — *design-intent, 繁體中文* |
+| fankeel 面板（10-12）改版的 plan：六個 task——輸入框上方兩行、Pane 重排、gate 完整說明、接線、文件、真機 | [plans/2026-10-12-fankeel-pane-band.md](90-agent/plans/2026-10-12-fankeel-pane-band.md) — *design-intent, 繁體中文* |
 | workflow-gaps（10-10）的 design：judge 的十筆核對後全做——suite 紀錄累加與 `--check`、`direct` 整合、design.md 一律寫出、`facts:` 行、pipeline 頁引文、One path 比對、未受控 gate 的選項數、受控站擋 shell 寫檔 | `docs/99-archive/2026-10-10-workflow-gaps-design.md` — *built, 繁體中文* |
 | 那份設計的十二個 task | `docs/99-archive/2026-10-10-workflow-gaps.md` — *built, 繁體中文* |
 | workflow-gaps（10-10）定了什麼、沒做什麼：十筆全做、十條 TODO 結案；design 進 build 的規則塊沒有改成一律注入、One path 比對留三個洞 | [reports/2026-10-10-workflow-gaps-landed.md](90-agent/reports/2026-10-10-workflow-gaps-landed.md) — *繁體中文* |
