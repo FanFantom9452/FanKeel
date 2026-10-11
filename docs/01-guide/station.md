@@ -32,7 +32,7 @@ source_of_truth: docs/90-agent/reference/station.md, assets/station/station.js, 
 | 導覽 | `#/tour` | 一支 60 秒的動態宣傳片，配純音樂，中英兩版跟著監控站的語言，七站各用一個動畫講它在做什麼；要從 serve 開的頁面才看得到 |
 | 設定 | `#/settings` | profile 精靈，見 [profile.md](profile.md) |
 
-點任一個 session 會進它自己的頁面 `#/s/<id>`，三個分頁：概覽（context 曲線、任務、每站花費）、派工（每個 agent 的 token 與錢）、事件（重播，每個 gate 等了多久）。
+點任一個 session 會進它自己的頁面 `#/s/<id>`，四個分頁：概覽（context 曲線、任務、每站花費）、派工（每個 agent 的 token 與錢）、事件（重播，每個 gate 等了多久）、對話（這個 session 的整段對話，你和 Claude 的文字全文，一次 100 則，網址 `#/s/<id>/talk`；文字只留在這台機器上）。
 
 ## 數字怎麼讀
 
