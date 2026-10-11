@@ -19,7 +19,28 @@ session f0a58f35-ae39-4954-89d6-e0b9129a4082 的 design。這頁是要做的事�
 
 ## 2. 狀態區塊
 
-- 資料只有一個來源：`.fankeel/sessions/<id>.json`，找法用 `hooks/compact.ts` 的 `findEntry`（改成 export，不再寫一份）。
+- 資料只有一個來源：`.fankeel/sessions/<id>.json`，找法同 `hooks/compact.ts` 的 `findEntry`。build 時改了：`claude plugin validate` 不接受把 `---
+status: design-intent
+last_verified: 2026-10-11
+---
+
+# fankeel 面板：一個 Pane，狀態在上，gate 在下
+
+session f0a58f35-ae39-4954-89d6-e0b9129a4082 的 design。這頁是要做的事，不是現狀。mockup 在 `.fankeel/build/2026-10-11-fankeel-pane/mockup.html`（未進 git），gate 核准的是那一頁。
+
+一句話：`hooks/pane.ts` 在現有的 mod 裡加一個 id 為 `fankeel` 的 Pane，由 `/fankeel-pane` 開關，讀這個 session 的 registry 檔畫出任務狀態，有 gate 在等時在同一個 Pane 頂端畫出 gate 並把答案寫進 answer 檔；mod 沒載入時一切照舊。
+
+它改掉 [gate Pane 設計](2026-10-07-gate-pane-design.md) 的一件事：Pane 的 id 從 `fankeel-gate` 變成共用的 `fankeel`，gate 是它的一個區塊，不是另一個 Pane。那一頁其餘的決定（做法 A、250 ms 輪詢、寫前先 stat、交給終端、多選題逐項一個 Input）原樣沿用。
+
+## 1. 開與關
+
+- `session.start` 以 `$.command.register` 註冊 `fankeel-pane`；`command.run` 開著就 `$.ui.close({ id: 'fankeel' })`，沒開就 `$.ui.open({ id: 'fankeel', title: 'fankeel' })`。使用者自己開的 Pane 任何寬度都落位。
+- mod 不在 `session.start` 自己開 Pane：沒被要求的面板佔掉 44 欄。
+- pending 檔出現而 Pane 沒開時，mod 自己 `$.ui.open`；回 `isPlaced: false` 就發一則 `$.ui.toast`，說 gate 在等、`/fankeel-pane` 開面板。自己開的那一次，在 pending 檔消失時關掉；使用者開的不關。
+
+## 2. 狀態區塊
+
+- 資料只有一個來源：`.fankeel/sessions/<id>.json`， 傳進 import 來的函式，所以 `hooks/pane.ts` 有自己的一份，只共用 `parentOf`。
 - 區塊與 mockup 的 `data-block` 同名同序：`head`（task 最多兩行、class）、`route`（階段名、圓點、`N of M`）、`memory`（`next`、`notes`）、`touched`（`claims` 的數目與最後三個路徑，從尾端截）、`cost`（`clock` 與 `waited` 算出的每站分鐘）、`neighbours`、`foot`（id 前 8 碼、`guard`）。
 - `neighbours` 以 `$.fs.list` 讀同一個 `sessions/` 目錄，列出 `active: true` 而且不是自己的；mod 查不了 pid，所以每一列帶 `updated` 的年齡，不宣稱它活著。與自己的 `claims` 有交集時多一行 clash。
 - 沒有 active 的 entry 時只畫 `empty`：沒有任務、`/fankeel` 開一個。

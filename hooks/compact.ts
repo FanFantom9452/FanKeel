@@ -44,7 +44,7 @@ export function instructionsFor(id: string, entry: Entry, pluginRoot: string): s
 // The registry root is the nearest ancestor holding .fankeel/sessions
 // (lib/registry.js findStateRoot); looking for this session's own file there
 // also skips a machine-wide registry that does not hold it.
-export async function findEntry($: EngineInterface, id: string): Promise<{ entry: Entry; root: string } | null> {
+async function findEntry($: EngineInterface, id: string): Promise<{ entry: Entry; root: string } | null> {
   let dir: string | null = await $.session.root()
   while (dir) {
     const root = dir.replace(/[\\/]+$/, '')

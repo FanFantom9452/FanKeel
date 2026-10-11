@@ -1,5 +1,5 @@
 import type { Register, EngineInterface } from 'claude-code'
-import { findEntry, isActive, SESSION_ID } from './compact.ts'
+import { parentOf, isActive, SESSION_ID } from './compact.ts'
 import { statusRows, cut } from './pane-status.ts'
 import type { Entry, Other } from './pane-status.ts'
 import { taskDir, pendingName, answerName, parsePending, gateRows, answerText, HANDOFF } from './pane-gate.ts'
@@ -27,6 +27,22 @@ async function readJson($: EngineInterface, file: string): Promise<Entry | null>
   } catch {
     return null
   }
+}
+
+// hooks/compact.ts findEntry, written again: the engine follows $ only into a
+// function of this file, never across an import.
+async function findEntry($: EngineInterface, id: string): Promise<{ entry: Entry; root: string } | null> {
+  let dir: string | null = await $.session.root()
+  while (dir) {
+    const root = dir.replace(/[\/]+$/, '')
+    const file = `${root}/.fankeel/sessions/${id}.json`
+    if (await $.fs.exists(file)) {
+      const entry = await readJson($, file)
+      return entry && { entry, root }
+    }
+    dir = parentOf(dir)
+  }
+  return null
 }
 
 // Everything the pane draws, read fresh: this session's entry, the other
@@ -63,78 +79,85 @@ async function look($: EngineInterface, placed: boolean): Promise<Seen> {
   return { id, entry, others, pending, pendingFile }
 }
 
-export const register: Register = (on) => {
-  let seen: Seen = { id: '', entry: null, others: [], pending: null, pendingFile: null }
-  let print = ''
+type State = {
+  seen: Seen
+  print: string
   // Whether the pane up now is one the mod opened for a gate, and so it's to close.
-  let mine = false
-  let busy = false
+  mine: boolean
+  busy: boolean
+}
 
-  // An unplaced pane (narrow terminal) is registered but not drawn: not open.
-  const isOpen = async ($: EngineInterface): Promise<boolean> => (await $.ui.panes()).some((pane) => pane.id === PANE && pane.isPlaced)
+// An unplaced pane (narrow terminal) is registered but not drawn: not open.
+async function isOpen($: EngineInterface): Promise<boolean> {
+  return (await $.ui.panes()).some((pane) => pane.id === PANE && pane.isPlaced)
+}
 
-  async function tick($: EngineInterface): Promise<void> {
-    if (busy) return
-    busy = true
-    try {
-      const placed = await isOpen($)
-      const next = await look($, placed)
-      const was = seen.pendingFile
-      const now = JSON.stringify([next.entry, next.others, next.pending && next.pending.questions, next.pendingFile])
-      // Asked again here, not `placed`: /fankeel-pane may have opened or closed the pane while `look` read files.
-      if (next.pendingFile && next.pendingFile !== was && !(await isOpen($))) {
-        const opened = await $.ui.open({ id: PANE, title: 'fankeel' })
-        // Its pane either way, placed now or when the terminal widens.
-        mine = true
-        if (!opened.isPlaced) $.ui.toast('fankeel：有一個 gate 在等。/fankeel-pane 開面板，或在終端回答')
-      }
-      if (!next.pendingFile && was && mine) {
-        await $.ui.close({ id: PANE })
-        mine = false
-      }
-      // After the open and close: a rejected one leaves `seen` as it was, so the next tick sees the gate as new.
-      seen = next
-      if (now !== print) {
-        print = now
-        $.ui.invalidate('ui.render')
-      }
-    } catch (err) {
-      $.ui.log(`fankeel pane: tick skipped, ${String(err)}`, { to: 'debug' })
-    } finally {
-      busy = false
+// Declared up here, not inside register: the engine refuses a module that hands $ to a closure.
+async function tick($: EngineInterface, state: State): Promise<void> {
+  if (state.busy) return
+  state.busy = true
+  try {
+    const placed = await isOpen($)
+    const next = await look($, placed)
+    const was = state.seen.pendingFile
+    const now = JSON.stringify([next.entry, next.others, next.pending && next.pending.questions, next.pendingFile])
+    // Asked again here, not `placed`: /fankeel-pane may have opened or closed the pane while `look` read files.
+    if (next.pendingFile && next.pendingFile !== was && !(await isOpen($))) {
+      const opened = await $.ui.open({ id: PANE, title: 'fankeel' })
+      // Its pane either way, placed now or when the terminal widens.
+      state.mine = true
+      if (!opened.isPlaced) $.ui.toast('fankeel：有一個 gate 在等。/fankeel-pane 開面板，或在終端回答')
     }
-  }
-
-  // Writes `text` to the answer file of the gate that was drawn, unless the
-  // gate is already gone or an answer newer than the wait's start is there
-  // (the station got there first). An older one is an earlier gate's:
-  // lib/handoff.js answersSince reads only a file newer than the wait.
-  async function answer($: EngineInterface, pending: Pending, pendingFile: string, text: string | null): Promise<void> {
-    try {
-      const file = answerName(pendingFile)
-      if (!text || !(await $.fs.exists(pendingFile))) return
-      if ((await $.fs.exists(file)) && (pending.at === null || (await $.fs.stat(file)).mtimeMs > pending.at)) return
-      await $.fs.write(file, text)
-    } catch (err) {
-      $.ui.log(`fankeel pane: answer not written, ${String(err)}`, { to: 'debug' })
-      $.ui.toast('fankeel：答案沒寫成，請在終端回答')
+    if (!next.pendingFile && was && state.mine) {
+      await $.ui.close({ id: PANE })
+      state.mine = false
     }
+    // After the open and close: a rejected one leaves `seen` as it was, so the next tick sees the gate as new.
+    state.seen = next
+    if (now !== state.print) {
+      state.print = now
+      $.ui.invalidate('ui.render')
+    }
+  } catch (err) {
+    $.ui.log(`fankeel pane: tick skipped, ${String(err)}`, { to: 'debug' })
+  } finally {
+    state.busy = false
   }
+}
+
+// Writes `text` to the answer file of the gate that was drawn, unless the
+// gate is already gone or an answer newer than the wait's start is there
+// (the station got there first). An older one is an earlier gate's:
+// lib/handoff.js answersSince reads only a file newer than the wait.
+async function answer($: EngineInterface, pending: Pending, pendingFile: string, text: string | null): Promise<void> {
+  try {
+    const file = answerName(pendingFile)
+    if (!text || !(await $.fs.exists(pendingFile))) return
+    if ((await $.fs.exists(file)) && (pending.at === null || (await $.fs.stat(file)).mtimeMs > pending.at)) return
+    await $.fs.write(file, text)
+  } catch (err) {
+    $.ui.log(`fankeel pane: answer not written, ${String(err)}`, { to: 'debug' })
+    $.ui.toast('fankeel：答案沒寫成，請在終端回答')
+  }
+}
+
+export const register: Register = (on) => {
+  const state: State = { seen: { id: '', entry: null, others: [], pending: null, pendingFile: null }, print: '', mine: false, busy: false }
 
   on('session.start', async ($, e, next) => {
     await $.command.register({ name: COMMAND, description: 'fankeel 面板：這個 session 的任務、階段與等待中的 gate' })
-    $.clock.every(POLL_MS, () => tick($))
+    $.clock.every(POLL_MS, () => tick($, state))
     return next(e)
   })
 
   on('command.run', { command: COMMAND }, async ($) => {
-    mine = false
+    state.mine = false
     if (await isOpen($)) {
       await $.ui.close({ id: PANE })
       return { text: 'fankeel 面板已關閉。' }
     }
     const opened = await $.ui.open({ id: PANE, title: 'fankeel' })
-    await tick($)
+    await tick($, state)
     return { text: opened.isPlaced ? 'fankeel 面板已開啟。' : 'fankeel 面板開不了：終端太窄。' }
   })
 
@@ -142,11 +165,11 @@ export const register: Register = (on) => {
     const { Box, Text, Button } = $.ui.resolve(e)
     const cols = Math.max(20, (e.viewport?.columns ?? 44) - 2)
     const room = Math.max(8, (e.viewport?.rows ?? 24) - 4)
-    const pending = seen.pending
-    const pendingFile = seen.pendingFile
+    const pending = state.seen.pending
+    const pendingFile = state.seen.pendingFile
     // 7: the status rows that never drop (head up to 3, route 2, foot 2).
     const gate = pending && pendingFile ? gateRows(pending, cols, room - 7, cut) : []
-    const status = statusRows(seen.id, seen.entry, seen.others, cols, room - gate.length, Date.now())
+    const status = statusRows(state.seen.id, state.seen.entry, state.seen.others, cols, room - gate.length, Date.now())
 
     const drawn = [
       ...gate.map((row) =>
