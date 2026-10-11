@@ -159,7 +159,7 @@ export function statusRows(
     blocks.push([head('touched', `touched ${claims.length}`), ...claims.slice(-3).map((file) => one('touched', tail(file, cols), 'dim'))])
   }
 
-  blocks.push([one('foot', cut(`${id.slice(0, 8)} · /fankeel-pane 關閉`, cols), 'dim')])
+  blocks.push([one('foot', cut(`${id.slice(0, 8)} · /fankeel-panel 關閉`, cols), 'dim')])
 
   // Every block but the first costs a blank row above it.
   const size = (): number => blocks.reduce((n, block) => n + block.length, blocks.length - 1)

@@ -3,19 +3,19 @@ status: design-intent
 last_verified: 2026-10-12
 ---
 
-# fankeel 面板：一個 Pane，狀態在上，gate 在下
+# fankeel 面板：一個 Pane，gate 在上，狀態在下
 
 session f0a58f35-ae39-4954-89d6-e0b9129a4082 的 design。這頁是要做的事，不是現狀。mockup 在 `.fankeel/build/2026-10-11-fankeel-pane/mockup.html`（未進 git），gate 核准的是那一頁。
 
-一句話：`hooks/pane.ts` 在現有的 mod 裡加一個 id 為 `fankeel` 的 Pane，由 `/fankeel-pane` 開關，讀這個 session 的 registry 檔畫出任務狀態，有 gate 在等時在同一個 Pane 頂端畫出 gate 並把答案寫進 answer 檔；mod 沒載入時一切照舊。
+一句話：`hooks/pane.ts` 在現有的 mod 裡加一個 id 為 `fankeel` 的 Pane，由 `/fankeel-panel` 開關，讀這個 session 的 registry 檔畫出任務狀態，有 gate 在等時在同一個 Pane 頂端畫出 gate 並把答案寫進 answer 檔；mod 沒載入時一切照舊。這個命令到 2026-10-12 為止叫 `/fankeel-pane`，依使用者的意思改名為 `/fankeel-panel`，舊名不留作別名。
 
 它改掉 [gate Pane 設計](2026-10-07-gate-pane-design.md) 的一件事：Pane 的 id 從 `fankeel-gate` 變成共用的 `fankeel`，gate 是它的一個區塊，不是另一個 Pane。那一頁其餘的決定（做法 A、250 ms 輪詢、寫前先 stat、交給終端、多選題逐項一個 Input）原樣沿用。
 
 ## 1. 開與關
 
-- `session.start` 以 `$.command.register` 註冊 `fankeel-pane`；`command.run` 開著就 `$.ui.close({ id: 'fankeel' })`，沒開就 `$.ui.open({ id: 'fankeel', title: 'fankeel' })`。使用者自己開的 Pane 任何寬度都落位。
+- `session.start` 以 `$.command.register` 註冊 `fankeel-panel`；`command.run` 開著就 `$.ui.close({ id: 'fankeel' })`，沒開就 `$.ui.open({ id: 'fankeel', title: 'fankeel' })`。使用者自己開的 Pane 任何寬度都落位。
 - ~~mod 不在 `session.start` 自己開 Pane：沒被要求的面板佔掉 44 欄。~~ 10-12 改了，見第 6 節。
-- pending 檔出現而 Pane 沒開時，mod 自己 `$.ui.open`；回 `isPlaced: false` 就發一則 `$.ui.toast`，說 gate 在等、`/fankeel-pane` 開面板。自己為 gate 開的那一次，在 pending 檔消失時關掉；使用者開的不關，為任務開的（第 6 節）也不關。
+- pending 檔出現而 Pane 沒開時，mod 自己 `$.ui.open`；回 `isPlaced: false` 就發一則 `$.ui.toast`，說 gate 在等、`/fankeel-panel` 開面板。自己為 gate 開的那一次，在 pending 檔消失時關掉；使用者開的不關，為任務開的（第 6 節）也不關。
 
 ## 2. 狀態區塊
 
@@ -57,7 +57,7 @@ session f0a58f35-ae39-4954-89d6-e0b9129a4082 的 design。這頁是要做的事�
 - `context` 兩列：`$.session.usage().context.tokens` 與自動 compact 的門檻（`FANKEEL_COMPACT_AT`，沒有就 `HARD`）；數字一律粗體，到門檻時連整列粗體；第二列是 compact 會留下的東西，與 `hooks/compact.ts` 的 `instructionsFor` 同一份清單。
 - `plan` 兩列：`claims` 裡的 plan 檔在 `.fankeel/build/<basename>/progress.md` 有 ledger 時，畫完成的 task 數與總數（圓點與 `tasks N of M`），第二列是 plan 的檔名；沒有 ledger 就沒有這個區塊。
 - 兩個畫面的資料都來自 `hooks/pane.ts` 同一個 `look`，重畫的比對鍵加上 token 數與 ledger 的內容。
-- `/fankeel-pane` 開不了時的訊息不再一律說終端太窄：`$.session.surfaces()` 沒有能放 Pane 的 surface 時，說這裡畫不了面板。
+- `/fankeel-panel` 開不了時的訊息不再一律說終端太窄：`$.session.surfaces()` 沒有能放 Pane 的 surface 時，說這裡畫不了面板。
 - session 有 active 的 entry 時 mod 自己開 Pane，一個任務只開一次：使用者關掉就不再為同一個任務開，新的 gate 來時才再開。任務結束時關掉 mod 自己開的；使用者開的不關。registry 檔連續 20 個 tick（五秒）讀不懂時算作沒有任務。使用者在真機看過之後要的（10-12）。
 - 文件寫明兩件實測到的事：Remote Control 與手機不畫 mod；Claude Desktop 讀的是安裝時的快照，改版後要 `claude plugin update fankeel@fankeel` 才看得到。
 
@@ -71,7 +71,7 @@ session f0a58f35-ae39-4954-89d6-e0b9129a4082 的 design。這頁是要做的事�
 | Pane 寫的 answer 檔與 station 的同形 | 測試以 `lib/handoff.js` 的 `answersSince` 讀 mod 寫出的檔，讀得到同一份答案 |
 | mod 只多掛該掛的 | `tests/mod.test.js` 的事件清單改成新的一份，多一個少一個都紅 |
 | mod 沒載入時不變 | 不按 Enable 跑一次 gate，照舊由 AskUserQuestion 問 |
-| 真機 | 按 Enable、`/fankeel-pane`，Pane 畫出這個任務；答一次 gate；窄終端看到 toast |
+| 真機 | 按 Enable、`/fankeel-panel`，Pane 畫出這個任務；答一次 gate；窄終端看到 toast |
 | 上方兩行讀得出 registry（10-12） | `tests/pane-band.test.js`：fixture entry 在 `build`、route 七站，第一行有 `FANKEEL BUILD`、四個 `#5f87d7` 的實心圓點與三個空心；現在沒有這個檔，紅 |
 | 上方兩行與 Pane 同源（10-12） | 同一個 fixture 畫兩個畫面：上方的 `N of M`、`claims` 數目、`⚑` 的數目，等於 Pane 的 `touched` 數目與 `neighbours` 的 clash 列數 |
 | gate 的 description 不丟（10-12） | `tests/pane-gate.test.js`：四個選項各帶 description、Pane 只有 18 列，每一個 description 的字都在樹裡；現在會被丟，紅 |
@@ -79,6 +79,6 @@ session f0a58f35-ae39-4954-89d6-e0b9129a4082 的 design。這頁是要做的事�
 
 真機（10-12）的結果，Claude Desktop 2.31226.1 內建的 Claude Code 2.1.295：
 
-- 沒有任務的 session：上方兩行不出現，`/fankeel-pane` 開出的 Pane 畫 `empty`。看過。
+- 沒有任務的 session：上方兩行不出現，`/fankeel-panel` 開出的 Pane 畫 `empty`。看過。
 - 放一筆在 `build` 的 entry：上方兩行在一秒內出現（階段、四實三空的圓點、`⚿ deny`、標題；`next`、`2 檔`、`4 of 7 · 8 分`），Pane 畫出 `context`（60k 對 450k）、`notes`、其他 session、`touched 2` 與 session id。看過，用的是手寫的假 entry。
 - 沒看的，記在 TODO `pane-1`：`⚑` 與紅色色帶、gate 在 Pane 上的完整說明與作答、終端上的樣子、Pane 自己打開。使用者要等下一個真的任務一起看。

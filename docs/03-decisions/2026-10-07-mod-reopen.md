@@ -5,6 +5,11 @@ last_verified: 2026-10-07
 
 # 重開 mod 路線（10-07）：決策紀錄
 
+> **10-12 註記**（這頁是 10-07 的紀錄，下面不改寫；現況見 [fankeel 面板 design 第 6 節](../90-agent/plans/2026-10-11-fankeel-pane-design.md)）：
+> - 第 17 行說 Pane 在終端、Desktop、VS Code 與手機上都能開。真機只在 Claude Desktop 看過 Pane 與輸入框上方兩行；Remote Control 與手機畫不出 mod。終端與 VS Code 還沒有真機結果，記在 [pane-1](../90-agent/todo/pane-1.md)。
+> - 第 22 行說 `hooks/mod.ts` 只剩 compact，已不對：`hooks/mod.ts:7`（`pane(on, options)`）也掛上了 Pane，上方兩行與 Pane 由 `hooks/pane.ts` 畫。
+> - 第 26 與 32 行把第三到五項列為未做。第五項（Pane 上的 gate 介面）已做，見 `hooks/pane.ts` 的 gate 區塊與 `hooks/pane-gate.ts`。第三項（子代理 brief）與第四項（每個子代理的 effort）仍未做，`hooks/` 裡沒有 `agent.spawn` 或 `turn.step`。
+
 一句話：fankeel 重開 mod 路線，mod 只做 command hook 做不到的事，command hook 照舊是底層；前提是使用者接受每個 session 在 `/plugin` 按一次 Enable for this session。這份紀錄取代 [10-03 的 mod 路線擱置](2026-10-03-mod-route.md) 與 [10-05 的函式 hook 與 gate 報告面板](2026-10-05-inject-gate-mod.md)，await-title 隨這份紀錄移除。
 
 設計稿是 [2026-10-07-mod-reopen-design.md](../99-archive/2026-10-07-mod-reopen-design.md)，計畫是 [2026-10-07-mod-reopen.md](../99-archive/2026-10-07-mod-reopen.md)。

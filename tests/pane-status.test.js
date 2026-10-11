@@ -18,7 +18,7 @@ const entry = {
     active: true,
     guard: 'deny',
     next: '畫 mockup，等使用者看過再進 plan',
-    notes: ['Pane 由 /fankeel-pane 開', 'gate 區塊沿用 2026-10-09 核准的設計'],
+    notes: ['Pane 由 /fankeel-panel 開', 'gate 區塊沿用 2026-10-09 核准的設計'],
     claims: ['hooks/mod.ts', 'hooks/pane.ts', 'tests/pane.test.js', 'docs/a/very/long/path/that/goes/on/and/on/file.md'],
     clock: { survey: [1000, 661000], design: [661000, null] },
     waited: { survey: 600000 },
@@ -73,7 +73,8 @@ test('what the context block says survives is what the compact instructions keep
     const { instructionsFor } = await compact();
     assert.deepEqual(KEPT, ['task', 'stage', 'plan', 'agent', 'handoff']);
     const kept = instructionsFor(ID, { task: 'demo', stage: 'build', class: 'bounded' }, 'F:/plugin');
-    for (const word of KEPT) assert.ok(kept.includes(word), word + ' is not in the compact instructions');
+    // 'task' is also in the opening sentence, so the line itself is what is looked for.
+    for (const word of KEPT) assert.ok(kept.includes(word === 'task' ? '- task:' : word), word + ' is not in the compact instructions');
 });
 
 test('plan is one dot a task, the count, and the plan\'s name; no ledger is no block', async () => {
@@ -96,7 +97,7 @@ test('notes are at most five, each under the notes heading', async () => {
     const m = await load();
     const many = Object.assign({}, entry, { notes: ['a', 'b', 'c', 'd', 'e', 'f', 'g'] });
     assert.deepEqual(text(m.statusRows(ID, many, [], null, null, 44, 60, NOW), 'notes'), ['notes', '· a', '· b', '· c', '· d', '· e']);
-    assert.deepEqual(drawn(all(m, 44, 60), 'notes')[1].segs, [{ text: '· Pane 由 /fankeel-pane 開', tone: 'text' }]);
+    assert.deepEqual(drawn(all(m, 44, 60), 'notes')[1].segs, [{ text: '· Pane 由 /fankeel-panel 開', tone: 'text' }]);
     assert.deepEqual(text(m.statusRows(ID, Object.assign({}, entry, { notes: [] }), [], null, null, 44, 60, NOW), 'notes'), []);
 });
 
@@ -123,7 +124,7 @@ test('touched is the count and the last three paths, a long one kept by its tail
 
 test('foot is one row: the session and how to close the pane', async () => {
     const m = await load();
-    assert.deepEqual(drawn(all(m, 44, 60), 'foot').map((r) => r.segs), [[{ text: 'f0a58f35 · /fankeel-pane 關閉', tone: 'dim' }]]);
+    assert.deepEqual(drawn(all(m, 44, 60), 'foot').map((r) => r.segs), [[{ text: 'f0a58f35 · /fankeel-panel 關閉', tone: 'dim' }]]);
 });
 
 test('blocks drop in the order touched, neighbours, notes, plan, context, and foot never does', async () => {

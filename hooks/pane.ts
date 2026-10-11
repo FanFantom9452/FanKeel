@@ -10,11 +10,11 @@ import type { Seg as BandSeg } from './pane-band.ts'
 // The fankeel mod's two drawings: two rows above the prompt for what is always
 // wanted, and the Pane for what is looked up, with whatever gate is waiting on
 // top of it. The Pane opens itself while the session owns a task, and again for
-// a gate if the user closed it; /fankeel-pane toggles it. docs/90-agent/plans/2026-10-11-fankeel-pane-design.md, section 6
+// a gate if the user closed it; /fankeel-panel toggles it. docs/90-agent/plans/2026-10-11-fankeel-pane-design.md, section 6
 // over sections 1 to 5. Nothing here runs unless the module was enabled, and
 // nothing outside it depends on it.
 export const PANE = 'fankeel'
-export const COMMAND = 'fankeel-pane'
+export const COMMAND = 'fankeel-panel'
 export const POLL_MS = 250
 
 // The surfaces measured to draw a Pane. Remote Control attaches none of them, and the mobile app draws no mod.
@@ -31,14 +31,15 @@ type Seen = {
 }
 
 // What a file last parsed to, and the time and size it had then: the tick runs
-// four times a second in every session that enabled the mod, and a file that
-// has not moved is not read again.
+// four times a second in every session that enabled the mod, and a neighbour's
+// registry file or a plan file that has not moved is not read again. The
+// session's own registry file, the pending file and the ledger are read every tick.
 type Cache = Map<string, { stamp: string; value: unknown }>
 
 const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, pendingFile: null, context: null, plan: null })
 
 // The last message each silent catch logged: the tick runs four times a second, and a failure that stays is said once.
-type Logged = { context: string; plan: string; open: string; registry: string }
+type Logged = { context: string; plan: string; open: string; registry: string; neighbour: string; gate: string }
 
 // A registry file that is there and does not parse: told apart so `tick` can wait it out for a while, then give up on it.
 class Unreadable extends Error {}
@@ -141,6 +142,7 @@ async function look($: EngineInterface, cache: Cache, logged: Logged): Promise<S
   const entry = found.entry as Entry
 
   const others: Other[] = []
+  const unreadable: string[] = []
   const sessions = `${found.root}/.fankeel/sessions`
   for (const file of await $.fs.list(sessions)) {
     if (!file.name.endsWith('.json') || file.name === `${id}.json`) continue
@@ -153,8 +155,12 @@ async function look($: EngineInterface, cache: Cache, logged: Logged): Promise<S
       if (hit.value) cache.set(path, hit)
     }
     const other = hit.value as Entry | null
+    if (!other) unreadable.push(path)
     if (other && isActive(other)) others.push({ id: file.name.slice(0, -5), entry: other })
   }
+  // All the paths in one line, so two files that stay unreadable do not take turns being logged.
+  if (unreadable.length) logOnce($, logged, 'neighbour', `fankeel pane: neighbour registry file unreadable, ${unreadable.join(', ')}`)
+  else logged.neighbour = ''
 
   let pending: Pending | null = null
   let pendingFile: string | null = null
@@ -163,8 +169,18 @@ async function look($: EngineInterface, cache: Cache, logged: Logged): Promise<S
     const name = pendingName((await $.fs.list(dir)).map((f) => f.name), String(entry.stage))
     if (name) {
       pendingFile = `${dir}/${name}`
-      pending = parsePending(String(await $.fs.read(pendingFile)), Date.now())
-      if (!pending) pendingFile = null
+      const text = String(await $.fs.read(pendingFile))
+      pending = parsePending(text, Date.now())
+      if (!pending) {
+        // parsePending says null for a gate that expired or has no questions too: only a file that is not JSON is logged.
+        try {
+          JSON.parse(text)
+          logged.gate = ''
+        } catch {
+          logOnce($, logged, 'gate', `fankeel pane: pending file does not parse, ${pendingFile}`)
+        }
+        pendingFile = null
+      } else logged.gate = ''
     }
   }
 
@@ -217,7 +233,7 @@ async function tick($: EngineInterface, state: State): Promise<void> {
     // The opens and closes have their own memory, `edge`, which moves only when they all went through: a rejected
     // one is met again next tick as the same edge, while `seen` and the redraw below never wait on them.
     try {
-      // Asked here, after `look`: /fankeel-pane may have opened or closed the pane while it read files.
+      // Asked here, after `look`: /fankeel-panel may have opened or closed the pane while it read files.
       // A task appears: the pane opens, once; a pane the user then closes stays closed until a gate comes. No toast: the band shows the task.
       if (!state.edge.task && next.entry && !(await isOpen($))) {
         await $.ui.open({ id: PANE, title: 'fankeel' })
@@ -227,7 +243,7 @@ async function tick($: EngineInterface, state: State): Promise<void> {
         const opened = await $.ui.open({ id: PANE, title: 'fankeel' })
         // Its pane either way, placed now or when the terminal widens; a pane the task owns stays the task's.
         if (state.mine !== 'task') state.mine = 'gate'
-        if (!opened.isPlaced) $.ui.toast('fankeel：有一個 gate 在等。/fankeel-pane 開面板，或在終端回答')
+        if (!opened.isPlaced) $.ui.toast('fankeel：有一個 gate 在等。/fankeel-panel 開面板，或在終端回答')
       }
       if (!next.pendingFile && state.edge.gate && state.mine === 'gate') {
         await $.ui.close({ id: PANE })
@@ -274,7 +290,7 @@ async function answer($: EngineInterface, pending: Pending, pendingFile: string,
 export const register: Register = (on) => {
   const state: State = {
     seen: blank(''), print: '', mine: false, edge: { task: false, gate: null }, bad: 0, busy: false, cache: new Map(),
-    logged: { context: '', plan: '', open: '', registry: '' },
+    logged: { context: '', plan: '', open: '', registry: '', neighbour: '', gate: '' },
   }
 
   on('session.start', async ($, e, next) => {
