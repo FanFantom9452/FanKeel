@@ -1,9 +1,19 @@
 // The status half of the fankeel Pane: a registry entry in, rows out.
 // No engine call here, so tests/pane-status.test.js runs it under plain node.
+// What each block holds is docs/90-agent/judgements/2026-10-11-pane-content.md;
+// the stage, the route, `next` and the guard are the band's (hooks/pane-band.ts).
 
 export type Entry = Record<string, unknown>
 export type Other = { id: string; entry: Entry }
-export type Row = { block: string; text: string; dim?: boolean; bold?: boolean; warn?: boolean }
+// A colour by what it means; hooks/pane.ts turns each into a hex of hooks/pane-band.ts.
+export type Tone = 'head' | 'plain' | 'text' | 'dim' | 'amber' | 'clash' | 'hollow'
+export type Seg = { text: string; tone: Tone; bold?: boolean }
+// One drawn row, its segments a cell apart. No segments is the blank row above a block.
+export type Row = { block: string; segs: Seg[] }
+// The context tokens in play and the count hooks/compact.ts compacts at.
+export type Context = { tokens: number; at: number }
+// A plan's build ledger: its basename, the tasks recorded complete, the tasks it has.
+export type PlanCount = { name: string; done: number; total: number }
 
 const WIDE = /[ᄀ-ᅟ⺀-꓏가-힣豈-﫿︰-﹏＀-｠￠-￦]/
 
@@ -39,28 +49,6 @@ function tail(s: string, cols: number): string {
   return '…' + out
 }
 
-// At most `max` lines of `cols` cells; the last one is cut when more remains.
-function wrap(s: string, cols: number, max: number): string[] {
-  const lines: string[] = []
-  let rest = s
-  while (rest && lines.length < max) {
-    if (lines.length === max - 1) {
-      lines.push(cut(rest, cols))
-      break
-    }
-    let line = ''
-    for (const ch of rest) {
-      if (width(line + ch) > cols) break
-      line += ch
-    }
-    lines.push(line)
-    rest = rest.slice(line.length)
-  }
-  return lines
-}
-
-const minutes = (ms: number): string => `${Math.round(ms / 60000)}m`
-
 function age(updated: unknown, now: number): string {
   const at = Date.parse(str(updated))
   if (!Number.isFinite(at)) return '?'
@@ -70,59 +58,115 @@ function age(updated: unknown, now: number): string {
   return `${Math.round(min / 1440)}d`
 }
 
-// Dropped in this order when the rows do not fit; head, route, gate and foot never are.
-const DROP = ['cost', 'touched', 'neighbours', 'memory']
+// What hooks/compact.ts instructionsFor tells the summary to keep, a word each;
+// tests/pane-status.test.js checks every word against that function's text.
+export const KEPT = ['task', 'stage', 'plan', 'agent', 'handoff']
 
-export function statusRows(id: string, entry: Entry | null, others: Other[], cols: number, room: number, now: number): Row[] {
+// lib/ledger.js HEADER_PREFIX, owns and completed: how many tasks the ledger
+// records complete, or null when its first line names another plan.
+const LEDGER = '# fankeel build ledger — plan: '
+export function ledgerDone(text: string, claim: string): number | null {
+  const lines = text.split(/\r?\n/)
+  if (lines[0] !== LEDGER + claim) return null
+  const done = new Set<number>()
+  for (const line of lines) {
+    const m = /^Task (\d+): complete\b/.exec(line.trim())
+    if (m) done.add(Number(m[1]))
+  }
+  return done.size
+}
+
+// lib/plantasks.js parsePlan: the `## Task N:` headings of a plan, a fenced one not counted.
+export function planTotal(text: string): number {
+  let total = 0
+  let fence = 0
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim()
+    const f = /^`{3,}/.exec(line)
+    if (f) {
+      if (fence === 0) fence = f[0].length
+      else if (f[0].length >= fence) fence = 0
+      continue
+    }
+    if (!fence && /^##\s+Task\s+\d+:/.test(line)) total += 1
+  }
+  return total
+}
+
+// Dropped in this order when the rows do not fit; the gate (hooks/pane-gate.ts) and foot never are.
+const DROP = ['touched', 'neighbours', 'notes', 'plan', 'context']
+
+const thousands = (n: number): string => `${Math.round(n / 1000)}k`
+
+export function statusRows(
+  id: string,
+  entry: Entry | null,
+  others: Other[],
+  context: Context | null,
+  plan: PlanCount | null,
+  cols: number,
+  room: number,
+  now: number,
+): Row[] {
+  const one = (block: string, text: string, tone: Tone): Row => ({ block, segs: [{ text, tone }] })
   if (!entry) {
-    return [
-      { block: 'empty', text: cut('這個 session 沒有進行中的任務', cols) },
-      { block: 'empty', text: cut('/fankeel 開一個', cols), dim: true },
-    ]
+    return [one('empty', cut('這個 session 沒有進行中的任務', cols), 'plain'), one('empty', cut('/fankeel 開一個', cols), 'dim')]
   }
-  const route = list(entry.route)
-  const at = route.indexOf(str(entry.stage))
+  const head = (block: string, text: string): Row => ({ block, segs: [{ text: cut(text, cols), tone: 'head', bold: true }] })
   const claims = list(entry.claims ?? entry.scope)
-  let rows: Row[] = []
+  const blocks: Row[][] = []
 
-  for (const line of wrap(str(entry.task), cols, 2)) rows.push({ block: 'head', text: line, bold: true })
-  rows.push({ block: 'head', text: str(entry.class) || 'unknown', dim: true })
-
-  if (route.length) {
-    rows.push({ block: 'route', text: `${'●'.repeat(at + 1)}${'○'.repeat(route.length - at - 1)}  ${at + 1} of ${route.length}` })
-    rows.push({ block: 'route', text: cut(route.map((s, i) => (i === at ? `[${s}]` : s)).join(' '), cols), dim: true })
+  if (context) {
+    const count = thousands(context.tokens)
+    const rest = cut(`· 到 ${thousands(context.at)} 自動 compact`, Math.max(4, cols - width(count) - 1))
+    const hot = context.tokens >= context.at
+    blocks.push([
+      head('context', 'context'),
+      { block: 'context', segs: [{ text: count, tone: 'amber', bold: true }, hot ? { text: rest, tone: 'amber', bold: true } : { text: rest, tone: 'dim' }] },
+      one('context', cut(`留 ${KEPT.join(' · ')}`, cols), 'dim'),
+    ])
   }
 
-  if (str(entry.next)) rows.push({ block: 'memory', text: cut(`next: ${str(entry.next)}`, cols) })
-  for (const note of list(entry.notes).slice(0, 5)) rows.push({ block: 'memory', text: cut(`· ${note}`, cols), dim: true })
+  if (plan && plan.total > 0) {
+    const done = Math.max(0, Math.min(plan.done, plan.total))
+    const count = `tasks ${done} of ${plan.total}`
+    const segs: Seg[] = []
+    // One dot a task, while the row has the cells for them.
+    if (plan.total + 2 + width(count) <= cols) {
+      if (done) segs.push({ text: '●'.repeat(done), tone: 'head' })
+      if (plan.total - done) segs.push({ text: '○'.repeat(plan.total - done), tone: 'hollow' })
+    }
+    segs.push({ text: cut(count, cols), tone: 'plain' })
+    blocks.push([head('plan', 'plan'), { block: 'plan', segs }, one('plan', cut(plan.name, cols), 'dim')])
+  }
+
+  const notes = list(entry.notes).slice(0, 5)
+  if (notes.length) blocks.push([head('notes', 'notes'), ...notes.map((note) => one('notes', cut(`· ${note}`, cols), 'text'))])
+
+  if (others.length) {
+    const rows: Row[] = [head('neighbours', '其他 session')]
+    for (const other of others) {
+      const tag = ` @ ${str(other.entry.stage) || '?'} · ${age(other.entry.updated, now)}`
+      rows.push(one('neighbours', cut(str(other.entry.task) || other.id.slice(0, 8), Math.max(4, cols - width(tag))) + tag, 'text'))
+      const shared = list(other.entry.claims ?? other.entry.scope).find((file) => claims.includes(file))
+      // 7: the cells of `⚑ 共用 `.
+      if (shared) rows.push({ block: 'neighbours', segs: [{ text: `⚑ 共用 ${tail(shared, Math.max(4, cols - 7))}`, tone: 'clash', bold: true }] })
+    }
+    blocks.push(rows)
+  }
 
   if (claims.length) {
-    rows.push({ block: 'touched', text: `touched ${claims.length}` })
-    for (const file of claims.slice(-3)) rows.push({ block: 'touched', text: tail(file, cols), dim: true })
+    blocks.push([head('touched', `touched ${claims.length}`), ...claims.slice(-3).map((file) => one('touched', tail(file, cols), 'dim'))])
   }
 
-  const clock = (entry.clock && typeof entry.clock === 'object' ? entry.clock : {}) as Record<string, unknown>
-  const waited = (entry.waited && typeof entry.waited === 'object' ? entry.waited : {}) as Record<string, unknown>
-  for (const stage of route) {
-    const pair = clock[stage]
-    if (!Array.isArray(pair) || typeof pair[0] !== 'number' || typeof pair[1] !== 'number') continue
-    const held = typeof waited[stage] === 'number' && (waited[stage] as number) > 0 ? `（gate 等 ${minutes(waited[stage] as number)}）` : ''
-    rows.push({ block: 'cost', text: cut(`${stage} ${minutes(pair[1] - pair[0])}${held}`, cols), dim: true })
-  }
+  blocks.push([one('foot', cut(`${id.slice(0, 8)} · /fankeel-pane 關閉`, cols), 'dim')])
 
-  for (const other of others) {
-    const tag = ` @ ${str(other.entry.stage) || '?'} · ${age(other.entry.updated, now)}`
-    rows.push({ block: 'neighbours', text: cut(str(other.entry.task) || other.id.slice(0, 8), Math.max(4, cols - width(tag))) + tag })
-    const shared = list(other.entry.claims ?? other.entry.scope).find((file) => claims.includes(file))
-    if (shared) rows.push({ block: 'neighbours', text: tail(`! 共用 ${shared}`, cols), warn: true })
+  // Every block but the first costs a blank row above it.
+  const size = (): number => blocks.reduce((n, block) => n + block.length, blocks.length - 1)
+  for (const name of DROP) {
+    if (size() <= room) break
+    const at = blocks.findIndex((block) => block[0].block === name)
+    if (at >= 0) blocks.splice(at, 1)
   }
-
-  rows.push({ block: 'foot', text: cut(`${id.slice(0, 8)} · guard ${str(entry.guard) || 'ask'}`, cols), dim: true })
-  rows.push({ block: 'foot', text: cut('/fankeel-pane 開關面板', cols), dim: true })
-
-  for (const block of DROP) {
-    if (rows.length <= room) break
-    rows = rows.filter((r) => r.block !== block)
-  }
-  return rows
+  return blocks.flatMap((block, i) => (i ? [{ block: block[0].block, segs: [] }, ...block] : block))
 }
