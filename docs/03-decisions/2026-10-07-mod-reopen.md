@@ -6,7 +6,7 @@ last_verified: 2026-10-07
 # 重開 mod 路線（10-07）：決策紀錄
 
 > **10-12 註記**（這頁是 10-07 的紀錄，下面不改寫；現況見 [fankeel 面板 design 第 6 節](../90-agent/plans/2026-10-11-fankeel-pane-design.md)）：
-> - 下面的行號是加這則註記之前的，現在各往下五行。
+> - 下面的行號是加這則註記之前的；註記把正文往下推了，找的時候以引的那句話為準。
 > - 原第 17 行說 Pane 在終端、Desktop、VS Code 與手機上都能開。量過能畫 Pane 的是終端與 Claude Desktop（`hooks/pane.ts` 的 `PLACES`）；Remote Control 與手機畫不出 mod，VS Code 不在 `PLACES` 裡。
 > - 這一版的 Pane 與輸入框上方兩行，真機只在 Claude Desktop 看過；終端上的樣子還沒看，記在 [pane-1](../90-agent/todo/pane-1.md)。
 > - 原第 22 行說 `hooks/mod.ts` 只剩 compact，已不對：`hooks/mod.ts:7`（`pane(on, options)`）也掛上了 Pane，上方兩行與 Pane 由 `hooks/pane.ts` 畫。
