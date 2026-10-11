@@ -235,6 +235,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | TODO 全表盤點（10-03）的 plan：子 session 由環境變數證明在跑、todo-check 讀不到就回報且前綴補斜線、commit.js 兩個子句補測試、balanced 註明無來源、mod 路線擱置 | [plans/2026-10-03-todo-patrol-three.md](90-agent/plans/2026-10-03-todo-patrol-three.md) — *design-intent, 繁體中文* |
 | TODO 全表盤點（10-05）的 plan：壓縮重試最多三次的測試、`/fankeel` 頁面寫不出來時 station 行說出來、兩處 timeout 與行號小錯、brain 選模型改放 Watch | [plans/2026-10-05-todo-patrol-ready-three.md](90-agent/plans/2026-10-05-todo-patrol-ready-three.md) — *design-intent, 繁體中文* |
 | Pane 上的 gate 介面（10-07）的 design 草稿：pending 與 answer 檔只有一份，station 頁面板與 Pane 都是它的畫面，mod 沒載入照舊 | [plans/2026-10-07-gate-pane-design.md](90-agent/plans/2026-10-07-gate-pane-design.md) — *design-intent, 繁體中文* |
+| TODO 全表盤點（10-12）的 design：Pane 右欄只留會改變下一步的區塊、最上面是任務全貌與每站耗時，站頁多一個對話分頁，14 條 Blocked 重蓋日期 | [plans/2026-10-12-pane-talk-design.md](90-agent/plans/2026-10-12-pane-talk-design.md) — *design-intent, 繁體中文* |
+| 那份設計的七個 task，含 Remote Control 的探測行與使用者在真機開關一次 | [plans/2026-10-12-pane-talk.md](90-agent/plans/2026-10-12-pane-talk.md) — *design-intent, 繁體中文* |
 | fankeel 面板（10-12）定了什麼：輸入框上方兩行常駐、細節與 gate 的完整說明放 Pane、Pane 自己打開、終端與 Claude Desktop 都畫；放棄了什麼 | [decisions/2026-10-12-fankeel-panel.md](03-decisions/2026-10-12-fankeel-panel.md) — *繁體中文* |
 | fankeel 面板（10-11）的 design：一個 id 為 fankeel 的 Pane，/fankeel-panel 開關，gate 在上、狀態在下，改掉 10-07 那頁的 Pane id | `docs/99-archive/2026-10-11-fankeel-pane-design.md` — *built, 繁體中文* |
 | fankeel 面板（10-11）的 plan：五個 task——狀態列、gate 列與 answer 檔、接線、文件、真機 | `docs/99-archive/2026-10-11-fankeel-pane.md` — *built, 繁體中文* |
@@ -504,6 +506,7 @@ is corrected by the next one, not by rewriting this.
 | 判斷 8：09-11 的五個方向加上現有 8 條，怎麼拆成分群的 TODO | [judgements/2026-09-11-todo-split.md](90-agent/judgements/2026-09-11-todo-split.md) — *judged 2026-09-11, fable* |
 | fankeel 這套工作流現在哪些設計還能精進、哪些環節漏掉了？ | [90-agent/judgements/2026-10-10-workflow-gaps.md](90-agent/judgements/2026-10-10-workflow-gaps.md) — *judged 2026-10-10, fable* |
 | Brief: what the fankeel side Pane should show | [90-agent/judgements/2026-10-11-pane-content.md](90-agent/judgements/2026-10-11-pane-content.md) — *judged 2026-10-11, fable* |
+| Brief: fankeel 面板右邊的 Pane 到底該顯示什麼 | [90-agent/judgements/2026-10-11-pane-right.md](90-agent/judgements/2026-10-11-pane-right.md) — *judged 2026-10-11, fable* |
 
 ## The five scanners
 
