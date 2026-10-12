@@ -470,19 +470,22 @@ other is 400k or more in play with nothing dropped yet (`BUSY` in
 `lib/context.js`), which prints `context: 452k in play, nothing dropped yet.`
 and the same hand-off advice, with no `--session` id.
 
-At `BUSY` and above the line also says when nothing is going to compact the
-session. Claude Code compacts on its own, mid-turn, once
-`CLAUDE_CODE_AUTO_COMPACT_WINDOW` is set — measured 2026-10-12 at the window
-less some 30k ([the probe](../reports/2026-10-12-compact-window-probe.md)) —
-and without it waits for the model's own limit. A hook process inherits the
-host's environment, so `contextLine` in `lib/context.js` takes it as its third
-argument, and with no positive number there, in a session that has not
+At `BUSY` and above the line also says when no auto-compact window is set.
+Claude Code compacts on its own, mid-turn, once
+`CLAUDE_CODE_AUTO_COMPACT_WINDOW` is set — measured 2026-10-12, headless, at
+the window less some 30k
+([the probe](../reports/2026-10-12-compact-window-probe.md)); Claude Desktop
+was not measured. What it does with none set was not measured as a rule: one
+Desktop session on a 1M window reached 650k with nothing compacting it.
+`contextLine` in `lib/context.js` takes the hook's own environment as its
+third argument, and with no positive number there, in a session that has not
 compacted yet, it ends the line with `No auto-compact window is set` and the
-variable's name. With a window set, below `BUSY`, or once something has been
-dropped, the line is as it was. The fankeel module (`hooks/compact.ts`) still
-compacts at 450k at a turn end in a session where it is enabled; with a 450000
-window the host gets there first. How to set one is in
-[the guide](../../01-guide/profile.md).
+variable's name. Whether a variable written under `env` in `settings.json`
+reaches a hook process is not measured yet; if it does not, the sentence
+appears although a window is set. With a window set, below `BUSY`, or once
+something has been dropped, the line is as it was. The fankeel module
+(`hooks/compact.ts`) still compacts at 450k at a turn end in a session where
+it is enabled. How to set a window is in [the guide](../../01-guide/profile.md).
 
 The session id rides the compaction form of this line and only that one. It is disclosed in the `init`
 block, which a session sees only while it has no task; once it owns one the block
