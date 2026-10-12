@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-10-09
+last_verified: 2026-10-13
 source_of_truth: lib/registry.js, lib/station.js, lib/render.js, lib/context.js, lib/dirty.js, lib/live.js, lib/usage.js, lib/profile.js, lib/spend.js, scripts/task.js, scripts/spend.js, hooks/touch.js, hooks/inject.js, hooks/carry.js, hooks/gate.js, hooks/resume.js, hooks/leave.js
 ---
 
@@ -486,8 +486,10 @@ variable's name. Whether a variable written under `env` in `settings.json`
 reaches a hook process is not measured yet; if it does not, the sentence
 appears although a window is set. With a window set, below `BUSY`, or once
 something has been dropped, the line is as it was. The fankeel module
-(`hooks/compact.ts`) still compacts at 450k at a turn end in a session where
-it is enabled. How to set a window is in [the guide](../../01-guide/profile.md).
+(`hooks/compact.ts`) compacts at the profile's `compact.at` at a turn end in a
+session where it is enabled: 450k unless a profile says otherwise, never when
+it is `off`. A tier a profile file set takes the sentence off the line; the
+built-in one does not. How to set a window is in [the guide](../../01-guide/profile.md).
 
 The session id rides the compaction form of this line and only that one. It is disclosed in the `init`
 block, which a session sees only while it has no task; once it owns one the block

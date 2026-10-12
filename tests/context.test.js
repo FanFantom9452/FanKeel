@@ -208,6 +208,41 @@ test('both blocks read the window from the hook\'s own environment', () => {
   }
 });
 
+// compact-5: hooks/compact.ts compacts at the profile's compact.at, so a tier a
+// profile file set is a window of its own. The built-in tier is nobody's choice.
+test('a tier the profile set stands in for the window; off and no tier do not', () => {
+  const info = { dropped: 0, used: ctx.BUSY };
+  for (const at of ['350000', '450000', '600000', 350000]) {
+    assert.doesNotMatch(ctx.contextLine(info, null, {}, at), /auto-compact window/, String(at));
+  }
+  for (const at of ['off', undefined, null, '123']) {
+    assert.match(ctx.contextLine(info, null, {}, at), /No auto-compact window is set/, String(at));
+  }
+});
+
+test('both blocks pass the tier a profile file set, never the built-in one', () => {
+  const { render, renderResume } = require('../lib/render.js');
+  const now = Date.now();
+  const mine = { sessionId: 'a', data: { task: 'x', scope: ['a.js'], stage: 'build', active: true, updated: new Date(now).toISOString() } };
+  const file = transcript([usage(ctx.BUSY)]);
+  const profileOf = (source) => ({ values: { 'compact.at': '350000' }, sources: { 'compact.at': source } });
+  const block = (source) => render({ mine, others: [], now, root: 'F:/x', launch: 'F:/x', transcript: file, profile: profileOf(source) });
+  const resume = (source) => renderResume({ mine, transcript: file, profile: profileOf(source) }) || '';
+  const saved = process.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW;
+  try {
+    delete process.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW;
+    for (const source of ['project', 'machine']) {
+      assert.doesNotMatch(block(source), /auto-compact window/, source);
+      assert.doesNotMatch(resume(source), /auto-compact window/, source);
+    }
+    assert.match(block('builtin'), /No auto-compact window is set/);
+    assert.match(resume('builtin'), /No auto-compact window is set/);
+  } finally {
+    if (saved === undefined) delete process.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW;
+    else process.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW = saved;
+  }
+});
+
 // A row that quotes a transcript: a tool result whose text carries a usage
 // record and a dropped count. On disk its quotes are escaped once, which is the
 // form the old patterns were written to accept.
