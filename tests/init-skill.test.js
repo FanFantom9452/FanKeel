@@ -54,3 +54,19 @@ test('CLAUDE.md cuts go to fankeel-slimmer, and memory is reported, never merged
 test('a fat MEMORY.md line is a slimmer cut, not a step-6 finding', () => {
   assert.match(flat(), /A `MEMORY\.md` line that carries more than its title, link and a short hook is a slimmer cut, not a step-6 finding: it goes with step 5's dispatch\./);
 });
+
+// docs/90-agent/plans/2026-10-12-init-compact-window-design.md §3.
+test('step 7 asks for the auto-compact window only when show prints unset, and writes only on an answer', () => {
+  const t = text();
+  const step = t.slice(t.indexOf('## 7. Profile'), t.indexOf('## 8. Close'));
+  const f = step.replace(/\s+/g, ' ');
+  assert.match(f, /scripts\/compact-window\.js show/);
+  assert.match(f, /only `unset` is asked/);
+  assert.match(f, /450000/);
+  assert.match(f, /scripts\/compact-window\.js set <n>/);
+  assert.match(f, /scripts\/compact-window\.js decline/);
+  assert.match(f, /the user's own `settings\.json`/);
+  assert.match(f, /restarted/);
+  assert.match(f, /No answer writes nothing/);
+  assert.match(t.split(/\n---\r?\n/)[0], /^source_of_truth: .*scripts\/compact-window\.js/m);
+});

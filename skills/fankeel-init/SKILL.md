@@ -3,8 +3,8 @@ name: fankeel-init
 description: First-use onboarding for a project fankeel has not organised — its docs tree, raw data, TODO, directory tree, CLAUDE.md, memory and a sensitive-word list — one question at a time until the onboarding checks pass. Use when `task.js start` prints an `onboard:` line, or for /fankeel-init.
 version: 0.102.0
 status: current
-last_verified: 2026-10-02
-source_of_truth: scripts/onboard.js, lib/onboard.js, agents/fankeel-init-scout.md
+last_verified: 2026-10-12
+source_of_truth: scripts/onboard.js, lib/onboard.js, agents/fankeel-init-scout.md, scripts/compact-window.js
 ---
 
 # fankeel-init
@@ -140,6 +140,21 @@ Two of them carry this repository's own evidence:
   as the recommended answer with its evidence line, and say that
   `land.js merge` writes `merge: <task>`, so a pattern without `merge` refuses
   `land.js merge` until the user adds it. Write nothing the user did not pick.
+
+One more question belongs to the machine, not to the profile, and is asked
+whatever the scout's `profile` row says:
+
+- The auto-compact window —
+  `node <plugin>/scripts/compact-window.js show` prints `set <n>`, `declined`
+  or `unset`, and only `unset` is asked: one `AskUserQuestion` with 450000 as
+  the recommended option, 不設 as the second, and **Other** for a number of
+  the user's own. The descriptions say what a yes does: it writes
+  `CLAUDE_CODE_AUTO_COMPACT_WINDOW` under `env` in the user's own
+  `settings.json`, every session opened on this machine reads it and not only
+  fankeel's, and Claude Code has to be restarted before it takes effect. A
+  number runs `node <plugin>/scripts/compact-window.js set <n>`; 不設 runs
+  `node <plugin>/scripts/compact-window.js decline`, and no later run asks
+  again. No answer writes nothing.
 
 ## 8. Close
 
