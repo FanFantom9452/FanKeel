@@ -79,7 +79,7 @@ test('the dots come from the route at every stage, and a stage off the route has
 test('the colours are the ones the design lists', async () => {
     const m = await load();
     assert.deepEqual(m.RAMP, { survey: '#5f5f87', design: '#5f5fd7', plan: '#5f87af', build: '#5f87d7', verify: '#5fafff', audit: '#5fd787', land: '#5fd7ff' });
-    assert.deepEqual([m.HOLLOW, m.TODO, m.GUARD, m.FLAG, m.TITLE, m.WHERE, m.CLASH, m.INK], ['#585858', '#767676', '#d7af5f', '#ff5f5f', '#bcbcbc', '#8a8a8a', '#ff0000', '#000000']);
+    assert.deepEqual([m.TODO, m.GUARD, m.FLAG, m.WHERE, m.CLASH, m.INK], ['#767676', '#d7af5f', '#ff5f5f', '#8a8a8a', '#ff0000', '#000000']);
     assert.equal(m.stageColor('verify'), '#5fafff');
     assert.equal(m.stageColor('init'), '#8a8a8a');
     assert.equal(m.stageColor('constructor'), '#8a8a8a');

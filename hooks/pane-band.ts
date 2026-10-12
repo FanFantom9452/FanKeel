@@ -32,12 +32,10 @@ export const RAMP: Record<string, string> = {
   audit: '#5fd787',
   land: '#5fd7ff',
 }
-export const HOLLOW = '#585858'
 // The stations still ahead, and a task not begun.
 export const TODO = '#767676'
 export const GUARD = '#d7af5f'
 export const FLAG = '#ff5f5f'
-export const TITLE = '#bcbcbc'
 export const WHERE = '#8a8a8a'
 export const CLASH = '#ff0000'
 export const INK = '#000000'
