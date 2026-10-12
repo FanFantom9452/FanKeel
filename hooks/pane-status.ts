@@ -4,7 +4,7 @@
 // docs/90-agent/plans/2026-10-12-pane-band-design.md section 3.
 
 import { WHERE, FLAG, GUARD, TODO, claimsOf } from './pane-band.ts'
-import { str, list, width, cut, WIDE, DIM, minutes } from './pane-bar.ts'
+import { str, list, width, cut, WIDE, DIM, minutes, nearCompact } from './pane-bar.ts'
 import type { Context } from './pane-bar.ts'
 
 // Kept as exports of this file: hooks/pane-gate.ts and hooks/pane.ts import them from here.
@@ -273,18 +273,13 @@ function tasksBlock(entry: Entry, plan: PlanInfo | null, inner: number, now: num
   return rows
 }
 
-// The percent of the compact threshold the context block appears at.
-const KEEP = 80
-// Integer comparison, so a threshold needs no rounding.
-const near = (context: Context): boolean => context.tokens * 100 >= KEEP * context.at
-
 // Drawn only from eighty percent of the threshold (hooks/compact.ts threshold:
 // FANKEEL_COMPACT_AT, the profile's compact.at, else HARD), and then never
 // given up: that a compact is close, or
 // under way, and what one keeps. No count, no bar and no mark: the band's `ctx`
 // meter (hooks/pane-band.ts) has those, and a figure is drawn once.
 function contextBlock(context: Context, inner: number): Row[] {
-  if (!near(context)) return []
+  if (!nearCompact(context.tokens, context.at)) return []
   const hot = context.tokens >= context.at
   return [
     row('context', title('context', 'context'), hot ? { text: '  已到門檻，compact 中', color: GUARD, bold: true } : dim('  快要自動 compact 了')),

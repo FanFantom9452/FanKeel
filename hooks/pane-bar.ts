@@ -64,9 +64,14 @@ function step(steps: Step[], value: number): { color: string; bold: boolean } {
   return { color: XTERM[hit[1]], bold: hit[2] === true }
 }
 
+// The percent of the compact threshold from which a compact is near: the band marks its meter and the Pane draws its context block from here.
+const NEAR = 80
+// Integer comparison, so a threshold needs no rounding.
+export const nearCompact = (tokens: number, at: number): boolean => tokens * 100 >= NEAR * at
+
 export function ctxPaint(tokens: number, at: number): Paint {
   const percent = at > 0 ? (tokens * 100) / at : 0
-  return { ...step(CTX, percent), mark: percent >= 80 ? '⚠' : '' }
+  return { ...step(CTX, percent), mark: at > 0 && nearCompact(tokens, at) ? '⚠' : '' }
 }
 
 export function fivePaint(used: number): Paint {

@@ -146,6 +146,10 @@ test('a first row that does not fit drops the stage minutes, then the wait, then
 test('the second row is ctx, 5h and 7d as bars, parted by a bar of their own', async () => {
     const m = await load();
     const { width } = await at('pane-bar.ts');
+    // The mark is drawn from eighty percent of the threshold, to the token.
+    const ctxRow = (tokens) => line(band(m, { context: { tokens, at: 450000 }, limits: [], cols: 120 })[1]);
+    assert.ok(ctxRow(360000).endsWith(' 360k/450k ⚠'), ctxRow(360000));
+    assert.ok(ctxRow(359999).endsWith(' 360k/450k'), ctxRow(359999));
     const [, row] = band(m);
     assert.deepEqual(row, [
         { text: '▌', color: '#5f87d7' },

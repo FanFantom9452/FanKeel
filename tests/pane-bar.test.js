@@ -77,7 +77,16 @@ test('bar fills in eighths of a cell, rounded down, and the track takes the rest
 });
 
 test('ctxPaint steps through TokenBar\'s ramp by percent of the threshold, bold from sixty, marked from eighty', async () => {
-    const { ctxPaint } = await load();
+    const { ctxPaint, nearCompact } = await load();
+    // The eighty percent line is one definition: the band's mark and the Pane's context block both ask it.
+    assert.equal(nearCompact(80000, 100000), true);
+    assert.equal(nearCompact(79999, 100000), false);
+    assert.equal(nearCompact(360000, 450000), true);
+    assert.equal(nearCompact(359999, 450000), false);
+    assert.equal(nearCompact(463000, 450000), true);
+    for (const [tokens, at] of [[79999, 100000], [80000, 100000], [359999, 450000], [360000, 450000], [463000, 450000]]) {
+        assert.equal(ctxPaint(tokens, at).mark === '⚠', nearCompact(tokens, at), tokens + ' of ' + at);
+    }
     const steps = [[0, 46], [8, 83], [16, 120], [24, 157], [32, 194], [36, 190], [40, 226], [45, 220], [50, 214], [55, 208], [60, 196], [65, 198], [70, 199], [75, 200], [80, 201]];
     steps.forEach(([from, xterm], i) => {
         assert.deepEqual(ctxPaint(from * 1000, 100000), { color: X[xterm], bold: from >= 60, mark: from >= 80 ? '⚠' : '' }, from + ' percent');
