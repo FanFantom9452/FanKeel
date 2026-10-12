@@ -491,10 +491,26 @@ test('items are refused when empty, over twenty, or missing a note or an element
     assert.equal((await ask([])).status, 400);
     assert.match((await ask(Array(21).fill(one))).text, /1 to 20/);
     assert.equal((await ask([one, { note: '', block: 'now' }])).text, 'item 2: a note, and a block or a selector, are required');
-    assert.match((await ask([one, { note: 'y', selector: 'main > footer' }])).text, /a static page takes a data-block element/);
+    const loose = await ask([one, { note: 'y', selector: 'main > footer:nth-of-type(1)', classes: ['fine', 'print'] }]);
+    assert.equal(loose.status, 400);
+    assert.equal(loose.text, 'item 2: footer.fine.print 不在任何 data-block 內；按這一則的編號重新圈選，往外或往內一層');
     const ok = await ask(Array(20).fill(one));
     assert.equal(ok.status, 200, ok.text);
     assert.equal(JSON.parse((await request(base + '__live/queue', 'GET')).text).pending, 1);
+});
+
+// tune-3: an item whose first element sat in no block arrives with an empty
+// `block` and the rest in `blocks`; the item is held to the first of those.
+test('a static item with an empty block takes the first of its blocks', async (t) => {
+    const cwd = tmp('fankeel-tune-');
+    fs.mkdirSync(path.join(cwd, 'site'));
+    fs.writeFileSync(path.join(cwd, 'site', 'page.html'), PAGE);
+    const base = await startServer(t, cwd);
+    const made = await request(base + '__live/request', 'POST', { page: '/page.html', items: [{ note: 'z', block: '', blocks: ['now'], selector: 'main > footer' }] });
+    assert.equal(made.status, 200, made.text);
+    const job = JSON.parse(spawnSync(process.execPath, [CLI, 'wait', '--timeout', '5'], { cwd, encoding: 'utf8' }).stdout);
+    assert.equal(job.block, 'now');
+    assert.equal(job.items[0].block, 'now');
 });
 
 test('the queue names every block of an items request it is editing', async (t) => {
