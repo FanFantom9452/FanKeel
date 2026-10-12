@@ -16,4 +16,6 @@ stamp: 2026-10-13
 2. lib/context.js 的 NO_WINDOW（第 154 行附近）在沒設 CLAUDE_CODE_AUTO_COMPACT_WINDOW 時說「沒有自動壓縮視窗」。compact.at 是 350000、450000 或 600000 而且 mod 有載入時，這句不成立；off 時仍成立。
 3. hooks/pane-status.ts 第 275 行附近的註解寫門檻是 HARD 或 FANKEEL_COMPACT_AT，補上 compact.at。
 
+4. docs/90-agent/reference/registry.md 第 489 行附近寫 mod「still compacts at 450k」，改成 profile 的 compact.at（預設 450k，off 不壓縮）。這一頁當時同樣被 Pane 配色任務佔著，是 verify 的 adversary 找到的。
+
 做完的樣子：compact.at 設 350000 時，輸入框上方的 ctx 長條與面板的 context 區塊以 350000 為門檻，各有一個測試在讀法被拿掉時變紅；compact.at 為 off 時面板不再顯示「快要自動 compact 了」；context: 行在 compact.at 有數字時不再說沒有視窗。
