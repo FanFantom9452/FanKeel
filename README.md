@@ -236,7 +236,6 @@ fankeel/
 │   ├── orient.js      what is under this directory, before /fankeel asks anything
 │   ├── map.js         writes .fankeel/map.md
 │   ├── onboard.js     prints the onboarding checks, pass or fail; --full adds docs-check and drift
-│   ├── compact-window.js  whether this machine has an auto-compact window: show, set <n>, decline
 │   ├── layout.js      prints the half of this tree a listing can derive
 │   ├── survey.js      what already exists here, for the survey stage
 │   ├── ledger.js      the build ledger: init, complete, groups, lint, brief
