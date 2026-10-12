@@ -123,4 +123,5 @@ test('a list that cannot be written does not cost the injection', () => {
     fs.mkdirSync(liveFile(root), { recursive: true });
     assert.match(run({ session_id: MINE, cwd: root }, cfg), /FANKEEL ACTIVE/);
     assert.equal(fs.statSync(liveFile(root)).isDirectory(), true);
+    assert.deepEqual(fs.readdirSync(path.dirname(liveFile(root))).filter((name) => name !== 'live.json' && name.startsWith('live.json')), []);
 });
