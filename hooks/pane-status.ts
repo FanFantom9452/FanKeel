@@ -4,7 +4,7 @@
 // docs/90-agent/plans/2026-10-12-pane-band-design.md section 3.
 
 import { WHERE, FLAG, GUARD, TODO, claimsOf } from './pane-band.ts'
-import { str, list, width, cut, WIDE, countdown, resetMs, limitOf, DIM } from './pane-bar.ts'
+import { str, list, width, cut, WIDE, DIM } from './pane-bar.ts'
 import type { Context, Limit } from './pane-bar.ts'
 
 // Kept as exports of this file: hooks/pane-gate.ts and hooks/pane.ts import them from here.
@@ -42,11 +42,9 @@ export type StatusInput = {
 export const RAILS: Record<string, string> = {
   gate: GUARD,
   clash: FLAG,
-  tasks: '#87af5f',
-  context: '#d787af',
-  quota: '#8787d7',
-  session: '#5fafaf',
-  notes: '#87afd7',
+  tasks: WHERE,
+  context: WHERE,
+  notes: WHERE,
   foot: DIM,
 }
 
@@ -164,6 +162,29 @@ function taskBlock(entry: Entry, inner: number): Row[] {
   wrap(next ? `next: ${next}` : '', inner).forEach((text, i) => {
     rows.push(i ? row('task', { text }) : row('task', dim(text.slice(0, 5)), { text: text.slice(5) }))
   })
+  // The stations behind the stage are green, the stage is the terminal's own and bold, those ahead are grey.
+  const route = list(entry.route)
+  const at = route.indexOf(str(entry.stage))
+  if (at >= 0) {
+    let cur: Seg[] = []
+    let used = 0
+    route.forEach((name, i) => {
+      const station: Seg = i < at ? { text: name, color: DONE } : i === at ? { text: name, bold: true } : { text: name, color: TODO }
+      // 3: the cells of ` › `.
+      if (cur.length && used + 3 + width(name) > inner) {
+        rows.push(row('task', ...cur))
+        cur = []
+        used = 0
+      }
+      if (cur.length) {
+        cur.push({ text: ' › ', color: TODO })
+        used += 3
+      }
+      cur.push(station)
+      used += width(name)
+    })
+    rows.push(row('task', ...cur))
+  }
   return rows
 }
 
@@ -194,22 +215,8 @@ function clashBlock(entry: Entry, others: Other[], inner: number, now: number): 
   return rows
 }
 
-// lib/guard.js's three modes, as what each does to a write into a neighbour's file.
-const GUARDS: Record<string, string> = { deny: '直接擋下，不能改', ask: '先問你', off: '只提醒' }
-
-function sessionBlock(entry: Entry): Row[] {
-  const guard = Object.hasOwn(GUARDS, str(entry.guard)) ? str(entry.guard) : 'ask'
-  return [
-    row('session', title('session', '這個 session')),
-    row('session', dim('別的 session 也在改同一個檔時')),
-    row('session', { text: `  ${GUARDS[guard]}` }, dim(`  guard ${guard}`)),
-    row('session', dim('這個任務改過的檔')),
-    row('session', { text: `  ${claimsOf(entry).length} 個` }, dim('  claims')),
-  ]
-}
-
 // A task complete, and an agent out on one.
-const DONE = RAILS.tasks
+const DONE = '#87af5f'
 const OUT = '#af87d7'
 // The minutes an agent is out before its row turns amber.
 const LONG = 20
@@ -285,23 +292,6 @@ function contextBlock(context: Context, inner: number): Row[] {
   ]
 }
 
-// When each window resets, and nothing else: the band's `5h` and `7d` meters
-// have the bar, the percent, the deviation and the mark. A window the engine
-// gave no `resetsAt` for has no row, and with no row there is no block.
-function quotaBlock(limits: Limit[], now: number): Row[] {
-  const rows: Row[] = []
-  const window = (label: string, kind: string, days: boolean): void => {
-    const limit = limitOf(limits, kind)
-    const reset = limit ? resetMs(limit) : null
-    if (reset === null) return
-    const left = reset - now
-    rows.push(left > 0 ? row('quota', dim(`${label}  `), { text: countdown(left, days) }, dim(' 後重置')) : row('quota', dim(`${label}  `), { text: '已重置' }))
-  }
-  window('5h', 'five_hour', false)
-  window('7d', 'seven_day', true)
-  return rows.length ? [row('quota', title('quota', '用量額度')), ...rows] : []
-}
-
 // A row cut to `cols` cells: the segment that crosses the edge is cut, and the ones after it go.
 function fit(r: Row, cols: number): Row {
   let left = cols
@@ -318,7 +308,7 @@ function fit(r: Row, cols: number): Row {
 // Given up in this order when the rows do not fit: `tasks` keeps its title row.
 // The task, the gate (hooks/pane-gate.ts), the clash, the context block — drawn
 // only once a compact is close — and the foot never go.
-const DROP = ['session', 'notes', 'quota', 'tasks']
+const DROP = ['notes', 'tasks']
 // The blocks that are alarms, not sections: every row of one keeps its rail.
 // The gate is the other alarm; hooks/pane.ts `railed` draws its rows.
 const ALARMS = ['clash']
@@ -340,9 +330,6 @@ export function statusRows(input: StatusInput): Row[] {
   if (tasks.length) blocks.push(tasks)
   const context = input.context ? contextBlock(input.context, inner) : []
   if (context.length) blocks.push(context)
-  const quota = quotaBlock(input.limits, now)
-  if (quota.length) blocks.push(quota)
-  blocks.push(sessionBlock(entry))
 
   // The registry keeps the newest note last.
   const notes = list(entry.notes).slice(-3)

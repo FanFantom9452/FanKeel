@@ -117,22 +117,17 @@ test('the Pane draws the task block on top, then what is looked up, each block u
     const tree = await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } });
     assert.deepEqual(paneLines(tree), [
         '▌demo task',
+        ' survey › design › build',
         ' ',
         '▌context  快要自動 compact 了',
         ' 留 task · stage · plan · agent · handoff',
-        ' ',
-        '▌這個 session',
-        ' 別的 session 也在改同一個檔時',
-        '   直接擋下，不能改  guard deny',
-        ' 這個任務改過的檔',
-        '   1 個  claims',
         ' ',
         '▌notes',
         ' · a note',
         ' ',
         '▌abcdef12 · /fankeel-panel 關閉',
     ]);
-    assert.doesNotMatch(paneLines(tree).join('\n'), /touched|survey|▸|本站|2 of 3|bounded|400k|450k/);
+    assert.doesNotMatch(paneLines(tree).join('\n'), /touched|▸|本站|2 of 3|bounded|400k|450k/);
     assert.equal(buttons(tree).length, 0);
 });
 
@@ -441,17 +436,16 @@ test('a short pane with a four-option gate keeps the task, every description, ev
     for (const o of options) assert.ok(words.includes(squash(o.description)), 'the description of ' + o.label + ' was dropped');
     assert.ok(seen.length > 14, 'the fixture fits the pane: ' + seen.length);
     assert.equal(buttons(tree).length, 5);
-    assert.ok(!texts(tree).includes('這個 session'), 'a block that drops was kept beside a gate taller than the pane');
-    // The task block, a blank row, the gate, a blank row, the foot.
-    assert.deepEqual(seen.slice(0, 2), ['▌demo task', ' ']);
-    assert.match(seen[2], /^▌ gate · design {3}還 \d+ 秒$/);
+    // The task block and its route, a blank row, the gate, a blank row, the foot.
+    assert.deepEqual(seen.slice(0, 3), ['▌demo task', ' survey › design › build', ' ']);
+    assert.match(seen[3], /^▌ gate · design {3}還 \d+ 秒$/);
     assert.deepEqual(seen.slice(-2), [' ', '▌abcdef12 · /fankeel-panel 關閉']);
     const badge = leaves(tree).find((n) => n.props.backgroundColor);
     assert.deepEqual([badge.children.join(''), badge.props.backgroundColor, badge.props.color, badge.props.bold], [' gate · design ', '#d7af5f', '#000000', true]);
     const left = leaves(tree).find((n) => /^ {2}還 \d+ 秒$/.test(n.children.join('')));
     assert.deepEqual([left.props.color, left.props.bold, left.props.backgroundColor], ['#d7af5f', true, undefined]);
     // Every gate row sits behind the gate's own rail, the buttons too.
-    const gateRows = tree.children.slice(2, -2);
+    const gateRows = tree.children.slice(3, -2);
     for (const row of gateRows) assert.deepEqual([row.children[0].children.join(''), row.children[0].props.color], ['▌', '#d7af5f'], texts(row).join(''));
 });
 
@@ -683,7 +677,7 @@ test('a claimed plan with a build ledger draws its tasks, on the band as a count
     });
     const { $, log, store } = fake({ files });
     const draw = async () => paneLines(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
-    const tasks = (seen) => seen.slice(seen.indexOf(seen.find((t) => t.startsWith('▌tasks '))), seen.indexOf('▌這個 session') - 1);
+    const tasks = (seen) => seen.slice(seen.indexOf(seen.find((t) => t.startsWith('▌tasks '))), seen.findIndex((t) => t.startsWith('▌abcdef12')) - 1);
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
     assert.deepEqual(tasks(await draw()), ['▌tasks 1 of 2', ' ● 1 one', ' ◐ 2 two · 你的']);
@@ -738,14 +732,13 @@ test('the Pane is laid out in its own body columns and rows, each block under on
         if (row.tag === 'Box') assert.equal(row.children[0].children.join(''), opens || row.children[0].props.color === '#ff5f5f' ? '▌' : ' ', texts(row).join(''));
         opens = row.tag !== 'Box';
     }
-    const title = leaves(tree).filter((n) => n.props.bold && n.props.color === undefined).map((n) => n.children.join(''));
+    const title = leaves(tree).filter((n) => n.props.bold && n.props.color === undefined && n.children.join('') !== 'design').map((n) => n.children.join(''));
     assert.equal(title.join(''), mine.task, 'the title is not drawn whole');
     assert.equal(title.length, 3);
-    const RAIL = { '#d787af': 'context', '#5fafaf': 'session', '#87afd7': 'notes' };
-    const heads = (t) => leaves(t).filter((n) => n.props.bold && RAIL[n.props.color]).map((n) => [n.children.join(''), RAIL[n.props.color]]);
-    assert.deepEqual(heads(tree), [['context', 'context'], ['這個 session', 'session'], ['notes', 'notes']]);
+    const heads = (t) => leaves(t).filter((n) => n.props.bold && n.props.color === '#8a8a8a').map((n) => n.children.join(''));
+    assert.deepEqual(heads(tree), ['context', 'notes']);
     const rails = (t) => [...new Set(t.children.filter((row) => row.tag === 'Box').map((row) => row.children[0].props.color))];
-    assert.deepEqual(rails(tree), [undefined, '#ff5f5f', '#d787af', '#5fafaf', '#87afd7', '#585858']);
+    assert.deepEqual(rails(tree), [undefined, '#ff5f5f', '#8a8a8a', '#585858']);
     const clash = leaves(tree).filter((n) => n.children.join('').startsWith('⚑ '));
     assert.equal(clash.length, 2);
     assert.deepEqual(clash.map((n) => [n.props.color, n.props.bold]), [['#ff5f5f', true], ['#ff5f5f', true]]);
@@ -753,12 +746,12 @@ test('the Pane is laid out in its own body columns and rows, each block under on
     assert.equal(paneLines(tree).filter((t) => /… @ build · \d+m$/.test(t)).length, 2);
     const foot = leaves(tree).find((n) => n.children.join('').startsWith('abcdef12'));
     assert.equal(foot.props.color, '#8a8a8a');
-    // 22 rows in all: the task 3, the clash 4, context 2, session 5, notes 2, the foot 1, and five blank rows between.
-    assert.equal(tree.children.length, 22);
-    assert.deepEqual(heads(await at(15)).map((h) => h[1]), ['context'], 'the room is the body rows the surface gave, not the viewport');
+    // 17 rows in all: the task 4, the clash 4, context 2, notes 2, the foot 1, and four blank rows between.
+    assert.equal(tree.children.length, 17);
+    assert.deepEqual(heads(await at(15)), ['context'], 'the room is the body rows the surface gave, not the viewport');
 });
 
-test('the engine\'s rate limits are bars on the band and reset times in the Pane, and a new figure redraws', async () => {
+test('the engine\'s rate limits are bars on the band and no reset time in the Pane, and a new figure redraws', async () => {
     const hooks = await wired();
     const { $, log } = fake({ files: entryFile(live) });
     // Half a minute over, so the minute a countdown shows does not turn while the test runs: hooks/pane.ts draws against Date.now().
@@ -766,26 +759,22 @@ test('the engine\'s rate limits are bars on the band and reset times in the Pane
     const limits = [{ kind: 'five_hour', percentUsed: 66, resetsAt: soon(106 * 60000) }, { kind: 'seven_day', percentUsed: 58, resetsAt: soon(60.5 * 3600000) }];
     $.session.usage = async () => ({ startedAt: 0, context: { tokens: log.tokens, window: 1000000, percent: 31 }, rateLimits: limits });
     const pane = async () => paneLines(await hooks['ui.render']($, { viewport: { columns: 44, rows: 60 } }));
-    const quota = (rows) => rows.slice(rows.indexOf('▌用量額度'), rows.indexOf('▌這個 session') - 1);
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
     assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ██████▉░░░ 312k/450k  │  5h ██████▌░░░  66%  │  7d █████▊░░░░  58%  -6%');
-    assert.deepEqual(quota(await pane()), ['▌用量額度', ' 5h  1h 46m 後重置', ' 7d  2d 12h 30m 後重置']);
     assert.doesNotMatch((await pane()).join('\n'), /█|░|%|剩|↻/);
     const after = log.invalidated;
     limits[0] = Object.assign({}, limits[0], { percentUsed: 67 });
     await log.ticks[0].fn();
     assert.equal(log.invalidated, after + 1);
-    // A window with no reset is still a bar on the band, and has no row in the Pane.
+    // A window with no reset is still a bar on the band.
     limits[1] = { kind: 'seven_day', percentUsed: 58 };
     await log.ticks[0].fn();
     assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ██████▉░░░ 312k/450k  │  5h ██████▋░░░  67%  │  7d █████▊░░░░  58%');
-    assert.deepEqual(quota(await pane()), ['▌用量額度', ' 5h  1h 46m 後重置']);
-    // An engine that reports no limits at all: the band is ctx alone and the Pane has no quota block.
+    // An engine that reports no limits at all: the band is ctx alone.
     $.session.usage = async () => ({ startedAt: 0, context: { tokens: log.tokens } });
     await log.ticks[0].fn();
     assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ██████▉░░░ 312k/450k');
-    assert.ok(!(await pane()).includes('▌用量額度'));
 });
 
 test('while a gate waits a new second redraws, so both countdowns move; with none it does not', async () => {

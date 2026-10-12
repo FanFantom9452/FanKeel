@@ -79,7 +79,7 @@ function inked(text: string, paint: Paint, gap = 0): Seg {
 // One way of drawing the second row. They are tried in this order and the first
 // that fits is drawn: the space round `│` closes up, then the bars shorten
 // together, then the 7d meter goes, then the 5h one. No reset is drawn here at
-// any width: the Pane's quota block (hooks/pane-status.ts) is where one is read.
+// any width, and the Pane draws none either.
 type Shape = { five: boolean; week: boolean; sp: number; cells: number }
 function shapes(): Shape[] {
   const out: Shape[] = [{ five: true, week: true, sp: 2, cells: 10 }]
