@@ -134,8 +134,9 @@ the page. The gate approves the page, not the paragraph.
 **Before the gate, the page can be tuned block by block.** The url the
 agent returned is already a `tune.js serve`, overlay and all; give the user
 that url: a click reaches the page until the fankeel logo in the
-bottom-right corner asks for one. The logo drags anywhere and opens a tray
-on a click; 新增一則 starts an item, and while it picks, a click on the page
+bottom-right corner asks for one. The logo drags anywhere; the tray is open
+when the page loads, and a click on the logo folds or reopens it; 新增一則
+starts an item, and while it picks, a click on the page
 adds an element or takes it back out, the wheel or 往外一層 walks out to its
 parents, and Esc drops the pick. Each item is one or more elements under one
 note, and 全部送出 sends every item as one request. List what you see, block by
