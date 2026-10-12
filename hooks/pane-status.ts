@@ -3,7 +3,7 @@
 // it under plain node. What each block holds is
 // docs/90-agent/plans/2026-10-12-pane-band-design.md section 3.
 
-import { WHERE, FLAG, GUARD, TODO } from './pane-band.ts'
+import { WHERE, FLAG, GUARD, TODO, claimsOf } from './pane-band.ts'
 import { str, list, width, cut, WIDE, bar, ctxPaint, fivePaint, weekPaint, deviation, countdown, resetMs, limitOf, pct, kilo, signed, DIM } from './pane-bar.ts'
 import type { Context, Limit, Paint } from './pane-bar.ts'
 
@@ -39,14 +39,14 @@ export type StatusInput = {
 // Each block's rail, a fixed colour whatever the stage. The task block has
 // none: its rail is the terminal's own colour. `gate` is drawn by hooks/pane.ts.
 export const RAILS: Record<string, string> = {
-  gate: '#d7af5f',
-  clash: '#ff5f5f',
+  gate: GUARD,
+  clash: FLAG,
   tasks: '#87af5f',
   context: '#d787af',
   quota: '#8787d7',
   session: '#5fafaf',
   notes: '#87afd7',
-  foot: '#585858',
+  foot: DIM,
 }
 
 const rail = (block: string): Seg => (Object.hasOwn(RAILS, block) ? { text: '▌', color: RAILS[block] } : { text: '▌' })
@@ -57,7 +57,6 @@ const title = (block: string, text: string): Seg => ({ text, color: RAILS[block]
 const record = (v: unknown): Record<string, unknown> => (v && typeof v === 'object' ? (v as Record<string, unknown>) : {})
 // Labels and secondary text.
 const dim = (text: string): Seg => ({ text, color: WHERE })
-const claimsOf = (entry: Entry): string[] => list(entry.claims ?? entry.scope)
 
 // The tail of `s` that fits: a path is told apart by its end.
 function tail(s: string, cols: number): string {
@@ -209,7 +208,7 @@ function sessionBlock(entry: Entry): Row[] {
 }
 
 // A task complete, and an agent out on one.
-const DONE = '#87af5f'
+const DONE = RAILS.tasks
 const OUT = '#af87d7'
 // The minutes an agent is out before its row turns amber.
 const LONG = 20

@@ -45,7 +45,7 @@ export const INK = '#000000'
 // A stage off the ramp (init, or one a later version adds) is drawn as secondary text.
 export const stageColor = (stage: string): string => (Object.hasOwn(RAMP, stage) ? RAMP[stage] : WHERE)
 
-const claimsOf = (entry: Entry): string[] => list(entry.claims ?? entry.scope)
+export const claimsOf = (entry: Entry): string[] => list(entry.claims ?? entry.scope)
 
 // How many other sessions hold a file this one holds.
 export function clashes(entry: Entry, others: { entry: Entry }[]): number {
