@@ -252,6 +252,17 @@ test('a block listing both sides of a staged rename commits one rename', () => {
     assert.equal(git(dir, 'status', '--porcelain'), 'M b.txt');
 });
 
+test('a block listing a non-ASCII old path of a staged rename commits one rename', () => {
+    const dir = repo();
+    fs.writeFileSync(path.join(dir, 'a.txt'), 'a1\n');
+    execFileSync('git', ['mv', 'a.txt', '舊名.txt'], { cwd: dir });
+    execFileSync('git', ['commit', '-qm', 'first move'], { cwd: dir });
+    execFileSync('git', ['mv', '舊名.txt', '新名.txt'], { cwd: dir });
+    const res = commit.main([requestFile('舊名.txt\n新名.txt\n\nfeat: rename again\n')], dir);
+    assert.ok(!res.code, res.text);
+    assert.equal(git(dir, '-c', 'core.quotePath=false', 'show', '--name-status', '-M', '--format=', 'HEAD'), 'R100\t舊名.txt\t新名.txt');
+});
+
 test('a block listing a path removed with git rm commits the deletion', () => {
     const dir = repo();
     execFileSync('git', ['rm', '-qf', 'b.txt'], { cwd: dir });

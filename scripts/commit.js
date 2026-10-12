@@ -147,7 +147,7 @@ function landWorktree(top, block, run, oneLine) {
     }
     const here = (args, input, env) => run(wt, args, input, env);
     const branch = here(['symbolic-ref', '--quiet', '--short', 'HEAD']);
-    const renamed = here(['diff', '--cached', '-M', '--name-status']);
+    const renamed = here(['-c', 'core.quotePath=false', 'diff', '--cached', '-M', '--name-status']);
     const staged = renamed.status === 0 ? renamed.stdout.split(/\r?\n/) : [];
     const gone = stagedGone(staged);
     const toAdd = block.paths.filter((p) => !gone.has(p) || fs.existsSync(path.resolve(wt, p)));
@@ -290,7 +290,7 @@ function main(argv, cwd) {
         if (hits.length && mode === 'block') {
             return fail('sensitive: ' + sensitive.listed(hits) + ' — words from .fankeel/sensitive.txt, and sensitive.mode is block');
         }
-        const renamed = git(['diff', '--cached', '-M', '--name-status']);
+        const renamed = git(['-c', 'core.quotePath=false', 'diff', '--cached', '-M', '--name-status']);
         const staged = renamed.status === 0 ? renamed.stdout.split(/\r?\n/) : [];
         const gone = stagedGone(staged);
         // A path recreated on disk after its deletion was staged is still added.
