@@ -10,7 +10,7 @@
 // three code shapes (the CSS pulse rule and its reduced-motion rule,
 // `q.editing`, `setInterval(refreshQueue, 2000)`), which assert the source
 // says so, not that it runs. Listeners no test dispatches: the logo's
-// pointercancel, the fold, clear and out buttons, document mousemove beyond the
+// pointercancel, the fold and clear buttons, document mousemove beyond the
 // hovers the two wheel tests fire, window blur, keyup and keypress, scroll and
 // resize, the draft number button click (overlay.js:348), the chip remove x
 // click (:360), the draft delete button click (:373), the diff link click
@@ -389,14 +389,17 @@ test('while picking, the capture listeners swallow the page\'s pointer and click
     assert.deepEqual(seen, [], 'the page saw ' + seen);
     assert.equal(t.fire(t.page.hero, 'pointerdown', { button: 2 })._stopNow, false, 'a right-button press is not the assistant\'s');
 
-    // The overlay's own elements are never swallowed.
+    // The overlay's own elements are never swallowed. 完成這則 sits in the row
+    // being picked, so it is clicked while that row is there, and a new item
+    // keeps the assistant picking for the logo.
+    assert.equal(t.fire(t.q('.fk-live-fin'), 'click').defaultPrevented, false);
+    t.fire(t.q('.fk-live-add'), 'click');
     own.length = 0;
     for (const type of TYPES) {
         const ev = t.fire(t.logo, type, { button: type === 'auxclick' ? 1 : 0 });
         assert.equal(ev.defaultPrevented, false, type + ' on the logo was prevented');
     }
     assert.deepEqual(own, TYPES, 'the logo missed an event while picking');
-    assert.equal(t.fire(t.q('.fk-live-fin'), 'click').defaultPrevented, false);
 });
 
 test('while picking, a click on a page element picks it, a second click takes it back, and an Alt click is the same click', () => {
@@ -627,4 +630,37 @@ test('a refused send keeps the drafts, marks the item the server named, and says
     await plain.tick();
     assert.equal(plain.q('.fk-live-queue').querySelector('span').textContent, 'not JSON');
     assert.deepEqual(plain.doc.all('.fk-live-item').map((li) => li.classList.contains('fk-live-err')), [false]);
+});
+
+// tune-4: the item being picked carries its note field and its two buttons, so
+// what the user does next is in the row the pick belongs to.
+test('the row being picked has its note field, and 往外一層 and 完成這則 sit in it', () => {
+    const t = loadOverlay();
+    const span = t.doc.createElement('span');
+    t.page.card.appendChild(span);
+    t.openTray();
+    t.fire(t.q('.fk-live-add'), 'click');
+    const row = () => t.q('.fk-live-item.fk-live-picking');
+    assert.ok(row(), 'no row is marked as the one being picked');
+    const area = row().querySelector('textarea');
+    assert.ok(area, 'the row being picked has no note field');
+    assert.ok(row().querySelector('.fk-live-out'), '往外一層 is not in the row being picked');
+    assert.ok(row().querySelector('.fk-live-fin'), '完成這則 is not in the row being picked');
+    assert.equal(t.q('.fk-live-hint').querySelector('button'), null, 'the hint still carries a button');
+
+    area.value = '先寫備註';
+    t.fire(area, 'input');
+    t.fire(t.page.hero, 'click');
+    assert.equal(row().querySelector('textarea').value, '先寫備註', 'a pick threw the note away');
+
+    t.fire(span, 'mousemove');
+    t.fire(row().querySelector('.fk-live-out'), 'click');
+    t.fire(span, 'click');
+    assert.deepEqual(t.doc.all('.fk-live-chip').map((c) => c.textContent), ['section.hero-c×', 'section.card-c×'], '往外一層 in the row did not walk out to the parent');
+
+    t.fire(row().querySelector('.fk-live-fin'), 'click');
+    assert.equal(row(), null, '完成這則 in the row did not end the pick');
+    assert.equal(t.q('.fk-live-out'), null, 'a row that is not being picked carries 往外一層');
+    assert.deepEqual(t.doc.all('textarea').map((x) => x.value), ['先寫備註']);
+    assert.equal(t.q('.fk-live-badge').textContent, '1');
 });

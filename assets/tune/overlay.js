@@ -95,8 +95,8 @@
         '.fk-live-num.fk-live-open{background:#1d2026;color:#22b8cf;box-shadow:inset 0 0 0 1px #22b8cf}',
         '.fk-live-mark{position:absolute;pointer-events:none;z-index:2147483000}',
         '.fk-live-ast{position:fixed;z-index:2147483001;width:48px;height:48px;font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;color:#e8e8e3}',
-        '.fk-live-ast button,.fk-live-hint button{font:inherit;color:inherit;border-radius:0;cursor:pointer}',
-        '.fk-live-ast :focus-visible,.fk-live-hint :focus-visible{outline:2px solid #22b8cf;outline-offset:2px}',
+        '.fk-live-ast button{font:inherit;color:inherit;border-radius:0;cursor:pointer}',
+        '.fk-live-ast :focus-visible{outline:2px solid #22b8cf;outline-offset:2px}',
         '.fk-live-ast [hidden],.fk-live-hint[hidden]{display:none!important}',
         '.fk-live-logo{position:absolute;left:0;top:0;width:48px;height:48px;padding:0;display:grid;place-items:center;background:#1d2026;border:1px solid #3a3e46;box-shadow:0 8px 28px rgba(14,16,20,.32);cursor:grab;touch-action:none}',
         '.fk-live-logo[aria-expanded=true]{border-color:#22b8cf}',
@@ -136,7 +136,7 @@
         '.fk-live-item textarea.fk-live-err{border-color:#e0a526}',
         '.fk-live-item.fk-live-picking{background:rgba(34,184,207,.07)}',
         '.fk-live-item.fk-live-err{box-shadow:inset 3px 0 0 #e0a526}',
-        '.fk-live-later{margin:0;color:#b8b8b0}',
+        '.fk-live-acts{align-items:center;margin-bottom:6px}',
         '.fk-live-send{padding:8px 10px 10px;border-top:1px solid #3a3e46}',
         '.fk-live-queue{display:flex;align-items:center;gap:6px;margin:0 0 8px;color:#b8b8b0}',
         '.fk-live-queue i{display:inline-block;width:7px;height:7px;border-radius:50%;background:#22b8cf;animation:fk-live-pulse 1s infinite alternate}',
@@ -150,7 +150,6 @@
         '.fk-live-hint .fk-live-row{flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:6px 8px}',
         '.fk-live-aside{color:#8f939b}',
         '.fk-live-hint kbd{border:1px solid #555a63;padding:0 4px;font:inherit}',
-        '.fk-live-hint .fk-live-go{margin-left:auto}',
         '@keyframes fk-live-pulse{from{opacity:.35}to{opacity:1}}',
         '.fk-live-edp{position:absolute;pointer-events:none;z-index:2147482998;border-radius:6px;box-shadow:0 0 0 1.5px #22b8cf,0 0 0 5px rgba(34,184,207,.18);animation:fk-live-edp 2.8s ease-in-out infinite}',
         '.fk-live-edp span{position:absolute;top:-9px;right:14px;padding:0 7px;font:600 11px/18px ui-monospace,Menlo,Consolas,monospace;color:#1d2026;background:#22b8cf;border-radius:4px}',
@@ -252,10 +251,7 @@
         + '<button type="button" class="fk-live-logo" aria-expanded="false">' + GLYPH + '<span class="fk-live-badge" hidden></span></button>');
     var hint = el('div', 'fk-live-hint',
         '<p><span class="fk-live-num fk-live-open"></span><span class="fk-live-say"></span></p>'
-        + '<div class="fk-live-row"><button type="button" class="fk-live-btn fk-live-out">往外一層</button>'
-        + '<span class="fk-live-aside">或滾輪：上 往外，下 往內</span>'
-        + '<button type="button" class="fk-live-btn fk-live-go fk-live-fin">完成這則</button>'
-        + '<span class="fk-live-aside"><kbd>Esc</kbd> 取消</span></div>');
+        + '<div class="fk-live-row"><span class="fk-live-aside"><kbd>Esc</kbd> 取消</span></div>');
     hint.setAttribute('role', 'status');
     hint.hidden = true;
 
@@ -396,12 +392,16 @@
             head.appendChild(del);
         }
         li.appendChild(head);
+        // The item being picked carries its own two buttons, above its note.
         if (i === picking) {
-            var later = doc.createElement('p');
-            later.className = 'fk-live-later';
-            later.textContent = '圈選中。按「完成這則」後在這裡寫備註。';
-            li.appendChild(later);
-            return li;
+            var acts = doc.createElement('div');
+            acts.className = 'fk-live-row fk-live-acts';
+            acts.innerHTML = '<button type="button" class="fk-live-btn fk-live-out">往外一層</button>'
+                + '<span class="fk-live-aside">或滾輪：上 往外，下 往內</span>'
+                + '<button type="button" class="fk-live-btn fk-live-go fk-live-fin">完成這則</button>';
+            acts.querySelector('.fk-live-out').addEventListener('click', function () { walk(true); });
+            acts.querySelector('.fk-live-fin').addEventListener('click', function () { endPick(true); });
+            li.appendChild(acts);
         }
         var label = doc.createElement('label');
         label.textContent = d.picks.length > 1 ? '這 ' + d.picks.length + ' 塊共用一段備註，要怎麼改？' : '這塊要怎麼改？';
@@ -636,8 +636,6 @@
         draw();
     });
     allBtn.addEventListener('click', sendAll);
-    hint.querySelector('.fk-live-out').addEventListener('click', function () { walk(true); });
-    hint.querySelector('.fk-live-fin').addEventListener('click', function () { endPick(true); });
 
     doc.addEventListener('mousemove', function (ev) {
         if (ours(ev.target)) return;
