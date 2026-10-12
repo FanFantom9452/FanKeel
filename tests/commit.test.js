@@ -280,6 +280,18 @@ test('a worktree block listing both sides of a staged rename lands one rename', 
     assert.equal(git(dir, 'status', '--porcelain'), '');
 });
 
+test('a worktree block listing a non-ASCII old path of a staged rename lands one rename', () => {
+    const { dir, wt } = worktreeRepo();
+    // Both trees must already have 舊名.txt, or the cherry-pick has no old file to rename.
+    execFileSync('git', ['mv', 'b.txt', '舊名.txt'], { cwd: dir });
+    execFileSync('git', ['commit', '-qm', 'first move'], { cwd: dir });
+    execFileSync('git', ['reset', '-q', '--hard', git(dir, 'rev-parse', 'HEAD')], { cwd: wt });
+    execFileSync('git', ['mv', '舊名.txt', '新名.txt'], { cwd: wt });
+    const res = commit.main([requestFile('worktree ' + wt + '\n舊名.txt\n新名.txt\n\nfeat: rename again\n')], dir);
+    assert.ok(!res.code, res.text);
+    assert.equal(git(dir, '-c', 'core.quotePath=false', 'show', '--name-status', '-M', '--format=', 'HEAD'), 'R100\t舊名.txt\t新名.txt');
+});
+
 // docs/90-agent/plans/2026-09-28-spawndepth-worktree-design.md §2: a block
 // whose first line is `worktree <path>` was built in a worktree of this
 // repository. A clean repository whose a.txt has ten lines, b.txt one, and a
