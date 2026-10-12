@@ -119,6 +119,7 @@ test('a waiting gate adds the badge and its countdown after tasks, and moves the
     assert.equal(secs(NOW + 45000), '還 45 秒');
     assert.equal(secs(NOW + 45001), '還 46 秒');
     assert.equal(secs(NOW - 1), '還 0 秒');
+    assert.equal(secs(NOW - 5000), '還 0 秒');
     assert.ok(!band(m)[0].some((seg) => seg.backgroundColor), 'a badge with no gate waiting');
 });
 
