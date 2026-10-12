@@ -302,7 +302,7 @@ function loadOverlay(shared) {
     return t;
 }
 
-test('dragging the logo moves it, clamps it inside the viewport, keeps the spot, and the click that ends a drag does not open the tray', () => {
+test('dragging the logo moves it, clamps it inside the viewport, keeps the spot, and the click that ends a drag does not fold the tray', () => {
     const t = loadOverlay();
     assert.equal(t.ast.style.left, '1216px');
     assert.equal(t.ast.style.top, '736px');
