@@ -46,16 +46,20 @@
         return list.indexOf(item) < 0 ? list.concat([item]) : list.filter(function (x) { return x !== item; });
     }
     // The request's items: one per draft that has a note and an element, the
-    // first element's fields on the item, and when it has more than one,
-    // every element's block (once each) and every selector.
+    // first element's selector, classes and text on the item, and every block
+    // its picks resolved to, once each: the first as `block`, all of them as
+    // `blocks` when there is more than one. A pick that is a frame carries
+    // its own `blocks`; `selectors` lists every pick when there are several.
     function itemsOf(drafts) {
         return drafts.filter(function (d) { return String(d.note || '').trim() && d.picks.length; }).map(function (d) {
             var first = d.picks[0];
-            var item = { note: String(d.note).trim(), block: first.block, selector: first.selector, classes: first.classes, text: first.text };
-            if (d.picks.length > 1) {
-                item.blocks = d.picks.map(function (p) { return p.block; }).filter(function (b, i, all) { return b && all.indexOf(b) === i; });
-                item.selectors = d.picks.map(function (p) { return p.selector; });
-            }
+            var union = [];
+            d.picks.forEach(function (p) {
+                (p.blocks || [p.block]).forEach(function (b) { if (b && union.indexOf(b) < 0) union.push(b); });
+            });
+            var item = { note: String(d.note).trim(), block: union[0] || '', selector: first.selector, classes: first.classes, text: first.text };
+            if (union.length > 1) item.blocks = union;
+            if (d.picks.length > 1) item.selectors = d.picks.map(function (p) { return p.selector; });
             return item;
         });
     }
@@ -80,6 +84,7 @@
         '.fk-live-tag,.fk-live-pill{font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;color:#e8e8e3;background:#1d2026;border-radius:0;z-index:2147483001}',
         '.fk-live-tag{position:absolute;padding:1px 6px;pointer-events:none;white-space:nowrap}',
         '.fk-live-tag b{color:#22b8cf;font-weight:600}',
+        '.fk-live-tag.fk-live-bad{background:#e0a526;color:#1d2026}',
         '.fk-live-pill{position:absolute;padding:2px 8px;white-space:nowrap}',
         '.fk-live-pill i{display:inline-block;width:7px;height:7px;border-radius:50%;background:#22b8cf;margin-right:6px;animation:fk-live-pulse 1s infinite alternate}',
         '.fk-live-pill.fk-live-ok i{background:#2f9e44;animation:none}',
@@ -177,6 +182,15 @@
     function blockName(node) {
         var b = blockOf(node);
         return b ? b.getAttribute('data-block') : '';
+    }
+    // What a pick stands for: the block it sits in; for a frame around
+    // blocks, every block inside it, once each; nothing when it has neither.
+    function blocksOf(node) {
+        var own = blockName(node);
+        if (own) return [own];
+        return [].slice.call(node.querySelectorAll('[data-block]'))
+            .map(function (b) { return b.getAttribute('data-block'); })
+            .filter(function (b, i, all) { return b && all.indexOf(b) === i; });
     }
     function find(name) {
         if (!name) return null;
@@ -283,11 +297,16 @@
     var pos = null;
     var press = null;
 
+    // The outline says what a click here would take: the block's name, or 外框
+    // and how many blocks it holds; amber, and why, when it would take nothing.
     function show(target) {
         box.style.display = tag.style.display = '';
         place(box, target, 0);
-        var name = target.getAttribute('data-block');
-        tag.innerHTML = esc(labelOf(target)) + (name !== null ? ' · data-block="<b>' + esc(name) + '</b>"' : '');
+        var names = blocksOf(target);
+        box.classList.toggle('fk-live-bad', !names.length);
+        tag.classList.toggle('fk-live-bad', !names.length);
+        tag.innerHTML = esc(labelOf(target)) + ' · ' + (!names.length ? '沒有 data-block，往外或往內一層'
+            : blockName(target) ? 'data-block="<b>' + esc(names[0]) + '</b>"' : '外框·' + names.length + ' 塊');
         above(tag, target);
     }
     function hide() {
@@ -299,7 +318,8 @@
         return p;
     }
     function describe(node) {
-        return { block: blockName(node), selector: selectorOf(node, doc.body), classes: [].slice.call(node.classList).filter(function (c) { return c.indexOf('fk-live-') !== 0; }), text: String(node.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 80) };
+        var names = blocksOf(node);
+        return { block: names[0] || '', blocks: names, selector: selectorOf(node, doc.body), classes: [].slice.call(node.classList).filter(function (c) { return c.indexOf('fk-live-') !== 0; }), text: String(node.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 80) };
     }
 
     // The drafts survive the reload a finished request causes: each pick is
@@ -354,7 +374,8 @@
             c.className = 'fk-live-chip';
             c.innerHTML = '<code></code><button type="button">×</button>';
             var code = c.querySelector('code');
-            code.textContent = code.title = labelOf(p);
+            var names = blocksOf(p);
+            code.textContent = code.title = labelOf(p) + (blockName(p) ? '' : names.length ? ' · 外框·' + names.length + ' 塊' : ' · 沒有 data-block');
             var x = c.querySelector('button');
             x.setAttribute('aria-label', '移除 ' + labelOf(p));
             x.addEventListener('click', function () {
@@ -667,6 +688,8 @@
         ev.stopImmediatePropagation();
         var picked = hover && hover.contains(ev.target) ? hover : ev.target;
         if (!pickable(picked)) return;
+        // An element with no block in or around it is shown why, and not taken.
+        if (!blocksOf(picked).length) { show(picked); return; }
         drafts[picking].picks = toggleIn(drafts[picking].picks, picked);
         draw();
     }, true);

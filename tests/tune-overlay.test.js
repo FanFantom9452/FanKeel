@@ -189,6 +189,7 @@ function makeEl(doc, tag) {
         (e._on[type] = e._on[type] || []).push({ fn, capture });
     };
     const match = (sel) => {
+        if (sel === '[data-block]') return (n) => n.hasAttribute('data-block');
         const m = /^(?:body > )?(\w+)?((?:\.[\w-]+)*)(?::nth-of-type\((\d+)\))?(?:\[data-block="(.*)"\])?$/.exec(sel);
         if (!m) return () => false;
         return (n) => (!m[1] || n.tagName === m[1].toUpperCase())
@@ -526,4 +527,71 @@ test('Escape while picking drops the pick, removes a draft left with no element,
     assert.equal(t.doc.all('.fk-live-chip').length, 1, 'the unfinished draft stayed');
     assert.equal(t.q('.fk-live-badge').textContent, '1');
     assert.equal(t.fire(t.page.card, 'keydown', { key: 'Escape' })._stopNow, false, 'Escape with nothing to end was swallowed');
+});
+
+// tune-3: a pick is resolved to blocks when it is made. An element inside a
+// block stands for that block; a frame around blocks stands for every block
+// inside it; an element with neither is outlined amber, told why, and not taken.
+test('itemsOf sends every block a frame pick resolved to, the first one as block', () => {
+    const { itemsOf } = require('../assets/tune/overlay.js');
+    const frame = { block: 'card', blocks: ['card', 'foot'], selector: 'div:nth-of-type(1)', classes: ['term'], text: 't' };
+    const inner = { block: 'hero', blocks: ['hero'], selector: 'section:nth-of-type(1)', classes: [], text: 'h' };
+    assert.deepEqual(itemsOf([{ note: 'one', picks: [frame] }, { note: 'two', picks: [inner, frame] }, { note: 'three', picks: [inner] }]), [
+        { note: 'one', block: 'card', blocks: ['card', 'foot'], selector: 'div:nth-of-type(1)', classes: ['term'], text: 't' },
+        { note: 'two', block: 'hero', blocks: ['hero', 'card', 'foot'], selector: 'section:nth-of-type(1)', classes: [], text: 'h', selectors: ['section:nth-of-type(1)', 'div:nth-of-type(1)'] },
+        { note: 'three', block: 'hero', selector: 'section:nth-of-type(1)', classes: [], text: 'h' },
+    ]);
+});
+
+// A frame around card and foot, with a spacer row between them that carries no
+// data-block, appended to the stub page; picking has begun.
+function withFrame() {
+    const t = loadOverlay();
+    const frame = t.doc.createElement('div');
+    frame.className = 'term';
+    const gap = t.doc.createElement('div');
+    gap.className = 'gap';
+    t.doc.body.appendChild(frame);
+    frame.appendChild(t.page.card);
+    frame.appendChild(gap);
+    frame.appendChild(t.page.foot);
+    t.openTray();
+    t.fire(t.q('.fk-live-add'), 'click');
+    return { t, frame, gap };
+}
+
+test('while picking, a click on a frame takes every block inside it, and an element with no block is told why and not taken', async () => {
+    const { t, frame, gap } = withFrame();
+    const chips = () => t.doc.all('.fk-live-chip').map((c) => c.textContent);
+    const tag = () => t.q('.fk-live-tag');
+    const box = () => t.q('.fk-live-box');
+
+    t.fire(gap, 'mousemove');
+    assert.equal(tag().textContent, 'div.gap · 沒有 data-block，往外或往內一層');
+    assert.ok(box().classList.contains('fk-live-bad'), 'the outline of an element with no block is not amber');
+    assert.ok(tag().classList.contains('fk-live-bad'), 'the label of an element with no block is not amber');
+    t.fire(gap, 'click');
+    assert.deepEqual(chips(), [], 'an element with no data-block in or around it was taken');
+
+    t.fire(frame, 'mousemove');
+    assert.equal(tag().textContent, 'div.term · 外框·2 塊');
+    assert.ok(!box().classList.contains('fk-live-bad'), 'a frame around blocks is outlined amber');
+    t.fire(frame, 'click');
+    assert.deepEqual(chips(), ['div.term · 外框·2 塊×']);
+
+    t.fire(t.page.hero, 'mousemove');
+    assert.equal(tag().querySelector('b').textContent, 'hero', 'the label of an element in a block does not name the block');
+    assert.ok(!tag().classList.contains('fk-live-bad'));
+
+    t.fire(t.q('.fk-live-fin'), 'click');
+    const area = t.doc.all('textarea').pop();
+    area.value = '整個外框換底色';
+    t.fire(area, 'input');
+    t.fire(t.q('.fk-live-all'), 'click');
+    const item = JSON.parse(t.fetched.filter((f) => f.url === '/__live/request')[0].init.body).items[0];
+    assert.equal(item.block, 'card');
+    assert.deepEqual(item.blocks, ['card', 'foot']);
+    assert.match(item.selector, /^div:nth-of-type\(\d+\)$/);
+    assert.equal(item.selectors, undefined);
+    await t.tick();
 });
