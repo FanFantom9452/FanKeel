@@ -35,7 +35,7 @@ export function cut(s: string, cols: number): string {
   return out + '…'
 }
 
-// xterm 240: labels, the bar's track, the separators and the countdowns.
+// xterm 240: labels, the bar's track and the separators.
 export const DIM = '#585858'
 
 // TokenBar's ramp (F:/ymlab/TokenBar/statusline.sh), each xterm number as its hex.

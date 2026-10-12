@@ -392,7 +392,7 @@ export const register: Register = (on) => {
     const pending = seen.pending
     const pendingFile = seen.pendingFile
     // The gate is drawn whole, under the task block, and the Pane scrolls over it; the status blocks take the rows it leaves.
-    // 1: the rail every gate row opens with, as every status row does.
+    // 1: the rail every gate row opens with; a status row opens with a rail or a space, the same one cell.
     const gate = pending && pendingFile ? gateRows(pending, cols - 1, width, Date.now()) : []
     const status = statusRows({
       id: seen.id,
