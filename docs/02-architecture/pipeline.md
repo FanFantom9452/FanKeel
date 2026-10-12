@@ -249,11 +249,11 @@ reference root: `tests/resume.test.js:331`, `assert.ok(worst < 2600`. The 43
 characters of headroom are about two more profile keys.
 
 `tests/render.test.js` caps a narrower thing, the seven stage preambles alone,
-under 2,400 — `tests/render.test.js:541`, `assert.ok(size < 2400` — and a wider
+under 2,400 — `tests/render.test.js:569`, `assert.ok(size < 2400` — and a wider
 one, the whole worst-case block those preambles sit inside, five notes, a
 second session, a compacted transcript, none of which a resume answer ever
 carries, is capped separately under 3,000 in the same file:
-`tests/render.test.js:492`, `assert.ok(worst < 3000`. The
+`tests/render.test.js:519`, `assert.ok(got.worst < 3000`. The
 range is `renderResume` measured against the same reference plugin root
 `tests/reference-size.js` now defines for both files, and **each class over its
 own route** — a `bounded` task never reaches `audit`, so pairing every class
