@@ -7,7 +7,7 @@ import { cut } from './pane-status.ts'
 
 export type Question = { question: string; header?: string; multiSelect?: boolean; options: { label: string; description?: string }[] }
 export type Pending = { questions: Question[]; until: number; at: number | null }
-export type GateRow = { block: 'gate'; text: string; dim?: boolean; bold?: boolean; badge?: boolean; press?: string; hotkey?: string }
+export type GateRow = { block: 'gate'; text: string; dim?: boolean; bold?: boolean; badge?: boolean; after?: string; press?: string; hotkey?: string }
 
 // lib/handoff.js dirFor.
 export function taskDir(root: string, entry: Record<string, unknown>): string | null {
@@ -87,15 +87,19 @@ function wrap(s: string, cols: number, width: (s: string) => number): string[] {
 }
 
 // `press` is the label a button answers with; '' is the terminal button.
-// `badge` is the header, drawn on a coloured ground. Nothing is dropped for
+// `badge` is the header, drawn on a coloured ground. Its after is drawn beside it, off the ground. Nothing is dropped for
 // lack of rows: the question and every option's description are wrapped
 // whole, and a gate taller than the Pane scrolls in it. `width` is
 // hooks/pane-status.ts's, which the caller passes in for `wrap`.
-export function gateRows(pending: Pending, cols: number, width: (s: string) => number): GateRow[] {
+// `now`, when given, puts the seconds the gate has left on the badge row as `after`.
+export function gateRows(pending: Pending, cols: number, width: (s: string) => number, now?: number): GateRow[] {
   const rows: GateRow[] = []
   const q = pending.questions[0]
-  // 2: the badge's own space either side.
-  rows.push({ block: 'gate', text: cut(`gate · ${q && q.header ? q.header : ''}`, cols - 2), bold: true, badge: true })
+  const after = now === undefined ? '' : `還 ${Math.max(0, Math.ceil((pending.until - now) / 1000))} 秒`
+  // 2: the badge's own space either side; with a countdown, 2 more between the two.
+  const badge: GateRow = { block: 'gate', text: cut(`gate · ${q && q.header ? q.header : ''}`, cols - 2 - (after ? width(after) + 2 : 0)), bold: true, badge: true }
+  if (after) badge.after = after
+  rows.push(badge)
   if (simple(pending)) {
     for (const line of wrap(String(q.question ?? ''), cols, width)) rows.push({ block: 'gate', text: line, bold: true })
     q.options.forEach((o, i) => {

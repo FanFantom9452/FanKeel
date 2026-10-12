@@ -147,3 +147,23 @@ test('an option with no description draws only its button', async () => {
     const rows = gateRows({ questions: [bare], until: 1, at: null }, 44, width);
     assert.deepEqual(rows.map((r) => r.hotkey || (r.badge ? 'badge' : r.bold ? 'question' : 'hint')), ['badge', 'question', '1', '2', 't', 'hint']);
 });
+
+test('gateRows with a clock puts the seconds left beside the badge, and cuts the badge to leave them room', async () => {
+    const { gateRows } = await load();
+    const pending = { questions: [one], until: 100000, at: 40000 };
+    const badge = (now, cols, q) => gateRows(q ? { questions: [q], until: 100000, at: 40000 } : pending, cols || 44, width, now)[0];
+    assert.deepEqual(badge(55500), { block: 'gate', text: 'gate · design', bold: true, badge: true, after: '還 45 秒' });
+    assert.equal(badge(55000).after, '還 45 秒');
+    assert.equal(badge(54999).after, '還 46 秒');
+    assert.equal(badge(100000).after, '還 0 秒');
+    assert.equal(badge(200000).after, '還 0 秒');
+    // No clock, no countdown: the row is the one it always was.
+    assert.deepEqual(gateRows(pending, 44, width)[0], { block: 'gate', text: 'gate · design', bold: true, badge: true });
+    const long = Object.assign({}, one, { header: 'a header far longer than any pane is wide' });
+    const cut = badge(55500, 30, long);
+    // 2 for the badge's own space either side, 2 between it and the countdown.
+    assert.ok(cut.text.endsWith('…') && width(cut.text) + 2 + 2 + width(cut.after) <= 30, cut.text);
+    assert.equal(width(gateRows({ questions: [long], until: 100000, at: 40000 }, 30, width)[0].text), 28);
+    // Nothing but the badge row changes.
+    assert.deepEqual(gateRows(pending, 44, width, 55500).slice(1), gateRows(pending, 44, width).slice(1));
+});
