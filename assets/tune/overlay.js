@@ -1,8 +1,9 @@
 // assets/tune/overlay.js: injected by `scripts/tune.js serve` into every page
 // it sends. A click belongs to the page until the assistant asks for one. The
 // assistant is the fankeel logo in the bottom-right corner: drag it anywhere
-// (the spot is kept in localStorage), click it to open the tray of drafted
-// changes. 新增一則 starts picking: a click on the page then toggles that
+// (the spot is kept in localStorage); the tray of drafted changes is open
+// when the page loads, and a click on the logo folds or reopens it.
+// 新增一則 starts picking: a click on the page then toggles that
 // element in or out of the item, 往外一層 goes out to its parents (out only),
 // the wheel goes both ways, 完成這則 ends it and Esc throws the pick away. Each item
 // is one note for one or more elements; 全部送出 sends every item as one POST
@@ -815,8 +816,8 @@
         pos = null;
     }
     load();
-    settlePos();
-    draw();
+    // Open on load: a first-time reader has to see where to start.
+    toggleTray(true);
     refreshQueue();
     showLast();
 }());

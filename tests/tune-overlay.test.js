@@ -288,7 +288,7 @@ function loadOverlay(shared) {
         release: (id = 1) => fire(logo, 'pointerup', { pointerId: id }),
         tick: () => new Promise((r) => setImmediate(r)),
     };
-    t.openTray = () => { t.press(5, 5); t.release(); };
+    t.openTray = () => { if (t.tray.hidden) { t.press(5, 5); t.release(); } };
     // 新增一則, click each block, 完成這則, then write the note when given one.
     t.draft = (blocks, note) => {
         fire(q('.fk-live-add'), 'click');
@@ -317,8 +317,8 @@ test('dragging the logo moves it, clamps it inside the viewport, keeps the spot,
     assert.ok(!t.logo.classList.contains('fk-live-drag'));
     assert.deepEqual(JSON.parse(t.localStorage.m['fk-live-ast-pos']), { x: 916, y: 536 });
     t.fire(t.logo, 'click', { detail: 1 });
-    assert.equal(t.tray.hidden, true, 'the click that ends a drag opened the tray');
-    assert.equal(t.logo.getAttribute('aria-expanded'), 'false');
+    assert.equal(t.tray.hidden, false, 'the click that ends a drag folded the tray');
+    assert.equal(t.logo.getAttribute('aria-expanded'), 'true');
     t.press(930, 550);
     t.move(2930, 2550);
     assert.equal(t.ast.style.left, '1232px');
@@ -342,24 +342,34 @@ test('another pointer\'s move does not drag the logo', () => {
     t.release();
 });
 
+// tune-5: a first-time reader never noticed the logo in the corner, so the
+// tray is there when the page loads and the logo is what folds it.
+test('a freshly loaded page shows the tray open, and the logo says it folds', () => {
+    const t = loadOverlay();
+    assert.equal(t.tray.hidden, false, 'the tray is folded behind the logo on load');
+    assert.equal(t.logo.getAttribute('aria-expanded'), 'true');
+    assert.ok(t.ast.classList.contains('fk-live-open'));
+    assert.match(t.logo.getAttribute('aria-label'), /點一下收合$/);
+});
+
 test('a plain press and release of the logo toggles the tray and aria-expanded, once, and a keyboard click does too', () => {
     const t = loadOverlay();
-    assert.equal(t.logo.getAttribute('aria-expanded'), 'false');
-    t.press(5, 5);
-    t.release();
-    t.fire(t.logo, 'click', { detail: 1 });
-    assert.equal(t.tray.hidden, false);
     assert.equal(t.logo.getAttribute('aria-expanded'), 'true');
     t.press(5, 5);
     t.release();
     t.fire(t.logo, 'click', { detail: 1 });
     assert.equal(t.tray.hidden, true);
     assert.equal(t.logo.getAttribute('aria-expanded'), 'false');
-    t.fire(t.logo, 'click', { detail: 0 });
+    t.press(5, 5);
+    t.release();
+    t.fire(t.logo, 'click', { detail: 1 });
+    assert.equal(t.tray.hidden, false);
     assert.equal(t.logo.getAttribute('aria-expanded'), 'true');
+    t.fire(t.logo, 'click', { detail: 0 });
+    assert.equal(t.logo.getAttribute('aria-expanded'), 'false');
     t.press(5, 5, 7);
     t.release(8);
-    assert.equal(t.logo.getAttribute('aria-expanded'), 'true', 'another pointer\'s release must not toggle');
+    assert.equal(t.logo.getAttribute('aria-expanded'), 'false', 'another pointer\'s release must not toggle');
 });
 
 test('while picking, the capture listeners swallow the page\'s pointer and click events, never the overlay\'s own, and never when not picking', () => {
