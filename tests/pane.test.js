@@ -429,7 +429,17 @@ test('a short pane with a four-option gate keeps the task, every description, ev
     const { $, log } = fake({ files });
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
-    const tree = await hooks['ui.render']($, { viewport: { columns: 44, rows: 18 } });
+    // One reading of the clock for the whole drawing: the gate's seconds and the status block's minutes are of the same moment.
+    const real = Date.now;
+    let reads = 0;
+    Date.now = () => { reads += 1; return real(); };
+    let tree;
+    try {
+        tree = await hooks['ui.render']($, { viewport: { columns: 44, rows: 18 } });
+    } finally {
+        Date.now = real;
+    }
+    assert.equal(reads, 1, 'the Pane read the clock ' + reads + ' times in one drawing');
     const seen = paneLines(tree);
     const squash = (s) => s.replace(/\s+/g, '');
     const words = squash(texts(tree).filter((t) => t !== '▌').join(''));

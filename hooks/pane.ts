@@ -393,7 +393,9 @@ export const register: Register = (on) => {
     const pendingFile = seen.pendingFile
     // The gate is drawn whole, under the task block, and the Pane scrolls over it; the status blocks take the rows it leaves.
     // 1: the rail every gate row opens with; a status row opens with a rail or a space, the same one cell.
-    const gate = pending && pendingFile ? gateRows(pending, cols - 1, width, Date.now()) : []
+    // One reading for the whole drawing, so the gate's seconds and the status block's minutes are of the same moment.
+    const now = Date.now()
+    const gate = pending && pendingFile ? gateRows(pending, cols - 1, width, now) : []
     const status = statusRows({
       id: seen.id,
       entry: seen.entry,
@@ -402,7 +404,7 @@ export const register: Register = (on) => {
       plan: seen.plan,
       cols,
       room: room - gate.length - (gate.length ? 1 : 0),
-      now: Date.now(),
+      now,
       probe: seen.probe,
     })
     const blankRow = () => h(Text, {}, ' ')
