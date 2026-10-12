@@ -1,18 +1,19 @@
 import type { Register, EngineInterface } from 'claude-code'
 import { parentOf, isActive, SESSION_ID, HARD } from './compact.ts'
-import { statusRows, width, ledgerDone, planTotal } from './pane-status.ts'
-import type { Entry, Other, Context, PlanCount, Seg as StatusSeg, Row as StatusRow } from './pane-status.ts'
+import { statusRows, width, ledgerDoneIds, planTasks, RAILS } from './pane-status.ts'
+import type { Entry, Other, Context, PlanInfo, PlanTask, Seg as StatusSeg, Row as StatusRow } from './pane-status.ts'
+import type { Limit } from './pane-bar.ts'
 import { taskDir, pendingName, answerName, parsePending, gateRows, answerText, HANDOFF } from './pane-gate.ts'
 import type { Pending } from './pane-gate.ts'
-import { bandRows, stageColor, GUARD, FLAG, TITLE, WHERE, HOLLOW, INK } from './pane-band.ts'
+import { bandRows, GUARD, WHERE, INK } from './pane-band.ts'
 import type { Seg as BandSeg } from './pane-band.ts'
 
 // The fankeel mod's two drawings: two rows above the prompt for what is always
 // wanted, and the Pane for what is looked up, with whatever gate is waiting on
 // top of it. The Pane opens itself while the session owns a task, and again for
-// a gate if the user closed it; /fankeel-panel toggles it. docs/90-agent/plans/2026-10-11-fankeel-pane-design.md, section 6
-// over sections 1 to 5. Nothing here runs unless the module was enabled, and
-// nothing outside it depends on it.
+// a gate if the user closed it; /fankeel-panel toggles it. docs/90-agent/plans/2026-10-12-pane-band-design.md
+// is the design. Nothing here runs unless the module was enabled, and nothing
+// outside it depends on it.
 export const PANE = 'fankeel'
 export const COMMAND = 'fankeel-panel'
 export const POLL_MS = 250
@@ -27,7 +28,8 @@ type Seen = {
   pending: Pending | null
   pendingFile: string | null
   context: Context | null
-  plan: PlanCount | null
+  limits: Limit[]
+  plan: PlanInfo | null
   // What probeOf read, or null while FANKEEL_PANE_PROBE is unset.
   probe: string | null
 }
@@ -38,7 +40,7 @@ type Seen = {
 // session's own registry file, the pending file and the ledger are read every tick.
 type Cache = Map<string, { stamp: string; value: unknown }>
 
-const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, pendingFile: null, context: null, plan: null, probe: null })
+const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, pendingFile: null, context: null, limits: [], plan: null, probe: null })
 
 // The last message each silent catch logged: the tick runs four times a second, and a failure that stays is said once.
 type Logged = { context: string; plan: string; open: string; registry: string; neighbour: string; gate: string }
@@ -82,18 +84,20 @@ async function findEntry($: EngineInterface, id: string): Promise<{ entry: Entry
   return null
 }
 
-// The tokens in play and the count hooks/compact.ts compacts at: its
-// `threshold`, written again for the same reason as findEntry. Null while the
-// engine has no count, or cannot be asked.
-async function contextOf($: EngineInterface, logged: Logged): Promise<Context | null> {
+// The tokens in play against the count hooks/compact.ts compacts at — its
+// `threshold`, written again for the same reason as findEntry — and the rate
+// limits the same call reports: `five_hour` and `seven_day` are the two drawn.
+// No context while the engine has no count; neither when it cannot be asked.
+async function contextOf($: EngineInterface, logged: Logged): Promise<{ context: Context | null; limits: Limit[] }> {
   try {
-    const { context } = await $.session.usage()
-    if (typeof context.tokens !== 'number') return null
+    const usage = await $.session.usage()
+    const limits = Array.isArray(usage.rateLimits) ? (usage.rateLimits as Limit[]) : []
+    if (typeof usage.context.tokens !== 'number') return { context: null, limits }
     const raw = Number(await $.env.get('FANKEEL_COMPACT_AT'))
-    return { tokens: context.tokens, at: Number.isFinite(raw) && raw > 0 ? raw : HARD }
+    return { context: { tokens: usage.context.tokens, at: Number.isFinite(raw) && raw > 0 ? raw : HARD }, limits }
   } catch (err) {
     logOnce($, logged, 'context', `fankeel pane: no token count, ${String(err)}`)
-    return null
+    return { context: null, limits: [] }
   }
 }
 
@@ -109,9 +113,9 @@ async function probeOf($: EngineInterface): Promise<string | null> {
 }
 
 // The newest plan this task claimed that has a build ledger of its own: the
-// ledger is where lib/ledger.js ledgerPath puts it, and ledgerDone refuses one
-// whose first line names another plan. The total is the plan's own headings.
-async function planOf($: EngineInterface, root: string, entry: Entry, cache: Cache, logged: Logged): Promise<PlanCount | null> {
+// ledger is where lib/ledger.js ledgerPath puts it, and ledgerDoneIds refuses
+// one whose first line names another plan. The tasks are the plan's own headings.
+async function planOf($: EngineInterface, root: string, entry: Entry, cache: Cache, logged: Logged): Promise<PlanInfo | null> {
   const claims = Array.isArray(entry.claims) ? entry.claims : []
   for (let i = claims.length - 1; i >= 0; i--) {
     const claim = claims[i]
@@ -120,23 +124,23 @@ async function planOf($: EngineInterface, root: string, entry: Entry, cache: Cac
     const file = `${root}/.fankeel/build/${name}/progress.md`
     if (!(await $.fs.exists(file))) continue
     const ledger = String(await $.fs.read(file))
-    const done = ledgerDone(ledger, claim)
+    const done = ledgerDoneIds(ledger, claim)
     if (done === null) continue
-    let total = 0
+    let tasks: PlanTask[] = []
     try {
       const planFile = `${root}/${claim}`
       const stat = await $.fs.stat(planFile)
       const stamp = `${stat.mtimeMs}:${stat.size}`
       let hit = cache.get(planFile)
       if (!hit || hit.stamp !== stamp) {
-        hit = { stamp, value: planTotal(String(await $.fs.read(planFile))) }
+        hit = { stamp, value: planTasks(String(await $.fs.read(planFile))) }
         cache.set(planFile, hit)
       }
-      total = hit.value as number
+      tasks = hit.value as PlanTask[]
     } catch (err) {
       logOnce($, logged, 'plan', `fankeel pane: plan file unreadable, ${String(err)}`)
     }
-    return total > 0 ? { name, done, total } : null
+    return tasks.length > 0 ? { name, done, tasks } : null
   }
   return null
 }
@@ -196,10 +200,10 @@ async function look($: EngineInterface, cache: Cache, logged: Logged): Promise<S
     }
   }
 
-  const context = await contextOf($, logged)
+  const { context, limits } = await contextOf($, logged)
   const plan = await planOf($, found.root, entry, cache, logged)
   const probe = await probeOf($)
-  return { id, entry, others, pending, pendingFile, context, plan, probe }
+  return { id, entry, others, pending, pendingFile, context, limits, plan, probe }
 }
 
 type State = {
@@ -240,9 +244,12 @@ async function tick($: EngineInterface, state: State): Promise<void> {
       if (state.bad < UNREADABLE_TICKS) return
       next = blank(state.seen.id)
     }
-    // The minute is in the key so the band's minutes and the neighbours' ages move while nothing else does.
-    const minute = next.entry ? Math.floor((await $.clock.now()) / 60000) : 0
-    const now = JSON.stringify([next.entry, next.others, next.pending && next.pending.questions, next.pendingFile, next.context, next.plan, next.probe, minute])
+    // The minute is in the key so the minutes, the neighbours' ages and the reset countdowns move while
+    // nothing else does; while a gate waits the second is too, for the seconds it has left.
+    const clock = next.entry ? await $.clock.now() : 0
+    const minute = Math.floor(clock / 60000)
+    const second = next.pending ? Math.floor(clock / 1000) : 0
+    const now = JSON.stringify([next.entry, next.others, next.pending && next.pending.questions, next.pendingFile, next.context, next.limits, next.plan, next.probe, minute, second])
     // The opens and closes have their own memory, `edge`, which moves only when they all went through: a rejected
     // one is met again next tick as the same edge, while `seen` and the redraw below never wait on them.
     try {
@@ -307,7 +314,7 @@ export const register: Register = (on) => {
   }
 
   on('session.start', async ($, e, next) => {
-    await $.command.register({ name: COMMAND, description: 'fankeel 面板：任務、等待中的 gate、撞檔、出去的 agent、context、plan 進度與 notes' })
+    await $.command.register({ name: COMMAND, description: 'fankeel 面板：任務、等待中的 gate、撞檔、tasks、context、用量額度與 notes' })
     $.clock.every(POLL_MS, () => tick($, state))
     return next(e)
   })
@@ -331,11 +338,19 @@ export const register: Register = (on) => {
     const seen = state.seen
     const props = (e.props ?? {}) as { hasSurvey?: boolean; bodyColumns?: number }
     if (props.hasSurvey) return next(e)
-    const asked = seen.pending ? seen.pending.questions[0] : null
-    const gate = seen.pending ? String((asked && asked.question) ?? '') : null
     // 5: the cells the engine keeps at the band's right end, where no surface has measured the body.
     const cols = Math.max(20, props.bodyColumns ?? (e.viewport?.columns ?? 85) - 5)
-    const rows = bandRows(seen.entry, seen.others, gate, cols, Date.now())
+    const plan = seen.plan
+    const rows = bandRows({
+      entry: seen.entry,
+      others: seen.others,
+      gateUntil: seen.pending ? seen.pending.until : null,
+      context: seen.context,
+      limits: seen.limits,
+      tasks: plan ? { done: plan.tasks.filter((t) => plan.done.includes(t.n)).length, total: plan.tasks.length } : null,
+      cols,
+      now: Date.now(),
+    })
     if (!rows) return next(e)
     const { Box, Text } = $.ui.resolve(e)
     const cell = (seg: BandSeg) => {
@@ -355,35 +370,45 @@ export const register: Register = (on) => {
     const pending = seen.pending
     const pendingFile = seen.pendingFile
     // The gate is drawn whole, under the task block, and the Pane scrolls over it; the status blocks take the rows it leaves.
-    const gate = pending && pendingFile ? gateRows(pending, cols, width) : []
-    const status = statusRows(seen.id, seen.entry, seen.others, seen.context, seen.plan, cols, room - gate.length - (gate.length ? 1 : 0), Date.now(), seen.probe)
-    const stage = stageColor(String(seen.entry?.stage ?? ''))
-    const tones: Record<string, string | undefined> = {
-      head: stage, plain: undefined, text: TITLE, dim: WHERE, amber: GUARD, clash: FLAG, hollow: HOLLOW,
-      // TokenBar's context ramp, second tier (xterm 190 226 220 214 208 196 198 199 200), as hex.
-      heat36: '#d7ff00', heat40: '#ffff00', heat45: '#ffd700', heat50: '#ffaf00', heat55: '#ff8700',
-      heat60: '#ff0000', heat65: '#ff0087', heat70: '#ff00af', heat75: '#ff00d7',
-    }
-    const gap = () => h(Text, {}, ' ')
-    const piece = (seg: StatusSeg) => h(Text, { color: tones[seg.tone], bold: seg.bold, wrap: 'truncate-end' }, seg.text)
-    const line = (row: StatusRow) => (row.segs.length === 0 ? gap() : row.segs.length === 1 ? piece(row.segs[0]) : h(Box, { flexDirection: 'row', gap: 1 }, ...row.segs.map(piece)))
+    // 1: the rail every gate row opens with, as every status row does.
+    const gate = pending && pendingFile ? gateRows(pending, cols - 1, width, Date.now()) : []
+    const status = statusRows({
+      id: seen.id,
+      entry: seen.entry,
+      others: seen.others,
+      context: seen.context,
+      limits: seen.limits,
+      plan: seen.plan,
+      cols,
+      room: room - gate.length - (gate.length ? 1 : 0),
+      now: Date.now(),
+      probe: seen.probe,
+    })
+    const blankRow = () => h(Text, {}, ' ')
+    // A row's segments touch: each carries its own colour, and its own space where it wants one.
+    const piece = (seg: StatusSeg) => h(Text, { color: seg.color, bold: seg.bold, wrap: 'truncate-end' }, seg.text)
+    const line = (row: StatusRow) => (row.segs.length === 0 ? blankRow() : h(Box, { flexDirection: 'row' }, ...row.segs.map(piece)))
+    const railed = (...cells: unknown[]) => h(Box, { flexDirection: 'row' }, h(Text, { color: RAILS.gate }, '▌'), ...cells)
     // The task block stays on top; the blank row statusRows puts above the block after it parts the gate from the rest.
     const top = status.filter((row) => row.block === 'task')
 
     const drawn = [
       ...top.map(line),
-      ...(gate.length && top.length ? [gap()] : []),
+      ...(gate.length && top.length ? [blankRow()] : []),
       ...gate.map((row) => {
         if (row.press !== undefined && pending && pendingFile) {
-          return h(Button, {
+          return railed(h(Button, {
             key: `gate:${row.hotkey}`,
             hotkey: row.hotkey,
             plain: true,
             onPress: () => answer($, pending, pendingFile, row.press === '' ? HANDOFF : answerText(pending, row.press as string)),
-          }, row.text)
+          }, row.text))
         }
-        if (row.badge) return h(Text, { backgroundColor: GUARD, color: INK, bold: true }, ` ${row.text} `)
-        return h(Text, { bold: row.bold, color: row.dim ? WHERE : undefined, wrap: 'truncate-end' }, row.text)
+        if (row.badge) {
+          const badge = h(Text, { backgroundColor: GUARD, color: INK, bold: true }, ` ${row.text} `)
+          return row.after ? railed(badge, h(Text, { color: GUARD, bold: true }, `  ${row.after}`)) : railed(badge)
+        }
+        return railed(h(Text, { bold: row.bold, color: row.dim ? WHERE : undefined, wrap: 'truncate-end' }, row.text))
       }),
       ...status.filter((row) => row.block !== 'task').map(line),
     ]
