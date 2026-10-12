@@ -43,7 +43,7 @@ type Cache = Map<string, { stamp: string; value: unknown }>
 const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, pendingFile: null, context: null, limits: [], plan: null, probe: null })
 
 // The last message each silent catch logged: the tick runs four times a second, and a failure that stays is said once.
-type Logged = { context: string; plan: string; open: string; registry: string; neighbour: string; gate: string }
+type Logged = { context: string; plan: string; open: string; registry: string; neighbour: string; gate: string; live: string }
 
 // A registry file that is there and does not parse: told apart so `tick` can wait it out for a while, then give up on it.
 class Unreadable extends Error {}
@@ -150,14 +150,15 @@ async function planOf($: EngineInterface, root: string, entry: Entry, cache: Cac
 // that does not parse, no `at`, or `ids` that is no list — lib/live.js writes
 // null there when it could not tell. The mod has no pid to signal, so this file
 // is all it knows of who is alive. Read every tick: it is one short line.
-async function liveOf($: EngineInterface, root: string): Promise<{ at: number; ids: string[] } | null> {
+async function liveOf($: EngineInterface, root: string, logged: Logged): Promise<{ at: number; ids: string[] } | null> {
+  const file = `${root}/.fankeel/build/live.json`
   try {
-    const file = `${root}/.fankeel/build/live.json`
     if (!(await $.fs.exists(file))) return null
     const got = JSON.parse(String(await $.fs.read(file))) as { at?: unknown; ids?: unknown } | null
     if (!got || typeof got.at !== 'number' || !Number.isFinite(got.at) || !Array.isArray(got.ids)) return null
     return { at: got.at, ids: got.ids.filter((x): x is string => typeof x === 'string') }
-  } catch {
+  } catch (err) {
+    logOnce($, logged, 'live', `fankeel pane: live list does not parse, ${file}, ${String(err)}`)
     return null
   }
 }
@@ -174,7 +175,7 @@ async function look($: EngineInterface, cache: Cache, logged: Logged): Promise<S
   if (!found || !isActive(found.entry)) return blank(id)
   const entry = found.entry as Entry
 
-  const alive = await liveOf($, found.root)
+  const alive = await liveOf($, found.root, logged)
   const others: Other[] = []
   const unreadable: string[] = []
   const sessions = `${found.root}/.fankeel/sessions`
@@ -331,7 +332,7 @@ async function answer($: EngineInterface, pending: Pending, pendingFile: string,
 export const register: Register = (on) => {
   const state: State = {
     seen: blank(''), print: '', mine: false, edge: { task: false, gate: null }, bad: 0, busy: false, cache: new Map(),
-    logged: { context: '', plan: '', open: '', registry: '', neighbour: '', gate: '' },
+    logged: { context: '', plan: '', open: '', registry: '', neighbour: '', gate: '', live: '' },
   }
 
   on('session.start', async ($, e, next) => {

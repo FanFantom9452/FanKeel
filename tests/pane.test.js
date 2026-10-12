@@ -1088,6 +1088,20 @@ test('an active neighbour that is not in live.json is no clash, unless its file 
     assert.match(await band(), /⚑2/);
 });
 
+test('a live.json that exists and does not parse is logged once across ticks, and a missing one is not logged', async () => {
+    const hooks = await wired();
+    const LIVE = ROOT + '/.fankeel/build/live.json';
+    const { $, log, store } = fake({ files: entryFile(live) });
+    const said = () => log.logs.filter((m) => /live list/.test(m));
+    await hooks['session.start']($, {}, async () => ({}));
+    for (let i = 0; i < 3; i++) await log.ticks[0].fn();
+    assert.deepEqual(said(), [], 'a missing live.json was logged');
+    store[LIVE] = '{ not json';
+    for (let i = 0; i < 3; i++) await log.ticks[0].fn();
+    assert.equal(said().length, 1, JSON.stringify(log.logs));
+    assert.match(said()[0], /^fankeel pane: live list does not parse, /);
+});
+
 test('a waiting gate sits between the task block and the clash block, ahead of the context', async () => {
     const hooks = await wired();
     const peer = JSON.stringify({ task: 'shares a', stage: 'build', active: true, updated: new Date().toISOString(), claims: ['a.js'] });
