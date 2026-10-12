@@ -449,7 +449,7 @@ never takes the task with it.
 # When compaction has already cost something
 
 ```
-context: 1.1M tokens dropped to compaction so far, 308k in play now,
+context: 1.1M tokens dropped, 308k in play,
 --session 302790e6-e652-4cab-af1c-e45d239516cc. Start a fresh session before the
 next one. This stage's gate gets a fourth option, hand off: set next with task.js
 next --handoff --from-gate, then a new terminal and /fankeel → Adopt.

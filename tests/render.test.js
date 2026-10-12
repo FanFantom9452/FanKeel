@@ -444,7 +444,7 @@ test('a style is never restated in the injected block', () => {
 // be a copy of each other and no longer are.
 const { REFERENCE_ROOT, sizeAtReference } = require('./reference-size.js');
 
-test('the whole injection stays a readable size with everything populated', () => {
+test('the whole injection stays a readable size with everything populated', (t) => {
   // The worst case on purpose, and found rather than named: every stage, both
   // memory fields full, a second session to report.
   // Naming `land` as the longest is what this used to do, and it stopped being
@@ -466,30 +466,58 @@ test('the whole injection stays a readable size with everything populated', () =
     '{"type":"assistant","message":{"usage":{"input_tokens":2,'
     + '"cache_creation_input_tokens":2362,"cache_read_input_tokens":650000,"output_tokens":275}}}\n'
     + '{"type":"system","subtype":"compact_boundary","content":"'
-    + '\\\\"compactMetadata\\\\":{\\\\"cumulativeDroppedTokens\\\\":1120198}"}\n');
+    + '\\"compactMetadata\\":{\\"cumulativeDroppedTokens\\":1120198}"}\n');
+  const reading = require('../lib/context.js').inspect;
+  // What the fixture is for, asserted: one that reads as uncompacted measures the shorter line.
+  assert.deepEqual(reading(heavy), { dropped: 1120198, used: 652364 });
+  // The other `context:` line: busy, never compacted, and no window set.
+  const busy = path.join(tmp('fankeel-busy-'), 'transcript.jsonl');
+  fs.writeFileSync(busy, JSON.stringify({ type: 'assistant', message: { usage: { input_tokens: 2, cache_creation_input_tokens: 2362, cache_read_input_tokens: 650000 } } }) + '\n');
+  assert.deepEqual(reading(busy), { dropped: 0, used: 652364 });
 
-  let worst = 0;
-  let name = '';
-  for (const stage of NAMES) {
-    const out = render({
-      mine: entry(MINE, {
-        stage,
-        project: 'LevelMark',
-        style: 'pipeline',
-        next: 'wire the badge into TokenBar',
-        notes: Array.from({ length: 5 }, (_, i) => 'a lesson learned number ' + i),
-      }),
-      others: [entry(THEIRS, { task: 'retune the 5h ramp', claims: ['statusline.ps1'] })],
-      now: NOW,
-      transcript: heavy,
-    });
-    const size = sizeAtReference(out);
-    if (size > worst) { worst = size; name = stage; }
+  const worstOf = (transcript) => {
+    let worst = 0;
+    let name = '';
+    for (const stage of NAMES) {
+      const out = render({
+        mine: entry(MINE, {
+          stage,
+          project: 'LevelMark',
+          style: 'pipeline',
+          next: 'wire the badge into TokenBar',
+          notes: Array.from({ length: 5 }, (_, i) => 'a lesson learned number ' + i),
+        }),
+        others: [entry(THEIRS, { task: 'retune the 5h ramp', claims: ['statusline.ps1'] })],
+        now: NOW,
+        transcript,
+      });
+      const size = sizeAtReference(out);
+      if (size > worst) { worst = size; name = stage; }
+    }
+    return { worst, name };
+  };
+  const drawn = (transcript) => render({ mine: entry(MINE, { stage: 'build' }), others: [], now: NOW, transcript });
+
+  // `render` reads the window from this process's environment: unset here, so the busy line carries its last sentence.
+  const WINDOW = 'CLAUDE_CODE_AUTO_COMPACT_WINDOW';
+  const saved = process.env[WINDOW];
+  delete process.env[WINDOW];
+  let compacted;
+  let uncompacted;
+  try {
+    assert.match(drawn(heavy), /context: 1\.1M tokens dropped, 652k in play, --session /);
+    assert.match(drawn(busy), /context: 652k in play, nothing dropped yet\..*No auto-compact window is set/);
+    compacted = worstOf(heavy);
+    uncompacted = worstOf(busy);
+  } finally {
+    if (saved !== undefined) process.env[WINDOW] = saved;
   }
   fs.unlinkSync(heavy);
-  assert.match(render({ mine: entry(MINE, { stage: 'build' }), others: [], now: NOW, transcript: heavy }) || '', /^FANKEEL/,
-    'the fixture transcript is gone, and a missing one still renders');
-  assert.ok(worst < 3000, 'worst injection is ' + name + ' at ' + worst + ' chars under a ' + REFERENCE_ROOT + '-character root');
+  assert.match(drawn(heavy) || '', /^FANKEEL/, 'the fixture transcript is gone, and a missing one still renders');
+  t.diagnostic('compacted: ' + compacted.name + ' at ' + compacted.worst + '; busy with no window: ' + uncompacted.name + ' at ' + uncompacted.worst);
+  for (const [what, got] of [['compacted', compacted], ['busy with no window set', uncompacted]]) {
+    assert.ok(got.worst < 3000, 'worst ' + what + ' injection is ' + got.name + ' at ' + got.worst + ' chars under a ' + REFERENCE_ROOT + '-character root');
+  }
 });
 
 test('no stage’s rules cost more than a readable preamble', (t) => {
