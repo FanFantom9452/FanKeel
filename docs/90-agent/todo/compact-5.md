@@ -2,11 +2,8 @@
 label: compact
 title: 面板提醒改讀 compact.at
 description: `hooks/pane.ts`、`lib/context.js` 與 `hooks/pane-status.ts` 仍只認 FANKEEL_COMPACT_AT 或 450000，沒有讀 profile 的 compact.at
-state: blocked
+state: ready
 link: hooks/pane.ts
-group: pane-band 任務收尾
-timing: after: Pane 配色任務收尾，放開 `hooks/pane.ts`、`hooks/pane-status.ts` 與 `lib/context.js`
-stamp: 2026-10-13
 ---
 
 來源：2026-10-12 session 80db54ce 做「init 問壓縮門檻四檔」時新增 profile 鍵 compact.at，hooks/compact.ts 已改讀它（commit 77078caa、69b304a8）。第 1 輪審查確認有三處沒跟上，三個檔當時都被 Pane 配色任務佔著、guard 是 deny，使用者裁定只放行文件頁，程式留到該任務收尾。
