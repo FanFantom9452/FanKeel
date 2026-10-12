@@ -203,6 +203,21 @@ test('an unparsable profile file logs one debug line naming it; a missing file o
     assert.deepEqual(await run({ [file]: JSON.stringify({ 'compact.at': '123' }) }), []);
 });
 
+test('compact.at written as a JSON number is that tier; a number outside the tiers is absent', async () => {
+    const mod = await load();
+    const run = async (value, tokens) => {
+        const files = { ...entryAt('F:/proj', live), ...profileAt('F:/proj/.fankeel/profile.json', { 'compact.at': value }) };
+        const r = fake({ tokens, files });
+        await fire(handlerOf(mod), r.$);
+        return r.calls.length;
+    };
+    assert.equal(await run(600000, 500000), 0);
+    assert.equal(await run(600000, 610000), 1);
+    assert.equal(await run(123, CONTEXT_HARD - 1), 0);
+    assert.equal(await run(123, CONTEXT_HARD), 1);
+    assert.equal(await run([600000], CONTEXT_HARD), 1);
+});
+
 test('a rejected compaction is retried', async () => {
     const { $, calls } = fake({ tokens: CONTEXT_HARD, files: entryAt('F:/proj', live) });
     let first = true;

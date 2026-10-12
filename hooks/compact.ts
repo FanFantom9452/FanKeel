@@ -70,7 +70,8 @@ async function profileAt($: EngineInterface, file: string): Promise<string | nul
   try {
     if (!(await $.fs.exists(file))) return null
     const v = (JSON.parse(String(await $.fs.read(file))) as Record<string, unknown>)['compact.at']
-    const at = typeof v === 'string' ? v.trim().toLowerCase() : ''
+    // lib/profile.js parseValue reads String(raw), so a hand-written number counts.
+    const at = typeof v === 'string' || typeof v === 'number' ? String(v).trim().toLowerCase() : ''
     return COMPACT_AT.test(at) ? at : null
   } catch (err) {
     $.ui.log(`fankeel compact: unreadable profile ${file}: ${err}`, { to: 'debug' })
