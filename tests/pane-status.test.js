@@ -431,6 +431,9 @@ test('quota is a row a window — bar, percent used, what is left, the reset —
     ]);
     const even = { kind: 'seven_day', percentUsed: 50, resetsAt: new Date(NOW + 84 * HOUR).toISOString() };
     assert.equal(text(status(m, { limits: [even] }), 'quota')[2], '▌   0%  落後平均進度 0 點');
+    const over = text(status(m, { limits: [Object.assign({}, five, { percentUsed: 120 })] }), 'quota')[1];
+    assert.ok(over.includes('120%') && over.includes('剩  0%'), over);
+    assert.equal(text(status(m, { limits: [Object.assign({}, five, { percentUsed: -5 })] }), 'quota')[1], '▌5h ░░░░░░░░░░  -5%  剩100%  ↻ 1h 46m');
     assert.deepEqual(blocksOf(status(m, { context, limits: [five, week] })), ['task', 'context', 'quota', 'session', 'notes', 'foot']);
 });
 

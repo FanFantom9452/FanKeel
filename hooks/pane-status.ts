@@ -302,7 +302,7 @@ function quotaBlock(limits: Limit[], inner: number, now: number): Row[] {
     const { fill, track } = bar(limit.percentUsed, 100, 10)
     const reset = resetMs(limit)
     const base: Seg[] = [dim(label), inked(fill, paint), { text: track, color: DIM }, inked(` ${pct(limit.percentUsed)}`, paint), inked(mark ? ` ${mark}` : '', paint)]
-    const left: Seg[] = [dim('  剩'), { text: pct(100 - limit.percentUsed) }]
+    const left: Seg[] = [dim('  剩'), { text: pct(Math.max(0, Math.min(100, 100 - limit.percentUsed))) }]
     const until: Seg[] = reset === null ? [] : [dim(`  ↻ ${countdown(reset - now, days)}`)]
     const shape = [[...base, ...left, ...until], [...base, ...left]].find((segs) => cells(segs) <= inner) ?? base
     return row('quota', ...shape)
