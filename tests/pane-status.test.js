@@ -10,6 +10,7 @@ const load = () => import(pathToFileURL(path.join(__dirname, '..', 'hooks', 'pan
 const compact = () => import(pathToFileURL(path.join(__dirname, '..', 'hooks', 'compact.ts')).href);
 const ID = 'f0a58f35-ae39-4954-89d6-e0b9129a4082';
 const NOW = Date.parse('2026-10-11T00:00:00.000Z');
+const HOUR = 3600000;
 const entry = {
     task: 'fankeel 面板 mod：把任務／階段狀態做成隨 plugin 出貨的 Claude Code mod Pane',
     class: 'architectural',
@@ -25,120 +26,169 @@ const entry = {
     moves: [['survey', NOW - 49 * 60000, 1], ['design', NOW - 38 * 60000 - 5000, 2]],
 };
 const other = { id: 'aaaaaaaa-0000-4000-8000-000000000001', entry: { task: '站頁看得到對話全文', stage: 'build', active: true, claims: ['hooks/mod.ts'], updated: '2026-10-10T22:00:00.000Z' } };
-const context = { tokens: 312400, at: 450000 };
-const plan = { name: '2026-10-11-fankeel-pane', done: 4, total: 5 };
-// The same entry with a subagent out on its stage.
-const busy = Object.assign({}, entry, { inflight: { stage: 'design', at: NOW - 12 * 60000 - 30000, group: 2 } });
-const line = (row) => row.segs.map((seg) => seg.text).join(' ');
+const apart = { id: 'bbbbbbbb-0000-4000-8000-000000000002', entry: { task: 'x', stage: 'plan', active: true, claims: ['lib/x.js'] } };
+const RAIL = { clash: '#ff5f5f', tasks: '#87af5f', context: '#d787af', quota: '#8787d7', session: '#5fafaf', notes: '#87afd7', foot: '#585858' };
+const SECOND = '#8a8a8a';
+// A row as the Pane shows it: its segments touch.
+const line = (row) => row.segs.map((seg) => seg.text).join('');
 const drawn = (rows, block) => rows.filter((r) => r.block === block && r.segs.length);
 const text = (rows, block) => drawn(rows, block).map(line);
-const all = (m, cols, room) => m.statusRows(ID, entry, [other], context, plan, cols, room, NOW);
-const alone = (m, mine, cols) => m.statusRows(ID, mine, [], null, null, cols || 44, 60, NOW);
+// A block's rows without the rail segment each one opens with.
+const body = (rows, block) => drawn(rows, block).map((r) => r.segs.slice(1));
+const status = (m, over) => m.statusRows(Object.assign({ id: ID, entry, others: [], context: null, limits: [], plan: null, cols: 41, room: 60, now: NOW }, over));
+const blocksOf = (rows) => [...new Set(rows.map((r) => r.block))];
 
-test('the blocks are task, neighbours, agent, context, plan, notes, foot, and touched and the neighbours\' names are gone', async () => {
+test('the frame is task, clash, session, notes, foot, and every drawn row opens with its block\'s rail', async () => {
     const m = await load();
-    const rows = m.statusRows(ID, busy, [other], context, plan, 44, 60, NOW);
-    assert.deepEqual([...new Set(rows.map((r) => r.block))], ['task', 'neighbours', 'agent', 'context', 'plan', 'notes', 'foot']);
-    const seen = rows.map(line).join('\n');
-    for (const gone of ['touched', '其他 session', '共用', '站頁看得到對話全文', '@ build', 'architectural', 'guard', 'deny']) {
-        assert.ok(!seen.includes(gone), gone + ' is still drawn');
+    const rows = status(m, { others: [other] });
+    assert.deepEqual(blocksOf(rows), ['task', 'clash', 'session', 'notes', 'foot']);
+    for (const row of rows.filter((r) => r.segs.length)) {
+        const want = row.block === 'task' ? { text: '▌' } : { text: '▌', color: RAIL[row.block] };
+        assert.deepEqual(row.segs[0], want, line(row));
     }
+    assert.deepEqual(m.RAILS, Object.assign({ gate: '#d7af5f' }, RAIL));
 });
 
 test('one blank row sits above every block but the first, and belongs to the block under it', async () => {
     const m = await load();
-    const rows = all(m, 44, 60);
+    const rows = status(m, { others: [other] });
     assert.ok(rows[0].segs.length && rows[rows.length - 1].segs.length);
     const blanks = rows.map((r, i) => (r.segs.length ? -1 : i)).filter((i) => i >= 0);
-    assert.equal(blanks.length, 5);
+    assert.equal(blanks.length, 4);
     for (const i of blanks) {
         assert.equal(rows[i].block, rows[i + 1].block);
         assert.notEqual(rows[i].block, rows[i - 1].block);
     }
 });
 
-test('the task block opens with the title whole, the route with this stage in brackets, and next whole', async () => {
+test('the task block is the title whole and bold, then next: whole, with no route and no minutes', async () => {
     const m = await load();
-    assert.deepEqual(drawn(all(m, 44, 60), 'task').slice(0, 5).map((r) => r.segs), [
-        [{ text: 'fankeel 面板 mod：把任務／階段狀態做成隨', tone: 'plain', bold: true }],
-        [{ text: 'plugin 出貨的 Claude Code mod Pane', tone: 'plain', bold: true }],
-        [{ text: 'survey ▸ [design] ▸ plan ▸ build ▸ verify ▸', tone: 'text' }],
-        [{ text: 'audit ▸ land', tone: 'text' }],
-        [{ text: 'next: 畫 mockup，等使用者看過再進 plan', tone: 'text' }],
+    assert.deepEqual(body(status(m), 'task'), [
+        [{ text: 'fankeel 面板 mod：把任務／階段狀態做成隨', bold: true }],
+        [{ text: 'plugin 出貨的 Claude Code mod Pane', bold: true }],
+        [{ text: 'next:', color: SECOND }, { text: ' 畫 mockup，等使用者看過再進 plan' }],
     ]);
-    assert.deepEqual(text(all(m, 30, 60), 'task').slice(0, 7), [
-        'fankeel 面板 mod：把任務／階段',
-        '狀態做成隨 plugin 出貨的',
-        'Claude Code mod Pane',
-        'survey ▸ [design] ▸ plan ▸',
-        'build ▸ verify ▸ audit ▸ land',
-        'next: 畫 mockup，等使用者看過',
-        '再進 plan',
+    assert.deepEqual(text(status(m, { cols: 31 }), 'task'), [
+        '▌fankeel 面板 mod：把任務／階段',
+        '▌狀態做成隨 plugin 出貨的',
+        '▌Claude Code mod Pane',
+        '▌next: 畫 mockup，等使用者看過',
+        '▌再進 plan',
     ]);
+    const seen = text(status(m), 'task').join('\n');
+    assert.doesNotMatch(seen, /▸|survey|\[design\]|本站|上站|等你/);
     // Sixty CJK characters and no space: four full rows of thirty cells, nothing cut.
     const long = '把一個很長的任務標題折成好幾行而不是截斷'.repeat(3);
-    const rows = text(alone(m, Object.assign({}, entry, { task: long, next: '' }), 30), 'task');
-    const title = rows.slice(0, rows.indexOf('survey ▸ [design] ▸ plan ▸'));
-    assert.equal(title.length, 4);
-    assert.equal(title.join(''), long);
-    assert.ok(title.every((row) => m.width(row) === 30), title.join(' | '));
-    assert.ok(!rows.some((row) => row.startsWith('next')), 'a next row is drawn with no next');
-    const off = text(alone(m, Object.assign({}, entry, { stage: 'init' })), 'task').join('\n');
-    assert.ok(!off.includes('[') && off.includes('survey ▸ design ▸ plan'), off);
-    assert.ok(!text(alone(m, Object.assign({}, entry, { route: [] })), 'task').join('\n').includes('▸'));
+    const rows = text(status(m, { entry: Object.assign({}, entry, { task: long, next: '' }), cols: 31 }), 'task');
+    assert.equal(rows.length, 4);
+    assert.equal(rows.map((row) => row.slice(1)).join(''), long);
+    assert.ok(rows.every((row) => m.width(row) === 31), rows.join(' | '));
+    assert.deepEqual(text(status(m, { entry: Object.assign({}, entry, { task: '' }) }), 'task')[0], '▌—');
 });
 
-test('the task block ends with this stage\'s minutes and the wait in it, then the stage before; the first stage has none before', async () => {
+test('the clash block is each file a neighbour holds too, then that neighbour\'s task, stage and how long since it moved', async () => {
     const m = await load();
-    const ends = (over) => text(alone(m, Object.assign({}, entry, over)), 'task').filter((row) => /^[本上]站 /.test(row));
-    assert.deepEqual(drawn(all(m, 44, 60), 'task').slice(-2).map((r) => r.segs), [
-        [{ text: '本站 design 38 分 · 等你 2 分', tone: 'dim' }],
-        [{ text: '上站 survey 11 分 · 等你 10 分', tone: 'dim' }],
+    const clash = (others, cols) => status(m, { others, cols: cols || 41 });
+    assert.deepEqual(drawn(clash([other]), 'clash'), [
+        { block: 'clash', segs: [{ text: '▌', color: '#ff5f5f' }, { text: '⚑ hooks/mod.ts', color: '#ff5f5f', bold: true }] },
+        { block: 'clash', segs: [{ text: '▌', color: '#ff5f5f' }, { text: '  站頁看得到對話全文' }, { text: ' @ build · 2h', color: SECOND }], who: other.id },
     ]);
-    assert.deepEqual(ends({ stage: 'survey', moves: [['survey', NOW - 5 * 60000, 1]] }), ['本站 survey 5 分 · 等你 10 分']);
-    assert.deepEqual(ends({ stage: 'init' }).length, 1, 'a stage off the route has no stage before it');
-    assert.deepEqual(ends({ waited: undefined }), ['本站 design 38 分 · 等你 0 分', '上站 survey 11 分 · 等你 0 分']);
-    // The stage before is read off `clock`, both marks of it; this one off `moves`, else `clock`.
-    assert.deepEqual(ends({ clock: { survey: [1000, null] } })[1], '上站 survey ? 分 · 等你 10 分');
-    assert.deepEqual(ends({ moves: undefined, clock: { design: [NOW - 7 * 60000, null] } }), ['本站 design 7 分 · 等你 2 分', '上站 survey ? 分 · 等你 10 分']);
-    assert.deepEqual(ends({ moves: undefined, clock: undefined })[0], '本站 design ? 分 · 等你 2 分');
-});
-
-test('context is the tokens against the compact threshold, and what survives only from four fifths of it', async () => {
-    const m = await load();
-    const rows = drawn(all(m, 44, 60), 'context');
-    assert.deepEqual(rows.map((r) => r.segs), [
-        [{ text: 'context', tone: 'head', bold: true }],
-        [{ text: '312k', tone: 'heat65', bold: true }, { text: '· 到 450k 自動 compact', tone: 'dim' }],
+    const second = { id: 'cccccccc-0000-4000-8000-000000000003', entry: { task: 'y', stage: 'plan', active: true, claims: ['tests/pane.test.js', 'hooks/mod.ts', 'lib/y.js'], updated: new Date(NOW - 12 * 60000).toISOString() } };
+    assert.deepEqual(text(clash([other, second]), 'clash'), [
+        '▌⚑ hooks/mod.ts', '▌  站頁看得到對話全文 @ build · 2h', '▌  y @ plan · 12m',
+        '▌⚑ tests/pane.test.js', '▌  y @ plan · 12m',
     ]);
-    const at = (tokens, limit) => drawn(m.statusRows(ID, entry, [], { tokens, at: limit }, null, 44, 60, NOW), 'context');
-    assert.deepEqual(at(450000, 450000)[1].segs, [{ text: '450k', tone: 'heat75', bold: true }, { text: '· 到 450k 自動 compact', tone: 'amber', bold: true }]);
-    assert.deepEqual(at(449999, 450000)[1].segs[1], { text: '· 到 450k 自動 compact', tone: 'dim' });
-    assert.deepEqual(at(9000, 123456)[1].segs, [{ text: '9k', tone: 'plain' }, { text: '· 到 123k 自動 compact', tone: 'dim' }]);
-    assert.deepEqual(at(79999, 100000).map(line), ['context', '80k · 到 100k 自動 compact']);
-    assert.deepEqual(at(80000, 100000).map(line), ['context', '80k · 到 100k 自動 compact', '留 task · stage · plan · agent · handoff']);
-    assert.deepEqual(at(80000, 100000)[2].segs, [{ text: '留 task · stage · plan · agent · handoff', tone: 'dim' }]);
-    assert.equal(at(359999, 450000).length, 2);
-    assert.equal(at(360000, 450000).length, 3);
-    assert.deepEqual(text(m.statusRows(ID, entry, [], null, null, 44, 60, NOW), 'context'), []);
+    const who = (others) => [...new Set(drawn(clash(others), 'clash').filter((r) => r.who).map((r) => r.who))];
+    assert.deepEqual(who([other, second, apart]), [other.id, second.id]);
+    assert.deepEqual(text(clash([apart]), 'clash'), []);
+    assert.deepEqual(text(clash([]), 'clash'), []);
+    const aged = (updated) => line(drawn(clash([{ id: other.id, entry: Object.assign({}, other.entry, { updated }) }]), 'clash')[1]);
+    assert.equal(aged(new Date(NOW - 59 * 60000).toISOString()), '▌  站頁看得到對話全文 @ build · 59m');
+    assert.equal(aged(new Date(NOW - 60 * 60000).toISOString()), '▌  站頁看得到對話全文 @ build · 1h');
+    assert.equal(aged(new Date(NOW + HOUR).toISOString()), '▌  站頁看得到對話全文 @ build · 0m');
+    assert.equal(aged('soon'),'▌  站頁看得到對話全文 @ build');
+    assert.equal(aged(undefined), '▌  站頁看得到對話全文 @ build');
+    const deep = { id: 'dddddddd-0000-4000-8000-000000000004', entry: { task: '一個很長很長的任務標題，'.repeat(4), stage: 'build', active: true, scope: [entry.claims[3]], updated: other.entry.updated } };
+    const [file, holder] = text(clash([deep], 31), 'clash');
+    assert.ok(file.startsWith('▌⚑ …') && file.endsWith('file.md') && m.width(file) <= 31, file);
+    assert.ok(holder.endsWith('… @ build · 2h') && m.width(holder) <= 31, holder);
 });
 
-test('the context count takes a tone at each of TokenBar\'s nine steps, bold from sixty percent, and none under thirty-six', async () => {
+test('the session block says in words what the guard does and how many files the task has claimed', async () => {
     const m = await load();
-    const count = (tokens, limit) => drawn(m.statusRows(ID, entry, [], { tokens, at: limit || 100000 }, null, 44, 60, NOW), 'context')[1].segs[0];
-    const steps = [36, 40, 45, 50, 55, 60, 65, 70, 75];
-    assert.deepEqual(count(35999), { text: '36k', tone: 'plain' });
-    steps.forEach((step, i) => {
-        const want = { text: step + 'k', tone: 'heat' + step };
-        if (step >= 60) want.bold = true;
-        assert.deepEqual(count(step * 1000), want);
-        assert.equal(count(step * 1000 - 1).tone, i ? 'heat' + steps[i - 1] : 'plain', 'one token under ' + step + ' percent');
-    });
-    assert.equal(count(59999).bold, undefined);
-    assert.deepEqual(count(250000), { text: '250k', tone: 'heat75', bold: true });
-    // 55 percent of 450000 is 247500: a threshold that is not a round hundred thousand.
-    assert.equal(count(247500, 450000).tone, 'heat55');
-    assert.equal(count(247499, 450000).tone, 'heat50');
+    const session = (over) => status(m, { entry: Object.assign({}, entry, over) });
+    assert.deepEqual(body(session({}), 'session'), [
+        [{ text: '這個 session', color: '#5fafaf', bold: true }],
+        [{ text: '別的 session 也在改同一個檔時', color: SECOND }],
+        [{ text: '  直接擋下，不能改' }, { text: '  guard deny', color: SECOND }],
+        [{ text: '這個任務改過的檔', color: SECOND }],
+        [{ text: '  4 個' }, { text: '  claims', color: SECOND }],
+    ]);
+    assert.equal(text(session({ guard: 'ask' }), 'session')[2], '▌  先問你  guard ask');
+    assert.equal(text(session({ guard: 'off' }), 'session')[2], '▌  只提醒  guard off');
+    assert.equal(text(session({ guard: undefined }), 'session')[2], '▌  先問你  guard ask');
+    assert.equal(text(session({ guard: 'constructor' }), 'session')[2], '▌  先問你  guard ask');
+    assert.equal(text(session({ claims: undefined, scope: ['a.js'] }), 'session')[4], '▌  1 個  claims');
+    assert.equal(text(session({ claims: [] }), 'session')[4], '▌  0 個  claims');
+});
+
+test('notes are the newest three, each under the notes heading', async () => {
+    const m = await load();
+    const many = Object.assign({}, entry, { notes: ['a', 'b', 'c', 'd', 'e', 'f', 'g'] });
+    assert.deepEqual(text(status(m, { entry: many }), 'notes'), ['▌notes', '▌· e', '▌· f', '▌· g']);
+    assert.deepEqual(body(status(m), 'notes'), [
+        [{ text: 'notes', color: '#87afd7', bold: true }],
+        [{ text: '· Pane 由 /fankeel-panel 開' }],
+        [{ text: '· gate 區塊沿用 2026-10-09 核准的設計' }],
+    ]);
+    assert.deepEqual(text(status(m, { entry: Object.assign({}, entry, { notes: [] }) }), 'notes'), []);
+});
+
+test('foot is the session and how to close the pane; a probe is drawn above it, whole, and is never dropped', async () => {
+    const m = await load();
+    assert.deepEqual(body(status(m), 'foot'), [[{ text: 'f0a58f35 · /fankeel-panel 關閉', color: SECOND }]]);
+    const probe = 'surfaces [terminal, desktop] · surface terminal';
+    assert.deepEqual(body(status(m, { cols: 61, probe }), 'foot'), [
+        [{ text: probe, color: SECOND }],
+        [{ text: 'f0a58f35 · /fankeel-panel 關閉', color: SECOND }],
+    ]);
+    assert.equal(status(m, { cols: 61, probe }).length, status(m, { cols: 61 }).length + 1, 'the probe is its own block, or more than a row');
+    assert.deepEqual(text(status(m, { cols: 31, probe }), 'foot'), ['▌surfaces [terminal, desktop] ·', '▌surface terminal', '▌f0a58f35 · /fankeel-panel 關閉']);
+    assert.deepEqual(text(status(m, { cols: 61, room: -9, probe }), 'foot'), ['▌' + probe, '▌f0a58f35 · /fankeel-panel 關閉']);
+    for (const none of [undefined, null, '']) assert.deepEqual(text(status(m, { probe: none }), 'foot'), ['▌f0a58f35 · /fankeel-panel 關閉']);
+});
+
+test('no entry draws only the empty block, with no rail', async () => {
+    const m = await load();
+    const rows = status(m, { entry: null, others: [other], probe: 'surfaces [terminal]' });
+    assert.deepEqual(rows, [
+        { block: 'empty', segs: [{ text: '這個 session 沒有進行中的任務' }] },
+        { block: 'empty', segs: [{ text: '/fankeel 開一個', color: SECOND }] },
+    ]);
+});
+
+test('with no room the session block goes first, then notes; task, clash and foot never do', async () => {
+    const m = await load();
+    const rows = (room) => status(m, { others: [other], room });
+    assert.equal(rows(60).length, 18);
+    assert.deepEqual(blocksOf(rows(18)), ['task', 'clash', 'session', 'notes', 'foot']);
+    assert.deepEqual(blocksOf(rows(17)), ['task', 'clash', 'notes', 'foot']);
+    assert.deepEqual(blocksOf(rows(12)), ['task', 'clash', 'notes', 'foot']);
+    assert.deepEqual(blocksOf(rows(11)), ['task', 'clash', 'foot']);
+    assert.deepEqual(blocksOf(rows(-9)), ['task', 'clash', 'foot']);
+    assert.equal(rows(-9).length, 8);
+    for (const room of [18, 17, 12, 11, 8]) assert.ok(rows(room).length <= room, room + ' < ' + rows(room).length);
+});
+
+test('no row is wider than the pane, and CJK counts two', async () => {
+    const m = await load();
+    assert.equal(m.width('ab面板'), 6);
+    const long = { id: other.id, entry: Object.assign({}, other.entry, { task: '另一個很長的任務標題，'.repeat(6), claims: entry.claims }) };
+    for (const cols of [20, 30, 41, 88]) {
+        for (const row of status(m, { others: [long], cols, probe: 'surfaces [terminal, desktop] · surface terminal' })) {
+            assert.ok(m.width(line(row)) <= cols, cols + ' < ' + m.width(line(row)) + ': ' + line(row));
+        }
+    }
 });
 
 test('what the context block says survives is what the compact instructions keep', async () => {
@@ -148,119 +198,6 @@ test('what the context block says survives is what the compact instructions keep
     const kept = instructionsFor(ID, { task: 'demo', stage: 'build', class: 'bounded' }, 'F:/plugin');
     // 'task' is also in the opening sentence, so the line itself is what is looked for.
     for (const word of KEPT) assert.ok(kept.includes(word === 'task' ? '- task:' : word), word + ' is not in the compact instructions');
-});
-
-test('plan is one dot a task, the count, and the plan\'s name; no ledger is no block', async () => {
-    const m = await load();
-    const of = (count, cols) => drawn(m.statusRows(ID, entry, [], null, count, cols || 44, 60, NOW), 'plan').map((r) => r.segs);
-    assert.deepEqual(of(plan), [
-        [{ text: 'plan', tone: 'head', bold: true }],
-        [{ text: '●●●●', tone: 'head' }, { text: '○', tone: 'hollow' }, { text: 'tasks 4 of 5', tone: 'plain' }],
-        [{ text: '2026-10-11-fankeel-pane', tone: 'dim' }],
-    ]);
-    assert.deepEqual(of({ name: 'p', done: 0, total: 2 })[1], [{ text: '○○', tone: 'hollow' }, { text: 'tasks 0 of 2', tone: 'plain' }]);
-    assert.deepEqual(of({ name: 'p', done: 2, total: 2 })[1], [{ text: '●●', tone: 'head' }, { text: 'tasks 2 of 2', tone: 'plain' }]);
-    assert.deepEqual(of({ name: 'p', done: 9, total: 2 })[1], [{ text: '●●', tone: 'head' }, { text: 'tasks 2 of 2', tone: 'plain' }]);
-    assert.deepEqual(of({ name: 'p', done: 3, total: 40 })[1], [{ text: 'tasks 3 of 40', tone: 'plain' }]);
-    assert.deepEqual(of({ name: 'p', done: 0, total: 0 }), []);
-    assert.deepEqual(of(null), []);
-});
-
-test('an agent mark with no readable start draws ? minutes and is never amber', async () => {
-    const m = await load();
-    const out = (inflight) => drawn(alone(m, Object.assign({}, entry, { inflight })), 'agent').map((r) => r.segs);
-    assert.deepEqual(out({ stage: 'design' }), [[{ text: 'agent 出去 ? 分', tone: 'text' }]]);
-    assert.deepEqual(out({ stage: 'design', at: 'soon', group: 2 }), [[{ text: 'agent 出去 ? 分 · 第 2 組', tone: 'text' }]]);
-    assert.deepEqual(out({ stage: 'design', at: NOW }), [[{ text: 'agent 出去 0 分', tone: 'text' }]]);
-});
-
-test('notes are the newest three, each under the notes heading', async () => {
-    const m = await load();
-    const many = Object.assign({}, entry, { notes: ['a', 'b', 'c', 'd', 'e', 'f', 'g'] });
-    assert.deepEqual(text(alone(m, many), 'notes'), ['notes', '· e', '· f', '· g']);
-    assert.deepEqual(drawn(all(m, 44, 60), 'notes')[1].segs, [{ text: '· Pane 由 /fankeel-panel 開', tone: 'text' }]);
-    assert.deepEqual(text(alone(m, Object.assign({}, entry, { notes: [] })), 'notes'), []);
-});
-
-test('neighbours are one flagged row for each file another session holds too, and a session that shares none draws nothing', async () => {
-    const m = await load();
-    const flags = (others, cols) => text(m.statusRows(ID, entry, others, null, null, cols || 44, 60, NOW), 'neighbours');
-    assert.deepEqual(drawn(all(m, 44, 60), 'neighbours').map((r) => r.segs), [[{ text: '⚑ hooks/mod.ts', tone: 'clash', bold: true }]]);
-    const second = { id: 'cccccccc-0000-4000-8000-000000000003', entry: { task: 'y', stage: 'plan', active: true, claims: ['tests/pane.test.js', 'hooks/mod.ts', 'lib/y.js'] } };
-    assert.deepEqual(flags([other, second]), ['⚑ hooks/mod.ts', '⚑ tests/pane.test.js']);
-    const apart = { id: 'bbbbbbbb-0000-4000-8000-000000000002', entry: { task: 'x', stage: 'plan', active: true, claims: ['lib/x.js'] } };
-    assert.deepEqual(flags([apart]), []);
-    assert.deepEqual(flags([apart, other]), ['⚑ hooks/mod.ts']);
-    assert.deepEqual(flags([]), []);
-    const deep = { id: 'dddddddd-0000-4000-8000-000000000004', entry: { task: 'z', stage: 'build', active: true, scope: [entry.claims[3]] } };
-    const [row] = flags([deep], 30);
-    assert.ok(row.startsWith('⚑ …') && row.endsWith('file.md') && m.width(row) <= 30, row);
-});
-
-test('an agent out on this stage is one row with its group, amber from twenty minutes; a mark for another stage is not drawn', async () => {
-    const m = await load();
-    const out = (inflight) => drawn(alone(m, Object.assign({}, entry, { inflight })), 'agent').map((r) => r.segs);
-    assert.deepEqual(drawn(alone(m, busy), 'agent').map((r) => r.segs), [[{ text: 'agent 出去 12 分 · 第 2 組', tone: 'text' }]]);
-    assert.deepEqual(out({ stage: 'design', at: NOW - 20 * 60000 + 1000 }), [[{ text: 'agent 出去 19 分', tone: 'text' }]]);
-    assert.deepEqual(out({ stage: 'design', at: NOW - 20 * 60000 }), [[{ text: 'agent 出去 20 分', tone: 'amber' }]]);
-    assert.deepEqual(out({ stage: 'design', at: NOW - 95 * 60000, group: 3 }), [[{ text: 'agent 出去 95 分 · 第 3 組', tone: 'amber' }]]);
-    assert.deepEqual(out({ stage: 'survey', at: NOW - 60000 }), []);
-    assert.deepEqual(out([{ stage: 'survey', at: NOW - 60000 }, { stage: 'design', at: NOW - 3 * 60000, group: 1 }]), [[{ text: 'agent 出去 3 分 · 第 1 組', tone: 'text' }]]);
-    assert.deepEqual(out(undefined), []);
-});
-
-test('foot is one row: the session and how to close the pane', async () => {
-    const m = await load();
-    assert.deepEqual(drawn(all(m, 44, 60), 'foot').map((r) => r.segs), [[{ text: 'f0a58f35 · /fankeel-panel 關閉', tone: 'dim' }]]);
-});
-
-test('a probe is drawn above the foot, whole, and is never dropped; with none the foot is one row', async () => {
-    const m = await load();
-    const probe = 'surfaces [terminal, desktop] · surface terminal';
-    const rows = (cols, room, said) => m.statusRows(ID, busy, [other], context, plan, cols, room, NOW, said);
-    assert.deepEqual(drawn(rows(60, 60, probe), 'foot').map((r) => r.segs), [
-        [{ text: probe, tone: 'dim' }],
-        [{ text: 'f0a58f35 · /fankeel-panel 關閉', tone: 'dim' }],
-    ]);
-    assert.equal(rows(60, 60, probe).length, rows(60, 60).length + 1, 'the probe is its own block, or more than a row');
-    assert.deepEqual(text(rows(30, 60, probe), 'foot'), ['surfaces [terminal, desktop] ·', 'surface terminal', 'f0a58f35 · /fankeel-panel 關閉']);
-    assert.deepEqual(text(rows(60, -9, probe), 'foot'), [probe, 'f0a58f35 · /fankeel-panel 關閉']);
-    for (const none of [undefined, null, '']) assert.deepEqual(text(rows(60, 60, none), 'foot'), ['f0a58f35 · /fankeel-panel 關閉']);
-    assert.deepEqual(m.statusRows(ID, null, [], null, null, 44, 44, NOW, probe).map((r) => r.block), ['empty', 'empty']);
-});
-
-test('blocks drop in the order notes, plan, agent, context, and task, neighbours and foot never do', async () => {
-    const m = await load();
-    const rows = (room) => m.statusRows(ID, busy, [other], context, plan, 44, room, NOW);
-    const kept = (room) => [...new Set(rows(room).map((r) => r.block))];
-    assert.equal(rows(60).length, 24);
-    assert.deepEqual(kept(24), ['task', 'neighbours', 'agent', 'context', 'plan', 'notes', 'foot']);
-    assert.deepEqual(kept(23), ['task', 'neighbours', 'agent', 'context', 'plan', 'foot']);
-    assert.deepEqual(kept(20), ['task', 'neighbours', 'agent', 'context', 'plan', 'foot']);
-    assert.deepEqual(kept(19), ['task', 'neighbours', 'agent', 'context', 'foot']);
-    assert.deepEqual(kept(16), ['task', 'neighbours', 'agent', 'context', 'foot']);
-    assert.deepEqual(kept(15), ['task', 'neighbours', 'context', 'foot']);
-    assert.deepEqual(kept(14), ['task', 'neighbours', 'context', 'foot']);
-    assert.deepEqual(kept(13), ['task', 'neighbours', 'foot']);
-    assert.deepEqual(kept(-9), ['task', 'neighbours', 'foot']);
-    assert.equal(rows(-9).length, 11);
-    for (const room of [24, 23, 20, 19, 16, 15, 14, 13, 11]) assert.ok(rows(room).length <= room, room + ' < ' + rows(room).length);
-});
-
-test('no row is wider than the pane, and CJK counts two', async () => {
-    const m = await load();
-    assert.equal(m.width('ab面板'), 6);
-    const cells = (row) => row.segs.reduce((n, seg) => n + m.width(seg.text), Math.max(0, row.segs.length - 1));
-    for (const cols of [30, 41, 88]) {
-        for (const row of m.statusRows(ID, busy, [other], context, plan, cols, 60, NOW)) assert.ok(cells(row) <= cols, cols + ' < ' + cells(row) + ': ' + line(row));
-    }
-});
-
-test('no entry draws only the empty block', async () => {
-    const m = await load();
-    const rows = m.statusRows(ID, null, [other], context, plan, 44, 44, NOW);
-    assert.deepEqual(rows.map((r) => r.block), ['empty', 'empty']);
-    assert.ok(rows.some((r) => line(r).includes('/fankeel')));
 });
 
 test('ledgerDone counts what lib/ledger.js completed() counts, for the plan the ledger names', async () => {
