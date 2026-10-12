@@ -517,6 +517,7 @@ is corrected by the next one, not by rewriting this.
 | Brief: 該不該在 build 之前問使用者要不要先 compact，以及 build 途中 context 堆高怎麼辦 | [90-agent/judgements/2026-10-12-compact-before-build.md](90-agent/judgements/2026-10-12-compact-before-build.md) — *judged 2026-10-12, fable* |
 | Brief: 逐塊調整工具（tune）怎麼變直覺 | [90-agent/judgements/2026-10-12-tune-intuitive.md](90-agent/judgements/2026-10-12-tune-intuitive.md) — *judged 2026-10-12, fable* |
 | Brief: band 與 Pane 該怎麼重新設計 | [90-agent/judgements/2026-10-12-pane-band-redesign.md](90-agent/judgements/2026-10-12-pane-band-redesign.md) — *judged 2026-10-12, fable* |
+| Brief 10 — the Pane's rail on every row, and the same readings drawn twice | [90-agent/judgements/2026-10-12-pane-rail-dup.md](90-agent/judgements/2026-10-12-pane-rail-dup.md) — *judged 2026-10-12, fable* |
 
 ## The five scanners
 
