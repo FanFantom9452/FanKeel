@@ -156,8 +156,13 @@ export function bandRows(input: BandInput): Seg[][] | null {
     if (context) {
       const paint = ctxPaint(context.tokens, context.at)
       open('ctx ')
-      draw(context.tokens, context.at, paint)
-      row.push(inked(kilo(context.tokens), paint, 1), { text: `/${kilo(context.at)}`, color: WHERE })
+      // compact.at off is an infinite threshold: the count alone, with nothing to measure it against.
+      if (Number.isFinite(context.at)) {
+        draw(context.tokens, context.at, paint)
+        row.push(inked(kilo(context.tokens), paint, 1), { text: `/${kilo(context.at)}`, color: WHERE })
+      } else {
+        row.push(inked(kilo(context.tokens), paint))
+      }
       if (paint.mark) row.push(inked(paint.mark, paint, 1))
     }
     if (five && shape.five) {

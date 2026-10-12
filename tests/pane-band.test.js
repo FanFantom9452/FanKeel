@@ -260,3 +260,14 @@ test('no entry is no band', async () => {
     const m = await load();
     assert.equal(band(m, { entry: null }), null);
 });
+
+// compact.at off is an infinite threshold (hooks/compact.ts threshold): the
+// count is drawn alone, with no bar and nothing after the slash.
+test('with no compact threshold the band draws the count alone', async () => {
+    const m = await load();
+    const open = { tokens: 212000, at: Infinity };
+    const row = band(m, { context: open, limits: [] })[1];
+    assert.equal(line(row), '▌ctx 212k');
+    assert.deepEqual(row[2], { text: '212k', color: '#00ff00' });
+    assert.equal(band(m, { context: open, limits: [five] }).map(line)[1], '▌ctx 212k  │  5h ██████▌░░░  66%');
+});
