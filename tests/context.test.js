@@ -169,3 +169,41 @@ test('once something has been dropped, that is what gets reported', () => {
   assert.match(line, /327k tokens dropped/);
   assert.doesNotMatch(line, /nothing dropped yet/);
 });
+
+// The host compacts on its own once a window is set; without one, a session on
+// a 1M window is not compacted until it is nearly full, and nothing said so.
+test('a busy session with no auto-compact window is told nothing will compact it', () => {
+  const info = { dropped: 0, used: ctx.BUSY };
+  assert.doesNotMatch(ctx.contextLine(info), /auto-compact window/);
+  assert.match(ctx.contextLine(info, null, {}),
+    /nothing dropped yet\. This stage's gate gets a fourth option.*Adopt\. No auto-compact window is set.*CLAUDE_CODE_AUTO_COMPACT_WINDOW, or \/compact\)\.$/);
+  assert.match(ctx.contextLine(info, null, { CLAUDE_CODE_AUTO_COMPACT_WINDOW: '0' }), /No auto-compact window is set/);
+  assert.match(ctx.contextLine(info, null, { CLAUDE_CODE_AUTO_COMPACT_WINDOW: 'off' }), /No auto-compact window is set/);
+  assert.doesNotMatch(ctx.contextLine(info, null, { CLAUDE_CODE_AUTO_COMPACT_WINDOW: '450000' }), /auto-compact window/);
+  // a session that has compacted before keeps the line it had, busy or not
+  assert.doesNotMatch(ctx.contextLine({ dropped: 500000, used: ctx.BUSY }, 'abc', {}), /auto-compact window/);
+  assert.doesNotMatch(ctx.contextLine({ dropped: 500000, used: 1000 }, 'abc', {}), /auto-compact window/);
+  assert.equal(ctx.contextLine({ dropped: 0, used: ctx.BUSY - 1 }, null, {}), null);
+});
+
+test('both blocks read the window from the hook\'s own environment', () => {
+  const { render, renderResume } = require('../lib/render.js');
+  const now = Date.now();
+  const mine = { sessionId: 'a', data: { task: 'x', scope: ['a.js'], stage: 'build', active: true, updated: new Date(now).toISOString() } };
+  const file = transcript([usage(ctx.BUSY)]);
+  const block = () => render({ mine, others: [], now, root: 'F:/x', launch: 'F:/x', transcript: file });
+  const resume = () => renderResume({ mine, transcript: file }) || '';
+  const saved = process.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW;
+  try {
+    delete process.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW;
+    assert.match(block(), /No auto-compact window is set/);
+    assert.match(resume(), /No auto-compact window is set/);
+    process.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW = '450000';
+    assert.match(block(), /context: 40\dk in play/);
+    assert.doesNotMatch(block(), /auto-compact window/);
+    assert.doesNotMatch(resume(), /auto-compact window/);
+  } finally {
+    if (saved === undefined) delete process.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW;
+    else process.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW = saved;
+  }
+});
