@@ -361,3 +361,138 @@ test('a long task name is cut so its row, tail and all, stays inside the pane', 
         assert.ok(line(rows[4]).endsWith('… · 你的'), line(rows[4]));
     }
 });
+
+const context = { tokens: 212000, at: 450000 };
+const five = { kind: 'five_hour', percentUsed: 66, resetsAt: new Date(NOW + 106 * 60000).toISOString() };
+const week = { kind: 'seven_day', percentUsed: 58, resetsAt: new Date(NOW + 60.5 * HOUR).toISOString() };
+
+test('context is the count and what is left, then a bar to the compact threshold', async () => {
+    const m = await load();
+    assert.deepEqual(body(status(m, { context }), 'context'), [
+        [{ text: 'context', color: '#d787af', bold: true }, { text: '  212k', color: '#ffd700' }, { text: ' · 還 ', color: SECOND }, { text: '238k' }, { text: ' 可用', color: SECOND }],
+        [{ text: '████████▍', color: '#ffd700' }, { text: '░░░░░░░░░', color: '#585858' }, { text: ' 到 450k 自動 compact', color: SECOND }],
+    ]);
+    assert.deepEqual(text(status(m, { context }), 'context'), ['▌context  212k · 還 238k 可用', '▌████████▍░░░░░░░░░ 到 450k 自動 compact']);
+    assert.deepEqual(text(status(m, { context: { tokens: 9000, at: 123456 } }), 'context'), ['▌context  9k · 還 114k 可用', '▌█▎░░░░░░░░░░░░░░░░ 到 123k 自動 compact']);
+    assert.deepEqual(text(status(m, { context: null }), 'context'), []);
+    assert.deepEqual(blocksOf(status(m, { others: [other], context, plan: planOf(5, []) })), ['task', 'clash', 'tasks', 'context', 'session', 'notes', 'foot']);
+});
+
+test('the context bar is ten to eighteen cells, as many as the pane leaves beside its label', async () => {
+    const m = await load();
+    const cells = (cols) => [...body(status(m, { context, cols }), 'context')[1].slice(0, 2).map((seg) => seg.text).join('')].length;
+    assert.equal(cells(41), 18);
+    assert.equal(cells(88), 18);
+    assert.equal(cells(36), 14);
+    assert.equal(cells(32), 10);
+    assert.equal(cells(24), 10);
+});
+
+test('from four fifths of the threshold the count is marked and the block says what a compact keeps; at the threshold it says so', async () => {
+    const m = await load();
+    const at = (tokens, limit) => status(m, { context: { tokens, at: limit || 450000 } });
+    assert.equal(drawn(at(359999), 'context').length, 2);
+    assert.deepEqual(text(at(360000), 'context'), ['▌context  360k ⚠ · 還 90k 可用', '▌██████████████▍░░░ 到 450k 自動 compact', '▌留 task · stage · plan · agent · handoff']);
+    assert.deepEqual(body(at(360000), 'context')[0].slice(1, 3), [{ text: '  360k', color: '#ff00ff', bold: true }, { text: ' ⚠', color: '#ff00ff', bold: true }]);
+    assert.deepEqual(body(at(360000), 'context')[2], [{ text: '留 task · stage · plan · agent · handoff', color: SECOND }]);
+    assert.deepEqual(text(at(79999, 100000), 'context').length, 2);
+    assert.deepEqual(text(at(80000, 100000), 'context').length, 3);
+    assert.deepEqual(text(at(450000), 'context'), ['▌context  450k ⚠ · 還 0k 可用', '▌██████████████████ 已到 450k，compact 中', '▌留 task · stage · plan · agent · handoff']);
+    assert.deepEqual(body(at(450000), 'context')[1], [{ text: '█'.repeat(18), color: '#ff00ff', bold: true }, { text: ' 已到 450k，compact 中', color: '#d7af5f', bold: true }]);
+    assert.equal(text(at(463000), 'context')[0], '▌context  463k ⚠ · 還 0k 可用');
+    // One token short of the threshold: the bar is full to its last eighth, and the label has not changed yet.
+    assert.deepEqual(body(at(449999), 'context')[1], [{ text: '█'.repeat(17) + '▉', color: '#ff00ff', bold: true }, { text: ' 到 450k 自動 compact', color: SECOND }]);
+});
+
+test('quota is a row a window — bar, percent used, what is left, the reset — and the 7d deviation in a sentence', async () => {
+    const m = await load();
+    const rows = status(m, { limits: [five, week] });
+    assert.deepEqual(text(rows, 'quota'), [
+        '▌用量額度',
+        '▌5h ██████▌░░░  66%  剩 34%  ↻ 1h 46m',
+        '▌7d █████▊░░░░  58%  剩 42%  ↻ 2d 12h 30m',
+        '▌   -6%  落後平均進度 6 點',
+    ]);
+    assert.deepEqual(body(rows, 'quota'), [
+        [{ text: '用量額度', color: '#8787d7', bold: true }],
+        [{ text: '5h ', color: SECOND }, { text: '██████▌', color: '#ffd700' }, { text: '░░░', color: '#585858' }, { text: '  66%', color: '#ffd700' },
+            { text: '  剩', color: SECOND }, { text: ' 34%' }, { text: '  ↻ 1h 46m', color: SECOND }],
+        [{ text: '7d ', color: SECOND }, { text: '█████▊', color: '#87ff87' }, { text: '░░░░', color: '#585858' }, { text: '  58%', color: '#87ff87' },
+            { text: '  剩', color: SECOND }, { text: ' 42%' }, { text: '  ↻ 2d 12h 30m', color: SECOND }],
+        [{ text: '   ' }, { text: '-6%', color: '#87ff87' }, { text: '  落後平均進度', color: SECOND }, { text: ' 6 ' }, { text: '點', color: SECOND }],
+    ]);
+    assert.equal(m.width(text(rows, 'quota')[2]), 41);
+    const full = { kind: 'five_hour', percentUsed: 96, resetsAt: new Date(NOW + 12 * 60000).toISOString() };
+    assert.deepEqual(text(status(m, { limits: [full, Object.assign({}, week, { percentUsed: 79 })] }), 'quota'), [
+        '▌用量額度',
+        '▌5h █████████▌  96% ⚠  剩  4%  ↻ 0h 12m',
+        '▌7d ███████▉░░  79%  剩 21%  ↻ 2d 12h 30m',
+        '▌   +15% 💀  超前平均進度 15 點',
+    ]);
+    const even = { kind: 'seven_day', percentUsed: 50, resetsAt: new Date(NOW + 84 * HOUR).toISOString() };
+    assert.equal(text(status(m, { limits: [even] }), 'quota')[2], '▌   0%  落後平均進度 0 點');
+    assert.deepEqual(blocksOf(status(m, { context, limits: [five, week] })), ['task', 'context', 'quota', 'session', 'notes', 'foot']);
+});
+
+test('quota draws only the windows the engine gave, and a 7d with no reset has no countdown and no deviation', async () => {
+    const m = await load();
+    assert.deepEqual(text(status(m, { limits: [] }), 'quota'), []);
+    assert.deepEqual(text(status(m, { limits: [{ kind: 'opus_week', percentUsed: 5 }] }), 'quota'), []);
+    assert.deepEqual(text(status(m, { limits: [five] }), 'quota'), ['▌用量額度', '▌5h ██████▌░░░  66%  剩 34%  ↻ 1h 46m']);
+    const bare = status(m, { limits: [{ kind: 'seven_day', percentUsed: 58 }] });
+    assert.deepEqual(text(bare, 'quota'), ['▌用量額度', '▌7d █████▊░░░░  58%  剩 42%']);
+    assert.equal(body(bare, 'quota')[1][1].color, '#d7ff00');
+});
+
+test('a quota row that does not fit drops its countdown, then what is left', async () => {
+    const m = await load();
+    const rows = (cols) => text(status(m, { limits: [five, week], cols }), 'quota');
+    assert.deepEqual(rows(40).slice(1, 3), ['▌5h ██████▌░░░  66%  剩 34%  ↻ 1h 46m', '▌7d █████▊░░░░  58%  剩 42%']);
+    assert.deepEqual(rows(36).slice(1, 3), ['▌5h ██████▌░░░  66%  剩 34%', '▌7d █████▊░░░░  58%  剩 42%']);
+    assert.deepEqual(rows(26).slice(1, 3), ['▌5h ██████▌░░░  66%', '▌7d █████▊░░░░  58%']);
+});
+
+test('with no room the blocks go in the order session, notes, quota, the tasks window, context — and a context at four fifths stays', async () => {
+    const m = await load();
+    const rows = (room, ctx) => status(m, { others: [other], plan: planOf(5, [1, 2]), context: ctx || context, limits: [five, week], room });
+    const all = ['task', 'clash', 'tasks', 'context', 'quota', 'session', 'notes', 'foot'];
+    assert.equal(rows(60).length, 33);
+    assert.deepEqual(blocksOf(rows(33)), all);
+    assert.deepEqual(blocksOf(rows(32)), ['task', 'clash', 'tasks', 'context', 'quota', 'notes', 'foot']);
+    assert.deepEqual(blocksOf(rows(27)), ['task', 'clash', 'tasks', 'context', 'quota', 'notes', 'foot']);
+    assert.deepEqual(blocksOf(rows(26)), ['task', 'clash', 'tasks', 'context', 'quota', 'foot']);
+    assert.deepEqual(blocksOf(rows(22)), ['task', 'clash', 'tasks', 'context', 'foot']);
+    assert.equal(drawn(rows(18), 'tasks').length, 6);
+    assert.deepEqual(text(rows(17), 'tasks'), ['▌tasks 2 of 5']);
+    assert.deepEqual(blocksOf(rows(13)), ['task', 'clash', 'tasks', 'context', 'foot']);
+    assert.deepEqual(blocksOf(rows(12)), ['task', 'clash', 'tasks', 'foot']);
+    assert.deepEqual(blocksOf(rows(-9)), ['task', 'clash', 'tasks', 'foot']);
+    assert.equal(rows(-9).length, 10);
+    for (const room of [33, 32, 27, 26, 22, 18, 17, 13, 12, 10]) assert.ok(rows(room).length <= room, room + ' < ' + rows(room).length);
+    const hot = { tokens: 432000, at: 450000 };
+    assert.deepEqual(blocksOf(rows(-9, hot)), ['task', 'clash', 'tasks', 'context', 'foot']);
+    assert.equal(drawn(rows(-9, hot), 'context').length, 3);
+    // Just under four fifths the context is given up like any other block.
+    assert.deepEqual(blocksOf(rows(-9, { tokens: 359999, at: 450000 })), ['task', 'clash', 'tasks', 'foot']);
+});
+
+test('a block the entry lacks is skipped, not removed in its place: with no notes, tasks or clash in a room too small, the task and the foot stay', async () => {
+    const m = await load();
+    const bare = Object.assign({}, entry, { notes: [], claims: [] });
+    assert.deepEqual(blocksOf(status(m, { entry: bare, room: -9 })), ['task', 'foot']);
+    assert.deepEqual(blocksOf(status(m, { entry: bare, context, room: -9 })), ['task', 'foot']);
+    assert.ok(text(status(m, { entry: bare, room: -9 }), 'foot').length > 0);
+});
+
+test('no row of the whole Pane is wider than it, at any width', async () => {
+    const m = await load();
+    const long = { id: other.id, entry: Object.assign({}, other.entry, { task: '另一個很長的任務標題，'.repeat(6), claims: entry.claims }) };
+    const heavy = [{ kind: 'five_hour', percentUsed: 96, resetsAt: five.resetsAt }, Object.assign({}, week, { percentUsed: 79 })];
+    for (const cols of [20, 30, 41, 88]) {
+        for (const ctx of [context, { tokens: 463000, at: 450000 }]) {
+            for (const row of status(m, { entry: busy, others: [long], plan: planOf(13, [1, 2], [13]), context: ctx, limits: heavy, cols })) {
+                assert.ok(m.width(line(row)) <= cols, cols + ' < ' + m.width(line(row)) + ': ' + line(row));
+            }
+        }
+    }
+});
