@@ -11,9 +11,10 @@ last_verified: 2026-10-12
 
 ## 決定
 
-- init 第 7 步問一題，四個選項：`450000`（預設、建議）、`350000`（保守，較早壓縮、較省 token）、`600000`（寬鬆，留較多內容、較耗 token）、不設（`off`，fankeel 不壓縮，極耗 token）。
+- init 第 7 步問一題，四個選項：`450000`（預設、建議）、`350000`（保守，較早壓縮、較省 token）、`600000`（寬鬆，留較多內容、較耗 token）、不設（`off`，極耗 token）。`off` 是 mod 不壓縮，但主機自己的自動壓縮或整機的 `CLAUDE_CODE_AUTO_COMPACT_WINDOW` 仍可能壓縮。
 - 答案用 `task.js profile set compact.at <值> --default` 存成這台機器的預設。`compact.at` 已經有人選過（來源不是 `builtin`）就不再問。沒有回答就什麼都不寫。
 - 門檻只在正在跑 fankeel 任務的 session 生效，由既有的 `hooks/compact.ts` 在主對話的 context 到那個 token 數時壓縮。這台機器上其他的 Claude Code session 完全不受影響。
+- 門檻只在 mod 有載入的互動式 session 生效，也就是那個 session 在 `/plugin` 按過 Enable；headless 的 `claude -p` 不會壓縮。
 - init 不再寫使用者的 `settings.json`，也不再執行 `compact-window.js set` 或 `decline`；它只還在執行 `compact-window.js show`，用來告訴使用者這台機器是否已有整機的視窗。
 
 ## 為什麼

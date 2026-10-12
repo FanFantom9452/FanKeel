@@ -155,11 +155,16 @@ whatever the scout's `profile` row says:
   smaller. One `AskUserQuestion`, four options in this order: `450000`,
   recommended (the default); `350000` — conservative, compacts sooner and
   spends fewer tokens; `600000` — loose, keeps more in context and spends
-  more; 不設 (`off`) — fankeel never compacts, and the description says this
+  more; 不設 (`off`) — fankeel's own mod, `hooks/compact.ts`, never compacts
+  (the host's own auto-compact, or a machine-wide
+  `CLAUDE_CODE_AUTO_COMPACT_WINDOW`, still can), and the description says this
   burns tokens heavily. **Other** is not offered: the key takes those four
   values. The descriptions say what the answer does: it only applies in a
   session that is running a fankeel task — `hooks/compact.ts` compacts the main
-  conversation once its context reaches that many tokens — and every other
+  conversation once its context reaches that many tokens. It is a mod, so it
+  acts only in an interactive session where the mod is loaded (the session has
+  pressed Enable under `/plugin`), and never in a headless `claude -p` session.
+  The descriptions say so too. Every other
   Claude Code session on the machine is left exactly as it was; nothing is
   written to the user's `settings.json`. 350000 and 600000 have not been
   measured, and the descriptions say so. The answer runs
