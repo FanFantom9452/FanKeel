@@ -65,6 +65,13 @@ test('set creates settings.json where there was none', () => {
   assert.deepEqual(JSON.parse(fs.readFileSync(settings(cfg), 'utf8')), { env: { [WINDOW]: '300000' } });
 });
 
+test('a settings.json that opens with a byte-order mark still parses', () => {
+  const cfg = tmp('fankeel-cw-');
+  fs.writeFileSync(settings(cfg), String.fromCharCode(0xFEFF) + JSON.stringify({ model: 'opus' }));
+  assert.equal(run(cfg, ['set', '450000']).code, 0);
+  assert.deepEqual(JSON.parse(fs.readFileSync(settings(cfg), 'utf8')), { model: 'opus', env: { [WINDOW]: '450000' } });
+});
+
 test('set refuses a bad number, a file that does not parse and an env that is no object, and writes nothing', () => {
   const cfg = tmp('fankeel-cw-');
   for (const bad of ['abc', '0', '-5', '4.5', '']) {

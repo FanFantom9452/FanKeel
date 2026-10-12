@@ -33,7 +33,7 @@ function readSettings(file) {
     let raw;
     try { raw = fs.readFileSync(file, 'utf8'); } catch (e) { return e.code === 'ENOENT' ? { values: {} } : { unreadable: true }; }
     try {
-        const parsed = JSON.parse(raw.replace(/^﻿/, ''));
+        const parsed = JSON.parse(raw.replace(/^\uFEFF/, ''));
         if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return { unreadable: true };
         return { values: parsed };
     } catch (e) {
