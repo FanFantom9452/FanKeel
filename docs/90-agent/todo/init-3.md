@@ -1,11 +1,11 @@
 ---
 label: init
 title: 指南補上 init 會問壓縮視窗
-description: docs/01-guide/profile.md 講手動設 CLAUDE_CODE_AUTO_COMPACT_WINDOW 的那一段，補一句 /fankeel-init 第 7 步會問這一題
+description: `docs/01-guide/profile.md` 講手動設 CLAUDE_CODE_AUTO_COMPACT_WINDOW 的那一段，補一句 /fankeel-init 第 7 步會問這一題
 state: blocked
 link: docs/01-guide/profile.md
 group: pane-band 任務收尾
-timing: after: session 89f469d1 的 Pane 配色任務收尾，放開 docs/01-guide/profile.md
+timing: after: session 89f469d1 的 Pane 配色任務收尾，放開 `docs/01-guide/profile.md`
 stamp: 2026-10-12
 ---
 
