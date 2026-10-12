@@ -1130,7 +1130,9 @@ skipped, turns }`. `total` is every turn of the conversation; `counts` and
 from index `from` (`pageOf` in `lib/conversation.js`; a `from` that is not a
 whole number above 0 is 0). A turn is `{ kind, at, text }`, `kind` one of
 `user`, `claude`, `interrupt`, `summary` or `compact`, and a `compact` turn also
-carries `trigger` and `preTokens`. A session with no transcript here is a 404.
+carries `trigger` and `preTokens`. A session with no transcript here is a 404. One whose
+transcript is there and cannot be read is a 500, which the tab draws as
+`讀不到對話` with a retry rather than as a transcript this machine no longer has.
 The conversation last read is held in memory and parsed again only when
 `keyOf` (`lib/detail.js`) says the transcript moved. None of it is written to
 `station-data.js`, a detail script or any copy of the page: the full text stays
