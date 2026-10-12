@@ -491,7 +491,7 @@ async function serve(opts) {
                 const stats = { unparsed: 0 };
                 const entries = entriesOf(file, stats);
                 if (!entries) {
-                    fail(404, 'cannot read that transcript');
+                    fail(500, 'cannot read that transcript');
                     return;
                 }
                 const read = conversation.turnsOf(entries);

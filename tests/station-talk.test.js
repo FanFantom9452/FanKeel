@@ -99,6 +99,23 @@ test('the route pages 100 turns at a time from the index asked for, and 404s a s
     }
 });
 
+test('a transcript that exists but cannot be read is a 500, and a session with none is a 404', async () => {
+    const f = fixture();
+    // A file that stats fine but fails to read (a lock, a permission) cannot be
+    // made the same way on Windows and Linux, so the read is made to throw.
+    const read = fs.readFileSync;
+    fs.readFileSync = (p, ...a) => { if (String(p).endsWith(SID + '.jsonl')) throw Object.assign(new Error('locked'), { code: 'EACCES' }); return read(p, ...a); };
+    const s = await serve({ configDir: f.cfg, roots: [f.r1], port: 0, idleMs: 60e3, open: false });
+    try {
+        const locked = await get(s.url + 'station/talk/' + SID);
+        assert.deepEqual([locked.status, locked.text], [500, 'cannot read that transcript\n']);
+        assert.equal((await get(s.url + 'station/talk/' + NONE)).status, 404);
+    } finally {
+        fs.readFileSync = read;
+        s.close();
+    }
+});
+
 test('the route reads a transcript again once it has grown', async () => {
     const f = fixture();
     const s = await serve({ configDir: f.cfg, roots: [f.r1], port: 0, idleMs: 60e3, open: false });
