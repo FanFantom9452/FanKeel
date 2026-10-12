@@ -121,6 +121,8 @@ test('deviation is percent used less the share of the seven days gone by, rounde
     assert.equal(deviation(week(79, 60.5), NOW), 15);
     assert.equal(deviation(week(50, 84), NOW), 0);
     assert.ok(Object.is(deviation(week(50, 84), NOW), 0), 'never -0');
+    assert.equal(deviation(week(43.5, 84), NOW), -7, 'an exact negative half goes away from zero');
+    assert.ok(Object.is(deviation(week(49.7, 84), NOW), 0), 'a raw value in (-0.5, 0) is 0, never -0');
     assert.equal(deviation(week(30, 168), NOW), 30);
     assert.equal(deviation(week(30, 400), NOW), 30, 'a reset more than a week out is a window not begun');
     assert.equal(deviation(week(30, -1), NOW), -70, 'a reset already past is a window all gone by');
