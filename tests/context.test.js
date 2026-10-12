@@ -170,8 +170,8 @@ test('once something has been dropped, that is what gets reported', () => {
   assert.doesNotMatch(line, /nothing dropped yet/);
 });
 
-// The host compacts on its own once a window is set; with none, one session on
-// a 1M window grew from 450k to 629k uncompacted, and nothing said so.
+// The host compacts on its own once a window is set. One session grew from
+// 450k to 629k uncompacted, and nothing said that no window was set.
 test('a busy session with no auto-compact window is told nothing will compact it', () => {
   const info = { dropped: 0, used: ctx.BUSY };
   assert.doesNotMatch(ctx.contextLine(info), /auto-compact window/);
