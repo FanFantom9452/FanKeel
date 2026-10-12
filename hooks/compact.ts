@@ -80,12 +80,16 @@ async function profileAt($: EngineInterface, file: string): Promise<string | nul
 // lib/docs.js projectRootsFor: the first segment of the entry's project, when
 // that is a directory under the registry root; otherwise the root itself.
 async function projectRootOf($: EngineInterface, root: string, project: unknown): Promise<string> {
-  if (typeof project !== 'string' || !project.trim()) return root
+  if (typeof project !== 'string') return root
   const p = project.replace(/\\/g, '/').replace(/^\.\//, '')
   if (p.startsWith('/') || p.includes('..')) return root
   const head = p.split('/')[0]
   if (!head) return root
-  return (await $.fs.exists(`${root}/${head}`)) ? `${root}/${head}` : root
+  try {
+    return (await $.fs.stat(`${root}/${head}`)).kind === 'dir' ? `${root}/${head}` : root
+  } catch {
+    return root
+  }
 }
 
 // lib/profile.js: the project file under the entry's project root, then the

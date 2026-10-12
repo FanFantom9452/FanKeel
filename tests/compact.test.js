@@ -25,6 +25,11 @@ function fake({ tokens, files = {}, root = 'F:/proj/sub', env }) {
         fs: {
             exists: async (p) => Object.prototype.hasOwnProperty.call(files, p),
             read: async (p) => files[p],
+            // A directory is a key holding '' in these fakes.
+            stat: async (p) => {
+                if (!Object.prototype.hasOwnProperty.call(files, p)) throw new Error('ENOENT');
+                return { kind: files[p] === '' ? 'dir' : 'file', size: 0, mtimeMs: 0, isLink: false };
+            },
         },
         env: { get: async () => env },
         clock: { sleep: async () => {} },
@@ -124,6 +129,7 @@ async function projectCompacts(project, extra) {
         ...entryAt('F:/proj', { ...live, project }),
         ...profileAt('F:/proj/.fankeel/profile.json', { 'compact.at': '350000' }),
         ...profileAt('F:/proj/app/.fankeel/profile.json', { 'compact.at': 'off' }),
+        ...profileAt('F:/proj/app/src/.fankeel/profile.json', { 'compact.at': '350000' }),
         ...extra,
     };
     const r = fake({ tokens: 360000, files });
@@ -140,10 +146,14 @@ test('a project naming a directory that does not exist reads the root profile', 
     assert.equal(await projectCompacts('app', {}), 1);
 });
 
+test('a project whose first segment is a file reads the root profile', async () => {
+    assert.equal(await projectCompacts('app/src', { 'F:/proj/app': 'not a directory' }), 1);
+});
+
 test('a project containing .. or starting with / reads the root profile', async () => {
     assert.equal(await projectCompacts('app/../x', { 'F:/proj/app': '' }), 1);
     assert.equal(await projectCompacts('/app', { 'F:/proj/app': '' }), 1);
-    assert.equal(await projectCompacts('  ', { 'F:/proj/app': '' }), 1);
+    assert.equal(await projectCompacts('./', { 'F:/proj/': '' }), 1);
 });
 
 test('the project profile beats the machine one and FANKEEL_COMPACT_AT beats both', async () => {
