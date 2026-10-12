@@ -1,7 +1,7 @@
 ---
 label: context
 title: 引用的 usage 被當成真的
-description: lib/context.js 的 usedFrom 與 droppedFrom 會比對到工具結果裡引用的 usage 與 compactMetadata；context 行報假數字，子代理的預算 hook 誤擋
+description: usedFrom 與 droppedFrom 會比對到工具結果裡引用的 usage 與 compactMetadata；context 行報假數字，子代理的預算 hook 誤擋
 state: ready
 link: lib/context.js
 ---

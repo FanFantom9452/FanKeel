@@ -1,7 +1,7 @@
 ---
 label: test
 title: 上限測試沒量到壓縮過的行
-description: tests/render.test.js 的 3000 字上限測試想量壓縮過的 context 行，但 fixture 多跳脫一層，讀成沒壓縮過；最長的那一行從來沒被量到
+description: 注入區塊的 3000 字上限測試想量壓縮過的 context 行，但 fixture 多跳脫一層，讀成沒壓縮過；最長的那一行從來沒被量到
 state: ready
 link: tests/render.test.js
 ---
