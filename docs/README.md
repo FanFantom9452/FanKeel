@@ -522,6 +522,7 @@ is corrected by the next one, not by rewriting this.
 | Brief: 逐塊調整工具（tune）怎麼變直覺 | [90-agent/judgements/2026-10-12-tune-intuitive.md](90-agent/judgements/2026-10-12-tune-intuitive.md) — *judged 2026-10-12, fable* |
 | Brief: band 與 Pane 該怎麼重新設計 | [90-agent/judgements/2026-10-12-pane-band-redesign.md](90-agent/judgements/2026-10-12-pane-band-redesign.md) — *judged 2026-10-12, fable* |
 | Brief 10 — the Pane's rail on every row, and the same readings drawn twice | [90-agent/judgements/2026-10-12-pane-rail-dup.md](90-agent/judgements/2026-10-12-pane-rail-dup.md) — *judged 2026-10-12, fable* |
+| Brief: a deleted Claude Desktop session, seen from the station | [90-agent/judgements/2026-10-12-deleted-desktop-session.md](90-agent/judgements/2026-10-12-deleted-desktop-session.md) — *judged 2026-10-12, fable* |
 
 ## The five scanners
 
