@@ -476,7 +476,8 @@ Claude Code compacts on its own, mid-turn, once
 the window less some 30k
 ([the probe](../reports/2026-10-12-compact-window-probe.md)); Claude Desktop
 was not measured. What it does with none set was not measured as a rule: one
-Desktop session on a 1M window reached 650k with nothing compacting it.
+Desktop session on a 1M window grew from 450k to 629k across sixteen turn ends
+with nothing compacting it.
 `contextLine` in `lib/context.js` takes the hook's own environment as its
 third argument, and with no positive number there, in a session that has not
 compacted yet, it ends the line with `No auto-compact window is set` and the
