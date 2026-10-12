@@ -108,7 +108,7 @@ test('compact.at off never compacts, even far above HARD', async () => {
 test('compact.at is read from the entry\'s project directory and its configDir machine file', async () => {
     const mod = await load();
     const sub = { ...live, project: 'app' };
-    let f = { ...entryAt('F:/proj', sub), ...profileAt('F:/proj/app/.fankeel/profile.json', { 'compact.at': '600000' }) };
+    let f = { ...entryAt('F:/proj', sub), 'F:/proj/app': '', ...profileAt('F:/proj/app/.fankeel/profile.json', { 'compact.at': '600000' }) };
     let r = fake({ tokens: 500000, files: f });
     await fire(handlerOf(mod), r.$);
     assert.equal(r.calls.length, 0);
@@ -116,6 +116,34 @@ test('compact.at is read from the entry\'s project directory and its configDir m
     r = fake({ tokens: 360000, files: f });
     await fire(handlerOf(mod), r.$);
     assert.equal(r.calls.length, 1);
+});
+
+// lib/docs.js projectRootsFor: the project's first segment, when it is a directory.
+async function projectCompacts(project, extra) {
+    const files = {
+        ...entryAt('F:/proj', { ...live, project }),
+        ...profileAt('F:/proj/.fankeel/profile.json', { 'compact.at': '350000' }),
+        ...profileAt('F:/proj/app/.fankeel/profile.json', { 'compact.at': 'off' }),
+        ...extra,
+    };
+    const r = fake({ tokens: 360000, files });
+    await fire(handlerOf(await load()), r.$);
+    return r.calls.length;
+}
+
+test('a project of app/src reads the profile of its first segment, app', async () => {
+    assert.equal(await projectCompacts('app/src', { 'F:/proj/app': '' }), 0);
+    assert.equal(await projectCompacts('.\\app\\src', { 'F:/proj/app': '' }), 0);
+});
+
+test('a project naming a directory that does not exist reads the root profile', async () => {
+    assert.equal(await projectCompacts('app', {}), 1);
+});
+
+test('a project containing .. or starting with / reads the root profile', async () => {
+    assert.equal(await projectCompacts('app/../x', { 'F:/proj/app': '' }), 1);
+    assert.equal(await projectCompacts('/app', { 'F:/proj/app': '' }), 1);
+    assert.equal(await projectCompacts('  ', { 'F:/proj/app': '' }), 1);
 });
 
 test('the project profile beats the machine one and FANKEEL_COMPACT_AT beats both', async () => {

@@ -1,6 +1,7 @@
 import type { Register, EngineInterface } from 'claude-code'
 
-// Compacts the main conversation once its context reaches HARD, but only in a
+// Compacts the main conversation once its context reaches the profile's
+// compact.at (HARD where nothing sets one, never when it is off), but only in a
 // session that owns an active fankeel task: the user's own autoCompactEnabled
 // is false, and other sessions keep that choice.
 // The engine runs this module; it cannot require lib/, so HARD is written
@@ -69,20 +70,32 @@ async function profileAt($: EngineInterface, file: string): Promise<string | nul
   try {
     if (!(await $.fs.exists(file))) return null
     const v = (JSON.parse(String(await $.fs.read(file))) as Record<string, unknown>)['compact.at']
-    return typeof v === 'string' && COMPACT_AT.test(v.trim().toLowerCase()) ? v.trim().toLowerCase() : null
+    const at = typeof v === 'string' ? v.trim().toLowerCase() : ''
+    return COMPACT_AT.test(at) ? at : null
   } catch {
     return null
   }
 }
 
-// lib/profile.js: the project file under the entry's project directory (else the
-// registry root), then the machine file under the entry's configDir.
+// lib/docs.js projectRootsFor: the first segment of the entry's project, when
+// that is a directory under the registry root; otherwise the root itself.
+async function projectRootOf($: EngineInterface, root: string, project: unknown): Promise<string> {
+  if (typeof project !== 'string' || !project.trim()) return root
+  const p = project.replace(/\\/g, '/').replace(/^\.\//, '')
+  if (p.startsWith('/') || p.includes('..')) return root
+  const head = p.split('/')[0]
+  if (!head) return root
+  return (await $.fs.exists(`${root}/${head}`)) ? `${root}/${head}` : root
+}
+
+// lib/profile.js: the project file under the entry's project root, then the
+// machine file under the entry's configDir.
 async function threshold($: EngineInterface, found: { entry: Entry; root: string } | null): Promise<number> {
   const raw = Number(await $.env.get('FANKEEL_COMPACT_AT'))
   if (Number.isFinite(raw) && raw > 0) return raw
   if (found) {
     const { entry, root } = found
-    const project = typeof entry.project === 'string' && entry.project ? `${root}/${entry.project}` : root
+    const project = await projectRootOf($, root, entry.project)
     const machine = typeof entry.configDir === 'string' && entry.configDir ? `${entry.configDir.replace(/[\\/]+$/, '')}/fankeel/profile.json` : null
     const at = (await profileAt($, `${project}/.fankeel/profile.json`)) ?? (machine ? await profileAt($, machine) : null)
     if (at === 'off') return Infinity
