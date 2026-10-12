@@ -35,7 +35,7 @@ const drawn = (rows, block) => rows.filter((r) => r.block === block && r.segs.le
 const text = (rows, block) => drawn(rows, block).map(line);
 // A block's rows without the cell each one opens with: its rail, or the space under it.
 const body = (rows, block) => drawn(rows, block).map((r) => r.segs.slice(1));
-const status = (m, over) => m.statusRows(Object.assign({ id: ID, entry, others: [], context: null, limits: [], plan: null, cols: 41, room: 60, now: NOW }, over));
+const status = (m, over) => m.statusRows(Object.assign({ id: ID, entry, others: [], context: null, plan: null, cols: 41, room: 60, now: NOW }, over));
 const blocksOf = (rows) => [...new Set(rows.map((r) => r.block))];
 
 test('the frame is task, clash, notes, foot: a section\'s rail is on its first row alone, and every clash row keeps its own', async () => {
@@ -368,8 +368,6 @@ test('a long task name is cut so its row, tail and all, stays inside the pane', 
 const context = { tokens: 212000, at: 450000 };
 // Four fifths of the threshold exactly: the first count the Pane says anything about.
 const close = { tokens: 360000, at: 450000 };
-const five = { kind: 'five_hour', percentUsed: 66, resetsAt: new Date(NOW + 106 * 60000).toISOString() };
-const week = { kind: 'seven_day', percentUsed: 58, resetsAt: new Date(NOW + 60.5 * HOUR).toISOString() };
 
 test('under four fifths of the threshold there is no context block; from there it says a compact is close and what one keeps, with no number', async () => {
     const m = await load();
@@ -396,7 +394,7 @@ test('under four fifths of the threshold there is no context block; from there i
 
 test('every section of the whole Pane carries one rail, its first row\'s, at any width and however the rows are dropped', async () => {
     const m = await load();
-    const whole = (over) => status(m, Object.assign({ entry: busy, others: [other], plan: planOf(13, [1, 2], [13]), context: close, limits: [five, week], probe: 'surfaces [terminal]' }, over));
+    const whole = (over) => status(m, Object.assign({ entry: busy, others: [other], plan: planOf(13, [1, 2], [13]), context: close, probe: 'surfaces [terminal]' }, over));
     const rows = whole({});
     assert.deepEqual(blocksOf(rows), ['task', 'clash', 'tasks', 'context', 'notes', 'foot']);
     for (const block of ['task', 'tasks', 'context', 'notes', 'foot']) {
@@ -423,7 +421,7 @@ test('every section of the whole Pane carries one rail, its first row\'s, at any
 
 test('with no room the blocks go in the order notes, the tasks window; a context block is never given up', async () => {
     const m = await load();
-    const rows = (room, ctx) => status(m, { others: [other], plan: planOf(5, [1, 2]), context: ctx || close, limits: [five, week], room });
+    const rows = (room, ctx) => status(m, { others: [other], plan: planOf(5, [1, 2]), context: ctx || close, room });
     const all = ['task', 'clash', 'tasks', 'context', 'notes', 'foot'];
     // 24 rows: the task 5, the clash 2, tasks 6, context 2, notes 3, the foot 1, and five blank rows between.
     assert.equal(rows(60).length, 24);
@@ -454,10 +452,9 @@ test('a block the entry lacks is skipped, not removed in its place: with no note
 test('no row of the whole Pane is wider than it, at any width', async () => {
     const m = await load();
     const long = { id: other.id, entry: Object.assign({}, other.entry, { task: '另一個很長的任務標題，'.repeat(6), claims: entry.claims }) };
-    const heavy = [{ kind: 'five_hour', percentUsed: 96, resetsAt: five.resetsAt }, Object.assign({}, week, { percentUsed: 79 })];
     for (const cols of [20, 30, 41, 88]) {
         for (const ctx of [context, { tokens: 463000, at: 450000 }]) {
-            for (const row of status(m, { entry: busy, others: [long], plan: planOf(13, [1, 2], [13]), context: ctx, limits: heavy, cols })) {
+            for (const row of status(m, { entry: busy, others: [long], plan: planOf(13, [1, 2], [13]), context: ctx, cols })) {
                 assert.ok(m.width(line(row)) <= cols, cols + ' < ' + m.width(line(row)) + ': ' + line(row));
             }
         }

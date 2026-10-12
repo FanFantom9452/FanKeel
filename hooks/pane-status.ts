@@ -5,7 +5,7 @@
 
 import { WHERE, FLAG, GUARD, TODO, claimsOf } from './pane-band.ts'
 import { str, list, width, cut, WIDE, DIM } from './pane-bar.ts'
-import type { Context, Limit } from './pane-bar.ts'
+import type { Context } from './pane-bar.ts'
 
 // Kept as exports of this file: hooks/pane-gate.ts and hooks/pane.ts import them from here.
 export { str, list, width, cut, WIDE }
@@ -28,7 +28,6 @@ export type StatusInput = {
   entry: Entry | null
   others: Other[]
   context: Context | null
-  limits: Limit[]
   plan: PlanInfo | null
   cols: number
   room: number

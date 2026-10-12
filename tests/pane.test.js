@@ -762,7 +762,7 @@ test('the engine\'s rate limits are bars on the band and no reset time in the Pa
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
     assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ██████▉░░░ 312k/450k  │  5h ██████▌░░░  66%  │  7d █████▊░░░░  58%  -6%');
-    assert.doesNotMatch((await pane()).join('\n'), /█|░|%|剩|↻/);
+    assert.doesNotMatch((await pane()).join('\n'), /█|░|%|剩|↻|重置|用量額度/);
     const after = log.invalidated;
     limits[0] = Object.assign({}, limits[0], { percentUsed: 67 });
     await log.ticks[0].fn();

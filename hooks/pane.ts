@@ -399,7 +399,6 @@ export const register: Register = (on) => {
       entry: seen.entry,
       others: seen.others,
       context: seen.context,
-      limits: seen.limits,
       plan: seen.plan,
       cols,
       room: room - gate.length - (gate.length ? 1 : 0),
