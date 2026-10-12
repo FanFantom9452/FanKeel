@@ -4,7 +4,7 @@ description: First-use onboarding for a project fankeel has not organised — it
 version: 0.103.0
 status: current
 last_verified: 2026-10-12
-source_of_truth: scripts/onboard.js, lib/onboard.js, agents/fankeel-init-scout.md, scripts/compact-window.js
+source_of_truth: scripts/onboard.js, lib/onboard.js, agents/fankeel-init-scout.md, scripts/compact-window.js, hooks/compact.ts
 ---
 
 # fankeel-init
@@ -144,21 +144,27 @@ Two of them carry this repository's own evidence:
 One more question belongs to the machine, not to the profile, and is asked
 whatever the scout's `profile` row says:
 
-- The auto-compact window —
-  `node <plugin>/scripts/compact-window.js show` prints `set <n>`, `declined`
-  or `unset`, and only `unset` is asked: one `AskUserQuestion` with 450000 as
-  the recommended option, 不設 as the second, and **Other** for a number of
-  the user's own. The descriptions say what a yes does: it writes
-  `CLAUDE_CODE_AUTO_COMPACT_WINDOW` under `env` in the user's own
-  `settings.json`, keeping a copy of the file beside it as
-  `settings.json.fankeel-bak`; that file is the user-level one, so it applies
-  to every session on this machine and not only fankeel's; and Claude Code
-  has to be restarted before it takes effect. Measured 2026-10-12 on a
-  headless session with a settings file's `env`; Claude Desktop is not
-  measured, and the description says so. A
-  number runs `node <plugin>/scripts/compact-window.js set <n>`; 不設 runs
-  `node <plugin>/scripts/compact-window.js decline`, and no later run asks
-  again. No answer writes nothing.
+- The auto-compact window — asked when
+  `node <plugin>/scripts/task.js profile show` gives `compact.at` the
+  source `builtin` (nobody has chosen); a row sourced `project` or a machine
+  default is not asked again. First run
+  `node <plugin>/scripts/compact-window.js show`: when it prints `set <n>`,
+  the descriptions say this machine already has a machine-wide
+  `CLAUDE_CODE_AUTO_COMPACT_WINDOW` of `<n>`, which the host applies to
+  every session and which fires before `compact.at` wherever `<n>` is the
+  smaller. One `AskUserQuestion`, four options in this order: `450000`,
+  recommended (the default); `350000` — conservative, compacts sooner and
+  spends fewer tokens; `600000` — loose, keeps more in context and spends
+  more; 不設 (`off`) — fankeel never compacts, and the description says this
+  burns tokens heavily. **Other** is not offered: the key takes those four
+  values. The descriptions say what the answer does: it only applies in a
+  session that is running a fankeel task — `hooks/compact.ts` compacts the main
+  conversation once its context reaches that many tokens — and every other
+  Claude Code session on the machine is left exactly as it was; nothing is
+  written to the user's `settings.json`. 350000 and 600000 have not been
+  measured, and the descriptions say so. The answer runs
+  `node <plugin>/scripts/task.js profile set compact.at <value> --default`.
+  No answer writes nothing.
 
 ## 8. Close
 
