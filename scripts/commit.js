@@ -150,7 +150,7 @@ function landWorktree(top, block, run, oneLine) {
     const renamed = here(['-c', 'core.quotePath=false', 'diff', '--cached', '-M', '--name-status']);
     const staged = renamed.status === 0 ? renamed.stdout.split(/\r?\n/) : [];
     const gone = stagedGone(staged);
-    const toAdd = block.paths.filter((p) => !gone.has(p) || fs.existsSync(path.resolve(wt, p)));
+    const toAdd = block.paths.filter((p) => !gone.has(p));
     const add = toAdd.length ? here(['add', '--'].concat(toAdd)) : { status: 0 };
     if (add.status !== 0) return { error: 'git add failed: ' + oneLine(add.stderr) };
     if (here(['diff', '--cached', '--quiet', '--'].concat(block.paths)).status === 0) return { error: 'nothing to commit in ' + block.paths.join(', ') };
@@ -293,8 +293,8 @@ function main(argv, cwd) {
         const renamed = git(['-c', 'core.quotePath=false', 'diff', '--cached', '-M', '--name-status']);
         const staged = renamed.status === 0 ? renamed.stdout.split(/\r?\n/) : [];
         const gone = stagedGone(staged);
-        // A path recreated on disk after its deletion was staged is still added.
-        const toAdd = paths.filter((p) => !gone.has(p) || fs.existsSync(path.resolve(topDir, p)));
+        // A path recreated on disk needs no add either: commit -o reads the working tree.
+        const toAdd = paths.filter((p) => !gone.has(p));
         const add = toAdd.length ? git(['add', '--'].concat(toAdd)) : { status: 0 };
         if (add.status !== 0) return fail('git add failed: ' + oneLine(add.stderr));
         const withOld = foldRenames(paths, staged);

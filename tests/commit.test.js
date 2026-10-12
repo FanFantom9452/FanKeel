@@ -271,6 +271,17 @@ test('a block listing a path removed with git rm commits the deletion', () => {
     assert.equal(git(dir, 'show', '--name-status', '--format=', 'HEAD'), 'D\tb.txt');
 });
 
+test('a block listing a path whose deletion was staged and which was then recreated commits the new content', () => {
+    const dir = repo();
+    execFileSync('git', ['rm', '-qf', 'b.txt'], { cwd: dir });
+    fs.writeFileSync(path.join(dir, 'b.txt'), 'b3\n');
+    const res = commit.main([requestFile('b.txt\n\nfeat: rewrite b\n')], dir);
+    assert.ok(!res.code, res.text);
+    assert.equal(git(dir, 'show', '--name-status', '--format=', 'HEAD'), 'M\tb.txt');
+    assert.equal(git(dir, 'show', 'HEAD:b.txt'), 'b3');
+    assert.doesNotMatch(git(dir, 'status', '--porcelain'), /b\.txt/);
+});
+
 test('a worktree block listing both sides of a staged rename lands one rename', () => {
     const { dir, wt } = worktreeRepo();
     execFileSync('git', ['mv', 'b.txt', 'b2.txt'], { cwd: wt });
@@ -278,6 +289,15 @@ test('a worktree block listing both sides of a staged rename lands one rename', 
     assert.ok(!res.code, res.text);
     assert.equal(git(dir, 'show', '--name-status', '-M', '--format=', 'HEAD'), 'R100\tb.txt\tb2.txt');
     assert.equal(git(dir, 'status', '--porcelain'), '');
+});
+
+test('a worktree block listing a path whose deletion was staged and which was then recreated lands the new content', () => {
+    const { dir, wt } = worktreeRepo();
+    execFileSync('git', ['rm', '-qf', 'b.txt'], { cwd: wt });
+    fs.writeFileSync(path.join(wt, 'b.txt'), 'b3\n');
+    const res = commit.main([requestFile('worktree ' + wt + '\nb.txt\n\nfeat: rewrite b\n')], dir);
+    assert.ok(!res.code, res.text);
+    assert.equal(git(dir, 'show', '--name-status', '--format=', 'HEAD'), 'M\tb.txt');
 });
 
 test('a worktree block listing a non-ASCII old path of a staged rename lands one rename', () => {
