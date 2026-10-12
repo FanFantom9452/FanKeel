@@ -4,7 +4,7 @@
 // tests/pane-band.test.js runs it under plain node.
 // docs/90-agent/plans/2026-10-12-pane-band-design.md sections 1 and 2.
 
-import { str, list, width, bar, ctxPaint, fivePaint, weekPaint, deviation, countdown, resetMs, limitOf, pct, kilo, signed, DIM } from './pane-bar.ts'
+import { str, list, width, bar, ctxPaint, fivePaint, weekPaint, deviation, limitOf, pct, kilo, signed, DIM } from './pane-bar.ts'
 import type { Context, Limit, Paint } from './pane-bar.ts'
 
 // `gap` is the cells of space before the segment; without one it sits against the last.
@@ -77,17 +77,14 @@ function inked(text: string, paint: Paint, gap = 0): Seg {
 }
 
 // One way of drawing the second row. They are tried in this order and the first
-// that fits is drawn: the countdowns go first, then the space round `│`, then
-// the bars shorten together, then the 7d meter goes, then the 5h one.
-type Shape = { five: boolean; week: boolean; fiveReset: boolean; weekReset: boolean; sp: number; cells: number }
+// that fits is drawn: the space round `│` closes up, then the bars shorten
+// together, then the 7d meter goes, then the 5h one. No reset is drawn here at
+// any width: the Pane's quota block (hooks/pane-status.ts) is where one is read.
+type Shape = { five: boolean; week: boolean; sp: number; cells: number }
 function shapes(): Shape[] {
-  const out: Shape[] = [
-    { five: true, week: true, fiveReset: true, weekReset: true, sp: 2, cells: 10 },
-    { five: true, week: true, fiveReset: true, weekReset: false, sp: 2, cells: 10 },
-    { five: true, week: true, fiveReset: false, weekReset: false, sp: 2, cells: 10 },
-  ]
+  const out: Shape[] = [{ five: true, week: true, sp: 2, cells: 10 }]
   for (const [five, week] of [[true, true], [true, false], [false, false]]) {
-    for (let cells = 10; cells >= 5; cells--) out.push({ five, week, fiveReset: false, weekReset: false, sp: 1, cells })
+    for (let cells = 10; cells >= 5; cells--) out.push({ five, week, sp: 1, cells })
   }
   return out
 }
@@ -165,21 +162,17 @@ export function bandRows(input: BandInput): Seg[][] | null {
     }
     if (five && shape.five) {
       const paint = fivePaint(five.percentUsed)
-      const reset = resetMs(five)
       open('5h ')
       draw(five.percentUsed, 100, paint)
       row.push(inked(pct(five.percentUsed), paint, 1))
       if (paint.mark) row.push(inked(paint.mark, paint, 1))
-      if (shape.fiveReset && reset !== null) row.push({ text: `↻ ${countdown(reset - now, false)}`, color: DIM, gap: 2 })
     }
     if (week && shape.week) {
       const dev = deviation(week, now)
       const paint = weekPaint(week.percentUsed, dev)
-      const reset = resetMs(week)
       open('7d ')
       draw(week.percentUsed, 100, paint)
       row.push(inked(pct(week.percentUsed), paint, 1))
-      if (shape.weekReset && reset !== null) row.push({ text: `↻ ${countdown(reset - now, true)}`, color: DIM, gap: 2 })
       if (dev !== null) {
         row.push(inked(signed(dev), paint, 2))
         if (paint.mark) row.push(inked(paint.mark, paint, 1))

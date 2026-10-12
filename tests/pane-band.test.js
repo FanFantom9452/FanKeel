@@ -170,26 +170,26 @@ test('the second row is ctx, 5h and 7d as bars, parted by a bar of their own', a
     assert.equal(width(line(row)), 76);
 });
 
-test('the two countdowns are drawn only where the row has the cells: both at 100, the 5h one at 99, neither at 80', async () => {
+test('the second row draws no reset countdown at any width: a reset is read in the Pane', async () => {
     const m = await load();
     const { width } = await at('pane-bar.ts');
     const row = (cols) => line(band(m, { cols })[1]);
-    assert.equal(row(100), '▌ctx ████▋░░░░░ 212k/450k  │  5h ██████▌░░░  66%  ↻ 1h 46m  │  7d █████▊░░░░  58%  ↻ 2d 12h 30m  -6%');
-    assert.equal(width(row(100)), 100);
-    assert.equal(row(99), '▌ctx ████▋░░░░░ 212k/450k  │  5h ██████▌░░░  66%  ↻ 1h 46m  │  7d █████▊░░░░  58%  -6%');
-    assert.equal(width(row(99)), 86);
-    assert.equal(row(86), row(99));
-    assert.equal(row(85), row(80));
-    assert.doesNotMatch(row(80), /↻/);
-    const reset = band(m, { cols: 100 })[1].filter((seg) => seg.text.startsWith('↻'));
-    assert.deepEqual(reset, [{ text: '↻ 1h 46m', color: '#585858', gap: 2 }, { text: '↻ 2d 12h 30m', color: '#585858', gap: 2 }]);
+    const wide = '▌ctx ████▋░░░░░ 212k/450k  │  5h ██████▌░░░  66%  │  7d █████▊░░░░  58%  -6%';
+    assert.equal(width(wide), 76);
+    for (const cols of [200, 100, 99, 86, 80, 76]) assert.equal(row(cols), wide, 'at ' + cols);
+    assert.equal(row(75), '▌ctx ████▋░░░░░ 212k/450k │ 5h ██████▌░░░  66% │ 7d █████▊░░░░  58%  -6%');
+    for (const cols of [200, 100, 80, 50, 20]) {
+        for (const over of [{}, { context: null }, { limits: [five] }, { gateUntil: NOW + 44500 }, { others: [other, second] }]) {
+            assert.doesNotMatch(band(m, Object.assign({ cols }, over)).map(line).join('\n'), /↻/, 'at ' + cols);
+        }
+    }
 });
 
 test('with no rate limits the second row is ctx alone; with nothing to draw there is one row', async () => {
     const m = await load();
     assert.deepEqual(band(m, { limits: [] }).map(line)[1], '▌ctx ████▋░░░░░ 212k/450k');
-    assert.equal(band(m, { limits: [five] }).map(line)[1], '▌ctx ████▋░░░░░ 212k/450k  │  5h ██████▌░░░  66%  ↻ 1h 46m');
-    assert.equal(band(m, { context: null }).map(line)[1], '▌5h ██████▌░░░  66%  ↻ 1h 46m  │  7d █████▊░░░░  58%  ↻ 2d 12h 30m  -6%');
+    assert.equal(band(m, { limits: [five] }).map(line)[1], '▌ctx ████▋░░░░░ 212k/450k  │  5h ██████▌░░░  66%');
+    assert.equal(band(m, { context: null }).map(line)[1], '▌5h ██████▌░░░  66%  │  7d █████▊░░░░  58%  -6%');
     assert.equal(band(m, { context: null, limits: [] }).length, 1);
     assert.deepEqual(band(m, { context: null, limits: [], others: [other] }).map(line)[1], '▌  ⚑1');
 });
@@ -236,8 +236,8 @@ test('the 7d meter is coloured and marked by its deviation, the 5h one by percen
     assert.deepEqual(tail({ limits: [five, weekOf(79)] }, 2), [{ text: '+15%', color: '#ff00ff', bold: true, gap: 2 }, { text: '💀', color: '#ff00ff', bold: true, gap: 1 }]);
     assert.deepEqual(tail({ limits: [five, weekOf(58, null)] }, 3), [{ text: '█████▊', color: '#d7ff00' }, { text: '░░░░', color: '#585858' }, { text: ' 58%', color: '#d7ff00', gap: 1 }]);
     const full = { kind: 'five_hour', percentUsed: 96, resetsAt: new Date(NOW + 12 * 60000).toISOString() };
-    assert.equal(line(band(m, { limits: [full], context: null, cols: 120 })[1]), '▌5h █████████▌  96% ⚠  ↻ 0h 12m');
-    assert.deepEqual(tail({ limits: [full], context: null }, 3)[0], { text: ' 96%', color: '#ff00ff', bold: true, gap: 1 });
+    assert.equal(line(band(m, { limits: [full], context: null, cols: 120 })[1]), '▌5h █████████▌  96% ⚠');
+    assert.deepEqual(tail({ limits: [full], context: null }, 2), [{ text: ' 96%', color: '#ff00ff', bold: true, gap: 1 }, { text: '⚠', color: '#ff00ff', bold: true, gap: 1 }]);
 });
 
 test('neither row is wider than the band at 80, 70 and 50 columns, gate or none, clash or none', async () => {

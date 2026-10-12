@@ -111,15 +111,15 @@ test('the command opens the pane, and closes it when it is open', async () => {
 test('the Pane draws the task block on top, then what is looked up, every row behind a rail', async () => {
     const hooks = await wired();
     assert.deepEqual(hooks['ui.render:matcher'], { component: 'Pane', requestId: 'fankeel' });
-    const { $, log } = fake({ files: entryFile(Object.assign({}, live, { notes: ['a note'] })) });
+    const { $, log } = fake({ files: entryFile(Object.assign({}, live, { notes: ['a note'] })), tokens: 400000 });
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
     const tree = await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } });
     assert.deepEqual(paneLines(tree), [
         '▌demo task',
         ' ',
-        '▌context  312k · 還 138k 可用',
-        '▌████████████▍░░░░░ 到 450k 自動 compact',
+        '▌context  快要自動 compact 了',
+        '▌留 task · stage · plan · agent · handoff',
         ' ',
         '▌這個 session',
         '▌別的 session 也在改同一個檔時',
@@ -132,7 +132,7 @@ test('the Pane draws the task block on top, then what is looked up, every row be
         ' ',
         '▌abcdef12 · /fankeel-panel 關閉',
     ]);
-    assert.doesNotMatch(paneLines(tree).join('\n'), /touched|survey|▸|本站|2 of 3|bounded/);
+    assert.doesNotMatch(paneLines(tree).join('\n'), /touched|survey|▸|本站|2 of 3|bounded|400k|450k/);
     assert.equal(buttons(tree).length, 0);
 });
 
@@ -441,7 +441,7 @@ test('a short pane with a four-option gate keeps the task, every description, ev
     for (const o of options) assert.ok(words.includes(squash(o.description)), 'the description of ' + o.label + ' was dropped');
     assert.ok(seen.length > 14, 'the fixture fits the pane: ' + seen.length);
     assert.equal(buttons(tree).length, 5);
-    assert.ok(!texts(tree).includes('context'), 'a block that drops was kept beside a gate taller than the pane');
+    assert.ok(!texts(tree).includes('這個 session'), 'a block that drops was kept beside a gate taller than the pane');
     // The task block, a blank row, the gate, a blank row, the foot.
     assert.deepEqual(seen.slice(0, 2), ['▌demo task', ' ']);
     assert.match(seen[2], /^▌ gate · design {3}還 \d+ 秒$/);
@@ -501,7 +501,7 @@ test('with a gate waiting the band\'s first row carries the badge and the second
     assert.deepEqual([badge.children.join(''), badge.props.backgroundColor, badge.props.color, badge.props.bold], [' gate 在等 ', '#d7af5f', '#000000', true]);
 });
 
-test('the two drawings agree: the band\'s flag counts the sessions the Pane names, and both show the same context numbers', async () => {
+test('the two drawings agree: the band\'s flag counts the sessions the Pane names, and the context count is on the band alone', async () => {
     const hooks = await wired();
     const mine = Object.assign({}, live, { claims: ['a.js', 'b.js', 'c.js', 'd.js'] });
     const peer = (task, claims) => JSON.stringify({ task, stage: 'build', active: true, updated: new Date().toISOString(), claims });
@@ -510,7 +510,7 @@ test('the two drawings agree: the band\'s flag counts the sessions the Pane name
         [ROOT + '/.fankeel/sessions/22222222-0000-4000-8000-000000000003.json']: peer('shares c and a', ['c.js', 'a.js', 'b.js']),
         [ROOT + '/.fankeel/sessions/33333333-0000-4000-8000-000000000004.json']: peer('shares nothing', ['z.js']),
     });
-    const { $, log } = fake({ files });
+    const { $, log } = fake({ files, tokens: 400000 });
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
     const band = bandLines(await hooks.band($, BAND, passed));
@@ -522,40 +522,46 @@ test('the two drawings agree: the band\'s flag counts the sessions the Pane name
     assert.equal(Number(band[1].match(/⚑(\d+)/)[1]), named.size);
     assert.doesNotMatch(band[0], /⚑/);
     assert.doesNotMatch(pane.join('\n'), /shares nothing/);
-    // The same tokens and the same threshold, each written the one way.
-    const [, bandTokens, bandAt] = band[1].match(/ctx \S+ (\d+k)\/(\d+k)/);
-    const [, paneTokens] = pane.find((t) => t.startsWith('▌context')).match(/^▌context {2}(\d+k)/);
-    const [, paneAt] = pane.find((t) => t.includes('自動 compact')).match(/到 (\d+k) 自動 compact$/);
-    assert.deepEqual([bandTokens, bandAt], [paneTokens, paneAt]);
-    assert.deepEqual([bandTokens, bandAt], ['312k', '450k']);
+    // The tokens and the threshold are written once, on the band; the Pane's context block is there and holds no figure.
+    assert.match(band[1], /^▌ctx \S+ 400k\/450k ⚠/);
+    assert.ok(pane.includes('▌context  快要自動 compact 了'), pane.join(' | '));
+    assert.doesNotMatch(pane.join('\n'), /\d+k|█|░|%/);
 });
 
-test('the context block shows the tokens against FANKEEL_COMPACT_AT, and a new count redraws', async () => {
+test('the context block is measured against FANKEEL_COMPACT_AT, and a new count redraws', async () => {
     const hooks = await wired();
     const { $, log } = fake({ files: entryFile(live), env: { FANKEEL_COMPACT_AT: '300000' } });
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
-    const tree = await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } });
-    const rest = leaves(tree).find((n) => n.children.join('') === ' 已到 300k，compact 中');
-    assert.ok(rest, paneLines(tree).join(' | '));
-    assert.deepEqual([rest.props.color, rest.props.bold], ['#d7af5f', true]);
-    assert.ok(texts(tree).includes('  312k'));
+    // What the Pane says beside the block's name, or null with no block.
+    const said = async () => {
+        const all = leaves(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
+        const at = all.findIndex((n) => n.children.join('') === 'context');
+        return at < 0 ? null : [all[at + 1].children.join(''), all[at + 1].props.color, all[at + 1].props.bold];
+    };
+    assert.deepEqual(await said(), ['  已到門檻，compact 中', '#d7af5f', true]);
     assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ██████████ 312k/300k ⚠');
     const after = log.invalidated;
-    log.tokens = 320000;
+    log.tokens = 250000;
     await log.ticks[0].fn();
     assert.equal(log.invalidated, after + 1);
-    assert.ok(texts(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } })).includes('  320k'));
+    assert.deepEqual(await said(), ['  快要自動 compact 了', '#8a8a8a', undefined]);
+    assert.match(bandLines(await hooks.band($, BAND, passed))[1], / 250k\/300k ⚠$/);
+    // Four fifths of 300k is 240k.
+    log.tokens = 239999;
+    await log.ticks[0].fn();
+    assert.equal(await said(), null);
+    assert.match(bandLines(await hooks.band($, BAND, passed))[1], / 240k\/300k$/);
 });
 
-test('the context count is coloured by how far it is to the threshold, bold from sixty percent', async () => {
+test('the band\'s context count is coloured by how far it is to the threshold, bold from sixty percent', async () => {
     const hooks = await wired();
     const { $, log } = fake({ files: entryFile(live), env: { FANKEEL_COMPACT_AT: '100000' } });
     await hooks['session.start']($, {}, async () => ({}));
     const count = async (tokens) => {
         log.tokens = tokens;
         await log.ticks[0].fn();
-        const leaf = leaves(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } })).find((n) => n.children.join('') === '  ' + Math.round(tokens / 1000) + 'k');
+        const leaf = leaves(await hooks.band($, BAND, passed)).find((n) => n.children.join('') === Math.round(tokens / 1000) + 'k');
         return [leaf.props.color, leaf.props.bold];
     };
     assert.deepEqual(await count(5000), ['#00ff00', undefined]);
@@ -579,19 +585,22 @@ test('with no FANKEEL_COMPACT_AT the threshold is HARD, and with no token count 
     const { $, log } = fake({ files: entryFile(live), env: { FANKEEL_COMPACT_AT: 'soon' } });
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
-    const tree = await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } });
-    const rest = leaves(tree).find((n) => n.children.join('') === ' 到 ' + Math.round(HARD / 1000) + 'k 自動 compact');
-    assert.ok(rest, paneLines(tree).join(' | '));
-    assert.deepEqual([rest.props.color, rest.props.bold], ['#8a8a8a', undefined]);
+    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ██████▉░░░ 312k/' + Math.round(HARD / 1000) + 'k');
     // Number('Infinity') is not finite: the same rule as hooks/compact.ts threshold.
     const inf = fake({ files: entryFile(live), env: { FANKEEL_COMPACT_AT: 'Infinity' } });
     const infHooks = await wired();
     await infHooks['session.start'](inf.$, {}, async () => ({}));
     await inf.log.ticks[0].fn();
-    assert.ok(texts(await infHooks['ui.render'](inf.$, { viewport: { columns: 44, rows: 40 } })).includes(' 到 450k 自動 compact'));
+    assert.equal(bandLines(await infHooks.band(inf.$, BAND, passed))[1], '▌ctx ██████▉░░░ 312k/450k');
+    // Four fifths of HARD is 360k: the Pane's block is there from that count, and goes with the count.
+    const pane = async () => texts(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
+    assert.ok(!(await pane()).includes('context'), 'a context block under four fifths of HARD');
+    log.tokens = HARD * 0.8;
+    await log.ticks[0].fn();
+    assert.ok((await pane()).includes('context'), 'no context block at four fifths of HARD');
     log.tokens = null;
     await log.ticks[0].fn();
-    assert.ok(!texts(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } })).includes('context'));
+    assert.ok(!(await pane()).includes('context'));
     assert.deepEqual(bandLines(await hooks.band($, BAND, passed)), ['▌FANKEEL DESIGN  ●●○  等你 0 分'], 'a band with no count still drew a second row');
     $.session.usage = async () => { throw new Error('not yet'); };
     await log.ticks[0].fn();
@@ -600,7 +609,7 @@ test('with no FANKEEL_COMPACT_AT the threshold is HARD, and with no token count 
 
 test('a usage() that rejects drops the context block and nothing else of the tick', async () => {
     const hooks = await wired();
-    const { $, log, store } = fake({ files: entryFile(live) });
+    const { $, log, store } = fake({ files: entryFile(live), tokens: 400000 });
     const draw = async () => texts(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
@@ -674,7 +683,7 @@ test('a claimed plan with a build ledger draws its tasks, on the band as a count
     });
     const { $, log, store } = fake({ files });
     const draw = async () => paneLines(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
-    const tasks = (seen) => seen.slice(seen.indexOf(seen.find((t) => t.startsWith('▌tasks '))), seen.indexOf('▌context  312k · 還 138k 可用') - 1);
+    const tasks = (seen) => seen.slice(seen.indexOf(seen.find((t) => t.startsWith('▌tasks '))), seen.indexOf('▌這個 session') - 1);
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
     assert.deepEqual(tasks(await draw()), ['▌tasks 1 of 2', '▌● 1 one', '▌◐ 2 two · 你的']);
@@ -716,7 +725,7 @@ test('the Pane is laid out in its own body columns and rows, each block behind i
     const files = Object.assign(entryFile(mine), {
         [ROOT + '/.fankeel/sessions/11111111-0000-4000-8000-000000000002.json']: JSON.stringify({ task: '另一個很長的任務標題，'.repeat(6), stage: 'build', active: true, updated: new Date().toISOString(), claims: mine.claims }),
     });
-    const { $, log } = fake({ files });
+    const { $, log } = fake({ files, tokens: 400000 });
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
     const at = (bodyRows) => hooks['ui.render']($, { viewport: { columns: 200, rows: 50 }, props: { bodyColumns: 41, scroll: { offset: 0, bodyRows } } });
@@ -746,26 +755,34 @@ test('the Pane is laid out in its own body columns and rows, each block behind i
     assert.deepEqual(heads(await at(15)).map((h) => h[1]), ['context'], 'the room is the body rows the surface gave, not the viewport');
 });
 
-test('the engine\'s rate limits are drawn on the band and in the Pane, and a new figure redraws', async () => {
+test('the engine\'s rate limits are bars on the band and reset times in the Pane, and a new figure redraws', async () => {
     const hooks = await wired();
     const { $, log } = fake({ files: entryFile(live) });
-    const limits = [{ kind: 'five_hour', percentUsed: 66 }, { kind: 'seven_day', percentUsed: 58 }];
+    // Half a minute over, so the minute a countdown shows does not turn while the test runs: hooks/pane.ts draws against Date.now().
+    const soon = (ms) => new Date(Date.now() + ms + 30000).toISOString();
+    const limits = [{ kind: 'five_hour', percentUsed: 66, resetsAt: soon(106 * 60000) }, { kind: 'seven_day', percentUsed: 58, resetsAt: soon(60.5 * 3600000) }];
     $.session.usage = async () => ({ startedAt: 0, context: { tokens: log.tokens, window: 1000000, percent: 31 }, rateLimits: limits });
+    const pane = async () => paneLines(await hooks['ui.render']($, { viewport: { columns: 44, rows: 60 } }));
+    const quota = (rows) => rows.slice(rows.indexOf('▌用量額度'), rows.indexOf('▌這個 session') - 1);
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
-    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ██████▉░░░ 312k/450k  │  5h ██████▌░░░  66%  │  7d █████▊░░░░  58%');
-    const pane = paneLines(await hooks['ui.render']($, { viewport: { columns: 44, rows: 60 } }));
-    const at = pane.indexOf('▌用量額度');
-    assert.deepEqual(pane.slice(at, at + 3), ['▌用量額度', '▌5h ██████▌░░░  66%  剩 34%', '▌7d █████▊░░░░  58%  剩 42%']);
+    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ██████▉░░░ 312k/450k  │  5h ██████▌░░░  66%  │  7d █████▊░░░░  58%  -6%');
+    assert.deepEqual(quota(await pane()), ['▌用量額度', '▌5h  1h 46m 後重置', '▌7d  2d 12h 30m 後重置']);
+    assert.doesNotMatch((await pane()).join('\n'), /█|░|%|剩|↻/);
     const after = log.invalidated;
-    limits[0] = { kind: 'five_hour', percentUsed: 67 };
+    limits[0] = Object.assign({}, limits[0], { percentUsed: 67 });
     await log.ticks[0].fn();
     assert.equal(log.invalidated, after + 1);
+    // A window with no reset is still a bar on the band, and has no row in the Pane.
+    limits[1] = { kind: 'seven_day', percentUsed: 58 };
+    await log.ticks[0].fn();
+    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ██████▉░░░ 312k/450k  │  5h ██████▋░░░  67%  │  7d █████▊░░░░  58%');
+    assert.deepEqual(quota(await pane()), ['▌用量額度', '▌5h  1h 46m 後重置']);
     // An engine that reports no limits at all: the band is ctx alone and the Pane has no quota block.
     $.session.usage = async () => ({ startedAt: 0, context: { tokens: log.tokens } });
     await log.ticks[0].fn();
     assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ██████▉░░░ 312k/450k');
-    assert.ok(!paneLines(await hooks['ui.render']($, { viewport: { columns: 44, rows: 60 } })).includes('▌用量額度'));
+    assert.ok(!(await pane()).includes('▌用量額度'));
 });
 
 test('while a gate waits a new second redraws, so both countdowns move; with none it does not', async () => {
@@ -1106,7 +1123,7 @@ test('a waiting gate sits between the task block and the clash block, ahead of t
     const hooks = await wired();
     const peer = JSON.stringify({ task: 'shares a', stage: 'build', active: true, updated: new Date().toISOString(), claims: ['a.js'] });
     const files = Object.assign(entryFile(live), { [DIR + '/design-pending.json']: JSON.stringify(gate), [ROOT + '/.fankeel/sessions/11111111-0000-4000-8000-000000000002.json']: peer });
-    const { $, log } = fake({ files });
+    const { $, log } = fake({ files, tokens: 400000 });
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
     const rows = paneLines(await hooks['ui.render']($, { viewport: { columns: 44, rows: 60 } }));

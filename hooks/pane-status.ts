@@ -4,8 +4,8 @@
 // docs/90-agent/plans/2026-10-12-pane-band-design.md section 3.
 
 import { WHERE, FLAG, GUARD, TODO, claimsOf } from './pane-band.ts'
-import { str, list, width, cut, WIDE, bar, ctxPaint, fivePaint, weekPaint, deviation, countdown, resetMs, limitOf, pct, kilo, signed, DIM } from './pane-bar.ts'
-import type { Context, Limit, Paint } from './pane-bar.ts'
+import { str, list, width, cut, WIDE, countdown, resetMs, limitOf, DIM } from './pane-bar.ts'
+import type { Context, Limit } from './pane-bar.ts'
 
 // Kept as exports of this file: hooks/pane-gate.ts and hooks/pane.ts import them from here.
 export { str, list, width, cut, WIDE }
@@ -266,61 +266,39 @@ function tasksBlock(entry: Entry, plan: PlanInfo | null, inner: number, now: num
   return rows
 }
 
-const inked = (text: string, paint: Paint): Seg => (paint.bold ? { text, color: paint.color, bold: true } : { text, color: paint.color })
-// The percent of the threshold the block says what a compact keeps at, and stops being dropped at.
+// The percent of the compact threshold the context block appears at.
 const KEEP = 80
 // Integer comparison, so a threshold needs no rounding.
 const near = (context: Context): boolean => context.tokens * 100 >= KEEP * context.at
 
-// The count and what is left before the automatic compact, then a bar on the
-// scale 0 to the threshold (hooks/compact.ts HARD or FANKEEL_COMPACT_AT, never
-// the model's window): ten to eighteen cells, as many as the label leaves.
+// Drawn only from KEEP percent of the threshold (hooks/compact.ts HARD or
+// FANKEEL_COMPACT_AT), and then never given up: that a compact is close, or
+// under way, and what one keeps. No count, no bar and no mark: the band's `ctx`
+// meter (hooks/pane-band.ts) has those, and a figure is drawn once.
 function contextBlock(context: Context, inner: number): Row[] {
-  const paint = ctxPaint(context.tokens, context.at)
+  if (!near(context)) return []
   const hot = context.tokens >= context.at
-  const label = hot ? ` 已到 ${kilo(context.at)}，compact 中` : ` 到 ${kilo(context.at)} 自動 compact`
-  const { fill, track } = bar(context.tokens, context.at, Math.max(10, Math.min(18, inner - width(label))))
-  const rows = [
-    row('context', title('context', 'context'), inked(`  ${kilo(context.tokens)}`, paint), inked(paint.mark ? ` ${paint.mark}` : '', paint),
-      dim(' · 還 '), { text: kilo(Math.max(0, context.at - context.tokens)) }, dim(' 可用')),
-    row('context', inked(fill, paint), { text: track, color: DIM }, hot ? { text: label, color: GUARD, bold: true } : dim(label)),
+  return [
+    row('context', title('context', 'context'), hot ? { text: '  已到門檻，compact 中', color: GUARD, bold: true } : dim('  快要自動 compact 了')),
+    row('context', dim(cut(`留 ${KEPT.join(' · ')}`, inner))),
   ]
-  if (near(context)) rows.push(row('context', dim(cut(`留 ${KEPT.join(' · ')}`, inner))))
-  return rows
 }
 
-// One row a window the engine gave: a ten-cell bar, percent used, what is left
-// and when it resets. A row that does not fit drops the reset, then what is
-// left. Under the seven-day row, its deviation from an even pace in a sentence.
-function quotaBlock(limits: Limit[], inner: number, now: number): Row[] {
-  const five = limitOf(limits, 'five_hour')
-  const week = limitOf(limits, 'seven_day')
-  if (!five && !week) return []
-  const cells = (segs: Seg[]): number => segs.reduce((n, seg) => n + width(seg.text), 0)
-  const meter = (label: string, limit: Limit, paint: Paint, mark: string, days: boolean): Row => {
-    const { fill, track } = bar(limit.percentUsed, 100, 10)
-    const reset = resetMs(limit)
-    const base: Seg[] = [dim(label), inked(fill, paint), { text: track, color: DIM }, inked(` ${pct(limit.percentUsed)}`, paint), inked(mark ? ` ${mark}` : '', paint)]
-    const left: Seg[] = [dim('  剩'), { text: pct(Math.max(0, Math.min(100, 100 - limit.percentUsed))) }]
-    const until: Seg[] = reset === null ? [] : [dim(`  ↻ ${countdown(reset - now, days)}`)]
-    const shape = [[...base, ...left, ...until], [...base, ...left]].find((segs) => cells(segs) <= inner) ?? base
-    return row('quota', ...shape)
+// When each window resets, and nothing else: the band's `5h` and `7d` meters
+// have the bar, the percent, the deviation and the mark. A window the engine
+// gave no `resetsAt` for has no row, and with no row there is no block.
+function quotaBlock(limits: Limit[], now: number): Row[] {
+  const rows: Row[] = []
+  const window = (label: string, kind: string, days: boolean): void => {
+    const limit = limitOf(limits, kind)
+    const reset = limit ? resetMs(limit) : null
+    if (reset === null) return
+    const left = reset - now
+    rows.push(left > 0 ? row('quota', dim(`${label}  `), { text: countdown(left, days) }, dim(' 後重置')) : row('quota', dim(`${label}  `), { text: '已重置' }))
   }
-  const rows = [row('quota', title('quota', '用量額度'))]
-  if (five) {
-    const paint = fivePaint(five.percentUsed)
-    rows.push(meter('5h ', five, paint, paint.mark, false))
-  }
-  if (week) {
-    const dev = deviation(week, now)
-    const paint = weekPaint(week.percentUsed, dev)
-    rows.push(meter('7d ', week, paint, '', true))
-    if (dev !== null) {
-      rows.push(row('quota', { text: '   ' }, inked(signed(dev), paint), inked(paint.mark ? ` ${paint.mark}` : '', paint),
-        dim(`  ${dev > 0 ? '超前' : '落後'}平均進度`), { text: ` ${Math.abs(dev)} ` }, dim('點')))
-    }
-  }
-  return rows
+  window('5h', 'five_hour', false)
+  window('7d', 'seven_day', true)
+  return rows.length ? [row('quota', title('quota', '用量額度')), ...rows] : []
 }
 
 // A row cut to `cols` cells: the segment that crosses the edge is cut, and the ones after it go.
@@ -336,10 +314,10 @@ function fit(r: Row, cols: number): Row {
   return { ...r, segs }
 }
 
-// Given up in this order when the rows do not fit: `tasks` keeps its title row,
-// and `context` stays once it is at KEEP percent. The task, the gate
-// (hooks/pane-gate.ts), the clash and the foot never go.
-const DROP = ['session', 'notes', 'quota', 'tasks', 'context']
+// Given up in this order when the rows do not fit: `tasks` keeps its title row.
+// The task, the gate (hooks/pane-gate.ts), the clash, the context block — drawn
+// only once a compact is close — and the foot never go.
+const DROP = ['session', 'notes', 'quota', 'tasks']
 
 export function statusRows(input: StatusInput): Row[] {
   const { id, entry, others, cols, room, now } = input
@@ -356,8 +334,9 @@ export function statusRows(input: StatusInput): Row[] {
   if (clash.length) blocks.push(clash)
   const tasks = tasksBlock(entry, input.plan, inner, now)
   if (tasks.length) blocks.push(tasks)
-  if (input.context) blocks.push(contextBlock(input.context, inner))
-  const quota = quotaBlock(input.limits, inner, now)
+  const context = input.context ? contextBlock(input.context, inner) : []
+  if (context.length) blocks.push(context)
+  const quota = quotaBlock(input.limits, now)
   if (quota.length) blocks.push(quota)
   blocks.push(sessionBlock(entry))
 
@@ -376,7 +355,6 @@ export function statusRows(input: StatusInput): Row[] {
     const at = blocks.findIndex((block) => block[0].block === name)
     if (at < 0) continue
     if (name === 'tasks') blocks[at] = blocks[at].slice(0, 1)
-    else if (name === 'context' && input.context && near(input.context)) continue
     else blocks.splice(at, 1)
   }
   return blocks.flatMap((block, i) => (i ? [{ block: block[0].block, segs: [] }, ...block] : block)).map((r) => fit(r, cols))
