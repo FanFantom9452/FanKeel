@@ -69,7 +69,7 @@ const COMPACT_AT = /^(350000|450000|600000|off)$/
 async function profileAt($: EngineInterface, file: string): Promise<string | null> {
   try {
     if (!(await $.fs.exists(file))) return null
-    const v = (JSON.parse(String(await $.fs.read(file))) as Record<string, unknown>)['compact.at']
+    const v = (JSON.parse(String(await $.fs.read(file)).replace(/^﻿/, '')) as Record<string, unknown>)['compact.at']
     // lib/profile.js parseValue reads String(raw), so a hand-written number counts.
     const at = typeof v === 'string' || typeof v === 'number' ? String(v).trim().toLowerCase() : ''
     return COMPACT_AT.test(at) ? at : null

@@ -215,7 +215,18 @@ test('compact.at written as a JSON number is that tier; a number outside the tie
     assert.equal(await run(600000, 610000), 1);
     assert.equal(await run(123, CONTEXT_HARD - 1), 0);
     assert.equal(await run(123, CONTEXT_HARD), 1);
+    // Deliberate: lib/profile.js String() would read an array as 600000; the mod keeps it absent.
     assert.equal(await run([600000], CONTEXT_HARD), 1);
+});
+
+test('a profile file that starts with a UTF-8 BOM is read, with no unreadable-profile line', async () => {
+    const files = { ...entryAt('F:/proj', live), 'F:/proj/.fankeel/profile.json': '\uFEFF{"compact.at":"350000"}' };
+    const r = fake({ tokens: 360000, files });
+    const logs = [];
+    r.$.ui.log = (text) => { logs.push(text); };
+    await fire(handlerOf(await load()), r.$);
+    assert.equal(r.calls.length, 1);
+    assert.deepEqual(logs.filter((l) => /unreadable profile/.test(l)), []);
 });
 
 test('a rejected compaction is retried', async () => {
