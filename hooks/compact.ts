@@ -72,7 +72,8 @@ async function profileAt($: EngineInterface, file: string): Promise<string | nul
     const v = (JSON.parse(String(await $.fs.read(file))) as Record<string, unknown>)['compact.at']
     const at = typeof v === 'string' ? v.trim().toLowerCase() : ''
     return COMPACT_AT.test(at) ? at : null
-  } catch {
+  } catch (err) {
+    $.ui.log(`fankeel compact: unreadable profile ${file}: ${err}`, { to: 'debug' })
     return null
   }
 }

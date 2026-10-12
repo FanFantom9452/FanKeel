@@ -184,6 +184,25 @@ test('an unparsable or invalid profile falls back to HARD', async () => {
     }
 });
 
+test('an unparsable profile file logs one debug line naming it; a missing file or a profile without the key logs none', async () => {
+    const mod = await load();
+    const file = 'F:/proj/.fankeel/profile.json';
+    const run = async (extra) => {
+        const r = fake({ tokens: CONTEXT_HARD, files: { ...entryAt('F:/proj', live), ...extra } });
+        const logs = [];
+        r.$.ui.log = (text) => { logs.push(text); };
+        await fire(handlerOf(mod), r.$);
+        assert.equal(r.calls.length, 1);
+        return logs.filter((l) => /unreadable profile/.test(l));
+    };
+    const bad = await run({ [file]: '{not json' });
+    assert.equal(bad.length, 1);
+    assert.ok(bad[0].includes(file), bad[0]);
+    assert.deepEqual(await run({}), []);
+    assert.deepEqual(await run({ [file]: JSON.stringify({ guard: 'off' }) }), []);
+    assert.deepEqual(await run({ [file]: JSON.stringify({ 'compact.at': '123' }) }), []);
+});
+
 test('a rejected compaction is retried', async () => {
     const { $, calls } = fake({ tokens: CONTEXT_HARD, files: entryAt('F:/proj', live) });
     let first = true;
