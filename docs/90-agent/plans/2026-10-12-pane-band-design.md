@@ -12,7 +12,7 @@ session 88d97abd-517b-4278-93fd-55c331259f41 的 design，來自 TODO 條目「P
 
 使用者核准的是 mockup 的版本 C：`.fankeel/build/2026-10-12-pane-band/mockup.html`（未進 git）。它依據的判決是 [band 與 Pane 該怎麼重新設計](../judgements/2026-10-12-pane-band-redesign.md)，之後使用者又改了四處：`next` 回到 Pane、band 不放句子、context 與額度的長條照 TokenBar 畫、Remote Control 不畫。這四處以本頁為準。
 
-2026-10-12 使用者在真機看過之後又改了一處，依據是[Pane 每列的色軌，與畫了兩次的讀數](../judgements/2026-10-12-pane-rail-dup.md)的 `## Duplicate`：量表（長條、數字、百分比、偏差值、警示符號）全部只在 band；Pane 只畫 band 不畫的東西，也就是重置時間與 compact 的那句話。第 1、2、3 節與檢查表已照它改寫。
+2026-10-12 使用者在真機看過之後又改了兩處，依據是[Pane 每列的色軌，與畫了兩次的讀數](../judgements/2026-10-12-pane-rail-dup.md)的 `## Duplicate`：量表（長條、數字、百分比、偏差值、警示符號）全部只在 band；Pane 只畫 band 不畫的東西，也就是重置時間與 compact 的那句話。第 1、2、3 節與檢查表已照它改寫。同一份判決的 `## Rail`：Pane 的色軌只在每一塊的第一列，gate 與撞檔每一列都有。
 
 ## 1. band
 
@@ -38,7 +38,7 @@ session 88d97abd-517b-4278-93fd-55c331259f41 的 design，來自 TODO 條目「P
 
 ## 3. Pane
 
-- 由上到下的塊：task、gate、撞檔、tasks、context、用量額度、session、notes、foot；每一塊左邊一條自己的固定色軌，內文不指定顏色（跟隨終端佈景）。
+- 由上到下的塊：task、gate、撞檔、tasks、context、用量額度、session、notes、foot；色軌 `▌` 只在每一塊畫出來的第一列——task 塊的不指定顏色，其餘各塊一個固定色——其下各列開頭是一格空白；gate 與撞檔是警示，每一列都有色軌；塊與塊之間空一列，沒有任務時的那一塊沒有色軌；內文不指定顏色（跟隨終端佈景）。
 - task 塊：任務標題折行全寫（粗體），其下 `next:` 全文折行；不再畫 route 與分鐘。
 - gate 塊：徽章列多 `還 N 秒`；題目、選項、說明照現在的畫法。
 - 撞檔塊：每個與活著的 session 共用的檔兩列——`⚑ <路徑尾>`，其下是對方任務的標題、`@ <stage>` 與多久前更新。

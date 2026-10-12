@@ -108,7 +108,7 @@ test('the command opens the pane, and closes it when it is open', async () => {
     assert.deepEqual(log.closed.map((p) => p.id), ['fankeel']);
 });
 
-test('the Pane draws the task block on top, then what is looked up, every row behind a rail', async () => {
+test('the Pane draws the task block on top, then what is looked up, each block under one rail', async () => {
     const hooks = await wired();
     assert.deepEqual(hooks['ui.render:matcher'], { component: 'Pane', requestId: 'fankeel' });
     const { $, log } = fake({ files: entryFile(Object.assign({}, live, { notes: ['a note'] })), tokens: 400000 });
@@ -119,16 +119,16 @@ test('the Pane draws the task block on top, then what is looked up, every row be
         '▌demo task',
         ' ',
         '▌context  快要自動 compact 了',
-        '▌留 task · stage · plan · agent · handoff',
+        ' 留 task · stage · plan · agent · handoff',
         ' ',
         '▌這個 session',
-        '▌別的 session 也在改同一個檔時',
-        '▌  直接擋下，不能改  guard deny',
-        '▌這個任務改過的檔',
-        '▌  1 個  claims',
+        ' 別的 session 也在改同一個檔時',
+        '   直接擋下，不能改  guard deny',
+        ' 這個任務改過的檔',
+        '   1 個  claims',
         ' ',
         '▌notes',
-        '▌· a note',
+        ' · a note',
         ' ',
         '▌abcdef12 · /fankeel-panel 關閉',
     ]);
@@ -686,13 +686,13 @@ test('a claimed plan with a build ledger draws its tasks, on the band as a count
     const tasks = (seen) => seen.slice(seen.indexOf(seen.find((t) => t.startsWith('▌tasks '))), seen.indexOf('▌這個 session') - 1);
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
-    assert.deepEqual(tasks(await draw()), ['▌tasks 1 of 2', '▌● 1 one', '▌◐ 2 two · 你的']);
+    assert.deepEqual(tasks(await draw()), ['▌tasks 1 of 2', ' ● 1 one', ' ◐ 2 two · 你的']);
     assert.match(bandLines(await hooks.band($, BAND, passed))[0], / {2}tasks 1\/2 {2}/);
     const after = log.invalidated;
     store[LEDGER] += 'Task 2: complete — two\n';
     await log.ticks[0].fn();
     assert.equal(log.invalidated, after + 1);
-    assert.deepEqual(tasks(await draw()), ['▌tasks 2 of 2', '▌● 1 one', '▌● 2 two']);
+    assert.deepEqual(tasks(await draw()), ['▌tasks 2 of 2', ' ● 1 one', ' ● 2 two']);
     assert.match(bandLines(await hooks.band($, BAND, passed))[0], / {2}tasks 2\/2 {2}/);
     assert.equal(log.reads.filter((p) => p === ROOT + '/' + PLAN).length, 1, 'the plan file was read again though it had not changed');
     store[LEDGER] = HEAD + 'docs/plans/other.md\nTask 1: complete — one\n';
@@ -718,7 +718,7 @@ test('a pane that cannot open says what the engine said, or that nothing here dr
     }
 });
 
-test('the Pane is laid out in its own body columns and rows, each block behind its own rail', async () => {
+test('the Pane is laid out in its own body columns and rows, each block under one rail of its own colour', async () => {
     const { width } = await import(pathToFileURL(path.join(__dirname, '..', 'hooks', 'pane-status.ts')).href);
     const hooks = await wired();
     const mine = Object.assign({}, live, { task: '一個很長的任務標題，'.repeat(6), notes: ['一則很長的筆記，'.repeat(8)], claims: ['a.js', 'docs/a/very/long/path/that/goes/on/and/on/and/on/file.md'] });
@@ -730,10 +730,13 @@ test('the Pane is laid out in its own body columns and rows, each block behind i
     await log.ticks[0].fn();
     const at = (bodyRows) => hooks['ui.render']($, { viewport: { columns: 200, rows: 50 }, props: { bodyColumns: 41, scroll: { offset: 0, bodyRows } } });
     const tree = await at(32);
+    // A row after a blank one, or the first, opens its block; the clash is an alarm and keeps its rail on every row.
+    let opens = true;
     for (const row of tree.children) {
         const cells = width(texts(row).join(''));
         assert.ok(cells <= 41, '41 < ' + cells + ': ' + texts(row).join(''));
-        if (row.tag === 'Box') assert.equal(row.children[0].children.join(''), '▌');
+        if (row.tag === 'Box') assert.equal(row.children[0].children.join(''), opens || row.children[0].props.color === '#ff5f5f' ? '▌' : ' ', texts(row).join(''));
+        opens = row.tag !== 'Box';
     }
     const title = leaves(tree).filter((n) => n.props.bold && n.props.color === undefined).map((n) => n.children.join(''));
     assert.equal(title.join(''), mine.task, 'the title is not drawn whole');
@@ -767,7 +770,7 @@ test('the engine\'s rate limits are bars on the band and reset times in the Pane
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
     assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ██████▉░░░ 312k/450k  │  5h ██████▌░░░  66%  │  7d █████▊░░░░  58%  -6%');
-    assert.deepEqual(quota(await pane()), ['▌用量額度', '▌5h  1h 46m 後重置', '▌7d  2d 12h 30m 後重置']);
+    assert.deepEqual(quota(await pane()), ['▌用量額度', ' 5h  1h 46m 後重置', ' 7d  2d 12h 30m 後重置']);
     assert.doesNotMatch((await pane()).join('\n'), /█|░|%|剩|↻/);
     const after = log.invalidated;
     limits[0] = Object.assign({}, limits[0], { percentUsed: 67 });
@@ -777,7 +780,7 @@ test('the engine\'s rate limits are bars on the band and reset times in the Pane
     limits[1] = { kind: 'seven_day', percentUsed: 58 };
     await log.ticks[0].fn();
     assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ██████▉░░░ 312k/450k  │  5h ██████▋░░░  67%  │  7d █████▊░░░░  58%');
-    assert.deepEqual(quota(await pane()), ['▌用量額度', '▌5h  1h 46m 後重置']);
+    assert.deepEqual(quota(await pane()), ['▌用量額度', ' 5h  1h 46m 後重置']);
     // An engine that reports no limits at all: the band is ctx alone and the Pane has no quota block.
     $.session.usage = async () => ({ startedAt: 0, context: { tokens: log.tokens } });
     await log.ticks[0].fn();
@@ -1040,17 +1043,17 @@ test('FANKEEL_PANE_PROBE draws what the engine says the session draws on above t
     const draw = async () => paneLines(await hooks['ui.render']($, { viewport: { columns: 60, rows: 40 } }));
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
-    assert.deepEqual((await draw()).slice(-3), [' ', '▌surfaces [terminal, desktop] · surface terminal', '▌abcdef12 · /fankeel-panel 關閉']);
+    assert.deepEqual((await draw()).slice(-3), [' ', '▌surfaces [terminal, desktop] · surface terminal', ' abcdef12 · /fankeel-panel 關閉']);
     const after = log.invalidated;
     await log.ticks[0].fn();
     assert.equal(log.invalidated, after, 'the same surfaces redrew');
     surfaces.length = 0;
     await log.ticks[0].fn();
     assert.equal(log.invalidated, after + 1);
-    assert.deepEqual((await draw()).slice(-2), ['▌surfaces [] · surface null', '▌abcdef12 · /fankeel-panel 關閉']);
+    assert.deepEqual((await draw()).slice(-2), ['▌surfaces [] · surface null', ' abcdef12 · /fankeel-panel 關閉']);
     $.session.surface = async () => { throw new Error('gone'); };
     await log.ticks[0].fn();
-    assert.deepEqual((await draw()).slice(-2), ['▌surfaces ? · Error: gone', '▌abcdef12 · /fankeel-panel 關閉']);
+    assert.deepEqual((await draw()).slice(-2), ['▌surfaces ? · Error: gone', ' abcdef12 · /fankeel-panel 關閉']);
 });
 
 test('with no FANKEEL_PANE_PROBE the Pane draws no probe row and the engine is not asked', async () => {

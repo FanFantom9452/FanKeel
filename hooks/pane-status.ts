@@ -36,8 +36,9 @@ export type StatusInput = {
   probe?: string | null
 }
 
-// Each block's rail, a fixed colour whatever the stage. The task block has
-// none: its rail is the terminal's own colour. `gate` is drawn by hooks/pane.ts.
+// Each block's rail, a fixed colour whatever the stage, on its first drawn row;
+// an alarm (ALARMS, and the gate) carries it on every row. The task block has
+// no colour: its rail is the terminal's own. `gate` is drawn by hooks/pane.ts.
 export const RAILS: Record<string, string> = {
   gate: GUARD,
   clash: FLAG,
@@ -50,7 +51,7 @@ export const RAILS: Record<string, string> = {
 }
 
 const rail = (block: string): Seg => (Object.hasOwn(RAILS, block) ? { text: '▌', color: RAILS[block] } : { text: '▌' })
-// A drawn row: the rail, then the segments that have text.
+// A drawn row: the rail, then the segments that have text. statusRows swaps the rail for a space on a section's later rows.
 const row = (block: string, ...segs: Seg[]): Row => ({ block, segs: [rail(block), ...segs.filter((seg) => seg.text)] })
 // A block's name, bold in its rail colour.
 const title = (block: string, text: string): Seg => ({ text, color: RAILS[block], bold: true })
@@ -318,6 +319,9 @@ function fit(r: Row, cols: number): Row {
 // The task, the gate (hooks/pane-gate.ts), the clash, the context block — drawn
 // only once a compact is close — and the foot never go.
 const DROP = ['session', 'notes', 'quota', 'tasks']
+// The blocks that are alarms, not sections: every row of one keeps its rail.
+// The gate is the other alarm; hooks/pane.ts `railed` draws its rows.
+const ALARMS = ['clash']
 
 export function statusRows(input: StatusInput): Row[] {
   const { id, entry, others, cols, room, now } = input
@@ -327,7 +331,7 @@ export function statusRows(input: StatusInput): Row[] {
       { block: 'empty', segs: [dim(cut('/fankeel 開一個', cols))] },
     ]
   }
-  // 1: the rail every drawn row opens with.
+  // 1: the cell every drawn row opens with, its block's rail or the space under it.
   const inner = Math.max(4, cols - 1)
   const blocks: Row[][] = [taskBlock(entry, inner)]
   const clash = clashBlock(entry, others, inner, now)
@@ -357,5 +361,8 @@ export function statusRows(input: StatusInput): Row[] {
     if (name === 'tasks') blocks[at] = blocks[at].slice(0, 1)
     else blocks.splice(at, 1)
   }
-  return blocks.flatMap((block, i) => (i ? [{ block: block[0].block, segs: [] }, ...block] : block)).map((r) => fit(r, cols))
+  // A section's rail is on its first drawn row alone: the rows under it open
+  // with one plain space instead, so `inner` holds and no wrap or cut moves.
+  const railed = blocks.map((block) => (ALARMS.includes(block[0].block) ? block : block.map((r, i) => (i ? { ...r, segs: [{ text: ' ' }, ...r.segs.slice(1)] } : r))))
+  return railed.flatMap((block, i) => (i ? [{ block: block[0].block, segs: [] }, ...block] : block)).map((r) => fit(r, cols))
 }
