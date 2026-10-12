@@ -133,7 +133,13 @@ test('deviation is percent used less the share of the seven days gone by, rounde
 });
 
 test('countdown is hours and two-digit minutes, with days in front where asked, and `now` once it is past', async () => {
-    const { countdown, minutes } = await load();
+    const { countdown, minutes, secondsLeft } = await load();
+    // The one place a gate's seconds are made: the band's badge and the Pane's gate row are both this.
+    assert.equal(secondsLeft(NOW + 45000, NOW), 45);
+    assert.equal(secondsLeft(NOW + 45001, NOW), 46, 'a part second counts whole');
+    assert.equal(secondsLeft(NOW, NOW), 0);
+    assert.equal(secondsLeft(NOW - 1, NOW), 0, 'never under zero, and never -0');
+    assert.equal(secondsLeft(NOW - 5000, NOW), 0);
     // The one place whole minutes are made: the band's stage minutes and the Pane's agent minutes are both this.
     assert.equal(minutes(0), 0);
     assert.equal(minutes(59999), 0);

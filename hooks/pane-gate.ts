@@ -4,6 +4,7 @@
 // pins each one to the function it copies.
 
 import { cut } from './pane-status.ts'
+import { secondsLeft } from './pane-bar.ts'
 
 export type Question = { question: string; header?: string; multiSelect?: boolean; options: { label: string; description?: string }[] }
 export type Pending = { questions: Question[]; until: number; at: number | null }
@@ -95,7 +96,7 @@ function wrap(s: string, cols: number, width: (s: string) => number): string[] {
 export function gateRows(pending: Pending, cols: number, width: (s: string) => number, now?: number): GateRow[] {
   const rows: GateRow[] = []
   const q = pending.questions[0]
-  const after = now === undefined ? '' : `還 ${Math.max(0, Math.ceil((pending.until - now) / 1000))} 秒`
+  const after = now === undefined ? '' : `還 ${secondsLeft(pending.until, now)} 秒`
   // 2: the badge's own space either side; with a countdown, 2 more between the two.
   const badge: GateRow = { block: 'gate', text: cut(`gate · ${q && q.header ? q.header : ''}`, cols - 2 - (after ? width(after) + 2 : 0)), bold: true, badge: true }
   if (after) badge.after = after

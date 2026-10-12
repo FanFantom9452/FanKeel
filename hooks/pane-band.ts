@@ -4,7 +4,7 @@
 // tests/pane-band.test.js runs it under plain node.
 // docs/90-agent/plans/2026-10-12-pane-band-design.md sections 1 and 2.
 
-import { str, list, width, bar, ctxPaint, fivePaint, weekPaint, deviation, limitOf, pct, kilo, signed, minutes, DIM } from './pane-bar.ts'
+import { str, list, width, bar, ctxPaint, fivePaint, weekPaint, deviation, limitOf, pct, kilo, signed, minutes, secondsLeft, DIM } from './pane-bar.ts'
 import type { Context, Limit, Paint } from './pane-bar.ts'
 
 // `gap` is the cells of space before the segment; without one it sits against the last.
@@ -117,7 +117,7 @@ export function bandRows(input: BandInput): Seg[][] | null {
     ? []
     : [
         { text: ' gate 在等 ', backgroundColor: GUARD, color: INK, bold: true, gap: 2 },
-        { text: `還 ${Math.max(0, Math.ceil((gateUntil - now) / 1000))} 秒`, color: GUARD, bold: true, gap: 2 },
+        { text: `還 ${secondsLeft(gateUntil, now)} 秒`, color: GUARD, bold: true, gap: 2 },
       ]
   const yours: Seg[] = gateUntil === null
     ? [{ text: '等你', color: WHERE, gap: 2 }, { text: String(waited), gap: 1 }, { text: '分', color: WHERE, gap: 1 }]
