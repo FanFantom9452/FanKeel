@@ -69,10 +69,13 @@ function set(configDir, raw) {
     let backup;
     if (existed) {
         backup = target + '.fankeel-bak';
+        fs.rmSync(backup, { force: true });
         fs.copyFileSync(target, backup);
     }
     const tmp = target + '.fankeel-tmp';
+    fs.rmSync(tmp, { force: true });
     fs.writeFileSync(tmp, JSON.stringify(next, null, 2) + '\n');
+    if (existed) fs.chmodSync(tmp, fs.statSync(target).mode);
     fs.renameSync(tmp, target);
     return { ok: true, file, backup };
 }

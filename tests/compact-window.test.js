@@ -101,6 +101,27 @@ test('set writes through a live link and leaves it a link', (t) => {
   assert.deepEqual(JSON.parse(fs.readFileSync(real, 'utf8')), { model: 'opus', env: { [WINDOW]: '450000' } });
 });
 
+test('set keeps the mode settings.json had', (t) => {
+  if (process.platform === 'win32') { t.skip('no POSIX modes'); return; }
+  const cfg = tmp('fankeel-cw-');
+  fs.writeFileSync(settings(cfg), '{}');
+  fs.chmodSync(settings(cfg), 0o600);
+  assert.equal(run(cfg, ['set', '450000']).code, 0);
+  assert.equal(fs.statSync(settings(cfg)).mode & 0o777, 0o600);
+});
+
+test('a stale backup and temp file are replaced, not written through', () => {
+  const cfg = tmp('fankeel-cw-');
+  const original = '{"model":"opus"}';
+  fs.writeFileSync(settings(cfg), original);
+  fs.writeFileSync(settings(cfg) + '.fankeel-bak', 'old');
+  fs.writeFileSync(settings(cfg) + '.fankeel-tmp', 'junk');
+  assert.equal(run(cfg, ['set', '450000']).code, 0);
+  assert.equal(fs.readFileSync(settings(cfg) + '.fankeel-bak', 'utf8'), original);
+  assert.ok(!fs.existsSync(settings(cfg) + '.fankeel-tmp'));
+  assert.deepEqual(JSON.parse(fs.readFileSync(settings(cfg), 'utf8')), { model: 'opus', env: { [WINDOW]: '450000' } });
+});
+
 test('a settings.json that opens with a byte-order mark still parses', () => {
   const cfg = tmp('fankeel-cw-');
   fs.writeFileSync(settings(cfg), String.fromCharCode(0xFEFF) + JSON.stringify({ model: 'opus' }));
