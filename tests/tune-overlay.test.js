@@ -243,6 +243,7 @@ function loadOverlay(shared) {
     const fetched = [];
     const fetchStub = (url, init) => {
         fetched.push({ url, init });
+        if (url === '/__live/request' && shared && shared.refuse) return Promise.resolve({ ok: false, status: 400, text: () => Promise.resolve(shared.refuse) });
         const body = url === '/__live/request' ? { id: 'r1' } : { pending: 0, editing: [] };
         return Promise.resolve({ ok: true, json: () => Promise.resolve(body), text: () => Promise.resolve('') });
     };
@@ -594,4 +595,28 @@ test('while picking, a click on a frame takes every block inside it, and an elem
     assert.match(item.selector, /^div:nth-of-type\(\d+\)$/);
     assert.equal(item.selectors, undefined);
     await t.tick();
+});
+
+// tune-3: a refusal that names an item keeps every draft, marks that item's
+// row, and says which one on the queue line; one that names none marks none.
+test('a refused send keeps the drafts, marks the item the server named, and says which one', async () => {
+    const why = 'div.r 不在任何 data-block 內；按這一則的編號重新圈選，往外或往內一層';
+    const t = loadOverlay({ refuse: 'item 2: ' + why });
+    t.openTray();
+    t.draft(['hero'], 'first');
+    t.draft(['card'], 'second');
+    t.fire(t.q('.fk-live-all'), 'click');
+    await t.tick();
+    assert.equal(t.q('.fk-live-badge').textContent, '2', 'a refused send dropped the drafts');
+    assert.deepEqual(t.doc.all('textarea').map((x) => x.value), ['first', 'second']);
+    assert.equal(t.q('.fk-live-queue').querySelector('span').textContent, '第 2 則：' + why);
+    assert.deepEqual(t.doc.all('.fk-live-item').map((li) => li.classList.contains('fk-live-err')), [false, true]);
+
+    const plain = loadOverlay({ refuse: 'not JSON' });
+    plain.openTray();
+    plain.draft(['hero'], 'first');
+    plain.fire(plain.q('.fk-live-all'), 'click');
+    await plain.tick();
+    assert.equal(plain.q('.fk-live-queue').querySelector('span').textContent, 'not JSON');
+    assert.deepEqual(plain.doc.all('.fk-live-item').map((li) => li.classList.contains('fk-live-err')), [false]);
 });

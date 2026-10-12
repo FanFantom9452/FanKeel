@@ -135,6 +135,7 @@
         '.fk-live-item textarea{display:block;box-sizing:border-box;width:100%;min-height:46px;margin-top:3px;padding:5px 6px;resize:vertical;background:#2a2e36;color:#e8e8e3;border:1px solid #444850;border-radius:0;font:inherit}',
         '.fk-live-item textarea.fk-live-err{border-color:#e0a526}',
         '.fk-live-item.fk-live-picking{background:rgba(34,184,207,.07)}',
+        '.fk-live-item.fk-live-err{box-shadow:inset 3px 0 0 #e0a526}',
         '.fk-live-later{margin:0;color:#b8b8b0}',
         '.fk-live-send{padding:8px 10px 10px;border-top:1px solid #3a3e46}',
         '.fk-live-queue{display:flex;align-items:center;gap:6px;margin:0 0 8px;color:#b8b8b0}',
@@ -567,9 +568,15 @@
                 refreshQueue();
             }, function (err) {
                 // The drafts stay; the server's reason goes on the queue line.
+                // `item <n>: ` on its front names the draft at fault, whose
+                // row is marked until the next draw — picking it again is one.
                 busy = false;
-                sendErr = err && err.message ? err.message : String(err);
+                var why = err && err.message ? err.message : String(err);
+                var named = /^item (\d+): ([\s\S]*)$/.exec(why);
+                sendErr = named ? '第 ' + named[1] + ' 則：' + named[2] : why;
                 draw();
+                var li = named ? list.children[named[1] - 1] : null;
+                if (li) li.classList.add('fk-live-err');
             });
     }
 
