@@ -732,7 +732,7 @@ newest 40, dropping an exact duplicate and replacing a fact read again at a
 new sha. `context.js show` marks a line whose sha is not HEAD `(舊)`. The
 ordinary brief inlines the file's content — `renderBrief` and `renderBrainBrief`
 in `lib/render.js` paste it in whole under `BRIEF_MAX`; over it `fit()` keeps the
-newest facts and names the file for the rest (`lib/render.js:734`, `' older ' + (n === 1 ? 'fact' : 'facts')`) — so a
+newest facts and names the file for the rest (`lib/render.js:741`, `' older ' + (n === 1 ? 'fact' : 'facts')`) — so a
 subagent no longer has to `Read` the file itself before using what it holds.
 
 Build now dispatches one `fankeel:fankeel-brain` per disjoint `ledger.js
@@ -800,20 +800,20 @@ model name or `false`. Set `prompt.all` and any of `prompt.survey`, `prompt.desi
 is appended as the rules block's last line, `  - <sentence>`, on every prompt
 that block reaches — `prompt.all` first, then `prompt.<the current stage>`,
 so a task with both set carries two extra rule lines, not one
-(`lib/render.js:116`, `function promptRules(values, stage) {`). `parsePrompt`
+(`lib/render.js:123`, `function promptRules(values, stage) {`). `parsePrompt`
 in `lib/profile.js` holds it to one line and 200 characters — trimmed but not
 lowercased, and refused if it is empty, carries a newline, or runs long
 (`lib/profile.js:216`, `key + ' is one line of 1 to ' + PROMPT_MAX + ' characters' };`).
 `promptRules` is called once, inside `rulesLines`
-(`lib/render.js:182`, `.concat(promptRules(values, data && data.stage));`),
+(`lib/render.js:189`, `.concat(promptRules(values, data && data.stage));`),
 and by `controlBlock` for a controlled stage's own block
-(`lib/render.js:133`, `return control && Object.assign({}, control, { rules: control.rules.concat(promptRules(values, stage)) });`),
+(`lib/render.js:140`, `return control && Object.assign({}, control, { rules: control.rules.concat(promptRules(values, stage)) });`),
 so `render`, `renderResume` and `renderBrainBrief` — every path that calls
 `rulesLines` — all carry it, controlled stage or not. `renderBrief`, the brief
 a reader, reviewer, fixer or implementer gets, never calls `rulesLines` and so
 never reaches `promptRules` — that return goes to the controller, not to
 whoever typed the sentence
-(`lib/render.js:114`, `never reaches this — a reader's return is`).
+(`lib/render.js:121`, `never reaches this — a reader's return is`).
 
 Setting the key prints what it costs: the estimated tokens the injected line
 adds per prompt, and each stage's remaining room under the reference-root
