@@ -133,7 +133,13 @@ test('deviation is percent used less the share of the seven days gone by, rounde
 });
 
 test('countdown is hours and two-digit minutes, with days in front where asked, and `now` once it is past', async () => {
-    const { countdown } = await load();
+    const { countdown, minutes } = await load();
+    // The one place whole minutes are made: the band's stage minutes and the Pane's agent minutes are both this.
+    assert.equal(minutes(0), 0);
+    assert.equal(minutes(59999), 0);
+    assert.equal(minutes(60000), 1);
+    assert.equal(minutes(38 * 60000 + 5000), 38);
+    assert.equal(minutes(-60000), 0, 'never under zero');
     assert.equal(countdown(106 * 60000, false), '1h 46m');
     assert.equal(countdown(12 * 60000, false), '0h 12m');
     assert.equal(countdown(208 * 60000, false), '3h 28m');

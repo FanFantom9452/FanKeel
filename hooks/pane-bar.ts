@@ -124,6 +124,9 @@ export function countdown(ms: number, days: boolean): string {
   return `${hours}h ${two(total % 60)}m`
 }
 
+// Whole minutes in `ms`, never under zero: the band's stage minutes and the Pane's agent minutes are both this.
+export const minutes = (ms: number): number => Math.max(0, Math.floor(ms / 60000))
+
 // ` 66%`: three cells of number, so a column of them lines up.
 export const pct = (n: number): string => `${String(Math.round(n)).padStart(3)}%`
 export const kilo = (n: number): string => `${Math.round(n / 1000)}k`

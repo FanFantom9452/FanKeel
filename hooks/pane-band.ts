@@ -4,7 +4,7 @@
 // tests/pane-band.test.js runs it under plain node.
 // docs/90-agent/plans/2026-10-12-pane-band-design.md sections 1 and 2.
 
-import { str, list, width, bar, ctxPaint, fivePaint, weekPaint, deviation, limitOf, pct, kilo, signed, DIM } from './pane-bar.ts'
+import { str, list, width, bar, ctxPaint, fivePaint, weekPaint, deviation, limitOf, pct, kilo, signed, minutes, DIM } from './pane-bar.ts'
 import type { Context, Limit, Paint } from './pane-bar.ts'
 
 // `gap` is the cells of space before the segment; without one it sits against the last.
@@ -64,8 +64,6 @@ export function since(entry: Entry, stage: string): number | null {
   const pair = clock[stage]
   return Array.isArray(pair) && typeof pair[0] === 'number' ? pair[0] : null
 }
-
-const minutes = (ms: number): number => Math.max(0, Math.floor(ms / 60000))
 
 function inked(text: string, paint: Paint, gap = 0): Seg {
   const seg: Seg = { text, color: paint.color }

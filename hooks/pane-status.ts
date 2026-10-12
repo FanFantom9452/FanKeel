@@ -4,7 +4,7 @@
 // docs/90-agent/plans/2026-10-12-pane-band-design.md section 3.
 
 import { WHERE, FLAG, GUARD, TODO, claimsOf } from './pane-band.ts'
-import { str, list, width, cut, WIDE, DIM } from './pane-bar.ts'
+import { str, list, width, cut, WIDE, DIM, minutes } from './pane-bar.ts'
 import type { Context } from './pane-bar.ts'
 
 // Kept as exports of this file: hooks/pane-gate.ts and hooks/pane.ts import them from here.
@@ -92,7 +92,7 @@ function wrap(s: string, cols: number): string[] {
 }
 
 // Whole minutes, or `?` where the registry has no reading.
-const mins = (ms: unknown): string => (typeof ms === 'number' && Number.isFinite(ms) ? String(Math.max(0, Math.floor(ms / 60000))) : '?')
+const mins = (ms: unknown): string => (typeof ms === 'number' && Number.isFinite(ms) ? String(minutes(ms)) : '?')
 
 // What hooks/compact.ts instructionsFor tells the summary to keep, a word each;
 // tests/pane-status.test.js checks every word against that function's text.
