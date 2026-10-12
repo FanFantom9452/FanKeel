@@ -2,8 +2,13 @@
 label: station
 title: 站頁看得到對話全文
 description: 站頁的 session 詳情加一個對話全文視圖：使用者與 Claude 的全文依序列出、壓縮點與摘要標在原位；目前只有命令列匯出，過程還原不含 Claude 的回覆
-state: ready
+state: done
 link: scripts/conversation.js
+done:
+  at: 2026-10-12
+  sha: 43865cf5
+  disposition: done
+  session: 63835487-9b40-4f4f-8b7c-d8f512d17c17
 ---
 
 來源：2026-10-10 使用者在一個 session 裡要求「這些對話歷史在 STATION 上可以看到完整的還原」，起因是想回頭讀 10-08 用 Fable 做的工作流評審（session 714c5b82-a1ee-4a53-9a0f-8c9bd00e8323），以及壓縮 6 次的落實 session 91cb51ef-804b-401e-be65-965d64be97b1。
@@ -15,3 +20,16 @@ link: scripts/conversation.js
 完成的標準：在 91cb51ef 這個 session 上，站頁顯示的 turn 數、壓縮次數、left out 計數與 `scripts/conversation.js` 匯出的檔頭完全一致；有測試以帶 compact_boundary 的 fixture 釘住；Claude 的回覆文字在頁面上可讀到全文，不被截斷。
 
 2026-10-10 第二輪盤點：plan 站寫過一版做法（伺服器一條分頁的 JSON 路徑加 countsOf 與 pageOf，瀏覽器一個收合的區段、一次載入 100 則），使用者在關卡決定先畫 mockup 再做，所以拆出去。那一版連同測試碼留在 commit 321b0702 的 plan 檔裡，另開帶 design 站的任務時可以拿來當起點。
+
+## 完成紀錄
+
+監控站每個 session 的頁面多了第四個分頁「對話」，看得到這個 session 的整段對話：你和 Claude 的文字全文，一次載入 100 則，按鈕再載下一批。壓縮的地方畫成一條分隔線，摘要收著，點開才看。對話只留在這台機器上；機器上已經沒有紀錄檔時，分頁會直接說沒有。紀錄檔還在卻讀不到時，分頁說讀不到並給重試，不會說成檔案不見了。伺服器一次只送一頁，紀錄檔變長後會重新讀。
+
+- commit 1f7708c7
+- commit 63792a7b
+- commit 43865cf5
+- commit 3907c5c0
+- commit 0f7417f3
+- commit 5eeaa0b9
+- commit 1dabfc6b
+- commit b07cfa57
