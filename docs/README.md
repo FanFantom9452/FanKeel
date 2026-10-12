@@ -234,7 +234,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 監控站掛 Chartroom 白板（10-07）定了什麼：白板在 AI 要給人看時才出現、目標取代 Mermaid；整個併進 fankeel 直接可用；寫入照監控站的 nonce，不開例外；怎麼做另開 design | [decisions/2026-10-07-station-chartroom.md](03-decisions/2026-10-07-station-chartroom.md) — *繁體中文* |
 | TODO 全表盤點（10-03）的 plan：子 session 由環境變數證明在跑、todo-check 讀不到就回報且前綴補斜線、commit.js 兩個子句補測試、balanced 註明無來源、mod 路線擱置 | [plans/2026-10-03-todo-patrol-three.md](90-agent/plans/2026-10-03-todo-patrol-three.md) — *design-intent, 繁體中文* |
 | TODO 全表盤點（10-05）的 plan：壓縮重試最多三次的測試、`/fankeel` 頁面寫不出來時 station 行說出來、兩處 timeout 與行號小錯、brain 選模型改放 Watch | [plans/2026-10-05-todo-patrol-ready-three.md](90-agent/plans/2026-10-05-todo-patrol-ready-three.md) — *design-intent, 繁體中文* |
-| TODO 全表盤點（10-13）的 plan：面板門檻改讀 `compact.at`、Pane 四處重複、逐塊調整兩條、指南補 init 第 7 步 | [plans/2026-10-13-todo-patrol-five.md](90-agent/plans/2026-10-13-todo-patrol-five.md) — *design-intent, 繁體中文* |
+| TODO 全表盤點（10-13）的 plan：面板門檻改讀 `compact.at`、Pane 四處重複、逐塊調整兩條、指南補 init 第 7 步 | `docs/99-archive/2026-10-13-todo-patrol-five.md` — *built, 繁體中文* |
+| TODO 全表盤點（10-13）做了什麼、沒做什麼：面板門檻改讀 `compact.at`、Pane 四處重複收掉、逐塊調整點錯不再整批被退，八筆關閉；逐塊調整真機只試一半，tune-4 留在 Ready | [reports/patrols/2026-10-13-todo-patrol-five.md](90-agent/reports/patrols/2026-10-13-todo-patrol-five.md) — *繁體中文* |
 | Pane 上的 gate 介面（10-07）的 design 草稿：pending 與 answer 檔只有一份，station 頁面板與 Pane 都是它的畫面，mod 沒載入照舊 | [plans/2026-10-07-gate-pane-design.md](90-agent/plans/2026-10-07-gate-pane-design.md) — *design-intent, 繁體中文* |
 | TODO 全表盤點（10-12）的 design：Pane 右欄只留會改變下一步的區塊、最上面是任務全貌與每站耗時，站頁多一個對話分頁，14 條 Blocked 重蓋日期 | `docs/99-archive/2026-10-12-pane-talk-design.md` — *built, 繁體中文* |
 | 那份設計的七個 task，含 Remote Control 的探測行與使用者在真機開關一次 | `docs/99-archive/2026-10-12-pane-talk.md` — *built, 繁體中文* |

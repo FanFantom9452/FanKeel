@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # TODO 全表盤點（10-13）：面板門檻改讀 compact.at、Pane 四處重複、逐塊調整兩條、指南一句 Implementation Plan
