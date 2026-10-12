@@ -207,3 +207,30 @@ test('both blocks read the window from the hook\'s own environment', () => {
     else process.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW = saved;
   }
 });
+
+// A row that quotes a transcript: a tool result whose text carries a usage
+// record and a dropped count. On disk its quotes are escaped once, which is the
+// form the old patterns were written to accept.
+const quoted = (read, dropped) => JSON.stringify({ type: 'user', message: { role: 'user', content: [{
+  type: 'tool_result',
+  content: '{"usage":{"input_tokens":2,"cache_creation_input_tokens":2362,"cache_read_input_tokens":' + read + '}} "cumulativeDroppedTokens":' + dropped,
+}] } });
+
+test('a usage and a dropped count quoted in a tool result are not this session\'s', () => {
+  const file = transcript([usage(40000), compaction(326893), quoted(650000, 1120198)]);
+  const info = ctx.inspect(file);
+  assert.equal(info.used, 40000 + 2362 + 2);
+  assert.equal(info.dropped, 326893);
+});
+
+test('quoted figures alone are no reading at all', () => {
+  assert.equal(ctx.inspect(transcript([quoted(650000, 1120198)])), null);
+});
+
+test('a usage on a row that is not an assistant row, and a dropped count on one that is not a compact_boundary, do not count', () => {
+  const stray = JSON.stringify({type: 'progress',message: {usage: {input_tokens: 999999}}});
+  const note = '{"type":"system","subtype":"informational","content":"' + BS + '"cumulativeDroppedTokens' + BS + '":777}"}';
+  const info = ctx.inspect(transcript([usage(40000), stray, note]));
+  assert.equal(info.used, 40000 + 2362 + 2);
+  assert.equal(info.dropped, 0);
+});
