@@ -234,3 +234,26 @@ test('a usage on a row that is not an assistant row, and a dropped count on one 
   assert.equal(info.used, 40000 + 2362 + 2);
   assert.equal(info.dropped, 0);
 });
+
+// Rows that carry the text `compact_boundary` and a dropped count without being
+// the system row of that subtype: a tool result quoting one, a system row of
+// another subtype that names it, a row of that subtype that is not a system
+// row, and the tail's first line, cut mid-row so it does not parse.
+const mention = (dropped) => JSON.stringify({ type: 'user', message: { role: 'user', content: [{
+  type: 'tool_result',
+  content: 'a compact_boundary row reads "cumulativeDroppedTokens":' + dropped,
+}] } });
+const aside = (dropped) => JSON.stringify({ type: 'system', subtype: 'informational',
+  content: 'the last compact_boundary said "cumulativeDroppedTokens":' + dropped });
+const posed = (dropped) => JSON.stringify({ type: 'user', subtype: 'compact_boundary',
+  content: '"cumulativeDroppedTokens":' + dropped });
+const torn = (dropped) => compaction(dropped).slice(9);
+
+test('a row that names compact_boundary and carries a dropped count, and is not that system row, is not a compaction', () => {
+  for (const [name, row] of [['a tool result', mention(1120198)], ['another subtype', aside(1120198)], ['another type', posed(1120198)], ['a cut line', torn(1120198)]]) {
+    assert.ok(row.includes('compact_boundary') && /cumulativeDroppedTokens/.test(row), name + ' does not reach the row check');
+    const info = ctx.inspect(transcript([usage(40000), compaction(326893), row]));
+    assert.equal(info.dropped, 326893, name + ' was read as a compaction');
+    assert.equal(ctx.inspect(transcript([usage(40000), row])).dropped, 0, name + ' alone was read as a compaction');
+  }
+});
