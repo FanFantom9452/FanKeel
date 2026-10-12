@@ -44,6 +44,7 @@ profile 是 gate 的常備答案：先寫好，fankeel 就不再問那一題。g
 | `station.hide` | 這個專案要不要從監控站隱藏 | `true`、`false`；內建 `false` | 不設，維持內建 |
 | `station.chartroom` | 監控站從哪個 Chartroom 安裝路徑開架構白板（/chartroom/<專案>/）；沒設就沒有白板 | 一個絕對路徑：Chartroom 套件的根目錄 | 不設 |
 | `gate.station` | gate 發出後，等監控站作答幾秒；off 不等，逾時照常在 terminal 問 | `off`、`60`、`120`、`300`；內建 `off` | 不設，維持內建 |
+| `compact.at` | 主對話累積多少 token 就自動壓縮；off 不壓縮。只對跑 fankeel 任務的 session 生效 | `350000`、`450000`、`600000`、`off`；內建 `450000` | 不設，維持內建 |
 | `stage.agents` | 哪幾站交給站 agent 在乾淨 context 裡跑，主控只轉路徑 | `false`、`true`、`all`、或逗號分隔的站名清單；內建 `false` | `survey,build,verify` |
 | `security.local` | verify 的 security lens 先交給哪個本地 ollama 模型篩候選；沒設照原流程 | 一個 ollama 模型名稱 | 不設 |
 | `prompt.all`、`prompt.<站>` | 附在每一站（或某一站）規則最後的一句自訂 prompt | 一行文字 | 需要時才設 |

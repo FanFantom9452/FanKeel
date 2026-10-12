@@ -89,6 +89,63 @@ test('FANKEEL_COMPACT_AT lowers the threshold', async () => {
     assert.equal(calls.length, 1);
 });
 
+const profileAt = (file, data) => ({ [file]: JSON.stringify(data) });
+
+test('compact.at in the project profile sets the threshold', async () => {
+    const files = { ...entryAt('F:/proj', live), ...profileAt('F:/proj/.fankeel/profile.json', { 'compact.at': '350000' }) };
+    const { $, calls } = fake({ tokens: 360000, files });
+    await fire(handlerOf(await load()), $);
+    assert.equal(calls.length, 1);
+});
+
+test('compact.at off never compacts, even far above HARD', async () => {
+    const files = { ...entryAt('F:/proj', live), ...profileAt('F:/proj/.fankeel/profile.json', { 'compact.at': 'off' }) };
+    const { $, calls } = fake({ tokens: 700000, files });
+    await fire(handlerOf(await load()), $);
+    assert.equal(calls.length, 0);
+});
+
+test('compact.at is read from the entry\'s project directory and its configDir machine file', async () => {
+    const mod = await load();
+    const sub = { ...live, project: 'app' };
+    let f = { ...entryAt('F:/proj', sub), ...profileAt('F:/proj/app/.fankeel/profile.json', { 'compact.at': '600000' }) };
+    let r = fake({ tokens: 500000, files: f });
+    await fire(handlerOf(mod), r.$);
+    assert.equal(r.calls.length, 0);
+    f = { ...entryAt('F:/proj', { ...live, configDir: 'C:/cfg' }), ...profileAt('C:/cfg/fankeel/profile.json', { 'compact.at': '350000' }) };
+    r = fake({ tokens: 360000, files: f });
+    await fire(handlerOf(mod), r.$);
+    assert.equal(r.calls.length, 1);
+});
+
+test('the project profile beats the machine one and FANKEEL_COMPACT_AT beats both', async () => {
+    const mod = await load();
+    const files = {
+        ...entryAt('F:/proj', { ...live, configDir: 'C:/cfg' }),
+        ...profileAt('F:/proj/.fankeel/profile.json', { 'compact.at': '600000' }),
+        ...profileAt('C:/cfg/fankeel/profile.json', { 'compact.at': '350000' }),
+    };
+    let r = fake({ tokens: 400000, files });
+    await fire(handlerOf(mod), r.$);
+    assert.equal(r.calls.length, 0);
+    r = fake({ tokens: 400000, files, env: '1000' });
+    await fire(handlerOf(mod), r.$);
+    assert.equal(r.calls.length, 1);
+});
+
+test('an unparsable or invalid profile falls back to HARD', async () => {
+    const mod = await load();
+    for (const raw of ['{not json', JSON.stringify({ 'compact.at': '123' })]) {
+        const files = { ...entryAt('F:/proj', live), 'F:/proj/.fankeel/profile.json': raw };
+        const r = fake({ tokens: CONTEXT_HARD, files });
+        await fire(handlerOf(mod), r.$);
+        assert.equal(r.calls.length, 1, raw);
+        const b = fake({ tokens: CONTEXT_HARD - 1, files });
+        await fire(handlerOf(mod), b.$);
+        assert.equal(b.calls.length, 0, raw);
+    }
+});
+
 test('a rejected compaction is retried', async () => {
     const { $, calls } = fake({ tokens: CONTEXT_HARD, files: entryAt('F:/proj', live) });
     let first = true;
