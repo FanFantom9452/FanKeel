@@ -293,7 +293,7 @@ function main(argv, cwd) {
         const renamed = git(['-c', 'core.quotePath=false', 'diff', '--cached', '-M', '--name-status']);
         const staged = renamed.status === 0 ? renamed.stdout.split(/\r?\n/) : [];
         const gone = stagedGone(staged);
-        // A path recreated on disk needs no add either: commit -o reads the working tree.
+        // A path recreated on disk needs no add either: commitPaths takes it from the working tree.
         const toAdd = paths.filter((p) => !gone.has(p));
         const add = toAdd.length ? git(['add', '--'].concat(toAdd)) : { status: 0 };
         if (add.status !== 0) return fail('git add failed: ' + oneLine(add.stderr));
