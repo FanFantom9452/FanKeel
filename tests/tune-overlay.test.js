@@ -127,6 +127,14 @@ test('the design and build skills and the mockup agent describe the assistant an
     assert.match(read('agents/fankeel-mockup.md'), /A request with `items` is several changes sent together/);
 });
 
+// tune-3: a frame and a spacer row with no name of their own are what the
+// overlay cannot send, so the mockup agent is told to name them.
+test('the mockup agent names the frame and the spacer row as blocks of their own', () => {
+    const text = fs.readFileSync(path.join(__dirname, '..', 'agents', 'fankeel-mockup.md'), 'utf8').replace(/\s+/g, ' ');
+    assert.match(text, /A frame that wraps several blocks, and a row that sits between two blocks, each carry a `data-block` of their own/);
+    assert.match(text, /One granularity per page/);
+});
+
 // ---- The DOM half, executed against a hand-written stub document. ----------
 // OVERLAY_SRC lets a mutated copy of overlay.js be run through the same tests.
 const DOM_SRC = process.env.OVERLAY_SRC || SRC;

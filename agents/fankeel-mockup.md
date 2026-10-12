@@ -39,6 +39,14 @@ write goes anywhere else.
 - Every block the approach changes carries `data-block="<name>"`, spelled
   literally in the markup. The user, the tuning step and the render reviewer
   all point at a block by that name.
+- A frame that wraps several blocks, and a row that sits between two blocks,
+  each carry a `data-block` of their own. The tuning overlay refuses a click
+  on an element with no `data-block` in or around it, and `tune.js done`
+  puts back an edit that lands in markup no block owns; a name on the frame
+  and on the spacer row is what lets a note about "the whole pane" or "this
+  gap" be sent and kept. A named block inside a named frame is fine. One
+  granularity per page: where a block is a group of rows, every such group
+  is one, and a single row is a block only where it stands alone.
 
 ## Tuning one block
 
