@@ -3,7 +3,7 @@
 // it under plain node. What each block holds is
 // docs/90-agent/plans/2026-10-12-pane-band-design.md section 3.
 
-import { WHERE, FLAG } from './pane-band.ts'
+import { WHERE, FLAG, GUARD, TODO } from './pane-band.ts'
 import { str, list, width, cut, WIDE } from './pane-bar.ts'
 import type { Context, Limit } from './pane-bar.ts'
 
@@ -55,6 +55,7 @@ const row = (block: string, ...segs: Seg[]): Row => ({ block, segs: [rail(block)
 // A block's name, bold in its rail colour.
 const title = (block: string, text: string): Seg => ({ text, color: RAILS[block], bold: true })
 // Labels and secondary text.
+const record = (v: unknown): Record<string, unknown> => (v && typeof v === 'object' ? (v as Record<string, unknown>) : {})
 const dim = (text: string): Seg => ({ text, color: WHERE })
 const claimsOf = (entry: Entry): string[] => list(entry.claims ?? entry.scope)
 
@@ -100,10 +101,10 @@ const mins = (ms: unknown): string => (typeof ms === 'number' && Number.isFinite
 // tests/pane-status.test.js checks every word against that function's text.
 export const KEPT = ['task', 'stage', 'plan', 'agent', 'handoff']
 
-// lib/ledger.js HEADER_PREFIX, owns and completed: how many tasks the ledger
-// records complete, or null when its first line names another plan.
 const LEDGER = '# fankeel build ledger — plan: '
-export function ledgerDone(text: string, claim: string): number | null {
+// lib/ledger.js HEADER_PREFIX, owns and completed: the tasks the ledger records
+// complete, ascending, or null when its first line names another plan.
+export function ledgerDoneIds(text: string, claim: string): number[] | null {
   const lines = text.split(/\r?\n/)
   if (lines[0] !== LEDGER + claim) return null
   const done = new Set<number>()
@@ -111,25 +112,49 @@ export function ledgerDone(text: string, claim: string): number | null {
     const m = /^Task (\d+): complete\b/.exec(line.trim())
     if (m) done.add(Number(m[1]))
   }
-  return done.size
+  return [...done].sort((a, b) => a - b)
 }
 
-// lib/plantasks.js parsePlan: the `## Task N:` headings of a plan, a fenced one not counted.
-export function planTotal(text: string): number {
-  let total = 0
+export function ledgerDone(text: string, claim: string): number | null {
+  const ids = ledgerDoneIds(text, claim)
+  return ids === null ? null : ids.length
+}
+
+// lib/plantasks.js parsePlan: the `## Task N:` headings of a plan, a fenced one
+// not counted, each with whether its first `**Dispatch:**` line names the user.
+// Any other `## ` heading ends the tasks.
+export function planTasks(text: string): PlanTask[] {
+  const tasks: PlanTask[] = []
+  let task: PlanTask | null = null
+  let said = false
   let fence = 0
   for (const raw of text.split(/\r?\n/)) {
     const line = raw.trim()
+    const t = fence ? null : /^##\s+Task\s+(\d+):\s*(.*)$/.exec(line)
+    if (t) {
+      task = { n: Number(t[1]), name: t[2].trim(), user: false }
+      said = false
+      tasks.push(task)
+      continue
+    }
+    if (!fence && /^##\s/.test(line)) task = null
     const f = /^`{3,}/.exec(line)
     if (f) {
       if (fence === 0) fence = f[0].length
       else if (f[0].length >= fence) fence = 0
       continue
     }
-    if (!fence && /^##\s+Task\s+\d+:/.test(line)) total += 1
+    if (fence || !task || said) continue
+    const d = /^\*\*Dispatch:\*\*\s*(.*)$/.exec(line)
+    if (!d) continue
+    said = true
+    const word = /^([a-z][a-z-]*)/i.exec(d[1])
+    task.user = !!word && word[1].toLowerCase() === 'user'
   }
-  return total
+  return tasks
 }
+
+export const planTotal = (text: string): number => planTasks(text).length
 
 // `inner` is the cells a row has after its rail.
 function taskBlock(entry: Entry, inner: number): Row[] {
@@ -183,6 +208,65 @@ function sessionBlock(entry: Entry): Row[] {
   ]
 }
 
+// A task complete, and an agent out on one.
+const DONE = '#87af5f'
+const OUT = '#af87d7'
+// The minutes an agent is out before its row turns amber.
+const LONG = 20
+// A plan of more tasks than this folds into a window.
+const WHOLE = 6
+
+// The plan's tasks against its ledger. Six or fewer are listed; more fold to
+// the count done, the first open task and the two after it, and how many are
+// left — six rows at most. `inflight` is one mark, or a list of them once two
+// agents are out (lib/registry.js inflights); the mod cannot tell which tasks a
+// dispatch group holds, so the agent is drawn on the first open task that is
+// not the user's. With no ledger, a mark on this stage is one row of its own.
+function tasksBlock(entry: Entry, plan: PlanInfo | null, inner: number, now: number): Row[] {
+  const stage = str(entry.stage)
+  const marks = Array.isArray(entry.inflight) ? entry.inflight : [entry.inflight]
+  const mark = marks.map(record).find((m) => m.stage === stage)
+  const known = !!mark && typeof mark.at === 'number' && Number.isFinite(mark.at)
+  const out = mark ? mins(known ? now - (mark.at as number) : null) : ''
+  const late = known && Number(out) >= LONG
+  if (!plan || !plan.tasks.length) {
+    if (!mark) return []
+    const group = Number.isInteger(mark.group) ? ` · 第 ${mark.group} 組` : ''
+    const seg: Seg = { text: cut(`agent 出去 ${out} 分${group}`, inner) }
+    if (late) seg.color = GUARD
+    return [row('tasks', seg)]
+  }
+  const done = new Set(plan.done)
+  const open = plan.tasks.filter((t) => !done.has(t.n))
+  const count = plan.tasks.length - open.length
+  const running = mark ? open.find((t) => !t.user) : undefined
+  // Numbers right-aligned to the widest one.
+  const pad = String(Math.max(...plan.tasks.map((t) => t.n))).length
+  const one = (t: PlanTask): Row => {
+    const label = ` ${String(t.n).padStart(pad)} `
+    // 1: the mark every task row opens with.
+    const name = (after: string): string => label + cut(t.name, Math.max(4, inner - 1 - width(label) - width(after)))
+    if (done.has(t.n)) return row('tasks', { text: '●', color: DONE }, dim(name('')))
+    if (t === running) {
+      const after = ` · 出去 ${out} 分`
+      return row('tasks', { text: '◉', color: OUT }, { text: name(after), bold: true }, { text: after, color: late ? GUARD : OUT })
+    }
+    if (t.user) return row('tasks', { text: '◐', color: GUARD }, { text: name(' · 你的') }, dim(' · 你的'))
+    return row('tasks', { text: '○', color: TODO }, { text: name('') })
+  }
+  const head = row('tasks', title('tasks', 'tasks'), { text: ` ${count} of ${plan.tasks.length}` })
+  if (plan.tasks.length <= WHOLE) return [head, ...plan.tasks.map(one)]
+  const rows = [head]
+  if (count) rows.push(row('tasks', { text: '✓', color: DONE }, dim(` 完成 ${count}`)))
+  rows.push(...open.slice(0, 3).map(one))
+  const rest = open.slice(3)
+  if (rest.length) {
+    const yours = rest.filter((t) => t.user).length
+    rows.push(row('tasks', { text: '○', color: TODO }, dim(` 還有 ${rest.length} 個${yours ? `，${yours} 個是你的` : ''}`)))
+  }
+  return rows
+}
+
 // A row cut to `cols` cells: the segment that crosses the edge is cut, and the ones after it go.
 function fit(r: Row, cols: number): Row {
   let left = cols
@@ -212,6 +296,8 @@ export function statusRows(input: StatusInput): Row[] {
   const blocks: Row[][] = [taskBlock(entry, inner)]
   const clash = clashBlock(entry, others, inner, now)
   if (clash.length) blocks.push(clash)
+  const tasks = tasksBlock(entry, input.plan, inner, now)
+  if (tasks.length) blocks.push(tasks)
   blocks.push(sessionBlock(entry))
 
   // The registry keeps the newest note last.

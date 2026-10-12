@@ -237,3 +237,127 @@ test('planTotal counts the headings lib/plantasks.js parseTasks counts', async (
     assert.equal(planTotal(body.replace(/\n/g, '\r\n')), 3);
     assert.equal(planTotal(''), 0);
 });
+
+// A plan of `n` tasks named `task 1` on, `done` complete, `users` the user's own.
+const planOf = (n, done, users) => ({ name: '2026-10-12-pane-band', done, tasks: Array.from({ length: n }, (_, i) => ({ n: i + 1, name: 'task ' + (i + 1), user: (users || []).includes(i + 1) })) });
+// The same entry with a subagent out on its stage.
+const busy = Object.assign({}, entry, { inflight: { stage: 'design', at: NOW - 12 * 60000 - 30000, group: 2 } });
+
+test('planTasks reads the headings lib/plantasks.js parseTasks reads, and which of them are the user\'s', async () => {
+    const { planTasks, planTotal } = await load();
+    const fence = '`'.repeat(3);
+    const text = ['# Plan', '', '## Task 1: one', '', '**Dispatch:** implementer, sonnet — the code is in the plan.', '', 'text', '**Dispatch:** user — a later line is prose',
+        fence + 'md', '## Task 9: an example inside a fence', '**Dispatch:** user', fence,
+        '##  Task 2:  two', '', '**Dispatch:** User — run it by hand', '### Task 3: a sub-heading', '   ## Task 4: indented', 'no dispatch line here',
+        '## Coverage', '**Dispatch:** user', ''].join('\n');
+    const theirs = plantasks.parseTasks(text);
+    assert.deepEqual(planTasks(text).map((t) => [t.n, t.name, t.user]), theirs.map((t) => [t.n, t.name, t.dispatch === 'user']));
+    assert.deepEqual(planTasks(text), [{ n: 1, name: 'one', user: false }, { n: 2, name: 'two', user: true }, { n: 4, name: 'indented', user: false }]);
+    assert.deepEqual(planTasks(text.replace(/\n/g, '\r\n')), planTasks(text));
+    assert.equal(planTotal(text), 3);
+    assert.deepEqual(planTasks(''), []);
+});
+
+test('ledgerDoneIds names the tasks lib/ledger.js completed() names, ascending, for the plan the ledger is of', async () => {
+    const { ledgerDoneIds, ledgerDone } = await load();
+    const claim = 'docs/90-agent/plans/2026-10-12-pane-band.md';
+    const text = [ledger.header(claim), ledger.completionLine(2, 'b'), ledger.completionLine(1, 'a'), '  ' + ledger.completionLine(4, 'd'),
+        ledger.completionLine(2, 'b, again'), 'Task 7: completed later'].join('\n') + '\n';
+    assert.deepEqual(ledgerDoneIds(text, claim), [1, 2, 4]);
+    assert.deepEqual(ledgerDoneIds(text, claim), [...new Set(ledger.completed(text).map(Number))].sort((a, b) => a - b));
+    assert.deepEqual(ledgerDoneIds(text.replace(/\n/g, '\r\n'), claim), [1, 2, 4]);
+    assert.equal(ledgerDoneIds(text, 'docs/90-agent/plans/other.md'), null);
+    assert.equal(ledgerDoneIds('', claim), null);
+    assert.equal(ledgerDone(text, claim), 3);
+});
+
+test('six tasks or fewer are listed whole: done, open, and the user\'s own', async () => {
+    const m = await load();
+    const rows = status(m, { plan: planOf(5, [1, 2], [4]) });
+    assert.deepEqual(body(rows, 'tasks'), [
+        [{ text: 'tasks', color: '#87af5f', bold: true }, { text: ' 2 of 5' }],
+        [{ text: '●', color: '#87af5f' }, { text: ' 1 task 1', color: SECOND }],
+        [{ text: '●', color: '#87af5f' }, { text: ' 2 task 2', color: SECOND }],
+        [{ text: '○', color: '#767676' }, { text: ' 3 task 3' }],
+        [{ text: '◐', color: '#d7af5f' }, { text: ' 4 task 4' }, { text: ' · 你的', color: SECOND }],
+        [{ text: '○', color: '#767676' }, { text: ' 5 task 5' }],
+    ]);
+    assert.equal(drawn(status(m, { plan: planOf(6, []) }), 'tasks').length, 7);
+    assert.deepEqual(text(status(m, { plan: planOf(3, [1, 9]) }), 'tasks')[0], '▌tasks 1 of 3');
+    assert.deepEqual(blocksOf(status(m, { others: [other], plan: planOf(5, []) })), ['task', 'clash', 'tasks', 'session', 'notes', 'foot']);
+    assert.deepEqual(text(status(m, { plan: null }), 'tasks'), []);
+});
+
+test('an agent out on this stage is marked on the first open task that is not the user\'s, amber from twenty minutes', async () => {
+    const m = await load();
+    const out = (inflight, plan) => body(status(m, { entry: Object.assign({}, entry, { inflight }), plan: plan || planOf(5, [1, 2]) }), 'tasks');
+    assert.deepEqual(out(busy.inflight)[3], [{ text: '◉', color: '#af87d7' }, { text: ' 3 task 3', bold: true }, { text: ' · 出去 12 分', color: '#af87d7' }]);
+    assert.deepEqual(out(busy.inflight)[4], [{ text: '○', color: '#767676' }, { text: ' 4 task 4' }]);
+    assert.deepEqual(out({ stage: 'design', at: NOW - 20 * 60000 + 1000 })[3][2], { text: ' · 出去 19 分', color: '#af87d7' });
+    assert.deepEqual(out({ stage: 'design', at: NOW - 20 * 60000 })[3][2], { text: ' · 出去 20 分', color: '#d7af5f' });
+    assert.deepEqual(out({ stage: 'design' })[3][2], { text: ' · 出去 ? 分', color: '#af87d7' });
+    assert.deepEqual(out({ stage: 'survey', at: NOW - 60000 })[3], [{ text: '○', color: '#767676' }, { text: ' 3 task 3' }]);
+    assert.deepEqual(out([{ stage: 'survey', at: NOW - 60000 }, { stage: 'design', at: NOW - 3 * 60000 }])[3][2], { text: ' · 出去 3 分', color: '#af87d7' });
+    // Task 3 is the user's: the agent is out on the one after it.
+    const mixed = out(busy.inflight, planOf(5, [1, 2], [3]));
+    assert.deepEqual(mixed[3], [{ text: '◐', color: '#d7af5f' }, { text: ' 3 task 3' }, { text: ' · 你的', color: SECOND }]);
+    assert.equal(mixed[4][0].text, '◉');
+});
+
+test('more than six tasks fold to the count done, the first open task and the two after it, and how many are left', async () => {
+    const m = await load();
+    assert.deepEqual(text(status(m, { entry: busy, plan: planOf(13, [1, 2, 3, 4], [13]) }), 'tasks'), [
+        '▌tasks 4 of 13',
+        '▌✓ 完成 4',
+        '▌◉  5 task 5 · 出去 12 分',
+        '▌○  6 task 6',
+        '▌○  7 task 7',
+        '▌○ 還有 6 個，1 個是你的',
+    ]);
+    assert.deepEqual(body(status(m, { plan: planOf(13, [1, 2, 3, 4]) }), 'tasks').filter((segs) => /完成|還有/.test(segs[1].text)), [
+        [{ text: '✓', color: '#87af5f' }, { text: ' 完成 4', color: SECOND }],
+        [{ text: '○', color: '#767676' }, { text: ' 還有 6 個', color: SECOND }],
+    ]);
+    assert.deepEqual(text(status(m, { plan: planOf(7, []) }), 'tasks'), ['▌tasks 0 of 7', '▌○ 1 task 1', '▌○ 2 task 2', '▌○ 3 task 3', '▌○ 還有 4 個']);
+    // Complete out of order: the window is still the first three that are open.
+    assert.deepEqual(text(status(m, { plan: planOf(8, [1, 3, 8]) }), 'tasks'), ['▌tasks 3 of 8', '▌✓ 完成 3', '▌○ 2 task 2', '▌○ 4 task 4', '▌○ 5 task 5', '▌○ 還有 2 個']);
+    assert.deepEqual(text(status(m, { plan: planOf(9, [1, 2, 3, 4, 5, 6, 7, 8]) }), 'tasks'), ['▌tasks 8 of 9', '▌✓ 完成 8', '▌○ 9 task 9']);
+    assert.deepEqual(text(status(m, { plan: planOf(7, [1, 2, 3, 4, 5, 6, 7]) }), 'tasks'), ['▌tasks 7 of 7', '▌✓ 完成 7']);
+    // Three open is the window exactly; four open leaves one.
+    assert.deepEqual(text(status(m, { plan: planOf(7, [1, 2, 3, 4]) }), 'tasks').slice(2), ['▌○ 5 task 5', '▌○ 6 task 6', '▌○ 7 task 7']);
+    assert.deepEqual(text(status(m, { plan: planOf(8, [1, 2, 3, 4]) }), 'tasks').slice(-1), ['▌○ 還有 1 個']);
+    assert.equal(drawn(status(m, { plan: planOf(7, [1]) }), 'tasks').length, 6);
+});
+
+test('thirty tasks never take more than seven rows, however many are done', async () => {
+    const m = await load();
+    for (let done = 0; done <= 30; done++) {
+        const rows = drawn(status(m, { entry: busy, plan: planOf(30, Array.from({ length: done }, (_, i) => i + 1), [29, 30]) }), 'tasks');
+        assert.ok(rows.length <= 7, done + ' done: ' + rows.length + ' rows');
+        assert.equal(line(rows[0]), '▌tasks ' + done + ' of 30');
+    }
+});
+
+test('with no ledger an agent out on this stage is one row with its group; with neither there is no tasks block', async () => {
+    const m = await load();
+    const out = (inflight, plan) => body(status(m, { entry: Object.assign({}, entry, { inflight }), plan: plan || null }), 'tasks');
+    assert.deepEqual(out(busy.inflight), [[{ text: 'agent 出去 12 分 · 第 2 組' }]]);
+    assert.deepEqual(out({ stage: 'design', at: NOW - 95 * 60000, group: 3 }), [[{ text: 'agent 出去 95 分 · 第 3 組', color: '#d7af5f' }]]);
+    assert.deepEqual(out({ stage: 'design' }), [[{ text: 'agent 出去 ? 分' }]]);
+    assert.deepEqual(out({ stage: 'design', at: 'soon', group: 2 }), [[{ text: 'agent 出去 ? 分 · 第 2 組' }]]);
+    assert.deepEqual(out(busy.inflight, planOf(0, [])), [[{ text: 'agent 出去 12 分 · 第 2 組' }]]);
+    assert.deepEqual(out({ stage: 'survey', at: NOW - 60000 }), []);
+    assert.deepEqual(out(undefined), []);
+});
+
+test('a long task name is cut so its row, tail and all, stays inside the pane', async () => {
+    const m = await load();
+    const long = planOf(5, [1], [4]);
+    for (const t of long.tasks) t.name = '把一個很長的任務名稱寫在這裡 ' + t.n;
+    for (const cols of [31, 41]) {
+        const rows = drawn(status(m, { entry: busy, plan: long, cols }), 'tasks');
+        for (const row of rows) assert.ok(m.width(line(row)) <= cols, cols + ' < ' + m.width(line(row)) + ': ' + line(row));
+        assert.ok(line(rows[2]).endsWith('… · 出去 12 分'), line(rows[2]));
+        assert.ok(line(rows[4]).endsWith('… · 你的'), line(rows[4]));
+    }
+});
