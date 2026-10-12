@@ -145,11 +145,28 @@ async function planOf($: EngineInterface, root: string, entry: Entry, cache: Cac
   return null
 }
 
+// The neighbours hooks/inject.js found running at this session's last prompt
+// (`.fankeel/build/live.json`), or null where that cannot be told: no file, one
+// that does not parse, no `at`, or `ids` that is no list — lib/live.js writes
+// null there when it could not tell. The mod has no pid to signal, so this file
+// is all it knows of who is alive. Read every tick: it is one short line.
+async function liveOf($: EngineInterface, root: string): Promise<{ at: number; ids: string[] } | null> {
+  try {
+    const file = `${root}/.fankeel/build/live.json`
+    if (!(await $.fs.exists(file))) return null
+    const got = JSON.parse(String(await $.fs.read(file))) as { at?: unknown; ids?: unknown } | null
+    if (!got || typeof got.at !== 'number' || !Number.isFinite(got.at) || !Array.isArray(got.ids)) return null
+    return { at: got.at, ids: got.ids.filter((x): x is string => typeof x === 'string') }
+  } catch {
+    return null
+  }
+}
+
 // Everything both drawings show: this session's entry, the other active
 // entries beside it, the gate hooks/gate.js is holding, the context count and
 // the plan's ledger; the neighbours and the plan file are read again only when
 // their mtimeMs or size changes. The neighbours are read whether or not the
-// Pane is up, because the band's flag needs them.
+// Pane is up, because the band's flag needs them. A neighbour the live list says has gone is left out of both.
 async function look($: EngineInterface, cache: Cache, logged: Logged): Promise<Seen> {
   const id = await $.session.id()
   if (!SESSION_ID.test(id)) return blank(id)
@@ -157,6 +174,7 @@ async function look($: EngineInterface, cache: Cache, logged: Logged): Promise<S
   if (!found || !isActive(found.entry)) return blank(id)
   const entry = found.entry as Entry
 
+  const alive = await liveOf($, found.root)
   const others: Other[] = []
   const unreadable: string[] = []
   const sessions = `${found.root}/.fankeel/sessions`
@@ -172,7 +190,10 @@ async function look($: EngineInterface, cache: Cache, logged: Logged): Promise<S
     }
     const other = hit.value as Entry | null
     if (!other) unreadable.push(path)
-    if (other && isActive(other)) others.push({ id: file.name.slice(0, -5), entry: other })
+    // Unknown means live, and so does a registry file that moved after the list was written:
+    // a clash shown for a session that has gone is noise, one hidden is two terminals overwriting each other.
+    const sid = file.name.slice(0, -5)
+    if (other && isActive(other) && (!alive || alive.ids.includes(sid) || file.mtimeMs > alive.at)) others.push({ id: sid, entry: other })
   }
   // All the paths in one line, so two files that stay unreadable do not take turns being logged.
   if (unreadable.length) logOnce($, logged, 'neighbour', `fankeel pane: neighbour registry file unreadable, ${unreadable.join(', ')}`)

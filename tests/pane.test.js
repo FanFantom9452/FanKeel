@@ -1050,3 +1050,54 @@ test('with no FANKEEL_PANE_PROBE the Pane draws no probe row and the engine is n
         assert.equal(asked, 0);
     }
 });
+
+test('an active neighbour that is not in live.json is no clash, unless its file moved since; with no list every active neighbour counts', async () => {
+    const hooks = await wired();
+    const LIVE = ROOT + '/.fankeel/build/live.json';
+    const A = ROOT + '/.fankeel/sessions/11111111-0000-4000-8000-000000000002.json';
+    const B = ROOT + '/.fankeel/sessions/22222222-0000-4000-8000-000000000003.json';
+    const peer = (task) => JSON.stringify({ task, stage: 'build', active: true, updated: new Date().toISOString(), claims: ['a.js'] });
+    const { $, log, store, mtimes } = fake({ files: Object.assign(entryFile(live), { [A]: peer('still here'), [B]: peer('long gone') }) });
+    const band = async () => { await log.ticks[0].fn(); return bandLines(await hooks.band($, BAND, passed)).join('\n'); };
+    const pane = async () => paneLines(await hooks['ui.render']($, { viewport: { columns: 44, rows: 60 } })).join('\n');
+    const list = (ids, at) => JSON.stringify({ at: at === undefined ? 5 : at, ids });
+    await hooks['session.start']($, {}, async () => ({}));
+    // No list: as it always was.
+    assert.match(await band(), /⚑2/);
+    // Every registry file here has mtimeMs 1, older than the list's `at` of 5.
+    store[LIVE] = list(['11111111-0000-4000-8000-000000000002']);
+    assert.match(await band(), /⚑1/);
+    assert.match(await pane(), /still here @ build/);
+    assert.doesNotMatch(await pane(), /long gone/);
+    // A registry file newer than the list is a session that moved after it was written.
+    mtimes[B] = 6;
+    assert.match(await band(), /⚑2/);
+    assert.match(await pane(), /long gone @ build/);
+    mtimes[B] = 5;
+    assert.match(await band(), /⚑1/, 'a file as old as the list counted as newer');
+    store[LIVE] = list([]);
+    assert.doesNotMatch(await band(), /⚑/);
+    assert.doesNotMatch(await pane(), /⚑|still here/);
+    assert.equal(leaves(await hooks.band($, BAND, passed))[0].props.color, '#5f5fd7', 'the rail stayed red with nobody live in these files');
+    // Cannot tell is not nobody: null ids, a file that does not parse, one with no `at`, and no file.
+    for (const text of [list(null), '{ not json', JSON.stringify({ ids: [] }), JSON.stringify({ at: 'soon', ids: [] })]) {
+        store[LIVE] = text;
+        assert.match(await band(), /⚑2/, text);
+    }
+    delete store[LIVE];
+    assert.match(await band(), /⚑2/);
+});
+
+test('a waiting gate sits between the task block and the clash block, ahead of the context', async () => {
+    const hooks = await wired();
+    const peer = JSON.stringify({ task: 'shares a', stage: 'build', active: true, updated: new Date().toISOString(), claims: ['a.js'] });
+    const files = Object.assign(entryFile(live), { [DIR + '/design-pending.json']: JSON.stringify(gate), [ROOT + '/.fankeel/sessions/11111111-0000-4000-8000-000000000002.json']: peer });
+    const { $, log } = fake({ files });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const rows = paneLines(await hooks['ui.render']($, { viewport: { columns: 44, rows: 60 } }));
+    const at = (re) => rows.findIndex((t) => re.test(t));
+    const order = [/^▌demo task/, /^▌ gate · design/, /^▌⚑ a\.js/, /^▌context/].map(at);
+    assert.ok(order.every((i) => i >= 0), order.join());
+    assert.deepEqual(order, [...order].sort((x, y) => x - y), 'the blocks are out of order: ' + order.join());
+});
