@@ -235,11 +235,12 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | TODO 全表盤點（10-03）的 plan：子 session 由環境變數證明在跑、todo-check 讀不到就回報且前綴補斜線、commit.js 兩個子句補測試、balanced 註明無來源、mod 路線擱置 | [plans/2026-10-03-todo-patrol-three.md](90-agent/plans/2026-10-03-todo-patrol-three.md) — *design-intent, 繁體中文* |
 | TODO 全表盤點（10-05）的 plan：壓縮重試最多三次的測試、`/fankeel` 頁面寫不出來時 station 行說出來、兩處 timeout 與行號小錯、brain 選模型改放 Watch | [plans/2026-10-05-todo-patrol-ready-three.md](90-agent/plans/2026-10-05-todo-patrol-ready-three.md) — *design-intent, 繁體中文* |
 | Pane 上的 gate 介面（10-07）的 design 草稿：pending 與 answer 檔只有一份，station 頁面板與 Pane 都是它的畫面，mod 沒載入照舊 | [plans/2026-10-07-gate-pane-design.md](90-agent/plans/2026-10-07-gate-pane-design.md) — *design-intent, 繁體中文* |
-| 自動壓縮改靠主機的壓縮視窗（10-12）的 design：量到 629k 的 session 過 450k 後 16 次 turn 結束都沒壓；設 `CLAUDE_CODE_AUTO_COMPACT_WINDOW` 後主機在 turn 進行中自己壓，context 行在沒設時說出來 | [plans/2026-10-12-compact-window-design.md](90-agent/plans/2026-10-12-compact-window-design.md) — *design-intent, 繁體中文* |
-| 那份設計的兩個 task：context 行的一句、指南與一筆真機 TODO | [plans/2026-10-12-compact-window.md](90-agent/plans/2026-10-12-compact-window.md) — *design-intent, 繁體中文* |
 | TODO 全表盤點（10-12）的 design：Pane 右欄只留會改變下一步的區塊、最上面是任務全貌與每站耗時，站頁多一個對話分頁，14 條 Blocked 重蓋日期 | `docs/99-archive/2026-10-12-pane-talk-design.md` — *built, 繁體中文* |
 | 那份設計的七個 task，含 Remote Control 的探測行與使用者在真機開關一次 | `docs/99-archive/2026-10-12-pane-talk.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-12）做了什麼、沒做什麼：站頁的對話分頁與 Pane 改版做完，14 條 Blocked 重蓋日期，真機看 Remote Control 那一步留成新的 Ready，verify 來回三輪抓到什麼 | [reports/patrols/2026-10-12-todo-patrol-pane-talk.md](90-agent/reports/patrols/2026-10-12-todo-patrol-pane-talk.md) — *繁體中文* |
+| 自動壓縮改靠主機的壓縮視窗（10-12）的 design：量到 629k 的 session 過 450k 後 16 次 turn 結束都沒壓；設 `CLAUDE_CODE_AUTO_COMPACT_WINDOW` 後主機在 turn 進行中自己壓，context 行在沒設時說出來 | `docs/99-archive/2026-10-12-compact-window-design.md` — *built, 繁體中文* |
+| 那份設計的兩個 task：context 行的一句、指南與一筆真機 TODO | `docs/99-archive/2026-10-12-compact-window.md` — *built, 繁體中文* |
+| TODO 全表盤點（10-12 第二輪）與自動壓縮做了什麼、沒做什麼：壓縮交給主機的視窗，fankeel 只在沒設時提醒；放棄了 mod 心跳與進 build 先壓；盤點沒有可直接做的，新開六筆 | [reports/patrols/2026-10-12-todo-patrol-compact-window.md](90-agent/reports/patrols/2026-10-12-todo-patrol-compact-window.md) — *繁體中文* |
 | fankeel 面板（10-12）定了什麼：輸入框上方兩行常駐、細節與 gate 的完整說明放 Pane、Pane 自己打開、終端與 Claude Desktop 都畫；放棄了什麼 | [decisions/2026-10-12-fankeel-panel.md](03-decisions/2026-10-12-fankeel-panel.md) — *繁體中文* |
 | fankeel 面板（10-11）的 design：一個 id 為 fankeel 的 Pane，/fankeel-panel 開關，gate 在上、狀態在下，改掉 10-07 那頁的 Pane id | `docs/99-archive/2026-10-11-fankeel-pane-design.md` — *built, 繁體中文* |
 | fankeel 面板（10-11）的 plan：五個 task——狀態列、gate 列與 answer 檔、接線、文件、真機 | `docs/99-archive/2026-10-11-fankeel-pane.md` — *built, 繁體中文* |

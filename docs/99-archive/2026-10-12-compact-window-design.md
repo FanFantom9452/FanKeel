@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # 自動壓縮改靠主機的壓縮視窗（10-12）— design
