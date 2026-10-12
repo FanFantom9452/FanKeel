@@ -4,6 +4,12 @@
 // the task block on top is the band's two rows (hooks/pane-band.ts) written out whole.
 
 import { since } from './pane-band.ts'
+import { str, list, width, cut, WIDE } from './pane-bar.ts'
+import type { Context } from './pane-bar.ts'
+
+// Kept as exports of this file: hooks/pane-band.ts, hooks/pane-gate.ts and hooks/pane.ts import them from here.
+export { str, list, width, cut, WIDE }
+export type { Context }
 
 export type Entry = Record<string, unknown>
 export type Other = { id: string; entry: Entry }
@@ -13,33 +19,8 @@ export type Tone = 'head' | 'plain' | 'text' | 'dim' | 'amber' | 'clash' | 'holl
 export type Seg = { text: string; tone: Tone; bold?: boolean }
 // One drawn row, its segments a cell apart. No segments is the blank row above a block.
 export type Row = { block: string; segs: Seg[] }
-// The context tokens in play and the count hooks/compact.ts compacts at.
-export type Context = { tokens: number; at: number }
 // A plan's build ledger: its basename, the tasks recorded complete, the tasks it has.
 export type PlanCount = { name: string; done: number; total: number }
-
-const WIDE = /[ᄀ-ᅟ⺀-꓏가-힣豈-﫿︰-﹏＀-｠￠-￦]/
-
-export const str = (v: unknown): string => (typeof v === 'string' ? v : '')
-export const list = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [])
-
-// Terminal cells: a CJK or full-width character takes two.
-export function width(s: string): number {
-  let n = 0
-  for (const ch of s) n += WIDE.test(ch) ? 2 : 1
-  return n
-}
-
-// The head of `s` that fits `cols` cells, ending in an ellipsis when cut.
-export function cut(s: string, cols: number): string {
-  if (width(s) <= cols) return s
-  let out = ''
-  for (const ch of s) {
-    if (width(out + ch) > cols - 1) break
-    out += ch
-  }
-  return out + '…'
-}
 
 // The tail of `s` that fits: a path is told apart by its end.
 function tail(s: string, cols: number): string {
