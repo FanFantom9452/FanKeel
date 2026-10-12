@@ -238,6 +238,9 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | TODO 全表盤點（10-12）的 design：Pane 右欄只留會改變下一步的區塊、最上面是任務全貌與每站耗時，站頁多一個對話分頁，14 條 Blocked 重蓋日期 | `docs/99-archive/2026-10-12-pane-talk-design.md` — *built, 繁體中文* |
 | 那份設計的七個 task，含 Remote Control 的探測行與使用者在真機開關一次 | `docs/99-archive/2026-10-12-pane-talk.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-12）做了什麼、沒做什麼：站頁的對話分頁與 Pane 改版做完，14 條 Blocked 重蓋日期，真機看 Remote Control 那一步留成新的 Ready，verify 來回三輪抓到什麼 | [reports/patrols/2026-10-12-todo-patrol-pane-talk.md](90-agent/reports/patrols/2026-10-12-todo-patrol-pane-talk.md) — *繁體中文* |
+| 自動壓縮改靠主機的壓縮視窗（10-12）的 design：量到 629k 的 session 過 450k 後 16 次 turn 結束都沒壓；設 `CLAUDE_CODE_AUTO_COMPACT_WINDOW` 後主機在 turn 進行中自己壓，context 行在沒設時說出來 | `docs/99-archive/2026-10-12-compact-window-design.md` — *built, 繁體中文* |
+| 那份設計的兩個 task：context 行的一句、指南與一筆真機 TODO | `docs/99-archive/2026-10-12-compact-window.md` — *built, 繁體中文* |
+| TODO 全表盤點（10-12 第二輪）與自動壓縮做了什麼、沒做什麼：壓縮交給主機的視窗，fankeel 只在沒設時提醒；放棄了 mod 心跳與進 build 先壓；盤點沒有可直接做的，新開六筆 | [reports/patrols/2026-10-12-todo-patrol-compact-window.md](90-agent/reports/patrols/2026-10-12-todo-patrol-compact-window.md) — *繁體中文* |
 | fankeel 面板（10-12）定了什麼：輸入框上方兩行常駐、細節與 gate 的完整說明放 Pane、Pane 自己打開、終端與 Claude Desktop 都畫；放棄了什麼 | [decisions/2026-10-12-fankeel-panel.md](03-decisions/2026-10-12-fankeel-panel.md) — *繁體中文* |
 | fankeel 面板（10-11）的 design：一個 id 為 fankeel 的 Pane，/fankeel-panel 開關，gate 在上、狀態在下，改掉 10-07 那頁的 Pane id | `docs/99-archive/2026-10-11-fankeel-pane-design.md` — *built, 繁體中文* |
 | fankeel 面板（10-11）的 plan：五個 task——狀態列、gate 列與 answer 檔、接線、文件、真機 | `docs/99-archive/2026-10-11-fankeel-pane.md` — *built, 繁體中文* |
@@ -363,6 +366,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | mod 探測第三輪：hooks module 載入後，子代理吃不到 `prompt.compose`（headless、互動式與熱重載都否）、SendMessage 再送達照設計結論、`turn.step` 改的 effort 有送進請求（n=1）；fankeel hook 干擾未測 | [reports/2026-10-03-mod-probe-3.md](90-agent/reports/2026-10-03-mod-probe-3.md) — *a dated snapshot, 繁體中文* |
 | mod 探測第四輪：兩臂對照補測 (d)，mod 載入時 fankeel 的 `inject.js` 與 `brief.js` 內文沒有被干擾（n=1） | [reports/2026-10-04-mod-probe-4.md](90-agent/reports/2026-10-04-mod-probe-4.md) — *a dated snapshot, 繁體中文* |
 | mod 自動壓縮的 headless 探針：`hooks/compact.ts` 載入並從 `turn.complete` 決定壓縮，但 headless 下 `$.session.compact` 被拒（not available in a headless session），沒有壓縮發生；對照組如預期（n=1） | [reports/2026-10-05-compact-probe.md](90-agent/reports/2026-10-05-compact-probe.md) — *a dated snapshot, 繁體中文* |
+| 主機的壓縮視窗探針：設了 `CLAUDE_CODE_AUTO_COMPACT_WINDOW` 之後主機在 turn 進行中自己壓，視窗 100000 在 71k 到 75k、200000 在 165k 到 170k；Desktop 與 450000 沒量（headless，n=2） | [reports/2026-10-12-compact-window-probe.md](90-agent/reports/2026-10-12-compact-window-probe.md) — *繁體中文* |
 | 受控站實跑量測：stage.agents 設全部站時，主控與 brain 各站的 context、站 agent 做不到的事、記帳、提交落點與 mutator（五個已收尾 task，n=5）；第二個 agent、profile 中途翻轉與 claims 由使用者親手補 | [reports/2026-10-04-controlled-stages.md](90-agent/reports/2026-10-04-controlled-stages.md) — *a dated snapshot, 繁體中文* |
 | 注入計時：UserPromptSubmit hook 一般 prompt、/fankeel prompt 與進行中任務各段的耗時，五秒逾時沒有在本機重現，最慢一段是 station 的 write，中位數約 1.76 秒 | [reports/2026-10-05-inject-timing.md](90-agent/reports/2026-10-05-inject-timing.md) — *a dated snapshot, 繁體中文* |
 | 注入冷啟動：/fankeel 在 station 沒在跑、在跑、同步 fs 放慢 2 與 5 毫秒四種情形下，先問 station 再寫頁前後的耗時，以及節流與 SessionStart 起 server 的結論 | [reports/2026-10-05-inject-cold-start.md](90-agent/reports/2026-10-05-inject-cold-start.md) — *a dated snapshot, 繁體中文* |
@@ -508,6 +512,7 @@ is corrected by the next one, not by rewriting this.
 | fankeel 這套工作流現在哪些設計還能精進、哪些環節漏掉了？ | [90-agent/judgements/2026-10-10-workflow-gaps.md](90-agent/judgements/2026-10-10-workflow-gaps.md) — *judged 2026-10-10, fable* |
 | Brief: what the fankeel side Pane should show | [90-agent/judgements/2026-10-11-pane-content.md](90-agent/judgements/2026-10-11-pane-content.md) — *judged 2026-10-11, fable* |
 | Brief: fankeel 面板右邊的 Pane 到底該顯示什麼 | [90-agent/judgements/2026-10-11-pane-right.md](90-agent/judgements/2026-10-11-pane-right.md) — *judged 2026-10-11, fable* |
+| Brief: 該不該在 build 之前問使用者要不要先 compact，以及 build 途中 context 堆高怎麼辦 | [90-agent/judgements/2026-10-12-compact-before-build.md](90-agent/judgements/2026-10-12-compact-before-build.md) — *judged 2026-10-12, fable* |
 
 ## The five scanners
 
