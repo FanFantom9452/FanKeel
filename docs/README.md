@@ -240,6 +240,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | TODO 全表盤點（10-12）做了什麼、沒做什麼：站頁的對話分頁與 Pane 改版做完，14 條 Blocked 重蓋日期，真機看 Remote Control 那一步留成新的 Ready，verify 來回三輪抓到什麼 | [reports/patrols/2026-10-12-todo-patrol-pane-talk.md](90-agent/reports/patrols/2026-10-12-todo-patrol-pane-talk.md) — *繁體中文* |
 | 自動壓縮改靠主機的壓縮視窗（10-12）的 design：量到 629k 的 session 過 450k 後 16 次 turn 結束都沒壓；設 `CLAUDE_CODE_AUTO_COMPACT_WINDOW` 後主機在 turn 進行中自己壓，context 行在沒設時說出來 | `docs/99-archive/2026-10-12-compact-window-design.md` — *built, 繁體中文* |
 | 那份設計的兩個 task：context 行的一句、指南與一筆真機 TODO | `docs/99-archive/2026-10-12-compact-window.md` — *built, 繁體中文* |
+| fankeel-init 幫忙設自動壓縮視窗（10-12）的 design：`compact-window.js` 寫使用者層 `settings.json` 的 `env`，答否記在機器層的標記檔，第 7 步多問一題 | [plans/2026-10-12-init-compact-window-design.md](90-agent/plans/2026-10-12-init-compact-window-design.md) — *design-intent, 繁體中文* |
+| 那份設計的兩個 task：腳本與它的測試、skill 第 7 步的那一題 | [plans/2026-10-12-init-compact-window.md](90-agent/plans/2026-10-12-init-compact-window.md) — *design-intent, 繁體中文* |
 | TODO 全表盤點（10-12 第二輪）與自動壓縮做了什麼、沒做什麼：壓縮交給主機的視窗，fankeel 只在沒設時提醒；放棄了 mod 心跳與進 build 先壓；盤點沒有可直接做的，新開六筆 | [reports/patrols/2026-10-12-todo-patrol-compact-window.md](90-agent/reports/patrols/2026-10-12-todo-patrol-compact-window.md) — *繁體中文* |
 | fankeel 面板（10-12）定了什麼：輸入框上方兩行常駐、細節與 gate 的完整說明放 Pane、Pane 自己打開、終端與 Claude Desktop 都畫；放棄了什麼 | [decisions/2026-10-12-fankeel-panel.md](03-decisions/2026-10-12-fankeel-panel.md) — *繁體中文* |
 | fankeel 面板（10-11）的 design：一個 id 為 fankeel 的 Pane，/fankeel-panel 開關，gate 在上、狀態在下，改掉 10-07 那頁的 Pane id | `docs/99-archive/2026-10-11-fankeel-pane-design.md` — *built, 繁體中文* |
