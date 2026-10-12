@@ -96,7 +96,7 @@ async function projectRootOf($: EngineInterface, root: string, project: unknown)
 
 // lib/profile.js: the project file under the entry's project root, then the
 // machine file under the entry's configDir.
-async function threshold($: EngineInterface, found: { entry: Entry; root: string } | null): Promise<number> {
+export async function threshold($: EngineInterface, found: { entry: Entry; root: string } | null): Promise<number> {
   const raw = Number(await $.env.get('FANKEEL_COMPACT_AT'))
   if (Number.isFinite(raw) && raw > 0) return raw
   if (found) {

@@ -573,6 +573,33 @@ test('the band\'s context count is coloured by how far it is to the threshold, b
     assert.deepEqual(await count(250000), ['#ff00ff', true]);
 });
 
+const profileFile = (data) => ({ [ROOT + '/.fankeel/profile.json']: JSON.stringify(data) });
+
+// compact-5: the same source as hooks/compact.ts threshold, so the band and the
+// Pane move with the profile's compact.at.
+test('the band and the context block are measured against the profile\'s compact.at', async () => {
+    const hooks = await wired();
+    const { $, log } = fake({ files: Object.assign(entryFile(live), profileFile({ 'compact.at': '350000' })) });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ████████▉░ 312k/350k ⚠');
+    const pane = async () => texts(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
+    assert.ok((await pane()).includes('context'), 'no context block at 312k of 350k');
+    // Four fifths of 350k is 280k.
+    log.tokens = 279999;
+    await log.ticks[0].fn();
+    assert.ok(!(await pane()).includes('context'), 'a context block under four fifths of 350k');
+});
+
+test('compact.at off draws the count with no threshold and never a context block', async () => {
+    const hooks = await wired();
+    const { $, log } = fake({ files: Object.assign(entryFile(live), profileFile({ 'compact.at': 'off' })), tokens: 2000000 });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx 2000k');
+    assert.ok(!texts(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } })).includes('context'));
+});
+
 test('with no FANKEEL_COMPACT_AT the threshold is HARD, and with no token count there is no context block', async () => {
     const { HARD } = await import(pathToFileURL(path.join(__dirname, '..', 'hooks', 'compact.ts')).href);
     const hooks = await wired();

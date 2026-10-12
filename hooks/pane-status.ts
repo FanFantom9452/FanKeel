@@ -278,8 +278,9 @@ const KEEP = 80
 // Integer comparison, so a threshold needs no rounding.
 const near = (context: Context): boolean => context.tokens * 100 >= KEEP * context.at
 
-// Drawn only from KEEP percent of the threshold (hooks/compact.ts HARD or
-// FANKEEL_COMPACT_AT), and then never given up: that a compact is close, or
+// Drawn only from eighty percent of the threshold (hooks/compact.ts threshold:
+// FANKEEL_COMPACT_AT, the profile's compact.at, else HARD), and then never
+// given up: that a compact is close, or
 // under way, and what one keeps. No count, no bar and no mark: the band's `ctx`
 // meter (hooks/pane-band.ts) has those, and a figure is drawn once.
 function contextBlock(context: Context, inner: number): Row[] {

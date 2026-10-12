@@ -1,5 +1,5 @@
 import type { Register, EngineInterface } from 'claude-code'
-import { parentOf, isActive, SESSION_ID, HARD } from './compact.ts'
+import { parentOf, isActive, SESSION_ID, threshold } from './compact.ts'
 import { statusRows, width, ledgerDoneIds, planTasks, RAILS } from './pane-status.ts'
 import type { Entry, Other, Context, PlanInfo, PlanTask, Seg as StatusSeg, Row as StatusRow } from './pane-status.ts'
 import type { Limit } from './pane-bar.ts'
@@ -84,17 +84,17 @@ async function findEntry($: EngineInterface, id: string): Promise<{ entry: Entry
   return null
 }
 
-// The tokens in play against the count hooks/compact.ts compacts at — its
-// `threshold`, written again for the same reason as findEntry — and the rate
-// limits the same call reports: `five_hour` and `seven_day` are the two drawn.
+// The tokens in play against the count hooks/compact.ts compacts at — its own
+// `threshold`, so FANKEEL_COMPACT_AT, the profile's compact.at and HARD are read
+// in one place, and `off` is Infinity — and the rate limits the same call
+// reports: `five_hour` and `seven_day` are the two drawn.
 // No context while the engine has no count; neither when it cannot be asked.
-async function contextOf($: EngineInterface, logged: Logged): Promise<{ context: Context | null; limits: Limit[] }> {
+async function contextOf($: EngineInterface, logged: Logged, found: { entry: Entry; root: string }): Promise<{ context: Context | null; limits: Limit[] }> {
   try {
     const usage = await $.session.usage()
     const limits = Array.isArray(usage.rateLimits) ? (usage.rateLimits as Limit[]) : []
     if (typeof usage.context.tokens !== 'number') return { context: null, limits }
-    const raw = Number(await $.env.get('FANKEEL_COMPACT_AT'))
-    return { context: { tokens: usage.context.tokens, at: Number.isFinite(raw) && raw > 0 ? raw : HARD }, limits }
+    return { context: { tokens: usage.context.tokens, at: await threshold($, found) }, limits }
   } catch (err) {
     logOnce($, logged, 'context', `fankeel pane: no token count, ${String(err)}`)
     return { context: null, limits: [] }
@@ -222,7 +222,7 @@ async function look($: EngineInterface, cache: Cache, logged: Logged): Promise<S
     }
   }
 
-  const { context, limits } = await contextOf($, logged)
+  const { context, limits } = await contextOf($, logged, found)
   const plan = await planOf($, found.root, entry, cache, logged)
   const probe = await probeOf($)
   return { id, entry, others, pending, pendingFile, context, limits, plan, probe }
