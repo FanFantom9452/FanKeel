@@ -150,8 +150,12 @@ whatever the scout's `profile` row says:
   the recommended option, 不設 as the second, and **Other** for a number of
   the user's own. The descriptions say what a yes does: it writes
   `CLAUDE_CODE_AUTO_COMPACT_WINDOW` under `env` in the user's own
-  `settings.json`, every session opened on this machine reads it and not only
-  fankeel's, and Claude Code has to be restarted before it takes effect. A
+  `settings.json`, keeping a copy of the file beside it as
+  `settings.json.fankeel-bak`; that file is the user-level one, so it applies
+  to every session on this machine and not only fankeel's; and Claude Code
+  has to be restarted before it takes effect. Measured 2026-10-12 on a
+  headless session with a settings file's `env`; Claude Desktop is not
+  measured, and the description says so. A
   number runs `node <plugin>/scripts/compact-window.js set <n>`; 不設 runs
   `node <plugin>/scripts/compact-window.js decline`, and no later run asks
   again. No answer writes nothing.

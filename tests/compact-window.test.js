@@ -65,6 +65,42 @@ test('set creates settings.json where there was none', () => {
   assert.deepEqual(JSON.parse(fs.readFileSync(settings(cfg), 'utf8')), { env: { [WINDOW]: '300000' } });
 });
 
+test('set leaves a backup holding the bytes that were there', () => {
+  const cfg = tmp('fankeel-cw-');
+  const original = '{\n\t"model":\t"opus"\n}';
+  fs.writeFileSync(settings(cfg), original);
+  const got = run(cfg, ['set', '450000']);
+  assert.equal(got.code, 0);
+  const bak = settings(cfg) + '.fankeel-bak';
+  assert.equal(fs.readFileSync(bak, 'utf8'), original);
+  assert.ok(got.out.includes(bak), got.out);
+  assert.ok(got.out.endsWith('Restart Claude Code for it to take effect.'), got.out);
+  assert.deepEqual(fs.readdirSync(cfg).filter((f) => f.endsWith('.fankeel-tmp')), []);
+  const bare = tmp('fankeel-cw-');
+  assert.equal(run(bare, ['set', '450000']).code, 0);
+  assert.ok(!fs.existsSync(settings(bare) + '.fankeel-bak'));
+});
+
+test('set refuses a settings.json that links to nothing', (t) => {
+  const cfg = tmp('fankeel-cw-');
+  const gone = path.join(cfg, 'gone.json');
+  try { fs.symlinkSync(gone, settings(cfg)); } catch (e) { t.skip('no symlink privilege'); return; }
+  const got = run(cfg, ['set', '450000']);
+  assert.equal(got.code, 1);
+  assert.ok(got.out.includes(settings(cfg)), got.out);
+  assert.ok(!fs.existsSync(gone));
+});
+
+test('set writes through a live link and leaves it a link', (t) => {
+  const cfg = tmp('fankeel-cw-');
+  const real = path.join(cfg, 'real.json');
+  fs.writeFileSync(real, JSON.stringify({ model: 'opus' }));
+  try { fs.symlinkSync(real, settings(cfg)); } catch (e) { t.skip('no symlink privilege'); return; }
+  assert.equal(run(cfg, ['set', '450000']).code, 0);
+  assert.ok(fs.lstatSync(settings(cfg)).isSymbolicLink());
+  assert.deepEqual(JSON.parse(fs.readFileSync(real, 'utf8')), { model: 'opus', env: { [WINDOW]: '450000' } });
+});
+
 test('a settings.json that opens with a byte-order mark still parses', () => {
   const cfg = tmp('fankeel-cw-');
   fs.writeFileSync(settings(cfg), String.fromCharCode(0xFEFF) + JSON.stringify({ model: 'opus' }));

@@ -50,18 +50,31 @@ function show(configDir, env) {
     return fs.existsSync(declinedFile(configDir)) ? 'declined' : 'unset';
 }
 
+// The read-then-write window against another writer is not closed and the
+// file is re-serialised with two-space JSON; the .fankeel-bak copy covers both.
 function set(configDir, raw) {
     const file = settingsFile(configDir);
     if (!/^[1-9]\d*$/.test(raw)) return { ok: false, reason: 'set <n>: a positive whole number of tokens, such as 450000' };
-    const current = readSettings(file);
     const fix = '; fix it by hand first';
+    const link = fs.lstatSync(file, { throwIfNoEntry: false });
+    if (link && link.isSymbolicLink() && !fs.existsSync(file)) return { ok: false, reason: file + ' is a link to nothing' + fix };
+    const current = readSettings(file);
     if (current.unreadable) return { ok: false, reason: file + ' does not parse' + fix };
     const env = current.values.env;
     if (env !== undefined && (!env || typeof env !== 'object' || Array.isArray(env))) return { ok: false, reason: file + ' has an "env" that is not an object' + fix };
     const next = Object.assign({}, current.values, { env: Object.assign({}, env, { [WINDOW]: raw }) });
     fs.mkdirSync(configDir, { recursive: true });
-    fs.writeFileSync(file, JSON.stringify(next, null, 2) + '\n');
-    return { ok: true, file };
+    const existed = fs.existsSync(file);
+    const target = existed ? fs.realpathSync(file) : file;
+    let backup;
+    if (existed) {
+        backup = target + '.fankeel-bak';
+        fs.copyFileSync(target, backup);
+    }
+    const tmp = target + '.fankeel-tmp';
+    fs.writeFileSync(tmp, JSON.stringify(next, null, 2) + '\n');
+    fs.renameSync(tmp, target);
+    return { ok: true, file, backup };
 }
 
 function decline(configDir) {
@@ -80,7 +93,7 @@ function main(argv, env) {
     if (verb === 'set' && argv.length === 2) {
         const out = set(configDir, n);
         if (!out.ok) return { text: 'compact-window.js: ' + out.reason, code: 1 };
-        return { text: 'set ' + n + '  → ' + out.file + '\nRestart Claude Code: every session opened on this machine reads it from then on.', code: 0 };
+        return { text: ['set ' + n + '  → ' + out.file].concat(out.backup ? ['backup  → ' + out.backup] : [], 'Restart Claude Code for it to take effect.').join('\n'), code: 0 };
     }
     return { text: 'usage: compact-window.js show | set <n> | decline', code: 2 };
 }
