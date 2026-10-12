@@ -110,14 +110,21 @@ test('set keeps the mode settings.json had', (t) => {
   assert.equal(fs.statSync(settings(cfg)).mode & 0o777, 0o600);
 });
 
-test('a stale backup and temp file are replaced, not written through', () => {
+test('a link left at the backup or temp path is replaced, not written through', (t) => {
   const cfg = tmp('fankeel-cw-');
   const original = '{"model":"opus"}';
   fs.writeFileSync(settings(cfg), original);
-  fs.writeFileSync(settings(cfg) + '.fankeel-bak', 'old');
-  fs.writeFileSync(settings(cfg) + '.fankeel-tmp', 'junk');
+  const victims = ['victim-bak.txt', 'victim-tmp.txt'].map((f) => path.join(cfg, f));
+  for (const v of victims) fs.writeFileSync(v, 'victim');
+  try {
+    fs.symlinkSync(victims[0], settings(cfg) + '.fankeel-bak');
+    fs.symlinkSync(victims[1], settings(cfg) + '.fankeel-tmp');
+  } catch (e) { t.skip('no symlink privilege'); return; }
   assert.equal(run(cfg, ['set', '450000']).code, 0);
-  assert.equal(fs.readFileSync(settings(cfg) + '.fankeel-bak', 'utf8'), original);
+  for (const v of victims) assert.equal(fs.readFileSync(v, 'utf8'), 'victim');
+  const bak = settings(cfg) + '.fankeel-bak';
+  assert.ok(!fs.lstatSync(bak).isSymbolicLink());
+  assert.equal(fs.readFileSync(bak, 'utf8'), original);
   assert.ok(!fs.existsSync(settings(cfg) + '.fankeel-tmp'));
   assert.deepEqual(JSON.parse(fs.readFileSync(settings(cfg), 'utf8')), { model: 'opus', env: { [WINDOW]: '450000' } });
 });
