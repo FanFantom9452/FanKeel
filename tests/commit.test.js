@@ -234,6 +234,41 @@ test('a staged rename is committed whole: the old path rides along with the new 
     assert.equal(git(dir, 'diff', '--name-only'), 'b.txt', 'the other dirty file is untouched');
 });
 
+test('stagedGone names a rename\'s old side and a staged deletion, and nothing else', () => {
+    assert.deepEqual([...commit.stagedGone(['R100\ta.txt\ta2.txt', 'D\tb.txt', 'M\tc.txt', 'A\td.txt', ''])], ['a.txt', 'b.txt']);
+});
+
+// commit-4: archive.js lists both sides of its `git mv`. The old side is in
+// neither the working tree nor the index, so `git add` has nothing to match.
+test('a block listing both sides of a staged rename commits one rename', () => {
+    const dir = repo();
+    fs.writeFileSync(path.join(dir, 'a.txt'), 'a1\n');
+    execFileSync('git', ['mv', 'a.txt', 'a2.txt'], { cwd: dir });
+    const before = git(dir, 'rev-parse', 'HEAD');
+    const res = commit.main([requestFile('a.txt\na2.txt\n\nfeat: rename a\n')], dir);
+    assert.ok(!res.code, res.text);
+    assert.equal(res.text, before + '..' + git(dir, 'rev-parse', 'HEAD'));
+    assert.equal(git(dir, 'show', '--name-status', '-M', '--format=', 'HEAD'), 'R100\ta.txt\ta2.txt');
+    assert.equal(git(dir, 'status', '--porcelain'), 'M b.txt');
+});
+
+test('a block listing a path removed with git rm commits the deletion', () => {
+    const dir = repo();
+    execFileSync('git', ['rm', '-qf', 'b.txt'], { cwd: dir });
+    const res = commit.main([requestFile('b.txt\n\nfeat: drop b\n')], dir);
+    assert.ok(!res.code, res.text);
+    assert.equal(git(dir, 'show', '--name-status', '--format=', 'HEAD'), 'D\tb.txt');
+});
+
+test('a worktree block listing both sides of a staged rename lands one rename', () => {
+    const { dir, wt } = worktreeRepo();
+    execFileSync('git', ['mv', 'b.txt', 'b2.txt'], { cwd: wt });
+    const res = commit.main([requestFile('worktree ' + wt + '\nb.txt\nb2.txt\n\nfeat: rename b\n')], dir);
+    assert.ok(!res.code, res.text);
+    assert.equal(git(dir, 'show', '--name-status', '-M', '--format=', 'HEAD'), 'R100\tb.txt\tb2.txt');
+    assert.equal(git(dir, 'status', '--porcelain'), '');
+});
+
 // docs/90-agent/plans/2026-09-28-spawndepth-worktree-design.md §2: a block
 // whose first line is `worktree <path>` was built in a worktree of this
 // repository. A clean repository whose a.txt has ten lines, b.txt one, and a

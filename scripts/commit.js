@@ -67,6 +67,19 @@ function foldRenames(paths, statusLines) {
     return out;
 }
 
+// `git diff --cached -M --name-status` lines again: the paths `git add`
+// cannot be handed. A rename's old side and a staged deletion are in neither
+// the working tree nor the index, so `add` matches nothing and fails the
+// whole block; `commit -o` still takes them, and has to.
+function stagedGone(statusLines) {
+    const gone = new Set();
+    for (const line of statusLines) {
+        const m = /^(?:D|R\d*)\t([^\t]+)/.exec(line);
+        if (m) gone.add(m[1]);
+    }
+    return gone;
+}
+
 // The directory every worktree of one repository shares, or null.
 function commonDir(run, dir) {
     const r = run(dir, ['rev-parse', '--git-common-dir']);
@@ -135,10 +148,13 @@ function landWorktree(top, block, run, oneLine) {
     const here = (args, input, env) => run(wt, args, input, env);
     const branch = here(['symbolic-ref', '--quiet', '--short', 'HEAD']);
     const renamed = here(['diff', '--cached', '-M', '--name-status']);
-    const add = here(['add', '--'].concat(block.paths));
+    const staged = renamed.status === 0 ? renamed.stdout.split(/\r?\n/) : [];
+    const gone = stagedGone(staged);
+    const toAdd = block.paths.filter((p) => !gone.has(p) || fs.existsSync(path.resolve(wt, p)));
+    const add = toAdd.length ? here(['add', '--'].concat(toAdd)) : { status: 0 };
     if (add.status !== 0) return { error: 'git add failed: ' + oneLine(add.stderr) };
     if (here(['diff', '--cached', '--quiet', '--'].concat(block.paths)).status === 0) return { error: 'nothing to commit in ' + block.paths.join(', ') };
-    const withOld = foldRenames(block.paths, renamed.status === 0 ? renamed.stdout.split(/\r?\n/) : []);
+    const withOld = foldRenames(block.paths, staged);
     const made = commitPaths(here, wt, withOld, block.message);
     if (made.status !== 0) return { error: 'git commit failed: ' + oneLine(made.stderr || made.stdout) };
     const sha = here(['rev-parse', 'HEAD']).stdout.trim();
@@ -275,9 +291,13 @@ function main(argv, cwd) {
             return fail('sensitive: ' + sensitive.listed(hits) + ' — words from .fankeel/sensitive.txt, and sensitive.mode is block');
         }
         const renamed = git(['diff', '--cached', '-M', '--name-status']);
-        const add = git(['add', '--'].concat(paths));
+        const staged = renamed.status === 0 ? renamed.stdout.split(/\r?\n/) : [];
+        const gone = stagedGone(staged);
+        // A path recreated on disk after its deletion was staged is still added.
+        const toAdd = paths.filter((p) => !gone.has(p) || fs.existsSync(path.resolve(topDir, p)));
+        const add = toAdd.length ? git(['add', '--'].concat(toAdd)) : { status: 0 };
         if (add.status !== 0) return fail('git add failed: ' + oneLine(add.stderr));
-        const withOld = foldRenames(paths, renamed.status === 0 ? renamed.stdout.split(/\r?\n/) : []);
+        const withOld = foldRenames(paths, staged);
         // Said here rather than left to `git commit`, whose text for this case depends on the rest of the tree.
         if (git(['diff', '--cached', '--quiet', '--'].concat(paths)).status === 0) return fail('nothing to commit in ' + paths.join(', '));
         const made = commitPaths(git, topDir, withOld, message);
@@ -302,4 +322,4 @@ if (require.main === module) {
     if (code) process.exitCode = code;
 }
 
-module.exports = { main, foldRenames, formatMiss, stagedModes };
+module.exports = { main, foldRenames, formatMiss, stagedGone, stagedModes };
