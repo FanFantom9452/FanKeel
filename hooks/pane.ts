@@ -199,12 +199,11 @@ async function look($: EngineInterface, cache: Cache, logged: Logged): Promise<S
   else logged.neighbour = ''
 
   let pending: Pending | null = null
-  let pendingFile: string | null = null
   const dir = taskDir(found.root, entry)
   if (dir && (await $.fs.exists(dir))) {
     const name = pendingName((await $.fs.list(dir)).map((f) => f.name), String(entry.stage))
     if (name) {
-      pendingFile = `${dir}/${name}`
+      const pendingFile = `${dir}/${name}`
       const text = String(await $.fs.read(pendingFile))
       pending = parsePending(text, Date.now())
       if (!pending) {
@@ -215,7 +214,6 @@ async function look($: EngineInterface, cache: Cache, logged: Logged): Promise<S
         } catch {
           logOnce($, logged, 'gate', `fankeel pane: pending file does not parse, ${pendingFile}`)
         }
-        pendingFile = null
       } else logged.gate = ''
     }
   }
