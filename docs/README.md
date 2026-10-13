@@ -234,7 +234,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 監控站掛 Chartroom 白板（10-07）定了什麼：白板在 AI 要給人看時才出現、目標取代 Mermaid；整個併進 fankeel 直接可用；寫入照監控站的 nonce，不開例外；怎麼做另開 design | [decisions/2026-10-07-station-chartroom.md](03-decisions/2026-10-07-station-chartroom.md) — *繁體中文* |
 | TODO 全表盤點（10-03）的 plan：子 session 由環境變數證明在跑、todo-check 讀不到就回報且前綴補斜線、commit.js 兩個子句補測試、balanced 註明無來源、mod 路線擱置 | [plans/2026-10-03-todo-patrol-three.md](90-agent/plans/2026-10-03-todo-patrol-three.md) — *design-intent, 繁體中文* |
 | TODO 全表盤點（10-05）的 plan：壓縮重試最多三次的測試、`/fankeel` 頁面寫不出來時 station 行說出來、兩處 timeout 與行號小錯、brain 選模型改放 Watch | [plans/2026-10-05-todo-patrol-ready-three.md](90-agent/plans/2026-10-05-todo-patrol-ready-three.md) — *design-intent, 繁體中文* |
-| TODO 全表盤點（10-14）的 plan：knip 與 fast mode 兩條上游戳記重蓋、逐塊調整浮層在 land 結案、六條真機條目留在 Ready、pane-band 併回 main | [plans/2026-10-14-todo-patrol-restamp.md](90-agent/plans/2026-10-14-todo-patrol-restamp.md) — *design-intent, 繁體中文* |
+| TODO 全表盤點（10-14）的 plan：knip 與 fast mode 兩條上游戳記重蓋、逐塊調整浮層在 land 結案、六條真機條目留在 Ready、pane-band 併回 main | `docs/99-archive/2026-10-14-todo-patrol-restamp.md` — *built, 繁體中文* |
+| TODO 全表盤點（10-14）做了什麼、沒做什麼：逐塊調整浮層不夠直覺關閉、knip 與 fast mode 兩筆重新蓋章、pane-band 併回 main；六筆真機條目留在 Ready，留下五個缺口 | [reports/patrols/2026-10-14-todo-patrol-restamp.md](90-agent/reports/patrols/2026-10-14-todo-patrol-restamp.md) — *繁體中文* |
 | TODO 全表盤點（10-13 第二輪）的 plan：commit.js 提交搬過家的檔、逐塊調整托盤載入就展開 | `docs/99-archive/2026-10-13-todo-patrol-two.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-13 第二輪）做了什麼、沒做什麼：commit.js 能提交列了舊路徑的搬家、托盤載入就展開，兩筆關閉；verify 退回三件事，留下三個缺口 | [reports/patrols/2026-10-13-todo-patrol-two.md](90-agent/reports/patrols/2026-10-13-todo-patrol-two.md) — *繁體中文* |
 | TODO 全表盤點（10-13）的 plan：面板門檻改讀 `compact.at`、Pane 四處重複、逐塊調整兩條、指南補 init 第 7 步 | `docs/99-archive/2026-10-13-todo-patrol-five.md` — *built, 繁體中文* |

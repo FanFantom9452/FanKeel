@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # TODO 全表盤點（10-14）：兩條上游戳記重蓋、逐塊調整浮層結案、pane-band 收尾 Implementation Plan
