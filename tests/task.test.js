@@ -1030,3 +1030,14 @@ test('start still succeeds and says why when settings.json does not parse', () =
   assert.match(out, /compact window: not synced — \S/);
   assert.equal(fs.readFileSync(path.join(dir, 'cfg', 'settings.json'), 'utf8'), '{ not json');
 });
+
+test('start still succeeds and says why when the settings write throws', () => {
+  const dir = root();
+  const cfg = path.join(dir, 'cfg');
+  fs.mkdirSync(path.join(cfg, 'settings.json.fankeel-tmp', 'in'), { recursive: true });
+  fs.writeFileSync(path.join(cfg, 'settings.json'), '{}');
+  const { out, code } = run(dir, ['start', '--session', A, '--task', 'x']);
+  assert.equal(code, 0, out);
+  assert.match(out, /compact window: not synced — \S/);
+  assert.equal(fs.readFileSync(path.join(cfg, 'settings.json'), 'utf8'), '{}');
+});

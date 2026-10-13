@@ -226,3 +226,18 @@ test('the exported sync returns the state object', () => {
   assert.equal(f.state, 'failed');
   assert.ok(f.reason.includes(settings(cfg)));
 });
+
+test('sync exits 1 with the reason when the write throws, and leaves settings.json', () => {
+  const cfg = tmp('fankeel-cw-');
+  fs.writeFileSync(settings(cfg), '{}');
+  const block = settings(cfg) + '.fankeel-tmp';
+  fs.mkdirSync(path.join(block, 'in'), { recursive: true });
+  const got = run(cfg, ['sync', '450000']);
+  assert.equal(got.code, 1);
+  assert.match(got.out, /^compact-window\.js: \S/);
+  assert.equal(fs.readFileSync(settings(cfg), 'utf8'), '{}');
+  const { sync } = require('../scripts/compact-window.js');
+  const f = sync(cfg, '450000');
+  assert.deepEqual([f.state, f.from, f.to], ['failed', 'unset', '450000']);
+  assert.ok(f.reason.length > 0);
+});
