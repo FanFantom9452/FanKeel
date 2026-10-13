@@ -155,7 +155,6 @@ export function bandRows(input: BandInput): Seg[][] | null {
       // With a window the colour still follows the compact threshold, or the window itself when compact is off.
       const paint = ctxPaint(context.tokens, sized && !Number.isFinite(context.at) ? window : context.at)
       open('ctx ')
-      // compact.at off is an infinite threshold: the count alone, with nothing to measure it against.
       if (sized) {
         // The white line sits at the compact threshold, when that is a point inside the window.
         if (context.at < window) {
@@ -171,6 +170,7 @@ export function bandRows(input: BandInput): Seg[][] | null {
         draw(context.tokens, context.at, paint)
         row.push(inked(kilo(context.tokens), paint, 1), { text: `/${kilo(context.at)}`, color: WHERE })
       } else {
+        // No window, and compact.at off is an infinite threshold: the count alone, with nothing to measure it against.
         row.push(inked(kilo(context.tokens), paint))
       }
       if (paint.mark) row.push(inked(paint.mark, paint, 1))
