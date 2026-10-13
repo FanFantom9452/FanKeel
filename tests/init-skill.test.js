@@ -56,7 +56,7 @@ test('a fat MEMORY.md line is a slimmer cut, not a step-6 finding', () => {
 });
 
 // docs/03-decisions/2026-10-12-compact-at.md.
-test('step 7 asks the four compact.at tiers, applies only in a fankeel task, and writes the user\'s settings.json never', () => {
+test('step 7 asks the four compact.at tiers, applies only in a fankeel task, and says task.js start syncs the window', () => {
   const t = text();
   const step = t.slice(t.indexOf('## 7. Profile'), t.indexOf('## 8. Close'));
   const f = step.replace(/\s+/g, ' ');
@@ -65,7 +65,7 @@ test('step 7 asks the four compact.at tiers, applies only in a fankeel task, and
   for (const v of ['450000', '350000', '600000', 'off']) assert.ok(f.includes(v), v);
   assert.match(f, /scripts\/task\.js profile set compact\.at <value> --default/);
   assert.match(f, /only applies in a session that is running a fankeel task/);
-  assert.match(f, /nothing is written to the user's `settings\.json`/);
+  assert.match(f, /`task\.js start` syncs `env\.CLAUDE_CODE_AUTO_COMPACT_WINDOW` to `compact\.at` each time a task starts/);
   assert.ok(!f.includes('compact-window.js set <n>'));
   assert.ok(!f.includes('compact-window.js decline'));
   assert.match(f, /No answer writes nothing/);
