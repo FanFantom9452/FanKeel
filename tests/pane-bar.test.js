@@ -182,3 +182,21 @@ test('limitOf finds a window by its kind, and one with no number is no window', 
     assert.equal(limitOf([{ kind: 'five_hour' }, null, { kind: 'five_hour', percentUsed: NaN }], 'five_hour'), null);
     assert.equal(DIM, '#585858');
 });
+
+test('markedBar draws one cell of │ at floor(mark/whole*cells), clamped, over fill or track', async () => {
+    const { bar, markedBar } = await load();
+    const drawn = (part, whole, cells, mark) => markedBar(part, whole, cells, mark).map((p) => p.kind[0] + p.text).join(' ');
+    assert.equal(drawn(212000, 1000000, 10, 450000), 'f██ t░░ m│ t░░░░░');
+    assert.equal(drawn(432000, 1000000, 10, 450000), 'f████ m│ t░░░░░');
+    assert.equal(drawn(700000, 1000000, 10, 450000), 'f████ m│ f██ t░░░');
+    assert.equal(drawn(0, 100, 10, 0), 'm│ t░░░░░░░░░');
+    assert.equal(drawn(50, 100, 10, 99), 'f█████ t░░░░ m│');
+    assert.equal(drawn(50, 100, 10, 500), 'f█████ t░░░░ m│');
+    const plain = bar(212000, 450000, 10);
+    assert.deepEqual(plain, { fill: '████▋', track: '░░░░░' });
+});
+
+test('kilo writes a whole million as 1M and anything else in k', async () => {
+    const { kilo } = await load();
+    assert.deepEqual([kilo(1000000), kilo(2000000), kilo(1500000), kilo(999999), kilo(200000)], ['1M', '2M', '1500k', '1000k', '200k']);
+});

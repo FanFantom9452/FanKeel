@@ -92,7 +92,8 @@ async function contextOf($: EngineInterface, logged: Logged, found: { entry: Ent
     const usage = await $.session.usage()
     const limits = Array.isArray(usage.rateLimits) ? (usage.rateLimits as Limit[]) : []
     if (typeof usage.context.tokens !== 'number') return { context: null, limits }
-    return { context: { tokens: usage.context.tokens, at: await threshold($, found) }, limits }
+    const window = usage.context.window
+    return { context: { tokens: usage.context.tokens, at: await threshold($, found), ...(typeof window === 'number' && Number.isFinite(window) && window > 0 ? { window } : {}) }, limits }
   } catch (err) {
     logOnce($, logged, 'context', `fankeel pane: no token count, ${String(err)}`)
     return { context: null, limits: [] }

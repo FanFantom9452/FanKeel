@@ -4,7 +4,7 @@
 // tests/pane-band.test.js runs it under plain node.
 // docs/90-agent/plans/2026-10-12-pane-band-design.md sections 1 and 2.
 
-import { str, list, width, bar, ctxPaint, fivePaint, weekPaint, deviation, limitOf, pct, kilo, signed, minutes, secondsLeft, DIM } from './pane-bar.ts'
+import { str, list, width, bar, markedBar, ctxPaint, fivePaint, weekPaint, deviation, limitOf, pct, kilo, signed, minutes, secondsLeft, DIM } from './pane-bar.ts'
 import type { Context, Limit, Paint } from './pane-bar.ts'
 
 // `gap` is the cells of space before the segment; without one it sits against the last.
@@ -150,10 +150,24 @@ export function bandRows(input: BandInput): Seg[][] | null {
       if (track) row.push({ text: track, color: DIM })
     }
     if (context) {
-      const paint = ctxPaint(context.tokens, context.at)
+      const { window } = context
+      const sized = typeof window === 'number' && Number.isFinite(window) && window > 0
+      // With a window the colour still follows the compact threshold, or the window itself when compact is off.
+      const paint = ctxPaint(context.tokens, sized && !Number.isFinite(context.at) ? window : context.at)
       open('ctx ')
       // compact.at off is an infinite threshold: the count alone, with nothing to measure it against.
-      if (Number.isFinite(context.at)) {
+      if (sized) {
+        // The white line sits at the compact threshold, when that is a point inside the window.
+        if (context.at < window) {
+          for (const p of markedBar(context.tokens, window, shape.cells, context.at)) {
+            if (p.kind === 'fill') row.push(inked(p.text, paint))
+            else row.push(p.kind === 'mark' ? { text: p.text, color: '#ffffff', bold: true } : { text: p.text, color: DIM })
+          }
+        } else {
+          draw(context.tokens, window, paint)
+        }
+        row.push(inked(kilo(context.tokens), paint, 1), { text: `/${kilo(window)}`, color: WHERE })
+      } else if (Number.isFinite(context.at)) {
         draw(context.tokens, context.at, paint)
         row.push(inked(kilo(context.tokens), paint, 1), { text: `/${kilo(context.at)}`, color: WHERE })
       } else {

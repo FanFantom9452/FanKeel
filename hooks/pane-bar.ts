@@ -3,8 +3,8 @@
 // rule of each meter. No engine call and no import, so tests/pane-bar.test.js
 // runs it under plain node. docs/90-agent/plans/2026-10-12-pane-band-design.md, section 2.
 
-// The context tokens in play and the count hooks/compact.ts compacts at.
-export type Context = { tokens: number; at: number }
+// The context tokens in play, the count hooks/compact.ts compacts at and the model's context window in tokens, when the engine reports one.
+export type Context = { tokens: number; at: number; window?: number }
 // One window of the engine's session.usage().rateLimits.
 export type Limit = { kind: string; percentUsed: number; resetsAt?: string }
 // `mark` is the warning sign drawn after the number, or ''.
@@ -100,6 +100,23 @@ export function bar(part: number, whole: number, cells: number): { fill: string;
   return { fill: '█'.repeat(full) + last, track: '░'.repeat(cells - full - (last ? 1 : 0)) }
 }
 
+// `bar` with cell `floor(mark / whole * cells)`, clamped to the bar, drawn as `│` over fill or track: the cells in runs of one kind.
+export function markedBar(part: number, whole: number, cells: number, mark: number): { text: string; kind: 'fill' | 'track' | 'mark' }[] {
+  const { fill, track } = bar(part, whole, cells)
+  const kinds = [...[...fill].map(() => 'fill' as const), ...[...track].map(() => 'track' as const)]
+  const at = Math.max(0, Math.min(cells - 1, Math.floor((mark * cells) / whole)))
+  const chars = [...fill, ...track]
+  chars[at] = '│'
+  kinds[at] = 'mark'
+  const runs: { text: string; kind: 'fill' | 'track' | 'mark' }[] = []
+  chars.forEach((ch, i) => {
+    const last = runs[runs.length - 1]
+    if (last && last.kind === kinds[i]) last.text += ch
+    else runs.push({ text: ch, kind: kinds[i] })
+  })
+  return runs
+}
+
 // The instant the window resets, epoch milliseconds, or null.
 export function resetMs(limit: Limit): number | null {
   const at = typeof limit.resetsAt === 'string' ? Date.parse(limit.resetsAt) : NaN
@@ -136,7 +153,7 @@ export const secondsLeft = (until: number, now: number): number => Math.max(0, M
 
 // ` 66%`: three cells of number, so a column of them lines up.
 export const pct = (n: number): string => `${String(Math.round(n)).padStart(3)}%`
-export const kilo = (n: number): string => `${Math.round(n / 1000)}k`
+export const kilo = (n: number): string => (n >= 1e6 && n % 1e6 === 0 ? `${n / 1e6}M` : `${Math.round(n / 1000)}k`)
 export const signed = (dev: number): string => `${dev > 0 ? '+' : ''}${dev}%`
 
 // The window of that kind (`five_hour`, `seven_day`), or null; one with no number is no window.

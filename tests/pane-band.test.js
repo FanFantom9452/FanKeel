@@ -275,3 +275,35 @@ test('with no compact threshold the band draws the count alone', async () => {
     assert.deepEqual(row[2], { text: '212k', color: '#00ff00' });
     assert.equal(band(m, { context: open, limits: [five] }).map(line)[1], '▌ctx 212k  │  5h ██████▌░░░  66%');
 });
+
+// The ctx bar is measured against the model's context window; the white line is the compact threshold.
+test('with a window the ctx bar is tokens over window and a white line marks the compact threshold', async () => {
+    const m = await load();
+    const sized = (tokens, over) => band(m, Object.assign({ context: { tokens, at: 450000, window: 1000000 } }, over));
+    const row = sized(212000)[1];
+    assert.equal(line(row), '▌ctx ██░░│░░░░░ 212k/1M  │  5h ██████▌░░░  66%  │  7d █████▊░░░░  58%  -6%');
+    assert.deepEqual(row.slice(1, 8), [
+        { text: 'ctx ', color: '#585858' },
+        { text: '██', color: '#ffd700' },
+        { text: '░░', color: '#585858' },
+        { text: '│', color: '#ffffff', bold: true },
+        { text: '░░░░░', color: '#585858' },
+        { text: '212k', color: '#ffd700', gap: 1 },
+        { text: '/1M', color: '#8a8a8a' },
+    ]);
+    assert.match(line(sized(432000)[1]), /^▌ctx ████│░░░░░ 432k\/1M ⚠ /);
+    // the line is placed again for the cells a narrow band leaves
+    assert.match(line(sized(212000, { cols: 20 })[1]), /^▌ctx █▍░│░░░ 212k\/1M/);
+});
+
+test('the white line is absent when the compact threshold is off or not under the window; no window is the old bar', async () => {
+    const m = await load();
+    const row = (ctx) => band(m, { context: ctx, limits: [] })[1];
+    const off = row({ tokens: 212000, at: Infinity, window: 1000000 });
+    assert.equal(line(off), '▌ctx ██░░░░░░░░ 212k/1M');
+    assert.ok(!off.some((seg) => seg.text.includes('│')));
+    assert.equal(off[2].color, '#87ff87', 'coloured by tokens over the window');
+    for (const at of [1000000, 1200000]) assert.ok(!line(row({ tokens: 212000, at, window: 1000000 })).includes('│'), 'at ' + at);
+    assert.equal(line(row({ tokens: 212000, at: 450000 })), '▌ctx ████▋░░░░░ 212k/450k');
+    assert.equal(line(row({ tokens: 212000, at: 450000, window: 0 })), '▌ctx ████▋░░░░░ 212k/450k');
+});

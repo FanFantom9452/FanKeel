@@ -138,7 +138,7 @@ test('the band above the prompt draws the stage, the dots and the minutes, then 
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
     const tree = await hooks.band($, BAND, passed);
-    assert.deepEqual(bandLines(tree), ['▌FANKEEL DESIGN  ●●○  等你 0 分', '▌ctx ██████▉░░░ 312k/450k']);
+    assert.deepEqual(bandLines(tree), ['▌FANKEEL DESIGN  ●●○  等你 0 分', '▌ctx ███░│░░░░░ 312k/1M']);
     assert.deepEqual(leaves(tree).filter((n) => n.props.color === '#5f5fd7').map((n) => n.children.join('')), ['▌', 'FANKEEL DESIGN', '●●', '▌']);
     assert.doesNotMatch(bandLines(tree).join('\n'), /demo task|write the plan|⚿|檔| of /);
     assert.equal(log.opened.length, 1, 'drawing the band opened a pane beyond the one the task opened');
@@ -294,7 +294,7 @@ test('with a gate waiting the band\'s first row carries the badge and the second
     await log.ticks[0].fn();
     const tree = await hooks.band($, BAND, passed);
     assert.match(bandLines(tree)[0], /^▌FANKEEL DESIGN {2}●●○ {3}gate 在等 {3}還 \d+ 秒 {2}等你 0 分$/);
-    assert.equal(bandLines(tree)[1], '▌ctx ██████▉░░░ 312k/450k');
+    assert.equal(bandLines(tree)[1], '▌ctx ███░│░░░░░ 312k/1M');
     assert.doesNotMatch(bandLines(tree).join('\n'), /Go on\?/);
     const badge = leaves(tree).find((n) => n.props.backgroundColor);
     assert.deepEqual([badge.children.join(''), badge.props.backgroundColor, badge.props.color, badge.props.bold], [' gate 在等 ', '#d7af5f', '#000000', true]);
@@ -357,7 +357,7 @@ test('the two drawings agree: the band\'s flag counts the sessions the Pane name
     assert.doesNotMatch(band[0], /⚑/);
     assert.doesNotMatch(pane.join('\n'), /shares nothing/);
     // The tokens and the threshold are written once, on the band; the Pane's context block is there and holds no figure.
-    assert.match(band[1], /^▌ctx \S+ 400k\/450k ⚠/);
+    assert.match(band[1], /^▌ctx \S+ 400k\/1M ⚠/);
     assert.ok(pane.includes('▌context  快要自動 compact 了'), pane.join(' | '));
     assert.doesNotMatch(pane.join('\n'), /\d+k|█|░|%/);
 });
@@ -374,18 +374,18 @@ test('the context block is measured against FANKEEL_COMPACT_AT, and a new count 
         return at < 0 ? null : [all[at + 1].children.join(''), all[at + 1].props.color, all[at + 1].props.bold];
     };
     assert.deepEqual(await said(), ['  已到門檻，compact 中', '#d7af5f', true]);
-    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ██████████ 312k/300k ⚠');
+    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ███│░░░░░░ 312k/1M ⚠');
     const after = log.invalidated;
     log.tokens = 250000;
     await log.ticks[0].fn();
     assert.equal(log.invalidated, after + 1);
     assert.deepEqual(await said(), ['  快要自動 compact 了', '#8a8a8a', undefined]);
-    assert.match(bandLines(await hooks.band($, BAND, passed))[1], / 250k\/300k ⚠$/);
+    assert.match(bandLines(await hooks.band($, BAND, passed))[1], / 250k\/1M ⚠$/);
     // Four fifths of 300k is 240k.
     log.tokens = 239999;
     await log.ticks[0].fn();
     assert.equal(await said(), null);
-    assert.match(bandLines(await hooks.band($, BAND, passed))[1], / 240k\/300k$/);
+    assert.match(bandLines(await hooks.band($, BAND, passed))[1], / 240k\/1M$/);
 });
 
 test('the band\'s context count is coloured by how far it is to the threshold, bold from sixty percent', async () => {
@@ -422,7 +422,7 @@ test('the band and the context block are measured against the profile\'s compact
     const { $, log } = fake({ files: Object.assign(entryFile(live), profileFile({ 'compact.at': '350000' })) });
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
-    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ████████▉░ 312k/350k ⚠');
+    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ███│░░░░░░ 312k/1M ⚠');
     const pane = async () => texts(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
     assert.ok((await pane()).includes('context'), 'no context block at 312k of 350k');
     // Four fifths of 350k is 280k.
@@ -436,7 +436,7 @@ test('compact.at off draws the count with no threshold and never a context block
     const { $, log } = fake({ files: Object.assign(entryFile(live), profileFile({ 'compact.at': 'off' })), tokens: 2000000 });
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
-    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx 2000k');
+    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ██████████ 2M/1M ⚠');
     assert.ok(!texts(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } })).includes('context'));
 });
 
@@ -446,13 +446,15 @@ test('with no FANKEEL_COMPACT_AT the threshold is HARD, and with no token count 
     const { $, log } = fake({ files: entryFile(live), env: { FANKEEL_COMPACT_AT: 'soon' } });
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
-    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ██████▉░░░ 312k/' + Math.round(HARD / 1000) + 'k');
+    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ███░│░░░░░ 312k/1M');
+    // The white line is where HARD falls in the window.
+    assert.equal(bandLines(await hooks.band($, BAND, passed))[1].indexOf('│') - '▌ctx '.length, Math.floor((HARD * 10) / 1000000));
     // Number('Infinity') is not finite: the same rule as hooks/compact.ts threshold.
     const inf = fake({ files: entryFile(live), env: { FANKEEL_COMPACT_AT: 'Infinity' } });
     const infHooks = await wired();
     await infHooks['session.start'](inf.$, {}, async () => ({}));
     await inf.log.ticks[0].fn();
-    assert.equal(bandLines(await infHooks.band(inf.$, BAND, passed))[1], '▌ctx ██████▉░░░ 312k/450k');
+    assert.equal(bandLines(await infHooks.band(inf.$, BAND, passed))[1], '▌ctx ███░│░░░░░ 312k/1M');
     // Four fifths of HARD is 360k: the Pane's block is there from that count, and goes with the count.
     const pane = async () => texts(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
     assert.ok(!(await pane()).includes('context'), 'a context block under four fifths of HARD');
@@ -628,7 +630,7 @@ test('the engine\'s rate limits are bars on the band and no reset time in the Pa
     const pane = async () => paneLines(await hooks['ui.render']($, { viewport: { columns: 44, rows: 60 } }));
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
-    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ██████▉░░░ 312k/450k  │  5h ██████▌░░░  66%  │  7d █████▊░░░░  58%  -6%');
+    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ███░│░░░░░ 312k/1M  │  5h ██████▌░░░  66%  │  7d █████▊░░░░  58%  -6%');
     assert.doesNotMatch((await pane()).join('\n'), /█|░|%|剩|↻|重置|用量額度/);
     const after = log.invalidated;
     limits[0] = Object.assign({}, limits[0], { percentUsed: 67 });
@@ -637,7 +639,7 @@ test('the engine\'s rate limits are bars on the band and no reset time in the Pa
     // A window with no reset is still a bar on the band.
     limits[1] = { kind: 'seven_day', percentUsed: 58 };
     await log.ticks[0].fn();
-    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ██████▉░░░ 312k/450k  │  5h ██████▋░░░  67%  │  7d █████▊░░░░  58%');
+    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ███░│░░░░░ 312k/1M  │  5h ██████▋░░░  67%  │  7d █████▊░░░░  58%');
     // An engine that reports no limits at all: the band is ctx alone.
     $.session.usage = async () => ({ startedAt: 0, context: { tokens: log.tokens } });
     await log.ticks[0].fn();
