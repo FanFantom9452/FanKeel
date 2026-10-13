@@ -7,7 +7,7 @@ import { WHERE, FLAG, GUARD, TODO, claimsOf } from './pane-band.ts'
 import { str, list, width, cut, WIDE, DIM, minutes, nearCompact } from './pane-bar.ts'
 import type { Context } from './pane-bar.ts'
 
-// Kept as exports of this file: hooks/pane-gate.ts and hooks/pane.ts import them from here.
+// Kept as exports of this file: hooks/pane.ts imports them from here.
 export { str, list, width, cut, WIDE }
 export type { Context }
 
@@ -36,8 +36,8 @@ export type StatusInput = {
 }
 
 // Each block's rail, a fixed colour whatever the stage, on its first drawn row;
-// an alarm (ALARMS, and the gate) carries it on every row. The task block has
-// no colour: its rail is the terminal's own. `gate` is drawn by hooks/pane.ts.
+// an alarm (ALARMS) carries it on every row. The task block has
+// no colour: its rail is the terminal's own.
 export const RAILS: Record<string, string> = {
   gate: GUARD,
   clash: FLAG,
@@ -301,11 +301,10 @@ function fit(r: Row, cols: number): Row {
 }
 
 // Given up in this order when the rows do not fit: `tasks` keeps its title row.
-// The task, the gate (hooks/pane-gate.ts), the clash, the context block — drawn
+// The task, the clash, the context block — drawn
 // only once a compact is close — and the foot never go.
 const DROP = ['notes', 'tasks']
 // The blocks that are alarms, not sections: every row of one keeps its rail.
-// The gate is the other alarm; hooks/pane.ts `railed` draws its rows.
 const ALARMS = ['clash']
 
 export function statusRows(input: StatusInput): Row[] {

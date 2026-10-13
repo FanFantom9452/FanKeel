@@ -188,117 +188,6 @@ test('a tick redraws only when the registry file changed', async () => {
     assert.equal(log.invalidated, after + 1);
 });
 
-test('a pending gate opens the pane, draws buttons, and a press writes the answer file', async () => {
-    const hooks = await wired();
-    const files = Object.assign(entryFile(live), { [DIR + '/design-pending.json']: JSON.stringify(gate) });
-    const { $, log, store } = fake({ files });
-    await hooks['session.start']($, {}, async () => ({}));
-    await log.ticks[0].fn();
-    assert.deepEqual(log.opened.map((p) => p.id), ['fankeel']);
-    const tree = await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } });
-    const bs = buttons(tree);
-    assert.deepEqual(bs.map((b) => b.props.hotkey), ['1', '2', '3', 't']);
-    assert.ok(bs.every((b) => b.props.plain === true));
-    await bs[1].props.onPress({});
-    assert.deepEqual(JSON.parse(store[DIR + '/design-answer.md']), { answers: { 'Go on?': 'Stay' } });
-});
-
-test('a press writes nothing once the station answered, or the gate is gone', async () => {
-    const hooks = await wired();
-    const files = Object.assign(entryFile(live), { [DIR + '/design-pending.json']: JSON.stringify(gate) });
-    const { $, log, store, mtimes } = fake({ files });
-    await hooks['session.start']($, {}, async () => ({}));
-    await log.ticks[0].fn();
-    const bs = buttons(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
-    store[DIR + '/design-answer.md'] = 'station got there first';
-    mtimes[DIR + '/design-answer.md'] = 2000;
-    await bs[0].props.onPress({});
-    assert.equal(store[DIR + '/design-answer.md'], 'station got there first');
-    delete store[DIR + '/design-answer.md'];
-    delete store[DIR + '/design-pending.json'];
-    await bs[0].props.onPress({});
-    assert.equal(store[DIR + '/design-answer.md'], undefined);
-});
-
-test('an answer file older than the gate is an earlier gate\'s: a press overwrites it, the terminal button too', async () => {
-    const hooks = await wired();
-    const files = Object.assign(entryFile(live), { [DIR + '/design-pending.json']: JSON.stringify(gate) });
-    const { $, log, store, mtimes } = fake({ files });
-    await hooks['session.start']($, {}, async () => ({}));
-    await log.ticks[0].fn();
-    const bs = buttons(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
-    store[DIR + '/design-answer.md'] = 'an earlier gate';
-    mtimes[DIR + '/design-answer.md'] = 500;
-    await bs[1].props.onPress({});
-    assert.deepEqual(JSON.parse(store[DIR + '/design-answer.md']), { answers: { 'Go on?': 'Stay' } });
-    store[DIR + '/design-answer.md'] = 'an earlier gate';
-    await bs[3].props.onPress({});
-    assert.deepEqual(JSON.parse(store[DIR + '/design-answer.md']), { handoff: 'terminal' });
-});
-
-test('a gate with no `at` leaves any answer file alone', async () => {
-    const hooks = await wired();
-    const noAt = Object.assign({}, gate);
-    delete noAt.at;
-    const files = Object.assign(entryFile(live), { [DIR + '/design-pending.json']: JSON.stringify(noAt) });
-    const { $, log, store, mtimes } = fake({ files });
-    await hooks['session.start']($, {}, async () => ({}));
-    await log.ticks[0].fn();
-    const bs = buttons(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
-    assert.equal(bs.length, 4);
-    store[DIR + '/design-answer.md'] = 'unknown age';
-    mtimes[DIR + '/design-answer.md'] = 0;
-    await bs[0].props.onPress({});
-    assert.equal(store[DIR + '/design-answer.md'], 'unknown age');
-});
-
-test('the terminal button writes the handoff', async () => {
-    const hooks = await wired();
-    const files = Object.assign(entryFile(live), { [DIR + '/design-pending.json']: JSON.stringify(gate) });
-    const { $, log, store } = fake({ files });
-    await hooks['session.start']($, {}, async () => ({}));
-    await log.ticks[0].fn();
-    const bs = buttons(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
-    await bs[3].props.onPress({});
-    assert.deepEqual(JSON.parse(store[DIR + '/design-answer.md']), { handoff: 'terminal' });
-});
-
-test('a pane the mod opened for a gate closes with it; one the user opened stays', async () => {
-    const hooks = await wired();
-    const files = Object.assign(entryFile(live), { [DIR + '/design-pending.json']: JSON.stringify(gate) });
-    // The task's own pane is the user's to close; the gate that comes after opens it again.
-    const mine = fake({ files: entryFile(live) });
-    await hooks['session.start'](mine.$, {}, async () => ({}));
-    await mine.log.ticks[0].fn();
-    await hooks['command.run'](mine.$, { command: 'fankeel-panel', args: '' });
-    mine.store[DIR + '/design-pending.json'] = JSON.stringify(gate);
-    await mine.log.ticks[0].fn();
-    assert.equal(mine.log.opened.length, 2, 'the gate got no pane after the user closed the task\'s');
-    delete mine.store[DIR + '/design-pending.json'];
-    await mine.log.ticks[0].fn();
-    assert.equal(mine.log.closed.length, 2, 'the pane the gate opened stayed up after it');
-
-    const hooks2 = await wired();
-    const theirs = fake({ files });
-    await hooks2['session.start'](theirs.$, {}, async () => ({}));
-    await hooks2['command.run'](theirs.$, { command: 'fankeel-panel', args: '' });
-    await theirs.log.ticks[0].fn();
-    delete theirs.store[DIR + '/design-pending.json'];
-    await theirs.log.ticks[0].fn();
-    assert.deepEqual(theirs.log.closed, []);
-});
-
-test('a gate with no room for the pane is one toast, not one a tick', async () => {
-    const hooks = await wired();
-    const files = Object.assign(entryFile(live), { [DIR + '/design-pending.json']: JSON.stringify(gate) });
-    const { $, log } = fake({ files, placed: false });
-    await hooks['session.start']($, {}, async () => ({}));
-    await log.ticks[0].fn();
-    await log.ticks[0].fn();
-    assert.equal(log.toasts.length, 1);
-    assert.match(log.toasts[0], /\/fankeel-panel/);
-});
-
 test('neighbours are the other active entries in the same sessions directory, drawn as the files they share and who shares them', async () => {
     const hooks = await wired();
     const other = { task: 'someone else', stage: 'build', active: true, updated: new Date().toISOString(), claims: ['a.js'] };
@@ -317,20 +206,6 @@ test('neighbours are the other active entries in the same sessions directory, dr
     assert.doesNotMatch(seen.join('\n'), /stood down|gone\.js|共用/);
 });
 
-test('narrow terminal: a gate gives one toast, and /fankeel-panel opens again instead of closing', async () => {
-    const hooks = await wired();
-    const files = Object.assign(entryFile(live), { [DIR + '/design-pending.json']: JSON.stringify(gate) });
-    const { $, log } = fake({ files, placed: false });
-    await hooks['session.start']($, {}, async () => ({}));
-    await log.ticks[0].fn();
-    assert.equal(log.toasts.length, 1);
-    const before = log.opened.length;
-    const reply = await hooks['command.run']($, { command: 'fankeel-panel', args: '' });
-    assert.deepEqual(log.closed, []);
-    assert.equal(log.opened.length, before + 1);
-    assert.doesNotMatch(reply.text, /已關閉/);
-});
-
 test('narrow terminal: the unplaced pane opened for the task is not the gate\'s to close', async () => {
     const hooks = await wired();
     const files = Object.assign(entryFile(live), { [DIR + '/design-pending.json']: JSON.stringify(gate) });
@@ -343,36 +218,6 @@ test('narrow terminal: the unplaced pane opened for the task is not the gate\'s 
     store[SESSION] = JSON.stringify(Object.assign({}, live, { active: false }));
     await log.ticks[0].fn();
     assert.deepEqual(log.closed.map((p) => p.id), ['fankeel'], 'the end of the task left its pane');
-});
-
-test('a tick whose ui.open rejected is tried again, the gate still new', async () => {
-    const hooks = await wired();
-    const { $, log, store } = fake({ files: entryFile(live) });
-    await hooks['session.start']($, {}, async () => ({}));
-    await log.ticks[0].fn();
-    await hooks['command.run']($, { command: 'fankeel-panel', args: '' });
-    store[DIR + '/design-pending.json'] = JSON.stringify(gate);
-    const open = $.ui.open;
-    let calls = 0;
-    $.ui.open = async (p) => { calls += 1; if (calls === 1) throw new Error('busy'); return open(p); };
-    await log.ticks[0].fn();
-    assert.equal(log.opened.length, 1);
-    await log.ticks[0].fn();
-    assert.equal(log.opened.length, 2);
-});
-
-test('a press whose write fails says so in a toast', async () => {
-    const hooks = await wired();
-    const files = Object.assign(entryFile(live), { [DIR + '/design-pending.json']: JSON.stringify(gate) });
-    const { $, log, store } = fake({ files });
-    await hooks['session.start']($, {}, async () => ({}));
-    await log.ticks[0].fn();
-    const bs = buttons(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
-    $.fs.write = async () => { throw new Error('disk full'); };
-    await bs[0].props.onPress({});
-    assert.equal(store[DIR + '/design-answer.md'], undefined);
-    assert.equal(log.toasts.length, 1);
-    assert.match(log.toasts[0], /答案沒寫成/);
 });
 
 test('a pane the user closed and reopened with the command is not closed when the gate ends', async () => {
@@ -421,44 +266,6 @@ test('neighbours are read with the pane closed, for the band, and a file that ha
     assert.doesNotMatch(bandLines(await hooks.band($, BAND, passed)).join('\n'), /⚑/);
 });
 
-test('a short pane with a four-option gate keeps the task, every description, every button and the foot', async () => {
-    const hooks = await wired();
-    const options = ['a', 'b', 'c', 'd'].map((label) => ({ label, description: ('about ' + label + ' at some length, ').repeat(4) + 'end of ' + label }));
-    const four = { questions: [{ question: 'Which?', header: 'design', options }], at: 1000, until: Date.now() + 600000 };
-    const files = Object.assign(entryFile(live), { [DIR + '/design-pending.json']: JSON.stringify(four) });
-    const { $, log } = fake({ files });
-    await hooks['session.start']($, {}, async () => ({}));
-    await log.ticks[0].fn();
-    // One reading of the clock for the whole drawing: the gate's seconds and the status block's minutes are of the same moment.
-    const real = Date.now;
-    let reads = 0;
-    Date.now = () => { reads += 1; return real(); };
-    let tree;
-    try {
-        tree = await hooks['ui.render']($, { viewport: { columns: 44, rows: 18 } });
-    } finally {
-        Date.now = real;
-    }
-    assert.equal(reads, 1, 'the Pane read the clock ' + reads + ' times in one drawing');
-    const seen = paneLines(tree);
-    const squash = (s) => s.replace(/\s+/g, '');
-    const words = squash(texts(tree).filter((t) => t !== '▌').join(''));
-    for (const o of options) assert.ok(words.includes(squash(o.description)), 'the description of ' + o.label + ' was dropped');
-    assert.ok(seen.length > 14, 'the fixture fits the pane: ' + seen.length);
-    assert.equal(buttons(tree).length, 5);
-    // The task block and its route, a blank row, the gate, a blank row, the foot.
-    assert.deepEqual(seen.slice(0, 3), ['▌demo task', ' survey › design › build', ' ']);
-    assert.match(seen[3], /^▌ gate · design {3}還 \d+ 秒$/);
-    assert.deepEqual(seen.slice(-2), [' ', '▌abcdef12 · /fankeel-panel 關閉']);
-    const badge = leaves(tree).find((n) => n.props.backgroundColor);
-    assert.deepEqual([badge.children.join(''), badge.props.backgroundColor, badge.props.color, badge.props.bold], [' gate · design ', '#d7af5f', '#000000', true]);
-    const left = leaves(tree).find((n) => /^ {2}還 \d+ 秒$/.test(n.children.join('')));
-    assert.deepEqual([left.props.color, left.props.bold, left.props.backgroundColor], ['#d7af5f', true, undefined]);
-    // Every gate row sits behind the gate's own rail, the buttons too.
-    const gateRows = tree.children.slice(3, -2);
-    for (const row of gateRows) assert.deepEqual([row.children[0].children.join(''), row.children[0].props.color], ['▌', '#d7af5f'], texts(row).join(''));
-});
-
 // The command is not under `busy`, so it can run while a tick is reading files.
 function midTick($, run) {
     const id = $.session.id;
@@ -479,18 +286,6 @@ test('a pane the user opens while a tick reads is not opened again, nor closed w
     assert.deepEqual(log.closed, [], 'the end of the gate closed the pane the user opened');
 });
 
-test('a pane the user closes while a tick reads is opened for the gate that tick first sees', async () => {
-    const hooks = await wired();
-    const { $, log, store } = fake({ files: entryFile(live) });
-    await hooks['session.start']($, {}, async () => ({}));
-    await hooks['command.run']($, { command: 'fankeel-panel', args: '' });
-    store[DIR + '/design-pending.json'] = JSON.stringify(gate);
-    midTick($, () => hooks['command.run']($, { command: 'fankeel-panel', args: '' }));
-    await log.ticks[0].fn();
-    assert.equal(log.closed.length, 1);
-    assert.equal(log.opened.length, 2, 'the gate got no pane after the user closed it mid-tick');
-});
-
 test('with a gate waiting the band\'s first row carries the badge and the seconds left, and never the question', async () => {
     const hooks = await wired();
     const files = Object.assign(entryFile(live), { [DIR + '/design-pending.json']: JSON.stringify(gate) });
@@ -503,6 +298,23 @@ test('with a gate waiting the band\'s first row carries the badge and the second
     assert.doesNotMatch(bandLines(tree).join('\n'), /Go on\?/);
     const badge = leaves(tree).find((n) => n.props.backgroundColor);
     assert.deepEqual([badge.children.join(''), badge.props.backgroundColor, badge.props.color, badge.props.bold], [' gate 在等 ', '#d7af5f', '#000000', true]);
+});
+
+test('a waiting gate is not the Pane\'s: no gate row or button, no open, no toast, and the band keeps its badge', async () => {
+    const hooks = await wired();
+    const { $, log, store } = fake({ files: entryFile(live), placed: false });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const opened = log.opened.length;
+    store[DIR + '/design-pending.json'] = JSON.stringify(gate);
+    await log.ticks[0].fn();
+    await log.ticks[0].fn();
+    assert.equal(log.opened.length, opened, 'the gate opened the Pane');
+    assert.deepEqual(log.toasts, []);
+    const tree = await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } });
+    assert.equal(buttons(tree).length, 0);
+    assert.doesNotMatch(paneLines(tree).join('\n'), /gate|Go on|Stay/);
+    assert.match(bandLines(await hooks.band($, BAND, passed))[0], /gate 在等 {3}還 \d+ 秒/);
 });
 
 test('the two drawings agree: the band\'s flag counts the sessions the Pane names, and the context count is on the band alone', async () => {
@@ -912,17 +724,6 @@ test('the task ending closes the pane the mod opened, and leaves one the user op
     theirs.store[SESSION] = ended;
     await theirs.log.ticks[0].fn();
     assert.equal(theirs.log.closed.length, 1, 'the end of the task closed a pane the user opened');
-
-    const hooks3 = await wired();
-    const gated = fake({ files: entryFile(live) });
-    await hooks3['session.start'](gated.$, {}, async () => ({}));
-    await gated.log.ticks[0].fn();
-    await command(hooks3, gated.$);
-    gated.store[DIR + '/design-pending.json'] = JSON.stringify(gate);
-    await gated.log.ticks[0].fn();
-    gated.store[SESSION] = ended;
-    await gated.log.ticks[0].fn();
-    assert.equal(gated.log.closed.length, 2, 'the pane a gate opened was left up, or closed twice, when the task ended');
 });
 
 test('a registry file that cannot be read for a tick neither closes nor reopens the pane', async () => {
@@ -1021,28 +822,6 @@ test('a readable tick starts the count of unreadable ticks again', async () => {
     await log.ticks[0].fn();
     assert.match(bandLines(await hooks.band($, BAND, passed))[0], /FANKEEL DESIGN/, 'the twentieth unreadable tick overall read as no task');
     assert.deepEqual(log.closed, []);
-});
-
-test('a close that rejects when the gate goes is tried again on the next tick, once', async () => {
-    const hooks = await wired();
-    const { $, log, store } = fake({ files: entryFile(live) });
-    const close = $.ui.close;
-    let calls = 0;
-    $.ui.close = async (p) => { calls += 1; if (calls === 2) throw new Error('busy'); return close(p); };
-    await hooks['session.start']($, {}, async () => ({}));
-    await log.ticks[0].fn();
-    await command(hooks, $);
-    assert.equal(log.closed.length, 1);
-    store[DIR + '/design-pending.json'] = JSON.stringify(gate);
-    await log.ticks[0].fn();
-    assert.equal(log.opened.length, 2, 'the gate got no pane after the user closed the task\'s');
-    delete store[DIR + '/design-pending.json'];
-    await log.ticks[0].fn();
-    assert.equal(log.closed.length, 1, 'the rejected close was recorded');
-    await log.ticks[0].fn();
-    assert.equal(log.closed.length, 2, 'the pane the gate opened stayed up after a close that rejected');
-    await log.ticks[0].fn();
-    assert.equal(log.closed.length, 2, 'closed again on a later tick');
 });
 
 test('a registry file that fails, parses, and fails again is logged each time it starts failing', async () => {
@@ -1148,16 +927,3 @@ test('a live.json that exists and does not parse is logged once across ticks, an
     assert.match(said()[0], /^fankeel pane: live list does not parse, /);
 });
 
-test('a waiting gate sits between the task block and the clash block, ahead of the context', async () => {
-    const hooks = await wired();
-    const peer = JSON.stringify({ task: 'shares a', stage: 'build', active: true, updated: new Date().toISOString(), claims: ['a.js'] });
-    const files = Object.assign(entryFile(live), { [DIR + '/design-pending.json']: JSON.stringify(gate), [ROOT + '/.fankeel/sessions/11111111-0000-4000-8000-000000000002.json']: peer });
-    const { $, log } = fake({ files, tokens: 400000 });
-    await hooks['session.start']($, {}, async () => ({}));
-    await log.ticks[0].fn();
-    const rows = paneLines(await hooks['ui.render']($, { viewport: { columns: 44, rows: 60 } }));
-    const at = (re) => rows.findIndex((t) => re.test(t));
-    const order = [/^▌demo task/, /^▌ gate · design/, /^▌⚑ a\.js/, /^▌context/].map(at);
-    assert.ok(order.every((i) => i >= 0), order.join());
-    assert.deepEqual(order, [...order].sort((x, y) => x - y), 'the blocks are out of order: ' + order.join());
-});

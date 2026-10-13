@@ -1,17 +1,16 @@
 import type { Register, EngineInterface } from 'claude-code'
 import { parentOf, isActive, SESSION_ID, threshold } from './compact.ts'
-import { statusRows, width, ledgerDoneIds, planTasks, RAILS } from './pane-status.ts'
+import { statusRows, ledgerDoneIds, planTasks } from './pane-status.ts'
 import type { Entry, Other, Context, PlanInfo, PlanTask, Seg as StatusSeg, Row as StatusRow } from './pane-status.ts'
 import type { Limit } from './pane-bar.ts'
-import { taskDir, pendingName, answerName, parsePending, gateRows, answerText, HANDOFF } from './pane-gate.ts'
+import { taskDir, pendingName, parsePending } from './pane-gate.ts'
 import type { Pending } from './pane-gate.ts'
-import { bandRows, GUARD, WHERE, INK } from './pane-band.ts'
+import { bandRows } from './pane-band.ts'
 import type { Seg as BandSeg } from './pane-band.ts'
 
 // The fankeel mod's two drawings: two rows above the prompt for what is always
-// wanted, and the Pane for what is looked up, with whatever gate is waiting on
-// top of it. The Pane opens itself while the session owns a task, and again for
-// a gate if the user closed it; /fankeel-panel toggles it. docs/90-agent/plans/2026-10-12-pane-band-design.md
+// wanted, and the Pane for what is looked up. The Pane opens itself while the
+// session owns a task; /fankeel-panel toggles it. docs/90-agent/plans/2026-10-12-pane-band-design.md
 // is the design. Nothing here runs unless the module was enabled, and nothing
 // outside it depends on it.
 export const PANE = 'fankeel'
@@ -231,11 +230,10 @@ async function look($: EngineInterface, cache: Cache, logged: Logged): Promise<S
 type State = {
   seen: Seen
   print: string
-  // Why the pane up now is the mod's, and so when it is the mod's to close: 'task' closes with the task;
-  // 'gate' closes when its gate goes, or when the task ends first.
-  mine: false | 'task' | 'gate'
-  // Whether a task was there, and which pending file, the last time the opens and closes for them went through.
-  edge: { task: boolean; gate: string | null }
+  // Whether the pane up now is the mod's, opened for the task, and so the mod's to close when the task ends.
+  mine: false | 'task'
+  // Whether a task was there the last time the opens and closes for it went through.
+  edge: { task: boolean }
   // Ticks in a row the registry file was unreadable.
   bad: number
   busy: boolean
@@ -276,27 +274,17 @@ async function tick($: EngineInterface, state: State): Promise<void> {
     // one is met again next tick as the same edge, while `seen` and the redraw below never wait on them.
     try {
       // Asked here, after `look`: /fankeel-panel may have opened or closed the pane while it read files.
-      // A task appears: the pane opens, once; a pane the user then closes stays closed until a gate comes. No toast: the band shows the task.
+      // A task appears: the pane opens, once; a pane the user then closes stays closed. No toast: the band shows the task.
       if (!state.edge.task && next.entry && !(await isOpen($))) {
         await $.ui.open({ id: PANE, title: 'fankeel' })
         state.mine = 'task'
-      }
-      if (next.pendingFile && next.pendingFile !== state.edge.gate && !(await isOpen($))) {
-        const opened = await $.ui.open({ id: PANE, title: 'fankeel' })
-        // Its pane either way, placed now or when the terminal widens; a pane the task owns stays the task's.
-        if (state.mine !== 'task') state.mine = 'gate'
-        if (!opened.isPlaced) $.ui.toast('fankeel：有一個 gate 在等。/fankeel-panel 開面板，或在終端回答')
-      }
-      if (!next.pendingFile && state.edge.gate && state.mine === 'gate') {
-        await $.ui.close({ id: PANE })
-        state.mine = false
       }
       if (state.edge.task && !next.entry && state.mine) {
         // Not asked whether it is open: a pane registered but not placed (a narrow terminal) is still the mod's to close.
         await $.ui.close({ id: PANE })
         state.mine = false
       }
-      state.edge = { task: !!next.entry, gate: next.pendingFile }
+      state.edge = { task: !!next.entry }
       state.logged.open = ''
     } catch (err) {
       logOnce($, state.logged, 'open', `fankeel pane: pane not opened or closed, ${String(err)}`)
@@ -313,30 +301,14 @@ async function tick($: EngineInterface, state: State): Promise<void> {
   }
 }
 
-// Writes `text` to the answer file of the gate that was drawn, unless the
-// gate is already gone or an answer newer than the wait's start is there
-// (the station got there first). An older one is an earlier gate's:
-// lib/handoff.js answersSince reads only a file newer than the wait.
-async function answer($: EngineInterface, pending: Pending, pendingFile: string, text: string | null): Promise<void> {
-  try {
-    const file = answerName(pendingFile)
-    if (!text || !(await $.fs.exists(pendingFile))) return
-    if ((await $.fs.exists(file)) && (pending.at === null || (await $.fs.stat(file)).mtimeMs > pending.at)) return
-    await $.fs.write(file, text)
-  } catch (err) {
-    $.ui.log(`fankeel pane: answer not written, ${String(err)}`, { to: 'debug' })
-    $.ui.toast('fankeel：答案沒寫成，請在終端回答')
-  }
-}
-
 export const register: Register = (on) => {
   const state: State = {
-    seen: blank(''), print: '', mine: false, edge: { task: false, gate: null }, bad: 0, busy: false, cache: new Map(),
+    seen: blank(''), print: '', mine: false, edge: { task: false }, bad: 0, busy: false, cache: new Map(),
     logged: { context: '', plan: '', open: '', registry: '', neighbour: '', gate: '', live: '' },
   }
 
   on('session.start', async ($, e, next) => {
-    await $.command.register({ name: COMMAND, description: 'fankeel 面板：任務、等待中的 gate、撞檔、tasks、context、用量額度與 notes' })
+    await $.command.register({ name: COMMAND, description: 'fankeel 面板：任務、撞檔、tasks、context、用量額度與 notes' })
     $.clock.every(POLL_MS, () => tick($, state))
     return next(e)
   })
@@ -383,19 +355,14 @@ export const register: Register = (on) => {
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
-    const { Box, Text, Button } = $.ui.resolve(e)
+    const { Box, Text } = $.ui.resolve(e)
     const seen = state.seen
     const props = (e.props ?? {}) as { bodyColumns?: number; scroll?: { bodyRows?: number } }
     // The body's own cells where the surface measured them (41 by 32 on Claude Desktop); the viewport is the whole surface.
     const cols = Math.max(20, props.bodyColumns ?? (e.viewport?.columns ?? 44) - 2)
     const room = Math.max(1, props.scroll?.bodyRows ?? (e.viewport?.rows ?? 24) - 4)
-    const pending = seen.pending
-    const pendingFile = seen.pendingFile
-    // The gate is drawn whole, under the task block, and the Pane scrolls over it; the status blocks take the rows it leaves.
-    // 1: the rail every gate row opens with; a status row opens with a rail or a space, the same one cell.
-    // One reading for the whole drawing, so the gate's seconds and the status block's minutes are of the same moment.
+    // One reading for the whole drawing, so the status block's minutes are of the same moment.
     const now = Date.now()
-    const gate = pending && pendingFile ? gateRows(pending, cols - 1, width, now) : []
     const status = statusRows({
       id: seen.id,
       entry: seen.entry,
@@ -403,7 +370,7 @@ export const register: Register = (on) => {
       context: seen.context,
       plan: seen.plan,
       cols,
-      room: room - gate.length - (gate.length ? 1 : 0),
+      room,
       now,
       probe: seen.probe,
     })
@@ -411,30 +378,6 @@ export const register: Register = (on) => {
     // A row's segments touch: each carries its own colour, and its own space where it wants one.
     const piece = (seg: StatusSeg) => h(Text, { color: seg.color, bold: seg.bold, wrap: 'truncate-end' }, seg.text)
     const line = (row: StatusRow) => (row.segs.length === 0 ? blankRow() : h(Box, { flexDirection: 'row' }, ...row.segs.map(piece)))
-    const railed = (...cells: unknown[]) => h(Box, { flexDirection: 'row' }, h(Text, { color: RAILS.gate }, '▌'), ...cells)
-    // The task block stays on top; the blank row statusRows puts above the block after it parts the gate from the rest.
-    const top = status.filter((row) => row.block === 'task')
-
-    const drawn = [
-      ...top.map(line),
-      ...(gate.length && top.length ? [blankRow()] : []),
-      ...gate.map((row) => {
-        if (row.press !== undefined && pending && pendingFile) {
-          return railed(h(Button, {
-            key: `gate:${row.hotkey}`,
-            hotkey: row.hotkey,
-            plain: true,
-            onPress: () => answer($, pending, pendingFile, row.press === '' ? HANDOFF : answerText(pending, row.press as string)),
-          }, row.text))
-        }
-        if (row.badge) {
-          const badge = h(Text, { backgroundColor: GUARD, color: INK, bold: true }, ` ${row.text} `)
-          return row.after ? railed(badge, h(Text, { color: GUARD, bold: true }, `  ${row.after}`)) : railed(badge)
-        }
-        return railed(h(Text, { bold: row.bold, color: row.dim ? WHERE : undefined, wrap: 'truncate-end' }, row.text))
-      }),
-      ...status.filter((row) => row.block !== 'task').map(line),
-    ]
-    return h(Box, { flexDirection: 'column' }, ...drawn)
+    return h(Box, { flexDirection: 'column' }, ...status.map(line))
   })
 }
