@@ -771,7 +771,10 @@ function cmdStart(root, opts) {
     const onboard = onboardLine(projectRootFor(root, opts), claudeDir(opts));
     if (onboard) lines.push(onboard);
     // Not before the profile is read, and never a reason to refuse a start.
-    const win = compactWindow.sync(claudeDir(opts), prof.values['compact.at'] || profile.KEYS['compact.at'].builtin);
+    const cfgForWindow = claudeDir(opts);
+    const win = cfgForWindow
+        ? compactWindow.sync(cfgForWindow, prof.values['compact.at'] || profile.KEYS['compact.at'].builtin)
+        : { state: 'off' };
     if (win.state === 'changed') {
         lines.push('compact window: ' + win.to + ' written to ' + win.file
             + ' — ask the user to restart Claude Desktop; sessions already open keep the old window.');

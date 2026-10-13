@@ -1011,6 +1011,16 @@ test('start leaves the window alone when compact.at is off', () => {
   assert.equal(fs.existsSync(path.join(dir, 'cfg', 'settings.json')), false);
 });
 
+test('start writes no window and prints no line on a declined machine', () => {
+  const dir = root();
+  fs.mkdirSync(path.join(dir, 'cfg', 'fankeel'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'cfg', 'fankeel', 'compact-window.declined'), '');
+  const { out, code } = run(dir, ['start', '--session', A, '--task', 'x']);
+  assert.equal(code, 0);
+  assert.doesNotMatch(out, /compact window:/);
+  assert.equal(fs.existsSync(path.join(dir, 'cfg', 'settings.json')), false);
+});
+
 test('start still succeeds and says why when settings.json does not parse', () => {
   const dir = root();
   fs.mkdirSync(path.join(dir, 'cfg'), { recursive: true });
