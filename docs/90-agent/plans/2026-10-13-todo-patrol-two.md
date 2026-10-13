@@ -343,8 +343,8 @@ sed -i 's/^stamp: .*/stamp: 2026-10-13/' docs/90-agent/todo/stage-agents-10.md d
    說明寫「TODO 全表盤點（10-13 第二輪）的 plan：commit.js 提交搬過家的檔、逐塊調整托盤載入就展開」，狀態照同表其他未落地的 plan 的寫法。
 3. 跑 `node scripts/todo-check.js`（exit 0）與 `node scripts/docs-check.js`（不點名這三個檔）。
 
-verify 推翻了 stage-agents-10 這一半：它等的是「no verdict 再發生一次」，那會出現在逐字稿而不是報告裡，而且提到 no verdict 的報告有三份、
-不是第 1 步寫的一份。grep 報告撐不起新的章，所以它的 `stamp:` 退回 2026-10-12；stage-agents-16 與索引列不變。
+verify 推翻了 stage-agents-10 這一半：它等的是「no verdict 再發生一次」，那會出現在逐字稿而不是報告裡，
+而且提到 no verdict 的報告有三份、不是第 1 步寫的一份。grep 報告撐不起新的章，所以它的 `stamp:` 退回 2026-10-12；stage-agents-16 與索引列不變。
 
 ## Task 5: 使用者不經說明開一次頁面，看找不找得到入口
 
@@ -384,7 +384,7 @@ node scripts/tune.js serve .fankeel/build/2026-10-13-pane-colour --port 7819
 | brief-3、compact-4、pane-1、pane-2、pane-6、tune-4 — needs the user（真機） | struck — 使用者自己做，沒有任務；land 不關它們 |
 | stage-agents-8 — 真正阻擋是 project≠cwd 的受控 build 從未跑過 — needs the user | struck — 要一次受控 build，這一輪沒有；條目不動 |
 | effort-1、foreign-1、session-2 — waiting on；restamp | Task 3 |
-| stage-agents-10、stage-agents-16 — waiting on；restamp | Task 4 |
+| stage-agents-10、stage-agents-16 — waiting on；restamp | Task 4 蓋了 stage-agents-16；stage-agents-10 struck — verify 推翻，章退回 2026-10-12 |
 | quota-1 — waiting on 7d 重置後的資料；restamp | struck — 上一輪盤點已蓋 2026-10-13，不必再蓋 |
 | audit-1、docs-1、security-1 — waiting on；restamp | struck — 等的是 repo 外的事，盤點在這台機器上核對不了；stamp 是有人讀過並同意的那一天，不蓋新章，沒有一條到期 |
 | build-1、model-4 — waiting on；restamp | struck — 要連網才查得到 knip 與 claude 的上游，reader 沒查；不蓋新章，沒有一條到期 |
