@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-10-09
+last_verified: 2026-10-13
 source_of_truth: lib/registry.js, lib/station.js, lib/render.js, lib/context.js, lib/dirty.js, lib/live.js, lib/usage.js, lib/profile.js, lib/spend.js, scripts/task.js, scripts/spend.js, hooks/touch.js, hooks/inject.js, hooks/carry.js, hooks/gate.js, hooks/resume.js, hooks/leave.js
 ---
 
@@ -40,6 +40,7 @@ workspace/                     <- Claude Code opened here
 | `<registry>/.fankeel/index.html`, and its four siblings under `station/` | No — `.fankeel/.gitignore` excludes all five | the same page, written beside the registry by whichever of those four ran inside it |
 | `<configDir>/fankeel/roots.json` | n/a | every registry the page has seen, rewritten by every write of the page. A root whose directory still exists stays until `--forget <dir>` drops it; one whose directory is gone from disk leaves on its own — [station.md](station.md) has more |
 | `.fankeel/build/task-<started>/<stage>.md`, and its `-answer.md` and `-commit.md` siblings | No — `.fankeel/.gitignore` excludes `build/` (`scripts/map.js:39`) | `lib/handoff.js`'s `handoffPath`, `commitPath` and `answerPath` give the three paths, one directory per task keyed by `started` (`dirFor`); the stage agent itself writes `<stage>.md`, and, in a build, design or plan stage, `<stage>-commit.md` too — both on the instructions `lib/render.js`'s `renderBrainBrief` sends it; `scripts/commit.js` renames `<stage>-commit.md` to `<stage>-commit.done.md` once every block in it has committed, so a `-commit.md` on disk is a commit still to make; `hooks/resume.js` writes `<stage>-answer.md`, through `writeAnswer`, once a gate's question is answered — only when the questions answered have the handoff gate's question count and, per question, its option count (`answersGate` in `lib/handoff.js`; wording is not compared, so a controller's reworded gate still lands), whether or not `inflight` still stands; a controller's own question of the same shape as the gate on disk is written too, and `<stage>-answer.miss.json` holds the ones that differ |
+| `.fankeel/build/live.json` | No — `.fankeel/.gitignore` excludes `build/` (`scripts/map.js:39`) | `hooks/inject.js`, on every prompt of a session that owns a task: `{ at, ids }`, `ids` being the session ids of the neighbours whose process is running, or `null` where `lib/live.js` could not tell. Written to `live.json.<pid>.tmp` and renamed onto the file, so a reader never sees half of it |
 | `<configDir>/fankeel/serve.json` | n/a | `scripts/station.js`'s `serve` command, once it has bound a port (`writeRecord`, holding `{ pid, port, url, started }`) — the path from `lib/serve.js`'s `serveRecordPath`; the same command deletes it when the listener closes — [station.md](station.md) has how a record left behind by a hard kill is trusted |
 | `<configDir>/fankeel/station/detail/`, and the same directory beside a registry | n/a for the first; No — gitignored the same as `index.html` above, for the second | `lib/station.js`'s `write()`, one `<sessionId>.js` per session carrying a detail (`serializeDetail`), written only where it was just read or is missing on disk — the sixth `EMITTED` name, a directory rather than a file, and the one the `index.html` row above does not cover |
 | `<configDir>/fankeel/station/cache/<sessionId>.json` | n/a | `lib/detail.js`'s `readDetail` (through `detailOf`), one file per session whose cached detail is stale or missing, keyed by `keyOf`'s reading of the transcript and any agent or run files — called from `lib/station.js`'s `gather()`, which both `write()` and the live server's own refreshes reach |
@@ -449,7 +450,7 @@ never takes the task with it.
 # When compaction has already cost something
 
 ```
-context: 1.1M tokens dropped to compaction so far, 308k in play now,
+context: 1.1M tokens dropped, 308k in play,
 --session 302790e6-e652-4cab-af1c-e45d239516cc. Start a fresh session before the
 next one. This stage's gate gets a fourth option, hand off: set next with task.js
 next --handoff --from-gate, then a new terminal and /fankeel → Adopt.
@@ -485,8 +486,10 @@ variable's name. Whether a variable written under `env` in `settings.json`
 reaches a hook process is not measured yet; if it does not, the sentence
 appears although a window is set. With a window set, below `BUSY`, or once
 something has been dropped, the line is as it was. The fankeel module
-(`hooks/compact.ts`) still compacts at 450k at a turn end in a session where
-it is enabled. How to set a window is in [the guide](../../01-guide/profile.md).
+(`hooks/compact.ts`) compacts at the profile's `compact.at` at a turn end in a
+session where it is enabled: 450k unless a profile says otherwise, never when
+it is `off`. A tier a profile file set takes the sentence off the line; the
+built-in one does not. How to set a window is in [the guide](../../01-guide/profile.md).
 
 The session id rides the compaction form of this line and only that one. It is disclosed in the `init`
 block, which a session sees only while it has no task; once it owns one the block

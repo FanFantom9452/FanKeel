@@ -73,6 +73,8 @@ const texts = (node) => (node.tag === 'Text' || node.tag === 'Button' ? [String(
 const buttons = (node) => (node.tag === 'Button' ? [node] : (node.children || []).filter((c) => c && c.tag).flatMap(buttons));
 const leaves = (node) => (node.tag === 'Text' ? [node] : (node.children || []).filter((c) => c && c.tag).flatMap(leaves));
 const bandLines = (tree) => tree.children.map((row) => leaves(row).map((n) => n.children.join('')).join(''));
+// The Pane row by row, as bandLines reads the band: a row is a Box of Text (and Button) children, or one blank Text.
+const paneLines = (tree) => tree.children.map((row) => texts(row).join(''));
 const BAND = { props: { bodyColumns: 90 } };
 const passed = async () => 'passed';
 
@@ -106,30 +108,39 @@ test('the command opens the pane, and closes it when it is open', async () => {
     assert.deepEqual(log.closed.map((p) => p.id), ['fankeel']);
 });
 
-test('the Pane draws the task block on top, then what is looked up', async () => {
+test('the Pane draws the task block on top, then what is looked up, each block under one rail', async () => {
     const hooks = await wired();
     assert.deepEqual(hooks['ui.render:matcher'], { component: 'Pane', requestId: 'fankeel' });
-    const { $, log } = fake({ files: entryFile(Object.assign({}, live, { notes: ['a note'] })) });
+    const { $, log } = fake({ files: entryFile(Object.assign({}, live, { notes: ['a note'] })), tokens: 400000 });
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
     const tree = await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } });
-    const seen = texts(tree);
-    assert.deepEqual(seen.filter((t) => t.trim()), ['demo task', 'survey ▸ [design] ▸ build', '本站 design ? 分 · 等你 0 分', '上站 survey ? 分 · 等你 0 分',
-        'context', '312k', '· 到 450k 自動 compact', 'notes', '· a note', 'abcdef12 · /fankeel-panel 關閉']);
-    assert.equal(seen.filter((t) => !t.trim()).length, 3);
-    assert.doesNotMatch(seen.join('\n'), /touched|2 of 3|guard|bounded/);
+    assert.deepEqual(paneLines(tree), [
+        '▌demo task',
+        ' survey › design › build',
+        ' ',
+        '▌context  快要自動 compact 了',
+        ' 留 task · stage · plan · agent · handoff',
+        ' ',
+        '▌notes',
+        ' · a note',
+        ' ',
+        '▌abcdef12 · /fankeel-panel 關閉',
+    ]);
+    assert.doesNotMatch(paneLines(tree).join('\n'), /touched|▸|本站|2 of 3|bounded|400k|450k/);
     assert.equal(buttons(tree).length, 0);
 });
 
-test('the band above the prompt draws the stage, the dots, the guard and the task from the registry file', async () => {
+test('the band above the prompt draws the stage, the dots and the minutes, then the context bar, from the registry file', async () => {
     const hooks = await wired();
     assert.deepEqual(hooks['band:matcher'], { component: 'AbovePrompt' });
     const { $, log } = fake({ files: entryFile(Object.assign({}, live, { next: 'write the plan' })) });
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
     const tree = await hooks.band($, BAND, passed);
-    assert.deepEqual(bandLines(tree), ['▌FANKEEL DESIGN  ●●○  ⚿ deny  demo task', '▌next  write the plan  1 檔  2 of 3']);
+    assert.deepEqual(bandLines(tree), ['▌FANKEEL DESIGN  ●●○  等你 0 分', '▌ctx ███░│░░░░░ 312k/1M']);
     assert.deepEqual(leaves(tree).filter((n) => n.props.color === '#5f5fd7').map((n) => n.children.join('')), ['▌', 'FANKEEL DESIGN', '●●', '▌']);
+    assert.doesNotMatch(bandLines(tree).join('\n'), /demo task|write the plan|⚿|檔| of /);
     assert.equal(log.opened.length, 1, 'drawing the band opened a pane beyond the one the task opened');
 });
 
@@ -139,7 +150,7 @@ test('a session root ending in a backslash still finds the registry file', async
     $.session.root = async () => ROOT + '\\';
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
-    assert.match(bandLines(await hooks.band($, BAND, passed))[0], /demo task/);
+    assert.match(bandLines(await hooks.band($, BAND, passed))[0], /FANKEEL DESIGN/);
     assert.match(texts(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } })).join('\n'), /abcdef12 · \/fankeel-panel/);
 });
 
@@ -177,118 +188,7 @@ test('a tick redraws only when the registry file changed', async () => {
     assert.equal(log.invalidated, after + 1);
 });
 
-test('a pending gate opens the pane, draws buttons, and a press writes the answer file', async () => {
-    const hooks = await wired();
-    const files = Object.assign(entryFile(live), { [DIR + '/design-pending.json']: JSON.stringify(gate) });
-    const { $, log, store } = fake({ files });
-    await hooks['session.start']($, {}, async () => ({}));
-    await log.ticks[0].fn();
-    assert.deepEqual(log.opened.map((p) => p.id), ['fankeel']);
-    const tree = await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } });
-    const bs = buttons(tree);
-    assert.deepEqual(bs.map((b) => b.props.hotkey), ['1', '2', '3', 't']);
-    assert.ok(bs.every((b) => b.props.plain === true));
-    await bs[1].props.onPress({});
-    assert.deepEqual(JSON.parse(store[DIR + '/design-answer.md']), { answers: { 'Go on?': 'Stay' } });
-});
-
-test('a press writes nothing once the station answered, or the gate is gone', async () => {
-    const hooks = await wired();
-    const files = Object.assign(entryFile(live), { [DIR + '/design-pending.json']: JSON.stringify(gate) });
-    const { $, log, store, mtimes } = fake({ files });
-    await hooks['session.start']($, {}, async () => ({}));
-    await log.ticks[0].fn();
-    const bs = buttons(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
-    store[DIR + '/design-answer.md'] = 'station got there first';
-    mtimes[DIR + '/design-answer.md'] = 2000;
-    await bs[0].props.onPress({});
-    assert.equal(store[DIR + '/design-answer.md'], 'station got there first');
-    delete store[DIR + '/design-answer.md'];
-    delete store[DIR + '/design-pending.json'];
-    await bs[0].props.onPress({});
-    assert.equal(store[DIR + '/design-answer.md'], undefined);
-});
-
-test('an answer file older than the gate is an earlier gate\'s: a press overwrites it, the terminal button too', async () => {
-    const hooks = await wired();
-    const files = Object.assign(entryFile(live), { [DIR + '/design-pending.json']: JSON.stringify(gate) });
-    const { $, log, store, mtimes } = fake({ files });
-    await hooks['session.start']($, {}, async () => ({}));
-    await log.ticks[0].fn();
-    const bs = buttons(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
-    store[DIR + '/design-answer.md'] = 'an earlier gate';
-    mtimes[DIR + '/design-answer.md'] = 500;
-    await bs[1].props.onPress({});
-    assert.deepEqual(JSON.parse(store[DIR + '/design-answer.md']), { answers: { 'Go on?': 'Stay' } });
-    store[DIR + '/design-answer.md'] = 'an earlier gate';
-    await bs[3].props.onPress({});
-    assert.deepEqual(JSON.parse(store[DIR + '/design-answer.md']), { handoff: 'terminal' });
-});
-
-test('a gate with no `at` leaves any answer file alone', async () => {
-    const hooks = await wired();
-    const noAt = Object.assign({}, gate);
-    delete noAt.at;
-    const files = Object.assign(entryFile(live), { [DIR + '/design-pending.json']: JSON.stringify(noAt) });
-    const { $, log, store, mtimes } = fake({ files });
-    await hooks['session.start']($, {}, async () => ({}));
-    await log.ticks[0].fn();
-    const bs = buttons(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
-    assert.equal(bs.length, 4);
-    store[DIR + '/design-answer.md'] = 'unknown age';
-    mtimes[DIR + '/design-answer.md'] = 0;
-    await bs[0].props.onPress({});
-    assert.equal(store[DIR + '/design-answer.md'], 'unknown age');
-});
-
-test('the terminal button writes the handoff', async () => {
-    const hooks = await wired();
-    const files = Object.assign(entryFile(live), { [DIR + '/design-pending.json']: JSON.stringify(gate) });
-    const { $, log, store } = fake({ files });
-    await hooks['session.start']($, {}, async () => ({}));
-    await log.ticks[0].fn();
-    const bs = buttons(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
-    await bs[3].props.onPress({});
-    assert.deepEqual(JSON.parse(store[DIR + '/design-answer.md']), { handoff: 'terminal' });
-});
-
-test('a pane the mod opened for a gate closes with it; one the user opened stays', async () => {
-    const hooks = await wired();
-    const files = Object.assign(entryFile(live), { [DIR + '/design-pending.json']: JSON.stringify(gate) });
-    // The task's own pane is the user's to close; the gate that comes after opens it again.
-    const mine = fake({ files: entryFile(live) });
-    await hooks['session.start'](mine.$, {}, async () => ({}));
-    await mine.log.ticks[0].fn();
-    await hooks['command.run'](mine.$, { command: 'fankeel-panel', args: '' });
-    mine.store[DIR + '/design-pending.json'] = JSON.stringify(gate);
-    await mine.log.ticks[0].fn();
-    assert.equal(mine.log.opened.length, 2, 'the gate got no pane after the user closed the task\'s');
-    delete mine.store[DIR + '/design-pending.json'];
-    await mine.log.ticks[0].fn();
-    assert.equal(mine.log.closed.length, 2, 'the pane the gate opened stayed up after it');
-
-    const hooks2 = await wired();
-    const theirs = fake({ files });
-    await hooks2['session.start'](theirs.$, {}, async () => ({}));
-    await hooks2['command.run'](theirs.$, { command: 'fankeel-panel', args: '' });
-    await theirs.log.ticks[0].fn();
-    delete theirs.store[DIR + '/design-pending.json'];
-    await theirs.log.ticks[0].fn();
-    assert.deepEqual(theirs.log.closed, []);
-});
-
-test('a gate with no room for the pane is one toast, not one a tick', async () => {
-    const hooks = await wired();
-    const files = Object.assign(entryFile(live), { [DIR + '/design-pending.json']: JSON.stringify(gate) });
-    const { $, log } = fake({ files, placed: false });
-    await hooks['session.start']($, {}, async () => ({}));
-    await log.ticks[0].fn();
-    await log.ticks[0].fn();
-    assert.equal(log.toasts.length, 1);
-    assert.match(log.toasts[0], /\/fankeel-panel/);
-});
-
-test('neighbours are the other active entries in the same sessions directory, drawn as the files they share', async () => {
+test('neighbours are the other active entries in the same sessions directory, drawn as the files they share and who shares them', async () => {
     const hooks = await wired();
     const other = { task: 'someone else', stage: 'build', active: true, updated: new Date().toISOString(), claims: ['a.js'] };
     const files = Object.assign(entryFile(live), {
@@ -300,23 +200,10 @@ test('neighbours are the other active entries in the same sessions directory, dr
     await hooks['session.start']($, {}, async () => ({}));
     await hooks['command.run']($, { command: 'fankeel-panel', args: '' });
     await log.ticks[0].fn();
-    const seen = texts(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
-    assert.deepEqual(seen.filter((t) => t.startsWith('⚑')), ['⚑ a.js']);
-    assert.doesNotMatch(seen.join('\n'), /someone else|stood down|@ build|共用/);
-});
-
-test('narrow terminal: a gate gives one toast, and /fankeel-panel opens again instead of closing', async () => {
-    const hooks = await wired();
-    const files = Object.assign(entryFile(live), { [DIR + '/design-pending.json']: JSON.stringify(gate) });
-    const { $, log } = fake({ files, placed: false });
-    await hooks['session.start']($, {}, async () => ({}));
-    await log.ticks[0].fn();
-    assert.equal(log.toasts.length, 1);
-    const before = log.opened.length;
-    const reply = await hooks['command.run']($, { command: 'fankeel-panel', args: '' });
-    assert.deepEqual(log.closed, []);
-    assert.equal(log.opened.length, before + 1);
-    assert.doesNotMatch(reply.text, /已關閉/);
+    const seen = paneLines(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
+    assert.deepEqual(seen.filter((t) => t.startsWith('▌⚑')), ['▌⚑ a.js']);
+    assert.match(seen[seen.indexOf('▌⚑ a.js') + 1], /^▌ {2}someone else @ build · \d+m$/);
+    assert.doesNotMatch(seen.join('\n'), /stood down|gone\.js|共用/);
 });
 
 test('narrow terminal: the unplaced pane opened for the task is not the gate\'s to close', async () => {
@@ -331,36 +218,6 @@ test('narrow terminal: the unplaced pane opened for the task is not the gate\'s 
     store[SESSION] = JSON.stringify(Object.assign({}, live, { active: false }));
     await log.ticks[0].fn();
     assert.deepEqual(log.closed.map((p) => p.id), ['fankeel'], 'the end of the task left its pane');
-});
-
-test('a tick whose ui.open rejected is tried again, the gate still new', async () => {
-    const hooks = await wired();
-    const { $, log, store } = fake({ files: entryFile(live) });
-    await hooks['session.start']($, {}, async () => ({}));
-    await log.ticks[0].fn();
-    await hooks['command.run']($, { command: 'fankeel-panel', args: '' });
-    store[DIR + '/design-pending.json'] = JSON.stringify(gate);
-    const open = $.ui.open;
-    let calls = 0;
-    $.ui.open = async (p) => { calls += 1; if (calls === 1) throw new Error('busy'); return open(p); };
-    await log.ticks[0].fn();
-    assert.equal(log.opened.length, 1);
-    await log.ticks[0].fn();
-    assert.equal(log.opened.length, 2);
-});
-
-test('a press whose write fails says so in a toast', async () => {
-    const hooks = await wired();
-    const files = Object.assign(entryFile(live), { [DIR + '/design-pending.json']: JSON.stringify(gate) });
-    const { $, log, store } = fake({ files });
-    await hooks['session.start']($, {}, async () => ({}));
-    await log.ticks[0].fn();
-    const bs = buttons(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
-    $.fs.write = async () => { throw new Error('disk full'); };
-    await bs[0].props.onPress({});
-    assert.equal(store[DIR + '/design-answer.md'], undefined);
-    assert.equal(log.toasts.length, 1);
-    assert.match(log.toasts[0], /答案沒寫成/);
 });
 
 test('a pane the user closed and reopened with the command is not closed when the gate ends', async () => {
@@ -399,37 +256,14 @@ test('neighbours are read with the pane closed, for the band, and a file that ha
     assert.equal(log.opened.length, 1, 'only the pane the task opened, and the user closed');
     assert.equal(log.closed.length, 1);
     assert.equal(log.reads.filter((p) => p === OTHER).length, 1, 'an unchanged neighbour was read again');
-    assert.match(bandLines(await hooks.band($, BAND, passed))[0], /⚑1/);
+    assert.match(bandLines(await hooks.band($, BAND, passed)).join('\n'), /⚑1/);
     const before = log.invalidated;
     store[OTHER] = JSON.stringify(Object.assign({}, other, { claims: ['z.js'] }));
     mtimes[OTHER] = 2;
     await log.ticks[0].fn();
     assert.equal(log.reads.filter((p) => p === OTHER).length, 2);
     assert.equal(log.invalidated, before + 1);
-    assert.doesNotMatch(bandLines(await hooks.band($, BAND, passed))[0], /⚑/);
-});
-
-test('a short pane with a four-option gate keeps the task, every description, every button and the foot', async () => {
-    const hooks = await wired();
-    const options = ['a', 'b', 'c', 'd'].map((label) => ({ label, description: ('about ' + label + ' at some length, ').repeat(4) + 'end of ' + label }));
-    const four = { questions: [{ question: 'Which?', header: 'design', options }], at: 1000, until: Date.now() + 600000 };
-    const files = Object.assign(entryFile(live), { [DIR + '/design-pending.json']: JSON.stringify(four) });
-    const { $, log } = fake({ files });
-    await hooks['session.start']($, {}, async () => ({}));
-    await log.ticks[0].fn();
-    const tree = await hooks['ui.render']($, { viewport: { columns: 44, rows: 18 } });
-    const seen = texts(tree);
-    const squash = (s) => s.replace(/\s+/g, '');
-    for (const o of options) assert.ok(squash(seen.join('')).includes(squash(o.description)), 'the description of ' + o.label + ' was dropped');
-    assert.ok(seen.length > 14, 'the fixture fits the pane: ' + seen.length);
-    assert.equal(buttons(tree).length, 5);
-    assert.ok(seen.some((t) => t.startsWith('abcdef12')));
-    assert.ok(!seen.includes('context'), 'a block that drops was kept beside a gate taller than the pane');
-    // The task block, a blank row, the gate, a blank row, the foot.
-    assert.deepEqual(seen.slice(0, 6), ['demo task', 'survey ▸ [design] ▸ build', '本站 design ? 分 · 等你 0 分', '上站 survey ? 分 · 等你 0 分', ' ', ' gate · design ']);
-    assert.deepEqual(seen.slice(-2), [' ', 'abcdef12 · /fankeel-panel 關閉']);
-    const badge = leaves(tree).find((n) => n.props.backgroundColor);
-    assert.deepEqual([badge.children.join(''), badge.props.backgroundColor, badge.props.color, badge.props.bold], [' gate · design ', '#d7af5f', '#000000', true]);
+    assert.doesNotMatch(bandLines(await hooks.band($, BAND, passed)).join('\n'), /⚑/);
 });
 
 // The command is not under `busy`, so it can run while a tick is reading files.
@@ -452,31 +286,56 @@ test('a pane the user opens while a tick reads is not opened again, nor closed w
     assert.deepEqual(log.closed, [], 'the end of the gate closed the pane the user opened');
 });
 
-test('a pane the user closes while a tick reads is opened for the gate that tick first sees', async () => {
-    const hooks = await wired();
-    const { $, log, store } = fake({ files: entryFile(live) });
-    await hooks['session.start']($, {}, async () => ({}));
-    await hooks['command.run']($, { command: 'fankeel-panel', args: '' });
-    store[DIR + '/design-pending.json'] = JSON.stringify(gate);
-    midTick($, () => hooks['command.run']($, { command: 'fankeel-panel', args: '' }));
-    await log.ticks[0].fn();
-    assert.equal(log.closed.length, 1);
-    assert.equal(log.opened.length, 2, 'the gate got no pane after the user closed it mid-tick');
-});
-
-test('with a gate waiting the band\'s second row is the badge and the question', async () => {
+test('with a gate waiting the band\'s first row carries the badge and the seconds left, and never the question', async () => {
     const hooks = await wired();
     const files = Object.assign(entryFile(live), { [DIR + '/design-pending.json']: JSON.stringify(gate) });
     const { $, log } = fake({ files });
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
     const tree = await hooks.band($, BAND, passed);
-    assert.equal(bandLines(tree)[1], '▌ gate 在等   Go on?  1 檔  2 of 3');
+    assert.match(bandLines(tree)[0], /^▌FANKEEL DESIGN {2}●●○ {3}gate 在等 {3}還 \d+ 秒 {2}等你 0 分$/);
+    assert.equal(bandLines(tree)[1], '▌ctx ███░│░░░░░ 312k/1M');
+    assert.doesNotMatch(bandLines(tree).join('\n'), /Go on\?/);
     const badge = leaves(tree).find((n) => n.props.backgroundColor);
     assert.deepEqual([badge.children.join(''), badge.props.backgroundColor, badge.props.color, badge.props.bold], [' gate 在等 ', '#d7af5f', '#000000', true]);
 });
 
-test('the band counts the sessions that clash, and the Pane names the files they share', async () => {
+test('a waiting gate is not the Pane\'s: no gate row or button, no open, no toast, and the band keeps its badge', async () => {
+    const hooks = await wired();
+    const { $, log, store } = fake({ files: entryFile(live), placed: false });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const opened = log.opened.length;
+    store[DIR + '/design-pending.json'] = JSON.stringify(gate);
+    await log.ticks[0].fn();
+    await log.ticks[0].fn();
+    assert.equal(log.opened.length, opened, 'the gate opened the Pane');
+    assert.deepEqual(log.toasts, []);
+    const tree = await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } });
+    assert.equal(buttons(tree).length, 0);
+    assert.doesNotMatch(paneLines(tree).join('\n'), /gate|Go on|Stay/);
+    assert.match(bandLines(await hooks.band($, BAND, passed))[0], /gate 在等 {3}還 \d+ 秒/);
+});
+
+test('the band redraws when a gate arrives and when it goes, with the minute unchanged', async () => {
+    const hooks = await wired();
+    const { $, log, store } = fake({ files: entryFile(live) });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const first = async () => bandLines(await hooks.band($, BAND, passed))[0];
+    assert.doesNotMatch(await first(), /gate 在等/);
+    const before = log.invalidated;
+    store[DIR + '/design-pending.json'] = JSON.stringify(gate);
+    await log.ticks[0].fn();
+    assert.equal(log.invalidated, before + 1, 'the arrival of a gate did not redraw');
+    assert.match(await first(), /gate 在等 {3}還 \d+ 秒/);
+    delete store[DIR + '/design-pending.json'];
+    await log.ticks[0].fn();
+    assert.equal(log.invalidated, before + 2, 'the end of a gate did not redraw');
+    assert.doesNotMatch(await first(), /gate 在等/);
+});
+
+test('the two drawings agree: the band\'s flag counts the sessions the Pane names, and the context count is on the band alone', async () => {
     const hooks = await wired();
     const mine = Object.assign({}, live, { claims: ['a.js', 'b.js', 'c.js', 'd.js'] });
     const peer = (task, claims) => JSON.stringify({ task, stage: 'build', active: true, updated: new Date().toISOString(), claims });
@@ -485,47 +344,62 @@ test('the band counts the sessions that clash, and the Pane names the files they
         [ROOT + '/.fankeel/sessions/22222222-0000-4000-8000-000000000003.json']: peer('shares c and a', ['c.js', 'a.js', 'b.js']),
         [ROOT + '/.fankeel/sessions/33333333-0000-4000-8000-000000000004.json']: peer('shares nothing', ['z.js']),
     });
-    const { $, log } = fake({ files });
+    const { $, log } = fake({ files, tokens: 400000 });
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
     const band = bandLines(await hooks.band($, BAND, passed));
-    const pane = texts(await hooks['ui.render']($, { viewport: { columns: 44, rows: 60 } }));
-    const [, n, m] = band[1].match(/(\d+) of (\d+)/);
-    assert.deepEqual([Number(n), Number(m)], [mine.route.indexOf(mine.stage) + 1, mine.route.length]);
-    assert.equal(Number(band[1].match(/(\d+) 檔/)[1]), 4);
-    assert.equal(Number(band[0].match(/⚑(\d+)/)[1]), 2);
-    assert.deepEqual(pane.filter((t) => t.startsWith('⚑')), ['⚑ a.js', '⚑ b.js', '⚑ c.js']);
-    assert.doesNotMatch(pane.join('\n'), /touched|shares/);
+    const pane = paneLines(await hooks['ui.render']($, { viewport: { columns: 44, rows: 60 } }));
+    assert.deepEqual(pane.filter((t) => t.startsWith('▌⚑')), ['▌⚑ a.js', '▌⚑ b.js', '▌⚑ c.js']);
+    // The sessions the Pane names under its files, each once.
+    const named = new Set(pane.map((t) => /^▌ {2}(.+) @ build · \d+m$/.exec(t)).filter(Boolean).map((m) => m[1]));
+    assert.deepEqual([...named].sort(), ['shares b', 'shares c and a']);
+    assert.equal(Number(band[1].match(/⚑(\d+)/)[1]), named.size);
+    assert.doesNotMatch(band[0], /⚑/);
+    assert.doesNotMatch(pane.join('\n'), /shares nothing/);
+    // The tokens and the threshold are written once, on the band; the Pane's context block is there and holds no figure.
+    assert.match(band[1], /^▌ctx \S+ 400k\/1M ⚠/);
+    assert.ok(pane.includes('▌context  快要自動 compact 了'), pane.join(' | '));
+    assert.doesNotMatch(pane.join('\n'), /\d+k|█|░|%/);
 });
 
-test('the context block shows the tokens against FANKEEL_COMPACT_AT, and a new count redraws', async () => {
+test('the context block is measured against FANKEEL_COMPACT_AT, and a new count redraws', async () => {
     const hooks = await wired();
     const { $, log } = fake({ files: entryFile(live), env: { FANKEEL_COMPACT_AT: '300000' } });
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
-    const tree = await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } });
-    const rest = leaves(tree).find((n) => n.children.join('') === '· 到 300k 自動 compact');
-    assert.ok(rest, texts(tree).join(' | '));
-    assert.deepEqual([rest.props.color, rest.props.bold], ['#d7af5f', true]);
-    assert.ok(texts(tree).includes('312k'));
+    // What the Pane says beside the block's name, or null with no block.
+    const said = async () => {
+        const all = leaves(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
+        const at = all.findIndex((n) => n.children.join('') === 'context');
+        return at < 0 ? null : [all[at + 1].children.join(''), all[at + 1].props.color, all[at + 1].props.bold];
+    };
+    assert.deepEqual(await said(), ['  已到門檻，compact 中', '#d7af5f', true]);
+    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ███│░░░░░░ 312k/1M ⚠');
     const after = log.invalidated;
-    log.tokens = 320000;
+    log.tokens = 250000;
     await log.ticks[0].fn();
     assert.equal(log.invalidated, after + 1);
-    assert.ok(texts(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } })).includes('320k'));
+    assert.deepEqual(await said(), ['  快要自動 compact 了', '#8a8a8a', undefined]);
+    assert.match(bandLines(await hooks.band($, BAND, passed))[1], / 250k\/1M ⚠$/);
+    // Four fifths of 300k is 240k.
+    log.tokens = 239999;
+    await log.ticks[0].fn();
+    assert.equal(await said(), null);
+    assert.match(bandLines(await hooks.band($, BAND, passed))[1], / 240k\/1M$/);
 });
 
-test('the context count is coloured by how far it is to the threshold, bold from sixty percent', async () => {
+test('the band\'s context count is coloured by how far it is to the threshold, bold from sixty percent', async () => {
     const hooks = await wired();
     const { $, log } = fake({ files: entryFile(live), env: { FANKEEL_COMPACT_AT: '100000' } });
     await hooks['session.start']($, {}, async () => ({}));
     const count = async (tokens) => {
         log.tokens = tokens;
         await log.ticks[0].fn();
-        const leaf = leaves(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } })).find((n) => n.children.join('') === Math.round(tokens / 1000) + 'k');
+        const leaf = leaves(await hooks.band($, BAND, passed)).find((n) => n.children.join('') === Math.round(tokens / 1000) + 'k');
         return [leaf.props.color, leaf.props.bold];
     };
-    assert.deepEqual(await count(35000), [undefined, undefined]);
+    assert.deepEqual(await count(5000), ['#00ff00', undefined]);
+    assert.deepEqual(await count(35000), ['#d7ffd7', undefined]);
     assert.deepEqual(await count(36000), ['#d7ff00', undefined]);
     assert.deepEqual(await count(40000), ['#ffff00', undefined]);
     assert.deepEqual(await count(45000), ['#ffd700', undefined]);
@@ -535,7 +409,37 @@ test('the context count is coloured by how far it is to the threshold, bold from
     assert.deepEqual(await count(65000), ['#ff0087', true]);
     assert.deepEqual(await count(70000), ['#ff00af', true]);
     assert.deepEqual(await count(75000), ['#ff00d7', true]);
-    assert.deepEqual(await count(250000), ['#ff00d7', true]);
+    assert.deepEqual(await count(80000), ['#ff00ff', true]);
+    assert.deepEqual(await count(250000), ['#ff00ff', true]);
+});
+
+const profileFile = (data) => ({ [ROOT + '/.fankeel/profile.json']: JSON.stringify(data) });
+
+// compact-5: the same source as hooks/compact.ts threshold, so the band and the
+// Pane move with the profile's compact.at.
+test('the band and the context block are measured against the profile\'s compact.at', async () => {
+    const hooks = await wired();
+    const { $, log } = fake({ files: Object.assign(entryFile(live), profileFile({ 'compact.at': '350000' })) });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ███│░░░░░░ 312k/1M ⚠');
+    const pane = async () => texts(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
+    assert.ok((await pane()).includes('context'), 'no context block at 312k of 350k');
+    // Four fifths of 350k is 280k.
+    log.tokens = 279999;
+    await log.ticks[0].fn();
+    assert.ok(!(await pane()).includes('context'), 'a context block under four fifths of 350k');
+    // 279999 is over four fifths of 300k and under four fifths of 350k: the band warns by the profile's value alone.
+    assert.ok(!bandLines(await hooks.band($, BAND, passed))[1].endsWith('⚠'), 'the band warned under four fifths of 350k');
+});
+
+test('compact.at off draws the count with no threshold and never a context block', async () => {
+    const hooks = await wired();
+    const { $, log } = fake({ files: Object.assign(entryFile(live), profileFile({ 'compact.at': 'off' })), tokens: 2000000 });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ██████████ 2M/1M ⚠');
+    assert.ok(!texts(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } })).includes('context'));
 });
 
 test('with no FANKEEL_COMPACT_AT the threshold is HARD, and with no token count there is no context block', async () => {
@@ -544,27 +448,33 @@ test('with no FANKEEL_COMPACT_AT the threshold is HARD, and with no token count 
     const { $, log } = fake({ files: entryFile(live), env: { FANKEEL_COMPACT_AT: 'soon' } });
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
-    const tree = await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } });
-    const rest = leaves(tree).find((n) => n.children.join('') === '· 到 ' + Math.round(HARD / 1000) + 'k 自動 compact');
-    assert.ok(rest, texts(tree).join(' | '));
-    assert.deepEqual([rest.props.color, rest.props.bold], ['#8a8a8a', undefined]);
+    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ███░│░░░░░ 312k/1M');
+    // The white line is where HARD falls in the window.
+    assert.equal(bandLines(await hooks.band($, BAND, passed))[1].indexOf('│') - '▌ctx '.length, Math.floor((HARD * 10) / 1000000));
     // Number('Infinity') is not finite: the same rule as hooks/compact.ts threshold.
     const inf = fake({ files: entryFile(live), env: { FANKEEL_COMPACT_AT: 'Infinity' } });
     const infHooks = await wired();
     await infHooks['session.start'](inf.$, {}, async () => ({}));
     await inf.log.ticks[0].fn();
-    assert.ok(texts(await infHooks['ui.render'](inf.$, { viewport: { columns: 44, rows: 40 } })).includes('· 到 450k 自動 compact'));
+    assert.equal(bandLines(await infHooks.band(inf.$, BAND, passed))[1], '▌ctx ███░│░░░░░ 312k/1M');
+    // Four fifths of HARD is 360k: the Pane's block is there from that count, and goes with the count.
+    const pane = async () => texts(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
+    assert.ok(!(await pane()).includes('context'), 'a context block under four fifths of HARD');
+    log.tokens = HARD * 0.8;
+    await log.ticks[0].fn();
+    assert.ok((await pane()).includes('context'), 'no context block at four fifths of HARD');
     log.tokens = null;
     await log.ticks[0].fn();
-    assert.ok(!texts(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } })).includes('context'));
+    assert.ok(!(await pane()).includes('context'));
+    assert.deepEqual(bandLines(await hooks.band($, BAND, passed)), ['▌FANKEEL DESIGN  ●●○  等你 0 分'], 'a band with no count still drew a second row');
     $.session.usage = async () => { throw new Error('not yet'); };
     await log.ticks[0].fn();
-    assert.match(bandLines(await hooks.band($, BAND, passed))[0], /demo task/, 'a usage() that throws took the band with it');
+    assert.match(bandLines(await hooks.band($, BAND, passed))[0], /FANKEEL DESIGN/, 'a usage() that throws took the band with it');
 });
 
 test('a usage() that rejects drops the context block and nothing else of the tick', async () => {
     const hooks = await wired();
-    const { $, log, store } = fake({ files: entryFile(live) });
+    const { $, log, store } = fake({ files: entryFile(live), tokens: 400000 });
     const draw = async () => texts(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
@@ -594,10 +504,10 @@ test('a neighbour that first reads as unparsable is read again at the same mtime
     const { $, log, store } = fake({ files: Object.assign(entryFile(live), { [OTHER]: 'x'.repeat(valid.length) }) });
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
-    assert.doesNotMatch(bandLines(await hooks.band($, BAND, passed))[0], /⚑/);
+    assert.doesNotMatch(bandLines(await hooks.band($, BAND, passed)).join('\n'), /⚑/);
     store[OTHER] = valid;
     await log.ticks[0].fn();
-    assert.match(bandLines(await hooks.band($, BAND, passed))[0], /⚑1/, 'a read that failed was cached');
+    assert.match(bandLines(await hooks.band($, BAND, passed)).join('\n'), /⚑1/, 'a read that failed was cached');
 });
 
 test('a neighbour registry file that does not read is logged once, and the entry is left out', async () => {
@@ -608,7 +518,7 @@ test('a neighbour registry file that does not read is logged once, and the entry
     for (let i = 0; i < 3; i++) await log.ticks[0].fn();
     const said = log.logs.filter((m) => /neighbour registry file unreadable/.test(m));
     assert.deepEqual(said, ['fankeel pane: neighbour registry file unreadable, ' + OTHER], JSON.stringify(log.logs));
-    assert.match(bandLines(await hooks.band($, BAND, passed))[0], /demo task/);
+    assert.match(bandLines(await hooks.band($, BAND, passed))[0], /FANKEEL DESIGN/);
 });
 
 test('a pending file that is not JSON is logged once and draws no gate, and one that expired is not logged', async () => {
@@ -627,31 +537,33 @@ test('a pending file that is not JSON is logged once and draws no gate, and one 
     assert.deepEqual(old.log.logs.filter((m) => /pending file/.test(m)), [], JSON.stringify(old.log.logs));
 });
 
-test('a claimed plan with a build ledger draws its tasks done, and a line added to the ledger redraws', async () => {
+test('a claimed plan with a build ledger draws its tasks, on the band as a count, and a line added to the ledger redraws', async () => {
     const hooks = await wired();
     const PLAN = 'docs/plans/2026-10-12-demo.md';
     const LEDGER = ROOT + '/.fankeel/build/2026-10-12-demo/progress.md';
     const HEAD = '# fankeel build ledger — plan: ';
     const files = Object.assign(entryFile(Object.assign({}, live, { claims: ['a.js', PLAN, 'notes.md'] })), {
-        [ROOT + '/' + PLAN]: ['# Demo', '', '## Task 1: one', '', '## Task 2: two', '', '## Coverage', ''].join('\n'),
+        [ROOT + '/' + PLAN]: ['# Demo', '', '## Task 1: one', '', '**Dispatch:** implementer, sonnet — code.', '', '## Task 2: two', '', '**Dispatch:** user — look at it.', '', '## Coverage', ''].join('\n'),
         [LEDGER]: HEAD + PLAN + '\nTask 1: complete — one\n',
     });
     const { $, log, store } = fake({ files });
-    const draw = async () => texts(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
+    const draw = async () => paneLines(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
+    const tasks = (seen) => seen.slice(seen.indexOf(seen.find((t) => t.startsWith('▌tasks '))), seen.findIndex((t) => t.startsWith('▌abcdef12')) - 1);
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
-    let seen = await draw();
-    assert.ok(seen.includes('tasks 1 of 2'), seen.join(' | '));
-    assert.ok(seen.includes('●') && seen.includes('○') && seen.includes('2026-10-12-demo'));
+    assert.deepEqual(tasks(await draw()), ['▌tasks 1 of 2', ' ● 1 one', ' ◐ 2 two · 你的']);
+    assert.match(bandLines(await hooks.band($, BAND, passed))[0], / {2}tasks 1\/2 {2}/);
     const after = log.invalidated;
     store[LEDGER] += 'Task 2: complete — two\n';
     await log.ticks[0].fn();
     assert.equal(log.invalidated, after + 1);
-    assert.ok((await draw()).includes('tasks 2 of 2'));
+    assert.deepEqual(tasks(await draw()), ['▌tasks 2 of 2', ' ● 1 one', ' ● 2 two']);
+    assert.match(bandLines(await hooks.band($, BAND, passed))[0], / {2}tasks 2\/2 {2}/);
     assert.equal(log.reads.filter((p) => p === ROOT + '/' + PLAN).length, 1, 'the plan file was read again though it had not changed');
     store[LEDGER] = HEAD + 'docs/plans/other.md\nTask 1: complete — one\n';
     await log.ticks[0].fn();
-    assert.ok(!(await draw()).some((t) => t.startsWith('tasks ')), 'another plan\'s ledger was counted');
+    assert.ok(!(await draw()).some((t) => t.startsWith('▌tasks ')), 'another plan\'s ledger was counted');
+    assert.doesNotMatch(bandLines(await hooks.band($, BAND, passed))[0], /tasks/);
 });
 
 test('a pane that cannot open says what the engine said, or that nothing here draws panes', async () => {
@@ -671,36 +583,100 @@ test('a pane that cannot open says what the engine said, or that nothing here dr
     }
 });
 
-test('the Pane is laid out in its own body columns and rows, and coloured by the stage', async () => {
+test('the Pane is laid out in its own body columns and rows, each block under one rail of its own colour', async () => {
     const { width } = await import(pathToFileURL(path.join(__dirname, '..', 'hooks', 'pane-status.ts')).href);
     const hooks = await wired();
     const mine = Object.assign({}, live, { task: '一個很長的任務標題，'.repeat(6), notes: ['一則很長的筆記，'.repeat(8)], claims: ['a.js', 'docs/a/very/long/path/that/goes/on/and/on/and/on/file.md'] });
     const files = Object.assign(entryFile(mine), {
         [ROOT + '/.fankeel/sessions/11111111-0000-4000-8000-000000000002.json']: JSON.stringify({ task: '另一個很長的任務標題，'.repeat(6), stage: 'build', active: true, updated: new Date().toISOString(), claims: mine.claims }),
     });
-    const { $, log } = fake({ files });
+    const { $, log } = fake({ files, tokens: 400000 });
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
     const at = (bodyRows) => hooks['ui.render']($, { viewport: { columns: 200, rows: 50 }, props: { bodyColumns: 41, scroll: { offset: 0, bodyRows } } });
     const tree = await at(32);
+    // A row after a blank one, or the first, opens its block; the clash is an alarm and keeps its rail on every row.
+    let opens = true;
     for (const row of tree.children) {
-        const cells = row.tag === 'Text' ? width(row.children.join('')) : row.children.reduce((n, c) => n + width(c.children.join('')), row.children.length - 1);
-        assert.ok(cells <= 41, '41 < ' + cells + ': ' + texts(row).join(' '));
+        const cells = width(texts(row).join(''));
+        assert.ok(cells <= 41, '41 < ' + cells + ': ' + texts(row).join(''));
+        if (row.tag === 'Box') assert.equal(row.children[0].children.join(''), opens || row.children[0].props.color === '#ff5f5f' ? '▌' : ' ', texts(row).join(''));
+        opens = row.tag !== 'Box';
     }
-    const title = leaves(tree).filter((n) => n.props.bold && n.props.color === undefined).map((n) => n.children.join(''));
+    const title = leaves(tree).filter((n) => n.props.bold && n.props.color === undefined && n.children.join('') !== 'design').map((n) => n.children.join(''));
     assert.equal(title.join(''), mine.task, 'the title is not drawn whole');
     assert.equal(title.length, 3);
-    const heads = (t) => leaves(t).filter((n) => n.props.bold && n.props.color === '#5f5fd7').map((n) => n.children.join(''));
+    const heads = (t) => leaves(t).filter((n) => n.props.bold && n.props.color === '#8a8a8a').map((n) => n.children.join(''));
     assert.deepEqual(heads(tree), ['context', 'notes']);
+    const rails = (t) => [...new Set(t.children.filter((row) => row.tag === 'Box').map((row) => row.children[0].props.color))];
+    assert.deepEqual(rails(tree), [undefined, '#ff5f5f', '#8a8a8a', '#585858']);
     const clash = leaves(tree).filter((n) => n.children.join('').startsWith('⚑ '));
     assert.equal(clash.length, 2);
     assert.deepEqual(clash.map((n) => [n.props.color, n.props.bold]), [['#ff5f5f', true], ['#ff5f5f', true]]);
     assert.ok(clash[1].children.join('').startsWith('⚑ …') && clash[1].children.join('').endsWith('file.md'));
+    assert.equal(paneLines(tree).filter((t) => /… @ build · \d+m$/.test(t)).length, 2);
     const foot = leaves(tree).find((n) => n.children.join('').startsWith('abcdef12'));
     assert.equal(foot.props.color, '#8a8a8a');
-    // 18 rows in all: the task 6, the files 2, context 2, notes 2, the foot 1, and four blank rows between.
-    assert.equal(texts(tree).length, 18);
+    // 17 rows in all: the task 4, the clash 4, context 2, notes 2, the foot 1, and four blank rows between.
+    assert.equal(tree.children.length, 17);
     assert.deepEqual(heads(await at(15)), ['context'], 'the room is the body rows the surface gave, not the viewport');
+});
+
+test('the engine\'s rate limits are bars on the band and no reset time in the Pane, and a new figure redraws', async () => {
+    const hooks = await wired();
+    const { $, log } = fake({ files: entryFile(live) });
+    // Half a minute over, so the minute a countdown shows does not turn while the test runs: hooks/pane.ts draws against Date.now().
+    const soon = (ms) => new Date(Date.now() + ms + 30000).toISOString();
+    const limits = [{ kind: 'five_hour', percentUsed: 66, resetsAt: soon(106 * 60000) }, { kind: 'seven_day', percentUsed: 58, resetsAt: soon(60.5 * 3600000) }];
+    $.session.usage = async () => ({ startedAt: 0, context: { tokens: log.tokens, window: 1000000, percent: 31 }, rateLimits: limits });
+    const pane = async () => paneLines(await hooks['ui.render']($, { viewport: { columns: 44, rows: 60 } }));
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ███░│░░░░░ 312k/1M  │  5h ██████▌░░░  66%  │  7d █████▊░░░░  58%  -6%');
+    assert.doesNotMatch((await pane()).join('\n'), /█|░|%|剩|↻|重置|用量額度/);
+    const after = log.invalidated;
+    limits[0] = Object.assign({}, limits[0], { percentUsed: 67 });
+    await log.ticks[0].fn();
+    assert.equal(log.invalidated, after + 1);
+    // A window with no reset is still a bar on the band.
+    limits[1] = { kind: 'seven_day', percentUsed: 58 };
+    await log.ticks[0].fn();
+    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ███░│░░░░░ 312k/1M  │  5h ██████▋░░░  67%  │  7d █████▊░░░░  58%');
+    // An engine that reports no limits at all: the band is ctx alone.
+    $.session.usage = async () => ({ startedAt: 0, context: { tokens: log.tokens } });
+    await log.ticks[0].fn();
+    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ██████▉░░░ 312k/450k');
+});
+
+test('an engine that reports no window, or a window of 0, leaves the band measured against the threshold', async () => {
+    const hooks = await wired();
+    const { $, log } = fake({ files: entryFile(live) });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    for (const context of [{ tokens: 312000 }, { tokens: 312000, window: 0 }]) {
+        $.session.usage = async () => ({ startedAt: 0, context, rateLimits: [] });
+        await log.ticks[0].fn();
+        assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ██████▉░░░ 312k/450k', JSON.stringify(context));
+    }
+});
+
+test('while a gate waits a new second redraws, so the band countdown moves; with none it does not', async () => {
+    const hooks = await wired();
+    const { $, log, store } = fake({ files: entryFile(live) });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    let after = log.invalidated;
+    log.now += 1000;
+    await log.ticks[0].fn();
+    assert.equal(log.invalidated, after, 'a second with no gate redrew');
+    store[DIR + '/design-pending.json'] = JSON.stringify(gate);
+    await log.ticks[0].fn();
+    after = log.invalidated;
+    await log.ticks[0].fn();
+    assert.equal(log.invalidated, after, 'the same second redrew');
+    log.now += 1000;
+    await log.ticks[0].fn();
+    assert.equal(log.invalidated, after + 1);
 });
 
 test('a new minute redraws, so the band\'s minutes and the neighbours\' ages move', async () => {
@@ -782,17 +758,6 @@ test('the task ending closes the pane the mod opened, and leaves one the user op
     theirs.store[SESSION] = ended;
     await theirs.log.ticks[0].fn();
     assert.equal(theirs.log.closed.length, 1, 'the end of the task closed a pane the user opened');
-
-    const hooks3 = await wired();
-    const gated = fake({ files: entryFile(live) });
-    await hooks3['session.start'](gated.$, {}, async () => ({}));
-    await gated.log.ticks[0].fn();
-    await command(hooks3, gated.$);
-    gated.store[DIR + '/design-pending.json'] = JSON.stringify(gate);
-    await gated.log.ticks[0].fn();
-    gated.store[SESSION] = ended;
-    await gated.log.ticks[0].fn();
-    assert.equal(gated.log.closed.length, 2, 'the pane a gate opened was left up, or closed twice, when the task ended');
 });
 
 test('a registry file that cannot be read for a tick neither closes nor reopens the pane', async () => {
@@ -803,13 +768,13 @@ test('a registry file that cannot be read for a tick neither closes nor reopens 
     await command(hooks, $);
     assert.equal(log.closed.length, 1);
     const band = async () => bandLines(await hooks.band($, BAND, passed))[0];
-    assert.match(await band(), /demo task/);
+    assert.match(await band(), /FANKEEL DESIGN/);
     store[SESSION] = '{"task": "demo task", "stag';
     await log.ticks[0].fn();
-    assert.match(await band(), /demo task/, 'the band lost the task');
+    assert.match(await band(), /FANKEEL DESIGN/, 'the band lost the task');
     store[SESSION] = JSON.stringify(live);
     await log.ticks[0].fn();
-    assert.match(await band(), /demo task/);
+    assert.match(await band(), /FANKEEL DESIGN/);
     assert.equal(log.opened.length, 1, 'the task appeared again after an unreadable tick');
     assert.equal(log.closed.length, 1, 'the unreadable tick ended the task');
 });
@@ -848,7 +813,7 @@ test('an open that keeps rejecting does not keep the band off the screen', async
     $.ui.open = async () => { throw new Error('busy'); };
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
-    assert.match(bandLines(await hooks.band($, BAND, passed))[0], /demo task/, 'the band waited on an open that never went through');
+    assert.match(bandLines(await hooks.band($, BAND, passed))[0], /FANKEEL DESIGN/, 'the band waited on an open that never went through');
     assert.ok(log.invalidated >= 1, 'nothing was invalidated');
     await log.ticks[0].fn();
     await log.ticks[0].fn();
@@ -863,7 +828,7 @@ test('a registry file that stays unreadable is logged once and, after twenty tic
     const band = async () => { const drawn = await hooks.band($, BAND, passed); return typeof drawn === 'string' ? drawn : bandLines(drawn)[0]; };
     store[SESSION] = '{"task": "demo task", "stag';
     for (let i = 0; i < 19; i++) await log.ticks[0].fn();
-    assert.match(await band(), /demo task/, 'the task went before the twentieth tick');
+    assert.match(await band(), /FANKEEL DESIGN/, 'the task went before the twentieth tick');
     assert.deepEqual(log.closed, []);
     await log.ticks[0].fn();
     assert.equal(await band(), 'passed', 'the band still draws a task whose file stayed unreadable');
@@ -874,7 +839,7 @@ test('a registry file that stays unreadable is logged once and, after twenty tic
     assert.equal(log.logs.filter((m) => /tick skipped/.test(m)).length, 0);
     store[SESSION] = JSON.stringify(live);
     await log.ticks[0].fn();
-    assert.match(await band(), /demo task/, 'a file that parses again is not a task');
+    assert.match(await band(), /FANKEEL DESIGN/, 'a file that parses again is not a task');
 });
 
 test('a readable tick starts the count of unreadable ticks again', async () => {
@@ -889,30 +854,8 @@ test('a readable tick starts the count of unreadable ticks again', async () => {
     await log.ticks[0].fn();
     store[SESSION] = torn;
     await log.ticks[0].fn();
-    assert.match(bandLines(await hooks.band($, BAND, passed))[0], /demo task/, 'the twentieth unreadable tick overall read as no task');
+    assert.match(bandLines(await hooks.band($, BAND, passed))[0], /FANKEEL DESIGN/, 'the twentieth unreadable tick overall read as no task');
     assert.deepEqual(log.closed, []);
-});
-
-test('a close that rejects when the gate goes is tried again on the next tick, once', async () => {
-    const hooks = await wired();
-    const { $, log, store } = fake({ files: entryFile(live) });
-    const close = $.ui.close;
-    let calls = 0;
-    $.ui.close = async (p) => { calls += 1; if (calls === 2) throw new Error('busy'); return close(p); };
-    await hooks['session.start']($, {}, async () => ({}));
-    await log.ticks[0].fn();
-    await command(hooks, $);
-    assert.equal(log.closed.length, 1);
-    store[DIR + '/design-pending.json'] = JSON.stringify(gate);
-    await log.ticks[0].fn();
-    assert.equal(log.opened.length, 2, 'the gate got no pane after the user closed the task\'s');
-    delete store[DIR + '/design-pending.json'];
-    await log.ticks[0].fn();
-    assert.equal(log.closed.length, 1, 'the rejected close was recorded');
-    await log.ticks[0].fn();
-    assert.equal(log.closed.length, 2, 'the pane the gate opened stayed up after a close that rejected');
-    await log.ticks[0].fn();
-    assert.equal(log.closed.length, 2, 'closed again on a later tick');
 });
 
 test('a registry file that fails, parses, and fails again is logged each time it starts failing', async () => {
@@ -936,20 +879,20 @@ test('FANKEEL_PANE_PROBE draws what the engine says the session draws on above t
     const hooks = await wired();
     const surfaces = ['terminal', 'desktop'];
     const { $, log } = fake({ files: entryFile(live), env: { FANKEEL_PANE_PROBE: '1' }, surfaces });
-    const draw = async () => texts(await hooks['ui.render']($, { viewport: { columns: 60, rows: 40 } }));
+    const draw = async () => paneLines(await hooks['ui.render']($, { viewport: { columns: 60, rows: 40 } }));
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
-    assert.deepEqual((await draw()).slice(-3), [' ', 'surfaces [terminal, desktop] · surface terminal', 'abcdef12 · /fankeel-panel 關閉']);
+    assert.deepEqual((await draw()).slice(-3), [' ', '▌surfaces [terminal, desktop] · surface terminal', ' abcdef12 · /fankeel-panel 關閉']);
     const after = log.invalidated;
     await log.ticks[0].fn();
     assert.equal(log.invalidated, after, 'the same surfaces redrew');
     surfaces.length = 0;
     await log.ticks[0].fn();
     assert.equal(log.invalidated, after + 1);
-    assert.deepEqual((await draw()).slice(-2), ['surfaces [] · surface null', 'abcdef12 · /fankeel-panel 關閉']);
+    assert.deepEqual((await draw()).slice(-2), ['▌surfaces [] · surface null', ' abcdef12 · /fankeel-panel 關閉']);
     $.session.surface = async () => { throw new Error('gone'); };
     await log.ticks[0].fn();
-    assert.deepEqual((await draw()).slice(-2), ['surfaces ? · Error: gone', 'abcdef12 · /fankeel-panel 關閉']);
+    assert.deepEqual((await draw()).slice(-2), ['▌surfaces ? · Error: gone', ' abcdef12 · /fankeel-panel 關閉']);
 });
 
 test('with no FANKEEL_PANE_PROBE the Pane draws no probe row and the engine is not asked', async () => {
@@ -966,3 +909,55 @@ test('with no FANKEEL_PANE_PROBE the Pane draws no probe row and the engine is n
         assert.equal(asked, 0);
     }
 });
+
+test('an active neighbour that is not in live.json is no clash, unless its file moved since; with no list every active neighbour counts', async () => {
+    const hooks = await wired();
+    const LIVE = ROOT + '/.fankeel/build/live.json';
+    const A = ROOT + '/.fankeel/sessions/11111111-0000-4000-8000-000000000002.json';
+    const B = ROOT + '/.fankeel/sessions/22222222-0000-4000-8000-000000000003.json';
+    const peer = (task) => JSON.stringify({ task, stage: 'build', active: true, updated: new Date().toISOString(), claims: ['a.js'] });
+    const { $, log, store, mtimes } = fake({ files: Object.assign(entryFile(live), { [A]: peer('still here'), [B]: peer('long gone') }) });
+    const band = async () => { await log.ticks[0].fn(); return bandLines(await hooks.band($, BAND, passed)).join('\n'); };
+    const pane = async () => paneLines(await hooks['ui.render']($, { viewport: { columns: 44, rows: 60 } })).join('\n');
+    const list = (ids, at) => JSON.stringify({ at: at === undefined ? 5 : at, ids });
+    await hooks['session.start']($, {}, async () => ({}));
+    // No list: as it always was.
+    assert.match(await band(), /⚑2/);
+    // Every registry file here has mtimeMs 1, older than the list's `at` of 5.
+    store[LIVE] = list(['11111111-0000-4000-8000-000000000002']);
+    assert.match(await band(), /⚑1/);
+    assert.match(await pane(), /still here @ build/);
+    assert.doesNotMatch(await pane(), /long gone/);
+    // A registry file newer than the list is a session that moved after it was written.
+    mtimes[B] = 6;
+    assert.match(await band(), /⚑2/);
+    assert.match(await pane(), /long gone @ build/);
+    mtimes[B] = 5;
+    assert.match(await band(), /⚑1/, 'a file as old as the list counted as newer');
+    store[LIVE] = list([]);
+    assert.doesNotMatch(await band(), /⚑/);
+    assert.doesNotMatch(await pane(), /⚑|still here/);
+    assert.equal(leaves(await hooks.band($, BAND, passed))[0].props.color, '#5f5fd7', 'the rail stayed red with nobody live in these files');
+    // Cannot tell is not nobody: null ids, a file that does not parse, one with no `at`, and no file.
+    for (const text of [list(null), '{ not json', JSON.stringify({ ids: [] }), JSON.stringify({ at: 'soon', ids: [] })]) {
+        store[LIVE] = text;
+        assert.match(await band(), /⚑2/, text);
+    }
+    delete store[LIVE];
+    assert.match(await band(), /⚑2/);
+});
+
+test('a live.json that exists and does not parse is logged once across ticks, and a missing one is not logged', async () => {
+    const hooks = await wired();
+    const LIVE = ROOT + '/.fankeel/build/live.json';
+    const { $, log, store } = fake({ files: entryFile(live) });
+    const said = () => log.logs.filter((m) => /live list/.test(m));
+    await hooks['session.start']($, {}, async () => ({}));
+    for (let i = 0; i < 3; i++) await log.ticks[0].fn();
+    assert.deepEqual(said(), [], 'a missing live.json was logged');
+    store[LIVE] = '{ not json';
+    for (let i = 0; i < 3; i++) await log.ticks[0].fn();
+    assert.equal(said().length, 1, JSON.stringify(log.logs));
+    assert.match(said()[0], /^fankeel pane: live list does not parse, /);
+});
+

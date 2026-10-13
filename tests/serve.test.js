@@ -82,7 +82,7 @@ test('a serve started detached outlives the process that started it and the one 
     const env = Object.assign({}, process.env, { CLAUDE_CONFIG_DIR: cfg });
     // The hook: what hooks/inject.js does on a `/fankeel` prompt — ask, start,
     // wait for the record, print the answer, exit. `--port 0` keeps the serve
-    // off 7817 and any station already there; `--idle 2` is the backstop
+    // off 28888 and any station already there; `--idle 2` is the backstop
     // should the kill below never run.
     const hook = 'require(' + JSON.stringify(LIB) + ').ensureServe({ configDir: ' + JSON.stringify(cfg)
         + ', plugin: ' + JSON.stringify(PLUGIN) + ", open: false, extra: ['--port', '0', '--idle', '2'],"

@@ -24,3 +24,7 @@ stamp: 2026-10-10
 2026-10-10（同一天稍晚）：事件又發生兩次，都在任務「核對 judge 的十筆 workflow-gaps」的同一個 commit 上，都不是 trackedIn 測試。第一次是 build 收尾跑整套，紅一條 tune 測試檔的 live mode 測試，單獨跑那個檔 26 條全過，重跑整套 3969 全過。第二次是 verify 站，整套和十二個各自跑測試的 verifier 同時進行，紅兩條：inject 測試檔的「a pass too big to record」與 tune 測試檔的「a request with items」；兩個檔單獨跑都綠，inject 連跑四次都是 50 條全過，機器安靜後重跑整套 3969 全過。到這次為止紅過的是六個不同的測試，其中三個在 tune 測試檔；第二次明顯和並行負載同時出現。suite 紀錄現在留下每一次執行，這兩次紅的測試名都在該任務的紀錄裡。
 
 2026-10-10（深夜）：事件又發生兩次，都在盤點任務「TODO 全表盤點」的 land 站、同一個 commit 上，兩次之間沒有改任何檔案，都不是 trackedIn 測試。第一次整套 3968 過、1 失敗，紅的是 station-cli 測試檔的「the first run scans once and records that it did」；第二次同樣 3968 過、1 失敗，紅的換成 dirty 測試檔的「a pass the record can hold is taken whole」。兩個檔單獨各跑三次都綠（12 條與 17 條全過）。當時機器上同時有二十多個 node 與 claude 行程，沒有驗證負載就是原因。到這次為止紅過的是八個不同的測試；這次是第一次連續兩輪整套都紅，使用者選擇記下證據、重跑到綠再收。
+
+2026-10-14：事件又發生一次。任務「入口同步自動壓縮視窗」的 build 收尾跑整套測試，4185 過、1 失敗，紅的是 station-cli 測試檔的「the first run scans once and records that it did」，和 10-10 深夜那次是同一條；那個檔單獨跑三次都是 12 過，同一個 commit 重跑整套 4186 全過，兩次之間沒有改任何檔案。這次改動的檔（compact-window.js、task.js 與它們的測試）那條測試碰不到。
+
+2026-10-14（第二次）：事件又發生一次。任務「移除 pane 的 gate 提問右側顯示功能」的 verify 在 ded261cd 上跑整套測試，4163 過、1 失敗，紅的仍是 station-cli 測試檔的「the first run scans once and records that it did」，那一條跑了 13.5 秒；那次整套執行時同一個 session 另外在跑 docs-check 與幾個 grep。該檔單獨重跑 12 過，同一個 commit 之後單獨跑整套是 4164 過、0 失敗。機器忙的時候這一條會超時是候選原因，沒有證實。

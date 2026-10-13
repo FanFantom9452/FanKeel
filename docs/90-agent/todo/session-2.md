@@ -6,7 +6,7 @@ state: blocked
 link: docs/90-agent/reference/drive.md
 group: driver 實跑
 timing: after: 有一個要跑的任務選擇交給 drive.js
-stamp: 2026-10-12
+stamp: 2026-10-13
 ---
 
 來源：2026-10-10 TODO 盤點（session-1 結案時）。verify 確認 drive.js 的每條路徑都只由假 spawn 測過；設計的 Unverified 一項（acceptEdits 下能不能寫 .fankeel/build/）仍未驗證。10-10 使用者用 claude --debug 在 auto mode 寫同一個資料夾是放行的，但那是主 session、不是 claude -p 加 acceptEdits。

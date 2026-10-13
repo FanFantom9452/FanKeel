@@ -153,11 +153,13 @@ function serve(dir, port, live, upstream) {
                 const str = (v, n) => (typeof v === 'string' ? v.trim().slice(0, n) : '');
                 const strs = (v, n) => (Array.isArray(v) ? v.map((x) => str(x, n)).filter(Boolean).slice(0, 20) : []);
                 // One change: a note for one element, or for several — then
-                // `blocks` and `selectors` name every one of them.
+                // `blocks` and `selectors` name every one of them. `block`
+                // falls back to the first of `blocks`, for an item whose first
+                // element sat in no block.
                 const itemOf = (d) => {
-                    const one = { note: str(d.note, 4000), block: str(d.block, 200), selector: str(d.selector, 500), classes: Array.isArray(d.classes) ? d.classes.filter((c) => typeof c === 'string').slice(0, 20) : [], text: str(d.text, 80) };
                     const blocks = strs(d.blocks, 200);
                     const selectors = strs(d.selectors, 500);
+                    const one = { note: str(d.note, 4000), block: str(d.block, 200) || blocks[0] || '', selector: str(d.selector, 500), classes: Array.isArray(d.classes) ? d.classes.filter((c) => typeof c === 'string').slice(0, 20) : [], text: str(d.text, 80) };
                     if (blocks.length > 1) one.blocks = blocks;
                     if (selectors.length > 1) one.selectors = selectors;
                     return one;
@@ -167,8 +169,18 @@ function serve(dir, port, live, upstream) {
                 const items = many ? data.items.map((d) => itemOf(d && typeof d === 'object' ? d : {})) : [itemOf(data)];
                 const bad = items.findIndex((it) => !it.note || (!it.block && !it.selector));
                 if (bad >= 0) return send(res, 400, TYPES['.txt'], (many ? 'item ' + (bad + 1) + ': ' : '') + 'a note, and a block or a selector, are required');
-                if (!upstream && (!file || !/\.html?$/i.test(file) || !fs.existsSync(file) || items.some((it) => !it.block))) {
+                if (!upstream && (!file || !/\.html?$/i.test(file) || !fs.existsSync(file))) {
                     return send(res, 400, TYPES['.txt'], 'a static page takes a data-block element on an html file under the served directory');
+                }
+                // A static page is edited by block name, so every item needs
+                // one. The refusal names the item and the element it pointed
+                // at — its tag off the selector's last step, and its classes —
+                // and the overlay reads `item <n>: ` off the front to mark it.
+                const loose = upstream ? -1 : items.findIndex((it) => !it.block);
+                if (loose >= 0) {
+                    const it = items[loose];
+                    const name = it.selector.split(' > ').pop().replace(/:nth-of-type\(\d+\)$/, '') + it.classes.map((c) => '.' + c).join('');
+                    return send(res, 400, TYPES['.txt'], (many ? 'item ' + (loose + 1) + ': ' : '') + name + ' 不在任何 data-block 內；按這一則的編號重新圈選，往外或往內一層');
                 }
                 // Every block the request names, once each: what `done` holds
                 // the edit to. The first item's fields stay on the row, so a

@@ -10,7 +10,7 @@
 // three code shapes (the CSS pulse rule and its reduced-motion rule,
 // `q.editing`, `setInterval(refreshQueue, 2000)`), which assert the source
 // says so, not that it runs. Listeners no test dispatches: the logo's
-// pointercancel, the fold, clear and out buttons, document mousemove beyond the
+// pointercancel, the fold and clear buttons, document mousemove beyond the
 // hovers the two wheel tests fire, window blur, keyup and keypress, scroll and
 // resize, the draft number button click (overlay.js:348), the chip remove x
 // click (:360), the draft delete button click (:373), the diff link click
@@ -127,6 +127,14 @@ test('the design and build skills and the mockup agent describe the assistant an
     assert.match(read('agents/fankeel-mockup.md'), /A request with `items` is several changes sent together/);
 });
 
+// tune-3: a frame and a spacer row with no name of their own are what the
+// overlay cannot send, so the mockup agent is told to name them.
+test('the mockup agent names the frame and the spacer row as blocks of their own', () => {
+    const text = fs.readFileSync(path.join(__dirname, '..', 'agents', 'fankeel-mockup.md'), 'utf8').replace(/\s+/g, ' ');
+    assert.match(text, /A frame that wraps several blocks, and a row that sits between two blocks, each carry a `data-block` of their own/);
+    assert.match(text, /One granularity per page/);
+});
+
 // ---- The DOM half, executed against a hand-written stub document. ----------
 // OVERLAY_SRC lets a mutated copy of overlay.js be run through the same tests.
 const DOM_SRC = process.env.OVERLAY_SRC || SRC;
@@ -189,6 +197,7 @@ function makeEl(doc, tag) {
         (e._on[type] = e._on[type] || []).push({ fn, capture });
     };
     const match = (sel) => {
+        if (sel === '[data-block]') return (n) => n.hasAttribute('data-block');
         const m = /^(?:body > )?(\w+)?((?:\.[\w-]+)*)(?::nth-of-type\((\d+)\))?(?:\[data-block="(.*)"\])?$/.exec(sel);
         if (!m) return () => false;
         return (n) => (!m[1] || n.tagName === m[1].toUpperCase())
@@ -242,6 +251,7 @@ function loadOverlay(shared) {
     const fetched = [];
     const fetchStub = (url, init) => {
         fetched.push({ url, init });
+        if (url === '/__live/request' && shared && shared.refuse) return Promise.resolve({ ok: false, status: 400, text: () => Promise.resolve(shared.refuse) });
         const body = url === '/__live/request' ? { id: 'r1' } : { pending: 0, editing: [] };
         return Promise.resolve({ ok: true, json: () => Promise.resolve(body), text: () => Promise.resolve('') });
     };
@@ -278,7 +288,7 @@ function loadOverlay(shared) {
         release: (id = 1) => fire(logo, 'pointerup', { pointerId: id }),
         tick: () => new Promise((r) => setImmediate(r)),
     };
-    t.openTray = () => { t.press(5, 5); t.release(); };
+    t.openTray = () => { if (t.tray.hidden) { t.press(5, 5); t.release(); } };
     // 新增一則, click each block, 完成這則, then write the note when given one.
     t.draft = (blocks, note) => {
         fire(q('.fk-live-add'), 'click');
@@ -292,7 +302,7 @@ function loadOverlay(shared) {
     return t;
 }
 
-test('dragging the logo moves it, clamps it inside the viewport, keeps the spot, and the click that ends a drag does not open the tray', () => {
+test('dragging the logo moves it, clamps it inside the viewport, keeps the spot, and the click that ends a drag does not fold the tray', () => {
     const t = loadOverlay();
     assert.equal(t.ast.style.left, '1216px');
     assert.equal(t.ast.style.top, '736px');
@@ -307,8 +317,8 @@ test('dragging the logo moves it, clamps it inside the viewport, keeps the spot,
     assert.ok(!t.logo.classList.contains('fk-live-drag'));
     assert.deepEqual(JSON.parse(t.localStorage.m['fk-live-ast-pos']), { x: 916, y: 536 });
     t.fire(t.logo, 'click', { detail: 1 });
-    assert.equal(t.tray.hidden, true, 'the click that ends a drag opened the tray');
-    assert.equal(t.logo.getAttribute('aria-expanded'), 'false');
+    assert.equal(t.tray.hidden, false, 'the click that ends a drag folded the tray');
+    assert.equal(t.logo.getAttribute('aria-expanded'), 'true');
     t.press(930, 550);
     t.move(2930, 2550);
     assert.equal(t.ast.style.left, '1232px');
@@ -332,24 +342,34 @@ test('another pointer\'s move does not drag the logo', () => {
     t.release();
 });
 
+// tune-5: a first-time reader never noticed the logo in the corner, so the
+// tray is there when the page loads and the logo is what folds it.
+test('a freshly loaded page shows the tray open, and the logo says it folds', () => {
+    const t = loadOverlay();
+    assert.equal(t.tray.hidden, false, 'the tray is folded behind the logo on load');
+    assert.equal(t.logo.getAttribute('aria-expanded'), 'true');
+    assert.ok(t.ast.classList.contains('fk-live-open'));
+    assert.match(t.logo.getAttribute('aria-label'), /點一下收合$/);
+});
+
 test('a plain press and release of the logo toggles the tray and aria-expanded, once, and a keyboard click does too', () => {
     const t = loadOverlay();
-    assert.equal(t.logo.getAttribute('aria-expanded'), 'false');
-    t.press(5, 5);
-    t.release();
-    t.fire(t.logo, 'click', { detail: 1 });
-    assert.equal(t.tray.hidden, false);
     assert.equal(t.logo.getAttribute('aria-expanded'), 'true');
     t.press(5, 5);
     t.release();
     t.fire(t.logo, 'click', { detail: 1 });
     assert.equal(t.tray.hidden, true);
     assert.equal(t.logo.getAttribute('aria-expanded'), 'false');
-    t.fire(t.logo, 'click', { detail: 0 });
+    t.press(5, 5);
+    t.release();
+    t.fire(t.logo, 'click', { detail: 1 });
+    assert.equal(t.tray.hidden, false);
     assert.equal(t.logo.getAttribute('aria-expanded'), 'true');
+    t.fire(t.logo, 'click', { detail: 0 });
+    assert.equal(t.logo.getAttribute('aria-expanded'), 'false');
     t.press(5, 5, 7);
     t.release(8);
-    assert.equal(t.logo.getAttribute('aria-expanded'), 'true', 'another pointer\'s release must not toggle');
+    assert.equal(t.logo.getAttribute('aria-expanded'), 'false', 'another pointer\'s release must not toggle');
 });
 
 test('while picking, the capture listeners swallow the page\'s pointer and click events, never the overlay\'s own, and never when not picking', () => {
@@ -379,14 +399,17 @@ test('while picking, the capture listeners swallow the page\'s pointer and click
     assert.deepEqual(seen, [], 'the page saw ' + seen);
     assert.equal(t.fire(t.page.hero, 'pointerdown', { button: 2 })._stopNow, false, 'a right-button press is not the assistant\'s');
 
-    // The overlay's own elements are never swallowed.
+    // The overlay's own elements are never swallowed. 完成這則 sits in the row
+    // being picked, so it is clicked while that row is there, and a new item
+    // keeps the assistant picking for the logo.
+    assert.equal(t.fire(t.q('.fk-live-fin'), 'click').defaultPrevented, false);
+    t.fire(t.q('.fk-live-add'), 'click');
     own.length = 0;
     for (const type of TYPES) {
         const ev = t.fire(t.logo, type, { button: type === 'auxclick' ? 1 : 0 });
         assert.equal(ev.defaultPrevented, false, type + ' on the logo was prevented');
     }
     assert.deepEqual(own, TYPES, 'the logo missed an event while picking');
-    assert.equal(t.fire(t.q('.fk-live-fin'), 'click').defaultPrevented, false);
 });
 
 test('while picking, a click on a page element picks it, a second click takes it back, and an Alt click is the same click', () => {
@@ -526,4 +549,128 @@ test('Escape while picking drops the pick, removes a draft left with no element,
     assert.equal(t.doc.all('.fk-live-chip').length, 1, 'the unfinished draft stayed');
     assert.equal(t.q('.fk-live-badge').textContent, '1');
     assert.equal(t.fire(t.page.card, 'keydown', { key: 'Escape' })._stopNow, false, 'Escape with nothing to end was swallowed');
+});
+
+// tune-3: a pick is resolved to blocks when it is made. An element inside a
+// block stands for that block; a frame around blocks stands for every block
+// inside it; an element with neither is outlined amber, told why, and not taken.
+test('itemsOf sends every block a frame pick resolved to, the first one as block', () => {
+    const { itemsOf } = require('../assets/tune/overlay.js');
+    const frame = { block: 'card', blocks: ['card', 'foot'], selector: 'div:nth-of-type(1)', classes: ['term'], text: 't' };
+    const inner = { block: 'hero', blocks: ['hero'], selector: 'section:nth-of-type(1)', classes: [], text: 'h' };
+    assert.deepEqual(itemsOf([{ note: 'one', picks: [frame] }, { note: 'two', picks: [inner, frame] }, { note: 'three', picks: [inner] }]), [
+        { note: 'one', block: 'card', blocks: ['card', 'foot'], selector: 'div:nth-of-type(1)', classes: ['term'], text: 't' },
+        { note: 'two', block: 'hero', blocks: ['hero', 'card', 'foot'], selector: 'section:nth-of-type(1)', classes: [], text: 'h', selectors: ['section:nth-of-type(1)', 'div:nth-of-type(1)'] },
+        { note: 'three', block: 'hero', selector: 'section:nth-of-type(1)', classes: [], text: 'h' },
+    ]);
+});
+
+// A frame around card and foot, with a spacer row between them that carries no
+// data-block, appended to the stub page; picking has begun.
+function withFrame() {
+    const t = loadOverlay();
+    const frame = t.doc.createElement('div');
+    frame.className = 'term';
+    const gap = t.doc.createElement('div');
+    gap.className = 'gap';
+    t.doc.body.appendChild(frame);
+    frame.appendChild(t.page.card);
+    frame.appendChild(gap);
+    frame.appendChild(t.page.foot);
+    t.openTray();
+    t.fire(t.q('.fk-live-add'), 'click');
+    return { t, frame, gap };
+}
+
+test('while picking, a click on a frame takes every block inside it, and an element with no block is told why and not taken', async () => {
+    const { t, frame, gap } = withFrame();
+    const chips = () => t.doc.all('.fk-live-chip').map((c) => c.textContent);
+    const tag = () => t.q('.fk-live-tag');
+    const box = () => t.q('.fk-live-box');
+
+    t.fire(gap, 'mousemove');
+    assert.equal(tag().textContent, 'div.gap · 沒有 data-block，往外或往內一層');
+    assert.ok(box().classList.contains('fk-live-bad'), 'the outline of an element with no block is not amber');
+    assert.ok(tag().classList.contains('fk-live-bad'), 'the label of an element with no block is not amber');
+    t.fire(gap, 'click');
+    assert.deepEqual(chips(), [], 'an element with no data-block in or around it was taken');
+
+    t.fire(frame, 'mousemove');
+    assert.equal(tag().textContent, 'div.term · 外框·2 塊');
+    assert.ok(!box().classList.contains('fk-live-bad'), 'a frame around blocks is outlined amber');
+    t.fire(frame, 'click');
+    assert.deepEqual(chips(), ['div.term · 外框·2 塊×']);
+
+    t.fire(t.page.hero, 'mousemove');
+    assert.equal(tag().querySelector('b').textContent, 'hero', 'the label of an element in a block does not name the block');
+    assert.ok(!tag().classList.contains('fk-live-bad'));
+
+    t.fire(t.q('.fk-live-fin'), 'click');
+    const area = t.doc.all('textarea').pop();
+    area.value = '整個外框換底色';
+    t.fire(area, 'input');
+    t.fire(t.q('.fk-live-all'), 'click');
+    const item = JSON.parse(t.fetched.filter((f) => f.url === '/__live/request')[0].init.body).items[0];
+    assert.equal(item.block, 'card');
+    assert.deepEqual(item.blocks, ['card', 'foot']);
+    assert.match(item.selector, /^div:nth-of-type\(\d+\)$/);
+    assert.equal(item.selectors, undefined);
+    await t.tick();
+});
+
+// tune-3: a refusal that names an item keeps every draft, marks that item's
+// row, and says which one on the queue line; one that names none marks none.
+test('a refused send keeps the drafts, marks the item the server named, and says which one', async () => {
+    const why = 'div.r 不在任何 data-block 內；按這一則的編號重新圈選，往外或往內一層';
+    const t = loadOverlay({ refuse: 'item 2: ' + why });
+    t.openTray();
+    t.draft(['hero'], 'first');
+    t.draft(['card'], 'second');
+    t.fire(t.q('.fk-live-all'), 'click');
+    await t.tick();
+    assert.equal(t.q('.fk-live-badge').textContent, '2', 'a refused send dropped the drafts');
+    assert.deepEqual(t.doc.all('textarea').map((x) => x.value), ['first', 'second']);
+    assert.equal(t.q('.fk-live-queue').querySelector('span').textContent, '第 2 則：' + why);
+    assert.deepEqual(t.doc.all('.fk-live-item').map((li) => li.classList.contains('fk-live-err')), [false, true]);
+
+    const plain = loadOverlay({ refuse: 'not JSON' });
+    plain.openTray();
+    plain.draft(['hero'], 'first');
+    plain.fire(plain.q('.fk-live-all'), 'click');
+    await plain.tick();
+    assert.equal(plain.q('.fk-live-queue').querySelector('span').textContent, 'not JSON');
+    assert.deepEqual(plain.doc.all('.fk-live-item').map((li) => li.classList.contains('fk-live-err')), [false]);
+});
+
+// tune-4: the item being picked carries its note field and its two buttons, so
+// what the user does next is in the row the pick belongs to.
+test('the row being picked has its note field, and 往外一層 and 完成這則 sit in it', () => {
+    const t = loadOverlay();
+    const span = t.doc.createElement('span');
+    t.page.card.appendChild(span);
+    t.openTray();
+    t.fire(t.q('.fk-live-add'), 'click');
+    const row = () => t.q('.fk-live-item.fk-live-picking');
+    assert.ok(row(), 'no row is marked as the one being picked');
+    const area = row().querySelector('textarea');
+    assert.ok(area, 'the row being picked has no note field');
+    assert.ok(row().querySelector('.fk-live-out'), '往外一層 is not in the row being picked');
+    assert.ok(row().querySelector('.fk-live-fin'), '完成這則 is not in the row being picked');
+    assert.equal(t.q('.fk-live-hint').querySelector('button'), null, 'the hint still carries a button');
+
+    area.value = '先寫備註';
+    t.fire(area, 'input');
+    t.fire(t.page.hero, 'click');
+    assert.equal(row().querySelector('textarea').value, '先寫備註', 'a pick threw the note away');
+
+    t.fire(span, 'mousemove');
+    t.fire(row().querySelector('.fk-live-out'), 'click');
+    t.fire(span, 'click');
+    assert.deepEqual(t.doc.all('.fk-live-chip').map((c) => c.textContent), ['section.hero-c×', 'section.card-c×'], '往外一層 in the row did not walk out to the parent');
+
+    t.fire(row().querySelector('.fk-live-fin'), 'click');
+    assert.equal(row(), null, '完成這則 in the row did not end the pick');
+    assert.equal(t.q('.fk-live-out'), null, 'a row that is not being picked carries 往外一層');
+    assert.deepEqual(t.doc.all('textarea').map((x) => x.value), ['先寫備註']);
+    assert.equal(t.q('.fk-live-badge').textContent, '1');
 });

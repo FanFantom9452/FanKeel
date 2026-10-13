@@ -26,7 +26,7 @@ function seed(root, sessionId, over) {
 
 function transcript(root, tokens) {
     const file = path.join(root, 'transcript.jsonl');
-    fs.writeFileSync(file, JSON.stringify({ message: { usage: {
+    fs.writeFileSync(file, JSON.stringify({ type: 'assistant', message: { usage: {
         input_tokens: tokens, cache_creation_input_tokens: 0, cache_read_input_tokens: 0,
     } } }) + '\n');
     return file;
@@ -43,7 +43,7 @@ function withSubagent(root, parentTokens, subagentTokens) {
     if (subagentTokens !== undefined) {
         const dir = path.join(root, 'transcript', 'subagents');
         fs.mkdirSync(dir, { recursive: true });
-        fs.writeFileSync(path.join(dir, 'agent-' + AGENT + '.jsonl'), JSON.stringify({ message: { usage: {
+        fs.writeFileSync(path.join(dir, 'agent-' + AGENT + '.jsonl'), JSON.stringify({ type: 'assistant', message: { usage: {
             input_tokens: subagentTokens, cache_creation_input_tokens: 0, cache_read_input_tokens: 0,
         } } }) + '\n');
     }
@@ -110,7 +110,7 @@ test('460k in a workflow agent\'s transcript, present only under subagents/workf
     const t = transcript(root, 1000);
     const dir = path.join(root, 'transcript', 'subagents', 'workflows', 'wf_x');
     fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(path.join(dir, 'agent-a0b1c2.jsonl'), JSON.stringify({ message: { usage: {
+    fs.writeFileSync(path.join(dir, 'agent-a0b1c2.jsonl'), JSON.stringify({ type: 'assistant', message: { usage: {
         input_tokens: 460000, cache_creation_input_tokens: 0, cache_read_input_tokens: 0,
     } } }) + '\n');
     const out = run({ session_id: MINE, cwd: root, agent_id: 'a0b1c2', hook_event_name: 'PreToolUse', tool_name: 'Read', tool_input: { file_path: 'lib/x.js' }, transcript_path: t });
@@ -145,4 +145,17 @@ test('460k on PreToolUse: SubagentHandback is let through', () => {
     const t = withSubagent(root, 1000, 460000);
     const out = run({ session_id: MINE, cwd: root, agent_id: AGENT, hook_event_name: 'PreToolUse', tool_name: 'SubagentHandback', tool_input: { message: 'relay' }, transcript_path: t });
     assert.equal(out, '');
+});
+
+test('a subagent at 47k that read a file quoting a 650k usage record is not stopped', () => {
+    const root = tmp('fankeel-budget-');
+    seed(root, MINE);
+    const t = withSubagent(root, 1000, 47000);
+    const quoted = JSON.stringify({ type: 'user', message: { role: 'user', content: [{
+        type: 'tool_result',
+        content: JSON.stringify({usage: {input_tokens: 2,cache_creation_input_tokens: 2362,cache_read_input_tokens: 650000}}),
+    }] } });
+    fs.appendFileSync(path.join(root, 'transcript', 'subagents', 'agent-' + AGENT + '.jsonl'), quoted + '\n');
+    const out = run({ session_id: MINE, cwd: root, agent_id: AGENT, hook_event_name: 'PreToolUse', tool_name: 'Read', tool_input: { file_path: 'tests/render.test.js' }, transcript_path: t });
+    assert.equal(out.trim(), '');
 });

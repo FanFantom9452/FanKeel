@@ -207,3 +207,88 @@ test('both blocks read the window from the hook\'s own environment', () => {
     else process.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW = saved;
   }
 });
+
+// compact-5: hooks/compact.ts compacts at the profile's compact.at, so a tier a
+// profile file set is a window of its own. The built-in tier is nobody's choice.
+test('a tier the profile set stands in for the window; off and no tier do not', () => {
+  const info = { dropped: 0, used: ctx.BUSY };
+  for (const at of ['350000', '450000', '600000', 350000]) {
+    assert.doesNotMatch(ctx.contextLine(info, null, {}, at), /auto-compact window/, String(at));
+  }
+  for (const at of ['off', undefined, null, '123']) {
+    assert.match(ctx.contextLine(info, null, {}, at), /No auto-compact window is set/, String(at));
+  }
+});
+
+test('both blocks pass the tier a profile file set, never the built-in one', () => {
+  const { render, renderResume } = require('../lib/render.js');
+  const now = Date.now();
+  const mine = { sessionId: 'a', data: { task: 'x', scope: ['a.js'], stage: 'build', active: true, updated: new Date(now).toISOString() } };
+  const file = transcript([usage(ctx.BUSY)]);
+  const profileOf = (source) => ({ values: { 'compact.at': '350000' }, sources: { 'compact.at': source } });
+  const block = (source) => render({ mine, others: [], now, root: 'F:/x', launch: 'F:/x', transcript: file, profile: profileOf(source) });
+  const resume = (source) => renderResume({ mine, transcript: file, profile: profileOf(source) }) || '';
+  const saved = process.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW;
+  try {
+    delete process.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW;
+    for (const source of ['project', 'machine']) {
+      assert.doesNotMatch(block(source), /auto-compact window/, source);
+      assert.doesNotMatch(resume(source), /auto-compact window/, source);
+    }
+    assert.match(block('builtin'), /No auto-compact window is set/);
+    assert.match(resume('builtin'), /No auto-compact window is set/);
+  } finally {
+    if (saved === undefined) delete process.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW;
+    else process.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW = saved;
+  }
+});
+
+// A row that quotes a transcript: a tool result whose text carries a usage
+// record and a dropped count. On disk its quotes are escaped once, which is the
+// form the old patterns were written to accept.
+const quoted = (read, dropped) => JSON.stringify({ type: 'user', message: { role: 'user', content: [{
+  type: 'tool_result',
+  content: '{"usage":{"input_tokens":2,"cache_creation_input_tokens":2362,"cache_read_input_tokens":' + read + '}} "cumulativeDroppedTokens":' + dropped,
+}] } });
+
+test('a usage and a dropped count quoted in a tool result are not this session\'s', () => {
+  const file = transcript([usage(40000), compaction(326893), quoted(650000, 1120198)]);
+  const info = ctx.inspect(file);
+  assert.equal(info.used, 40000 + 2362 + 2);
+  assert.equal(info.dropped, 326893);
+});
+
+test('quoted figures alone are no reading at all', () => {
+  assert.equal(ctx.inspect(transcript([quoted(650000, 1120198)])), null);
+});
+
+test('a usage on a row that is not an assistant row, and a dropped count on one that is not a compact_boundary, do not count', () => {
+  const stray = JSON.stringify({type: 'progress',message: {usage: {input_tokens: 999999}}});
+  const note = '{"type":"system","subtype":"informational","content":"' + BS + '"cumulativeDroppedTokens' + BS + '":777}"}';
+  const info = ctx.inspect(transcript([usage(40000), stray, note]));
+  assert.equal(info.used, 40000 + 2362 + 2);
+  assert.equal(info.dropped, 0);
+});
+
+// Rows that carry the text `compact_boundary` and a dropped count without being
+// the system row of that subtype: a tool result quoting one, a system row of
+// another subtype that names it, a row of that subtype that is not a system
+// row, and the tail's first line, cut mid-row so it does not parse.
+const mention = (dropped) => JSON.stringify({ type: 'user', message: { role: 'user', content: [{
+  type: 'tool_result',
+  content: 'a compact_boundary row reads "cumulativeDroppedTokens":' + dropped,
+}] } });
+const aside = (dropped) => JSON.stringify({ type: 'system', subtype: 'informational',
+  content: 'the last compact_boundary said "cumulativeDroppedTokens":' + dropped });
+const posed = (dropped) => JSON.stringify({ type: 'user', subtype: 'compact_boundary',
+  content: '"cumulativeDroppedTokens":' + dropped });
+const torn = (dropped) => compaction(dropped).slice(9);
+
+test('a row that names compact_boundary and carries a dropped count, and is not that system row, is not a compaction', () => {
+  for (const [name, row] of [['a tool result', mention(1120198)], ['another subtype', aside(1120198)], ['another type', posed(1120198)], ['a cut line', torn(1120198)]]) {
+    assert.ok(row.includes('compact_boundary') && /cumulativeDroppedTokens/.test(row), name + ' does not reach the row check');
+    const info = ctx.inspect(transcript([usage(40000), compaction(326893), row]));
+    assert.equal(info.dropped, 326893, name + ' was read as a compaction');
+    assert.equal(ctx.inspect(transcript([usage(40000), row])).dropped, 0, name + ' alone was read as a compaction');
+  }
+});

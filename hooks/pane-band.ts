@@ -1,13 +1,26 @@
-// The two rows above the prompt: this session's stage, guard and task, then
-// what comes next or the gate that is waiting. An entry in, segments out; no
-// engine call here, so tests/pane-band.test.js runs it under plain node.
-// docs/90-agent/plans/2026-10-11-fankeel-pane-design.md section 6.
+// The two rows above the prompt: which station this session is at, then how
+// much is left of the context, the five-hour window and the seven-day one. An
+// entry and the engine's numbers in, segments out; no engine call here, so
+// tests/pane-band.test.js runs it under plain node.
+// docs/90-agent/plans/2026-10-12-pane-band-design.md sections 1 and 2.
 
-import { str, list, width, cut } from './pane-status.ts'
+import { str, list, width, bar, markedBar, ctxPaint, fivePaint, weekPaint, deviation, limitOf, pct, kilo, signed, minutes, secondsLeft, DIM } from './pane-bar.ts'
+import type { Context, Limit, Paint } from './pane-bar.ts'
 
 // `gap` is the cells of space before the segment; without one it sits against the last.
 export type Seg = { text: string; color?: string; backgroundColor?: string; bold?: boolean; gap?: number }
 type Entry = Record<string, unknown>
+// `gateUntil` is the `until` of the gate that is waiting, or null. `tasks` is the plan's ledger count, or null.
+export type BandInput = {
+  entry: Entry | null
+  others: { entry: Entry }[]
+  gateUntil: number | null
+  context: Context | null
+  limits: Limit[]
+  tasks: { done: number; total: number } | null
+  cols: number
+  now: number
+}
 
 // TokenBar's fankeel ramp (xterm 60 62 67 68 75 78 81), as hex.
 export const RAMP: Record<string, string> = {
@@ -19,10 +32,10 @@ export const RAMP: Record<string, string> = {
   audit: '#5fd787',
   land: '#5fd7ff',
 }
-export const HOLLOW = '#585858'
+// The stations still ahead, and a task not begun.
+export const TODO = '#767676'
 export const GUARD = '#d7af5f'
 export const FLAG = '#ff5f5f'
-export const TITLE = '#bcbcbc'
 export const WHERE = '#8a8a8a'
 export const CLASH = '#ff0000'
 export const INK = '#000000'
@@ -30,7 +43,7 @@ export const INK = '#000000'
 // A stage off the ramp (init, or one a later version adds) is drawn as secondary text.
 export const stageColor = (stage: string): string => (Object.hasOwn(RAMP, stage) ? RAMP[stage] : WHERE)
 
-const claimsOf = (entry: Entry): string[] => list(entry.claims ?? entry.scope)
+export const claimsOf = (entry: Entry): string[] => list(entry.claims ?? entry.scope)
 
 // How many other sessions hold a file this one holds.
 export function clashes(entry: Entry, others: { entry: Entry }[]): number {
@@ -52,46 +65,139 @@ export function since(entry: Entry, stage: string): number | null {
   return Array.isArray(pair) && typeof pair[0] === 'number' ? pair[0] : null
 }
 
-// `gate` is the first question of the gate that is waiting, or null.
-export function bandRows(entry: Entry | null, others: { entry: Entry }[], gate: string | null, cols: number, now: number): Seg[][] | null {
+function inked(text: string, paint: Paint, gap = 0): Seg {
+  const seg: Seg = { text, color: paint.color }
+  if (paint.bold) seg.bold = true
+  if (gap) seg.gap = gap
+  return seg
+}
+
+// One way of drawing the second row. They are tried in this order and the first
+// that fits is drawn: the space round `│` closes up, then the bars shorten
+// together, then the 7d meter goes, then the 5h one. No reset is drawn here at
+// any width, and the Pane draws none either.
+type Shape = { five: boolean; week: boolean; sp: number; cells: number }
+function shapes(): Shape[] {
+  const out: Shape[] = [{ five: true, week: true, sp: 2, cells: 10 }]
+  for (const [five, week] of [[true, true], [true, false], [false, false]]) {
+    for (let cells = 10; cells >= 5; cells--) out.push({ five, week, sp: 1, cells })
+  }
+  return out
+}
+
+export function bandRows(input: BandInput): Seg[][] | null {
+  const { entry, others, gateUntil, context, limits, tasks, cols, now } = input
   if (!entry) return null
   const stage = str(entry.stage)
   const route = list(entry.route)
   const at = route.indexOf(stage)
   const flags = clashes(entry, others)
   const colour = stageColor(stage)
-  const rail = flags ? CLASH : colour
+  const rail: Seg = { text: '▌', color: flags ? CLASH : colour }
   const used = (segs: Seg[]): number => segs.reduce((n, seg) => n + (seg.gap ?? 0) + width(seg.text), 0)
 
-  const first: Seg[] = [
-    { text: '▌', color: rail },
-    { text: `FANKEEL ${stage.toUpperCase()}`, color: colour, bold: true },
-  ]
-  if (at >= 0) first.push({ text: '●'.repeat(at + 1), color: colour, gap: 2 })
+  const head: Seg[] = [rail, { text: `FANKEEL ${stage.toUpperCase()}`, color: colour, bold: true }]
+  if (at >= 0) head.push({ text: '●'.repeat(at + 1), color: colour, gap: 2 })
   if (route.length - at - 1 > 0) {
-    const hollow: Seg = { text: '○'.repeat(route.length - at - 1), color: HOLLOW }
-    if (at < 0) hollow.gap = 2
-    first.push(hollow)
+    const ahead: Seg = { text: '○'.repeat(route.length - at - 1), color: TODO }
+    if (at < 0) ahead.gap = 2
+    head.push(ahead)
   }
-  first.push({ text: `⚿ ${str(entry.guard) || 'ask'}`, color: GUARD, gap: 2 })
-  if (flags) first.push({ text: `⚑${flags}`, color: FLAG, gap: 2 })
-  first.push({ text: cut(str(entry.task), Math.max(4, cols - used(first) - 2)), color: TITLE, gap: 2 })
-
+  const count: Seg[] = tasks && tasks.total > 0
+    ? [{ text: 'tasks', color: WHERE, gap: 2 }, { text: `${Math.max(0, Math.min(tasks.done, tasks.total))}/${tasks.total}`, gap: 1 }]
+    : []
   const started = since(entry, stage)
-  const where = [
-    at >= 0 ? `${at + 1} of ${route.length}` : '',
-    started === null ? '' : `${Math.max(0, Math.floor((now - started) / 60000))} 分`,
-  ].filter(Boolean).join(' · ')
-  const tail: Seg[] = [{ text: `${claimsOf(entry).length} 檔`, color: WHERE, gap: 2 }]
-  if (where) tail.push({ text: where, color: WHERE, gap: 2 })
-  const lead: Seg[] = [
-    { text: '▌', color: rail },
-    gate !== null ? { text: ' gate 在等 ', backgroundColor: GUARD, color: INK, bold: true } : { text: 'next', color: WHERE },
-  ]
-  const room = Math.max(4, cols - used(lead) - used(tail) - 2)
-  const next = str(entry.next)
-  const body: Seg = gate !== null
-    ? { text: cut(gate, room), color: GUARD, gap: 2 }
-    : { text: cut(next || '—', room), color: next ? TITLE : WHERE, gap: 2 }
-  return [first, [...lead, body, ...tail]]
+  const here: Seg[] = started === null
+    ? []
+    : [{ text: '本站', color: WHERE, gap: 2 }, { text: String(minutes(now - started)), gap: 1 }, { text: '分', color: WHERE, gap: 1 }]
+  const waits = (entry.waited && typeof entry.waited === 'object' ? entry.waited : {}) as Record<string, unknown>
+  const wait = waits[stage]
+  const waited = typeof wait === 'number' && Number.isFinite(wait) ? minutes(wait) : 0
+  const gate: Seg[] = gateUntil === null
+    ? []
+    : [
+        { text: ' gate 在等 ', backgroundColor: GUARD, color: INK, bold: true, gap: 2 },
+        { text: `還 ${secondsLeft(gateUntil, now)} 秒`, color: GUARD, bold: true, gap: 2 },
+      ]
+  const yours: Seg[] = gateUntil === null
+    ? [{ text: '等你', color: WHERE, gap: 2 }, { text: String(waited), gap: 1 }, { text: '分', color: WHERE, gap: 1 }]
+    : [{ text: `等你 ${waited} 分`, color: GUARD, gap: 2 }]
+  // `drop` is how many of the three droppable groups are gone: the stage minutes, then the wait, then tasks.
+  const firstAt = (drop: number): Seg[] => {
+    const a = drop < 3 ? count : []
+    const b = drop < 2 ? yours : []
+    const c = drop < 1 ? here : []
+    return gateUntil === null ? [...head, ...a, ...c, ...b] : [...head, ...a, ...gate, ...b, ...c]
+  }
+  let first = firstAt(0)
+  for (let drop = 1; drop <= 3 && used(first) > cols; drop++) first = firstAt(drop)
+
+  const five = limitOf(limits, 'five_hour')
+  const week = limitOf(limits, 'seven_day')
+  const secondAt = (shape: Shape): Seg[] => {
+    const row: Seg[] = [rail]
+    // A meter after the first is parted from it by `│`, with `sp` cells either side.
+    const open = (label: string): void => {
+      if (row.length === 1) {
+        row.push({ text: label, color: DIM })
+        return
+      }
+      row.push({ text: '│', color: DIM, gap: shape.sp }, { text: label, color: DIM, gap: shape.sp })
+    }
+    const draw = (part: number, whole: number, paint: Paint): void => {
+      const { fill, track } = bar(part, whole, shape.cells)
+      if (fill) row.push(inked(fill, paint))
+      if (track) row.push({ text: track, color: DIM })
+    }
+    if (context) {
+      const { window } = context
+      const sized = typeof window === 'number' && Number.isFinite(window) && window > 0
+      // With a window the colour still follows the compact threshold, or the window itself when compact is off.
+      const paint = ctxPaint(context.tokens, sized && !Number.isFinite(context.at) ? window : context.at)
+      open('ctx ')
+      if (sized) {
+        // The white line sits at the compact threshold, when that is a point inside the window.
+        if (context.at < window) {
+          for (const p of markedBar(context.tokens, window, shape.cells, context.at)) {
+            if (p.kind === 'fill') row.push(inked(p.text, paint))
+            else row.push(p.kind === 'mark' ? { text: p.text, color: '#ffffff', bold: true } : { text: p.text, color: DIM })
+          }
+        } else {
+          draw(context.tokens, window, paint)
+        }
+        row.push(inked(kilo(context.tokens), paint, 1), { text: `/${kilo(window)}`, color: WHERE })
+      } else if (Number.isFinite(context.at)) {
+        draw(context.tokens, context.at, paint)
+        row.push(inked(kilo(context.tokens), paint, 1), { text: `/${kilo(context.at)}`, color: WHERE })
+      } else {
+        // No window, and compact.at off is an infinite threshold: the count alone, with nothing to measure it against.
+        row.push(inked(kilo(context.tokens), paint))
+      }
+      if (paint.mark) row.push(inked(paint.mark, paint, 1))
+    }
+    if (five && shape.five) {
+      const paint = fivePaint(five.percentUsed)
+      open('5h ')
+      draw(five.percentUsed, 100, paint)
+      row.push(inked(pct(five.percentUsed), paint, 1))
+      if (paint.mark) row.push(inked(paint.mark, paint, 1))
+    }
+    if (week && shape.week) {
+      const dev = deviation(week, now)
+      const paint = weekPaint(week.percentUsed, dev)
+      open('7d ')
+      draw(week.percentUsed, 100, paint)
+      row.push(inked(pct(week.percentUsed), paint, 1))
+      if (dev !== null) {
+        row.push(inked(signed(dev), paint, 2))
+        if (paint.mark) row.push(inked(paint.mark, paint, 1))
+      }
+    }
+    if (flags) row.push({ text: `⚑${flags}`, color: FLAG, bold: true, gap: 2 })
+    return row
+  }
+  const tried = shapes().map(secondAt)
+  const second = tried.find((row) => used(row) <= cols) ?? tried[tried.length - 1]
+  // A second row with nothing but its rail is not drawn.
+  return second.length > 1 ? [first, second] : [first]
 }

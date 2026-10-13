@@ -457,14 +457,38 @@ test('gate.station: no answer in time leaves the question to the terminal, and a
   assert.equal(fs.existsSync(path.join(taskDir(root), 'design-pending.json')), false);
 });
 
-test('gate.station off: the hook neither waits nor writes a pending file', () => {
+// Whether the pending file was ever there while the hook ran. The hook writes it
+// before it waits and holds it for the whole wait (hooks/gate.js stationAnswers),
+// so a file never seen is a wait never begun — and nothing here reads a clock,
+// which is what went red at 3407 ms under the whole suite.
+async function sawPending(root, payload) {
+  const pending = path.join(taskDir(root), 'design-pending.json');
+  let seen = false;
+  let over = false;
+  const done = runAsync(GATE, root, payload).then((out) => { over = true; return out; });
+  while (!over) {
+    if (fs.existsSync(pending)) seen = true;
+    await new Promise((r) => setTimeout(r, 20));
+  }
+  return { out: await done, seen: seen || fs.existsSync(pending) };
+}
+
+test('gate.station off: the hook neither waits nor writes a pending file', async () => {
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'design', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
   stationOn(root, 'off');
-  const started = Date.now();
-  assert.equal(run(GATE, root, { tool_input: askOf(QUESTIONS) }).trim(), '');
-  assert.ok(Date.now() - started < 3000);
-  assert.equal(fs.existsSync(path.join(taskDir(root), 'design-pending.json')), false);
+  const { out, seen } = await sawPending(root, { tool_input: askOf(QUESTIONS) });
+  assert.equal(out.trim(), '');
+  assert.equal(seen, false, 'the hook wrote a pending file, which it does only to wait');
+});
+
+test('the watch the off test relies on sees the pending file of a hook that does wait', async () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'design', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  stationOn(root, 1);
+  const { out, seen } = await sawPending(root, { tool_input: askOf(QUESTIONS) });
+  assert.equal(out.trim(), '');
+  assert.equal(seen, true, 'a one-second wait went by without its pending file being seen');
 });
 
 // 「交給終端／手機」 on the page: the hook stops waiting at once and the

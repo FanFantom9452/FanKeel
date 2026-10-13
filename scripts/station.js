@@ -9,7 +9,7 @@
 // `hooks/leave.js` runs the same write at every session end, so the file is
 // current whenever it is opened. The second form is a server on 127.0.0.1 that
 // renders on every request and takes a POST from the page's clear buttons.
-// `--port` defaults to the fixed `7817` and falls back to an ephemeral one only
+// `--port` defaults to the fixed `28888` and falls back to an ephemeral one only
 // when that is taken; `--idle` defaults to never exiting — give it a number of
 // minutes to bring back the old idle-exit behaviour. A second `serve` against
 // the same config directory joins the first, printing its URL, rather than
@@ -92,7 +92,7 @@ function parseArgs(argv) {
         roots: values.root || [],
         scan: values.scan || [],
         open: Boolean(values.open),
-        port: values.port !== undefined ? (Number(values.port) || 0) : 7817,
+        port: values.port !== undefined ? (Number(values.port) || 0) : 28888,
         portWasExplicit: values.port !== undefined,
         idleMs: values.idle !== undefined ? (Number(values.idle) || 10) * 60e3 : 0,
         forget: values.forget !== undefined ? values.forget : null,
@@ -732,7 +732,7 @@ async function serve(opts) {
             // ordinary port conflict, not a station-related one. `serve.json`
             // joining above is what catches an actual second station; this is
             // only reached when no live one is recorded, so failing outright
-            // would turn "something else is on 7817" into "the station cannot
+            // would turn "something else is on 28888" into "the station cannot
             // start" rather than a station on a different port. A caller who
             // named the port with `--port` gets the real error instead: they
             // asked for that port specifically.

@@ -1,8 +1,9 @@
 // assets/tune/overlay.js: injected by `scripts/tune.js serve` into every page
 // it sends. A click belongs to the page until the assistant asks for one. The
 // assistant is the fankeel logo in the bottom-right corner: drag it anywhere
-// (the spot is kept in localStorage), click it to open the tray of drafted
-// changes. 新增一則 starts picking: a click on the page then toggles that
+// (the spot is kept in localStorage); the tray of drafted changes is open
+// when the page loads, and a click on the logo folds or reopens it.
+// 新增一則 starts picking: a click on the page then toggles that
 // element in or out of the item, 往外一層 goes out to its parents (out only),
 // the wheel goes both ways, 完成這則 ends it and Esc throws the pick away. Each item
 // is one note for one or more elements; 全部送出 sends every item as one POST
@@ -46,16 +47,20 @@
         return list.indexOf(item) < 0 ? list.concat([item]) : list.filter(function (x) { return x !== item; });
     }
     // The request's items: one per draft that has a note and an element, the
-    // first element's fields on the item, and when it has more than one,
-    // every element's block (once each) and every selector.
+    // first element's selector, classes and text on the item, and every block
+    // its picks resolved to, once each: the first as `block`, all of them as
+    // `blocks` when there is more than one. A pick that is a frame carries
+    // its own `blocks`; `selectors` lists every pick when there are several.
     function itemsOf(drafts) {
         return drafts.filter(function (d) { return String(d.note || '').trim() && d.picks.length; }).map(function (d) {
             var first = d.picks[0];
-            var item = { note: String(d.note).trim(), block: first.block, selector: first.selector, classes: first.classes, text: first.text };
-            if (d.picks.length > 1) {
-                item.blocks = d.picks.map(function (p) { return p.block; }).filter(function (b, i, all) { return b && all.indexOf(b) === i; });
-                item.selectors = d.picks.map(function (p) { return p.selector; });
-            }
+            var union = [];
+            d.picks.forEach(function (p) {
+                (p.blocks || [p.block]).forEach(function (b) { if (b && union.indexOf(b) < 0) union.push(b); });
+            });
+            var item = { note: String(d.note).trim(), block: union[0] || '', selector: first.selector, classes: first.classes, text: first.text };
+            if (union.length > 1) item.blocks = union;
+            if (d.picks.length > 1) item.selectors = d.picks.map(function (p) { return p.selector; });
             return item;
         });
     }
@@ -80,6 +85,7 @@
         '.fk-live-tag,.fk-live-pill{font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;color:#e8e8e3;background:#1d2026;border-radius:0;z-index:2147483001}',
         '.fk-live-tag{position:absolute;padding:1px 6px;pointer-events:none;white-space:nowrap}',
         '.fk-live-tag b{color:#22b8cf;font-weight:600}',
+        '.fk-live-tag.fk-live-bad{background:#e0a526;color:#1d2026}',
         '.fk-live-pill{position:absolute;padding:2px 8px;white-space:nowrap}',
         '.fk-live-pill i{display:inline-block;width:7px;height:7px;border-radius:50%;background:#22b8cf;margin-right:6px;animation:fk-live-pulse 1s infinite alternate}',
         '.fk-live-pill.fk-live-ok i{background:#2f9e44;animation:none}',
@@ -90,8 +96,8 @@
         '.fk-live-num.fk-live-open{background:#1d2026;color:#22b8cf;box-shadow:inset 0 0 0 1px #22b8cf}',
         '.fk-live-mark{position:absolute;pointer-events:none;z-index:2147483000}',
         '.fk-live-ast{position:fixed;z-index:2147483001;width:48px;height:48px;font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;color:#e8e8e3}',
-        '.fk-live-ast button,.fk-live-hint button{font:inherit;color:inherit;border-radius:0;cursor:pointer}',
-        '.fk-live-ast :focus-visible,.fk-live-hint :focus-visible{outline:2px solid #22b8cf;outline-offset:2px}',
+        '.fk-live-ast button{font:inherit;color:inherit;border-radius:0;cursor:pointer}',
+        '.fk-live-ast :focus-visible{outline:2px solid #22b8cf;outline-offset:2px}',
         '.fk-live-ast [hidden],.fk-live-hint[hidden]{display:none!important}',
         '.fk-live-logo{position:absolute;left:0;top:0;width:48px;height:48px;padding:0;display:grid;place-items:center;background:#1d2026;border:1px solid #3a3e46;box-shadow:0 8px 28px rgba(14,16,20,.32);cursor:grab;touch-action:none}',
         '.fk-live-logo[aria-expanded=true]{border-color:#22b8cf}',
@@ -130,7 +136,8 @@
         '.fk-live-item textarea{display:block;box-sizing:border-box;width:100%;min-height:46px;margin-top:3px;padding:5px 6px;resize:vertical;background:#2a2e36;color:#e8e8e3;border:1px solid #444850;border-radius:0;font:inherit}',
         '.fk-live-item textarea.fk-live-err{border-color:#e0a526}',
         '.fk-live-item.fk-live-picking{background:rgba(34,184,207,.07)}',
-        '.fk-live-later{margin:0;color:#b8b8b0}',
+        '.fk-live-item.fk-live-err{box-shadow:inset 3px 0 0 #e0a526}',
+        '.fk-live-acts{align-items:center;margin-bottom:6px}',
         '.fk-live-send{padding:8px 10px 10px;border-top:1px solid #3a3e46}',
         '.fk-live-queue{display:flex;align-items:center;gap:6px;margin:0 0 8px;color:#b8b8b0}',
         '.fk-live-queue i{display:inline-block;width:7px;height:7px;border-radius:50%;background:#22b8cf;animation:fk-live-pulse 1s infinite alternate}',
@@ -144,7 +151,6 @@
         '.fk-live-hint .fk-live-row{flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:6px 8px}',
         '.fk-live-aside{color:#8f939b}',
         '.fk-live-hint kbd{border:1px solid #555a63;padding:0 4px;font:inherit}',
-        '.fk-live-hint .fk-live-go{margin-left:auto}',
         '@keyframes fk-live-pulse{from{opacity:.35}to{opacity:1}}',
         '.fk-live-edp{position:absolute;pointer-events:none;z-index:2147482998;border-radius:6px;box-shadow:0 0 0 1.5px #22b8cf,0 0 0 5px rgba(34,184,207,.18);animation:fk-live-edp 2.8s ease-in-out infinite}',
         '.fk-live-edp span{position:absolute;top:-9px;right:14px;padding:0 7px;font:600 11px/18px ui-monospace,Menlo,Consolas,monospace;color:#1d2026;background:#22b8cf;border-radius:4px}',
@@ -177,6 +183,15 @@
     function blockName(node) {
         var b = blockOf(node);
         return b ? b.getAttribute('data-block') : '';
+    }
+    // What a pick stands for: the block it sits in; for a frame around
+    // blocks, every block inside it, once each; nothing when it has neither.
+    function blocksOf(node) {
+        var own = blockName(node);
+        if (own) return [own];
+        return [].slice.call(node.querySelectorAll('[data-block]'))
+            .map(function (b) { return b.getAttribute('data-block'); })
+            .filter(function (b, i, all) { return b && all.indexOf(b) === i; });
     }
     function find(name) {
         if (!name) return null;
@@ -237,10 +252,7 @@
         + '<button type="button" class="fk-live-logo" aria-expanded="false">' + GLYPH + '<span class="fk-live-badge" hidden></span></button>');
     var hint = el('div', 'fk-live-hint',
         '<p><span class="fk-live-num fk-live-open"></span><span class="fk-live-say"></span></p>'
-        + '<div class="fk-live-row"><button type="button" class="fk-live-btn fk-live-out">往外一層</button>'
-        + '<span class="fk-live-aside">或滾輪：上 往外，下 往內</span>'
-        + '<button type="button" class="fk-live-btn fk-live-go fk-live-fin">完成這則</button>'
-        + '<span class="fk-live-aside"><kbd>Esc</kbd> 取消</span></div>');
+        + '<div class="fk-live-row"><span class="fk-live-aside"><kbd>Esc</kbd> 取消</span></div>');
     hint.setAttribute('role', 'status');
     hint.hidden = true;
 
@@ -283,11 +295,16 @@
     var pos = null;
     var press = null;
 
+    // The outline says what a click here would take: the block's name, or 外框
+    // and how many blocks it holds; amber, and why, when it would take nothing.
     function show(target) {
         box.style.display = tag.style.display = '';
         place(box, target, 0);
-        var name = target.getAttribute('data-block');
-        tag.innerHTML = esc(labelOf(target)) + (name !== null ? ' · data-block="<b>' + esc(name) + '</b>"' : '');
+        var names = blocksOf(target);
+        box.classList.toggle('fk-live-bad', !names.length);
+        tag.classList.toggle('fk-live-bad', !names.length);
+        tag.innerHTML = esc(labelOf(target)) + ' · ' + (!names.length ? '沒有 data-block，往外或往內一層'
+            : blockName(target) ? 'data-block="<b>' + esc(names[0]) + '</b>"' : '外框·' + names.length + ' 塊');
         above(tag, target);
     }
     function hide() {
@@ -299,7 +316,8 @@
         return p;
     }
     function describe(node) {
-        return { block: blockName(node), selector: selectorOf(node, doc.body), classes: [].slice.call(node.classList).filter(function (c) { return c.indexOf('fk-live-') !== 0; }), text: String(node.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 80) };
+        var names = blocksOf(node);
+        return { block: names[0] || '', blocks: names, selector: selectorOf(node, doc.body), classes: [].slice.call(node.classList).filter(function (c) { return c.indexOf('fk-live-') !== 0; }), text: String(node.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 80) };
     }
 
     // The drafts survive the reload a finished request causes: each pick is
@@ -354,7 +372,8 @@
             c.className = 'fk-live-chip';
             c.innerHTML = '<code></code><button type="button">×</button>';
             var code = c.querySelector('code');
-            code.textContent = code.title = labelOf(p);
+            var names = blocksOf(p);
+            code.textContent = code.title = labelOf(p) + (blockName(p) ? '' : names.length ? ' · 外框·' + names.length + ' 塊' : ' · 沒有 data-block');
             var x = c.querySelector('button');
             x.setAttribute('aria-label', '移除 ' + labelOf(p));
             x.addEventListener('click', function () {
@@ -374,12 +393,16 @@
             head.appendChild(del);
         }
         li.appendChild(head);
+        // The item being picked carries its own two buttons, above its note.
         if (i === picking) {
-            var later = doc.createElement('p');
-            later.className = 'fk-live-later';
-            later.textContent = '圈選中。按「完成這則」後在這裡寫備註。';
-            li.appendChild(later);
-            return li;
+            var acts = doc.createElement('div');
+            acts.className = 'fk-live-row fk-live-acts';
+            acts.innerHTML = '<button type="button" class="fk-live-btn fk-live-out">往外一層</button>'
+                + '<span class="fk-live-aside">或滾輪：上 往外，下 往內</span>'
+                + '<button type="button" class="fk-live-btn fk-live-go fk-live-fin">完成這則</button>';
+            acts.querySelector('.fk-live-out').addEventListener('click', function () { walk(true); });
+            acts.querySelector('.fk-live-fin').addEventListener('click', function () { endPick(true); });
+            li.appendChild(acts);
         }
         var label = doc.createElement('label');
         label.textContent = d.picks.length > 1 ? '這 ' + d.picks.length + ' 塊共用一段備註，要怎麼改？' : '這塊要怎麼改？';
@@ -546,9 +569,15 @@
                 refreshQueue();
             }, function (err) {
                 // The drafts stay; the server's reason goes on the queue line.
+                // `item <n>: ` on its front names the draft at fault, whose
+                // row is marked until the next draw — picking it again is one.
                 busy = false;
-                sendErr = err && err.message ? err.message : String(err);
+                var why = err && err.message ? err.message : String(err);
+                var named = /^item (\d+): ([\s\S]*)$/.exec(why);
+                sendErr = named ? '第 ' + named[1] + ' 則：' + named[2] : why;
                 draw();
+                var li = named ? list.children[named[1] - 1] : null;
+                if (li) li.classList.add('fk-live-err');
             });
     }
 
@@ -608,8 +637,6 @@
         draw();
     });
     allBtn.addEventListener('click', sendAll);
-    hint.querySelector('.fk-live-out').addEventListener('click', function () { walk(true); });
-    hint.querySelector('.fk-live-fin').addEventListener('click', function () { endPick(true); });
 
     doc.addEventListener('mousemove', function (ev) {
         if (ours(ev.target)) return;
@@ -667,6 +694,8 @@
         ev.stopImmediatePropagation();
         var picked = hover && hover.contains(ev.target) ? hover : ev.target;
         if (!pickable(picked)) return;
+        // An element with no block in or around it is shown why, and not taken.
+        if (!blocksOf(picked).length) { show(picked); return; }
         drafts[picking].picks = toggleIn(drafts[picking].picks, picked);
         draw();
     }, true);
@@ -787,8 +816,8 @@
         pos = null;
     }
     load();
-    settlePos();
-    draw();
+    // Open on load: a first-time reader has to see where to start.
+    toggleTray(true);
     refreshQueue();
     showLast();
 }());

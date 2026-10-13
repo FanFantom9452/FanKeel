@@ -1,7 +1,7 @@
 ---
 name: fankeel-design
 description: The design stage — one approach with its trade-offs, a success criterion that can fail, and a check against the project map before anything is built. Use for the design stage of a fankeel task, choosing between approaches, writing a spec, or when an approach needs approving before implementation.
-version: 0.101.0
+version: 0.105.0
 status: current
 last_verified: 2026-10-09
 source_of_truth: lib/stages.js, lib/plantasks.js
@@ -134,8 +134,9 @@ the page. The gate approves the page, not the paragraph.
 **Before the gate, the page can be tuned block by block.** The url the
 agent returned is already a `tune.js serve`, overlay and all; give the user
 that url: a click reaches the page until the fankeel logo in the
-bottom-right corner asks for one. The logo drags anywhere and opens a tray
-on a click; 新增一則 starts an item, and while it picks, a click on the page
+bottom-right corner asks for one. The logo drags anywhere; the tray is open
+when the page loads, and a click on the logo folds or reopens it; 新增一則
+starts an item, and while it picks, a click on the page
 adds an element or takes it back out, the wheel or 往外一層 walks out to its
 parents, and Esc drops the pick. Each item is one or more elements under one
 note, and 全部送出 sends every item as one request. List what you see, block by

@@ -234,12 +234,24 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 監控站掛 Chartroom 白板（10-07）定了什麼：白板在 AI 要給人看時才出現、目標取代 Mermaid；整個併進 fankeel 直接可用；寫入照監控站的 nonce，不開例外；怎麼做另開 design | [decisions/2026-10-07-station-chartroom.md](03-decisions/2026-10-07-station-chartroom.md) — *繁體中文* |
 | TODO 全表盤點（10-03）的 plan：子 session 由環境變數證明在跑、todo-check 讀不到就回報且前綴補斜線、commit.js 兩個子句補測試、balanced 註明無來源、mod 路線擱置 | [plans/2026-10-03-todo-patrol-three.md](90-agent/plans/2026-10-03-todo-patrol-three.md) — *design-intent, 繁體中文* |
 | TODO 全表盤點（10-05）的 plan：壓縮重試最多三次的測試、`/fankeel` 頁面寫不出來時 station 行說出來、兩處 timeout 與行號小錯、brain 選模型改放 Watch | [plans/2026-10-05-todo-patrol-ready-three.md](90-agent/plans/2026-10-05-todo-patrol-ready-three.md) — *design-intent, 繁體中文* |
+| TODO 全表盤點（10-14）的 plan：knip 與 fast mode 兩條上游戳記重蓋、逐塊調整浮層在 land 結案、六條真機條目留在 Ready、pane-band 併回 main | `docs/99-archive/2026-10-14-todo-patrol-restamp.md` — *built, 繁體中文* |
+| TODO 全表盤點（10-14）做了什麼、沒做什麼：逐塊調整浮層不夠直覺關閉、knip 與 fast mode 兩筆重新蓋章、pane-band 併回 main；六筆真機條目留在 Ready，留下五個缺口 | [reports/patrols/2026-10-14-todo-patrol-restamp.md](90-agent/reports/patrols/2026-10-14-todo-patrol-restamp.md) — *繁體中文* |
+| TODO 全表盤點（10-13 第二輪）的 plan：commit.js 提交搬過家的檔、逐塊調整托盤載入就展開 | `docs/99-archive/2026-10-13-todo-patrol-two.md` — *built, 繁體中文* |
+| TODO 全表盤點（10-13 第二輪）做了什麼、沒做什麼：commit.js 能提交列了舊路徑的搬家、托盤載入就展開，兩筆關閉；verify 退回三件事，留下三個缺口 | [reports/patrols/2026-10-13-todo-patrol-two.md](90-agent/reports/patrols/2026-10-13-todo-patrol-two.md) — *繁體中文* |
+| TODO 全表盤點（10-13）的 plan：面板門檻改讀 `compact.at`、Pane 四處重複、逐塊調整兩條、指南補 init 第 7 步 | `docs/99-archive/2026-10-13-todo-patrol-five.md` — *built, 繁體中文* |
+| TODO 全表盤點（10-13）做了什麼、沒做什麼：面板門檻改讀 `compact.at`、Pane 四處重複收掉、逐塊調整點錯不再整批被退，八筆關閉；逐塊調整真機只試一半，tune-4 留在 Ready | [reports/patrols/2026-10-13-todo-patrol-five.md](90-agent/reports/patrols/2026-10-13-todo-patrol-five.md) — *繁體中文* |
 | Pane 上的 gate 介面（10-07）的 design 草稿：pending 與 answer 檔只有一份，station 頁面板與 Pane 都是它的畫面，mod 沒載入照舊 | [plans/2026-10-07-gate-pane-design.md](90-agent/plans/2026-10-07-gate-pane-design.md) — *design-intent, 繁體中文* |
 | TODO 全表盤點（10-12）的 design：Pane 右欄只留會改變下一步的區塊、最上面是任務全貌與每站耗時，站頁多一個對話分頁，14 條 Blocked 重蓋日期 | `docs/99-archive/2026-10-12-pane-talk-design.md` — *built, 繁體中文* |
 | 那份設計的七個 task，含 Remote Control 的探測行與使用者在真機開關一次 | `docs/99-archive/2026-10-12-pane-talk.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-12）做了什麼、沒做什麼：站頁的對話分頁與 Pane 改版做完，14 條 Blocked 重蓋日期，真機看 Remote Control 那一步留成新的 Ready，verify 來回三輪抓到什麼 | [reports/patrols/2026-10-12-todo-patrol-pane-talk.md](90-agent/reports/patrols/2026-10-12-todo-patrol-pane-talk.md) — *繁體中文* |
 | 自動壓縮改靠主機的壓縮視窗（10-12）的 design：量到 629k 的 session 過 450k 後 16 次 turn 結束都沒壓；設 `CLAUDE_CODE_AUTO_COMPACT_WINDOW` 後主機在 turn 進行中自己壓，context 行在沒設時說出來 | `docs/99-archive/2026-10-12-compact-window-design.md` — *built, 繁體中文* |
 | 那份設計的兩個 task：context 行的一句、指南與一筆真機 TODO | `docs/99-archive/2026-10-12-compact-window.md` — *built, 繁體中文* |
+| fankeel-init 幫忙設自動壓縮視窗（10-12）的 design：`compact-window.js` 寫使用者層 `settings.json` 的 `env`，答否記在機器層的標記檔，第 7 步多問一題 | `docs/99-archive/2026-10-12-init-compact-window-design.md` — *built, 繁體中文* |
+| 那份設計的兩個 task：腳本與它的測試、skill 第 7 步的那一題 | `docs/99-archive/2026-10-12-init-compact-window.md` — *built, 繁體中文* |
+| 壓縮視窗由 init 幫忙設（10-12）定了什麼：問一題、答是才寫使用者的設定檔、先留備份、答否記住；放棄了什麼 | [decisions/2026-10-12-init-compact-window.md](03-decisions/2026-10-12-init-compact-window.md) — *繁體中文* |
+| 壓縮門檻改成 `compact.at`（10-12）定了什麼：init 問四檔、只在 fankeel 任務生效、不再寫使用者的設定檔；放棄了什麼 | [decisions/2026-10-12-compact-at.md](03-decisions/2026-10-12-compact-at.md) — *繁體中文* |
+| 開任務時同步壓縮視窗（10-14）定了什麼：start 把主機視窗對齊 `compact.at`、值變了請使用者重開 Desktop；放棄了什麼 | [decisions/2026-10-14-start-syncs-window.md](03-decisions/2026-10-14-start-syncs-window.md) — *繁體中文* |
+| Pane 配色改成安靜版（10-13）定了什麼：標題共用灰、多一行 route、拿掉「這個 session」與「用量額度」兩塊；放棄了什麼 | [decisions/2026-10-13-pane-colour.md](03-decisions/2026-10-13-pane-colour.md) — *繁體中文* |
 | TODO 全表盤點（10-12 第二輪）與自動壓縮做了什麼、沒做什麼：壓縮交給主機的視窗，fankeel 只在沒設時提醒；放棄了 mod 心跳與進 build 先壓；盤點沒有可直接做的，新開六筆 | [reports/patrols/2026-10-12-todo-patrol-compact-window.md](90-agent/reports/patrols/2026-10-12-todo-patrol-compact-window.md) — *繁體中文* |
 | fankeel 面板（10-12）定了什麼：輸入框上方兩行常駐、細節與 gate 的完整說明放 Pane、Pane 自己打開、終端與 Claude Desktop 都畫；放棄了什麼 | [decisions/2026-10-12-fankeel-panel.md](03-decisions/2026-10-12-fankeel-panel.md) — *繁體中文* |
 | fankeel 面板（10-11）的 design：一個 id 為 fankeel 的 Pane，/fankeel-panel 開關，gate 在上、狀態在下，改掉 10-07 那頁的 Pane id | `docs/99-archive/2026-10-11-fankeel-pane-design.md` — *built, 繁體中文* |
@@ -476,6 +488,10 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 - [mod 路線擱置（10-03）：決策紀錄](03-decisions/2026-10-03-mod-route.md)
 - [重開 mod 路線（10-07）：決策紀錄](03-decisions/2026-10-07-mod-reopen.md)
 - [fankeel 面板（10-12）：兩行常駐，細節放 Pane](03-decisions/2026-10-12-fankeel-panel.md)
+- [壓縮視窗由 init 幫忙設（10-12）：問一題，答是才寫使用者的設定檔](03-decisions/2026-10-12-init-compact-window.md)
+- [壓縮門檻改成 profile 的 compact.at（10-12）：init 問四檔，不再寫使用者的設定檔](03-decisions/2026-10-12-compact-at.md)
+- [開任務時同步壓縮視窗（10-14）：task.js start 把主機視窗寫成 compact.at](03-decisions/2026-10-14-start-syncs-window.md)
+- [Pane 的配色改成安靜版，多一行 route，拿掉兩塊（10-13）](03-decisions/2026-10-13-pane-colour.md)
 
 ### 其他
 
@@ -513,6 +529,10 @@ is corrected by the next one, not by rewriting this.
 | Brief: what the fankeel side Pane should show | [90-agent/judgements/2026-10-11-pane-content.md](90-agent/judgements/2026-10-11-pane-content.md) — *judged 2026-10-11, fable* |
 | Brief: fankeel 面板右邊的 Pane 到底該顯示什麼 | [90-agent/judgements/2026-10-11-pane-right.md](90-agent/judgements/2026-10-11-pane-right.md) — *judged 2026-10-11, fable* |
 | Brief: 該不該在 build 之前問使用者要不要先 compact，以及 build 途中 context 堆高怎麼辦 | [90-agent/judgements/2026-10-12-compact-before-build.md](90-agent/judgements/2026-10-12-compact-before-build.md) — *judged 2026-10-12, fable* |
+| Brief: 逐塊調整工具（tune）怎麼變直覺 | [90-agent/judgements/2026-10-12-tune-intuitive.md](90-agent/judgements/2026-10-12-tune-intuitive.md) — *judged 2026-10-12, fable* |
+| Brief: band 與 Pane 該怎麼重新設計 | [90-agent/judgements/2026-10-12-pane-band-redesign.md](90-agent/judgements/2026-10-12-pane-band-redesign.md) — *judged 2026-10-12, fable* |
+| Brief 10 — the Pane's rail on every row, and the same readings drawn twice | [90-agent/judgements/2026-10-12-pane-rail-dup.md](90-agent/judgements/2026-10-12-pane-rail-dup.md) — *judged 2026-10-12, fable* |
+| Brief: a deleted Claude Desktop session, seen from the station | [90-agent/judgements/2026-10-12-deleted-desktop-session.md](90-agent/judgements/2026-10-12-deleted-desktop-session.md) — *judged 2026-10-12, fable* |
 
 ## The five scanners
 

@@ -36,6 +36,7 @@ const { overlapPaths } = require('../lib/overlap.js');
 const { splitAroundVerb } = require('../lib/argv.js');
 const { byName: stageByName, NAMES: STAGE_NAMES, FULL_ROUTE, CLASSES, normaliseRoute, positionIn, routeForClass, classForRoute } = require('../lib/stages.js');
 const profile = require('../lib/profile.js');
+const compactWindow = require('./compact-window.js');
 const docs = require('../lib/docs.js');
 const suite = require('../lib/suite.js');
 const { handoffPath, readGate, lapsUsed, contextPath } = require('../lib/handoff.js');
@@ -769,6 +770,17 @@ function cmdStart(root, opts) {
     lines.push('');
     const onboard = onboardLine(projectRootFor(root, opts), claudeDir(opts));
     if (onboard) lines.push(onboard);
+    // Not before the profile is read, and never a reason to refuse a start.
+    const cfgForWindow = claudeDir(opts);
+    const win = cfgForWindow
+        ? compactWindow.sync(cfgForWindow, prof.values['compact.at'] || profile.KEYS['compact.at'].builtin)
+        : { state: 'off' };
+    if (win.state === 'changed') {
+        lines.push('compact window: ' + win.to + ' written to ' + win.file
+            + ' — ask the user to restart Claude Desktop; sessions already open keep the old window.');
+    } else if (win.state === 'failed') {
+        lines.push('compact window: not synced — ' + win.reason);
+    }
     const controller = controllerLines(root, id, data, prof.values);
     if (controller) {
         for (const line of controller) lines.push(line);

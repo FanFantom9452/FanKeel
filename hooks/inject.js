@@ -13,6 +13,8 @@
 // and its own statusline flag — with no directories created, no flags written and
 // no output.
 
+const fs = require('node:fs');
+const path = require('node:path');
 const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
 const badge = require('../lib/badge.js');
@@ -246,6 +248,23 @@ function main(raw) {
             additionalContext: render({ mine: { sessionId, data: mine }, others: alive, now, root, launch, transcript: payload.transcript_path, unclaimed, profile }),
         },
     }));
+
+    // Who is still running, left for the mod: hooks/pane.ts draws a clash only
+    // for a neighbour in this list, and it has no pid of its own to signal.
+    // `ids` is null where lib/live.js could not tell, which the mod reads as
+    // "count every active neighbour" — the doubt goes to the loud side there
+    // too. Written by rename, so a tick never reads half a file.
+    try {
+        const file = path.join(root, '.fankeel', 'build', 'live.json');
+        const part = file + '.' + process.pid + '.tmp';
+        fs.mkdirSync(path.dirname(file), { recursive: true });
+        fs.writeFileSync(part, JSON.stringify({ at: now, ids: liveState.known === true ? alive.map((o) => o.sessionId) : null }) + '\n');
+        try {
+            fs.renameSync(part, file);
+        } catch (e) {
+            fs.unlinkSync(part);
+        }
+    } catch (e) { /* housekeeping */ }
 
     // The same transcript `render` just read, read again for the number it threw
     // away: `contextLine` says nothing below its threshold, and what a stage

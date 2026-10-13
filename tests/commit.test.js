@@ -234,6 +234,84 @@ test('a staged rename is committed whole: the old path rides along with the new 
     assert.equal(git(dir, 'diff', '--name-only'), 'b.txt', 'the other dirty file is untouched');
 });
 
+test('stagedGone names a rename\'s old side and a staged deletion, and nothing else', () => {
+    assert.deepEqual([...commit.stagedGone(['R100\ta.txt\ta2.txt', 'D\tb.txt', 'M\tc.txt', 'A\td.txt', ''])], ['a.txt', 'b.txt']);
+});
+
+// commit-4: archive.js lists both sides of its `git mv`. The old side is in
+// neither the working tree nor the index, so `git add` has nothing to match.
+test('a block listing both sides of a staged rename commits one rename', () => {
+    const dir = repo();
+    fs.writeFileSync(path.join(dir, 'a.txt'), 'a1\n');
+    execFileSync('git', ['mv', 'a.txt', 'a2.txt'], { cwd: dir });
+    const before = git(dir, 'rev-parse', 'HEAD');
+    const res = commit.main([requestFile('a.txt\na2.txt\n\nfeat: rename a\n')], dir);
+    assert.ok(!res.code, res.text);
+    assert.equal(res.text, before + '..' + git(dir, 'rev-parse', 'HEAD'));
+    assert.equal(git(dir, 'show', '--name-status', '-M', '--format=', 'HEAD'), 'R100\ta.txt\ta2.txt');
+    assert.equal(git(dir, 'status', '--porcelain'), 'M b.txt');
+});
+
+test('a block listing a non-ASCII old path of a staged rename commits one rename', () => {
+    const dir = repo();
+    fs.writeFileSync(path.join(dir, 'a.txt'), 'a1\n');
+    execFileSync('git', ['mv', 'a.txt', '舊名.txt'], { cwd: dir });
+    execFileSync('git', ['commit', '-qm', 'first move'], { cwd: dir });
+    execFileSync('git', ['mv', '舊名.txt', '新名.txt'], { cwd: dir });
+    const res = commit.main([requestFile('舊名.txt\n新名.txt\n\nfeat: rename again\n')], dir);
+    assert.ok(!res.code, res.text);
+    assert.equal(git(dir, '-c', 'core.quotePath=false', 'show', '--name-status', '-M', '--format=', 'HEAD'), 'R100\t舊名.txt\t新名.txt');
+});
+
+test('a block listing a path removed with git rm commits the deletion', () => {
+    const dir = repo();
+    execFileSync('git', ['rm', '-qf', 'b.txt'], { cwd: dir });
+    const res = commit.main([requestFile('b.txt\n\nfeat: drop b\n')], dir);
+    assert.ok(!res.code, res.text);
+    assert.equal(git(dir, 'show', '--name-status', '--format=', 'HEAD'), 'D\tb.txt');
+});
+
+test('a block listing a path whose deletion was staged and which was then recreated commits the new content', () => {
+    const dir = repo();
+    execFileSync('git', ['rm', '-qf', 'b.txt'], { cwd: dir });
+    fs.writeFileSync(path.join(dir, 'b.txt'), 'b3\n');
+    const res = commit.main([requestFile('b.txt\n\nfeat: rewrite b\n')], dir);
+    assert.ok(!res.code, res.text);
+    assert.equal(git(dir, 'show', '--name-status', '--format=', 'HEAD'), 'M\tb.txt');
+    assert.equal(git(dir, 'show', 'HEAD:b.txt'), 'b3');
+    assert.doesNotMatch(git(dir, 'status', '--porcelain'), /b\.txt/);
+});
+
+test('a worktree block listing both sides of a staged rename lands one rename', () => {
+    const { dir, wt } = worktreeRepo();
+    execFileSync('git', ['mv', 'b.txt', 'b2.txt'], { cwd: wt });
+    const res = commit.main([requestFile('worktree ' + wt + '\nb.txt\nb2.txt\n\nfeat: rename b\n')], dir);
+    assert.ok(!res.code, res.text);
+    assert.equal(git(dir, 'show', '--name-status', '-M', '--format=', 'HEAD'), 'R100\tb.txt\tb2.txt');
+    assert.equal(git(dir, 'status', '--porcelain'), '');
+});
+
+test('a worktree block listing a path whose deletion was staged and which was then recreated lands the new content', () => {
+    const { dir, wt } = worktreeRepo();
+    execFileSync('git', ['rm', '-qf', 'b.txt'], { cwd: wt });
+    fs.writeFileSync(path.join(wt, 'b.txt'), 'b3\n');
+    const res = commit.main([requestFile('worktree ' + wt + '\nb.txt\n\nfeat: rewrite b\n')], dir);
+    assert.ok(!res.code, res.text);
+    assert.equal(git(dir, 'show', '--name-status', '--format=', 'HEAD'), 'M\tb.txt');
+});
+
+test('a worktree block listing a non-ASCII old path of a staged rename lands one rename', () => {
+    const { dir, wt } = worktreeRepo();
+    // Both trees must already have 舊名.txt, or the cherry-pick has no old file to rename.
+    execFileSync('git', ['mv', 'b.txt', '舊名.txt'], { cwd: dir });
+    execFileSync('git', ['commit', '-qm', 'first move'], { cwd: dir });
+    execFileSync('git', ['reset', '-q', '--hard', git(dir, 'rev-parse', 'HEAD')], { cwd: wt });
+    execFileSync('git', ['mv', '舊名.txt', '新名.txt'], { cwd: wt });
+    const res = commit.main([requestFile('worktree ' + wt + '\n舊名.txt\n新名.txt\n\nfeat: rename again\n')], dir);
+    assert.ok(!res.code, res.text);
+    assert.equal(git(dir, '-c', 'core.quotePath=false', 'show', '--name-status', '-M', '--format=', 'HEAD'), 'R100\t舊名.txt\t新名.txt');
+});
+
 // docs/90-agent/plans/2026-09-28-spawndepth-worktree-design.md §2: a block
 // whose first line is `worktree <path>` was built in a worktree of this
 // repository. A clean repository whose a.txt has ten lines, b.txt one, and a
@@ -452,6 +530,31 @@ test('a mode staged 100755 => 100644 stays 100644 after the commit', () => {
     const res = commit.main([requestFile('run.sh\n\nchore: run.sh not executable\n')], dir);
     assert.ok(!res.code, res.text);
     assert.match(git(dir, 'ls-tree', 'HEAD', 'run.sh'), /^100644 /);
+});
+
+// The scratch-index branch of commitPaths, with a staged-gone path in the block.
+test('a staged rename with a staged executable mode commits one rename and keeps the mode', () => {
+    const dir = repo();
+    git(dir, 'config', 'core.fileMode', 'false');
+    fs.writeFileSync(path.join(dir, 'a.txt'), 'a1\n');
+    git(dir, 'mv', 'a.txt', 'a2.txt');
+    git(dir, 'update-index', '--chmod=+x', 'a2.txt');
+    const res = commit.main([requestFile('a.txt\na2.txt\n\nfeat: rename a, executable\n')], dir);
+    assert.ok(!res.code, res.text);
+    assert.match(git(dir, 'show', '--name-status', '-M', '--format=', 'HEAD'), /^R\d+\ta\.txt\ta2\.txt$/);
+    assert.match(git(dir, 'ls-tree', 'HEAD', 'a2.txt'), /^100755 /);
+    assert.doesNotMatch(git(dir, 'ls-tree', '--name-only', 'HEAD'), /^a\.txt$/m);
+});
+
+test('a git rm beside a staged executable mode in one block commits both', () => {
+    const dir = repo();
+    git(dir, 'config', 'core.fileMode', 'false');
+    git(dir, 'rm', '-qf', 'b.txt');
+    git(dir, 'update-index', '--chmod=+x', 'a.txt');
+    const res = commit.main([requestFile('a.txt\nb.txt\n\nfeat: drop b, a executable\n')], dir);
+    assert.ok(!res.code, res.text);
+    assert.doesNotMatch(git(dir, 'ls-tree', '--name-only', 'HEAD'), /^b\.txt$/m);
+    assert.match(git(dir, 'ls-tree', 'HEAD', 'a.txt'), /^100755 /);
 });
 
 // todo-check-1, third item: neither clause had a test that failed without it.

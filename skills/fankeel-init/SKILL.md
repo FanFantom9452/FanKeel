@@ -1,10 +1,10 @@
 ---
 name: fankeel-init
 description: First-use onboarding for a project fankeel has not organised — its docs tree, raw data, TODO, directory tree, CLAUDE.md, memory and a sensitive-word list — one question at a time until the onboarding checks pass. Use when `task.js start` prints an `onboard:` line, or for /fankeel-init.
-version: 0.101.0
+version: 0.105.0
 status: current
-last_verified: 2026-10-02
-source_of_truth: scripts/onboard.js, lib/onboard.js, agents/fankeel-init-scout.md
+last_verified: 2026-10-12
+source_of_truth: scripts/onboard.js, lib/onboard.js, agents/fankeel-init-scout.md, scripts/compact-window.js, hooks/compact.ts
 ---
 
 # fankeel-init
@@ -140,6 +140,44 @@ Two of them carry this repository's own evidence:
   as the recommended answer with its evidence line, and say that
   `land.js merge` writes `merge: <task>`, so a pattern without `merge` refuses
   `land.js merge` until the user adds it. Write nothing the user did not pick.
+
+One more question belongs to the machine, not to the profile, and is asked
+whatever the scout's `profile` row says:
+
+- The auto-compact window — asked when
+  `node <plugin>/scripts/task.js profile show` gives `compact.at` the
+  source `builtin` (nobody has chosen); a row sourced `project` or a machine
+  default is not asked again. First run
+  `node <plugin>/scripts/compact-window.js show`: when it prints `set <n>`,
+  the descriptions say this machine already has a machine-wide
+  `CLAUDE_CODE_AUTO_COMPACT_WINDOW` of `<n>`. The next `task.js start`
+  replaces that `<n>` with the answer, and the descriptions say so. One `AskUserQuestion`, four options in this order: `450000`,
+  recommended (the default); `350000` — conservative, compacts sooner and
+  spends fewer tokens; `600000` — loose, keeps more in context and spends
+  more; 不設 (`off`) — fankeel's own mod, `hooks/compact.ts`, never compacts
+  (the host's own auto-compact, or a machine-wide
+  `CLAUDE_CODE_AUTO_COMPACT_WINDOW`, still can), and the description says this
+  burns tokens heavily. **Other** is not offered: the key takes those four
+  values. The descriptions say what the answer does: it only applies in a
+  session that is running a fankeel task — `hooks/compact.ts` compacts the main
+  conversation once its context reaches that many tokens. It is a mod, so it
+  acts only in an interactive session where the mod is loaded (the session has
+  pressed Enable under `/plugin`), and never in a headless `claude -p` session.
+  The descriptions say so too. The answer is not written to `settings.json`
+  now, but `task.js start` syncs `env.CLAUDE_CODE_AUTO_COMPACT_WINDOW` to
+  `compact.at` each time a task starts (it writes only when the value differs,
+  keeping a `.fankeel-bak` copy of a settings.json that already existed), so
+  the host's own auto-compact, which fires about 30k tokens before the window,
+  then applies to every session on the machine. `off` and a
+  `compact-window.declined` marker left by an earlier init are left alone, and
+  the descriptions say so. When settings.json cannot be written, start prints
+  `compact window: not synced — <reason>` and goes on. When start prints `compact window: <n> written to <file>`,
+  the user restarts Claude Desktop; sessions already open keep the old window.
+  350000 and 600000 have not been measured, and the descriptions say so. The
+  answer runs
+  `node <plugin>/scripts/task.js profile set compact.at <value> --default`.
+  No answer writes nothing to the profile, but the next `task.js start` still
+  syncs the built-in 450000.
 
 ## 8. Close
 
