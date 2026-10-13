@@ -39,7 +39,6 @@ export type StatusInput = {
 // an alarm (ALARMS) carries it on every row. The task block has
 // no colour: its rail is the terminal's own.
 export const RAILS: Record<string, string> = {
-  gate: GUARD,
   clash: FLAG,
   tasks: WHERE,
   context: WHERE,

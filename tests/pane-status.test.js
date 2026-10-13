@@ -50,7 +50,7 @@ test('the frame is task, clash, notes, foot: a section\'s rail is on its first r
     });
     // The task 5 rows (the route wraps to two), the clash 2, notes 3, the foot 1.
     assert.equal(rows.filter((r) => r.segs.length).map((r) => r.segs[0].text).join(''), '▌    ▌▌▌  ▌');
-    assert.deepEqual(m.RAILS, Object.assign({ gate: '#d7af5f' }, RAIL));
+    assert.deepEqual(m.RAILS, RAIL);
 });
 
 test('one blank row sits above every block but the first, and belongs to the block under it', async () => {

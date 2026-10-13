@@ -25,7 +25,6 @@ type Seen = {
   entry: Entry | null
   others: Other[]
   pending: Pending | null
-  pendingFile: string | null
   context: Context | null
   limits: Limit[]
   plan: PlanInfo | null
@@ -39,7 +38,7 @@ type Seen = {
 // session's own registry file, the pending file and the ledger are read every tick.
 type Cache = Map<string, { stamp: string; value: unknown }>
 
-const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, pendingFile: null, context: null, limits: [], plan: null, probe: null })
+const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, context: null, limits: [], plan: null, probe: null })
 
 // The last message each silent catch logged: the tick runs four times a second, and a failure that stays is said once.
 type Logged = { context: string; plan: string; open: string; registry: string; neighbour: string; gate: string; live: string }
@@ -224,7 +223,7 @@ async function look($: EngineInterface, cache: Cache, logged: Logged): Promise<S
   const { context, limits } = await contextOf($, logged, found)
   const plan = await planOf($, found.root, entry, cache, logged)
   const probe = await probeOf($)
-  return { id, entry, others, pending, pendingFile, context, limits, plan, probe }
+  return { id, entry, others, pending, context, limits, plan, probe }
 }
 
 type State = {
@@ -269,7 +268,7 @@ async function tick($: EngineInterface, state: State): Promise<void> {
     const clock = next.entry ? await $.clock.now() : 0
     const minute = Math.floor(clock / 60000)
     const second = next.pending ? Math.floor(clock / 1000) : 0
-    const now = JSON.stringify([next.entry, next.others, next.pending && next.pending.questions, next.pendingFile, next.context, next.limits, next.plan, next.probe, minute, second])
+    const now = JSON.stringify([next.entry, next.others, next.context, next.limits, next.plan, next.probe, minute, second])
     // The opens and closes have their own memory, `edge`, which moves only when they all went through: a rejected
     // one is met again next tick as the same edge, while `seen` and the redraw below never wait on them.
     try {
