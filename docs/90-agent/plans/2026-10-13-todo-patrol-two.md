@@ -343,6 +343,9 @@ sed -i 's/^stamp: .*/stamp: 2026-10-13/' docs/90-agent/todo/stage-agents-10.md d
    說明寫「TODO 全表盤點（10-13 第二輪）的 plan：commit.js 提交搬過家的檔、逐塊調整托盤載入就展開」，狀態照同表其他未落地的 plan 的寫法。
 3. 跑 `node scripts/todo-check.js`（exit 0）與 `node scripts/docs-check.js`（不點名這三個檔）。
 
+verify 推翻了 stage-agents-10 這一半：它等的是「no verdict 再發生一次」，那會出現在逐字稿而不是報告裡，而且提到 no verdict 的報告有三份、
+不是第 1 步寫的一份。grep 報告撐不起新的章，所以它的 `stamp:` 退回 2026-10-12；stage-agents-16 與索引列不變。
+
 ## Task 5: 使用者不經說明開一次頁面，看找不找得到入口
 
 沒有測試看得到真的瀏覽器。這個 task 是使用者的，沒有程式，也沒有任何派出去的 task 依賴它。
