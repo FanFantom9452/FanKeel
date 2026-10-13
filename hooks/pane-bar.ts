@@ -131,7 +131,7 @@ export function countdown(ms: number, days: boolean): string {
 
 // Whole minutes in `ms`, never under zero: the band's stage minutes and the Pane's agent minutes are both this.
 export const minutes = (ms: number): number => Math.max(0, Math.floor(ms / 60000))
-// Whole seconds until `until`, a part second counted whole, never under zero: the band's badge and the Pane's gate row are both this.
+// Whole seconds until `until`, a part second counted whole, never under zero: the band's badge counts down with it.
 export const secondsLeft = (until: number, now: number): number => Math.max(0, Math.ceil((until - now) / 1000))
 
 // ` 66%`: three cells of number, so a column of them lines up.

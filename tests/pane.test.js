@@ -317,6 +317,24 @@ test('a waiting gate is not the Pane\'s: no gate row or button, no open, no toas
     assert.match(bandLines(await hooks.band($, BAND, passed))[0], /gate 在等 {3}還 \d+ 秒/);
 });
 
+test('the band redraws when a gate arrives and when it goes, with the minute unchanged', async () => {
+    const hooks = await wired();
+    const { $, log, store } = fake({ files: entryFile(live) });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const first = async () => bandLines(await hooks.band($, BAND, passed))[0];
+    assert.doesNotMatch(await first(), /gate 在等/);
+    const before = log.invalidated;
+    store[DIR + '/design-pending.json'] = JSON.stringify(gate);
+    await log.ticks[0].fn();
+    assert.equal(log.invalidated, before + 1, 'the arrival of a gate did not redraw');
+    assert.match(await first(), /gate 在等 {3}還 \d+ 秒/);
+    delete store[DIR + '/design-pending.json'];
+    await log.ticks[0].fn();
+    assert.equal(log.invalidated, before + 2, 'the end of a gate did not redraw');
+    assert.doesNotMatch(await first(), /gate 在等/);
+});
+
 test('the two drawings agree: the band\'s flag counts the sessions the Pane names, and the context count is on the band alone', async () => {
     const hooks = await wired();
     const mine = Object.assign({}, live, { claims: ['a.js', 'b.js', 'c.js', 'd.js'] });
