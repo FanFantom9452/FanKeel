@@ -156,6 +156,73 @@ test('anything else is a usage line and exit 2', () => {
   for (const args of [[], ['get'], ['set'], ['show', 'x']]) {
     const got = run(cfg, args);
     assert.equal(got.code, 2, args.join(' '));
-    assert.match(got.out, /usage: compact-window\.js show \| set <n> \| decline/);
+    assert.match(got.out, /usage: compact-window\.js show \| set <n> \| sync <at> \| decline/);
   }
+});
+
+test('sync writes on a machine with nothing set, then says same and touches no byte', () => {
+  const cfg = tmp('fankeel-cw-');
+  fs.writeFileSync(settings(cfg), JSON.stringify({ model: 'opus' }));
+  const first = run(cfg, ['sync', '450000']);
+  assert.equal(first.code, 0);
+  assert.ok(first.out.startsWith('changed unset → 450000'), first.out);
+  assert.ok(first.out.includes(settings(cfg)), first.out);
+  assert.ok(first.out.includes(settings(cfg) + '.fankeel-bak'), first.out);
+  const bak = settings(cfg) + '.fankeel-bak';
+  const before = [fs.readFileSync(settings(cfg)), fs.readFileSync(bak)];
+  fs.writeFileSync(bak, 'marker');
+  before[1] = fs.readFileSync(bak);
+  const again = run(cfg, ['sync', '450000']);
+  assert.deepEqual(again, { out: 'same 450000', code: 0 });
+  assert.deepEqual(fs.readFileSync(settings(cfg)), before[0]);
+  assert.deepEqual(fs.readFileSync(bak), before[1]);
+});
+
+test('sync reports the old value when it changes one, and ignores process.env', () => {
+  const cfg = tmp('fankeel-cw-');
+  fs.writeFileSync(settings(cfg), JSON.stringify({ env: { [WINDOW]: '350000' } }));
+  const got = run(cfg, ['sync', '600000'], { [WINDOW]: '600000' });
+  assert.ok(got.out.startsWith('changed 350000 → 600000'), got.out);
+  assert.equal(JSON.parse(fs.readFileSync(settings(cfg), 'utf8')).env[WINDOW], '600000');
+});
+
+test('sync off and a decline marker leave the window alone', () => {
+  const cfg = tmp('fankeel-cw-');
+  assert.deepEqual(run(cfg, ['sync', 'off']), { out: 'off: window left as it is', code: 0 });
+  assert.ok(!fs.existsSync(settings(cfg)));
+  run(cfg, ['decline']);
+  assert.deepEqual(run(cfg, ['sync', '450000']), { out: 'declined: window left as it is', code: 0 });
+  assert.ok(!fs.existsSync(settings(cfg)));
+});
+
+test('sync refuses a number outside the three windows with usage and exit 2', () => {
+  const cfg = tmp('fankeel-cw-');
+  for (const bad of ['200000', 'abc', '']) {
+    const got = run(cfg, ['sync', bad]);
+    assert.equal(got.code, 2, bad);
+    assert.match(got.out, /usage: compact-window\.js show \| set <n> \| sync <at> \| decline/);
+  }
+  assert.ok(!fs.existsSync(settings(cfg)));
+});
+
+test('sync exits 1 with the reason when settings.json does not parse, and leaves it', () => {
+  const cfg = tmp('fankeel-cw-');
+  fs.writeFileSync(settings(cfg), '{ not json');
+  const got = run(cfg, ['sync', '450000']);
+  assert.equal(got.code, 1);
+  assert.ok(got.out.includes(settings(cfg)), got.out);
+  assert.equal(fs.readFileSync(settings(cfg), 'utf8'), '{ not json');
+});
+
+test('the exported sync returns the state object', () => {
+  const cfg = tmp('fankeel-cw-');
+  const { sync } = require('../scripts/compact-window.js');
+  const a = sync(cfg, '450000');
+  assert.deepEqual([a.state, a.from, a.to, a.file], ['changed', 'unset', '450000', settings(cfg)]);
+  assert.equal(sync(cfg, '450000').state, 'same');
+  assert.equal(sync(cfg, 'off').state, 'off');
+  fs.writeFileSync(settings(cfg), '[]');
+  const f = sync(cfg, '350000');
+  assert.equal(f.state, 'failed');
+  assert.ok(f.reason.includes(settings(cfg)));
 });

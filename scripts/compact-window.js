@@ -6,6 +6,7 @@
 //
 //   node scripts/compact-window.js show
 //   node scripts/compact-window.js set <n>
+//   node scripts/compact-window.js sync <at>
 //   node scripts/compact-window.js decline
 //
 // `show` prints `set <n>`, `declined` or `unset`. `set` writes the variable
@@ -80,6 +81,22 @@ function set(configDir, raw) {
     return { ok: true, file, backup };
 }
 
+const AT = ['350000', '450000', '600000'];
+
+// Makes the window in settings.json (not process.env) equal `at`, writing only
+// when it differs. `off` and a decline marker leave the machine as it is.
+function sync(configDir, at) {
+    if (at === 'off') return { state: 'off', to: at };
+    if (!AT.includes(at)) return { state: 'failed', to: at, reason: 'sync <at>: 350000, 450000, 600000 or off' };
+    if (fs.existsSync(declinedFile(configDir))) return { state: 'declined', to: at };
+    const file = settingsFile(configDir);
+    const had = windowOf(((readSettings(file).values || {}).env));
+    if (had === Number(at)) return { state: 'same', from: String(had), to: at, file };
+    const out = set(configDir, at);
+    if (!out.ok) return { state: 'failed', from: had ? String(had) : 'unset', to: at, file, reason: out.reason };
+    return { state: 'changed', from: had ? String(had) : 'unset', to: at, file, backup: out.backup };
+}
+
 function decline(configDir) {
     const file = declinedFile(configDir);
     fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -98,8 +115,17 @@ function main(argv, env) {
         if (!out.ok) return { text: 'compact-window.js: ' + out.reason, code: 1 };
         return { text: ['set ' + n + '  → ' + out.file].concat(out.backup ? ['backup  → ' + out.backup] : [], 'Restart Claude Code for it to take effect.').join('\n'), code: 0 };
     }
-    return { text: 'usage: compact-window.js show | set <n> | decline', code: 2 };
+    if (verb === 'sync' && argv.length === 2 && (n === 'off' || AT.includes(n))) {
+        const out = sync(configDir, n);
+        if (out.state === 'failed') return { text: 'compact-window.js: ' + out.reason, code: 1 };
+        if (out.state === 'off' || out.state === 'declined') return { text: out.state + ': window left as it is', code: 0 };
+        if (out.state === 'same') return { text: 'same ' + n, code: 0 };
+        return { text: ['changed ' + out.from + ' → ' + n + '  → ' + out.file].concat(out.backup ? ['backup  → ' + out.backup] : []).join('\n'), code: 0 };
+    }
+    return { text: 'usage: compact-window.js show | set <n> | sync <at> | decline', code: 2 };
 }
+
+module.exports = { sync };
 
 if (require.main === module) {
     const { text, code } = main(process.argv.slice(2), process.env);
