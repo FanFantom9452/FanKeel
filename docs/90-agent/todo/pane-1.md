@@ -1,7 +1,7 @@
 ---
 label: pane
 title: 面板真機沒看完的四件事
-description: 用下一個真的任務看：撞檔的 ⚑、gate 只在上方兩行顯示、終端、Pane 自己打開
+description: 用下一個真的任務看：撞檔的 ⚑、gate 只在上方第一行顯示、終端、Pane 自己打開
 state: ready
 ---
 

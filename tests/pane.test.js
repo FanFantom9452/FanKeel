@@ -644,7 +644,7 @@ test('the engine\'s rate limits are bars on the band and no reset time in the Pa
     assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ██████▉░░░ 312k/450k');
 });
 
-test('while a gate waits a new second redraws, so both countdowns move; with none it does not', async () => {
+test('while a gate waits a new second redraws, so the band's countdown moves; with none it does not', async () => {
     const hooks = await wired();
     const { $, log, store } = fake({ files: entryFile(live) });
     await hooks['session.start']($, {}, async () => ({}));
