@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # TODO 全表盤點（10-13 第二輪）：commit.js 提交搬過家的檔、逐塊調整托盤載入就展開 Implementation Plan
