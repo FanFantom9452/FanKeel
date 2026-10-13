@@ -958,10 +958,11 @@ every request, takes a POST from the clear button on a `stale` row, answers
 `force` is ticked — the age-and-liveness rule is
 [collisions.md](collisions.md)'s — and `403` without the per-run nonce, on every POST but the
 `/chartroom/` route's below. It binds the fixed
-port `7817` by default, falling back to an ephemeral one only when `7817` is
-already taken — and then keeps trying `7817` every thirty seconds; the first
+port `28888` by default (inside 15001–32767, a range no platform hands out as
+an ephemeral port), falling back to an ephemeral one only when `28888` is
+already taken — and then keeps trying `28888` every thirty seconds; the first
 time it binds, a second listener on the same handler takes it, `serve.json`
-names `7817` from then on, and the ephemeral listener stays open so a tab on
+names `28888` from then on, and the ephemeral listener stays open so a tab on
 the old url keeps working. `--port <n>` asks for a chosen port instead, and
 a chosen port that is taken is an error rather than a fallback. It does not exit
 on its own — `--idle <minutes>` is what asks for an idle exit at all, and

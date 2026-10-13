@@ -150,6 +150,14 @@ test('a second serve() call joins the first rather than binding its own port', a
     }
 });
 
+test('without --port the station asks for 28888, and --port still overrides it', () => {
+    const { parseArgs } = require('../scripts/station.js');
+    const bare = parseArgs(['serve']);
+    assert.equal(bare.port, 28888);
+    assert.equal(bare.portWasExplicit, false);
+    assert.equal(parseArgs(['serve', '--port', '4321']).port, 4321);
+});
+
 test('serve.json is written once the listener binds and removed once it closes', async () => {
     const f = fixture();
     const { serve } = require('../scripts/station.js');
