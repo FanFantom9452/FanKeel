@@ -532,6 +532,31 @@ test('a mode staged 100755 => 100644 stays 100644 after the commit', () => {
     assert.match(git(dir, 'ls-tree', 'HEAD', 'run.sh'), /^100644 /);
 });
 
+// The scratch-index branch of commitPaths, with a staged-gone path in the block.
+test('a staged rename with a staged executable mode commits one rename and keeps the mode', () => {
+    const dir = repo();
+    git(dir, 'config', 'core.fileMode', 'false');
+    fs.writeFileSync(path.join(dir, 'a.txt'), 'a1\n');
+    git(dir, 'mv', 'a.txt', 'a2.txt');
+    git(dir, 'update-index', '--chmod=+x', 'a2.txt');
+    const res = commit.main([requestFile('a.txt\na2.txt\n\nfeat: rename a, executable\n')], dir);
+    assert.ok(!res.code, res.text);
+    assert.match(git(dir, 'show', '--name-status', '-M', '--format=', 'HEAD'), /^R\d+\ta\.txt\ta2\.txt$/);
+    assert.match(git(dir, 'ls-tree', 'HEAD', 'a2.txt'), /^100755 /);
+    assert.doesNotMatch(git(dir, 'ls-tree', '--name-only', 'HEAD'), /^a\.txt$/m);
+});
+
+test('a git rm beside a staged executable mode in one block commits both', () => {
+    const dir = repo();
+    git(dir, 'config', 'core.fileMode', 'false');
+    git(dir, 'rm', '-qf', 'b.txt');
+    git(dir, 'update-index', '--chmod=+x', 'a.txt');
+    const res = commit.main([requestFile('a.txt\nb.txt\n\nfeat: drop b, a executable\n')], dir);
+    assert.ok(!res.code, res.text);
+    assert.doesNotMatch(git(dir, 'ls-tree', '--name-only', 'HEAD'), /^b\.txt$/m);
+    assert.match(git(dir, 'ls-tree', 'HEAD', 'a.txt'), /^100755 /);
+});
+
 // todo-check-1, third item: neither clause had a test that failed without it.
 test('stagedModes hands back a failed git diff --cached --summary as it came', () => {
     const failed = { status: 128, stdout: '', stderr: 'fatal: bad revision' };

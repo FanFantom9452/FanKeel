@@ -68,9 +68,9 @@ function foldRenames(paths, statusLines) {
 }
 
 // `git diff --cached -M --name-status` lines again: the paths `git add`
-// cannot be handed. A rename's old side and a staged deletion are in neither
-// the working tree nor the index, so `add` matches nothing and fails the
-// whole block; `commit -o` still takes them, and has to.
+// cannot be handed. A rename's old side and a staged deletion are not in the
+// index, so where the working tree lacks them too `add` matches nothing and
+// fails the whole block; `commit -o` still takes them, and has to.
 function stagedGone(statusLines) {
     const gone = new Set();
     for (const line of statusLines) {
@@ -96,7 +96,7 @@ function commonDir(run, dir) {
 // the commit from HEAD and the working tree, and with core.fileMode=false it
 // reads no executable bit off the working tree, so these are what it drops.
 function stagedModes(git, paths) {
-    const r = git(['-c', 'core.quotePath=false', 'diff', '--cached', '--summary', '--'].concat(paths));
+    const r = git(['-c', 'core.quotePath=false', 'diff', '--cached', '--summary', '--no-renames', '--'].concat(paths));
     if (r.status !== 0) return r;
     const out = new Map();
     for (const line of r.stdout.split(/\r?\n/)) {
