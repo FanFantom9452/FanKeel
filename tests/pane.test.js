@@ -429,6 +429,8 @@ test('the band and the context block are measured against the profile\'s compact
     log.tokens = 279999;
     await log.ticks[0].fn();
     assert.ok(!(await pane()).includes('context'), 'a context block under four fifths of 350k');
+    // 279999 is over four fifths of 300k and under four fifths of 350k: the band warns by the profile's value alone.
+    assert.ok(!bandLines(await hooks.band($, BAND, passed))[1].endsWith('⚠'), 'the band warned under four fifths of 350k');
 });
 
 test('compact.at off draws the count with no threshold and never a context block', async () => {
@@ -644,6 +646,18 @@ test('the engine\'s rate limits are bars on the band and no reset time in the Pa
     $.session.usage = async () => ({ startedAt: 0, context: { tokens: log.tokens } });
     await log.ticks[0].fn();
     assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ██████▉░░░ 312k/450k');
+});
+
+test('an engine that reports no window, or a window of 0, leaves the band measured against the threshold', async () => {
+    const hooks = await wired();
+    const { $, log } = fake({ files: entryFile(live) });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    for (const context of [{ tokens: 312000 }, { tokens: 312000, window: 0 }]) {
+        $.session.usage = async () => ({ startedAt: 0, context, rateLimits: [] });
+        await log.ticks[0].fn();
+        assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ██████▉░░░ 312k/450k', JSON.stringify(context));
+    }
 });
 
 test('while a gate waits a new second redraws, so the band countdown moves; with none it does not', async () => {
