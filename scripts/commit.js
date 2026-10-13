@@ -67,9 +67,8 @@ function foldRenames(paths, statusLines) {
     return out;
 }
 
-// `git diff --cached -M --name-status` lines again: the paths `git add`
-// cannot be handed. A rename's old side and a staged deletion are not in the
-// index, so where the working tree lacks them too `add` matches nothing and
+// `git diff --cached -M --name-status` lines again: the paths left out of
+// `git add` (a rename's old side and a staged deletion: not in the index), so where the working tree lacks them too `add` matches nothing and
 // fails the whole block; `commit -o` still takes them, and has to.
 function stagedGone(statusLines) {
     const gone = new Set();
@@ -95,6 +94,10 @@ function commonDir(run, dir) {
 // or a new file staged executable — as path to mode. `git commit -o` rebuilds
 // the commit from HEAD and the working tree, and with core.fileMode=false it
 // reads no executable bit off the working tree, so these are what it drops.
+// `--no-renames`: with rename detection on, a renamed file's mode change prints
+// as ` mode change 100644 => 100755` with no path after it, so the mode would
+// be dropped; without it the line is `create mode <mode> <path>`, which the
+// second pattern reads.
 function stagedModes(git, paths) {
     const r = git(['-c', 'core.quotePath=false', 'diff', '--cached', '--summary', '--no-renames', '--'].concat(paths));
     if (r.status !== 0) return r;
