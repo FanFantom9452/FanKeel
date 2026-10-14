@@ -236,3 +236,109 @@ export function bandRow2Svg(input: BandInput): string {
   if (flags) after(`⚑${flags}`, { fill: FLAG, bold: true }, drawn ? 14 : 0)
   return drawn || flags ? svgDoc(cols * CELL_PX, BAND_H, b) : ''
 }
+
+// The Pane's width in px: one cell is CELL_PX.
+const paneW = (cols: number): number => cols * CELL_PX
+
+type Station = { name: string; state: 'done' | 'here' | 'ahead'; min: number | null; wait: number }
+
+// The route under the task title: a column a station, its dot (done green, here
+// a grey ring, ahead hollow), a bar of the minutes it took from the entry's
+// `clock` against the longest, and the minutes its gate waited (`waited`) in
+// amber at the bar's end. '' when the stage is not on the route.
+export function routeSvg(entry: Entry, now: number, cols: number): string {
+  const route = list(entry.route)
+  const at = route.indexOf(str(entry.stage))
+  if (at < 0) return ''
+  const W = paneW(cols)
+  const clock = record(entry.clock)
+  const waits = record(entry.waited)
+  const stations: Station[] = route.map((name, i): Station => {
+    if (i > at) return { name, state: 'ahead', min: null, wait: 0 }
+    const pair = clock[name]
+    const from = Array.isArray(pair) && typeof pair[0] === 'number' ? pair[0] : null
+    const to = i === at ? now : Array.isArray(pair) && typeof pair[1] === 'number' ? pair[1] : null
+    const wait = waits[name]
+    return {
+      name,
+      state: i < at ? 'done' : 'here',
+      min: from !== null && to !== null ? minutes(to - from) : null,
+      wait: typeof wait === 'number' && Number.isFinite(wait) ? minutes(wait) : 0,
+    }
+  })
+  const n = stations.length
+  const slot = W / n
+  const cx = (i: number): number => slot * i + slot / 2
+  const max = Math.max(1, ...stations.map((s) => s.min ?? 0))
+  let b = ''
+  stations.forEach((s, i) => {
+    b += text(cx(i), 12, fitPx(s.name, slot - 2), { anchor: 'middle', bold: s.state === 'here', fill: s.state === 'ahead' ? TODO : WHERE })
+  })
+  b += `<line x1="${r1(cx(0))}" y1="26" x2="${r1(cx(at))}" y2="26" stroke="${DONE}" stroke-width="2"/>`
+  b += `<line x1="${r1(cx(at))}" y1="26" x2="${r1(cx(n - 1))}" y2="26" stroke="${TODO}" stroke-width="1"/>`
+  stations.forEach((s, i) => {
+    const x = r1(cx(i))
+    if (s.state === 'done') b += `<circle cx="${x}" cy="26" r="4" fill="${DONE}"/>`
+    else if (s.state === 'here') b += `<circle cx="${x}" cy="26" r="6" fill="none" stroke="${WHERE}" stroke-width="2.5"/><circle cx="${x}" cy="26" r="2.5" fill="${WHERE}"/>`
+    else b += `<circle cx="${x}" cy="26" r="3.75" fill="none" stroke="${TODO}" stroke-width="1.5"/>`
+  })
+  const full = slot - 10
+  stations.forEach((s, i) => {
+    if (s.min === null) return
+    const w = Math.max(3, (s.min / max) * full)
+    const ww = s.wait ? Math.min(w, Math.max(2, (s.wait / max) * full)) : 0
+    const x0 = cx(i) - w / 2
+    if (w - ww > 0) b += `<rect x="${r1(x0)}" y="38" width="${r1(w - ww)}" height="4" rx="1" fill="${s.state === 'done' ? DONE : WHERE}"/>`
+    if (ww) b += `<rect x="${r1(x0 + w - ww)}" y="38" width="${r1(ww)}" height="4" rx="1" fill="${GUARD}"/>`
+    b += text(cx(i), 56, `${s.min}分`, { anchor: 'middle', bold: s.state === 'here' })
+    if (s.wait) b += text(cx(i), 72, `等${s.wait}`, { anchor: 'middle', fill: GUARD })
+  })
+  return svgDoc(W, 78, b)
+}
+
+// hooks/pane-status.ts ago: `12m`, `3h`, or '' where `updated` does not parse.
+function ago(updated: unknown, now: number): string {
+  const at = typeof updated === 'string' ? Date.parse(updated) : NaN
+  if (!Number.isFinite(at)) return ''
+  const m = Math.max(0, Math.floor((now - at) / 60000))
+  return m >= 60 ? `${Math.floor(m / 60)}h` : `${m}m`
+}
+
+// The clash as a small graph: the files this session shares on the left, the
+// sessions holding them on the right, a red line for each hold; under each
+// session its station's colour, its stage and how long since it moved. ''
+// where no file is shared.
+export function clashSvg(entry: Entry, others: Other[], now: number, cols: number): string {
+  const files = claimsOf(entry).filter((file) => others.some((other) => claimsOf(other.entry).includes(file)))
+  if (!files.length) return ''
+  const holders = others.filter((other) => claimsOf(other.entry).some((file) => files.includes(file)))
+  const W = paneW(cols)
+  const fileY = (i: number): number => 16 + i * 26
+  const whoY = (j: number): number => 14 + j * 40
+  const h = Math.max(fileY(files.length - 1) + 14, whoY(holders.length - 1) + 30)
+  // 10, 174 and 218 of the mockup's 328px.
+  const L = 10
+  const LW = Math.round(W * 0.53)
+  const RX = L + LW + 34
+  let b = `<rect x="0" y="0" width="3" height="${h}" fill="${FLAG}"/>`
+  files.forEach((file, i) => {
+    b += text(L, fileY(i), '⚑', { fill: FLAG, bold: true })
+    b += text(L + 16, fileY(i), tailPx(file, LW - 16), { fill: FLAG, bold: true })
+    holders.forEach((other, j) => {
+      if (!claimsOf(other.entry).includes(file)) return
+      const y1 = fileY(i) - 4
+      const y2 = whoY(j) - 4
+      b += `<path d="M ${L + LW + 4} ${y1} C ${L + LW + 22} ${y1}, ${RX - 20} ${y2}, ${RX - 6} ${y2}" fill="none" stroke="${FLAG}" stroke-width="1.5"/>`
+    })
+    b += `<circle cx="${L + LW + 4}" cy="${fileY(i) - 4}" r="2.5" fill="${FLAG}"/>`
+  })
+  holders.forEach((other, j) => {
+    const stage = str(other.entry.stage) || '?'
+    const age = ago(other.entry.updated, now)
+    b += `<circle cx="${RX - 6}" cy="${whoY(j) - 4}" r="2.5" fill="${FLAG}"/>`
+    b += text(RX, whoY(j), fitPx(str(other.entry.task) || other.id.slice(0, 8), W - RX - 2), { bold: true })
+    b += `<circle cx="${RX + 4}" cy="${whoY(j) + 13}" r="3.5" fill="${stageColor(stage)}"/>`
+    b += text(RX + 12, whoY(j) + 17, age ? `${stage} · ${age}` : stage)
+  })
+  return svgDoc(W, h, b)
+}

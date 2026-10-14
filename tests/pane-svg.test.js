@@ -112,3 +112,28 @@ test('compact.at off leaves no compact point; with no window it is the count alo
     assert.ok(!bare.includes('height="10"'), 'a well drawn with nothing to measure against');
     assert.equal(bandRow2Svg(bandInput({ context: null, limits: [], others: [] })), '');
 });
+
+test('the Pane\'s route is a column a station: the minutes from clock, the wait from waited, ahead with no bar', async () => {
+    const { routeSvg } = await load('pane-svg');
+    const source = routeSvg(entry, NOW, 41);
+    assert.match(source, /^<svg [^>]*width="328" height="78"/);
+    // The names, then each visited station's minutes and the minutes its gate waited.
+    assert.deepEqual(words(source), ['survey', 'design', 'plan', 'build', 'verify', 'land', '11分', '37分', '等6', '20分', '等2', '47分', '等4']);
+    // Three done dots, the ring and its dot, two hollow.
+    assert.equal((source.match(/r="4" fill="#87af5f"/g) || []).length, 3);
+    assert.equal((source.match(/r="3\.75" fill="none"/g) || []).length, 2);
+    // Each gate's wait is amber at its bar's end.
+    assert.equal((source.match(/y="38" width="[\d.]+" height="4" rx="1" fill="#d7af5f"/g) || []).length, 3);
+    assert.equal(routeSvg(Object.assign({}, entry, { stage: 'init' }), NOW, 41), '');
+});
+
+test('the clash is the shared files on the left, who holds them on the right, one red line a hold', async () => {
+    const { clashSvg } = await load('pane-svg');
+    const { RAMP } = await load('pane-band');
+    const source = clashSvg(entry, others, NOW, 41);
+    assert.deepEqual(words(source), ['⚑', 'hooks/pane.ts', '⚑', 'hooks/pane-status.ts', 'band 倒數改秒數', 'build · 12m', 'TODO 歸檔', 'verify · 3m']);
+    // pane.ts is held by one neighbour, pane-status.ts by both.
+    assert.equal((source.match(/<path /g) || []).length, 3);
+    assert.ok(source.includes(`r="3.5" fill="${RAMP.build}"`) && source.includes(`r="3.5" fill="${RAMP.verify}"`));
+    assert.equal(clashSvg(entry, [], NOW, 41), '');
+});
