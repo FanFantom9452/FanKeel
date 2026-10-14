@@ -407,10 +407,49 @@ test('sixty tasks, a long clash and the off meter stay far under the engine\'s 1
     const { tasksSvg, clashSvg, contextSvg, SVG_MAX } = await load('pane-svg');
     const big = { name: 'big', done: Array.from({ length: 37 }, (_, i) => i + 1), tasks: Array.from({ length: 60 }, (_, i) => ({ n: i + 1, name: 'x'.repeat(200), user: i === 50 })) };
     const many = Array.from({ length: 20 }, (_, i) => ({ id: 'n' + i, entry: { task: 'y'.repeat(200), stage: 'build', claims: entry.claims } }));
-    for (const source of [tasksSvg(entry, big, NOW, 41), tasksSvg(entry, Object.assign({}, big, { tasks: big.tasks.slice(0, 30) }), NOW, 41), clashSvg(entry, many, NOW, 41), contextSvg({ tokens: 455000, at: Infinity }, 41)]) {
-        assert.ok(source.length < SVG_MAX / 4, String(source.length));
+    const { bandRow1Svg, bandRow2Svg, routeSvg } = await load('pane-svg');
+    const long = Object.assign({}, entry, { task: 'z'.repeat(300), next: 'w'.repeat(300) });
+    const heavy = bandInput({ entry: long, others: many, gateAt: NOW - 18000, gateUntil: NOW + 42000, tasks: { done: 37, total: 60 }, cols: 200 });
+    const stages = Array.from({ length: 40 }, (_, i) => 's' + 'x'.repeat(30) + i);
+    const longRoute = Object.assign({}, entry, { route: stages, stage: stages[30], clock: Object.fromEntries(stages.slice(0, 31).map((s, i) => [s, [NOW - (40 - i) * M, i === 30 ? null : NOW - (39 - i) * M]])), waited: Object.fromEntries(stages.map((s) => [s, 9 * M])) });
+    for (const source of [tasksSvg(entry, big, NOW, 41), tasksSvg(entry, Object.assign({}, big, { tasks: big.tasks.slice(0, 30) }), NOW, 41), clashSvg(entry, many, NOW, 41), contextSvg({ tokens: 455000, at: Infinity }, 41),
+        bandRow1Svg(heavy), bandRow2Svg(heavy), routeSvg(longRoute, NOW, 200)]) {
+        assert.ok(source.length > 0 && source.length < SVG_MAX / 4, String(source.length));
     }
     assert.equal(SVG_MAX, 131072);
+});
+
+test('the band\'s rail is the clash colour only while a file is shared', async () => {
+    const { bandRow1Svg, bandRow2Svg } = await load('pane-svg');
+    const { CLASH } = await load('pane-band');
+    const rail = (source) => /<rect x="0" y="2" width="3" height="18" fill="(#[0-9a-f]{6})"\/>/.exec(source)[1];
+    const apart = [{ id: 'd1', entry: { task: 'elsewhere', stage: 'build', active: true, claims: ['docs/x.md'], updated: new Date(NOW).toISOString() } }];
+    for (const draw of [bandRow1Svg, bandRow2Svg]) {
+        assert.equal(rail(draw(bandInput())), CLASH);
+        assert.notEqual(rail(draw(bandInput({ others: apart }))), CLASH);
+        assert.notEqual(rail(draw(bandInput({ others: [] }))), CLASH);
+    }
+});
+
+test('the band\'s window and compact.at-off wording are the rows bandRows produces', async () => {
+    const { bandRow2Svg } = await load('pane-svg');
+    const { bandRows } = await load('pane-band');
+    for (const ctx of [{ tokens: 212000, at: 450000, window: 1000000 }, { tokens: 212000, at: Infinity, window: 1000000 }, { tokens: 212000, at: Infinity }, { tokens: 212000, at: 450000 }]) {
+        const input = bandInput({ context: ctx, limits: [], others: [] });
+        const said = bandRows(input)[1].map((s) => s.text.trim()).filter(Boolean);
+        const drawn = words(bandRow2Svg(input));
+        assert.ok(drawn.length >= 2, JSON.stringify(ctx));
+        for (const w of drawn) assert.ok(said.includes(w), `${w} not in ${JSON.stringify(said)} for ${JSON.stringify(ctx)}`);
+        assert.equal(drawn.filter((w) => w[0] === '/').length, said.filter((w) => w[0] === '/').length);
+    }
+});
+
+test('the agent that is out is on the first open task that is not the user\'s, even when the user\'s comes first', async () => {
+    const { tasksSvg } = await load('pane-svg');
+    const t = titles(tasksSvg(entry, planOf(9, 4, [5]), NOW, 41));
+    assert.equal(t[4], '5 · task 5 · 你的');
+    assert.equal(t[5], '6 · task 6 · agent 出去 12 分');
+    assert.equal(t.filter((x) => x.includes('agent 出去')).length, 1);
 });
 
 test('a band with one row on Claude Desktop is one Svg', async () => {
