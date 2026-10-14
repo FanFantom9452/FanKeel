@@ -131,7 +131,7 @@ export function bandRows(input: BandInput): Seg[][] | null {
     : [{ text: `等你 ${waited} 分`, color: GUARD, gap: 2 }]
   // Always drawn: ✓ in green while Remote Control is connected, ✗ in the grey text colour when not (off is normal, not an alarm).
   const remote: Seg[] = [{ text: '遠端', color: WHERE, gap: 2 }, input.remote ? { text: '✓', color: CONNECTED, gap: 1 } : { text: '✗', color: WHERE, gap: 1 }]
-  // `drop` is how many of the four droppable groups are gone: 遠端 ●, then the stage minutes, then the wait, then tasks.
+  // `drop` is how many of the four droppable groups are gone: 遠端, then the stage minutes, then the wait, then tasks.
   const firstAt = (drop: number): Seg[] => {
     const a = drop < 4 ? count : []
     const b = drop < 3 ? yours : []
