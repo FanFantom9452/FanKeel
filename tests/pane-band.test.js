@@ -51,8 +51,10 @@ test('the first row is the rail, the badge, the route as dots, tasks N/M and the
         { text: '等你', color: '#8a8a8a', gap: 2 },
         { text: '2', gap: 1 },
         { text: '分', color: '#8a8a8a', gap: 1 },
+        { text: '遠端', color: '#8a8a8a', gap: 2 },
+        { text: '✗', color: '#8a8a8a', gap: 1 },
     ]);
-    assert.equal(line(first), '▌FANKEEL BUILD  ●●●●○○○  tasks 4/5  本站 38 分  等你 2 分');
+    assert.equal(line(first), '▌FANKEEL BUILD  ●●●●○○○  tasks 4/5  本站 38 分  等你 2 分  遠端 ✗');
 });
 
 test('the band draws no task title, no next, no guard, no file count and no N of M', async () => {
@@ -91,7 +93,7 @@ test('the stage minutes come from the last move, else the clock, else are not dr
     assert.equal(after(first({}), '本站'), '38');
     assert.equal(after(first({ moves: undefined }), '本站'), '98');
     assert.equal(after(first({ moves: undefined, clock: undefined }), '本站'), null);
-    assert.equal(line(first({ moves: undefined, clock: undefined })), '▌FANKEEL BUILD  ●●●●○○○  tasks 4/5  等你 2 分');
+    assert.equal(line(first({ moves: undefined, clock: undefined })), '▌FANKEEL BUILD  ●●●●○○○  tasks 4/5  等你 2 分  遠端 ✗');
     assert.equal(after(first({ waited: undefined }), '等你'), '0');
     assert.equal(after(first({ waited: { design: 600000 } }), '等你'), '0');
 });
@@ -284,14 +286,14 @@ test('with a window the ctx bar is tokens over window and a white line marks the
     assert.equal(line(row), '▌ctx ██░░│░░░░░ 212k/1M  │  5h ██████▌░░░  66%  │  7d █████▊░░░░  58%  -6%');
     assert.deepEqual(row.slice(1, 8), [
         { text: 'ctx ', color: '#585858' },
-        { text: '██', color: '#ffd700' },
+        { text: '██', color: '#d7ffd7' },
         { text: '░░', color: '#585858' },
         { text: '│', color: '#ffffff', bold: true },
         { text: '░░░░░', color: '#585858' },
-        { text: '212k', color: '#ffd700', gap: 1 },
+        { text: '212k', color: '#d7ffd7', gap: 1 },
         { text: '/1M', color: '#8a8a8a' },
     ]);
-    assert.match(line(sized(432000)[1]), /^▌ctx ████│░░░░░ 432k\/1M ⚠ /);
+    assert.match(line(sized(500000)[1]), /^▌ctx ████│░░░░░ 500k\/1M ⚠ /);
     // the line is placed again for the cells a narrow band leaves
     assert.match(line(sized(212000, { cols: 20 })[1]), /^▌ctx █▍░│░░░ 212k\/1M/);
 });
@@ -302,8 +304,52 @@ test('the white line is absent when the compact threshold is off or not under th
     const off = row({ tokens: 212000, at: Infinity, window: 1000000 });
     assert.equal(line(off), '▌ctx ██░░░░░░░░ 212k/1M');
     assert.ok(!off.some((seg) => seg.text.includes('│')));
-    assert.equal(off[2].color, '#87ff87', 'coloured by tokens over the window');
+    assert.equal(off[2].color, '#d7ffd7', 'coloured by tokens over the window');
     for (const at of [1000000, 1200000]) assert.ok(!line(row({ tokens: 212000, at, window: 1000000 })).includes('│'), 'at ' + at);
     assert.equal(line(row({ tokens: 212000, at: 450000 })), '▌ctx ████▋░░░░░ 212k/450k');
     assert.equal(line(row({ tokens: 212000, at: 450000, window: 0 })), '▌ctx ████▋░░░░░ 212k/450k');
+});
+
+test('the band ctx colour and mark follow the TokenBar tier of the window, not the compact threshold', async () => {
+    const m = await load();
+    const ctxSegs = (ctx) => band(m, { context: ctx, limits: [] })[1];
+    // 100000 of 450000 is 22% of the threshold (green), but 50% of a 200k window: yellow. 85% of it is purple with a single warning sign.
+    assert.equal(ctxSegs({ tokens: 100000, at: 450000, window: 200000 })[2].color, '#ffff00');
+    const small = ctxSegs({ tokens: 170000, at: 450000, window: 200000 });
+    assert.deepEqual(small.find((seg) => seg.text === '170k'), { text: '170k', color: '#ff00ff', bold: true, gap: 1 });
+    assert.equal(small.find((seg) => seg.text === '⚠').color, '#ff00ff');
+    assert.ok(!ctxSegs({ tokens: 169999, at: 450000, window: 200000 }).some((seg) => seg.text === '⚠'));
+    // The ladder on a 1M window; the threshold is far above, and the old rule would show nothing.
+    assert.ok(line(ctxSegs({ tokens: 650000, at: 900000, window: 1000000 })).includes(' 650k/1M 💥'));
+    assert.ok(line(ctxSegs({ tokens: 900000, at: 950000, window: 1000000 })).includes('💀'));
+    // No window: the compact threshold as before.
+    assert.equal(ctxSegs({ tokens: 360000, at: 450000 }).find((seg) => seg.text === '⚠').color, '#ff00ff');
+});
+
+test('Remote Control connected ends the first row with 遠端 ✓, the ✓ green after grey text', async () => {
+    const m = await load();
+    const row = band(m, { remote: true, cols: 90 })[0];
+    assert.equal(line(row), '▌FANKEEL BUILD  ●●●●○○○  tasks 4/5  本站 38 分  等你 2 分  遠端 ✓');
+    assert.deepEqual(row.slice(-2).map((s) => s.color), ['#8a8a8a', '#87af5f']);
+});
+
+test('Remote Control not connected, or not said, ends the first row with 遠端 ✗ in the grey text colour, not red or green', async () => {
+    const m = await load();
+    for (const over of [{ remote: false }, {}]) {
+        const row = band(m, Object.assign({ cols: 90 }, over))[0];
+        assert.equal(line(row), '▌FANKEEL BUILD  ●●●●○○○  tasks 4/5  本站 38 分  等你 2 分  遠端 ✗');
+        assert.deepEqual(row.slice(-2).map((s) => s.color), ['#8a8a8a', '#8a8a8a']);
+    }
+});
+
+test('a narrow first row drops 遠端 before 本站, 等你 and tasks', async () => {
+    const m = await load();
+    const calm = (cols) => line(band(m, { cols, remote: true })[0]);
+    assert.equal(calm(65), '▌FANKEEL BUILD  ●●●●○○○  tasks 4/5  本站 38 分  等你 2 分  遠端 ✓');
+    assert.equal(calm(64), '▌FANKEEL BUILD  ●●●●○○○  tasks 4/5  本站 38 分  等你 2 分');
+    assert.equal(calm(56), '▌FANKEEL BUILD  ●●●●○○○  tasks 4/5  等你 2 分');
+    const gated = line(band(m, { cols: 90, remote: true, gateUntil: NOW + 44500 })[0]);
+    assert.ok(gated.endsWith('  遠端 ✓'));
+    assert.equal(line(band(m, { cols: 65, remote: false })[0]), '▌FANKEEL BUILD  ●●●●○○○  tasks 4/5  本站 38 分  等你 2 分  遠端 ✗');
+    assert.equal(line(band(m, { cols: 64, remote: false })[0]), '▌FANKEEL BUILD  ●●●●○○○  tasks 4/5  本站 38 分  等你 2 分');
 });

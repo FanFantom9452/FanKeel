@@ -1,12 +1,13 @@
 import type { Register, EngineInterface } from 'claude-code'
-import { parentOf, isActive, SESSION_ID, threshold } from './compact.ts'
+import { parentOf, isActive, SESSION_ID, thresholdWith } from './compact.ts'
 import { statusRows, ledgerDoneIds, planTasks } from './pane-status.ts'
-import type { Entry, Other, Context, PlanInfo, PlanTask, Seg as StatusSeg, Row as StatusRow } from './pane-status.ts'
+import type { Entry, Other, Context, PlanInfo, PlanTask, Seg as StatusSeg, Row as StatusRow, StatusInput } from './pane-status.ts'
 import type { Limit } from './pane-bar.ts'
 import { taskDir, pendingName, parsePending } from './pane-gate.ts'
 import type { Pending } from './pane-gate.ts'
 import { bandRows } from './pane-band.ts'
-import type { Seg as BandSeg } from './pane-band.ts'
+import type { Seg as BandSeg, BandInput } from './pane-band.ts'
+import { bandRow1Svg, bandRow2Svg, paneParts, altOf, SVG_MAX } from './pane-svg.ts'
 
 // The fankeel mod's two drawings: two rows above the prompt for what is always
 // wanted, and the Pane for what is looked up. The Pane opens itself while the
@@ -28,6 +29,8 @@ type Seen = {
   context: Context | null
   limits: Limit[]
   plan: PlanInfo | null
+  // Whether Remote Control is connected, from Claude Code's own session file.
+  remote: boolean
   // What probeOf read, or null while FANKEEL_PANE_PROBE is unset.
   probe: string | null
 }
@@ -38,10 +41,10 @@ type Seen = {
 // session's own registry file, the pending file and the ledger are read every tick.
 type Cache = Map<string, { stamp: string; value: unknown }>
 
-const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, context: null, limits: [], plan: null, probe: null })
+const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, context: null, limits: [], plan: null, remote: false, probe: null })
 
 // The last message each silent catch logged: the tick runs four times a second, and a failure that stays is said once.
-type Logged = { context: string; plan: string; open: string; registry: string; neighbour: string; gate: string; live: string }
+type Logged = { context: string; plan: string; open: string; registry: string; neighbour: string; gate: string; live: string; remote: string; bandSvg: string; paneSvg: string }
 
 // A registry file that is there and does not parse: told apart so `tick` can wait it out for a while, then give up on it.
 class Unreadable extends Error {}
@@ -83,7 +86,7 @@ async function findEntry($: EngineInterface, id: string): Promise<{ entry: Entry
 }
 
 // The tokens in play against the count hooks/compact.ts compacts at — its own
-// `threshold`, so FANKEEL_COMPACT_AT, the profile's compact.at and HARD are read
+// `thresholdWith`, so FANKEEL_COMPACT_AT, the profile's compact.at and HARD are read
 // in one place, and `off` is Infinity — and the rate limits the same call
 // reports: `five_hour` and `seven_day` are the two drawn.
 // No context while the engine has no count; neither when it cannot be asked.
@@ -93,7 +96,14 @@ async function contextOf($: EngineInterface, logged: Logged, found: { entry: Ent
     const limits = Array.isArray(usage.rateLimits) ? (usage.rateLimits as Limit[]) : []
     if (typeof usage.context.tokens !== 'number') return { context: null, limits }
     const window = usage.context.window
-    return { context: { tokens: usage.context.tokens, at: await threshold($, found), ...(typeof window === 'number' && Number.isFinite(window) && window > 0 ? { window } : {}) }, limits }
+    const io = {
+      compactAt: () => $.env.get('FANKEEL_COMPACT_AT'),
+      exists: (path: string) => $.fs.exists(path),
+      read: async (path: string) => String(await $.fs.read(path)),
+      stat: (path: string) => $.fs.stat(path),
+      log: (text: string) => $.ui.log(text, { to: 'debug' }),
+    }
+    return { context: { tokens: usage.context.tokens, at: await thresholdWith(io, found), ...(typeof window === 'number' && Number.isFinite(window) && window > 0 ? { window } : {}) }, limits }
   } catch (err) {
     logOnce($, logged, 'context', `fankeel pane: no token count, ${String(err)}`)
     return { context: null, limits: [] }
@@ -162,6 +172,52 @@ async function liveOf($: EngineInterface, root: string, logged: Logged): Promise
   }
 }
 
+// Whether Remote Control is on for this session: Claude Code writes <configDir>/sessions/<pid>.json with
+// the session's `sessionId`, and a `bridgeSessionId` that is a non-empty string while it is connected
+// (null once switched off, absent if it never was; measured on 2.1.295). The file for this session is
+// found by its sessionId, not by its name. A directory or file that cannot be read counts as not connected.
+async function remoteOf($: EngineInterface, entry: Entry, id: string, cache: Cache, logged: Logged): Promise<boolean> {
+  try {
+    const home = (await $.env.get('HOME')) || (await $.env.get('USERPROFILE'))
+    const configDir = typeof entry.configDir === 'string' && entry.configDir ? entry.configDir : home ? `${home}/.claude` : ''
+    if (!configDir) return false
+    const dir = `${configDir.replace(/[\\/]+$/, '')}/sessions`
+    if (!(await $.fs.exists(dir))) return false
+    // Several files can name this session (a dead pid leaves its own behind): the newest one is the truth.
+    let newest = -Infinity
+    let remote = false
+    const listed = new Set<string>()
+    for (const file of await $.fs.list(dir)) {
+      if (!file.name.endsWith('.json')) continue
+      const path = `${dir}/${file.name}`
+      listed.add(path)
+      const stamp = `${file.mtimeMs}:${file.size}`
+      let hit = cache.get(path)
+      if (!hit || hit.stamp !== stamp) {
+        // A file caught mid-write keeps its last good reading, and is read again next tick.
+        const fresh = await readJson($, path)
+        if (fresh) {
+          hit = { stamp, value: fresh }
+          cache.set(path, hit)
+        } else hit = { stamp, value: hit ? hit.value : null }
+      }
+      const got = hit.value as { sessionId?: unknown; bridgeSessionId?: unknown } | null
+      if (got && got.sessionId === id && file.mtimeMs >= newest) {
+        const on = typeof got.bridgeSessionId === 'string' && got.bridgeSessionId !== ''
+        // On an equal mtime connected wins, so the answer does not depend on the listing's order.
+        remote = file.mtimeMs === newest ? remote || on : on
+        newest = file.mtimeMs
+      }
+    }
+    for (const key of cache.keys()) if (key.startsWith(`${dir}/`) && !listed.has(key)) cache.delete(key)
+    logged.remote = ''
+    return remote
+  } catch (err) {
+    logOnce($, logged, 'remote', `fankeel pane: Remote Control state unreadable, ${String(err)}`)
+    return false
+  }
+}
+
 // Everything both drawings show: this session's entry, the other active
 // entries beside it, the gate hooks/gate.js is holding, the context count and
 // the plan's ledger; the neighbours and the plan file are read again only when
@@ -222,7 +278,8 @@ async function look($: EngineInterface, cache: Cache, logged: Logged): Promise<S
   const { context, limits } = await contextOf($, logged, found)
   const plan = await planOf($, found.root, entry, cache, logged)
   const probe = await probeOf($)
-  return { id, entry, others, pending, context, limits, plan, probe }
+  const remote = await remoteOf($, entry, id, cache, logged)
+  return { id, entry, others, pending, context, limits, plan, remote, probe }
 }
 
 type State = {
@@ -267,7 +324,7 @@ async function tick($: EngineInterface, state: State): Promise<void> {
     const clock = next.entry ? await $.clock.now() : 0
     const minute = Math.floor(clock / 60000)
     const second = next.pending ? Math.floor(clock / 1000) : 0
-    const now = JSON.stringify([next.entry, next.others, next.context, next.limits, next.plan, next.probe, minute, second])
+    const now = JSON.stringify([next.entry, next.others, next.context, next.limits, next.plan, next.remote, next.probe, minute, second])
     // The opens and closes have their own memory, `edge`, which moves only when they all went through: a rejected
     // one is met again next tick as the same edge, while `seen` and the redraw below never wait on them.
     try {
@@ -302,7 +359,7 @@ async function tick($: EngineInterface, state: State): Promise<void> {
 export const register: Register = (on) => {
   const state: State = {
     seen: blank(''), print: '', mine: false, edge: { task: false }, bad: 0, busy: false, cache: new Map(),
-    logged: { context: '', plan: '', open: '', registry: '', neighbour: '', gate: '', live: '' },
+    logged: { context: '', plan: '', open: '', registry: '', neighbour: '', gate: '', live: '', remote: '', bandSvg: '', paneSvg: '' },
   }
 
   on('session.start', async ($, e, next) => {
@@ -333,17 +390,32 @@ export const register: Register = (on) => {
     // 5: the cells the engine keeps at the band's right end, where no surface has measured the body.
     const cols = Math.max(20, props.bodyColumns ?? (e.viewport?.columns ?? 85) - 5)
     const plan = seen.plan
-    const rows = bandRows({
+    const band: BandInput = {
       entry: seen.entry,
       others: seen.others,
       gateUntil: seen.pending ? seen.pending.until : null,
+      gateAt: seen.pending ? seen.pending.at : null,
       context: seen.context,
       limits: seen.limits,
       tasks: plan ? { done: plan.tasks.filter((t) => plan.done.includes(t.n)).length, total: plan.tasks.length } : null,
+      remote: seen.remote,
       cols,
       now: Date.now(),
-    })
+    }
+    const rows = bandRows(band)
     if (!rows) return next(e)
+    // Claude Desktop draws each row as one Svg, its alt the row as text; every other surface draws the text.
+    // A drawing that throws, or comes back empty or over the engine's limit, falls through to the text rows.
+    if (e.surface === 'desktop') {
+      try {
+        const { Box, Svg } = $.ui.resolve(e)
+        const sources = rows.map((_, i) => (i === 0 ? bandRow1Svg(band) : bandRow2Svg(band)))
+        if (sources.some((source) => !source || source.length > SVG_MAX)) throw new Error('a band row drew empty or over the limit')
+        return h(Box, { flexDirection: 'column' }, ...sources.map((source, i) => h(Svg, { source, alt: altOf([rows[i]]) })))
+      } catch (err) {
+        logOnce($, state.logged, 'bandSvg', `fankeel pane: band Svg not drawn, ${String(err)}`)
+      }
+    }
     const { Box, Text } = $.ui.resolve(e)
     const cell = (seg: BandSeg) => {
       const text = h(Text, { color: seg.color, backgroundColor: seg.backgroundColor, bold: seg.bold, wrap: 'truncate-end' }, seg.text)
@@ -361,7 +433,7 @@ export const register: Register = (on) => {
     const room = Math.max(1, props.scroll?.bodyRows ?? (e.viewport?.rows ?? 24) - 4)
     // One reading for the whole drawing, so the status block's minutes are of the same moment.
     const now = Date.now()
-    const status = statusRows({
+    const input: StatusInput = {
       id: seen.id,
       entry: seen.entry,
       others: seen.others,
@@ -371,11 +443,21 @@ export const register: Register = (on) => {
       room,
       now,
       probe: seen.probe,
-    })
+    }
+    const status = statusRows(input)
     const blankRow = () => h(Text, {}, ' ')
     // A row's segments touch: each carries its own colour, and its own space where it wants one.
     const piece = (seg: StatusSeg) => h(Text, { color: seg.color, bold: seg.bold, wrap: 'truncate-end' }, seg.text)
     const line = (row: StatusRow) => (row.segs.length === 0 ? blankRow() : h(Box, { flexDirection: 'row' }, ...row.segs.map(piece)))
+    // Claude Desktop draws the route, the clash, the tasks and the context as Svg; every other surface draws the text.
+    if (e.surface === 'desktop') {
+      try {
+        const { Svg } = $.ui.resolve(e)
+        return h(Box, { flexDirection: 'column' }, ...paneParts(input, status).flatMap((part) => ('rows' in part ? part.rows.map(line) : [h(Svg, part)])))
+      } catch (err) {
+        logOnce($, state.logged, 'paneSvg', `fankeel pane: Pane Svg not drawn, ${String(err)}`)
+      }
+    }
     return h(Box, { flexDirection: 'column' }, ...status.map(line))
   })
 }

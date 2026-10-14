@@ -74,6 +74,31 @@ export function ctxPaint(tokens: number, at: number): Paint {
   return { ...step(CTX, percent), mark: at > 0 && nearCompact(tokens, at) ? '⚠' : '' }
 }
 
+// TokenBar's CTX_TIERS as [largest window the tier covers, purple from percent, ramp], the ramp in percent of the window itself.
+const TIERS: [number, number, Step[]][] = [
+  [200000, 85, [[0, 46], [10, 83], [20, 120], [30, 157], [40, 194], [45, 190], [50, 226], [55, 220], [60, 214], [65, 208], [70, 196, true], [75, 198, true], [80, 200, true]]],
+  [500000, 80, [[0, 46], [8, 83], [16, 120], [24, 157], [32, 194], [36, 190], [40, 226], [45, 220], [50, 214], [55, 208], [60, 196, true], [65, 198, true], [70, 199, true], [75, 200, true]]],
+  [800000, 80, [[0, 46], [6, 83], [12, 120], [18, 157], [24, 194], [27, 190], [30, 226], [36, 220], [42, 214], [48, 208], [55, 196, true], [62, 198, true], [70, 199, true], [75, 200, true]]],
+  [Infinity, 80, [[0, 46], [5, 83], [10, 120], [15, 157], [20, 194], [25, 193], [30, 192], [35, 190], [40, 226], [45, 214], [50, 196, true], [55, 197, true], [60, 198, true], [65, 199, true], [70, 200, true], [75, 201, true]]],
+]
+// CTX_MARKS: only windows above 800k carry the ladder; a smaller one gets a single ⚠ at its purple threshold.
+const LADDER: [number, string][] = [[50, '⚠'], [65, '💥'], [75, '💥💥'], [85, '💥💥💥'], [90, '💀']]
+
+// TokenBar's rule for the band's ctx meter: percent of the context window, not of the compact threshold.
+export function ctxWindowPaint(tokens: number, window: number): Paint {
+  const [, purple, ramp] = TIERS.find((t) => window <= t[0]) ?? TIERS[TIERS.length - 1]
+  // Integer-safe: tokens/window*100 >= from  <=>  tokens*100 >= from*window.
+  const reached = (from: number): boolean => tokens * 100 >= from * window
+  let hit = ramp[0]
+  for (const s of ramp) if (reached(s[0])) hit = s
+  const purpled = reached(purple)
+  const color = purpled ? XTERM[201] : XTERM[hit[1]]
+  let mark = ''
+  if (window > 800000) for (const [from, glyph] of LADDER) { if (reached(from)) mark = glyph }
+  else if (purpled) mark = '⚠'
+  return { color, bold: purpled || hit[2] === true, mark }
+}
+
 export function fivePaint(used: number): Paint {
   return { ...step(FIVE, used), mark: used >= 95 ? '⚠' : '' }
 }

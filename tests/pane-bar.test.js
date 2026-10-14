@@ -200,3 +200,30 @@ test('kilo writes a whole million as 1M and anything else in k', async () => {
     const { kilo } = await load();
     assert.deepEqual([kilo(1000000), kilo(2000000), kilo(1500000), kilo(999999), kilo(200000)], ['1M', '2M', '1500k', '1000k', '200k']);
 });
+
+test('ctxWindowPaint is the TokenBar tier by window: ramp, purple switch, ladder above 800k, one warning sign below', async () => {
+    const { ctxWindowPaint, ctxPaint } = await load();
+    // One boundary per tier: [window, percent, colour under, colour at].
+    for (const [w, p, under, here] of [[200000, 45, 194, 190], [500000, 36, 194, 190], [800000, 27, 194, 190], [1000000, 25, 194, 193]]) {
+        assert.equal(ctxWindowPaint(w * p / 100 - 1, w).color, X[under], w + ' under ' + p);
+        assert.equal(ctxWindowPaint(w * p / 100, w).color, X[here], w + ' at ' + p);
+    }
+    // A window at its tier's edge belongs to that tier; one token over belongs to the next.
+    assert.equal(ctxWindowPaint(100000, 200000).color, X[226]);
+    assert.equal(ctxWindowPaint(100000, 200001).color, X[220]);
+    assert.equal(ctxWindowPaint(250000, 500000).color, X[214]);
+    // Purple, bold: 85 percent of 200k, 80 percent of the rest; bold from the ramp's own bold steps below that.
+    assert.deepEqual(ctxWindowPaint(169999, 200000), { color: X[200], bold: true, mark: '' });
+    assert.deepEqual(ctxWindowPaint(170000, 200000), { color: X[201], bold: true, mark: '⚠' });
+    assert.deepEqual(ctxWindowPaint(399999, 500000), { color: X[200], bold: true, mark: '' });
+    assert.deepEqual(ctxWindowPaint(400000, 500000), { color: X[201], bold: true, mark: '⚠' });
+    assert.deepEqual(ctxWindowPaint(640000, 800000), { color: X[201], bold: true, mark: '⚠' });
+    assert.equal(ctxWindowPaint(100000, 200000).bold, false);
+    // Above 800k the ladder replaces the single sign.
+    const ladder = [[499999, ''], [500000, '⚠'], [650000, '💥'], [750000, '💥💥'], [850000, '💥💥💥'], [900000, '💀']];
+    for (const [tokens, mark] of ladder) assert.equal(ctxWindowPaint(tokens, 1000000).mark, mark, tokens + ' of 1M');
+    assert.equal(ctxWindowPaint(600001, 800001).mark, '💥💥');
+    // The Pane's rule is untouched: percent of the threshold.
+    assert.equal(ctxPaint(100000, 450000).color, X[120]);
+    assert.equal(ctxWindowPaint(100000, 200000).color, X[226]);
+});

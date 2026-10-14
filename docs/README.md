@@ -236,6 +236,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | TODO 全表盤點（10-05）的 plan：壓縮重試最多三次的測試、`/fankeel` 頁面寫不出來時 station 行說出來、兩處 timeout 與行號小錯、brain 選模型改放 Watch | [plans/2026-10-05-todo-patrol-ready-three.md](90-agent/plans/2026-10-05-todo-patrol-ready-three.md) — *design-intent, 繁體中文* |
 | TODO 全表盤點（10-14）的 plan：knip 與 fast mode 兩條上游戳記重蓋、逐塊調整浮層在 land 結案、六條真機條目留在 Ready、pane-band 併回 main | `docs/99-archive/2026-10-14-todo-patrol-restamp.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-14）做了什麼、沒做什麼：逐塊調整浮層不夠直覺關閉、knip 與 fast mode 兩筆重新蓋章、pane-band 併回 main；六筆真機條目留在 Ready，留下五個缺口 | [reports/patrols/2026-10-14-todo-patrol-restamp.md](90-agent/reports/patrols/2026-10-14-todo-patrol-restamp.md) — *繁體中文* |
+| Desktop 用 Svg 畫 band 與 Pane（10-14）的 design：Desktop 依 surface 畫 Svg、終端維持文字，Svg 的 alt 就是文字列 | `docs/99-archive/2026-10-14-pane-svg-design.md` — *built, 繁體中文* |
+| 那份設計的十個 task：五個程式、五個使用者在真機上做；後來加了 ctx 照 TokenBar 與 band 尾巴的遠端 ✓／✗ | `docs/99-archive/2026-10-14-pane-svg.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-13 第二輪）的 plan：commit.js 提交搬過家的檔、逐塊調整托盤載入就展開 | `docs/99-archive/2026-10-13-todo-patrol-two.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-13 第二輪）做了什麼、沒做什麼：commit.js 能提交列了舊路徑的搬家、托盤載入就展開，兩筆關閉；verify 退回三件事，留下三個缺口 | [reports/patrols/2026-10-13-todo-patrol-two.md](90-agent/reports/patrols/2026-10-13-todo-patrol-two.md) — *繁體中文* |
 | TODO 全表盤點（10-13）的 plan：面板門檻改讀 `compact.at`、Pane 四處重複、逐塊調整兩條、指南補 init 第 7 步 | `docs/99-archive/2026-10-13-todo-patrol-five.md` — *built, 繁體中文* |
@@ -250,6 +252,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 那份設計的兩個 task：腳本與它的測試、skill 第 7 步的那一題 | `docs/99-archive/2026-10-12-init-compact-window.md` — *built, 繁體中文* |
 | 壓縮視窗由 init 幫忙設（10-12）定了什麼：問一題、答是才寫使用者的設定檔、先留備份、答否記住；放棄了什麼 | [decisions/2026-10-12-init-compact-window.md](03-decisions/2026-10-12-init-compact-window.md) — *繁體中文* |
 | 壓縮門檻改成 `compact.at`（10-12）定了什麼：init 問四檔、只在 fankeel 任務生效、不再寫使用者的設定檔；放棄了什麼 | [decisions/2026-10-12-compact-at.md](03-decisions/2026-10-12-compact-at.md) — *繁體中文* |
+| Desktop 用 Svg 畫 band 與 Pane（10-15）定了什麼：Desktop 畫圖、終端維持文字，band 尾巴的遠端 ✓／✗，ctx 照 TokenBar；放棄了什麼 | [decisions/2026-10-15-pane-svg.md](03-decisions/2026-10-15-pane-svg.md) — *繁體中文* |
 | 開任務時同步壓縮視窗（10-14）定了什麼：start 把主機視窗對齊 `compact.at`、值變了請使用者重開 Desktop；放棄了什麼 | [decisions/2026-10-14-start-syncs-window.md](03-decisions/2026-10-14-start-syncs-window.md) — *繁體中文* |
 | Pane 配色改成安靜版（10-13）定了什麼：標題共用灰、多一行 route、拿掉「這個 session」與「用量額度」兩塊；放棄了什麼 | [decisions/2026-10-13-pane-colour.md](03-decisions/2026-10-13-pane-colour.md) — *繁體中文* |
 | TODO 全表盤點（10-12 第二輪）與自動壓縮做了什麼、沒做什麼：壓縮交給主機的視窗，fankeel 只在沒設時提醒；放棄了 mod 心跳與進 build 先壓；盤點沒有可直接做的，新開六筆 | [reports/patrols/2026-10-12-todo-patrol-compact-window.md](90-agent/reports/patrols/2026-10-12-todo-patrol-compact-window.md) — *繁體中文* |
@@ -490,6 +493,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 - [fankeel 面板（10-12）：兩行常駐，細節放 Pane](03-decisions/2026-10-12-fankeel-panel.md)
 - [壓縮視窗由 init 幫忙設（10-12）：問一題，答是才寫使用者的設定檔](03-decisions/2026-10-12-init-compact-window.md)
 - [壓縮門檻改成 profile 的 compact.at（10-12）：init 問四檔，不再寫使用者的設定檔](03-decisions/2026-10-12-compact-at.md)
+- [Desktop 用 Svg 畫 band 與 Pane，終端維持文字（10-15）](03-decisions/2026-10-15-pane-svg.md)
 - [開任務時同步壓縮視窗（10-14）：task.js start 把主機視窗寫成 compact.at](03-decisions/2026-10-14-start-syncs-window.md)
 - [Pane 的配色改成安靜版，多一行 route，拿掉兩塊（10-13）](03-decisions/2026-10-13-pane-colour.md)
 

@@ -6,6 +6,7 @@
 import { WHERE, FLAG, GUARD, TODO, claimsOf } from './pane-band.ts'
 import { str, list, width, cut, WIDE, DIM, minutes, nearCompact } from './pane-bar.ts'
 import type { Context } from './pane-bar.ts'
+import { HARD } from './compact.ts'
 
 // Kept as exports of this file: hooks/pane.ts imports them from here.
 export { str, list, width, cut, WIDE }
@@ -187,7 +188,7 @@ function taskBlock(entry: Entry, inner: number): Row[] {
 }
 
 // `12m`, `3h`, or '' where `updated` does not parse.
-function ago(updated: unknown, now: number): string {
+export function ago(updated: unknown, now: number): string {
   const at = typeof updated === 'string' ? Date.parse(updated) : NaN
   if (!Number.isFinite(at)) return ''
   const m = Math.max(0, Math.floor((now - at) / 60000))
@@ -214,8 +215,8 @@ function clashBlock(entry: Entry, others: Other[], inner: number, now: number): 
 }
 
 // A task complete, and an agent out on one.
-const DONE = '#87af5f'
-const OUT = '#af87d7'
+export const DONE = '#87af5f'
+export const OUT = '#af87d7'
 // The minutes an agent is out before its row turns amber.
 const LONG = 20
 // A plan of more tasks than this folds into a window.
@@ -272,17 +273,25 @@ function tasksBlock(entry: Entry, plan: PlanInfo | null, inner: number, now: num
   return rows
 }
 
+// What the context block says, read by the desktop Svg (hooks/pane-svg.ts) too, so the two never word it apart.
+export const SAID = { hot: '已到門檻，compact 中', near: '快要自動 compact 了', hotOff: '已到門檻，自動 compact 已關閉', nearOff: '快到門檻，自動 compact 已關閉' }
+
 // Drawn only from eighty percent of the threshold (hooks/compact.ts threshold:
 // FANKEEL_COMPACT_AT, the profile's compact.at, else HARD), and then never
 // given up: that a compact is close, or
 // under way, and what one keeps. No count, no bar and no mark: the band's `ctx`
-// meter (hooks/pane-band.ts) has those, and a figure is drawn once.
+// meter (hooks/pane-band.ts) has those, and a figure is drawn once. compact.at
+// off is an infinite threshold: the block is measured against HARD and says
+// that no compact will run.
 function contextBlock(context: Context, inner: number): Row[] {
-  if (!nearCompact(context.tokens, context.at)) return []
-  const hot = context.tokens >= context.at
+  const off = !Number.isFinite(context.at)
+  const at = off ? HARD : context.at
+  if (!nearCompact(context.tokens, at)) return []
+  const hot = context.tokens >= at
+  const said = hot ? (off ? SAID.hotOff : SAID.hot) : off ? SAID.nearOff : SAID.near
   return [
-    row('context', title('context', 'context'), hot ? { text: '  已到門檻，compact 中', color: GUARD, bold: true } : dim('  快要自動 compact 了')),
-    row('context', dim(cut(`留 ${KEPT.join(' · ')}`, inner))),
+    row('context', title('context', 'context'), hot ? { text: `  ${said}`, color: GUARD, bold: true } : dim(`  ${said}`)),
+    row('context', dim(cut(off ? '不會自動壓縮；要壓縮請手動 /compact' : `留 ${KEPT.join(' · ')}`, inner))),
   ]
 }
 

@@ -66,44 +66,53 @@ async function findEntry($: EngineInterface, id: string): Promise<{ entry: Entry
 // lib/profile.js KEYS['compact.at'] values; anything else in a file is read as absent.
 const COMPACT_AT = /^(350000|450000|600000|off)$/
 
-async function profileAt($: EngineInterface, file: string): Promise<string | null> {
+async function profileAt(io: ThresholdIo, file: string): Promise<string | null> {
   try {
-    if (!(await $.fs.exists(file))) return null
-    const v = (JSON.parse(String(await $.fs.read(file)).replace(/^﻿/, '')) as Record<string, unknown>)['compact.at']
+    if (!(await io.exists(file))) return null
+    const v = (JSON.parse(String(await io.read(file)).replace(/^﻿/, '')) as Record<string, unknown>)['compact.at']
     // lib/profile.js parseValue reads String(raw), so a hand-written number counts.
     const at = typeof v === 'string' || typeof v === 'number' ? String(v).trim().toLowerCase() : ''
     return COMPACT_AT.test(at) ? at : null
   } catch (err) {
-    $.ui.log(`fankeel compact: unreadable profile ${file}: ${err}`, { to: 'debug' })
+    io.log(`fankeel compact: unreadable profile ${file}: ${err}`)
     return null
   }
 }
 
 // lib/docs.js projectRootsFor: the first segment of the entry's project, when
 // that is a directory under the registry root; otherwise the root itself.
-async function projectRootOf($: EngineInterface, root: string, project: unknown): Promise<string> {
+async function projectRootOf(io: ThresholdIo, root: string, project: unknown): Promise<string> {
   if (typeof project !== 'string') return root
   const p = project.replace(/\\/g, '/').replace(/^\.\//, '')
   if (p.startsWith('/') || p.includes('..')) return root
   const head = p.split('/')[0]
   if (!head) return root
   try {
-    return (await $.fs.stat(`${root}/${head}`)).kind === 'dir' ? `${root}/${head}` : root
+    return (await io.stat(`${root}/${head}`)).kind === 'dir' ? `${root}/${head}` : root
   } catch {
     return root
   }
 }
 
+// The file and env reads the threshold needs, as plain functions: the engine refuses $ passed to an imported function, so hooks/pane.ts builds this from its own $.
+export type ThresholdIo = {
+  compactAt(): Promise<string | undefined>
+  exists(path: string): Promise<boolean>
+  read(path: string): Promise<string>
+  stat(path: string): Promise<{ kind: string }>
+  log(text: string): void
+}
+
 // lib/profile.js: the project file under the entry's project root, then the
 // machine file under the entry's configDir.
-export async function threshold($: EngineInterface, found: { entry: Entry; root: string } | null): Promise<number> {
-  const raw = Number(await $.env.get('FANKEEL_COMPACT_AT'))
+export async function thresholdWith(io: ThresholdIo, found: { entry: Entry; root: string } | null): Promise<number> {
+  const raw = Number(await io.compactAt())
   if (Number.isFinite(raw) && raw > 0) return raw
   if (found) {
     const { entry, root } = found
-    const project = await projectRootOf($, root, entry.project)
+    const project = await projectRootOf(io, root, entry.project)
     const machine = typeof entry.configDir === 'string' && entry.configDir ? `${entry.configDir.replace(/[\\/]+$/, '')}/fankeel/profile.json` : null
-    const at = (await profileAt($, `${project}/.fankeel/profile.json`)) ?? (machine ? await profileAt($, machine) : null)
+    const at = (await profileAt(io, `${project}/.fankeel/profile.json`)) ?? (machine ? await profileAt(io, machine) : null)
     if (at === 'off') return Infinity
     if (at) return Number(at)
   }
@@ -135,7 +144,16 @@ export const register: Register = (on) => {
       const id = await $.session.id()
       if (!SESSION_ID.test(id)) return out
       const found = await findEntry($, id)
-      const at = await threshold($, found)
+      const at = await thresholdWith(
+        {
+          compactAt: () => $.env.get('FANKEEL_COMPACT_AT'),
+          exists: (path) => $.fs.exists(path),
+          read: async (path) => String(await $.fs.read(path)),
+          stat: (path) => $.fs.stat(path),
+          log: (text) => $.ui.log(text, { to: 'debug' }),
+        },
+        found,
+      )
       if (typeof context.tokens !== 'number' || context.tokens < at) return out
       if (!found || !isActive(found.entry)) return out
       const entry = found.entry

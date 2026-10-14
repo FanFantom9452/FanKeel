@@ -138,7 +138,7 @@ test('the band above the prompt draws the stage, the dots and the minutes, then 
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
     const tree = await hooks.band($, BAND, passed);
-    assert.deepEqual(bandLines(tree), ['▌FANKEEL DESIGN  ●●○  等你 0 分', '▌ctx ███░│░░░░░ 312k/1M']);
+    assert.deepEqual(bandLines(tree), ['▌FANKEEL DESIGN  ●●○  等你 0 分  遠端 ✗', '▌ctx ███░│░░░░░ 312k/1M']);
     assert.deepEqual(leaves(tree).filter((n) => n.props.color === '#5f5fd7').map((n) => n.children.join('')), ['▌', 'FANKEEL DESIGN', '●●', '▌']);
     assert.doesNotMatch(bandLines(tree).join('\n'), /demo task|write the plan|⚿|檔| of /);
     assert.equal(log.opened.length, 1, 'drawing the band opened a pane beyond the one the task opened');
@@ -293,7 +293,7 @@ test('with a gate waiting the band\'s first row carries the badge and the second
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
     const tree = await hooks.band($, BAND, passed);
-    assert.match(bandLines(tree)[0], /^▌FANKEEL DESIGN {2}●●○ {3}gate 在等 {3}還 \d+ 秒 {2}等你 0 分$/);
+    assert.match(bandLines(tree)[0], /^▌FANKEEL DESIGN {2}●●○ {3}gate 在等 {3}還 \d+ 秒 {2}等你 0 分 {2}遠端 ✗$/);
     assert.equal(bandLines(tree)[1], '▌ctx ███░│░░░░░ 312k/1M');
     assert.doesNotMatch(bandLines(tree).join('\n'), /Go on\?/);
     const badge = leaves(tree).find((n) => n.props.backgroundColor);
@@ -357,7 +357,8 @@ test('the two drawings agree: the band\'s flag counts the sessions the Pane name
     assert.doesNotMatch(band[0], /⚑/);
     assert.doesNotMatch(pane.join('\n'), /shares nothing/);
     // The tokens and the threshold are written once, on the band; the Pane's context block is there and holds no figure.
-    assert.match(band[1], /^▌ctx \S+ 400k\/1M ⚠/);
+    // 400k of a 1M window is 40 percent: past the compact line, short of the band's first sign.
+    assert.match(band[1], /^▌ctx \S+ 400k\/1M(?! ⚠)/);
     assert.ok(pane.includes('▌context  快要自動 compact 了'), pane.join(' | '));
     assert.doesNotMatch(pane.join('\n'), /\d+k|█|░|%/);
 });
@@ -374,13 +375,13 @@ test('the context block is measured against FANKEEL_COMPACT_AT, and a new count 
         return at < 0 ? null : [all[at + 1].children.join(''), all[at + 1].props.color, all[at + 1].props.bold];
     };
     assert.deepEqual(await said(), ['  已到門檻，compact 中', '#d7af5f', true]);
-    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ███│░░░░░░ 312k/1M ⚠');
+    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ███│░░░░░░ 312k/1M');
     const after = log.invalidated;
     log.tokens = 250000;
     await log.ticks[0].fn();
     assert.equal(log.invalidated, after + 1);
     assert.deepEqual(await said(), ['  快要自動 compact 了', '#8a8a8a', undefined]);
-    assert.match(bandLines(await hooks.band($, BAND, passed))[1], / 250k\/1M ⚠$/);
+    assert.match(bandLines(await hooks.band($, BAND, passed))[1], / 250k\/1M$/);
     // Four fifths of 300k is 240k.
     log.tokens = 239999;
     await log.ticks[0].fn();
@@ -388,8 +389,9 @@ test('the context block is measured against FANKEEL_COMPACT_AT, and a new count 
     assert.match(bandLines(await hooks.band($, BAND, passed))[1], / 240k\/1M$/);
 });
 
-test('the band\'s context count is coloured by how far it is to the threshold, bold from sixty percent', async () => {
+test('the band\'s context count is coloured by TokenBar\'s tier of the 1M window, bold from fifty percent', async () => {
     const hooks = await wired();
+    // The threshold is 100k: the colour must not move with it.
     const { $, log } = fake({ files: entryFile(live), env: { FANKEEL_COMPACT_AT: '100000' } });
     await hooks['session.start']($, {}, async () => ({}));
     const count = async (tokens) => {
@@ -399,18 +401,13 @@ test('the band\'s context count is coloured by how far it is to the threshold, b
         return [leaf.props.color, leaf.props.bold];
     };
     assert.deepEqual(await count(5000), ['#00ff00', undefined]);
-    assert.deepEqual(await count(35000), ['#d7ffd7', undefined]);
-    assert.deepEqual(await count(36000), ['#d7ff00', undefined]);
-    assert.deepEqual(await count(40000), ['#ffff00', undefined]);
-    assert.deepEqual(await count(45000), ['#ffd700', undefined]);
-    assert.deepEqual(await count(50000), ['#ffaf00', undefined]);
-    assert.deepEqual(await count(55000), ['#ff8700', undefined]);
-    assert.deepEqual(await count(60000), ['#ff0000', true]);
-    assert.deepEqual(await count(65000), ['#ff0087', true]);
-    assert.deepEqual(await count(70000), ['#ff00af', true]);
-    assert.deepEqual(await count(75000), ['#ff00d7', true]);
-    assert.deepEqual(await count(80000), ['#ff00ff', true]);
-    assert.deepEqual(await count(250000), ['#ff00ff', true]);
+    assert.deepEqual(await count(50000), ['#5fff5f', undefined]);
+    assert.deepEqual(await count(200000), ['#d7ffd7', undefined]);
+    assert.deepEqual(await count(400000), ['#ffff00', undefined]);
+    assert.deepEqual(await count(450000), ['#ffaf00', undefined]);
+    assert.deepEqual(await count(500000), ['#ff0000', true]);
+    assert.deepEqual(await count(700000), ['#ff00d7', true]);
+    assert.deepEqual(await count(750000), ['#ff00ff', true]);
 });
 
 const profileFile = (data) => ({ [ROOT + '/.fankeel/profile.json']: JSON.stringify(data) });
@@ -422,24 +419,26 @@ test('the band and the context block are measured against the profile\'s compact
     const { $, log } = fake({ files: Object.assign(entryFile(live), profileFile({ 'compact.at': '350000' })) });
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
-    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ███│░░░░░░ 312k/1M ⚠');
+    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ███│░░░░░░ 312k/1M');
     const pane = async () => texts(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
     assert.ok((await pane()).includes('context'), 'no context block at 312k of 350k');
     // Four fifths of 350k is 280k.
     log.tokens = 279999;
     await log.ticks[0].fn();
     assert.ok(!(await pane()).includes('context'), 'a context block under four fifths of 350k');
-    // 279999 is over four fifths of 300k and under four fifths of 350k: the band warns by the profile's value alone.
-    assert.ok(!bandLines(await hooks.band($, BAND, passed))[1].endsWith('⚠'), 'the band warned under four fifths of 350k');
+    // The band's sign follows the window, not compact.at: 280k of 1M is 28 percent and carries none.
+    assert.ok(!bandLines(await hooks.band($, BAND, passed))[1].endsWith('⚠'), 'the band warned at 28 percent of the window');
 });
 
-test('compact.at off draws the count with no threshold and never a context block', async () => {
+test('compact.at off draws the count with no threshold, and a context block that says no compact will run', async () => {
     const hooks = await wired();
     const { $, log } = fake({ files: Object.assign(entryFile(live), profileFile({ 'compact.at': 'off' })), tokens: 2000000 });
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
-    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ██████████ 2M/1M ⚠');
-    assert.ok(!texts(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } })).includes('context'));
+    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ██████████ 2M/1M 💀');
+    const pane = paneLines(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
+    assert.ok(pane.includes('▌context  已到門檻，自動 compact 已關閉'), pane.join('\n'));
+    assert.ok(pane.includes(' 不會自動壓縮；要壓縮請手動 /compact'), pane.join('\n'));
 });
 
 test('with no FANKEEL_COMPACT_AT the threshold is HARD, and with no token count there is no context block', async () => {
@@ -466,7 +465,7 @@ test('with no FANKEEL_COMPACT_AT the threshold is HARD, and with no token count 
     log.tokens = null;
     await log.ticks[0].fn();
     assert.ok(!(await pane()).includes('context'));
-    assert.deepEqual(bandLines(await hooks.band($, BAND, passed)), ['▌FANKEEL DESIGN  ●●○  等你 0 分'], 'a band with no count still drew a second row');
+    assert.deepEqual(bandLines(await hooks.band($, BAND, passed)), ['▌FANKEEL DESIGN  ●●○  等你 0 分  遠端 ✗'], 'a band with no count still drew a second row');
     $.session.usage = async () => { throw new Error('not yet'); };
     await log.ticks[0].fn();
     assert.match(bandLines(await hooks.band($, BAND, passed))[0], /FANKEEL DESIGN/, 'a usage() that throws took the band with it');
@@ -961,3 +960,144 @@ test('a live.json that exists and does not parse is logged once across ticks, an
     assert.match(said()[0], /^fankeel pane: live list does not parse, /);
 });
 
+
+// Claude Code's own session files: <configDir>/sessions/<pid>.json.
+const CLAUDE = 'F:/cfg/sessions/';
+async function bandWith(files, over = {}) {
+    const hooks = await wired();
+    const { $, log } = fake({ files: Object.assign(entryFile(Object.assign({}, live, { configDir: 'F:/cfg' }, over)), files) });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const tree = await hooks['band']($, { surface: 'terminal', ...BAND }, passed);
+    return { lines: bandLines(tree), log };
+}
+
+test('Remote Control: the session file whose sessionId is this session, bridgeSessionId a string, puts 遠端 ✓ on the band', async () => {
+    const on = await bandWith({ [CLAUDE + '100.json']: JSON.stringify({ sessionId: 'someone-else', bridgeSessionId: 'br_x' }), [CLAUDE + '200.json']: JSON.stringify({ sessionId: ID, bridgeSessionId: 'br_1' }) });
+    assert.match(on.lines[0], /等你 \d+ 分  遠端 ✓$|遠端 ✓$/);
+    const first = await bandWith({ [CLAUDE + '100.json']: JSON.stringify({ sessionId: ID, bridgeSessionId: 'br_x' }), [CLAUDE + '200.json']: JSON.stringify({ sessionId: 'someone-else', bridgeSessionId: null }) });
+    assert.match(first.lines[0], /遠端 ✓$/);
+    const other = await bandWith({ [CLAUDE + '100.json']: JSON.stringify({ sessionId: 'someone-else', bridgeSessionId: 'br_x' }), [CLAUDE + '200.json']: JSON.stringify({ sessionId: ID, bridgeSessionId: null }) });
+    assert.match(other.lines[0], /遠端 ✗$/);
+});
+
+test('Remote Control: null, absent, empty, a file that does not parse and no sessions directory read as not connected, 遠端 ✗, and do not throw', async () => {
+    for (const files of [
+        { [CLAUDE + '1.json']: JSON.stringify({ sessionId: ID, bridgeSessionId: null }) },
+        { [CLAUDE + '1.json']: JSON.stringify({ sessionId: ID }) },
+        { [CLAUDE + '1.json']: JSON.stringify({ sessionId: ID, bridgeSessionId: '' }) },
+        { [CLAUDE + '1.json']: '{"sessionId": ' },
+        {},
+    ]) {
+        const got = await bandWith(files);
+        assert.ok(got.lines.length >= 1);
+        assert.match(got.lines[0], /遠端 ✗$/);
+    }
+});
+
+test('Remote Control: the configDir is the registry entry\'s, else HOME/.claude', async () => {
+    const hooks = await wired();
+    const { $, log } = fake({ files: Object.assign(entryFile(live), { 'F:/home/.claude/sessions/9.json': JSON.stringify({ sessionId: ID, bridgeSessionId: 'br' }) }), env: { HOME: 'F:/home' } });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    assert.match(bandLines(await hooks['band']($, { surface: 'terminal', ...BAND }, passed))[0], /遠端 ✓$/);
+});
+
+test('Remote Control: switching it off is seen on the next tick, and the Desktop Svg alt carries the same words as the row', async () => {
+    const hooks = await wired();
+    const { $, log, store, mtimes } = fake({ files: Object.assign(entryFile(Object.assign({}, live, { configDir: 'F:/cfg' })), { [CLAUDE + '1.json']: JSON.stringify({ sessionId: ID, bridgeSessionId: 'br' }) }), surfaces: ['desktop'] });
+    $.ui.resolve = () => ({ Box: 'Box', Svg: 'Svg', Text: 'Text' });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const on = await hooks['band']($, { surface: 'desktop', ...BAND }, passed);
+    assert.match(on.children[0].props.alt, /遠端 ✓$/);
+    assert.match(on.children[0].props.source, />遠端<.*>✓</);
+    store[CLAUDE + '1.json'] = JSON.stringify({ sessionId: ID, bridgeSessionId: null });
+    mtimes[CLAUDE + '1.json'] = 99;
+    await log.ticks[0].fn();
+    const off = await hooks['band']($, { surface: 'desktop', ...BAND }, passed);
+    assert.match(off.children[0].props.alt, /遠端 ✗$/);
+    assert.match(off.children[0].props.source, />遠端<.*>✗</);
+    assert.doesNotMatch(off.children[0].props.source, />✓</);
+});
+
+// Claude Code's session files, driven tick by tick so the cache and the mtimes can be moved.
+async function remoteRig(files) {
+    const hooks = await wired();
+    const rig = fake({ files: Object.assign(entryFile(Object.assign({}, live, { configDir: 'F:/cfg' })), files) });
+    await hooks['session.start'](rig.$, {}, async () => ({}));
+    const tick = async () => { await rig.log.ticks[0].fn(); return bandLines(await hooks['band'](rig.$, { surface: 'terminal', ...BAND }, passed))[0]; };
+    return { ...rig, tick };
+}
+
+test('Remote Control: a configDir that ends in a backslash finds the file', async () => {
+    const hooks = await wired();
+    const { $, log } = fake({ files: Object.assign(entryFile(Object.assign({}, live, { configDir: 'F:/cfg\\' })), { [CLAUDE + '1.json']: JSON.stringify({ sessionId: ID, bridgeSessionId: 'br' }) }) });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    assert.match(bandLines(await hooks['band']($, { surface: 'terminal', ...BAND }, passed))[0], /遠端 ✓$/);
+});
+
+test('Remote Control: a connected file whose next read does not parse still shows 遠端 ✓, and is read again after', async () => {
+    const f = CLAUDE + '1.json';
+    const { tick, store, mtimes } = await remoteRig({ [f]: JSON.stringify({ sessionId: ID, bridgeSessionId: 'br' }) });
+    assert.match(await tick(), /遠端 ✓$/);
+    store[f] = '{"sessionId": "' + ID + '", "bridge';
+    mtimes[f] = 5;
+    assert.match(await tick(), /遠端 ✓$/);
+    store[f] = JSON.stringify({ sessionId: ID, bridgeSessionId: null });
+    mtimes[f] = 6;
+    assert.match(await tick(), /遠端 ✗$/);
+});
+
+test('Remote Control: a file gone from the listing is gone from the cache', async () => {
+    const gone = CLAUDE + '1.json';
+    const keep = CLAUDE + '2.json';
+    const { tick, store, $ } = await remoteRig({ [gone]: JSON.stringify({ sessionId: 'x' }), [keep]: JSON.stringify({ sessionId: 'y' }) });
+    await tick();
+    let n = 0;
+    const read = $.fs.read;
+    $.fs.read = async (p) => { if (p === gone || p === keep) n += 1; return read(p); };
+    await tick();
+    assert.equal(n, 0, 'unchanged files were read again');
+    delete store[gone];
+    await tick();
+    store[gone] = JSON.stringify({ sessionId: 'x' });
+    await tick();
+    assert.equal(n, 1, 'the removed file stayed cached, the kept one was read again');
+});
+
+test('Remote Control: of several files with this sessionId the newest decides', async () => {
+    const a = CLAUDE + '1.json';
+    const b = CLAUDE + '2.json';
+    const old = await remoteRig({ [a]: JSON.stringify({ sessionId: ID, bridgeSessionId: 'br' }), [b]: JSON.stringify({ sessionId: ID, bridgeSessionId: null }) });
+    old.mtimes[a] = 10;
+    old.mtimes[b] = 20;
+    assert.match(await old.tick(), /遠端 ✗$/);
+    const fresh = await remoteRig({ [a]: JSON.stringify({ sessionId: ID, bridgeSessionId: null }), [b]: JSON.stringify({ sessionId: ID, bridgeSessionId: 'br' }) });
+    fresh.mtimes[a] = 10;
+    fresh.mtimes[b] = 20;
+    assert.match(await fresh.tick(), /遠端 ✓$/);
+});
+
+test('Remote Control: the newest file decides whatever order the listing gives', async () => {
+    const a = CLAUDE + '1.json';
+    const b = CLAUDE + '2.json';
+    const rig = await remoteRig({ [a]: JSON.stringify({ sessionId: ID, bridgeSessionId: null }), [b]: JSON.stringify({ sessionId: ID, bridgeSessionId: 'br' }) });
+    rig.mtimes[a] = 20;
+    rig.mtimes[b] = 10;
+    assert.match(await rig.tick(), /遠端 ✗$/);
+});
+
+test('Remote Control: two files of this session with the same mtime are connected whichever the listing lists first', async () => {
+    const a = CLAUDE + '1.json';
+    const b = CLAUDE + '2.json';
+    const on = JSON.stringify({ sessionId: ID, bridgeSessionId: 'br' });
+    const off = JSON.stringify({ sessionId: ID, bridgeSessionId: null });
+    for (const files of [{ [a]: on, [b]: off }, { [a]: off, [b]: on }]) {
+        const rig = await remoteRig(files);
+        rig.mtimes[a] = 10;
+        rig.mtimes[b] = 10;
+        assert.match(await rig.tick(), /遠端 ✓$/);
+    }
+});
