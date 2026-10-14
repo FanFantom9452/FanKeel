@@ -262,7 +262,8 @@ const ROOT = 'F:/proj';
 const PLAN = 'docs/plans/2026-10-14-demo.md';
 const LEDGER = ROOT + '/.fankeel/build/2026-10-14-demo/progress.md';
 const planText = ['# Demo', '', ...Array.from({ length: 9 }, (_, i) => ['## Task ' + (i + 1) + ': task ' + (i + 1), '', '**Dispatch:** ' + (i === 5 ? 'user — look.' : 'implementer, sonnet — code.'), '']).flat(), '## Coverage', ''].join('\n');
-function engine({ profile = null, tokens = 400000 } = {}) {
+function engine({ profile = null, tokens = 400000, bare = false, svgThrows = false } = {}) {
+    const logs = [];
     const T = Date.now();
     const mine = Object.assign({}, entry, {
         clock: { survey: [T - 118 * M, T - 107 * M], design: [T - 106 * M, T - 69 * M], plan: [T - 68 * M, T - 48 * M], build: [T - 47 * M, null] },
@@ -276,6 +277,7 @@ function engine({ profile = null, tokens = 400000 } = {}) {
         [ROOT + '/' + PLAN]: planText,
         [LEDGER]: '# fankeel build ledger — plan: ' + PLAN + '\n' + [1, 2, 3, 4].map((n) => 'Task ' + n + ': complete — task ' + n).join('\n') + '\n',
     };
+    if (bare) delete store[ROOT + '/.fankeel/sessions/' + others[0].id + '.json'];
     if (profile) store[ROOT + '/.fankeel/profile.json'] = JSON.stringify(profile);
     const ticks = [];
     const stat = (p) => ({ kind: 'file', size: String(store[p]).length, mtimeMs: 1, isLink: false });
@@ -284,7 +286,7 @@ function engine({ profile = null, tokens = 400000 } = {}) {
         session: {
             id: async () => SID,
             root: async () => ROOT,
-            usage: async () => ({ startedAt: 0, context: { tokens, window: 1000000, percent: 40 }, rateLimits: limits }),
+            usage: async () => ({ startedAt: 0, context: bare ? null : { tokens, window: 1000000, percent: 40 }, rateLimits: bare ? [] : limits }),
             surfaces: async () => ['desktop'],
             surface: async () => 'desktop',
         },
@@ -306,22 +308,22 @@ function engine({ profile = null, tokens = 400000 } = {}) {
             close: async () => {},
             panes: async () => [],
             invalidate: () => {},
-            log: () => {},
-            resolve: (e) => (e.surface === 'desktop' ? { Box: 'Box', Text: 'Text', Button: 'Button', Svg: 'Svg' } : { Box: 'Box', Text: 'Text', Button: 'Button' }),
+            log: (text, opts) => { logs.push([text, opts]); },
+            resolve: (e) => (e.surface === 'desktop' ? { Box: 'Box', Text: 'Text', Button: 'Button', get Svg() { if (svgThrows) throw new Error('no Svg'); return 'Svg'; } } : { Box: 'Box', Text: 'Text', Button: 'Button' }),
         },
     };
-    return { $, ticks, store };
+    return { $, ticks, store, logs };
 }
 async function drawn(over) {
     const { register } = await load('pane');
     const hooks = {};
     register((event, a, b) => { hooks[event === 'ui.render' && a && a.component === 'AbovePrompt' ? 'band' : event] = typeof a === 'function' ? a : b; });
-    const { $, ticks, store } = engine(over);
+    const { $, ticks, store, logs } = engine(over);
     await hooks['session.start']($, {}, async () => ({}));
     await ticks[0]();
     const band = (surface) => hooks.band($, { surface, props: { bodyColumns: 80 } }, async () => 'passed');
     const pane = (surface) => hooks['ui.render']($, { surface, props: { bodyColumns: 41, scroll: { offset: 0, bodyRows: 60 } } });
-    return { band, pane, store, tick: ticks[0] };
+    return { band, pane, store, logs, tick: ticks[0] };
 }
 const kids = (tree) => tree.children.filter((c) => c && c.tag);
 const textOf = (node) => (node.tag === 'Text' ? String(node.children.join('')) : (node.children || []).filter((c) => c && c.tag).map(textOf).join(''));
@@ -409,4 +411,80 @@ test('sixty tasks, a long clash and the off meter stay far under the engine\'s 1
         assert.ok(source.length < SVG_MAX / 4, String(source.length));
     }
     assert.equal(SVG_MAX, 131072);
+});
+
+test('a band with one row on Claude Desktop is one Svg', async () => {
+    const { band } = await drawn({ bare: true });
+    const term = await band('terminal');
+    assert.equal(kids(term).length, 1);
+    assert.deepEqual(kids(await band('desktop')).map((n) => n.tag), ['Svg']);
+});
+
+test('a band drawing that throws on Claude Desktop falls back to the terminal rows, and logs once to debug', async () => {
+    const { band, logs } = await drawn({ svgThrows: true });
+    assert.deepEqual(await band('desktop'), await band('terminal'));
+    assert.deepEqual(await band('desktop'), await band('terminal'));
+    const said = logs.filter(([t]) => /band Svg not drawn/.test(t));
+    assert.equal(said.length, 1);
+    assert.equal(said[0][1].to, 'debug');
+});
+
+test('a Pane drawing that throws on Claude Desktop falls back to the terminal rows, and logs once to debug', async () => {
+    const { pane, logs } = await drawn({ svgThrows: true });
+    assert.deepEqual(await pane('desktop'), await pane('terminal'));
+    assert.deepEqual(await pane('desktop'), await pane('terminal'));
+    const said = logs.filter(([t]) => /Pane Svg not drawn/.test(t));
+    assert.equal(said.length, 1);
+    assert.equal(said[0][1].to, 'debug');
+});
+
+test('paneParts keeps a block as rows when its drawing is empty', async () => {
+    const { paneParts } = await load('pane-svg');
+    const seg = (text) => ({ text });
+    const clashRows = [{ block: 'clash', segs: [seg('▌'), seg('⚑ hooks/pane.ts')] }];
+    const base = { id: 'x', entry, others: [], context: null, plan: null, cols: 41, room: 60, now: NOW };
+    // No other session holds a file: clashSvg draws nothing, so the rows stay.
+    assert.deepEqual(paneParts(base, clashRows), [{ rows: clashRows }]);
+});
+
+test('paneParts keeps a block as rows when its drawing is over SVG_MAX', async () => {
+    const { paneParts } = await load('pane-svg');
+    const clashRows = [{ block: 'clash', segs: [{ text: '▌' }, { text: '⚑ hooks/pane.ts' }] }];
+    const base = { id: 'x', entry, others: [], context: null, plan: null, cols: 41, room: 60, now: NOW };
+    // 2000 shared files draw far past 131072 characters.
+    const files = Array.from({ length: 2000 }, (_, i) => 'f/' + i + '.ts');
+    const big = Object.assign({}, entry, { claims: files });
+    const input = Object.assign({}, base, { entry: big, others: [{ id: 'o', entry: { task: 'o', stage: 'build', claims: files } }] });
+    assert.deepEqual(paneParts(input, clashRows), [{ rows: clashRows }]);
+});
+
+test('paneParts draws nothing as Svg when there is no task', async () => {
+    const { paneParts } = await load('pane-svg');
+    const rows = [
+        { block: 'task', segs: [{ text: '▌' }, { text: 'x' }] },
+        { block: 'context', segs: [] },
+        { block: 'context', segs: [{ text: '▌' }, { text: 'context' }] },
+    ];
+    const parts = paneParts({ id: 'x', entry: null, others: [], context, plan: null, cols: 41, room: 60, now: NOW }, rows);
+    assert.deepEqual(parts, [{ rows }]);
+});
+
+test('paneParts leaves the tasks block as rows when statusRows cut it to its title', async () => {
+    const { paneParts } = await load('pane-svg');
+    const rows = [{ block: 'tasks', segs: [{ text: '▌' }, { text: 'tasks' }, { text: ' 4 of 9' }] }];
+    const parts = paneParts({ id: 'x', entry, others: [], context: null, plan: planOf(9, 4), cols: 41, room: 60, now: NOW }, rows);
+    assert.deepEqual(parts, [{ rows }]);
+});
+
+test('paneParts: a task titled like a station keeps its title row as Text and the route rows become the Svg', async () => {
+    const { paneParts } = await load('pane-svg');
+    const { statusRows } = await load('pane-status');
+    const named = Object.assign({}, entry, { task: 'build' });
+    const input = { id: 'x', entry: named, others: [], context: null, plan: null, cols: 41, room: 60, now: NOW };
+    const rows = statusRows(input);
+    const parts = paneParts(input, rows);
+    const svgs = parts.filter((p) => 'source' in p);
+    assert.equal(svgs.length, 1);
+    assert.ok(parts.some((p) => 'rows' in p && p.rows.some((r) => r.segs.some((s) => s.text === 'build'))));
+    assert.equal(svgs[0].alt, 'survey › design › plan › build › verify\nland');
 });

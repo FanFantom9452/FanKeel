@@ -7,7 +7,7 @@ import { taskDir, pendingName, parsePending } from './pane-gate.ts'
 import type { Pending } from './pane-gate.ts'
 import { bandRows } from './pane-band.ts'
 import type { Seg as BandSeg, BandInput } from './pane-band.ts'
-import { bandRow1Svg, bandRow2Svg, paneParts, altOf } from './pane-svg.ts'
+import { bandRow1Svg, bandRow2Svg, paneParts, altOf, SVG_MAX } from './pane-svg.ts'
 
 // The fankeel mod's two drawings: two rows above the prompt for what is always
 // wanted, and the Pane for what is looked up. The Pane opens itself while the
@@ -42,7 +42,7 @@ type Cache = Map<string, { stamp: string; value: unknown }>
 const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, context: null, limits: [], plan: null, probe: null })
 
 // The last message each silent catch logged: the tick runs four times a second, and a failure that stays is said once.
-type Logged = { context: string; plan: string; open: string; registry: string; neighbour: string; gate: string; live: string }
+type Logged = { context: string; plan: string; open: string; registry: string; neighbour: string; gate: string; live: string; svg: string }
 
 // A registry file that is there and does not parse: told apart so `tick` can wait it out for a while, then give up on it.
 class Unreadable extends Error {}
@@ -303,7 +303,7 @@ async function tick($: EngineInterface, state: State): Promise<void> {
 export const register: Register = (on) => {
   const state: State = {
     seen: blank(''), print: '', mine: false, edge: { task: false }, bad: 0, busy: false, cache: new Map(),
-    logged: { context: '', plan: '', open: '', registry: '', neighbour: '', gate: '', live: '' },
+    logged: { context: '', plan: '', open: '', registry: '', neighbour: '', gate: '', live: '', svg: '' },
   }
 
   on('session.start', async ($, e, next) => {
@@ -348,10 +348,16 @@ export const register: Register = (on) => {
     const rows = bandRows(band)
     if (!rows) return next(e)
     // Claude Desktop draws each row as one Svg, its alt the row as text; every other surface draws the text.
+    // A drawing that throws, or comes back empty or over the engine's limit, falls through to the text rows.
     if (e.surface === 'desktop') {
-      const { Box, Svg } = $.ui.resolve(e)
-      const second = rows.length > 1 ? bandRow2Svg(band) : ''
-      return h(Box, { flexDirection: 'column' }, h(Svg, { source: bandRow1Svg(band), alt: altOf([rows[0]]) }), ...(second ? [h(Svg, { source: second, alt: altOf([rows[1]]) })] : []))
+      try {
+        const { Box, Svg } = $.ui.resolve(e)
+        const sources = rows.map((_, i) => (i === 0 ? bandRow1Svg(band) : bandRow2Svg(band)))
+        if (sources.some((source) => !source || source.length > SVG_MAX)) throw new Error('a band row drew empty or over the limit')
+        return h(Box, { flexDirection: 'column' }, ...sources.map((source, i) => h(Svg, { source, alt: altOf([rows[i]]) })))
+      } catch (err) {
+        logOnce($, state.logged, 'svg', `fankeel pane: band Svg not drawn, ${String(err)}`)
+      }
     }
     const { Box, Text } = $.ui.resolve(e)
     const cell = (seg: BandSeg) => {
@@ -388,8 +394,12 @@ export const register: Register = (on) => {
     const line = (row: StatusRow) => (row.segs.length === 0 ? blankRow() : h(Box, { flexDirection: 'row' }, ...row.segs.map(piece)))
     // Claude Desktop draws the route, the clash, the tasks and the context as Svg; every other surface draws the text.
     if (e.surface === 'desktop') {
-      const { Svg } = $.ui.resolve(e)
-      return h(Box, { flexDirection: 'column' }, ...paneParts(input, status).flatMap((part) => ('rows' in part ? part.rows.map(line) : [h(Svg, part)])))
+      try {
+        const { Svg } = $.ui.resolve(e)
+        return h(Box, { flexDirection: 'column' }, ...paneParts(input, status).flatMap((part) => ('rows' in part ? part.rows.map(line) : [h(Svg, part)])))
+      } catch (err) {
+        logOnce($, state.logged, 'svg', `fankeel pane: Pane Svg not drawn, ${String(err)}`)
+      }
     }
     return h(Box, { flexDirection: 'column' }, ...status.map(line))
   })
