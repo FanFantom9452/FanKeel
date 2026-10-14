@@ -29,6 +29,8 @@ type Seen = {
   context: Context | null
   limits: Limit[]
   plan: PlanInfo | null
+  // Whether Remote Control is connected, from Claude Code's own session file.
+  remote: boolean
   // What probeOf read, or null while FANKEEL_PANE_PROBE is unset.
   probe: string | null
 }
@@ -39,10 +41,10 @@ type Seen = {
 // session's own registry file, the pending file and the ledger are read every tick.
 type Cache = Map<string, { stamp: string; value: unknown }>
 
-const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, context: null, limits: [], plan: null, probe: null })
+const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, context: null, limits: [], plan: null, remote: false, probe: null })
 
 // The last message each silent catch logged: the tick runs four times a second, and a failure that stays is said once.
-type Logged = { context: string; plan: string; open: string; registry: string; neighbour: string; gate: string; live: string; bandSvg: string; paneSvg: string }
+type Logged = { context: string; plan: string; open: string; registry: string; neighbour: string; gate: string; live: string; remote: string; bandSvg: string; paneSvg: string }
 
 // A registry file that is there and does not parse: told apart so `tick` can wait it out for a while, then give up on it.
 class Unreadable extends Error {}
@@ -170,6 +172,38 @@ async function liveOf($: EngineInterface, root: string, logged: Logged): Promise
   }
 }
 
+// Whether Remote Control is on for this session: Claude Code writes <configDir>/sessions/<pid>.json with
+// the session's `sessionId`, and a `bridgeSessionId` that is a non-empty string while it is connected
+// (null once switched off, absent if it never was; measured on 2.1.295). The file for this session is
+// found by its sessionId, not by its name. A directory or file that cannot be read counts as not connected.
+async function remoteOf($: EngineInterface, entry: Entry, id: string, cache: Cache, logged: Logged): Promise<boolean> {
+  try {
+    const home = (await $.env.get('HOME')) || (await $.env.get('USERPROFILE'))
+    const configDir = typeof entry.configDir === 'string' && entry.configDir ? entry.configDir : home ? `${home}/.claude` : ''
+    if (!configDir) return false
+    const dir = `${configDir.replace(/[\/]+$/, '')}/sessions`
+    if (!(await $.fs.exists(dir))) return false
+    let remote = false
+    for (const file of await $.fs.list(dir)) {
+      if (!file.name.endsWith('.json')) continue
+      const path = `${dir}/${file.name}`
+      const stamp = `${file.mtimeMs}:${file.size}`
+      let hit = cache.get(path)
+      if (!hit || hit.stamp !== stamp) {
+        hit = { stamp, value: await readJson($, path) }
+        if (hit.value) cache.set(path, hit)
+      }
+      const got = hit.value as { sessionId?: unknown; bridgeSessionId?: unknown } | null
+      if (got && got.sessionId === id && typeof got.bridgeSessionId === 'string' && got.bridgeSessionId !== '') remote = true
+    }
+    logged.remote = ''
+    return remote
+  } catch (err) {
+    logOnce($, logged, 'remote', `fankeel pane: Remote Control state unreadable, ${String(err)}`)
+    return false
+  }
+}
+
 // Everything both drawings show: this session's entry, the other active
 // entries beside it, the gate hooks/gate.js is holding, the context count and
 // the plan's ledger; the neighbours and the plan file are read again only when
@@ -230,7 +264,8 @@ async function look($: EngineInterface, cache: Cache, logged: Logged): Promise<S
   const { context, limits } = await contextOf($, logged, found)
   const plan = await planOf($, found.root, entry, cache, logged)
   const probe = await probeOf($)
-  return { id, entry, others, pending, context, limits, plan, probe }
+  const remote = await remoteOf($, entry, id, cache, logged)
+  return { id, entry, others, pending, context, limits, plan, remote, probe }
 }
 
 type State = {
@@ -275,7 +310,7 @@ async function tick($: EngineInterface, state: State): Promise<void> {
     const clock = next.entry ? await $.clock.now() : 0
     const minute = Math.floor(clock / 60000)
     const second = next.pending ? Math.floor(clock / 1000) : 0
-    const now = JSON.stringify([next.entry, next.others, next.context, next.limits, next.plan, next.probe, minute, second])
+    const now = JSON.stringify([next.entry, next.others, next.context, next.limits, next.plan, next.remote, next.probe, minute, second])
     // The opens and closes have their own memory, `edge`, which moves only when they all went through: a rejected
     // one is met again next tick as the same edge, while `seen` and the redraw below never wait on them.
     try {
@@ -310,7 +345,7 @@ async function tick($: EngineInterface, state: State): Promise<void> {
 export const register: Register = (on) => {
   const state: State = {
     seen: blank(''), print: '', mine: false, edge: { task: false }, bad: 0, busy: false, cache: new Map(),
-    logged: { context: '', plan: '', open: '', registry: '', neighbour: '', gate: '', live: '', bandSvg: '', paneSvg: '' },
+    logged: { context: '', plan: '', open: '', registry: '', neighbour: '', gate: '', live: '', remote: '', bandSvg: '', paneSvg: '' },
   }
 
   on('session.start', async ($, e, next) => {
@@ -349,6 +384,7 @@ export const register: Register = (on) => {
       context: seen.context,
       limits: seen.limits,
       tasks: plan ? { done: plan.tasks.filter((t) => plan.done.includes(t.n)).length, total: plan.tasks.length } : null,
+      remote: seen.remote,
       cols,
       now: Date.now(),
     }

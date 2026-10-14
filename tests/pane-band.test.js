@@ -323,3 +323,23 @@ test('the band ctx colour and mark follow the TokenBar tier of the window, not t
     // No window: the compact threshold as before.
     assert.equal(ctxSegs({ tokens: 360000, at: 450000 }).find((seg) => seg.text === '⚠').color, '#ff00ff');
 });
+
+test('Remote Control connected ends the first row with 遠端 ●, in green after grey; otherwise nothing is added', async () => {
+    const m = await load();
+    const row = band(m, { remote: true, cols: 90 })[0];
+    assert.equal(line(row), '▌FANKEEL BUILD  ●●●●○○○  tasks 4/5  本站 38 分  等你 2 分  遠端 ●');
+    assert.deepEqual(row.slice(-2).map((s) => s.color), ['#8a8a8a', '#87af5f']);
+    const bare = line(band(m, { cols: 90 })[0]);
+    assert.ok(!bare.includes('遠端'));
+    assert.equal(line(band(m, { remote: false, cols: 90 })[0]), bare);
+});
+
+test('a narrow first row drops 遠端 ● before 本站, 等你 and tasks', async () => {
+    const m = await load();
+    const calm = (cols) => line(band(m, { cols, remote: true })[0]);
+    assert.equal(calm(65), '▌FANKEEL BUILD  ●●●●○○○  tasks 4/5  本站 38 分  等你 2 分  遠端 ●');
+    assert.equal(calm(64), '▌FANKEEL BUILD  ●●●●○○○  tasks 4/5  本站 38 分  等你 2 分');
+    assert.equal(calm(56), '▌FANKEEL BUILD  ●●●●○○○  tasks 4/5  等你 2 分');
+    const gated = line(band(m, { cols: 90, remote: true, gateUntil: NOW + 44500 })[0]);
+    assert.ok(gated.endsWith('  遠端 ●'));
+});

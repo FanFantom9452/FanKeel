@@ -559,3 +559,14 @@ test('the band Svg ctx follows the TokenBar tier of the window; the Pane context
     // The Pane's block, with a 1M window, stays on the threshold: 372k of 450k is near, and 37% of the window would not be.
     assert.equal(words(contextSvg({ tokens: 372000, at: 450000, window: 1000000 }, 41))[1], '快要自動 compact 了');
 });
+
+test('Remote Control connected adds 遠端 ● to the band\'s first row, the dot green; otherwise nothing', async () => {
+    const { bandRow1Svg } = await load('pane-svg');
+    const on = bandRow1Svg(bandInput({ remote: true }));
+    assert.deepEqual(words(on).slice(-2), ['遠端', '●']);
+    assert.match(on, /<text [^>]*fill="#87af5f"[^>]*>●<\/text>/);
+    assert.ok(!words(bandRow1Svg(bandInput())).includes('遠端'));
+    assert.ok(!words(bandRow1Svg(bandInput({ remote: false }))).includes('遠端'));
+    const gated = words(bandRow1Svg(bandInput({ remote: true, gateUntil: NOW + 42000 })));
+    assert.deepEqual(gated.slice(-2), ['遠端', '●']);
+});

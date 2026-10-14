@@ -21,6 +21,8 @@ export type BandInput = {
   context: Context | null
   limits: Limit[]
   tasks: { done: number; total: number } | null
+  // Whether Remote Control is connected: Claude Code's session file has a bridgeSessionId.
+  remote?: boolean
   cols: number
   now: number
 }
@@ -42,6 +44,8 @@ export const FLAG = '#ff5f5f'
 export const WHERE = '#8a8a8a'
 export const CLASH = '#ff0000'
 export const INK = '#000000'
+// The ● of 遠端: the green of a finished task in the Pane.
+export const CONNECTED = '#87af5f'
 
 // A stage off the ramp (init, or one a later version adds) is drawn as secondary text.
 export const stageColor = (stage: string): string => (Object.hasOwn(RAMP, stage) ? RAMP[stage] : WHERE)
@@ -125,15 +129,17 @@ export function bandRows(input: BandInput): Seg[][] | null {
   const yours: Seg[] = gateUntil === null
     ? [{ text: '等你', color: WHERE, gap: 2 }, { text: String(waited), gap: 1 }, { text: '分', color: WHERE, gap: 1 }]
     : [{ text: `等你 ${waited} 分`, color: GUARD, gap: 2 }]
-  // `drop` is how many of the three droppable groups are gone: the stage minutes, then the wait, then tasks.
+  const remote: Seg[] = input.remote ? [{ text: '遠端', color: WHERE, gap: 2 }, { text: '●', color: CONNECTED, gap: 1 }] : []
+  // `drop` is how many of the four droppable groups are gone: 遠端 ●, then the stage minutes, then the wait, then tasks.
   const firstAt = (drop: number): Seg[] => {
-    const a = drop < 3 ? count : []
-    const b = drop < 2 ? yours : []
-    const c = drop < 1 ? here : []
-    return gateUntil === null ? [...head, ...a, ...c, ...b] : [...head, ...a, ...gate, ...b, ...c]
+    const a = drop < 4 ? count : []
+    const b = drop < 3 ? yours : []
+    const c = drop < 2 ? here : []
+    const r = drop < 1 ? remote : []
+    return gateUntil === null ? [...head, ...a, ...c, ...b, ...r] : [...head, ...a, ...gate, ...b, ...c, ...r]
   }
   let first = firstAt(0)
-  for (let drop = 1; drop <= 3 && used(first) > cols; drop++) first = firstAt(drop)
+  for (let drop = 1; drop <= 4 && used(first) > cols; drop++) first = firstAt(drop)
 
   const five = limitOf(limits, 'five_hour')
   const week = limitOf(limits, 'seven_day')

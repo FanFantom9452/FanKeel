@@ -4,7 +4,7 @@
 // under plain node. docs/90-agent/plans/2026-10-14-pane-svg-design.md is the
 // design; the approved drawing is the mockup .fankeel/build/2026-10-14-pane-svg/gen.mjs wrote.
 
-import { TODO, GUARD, FLAG, WHERE, CLASH, INK, stageColor, since, clashes, claimsOf } from './pane-band.ts'
+import { TODO, GUARD, CONNECTED, FLAG, WHERE, CLASH, INK, stageColor, since, clashes, claimsOf } from './pane-band.ts'
 import type { BandInput } from './pane-band.ts'
 import { str, list, kilo, cut, ctxPaint, ctxWindowPaint, fivePaint, weekPaint, deviation, limitOf, signed, minutes, secondsLeft, DIM } from './pane-bar.ts'
 import type { Context } from './pane-bar.ts'
@@ -149,10 +149,15 @@ export function bandRow1Svg(input: BandInput): string {
     b += text(x, 15, `等你 ${waited} 分`, { fill: GUARD })
     x += px(`等你 ${waited} 分`) + 12
     b += hereAt(x)
+    if (here !== null) x += px(`本站 ${here} 分`) + 12
   } else {
     b += hereAt(x)
     if (here !== null) x += px(`本站 ${here} 分`) + 14
     b += text(x, 15, '等你') + text(x + px('等你 '), 15, String(waited), { bold: true }) + text(x + px(`等你 ${waited} `), 15, '分')
+    x += px(`等你 ${waited} 分`) + 12
+  }
+  if (input.remote) {
+    b += text(x, 15, '遠端') + text(x + px('遠端 '), 15, '●', { fill: CONNECTED })
   }
   return svgDoc(cols * CELL_PX, BAND_H, b)
 }

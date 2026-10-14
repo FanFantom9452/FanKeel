@@ -960,3 +960,62 @@ test('a live.json that exists and does not parse is logged once across ticks, an
     assert.match(said()[0], /^fankeel pane: live list does not parse, /);
 });
 
+
+// Claude Code's own session files: <configDir>/sessions/<pid>.json.
+const CLAUDE = 'F:/cfg/sessions/';
+async function bandWith(files, over = {}) {
+    const hooks = await wired();
+    const { $, log } = fake({ files: Object.assign(entryFile(Object.assign({}, live, { configDir: 'F:/cfg' }, over)), files) });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const tree = await hooks['band']($, { surface: 'terminal', ...BAND }, passed);
+    return { lines: bandLines(tree), log };
+}
+
+test('Remote Control: the session file whose sessionId is this session, bridgeSessionId a string, puts 遠端 ● on the band', async () => {
+    const on = await bandWith({ [CLAUDE + '100.json']: JSON.stringify({ sessionId: 'someone-else', bridgeSessionId: 'br_x' }), [CLAUDE + '200.json']: JSON.stringify({ sessionId: ID, bridgeSessionId: 'br_1' }) });
+    assert.match(on.lines[0], /等你 \d+ 分  遠端 ●$|遠端 ●$/);
+    const first = await bandWith({ [CLAUDE + '100.json']: JSON.stringify({ sessionId: ID, bridgeSessionId: 'br_x' }), [CLAUDE + '200.json']: JSON.stringify({ sessionId: 'someone-else', bridgeSessionId: null }) });
+    assert.match(first.lines[0], /遠端 ●$/);
+    const other = await bandWith({ [CLAUDE + '100.json']: JSON.stringify({ sessionId: 'someone-else', bridgeSessionId: 'br_x' }), [CLAUDE + '200.json']: JSON.stringify({ sessionId: ID, bridgeSessionId: null }) });
+    assert.doesNotMatch(other.lines[0], /遠端/);
+});
+
+test('Remote Control: null, absent, empty, a file that does not parse and no sessions directory add nothing and do not throw', async () => {
+    for (const files of [
+        { [CLAUDE + '1.json']: JSON.stringify({ sessionId: ID, bridgeSessionId: null }) },
+        { [CLAUDE + '1.json']: JSON.stringify({ sessionId: ID }) },
+        { [CLAUDE + '1.json']: JSON.stringify({ sessionId: ID, bridgeSessionId: '' }) },
+        { [CLAUDE + '1.json']: '{"sessionId": ' },
+        {},
+    ]) {
+        const got = await bandWith(files);
+        assert.ok(got.lines.length >= 1);
+        assert.doesNotMatch(got.lines[0], /遠端/);
+    }
+});
+
+test('Remote Control: the configDir is the registry entry\'s, else HOME/.claude', async () => {
+    const hooks = await wired();
+    const { $, log } = fake({ files: Object.assign(entryFile(live), { 'F:/home/.claude/sessions/9.json': JSON.stringify({ sessionId: ID, bridgeSessionId: 'br' }) }), env: { HOME: 'F:/home' } });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    assert.match(bandLines(await hooks['band']($, { surface: 'terminal', ...BAND }, passed))[0], /遠端 ●$/);
+});
+
+test('Remote Control: switching it off is seen on the next tick, and the Desktop Svg alt carries the same words as the row', async () => {
+    const hooks = await wired();
+    const { $, log, store, mtimes } = fake({ files: Object.assign(entryFile(Object.assign({}, live, { configDir: 'F:/cfg' })), { [CLAUDE + '1.json']: JSON.stringify({ sessionId: ID, bridgeSessionId: 'br' }) }), surfaces: ['desktop'] });
+    $.ui.resolve = () => ({ Box: 'Box', Svg: 'Svg', Text: 'Text' });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const on = await hooks['band']($, { surface: 'desktop', ...BAND }, passed);
+    assert.match(on.children[0].props.alt, /遠端 ●$/);
+    assert.match(on.children[0].props.source, />遠端</);
+    store[CLAUDE + '1.json'] = JSON.stringify({ sessionId: ID, bridgeSessionId: null });
+    mtimes[CLAUDE + '1.json'] = 99;
+    await log.ticks[0].fn();
+    const off = await hooks['band']($, { surface: 'desktop', ...BAND }, passed);
+    assert.doesNotMatch(off.children[0].props.alt, /遠端/);
+    assert.doesNotMatch(off.children[0].props.source, /遠端/);
+});
