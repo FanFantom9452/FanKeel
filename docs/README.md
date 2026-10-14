@@ -397,6 +397,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 外部評審原文與使用者指示（10-09）：六條建議各自怎麼變成腳本或測試 | [reports/2026-10-09-workflow-review.md](90-agent/reports/2026-10-09-workflow-review.md) — *a dated snapshot, 繁體中文* |
 | verify 十一次退回的記錄，從 build skill 的 reviewer 模板搬出 | [reports/2026-10-01-verify-eleven-returns.md](90-agent/reports/2026-10-01-verify-eleven-returns.md) — *a dated snapshot, 繁體中文* |
 | Haiku 角色題庫與長任務飄移：四個角色各 36 次 haiku 對 36 次 sonnet 分三層，以及 haiku／sonnet × PostToolUse 重注入的 2×2 各 10 次；haiku 撐得住長任務、重注入對 haiku 值得，sonnet 多數 run 用腳本做完、不足 30 步而無效 | [reports/2026-10-09-haiku-bank-drift.md](90-agent/reports/2026-10-09-haiku-bank-drift.md) — *a dated snapshot, 繁體中文* |
+| 0.80.0 到 0.108.1 專案檔案格式的盤點：沒有一項舊格式會壞，upgrade.js 不加步驟 | [reports/2026-10-15-upgrade-080-inventory.md](90-agent/reports/2026-10-15-upgrade-080-inventory.md) — *繁體中文* |
 | 給人看的文字可選風格（10-05）的 design：profile key `prose.style`（`writer`、`plain`、`sepia`、`custom`，預設 `writer`），把所選風格的規則注入站 agent 與 writer 的 brief，build 站不注入 | `docs/99-archive/2026-10-05-prose-style-design.md` — *built, 繁體中文* |
 | 那份設計的四個 task | `docs/99-archive/2026-10-05-prose-style.md` — *built, 繁體中文* |
 | mod 自動壓縮的四個 task：`hooks/compact.ts` 在主 session 超過 450k 且有 fankeel 任務進行中時壓縮 | [plans/2026-10-05-compact-mod.md](90-agent/plans/2026-10-05-compact-mod.md) — *design-intent, 繁體中文* |
