@@ -8,7 +8,7 @@ source_of_truth: 本頁是一次量測的紀錄，不隨程式碼更新；資料
 
 ## 結論
 
-guard 最大值 99.2ms、冷啟動 wall 最大值 216ms，門檻都是 hook 的 timeout 5000ms，兩者都過；slow-2 與 slow-5 這次都跑出了數字（10-05 那次全在 20 秒被殺），最大值 2343ms 與 1810ms，也都低於 5000ms；station-data 冷請求中位數 1.67 秒，門檻 1 秒，沒過。
+guard 最大值 99.2ms、冷啟動 wall 最大值 216ms，門檻都是 hook 的 timeout 5000ms，兩者都過；slow-2 與 slow-5 這次都跑出了數字（10-05 那次全在 20 秒被殺），最大值 2343ms 與 1810ms，也都低於 5000ms；station-data 冷請求中位數 1.67 秒，門檻 1 秒，沒過；同一天 2a44fee1 讓 `gather` 每次只讀一份 transcript 索引之後，重量是 0.475 秒，過了。
 
 ## 怎麼量的
 
@@ -44,9 +44,11 @@ slow-5	median 1422	max 1810
 
 station-data（`station-data.txt`，秒）：1.700955、1.674382、1.699408、1.652204、1.668759；中位數 1.674382。
 
+2a44fee1 之後（`station-data-after.txt`，秒，station 重啟在新程式上）：0.626881、0.493565、0.337605、0.475293、0.356116；中位數 0.475293。
+
 ## 沒量到的
 
 - PowerShell 的 guard 路徑沒量，只量了 node 直接執行 `hooks/guard.js`。
 - guard 沒有經由 Claude Code 實際觸發，只量 node 行程的牆鐘；`commit` 案例用 `--dry-run`，命令本身沒執行。
 - 量測時同機有其他 session 在跑，雜訊未記錄。
-- station-data 的 1.67 秒沒有拆開（算圖或讀檔），只知道整段請求耗時。
+- station-data 的 1.67 秒事後拆開了：在 session 內對 `gather` 計時，1.66 秒裡 `detailOf` 佔 1.44 秒，幾乎全是 `transcriptOf` 對 443 個 transcript 已不在的 session 各掃一遍 `projects/` 的 544 個目錄；`registry.readAll` 只佔 45ms。修好後同一計時是 0.33 秒，`detailOf` 17ms。
