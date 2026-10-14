@@ -470,3 +470,54 @@ export function contextSvg(context: Context, cols: number): string {
   b += text(1, 72, off ? '不會自動壓縮；要壓縮請手動 /compact' : cut(`留 ${KEPT.join(' · ')}`, 40))
   return svgDoc(W + 2, 78, b)
 }
+
+// One piece of the desktop Pane, top to bottom: rows drawn as Text, as the
+// terminal draws them, or one Svg.
+export type Part = { rows: Row[] } | { source: string; alt: string; isInteractive?: boolean }
+
+// The desktop Pane from the rows statusRows drew for the same input: the task
+// title, `next:`, notes and the foot stay rows; the route rows, the clash, the
+// tasks and the context block become one Svg each, whose alt is those rows'
+// text. A block statusRows cut to its title (the tasks, when the Pane is short),
+// a drawing with nothing in it, or one over SVG_MAX stays rows.
+export function paneParts(input: StatusInput, rows: Row[]): Part[] {
+  const parts: Part[] = []
+  const keep = (rs: Row[]): void => {
+    if (!rs.length) return
+    const last = parts[parts.length - 1]
+    if (last && 'rows' in last) last.rows.push(...rs)
+    else parts.push({ rows: [...rs] })
+  }
+  const draw = (source: string, rs: Row[], isInteractive: boolean): void => {
+    if (!source || source.length > SVG_MAX || !rs.length) return keep(rs)
+    const alt = altOf(rs.map((r) => r.segs))
+    parts.push(isInteractive ? { source, alt, isInteractive } : { source, alt })
+  }
+  // A block opens with the blank row above it, but for the first.
+  const blocks: Row[][] = []
+  for (const r of rows) {
+    if (!r.segs.length || !blocks.length) blocks.push([r])
+    else blocks[blocks.length - 1].push(r)
+  }
+  const { entry, plan, context, now, cols } = input
+  for (const block of blocks) {
+    const lead = block[0].segs.length ? [] : [block[0]]
+    const body = block.slice(lead.length)
+    keep(lead)
+    const name = body.length ? body[0].block : ''
+    if (!entry) keep(body)
+    else if (name === 'task') {
+      // The route rows end the block: each holds only station names and ` › `.
+      const route = list(entry.route)
+      const isRoute = (r: Row): boolean => r.segs.length > 1 && r.segs.slice(1).every((seg) => route.includes(seg.text) || seg.text === ' › ')
+      let from = body.length
+      while (from > 0 && isRoute(body[from - 1])) from--
+      keep(body.slice(0, from))
+      draw(routeSvg(entry, now, cols), body.slice(from), false)
+    } else if (name === 'clash') draw(clashSvg(entry, input.others, now, cols), body, false)
+    else if (name === 'tasks' && plan && plan.tasks.length && body.length > 1) draw(tasksSvg(entry, plan, now, cols), body, true)
+    else if (name === 'context' && context) draw(contextSvg(context, cols), body, false)
+    else keep(body)
+  }
+  return parts
+}

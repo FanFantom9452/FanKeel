@@ -1,12 +1,13 @@
 import type { Register, EngineInterface } from 'claude-code'
 import { parentOf, isActive, SESSION_ID, threshold } from './compact.ts'
 import { statusRows, ledgerDoneIds, planTasks } from './pane-status.ts'
-import type { Entry, Other, Context, PlanInfo, PlanTask, Seg as StatusSeg, Row as StatusRow } from './pane-status.ts'
+import type { Entry, Other, Context, PlanInfo, PlanTask, Seg as StatusSeg, Row as StatusRow, StatusInput } from './pane-status.ts'
 import type { Limit } from './pane-bar.ts'
 import { taskDir, pendingName, parsePending } from './pane-gate.ts'
 import type { Pending } from './pane-gate.ts'
 import { bandRows } from './pane-band.ts'
-import type { Seg as BandSeg } from './pane-band.ts'
+import type { Seg as BandSeg, BandInput } from './pane-band.ts'
+import { bandRow1Svg, bandRow2Svg, paneParts, altOf } from './pane-svg.ts'
 
 // The fankeel mod's two drawings: two rows above the prompt for what is always
 // wanted, and the Pane for what is looked up. The Pane opens itself while the
@@ -333,17 +334,25 @@ export const register: Register = (on) => {
     // 5: the cells the engine keeps at the band's right end, where no surface has measured the body.
     const cols = Math.max(20, props.bodyColumns ?? (e.viewport?.columns ?? 85) - 5)
     const plan = seen.plan
-    const rows = bandRows({
+    const band: BandInput = {
       entry: seen.entry,
       others: seen.others,
       gateUntil: seen.pending ? seen.pending.until : null,
+      gateAt: seen.pending ? seen.pending.at : null,
       context: seen.context,
       limits: seen.limits,
       tasks: plan ? { done: plan.tasks.filter((t) => plan.done.includes(t.n)).length, total: plan.tasks.length } : null,
       cols,
       now: Date.now(),
-    })
+    }
+    const rows = bandRows(band)
     if (!rows) return next(e)
+    // Claude Desktop draws each row as one Svg, its alt the row as text; every other surface draws the text.
+    if (e.surface === 'desktop') {
+      const { Box, Svg } = $.ui.resolve(e)
+      const second = rows.length > 1 ? bandRow2Svg(band) : ''
+      return h(Box, { flexDirection: 'column' }, h(Svg, { source: bandRow1Svg(band), alt: altOf([rows[0]]) }), ...(second ? [h(Svg, { source: second, alt: altOf([rows[1]]) })] : []))
+    }
     const { Box, Text } = $.ui.resolve(e)
     const cell = (seg: BandSeg) => {
       const text = h(Text, { color: seg.color, backgroundColor: seg.backgroundColor, bold: seg.bold, wrap: 'truncate-end' }, seg.text)
@@ -361,7 +370,7 @@ export const register: Register = (on) => {
     const room = Math.max(1, props.scroll?.bodyRows ?? (e.viewport?.rows ?? 24) - 4)
     // One reading for the whole drawing, so the status block's minutes are of the same moment.
     const now = Date.now()
-    const status = statusRows({
+    const input: StatusInput = {
       id: seen.id,
       entry: seen.entry,
       others: seen.others,
@@ -371,11 +380,17 @@ export const register: Register = (on) => {
       room,
       now,
       probe: seen.probe,
-    })
+    }
+    const status = statusRows(input)
     const blankRow = () => h(Text, {}, ' ')
     // A row's segments touch: each carries its own colour, and its own space where it wants one.
     const piece = (seg: StatusSeg) => h(Text, { color: seg.color, bold: seg.bold, wrap: 'truncate-end' }, seg.text)
     const line = (row: StatusRow) => (row.segs.length === 0 ? blankRow() : h(Box, { flexDirection: 'row' }, ...row.segs.map(piece)))
+    // Claude Desktop draws the route, the clash, the tasks and the context as Svg; every other surface draws the text.
+    if (e.surface === 'desktop') {
+      const { Svg } = $.ui.resolve(e)
+      return h(Box, { flexDirection: 'column' }, ...paneParts(input, status).flatMap((part) => ('rows' in part ? part.rows.map(line) : [h(Svg, part)])))
+    }
     return h(Box, { flexDirection: 'column' }, ...status.map(line))
   })
 }

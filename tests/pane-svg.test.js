@@ -253,3 +253,160 @@ test('compact.at off still draws the meter, against HARD, with a dashed compact 
     assert.ok(!off.includes('fill="#8a8a8a"/>'), 'a solid compact point drawn while compact is off');
     assert.equal(words(contextSvg({ tokens: 372000, at: Infinity }, 41))[1], '快到門檻，自動 compact 已關閉');
 });
+
+// hooks/pane.ts on a fake engine: the parts of tests/pane.test.js fake() the two drawings read, and `resolve` hands
+// out Svg on the desktop alone, as the engine's Elements table does.
+globalThis.h = (tag, props, ...children) => ({ tag, props: props || {}, children: children.flat() });
+const SID = 'abcdef12-0000-4000-8000-000000000001';
+const ROOT = 'F:/proj';
+const PLAN = 'docs/plans/2026-10-14-demo.md';
+const LEDGER = ROOT + '/.fankeel/build/2026-10-14-demo/progress.md';
+const planText = ['# Demo', '', ...Array.from({ length: 9 }, (_, i) => ['## Task ' + (i + 1) + ': task ' + (i + 1), '', '**Dispatch:** ' + (i === 5 ? 'user — look.' : 'implementer, sonnet — code.'), '']).flat(), '## Coverage', ''].join('\n');
+function engine({ profile = null, tokens = 400000 } = {}) {
+    const T = Date.now();
+    const mine = Object.assign({}, entry, {
+        clock: { survey: [T - 118 * M, T - 107 * M], design: [T - 106 * M, T - 69 * M], plan: [T - 68 * M, T - 48 * M], build: [T - 47 * M, null] },
+        moves: [['survey', T - 118 * M], ['design', T - 106 * M], ['plan', T - 68 * M], ['build', T - 47 * M]],
+        inflight: { stage: 'build', at: T - 12 * M },
+        started: '2026-10-10T20:33:51.000Z', claims: ['hooks/pane.ts', PLAN],
+    });
+    const store = {
+        [ROOT + '/.fankeel/sessions/' + SID + '.json']: JSON.stringify(mine),
+        [ROOT + '/.fankeel/sessions/' + others[0].id + '.json']: JSON.stringify(Object.assign({}, others[0].entry, { updated: new Date(T - 12 * M).toISOString() })),
+        [ROOT + '/' + PLAN]: planText,
+        [LEDGER]: '# fankeel build ledger — plan: ' + PLAN + '\n' + [1, 2, 3, 4].map((n) => 'Task ' + n + ': complete — task ' + n).join('\n') + '\n',
+    };
+    if (profile) store[ROOT + '/.fankeel/profile.json'] = JSON.stringify(profile);
+    const ticks = [];
+    const stat = (p) => ({ kind: 'file', size: String(store[p]).length, mtimeMs: 1, isLink: false });
+    const $ = {
+        plugin: { root: 'F:/plugin', name: 'fankeel' },
+        session: {
+            id: async () => SID,
+            root: async () => ROOT,
+            usage: async () => ({ startedAt: 0, context: { tokens, window: 1000000, percent: 40 }, rateLimits: limits }),
+            surfaces: async () => ['desktop'],
+            surface: async () => 'desktop',
+        },
+        env: { get: async () => undefined },
+        fs: {
+            exists: async (p) => Object.keys(store).some((k) => k === p || k.startsWith(p + '/')),
+            read: async (p) => store[p],
+            stat: async (p) => {
+                if (!(p in store)) throw new Error('ENOENT ' + p);
+                return stat(p);
+            },
+            list: async (dir) => Object.keys(store).filter((p) => p.startsWith(dir + '/') && !p.slice(dir.length + 1).includes('/'))
+                .map((p) => Object.assign({ name: p.slice(dir.length + 1) }, stat(p))),
+        },
+        clock: { now: async () => T, every: (ms, fn) => { ticks.push(fn); return { cancel() {} }; } },
+        command: { register: async () => ({}) },
+        ui: {
+            open: async () => ({ isPlaced: true }),
+            close: async () => {},
+            panes: async () => [],
+            invalidate: () => {},
+            log: () => {},
+            resolve: (e) => (e.surface === 'desktop' ? { Box: 'Box', Text: 'Text', Button: 'Button', Svg: 'Svg' } : { Box: 'Box', Text: 'Text', Button: 'Button' }),
+        },
+    };
+    return { $, ticks, store };
+}
+async function drawn(over) {
+    const { register } = await load('pane');
+    const hooks = {};
+    register((event, a, b) => { hooks[event === 'ui.render' && a && a.component === 'AbovePrompt' ? 'band' : event] = typeof a === 'function' ? a : b; });
+    const { $, ticks, store } = engine(over);
+    await hooks['session.start']($, {}, async () => ({}));
+    await ticks[0]();
+    const band = (surface) => hooks.band($, { surface, props: { bodyColumns: 80 } }, async () => 'passed');
+    const pane = (surface) => hooks['ui.render']($, { surface, props: { bodyColumns: 41, scroll: { offset: 0, bodyRows: 60 } } });
+    return { band, pane, store, tick: ticks[0] };
+}
+const kids = (tree) => tree.children.filter((c) => c && c.tag);
+const textOf = (node) => (node.tag === 'Text' ? String(node.children.join('')) : (node.children || []).filter((c) => c && c.tag).map(textOf).join(''));
+// The terminal's rows, without the cell each one opens with.
+const plain = (tree) => kids(tree).map(textOf).map((t) => t.slice(1));
+
+test('on Claude Desktop the band is two Svg rows, each alt the row the terminal draws, with the same numbers', async () => {
+    const { band } = await drawn();
+    const desk = await band('desktop');
+    const term = await band('terminal');
+    assert.deepEqual(kids(desk).map((n) => n.tag), ['Svg', 'Svg']);
+    assert.deepEqual(kids(desk).map((n) => n.props.alt), plain(term));
+    for (const n of kids(desk)) {
+        assert.ok(n.props.source.startsWith('<svg ') && n.props.source.length <= 131072);
+        assert.equal(n.props.isInteractive, undefined);
+    }
+    assert.match(plain(term)[0], /tasks 4\/9/);
+    assert.ok(words(kids(desk)[0].props.source).includes('4/9'));
+    assert.match(plain(term)[1], /400k\/1M/);
+    assert.ok(words(kids(desk)[1].props.source).includes('400k'));
+});
+
+test('on Claude Desktop the Pane draws the route, the clash, the tasks and the context as Svg, and the rest as the terminal does', async () => {
+    const { pane } = await drawn();
+    const desk = await pane('desktop');
+    const term = await pane('terminal');
+    const svgs = kids(desk).filter((n) => n.tag === 'Svg');
+    assert.equal(svgs.length, 4);
+    for (const n of svgs) assert.ok(n.props.source.startsWith('<svg ') && n.props.source.length <= 131072);
+    assert.deepEqual(svgs.map((n) => n.props.isInteractive === true), [false, false, true, false]);
+    // Each alt is the rows it stands for, as the terminal draws them.
+    const rows = plain(term);
+    const block = (from, to) => rows.slice(rows.findIndex((t) => t.startsWith(from)), to === undefined ? undefined : rows.findIndex((t) => t.startsWith(to)) - 1).join('\n');
+    assert.equal(svgs[0].props.alt, 'survey › design › plan › build › verify\nland');
+    assert.equal(svgs[1].props.alt, block('⚑ hooks/pane.ts', 'tasks '));
+    assert.equal(svgs[2].props.alt, block('tasks 4 of 9', 'context'));
+    assert.equal(svgs[3].props.alt, block('context', 'notes'));
+    // The title, next:, notes and the foot are the terminal's own rows.
+    const words2 = kids(desk).filter((n) => n.tag !== 'Svg').map(textOf);
+    assert.ok(words2.includes('▌Pane 視覺化改版'));
+    assert.ok(words2.some((t) => t.startsWith(' next: task 5')));
+    assert.ok(words2.includes('▌notes'));
+    assert.ok(words2.some((t) => t.startsWith('▌abcdef12 · /fankeel-panel')));
+    // The tasks Svg counts what the text counts.
+    assert.ok(words(svgs[2].props.source).includes('4 of 9'));
+});
+
+test('every surface but the desktop draws the text exactly, and asks the engine for no Svg', async () => {
+    const { band, pane } = await drawn();
+    for (const surface of ['terminal', 'vscode', 'mobile']) {
+        assert.deepEqual(await band(surface), await band(undefined), surface);
+        assert.deepEqual(await pane(surface), await pane(undefined), surface);
+    }
+    const tags = (node) => [node.tag, ...(node.children || []).filter((c) => c && c.tag).flatMap(tags)];
+    assert.ok(!tags(await pane('terminal')).includes('Svg'));
+});
+
+test('compact.at off: the desktop meter and the terminal rows both say automatic compact is off', async () => {
+    const { pane } = await drawn({ profile: { 'compact.at': 'off' }, tokens: 455000 });
+    const desk = kids(await pane('desktop')).filter((n) => n.tag === 'Svg');
+    const meter = desk.find((n) => n.props.alt.startsWith('context'));
+    assert.ok(words(meter.props.source).includes('已到門檻，自動 compact 已關閉'));
+    assert.match(meter.props.alt, /自動 compact 已關閉/);
+    assert.ok(plain(await pane('terminal')).includes('context  已到門檻，自動 compact 已關閉'));
+});
+
+test('a gate waiting on Claude Desktop draws its ring from the pending file\'s at to its until', async () => {
+    const { band, store, tick } = await drawn();
+    const T = Date.now();
+    store[ROOT + '/.fankeel/build/task-20261010T203351/build-pending.json'] = JSON.stringify({ questions: [{ question: 'Go on?', options: [{ label: 'Yes' }] }], at: T - 30000, until: T + 30000 });
+    await tick();
+    const row = kids(await band('desktop'))[0];
+    assert.ok(words(row.props.source).includes('gate 在等'));
+    // Half of the 60 seconds left, give or take the second the test took: about half a circle of 40.8.
+    const share = Number(/stroke-dasharray="([\d.]+) 40\.8"/.exec(row.props.source)[1]) / 40.8;
+    assert.ok(share > 0.45 && share <= 0.53, String(share));
+    assert.match(row.props.alt, /gate 在等/);
+});
+
+test('sixty tasks, a long clash and the off meter stay far under the engine\'s 131072 characters', async () => {
+    const { tasksSvg, clashSvg, contextSvg, SVG_MAX } = await load('pane-svg');
+    const big = { name: 'big', done: Array.from({ length: 37 }, (_, i) => i + 1), tasks: Array.from({ length: 60 }, (_, i) => ({ n: i + 1, name: 'x'.repeat(200), user: i === 50 })) };
+    const many = Array.from({ length: 20 }, (_, i) => ({ id: 'n' + i, entry: { task: 'y'.repeat(200), stage: 'build', claims: entry.claims } }));
+    for (const source of [tasksSvg(entry, big, NOW, 41), tasksSvg(entry, Object.assign({}, big, { tasks: big.tasks.slice(0, 30) }), NOW, 41), clashSvg(entry, many, NOW, 41), contextSvg({ tokens: 455000, at: Infinity }, 41)]) {
+        assert.ok(source.length < SVG_MAX / 4, String(source.length));
+    }
+    assert.equal(SVG_MAX, 131072);
+});
