@@ -433,13 +433,15 @@ test('the band and the context block are measured against the profile\'s compact
     assert.ok(!bandLines(await hooks.band($, BAND, passed))[1].endsWith('⚠'), 'the band warned under four fifths of 350k');
 });
 
-test('compact.at off draws the count with no threshold and never a context block', async () => {
+test('compact.at off draws the count with no threshold, and a context block that says no compact will run', async () => {
     const hooks = await wired();
     const { $, log } = fake({ files: Object.assign(entryFile(live), profileFile({ 'compact.at': 'off' })), tokens: 2000000 });
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
     assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ██████████ 2M/1M ⚠');
-    assert.ok(!texts(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } })).includes('context'));
+    const pane = paneLines(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
+    assert.ok(pane.includes('▌context  已到門檻，自動 compact 已關閉'), pane.join('\n'));
+    assert.ok(pane.includes(' 不會自動壓縮；要壓縮請手動 /compact'), pane.join('\n'));
 });
 
 test('with no FANKEEL_COMPACT_AT the threshold is HARD, and with no token count there is no context block', async () => {

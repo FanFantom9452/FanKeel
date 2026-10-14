@@ -233,3 +233,23 @@ test('a long task name under the cells is cut with an ellipsis', async () => {
     const line = w.find((t) => t.startsWith('5 xxx'));
     assert.ok(line && line.includes('…') && line.endsWith(' · 出去 12 分'));
 });
+
+test('the context meter: the threshold is the scale, four fifths amber, the compact point grey; what it says follows compact.at', async () => {
+    const { contextSvg } = await load('pane-svg');
+    const near = contextSvg({ tokens: 372000, at: 450000, window: 1000000 }, 41);
+    assert.deepEqual(words(near), ['context', '快要自動 compact 了', '372k', '，再 78k 到門檻', '80%', '450k', '留 task · stage · plan · agent · handoff']);
+    assert.match(near, /<rect x="[\d.]+" y="20" width="2" height="18" rx="1" fill="#d7af5f"\/>/);
+    assert.match(near, /<rect x="[\d.]+" y="20" width="2" height="18" rx="1" fill="#8a8a8a"\/>/);
+    assert.ok(!near.includes('stroke-dasharray'));
+    const hot = contextSvg({ tokens: 455000, at: 450000 }, 41);
+    assert.deepEqual(words(hot).slice(0, 4), ['context', '已到門檻，這輪回完自動 compact', '455k', '，過了門檻']);
+});
+
+test('compact.at off still draws the meter, against HARD, with a dashed compact point, and says no compact will run', async () => {
+    const { contextSvg } = await load('pane-svg');
+    const off = contextSvg({ tokens: 455000, at: Infinity }, 41);
+    assert.deepEqual(words(off), ['context', '已到門檻，自動 compact 已關閉', '455k', '，過了內建的 450k', '80%', '450k', '不會自動壓縮；要壓縮請手動 /compact']);
+    assert.match(off, /stroke-dasharray="3 2"/);
+    assert.ok(!off.includes('fill="#8a8a8a"/>'), 'a solid compact point drawn while compact is off');
+    assert.equal(words(contextSvg({ tokens: 372000, at: Infinity }, 41))[1], '快到門檻，自動 compact 已關閉');
+});

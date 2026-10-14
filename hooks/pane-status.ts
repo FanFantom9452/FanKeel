@@ -6,6 +6,7 @@
 import { WHERE, FLAG, GUARD, TODO, claimsOf } from './pane-band.ts'
 import { str, list, width, cut, WIDE, DIM, minutes, nearCompact } from './pane-bar.ts'
 import type { Context } from './pane-bar.ts'
+import { HARD } from './compact.ts'
 
 // Kept as exports of this file: hooks/pane.ts imports them from here.
 export { str, list, width, cut, WIDE }
@@ -276,10 +277,20 @@ function tasksBlock(entry: Entry, plan: PlanInfo | null, inner: number, now: num
 // FANKEEL_COMPACT_AT, the profile's compact.at, else HARD), and then never
 // given up: that a compact is close, or
 // under way, and what one keeps. No count, no bar and no mark: the band's `ctx`
-// meter (hooks/pane-band.ts) has those, and a figure is drawn once.
+// meter (hooks/pane-band.ts) has those, and a figure is drawn once. compact.at
+// off is an infinite threshold: the block is measured against HARD and says
+// that no compact will run.
 function contextBlock(context: Context, inner: number): Row[] {
-  if (!nearCompact(context.tokens, context.at)) return []
-  const hot = context.tokens >= context.at
+  const off = !Number.isFinite(context.at)
+  const at = off ? HARD : context.at
+  if (!nearCompact(context.tokens, at)) return []
+  const hot = context.tokens >= at
+  if (off) {
+    return [
+      row('context', title('context', 'context'), hot ? { text: '  已到門檻，自動 compact 已關閉', color: GUARD, bold: true } : dim('  快到門檻，自動 compact 已關閉')),
+      row('context', dim(cut('不會自動壓縮；要壓縮請手動 /compact', inner))),
+    ]
+  }
   return [
     row('context', title('context', 'context'), hot ? { text: '  已到門檻，compact 中', color: GUARD, bold: true } : dim('  快要自動 compact 了')),
     row('context', dim(cut(`留 ${KEPT.join(' · ')}`, inner))),

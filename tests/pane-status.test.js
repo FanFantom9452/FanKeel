@@ -460,3 +460,16 @@ test('no row of the whole Pane is wider than it, at any width', async () => {
         }
     }
 });
+
+test('compact.at off measures the block against HARD from four fifths of it, and says no compact will run', async () => {
+    const m = await load();
+    const { HARD } = await compact();
+    const at = (tokens) => status(m, { context: { tokens, at: Infinity } });
+    assert.deepEqual(text(at(HARD * 0.8 - 1), 'context'), []);
+    assert.deepEqual(text(at(HARD * 0.8), 'context'), ['▌context  快到門檻，自動 compact 已關閉', ' 不會自動壓縮；要壓縮請手動 /compact']);
+    assert.deepEqual(body(at(HARD), 'context'), [
+        [{ text: 'context', color: SECOND, bold: true }, { text: '  已到門檻，自動 compact 已關閉', color: '#d7af5f', bold: true }],
+        [{ text: '不會自動壓縮；要壓縮請手動 /compact', color: SECOND }],
+    ]);
+    assert.doesNotMatch(text(at(2000000), 'context').join('\n'), /留 task|compact 中/);
+});

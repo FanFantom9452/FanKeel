@@ -442,3 +442,31 @@ export function tasksSvg(entry: Entry, plan: PlanInfo, now: number, cols: number
   }
   return svgDoc(W, y - 14, b, ' class="fk-t"')
 }
+
+// The context meter, drawn where the text block is (from four fifths of the
+// threshold): the threshold is the scale, an amber line at four fifths and a
+// grey one at the compact point. compact.at off is an infinite threshold: the
+// scale is HARD and the compact point is dashed, for no compact runs there.
+export function contextSvg(context: Context, cols: number): string {
+  const off = !Number.isFinite(context.at)
+  const at = off ? HARD : context.at
+  const hot = context.tokens >= at
+  const paint = ctxPaint(context.tokens, at)
+  const W = paneW(cols) - 2
+  const said = hot ? (off ? '已到門檻，自動 compact 已關閉' : '已到門檻，這輪回完自動 compact') : off ? '快到門檻，自動 compact 已關閉' : '快要自動 compact 了'
+  let b = text(0, 14, 'context', { bold: true }) + text(px('context  '), 14, said, hot ? { fill: GUARD, bold: true } : {})
+  b += `<rect x="1" y="24" width="${r1(W)}" height="10" rx="2" fill="${DIM}"/>`
+  b += `<rect x="2" y="25" width="${r1(Math.min(1, context.tokens / at) * (W - 2))}" height="8" rx="1.5" fill="${paint.color}"/>`
+  const x80 = 2 + 0.8 * (W - 2)
+  b += `<rect x="${r1(x80 - 1)}" y="20" width="2" height="18" rx="1" fill="${GUARD}"/>`
+  b += off
+    ? `<line x1="${r1(W)}" y1="19" x2="${r1(W)}" y2="39" stroke="${WHERE}" stroke-width="2" stroke-dasharray="3 2"/>`
+    : `<rect x="${r1(W - 1)}" y="20" width="2" height="18" rx="1" fill="${WHERE}"/>`
+  const left = at - context.tokens
+  const count = kilo(context.tokens)
+  b += text(1, 52, count, { bold: true }) + text(1 + px(count), 52, left > 0 ? `，再 ${kilo(left)} 到門檻` : off ? `，過了內建的 ${kilo(at)}` : '，過了門檻')
+  b += text(x80, 52, '80%', { anchor: 'middle', fill: GUARD })
+  b += text(W + 1, 52, kilo(at), { anchor: 'end' })
+  b += text(1, 72, off ? '不會自動壓縮；要壓縮請手動 /compact' : cut(`留 ${KEPT.join(' · ')}`, 40))
+  return svgDoc(W + 2, 78, b)
+}
