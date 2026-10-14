@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-10-10
+last_verified: 2026-10-15
 source_of_truth: scripts/drive.js, lib/handoff.js, lib/render.js
 ---
 
@@ -17,7 +17,7 @@ node scripts/drive.js --session <id> [--root <dir>] [--max-rounds 12] [--max-usd
 ## One stage
 
 1. The prompt is the brief a `fankeel-brain` stage agent gets from `renderBrief`, with `stage.agents` forced to this stage, plus one line asking for `status`.
-2. `claude -p --plugin-dir <plugin> --permission-mode acceptEdits --output-format json --max-budget-usd <left>` runs it. The permission mode was the user's choice on 2026-10-10: edits go through and everything else follows the project's allow rules. A stage whose tool was refused can report `blocked`; if the refused write is the handoff file itself, no handoff appears and the driver stops on `status` — whether `acceptEdits` lets a stage write under `.fankeel/build/` has not been run yet.
+2. `claude -p --plugin-dir <plugin> --permission-mode acceptEdits --output-format json --max-budget-usd <left>` runs it. The permission mode was the user's choice on 2026-10-10: edits go through and everything else follows the project's allow rules. A stage whose tool was refused can report `blocked`; if the refused write is the handoff file itself, no handoff appears and the driver stops on `status` — and that is what `acceptEdits` does: on 2026-10-15 the first real run (session 8a06683b, one build round, $0.47) had both its Write and its Edit of `.fankeel/build/task-<started>/build.md` refused as "a sensitive file", reported `blocked` in its last message, and the driver stopped on `status` with no handoff on disk. Until the mode or an allow rule lets a headless stage write under `.fankeel/build/`, no stage driven here can hand off.
 3. The stage writes its handoff with a `json gate` block whose top level carries `"status"`: `done`, `partial` or `blocked`.
 4. The driver writes `<stage>-pending.json` the way `hooks/gate.js` does, so the station shows the question, and waits for `<stage>-answer.md`, which the station's `/answer` writes.
 5. The first question's answer decides: its own option one runs `task.js stage <next>` (or `task.js down` at the route's end), a pause runs `task.js next`, and anything else runs the same stage again with the answer file's path in the prompt.

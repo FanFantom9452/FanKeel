@@ -13,3 +13,5 @@ link: docs/90-agent/reference/drive.md
 完成條件：一站跑完並讀到帶 status 的 handoff，或停下的原因查清楚並寫回 drive.md。
 
 2026-10-15 盤點：使用者選了第一個交給 drive.js 的任務——一個小型文件或測試任務，用 `--max-rounds 2 --max-usd 2` 跑，順便回答 acceptEdits 能否寫 `.fankeel/build/`。
+
+2026-10-15：第一次實跑：`{"stopped":"status","rounds":1,"usd":0.47,"stage":"build","handoff":"F:/ymlab/fankeel/.fankeel/build/task-20261014T221105/build.md"}`。任務是 session 8a06683b 的「drive.js 試跑：把 drive.md 的 last_verified 對照 scripts/drive.js 的 usage 行檢查一遍」，路線 build,verify。這一輪有 `total_cost_usd`（driver 算出 0.47）；只跑了一輪，所以「每輪都有」只驗到一輪。build 站自己的檢查做完了，但它對 handoff 檔的 Write 與 Edit 都被 Claude Code 以「sensitive file」拒絕，最後一則訊息報 blocked、沒有繞過，工作樹沒有任何改動，driver 因找不到 handoff 停在 status。答案寫回 drive.md 第 20 行：acceptEdits 不讓 headless 站寫 `.fankeel/build/`。完成條件的後半（停下的原因查清楚並寫回 drive.md）已達成；要讓 drive.js 真的能交棒，得換權限模式或加 allow 規則，那是另一件事。
