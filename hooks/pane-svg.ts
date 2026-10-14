@@ -8,7 +8,7 @@ import { TODO, GUARD, FLAG, WHERE, CLASH, INK, stageColor, since, clashes, claim
 import type { BandInput } from './pane-band.ts'
 import { str, list, kilo, cut, ctxPaint, fivePaint, weekPaint, deviation, limitOf, signed, minutes, secondsLeft, DIM } from './pane-bar.ts'
 import type { Context } from './pane-bar.ts'
-import { KEPT } from './pane-status.ts'
+import { KEPT, SAID } from './pane-status.ts'
 import type { Entry, Other, PlanInfo, Row, StatusInput } from './pane-status.ts'
 import { HARD } from './compact.ts'
 
@@ -453,7 +453,7 @@ export function contextSvg(context: Context, cols: number): string {
   const hot = context.tokens >= at
   const paint = ctxPaint(context.tokens, at)
   const W = paneW(cols) - 2
-  const said = hot ? (off ? '已到門檻，自動 compact 已關閉' : '已到門檻，這輪回完自動 compact') : off ? '快到門檻，自動 compact 已關閉' : '快要自動 compact 了'
+  const said = hot ? (off ? SAID.hotOff : SAID.hot) : off ? SAID.nearOff : SAID.near
   let b = text(0, 14, 'context', { bold: true }) + text(px('context  '), 14, said, hot ? { fill: GUARD, bold: true } : {})
   b += `<rect x="1" y="24" width="${r1(W)}" height="10" rx="2" fill="${DIM}"/>`
   b += `<rect x="2" y="25" width="${r1(Math.min(1, context.tokens / at) * (W - 2))}" height="8" rx="1.5" fill="${paint.color}"/>`

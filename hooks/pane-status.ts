@@ -273,6 +273,9 @@ function tasksBlock(entry: Entry, plan: PlanInfo | null, inner: number, now: num
   return rows
 }
 
+// What the context block says, read by the desktop Svg (hooks/pane-svg.ts) too, so the two never word it apart.
+export const SAID = { hot: '已到門檻，compact 中', near: '快要自動 compact 了', hotOff: '已到門檻，自動 compact 已關閉', nearOff: '快到門檻，自動 compact 已關閉' }
+
 // Drawn only from eighty percent of the threshold (hooks/compact.ts threshold:
 // FANKEEL_COMPACT_AT, the profile's compact.at, else HARD), and then never
 // given up: that a compact is close, or
@@ -287,12 +290,12 @@ function contextBlock(context: Context, inner: number): Row[] {
   const hot = context.tokens >= at
   if (off) {
     return [
-      row('context', title('context', 'context'), hot ? { text: '  已到門檻，自動 compact 已關閉', color: GUARD, bold: true } : dim('  快到門檻，自動 compact 已關閉')),
+      row('context', title('context', 'context'), hot ? { text: `  ${SAID.hotOff}`, color: GUARD, bold: true } : dim(`  ${SAID.nearOff}`)),
       row('context', dim(cut('不會自動壓縮；要壓縮請手動 /compact', inner))),
     ]
   }
   return [
-    row('context', title('context', 'context'), hot ? { text: '  已到門檻，compact 中', color: GUARD, bold: true } : dim('  快要自動 compact 了')),
+    row('context', title('context', 'context'), hot ? { text: `  ${SAID.hot}`, color: GUARD, bold: true } : dim(`  ${SAID.near}`)),
     row('context', dim(cut(`留 ${KEPT.join(' · ')}`, inner))),
   ]
 }

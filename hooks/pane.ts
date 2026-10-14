@@ -42,7 +42,7 @@ type Cache = Map<string, { stamp: string; value: unknown }>
 const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, context: null, limits: [], plan: null, probe: null })
 
 // The last message each silent catch logged: the tick runs four times a second, and a failure that stays is said once.
-type Logged = { context: string; plan: string; open: string; registry: string; neighbour: string; gate: string; live: string; svg: string }
+type Logged = { context: string; plan: string; open: string; registry: string; neighbour: string; gate: string; live: string; bandSvg: string; paneSvg: string }
 
 // A registry file that is there and does not parse: told apart so `tick` can wait it out for a while, then give up on it.
 class Unreadable extends Error {}
@@ -310,7 +310,7 @@ async function tick($: EngineInterface, state: State): Promise<void> {
 export const register: Register = (on) => {
   const state: State = {
     seen: blank(''), print: '', mine: false, edge: { task: false }, bad: 0, busy: false, cache: new Map(),
-    logged: { context: '', plan: '', open: '', registry: '', neighbour: '', gate: '', live: '', svg: '' },
+    logged: { context: '', plan: '', open: '', registry: '', neighbour: '', gate: '', live: '', bandSvg: '', paneSvg: '' },
   }
 
   on('session.start', async ($, e, next) => {
@@ -363,7 +363,7 @@ export const register: Register = (on) => {
         if (sources.some((source) => !source || source.length > SVG_MAX)) throw new Error('a band row drew empty or over the limit')
         return h(Box, { flexDirection: 'column' }, ...sources.map((source, i) => h(Svg, { source, alt: altOf([rows[i]]) })))
       } catch (err) {
-        logOnce($, state.logged, 'svg', `fankeel pane: band Svg not drawn, ${String(err)}`)
+        logOnce($, state.logged, 'bandSvg', `fankeel pane: band Svg not drawn, ${String(err)}`)
       }
     }
     const { Box, Text } = $.ui.resolve(e)
@@ -405,7 +405,7 @@ export const register: Register = (on) => {
         const { Svg } = $.ui.resolve(e)
         return h(Box, { flexDirection: 'column' }, ...paneParts(input, status).flatMap((part) => ('rows' in part ? part.rows.map(line) : [h(Svg, part)])))
       } catch (err) {
-        logOnce($, state.logged, 'svg', `fankeel pane: Pane Svg not drawn, ${String(err)}`)
+        logOnce($, state.logged, 'paneSvg', `fankeel pane: Pane Svg not drawn, ${String(err)}`)
       }
     }
     return h(Box, { flexDirection: 'column' }, ...status.map(line))

@@ -242,7 +242,17 @@ test('the context meter: the threshold is the scale, four fifths amber, the comp
     assert.match(near, /<rect x="[\d.]+" y="20" width="2" height="18" rx="1" fill="#8a8a8a"\/>/);
     assert.ok(!near.includes('stroke-dasharray'));
     const hot = contextSvg({ tokens: 455000, at: 450000 }, 41);
-    assert.deepEqual(words(hot).slice(0, 4), ['context', '已到門檻，這輪回完自動 compact', '455k', '，過了門檻']);
+    assert.deepEqual(words(hot).slice(0, 4).filter((_, i) => i !== 1), ['context', '455k', '，過了門檻']);
+});
+
+test('the context meter says what the text row says, hot or near, compact.at on or off', async () => {
+    const { contextSvg } = await load('pane-svg');
+    const { statusRows } = await load('pane-status');
+    for (const context of [{ tokens: 372000, at: 450000 }, { tokens: 455000, at: 450000 }, { tokens: 372000, at: Infinity }, { tokens: 455000, at: Infinity }]) {
+        const rows = statusRows({ id: 'x', entry, others: [], context, plan: null, cols: 60, room: 60, now: NOW }).filter((r) => r.block === 'context' && r.segs.length);
+        const row = rows[0].segs.map((s) => s.text).join('').replace(/^▌?\s*context\s+/, '');
+        assert.equal(words(contextSvg(context, 41))[1], row, JSON.stringify(context));
+    }
 });
 
 test('compact.at off still draws the meter, against HARD, with a dashed compact point, and says no compact will run', async () => {
@@ -475,6 +485,13 @@ test('a Pane drawing that throws on Claude Desktop falls back to the terminal ro
     const said = logs.filter(([t]) => /Pane Svg not drawn/.test(t));
     assert.equal(said.length, 1);
     assert.equal(said[0][1].to, 'debug');
+});
+
+test('the band and the Pane drawings both throwing log once each, not again every render', async () => {
+    const { band, pane, logs } = await drawn({ svgThrows: true });
+    for (let i = 0; i < 3; i++) { await band('desktop'); await pane('desktop'); }
+    assert.equal(logs.filter(([t]) => /band Svg not drawn/.test(t)).length, 1);
+    assert.equal(logs.filter(([t]) => /Pane Svg not drawn/.test(t)).length, 1);
 });
 
 test('paneParts keeps a block as rows when its drawing is empty', async () => {
