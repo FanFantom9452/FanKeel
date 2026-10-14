@@ -59,7 +59,7 @@ function pg() {
     const attrs = { 'data-pg-id': 's1', 'data-pg-root': PK };
     const ticked = { value: 'A', checked: true };
     return { pgr, btns: [send], getAttribute: (k) => (k in attrs ? attrs[k] : null),
-        querySelector: (sel) => (sel === '.pgr' ? pgr : null),
+        querySelector: (sel) => (sel === '.pgr' ? pgr : sel === '[data-answer]' ? send : null),
         querySelectorAll: (sel) => (sel.indexOf('input[name="pg-') === 0 ? [ticked] : [send]) };
 }
 const answer = (box) => ({ '[data-answer]': { closest: (sel) => (sel === '.pg' ? box : null) } });
@@ -157,4 +157,11 @@ test('gho: the hand-off press disables the gate and a network error gives it bac
     await settle();
     assert.deepEqual(box.btns.map((x) => x.disabled), [false, false, false]);
     assert.equal(box.gend.textContent, '送不出去：serve 還在跑嗎？可以再按一次');
+});
+
+test('answer: ticking the form while the send is out leaves 送出答案 disabled', () => {
+    const b = boot(), box = pg();
+    b.press(answer(box));
+    b.press({ '.pg input[name^="pg-"]': { closest: (sel) => (sel === '.pg' ? box : null) } });
+    assert.equal(box.btns[0].disabled, true);
 });

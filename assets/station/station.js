@@ -5562,7 +5562,9 @@
         var who = S.sessions.filter(function (x) { return x.id === pgb.getAttribute('data-pg-id'); })[0];
         var qs = (who && who.pending && who.pending.questions) || [];
         var got = pgRead(pgb, qs), btn = pgb.querySelector('[data-answer]'), cnt = pgb.querySelector('.pgn');
-        if (btn) btn.disabled = got.missing > 0;
+        var sent = view.pg[pgb.getAttribute('data-pg-id') + ':send'];
+        var sending = sent && who && who.pending && sent.gate === who.pending.until && (sent.busy || sent.cls === 'ok');
+        if (btn) btn.disabled = got.missing > 0 || !!sending;
         if (cnt) cnt.textContent = (qs.length - got.missing) + ' / ' + qs.length;
     }
     // One POST /answer that says it is on its way. Every button in `box` is
