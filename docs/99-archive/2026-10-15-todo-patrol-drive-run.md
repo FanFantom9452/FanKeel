@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # TODO patrol 2026-10-15 (second) Implementation Plan
