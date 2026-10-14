@@ -137,3 +137,48 @@ test('the clash is the shared files on the left, who holds them on the right, on
     assert.ok(source.includes(`r="3.5" fill="${RAMP.build}"`) && source.includes(`r="3.5" fill="${RAMP.verify}"`));
     assert.equal(clashSvg(entry, [], NOW, 41), '');
 });
+
+// A plan of `total` tasks, the first `done` complete, the numbers in `user` the user's.
+const planOf = (total, done, user = []) => ({
+    name: 'demo',
+    done: Array.from({ length: done }, (_, i) => i + 1),
+    tasks: Array.from({ length: total }, (_, i) => ({ n: i + 1, name: 'task ' + (i + 1), user: user.includes(i + 1) })),
+});
+const titles = (source) => [...source.matchAll(/<title>([^<]*)<\/title>/g)].map((m) => m[1]);
+
+test('nine tasks or fewer are one row of cells, each with a title, the agent on the first open task that is not the user\'s', async () => {
+    const { tasksSvg } = await load('pane-svg');
+    const source = tasksSvg(entry, planOf(9, 4, [6]), NOW, 41);
+    assert.deepEqual(words(source).slice(0, 2), ['tasks', '4 of 9']);
+    assert.deepEqual(titles(source), [
+        '1 · task 1 · 完成', '2 · task 2 · 完成', '3 · task 3 · 完成', '4 · task 4 · 完成',
+        '5 · task 5 · agent 出去 12 分', '6 · task 6 · 你的', '7 · task 7 · 還沒做', '8 · task 8 · 還沒做', '9 · task 9 · 還沒做',
+    ]);
+    // One row: every cell at y 24, 30px wide.
+    assert.equal((source.match(/class="c" x="[\d.]+" y="24" width="30"/g) || []).length, 5);
+    // Under the cells: the running task and the user's.
+    assert.ok(words(source).includes('5 task 5 · 出去 12 分'));
+    assert.ok(words(source).includes('6 task 6 · 你的'));
+    assert.match(source, /class="fk-t"/);
+});
+
+test('ten to thirty tasks are rows of ten cells; more than thirty are one bar of four counts', async () => {
+    const { tasksSvg } = await load('pane-svg');
+    const grid = tasksSvg(entry, planOf(24, 11, [16, 20]), NOW, 41);
+    assert.equal(titles(grid).length, 24);
+    // Task 11 opens the second row and task 21 the third.
+    assert.match(grid, /<title>11 · task 11 · 完成<\/title><rect class="c" x="1" y="53" width="24"/);
+    assert.match(grid, /<title>21 · task 21 · 還沒做<\/title><rect class="c" x="1.5" y="82.5" width="23"/);
+    const bar = tasksSvg(entry, planOf(60, 37, [39, 44, 50, 51]), NOW, 41);
+    assert.deepEqual(titles(bar), ['完成 37', '在跑 1', '你的 4', '還沒做 18']);
+    assert.ok(words(bar).includes('還有 1 個是你的'));
+    assert.equal(words(bar).filter((w) => w.endsWith(' · 你的')).length, 3);
+});
+
+test('with no agent out nothing breathes and nothing is named as running', async () => {
+    const { tasksSvg } = await load('pane-svg');
+    const idle = Object.assign({}, entry, { inflight: null });
+    const source = tasksSvg(idle, planOf(9, 4), NOW, 41);
+    assert.ok(!source.includes('class="live"'));
+    assert.ok(!words(source).some((w) => w.includes('出去')));
+});

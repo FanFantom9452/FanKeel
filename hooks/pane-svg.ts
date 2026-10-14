@@ -342,3 +342,103 @@ export function clashSvg(entry: Entry, others: Other[], now: number, cols: numbe
   })
   return svgDoc(W, h, b)
 }
+
+// Up to this many tasks: one row of 30px cells. Up to GRID_MAX: rows of ten
+// 24px cells, so task n sits on row ceil(n/10). More: one bar of four parts.
+const ONE_ROW = 9
+const GRID_MAX = 30
+// A cell's hover ring, and the out task's breathing outline; still under reduced motion.
+const TASKS_STYLE = `<style>.fk-t rect.c{transition:stroke-width .15s ease-out}.fk-t g.k:hover rect.c{stroke:${WHERE};stroke-width:2.5}.fk-t .live{animation:fk-pulse 1.6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}@keyframes fk-pulse{0%,100%{opacity:.9}50%{opacity:.25}}@media (prefers-reduced-motion:reduce){.fk-t .live{animation:none}}</style>`
+
+// The plan's tasks against its ledger, drawn by how many there are. Every cell
+// and every part of the bar carries a <title>, so the Svg is drawn
+// interactive. The agent is on the first open task that is not the user's, as
+// hooks/pane-status.ts tasksBlock draws it; under the cells or the bar, that
+// task and up to three of the user's are named.
+export function tasksSvg(entry: Entry, plan: PlanInfo, now: number, cols: number): string {
+  const W = paneW(cols)
+  const done = new Set(plan.done)
+  const open = plan.tasks.filter((t) => !done.has(t.n))
+  const stage = str(entry.stage)
+  const marks = Array.isArray(entry.inflight) ? entry.inflight : [entry.inflight]
+  const mark = marks.map(record).find((m) => m.stage === stage)
+  const running = mark ? open.find((t) => !t.user) : undefined
+  const out = mark && typeof mark.at === 'number' && Number.isFinite(mark.at) ? String(minutes(now - mark.at)) : '?'
+  const you = open.filter((t) => t.user)
+  const n = plan.tasks.length
+  const count = n - open.length
+  let b = TASKS_STYLE + text(0, 14, 'tasks', { bold: true }) + text(px('tasks '), 14, `${count} of ${n}`)
+  let y = 0
+  if (n <= GRID_MAX) {
+    const [S, G, per] = n <= ONE_ROW ? [30, 4, ONE_ROW] : [24, 5, 10]
+    plan.tasks.forEach((t, i) => {
+      const x = (i % per) * (S + G) + 1
+      const top = 24 + Math.floor(i / per) * (S + G)
+      const ty = top + S / 2 + 4
+      const isDone = done.has(t.n)
+      const tip = `${t.n} · ${t.name}${isDone ? ' · 完成' : t === running ? ` · agent 出去 ${out} 分` : t.user ? ' · 你的' : ' · 還沒做'}`
+      let cell: string
+      if (isDone) {
+        cell = `<rect class="c" x="${x}" y="${top}" width="${S}" height="${S}" rx="4" fill="${DONE}"/>` + text(x + S / 2, ty, String(t.n), { anchor: 'middle', fill: ON_FILL, bold: true })
+      } else if (t === running) {
+        cell = `<rect class="live" x="${x - 2}" y="${top - 2}" width="${S + 4}" height="${S + 4}" rx="5" fill="none" stroke="${OUT}" stroke-width="1.5"/>`
+          + `<rect class="c" x="${x}" y="${top}" width="${S}" height="${S}" rx="4" fill="${OUT}"/>` + text(x + S / 2, ty, String(t.n), { anchor: 'middle', fill: ON_FILL, bold: true })
+      } else if (t.user) {
+        cell = `<rect class="c" x="${x + 1}" y="${top + 1}" width="${S - 2}" height="${S - 2}" rx="4" fill="none" stroke="${GUARD}" stroke-width="2"/>` + text(x + S / 2, ty, String(t.n), { anchor: 'middle', fill: GUARD, bold: true })
+      } else {
+        cell = `<rect class="c" x="${x + 0.5}" y="${top + 0.5}" width="${S - 1}" height="${S - 1}" rx="4" fill="none" stroke="${TODO}" stroke-width="1"/>` + text(x + S / 2, ty, String(t.n), { anchor: 'middle' })
+      }
+      b += `<g class="k"><title>${esc(tip)}</title>${cell}</g>`
+    })
+    const rows = Math.ceil(n / per)
+    y = 24 + rows * S + (rows - 1) * G + 22
+  } else {
+    // One bar of four parts in this order: done, running, the user's, not begun.
+    const parts = [
+      { k: count, label: '完成', color: DONE, fill: true, live: false },
+      { k: running ? 1 : 0, label: '在跑', color: OUT, fill: true, live: true },
+      { k: you.length, label: '你的', color: GUARD, fill: false, live: false },
+      { k: open.length - (running ? 1 : 0) - you.length, label: '還沒做', color: TODO, fill: false, live: false },
+    ].filter((q) => q.k > 0)
+    const G = 2
+    const room = W - 2 - G * (parts.length - 1)
+    const ws = parts.map((q) => Math.max(6, (q.k / n) * room))
+    // A part kept at its 6px floor takes its width from the widest.
+    ws[ws.indexOf(Math.max(...ws))] -= ws.reduce((s, w) => s + w, 0) - room
+    let x = 1
+    parts.forEach((q, i) => {
+      const w = ws[i]
+      const shape = q.fill
+        ? `<rect class="c${q.live ? ' live' : ''}" x="${r1(x)}" y="24" width="${r1(w)}" height="14" rx="4" fill="${q.color}"/>`
+        : `<rect class="c" x="${r1(x + 0.75)}" y="24.75" width="${r1(w - 1.5)}" height="12.5" rx="4" fill="none" stroke="${q.color}" stroke-width="1.5"/>`
+      b += `<g class="k"><title>${esc(`${q.label} ${q.k}`)}</title>${shape}</g>`
+      x += w + G
+    })
+    let lx = 1
+    for (const q of parts) {
+      b += q.fill
+        ? `<rect x="${r1(lx)}" y="47" width="10" height="10" rx="2" fill="${q.color}"/>`
+        : `<rect x="${r1(lx + 1)}" y="48" width="8" height="8" rx="2" fill="none" stroke="${q.color}" stroke-width="2"/>`
+      const k = String(q.k)
+      b += text(lx + 15, 56, k, { bold: true }) + text(lx + 15 + px(k + ' '), 56, q.label)
+      lx += 15 + px(`${k} ${q.label}`) + 14
+    }
+    y = 80
+  }
+  if (running) {
+    const tail = ` · 出去 ${out} 分`
+    b += `<rect x="1" y="${y - 9}" width="10" height="10" rx="2" fill="${OUT}"/>`
+    b += text(18, y, fitPx(`${running.n} ${running.name}`, W - 18 - px(tail)) + tail)
+    y += 20
+  }
+  for (const t of you.slice(0, 3)) {
+    b += `<rect x="2" y="${y - 8}" width="8" height="8" rx="2" fill="none" stroke="${GUARD}" stroke-width="2"/>`
+    b += text(18, y, fitPx(`${t.n} ${t.name}`, W - 18 - px(' · 你的')) + ' · 你的')
+    y += 20
+  }
+  if (you.length > 3) {
+    b += text(18, y, `還有 ${you.length - 3} 個是你的`, { fill: GUARD })
+    y += 20
+  }
+  return svgDoc(W, y - 14, b, ' class="fk-t"')
+}
