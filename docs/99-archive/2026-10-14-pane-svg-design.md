@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 approved: 2026-10-14
 last_verified: 2026-10-14
 ---

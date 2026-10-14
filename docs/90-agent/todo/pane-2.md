@@ -2,8 +2,13 @@
 label: pane
 title: Pane 顯示遠端控制狀態
 description: Pane 與 band 都顯示 Remote Control 有沒有開：先在真機用 FANKEEL_PANE_PROBE 看 `$.session.surfaces()` 在開、關時有沒有差別 — [hooks/pane.ts](hooks/pane.ts).
-state: ready
+state: done
 link: hooks/pane.ts
+done:
+  at: 2026-10-15
+  sha: cc105bfc
+  disposition: done
+  session: 82155bbc-cfde-406e-b3c6-4f456476624b
 ---
 
 來源：2026-10-12 使用者在 Pane 右欄改版的討論裡要求 Pane 顯示 Remote Control 有沒有開。查過 mod 的 session API、Claude Code 的 session 檔與 hook 輸入，都沒有這個欄位；唯一的線索是 Remote Control 不掛任何畫面，所以 `$.session.surfaces()` 可能變空。同一天的 build 做了探測行（commit cc878932 的 `probeOf`），但使用者決定真機那一步先跳過。
@@ -19,3 +24,14 @@ link: hooks/pane.ts
 2026-10-14：量到 Claude Code 2.1.295（Desktop）的 `<configDir>/sessions/<pid>.json` 帶 `sessionId` 與 `bridgeSessionId`：Remote Control 開著是非空字串，關掉是 null，從沒開過則沒有這個鍵；band 第一行現在在連著時最後多一個「遠端 ●」（`hooks/pane.ts` 讀、`hooks/pane-band.ts` 與 `hooks/pane-svg.ts` 畫），讀不到當沒連。
 2026-10-15：真機 Desktop 0.108.0 在 Remote Control 開著時畫出了「遠端」；ctx 的顏色也確認了；標記依使用者的選擇改成 ✓（連著，綠）與 ✗（沒連或讀不到，灰）。
 2026-10-15：0.108.1 在新開的 Desktop session 上確認了，遠端 ✓／✗ 會跟著開關變；有問題等著回答時，gate 的倒數圈也有出現。
+
+## 完成紀錄
+
+band 第一列的最後現在會顯示 Remote Control 的狀態：連著是綠色的「遠端 ✓」，沒連是灰色的「遠端 ✗」。mod 自己的介面看不出 Remote Control，所以改讀 Claude Code 寫的 session 檔，看 bridgeSessionId 有沒有值；10-14 在 Desktop 實測過開、關、沒開過三種情況。10-15 使用者在真機上開關確認過兩個符號會跟著變。Pane 本身沒有加這一行，使用者選了只放在 band。從終端啟動的 session 讀不讀得到還沒驗，另開了 pane-7。
+
+- commit 4d1b813d
+- commit 3b2f725f
+- commit 8b44e1ba
+- commit b41ad84a
+- commit 495a7471
+- commit 0629f452
