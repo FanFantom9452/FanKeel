@@ -1,0 +1,9 @@
+control	written true	denials 0	exit 0
+settings	written true	denials 0	exit 0
+allowedTools	written true	denials 0	exit 0
+isolated	written true	denials 0	exit 0
+plugin	written false	denials 1	exit 0
+isolatedAllowed	written true	denials 0	exit 0
+pluginPlain	written false	denials 1	exit 0
+pluginAllowed	written false	denials 1	exit 0
+pluginElsewhere	written true	denials 0	exit 0
