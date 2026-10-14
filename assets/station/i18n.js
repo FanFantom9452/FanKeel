@@ -907,6 +907,9 @@
             'cmp.handedToTerminalColon': 'Handed to the terminal: ',
             'cmp.stillNQuestionsUnanswered': '{n} question(s) still unanswered',
             'cmp.couldNotSendServeRunning': 'Could not send: is serve running?',
+            'cmp.sending': 'Sending…',
+            'cmp.notConfirmedRetry': 'Not confirmed yet: you can press it again',
+            'cmp.pressAgain': ' You can press it again.',
             'cmp.writtenToTodoColon': 'Recorded: ',
             'cmp.dashNotWrittenColon': ' — not written: ',
             // q — the header search box
