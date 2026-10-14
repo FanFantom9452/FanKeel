@@ -1262,7 +1262,7 @@ and the model took the hook's answer as the user's; `claude -p` offers no
 before. An answer file older than the wait is an earlier gate's and is not
 read. A file on disk cannot post, so it says to answer in the terminal.
 
-A press says it is on its way (`answerPost`, `assets/station/station.js:5578`, `function answerPost(id, box, line, cls, form, said, failed)`): while `POST /answer` is out the gate's buttons are disabled and its line reads 送出中…. A reply ok keeps them disabled; a refusal, a network error, or 10 seconds with no reply (`SEND_MS`, the fetch aborted through an `AbortController`) gives them back with a line saying it may be pressed again. The state lives in `view.pg['<id>:send']`, keyed to the gate's `pending.until`, so the poll's redraw draws it as it was and a new gate starts clean.
+A press says it is on its way (`answerPost`, `assets/station/station.js:5578`, `function answerPost(id, box, line, cls, form, said, failed)`): while `POST /answer` is out the gate's buttons are disabled and its line reads 送出中…. A reply ok keeps them disabled; a refusal, a network error, or 10 seconds with no reply (`SEND_MS`, the fetch aborted through an `AbortController`) gives them back. A refusal shows `<status> — <the server's text>`, with no press-again wording; only a network error (…可以再按一次) and the timeout (還沒確認送到：可以再按一次) say it may be pressed again. The state lives in `view.pg['<id>:send']`, keyed to the gate's `pending.until`, so the poll's redraw draws it as it was and a new gate starts clean.
 
 ## When a tuned block is done
 
