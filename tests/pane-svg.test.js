@@ -182,3 +182,44 @@ test('with no agent out nothing breathes and nothing is named as running', async
     assert.ok(!source.includes('class="live"'));
     assert.ok(!words(source).some((w) => w.includes('出去')));
 });
+
+test('the heading counts the tasks the plan completed, not every number in the ledger', async () => {
+    const { tasksSvg } = await load('pane-svg');
+    const plan = planOf(9, 4);
+    plan.done.push(99);
+    assert.deepEqual(words(tasksSvg(entry, plan, NOW, 41)).slice(0, 2), ['tasks', '4 of 9']);
+});
+
+test('nine tasks are one row and ten are rows of ten; thirty are rows and thirty-one a bar', async () => {
+    const { tasksSvg } = await load('pane-svg');
+    const rowsAt = (n) => (tasksSvg(entry, planOf(n, n), NOW, 41).match(/class="c" x="[\d.]+" y="24" width="(\d+)"/g) || []);
+    assert.ok(rowsAt(9).every((m) => m.endsWith('width="30"')) && rowsAt(9).length === 9);
+    assert.ok(rowsAt(10).every((m) => m.endsWith('width="24"')) && rowsAt(10).length === 10);
+    assert.equal(titles(tasksSvg(entry, planOf(30, 0), NOW, 41)).length, 30);
+    assert.deepEqual(titles(tasksSvg(entry, planOf(31, 0), NOW, 41)), ['在跑 1', '還沒做 30']);
+});
+
+test('an agent out on another stage draws no running task', async () => {
+    const { tasksSvg } = await load('pane-svg');
+    const other = Object.assign({}, entry, { inflight: { stage: 'verify', at: NOW - 12 * M } });
+    const source = tasksSvg(other, planOf(9, 4), NOW, 41);
+    assert.ok(!source.includes('class="live"') && !source.includes('出去'));
+    assert.ok(titles(source).every((t) => !t.includes('agent')));
+});
+
+test('in a bar the running part breathes; the style carries the hover ring and the reduced-motion rule', async () => {
+    const { tasksSvg } = await load('pane-svg');
+    const source = tasksSvg(entry, planOf(40, 10), NOW, 41);
+    assert.match(source, /<rect class="c live"/);
+    assert.ok(source.includes('g.k:hover rect.c{stroke:#8a8a8a'));
+    assert.ok(source.includes('@media (prefers-reduced-motion:reduce){.fk-t .live{animation:none}}'));
+});
+
+test('a long task name under the cells is cut with an ellipsis', async () => {
+    const { tasksSvg } = await load('pane-svg');
+    const plan = planOf(9, 4);
+    plan.tasks[4].name = 'x'.repeat(80);
+    const w = words(tasksSvg(entry, plan, NOW, 41));
+    const line = w.find((t) => t.startsWith('5 xxx'));
+    assert.ok(line && line.includes('…') && line.endsWith(' · 出去 12 分'));
+});

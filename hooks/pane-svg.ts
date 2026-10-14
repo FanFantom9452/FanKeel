@@ -351,8 +351,8 @@ const GRID_MAX = 30
 const TASKS_STYLE = `<style>.fk-t rect.c{transition:stroke-width .15s ease-out}.fk-t g.k:hover rect.c{stroke:${WHERE};stroke-width:2.5}.fk-t .live{animation:fk-pulse 1.6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}@keyframes fk-pulse{0%,100%{opacity:.9}50%{opacity:.25}}@media (prefers-reduced-motion:reduce){.fk-t .live{animation:none}}</style>`
 
 // The plan's tasks against its ledger, drawn by how many there are. Every cell
-// and every part of the bar carries a <title>, so the Svg is drawn
-// interactive. The agent is on the first open task that is not the user's, as
+// and every part of the bar carries a <title>; the titles and the hover
+// need the Svg drawn interactive, which the caller sets. The agent is on the first open task that is not the user's, as
 // hooks/pane-status.ts tasksBlock draws it; under the cells or the bar, that
 // task and up to three of the user's are named.
 export function tasksSvg(entry: Entry, plan: PlanInfo, now: number, cols: number): string {
