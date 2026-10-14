@@ -5592,9 +5592,9 @@
             w.clearTimeout(timer);
             show(false, c, t);
         }
-        show(true, 'wait', loc('cmp.sending', '送出中…'));
+        show(true, 'wait', loc('poll.sending', '送出中…'));
         timer = w.setTimeout(function () {
-            give('bad', loc('cmp.notConfirmedRetry', '還沒確認送到：可以再按一次'));
+            give('bad', loc('poll.notConfirmedRetry', '還沒確認送到：可以再按一次'));
             if (ac) ac.abort();
         }, SEND_MS);
         var init = { method: 'POST', body: form };
@@ -5603,7 +5603,7 @@
             return r.text().then(function (t) {
                 give(r.ok ? 'ok' : 'bad', (r.ok ? said : r.status + ' — ') + t.trim());
             });
-        }, function () { give('bad', failed + loc('cmp.pressAgain', '可以再按一次')); });
+        }, function () { give('bad', failed + loc('poll.pressAgain', '可以再按一次')); });
     }
     // One POST /answer from the floating icon: an option, or the hand-off.
     function gatePost(gc, fill, said) {
