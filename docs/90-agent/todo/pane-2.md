@@ -18,3 +18,4 @@ link: hooks/pane.ts
 2026-10-14 更正上一行：從終端啟動、再用 Remote Control 到 Desktop，在 Desktop 下 `/fankeel-panel` 其實會開關終端那邊的 Pane，只是 Desktop 不渲染 band 與 Pane。探測行開著時仍是 `[terminal]`，mod 分不出指令從遠端來，所以「只有一邊會開關」的提醒只能不分情況給：終端啟動的 session 執行 `/fankeel-panel` 時，回覆說 Pane 畫在終端、Remote Control 的遠端看不到；這句回覆在 Desktop 看不看得到還沒驗。
 2026-10-14：量到 Claude Code 2.1.295（Desktop）的 `<configDir>/sessions/<pid>.json` 帶 `sessionId` 與 `bridgeSessionId`：Remote Control 開著是非空字串，關掉是 null，從沒開過則沒有這個鍵；band 第一行現在在連著時最後多一個「遠端 ●」（`hooks/pane.ts` 讀、`hooks/pane-band.ts` 與 `hooks/pane-svg.ts` 畫），讀不到當沒連。
 2026-10-15：真機 Desktop 0.108.0 在 Remote Control 開著時畫出了「遠端」；ctx 的顏色也確認了；標記依使用者的選擇改成 ✓（連著，綠）與 ✗（沒連或讀不到，灰）。
+2026-10-15：0.108.1 在新開的 Desktop session 上確認了，遠端 ✓／✗ 會跟著開關變；有問題等著回答時，gate 的倒數圈也有出現。
