@@ -41,6 +41,7 @@ function boot(saved) {
         down: (hits, x, y) => fire(docL, 'pointerdown', 'data-fk-', { button: 0, target: at(hits), clientX: x, clientY: y, preventDefault() {} }),
         move: (x, y) => fire(winL, 'pointermove', 'fkDrag', { clientX: x, clientY: y }),
         up: () => fire(winL, 'pointerup', 'fkDrag', {}),
+        cancel: () => fire(winL, 'pointercancel', 'fkDrag', {}),
         resize: () => fire(winL, 'resize', 'fkBox', {}),
         dbl: (hits) => fire(docL, 'dblclick', 'data-fk-', { target: at(hits) }),
     };
@@ -95,4 +96,18 @@ test('a double-click on the title bar puts the panel back in its corner', () => 
     const p = boot(JSON.stringify({ x: 100, y: 100, w: 376, h: 400 }));
     p.dbl(TITLE);
     assert.equal(p.kept.has('station.fkBox'), false);
+});
+
+test('a cancelled drag still keeps where the panel got to', () => {
+    const p = boot();
+    p.down(TITLE, 700, 310);
+    p.move(600, 260);
+    p.cancel();
+    assert.deepEqual(JSON.parse(p.kept.get('station.fkBox')), { x: 500, y: 250, w: 376, h: 400 });
+});
+
+test('a double-click on a button on the title bar keeps the place', () => {
+    const p = boot(JSON.stringify({ x: 100, y: 100, w: 376, h: 400 }));
+    p.dbl({ 'button,a': {}, '#fk [data-fk-drag]': {} });
+    assert.equal(p.kept.has('station.fkBox'), true);
 });

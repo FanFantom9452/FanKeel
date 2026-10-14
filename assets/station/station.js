@@ -4828,8 +4828,9 @@
         fk.className = 'fk' + (held ? ' hasgate' : '');
     }
     // Dragging the gate panel by its title bar, resizing it by its corner
-    // grip. The listeners sit on the window, not on #fkp, because drawFloat
-    // rebuilds #fkp every repaint; the place lives in view.fkBox, which
+    // grip. The move/up/cancel/resize listeners sit on the window and pointerdown/
+    // dblclick on the document, not on #fkp, because drawFloat rebuilds #fkp
+    // every repaint; the place lives in view.fkBox, which
     // floatHtml writes back, so a repaint mid-drag draws it where it is.
     var FK_BOX_KEY = 'station.fkBox';
     var fkDrag = null;
@@ -4855,10 +4856,10 @@
         if (e.button || !t || !t.closest) return;
         var mode = t.closest('#fk [data-fk-resize]') ? 'size' : (t.closest('#fk [data-fk-drag]') && !t.closest('button,a') ? 'move' : null);
         var p = mode ? doc.getElementById('fkp') : null;
-        if (!p || !p.getBoundingClientRect) return;
+        if (!p) return;
         var r = p.getBoundingClientRect();
         fkDrag = { mode: mode, sx: e.clientX, sy: e.clientY, box: { x: r.left, y: r.top, w: r.width, h: r.height } };
-        if (e.preventDefault) e.preventDefault();
+        e.preventDefault();
     });
     w.addEventListener('pointermove', function (e) {
         if (!fkDrag) return;
