@@ -88,7 +88,7 @@ function insidePlugin(root, plugin) {
 }
 
 function argsFor(usdLeft, pluginDir = PLUGIN) {
-    return ['-p', '--plugin-dir', pluginDir,'--permission-mode', 'acceptEdits', '--output-format', 'json', '--max-budget-usd', usdLeft.toFixed(2)];
+    return ['-p', '--plugin-dir', pluginDir, '--permission-mode', 'acceptEdits', '--output-format', 'json', '--max-budget-usd', usdLeft.toFixed(2)];
 }
 
 const mtime = (file) => { try { return fs.statSync(file).mtimeMs; } catch (e) { return 0; } };
@@ -128,8 +128,10 @@ async function drive(opts, deps = {}) {
     // not write its handoff into the tree it was loaded from; drive from a
     // detached copy of HEAD. docs/90-agent/reports/evidence/2026-10-15-drive-allow/result.tsv
     const git = deps.git || ((args) => execFileSync('git', args, { encoding: 'utf8', stdio: 'pipe' }));
-    const copy = path.join(os.tmpdir(), 'fankeel-drive-plugin-' + process.pid);
+    const copy = path.join(os.tmpdir(), 'fankeel-drive-plugin-' + process.pid + '-' + Date.now());
     try {
+        // A run killed before its finally leaves a registration behind.
+        git(['-C', plugin, 'worktree', 'prune']);
         git(['-C', plugin, 'worktree', 'add', '--detach', copy, 'HEAD']);
     } catch (e) {
         const data = registry.readSession(root, opts.session);
@@ -138,7 +140,13 @@ async function drive(opts, deps = {}) {
     try {
         return await run(opts, deps, root, copy);
     } finally {
-        try { git(['-C', plugin, 'worktree', 'remove', '--force', copy]); } catch (e) { /* the temp copy is left for the OS to sweep */ }
+        try {
+            git(['-C', plugin, 'worktree', 'remove', '--force', copy]);
+        } catch (e) {
+            process.stderr.write('drive: could not remove the plugin copy ' + copy + ': ' + e.message + '\n');
+            // Best effort: the stop line is already decided, and a failed prune only leaves the registration for the next run's prune.
+            try { git(['-C', plugin, 'worktree', 'prune']); } catch (e2) { /* see above */ }
+        }
     }
 }
 

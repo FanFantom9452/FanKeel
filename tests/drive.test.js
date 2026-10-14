@@ -8,7 +8,7 @@ const { EventEmitter } = require('node:events');
 const registry = require('../lib/registry.js');
 const handoff = require('../lib/handoff.js');
 const tmp = require('./tmp.js');
-const { parse, capReason, afterAnswer, lastJson, argsFor, insidePlugin, drive } =require('../scripts/drive.js');
+const { parse, capReason, afterAnswer, lastJson, argsFor, insidePlugin, drive } = require('../scripts/drive.js');
 
 const ID = '11111111-2222-4333-8444-555555555555';
 const ROUTE = ['survey', 'plan', 'build'];
@@ -240,12 +240,38 @@ test('drive over a root inside the plugin: worktree add before the first spawn, 
     const log = [];
     const inner = fakeSpawn(root);
     const spawn = (cmd, argv, o) => { log.push('spawn ' + argv[argv.indexOf('--plugin-dir') + 1]); return inner(cmd, argv, o); };
-    const git = (args) => { log.push('git ' + args[3] + ' ' + args[5]); };
+    const git = (args) => { if (args[3] !== 'prune') log.push('git ' + args[3] + ' ' + args[5]); };
     await drive(base(root, env, { maxRounds: 1 }), { spawn, git, plugin, sleep: answerer(root, () => '留在本站'), pollMs: 5 });
     assert.equal(log.length, 3);
-    assert.match(log[0], /^git add .*fankeel-drive-plugin-\d+$/);
-    assert.match(log[1], /^spawn .*fankeel-drive-plugin-\d+$/);
-    assert.match(log[2], /^git remove .*fankeel-drive-plugin-\d+$/);
+    assert.match(log[0], /^git add .*fankeel-drive-plugin-\d+-\d+$/);
+    assert.match(log[1], /^spawn .*fankeel-drive-plugin-\d+-\d+$/);
+    assert.match(log[2], /^git remove .*fankeel-drive-plugin-\d+-\d+$/);
+});
+
+test('drive over a root inside the plugin prunes stale worktrees before it adds its own', async () => {
+    const { root, env } = setup();
+    const seen = [];
+    const git = (args) => { seen.push(args[3]); };
+    await drive(base(root, env, { maxRounds: 1 }), { spawn: fakeSpawn(root), git, plugin: path.dirname(root), sleep: answerer(root, () => '留在本站'), pollMs: 5 });
+    assert.ok(seen.indexOf('prune') >= 0 && seen.indexOf('prune') < seen.indexOf('add'));
+});
+
+test('drive over a root inside the plugin: a failed worktree remove is reported on stderr and pruned, the stop line stays', async () => {
+    const { root, env } = setup();
+    const seen = [];
+    const git = (args) => { seen.push(args[3]); if (args[3] === 'remove') throw new Error('remove refused'); };
+    const written = [];
+    const orig = process.stderr.write;
+    process.stderr.write = (s) => { written.push(String(s)); return true; };
+    let out;
+    try {
+        out = await drive(base(root, env, { maxRounds: 1 }), { spawn: fakeSpawn(root), git, plugin: path.dirname(root), sleep: answerer(root, () => '留在本站'), pollMs: 5 });
+    } finally {
+        process.stderr.write = orig;
+    }
+    assert.equal(out.stopped, 'rounds');
+    assert.ok(written.join('').includes('remove refused'));
+    assert.ok(seen.lastIndexOf('prune') > seen.indexOf('remove'));
 });
 
 test('drive over a root inside the plugin stops on error naming git when the copy cannot be made, and spawns nothing', async () => {
