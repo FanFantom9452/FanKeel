@@ -156,9 +156,7 @@ export function bandRow1Svg(input: BandInput): string {
     b += text(x, 15, '等你') + text(x + px('等你 '), 15, String(waited), { bold: true }) + text(x + px(`等你 ${waited} `), 15, '分')
     x += px(`等你 ${waited} 分`) + 12
   }
-  if (input.remote) {
-    b += text(x, 15, '遠端') + text(x + px('遠端 '), 15, '●', { fill: CONNECTED })
-  }
+  b += text(x, 15, '遠端') + text(x + px('遠端 '), 15, input.remote ? '✓' : '✗', input.remote ? { fill: CONNECTED } : {})
   return svgDoc(cols * CELL_PX, BAND_H, b)
 }
 

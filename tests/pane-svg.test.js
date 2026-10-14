@@ -560,13 +560,21 @@ test('the band Svg ctx follows the TokenBar tier of the window; the Pane context
     assert.equal(words(contextSvg({ tokens: 372000, at: 450000, window: 1000000 }, 41))[1], '快要自動 compact 了');
 });
 
-test('Remote Control connected adds 遠端 ● to the band\'s first row, the dot green; otherwise nothing', async () => {
+test('Remote Control connected draws 遠端 ✓ at the end of the first row, the ✓ green', async () => {
     const { bandRow1Svg } = await load('pane-svg');
     const on = bandRow1Svg(bandInput({ remote: true }));
-    assert.deepEqual(words(on).slice(-2), ['遠端', '●']);
-    assert.match(on, /<text [^>]*fill="#87af5f"[^>]*>●<\/text>/);
-    assert.ok(!words(bandRow1Svg(bandInput())).includes('遠端'));
-    assert.ok(!words(bandRow1Svg(bandInput({ remote: false }))).includes('遠端'));
-    const gated = words(bandRow1Svg(bandInput({ remote: true, gateUntil: NOW + 42000 })));
-    assert.deepEqual(gated.slice(-2), ['遠端', '●']);
+    assert.deepEqual(words(on).slice(-2), ['遠端', '✓']);
+    assert.match(on, /<text [^>]*fill="#87af5f"[^>]*>✓[<][/]text>/);
+    assert.deepEqual(words(bandRow1Svg(bandInput({ remote: true, gateUntil: NOW + 42000 }))).slice(-2), ['遠端', '✓']);
+});
+
+test('Remote Control not connected, or not said, draws 遠端 ✗ in the grey text colour, never green or red', async () => {
+    const { bandRow1Svg } = await load('pane-svg');
+    for (const over of [{ remote: false }, {}]) {
+        const off = bandRow1Svg(bandInput(over));
+        assert.deepEqual(words(off).slice(-2), ['遠端', '✗']);
+        assert.match(off, /<text [^>]*fill="#8a8a8a"[^>]*>✗[<][/]text>/);
+        assert.ok(!off.includes('>✓<'));
+    }
+    assert.deepEqual(words(bandRow1Svg(bandInput({ gateUntil: NOW + 42000 }))).slice(-2), ['遠端', '✗']);
 });

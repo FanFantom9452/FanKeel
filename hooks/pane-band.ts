@@ -44,7 +44,7 @@ export const FLAG = '#ff5f5f'
 export const WHERE = '#8a8a8a'
 export const CLASH = '#ff0000'
 export const INK = '#000000'
-// The ● of 遠端: the green of a finished task in the Pane.
+// The ✓ of 遠端: the green of a finished task in the Pane.
 export const CONNECTED = '#87af5f'
 
 // A stage off the ramp (init, or one a later version adds) is drawn as secondary text.
@@ -129,7 +129,8 @@ export function bandRows(input: BandInput): Seg[][] | null {
   const yours: Seg[] = gateUntil === null
     ? [{ text: '等你', color: WHERE, gap: 2 }, { text: String(waited), gap: 1 }, { text: '分', color: WHERE, gap: 1 }]
     : [{ text: `等你 ${waited} 分`, color: GUARD, gap: 2 }]
-  const remote: Seg[] = input.remote ? [{ text: '遠端', color: WHERE, gap: 2 }, { text: '●', color: CONNECTED, gap: 1 }] : []
+  // Always drawn: ✓ in green while Remote Control is connected, ✗ in the grey text colour when not (off is normal, not an alarm).
+  const remote: Seg[] = [{ text: '遠端', color: WHERE, gap: 2 }, input.remote ? { text: '✓', color: CONNECTED, gap: 1 } : { text: '✗', color: WHERE, gap: 1 }]
   // `drop` is how many of the four droppable groups are gone: 遠端 ●, then the stage minutes, then the wait, then tasks.
   const firstAt = (drop: number): Seg[] => {
     const a = drop < 4 ? count : []

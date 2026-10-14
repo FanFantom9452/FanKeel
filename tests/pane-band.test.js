@@ -51,8 +51,10 @@ test('the first row is the rail, the badge, the route as dots, tasks N/M and the
         { text: '等你', color: '#8a8a8a', gap: 2 },
         { text: '2', gap: 1 },
         { text: '分', color: '#8a8a8a', gap: 1 },
+        { text: '遠端', color: '#8a8a8a', gap: 2 },
+        { text: '✗', color: '#8a8a8a', gap: 1 },
     ]);
-    assert.equal(line(first), '▌FANKEEL BUILD  ●●●●○○○  tasks 4/5  本站 38 分  等你 2 分');
+    assert.equal(line(first), '▌FANKEEL BUILD  ●●●●○○○  tasks 4/5  本站 38 分  等你 2 分  遠端 ✗');
 });
 
 test('the band draws no task title, no next, no guard, no file count and no N of M', async () => {
@@ -91,7 +93,7 @@ test('the stage minutes come from the last move, else the clock, else are not dr
     assert.equal(after(first({}), '本站'), '38');
     assert.equal(after(first({ moves: undefined }), '本站'), '98');
     assert.equal(after(first({ moves: undefined, clock: undefined }), '本站'), null);
-    assert.equal(line(first({ moves: undefined, clock: undefined })), '▌FANKEEL BUILD  ●●●●○○○  tasks 4/5  等你 2 分');
+    assert.equal(line(first({ moves: undefined, clock: undefined })), '▌FANKEEL BUILD  ●●●●○○○  tasks 4/5  等你 2 分  遠端 ✗');
     assert.equal(after(first({ waited: undefined }), '等你'), '0');
     assert.equal(after(first({ waited: { design: 600000 } }), '等你'), '0');
 });
@@ -324,22 +326,30 @@ test('the band ctx colour and mark follow the TokenBar tier of the window, not t
     assert.equal(ctxSegs({ tokens: 360000, at: 450000 }).find((seg) => seg.text === '⚠').color, '#ff00ff');
 });
 
-test('Remote Control connected ends the first row with 遠端 ●, in green after grey; otherwise nothing is added', async () => {
+test('Remote Control connected ends the first row with 遠端 ✓, the ✓ green after grey text', async () => {
     const m = await load();
     const row = band(m, { remote: true, cols: 90 })[0];
-    assert.equal(line(row), '▌FANKEEL BUILD  ●●●●○○○  tasks 4/5  本站 38 分  等你 2 分  遠端 ●');
+    assert.equal(line(row), '▌FANKEEL BUILD  ●●●●○○○  tasks 4/5  本站 38 分  等你 2 分  遠端 ✓');
     assert.deepEqual(row.slice(-2).map((s) => s.color), ['#8a8a8a', '#87af5f']);
-    const bare = line(band(m, { cols: 90 })[0]);
-    assert.ok(!bare.includes('遠端'));
-    assert.equal(line(band(m, { remote: false, cols: 90 })[0]), bare);
 });
 
-test('a narrow first row drops 遠端 ● before 本站, 等你 and tasks', async () => {
+test('Remote Control not connected, or not said, ends the first row with 遠端 ✗ in the grey text colour, not red or green', async () => {
+    const m = await load();
+    for (const over of [{ remote: false }, {}]) {
+        const row = band(m, Object.assign({ cols: 90 }, over))[0];
+        assert.equal(line(row), '▌FANKEEL BUILD  ●●●●○○○  tasks 4/5  本站 38 分  等你 2 分  遠端 ✗');
+        assert.deepEqual(row.slice(-2).map((s) => s.color), ['#8a8a8a', '#8a8a8a']);
+    }
+});
+
+test('a narrow first row drops 遠端 before 本站, 等你 and tasks', async () => {
     const m = await load();
     const calm = (cols) => line(band(m, { cols, remote: true })[0]);
-    assert.equal(calm(65), '▌FANKEEL BUILD  ●●●●○○○  tasks 4/5  本站 38 分  等你 2 分  遠端 ●');
+    assert.equal(calm(65), '▌FANKEEL BUILD  ●●●●○○○  tasks 4/5  本站 38 分  等你 2 分  遠端 ✓');
     assert.equal(calm(64), '▌FANKEEL BUILD  ●●●●○○○  tasks 4/5  本站 38 分  等你 2 分');
     assert.equal(calm(56), '▌FANKEEL BUILD  ●●●●○○○  tasks 4/5  等你 2 分');
     const gated = line(band(m, { cols: 90, remote: true, gateUntil: NOW + 44500 })[0]);
-    assert.ok(gated.endsWith('  遠端 ●'));
+    assert.ok(gated.endsWith('  遠端 ✓'));
+    assert.equal(line(band(m, { cols: 65, remote: false })[0]), '▌FANKEEL BUILD  ●●●●○○○  tasks 4/5  本站 38 分  等你 2 分  遠端 ✗');
+    assert.equal(line(band(m, { cols: 64, remote: false })[0]), '▌FANKEEL BUILD  ●●●●○○○  tasks 4/5  本站 38 分  等你 2 分');
 });
