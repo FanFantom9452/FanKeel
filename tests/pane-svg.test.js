@@ -207,11 +207,21 @@ test('an agent out on another stage draws no running task', async () => {
     assert.ok(titles(source).every((t) => !t.includes('agent')));
 });
 
-test('in a bar the running part breathes; the style carries the hover ring and the reduced-motion rule', async () => {
+test('in a bar the running part carries the breathing class', async () => {
     const { tasksSvg } = await load('pane-svg');
     const source = tasksSvg(entry, planOf(40, 10), NOW, 41);
     assert.match(source, /<rect class="c live"/);
+});
+
+test('the hover ring is in the style', async () => {
+    const { tasksSvg } = await load('pane-svg');
+    const source = tasksSvg(entry, planOf(40, 10), NOW, 41);
     assert.ok(source.includes('g.k:hover rect.c{stroke:#8a8a8a'));
+});
+
+test('the breathing stops under reduced motion', async () => {
+    const { tasksSvg } = await load('pane-svg');
+    const source = tasksSvg(entry, planOf(40, 10), NOW, 41);
     assert.ok(source.includes('@media (prefers-reduced-motion:reduce){.fk-t .live{animation:none}}'));
 });
 

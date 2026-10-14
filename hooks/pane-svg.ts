@@ -360,7 +360,7 @@ export function tasksSvg(entry: Entry, plan: PlanInfo, now: number, cols: number
   const done = new Set(plan.done)
   const open = plan.tasks.filter((t) => !done.has(t.n))
   const stage = str(entry.stage)
-  const marks = Array.isArray(entry.inflight) ? entry.inflight : [entry.inflight]
+  const marks = (Array.isArray(entry.inflight) ? entry.inflight : [entry.inflight]).filter(Boolean)
   const mark = marks.map(record).find((m) => m.stage === stage)
   const running = mark ? open.find((t) => !t.user) : undefined
   const out = mark && typeof mark.at === 'number' && Number.isFinite(mark.at) ? String(minutes(now - mark.at)) : '?'
