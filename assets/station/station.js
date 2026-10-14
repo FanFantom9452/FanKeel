@@ -2440,7 +2440,26 @@
     }
     var FK_BELL = '<svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'
         + '<path d="M5 8a5 5 0 0 1 10 0v4l1.5 2.5h-13L5 12z"/><path d="M8.2 16.5a2 2 0 0 0 3.6 0"/></svg>';
-    function floatHtml(sessions, notes, open, now, picked, permission) {
+    // The gate panel's own place and size once dragged: {x, y, w, h} in px
+    // from the viewport's top left, kept in localStorage as `station.fkBox`.
+    // Always pulled back inside the window, never smaller than 260 by 160.
+    var FK_MIN_W = 260, FK_MIN_H = 160;
+    function fkBoxParse(raw) {
+        var b;
+        try { b = JSON.parse(raw); } catch (e) { return null; }
+        if (!b || ['x', 'y', 'w', 'h'].some(function (k) { return typeof b[k] !== 'number' || !isFinite(b[k]); })) return null;
+        return { x: b.x, y: b.y, w: b.w, h: b.h };
+    }
+    function fkBoxClamp(b, vw, vh) {
+        if (!b) return null;
+        var wd = Math.max(FK_MIN_W, Math.min(b.w, vw)), ht = Math.max(FK_MIN_H, Math.min(b.h, vh));
+        return { x: Math.max(0, Math.min(b.x, vw - wd)), y: Math.max(0, Math.min(b.y, vh - ht)), w: wd, h: ht };
+    }
+    function fkBoxStyle(b) {
+        return b ? ' style="position:fixed;left:' + Math.round(b.x) + 'px;top:' + Math.round(b.y) + 'px;right:auto;bottom:auto;width:'
+            + Math.round(b.w) + 'px;height:' + Math.round(b.h) + 'px;max-height:none"' : '';
+    }
+    function floatHtml(sessions, notes, open, now, picked, permission, box) {
         var held = (sessions || []).filter(function (s) { return s.pending && s.pending.questions && s.pending.questions.length; });
         var all = floatNotes(sessions, notes), n = held.length + all.length, tune = null, done = 0;
         (sessions || []).forEach(function (s) {
@@ -2448,8 +2467,8 @@
             done += s.tune.done;
             if (!tune && s.tune.url) tune = s.tune;
         });
-        return '<section class="fkp" id="fkp" aria-label="' + loc('tune.notificationsAndGate', '通知與 gate') + '"' + (open || held.length ? '' : ' hidden') + '>'
-            + '<div class="fkh"><b>' + loc('tune.notificationsAndGate', '通知與 gate') + '</b><span class="n">' + loc('tune.nItems', '{n} 件', { n: n }) + '</span><span class="spacer"></span>'
+        return '<section class="fkp" id="fkp" aria-label="' + loc('tune.notificationsAndGate', '通知與 gate') + '"' + (open || held.length ? '' : ' hidden') + fkBoxStyle(box) + '>'
+            + '<div class="fkh" data-fk-drag><b>' + loc('tune.notificationsAndGate', '通知與 gate') + '</b><span class="n">' + loc('tune.nItems', '{n} 件', { n: n }) + '</span><span class="spacer"></span>'
             + (all.some(function (x) { return x.status !== 'edit'; }) ? '<button class="lk" type="button" data-note-clear>' + loc('tune.clearNotifications', '清掉通知') + '</button>' : '') + '</div>'
             + (held.length ? '<div class="fks">' + loc('tune.waitingOnYou', '等你回答') + ' <b>' + held.length + '</b></div>'
                 + held.map(function (s) { return gateCountdownHtml(s, now, picked); }).join('') : '')
@@ -2458,7 +2477,7 @@
             + '<div class="fkf"><span>' + loc('tune.tuneDone', 'tune 完成') + ' <b>' + done + '</b></span>'
             + (tune ? '<a href="' + esc(tune.url) + '" target="_blank" rel="noopener">' + esc(tune.url.replace(/^https?:\/\//, '').replace(/\/$/, '')) + '</a>' : '')
             + '<span class="spacer"></span>'
-            + (permission === 'default' ? '<button type="button" class="btn" data-tune-notify>' + loc('tune.notifyInBackground', '背景時通知我') + '</button>' : '') + '</div></section>'
+            + (permission === 'default' ? '<button type="button" class="btn" data-tune-notify>' + loc('tune.notifyInBackground', '背景時通知我') + '</button>' : '') + '</div><span class="fkr" data-fk-resize aria-hidden="true"></span></section>'
             + '<button type="button" class="fkb" data-fkb aria-expanded="' + Boolean(open || held.length) + '" aria-controls="fkp" aria-label="' + loc('tune.notificationsAndGateNItems', '通知與 gate：{n} 件', { n: n })
             + (held.length ? loc('tune.nGatesWaiting', '，{n} 個 gate 在等', { n: held.length }) : '') + '">' + FK_BELL + '<span class="fkn">' + (n ? n : '') + '</span></button>';
     }
@@ -2701,7 +2720,7 @@
             dashLive: dashLive, dashGate: dashGate, liveSubsHtml: liveSubsHtml, dashSpend: dashSpend, dashRecent: dashRecent, dashPage: dashPage,
             dashTodo: dashTodo, dashOrder: dashOrder, dashChooserHtml: dashChooserHtml,
             NAV_TREE: NAV_TREE,
-            tuneOpen: tuneOpen, tuneEvents: tuneEvents, toastText: toastText, floatHtml: floatHtml, gateCountdownHtml: gateCountdownHtml, noteHtml: noteHtml, floatNotes: floatNotes, clock: gateClock,
+            tuneOpen: tuneOpen, tuneEvents: tuneEvents, toastText: toastText, floatHtml: floatHtml, fkBoxParse: fkBoxParse, fkBoxClamp: fkBoxClamp, gateCountdownHtml: gateCountdownHtml, noteHtml: noteHtml, floatNotes: floatNotes, clock: gateClock,
             changedParts: changedParts, seenHtml: seenHtml, drawList: drawList,
         };
     }
