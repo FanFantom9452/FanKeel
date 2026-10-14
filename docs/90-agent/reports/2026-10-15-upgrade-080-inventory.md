@@ -16,7 +16,7 @@ source_of_truth: 本頁是一次盤點的紀錄，不隨程式碼更新；由 te
 |---|---|---|---|
 | `.fankeel/profile.json` | 新增 `quota.week`、`station.chartroom`、`compact.at`、`language`、`init.skip`、`sensitive.mode`、`sensitive.review`、`commit.format`、`quota.calibrated`、`prose.style`、`agent.<name>.model\|effort` | 讀得進來：缺的鍵讀成內建值或不存在 | `lib/profile.js:326-336` |
 | `.fankeel/profile.json` | `worktree` 從 `true\|false` 放寬到也接受 `bounded\|architectural` | 讀得進來：舊值仍在允許值裡 | `lib/profile.js` 的 `KEYS.worktree` |
-| `.fankeel/profile.json` | `stage.agents` 只改了 lean preset 的設定值 | 讀得進來：解析不變 | `lib/profile.js` 的 `PRESETS` |
+| `.fankeel/profile.json` | `stage.agents` 的 preset 改了兩個：`balanced` 從 `survey` 改成 `survey,build,verify`，`lean` 從 `survey,build,verify` 改成 `all` | 讀得進來：解析不變 | `lib/profile.js` 的 `PRESETS` |
 | `.fankeel/profile.json` | 沒有鍵被刪或改名 | — | `git diff 90bd950b..HEAD -- lib/profile.js` |
 | `.fankeel/docs.json` | 角色從 6 個變 8 個（新增 `todo`、`data`） | 讀得進來：`normalise` 保留舊角色，只丟未知角色 | `lib/docs.js:149-161` |
 | `.fankeel/docs.json` | `depth`、`audience`、`index` 不變 | 讀得進來 | `lib/docs.js:149-168` |
