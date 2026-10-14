@@ -932,7 +932,7 @@ section records them.
   worktree outside the root that shares its git-common-dir — so an implementer's
   edit in `isolation: "worktree"` collides with a neighbour exactly as the same
   edit in the main tree would.
-  Seen: all five commits of one task landed on main; four implementer worktrees of another were left behind, merged and empty of new work, and why `commit.js` did not remove them is not in the record; a task whose `project` differs from the cwd did not occur ([report](../reports/2026-10-04-controlled-stages.md#在哪提交)).
+  Seen: all five commits of one task landed on main; four implementer worktrees of another were left behind, merged and empty of new work, and why `commit.js` did not remove them is not in the record; a task whose `project` differs from the cwd did not occur ([report](../reports/2026-10-04-controlled-stages.md#在哪提交)). Ruled 2026-10-15: `commit.js` commits in the repository of its cwd, by design, and a task whose `project` is not the cwd is a known limit rather than an open seam — run its commit from that project's directory.
 
 # Telling a subagent apart, when a hook has to
 

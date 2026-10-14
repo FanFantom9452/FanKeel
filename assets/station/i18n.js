@@ -923,6 +923,9 @@
             'q.nRegistryDot': '{n} registries · ',
             // poll — the notification bar's own poll
             'poll.couldNotSendServeRunning': 'Could not send: is serve running?',
+            'poll.sending': 'Sending…',
+            'poll.notConfirmedRetry': 'Not confirmed yet: you can press it again',
+            'poll.pressAgain': ' You can press it again.',
             // health — serve health polling
             'health.serveNotResponding': 'serve is not responding',
             'health.retry': 'Retry',

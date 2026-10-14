@@ -273,10 +273,10 @@ test('answer: a rejected fetch writes pgr bad', async () => {
     assert.equal((await answered(p, pgBox([0, 1]))).pgr.className, 'pgr bad');
 });
 
-test('answer: a rejected fetch writes 送不出去：serve 還在跑嗎？', async () => {
+test('answer: a rejected fetch writes 送不出去：serve 還在跑嗎？可以再按一次', async () => {
     const p = boot('#/', { pending: PENDING });
     p.reply = () => Promise.reject(new Error('down'));
-    assert.equal((await answered(p, pgBox([0, 1]))).pgr.textContent, '送不出去：serve 還在跑嗎？');
+    assert.equal((await answered(p, pgBox([0, 1]))).pgr.textContent, '送不出去：serve 還在跑嗎？可以再按一次');
 });
 
 test('answer: the fetch branch returns before the later branches (a [data-wf] answer does not redraw)', () => {
@@ -340,8 +340,8 @@ for (const [name, via, said] of VIAS) {
     test(name + ' gend: a rejected fetch writes exactly gend bad', async () => {
         assert.equal((await run(() => Promise.reject(new Error('down')))).className, 'gend bad');
     });
-    test(name + ' gend: a rejected fetch writes 送不出去：serve 還在跑嗎？', async () => {
-        assert.equal((await run(() => Promise.reject(new Error('down')))).textContent, '送不出去：serve 還在跑嗎？');
+    test(name + ' gend: a rejected fetch writes 送不出去：serve 還在跑嗎？可以再按一次', async () => {
+        assert.equal((await run(() => Promise.reject(new Error('down')))).textContent, '送不出去：serve 還在跑嗎？可以再按一次');
     });
 }
 

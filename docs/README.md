@@ -236,6 +236,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | TODO 全表盤點（10-05）的 plan：壓縮重試最多三次的測試、`/fankeel` 頁面寫不出來時 station 行說出來、兩處 timeout 與行號小錯、brain 選模型改放 Watch | [plans/2026-10-05-todo-patrol-ready-three.md](90-agent/plans/2026-10-05-todo-patrol-ready-three.md) — *design-intent, 繁體中文* |
 | TODO 全表盤點（10-14）的 plan：knip 與 fast mode 兩條上游戳記重蓋、逐塊調整浮層在 land 結案、六條真機條目留在 Ready、pane-band 併回 main | `docs/99-archive/2026-10-14-todo-patrol-restamp.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-14）做了什麼、沒做什麼：逐塊調整浮層不夠直覺關閉、knip 與 fast mode 兩筆重新蓋章、pane-band 併回 main；六筆真機條目留在 Ready，留下五個缺口 | [reports/patrols/2026-10-14-todo-patrol-restamp.md](90-agent/reports/patrols/2026-10-14-todo-patrol-restamp.md) — *繁體中文* |
+| TODO 全表盤點（10-15）的 plan：站上 gate 按鈕送出中與逾時、接縫「在哪提交」記為已知限制、drive.js 首跑移到 Ready、十一筆 Blocked 重蓋戳記 | `docs/99-archive/2026-10-15-todo-patrol-gate-send.md` — *built* |
+| TODO 全表盤點（10-15）做了什麼、沒做什麼：站上 gate 按下去沒反應那筆結案、在哪提交結案、drive.js 首跑到 Ready；五筆真機條目留在 Ready，真頁面還沒人看過 | [reports/patrols/2026-10-15-todo-patrol-gate-send.md](90-agent/reports/patrols/2026-10-15-todo-patrol-gate-send.md) — *繁體中文* |
 | Desktop 用 Svg 畫 band 與 Pane（10-14）的 design：Desktop 依 surface 畫 Svg、終端維持文字，Svg 的 alt 就是文字列 | `docs/99-archive/2026-10-14-pane-svg-design.md` — *built, 繁體中文* |
 | 那份設計的十個 task：五個程式、五個使用者在真機上做；後來加了 ctx 照 TokenBar 與 band 尾巴的遠端 ✓／✗ | `docs/99-archive/2026-10-14-pane-svg.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-13 第二輪）的 plan：commit.js 提交搬過家的檔、逐塊調整托盤載入就展開 | `docs/99-archive/2026-10-13-todo-patrol-two.md` — *built, 繁體中文* |

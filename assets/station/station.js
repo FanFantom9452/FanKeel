@@ -2419,10 +2419,13 @@
         var p = s.pending, q = p.questions[0];
         var total = Math.max(1, Math.round((p.until - (typeof p.at === 'number' && isFinite(p.at) ? p.at : p.until - 60000)) / 1000));
         var left = Math.max(0, Math.min(total, Math.round((p.until - now) / 1000)));
+        var sent = (picked || {})[s.id + ':send'];
+        if (sent && sent.gate !== p.until) sent = null;
+        var lock = sent && (sent.busy || sent.cls === 'ok') ? ' disabled' : '';
         var body = p.questions.length === 1 && !q.multiSelect && S.serve
             ? '<p class="gq"><small>' + esc(q.header || '') + '</small>' + esc(q.question) + '</p><div class="gops" role="group" aria-label="' + loc('tune.answer', '回答') + '">'
                 + (q.options || []).map(function (o, i) {
-                    return '<button type="button" class="gop" data-gop="' + i + '"><b>' + esc(o.label) + '</b><small>' + esc(o.description || '')
+                    return '<button type="button" class="gop" data-gop="' + i + '"' + lock + '><b>' + esc(o.label) + '</b><small>' + esc(o.description || '')
                         + '</small><kbd>' + (i + 1) + '</kbd></button>';
                 }).join('') + '</div>'
             : pendingGateHtml(s, picked);
@@ -2431,9 +2434,9 @@
             + esc(s.stage || '') + '</span><span class="t">' + esc(s.task || '') + '</span></div>' + body
             + '<div class="gtm"><div class="gbar" aria-hidden="true"><i style="width:' + (left / total * 100).toFixed(1) + '%"></i></div>'
             + '<span class="gsec">' + gateClock(left) + '</span><small>' + loc('tune.timeUpAsksTerminal', '時間到，問題回到 terminal 問') + '</small></div>'
-            + (S.serve ? '<button type="button" class="gho" data-gho>' + loc('tune.handToTerminalPhone', '交給終端／手機') + '</button>'
+            + (S.serve ? '<button type="button" class="gho" data-gho' + lock + '>' + loc('tune.handToTerminalPhone', '交給終端／手機') + '</button>'
                 + '<p class="ghs">' + loc('tune.handOffHint', '網頁不再等，問題馬上在 terminal 問；Remote Control 在手機上也看得到。') + '</p>' : '')
-            + '<p class="gend" role="status" aria-live="polite"></p></div>';
+            + '<p class="gend' + (sent && sent.cls ? ' ' + sent.cls : '') + '" role="status" aria-live="polite">' + (sent ? esc(sent.text) : '') + '</p></div>';
     }
     var FK_BELL = '<svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'
         + '<path d="M5 8a5 5 0 0 1 10 0v4l1.5 2.5h-13L5 12z"/><path d="M8.2 16.5a2 2 0 0 0 3.6 0"/></svg>';
@@ -2488,6 +2491,9 @@
         p.questions.forEach(function (q, i) { picks[i] = on[s.id + ':' + i] || []; others[i] = on[s.id + ':' + i + ':other'] || ''; });
         var got = pgAnswers(p.questions, picks, others), n = p.questions.length;
         var dis = S.serve ? '' : ' disabled';
+        var sent = on[s.id + ':send'];
+        if (sent && sent.gate !== p.until) sent = null;
+        var lock = sent && (sent.busy || sent.cls === 'ok');
         var qs = p.questions.map(function (q, i) {
             var type = q.multiSelect ? 'checkbox' : 'radio', had = picks[i];
             return '<fieldset class="pgq"><legend>' + esc(q.header || '') + ' · ' + esc(q.question)
@@ -2506,8 +2512,8 @@
             + '<div class="h2">' + loc('tune.pendingGate', '懸著的 gate') + ' <small>' + loc('tune.terminalWaiting', 'terminal 還等 {t}，逾時就回 terminal 問', { t: dur(left) }) + '</small></div>' + qs
             + (S.serve ? '<div class="act gpf"><span class="cnt">' + loc('tune.answeredNOfM', '已答 <b class="pgn">{a} / {n}</b>', { a: n - got.missing, n: n }) + '</span>'
                 + '<span class="why">' + loc('tune.everyQuestionNeedsAnswer', '每題都要有答案') + '</span><span class="spacer"></span>'
-                + '<button type="button" class="go" data-answer' + (got.missing ? ' disabled' : '') + '>' + loc('tune.submitAnswer', '送出答案') + '</button></div>'
-                + '<div class="pgr" role="status" aria-live="polite"></div>'
+                + '<button type="button" class="go" data-answer' + (got.missing || lock ? ' disabled' : '') + '>' + loc('tune.submitAnswer', '送出答案') + '</button></div>'
+                + '<div class="pgr' + (sent && sent.cls ? ' ' + sent.cls : '') + '" role="status" aria-live="polite">' + (sent ? esc(sent.text) : '') + '</div>'
                 : '<p class="tally">' + loc('tune.staticCannotAnswer', '靜態頁不能作答：開 serve 的頁面，或回 terminal 答。') + '</p>') + '</div>';
     }
 
@@ -5064,15 +5070,7 @@
             form.set('root', pg.getAttribute('data-pg-root'));
             form.set('id', pg.getAttribute('data-pg-id'));
             form.set('answers', JSON.stringify(answers));
-            fetch('answer', { method: 'POST', body: form }).then(function (r) {
-                return r.text().then(function (t) {
-                    pgr.className = 'pgr ' + (r.ok ? 'ok' : 'bad');
-                    pgr.textContent = (r.ok ? loc('cmp.sentColon', '已送出：') : r.status + ' — ') + t.trim();
-                });
-            }, function () {
-                pgr.className = 'pgr bad';
-                pgr.textContent = loc('cmp.couldNotSendServeRunning', '送不出去：serve 還在跑嗎？');
-            });
+            answerPost(pg.getAttribute('data-pg-id'), pg, pgr, 'pgr', form, loc('cmp.sentColon', '已送出：'), loc('cmp.couldNotSendServeRunning', '送不出去：serve 還在跑嗎？'));
             return;
         }
         // 記成 TODO: the server checks the line and answers with the rule it
@@ -5564,28 +5562,60 @@
         var who = S.sessions.filter(function (x) { return x.id === pgb.getAttribute('data-pg-id'); })[0];
         var qs = (who && who.pending && who.pending.questions) || [];
         var got = pgRead(pgb, qs), btn = pgb.querySelector('[data-answer]'), cnt = pgb.querySelector('.pgn');
-        if (btn) btn.disabled = got.missing > 0;
+        var sent = view.pg[pgb.getAttribute('data-pg-id') + ':send'];
+        var sending = sent && who && who.pending && sent.gate === who.pending.until && (sent.busy || sent.cls === 'ok');
+        if (btn) btn.disabled = got.missing > 0 || !!sending;
         if (cnt) cnt.textContent = (qs.length - got.missing) + ' / ' + qs.length;
+    }
+    // One POST /answer that says it is on its way. Every button in `box` is
+    // disabled and `line` reads 送出中… until the reply. A reply ok leaves
+    // them disabled; a refusal, a network error or no reply in SEND_MS gives
+    // them back — the server's own gate waits 60 seconds (`gate.station`),
+    // so 10 leaves room to press again. The state is kept in `view.pg` under
+    // `<id>:send` first, because the poll's redraw replaces `box` and draws
+    // from there (`gateCountdownHtml`, `pendingGateHtml`).
+    var SEND_MS = 10000;
+    function answerPost(id, box, line, cls, form, said, failed) {
+        var btns = box.querySelectorAll ? [].slice.call(box.querySelectorAll('[data-gop],[data-gho],[data-answer]')) : [];
+        var who = S.sessions.filter(function (x) { return x.id === id; })[0], gate = who && who.pending ? who.pending.until : null;
+        var ac = typeof AbortController === 'function' ? new AbortController() : null, over = false, timer;
+        function show(busy, c, t) {
+            view.pg[id + ':send'] = { busy: busy, cls: c, text: t, gate: gate };
+            btns.forEach(function (b) { b.disabled = busy || c === 'ok'; });
+            if (!line) return;
+            line.className = cls + (c ? ' ' + c : '');
+            line.textContent = t;
+        }
+        function give(c, t) {
+            if (over) return;
+            over = true;
+            w.clearTimeout(timer);
+            show(false, c, t);
+        }
+        show(true, 'wait', loc('poll.sending', '送出中…'));
+        timer = w.setTimeout(function () {
+            give('bad', loc('poll.notConfirmedRetry', '還沒確認送到：可以再按一次'));
+            if (ac) ac.abort();
+        }, SEND_MS);
+        var init = { method: 'POST', body: form };
+        if (ac) init.signal = ac.signal;
+        fetch('answer', init).then(function (r) {
+            return r.text().then(function (t) {
+                give(r.ok ? 'ok' : 'bad', (r.ok ? said : r.status + ' — ') + t.trim());
+            });
+        }, function () { give('bad', failed + loc('poll.pressAgain', '可以再按一次')); });
     }
     // One POST /answer from the floating icon: an option, or the hand-off.
     function gatePost(gc, fill, said) {
-        var who = S.sessions.filter(function (x) { return x.id === gc.getAttribute('data-pg-id'); })[0];
-        var end = gc.querySelector('.gend');
+        var id = gc.getAttribute('data-pg-id');
+        var who = S.sessions.filter(function (x) { return x.id === id; })[0];
         if (!who || !who.pending) return;
         var form = new URLSearchParams();
         form.set('nonce', S.nonce || '');
         form.set('root', gc.getAttribute('data-pg-root'));
-        form.set('id', gc.getAttribute('data-pg-id'));
+        form.set('id', id);
         fill(form, who);
-        fetch('answer', { method: 'POST', body: form }).then(function (r) {
-            return r.text().then(function (t) {
-                end.className = 'gend ' + (r.ok ? 'ok' : 'bad');
-                end.textContent = (r.ok ? said : r.status + ' — ') + t.trim();
-            });
-        }, function () {
-            end.className = 'gend bad';
-            end.textContent = loc('poll.couldNotSendServeRunning', '送不出去：serve 還在跑嗎？');
-        });
+        answerPost(id, gc, gc.querySelector('.gend'), 'gend', form, said, loc('poll.couldNotSendServeRunning', '送不出去：serve 還在跑嗎？'));
     }
     // The countdown moves every second between re-reads, on `tickNow`'s tick.
     function tickGates(now) {
