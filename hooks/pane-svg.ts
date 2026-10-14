@@ -6,7 +6,7 @@
 
 import { TODO, GUARD, FLAG, WHERE, CLASH, INK, stageColor, since, clashes, claimsOf } from './pane-band.ts'
 import type { BandInput } from './pane-band.ts'
-import { str, list, kilo, cut, ctxPaint, fivePaint, weekPaint, deviation, limitOf, signed, minutes, secondsLeft, DIM } from './pane-bar.ts'
+import { str, list, kilo, cut, ctxPaint, ctxWindowPaint, fivePaint, weekPaint, deviation, limitOf, signed, minutes, secondsLeft, DIM } from './pane-bar.ts'
 import type { Context } from './pane-bar.ts'
 import { KEPT, SAID } from './pane-status.ts'
 import type { Entry, Other, PlanInfo, Row, StatusInput } from './pane-status.ts'
@@ -195,7 +195,7 @@ export function bandRow2Svg(input: BandInput): string {
     const window = context.window
     const sized = typeof window === 'number' && Number.isFinite(window) && window > 0
     const finite = Number.isFinite(context.at)
-    const paint = ctxPaint(context.tokens, sized && !finite ? (window as number) : context.at)
+    const paint = sized ? ctxWindowPaint(context.tokens, window as number) : ctxPaint(context.tokens, context.at)
     const whole = sized ? (window as number) : finite ? context.at : 0
     open('ctx')
     if (whole > 0) {

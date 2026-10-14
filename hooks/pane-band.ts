@@ -4,7 +4,7 @@
 // tests/pane-band.test.js runs it under plain node.
 // docs/90-agent/plans/2026-10-12-pane-band-design.md sections 1 and 2.
 
-import { str, list, width, bar, markedBar, ctxPaint, fivePaint, weekPaint, deviation, limitOf, pct, kilo, signed, minutes, secondsLeft, DIM } from './pane-bar.ts'
+import { str, list, width, bar, markedBar, ctxPaint, ctxWindowPaint, fivePaint, weekPaint, deviation, limitOf, pct, kilo, signed, minutes, secondsLeft, DIM } from './pane-bar.ts'
 import type { Context, Limit, Paint } from './pane-bar.ts'
 
 // `gap` is the cells of space before the segment; without one it sits against the last.
@@ -155,8 +155,8 @@ export function bandRows(input: BandInput): Seg[][] | null {
     if (context) {
       const { window } = context
       const sized = typeof window === 'number' && Number.isFinite(window) && window > 0
-      // With a window the colour still follows the compact threshold, or the window itself when compact is off.
-      const paint = ctxPaint(context.tokens, sized && !Number.isFinite(context.at) ? window : context.at)
+      // With a window the colour and mark follow TokenBar's tiers by percent of that window; with none they follow the compact threshold. The white line is still the compact threshold.
+      const paint = sized ? ctxWindowPaint(context.tokens, window) : ctxPaint(context.tokens, context.at)
       open('ctx ')
       if (sized) {
         // The white line sits at the compact threshold, when that is a point inside the window.

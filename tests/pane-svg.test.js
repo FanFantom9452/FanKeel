@@ -94,7 +94,7 @@ test('the band\'s second row draws ctx, 5h and 7d as meters, the compact point i
     const { bandRow2Svg } = await load('pane-svg');
     const { bandRows } = await load('pane-band');
     const source = bandRow2Svg(bandInput());
-    assert.deepEqual(words(source), ['ctx', '372k', '/1M', '⚠', '5h', '46%', '7d', '64%', '+4%', '⚑2']);
+    assert.deepEqual(words(source), ['ctx', '372k', '/1M', '5h', '46%', '7d', '64%', '+4%', '⚑2']);
     // The text row carries the same count.
     assert.ok(bandRows(bandInput())[1].some((seg) => seg.text === '372k'));
     // The compact point: a grey line taller than the well, at 450k of 1M.
@@ -543,4 +543,19 @@ test('paneParts: a task titled like a station keeps its title row as Text and th
     assert.equal(svgs.length, 1);
     assert.ok(parts.some((p) => 'rows' in p && p.rows.some((r) => r.segs.some((s) => s.text === 'build'))));
     assert.equal(svgs[0].alt, 'survey › design › plan › build › verify\nland');
+});
+
+test('the band Svg ctx follows the TokenBar tier of the window; the Pane context block still follows the threshold', async () => {
+    const { bandRow2Svg, contextSvg } = await load('pane-svg');
+    const row = (ctx) => bandRow2Svg(bandInput({ context: ctx, limits: [], others: [] }));
+    // 50% of a 200k window is yellow; 22% of the 450k threshold would be green.
+    assert.ok(row({ tokens: 100000, at: 450000, window: 200000 }).includes('#ffff00'));
+    const purple = row({ tokens: 170000, at: 450000, window: 200000 });
+    assert.deepEqual(words(purple), ['ctx', '170k', '/200k', '⚠']);
+    assert.ok(purple.includes('#ff00ff'));
+    assert.deepEqual(words(row({ tokens: 900000, at: 950000, window: 1000000 })), ['ctx', '900k', '/1M', '💀']);
+    // Same tokens, no window: the threshold decides.
+    assert.deepEqual(words(row({ tokens: 372000, at: 450000 })), ['ctx', '372k', '/450k', '⚠']);
+    // The Pane's block, with a 1M window, stays on the threshold: 372k of 450k is near, and 37% of the window would not be.
+    assert.equal(words(contextSvg({ tokens: 372000, at: 450000, window: 1000000 }, 41))[1], '快要自動 compact 了');
 });

@@ -284,14 +284,14 @@ test('with a window the ctx bar is tokens over window and a white line marks the
     assert.equal(line(row), '▌ctx ██░░│░░░░░ 212k/1M  │  5h ██████▌░░░  66%  │  7d █████▊░░░░  58%  -6%');
     assert.deepEqual(row.slice(1, 8), [
         { text: 'ctx ', color: '#585858' },
-        { text: '██', color: '#ffd700' },
+        { text: '██', color: '#d7ffd7' },
         { text: '░░', color: '#585858' },
         { text: '│', color: '#ffffff', bold: true },
         { text: '░░░░░', color: '#585858' },
-        { text: '212k', color: '#ffd700', gap: 1 },
+        { text: '212k', color: '#d7ffd7', gap: 1 },
         { text: '/1M', color: '#8a8a8a' },
     ]);
-    assert.match(line(sized(432000)[1]), /^▌ctx ████│░░░░░ 432k\/1M ⚠ /);
+    assert.match(line(sized(500000)[1]), /^▌ctx ████│░░░░░ 500k\/1M ⚠ /);
     // the line is placed again for the cells a narrow band leaves
     assert.match(line(sized(212000, { cols: 20 })[1]), /^▌ctx █▍░│░░░ 212k\/1M/);
 });
@@ -302,8 +302,24 @@ test('the white line is absent when the compact threshold is off or not under th
     const off = row({ tokens: 212000, at: Infinity, window: 1000000 });
     assert.equal(line(off), '▌ctx ██░░░░░░░░ 212k/1M');
     assert.ok(!off.some((seg) => seg.text.includes('│')));
-    assert.equal(off[2].color, '#87ff87', 'coloured by tokens over the window');
+    assert.equal(off[2].color, '#d7ffd7', 'coloured by tokens over the window');
     for (const at of [1000000, 1200000]) assert.ok(!line(row({ tokens: 212000, at, window: 1000000 })).includes('│'), 'at ' + at);
     assert.equal(line(row({ tokens: 212000, at: 450000 })), '▌ctx ████▋░░░░░ 212k/450k');
     assert.equal(line(row({ tokens: 212000, at: 450000, window: 0 })), '▌ctx ████▋░░░░░ 212k/450k');
+});
+
+test('the band ctx colour and mark follow the TokenBar tier of the window, not the compact threshold', async () => {
+    const m = await load();
+    const ctxSegs = (ctx) => band(m, { context: ctx, limits: [] })[1];
+    // 100000 of 450000 is 22% of the threshold (green), but 50% of a 200k window: yellow. 85% of it is purple with a single warning sign.
+    assert.equal(ctxSegs({ tokens: 100000, at: 450000, window: 200000 })[2].color, '#ffff00');
+    const small = ctxSegs({ tokens: 170000, at: 450000, window: 200000 });
+    assert.deepEqual(small.find((seg) => seg.text === '170k'), { text: '170k', color: '#ff00ff', bold: true, gap: 1 });
+    assert.equal(small.find((seg) => seg.text === '⚠').color, '#ff00ff');
+    assert.ok(!ctxSegs({ tokens: 169999, at: 450000, window: 200000 }).some((seg) => seg.text === '⚠'));
+    // The ladder on a 1M window; the threshold is far above, and the old rule would show nothing.
+    assert.ok(line(ctxSegs({ tokens: 650000, at: 900000, window: 1000000 })).includes(' 650k/1M 💥'));
+    assert.ok(line(ctxSegs({ tokens: 900000, at: 950000, window: 1000000 })).includes('💀'));
+    // No window: the compact threshold as before.
+    assert.equal(ctxSegs({ tokens: 360000, at: 450000 }).find((seg) => seg.text === '⚠').color, '#ff00ff');
 });

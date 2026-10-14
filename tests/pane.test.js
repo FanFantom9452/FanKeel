@@ -357,7 +357,8 @@ test('the two drawings agree: the band\'s flag counts the sessions the Pane name
     assert.doesNotMatch(band[0], /⚑/);
     assert.doesNotMatch(pane.join('\n'), /shares nothing/);
     // The tokens and the threshold are written once, on the band; the Pane's context block is there and holds no figure.
-    assert.match(band[1], /^▌ctx \S+ 400k\/1M ⚠/);
+    // 400k of a 1M window is 40 percent: past the compact line, short of the band's first sign.
+    assert.match(band[1], /^▌ctx \S+ 400k\/1M(?! ⚠)/);
     assert.ok(pane.includes('▌context  快要自動 compact 了'), pane.join(' | '));
     assert.doesNotMatch(pane.join('\n'), /\d+k|█|░|%/);
 });
@@ -374,13 +375,13 @@ test('the context block is measured against FANKEEL_COMPACT_AT, and a new count 
         return at < 0 ? null : [all[at + 1].children.join(''), all[at + 1].props.color, all[at + 1].props.bold];
     };
     assert.deepEqual(await said(), ['  已到門檻，compact 中', '#d7af5f', true]);
-    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ███│░░░░░░ 312k/1M ⚠');
+    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ███│░░░░░░ 312k/1M');
     const after = log.invalidated;
     log.tokens = 250000;
     await log.ticks[0].fn();
     assert.equal(log.invalidated, after + 1);
     assert.deepEqual(await said(), ['  快要自動 compact 了', '#8a8a8a', undefined]);
-    assert.match(bandLines(await hooks.band($, BAND, passed))[1], / 250k\/1M ⚠$/);
+    assert.match(bandLines(await hooks.band($, BAND, passed))[1], / 250k\/1M$/);
     // Four fifths of 300k is 240k.
     log.tokens = 239999;
     await log.ticks[0].fn();
@@ -388,8 +389,9 @@ test('the context block is measured against FANKEEL_COMPACT_AT, and a new count 
     assert.match(bandLines(await hooks.band($, BAND, passed))[1], / 240k\/1M$/);
 });
 
-test('the band\'s context count is coloured by how far it is to the threshold, bold from sixty percent', async () => {
+test('the band\'s context count is coloured by TokenBar\'s tier of the 1M window, bold from fifty percent', async () => {
     const hooks = await wired();
+    // The threshold is 100k: the colour must not move with it.
     const { $, log } = fake({ files: entryFile(live), env: { FANKEEL_COMPACT_AT: '100000' } });
     await hooks['session.start']($, {}, async () => ({}));
     const count = async (tokens) => {
@@ -399,18 +401,13 @@ test('the band\'s context count is coloured by how far it is to the threshold, b
         return [leaf.props.color, leaf.props.bold];
     };
     assert.deepEqual(await count(5000), ['#00ff00', undefined]);
-    assert.deepEqual(await count(35000), ['#d7ffd7', undefined]);
-    assert.deepEqual(await count(36000), ['#d7ff00', undefined]);
-    assert.deepEqual(await count(40000), ['#ffff00', undefined]);
-    assert.deepEqual(await count(45000), ['#ffd700', undefined]);
-    assert.deepEqual(await count(50000), ['#ffaf00', undefined]);
-    assert.deepEqual(await count(55000), ['#ff8700', undefined]);
-    assert.deepEqual(await count(60000), ['#ff0000', true]);
-    assert.deepEqual(await count(65000), ['#ff0087', true]);
-    assert.deepEqual(await count(70000), ['#ff00af', true]);
-    assert.deepEqual(await count(75000), ['#ff00d7', true]);
-    assert.deepEqual(await count(80000), ['#ff00ff', true]);
-    assert.deepEqual(await count(250000), ['#ff00ff', true]);
+    assert.deepEqual(await count(50000), ['#5fff5f', undefined]);
+    assert.deepEqual(await count(200000), ['#d7ffd7', undefined]);
+    assert.deepEqual(await count(400000), ['#ffff00', undefined]);
+    assert.deepEqual(await count(450000), ['#ffaf00', undefined]);
+    assert.deepEqual(await count(500000), ['#ff0000', true]);
+    assert.deepEqual(await count(700000), ['#ff00d7', true]);
+    assert.deepEqual(await count(750000), ['#ff00ff', true]);
 });
 
 const profileFile = (data) => ({ [ROOT + '/.fankeel/profile.json']: JSON.stringify(data) });
@@ -422,15 +419,15 @@ test('the band and the context block are measured against the profile\'s compact
     const { $, log } = fake({ files: Object.assign(entryFile(live), profileFile({ 'compact.at': '350000' })) });
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
-    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ███│░░░░░░ 312k/1M ⚠');
+    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ███│░░░░░░ 312k/1M');
     const pane = async () => texts(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
     assert.ok((await pane()).includes('context'), 'no context block at 312k of 350k');
     // Four fifths of 350k is 280k.
     log.tokens = 279999;
     await log.ticks[0].fn();
     assert.ok(!(await pane()).includes('context'), 'a context block under four fifths of 350k');
-    // 279999 is over four fifths of 300k and under four fifths of 350k: the band warns by the profile's value alone.
-    assert.ok(!bandLines(await hooks.band($, BAND, passed))[1].endsWith('⚠'), 'the band warned under four fifths of 350k');
+    // The band's sign follows the window, not compact.at: 280k of 1M is 28 percent and carries none.
+    assert.ok(!bandLines(await hooks.band($, BAND, passed))[1].endsWith('⚠'), 'the band warned at 28 percent of the window');
 });
 
 test('compact.at off draws the count with no threshold, and a context block that says no compact will run', async () => {
@@ -438,7 +435,7 @@ test('compact.at off draws the count with no threshold, and a context block that
     const { $, log } = fake({ files: Object.assign(entryFile(live), profileFile({ 'compact.at': 'off' })), tokens: 2000000 });
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
-    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ██████████ 2M/1M ⚠');
+    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ██████████ 2M/1M 💀');
     const pane = paneLines(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
     assert.ok(pane.includes('▌context  已到門檻，自動 compact 已關閉'), pane.join('\n'));
     assert.ok(pane.includes(' 不會自動壓縮；要壓縮請手動 /compact'), pane.join('\n'));
