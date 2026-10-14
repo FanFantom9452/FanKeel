@@ -8,7 +8,7 @@ const { EventEmitter } = require('node:events');
 const registry = require('../lib/registry.js');
 const handoff = require('../lib/handoff.js');
 const tmp = require('./tmp.js');
-const { parse, capReason, afterAnswer, lastJson, argsFor, drive } = require('../scripts/drive.js');
+const { parse, capReason, afterAnswer, lastJson, argsFor, insidePlugin, drive } =require('../scripts/drive.js');
 
 const ID = '11111111-2222-4333-8444-555555555555';
 const ROUTE = ['survey', 'plan', 'build'];
@@ -217,4 +217,43 @@ test('argsFor: acceptEdits as an adjacent pair, the budget to cents, never bypas
     assert.ok(pair('--permission-mode', 'acceptEdits'));
     assert.ok(pair('--max-budget-usd', '1.23'));
     assert.ok(!args.includes('bypassPermissions'));
+});
+
+test('argsFor: --plugin-dir takes the directory it is given, acceptEdits stays, never bypassPermissions', () => {
+    const args = argsFor(1, path.join(path.sep, 'copy'));
+    assert.equal(args[args.indexOf('--plugin-dir') + 1], path.join(path.sep, 'copy'));
+    assert.equal(args[args.indexOf('--permission-mode') + 1], 'acceptEdits');
+    assert.ok(!args.includes('bypassPermissions'));
+});
+
+test('insidePlugin: the plugin itself and below it, not a sibling or a stranger', () => {
+    const plugin = path.resolve('plug');
+    assert.equal(insidePlugin(plugin, plugin), true);
+    assert.equal(insidePlugin(path.join(plugin, 'sub', 'deep'), plugin), true);
+    assert.equal(insidePlugin(plugin + '-other', plugin), false);
+    assert.equal(insidePlugin(path.resolve('elsewhere'), plugin), false);
+});
+
+test('drive over a root inside the plugin: worktree add before the first spawn, remove after, copy passed as --plugin-dir', async () => {
+    const { root, env } = setup();
+    const plugin = path.dirname(root);
+    const log = [];
+    const inner = fakeSpawn(root);
+    const spawn = (cmd, argv, o) => { log.push('spawn ' + argv[argv.indexOf('--plugin-dir') + 1]); return inner(cmd, argv, o); };
+    const git = (args) => { log.push('git ' + args[3] + ' ' + args[5]); };
+    await drive(base(root, env, { maxRounds: 1 }), { spawn, git, plugin, sleep: answerer(root, () => '留在本站'), pollMs: 5 });
+    assert.equal(log.length, 3);
+    assert.match(log[0], /^git add .*fankeel-drive-plugin-\d+$/);
+    assert.match(log[1], /^spawn .*fankeel-drive-plugin-\d+$/);
+    assert.match(log[2], /^git remove .*fankeel-drive-plugin-\d+$/);
+});
+
+test('drive over a root inside the plugin stops on error naming git when the copy cannot be made, and spawns nothing', async () => {
+    const { root, env } = setup();
+    let spawned = 0;
+    const git = () => { throw new Error('fatal: worktree add refused'); };
+    const out = await drive(base(root, env), { spawn: () => { spawned++; }, git, plugin: path.dirname(root), sleep: answerer(root, () => '留在本站'), pollMs: 5 });
+    assert.equal(out.stopped, 'error');
+    assert.match(out.detail, /worktree add refused/);
+    assert.equal(spawned, 0);
 });

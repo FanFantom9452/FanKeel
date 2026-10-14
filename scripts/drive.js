@@ -10,6 +10,7 @@
 //        [--max-usd 20] [--timeout 3600] [--gate-wait 86400]
 
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 const { parseArgs: parseArgv } = require('node:util');
 const { execFileSync } = require('node:child_process');
@@ -81,8 +82,13 @@ function lastJson(text) {
     return null;
 }
 
-function argsFor(usdLeft) {
-    return ['-p', '--plugin-dir', PLUGIN, '--permission-mode', 'acceptEdits', '--output-format', 'json', '--max-budget-usd', usdLeft.toFixed(2)];
+function insidePlugin(root, plugin) {
+    const rel = path.relative(plugin, path.resolve(root));
+    return rel === '' || (rel !== '..' && !rel.startsWith('..' + path.sep) && !path.isAbsolute(rel));
+}
+
+function argsFor(usdLeft, pluginDir = PLUGIN) {
+    return ['-p', '--plugin-dir', pluginDir,'--permission-mode', 'acceptEdits', '--output-format', 'json', '--max-budget-usd', usdLeft.toFixed(2)];
 }
 
 const mtime = (file) => { try { return fs.statSync(file).mtimeMs; } catch (e) { return 0; } };
@@ -116,6 +122,27 @@ async function waitAnswer(root, data, gate, opts, deps) {
 
 async function drive(opts, deps = {}) {
     const root = opts.root ? registry.resolveRoot(opts.root) : (registry.findStateRoot(process.cwd()) || process.cwd());
+    const plugin = deps.plugin || PLUGIN;
+    if (!insidePlugin(root, plugin)) return run(opts, deps, root, plugin);
+    // A loaded plugin's own files are sensitive to Claude Code, so a stage could
+    // not write its handoff into the tree it was loaded from; drive from a
+    // detached copy of HEAD. docs/90-agent/reports/evidence/2026-10-15-drive-allow/result.tsv
+    const git = deps.git || ((args) => execFileSync('git', args, { encoding: 'utf8', stdio: 'pipe' }));
+    const copy = path.join(os.tmpdir(), 'fankeel-drive-plugin-' + process.pid);
+    try {
+        git(['-C', plugin, 'worktree', 'add', '--detach', copy, 'HEAD']);
+    } catch (e) {
+        const data = registry.readSession(root, opts.session);
+        return { stopped: 'error', rounds: 0, usd: 0, stage: data ? data.stage : null, detail: 'git worktree add failed: ' + e.message };
+    }
+    try {
+        return await run(opts, deps, root, copy);
+    } finally {
+        try { git(['-C', plugin, 'worktree', 'remove', '--force', copy]); } catch (e) { /* the temp copy is left for the OS to sweep */ }
+    }
+}
+
+async function run(opts, deps, root, pluginDir) {
     const d = {
         spawn: deps.spawn,
         pollMs: deps.pollMs || 1000,
@@ -141,7 +168,7 @@ async function drive(opts, deps = {}) {
             const file = handoff.handoffPath(root, data, stage, handoff.lapOf(data, stage));
             const before = mtime(file);
             const prompt = brief + '\n\n' + STATUS_RULE + (relay ? '\nThe user\'s answer is in ' + relay + '.' : '');
-            const r = await spawnClaudeAsync(argsFor(opts.maxUsd - state.usd), { cwd: root, env: opts.env, input: prompt, timeout: Math.max(1, deadline - Date.now()) }, d.spawn);
+            const r = await spawnClaudeAsync(argsFor(opts.maxUsd - state.usd, pluginDir), { cwd: root, env: opts.env, input: prompt, timeout: Math.max(1, deadline - Date.now()) }, d.spawn);
             state.rounds++;
             const out = lastJson(r.stdout);
             const cost = out && out.total_cost_usd;
@@ -190,4 +217,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { parse, capReason, afterAnswer, lastJson, argsFor, drive };
+module.exports = { parse, capReason, afterAnswer, lastJson, argsFor, insidePlugin, drive };
