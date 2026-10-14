@@ -1,0 +1,290 @@
+start 28.0
+require lib/json.js 14.2
+require lib/launchers.js 15.6
+require lib/registry.js 46.5
+require lib/live.js 16.0
+require lib/badge.js 15.3
+require lib/prices.js 14.2
+require lib/blame.js 18.6
+require lib/agentfile.js 13.5
+require lib/profile.js 47.8
+require lib/stages.js 64.1
+require lib/context.js 14.8
+require lib/usage.js 30.4
+require lib/ledger.js 16.1
+require lib/tracked.js 15.3
+require lib/requires.js 14.8
+require lib/plantasks.js 45.8
+require lib/replay.js 15.6
+require lib/detail.js 122.8
+require lib/handoff.js 15.8
+require lib/refs.js 14.8
+require lib/reviewcheck.js 30.6
+require lib/tune.js 45.8
+require lib/docs.js 16.0
+require lib/plain.js 15.6
+require lib/todo.js 47.3
+require lib/station.js 326.9
+require lib/overlap.js 14.8
+require lib/guard.js 31.5
+require lib/report.js 15.1
+require lib/map.js 31.0
+require lib/prose.js 15.3
+require lib/render.js 94.1
+require lib/dirty.js 15.0
+require lib/hook.js 15.3
+call lib/hook.js run 1.0
+require hooks/inject.js 544.8
+call lib/hook.js parse 0.0
+call lib/registry.js launchRoot 0.0
+call lib/registry.js rootFor 13.6
+call lib/registry.js readSession 15.6
+call lib/profile.js configDirOf 0.1
+call lib/registry.js sessionPath 0.1
+call lib/live.js liveConfigDir 0.0
+call lib/registry.js writeSession 124.8
+require scripts/docs-check.js 16.2
+require scripts/memory-check.js 15.0
+require scripts/input-check.js 46.0
+call lib/live.js liveConfigDir 0.0
+call scripts/input-check.js sources 401.2
+require lib/serve.js 16.3
+call lib/json.js readObject 15.6
+call lib/serve.js ensureServe 494.0
+call lib/render.js renderInit 0.4
+call lib/badge.js writeBadge 30.3
+call lib/badge.js writeLead 30.5
+exit 1763.2
+---
+start 31.9
+require lib/json.js 15.7
+require lib/launchers.js 14.7
+require lib/registry.js 46.8
+require lib/live.js 14.8
+require lib/badge.js 15.6
+require lib/prices.js 15.4
+require lib/blame.js 17.1
+require lib/agentfile.js 12.3
+require lib/profile.js 44.9
+require lib/stages.js 62.6
+require lib/context.js 15.0
+require lib/usage.js 30.7
+require lib/ledger.js 15.4
+require lib/tracked.js 16.3
+require lib/requires.js 14.8
+require lib/plantasks.js 46.6
+require lib/replay.js 16.3
+require lib/detail.js 124.3
+require lib/handoff.js 15.0
+require lib/refs.js 14.8
+require lib/reviewcheck.js 29.9
+require lib/tune.js 44.7
+require lib/docs.js 16.0
+require lib/plain.js 15.1
+require lib/todo.js 47.2
+require lib/station.js 325.5
+require lib/overlap.js 14.8
+require lib/guard.js 29.5
+require lib/report.js 14.6
+require lib/map.js 30.7
+require lib/prose.js 15.4
+require lib/render.js 90.6
+require lib/dirty.js 15.7
+require lib/hook.js 15.8
+call lib/hook.js run 0.9
+require hooks/inject.js 540.5
+call lib/hook.js parse 0.0
+call lib/registry.js launchRoot 0.0
+call lib/registry.js rootFor 13.4
+call lib/registry.js readSession 15.6
+call lib/profile.js configDirOf 0.1
+call lib/registry.js sessionPath 0.0
+call lib/live.js liveConfigDir 0.0
+call lib/registry.js writeSession 124.0
+require scripts/docs-check.js 15.2
+require scripts/memory-check.js 16.0
+require scripts/input-check.js 46.4
+call lib/live.js liveConfigDir 0.0
+call scripts/input-check.js sources 400.1
+require lib/serve.js 15.4
+call lib/json.js readObject 15.4
+call lib/serve.js ensureServe 91.8
+call lib/render.js renderInit 0.2
+call lib/badge.js writeBadge 29.8
+call lib/badge.js writeLead 31.6
+exit 1359.0
+---
+start 41.3
+require lib/json.js 14.9
+require lib/launchers.js 15.4
+require lib/registry.js 46.9
+require lib/live.js 15.9
+require lib/badge.js 15.5
+require lib/prices.js 15.0
+require lib/blame.js 17.7
+require lib/agentfile.js 13.2
+require lib/profile.js 47.6
+require lib/stages.js 64.0
+require lib/context.js 14.5
+require lib/usage.js 30.4
+require lib/ledger.js 16.1
+require lib/tracked.js 15.2
+require lib/requires.js 15.0
+require lib/plantasks.js 46.0
+require lib/replay.js 15.4
+require lib/detail.js 122.6
+require lib/handoff.js 15.8
+require lib/refs.js 15.1
+require lib/reviewcheck.js 30.7
+require lib/tune.js 46.3
+require lib/docs.js 15.0
+require lib/plain.js 16.0
+require lib/todo.js 47.5
+require lib/station.js 327.3
+require lib/overlap.js 15.6
+require lib/guard.js 30.8
+require lib/report.js 10.4
+require lib/map.js 30.6
+require lib/prose.js 15.3
+require lib/render.js 93.3
+require lib/dirty.js 15.1
+require lib/hook.js 16.0
+call lib/hook.js run 1.2
+require hooks/inject.js 546.2
+call lib/hook.js parse 0.0
+call lib/registry.js launchRoot 0.0
+call lib/registry.js rootFor 13.3
+call lib/registry.js readSession 16.2
+call lib/profile.js configDirOf 0.1
+call lib/registry.js sessionPath 0.1
+call lib/live.js liveConfigDir 0.1
+call lib/registry.js writeSession 125.3
+require scripts/docs-check.js 16.8
+require scripts/memory-check.js 14.7
+require scripts/input-check.js 47.3
+call lib/live.js liveConfigDir 0.0
+call scripts/input-check.js sources 405.0
+require lib/serve.js 16.2
+call lib/json.js readObject 15.5
+call lib/serve.js ensureServe 466.4
+call lib/render.js renderInit 0.2
+call lib/badge.js writeBadge 31.0
+call lib/badge.js writeLead 31.5
+exit 1758.7
+---
+start 33.2
+require lib/json.js 15.3
+require lib/launchers.js 15.6
+require lib/registry.js 47.6
+require lib/live.js 15.9
+require lib/badge.js 15.5
+require lib/prices.js 14.7
+require lib/blame.js 17.4
+require lib/agentfile.js 12.9
+require lib/profile.js 46.6
+require lib/stages.js 62.3
+require lib/context.js 14.1
+require lib/usage.js 30.2
+require lib/ledger.js 15.6
+require lib/tracked.js 15.3
+require lib/requires.js 15.3
+require lib/plantasks.js 47.0
+require lib/replay.js 16.0
+require lib/detail.js 123.3
+require lib/handoff.js 14.9
+require lib/refs.js 15.5
+require lib/reviewcheck.js 30.6
+require lib/tune.js 45.7
+require lib/docs.js 15.8
+require lib/plain.js 14.4
+require lib/todo.js 46.6
+require lib/station.js 324.0
+require lib/overlap.js 14.9
+require lib/guard.js 30.6
+require lib/report.js 15.5
+require lib/map.js 31.3
+require lib/prose.js 15.2
+require lib/render.js 93.1
+require lib/dirty.js 15.7
+require lib/hook.js 14.9
+call lib/hook.js run 1.0
+require hooks/inject.js 542.2
+call lib/hook.js parse 0.0
+call lib/registry.js launchRoot 0.0
+call lib/registry.js rootFor 13.4
+call lib/registry.js readSession 15.7
+call lib/profile.js configDirOf 0.1
+call lib/registry.js sessionPath 0.1
+call lib/live.js liveConfigDir 0.0
+call lib/registry.js writeSession 125.9
+require scripts/docs-check.js 15.7
+require scripts/memory-check.js 14.4
+require scripts/input-check.js 46.0
+call lib/live.js liveConfigDir 0.0
+call scripts/input-check.js sources 406.6
+require lib/serve.js 16.3
+call lib/json.js readObject 14.8
+call lib/serve.js ensureServe 93.0
+call lib/render.js renderInit 0.2
+call lib/badge.js writeBadge 31.4
+call lib/badge.js writeLead 30.4
+exit 1373.1
+---
+start 30.9
+require lib/json.js 14.8
+require lib/launchers.js 15.2
+require lib/registry.js 45.8
+require lib/live.js 15.6
+require lib/badge.js 15.3
+require lib/prices.js 15.8
+require lib/blame.js 18.3
+require lib/agentfile.js 12.2
+require lib/profile.js 46.5
+require lib/stages.js 62.6
+require lib/context.js 14.9
+require lib/usage.js 30.7
+require lib/ledger.js 14.8
+require lib/tracked.js 15.3
+require lib/requires.js 15.0
+require lib/plantasks.js 47.1
+require lib/replay.js 14.4
+require lib/detail.js 122.7
+require lib/handoff.js 15.3
+require lib/refs.js 15.8
+require lib/reviewcheck.js 31.4
+require lib/tune.js 46.5
+require lib/docs.js 15.2
+require lib/plain.js 16.4
+require lib/todo.js 47.7
+require lib/station.js 327.4
+require lib/overlap.js 15.6
+require lib/guard.js 31.9
+require lib/report.js 14.8
+require lib/map.js 30.6
+require lib/prose.js 16.0
+require lib/render.js 93.7
+require lib/dirty.js 15.5
+require lib/hook.js 15.3
+call lib/hook.js run 0.9
+require hooks/inject.js 544.4
+call lib/hook.js parse 0.0
+call lib/registry.js launchRoot 0.0
+call lib/registry.js rootFor 13.6
+call lib/registry.js readSession 15.6
+call lib/profile.js configDirOf 0.1
+call lib/registry.js sessionPath 0.1
+call lib/live.js liveConfigDir 0.1
+call lib/registry.js writeSession 125.9
+require scripts/docs-check.js 14.6
+require scripts/memory-check.js 15.0
+require scripts/input-check.js 46.3
+call lib/live.js liveConfigDir 0.1
+call scripts/input-check.js sources 404.0
+require lib/serve.js 15.5
+call lib/json.js readObject 16.2
+call lib/serve.js ensureServe 93.9
+call lib/render.js renderInit 0.2
+call lib/badge.js writeBadge 31.6
+call lib/badge.js writeLead 31.6
+exit 1372.4
+---

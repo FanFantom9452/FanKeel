@@ -1,0 +1,19 @@
+date: 2026-10-14T23:31:07.787Z
+plugin: F:\ymlab\fankeel
+HEAD: 7243bc65e66f05de84b6c13cf2382e03d7941d64
+porcelain:
+ M .fankeel/profile.json
+ M docs/README.md
+?? .claude/
+?? docs/90-agent/plans/2026-10-10-decisions-human-design.md
+?? docs/90-agent/plans/2026-10-10-decisions-human.md
+?? docs/90-agent/plans/2026-10-10-todo-patrol-lint-suite-design.md
+?? docs/90-agent/plans/2026-10-10-todo-patrol-lint-suite.md
+?? docs/90-agent/reports/2026-10-15-upgrade-080-inventory.md
+?? docs/90-agent/reports/evidence/2026-10-08-haiku-bench/provenance_DESKTOP-URB5NS2_Oct-14-070840-2026_Conflict.txt
+?? docs/90-agent/reports/evidence/2026-10-15-drive-allow/
+?? docs/90-agent/reports/evidence/2026-10-15-hook-timing/
+?? tests/upgrade-080.test.js
+?? tsconfig.json
+
+node: v24.21.0  runs: 5

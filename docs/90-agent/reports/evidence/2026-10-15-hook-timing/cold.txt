@@ -1,0 +1,193 @@
+== cold  runs 5  skipped 0
+wall	median 210	max 216	exits 0
+bound	median 134	max 139
+line	station: <url> (serve started, browser opened).
+fs calls	median 84	max 84
+start	median 19.5	max 20.7	n 5
+require lib/registry.js	median 1.7	max 1.8	n 5
+require lib/blame.js	median 2.8	max 3.3	n 5
+require lib/profile.js	median 4.5	max 5.3	n 5
+require lib/stages.js	median 5.3	max 6.0	n 5
+require lib/plantasks.js	median 1.3	max 1.5	n 5
+require lib/detail.js	median 4.0	max 4.2	n 5
+require lib/tune.js	median 1.0	max 1.0	n 4
+require lib/todo.js	median 1.3	max 1.4	n 5
+require lib/station.js	median 13.4	max 14.5	n 5
+require lib/render.js	median 2.2	max 2.4	n 5
+call lib/hook.js run	median 0.8	max 0.9	n 5
+require hooks/inject.js	median 20.1	max 21.1	n 5
+call lib/hook.js parse	median 0.0	max 0.0	n 5
+call lib/registry.js launchRoot	median 0.0	max 0.0	n 5
+call lib/registry.js rootFor	median 0.1	max 0.2	n 5
+call lib/registry.js readSession	median 0.2	max 0.2	n 5
+call lib/profile.js configDirOf	median 0.0	max 0.0	n 5
+call lib/registry.js sessionPath	median 0.0	max 0.0	n 5
+call lib/live.js liveConfigDir	median 0.0	max 0.0	n 10
+call lib/registry.js writeSession	median 1.8	max 1.8	n 5
+require scripts/docs-check.js	median 1.1	max 1.1	n 3
+require scripts/input-check.js	median 2.5	max 2.7	n 5
+call scripts/input-check.js sources	median 2.3	max 2.6	n 5
+call lib/json.js readObject	median 0.1	max 1.2	n 15
+call lib/serve.js ensureServe	median 132.0	max 134.4	n 5
+call lib/render.js renderInit	median 0.2	max 0.2	n 5
+call lib/badge.js writeBadge	median 0.7	max 0.9	n 5
+call lib/badge.js writeLead	median 1.4	max 1.6	n 5
+exit	median 183.3	max 188.2	n 5
+require lib/usage.js	median 1.0	max 1.0	n 1
+== warm  runs 5  skipped 0
+wall	median 1101	max 1108	exits 0
+line	station: <url> (serve is busy loading; the page fills in when it finishes).
+line	station: <url> (serve was running).
+fs calls	median 81	max 84
+start	median 19.4	max 20.0	n 5
+require lib/registry.js	median 1.7	max 1.8	n 5
+require lib/blame.js	median 2.8	max 3.2	n 5
+require lib/profile.js	median 4.1	max 4.6	n 5
+require lib/stages.js	median 5.2	max 5.8	n 5
+require lib/usage.js	median 1.3	max 1.3	n 2
+require lib/plantasks.js	median 1.4	max 1.6	n 5
+require lib/detail.js	median 3.8	max 4.9	n 5
+require lib/tune.js	median 1.1	max 1.2	n 3
+require lib/todo.js	median 1.4	max 1.4	n 5
+require lib/station.js	median 13.1	max 15.2	n 5
+require lib/render.js	median 2.3	max 2.7	n 5
+call lib/hook.js run	median 0.8	max 0.9	n 5
+require hooks/inject.js	median 20.1	max 22.5	n 5
+call lib/hook.js parse	median 0.0	max 0.1	n 5
+call lib/registry.js launchRoot	median 0.0	max 0.0	n 5
+call lib/registry.js rootFor	median 0.1	max 0.2	n 5
+call lib/registry.js readSession	median 0.2	max 0.3	n 5
+call lib/profile.js configDirOf	median 0.0	max 0.0	n 5
+call lib/registry.js sessionPath	median 0.0	max 0.0	n 5
+call lib/live.js liveConfigDir	median 0.0	max 0.1	n 10
+call lib/registry.js writeSession	median 1.8	max 1.9	n 5
+require scripts/docs-check.js	median 1.1	max 1.3	n 5
+require scripts/input-check.js	median 2.6	max 3.4	n 5
+call scripts/input-check.js sources	median 2.4	max 2.7	n 5
+call lib/serve.js ensureServe	median 1010.6	max 1017.6	n 5
+call lib/render.js renderInit	median 0.2	max 0.3	n 5
+call lib/badge.js writeBadge	median 0.7	max 11.5	n 5
+call lib/badge.js writeLead	median 1.6	max 2.1	n 5
+exit	median 1070.2	max 1075.8	n 5
+call lib/json.js readObject	median 0.1	max 0.1	n 1
+== slow-2  runs 5  skipped 0
+wall	median 1581	max 2343	exits 0
+line	station: <url> (serve was running).
+line	station: <url> (serve is busy loading; the page fills in when it finishes).
+fs calls	median 84	max 84
+start	median 31.8	max 35.0	n 5
+require lib/json.js	median 14.5	max 16.1	n 5
+require lib/launchers.js	median 15.5	max 15.9	n 5
+require lib/registry.js	median 47.2	max 48.9	n 5
+require lib/live.js	median 15.5	max 15.8	n 5
+require lib/badge.js	median 15.3	max 16.7	n 5
+require lib/prices.js	median 14.7	max 15.4	n 5
+require lib/blame.js	median 18.0	max 18.9	n 5
+require lib/agentfile.js	median 12.0	max 12.5	n 5
+require lib/profile.js	median 46.0	max 46.3	n 5
+require lib/stages.js	median 62.1	max 63.4	n 5
+require lib/context.js	median 15.1	max 16.3	n 5
+require lib/usage.js	median 30.7	max 31.0	n 5
+require lib/ledger.js	median 15.1	max 15.4	n 5
+require lib/tracked.js	median 15.1	max 15.5	n 5
+require lib/requires.js	median 15.6	max 16.8	n 5
+require lib/plantasks.js	median 46.4	max 47.8	n 5
+require lib/replay.js	median 15.6	max 16.3	n 5
+require lib/detail.js	median 123.5	max 124.3	n 5
+require lib/handoff.js	median 15.7	max 15.9	n 5
+require lib/refs.js	median 15.0	max 15.9	n 5
+require lib/reviewcheck.js	median 31.3	max 31.8	n 5
+require lib/tune.js	median 46.2	max 46.8	n 5
+require lib/docs.js	median 16.1	max 16.5	n 5
+require lib/plain.js	median 15.1	max 15.7	n 5
+require lib/todo.js	median 46.6	max 47.2	n 5
+require lib/station.js	median 324.9	max 326.6	n 5
+require lib/overlap.js	median 15.3	max 15.8	n 5
+require lib/guard.js	median 30.8	max 31.2	n 5
+require lib/report.js	median 15.2	max 15.7	n 5
+require lib/map.js	median 31.0	max 31.3	n 5
+require lib/prose.js	median 15.4	max 16.4	n 5
+require lib/render.js	median 93.7	max 93.8	n 5
+require lib/dirty.js	median 15.3	max 15.3	n 5
+require lib/hook.js	median 15.3	max 16.3	n 5
+call lib/hook.js run	median 0.9	max 1.3	n 5
+require hooks/inject.js	median 544.5	max 546.8	n 5
+call lib/hook.js parse	median 0.0	max 0.0	n 5
+call lib/registry.js launchRoot	median 0.0	max 0.0	n 5
+call lib/registry.js rootFor	median 12.5	max 13.1	n 5
+call lib/registry.js readSession	median 15.4	max 16.3	n 5
+call lib/profile.js configDirOf	median 0.1	max 0.1	n 5
+call lib/registry.js sessionPath	median 0.1	max 0.1	n 5
+call lib/live.js liveConfigDir	median 0.0	max 0.1	n 10
+call lib/registry.js writeSession	median 124.8	max 126.7	n 5
+require scripts/docs-check.js	median 15.9	max 16.6	n 5
+require scripts/memory-check.js	median 15.2	max 15.6	n 5
+require scripts/input-check.js	median 46.1	max 47.3	n 5
+call scripts/input-check.js sources	median 388.6	max 391.7	n 5
+require lib/serve.js	median 15.9	max 16.1	n 5
+call lib/json.js readObject	median 15.9	max 16.7	n 4
+call lib/serve.js ensureServe	median 266.8	max 1028.7	n 5
+call lib/render.js renderInit	median 0.2	max 0.4	n 5
+call lib/badge.js writeBadge	median 30.4	max 31.0	n 5
+call lib/badge.js writeLead	median 31.2	max 36.2	n 5
+exit	median 1527.2	max 2292.5	n 5
+== slow-5  runs 5  skipped 0
+wall	median 1422	max 1810	exits 0
+line	station: <url> (serve was running).
+fs calls	median 84	max 84
+start	median 31.9	max 41.3	n 5
+require lib/json.js	median 14.9	max 15.7	n 5
+require lib/launchers.js	median 15.4	max 15.6	n 5
+require lib/registry.js	median 46.8	max 47.6	n 5
+require lib/live.js	median 15.9	max 16.0	n 5
+require lib/badge.js	median 15.5	max 15.6	n 5
+require lib/prices.js	median 15.0	max 15.8	n 5
+require lib/blame.js	median 17.7	max 18.6	n 5
+require lib/agentfile.js	median 12.9	max 13.5	n 5
+require lib/profile.js	median 46.6	max 47.8	n 5
+require lib/stages.js	median 62.6	max 64.1	n 5
+require lib/context.js	median 14.8	max 15.0	n 5
+require lib/usage.js	median 30.4	max 30.7	n 5
+require lib/ledger.js	median 15.6	max 16.1	n 5
+require lib/tracked.js	median 15.3	max 16.3	n 5
+require lib/requires.js	median 15.0	max 15.3	n 5
+require lib/plantasks.js	median 46.6	max 47.1	n 5
+require lib/replay.js	median 15.6	max 16.3	n 5
+require lib/detail.js	median 122.8	max 124.3	n 5
+require lib/handoff.js	median 15.3	max 15.8	n 5
+require lib/refs.js	median 15.1	max 15.8	n 5
+require lib/reviewcheck.js	median 30.6	max 31.4	n 5
+require lib/tune.js	median 45.8	max 46.5	n 5
+require lib/docs.js	median 15.8	max 16.0	n 5
+require lib/plain.js	median 15.6	max 16.4	n 5
+require lib/todo.js	median 47.3	max 47.7	n 5
+require lib/station.js	median 326.9	max 327.4	n 5
+require lib/overlap.js	median 14.9	max 15.6	n 5
+require lib/guard.js	median 30.8	max 31.9	n 5
+require lib/report.js	median 14.8	max 15.5	n 5
+require lib/map.js	median 30.7	max 31.3	n 5
+require lib/prose.js	median 15.3	max 16.0	n 5
+require lib/render.js	median 93.3	max 94.1	n 5
+require lib/dirty.js	median 15.5	max 15.7	n 5
+require lib/hook.js	median 15.3	max 16.0	n 5
+call lib/hook.js run	median 1.0	max 1.2	n 5
+require hooks/inject.js	median 544.4	max 546.2	n 5
+call lib/hook.js parse	median 0.0	max 0.0	n 5
+call lib/registry.js launchRoot	median 0.0	max 0.0	n 5
+call lib/registry.js rootFor	median 13.4	max 13.6	n 5
+call lib/registry.js readSession	median 15.6	max 16.2	n 5
+call lib/profile.js configDirOf	median 0.1	max 0.1	n 5
+call lib/registry.js sessionPath	median 0.1	max 0.1	n 5
+call lib/live.js liveConfigDir	median 0.0	max 0.1	n 10
+call lib/registry.js writeSession	median 125.3	max 125.9	n 5
+require scripts/docs-check.js	median 15.7	max 16.8	n 5
+require scripts/memory-check.js	median 15.0	max 16.0	n 5
+require scripts/input-check.js	median 46.3	max 47.3	n 5
+call scripts/input-check.js sources	median 404.0	max 406.6	n 5
+require lib/serve.js	median 16.2	max 16.3	n 5
+call lib/json.js readObject	median 15.5	max 16.2	n 5
+call lib/serve.js ensureServe	median 93.9	max 494.0	n 5
+call lib/render.js renderInit	median 0.2	max 0.4	n 5
+call lib/badge.js writeBadge	median 31.0	max 31.6	n 5
+call lib/badge.js writeLead	median 31.5	max 31.6	n 5
+exit	median 1373.1	max 1763.2	n 5

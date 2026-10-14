@@ -1,0 +1,16 @@
+case	run	ms	exit	stdout
+read	1	55.5	0	0
+read	2	53.9	0	0
+read	3	53.2	0	0
+read	4	55.7	0	0
+read	5	55.2	0	0
+write	1	55.0	0	0
+write	2	53.9	0	0
+write	3	54.6	0	0
+write	4	53.5	0	0
+write	5	51.7	0	0
+commit	1	89.5	0	0
+commit	2	90.3	0	0
+commit	3	84.9	0	0
+commit	4	97.2	0	0
+commit	5	99.2	0	0

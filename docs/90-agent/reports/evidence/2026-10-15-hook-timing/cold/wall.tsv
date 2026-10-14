@@ -1,0 +1,20 @@
+cold	1	203	0		134	station: http://127.0.0.1:28888/ (serve started, browser opened).
+warm	1	1108	0			station: http://127.0.0.1:28888/ (serve is busy loading; the page fills in when it finishes).
+slow-2	1	1606	0			station: http://127.0.0.1:28888/ (serve was running).
+slow-5	1	1810	0			station: http://127.0.0.1:28888/ (serve was running).
+slow-5	2	1405	0			station: http://127.0.0.1:28888/ (serve was running).
+slow-2	2	1361	0			station: http://127.0.0.1:28888/ (serve was running).
+warm	2	107	0			station: http://127.0.0.1:28888/ (serve was running).
+cold	2	205	0		123	station: http://127.0.0.1:28888/ (serve started, browser opened).
+cold	3	213	0		139	station: http://127.0.0.1:28888/ (serve started, browser opened).
+warm	3	1102	0			station: http://127.0.0.1:28888/ (serve is busy loading; the page fills in when it finishes).
+slow-2	3	1581	0			station: http://127.0.0.1:28888/ (serve was running).
+slow-5	3	1803	0			station: http://127.0.0.1:28888/ (serve was running).
+slow-5	4	1422	0			station: http://127.0.0.1:28888/ (serve was running).
+slow-2	4	1383	0			station: http://127.0.0.1:28888/ (serve was running).
+warm	4	1098	0			station: http://127.0.0.1:28888/ (serve is busy loading; the page fills in when it finishes).
+cold	4	210	0		135	station: http://127.0.0.1:28888/ (serve started, browser opened).
+cold	5	216	0		132	station: http://127.0.0.1:28888/ (serve started, browser opened).
+warm	5	1101	0			station: http://127.0.0.1:28888/ (serve is busy loading; the page fills in when it finishes).
+slow-2	5	2343	0			station: http://127.0.0.1:28888/ (serve is busy loading; the page fills in when it finishes).
+slow-5	5	1417	0			station: http://127.0.0.1:28888/ (serve was running).

@@ -1,0 +1,156 @@
+start 19.4
+require lib/registry.js 1.8
+require lib/blame.js 3.2
+require lib/profile.js 4.6
+require lib/stages.js 5.8
+require lib/usage.js 1.3
+require lib/plantasks.js 1.5
+require lib/detail.js 4.9
+require lib/tune.js 1.2
+require lib/todo.js 1.4
+require lib/station.js 15.2
+require lib/render.js 2.7
+call lib/hook.js run 0.8
+require hooks/inject.js 22.5
+call lib/hook.js parse 0.1
+call lib/registry.js launchRoot 0.0
+call lib/registry.js rootFor 0.1
+call lib/registry.js readSession 0.3
+call lib/profile.js configDirOf 0.0
+call lib/registry.js sessionPath 0.0
+call lib/live.js liveConfigDir 0.0
+call lib/registry.js writeSession 1.5
+require scripts/docs-check.js 1.1
+require scripts/input-check.js 2.4
+call lib/live.js liveConfigDir 0.0
+call scripts/input-check.js sources 2.4
+call lib/serve.js ensureServe 1017.6
+call lib/render.js renderInit 0.2
+call lib/badge.js writeBadge 0.7
+call lib/badge.js writeLead 2.1
+exit 1075.8
+---
+start 18.3
+require lib/registry.js 1.7
+require lib/blame.js 2.7
+require lib/profile.js 4.3
+require lib/stages.js 4.9
+require lib/plantasks.js 1.2
+require lib/detail.js 3.7
+require lib/tune.js 1.1
+require lib/todo.js 1.3
+require lib/station.js 12.6
+require lib/render.js 2.7
+call lib/hook.js run 0.8
+require hooks/inject.js 19.6
+call lib/hook.js parse 0.0
+call lib/registry.js launchRoot 0.0
+call lib/registry.js rootFor 0.2
+call lib/registry.js readSession 0.2
+call lib/profile.js configDirOf 0.0
+call lib/registry.js sessionPath 0.0
+call lib/live.js liveConfigDir 0.1
+call lib/registry.js writeSession 1.9
+require scripts/docs-check.js 1.0
+require scripts/input-check.js 2.5
+call lib/live.js liveConfigDir 0.0
+call scripts/input-check.js sources 2.4
+call lib/json.js readObject 0.1
+call lib/serve.js ensureServe 29.0
+call lib/render.js renderInit 0.3
+call lib/badge.js writeBadge 0.7
+call lib/badge.js writeLead 1.2
+exit 80.3
+---
+start 20.0
+require lib/registry.js 1.7
+require lib/blame.js 2.5
+require lib/profile.js 4.1
+require lib/stages.js 4.7
+require lib/plantasks.js 1.2
+require lib/detail.js 3.4
+require lib/todo.js 1.3
+require lib/station.js 12.2
+require lib/render.js 2.3
+call lib/hook.js run 0.9
+require hooks/inject.js 18.9
+call lib/hook.js parse 0.0
+call lib/registry.js launchRoot 0.0
+call lib/registry.js rootFor 0.1
+call lib/registry.js readSession 0.2
+call lib/profile.js configDirOf 0.0
+call lib/registry.js sessionPath 0.0
+call lib/live.js liveConfigDir 0.0
+call lib/registry.js writeSession 1.8
+require scripts/docs-check.js 1.3
+require scripts/input-check.js 3.4
+call lib/live.js liveConfigDir 0.0
+call scripts/input-check.js sources 2.3
+call lib/serve.js ensureServe 1004.7
+call lib/render.js renderInit 0.2
+call lib/badge.js writeBadge 11.5
+call lib/badge.js writeLead 1.6
+exit 1070.4
+---
+start 18.2
+require lib/registry.js 1.8
+require lib/blame.js 2.8
+require lib/profile.js 4.0
+require lib/stages.js 5.2
+require lib/plantasks.js 1.4
+require lib/detail.js 3.8
+require lib/todo.js 1.4
+require lib/station.js 13.1
+require lib/render.js 2.3
+call lib/hook.js run 0.8
+require hooks/inject.js 20.1
+call lib/hook.js parse 0.0
+call lib/registry.js launchRoot 0.0
+call lib/registry.js rootFor 0.1
+call lib/registry.js readSession 0.2
+call lib/profile.js configDirOf 0.0
+call lib/registry.js sessionPath 0.0
+call lib/live.js liveConfigDir 0.0
+call lib/registry.js writeSession 1.8
+require scripts/docs-check.js 1.2
+require scripts/input-check.js 2.6
+call lib/live.js liveConfigDir 0.0
+call scripts/input-check.js sources 2.4
+call lib/serve.js ensureServe 1017.2
+call lib/render.js renderInit 0.1
+call lib/badge.js writeBadge 0.7
+call lib/badge.js writeLead 1.3
+exit 1070.2
+---
+start 19.4
+require lib/registry.js 1.6
+require lib/blame.js 2.8
+require lib/profile.js 4.1
+require lib/stages.js 5.3
+require lib/usage.js 1.3
+require lib/plantasks.js 1.6
+require lib/detail.js 4.4
+require lib/tune.js 1.0
+require lib/todo.js 1.4
+require lib/station.js 13.8
+require lib/render.js 2.2
+call lib/hook.js run 0.9
+require hooks/inject.js 20.6
+call lib/hook.js parse 0.0
+call lib/registry.js launchRoot 0.0
+call lib/registry.js rootFor 0.1
+call lib/registry.js readSession 0.2
+call lib/profile.js configDirOf 0.0
+call lib/registry.js sessionPath 0.0
+call lib/live.js liveConfigDir 0.1
+call lib/registry.js writeSession 1.8
+require scripts/docs-check.js 1.1
+require scripts/input-check.js 2.8
+call lib/live.js liveConfigDir 0.0
+call scripts/input-check.js sources 2.7
+call lib/serve.js ensureServe 1010.6
+call lib/render.js renderInit 0.2
+call lib/badge.js writeBadge 1.1
+call lib/badge.js writeLead 1.7
+exit 1067.6
+---
