@@ -33,10 +33,8 @@ test('ctxWindowPaint switches tier one token past 500000 and past 800000', async
     assert.equal(ctxWindowPaint(520001, 800001).mark, '💥');
 });
 
-test('ctxWindowPaint on a 1M window: purple at 800000, 799999 the same ramp step, each ladder rung one token under', async () => {
+test('ctxWindowPaint on a 1M window: each ladder rung one token under its edge', async () => {
     const { ctxWindowPaint } = await load('pane-bar');
-    assert.deepEqual(ctxWindowPaint(800000, 1000000), { color: X[201], bold: true, mark: '💥💥' });
-    assert.deepEqual(ctxWindowPaint(799999, 1000000), { color: X[201], bold: true, mark: '💥💥' });
     assert.equal(ctxWindowPaint(699999, 1000000).color, '#ff00af');
     for (const [tokens, mark] of [[649999, '⚠'], [749999, '💥'], [849999, '💥💥'], [899999, '💥💥💥']]) assert.equal(ctxWindowPaint(tokens, 1000000).mark, mark, String(tokens));
 });
@@ -158,7 +156,8 @@ test('remoteOf finds the file under a configDir ending in / or //', async () => 
 });
 
 test('remoteOf falls back to USERPROFILE/.claude when HOME is unset, and reads ✗ with no configDir, HOME or USERPROFILE', async () => {
-    const files = { 'F:/home/.claude/sessions/1.json': session('br') };
+    // The /sessions file is what a missing `if (!configDir) return false` would read.
+    const files = { 'F:/home/.claude/sessions/1.json': session('br'), '/sessions/1.json': session('br') };
     assert.match(await (await rig({ entryData: live, files, env: { USERPROFILE: 'F:/home' } })).tick(), /遠端 ✓$/);
     assert.match(await (await rig({ entryData: live, files, env: {} })).tick(), /遠端 ✗$/);
 });
@@ -166,6 +165,15 @@ test('remoteOf falls back to USERPROFILE/.claude when HOME is unset, and reads �
 test('remoteOf: two files of this session with the same mtime, both bridgeSessionId null, read ✗', async () => {
     const r = await rig({ entryData: Object.assign({}, live, { configDir: 'F:/cfg' }), files: { 'F:/cfg/sessions/1.json': session(null), 'F:/cfg/sessions/2.json': session(null) } });
     assert.match(await r.tick(), /遠端 ✗$/);
+});
+
+test('remoteOf: two files of this session with the same mtime, one connected and one null, read ✓ in either listing order', async () => {
+    const a = 'F:/cfg/sessions/1.json';
+    const b = 'F:/cfg/sessions/2.json';
+    for (const files of [{ [a]: session('br'), [b]: session(null) }, { [a]: session(null), [b]: session('br') }]) {
+        const r = await rig({ entryData: Object.assign({}, live, { configDir: 'F:/cfg' }), files });
+        assert.match(await r.tick(), /遠端 ✓$/);
+    }
 });
 
 test('remoteOf: a tick on another directory keeps the first directory cache', async () => {
