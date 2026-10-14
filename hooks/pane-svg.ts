@@ -8,31 +8,28 @@ import { TODO, GUARD, CONNECTED, FLAG, WHERE, CLASH, INK, stageColor, since, cla
 import type { BandInput } from './pane-band.ts'
 import { str, list, kilo, cut, ctxPaint, ctxWindowPaint, fivePaint, weekPaint, deviation, limitOf, signed, minutes, secondsLeft, DIM } from './pane-bar.ts'
 import type { Context } from './pane-bar.ts'
-import { KEPT, SAID } from './pane-status.ts'
+import { KEPT, SAID, ago, DONE, OUT } from './pane-status.ts'
 import type { Entry, Other, PlanInfo, Row, StatusInput } from './pane-status.ts'
 import { HARD } from './compact.ts'
 
 // The engine's bound on SvgProps.source, in characters.
 export const SVG_MAX = 131072
 // One terminal cell in CSS pixels: the Pane's 41 cells are 328px, the band's 80 are 640px.
-export const CELL_PX = 8
-// A task complete and an agent out on one: hooks/pane-status.ts DONE and OUT.
-const DONE = '#87af5f'
-const OUT = '#af87d7'
+const CELL_PX = 8
 // The figure on a filled task cell.
 const ON_FILL = '#1f1e1d'
 const FONT = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace'
 // The characters a 12px monospace face draws a full em wide: hooks/pane-bar.ts WIDE, and ⚑.
 const WIDE_PX = /[ᄀ-ᅟ⺀-꓏가-힣豈-﫿︰-﹏＀-｠￠-￦⚑]/
 
-export const esc = (s: string): string => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+const esc = (s: string): string => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 // The drawn width of `s` at `size` px: a wide character is one em, any other three fifths of one.
-export const px = (s: string, size = 12): number => [...s].reduce((n, ch) => n + (WIDE_PX.test(ch) ? size : size * 0.6), 0)
+const px = (s: string, size = 12): number => [...s].reduce((n, ch) => n + (WIDE_PX.test(ch) ? size : size * 0.6), 0)
 const r1 = (n: number): number => Math.round(n * 10) / 10
 const record = (v: unknown): Record<string, unknown> => (v && typeof v === 'object' ? (v as Record<string, unknown>) : {})
 
 // The head of `s` that fits `room` px, ending in an ellipsis when cut.
-export function fitPx(s: string, room: number): string {
+function fitPx(s: string, room: number): string {
   if (px(s) <= room) return s
   let out = ''
   for (const ch of s) {
@@ -53,7 +50,7 @@ function tailPx(s: string, room: number): string {
   return '…' + out
 }
 
-export function svgDoc(w: number, h: number, body: string, extra = ''): string {
+function svgDoc(w: number, h: number, body: string, extra = ''): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${r1(w)}" height="${r1(h)}" viewBox="0 0 ${r1(w)} ${r1(h)}" font-family="${FONT}" font-size="12"${extra}>${body}</svg>`
 }
 
@@ -297,14 +294,6 @@ export function routeSvg(entry: Entry, now: number, cols: number): string {
     if (s.wait) b += text(cx(i), 72, `等${s.wait}`, { anchor: 'middle', fill: GUARD })
   })
   return svgDoc(W, 78, b)
-}
-
-// hooks/pane-status.ts ago: `12m`, `3h`, or '' where `updated` does not parse.
-function ago(updated: unknown, now: number): string {
-  const at = typeof updated === 'string' ? Date.parse(updated) : NaN
-  if (!Number.isFinite(at)) return ''
-  const m = Math.max(0, Math.floor((now - at) / 60000))
-  return m >= 60 ? `${Math.floor(m / 60)}h` : `${m}m`
 }
 
 // The clash as a small graph: the files this session shares on the left, the

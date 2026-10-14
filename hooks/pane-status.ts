@@ -188,7 +188,7 @@ function taskBlock(entry: Entry, inner: number): Row[] {
 }
 
 // `12m`, `3h`, or '' where `updated` does not parse.
-function ago(updated: unknown, now: number): string {
+export function ago(updated: unknown, now: number): string {
   const at = typeof updated === 'string' ? Date.parse(updated) : NaN
   if (!Number.isFinite(at)) return ''
   const m = Math.max(0, Math.floor((now - at) / 60000))
@@ -215,8 +215,8 @@ function clashBlock(entry: Entry, others: Other[], inner: number, now: number): 
 }
 
 // A task complete, and an agent out on one.
-const DONE = '#87af5f'
-const OUT = '#af87d7'
+export const DONE = '#87af5f'
+export const OUT = '#af87d7'
 // The minutes an agent is out before its row turns amber.
 const LONG = 20
 // A plan of more tasks than this folds into a window.
@@ -288,15 +288,10 @@ function contextBlock(context: Context, inner: number): Row[] {
   const at = off ? HARD : context.at
   if (!nearCompact(context.tokens, at)) return []
   const hot = context.tokens >= at
-  if (off) {
-    return [
-      row('context', title('context', 'context'), hot ? { text: `  ${SAID.hotOff}`, color: GUARD, bold: true } : dim(`  ${SAID.nearOff}`)),
-      row('context', dim(cut('不會自動壓縮；要壓縮請手動 /compact', inner))),
-    ]
-  }
+  const said = hot ? (off ? SAID.hotOff : SAID.hot) : off ? SAID.nearOff : SAID.near
   return [
-    row('context', title('context', 'context'), hot ? { text: `  ${SAID.hot}`, color: GUARD, bold: true } : dim(`  ${SAID.near}`)),
-    row('context', dim(cut(`留 ${KEPT.join(' · ')}`, inner))),
+    row('context', title('context', 'context'), hot ? { text: `  ${said}`, color: GUARD, bold: true } : dim(`  ${said}`)),
+    row('context', dim(cut(off ? '不會自動壓縮；要壓縮請手動 /compact' : `留 ${KEPT.join(' · ')}`, inner))),
   ]
 }
 
