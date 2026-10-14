@@ -11,3 +11,6 @@ link: hooks/pane.ts
 要做成：使用者在 PowerShell 跑 `$env:FANKEEL_PANE_PROBE='1'; claude --plugin-dir F:\ymlab\fankeel`，起一個任務、打開 Pane，Remote Control 關著與開著時各把 foot 上面那一行（`surfaces [...] · surface ...`）原樣記下來。兩次不同，就在 Pane 的 task 區塊加一行 Remote Control 的狀態；兩次相同，這條改成 Blocked，timing 寫 `upstream: mod API 給得到 Remote Control 狀態`。
 
 完成條件：兩次看到的那一行寫進這個條目；分得出來的話 `tests/pane-status.test.js` 有一條 Remote Control 那一行的測試，分不出來的話條目的 state 是 blocked。`--plugin-dir` 會不會蓋過已安裝的版本沒有驗過，Pane 上沒有那一行就是讀到舊版。
+
+2026-10-14：Remote Control 開著時探測行是 `surfaces [terminal] · surface terminal`；關著那一行還沒記。
+2026-10-14：Remote Control 的遠端（Desktop）看不到 band 與 Pane；在遠端下 `/fankeel-panel` 什麼都沒回，終端的 Pane 也沒關，在終端下則正常關掉：Remote Control 不轉送 mod 的指令。
