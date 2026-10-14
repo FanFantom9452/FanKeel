@@ -10,11 +10,14 @@ import type { Context, Limit, Paint } from './pane-bar.ts'
 // `gap` is the cells of space before the segment; without one it sits against the last.
 export type Seg = { text: string; color?: string; backgroundColor?: string; bold?: boolean; gap?: number }
 type Entry = Record<string, unknown>
-// `gateUntil` is the `until` of the gate that is waiting, or null. `tasks` is the plan's ledger count, or null.
+// `gateUntil` is the `until` of the gate that is waiting, or null, and `gateAt` the
+// `at` its pending file names, when the wait began: only the desktop's ring reads it.
+// `tasks` is the plan's ledger count, or null.
 export type BandInput = {
   entry: Entry | null
   others: { entry: Entry }[]
   gateUntil: number | null
+  gateAt?: number | null
   context: Context | null
   limits: Limit[]
   tasks: { done: number; total: number } | null
