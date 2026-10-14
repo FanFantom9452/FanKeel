@@ -1,12 +1,12 @@
 ---
 label: test
-title: 一次性整套測試失敗未重現
-description: 某次整套測試跑出一個失敗、重跑不再出現；候選原因是 trackedIn 測試複製 80 MB 的 node 執行檔（未證實），下次再紅時先看這個測試 — [tests/todo-check-folder.test.js](tests/todo-check-folder.test.js).
+title: station-cli 測試偶爾逾時
+description: 整套測試偶爾跑出一個重跑就消失的失敗；10-10 深夜與 10-14 兩次紅的都是 station-cli 的「the first run scans once and records that it did」，候選改成它在忙碌機器上逾時 — [tests/station-cli.test.js](tests/station-cli.test.js).
 state: watch
-link: tests/todo-check-folder.test.js
+link: tests/station-cli.test.js
 group: 整套再紅一次
 timing: if: 整套測試再出現一次重跑不見的失敗
-stamp: 2026-10-10
+stamp: 2026-10-15
 ---
 
 來源：fc59e8cf（2026-09-29）landing todo patrol 2 時登記；那次整套測試跑出一個失敗，重跑不再出現，原因沒查到，只留下候選：trackedIn 測試複製 80 MB 的 node 執行檔，尚未證實。
@@ -28,3 +28,5 @@ stamp: 2026-10-10
 2026-10-14：事件又發生一次。任務「入口同步自動壓縮視窗」的 build 收尾跑整套測試，4185 過、1 失敗，紅的是 station-cli 測試檔的「the first run scans once and records that it did」，和 10-10 深夜那次是同一條；那個檔單獨跑三次都是 12 過，同一個 commit 重跑整套 4186 全過，兩次之間沒有改任何檔案。這次改動的檔（compact-window.js、task.js 與它們的測試）那條測試碰不到。
 
 2026-10-14（第二次）：事件又發生一次。任務「移除 pane 的 gate 提問右側顯示功能」的 verify 在 ded261cd 上跑整套測試，4163 過、1 失敗，紅的仍是 station-cli 測試檔的「the first run scans once and records that it did」，那一條跑了 13.5 秒；那次整套執行時同一個 session 另外在跑 docs-check 與幾個 grep。該檔單獨重跑 12 過，同一個 commit 之後單獨跑整套是 4164 過、0 失敗。機器忙的時候這一條會超時是候選原因，沒有證實。
+
+2026-10-15：使用者在盤點選擇改查 station-cli 測試。到目前為止紅過八個不同的測試，其中 station-cli 的「the first run scans once and records that it did」（`tests/station-cli.test.js:248`）紅了三次，最近一次跑了 13.5 秒，而它的 `execFileSync` 逾時是 20 秒（`:257`）；trackedIn 測試從 09-29 起沒有再被指認。候選原因因此改成：這一條在機器忙的時候跑得太久。下次再紅時先看那一次的耗時與當時並行的行程。test-4（並行 commit 測試偶爾紅）併進本條，它自己的斷言從 10-05 起沒有再紅。
