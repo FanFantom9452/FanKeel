@@ -2419,7 +2419,9 @@
         var p = s.pending, q = p.questions[0];
         var total = Math.max(1, Math.round((p.until - (typeof p.at === 'number' && isFinite(p.at) ? p.at : p.until - 60000)) / 1000));
         var left = Math.max(0, Math.min(total, Math.round((p.until - now) / 1000)));
-        var sent = (picked || {})[s.id + ':send'], lock = sent && (sent.busy || sent.cls === 'ok') ? ' disabled' : '';
+        var sent = (picked || {})[s.id + ':send'];
+        if (sent && sent.gate !== p.until) sent = null;
+        var lock = sent && (sent.busy || sent.cls === 'ok') ? ' disabled' : '';
         var body = p.questions.length === 1 && !q.multiSelect && S.serve
             ? '<p class="gq"><small>' + esc(q.header || '') + '</small>' + esc(q.question) + '</p><div class="gops" role="group" aria-label="' + loc('tune.answer', '回答') + '">'
                 + (q.options || []).map(function (o, i) {
@@ -2489,7 +2491,9 @@
         p.questions.forEach(function (q, i) { picks[i] = on[s.id + ':' + i] || []; others[i] = on[s.id + ':' + i + ':other'] || ''; });
         var got = pgAnswers(p.questions, picks, others), n = p.questions.length;
         var dis = S.serve ? '' : ' disabled';
-        var sent = on[s.id + ':send'], lock = sent && (sent.busy || sent.cls === 'ok');
+        var sent = on[s.id + ':send'];
+        if (sent && sent.gate !== p.until) sent = null;
+        var lock = sent && (sent.busy || sent.cls === 'ok');
         var qs = p.questions.map(function (q, i) {
             var type = q.multiSelect ? 'checkbox' : 'radio', had = picks[i];
             return '<fieldset class="pgq"><legend>' + esc(q.header || '') + ' · ' + esc(q.question)
@@ -5571,9 +5575,10 @@
     var SEND_MS = 10000;
     function answerPost(id, box, line, cls, form, said, failed) {
         var btns = box.querySelectorAll ? [].slice.call(box.querySelectorAll('[data-gop],[data-gho],[data-answer]')) : [];
+        var who = S.sessions.filter(function (x) { return x.id === id; })[0], gate = who && who.pending ? who.pending.until : null;
         var ac = typeof AbortController === 'function' ? new AbortController() : null, over = false, timer;
         function show(busy, c, t) {
-            view.pg[id + ':send'] = { busy: busy, cls: c, text: t };
+            view.pg[id + ':send'] = { busy: busy, cls: c, text: t, gate: gate };
             btns.forEach(function (b) { b.disabled = busy || c === 'ok'; });
             if (!line) return;
             line.className = cls + (c ? ' ' + c : '');
@@ -5585,7 +5590,7 @@
             w.clearTimeout(timer);
             show(false, c, t);
         }
-        show(true, '', loc('cmp.sending', '送出中…'));
+        show(true, 'wait', loc('cmp.sending', '送出中…'));
         timer = w.setTimeout(function () {
             give('bad', loc('cmp.notConfirmedRetry', '還沒確認送到：可以再按一次'));
             if (ac) ac.abort();

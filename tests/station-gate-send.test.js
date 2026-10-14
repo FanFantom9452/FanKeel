@@ -71,6 +71,7 @@ test('gop: the press disables every button of the gate and writes 送出中…',
     b.press(gop(box));
     assert.deepEqual(box.btns.map((x) => x.disabled), [true, true, true]);
     assert.equal(box.gend.textContent, '送出中…');
+    assert.equal(box.gend.className, 'gend wait');
 });
 
 test('gop: the fetch carries an abort signal and a 10-second timer is set', () => {
@@ -143,4 +144,17 @@ test('answer: a network error gives 送出答案 back', async () => {
     await settle();
     assert.equal(box.btns[0].disabled, false);
     assert.equal(box.pgr.textContent, '送不出去：serve 還在跑嗎？可以再按一次');
+});
+
+const gho = (box) => ({ '[data-gho]': {}, '.gc': box });
+
+test('gho: the hand-off press disables the gate and a network error gives it back', async () => {
+    const b = boot(), box = gc();
+    b.press(gho(box));
+    assert.deepEqual(box.btns.map((x) => x.disabled), [true, true, true]);
+    assert.equal(box.gend.textContent, '送出中…');
+    b.fetches[0].reject(new Error('down'));
+    await settle();
+    assert.deepEqual(box.btns.map((x) => x.disabled), [false, false, false]);
+    assert.equal(box.gend.textContent, '送不出去：serve 還在跑嗎？可以再按一次');
 });
