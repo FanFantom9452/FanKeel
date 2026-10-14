@@ -8,11 +8,11 @@ source_of_truth: 本頁是一次量測的紀錄，不隨程式碼更新；資料
 
 ## 結論
 
-guard 最大值 99.2ms、冷啟動 wall 最大值 216ms，門檻都是 hook 的 timeout 5000ms，兩者都過；station-data 冷請求中位數 1.67 秒，門檻 1 秒，沒過。
+guard 最大值 99.2ms、冷啟動 wall 最大值 216ms，門檻都是 hook 的 timeout 5000ms，兩者都過；slow-2 與 slow-5 這次都跑出了數字（10-05 那次全在 20 秒被殺），最大值 2343ms 與 1810ms，也都低於 5000ms；station-data 冷請求中位數 1.67 秒，門檻 1 秒，沒過。
 
 ## 怎麼量的
 
-- guard：`guard-probe.cjs` 對 `hooks/guard.js` 餵三種 PreToolUse Bash payload（`read`、`write`、`commit`），每種起五個新的 node，session 是本次盤點的 session（有 active 條目，走完整路徑）。
+- guard：`guard-probe.cjs` 對 `hooks/guard.js` 餵三種 PreToolUse Bash payload（`read`、`write`、`commit`），每種起五個新的 node，session id 用 `349c5d13-627f-44a9-8a0c-7e723fa347b4`，量測時它的登記條目在 build 階段是 active，所以 `hooks/guard.js` 走的是 active session 的完整路徑，不是 `hooks/guard.js:55-58` 的提早返回。
 - 冷啟動：`cold.cjs` 五輪，每輪先停掉本機 station。
 - station-data：每次先閒置 3 秒讓 `memoMs`（2000ms，`scripts/station.js:358`）過期，再 curl `/station/station-data.js`，五次。
 
@@ -32,14 +32,20 @@ commit	median 90.3	max 99.2	n 5
 == cold  runs 5  skipped 0
 wall	median 210	max 216	exits 0
 bound	median 134	max 139
-line	station: <url> (serve started, browser opened).
+```
+
+暖啟動與慢磁碟兩臂（`cold/wall.tsv`，wall 單位 ms，各五輪）：
+
+```
+warm	median 1101	max 1108
+slow-2	median 1581	max 2343
+slow-5	median 1422	max 1810
 ```
 
 station-data（`station-data.txt`，秒）：1.700955、1.674382、1.699408、1.652204、1.668759；中位數 1.674382。
 
 ## 沒量到的
 
-- 慢磁碟兩臂（slow-2、slow-5）沒有重跑，只量了 cold 臂。
 - PowerShell 的 guard 路徑沒量，只量了 node 直接執行 `hooks/guard.js`。
 - guard 沒有經由 Claude Code 實際觸發，只量 node 行程的牆鐘；`commit` 案例用 `--dry-run`，命令本身沒執行。
 - 量測時同機有其他 session 在跑，雜訊未記錄。
