@@ -817,6 +817,35 @@ The 2026-10-15 rerun (`--max-rounds 2 --max-usd 2`) on a `build,verify` task sto
    角括號照實際輸出換掉。完成條件是 `stopped` 為 `gate`，且 handoff 檔存在。
 4. Commit：`git add docs/90-agent/reference/drive.md docs/90-agent/reports/evidence/2026-10-15-drive-allow`，訊息 `docs: drive.js rerun after the allow rule`。
 
+## Task 8: station-data 冷請求不再逐 session 掃整個 projects 目錄
+
+10-15 量到冷請求中位數 1.67 秒（Task 5 的報告），使用者在 build 的關卡選在這個任務裡修。剖析結果（在 session 內用 `lib/station.js` 的 `gather` 跑三次，memo 已暖）：1.66 秒裡 `detailOf` 佔 1.44 秒，`registry.readAll` 只佔 45ms；`detailOf` 的時間幾乎全在 `transcriptOf`：511 個 session 裡 443 個的 transcript 已不在磁碟，每一個都對 `projects/` 底下 544 個目錄各 stat 一次才回 null。把 `projects/` 讀成一份 `sessionId → 檔案路徑` 的索引只要 25ms。所以快取的是索引，每次 `gather` 建一份、用完就丟，不跨請求，沒有失效問題；station-23 條目原本猜的 registry 走訪不是瓶頸。
+
+**Files:**
+- Modify: `lib/detail.js:550-790` — 新增 `transcriptIndex(configDir)`；`detailOf` 與 `readDetail` 在 `opts.transcripts`（一個 Map）存在時從它查，不呼叫 `transcriptOf`
+- Modify: `lib/station.js:418-470` — `gather` 每個 config dir 建一次索引，傳給 `detailOf`
+- Test: `tests/detail-index.test.js`
+- Read: `tests/detail-cache.test.js` — 怎麼在暫存目錄搭 configDir/projects 與 memo
+
+**Interfaces:**
+- Consumes: nothing.
+- Produces: `transcriptIndex(configDir) → Map<sessionId, absolute .jsonl path>`（`projects/` 讀不到時回空 Map），由 `lib/detail.js` 匯出；`detailOf(configDir, sessionId, data, { memo, reuse, transcripts })`。
+
+**Dispatch:** implementer, sonnet — 範圍與做法都寫在這裡，是轉寫加測試。
+
+1. 先寫 `tests/detail-index.test.js`：
+   - 在暫存目錄搭 `projects/a/s1.jsonl`、`projects/b/s2.jsonl`、`projects/b/notes.txt`，`transcriptIndex` 回的 Map 恰好是 `s1`、`s2` 兩個鍵，值是各自的絕對路徑；`projects/` 不存在時回空 Map。
+   - `detailOf` 帶 `{ memo, transcripts }` 時，一個不在索引裡的 session 不會去讀 `projects/` 底下任何目錄：用 `fs.readdirSync`/`fs.statSync` 的計數包裝（測試結束還原）斷言對 `projects/<dir>` 的呼叫是 0；結果與不帶 `transcripts` 時一樣（`detail` 為 null 或同一份）。
+   - `detailOf` 帶 `transcripts` 時，一個在索引裡的 session 讀到的 detail 與不帶時相同（以 `detail-cache.test.js` 的方式寫一份最小 transcript）。
+   跑 `node --test tests/detail-index.test.js`，看它紅。
+2. 在 `lib/detail.js` 的 `transcriptOf` 下面加 `transcriptIndex`：讀 `<configDir>/projects` 一次，對每個子目錄 `readdirSync` 一次，收 `.jsonl` 結尾的檔名（去掉副檔名當鍵）。同名出現在兩個目錄時保留第一個，與 `transcriptOf` 走 `readdirSync` 順序找到的第一個一致。
+3. `detailOf` 的 `transcriptOf(configDir, sessionId)` 與 `readDetail` 裡的那一次（`lib/detail.js:698`）改成：`o.transcripts instanceof Map ? (o.transcripts.get(sessionId) || null) : transcriptOf(configDir, sessionId)`。匯出 `transcriptIndex`。
+4. 在 `lib/station.js` 的 `gather`，仿照 `idsIn` 的 `scans` Map，加一個每個 config dir 只建一次的 `indexIn(dir)`，呼叫 `detail.detailOf` 時多傳 `transcripts: indexIn(theirs)`。`opts.details === false` 時不建。
+5. 跑 `node --test tests/detail-index.test.js tests/detail-cache.test.js tests/detail.test.js tests/station.test.js`，全綠。
+6. 不 commit；回傳 status、路徑、pass/fail 行與每條新測試的 red-when。
+
+量測（由 build 的 session 在 commit 後做，不是 implementer）：重啟 station，照 Task 5 的方法閒置 3 秒再 curl 五次，取中位數，結果補進 `docs/90-agent/reports/2026-10-15-hook-and-station-timing.md` 的數字一節與結論，原始資料存 `docs/90-agent/reports/evidence/2026-10-15-hook-timing/station-data-after.txt`。
+
 ## Coverage
 
 | promise | task |
