@@ -1019,3 +1019,71 @@ test('Remote Control: switching it off is seen on the next tick, and the Desktop
     assert.doesNotMatch(off.children[0].props.alt, /遠端/);
     assert.doesNotMatch(off.children[0].props.source, /遠端/);
 });
+
+// Claude Code's session files, driven tick by tick so the cache and the mtimes can be moved.
+async function remoteRig(files) {
+    const hooks = await wired();
+    const rig = fake({ files: Object.assign(entryFile(Object.assign({}, live, { configDir: 'F:/cfg' })), files) });
+    await hooks['session.start'](rig.$, {}, async () => ({}));
+    const tick = async () => { await rig.log.ticks[0].fn(); return bandLines(await hooks['band'](rig.$, { surface: 'terminal', ...BAND }, passed))[0]; };
+    return { ...rig, tick };
+}
+
+test('Remote Control: a configDir that ends in a backslash finds the file', async () => {
+    const hooks = await wired();
+    const { $, log } = fake({ files: Object.assign(entryFile(Object.assign({}, live, { configDir: 'F:/cfg\\' })), { [CLAUDE + '1.json']: JSON.stringify({ sessionId: ID, bridgeSessionId: 'br' }) }) });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    assert.match(bandLines(await hooks['band']($, { surface: 'terminal', ...BAND }, passed))[0], /遠端 ●$/);
+});
+
+test('Remote Control: a connected file whose next read does not parse still shows 遠端 ●, and is read again after', async () => {
+    const f = CLAUDE + '1.json';
+    const { tick, store, mtimes } = await remoteRig({ [f]: JSON.stringify({ sessionId: ID, bridgeSessionId: 'br' }) });
+    assert.match(await tick(), /遠端 ●$/);
+    store[f] = '{"sessionId": "' + ID + '", "bridge';
+    mtimes[f] = 5;
+    assert.match(await tick(), /遠端 ●$/);
+    store[f] = JSON.stringify({ sessionId: ID, bridgeSessionId: null });
+    mtimes[f] = 6;
+    assert.doesNotMatch(await tick(), /遠端/);
+});
+
+test('Remote Control: a file gone from the listing is gone from the cache', async () => {
+    const gone = CLAUDE + '1.json';
+    const keep = CLAUDE + '2.json';
+    const { tick, store, $ } = await remoteRig({ [gone]: JSON.stringify({ sessionId: 'x' }), [keep]: JSON.stringify({ sessionId: 'y' }) });
+    await tick();
+    let n = 0;
+    const read = $.fs.read;
+    $.fs.read = async (p) => { if (p === gone || p === keep) n += 1; return read(p); };
+    await tick();
+    assert.equal(n, 0, 'unchanged files were read again');
+    delete store[gone];
+    await tick();
+    store[gone] = JSON.stringify({ sessionId: 'x' });
+    await tick();
+    assert.equal(n, 1, 'the removed file stayed cached, the kept one was read again');
+});
+
+test('Remote Control: of several files with this sessionId the newest decides', async () => {
+    const a = CLAUDE + '1.json';
+    const b = CLAUDE + '2.json';
+    const old = await remoteRig({ [a]: JSON.stringify({ sessionId: ID, bridgeSessionId: 'br' }), [b]: JSON.stringify({ sessionId: ID, bridgeSessionId: null }) });
+    old.mtimes[a] = 10;
+    old.mtimes[b] = 20;
+    assert.doesNotMatch(await old.tick(), /遠端/);
+    const fresh = await remoteRig({ [a]: JSON.stringify({ sessionId: ID, bridgeSessionId: null }), [b]: JSON.stringify({ sessionId: ID, bridgeSessionId: 'br' }) });
+    fresh.mtimes[a] = 10;
+    fresh.mtimes[b] = 20;
+    assert.match(await fresh.tick(), /遠端 ●$/);
+});
+
+test('Remote Control: the newest file decides whatever order the listing gives', async () => {
+    const a = CLAUDE + '1.json';
+    const b = CLAUDE + '2.json';
+    const rig = await remoteRig({ [a]: JSON.stringify({ sessionId: ID, bridgeSessionId: null }), [b]: JSON.stringify({ sessionId: ID, bridgeSessionId: 'br' }) });
+    rig.mtimes[a] = 20;
+    rig.mtimes[b] = 10;
+    assert.doesNotMatch(await rig.tick(), /遠端/);
+});

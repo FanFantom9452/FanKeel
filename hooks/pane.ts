@@ -181,21 +181,33 @@ async function remoteOf($: EngineInterface, entry: Entry, id: string, cache: Cac
     const home = (await $.env.get('HOME')) || (await $.env.get('USERPROFILE'))
     const configDir = typeof entry.configDir === 'string' && entry.configDir ? entry.configDir : home ? `${home}/.claude` : ''
     if (!configDir) return false
-    const dir = `${configDir.replace(/[\/]+$/, '')}/sessions`
+    const dir = `${configDir.replace(/[\\/]+$/, '')}/sessions`
     if (!(await $.fs.exists(dir))) return false
+    // Several files can name this session (a dead pid leaves its own behind): the newest one is the truth.
+    let newest = -Infinity
     let remote = false
+    const listed = new Set<string>()
     for (const file of await $.fs.list(dir)) {
       if (!file.name.endsWith('.json')) continue
       const path = `${dir}/${file.name}`
+      listed.add(path)
       const stamp = `${file.mtimeMs}:${file.size}`
       let hit = cache.get(path)
       if (!hit || hit.stamp !== stamp) {
-        hit = { stamp, value: await readJson($, path) }
-        if (hit.value) cache.set(path, hit)
+        // A file caught mid-write keeps its last good reading, and is read again next tick.
+        const fresh = await readJson($, path)
+        if (fresh) {
+          hit = { stamp, value: fresh }
+          cache.set(path, hit)
+        } else hit = { stamp, value: hit ? hit.value : null }
       }
       const got = hit.value as { sessionId?: unknown; bridgeSessionId?: unknown } | null
-      if (got && got.sessionId === id && typeof got.bridgeSessionId === 'string' && got.bridgeSessionId !== '') remote = true
+      if (got && got.sessionId === id && file.mtimeMs >= newest) {
+        newest = file.mtimeMs
+        remote = typeof got.bridgeSessionId === 'string' && got.bridgeSessionId !== ''
+      }
     }
+    for (const key of cache.keys()) if (key.startsWith(`${dir}/`) && !listed.has(key)) cache.delete(key)
     logged.remote = ''
     return remote
   } catch (err) {
