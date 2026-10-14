@@ -1,7 +1,7 @@
 ---
 label: session
 title: drive.js 寫不進 handoff
-description: drive.js 用 acceptEdits 跑 claude -p，站寫 .fankeel/build 的 handoff 被當 sensitive file 拒絕，driver 停在 status 無法交棒 — [drive.md](docs/90-agent/reference/drive.md).
+description: drive.js 用 acceptEdits 跑 claude -p，站寫 build 目錄下的 handoff 檔被當 sensitive file 拒絕，driver 停在 status 無法交棒 — [drive.md](docs/90-agent/reference/drive.md).
 state: ready
 link: docs/90-agent/reference/drive.md
 ---

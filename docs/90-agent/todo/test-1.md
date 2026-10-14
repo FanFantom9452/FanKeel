@@ -29,4 +29,4 @@ stamp: 2026-10-15
 
 2026-10-14（第二次）：事件又發生一次。任務「移除 pane 的 gate 提問右側顯示功能」的 verify 在 ded261cd 上跑整套測試，4163 過、1 失敗，紅的仍是 station-cli 測試檔的「the first run scans once and records that it did」，那一條跑了 13.5 秒；那次整套執行時同一個 session 另外在跑 docs-check 與幾個 grep。該檔單獨重跑 12 過，同一個 commit 之後單獨跑整套是 4164 過、0 失敗。機器忙的時候這一條會超時是候選原因，沒有證實。
 
-2026-10-15：使用者在盤點選擇改查 station-cli 測試。到目前為止紅過八個不同的測試，其中 station-cli 的「the first run scans once and records that it did」（`tests/station-cli.test.js:248`）紅了三次，最近一次跑了 13.5 秒，而它的 `execFileSync` 逾時是 20 秒（`:257`）；trackedIn 測試從 09-29 起沒有再被指認。候選原因因此改成：這一條在機器忙的時候跑得太久。下次再紅時先看那一次的耗時與當時並行的行程。test-4（並行 commit 測試偶爾紅）併進本條，它自己的斷言從 10-05 起沒有再紅。
+2026-10-15：使用者在盤點選擇改查 station-cli 測試。到目前為止紅過八個不同的測試，其中 station-cli 的「the first run scans once and records that it did」（`tests/station-cli.test.js:248`）紅了三次，最近一次跑了 13.5 秒，而它在 `tests/station-cli.test.js:257` 的逾時是 20 秒；trackedIn 測試從 09-29 起沒有再被指認。候選原因因此改成：這一條在機器忙的時候跑得太久。下次再紅時先看那一次的耗時與當時並行的行程。test-4（並行 commit 測試偶爾紅）併進本條，它自己的斷言從 10-05 起沒有再紅。
