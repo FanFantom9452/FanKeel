@@ -203,8 +203,10 @@ async function remoteOf($: EngineInterface, entry: Entry, id: string, cache: Cac
       }
       const got = hit.value as { sessionId?: unknown; bridgeSessionId?: unknown } | null
       if (got && got.sessionId === id && file.mtimeMs >= newest) {
+        const on = typeof got.bridgeSessionId === 'string' && got.bridgeSessionId !== ''
+        // On an equal mtime connected wins, so the answer does not depend on the listing's order.
+        remote = file.mtimeMs === newest ? remote || on : on
         newest = file.mtimeMs
-        remote = typeof got.bridgeSessionId === 'string' && got.bridgeSessionId !== ''
       }
     }
     for (const key of cache.keys()) if (key.startsWith(`${dir}/`) && !listed.has(key)) cache.delete(key)

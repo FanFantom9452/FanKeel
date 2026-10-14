@@ -1087,3 +1087,16 @@ test('Remote Control: the newest file decides whatever order the listing gives',
     rig.mtimes[b] = 10;
     assert.doesNotMatch(await rig.tick(), /遠端/);
 });
+
+test('Remote Control: two files of this session with the same mtime are connected whichever the listing lists first', async () => {
+    const a = CLAUDE + '1.json';
+    const b = CLAUDE + '2.json';
+    const on = JSON.stringify({ sessionId: ID, bridgeSessionId: 'br' });
+    const off = JSON.stringify({ sessionId: ID, bridgeSessionId: null });
+    for (const files of [{ [a]: on, [b]: off }, { [a]: off, [b]: on }]) {
+        const rig = await remoteRig(files);
+        rig.mtimes[a] = 10;
+        rig.mtimes[b] = 10;
+        assert.match(await rig.tick(), /遠端 ●$/);
+    }
+});
