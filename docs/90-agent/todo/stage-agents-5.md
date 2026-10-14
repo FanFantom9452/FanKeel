@@ -12,6 +12,6 @@ link: docs/90-agent/reference/subagents.md
 
 完成條件：跑過一次 stage.agents=all 的真實 task 並在中途翻轉 profile，五個 hook 的實際行為寫進 subagents.md，這條 TODO 才關。
 
-2026-10-04 跑過一次：resume 與 guard 有了答案，inject、brief、gate 還要一次把在跑的站移出 `stage.agents` 的翻轉才分得出來；這條維持 blocked。
+2026-10-04 跑過一次：resume 與 guard 有了答案，inject、brief、gate 還要一次把在跑的站移出 `stage.agents` 的翻轉才分得出來；當時這條維持 blocked。
 
 2026-10-15 盤點：`after:` 的條件在 09-28 與 10-04 已經滿足，使用者選改標 ready。剩下的是一次受控翻轉：受控站跑到一半，由使用者在站頁套一個把在跑的站移出 `stage.agents` 的 preset，看 inject、brief、gate 各讀到哪一份 profile。
