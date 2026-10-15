@@ -291,3 +291,15 @@ test('taskEnv makes task.js see the driven session as the caller, keeping the re
     assert.equal(env.CLAUDE_PID, '4242');
     assert.equal(env.PATH, 'p');
 });
+
+test('drive runs task.js under taskEnv: the driven id and its own pid', async () => {
+    const { root, env } = setup();
+    const data = registry.readSession(root, ID);
+    registry.writeSession(root, ID, Object.assign({}, data, { stage: 'build', moves: [['build', Date.now(), null]] }));
+    const seen = [];
+    const out = await drive(base(root, env), { spawn: fakeSpawn(root), sleep: answerer(root, (q) => q.options[0].label), pollMs: 5, execFile: (file, args, o) => { seen.push(o.env); } });
+    assert.equal(out.stopped, 'down');
+    assert.equal(seen.length, 1);
+    assert.equal(seen[0].CLAUDE_CODE_SESSION_ID, ID);
+    assert.equal(seen[0].CLAUDE_PID, String(process.pid));
+});
