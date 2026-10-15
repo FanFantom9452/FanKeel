@@ -4830,8 +4830,9 @@
     // Dragging the gate panel by its title bar, resizing it by its corner
     // grip. The move/up/cancel/resize listeners sit on the window and pointerdown/
     // dblclick on the document, not on #fkp, because drawFloat rebuilds #fkp
-    // every repaint; the place lives in view.fkBox, which
-    // floatHtml writes back, so a repaint mid-drag draws it where it is.
+    // every repaint; the place lives in view.fkBox, which the drag handlers
+    // (pointermove, fkDrop, resize) write and drawFloat passes to floatHtml
+    // (which only reads it), so a repaint mid-drag draws it where it is.
     var FK_BOX_KEY = 'station.fkBox';
     var fkDrag = null;
     function fkFit(b) {

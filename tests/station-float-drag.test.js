@@ -38,7 +38,7 @@ function boot(saved) {
     const at = (hits) => ({ closest: (sel) => (sel in hits ? hits[sel] : null) });
     return {
         win, kept, panel: () => doc.getElementById('fkp'),
-        down: (hits, x, y) => fire(docL, 'pointerdown', 'data-fk-', { button: 0, target: at(hits), clientX: x, clientY: y, preventDefault() {} }),
+        down: (hits, x, y, button = 0) => fire(docL, 'pointerdown', 'data-fk-', { button, target: at(hits), clientX: x, clientY: y, preventDefault() {} }),
         move: (x, y) => fire(winL, 'pointermove', 'fkDrag', { clientX: x, clientY: y }),
         up: () => fire(winL, 'pointerup', 'fkDrag', {}),
         cancel: () => fire(winL, 'pointercancel', 'fkDrag', {}),
@@ -79,6 +79,13 @@ test('a drag past the window edge stops at it', () => {
 test('a button on the title bar is not a drag handle', () => {
     const p = boot();
     p.down(Object.assign({ 'button,a': {} }, TITLE), 700, 310);
+    p.move(600, 260);
+    assert.equal(p.panel().style.left, undefined);
+});
+
+test('a right-button press on the title bar starts no drag', () => {
+    const p = boot();
+    p.down(TITLE, 700, 310, 2);
     p.move(600, 260);
     assert.equal(p.panel().style.left, undefined);
 });
