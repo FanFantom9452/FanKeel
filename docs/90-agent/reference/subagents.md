@@ -87,7 +87,7 @@ the matcher above, not this one, governs them, and refuses the controller's comm
 A `fankeel-brain` `Write` under `.fankeel/build/task-*/` is checked too
 (`hooks/guard.js:130`, `if (payload.tool_name === 'Write') {`): when the task directory it targets is not the
 one `handoff.dirFor` gives for its own session's record, it is denied, and the
-reason names both directories (`lib/guard.js:365`, `return 'fankeel: a fankeel-brain writes only under its own session\'s task directory. '`).
+reason names both directories (`lib/guard.js:372`, `return 'fankeel: a fankeel-brain writes only under its own session\'s task directory. '`).
 
 A fourth entry, matcher `Agent|Task` — both names, because which one the
 host sends for the subagent tool was not verified when it was added — sends
@@ -601,7 +601,7 @@ stage on that list and it is run by a stage agent instead of by the session:
 
 | piece | where | what it does |
 |---|---|---|
-| controller's block | `controlFor` in `lib/stages.js`, injected by `rulesLines` in `lib/render.js` and printed by `task.js start` and `task` in place of their first step, and by `stage` after its one-line move | replaces the stage's rules and shape: dispatch one `fankeel:fankeel-brain`, print the path it returns (on `survey`, also the report's text above its gate block), ask (on `build`, `design` and `plan`, first relay each `commit <file>`); a return that is not a path is not relayed; after the dispatch, each `SendMessage` and a notification that the agent finished with no path, the controller runs `scripts/await.js` in the background and does what its one line says (below); option one advances the stage, sends it back to any other stage on the task's own route, or stands the task down where the route ends |
+| controller's block | `controlFor` in `lib/stages.js`, injected by `rulesLines` in `lib/render.js` and printed by `task.js start`, `task` and `stage` (after its one-line move) in place of the stage's rules, each ending on the same-turn line | replaces the stage's rules and shape: dispatch one `fankeel:fankeel-brain`, print the path it returns (on `survey`, also the report's text above its gate block), ask (on `build`, `design` and `plan`, first relay each `commit <file>`); a return that is not a path is not relayed; after the dispatch, each `SendMessage` and a notification that the agent finished with no path, the controller runs `scripts/await.js` in the background and does what its one line says (below); option one advances the stage, sends it back to any other stage on the task's own route, or stands the task down where the route ends |
 | the stage agent | `agents/fankeel-brain.md` | sonnet at `effort: medium` (the controller's dispatch passes `model: opus` for `design` and `plan`); `Write` for its handoff (and, on build, design and plan, its commit file; on design and plan also one `docs/plans/` file), `Agent` for its readers and reviewers, and on build a render reviewer, a fixer and implementers, on verify a render reviewer, a verifier, a fixer and an implementer, on audit a fixer and an implementer, on land an implementer — which of them, and when, its stage's own rules decide |
 | its brief | `renderBrief` in `lib/render.js` | the stage's rules and shape, the skill's path, the handoff path, the gate's shape, the newest `docs/plans/` file written since the task started when no earlier stage left a report, on `verify` the `subagents/` directory, what replaces AskUserQuestion and Workflow, one Bash call for independent commands and for the lines it cites, and the output rule's word count as the file's — under Claude Code's 10,000-character cap on one `additionalContext` |
 | the handoff | `handoffPath`, `answerPath`, `readGate` and `writeAnswer` in `lib/handoff.js` | `.fankeel/build/task-<started>/<stage>.md`, ending in a `json gate` block; the answer beside it as `<stage>-answer.md` — `survey.md` and `survey-answer.md` when `survey` is the stage on the list; a stage's n-th visit (n ≥ 2, counted from the record's `moves`) is `<stage>-<n>.md`, `<stage>-<n>-answer.md` and `<stage>-<n>-commit.md`, so a return to `build` never overwrites its first lap; a renamed task keeps the directory and numbers on from the laps the old task used (`lapped` on the record, written by `task.js task`), so it never reads the old task's gate |
@@ -845,10 +845,10 @@ Setting the key prints what it costs: the estimated tokens the injected line
 adds per prompt, and each stage's remaining room under the reference-root
 2400-character cap with the profile as it now reads — a warning, never a
 refusal, since the cap belongs to the tests and the sentence belongs to the
-user (`scripts/task.js:1256`, `set anyway; this is a warning, not a refusal`)
+user (`scripts/task.js:1246`, `set anyway; this is a warning, not a refusal`)
 — computed in `cmdProfile`'s `set` branch off `input-check.js`'s
 `estimateTokens` and `lib/render.js`'s `blockSizes`
-(`scripts/task.js:1249`, `const n = estimateTokens('\n  - ' + out.value);`).
+(`scripts/task.js:1239`, `const n = estimateTokens('\n  - ' + out.value);`).
 
 ## What a controlled `build` and `verify` were run through
 

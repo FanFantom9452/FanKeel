@@ -546,7 +546,7 @@ Writing the file is atomic — a sibling, then a rename — but reading it, chan
 one field and writing it back is not, and that is what every writer here does.
 Five of them are registered in hooks. `inject.js` writes
 on every prompt — once for `updated`, and once more for every new path the git
-pass records in `seen`, since `lib/dirty.js:199` calls `addSeen` per path and each one
+pass records in `seen`, since `lib/dirty.js:193` calls `addSeen` per path and each one
 takes the lock — in every session on the machine. That second number is usually
 zero after a task's first prompt, because `covers` skips a path already held.
 `resume.js` writes twice per answered question (`registry.gateClose`, then
