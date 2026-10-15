@@ -36,7 +36,7 @@ profile 是 gate 的常備答案：先寫好，fankeel 就不再問那一題。g
 | `land.archivePlan` | 計畫落地後直接封存，還是先問 | `true`、`false` | `true` |
 | `class.default` | 起任務沒指定類別時的預設（spike／bounded／architectural） | `spike`、`bounded`、`architectural` | 不設 |
 | `guard` | 別的 session 佔了檔案時：ask 問、deny 擋、off 只警告 | `ask`、`deny`、`off`；內建 `ask` | `ask` |
-| `dispatch.floor` | 派給實作者與 reader 的最低模型 | `sonnet`、`opus`、`fable`、`haiku`；內建 `sonnet` | 不設，維持內建 |
+| `dispatch.floor` | 派給實作者與 reader 的最低模型；architectural 類的任務自動抬到至少 `opus`、effort `high` | `sonnet`、`opus`、`fable`、`haiku`；內建 `sonnet` | 不設，維持內建 |
 | `judge.model` | 判官（/fankeel-ask）用哪個模型 | `sonnet`、`opus`、`fable`、`haiku`；內建 `fable` | 不設，維持內建 |
 | `design.mockup` | 有前端的專案，design 站先做頁面時用哪個模型；auto 前端工作不問就畫、畫完開頁面；false 不做 | `false`、`auto`、`sonnet`、`opus`、`fable`；內建 `false` | 不設，維持內建 |
 | `design.skill` | mockup 另外載入哪些 design skill，可多選（逗號分隔）；fankeel 指南一律載入 | `taste-skill:taste-skill`、`taste-skill:soft-skill`、`taste-skill:minimalist-skill`、`frontend-design:frontend-design`、`ui-ux-pro-max:ui-ux-pro-max`、`impeccable:impeccable` | 不設 |

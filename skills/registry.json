@@ -19,21 +19,21 @@
       "name": "plan",
       "entry_condition": "Read:, a fence names its file, ## Coverage.",
       "stop_condition": "Done when every task carries its own test cycle, its `**Files:**` block and its `Dispatch:` line, `## Global Constraints` has been generated from the project rather than remembered, and the plan file is written.",
-      "prompt_bytes": 2394,
+      "prompt_bytes": 2392,
       "prompt_byte_budget": 2400
     },
     {
       "name": "build",
       "entry_condition": "worktree consent, brief file, reviewer template, fix rows, five rounds, commit shape. At close: suite, then docs-check.",
       "stop_condition": "Done when the denominator lists nothing open, each piece has had its review as it landed, and the whole-branch review has run.",
-      "prompt_bytes": 2393,
+      "prompt_bytes": 2391,
       "prompt_byte_budget": 2400
     },
     {
       "name": "verify",
       "entry_condition": "ledger ranges, red-green, line by line.",
       "stop_condition": "Done when every claim has a row with the evidence beside it, the adversary has read that table, and `docs-check` has been run.",
-      "prompt_bytes": 2313,
+      "prompt_bytes": 2311,
       "prompt_byte_budget": 2500
     },
     {
