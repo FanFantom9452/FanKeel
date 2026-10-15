@@ -346,10 +346,9 @@ test('on Claude Desktop the band is two Svg rows, each alt the row the terminal 
     const term = await band('terminal');
     assert.deepEqual(kids(desk).map((n) => n.tag), ['Svg', 'Svg']);
     assert.deepEqual(kids(desk).map((n) => n.props.alt), plain(term));
-    for (const n of kids(desk)) {
-        assert.ok(n.props.source.startsWith('<svg ') && n.props.source.length <= 131072);
-        assert.equal(n.props.isInteractive, undefined);
-    }
+    for (const n of kids(desk)) assert.ok(n.props.source.startsWith('<svg ') && n.props.source.length <= 131072);
+    // The fixture's stage agent is out 12 minutes: the first row breathes, so it is drawn interactive; the second never is.
+    assert.deepEqual(kids(desk).map((n) => n.props.isInteractive), [true, undefined]);
     assert.match(plain(term)[0], /tasks 4\/9/);
     assert.ok(words(kids(desk)[0].props.source).includes('4/9'));
     assert.match(plain(term)[1], /400k\/1M/);

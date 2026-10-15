@@ -1101,3 +1101,41 @@ test('Remote Control: two files of this session with the same mtime are connecte
         assert.match(await rig.tick(), /遠端 ✓$/);
     }
 });
+
+test('turn.start and turn.complete are hooked and pass the event on', async () => {
+    const hooks = await wired();
+    const { $ } = fake({ files: entryFile(live) });
+    for (const name of ['turn.start', 'turn.complete']) {
+        assert.equal(typeof hooks[name], 'function', name + ' is not hooked');
+        assert.deepEqual(await hooks[name]($, { n: 1 }, async (e) => ({ got: e })), { got: { n: 1 } });
+    }
+});
+
+test('the band\'s first row is drawn interactive from turn.start to turn.complete', async () => {
+    const hooks = await wired();
+    const { $, log } = fake({ files: entryFile(live), surfaces: ['desktop'] });
+    $.ui.resolve = () => ({ Box: 'Box', Svg: 'Svg', Text: 'Text' });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const draw = async () => (await hooks['band']($, { surface: 'desktop', ...BAND }, passed)).children;
+    assert.equal((await draw())[0].props.isInteractive, undefined);
+    await hooks['turn.start']($, {}, passed);
+    const during = await draw();
+    assert.equal(during[0].props.isInteractive, true);
+    assert.equal(during[1].props.isInteractive, undefined);
+    await hooks['turn.complete']($, {}, passed);
+    assert.equal((await draw())[0].props.isInteractive, undefined);
+});
+
+test('a turn flag that changes redraws once on the next tick, and not again', async () => {
+    const hooks = await wired();
+    const { $, log } = fake({ files: entryFile(live) });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    await hooks['turn.start']($, {}, passed);
+    log.invalidated = 0;
+    await log.ticks[0].fn();
+    assert.equal(log.invalidated, 1);
+    await log.ticks[0].fn();
+    assert.equal(log.invalidated, 1);
+});
