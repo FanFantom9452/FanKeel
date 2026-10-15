@@ -16,7 +16,7 @@ last_verified: 2026-10-15
 | writer | 留著，只給 stage agent 派 | build 與 audit 的 stage agent 透過它寫給人看的頁；在 session 裡由 session 自己寫 |
 | init-scout、slimmer | 留著，不改 | `fankeel-init` 會派這兩個；這個 repository 從來沒跑過 init |
 
-- 表上第一列的三個從沒被派過；另外三個複本（implementer-high、reviewer-high、brain-xhigh）派過，也一起刪。
+- 表上第一列的三個從沒被派過；另外三個複本派過（reviewer-high 41 次、implementer-high 23 次、brain-xhigh 4 次，數字見[判斷紀錄](../90-agent/judgements/2026-10-15-agent-effort-usage-render.md)），也一起刪。
 - 哪些 agent 只有 stage agent 會派，寫在 `docs/90-agent/reference/subagents.md`。
 
 ## 為什麼
