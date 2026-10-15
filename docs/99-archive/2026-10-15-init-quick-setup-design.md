@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 date: 2026-10-15
 task: 快速設定重新設計
 ---
