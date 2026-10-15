@@ -30,8 +30,10 @@ const suite = require('../lib/suite.js');
 const lock = require('../lib/suitelock.js');
 const { worktreeOf } = require('../lib/guard.js');
 
-// The one line a waiting run prints: who holds the lock, where, since when.
-function waitLine(h, file) {
+// The one line a waiting run prints: who holds the lock, where, since when — or,
+// stuck, that the lock is dead and could not be removed.
+function waitLine(h, file, stuck) {
+    if (stuck) return 'suite: waiting — lock ' + file + ' is stale and could not be removed; delete it by hand';
     if (h.unreadable) return 'suite: waiting — lock ' + file + ' is being written';
     const at = new Date(h.at);
     const since = String(at.getHours()).padStart(2, '0') + ':' + String(at.getMinutes()).padStart(2, '0');
@@ -71,7 +73,7 @@ function main(argv) {
     if (!command) return { text: 'suite: no test command — package.json has no scripts.test; pass --command "<cmd>".', ok: false };
     const lockAt = lock.lockFile();
     const held = process.env.FANKEEL_SUITE_HELD === lockAt ? null
-        : lock.acquire({ file: lockAt, owner: { session: values.session, tree, command }, onWait: (h) => process.stdout.write(waitLine(h, lockAt) + '\n') });
+        : lock.acquire({ file: lockAt, owner: { session: values.session, tree, command }, onWait: (h, stuck) => process.stdout.write(waitLine(h, lockAt, stuck) + '\n') });
     let result;
     try {
         result = suite.runSuite(tree, command, { FANKEEL_SUITE_HELD: lockAt });
@@ -97,4 +99,4 @@ if (require.main === module) {
     process.exit(r.ok ? 0 : 1);
 }
 
-module.exports = { main };
+module.exports = { main, waitLine };

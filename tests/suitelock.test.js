@@ -28,12 +28,14 @@ test('acquire writes this pid into a free lock, and release removes it', () => {
   assert.equal(fs.existsSync(file), false);
 });
 
-test('a lock held by a live pid waits: onWait gets the holder', () => {
+test('a lock held by a live pid waits: onWait gets the holder, not stuck', () => {
   const file = scratch();
   hold(file, { pid: process.pid, at: new Date().toISOString(), session: 'other' });
   let seen = null;
-  assert.throws(() => lock.acquire({ file, onWait: (h) => { seen = h; waited(); } }), /waited/);
+  let stuck = null;
+  assert.throws(() => lock.acquire({ file, onWait: (h, s) => { seen = h; stuck = s; waited(); } }), /waited/);
   assert.equal(seen.session, 'other');
+  assert.equal(stuck, false);
 });
 
 test('a lock whose pid is dead is cleared and taken', () => {

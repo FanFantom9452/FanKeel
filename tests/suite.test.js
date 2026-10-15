@@ -14,7 +14,7 @@ const tmp = require('./tmp.js');
 // lock a running suite.js holds, which would make it wait on its own parent.
 process.env.FANKEEL_SUITE_LOCK = path.join(tmp('fankeel-suitelock-'), 'suite.lock');
 delete process.env.FANKEEL_SUITE_HELD;
-const { main } = require('../scripts/suite.js');
+const { main, waitLine } = require('../scripts/suite.js');
 
 const git = (dir, args) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: dir, encoding: 'utf8' }).trim();
 const DATA = { task: 't', stage: 'land', active: true, started: '2026-09-19T09:30:12.345Z' };
@@ -380,4 +380,10 @@ test('package.json: test is everything, test:fast skips the @slow tag', () => {
   const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
   assert.equal(pkg.scripts.test, 'node --test');
   assert.equal(pkg.scripts['test:fast'], 'node --test --test-skip-pattern=@slow');
+});
+
+test('waitLine names the live holder, and says a stuck dead lock must be deleted by hand', () => {
+  const h = { pid: 42, session: 's', tree: 'T', at: new Date(2026, 9, 16, 9, 5).toISOString() };
+  assert.equal(waitLine(h, 'x.lock', false), 'suite: waiting — pid 42 (session s) has run the suite in T since 09:05; lock x.lock');
+  assert.equal(waitLine(h, 'x.lock', true), 'suite: waiting — lock x.lock is stale and could not be removed; delete it by hand');
 });
