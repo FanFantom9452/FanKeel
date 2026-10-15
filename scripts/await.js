@@ -20,7 +20,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { readObject } = require('../lib/json.js');
 const registry = require('../lib/registry.js');
-const { handoffPath, commitPath, ledgerCommitPath, answerPath, awaitHandoff, newestCommit, caseOfPrompt, promptOf } = require('../lib/handoff.js');
+const { handoffPath, commitPath, ledgerCommitPath, answerPath, awaitHandoff, newestCommit, caseOfPrompt, promptOf, workflowOf } = require('../lib/handoff.js');
 const { newestPlan } = require('../lib/render.js');
 const { transcriptOf } = require('../lib/detail.js');
 const { sessionDirOf, agentFiles } = require('../lib/usage.js');
@@ -118,8 +118,12 @@ function waitFor(opts, env) {
         // report older than the dispatch is not the reply to it.
         if (mark && Number.isFinite(mark.at)) since = mark.at;
     }
+    // A group mark is re-set when its report hands a workflow over and on every
+    // SendMessage delivery, and neither writes an answer file: a report no newer
+    // than the mark is the one already handed over.
+    if (group !== undefined && mark && Number.isFinite(mark.at)) since = Math.max(since, mark.at);
     const activity = own ? () => (fs.existsSync(own) ? agentFiles(dir) : []) : () => [];
-    return { root, handoff, commit: commitCandidates(root, data, lap, group), since, agentId, group, kind, activity, idleMs: opts.idle * 1000, timeoutMs: opts.timeout * 1000 };
+    return { root, handoff, commit: commitCandidates(root, data, lap, group), since, agentId, group, lap, kind, activity, idleMs: opts.idle * 1000, timeoutMs: opts.timeout * 1000 };
 }
 
 // The word first, so the controller's rule can name it; then what to do, so
@@ -131,7 +135,11 @@ function waitFor(opts, env) {
 // running) prints exactly the line it always did.
 function lineFor(state, o, commitFile) {
     const tag = Number.isInteger(o.group) ? 'group ' + o.group + ', agent ' + (o.agentId || '?') + ': ' : '';
-    if (state === 'handoff') return tag + 'handoff ' + o.handoff + ' — print this path and ask its gate as your rules say, unless you already asked it and the file has not changed since.';
+    if (state === 'handoff') {
+        const script = workflowOf(o.handoff);
+        if (script) return tag + 'workflow ' + script + ' — open it with `Workflow({ scriptPath: "' + script + '" })`, then SendMessage agent ' + (o.agentId || '?') + ' `Workflow returned:` and the result, exactly.';
+        return tag + 'handoff ' + o.handoff + ' — print this path and ask its gate as your rules say, unless you already asked it and the file has not changed since.';
+    }
     if (state === 'commit') return tag + 'commit ' + commitFile + ' — run `node ' + COMMIT_SCRIPT + ' "' + commitFile + '"` and SendMessage the agent what it printed, exactly. After a `commit.js:` line, run await again with `--since "' + commitFile + '"` added.';
     if (state === 'lost') return tag + 'lost ' + o.agentId + ' — the stage agent stopped with neither file written: dispatch a fresh one with the same line.';
     return tag + 'timeout — nothing moved in ' + Math.round(o.timeoutMs / 60000) + ' minutes: run await again.';
@@ -184,7 +192,14 @@ function main(argv, env) {
         // A group brain returns with no gate, so hooks/gate.js never clears its
         // mark; its own handoff arriving is the only signal there is. A close mark
         // is left standing for hooks/gate.js, once the gate is confirmed.
-        if (state === 'lost' || (state === 'handoff' && o.kind !== 'close' && Number.isInteger(o.group)))registry.clearInflight(o.root, opts.session, o.agentId);
+        // A group report carrying `workflow:` is a brain still alive, waiting for
+        // the run's result: its mark stays, so the await after the SendMessage
+        // still reads build-g<N>.md rather than build.md, and it is re-marked
+        // now, so that await waits for a report newer than this one instead of
+        // handing the same script over twice. A SendMessage writes no answer file.
+        const handedOver = state === 'handoff' && Number.isInteger(o.group) && Boolean(workflowOf(o.handoff));
+        if (handedOver) registry.markInflight(o.root, opts.session, 'build', o.agentId, o.lap, o.group, o.kind);
+        else if (state === 'lost' || (state === 'handoff' && o.kind !== 'close' && Number.isInteger(o.group))) registry.clearInflight(o.root, opts.session, o.agentId);
         return { text: lineFor(state, o, state === 'commit' ? newestCommit(o.commit, o.since) : null) };
     }, (e) => {
         release();

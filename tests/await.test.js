@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
-const { awaitState, awaitHandoff } = require('../lib/handoff.js');
+const { awaitState, awaitHandoff, workflowOf } = require('../lib/handoff.js');
 const awaitCli = require('../scripts/await.js');
 const registry = require('../lib/registry.js');
 const tmp = require('./tmp.js');
@@ -393,4 +393,35 @@ test('a stage agent starting stamps the lap its brief named on the in-flight mar
     assert.equal(r.status, 0, r.stderr);
     const mark = JSON.parse(fs.readFileSync(path.join(f.root, '.fankeel', 'sessions', SID + '.json'), 'utf8')).inflight;
     assert.deepEqual([mark.stage, mark.agentId, mark.lap], ['build', 'a3f9c2', 2]);
+});
+
+// stage-agents-16: a build brain cannot run Workflow, so a group report that
+// carries `workflow: <path>` hands the script to the controller instead of
+// asking anything; the last such line counts, as for `reads:`.
+test('workflowOf reads the last workflow: line, and null without one', () => {
+    const dir = tmp('fankeel-await-');
+    const report = at(path.join(dir, 'build-g2.md'), T, 'group 2\n\nworkflow: /r/a.js\n\nworkflow:   /r/b.js  \n');
+    assert.equal(workflowOf(report), '/r/b.js');
+    assert.equal(workflowOf(at(path.join(dir, 'build-g3.md'), T, 'group 3\nreads:\n- a — b\n')), null);
+    assert.equal(workflowOf(path.join(dir, 'none.md')), null);
+});
+
+test('await.js tells the controller to open a group report\'s workflow script', async () => {
+    const f = fixture({ inflight: [{ stage: 'build', at: 1, agentId: 'g7', group: 7 }] });
+    const dir = path.join(f.config, 'projects', 'F--x', SID);
+    at(path.join(f.config, 'projects', 'F--x', SID + '.jsonl'), Date.now());
+    at(path.join(dir, 'subagents', 'agent-g7.jsonl'), Date.now(), JSON.stringify({ message: { role: 'user', content: 'build group 2: tasks 3, 4, 5.' } }) + '\n');
+    const g7 = path.join(f.task, 'build-g7.md').split(path.sep).join('/');
+    at(g7, Date.now(), 'group 7\n\nworkflow: /r/.fankeel/build/p/workflow-g2.js\n');
+    const out = await awaitCli.main(['--session', SID, '--root', f.root, '--agent', 'g7', '--timeout', '0.1'], f.env);
+    assert.ok(out.text.startsWith('group 7, agent g7: workflow /r/.fankeel/build/p/workflow-g2.js — '), out.text);
+    assert.match(out.text, /Workflow\(\{ scriptPath: "\/r\/\.fankeel\/build\/p\/workflow-g2\.js" \}\)/);
+    assert.match(out.text, /SendMessage agent g7 `Workflow returned:` and the result, exactly/);
+    assert.deepEqual(registry.inflights(registry.readSession(f.root, SID)).map((m) => m.agentId), ['g7'], 'a brain waiting on its workflow keeps its mark');
+    const stale = await awaitCli.main(['--session', SID, '--root', f.root, '--agent', 'g7', '--timeout', '0.3'], f.env);
+    assert.ok(stale.text.startsWith('group 7, agent g7: timeout'), 'the report already handed over is not news: ' + stale.text);
+    at(g7, Date.now() + 1000, 'group 7\n\ndone 3 of 3\n');
+    const again = await awaitCli.main(['--session', SID, '--root', f.root, '--agent', 'g7', '--timeout', '0.5'], f.env);
+    assert.ok(again.text.startsWith('group 7, agent g7: handoff ' + g7), again.text);
+    assert.deepEqual(registry.inflights(registry.readSession(f.root, SID)).map((m) => m.agentId), [], 'the report without the line clears it as before');
 });
