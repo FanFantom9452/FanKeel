@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
-const { awaitState, awaitHandoff, workflowOf } = require('../lib/handoff.js');
+const { awaitState, awaitHandoff, workflowOf, answerPath } = require('../lib/handoff.js');
 const awaitCli = require('../scripts/await.js');
 const registry = require('../lib/registry.js');
 const tmp = require('./tmp.js');
@@ -424,4 +424,21 @@ test('await.js tells the controller to open a group report\'s workflow script', 
     const again = await awaitCli.main(['--session', SID, '--root', f.root, '--agent', 'g7', '--timeout', '0.5'], f.env);
     assert.ok(again.text.startsWith('group 7, agent g7: handoff ' + g7), again.text);
     assert.deepEqual(registry.inflights(registry.readSession(f.root, SID)).map((m) => m.agentId), [], 'the report without the line clears it as before');
+});
+
+// An answer file older than the mark is no floor: the re-mark on hand-over
+// writes none, so without the mark's own `at` the second await would read the
+// report it just handed over as new.
+test('await.js does not hand a workflow over twice when an older answer file exists', async () => {
+    const f = fixture({ inflight: [{ stage: 'build', at: 1, agentId: 'g7', group: 7 }] });
+    const dir = path.join(f.config, 'projects', 'F--x', SID);
+    at(path.join(f.config, 'projects', 'F--x', SID + '.jsonl'), Date.now());
+    at(path.join(dir, 'subagents', 'agent-g7.jsonl'), Date.now(), JSON.stringify({ message: { role: 'user', content: 'build group 2: tasks 3, 4, 5.' } }) + '\n');
+    at(answerPath(f.root, registry.readSession(f.root, SID), 'build', undefined), Date.now() - 5000);
+    const g7 = path.join(f.task, 'build-g7.md').split(path.sep).join('/');
+    at(g7, Date.now(), 'group 7\n\nworkflow: /r/.fankeel/build/p/workflow-g2.js\n');
+    const out = await awaitCli.main(['--session', SID, '--root', f.root, '--agent', 'g7', '--timeout', '0.1'], f.env);
+    assert.ok(out.text.startsWith('group 7, agent g7: workflow /r/.fankeel/build/p/workflow-g2.js — '), out.text);
+    const stale = await awaitCli.main(['--session', SID, '--root', f.root, '--agent', 'g7', '--timeout', '0.3'], f.env);
+    assert.ok(stale.text.startsWith('group 7, agent g7: timeout'), 'an answer older than the re-mark does not make the handed-over report news: ' + stale.text);
 });
