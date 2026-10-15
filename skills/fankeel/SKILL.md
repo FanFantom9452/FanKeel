@@ -1094,8 +1094,8 @@ Six rules that make it work, each of which fails silently when missed:
   (the word `inherit` when its transcript names none); a
   full id is parsed as it stands, an alias takes its version off the newest
   real `message.model` of that family in this project's subagent transcripts,
-  left out when there is none; the effort off the agent file's `effort:`,
-  else `inherit`. Another plugin's agent, or an agent file it cannot read,
+  left out when there is none; the effort from the call's `effort`, else
+  the agent file's `effort:`, else `inherit`. Another plugin's agent, or an agent file it cannot read,
   gets no prefix — the model there is not one it can know. The
   description is the title a background agent runs under, and the one place
   the user sees what is spending while it runs — so it is computed, never

@@ -34,7 +34,7 @@ const plantasks = require('../lib/plantasks.js');
 const profileLib = require('../lib/profile.js');
 const { controlling } = require('../lib/stages.js');
 const { contextPath } = require('../lib/handoff.js');
-const { parseTargets, pagesTouched } = require('../lib/shots.js');
+const { loadTargets, pagesTouched, renderFileRefusal, verdictRefusal } = require('../lib/shots.js');
 
 function fail(message) {
     process.stdout.write(message + '\n');
@@ -500,59 +500,49 @@ function prefix(root, planOpt, group) {
 // read as a review that passed. Returns the note's suffix naming the file.
 function renderNote(root, render) {
     if (render === undefined) return '';
-    const file = path.resolve(render);
-    let text;
-    try {
-        text = fs.readFileSync(file, 'utf8');
-    } catch (e) {
-        return fail('--render: no file at ' + file + '.');
-    }
-    if (!ledger.renderShips(text)) {
-        fail('--render ' + render + ': its first line is not `disposition: ship`. What it found goes back to the implementer before this is recorded.');
-    }
-    return ' — render: ' + path.relative(root, file).split(path.sep).join('/');
+    const refusal = renderFileRefusal(render);
+    if (refusal) fail(refusal);
+    return ' — render: ' + path.relative(root, path.resolve(render)).split(path.sep).join('/');
 }
+
+const SKIP_HOW = 'record `ruling "render skipped" "<why>" "<cost if wrong>"`';
 
 // A range that changed a file a `.fankeel/render.json` page names in `src`,
 // with neither `--render` nor a `Ruling: render skipped — <why>` since the
-// last complete or fix: the refusal, else null. No render.json, or no page
-// with `src`, is never refused
+// last complete or fix: the refusal, else null. No range at all, where a page
+// has `src`, is refused the same way: the range is what the check reads. No
+// render.json, or no page with `src`, is never refused
 // (docs/90-agent/plans/2026-10-15-render-gate-design.md §1). Only the
 // registry root's render.json is read; a `--project` subdirectory's is not.
 function renderRefusal(root, range, opts) {
-    let conf;
-    try {
-        conf = fs.readFileSync(path.join(root, '.fankeel', 'render.json'), 'utf8');
-    } catch (e) {
-        if (e.code === 'ENOENT') return null;
-        return '.fankeel/render.json could not be read (' + e.code + '), so this range cannot be checked against it.';
+    const loaded = loadTargets(path.join(root, '.fankeel', 'render.json'));
+    if (!loaded) return null;
+    if (loaded.refusal) return loaded.refusal;
+    const { targets } = loaded;
+    let changed = null;
+    if (range === undefined) {
+        if (!targets.src.size) return null;
+    } else {
+        try {
+            // -z: without it git quotes a non-ASCII path, which no glob matches.
+            // --no-renames: a file renamed out of a `src` glob lists its old side too.
+            changed = execFileSync('git', ['diff', '-z', '--name-only', '--no-renames', range], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
+                .split('\0').filter(Boolean);
+        } catch (e) {
+            return 'git could not read ' + range + ', so it cannot be checked against .fankeel/render.json.';
+        }
+        if (!pagesTouched(targets, changed).length || opts.render !== undefined) return null;
     }
-    let targets;
-    try {
-        targets = parseTargets(conf);
-    } catch (e) {
-        return e.message;
-    }
-    let changed;
-    try {
-        // -z: without it git quotes a non-ASCII path, which no glob matches.
-        // --no-renames: a file renamed out of a `src` glob lists its old side too.
-        changed = execFileSync('git', ['diff', '-z', '--name-only', '--no-renames', range], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
-            .split('\0').filter(Boolean);
-    } catch (e) {
-        return 'git could not read ' + range + ', so it cannot be checked against .fankeel/render.json.';
-    }
-    const pages = pagesTouched(targets, changed);
-    if (!pages.length || opts.render !== undefined) return null;
     let contents = '';
     try {
         contents = fs.readFileSync(ledger.ledgerPath(root, opts.plan), 'utf8');
     } catch (e) { /* no ledger yet, so no ruling either */ }
     if (ledger.owns(contents, opts.plan) && ledger.renderSkipped(contents) !== null) return null;
-    const hits = changed.filter((p) => pagesTouched(targets, [p]).length);
-    return 'fankeel ledger — this range changes ' + pages.join(', ') + ' (' + hits.join(', ') + ') and carries no render verdict.'
-        + '\nPass --render <file>, the render reviewer\'s return, whose first line is `disposition: ship`;'
-        + '\nor record `ruling "render skipped" "<why>" "<cost if wrong>"` first: one `Ruling: render skipped — <why>` covers this task alone.';
+    if (range === undefined) {
+        return 'fankeel ledger — .fankeel/render.json names the files that draw its pages, and --range <base>..<head> is what lets the render check run.'
+            + '\nComplete with --range, or ' + SKIP_HOW + ' first: one `Ruling: render skipped — <why>` covers this task alone.';
+    }
+    return verdictRefusal(targets, changed, '--render <file>', SKIP_HOW);
 }
 
 function main(argv) {
@@ -641,10 +631,8 @@ function main(argv) {
                 + '"' + opts.range + '" would reach the file and read back as no range at all.');
         }
         const suffix = renderNote(root, opts.render);
-        if (opts.range !== undefined) {
-            const refusal = renderRefusal(root, opts.range, opts);
-            if (refusal) fail(refusal);
-        }
+        const refusal = renderRefusal(root, opts.range, opts);
+        if (refusal) fail(refusal);
         ledger.append(root, opts.plan, ledger.completionLine(n, note + suffix, opts.range));
         return 'fankeel ledger — Task ' + n + ' complete.';
     }

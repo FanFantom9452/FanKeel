@@ -43,8 +43,8 @@ const { handoffPath, readGate, lapsUsed, contextPath } = require('../lib/handoff
 const { controlRulesFor, PLUGIN_MARK, PLUGIN_ROOT, newestPlan, blockSizes, BLOCK_CAP } = require('../lib/render.js');
 const { estimateTokens } = require('./input-check.js');
 const plantasks = require('../lib/plantasks.js');
-const { parseTargets, pagesTouched } = require('../lib/shots.js');
-const { renderShips, renderSkipped } = require('../lib/ledger.js');
+const { loadTargets, renderFileRefusal, verdictRefusal } = require('../lib/shots.js');
+const { renderSkipped } = require('../lib/ledger.js');
 const { rateFor } = require('../lib/prices.js');
 
 const PLUGIN = path.resolve(__dirname, '..');
@@ -847,53 +847,36 @@ function todoLines(root, id, data) {
 // Leaving build on a route with no plan there is no ledger, so the render
 // check `ledger.js complete` makes runs here, over the entry's claims
 // (docs/90-agent/plans/2026-10-15-render-gate-design.md §1). The refusal, or
-// null. Claims are relative to the registry root and `src` to the project
-// render.json sits in, found as `valuesOfRecord` finds it; a worktree's
-// claims carry the worktree's own path in front. Only a missing render.json
-// means no check: one that cannot be read or parsed refuses.
+// null. Claims are relative to the registry root, a worktree's with the
+// worktree's own path in front; `src` is relative to the project render.json
+// sits in, found as `valuesOfRecord` finds it, so a claim outside that
+// project is never matched. Only a missing render.json means no check: one
+// that cannot be read or parsed refuses. A given `--render` was checked
+// before this.
 function renderRefusal(root, data, opts, next) {
     const projectRoot = docs.projectRootsFor(root, data.project ? [data.project] : [])[0] || root;
-    const confPath = path.join(projectRoot, '.fankeel', 'render.json');
-    let conf;
-    try {
-        conf = fs.readFileSync(confPath, 'utf8');
-    } catch (e) {
-        if (e.code === 'ENOENT') return null;
-        return 'render.json: could not read ' + confPath + ' (' + e.code + ').';
-    }
-    let targets;
-    try {
-        targets = parseTargets(conf);
-    } catch (e) {
-        return e.message;
-    }
+    const loaded = loadTargets(path.join(projectRoot, '.fankeel', 'render.json'));
+    if (!loaded) return null;
+    if (loaded.refusal) return loaded.refusal;
+    if (opts.render !== undefined || renderSkipped(registry.notesOf(data).join(NL)) !== null) return null;
     const wt = worktreeOf(data);
     const base = wt ? wt.path : path.relative(root, projectRoot).split(path.sep).join('/');
-    const paths = registry.claimsOf(data).map((c) => (base && c.startsWith(base + '/') ? c.slice(base.length + 1) : c));
-    const pages = pagesTouched(targets, paths);
-    if (!pages.length) return null;
-    if (opts.render !== undefined) {
-        const file = path.resolve(opts.render);
-        let text;
-        try {
-            text = fs.readFileSync(file, 'utf8');
-        } catch (e) {
-            return '--render: no file at ' + file + '.';
-        }
-        return renderShips(text) ? null
-            : '--render ' + opts.render + ': its first line is not `disposition: ship`. What it found goes back to the implementer first.';
-    }
-    if (renderSkipped(registry.notesOf(data).join(NL)) !== null) return null;
-    const hits = paths.filter((p) => pagesTouched(targets, [p]).length);
-    return 'fankeel — this task changed ' + pages.join(', ') + ' (' + hits.join(', ') + ') and has no render verdict.' + NL
-        + 'Pass `stage ' + next + ' --render <file>`: the render reviewer\'s return, whose first line is `disposition: ship`;' + NL
-        + 'or `note "Ruling: render skipped — <why>"` first.';
+    const paths = registry.claimsOf(data)
+        .filter((c) => !base || c.startsWith(base + '/'))
+        .map((c) => (base ? c.slice(base.length + 1) : c));
+    return verdictRefusal(loaded.targets, paths, '`stage ' + next + ' --render <file>`', '`note "Ruling: render skipped — <why>"`');
 }
 
 function cmdStage(root, opts) {
     const id = requireSession(opts);
     const name = String(opts.positional[0] || '').toLowerCase();
     if (!stageByName(name)) fail('Not a stage: ' + (name || '(none)') + '. One of: ' + STAGE_NAMES.join(', '));
+    // Checked whenever it is given, as the ledger checks it: a `fix` verdict
+    // passed on a task that touched no page is still not a review that passed.
+    if (opts.render !== undefined) {
+        const bad = renderFileRefusal(opts.render);
+        if (bad) fail(bad);
+    }
 
     // Read, checked and written inside the lock, because a claim landing between
     // the read and the write used to be put back the way it was. `refuse` rather
@@ -1691,7 +1674,8 @@ const USAGE = [
     '  start --task "..." [--project <dir>] [--route "survey,build,verify"]',
     '                                    begin, at the first stage of the route',
     '  task "..."                        a new task here: clears claims, notes and next',
-    '  stage <name>                      move along the route',
+    '  stage <name> [--render <file>]    move along the route; leaving build with no plan,',
+    '                                    a page change needs the render reviewer\'s return',
     '  route "a,b,c"                     re-route a task that changed shape',
     '  note "..."                        a dead end or a decision, capped at five',
     '  next "..."                        one line; empty clears it',

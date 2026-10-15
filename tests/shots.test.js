@@ -1,8 +1,10 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
 const path = require('node:path');
-const { parseTargets, cells, pagesTouched } = require('../lib/shots.js');
+const { parseTargets, cells, pagesTouched, loadTargets, renderFileRefusal, verdictRefusal } = require('../lib/shots.js');
+const tmp = require('./tmp.js');
 
 const CONF = JSON.stringify({
     pages: [{ name: 'home', url: 'home.html' }, { name: 'admin', url: 'http://127.0.0.1:9/admin' }],
@@ -67,4 +69,36 @@ test('pagesTouched names the pages whose src matches a path, either separator, a
     assert.deepEqual(pagesTouched(t, ['lib/x.js', 'assets/other.css', 'README.md']), []);
     assert.deepEqual(pagesTouched(t, []), []);
     assert.deepEqual(pagesTouched(parseTargets(CONF), ['home.html']), []);
+});
+
+// The ledger and `task.js stage` read render.json and a --render file, and
+// word the refusal, through these, so the two never drift apart again.
+test('loadTargets: null with no file, a refusal for one it cannot read or parse, else the targets', () => {
+    const dir = tmp('fankeel-shots-');
+    assert.equal(loadTargets(path.join(dir, 'render.json')), null);
+    assert.match(loadTargets(dir).refusal, /render\.json: could not read .* \(E[A-Z]+\)/);
+    fs.writeFileSync(path.join(dir, 'bad.json'), '{');
+    assert.match(loadTargets(path.join(dir, 'bad.json')).refusal, /render\.json: not JSON/);
+    fs.writeFileSync(path.join(dir, 'ok.json'), SRC);
+    assert.deepEqual(loadTargets(path.join(dir, 'ok.json')).targets.src.get('home'), ['site/**', 'assets/home.css']);
+});
+
+test('renderFileRefusal passes only a file whose first non-blank line is disposition: ship', () => {
+    const dir = tmp('fankeel-shots-');
+    fs.writeFileSync(path.join(dir, 'ship.md'), '\n  \ndisposition: ship\n');
+    fs.writeFileSync(path.join(dir, 'fix.md'), 'disposition: fix\ndisposition: ship\n');
+    assert.equal(renderFileRefusal(path.join(dir, 'ship.md')), null);
+    assert.match(renderFileRefusal(path.join(dir, 'fix.md')), /fix\.md: its first line is not `disposition: ship`/);
+    assert.match(renderFileRefusal(path.join(dir, 'gone.md')), /--render: no file at .*gone\.md/);
+});
+
+test('verdictRefusal names the pages and only the paths that reach them, with the caller\'s two ways through', () => {
+    const t = parseTargets(SRC);
+    assert.equal(verdictRefusal(t, ['lib/x.js'], 'PASS', 'SKIP'), null);
+    const said = verdictRefusal(t, ['lib/x.js', 'site/index.html'], 'PASS', 'SKIP');
+    assert.match(said, /home \(site\/index\.html\) and carries no render verdict/);
+    assert.doesNotMatch(said, /lib\/x\.js|admin/);
+    assert.match(said, /PASS/);
+    assert.match(said, /SKIP/);
+    assert.match(said, /Ruling: render skipped — <why>/);
 });

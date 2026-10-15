@@ -4,6 +4,9 @@
   "private": true,
   "description": "Claude Code plugin: per-session task registry and development discipline.",
   "license": "MIT",
+  "engines": {
+    "node": ">=22.5"
+  },
   "scripts": {
     "test": "node --test",
     "clean": "node scripts/tmp-clean.js"

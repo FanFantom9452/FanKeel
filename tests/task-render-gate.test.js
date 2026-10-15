@@ -97,6 +97,32 @@ test('a render.json that cannot be read or parsed refuses rather than skipping t
     assert.equal(registry.readSession(unread, A).stage, 'build');
 });
 
+test('a --render file is checked whenever it is given, on a task that touched no page too', () => {
+    const dir = atBuild('build,verify', ['lib/x.js']);
+    fs.writeFileSync(path.join(dir, 'fix.md'), 'disposition: fix\n');
+    const { out, code } = run(dir, ['stage', 'verify', '--render', 'fix.md', '--session', A]);
+    assert.equal(code, 1, out);
+    assert.match(out, /first line is not `disposition: ship`/);
+    assert.equal(registry.readSession(dir, A).stage, 'build');
+});
+
+test('src is matched against the claims inside the project only, relative to it', () => {
+    const dir = tmp('fankeel-render-gate-');
+    fs.mkdirSync(path.join(dir, 'app', '.fankeel'), { recursive: true });
+    fs.writeFileSync(path.join(dir, 'app', '.fankeel', 'render.json'), JSON.stringify({
+        pages: [{ name: 'home', url: 'site/index.html', src: ['**/*.html'] }],
+        roles: [{ name: 'guest' }],
+    }));
+    run(dir, ['start', '--session', A, '--task', 'a page task', '--route', 'build,verify', '--project', 'app']);
+    registry.addClaim(dir, A, 'other/index.html');
+    assert.equal(run(dir, ['stage', 'verify', '--session', A]).code, 0, 'a claim outside the project');
+    run(dir, ['stage', 'build', '--session', A]);
+    registry.addClaim(dir, A, 'app/site/index.html');
+    const { out, code } = run(dir, ['stage', 'verify', '--session', A]);
+    assert.equal(code, 1, out);
+    assert.match(out, /\(site\/index\.html\)/);
+});
+
 test('a worktree claim is read relative to its worktree', () => {
     const dir = atBuild('build,verify', []);
     registry.update(dir, A, (d) => { d.worktree = { path: '.fankeel/worktrees/aaaaaaaa', branch: 'fk/aaaaaaaa' }; });

@@ -1221,6 +1221,23 @@ test('a render.json that cannot be read or parsed, or a range git cannot read, i
   assert.match(gone.out, /git could not read aaaaaaa\.\.bbbbbbb/);
 });
 
+test('complete with no --range, where a render.json page names its src, is refused until a skip ruling covers the task', () => {
+  const { dir } = pageRepo();
+  const { out, code } = inRepo(dir, 'complete', '1', 'no range');
+  assert.equal(code, 1, out);
+  assert.match(out, /--range/);
+  assert.match(out, /render check/);
+  assert.equal(fs.existsSync(ledger.ledgerPath(dir, 'p.md')), false, 'nothing was recorded');
+  inRepo(dir, 'ruling', 'render skipped', 'tuned live with the user', 'a broken page ships');
+  assert.equal(inRepo(dir, 'complete', '1', 'no range').code, 0);
+  assert.equal(inRepo(dir, 'complete', '2', 'no range').code, 1, 'the ruling covered task 1 alone');
+  const plain = pageRepo();
+  fs.writeFileSync(path.join(plain.dir, '.fankeel', 'render.json'),
+    JSON.stringify({ pages: [{ name: 'home', url: 'site/index.html' }], roles: [{ name: 'guest' }] }));
+  assert.equal(inRepo(plain.dir, 'complete', '1', 'no range').code, 0);
+  assert.equal(inRepo(pageRepo(false).dir, 'complete', '1', 'no range').code, 0);
+});
+
 test('a --render file that is not disposition: ship is refused even on a range touching no page', () => {
   const { dir, base } = pageRepo();
   const head = commitAt(dir, 'lib/x.js');
