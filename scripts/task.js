@@ -1122,8 +1122,9 @@ function cmdProfile(root, opts) {
     const projectRoot = projectRootFor(root, opts);
     // profile-3: `docs.projectRootsFor` drops a value it cannot resolve to a
     // directory under root (missing, absolute, `..`, a file), and the fallback
-    // to root then wrote the registry root's profile.
-    if (opts.project && projectRoot === root) fail('--project ' + opts.project + ': no such project under ' + root);
+    // to root then wrote the registry root's profile. It also checks only the
+    // first segment, so `app/missing` resolved to `app`; the full path must exist.
+    if (opts.project && (projectRoot === root || !fs.existsSync(path.resolve(root, String(opts.project))))) fail('--project ' + opts.project + ': no such project under ' + root);
     const cfg = claudeDir(opts);
     if (verb === 'show') {
         const { values, sources, unreadable } = profile.read(projectRoot, cfg);

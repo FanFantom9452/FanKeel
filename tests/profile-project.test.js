@@ -14,17 +14,35 @@ const tmp = require('./tmp.js');
 const TASK = path.join(__dirname, '..', 'scripts', 'task.js');
 const run = (d, cfg, args) => spawnSync(process.execPath, [TASK, 'profile', ...args, '--root', d, '--claude-dir', cfg], { encoding: 'utf8', env: Object.assign({}, process.env, { CLAUDE_CONFIG_DIR: cfg }) });
 
-for (const args of [['set', 'guard', 'ask'], ['preset', 'lean']]) {
-    test('profile ' + args[0] + ' refuses a --project that does not exist and writes nothing', () => {
-        const d = tmp('fankeel-profile-project-');
-        const cfg = path.join(d, 'cfg');
-        const r = run(d, cfg, [...args, '--project', 'nope']);
-        assert.equal(r.status, 1);
-        assert.match(r.stdout, /--project nope: no such project under /);
-        assert.equal(fs.existsSync(profile.projectFile(d)), false);
-        assert.equal(fs.existsSync(path.join(d, 'nope')), false);
-    });
-}
+test('profile set refuses a --project that does not exist and writes nothing', () => {
+    const d = tmp('fankeel-profile-project-');
+    const cfg = path.join(d, 'cfg');
+    const r = run(d, cfg, ['set', 'guard', 'ask', '--project', 'nope']);
+    assert.equal(r.status, 1);
+    assert.match(r.stdout, /--project nope: no such project under /);
+    assert.equal(fs.existsSync(profile.projectFile(d)), false);
+    assert.equal(fs.existsSync(path.join(d, 'nope')), false);
+});
+
+test('profile preset refuses a --project that does not exist and writes nothing', () => {
+    const d = tmp('fankeel-profile-project-');
+    const cfg = path.join(d, 'cfg');
+    const r = run(d, cfg, ['preset', 'lean', '--project', 'nope']);
+    assert.equal(r.status, 1);
+    assert.match(r.stdout, /--project nope: no such project under /);
+    assert.equal(fs.existsSync(profile.projectFile(d)), false);
+    assert.equal(fs.existsSync(path.join(d, 'nope')), false);
+});
+
+test('profile set refuses a --project whose first segment exists but the rest does not', () => {
+    const d = tmp('fankeel-profile-project-');
+    const cfg = path.join(d, 'cfg');
+    fs.mkdirSync(path.join(d, 'app'));
+    const r = run(d, cfg, ['set', 'guard', 'ask', '--project', 'app/missing']);
+    assert.equal(r.status, 1);
+    assert.equal(fs.existsSync(profile.projectFile(d)), false);
+    assert.equal(fs.existsSync(profile.projectFile(path.join(d, 'app'))), false);
+});
 
 test('profile set refuses a --project naming a file rather than a directory', () => {
     const d = tmp('fankeel-profile-project-');
