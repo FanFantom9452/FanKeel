@@ -3,7 +3,7 @@ name: fankeel-init
 description: First-use onboarding for a project fankeel has not organised — its docs tree, raw data, TODO, directory tree, CLAUDE.md, memory and a sensitive-word list — one question at a time until the onboarding checks pass. Use when `task.js start` prints an `onboard:` line, or for /fankeel-init.
 version: 0.109.0
 status: current
-last_verified: 2026-10-12
+last_verified: 2026-10-15
 source_of_truth: scripts/onboard.js, lib/onboard.js, agents/fankeel-init-scout.md, scripts/compact-window.js, hooks/compact.ts
 ---
 
@@ -13,8 +13,9 @@ Puts a project's documents in a state the stages can read as true. A page
 nobody filed, a tree row nobody described and a page nobody re-read are what a
 survey reads as the present and repeats as fact.
 
-**Done when** `node <plugin>/scripts/onboard.js --full --root <project>` exits
-0. Short of that, the checks that failed are named and left at their step.
+**Done when** step 1 has written the habits and either step 2 was answered
+先不要 or 下次再說, or `node <plugin>/scripts/onboard.js --full --root <project>`
+exits 0. Short of that, the checks that failed are named and left at their step.
 
 - **One path, never a search.** `<plugin>` is two directories up from this
   file; resolve every script this skill names against that root and nowhere
@@ -32,104 +33,41 @@ survey reads as the present and repeats as fact.
   reports `done` is skipped with one sentence saying so. A rerun picks up where
   the last one stopped, because the state is read again, never stored.
 
-## 0. The scout and the first gate
+
+## 0. The scout
 
 Dispatch one `subagent_type: fankeel:fankeel-init-scout` — its file pins
 `sonnet` — with `<project>` and `<open>`, and say how many, and on which model:
 one, `fankeel-init-scout`, on `sonnet`.
-Its `status:` and `drafts:` are what every step below starts from.
+Its `status:` and `drafts:` are what every step below starts from. Nothing is
+asked before step 1: the habits come first, and the docs half waits behind
+step 2's gate.
 
-The first gate lists the open steps, and its last option is **先跳過**. Chosen,
-ask a second gate that says what skipping costs — every later survey reads the
-unfiled pages and the undescribed tree as the present — and recommends
-organising first. Only a confirmed second answer runs
-`node <plugin>/scripts/task.js profile set init.skip true --project <name>`;
-after it, `task.js start` prints no `onboard:` line for this project.
+## 1. Habits
 
-## 1. Visibility and the word list
+`node <plugin>/scripts/task.js profile show --project <name>` first. A
+`profile.json` already there is read as it is: nothing in it is migrated, and
+only what an answer below writes changes.
 
-First, because everything this skill writes is committed afterwards.
+- The first question, one `AskUserQuestion`, four options in this order:
+  **建議值** (`balanced`, recommended), **省 context** (`lean`), **每關都問**
+  (`manual`), **逐項設定**. Each description says what its preset writes —
+  `PRESETS` in `<plugin>/lib/profile.js` — and 建議值's says that
+  `land.integration` and `land.push` come from this repository's history
+  where `profile suggest` reads one.
+- 建議值, 省 context and 每關都問 run one command and are done:
+  `node <plugin>/scripts/task.js profile preset <balanced|lean|manual> --project <name>`.
+  It writes a value as `profile set` does and clears a `null` as
+  `profile unset` does. Show its lines; one ending `(from history)` is a value
+  the history chose over the preset's.
+- 逐項設定 asks one `AskUserQuestion` per card, in the station wizard's order:
+  收尾, 任務大小, 前端, context, 撞檔, 模型, 監控站, 答 gate (`WIZ_STEPS` in
+  `<plugin>/assets/station/station.js`). Each card's options are its habits;
+  an answer runs `node <plugin>/scripts/task.js profile set <key> <value> --project <name>`
+  for each key it sets and `node <plugin>/scripts/task.js profile unset <key> --project <name>`
+  for each key it clears.
 
-- `gh repo view --json visibility` answers `public` or `private`; no remote is
-  `local`; no `gh`, or no answer, is `unknown`. Visibility only sets how hard to
-  ask: on `public`, recommend a word list and `block`.
-- The list is `.fankeel/sensitive.txt`, one word per line. Add `sensitive.txt`
-  to `.fankeel/.gitignore` before writing it: the list is itself sensitive, and
-  it is per machine — a new machine sets it again.
-- Ask for `sensitive.mode` — `warn`, the default, or `block` — and
-  `sensitive.review` — `false`, the default, or `true`, recommended on
-  `public` — and set each with
-  `node <plugin>/scripts/task.js profile set <key> <value> --project <name>`.
-- Specs and plans are committed as they always are: the list decides what a
-  commit is warned about, not whether a plan lands.
-
-## 2. docs.json, raw data first
-
-- Take the scout's `data` drafts to the user one directory at a time. Each one
-  approved becomes a bucket `{ "path": "<dir>", "role": "data" }` — a path and a
-  role, nothing more. A `data` bucket is not a document: docs-check and
-  docs-audit skip it and it is never counted unfiled.
-- No `docs.json`: offer the three shapes, `audience` as option one, and write
-  the chosen one with `lib/docs.js`'s `write(root, PRESETS[<shape>])` —
-  `node -e "const d=require('<plugin>/lib/docs.js');d.write('<project>',d.PRESETS['<shape>'])"` —
-  then add the approved `data` buckets to it.
-- Pages already on disk:
-  `node <plugin>/scripts/docs-move.js plan --to <shape> --out <project>/.fankeel/build/moves.tsv --root <project>`,
-  show the table, and only after approval
-  `node <plugin>/scripts/docs-move.js apply --to <shape> --table <project>/.fankeel/build/moves.tsv --root <project>`.
-- The scout's `file` drafts settle what is still unfiled: a bucket for its
-  directory, or a move.
-
-## 3. TODO
-
-- A `TODO.md` already there: ask one question first, two options.
-  **Move it into docs**: declare a `role: todo` bucket — `docs/90-agent/todo`
-  under `audience` — run `node <plugin>/scripts/todo.js migrate --root <project>`
-  (each line becomes an entry file whose body is that line and a source line,
-  and `TODO.md` is removed; its text stays in git history), then
-  `node <plugin>/scripts/todo-check.js --root <project>`. Every open entry it
-  names `thin body` gets its body written from that line's history — `git log`
-  on the old `TODO.md` finds the commit that brought the line in — in three
-  parts: where it came from, what it should become, what counts as done, at
-  least 200 characters together. An entry it names `no reason` (text outside the
-  migration template and its own description under 200 characters) needs a reason
-  written by hand, not derived from history: a `## 為什麼還開著` section naming the
-  incident, session or sha and what done looks like. **Keep the hand-written `TODO.md`**: declare
-  no bucket; `orient`, todo-check and the station go on reading it, and
-  `todo.js migrate` can move it in any later day.
-- None: declare the same bucket and create its empty folder.
-
-## 4. The directory tree
-
-`node <plugin>/scripts/layout.js --root <project>` prints the half a listing
-can derive. Fill each row with the scout's `tree` draft, show the result as a
-diff, and take the user's approval row by row before writing it into the file
-`onboard.js` found the tree in — `README.md` where there was none.
-
-## 5. CLAUDE.md
-
-- `node <plugin>/scripts/input-check.js --root <open>` lists every `CLAUDE.md`
-  loaded at `<open>` — global, above, at `<open>` and under it — and each
-  `MEMORY.md`, with sizes.
-- Put the scout's `scope:`, `contradiction:` and `duplicate:` lines to the user
-  as diffs: a repository's own rule moves into that repository's `CLAUDE.md`, a
-  duplicate loses one side, and a contradiction is the user's to settle. Each
-  file is written only after its own approval.
-- Cuts for size go to one `subagent_type: fankeel:fankeel-slimmer`, never here.
-
-## 6. Memory
-
-`node <plugin>/scripts/memory-check.js --root <open>`, and name every other
-open location under this workspace that keeps a memory of its own. Report only:
-nothing is merged, and no entry is written in advance.
-A `MEMORY.md` line that carries more than its title, link and a short hook is
-a slimmer cut, not a step-6 finding: it goes with step 5's dispatch.
-
-## 7. Profile
-
-`node <plugin>/scripts/task.js profile show --project <name>`; the keys no
-earlier step settled are asked one at a time, the way `/fankeel` asks them.
-Two of them carry this repository's own evidence:
+Then, whichever answer, two keys that carry this repository's own evidence:
 
 - `worktree` — `false` (the builtin), `true` (every task opens its own
   checkout), `bounded` (bounded and architectural tasks do) or `architectural`
@@ -141,8 +79,8 @@ Two of them carry this repository's own evidence:
   `land.js merge` writes `merge: <task>`, so a pattern without `merge` refuses
   `land.js merge` until the user adds it. Write nothing the user did not pick.
 
-One more question belongs to the machine, not to the profile, and is asked
-whatever the scout's `profile` row says:
+One more question belongs to the machine, not to the profile, and is asked on
+its own after the preset, whatever the scout's `profile` row says:
 
 - The auto-compact window — asked when
   `node <plugin>/scripts/task.js profile show` gives `compact.at` the
@@ -182,7 +120,103 @@ whatever the scout's `profile` row says:
   No answer writes nothing, and `task.js start` then leaves the machine's
   window as it is.
 
-## 8. Close
+## 2. The gate
+
+One `AskUserQuestion` after the habits, three options in this order:
+
+- **整理** — organise the docs: `docs.json`, the TODO, the directory tree,
+  `CLAUDE.md`, memory and the word list. Steps 3 to 9 run.
+- **先不要** — runs
+  `node <plugin>/scripts/task.js profile set init.skip true --project <name>`;
+  after it, `task.js start` prints no `onboard:` line for this project. Its
+  description says what skipping costs — every later survey reads the unfiled
+  pages and the undescribed tree as the present — and that `/fankeel-init`
+  still runs the docs steps on any later day.
+- **下次再說** — writes nothing; the `onboard:` line comes back at the next
+  `task.js start`.
+
+先不要 and 下次再說 end the skill here, with the habits already written.
+
+## 3. Visibility and the word list
+
+First of the docs half, because everything it writes is committed afterwards.
+
+- `gh repo view --json visibility` answers `public` or `private`; no remote is
+  `local`; no `gh`, or no answer, is `unknown`. Visibility only sets how hard to
+  ask: on `public`, recommend a word list and `block`.
+- The list is `.fankeel/sensitive.txt`, one word per line. Add `sensitive.txt`
+  to `.fankeel/.gitignore` before writing it: the list is itself sensitive, and
+  it is per machine — a new machine sets it again.
+- Ask for `sensitive.mode` — `warn`, the default, or `block` — and
+  `sensitive.review` — `false`, the default, or `true`, recommended on
+  `public` — and set each with
+  `node <plugin>/scripts/task.js profile set <key> <value> --project <name>`.
+- Specs and plans are committed as they always are: the list decides what a
+  commit is warned about, not whether a plan lands.
+
+## 4. docs.json, raw data first
+
+- Take the scout's `data` drafts to the user one directory at a time. Each one
+  approved becomes a bucket `{ "path": "<dir>", "role": "data" }` — a path and a
+  role, nothing more. A `data` bucket is not a document: docs-check and
+  docs-audit skip it and it is never counted unfiled.
+- No `docs.json`: offer the three shapes, `audience` as option one, and write
+  the chosen one with `lib/docs.js`'s `write(root, PRESETS[<shape>])` —
+  `node -e "const d=require('<plugin>/lib/docs.js');d.write('<project>',d.PRESETS['<shape>'])"` —
+  then add the approved `data` buckets to it.
+- Pages already on disk:
+  `node <plugin>/scripts/docs-move.js plan --to <shape> --out <project>/.fankeel/build/moves.tsv --root <project>`,
+  show the table, and only after approval
+  `node <plugin>/scripts/docs-move.js apply --to <shape> --table <project>/.fankeel/build/moves.tsv --root <project>`.
+- The scout's `file` drafts settle what is still unfiled: a bucket for its
+  directory, or a move.
+
+## 5. TODO
+
+- A `TODO.md` already there: ask one question first, two options.
+  **Move it into docs**: declare a `role: todo` bucket — `docs/90-agent/todo`
+  under `audience` — run `node <plugin>/scripts/todo.js migrate --root <project>`
+  (each line becomes an entry file whose body is that line and a source line,
+  and `TODO.md` is removed; its text stays in git history), then
+  `node <plugin>/scripts/todo-check.js --root <project>`. Every open entry it
+  names `thin body` gets its body written from that line's history — `git log`
+  on the old `TODO.md` finds the commit that brought the line in — in three
+  parts: where it came from, what it should become, what counts as done, at
+  least 200 characters together. An entry it names `no reason` (text outside the
+  migration template and its own description under 200 characters) needs a reason
+  written by hand, not derived from history: a `## 為什麼還開著` section naming the
+  incident, session or sha and what done looks like. **Keep the hand-written `TODO.md`**: declare
+  no bucket; `orient`, todo-check and the station go on reading it, and
+  `todo.js migrate` can move it in any later day.
+- None: declare the same bucket and create its empty folder.
+
+## 6. The directory tree
+
+`node <plugin>/scripts/layout.js --root <project>` prints the half a listing
+can derive. Fill each row with the scout's `tree` draft, show the result as a
+diff, and take the user's approval row by row before writing it into the file
+`onboard.js` found the tree in — `README.md` where there was none.
+
+## 7. CLAUDE.md
+
+- `node <plugin>/scripts/input-check.js --root <open>` lists every `CLAUDE.md`
+  loaded at `<open>` — global, above, at `<open>` and under it — and each
+  `MEMORY.md`, with sizes.
+- Put the scout's `scope:`, `contradiction:` and `duplicate:` lines to the user
+  as diffs: a repository's own rule moves into that repository's `CLAUDE.md`, a
+  duplicate loses one side, and a contradiction is the user's to settle. Each
+  file is written only after its own approval.
+- Cuts for size go to one `subagent_type: fankeel:fankeel-slimmer`, never here.
+
+## 8. Memory
+
+`node <plugin>/scripts/memory-check.js --root <open>`, and name every other
+open location under this workspace that keeps a memory of its own. Report only:
+nothing is merged, and no entry is written in advance.
+A `MEMORY.md` line that carries more than its title, link and a short hook is
+a slimmer cut, not a step-8 finding: it goes with step 7's dispatch.
+
+## 9. Close
 
 - Residue: the scout's `worktrees` row says whether `.gitignore` holds
   `.claude/worktrees/` and how many worktrees and spent `worktree-agent-*`

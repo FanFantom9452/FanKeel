@@ -23,8 +23,8 @@ test('land merges with land.js, cleans after a green suite, and clears only spen
 
 test('init step 7 offers worktree\'s four values and the suggested commit.format; step 8 asks about residue', () => {
     const t = flat('skills/fankeel-init/SKILL.md');
-    const seven = t.slice(t.indexOf('## 7. Profile'), t.indexOf('## 8. Close'));
-    const eight = t.slice(t.indexOf('## 8. Close'));
+    const seven = t.slice(t.indexOf('## 1. Habits'), t.indexOf('## 2. The gate'));
+    const eight = t.slice(t.indexOf('## 9. Close'));
     assert.match(seven, /`worktree` — `false`.*`true`.*`bounded`.*`architectural`/);
     assert.match(seven, /task\.js profile suggest --project <name>/);
     assert.match(seven, /`commit\.format`/);
@@ -37,6 +37,6 @@ test('the init scout runs residue.js and returns a worktrees row', () => {
     const t = flat('agents/fankeel-init-scout.md');
     assert.match(t, /node <plugin>\/scripts\/residue\.js --root <root>/);
     assert.match(t, /`\.claude\/worktrees\/`/);
-    assert.match(t, /memory, profile, worktrees/);
+    assert.match(t, /profile, visibility,\s+docs\.json, TODO, tree, CLAUDE\.md, memory, worktrees/);
     assert.match(t, /the five above/);
 });

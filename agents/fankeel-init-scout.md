@@ -47,8 +47,8 @@ against the others and report three kinds, each with both sides' `path:line`:
 
 Two sections, nothing else.
 
-`status:` one row per step, in the skill's order — visibility, docs.json,
-TODO, tree, CLAUDE.md, memory, profile, worktrees — each `done`, `partial` or
+`status:` one row per step, in the skill's order — profile, visibility,
+docs.json, TODO, tree, CLAUDE.md, memory, worktrees — each `done`, `partial` or
 `missing` with one line of evidence. The `docs.json`, `unfiled` and `tree`
 rows copy `onboard.js`'s own line. The `worktrees` row says whether
 `git -C <root> check-ignore -q .claude/worktrees/x` exits 0 — `.gitignore`

@@ -12,8 +12,8 @@ const SKILL = path.join(__dirname, '..', 'skills', 'fankeel-init', 'SKILL.md');
 
 test('init section 3 asks before migrating a TODO.md, with both options', () => {
   const text = fs.readFileSync(SKILL, 'utf8');
-  const from = text.indexOf('## 3. TODO');
-  const to = text.indexOf('## 4.', from);
+  const from = text.indexOf('## 5. TODO');
+  const to = text.indexOf('## 6.', from);
   assert.ok(from !== -1 && to > from, 'section 3 is there');
   const s = text.slice(from, to);
   assert.match(s, /ask one question first/);
