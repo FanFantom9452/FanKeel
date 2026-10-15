@@ -12,4 +12,4 @@ link: hooks/pane-svg.ts
 
 完成條件：三件事的結果寫進這個條目。完全不會動的話，在 docs/90-agent/reference/statusline.md 第 27 行旁補一句 Pane 也不能動畫，並把 hooks/pane-svg.ts 的圈與 isInteractive 拿掉。
 
-2026-10-16 盤點：`~/.claude/plugins/cache/fankeel/fankeel/` 已有 0.111.0、0.111.1、0.111.2，installed_plugins.json 記 0.111.2（10-15 更新），after 條件已滿足，改標 ready。注意：band 與 Pane 要 mod 載入才會畫，Desktop 外掛頁沒有 Enable for this session（見「實測安裝版 mod 啟動就載入」），所以先在終端 `claude` 的 `/plugin` 按 Enable 再看。
+2026-10-16 盤點：`~/.claude/plugins/cache/fankeel/fankeel/` 已有 0.111.0、0.111.1、0.111.2，installed_plugins.json 記 0.111.2（10-15 更新），after 條件已滿足，改標 ready。注意：band 與 Pane 要 mod 載入才會畫。mod 預設就開，不用按 Enable；0.111.0 到 0.111.3 沒畫是 validate 錯誤讓整個 module 被拒，0.111.4 修掉（見「確認 0.111.4 mod 載入」），所以用 0.111.4 以上的新 session 看。

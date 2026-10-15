@@ -10,7 +10,7 @@ link: hooks/brief.js
 
 ## 探測步驟（2026-10-16 盤點寫成）
 
-前提：mod 要在互動式 session 載入；Desktop 外掛頁沒有 Enable for this session（compact-6 的 10-14 紀錄），所以在終端跑。
+前提：mod 要在互動式 session 載入。mod 預設就開，Desktop 也會載入；10-14 以為 Desktop 要按 Enable，其實是 0.111.0 到 0.111.3 的 validate 錯誤讓整個 module 被拒，0.111.4 已修（compact-6 的 10-16 紀錄）。
 
 1. 重用 `docs/90-agent/reports/evidence/2026-10-03-mod-probe-3/mod/hooks/probe.ts`：把 `:7` 的 LOG 改到一個新的 `.fankeel/build/<日期>-spawn-probe/records`。這支 probe 只在 dispatch 的 description 含 `mod-probe b` 時改寫 prompt（`:116`），改寫方式是在 prompt 尾端加 `MOD-PROBE-SPAWN-<nonce>`。
 2. 終端執行 `claude --plugin-dir docs/90-agent/reports/evidence/2026-10-03-mod-probe-3/mod --debug-file <log>`，在 session 裡 `/plugin` → Enable for this session。debug log 要有 `hooks module … loaded`；沒有就是 rollout 旗標 `tengu_plugin_hooks_modules` 關著，停在這步並記下。

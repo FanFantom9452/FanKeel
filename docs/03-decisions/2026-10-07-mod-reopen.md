@@ -12,6 +12,8 @@ last_verified: 2026-10-07
 > - 原第 22 行說 `hooks/mod.ts` 只剩 compact，已不對：`hooks/mod.ts:7`（`pane(on, options)`）也掛上了 Pane，上方兩行與 Pane 由 `hooks/pane.ts` 畫。
 > - 原第 24 到 26 行是第三到五項，原第 32 行說這三項都還沒做。第五項（Pane 上的 gate 介面）已做，見 `hooks/pane.ts` 的 gate 區塊與 `hooks/pane-gate.ts`。第三項（子代理 brief）與第四項（每個子代理的 effort）仍未做，`hooks/` 裡沒有 `agent.spawn` 或 `turn.step`。
 
+> **10-16 註記**：下面「每個 session 在 `/plugin` 按一次 Enable for this session」這個前提不對。官方文件（code.claude.com/docs/en/plugins/mods/overview.md）寫 Mods are on by default，Desktop 從 2.1.286 起支援，安裝版不用按任何東西。0.111.0 到 0.111.3 的 mod 沒載入，是因為 `claude plugin validate` 報 `turn.complete` 被註冊兩次（`hooks/compact.ts` 與 `hooks/pane.ts` 各一支），引擎因此拒絕整個 hooks module。0.111.4 起只剩 `hooks/compact.ts` 一支，`tests/plugin-validate.test.js` 讓同樣的錯以後會讓 suite 變紅。
+
 一句話：fankeel 重開 mod 路線，mod 只做 command hook 做不到的事，command hook 照舊是底層；前提是使用者接受每個 session 在 `/plugin` 按一次 Enable for this session。這份紀錄取代 [10-03 的 mod 路線擱置](2026-10-03-mod-route.md) 與 [10-05 的函式 hook 與 gate 報告面板](2026-10-05-inject-gate-mod.md)，await-title 隨這份紀錄移除。
 
 設計稿是 [2026-10-07-mod-reopen-design.md](../99-archive/2026-10-07-mod-reopen-design.md)，計畫是 [2026-10-07-mod-reopen.md](../99-archive/2026-10-07-mod-reopen.md)。
