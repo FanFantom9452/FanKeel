@@ -52,4 +52,4 @@ station-data（`station-data.txt`，秒）：1.700955、1.674382、1.699408、1.
 - guard 沒有經由 Claude Code 實際觸發，只量 node 行程的牆鐘；`commit` 案例用 `--dry-run`，命令本身沒執行。
 - 量測時同機有其他 session 在跑，雜訊未記錄。
 - station-data 的 1.67 秒事後拆開了：在 session 內對 `gather` 計時，1.66 秒裡 `detailOf` 佔 1.44 秒，幾乎全是 `transcriptOf` 對 443 個 transcript 已不在的 session 各掃一遍 `projects/` 的 544 個目錄；`registry.readAll` 只佔 45ms。修好後同一計時是 0.33 秒，`detailOf` 17ms。這一段的數字（1.66 秒、1.44 秒、443、544、45ms、0.33 秒、17ms）來自 session 內的剖析，輸出沒有留存，evidence 目錄裡沒有對應的原始檔。
-- 暖啟動一臂的第 2 輪（107ms）是在 `serve` 已經在跑時量的（`cold/wall.tsv` 該列註記 `serve was running`），其餘四輪（1098 至 1108ms）是 `serve` 尚未起來時量的，所以這一臂混了兩種條件。
+- 暖啟動一臂的第 2 輪（107ms）是在 `serve` 已經在跑時量的（`cold/wall.tsv` 該列註記 `serve was running`），其餘四輪（1098 至 1108ms）是 `serve` 還在載入時量的（該列註記 `serve is busy loading`），所以這一臂混了兩種條件。
