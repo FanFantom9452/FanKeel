@@ -240,8 +240,9 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | TODO 全表盤點（10-15）做了什麼、沒做什麼：站上 gate 按下去沒反應那筆結案、在哪提交結案、drive.js 首跑到 Ready；五筆真機條目留在 Ready，真頁面還沒人看過 | [reports/patrols/2026-10-15-todo-patrol-gate-send.md](90-agent/reports/patrols/2026-10-15-todo-patrol-gate-send.md) — *繁體中文* |
 | TODO 全表盤點（10-15 第二次）的 plan：整套偶爾紅的兩條改盯 station-cli、升級技能記成待決、drive.js 第一次實跑 | `docs/99-archive/2026-10-15-todo-patrol-drive-run.md` — *built* |
 | TODO 全表盤點（10-15 第二次）做了什麼、沒做什麼：drive.js 首跑結案（acceptEdits 下寫不進交棒資料夾）、test-4 併入 test-1、四條新 TODO；五筆真機條目留在 Ready | [reports/patrols/2026-10-15-todo-patrol-drive-run.md](90-agent/reports/patrols/2026-10-15-todo-patrol-drive-run.md) — *繁體中文* |
-| TODO 全表盤點（10-15 第三輪）的 design：gate 框拖曳縮放、drive.js 交棒、0.80.0 格式盤點、兩個量測 | [plans/2026-10-15-todo-patrol-gate-drive-design.md](90-agent/plans/2026-10-15-todo-patrol-gate-drive-design.md) — *繁體中文* |
-| 那份設計的七個 task：兩個前端、drive.js 先 probe 再改、盤點報告加一條測試、三個量測、一個條目改 ready、一次使用者在 Desktop 起的重跑 | [plans/2026-10-15-todo-patrol-gate-drive.md](90-agent/plans/2026-10-15-todo-patrol-gate-drive.md) — *繁體中文* |
+| TODO 全表盤點（10-15 第三次）做了什麼、沒做什麼：gate 面板拖曳縮放、drive.js 交棒與換站、station-data 冷請求 0.5 秒、hook 計時，四筆結案；六筆真機條目留在 Ready | [reports/patrols/2026-10-15-todo-patrol-gate-drive.md](90-agent/reports/patrols/2026-10-15-todo-patrol-gate-drive.md) — *繁體中文* |
+| TODO 全表盤點（10-15 第三輪）的 design：gate 框拖曳縮放、drive.js 交棒、0.80.0 格式盤點、兩個量測 | `docs/99-archive/2026-10-15-todo-patrol-gate-drive-design.md` — *built* |
+| 那份設計的八個 task（含 station-data 冷請求）：兩個前端、drive.js 先 probe 再改、盤點報告加一條測試、三個量測、一個條目改 ready、一次使用者在 Desktop 起的重跑 | `docs/99-archive/2026-10-15-todo-patrol-gate-drive.md` — *built* |
 | Desktop 用 Svg 畫 band 與 Pane（10-14）的 design：Desktop 依 surface 畫 Svg、終端維持文字，Svg 的 alt 就是文字列 | `docs/99-archive/2026-10-14-pane-svg-design.md` — *built, 繁體中文* |
 | 那份設計的十個 task：五個程式、五個使用者在真機上做；後來加了 ctx 照 TokenBar 與 band 尾巴的遠端 ✓／✗ | `docs/99-archive/2026-10-14-pane-svg.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-13 第二輪）的 plan：commit.js 提交搬過家的檔、逐塊調整托盤載入就展開 | `docs/99-archive/2026-10-13-todo-patrol-two.md` — *built, 繁體中文* |

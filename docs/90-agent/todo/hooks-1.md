@@ -2,11 +2,16 @@
 label: hooks
 title: 兩個 hook 逾時
 description: /doctor 09-25 報 UserPromptSubmit 逾時 4/4 次（中位數 7.9s）、PreToolUse:Bash scope guard 逾時 2/2 次（50 個 session 裡） — [hooks/brief.js](hooks/brief.js).
-state: watch
+state: done
 link: hooks/brief.js
 group: 兩個 hook 逾時
 timing: if: UserPromptSubmit 或 PreToolUse Bash guard 再逾時一次
 stamp: 2026-09-26
+done:
+  at: 2026-10-15
+  sha: daac0260
+  disposition: done
+  session: fda998ce-624c-4573-960f-ed4fcb937951
 ---
 
 來源：根目錄 TODO.md 第 221 行的條目（2026-09-26 記），改成逐條的 todo 檔。
@@ -22,3 +27,12 @@ stamp: 2026-09-26
 Bash guard 那半一個數字都沒有：timing 報告通篇沒提 guard，`.claude-plugin/plugin.json` 的 `Bash|PowerShell` matcher 仍跑 `hooks/guard.js`、`timeout: 5`。要寫一支新的 `guard-probe.cjs`（放在 `probe.cjs` 所在的 2026-10-05-inject-timing 目錄）：`probe.cjs` 寫死 `hooks/inject.js`、`INJECT_TIMING_*` 墊片與四個 prompt 情境，並交替比較墊片與裸跑，不能指向 guard；能沿用的只有骨架，每次起一個新 node、payload 走 stdin、跑五次取中位數與最大值（guard.js 一個行程只吃一份 payload，所以沒有冷熱之分）。它餵一份 PreToolUse 的 Bash payload 給 `hooks/guard.js`。
 
 完成的標準是兩個最大值都低於 5000ms。一，`node guard-probe.cjs <plugin root> <main tree root> <out dir> <session>` 印出的最大值。二，重跑 `node docs/90-agent/reports/evidence/2026-10-05-inject-cold/cold.cjs <plugin root> <out dir> 5`，它每輪先停掉本機 station（`scripts/station.js:520` 的 `/station/health`，拒絕連線就是沒有 station），印出的 `== cold` 區塊 `wall` 最大值。`probe.cjs` 的 `fankeel` 情境在沒有 station 時直接跳過，量不了冷啟動，所以用 cold.cjs。兩個都過，就以新 report 的 sha 結案；任何一個高於，先在對應的 hook 找出最慢的一段去掉，再量一次。
+
+## 完成紀錄
+
+10-15 量了兩個 hook：scope guard 對三種 Bash 指令各跑五次，最大 99.2 毫秒；UserPromptSubmit 冷啟動五輪，最大 216 毫秒，都遠低於 5000 毫秒的門檻。原始資料在 10-15 的 hook-timing 證據資料夾，報告是 10-15 的 hook 與 station 計時報告。
+
+- commit 34b3ae12
+- commit 2b4cbc9e
+- commit ceb9e994
+- commit cd6f2955

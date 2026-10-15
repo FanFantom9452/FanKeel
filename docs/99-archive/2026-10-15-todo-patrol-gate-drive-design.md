@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # TODO 全表盤點（10-15 第三輪）：gate 框拖曳縮放、drive.js 交棒、0.80.0 格式盤點、兩個量測 — Design
