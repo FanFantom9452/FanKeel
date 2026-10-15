@@ -542,6 +542,24 @@ test('a controlled build\'s brain brief stays under the 10,000-character cap on 
   assert.ok(sizeAtReference(text) <= BRIEF_MAX, 'brain brief is ' + sizeAtReference(text) + ' chars at the reference root');
 });
 
+// stage-agents-16: the brain cannot run Workflow, so its brief names the
+// command that writes the script, and its agent file says what follows.
+test('a controlled build\'s brain brief names the workflow script command, and its agent file says what follows the result', () => {
+  const root = tmp();
+  seedProfile(root, { 'stage.agents': ['build'] });
+  seed(root, { stage: 'build', started: '2026-09-19T09:30:12.345Z' });
+  const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
+  assert.ok(text.includes('  - workflow script: a `groups` row of three or more that holds your tasks goes as one Workflow; your agent file\'s `## On a build stage` says how.'), text);
+  assert.ok(sizeAtReference(text) <= BRIEF_MAX, 'brain brief is ' + sizeAtReference(text) + ' chars at the reference root');
+  const file = fs.readFileSync(path.join(__dirname, '..', 'agents', 'fankeel-brain.md'), 'utf8');
+  const build = file.split(/^## /m).find((s) => s.startsWith('On a build stage'));
+  assert.match(build, /`workflow: <the path it printed>`/);
+  assert.match(build, /`Workflow returned:`/);
+  assert.match(build, /without\s+the\s+`workflow:`\s+line/);
+  assert.match(build, /workflow --group <row>/);
+  assert.match(build, /row that holds your tasks/);
+});
+
 // brief-4: with the build rules in agents/fankeel-brain.md, the bare build
 // brain brief is its paths and sits well under the cap.
 test('a bare build brain brief is under 7,000 characters at the reference root', () => {
