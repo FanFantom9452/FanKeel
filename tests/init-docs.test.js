@@ -29,7 +29,7 @@ test('subagents.md and collisions.md name fankeel-init-scout as read-only', () =
 test('subagents.md names every agent the plugin ships', () => {
     const text = flat('subagents.md');
     const names = fs.readdirSync(path.join(__dirname, '..', 'agents')).filter((f) => f.endsWith('.md')).map((f) => f.slice(0, -3));
-    assert.equal(names.length, 16);
+    assert.equal(names.length, 14);
     for (const n of names) assert.ok(text.includes('`' + n + '`'), n);
     assert.match(flat('model-choice.md'), /implementer, <model>, <effort>/);
     assert.match(flat('model-choice.md'), /asks the user before it sends a brain/);
