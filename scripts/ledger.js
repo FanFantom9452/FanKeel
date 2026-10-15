@@ -34,6 +34,7 @@ const plantasks = require('../lib/plantasks.js');
 const profileLib = require('../lib/profile.js');
 const { controlling } = require('../lib/stages.js');
 const { contextPath } = require('../lib/handoff.js');
+const { parseTargets, pagesTouched } = require('../lib/shots.js');
 
 function fail(message) {
     process.stdout.write(message + '\n');
@@ -42,7 +43,7 @@ function fail(message) {
 
 // Every string flag, and the key it lands on. A table rather than a list because
 // `splitAtVerb` reads it too, and two lists of the same flags drift.
-const STRING_FLAGS = { root: 'root', plan: 'plan', range: 'range', group: 'group' };
+const STRING_FLAGS = { root: 'root', plan: 'plan', range: 'range', group: 'group', render: 'render' };
 
 // The verbs, in the order the refusal at the bottom lists them. A set rather
 // than four literals for the same reason the flags are a table: `splitAtVerb`
@@ -54,7 +55,7 @@ const VERBS = new Set(['init', 'complete', 'ruling', 'show', 'groups', 'ready', 
 // where a range is recorded. A flag outside its verb's list is refused rather
 // than ignored: `ranges --range x` used to exit 0 having read nothing of it.
 const BASE_FLAGS = ['root', 'plan'];
-const VERB_FLAGS = { init: BASE_FLAGS.concat(['range']), complete: BASE_FLAGS.concat(['range']), fix: BASE_FLAGS.concat(['range']), brief: BASE_FLAGS.concat(['group', 'prefix']), ready: BASE_FLAGS.concat(['worktree']) };
+const VERB_FLAGS = { init: BASE_FLAGS.concat(['range']), complete: BASE_FLAGS.concat(['range', 'render']), fix: BASE_FLAGS.concat(['range', 'render']), brief: BASE_FLAGS.concat(['group', 'prefix']), ready: BASE_FLAGS.concat(['worktree']) };
 
 // `strict: false` lets an unknown flag through to the verb check below, which
 // refuses it by name. A declared flag given no value comes back `true` rather
@@ -494,6 +495,63 @@ function prefix(root, planOpt, group) {
     ].join('\n');
 }
 
+// `--render <file>`: the render reviewer's return. Checked whenever it is
+// given, page or not — a `fix` verdict recorded beside a completion would
+// read as a review that passed. Returns the note's suffix naming the file.
+function renderNote(root, render) {
+    if (render === undefined) return '';
+    const file = path.resolve(render);
+    let text;
+    try {
+        text = fs.readFileSync(file, 'utf8');
+    } catch (e) {
+        return fail('--render: no file at ' + file + '.');
+    }
+    if (!ledger.renderShips(text)) {
+        fail('--render ' + render + ': its first line is not `disposition: ship`. What it found goes back to the implementer before this is recorded.');
+    }
+    return ' — render: ' + path.relative(root, file).split(path.sep).join('/');
+}
+
+// A range that changed a file a `.fankeel/render.json` page names in `src`,
+// with neither `--render` nor a `Ruling: render skipped — <why>` since the
+// last complete or fix: the refusal, else null. No render.json, or no page
+// with `src`, is never refused
+// (docs/90-agent/plans/2026-10-15-render-gate-design.md §1). Only the
+// registry root's render.json is read; a `--project` subdirectory's is not.
+function renderRefusal(root, range, opts) {
+    let conf;
+    try {
+        conf = fs.readFileSync(path.join(root, '.fankeel', 'render.json'), 'utf8');
+    } catch (e) {
+        return null;
+    }
+    let targets;
+    try {
+        targets = parseTargets(conf);
+    } catch (e) {
+        return e.message;
+    }
+    let changed;
+    try {
+        changed = execFileSync('git', ['diff', '--name-only', range], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
+            .split(/\r?\n/).filter(Boolean);
+    } catch (e) {
+        return 'git could not read ' + range + ', so it cannot be checked against .fankeel/render.json.';
+    }
+    const pages = pagesTouched(targets, changed);
+    if (!pages.length || opts.render !== undefined) return null;
+    let contents = '';
+    try {
+        contents = fs.readFileSync(ledger.ledgerPath(root, opts.plan), 'utf8');
+    } catch (e) { /* no ledger yet, so no ruling either */ }
+    if (ledger.owns(contents, opts.plan) && ledger.renderSkipped(contents) !== null) return null;
+    const hits = changed.filter((p) => pagesTouched(targets, [p]).length);
+    return 'fankeel ledger — this range changes ' + pages.join(', ') + ' (' + hits.join(', ') + ') and carries no render verdict.'
+        + '\nPass --render <file>, the render reviewer\'s return, whose first line is `disposition: ship`;'
+        + '\nor record `ruling "render skipped" "<why>" "<cost if wrong>"` first: one `Ruling: render skipped — <why>` covers this task alone.';
+}
+
 function main(argv) {
     const { head, verb: named, text } = splitAroundVerb(argv, STRING_FLAGS, VERBS);
     const verb = String(named || 'show').toLowerCase();
@@ -579,7 +637,12 @@ function main(argv) {
             fail('--range wants two commit shas: <base>..<head>, 7 to 40 hex each. '
                 + '"' + opts.range + '" would reach the file and read back as no range at all.');
         }
-        ledger.append(root, opts.plan, ledger.completionLine(n, note, opts.range));
+        const suffix = renderNote(root, opts.render);
+        if (opts.range !== undefined) {
+            const refusal = renderRefusal(root, opts.range, opts);
+            if (refusal) fail(refusal);
+        }
+        ledger.append(root, opts.plan, ledger.completionLine(n, note + suffix, opts.range));
         return 'fankeel ledger — Task ' + n + ' complete.';
     }
 
@@ -720,7 +783,10 @@ function main(argv) {
             fail('--range wants two commit shas: <base>..<head>, 7 to 40 hex each. '
                 + '"' + opts.range + '" would reach the file and read back as no range at all.');
         }
-        ledger.append(root, opts.plan, ledger.fixLine(what, opts.range));
+        const suffix = renderNote(root, opts.render);
+        const refusal = renderRefusal(root, opts.range, opts);
+        if (refusal) fail(refusal);
+        ledger.append(root, opts.plan, ledger.fixLine(what + suffix, opts.range));
         return 'fankeel ledger — fix recorded.';
     }
 

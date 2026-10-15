@@ -1068,3 +1068,117 @@ test('ledger.js run from a worktree under the registry root writes the ledger be
   assert.ok(fs.existsSync(path.join(main, '.fankeel', 'build', 'p', 'progress.md')), 'the ledger is beside the registry');
   assert.equal(fs.existsSync(path.join(wt, '.fankeel', 'build', 'p', 'progress.md')), false, 'no second ledger in the worktree');
 });
+
+// docs/90-agent/plans/2026-10-15-render-gate-design.md §1: a range that
+// changed a file a render.json page names in `src` completes only with a
+// render verdict, and one task's skip ruling never covers the next.
+const RENDER_JSON = JSON.stringify({
+  pages: [{ name: 'home', url: 'site/index.html', src: ['site/**'] }, { name: 'admin', url: 'http://127.0.0.1:9/admin' }],
+  roles: [{ name: 'guest' }],
+});
+
+function pageRepo(withConf) {
+  const dir = root();
+  freshRepo(dir);
+  if (withConf !== false) {
+    fs.mkdirSync(path.join(dir, '.fankeel'), { recursive: true });
+    fs.writeFileSync(path.join(dir, '.fankeel', 'render.json'), RENDER_JSON);
+  }
+  return { dir, base: commit(dir, 'base.txt') };
+}
+
+function commitAt(dir, rel) {
+  fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true });
+  fs.writeFileSync(path.join(dir, rel), rel + '\n');
+  git(dir, ['add', '-A']);
+  git(dir, ['commit', '-qm', rel]);
+  return execFileSync('git', ['rev-parse', 'HEAD'], { cwd: dir, encoding: 'utf8' }).trim();
+}
+
+const inRepo = (dir, ...args) => {
+  try {
+    return { out: execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', ...args], { cwd: dir, encoding: 'utf8' }), code: 0 };
+  } catch (e) {
+    return { out: String(e.stdout || ''), code: e.status };
+  }
+};
+const progress = (dir) => fs.readFileSync(ledger.ledgerPath(dir, 'p.md'), 'utf8');
+
+test('renderShips reads the first non-blank line, and only disposition: ship passes', () => {
+  assert.equal(ledger.renderShips('\n  \ndisposition: ship\nthe rest'), true);
+  assert.equal(ledger.renderShips('disposition: fix\ndisposition: ship'), false);
+  assert.equal(ledger.renderShips('disposition: recapture'), false);
+  assert.equal(ledger.renderShips(''), false);
+});
+
+test('renderSkipped is the why of a skip ruling written since the last complete or fix line', () => {
+  const skip = ledger.rulingLine('render skipped', 'tuned live with the user', 'a broken page ships');
+  assert.equal(ledger.renderSkipped([ledger.header('p.md'), ledger.completionLine(1, 'one'), skip].join('\n')), 'tuned live with the user');
+  assert.equal(ledger.renderSkipped([skip, ledger.completionLine(2, 'two')].join('\n')), null);
+  assert.equal(ledger.renderSkipped([skip, ledger.fixLine('a fix', 'abc1234..def5678')].join('\n')), null);
+  assert.equal(ledger.renderSkipped(ledger.rulingLine('render skipped', '', 'a cost')), null);
+  assert.equal(ledger.renderSkipped(ledger.rulingLine('something else', 'why', 'cost')), null);
+  assert.equal(ledger.renderSkipped('Ruling: render skipped — said in a note'), 'said in a note');
+});
+
+test('complete refuses a range that changed a src page with no render verdict, naming the page, the path and both ways through', () => {
+  const { dir, base } = pageRepo();
+  const head = commitAt(dir, 'site/index.html');
+  const { out, code } = inRepo(dir, '--range', base + '..' + head, 'complete', '1', 'the page');
+  assert.equal(code, 1, out);
+  assert.match(out, /home/);
+  assert.match(out, /site\/index\.html/);
+  assert.match(out, /--render <file>/);
+  assert.match(out, /Ruling: render skipped — <why>/);
+  assert.doesNotMatch(out, /admin/);
+  assert.equal(fs.existsSync(ledger.ledgerPath(dir, 'p.md')), false, 'nothing was recorded');
+});
+
+test('complete records a page range with a disposition: ship file and its path, and refuses a disposition: fix file or a missing one', () => {
+  const { dir, base } = pageRepo();
+  const head = commitAt(dir, 'site/index.html');
+  fs.writeFileSync(path.join(dir, 'fix.md'), 'disposition: fix\n- site/index.html:3 — the header overlaps\n');
+  fs.writeFileSync(path.join(dir, 'ship.md'), '\ndisposition: ship\n');
+  const fixed = inRepo(dir, '--range', base + '..' + head, '--render', 'fix.md', 'complete', '1', 'the page');
+  assert.equal(fixed.code, 1);
+  assert.match(fixed.out, /first line is not `disposition: ship`/);
+  assert.equal(inRepo(dir, '--range', base + '..' + head, '--render', 'gone.md', 'complete', '1', 'the page').code, 1);
+  const shipped = inRepo(dir, '--range', base + '..' + head, '--render', 'ship.md', 'complete', '1', 'the page');
+  assert.equal(shipped.code, 0, shipped.out);
+  assert.match(progress(dir), /^Task 1: complete \[[0-9a-f]+\.\.[0-9a-f]+\] — the page — render: ship\.md$/m);
+});
+
+test('a skip ruling lets one task through, and the next task is refused despite it', () => {
+  const { dir, base } = pageRepo();
+  const one = commitAt(dir, 'site/index.html');
+  inRepo(dir, 'ruling', 'render skipped', 'tuned live with the user', 'a broken page ships');
+  assert.equal(inRepo(dir, '--range', base + '..' + one, 'complete', '1', 'the page').code, 0);
+  const two = commitAt(dir, 'site/about.html');
+  const { out, code } = inRepo(dir, '--range', one + '..' + two, 'complete', '2', 'another page');
+  assert.equal(code, 1, out);
+  assert.match(out, /site\/about\.html/);
+});
+
+test('a range touching no page, or a project with no render.json, completes as before', () => {
+  const { dir, base } = pageRepo();
+  const head = commitAt(dir, 'lib/x.js');
+  assert.equal(inRepo(dir, '--range', base + '..' + head, 'complete', '1', 'no page').code, 0);
+  const bare = pageRepo(false);
+  const page = commitAt(bare.dir, 'site/index.html');
+  assert.equal(inRepo(bare.dir, '--range', bare.base + '..' + page, 'complete', '1', 'no render.json').code, 0);
+});
+
+test('fix is held to the same render check, and records the render file it was given', () => {
+  const { dir, base } = pageRepo();
+  const head = commitAt(dir, 'site/index.html');
+  assert.equal(inRepo(dir, '--range', base + '..' + head, 'fix', 'the header').code, 1);
+  fs.writeFileSync(path.join(dir, 'ship.md'), 'disposition: ship\n');
+  assert.equal(inRepo(dir, '--range', base + '..' + head, '--render', 'ship.md', 'fix', 'the header').code, 0);
+  assert.match(progress(dir), /^Fix: \[[0-9a-f]+\.\.[0-9a-f]+\] — the header — render: ship\.md$/m);
+});
+
+test('--render is a flag of complete and fix only', () => {
+  const { out, code } = inRepo(root(), '--render', 'x.md', 'show');
+  assert.equal(code, 1);
+  assert.match(out, /refused: --render/);
+});
