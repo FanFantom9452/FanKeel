@@ -90,8 +90,9 @@ The test row is `node <plugin>/scripts/suite.js --session <id> --fast`, and
 the last line it prints is what gets quoted. `--fast` runs `package.json`'s
 `test:fast` — the suite without the tests named `@slow` — where there is one,
 and the whole `test` script where there is not, saying so. A fast record is
-not land's: `land` runs the whole suite once more, and its `suite.js --check`
-refuses a fast record by name.
+not land's: land's `suite.js --check` refuses it by name, and land runs the
+whole suite. Where there was no `test:fast`, the record is a whole run and
+stands.
 
 ## Red flags — stop
 
