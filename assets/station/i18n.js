@@ -377,7 +377,7 @@
             'wiz.agentsH1L': 'Only hand off survey',
             'wiz.agentsH1B': 'Reading the repo eats the most context; only hand off this stage.',
             'wiz.agentsH2L': 'Save context',
-            'wiz.agentsH2B': 'Hand off survey, build and verify.',
+            'wiz.agentsH2B': 'Every stage goes to a stage agent and runs in its own clean context; the main session only gets paths back.',
             'wiz.agentsH3L': 'Hand off everything',
             'wiz.agentsH3B': 'The main session only forwards the route; all seven stages go to stage agents.',
             'wiz.guardT': 'File conflicts',

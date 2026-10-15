@@ -40,7 +40,7 @@ test('wizLoad reads each key from the scope, the machine layer under it, or the 
     assert.equal(W.val['judge.model'], 'fable', 'the builtin');
     assert.equal(W.val['design.skill'], null, 'no builtin: ask');
     assert.equal(W.val['stage.agents'], 'survey,build,verify');
-    assert.equal(W.pick[3], 2, 'the 省 context card matches what is on disk');
+    assert.equal(W.pick[3], undefined, 'survey,build,verify on disk is the 交三站 card, and no habit writes it');
     assert.equal(W.pick[2], 2, 'the opus card matches');
     assert.equal(W.pick[0], undefined, 'no 收尾 card matches merge + push');
 });
@@ -224,4 +224,16 @@ test('only the auto option carries the open icon', () => {
     const withIcon = buttons.filter((b) => b.includes('class="fopen"'));
     assert.equal(withIcon.length, 1);
     assert.match(withIcon[0], /<b>auto/);
+});
+
+// docs/90-agent/plans/2026-10-15-init-quick-setup-design.md §4.
+test('the wizard\'s 省 context habit and PRESETS.lean write the same stage.agents', () => {
+    const step = V.WIZ_STEPS.findIndex((s) => s.id === 'agents');
+    const h = V.WIZ_STEPS[step].habits.findIndex((x) => x.l === '省 context');
+    assert.ok(h >= 0, 'the agents step has a 省 context habit');
+    assert.equal(V.WIZ_STEPS[step].habits[h].s['stage.agents'], profile.PRESETS.lean.set['stage.agents']);
+    let W = load();
+    W.step = step;
+    W = V.wizApply(W, KEYS, PROFILES, { h: String(h) });
+    assert.equal(W.val['stage.agents'], 'all');
 });

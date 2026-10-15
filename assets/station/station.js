@@ -1988,7 +1988,7 @@
             habits: [
                 { l: loc('wiz.agentsH0L', '不在意，全部自己跑'), b: loc('wiz.agentsH0B', '每一站都在主 session 裡，看得最清楚。'), s: { 'stage.agents': 'false' } },
                 { l: loc('wiz.agentsH1L', '只交出 survey'), b: loc('wiz.agentsH1B', '讀 repo 最吃 context，只把這站交出去。'), s: { 'stage.agents': 'survey' } },
-                { l: loc('wiz.agentsH2L', '省 context'), b: loc('wiz.agentsH2B', 'survey、build、verify 三站交出去。'), s: { 'stage.agents': 'survey,build,verify' } },
+                { l: loc('wiz.agentsH2L', '省 context'), b: loc('wiz.agentsH2B', '每一站都交給站 agent，在自己乾淨的 context 裡跑；主 session 只拿回路徑。'), s: { 'stage.agents': 'all' } },
                 { l: loc('wiz.agentsH3L', '全部交出去'), b: loc('wiz.agentsH3B', '主控只轉路徑，七站都給站 agent。'), s: { 'stage.agents': 'all' } },
             ] },
         { id: 'guard', t: loc('wiz.guardT', '撞檔'), q: loc('wiz.guardQ', '別的 session 正在改同一個檔案時，你要怎樣？'), sub: loc('wiz.guardSub', '兩個 session 同時動一個檔案，其中一邊的改動可能被蓋掉。'), keys: ['guard'],
