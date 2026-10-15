@@ -1077,7 +1077,7 @@ Six rules that make it work, each of which fails silently when missed:
   rendering review, and `fankeel-verifier` for verify's per-row
   verifiers — where omitting it is the point: the file's `model:` is
   the floor the harness itself enforces. Inside a Workflow script the same rule holds: every `agent`
-  call carries `model` and the profile's `dispatch.floor` is the floor there too; the authoring
+  call carries `model` and the floor the brief names (`dispatch.floor`, `opus` at least if architectural) is the floor there too; the authoring
   reference's advice to omit it and inherit is the host's default, not this
   plugin's. `subagent_type: "fork"` is a second exception, and the wrong
   direction: it inherits the whole context and ignores `model` outright — the

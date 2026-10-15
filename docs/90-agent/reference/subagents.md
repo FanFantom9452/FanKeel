@@ -125,7 +125,7 @@ that the stage needs deep thought, asked the user first and the user said yes
 (`controlRules` in `lib/stages.js`).
 
 `fankeel-reader` runs at `model: sonnet` by default — the profile's
-`dispatch.floor`, which the survey, verify and audit skills ask their reader
+`dispatch.floor`, `opus` at least on an architectural task, which the survey, verify and audit skills ask their reader
 fan-outs to use (survey's stage rule names the type, no
 model) — a `subagent_type`
 that is structurally read-only standing in for what those dispatches used to
@@ -286,7 +286,7 @@ Six things that fail silently when missed: several dispatches must be in **one
 response** to run concurrently; the **model must be passed explicitly**, since an
 omitted one inherits the parent's, unless the `subagent_type` is an agent file
 that pins its own — inside a Workflow script too, where every
-`agent` call carries `model` and the profile's `dispatch.floor` is the floor,
+`agent` call carries `model` and the floor the brief names (`dispatch.floor`, `opus` at least if architectural) is the floor,
 and the authoring
 reference's omit-and-inherit is the host's default, not this plugin's — and
 `subagent_type: "fork"` inherits the whole context and ignores `model`
@@ -759,8 +759,8 @@ more than `FILE_CAP` of them.
 (`controlRules` in `lib/stages.js`) passes `model: opus` for `design` and `plan`, the
 two stages whose product is a judgement, and no model for the other five, so a stage agent
 uses Opus where the user asked for it and nowhere else (a build implementer runs on the model
-its task's Dispatch line names, or on `dispatch.floor` when that line says in-session; a
-verify, audit or land implementer runs on `dispatch.floor`). Every measurement in this
+its task's Dispatch line names, or on the floor model the brief names when that line says in-session; a
+verify, audit or land implementer runs on that floor — `dispatch.floor`, `opus` at least if architectural). Every measurement in this
 repository before 2026-09-22 ran an Opus stage agent; a Sonnet one has not been
 measured. [decisions/2026-09-22-brain-on-sonnet.md](../../03-decisions/2026-09-22-brain-on-sonnet.md)
 records the choice.
