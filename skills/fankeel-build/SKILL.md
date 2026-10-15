@@ -3,7 +3,7 @@ name: fankeel-build
 description: The build stage — run a plan's tasks, or a design's file table where there is no plan, in a loop that does not stop to ask, keeping its place in a ledger and reviewing each task as it lands. Use for the build stage of a fankeel task, implementing an approved plan, resuming build work after a compaction, or when a task loop needs a ledger.
 version: 0.111.4
 status: current
-last_verified: 2026-10-09
+last_verified: 2026-10-16
 source_of_truth: lib/stages.js, lib/ledger.js, lib/plantasks.js, scripts/ledger.js, scripts/review-check.js
 ---
 
@@ -323,7 +323,7 @@ then asks this stage's gate.
    Every implementer in the run gets its brief file, and the brief's footer
    carries the three things it cannot infer — neighbours in the same tree so
    its own test command only, no commits and no touching the index, `HEAD` or
-   branch state, and paths and a status back rather than a diff —
+   branch state, and paths and a status back rather than a diff.
 
    When the run returns, the parent takes BASE and commits each task in the
    group's order, then records `--range BASE..<sha> complete <n>`. The reviews
@@ -343,6 +343,24 @@ then asks this stage's gate.
    Anything written outside those paths stays unstaged, so `git status` after
    the commit is where a wrong `**Files:**` block shows up, before the review
    rather than after it.
+
+   **Opening a `workflow` group.** The script is written, not authored, and
+   only on the plan path — with no plan there is no group to write:
+   `node <plugin>/scripts/ledger.js --plan <plan bucket>/<file>.md workflow
+   --group <N>` writes every implementer's brief and the script to
+   `.fankeel/build/<plan stem>/workflow-g<N>.js`, and prints that path. The
+   session holding the Workflow tool opens it as
+   `Workflow({ scriptPath: "<that path>" })`. Each task whose Dispatch line
+   says `implementer` goes out as `fankeel:fankeel-implementer` on that
+   line's model and effort, then as `fankeel:fankeel-reviewer` on the
+   path-pinned diff above, and the run returns one
+   `{ n, implementer, review }` per task: save each `implementer` to
+   `review-<n>.txt`, as step 2 says, before committing. A stage agent has no
+   Workflow tool, so a build brain whose `groups` row has three or more runs
+   the same command and writes its group report with a line
+   `workflow: <path>`; `scripts/await.js` tells the controller to open it and
+   SendMessage the brain `Workflow returned:` and the result, and the brain
+   asks for each task's commit and records it from there.
 5. One reviewer, on this template and no other, against the brief and the
    diff. **Pin the range at both ends** — `BASE..<the sha this task's commit
    produced>`. Every task has one, `in-session` included, because step 4

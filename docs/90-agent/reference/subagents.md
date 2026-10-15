@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-10-15
+last_verified: 2026-10-16
 source_of_truth: hooks/brief.js, lib/render.js, lib/stages.js, hooks/carry.js, lib/plantasks.js, lib/requires.js, lib/usage.js, lib/prices.js, scripts/judge.js, scripts/await.js, scripts/commit.js
 ---
 
@@ -365,6 +365,20 @@ the pair looks independent. Two Agents survive that: the parent reads both
 returns and the grouping's mistake is in front of it. A Workflow does not come
 back between its steps, so it wants a group shown to be disjoint rather than one
 merely not refuted.
+
+A `workflow` group is not written by hand. `workflowScript` in
+`lib/plantasks.js` turns one into a Workflow script — one pipeline item per
+implementer task, implement then review, every `agent` call carrying its
+`agentType`, the model its task's Dispatch line names or the reviewer's
+pinned `sonnet`, and the line's effort when it names one — and
+`node scripts/ledger.js --plan <f> workflow --group <N>` writes it beside the
+ledger, after every implementer's brief, and prints its path for the session
+holding the Workflow tool to open with `scriptPath`. A stage agent has no
+Workflow tool, so under a brain build `groups` still prints `agents`; a brain
+whose row has three or more runs the same command and puts
+`workflow: <path>` in its group report, `workflowOf` in `lib/handoff.js`
+reads it, and `scripts/await.js` tells the controller to open it and message
+the result back, keeping the brain's in-flight mark meanwhile.
 
 The two thresholds meet in `build`, which is the only stage that has groups at
 all: a group of implementers whose output feeds a reviewer each is the shape
@@ -744,7 +758,7 @@ newest 40, dropping an exact duplicate and replacing a fact read again at a
 new sha. `context.js show` marks a line whose sha is not HEAD `(舊)`. The
 ordinary brief inlines the file's content — `renderBrief` and `renderBrainBrief`
 in `lib/render.js` paste it in whole under `BRIEF_MAX`; over it `fit()` keeps the
-newest facts and names the file for the rest (`lib/render.js:749`, `' older ' + (n === 1 ? 'fact' : 'facts')`) — so a
+newest facts and names the file for the rest (`lib/render.js:750`, `' older ' + (n === 1 ? 'fact' : 'facts')`) — so a
 subagent no longer has to `Read` the file itself before using what it holds.
 
 Build now dispatches one `fankeel:fankeel-brain` per disjoint `ledger.js

@@ -37,7 +37,6 @@ const KNOWN_LEDGER_PARAGRAPHS = [
   "   and holds the plan's goal and spec line, the `## Global C",
   "   A dispatched implementer **does not commit. It returns a ",
   "   Every implementer in the run gets its brief file, and the",
-  "   Anything written outside those paths stays unstaged, so `",
   "   THE RANGE, pinned at both ends: <BASE>..<sha>",
   "   Part 1 — against the brief and the coverage rows, in this",
   "   Give it the brief path and the range — never a paste of t",
@@ -973,6 +972,21 @@ test('the build skill carries the commit skeleton its injection cannot', () => {
   assert.match(text, /one bullet per change with the module it landed in/);
   assert.match(text, /one paragraph only for what a bullet cannot hold/);
   assert.match(read('fankeel-land'), /\ntype: what changed, under 60 characters/);
+});
+
+// A workflow group is opened from the script ledger.js writes, never authored
+// by hand: the session holding the Workflow tool needs the path, the shape of
+// the return and where each implementer return goes, and a brain hands the
+// path over as a `workflow:` line.
+test('the build skill opens a workflow group from the script ledger.js writes', () => {
+  const step = /\n4\. Commit[\s\S]*?\n5\. /.exec(read('fankeel-build'));
+  assert.ok(step, 'step 4 of the build loop is not where this test looks for it');
+  const text = step[0].replace(/\s+/g, ' ');
+  assert.match(text, /workflow --group <N>/);
+  assert.match(text, /Workflow\(\{ scriptPath/);
+  assert.match(text, /review-<n>\.txt/);
+  assert.match(text, /`workflow: <path>`/);
+  assert.match(text, /rather than a diff\. /, 'the brief-footer paragraph ends in a full stop');
 });
 
 // --- lib/skills.js: the fail-closed skills gate -----------------------------
