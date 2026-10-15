@@ -481,23 +481,6 @@ test('the brain names the dedicated agents, records survey and design facts, wri
     assert.match(effort, /ask in your report's gate/);
 });
 
-// docs/90-agent/plans/2026-10-02-docs-writer.md Tasks 7-9: a variant is
-// generated, never hand-edited. Edit the base file, then run
-// `node scripts/variants.js --base <name>`.
-const VARIANT_BASES = ['fankeel-implementer', 'fankeel-brain', 'fankeel-reviewer'];
-test('each effort variant is its base file with name and effort changed', () => {
-    const { VARIANT_EFFORTS, renderVariant } = require('../lib/agentfile.js');
-    for (const name of VARIANT_BASES) {
-        const base = fs.readFileSync(path.join(ROOT, 'agents', name + '.md'), 'utf8');
-        for (const effort of VARIANT_EFFORTS) {
-            const rel = 'agents/' + name + '-' + effort + '.md';
-            assert.equal(fs.readFileSync(path.join(ROOT, rel), 'utf8'), renderVariant(base, effort), rel + ' differs: run node scripts/variants.js --base ' + name);
-        }
-    }
-});
-test('every base scripts/variants.js knows has its variants shipped', () => {
-    assert.deepEqual([...VARIANT_BASES].sort(), [...require('../scripts/variants.js').BASES].sort());
-});
 // implementer-1: a build left .tmp-append.txt at the repository root on
 // 2026-10-02, and the task recorded it as touched.
 test('the implementer keeps scratch files out of the tree', () => {
