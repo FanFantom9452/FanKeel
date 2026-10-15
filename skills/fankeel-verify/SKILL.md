@@ -86,10 +86,12 @@ the same rule as the table above. Find them with
 `grep -E '^(build|test|lint):' Makefile`. A project that declares none of the
 three says so in one line: `none declared`.
 
-The test row is `node <plugin>/scripts/suite.js --session <id>`, and the one
-line it prints is what gets quoted. That run is recorded beside the task's
-handoffs, so `land` does not run the suite a second time while the record
-stands — green, no code changed since: its `suite.js --check` says which.
+The test row is `node <plugin>/scripts/suite.js --session <id> --fast`, and
+the last line it prints is what gets quoted. `--fast` runs `package.json`'s
+`test:fast` — the suite without the tests named `@slow` — where there is one,
+and the whole `test` script where there is not, saying so. A fast record is
+not land's: `land` runs the whole suite once more, and its `suite.js --check`
+refuses a fast record by name.
 
 ## Red flags — stop
 

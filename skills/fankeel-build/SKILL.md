@@ -595,7 +595,7 @@ third return to build was made of their defects; `--range` is required on
 
 Then one whole-branch review when the last task is done.
 
-**Then docs-check, at close.** After the full suite, run
+**Then docs-check, at close.** After the fast suite — `node <plugin>/scripts/suite.js --session <id> --fast`, which skips the tests named `@slow`; land runs them — run
 `node <plugin>/scripts/docs-check.js` — the check verify runs — and treat what
 it finds as this stage's own, in three tiers, each run once and never looped:
 
