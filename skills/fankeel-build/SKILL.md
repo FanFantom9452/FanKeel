@@ -214,8 +214,8 @@ then asks this stage's gate.
    their diffs into this task's review.
 2. Do what the task's `**Dispatch:**` line says. `in-session` means implement it
    here; `implementer, <model>` means dispatch one as
-   `subagent_type: fankeel:fankeel-implementer` — or
-   `fankeel:fankeel-implementer-<effort>` when the line carries a third field,
+   `subagent_type: fankeel:fankeel-implementer` — with `effort: "<the field>"`
+   on the call when the line carries a third field,
    `implementer, sonnet, high` — **pass the model
    explicitly**, an omitted one inherits this session's, and say how many
    and on which model in the response that sends it. Either way: every
@@ -427,7 +427,7 @@ then asks this stage's gate.
    ```
 
    Give it the brief path and the range — never a paste of the session's
-   history. Dispatch it as `subagent_type: fankeel:fankeel-reviewer` — `fankeel:fankeel-reviewer-<effort>` when the task's Dispatch line names an effort; the model
+   history. Dispatch it as `subagent_type: fankeel:fankeel-reviewer` — with the same `effort: "<the field>"` when the task's Dispatch line names one; the model
    comes from that agent file, not typed by hand here.
 
    Before dispatching, run `node <plugin>/scripts/lenses.js <BASE>..<sha>` and
@@ -449,9 +449,28 @@ then asks this stage's gate.
    one request of the tuning loop below: there the user is looking at the real
    page and judging it, so the render reviewer is skipped for that request, and
    a `fankeel-reviewer` alone reviews it. The user may also say, this session,
-   to skip it (or to run it) for any page task; that is a ruling, recorded once
-   at the top of the ledger, or in the response and then the commit message
-   where a `bounded` task has none, not once per task and not a stopper.
+   to skip it (or to run it) for any page task; that is a ruling, not a
+   stopper, and a skip is written for each page task it covers, because the
+   completion reads only the rulings written since the last task's line.
+
+   **The render verdict is what lets a page task complete.** Where
+   `.fankeel/render.json` gives a page `src` globs, a range that changed a
+   file under one is refused by
+   `ledger.js --plan <file> --range <BASE>..<sha> --render <file> complete <n> "<what landed>"`
+   — and by `fix` the same way — unless `--render` names the render
+   reviewer's return, saved under `.fankeel/build/task-<started>/`, whose
+   first line is `disposition: ship`, or the ledger holds a
+   `Ruling: render skipped — <why>` written since the last task's line:
+   `ledger.js --plan <file> ruling "render skipped" "<why>" "<cost if wrong>"`.
+   In such a project a `complete` with no `--range` is refused outright — the
+   range is what lets the check run — and `--render` alone does not clear it;
+   only that skip ruling does.
+   With no plan there is no ledger, so the same check runs when the task
+   leaves build: `task.js stage <next> --session <id> --render <file>`, or
+   `task.js note "Ruling: render skipped — <why>" --session <id>` first.
+   That check reads the task's claims and what git says it changed since it
+   started — commits, uncommitted and untracked files — so a page a claim no
+   longer names is still caught.
 
    **Where the task changed a page**, a tuning
    loop on the real page follows once it lands, served by the
@@ -536,6 +555,8 @@ then asks this stage's gate.
    The flag precedes the verb; everything after `complete` is the note. A task
    completed with no `--range` is recorded and reported as such by `ranges`,
    which is worse than it sounds: it is a task that landed and gets no verifier.
+   Where `.fankeel/render.json` gives a page `src`, it is not recorded at all:
+   it is refused unless a `Ruling: render skipped — <why>` covers the task.
 
 **A fix that came back from `verify` is a row of this loop.** `verify` commits
 nothing; a defeated row is routed here at its gate, and here it gets what a

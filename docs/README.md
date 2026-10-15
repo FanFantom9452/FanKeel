@@ -263,6 +263,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 壓縮視窗由 init 幫忙設（10-12）定了什麼：問一題、答是才寫使用者的設定檔、先留備份、答否記住；放棄了什麼 | [decisions/2026-10-12-init-compact-window.md](03-decisions/2026-10-12-init-compact-window.md) — *繁體中文* |
 | 壓縮門檻改成 `compact.at`（10-12）定了什麼：init 問四檔、只在 fankeel 任務生效、不再寫使用者的設定檔；放棄了什麼 | [decisions/2026-10-12-compact-at.md](03-decisions/2026-10-12-compact-at.md) — *繁體中文* |
 | Desktop 用 Svg 畫 band 與 Pane（10-15）定了什麼：Desktop 畫圖、終端維持文字，band 尾巴的遠端 ✓／✗，ctx 照 TokenBar；放棄了什麼 | [decisions/2026-10-15-pane-svg.md](03-decisions/2026-10-15-pane-svg.md) — *繁體中文* |
+| 沒派過的 agent 怎麼處理（10-15）定了什麼：effort 改在派工時傳、六個複本刪掉，mover、mutator、writer 只給 stage agent 派，init-scout 與 slimmer 不動；放棄了什麼 | [decisions/2026-10-15-unused-agents.md](03-decisions/2026-10-15-unused-agents.md) — *繁體中文* |
 | 開任務時同步壓縮視窗（10-14）定了什麼：start 把主機視窗對齊 `compact.at`、值變了請使用者重開 Desktop；放棄了什麼 | [decisions/2026-10-14-start-syncs-window.md](03-decisions/2026-10-14-start-syncs-window.md) — *繁體中文* |
 | Pane 配色改成安靜版（10-13）定了什麼：標題共用灰、多一行 route、拿掉「這個 session」與「用量額度」兩塊；放棄了什麼 | [decisions/2026-10-13-pane-colour.md](03-decisions/2026-10-13-pane-colour.md) — *繁體中文* |
 | TODO 全表盤點（10-12 第二輪）與自動壓縮做了什麼、沒做什麼：壓縮交給主機的視窗，fankeel 只在沒設時提醒；放棄了 mod 心跳與進 build 先壓；盤點沒有可直接做的，新開六筆 | [reports/patrols/2026-10-12-todo-patrol-compact-window.md](90-agent/reports/patrols/2026-10-12-todo-patrol-compact-window.md) — *繁體中文* |
@@ -425,6 +426,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 03-decisions 只收決策（10-10）：land 只在做過取捨時寫決策頁，給人看的決策頁由 docs-check 守白話與骨架，34 頁盤點日誌搬到 reports/patrols | [decisions/2026-10-10-decisions-human.md](03-decisions/2026-10-10-decisions-human.md) — *繁體中文* |
 | 那份設計：land 的紀錄分流、`decision-shape` 檢查、日誌搬家 | `docs/99-archive/2026-10-10-decisions-human-design.md` — *built, 繁體中文* |
 | 那份設計的 3 個 task | `docs/99-archive/2026-10-10-decisions-human.md` — *built, 繁體中文* |
+| render reviewer 強制、effort 改在派工時傳、未派 agent 的去留（10-15）的 design：render.json 的頁面帶 `src`，ledger 與 `task.js stage` 拒絕沒有 render 判定的頁面變更；六個 effort 複本刪掉 | `docs/99-archive/2026-10-15-render-gate-design.md` — *built* |
+| 那份設計的十二個 task，加上 verify 送回的修正：最近的 render.json、沒有 plan 時讀 git | `docs/99-archive/2026-10-15-render-gate.md` — *built* |
 | Haiku 角色題庫、平行執行器與長任務飄移 2×2 的 design：每角色十二題分三層、`check.sh` 標出失敗類別、`bench.js role` 用 `--jobs` 平行跑、`drift` 量 haiku／sonnet × PostToolUse 重注入 | `docs/99-archive/2026-10-09-haiku-bank-drift-design.md` — *built, 繁體中文* |
 | 那份設計的十二個 task：失敗類別與共用判分、四組題庫、平行執行器、逐步檢查與重注入、報告產生器，以及使用者親手跑的付費批次 | `docs/99-archive/2026-10-09-haiku-bank-drift.md` — *built, 繁體中文* |
 | 監控站在 `/chartroom/<專案>/` 開架構白板（10-08）的 design：handler 在 nonce 檢查之前剝前綴，轉交該專案懶建的 Chartroom `createHandler`，Chartroom 路徑取自 profile `station.chartroom`，板子固定在 `<專案>/.fankeel/architecture.board` | `docs/99-archive/2026-10-08-station-chartroom-design.md` — *built, 繁體中文* |
@@ -506,6 +509,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 - [壓縮視窗由 init 幫忙設（10-12）：問一題，答是才寫使用者的設定檔](03-decisions/2026-10-12-init-compact-window.md)
 - [壓縮門檻改成 profile 的 compact.at（10-12）：init 問四檔，不再寫使用者的設定檔](03-decisions/2026-10-12-compact-at.md)
 - [Desktop 用 Svg 畫 band 與 Pane，終端維持文字（10-15）](03-decisions/2026-10-15-pane-svg.md)
+- [沒派過的 agent 怎麼處理（10-15）：effort 改在派工時傳，六個複本刪掉](03-decisions/2026-10-15-unused-agents.md)
 - [開任務時同步壓縮視窗（10-14）：task.js start 把主機視窗寫成 compact.at](03-decisions/2026-10-14-start-syncs-window.md)
 - [Pane 的配色改成安靜版，多一行 route，拿掉兩塊（10-13）](03-decisions/2026-10-13-pane-colour.md)
 

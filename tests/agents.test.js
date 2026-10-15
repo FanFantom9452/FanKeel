@@ -7,7 +7,7 @@ const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
 const FRONT = /^---\r?\n([\s\S]*?)\r?\n---/;
-const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-verifier', 'fankeel-fixer', 'fankeel-brain', 'fankeel-render-reviewer', 'fankeel-mockup', 'fankeel-slimmer', 'fankeel-init-scout', 'fankeel-writer', 'fankeel-implementer', 'fankeel-mutator', 'fankeel-mover', 'fankeel-implementer-high', 'fankeel-implementer-xhigh', 'fankeel-brain-high', 'fankeel-brain-xhigh', 'fankeel-reviewer-high', 'fankeel-reviewer-xhigh'];
+const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-verifier', 'fankeel-fixer', 'fankeel-brain', 'fankeel-render-reviewer', 'fankeel-mockup', 'fankeel-slimmer', 'fankeel-init-scout', 'fankeel-writer', 'fankeel-implementer', 'fankeel-mutator', 'fankeel-mover'];
 
 // `fankeel-verifier` is the one named exception: it writes evidence rows to a
 // file for the Workflow join, and `Write` is what that takes. It is not less
@@ -29,7 +29,7 @@ const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-v
 // `fankeel-mockup` is the fourth: it draws the design stage's mockup page and,
 // in a tuning loop, rewrites the one block it is sent — `Edit` and `Write` on
 // that page, which is the whole of its job.
-const MAY_WRITE = { 'fankeel-verifier': ['Write'], 'fankeel-fixer': ['Edit', 'Write'], 'fankeel-brain': ['Write'], 'fankeel-mockup': ['Edit', 'Write'], 'fankeel-writer': ['Edit', 'Write'], 'fankeel-implementer': ['Edit', 'Write'], 'fankeel-mutator': ['Edit'], 'fankeel-implementer-high': ['Edit', 'Write'], 'fankeel-implementer-xhigh': ['Edit', 'Write'], 'fankeel-brain-high': ['Write'], 'fankeel-brain-xhigh': ['Write'] };
+const MAY_WRITE = { 'fankeel-verifier': ['Write'], 'fankeel-fixer': ['Edit', 'Write'], 'fankeel-brain': ['Write'], 'fankeel-mockup': ['Edit', 'Write'], 'fankeel-writer': ['Edit', 'Write'], 'fankeel-implementer': ['Edit', 'Write'], 'fankeel-mutator': ['Edit'] };
 
 function front(file) {
     const m = FRONT.exec(fs.readFileSync(file, 'utf8'));
@@ -229,7 +229,6 @@ const EFFORT = {
     'fankeel-brain': 'medium', 'fankeel-mockup': 'high', 'fankeel-slimmer': 'low', 'fankeel-init-scout': 'medium',
     'fankeel-writer': 'medium', 'fankeel-implementer': 'medium',
     'fankeel-mutator': 'low', 'fankeel-mover': 'low',
-    'fankeel-implementer-high': 'high', 'fankeel-implementer-xhigh': 'xhigh', 'fankeel-brain-high': 'high', 'fankeel-brain-xhigh': 'xhigh', 'fankeel-reviewer-high': 'high', 'fankeel-reviewer-xhigh': 'xhigh',
 };
 test('every agent names its effort, and none of them is max', () => {
     for (const name of NAMES) {
@@ -464,7 +463,7 @@ test('the mutator applies one mutation and restores it, the mover moves without 
 test('the brain names the dedicated agents, records survey and design facts, writes for a person, and knows how effort is chosen', () => {
     const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-brain.md'), 'utf8');
     const tools = text.split('\n## Tools\n')[1].split('\n## Refusals\n')[0];
-    for (const a of ['fankeel:fankeel-writer', 'fankeel:fankeel-mutator', 'fankeel:fankeel-mover', '`fankeel:fankeel-implementer`', 'fankeel:fankeel-implementer-<effort>']) {
+    for (const a of ['fankeel:fankeel-writer', 'fankeel:fankeel-mutator', 'fankeel:fankeel-mover', '`fankeel:fankeel-implementer`']) {
         assert.ok(tools.includes(a), 'Tools lacks ' + a);
     }
     assert.doesNotMatch(tools, /\(`general-purpose`, on the model/);
@@ -474,34 +473,19 @@ test('the brain names the dedicated agents, records survey and design facts, wri
     assert.match(ctx, /design/);
     assert.match(ctx, /context\.js add "<fact>" --at <path:line> --session <id>/);
     assert.match(text, /^## Reports are read by a person$/m);
-    const effort = section('Effort');
-    assert.match(effort, /`fankeel:fankeel-brain-high`/);
+    const effort = section('Effort').replace(/\s+/g, ' ');
+    assert.match(effort, /sends you with `effort: "high"` \(or `"xhigh"`\) on the dispatch/);
     assert.match(effort, /The controller/);
-    assert.match(effort, /`fankeel:fankeel-reviewer-<effort>`/);
+    assert.match(effort, /`fankeel:fankeel-reviewer` with the same/);
     assert.match(effort, /ask in your report's gate/);
+    assert.doesNotMatch(effort, /-high`|-<effort>`/);
+    assert.match(tools.replace(/\s+/g, ' '), /`fankeel:fankeel-implementer`, with `effort:` set where the task's Dispatch line names an effort/);
 });
 
-// docs/90-agent/plans/2026-10-02-docs-writer.md Tasks 7-9: a variant is
-// generated, never hand-edited. Edit the base file, then run
-// `node scripts/variants.js --base <name>`.
-const VARIANT_BASES = ['fankeel-implementer', 'fankeel-brain', 'fankeel-reviewer'];
-test('each effort variant is its base file with name and effort changed', () => {
-    const { VARIANT_EFFORTS, renderVariant } = require('../lib/agentfile.js');
-    for (const name of VARIANT_BASES) {
-        const base = fs.readFileSync(path.join(ROOT, 'agents', name + '.md'), 'utf8');
-        for (const effort of VARIANT_EFFORTS) {
-            const rel = 'agents/' + name + '-' + effort + '.md';
-            assert.equal(fs.readFileSync(path.join(ROOT, rel), 'utf8'), renderVariant(base, effort), rel + ' differs: run node scripts/variants.js --base ' + name);
-        }
-    }
-});
-test('every base scripts/variants.js knows has its variants shipped', () => {
-    assert.deepEqual([...VARIANT_BASES].sort(), [...require('../scripts/variants.js').BASES].sort());
-});
 // implementer-1: a build left .tmp-append.txt at the repository root on
 // 2026-10-02, and the task recorded it as touched.
 test('the implementer keeps scratch files out of the tree', () => {
-    for (const name of ['fankeel-implementer', 'fankeel-implementer-high', 'fankeel-implementer-xhigh']) {
+    for (const name of ['fankeel-implementer']) {
         const text = fs.readFileSync(path.join(ROOT, 'agents', name + '.md'), 'utf8');
         assert.match(text, /## Scratch files/, name);
         assert.match(text, /`\.fankeel\/build\/<task>\/`/, name);
@@ -512,7 +496,7 @@ test('the implementer keeps scratch files out of the tree', () => {
 // gate-5: three gates on 2026-10-02/03 were refused only when the controller
 // asked them, each costing a SendMessage round to the brain that wrote it.
 test('the brain checks its own gate with gate-check.js before it returns the path', () => {
-    for (const name of ['fankeel-brain', 'fankeel-brain-high', 'fankeel-brain-xhigh']) {
+    for (const name of ['fankeel-brain']) {
         const text = fs.readFileSync(path.join(ROOT, 'agents', name + '.md'), 'utf8');
         assert.match(text, /node <plugin>\/scripts\/gate-check\.js --session <id> <handoff path>/, name);
     }

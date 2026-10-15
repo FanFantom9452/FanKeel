@@ -200,7 +200,7 @@ right-hand column is the half it cannot.
 fankeel/
 ├── .claude-plugin/    plugin.json — the skills, the agents, every hook and its timeout — and marketplace.json
 ├── .fankeel/          this repository's own settings: docs.json files each page, profile.json answers gates, .gitignore; and, generated and ignored, .fankeel/station.bat and station.sh, which open this machine's station
-├── agents/            every subagent the stages dispatch, one file each — reader, reviewer, verifier, judge, fixer, brain, implementer, mover, mutator, writer, render-reviewer, mockup and the rest, some with -high and -xhigh variants — with its tools and model
+├── agents/            every subagent the stages dispatch, one file each — reader, reviewer, verifier, judge, fixer, brain, implementer, mover, mutator, writer, render-reviewer, mockup and the rest — with its tools and model
 ├── assets/            station/, the station page: index.html, station.css and station.js, copied beside every page a write produces, and tour.html, tour.css and tour*.js, the one-minute promo film; tune/overlay.js, which scripts/tune.js serve injects into every page it sends
 ├── bench/             the fixed inputs and two-sided controls scripts/bench.js runs: add-feature/, fix-bug/ and review-planted/, the whole tasks `run` compares arms on; roles/, one directory per role, each holding twelve items in three tiers; drift/, the long task the drift 2×2 checks step by step
 ├── docs/              reference pages by audience: 01-guide/, 02-architecture/, 03-decisions/, and 90-agent/ (reference/, plans/, reports/, judgements/) with 99-archive/ for what it retires

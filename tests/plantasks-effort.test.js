@@ -1,7 +1,7 @@
 'use strict';
 
 // docs/90-agent/plans/2026-10-02-docs-writer.md Task 10: `implementer, <model>,
-// <effort>` names a shipped effort variant of fankeel-implementer.
+// <effort>` names the effort sent on the implementer's dispatch, `high` or `xhigh`.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
@@ -28,8 +28,8 @@ test('parsePlan leaves effort empty where the line names none, and the model as 
   assert.equal(parseTasks(body('**Dispatch:** in-session — the user said so.'))[0].effort, '');
 });
 
-test('lint names an effort with no shipped variant, and passes high and xhigh', () => {
+test('lint names an effort a plan may not raise to, and passes high and xhigh', () => {
   assert.deepEqual(plantasks.lint(body('**Dispatch:** implementer, sonnet, xhigh — a design judgement.'), '# A design\n'), []);
   const out = plantasks.lint(body('**Dispatch:** implementer, sonnet, max — why.'), '# A design\n');
-  assert.ok(out.includes('Task 1: effort `max` has no fankeel-implementer variant — one of high, xhigh, or none for the agent file\'s own medium'), out.join('\n'));
+  assert.ok(out.includes('Task 1: effort `max` is not one a plan raises to — one of high, xhigh, or none for the agent file\'s own medium'), out.join('\n'));
 });

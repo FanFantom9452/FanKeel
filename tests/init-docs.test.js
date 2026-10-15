@@ -19,8 +19,8 @@ test('documents.md: the docs.json question is asked at init and at survey, and d
 });
 
 test('subagents.md and collisions.md name fankeel-init-scout as read-only', () => {
-    assert.match(flat('subagents.md'), /## The twenty agents this plugin defines/);
-    assert.match(flat('subagents.md'), /`fankeel-init-scout`, `fankeel-reviewer-high` and `fankeel-reviewer-xhigh` — carry `tools: \[Read, Grep, Glob, Bash\]`/);
+    assert.match(flat('subagents.md'), /## The fourteen agents this plugin defines/);
+    assert.match(flat('subagents.md'), /`fankeel-slimmer` and `fankeel-init-scout` — carry `tools: \[Read, Grep, Glob, Bash\]`/);
     assert.match(flat('collisions.md'), /`fankeel-slimmer` or `fankeel-init-scout`, and the command/);
     assert.match(flat('collisions.md'), /\.fankeel\/sensitive\.txt/);
 });
@@ -29,8 +29,12 @@ test('subagents.md and collisions.md name fankeel-init-scout as read-only', () =
 test('subagents.md names every agent the plugin ships', () => {
     const text = flat('subagents.md');
     const names = fs.readdirSync(path.join(__dirname, '..', 'agents')).filter((f) => f.endsWith('.md')).map((f) => f.slice(0, -3));
-    assert.equal(names.length, 20);
+    assert.equal(names.length, 14);
     for (const n of names) assert.ok(text.includes('`' + n + '`'), n);
     assert.match(flat('model-choice.md'), /implementer, <model>, <effort>/);
     assert.match(flat('model-choice.md'), /asks the user before it sends a brain/);
+    assert.match(flat('model-choice.md'), /effortValue: "high"/);
+    assert.doesNotMatch(flat('model-choice.md'), /The Agent tool cannot set effort\. Only/);
+    assert.match(text, /dispatched only by a stage agent: `fankeel-mover`, `fankeel-mutator` and `fankeel-writer`/);
+    assert.doesNotMatch(text, /scripts\/variants\.js|renderVariant/);
 });

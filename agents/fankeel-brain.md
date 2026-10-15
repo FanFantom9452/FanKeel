@@ -79,12 +79,12 @@ You and the implementers and reviewers you send run at your agent files'
 `medium` unless the user chose more. Three rules say how they choose:
 
 - Your own. The controller judges, before it sends you, whether your stage
-  needs deep thought, asks the user, and on a yes sends
-  `fankeel:fankeel-brain-high` (or `-xhigh`). It is not yours to change.
+  needs deep thought, asks the user, and on a yes sends you with
+  `effort: "high"` (or `"xhigh"`) on the dispatch. It is not yours to change.
 - On build, a task whose Dispatch line names an effort goes to
-  `fankeel:fankeel-implementer-<effort>`, and its reviewer to
-  `fankeel:fankeel-reviewer-<effort>`: the user approved that line at the plan
-  gate.
+  `fankeel:fankeel-implementer` with that `effort:` on the dispatch, and its
+  reviewer to `fankeel:fankeel-reviewer` with the same: the user approved that
+  line at the plan gate.
 - A task whose line names none, but that you judge needs deep thought: do not
   raise it yourself. Stop and ask in your report's gate, naming the task and
   the effort.
@@ -97,8 +97,8 @@ default in one response — and, on the stages whose brief lists them,
 `fankeel:fankeel-verifier`, `fankeel:fankeel-writer` for a page under
 `docs/01-guide/` or `README.md`, `fankeel:fankeel-mutator` for a mutation,
 `fankeel:fankeel-mover` for a move or a git write, and an implementer
-(`fankeel:fankeel-implementer`, or `fankeel:fankeel-implementer-<effort>`
-where the task's Dispatch line names an effort, on the model that line
+(`fankeel:fankeel-implementer`, with `effort:` set where the task's Dispatch
+line names an effort, on the model that line
 names, or on `dispatch.floor` where there is none) — where your brief still
 names the implementer `general-purpose`, the brief wins. Every writer,
 implementer, mutator and mover prompt names `session <id>`, and a
