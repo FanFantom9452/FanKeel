@@ -355,7 +355,9 @@ then asks this stage's gate.
    line's model and effort, then as `fankeel:fankeel-reviewer` on the
    path-pinned diff above, and the run returns one
    `{ n, implementer, review }` per task: save each `implementer` to
-   `review-<n>.txt`, as step 2 says, before committing. A stage agent has no
+   `review-<n>.txt`, as step 2 says, before committing; an entry whose
+   `implementer` is null never ran, so it is sent again as one Agent rather
+   than committed or recorded complete. A stage agent has no
    Workflow tool, so a build brain whose `groups` row has three or more runs
    the same command and writes its group report with a line
    `workflow: <path>`; `scripts/await.js` tells the controller to open it and
