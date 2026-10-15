@@ -45,9 +45,9 @@ prompt. Separately, `tests/dirty.test.js` fails under full-suite load because
 
 ## What proves it done
 
-| check | fails now | passes after |
+| test | fails now | passes after |
 |---|---|---|
 | `start --route plan,build` output holds plan's first rule, plan's output shape, and ends with the same-turn line | prints `Now plan: …` only | — |
 | `task "<new>"` on a started session prints the first stage's rules and the same-turn line | prints `FIRST_STEP` only | — |
-| `dirtyPaths` with a git shim that sleeps 3 s and `FANKEEL_GIT_TIMEOUT=10000` returns the paths | returns `null` | — |
+| `dirtyPaths` with a git shim that sleeps 5 s and `FANKEEL_GIT_TIMEOUT=10000` returns the paths | returns `null` | — |
 | full `npm test` in a clean worktree | 1–3 dirty tests fail | 0 fail |
