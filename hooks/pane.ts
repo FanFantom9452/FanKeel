@@ -1,4 +1,5 @@
 import type { Register, EngineInterface } from 'claude-code'
+import { turn } from './turn.ts'
 import { parentOf, isActive, SESSION_ID, thresholdWith } from './compact.ts'
 import { statusRows, ledgerDoneIds, planTasks } from './pane-status.ts'
 import type { Entry, Other, Context, PlanInfo, PlanTask, Seg as StatusSeg, Row as StatusRow, StatusInput } from './pane-status.ts'
@@ -292,8 +293,6 @@ type State = {
   // Ticks in a row the registry file was unreadable.
   bad: number
   busy: boolean
-  // Whether a turn is running, from turn.start to turn.complete.
-  turn: boolean
   cache: Cache
   logged: Logged
 }
@@ -326,7 +325,7 @@ async function tick($: EngineInterface, state: State): Promise<void> {
     const clock = next.entry ? await $.clock.now() : 0
     const minute = Math.floor(clock / 60000)
     const second = next.pending ? Math.floor(clock / 1000) : 0
-    const now = JSON.stringify([next.entry, next.others, next.context, next.limits, next.plan, next.remote, next.probe, minute, second, state.turn])
+    const now = JSON.stringify([next.entry, next.others, next.context, next.limits, next.plan, next.remote, next.probe, minute, second, turn.running])
     // The opens and closes have their own memory, `edge`, which moves only when they all went through: a rejected
     // one is met again next tick as the same edge, while `seen` and the redraw below never wait on them.
     try {
@@ -360,7 +359,7 @@ async function tick($: EngineInterface, state: State): Promise<void> {
 
 export const register: Register = (on) => {
   const state: State = {
-    seen: blank(''), print: '', mine: false, edge: { task: false }, bad: 0, busy: false, turn: false, cache: new Map(),
+    seen: blank(''), print: '', mine: false, edge: { task: false }, bad: 0, busy: false, cache: new Map(),
     logged: { context: '', plan: '', open: '', registry: '', neighbour: '', gate: '', live: '', remote: '', bandSvg: '', paneSvg: '' },
   }
 
@@ -372,16 +371,8 @@ export const register: Register = (on) => {
 
   // A turn is running: the route's current dot breathes until it completes.
   on('turn.start', async ($, e, next) => {
-    state.turn = true
+    turn.running = true
     $.ui.invalidate('ui.render')
-    return next(e)
-  })
-  on('turn.complete', async ($, e, next) => {
-    // A subagent's run ends with its own turn.complete (it carries agentId) and raised no turn.start: the main turn is still running.
-    if (!(e as { agentId?: string }).agentId) {
-      state.turn = false
-      $.ui.invalidate('ui.render')
-    }
     return next(e)
   })
 
@@ -417,7 +408,7 @@ export const register: Register = (on) => {
       limits: seen.limits,
       tasks: plan ? { done: plan.tasks.filter((t) => plan.done.includes(t.n)).length, total: plan.tasks.length } : null,
       remote: seen.remote,
-      turn: state.turn,
+      turn: turn.running,
       cols,
       now,
     }
@@ -430,7 +421,7 @@ export const register: Register = (on) => {
         const { Box, Svg } = $.ui.resolve(e)
         const sources = rows.map((_, i) => (i === 0 ? bandRow1Svg(band) : bandRow2Svg(band)))
         if (sources.some((source) => !source || source.length > SVG_MAX)) throw new Error('a band row drew empty or over the limit')
-        const live = !!seen.entry && breathing(seen.entry, band.now, state.turn, band.gateAt ?? null)
+        const live = !!seen.entry && breathing(seen.entry, band.now, turn.running, band.gateAt ?? null)
         return h(Box, { flexDirection: 'column' }, ...sources.map((source, i) => h(Svg, i === 0 && live ? { source, alt: altOf([rows[i]]), isInteractive: true } : { source, alt: altOf([rows[i]]) })))
       } catch (err) {
         logOnce($, state.logged, 'bandSvg', `fankeel pane: band Svg not drawn, ${String(err)}`)
@@ -463,7 +454,7 @@ export const register: Register = (on) => {
       room,
       now,
       probe: seen.probe,
-      turn: state.turn,
+      turn: turn.running,
       gateAt: seen.pending ? (seen.pending.at ?? now) : null,
     }
     const status = statusRows(input)

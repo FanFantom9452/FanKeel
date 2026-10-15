@@ -58,8 +58,11 @@ function fake({ files = {}, placed = true, surfaces = ['terminal'], tokens = 312
 }
 
 // Two hooks share the event `ui.render`: the Pane's stays under that name, the band's is `band`.
+// The turn flag is clear at every load in a session; here one module instance serves every test.
+// The module's one turn.complete is compact.ts's, so the hooks come from mod.ts, which registers both.
 async function wired() {
-    const { register } = await load();
+    const { register } = await import(pathToFileURL(path.join(__dirname, '..', 'hooks', 'mod.ts')).href);
+    (await import(pathToFileURL(path.join(__dirname, '..', 'hooks', 'turn.ts')).href)).turn.running = false;
     const hooks = {};
     register((event, a, b) => {
         const key = event === 'ui.render' && a && a.component === 'AbovePrompt' ? 'band' : event;

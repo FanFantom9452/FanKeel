@@ -1,3 +1,4 @@
+import { turn } from './turn.ts'
 import type { Register, EngineInterface } from 'claude-code'
 
 // Compacts the main conversation once its context reaches the profile's
@@ -136,7 +137,13 @@ async function compactWithRetry($: EngineInterface, instructions: string): Promi
 
 export const register: Register = (on) => {
   let pending = false
+  // The module's one turn.complete: the engine refuses a second without a matcher, so pane.ts's turn flag is cleared here.
   on('turn.complete', async ($, e, next) => {
+    // A subagent's run ends with its own turn.complete (it carries agentId) and raised no turn.start: the main turn is still running.
+    if (!e.agentId) {
+      turn.running = false
+      $.ui.invalidate('ui.render')
+    }
     const out = await next(e)
     if (e.agentId !== undefined || pending) return out
     try {
