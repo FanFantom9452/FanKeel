@@ -767,6 +767,10 @@ floating box's position are. The promo film's look is the only look:
 it off, every keel rule sits under `:root[data-style=keel]` at the end of
 `assets/station/station.css` over the base rules above it, the masthead
 carries the film's glyph, and a live row fills that glyph stage by stage.
+Its current segment breathes only while that stage is worked on: `keelProgress`
+adds `live` when the session runs, no question is out (`gateAt`) and the row's
+`busy` is true — an `inflight` mark on the current stage under 20 minutes old,
+which `gather()` in `lib/station.js` computes. Otherwise the segment stands still.
 
 The 30-day histogram that used to open the page is now **近 30 天**,
 `#/days` — one bar per local day, today at the

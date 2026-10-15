@@ -1,11 +1,11 @@
 ---
-status: design-intent
+status: current
 last_verified: 2026-10-15
 ---
 
 # 路線圓點在執行中呼吸 — design
 
-The current stage's mark on the route breathes only while that stage is being worked on, and stands still when a question is waiting or nothing runs. Approved at the design gate on 2026-10-15 against the mockup at `.fankeel/build/2026-10-15-route-dots-breathe/mockup.html`. The judgement this argues from: [2026-10-15-route-dots-breathe.md](../judgements/2026-10-15-route-dots-breathe.md).
+The current stage's mark on the route breathes only while that stage is being worked on, and stands still when a question is waiting or nothing runs. Approved at the design gate on 2026-10-15 against the mockup at `.fankeel/build/2026-10-15-route-dots-breathe/mockup.html`. The judgement this argues from: [2026-10-15-route-dots-breathe.md](../90-agent/judgements/2026-10-15-route-dots-breathe.md).
 
 ## 1. When a stage counts as being worked on
 
