@@ -605,7 +605,7 @@ test('applyPreset writes a preset the way wizApply does: a value as write, null 
 test('balanced takes land.integration and land.push from history, and nothing else from it', () => {
     const file = path.join(dir(), 'profile.json');
     const out = profile.applyPreset(file, 'balanced', {
-        'land.integration': 'pr', 'land.push': true, 'class.default': 'spike', 'commit.format': '^(feat)(\([^)]+\))?: ',
+        'land.integration': 'pr', 'land.push': true, 'land.archivePlan': false, guard: 'auto', 'class.default': 'spike', 'commit.format': '^(feat)(\([^)]+\))?: ',
     });
     assert.equal(out.ok, true);
     const written = JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -665,6 +665,16 @@ test('profile preset balanced --project writes land.integration pr from a histor
 test('profile preset refuses a name that is not a preset, and --default reads no history', () => {
     const d = dir();
     const cfg = path.join(d, 'cfg');
+    const who = ['-c', 'user.name=t', '-c', 'user.email=t@t'];
+    const g = (...a) => execFileSync('git', a, { cwd: d, stdio: 'ignore' });
+    g('init', '-q', '-b', 'main');
+    g(...who, 'commit', '-q', '--allow-empty', '-m', 'init');
+    for (let i = 0; i < 3; i++) {
+        g('checkout', '-q', '-b', 'f' + i);
+        g(...who, 'commit', '-q', '--allow-empty', '-m', 'work ' + i);
+        g('checkout', '-q', 'main');
+        g(...who, 'merge', '-q', '--no-ff', '-m', 'Merge pull request #' + (i + 1) + ' from me/f' + i, 'f' + i);
+    }
     const TASK = path.join(__dirname, '..', 'scripts', 'task.js');
     const env = Object.assign({}, process.env, { CLAUDE_CONFIG_DIR: cfg });
     const r = require('node:child_process').spawnSync(process.execPath, [TASK, 'profile', 'preset', 'fast', '--root', d, '--claude-dir', cfg], { encoding: 'utf8', env });
