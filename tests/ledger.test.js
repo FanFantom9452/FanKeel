@@ -1182,3 +1182,51 @@ test('--render is a flag of complete and fix only', () => {
   assert.equal(code, 1);
   assert.match(out, /refused: --render/);
 });
+
+// Fix round 1: git quotes a non-ASCII path and, with rename detection, lists
+// only the new side of a rename, so either slipped a page past the check.
+test('a src file with a non-ASCII name, or one renamed out of the glob, is refused', () => {
+  const { dir, base } = pageRepo();
+  const named = commitAt(dir, 'site/首頁.html');
+  const refused = inRepo(dir, '--range', base + '..' + named, 'complete', '1', 'the page');
+  assert.equal(refused.code, 1, refused.out);
+  assert.match(refused.out, /site\/首頁\.html/);
+  inRepo(dir, 'ruling', 'render skipped', 'tuned live with the user', 'a broken page ships');
+  assert.equal(inRepo(dir, '--range', base + '..' + named, 'complete', '1', 'the page').code, 0);
+  git(dir, ['mv', 'site/首頁.html', 'moved.html']);
+  git(dir, ['commit', '-qm', 'move']);
+  const moved = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: dir, encoding: 'utf8' }).trim();
+  const { out, code } = inRepo(dir, '--range', named + '..' + moved, 'complete', '2', 'moved out');
+  assert.equal(code, 1, out);
+  assert.match(out, /home/);
+});
+
+test('a render.json that cannot be read or parsed, or a range git cannot read, is refused rather than waved through', () => {
+  const dir = pageRepo(false);
+  const head = commitAt(dir.dir, 'site/index.html');
+  fs.mkdirSync(path.join(dir.dir, '.fankeel', 'render.json'), { recursive: true });
+  const unreadable = inRepo(dir.dir, '--range', dir.base + '..' + head, 'complete', '1', 'the page');
+  assert.equal(unreadable.code, 1, unreadable.out);
+  assert.match(unreadable.out, /render\.json/);
+  const broken = pageRepo(false);
+  const page = commitAt(broken.dir, 'site/index.html');
+  fs.mkdirSync(path.join(broken.dir, '.fankeel'), { recursive: true });
+  fs.writeFileSync(path.join(broken.dir, '.fankeel', 'render.json'), '{');
+  const parsed = inRepo(broken.dir, '--range', broken.base + '..' + page, 'complete', '1', 'the page');
+  assert.equal(parsed.code, 1, parsed.out);
+  assert.match(parsed.out, /render\.json: not JSON/);
+  const { dir: ok } = pageRepo();
+  const gone = inRepo(ok, '--range', 'aaaaaaa..bbbbbbb', 'complete', '1', 'the page');
+  assert.equal(gone.code, 1, gone.out);
+  assert.match(gone.out, /git could not read aaaaaaa\.\.bbbbbbb/);
+});
+
+test('a --render file that is not disposition: ship is refused even on a range touching no page', () => {
+  const { dir, base } = pageRepo();
+  const head = commitAt(dir, 'lib/x.js');
+  fs.writeFileSync(path.join(dir, 'fix.md'), 'disposition: fix\n');
+  const { out, code } = inRepo(dir, '--range', base + '..' + head, '--render', 'fix.md', 'complete', '1', 'no page');
+  assert.equal(code, 1, out);
+  assert.match(out, /first line is not `disposition: ship`/);
+  assert.equal(fs.existsSync(ledger.ledgerPath(dir, 'p.md')), false, 'nothing was recorded');
+});

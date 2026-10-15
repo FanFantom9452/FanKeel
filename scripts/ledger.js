@@ -52,7 +52,7 @@ const STRING_FLAGS = { root: 'root', plan: 'plan', range: 'range', group: 'group
 const VERBS = new Set(['init', 'complete', 'ruling', 'show', 'groups', 'ready', 'hands', 'scan', 'ranges', 'lint', 'brief', 'fix']);
 
 // The flags each verb takes. `--root` and `--plan` everywhere; `--range` only
-// where a range is recorded. A flag outside its verb's list is refused rather
+// where a range is recorded; `--render` only on `complete` and `fix`. A flag outside its verb's list is refused rather
 // than ignored: `ranges --range x` used to exit 0 having read nothing of it.
 const BASE_FLAGS = ['root', 'plan'];
 const VERB_FLAGS = { init: BASE_FLAGS.concat(['range']), complete: BASE_FLAGS.concat(['range', 'render']), fix: BASE_FLAGS.concat(['range', 'render']), brief: BASE_FLAGS.concat(['group', 'prefix']), ready: BASE_FLAGS.concat(['worktree']) };
@@ -524,7 +524,8 @@ function renderRefusal(root, range, opts) {
     try {
         conf = fs.readFileSync(path.join(root, '.fankeel', 'render.json'), 'utf8');
     } catch (e) {
-        return null;
+        if (e.code === 'ENOENT') return null;
+        return '.fankeel/render.json could not be read (' + e.code + '), so this range cannot be checked against it.';
     }
     let targets;
     try {
@@ -534,8 +535,10 @@ function renderRefusal(root, range, opts) {
     }
     let changed;
     try {
-        changed = execFileSync('git', ['diff', '--name-only', range], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
-            .split(/\r?\n/).filter(Boolean);
+        // -z: without it git quotes a non-ASCII path, which no glob matches.
+        // --no-renames: a file renamed out of a `src` glob lists its old side too.
+        changed = execFileSync('git', ['diff', '-z', '--name-only', '--no-renames', range], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
+            .split('\0').filter(Boolean);
     } catch (e) {
         return 'git could not read ' + range + ', so it cannot be checked against .fankeel/render.json.';
     }
