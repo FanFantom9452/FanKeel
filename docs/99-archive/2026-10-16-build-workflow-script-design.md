@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # Build workflow written by a script — Design
