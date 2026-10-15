@@ -69,14 +69,25 @@ test('FANKEEL_GIT_TIMEOUT lets a slow git finish instead of answering null', () 
   assert.deepEqual(got, []);
 });
 
-test('the guard\'s git calls read the same timeout as dirtyPaths', () => {
+test('logicalFile waits out a slow git under FANKEEL_GIT_TIMEOUT instead of cutting it at 2.5s', () => {
   const guard = require('../lib/guard.js');
-  delete process.env.FANKEEL_GIT_TIMEOUT;
-  assert.equal(guard.gitTimeout(), 2500);
+  const root = mkTmp('fankeel-guard-root-');
+  const elsewhere = mkTmp('fankeel-guard-else-');
+  const { bin, env } = slowGit();
+  const saved = { PATH: process.env.PATH, NODE_OPTIONS: process.env.NODE_OPTIONS };
+  process.env.PATH = bin + path.delimiter + process.env.PATH;
+  for (const k of Object.keys(env)) process.env[k] = env[k];
   process.env.FANKEEL_GIT_TIMEOUT = '10000';
+  const began = Date.now();
   try {
-    assert.equal(guard.gitTimeout(), 10000);
+    guard.logicalFile(root, path.join(elsewhere, 'a.js'));
   } finally {
+    process.env.PATH = saved.PATH;
     delete process.env.FANKEEL_GIT_TIMEOUT;
+    if (saved.NODE_OPTIONS === undefined) delete process.env.NODE_OPTIONS;
+    else process.env.NODE_OPTIONS = saved.NODE_OPTIONS;
   }
+  // The slow git sleeps five seconds: a 2500 cut answers in under three.
+  const took = Date.now() - began;
+  assert.ok(took > 4500, 'took ' + took + 'ms; the 10000ms override was not used');
 });
