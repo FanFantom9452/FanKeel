@@ -226,6 +226,16 @@ test('argsFor: --plugin-dir takes the directory it is given, acceptEdits stays, 
     assert.ok(!args.includes('bypassPermissions'));
 });
 
+// session-4: on 2026-10-15 `node` was refused under acceptEdits in both
+// driven rounds, so neither stage ran the suite or docs-check. The user chose
+// to let node and git through, still under acceptEdits.
+test('argsFor: lets node and git through as one --allowedTools value, still acceptEdits, never bypassPermissions', () => {
+    const args = argsFor(1);
+    assert.equal(args[args.indexOf('--allowedTools') + 1], 'Bash(node:*),Bash(git:*)');
+    assert.equal(args[args.indexOf('--permission-mode') + 1], 'acceptEdits');
+    assert.ok(!args.includes('bypassPermissions'));
+});
+
 test('insidePlugin: the plugin itself and below it, not a sibling or a stranger', () => {
     const plugin = path.resolve('plug');
     assert.equal(insidePlugin(plugin, plugin), true);

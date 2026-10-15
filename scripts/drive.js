@@ -88,7 +88,7 @@ function insidePlugin(root, plugin) {
 }
 
 function argsFor(usdLeft, pluginDir = PLUGIN) {
-    return ['-p', '--plugin-dir', pluginDir, '--permission-mode', 'acceptEdits', '--output-format', 'json', '--max-budget-usd', usdLeft.toFixed(2)];
+    return ['-p', '--plugin-dir', pluginDir, '--permission-mode', 'acceptEdits', '--allowedTools', 'Bash(node:*),Bash(git:*)', '--output-format', 'json', '--max-budget-usd', usdLeft.toFixed(2)];
 }
 
 const mtime = (file) => { try { return fs.statSync(file).mtimeMs; } catch (e) { return 0; } };
