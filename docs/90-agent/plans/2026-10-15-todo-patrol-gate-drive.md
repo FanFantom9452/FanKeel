@@ -819,7 +819,7 @@ The 2026-10-15 rerun (`--max-rounds 2 --max-usd 2`) on a `build,verify` task sto
 
 ## Task 8: station-data 冷請求不再逐 session 掃整個 projects 目錄
 
-10-15 量到冷請求中位數 1.67 秒（Task 5 的報告），使用者在 build 的關卡選在這個任務裡修。剖析結果（在 session 內用 `lib/station.js` 的 `gather` 跑三次，memo 已暖）：1.66 秒裡 `detailOf` 佔 1.44 秒，`registry.readAll` 只佔 45ms；`detailOf` 的時間幾乎全在 `transcriptOf`：511 個 session 裡 443 個的 transcript 已不在磁碟，每一個都對 `projects/` 底下 544 個目錄各 stat 一次才回 null。把 `projects/` 讀成一份 `sessionId → 檔案路徑` 的索引只要 25ms。所以快取的是索引，每次 `gather` 建一份、用完就丟，不跨請求，沒有失效問題；station-23 條目原本猜的 registry 走訪不是瓶頸。
+10-15 量到冷請求中位數 1.67 秒（Task 5 的報告），使用者在 build 的關卡選在這個任務裡修。剖析結果（在 session 內用 `lib/station.js` 的 `gather` 跑三次，memo 已暖）：1.66 秒裡 `detailOf` 佔 1.44 秒，`registry.readAll` 只佔 45ms；`detailOf` 的時間幾乎全在 `transcriptOf`：511 個 session 裡 443 個（511 與下文的 25ms 同上述剖析數字，來自 session 內剖析，沒有留存原始檔）的 transcript 已不在磁碟，每一個都對 `projects/` 底下 544 個目錄各 stat 一次才回 null。把 `projects/` 讀成一份 `sessionId → 檔案路徑` 的索引只要 25ms。所以快取的是索引，每次 `gather` 建一份、用完就丟，不跨請求，沒有失效問題；station-23 條目原本猜的 registry 走訪不是瓶頸。
 
 **Files:**
 - Modify: `lib/detail.js:550-790` — 新增 `transcriptIndex(configDir)`；`detailOf` 與 `readDetail` 在 `opts.transcripts`（一個 Map）存在時從它查，不呼叫 `transcriptOf`
