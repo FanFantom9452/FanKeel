@@ -128,3 +128,14 @@ test('gather builds one index per config dir and hands detailOf that Map for eve
     assert.ok(seen.every((m) => m instanceof Map && m === seen[0]));
     assert.equal(built, 1);
 });
+
+test('a dangling <id>.jsonl link is not indexed and does not shadow a later real file', (t) => {
+    const f = setup();
+    try {
+        fs.symlinkSync(path.join(f.cfg, 'nowhere.jsonl'), path.join(f.cfg, 'projects', 'a', 'dang.jsonl'));
+    } catch (e) {
+        return t.skip('cannot create a symlink here: ' + e.code);
+    }
+    fs.writeFileSync(path.join(f.cfg, 'projects', 'b', 'dang.jsonl'), '');
+    assert.equal(detail.transcriptIndex(f.cfg).get('dang'), path.join(f.cfg, 'projects', 'b', 'dang.jsonl'));
+});
