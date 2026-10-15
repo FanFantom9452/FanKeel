@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 
-// The ledger, from the command line. Twelve verbs, because twelve is what the build
+// The ledger, from the command line. Thirteen verbs, because thirteen is what the build
 // loop actually does to it: open it, say a task is done, and — after a compaction
 // — ask what it already knows, and ask which of a plan's tasks may go out together.
 // `lint`, `brief` and `fix` came with the 2026-09-07 plan-quality change: check a
@@ -10,6 +10,8 @@
 // build stage's step-3 scan table has one producer instead of a session pasting
 // it in by hand.
 // `ready` and `hands` came on 2026-09-24: which tasks go out now, and which are the user's.
+// `workflow` came on 2026-10-16: one group written as a Workflow script, for
+// the session holding the Workflow tool to open by `scriptPath`.
 //
 // **Flags precede the verb.** Everything after it is the user's words, down to a
 // word spelled exactly like a flag. `--plan` and `--root` are both paths, and a
@@ -49,13 +51,13 @@ const STRING_FLAGS = { root: 'root', plan: 'plan', range: 'range', group: 'group
 // than four literals for the same reason the flags are a table: `splitAtVerb`
 // reads it too, so that no flag spends one, and two lists of the same verbs
 // drift.
-const VERBS = new Set(['init', 'complete', 'ruling', 'show', 'groups', 'ready', 'hands', 'scan', 'ranges', 'lint', 'brief', 'fix']);
+const VERBS = new Set(['init', 'complete', 'ruling', 'show', 'groups', 'ready', 'hands', 'scan', 'ranges', 'lint', 'brief', 'fix', 'workflow']);
 
 // The flags each verb takes. `--root` and `--plan` everywhere; `--range` only
 // where a range is recorded; `--render` only on `complete` and `fix`. A flag outside its verb's list is refused rather
 // than ignored: `ranges --range x` used to exit 0 having read nothing of it.
 const BASE_FLAGS = ['root', 'plan'];
-const VERB_FLAGS = { init: BASE_FLAGS.concat(['range']), complete: BASE_FLAGS.concat(['range', 'render']), fix: BASE_FLAGS.concat(['range', 'render']), brief: BASE_FLAGS.concat(['group', 'prefix']), ready: BASE_FLAGS.concat(['worktree']) };
+const VERB_FLAGS = { init: BASE_FLAGS.concat(['range']), complete: BASE_FLAGS.concat(['range', 'render']), fix: BASE_FLAGS.concat(['range', 'render']), brief: BASE_FLAGS.concat(['group', 'prefix']), ready: BASE_FLAGS.concat(['worktree']), workflow: BASE_FLAGS.concat(['group']) };
 
 // `strict: false` lets an unknown flag through to the verb check below, which
 // refuses it by name. A declared flag given no value comes back `true` rather
@@ -188,6 +190,20 @@ function readPlan(root, plan) {
     }
 }
 
+// The surface each group takes from its tasks alone: `surfaces`, with a group
+// carrying a require-edge diagnostic held off `workflow` the way a group with
+// no Interfaces block already is. Whether build runs under a stage agent is
+// not asked here: `groups` applies that, and `workflow` writes the script a
+// stage agent cannot open but the session holding the Workflow tool can.
+function taskSurfaces(tasks, requireHits) {
+    const flagged = new Set(requireHits.flatMap((r) => [r.a, r.b]));
+    return plantasks.surfaces(tasks).map((g) => (
+        g.surface === 'workflow' && g.tasks.some((n) => flagged.has(n))
+            ? { tasks: g.tasks, surface: 'agents' }
+            : g
+    ));
+}
+
 // The whole `groups` report, as one string. `groups` prints it and `scan`
 // writes it into the ledger, and both read it from here so the two can never
 // drift into two different tables for the same plan.
@@ -206,7 +222,6 @@ function groupsReport(root, planOpt) {
     // Computed before the empty-plan check below because that check returns
     // before either `rows` or the original `surfaced` was ever used either.
     const requireHits = plantasks.requireConflicts(tasks, root);
-    const flagged = new Set(requireHits.flatMap((r) => [r.a, r.b]));
     // A stage agent has no Workflow tool, so when build runs under one
     // (`stage.agents` names build) a group the tasks would call `workflow` is
     // sent as `agents`. A profile read that throws leaves today's answer; a
@@ -219,10 +234,8 @@ function groupsReport(root, planOpt) {
         brainBuild = controlling('build', prof.values);
         unreadable = prof.unreadable || [];
     } catch (e) { /* no profile: what it always printed */ }
-    const surfaced = plantasks.surfaces(tasks).map((g) => (
-        g.surface === 'workflow' && (brainBuild || g.tasks.some((n) => flagged.has(n)))
-            ? { tasks: g.tasks, surface: 'agents' }
-            : g
+    const surfaced = taskSurfaces(tasks, requireHits).map((g) => (
+        g.surface === 'workflow' && brainBuild ? { tasks: g.tasks, surface: 'agents' } : g
     ));
     if (!tasks.length) {
         // "no tasks in <file>" alone reads as "this plan is empty," and the
@@ -556,6 +569,90 @@ function renderRefusal(root, range, opts) {
     return verdictRefusal(reached, '--render <file>', SKIP_HOW);
 }
 
+// One task's brief file, written beside the ledger, and its path. `brief <n>`
+// and `workflow --group <N>` both write through here, so the brief a Workflow
+// implementer reads is the one `brief <n>` would have written.
+function writeBrief(root, planOpt, n) {
+    const { file, text: planText } = readPlan(root, planOpt);
+    const { header, tasks } = plantasks.parsePlan(planText);
+    const task = tasks.find((t) => t.n === n);
+    if (!task) fail('brief: no Task ' + n + ' in ' + file + '. ' + CONFORMING_HEADING);
+    // For every name this task consumes, the entry that produces it — the
+    // exact signature, from the task that owns it, rather than a memory.
+    const produced = [];
+    for (const name of task.consumes) {
+        for (const t of tasks) {
+            if (t.n === task.n) continue;
+            for (const entry of t.producesText) {
+                if (entry.includes('`' + name + '`') && !produced.includes('- Task ' + t.n + ' produces: ' + entry)) {
+                    produced.push('- Task ' + t.n + ' produces: ' + entry);
+                }
+            }
+        }
+    }
+    const out = [
+        '# Task ' + n + ' — ' + task.name,
+        '',
+        planOpt + ', Task ' + n + '. This file is your whole brief.',
+        '',
+        paragraph(header, 'Goal'),
+        '',
+        paragraph(header, 'Spec'),
+        '',
+        section(header, 'Global Constraints'),
+        '',
+        task.body,
+        '',
+        '## From the tasks this consumes',
+        '',
+        produced.length ? produced.join('\n') : 'Nothing consumed from an earlier task.',
+        '',
+        FOOTER,
+        '',
+    ].join('\n');
+    const dir = path.dirname(ledger.ledgerPath(root, planOpt));
+    fs.mkdirSync(dir, { recursive: true });
+    const briefFile = path.join(dir, 'task-' + n + '-brief.md');
+    fs.writeFileSync(briefFile, out);
+    return briefFile;
+}
+
+// `workflow --group <N>`: group N written as one Workflow script beside the
+// ledger, every implementer's brief written first, and the script's path
+// printed for the session holding the Workflow tool to open by `scriptPath`.
+function workflowFile(root, planOpt, group) {
+    const { text } = readPlan(root, planOpt);
+    const tasks = plantasks.parseTasks(text);
+    const rows = taskSurfaces(tasks, plantasks.requireConflicts(tasks, root));
+    const n = Number(group);
+    if (!Number.isInteger(n) || n < 1 || n > rows.length) {
+        fail('workflow wants --group 1..' + rows.length + ' for this plan, got ' + group);
+    }
+    const row = rows[n - 1];
+    if (row.surface !== 'workflow') {
+        fail('fankeel ledger — group ' + n + ' is `' + row.surface + '`, not `workflow`: send its tasks as Agents.');
+    }
+    const sent = tasks.filter((t) => row.tasks.includes(t.n) && t.dispatch === 'implementer');
+    if (sent.length < 3) {
+        fail('fankeel ledger — group ' + n + ' sends ' + sent.length + ' implementers, fewer than three: send them as Agents.');
+    }
+    const briefs = {};
+    for (const t of sent) briefs[t.n] = writeBrief(root, planOpt, t.n);
+    let script;
+    try {
+        script = plantasks.workflowScript(tasks, row.tasks, {
+            root, plan: planOpt, stem: path.basename(String(planOpt), '.md'), group: n, briefs,
+        });
+    } catch (e) {
+        return fail('fankeel ledger — ' + e.message);
+    }
+    const file = path.join(path.dirname(ledger.ledgerPath(root, planOpt)), 'workflow-g' + n + '.js');
+    fs.writeFileSync(file, script);
+    return 'fankeel ledger — ' + file
+        + '\n\nOpen it with Workflow { scriptPath }. Nothing commits while it runs; then commit each task in this order: '
+        + sent.map((t) => t.n).join(', ') + '.';
+}
+
 function main(argv) {
     const { head, verb: named, text } = splitAroundVerb(argv, STRING_FLAGS, VERBS);
     const verb = String(named || 'show').toLowerCase();
@@ -730,48 +827,12 @@ function main(argv) {
         }
         const n = Number(text[0]);
         if (!Number.isInteger(n) || n < 1) fail('brief <task number>');
-        const { file, text: planText } = readPlan(root, opts.plan);
-        const { header, tasks } = plantasks.parsePlan(planText);
-        const task = tasks.find((t) => t.n === n);
-        if (!task) fail('brief: no Task ' + n + ' in ' + file + '. ' + CONFORMING_HEADING);
-        // For every name this task consumes, the entry that produces it — the
-        // exact signature, from the task that owns it, rather than a memory.
-        const produced = [];
-        for (const name of task.consumes) {
-            for (const t of tasks) {
-                if (t.n === task.n) continue;
-                for (const entry of t.producesText) {
-                    if (entry.includes('`' + name + '`') && !produced.includes('- Task ' + t.n + ' produces: ' + entry)) {
-                        produced.push('- Task ' + t.n + ' produces: ' + entry);
-                    }
-                }
-            }
-        }
-        const out = [
-            '# Task ' + n + ' — ' + task.name,
-            '',
-            opts.plan + ', Task ' + n + '. This file is your whole brief.',
-            '',
-            paragraph(header, 'Goal'),
-            '',
-            paragraph(header, 'Spec'),
-            '',
-            section(header, 'Global Constraints'),
-            '',
-            task.body,
-            '',
-            '## From the tasks this consumes',
-            '',
-            produced.length ? produced.join('\n') : 'Nothing consumed from an earlier task.',
-            '',
-            FOOTER,
-            '',
-        ].join('\n');
-        const dir = path.dirname(ledger.ledgerPath(root, opts.plan));
-        fs.mkdirSync(dir, { recursive: true });
-        const briefFile = path.join(dir, 'task-' + n + '-brief.md');
-        fs.writeFileSync(briefFile, out);
-        return 'fankeel ledger — ' + briefFile;
+        return 'fankeel ledger — ' + writeBrief(root, opts.plan, n);
+    }
+
+    if (verb === 'workflow') {
+        if (opts.group === undefined) fail('workflow wants --group <N>, a group `groups` prints as workflow.');
+        return workflowFile(root, opts.plan, opts.group);
     }
 
     if (verb === 'fix') {
