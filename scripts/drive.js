@@ -150,12 +150,20 @@ async function drive(opts, deps = {}) {
     }
 }
 
+// No Claude Code process holds the driven session, so task.js would refuse its
+// id while any other session runs (2026-10-15: the rerun's answer could not move
+// build to verify). This process names itself as that session's shell, the shape
+// live.envSession accepts: its pid is running and no sessions/<pid>.json says otherwise.
+function taskEnv(env, id, pid) {
+    return Object.assign({}, env, { CLAUDE_CODE_SESSION_ID: id, CLAUDE_PID: String(pid) });
+}
+
 async function run(opts, deps, root, pluginDir) {
     const d = {
         spawn: deps.spawn,
         pollMs: deps.pollMs || 1000,
         sleep: deps.sleep || ((ms) => new Promise((r) => setTimeout(r, ms))),
-        task: deps.task || ((args) => execFileSync(process.execPath, [path.join(__dirname, 'task.js'), ...args, '--session', opts.session, '--root', root], { encoding: 'utf8', env: opts.env || process.env })),
+        task: deps.task || ((args) => execFileSync(process.execPath, [path.join(__dirname, 'task.js'), ...args, '--session', opts.session, '--root', root], { encoding: 'utf8', env: taskEnv(opts.env || process.env, opts.session, process.pid) })),
     };
     const state = { rounds: 0, usd: 0, waited: 0, start: Date.now() };
     const stop = (stopped, extra) => {
@@ -225,4 +233,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { parse, capReason, afterAnswer, lastJson, argsFor, insidePlugin, drive };
+module.exports = { parse, capReason, afterAnswer, lastJson, argsFor, insidePlugin, taskEnv, drive };

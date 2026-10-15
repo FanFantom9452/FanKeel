@@ -283,3 +283,11 @@ test('drive over a root inside the plugin stops on error naming git when the cop
     assert.match(out.detail, /worktree add refused/);
     assert.equal(spawned, 0);
 });
+
+test('taskEnv makes task.js see the driven session as the caller, keeping the rest of the env', () => {
+    const { taskEnv } = require('../scripts/drive.js');
+    const env = taskEnv({ PATH: 'p', CLAUDE_CODE_SESSION_ID: 'outer', CLAUDE_PID: '1' }, ID, 4242);
+    assert.equal(env.CLAUDE_CODE_SESSION_ID, ID);
+    assert.equal(env.CLAUDE_PID, '4242');
+    assert.equal(env.PATH, 'p');
+});
