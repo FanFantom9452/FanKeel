@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 date: 2026-10-15
 task: render reviewer 強制、effort 探針、未派 agent 的去留
 ---

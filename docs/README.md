@@ -426,6 +426,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 03-decisions 只收決策（10-10）：land 只在做過取捨時寫決策頁，給人看的決策頁由 docs-check 守白話與骨架，34 頁盤點日誌搬到 reports/patrols | [decisions/2026-10-10-decisions-human.md](03-decisions/2026-10-10-decisions-human.md) — *繁體中文* |
 | 那份設計：land 的紀錄分流、`decision-shape` 檢查、日誌搬家 | `docs/99-archive/2026-10-10-decisions-human-design.md` — *built, 繁體中文* |
 | 那份設計的 3 個 task | `docs/99-archive/2026-10-10-decisions-human.md` — *built, 繁體中文* |
+| render reviewer 強制、effort 改在派工時傳、未派 agent 的去留（10-15）的 design：render.json 的頁面帶 `src`，ledger 與 `task.js stage` 拒絕沒有 render 判定的頁面變更；六個 effort 複本刪掉 | `docs/99-archive/2026-10-15-render-gate-design.md` — *built* |
+| 那份設計的十二個 task，加上 verify 送回的修正：最近的 render.json、沒有 plan 時讀 git | `docs/99-archive/2026-10-15-render-gate.md` — *built* |
 | Haiku 角色題庫、平行執行器與長任務飄移 2×2 的 design：每角色十二題分三層、`check.sh` 標出失敗類別、`bench.js role` 用 `--jobs` 平行跑、`drift` 量 haiku／sonnet × PostToolUse 重注入 | `docs/99-archive/2026-10-09-haiku-bank-drift-design.md` — *built, 繁體中文* |
 | 那份設計的十二個 task：失敗類別與共用判分、四組題庫、平行執行器、逐步檢查與重注入、報告產生器，以及使用者親手跑的付費批次 | `docs/99-archive/2026-10-09-haiku-bank-drift.md` — *built, 繁體中文* |
 | 監控站在 `/chartroom/<專案>/` 開架構白板（10-08）的 design：handler 在 nonce 檢查之前剝前綴，轉交該專案懶建的 Chartroom `createHandler`，Chartroom 路徑取自 profile `station.chartroom`，板子固定在 `<專案>/.fankeel/architecture.board` | `docs/99-archive/2026-10-08-station-chartroom-design.md` — *built, 繁體中文* |
