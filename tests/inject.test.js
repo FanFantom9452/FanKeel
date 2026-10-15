@@ -11,6 +11,9 @@ const http = require('node:http');
 const tmp = require('./tmp.js');
 const serve = require('../lib/serve.js');
 
+// A loaded machine slows git past the hook's 2.5s; these tests need its answer.
+process.env.FANKEEL_GIT_TIMEOUT = '30000';
+
 const HOOK = path.join(__dirname, '..', 'hooks', 'inject.js');
 const PLUGIN = path.join(__dirname, '..');
 

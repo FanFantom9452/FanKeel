@@ -48,3 +48,23 @@ test('a git that hangs is cut off and answers null inside three seconds', () => 
   assert.equal(got, null);
   assert.ok(took < 3000, 'took ' + took + 'ms against a 2500ms timeout');
 });
+
+test('FANKEEL_GIT_TIMEOUT lets a slow git finish instead of answering null', () => {
+  const repo = mkTmp('fankeel-dirty-slow-');
+  fs.mkdirSync(path.join(repo, '.git'));
+  const { bin, env } = slowGit();
+  const saved = { PATH: process.env.PATH, NODE_OPTIONS: process.env.NODE_OPTIONS };
+  process.env.PATH = bin + path.delimiter + process.env.PATH;
+  for (const k of Object.keys(env)) process.env[k] = env[k];
+  process.env.FANKEEL_GIT_TIMEOUT = '10000';
+  let got;
+  try {
+    got = dirty.dirtyPaths(repo);
+  } finally {
+    process.env.PATH = saved.PATH;
+    delete process.env.FANKEEL_GIT_TIMEOUT;
+    if (saved.NODE_OPTIONS === undefined) delete process.env.NODE_OPTIONS;
+    else process.env.NODE_OPTIONS = saved.NODE_OPTIONS;
+  }
+  assert.deepEqual(got, []);
+});
