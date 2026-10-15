@@ -1120,6 +1120,10 @@ function openWorktree(root, repo, id) {
 function cmdProfile(root, opts) {
     const verb = String(opts.positional[0] || '');
     const projectRoot = projectRootFor(root, opts);
+    // profile-3: `docs.projectRootsFor` drops a value it cannot resolve to a
+    // directory under root (missing, absolute, `..`, a file), and the fallback
+    // to root then wrote the registry root's profile.
+    if (opts.project && projectRoot === root) fail('--project ' + opts.project + ': no such project under ' + root);
     const cfg = claudeDir(opts);
     if (verb === 'show') {
         const { values, sources, unreadable } = profile.read(projectRoot, cfg);
