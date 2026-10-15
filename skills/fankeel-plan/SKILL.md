@@ -235,7 +235,7 @@ Four rules about that line:
 1. **Every task carries one.** A task without it is a plan failure, in the same
    list as `TBD` and "similar to Task N".
 2. **The profile's `dispatch.floor` is the floor, `sonnet` unless a profile
-   says otherwise**, and the floor needs no argument. The unit
+   says otherwise**, and the floor needs no argument. An `architectural` task raises it to at least `opus` at `high` effort (`dispatchFor`, `lib/profile.js`), and that needs no argument either. The unit
    that matters is not token price but whether the task finishes on the first
    dispatch: a model that needs two attempts re-reads everything the first one
    read, and costs more in wall-clock and attention than the tier above it.

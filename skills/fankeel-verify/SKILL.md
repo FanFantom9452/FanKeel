@@ -157,8 +157,8 @@ expect it to find: a brief saying a page was less likely to have drifted got
 `no drift` back. Ask the same question of every target, with no ranking among
 them. Never a pasted diff: it lands the whole change in this context, which
 is the cost dispatching exists to avoid.
-Pass `subagent_type: fankeel:fankeel-reader` and the model explicitly — the profile's
-`dispatch.floor`, `sonnet` by default. Say how many are going and on which
+Pass `subagent_type: fankeel:fankeel-reader` and the model explicitly — the floor model
+the brief names (`dispatch.floor`, `opus` at least if architectural), `sonnet` by default. Say how many are going and on which
 model as they go out — a fan-out the user did not see coming is spend they
 were never given the chance to question.
 
@@ -213,7 +213,7 @@ stages: the verifier for a task writes its evidence rows to a file under
 `.fankeel/build/<plan>/`, not a scratchpad that gets cleared, and returns the
 path; the adversary for that task reads the path and returns, under a
 `schema`, only the rows it defeats. Every `agent` call carries `model`, and
-the profile's `dispatch.floor` is the floor there as it is here. What returns is the join — per
+the brief's floor model is the floor there as it is here. What returns is the join — per
 task, the rows and the rows defeated. An `agent` call's own return already
 stays in the script rather than reaching this context, so writing to a file
 buys nothing there; what it keeps the rows out of is the join itself, the

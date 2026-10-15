@@ -482,7 +482,7 @@ test('a build brain may dispatch a fixer and an implementer, a verify brain a ve
   assert.match(build, /implementer/);
   assert.match(build, /`fankeel:fankeel-reviewer`, `fankeel:fankeel-render-reviewer`, `fankeel:fankeel-fixer`, `fankeel:fankeel-writer` or an implementer/);
   assert.match(dispatchLine('verify'), /fankeel:fankeel-verifier/);
-  assert.match(dispatchLine('verify'), /`fankeel:fankeel-render-reviewer`, `fankeel:fankeel-verifier`, `fankeel:fankeel-fixer` or a mutator \(`fankeel:fankeel-mutator`, on the `dispatch.floor` model/);
+  assert.match(dispatchLine('verify'), /`fankeel:fankeel-render-reviewer`, `fankeel:fankeel-verifier`, `fankeel:fankeel-fixer` or a mutator \(`fankeel:fankeel-mutator`, on the floor model your brief names/);
   const survey = dispatchLine('survey');
   assert.match(survey, /fankeel:fankeel-reader/);
   assert.match(survey, /Dispatch `fankeel:fankeel-reader` or `fankeel:fankeel-reviewer` with the Agent tool/);

@@ -1069,7 +1069,7 @@ Six rules that make it work, each of which fails silently when missed:
 - **Several dispatches in one response run at once.** One per response runs them
   in sequence — the cost of parallelism with none of it.
 - **Always pass the model, and the profile's `dispatch.floor` is the floor —
-  `sonnet` by default.** An omitted model
+  `sonnet` by default, raised to at least `opus` for an architectural task.** An omitted model
   inherits this session's, which is usually the most capable and most expensive
   one available. The exception is a dispatch whose `subagent_type` is an
   agent file that pins its own — `fankeel-reviewer` for plan's, build's and
