@@ -90,6 +90,15 @@ test('the reviewer reads a range pinned by path, a ranged Modify entry by its ba
   assert.ok(first.includes(OPTS.briefs[1]));
 });
 
+test('the script carries the working tree\'s absolute root, and both prompts work under it', async () => {
+  const script = workflowScript(TASKS, [1, 2, 3], OPTS);
+  assert.ok(script.split('\n').includes('const ROOT = ' + JSON.stringify(OPTS.root) + ';'), script);
+  const { implementers, reviewers } = await run(script, answers);
+  assert.ok(implementers[0].prompt.includes('The working tree is /repo. Every path in the brief is relative to it: Read and Edit under it by absolute path, and cd into it before every command.'), implementers[0].prompt);
+  assert.ok(reviewers[0].prompt.includes('You are reviewing ONE task\'s change in /repo.'), reviewers[0].prompt);
+  assert.ok(reviewers[0].prompt.includes('git -C /repo diff HEAD -- '), reviewers[0].prompt);
+});
+
 test('an implementer that returned nothing gets no reviewer', async () => {
   const skip = (prompt, opts) => (opts.label === 'Task 2 implement' ? null : answers(prompt, opts));
   const { result, reviewers } = await run(workflowScript(TASKS, [1, 2, 3], OPTS), skip);

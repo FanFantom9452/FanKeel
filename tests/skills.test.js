@@ -989,6 +989,15 @@ test('the build skill opens a workflow group from the script ledger.js writes', 
   assert.match(text, /rather than a diff\. /, 'the brief-footer paragraph ends in a full stop');
 });
 
+// A workflow entry whose implementer is null never built anything: committing
+// it or recording it complete would mark a task done that was never done.
+test('a null implementer from a workflow run is sent again, in the skill and the brain', () => {
+  assert.match(read('fankeel-build'),
+    /an\s+entry\s+whose\s+`implementer`\s+is\s+null\s+never\s+ran,\s+so\s+it\s+is\s+sent\s+again\s+as\s+one\s+Agent\s+rather\s+than\s+committed\s+or\s+recorded\s+complete/);
+  assert.match(fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-brain.md'), 'utf8'),
+    /An\s+entry\s+whose\s+`implementer`\s+is\s+null\s+never\s+ran:\s+it\s+gets\s+no\s+review\s+file,\s+no\s+commit\s+and\s+no\s+`complete`\s+—\s+it\s+goes\s+back\s+out\s+as\s+one\s+Agent/);
+});
+
 // --- lib/skills.js: the fail-closed skills gate -----------------------------
 // `lib/skills.js` is required inside each test body below, the same way
 // `lib/stages.js` is required above, so a module that does not exist yet (or
