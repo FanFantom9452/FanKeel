@@ -4,6 +4,7 @@ title: Desktop 看路線圓點呼吸
 description: 發 0.111.0 後在真正的 Claude Desktop 上看 band 與 Pane 的路線圓點有沒有擴散的圈、重畫會不會跳 — [hooks/pane-svg.ts](hooks/pane-svg.ts).
 state: blocked
 link: hooks/pane-svg.ts
+group: 0.111.0 發版後開新 session
 timing: after: 0.111.0 發版、plugin update 之後開新 session
 stamp: 2026-10-15
 ---
