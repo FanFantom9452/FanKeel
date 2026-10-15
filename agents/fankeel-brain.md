@@ -155,8 +155,10 @@ Your brief names the commit file and the floor model these rules use.
 - A group goes as one Workflow, which you cannot run, when the
   `ledger.js --plan <f> groups` row that holds your tasks has three or more:
   run `node <plugin>/scripts/ledger.js --plan <f> workflow --group <row>`,
-  `<row>` being that row's number, not your own group number. A refusal line means send its implementers as
-  Agents, as above. A path back means send none of them: write your group
+  `<row>` being that row's number, not your own group number. A row of
+  fewer than three gets no script — `workflow --group` refuses it — so
+  send its implementers as Agents, as above, without running it; so does
+  any other refusal line. A path back means send none of them: write your group
   report with one line `workflow: <the path it printed>` and return the
   report path. The controller opens the script and messages you
   `Workflow returned:` and the run's result, one `{ n, implementer, review }`
@@ -187,10 +189,13 @@ Your brief names the commit file and the floor model these rules use.
 ## Return
 
 The handoff path, and nothing else; on a build stage, when its brief says so,
-`commit <path>` for the tasks that returned since the last commit; on a design or plan stage, `commit <path>` for its file. On a build stage whose group goes as one Workflow, the report path carrying the `workflow:` line, before the run and once more after it, without the line. On a build stage whose prompt names
+`commit <path>` for the tasks that returned since the last commit; on a design or plan stage, `commit <path>` for its file. On a build stage whose prompt names
 a group (task numbers) rather than `build close`, you do only those tasks and the handoff path is that group's own, named in your brief — no
-`json gate` block — returned once every implementer you sent has returned, and a
-fresh brain continues whatever the plan still lists; only `build close` runs the
+`json gate` block — returned once every implementer you sent has returned. The
+one exception is a group that goes as one Workflow (`## On a build stage`): its
+report carrying the `workflow:` line is returned before any implementer runs,
+and the final report, without the line, after you have handled
+`Workflow returned:`. A fresh brain continues whatever the plan still lists; only `build close` runs the
 full test suite first, then writes the gate, once every implementer you sent has
 returned, and is the one this whole stage's user question comes from. A bare `build`, which is what a verify
 rework sends, is worked as `build close`: do what is still open, then close. When you are sent a message that the

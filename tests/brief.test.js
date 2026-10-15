@@ -558,6 +558,10 @@ test('a controlled build\'s brain brief names the workflow script command, and i
   assert.match(build, /without\s+the\s+`workflow:`\s+line/);
   assert.match(build, /workflow --group <row>/);
   assert.match(build, /row that holds your tasks/);
+  assert.match(build, /fewer than three gets no script/);
+  const ret = file.split(/^## /m).find((s) => s.startsWith('Return'));
+  assert.match(ret, /`workflow:`\s+line\s+is\s+returned\s+before\s+any\s+implementer\s+runs/);
+  assert.match(ret, /without\s+the\s+line,\s+after\s+you\s+have\s+handled\s+`Workflow\s+returned:`/);
 });
 
 // brief-4: with the build rules in agents/fankeel-brain.md, the bare build
