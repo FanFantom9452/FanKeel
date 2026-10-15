@@ -23,7 +23,7 @@ class 為 bounded：四條都改既有流程，沒有前端。
 
 - `lib/profile.js` 新增純函式 `dispatchFor(values, cls)`，回傳 `{ floor, effort }`：class 為 `architectural` 時 floor 至少是 `opus`（profile 設的 floor 已高於 `opus`，例如 `fable`，就保留），effort 為 `high`；其他 class 與空 class 回傳 profile 的 floor 原值、effort 為 `null`。
 - `dispatchClause(values, cls)` 把上面的結果寫成一行規則：``class architectural: floor `opus`, effort `high` — no economising; reviewers as `-high`.``；不是 architectural 回 `null`。
-- `lib/render.js` 在 plan、build、verify 三站的注入規則尾端加上這一行，其他站不加。
+- `lib/render.js` 在 plan、build、verify 三站的注入規則尾端加上這一行，其他站不加。Ruling（build，2026-10-15）：另加一行讓 plan 到 2410/2400、verify 加 security.local 到 2450、壓縮過的 build 到 3011/3000，所以改成這三站的 `class:` 行以這句取代 architectural 的 means 句，不另加一行。
 - stage agent 的 brief（`renderBrainBrief`）裡三處 `profile.values['dispatch.floor']` 改讀 `dispatchFor` 的 floor，plan、build、verify 的 brief 經 `rulesLines` 帶那一行規則，只一次。controller 的區塊不帶：controller 只派 brain，不派 implementer、reviewer 或 reader。
 - 條目寫的「build 對機械性 finding 略過 confirm reviewer」與「verify 的抽樣」在 skills、agents、lib 都找不到對應文字，沒有東西可取消；lean preset 只設 `stage.agents`。這兩點寫回條目正文，不另做程式。
 - reader、mutator、mover 沒有 `-high` 變體，只跟著 floor 換模型。
