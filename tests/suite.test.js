@@ -8,8 +8,13 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 const suite = require('../lib/suite.js');
 const registry = require('../lib/registry.js');
-const { main } = require('../scripts/suite.js');
 const tmp = require('./tmp.js');
+
+// main() takes the machine lock; a scratch one keeps this file off the real
+// lock a running suite.js holds, which would make it wait on its own parent.
+process.env.FANKEEL_SUITE_LOCK = path.join(tmp('fankeel-suitelock-'), 'suite.lock');
+delete process.env.FANKEEL_SUITE_HELD;
+const { main } = require('../scripts/suite.js');
 
 const git = (dir, args) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: dir, encoding: 'utf8' }).trim();
 const DATA = { task: 't', stage: 'land', active: true, started: '2026-09-19T09:30:12.345Z' };
@@ -288,4 +293,81 @@ test('--check on a green record with no sha says record stands @ no repo', () =>
   const r = main(['--session', 'abcdef0127', '--root', dir, '--check']);
   assert.equal(r.ok, true);
   assert.equal(r.text, 'suite: record stands @ no repo');
+});
+
+const { spawn } = require('node:child_process');
+const SUITE = path.join(__dirname, '..', 'scripts', 'suite.js');
+
+function runChild(args, env) {
+  const child = spawn(process.execPath, [SUITE, ...args], { env: { ...process.env, ...env }, encoding: 'utf8' });
+  let out = '';
+  child.stdout.on('data', (d) => { out += d; });
+  const done = new Promise((resolve) => child.on('exit', (code) => resolve(code)));
+  return { child, done, out: () => out };
+}
+
+test('suite.js waits while a live pid holds the lock, says on what, and runs once it is released', { timeout: 60000 }, async () => {
+  const dir = repo();
+  registry.writeSession(dir, 'abcdef0130', { ...DATA });
+  const file = path.join(tmp('fankeel-suitelock-'), 'suite.lock');
+  fs.writeFileSync(file, JSON.stringify({ pid: process.pid, at: new Date().toISOString(), session: 'neighbour', tree: 'F:/elsewhere' }));
+  const run = runChild(['--session', 'abcdef0130', '--root', dir], { FANKEEL_SUITE_LOCK: file });
+  try {
+    await new Promise((r) => setTimeout(r, 1500));
+    assert.equal(run.child.exitCode, null, 'suite.js ran while the lock was held');
+    assert.match(run.out(), /^suite: waiting — pid \d+ \(session neighbour\) has run the suite in F:\/elsewhere since \d\d:\d\d; lock .*suite\.lock$/m);
+  } catch (e) {
+    run.child.kill();
+    throw e;
+  }
+  fs.unlinkSync(file);
+  assert.equal(await run.done, 0);
+  assert.match(run.out(), /^suite: 1 pass, 0 fail @ [0-9a-f]{8}$/m);
+  assert.equal(fs.existsSync(file), false, 'suite.js left its lock behind');
+});
+
+test('suite.js takes no lock where FANKEEL_SUITE_HELD names its lock file — the suite that spawned it holds it', { timeout: 30000 }, async () => {
+  const dir = repo();
+  registry.writeSession(dir, 'abcdef0131', { ...DATA });
+  const file = path.join(tmp('fankeel-suitelock-'), 'suite.lock');
+  fs.writeFileSync(file, JSON.stringify({ pid: process.pid, at: new Date().toISOString() }));
+  const run = runChild(['--session', 'abcdef0131', '--root', dir], { FANKEEL_SUITE_LOCK: file, FANKEEL_SUITE_HELD: file });
+  const timer = setTimeout(() => run.child.kill(), 25000);
+  assert.equal(await run.done, 0, 'suite.js waited on the lock its parent holds');
+  clearTimeout(timer);
+  assert.doesNotMatch(run.out(), /waiting/);
+});
+
+test('--fast runs test:fast, which skips @slow, and records fast: true; blocker refuses that record and takes the next full one', () => {
+  const dir = repo();
+  fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ name: 'x', scripts: { test: 'node --test', 'test:fast': 'node --test --test-skip-pattern=@slow' } }));
+  fs.writeFileSync(path.join(dir, 'b.test.js'), "const test = require('node:test'); test('b @slow', () => { throw new Error('slow'); });\n");
+  git(dir, ['add', '.']);
+  git(dir, ['commit', '-qm', 'slow']);
+  registry.writeSession(dir, 'abcdef0132', { ...DATA });
+  const fast = main(['--session', 'abcdef0132', '--root', dir, '--fast']);
+  assert.equal(fast.ok, true, fast.text);
+  assert.equal(suite.readRecord(dir, DATA).fast, true);
+  assert.match(suite.blocker(dir, DATA, dir), /^suite ran the fast set at [0-9a-f]{8} — land runs everything: node scripts\/suite\.js --session <id>$/);
+  fs.writeFileSync(path.join(dir, 'b.test.js'), "const test = require('node:test'); test('b @slow', () => {});\n");
+  git(dir, ['commit', '-qam', 'green']);
+  const full = main(['--session', 'abcdef0132', '--root', dir]);
+  assert.equal(full.ok, true, full.text);
+  assert.equal(suite.readRecord(dir, DATA).fast, undefined);
+  assert.equal(suite.blocker(dir, DATA, dir), null);
+});
+
+test('--fast where package.json has no test:fast runs test, says so, and records no fast', () => {
+  const dir = repo();
+  registry.writeSession(dir, 'abcdef0133', { ...DATA });
+  const r = main(['--session', 'abcdef0133', '--root', dir, '--fast']);
+  assert.equal(r.ok, true);
+  assert.match(r.text, /^suite: 1 pass, 0 fail @ [0-9a-f]{8} \(no test:fast script — ran the whole suite\)$/);
+  assert.equal(suite.readRecord(dir, DATA).fast, undefined);
+});
+
+test('package.json: test is everything, test:fast skips the @slow tag', () => {
+  const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
+  assert.equal(pkg.scripts.test, 'node --test');
+  assert.equal(pkg.scripts['test:fast'], 'node --test --test-skip-pattern=@slow');
 });
