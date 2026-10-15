@@ -101,7 +101,7 @@ function runRaw(dir, args) {
 // The turn `start` prints in has no injection yet — `hooks/inject.js` runs on
 // the next prompt, not this one — so where `stage.agents` is on for the stage
 // just entered, the controller's rules are what `start` prints in place of the stage's own.
-test('start at survey with stage.agents true prints the controller\'s rules, not the scanner step', () => {
+test('start at survey with stage.agents true prints the controller\'s rules, not survey\'s own', () => {
   const dir = root();
   const cfg = path.join(dir, 'cfg');
   run(dir, ['profile', 'set', 'stage.agents', 'true', '--default'], { CLAUDE_CONFIG_DIR: cfg });
@@ -111,7 +111,8 @@ test('start at survey with stage.agents true prints the controller\'s rules, not
   assert.match(out, /fankeel:fankeel-brain/);
   assert.match(out, new RegExp('`node <plugin>/scripts/task\\.js stage <word> --session ' + A + '`'));
   assert.match(out, new RegExp('`node <plugin>/scripts/task\\.js down --session ' + A + '`'));
-  assert.doesNotMatch(out, /run the scanner/);
+  assert.doesNotMatch(out, /stage rules:/);
+  assert.ok(out.trimEnd().endsWith('進到這一站後在同一回合開工，不要先收回合。'), out);
   // The rules name `<plugin>`, and this output is not an injection: it says
   // what that resolves to itself.
   assert.ok(out.includes('<plugin> = ' + PLUGIN_ROOT), out);
@@ -213,6 +214,8 @@ test('task at survey with stage.agents true prints the controller\'s rules', () 
   const { out, code } = run(dir, ['task', 'another question', '--session', A], { CLAUDE_CONFIG_DIR: cfg });
   assert.equal(code, 0, out);
   assert.match(out, /fankeel:fankeel-brain/);
+  assert.doesNotMatch(out, /stage rules:/);
+  assert.ok(out.trimEnd().endsWith('進到這一站後在同一回合開工，不要先收回合。'), out);
 });
 
 // PROVES IT DONE #5: a route long enough that the controller is doing real
