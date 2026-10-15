@@ -2946,7 +2946,8 @@
     function keelProgress(s) {
         var route = s.route || [], at = route.indexOf(s.stage);
         var state = function (k) { var i = route.indexOf(k); return i < 0 ? null : i < at ? 'done' : i === at ? 'now' : 'todo'; };
-        return keelGlyph({ cls: 'prog', seg: function (i) { return state(ROUTE[i]); }, edge: state('land'), c: at >= 0 ? 'var(--st-' + esc(s.stage) + ')' : '' });
+        var live = s.state === 'live' && !s.gateAt && s.busy === true;
+        return keelGlyph({ cls: 'prog' + (live ? ' live' : ''), seg: function (i) { return state(ROUTE[i]); }, edge: state('land'), c: at >= 0 ? 'var(--st-' + esc(s.stage) + ')' : '' });
     }
     function keelStage(s) {
         var route = s.route || [], at = route.indexOf(s.stage);

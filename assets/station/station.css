@@ -1771,9 +1771,10 @@ a.td-rf:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-rad
 :root[data-style=keel] [data-block=dash-live] .dr{grid-area:r;font-size:11px}
 :root[data-style=keel] .glyph.prog{grid-area:g;width:30px;height:30px}
 .glyph .gseg.todo{fill:var(--rule2)}
-.glyph .gseg.now{fill:var(--c);animation:klive 1.6s ease-in-out infinite alternate}
+.glyph .gseg.now{fill:var(--c)}
 .glyph .gedge.todo{stroke:var(--faint);stroke-width:3}
-.glyph .gedge.now{stroke:var(--c);animation:klive 1.6s ease-in-out infinite alternate}
+.glyph .gedge.now{stroke:var(--c)}
+.glyph.live .gseg.now,.glyph.live .gedge.now{animation:klive 1.6s ease-in-out infinite alternate}
 @keyframes klive{to{opacity:.45}}
 :root[data-style=keel] .kst{grid-area:st;display:flex;align-items:baseline;gap:0;white-space:nowrap;font:700 11px var(--f-mono);color:color-mix(in srgb,var(--c) 72%,var(--ink))}
 .kst i{font-style:normal;color:var(--muted);margin-right:7px}
@@ -1915,7 +1916,7 @@ a.td-rf:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-rad
 
 
 @media (prefers-reduced-motion:reduce){
-  .glyph .gseg,.glyph .gcore,.glyph .gedge,:root[data-style=keel] .rip::after{animation:none}
+  .glyph .gseg,.glyph .gcore,.glyph .gedge,.glyph.live .gseg.now,.glyph.live .gedge.now,:root[data-style=keel] .rip::after{animation:none}
 }
 /* the one chevron icon, turned up for 收起 and for a chooser's move-up */
 .td-mb[aria-expanded="true"] .ico,.dch-b[data-dchmv="-1"] .ico{transform:rotate(180deg)}
