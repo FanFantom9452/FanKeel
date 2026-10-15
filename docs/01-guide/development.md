@@ -25,8 +25,9 @@ v24.21.0, with nothing else running and `FANKEEL_BROWSER` set: the whole suite
 
 A test whose name carries `@slow` took 10 s or more under the whole suite's
 load — the bench check.sh tests and the git-heavy ones. The tag was chosen
-from a run on main at `f92c7a06` (280 s): 129 test points at 10 s or more,
-53% of the summed test time. `npm run test:fast` is
+from one `node --test --test-reporter=tap` run on main at `f92c7a06` (280 s),
+reading each test point's `duration_ms`: 129 points at 10 s or more, 53% of
+the 4928 s summed over all of them. `npm run test:fast` is
 `node --test --test-skip-pattern=@slow`; `npm test` is still everything.
 Build and verify run `node scripts/suite.js --session <id> --fast`, which
 records `fast: true`; land runs `suite.js` without it, and both its `--check`
@@ -35,7 +36,8 @@ and `task.js land` refuse a fast record.
 The fast set saves about a fifth of the wall-clock, not half. `node --test`
 runs files in parallel but each file's tests one after another, and files of
 many short git-heavy tests (`tests/survey.test.js`, `tests/todo-check.test.js`,
-`tests/task.test.js`, each 100 s or more of serial test time under load) set
+`tests/task.test.js`, each 100 s or more of serial test time under load in
+that run, its points attributed to files by test name) set
 the floor whatever the threshold. The lock is what stops the random reds; the
 fast set only trims time.
 
@@ -49,11 +51,11 @@ every test at or over the threshold whose name a literal spells, and prints
 temp directory, or `FANKEEL_SUITE_LOCK` — so a second run waits and says on
 whom rather than running beside the first. Two suites at once on 2026-10-16
 failed a different handful of tests each run, every one green alone. A lock
-whose pid is dead, or older than an hour, is cleared. `npm test` run by hand
+whose pid is dead, older than an hour, or unparsed for 5 s is cleared. A dead
+lock Windows will not let it move is said instead —
+`suite: waiting — lock <file> is stale and could not be removed; delete it by
+hand` — and deleting that file lets the run go on. `npm test` run by hand
 takes no lock.
-
-The 2026-09-24 history below, measured before any of this, is kept as history;
-its figures (77.1 s and 86.9 s, Node v24.9.0) are not the current ones.
 
 ### 2026-09-24: the file split
 

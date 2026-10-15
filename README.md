@@ -259,6 +259,10 @@ claude plugin validate .
 
 Run one `npm test` at a time. Some tests used to share fixed temp file names, so concurrent suites unlinked each other's files; that is fixed in `tests/sensitive.test.js` and `tests/render.test.js`. A few tests still time real work against budgets the code itself promises — the station's first scan of the drives (`tests/station-cli.test.js`), the 2.5 seconds a prompt waits for `git status` (`lib/dirty.js`), and the `/fankeel` probe of a busy station (`tests/inject.test.js`) — and three suites at once can starve those of CPU, so one of them fails with nothing wrong. Those bounds are the product's own, so they are not loosened to let parallel runs pass — with one exception: the git timeout (`gitTimeout` in `lib/guard.js`, used by `lib/dirty.js`) reads `FANKEEL_GIT_TIMEOUT` in milliseconds, 2500 when unset, and the tests that need git's answer rather than its timing (`tests/dirty.test.js`, `tests/inject.test.js`, `tests/worktree-paths.test.js`) set it to 30000.
 
+`node scripts/suite.js --session <id>` queues on its own: a second run on
+the same machine waits for the first and prints whose run it is waiting on.
+`npm run test:fast` skips the tests named `@slow`; `npm test` runs them all.
+
 `lib/` is pure logic, tested directly; `hooks/` is where stdin, stdout and process
 exit live, and every hook exits 0 on every path, because a hook that throws blocks
 the thing it was called for and a plugin that can wedge your terminal is worse than
@@ -266,7 +270,3 @@ no plugin. `todo-check.js`, `version.js`, `skills-check.js` and
 `stage-registry.js` each hold one written claim to the code it describes, and
 [docs/development.md](docs/01-guide/development.md) says what each of them checks. The
 behaviour eval and its runner are in [docs/evals.md](docs/90-agent/reference/evals.md).
-
-`node scripts/suite.js --session <id>` queues on its own: a second run on
-the same machine waits for the first and prints whose run it is waiting on.
-`npm run test:fast` skips the tests named `@slow`; `npm test` runs them all.

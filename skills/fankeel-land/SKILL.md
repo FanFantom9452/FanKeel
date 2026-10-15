@@ -43,14 +43,16 @@ it — and only then run this step: `package.json` is code to the record, so a
 suite run before the bump is stale after it, `--check` below refuses on it,
 and so does `task.js land`.
 
-Verify ran the fast suite, so this check usually refuses — ask anyway, because a full record from an earlier land attempt still stands:
+Verify ran the fast suite, so this check usually refuses; ask anyway, because
+a whole run recorded earlier — an earlier land attempt, or verify's in a
+project with no `test:fast` — still stands:
 
 ```
 node <plugin>/scripts/suite.js --session <id> --check
 ```
 
 It runs no test and writes nothing. `suite: record stands @ <sha>` with exit
-0 means verify's record is green and no code changed since, and that line is
+0 means a whole-suite record is green and no code changed since, and that line is
 this step's `suite:` line. `suite: no suite to run` also exits 0 and means
 the project has no test command, so there is no record to stand and nothing
 to run; copy that line to the report's `suite:` line as it is. Exit 1 prints
@@ -65,7 +67,11 @@ fast set at <sha> — land runs everything` — because the tests named `@slow`
 did not run. The full run waits while another `suite.js` on this machine
 holds the lock, printing `suite: waiting — pid <pid> (session <id>) has run
 the suite in <tree> since <HH:MM>; lock <file>`; that is a queue, not a hang,
-and a lock whose pid has died or is over an hour old is cleared on its own.
+and a lock whose pid has died, is over an hour old, or has not parsed for 5 s
+is cleared on its own. One line is not a queue:
+`suite: waiting — lock <file> is stale and could not be removed; delete it by
+hand` — the lock is dead but Windows refused to move it; delete the file named
+and the run goes on.
 
 Where build ran in a git worktree opened by hand — one the entry does not
 record — add `--tree <that worktree>`: the suite runs there, `suite.json`
@@ -301,7 +307,7 @@ into the branch the main checkout is on with `--no-ff`, the message
 `merge: <task>` and two trailers, `Fankeel-Task` and `Fankeel-Class`, and no
 tag, and prints `<base>..<sha>`. Uncommitted files in the worktree, a subject
 `commit.format` refuses, or `conflict <paths>` stop it with nothing merged and
-both left in place. Re-run the suite on the merged result with the project's own test command (package.json's `test` script) from the main checkout, because `suite.js --session` runs in the worktree while it stands — or in the tree `--tree` named, for an entry with no worktree of its own — and its record is the gate before the merge, not after; only when that is
+both left in place. Re-run the suite on the merged result with the project's own test command (package.json's `test` script) from the main checkout, because `suite.js --session` runs in the worktree while it stands — or in the tree `--tree` named, for an entry with no worktree of its own — and its record is the gate before the merge, not after. That run takes no machine lock — only `suite.js` does — so start it when no `suite: waiting` or other suite is running here; only when that is
 green run `node <plugin>/scripts/land.js clean --session <id>`: it removes the
 worktree and runs `git branch -d fk/<id8>`, and a `-d` refusal is printed as
 git said it — never retried with `-D`. A red suite leaves both in place, as
