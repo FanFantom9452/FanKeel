@@ -12,7 +12,7 @@ reverse-index column so that changing a figure says which pages have to
 change with it. This page is that mechanism for fankeel's own dated reports.
 
 Every row below is one of the dated reports at the top level of
-`docs/90-agent/reports/`. Fifty-four sit there and fifty-four have a row; the heading
+`docs/90-agent/reports/`. Fifty-eight sit there and fifty-eight have a row; the heading
 counts rows across both tables, not files. A row is still added by hand, and
 `tests/sources-doc.test.js` fails while a report there has none — the heading
 is the one number left to keep in step by hand.
@@ -36,7 +36,7 @@ dispatch-vs-inline residue (9.2× / 2.55× / 1.5×), which is one gradient, not
 three disagreeing numbers, once each row's Scope says which variable it held
 fixed.
 
-## The fifty-four reports
+## The fifty-eight reports
 
 | ID | What it measured | Link | Checked | Evidence level | Scope | Cited by |
 |---|---|---|---|---|---|---|
