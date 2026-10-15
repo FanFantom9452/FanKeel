@@ -463,7 +463,7 @@ test('the mutator applies one mutation and restores it, the mover moves without 
 test('the brain names the dedicated agents, records survey and design facts, writes for a person, and knows how effort is chosen', () => {
     const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-brain.md'), 'utf8');
     const tools = text.split('\n## Tools\n')[1].split('\n## Refusals\n')[0];
-    for (const a of ['fankeel:fankeel-writer', 'fankeel:fankeel-mutator', 'fankeel:fankeel-mover', '`fankeel:fankeel-implementer`', 'fankeel:fankeel-implementer-<effort>']) {
+    for (const a of ['fankeel:fankeel-writer', 'fankeel:fankeel-mutator', 'fankeel:fankeel-mover', '`fankeel:fankeel-implementer`']) {
         assert.ok(tools.includes(a), 'Tools lacks ' + a);
     }
     assert.doesNotMatch(tools, /\(`general-purpose`, on the model/);
@@ -473,11 +473,13 @@ test('the brain names the dedicated agents, records survey and design facts, wri
     assert.match(ctx, /design/);
     assert.match(ctx, /context\.js add "<fact>" --at <path:line> --session <id>/);
     assert.match(text, /^## Reports are read by a person$/m);
-    const effort = section('Effort');
-    assert.match(effort, /`fankeel:fankeel-brain-high`/);
+    const effort = section('Effort').replace(/\s+/g, ' ');
+    assert.match(effort, /sends you with `effort: "high"` \(or `"xhigh"`\) on the dispatch/);
     assert.match(effort, /The controller/);
-    assert.match(effort, /`fankeel:fankeel-reviewer-<effort>`/);
+    assert.match(effort, /`fankeel:fankeel-reviewer` with the same/);
     assert.match(effort, /ask in your report's gate/);
+    assert.doesNotMatch(effort, /-high`|-<effort>`/);
+    assert.match(tools.replace(/\s+/g, ' '), /`fankeel:fankeel-implementer`, with `effort:` set where the task's Dispatch line names an effort/);
 });
 
 // implementer-1: a build left .tmp-append.txt at the repository root on
