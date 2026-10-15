@@ -139,6 +139,7 @@ test('stage into a controlled build prints the controller\'s rules with the comm
   const design = run(dir, ['stage', 'design', '--session', A], { CLAUDE_CONFIG_DIR: cfg });
   assert.equal(design.code, 0, design.out);
   assert.doesNotMatch(design.out, /fankeel:fankeel-brain/);
+  assert.match(design.out, /stage rules:/);
 
   const build = run(dir, ['stage', 'build', '--session', A], { CLAUDE_CONFIG_DIR: cfg });
   assert.equal(build.code, 0, build.out);
