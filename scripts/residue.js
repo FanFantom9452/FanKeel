@@ -62,9 +62,11 @@ function sizeOf(dir, cap) {
     let seen = 0;
     const stack = [dir];
     while (stack.length && seen < limit) {
-        // Held in a binding rather than read back off the entry. `Dirent.parentPath`
-        // only exists from Node 20.12, this package declares no engine floor, and
-        // the wrong parent silently sizes the wrong directory.
+        // Held in a binding rather than read back off the entry. It was written
+        // before package.json's engine floor (Node 22.5) guaranteed
+        // `Dirent.parentPath` (Node 20.12), and the binding still needs nothing
+        // of the entry but its name — the wrong parent silently sizes the
+        // wrong directory.
         const here = stack.pop();
         let entries;
         try {

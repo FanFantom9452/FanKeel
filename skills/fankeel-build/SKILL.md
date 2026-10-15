@@ -462,6 +462,9 @@ then asks this stage's gate.
    first line is `disposition: ship`, or the ledger holds a
    `Ruling: render skipped — <why>` written since the last task's line:
    `ledger.js --plan <file> ruling "render skipped" "<why>" "<cost if wrong>"`.
+   In such a project a `complete` with no `--range` is refused outright — the
+   range is what lets the check run — and `--render` alone does not clear it;
+   only that skip ruling does.
    With no plan there is no ledger, so the same check runs when the task
    leaves build: `task.js stage <next> --session <id> --render <file>`, or
    `task.js note "Ruling: render skipped — <why>" --session <id>` first.
@@ -549,6 +552,8 @@ then asks this stage's gate.
    The flag precedes the verb; everything after `complete` is the note. A task
    completed with no `--range` is recorded and reported as such by `ranges`,
    which is worse than it sounds: it is a task that landed and gets no verifier.
+   Where `.fankeel/render.json` gives a page `src`, it is not recorded at all:
+   it is refused unless a `Ruling: render skipped — <why>` covers the task.
 
 **A fix that came back from `verify` is a row of this loop.** `verify` commits
 nothing; a defeated row is routed here at its gate, and here it gets what a
