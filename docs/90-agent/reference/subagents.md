@@ -125,8 +125,8 @@ that the stage needs deep thought, asked the user first and the user said yes
 (`controlRules` in `lib/stages.js`).
 
 `fankeel-reader` runs at `model: sonnet` by default — the profile's
-`dispatch.floor`, `opus` at least on an architectural task, which the survey, verify and audit skills ask their reader
-fan-outs to use (survey's stage rule names the type, no
+`dispatch.floor`, which the survey, verify and audit skills ask their reader
+fan-outs to use (verify's go out on `opus` at least for an architectural task; survey's stage rule names the type, no
 model) — a `subagent_type`
 that is structurally read-only standing in for what those dispatches used to
 send as `general-purpose`.
