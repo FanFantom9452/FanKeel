@@ -1247,3 +1247,49 @@ test('a --render file that is not disposition: ship is refused even on a range t
   assert.match(out, /first line is not `disposition: ship`/);
   assert.equal(fs.existsSync(ledger.ledgerPath(dir, 'p.md')), false, 'nothing was recorded');
 });
+
+// Fix round (verify): `src` is relative to the render.json that holds it, and
+// the nearest one above each changed file is read, so a page in a project
+// under the repository, or under a registry root below the toplevel, is seen.
+const ledgerIn = (dir, ...args) => {
+  try {
+    return { out: execFileSync(process.execPath, [SCRIPT, ...args], { cwd: dir, encoding: 'utf8' }), code: 0 };
+  } catch (e) {
+    return { out: String(e.stdout || ''), code: e.status };
+  }
+};
+
+test('a range changing a page of a project render.json is refused, and accepted with a ship file', () => {
+  const { dir, base } = pageRepo(false);
+  fs.mkdirSync(path.join(dir, 'app', '.fankeel'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'app', '.fankeel', 'render.json'), RENDER_JSON);
+  const head = commitAt(dir, 'app/site/index.html');
+  const { out, code } = inRepo(dir, '--range', base + '..' + head, 'complete', '1', 'the page');
+  assert.equal(code, 1, out);
+  assert.match(out, /home/);
+  assert.match(out, /site\/index\.html/);
+  fs.writeFileSync(path.join(dir, 'ship.md'), 'disposition: ship\n');
+  assert.equal(inRepo(dir, '--range', base + '..' + head, '--render', 'ship.md', 'complete', '1', 'the page').code, 0);
+});
+
+test('a registry root below the git toplevel matches src relative to itself', () => {
+  const { dir, base } = pageRepo(false);
+  const app = path.join(dir, 'app');
+  fs.mkdirSync(path.join(app, '.fankeel'), { recursive: true });
+  fs.writeFileSync(path.join(app, '.fankeel', 'render.json'), RENDER_JSON);
+  const head = commitAt(dir, 'app/site/x.html');
+  const { out, code } = ledgerIn(dir, '--root', app, '--plan', 'p.md', '--range', base + '..' + head, 'complete', '1', 'the page');
+  assert.equal(code, 1, out);
+  assert.match(out, /site\/x\.html/);
+});
+
+test('complete with no --range is refused when the plan sits under a project whose render.json names src', () => {
+  const { dir } = pageRepo(false);
+  fs.mkdirSync(path.join(dir, 'app', '.fankeel'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'app', '.fankeel', 'render.json'), RENDER_JSON);
+  const { out, code } = ledgerIn(dir, '--plan', 'app/docs/p.md', 'complete', '1', 'no range');
+  assert.equal(code, 1, out);
+  assert.match(out, /--range/);
+  ledgerIn(dir, '--plan', 'app/docs/p.md', 'ruling', 'render skipped', 'tuned live with the user', 'a broken page ships');
+  assert.equal(ledgerIn(dir, '--plan', 'app/docs/p.md', 'complete', '1', 'no range').code, 0);
+});

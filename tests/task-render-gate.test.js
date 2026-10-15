@@ -123,11 +123,78 @@ test('src is matched against the claims inside the project only, relative to it'
     assert.match(out, /\(site\/index\.html\)/);
 });
 
+// The worktree is a checkout, and `.fankeel/` is version-controlled, so it
+// carries its own render.json: the nearest one to the claim.
 test('a worktree claim is read relative to its worktree', () => {
     const dir = atBuild('build,verify', []);
+    fs.mkdirSync(path.join(dir, '.fankeel', 'worktrees', 'aaaaaaaa', '.fankeel'), { recursive: true });
+    fs.writeFileSync(path.join(dir, '.fankeel', 'worktrees', 'aaaaaaaa', '.fankeel', 'render.json'), CONF);
     registry.update(dir, A, (d) => { d.worktree = { path: '.fankeel/worktrees/aaaaaaaa', branch: 'fk/aaaaaaaa' }; });
     registry.addClaim(dir, A, '.fankeel/worktrees/aaaaaaaa/site/index.html');
     const { out, code } = run(dir, ['stage', 'verify', '--session', A]);
     assert.equal(code, 1, out);
     assert.match(out, /site\/index\.html/);
+});
+
+// Fix round (verify): claims are capped and the oldest evicted, so a page the
+// task changed is read from git as well — what it committed since it started
+// and what it left uncommitted — whether or not a claim still names it.
+function gitIn(dir, args, env) {
+    execFileSync('git', args, { cwd: dir, stdio: 'ignore', env: Object.assign({}, process.env, env || {}) });
+}
+
+function pageRepo() {
+    const dir = tmp('fankeel-render-gate-');
+    gitIn(dir, ['init', '-q']);
+    gitIn(dir, ['config', 'user.email', 'test@example.invalid']);
+    gitIn(dir, ['config', 'user.name', 'test']);
+    gitIn(dir, ['config', 'commit.gpgsign', 'false']);
+    fs.mkdirSync(path.join(dir, '.fankeel'), { recursive: true });
+    fs.writeFileSync(path.join(dir, '.fankeel', 'render.json'), CONF);
+    fs.writeFileSync(path.join(dir, 'base.txt'), 'base\n');
+    return dir;
+}
+
+function commitFile(dir, rel, env) {
+    fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true });
+    fs.writeFileSync(path.join(dir, rel), rel + '\n');
+    gitIn(dir, ['add', '--', rel]);
+    gitIn(dir, ['commit', '-qm', rel], env);
+}
+
+function startAt(dir) {
+    run(dir, ['start', '--session', A, '--task', 'a page task', '--route', 'build,verify']);
+    registry.addClaim(dir, A, 'lib/x.js');
+}
+
+test('a page committed since the task started, claimed or not, is refused', () => {
+    const dir = pageRepo();
+    commitFile(dir, 'base.txt');
+    startAt(dir);
+    commitFile(dir, 'site/index.html');
+    const { out, code } = run(dir, ['stage', 'verify', '--session', A]);
+    assert.equal(code, 1, out);
+    assert.match(out, /site\/index\.html/);
+});
+
+test('a page left uncommitted and not claimed is refused', () => {
+    const dir = pageRepo();
+    commitFile(dir, 'base.txt');
+    startAt(dir);
+    fs.mkdirSync(path.join(dir, 'site'), { recursive: true });
+    fs.writeFileSync(path.join(dir, 'site', 'index.html'), 'new\n');
+    const { out, code } = run(dir, ['stage', 'verify', '--session', A]);
+    assert.equal(code, 1, out);
+    assert.match(out, /site\/index\.html/);
+});
+
+test('a page committed before the task started and not touched since is not refused', () => {
+    const dir = pageRepo();
+    const past = new Date(Date.now() - 3600e3).toISOString();
+    commitFile(dir, 'site/index.html', { GIT_COMMITTER_DATE: past, GIT_AUTHOR_DATE: past });
+    gitIn(dir, ['add', '-A']);
+    gitIn(dir, ['commit', '-qm', 'base'], { GIT_COMMITTER_DATE: past, GIT_AUTHOR_DATE: past });
+    startAt(dir);
+    const { out, code } = run(dir, ['stage', 'verify', '--session', A]);
+    assert.equal(code, 0, out);
 });

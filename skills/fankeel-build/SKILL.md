@@ -468,6 +468,9 @@ then asks this stage's gate.
    With no plan there is no ledger, so the same check runs when the task
    leaves build: `task.js stage <next> --session <id> --render <file>`, or
    `task.js note "Ruling: render skipped — <why>" --session <id>` first.
+   That check reads the task's claims and what git says it changed since it
+   started — commits, uncommitted and untracked files — so a page a claim no
+   longer names is still caught.
 
    **Where the task changed a page**, a tuning
    loop on the real page follows once it lands, served by the

@@ -43,7 +43,7 @@ const { handoffPath, readGate, lapsUsed, contextPath } = require('../lib/handoff
 const { controlRulesFor, PLUGIN_MARK, PLUGIN_ROOT, newestPlan, blockSizes, BLOCK_CAP } = require('../lib/render.js');
 const { estimateTokens } = require('./input-check.js');
 const plantasks = require('../lib/plantasks.js');
-const { loadTargets, renderFileRefusal, verdictRefusal } = require('../lib/shots.js');
+const { pagesReached, renderStop, realPath, renderFileRefusal, verdictRefusal } = require('../lib/shots.js');
 const { renderSkipped } = require('../lib/ledger.js');
 const { rateFor } = require('../lib/prices.js');
 
@@ -845,26 +845,42 @@ function todoLines(root, id, data) {
 }
 
 // Leaving build on a route with no plan there is no ledger, so the render
-// check `ledger.js complete` makes runs here, over the entry's claims
+// check `ledger.js complete` makes runs here
 // (docs/90-agent/plans/2026-10-15-render-gate-design.md §1). The refusal, or
-// null. Claims are relative to the registry root, a worktree's with the
-// worktree's own path in front; `src` is relative to the project render.json
-// sits in, found as `valuesOfRecord` finds it, so a claim outside that
-// project is never matched. Only a missing render.json means no check: one
-// that cannot be read or parsed refuses. A given `--render` was checked
-// before this.
+// null. It reads the entry's claims and what git says the task changed — in
+// its worktree, else the project root: commits since `started`, and what is
+// uncommitted or untracked — since claims are capped and the oldest evicted.
+// Each path is read against the nearest render.json above it
+// (`pagesReached`); one that cannot be read or parsed refuses. A git that
+// fails leaves the claims alone. A given `--render` was checked before this.
 function renderRefusal(root, data, opts, next) {
-    const projectRoot = docs.projectRootsFor(root, data.project ? [data.project] : [])[0] || root;
-    const loaded = loadTargets(path.join(projectRoot, '.fankeel', 'render.json'));
-    if (!loaded) return null;
-    if (loaded.refusal) return loaded.refusal;
-    if (opts.render !== undefined || renderSkipped(registry.notesOf(data).join(NL)) !== null) return null;
+    const base = realPath(root);
     const wt = worktreeOf(data);
-    const base = wt ? wt.path : path.relative(root, projectRoot).split(path.sep).join('/');
-    const paths = registry.claimsOf(data)
-        .filter((c) => !base || c.startsWith(base + '/'))
-        .map((c) => (base ? c.slice(base.length + 1) : c));
-    return verdictRefusal(loaded.targets, paths, '`stage ' + next + ' --render <file>`', '`note "Ruling: render skipped — <why>"`');
+    const tree = wt ? path.resolve(base, wt.path) : docs.projectRootsFor(root, data.project ? [data.project] : [])[0] || root;
+    const git = (args) => execFileSync('git', args, { cwd: tree, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+    const files = new Set(registry.claimsOf(data).map((c) => path.resolve(base, c)));
+    let top = null;
+    try { top = realPath(git(['rev-parse', '--show-toplevel']).trim()); } catch (e) { /* not a repository: claims alone */ }
+    if (top) {
+        // -z: without it git quotes a non-ASCII path, which no glob matches.
+        // --no-renames: a file renamed out of a `src` glob lists its old side too.
+        try {
+            if (data.started) {
+                for (const f of git(['log', '-z', '--no-renames', '--name-only', '--format=', '--since=' + data.started, 'HEAD']).split('\0')) {
+                    if (f) files.add(path.resolve(top, f));
+                }
+            }
+        } catch (e) { /* no commits yet */ }
+        try {
+            for (const e of git(['status', '--porcelain', '-z', '--no-renames', '--untracked-files=all']).split('\0')) {
+                if (e.length > 3) files.add(path.resolve(top, e.slice(3)));
+            }
+        } catch (e) { /* claims and the log alone */ }
+    }
+    const reached = pagesReached([...files], renderStop(base, top));
+    if (reached.refusal) return reached.refusal;
+    if (opts.render !== undefined || renderSkipped(registry.notesOf(data).join(NL)) !== null) return null;
+    return verdictRefusal(reached, '`stage ' + next + ' --render <file>`', '`note "Ruling: render skipped — <why>"`');
 }
 
 function cmdStage(root, opts) {

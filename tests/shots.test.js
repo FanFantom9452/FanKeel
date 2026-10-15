@@ -3,7 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { parseTargets, cells, pagesTouched, loadTargets, renderFileRefusal, verdictRefusal } = require('../lib/shots.js');
+const { parseTargets, cells, pagesTouched, loadTargets, renderFileRefusal, verdictRefusal, pagesReached } = require('../lib/shots.js');
 const tmp = require('./tmp.js');
 
 const CONF = JSON.stringify({
@@ -93,12 +93,40 @@ test('renderFileRefusal passes only a file whose first non-blank line is disposi
 });
 
 test('verdictRefusal names the pages and only the paths that reach them, with the caller\'s two ways through', () => {
-    const t = parseTargets(SRC);
-    assert.equal(verdictRefusal(t, ['lib/x.js'], 'PASS', 'SKIP'), null);
-    const said = verdictRefusal(t, ['lib/x.js', 'site/index.html'], 'PASS', 'SKIP');
+    assert.equal(verdictRefusal({ pages: [], hits: [] }, 'PASS', 'SKIP'), null);
+    const said = verdictRefusal({ pages: ['home'], hits: ['site/index.html'] }, 'PASS', 'SKIP');
     assert.match(said, /home \(site\/index\.html\) and carries no render verdict/);
-    assert.doesNotMatch(said, /lib\/x\.js|admin/);
     assert.match(said, /PASS/);
     assert.match(said, /SKIP/);
     assert.match(said, /Ruling: render skipped — <why>/);
+});
+
+// Fix round (verify): each changed file is read against the nearest
+// render.json above it, `src` relative to that file's directory, so a page
+// in a project under the repository is seen whichever seat asks.
+function tree(files) {
+    const dir = tmp('fankeel-shots-');
+    for (const [rel, text] of Object.entries(files)) {
+        fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true });
+        fs.writeFileSync(path.join(dir, rel), text);
+    }
+    return dir;
+}
+
+test('pagesReached reads the nearest render.json, matching src relative to its directory', () => {
+    const dir = tree({
+        '.fankeel/render.json': JSON.stringify({ pages: [{ name: 'top', url: 'x.html', src: ['**/*.html'] }], roles: [{ name: 'g' }] }),
+        'app/.fankeel/render.json': SRC,
+    });
+    const one = pagesReached([path.join(dir, 'app', 'site', 'index.html'), path.join(dir, 'app', 'lib', 'x.js')], dir);
+    assert.deepEqual(one, { pages: ['home'], hits: ['site/index.html'] });
+    const both = pagesReached([path.join(dir, 'app', 'site', 'index.html'), path.join(dir, 'doc', 'a.html')], dir);
+    assert.deepEqual(both, { pages: ['home (app)', 'top (.)'], hits: ['app/site/index.html', 'doc/a.html'] });
+});
+
+test('pagesReached: a file under no render.json, or above stop, reaches nothing; an unparsable one refuses', () => {
+    const dir = tree({ 'app/.fankeel/render.json': SRC, 'web/.fankeel/render.json': '{' });
+    assert.deepEqual(pagesReached([path.join(dir, 'site', 'index.html')], dir), { pages: [], hits: [] });
+    assert.deepEqual(pagesReached([path.join(dir, 'app', 'site', 'index.html')], path.join(dir, 'app', 'site')), { pages: [], hits: [] });
+    assert.match(pagesReached([path.join(dir, 'web', 'index.html')], dir).refusal, /render\.json: not JSON/);
 });

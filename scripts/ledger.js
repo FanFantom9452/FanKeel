@@ -34,7 +34,7 @@ const plantasks = require('../lib/plantasks.js');
 const profileLib = require('../lib/profile.js');
 const { controlling } = require('../lib/stages.js');
 const { contextPath } = require('../lib/handoff.js');
-const { loadTargets, pagesTouched, renderFileRefusal, verdictRefusal } = require('../lib/shots.js');
+const { nearestTargets, pagesReached, renderStop, realPath, renderFileRefusal, verdictRefusal } = require('../lib/shots.js');
 
 function fail(message) {
     process.stdout.write(message + '\n');
@@ -509,29 +509,38 @@ const SKIP_HOW = 'record `ruling "render skipped" "<why>" "<cost if wrong>"`';
 
 // A range that changed a file a `.fankeel/render.json` page names in `src`,
 // with neither `--render` nor a `Ruling: render skipped — <why>` since the
-// last complete or fix: the refusal, else null. No range at all, where a page
-// has `src`, is refused the same way: the range is what the check reads. No
-// render.json, or no page with `src`, is never refused
-// (docs/90-agent/plans/2026-10-15-render-gate-design.md §1). Only the
-// registry root's render.json is read; a `--project` subdirectory's is not.
+// last complete or fix: the refusal, else null. Each changed file is read
+// against the nearest render.json above it (`pagesReached`). No range at
+// all, where the plan's nearest render.json or the registry root's has a
+// page with `src`, is refused the same way: the range is what the check
+// reads. No render.json, or no page with `src`, is never refused
+// (docs/90-agent/plans/2026-10-15-render-gate-design.md §1).
 function renderRefusal(root, range, opts) {
-    const loaded = loadTargets(path.join(root, '.fankeel', 'render.json'));
-    if (!loaded) return null;
-    if (loaded.refusal) return loaded.refusal;
-    const { targets } = loaded;
-    let changed = null;
+    const git = (args) => execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+    let top = null;
+    try { top = realPath(git(['rev-parse', '--show-toplevel']).trim()); } catch (e) { /* no git: the registry root is the stop */ }
+    const base = realPath(root);
+    const stop = renderStop(base, top);
+    const cache = new Map();
+    const near = [nearestTargets(path.dirname(path.resolve(base, opts.plan)), stop, cache), nearestTargets(base, base, cache)].filter(Boolean);
+    let reached = null;
     if (range === undefined) {
-        if (!targets.src.size) return null;
+        const bad = near.find((n) => n.refusal);
+        if (bad) return bad.refusal;
+        if (!near.some((n) => n.targets.src.size)) return null;
     } else {
+        let changed;
         try {
             // -z: without it git quotes a non-ASCII path, which no glob matches.
             // --no-renames: a file renamed out of a `src` glob lists its old side too.
-            changed = execFileSync('git', ['diff', '-z', '--name-only', '--no-renames', range], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
-                .split('\0').filter(Boolean);
+            changed = git(['diff', '-z', '--name-only', '--no-renames', range]).split('\0').filter(Boolean);
         } catch (e) {
+            if (!near.length) return null;
             return 'git could not read ' + range + ', so it cannot be checked against .fankeel/render.json.';
         }
-        if (!pagesTouched(targets, changed).length || opts.render !== undefined) return null;
+        reached = pagesReached(changed.map((f) => path.resolve(top, f)), stop);
+        if (reached.refusal) return reached.refusal;
+        if (!reached.pages.length || opts.render !== undefined) return null;
     }
     let contents = '';
     try {
@@ -542,7 +551,7 @@ function renderRefusal(root, range, opts) {
         return 'fankeel ledger — .fankeel/render.json names the files that draw its pages, and --range <base>..<head> is what lets the render check run.'
             + '\nComplete with --range, or ' + SKIP_HOW + ' first: one `Ruling: render skipped — <why>` covers this task alone.';
     }
-    return verdictRefusal(targets, changed, '--render <file>', SKIP_HOW);
+    return verdictRefusal(reached, '--render <file>', SKIP_HOW);
 }
 
 function main(argv) {
