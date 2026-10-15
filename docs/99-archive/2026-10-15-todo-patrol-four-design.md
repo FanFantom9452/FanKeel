@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # TODO 全表盤點（10-15 第三輪）：--project 拒絕、architectural 不省額度、driven 站放行 node、升級清單 — Design

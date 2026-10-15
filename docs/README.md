@@ -243,6 +243,9 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | TODO 全表盤點（10-15 第三次）做了什麼、沒做什麼：gate 面板拖曳縮放、drive.js 交棒與換站、station-data 冷請求 0.5 秒、hook 計時，四筆結案；六筆真機條目留在 Ready | [reports/patrols/2026-10-15-todo-patrol-gate-drive.md](90-agent/reports/patrols/2026-10-15-todo-patrol-gate-drive.md) — *繁體中文* |
 | TODO 全表盤點（10-15 第三輪）的 design：gate 框拖曳縮放、drive.js 交棒、0.80.0 格式盤點、兩個量測 | `docs/99-archive/2026-10-15-todo-patrol-gate-drive-design.md` — *built* |
 | 那份設計的八個 task（含 station-data 冷請求）：兩個前端、drive.js 先 probe 再改、盤點報告加一條測試、三個量測、一個條目改 ready、一次使用者在 Desktop 起的重跑 | `docs/99-archive/2026-10-15-todo-patrol-gate-drive.md` — *built* |
+| TODO 全表盤點（10-15 第四次）做了什麼、沒做什麼：--project 打錯被拒、architectural 不省額度、driven 站跑得了 node、升級不必補步驟，四筆結案 | [reports/patrols/2026-10-15-todo-patrol-four.md](90-agent/reports/patrols/2026-10-15-todo-patrol-four.md) — *繁體中文* |
+| TODO 全表盤點（10-15 第四次）的 design：--project 拒絕、architectural 不省額度、driven 站放行 node、升級清單 | `docs/99-archive/2026-10-15-todo-patrol-four-design.md` — *built, 繁體中文* |
+| 那份設計的五個 task | `docs/99-archive/2026-10-15-todo-patrol-four.md` — *built, 繁體中文* |
 | Desktop 用 Svg 畫 band 與 Pane（10-14）的 design：Desktop 依 surface 畫 Svg、終端維持文字，Svg 的 alt 就是文字列 | `docs/99-archive/2026-10-14-pane-svg-design.md` — *built, 繁體中文* |
 | 那份設計的十個 task：五個程式、五個使用者在真機上做；後來加了 ctx 照 TokenBar 與 band 尾巴的遠端 ✓／✗ | `docs/99-archive/2026-10-14-pane-svg.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-13 第二輪）的 plan：commit.js 提交搬過家的檔、逐塊調整托盤載入就展開 | `docs/99-archive/2026-10-13-todo-patrol-two.md` — *built, 繁體中文* |
@@ -408,8 +411,6 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | TODO 全表盤點（10-10）定了什麼、沒做什麼：逐站 driver 做出來但沒實跑、三處 helper 合併、knip 重蓋日期、allow 規則實測沒重現 no verdict | [reports/patrols/2026-10-10-todo-patrol-drive.md](90-agent/reports/patrols/2026-10-10-todo-patrol-drive.md) — *繁體中文* |
 | TODO 全表盤點（10-10 第二輪）的 design：lint 遇到目錄回 finding、`suite.js --tree` | `docs/99-archive/2026-10-10-todo-patrol-lint-suite-design.md` — *built, 繁體中文* |
 | 那份設計的兩個 task | `docs/99-archive/2026-10-10-todo-patrol-lint-suite.md` — *built, 繁體中文* |
-| TODO 全表盤點（10-15 第三輪）的 design：--project 拒絕、architectural 不省額度、driven 站放行 node、升級清單 | [90-agent/plans/2026-10-15-todo-patrol-four-design.md](90-agent/plans/2026-10-15-todo-patrol-four-design.md) — *design-intent, 繁體中文* |
-| 那份設計的五個 task | [90-agent/plans/2026-10-15-todo-patrol-four.md](90-agent/plans/2026-10-15-todo-patrol-four.md) — *design-intent, 繁體中文* |
 | TODO 全表盤點（10-10 第二輪）定了什麼、沒做什麼：lint 目錄與 `suite.js --tree` 做掉，站頁對話全文拆出去先畫 mockup，brief-3 留給使用者 | [reports/patrols/2026-10-10-todo-patrol-lint-suite.md](90-agent/reports/patrols/2026-10-10-todo-patrol-lint-suite.md) — *繁體中文* |
 | TODO 全表盤點（10-10 第三輪）的 plan：11 條 Blocked 條目的日期重蓋成 10-10，一個 task | `docs/99-archive/2026-10-10-todo-patrol-restamp.md` — *built* |
 | TODO 全表盤點（10-10 第三輪）定了什麼、沒做什麼：27 條都核過、沒有可直接動手的，只重蓋 11 條 Blocked 的日期，brief-3 與站頁對話全文留著 ready | [reports/patrols/2026-10-10-todo-patrol-restamp.md](90-agent/reports/patrols/2026-10-10-todo-patrol-restamp.md) — *繁體中文* |
