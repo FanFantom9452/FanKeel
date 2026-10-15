@@ -408,6 +408,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | TODO 全表盤點（10-10）定了什麼、沒做什麼：逐站 driver 做出來但沒實跑、三處 helper 合併、knip 重蓋日期、allow 規則實測沒重現 no verdict | [reports/patrols/2026-10-10-todo-patrol-drive.md](90-agent/reports/patrols/2026-10-10-todo-patrol-drive.md) — *繁體中文* |
 | TODO 全表盤點（10-10 第二輪）的 design：lint 遇到目錄回 finding、`suite.js --tree` | `docs/99-archive/2026-10-10-todo-patrol-lint-suite-design.md` — *built, 繁體中文* |
 | 那份設計的兩個 task | `docs/99-archive/2026-10-10-todo-patrol-lint-suite.md` — *built, 繁體中文* |
+| TODO 全表盤點（10-15 第三輪）的 design：--project 拒絕、architectural 不省額度、driven 站放行 node、升級清單 | [90-agent/plans/2026-10-15-todo-patrol-four-design.md](90-agent/plans/2026-10-15-todo-patrol-four-design.md) — *design-intent, 繁體中文* |
+| 那份設計的五個 task | [90-agent/plans/2026-10-15-todo-patrol-four.md](90-agent/plans/2026-10-15-todo-patrol-four.md) — *design-intent, 繁體中文* |
 | TODO 全表盤點（10-10 第二輪）定了什麼、沒做什麼：lint 目錄與 `suite.js --tree` 做掉，站頁對話全文拆出去先畫 mockup，brief-3 留給使用者 | [reports/patrols/2026-10-10-todo-patrol-lint-suite.md](90-agent/reports/patrols/2026-10-10-todo-patrol-lint-suite.md) — *繁體中文* |
 | TODO 全表盤點（10-10 第三輪）的 plan：11 條 Blocked 條目的日期重蓋成 10-10，一個 task | `docs/99-archive/2026-10-10-todo-patrol-restamp.md` — *built* |
 | TODO 全表盤點（10-10 第三輪）定了什麼、沒做什麼：27 條都核過、沒有可直接動手的，只重蓋 11 條 Blocked 的日期，brief-3 與站頁對話全文留著 ready | [reports/patrols/2026-10-10-todo-patrol-restamp.md](90-agent/reports/patrols/2026-10-10-todo-patrol-restamp.md) — *繁體中文* |
