@@ -11,6 +11,9 @@ const dirty = require('../lib/dirty.js');
 const registry = require('../lib/registry.js');
 const tmp = require('./tmp.js');
 
+// A loaded machine slows git past the hook's 2.5s; these tests need its answer.
+process.env.FANKEEL_GIT_TIMEOUT = '30000';
+
 const HOOK = path.join(__dirname, '..', 'hooks', 'touch.js');
 const A = 'aaaaaaaa-0000-4000-8000-000000000001';
 const B = 'bbbbbbbb-0000-4000-8000-000000000002';

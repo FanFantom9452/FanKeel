@@ -68,3 +68,15 @@ test('FANKEEL_GIT_TIMEOUT lets a slow git finish instead of answering null', () 
   }
   assert.deepEqual(got, []);
 });
+
+test('the guard\'s git calls read the same timeout as dirtyPaths', () => {
+  const guard = require('../lib/guard.js');
+  delete process.env.FANKEEL_GIT_TIMEOUT;
+  assert.equal(guard.gitTimeout(), 2500);
+  process.env.FANKEEL_GIT_TIMEOUT = '10000';
+  try {
+    assert.equal(guard.gitTimeout(), 10000);
+  } finally {
+    delete process.env.FANKEEL_GIT_TIMEOUT;
+  }
+});
