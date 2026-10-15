@@ -167,7 +167,7 @@ Your brief names the commit file and the floor model these rules use.
   since the run built in the main tree — and record each `complete <n>`
   with the range that came back. An entry whose `implementer` is null never
   ran: it gets no review file, no commit and no `complete` — it goes back
-  out as one Agent, the way step 2 sends a task. Then rewrite the report without the
+  out as one Agent, as the Agents above do. Then rewrite the report without the
   `workflow:` line and return its path again.
 
 ## Refusals
