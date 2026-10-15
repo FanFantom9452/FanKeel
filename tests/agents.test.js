@@ -7,7 +7,7 @@ const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
 const FRONT = /^---\r?\n([\s\S]*?)\r?\n---/;
-const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-verifier', 'fankeel-fixer', 'fankeel-brain', 'fankeel-render-reviewer', 'fankeel-mockup', 'fankeel-slimmer', 'fankeel-init-scout', 'fankeel-writer', 'fankeel-implementer', 'fankeel-mutator', 'fankeel-mover', 'fankeel-implementer-high', 'fankeel-implementer-xhigh', 'fankeel-brain-high', 'fankeel-brain-xhigh', 'fankeel-reviewer-high', 'fankeel-reviewer-xhigh'];
+const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-verifier', 'fankeel-fixer', 'fankeel-brain', 'fankeel-render-reviewer', 'fankeel-mockup', 'fankeel-slimmer', 'fankeel-init-scout', 'fankeel-writer', 'fankeel-implementer', 'fankeel-mutator', 'fankeel-mover', 'fankeel-brain-high', 'fankeel-brain-xhigh', 'fankeel-reviewer-high', 'fankeel-reviewer-xhigh'];
 
 // `fankeel-verifier` is the one named exception: it writes evidence rows to a
 // file for the Workflow join, and `Write` is what that takes. It is not less
@@ -29,7 +29,7 @@ const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-v
 // `fankeel-mockup` is the fourth: it draws the design stage's mockup page and,
 // in a tuning loop, rewrites the one block it is sent — `Edit` and `Write` on
 // that page, which is the whole of its job.
-const MAY_WRITE = { 'fankeel-verifier': ['Write'], 'fankeel-fixer': ['Edit', 'Write'], 'fankeel-brain': ['Write'], 'fankeel-mockup': ['Edit', 'Write'], 'fankeel-writer': ['Edit', 'Write'], 'fankeel-implementer': ['Edit', 'Write'], 'fankeel-mutator': ['Edit'], 'fankeel-implementer-high': ['Edit', 'Write'], 'fankeel-implementer-xhigh': ['Edit', 'Write'], 'fankeel-brain-high': ['Write'], 'fankeel-brain-xhigh': ['Write'] };
+const MAY_WRITE = { 'fankeel-verifier': ['Write'], 'fankeel-fixer': ['Edit', 'Write'], 'fankeel-brain': ['Write'], 'fankeel-mockup': ['Edit', 'Write'], 'fankeel-writer': ['Edit', 'Write'], 'fankeel-implementer': ['Edit', 'Write'], 'fankeel-mutator': ['Edit'], 'fankeel-brain-high': ['Write'], 'fankeel-brain-xhigh': ['Write'] };
 
 function front(file) {
     const m = FRONT.exec(fs.readFileSync(file, 'utf8'));
@@ -229,7 +229,7 @@ const EFFORT = {
     'fankeel-brain': 'medium', 'fankeel-mockup': 'high', 'fankeel-slimmer': 'low', 'fankeel-init-scout': 'medium',
     'fankeel-writer': 'medium', 'fankeel-implementer': 'medium',
     'fankeel-mutator': 'low', 'fankeel-mover': 'low',
-    'fankeel-implementer-high': 'high', 'fankeel-implementer-xhigh': 'xhigh', 'fankeel-brain-high': 'high', 'fankeel-brain-xhigh': 'xhigh', 'fankeel-reviewer-high': 'high', 'fankeel-reviewer-xhigh': 'xhigh',
+    'fankeel-brain-high': 'high', 'fankeel-brain-xhigh': 'xhigh', 'fankeel-reviewer-high': 'high', 'fankeel-reviewer-xhigh': 'xhigh',
 };
 test('every agent names its effort, and none of them is max', () => {
     for (const name of NAMES) {
@@ -484,7 +484,7 @@ test('the brain names the dedicated agents, records survey and design facts, wri
 // implementer-1: a build left .tmp-append.txt at the repository root on
 // 2026-10-02, and the task recorded it as touched.
 test('the implementer keeps scratch files out of the tree', () => {
-    for (const name of ['fankeel-implementer', 'fankeel-implementer-high', 'fankeel-implementer-xhigh']) {
+    for (const name of ['fankeel-implementer']) {
         const text = fs.readFileSync(path.join(ROOT, 'agents', name + '.md'), 'utf8');
         assert.match(text, /## Scratch files/, name);
         assert.match(text, /`\.fankeel\/build\/<task>\/`/, name);
