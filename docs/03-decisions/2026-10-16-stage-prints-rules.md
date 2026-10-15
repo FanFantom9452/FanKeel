@@ -21,4 +21,4 @@ last_verified: 2026-10-16
 
 - 另寫一份精簡版的規則給換站時印：兩份會分家，注入的跟印出的說不同的話。
 - 受控站也改印規則區塊：會和 controller 區塊重複，而且既有測試靠 controller 的標頭行辨認它。
-- `start` 與改名（`task.js task`）開站時也印規則：這次沒做，它們仍印一行「先做什麼」。
+- `start` 與改名（`task.js task`）開站時也印規則：當天的下一個任務補上，三處共用 `openingLines`，`FIRST_STEP` 刪除。

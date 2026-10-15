@@ -100,7 +100,7 @@ function runRaw(dir, args) {
 
 // The turn `start` prints in has no injection yet — `hooks/inject.js` runs on
 // the next prompt, not this one — so where `stage.agents` is on for the stage
-// just entered, the controller's rules have to be the FIRST_STEP line itself.
+// just entered, the controller's rules are what `start` prints in place of the stage's own.
 test('start at survey with stage.agents true prints the controller\'s rules, not the scanner step', () => {
   const dir = root();
   const cfg = path.join(dir, 'cfg');
@@ -193,14 +193,14 @@ test('task reads stage.agents from the record\'s project, as the hooks do, since
   assert.match(next.out, /Now build, through its stage agent\. You are its controller:/);
 });
 
-test('start at survey with stage.agents false keeps the scanner step', () => {
+test('start at survey with stage.agents false prints survey\'s rules', () => {
   const dir = root();
   const cfg = path.join(dir, 'cfg');
   run(dir, ['profile', 'set', 'stage.agents', 'false', '--default'], { CLAUDE_CONFIG_DIR: cfg });
 
   const { out, code } = run(dir, ['start', '--session', A, '--task', 'x', '--route', 'survey,design'], { CLAUDE_CONFIG_DIR: cfg });
   assert.equal(code, 0, out);
-  assert.match(out, /run the scanner/);
+  assert.match(out, /stage rules:/);
   assert.doesNotMatch(out, /fankeel:fankeel-brain/);
 });
 

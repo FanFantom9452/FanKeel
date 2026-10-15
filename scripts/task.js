@@ -75,19 +75,6 @@ const LAND_VERBS = ['merge', 'pr', 'keep', 'direct'];
 // Named because it is built into message strings all through this file.
 const NL = String.fromCharCode(10);
 
-// What to do first, named for the stage the route actually begins at. A route
-// that starts at `build` was told to survey, which is both wrong and the kind
-// of wrong that teaches people to skim the output.
-const FIRST_STEP = {
-    survey: 'Now survey: read what orient named, then run the scanner. Do not stop to ask first.',
-    design: 'Now design: one approach and what it costs, then wait for a yes.',
-    plan:   'Now plan: decompose it into tasks a stranger could execute, then stop at the gate.',
-    build:  'Now build. The change is the output; say little until there is something to show.',
-    verify: 'Now verify: run it and quote the line that decided it.',
-    audit:  'Now audit: run the documents check and quote it before judging anything.',
-    land:   'Now land: commit the reason, close the TODO entries, leave nothing dangling.',
-};
-
 // A route this long is real spend on the controller alone: four or more
 // stages of dispatching, relaying and asking, on whatever model the session
 // happens to be running. `sonnet` is cheap enough that the difference is
@@ -785,20 +772,15 @@ function cmdStart(root, opts) {
     } else if (win.state === 'failed') {
         lines.push('compact window: not synced — ' + win.reason);
     }
-    const controller = controllerLines(root, id, data, prof.values);
-    if (controller) {
-        for (const line of controller) lines.push(line);
-    } else {
-        lines.push(FIRST_STEP[data.stage] || 'Begin at ' + data.stage + '. Do not stop to ask whether to start.');
-    }
+    for (const line of openingLines(root, id, data, prof.values)) lines.push(line);
     return lines.join('\n');
 }
 
 // The turn `start` or `task` prints in carries no injection at all — that
-// rides `hooks/inject.js` on the *next* prompt — so FIRST_STEP above is the
+// rides `hooks/inject.js` on the *next* prompt — so `openingLines` below is the
 // controller's only instruction until then. Where `stage.agents` is on for
-// the stage just entered, this replaces it with the controller's own rules
-// instead of the ordinary next-step line.
+// the stage just entered, this is what it prints in place of the stage's
+// ordinary rules.
 // docs/archive/2026-09-19-survey-brain-design.md's nested bullet under §2.
 function controllerLines(root, id, data, values) {
     const control = controlRulesFor(data, { values }, { root, sessionId: id });
@@ -806,6 +788,26 @@ function controllerLines(root, id, data, values) {
     const lines = ['Now ' + data.stage + ', through its stage agent. You are its controller:'];
     if (control.rules.some((rule) => rule.includes(PLUGIN_MARK))) lines.push(PLUGIN_MARK + ' = ' + PLUGIN_ROOT);
     for (const rule of control.rules) lines.push('  - ' + rule);
+    return lines;
+}
+
+// What a session reads the moment it enters a stage: the controller block where
+// `stage.agents` names the stage, else the rules and shape inject would send,
+// then build's hands and land's closing lines, then the line that keeps the
+// turn going. `start`, `task` and `stage` print the same block, because none of
+// them has an injection behind it until the next prompt.
+function openingLines(root, id, data, values) {
+    const controller = controllerLines(root, id, data, values);
+    const lines = (controller || rulesLines(data, { values }, { root, sessionId: id })).slice();
+    if (data.stage === 'build') {
+        const hands = handsLines(root, data);
+        if (hands) lines.push(...hands);
+    }
+    if (data.stage === 'land') {
+        const closing = todoLines(root, id, data);
+        if (closing) lines.push(...closing);
+    }
+    lines.push('', '進到這一站後在同一回合開工，不要先收回合。');
     return lines;
 }
 
@@ -1021,18 +1023,7 @@ function cmdStage(root, opts) {
     // them now — the controller's block where `stage.agents` names the stage just
     // entered, as `start` and `task` do, else the rules and shape inject would
     // send — or nothing on screen names the new stage and the session ends its turn.
-    const values = valuesOfRecord(root, data, opts);
-    const controller = controllerLines(root, id, data, values);
-    line += NL + (controller || rulesLines(data, { values }, { root, sessionId: id })).join(NL);
-    if (name === 'build') {
-        const hands = handsLines(root, data);
-        if (hands) line += NL + hands.join(NL);
-    }
-    if (name === 'land') {
-        const closing = todoLines(root, id, data);
-        if (closing) line += NL + closing.join(NL);
-    }
-    line += NL + NL + '進到這一站後在同一回合開工，不要先收回合。';
+    line += NL + openingLines(root, id, data, valuesOfRecord(root, data, opts)).join(NL);
     return line;
 }
 
@@ -1113,8 +1104,7 @@ function cmdTask(root, opts) {
     // Holding nothing, so overlapping nothing.
     showBadge(opts, id, badge.badgeWord(data.stage, false), data, root);
 
-    const controller = controllerLines(root, id, data, valuesOfRecord(root, data, opts));
-    const tail = controller ? controller.join(NL) : (FIRST_STEP[data.stage] || 'Begin at ' + data.stage + '.');
+    const tail = openingLines(root, id, data, valuesOfRecord(root, data, opts)).join(NL);
 
     return 'fankeel — task: ' + text
         + NL + '           at ' + data.stage + ', holding nothing.'
