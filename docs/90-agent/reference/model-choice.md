@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-10-09
+last_verified: 2026-10-15
 source_of_truth: agents/*.md, lib/profile.js
 ---
 
@@ -41,11 +41,14 @@ keys of their own, `judge.model` and `design.mockup`, and for any agent by
 
 ## Constraint on c
 
-The Agent tool cannot set effort. Only an agent file's frontmatter `effort:` can. So
-a default effort per model can only be done by editing the frontmatter of each agent
-file, or by generating it from the profile; a profile key alone would change the
-model and leave the effort as pinned. Item c settles it: the pinned `effort:` stays,
-and a per-task raise goes through the override file. It is the plugin's own agent file
+A dispatch sets it. Until 2026-10-15 this page said the Agent tool cannot set
+effort; a probe that day sent two `fankeel:fankeel-reader` dispatches on
+opus, one with `effort: "high"`. Its `agent-*.prefix.json` carried
+`effortValue: "high"`, and the control's carried `medium`, its agent file's
+`effort:` — the call's `effort` overrides the file's. A default effort per
+model is still the frontmatter's, since a profile key alone would change the
+model and leave the effort as pinned, so item c stands: the pinned `effort:`
+stays, and a raise for one role goes through the override file. It is the plugin's own agent file
 with `model:`/`effort:` replaced and `generated_by: fankeel <version>` added
 (`lib/agentfile.js:46-60`); the profile unset command removes it (`lib/agentfile.js:71-75`);
 `task.js start` rewrites one left by an older plugin version (`lib/agentfile.js:95-109`,
@@ -56,16 +59,14 @@ only the bare name reaches it. An override written after the running process sta
 `fankeel:<name>` and the hook says a new terminal is needed, because Claude Code reads agent
 files only at process start.
 
-A raise for one dispatch is shipped rather than generated: `-high` and `-xhigh`
-copies of `fankeel-brain`, `fankeel-implementer` and `fankeel-reviewer`
-(`renderVariant` in `lib/agentfile.js`, written by `scripts/variants.js`),
-because a plugin agent loads at startup and a file written mid-session was
-never measured to resolve. A plan's `**Dispatch:**` line
-`implementer, <model>, <effort>` sends the implementer and its reviewer at that
-effort, approved at the plan gate; `ledger.js lint` refuses any other value.
-The controller asks the user before it sends a brain at `high` or `xhigh`, and
-only for a stage it judges needs deep thought (`controlRules` in
-`lib/stages.js`). The override file above stays the per-role route.
+A raise for one dispatch is sent on the call. A plan's `**Dispatch:**` line
+`implementer, <model>, <effort>` sends the implementer and its reviewer with
+`effort: "<effort>"`, approved at the plan gate; `ledger.js lint` refuses any
+value but `high` and `xhigh`. The controller asks the user before it sends a brain
+with `effort: "high"` or `"xhigh"`, and only for a stage it judges needs deep
+thought (`controlRules` in `lib/stages.js`). The six `-high` and `-xhigh`
+agent-file copies that stood in for this were deleted on 2026-10-15. The
+override file above stays the per-role route.
 
 ## Fast mode
 
