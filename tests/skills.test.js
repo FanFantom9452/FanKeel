@@ -1403,13 +1403,15 @@ test('fankeel-verify always runs the project\'s declared build, test and lint, a
   assert.match(body, /none declared/);
 });
 
-// docs/90-agent/plans/2026-10-02-docs-writer.md Task 10.
-test('build sends implementers as fankeel-implementer, the effort variant when the Dispatch line names one, and its reviewer at the same effort', () => {
+// docs/90-agent/plans/2026-10-15-render-gate-design.md §2.
+test('build sends implementers as fankeel-implementer with the Dispatch line\'s effort on the call, and its reviewer at the same effort', () => {
   const build = read('fankeel-build');
-  assert.match(build, /`subagent_type: fankeel:fankeel-implementer`/);
-  assert.match(build, /`fankeel:fankeel-implementer-<effort>`/);
-  assert.match(build, /`fankeel:fankeel-reviewer-<effort>`/);
-  assert.match(read('fankeel-plan'), /\*\*Dispatch:\*\* implementer, sonnet, high —/);
+  assert.match(build, /`subagent_type: fankeel:fankeel-implementer` — with `effort: "<the field>"`\s+on the call/);
+  assert.match(build, /`subagent_type: fankeel:fankeel-reviewer` — with the same `effort: "<the field>"`/);
+  assert.doesNotMatch(build, /-<effort>`/);
+  const plan = read('fankeel-plan');
+  assert.match(plan, /\*\*Dispatch:\*\* implementer, sonnet, high —/);
+  assert.doesNotMatch(plan, /VARIANT_EFFORTS|-<effort>`|model-choice\.md:43/);
 });
 
 // docs/90-agent/plans/2026-10-07-review-checks-in-build.md Task 1.
@@ -1444,4 +1446,17 @@ test('no skill page calls four dispatches a ceiling', () => {
     assert.doesNotMatch(flat, /\bthe ceiling names\b/, n + ' still names a dispatch ceiling');
     assert.doesNotMatch(flat, /\bfour in one response at most\b/, n + ' still caps dispatches at four');
   }
+});
+
+// docs/90-agent/plans/2026-10-15-render-gate-design.md §1.
+test('build and verify name --render and the per-task skip ruling, and build names task.js stage --render for no plan', () => {
+  const build = read('fankeel-build').replace(/\s+/g, ' ');
+  assert.match(build, /--render <file> complete <n>/);
+  assert.match(build, /`Ruling: render skipped — <why>`/);
+  assert.match(build, /ruling "render skipped" "<why>" "<cost if wrong>"/);
+  assert.match(build, /`task\.js stage <next> --session <id> --render <file>`/);
+  assert.doesNotMatch(build, /recorded once at the top of the ledger/);
+  const verify = read('fankeel-verify').replace(/\s+/g, ' ');
+  assert.match(verify, /--render <file> fix/);
+  assert.match(verify, /`Ruling: render skipped — <why>`/);
 });
