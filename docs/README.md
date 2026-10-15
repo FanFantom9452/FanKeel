@@ -549,6 +549,7 @@ is corrected by the next one, not by rewriting this.
 | Brief 10 — the Pane's rail on every row, and the same readings drawn twice | [90-agent/judgements/2026-10-12-pane-rail-dup.md](90-agent/judgements/2026-10-12-pane-rail-dup.md) — *judged 2026-10-12, fable* |
 | Brief: a deleted Claude Desktop session, seen from the station | [90-agent/judgements/2026-10-12-deleted-desktop-session.md](90-agent/judgements/2026-10-12-deleted-desktop-session.md) — *judged 2026-10-12, fable* |
 | Can the route dots breathe while the stage is live? | [90-agent/judgements/2026-10-15-route-dots-breathe.md](90-agent/judgements/2026-10-15-route-dots-breathe.md) — *judged 2026-10-15, fable* |
+| Judge brief 1 — agent effort, agent coverage, mandatory render review | [90-agent/judgements/2026-10-15-agent-effort-usage-render.md](90-agent/judgements/2026-10-15-agent-effort-usage-render.md) — *judged 2026-10-15, fable* |
 
 ## The five scanners
 
