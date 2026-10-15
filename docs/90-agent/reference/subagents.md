@@ -187,7 +187,7 @@ the shape of the question: a reader is asked what a file says, a reviewer
 is asked what a diff, a table or the tree gets wrong — or, when the brief asks
 for cuts, what it could lose — and it returns only what it defeats and those
 cuts. It is one of several dispatches where nobody types a model at all —
-`fankeel-verifier` is another: `skills/fankeel-verify/SKILL.md:186`, `not typed by hand`,
+`fankeel-verifier` is another: `skills/fankeel-verify/SKILL.md:189`, `not typed by hand`,
 and it was added on the same branch as this sentence; the stage agent `fankeel-brain` and `fankeel-fixer` type none either —
 so the file's pin is the only floor — the literal `sonnet`, not `dispatch.floor`,
 which no reader or reviewer agent file and no hook reads to pin a model — only the
