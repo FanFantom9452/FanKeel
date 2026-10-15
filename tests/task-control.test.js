@@ -130,7 +130,7 @@ test('start at survey with stage.agents true prints the controller\'s rules, not
 
 // `stage` is the move a controller makes on option one, and the answer that
 // triggered it was injected while the old stage was still current.
-test('stage into a controlled build prints the controller\'s rules with the commit relay, and into an uncontrolled stage prints only the move', () => {
+test('stage into a controlled build prints the controller\'s rules with the commit relay, and into an uncontrolled stage prints that stage\'s own rules', () => {
   const dir = root();
   const cfg = path.join(dir, 'cfg');
   run(dir, ['profile', 'set', 'stage.agents', 'survey,build', '--default'], { CLAUDE_CONFIG_DIR: cfg });
@@ -148,6 +148,8 @@ test('stage into a controlled build prints the controller\'s rules with the comm
   assert.match(build.out, new RegExp('`node <plugin>/scripts/task\\.js stage <word> --session ' + A + '`'));
   assert.match(build.out, new RegExp('`node <plugin>/scripts/task\\.js down --session ' + A + '`'));
   assert.ok(build.out.includes('<plugin> = ' + PLUGIN_ROOT), build.out);
+  assert.doesNotMatch(build.out, /stage rules:/);
+  assert.match(build.out, /進到這一站後在同一回合開工/);
 
   const verify = run(dir, ['stage', 'verify', '--session', A], { CLAUDE_CONFIG_DIR: cfg });
   assert.equal(verify.code, 0, verify.out);

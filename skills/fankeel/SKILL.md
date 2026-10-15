@@ -291,7 +291,8 @@ Reading a file grants no capability the session did not already have.
 
 Each stage's rules are injected on every prompt while you are in it — and again
 each time an AskUserQuestion of yours is answered, because an answer is a tool
-result and not a prompt — and only that stage's — followed by an `output shape:` block, which is the skeleton the
+result and not a prompt — and printed by `task.js stage` the moment you enter
+it, so the work starts that turn — and only that stage's — followed by an `output shape:` block, which is the skeleton the
 report is meant to fill in rather than a description of it. Fill it in. Prose is
 for the things the skeleton cannot hold, and there is less of that than it
 feels like.

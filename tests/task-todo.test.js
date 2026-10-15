@@ -76,7 +76,11 @@ test('an entry folder that cannot be read prints bare ids at start and at land i
 test('with no entry folder stage land prints no todo.js line', () => {
   const dir = root(false);
   task(dir, ['start', '--task', 'plain', '--route', 'build,land', '--todo', 'x-1']);
-  assert.doesNotMatch(task(dir, ['stage', 'land']), /todo\.js done/);
+  // The land rules name `todo.js done` themselves; what must be absent is the
+  // closing block and a line for this task's id.
+  const out = task(dir, ['stage', 'land']);
+  assert.doesNotMatch(out, /close at land/);
+  assert.doesNotMatch(out, /todo\.js done x-1/);
 });
 
 test('the land rule names the todo.js done lines and still runs todo-check', () => {

@@ -40,7 +40,7 @@ const compactWindow = require('./compact-window.js');
 const docs = require('../lib/docs.js');
 const suite = require('../lib/suite.js');
 const { handoffPath, readGate, lapsUsed, contextPath } = require('../lib/handoff.js');
-const { controlRulesFor, PLUGIN_MARK, PLUGIN_ROOT, newestPlan, blockSizes, BLOCK_CAP } = require('../lib/render.js');
+const { controlRulesFor, rulesLines, PLUGIN_MARK, PLUGIN_ROOT, newestPlan, blockSizes, BLOCK_CAP } = require('../lib/render.js');
 const { estimateTokens } = require('./input-check.js');
 const plantasks = require('../lib/plantasks.js');
 const { nearestTargets, pagesReached, renderScope, renderFileRefusal, verdictRefusal } = require('../lib/shots.js');
@@ -1017,11 +1017,13 @@ function cmdStage(root, opts) {
     }
     line += NL + effortHint(data.class || classForRoute(route), name);
     // The answer that sent the session here fired `resume.js` while the old stage
-    // was still current, so nothing has injected the new stage's rules yet. Where
-    // `stage.agents` names the stage just entered, print the controller's block
-    // now, as `start` and `task` do, or it dispatches with the last stage's rules.
-    const controller = controllerLines(root, id, data, valuesOfRecord(root, data, opts));
-    if (controller) line += NL + controller.join(NL);
+    // was still current, so nothing has injected the new stage's rules yet. Print
+    // them now — the controller's block where `stage.agents` names the stage just
+    // entered, as `start` and `task` do, else the rules and shape inject would
+    // send — or nothing on screen names the new stage and the session ends its turn.
+    const values = valuesOfRecord(root, data, opts);
+    const controller = controllerLines(root, id, data, values);
+    line += NL + (controller || rulesLines(data, { values }, { root, sessionId: id })).join(NL);
     if (name === 'build') {
         const hands = handsLines(root, data);
         if (hands) line += NL + hands.join(NL);
@@ -1030,6 +1032,7 @@ function cmdStage(root, opts) {
         const closing = todoLines(root, id, data);
         if (closing) line += NL + closing.join(NL);
     }
+    line += NL + NL + '進到這一站後在同一回合開工，不要先收回合。';
     return line;
 }
 
