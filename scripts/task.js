@@ -43,6 +43,8 @@ const { handoffPath, readGate, lapsUsed, contextPath } = require('../lib/handoff
 const { controlRulesFor, PLUGIN_MARK, PLUGIN_ROOT, newestPlan, blockSizes, BLOCK_CAP } = require('../lib/render.js');
 const { estimateTokens } = require('./input-check.js');
 const plantasks = require('../lib/plantasks.js');
+const { parseTargets, pagesTouched } = require('../lib/shots.js');
+const { renderShips, renderSkipped } = require('../lib/ledger.js');
 const { rateFor } = require('../lib/prices.js');
 
 const PLUGIN = path.resolve(__dirname, '..');
@@ -209,6 +211,7 @@ const STRING_FLAGS = {
     route: 'route',
     'claude-dir': 'claudeDir',
     todo: 'todo',
+    render: 'render',
 };
 
 // `strict: false` keeps an unknown flag silent. A declared flag given no value
@@ -841,6 +844,52 @@ function todoLines(root, id, data) {
             '  node ' + script + ' done ' + t + ' --sha <sha> --session ' + id + ' --root ' + dir]));
 }
 
+// Leaving build on a route with no plan there is no ledger, so the render
+// check `ledger.js complete` makes runs here, over the entry's claims
+// (docs/90-agent/plans/2026-10-15-render-gate-design.md §1). The refusal, or
+// null. Claims are relative to the registry root and `src` to the project
+// render.json sits in, found as `valuesOfRecord` finds it; a worktree's
+// claims carry the worktree's own path in front. Only a missing render.json
+// means no check: one that cannot be read or parsed refuses.
+function renderRefusal(root, data, opts, next) {
+    const projectRoot = docs.projectRootsFor(root, data.project ? [data.project] : [])[0] || root;
+    const confPath = path.join(projectRoot, '.fankeel', 'render.json');
+    let conf;
+    try {
+        conf = fs.readFileSync(confPath, 'utf8');
+    } catch (e) {
+        if (e.code === 'ENOENT') return null;
+        return 'render.json: could not read ' + confPath + ' (' + e.code + ').';
+    }
+    let targets;
+    try {
+        targets = parseTargets(conf);
+    } catch (e) {
+        return e.message;
+    }
+    const wt = worktreeOf(data);
+    const base = wt ? wt.path : path.relative(root, projectRoot).split(path.sep).join('/');
+    const paths = registry.claimsOf(data).map((c) => (base && c.startsWith(base + '/') ? c.slice(base.length + 1) : c));
+    const pages = pagesTouched(targets, paths);
+    if (!pages.length) return null;
+    if (opts.render !== undefined) {
+        const file = path.resolve(opts.render);
+        let text;
+        try {
+            text = fs.readFileSync(file, 'utf8');
+        } catch (e) {
+            return '--render: no file at ' + file + '.';
+        }
+        return renderShips(text) ? null
+            : '--render ' + opts.render + ': its first line is not `disposition: ship`. What it found goes back to the implementer first.';
+    }
+    if (renderSkipped(registry.notesOf(data).join(NL)) !== null) return null;
+    const hits = paths.filter((p) => pagesTouched(targets, [p]).length);
+    return 'fankeel — this task changed ' + pages.join(', ') + ' (' + hits.join(', ') + ') and has no render verdict.' + NL
+        + 'Pass `stage ' + next + ' --render <file>`: the render reviewer\'s return, whose first line is `disposition: ship`;' + NL
+        + 'or `note "Ruling: render skipped — <why>"` first.';
+}
+
 function cmdStage(root, opts) {
     const id = requireSession(opts);
     const name = String(opts.positional[0] || '').toLowerCase();
@@ -869,6 +918,11 @@ function cmdStage(root, opts) {
         }
 
         from = d.stage;
+        // A route with plan was checked by the ledger already; not twice.
+        if (from === 'build' && name !== 'build' && !route.includes('plan')) {
+            const why = renderRefusal(root, d, opts, name);
+            if (why) { refuse = why; return false; }
+        }
         // The stamp goes down here, inside the callback that just cleared the
         // route and liveness checks, so the change and its timestamp are one
         // write. Leaving it to the hook put the boundary at the next prompt
