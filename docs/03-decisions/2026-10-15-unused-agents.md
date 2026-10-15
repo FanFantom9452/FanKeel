@@ -25,7 +25,7 @@ last_verified: 2026-10-15
 - 帶的那次，請求前綴記的是 `effortValue: "high"`；沒帶的那次是 `medium`，和 agent 檔一樣。
 - 派工時傳的 effort 會蓋過 agent 檔，複本就沒有存在的理由。
 - 複本是 agent 檔的拷貝，本體每改一次就要重產六份；刪掉之後只剩一份要維護。
-- mover、mutator、writer 在這裡沒被派過，是因為每個 stage 都在 session 裡跑。改由 stage agent 跑時要靠它們，刪了 stage agent 就沒有手。
+- mover、mutator、writer 在這裡幾乎沒被派過（writer 1 次、mover 1 次、mutator 0 次），是因為每個 stage 都在 session 裡跑。改由 stage agent 跑時要靠它們，刪了 stage agent 就沒有手。
 - init-scout 與 slimmer 沒被派過，是因為這個 repository 沒跑過 init；別的專案跑 init 時會用到。
 
 ## 放棄了什麼
