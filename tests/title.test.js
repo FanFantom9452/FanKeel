@@ -113,12 +113,12 @@ test('built-ins, an unfound bare name and an empty type keep the inherit title',
     assert.equal(ask(w, { description: 'x' }), 'opus 5.5 · inherit');
 });
 
-// The shipped variant is a plugin agent like any other, so the title reads its
-// effort off the file.
-test('a shipped effort variant titles with its own effort', () => {
+// docs/90-agent/plans/2026-10-15-render-gate-design.md §2: the dispatch's own
+// `effort` is what runs — the 2026-10-15 probe's title read `· medium` on a
+// `high` dispatch, the agent file's effort and not the call's.
+test('a dispatch carrying effort titles with it, over the agent file\'s', () => {
     const w = world();
-    const title = prefixFor({ toolInput: { subagent_type: 'fankeel:fankeel-implementer-xhigh', description: 'x' },
-        pluginRoot: path.join(__dirname, '..'), projectDir: w.projectDir, configDir: w.configDir,
-        transcriptPath: w.transcriptPath, env: {} });
-    assert.equal(title, 'sonnet · xhigh');
+    assert.equal(ask(w, { subagent_type: 'fankeel:fankeel-reader', effort: 'xhigh', description: 'x' }), 'sonnet · xhigh');
+    assert.equal(ask(w, { subagent_type: 'general-purpose', effort: 'high', description: 'x' }), 'opus 5.5 · high');
+    assert.equal(ask(w, { subagent_type: 'fankeel:fankeel-reader', effort: '', description: 'x' }), 'sonnet · medium');
 });
