@@ -2,7 +2,6 @@
 status: design-intent
 date: 2026-10-15
 task: render reviewer 強制、effort 探針、未派 agent 的去留
-judgement: docs/90-agent/judgements/2026-10-15-agent-effort-usage-render.md
 ---
 
 # Render review becomes a refusal, effort becomes a parameter, unused agents get a ruling
