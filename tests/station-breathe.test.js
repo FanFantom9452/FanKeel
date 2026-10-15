@@ -85,4 +85,5 @@ test('the css breathes the glyph only under .live, and reduced motion stills it'
     assert.match(rule('.glyph.live .gseg.now,.glyph.live .gedge.now'), /klive/);
     const block = CSS.match(/@media \(prefers-reduced-motion:reduce\)\{[^@]*?\.glyph \.gseg[^@]*?\}\s*\}/)[0];
     assert.match(block, /\.glyph\.live \.gseg\.now/);
+    assert.match(block, /\.glyph\.live \.gedge\.now/);
 });

@@ -377,8 +377,11 @@ export const register: Register = (on) => {
     return next(e)
   })
   on('turn.complete', async ($, e, next) => {
-    state.turn = false
-    $.ui.invalidate('ui.render')
+    // A subagent's run ends with its own turn.complete (it carries agentId) and raised no turn.start: the main turn is still running.
+    if (!(e as { agentId?: string }).agentId) {
+      state.turn = false
+      $.ui.invalidate('ui.render')
+    }
     return next(e)
   })
 
@@ -404,18 +407,19 @@ export const register: Register = (on) => {
     // 5: the cells the engine keeps at the band's right end, where no surface has measured the body.
     const cols = Math.max(20, props.bodyColumns ?? (e.viewport?.columns ?? 85) - 5)
     const plan = seen.plan
+    const now = Date.now()
     const band: BandInput = {
       entry: seen.entry,
       others: seen.others,
       gateUntil: seen.pending ? seen.pending.until : null,
-      gateAt: seen.pending ? seen.pending.at : null,
+      gateAt: seen.pending ? (seen.pending.at ?? now) : null,
       context: seen.context,
       limits: seen.limits,
       tasks: plan ? { done: plan.tasks.filter((t) => plan.done.includes(t.n)).length, total: plan.tasks.length } : null,
       remote: seen.remote,
       turn: state.turn,
       cols,
-      now: Date.now(),
+      now,
     }
     const rows = bandRows(band)
     if (!rows) return next(e)
@@ -460,7 +464,7 @@ export const register: Register = (on) => {
       now,
       probe: seen.probe,
       turn: state.turn,
-      gateAt: seen.pending ? seen.pending.at : null,
+      gateAt: seen.pending ? (seen.pending.at ?? now) : null,
     }
     const status = statusRows(input)
     const blankRow = () => h(Text, {}, ' ')

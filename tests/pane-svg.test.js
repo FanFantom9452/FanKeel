@@ -590,6 +590,16 @@ test('breathing is true only for a stage agent under twenty minutes or a turn, a
     assert.equal(breathing(Object.assign({}, entry, { inflight: [{ stage: 'plan', at: NOW - M }, { stage: 'build', at: NOW - M }] }), NOW, false, null), true);
 });
 
+test('an agent in another stage does not make the current stage breathe', async () => {
+    const { breathing } = await load('pane-svg');
+    assert.equal(breathing(Object.assign({}, entry, { inflight: { stage: 'plan', at: NOW - 60000 } }), NOW, false, null), false);
+});
+
+test('the ring starts invisible and holds both animate tags', async () => {
+    const { routeSvg } = await load('pane-svg');
+    assert.match(routeSvg(entry, NOW, 41, true), /<circle class="fk-br"[^>]*opacity="0"[^>]*>(<animate [^>]*\/>){2}<\/circle>/);
+});
+
 test('the Pane route draws one breathing ring only when told it is live, phase-locked to now', async () => {
     const { routeSvg } = await load('pane-svg');
     const on = routeSvg(entry, NOW, 41, true);
