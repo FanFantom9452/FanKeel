@@ -43,7 +43,7 @@ it — and only then run this step: `package.json` is code to the record, so a
 suite run before the bump is stale after it, `--check` below refuses on it,
 and so does `task.js land`.
 
-Verify already ran the suite, so ask before running it again:
+Verify ran the fast suite, so this check usually refuses — ask anyway, because a full record from an earlier land attempt still stands:
 
 ```
 node <plugin>/scripts/suite.js --session <id> --check
@@ -59,6 +59,13 @@ why, and the full run is what answers it:
 ```
 node <plugin>/scripts/suite.js --session <id>
 ```
+
+A record verify made with `--fast` is refused here by name — `suite ran the
+fast set at <sha> — land runs everything` — because the tests named `@slow`
+did not run. The full run waits while another `suite.js` on this machine
+holds the lock, printing `suite: waiting — pid <pid> (session <id>) has run
+the suite in <tree> since <HH:MM>; lock <file>`; that is a queue, not a hang,
+and a lock whose pid has died or is over an hour old is cleared on its own.
 
 Where build ran in a git worktree opened by hand — one the entry does not
 record — add `--tree <that worktree>`: the suite runs there, `suite.json`

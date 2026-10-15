@@ -266,3 +266,7 @@ no plugin. `todo-check.js`, `version.js`, `skills-check.js` and
 `stage-registry.js` each hold one written claim to the code it describes, and
 [docs/development.md](docs/01-guide/development.md) says what each of them checks. The
 behaviour eval and its runner are in [docs/evals.md](docs/90-agent/reference/evals.md).
+
+`node scripts/suite.js --session <id>` queues on its own: a second run on
+the same machine waits for the first and prints whose run it is waiting on.
+`npm run test:fast` skips the tests named `@slow`; `npm test` runs them all.

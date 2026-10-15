@@ -16,7 +16,46 @@ claude plugin validate .
 knip
 ```
 
-## How long the suite takes
+## How long the suite takes, and the fast set
+
+Measured on 2026-10-16 in a worktree at `d9dd7f5b`, Windows 11 and Node
+v24.21.0, with nothing else running and `FANKEEL_BROWSER` set: the whole suite
+(`node --test`) took 274 s with 4416 tests passing, and the fast set
+(`npm run test:fast`) 216 s with 4289 passing.
+
+A test whose name carries `@slow` took 10 s or more under the whole suite's
+load — the bench check.sh tests and the git-heavy ones. The tag was chosen
+from a run on main at `f92c7a06` (280 s): 129 test points at 10 s or more,
+53% of the summed test time. `npm run test:fast` is
+`node --test --test-skip-pattern=@slow`; `npm test` is still everything.
+Build and verify run `node scripts/suite.js --session <id> --fast`, which
+records `fast: true`; land runs `suite.js` without it, and both its `--check`
+and `task.js land` refuse a fast record.
+
+The fast set saves about a fifth of the wall-clock, not half. `node --test`
+runs files in parallel but each file's tests one after another, and files of
+many short git-heavy tests (`tests/survey.test.js`, `tests/todo-check.test.js`,
+`tests/task.test.js`, each 100 s or more of serial test time under load) set
+the floor whatever the threshold. The lock is what stops the random reds; the
+fast set only trims time.
+
+To re-tag, run `node --test --test-reporter=tap > run.tap`, then
+`node scripts/slow-tag.js run.tap [--min <seconds>]`. It appends ` @slow` to
+every test at or over the threshold whose name a literal spells, and prints
+`not found:` for names built at run time — tag those by hand, as
+`tests/bench-projects.test.js`'s template is.
+
+`scripts/suite.js` takes a machine-wide lock — `fankeel-suite.lock` in the
+temp directory, or `FANKEEL_SUITE_LOCK` — so a second run waits and says on
+whom rather than running beside the first. Two suites at once on 2026-10-16
+failed a different handful of tests each run, every one green alone. A lock
+whose pid is dead, or older than an hour, is cleared. `npm test` run by hand
+takes no lock.
+
+The 2026-09-24 history below, measured before any of this, is kept as history;
+its figures (77.1 s and 86.9 s, Node v24.9.0) are not the current ones.
+
+### 2026-09-24: the file split
 
 Measured on 2026-09-24, Windows 11 and Node v24.9.0, by
 `docs/99-archive/2026-09-24-todo-clear.md`, the timing-measurement step of the docs-and-timings task: each file alone with
