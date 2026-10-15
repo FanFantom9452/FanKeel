@@ -74,7 +74,7 @@ const KEPT = [
     'lib/b.js:10: secret: API_KEY → console.log. Drop the log.',
 ];
 
-test('only the reply lines in the lens format reach --out, and the model is shown the lens and the diff', async () => {
+test('only the reply lines in the lens format reach --out, and the model is shown the lens and the diff @slow', async () => {
     const dir = repo();
     const { server, seen, url } = await stub(NOISE);
     try {
@@ -95,7 +95,7 @@ test('only the reply lines in the lens format reach --out, and the model is show
     }
 });
 
-test('ollama not answering: non-zero, the reason on stderr, nothing written', async () => {
+test('ollama not answering: non-zero, the reason on stderr, nothing written @slow', async () => {
     const { server, url } = await stub('');
     await new Promise((resolve) => server.close(resolve));
     const dir = repo();

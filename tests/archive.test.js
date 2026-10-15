@@ -44,7 +44,7 @@ test('archiveDir is the archive bucket docs.json declares, or null', () => {
     assert.equal(archiveDir(tmp('fankeel-archive-empty-')), null);
 });
 
-test('a landed plan and its design move to the archive as status: current, staged that way', () => {
+test('a landed plan and its design move to the archive as status: current, staged that way @slow', () => {
     const root = repo();
     const out = execFileSync(process.execPath, [SCRIPT, '--root', root, 'docs/plans/2026-09-24-x.md', 'docs/plans/2026-09-24-x-design.md'], { encoding: 'utf8' });
     for (const name of ['2026-09-24-x.md', '2026-09-24-x-design.md']) {
@@ -56,7 +56,7 @@ test('a landed plan and its design move to the archive as status: current, stage
     assert.match(out, /archived docs\/plans\/2026-09-24-x\.md -> docs\/archive\/2026-09-24-x\.md, status: design-intent -> current/);
 });
 
-test('docs-audit names nothing about the page once it is archived', () => {
+test('docs-audit names nothing about the page once it is archived @slow', () => {
     const root = repo();
     main(['--root', root, 'docs/plans/2026-09-24-x.md']);
     const r = spawnSync(process.execPath, [AUDIT, '--root', root], { encoding: 'utf8' });

@@ -68,7 +68,7 @@ test('serialize carries each project\'s open and done entries, done with its sha
     assert.deepEqual(t.open.map((e) => [e.id, e.state]), [['a-1', 'ready'], ['a-2', 'decision']]);
 });
 
-test('POST /todo in folder mode writes an entry file with its body and no TODO.md; a refused one leaves no file', async () => {
+test('POST /todo in folder mode writes an entry file with its body and no TODO.md; a refused one leaves no file @slow', async () => {
     const f = fixture();
     const { serve } = require('../scripts/station.js');
     const s = await serve({ configDir: f.cfg, roots: [f.r1], port: 0, idleMs: 60e3, open: false });

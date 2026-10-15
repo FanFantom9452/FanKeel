@@ -49,7 +49,7 @@ function workspace(n) {
   return root;
 }
 
-test('fanout answers for every repository it is given, and null for one that is not', async () => {
+test('fanout answers for every repository it is given, and null for one that is not @slow', async () => {
   const root = workspace(3);
   const got = await fanout(root, ['p0', 'p1', 'p2', 'loose']);
   assert.deepEqual(Object.keys(got).sort(), ['loose', 'p0', 'p1', 'p2']);
@@ -60,7 +60,7 @@ test('fanout answers for every repository it is given, and null for one that is 
   }
 });
 
-test('fanout is the same answer whatever the width', async () => {
+test('fanout is the same answer whatever the width @slow', async () => {
   const root = workspace(5);
   const repos = ['p0', 'p1', 'p2', 'p3', 'p4'];
   const one = await fanout(root, repos, 1);
@@ -102,7 +102,7 @@ const { trackedFiles } = require('../lib/tracked.js');
 // it. The three around it are regression guards — they describe what must not
 // change, and they pass today because today's walk already has those
 // properties. This one is the driver: nothing spawns a pool yet.
-test('a root above the threshold spawns the pool exactly once', (t) => {
+test('a root above the threshold spawns the pool exactly once @slow', (t) => {
   const root = workspace(6);
   const cp = require('node:child_process');
   const real = cp.execFileSync;
@@ -121,7 +121,7 @@ test('a root above the threshold spawns the pool exactly once', (t) => {
 // child process sends the same root down the serial path instead, and the two
 // have to agree exactly — including the order, which is the property no test in
 // this repository covered before this one.
-test('the pooled path and the serial path return the same list, in the same order', (t) => {
+test('the pooled path and the serial path return the same list, in the same order @slow', (t) => {
   const root = workspace(6);
   const pooled = trackedFiles(root);
 

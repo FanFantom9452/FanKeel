@@ -36,14 +36,14 @@ function worktreeWithRecord(active) {
   return root;
 }
 
-test('a worktree an active record points at is in use, not spent', () => {
+test('a worktree an active record points at is in use, not spent @slow', () => {
   const result = scan(worktreeWithRecord(true));
   assert.deepEqual(result.worktrees, [], 'reported spent: ' + JSON.stringify(result.worktrees));
   assert.deepEqual(result.inUse.map((w) => w.branch), ['fk/aaaaaaaa']);
   assert.match(report(result), /1 worktree is in use by a live task/);
 });
 
-test('the same worktree under a stood-down record is spent again', () => {
+test('the same worktree under a stood-down record is spent again @slow', () => {
   const result = scan(worktreeWithRecord(false));
   assert.deepEqual(result.worktrees.map((w) => w.branch), ['fk/aaaaaaaa']);
   assert.deepEqual(result.inUse, []);

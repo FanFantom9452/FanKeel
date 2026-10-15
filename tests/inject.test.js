@@ -461,7 +461,7 @@ function gitRepo() {
   return dir;
 }
 
-test('a write no hook saw is seen on the next prompt', () => {
+test('a write no hook saw is seen on the next prompt @slow', () => {
   const root = gitRepo();
   seed(root, MINE, { claims: [] });
   fs.mkdirSync(path.join(root, 'api'), { recursive: true });
@@ -470,7 +470,7 @@ test('a write no hook saw is seen on the next prompt', () => {
   assert.deepEqual(readEntry(root, MINE).seen, ['api/routes.js']);
 });
 
-test('a file dirty before the task started is not claimed', () => {
+test('a file dirty before the task started is not claimed @slow', () => {
   const root = gitRepo();
   seed(root, MINE, { claims: [] });
   fs.appendFileSync(path.join(root, 'kept.js'), 'two\n');

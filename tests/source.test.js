@@ -114,7 +114,7 @@ function exportedNames(src) {
 // A name reached only by a test counts as used. Exporting a private helper so a
 // unit test can reach it is a deliberate choice and a common one; what this
 // guards against is the name exported for nobody at all.
-test('every exported name is imported by something', () => {
+test('every exported name is imported by something @slow', () => {
     const files = tracked();
     const body = new Map(files.map((rel) => [rel, fs.readFileSync(path.join(ROOT, rel), 'utf8')]));
     const orphans = [];
@@ -217,7 +217,7 @@ test('no frontmatter key nothing reads carries a repository path', () => {
 // module that read the install manifest to pick one sentence went with them.
 // A name that grows back in a comment is the coupling returning as prose
 // first. The length check is the control: an empty scan would pass too.
-test('no shipped file names ponytail', () => {
+test('no shipped file names ponytail @slow', () => {
     const shipped = ['lib', 'scripts', 'hooks', 'agents', 'skills', 'assets', '.claude-plugin']
         .flatMap((dir) => tracked(dir));
     assert.ok(shipped.length > 50, 'git ls-files found ' + shipped.length + ' files to scan');

@@ -52,7 +52,7 @@ test('addedLines carries each added line with its file and its new line number',
   assert.deepEqual(addedLines(diff), [{ file: 'x.js', line: 2, text: 'added' }]);
 });
 
-test('the three tables: an untested selector is NONE, a test without a red line says so, a citation two lines off says off by 2', () => {
+test('the three tables: an untested selector is NONE, a test without a red line says so, a citation two lines off says off by 2 @slow', () => {
   const { dir, base, sha } = repo();
   const returned = 'done\na press on [data-tested] returns 1 — red when: the closest call returns null\n';
   const t = tables(dir, { sha, base, returned });
@@ -68,7 +68,7 @@ test('the three tables: an untested selector is NONE, a test without a red line 
   assert.match(text, /findings: 3$/);
 });
 
-test('without a returned file every new test is "no returned file"; the CLI exits 1 on findings and 0 on none', () => {
+test('without a returned file every new test is "no returned file"; the CLI exits 1 on findings and 0 on none @slow', () => {
   const { dir, base, sha } = repo();
   const t = tables(dir, { sha, base, returned: null });
   assert.deepEqual(t.tests.map((r) => r.finding), ['no returned file', 'no returned file']);
@@ -96,7 +96,7 @@ const scratch = (files) => {
   return { dir, base: commit(dir, files) };
 };
 
-test('a diff with a selector and no citation has one selector finding; a diff with a citation and no selector has only citation findings', () => {
+test('a diff with a selector and no citation has one selector finding; a diff with a citation and no selector has only citation findings @slow', () => {
   const { dir, base } = scratch({ 'lib/x.js': 'aa\nbb\ncc\n', 'tests/x.test.js': '// t\n' });
   const s1 = commit(dir, { 'lib/y.js': "el.addEventListener('zap', f);\n" });
   const a = tables(dir, { sha: s1, base });

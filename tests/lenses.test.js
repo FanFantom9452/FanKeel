@@ -71,14 +71,14 @@ test('parseArgs: <range> and --root, and a range git would read as an option is 
     assert.ok(parseArgs(['a..b', '--root']).error, '--root with nothing after it');
 });
 
-test('scripts/lenses.js <range>: one lens per line from the real git diff', () => {
+test('scripts/lenses.js <range>: one lens per line from the real git diff @slow', () => {
     const dir = repo('module.exports = 1;\n// a plain comment\n');
     const r = spawnSync(process.execPath, [SCRIPT, 'HEAD~1..HEAD', '--root', dir], { encoding: 'utf8' });
     assert.equal(r.status, 0, r.stderr);
     assert.equal(r.stdout, 'comment\n');
 });
 
-test('scripts/lenses.js: no lens fires, prints none', () => {
+test('scripts/lenses.js: no lens fires, prints none @slow', () => {
     const dir = repo('module.exports = 2;\n');
     const r = spawnSync(process.execPath, [SCRIPT, 'HEAD~1..HEAD', '--root', dir], { encoding: 'utf8' });
     assert.equal(r.status, 0, r.stderr);

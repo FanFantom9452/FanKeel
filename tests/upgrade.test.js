@@ -133,7 +133,7 @@ test('--apply with no report bucket still runs the steps and says no report was 
   assert.doesNotMatch(fs.readFileSync(path.join(dir, 'TODO.md'), 'utf8'), /## Waiting/);
 });
 
-test('the changes listed start after the newest report\'s release, and a stamp the log lacks is unavailable, not an error', () => {
+test('the changes listed start after the newest report\'s release, and a stamp the log lacks is unavailable, not an error @slow', () => {
   const p = pluginRepo('0.2.0', ['chore: 0.1.0 — first', 'feat: middle', 'chore: 0.2.0 — second', 'fix: latest']);
   const dir = project('# TODO\n');
   fs.writeFileSync(path.join(dir, 'docs', 'reports', '2026-09-01-fankeel-upgrade.md'), '---\nstatus: current\nfankeel: 0.1.0\n---\n\n# earlier\n');

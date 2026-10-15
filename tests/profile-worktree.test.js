@@ -43,7 +43,7 @@ function history(subjects) {
 
 // The plan gate of 2026-10-02 ruled `merge` is not added on its own: the
 // pattern holds the types the log used, and nothing else.
-test('suggest infers commit.format from a conventional log, from the types it used alone', () => {
+test('suggest infers commit.format from a conventional log, from the types it used alone @slow', () => {
     const subjects = ['feat: a', 'fix(x): b', 'docs: c', 'chore: d', 'feat(y): e'];
     const out = profile.suggest(history(subjects));
     assert.equal(out.values['commit.format'], '^(chore|docs|feat|fix)(\\([^)]+\\))?: ');
@@ -53,7 +53,7 @@ test('suggest infers commit.format from a conventional log, from the types it us
     assert.ok(out.evidence.includes('commit subjects: 5 of 5 read type(scope): '), out.evidence.join(' | '));
 });
 
-test('suggest infers no commit.format when fewer than four in five subjects are conventional', () => {
+test('suggest infers no commit.format when fewer than four in five subjects are conventional @slow', () => {
     const out = profile.suggest(history(['feat: a', 'wip', 'update readme', 'fix: b', 'more']));
     assert.equal(out.values['commit.format'], undefined);
     assert.ok(out.evidence.includes('commit subjects: 2 of 5 read type(scope): '), out.evidence.join(' | '));

@@ -74,7 +74,7 @@ test('a note reading Ruling: render skipped — <why> lets it through; one with 
     assert.equal(run(dir, ['stage', 'verify', '--session', A]).code, 0);
 });
 
-test('a route with plan, a claim outside every src, and a project with no render.json are not checked', () => {
+test('a route with plan, a claim outside every src, and a project with no render.json are not checked @slow', () => {
     assert.equal(run(atBuild('plan,build,verify', ['site/index.html']), ['stage', 'verify', '--session', A]).code, 0);
     assert.equal(run(atBuild('build,verify', ['lib/x.js']), ['stage', 'verify', '--session', A]).code, 0);
     const bare = atBuild('build,verify', ['site/index.html']);
@@ -167,7 +167,7 @@ function startAt(dir) {
     registry.addClaim(dir, A, 'lib/x.js');
 }
 
-test('a page committed since the task started, claimed or not, is refused', () => {
+test('a page committed since the task started, claimed or not, is refused @slow', () => {
     const dir = pageRepo();
     commitFile(dir, 'base.txt');
     startAt(dir);
@@ -177,7 +177,7 @@ test('a page committed since the task started, claimed or not, is refused', () =
     assert.match(out, /site\/index\.html/);
 });
 
-test('a page left uncommitted and not claimed is refused', () => {
+test('a page left uncommitted and not claimed is refused @slow', () => {
     const dir = pageRepo();
     commitFile(dir, 'base.txt');
     startAt(dir);
@@ -188,7 +188,7 @@ test('a page left uncommitted and not claimed is refused', () => {
     assert.match(out, /site\/index\.html/);
 });
 
-test('a page committed before the task started and not touched since is not refused', () => {
+test('a page committed before the task started and not touched since is not refused @slow', () => {
     const dir = pageRepo();
     const past = new Date(Date.now() - 3600e3).toISOString();
     commitFile(dir, 'site/index.html', { GIT_COMMITTER_DATE: past, GIT_AUTHOR_DATE: past });
@@ -217,7 +217,7 @@ test('a worktree page with render.json only in the main tree is refused', () => 
 
 // Review round: git's listing past execFileSync's default 1 MiB buffer was
 // swallowed, and the check fell back to the claims alone.
-test('a page among more than a megabyte of untracked paths is still refused', () => {
+test('a page among more than a megabyte of untracked paths is still refused @slow', () => {
     const dir = pageRepo();
     commitFile(dir, 'base.txt');
     startAt(dir);

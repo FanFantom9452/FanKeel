@@ -155,7 +155,7 @@ test('a committed entry file that is gone is a deleted entry', () => {
   assert.deepEqual(kinds(dir), ['deleted entry']);
 });
 
-test('in folder mode Needs a decision is ordered by each file\'s last commit', () => {
+test('in folder mode Needs a decision is ordered by each file\'s last commit @slow', () => {
   const dir = root();
   lib.add(dir, { label: 'a', title: 'old', description: 'old one', state: 'decision', body: BODY });
   lib.add(dir, { label: 'a', title: 'new', description: 'new one', state: 'decision', body: BODY });

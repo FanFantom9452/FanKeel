@@ -35,7 +35,7 @@ function run(args, env) {
   }
 }
 
-test('pin-check passes only for the exact stage.agents value pinned in a worktree', () => {
+test('pin-check passes only for the exact stage.agents value pinned in a worktree @slow', () => {
   const wt = path.join(tmp('fankeel-ab-pin-'), 'wt');
   execFileSync('git', ['worktree', 'add', '--detach', wt, 'HEAD'], { cwd: REPO, stdio: 'pipe' });
   try {
@@ -49,7 +49,7 @@ test('pin-check passes only for the exact stage.agents value pinned in a worktre
   }
 });
 
-test('a non-DRY run under a stub claude pins both arms and reaches every stage', () => {
+test('a non-DRY run under a stub claude pins both arms and reaches every stage @slow', () => {
   const root = tmp('fankeel-ab-run-');
   const bin = path.join(root, 'bin');
   const calls = path.join(root, 'calls.txt');

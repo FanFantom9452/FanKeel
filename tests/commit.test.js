@@ -35,7 +35,7 @@ function requestFile(body) {
     return file;
 }
 
-test('commits the listed paths only, and leaves what was already staged staged', () => {
+test('commits the listed paths only, and leaves what was already staged staged @slow', () => {
     const dir = repo();
     git(dir, 'add', 'b.txt');
     const before = git(dir, 'rev-parse', 'HEAD');
@@ -47,7 +47,7 @@ test('commits the listed paths only, and leaves what was already staged staged',
     assert.equal(git(dir, 'log', '-1', '--format=%B'), 'feat: change a\n\nbody line');
 });
 
-test('adds a new file it is told to commit', () => {
+test('adds a new file it is told to commit @slow', () => {
     const dir = repo();
     fs.writeFileSync(path.join(dir, 'c.txt'), 'c\n');
     const res = commit.main([requestFile('c.txt\n\nfeat: add c\n')], dir);
@@ -55,7 +55,7 @@ test('adds a new file it is told to commit', () => {
     assert.equal(git(dir, 'show', '--name-only', '--format=', 'HEAD'), 'c.txt');
 });
 
-test('a request it cannot trust commits nothing and says why', () => {
+test('a request it cannot trust commits nothing and says why @slow', () => {
     const dir = repo();
     const before = git(dir, 'rev-parse', 'HEAD');
     const bad = {

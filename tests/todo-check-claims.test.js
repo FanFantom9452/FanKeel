@@ -42,7 +42,7 @@ test('refs: and count: lines the tree agrees with pass', () => {
   assert.deepEqual(kinds(dir), []);
 });
 
-test('a refs: or count: the tree no longer agrees with fails, naming what it found', () => {
+test('a refs: or count: the tree no longer agrees with fails, naming what it found @slow', () => {
   const dir = project();
   entry(dir, 'refs: 0 `helper`\ncount: 23 `JSON.parse(fs.readFileSync` in `lib/`\n');
   assert.deepEqual(kinds(dir), ['docs/todo/c-1.md stale refs', 'docs/todo/c-1.md stale count']);

@@ -212,7 +212,7 @@ test('load: a TODO.md that cannot be read throws, and only a missing one is "no 
 
 // docs-check-1: an open entry is checked as a reference page is when it is
 // filed; a path that is gone refuses it and leaves no file behind.
-test('new refuses an entry naming a path the tree does not have, and leaves no file', () => {
+test('new refuses an entry naming a path the tree does not have, and leaves no file @slow', () => {
   const dir = project(true);
   lib.migrate(dir, NOW);
   fs.mkdirSync(path.join(dir, 'lib'), { recursive: true });

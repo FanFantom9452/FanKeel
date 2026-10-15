@@ -38,7 +38,7 @@ test('parseTap reads node --test totals and gives null where there are none', ()
   assert.deepEqual(suite.parseTap('ok\n'), { pass: null, fail: null, failed: [] });
 });
 
-test('runSuite records a green node --test run with its sha, and a red one as not ok', () => {
+test('runSuite records a green node --test run with its sha, and a red one as not ok @slow', () => {
   const dir = repo();
   const green = suite.runSuite(dir, suite.testCommand(dir));
   assert.equal(green.ok, true);
@@ -56,7 +56,7 @@ test('parseTap keeps the leaf name of each not ok line, not its failing parent, 
   assert.deepEqual(suite.parseTap(tap).failed, ['leaf one', 'a']);
 });
 
-test('a red run records the failing test names in suite.json, a green one none', () => {
+test('a red run records the failing test names in suite.json, a green one none @slow', () => {
   const dir = repo();
   assert.deepEqual(suite.runSuite(dir, 'node --test').failed, []);
   fs.writeFileSync(path.join(dir, 'a.test.js'), RED);
@@ -66,7 +66,7 @@ test('a red run records the failing test names in suite.json, a green one none',
   assert.deepEqual(JSON.parse(fs.readFileSync(file, 'utf8')).failed, ['a']);
 });
 
-test('blocker: no record where a suite is runnable; a red record; a record older than a code change; null otherwise', () => {
+test('blocker: no record where a suite is runnable; a red record; a record older than a code change; null otherwise @slow', () => {
   const dir = repo();
   const sha = git(dir, ['rev-parse', 'HEAD']);
   assert.match(suite.blocker(dir, DATA, dir), /^no suite record/);
@@ -113,7 +113,7 @@ test('scripts/suite.js needs a session', () => {
   assert.match(r.text, /--session <id> is required/);
 });
 
-test('an entry with its own worktree: suite.js records that tree\'s HEAD and blocker checks against it', () => {
+test('an entry with its own worktree: suite.js records that tree\'s HEAD and blocker checks against it @slow', () => {
   const dir = repo();
   const mainHead = git(dir, ['rev-parse', 'HEAD']);
   const rel = '.fankeel/worktrees/abcdef01';
@@ -174,7 +174,7 @@ test('suite.js prints "suite: <pass> pass, <fail> fail @ <sha8>" with the record
   assert.equal(Number(m[2]), rec.fail);
 });
 
-test('--tree runs the suite in a worktree the entry does not know, and blocker checks against that tree while it exists', () => {
+test('--tree runs the suite in a worktree the entry does not know, and blocker checks against that tree while it exists @slow', () => {
   const dir = repo();
   const wt = path.join(tmp('fankeel-suite-manual-'), 'wt');
   git(dir, ['worktree', 'add', '-q', '-b', 'manual', wt]);
@@ -201,7 +201,7 @@ test('--tree runs the suite in a worktree the entry does not know, and blocker c
   assert.match(suite.blocker(dir, DATA, dir), /^suite ran at [0-9a-f]{8}, and lib\.js changed since — run suite\.js again$/);
 });
 
-test('--tree is refused for an entry with its own worktree, and for a directory that is not this project\'s checkout; blocker ignores a record\'s tree in both cases', () => {
+test('--tree is refused for an entry with its own worktree, and for a directory that is not this project\'s checkout; blocker ignores a record\'s tree in both cases @slow', () => {
   const dir = repo();
   const rel = '.fankeel/worktrees/abcdef01';
   git(dir, ['worktree', 'add', '-q', '-b', 'fk/abcdef01', path.join(dir, rel)]);

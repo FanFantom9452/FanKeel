@@ -46,7 +46,7 @@ function edit(wt, text) {
 const merge = (dir) => land.main(['merge', '--session', A, '--root', dir]);
 const clean = (dir) => land.main(['clean', '--session', A, '--root', dir]);
 
-test('merge joins fk/<id8> with --no-ff: two parents, the task name, two trailers, no tag', () => {
+test('merge joins fk/<id8> with --no-ff: two parents, the task name, two trailers, no tag @slow', () => {
     const { dir, wt } = started();
     edit(wt, 'one\ntwo\nTHREE\n');
     const base = git(dir, 'rev-parse', 'HEAD');
@@ -61,7 +61,7 @@ test('merge joins fk/<id8> with --no-ff: two parents, the task name, two trailer
     assert.equal(git(dir, 'tag'), '');
 });
 
-test('uncommitted files in the worktree refuse the merge and are named', () => {
+test('uncommitted files in the worktree refuse the merge and are named @slow', () => {
     const { dir, wt } = started();
     fs.writeFileSync(path.join(wt, 'loose.txt'), 'x\n');
     const before = git(dir, 'rev-parse', 'HEAD');
@@ -71,7 +71,7 @@ test('uncommitted files in the worktree refuse the merge and are named', () => {
     assert.equal(git(dir, 'rev-parse', 'HEAD'), before);
 });
 
-test('a conflict is aborted: HEAD stays, and the worktree and its branch stay', () => {
+test('a conflict is aborted: HEAD stays, and the worktree and its branch stay @slow', () => {
     const { dir, wt } = started();
     edit(wt, 'one\ntwo\nworktree\n');
     fs.writeFileSync(path.join(dir, 'a.txt'), 'one\ntwo\nmain\n');
@@ -86,7 +86,7 @@ test('a conflict is aborted: HEAD stays, and the worktree and its branch stay', 
     assert.match(git(dir, 'branch', '--list', 'fk/aaaaaaaa'), /fk\/aaaaaaaa/);
 });
 
-test('a subject commit.format refuses merges nothing', () => {
+test('a subject commit.format refuses merges nothing @slow', () => {
     const { dir, wt } = started({ 'commit.format': '^(feat|fix): ' });
     edit(wt, 'one\ntwo\nTHREE\n');
     const before = git(dir, 'rev-parse', 'HEAD');
@@ -96,7 +96,7 @@ test('a subject commit.format refuses merges nothing', () => {
     assert.equal(git(dir, 'rev-parse', 'HEAD'), before);
 });
 
-test('clean after a merge removes the worktree and deletes the branch', () => {
+test('clean after a merge removes the worktree and deletes the branch @slow', () => {
     const { dir, wt } = started();
     edit(wt, 'one\ntwo\nTHREE\n');
     assert.equal(merge(dir).code, 0);

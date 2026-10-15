@@ -48,7 +48,7 @@ function request(body) {
     return file;
 }
 
-test('a subject matching commit.format commits', () => {
+test('a subject matching commit.format commits @slow', () => {
     const dir = repo(FORMAT);
     const res = commit.main([request('a.txt\n\nfeat: change a\n')], dir);
     assert.ok(!res.code, res.text);
@@ -56,7 +56,7 @@ test('a subject matching commit.format commits', () => {
     assert.equal(git(dir, 'log', '-1', '--format=%s'), 'feat: change a');
 });
 
-test('a subject that does not match commits nothing, says which and why, and keeps the file', () => {
+test('a subject that does not match commits nothing, says which and why, and keeps the file @slow', () => {
     const dir = repo(FORMAT);
     const before = git(dir, 'rev-parse', 'HEAD');
     const file = request('a.txt\n\nchange a\n\nbody\n');
@@ -68,7 +68,7 @@ test('a subject that does not match commits nothing, says which and why, and kee
     assert.ok(fs.existsSync(file));
 });
 
-test('one bad block in a batch refuses the whole file before the first block commits', () => {
+test('one bad block in a batch refuses the whole file before the first block commits @slow', () => {
     const dir = repo(FORMAT);
     const before = git(dir, 'rev-parse', 'HEAD');
     const res = commit.main([request('a.txt\n\nfeat: change a\n---\nb.txt\n\nchange b\n')], dir);
@@ -77,14 +77,14 @@ test('one bad block in a batch refuses the whole file before the first block com
     assert.equal(git(dir, 'rev-parse', 'HEAD'), before);
 });
 
-test('with commit.format unset, any subject commits as before', () => {
+test('with commit.format unset, any subject commits as before @slow', () => {
     const dir = repo();
     const res = commit.main([request('a.txt\n\nchange a\n')], dir);
     assert.ok(!res.code, res.text);
     assert.equal(git(dir, 'log', '-1', '--format=%s'), 'change a');
 });
 
-test('a profile.json that does not parse still commits, and says so on a line after the range', () => {
+test('a profile.json that does not parse still commits, and says so on a line after the range @slow', () => {
     const dir = repo();
     fs.mkdirSync(path.join(dir, '.fankeel'), { recursive: true });
     fs.writeFileSync(path.join(dir, '.fankeel', 'profile.json'), '{ "commit.format": ');
@@ -131,7 +131,7 @@ test('a commit.format mismatch carries the profile notice when another layer doe
     assert.equal(lines.length, 2, res.text);
 });
 
-test('a worktree conflict carries the profile notice as its last line', () => {
+test('a worktree conflict carries the profile notice as its last line @slow', () => {
     const dir = tmp('fankeel-commit-format-wt-');
     git(dir, 'init', '-q');
     git(dir, 'config', 'user.email', 'test@example.invalid');

@@ -44,7 +44,7 @@ function stashAndDrop(wt) {
     if (git(wt, 'stash', 'list')) git(wt, 'stash', 'drop');
 }
 
-test('pin.sh commits stage.agents, so a stash push -u and drop leaves it pinned', () => {
+test('pin.sh commits stage.agents, so a stash push -u and drop leaves it pinned @slow', () => {
     const wt = worktree();
     const sha = pin(wt, 'false');
     assert.equal(sha, git(wt, 'rev-parse', 'HEAD'), 'pin.sh prints the sha holding the pin');
@@ -53,7 +53,7 @@ test('pin.sh commits stage.agents, so a stash push -u and drop leaves it pinned'
     assert.equal(shown(wt), 'false');
 });
 
-test('control: the 09-25 sequence — profile set, no commit — is back at BASE after the same stash and drop', () => {
+test('control: the 09-25 sequence — profile set, no commit — is back at BASE after the same stash and drop @slow', () => {
     const wt = worktree();
     task(wt, 'profile', 'set', 'stage.agents', 'false');
     assert.equal(shown(wt), 'false', 'the set itself took');
@@ -61,7 +61,7 @@ test('control: the 09-25 sequence — profile set, no commit — is back at BASE
     assert.equal(shown(wt), 'survey', 'the stash took the uncommitted pin back to BASE');
 });
 
-test('pin.sh twice with the same value exits 0 and makes no second commit', () => {
+test('pin.sh twice with the same value exits 0 and makes no second commit @slow', () => {
     const wt = worktree();
     const first = pin(wt, 'false');
     assert.equal(pin(wt, 'false'), first);

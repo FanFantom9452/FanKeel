@@ -22,7 +22,7 @@ function repo() {
   return { root, git };
 }
 
-test('a clean repository is clean', () => {
+test('a clean repository is clean @slow', () => {
   const { root } = repo();
   const result = scan(root);
   assert.equal(result.repo, true);
@@ -31,7 +31,7 @@ test('a clean repository is clean', () => {
   assert.match(report(result), /Nothing undecided and no spent worktrees/);
 });
 
-test('untracked and unignored is a defect; ignored is not', () => {
+test('untracked and unignored is a defect; ignored is not @slow', () => {
   const { root, git } = repo();
   fs.mkdirSync(path.join(root, 'scratch'), { recursive: true });
   fs.writeFileSync(path.join(root, 'scratch', 'note.txt'), 'x');
@@ -49,7 +49,7 @@ test('untracked and unignored is a defect; ignored is not', () => {
   assert.match(report(result), /nobody has decided/);
 });
 
-test('a parent matched by no pattern, holding only ignored content, is weight and not a decision', () => {
+test('a parent matched by no pattern, holding only ignored content, is weight and not a decision @slow', () => {
   const { root, git } = repo();
   // `full/` is matched by nothing; everything under it is. `wrap/` is the
   // control for the same shape — one file in it is not ignored, so it stays a
@@ -77,7 +77,7 @@ test('a parent matched by no pattern, holding only ignored content, is weight an
   assert.equal(defects(result), 1, 'wrap/ alone');
 });
 
-test('an empty directory is context, not a defect, and only the topmost', () => {
+test('an empty directory is context, not a defect, and only the topmost @slow', () => {
   const { root } = repo();
   fs.mkdirSync(path.join(root, 'hollow', 'one', 'two'), { recursive: true });
   fs.mkdirSync(path.join(root, 'empty2'), { recursive: true });
@@ -116,7 +116,7 @@ test('sizeOf says "at least" when it stopped early', () => {
   assert.equal(stopped.bytes, 30, 'one directory of the two');
 });
 
-test('a worktree whose branch is merged is spent', () => {
+test('a worktree whose branch is merged is spent @slow', () => {
   const { root, git } = repo();
   git(['branch', 'done']);
   const where = path.join(root, '.claude', 'worktrees', 'done');

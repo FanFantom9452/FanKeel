@@ -246,7 +246,7 @@ test('the scanner reads one project of the workspace when told which', () => {
     assert.match(one, /web\/src\/App\.jsx/);
 });
 
-test('a relative --root means the same directory in all eight scripts', () => {
+test('a relative --root means the same directory in all eight scripts @slow', () => {
     const workspace = tmp('fankeel-root-agree-');
     fs.mkdirSync(path.join(workspace, '.fankeel', 'sessions'), { recursive: true });
     fs.mkdirSync(path.join(workspace, 'alpha'), { recursive: true });

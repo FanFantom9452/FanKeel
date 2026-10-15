@@ -153,7 +153,7 @@ const V4_PIN = {
     en: '6f7bf819bd05b666e93c8579eabd3252e5cf19a91fa0a1c85ba26e7dad4d0659',
 };
 // red when: any draw call of promo30v4 in any of frames 0..3599 differs (a draw constant in v4 or a helper it shares with v5 changes), in zh or en
-test('promo30v4 draw calls are byte-identical to the hashes it drew before v5', () => {
+test('promo30v4 draw calls are byte-identical to the hashes it drew before v5 @slow', () => {
     for (const lang of ['zh', 'en']) {
         const P = T.palette(() => '', lang);
         const h = crypto.createHash('sha256');

@@ -215,7 +215,7 @@ test('a workspace is not broken down, because two targets would be a wall', () =
   assert.doesNotMatch(out, /inside it:/);
 });
 
-test('a root that is itself one project reports as one project', () => {
+test('a root that is itself one project reports as one project @slow', () => {
   const root = workspace({ 'web/a.js': 'x', 'api/b.py': 'x' });
   fs.mkdirSync(path.join(root, '.git'), { recursive: true });
   const out = run(['--root', root]);
@@ -269,7 +269,7 @@ test('a project with no commit date sorts last rather than first', () => {
   assert.deepEqual(result.entries.map((e) => e.rel), ['alpha', 'beta']);
 });
 
-test('a repository with no commits is a repository, not "no git"', () => {
+test('a repository with no commits is a repository, not "no git" @slow', () => {
   const root = workspace({ 'solo/a.js': 'x' });
   execFileSync('git', ['init', '-q'], { cwd: path.join(root, 'solo'), stdio: 'ignore' });
 
@@ -295,7 +295,7 @@ test('topLevel counts by first segment and marks directories with a slash', () =
   assert.deepEqual(rows, [['README.md', 1], ['api/', 1], ['web/', 2]]);
 });
 
-test('signposts are reported, and their absence is reported too', () => {
+test('signposts are reported, and their absence is reported too @slow', () => {
   const root = workspace({ 'CLAUDE.md': 'x', 'README.md': 'x', 'web/a.js': 'x' });
   fs.mkdirSync(path.join(root, '.git'), { recursive: true });
   const out = run(['--root', root]);
@@ -348,7 +348,7 @@ test('it writes nothing — orientation that changes the tree is not orientation
   assert.equal(fs.existsSync(path.join(root, '.fankeel')), false);
 });
 
-test('a real repository reports its branch, and git never speaks on stderr', () => {
+test('a real repository reports its branch, and git never speaks on stderr @slow', () => {
   const root = workspace({ 'a.js': 'x' });
   const opts = { cwd: root, stdio: ['ignore', 'ignore', 'ignore'] };
   try {
@@ -455,7 +455,7 @@ test('a root of nothing but skipped extensions says how many, not that it is unr
 // header excludes subtrees — a submodule is one entry standing for a whole
 // repository, not one file — and orient counted entries. It read `11 files`
 // where survey read `9`.
-test('the file count matches the one survey puts in its header', () => {
+test('the file count matches the one survey puts in its header @slow', () => {
   const root = workspace({ 'a.js': 'x\n', 'b.js': 'x\n', 'c.js': 'x\n' });
   execFileSync('git', ['init', '-q'], { cwd: root });
   // Both shapes git reports a nested repository in: a bare name for a submodule,

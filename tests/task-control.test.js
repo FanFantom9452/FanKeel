@@ -837,7 +837,7 @@ test('an explicit --class overrides class.default and carries no (profile) tag',
   assert.equal(/\(profile\)/.test(out.out), false);
 });
 
-test('start with no profile.json prints suggest plus a runnable profile set line', () => {
+test('start with no profile.json prints suggest plus a runnable profile set line @slow', () => {
   const dir = root();
   const g = (...a) => require('node:child_process').execFileSync('git', a, { cwd: dir, stdio: 'ignore' });
   g('init', '-q', '-b', 'main');

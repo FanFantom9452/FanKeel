@@ -90,7 +90,7 @@ test('a directory that is not a repository has no answer, not an empty one', () 
   assert.equal(dirty.dirtyPaths(''), null);
 });
 
-test('a file written behind the hooks is dirty', () => {
+test('a file written behind the hooks is dirty @slow', () => {
   const dir = repo();
   writeBehindTheHooks(dir, 'api/routes.js', 'added\n');
   fs.appendFileSync(path.join(dir, 'kept.js'), 'two\n');
@@ -102,7 +102,7 @@ test('a file written behind the hooks is dirty', () => {
 // answer wanted. Pinned because nothing else in this file says so, and this is
 // the test that fails the day `dirtyPaths` starts reporting a path git itself
 // was told to ignore.
-test('a write to a gitignored path is invisible, because git says so', () => {
+test('a write to a gitignored path is invisible, because git says so @slow', () => {
   const dir = repo();
   fs.writeFileSync(path.join(dir, '.gitignore'), 'build/\n');
   git(dir, ['add', '-A']);
@@ -111,7 +111,7 @@ test('a write to a gitignored path is invisible, because git says so', () => {
   assert.deepEqual(dirty.dirtyPaths(dir), []);
 });
 
-test('a file dirtied before the cutoff is not this task\'s', () => {
+test('a file dirtied before the cutoff is not this task\'s @slow', () => {
   const dir = repo();
   writeBehindTheHooks(dir, 'old.js', 'yesterday\n');
   const then = Date.now() - 48 * 3600e3;
@@ -124,7 +124,7 @@ test('writtenSince has no answer outside a repository either', () => {
   assert.equal(dirty.writtenSince(tmp(), Date.now()), null);
 });
 
-test('a write no hook saw is seen, not claimed', () => {
+test('a write no hook saw is seen, not claimed @slow', () => {
   const dir = repo();
   seed(dir);
   writeBehindTheHooks(dir, 'api/routes.js', 'sed did this\n');

@@ -120,7 +120,7 @@ test('a document newer than its subject is not drift', () => {
 // A date gap alone cannot say which side is wrong, so the row hands over what
 // actually happened to the target after the page's date — the commit subjects
 // a person needs to route the finding, rather than a default blame on the page.
-test('a drift row carries the commit subjects that touched its target after the page', () => {
+test('a drift row carries the commit subjects that touched its target after the page @slow', () => {
   const root = withTree(tree({
     'docs/01-architecture.md': { body: 'the badge is written by `lib/badge.js`\n', age: 60 },
     'lib/badge.js': { body: 'x\n', age: 60 },
@@ -435,7 +435,7 @@ test('a landed plan touched today is held back by the settle period', () => {
 // stayed open for good. A path git has seen deleted is the plan's work done;
 // one that never existed still holds its plan open. The commits are back-dated
 // because with a repository the dates come from the log, not from mtime.
-test('a plan naming a file git has seen deleted can land; one never built still cannot', () => {
+test('a plan naming a file git has seen deleted can land; one never built still cannot @slow', () => {
   const root = withTree(tree({
     'docs/plans/2026-01-01-x.md': { body: 'keep `lib/badge.js`, delete `lib/old.js`\n', age: 60 },
     'docs/plans/2026-01-02-y.md': { body: 'keep `lib/badge.js`, add `lib/future.js`\n', age: 60 },

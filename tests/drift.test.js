@@ -129,7 +129,7 @@ const DRIFT = path.join(ROOT, 'bench', 'drift');
 const SCRIPT = path.join(ROOT, 'scripts', 'bench.js');
 const cli = require('../scripts/bench.js');
 
-test('bench/drift: check.sh passes its pass control and fails each fail control on its own class', () => {
+test('bench/drift: check.sh passes its pass control and fails each fail control on its own class @slow', () => {
     assert.deepEqual(bench.selftest(DRIFT, { ...tmp.selfOpts(bench.posix(ROOT)), classes: true }), []);
 });
 

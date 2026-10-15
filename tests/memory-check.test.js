@@ -82,7 +82,7 @@ test('scan() does not report a path whose first segment this project never track
   assert.equal(result.findings.filter((f) => f.tag === 'dead').length, 0);
 });
 
-test('scan() never reports a .fankeel/ citation, even when .fankeel is tracked', () => {
+test('scan() never reports a .fankeel/ citation, even when .fankeel is tracked @slow', () => {
   const root = tmpProject();
   fs.mkdirSync(path.join(root, '.fankeel'), { recursive: true });
   fs.writeFileSync(path.join(root, '.fankeel', 'docs.json'), '{}');
@@ -174,7 +174,7 @@ test('citations extracts a path or path:line for a tracked root, skipping an unt
   ]);
 });
 
-test('lastCommit reads the committer date of the last commit touching a path, and null otherwise', () => {
+test('lastCommit reads the committer date of the last commit touching a path, and null otherwise @slow', () => {
   const root = tmpProject();
   initGit(root);
   fs.mkdirSync(path.join(root, 'lib'), { recursive: true });
@@ -186,7 +186,7 @@ test('lastCommit reads the committer date of the last commit touching a path, an
   assert.equal(lastCommit(root, 'lib/never-committed.js'), null);
 });
 
-test('scan() flags a memory entry whose modified predates the last commit to a path it cites', () => {
+test('scan() flags a memory entry whose modified predates the last commit to a path it cites @slow', () => {
   const root = tmpProject();
   initGit(root);
   fs.mkdirSync(path.join(root, 'lib'), { recursive: true });
@@ -203,7 +203,7 @@ test('scan() flags a memory entry whose modified predates the last commit to a p
   assert.equal(result.findings.length, 0, 'a stale citation is not a failing finding');
 });
 
-test('scan() does not flag a memory entry modified after the path it cites', () => {
+test('scan() does not flag a memory entry modified after the path it cites @slow', () => {
   const root = tmpProject();
   initGit(root);
   fs.mkdirSync(path.join(root, 'lib'), { recursive: true });
@@ -220,7 +220,7 @@ test('scan() does not flag a memory entry modified after the path it cites', () 
   assert.equal(result.stale.length, 0);
 });
 
-test('report() counts stale entries, not the citations they carry', () => {
+test('report() counts stale entries, not the citations they carry @slow', () => {
   const root = tmpProject();
   initGit(root);
   fs.mkdirSync(path.join(root, 'lib'), { recursive: true });

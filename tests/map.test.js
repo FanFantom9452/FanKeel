@@ -197,7 +197,7 @@ test('the map declares itself generated so the sweep skips it', () => {
   assert.match(text, /source_of_truth: generated-by scripts\/map\.js/);
 });
 
-test('a worktree checked out under a dot-directory is not the project', () => {
+test('a worktree checked out under a dot-directory is not the project @slow', () => {
   const root = tmp('fankeel-map-git-');
   const git = (args) => execFileSync('git', args, { cwd: root, stdio: 'ignore' });
   git(['init', '-q']);

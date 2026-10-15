@@ -54,7 +54,7 @@ test('a fact with no path:line, or no text, is refused and writes nothing', () =
   assert.equal(fs.existsSync(f), false);
 });
 
-test('the CLI finds the task by session, stamps HEAD\'s short sha, and show reads it back', () => {
+test('the CLI finds the task by session, stamps HEAD\'s short sha, and show reads it back @slow', () => {
   const root = tmp('fankeel-ctx-root-');
   const git = (args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' });
   git(['init', '-q']);

@@ -180,7 +180,7 @@ function repo(subjects) {
 }
 const TWO = ['chore: 0.33.0 — first', 'feat: middle work', 'chore: 0.34.0 — second', 'fix: after both'];
 
-test('--since lists every commit after that release, releases between included', () => {
+test('--since lists every commit after that release, releases between included @slow', () => {
   const root = repo(TWO);
   const found = version.changes(root, '0.33.0');
   assert.equal(found.since.subject, 'chore: 0.33.0 — first');
@@ -190,7 +190,7 @@ test('--since lists every commit after that release, releases between included',
   assert.match(r.text, /3 commit\(s\) since chore: 0\.33\.0/);
 });
 
-test('without --since the cut is still the newest release commit', () => {
+test('without --since the cut is still the newest release commit @slow', () => {
   const r = version.main(['--changes'], repo(TWO));
   assert.equal(r.code, 0, r.text);
   assert.match(r.text, /1 commit\(s\) since chore: 0\.34\.0/);
@@ -198,7 +198,7 @@ test('without --since the cut is still the newest release commit', () => {
 });
 
 // A number that is only a prefix of a real one is not that release: 0.3.0 must not match 0.33.0.
-test('a release no commit names exits 1 with a message, and a prefix is not a match', () => {
+test('a release no commit names exits 1 with a message, and a prefix is not a match @slow', () => {
   const root = repo(TWO);
   for (const unknown of ['9.9.9', '0.3.0']) {
     const r = version.main(['--changes', '--since', unknown], root);

@@ -71,7 +71,7 @@ test('FANKEEL_GIT_TIMEOUT lets a slow git finish instead of answering null', () 
   assert.deepEqual(got, []);
 });
 
-test('logicalFile waits out a slow git under FANKEEL_GIT_TIMEOUT instead of cutting it at 2.5s', () => {
+test('logicalFile waits out a slow git under FANKEEL_GIT_TIMEOUT instead of cutting it at 2.5s @slow', () => {
   const guard = require('../lib/guard.js');
   const root = mkTmp('fankeel-guard-root-');
   const elsewhere = mkTmp('fankeel-guard-else-');

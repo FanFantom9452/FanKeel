@@ -51,7 +51,7 @@ const FLAT = {
   'docs/judgements/2026-01-03-j.md': '# j\n\nAsked about [why](../decisions/why.md).\n',
 };
 
-test('a flat tree moved to audience: the table has a row per page, and docs-check finds nothing dead after', () => {
+test('a flat tree moved to audience: the table has a row per page, and docs-check finds nothing dead after @slow', () => {
   const root = repo(FLAT);
   assert.deepEqual(scan(root, []).findings, [], 'the fixture is clean before the move, or the zero after it proves nothing');
   const pages = audit.sweep(root, 14, Date.now()).markdown;
@@ -85,7 +85,7 @@ test('a flat tree moved to audience: the table has a row per page, and docs-chec
   assert.equal(docs.roleOf(tree, 'skills/x/SKILL.md'), 'reference', 'a bucket outside docs/ stays declared');
 });
 
-test('a page outside docs/ that links in is rewritten too, and a move without the rewrite is what the check catches', () => {
+test('a page outside docs/ that links in is rewritten too, and a move without the rewrite is what the check catches @slow', () => {
   const files = Object.assign({}, FLAT, { 'skills/x/SKILL.md': '# x\n\nRead [the pipeline](../../docs/pipeline.md), `docs/pipeline.md`; plans live in `docs/plans/`.\n' });
   const root = repo(files);
   move.applyMoves(root, move.planMoves(root, 'audience', {}), 'audience');

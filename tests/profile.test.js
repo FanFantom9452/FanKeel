@@ -60,7 +60,7 @@ test('write refuses an unknown key and an unknown value, and merges into the fil
     assert.deepEqual(JSON.parse(fs.readFileSync(file, 'utf8')), { 'land.push': false, guard: 'deny' });
 });
 
-test('suggest reads three local merges and no remote as merge, no push, and writes nothing', () => {
+test('suggest reads three local merges and no remote as merge, no push, and writes nothing @slow', () => {
     const d = dir();
     const g = (...a) => execFileSync('git', a, { cwd: d, stdio: 'ignore' });
     g('init', '-q', '-b', 'main');
@@ -190,7 +190,7 @@ test('suggest also counts this registry\'s own land records for the same project
 
 // docs/90-agent/plans/2026-10-10-workflow-gaps-design.md §5: `direct` is what
 // happened, not an answer land.integration can hold.
-test('suggest leaves direct land records out of land.integration', () => {
+test('suggest leaves direct land records out of land.integration @slow', () => {
     const d = dir();
     const g = (...a) => execFileSync('git', a, { cwd: d, stdio: 'ignore' });
     g('init', '-q', '-b', 'main');
@@ -527,7 +527,7 @@ test('init.skip, sensitive.mode and sensitive.review are keys, builtin false, wa
     assert.equal(profile.parseValue('init.skip', 'true').value, true);
 });
 
-test('suggest offers class.default once three class records agree by a majority, and says what it counted', () => {
+test('suggest offers class.default once three class records agree by a majority, and says what it counted @slow', () => {
     const d = dir();
     const g = (...a) => execFileSync('git', a, { cwd: d, stdio: 'ignore' });
     g('init', '-q', '-b', 'main');
@@ -636,7 +636,7 @@ test('lean and manual ignore history, balanced with none writes its own values, 
 });
 
 // docs/90-agent/plans/2026-10-15-init-quick-setup-design.md, Proves it done.
-test('profile preset balanced --project writes land.integration pr from a history of pull requests, and says so', () => {
+test('profile preset balanced --project writes land.integration pr from a history of pull requests, and says so @slow', () => {
     const d = dir();
     const cfg = path.join(d, 'cfg');
     const app = path.join(d, 'app');
@@ -662,7 +662,7 @@ test('profile preset balanced --project writes land.integration pr from a histor
     assert.match(out, /^ {2}history: merges: 0 local, 3 pull request$/m);
 });
 
-test('profile preset refuses a name that is not a preset, and --default reads no history', () => {
+test('profile preset refuses a name that is not a preset, and --default reads no history @slow', () => {
     const d = dir();
     const cfg = path.join(d, 'cfg');
     const who = ['-c', 'user.name=t', '-c', 'user.email=t@t'];

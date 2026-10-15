@@ -148,7 +148,7 @@ function pngsUnder(dir) {
     return fs.readdirSync(dir, { recursive: true }).filter((f) => f.endsWith('.png') && !f.split(path.sep).includes('profiles')).length;
 }
 
-test('a render.json of two roles and two pages writes four cells and an index that counts them', (t) => {
+test('a render.json of two roles and two pages writes four cells and an index that counts them @slow', (t) => {
     if (!findBrowser()) {
         t.skip('no Chromium-family browser on this machine (FANKEEL_BROWSER, Edge, Chrome, or an ms-playwright cache)');
         return;

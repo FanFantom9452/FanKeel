@@ -72,7 +72,7 @@ test('the file on disk prints the line to copy; the served page a form carrying 
     global.window.STATION.serve = false;
 });
 
-test('POST /todo writes a clean line under Needs a decision, and refuses with the rule todo-check names', async () => {
+test('POST /todo writes a clean line under Needs a decision, and refuses with the rule todo-check names @slow', async () => {
     const f = fixture();
     const { serve } = require('../scripts/station.js');
     const s = await serve({ configDir: f.cfg, roots: [f.r1], port: 0, idleMs: 60e3, open: false });

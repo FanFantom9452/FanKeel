@@ -51,7 +51,7 @@ function runCli(dir, file) {
     });
 }
 
-test('a held .git/index.lock: commit.js exits 1 with one line naming it, and the commit file stays', () => {
+test('a held .git/index.lock: commit.js exits 1 with one line naming it, and the commit file stays @slow', () => {
     const dir = repo();
     fs.writeFileSync(path.join(dir, 'a.txt'), 'a2\n');
     const before = git(dir, 'rev-parse', 'HEAD');
@@ -65,7 +65,7 @@ test('a held .git/index.lock: commit.js exits 1 with one line naming it, and the
     assert.ok(fs.existsSync(file), 'left for the agent to resend');
 });
 
-test('two commit.js at once on different paths: each prints a range or one commit.js: line, never nothing', async (t) => {
+test('two commit.js at once on different paths: each prints a range or one commit.js: line, never nothing @slow', async (t) => {
     const dir = repo();
     fs.writeFileSync(path.join(dir, 'a.txt'), 'a2\n');
     fs.writeFileSync(path.join(dir, 'b.txt'), 'b2\n');
@@ -92,7 +92,7 @@ test('two commit.js at once on different paths: each prints a range or one commi
     assert.ok(runs.some((r) => r.code === 0), 'neither landed');
 });
 
-test('two worktrees changing one line: the second merge stops on a conflict, and --abort puts main back', () => {
+test('two worktrees changing one line: the second merge stops on a conflict, and --abort puts main back @slow', () => {
     const dir = repo();
     const wa = path.join(tmp('fankeel-collisions-wt-'), 'a');
     const wb = path.join(tmp('fankeel-collisions-wt-'), 'b');

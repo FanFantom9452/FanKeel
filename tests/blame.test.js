@@ -43,19 +43,19 @@ const C = '- gamma entry about docs archive being found by grep';
 // Regrouping TODO.md by topic moves bullets without touching a word of them.
 // Without move detection the moved one reads as written in February, and
 // orient offers it as the newest entry when nobody has edited it.
-test('blameTimes keeps a moved line on the commit that wrote it', () => {
+test('blameTimes keeps a moved line on the commit that wrote it @slow', () => {
     const dir = repo([A, B, C]);
     recommit(dir, [B, C, A]);
     assert.deepEqual(blameTimes(dir, 'TODO.md'), [Date.parse(JAN), Date.parse(JAN), Date.parse(JAN)]);
 });
 
-test('blameTimes still dates an edited line to the edit', () => {
+test('blameTimes still dates an edited line to the edit @slow', () => {
     const dir = repo([A, B, C]);
     recommit(dir, [A, B.replace('placement', 'placement, moved to the top'), C]);
     assert.deepEqual(blameTimes(dir, 'TODO.md'), [Date.parse(JAN), Date.parse(FEB), Date.parse(JAN)]);
 });
 
-test('git returns stdout in a repository and null outside one', () => {
+test('git returns stdout in a repository and null outside one @slow', () => {
     const dir = repo([A]);
     assert.match(gitOut(dir, ['log', '--format=%s']), /^one\n$/);
     assert.equal(gitOut(mkTmp('fankeel-notrepo-'), ['rev-parse', 'HEAD']), null);

@@ -376,7 +376,7 @@ test('the range is absent from the line when none is given', () => {
 // One verifier per row, each pinned at both ends. The rows do not overlap, so
 // they may go out in one response -- which is the whole reason the range is
 // recorded rather than re-derived from git at verify time.
-test('ranges prints one pinned range per completed task', () => {
+test('ranges prints one pinned range per completed task @slow', () => {
   const dir = root();
   execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', 'init'], { cwd: dir, encoding: 'utf8' });
   execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', '--range', 'aaaaaaa..bbbbbbb', 'complete', '1', 'first'], { cwd: dir, encoding: 'utf8' });
@@ -535,7 +535,7 @@ function commit(dir, name) {
 // here -- c0..c2 is the task, c1..c2 is the fix, and c1..c2's one commit is a
 // strict subset of c0..c2's two -- so the overlap is read back from git
 // rather than asserted.
-test('ranges names a task row that fully contains a fix row, and drops the disjoint claim for it', () => {
+test('ranges names a task row that fully contains a fix row, and drops the disjoint claim for it @slow', () => {
   const dir = root();
   git(dir, ['init', '-q']);
   git(dir, ['config', 'user.email', 'test@example.invalid']);
@@ -570,7 +570,7 @@ function freshRepo(dir) {
 // verifier" over a pair it had just said has no container. c0..c2 and
 // c1..c3 over four linear commits share {c2} while c1 sits outside the first
 // range and c3 outside the second, so neither is a subset of the other.
-test('ranges names a pair that crosses without containment, and does not send the reader after a container that is not there', () => {
+test('ranges names a pair that crosses without containment, and does not send the reader after a container that is not there @slow', () => {
   const dir = root();
   freshRepo(dir);
   const c0 = commit(dir, 'c0.txt');
@@ -591,7 +591,7 @@ test('ranges names a pair that crosses without containment, and does not send th
 // are one range wearing two labels, not a container and a containee, and
 // "fully contains" is the wrong word for it — the old flat remedy used it
 // regardless of which of the three shapes was actually found.
-test('ranges names two rows over the exact same range as one range recorded twice, not a container and a containee', () => {
+test('ranges names two rows over the exact same range as one range recorded twice, not a container and a containee @slow', () => {
   const dir = root();
   freshRepo(dir);
   const c0 = commit(dir, 'c0.txt');
@@ -611,7 +611,7 @@ test('ranges names two rows over the exact same range as one range recorded twic
 // unverified rather than folding it into the disjoint claim — which is what
 // "the rows do not overlap" would say here, wrongly, since nothing checked
 // that range at all.
-test('ranges names a range git cannot read back as unverified rather than assuming it is disjoint', () => {
+test('ranges names a range git cannot read back as unverified rather than assuming it is disjoint @slow', () => {
   const dir = root();
   freshRepo(dir);
   const c0 = commit(dir, 'c0.txt');

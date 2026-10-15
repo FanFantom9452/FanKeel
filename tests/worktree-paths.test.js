@@ -42,7 +42,7 @@ test('an edit inside the worktree is claimed as lib/x.js', () => {
   assert.deepEqual(registry.claimsOf(registry.readSession(root, A)), ['lib/x.js']);
 });
 
-test('git is asked about the worktree, and answers in logical paths', () => {
+test('git is asked about the worktree, and answers in logical paths @slow', () => {
   const root = tmp('fankeel-wt-dirty-');
   git(root, ['init', '-q']);
   git(root, ['config', 'user.email', 'test@example.invalid']);
@@ -78,7 +78,7 @@ test('logicalFile treats an Agent-isolation worktree the same as the main tree',
   assert.equal(guard.logicalFile(root, path.join(root, 'lib', 'x.js')), 'lib/x.js');
 });
 
-test('logicalFile maps a linked worktree opened outside the root back to the main tree', () => {
+test('logicalFile maps a linked worktree opened outside the root back to the main tree @slow', () => {
   const root = tmp('fankeel-wt-linked-main-');
   git(root, ['init', '-q']);
   git(root, ['config', 'user.email', 'test@example.invalid']);
@@ -94,7 +94,7 @@ test('logicalFile maps a linked worktree opened outside the root back to the mai
   assert.equal(guard.logicalFile(root, file), 'lib/z.js');
 });
 
-test('logicalFile returns null for a file in a worktree belonging to a different repository', () => {
+test('logicalFile returns null for a file in a worktree belonging to a different repository @slow', () => {
   const root = tmp('fankeel-wt-linked-root-');
   git(root, ['init', '-q']);
   const other = tmp('fankeel-wt-other-');

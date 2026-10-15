@@ -424,7 +424,7 @@ test('selftestRole passes an item whose controls draw their own classes, and nam
     assert.deepEqual(bench.selftestRole(path.join(project({}), 'p'), selfOpts()), ['p: no items under items/']);
 });
 
-test('selftestRole runs every seed it is given, and each control sees that seed', () => {
+test('selftestRole runs every seed it is given, and each control sees that seed @slow', () => {
     const root = project({
         'items/easy-s/input.md': 'Q\n',
         'items/easy-s/setup.sh': 'echo "$BENCH_SEED" > seed.txt\n',

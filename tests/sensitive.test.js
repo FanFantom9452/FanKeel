@@ -54,18 +54,18 @@ function hook(dir, tool, command) {
   }).trim();
 }
 
-test('scan names every hit by path, line and listed word, case aside', () => {
+test('scan names every hit by path, line and listed word, case aside @slow', () => {
   const dir = repo(['ACME']);
   assert.deepEqual(sensitive.scan(dir, ['docs/plan.md', 'base.txt']), [{ path: 'docs/plan.md', line: 3, word: 'ACME' }]);
 });
 
-test('warn: the commit goes ahead and additionalContext names path:line', () => {
+test('warn: the commit goes ahead and additionalContext names path:line @slow', () => {
   const out = JSON.parse(hook(repo(['ACME'], 'warn'), 'Bash', 'git commit -m "plan"'));
   assert.equal(out.hookSpecificOutput.permissionDecision, undefined);
   assert.match(out.hookSpecificOutput.additionalContext, /docs\/plan\.md:3/);
 });
 
-test('block: denied, through PowerShell as through Bash', () => {
+test('block: denied, through PowerShell as through Bash @slow', () => {
   for (const tool of ['Bash', 'PowerShell']) {
     const out = JSON.parse(hook(repo(['ACME'], 'block'), tool, 'git commit -m "plan"'));
     assert.equal(out.hookSpecificOutput.permissionDecision, 'deny', tool);
@@ -73,7 +73,7 @@ test('block: denied, through PowerShell as through Bash', () => {
   }
 });
 
-test('an empty list says nothing in either mode, and neither does a command that is not a commit', () => {
+test('an empty list says nothing in either mode, and neither does a command that is not a commit @slow', () => {
   assert.equal(hook(repo([], 'warn'), 'Bash', 'git commit -m "plan"'), '');
   assert.equal(hook(repo([], 'block'), 'Bash', 'git commit -m "plan"'), '');
   assert.equal(hook(repo(['ACME'], 'block'), 'Bash', 'git status'), '');
@@ -84,7 +84,7 @@ test('a session with no fankeel entry is scanned too', () => {
   assert.equal(out.hookSpecificOutput.permissionDecision, 'deny');
 });
 
-test('commit.js refuses the block under block, and commits with a sensitive: line under warn', () => {
+test('commit.js refuses the block under block, and commits with a sensitive: line under warn @slow', () => {
   const req = (body) => {
     const file = path.join(tmp('fankeel-sensitive-req-'), 'build-commit.md');
     fs.writeFileSync(file, body);
@@ -103,7 +103,7 @@ test('commit.js refuses the block under block, and commits with a sensitive: lin
   assert.match(ok.text, /\nsensitive: docs\/plan\.md:3/);
 });
 
-test('a worktree block is scanned in the worktree, with the list from the main checkout', () => {
+test('a worktree block is scanned in the worktree, with the list from the main checkout @slow', () => {
   const req = (body) => {
     const file = path.join(tmp('fankeel-sensitive-req-'), 'build-commit.md');
     fs.writeFileSync(file, body);
@@ -167,7 +167,7 @@ test('a chained add of a file with a listed word is scanned before the add runs'
   }
 });
 
-test('a chained add of a directory, or of -A, or of . after a semicolon, is scanned', () => {
+test('a chained add of a directory, or of -A, or of . after a semicolon, is scanned @slow', () => {
   for (const command of ['git add docs && git commit -m x', 'git add -A && git commit -m x', 'git add . ; git commit -m x', 'git add --all || git commit -m x', 'git add -u\ngit commit -m x']) {
     const dir = loose(['ACME'], 'block');
     if (/-u/.test(command)) fs.writeFileSync(path.join(dir, 'base.txt'), 'base for acme\n');

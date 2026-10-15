@@ -84,7 +84,7 @@ test('without --print the map is still written', () => {
 // lib/, scripts/ and hooks/, inside the fifty rows MAX_TREE carries. The top
 // rows are checked against the tracked tree, so a directory added later
 // without a row fails here, and every entry file against the disk.
-test('this repository\'s README carries a tree the map reads whole, with no row left unfilled', () => {
+test('this repository\'s README carries a tree the map reads whole, with no row left unfilled @slow', () => {
   const ROOT = path.join(__dirname, '..');
   const out = execFileSync(process.execPath, [SCRIPT, '--print', '--root', ROOT], { encoding: 'utf8' });
   const lines = out.split(/\r?\n/);

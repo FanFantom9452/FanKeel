@@ -221,7 +221,7 @@ function liveRepo() {
     return cwd;
 }
 
-test('live mode: wait names the source line; an edit outside --src is put back; a failed rebuild is refused; a clean one rebuilds', async (t) => {
+test('live mode: wait names the source line; an edit outside --src is put back; a failed rebuild is refused; a clean one rebuilds @slow', async (t) => {
     const cwd = liveRepo();
     const view = path.join(cwd, 'src', 'view.js');
     const other = path.join(cwd, 'other.txt');
@@ -271,7 +271,7 @@ test('live mode: wait names the source line; an edit outside --src is put back; 
     assert.match(seen, /"type":"done","id":"r-0003"/);
 });
 
-test('live mode: a new untracked file outside --src is moved aside, not restored, and the --src edit stands', async (t) => {
+test('live mode: a new untracked file outside --src is moved aside, not restored, and the --src edit stands @slow', async (t) => {
     const cwd = liveRepo();
     const view = path.join(cwd, 'src', 'view.js');
     const stray = path.join(cwd, '.playwright-mcp', 'x.png');

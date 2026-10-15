@@ -22,7 +22,7 @@ test('every bench project names a title, arms the bench knows, and its three fil
 });
 
 for (const p of projects) {
-    test(p + ': check.sh passes every pass control and fails every fail control', () => {
+    test(p + ': check.sh passes every pass control and fails every fail control @slow', () => {
         assert.deepEqual(bench.selftest(path.join(BENCH, p), tmp.selfOpts(bench.posix(ROOT))), []);
     });
 }

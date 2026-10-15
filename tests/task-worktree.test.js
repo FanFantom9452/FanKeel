@@ -44,7 +44,7 @@ function run(dir, args) {
   }
 }
 
-test('profile worktree: true opens .fankeel/worktrees/<id8> on fk/<id8> and records it', () => {
+test('profile worktree: true opens .fankeel/worktrees/<id8> on fk/<id8> and records it @slow', () => {
   const dir = repo({ worktree: 'true' });
   const { out, code } = run(dir, ['start', '--session', A, '--task', 'own tree']);
   assert.equal(code, 0, out);
@@ -55,14 +55,14 @@ test('profile worktree: true opens .fankeel/worktrees/<id8> on fk/<id8> and reco
   assert.match(out, /worktree: \.fankeel\/worktrees\/aaaaaaaa \(fk\/aaaaaaaa\)/);
 });
 
-test('without the key, start opens no worktree', () => {
+test('without the key, start opens no worktree @slow', () => {
   const dir = repo(null);
   run(dir, ['start', '--session', A, '--task', 'shared tree']);
   assert.equal(registry.readSession(dir, A).worktree, undefined);
   assert.equal(fs.existsSync(path.join(dir, '.fankeel', 'worktrees')), false);
 });
 
-test('adopt carries the worktree across', () => {
+test('adopt carries the worktree across @slow', () => {
   const dir = repo({ worktree: 'true' });
   run(dir, ['start', '--session', A, '--task', 'own tree']);
   const { code, out } = run(dir, ['adopt', A, '--session', B]);
@@ -79,7 +79,7 @@ test('the block and a subagent brief both name the worktree', () => {
 
 // docs/99-archive/2026-10-02-worktree-habit-design.md §2: start decides
 // once, from the class it starts at; a later `route` up opens nothing.
-test('worktree=bounded opens for bounded and not for spike; worktree=architectural skips bounded', () => {
+test('worktree=bounded opens for bounded and not for spike; worktree=architectural skips bounded @slow', () => {
   const cases = [['bounded', 'spike', false], ['bounded', 'bounded', true], ['architectural', 'bounded', false], ['architectural', 'architectural', true]];
   for (const [value, cls, opens] of cases) {
     const dir = repo({ worktree: value });
@@ -89,7 +89,7 @@ test('worktree=bounded opens for bounded and not for spike; worktree=architectur
   }
 });
 
-test('a suggested commit.format prints as one quoted shell word', () => {
+test('a suggested commit.format prints as one quoted shell word @slow', () => {
   const dir = repo(null);
   for (const s of ['feat: a', 'fix(x): b', 'docs: c', 'chore: d']) git(dir, ['commit', '-q', '--allow-empty', '-m', s]);
   const { out } = run(dir, ['start', '--session', A, '--task', 't']);
