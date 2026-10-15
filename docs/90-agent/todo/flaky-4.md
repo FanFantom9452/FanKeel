@@ -1,7 +1,7 @@
 ---
 label: flaky
 title: task-worktree 偶發失敗
-description: tests/task-worktree.test.js「without the key, start opens no worktree」整套測試中失敗一次，這個測試沒有時間上限。
+description: task-worktree.test.js「without the key, start opens no worktree」整套測試中失敗一次，這個測試沒有時間上限。
 state: ready
 link: tests/task-worktree.test.js
 ---

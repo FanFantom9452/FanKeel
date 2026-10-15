@@ -1,7 +1,7 @@
 ---
 label: flaky
 title: station-cli 首掃偶發失敗
-description: tests/station-cli.test.js「the first run scans once…」帶 20 秒逾時掃磁碟，整套測試中失敗一次，單跑 3/3 綠。
+description: station-cli.test.js「the first run scans once…」帶 20 秒逾時掃磁碟，整套測試中失敗一次，單跑 3/3 綠。
 state: ready
 link: tests/station-cli.test.js
 ---

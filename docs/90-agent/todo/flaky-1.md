@@ -1,7 +1,7 @@
 ---
 label: flaky
 title: reviewcheck 偶發失敗
-description: tests/reviewcheck.test.js「the three tables…」在乾淨 worktree 的整套測試失敗一次（12.7 秒），單跑 3/3 綠。
+description: reviewcheck.test.js「the three tables…」在乾淨 worktree 的整套測試失敗一次（12.7 秒），單跑 3/3 綠。
 state: ready
 link: tests/reviewcheck.test.js
 ---

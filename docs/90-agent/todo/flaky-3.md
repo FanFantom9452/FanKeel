@@ -1,7 +1,7 @@
 ---
 label: flaky
 title: inject 髒檔測試偶發失敗
-description: tests/inject.test.js「a file dirty before the task started is not claimed」整套測試中失敗一次；git 逾時會讓它通過，所以不是逾時。
+description: inject.test.js「a file dirty before the task started is not claimed」整套測試中失敗一次；git 逾時會讓它通過，所以不是逾時。
 state: ready
 link: tests/inject.test.js
 ---
