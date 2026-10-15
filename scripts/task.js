@@ -1190,7 +1190,23 @@ function cmdProfile(root, opts) {
         for (const k of keys) lines.push('node ' + path.relative(process.cwd(), __filename).split(path.sep).join('/') + ' profile set ' + k + ' ' + profile.shellWord(values[k]) + (opts.project ? ' --project ' + opts.project : ''));
         return lines.join('\n');
     }
-    fail('profile is one of: show, set <key> <value> [--default], unset <key> [--default], suggest');
+    if (verb === 'preset') {
+        const name = String(opts.positional[1] || '');
+        const file = opts.default ? profile.machineFile(cfg) : profile.projectFile(projectRoot);
+        if (!file) fail('No config directory to write the machine default to.');
+        // A machine default is no one repository's habit, so only a project
+        // file takes balanced's land answers from this repository's history.
+        const history = name === 'balanced' && !opts.default ? profile.suggest(projectRoot, root) : null;
+        const out = profile.applyPreset(file, name, history ? history.values : null);
+        if (!out.ok) fail(out.reason);
+        const lines = ['fankeel — profile preset ' + name + '  → ' + file];
+        for (const r of out.rows) {
+            lines.push('  ' + r.key + ' = ' + (r.value === null ? '(cleared)' : profile.display(r.value)) + (r.from === 'history' ? '  (from history)' : ''));
+        }
+        if (out.rows.some((r) => r.from === 'history')) for (const e of history.evidence) lines.push('  history: ' + e);
+        return lines.join('\n');
+    }
+    fail('profile is one of: show, set <key> <value> [--default], unset <key> [--default], suggest, preset <manual|balanced|lean> [--default]');
 }
 
 // Invariant 7: never on this script's own initiative, so the value is always
@@ -1621,7 +1637,7 @@ const USAGE = [
     '  note "..."                        a dead end or a decision, capped at five',
     '  next "..."                        one line; empty clears it',
     '  guard <ask|deny|off>              only when the user asked for it',
-    '  profile show|set <key> <value>|unset <key>|suggest',
+    '  profile show|set <key> <value>|unset <key>|suggest|preset <manual|balanced|lean>',
     '                                    the project\'s standing answers; --default writes the',
     '                                    machine file, --project <dir> picks a project under the root',
     '  land <merge|pr|keep|direct> [--push|--no-push]',

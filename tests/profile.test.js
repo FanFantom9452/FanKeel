@@ -585,3 +585,93 @@ test('station.chartroom takes one absolute path, kept as typed, and is not a wiz
     assert.equal(profile.write(profile.machineFile(cfg), 'station.chartroom', abs).ok, true);
     assert.equal(profile.read(null, cfg).values['station.chartroom'], abs, 'read back from the machine profile');
 });
+
+// docs/90-agent/plans/2026-10-15-init-quick-setup-design.md §2.
+test('applyPreset writes a preset the way wizApply does: a value as write, null as unset', () => {
+    const file = path.join(dir(), 'profile.json');
+    profile.write(file, 'land.push', 'true');
+    profile.write(file, 'class.default', 'bounded');
+    profile.write(file, 'language', '繁體中文');
+    const out = profile.applyPreset(file, 'manual');
+    assert.equal(out.ok, true);
+    assert.deepEqual(JSON.parse(fs.readFileSync(file, 'utf8')), {
+        language: '繁體中文', guard: 'ask', 'stage.agents': profile.parseValue('stage.agents', 'false').value,
+    });
+    assert.deepEqual(out.rows.map((r) => r.key), Object.keys(profile.PRESETS.manual.set));
+    assert.ok(out.rows.every((r) => r.from === 'preset'));
+    assert.equal(out.rows.find((r) => r.key === 'land.push').value, null);
+});
+
+test('balanced takes land.integration and land.push from history, and nothing else from it', () => {
+    const file = path.join(dir(), 'profile.json');
+    const out = profile.applyPreset(file, 'balanced', {
+        'land.integration': 'pr', 'land.push': true, 'class.default': 'spike', 'commit.format': '^(feat)(\([^)]+\))?: ',
+    });
+    assert.equal(out.ok, true);
+    const written = JSON.parse(fs.readFileSync(file, 'utf8'));
+    assert.equal(written['land.integration'], 'pr');
+    assert.equal(written['land.push'], true);
+    assert.equal(written['land.archivePlan'], true);
+    assert.equal(written.guard, 'ask');
+    assert.deepEqual(written['stage.agents'], ['survey', 'build', 'verify']);
+    assert.equal('class.default' in written, false);
+    assert.equal('commit.format' in written, false);
+    assert.deepEqual(out.rows.filter((r) => r.from === 'history').map((r) => r.key), ['land.integration', 'land.push']);
+});
+
+test('lean and manual ignore history, balanced with none writes its own values, and an unknown preset writes nothing', () => {
+    const lean = path.join(dir(), 'profile.json');
+    profile.applyPreset(lean, 'lean', { 'land.integration': 'pr' });
+    assert.equal(JSON.parse(fs.readFileSync(lean, 'utf8'))['land.integration'], 'merge');
+    assert.deepEqual(JSON.parse(fs.readFileSync(lean, 'utf8'))['stage.agents'], profile.parseValue('stage.agents', 'all').value);
+    const plain = path.join(dir(), 'profile.json');
+    const out = profile.applyPreset(plain, 'balanced', null);
+    assert.equal(JSON.parse(fs.readFileSync(plain, 'utf8'))['land.integration'], 'merge');
+    assert.ok(out.rows.every((r) => r.from === 'preset'));
+    const other = path.join(dir(), 'profile.json');
+    const bad = profile.applyPreset(other, 'fast');
+    assert.equal(bad.ok, false);
+    assert.equal(bad.reason, 'preset is one of: manual, balanced, lean');
+    assert.equal(fs.existsSync(other), false);
+});
+
+// docs/90-agent/plans/2026-10-15-init-quick-setup-design.md, Proves it done.
+test('profile preset balanced --project writes land.integration pr from a history of pull requests, and says so', () => {
+    const d = dir();
+    const cfg = path.join(d, 'cfg');
+    const app = path.join(d, 'app');
+    fs.mkdirSync(app);
+    const who = ['-c', 'user.name=t', '-c', 'user.email=t@t'];
+    const g = (...a) => execFileSync('git', a, { cwd: app, stdio: 'ignore' });
+    g('init', '-q', '-b', 'main');
+    g(...who, 'commit', '-q', '--allow-empty', '-m', 'init');
+    for (let i = 0; i < 3; i++) {
+        g('checkout', '-q', '-b', 'f' + i);
+        g(...who, 'commit', '-q', '--allow-empty', '-m', 'work ' + i);
+        g('checkout', '-q', 'main');
+        g(...who, 'merge', '-q', '--no-ff', '-m', 'Merge pull request #' + (i + 1) + ' from me/f' + i, 'f' + i);
+    }
+    const TASK = path.join(__dirname, '..', 'scripts', 'task.js');
+    const out = execFileSync(process.execPath, [TASK, 'profile', 'preset', 'balanced', '--project', 'app', '--root', d, '--claude-dir', cfg],
+        { encoding: 'utf8', env: Object.assign({}, process.env, { CLAUDE_CONFIG_DIR: cfg }) });
+    const written = JSON.parse(fs.readFileSync(profile.projectFile(app), 'utf8'));
+    assert.equal(written['land.integration'], 'pr');
+    assert.deepEqual(written['stage.agents'], ['survey', 'build', 'verify']);
+    assert.match(out, /^ {2}land\.integration = pr {2}\(from history\)$/m);
+    assert.match(out, /^ {2}stage\.agents = survey,build,verify$/m);
+    assert.match(out, /^ {2}history: merges: 0 local, 3 pull request$/m);
+});
+
+test('profile preset refuses a name that is not a preset, and --default reads no history', () => {
+    const d = dir();
+    const cfg = path.join(d, 'cfg');
+    const TASK = path.join(__dirname, '..', 'scripts', 'task.js');
+    const env = Object.assign({}, process.env, { CLAUDE_CONFIG_DIR: cfg });
+    const r = require('node:child_process').spawnSync(process.execPath, [TASK, 'profile', 'preset', 'fast', '--root', d, '--claude-dir', cfg], { encoding: 'utf8', env });
+    assert.equal(r.status, 1);
+    assert.match(r.stdout, /preset is one of: manual, balanced, lean/);
+    assert.equal(fs.existsSync(profile.projectFile(d)), false);
+    const out = execFileSync(process.execPath, [TASK, 'profile', 'preset', 'balanced', '--default', '--root', d, '--claude-dir', cfg], { encoding: 'utf8', env });
+    assert.doesNotMatch(out, /from history/);
+    assert.equal(JSON.parse(fs.readFileSync(profile.machineFile(cfg), 'utf8'))['land.integration'], 'merge');
+});
