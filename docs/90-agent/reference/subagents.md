@@ -366,7 +366,7 @@ returns and the grouping's mistake is in front of it. A Workflow does not come
 back between its steps, so it wants a group shown to be disjoint rather than one
 merely not refuted.
 
-A `workflow` group is not written by hand. `workflowScript` in
+A `workflow` group, which exists only on the plan path, is not written by hand. `workflowScript` in
 `lib/plantasks.js` turns one into a Workflow script — one pipeline item per
 implementer task, implement then review, every `agent` call carrying its
 `agentType`, the model its task's Dispatch line names or the reviewer's
