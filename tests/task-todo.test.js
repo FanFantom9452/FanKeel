@@ -48,6 +48,9 @@ test('stage land prints the todo.js done line for each id where the project keep
   task(dir, ['start', '--task', 'close one', '--route', 'build,land', '--todo', 'a-1']);
   const out = task(dir, ['stage', 'land']);
   assert.match(out, new RegExp('todo\\.js done a-1 --sha <sha> --session ' + A));
+  // The closing block sits under land's rules, and the same-turn line ends the output.
+  assert.ok(out.indexOf('stage rules:') < out.indexOf('close at land'), out);
+  assert.ok(out.trimEnd().endsWith('進到這一站後在同一回合開工，不要先收回合。'), out);
 });
 
 test('a titled entry prints id：title, above its done line at land and under todo: in the description', () => {

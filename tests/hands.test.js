@@ -67,6 +67,9 @@ test('entering build names the plan\'s user tasks and says to ask now; a plan wi
   assert.match(out, /^  Task 2 — 跑 \/doctor$/m);
   assert.match(out, /Ask the user now, before the first dispatch/);
   assert.doesNotMatch(out, /Task 1 — /);
+  // The hands list sits under build's rules, and the same-turn line ends the output.
+  assert.ok(out.indexOf('stage rules:') < out.indexOf('hands — '), out);
+  assert.ok(out.trimEnd().endsWith('進到這一站後在同一回合開工，不要先收回合。'), out);
   fs.writeFileSync(path.join(plans, '2026-09-24-x.md'), WITHOUT_HANDS);
   assert.doesNotMatch(taskCli(dir, ['stage', 'build', '--session', SID]), /^hands/m);
 });
