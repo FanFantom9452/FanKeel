@@ -6,7 +6,7 @@ state: blocked
 link: docs/90-agent/reference/model-choice.md
 group: fast 可依 agent 設定
 timing: upstream: Sonnet 支援 fast，或 fast 可依 agent 個別設定
-stamp: 2026-10-15
+stamp: 2026-10-16
 ---
 
 來源：2026-10-05 使用者在「修 /fankeel hook 逾時」任務的 build 階段提出（session 2f5b7e13）：fast mode 能不能只套用給子 agent，而且只限 sonnet；opus 不要 fast。
@@ -21,3 +21,5 @@ stamp: 2026-10-15
 查證結果（2026-10-05，TODO 全表盤點的 survey 查官方說明，使用者在 gate 選結案）：fast mode 只支援 Opus 5.5、Opus 5 與 Opus 4.8，不支援 Sonnet。它是整個 session 的開關，用 `/fast` 切換；Agent 工具的參數、agent 檔的 frontmatter、Workflow 的 `agent()` 都沒有對應欄位。沒指定 model 的子 agent 會不會跟著繼承，文件沒寫，也沒實測。所以本條移到 Blocked，等上游讓 Sonnet 支援 fast，或讓 fast 能依 agent 個別設定；事實已寫進 model-choice.md 的 Fast mode 一節。
 
 2026-10-14 的盤點重讀官方 fast mode 說明：仍只支援 Opus 5.5、Opus 5 與 Opus 4.8，寫明 Sonnet 與 Haiku 不能用；仍是 `/fast` 或 `fastMode` 設定的整個 session 開關，頁面沒有任何依 agent 個別設定的欄位。上游沒有變，繼續等。
+
+2026-10-16 的盤點重讀 https://code.claude.com/docs/en/fast-mode：仍寫明不支援 Sonnet 與 Haiku，只支援 Opus 5.5、Opus 5 與 Opus 4.8；仍是 `/fast` 或 `fastMode` 的整個 session 開關，頁面沒有依 agent 設定的欄位。條件未滿足，維持 blocked。
