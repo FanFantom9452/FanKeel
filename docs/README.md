@@ -263,6 +263,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 壓縮視窗由 init 幫忙設（10-12）定了什麼：問一題、答是才寫使用者的設定檔、先留備份、答否記住；放棄了什麼 | [decisions/2026-10-12-init-compact-window.md](03-decisions/2026-10-12-init-compact-window.md) — *繁體中文* |
 | 壓縮門檻改成 `compact.at`（10-12）定了什麼：init 問四檔、只在 fankeel 任務生效、不再寫使用者的設定檔；放棄了什麼 | [decisions/2026-10-12-compact-at.md](03-decisions/2026-10-12-compact-at.md) — *繁體中文* |
 | Desktop 用 Svg 畫 band 與 Pane（10-15）定了什麼：Desktop 畫圖、終端維持文字，band 尾巴的遠端 ✓／✗，ctx 照 TokenBar；放棄了什麼 | [decisions/2026-10-15-pane-svg.md](03-decisions/2026-10-15-pane-svg.md) — *繁體中文* |
+| 沒派過的 agent 怎麼處理（10-15）定了什麼：effort 改在派工時傳、六個複本刪掉，mover、mutator、writer 只給 stage agent 派，init-scout 與 slimmer 不動；放棄了什麼 | [decisions/2026-10-15-unused-agents.md](03-decisions/2026-10-15-unused-agents.md) — *繁體中文* |
 | 開任務時同步壓縮視窗（10-14）定了什麼：start 把主機視窗對齊 `compact.at`、值變了請使用者重開 Desktop；放棄了什麼 | [decisions/2026-10-14-start-syncs-window.md](03-decisions/2026-10-14-start-syncs-window.md) — *繁體中文* |
 | Pane 配色改成安靜版（10-13）定了什麼：標題共用灰、多一行 route、拿掉「這個 session」與「用量額度」兩塊；放棄了什麼 | [decisions/2026-10-13-pane-colour.md](03-decisions/2026-10-13-pane-colour.md) — *繁體中文* |
 | TODO 全表盤點（10-12 第二輪）與自動壓縮做了什麼、沒做什麼：壓縮交給主機的視窗，fankeel 只在沒設時提醒；放棄了 mod 心跳與進 build 先壓；盤點沒有可直接做的，新開六筆 | [reports/patrols/2026-10-12-todo-patrol-compact-window.md](90-agent/reports/patrols/2026-10-12-todo-patrol-compact-window.md) — *繁體中文* |
@@ -506,6 +507,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 - [壓縮視窗由 init 幫忙設（10-12）：問一題，答是才寫使用者的設定檔](03-decisions/2026-10-12-init-compact-window.md)
 - [壓縮門檻改成 profile 的 compact.at（10-12）：init 問四檔，不再寫使用者的設定檔](03-decisions/2026-10-12-compact-at.md)
 - [Desktop 用 Svg 畫 band 與 Pane，終端維持文字（10-15）](03-decisions/2026-10-15-pane-svg.md)
+- [沒派過的 agent 怎麼處理（10-15）：effort 改在派工時傳，六個複本刪掉](03-decisions/2026-10-15-unused-agents.md)
 - [開任務時同步壓縮視窗（10-14）：task.js start 把主機視窗寫成 compact.at](03-decisions/2026-10-14-start-syncs-window.md)
 - [Pane 的配色改成安靜版，多一行 route，拿掉兩塊（10-13）](03-decisions/2026-10-13-pane-colour.md)
 
