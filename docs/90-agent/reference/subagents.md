@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-29
+last_verified: 2026-10-15
 source_of_truth: hooks/brief.js, lib/render.js, lib/stages.js, hooks/carry.js, lib/plantasks.js, lib/requires.js, lib/usage.js, lib/prices.js, scripts/judge.js, scripts/await.js, scripts/commit.js
 ---
 
@@ -25,19 +25,19 @@ reproduce whatever had been put in front of them, with no needle in the prompt t
 find — a third never launched, and a cell that did not run is not a result
 ([reports/2026-09-04-subagent-brief-probe.md](../reports/2026-09-04-subagent-brief-probe.md)).
 
-## The twenty agents this plugin defines
+## The fourteen agents this plugin defines
 
-Twenty subagent types are not just described in prose — they are declared as
+Fourteen subagent types are not just described in prose — they are declared as
 `agents` in `.claude-plugin/plugin.json` and shipped as files under `agents/`:
-`fankeel-reader`, `fankeel-judge`, `fankeel-reviewer`, `fankeel-verifier`, `fankeel-fixer`, `fankeel-brain`, `fankeel-render-reviewer`, `fankeel-mockup`, `fankeel-slimmer`, `fankeel-init-scout`, `fankeel-writer`, `fankeel-implementer`, `fankeel-mutator`, `fankeel-mover`, `fankeel-implementer-high`, `fankeel-implementer-xhigh`, `fankeel-brain-high`, `fankeel-brain-xhigh`, `fankeel-reviewer-high` and `fankeel-reviewer-xhigh`.
-Eight of them — `fankeel-reader`, `fankeel-judge`, `fankeel-reviewer`,
-`fankeel-render-reviewer`, `fankeel-slimmer`, `fankeel-init-scout`, `fankeel-reviewer-high` and `fankeel-reviewer-xhigh` — carry `tools: [Read, Grep, Glob, Bash]` — Edit, Write and
+`fankeel-reader`, `fankeel-judge`, `fankeel-reviewer`, `fankeel-verifier`, `fankeel-fixer`, `fankeel-brain`, `fankeel-render-reviewer`, `fankeel-mockup`, `fankeel-slimmer`, `fankeel-init-scout`, `fankeel-writer`, `fankeel-implementer`, `fankeel-mutator` and `fankeel-mover`.
+Six of them — `fankeel-reader`, `fankeel-judge`, `fankeel-reviewer`,
+`fankeel-render-reviewer`, `fankeel-slimmer` and `fankeel-init-scout` — carry `tools: [Read, Grep, Glob, Bash]` — Edit, Write and
 NotebookEdit are simply absent from the list, so calling any of them to change
 a file is refused by the harness rather than left to a rule somebody has to
 remember. Bash stays on the list for `git` — and, for the reader and the
 reviewer, this plugin's own read-only scripts, the reviewer's `node --test` on the
 one file its prompt names included — a named residual rather than a claim that
-any of the eight cannot write anything.
+any of the six cannot write anything.
 
 `fankeel-verifier` is no longer the only agent carrying `Write` —
 `fankeel-fixer` does too, with `Edit` beside it and no `Bash` at all,
@@ -62,8 +62,8 @@ The return applies only to a session with no active entry at all, one that never
 sent `/fankeel`; a session that has sent it has an active `init` entry
 (`hooks/inject.js` writes it), so its read-only subagents are denied.
 [collisions.md](collisions.md)
-carries what that denylist actually matches, not restated here. Nineteen of
-the twenty agents hold `Bash`; `fankeel-fixer` is the one that does not,
+carries what that denylist actually matches, not restated here. Thirteen of
+the fourteen agents hold `Bash`; `fankeel-fixer` is the one that does not,
 because it edits the file itself rather than returning something for the
 parent to run a test against. `tests/agents.test.js` names every writer as an
 exemption, each with its argument beside it, rather than dropping the assertion.
@@ -113,16 +113,28 @@ only. The mover runs a `git mv`, a merge or a deletion it is given, with `Read`
 and `Bash` and no `Edit` or `Write`. All four record what they read with
 `context.js add` when the prompt names a session id.
 
-The six `-high` and `-xhigh` files are `fankeel-brain`, `fankeel-implementer`
-and `fankeel-reviewer` with `name:` and `effort:` changed — written by
-`node scripts/variants.js`, held byte for byte to `renderVariant` by
-`tests/agents.test.js` — because the Agent tool cannot set effort. Every check
-that compares an agent type reads a variant as its base (`baseAgent` in
-`lib/agentfile.js`): the reviewer's variants are guarded read-only, the brain's
-get its brief and guards. An implementer and its reviewer run at a variant when
-the task's `**Dispatch:**` line names one; a brain when the controller, judging
-that the stage needs deep thought, asked the user first and the user said yes
-(`controlRules` in `lib/stages.js`).
+Effort for one dispatch is the call's own `effort` parameter. A probe on
+2026-10-15 sent two `fankeel:fankeel-reader` dispatches on opus, one with
+`effort: "high"`: its `agent-*.prefix.json` carried `effortValue: "high"`,
+and the control's carried `medium`, its agent file's own. So an implementer
+and its reviewer go out with `effort: "<the field>"` when the task's
+`**Dispatch:**` line names one, and a brain with `effort: "high"` or
+`"xhigh"` when the controller, judging that the stage needs deep thought,
+asked the user first and the user said yes (`controlRules` in
+`lib/stages.js`). The six `-high` and `-xhigh` copies of the brain,
+implementer and reviewer files that stood in for the parameter were deleted
+that day, with the script that wrote them. A transcript written before then
+still names them, and `baseAgent` in `lib/agentfile.js` still reads such a
+name as its base.
+
+Three of the fourteen are dispatched only by a stage agent: `fankeel-mover`,
+`fankeel-mutator` and `fankeel-writer`. They exist because a stage agent
+cannot `Edit`. A stage run in the session does that work itself: audit and
+land move their own files, verify there has no mutation step, and build and
+audit write their pages for a person directly — so a project that keeps
+every stage in the session never sends them. `fankeel-init-scout` and
+`fankeel-slimmer` are sent by `fankeel-init` alone. The ruling on each is
+[the 2026-10-15 decision](../../03-decisions/2026-10-15-unused-agents.md).
 
 `fankeel-reader` runs at `model: sonnet` by default — the profile's
 `dispatch.floor`, which the survey, verify and audit skills ask their reader
@@ -297,7 +309,7 @@ could not see coming; the **description is the title alone**, and `hooks/title.j
 the model (call `model`, agent file `model:`, `CLAUDE_CODE_SUBAGENT_MODEL`,
 then the session's), the version — parsed from a full id, else read off the
 newest real `message.model` of that family in the project's subagent
-transcripts — and the effort off the agent file's `effort:` or `inherit`, and
+transcripts — and the effort off the call's `effort`, else the agent file's `effort:`, else `inherit`, and
 writes nothing for another plugin's agent or an unreadable agent file,
 because it is the title a background agent runs under and the
 one place the user sees what is spending while it runs — computed, since a
@@ -569,7 +581,7 @@ empty list is refused with, in the shape every other bad profile value takes
 (`lib/profile.js:180`, `'stage.agents is one of: false, true, all, or a comma-separated list of: '`).
 `controlling()` and `controlFor()` in `lib/stages.js` read that array
 straight off the profile's `values` rather than off a fixed list only that
-file could change (`lib/stages.js:701`, `const raw = values && values['stage.agents'];`),
+file could change (`lib/stages.js:700`, `const raw = values && values['stage.agents'];`),
 so which stages are controlled is a profile answer, not a constant. Put a
 stage on that list and it is run by a stage agent instead of by the session:
 
@@ -819,10 +831,10 @@ Setting the key prints what it costs: the estimated tokens the injected line
 adds per prompt, and each stage's remaining room under the reference-root
 2400-character cap with the profile as it now reads — a warning, never a
 refusal, since the cap belongs to the tests and the sentence belongs to the
-user (`scripts/task.js:1169`, `set anyway; this is a warning, not a refusal`)
+user (`scripts/task.js:1253`, `set anyway; this is a warning, not a refusal`)
 — computed in `cmdProfile`'s `set` branch off `input-check.js`'s
 `estimateTokens` and `lib/render.js`'s `blockSizes`
-(`scripts/task.js:1162`, `const n = estimateTokens('\n  - ' + out.value);`).
+(`scripts/task.js:1246`, `const n = estimateTokens('\n  - ' + out.value);`).
 
 ## What a controlled `build` and `verify` were run through
 
