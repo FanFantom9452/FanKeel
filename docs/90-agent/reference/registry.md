@@ -105,7 +105,7 @@ this task has edited — at most sixty, each recorded whole and never truncated,
 because nothing here is a path a human retypes. `claims` and `seen` reach that cap
 from opposite directions. A path arriving on its own drops the oldest to make
 room (`lib/registry.js:704`, `data[field] = list.slice(-max);` in the shared `appendUnique` helper); a git pass holding more than sixty is refused
-whole rather than trimmed (`lib/dirty.js:190`, `declined: written.length`), because trimming it would evict
+whole rather than trimmed (`lib/dirty.js:183`, `declined: written.length`), because trimming it would evict
 every earlier path in `seen` and put build output in its place.
 [collisions.md](collisions.md) is the page for that. `hooks/touch.js` appends to it,
 which is why the table above lists a hook rather than a command as its writer.
