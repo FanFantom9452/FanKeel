@@ -36,12 +36,44 @@ test('a lock held by a live pid waits: onWait gets the holder', () => {
   assert.equal(seen.session, 'other');
 });
 
-test('a lock whose pid is dead, or older than maxAgeMs, is cleared and taken', () => {
+test('a lock whose pid is dead is cleared and taken', () => {
   const file = scratch();
   hold(file, { pid: deadPid(), at: new Date().toISOString() });
   lock.acquire({ file, onWait: waited }).release();
+});
+
+test('a lock older than maxAgeMs is cleared and taken even when its pid is alive', () => {
+  const file = scratch();
   hold(file, { pid: process.pid, at: new Date(Date.now() - lock.MAX_AGE_MS - 1000).toISOString() });
   lock.acquire({ file, onWait: waited }).release();
+});
+
+test('a holder with pid 0 or no pid and a fresh at is cleared and taken', () => {
+  const file = scratch();
+  hold(file, { pid: 0, at: new Date().toISOString() });
+  lock.acquire({ file, onWait: waited }).release();
+  hold(file, { at: new Date().toISOString() });
+  lock.acquire({ file, onWait: waited }).release();
+});
+
+test('a live-pid holder whose at is garbage is cleared and taken', () => {
+  const file = scratch();
+  hold(file, { pid: process.pid, at: 'garbage' });
+  lock.acquire({ file, onWait: waited }).release();
+});
+
+test('clearStale removes the holder it was given, and puts back a different lock it moved aside', () => {
+  const file = scratch();
+  const dir = path.dirname(file);
+  const h1 = { pid: 1, at: 'a' };
+  const h2 = { pid: 2, at: 'b' };
+  hold(file, h2);
+  assert.equal(lock.clearStale(file, h1), false);
+  assert.deepEqual(JSON.parse(fs.readFileSync(file, 'utf8')), h2);
+  assert.deepEqual(fs.readdirSync(dir), ['suite.lock']);
+  assert.equal(lock.clearStale(file, JSON.parse(fs.readFileSync(file, 'utf8'))), true);
+  assert.deepEqual(fs.readdirSync(dir), []);
+  assert.equal(lock.clearStale(file, h1), false);
 });
 
 test('a lock that does not parse waits while it is fresh, and is cleared once it is not', () => {
