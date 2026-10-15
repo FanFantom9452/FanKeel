@@ -1172,7 +1172,7 @@ test('land sends a plan that chose nothing to a report, not a decision record', 
 // land ran the whole suite a second time to get one.
 test('verify runs the suite through suite.js, land asks --check first, and both stay inside their budgets', () => {
   const { buildRegistry } = require('../lib/stage-registry.js');
-  assert.match(byName('verify').rules[0], /^Run `node \{\{SUITE\}\} --session <id>`/);
+  assert.match(byName('verify').rules[0], /^Run `node \{\{SUITE\}\} --session <id> --fast`/);
   const land = byName('land').rules;
   assert.match(land[land.length - 1], /^Output: `node \{\{SUITE\}\} --session <id> --check` first/);
   for (const name of ['verify', 'land']) {
