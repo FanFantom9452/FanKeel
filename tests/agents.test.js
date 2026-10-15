@@ -7,7 +7,7 @@ const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
 const FRONT = /^---\r?\n([\s\S]*?)\r?\n---/;
-const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-verifier', 'fankeel-fixer', 'fankeel-brain', 'fankeel-render-reviewer', 'fankeel-mockup', 'fankeel-slimmer', 'fankeel-init-scout', 'fankeel-writer', 'fankeel-implementer', 'fankeel-mutator', 'fankeel-mover', 'fankeel-brain-high', 'fankeel-brain-xhigh', 'fankeel-reviewer-high', 'fankeel-reviewer-xhigh'];
+const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-verifier', 'fankeel-fixer', 'fankeel-brain', 'fankeel-render-reviewer', 'fankeel-mockup', 'fankeel-slimmer', 'fankeel-init-scout', 'fankeel-writer', 'fankeel-implementer', 'fankeel-mutator', 'fankeel-mover', 'fankeel-brain-high', 'fankeel-brain-xhigh'];
 
 // `fankeel-verifier` is the one named exception: it writes evidence rows to a
 // file for the Workflow join, and `Write` is what that takes. It is not less
@@ -229,7 +229,7 @@ const EFFORT = {
     'fankeel-brain': 'medium', 'fankeel-mockup': 'high', 'fankeel-slimmer': 'low', 'fankeel-init-scout': 'medium',
     'fankeel-writer': 'medium', 'fankeel-implementer': 'medium',
     'fankeel-mutator': 'low', 'fankeel-mover': 'low',
-    'fankeel-brain-high': 'high', 'fankeel-brain-xhigh': 'xhigh', 'fankeel-reviewer-high': 'high', 'fankeel-reviewer-xhigh': 'xhigh',
+    'fankeel-brain-high': 'high', 'fankeel-brain-xhigh': 'xhigh',
 };
 test('every agent names its effort, and none of them is max', () => {
     for (const name of NAMES) {
