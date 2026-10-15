@@ -34,6 +34,8 @@ export type StatusInput = {
   room: number
   now: number
   probe?: string | null
+  // The mod saw turn.start and not yet turn.complete.
+  turn?: boolean
 }
 
 // Each block's rail, a fixed colour whatever the stage, on its first drawn row;

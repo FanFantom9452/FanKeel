@@ -363,7 +363,7 @@ test('on Claude Desktop the Pane draws the route, the clash, the tasks and the c
     const svgs = kids(desk).filter((n) => n.tag === 'Svg');
     assert.equal(svgs.length, 4);
     for (const n of svgs) assert.ok(n.props.source.startsWith('<svg ') && n.props.source.length <= 131072);
-    assert.deepEqual(svgs.map((n) => n.props.isInteractive === true), [false, false, true, false]);
+    assert.deepEqual(svgs.map((n) => n.props.isInteractive === true), [true, false, true, false]);
     // Each alt is the rows it stands for, as the terminal draws them.
     const rows = plain(term);
     const block = (from, to) => rows.slice(rows.findIndex((t) => t.startsWith(from)), to === undefined ? undefined : rows.findIndex((t) => t.startsWith(to)) - 1).join('\n');
@@ -577,4 +577,53 @@ test('Remote Control not connected, or not said, draws 遠端 ✗ in the grey te
         assert.ok(!off.includes('>✓<'));
     }
     assert.deepEqual(words(bandRow1Svg(bandInput({ gateUntil: NOW + 42000 }))).slice(-2), ['遠端', '✗']);
+});
+
+test('breathing is true only for a stage agent under twenty minutes or a turn, and never at a question', async () => {
+    const { breathing } = await load('pane-svg');
+    const idle = Object.assign({}, entry, { inflight: null });
+    assert.equal(breathing(entry, NOW, false, null), true);
+    assert.equal(breathing(Object.assign({}, entry, { inflight: { stage: 'build', at: NOW - 21 * M } }), NOW, false, null), false);
+    assert.equal(breathing(idle, NOW, true, null), true);
+    assert.equal(breathing(idle, NOW, false, null), false);
+    assert.equal(breathing(entry, NOW, true, NOW - 1000), false);
+    assert.equal(breathing(Object.assign({}, entry, { gateAt: NOW - 1000 }), NOW, true, null), false);
+    assert.equal(breathing(Object.assign({}, entry, { inflight: [{ stage: 'plan', at: NOW - M }, { stage: 'build', at: NOW - M }] }), NOW, false, null), true);
+});
+
+test('the Pane route draws one breathing ring only when told it is live, phase-locked to now', async () => {
+    const { routeSvg } = await load('pane-svg');
+    const on = routeSvg(entry, NOW, 41, true);
+    assert.equal(on.split('class="fk-br"').length - 1, 1);
+    assert.equal(on.split('<animate').length - 1, 2);
+    assert.ok(!routeSvg(entry, NOW, 41, false).includes('fk-br'));
+    const begin = (s) => Number(/begin="-([\d.]+)s"/.exec(s)[1]);
+    const d = (begin(routeSvg(entry, NOW + 1000, 41, true)) - begin(on) + 2.4) % 2.4;
+    assert.ok(Math.abs(d - 1) < 0.02, String(d));
+});
+
+test('the band route draws its ring only while the stage is worked on', async () => {
+    const { bandRow1Svg } = await load('pane-svg');
+    const idle = Object.assign({}, entry, { inflight: null });
+    const count = (s) => s.split('class="fk-br"').length - 1;
+    assert.equal(count(bandRow1Svg(bandInput())), 1);
+    assert.equal(count(bandRow1Svg(bandInput({ gateAt: NOW - 1000 }))), 0);
+    assert.equal(count(bandRow1Svg(bandInput({ entry: idle }))), 0);
+    assert.equal(count(bandRow1Svg(bandInput({ entry: idle, turn: true }))), 1);
+});
+
+test('paneParts draws the route interactive and ringed only while breathing', async () => {
+    const { paneParts } = await load('pane-svg');
+    const { statusRows } = await load('pane-status');
+    const routePart = (e, over) => {
+        const input = Object.assign({ id: 'x', entry: e, others: [], context: null, plan: null, cols: 41, room: 60, now: NOW }, over);
+        return paneParts(input, statusRows(input)).find((p) => 'source' in p && p.source.includes('<svg') && p.alt.startsWith('survey'));
+    };
+    const live = routePart(entry);
+    assert.equal(live.isInteractive, true);
+    assert.ok(live.source.includes('class="fk-br"'));
+    const idle = routePart(Object.assign({}, entry, { inflight: null }));
+    assert.ok(!idle.isInteractive && !idle.source.includes('fk-br'));
+    const asked = routePart(Object.assign({}, entry, { gateAt: NOW - 1000 }));
+    assert.ok(!asked.isInteractive && !asked.source.includes('fk-br'));
 });

@@ -78,6 +78,7 @@ export function bandRow1Svg(input: BandInput): string {
   const { entry, others, gateUntil, tasks, cols, now } = input
   if (!entry) return ''
   const gateAt = input.gateAt ?? null
+  const live = breathing(entry, now, !!input.turn, gateAt)
   const stage = str(entry.stage)
   const route = list(entry.route)
   const at = route.indexOf(stage)
@@ -100,7 +101,7 @@ export function bandRow1Svg(input: BandInput): string {
       const c = stageColor(name)
       const cx = r1(x0 + step * i)
       if (i < at) b += `<circle cx="${cx}" cy="11" r="3.5" fill="${c}"/>`
-      else if (i === at) b += `<circle cx="${cx}" cy="11" r="6" fill="none" stroke="${c}" stroke-width="1.5"/><circle cx="${cx}" cy="11" r="3.5" fill="${c}"/>`
+      else if (i === at) b += `<circle cx="${cx}" cy="11" r="6" fill="none" stroke="${c}" stroke-width="1.5"/><circle cx="${cx}" cy="11" r="3.5" fill="${c}"/>${live ? ring(cx, 11, c, now) : ''}`
       else b += `<circle cx="${cx}" cy="11" r="3.25" fill="none" stroke="${c}" stroke-width="1.5"/>`
     })
     x = x0 + step * (route.length - 1) + 7 + 12
@@ -237,6 +238,27 @@ export function bandRow2Svg(input: BandInput): string {
   return drawn || flags ? svgDoc(cols * CELL_PX, BAND_H, b) : ''
 }
 
+// Twenty minutes, as hooks/pane-status.ts LONG and lib/usage.js AGENT_QUIET_MS.
+const BUSY_MS = 20 * 60000
+// One breath, in ms; a redraw starts the pulse this far into it so it does not jump.
+const BREATH = 2400
+// Whether the current stage is being worked on: no question out, and a stage agent
+// marked on it under twenty minutes ago or a turn running.
+export function breathing(entry: Entry, now: number, turn: boolean, gateAt: number | null): boolean {
+  if (gateAt !== null || typeof entry.gateAt === 'number') return false
+  if (turn) return true
+  const stage = str(entry.stage)
+  const marks = (Array.isArray(entry.inflight) ? entry.inflight : [entry.inflight]).filter(Boolean).map(record)
+  return marks.some((m) => m.stage === stage && typeof m.at === 'number' && now - m.at < BUSY_MS)
+}
+// The breathing ring: invisible on its own, so a host that runs no SMIL draws the dots as they were.
+const ring = (cx: number | string, cy: number, colour: string, now: number): string => {
+  const begin = `-${((now % BREATH) / 1000).toFixed(2)}s`
+  return `<circle class="fk-br" cx="${cx}" cy="${cy}" r="5" fill="none" stroke="${colour}" stroke-width="1.5" opacity="0">`
+    + `<animate attributeName="r" values="5;10" dur="${BREATH / 1000}s" begin="${begin}" repeatCount="indefinite"/>`
+    + `<animate attributeName="opacity" values=".7;0" dur="${BREATH / 1000}s" begin="${begin}" repeatCount="indefinite"/></circle>`
+}
+
 // The Pane's width in px: one cell is CELL_PX.
 const paneW = (cols: number): number => cols * CELL_PX
 
@@ -246,7 +268,7 @@ type Station = { name: string; state: 'done' | 'here' | 'ahead'; min: number | n
 // a grey ring, ahead hollow), a bar of the minutes it took from the entry's
 // `clock` against the longest, and the minutes its gate waited (`waited`) in
 // amber at the bar's end. '' when the stage is not on the route.
-export function routeSvg(entry: Entry, now: number, cols: number): string {
+export function routeSvg(entry: Entry, now: number, cols: number, live = false): string {
   const route = list(entry.route)
   const at = route.indexOf(str(entry.stage))
   if (at < 0) return ''
@@ -282,6 +304,7 @@ export function routeSvg(entry: Entry, now: number, cols: number): string {
     else if (s.state === 'here') b += `<circle cx="${x}" cy="26" r="6" fill="none" stroke="${WHERE}" stroke-width="2.5"/><circle cx="${x}" cy="26" r="2.5" fill="${WHERE}"/>`
     else b += `<circle cx="${x}" cy="26" r="3.75" fill="none" stroke="${TODO}" stroke-width="1.5"/>`
   })
+  if (live) b += ring(r1(cx(at)), 26, WHERE, now)
   const full = slot - 10
   stations.forEach((s, i) => {
     if (s.min === null) return
@@ -492,6 +515,7 @@ export function paneParts(input: StatusInput, rows: Row[]): Part[] {
     else blocks[blocks.length - 1].push(r)
   }
   const { entry, plan, context, now, cols } = input
+  const live = !!entry && breathing(entry, now, !!input.turn, null)
   for (const block of blocks) {
     const lead = block[0].segs.length ? [] : [block[0]]
     const body = block.slice(lead.length)
@@ -505,7 +529,7 @@ export function paneParts(input: StatusInput, rows: Row[]): Part[] {
       let from = body.length
       while (from > 0 && isRoute(body[from - 1])) from--
       keep(body.slice(0, from))
-      draw(routeSvg(entry, now, cols), body.slice(from), false)
+      draw(routeSvg(entry, now, cols, live), body.slice(from), live)
     } else if (name === 'clash') draw(clashSvg(entry, input.others, now, cols), body, false)
     else if (name === 'tasks' && plan && plan.tasks.length && body.length > 1) draw(tasksSvg(entry, plan, now, cols), body, true)
     else if (name === 'context' && context) draw(contextSvg(context, cols), body, false)
