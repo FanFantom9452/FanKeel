@@ -220,6 +220,9 @@ test('the exported sync returns the state object', () => {
   const a = sync(cfg, '450000');
   assert.deepEqual([a.state, a.from, a.to, a.file], ['changed', 'unset', '450000', settings(cfg)]);
   assert.equal(sync(cfg, '450000').state, 'same');
+  const big = sync(cfg, '1000000');
+  assert.deepEqual([big.state, big.to], ['changed', '1000000']);
+  assert.equal(JSON.parse(fs.readFileSync(settings(cfg), 'utf8')).env[WINDOW], '1000000');
   assert.equal(sync(cfg, 'off').state, 'off');
   fs.writeFileSync(settings(cfg), '[]');
   const f = sync(cfg, '350000');

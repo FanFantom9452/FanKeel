@@ -64,7 +64,7 @@ async function findEntry($: EngineInterface, id: string): Promise<{ entry: Entry
 }
 
 // lib/profile.js KEYS['compact.at'] values; anything else in a file is read as absent.
-const COMPACT_AT = /^(350000|450000|600000|off)$/
+const COMPACT_AT = /^(350000|450000|600000|1000000|off)$/
 
 async function profileAt(io: ThresholdIo, file: string): Promise<string | null> {
   try {

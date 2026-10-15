@@ -388,8 +388,8 @@ test('gate.station is off or whole seconds from 1 to 600, off by default', () =>
     assert.equal(profile.read(d, null).sources['gate.station'], 'builtin');
 });
 
-test('compact.at is 350000, 450000, 600000 or off, 450000 by default', () => {
-    for (const ok of ['350000', '450000', '600000', 'off']) assert.deepEqual(profile.parseValue('compact.at', ok), { value: ok }, ok);
+test('compact.at is 350000, 450000, 600000, 1000000 or off, 450000 by default', () => {
+    for (const ok of ['350000', '450000', '600000', '1000000', 'off']) assert.deepEqual(profile.parseValue('compact.at', ok), { value: ok }, ok);
     for (const bad of ['0', '400000', 'on', '']) assert.match(profile.parseValue('compact.at', bad).error, /compact\.at is one of/, bad);
     const r = profile.read(dir(), null);
     assert.equal(r.values['compact.at'], '450000');

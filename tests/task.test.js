@@ -993,6 +993,7 @@ const RESTART = /compact window: 450000 written to .*settings\.json — ask the 
 
 test('start writes the compact window and says to restart only when it changed', () => {
   const dir = root();
+  assert.equal(run(dir, ['profile', 'set', 'compact.at', '450000']).code, 0);
   const first = run(dir, ['start', '--session', A, '--task', 'x']);
   assert.equal(first.code, 0);
   assert.match(first.out, RESTART);
@@ -1000,6 +1001,26 @@ test('start writes the compact window and says to restart only when it changed',
   const second = run(dir, ['start', '--session', B, '--task', 'y']);
   assert.equal(second.code, 0);
   assert.doesNotMatch(second.out, /compact window:/);
+});
+
+test('start with compact.at unset leaves an existing window alone', () => {
+  const dir = root();
+  fs.mkdirSync(path.join(dir, 'cfg'), { recursive: true });
+  const f = path.join(dir, 'cfg', 'settings.json');
+  fs.writeFileSync(f, JSON.stringify({ env: { CLAUDE_CODE_AUTO_COMPACT_WINDOW: '1000000' } }));
+  const { out, code } = run(dir, ['start', '--session', A, '--task', 'x']);
+  assert.equal(code, 0);
+  assert.doesNotMatch(out, /compact window:/);
+  assert.equal(windowOf(dir), '1000000');
+});
+
+test('start with compact.at set syncs over an existing window', () => {
+  const dir = root();
+  fs.mkdirSync(path.join(dir, 'cfg'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'cfg', 'settings.json'), JSON.stringify({ env: { CLAUDE_CODE_AUTO_COMPACT_WINDOW: '1000000' } }));
+  assert.equal(run(dir, ['profile', 'set', 'compact.at', '450000']).code, 0);
+  assert.equal(run(dir, ['start', '--session', A, '--task', 'x']).code, 0);
+  assert.equal(windowOf(dir), '450000');
 });
 
 test('start leaves the window alone when compact.at is off', () => {
@@ -1023,6 +1044,7 @@ test('start writes no window and prints no line on a declined machine', () => {
 
 test('start still succeeds and says why when settings.json does not parse', () => {
   const dir = root();
+  assert.equal(run(dir, ['profile', 'set', 'compact.at', '450000']).code, 0);
   fs.mkdirSync(path.join(dir, 'cfg'), { recursive: true });
   fs.writeFileSync(path.join(dir, 'cfg', 'settings.json'), '{ not json');
   const { out, code } = run(dir, ['start', '--session', A, '--task', 'x']);
@@ -1033,6 +1055,7 @@ test('start still succeeds and says why when settings.json does not parse', () =
 
 test('start still succeeds and says why when the settings write throws', () => {
   const dir = root();
+  assert.equal(run(dir, ['profile', 'set', 'compact.at', '450000']).code, 0);
   const cfg = path.join(dir, 'cfg');
   fs.mkdirSync(path.join(cfg, 'settings.json.fankeel-tmp', 'in'), { recursive: true });
   fs.writeFileSync(path.join(cfg, 'settings.json'), '{}');

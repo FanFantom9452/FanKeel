@@ -12,7 +12,7 @@
 // `show` prints `set <n>`, `declined` or `unset`. `set` writes the variable
 // under "env" in <configDir>/settings.json and leaves every other key as it
 // was; `decline` leaves a marker so fankeel-init does not ask again. `sync`
-// runs `set` only when the variable differs from <at> (350000, 450000 or 600000),
+// runs `set` only when the variable differs from <at> (350000, 450000, 600000 or 1000000),
 // and does nothing for `off` or a decline marker.
 // docs/90-agent/plans/2026-10-12-init-compact-window-design.md §1 and §2.
 // The name and the positive-number rule are lib/context.js's, typed again
@@ -83,13 +83,13 @@ function set(configDir, raw) {
     return { ok: true, file, backup };
 }
 
-const AT = ['350000', '450000', '600000'];
+const AT = ['350000', '450000', '600000', '1000000'];
 
 // Makes the window in settings.json (not process.env) equal `at`, writing only
 // when it differs. `off` and a decline marker leave the machine as it is.
 function sync(configDir, at) {
     if (at === 'off') return { state: 'off', to: at };
-    if (!AT.includes(at)) return { state: 'failed', to: at, reason: 'sync <at>: 350000, 450000, 600000 or off' };
+    if (!AT.includes(at)) return { state: 'failed', to: at, reason: 'sync <at>: 350000, 450000, 600000, 1000000 or off' };
     if (fs.existsSync(declinedFile(configDir))) return { state: 'declined', to: at };
     const file = settingsFile(configDir);
     const had = windowOf(((readSettings(file).values || {}).env));

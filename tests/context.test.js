@@ -212,7 +212,7 @@ test('both blocks read the window from the hook\'s own environment', () => {
 // profile file set is a window of its own. The built-in tier is nobody's choice.
 test('a tier the profile set stands in for the window; off and no tier do not', () => {
   const info = { dropped: 0, used: ctx.BUSY };
-  for (const at of ['350000', '450000', '600000', 350000]) {
+  for (const at of ['350000', '450000', '600000', '1000000', 350000]) {
     assert.doesNotMatch(ctx.contextLine(info, null, {}, at), /auto-compact window/, String(at));
   }
   for (const at of ['off', undefined, null, '123']) {

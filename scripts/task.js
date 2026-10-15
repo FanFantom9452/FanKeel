@@ -772,8 +772,9 @@ function cmdStart(root, opts) {
     if (onboard) lines.push(onboard);
     // Not before the profile is read, and never a reason to refuse a start.
     const cfgForWindow = claudeDir(opts);
-    const win = cfgForWindow
-        ? compactWindow.sync(cfgForWindow, prof.values['compact.at'] || profile.KEYS['compact.at'].builtin)
+    // Only an explicit project or machine choice syncs; the built-in tier must not overwrite a window the user set.
+    const win = cfgForWindow && prof.sources['compact.at'] && prof.sources['compact.at'] !== 'builtin'
+        ? compactWindow.sync(cfgForWindow, prof.values['compact.at'])
         : { state: 'off' };
     if (win.state === 'changed') {
         lines.push('compact window: ' + win.to + ' written to ' + win.file

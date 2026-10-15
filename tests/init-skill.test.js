@@ -62,7 +62,7 @@ test('step 7 asks the four compact.at tiers, applies only in a fankeel task, and
   const f = step.replace(/\s+/g, ' ');
   assert.match(f, /scripts\/compact-window\.js show/);
   assert.match(f, /`compact\.at` the source `builtin`/);
-  for (const v of ['450000', '350000', '600000', 'off']) assert.ok(f.includes(v), v);
+  for (const v of ['450000', '350000', '600000', '1000000', 'off']) assert.ok(f.includes(v), v);
   assert.match(f, /scripts\/task\.js profile set compact\.at <value> --default/);
   assert.match(f, /only applies in a session that is running a fankeel task/);
   assert.match(f, /`task\.js start` syncs `env\.CLAUDE_CODE_AUTO_COMPACT_WINDOW` to `compact\.at` each time a task starts/);
