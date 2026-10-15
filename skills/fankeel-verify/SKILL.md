@@ -258,7 +258,7 @@ line is `disposition: recapture`, `fix` or `ship`. Anything but `ship` is a
 defeated row. Leave it off a change with no screen behind it.
 Its return, saved under `.fankeel/build/task-<started>/`, is the file build
 passes as `ledger.js --plan <file> --range <BASE>..<sha> --render <file> fix "<what>"`
-for the fix that answers a page row; without it, or a
+for the fix that answers a page row; where `render.json` gives that page a `src`, without it, or a
 `Ruling: render skipped — <why>` written for that fix, the fix is refused.
 
 **`security.local` set: a local first pass.** Before dispatching the adversary,
