@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 'use strict';
-// scripts/suite.js: run the full suite once and record it for `task.js land`.
+// scripts/suite.js: run the suite once — the whole of it, or with --fast the set
+// without the tests named @slow — and record it for `task.js land`.
 //
-//   node scripts/suite.js --session <id> [--command "<test command>"] [--root <dir>] [--tree <dir>] [--check]
+//   node scripts/suite.js --session <id> [--command "<test command>"] [--root <dir>] [--tree <dir>] [--check] [--fast]
 //
 // Prints one line — `suite: <pass> pass, <fail> fail @ <sha8>`, or `suite: ok @ <sha8>`
 // / `suite: red @ <sha8>` for a runner that is not node --test — writes
@@ -75,7 +76,9 @@ function main(argv) {
     try {
         result = suite.runSuite(tree, command, { FANKEEL_SUITE_HELD: lockAt });
     } finally {
-        if (held) held.release();
+        // A lock left behind is cleared once this pid is gone; losing the record of a
+        // suite that already ran is worse, so a failed release is said and not thrown.
+        try { if (held) held.release(); } catch (e) { process.stderr.write('suite: could not remove the lock ' + lockAt + ' (' + e.code + ')\n'); }
     }
     if (fast) result.fast = true;
     if (given) result.tree = given;

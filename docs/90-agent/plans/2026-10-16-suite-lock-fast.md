@@ -702,7 +702,7 @@ with, in `lib/stages.js`,
 | promise | task |
 |---|---|
 | `lib/suitelock.js` exports `acquire({ file, owner, onWait, pollMs, maxAgeMs })` | Task 1 |
-| `acquire` creates the file with `fs.openSync(file, 'wx')`, writing | Task 1 |
+| `acquire` creates the file with `fs.openSync(file, 'wx')`, writing | Task 1 — as `fs.writeFileSync(file, …, { flag: 'wx' })`, the same exclusive create |
 | When the file exists and its holder is live, `acquire` calls `onWait(holder)` | Task 1 |
 | A holder is stale — the file is removed and the create retried — when its | Task 1 |
 | `scripts/suite.js` takes the lock before `runSuite` and releases it in a | Task 2 |

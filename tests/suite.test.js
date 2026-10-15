@@ -298,6 +298,13 @@ test('--check on a green record with no sha says record stands @ no repo', () =>
 const { spawn } = require('node:child_process');
 const SUITE = path.join(__dirname, '..', 'scripts', 'suite.js');
 
+test('suite.js removes its lock when the run ends, so the next run in this process does not wait on it', () => {
+  const dir = repo();
+  registry.writeSession(dir, 'abcdef0134', { ...DATA });
+  assert.equal(main(['--session', 'abcdef0134', '--root', dir]).ok, true);
+  assert.equal(fs.existsSync(process.env.FANKEEL_SUITE_LOCK), false, 'suite.js left its lock behind');
+});
+
 function runChild(args, env) {
   const child = spawn(process.execPath, [SUITE, ...args], { env: { ...process.env, ...env }, encoding: 'utf8' });
   let out = '';
@@ -313,7 +320,10 @@ test('suite.js waits while a live pid holds the lock, says on what, and runs onc
   fs.writeFileSync(file, JSON.stringify({ pid: process.pid, at: new Date().toISOString(), session: 'neighbour', tree: 'F:/elsewhere' }));
   const run = runChild(['--session', 'abcdef0130', '--root', dir], { FANKEEL_SUITE_LOCK: file });
   try {
-    await new Promise((r) => setTimeout(r, 1500));
+    // Poll for the line rather than sleep a fixed time: this file runs on a loaded machine.
+    for (let t = Date.now(); !/^suite: waiting/m.test(run.out()) && run.child.exitCode === null && Date.now() - t < 20000;) {
+      await new Promise((r) => setTimeout(r, 100));
+    }
     assert.equal(run.child.exitCode, null, 'suite.js ran while the lock was held');
     assert.match(run.out(), /^suite: waiting — pid \d+ \(session neighbour\) has run the suite in F:\/elsewhere since \d\d:\d\d; lock .*suite\.lock$/m);
   } catch (e) {
