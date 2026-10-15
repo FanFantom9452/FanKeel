@@ -36,6 +36,8 @@ export type StatusInput = {
   probe?: string | null
   // The mod saw turn.start and not yet turn.complete.
   turn?: boolean
+  // When the question the pending file holds went out; the band reads the same, so both stop together.
+  gateAt?: number | null
 }
 
 // Each block's rail, a fixed colour whatever the stage, on its first drawn row;

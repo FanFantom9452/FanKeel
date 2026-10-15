@@ -460,6 +460,7 @@ export const register: Register = (on) => {
       now,
       probe: seen.probe,
       turn: state.turn,
+      gateAt: seen.pending ? seen.pending.at : null,
     }
     const status = statusRows(input)
     const blankRow = () => h(Text, {}, ' ')

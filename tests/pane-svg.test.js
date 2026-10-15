@@ -625,4 +625,7 @@ test('paneParts draws the route interactive and ringed only while breathing', as
     assert.ok(!idle.isInteractive && !idle.source.includes('fk-br'));
     const asked = routePart(Object.assign({}, entry, { gateAt: NOW - 1000 }));
     assert.ok(!asked.isInteractive && !asked.source.includes('fk-br'));
+    // A question in the pending file before the registry's gateAt lands: the route stops with the band, turn or not.
+    const pending = routePart(entry, { turn: true, gateAt: NOW - 1000 });
+    assert.ok(!pending.isInteractive && !pending.source.includes('fk-br'));
 });

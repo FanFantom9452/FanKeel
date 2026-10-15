@@ -515,7 +515,7 @@ export function paneParts(input: StatusInput, rows: Row[]): Part[] {
     else blocks[blocks.length - 1].push(r)
   }
   const { entry, plan, context, now, cols } = input
-  const live = !!entry && breathing(entry, now, !!input.turn, null)
+  const live = !!entry && breathing(entry, now, !!input.turn, input.gateAt ?? null)
   for (const block of blocks) {
     const lead = block[0].segs.length ? [] : [block[0]]
     const body = block.slice(lead.length)
