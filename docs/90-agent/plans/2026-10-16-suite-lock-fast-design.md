@@ -26,7 +26,8 @@ per machine, and the slow tests carry a tag that build and verify's run skips.
   so the script stays synchronous.
 - A holder is stale — the file is removed and the create retried — when its
   pid is not running (`process.kill(pid, 0)` throws `ESRCH`), when the file
-  does not parse, or when `at` is older than `maxAgeMs` (default 60 minutes:
+  has not parsed for 5 s (a writer between its create and its write leaves it
+  empty for a moment), or when `at` is older than `maxAgeMs` (default 60 minutes:
   a reused Windows pid must not hold the lock forever; the full suite alone is
   about 5½ minutes).
 - `scripts/suite.js` takes the lock before `runSuite` and releases it in a
@@ -51,10 +52,9 @@ per machine, and the slow tests carry a tag that build and verify's run skips.
   and the record carries `fast: true`. Where there is none it runs `test`,
   says so on its line, and records no `fast` — it ran everything.
 - `lib/suite.js`'s `blocker` refuses a record with `fast: true`:
-  `suite ran the fast set — land runs everything: node scripts/suite.js --session <id>`.
-- `tests/meta-slow.test.js` (or a row in tests/suite.test.js) asserts that
-  package.json's `test:fast` carries the same tag the docs name, so the two
-  cannot drift.
+  `suite ran the fast set at <sha8> — land runs everything: node scripts/suite.js --session <id>`.
+- A row in tests/suite.test.js pins package.json's `test` and `test:fast`
+  to their literal strings, so neither changes without a red test.
 
 ## 3. Which stage runs which
 
