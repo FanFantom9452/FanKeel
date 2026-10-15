@@ -1293,3 +1293,24 @@ test('complete with no --range is refused when the plan sits under a project who
   ledgerIn(dir, '--plan', 'app/docs/p.md', 'ruling', 'render skipped', 'tuned live with the user', 'a broken page ships');
   assert.equal(ledgerIn(dir, '--plan', 'app/docs/p.md', 'complete', '1', 'no range').code, 0);
 });
+
+// Review round: a registry root above the repository (a workspace of several)
+// is no git repository, so git runs where the plan sits, inside the repository.
+test('a workspace root above the repository refuses a page range, and accepts it with a ship file', () => {
+  const dir = root();
+  const repo = path.join(dir, 'repo');
+  fs.mkdirSync(repo);
+  freshRepo(repo);
+  const base = commit(repo, 'base.txt');
+  fs.mkdirSync(path.join(dir, '.fankeel'), { recursive: true });
+  fs.writeFileSync(path.join(dir, '.fankeel', 'render.json'), JSON.stringify({
+    pages: [{ name: 'home', url: 'repo/site/x.html', src: ['repo/site/**'] }], roles: [{ name: 'guest' }],
+  }));
+  const head = commitAt(repo, 'site/x.html');
+  const refused = ledgerIn(dir, '--root', dir, '--plan', 'repo/p.md', '--range', base + '..' + head, 'complete', '1', 'the page');
+  assert.equal(refused.code, 1, refused.out);
+  assert.match(refused.out, /repo\/site\/x\.html/);
+  fs.writeFileSync(path.join(dir, 'ship.md'), 'disposition: ship\n');
+  const shipped = ledgerIn(dir, '--root', dir, '--plan', 'repo/p.md', '--range', base + '..' + head, '--render', 'ship.md', 'complete', '1', 'the page');
+  assert.equal(shipped.code, 0, shipped.out);
+});

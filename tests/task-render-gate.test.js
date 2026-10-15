@@ -198,3 +198,58 @@ test('a page committed before the task started and not touched since is not refu
     const { out, code } = run(dir, ['stage', 'verify', '--session', A]);
     assert.equal(code, 0, out);
 });
+
+// Review round: a worktree cut before render.json was written, or one the
+// main checkout changed since, holds no copy; its files are read where they
+// sit in the main tree, so the page is not waved through.
+test('a worktree page with render.json only in the main tree is refused', () => {
+    const dir = atBuild('build,verify', []);
+    registry.update(dir, A, (d) => { d.worktree = { path: '.fankeel/worktrees/aaaaaaaa', branch: 'fk/aaaaaaaa' }; });
+    registry.addClaim(dir, A, '.fankeel/worktrees/aaaaaaaa/site/index.html');
+    const own = run(dir, ['stage', 'verify', '--session', A]);
+    assert.equal(own.code, 1, own.out);
+    assert.match(own.out, /site\/index\.html/);
+    const agent = atBuild('build,verify', ['.claude/worktrees/agent-1a2b3c/site/index.html']);
+    const theirs = run(agent, ['stage', 'verify', '--session', A]);
+    assert.equal(theirs.code, 1, theirs.out);
+    assert.match(theirs.out, /site\/index\.html/);
+});
+
+// Review round: git's listing past execFileSync's default 1 MiB buffer was
+// swallowed, and the check fell back to the claims alone.
+test('a page among more than a megabyte of untracked paths is still refused', () => {
+    const dir = pageRepo();
+    commitFile(dir, 'base.txt');
+    startAt(dir);
+    const bulk = path.join(dir, 'bulk');
+    fs.mkdirSync(bulk);
+    const stem = 'x'.repeat(140);
+    for (let i = 0; i < 8000; i++) fs.writeFileSync(path.join(bulk, stem + i), '');
+    fs.mkdirSync(path.join(dir, 'site'));
+    fs.writeFileSync(path.join(dir, 'site', 'index.html'), 'new\n');
+    const { out, code } = run(dir, ['stage', 'verify', '--session', A]);
+    assert.equal(code, 1, out);
+    assert.match(out, /site\/index\.html/);
+});
+
+// Review round: a registry root holding several repositories, its
+// render.json naming the repository's files by their path from the root.
+test('a workspace root above the repository reads its render.json against the repository\'s changes', () => {
+    const dir = tmp('fankeel-render-gate-');
+    const repo = path.join(dir, 'repo');
+    fs.mkdirSync(repo);
+    gitIn(repo, ['init', '-q']);
+    gitIn(repo, ['config', 'user.email', 'test@example.invalid']);
+    gitIn(repo, ['config', 'user.name', 'test']);
+    gitIn(repo, ['config', 'commit.gpgsign', 'false']);
+    commitFile(repo, 'base.txt');
+    fs.mkdirSync(path.join(dir, '.fankeel'), { recursive: true });
+    fs.writeFileSync(path.join(dir, '.fankeel', 'render.json'), JSON.stringify({
+        pages: [{ name: 'home', url: 'repo/site/x.html', src: ['repo/site/**'] }], roles: [{ name: 'guest' }],
+    }));
+    run(dir, ['start', '--session', A, '--task', 'a page task', '--route', 'build,verify', '--project', 'repo']);
+    commitFile(repo, 'site/x.html');
+    const { out, code } = run(dir, ['stage', 'verify', '--session', A]);
+    assert.equal(code, 1, out);
+    assert.match(out, /repo\/site\/x\.html/);
+});

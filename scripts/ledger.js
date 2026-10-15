@@ -516,13 +516,19 @@ const SKIP_HOW = 'record `ruling "render skipped" "<why>" "<cost if wrong>"`';
 // reads. No render.json, or no page with `src`, is never refused
 // (docs/90-agent/plans/2026-10-15-render-gate-design.md §1).
 function renderRefusal(root, range, opts) {
-    const git = (args) => execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+    const base = realPath(root);
+    const planDir = path.dirname(path.resolve(base, opts.plan));
+    // git runs where the plan sits, inside its repository: a registry root
+    // holding several repositories is none itself. The plan's directory may
+    // not exist yet, so its nearest existing ancestor.
+    let cwd = planDir;
+    while (!fs.existsSync(cwd) && path.dirname(cwd) !== cwd) cwd = path.dirname(cwd);
+    const git = (args) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
     let top = null;
     try { top = realPath(git(['rev-parse', '--show-toplevel']).trim()); } catch (e) { /* no git: the registry root is the stop */ }
-    const base = realPath(root);
     const stop = renderStop(base, top);
     const cache = new Map();
-    const near = [nearestTargets(path.dirname(path.resolve(base, opts.plan)), stop, cache), nearestTargets(base, base, cache)].filter(Boolean);
+    const near = [nearestTargets(planDir, stop, cache), nearestTargets(base, base, cache)].filter(Boolean);
     let reached = null;
     if (range === undefined) {
         const bad = near.find((n) => n.refusal);

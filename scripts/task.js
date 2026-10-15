@@ -31,7 +31,7 @@ const badge = require('../lib/badge.js');
 const station = require('../lib/station.js');
 const { clearEntry } = require('../lib/clear.js');
 const { tokens } = require('../lib/context.js');
-const { guardMode, sharedWith, worktreeOf, effectiveClaims } = require('../lib/guard.js');
+const { guardMode, sharedWith, worktreeOf, effectiveClaims, relPath, WORKTREE_SEGMENT, AGENT_WORKTREE_SEGMENT } = require('../lib/guard.js');
 const { overlapPaths } = require('../lib/overlap.js');
 const { splitAroundVerb } = require('../lib/argv.js');
 const { byName: stageByName, NAMES: STAGE_NAMES, FULL_ROUTE, CLASSES, normaliseRoute, positionIn, routeForClass, classForRoute } = require('../lib/stages.js');
@@ -43,7 +43,7 @@ const { handoffPath, readGate, lapsUsed, contextPath } = require('../lib/handoff
 const { controlRulesFor, PLUGIN_MARK, PLUGIN_ROOT, newestPlan, blockSizes, BLOCK_CAP } = require('../lib/render.js');
 const { estimateTokens } = require('./input-check.js');
 const plantasks = require('../lib/plantasks.js');
-const { pagesReached, renderStop, realPath, renderFileRefusal, verdictRefusal } = require('../lib/shots.js');
+const { nearestTargets, pagesReached, renderStop, realPath, renderFileRefusal, verdictRefusal } = require('../lib/shots.js');
 const { renderSkipped } = require('../lib/ledger.js');
 const { rateFor } = require('../lib/prices.js');
 
@@ -851,13 +851,20 @@ function todoLines(root, id, data) {
 // its worktree, else the project root: commits since `started`, and what is
 // uncommitted or untracked — since claims are capped and the oldest evicted.
 // Each path is read against the nearest render.json above it
-// (`pagesReached`); one that cannot be read or parsed refuses. A git that
-// fails leaves the claims alone. A given `--render` was checked before this.
+// (`pagesReached`, after `mainTreeFile`); one that cannot be read or parsed
+// refuses, and so does a git listing too large to read. A tree that is no
+// repository, or a log with no commits yet, leaves the claims to stand
+// alone. A given `--render` was checked before this.
 function renderRefusal(root, data, opts, next) {
     const base = realPath(root);
     const wt = worktreeOf(data);
     const tree = wt ? path.resolve(base, wt.path) : docs.projectRootsFor(root, data.project ? [data.project] : [])[0] || root;
-    const git = (args) => execFileSync('git', args, { cwd: tree, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+    // The default 1 MiB overflowed on a large tree, and the overflow read as
+    // "git failed", so the page fell back to the claims unseen.
+    const git = (args) => execFileSync('git', args, { cwd: tree, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 256 * 1024 * 1024 });
+    const tooBig = (e, what) => (e && e.code === 'ENOBUFS'
+        ? 'fankeel — ' + what + ' in ' + tree + ' printed more than 256 MiB, so the render check cannot list what this task changed.'
+        : null);
     const files = new Set(registry.claimsOf(data).map((c) => path.resolve(base, c)));
     let top = null;
     try { top = realPath(git(['rev-parse', '--show-toplevel']).trim()); } catch (e) { /* not a repository: claims alone */ }
@@ -870,17 +877,45 @@ function renderRefusal(root, data, opts, next) {
                     if (f) files.add(path.resolve(top, f));
                 }
             }
-        } catch (e) { /* no commits yet */ }
+        } catch (e) {
+            // A HEAD with no commits yet fails here; only an overflow refuses.
+            const why = tooBig(e, 'git log');
+            if (why) return why;
+        }
         try {
             for (const e of git(['status', '--porcelain', '-z', '--no-renames', '--untracked-files=all']).split('\0')) {
                 if (e.length > 3) files.add(path.resolve(top, e.slice(3)));
             }
-        } catch (e) { /* claims and the log alone */ }
+        } catch (e) {
+            // Anything but an overflow (a held index lock, a broken index)
+            // leaves the claims and the log to stand alone.
+            const why = tooBig(e, 'git status');
+            if (why) return why;
+        }
     }
-    const reached = pagesReached([...files], renderStop(base, top));
+    const stop = renderStop(base, top);
+    const reached = pagesReached([...files].map((f) => mainTreeFile(base, f)), stop);
     if (reached.refusal) return reached.refusal;
     if (opts.render !== undefined || renderSkipped(registry.notesOf(data).join(NL)) !== null) return null;
     return verdictRefusal(reached, '`stage ' + next + ' --render <file>`', '`note "Ruling: render skipped — <why>"`');
+}
+
+// A file in a `.fankeel/worktrees/<id8>/` or `.claude/worktrees/agent-<hex>/`
+// checkout with no render.json inside that checkout — cut before render.json
+// was committed, or written in the main tree and never committed — is read
+// where it sits in the main tree; otherwise the walk reached the root's
+// render.json with the worktree's path in front, which no `src` matches.
+function mainTreeFile(base, file) {
+    const rel = relPath(base, file);
+    if (!rel) return file;
+    for (const seg of [WORKTREE_SEGMENT, AGENT_WORKTREE_SEGMENT]) {
+        const m = seg.exec(rel);
+        if (!m) continue;
+        const end = m.index + m[0].length;
+        if (nearestTargets(path.dirname(file), path.resolve(base, rel.slice(0, end - 1)), new Map())) return file;
+        return path.resolve(base, rel.slice(0, m.index + m[1].length) + rel.slice(end));
+    }
+    return file;
 }
 
 function cmdStage(root, opts) {
