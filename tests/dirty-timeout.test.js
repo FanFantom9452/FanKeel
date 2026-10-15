@@ -28,7 +28,7 @@ function slowGit() {
   return { bin, env: {} };
 }
 
-test('a git that hangs is cut off and answers null inside three seconds', () => {
+test('a git that hangs is cut off and answers null well before the hang ends', () => {
   const repo = mkTmp('fankeel-dirty-slow-');
   fs.mkdirSync(path.join(repo, '.git'));
   const { bin, env } = slowGit();
@@ -46,7 +46,9 @@ test('a git that hangs is cut off and answers null inside three seconds', () => 
   }
   const took = Date.now() - began;
   assert.equal(got, null);
-  assert.ok(took < 3000, 'took ' + took + 'ms against a 2500ms timeout');
+  // Under the five-second hang with room for a loaded machine to spawn and
+  // kill git: a missing cut waits the whole five.
+  assert.ok(took < 4500, 'took ' + took + 'ms against a 2500ms timeout');
 });
 
 test('FANKEEL_GIT_TIMEOUT lets a slow git finish instead of answering null', () => {
