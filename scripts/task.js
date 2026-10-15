@@ -43,7 +43,7 @@ const { handoffPath, readGate, lapsUsed, contextPath } = require('../lib/handoff
 const { controlRulesFor, PLUGIN_MARK, PLUGIN_ROOT, newestPlan, blockSizes, BLOCK_CAP } = require('../lib/render.js');
 const { estimateTokens } = require('./input-check.js');
 const plantasks = require('../lib/plantasks.js');
-const { nearestTargets, pagesReached, renderStop, realPath, renderFileRefusal, verdictRefusal } = require('../lib/shots.js');
+const { nearestTargets, pagesReached, renderScope, renderFileRefusal, verdictRefusal } = require('../lib/shots.js');
 const { renderSkipped } = require('../lib/ledger.js');
 const { rateFor } = require('../lib/prices.js');
 
@@ -856,18 +856,15 @@ function todoLines(root, id, data) {
 // repository, or a log with no commits yet, leaves the claims to stand
 // alone. A given `--render` was checked before this.
 function renderRefusal(root, data, opts, next) {
-    const base = realPath(root);
     const wt = worktreeOf(data);
-    const tree = wt ? path.resolve(base, wt.path) : docs.projectRootsFor(root, data.project ? [data.project] : [])[0] || root;
+    const tree = wt ? path.resolve(root, wt.path) : docs.projectRootsFor(root, data.project ? [data.project] : [])[0] || root;
     // The default 1 MiB overflowed on a large tree, and the overflow read as
     // "git failed", so the page fell back to the claims unseen.
-    const git = (args) => execFileSync('git', args, { cwd: tree, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 256 * 1024 * 1024 });
+    const { base, git, top, stop } = renderScope(root, tree, { maxBuffer: 256 * 1024 * 1024 });
     const tooBig = (e, what) => (e && e.code === 'ENOBUFS'
         ? 'fankeel — ' + what + ' in ' + tree + ' printed more than 256 MiB, so the render check cannot list what this task changed.'
         : null);
     const files = new Set(registry.claimsOf(data).map((c) => path.resolve(base, c)));
-    let top = null;
-    try { top = realPath(git(['rev-parse', '--show-toplevel']).trim()); } catch (e) { /* not a repository: claims alone */ }
     if (top) {
         // -z: without it git quotes a non-ASCII path, which no glob matches.
         // --no-renames: a file renamed out of a `src` glob lists its old side too.
@@ -893,7 +890,6 @@ function renderRefusal(root, data, opts, next) {
             if (why) return why;
         }
     }
-    const stop = renderStop(base, top);
     const reached = pagesReached([...files].map((f) => mainTreeFile(base, f)), stop);
     if (reached.refusal) return reached.refusal;
     if (opts.render !== undefined || renderSkipped(registry.notesOf(data).join(NL)) !== null) return null;
