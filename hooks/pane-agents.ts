@@ -6,8 +6,8 @@
 // .fankeel/build/agents-<session>.json (lib/agentends.js). No engine call
 // here, so tests/pane-agents.test.js runs it under plain node.
 
-export type AgentFile = { id: string; at: number; meta: Record<string, unknown> | null; prefix: Record<string, unknown> | null }
-export type AgentNode = { id: string; title: string; type: string; model: string; effort: string; at: number; end: number | null; kids: AgentNode[] }
+export type AgentFile = { id: string; at: number; meta: Record<string, unknown> | null; prefix: Record<string, unknown> | null; tokens?: number | null }
+export type AgentNode = { id: string; title: string; type: string; model: string; effort: string; at: number; end: number | null; tokens: number | null; kids: AgentNode[] }
 
 const record = (v: unknown): Record<string, unknown> => (v && typeof v === 'object' ? (v as Record<string, unknown>) : {})
 const str = (v: unknown): string => (typeof v === 'string' ? v : '')
@@ -21,6 +21,40 @@ export function modelAlias(id: string): string {
   const m = /^claude-([a-z]+)-(\d+)(?:-(\d{1,2}))?(?:-\d{8})?(?:\[[^\]]*\])?$/.exec(id)
   if (!m) return id
   return m[3] ? `${m[1]} ${m[2]}.${m[3]}` : `${m[1]} ${m[2]}`
+}
+
+// What an agent's transcript spent: input, cache writes and output, cache
+// reads left out. A request is written as several lines under one requestId,
+// so each counts once and its last line wins; a line with none counts on its
+// own, as lib/usage.js does. No usage line at all is null, never 0.
+export function agentTokens(text: string): number | null {
+  const by = new Map<string, number>()
+  let loose = 0
+  for (const line of text.split('\n')) {
+    if (!line.trim()) continue
+    let e: Record<string, unknown>
+    try {
+      e = record(JSON.parse(line))
+    } catch {
+      continue
+    }
+    if (e.type !== 'assistant') continue
+    const usage = record(record(e.message).usage)
+    if (!Object.keys(usage).length) continue
+    const n = (k: string): number => (typeof usage[k] === 'number' && Number.isFinite(usage[k]) ? (usage[k] as number) : 0)
+    by.set(str(e.requestId) || `line-${loose++}`, n('input_tokens') + n('cache_creation_input_tokens') + n('output_tokens'))
+  }
+  if (!by.size) return null
+  let sum = 0
+  for (const v of by.values()) sum += v
+  return sum
+}
+
+// A token count the width of a minutes figure: 892, 79.4k, 1.7M.
+export function tokenLabel(n: number): string {
+  if (n < 1000) return String(n)
+  if (n < 1000000) return `${(n / 1000).toFixed(1)}k`
+  return `${(n / 1000000).toFixed(1)}M`
 }
 
 // Every subagent dispatched at or after `since`, hung under its parentAgentId;
@@ -37,7 +71,8 @@ export function agentTree(files: AgentFile[], ended: Record<string, number>, sin
     const model = str(state.model) ? modelAlias(str(state.model)) : titled ? titled[1] : str(f.meta.model) || '?'
     const effort = str(state.effortValue) || (titled ? titled[2] : '') || '?'
     const end = typeof ended[f.id] === 'number' && Number.isFinite(ended[f.id]) ? ended[f.id] : null
-    const node: AgentNode = { id: f.id, title: titled ? titled[3] : description, type: str(f.meta.agentType), model, effort, at: f.at, end, kids: [] }
+    const tokens = typeof f.tokens === 'number' && Number.isFinite(f.tokens) ? f.tokens : null
+    const node: AgentNode = { id: f.id, title: titled ? titled[3] : description, type: str(f.meta.agentType), model, effort, at: f.at, end, tokens, kids: [] }
     nodes.set(f.id, { node, parent: str(f.meta.parentAgentId) })
   }
   const roots: AgentNode[] = []

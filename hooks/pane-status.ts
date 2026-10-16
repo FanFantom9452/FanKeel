@@ -7,6 +7,7 @@ import { WHERE, FLAG, GUARD, TODO, claimsOf } from './pane-band.ts'
 import { str, list, width, cut, WIDE, DIM, minutes, nearCompact } from './pane-bar.ts'
 import type { Context } from './pane-bar.ts'
 import { HARD } from './compact.ts'
+import { tokenLabel } from './pane-agents.ts'
 import type { AgentNode } from './pane-agents.ts'
 
 // Kept as exports of this file: hooks/pane.ts imports them from here.
@@ -333,7 +334,8 @@ const AGENT_KIDS = 3
 
 // This task's subagents: a title row with how many run and how many stopped,
 // then a row an agent — ○ running in OUT, ● stopped in DONE — its title, its
-// model, its effort and its minutes, out so far or out in all. An agent's
+// model, its effort, its minutes, out so far or out in all, and the tokens it
+// spent where its transcript was there to read. An agent's
 // own agents sit under it behind ├ and └, one level drawn; the counts in the
 // title row include every descendant, drawn or not.
 function agentsBlock(nodes: AgentNode[], inner: number, now: number): Row[] {
@@ -342,7 +344,8 @@ function agentsBlock(nodes: AgentNode[], inner: number, now: number): Row[] {
   const every = all(nodes)
   const running = every.filter((n) => n.end === null).length
   const one = (n: AgentNode, lead: string): Row => {
-    const after = ` · ${n.model} · ${n.effort} · ${mins((n.end ?? now) - n.at)} 分`
+    const spent = typeof n.tokens === 'number' ? ` · ${tokenLabel(n.tokens)}` : ''
+    const after = ` · ${n.model} · ${n.effort} · ${mins((n.end ?? now) - n.at)} 分${spent}`
     const name = cut(n.title || n.type || n.id, Math.max(4, inner - width(lead) - 2 - width(after)))
     const mark: Seg = n.end === null ? { text: '○', color: OUT } : { text: '●', color: DONE }
     return row('agents', { text: lead }, mark, n.end === null ? { text: ` ${name}`, bold: true } : dim(` ${name}`), dim(after))

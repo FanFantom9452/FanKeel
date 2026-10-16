@@ -477,16 +477,16 @@ test('compact.at off measures the block against HARD from four fifths of it, and
     assert.doesNotMatch(text(at(2000000), 'context').join('\n'), /留 task|compact 中/);
 });
 
-test('the agents block is a tree: the counts, ○ running, ● stopped, └ under its parent, the model and effort on each', async () => {
+test('the agents block is a tree: the counts, ○ running, ● stopped, └ under its parent, the model, effort and tokens on each', async () => {
     const { statusRows } = await load();
     const kid = { id: 'r1', title: 'Patrol check group C', type: 'fankeel:fankeel-reader', model: 'sonnet 5.5', effort: 'low', at: NOW - 8 * 60000, end: NOW - 2 * 60000, kids: [] };
-    const root = { id: 'b1', title: 'survey stage agent', type: 'fankeel:fankeel-brain', model: 'opus 5.5', effort: 'high', at: NOW - 10 * 60000, end: null, kids: [kid] };
+    const root = { id: 'b1', title: 'survey stage agent', type: 'fankeel:fankeel-brain', model: 'opus 5.5', effort: 'high', at: NOW - 10 * 60000, end: null, tokens: 79418, kids: [kid] };
     const base = { id: ID, entry, others: [], context: null, plan: null, cols: 60, room: 60, now: NOW };
     const text = (r) => r.segs.map((s) => s.text).join('');
     const block = statusRows({ ...base, agents: [root] }).filter((r) => r.block === 'agents' && r.segs.length).map(text);
     assert.deepEqual(block, [
         '▌agents  1 在跑 · 1 完成',
-        ' ○ survey stage agent · opus 5.5 · high · 10 分',
+        ' ○ survey stage agent · opus 5.5 · high · 10 分 · 79.4k',
         '  └ ● Patrol check group C · sonnet 5.5 · low · 6 分',
     ]);
     assert.ok(!statusRows(base).some((r) => r.block === 'agents'));

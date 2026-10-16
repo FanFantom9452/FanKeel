@@ -1204,6 +1204,7 @@ function agentRig(ended) {
     const files = Object.assign(entryFile(Object.assign({}, live, { configDir: CFG })), {
         [SUBS + '/agent-run1.meta.json']: JSON.stringify({ agentType: 'implementer', description: 'sonnet 5.5 · medium: building it' }),
         [SUBS + '/agent-run1.prefix.json']: JSON.stringify({ state: { model: 'claude-sonnet-5-5', effortValue: 'high' } }),
+        [SUBS + '/agent-run1.jsonl']: JSON.stringify({ type: 'assistant', requestId: 'q1', message: { usage: { input_tokens: 2, cache_creation_input_tokens: 14759, cache_read_input_tokens: 900, output_tokens: 16 } } }),
         [SUBS + '/agent-stop1.meta.json']: JSON.stringify({ agentType: 'reviewer', description: 'checking it' }),
         [SUBS + '/agent-old1.meta.json']: JSON.stringify({ agentType: 'survey', description: 'from before' }),
         [ROOT + '/.fankeel/build/agents-' + ID + '.json']: JSON.stringify({ ended: ended || { stop1: STARTED + 60000 } }),
@@ -1226,8 +1227,19 @@ test('the Pane lists this session\'s subagents: the running, the stopped, and no
     const stop = lines.find((l) => l.includes('checking it'));
     assert.ok(run && run.includes('○') && run.includes('sonnet 5.5') && run.includes('high'), String(run));
     assert.ok(stop && stop.includes('●'), String(stop));
+    assert.ok(run.endsWith('· 14.8k'), String(run));
+    assert.ok(stop.endsWith('分'), String(stop));
     assert.ok(!lines.some((l) => l.includes('from before')));
     assert.ok(lines.some((l) => l.includes('1 在跑') && l.includes('1 完成')));
+});
+
+test('an agent\'s transcript is read again only when it moved', async () => {
+    const hooks = await wired();
+    const { $, log } = agentRig();
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    await log.ticks[0].fn();
+    assert.equal(log.reads.filter((p) => p === SUBS + '/agent-run1.jsonl').length, 1);
 });
 
 test('a stops file with a value that is not a finite number stops nobody', async () => {

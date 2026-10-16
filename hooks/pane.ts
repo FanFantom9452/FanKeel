@@ -5,7 +5,7 @@ import type { Entry, Other, Context, PlanInfo, PlanTask, Seg as StatusSeg, Row a
 import type { Limit } from './pane-bar.ts'
 import { taskDir, pendingName, parsePending } from './pane-gate.ts'
 import type { Pending } from './pane-gate.ts'
-import { agentTree } from './pane-agents.ts'
+import { agentTree, agentTokens } from './pane-agents.ts'
 import type { AgentFile, AgentNode } from './pane-agents.ts'
 import { bandRows } from './pane-band.ts'
 import type { Seg as BandSeg, BandInput } from './pane-band.ts'
@@ -236,7 +236,7 @@ const SUB_RETRY_MS = 10000
 // This task's subagents, from Claude Code's own files under
 // <configDir>/projects/<slug>/<session>/subagents (hooks/pane-agents.ts) and
 // the stops hooks/agent-end.js wrote. The session's directory is found by its
-// name under projects/ and kept; a meta or prefix file is read again only
+// name under projects/ and kept; a meta, prefix or transcript file is read again only
 // when it moved. Anything unreadable is no agents.
 async function agentsOf($: EngineInterface, entry: Entry, id: string, root: string, cache: Cache, logged: Logged): Promise<AgentNode[]> {
   try {
@@ -282,11 +282,22 @@ async function agentsOf($: EngineInterface, entry: Entry, id: string, root: stri
       }
       return (hit.value as Record<string, unknown> | null) ?? null
     }
+    // The transcript's token count, kept by its stamp: a running agent's file grows each request.
+    const spent = async (name: string): Promise<number | null> => {
+      const stamp = stamps.get(name)
+      if (!stamp) return null
+      const path = `${sub}/${name}`
+      const hit = cache.get(path)
+      if (hit && hit.stamp === stamp) return typeof hit.value === 'number' ? hit.value : null
+      const tokens = agentTokens(String(await $.fs.read(path)))
+      cache.set(path, { stamp, value: tokens })
+      return tokens
+    }
     const files: AgentFile[] = []
     for (const f of listed) {
       const m = /^agent-(.+)\.meta\.json$/.exec(f.name)
       if (!m || f.mtimeMs < started) continue
-      files.push({ id: m[1], at: f.mtimeMs, meta: await read(f.name), prefix: await read(`agent-${m[1]}.prefix.json`) })
+      files.push({ id: m[1], at: f.mtimeMs, meta: await read(f.name), prefix: await read(`agent-${m[1]}.prefix.json`), tokens: await spent(`agent-${m[1]}.jsonl`) })
     }
     const ends = await readJson($, `${root}/.fankeel/build/agents-${id}.json`)
     const ended: Record<string, number> = {}
