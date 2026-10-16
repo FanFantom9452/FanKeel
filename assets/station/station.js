@@ -4847,11 +4847,17 @@
     var NAV_LABEL = { live: loc('cmp.crumbLive', '現在'), days: loc('cmp.crumbDays', '近 30 天'), sessions: loc('cmp.crumbSessions', '最近 sessions'),
         projects: loc('cmp.crumbProjects', '專案'), docs: loc('cmp.crumbDocs', '文件'), settings: loc('cmp.crumbSettings', '設定'),
         list: loc('cmp.crumbList', '清單'), cmp: loc('cmp.crumbCmp', '比較'), tour: loc('cmp.crumbTour', '導覽') };
+    function pageTitle(r) {
+        var v = navOn(r && r.view), hit = '';
+        NAV_TREE.forEach(function (g) {
+            if (g.v === v) hit = hit || g.label;
+            (g.kids || []).forEach(function (k) { if (k[0] === v) hit = hit || k[2]; });
+        });
+        return hit || NAV_TREE[0].label;
+    }
+    if (typeof module !== 'undefined' && module.exports) module.exports.pageTitle = pageTitle;
     function drawSide() {
-        var tail = CRUMBS[route.view] ? CRUMBS[route.view](route)
-            : route.view === 'days' && route.day ? [[loc('cmp.crumbDays', '近 30 天'), '#/days'], [route.day, null]]
-                : NAV_LABEL[route.view] ? [[NAV_LABEL[route.view], null]] : [];
-        doc.getElementById('side').innerHTML = crumbHtml([[loc('cmp.crumbDashboard', '儀表板'), '#/']].concat(tail));
+        doc.getElementById('side').innerHTML = '<h1 class="ptitle">' + esc(pageTitle(route)) + '</h1>';
     }
     VIEWS.now = dashPage;
     VIEWS.live = livePage;
@@ -5619,6 +5625,17 @@
     // they are set once here, before the first draw. The switch stores the
     // choice and reloads, so the left bar's labels and every other table built
     // at load are built again in the new language.
+    // The serve state in the masthead is this plug and a dot; the words are
+    // only in `title` and `aria-label`.
+    var SERVE_ICON = '<svg class="ico" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor"'
+        + ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/>'
+        + '<path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/></svg>';
+    function serveIconHtml(up) {
+        var words = up ? loc('mast.serveUp', 'serve 連線中') : loc('mast.serveDown', 'serve 已停');
+        return '<span class="pill ' + (up ? 'live srv up" id="serveup"' : 'down srv" id="servedown"') + ' role="status" aria-label="' + esc(words)
+            + '" title="' + esc(words) + '">' + SERVE_ICON + '<i class="dot ' + (up ? 'live' : 'down') + '" aria-hidden="true"></i></span>';
+    }
+    if (typeof module !== 'undefined' && module.exports) module.exports.serveIconHtml = serveIconHtml;
     function applyChrome() {
         if (!I18N) return;
         var en = I18N.lang === 'en';
@@ -5626,13 +5643,19 @@
         if (doc.documentElement && doc.documentElement.setAttribute) doc.documentElement.setAttribute('lang', en ? 'en' : 'zh-Hant');
         doc.title = loc('mast.title', 'fankeel 測站');
         set('brand', function (el) { el.setAttribute('aria-label', loc('mast.home', 'fankeel 測站 首頁')); });
-        set('brandw', function (el) { el.textContent = loc('mast.station', '測站'); });
+        set('brandw', function (el) { el.textContent = ''; });
         set('side', function (el) { el.setAttribute('aria-label', loc('mast.crumbs', '位置')); });
         set('q', function (el) {
             el.placeholder = loc('mast.searchHint', '搜尋任務、session、碰過的檔案…');
             el.setAttribute('aria-label', loc('mast.search', '搜尋'));
         });
-        set('servedown', function (el) { el.innerHTML = '<i class="dot down"></i>' + esc(loc('mast.serveDown', 'serve 已停')); });
+        set('servedown', function (el) {
+            el.className = 'pill down srv';
+            el.setAttribute('role', 'status');
+            el.setAttribute('aria-label', loc('mast.serveDown', 'serve 已停'));
+            el.title = loc('mast.serveDown', 'serve 已停');
+            el.innerHTML = SERVE_ICON + '<i class="dot down" aria-hidden="true"></i>';
+        });
         set('langzh', function (el) {
             el.setAttribute('aria-pressed', String(!en));
             el.setAttribute('aria-checked', String(!en));
@@ -5914,10 +5937,20 @@
             var page = doc.getElementById('page');
             if (page) page.style.cssText = on ? 'opacity:.72;filter:saturate(.3)' : '';
         };
+        // The shell ships only #servedown; the "connected" twin is built the
+        // first time the state is set, and the two swap by `hidden`.
         var servePill = function (on) {
             var pill = doc.getElementById('servedown');
-            if (pill) pill.hidden = !on;
+            if (!pill) return;
+            var upEl = doc.getElementById('serveup');
+            if (!upEl && pill.insertAdjacentHTML) {
+                pill.insertAdjacentHTML('beforebegin', serveIconHtml(true));
+                upEl = doc.getElementById('serveup');
+            }
+            if (upEl) upEl.hidden = on;
+            pill.hidden = !on;
         };
+        servePill(false);
         var showDead = function (msg) {
             if (!deadBar) {
                 deadBar = doc.createElement('div');

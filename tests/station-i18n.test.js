@@ -57,12 +57,12 @@ test('t: English by key with {vars} filled, Chinese otherwise, and set() stores 
     const w = { navigator: { language: 'en-US' }, localStorage: { getItem: (k) => kept[k] || null, setItem: (k, v) => { kept[k] = v; } } };
     const api = I.make(w);
     assert.equal(api.lang, 'en');
-    assert.equal(api.t('mast.station', '測站'), 'station');
+    assert.equal(api.t('mast.search', '搜尋'), 'Search');
     assert.equal(api.t('no.suchKey', '中文'), '中文');
     assert.equal(api.t('no.suchKey', '等了 {t}', { t: '4m' }), '等了 4m');
     assert.equal(api.set('zh'), true);
     assert.equal(kept['station.lang'], 'zh');
-    assert.equal(api.t('mast.station', '測站'), '測站');
+    assert.equal(api.t('mast.search', '搜尋'), '搜尋');
     assert.equal(api.set('fr'), false);
 });
 
@@ -129,13 +129,14 @@ test('EN: the left bar, the crumbs and the masthead carry no CJK character', () 
     assert.ok(p.els.nav.innerHTML.length > 200, 'the nav was drawn');
     assert.equal(where(p.els.nav.innerHTML), '', 'nav');
     assert.equal(where(p.els.side.innerHTML), '', 'crumbs');
-    assert.equal(p.els.brandw.textContent, 'station');
+    assert.equal(p.els.brandw.textContent, '');
     assert.equal(p.els.q.placeholder, 'Search tasks, sessions, files touched…');
     for (const id of ['brand', 'side', 'q']) {
         assert.ok(p.els[id].attrs['aria-label'], id + ' has an aria-label');
         assert.equal(where(p.els[id].attrs['aria-label']), '', id);
     }
-    assert.equal(where(p.els.servedown.innerHTML), '', 'servedown');
+    assert.ok(p.els.servedown.attrs['aria-label'], 'servedown has an aria-label');
+    assert.equal(where(p.els.servedown.attrs['aria-label']), '', 'servedown');
     assert.equal(where(p.doc.title), '', 'title');
     assert.equal(p.root.attrs.lang, 'en');
     assert.equal(p.els.langen.attrs['aria-pressed'], 'true');
@@ -148,7 +149,7 @@ test('EN: the left bar, the crumbs and the masthead carry no CJK character', () 
 test('zh: the same boot draws the Chinese bar and masthead (the control)', () => {
     const p = boot('zh');
     assert.match(p.els.nav.innerHTML, /儀表板/);
-    assert.equal(p.els.brandw.textContent, '測站');
+    assert.equal(p.els.brandw.textContent, '');
     assert.equal(p.root.attrs.lang, 'zh-Hant');
     assert.equal(p.els.langzh.attrs['aria-pressed'], 'true');
 });

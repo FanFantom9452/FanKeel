@@ -485,7 +485,6 @@
             'cmp.crumbList': 'List',
             'cmp.crumbCmp': 'Compare',
             'cmp.crumbTour': 'Tour',
-            'cmp.crumbDashboard': 'Dashboard',
             // tune — block-changed notifications and pending gates
             'tune.doneColon': 'Done: ',
             'tune.notChangedColon': 'Not changed: ',
@@ -939,10 +938,10 @@
             // mast — the masthead (station.js `applyChrome`)
             'mast.title': 'fankeel station',
             'mast.home': 'fankeel station home',
-            'mast.station': 'station',
             'mast.crumbs': 'Location',
             'mast.searchHint': 'Search tasks, sessions, files touched…',
             'mast.search': 'Search',
+            'mast.serveUp': 'serve connected',
             'mast.serveDown': 'serve stopped',
             'mast.appearance': 'Appearance',
         },
