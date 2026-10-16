@@ -1,6 +1,6 @@
 {
   "name": "fankeel",
-  "version": "0.111.7",
+  "version": "0.111.8",
   "private": true,
   "description": "Claude Code plugin: per-session task registry and development discipline.",
   "license": "MIT",
