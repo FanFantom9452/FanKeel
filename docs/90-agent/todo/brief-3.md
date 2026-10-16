@@ -18,3 +18,7 @@ link: hooks/brief.js
 4. 每一個：看 `<session 目錄>/subagents/agent-<agentId>.jsonl` 第 1 行是否以 `MOD-PROBE-SPAWN-<nonce>` 結尾。互動式 session 的 jsonl 可能不落地（mod-probe-3 只見 `.meta.json`），不在就改看 records 裡的 `agent.spawn` 紀錄，並記下「transcript 未落地」。
 5. `session.append`：repo 裡沒有呼叫它的程式。先讀 `SessionAppendArgs` 的欄位名：它在 probe 的 mod 資料夾底下 `.claude-plugin/types/claude-code/index.d.ts`，這份型別檔是 mod 載入時由引擎產生的，不在 git 裡，所以要在步驟 1 的 session 開過、mod 載入後才有，再在 probe 加一段，於第二個子代理執行中帶它的 agentId 呼叫一次，記下回傳或 `{deny}`。
 6. 三個都成立，就另開 design 決定 `hooks/brief.js` 哪一部分搬到 `agent.spawn`；任一不成立，就把結果寫進本條並關閉。
+
+## 探測準備（2026-10-17）
+
+步驟 1 與步驟 5 已備好，檔案在 `.fankeel/build/2026-10-17-spawn-probe/`（不進 git）。`mod/hooks/probe.ts` 的 LOG 指向同一目錄的 `records`，nonce 改存在 `probe.nonce4`。第二個 description 含 `mod-probe b` 的子代理跑到第一步時，probe 對它呼叫一次 `session.append`，結果記成 `session.append.call`。欄位照 `.claude-plugin/types/claude-code/index.d.ts:10541` 的 `SessionAppendArgs`：`message` 與 `agentId`；這份型別檔在這個 checkout 已經有，不必先載入 mod。`node .fankeel/build/2026-10-17-spawn-probe/check.mjs` 在假引擎上驗過這三件事。步驟 2 起要使用者在互動式 session 跑：`claude --plugin-dir .fankeel/build/2026-10-17-spawn-probe/mod --debug-file <log>`。
