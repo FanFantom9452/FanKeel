@@ -1,7 +1,7 @@
 ---
 label: pane
 title: 拿掉沒人畫的 turn.running
-description: hooks/pane.ts 的 turn.running 自 10-16 路線圓點不呼吸後只剩重畫 key 在讀，沒有東西拿它來畫。
+description: Pane 的 turn.running 自 10-16 路線圓點不呼吸後只剩重畫 key 在讀，沒有東西拿它來畫。
 state: ready
 link: hooks/pane.ts
 ---
