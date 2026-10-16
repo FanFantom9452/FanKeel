@@ -51,7 +51,7 @@ type Cache = Map<string, { stamp: string; value: unknown }>
 const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, context: null, limits: [], plan: null, remote: false, probe: null, agents: [], station: null })
 
 // The last message each silent catch logged: the tick runs four times a second, and a failure that stays is said once.
-type Logged = { context: string; plan: string; open: string; registry: string; neighbour: string; gate: string; live: string; remote: string; bandSvg: string; paneSvg: string; agents: string }
+type Logged = { context: string; plan: string; open: string; registry: string; neighbour: string; gate: string; live: string; remote: string; bandSvg: string; paneSvg: string; agents: string; station: string }
 
 // A registry file that is there and does not parse: told apart so `tick` can wait it out for a while, then give up on it.
 class Unreadable extends Error {}
@@ -309,7 +309,7 @@ const STATION_URL = /^http:\/\/127\.0\.0\.1:\d{1,5}\/?$/
 // The station's url as <configDir>/fankeel/serve.json records it (lib/serve.js),
 // or null when there is none. With no entry the config directory is
 // CLAUDE_CONFIG_DIR, else ~/.claude.
-async function stationOf($: EngineInterface, entry: Entry | null): Promise<string | null> {
+async function stationOf($: EngineInterface, entry: Entry | null, logged: Logged): Promise<string | null> {
   try {
     const recorded = !!entry && typeof entry.configDir === 'string' && !!entry.configDir
     const configDir = recorded && entry ? await configDirOf($, entry) : ((await $.env.get('CLAUDE_CONFIG_DIR')) || (await configDirOf($, {}))).replace(/[\\/]+$/, '')
@@ -318,13 +318,15 @@ async function stationOf($: EngineInterface, entry: Entry | null): Promise<strin
     if (!(await $.fs.exists(file))) return null
     const got = await readJson($, file)
     return got && typeof got.url === 'string' && STATION_URL.test(got.url) ? got.url : null
-  } catch {
+  } catch (err) {
+    logOnce($, logged, 'station', `fankeel pane: station record unreadable, ${String(err)}`)
     return null
   }
 }
 
 // Opens the station's page in the host's browser: `start` on Windows, else
-// `open`, then `xdg-open`. When none of them runs, the url is copied instead.
+// `open`, then `xdg-open`. When none of them runs, the url is copied instead,
+// and when that fails too a toast says so with the url in it.
 async function openStation($: EngineInterface, url: string, surface: UiPressArgument['surface']): Promise<void> {
   const windows = (await $.env.get('OS')) === 'Windows_NT'
   const tries = windows ? [['cmd', '/c', 'start', '', url]] : [['open', url], ['xdg-open', url]]
@@ -336,7 +338,12 @@ async function openStation($: EngineInterface, url: string, surface: UiPressArgu
       // `$.process.run` is CLI only: on another engine it rejects, and the next try or the copy follows.
     }
   }
-  await $.ui.copy({ text: url, surface })
+  try {
+    if ((await $.ui.copy({ text: url, surface })).isCopied) return
+  } catch {
+    // Said by the toast below, the same as a copy the surface declined.
+  }
+  $.ui.toast(`station：開不了瀏覽器，也複製不了網址 ${url}`)
 }
 
 // Everything both drawings show: this session's entry, the other active
@@ -348,7 +355,7 @@ async function look($: EngineInterface, cache: Cache, logged: Logged): Promise<S
   const id = await $.session.id()
   if (!SESSION_ID.test(id)) return blank(id)
   const found = await findEntry($, id)
-  if (!found || !isActive(found.entry)) return { ...blank(id), station: await stationOf($, null) }
+  if (!found || !isActive(found.entry)) return { ...blank(id), station: await stationOf($, null, logged) }
   const entry = found.entry as Entry
 
   const alive = await liveOf($, found.root, logged)
@@ -401,7 +408,7 @@ async function look($: EngineInterface, cache: Cache, logged: Logged): Promise<S
   const probe = await probeOf($)
   const remote = await remoteOf($, entry, id, cache, logged)
   const agents = await agentsOf($, entry, id, found.root, cache, logged)
-  const station = await stationOf($, entry)
+  const station = await stationOf($, entry, logged)
   return { id, entry, others, pending, context, limits, plan, remote, probe, agents, station }
 }
 
@@ -482,7 +489,7 @@ async function tick($: EngineInterface, state: State): Promise<void> {
 export const register: Register = (on) => {
   const state: State = {
     seen: blank(''), print: '', mine: false, edge: { task: false }, bad: 0, busy: false, cache: new Map(),
-    logged: { context: '', plan: '', open: '', registry: '', neighbour: '', gate: '', live: '', remote: '', bandSvg: '', paneSvg: '', agents: '' },
+    logged: { context: '', plan: '', open: '', registry: '', neighbour: '', gate: '', live: '', remote: '', bandSvg: '', paneSvg: '', agents: '', station: '' },
   }
 
   on('session.start', async ($, e, next) => {

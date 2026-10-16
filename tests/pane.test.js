@@ -1168,7 +1168,7 @@ test('with a station up the Pane carries a button that opens its url, and copies
     const ran = [];
     const copied = [];
     $.process = { run: async (argv) => { ran.push(argv); return { exitCode: 0, stdout: '', stderr: '' }; } };
-    $.ui.copy = async (c) => { copied.push(c); return { ok: true }; };
+    $.ui.copy = async (c) => { copied.push(c); return { isCopied: true }; };
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
     const tree = await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } });
@@ -1181,6 +1181,27 @@ test('with a station up the Pane carries a button that opens its url, and copies
     $.process.run = async () => { throw new Error('CLI only'); };
     await found[0].props.onPress({ surface: 'terminal' });
     assert.deepEqual(copied, [{ text: url, surface: 'terminal' }]);
+    assert.deepEqual(log.toasts, []);
+    // Desktop's copy can answer no-clipboard: then a toast carries the url, so the press is never silent.
+    $.ui.copy = async () => ({ isCopied: false, reason: 'no-clipboard' });
+    await found[0].props.onPress({ surface: 'desktop' });
+    assert.equal(log.toasts.length, 1);
+    assert.ok(String(log.toasts[0]).includes(url));
+    $.ui.copy = async () => { throw new Error('gone'); };
+    await found[0].props.onPress({ surface: 'desktop' });
+    assert.equal(log.toasts.length, 2);
+});
+
+test('a station record that cannot be read is said once in the debug log', async () => {
+    const hooks = await wired();
+    const cfg = 'C:/cfg';
+    const { $, log } = fake({ files: entryFile(Object.assign({}, live, { configDir: cfg })) });
+    const exists = $.fs.exists;
+    $.fs.exists = async (f) => { if (String(f).endsWith('serve.json')) throw new Error('denied'); return exists(f); };
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    await log.ticks[0].fn();
+    assert.equal(log.logs.filter((l) => String(l).includes('station record unreadable')).length, 1);
 });
 
 test('off Windows the button tries open, then xdg-open; a url that is not the local station draws no button', async () => {
