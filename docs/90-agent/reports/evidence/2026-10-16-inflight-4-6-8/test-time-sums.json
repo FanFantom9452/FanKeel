@@ -1,0 +1,9 @@
+{
+  "note": "sum of top-level passing test durations (seconds) in one suite run, from node --test output",
+  "sums": {
+    "k1-s1": 4844,
+    "k4-s1": 22401,
+    "k6-s1": 33319,
+    "k8-s5": 44606
+  }
+}

@@ -1,0 +1,4 @@
+# total wall per batch, timed by the shell loop around bench.js role reader --runs 2 --jobs N
+jobs 4 wall 167s rc 0
+jobs 6 wall 137s rc 0
+jobs 8 wall 118s rc 0

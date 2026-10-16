@@ -1,0 +1,21 @@
+# k8 (8 suites, default concurrency) hang — observed live 2026-10-16 ~18:40 local (UTC+8),
+# from Win32_Process (CreationDate, KernelModeTime+UserModeTime) and Get-Process .Threads.
+# Not recorded by a script; copied from the session's tool output. Times are local.
+# suites.js 8 k8 started its suites at 15:43:08; only suite 5 finished (k8-s5-summary.txt).
+
+pid    start     cpu_s  script (under worktree wtN)
+52152  15:43:45  0.4    wt4 scripts/ledger.js ... brief
+81996  15:43:45  0.4    wt7 scripts/judge.js record
+41576  15:43:45  0.3    wt4 hooks/inject.js
+46248  15:43:45  0.4    wt4 scripts/docs-check.js
+76160  15:43:45  0.4    wt1 scripts/orient.js
+59332  15:43:45  0.4    wt6 scripts/orient.js
+66936  15:43:46  0.3    wt7 scripts/docs-check.js
+27680  15:43:46  0.3    wt4 hooks/gate.js
+57096  15:43:47  0.3    wt8 hooks/leave.js
+73532  15:43:47  0.4    wt3 hooks/gate-write.js
+76996  15:43:47  0.3    wt7 hooks/brief.js
+
+each: 0 child processes; pid 76160 had 4 threads (wait reasons: Unknown 1, UserRequest 2, EventPairLow 1).
+each parent is a node --test worker of the suite in the same worktree, started 15:43:12-22.
+cpu.csv starts at 16:31 (local); 16:40-18:40, 1194 samples: avg 9.4%, min 0, max 66.4 (other sessions shared the machine).
