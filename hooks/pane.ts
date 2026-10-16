@@ -1,4 +1,4 @@
-import type { Register, EngineInterface } from 'claude-code'
+import type { Register, EngineInterface, UiPressArgument } from 'claude-code'
 import { turn } from './turn.ts'
 import { parentOf, isActive, SESSION_ID, thresholdWith } from './compact.ts'
 import { statusRows, ledgerDoneIds, planTasks } from './pane-status.ts'
@@ -38,6 +38,8 @@ type Seen = {
   probe: string | null
   // This task's subagents as a tree, from Claude Code's subagents files (agentsOf).
   agents: AgentNode[]
+  // The station's url from serve.json (stationOf), or null when none is up.
+  station: string | null
 }
 
 // What a file last parsed to, and the time and size it had then: the tick runs
@@ -46,7 +48,7 @@ type Seen = {
 // session's own registry file, the pending file and the ledger are read every tick.
 type Cache = Map<string, { stamp: string; value: unknown }>
 
-const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, context: null, limits: [], plan: null, remote: false, probe: null, agents: [] })
+const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, context: null, limits: [], plan: null, remote: false, probe: null, agents: [], station: null })
 
 // The last message each silent catch logged: the tick runs four times a second, and a failure that stays is said once.
 type Logged = { context: string; plan: string; open: string; registry: string; neighbour: string; gate: string; live: string; remote: string; bandSvg: string; paneSvg: string; agents: string }
@@ -290,6 +292,43 @@ async function agentsOf($: EngineInterface, entry: Entry, id: string, root: stri
   }
 }
 
+// What a station's url looks like: scripts/station.js binds 127.0.0.1. Anything
+// else in serve.json draws no button, since pressing it hands the url to a shell's `start`.
+const STATION_URL = /^http:\/\/127\.0\.0\.1:\d{1,5}\/?$/
+
+// The station's url as <configDir>/fankeel/serve.json records it (lib/serve.js),
+// or null when there is none. With no entry the config directory is
+// CLAUDE_CONFIG_DIR, else ~/.claude.
+async function stationOf($: EngineInterface, entry: Entry | null): Promise<string | null> {
+  try {
+    const recorded = !!entry && typeof entry.configDir === 'string' && !!entry.configDir
+    const configDir = recorded && entry ? await configDirOf($, entry) : ((await $.env.get('CLAUDE_CONFIG_DIR')) || (await configDirOf($, {}))).replace(/[\\/]+$/, '')
+    if (!configDir) return null
+    const file = `${configDir}/fankeel/serve.json`
+    if (!(await $.fs.exists(file))) return null
+    const got = await readJson($, file)
+    return got && typeof got.url === 'string' && STATION_URL.test(got.url) ? got.url : null
+  } catch {
+    return null
+  }
+}
+
+// Opens the station's page in the host's browser: `start` on Windows, else
+// `open`, then `xdg-open`. When none of them runs, the url is copied instead.
+async function openStation($: EngineInterface, url: string, surface: UiPressArgument['surface']): Promise<void> {
+  const windows = (await $.env.get('OS')) === 'Windows_NT'
+  const tries = windows ? [['cmd', '/c', 'start', '', url]] : [['open', url], ['xdg-open', url]]
+  for (const argv of tries) {
+    try {
+      const done = await $.process.run(argv, { timeoutMs: 10000 })
+      if (done.exitCode === 0) return
+    } catch {
+      // `$.process.run` is CLI only: on another engine it rejects, and the next try or the copy follows.
+    }
+  }
+  await $.ui.copy({ text: url, surface })
+}
+
 // Everything both drawings show: this session's entry, the other active
 // entries beside it, the gate hooks/gate.js is holding, the context count and
 // the plan's ledger; the neighbours and the plan file are read again only when
@@ -299,7 +338,7 @@ async function look($: EngineInterface, cache: Cache, logged: Logged): Promise<S
   const id = await $.session.id()
   if (!SESSION_ID.test(id)) return blank(id)
   const found = await findEntry($, id)
-  if (!found || !isActive(found.entry)) return blank(id)
+  if (!found || !isActive(found.entry)) return { ...blank(id), station: await stationOf($, null) }
   const entry = found.entry as Entry
 
   const alive = await liveOf($, found.root, logged)
@@ -352,7 +391,8 @@ async function look($: EngineInterface, cache: Cache, logged: Logged): Promise<S
   const probe = await probeOf($)
   const remote = await remoteOf($, entry, id, cache, logged)
   const agents = await agentsOf($, entry, id, found.root, cache, logged)
-  return { id, entry, others, pending, context, limits, plan, remote, probe, agents }
+  const station = await stationOf($, entry)
+  return { id, entry, others, pending, context, limits, plan, remote, probe, agents, station }
 }
 
 type State = {
@@ -397,7 +437,7 @@ async function tick($: EngineInterface, state: State): Promise<void> {
     const clock = next.entry ? await $.clock.now() : 0
     const minute = Math.floor(clock / 60000)
     const second = next.pending ? Math.floor(clock / 1000) : 0
-    const now = JSON.stringify([next.entry, next.others, next.context, next.limits, next.plan, next.remote, next.probe, minute, second, turn.running])
+    const now = JSON.stringify([next.entry, next.others, next.context, next.limits, next.plan, next.remote, next.probe, next.agents, next.station, minute, second, turn.running])
     // The opens and closes have their own memory, `edge`, which moves only when they all went through: a rejected
     // one is met again next tick as the same edge, while `seen` and the redraw below never wait on them.
     try {
@@ -507,7 +547,7 @@ export const register: Register = (on) => {
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
-    const { Box, Text } = $.ui.resolve(e)
+    const { Box, Text, Button } = $.ui.resolve(e)
     const seen = state.seen
     const props = (e.props ?? {}) as { bodyColumns?: number; scroll?: { bodyRows?: number } }
     // The body's own cells where the surface measured them (41 by 32 on Claude Desktop); the viewport is the whole surface.
@@ -528,11 +568,16 @@ export const register: Register = (on) => {
       turn: turn.running,
       gateAt: seen.pending ? (seen.pending.at ?? now) : null,
       agents: seen.agents,
+      station: seen.station,
     }
     const status = statusRows(input)
     const blankRow = () => h(Text, {}, ' ')
     // A row's segments touch: each carries its own colour, and its own space where it wants one.
-    const piece = (seg: StatusSeg) => h(Text, { color: seg.color, bold: seg.bold, wrap: 'truncate-end' }, seg.text)
+    const piece = (seg: StatusSeg) => {
+      const url = seen.station
+      if (seg.press === 'station' && url) return h(Button, { key: 'station', label: seg.text, hotkey: 's', onPress: (press: UiPressArgument) => openStation($, url, press.surface) })
+      return h(Text, { color: seg.color, bold: seg.bold, wrap: 'truncate-end' }, seg.text)
+    }
     const line = (row: StatusRow) => (row.segs.length === 0 ? blankRow() : h(Box, { flexDirection: 'row' }, ...row.segs.map(piece)))
     // Claude Desktop draws the route, the clash, the tasks and the context as Svg; every other surface draws the text.
     if (e.surface === 'desktop') {

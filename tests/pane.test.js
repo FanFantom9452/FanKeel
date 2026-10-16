@@ -129,6 +129,7 @@ test('the Pane draws the task block on top, then what is looked up, each block u
         ' · a note',
         ' ',
         '▌abcdef12 · /fankeel-panel 關閉',
+        ' station 未啟動',
     ]);
     assert.doesNotMatch(paneLines(tree).join('\n'), /touched|▸|本站|2 of 3|bounded|400k|450k/);
     assert.equal(buttons(tree).length, 0);
@@ -619,8 +620,8 @@ test('the Pane is laid out in its own body columns and rows, each block under on
     assert.equal(paneLines(tree).filter((t) => /… @ build · \d+m$/.test(t)).length, 2);
     const foot = leaves(tree).find((n) => n.children.join('').startsWith('abcdef12'));
     assert.equal(foot.props.color, '#8a8a8a');
-    // 17 rows in all: the task 4, the clash 4, context 2, notes 2, the foot 1, and four blank rows between.
-    assert.equal(tree.children.length, 17);
+    // 18 rows in all: the task 4, the clash 4, context 2, notes 2, the foot 2 (its station row last), and four blank rows between.
+    assert.equal(tree.children.length, 18);
     assert.deepEqual(heads(await at(15)), ['context'], 'the room is the body rows the surface gave, not the viewport');
 });
 
@@ -884,17 +885,17 @@ test('FANKEEL_PANE_PROBE draws what the engine says the session draws on above t
     const draw = async () => paneLines(await hooks['ui.render']($, { viewport: { columns: 60, rows: 40 } }));
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
-    assert.deepEqual((await draw()).slice(-3), [' ', '▌surfaces [terminal, desktop] · surface terminal', ' abcdef12 · /fankeel-panel 關閉']);
+    assert.deepEqual((await draw()).slice(-4), [' ', '▌surfaces [terminal, desktop] · surface terminal', ' abcdef12 · /fankeel-panel 關閉', ' station 未啟動']);
     const after = log.invalidated;
     await log.ticks[0].fn();
     assert.equal(log.invalidated, after, 'the same surfaces redrew');
     surfaces.length = 0;
     await log.ticks[0].fn();
     assert.equal(log.invalidated, after + 1);
-    assert.deepEqual((await draw()).slice(-2), ['▌surfaces [] · surface null', ' abcdef12 · /fankeel-panel 關閉']);
+    assert.deepEqual((await draw()).slice(-3), ['▌surfaces [] · surface null', ' abcdef12 · /fankeel-panel 關閉', ' station 未啟動']);
     $.session.surface = async () => { throw new Error('gone'); };
     await log.ticks[0].fn();
-    assert.deepEqual((await draw()).slice(-2), ['▌surfaces ? · Error: gone', ' abcdef12 · /fankeel-panel 關閉']);
+    assert.deepEqual((await draw()).slice(-3), ['▌surfaces ? · Error: gone', ' abcdef12 · /fankeel-panel 關閉', ' station 未啟動']);
 });
 
 test('with no FANKEEL_PANE_PROBE the Pane draws no probe row and the engine is not asked', async () => {
@@ -1150,4 +1151,51 @@ test('a turn flag that changes redraws once on the next tick, and not again', as
     assert.equal(log.invalidated, 1);
     await log.ticks[0].fn();
     assert.equal(log.invalidated, 1);
+});
+
+test('with a station up the Pane carries a button that opens its url, and copies it when nothing opens', async () => {
+    const hooks = await wired();
+    const url = 'http://127.0.0.1:28888/';
+    const cfg = 'C:/cfg';
+    const files = Object.assign(entryFile(Object.assign({}, live, { configDir: cfg })), { [cfg + '/fankeel/serve.json']: JSON.stringify({ pid: 1, port: 28888, url, started: 1 }) });
+    const { $, log } = fake({ files, env: { OS: 'Windows_NT' } });
+    const ran = [];
+    const copied = [];
+    $.process = { run: async (argv) => { ran.push(argv); return { exitCode: 0, stdout: '', stderr: '' }; } };
+    $.ui.copy = async (c) => { copied.push(c); return { ok: true }; };
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const tree = await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } });
+    const found = buttons(tree);
+    assert.equal(found.length, 1);
+    assert.equal(found[0].props.label, '開啟 station');
+    assert.ok(paneLines(tree).some((l) => l.includes(url)));
+    await found[0].props.onPress({ surface: 'terminal' });
+    assert.deepEqual(ran, [['cmd', '/c', 'start', '', url]]);
+    $.process.run = async () => { throw new Error('CLI only'); };
+    await found[0].props.onPress({ surface: 'terminal' });
+    assert.deepEqual(copied, [{ text: url, surface: 'terminal' }]);
+});
+
+test('off Windows the button tries open, then xdg-open; a url that is not the local station draws no button', async () => {
+    const hooks = await wired();
+    const url = 'http://127.0.0.1:28888/';
+    const cfg = 'C:/cfg';
+    const serve = (u) => ({ [cfg + '/fankeel/serve.json']: JSON.stringify({ pid: 1, port: 28888, url: u, started: 1 }) });
+    const { $, log, store } = fake({ files: Object.assign(entryFile(Object.assign({}, live, { configDir: cfg })), serve(url)) });
+    const ran = [];
+    $.process = { run: async (argv) => { ran.push(argv); return { exitCode: argv[0] === 'open' ? 1 : 0, stdout: '', stderr: '' }; } };
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const draw = async () => hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } });
+    await buttons(await draw())[0].props.onPress({ surface: 'terminal' });
+    assert.deepEqual(ran, [['open', url], ['xdg-open', url]]);
+    // The url is in the redraw key: a station that goes away redraws on the next tick.
+    const after = log.invalidated;
+    Object.assign(store, serve('https://example.com/'));
+    await log.ticks[0].fn();
+    assert.equal(log.invalidated, after + 1);
+    const tree = await draw();
+    assert.equal(buttons(tree).length, 0);
+    assert.ok(paneLines(tree).includes(' station 未啟動'));
 });

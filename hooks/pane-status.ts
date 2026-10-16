@@ -17,7 +17,8 @@ export type Entry = Record<string, unknown>
 export type Other = { id: string; entry: Entry }
 // `color` is a hex, or absent for the terminal's own. The segments of a row
 // touch: one that wants a space before it carries the space in its text.
-export type Seg = { text: string; color?: string; bold?: boolean }
+// `press` makes the segment a Button on the Pane (hooks/pane.ts piece): 'station' opens the station's page.
+export type Seg = { text: string; color?: string; bold?: boolean; press?: 'station' }
 // One drawn row. No segments is the blank row above a block. `who` is the
 // neighbour a clash row names: hooks/pane.ts counts them against the band's flag.
 export type Row = { block: string; segs: Seg[]; who?: string }
@@ -41,6 +42,8 @@ export type StatusInput = {
   gateAt?: number | null
   // This task's subagents as a tree (hooks/pane-agents.ts agentTree); absent or empty draws no block.
   agents?: AgentNode[]
+  // The station's url, from <configDir>/fankeel/serve.json (hooks/pane.ts stationOf); absent or null when none is up.
+  station?: string | null
 }
 
 // Each block's rail, a fixed colour whatever the stage, on its first drawn row;
@@ -303,6 +306,16 @@ function contextBlock(context: Context, inner: number): Row[] {
   ]
 }
 
+// The station, the foot's last row: a button that opens its page and the whole
+// url beside it, or grey words saying none is up. The terminal draws the
+// button as `[ label ]`, four cells wider than its label; a Pane narrower than
+// the url cuts the url's end.
+function stationRow(url: string | null | undefined, inner: number): Row {
+  if (!url) return row('foot', dim(cut('station 未啟動', inner)))
+  const label = '開啟 station'
+  return row('foot', { text: label, press: 'station' }, dim(cut(` ${url}`, Math.max(4, inner - width(label) - 4))))
+}
+
 // A row cut to `cols` cells: the segment that crosses the edge is cut, and the ones after it go.
 function fit(r: Row, cols: number): Row {
   let left = cols
@@ -360,6 +373,8 @@ export function statusRows(input: StatusInput): Row[] {
     return [
       { block: 'empty', segs: [{ text: cut('這個 session 沒有進行中的任務', cols) }] },
       { block: 'empty', segs: [dim(cut('/fankeel 開一個', cols))] },
+      // The station row with its rail left off, as the two above have none.
+      { block: 'empty', segs: stationRow(input.station, cols).segs.slice(1) },
     ]
   }
   // 1: the cell every drawn row opens with, its block's rail or the space under it.
@@ -380,7 +395,7 @@ export function statusRows(input: StatusInput): Row[] {
 
   // The probe is asked for by hand (hooks/pane.ts probeOf): it is drawn whole, in the block that never drops.
   const probed = input.probe ? wrap(input.probe, inner).map((text) => row('foot', dim(text))) : []
-  blocks.push([...probed, row('foot', dim(cut(`${id.slice(0, 8)} · /fankeel-panel 關閉`, inner)))])
+  blocks.push([...probed, row('foot', dim(cut(`${id.slice(0, 8)} · /fankeel-panel 關閉`, inner))), stationRow(input.station, inner)])
 
   // Every block but the first costs a blank row above it.
   const size = (): number => blocks.reduce((n, block) => n + block.length, blocks.length - 1)
