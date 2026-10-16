@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # Pane：route、tasks、TODO 可收合，TODO 標題跳到 station

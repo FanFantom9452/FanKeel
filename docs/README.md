@@ -252,6 +252,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | TODO 全表盤點（10-16 晚）做了什麼、沒做什麼：拿掉 `turn.running`、子代理樹跑著的排前面並顯示 token、tasks 過十個畫長條、Pane 拿掉 context 區塊 | [reports/patrols/2026-10-16-todo-patrol-agent-tokens.md](90-agent/reports/patrols/2026-10-16-todo-patrol-agent-tokens.md) — *繁體中文* |
 | 那份盤點的 design 與五個 task | `docs/99-archive/2026-10-16-todo-patrol-agent-tokens-design.md`、`docs/99-archive/2026-10-16-todo-patrol-agent-tokens.md` — *built, 繁體中文* |
 | 那份盤點的 design 與八個 task | `docs/99-archive/2026-10-16-todo-patrol-dots-agents-design.md`、`docs/99-archive/2026-10-16-todo-patrol-dots-agents.md` — *built, 繁體中文* |
+| TODO 全表盤點（10-17）做了什麼、沒做什麼：Pane 的 route、tasks、TODO 可收合，TODO 標題跳到 station 那一條，brief-3 探測檔備好 | [reports/patrols/2026-10-17-todo-patrol-pane-fold-todo.md](90-agent/reports/patrols/2026-10-17-todo-patrol-pane-fold-todo.md) — *繁體中文* |
+| 那份盤點的 design 與六個 task | `docs/99-archive/2026-10-17-pane-fold-todo-design.md`、`docs/99-archive/2026-10-17-pane-fold-todo.md` — *built, 繁體中文* |
 | 換站時印出新一站規則（10-16）的 design：cmdStage 印 rulesLines、受控站維持 controller 區塊、最後一行同回合開工 | `docs/99-archive/2026-10-16-stage-prints-rules-design.md` — *built, 繁體中文* |
 | 那份設計的一個 task | `docs/99-archive/2026-10-16-stage-prints-rules.md` — *built* |
 | Station 儀表板改版（10-16）的 design：頂列、花費 hover、可以開工彈窗、編輯模式、新增卡片、通知面板捲動 | `docs/99-archive/2026-10-16-station-dashboard-design.md` — *built, 繁體中文* |

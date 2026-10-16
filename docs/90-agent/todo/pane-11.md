@@ -2,8 +2,13 @@
 label: pane
 title: Pane 的 route、tasks 可收合
 description: route、tasks（可含 agents）的標題列改成 Button，按下收合或展開；Desktop 的按鈕放在 Svg 上方
-state: ready
+state: done
 link: hooks/pane.ts
+done:
+  at: 2026-10-17
+  sha: a09c1564
+  disposition: done
+  session: ba2d1016-5378-4c13-856b-d1e5c518eeb3
 ---
 
 來源：2026-10-16 使用者在 todo-patrol-agent-tokens 的 build 站問：「右手邊 ROADMAP 可以做收闔功能嗎? 還有 TASKS 顯示也可以做收和嗎? ... 我希望他可以變成互動的方式」。
@@ -15,3 +20,12 @@ link: hooks/pane.ts
 使用者選了記成 TODO、另開任務，從 design 站畫 mockup 再做。完成條件：兩塊都能在 Desktop 與終端收合再展開，測試在 onPress 不再切旗標時轉紅，使用者在 Desktop 真機點過一次。
 
 2026-10-17 Desktop 真機（0.111.14）：使用者按 route、tasks 的標題，兩塊都收成一列再展開回來，正常。
+
+## 完成紀錄
+
+Pane 裡 route 和 tasks 的標題變成可以按的按鈕。按一下，那一塊收成一列，只留標題和進度；再按一次就展開回來。終端和 Desktop 都能用。收合狀態只記在記憶體裡，重開 session 會回到全部展開。使用者在 Desktop 上實際按過，兩塊都正常。
+
+- commit d3d44729
+- commit a09c1564
+- commit 9450d0d9
+- commit 8f5d60c1
