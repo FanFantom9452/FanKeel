@@ -5419,6 +5419,8 @@
     // Back, forward and every link on the page arrive here.
     w.addEventListener('hashchange', function () {
         sel = null;
+        // Edit mode belongs to one visit of the dashboard: another page ends it.
+        view.dashEdit = false;
         draw();
         w.scrollTo(0, 0);
     });

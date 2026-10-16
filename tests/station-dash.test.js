@@ -149,7 +149,8 @@ test('dashOrder appends a kind the stored order lacks: on if it is a default car
 function editor(kept) {
     const listeners = {};
     const els = {};
-    let writes = 0;
+    let writes = 0, dialogOpen = false;
+    const winListeners = {};
     const el = () => ({ innerHTML: '', textContent: '', className: '', title: '', attrs: {}, style: {}, children: [],
         setAttribute(k, v) { this.attrs[k] = String(v); }, getAttribute(k) { return k in this.attrs ? this.attrs[k] : null; },
         hasAttribute(k) { return k in this.attrs; }, removeAttribute(k) { delete this.attrs[k]; }, appendChild() {}, addEventListener() {} });
@@ -163,8 +164,8 @@ function editor(kept) {
     };
     const doc = { hidden: false, documentElement: el(), title: '', getElementById: (id) => els[id] || (els[id] = mk(id)),
         addEventListener(type, fn) { (listeners[type] = listeners[type] || []).push(fn); }, createElement: el, querySelectorAll: () => [],
-        querySelector: () => null, head: { appendChild() {} } };
-    const win = { location: { hash: '#/', protocol: 'file:' }, addEventListener() {}, scrollTo() {},
+        querySelector: (sel) => (sel === 'dialog[open]' && dialogOpen ? {} : null), head: { appendChild() {} } };
+    const win = { location: { hash: '#/', protocol: 'file:' }, addEventListener(type, fn) { (winListeners[type] = winListeners[type] || []).push(fn); }, scrollTo() {},
         setInterval: () => 1, setTimeout: () => 1, clearTimeout() {}, navigator: { language: 'zh-TW' },
         localStorage: { getItem: (k) => (k in kept ? kept[k] : null), setItem: (k, v) => { kept[k] = String(v); }, removeItem: (k) => { delete kept[k]; } },
         STATION: { generatedAt: new Date(NOW).toISOString(), configDir: 'cfg', pricesVerified: '2026-09-04', serve: false,
@@ -180,7 +181,10 @@ function editor(kept) {
         : sel.includes('dashboard') ? {} : null) });
     const key = (k, id, alt) => fire('keydown', inCard(id), { key: k, altKey: !!alt });
     const drag = (from, onto, y) => { fire('dragstart', inCard(from)); fire('drop', inCard(onto), { clientY: y }); };
-    return { press, key, drag, fire, page: () => els.page.innerHTML, draws: () => writes };
+    // A modal open over the page (the TODO quick look, the card library), and a move to another page.
+    const modal = (v) => { dialogOpen = v; };
+    const go = (hash) => { win.location.hash = hash; for (const fn of winListeners.hashchange || []) fn({}); };
+    return { press, key, drag, fire, modal, go, page: () => els.page.innerHTML, draws: () => writes };
 }
 const DEF = ['dash-live', 'waiting-card', 'dash-todo', 'dash-spend', 'dash-recent'];
 const dashKey = (order, off) => { const tail = REST.filter((id) => !order.includes(id)); return JSON.stringify({ order: order.concat(tail), off: off.concat(tail) }); };
@@ -202,6 +206,26 @@ test('pressing 編輯版面 enters edit mode, and pressing it again, 完成 or E
     c.press({ 'data-dchtog': '1' });
     c.key('Escape', 'dash-live');
     assert.doesNotMatch(c.page(), EDITING, 'Esc leaves it');
+});
+
+test('Esc with a dialog open closes the dialog, not edit mode', () => {
+    const c = editor({});
+    c.press({ 'data-dchtog': '1' });
+    c.modal(true);
+    c.key('Escape', 'dash-live');
+    assert.match(c.page(), EDITING, 'the dialog takes Esc');
+    c.modal(false);
+    c.key('Escape', 'dash-live');
+    assert.doesNotMatch(c.page(), EDITING);
+});
+
+test('leaving the dashboard ends edit mode, so coming back is not still editing', () => {
+    const c = editor({});
+    c.press({ 'data-dchtog': '1' });
+    assert.match(c.page(), EDITING);
+    c.go('#/sessions');
+    c.go('#/');
+    assert.doesNotMatch(c.page(), EDITING);
 });
 
 test('完成 and Esc while not editing draw nothing', () => {
