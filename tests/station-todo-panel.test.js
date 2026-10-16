@@ -94,7 +94,7 @@ test('three or fewer done entries carry no button, and each state group names it
 
 // station.js booted on the project page with its document's listeners kept,
 // so a test can press 展開全部 / 收起 and read what the page drew.
-function projectBoot(todo) {
+function projectBoot(todo, hash) {
     todo = todo || LONG;
     const vm = require('node:vm');
     const fs = require('node:fs');
@@ -109,7 +109,7 @@ function projectBoot(todo) {
     const doc = { hidden: false, documentElement: el(), title: '', getElementById: (id) => els[id] || (els[id] = el()),
         addEventListener(type, fn) { (listeners[type] = listeners[type] || []).push(fn); }, createElement: el, querySelectorAll: () => [],
         querySelector: () => null, head: { appendChild() {} } };
-    const win = { location: { hash: '#/p/' + encodeURIComponent(todo.pkey), protocol: 'file:' }, addEventListener() {}, scrollTo() {},
+    const win = { location: { hash: hash || '#/p/' + encodeURIComponent(todo.pkey), protocol: 'file:' }, addEventListener() {}, scrollTo() {},
         setInterval: () => 1, setTimeout: () => 1, clearTimeout() {}, navigator: { language: 'zh-TW' },
         localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
         STATION: { generatedAt: new Date(NOW).toISOString(), configDir: 'cfg', pricesVerified: '2026-09-24', serve: false,
@@ -247,4 +247,10 @@ test('arriving on a TODO hash scrolls to it and not back to the top; any other h
     at.go('#/sessions');
     assert.deepEqual(at.tops, [[0, 0]]);
     assert.equal(at.scrolled.length, 1);
+});
+
+test('a pkey in the hash that differs from the session key only in slash direction still draws that project', () => {
+    const p = projectBoot(LONG, '#/p/' + encodeURIComponent('F:/ws'));
+    assert.doesNotMatch(p.page(), /這頁上沒有專案/);
+    assert.match(p.page(), /data-block="todo-head"/);
 });
