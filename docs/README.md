@@ -579,6 +579,7 @@ is corrected by the next one, not by rewriting this.
 | Judge brief 1 — agent effort, agent coverage, mandatory render review | [90-agent/judgements/2026-10-15-agent-effort-usage-render.md](90-agent/judgements/2026-10-15-agent-effort-usage-render.md) — *judged 2026-10-15, fable* |
 | Brief: Pane 上能不能放常駐、可點、打開 station 網頁的元件，並顯示完整網址 | [90-agent/judgements/2026-10-16-pane-station-link.md](90-agent/judgements/2026-10-16-pane-station-link.md) — *judged 2026-10-16, fable* |
 | 判官題：對話裡那張勾選清單是誰畫的？ | [90-agent/judgements/2026-10-16-desktop-task-list.md](90-agent/judgements/2026-10-16-desktop-task-list.md) — *judged 2026-10-16, fable* |
+| Brief: Pane 要不要顯示所有 background task，網頁服務能不能自動出現打開的 Button | [90-agent/judgements/2026-10-16-pane-background-tasks.md](90-agent/judgements/2026-10-16-pane-background-tasks.md) — *judged 2026-10-16, fable* |
 
 ## The five scanners
 
