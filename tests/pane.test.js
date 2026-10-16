@@ -126,9 +126,6 @@ test('the Pane draws the task block on top, then what is looked up, each block u
         '▌demo task',
         ' survey › design › build',
         ' ',
-        '▌context  快要自動 compact 了',
-        ' 留 task · stage · plan · agent · handoff',
-        ' ',
         '▌notes',
         ' · a note',
         ' ',
@@ -364,36 +361,25 @@ test('the two drawings agree: the band\'s flag counts the sessions the Pane name
     assert.equal(Number(band[1].match(/⚑(\d+)/)[1]), named.size);
     assert.doesNotMatch(band[0], /⚑/);
     assert.doesNotMatch(pane.join('\n'), /shares nothing/);
-    // The tokens and the threshold are written once, on the band; the Pane's context block is there and holds no figure.
-    // 400k of a 1M window is 40 percent: past the compact line, short of the band's first sign.
+    // The tokens and the threshold are written once, on the band; the Pane has no context block and no figure.
+    // 400k of a 1M window is 40 percent: past four fifths of the compact line, short of the band's first sign.
     assert.match(band[1], /^▌ctx \S+ 400k\/1M(?! ⚠)/);
-    assert.ok(pane.includes('▌context  快要自動 compact 了'), pane.join(' | '));
-    assert.doesNotMatch(pane.join('\n'), /\d+k|█|░|%/);
+    assert.doesNotMatch(pane.join('\n'), /context|\d+k|█|░|%/);
 });
 
-test('the context block is measured against FANKEEL_COMPACT_AT, and a new count redraws', async () => {
+test('the band is measured against FANKEEL_COMPACT_AT, and a new count redraws', async () => {
     const hooks = await wired();
     const { $, log } = fake({ files: entryFile(live), env: { FANKEEL_COMPACT_AT: '300000' } });
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
-    // What the Pane says beside the block's name, or null with no block.
-    const said = async () => {
-        const all = leaves(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
-        const at = all.findIndex((n) => n.children.join('') === 'context');
-        return at < 0 ? null : [all[at + 1].children.join(''), all[at + 1].props.color, all[at + 1].props.bold];
-    };
-    assert.deepEqual(await said(), ['  已到門檻，compact 中', '#d7af5f', true]);
     assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ███│░░░░░░ 312k/1M');
     const after = log.invalidated;
     log.tokens = 250000;
     await log.ticks[0].fn();
     assert.equal(log.invalidated, after + 1);
-    assert.deepEqual(await said(), ['  快要自動 compact 了', '#8a8a8a', undefined]);
     assert.match(bandLines(await hooks.band($, BAND, passed))[1], / 250k\/1M$/);
-    // Four fifths of 300k is 240k.
     log.tokens = 239999;
     await log.ticks[0].fn();
-    assert.equal(await said(), null);
     assert.match(bandLines(await hooks.band($, BAND, passed))[1], / 240k\/1M$/);
 });
 
@@ -422,34 +408,30 @@ const profileFile = (data) => ({ [ROOT + '/.fankeel/profile.json']: JSON.stringi
 
 // compact-5: the same source as hooks/compact.ts threshold, so the band and the
 // Pane move with the profile's compact.at.
-test('the band and the context block are measured against the profile\'s compact.at', async () => {
+test('the band is measured against the profile\'s compact.at', async () => {
     const hooks = await wired();
     const { $, log } = fake({ files: Object.assign(entryFile(live), profileFile({ 'compact.at': '350000' })) });
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
     assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ███│░░░░░░ 312k/1M');
-    const pane = async () => texts(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
-    assert.ok((await pane()).includes('context'), 'no context block at 312k of 350k');
     // Four fifths of 350k is 280k.
     log.tokens = 279999;
     await log.ticks[0].fn();
-    assert.ok(!(await pane()).includes('context'), 'a context block under four fifths of 350k');
     // The band's sign follows the window, not compact.at: 280k of 1M is 28 percent and carries none.
     assert.ok(!bandLines(await hooks.band($, BAND, passed))[1].endsWith('⚠'), 'the band warned at 28 percent of the window');
 });
 
-test('compact.at off draws the count with no threshold, and a context block that says no compact will run', async () => {
+test('compact.at off draws the count with no threshold on the band, and the Pane has no context block', async () => {
     const hooks = await wired();
     const { $, log } = fake({ files: Object.assign(entryFile(live), profileFile({ 'compact.at': 'off' })), tokens: 2000000 });
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
     assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ██████████ 2M/1M 💀');
     const pane = paneLines(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
-    assert.ok(pane.includes('▌context  已到門檻，自動 compact 已關閉'), pane.join('\n'));
-    assert.ok(pane.includes(' 不會自動壓縮；要壓縮請手動 /compact'), pane.join('\n'));
+    assert.doesNotMatch(pane.join('\n'), /context|compact/);
 });
 
-test('with no FANKEEL_COMPACT_AT the threshold is HARD, and with no token count there is no context block', async () => {
+test('with no FANKEEL_COMPACT_AT the threshold is HARD, and with no token count the band has no second row', async () => {
     const { HARD } = await import(pathToFileURL(path.join(__dirname, '..', 'hooks', 'compact.ts')).href);
     const hooks = await wired();
     const { $, log } = fake({ files: entryFile(live), env: { FANKEEL_COMPACT_AT: 'soon' } });
@@ -464,33 +446,25 @@ test('with no FANKEEL_COMPACT_AT the threshold is HARD, and with no token count 
     await infHooks['session.start'](inf.$, {}, async () => ({}));
     await inf.log.ticks[0].fn();
     assert.equal(bandLines(await infHooks.band(inf.$, BAND, passed))[1], '▌ctx ███░│░░░░░ 312k/1M');
-    // Four fifths of HARD is 360k: the Pane's block is there from that count, and goes with the count.
-    const pane = async () => texts(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
-    assert.ok(!(await pane()).includes('context'), 'a context block under four fifths of HARD');
-    log.tokens = HARD * 0.8;
-    await log.ticks[0].fn();
-    assert.ok((await pane()).includes('context'), 'no context block at four fifths of HARD');
     log.tokens = null;
     await log.ticks[0].fn();
-    assert.ok(!(await pane()).includes('context'));
     assert.deepEqual(bandLines(await hooks.band($, BAND, passed)), ['▌FANKEEL DESIGN  ●●○  等你 0 分  遠端 ✗'], 'a band with no count still drew a second row');
     $.session.usage = async () => { throw new Error('not yet'); };
     await log.ticks[0].fn();
     assert.match(bandLines(await hooks.band($, BAND, passed))[0], /FANKEEL DESIGN/, 'a usage() that throws took the band with it');
 });
 
-test('a usage() that rejects drops the context block and nothing else of the tick', async () => {
+test('a usage() that rejects drops the band\'s count and nothing else of the tick', async () => {
     const hooks = await wired();
     const { $, log, store } = fake({ files: entryFile(live), tokens: 400000 });
-    const draw = async () => texts(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
-    assert.ok((await draw()).includes('context'));
+    assert.match(bandLines(await hooks.band($, BAND, passed))[1], / 400k\/1M/);
     $.session.usage = async () => { throw new Error('not yet'); };
     store[ROOT + '/.fankeel/sessions/' + ID + '.json'] = JSON.stringify(Object.assign({}, live, { stage: 'build' }));
     const before = log.invalidated;
     await log.ticks[0].fn();
-    assert.ok(!(await draw()).includes('context'));
+    assert.equal(bandLines(await hooks.band($, BAND, passed)).length, 1, 'the band kept a count the engine could not give');
     assert.equal(log.invalidated, before + 1, 'the tick stopped at the usage() that threw');
     assert.match(bandLines(await hooks.band($, BAND, passed))[0], /FANKEEL BUILD/);
 });
@@ -614,7 +588,7 @@ test('the Pane is laid out in its own body columns and rows, each block under on
     assert.equal(title.join(''), mine.task, 'the title is not drawn whole');
     assert.equal(title.length, 3);
     const heads = (t) => leaves(t).filter((n) => n.props.bold && n.props.color === '#8a8a8a').map((n) => n.children.join(''));
-    assert.deepEqual(heads(tree), ['context', 'notes']);
+    assert.deepEqual(heads(tree), ['notes']);
     const rails = (t) => [...new Set(t.children.filter((row) => row.tag === 'Box').map((row) => row.children[0].props.color))];
     assert.deepEqual(rails(tree), [undefined, '#ff5f5f', '#8a8a8a', '#585858']);
     const clash = leaves(tree).filter((n) => n.children.join('').startsWith('⚑ '));
@@ -624,9 +598,9 @@ test('the Pane is laid out in its own body columns and rows, each block under on
     assert.equal(paneLines(tree).filter((t) => /… @ build · \d+m$/.test(t)).length, 2);
     const foot = leaves(tree).find((n) => n.children.join('').startsWith('abcdef12'));
     assert.equal(foot.props.color, '#8a8a8a');
-    // 18 rows in all: the task 4, the clash 4, context 2, notes 2, the foot 2 (its station row last), and four blank rows between.
-    assert.equal(tree.children.length, 18);
-    assert.deepEqual(heads(await at(15)), ['context'], 'the room is the body rows the surface gave, not the viewport');
+    // 15 rows in all: the task 4, the clash 4, notes 2, the foot 2 (its station row last), and three blank rows between.
+    assert.equal(tree.children.length, 15);
+    assert.deepEqual(heads(await at(14)), [], 'the room is the body rows the surface gave, not the viewport');
 });
 
 test('the engine\'s rate limits are bars on the band and no reset time in the Pane, and a new figure redraws', async () => {

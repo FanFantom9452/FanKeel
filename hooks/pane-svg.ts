@@ -7,10 +7,8 @@
 import { TODO, GUARD, CONNECTED, FLAG, WHERE, CLASH, INK, stageColor, since, clashes, claimsOf } from './pane-band.ts'
 import type { BandInput } from './pane-band.ts'
 import { str, list, kilo, cut, ctxPaint, ctxWindowPaint, fivePaint, weekPaint, deviation, limitOf, signed, minutes, secondsLeft, DIM } from './pane-bar.ts'
-import type { Context } from './pane-bar.ts'
-import { KEPT, SAID, ago, DONE, OUT } from './pane-status.ts'
+import { ago, DONE, OUT } from './pane-status.ts'
 import type { Entry, Other, PlanInfo, Row, StatusInput } from './pane-status.ts'
-import { HARD } from './compact.ts'
 
 // The engine's bound on SvgProps.source, in characters.
 export const SVG_MAX = 131072
@@ -435,41 +433,13 @@ export function tasksSvg(entry: Entry, plan: PlanInfo, now: number, cols: number
   return svgDoc(W, y - 14, b, ' class="fk-t"')
 }
 
-// The context meter, drawn where the text block is (from four fifths of the
-// threshold): the threshold is the scale, an amber line at four fifths and a
-// grey one at the compact point. compact.at off is an infinite threshold: the
-// scale is HARD and the compact point is dashed, for no compact runs there.
-export function contextSvg(context: Context, cols: number): string {
-  const off = !Number.isFinite(context.at)
-  const at = off ? HARD : context.at
-  const hot = context.tokens >= at
-  const paint = ctxPaint(context.tokens, at)
-  const W = paneW(cols) - 2
-  const said = hot ? (off ? SAID.hotOff : SAID.hot) : off ? SAID.nearOff : SAID.near
-  let b = text(0, 14, 'context', { bold: true }) + text(px('context  '), 14, said, hot ? { fill: GUARD, bold: true } : {})
-  b += `<rect x="1" y="24" width="${r1(W)}" height="10" rx="2" fill="${DIM}"/>`
-  b += `<rect x="2" y="25" width="${r1(Math.min(1, context.tokens / at) * (W - 2))}" height="8" rx="1.5" fill="${paint.color}"/>`
-  const x80 = 2 + 0.8 * (W - 2)
-  b += `<rect x="${r1(x80 - 1)}" y="20" width="2" height="18" rx="1" fill="${GUARD}"/>`
-  b += off
-    ? `<line x1="${r1(W)}" y1="19" x2="${r1(W)}" y2="39" stroke="${WHERE}" stroke-width="2" stroke-dasharray="3 2"/>`
-    : `<rect x="${r1(W - 1)}" y="20" width="2" height="18" rx="1" fill="${WHERE}"/>`
-  const left = at - context.tokens
-  const count = kilo(context.tokens)
-  b += text(1, 52, count, { bold: true }) + text(1 + px(count), 52, left > 0 ? `，再 ${kilo(left)} 到門檻` : off ? `，過了內建的 ${kilo(at)}` : '，過了門檻')
-  b += text(x80, 52, '80%', { anchor: 'middle', fill: GUARD })
-  b += text(W + 1, 52, kilo(at), { anchor: 'end' })
-  b += text(1, 72, off ? '不會自動壓縮；要壓縮請手動 /compact' : cut(`留 ${KEPT.join(' · ')}`, 40))
-  return svgDoc(W + 2, 78, b)
-}
-
 // One piece of the desktop Pane, top to bottom: rows drawn as Text, as the
 // terminal draws them, or one Svg.
 export type Part = { rows: Row[] } | { source: string; alt: string; isInteractive?: boolean }
 
 // The desktop Pane from the rows statusRows drew for the same input: the task
 // title, `next:`, notes and the foot stay rows; the route rows, the clash, the
-// tasks and the context block become one Svg each, whose alt is those rows'
+// and the tasks become one Svg each, whose alt is those rows'
 // text. A block statusRows cut to its title (the tasks, when the Pane is short),
 // a drawing with nothing in it, or one over SVG_MAX stays rows.
 export function paneParts(input: StatusInput, rows: Row[]): Part[] {
@@ -491,7 +461,7 @@ export function paneParts(input: StatusInput, rows: Row[]): Part[] {
     if (!r.segs.length || !blocks.length) blocks.push([r])
     else blocks[blocks.length - 1].push(r)
   }
-  const { entry, plan, context, now, cols } = input
+  const { entry, plan, now, cols } = input
   for (const block of blocks) {
     const lead = block[0].segs.length ? [] : [block[0]]
     const body = block.slice(lead.length)
@@ -508,7 +478,6 @@ export function paneParts(input: StatusInput, rows: Row[]): Part[] {
       draw(routeSvg(entry, now, cols), body.slice(from), false)
     } else if (name === 'clash') draw(clashSvg(entry, input.others, now, cols), body, false)
     else if (name === 'tasks' && plan && plan.tasks.length && body.length > 1) draw(tasksSvg(entry, plan, now, cols), body, true)
-    else if (name === 'context' && context) draw(contextSvg(context, cols), body, false)
     else keep(body)
   }
   return parts

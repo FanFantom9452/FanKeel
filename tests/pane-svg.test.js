@@ -221,36 +221,6 @@ test('a long task name under the cells is cut with an ellipsis', async () => {
     assert.ok(line && line.includes('…') && line.endsWith(' · 出去 12 分'));
 });
 
-test('the context meter: the threshold is the scale, four fifths amber, the compact point grey; what it says follows compact.at', async () => {
-    const { contextSvg } = await load('pane-svg');
-    const near = contextSvg({ tokens: 372000, at: 450000, window: 1000000 }, 41);
-    assert.deepEqual(words(near), ['context', '快要自動 compact 了', '372k', '，再 78k 到門檻', '80%', '450k', '留 task · stage · plan · agent · handoff']);
-    assert.match(near, /<rect x="[\d.]+" y="20" width="2" height="18" rx="1" fill="#d7af5f"\/>/);
-    assert.match(near, /<rect x="[\d.]+" y="20" width="2" height="18" rx="1" fill="#8a8a8a"\/>/);
-    assert.ok(!near.includes('stroke-dasharray'));
-    const hot = contextSvg({ tokens: 455000, at: 450000 }, 41);
-    assert.deepEqual(words(hot).slice(0, 4).filter((_, i) => i !== 1), ['context', '455k', '，過了門檻']);
-});
-
-test('the context meter says what the text row says, hot or near, compact.at on or off', async () => {
-    const { contextSvg } = await load('pane-svg');
-    const { statusRows } = await load('pane-status');
-    for (const context of [{ tokens: 372000, at: 450000 }, { tokens: 455000, at: 450000 }, { tokens: 372000, at: Infinity }, { tokens: 455000, at: Infinity }]) {
-        const rows = statusRows({ id: 'x', entry, others: [], context, plan: null, cols: 60, room: 60, now: NOW }).filter((r) => r.block === 'context' && r.segs.length);
-        const row = rows[0].segs.map((s) => s.text).join('').replace(/^▌?\s*context\s+/, '');
-        assert.equal(words(contextSvg(context, 41))[1], row, JSON.stringify(context));
-    }
-});
-
-test('compact.at off still draws the meter, against HARD, with a dashed compact point, and says no compact will run', async () => {
-    const { contextSvg } = await load('pane-svg');
-    const off = contextSvg({ tokens: 455000, at: Infinity }, 41);
-    assert.deepEqual(words(off), ['context', '已到門檻，自動 compact 已關閉', '455k', '，過了內建的 450k', '80%', '450k', '不會自動壓縮；要壓縮請手動 /compact']);
-    assert.match(off, /stroke-dasharray="3 2"/);
-    assert.ok(!off.includes('fill="#8a8a8a"/>'), 'a solid compact point drawn while compact is off');
-    assert.equal(words(contextSvg({ tokens: 372000, at: Infinity }, 41))[1], '快到門檻，自動 compact 已關閉');
-});
-
 // hooks/pane.ts on a fake engine: the parts of tests/pane.test.js fake() the two drawings read, and `resolve` hands
 // out Svg on the desktop alone, as the engine's Elements table does.
 globalThis.h = (tag, props, ...children) => ({ tag, props: props || {}, children: children.flat() });
@@ -342,21 +312,26 @@ test('on Claude Desktop the band is two Svg rows, each alt the row the terminal 
     assert.ok(words(kids(desk)[1].props.source).includes('400k'));
 });
 
-test('on Claude Desktop the Pane draws the route, the clash, the tasks and the context as Svg, and the rest as the terminal does', async () => {
+test('on Claude Desktop the Pane draws the route, the clash and the tasks as Svg, and the rest as the terminal does; no context block, at the threshold or past it', async () => {
     const { pane } = await drawn();
     const desk = await pane('desktop');
     const term = await pane('terminal');
     const svgs = kids(desk).filter((n) => n.tag === 'Svg');
-    assert.equal(svgs.length, 4);
+    assert.equal(svgs.length, 3);
     for (const n of svgs) assert.ok(n.props.source.startsWith('<svg ') && n.props.source.length <= 131072);
-    assert.deepEqual(svgs.map((n) => n.props.isInteractive === true), [false, false, true, false]);
+    assert.deepEqual(svgs.map((n) => n.props.isInteractive === true), [false, false, true]);
     // Each alt is the rows it stands for, as the terminal draws them.
     const rows = plain(term);
     const block = (from, to) => rows.slice(rows.findIndex((t) => t.startsWith(from)), to === undefined ? undefined : rows.findIndex((t) => t.startsWith(to)) - 1).join('\n');
     assert.equal(svgs[0].props.alt, 'survey › design › plan › build › verify\nland');
     assert.equal(svgs[1].props.alt, block('⚑ hooks/pane.ts', 'tasks '));
-    assert.equal(svgs[2].props.alt, block('tasks 4 of 9', 'context'));
-    assert.equal(svgs[3].props.alt, block('context', 'notes'));
+    assert.equal(svgs[2].props.alt, block('tasks 4 of 9', 'notes'));
+    // 400k of 450k is past four fifths of the threshold; the band alone says so.
+    assert.ok(!rows.some((t) => t.startsWith('context')));
+    assert.ok(!svgs.some((n) => n.props.alt.startsWith('context')));
+    const hot = await drawn({ tokens: 463000 });
+    assert.ok(!plain(await hot.pane('terminal')).some((t) => t.startsWith('context')));
+    assert.equal(kids(await hot.pane('desktop')).filter((n) => n.tag === 'Svg').length, 3);
     // The title, next:, notes and the foot are the terminal's own rows.
     const words2 = kids(desk).filter((n) => n.tag !== 'Svg').map(textOf);
     assert.ok(words2.includes('▌Pane 視覺化改版'));
@@ -377,15 +352,6 @@ test('every surface but the desktop draws the text exactly, and asks the engine 
     assert.ok(!tags(await pane('terminal')).includes('Svg'));
 });
 
-test('compact.at off: the desktop meter and the terminal rows both say automatic compact is off', async () => {
-    const { pane } = await drawn({ profile: { 'compact.at': 'off' }, tokens: 455000 });
-    const desk = kids(await pane('desktop')).filter((n) => n.tag === 'Svg');
-    const meter = desk.find((n) => n.props.alt.startsWith('context'));
-    assert.ok(words(meter.props.source).includes('已到門檻，自動 compact 已關閉'));
-    assert.match(meter.props.alt, /自動 compact 已關閉/);
-    assert.ok(plain(await pane('terminal')).includes('context  已到門檻，自動 compact 已關閉'));
-});
-
 test('a gate waiting on Claude Desktop draws its ring from the pending file\'s at to its until', async () => {
     const { band, store, tick } = await drawn();
     const T = Date.now();
@@ -399,8 +365,8 @@ test('a gate waiting on Claude Desktop draws its ring from the pending file\'s a
     assert.match(row.props.alt, /gate 在等/);
 });
 
-test('sixty tasks, a long clash and the off meter stay far under the engine\'s 131072 characters', async () => {
-    const { tasksSvg, clashSvg, contextSvg, SVG_MAX } = await load('pane-svg');
+test('sixty tasks and a long clash stay far under the engine\'s 131072 characters', async () => {
+    const { tasksSvg, clashSvg, SVG_MAX } = await load('pane-svg');
     const big = { name: 'big', done: Array.from({ length: 37 }, (_, i) => i + 1), tasks: Array.from({ length: 60 }, (_, i) => ({ n: i + 1, name: 'x'.repeat(200), user: i === 50 })) };
     const many = Array.from({ length: 20 }, (_, i) => ({ id: 'n' + i, entry: { task: 'y'.repeat(200), stage: 'build', claims: entry.claims } }));
     const { bandRow1Svg, bandRow2Svg, routeSvg } = await load('pane-svg');
@@ -408,7 +374,7 @@ test('sixty tasks, a long clash and the off meter stay far under the engine\'s 1
     const heavy = bandInput({ entry: long, others: many, gateAt: NOW - 18000, gateUntil: NOW + 42000, tasks: { done: 37, total: 60 }, cols: 200 });
     const stages = Array.from({ length: 40 }, (_, i) => 's' + 'x'.repeat(30) + i);
     const longRoute = Object.assign({}, entry, { route: stages, stage: stages[30], clock: Object.fromEntries(stages.slice(0, 31).map((s, i) => [s, [NOW - (40 - i) * M, i === 30 ? null : NOW - (39 - i) * M]])), waited: Object.fromEntries(stages.map((s) => [s, 9 * M])) });
-    for (const source of [tasksSvg(entry, big, NOW, 41), tasksSvg(entry, Object.assign({}, big, { tasks: big.tasks.slice(0, 30) }), NOW, 41), clashSvg(entry, many, NOW, 41), contextSvg({ tokens: 455000, at: Infinity }, 41),
+    for (const source of [tasksSvg(entry, big, NOW, 41), tasksSvg(entry, Object.assign({}, big, { tasks: big.tasks.slice(0, 30) }), NOW, 41), clashSvg(entry, many, NOW, 41),
         bandRow1Svg(heavy), bandRow2Svg(heavy), routeSvg(longRoute, NOW, 200)]) {
         assert.ok(source.length > 0 && source.length < SVG_MAX / 4, String(source.length));
     }
@@ -504,10 +470,10 @@ test('paneParts draws nothing as Svg when there is no task', async () => {
     const { paneParts } = await load('pane-svg');
     const rows = [
         { block: 'task', segs: [{ text: '▌' }, { text: 'x' }] },
-        { block: 'context', segs: [] },
-        { block: 'context', segs: [{ text: '▌' }, { text: 'context' }] },
+        { block: 'notes', segs: [] },
+        { block: 'notes', segs: [{ text: '▌' }, { text: 'notes' }] },
     ];
-    const parts = paneParts({ id: 'x', entry: null, others: [], context, plan: null, cols: 41, room: 60, now: NOW }, rows);
+    const parts = paneParts({ id: 'x', entry: null, others: [], context: null, plan: null, cols: 41, room: 60, now: NOW }, rows);
     assert.deepEqual(parts, [{ rows }]);
 });
 
@@ -531,8 +497,8 @@ test('paneParts: a task titled like a station keeps its title row as Text and th
     assert.equal(svgs[0].alt, 'survey › design › plan › build › verify\nland');
 });
 
-test('the band Svg ctx follows the TokenBar tier of the window; the Pane context block still follows the threshold', async () => {
-    const { bandRow2Svg, contextSvg } = await load('pane-svg');
+test('the band Svg ctx follows the TokenBar tier of the window', async () => {
+    const { bandRow2Svg } = await load('pane-svg');
     const row = (ctx) => bandRow2Svg(bandInput({ context: ctx, limits: [], others: [] }));
     // 50% of a 200k window is yellow; 22% of the 450k threshold would be green.
     assert.ok(row({ tokens: 100000, at: 450000, window: 200000 }).includes('#ffff00'));
@@ -542,8 +508,6 @@ test('the band Svg ctx follows the TokenBar tier of the window; the Pane context
     assert.deepEqual(words(row({ tokens: 900000, at: 950000, window: 1000000 })), ['ctx', '900k', '/1M', '💀']);
     // Same tokens, no window: the threshold decides.
     assert.deepEqual(words(row({ tokens: 372000, at: 450000 })), ['ctx', '372k', '/450k', '⚠']);
-    // The Pane's block, with a 1M window, stays on the threshold: 372k of 450k is near, and 37% of the window would not be.
-    assert.equal(words(contextSvg({ tokens: 372000, at: 450000, window: 1000000 }, 41))[1], '快要自動 compact 了');
 });
 
 test('Remote Control connected draws 遠端 ✓ at the end of the first row, the ✓ green', async () => {

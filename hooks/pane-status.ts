@@ -4,9 +4,8 @@
 // docs/90-agent/plans/2026-10-12-pane-band-design.md section 3.
 
 import { WHERE, FLAG, GUARD, TODO, claimsOf } from './pane-band.ts'
-import { str, list, width, cut, WIDE, DIM, minutes, nearCompact } from './pane-bar.ts'
+import { str, list, width, cut, WIDE, DIM, minutes } from './pane-bar.ts'
 import type { Context } from './pane-bar.ts'
-import { HARD } from './compact.ts'
 import { tokenLabel } from './pane-agents.ts'
 import type { AgentNode } from './pane-agents.ts'
 
@@ -52,7 +51,6 @@ export const RAILS: Record<string, string> = {
   clash: FLAG,
   tasks: WHERE,
   agents: WHERE,
-  context: WHERE,
   notes: WHERE,
   foot: DIM,
 }
@@ -103,10 +101,6 @@ function wrap(s: string, cols: number): string[] {
 
 // Whole minutes, or `?` where the registry has no reading.
 const mins = (ms: unknown): string => (typeof ms === 'number' && Number.isFinite(ms) ? String(minutes(ms)) : '?')
-
-// What hooks/compact.ts instructionsFor tells the summary to keep, a word each;
-// tests/pane-status.test.js checks every word against that function's text.
-export const KEPT = ['task', 'stage', 'plan', 'agent', 'handoff']
 
 const LEDGER = '# fankeel build ledger — plan: '
 // lib/ledger.js HEADER_PREFIX, owns and completed: the tasks the ledger records
@@ -283,28 +277,6 @@ function tasksBlock(entry: Entry, plan: PlanInfo | null, inner: number, now: num
   return rows
 }
 
-// What the context block says, read by the desktop Svg (hooks/pane-svg.ts) too, so the two never word it apart.
-export const SAID = { hot: '已到門檻，compact 中', near: '快要自動 compact 了', hotOff: '已到門檻，自動 compact 已關閉', nearOff: '快到門檻，自動 compact 已關閉' }
-
-// Drawn only from eighty percent of the threshold (hooks/compact.ts threshold:
-// FANKEEL_COMPACT_AT, the profile's compact.at, else HARD), and then never
-// given up: that a compact is close, or
-// under way, and what one keeps. No count, no bar and no mark: the band's `ctx`
-// meter (hooks/pane-band.ts) has those, and a figure is drawn once. compact.at
-// off is an infinite threshold: the block is measured against HARD and says
-// that no compact will run.
-function contextBlock(context: Context, inner: number): Row[] {
-  const off = !Number.isFinite(context.at)
-  const at = off ? HARD : context.at
-  if (!nearCompact(context.tokens, at)) return []
-  const hot = context.tokens >= at
-  const said = hot ? (off ? SAID.hotOff : SAID.hot) : off ? SAID.nearOff : SAID.near
-  return [
-    row('context', title('context', 'context'), hot ? { text: `  ${said}`, color: GUARD, bold: true } : dim(`  ${said}`)),
-    row('context', dim(cut(off ? '不會自動壓縮；要壓縮請手動 /compact' : `留 ${KEPT.join(' · ')}`, inner))),
-  ]
-}
-
 // The station, the foot's last row: a button that opens its page and the whole
 // url beside it, or grey words saying none is up. The terminal draws the
 // button as `[ label ]`, four cells wider than its label; a Pane narrower than
@@ -363,8 +335,7 @@ function agentsBlock(nodes: AgentNode[], inner: number, now: number): Row[] {
 }
 
 // Given up in this order when the rows do not fit: `agents` and `tasks` keep their title rows.
-// The task, the clash, the context block — drawn
-// only once a compact is close — and the foot never go.
+// The task, the clash and the foot never go.
 const DROP = ['notes', 'agents', 'tasks']
 // The blocks that are alarms, not sections: every row of one keeps its rail.
 const ALARMS = ['clash']
@@ -388,8 +359,6 @@ export function statusRows(input: StatusInput): Row[] {
   if (tasks.length) blocks.push(tasks)
   const agents = agentsBlock(input.agents ?? [], inner, now)
   if (agents.length) blocks.push(agents)
-  const context = input.context ? contextBlock(input.context, inner) : []
-  if (context.length) blocks.push(context)
 
   // The registry keeps the newest note last.
   const notes = list(entry.notes).slice(-3)
