@@ -479,7 +479,7 @@ test('compact.at off measures the block against HARD from four fifths of it, and
 
 test('the agents block is a tree: the counts, ○ running, ● stopped, └ under its parent, the model, effort and tokens on each', async () => {
     const { statusRows } = await load();
-    const kid = { id: 'r1', title: 'Patrol check group C', type: 'fankeel:fankeel-reader', model: 'sonnet 5.5', effort: 'low', at: NOW - 8 * 60000, end: NOW - 2 * 60000, kids: [] };
+    const kid = { id: 'r1', title: 'Patrol check group C', type: 'fankeel:fankeel-reader', model: 'sonnet 5.5', effort: 'low', at: NOW - 8 * 60000, end: NOW - 2 * 60000, tokens: null, kids: [] };
     const root = { id: 'b1', title: 'survey stage agent', type: 'fankeel:fankeel-brain', model: 'opus 5.5', effort: 'high', at: NOW - 10 * 60000, end: null, tokens: 79418, kids: [kid] };
     const base = { id: ID, entry, others: [], context: null, plan: null, cols: 60, room: 60, now: NOW };
     const text = (r) => r.segs.map((s) => s.text).join('');

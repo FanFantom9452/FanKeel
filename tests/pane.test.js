@@ -1242,6 +1242,20 @@ test('an agent\'s transcript is read again only when it moved', async () => {
     assert.equal(log.reads.filter((p) => p === SUBS + '/agent-run1.jsonl').length, 1);
 });
 
+test('a transcript that cannot be read drops its tokens and nothing else', async () => {
+    const hooks = await wired();
+    const { $, log } = agentRig();
+    const read = $.fs.read;
+    $.fs.read = async (p) => {
+        if (p === SUBS + '/agent-run1.jsonl') throw new Error('EBUSY');
+        return read(p);
+    };
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const run = (await drawn(hooks, $)).find((l) => l.includes('building it'));
+    assert.ok(run && run.includes('○') && run.endsWith('分'), String(run));
+});
+
 test('a stops file with a value that is not a finite number stops nobody', async () => {
     const hooks = await wired();
     const { $, log } = agentRig({ stop1: 'soon', run1: null });

@@ -289,7 +289,14 @@ async function agentsOf($: EngineInterface, entry: Entry, id: string, root: stri
       const path = `${sub}/${name}`
       const hit = cache.get(path)
       if (hit && hit.stamp === stamp) return typeof hit.value === 'number' ? hit.value : null
-      const tokens = agentTokens(String(await $.fs.read(path)))
+      let text: string
+      try {
+        text = String(await $.fs.read(path))
+      } catch {
+        // Gone or locked between the listing and the read: no tokens this tick, tried again the next.
+        return null
+      }
+      const tokens = agentTokens(text)
       cache.set(path, { stamp, value: tokens })
       return tokens
     }
