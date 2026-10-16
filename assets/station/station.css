@@ -1708,6 +1708,22 @@ a.td-rf:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-rad
   font:700 13px var(--f-mono);color:var(--muted);letter-spacing:0}
 :root[data-style=keel] .crumbs .cur{font-size:18px;font-weight:700;color:var(--ink);text-decoration:underline 2.4px var(--keel);text-underline-offset:7px}
 :root[data-style=keel] .mast .search{background:var(--panel);box-shadow:var(--lift),inset 0 0 0 1px var(--rule);height:36px;border-radius:8px}
+:root[data-style=keel] .mast{padding-left:32px;gap:8px}
+:root[data-style=keel] .mast .brand{width:204px;flex:none;margin-right:12px;justify-content:center}
+:root[data-style=keel] .mast .brand #brandw{display:none}
+:root[data-style=keel] .mast .crumbs{order:1;flex:1 1 0;min-width:0}
+:root[data-style=keel] .mast .ptitle{display:flex;align-items:center;gap:8px;margin:0;font-size:20px;font-weight:700;line-height:36px;letter-spacing:-.01em;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:root[data-style=keel] .mast .search{order:2;flex:none;width:clamp(180px,20vw,300px)}
+:root[data-style=keel] .srv{order:3;position:relative;display:grid;place-items:center;flex:none;width:36px;height:36px;box-sizing:border-box;padding:0;border-radius:8px;background:var(--panel);box-shadow:inset 0 0 0 1px var(--rule);color:var(--live);cursor:default}
+:root[data-style=keel] .srv[hidden]{display:none}
+:root[data-style=keel] .srv.down{color:var(--muted)}
+:root[data-style=keel] .srv .ico{width:17px;height:17px}
+:root[data-style=keel] .srv .dot{position:absolute;top:6px;right:6px;width:7px;height:7px;box-shadow:0 0 0 2px var(--panel)}
+:root[data-style=keel] .srv.up .dot{background:var(--live)}
+:root[data-style=keel] .srv.down .dot{background:var(--muted)}
+:root[data-style=keel] .mast .langsw{order:4}
+:root[data-style=keel] .mast .appear{order:5}
+:root[data-style=keel] .langpop i{display:none}
 :root[data-style=keel] .seg{background:var(--panel);box-shadow:inset 0 0 0 1px var(--rule)}
 :root[data-style=keel] .seg button[aria-pressed="true"]{background:var(--keel);color:var(--on-keel);font-weight:700}
 .glyph .gseg{fill:var(--keel)}
