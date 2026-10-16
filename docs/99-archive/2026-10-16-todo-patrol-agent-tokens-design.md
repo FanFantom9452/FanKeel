@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # TODO 全表盤點（10-16 晚）：拿掉 turn.running、子代理樹的 token 與排序 — Design
