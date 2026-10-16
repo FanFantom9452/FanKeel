@@ -261,7 +261,7 @@ test('the first run scans once and records that it did', () => {
     execFileSync(process.execPath, ['-e', ''], { encoding: 'utf8', timeout: 20000 });
     const idle = Date.now() - n0;
     const t0 = Date.now();
-    const out1 =execFileSync(process.execPath, [CLI], { cwd: base, env, encoding: 'utf8', timeout: 20000 });
+    const out1 = execFileSync(process.execPath, [CLI], { cwd: base, env, encoding: 'utf8', timeout: 20000 });
     const elapsed1 = Date.now() - t0;
     assert.match(out1, /first run/);
 
@@ -310,9 +310,9 @@ test('the first run scans once and records that it did', () => {
     // The first run is the one AUTO_BUDGET_MS exists to bound, and until this
     // line the suite measured it and threw the number away — a budget raised to
     // anything under this test's own 20-second `timeout` shipped green. Measured
-    // here on 2026-09-06: 6.0 seconds for a 5-second budget, so a second of
-    // node start-up, the readdir in flight when the deadline landed, and the
-    // write of the page. Nine seconds leaves that margin doubled and still
+    // here on 2026-09-06: 6.0 seconds for a 5-second budget — node start-up,
+    // now taken off as `idle`, the readdir in flight when the deadline landed,
+    // and the write of the page. Nine seconds leaves that margin doubled and still
     // catches a budget moved to ten seconds or beyond. It is deliberately a
     // literal rather than `AUTO_BUDGET_MS + slack`: a bound that moves with the
     // budget is a bound the budget cannot break.
