@@ -249,6 +249,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | TODO 全表盤點（10-16）做了什麼、沒做什麼：兩條探測清單、兩條改 Ready、兩條 Blocked 重查，無結案 | [reports/patrols/2026-10-16-todo-patrol-probes.md](90-agent/reports/patrols/2026-10-16-todo-patrol-probes.md) — *繁體中文* |
 | 那份盤點的四個 task | `docs/99-archive/2026-10-16-todo-patrol-probes.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-16 下午）做了什麼、沒做什麼：路線圓點不呼吸、Pane 的子代理樹與 station 按鈕、station-cli 首掃扣掉 node 啟動、三條偶發測試轉 watch | [reports/patrols/2026-10-16-todo-patrol-dots-agents.md](90-agent/reports/patrols/2026-10-16-todo-patrol-dots-agents.md) — *繁體中文* |
+| TODO 全表盤點（10-16 晚）的 design：拿掉 `turn.running`，子代理樹把還有在跑的排前面、每列顯示 input、cache 寫入與 output 的 token | [plans/2026-10-16-todo-patrol-agent-tokens-design.md](90-agent/plans/2026-10-16-todo-patrol-agent-tokens-design.md) — *design-intent, 繁體中文* |
+| 那份設計的三個 task | [plans/2026-10-16-todo-patrol-agent-tokens.md](90-agent/plans/2026-10-16-todo-patrol-agent-tokens.md) — *design-intent, 繁體中文* |
 | 那份盤點的 design 與八個 task | `docs/99-archive/2026-10-16-todo-patrol-dots-agents-design.md`、`docs/99-archive/2026-10-16-todo-patrol-dots-agents.md` — *built, 繁體中文* |
 | 換站時印出新一站規則（10-16）的 design：cmdStage 印 rulesLines、受控站維持 controller 區塊、最後一行同回合開工 | `docs/99-archive/2026-10-16-stage-prints-rules-design.md` — *built, 繁體中文* |
 | 那份設計的一個 task | `docs/99-archive/2026-10-16-stage-prints-rules.md` — *built* |
