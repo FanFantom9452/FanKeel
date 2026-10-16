@@ -60,6 +60,14 @@ test('new cards are off by default and offered by the library', () => {
     for (const id of IDS) assert.match(lib, new RegExp('data-dadd="' + id + '"'));
 });
 
+test('a claim named like an Object method does not break the clash card', () => {
+    const V = page();
+    const R = [{ id: 'a', state: 'live', claims: ['constructor', 'toString'], project: 'p', days: [] }, { id: 'b', state: 'live', claims: ['constructor'], project: 'p', days: [] }];
+    const html = V.dashKinds()['dash-clash'].render(R, { projects: [], sessions: R });
+    assert.match(html, /constructor/);
+    assert.doesNotMatch(html, /toString/);
+});
+
 test('the clash card lists a file two live sessions claim', () => {
     const V = page();
     const R = [{ id: 'a', state: 'live', claims: ['x.js', 'y.js'], project: 'p', days: [] }, { id: 'b', state: 'live', claims: ['x.js'], project: 'p', days: [] }, { id: 'c', state: 'down', claims: ['y.js'], days: [] }];
@@ -123,10 +131,15 @@ test('依專案花費 sums each project\'s spend, most first', () => {
 
 test('近 7 天 token adds the four kinds and skips a day with no tokens', () => {
     const t = TODAY();
-    const R = [{ id: 'a', days: [{ day: t, tokens: { input: 1000, output: 500, cacheRead: 300, cacheWrite5m: 200 } }, { day: t, tokens: null }] }];
+    const d = new Date(Date.now() - 10 * 864e5);
+    const old = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    // Four distinct sizes, so losing any one kind changes a figure; a day ten days back is outside the window.
+    const R = [{ id: 'a', days: [{ day: t, tokens: { input: 400000, output: 30000, cacheRead: 2000000, cacheWrite5m: 5000 } }, { day: t, tokens: null },
+        { day: old, tokens: { input: 9000000, output: 0, cacheRead: 0, cacheWrite5m: 0 } }] }];
     const V = page({}, R);
     const html = V.dashKinds()['dash-tokens7'].render(R, { projects: [], sessions: R });
-    assert.match(html, /<div class="dbig">2k/);
+    assert.match(html, new RegExp('<div class="dbig">' + V.tokens(2435000) + '<'));
+    for (const [k, n] of [['input', 400000], ['output', 30000], ['cache read', 2000000], ['cache write', 5000]]) assert.match(html, new RegExp(k + ' <b>' + V.tokens(n) + '</b>'), k);
 });
 
 test('模型用量分布 splits the spend by model', () => {
@@ -140,7 +153,9 @@ test('模型用量分布 splits the spend by model', () => {
 
 test('gate 平均等待 averages the stages that waited', () => {
     const now = Date.now();
-    const R = [{ id: 'a', stages: [{ stage: 'design', from: now - 6e5, to: now, waited: 6e5 }, { stage: 'plan', from: now - 6e5, to: now, waited: 18e5 }, { stage: 'build', from: now - 6e5, to: now, waited: 0 }] }];
+    // A long gate eight days back is outside the 近 7 天 window and must not move the average.
+    const R = [{ id: 'a', stages: [{ stage: 'design', from: now - 6e5, to: now, waited: 6e5 }, { stage: 'plan', from: now - 6e5, to: now, waited: 18e5 }, { stage: 'build', from: now - 6e5, to: now, waited: 0 },
+        { stage: 'verify', from: now - 8 * 864e5, to: now - 8 * 864e5 + 1, waited: 36e6 }] }];
     const V = page({}, R);
     const html = V.dashKinds()['dash-gatewait'].render(R, { projects: [], sessions: R });
     assert.match(html, /<div class="dbig">20 分/);

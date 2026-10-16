@@ -3168,7 +3168,8 @@
     function dashTodoName(pkey) { return esc(shortLabel(NAMES[pkey] || pkey)); }
     // A file two or more live sessions claim at once.
     function dashClash(R) {
-        var by = {};
+        // No prototype: a claimed file may be named `constructor` or `toString`.
+        var by = Object.create(null);
         R.filter(function (s) { return s.state === 'live'; }).forEach(function (s) {
             (s.claims || []).forEach(function (f) {
                 var list = by[f] || (by[f] = []);
