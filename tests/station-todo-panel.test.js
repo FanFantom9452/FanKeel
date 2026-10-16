@@ -4,6 +4,9 @@
 // this machine has it and its sha shown where it does not.
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
 
 global.window = { STATION: { serve: false } };
 const V = require('../assets/station/station.js');
@@ -22,7 +25,10 @@ test('the panel counts open and done entries and carries the three mockup blocks
     for (const b of ['todo-head', 'todo-open', 'todo-done']) assert.match(html, new RegExp('data-block="' + b + '"'));
     assert.match(html, /未完成 3/);
     assert.match(html, /已完成 2/);
-    assert.equal((html.match(/<li class="td-row">/g) || []).length, 5);
+    assert.equal((html.match(/<li class="td-row"( id="todo-[a-z0-9-]+")?>/g) || []).length, 5);
+    // An open row carries the id #/p/<pkey>/todo/<id> scrolls to; a done row does not.
+    assert.match(html, /<li class="td-row" id="todo-b-1">/);
+    assert.doesNotMatch(html, /id="todo-c-1"/);
     assert.match(html, /<code>x<\/code>/);
     assert.match(html, /class="td-tm rep"/, 'a second entry under the same timing is muted');
     assert.match(html, /href="#\/s\/ssss1111-0000"/);
@@ -146,12 +152,12 @@ test('a row with a body is clickable and opens a todo-body block under it; one w
         ROW.open[1],
     ], done: [Object.assign({}, ROW.done[0], { body: 'closed because' }), ROW.done[1]] });
     const shut = V.todoPanelHtml(row, []);
-    assert.match(shut, /<li class="td-row td-has" data-tdbody="a-1" role="button" tabindex="0" aria-expanded="false">/);
+    assert.match(shut, /<li class="td-row td-has" data-tdbody="a-1" role="button" tabindex="0" aria-expanded="false" id="todo-a-1">/);
     assert.match(shut, /data-tdbody="c-1"/);
     assert.doesNotMatch(shut, /data-tdbody="b-1"|data-tdbody="c-2"/);
     assert.doesNotMatch(shut, /data-block="todo-body"/);
     const open = V.todoPanelHtml(row, [], false, { 'a-1': true });
-    assert.match(open, /aria-expanded="true">/);
+    assert.match(open, /aria-expanded="true" id="todo-a-1">/);
     assert.match(open, /<li class="td-body" data-block="todo-body">From <code>x<\/code>\.\nSecond line &lt;b&gt;<\/li>/);
     assert.equal((open.match(/data-block="todo-body"/g) || []).length, 1);
 });
@@ -188,4 +194,57 @@ test('a press whose target is a link inside the row does not toggle the body', (
     assert.equal(bodyShown(p), 0);
     p.fire('click', 'a-1');
     assert.equal(bodyShown(p), 1, 'the row itself still toggles');
+});
+
+// The page booted whole in a fresh vm context, the way tests/station-docs-tour.test.js
+// boots it, on `hash`. Of the ids `todo` and `todo-<id>` only those in `present`
+// are on the page; every element records being scrolled to, and the window its scrollTo.
+// The elements are of the vm's realm, so what they record is compared as plain strings.
+const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+function bootAt(hash, present) {
+    const els = {};
+    const scrolled = [];
+    const tops = [];
+    const on = {};
+    const el = (id) => ({ id, innerHTML: '', textContent: '', className: '', title: '', hidden: false, style: {},
+        setAttribute() {}, getAttribute() { return null; }, appendChild() {}, addEventListener() {},
+        removeAttribute() {}, scrollIntoView(o) { scrolled.push([id, o && o.block]); } });
+    const doc = {
+        hidden: false,
+        getElementById: (id) => (/^todo(-|$)/.test(id) && !present.includes(id) ? null : els[id] || (els[id] = el(id))),
+        addEventListener() {}, createElement: () => el(''), querySelectorAll: () => [],
+        querySelector: () => ({ parentNode: { insertBefore() {} }, nextSibling: null }),
+        head: { appendChild() {} },
+    };
+    const win = {
+        location: { hash, protocol: 'file:' }, addEventListener: (type, fn) => { (on[type] = on[type] || []).push(fn); }, scrollTo: (x, y) => { tops.push([x, y]); },
+        setInterval: () => 1, setTimeout: () => 1, clearTimeout() {},
+        STATION: {
+            generatedAt: new Date(2026, 9, 17, 11, 0).toISOString(), configDir: 'C:\cfg', pricesVerified: '2026-09-04', serve: false,
+            projects: [], profiles: { machine: { values: {}, sources: {}, unreadable: [] }, projects: {} }, profileKeys: {}, classes: {}, sessions: [],
+        },
+    };
+    vm.runInNewContext(SRC, { window: win, document: doc, URLSearchParams });
+    return { scrolled, tops, go: (to) => { win.location.hash = to; on.hashchange.forEach((fn) => fn()); } };
+}
+const P = '#/p/' + encodeURIComponent('F:\ws');
+
+test('#/p/<pkey>/todo/<id> scrolls that entry into view once the page draws; one not on the page scrolls the panel', () => {
+    const at = bootAt(P + '/todo/b-1', ['todo', 'todo-b-1']);
+    assert.deepEqual(at.scrolled, [['todo-b-1', 'start']]);
+    assert.deepEqual(bootAt(P + '/todo/gone-1', ['todo']).scrolled, [['todo', 'start']]);
+    assert.deepEqual(bootAt(P + '/todo', ['todo', 'todo-b-1']).scrolled, [['todo', 'start']]);
+    assert.deepEqual(bootAt(P, ['todo', 'todo-b-1']).scrolled, []);
+    // No panel on the page yet: nothing is scrolled, and nothing throws.
+    assert.deepEqual(bootAt(P + '/todo/b-1', []).scrolled, []);
+});
+
+test('arriving on a TODO hash scrolls to it and not back to the top; any other hash goes to the top', () => {
+    const at = bootAt('#/', ['todo', 'todo-b-1']);
+    at.go(P + '/todo/b-1');
+    assert.deepEqual(at.scrolled, [['todo-b-1', 'start']]);
+    assert.deepEqual(at.tops, []);
+    at.go('#/sessions');
+    assert.deepEqual(at.tops, [[0, 0]]);
+    assert.equal(at.scrolled.length, 1);
 });

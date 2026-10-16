@@ -232,15 +232,20 @@
     // `#/days`, `#/d/<day>`, `#/sessions`, `#/projects`, `#/docs`, `#/settings`,
     // `#/tour`, `#/list` and `#/cmp` are the other pages the left bar opens;
     // `#/p/<pkey>` and `#/s/<id>[/<tab>]` are opened from rows. A hash is what
-    // a page opened from file:// can go back through.
+    // a page opened from file:// can go back through. `#/p/<pkey>/todo` and
+    // `#/p/<pkey>/todo/<id>` are the project page with its TODO panel, or that
+    // entry in it, scrolled into view: the Pane's TODO buttons open them.
     var PAGES = ['live', 'sessions', 'projects', 'docs', 'settings', 'tour'];
     function parseHash(hash) {
         var p = String(hash || '').replace(/^#\/?/, '').split('/');
         var dec = function (v) { try { return decodeURIComponent(v); } catch (e) { return null; } };
         if (p[0] === 'd' && /^\d{4}-\d{2}-\d{2}$/.test(p[1] || '')) return { view: 'days', day: p[1] };
         if (p[0] === 'days') return { view: 'days', day: null };
-        var key = p[0] === 'p' && p[1] ? dec(p.slice(1).join('/')) : null;
-        if (key !== null) return { view: 'project', pkey: key };
+        var seg = p[0] === 'p' && p[1] ? p.slice(1) : [], todo;
+        if (seg.length > 1 && seg[seg.length - 1] === 'todo') { todo = ''; seg = seg.slice(0, -1); }
+        else if (seg.length > 2 && seg[seg.length - 2] === 'todo') { todo = dec(seg[seg.length - 1]) || ''; seg = seg.slice(0, -2); }
+        var key = seg.length ? dec(seg.join('/')) : null;
+        if (key !== null) return todo === undefined ? { view: 'project', pkey: key } : { view: 'project', pkey: key, todo: todo };
         var id = p[0] === 's' && p[1] ? dec(p[1]) : null;
         if (id !== null) return { view: 'session', id: id, tab: TABS.indexOf(p[2]) >= 0 ? p[2] : 'timeline' };
         if (p[0] === 'list' || p[0] === 'cmp') return { view: p[0] };
@@ -248,6 +253,15 @@
         return { view: 'now' };
     }
     function projectHash(pkey) { return '#/p/' + encodeURIComponent(pkey); }
+    // The Pane builds a pkey from the engine's root, which may write `/` where
+    // lib/station.js's path.resolve wrote `\`, or another case of the drive
+    // letter: the key a session on the page carries wins, else `k` as it came.
+    function knownPkey(k, sessions) {
+        var flat = function (s) { return String(s).replace(/\\/g, '/').toLowerCase(); };
+        var all = sessions || [];
+        var hit = all.filter(function (s) { return s.pkey === k; })[0] || all.filter(function (s) { return flat(s.pkey) === flat(k); })[0];
+        return hit ? hit.pkey : k;
+    }
     function sessionHash(id, tab) { return '#/s/' + encodeURIComponent(id) + (tab && tab !== 'timeline' ? '/' + tab : ''); }
     function family(model) {
         var m = /claude-(fable|opus|sonnet|haiku)/.exec(String(model || ''));
@@ -2603,9 +2617,11 @@
         // A row with a body opens under itself on click or Enter; which are
         // open is the project page's `view.tdBody`, so a 3 s redraw keeps it.
         var opened = bodyOpen || {};
-        var rowOpen = function (e, cls) {
+        // An open row carries `id="todo-<id>"`, what `#/p/<pkey>/todo/<id>` scrolls to.
+        var rowOpen = function (e, cls, anchor) {
             var has = !!(e.body && e.id), on = has && !!opened[e.id];
-            return { on: on, head: '<li class="' + cls + (has ? ' td-has" data-tdbody="' + esc(e.id) + '" role="button" tabindex="0" aria-expanded="' + String(on) + '">' : '">') };
+            var at = anchor && e.id ? ' id="todo-' + esc(e.id) + '"' : '';
+            return { on: on, head: '<li class="' + cls + (has ? ' td-has" data-tdbody="' + esc(e.id) + '" role="button" tabindex="0" aria-expanded="' + String(on) + '"' : '"') + at + '>' };
         };
         var bodyRow = function (e, r) {
             return r.on ? '<li class="td-body" data-block="todo-body">' + md(e.body) + '</li>' : '';
@@ -2619,7 +2635,7 @@
                 + '<ul class="td-rows' + (timed ? ' timed' : '') + '">' + list.map(function (e) {
                     var rep = timed && e.condition === prev;
                     prev = timed ? e.condition : null;
-                    var r = rowOpen(e, 'td-row');
+                    var r = rowOpen(e, 'td-row', true);
                     return r.head + todoChip(e.label) + '<span class="td-t">' + esc(e.title) + '</span>'
                         + '<span class="td-d" title="' + esc(e.description) + '">' + md(e.description) + '</span>'
                         + (timed ? '<span class="td-tm' + (rep ? ' rep' : '') + '" title="' + esc(e.condition || '') + '">' + esc(e.condition || '') + '</span>'
@@ -2704,7 +2720,7 @@
 
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
-            todoPanelHtml: todoPanelHtml,
+            todoPanelHtml: todoPanelHtml, knownPkey: knownPkey,
             boardLinkHtml: boardLinkHtml,
             tokens: tokens, mins: mins, hours: hours, usd: usd, ago: ago, day: day,
             stamp: stamp, esc: esc, cost: cost, labels: labels, delta: delta, match: match,
@@ -5274,8 +5290,21 @@
         store(FK_BOX_KEY, null);
         drawFloat();
     });
+    // The hash a `#/p/<pkey>/todo[/<id>]` arrived with, until its TODO panel or
+    // entry is scrolled into view; null once it is. Tried after every draw, since
+    // the panel can come with a later data read; a hash the reader has left is
+    // not chased.
+    var focusFor = w.location.hash;
+    function focusTodo() {
+        if (focusFor !== w.location.hash || route.view !== 'project' || route.todo === undefined) return;
+        var to = (route.todo && doc.getElementById('todo-' + route.todo)) || doc.getElementById('todo');
+        if (!to) return;
+        focusFor = null;
+        to.scrollIntoView({ block: 'start' });
+    }
     function draw() {
         route = parseHash(w.location.hash);
+        if (route.view === 'project') route.pkey = knownPkey(route.pkey, S.sessions);
         var p = doc.getElementById('page');
         p.className = 'page' + (route.view === 'list' ? ' fixed' : '');
         // A 篩選 checkbox with focus keeps it through the 3 s redraw.
@@ -5338,6 +5367,7 @@
         drawNav();
         drawSide();
         doc.getElementById('gen').textContent = genText();
+        focusTodo();
     }
     // The left bar's folds, kept as `{fold: true}` for each one the reader
     // shut. Arriving on a page opens its category once; shutting it again
@@ -5422,8 +5452,9 @@
         sel = null;
         // Edit mode belongs to one visit of the dashboard: another page ends it.
         view.dashEdit = false;
+        focusFor = w.location.hash;
         draw();
-        w.scrollTo(0, 0);
+        if (focusFor !== null) w.scrollTo(0, 0);
     });
     // The 前端 step's model bar: arrow keys, Home and End walk the three
     // segments and choose as they go, the way a radio group does.

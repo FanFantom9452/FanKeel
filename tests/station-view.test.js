@@ -1755,3 +1755,25 @@ test('stageCost copies a stage\'s estimated flag beside its usd', () => {
     assert.deepEqual(m.segs.map((g) => g.estimated), [true, false]);
 });
 
+
+test('a trailing /todo or /todo/<id> on #/p/<pkey> is a focus on the TODO panel, not part of the key', () => {
+    const key = 'F:\\ymlab\\fankeel';
+    const k = encodeURIComponent(key);
+    assert.deepEqual(V.parseHash('#/p/' + k + '/todo/brief-3'), { view: 'project', pkey: key, todo: 'brief-3' });
+    assert.deepEqual(V.parseHash('#/p/' + k + '/todo'), { view: 'project', pkey: key, todo: '' });
+    assert.deepEqual(V.parseHash('#/p/' + k), { view: 'project', pkey: key });
+    // A key written with its slashes unencoded loses only the tail.
+    assert.deepEqual(V.parseHash('#/p/F:/ymlab/fankeel/todo/brief-3'), { view: 'project', pkey: 'F:/ymlab/fankeel', todo: 'brief-3' });
+    assert.deepEqual(V.parseHash('#/p/F:/ymlab/fankeel'), { view: 'project', pkey: 'F:/ymlab/fankeel' });
+    // `todo` alone is a key, not a focus with no project.
+    assert.deepEqual(V.parseHash('#/p/todo'), { view: 'project', pkey: 'todo' });
+});
+
+test('knownPkey finds the session key the Pane meant across slash direction and drive-letter case', () => {
+    const sessions = [{ pkey: 'F:\\ymlab\\fankeel' }, { pkey: 'F:\\ymlab\\fankeel/app' }];
+    assert.equal(V.knownPkey('F:/ymlab/fankeel', sessions), 'F:\\ymlab\\fankeel');
+    assert.equal(V.knownPkey('f:/ymlab/fankeel/app', sessions), 'F:\\ymlab\\fankeel/app');
+    assert.equal(V.knownPkey('F:\\ymlab\\fankeel', sessions), 'F:\\ymlab\\fankeel');
+    assert.equal(V.knownPkey('G:/other', sessions), 'G:/other');
+    assert.equal(V.knownPkey('G:/other', undefined), 'G:/other');
+});
