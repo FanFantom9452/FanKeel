@@ -95,10 +95,12 @@ test('release leaves a lock another pid holds', () => {
   assert.equal(fs.existsSync(file), true);
 });
 
-test('a lock reading null, or a directory at the lock path, is unreadable: waited on while fresh, cleared once old', () => {
+test('a lock reading null or [], or a directory at the lock path, is unreadable: waited on while fresh, cleared once old', () => {
   const file = scratch();
-  fs.writeFileSync(file, 'null');
-  assert.throws(() => lock.acquire({ file, onWait: waited }), /waited/);
+  for (const text of ['null', '[]']) {
+    fs.writeFileSync(file, text);
+    assert.throws(() => lock.acquire({ file, onWait: waited }), /waited/, text);
+  }
   const old = new Date(Date.now() - 60000);
   fs.utimesSync(file, old, old);
   lock.acquire({ file, onWait: waited }).release();

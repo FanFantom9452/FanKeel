@@ -36,12 +36,11 @@ and `task.js land` refuse a fast record.
 
 The fast set saves about a fifth of the wall-clock, not half. `node --test`
 runs files in parallel but each file's tests one after another, and files of
-many short git-heavy tests set the floor whatever the threshold. In the whole
-run those were `tests/survey.test.js`, `tests/todo-check.test.js` and
-`tests/task.test.js`, each 100 s or more of serial test time (points
-attributed to files by test name); with the slow tests skipped, the longest
-were `tests/commit.test.js` (about 122 s) and `tests/sensitive.test.js`
-(about 114 s), which is why the fast set still takes over three minutes. The lock is what stops the random reds; the
+many short git-heavy tests set the floor whatever the threshold. The two
+longest files are the same in both runs, by serial test time with points
+attributed to files by test name: `tests/commit.test.js` (186 s whole, 122 s
+fast) and `tests/sensitive.test.js` (184 s whole, 114 s fast). That is why
+the fast set still takes over three minutes. The lock is what stops the random reds; the
 fast set only trims time.
 
 To re-tag, run `node --test --test-reporter=tap > run.tap`, then
