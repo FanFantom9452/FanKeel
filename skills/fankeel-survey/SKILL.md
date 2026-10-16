@@ -344,8 +344,7 @@ the refusal lists the ids still missing. It reaches two cases only: a TODO kept
 as entry files (a hand-written `TODO.md` yields no list), and a controlled
 survey whose report is a handoff file — a patrol survey run in this session
 has no file to read, so there the rule above is the whole check.
-2026-10-17: a report that counted 29
-and checked 7 was the reason.
+2026-10-17: a report that counted 29 and checked 7 was the reason.
 
 **Ready and Needs a decision.** Each entry is re-checked in the code it links
 to: still true, already done, a bug rather than a decision, or a duplicate of
