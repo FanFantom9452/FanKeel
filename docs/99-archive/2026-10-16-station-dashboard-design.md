@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # Station 儀表板改版 — Design

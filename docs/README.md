@@ -254,6 +254,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 那份盤點的 design 與八個 task | `docs/99-archive/2026-10-16-todo-patrol-dots-agents-design.md`、`docs/99-archive/2026-10-16-todo-patrol-dots-agents.md` — *built, 繁體中文* |
 | 換站時印出新一站規則（10-16）的 design：cmdStage 印 rulesLines、受控站維持 controller 區塊、最後一行同回合開工 | `docs/99-archive/2026-10-16-stage-prints-rules-design.md` — *built, 繁體中文* |
 | 那份設計的一個 task | `docs/99-archive/2026-10-16-stage-prints-rules.md` — *built* |
+| Station 儀表板改版（10-16）的 design：頂列、花費 hover、可以開工彈窗、編輯模式、新增卡片、通知面板捲動 | `docs/99-archive/2026-10-16-station-dashboard-design.md` — *built, 繁體中文* |
+| 那份設計的八個 task | `docs/99-archive/2026-10-16-station-dashboard.md` — *built* |
 | 一台機器一次一組 suite、快組（10-16）的 design：lib/suitelock.js 的鎖、@slow 標記、suite.js --fast | `docs/99-archive/2026-10-16-suite-lock-fast-design.md` — *built* |
 | 那份設計的 task：鎖、suite.js 等鎖與 --fast、標 @slow、stage 規則與 skill、文件 | `docs/99-archive/2026-10-16-suite-lock-fast.md` — *built* |
 | build 的 workflow 由 script 產（10-16）的 design：workflowScript、ledger.js workflow、brain 以 `workflow:` 行交主控開 | `docs/99-archive/2026-10-16-build-workflow-script-design.md` — *built, 繁體中文* |
@@ -278,6 +280,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 壓縮門檻改成 `compact.at`（10-12）定了什麼：init 問四檔、只在 fankeel 任務生效、不再寫使用者的設定檔；放棄了什麼 | [decisions/2026-10-12-compact-at.md](03-decisions/2026-10-12-compact-at.md) — *繁體中文* |
 | Desktop 用 Svg 畫 band 與 Pane（10-15）定了什麼：Desktop 畫圖、終端維持文字，band 尾巴的遠端 ✓／✗，ctx 照 TokenBar；放棄了什麼 | [decisions/2026-10-15-pane-svg.md](03-decisions/2026-10-15-pane-svg.md) — *繁體中文* |
 | 換站時就印出新一站規則（10-16）定了什麼：task.js stage 印出與注入同一份的規則與 output shape，最後一行要 session 同回合開工；放棄了什麼 | [decisions/2026-10-16-stage-prints-rules.md](03-decisions/2026-10-16-stage-prints-rules.md) — *繁體中文* |
+| Station 儀表板（10-16）定了什麼：頁標題取代麵包屑、卡片區編輯模式與八種新卡片；放棄了什麼 | [decisions/2026-10-16-station-dashboard.md](03-decisions/2026-10-16-station-dashboard.md) — *繁體中文* |
 | build 的 workflow 由 script 產（10-16）定了什麼：ledger.js workflow 產 script，brain 寫 `workflow:` 行由主控開；放棄了什麼 | [decisions/2026-10-16-build-workflow-script.md](03-decisions/2026-10-16-build-workflow-script.md) — *繁體中文* |
 | 一台機器一次一組 suite（10-16）定了什麼：suite.js 等機器鎖，build/verify 跑 --fast，land 跑全部；放棄了什麼 | [decisions/2026-10-16-suite-lock-fast.md](03-decisions/2026-10-16-suite-lock-fast.md) — *繁體中文* |
 | 開站也印規則、git 逾時讓測試調高（10-16）定了什麼：start/task 印第一站規則；FANKEEL_GIT_TIMEOUT 只給測試調高；放棄了什麼 | [decisions/2026-10-16-git-timeout-env.md](03-decisions/2026-10-16-git-timeout-env.md) — *繁體中文* |
@@ -528,6 +531,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 - [壓縮門檻改成 profile 的 compact.at（10-12）：init 問四檔，不再寫使用者的設定檔](03-decisions/2026-10-12-compact-at.md)
 - [Desktop 用 Svg 畫 band 與 Pane，終端維持文字（10-15）](03-decisions/2026-10-15-pane-svg.md)
 - [換站時就印出新一站規則（10-16）：task.js stage 印規則與骨架，同回合開工](03-decisions/2026-10-16-stage-prints-rules.md)
+- [Station 儀表板（10-16）：頁標題取代麵包屑，編輯模式取代勾選面板](03-decisions/2026-10-16-station-dashboard.md)
 - [build 的 workflow 由 script 產（10-16）：ledger.js workflow 產 script，brain 交主控開](03-decisions/2026-10-16-build-workflow-script.md)
 - [一台機器一次一組 suite（10-16）：suite.js 等機器鎖，build 與 verify 跑 @slow 以外的快組](03-decisions/2026-10-16-suite-lock-fast.md)
 - [開站也印規則、git 逾時讓測試調高（10-16）：openingLines 三處共用，FANKEEL_GIT_TIMEOUT](03-decisions/2026-10-16-git-timeout-env.md)
