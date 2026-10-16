@@ -2995,8 +2995,9 @@
         var tip = function (b) { return b.day + ' ' + (b.total ? usd(b.total) + estMark(b) : loc('dash.noSpend', '沒有紀錄')); };
         var bars = '<div class="dspark" role="img" aria-label="' + loc('dash.dailyCostLast30d', '近 30 天每日花費') + '">'
             + list.map(function (b, i) {
-                var h = b.total ? Math.max(4, b.total / mx * 100) : 0;
-                return '<span class="db' + (i === list.length - 1 ? ' today' : '') + (i >= list.length - 4 ? ' end' : '') + '" tabindex="0" data-tip="' + esc(tip(b))
+                // A day with no spend is a full-height empty hit area, so its tip shows on hover, and no tab stop.
+                var h = b.total ? Math.max(4, b.total / mx * 100) : 100;
+                return '<span class="db' + (b.total ? '' : ' none') + (i === list.length - 1 ? ' today' : '') + (i >= list.length - 4 ? ' end' : '') + '"' + (b.total ? ' tabindex="0"' : '') + ' data-tip="' + esc(tip(b))
                     + '" aria-label="' + esc(tip(b)) + '" style="height:' + h.toFixed(1) + '%"></span>';
             }).join('') + '</div>';
         var at = function (i) { var b = list[list.length - i]; return b ? usd(b.total) + estMark(b) : '—'; };

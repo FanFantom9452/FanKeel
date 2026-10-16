@@ -28,6 +28,8 @@ test('every day is a focusable bar carrying its amount and day', () => {
     assert.match(html, /<span class="db[^"]*" tabindex="0"/);
     assert.match(html, new RegExp('data-tip="' + day + ' \\$12\\.50'));
     assert.match(html, /data-tip="[^"]*沒有紀錄"/);
+    // An empty day is hoverable but no tab stop.
+    assert.match(html, /<span class="db none[^"]*" data-tip="[^"]*沒有紀錄"/);
 });
 
 test('the hover lift is CSS and respects reduced motion', () => {
