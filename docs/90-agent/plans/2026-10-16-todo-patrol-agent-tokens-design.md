@@ -35,6 +35,21 @@ status: design-intent
 - `hooks/pane.ts` 的 `agentsOf` 在 jsonl 有列出時讀它、算出 token，並以 `mtimeMs:size` 快取，檔案沒動就不重讀；沒有 jsonl 時是 `null`。
 - `hooks/pane-status.ts` 每一列在分鐘之後接 ` · 79.4k`；`tokens` 是 `null` 時不畫這一段，不畫成 0。
 
+## 4. tasks 超過十個改畫長條
+
+使用者在 verify 站說：「TASK 3 OF 3 這種設計，超過 10 個就改為長條顯示吧，不然遇到大任務很佔據版面」。所以退回 build 加做。
+
+- Desktop 的 `tasksSvg`（`hooks/pane-svg.ts`）：`GRID_MAX` 從 30 改成 10。九個以內仍是一列 30px 的格子，十個是一列十個 24px 的格子，十一個起畫四段的長條（完成、在跑、你的、還沒做）。
+- 終端的 `tasksBlock` 不動：它在六個以內全列，更多本來就折成幾列。
+
+## 5. Pane 拿掉 context 區塊
+
+使用者在 build 站說：「PANE 的 CONTEXT 也刪除吧，因為 BAND 已經有 CONTEXT 顯示了」。
+
+- 終端的 `contextBlock` 與 Desktop 的 `contextSvg` 都拿掉，`statusRows` 與 `paneParts` 不再有 `context` 這一塊，`DROP` 的註解也不再提它。
+- 只為它而存在的東西一起拿掉：`SAID`、`KEPT`，以及 `hooks/pane-status.ts` 只為它 import 的 `HARD`、`nearCompact`。band 的 `ctx` 長條與 ⚠（`hooks/pane-bar.ts` 的 `nearCompact`、`ctxPaint`）不動。
+- `hooks/pane.ts` 照樣讀 context，因為 band 要用；Pane 那一側若因此不再讀 `context`，就不再傳。
+
 ## What proves it done
 
 | test | how |
@@ -43,6 +58,8 @@ status: design-intent
 | 跑著的排前面 | `tests/pane-agents.test.js`：一個已結束、底下有跑著的子節點的根，排在一個比它新但整棵都結束的根前面。 |
 | token 合計 | `tests/pane-agents.test.js`：同一個 `requestId` 兩行只算最後一行，沒有 `requestId` 的行各算一次，cache 讀取不算，沒有 usage 時回 `null`；`tokenLabel` 寫出 `892`、`79.4k`、`1.7M`。 |
 | token 畫出來 | `tests/pane-status.test.js` 的子代理樹那條，根那一列是 ` ○ survey stage agent · opus 5.5 · high · 10 分 · 79.4k`，沒有 token 的子節點沒有那一段；`tests/pane.test.js`：jsonl 在時 Pane 那一列有 token 的字樣，沒有 jsonl 的那一列沒有。 |
+| 十一個起畫長條 | `tests/pane-svg.test.js`：十個 task 是十個 24px 的格子，十一個是四段長條（`['在跑 1', '還沒做 10']`）。 |
+| Pane 沒有 context 區塊 | `grep -rn "contextBlock\|contextSvg\|SAID\|KEPT" hooks tests` 沒有輸出；`tests/pane-status.test.js`：tokens 超過門檻時 `statusRows` 也沒有 `block === 'context'` 的列；band 的 `ctx` 測試照舊全綠。 |
 
 ## Files
 
@@ -57,7 +74,10 @@ status: design-intent
 | `hooks/pane-agents.ts` | 排序看整棵；`agentTokens`、`tokenLabel`、`tokens` 欄位 |
 | `tests/pane-agents.test.js` | 排序與 token 測試 |
 | `hooks/pane-status.ts` | 列尾接 token |
-| `tests/pane-status.test.js` | 子代理樹那條加 token |
+| `tests/pane-status.test.js` | 子代理樹那條加 token；context 區塊的測試拿掉 |
+| `hooks/pane-svg.ts` | `GRID_MAX` 10；拿掉 `contextSvg` |
+| `tests/pane-svg.test.js` | 長條門檻的測試；context 圖的測試拿掉 |
+| `docs/01-guide/profile.md` | tasks 的門檻、Pane 沒有 context 區塊 |
 
 ## Unverified
 

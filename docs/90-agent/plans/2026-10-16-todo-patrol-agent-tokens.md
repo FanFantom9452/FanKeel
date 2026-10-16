@@ -419,6 +419,172 @@ git add hooks/pane-agents.ts hooks/pane.ts hooks/pane-status.ts tests/pane-agent
 git commit -m "feat: the Pane's agent tree shows each agent's tokens, input, cache writes and output"
 ```
 
+## Task 4: tasks 超過十個畫長條
+
+**Files:**
+- Modify: `hooks/pane-svg.ts` — `GRID_MAX` 30 改 10，上方註解跟著改
+- Modify: `docs/01-guide/profile.md` — Desktop 面板 tasks 那一句的門檻
+- Test: `tests/pane-svg.test.js`
+
+**Interfaces:**
+- Consumes: nothing.
+- Produces: `tasksSvg(entry, plan, now, cols)` 簽名不變；`plan.tasks.length > 10` 時畫四段長條。
+
+**Dispatch:** implementer, sonnet — 計畫帶著程式碼；照抄加測試。
+
+1. Write the failing test。在 `tests/pane-svg.test.js`，把 `test('ten to thirty tasks are rows of ten cells; more than thirty are one bar of four counts', …)` 整條換成：
+
+```js
+test('ten tasks are one row of ten cells; more than ten are one bar of four counts', async () => {
+    const { tasksSvg } = await load('pane-svg');
+    const grid = tasksSvg(entry, planOf(10, 4, [8]), NOW, 41);
+    assert.equal(titles(grid).length, 10);
+    assert.match(grid, /<title>1 · task 1 · 完成<\/title><rect class="c" x="1" y="24" width="24"/);
+    const bar = tasksSvg(entry, planOf(24, 11, [16, 20]), NOW, 41);
+    assert.deepEqual(titles(bar), ['完成 11', '在跑 1', '你的 2', '還沒做 10']);
+    const big = tasksSvg(entry, planOf(60, 37, [39, 44, 50, 51]), NOW, 41);
+    assert.deepEqual(titles(big), ['完成 37', '在跑 1', '你的 4', '還沒做 18']);
+    assert.ok(words(big).includes('還有 1 個是你的'));
+    assert.equal(words(big).filter((w) => w.endsWith(' · 你的')).length, 3);
+});
+```
+
+再把 `tests/pane-svg.test.js` 的 `test('nine tasks are one row and ten are rows of ten; thirty are rows and thirty-one a bar', …)` 整條換成：
+
+```js
+test('nine tasks are one row and ten are a row of ten; eleven are a bar', async () => {
+    const { tasksSvg } = await load('pane-svg');
+    const rowsAt = (n) => (tasksSvg(entry, planOf(n, n), NOW, 41).match(/class="c" x="[\d.]+" y="24" width="(\d+)"/g) || []);
+    assert.ok(rowsAt(9).every((m) => m.endsWith('width="30"')) && rowsAt(9).length === 9);
+    assert.ok(rowsAt(10).every((m) => m.endsWith('width="24"')) && rowsAt(10).length === 10);
+    assert.equal(titles(tasksSvg(entry, planOf(10, 0), NOW, 41)).length, 10);
+    assert.deepEqual(titles(tasksSvg(entry, planOf(11, 0), NOW, 41)), ['在跑 1', '還沒做 10']);
+});
+```
+
+2. Run it and watch it fail：
+
+```
+node --test tests/pane-svg.test.js
+```
+
+預期：兩條紅，24 個 task 仍畫成格子、11 個 task 仍畫成格子。
+
+3. Write the minimal implementation。在 `hooks/pane-svg.ts`，把 `GRID_MAX` 與它上方的註解換成：
+
+```ts
+// Up to this many tasks: one row of 30px cells. Up to GRID_MAX: one row of
+// ten 24px cells. More: one bar of four parts, so a large plan costs one row.
+const ONE_ROW = 9
+const GRID_MAX = 10
+```
+
+4. 在 `docs/01-guide/profile.md`，把 `tasks 九個以內排成一列，三十個以內每列十格，更多就畫成四段的一條長條` 換成 `tasks 九個以內排成一列，十個排成一列十格，超過十個就畫成四段的一條長條`。
+
+5. Run it and watch it pass：
+
+```
+node --test tests/pane-svg.test.js tests/pane-status.test.js
+```
+
+6. Commit：
+
+```
+git add hooks/pane-svg.ts tests/pane-svg.test.js docs/01-guide/profile.md
+git commit -m "feat: the Pane's tasks become one bar past ten"
+```
+
+## Task 5: Pane 拿掉 context 區塊
+
+**Files:**
+- Modify: `hooks/pane-status.ts` — 刪 `contextBlock`、`SAID`、`KEPT`，`statusRows` 不再推 context 那一塊，刪只為它 import 的 `HARD`、`nearCompact`
+- Modify: `hooks/pane-svg.ts` — 刪 `contextSvg` 與 `paneParts` 裡畫它的那一支，import 不再拿 `KEPT`、`SAID`
+- Modify: `docs/01-guide/profile.md` — 面板不再有 context 區塊
+- Test: `tests/pane-status.test.js`
+- Test: `tests/pane-svg.test.js`
+- Test: `tests/pane.test.js`
+- Read: `hooks/pane-bar.ts` — band 的 `nearCompact`、`ctxPaint` 留著，不改
+- Read: `hooks/pane.ts` — band 仍讀 `seen.context`，不改
+
+**Interfaces:**
+- Consumes: Task 4 之後的 `hooks/pane-svg.ts` 與 `docs/01-guide/profile.md`。
+- Produces: `hooks/pane-status.ts` 不再 export `SAID`、`KEPT`；`hooks/pane-svg.ts` 不再 export `contextSvg`；`statusRows` 永遠不產生 `block === 'context'` 的列。
+
+**Dispatch:** implementer, sonnet, high — 三個測試檔裡有些測試同時測 band 的 `ctx` 與 Pane 的 context 區塊，哪一個斷言該留、哪一個該刪要逐條判斷。
+
+1. Write the failing test。在 `tests/pane-status.test.js`，把 `test('under four fifths of the threshold there is no context block; …')` 整條換成：
+
+```js
+test('the Pane draws no context block at any count: the band carries the context', async () => {
+    const m = await load();
+    for (const tokens of [212000, 360000, 450000, 463000]) {
+        assert.deepEqual(text(status(m, { context: { tokens, at: 450000 } }), 'context'), []);
+        assert.deepEqual(text(status(m, { context: { tokens, at: Infinity } }), 'context'), []);
+    }
+});
+```
+
+2. Run it and watch it fail：
+
+```
+node --test tests/pane-status.test.js
+```
+
+預期：新的那條紅，360000 起有兩列 context。
+
+3. Write the minimal implementation。在 `hooks/pane-status.ts`：刪掉 `SAID` 與它上面那行註解、`KEPT` 與它上面的註解、`contextBlock` 與它上面那段註解；在 `statusRows` 刪掉這兩行：
+
+```ts
+  const context = input.context ? contextBlock(input.context, inner) : []
+  if (context.length) blocks.push(context)
+```
+
+把 `hooks/pane-status.ts` 裡 `DROP` 上面的註解換成：
+
+```ts
+// Given up in this order when the rows do not fit: `agents` and `tasks` keep their title rows.
+// The task, the clash and the foot never go.
+```
+
+並從 import 拿掉 `HARD` 與 `nearCompact`（`grep -n "HARD\|nearCompact" hooks/pane-status.ts` 確認只剩 import 那兩處才拿；還有別處在用就留）。`StatusInput` 的 `context` 欄位：`grep -n "input.context" hooks/pane-status.ts` 沒有輸出時，連同 `Context` 的 type import 一起拿掉。
+
+4. 在 `hooks/pane-svg.ts`：刪掉 `contextSvg` 與它上面那段註解；`paneParts` 裡刪掉這一行：
+
+```ts
+    else if (name === 'context' && context) draw(contextSvg(context, cols), body, false)
+```
+
+`hooks/pane-svg.ts` 的 import 那一行改成：
+
+```ts
+import { ago, DONE, OUT } from './pane-status.ts'
+```
+
+`paneParts` 若因此不再用 `context`，把它在 `paneParts` 裡取 `context` 的那一行拿掉；`HARD` 若在 `hooks/pane-svg.ts` 只剩 `contextSvg` 用，也拿掉它的 import。
+
+5. 測試：在三個測試檔，刪掉只測 Pane context 區塊或 `contextSvg` 的測試，改掉同時測 band 與 Pane 的測試裡測 Pane context 區塊的斷言，band 的斷言一條不動。要處理的有：
+   - `tests/pane-status.test.js`：`what the context block says survives is what the compact instructions keep`（測 `KEPT`，整條刪）、`with no room the blocks go in the order notes, the tasks window; a context block is never given up`（拿掉 context 的部分）、`compact.at off measures the block against HARD …`（整條刪）。
+   - `tests/pane-svg.test.js`：`the context meter: …`、`the context meter says what the text row says …`、`compact.at off still draws the meter, against HARD …`（三條刪）；`on Claude Desktop the Pane draws the route, the clash, the tasks and the context as Svg …`、`compact.at off: the desktop meter and the terminal rows both say …`、`the band Svg ctx follows the TokenBar tier of the window; the Pane context block still follows the threshold`（拿掉 Pane context 的斷言，band 的留）。
+   - `tests/pane.test.js`：`the context block is measured against FANKEEL_COMPACT_AT …`、`the band and the context block are measured against the profile's compact.at`、`compact.at off draws the count with no threshold, and a context block …`、`with no FANKEEL_COMPACT_AT the threshold is HARD, and with no token count there is no context block`、`a usage() that rejects drops the context block and nothing else of the tick`、`the two drawings agree: … the context count is on the band alone`（Pane 那一側改成斷言沒有 context 區塊，band 的斷言留）。
+
+6. 在 `docs/01-guide/profile.md`：刪掉從 `接著是 context：到門檻的 80% 才有這一塊` 起、到 `數字看輸入框上方的第二行。` 為止的整段；`Desktop 的面板（paneParts）把四塊換成圖` 改成 `把三塊換成圖`，刪掉那一句裡 `；context 畫成對照 \`compact.at\` 的長條，80% 處有一條線，到了門檻的數字情況與終端一樣寫「已到門檻，compact 中」` 這一段；`依 notes、agents 的清單（留標題列）、tasks 的清單（留標題列）的次序讓出位置；任務、撞檔、context 與頁尾不丟` 改成 `…；任務、撞檔與頁尾不丟`；`Pane 的 context 區塊才看離 \`compact.at\` 門檻多近。` 這一句刪掉。
+
+7. Run it and watch it pass：
+
+```
+node --test tests/pane-status.test.js tests/pane-svg.test.js tests/pane.test.js tests/pane-bar.test.js
+grep -rn "contextBlock\|contextSvg\|SAID\|KEPT" hooks tests
+```
+
+預期四個檔全綠，grep 沒有輸出。
+
+8. Commit：
+
+```
+git add hooks/pane-status.ts hooks/pane-svg.ts docs/01-guide/profile.md tests/pane-status.test.js tests/pane-svg.test.js tests/pane.test.js
+git commit -m "feat: the Pane drops its context block, the band carries the context"
+```
+
 ## Coverage
 
 | promise | task |
@@ -439,3 +605,10 @@ git commit -m "feat: the Pane's agent tree shows each agent's tokens, input, cac
 | 跑著的排前面 | Task 2 |
 | token 合計 | Task 3 |
 | token 畫出來 | Task 3 |
+| Desktop 的 `tasksSvg`（`hooks/pane-svg.ts`）：`GRID_MAX` 從 30 改成 10。九個以內仍是一列 30px 的格子 | Task 4 |
+| 終端的 `tasksBlock` 不動：它在六個以內全列，更多本來就折成幾列。 | struck — 不改，沒有 task；終端原樣保留 |
+| 終端的 `contextBlock` 與 Desktop 的 `contextSvg` 都拿掉，`statusRows` 與 `paneParts` 不再有 `context` 這一塊 | Task 5 |
+| 只為它而存在的東西一起拿掉：`SAID`、`KEPT`，以及 `hooks/pane-status.ts` 只為它 import 的 `HARD`、`nearCompact`。 | Task 5 |
+| `hooks/pane.ts` 照樣讀 context，因為 band 要用；Pane 那一側若因此不再讀 `context`，就不再傳。 | Task 5 |
+| 十一個起畫長條 | Task 4 |
+| Pane 沒有 context 區塊 | Task 5 |
