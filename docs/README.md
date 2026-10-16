@@ -248,6 +248,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 那份設計的五個 task | `docs/99-archive/2026-10-15-todo-patrol-four.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-16）做了什麼、沒做什麼：兩條探測清單、兩條改 Ready、兩條 Blocked 重查，無結案 | [reports/patrols/2026-10-16-todo-patrol-probes.md](90-agent/reports/patrols/2026-10-16-todo-patrol-probes.md) — *繁體中文* |
 | 那份盤點的四個 task | `docs/99-archive/2026-10-16-todo-patrol-probes.md` — *built, 繁體中文* |
+| TODO 全表盤點（10-16 下午）做了什麼、沒做什麼：路線圓點不呼吸、Pane 的子代理樹與 station 按鈕、station-cli 首掃扣掉 node 啟動、三條偶發測試轉 watch | [reports/patrols/2026-10-16-todo-patrol-dots-agents.md](90-agent/reports/patrols/2026-10-16-todo-patrol-dots-agents.md) — *繁體中文* |
+| 那份盤點的 design 與八個 task | `docs/99-archive/2026-10-16-todo-patrol-dots-agents-design.md`、`docs/99-archive/2026-10-16-todo-patrol-dots-agents.md` — *built, 繁體中文* |
 | 換站時印出新一站規則（10-16）的 design：cmdStage 印 rulesLines、受控站維持 controller 區塊、最後一行同回合開工 | `docs/99-archive/2026-10-16-stage-prints-rules-design.md` — *built, 繁體中文* |
 | 那份設計的一個 task | `docs/99-archive/2026-10-16-stage-prints-rules.md` — *built* |
 | 一台機器一次一組 suite、快組（10-16）的 design：lib/suitelock.js 的鎖、@slow 標記、suite.js --fast | `docs/99-archive/2026-10-16-suite-lock-fast-design.md` — *built* |
@@ -428,8 +430,6 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 那份設計的兩個 task | `docs/99-archive/2026-10-10-todo-patrol-lint-suite.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-10 第二輪）定了什麼、沒做什麼：lint 目錄與 `suite.js --tree` 做掉，站頁對話全文拆出去先畫 mockup，brief-3 留給使用者 | [reports/patrols/2026-10-10-todo-patrol-lint-suite.md](90-agent/reports/patrols/2026-10-10-todo-patrol-lint-suite.md) — *繁體中文* |
 | TODO 全表盤點（10-10 第三輪）的 plan：11 條 Blocked 條目的日期重蓋成 10-10，一個 task | `docs/99-archive/2026-10-10-todo-patrol-restamp.md` — *built* |
-| TODO 全表盤點（10-16）的 design：路線圓點不呼吸、目前站是站色空心圈、未到站灰色；Pane 的子代理樹（標題、model、effort、在跑或跑完）；station-cli 首掃扣掉 node 啟動，三條偶發測試轉 watch | [plans/2026-10-16-todo-patrol-dots-agents-design.md](90-agent/plans/2026-10-16-todo-patrol-dots-agents-design.md) — *design-intent, 繁體中文* |
-| 那份設計的六個 task | [plans/2026-10-16-todo-patrol-dots-agents.md](90-agent/plans/2026-10-16-todo-patrol-dots-agents.md) — *design-intent, 繁體中文* |
 | TODO 全表盤點（10-10 第三輪）定了什麼、沒做什麼：27 條都核過、沒有可直接動手的，只重蓋 11 條 Blocked 的日期，brief-3 與站頁對話全文留著 ready | [reports/patrols/2026-10-10-todo-patrol-restamp.md](90-agent/reports/patrols/2026-10-10-todo-patrol-restamp.md) — *繁體中文* |
 | 注入先開 server、gate 漏抓代號要出聲、brain 模型對照的三條 TODO：注入先量冷啟動與慢磁碟再讓 `/fankeel` 先問 station 再寫頁，`todoIds` 讀失敗浮出警告並把 2800 毫秒門檻寫成常數，brain 用 opus 或 sonnet 的對照腳本由使用者親手跑 | [plans/2026-10-05-inject-plain-brain.md](90-agent/plans/2026-10-05-inject-plain-brain.md) — *design-intent, 繁體中文* |
 | TODO 全表盤點（10-09）定了什麼、沒做什麼：九條 Ready 做掉、四條待決定定案、brief-3 留給使用者、stage-agents-10 仍封鎖、rules-1 新開 | [reports/patrols/2026-10-09-todo-patrol-nine.md](90-agent/reports/patrols/2026-10-09-todo-patrol-nine.md) — *繁體中文* |

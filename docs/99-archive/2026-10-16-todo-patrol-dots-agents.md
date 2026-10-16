@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # TODO 全表盤點（10-16）：路線圓點不呼吸、Pane 子代理樹、四條偶發測試 Implementation Plan
