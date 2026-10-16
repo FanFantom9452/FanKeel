@@ -457,8 +457,8 @@ test('dashSpend marks the 30-day total 估', () => {
     none(boot('#/', PLAIN).x.dashSpend(PLAIN));
 });
 
-test('dashSpend marks the day\'s bar title 估', () => {
-    assert.match(boot('#/', flat(EST)).x.dashSpend(EST), new RegExp('<title>' + TODAY + ' \\$4\\.00 估</title>'));
+test('dashSpend marks the day\'s bar tip 估', () => {
+    assert.match(boot('#/', flat(EST)).x.dashSpend(EST), new RegExp('data-tip="' + TODAY + ' \\$4\\.00 估"'));
 });
 
 test('dashSpend marks today\'s figure 估 and yesterday\'s empty one not', () => {

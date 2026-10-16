@@ -554,6 +554,7 @@
             'dash.waitedT': 'waited {t}',
             'dash.noGatesWaiting': 'No gate is waiting on you',
             'dash.dailyCostLast30d': 'daily cost, last 30 days',
+            'dash.noSpend': 'no record',
             'dash.last30dCost': 'Last 30 days cost',
             'dash.today': 'Today',
             'dash.yesterday': 'Yesterday',

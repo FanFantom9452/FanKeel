@@ -2991,17 +2991,17 @@
     // The 近 30 天 chart's own bars, summed per day, drawn without axes.
     function dashSpend(R) {
         var list = dayBars(R, 'usd', 'project', DAYS).days, mx = Math.max.apply(null, list.map(function (b) { return b.total; }).concat([0])) || 1;
-        var W = 300, H = 56, bw = W / list.length, tot = windowTotals(R, DAYS).usd, totEst = windowTotals(R, DAYS).estimated;
-        var svg = '<svg class="dspark" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" aria-label="' + loc('dash.dailyCostLast30d', '近 30 天每日花費') + '">'
+        var tot = windowTotals(R, DAYS).usd, totEst = windowTotals(R, DAYS).estimated;
+        var tip = function (b) { return b.day + ' ' + (b.total ? usd(b.total) + estMark(b) : loc('dash.noSpend', '沒有紀錄')); };
+        var bars = '<div class="dspark" role="img" aria-label="' + loc('dash.dailyCostLast30d', '近 30 天每日花費') + '">'
             + list.map(function (b, i) {
-                var h = b.total ? Math.max(2, b.total / mx * (H - 2)) : 0;
-                return '<rect x="' + (i * bw + 1).toFixed(1) + '" y="' + (H - h).toFixed(1) + '" width="' + Math.max(1, bw - 2).toFixed(1)
-                    + '" height="' + h.toFixed(1) + '" rx="1"' + (i === list.length - 1 ? ' class="today"' : '')
-                    + '><title>' + b.day + ' ' + usd(b.total) + estMark(b) + '</title></rect>';
-            }).join('') + '<line x1="0" x2="' + W + '" y1="' + (H - .5) + '" y2="' + (H - .5) + '"/></svg>';
+                var h = b.total ? Math.max(4, b.total / mx * 100) : 0;
+                return '<span class="db' + (i === list.length - 1 ? ' today' : '') + (i >= list.length - 4 ? ' end' : '') + '" tabindex="0" data-tip="' + esc(tip(b))
+                    + '" aria-label="' + esc(tip(b)) + '" style="height:' + h.toFixed(1) + '%"></span>';
+            }).join('') + '</div>';
         var at = function (i) { var b = list[list.length - i]; return b ? usd(b.total) + estMark(b) : '—'; };
         return '<section class="dcard" data-block="dash-spend">' + dashHead('spend', loc('dash.last30dCost', '近 30 天花費'), '#/days')
-            + '<div class="dbig">' + (tot ? usd(tot) + estMark({ estimated: totEst }) : '$0') + '</div>' + svg
+            + '<div class="dbig">' + (tot ? usd(tot) + estMark({ estimated: totEst }) : '$0') + '</div>' + bars
             + '<div class="dkv"><span>' + loc('dash.today', '今天') + ' <b>' + at(1) + '</b></span><span>' + loc('dash.yesterday', '昨天') + ' <b>' + at(2) + '</b></span></div></section>';
     }
     function dashRecent(R) {
