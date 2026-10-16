@@ -25,6 +25,7 @@ test('the header names the page from NAV_TREE, top level and kids alike', () => 
     assert.equal(V.pageTitle({ view: 'now' }), '儀表板');
     assert.equal(V.pageTitle({ view: 'days' }), '近 30 天');
     assert.equal(V.pageTitle({ view: 'project' }), '依專案');
+    assert.equal(V.pageTitle({ view: 'settings' }), '設定', 'a one-page group titles by the group');
 });
 
 test('the serve state is an icon with its words only in title and aria-label', () => {

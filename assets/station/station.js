@@ -4851,7 +4851,8 @@
         var v = navOn(r && r.view), hit = '';
         NAV_TREE.forEach(function (g) {
             if (g.v === v) hit = hit || g.label;
-            (g.kids || []).forEach(function (k) { if (k[0] === v) hit = hit || k[2]; });
+            // A group with one page is that page: 設定, not its only kid 精靈.
+            (g.kids || []).forEach(function (k) { if (k[0] === v) hit = hit || (g.kids.length === 1 ? g.label : k[2]); });
         });
         return hit || NAV_TREE[0].label;
     }
