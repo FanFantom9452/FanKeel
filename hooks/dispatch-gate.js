@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 'use strict';
 
-// PreToolUse on `Agent|Task`: four Agent calls in one response is the
-// default, and the fifth and later in the same assistant message are asked
+// PreToolUse on `Agent|Task`: the profile's `dispatch.inflight` (default four)
+// is how many Agent calls one response may make, and the next and later in the same assistant message are asked
 // of the user first, with what they are likely to cost (dispatch-1). Claude
 // Code writes one transcript line per content block, so one message's calls
 // are the assistant lines sharing `message.id` — the grouping `pendingTool`
-// in lib/handoff.js uses. At four or fewer it writes nothing, so those calls
+// in lib/handoff.js uses. Within the limit it writes nothing, so those calls
 // reach the user's own permission rules untouched. Exits 0 on every path.
 
 const fs = require('node:fs');
@@ -17,6 +17,8 @@ const { costOf } = require('../lib/prices.js');
 const { sessionDirOf, agentFiles } = require('../lib/usage.js');
 const { tailEntries } = require('../lib/handoff.js');
 const { readObject } = require('../lib/json.js');
+
+const profileLib = require('../lib/profile.js');
 
 const DEFAULT = 4;
 const DISPATCH = new Set(['Agent', 'Task']);
@@ -112,10 +114,11 @@ function decide(payload, opts) {
     const file = transcriptFor(payload);
     if (!file) return null;
     const n = positionOf(tailEntries(file) || [], payload.tool_use_id);
-    if (n <= DEFAULT) return null;
+    const limit = (opts && opts.limit) || DEFAULT;
+    if (n <= limit) return null;
     const input = payload.tool_input && typeof payload.tool_input === 'object' ? payload.tool_input : {};
     const role = roleOf(input.subagent_type);
-    const head = 'fankeel: this is Agent call ' + n + ' in one response, past the default of four. ';
+    const head = 'fankeel: this is Agent call ' + n + ' in one response, past dispatch.inflight (' + limit + '). ';
     const spent = spentSoFar(opts && opts.data);
     if (spent !== null) return { reason: head + 'This task has spent $' + spent.toFixed(2) + ' so far (registry spend, priced by lib/prices.js).' };
     const bench = benchPerDispatch(opts && opts.evidenceRoot, role, input.model);
@@ -128,7 +131,13 @@ function main(raw) {
     if (!payload || !DISPATCH.has(payload.tool_name)) return;
     let data = null;
     try { data = registry.readSession(registry.rootFor(payload), payload.session_id); } catch (e) { /* no registry: the bench figure */ }
-    const out = decide(payload, { data, evidenceRoot: EVIDENCE });
+    let limit = DEFAULT;
+    try {
+        const root = registry.rootFor(payload);
+        const values = data ? profileLib.profileFor(root, data).values : profileLib.read(root, profileLib.configDirOf()).values;
+        limit = profileLib.inflightOf(values);
+    } catch (e) { /* no profile: four */ }
+    const out = decide(payload, { data, evidenceRoot: EVIDENCE, limit });
     if (!out) return;
     process.stdout.write(JSON.stringify({
         hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'ask', permissionDecisionReason: out.reason },

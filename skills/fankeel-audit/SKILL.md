@@ -223,7 +223,7 @@ coming.
 **A large tree is read in batches, never truncated.**
 `node <plugin>/scripts/docs-audit.js --batches` lists them — one per bucket,
 at most 40 pages each, archive and fixture pages left out. Send one
-`fankeel:fankeel-reader` per batch, four in one response by default, each told
+`fankeel:fankeel-reader` per batch, `dispatch.inflight` in one response (four by default), each told
 its batch number and to run `node <plugin>/scripts/docs-audit.js --batch <n>`
 for its pages, and asked which page describes something that no longer
 exists. 319 pages are eight readers, not one reader holding the first forty.

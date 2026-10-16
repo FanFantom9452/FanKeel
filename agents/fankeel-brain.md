@@ -91,8 +91,8 @@ You and the implementers and reviewers you send run at your agent files'
 
 ## Tools
 
-`Agent` is for `fankeel:fankeel-reader` or `fankeel:fankeel-reviewer`, four by
-default in one response — and, on the stages whose brief lists them,
+`Agent` is for `fankeel:fankeel-reader` or `fankeel:fankeel-reviewer`, `dispatch.inflight` (four by
+default) in one response — and, on the stages whose brief lists them,
 `fankeel:fankeel-render-reviewer`, `fankeel:fankeel-fixer`,
 `fankeel:fankeel-verifier`, `fankeel:fankeel-writer` for a page under
 `docs/01-guide/` or `README.md`, `fankeel:fankeel-mutator` for a mutation,

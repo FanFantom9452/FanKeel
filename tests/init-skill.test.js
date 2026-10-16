@@ -56,7 +56,7 @@ test('drift goes to fankeel-reader by batch, four at once by default, each page 
   const f = flat();
   assert.match(f, /docs-audit\.js --batches --root <project>/);
   assert.match(f, /fankeel:fankeel-reader/);
-  assert.match(f, /four at once by default/);
+  assert.match(f, /`dispatch\.inflight` at once \(four by default\)/);
   assert.match(f, /update the page, move its `last_verified`, or move it into the archive/);
 });
 

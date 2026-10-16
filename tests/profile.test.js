@@ -388,6 +388,23 @@ test('gate.station is off or whole seconds from 1 to 600, off by default', () =>
     assert.equal(profile.read(d, null).sources['gate.station'], 'builtin');
 });
 
+test('dispatch.inflight is a whole number from 1 to 16, 4 by default', () => {
+    for (const ok of [1, '6', 16]) assert.deepEqual(profile.parseValue('dispatch.inflight', ok), { value: Number(ok) }, String(ok));
+    for (const bad of ['0', '17', 'x', '1.5']) assert.match(profile.parseValue('dispatch.inflight', bad).error, /dispatch.inflight is a whole number from 1 to 16/, bad);
+    assert.equal(profile.inflightOf({}), 4);
+    assert.equal(profile.inflightOf({ 'dispatch.inflight': 8 }), 8);
+    assert.equal(profile.read(dir(), null).values['dispatch.inflight'], 4);
+});
+
+test('a project profile dispatch.inflight, string or number, reads as the number', () => {
+    for (const v of ['6', 6]) {
+        const d = dir();
+        fs.mkdirSync(path.join(d, '.fankeel'), { recursive: true });
+        fs.writeFileSync(path.join(d, '.fankeel', 'profile.json'), JSON.stringify({ 'dispatch.inflight': v }));
+        assert.equal(profile.read(d, null).values['dispatch.inflight'], 6, JSON.stringify(v));
+    }
+});
+
 test('compact.at is 350000, 450000, 600000, 1000000 or off, 450000 by default', () => {
     for (const ok of ['350000', '450000', '600000', '1000000', 'off']) assert.deepEqual(profile.parseValue('compact.at', ok), { value: ok }, ok);
     for (const bad of ['0', '400000', 'on', '']) assert.match(profile.parseValue('compact.at', bad).error, /compact\.at is one of/, bad);

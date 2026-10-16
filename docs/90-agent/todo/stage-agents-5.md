@@ -18,7 +18,7 @@ link: docs/90-agent/reference/subagents.md
 
 ## 探測步驟（2026-10-16 盤點寫成）
 
-10-04 那次的翻轉保留了 survey，所以 inject、brief、gate 分不出新舊；這次要把在跑的站整個移出 `stage.agents`。每個 hook 每次呼叫都重讀 profile（`lib/profile.js:359` 是 `function profileFor(root, mine) {`），session 紀錄則在 `task.js start` 時抄下一份 `stage.agents`，比對兩者就知道讀的是哪一份。
+10-04 那次的翻轉保留了 survey，所以 inject、brief、gate 分不出新舊；這次要把在跑的站整個移出 `stage.agents`。每個 hook 每次呼叫都重讀 profile（`lib/profile.js:374` 是 `function profileFor(root, mine) {`），session 紀錄則在 `task.js start` 時抄下一份 `stage.agents`，比對兩者就知道讀的是哪一份。
 
 1. 開一個用完即丟的 task，先 `node scripts/task.js profile set stage.agents all`，讓 brain 跑一個不是 survey 的站（例如 `--route "design,land"` 的 design）。記下 `.fankeel/profile.json` 與 session 紀錄裡的 `stage.agents`。
 2. brain 還在跑時，打開站頁 `#/settings`，到 context 步驟點「不在意，全部自己跑」（`stage.agents=false`），在確認步驟送出（`assets/station/station.js:1987` 是 `{ id: 'agents', t: 'context'`；寫入專案的 .fankeel/profile.json）。

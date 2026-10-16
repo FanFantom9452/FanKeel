@@ -173,6 +173,35 @@ test('as a hook, a transcript that is not there prints nothing and exits 0', () 
     assert.equal(r.stdout, '');
 });
 
+test('opts.limit moves the line: with 6 the sixth call is quiet and the seventh names dispatch.inflight (6)', () => {
+    const dir = tmp('fankeel-dispatch-gate-');
+    const seven = [1, 2, 3, 4, 5, 6, 7].map((i) => agentLine(i));
+    const file = transcript(dir, seven);
+    const opts = { data: null, evidenceRoot: path.join(dir, 'none'), limit: 6 };
+    assert.equal(decide(payload(file, 'toolu_6'), opts), null);
+    assert.match(decide(payload(file, 'toolu_7'), opts).reason, /dispatch\.inflight \(6\)/);
+    assert.match(decide(payload(file, 'toolu_5'), { data: null, evidenceRoot: opts.evidenceRoot }).reason, /dispatch\.inflight \(4\)/);
+});
+
+test('as a hook, the limit is the project profile dispatch.inflight; a bad value falls back to 4', () => {
+    const run = (value, count, id) => {
+        const dir = tmp('fankeel-dispatch-gate-');
+        fs.mkdirSync(path.join(dir, '.fankeel'), { recursive: true });
+        fs.writeFileSync(path.join(dir, '.fankeel', 'profile.json'), JSON.stringify({ 'dispatch.inflight': value }));
+        const entries = Array.from({ length: count }, (_, i) => agentLine(i + 1));
+        const r = spawnSync(process.execPath, [HOOK], { input: JSON.stringify(payload(transcript(dir, entries), 'toolu_' + id)), encoding: 'utf8',
+            env: { ...process.env, CLAUDE_PROJECT_DIR: dir } });
+        assert.equal(r.status, 0);
+        return r.stdout;
+    };
+    assert.equal(run('6', 6, 6), '');
+    assert.match(run('6', 7, 7), /dispatch\.inflight \(6\)/);
+    assert.equal(run(6, 6, 6), '');
+    assert.match(run(6, 7, 7), /dispatch\.inflight \(6\)/);
+    assert.equal(run('x', 4, 4), '');
+    assert.match(run('x', 5, 5), /dispatch\.inflight \(4\)/);
+});
+
 test('with neither spend nor a bench report the reason says there is no figure', () => {
     const dir = tmp('fankeel-dispatch-gate-');
     const out = decide(payload(transcript(dir, five), 'toolu_5'), { data: null, evidenceRoot: path.join(dir, 'none') });

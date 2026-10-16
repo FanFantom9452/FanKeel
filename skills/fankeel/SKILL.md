@@ -1114,12 +1114,13 @@ Six rules that make it work, each of which fails silently when missed:
   exactly three. Same model, same shape of task. A contract without its reason is
   a preference.
 
-**Four in one response is the default.** Past that you are guessing at the
-split rather than deciding it, and every reader costs a system prompt whether or
+**Profile `dispatch.inflight` sets how many go in one response, four by
+default.** Past that you are guessing at the split rather than deciding it, and every reader costs a system prompt whether or
 not it had a distinct question. The test is what comes back: **if two readers
 would return the same shape of answer about different files, they are one reader
 with a list** — give it the list. Fan out on distinct questions, not on file
-count.
+count. The key guards API spend, the main context's residue and collisions in
+a shared checkout, not CPU; its range is 1 to 16.
 
 **Where a plan exists, none of that is guesswork and none of it is yours.**
 `lib/plantasks.js` groups a plan's tasks by disjoint `**Files:**` and by whether
@@ -1143,7 +1144,7 @@ The surface is the batch shape, not the implementer decision: a task whose own
 `**Dispatch:**` line reads `in-session` is not dispatched at all, whatever
 surface its group carries.
 
-**Four is the default, and it has one exception that is not yours to press.**
+**`dispatch.inflight` (four by default) has one exception that is not yours to press.**
 Four is where guessing at the split begins; a script does not guess, because it
 holds the list and it holds the join. So the shape a four-agent batch cannot
 express is a fan-out whose
