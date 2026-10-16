@@ -39,8 +39,14 @@ function fake({ files = {}, placed = true, surfaces = ['terminal'], tokens = 312
                 if (!(p in store)) throw new Error('ENOENT ' + p);
                 return stat(p);
             },
-            list: async (dir) => log.lists.push(dir) && Object.keys(store).filter((p) => p.startsWith(dir + '/') && !p.slice(dir.length + 1).includes('/'))
-                .map((p) => Object.assign({ name: p.slice(dir.length + 1) }, stat(p))),
+            list: async (dir) => {
+                log.lists.push(dir);
+                const below = Object.keys(store).filter((p) => p.startsWith(dir + '/')).map((p) => p.slice(dir.length + 1));
+                // A name with a slash left in it is a directory the files sit under.
+                const dirs = [...new Set(below.filter((n) => n.includes('/')).map((n) => n.split('/')[0]))]
+                    .map((name) => ({ name, kind: 'directory', size: 0, mtimeMs: 1, isLink: false }));
+                return [...below.filter((n) => !n.includes('/')).map((n) => Object.assign({ name: n }, stat(dir + '/' + n))), ...dirs];
+            },
         },
         clock: { now: async () => log.now, every: (ms, fn) => { log.ticks.push({ ms, fn }); return { cancel() {} }; } },
         command: { register: async (c) => { log.commands.push(c); return { command: c.name }; } },
@@ -129,6 +135,7 @@ test('the Pane draws the task block on top, then what is looked up, each block u
         ' · a note',
         ' ',
         '▌abcdef12 · /fankeel-panel 關閉',
+        ' station 未啟動',
     ]);
     assert.doesNotMatch(paneLines(tree).join('\n'), /touched|▸|本站|2 of 3|bounded|400k|450k/);
     assert.equal(buttons(tree).length, 0);
@@ -619,8 +626,8 @@ test('the Pane is laid out in its own body columns and rows, each block under on
     assert.equal(paneLines(tree).filter((t) => /… @ build · \d+m$/.test(t)).length, 2);
     const foot = leaves(tree).find((n) => n.children.join('').startsWith('abcdef12'));
     assert.equal(foot.props.color, '#8a8a8a');
-    // 17 rows in all: the task 4, the clash 4, context 2, notes 2, the foot 1, and four blank rows between.
-    assert.equal(tree.children.length, 17);
+    // 18 rows in all: the task 4, the clash 4, context 2, notes 2, the foot 2 (its station row last), and four blank rows between.
+    assert.equal(tree.children.length, 18);
     assert.deepEqual(heads(await at(15)), ['context'], 'the room is the body rows the surface gave, not the viewport');
 });
 
@@ -884,17 +891,17 @@ test('FANKEEL_PANE_PROBE draws what the engine says the session draws on above t
     const draw = async () => paneLines(await hooks['ui.render']($, { viewport: { columns: 60, rows: 40 } }));
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
-    assert.deepEqual((await draw()).slice(-3), [' ', '▌surfaces [terminal, desktop] · surface terminal', ' abcdef12 · /fankeel-panel 關閉']);
+    assert.deepEqual((await draw()).slice(-4), [' ', '▌surfaces [terminal, desktop] · surface terminal', ' abcdef12 · /fankeel-panel 關閉', ' station 未啟動']);
     const after = log.invalidated;
     await log.ticks[0].fn();
     assert.equal(log.invalidated, after, 'the same surfaces redrew');
     surfaces.length = 0;
     await log.ticks[0].fn();
     assert.equal(log.invalidated, after + 1);
-    assert.deepEqual((await draw()).slice(-2), ['▌surfaces [] · surface null', ' abcdef12 · /fankeel-panel 關閉']);
+    assert.deepEqual((await draw()).slice(-3), ['▌surfaces [] · surface null', ' abcdef12 · /fankeel-panel 關閉', ' station 未啟動']);
     $.session.surface = async () => { throw new Error('gone'); };
     await log.ticks[0].fn();
-    assert.deepEqual((await draw()).slice(-2), ['▌surfaces ? · Error: gone', ' abcdef12 · /fankeel-panel 關閉']);
+    assert.deepEqual((await draw()).slice(-3), ['▌surfaces ? · Error: gone', ' abcdef12 · /fankeel-panel 關閉', ' station 未啟動']);
 });
 
 test('with no FANKEEL_PANE_PROBE the Pane draws no probe row and the engine is not asked', async () => {
@@ -1114,7 +1121,7 @@ test('turn.start and turn.complete are hooked and pass the event on', async () =
     }
 });
 
-test('the band\'s first row is drawn interactive from turn.start to turn.complete', async () => {
+test('the band\'s first row is never drawn interactive, turn or not', async () => {
     const hooks = await wired();
     const { $, log } = fake({ files: entryFile(live), surfaces: ['desktop'] });
     $.ui.resolve = () => ({ Box: 'Box', Svg: 'Svg', Text: 'Text' });
@@ -1123,38 +1130,20 @@ test('the band\'s first row is drawn interactive from turn.start to turn.complet
     const draw = async () => (await hooks['band']($, { surface: 'desktop', ...BAND }, passed)).children;
     assert.equal((await draw())[0].props.isInteractive, undefined);
     await hooks['turn.start']($, {}, passed);
-    const during = await draw();
-    assert.equal(during[0].props.isInteractive, true);
-    assert.equal(during[1].props.isInteractive, undefined);
-    await hooks['turn.complete']($, {}, passed);
-    assert.equal((await draw())[0].props.isInteractive, undefined);
+    assert.deepEqual((await draw()).map((n) => n.props.isInteractive), [undefined, undefined]);
 });
 
 test('a subagent\'s turn.complete leaves the main turn running; the main one ends it', async () => {
     const hooks = await wired();
+    const { turn } = await import(pathToFileURL(path.join(__dirname, '..', 'hooks', 'turn.ts')).href);
     const { $, log } = fake({ files: entryFile(live), surfaces: ['desktop'] });
-    $.ui.resolve = () => ({ Box: 'Box', Svg: 'Svg', Text: 'Text' });
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
-    const draw = async () => (await hooks['band']($, { surface: 'desktop', ...BAND }, passed)).children;
     await hooks['turn.start']($, {}, passed);
     await hooks['turn.complete']($, { agentId: 'a1' }, passed);
-    assert.equal((await draw())[0].props.isInteractive, true);
+    assert.equal(turn.running, true);
     await hooks['turn.complete']($, {}, passed);
-    assert.equal((await draw())[0].props.isInteractive, undefined);
-});
-
-test('a pending question with no at still stops the breathing', async () => {
-    const hooks = await wired();
-    const noAt = { questions: gate.questions, until: Date.now() + 600000 };
-    const files = Object.assign(entryFile(live), { [DIR + '/design-pending.json']: JSON.stringify(noAt) });
-    const { $, log } = fake({ files, surfaces: ['desktop'] });
-    $.ui.resolve = () => ({ Box: 'Box', Svg: 'Svg', Text: 'Text' });
-    await hooks['session.start']($, {}, async () => ({}));
-    await log.ticks[0].fn();
-    await hooks['turn.start']($, {}, passed);
-    const rows = (await hooks['band']($, { surface: 'desktop', ...BAND }, passed)).children;
-    assert.equal(rows[0].props.isInteractive, undefined);
+    assert.equal(turn.running, false);
 });
 
 test('a turn flag that changes redraws once on the next tick, and not again', async () => {
@@ -1168,4 +1157,139 @@ test('a turn flag that changes redraws once on the next tick, and not again', as
     assert.equal(log.invalidated, 1);
     await log.ticks[0].fn();
     assert.equal(log.invalidated, 1);
+});
+
+test('with a station up the Pane carries a button that opens its url, and copies it when nothing opens', async () => {
+    const hooks = await wired();
+    const url = 'http://127.0.0.1:28888/';
+    const cfg = 'C:/cfg';
+    const files = Object.assign(entryFile(Object.assign({}, live, { configDir: cfg })), { [cfg + '/fankeel/serve.json']: JSON.stringify({ pid: 1, port: 28888, url, started: 1 }) });
+    const { $, log } = fake({ files, env: { OS: 'Windows_NT' } });
+    const ran = [];
+    const copied = [];
+    $.process = { run: async (argv) => { ran.push(argv); return { exitCode: 0, stdout: '', stderr: '' }; } };
+    $.ui.copy = async (c) => { copied.push(c); return { isCopied: true }; };
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const tree = await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } });
+    const found = buttons(tree);
+    assert.equal(found.length, 1);
+    assert.equal(found[0].props.label, '開啟 station');
+    assert.ok(paneLines(tree).some((l) => l.includes(url)));
+    await found[0].props.onPress({ surface: 'terminal' });
+    assert.deepEqual(ran, [['cmd', '/c', 'start', '', url]]);
+    $.process.run = async () => { throw new Error('CLI only'); };
+    await found[0].props.onPress({ surface: 'terminal' });
+    assert.deepEqual(copied, [{ text: url, surface: 'terminal' }]);
+    assert.deepEqual(log.toasts, []);
+    // Desktop's copy can answer no-clipboard: then a toast carries the url, so the press is never silent.
+    $.ui.copy = async () => ({ isCopied: false, reason: 'no-clipboard' });
+    await found[0].props.onPress({ surface: 'desktop' });
+    assert.equal(log.toasts.length, 1);
+    assert.ok(String(log.toasts[0]).includes(url));
+    $.ui.copy = async () => { throw new Error('gone'); };
+    await found[0].props.onPress({ surface: 'desktop' });
+    assert.equal(log.toasts.length, 2);
+});
+
+test('a station record that cannot be read is said once in the debug log', async () => {
+    const hooks = await wired();
+    const cfg = 'C:/cfg';
+    const { $, log } = fake({ files: entryFile(Object.assign({}, live, { configDir: cfg })) });
+    const exists = $.fs.exists;
+    $.fs.exists = async (f) => { if (String(f).endsWith('serve.json')) throw new Error('denied'); return exists(f); };
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    await log.ticks[0].fn();
+    assert.equal(log.logs.filter((l) => String(l).includes('station record unreadable')).length, 1);
+});
+
+test('off Windows the button tries open, then xdg-open; a url that is not the local station draws no button', async () => {
+    const hooks = await wired();
+    const url = 'http://127.0.0.1:28888/';
+    const cfg = 'C:/cfg';
+    const serve = (u) => ({ [cfg + '/fankeel/serve.json']: JSON.stringify({ pid: 1, port: 28888, url: u, started: 1 }) });
+    const { $, log, store } = fake({ files: Object.assign(entryFile(Object.assign({}, live, { configDir: cfg })), serve(url)) });
+    const ran = [];
+    $.process = { run: async (argv) => { ran.push(argv); return { exitCode: argv[0] === 'open' ? 1 : 0, stdout: '', stderr: '' }; } };
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const draw = async () => hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } });
+    await buttons(await draw())[0].props.onPress({ surface: 'terminal' });
+    assert.deepEqual(ran, [['open', url], ['xdg-open', url]]);
+    // The url is in the redraw key: a station that goes away redraws on the next tick.
+    const after = log.invalidated;
+    Object.assign(store, serve('https://example.com/'));
+    await log.ticks[0].fn();
+    assert.equal(log.invalidated, after + 1);
+    const tree = await draw();
+    assert.equal(buttons(tree).length, 0);
+    assert.ok(paneLines(tree).includes(' station 未啟動'));
+});
+
+// Claude Code's subagents files for ID under a config dir, and the stops hooks/agent-end.js wrote.
+const CFG = 'F:/cfg';
+const SUBS = CFG + '/projects/slug/' + ID + '/subagents';
+const STARTED = Date.parse(live.started);
+function agentRig(ended) {
+    const files = Object.assign(entryFile(Object.assign({}, live, { configDir: CFG })), {
+        [SUBS + '/agent-run1.meta.json']: JSON.stringify({ agentType: 'implementer', description: 'sonnet 5.5 · medium: building it' }),
+        [SUBS + '/agent-run1.prefix.json']: JSON.stringify({ state: { model: 'claude-sonnet-5-5', effortValue: 'high' } }),
+        [SUBS + '/agent-stop1.meta.json']: JSON.stringify({ agentType: 'reviewer', description: 'checking it' }),
+        [SUBS + '/agent-old1.meta.json']: JSON.stringify({ agentType: 'survey', description: 'from before' }),
+        [ROOT + '/.fankeel/build/agents-' + ID + '.json']: JSON.stringify({ ended: ended || { stop1: STARTED + 60000 } }),
+    });
+    const rig = fake({ files });
+    rig.mtimes[SUBS + '/agent-run1.meta.json'] = STARTED + 1000;
+    rig.mtimes[SUBS + '/agent-stop1.meta.json'] = STARTED + 2000;
+    rig.mtimes[SUBS + '/agent-old1.meta.json'] = STARTED - 5000;
+    return rig;
+}
+const drawn = async (hooks, $) => paneLines(await hooks['ui.render']($, { viewport: { columns: 60, rows: 60 } }));
+
+test('the Pane lists this session\'s subagents: the running, the stopped, and not one older than the task', async () => {
+    const hooks = await wired();
+    const { $, log } = agentRig();
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const lines = await drawn(hooks, $);
+    const run = lines.find((l) => l.includes('building it'));
+    const stop = lines.find((l) => l.includes('checking it'));
+    assert.ok(run && run.includes('○') && run.includes('sonnet 5.5') && run.includes('high'), String(run));
+    assert.ok(stop && stop.includes('●'), String(stop));
+    assert.ok(!lines.some((l) => l.includes('from before')));
+    assert.ok(lines.some((l) => l.includes('1 在跑') && l.includes('1 完成')));
+});
+
+test('a stops file with a value that is not a finite number stops nobody', async () => {
+    const hooks = await wired();
+    const { $, log } = agentRig({ stop1: 'soon', run1: null });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const lines = await drawn(hooks, $);
+    assert.ok(lines.some((l) => l.includes('2 在跑') && l.includes('0 完成')), lines.join('|'));
+});
+
+test('a session with no subagents directory is looked for again only after the retry wait', async () => {
+    const hooks = await wired();
+    const { $, log } = fake({ files: Object.assign(entryFile(Object.assign({}, live, { configDir: CFG })), { [CFG + '/projects/slug/other/x.json']: '{}' }) });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    await log.ticks[0].fn();
+    assert.equal(log.lists.filter((d) => d === CFG + '/projects').length, 1);
+});
+
+test('a cached subagents directory that no longer lists is looked for again on the next tick', async () => {
+    const hooks = await wired();
+    const { $, log } = agentRig();
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const projects = () => log.lists.filter((d) => d === CFG + '/projects').length;
+    assert.equal(projects(), 1);
+    const list = $.fs.list;
+    $.fs.list = async (dir) => { if (dir === SUBS) throw new Error('ENOENT'); return list(dir); };
+    await log.ticks[0].fn();
+    $.fs.list = list;
+    await log.ticks[0].fn();
+    assert.equal(projects(), 2);
 });

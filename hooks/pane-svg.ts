@@ -71,14 +71,13 @@ export function altOf(rows: { text: string; gap?: number }[][]): string {
 // The band's rows are this tall, and a row's text sits on y 15.
 const BAND_H = 22
 
-// The band's first row: the badge, the route as dots in each station's own
-// colour (done filled, here filled in a ring, ahead hollow), the tasks as small
+// The band's first row: the badge, the route as dots (done filled in its
+// station's colour, here one hollow ring in it, ahead hollow grey), the tasks as small
 // cells, the gate's countdown ring, the wait and the stage minutes.
 export function bandRow1Svg(input: BandInput): string {
   const { entry, others, gateUntil, tasks, cols, now } = input
   if (!entry) return ''
   const gateAt = input.gateAt ?? null
-  const live = breathing(entry, now, !!input.turn, gateAt)
   const stage = str(entry.stage)
   const route = list(entry.route)
   const at = route.indexOf(stage)
@@ -91,7 +90,7 @@ export function bandRow1Svg(input: BandInput): string {
   if (route.length) {
     const step = 14
     const x0 = x + 6
-    const rad = (i: number): number => (i === at ? 6.75 : 4)
+    const rad = (i: number): number => (i === at ? 5.75 : 4)
     for (let i = 0; i < route.length - 1; i++) {
       const a = x0 + step * i + rad(i) + 1
       const z = x0 + step * (i + 1) - rad(i + 1) - 1
@@ -101,8 +100,8 @@ export function bandRow1Svg(input: BandInput): string {
       const c = stageColor(name)
       const cx = r1(x0 + step * i)
       if (i < at) b += `<circle cx="${cx}" cy="11" r="3.5" fill="${c}"/>`
-      else if (i === at) b += `<circle cx="${cx}" cy="11" r="6" fill="none" stroke="${c}" stroke-width="1.5"/><circle cx="${cx}" cy="11" r="3.5" fill="${c}"/>${live ? ring(cx, 11, c, now) : ''}`
-      else b += `<circle cx="${cx}" cy="11" r="3.25" fill="none" stroke="${c}" stroke-width="1.5"/>`
+      else if (i === at) b += `<circle cx="${cx}" cy="11" r="5" fill="none" stroke="${c}" stroke-width="2"/>`
+      else b += `<circle cx="${cx}" cy="11" r="3.25" fill="none" stroke="${TODO}" stroke-width="1.5"/>`
     })
     x = x0 + step * (route.length - 1) + 7 + 12
   }
@@ -238,37 +237,16 @@ export function bandRow2Svg(input: BandInput): string {
   return drawn || flags ? svgDoc(cols * CELL_PX, BAND_H, b) : ''
 }
 
-// Twenty minutes, as hooks/pane-status.ts LONG and lib/usage.js AGENT_QUIET_MS.
-const BUSY_MS = 20 * 60000
-// One breath, in ms; a redraw starts the pulse this far into it so it does not jump.
-const BREATH = 2400
-// Whether the current stage is being worked on: no question out, and a stage agent
-// marked on it under twenty minutes ago or a turn running.
-export function breathing(entry: Entry, now: number, turn: boolean, gateAt: number | null): boolean {
-  if (gateAt !== null || typeof entry.gateAt === 'number') return false
-  if (turn) return true
-  const stage = str(entry.stage)
-  const marks = (Array.isArray(entry.inflight) ? entry.inflight : [entry.inflight]).filter(Boolean).map(record)
-  return marks.some((m) => m.stage === stage && typeof m.at === 'number' && now - m.at < BUSY_MS)
-}
-// The breathing ring: invisible on its own, so a host that runs no SMIL draws the dots as they were.
-const ring = (cx: number | string, cy: number, colour: string, now: number): string => {
-  const begin = `-${((now % BREATH) / 1000).toFixed(2)}s`
-  return `<circle class="fk-br" cx="${cx}" cy="${cy}" r="5" fill="none" stroke="${colour}" stroke-width="1.5" opacity="0">`
-    + `<animate attributeName="r" values="5;10" dur="${BREATH / 1000}s" begin="${begin}" repeatCount="indefinite"/>`
-    + `<animate attributeName="opacity" values=".7;0" dur="${BREATH / 1000}s" begin="${begin}" repeatCount="indefinite"/></circle>`
-}
-
 // The Pane's width in px: one cell is CELL_PX.
 const paneW = (cols: number): number => cols * CELL_PX
 
 type Station = { name: string; state: 'done' | 'here' | 'ahead'; min: number | null; wait: number }
 
 // The route under the task title: a column a station, its dot (done green, here
-// a grey ring, ahead hollow), a bar of the minutes it took from the entry's
+// one hollow ring in its station's colour, ahead hollow grey), a bar of the minutes it took from the entry's
 // `clock` against the longest, and the minutes its gate waited (`waited`) in
 // amber at the bar's end. '' when the stage is not on the route.
-export function routeSvg(entry: Entry, now: number, cols: number, live = false): string {
+export function routeSvg(entry: Entry, now: number, cols: number): string {
   const route = list(entry.route)
   const at = route.indexOf(str(entry.stage))
   if (at < 0) return ''
@@ -301,10 +279,9 @@ export function routeSvg(entry: Entry, now: number, cols: number, live = false):
   stations.forEach((s, i) => {
     const x = r1(cx(i))
     if (s.state === 'done') b += `<circle cx="${x}" cy="26" r="4" fill="${DONE}"/>`
-    else if (s.state === 'here') b += `<circle cx="${x}" cy="26" r="6" fill="none" stroke="${WHERE}" stroke-width="2.5"/><circle cx="${x}" cy="26" r="2.5" fill="${WHERE}"/>`
+    else if (s.state === 'here') b += `<circle cx="${x}" cy="26" r="6" fill="none" stroke="${stageColor(s.name)}" stroke-width="2.5"/>`
     else b += `<circle cx="${x}" cy="26" r="3.75" fill="none" stroke="${TODO}" stroke-width="1.5"/>`
   })
-  if (live) b += ring(r1(cx(at)), 26, WHERE, now)
   const full = slot - 10
   stations.forEach((s, i) => {
     if (s.min === null) return
@@ -362,8 +339,8 @@ export function clashSvg(entry: Entry, others: Other[], now: number, cols: numbe
 // 24px cells, so task n sits on row ceil(n/10). More: one bar of four parts.
 const ONE_ROW = 9
 const GRID_MAX = 30
-// A cell's hover ring, and the out task's breathing outline; still under reduced motion.
-const TASKS_STYLE = `<style>.fk-t rect.c{transition:stroke-width .15s ease-out}.fk-t g.k:hover rect.c{stroke:${WHERE};stroke-width:2.5}.fk-t .live{animation:fk-pulse 1.6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}@keyframes fk-pulse{0%,100%{opacity:.9}50%{opacity:.25}}@media (prefers-reduced-motion:reduce){.fk-t .live{animation:none}}</style>`
+// A cell's hover ring.
+const TASKS_STYLE = `<style>.fk-t rect.c{transition:stroke-width .15s ease-out}.fk-t g.k:hover rect.c{stroke:${WHERE};stroke-width:2.5}</style>`
 
 // The plan's tasks against its ledger, drawn by how many there are. Every cell
 // and every part of the bar carries a <title>; the titles and the hover
@@ -396,7 +373,7 @@ export function tasksSvg(entry: Entry, plan: PlanInfo, now: number, cols: number
       if (isDone) {
         cell = `<rect class="c" x="${x}" y="${top}" width="${S}" height="${S}" rx="4" fill="${DONE}"/>` + text(x + S / 2, ty, String(t.n), { anchor: 'middle', fill: ON_FILL, bold: true })
       } else if (t === running) {
-        cell = `<rect class="live" x="${x - 2}" y="${top - 2}" width="${S + 4}" height="${S + 4}" rx="5" fill="none" stroke="${OUT}" stroke-width="1.5"/>`
+        cell = `<rect x="${x - 2}" y="${top - 2}" width="${S + 4}" height="${S + 4}" rx="5" fill="none" stroke="${OUT}" stroke-width="1.5"/>`
           + `<rect class="c" x="${x}" y="${top}" width="${S}" height="${S}" rx="4" fill="${OUT}"/>` + text(x + S / 2, ty, String(t.n), { anchor: 'middle', fill: ON_FILL, bold: true })
       } else if (t.user) {
         cell = `<rect class="c" x="${x + 1}" y="${top + 1}" width="${S - 2}" height="${S - 2}" rx="4" fill="none" stroke="${GUARD}" stroke-width="2"/>` + text(x + S / 2, ty, String(t.n), { anchor: 'middle', fill: GUARD, bold: true })
@@ -410,10 +387,10 @@ export function tasksSvg(entry: Entry, plan: PlanInfo, now: number, cols: number
   } else {
     // One bar of four parts in this order: done, running, the user's, not begun.
     const parts = [
-      { k: count, label: '完成', color: DONE, fill: true, live: false },
-      { k: running ? 1 : 0, label: '在跑', color: OUT, fill: true, live: true },
-      { k: you.length, label: '你的', color: GUARD, fill: false, live: false },
-      { k: open.length - (running ? 1 : 0) - you.length, label: '還沒做', color: TODO, fill: false, live: false },
+      { k: count, label: '完成', color: DONE, fill: true },
+      { k: running ? 1 : 0, label: '在跑', color: OUT, fill: true },
+      { k: you.length, label: '你的', color: GUARD, fill: false },
+      { k: open.length - (running ? 1 : 0) - you.length, label: '還沒做', color: TODO, fill: false },
     ].filter((q) => q.k > 0)
     const G = 2
     const room = W - 2 - G * (parts.length - 1)
@@ -424,7 +401,7 @@ export function tasksSvg(entry: Entry, plan: PlanInfo, now: number, cols: number
     parts.forEach((q, i) => {
       const w = ws[i]
       const shape = q.fill
-        ? `<rect class="c${q.live ? ' live' : ''}" x="${r1(x)}" y="24" width="${r1(w)}" height="14" rx="4" fill="${q.color}"/>`
+        ? `<rect class="c" x="${r1(x)}" y="24" width="${r1(w)}" height="14" rx="4" fill="${q.color}"/>`
         : `<rect class="c" x="${r1(x + 0.75)}" y="24.75" width="${r1(w - 1.5)}" height="12.5" rx="4" fill="none" stroke="${q.color}" stroke-width="1.5"/>`
       b += `<g class="k"><title>${esc(`${q.label} ${q.k}`)}</title>${shape}</g>`
       x += w + G
@@ -515,7 +492,6 @@ export function paneParts(input: StatusInput, rows: Row[]): Part[] {
     else blocks[blocks.length - 1].push(r)
   }
   const { entry, plan, context, now, cols } = input
-  const live = !!entry && breathing(entry, now, !!input.turn, input.gateAt ?? null)
   for (const block of blocks) {
     const lead = block[0].segs.length ? [] : [block[0]]
     const body = block.slice(lead.length)
@@ -529,7 +505,7 @@ export function paneParts(input: StatusInput, rows: Row[]): Part[] {
       let from = body.length
       while (from > 0 && isRoute(body[from - 1])) from--
       keep(body.slice(0, from))
-      draw(routeSvg(entry, now, cols, live), body.slice(from), live)
+      draw(routeSvg(entry, now, cols), body.slice(from), false)
     } else if (name === 'clash') draw(clashSvg(entry, input.others, now, cols), body, false)
     else if (name === 'tasks' && plan && plan.tasks.length && body.length > 1) draw(tasksSvg(entry, plan, now, cols), body, true)
     else if (name === 'context' && context) draw(contextSvg(context, cols), body, false)

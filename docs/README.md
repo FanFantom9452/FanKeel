@@ -248,6 +248,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 那份設計的五個 task | `docs/99-archive/2026-10-15-todo-patrol-four.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-16）做了什麼、沒做什麼：兩條探測清單、兩條改 Ready、兩條 Blocked 重查，無結案 | [reports/patrols/2026-10-16-todo-patrol-probes.md](90-agent/reports/patrols/2026-10-16-todo-patrol-probes.md) — *繁體中文* |
 | 那份盤點的四個 task | `docs/99-archive/2026-10-16-todo-patrol-probes.md` — *built, 繁體中文* |
+| TODO 全表盤點（10-16 下午）做了什麼、沒做什麼：路線圓點不呼吸、Pane 的子代理樹與 station 按鈕、station-cli 首掃扣掉 node 啟動、三條偶發測試轉 watch | [reports/patrols/2026-10-16-todo-patrol-dots-agents.md](90-agent/reports/patrols/2026-10-16-todo-patrol-dots-agents.md) — *繁體中文* |
+| 那份盤點的 design 與八個 task | `docs/99-archive/2026-10-16-todo-patrol-dots-agents-design.md`、`docs/99-archive/2026-10-16-todo-patrol-dots-agents.md` — *built, 繁體中文* |
 | 換站時印出新一站規則（10-16）的 design：cmdStage 印 rulesLines、受控站維持 controller 區塊、最後一行同回合開工 | `docs/99-archive/2026-10-16-stage-prints-rules-design.md` — *built, 繁體中文* |
 | 那份設計的一個 task | `docs/99-archive/2026-10-16-stage-prints-rules.md` — *built* |
 | 一台機器一次一組 suite、快組（10-16）的 design：lib/suitelock.js 的鎖、@slow 標記、suite.js --fast | `docs/99-archive/2026-10-16-suite-lock-fast-design.md` — *built* |
@@ -573,6 +575,7 @@ is corrected by the next one, not by rewriting this.
 | Brief: a deleted Claude Desktop session, seen from the station | [90-agent/judgements/2026-10-12-deleted-desktop-session.md](90-agent/judgements/2026-10-12-deleted-desktop-session.md) — *judged 2026-10-12, fable* |
 | Can the route dots breathe while the stage is live? | [90-agent/judgements/2026-10-15-route-dots-breathe.md](90-agent/judgements/2026-10-15-route-dots-breathe.md) — *judged 2026-10-15, fable* |
 | Judge brief 1 — agent effort, agent coverage, mandatory render review | [90-agent/judgements/2026-10-15-agent-effort-usage-render.md](90-agent/judgements/2026-10-15-agent-effort-usage-render.md) — *judged 2026-10-15, fable* |
+| Brief: Pane 上能不能放常駐、可點、打開 station 網頁的元件，並顯示完整網址 | [90-agent/judgements/2026-10-16-pane-station-link.md](90-agent/judgements/2026-10-16-pane-station-link.md) — *judged 2026-10-16, fable* |
 
 ## The five scanners
 

@@ -23,8 +23,6 @@ export type BandInput = {
   tasks: { done: number; total: number } | null
   // Whether Remote Control is connected: Claude Code's session file has a bridgeSessionId.
   remote?: boolean
-  // The mod saw turn.start and not yet turn.complete.
-  turn?: boolean
   cols: number
   now: number
 }

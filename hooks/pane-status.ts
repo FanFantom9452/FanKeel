@@ -7,6 +7,7 @@ import { WHERE, FLAG, GUARD, TODO, claimsOf } from './pane-band.ts'
 import { str, list, width, cut, WIDE, DIM, minutes, nearCompact } from './pane-bar.ts'
 import type { Context } from './pane-bar.ts'
 import { HARD } from './compact.ts'
+import type { AgentNode } from './pane-agents.ts'
 
 // Kept as exports of this file: hooks/pane.ts imports them from here.
 export { str, list, width, cut, WIDE }
@@ -16,7 +17,8 @@ export type Entry = Record<string, unknown>
 export type Other = { id: string; entry: Entry }
 // `color` is a hex, or absent for the terminal's own. The segments of a row
 // touch: one that wants a space before it carries the space in its text.
-export type Seg = { text: string; color?: string; bold?: boolean }
+// `press` makes the segment a Button on the Pane (hooks/pane.ts piece): 'station' opens the station's page.
+export type Seg = { text: string; color?: string; bold?: boolean; press?: 'station' }
 // One drawn row. No segments is the blank row above a block. `who` is the
 // neighbour a clash row names: hooks/pane.ts counts them against the band's flag.
 export type Row = { block: string; segs: Seg[]; who?: string }
@@ -34,10 +36,12 @@ export type StatusInput = {
   room: number
   now: number
   probe?: string | null
-  // The mod saw turn.start and not yet turn.complete.
-  turn?: boolean
   // When the question the pending file holds went out; the band reads the same, so both stop together.
   gateAt?: number | null
+  // This task's subagents as a tree (hooks/pane-agents.ts agentTree); absent or empty draws no block.
+  agents?: AgentNode[]
+  // The station's url, from <configDir>/fankeel/serve.json (hooks/pane.ts stationOf); absent or null when none is up.
+  station?: string | null
 }
 
 // Each block's rail, a fixed colour whatever the stage, on its first drawn row;
@@ -46,6 +50,7 @@ export type StatusInput = {
 export const RAILS: Record<string, string> = {
   clash: FLAG,
   tasks: WHERE,
+  agents: WHERE,
   context: WHERE,
   notes: WHERE,
   foot: DIM,
@@ -299,6 +304,16 @@ function contextBlock(context: Context, inner: number): Row[] {
   ]
 }
 
+// The station, the foot's last row: a button that opens its page and the whole
+// url beside it, or grey words saying none is up. The terminal draws the
+// button as `[ label ]`, four cells wider than its label; a Pane narrower than
+// the url cuts the url's end.
+function stationRow(url: string | null | undefined, inner: number): Row {
+  if (!url) return row('foot', dim(cut('station 未啟動', inner)))
+  const label = '開啟 station'
+  return row('foot', { text: label, press: 'station' }, dim(cut(` ${url}`, Math.max(4, inner - width(label) - 4))))
+}
+
 // A row cut to `cols` cells: the segment that crosses the edge is cut, and the ones after it go.
 function fit(r: Row, cols: number): Row {
   let left = cols
@@ -312,10 +327,42 @@ function fit(r: Row, cols: number): Row {
   return { ...r, segs }
 }
 
-// Given up in this order when the rows do not fit: `tasks` keeps its title row.
+// The most roots the agents block lists, and the most agents under each.
+const AGENT_ROOTS = 6
+const AGENT_KIDS = 3
+
+// This task's subagents: a title row with how many run and how many stopped,
+// then a row an agent — ○ running in OUT, ● stopped in DONE — its title, its
+// model, its effort and its minutes, out so far or out in all. An agent's
+// own agents sit under it behind ├ and └, one level drawn; the counts in the
+// title row include every descendant, drawn or not.
+function agentsBlock(nodes: AgentNode[], inner: number, now: number): Row[] {
+  if (!nodes.length) return []
+  const all = (list: AgentNode[]): AgentNode[] => list.flatMap((n) => [n, ...all(n.kids)])
+  const every = all(nodes)
+  const running = every.filter((n) => n.end === null).length
+  const one = (n: AgentNode, lead: string): Row => {
+    const after = ` · ${n.model} · ${n.effort} · ${mins((n.end ?? now) - n.at)} 分`
+    const name = cut(n.title || n.type || n.id, Math.max(4, inner - width(lead) - 2 - width(after)))
+    const mark: Seg = n.end === null ? { text: '○', color: OUT } : { text: '●', color: DONE }
+    return row('agents', { text: lead }, mark, n.end === null ? { text: ` ${name}`, bold: true } : dim(` ${name}`), dim(after))
+  }
+  const rows = [row('agents', title('agents', 'agents'), dim(`  ${running} 在跑 · ${every.length - running} 完成`))]
+  for (const n of nodes.slice(0, AGENT_ROOTS)) {
+    rows.push(one(n, ''))
+    const kids = n.kids.slice(0, AGENT_KIDS)
+    const folded = n.kids.length > AGENT_KIDS
+    kids.forEach((k, i) => rows.push(one(k, i === kids.length - 1 && !folded ? ' └ ' : ' ├ ')))
+    if (folded) rows.push(row('agents', dim(` └ 還有 ${n.kids.length - AGENT_KIDS} 個`)))
+  }
+  if (nodes.length > AGENT_ROOTS) rows.push(row('agents', dim(`還有 ${nodes.length - AGENT_ROOTS} 個`)))
+  return rows
+}
+
+// Given up in this order when the rows do not fit: `agents` and `tasks` keep their title rows.
 // The task, the clash, the context block — drawn
 // only once a compact is close — and the foot never go.
-const DROP = ['notes', 'tasks']
+const DROP = ['notes', 'agents', 'tasks']
 // The blocks that are alarms, not sections: every row of one keeps its rail.
 const ALARMS = ['clash']
 
@@ -325,6 +372,8 @@ export function statusRows(input: StatusInput): Row[] {
     return [
       { block: 'empty', segs: [{ text: cut('這個 session 沒有進行中的任務', cols) }] },
       { block: 'empty', segs: [dim(cut('/fankeel 開一個', cols))] },
+      // The station row with its rail left off, as the two above have none.
+      { block: 'empty', segs: stationRow(input.station, cols).segs.slice(1) },
     ]
   }
   // 1: the cell every drawn row opens with, its block's rail or the space under it.
@@ -334,6 +383,8 @@ export function statusRows(input: StatusInput): Row[] {
   if (clash.length) blocks.push(clash)
   const tasks = tasksBlock(entry, input.plan, inner, now)
   if (tasks.length) blocks.push(tasks)
+  const agents = agentsBlock(input.agents ?? [], inner, now)
+  if (agents.length) blocks.push(agents)
   const context = input.context ? contextBlock(input.context, inner) : []
   if (context.length) blocks.push(context)
 
@@ -343,7 +394,7 @@ export function statusRows(input: StatusInput): Row[] {
 
   // The probe is asked for by hand (hooks/pane.ts probeOf): it is drawn whole, in the block that never drops.
   const probed = input.probe ? wrap(input.probe, inner).map((text) => row('foot', dim(text))) : []
-  blocks.push([...probed, row('foot', dim(cut(`${id.slice(0, 8)} · /fankeel-panel 關閉`, inner)))])
+  blocks.push([...probed, row('foot', dim(cut(`${id.slice(0, 8)} · /fankeel-panel 關閉`, inner))), stationRow(input.station, inner)])
 
   // Every block but the first costs a blank row above it.
   const size = (): number => blocks.reduce((n, block) => n + block.length, blocks.length - 1)
@@ -351,7 +402,7 @@ export function statusRows(input: StatusInput): Row[] {
     if (size() <= room) break
     const at = blocks.findIndex((block) => block[0].block === name)
     if (at < 0) continue
-    if (name === 'tasks') blocks[at] = blocks[at].slice(0, 1)
+    if (name === 'tasks' || name === 'agents') blocks[at] = blocks[at].slice(0, 1)
     else blocks.splice(at, 1)
   }
   // A section's rail is on its first drawn row alone: the rows under it open

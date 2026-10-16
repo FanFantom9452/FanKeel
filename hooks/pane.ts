@@ -1,4 +1,4 @@
-import type { Register, EngineInterface } from 'claude-code'
+import type { Register, EngineInterface, UiPressArgument } from 'claude-code'
 import { turn } from './turn.ts'
 import { parentOf, isActive, SESSION_ID, thresholdWith } from './compact.ts'
 import { statusRows, ledgerDoneIds, planTasks } from './pane-status.ts'
@@ -6,9 +6,11 @@ import type { Entry, Other, Context, PlanInfo, PlanTask, Seg as StatusSeg, Row a
 import type { Limit } from './pane-bar.ts'
 import { taskDir, pendingName, parsePending } from './pane-gate.ts'
 import type { Pending } from './pane-gate.ts'
+import { agentTree } from './pane-agents.ts'
+import type { AgentFile, AgentNode } from './pane-agents.ts'
 import { bandRows } from './pane-band.ts'
 import type { Seg as BandSeg, BandInput } from './pane-band.ts'
-import { bandRow1Svg, bandRow2Svg, paneParts, altOf, breathing, SVG_MAX } from './pane-svg.ts'
+import { bandRow1Svg, bandRow2Svg, paneParts, altOf, SVG_MAX } from './pane-svg.ts'
 
 // The fankeel mod's two drawings: two rows above the prompt for what is always
 // wanted, and the Pane for what is looked up. The Pane opens itself while the
@@ -34,6 +36,10 @@ type Seen = {
   remote: boolean
   // What probeOf read, or null while FANKEEL_PANE_PROBE is unset.
   probe: string | null
+  // This task's subagents as a tree, from Claude Code's subagents files (agentsOf).
+  agents: AgentNode[]
+  // The station's url from serve.json (stationOf), or null when none is up.
+  station: string | null
 }
 
 // What a file last parsed to, and the time and size it had then: the tick runs
@@ -42,10 +48,10 @@ type Seen = {
 // session's own registry file, the pending file and the ledger are read every tick.
 type Cache = Map<string, { stamp: string; value: unknown }>
 
-const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, context: null, limits: [], plan: null, remote: false, probe: null })
+const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, context: null, limits: [], plan: null, remote: false, probe: null, agents: [], station: null })
 
 // The last message each silent catch logged: the tick runs four times a second, and a failure that stays is said once.
-type Logged = { context: string; plan: string; open: string; registry: string; neighbour: string; gate: string; live: string; remote: string; bandSvg: string; paneSvg: string }
+type Logged = { context: string; plan: string; open: string; registry: string; neighbour: string; gate: string; live: string; remote: string; bandSvg: string; paneSvg: string; agents: string; station: string }
 
 // A registry file that is there and does not parse: told apart so `tick` can wait it out for a while, then give up on it.
 class Unreadable extends Error {}
@@ -173,16 +179,22 @@ async function liveOf($: EngineInterface, root: string, logged: Logged): Promise
   }
 }
 
+// The config directory this session runs under: the one its entry recorded, else ~/.claude; '' when neither is known.
+async function configDirOf($: EngineInterface, entry: Entry): Promise<string> {
+  const home = (await $.env.get('HOME')) || (await $.env.get('USERPROFILE'))
+  const configDir = typeof entry.configDir === 'string' && entry.configDir ? entry.configDir : home ? `${home}/.claude` : ''
+  return configDir.replace(/[\\/]+$/, '')
+}
+
 // Whether Remote Control is on for this session: Claude Code writes <configDir>/sessions/<pid>.json with
 // the session's `sessionId`, and a `bridgeSessionId` that is a non-empty string while it is connected
 // (null once switched off, absent if it never was; measured on 2.1.295). The file for this session is
 // found by its sessionId, not by its name. A directory or file that cannot be read counts as not connected.
 async function remoteOf($: EngineInterface, entry: Entry, id: string, cache: Cache, logged: Logged): Promise<boolean> {
   try {
-    const home = (await $.env.get('HOME')) || (await $.env.get('USERPROFILE'))
-    const configDir = typeof entry.configDir === 'string' && entry.configDir ? entry.configDir : home ? `${home}/.claude` : ''
+    const configDir = await configDirOf($, entry)
     if (!configDir) return false
-    const dir = `${configDir.replace(/[\\/]+$/, '')}/sessions`
+    const dir = `${configDir}/sessions`
     if (!(await $.fs.exists(dir))) return false
     // Several files can name this session (a dead pid leaves its own behind): the newest one is the truth.
     let newest = -Infinity
@@ -219,6 +231,121 @@ async function remoteOf($: EngineInterface, entry: Entry, id: string, cache: Cac
   }
 }
 
+// How long a session with no subagents directory yet waits before projects/ is listed again.
+const SUB_RETRY_MS = 10000
+
+// This task's subagents, from Claude Code's own files under
+// <configDir>/projects/<slug>/<session>/subagents (hooks/pane-agents.ts) and
+// the stops hooks/agent-end.js wrote. The session's directory is found by its
+// name under projects/ and kept; a meta or prefix file is read again only
+// when it moved. Anything unreadable is no agents.
+async function agentsOf($: EngineInterface, entry: Entry, id: string, root: string, cache: Cache, logged: Logged): Promise<AgentNode[]> {
+  try {
+    const started = Date.parse(String(entry.started))
+    if (!Number.isFinite(started)) return []
+    const key = `subagents:${id}`
+    const known = cache.get(key)
+    let sub = known && typeof known.value === 'string' ? known.value : ''
+    if (!sub) {
+      if (known && Date.now() - Number(known.stamp) < SUB_RETRY_MS) return []
+      const configDir = await configDirOf($, entry)
+      const projects = `${configDir}/projects`
+      if (configDir && (await $.fs.exists(projects))) {
+        for (const dir of await $.fs.list(projects)) {
+          const at = `${projects}/${dir.name}/${id}/subagents`
+          if (await $.fs.exists(at)) {
+            sub = at
+            break
+          }
+        }
+      }
+      cache.set(key, { stamp: String(Date.now()), value: sub })
+      if (!sub) return []
+    }
+    let listed: Awaited<ReturnType<EngineInterface['fs']['list']>>
+    try {
+      listed = await $.fs.list(sub)
+    } catch (err) {
+      // The cached directory is gone: look for it again next tick.
+      cache.delete(key)
+      throw err
+    }
+    const stamps = new Map(listed.map((f) => [f.name, `${f.mtimeMs}:${f.size}`]))
+    const read = async (name: string): Promise<Record<string, unknown> | null> => {
+      const stamp = stamps.get(name)
+      if (!stamp) return null
+      const path = `${sub}/${name}`
+      let hit = cache.get(path)
+      if (!hit || hit.stamp !== stamp) {
+        hit = { stamp, value: await readJson($, path) }
+        // A file caught mid-write is read again next tick.
+        if (hit.value) cache.set(path, hit)
+      }
+      return (hit.value as Record<string, unknown> | null) ?? null
+    }
+    const files: AgentFile[] = []
+    for (const f of listed) {
+      const m = /^agent-(.+)\.meta\.json$/.exec(f.name)
+      if (!m || f.mtimeMs < started) continue
+      files.push({ id: m[1], at: f.mtimeMs, meta: await read(f.name), prefix: await read(`agent-${m[1]}.prefix.json`) })
+    }
+    const ends = await readJson($, `${root}/.fankeel/build/agents-${id}.json`)
+    const ended: Record<string, number> = {}
+    if (ends && ends.ended && typeof ends.ended === 'object') {
+      for (const [k, v] of Object.entries(ends.ended)) if (typeof v === 'number' && Number.isFinite(v)) ended[k] = v
+    }
+    logged.agents = ''
+    return agentTree(files, ended, started)
+  } catch (err) {
+    logOnce($, logged, 'agents', `fankeel pane: agents unreadable, ${String(err)}`)
+    return []
+  }
+}
+
+// What a station's url looks like: scripts/station.js binds 127.0.0.1. Anything
+// else in serve.json draws no button, since pressing it hands the url to a shell's `start`.
+const STATION_URL = /^http:\/\/127\.0\.0\.1:\d{1,5}\/?$/
+
+// The station's url as <configDir>/fankeel/serve.json records it (lib/serve.js),
+// or null when there is none. With no entry the config directory is
+// CLAUDE_CONFIG_DIR, else ~/.claude.
+async function stationOf($: EngineInterface, entry: Entry | null, logged: Logged): Promise<string | null> {
+  try {
+    const recorded = !!entry && typeof entry.configDir === 'string' && !!entry.configDir
+    const configDir = recorded && entry ? await configDirOf($, entry) : ((await $.env.get('CLAUDE_CONFIG_DIR')) || (await configDirOf($, {}))).replace(/[\\/]+$/, '')
+    if (!configDir) return null
+    const file = `${configDir}/fankeel/serve.json`
+    if (!(await $.fs.exists(file))) return null
+    const got = await readJson($, file)
+    return got && typeof got.url === 'string' && STATION_URL.test(got.url) ? got.url : null
+  } catch (err) {
+    logOnce($, logged, 'station', `fankeel pane: station record unreadable, ${String(err)}`)
+    return null
+  }
+}
+
+// Opens the station's page in the host's browser: `start` on Windows, else
+// `open`, then `xdg-open`. When none of them runs, the url is copied instead,
+// and when that fails too a toast says so with the url in it.
+async function openStation($: EngineInterface, url: string, surface: UiPressArgument['surface']): Promise<void> {
+  const windows = (await $.env.get('OS')) === 'Windows_NT'
+  const tries = windows ? [['cmd', '/c', 'start', '', url]] : [['open', url], ['xdg-open', url]]
+  for (const argv of tries) {
+    try {
+      const done = await $.process.run(argv, { timeoutMs: 10000 })
+      if (done.exitCode === 0) return
+    } catch {
+      // `$.process.run` is CLI only: on another engine it rejects, and the next try or the copy follows.
+    }
+  }
+  try {
+    if ((await $.ui.copy({ text: url, surface })).isCopied) return
+  } catch {
+    // Said by the toast below, the same as a copy the surface declined.
+  }
+  $.ui.toast(`station：開不了瀏覽器，也複製不了網址 ${url}`)
+}
+
 // Everything both drawings show: this session's entry, the other active
 // entries beside it, the gate hooks/gate.js is holding, the context count and
 // the plan's ledger; the neighbours and the plan file are read again only when
@@ -228,7 +355,7 @@ async function look($: EngineInterface, cache: Cache, logged: Logged): Promise<S
   const id = await $.session.id()
   if (!SESSION_ID.test(id)) return blank(id)
   const found = await findEntry($, id)
-  if (!found || !isActive(found.entry)) return blank(id)
+  if (!found || !isActive(found.entry)) return { ...blank(id), station: await stationOf($, null, logged) }
   const entry = found.entry as Entry
 
   const alive = await liveOf($, found.root, logged)
@@ -280,7 +407,9 @@ async function look($: EngineInterface, cache: Cache, logged: Logged): Promise<S
   const plan = await planOf($, found.root, entry, cache, logged)
   const probe = await probeOf($)
   const remote = await remoteOf($, entry, id, cache, logged)
-  return { id, entry, others, pending, context, limits, plan, remote, probe }
+  const agents = await agentsOf($, entry, id, found.root, cache, logged)
+  const station = await stationOf($, entry, logged)
+  return { id, entry, others, pending, context, limits, plan, remote, probe, agents, station }
 }
 
 type State = {
@@ -325,7 +454,7 @@ async function tick($: EngineInterface, state: State): Promise<void> {
     const clock = next.entry ? await $.clock.now() : 0
     const minute = Math.floor(clock / 60000)
     const second = next.pending ? Math.floor(clock / 1000) : 0
-    const now = JSON.stringify([next.entry, next.others, next.context, next.limits, next.plan, next.remote, next.probe, minute, second, turn.running])
+    const now = JSON.stringify([next.entry, next.others, next.context, next.limits, next.plan, next.remote, next.probe, next.agents, next.station, minute, second, turn.running])
     // The opens and closes have their own memory, `edge`, which moves only when they all went through: a rejected
     // one is met again next tick as the same edge, while `seen` and the redraw below never wait on them.
     try {
@@ -360,7 +489,7 @@ async function tick($: EngineInterface, state: State): Promise<void> {
 export const register: Register = (on) => {
   const state: State = {
     seen: blank(''), print: '', mine: false, edge: { task: false }, bad: 0, busy: false, cache: new Map(),
-    logged: { context: '', plan: '', open: '', registry: '', neighbour: '', gate: '', live: '', remote: '', bandSvg: '', paneSvg: '' },
+    logged: { context: '', plan: '', open: '', registry: '', neighbour: '', gate: '', live: '', remote: '', bandSvg: '', paneSvg: '', agents: '', station: '' },
   }
 
   on('session.start', async ($, e, next) => {
@@ -369,7 +498,7 @@ export const register: Register = (on) => {
     return next(e)
   })
 
-  // A turn is running: the route's current dot breathes until it completes.
+  // A turn is running: the band and the Pane redraw when it starts and when it completes.
   on('turn.start', async ($, e, next) => {
     turn.running = true
     $.ui.invalidate('ui.render')
@@ -408,7 +537,6 @@ export const register: Register = (on) => {
       limits: seen.limits,
       tasks: plan ? { done: plan.tasks.filter((t) => plan.done.includes(t.n)).length, total: plan.tasks.length } : null,
       remote: seen.remote,
-      turn: turn.running,
       cols,
       now,
     }
@@ -421,8 +549,7 @@ export const register: Register = (on) => {
         const { Box, Svg } = $.ui.resolve(e)
         const sources = rows.map((_, i) => (i === 0 ? bandRow1Svg(band) : bandRow2Svg(band)))
         if (sources.some((source) => !source || source.length > SVG_MAX)) throw new Error('a band row drew empty or over the limit')
-        const live = !!seen.entry && breathing(seen.entry, band.now, turn.running, band.gateAt ?? null)
-        return h(Box, { flexDirection: 'column' }, ...sources.map((source, i) => h(Svg, i === 0 && live ? { source, alt: altOf([rows[i]]), isInteractive: true } : { source, alt: altOf([rows[i]]) })))
+        return h(Box, { flexDirection: 'column' }, ...sources.map((source, i) => h(Svg, { source, alt: altOf([rows[i]]) })))
       } catch (err) {
         logOnce($, state.logged, 'bandSvg', `fankeel pane: band Svg not drawn, ${String(err)}`)
       }
@@ -436,7 +563,7 @@ export const register: Register = (on) => {
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
-    const { Box, Text } = $.ui.resolve(e)
+    const { Box, Text, Button } = $.ui.resolve(e)
     const seen = state.seen
     const props = (e.props ?? {}) as { bodyColumns?: number; scroll?: { bodyRows?: number } }
     // The body's own cells where the surface measured them (41 by 32 on Claude Desktop); the viewport is the whole surface.
@@ -454,13 +581,18 @@ export const register: Register = (on) => {
       room,
       now,
       probe: seen.probe,
-      turn: turn.running,
       gateAt: seen.pending ? (seen.pending.at ?? now) : null,
+      agents: seen.agents,
+      station: seen.station,
     }
     const status = statusRows(input)
     const blankRow = () => h(Text, {}, ' ')
     // A row's segments touch: each carries its own colour, and its own space where it wants one.
-    const piece = (seg: StatusSeg) => h(Text, { color: seg.color, bold: seg.bold, wrap: 'truncate-end' }, seg.text)
+    const piece = (seg: StatusSeg) => {
+      const url = seen.station
+      if (seg.press === 'station' && url) return h(Button, { key: 'station', label: seg.text, hotkey: 's', onPress: (press: UiPressArgument) => openStation($, url, press.surface) })
+      return h(Text, { color: seg.color, bold: seg.bold, wrap: 'truncate-end' }, seg.text)
+    }
     const line = (row: StatusRow) => (row.segs.length === 0 ? blankRow() : h(Box, { flexDirection: 'row' }, ...row.segs.map(piece)))
     // Claude Desktop draws the route, the clash, the tasks and the context as Svg; every other surface draws the text.
     if (e.surface === 'desktop') {

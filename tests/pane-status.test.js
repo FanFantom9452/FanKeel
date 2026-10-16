@@ -28,7 +28,7 @@ const entry = {
 const other = { id: 'aaaaaaaa-0000-4000-8000-000000000001', entry: { task: '站頁看得到對話全文', stage: 'build', active: true, claims: ['hooks/mod.ts'], updated: '2026-10-10T22:00:00.000Z' } };
 const apart = { id: 'bbbbbbbb-0000-4000-8000-000000000002', entry: { task: 'x', stage: 'plan', active: true, claims: ['lib/x.js'] } };
 const SECOND = '#8a8a8a';
-const RAIL = { clash: '#ff5f5f', tasks: SECOND, context: SECOND, notes: SECOND, foot: '#585858' };
+const RAIL = { clash: '#ff5f5f', tasks: SECOND, agents: SECOND, context: SECOND, notes: SECOND, foot: '#585858' };
 // A row as the Pane shows it: its segments touch.
 const line = (row) => row.segs.map((seg) => seg.text).join('');
 const drawn = (rows, block) => rows.filter((r) => r.block === block && r.segs.length);
@@ -48,8 +48,8 @@ test('the frame is task, clash, notes, foot: a section\'s rail is on its first r
         const rail = row.block === 'task' ? { text: '▌' } : { text: '▌', color: RAIL[row.block] };
         assert.deepEqual(row.segs[0], first || row.block === 'clash' ? rail : { text: ' ' }, line(row));
     });
-    // The task 5 rows (the route wraps to two), the clash 2, notes 3, the foot 1.
-    assert.equal(rows.filter((r) => r.segs.length).map((r) => r.segs[0].text).join(''), '▌    ▌▌▌  ▌');
+    // The task 5 rows (the route wraps to two), the clash 2, notes 3, the foot 2: the session, then the station.
+    assert.equal(rows.filter((r) => r.segs.length).map((r) => r.segs[0].text).join(''), '▌    ▌▌▌  ▌ ');
     assert.deepEqual(m.RAILS, RAIL);
 });
 
@@ -151,16 +151,18 @@ test('notes are the newest three, each under the notes heading', async () => {
 
 test('foot is the session and how to close the pane; a probe is drawn above it, whole, and is never dropped', async () => {
     const m = await load();
-    assert.deepEqual(body(status(m), 'foot'), [[{ text: 'f0a58f35 · /fankeel-panel 關閉', color: SECOND }]]);
+    const off = { text: 'station 未啟動', color: SECOND };
+    assert.deepEqual(body(status(m), 'foot'), [[{ text: 'f0a58f35 · /fankeel-panel 關閉', color: SECOND }], [off]]);
     const probe = 'surfaces [terminal, desktop] · surface terminal';
     assert.deepEqual(body(status(m, { cols: 61, probe }), 'foot'), [
         [{ text: probe, color: SECOND }],
         [{ text: 'f0a58f35 · /fankeel-panel 關閉', color: SECOND }],
+        [off],
     ]);
     assert.equal(status(m, { cols: 61, probe }).length, status(m, { cols: 61 }).length + 1, 'the probe is its own block, or more than a row');
-    assert.deepEqual(text(status(m, { cols: 31, probe }), 'foot'), ['▌surfaces [terminal, desktop] ·', ' surface terminal', ' f0a58f35 · /fankeel-panel 關閉']);
-    assert.deepEqual(text(status(m, { cols: 61, room: -9, probe }), 'foot'), ['▌' + probe, ' f0a58f35 · /fankeel-panel 關閉']);
-    for (const none of [undefined, null, '']) assert.deepEqual(text(status(m, { probe: none }), 'foot'), ['▌f0a58f35 · /fankeel-panel 關閉']);
+    assert.deepEqual(text(status(m, { cols: 31, probe }), 'foot'), ['▌surfaces [terminal, desktop] ·', ' surface terminal', ' f0a58f35 · /fankeel-panel 關閉', ' station 未啟動']);
+    assert.deepEqual(text(status(m, { cols: 61, room: -9, probe }), 'foot'), ['▌' + probe, ' f0a58f35 · /fankeel-panel 關閉', ' station 未啟動']);
+    for (const none of [undefined, null, '']) assert.deepEqual(text(status(m, { probe: none }), 'foot'), ['▌f0a58f35 · /fankeel-panel 關閉', ' station 未啟動']);
 });
 
 test('no entry draws only the empty block, with no rail', async () => {
@@ -169,18 +171,19 @@ test('no entry draws only the empty block, with no rail', async () => {
     assert.deepEqual(rows, [
         { block: 'empty', segs: [{ text: '這個 session 沒有進行中的任務' }] },
         { block: 'empty', segs: [{ text: '/fankeel 開一個', color: SECOND }] },
+        { block: 'empty', segs: [{ text: 'station 未啟動', color: SECOND }] },
     ]);
 });
 
 test('with no room notes go first; task, clash and foot never do', async () => {
     const m = await load();
     const rows = (room) => status(m, { others: [other], room });
-    assert.equal(rows(60).length, 14);
-    assert.deepEqual(blocksOf(rows(14)), ['task', 'clash', 'notes', 'foot']);
-    assert.deepEqual(blocksOf(rows(13)), ['task', 'clash', 'foot']);
+    assert.equal(rows(60).length, 15);
+    assert.deepEqual(blocksOf(rows(15)), ['task', 'clash', 'notes', 'foot']);
+    assert.deepEqual(blocksOf(rows(14)), ['task', 'clash', 'foot']);
     assert.deepEqual(blocksOf(rows(-9)), ['task', 'clash', 'foot']);
-    assert.equal(rows(-9).length, 10);
-    for (const room of [14, 13, 10]) assert.ok(rows(room).length <= room, room + ' < ' + rows(room).length);
+    assert.equal(rows(-9).length, 11);
+    for (const room of [15, 14, 11])assert.ok(rows(room).length <= room, room + ' < ' + rows(room).length);
 });
 
 test('no row is wider than the pane, and CJK counts two', async () => {
@@ -423,21 +426,21 @@ test('with no room the blocks go in the order notes, the tasks window; a context
     const m = await load();
     const rows = (room, ctx) => status(m, { others: [other], plan: planOf(5, [1, 2]), context: ctx || close, room });
     const all = ['task', 'clash', 'tasks', 'context', 'notes', 'foot'];
-    // 24 rows: the task 5, the clash 2, tasks 6, context 2, notes 3, the foot 1, and five blank rows between.
-    assert.equal(rows(60).length, 24);
-    assert.deepEqual(blocksOf(rows(24)), all);
-    assert.deepEqual(blocksOf(rows(23)), ['task', 'clash', 'tasks', 'context', 'foot']);
-    assert.deepEqual(blocksOf(rows(20)), ['task', 'clash', 'tasks', 'context', 'foot']);
-    assert.equal(drawn(rows(20), 'tasks').length, 6);
-    assert.deepEqual(text(rows(19), 'tasks'), ['▌tasks 2 of 5']);
+    // 25 rows: the task 5, the clash 2, tasks 6, context 2, notes 3, the foot 2, and five blank rows between.
+    assert.equal(rows(60).length, 25);
+    assert.deepEqual(blocksOf(rows(25)), all);
+    assert.deepEqual(blocksOf(rows(24)), ['task', 'clash', 'tasks', 'context', 'foot']);
+    assert.deepEqual(blocksOf(rows(21)), ['task', 'clash', 'tasks', 'context', 'foot']);
+    assert.equal(drawn(rows(21), 'tasks').length, 6);
+    assert.deepEqual(text(rows(20), 'tasks'), ['▌tasks 2 of 5']);
     assert.deepEqual(blocksOf(rows(-9)), ['task', 'clash', 'tasks', 'context', 'foot']);
-    assert.equal(rows(-9).length, 15);
+    assert.equal(rows(-9).length, 16);
     assert.equal(drawn(rows(-9), 'context').length, 2);
-    for (const room of [24, 23, 20, 19, 15]) assert.ok(rows(room).length <= room, room + ' < ' + rows(room).length);
+    for (const room of [25, 24, 21, 20, 16])assert.ok(rows(room).length <= room, room + ' < ' + rows(room).length);
     // Under four fifths there is no context block to keep.
-    assert.equal(rows(60, context).length, 21);
+    assert.equal(rows(60, context).length, 22);
     assert.deepEqual(blocksOf(rows(-9, context)), ['task', 'clash', 'tasks', 'foot']);
-    assert.equal(rows(-9, context).length, 12);
+    assert.equal(rows(-9, context).length, 13);
     assert.deepEqual(blocksOf(rows(-9, { tokens: 359999, at: 450000 })), ['task', 'clash', 'tasks', 'foot']);
 });
 
@@ -472,4 +475,42 @@ test('compact.at off measures the block against HARD from four fifths of it, and
         [{ text: '不會自動壓縮；要壓縮請手動 /compact', color: SECOND }],
     ]);
     assert.doesNotMatch(text(at(2000000), 'context').join('\n'), /留 task|compact 中/);
+});
+
+test('the agents block is a tree: the counts, ○ running, ● stopped, └ under its parent, the model and effort on each', async () => {
+    const { statusRows } = await load();
+    const kid = { id: 'r1', title: 'Patrol check group C', type: 'fankeel:fankeel-reader', model: 'sonnet 5.5', effort: 'low', at: NOW - 8 * 60000, end: NOW - 2 * 60000, kids: [] };
+    const root = { id: 'b1', title: 'survey stage agent', type: 'fankeel:fankeel-brain', model: 'opus 5.5', effort: 'high', at: NOW - 10 * 60000, end: null, kids: [kid] };
+    const base = { id: ID, entry, others: [], context: null, plan: null, cols: 60, room: 60, now: NOW };
+    const text = (r) => r.segs.map((s) => s.text).join('');
+    const block = statusRows({ ...base, agents: [root] }).filter((r) => r.block === 'agents' && r.segs.length).map(text);
+    assert.deepEqual(block, [
+        '▌agents  1 在跑 · 1 完成',
+        ' ○ survey stage agent · opus 5.5 · high · 10 分',
+        '  └ ● Patrol check group C · sonnet 5.5 · low · 6 分',
+    ]);
+    assert.ok(!statusRows(base).some((r) => r.block === 'agents'));
+    assert.ok(!statusRows({ ...base, agents: [] }).some((r) => r.block === 'agents'));
+});
+
+test('the agents block lists six roots and three under each, and folds the rest', async () => {
+    const { statusRows } = await load();
+    const node = (id, kids = []) => ({ id, title: id, type: '', model: 'sonnet 5.5', effort: 'medium', at: NOW - 60000, end: null, kids });
+    const roots = [node('a', ['k1', 'k2', 'k3', 'k4', 'k5'].map((k) => node(k))), ...['b', 'c', 'd', 'e', 'f', 'g', 'h'].map((id) => node(id))];
+    const text = (r) => r.segs.map((s) => s.text).join('');
+    const block = statusRows({ id: ID, entry, others: [], context: null, plan: null, cols: 60, room: 80, now: NOW, agents: roots }).filter((r) => r.block === 'agents' && r.segs.length).map(text);
+    assert.equal(block.filter((t) => / ○ [a-h] /.test(t)).length, 6);
+    assert.equal(block.filter((t) => /├|└ ○/.test(t)).length, 3);
+    assert.ok(block.includes('  └ 還有 2 個'));
+    assert.equal(block[block.length - 1], ' 還有 2 個');
+});
+
+test('the station is the foot\'s last row: a button and the whole url, or grey words when none is up, with a task or without', async () => {
+    const m = await load();
+    const url = 'http://127.0.0.1:28888/';
+    const on = [{ text: '開啟 station', press: 'station' }, { text: ' ' + url, color: SECOND }];
+    assert.deepEqual(body(status(m, { station: url }), 'foot').slice(-1), [on]);
+    assert.equal(text(status(m, { station: url }), 'foot')[1], ' 開啟 station ' + url);
+    const empty = status(m, { entry: null, others: [], station: url });
+    assert.deepEqual(empty[empty.length - 1], { block: 'empty', segs: on });
 });
