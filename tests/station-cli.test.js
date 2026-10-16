@@ -253,8 +253,15 @@ test('the first run scans once and records that it did', () => {
     const rootsFile = path.join(cfg, 'fankeel', 'roots.json');
     assert.ok(!fs.existsSync(rootsFile), 'nothing has written roots.json for this config dir yet');
 
+    // A busy machine slows node's own start-up, which AUTO_BUDGET_MS does not
+    // bound: a run of nothing, timed just before, is taken off the reading below.
+    // 10-14 a red run of this test took 13.5s against its 20s `timeout`, so it
+    // was the 9000 below that failed, not the timeout.
+    const n0 = Date.now();
+    execFileSync(process.execPath, ['-e', ''], { encoding: 'utf8', timeout: 20000 });
+    const idle = Date.now() - n0;
     const t0 = Date.now();
-    const out1 = execFileSync(process.execPath, [CLI], { cwd: base, env, encoding: 'utf8', timeout: 20000 });
+    const out1 =execFileSync(process.execPath, [CLI], { cwd: base, env, encoding: 'utf8', timeout: 20000 });
     const elapsed1 = Date.now() - t0;
     assert.match(out1, /first run/);
 
@@ -309,5 +316,5 @@ test('the first run scans once and records that it did', () => {
     // catches a budget moved to ten seconds or beyond. It is deliberately a
     // literal rather than `AUTO_BUDGET_MS + slack`: a bound that moves with the
     // budget is a bound the budget cannot break.
-    assert.ok(elapsed1 < 9000, 'the first run stays inside its scan budget (took ' + elapsed1 + 'ms)');
+    assert.ok(elapsed1 - idle < 9000, 'the first run stays inside its scan budget (took ' + elapsed1 + 'ms, ' + idle + 'ms of it node start-up)');
 });
