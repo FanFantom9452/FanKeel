@@ -262,7 +262,14 @@ async function agentsOf($: EngineInterface, entry: Entry, id: string, root: stri
       cache.set(key, { stamp: String(Date.now()), value: sub })
       if (!sub) return []
     }
-    const listed = await $.fs.list(sub)
+    let listed: Awaited<ReturnType<EngineInterface['fs']['list']>>
+    try {
+      listed = await $.fs.list(sub)
+    } catch (err) {
+      // The cached directory is gone: look for it again next tick.
+      cache.delete(key)
+      throw err
+    }
     const stamps = new Map(listed.map((f) => [f.name, `${f.mtimeMs}:${f.size}`]))
     const read = async (name: string): Promise<Record<string, unknown> | null> => {
       const stamp = stamps.get(name)
@@ -283,7 +290,10 @@ async function agentsOf($: EngineInterface, entry: Entry, id: string, root: stri
       files.push({ id: m[1], at: f.mtimeMs, meta: await read(f.name), prefix: await read(`agent-${m[1]}.prefix.json`) })
     }
     const ends = await readJson($, `${root}/.fankeel/build/agents-${id}.json`)
-    const ended = ends && ends.ended && typeof ends.ended === 'object' ? (ends.ended as Record<string, number>) : {}
+    const ended: Record<string, number> = {}
+    if (ends && ends.ended && typeof ends.ended === 'object') {
+      for (const [k, v] of Object.entries(ends.ended)) if (typeof v === 'number' && Number.isFinite(v)) ended[k] = v
+    }
     logged.agents = ''
     return agentTree(files, ended, started)
   } catch (err) {
@@ -520,7 +530,6 @@ export const register: Register = (on) => {
       limits: seen.limits,
       tasks: plan ? { done: plan.tasks.filter((t) => plan.done.includes(t.n)).length, total: plan.tasks.length } : null,
       remote: seen.remote,
-      turn: turn.running,
       cols,
       now,
     }
@@ -565,7 +574,6 @@ export const register: Register = (on) => {
       room,
       now,
       probe: seen.probe,
-      turn: turn.running,
       gateAt: seen.pending ? (seen.pending.at ?? now) : null,
       agents: seen.agents,
       station: seen.station,

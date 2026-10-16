@@ -39,8 +39,14 @@ function fake({ files = {}, placed = true, surfaces = ['terminal'], tokens = 312
                 if (!(p in store)) throw new Error('ENOENT ' + p);
                 return stat(p);
             },
-            list: async (dir) => log.lists.push(dir) && Object.keys(store).filter((p) => p.startsWith(dir + '/') && !p.slice(dir.length + 1).includes('/'))
-                .map((p) => Object.assign({ name: p.slice(dir.length + 1) }, stat(p))),
+            list: async (dir) => {
+                log.lists.push(dir);
+                const below = Object.keys(store).filter((p) => p.startsWith(dir + '/')).map((p) => p.slice(dir.length + 1));
+                // A name with a slash left in it is a directory the files sit under.
+                const dirs = [...new Set(below.filter((n) => n.includes('/')).map((n) => n.split('/')[0]))]
+                    .map((name) => ({ name, kind: 'directory', size: 0, mtimeMs: 1, isLink: false }));
+                return [...below.filter((n) => !n.includes('/')).map((n) => Object.assign({ name: n }, stat(dir + '/' + n))), ...dirs];
+            },
         },
         clock: { now: async () => log.now, every: (ms, fn) => { log.ticks.push({ ms, fn }); return { cancel() {} }; } },
         command: { register: async (c) => { log.commands.push(c); return { command: c.name }; } },
@@ -1198,4 +1204,71 @@ test('off Windows the button tries open, then xdg-open; a url that is not the lo
     const tree = await draw();
     assert.equal(buttons(tree).length, 0);
     assert.ok(paneLines(tree).includes(' station 未啟動'));
+});
+
+// Claude Code's subagents files for ID under a config dir, and the stops hooks/agent-end.js wrote.
+const CFG = 'F:/cfg';
+const SUBS = CFG + '/projects/slug/' + ID + '/subagents';
+const STARTED = Date.parse(live.started);
+function agentRig(ended) {
+    const files = Object.assign(entryFile(Object.assign({}, live, { configDir: CFG })), {
+        [SUBS + '/agent-run1.meta.json']: JSON.stringify({ agentType: 'implementer', description: 'sonnet 5.5 · medium: building it' }),
+        [SUBS + '/agent-run1.prefix.json']: JSON.stringify({ state: { model: 'claude-sonnet-5-5', effortValue: 'high' } }),
+        [SUBS + '/agent-stop1.meta.json']: JSON.stringify({ agentType: 'reviewer', description: 'checking it' }),
+        [SUBS + '/agent-old1.meta.json']: JSON.stringify({ agentType: 'survey', description: 'from before' }),
+        [ROOT + '/.fankeel/build/agents-' + ID + '.json']: JSON.stringify({ ended: ended || { stop1: STARTED + 60000 } }),
+    });
+    const rig = fake({ files });
+    rig.mtimes[SUBS + '/agent-run1.meta.json'] = STARTED + 1000;
+    rig.mtimes[SUBS + '/agent-stop1.meta.json'] = STARTED + 2000;
+    rig.mtimes[SUBS + '/agent-old1.meta.json'] = STARTED - 5000;
+    return rig;
+}
+const drawn = async (hooks, $) => paneLines(await hooks['ui.render']($, { viewport: { columns: 60, rows: 60 } }));
+
+test('the Pane lists this session\'s subagents: the running, the stopped, and not one older than the task', async () => {
+    const hooks = await wired();
+    const { $, log } = agentRig();
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const lines = await drawn(hooks, $);
+    const run = lines.find((l) => l.includes('building it'));
+    const stop = lines.find((l) => l.includes('checking it'));
+    assert.ok(run && run.includes('○') && run.includes('sonnet 5.5') && run.includes('high'), String(run));
+    assert.ok(stop && stop.includes('●'), String(stop));
+    assert.ok(!lines.some((l) => l.includes('from before')));
+    assert.ok(lines.some((l) => l.includes('1 在跑') && l.includes('1 完成')));
+});
+
+test('a stops file with a value that is not a finite number stops nobody', async () => {
+    const hooks = await wired();
+    const { $, log } = agentRig({ stop1: 'soon', run1: null });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const lines = await drawn(hooks, $);
+    assert.ok(lines.some((l) => l.includes('2 在跑') && l.includes('0 完成')), lines.join('|'));
+});
+
+test('a session with no subagents directory is looked for again only after the retry wait', async () => {
+    const hooks = await wired();
+    const { $, log } = fake({ files: Object.assign(entryFile(Object.assign({}, live, { configDir: CFG })), { [CFG + '/projects/slug/other/x.json']: '{}' }) });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    await log.ticks[0].fn();
+    assert.equal(log.lists.filter((d) => d === CFG + '/projects').length, 1);
+});
+
+test('a cached subagents directory that no longer lists is looked for again on the next tick', async () => {
+    const hooks = await wired();
+    const { $, log } = agentRig();
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const projects = () => log.lists.filter((d) => d === CFG + '/projects').length;
+    assert.equal(projects(), 1);
+    const list = $.fs.list;
+    $.fs.list = async (dir) => { if (dir === SUBS) throw new Error('ENOENT'); return list(dir); };
+    await log.ticks[0].fn();
+    $.fs.list = list;
+    await log.ticks[0].fn();
+    assert.equal(projects(), 2);
 });

@@ -570,13 +570,12 @@ test('nothing the band or the Pane draws is animated, and the route is never dra
     assert.equal(mod.breathing, undefined);
     const drawn = [
         mod.bandRow1Svg(bandInput()),
-        mod.bandRow1Svg(bandInput({ turn: true })),
         mod.routeSvg(entry, NOW, 41),
         mod.tasksSvg(entry, planOf(9, 4), NOW, 41),
         mod.tasksSvg(entry, planOf(40, 10), NOW, 41),
     ];
     for (const source of drawn) assert.ok(!/<animate|fk-br|fk-pulse|class="[^"]*live/.test(source), source.slice(0, 80));
-    const input = { id: 'x', entry, others: [], context: null, plan: null, cols: 41, room: 60, now: NOW, turn: true };
+    const input = { id: 'x', entry, others: [], context: null, plan: null, cols: 41, room: 60, now: NOW };
     const route = mod.paneParts(input, statusRows(input)).find((p) => 'source' in p && p.alt.startsWith('survey'));
     assert.ok(route && !route.isInteractive);
 });

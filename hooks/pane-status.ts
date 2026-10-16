@@ -36,8 +36,6 @@ export type StatusInput = {
   room: number
   now: number
   probe?: string | null
-  // The mod saw turn.start and not yet turn.complete.
-  turn?: boolean
   // When the question the pending file holds went out; the band reads the same, so both stop together.
   gateAt?: number | null
   // This task's subagents as a tree (hooks/pane-agents.ts agentTree); absent or empty draws no block.
@@ -336,7 +334,8 @@ const AGENT_KIDS = 3
 // This task's subagents: a title row with how many run and how many stopped,
 // then a row an agent — ○ running in OUT, ● stopped in DONE — its title, its
 // model, its effort and its minutes, out so far or out in all. An agent's
-// own agents sit under it behind ├ and └, one level deep.
+// own agents sit under it behind ├ and └, one level drawn; the counts in the
+// title row include every descendant, drawn or not.
 function agentsBlock(nodes: AgentNode[], inner: number, now: number): Row[] {
   if (!nodes.length) return []
   const all = (list: AgentNode[]): AgentNode[] => list.flatMap((n) => [n, ...all(n.kids)])
