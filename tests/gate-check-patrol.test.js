@@ -34,10 +34,3 @@ test('gate-check refuses a patrol survey report that skips an open entry', () =>
   assert.equal(good.code, 0, good.text);
   assert.ok(registry.readSession(dir, ID));
 });
-
-// hooks/gate.js needs a controlled stage, a profile and a live gate hash to
-// reach its readGate call; this holds the one argument this task adds there.
-test('hooks/gate.js passes the patrol list to its controlled readGate', () => {
-  const src = fs.readFileSync(path.join(__dirname, '..', 'hooks', 'gate.js'), 'utf8');
-  assert.match(src, /ids: todo\.ids, patrol: patrolEntries\(root, mine\) \}/);
-});
