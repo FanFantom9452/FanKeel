@@ -20,7 +20,8 @@ knip
 
 Measured on 2026-10-16 in a worktree at `d9dd7f5b`, Windows 11 and Node
 v24.21.0, with nothing else running and `FANKEEL_BROWSER` set: the whole suite
-(`node --test`) took 274 s with 4416 tests passing, and the fast set
+(`node --test`) took 274 s with 4416 tests passing and 1 failing (a source
+check fixed in the next commit, not a slow test), and the fast set
 (`npm run test:fast`) 216 s with 4289 passing.
 
 A test whose name carries `@slow` took 10 s or more under the whole suite's
@@ -35,10 +36,12 @@ and `task.js land` refuse a fast record.
 
 The fast set saves about a fifth of the wall-clock, not half. `node --test`
 runs files in parallel but each file's tests one after another, and files of
-many short git-heavy tests (`tests/survey.test.js`, `tests/todo-check.test.js`,
-`tests/task.test.js`, each 100 s or more of serial test time under load in
-that run, its points attributed to files by test name) set
-the floor whatever the threshold. The lock is what stops the random reds; the
+many short git-heavy tests set the floor whatever the threshold. In the whole
+run those were `tests/survey.test.js`, `tests/todo-check.test.js` and
+`tests/task.test.js`, each 100 s or more of serial test time (points
+attributed to files by test name); with the slow tests skipped, the longest
+were `tests/commit.test.js` (about 122 s) and `tests/sensitive.test.js`
+(about 114 s), which is why the fast set still takes over three minutes. The lock is what stops the random reds; the
 fast set only trims time.
 
 To re-tag, run `node --test --test-reporter=tap > run.tap`, then
