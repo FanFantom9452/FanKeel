@@ -1,0 +1,54 @@
+=== 2026-10-16T11:16:49.823Z
+HEAD: 9264531ed673b13f6a2fa2857d7a57d105e99841
+porcelain:
+ M .fankeel/profile.json
+?? .claude/
+?? docs/90-agent/plans/2026-10-10-decisions-human-design.md
+?? docs/90-agent/plans/2026-10-10-decisions-human.md
+?? docs/90-agent/plans/2026-10-10-todo-patrol-lint-suite-design.md
+?? docs/90-agent/plans/2026-10-10-todo-patrol-lint-suite.md
+?? docs/90-agent/reports/evidence/2026-10-08-haiku-bench/provenance_DESKTOP-URB5NS2_Oct-14-070840-2026_Conflict.txt
+?? docs/90-agent/reports/evidence/2026-10-16-inflight-4-6-8/
+?? tsconfig.json
+claude: 2.1.301 (Claude Code)
+scripts/bench.js md5: 87aa7927e7b7ed8969ccd1dbe89586e0
+lib/bench.js md5: 1772fd318dd031dbee3d7de478735736
+batch: F:\ymlab\fankeel\.fankeel\build\bench\role-reader-20261016T111644
+role: reader (fankeel-reader)  items: 12  arms: sonnet  runs: 2  jobs: 4  cap: $1
+probe: haiku resolved to claude-haiku-5-5
+=== 2026-10-16T11:19:37.884Z
+HEAD: 9264531ed673b13f6a2fa2857d7a57d105e99841
+porcelain:
+ M .fankeel/profile.json
+?? .claude/
+?? docs/90-agent/plans/2026-10-10-decisions-human-design.md
+?? docs/90-agent/plans/2026-10-10-decisions-human.md
+?? docs/90-agent/plans/2026-10-10-todo-patrol-lint-suite-design.md
+?? docs/90-agent/plans/2026-10-10-todo-patrol-lint-suite.md
+?? docs/90-agent/reports/evidence/2026-10-08-haiku-bench/provenance_DESKTOP-URB5NS2_Oct-14-070840-2026_Conflict.txt
+?? docs/90-agent/reports/evidence/2026-10-16-inflight-4-6-8/
+?? tsconfig.json
+claude: 2.1.301 (Claude Code)
+scripts/bench.js md5: 87aa7927e7b7ed8969ccd1dbe89586e0
+lib/bench.js md5: 1772fd318dd031dbee3d7de478735736
+batch: F:\ymlab\fankeel\.fankeel\build\bench\role-reader-20261016T111932
+role: reader (fankeel-reader)  items: 12  arms: sonnet  runs: 2  jobs: 6  cap: $1
+probe: haiku resolved to claude-haiku-5-5
+=== 2026-10-16T11:21:55.681Z
+HEAD: 9264531ed673b13f6a2fa2857d7a57d105e99841
+porcelain:
+ M .fankeel/profile.json
+?? .claude/
+?? docs/90-agent/plans/2026-10-10-decisions-human-design.md
+?? docs/90-agent/plans/2026-10-10-decisions-human.md
+?? docs/90-agent/plans/2026-10-10-todo-patrol-lint-suite-design.md
+?? docs/90-agent/plans/2026-10-10-todo-patrol-lint-suite.md
+?? docs/90-agent/reports/evidence/2026-10-08-haiku-bench/provenance_DESKTOP-URB5NS2_Oct-14-070840-2026_Conflict.txt
+?? docs/90-agent/reports/evidence/2026-10-16-inflight-4-6-8/
+?? tsconfig.json
+claude: 2.1.301 (Claude Code)
+scripts/bench.js md5: 87aa7927e7b7ed8969ccd1dbe89586e0
+lib/bench.js md5: 1772fd318dd031dbee3d7de478735736
+batch: F:\ymlab\fankeel\.fankeel\build\bench\role-reader-20261016T112149
+role: reader (fankeel-reader)  items: 12  arms: sonnet  runs: 2  jobs: 8  cap: $1
+probe: haiku resolved to claude-haiku-5-5

@@ -1,0 +1,40 @@
+{
+  "label": "k4",
+  "k": 4,
+  "conc": null,
+  "totalWall": 1084.81,
+  "rows": [
+    {
+      "suite": 1,
+      "code": 1,
+      "wall": 1084.728,
+      "pass": 4426,
+      "fail": 1,
+      "fails": []
+    },
+    {
+      "suite": 2,
+      "code": 1,
+      "wall": 1084.789,
+      "pass": 4425,
+      "fail": 2,
+      "fails": []
+    },
+    {
+      "suite": 3,
+      "code": 1,
+      "wall": 1083.317,
+      "pass": 4424,
+      "fail": 3,
+      "fails": []
+    },
+    {
+      "suite": 4,
+      "code": 1,
+      "wall": 1082.449,
+      "pass": 4423,
+      "fail": 4,
+      "fails": []
+    }
+  ]
+}

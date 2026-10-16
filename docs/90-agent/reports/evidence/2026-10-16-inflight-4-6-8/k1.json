@@ -1,0 +1,16 @@
+{
+  "label": "k1",
+  "k": 1,
+  "conc": null,
+  "totalWall": 286.861,
+  "rows": [
+    {
+      "suite": 1,
+      "code": 0,
+      "wall": 286.859,
+      "pass": 4427,
+      "fail": 0,
+      "fails": []
+    }
+  ]
+}

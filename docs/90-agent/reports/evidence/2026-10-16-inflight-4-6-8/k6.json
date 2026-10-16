@@ -1,0 +1,56 @@
+{
+  "label": "k6",
+  "k": 6,
+  "conc": null,
+  "totalWall": 1641.65,
+  "rows": [
+    {
+      "suite": 1,
+      "code": 1,
+      "wall": 1640.775,
+      "pass": 4421,
+      "fail": 6,
+      "fails": []
+    },
+    {
+      "suite": 2,
+      "code": 1,
+      "wall": 1641.435,
+      "pass": 4421,
+      "fail": 6,
+      "fails": []
+    },
+    {
+      "suite": 3,
+      "code": 1,
+      "wall": 1639.294,
+      "pass": 4420,
+      "fail": 7,
+      "fails": []
+    },
+    {
+      "suite": 4,
+      "code": 1,
+      "wall": 1637.875,
+      "pass": 4421,
+      "fail": 6,
+      "fails": []
+    },
+    {
+      "suite": 5,
+      "code": 1,
+      "wall": 1641.626,
+      "pass": 4421,
+      "fail": 6,
+      "fails": []
+    },
+    {
+      "suite": 6,
+      "code": 1,
+      "wall": 1640.511,
+      "pass": 4423,
+      "fail": 4,
+      "fails": []
+    }
+  ]
+}

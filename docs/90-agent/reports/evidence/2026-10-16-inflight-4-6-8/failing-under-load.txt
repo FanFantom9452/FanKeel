@@ -1,0 +1,18 @@
+     22 ✖ a process that probes a station exits on its own within 3 seconds
+     20 ✖ the first run scans once and records that it did
+     14 ✖ the reason says how to get out of it
+     12 ✖ a bare idleMs never ends the calling process, but main()'s own --idle flag still does
+     12 ✖ POST /todo writes a clean line under Needs a decision, and refuses with the rule todo-check names @slow
+     11 ✖ failing tests:
+     10 ✖ a station whose own event loop is blocked is busy, not dead, and nothing is started
+      6 ✖ POST /todo in folder mode writes an entry file with its body and no TODO.md; a refused one leaves no file @slow
+      4 ✖ stops landing at the same moment are all kept
+      4 ✖ a claim whose process is gone does not block, and the same claim from a live one does
+      2 ✖ when both hold the file, the older claim holds and the newer yields
+      2 ✖ tests\requires.test.js
+      2 ✖ tests\report.test.js
+      2 ✖ an old claim from a running session still blocks — age is not the test any more
+      2 ✖ a serve started detached outlives the process that started it and the one above that
+      2 ✖ a bare directory claim covers what is under it
+      2 ✖ a /fankeel prompt finding the station busy names its url and starts no second one
+      2 ✖ NotebookEdit’s own path field is read
