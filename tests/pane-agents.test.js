@@ -54,3 +54,11 @@ test('an agent dispatched at the very ms the task started is listed, and one who
     const tree = agentTree([reader, old], {}, NOW - 60 * M);
     assert.deepEqual(tree.map((n) => [n.id, n.kids.length]), [['r1', 0]]);
 });
+
+test('a stopped agent with one still running under it sorts with the running, before a newer one stopped whole', async () => {
+    const { agentTree } = await load();
+    const f = (id, at, parent) => ({ id, at, meta: { description: id, ...(parent ? { parentAgentId: parent } : {}) }, prefix: null });
+    const tree = agentTree([f('old', NOW - 5 * M), f('kid', NOW - 4 * M, 'old'), f('new', NOW - M)], { old: NOW - 3 * M, new: NOW }, 0);
+    assert.deepEqual(tree.map((n) => n.id), ['old', 'new']);
+    assert.deepEqual(tree[0].kids.map((n) => [n.id, n.end]), [['kid', null]]);
+});

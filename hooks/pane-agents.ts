@@ -26,7 +26,7 @@ export function modelAlias(id: string): string {
 // Every subagent dispatched at or after `since`, hung under its parentAgentId;
 // one whose parent is not in the list is a root. The model is the prefix
 // file's, else the title's, else the meta's, else ?; the effort the prefix
-// file's, else the title's, else ?. Each list runs first, then the newest.
+// file's, else the title's, else ?. Each list puts first an agent that runs or has one running under it, then the newest.
 export function agentTree(files: AgentFile[], ended: Record<string, number>, since: number): AgentNode[] {
   const nodes = new Map<string, { node: AgentNode; parent: string }>()
   for (const f of files) {
@@ -46,9 +46,10 @@ export function agentTree(files: AgentFile[], ended: Record<string, number>, sin
     if (up) up.node.kids.push(node)
     else roots.push(node)
   }
+  const live = (n: AgentNode): boolean => n.end === null || n.kids.some(live)
   const order = (list: AgentNode[]): AgentNode[] => {
-    list.sort((a, b) => ((a.end === null) !== (b.end === null) ? (a.end === null ? -1 : 1) : b.at - a.at))
     for (const n of list) order(n.kids)
+    list.sort((a, b) => (live(a) !== live(b) ? (live(a) ? -1 : 1) : b.at - a.at))
     return list
   }
   return order(roots)
