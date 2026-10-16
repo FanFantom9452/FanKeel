@@ -476,15 +476,6 @@
             'wiz.backToPrev': '← Back to previous question',
             'wiz.settingsHeading': 'Settings',
             // cmp — crumbs and the compare page (used across the router)
-            'cmp.crumbLive': 'Now',
-            'cmp.crumbDays': 'Last 30 days',
-            'cmp.crumbSessions': 'Recent sessions',
-            'cmp.crumbProjects': 'Projects',
-            'cmp.crumbDocs': 'Docs',
-            'cmp.crumbSettings': 'Settings',
-            'cmp.crumbList': 'List',
-            'cmp.crumbCmp': 'Compare',
-            'cmp.crumbTour': 'Tour',
             // tune — block-changed notifications and pending gates
             'tune.doneColon': 'Done: ',
             'tune.notChangedColon': 'Not changed: ',

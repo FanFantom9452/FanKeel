@@ -549,12 +549,6 @@
                 + (why ? ' disabled title="' + esc(why) + '"' : '') + '>' + esc(o[1]) + '</button>';
         }).join('') + '</div>';
     }
-    function crumbHtml(parts) {
-        return parts.map(function (p, i) {
-            return i === parts.length - 1 ? '<span class="cur">' + esc(p[0]) + '</span>'
-                : '<a href="' + esc(p[1]) + '">' + esc(p[0]) + '</a>';
-        }).join('<i>/</i>');
-    }
     function histSvg(bars, o) {
         if (bars.disabled) return '<p class="note">' + esc(bars.disabled) + '</p>';
         var W = 1200, H = 318, L = 52, R = 4, T = 26, AX = 48, plotH = H - T - AX, base = T + plotH;
@@ -2754,7 +2748,7 @@
     // rather than two that could drift apart.
     var NOW, LAB, DAYS, PREV, TODAY, NAMES, PKEYS;
     freshen();
-    var VIEWS = {}, CRUMBS = {};
+    var VIEWS = {};
     var rows = function () {
         return S.sessions.filter(function (s) { return match(s, f); });
     };
@@ -3010,7 +3004,7 @@
                 return '<span class="db' + (b.total ? '' : ' none') + (i === list.length - 1 ? ' today' : '') + (i >= list.length - 4 ? ' end' : '') + '"' + (b.total ? ' tabindex="0"' : '') + ' data-tip="' + esc(tip(b))
                     + '" aria-label="' + esc(tip(b)) + '" style="height:' + h.toFixed(1) + '%"></span>';
             }).join('') + '</div>';
-        var at = function (i) { var b = list[list.length - i]; return b ? usd(b.total) + estMark(b) : '—'; };
+        var at = function (i) { var b = list[list.length - i]; return b ? usd(b.total, true) + estMark(b) : '—'; };
         return '<section class="dcard" data-block="dash-spend">' + dashHead('spend', loc('dash.last30dCost', '近 30 天花費'), '#/days')
             + '<div class="dbig">' + (tot ? usd(tot) + estMark({ estimated: totEst }) : '$0') + '</div>' + bars
             + '<div class="dkv"><span>' + loc('dash.today', '今天') + ' <b>' + at(1) + '</b></span><span>' + loc('dash.yesterday', '昨天') + ' <b>' + at(2) + '</b></span></div></section>';
@@ -3062,9 +3056,9 @@
             + (foot ? '<p class="dnone tfoot">' + foot + '</p>' : '') + '</section>';
     }
     // dash-todo's quick look (todo-dialog): one project's TODO in four tabs by
-    // state. `todos` is that project's `todos[]`; `href` is where the row
-    // pointed, kept as the way on to the full page. A `decision` or stateless
-    // entry has no tab, so it is counted in none.
+    // state, and a fifth for `decision` when there is one. `todos` is that
+    // project's `todos[]`; `href` is where the row pointed, kept as the way on
+    // to the full page. A stateless entry has no tab.
     function dashTodoDialog(todos, href) {
         var DONE_SHOWN = 8, lists = (todos || []).filter(Boolean);
         var open = [], done = [];
@@ -3074,7 +3068,9 @@
         var row = function (x, third) {
             return '<li><span class="tlb">' + esc(plain(x.label)) + '</span><span class="tt" title="' + esc(plain(x.title)) + '">' + esc(plain(x.title)) + '</span><span class="tid">' + esc(third) + '</span></li>';
         };
-        var tabs = [['ready', 'Ready', by('ready')], ['blocked', 'Blocked', by('blocked')], ['watch', 'Watch', by('watch')], ['done', 'Done', done]];
+        // `decision` gets a tab only when there is one: the row that opened this counts it, so the quick look must show it.
+        var tabs = [['ready', 'Ready', by('ready')], ['blocked', 'Blocked', by('blocked')], ['watch', 'Watch', by('watch')], ['decision', 'Decision', by('decision')], ['done', 'Done', done]]
+            .filter(function (g) { return g[0] !== 'decision' || g[2].length; });
         var folder = lists.length && lists[0].folder ? lists[0].folder : '';
         var name = lists.length ? shortLabel(lists[0].pkey) : '';
         return '<dialog class="tdlg" data-block="todo-dialog" aria-labelledby="tdlg-h"' + (folder ? ' aria-describedby="tdlg-src"' : '') + '><div class="tdlg-in">'
@@ -3522,7 +3518,6 @@
             + '<section class="panel"><div class="h2">' + loc('dash.stagesByRoute', '各 route 的階段') + ' <small>' + loc('dash.thisProjectOnly', '只算這個專案') + '</small></div>' + routeLedger(mine) + '</section>';
     }
     VIEWS.project = projectPage;
-    CRUMBS.project = function (r) { return [[NAMES[r.pkey] || r.pkey, null]]; };
     // The TODO panel's 已完成 list: 展開全部 / 收起 set `view.tdOpen`, which
     // holds across the 3 s redraw and resets on reload.
     view.tdOpen = false;
@@ -3668,10 +3663,6 @@
         });
     }
     VIEWS.session = sessionPage;
-    CRUMBS.session = function (r) {
-        var s = S.sessions.filter(function (x) { return x.id === r.id; })[0];
-        return s ? [[NAMES[s.pkey] || s.pkey, projectHash(s.pkey)], [s.task || String(s.id).slice(0, 8), null]] : [[r.id, null]];
-    };
     // `started` has a column of its own because the page this replaces sorted
     // by it, and a sort key with no header is a sort nobody can reach.
     var COLS = [['task', loc('dash.colTask', '任務')], ['stage', loc('dash.colStage', '階段')], ['burn', 'context'],
@@ -4934,9 +4925,6 @@
             + (xa && xb ? compareHtml(two[0], xa, two[1], xb) : '<p class="mute">' + loc('cmp.loadingDetail2', '讀取細節…') + '</p>') + '</div></div>';
     }
 
-    var NAV_LABEL = { live: loc('cmp.crumbLive', '現在'), days: loc('cmp.crumbDays', '近 30 天'), sessions: loc('cmp.crumbSessions', '最近 sessions'),
-        projects: loc('cmp.crumbProjects', '專案'), docs: loc('cmp.crumbDocs', '文件'), settings: loc('cmp.crumbSettings', '設定'),
-        list: loc('cmp.crumbList', '清單'), cmp: loc('cmp.crumbCmp', '比較'), tour: loc('cmp.crumbTour', '導覽') };
     function pageTitle(r) {
         var v = navOn(r && r.view), hit = '';
         NAV_TREE.forEach(function (g) {

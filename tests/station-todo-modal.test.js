@@ -37,3 +37,10 @@ test('the dialog links on to the page the row pointed at, and each row names its
     assert.match(V.dashTodoDialog([T], '#/p/x'), /<a [^>]*href="#\/p\/x"/);
     assert.match(V.dashTodo([{ root: 'F:\\ws\\a', todos: [T] }]), /class="drow trow" data-tdlg="[^"]+"/);
 });
+
+test('a decision entry gets its own tab, and only when there is one', () => {
+    const V = page();
+    const D = Object.assign({}, T, { open: T.open.concat([e('5', 'X1', 'decision')]) });
+    assert.match(V.dashTodoDialog([D], '#/p/x'), /role="tab"[^>]*>Decision <b>1<\/b>/);
+    assert.doesNotMatch(V.dashTodoDialog([T], '#/p/x'), />Decision </);
+});
