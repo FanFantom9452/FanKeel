@@ -2018,7 +2018,8 @@ a.td-rf:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-rad
 .dspark:hover .db:not(:hover),.dspark:focus-within .db:not(:focus-visible){opacity:.35}
 .dspark .db:hover,.dspark .db:focus-visible{opacity:1;transform:translateY(-3px);background:var(--keel,var(--ink))}
 .dspark .db:focus-visible{box-shadow:0 0 0 2px var(--keel,var(--ink))}
-.dspark .db.none,.dspark .db.none:hover{background:transparent;transform:none}
+/* An empty day is a hit area, never a bar: it must beat the keel bar and today colours, whose selectors are longer. */
+.dspark .db.none,.dspark .db.none:hover{background:transparent!important;transform:none!important}
 .dspark .db[data-tip]::after{content:attr(data-tip);position:absolute;z-index:3;left:50%;bottom:calc(100% + 9px);white-space:nowrap;padding:4px 8px;border-radius:var(--r-sm);background:var(--ink);color:var(--panel);box-shadow:var(--lift,none);font:400 12px/1.4 var(--f-mono);pointer-events:none;opacity:0;transform:translate(-50%,4px);transition:opacity .12s ease-in,transform .12s ease-in}
 .dspark .db:hover::after,.dspark .db:focus-visible::after{opacity:1;transform:translate(-50%,0)}
 .dspark .db.end::after{left:auto;right:0;transform:translate(0,4px)}
