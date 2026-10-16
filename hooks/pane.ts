@@ -1,12 +1,11 @@
 import type { Register, EngineInterface, UiPressArgument } from 'claude-code'
-import { turn } from './turn.ts'
 import { parentOf, isActive, SESSION_ID, thresholdWith } from './compact.ts'
 import { statusRows, ledgerDoneIds, planTasks } from './pane-status.ts'
-import type { Entry, Other, Context, PlanInfo, PlanTask, Seg as StatusSeg, Row as StatusRow, StatusInput } from './pane-status.ts'
-import type { Limit } from './pane-bar.ts'
+import type { Entry, Other, PlanInfo, PlanTask, Seg as StatusSeg, Row as StatusRow, StatusInput } from './pane-status.ts'
+import type { Context, Limit } from './pane-bar.ts'
 import { taskDir, pendingName, parsePending } from './pane-gate.ts'
 import type { Pending } from './pane-gate.ts'
-import { agentTree } from './pane-agents.ts'
+import { agentTree, agentTokens } from './pane-agents.ts'
 import type { AgentFile, AgentNode } from './pane-agents.ts'
 import { bandRows } from './pane-band.ts'
 import type { Seg as BandSeg, BandInput } from './pane-band.ts'
@@ -237,7 +236,7 @@ const SUB_RETRY_MS = 10000
 // This task's subagents, from Claude Code's own files under
 // <configDir>/projects/<slug>/<session>/subagents (hooks/pane-agents.ts) and
 // the stops hooks/agent-end.js wrote. The session's directory is found by its
-// name under projects/ and kept; a meta or prefix file is read again only
+// name under projects/ and kept; a meta, prefix or transcript file is read again only
 // when it moved. Anything unreadable is no agents.
 async function agentsOf($: EngineInterface, entry: Entry, id: string, root: string, cache: Cache, logged: Logged): Promise<AgentNode[]> {
   try {
@@ -283,11 +282,29 @@ async function agentsOf($: EngineInterface, entry: Entry, id: string, root: stri
       }
       return (hit.value as Record<string, unknown> | null) ?? null
     }
+    // The transcript's token count, kept by its stamp: a running agent's file grows each request.
+    const spent = async (name: string): Promise<number | null> => {
+      const stamp = stamps.get(name)
+      if (!stamp) return null
+      const path = `${sub}/${name}`
+      const hit = cache.get(path)
+      if (hit && hit.stamp === stamp) return typeof hit.value === 'number' ? hit.value : null
+      let text: string
+      try {
+        text = String(await $.fs.read(path))
+      } catch {
+        // Gone or locked between the listing and the read: no tokens this tick, tried again the next.
+        return null
+      }
+      const tokens = agentTokens(text)
+      cache.set(path, { stamp, value: tokens })
+      return tokens
+    }
     const files: AgentFile[] = []
     for (const f of listed) {
       const m = /^agent-(.+)\.meta\.json$/.exec(f.name)
       if (!m || f.mtimeMs < started) continue
-      files.push({ id: m[1], at: f.mtimeMs, meta: await read(f.name), prefix: await read(`agent-${m[1]}.prefix.json`) })
+      files.push({ id: m[1], at: f.mtimeMs, meta: await read(f.name), prefix: await read(`agent-${m[1]}.prefix.json`), tokens: await spent(`agent-${m[1]}.jsonl`) })
     }
     const ends = await readJson($, `${root}/.fankeel/build/agents-${id}.json`)
     const ended: Record<string, number> = {}
@@ -454,7 +471,7 @@ async function tick($: EngineInterface, state: State): Promise<void> {
     const clock = next.entry ? await $.clock.now() : 0
     const minute = Math.floor(clock / 60000)
     const second = next.pending ? Math.floor(clock / 1000) : 0
-    const now = JSON.stringify([next.entry, next.others, next.context, next.limits, next.plan, next.remote, next.probe, next.agents, next.station, minute, second, turn.running])
+    const now = JSON.stringify([next.entry, next.others, next.context, next.limits, next.plan, next.remote, next.probe, next.agents, next.station, minute, second])
     // The opens and closes have their own memory, `edge`, which moves only when they all went through: a rejected
     // one is met again next tick as the same edge, while `seen` and the redraw below never wait on them.
     try {
@@ -493,15 +510,8 @@ export const register: Register = (on) => {
   }
 
   on('session.start', async ($, e, next) => {
-    await $.command.register({ name: COMMAND, description: 'fankeel 面板：任務、撞檔、tasks、context、用量額度與 notes' })
+    await $.command.register({ name: COMMAND, description: 'fankeel 面板：任務、撞檔、tasks、用量額度與 notes' })
     $.clock.every(POLL_MS, () => tick($, state))
-    return next(e)
-  })
-
-  // A turn is running: the band and the Pane redraw when it starts and when it completes.
-  on('turn.start', async ($, e, next) => {
-    turn.running = true
-    $.ui.invalidate('ui.render')
     return next(e)
   })
 
@@ -575,7 +585,6 @@ export const register: Register = (on) => {
       id: seen.id,
       entry: seen.entry,
       others: seen.others,
-      context: seen.context,
       plan: seen.plan,
       cols,
       room,
@@ -594,7 +603,7 @@ export const register: Register = (on) => {
       return h(Text, { color: seg.color, bold: seg.bold, wrap: 'truncate-end' }, seg.text)
     }
     const line = (row: StatusRow) => (row.segs.length === 0 ? blankRow() : h(Box, { flexDirection: 'row' }, ...row.segs.map(piece)))
-    // Claude Desktop draws the route, the clash, the tasks and the context as Svg; every other surface draws the text.
+    // Claude Desktop draws the route, the clash and the tasks as Svg; every other surface draws the text.
     if (e.surface === 'desktop') {
       try {
         const { Svg } = $.ui.resolve(e)

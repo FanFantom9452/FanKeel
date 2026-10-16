@@ -4,14 +4,12 @@
 // docs/90-agent/plans/2026-10-12-pane-band-design.md section 3.
 
 import { WHERE, FLAG, GUARD, TODO, claimsOf } from './pane-band.ts'
-import { str, list, width, cut, WIDE, DIM, minutes, nearCompact } from './pane-bar.ts'
-import type { Context } from './pane-bar.ts'
-import { HARD } from './compact.ts'
+import { str, list, width, cut, WIDE, DIM, minutes } from './pane-bar.ts'
+import { tokenLabel } from './pane-agents.ts'
 import type { AgentNode } from './pane-agents.ts'
 
 // Kept as exports of this file: hooks/pane.ts imports them from here.
 export { str, list, width, cut, WIDE }
-export type { Context }
 
 export type Entry = Record<string, unknown>
 export type Other = { id: string; entry: Entry }
@@ -30,7 +28,6 @@ export type StatusInput = {
   id: string
   entry: Entry | null
   others: Other[]
-  context: Context | null
   plan: PlanInfo | null
   cols: number
   room: number
@@ -51,7 +48,6 @@ export const RAILS: Record<string, string> = {
   clash: FLAG,
   tasks: WHERE,
   agents: WHERE,
-  context: WHERE,
   notes: WHERE,
   foot: DIM,
 }
@@ -102,10 +98,6 @@ function wrap(s: string, cols: number): string[] {
 
 // Whole minutes, or `?` where the registry has no reading.
 const mins = (ms: unknown): string => (typeof ms === 'number' && Number.isFinite(ms) ? String(minutes(ms)) : '?')
-
-// What hooks/compact.ts instructionsFor tells the summary to keep, a word each;
-// tests/pane-status.test.js checks every word against that function's text.
-export const KEPT = ['task', 'stage', 'plan', 'agent', 'handoff']
 
 const LEDGER = '# fankeel build ledger — plan: '
 // lib/ledger.js HEADER_PREFIX, owns and completed: the tasks the ledger records
@@ -282,28 +274,6 @@ function tasksBlock(entry: Entry, plan: PlanInfo | null, inner: number, now: num
   return rows
 }
 
-// What the context block says, read by the desktop Svg (hooks/pane-svg.ts) too, so the two never word it apart.
-export const SAID = { hot: '已到門檻，compact 中', near: '快要自動 compact 了', hotOff: '已到門檻，自動 compact 已關閉', nearOff: '快到門檻，自動 compact 已關閉' }
-
-// Drawn only from eighty percent of the threshold (hooks/compact.ts threshold:
-// FANKEEL_COMPACT_AT, the profile's compact.at, else HARD), and then never
-// given up: that a compact is close, or
-// under way, and what one keeps. No count, no bar and no mark: the band's `ctx`
-// meter (hooks/pane-band.ts) has those, and a figure is drawn once. compact.at
-// off is an infinite threshold: the block is measured against HARD and says
-// that no compact will run.
-function contextBlock(context: Context, inner: number): Row[] {
-  const off = !Number.isFinite(context.at)
-  const at = off ? HARD : context.at
-  if (!nearCompact(context.tokens, at)) return []
-  const hot = context.tokens >= at
-  const said = hot ? (off ? SAID.hotOff : SAID.hot) : off ? SAID.nearOff : SAID.near
-  return [
-    row('context', title('context', 'context'), hot ? { text: `  ${said}`, color: GUARD, bold: true } : dim(`  ${said}`)),
-    row('context', dim(cut(off ? '不會自動壓縮；要壓縮請手動 /compact' : `留 ${KEPT.join(' · ')}`, inner))),
-  ]
-}
-
 // The station, the foot's last row: a button that opens its page and the whole
 // url beside it, or grey words saying none is up. The terminal draws the
 // button as `[ label ]`, four cells wider than its label; a Pane narrower than
@@ -333,7 +303,8 @@ const AGENT_KIDS = 3
 
 // This task's subagents: a title row with how many run and how many stopped,
 // then a row an agent — ○ running in OUT, ● stopped in DONE — its title, its
-// model, its effort and its minutes, out so far or out in all. An agent's
+// model, its effort, its minutes, out so far or out in all, and the tokens it
+// spent where its transcript was there to read. An agent's
 // own agents sit under it behind ├ and └, one level drawn; the counts in the
 // title row include every descendant, drawn or not.
 function agentsBlock(nodes: AgentNode[], inner: number, now: number): Row[] {
@@ -342,7 +313,8 @@ function agentsBlock(nodes: AgentNode[], inner: number, now: number): Row[] {
   const every = all(nodes)
   const running = every.filter((n) => n.end === null).length
   const one = (n: AgentNode, lead: string): Row => {
-    const after = ` · ${n.model} · ${n.effort} · ${mins((n.end ?? now) - n.at)} 分`
+    const spent = typeof n.tokens === 'number' ? ` · ${tokenLabel(n.tokens)}` : ''
+    const after = ` · ${n.model} · ${n.effort} · ${mins((n.end ?? now) - n.at)} 分${spent}`
     const name = cut(n.title || n.type || n.id, Math.max(4, inner - width(lead) - 2 - width(after)))
     const mark: Seg = n.end === null ? { text: '○', color: OUT } : { text: '●', color: DONE }
     return row('agents', { text: lead }, mark, n.end === null ? { text: ` ${name}`, bold: true } : dim(` ${name}`), dim(after))
@@ -360,8 +332,7 @@ function agentsBlock(nodes: AgentNode[], inner: number, now: number): Row[] {
 }
 
 // Given up in this order when the rows do not fit: `agents` and `tasks` keep their title rows.
-// The task, the clash, the context block — drawn
-// only once a compact is close — and the foot never go.
+// The task, the clash and the foot never go.
 const DROP = ['notes', 'agents', 'tasks']
 // The blocks that are alarms, not sections: every row of one keeps its rail.
 const ALARMS = ['clash']
@@ -385,8 +356,6 @@ export function statusRows(input: StatusInput): Row[] {
   if (tasks.length) blocks.push(tasks)
   const agents = agentsBlock(input.agents ?? [], inner, now)
   if (agents.length) blocks.push(agents)
-  const context = input.context ? contextBlock(input.context, inner) : []
-  if (context.length) blocks.push(context)
 
   // The registry keeps the newest note last.
   const notes = list(entry.notes).slice(-3)

@@ -54,3 +54,49 @@ test('an agent dispatched at the very ms the task started is listed, and one who
     const tree = agentTree([reader, old], {}, NOW - 60 * M);
     assert.deepEqual(tree.map((n) => [n.id, n.kids.length]), [['r1', 0]]);
 });
+
+test('a stopped agent with one still running under it sorts with the running, before a newer one stopped whole', async () => {
+    const { agentTree } = await load();
+    const f = (id, at, parent) => ({ id, at, meta: { description: id, ...(parent ? { parentAgentId: parent } : {}) }, prefix: null });
+    const tree = agentTree([f('old', NOW - 5 * M), f('kid', NOW - 4 * M, 'old'), f('new', NOW - M)], { old: NOW - 3 * M, new: NOW }, 0);
+    assert.deepEqual(tree.map((n) => n.id), ['old', 'new']);
+    assert.deepEqual(tree[0].kids.map((n) => [n.id, n.end]), [['kid', null]]);
+});
+
+test('a running grandchild lifts every stopped ancestor above a newer stopped one', async () => {
+    const { agentTree } = await load();
+    const f = (id, at, parent) => ({ id, at, meta: { description: id, ...(parent ? { parentAgentId: parent } : {}) }, prefix: null });
+    const files = [f('root', NOW - 9 * M), f('mid', NOW - 8 * M, 'root'), f('leaf', NOW - 7 * M, 'mid'), f('midNew', NOW - M, 'root'), f('rootNew', NOW - M)];
+    const tree = agentTree(files, { root: NOW, mid: NOW, midNew: NOW, rootNew: NOW }, 0);
+    assert.deepEqual(tree.map((n) => n.id), ['root', 'rootNew']);
+    assert.deepEqual(tree[0].kids.map((n) => n.id), ['mid', 'midNew']);
+});
+
+test('agentTokens counts input, cache writes and output once a request, the last line winning, and leaves cache reads out', async () => {
+    const { agentTokens } = await load();
+    const u = (i, w, r, o) => ({ input_tokens: i, cache_creation_input_tokens: w, cache_read_input_tokens: r, output_tokens: o });
+    const line = (rid, usage) => JSON.stringify({ type: 'assistant', ...(rid ? { requestId: rid } : {}), message: { usage } });
+    const text = [
+        line('q1', u(1, 100, 5000, 2)),
+        line('q1', u(2, 100, 5000, 10)),
+        line(null, u(3, 0, 9000, 4)),
+        line(null, u(5, 0, 9000, 6)),
+        JSON.stringify({ type: 'user', message: { content: 'hi' } }),
+        'not json',
+        '',
+    ].join('\n');
+    assert.equal(agentTokens(text), (2 + 100 + 10) + (3 + 4) + (5 + 6));
+    assert.equal(agentTokens(JSON.stringify({ type: 'user', message: { content: 'hi' } })), null);
+    assert.equal(agentTokens(''), null);
+});
+
+test('tokenLabel writes a count as it is under a thousand, then in k, then in M', async () => {
+    const { tokenLabel } = await load();
+    assert.deepEqual([0, 892, 79418, 1732632].map(tokenLabel), ['0', '892', '79.4k', '1.7M']);
+});
+
+test('agentTree carries an agent\'s tokens, and null where its file had none', async () => {
+    const { agentTree } = await load();
+    const [root] = agentTree([{ ...brain, tokens: 79418 }, reader], {}, NOW - 60 * M);
+    assert.deepEqual([root.tokens, root.kids[0].tokens], [79418, null]);
+});

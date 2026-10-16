@@ -288,20 +288,3 @@ test('the summary is told to keep the design.md and context.md paths', async () 
     assert.ok(lines.includes('- the design.md and context.md paths under .fankeel/build/, when the conversation named them'), lines.join(' | '));
     assert.equal(lines[lines.length - 1], '- the plugin scripts live under F:/plugin/scripts');
 });
-
-test('the one turn.complete clears the turn flag and redraws for the main turn, not for a subagent\'s', async () => {
-    const mod = await load();
-    const { turn } = await import(pathToFileURL(path.join(__dirname, '..', 'hooks', 'turn.ts')).href);
-    const { $ } = fake({ tokens: 0, files: {} });
-    const redrawn = [];
-    $.ui.invalidate = (what) => redrawn.push(what);
-    const handler = handlerOf(mod);
-    turn.running = true;
-    await fire(handler, $, { agentId: 'a1' });
-    assert.deepEqual([turn.running, redrawn], [true, []]);
-    await fire(handler, $);
-    assert.deepEqual([turn.running, redrawn], [false, ['ui.render']]);
-    turn.running = true;
-    await fire(handler, $, { agentId: '' });
-    assert.deepEqual([turn.running, redrawn], [false, ['ui.render', 'ui.render']]);
-});

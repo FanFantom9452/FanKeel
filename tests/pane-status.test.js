@@ -7,7 +7,6 @@ const ledger = require('../lib/ledger.js');
 const plantasks = require('../lib/plantasks.js');
 
 const load = () => import(pathToFileURL(path.join(__dirname, '..', 'hooks', 'pane-status.ts')).href);
-const compact = () => import(pathToFileURL(path.join(__dirname, '..', 'hooks', 'compact.ts')).href);
 const ID = 'f0a58f35-ae39-4954-89d6-e0b9129a4082';
 const NOW = Date.parse('2026-10-11T00:00:00.000Z');
 const HOUR = 3600000;
@@ -28,14 +27,14 @@ const entry = {
 const other = { id: 'aaaaaaaa-0000-4000-8000-000000000001', entry: { task: '站頁看得到對話全文', stage: 'build', active: true, claims: ['hooks/mod.ts'], updated: '2026-10-10T22:00:00.000Z' } };
 const apart = { id: 'bbbbbbbb-0000-4000-8000-000000000002', entry: { task: 'x', stage: 'plan', active: true, claims: ['lib/x.js'] } };
 const SECOND = '#8a8a8a';
-const RAIL = { clash: '#ff5f5f', tasks: SECOND, agents: SECOND, context: SECOND, notes: SECOND, foot: '#585858' };
+const RAIL = { clash: '#ff5f5f', tasks: SECOND, agents: SECOND, notes: SECOND, foot: '#585858' };
 // A row as the Pane shows it: its segments touch.
 const line = (row) => row.segs.map((seg) => seg.text).join('');
 const drawn = (rows, block) => rows.filter((r) => r.block === block && r.segs.length);
 const text = (rows, block) => drawn(rows, block).map(line);
 // A block's rows without the cell each one opens with: its rail, or the space under it.
 const body = (rows, block) => drawn(rows, block).map((r) => r.segs.slice(1));
-const status = (m, over) => m.statusRows(Object.assign({ id: ID, entry, others: [], context: null, plan: null, cols: 41, room: 60, now: NOW }, over));
+const status = (m, over) => m.statusRows(Object.assign({ id: ID, entry, others: [], plan: null, cols: 41, room: 60, now: NOW }, over));
 const blocksOf = (rows) => [...new Set(rows.map((r) => r.block))];
 
 test('the frame is task, clash, notes, foot: a section\'s rail is on its first row alone, and every clash row keeps its own', async () => {
@@ -195,15 +194,6 @@ test('no row is wider than the pane, and CJK counts two', async () => {
             assert.ok(m.width(line(row)) <= cols, cols + ' < ' + m.width(line(row)) + ': ' + line(row));
         }
     }
-});
-
-test('what the context block says survives is what the compact instructions keep', async () => {
-    const { KEPT } = await load();
-    const { instructionsFor } = await compact();
-    assert.deepEqual(KEPT, ['task', 'stage', 'plan', 'agent', 'handoff']);
-    const kept = instructionsFor(ID, { task: 'demo', stage: 'build', class: 'bounded' }, 'F:/plugin');
-    // 'task' is also in the opening sentence, so the line itself is what is looked for.
-    for (const word of KEPT) assert.ok(kept.includes(word === 'task' ? '- task:' : word), word + ' is not in the compact instructions');
 });
 
 test('ledgerDone counts what lib/ledger.js completed() counts, for the plan the ledger names', async () => {
@@ -369,38 +359,21 @@ test('a long task name is cut so its row, tail and all, stays inside the pane', 
 });
 
 const context = { tokens: 212000, at: 450000 };
-// Four fifths of the threshold exactly: the first count the Pane says anything about.
-const close = { tokens: 360000, at: 450000 };
 
-test('under four fifths of the threshold there is no context block; from there it says a compact is close and what one keeps, with no number', async () => {
+test('the Pane draws no context block at any count: the band carries the context', async () => {
     const m = await load();
-    const at = (tokens, limit) => status(m, { context: { tokens, at: limit || 450000 } });
-    assert.deepEqual(text(at(212000), 'context'), []);
-    assert.deepEqual(text(at(359999), 'context'), []);
-    assert.deepEqual(text(at(360000), 'context'), ['▌context  快要自動 compact 了', ' 留 task · stage · plan · agent · handoff']);
-    assert.deepEqual(body(at(360000), 'context'), [
-        [{ text: 'context', color: SECOND, bold: true }, { text: '  快要自動 compact 了', color: SECOND }],
-        [{ text: '留 task · stage · plan · agent · handoff', color: SECOND }],
-    ]);
-    assert.deepEqual(text(at(79999, 100000), 'context'), []);
-    assert.equal(text(at(80000, 100000), 'context').length, 2);
-    // One token short of the threshold the heading has not changed yet.
-    assert.equal(text(at(449999), 'context')[0], '▌context  快要自動 compact 了');
-    assert.deepEqual(body(at(450000), 'context')[0], [{ text: 'context', color: SECOND, bold: true }, { text: '  已到門檻，compact 中', color: '#d7af5f', bold: true }]);
-    assert.deepEqual(text(at(463000), 'context'), ['▌context  已到門檻，compact 中', ' 留 task · stage · plan · agent · handoff']);
-    // The band's ctx meter has the count, the threshold, the bar and the mark: none of them is here.
-    for (const tokens of [360000, 450000, 463000]) assert.doesNotMatch(text(at(tokens), 'context').join('\n'), /\d|█|░|⚠|可用/);
-    assert.deepEqual(text(status(m, { context: null }), 'context'), []);
-    assert.deepEqual(blocksOf(status(m, { others: [other], context: close, plan: planOf(5, []) })), ['task', 'clash', 'tasks', 'context', 'notes', 'foot']);
-    assert.deepEqual(blocksOf(status(m, { others: [other], context, plan: planOf(5, []) })), ['task', 'clash', 'tasks', 'notes', 'foot']);
+    for (const tokens of [212000, 360000, 450000, 463000]) {
+        assert.deepEqual(text(status(m, { context: { tokens, at: 450000 } }), 'context'), []);
+        assert.deepEqual(text(status(m, { context: { tokens, at: Infinity } }), 'context'), []);
+    }
 });
 
 test('every section of the whole Pane carries one rail, its first row\'s, at any width and however the rows are dropped', async () => {
     const m = await load();
-    const whole = (over) => status(m, Object.assign({ entry: busy, others: [other], plan: planOf(13, [1, 2], [13]), context: close, probe: 'surfaces [terminal]' }, over));
+    const whole = (over) => status(m, Object.assign({ entry: busy, others: [other], plan: planOf(13, [1, 2], [13]), probe: 'surfaces [terminal]' }, over));
     const rows = whole({});
-    assert.deepEqual(blocksOf(rows), ['task', 'clash', 'tasks', 'context', 'notes', 'foot']);
-    for (const block of ['task', 'tasks', 'context', 'notes', 'foot']) {
+    assert.deepEqual(blocksOf(rows), ['task', 'clash', 'tasks', 'notes', 'foot']);
+    for (const block of ['task', 'tasks', 'notes', 'foot']) {
         const [head, ...under] = drawn(rows, block);
         assert.deepEqual(head.segs[0], block === 'task' ? { text: '▌' } : { text: '▌', color: RAIL[block] }, block);
         assert.ok(under.length > 0, block + ' is one row: nothing under its rail was looked at');
@@ -422,26 +395,19 @@ test('every section of the whole Pane carries one rail, its first row\'s, at any
     }
 });
 
-test('with no room the blocks go in the order notes, the tasks window; a context block is never given up', async () => {
+test('with no room the blocks go in the order notes, the tasks window', async () => {
     const m = await load();
-    const rows = (room, ctx) => status(m, { others: [other], plan: planOf(5, [1, 2]), context: ctx || close, room });
-    const all = ['task', 'clash', 'tasks', 'context', 'notes', 'foot'];
-    // 25 rows: the task 5, the clash 2, tasks 6, context 2, notes 3, the foot 2, and five blank rows between.
-    assert.equal(rows(60).length, 25);
-    assert.deepEqual(blocksOf(rows(25)), all);
-    assert.deepEqual(blocksOf(rows(24)), ['task', 'clash', 'tasks', 'context', 'foot']);
-    assert.deepEqual(blocksOf(rows(21)), ['task', 'clash', 'tasks', 'context', 'foot']);
-    assert.equal(drawn(rows(21), 'tasks').length, 6);
-    assert.deepEqual(text(rows(20), 'tasks'), ['▌tasks 2 of 5']);
-    assert.deepEqual(blocksOf(rows(-9)), ['task', 'clash', 'tasks', 'context', 'foot']);
-    assert.equal(rows(-9).length, 16);
-    assert.equal(drawn(rows(-9), 'context').length, 2);
-    for (const room of [25, 24, 21, 20, 16])assert.ok(rows(room).length <= room, room + ' < ' + rows(room).length);
-    // Under four fifths there is no context block to keep.
-    assert.equal(rows(60, context).length, 22);
-    assert.deepEqual(blocksOf(rows(-9, context)), ['task', 'clash', 'tasks', 'foot']);
-    assert.equal(rows(-9, context).length, 13);
-    assert.deepEqual(blocksOf(rows(-9, { tokens: 359999, at: 450000 })), ['task', 'clash', 'tasks', 'foot']);
+    const rows = (room) => status(m, { others: [other], plan: planOf(5, [1, 2]), room });
+    const all = ['task', 'clash', 'tasks', 'notes', 'foot'];
+    // 22 rows: the task 5, the clash 2, tasks 6, notes 3, the foot 2, and four blank rows between.
+    assert.equal(rows(60).length, 22);
+    assert.deepEqual(blocksOf(rows(22)), all);
+    assert.deepEqual(blocksOf(rows(21)), ['task', 'clash', 'tasks', 'foot']);
+    assert.equal(drawn(rows(18), 'tasks').length, 6);
+    assert.deepEqual(text(rows(17), 'tasks'), ['▌tasks 2 of 5']);
+    assert.deepEqual(blocksOf(rows(-9)), ['task', 'clash', 'tasks', 'foot']);
+    assert.equal(rows(-9).length, 13);
+    for (const room of [22, 21, 18, 17, 13]) assert.ok(rows(room).length <= room, room + ' < ' + rows(room).length);
 });
 
 test('a block the entry lacks is skipped, not removed in its place: with no notes, tasks or clash in a room too small, the task and the foot stay', async () => {
@@ -464,29 +430,16 @@ test('no row of the whole Pane is wider than it, at any width', async () => {
     }
 });
 
-test('compact.at off measures the block against HARD from four fifths of it, and says no compact will run', async () => {
-    const m = await load();
-    const { HARD } = await compact();
-    const at = (tokens) => status(m, { context: { tokens, at: Infinity } });
-    assert.deepEqual(text(at(HARD * 0.8 - 1), 'context'), []);
-    assert.deepEqual(text(at(HARD * 0.8), 'context'), ['▌context  快到門檻，自動 compact 已關閉', ' 不會自動壓縮；要壓縮請手動 /compact']);
-    assert.deepEqual(body(at(HARD), 'context'), [
-        [{ text: 'context', color: SECOND, bold: true }, { text: '  已到門檻，自動 compact 已關閉', color: '#d7af5f', bold: true }],
-        [{ text: '不會自動壓縮；要壓縮請手動 /compact', color: SECOND }],
-    ]);
-    assert.doesNotMatch(text(at(2000000), 'context').join('\n'), /留 task|compact 中/);
-});
-
-test('the agents block is a tree: the counts, ○ running, ● stopped, └ under its parent, the model and effort on each', async () => {
+test('the agents block is a tree: the counts, ○ running, ● stopped, └ under its parent, the model, effort and tokens on each', async () => {
     const { statusRows } = await load();
-    const kid = { id: 'r1', title: 'Patrol check group C', type: 'fankeel:fankeel-reader', model: 'sonnet 5.5', effort: 'low', at: NOW - 8 * 60000, end: NOW - 2 * 60000, kids: [] };
-    const root = { id: 'b1', title: 'survey stage agent', type: 'fankeel:fankeel-brain', model: 'opus 5.5', effort: 'high', at: NOW - 10 * 60000, end: null, kids: [kid] };
-    const base = { id: ID, entry, others: [], context: null, plan: null, cols: 60, room: 60, now: NOW };
+    const kid = { id: 'r1', title: 'Patrol check group C', type: 'fankeel:fankeel-reader', model: 'sonnet 5.5', effort: 'low', at: NOW - 8 * 60000, end: NOW - 2 * 60000, tokens: null, kids: [] };
+    const root = { id: 'b1', title: 'survey stage agent', type: 'fankeel:fankeel-brain', model: 'opus 5.5', effort: 'high', at: NOW - 10 * 60000, end: null, tokens: 79418, kids: [kid] };
+    const base = { id: ID, entry, others: [], plan: null, cols: 60, room: 60, now: NOW };
     const text = (r) => r.segs.map((s) => s.text).join('');
     const block = statusRows({ ...base, agents: [root] }).filter((r) => r.block === 'agents' && r.segs.length).map(text);
     assert.deepEqual(block, [
         '▌agents  1 在跑 · 1 完成',
-        ' ○ survey stage agent · opus 5.5 · high · 10 分',
+        ' ○ survey stage agent · opus 5.5 · high · 10 分 · 79.4k',
         '  └ ● Patrol check group C · sonnet 5.5 · low · 6 分',
     ]);
     assert.ok(!statusRows(base).some((r) => r.block === 'agents'));
@@ -498,7 +451,7 @@ test('the agents block lists six roots and three under each, and folds the rest'
     const node = (id, kids = []) => ({ id, title: id, type: '', model: 'sonnet 5.5', effort: 'medium', at: NOW - 60000, end: null, kids });
     const roots = [node('a', ['k1', 'k2', 'k3', 'k4', 'k5'].map((k) => node(k))), ...['b', 'c', 'd', 'e', 'f', 'g', 'h'].map((id) => node(id))];
     const text = (r) => r.segs.map((s) => s.text).join('');
-    const block = statusRows({ id: ID, entry, others: [], context: null, plan: null, cols: 60, room: 80, now: NOW, agents: roots }).filter((r) => r.block === 'agents' && r.segs.length).map(text);
+    const block = statusRows({ id: ID, entry, others: [], plan: null, cols: 60, room: 80, now: NOW, agents: roots }).filter((r) => r.block === 'agents' && r.segs.length).map(text);
     assert.equal(block.filter((t) => / ○ [a-h] /.test(t)).length, 6);
     assert.equal(block.filter((t) => /├|└ ○/.test(t)).length, 3);
     assert.ok(block.includes('  └ 還有 2 個'));
