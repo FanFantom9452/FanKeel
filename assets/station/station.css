@@ -100,9 +100,6 @@ button{font:inherit;color:inherit}
   padding:11px 32px;background:var(--stale-bg);color:var(--stale-ink);border-left:3px solid var(--stale)}
 .dead b{display:inline-flex;align-items:center;gap:6px;font-weight:600}
 .dead code{font:11px/1.5 var(--mono);user-select:all;margin-left:auto}
-.crumbs a{text-decoration:none;color:var(--ink2)} .crumbs a:hover{color:var(--ink);text-decoration:underline}
-.crumbs i{font-style:normal;color:var(--faint)}
-.crumbs .cur{color:var(--ink);overflow:hidden;text-overflow:ellipsis}
 
 .page{max-width:1440px;margin:0 auto;padding:0 32px 72px}
 .panel{background:var(--panel);border-radius:var(--r);padding:22px 26px;margin-bottom:14px}
@@ -1703,9 +1700,6 @@ a.td-rf:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-rad
 :root[data-style=keel] .brand{gap:10px;align-items:center}
 :root[data-style=keel] .brand .glyph{width:34px;height:34px;display:block;flex:none}
 :root[data-style=keel] .brand b{font-weight:700;font-size:27px;letter-spacing:-.03em;line-height:1}
-:root[data-style=keel] .brand #brandw{display:flex;align-items:center;height:28px;margin-left:6px;padding-left:14px;border-left:1.2px solid var(--rule2);
-  font:700 13px var(--f-mono);color:var(--muted);letter-spacing:0}
-:root[data-style=keel] .crumbs .cur{font-size:18px;font-weight:700;color:var(--ink);text-decoration:underline 2.4px var(--keel);text-underline-offset:7px}
 :root[data-style=keel] .mast .search{background:var(--panel);box-shadow:var(--lift),inset 0 0 0 1px var(--rule);height:36px;border-radius:8px}
 :root[data-style=keel] .mast{padding-left:32px;gap:8px}
 :root[data-style=keel] .mast .brand{width:204px;flex:none;margin-right:12px;justify-content:center}

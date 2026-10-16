@@ -49,7 +49,7 @@ function boot(hash, profiles) {
     const fallback = Object.assign(el(), { parentNode: { insertBefore() {} }, nextSibling: null, click() {}, getBoundingClientRect: () => ({ left: 0, top: 0, width: 0, height: 0 }) });
     const doc = { hidden: false, documentElement: el('html'), body: el('body'), title: '', getElementById: (id) => els[id] || (els[id] = el()),
         addEventListener(type, fn) { (listeners[type] = listeners[type] || []).push(fn); }, createElement: el, querySelectorAll: () => [],
-        querySelector(sel) { asked.push(sel); return sel in named ? named[sel] : fallback; }, head: { appendChild() {} } };
+        querySelector(sel) { asked.push(sel); return sel in named ? named[sel] : sel === 'dialog[open]' ? null : fallback; }, head: { appendChild() {} } };
     const box = { window: win, document: doc, URLSearchParams, fetch: () => Promise.resolve({ ok: true }), module: { exports: {} } };
     vm.runInNewContext(SRC, box);
     asked.length = 0;

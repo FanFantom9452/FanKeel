@@ -6116,6 +6116,8 @@
     doc.addEventListener('keydown', function (e) {
         if (!/^[1-4]$/.test(e.key) || e.altKey || e.ctrlKey || e.metaKey) return;
         var t = e.target;
+        // A modal (the TODO quick look, the card library) owns the keys: the gate behind it is inert.
+        if (doc.querySelector && doc.querySelector('dialog[open]')) return;
         if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT')) return;
         var b = doc.querySelector && doc.querySelector('#fk .gc [data-gop="' + (Number(e.key) - 1) + '"]');
         if (b) { e.preventDefault(); b.click(); }
