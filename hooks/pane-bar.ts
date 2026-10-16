@@ -149,14 +149,20 @@ export function resetMs(limit: Limit): number | null {
 }
 
 const WEEK = 7 * 24 * 3600 * 1000
+export const FIVE_HOURS = 5 * 3600 * 1000
+
+// The share of a `span`-long window already gone by, 0 to 1, or null with no `resetsAt`.
+export function elapsed(limit: Limit, now: number, span: number): number | null {
+  const reset = resetMs(limit)
+  return reset === null ? null : Math.max(0, Math.min(1, 1 - (reset - now) / span))
+}
 
 // Percent used less the share of the seven days already gone by, in whole
 // points, rounded half away from zero as TokenBar does. Null with no `resetsAt`.
 export function deviation(limit: Limit, now: number): number | null {
-  const reset = resetMs(limit)
-  if (reset === null) return null
-  const elapsed = Math.max(0, Math.min(1, 1 - (reset - now) / WEEK))
-  const raw = limit.percentUsed - elapsed * 100
+  const gone = elapsed(limit, now, WEEK)
+  if (gone === null) return null
+  const raw = limit.percentUsed - gone * 100
   // `|| 0`: never -0.
   return (raw >= 0 ? Math.floor(raw + 0.5) : Math.ceil(raw - 0.5)) || 0
 }

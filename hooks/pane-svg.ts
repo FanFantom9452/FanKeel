@@ -6,7 +6,7 @@
 
 import { TODO, GUARD, CONNECTED, FLAG, WHERE, CLASH, INK, stageColor, since, clashes, claimsOf } from './pane-band.ts'
 import type { BandInput } from './pane-band.ts'
-import { str, list, kilo, cut, ctxPaint, ctxWindowPaint, fivePaint, weekPaint, deviation, limitOf, signed, minutes, secondsLeft, DIM } from './pane-bar.ts'
+import { str, list, kilo, cut, ctxPaint, ctxWindowPaint, fivePaint, weekPaint, deviation, elapsed, FIVE_HOURS, limitOf, signed, minutes, secondsLeft, DIM } from './pane-bar.ts'
 import { ago, DONE, OUT } from './pane-status.ts'
 import type { Entry, Other, PlanInfo, Row, StatusInput } from './pane-status.ts'
 
@@ -211,7 +211,10 @@ export function bandRow2Svg(input: BandInput): string {
   if (five) {
     const paint = fivePaint(five.percentUsed)
     open('5h')
-    b += well(x, five.percentUsed / 100, paint.color)
+    // The even pace: the share of the five hours gone by, the same thin grey tick as 7d.
+    const gone = elapsed(five, now, FIVE_HOURS)
+    const pace = gone === null ? '' : `<rect x="${r1(x + 1 + gone * (WELL - 2) - 0.75)}" y="3" width="1.5" height="16" fill="${WHERE}"/>`
+    b += well(x, five.percentUsed / 100, paint.color, pace)
     x += WELL + 6
     after(`${Math.round(five.percentUsed)}%`, { bold: true })
     if (paint.mark) after(paint.mark, { fill: paint.color, bold: true }, 6)

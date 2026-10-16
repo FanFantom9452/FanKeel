@@ -613,7 +613,7 @@ test('the engine\'s rate limits are bars on the band and no reset time in the Pa
     const pane = async () => paneLines(await hooks['ui.render']($, { viewport: { columns: 44, rows: 60 } }));
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
-    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ███░│░░░░░ 312k/1M  │  5h ██████▌░░░  66%  │  7d █████▊░░░░  58%  -6%');
+    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ███░│░░░░░ 312k/1M  │  5h ██████│░░░  66%  │  7d █████▊░░░░  58%  -6%');
     assert.doesNotMatch((await pane()).join('\n'), /█|░|%|剩|↻|重置|用量額度/);
     const after = log.invalidated;
     limits[0] = Object.assign({}, limits[0], { percentUsed: 67 });
@@ -622,7 +622,7 @@ test('the engine\'s rate limits are bars on the band and no reset time in the Pa
     // A window with no reset is still a bar on the band.
     limits[1] = { kind: 'seven_day', percentUsed: 58 };
     await log.ticks[0].fn();
-    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ███░│░░░░░ 312k/1M  │  5h ██████▋░░░  67%  │  7d █████▊░░░░  58%');
+    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ███░│░░░░░ 312k/1M  │  5h ██████│░░░  67%  │  7d █████▊░░░░  58%');
     // An engine that reports no limits at all: the band is ctx alone.
     $.session.usage = async () => ({ startedAt: 0, context: { tokens: log.tokens } });
     await log.ticks[0].fn();

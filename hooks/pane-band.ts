@@ -4,7 +4,7 @@
 // tests/pane-band.test.js runs it under plain node.
 // docs/90-agent/plans/2026-10-12-pane-band-design.md sections 1 and 2.
 
-import { str, list, width, bar, markedBar, ctxPaint, ctxWindowPaint, fivePaint, weekPaint, deviation, limitOf, pct, kilo, signed, minutes, secondsLeft, DIM } from './pane-bar.ts'
+import { str, list, width, bar, markedBar, ctxPaint, ctxWindowPaint, fivePaint, weekPaint, deviation, elapsed, FIVE_HOURS, limitOf, pct, kilo, signed, minutes, secondsLeft, DIM } from './pane-bar.ts'
 import type { Context, Limit, Paint } from './pane-bar.ts'
 
 // `gap` is the cells of space before the segment; without one it sits against the last.
@@ -188,7 +188,15 @@ export function bandRows(input: BandInput): Seg[][] | null {
     if (five && shape.five) {
       const paint = fivePaint(five.percentUsed)
       open('5h ')
-      draw(five.percentUsed, 100, paint)
+      // The even pace: a `│` at the share of the five hours gone by, as on the 7d meter of TokenBar.
+      const gone = elapsed(five, now, FIVE_HOURS)
+      if (gone === null) draw(five.percentUsed, 100, paint)
+      else {
+        for (const p of markedBar(five.percentUsed, 100, shape.cells, gone * 100)) {
+          if (p.kind === 'fill') row.push(inked(p.text, paint))
+          else row.push({ text: p.text, color: p.kind === 'mark' ? WHERE : DIM })
+        }
+      }
       row.push(inked(pct(five.percentUsed), paint, 1))
       if (paint.mark) row.push(inked(paint.mark, paint, 1))
     }

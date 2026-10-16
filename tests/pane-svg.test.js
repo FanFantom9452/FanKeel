@@ -95,6 +95,8 @@ test('the band\'s second row draws ctx, 5h and 7d as meters, the compact point i
     // The compact point: a grey line taller than the well, at 450k of 1M.
     assert.match(source, /<rect x="[\d.]+" y="2" width="2" height="18" rx="1" fill="#8a8a8a"\/>/);
     assert.match(source, /<rect x="[\d.]+" y="3" width="1\.5" height="16" fill="#8a8a8a"\/>/);
+    // The pace tick sits in both 5h and 7d: two of them.
+    assert.equal(source.match(/<rect x="[\d.]+" y="3" width="1\.5" height="16" fill="#8a8a8a"\/>/g).length, 2);
 });
 
 test('compact.at off leaves no compact point; with no window it is the count alone; with nothing to draw there is no row', async () => {

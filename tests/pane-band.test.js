@@ -162,7 +162,8 @@ test('the second row is ctx, 5h and 7d as bars, parted by a bar of their own', a
         { text: '/450k', color: '#8a8a8a' },
         { text: '│', color: '#585858', gap: 2 },
         { text: '5h ', color: '#585858', gap: 2 },
-        { text: '██████▌', color: '#ffd700' },
+        { text: '██████', color: '#ffd700' },
+        { text: '│', color: '#8a8a8a' },
         { text: '░░░', color: '#585858' },
         { text: ' 66%', color: '#ffd700', gap: 1 },
         { text: '│', color: '#585858', gap: 2 },
@@ -172,7 +173,7 @@ test('the second row is ctx, 5h and 7d as bars, parted by a bar of their own', a
         { text: ' 58%', color: '#87ff87', gap: 1 },
         { text: '-6%', color: '#87ff87', gap: 2 },
     ]);
-    assert.equal(line(row), '▌ctx ████▋░░░░░ 212k/450k  │  5h ██████▌░░░  66%  │  7d █████▊░░░░  58%  -6%');
+    assert.equal(line(row), '▌ctx ████▋░░░░░ 212k/450k  │  5h ██████│░░░  66%  │  7d █████▊░░░░  58%  -6%');
     assert.equal(width(line(row)), 76);
 });
 
@@ -180,10 +181,10 @@ test('the second row draws no reset countdown at any width: a reset is read in t
     const m = await load();
     const { width } = await at('pane-bar.ts');
     const row = (cols) => line(band(m, { cols })[1]);
-    const wide = '▌ctx ████▋░░░░░ 212k/450k  │  5h ██████▌░░░  66%  │  7d █████▊░░░░  58%  -6%';
+    const wide = '▌ctx ████▋░░░░░ 212k/450k  │  5h ██████│░░░  66%  │  7d █████▊░░░░  58%  -6%';
     assert.equal(width(wide), 76);
     for (const cols of [200, 100, 99, 86, 80, 76]) assert.equal(row(cols), wide, 'at ' + cols);
-    assert.equal(row(75), '▌ctx ████▋░░░░░ 212k/450k │ 5h ██████▌░░░  66% │ 7d █████▊░░░░  58%  -6%');
+    assert.equal(row(75), '▌ctx ████▋░░░░░ 212k/450k │ 5h ██████│░░░  66% │ 7d █████▊░░░░  58%  -6%');
     for (const cols of [200, 100, 80, 50, 20]) {
         for (const over of [{}, { context: null }, { limits: [five] }, { gateUntil: NOW + 44500 }, { others: [other, second] }]) {
             assert.doesNotMatch(band(m, Object.assign({ cols }, over)).map(line).join('\n'), /↻/, 'at ' + cols);
@@ -194,8 +195,8 @@ test('the second row draws no reset countdown at any width: a reset is read in t
 test('with no rate limits the second row is ctx alone; with nothing to draw there is one row', async () => {
     const m = await load();
     assert.deepEqual(band(m, { limits: [] }).map(line)[1], '▌ctx ████▋░░░░░ 212k/450k');
-    assert.equal(band(m, { limits: [five] }).map(line)[1], '▌ctx ████▋░░░░░ 212k/450k  │  5h ██████▌░░░  66%');
-    assert.equal(band(m, { context: null }).map(line)[1], '▌5h ██████▌░░░  66%  │  7d █████▊░░░░  58%  -6%');
+    assert.equal(band(m, { limits: [five] }).map(line)[1], '▌ctx ████▋░░░░░ 212k/450k  │  5h ██████│░░░  66%');
+    assert.equal(band(m, { context: null }).map(line)[1], '▌5h ██████│░░░  66%  │  7d █████▊░░░░  58%  -6%');
     assert.equal(band(m, { context: null, limits: [] }).length, 1);
     assert.deepEqual(band(m, { context: null, limits: [], others: [other] }).map(line)[1], '▌  ⚑1');
 });
@@ -217,11 +218,11 @@ test('a second row that does not fit closes up, shortens its bars, then drops 7d
     const m = await load();
     const { width } = await at('pane-bar.ts');
     const row = (cols) => line(band(m, { context: hot, others: [other, second], cols })[1]);
-    assert.equal(row(80), '▌ctx █████████▌ 432k/450k ⚠ │ 5h ██████▌░░░  66% │ 7d █████▊░░░░  58%  -6%  ⚑2');
+    assert.equal(row(80), '▌ctx █████████▌ 432k/450k ⚠ │ 5h ██████│░░░  66% │ 7d █████▊░░░░  58%  -6%  ⚑2');
     assert.equal(width(row(80)), 78);
-    assert.equal(row(70), '▌ctx ██████▋ 432k/450k ⚠ │ 5h ████▌░░  66% │ 7d ████░░░  58%  -6%  ⚑2');
+    assert.equal(row(70), '▌ctx ██████▋ 432k/450k ⚠ │ 5h ████│░░  66% │ 7d ████░░░  58%  -6%  ⚑2');
     assert.equal(width(row(70)), 69);
-    assert.equal(row(50), '▌ctx ████████▋ 432k/450k ⚠ │ 5h █████▉░░░  66%  ⚑2');
+    assert.equal(row(50), '▌ctx ████████▋ 432k/450k ⚠ │ 5h █████│░░░  66%  ⚑2');
     assert.equal(width(row(50)), 50);
     assert.equal(row(20), '▌ctx ████▊ 432k/450k ⚠  ⚑2');
     const segs = band(m, { context: hot, cols: 80 })[1];
@@ -242,7 +243,7 @@ test('the 7d meter is coloured and marked by its deviation, the 5h one by percen
     assert.deepEqual(tail({ limits: [five, weekOf(79)] }, 2), [{ text: '+15%', color: '#ff00ff', bold: true, gap: 2 }, { text: '💀', color: '#ff00ff', bold: true, gap: 1 }]);
     assert.deepEqual(tail({ limits: [five, weekOf(58, null)] }, 3), [{ text: '█████▊', color: '#d7ff00' }, { text: '░░░░', color: '#585858' }, { text: ' 58%', color: '#d7ff00', gap: 1 }]);
     const full = { kind: 'five_hour', percentUsed: 96, resetsAt: new Date(NOW + 12 * 60000).toISOString() };
-    assert.equal(line(band(m, { limits: [full], context: null, cols: 120 })[1]), '▌5h █████████▌  96% ⚠');
+    assert.equal(line(band(m, { limits: [full], context: null, cols: 120 })[1]), '▌5h █████████│  96% ⚠');
     assert.deepEqual(tail({ limits: [full], context: null }, 2), [{ text: ' 96%', color: '#ff00ff', bold: true, gap: 1 }, { text: '⚠', color: '#ff00ff', bold: true, gap: 1 }]);
 });
 
@@ -275,7 +276,7 @@ test('with no compact threshold the band draws the count alone', async () => {
     const row = band(m, { context: open, limits: [] })[1];
     assert.equal(line(row), '▌ctx 212k');
     assert.deepEqual(row[2], { text: '212k', color: '#00ff00' });
-    assert.equal(band(m, { context: open, limits: [five] }).map(line)[1], '▌ctx 212k  │  5h ██████▌░░░  66%');
+    assert.equal(band(m, { context: open, limits: [five] }).map(line)[1], '▌ctx 212k  │  5h ██████│░░░  66%');
 });
 
 // The ctx bar is measured against the model's context window; the white line is the compact threshold.
@@ -283,7 +284,7 @@ test('with a window the ctx bar is tokens over window and a white line marks the
     const m = await load();
     const sized = (tokens, over) => band(m, Object.assign({ context: { tokens, at: 450000, window: 1000000 } }, over));
     const row = sized(212000)[1];
-    assert.equal(line(row), '▌ctx ██░░│░░░░░ 212k/1M  │  5h ██████▌░░░  66%  │  7d █████▊░░░░  58%  -6%');
+    assert.equal(line(row), '▌ctx ██░░│░░░░░ 212k/1M  │  5h ██████│░░░  66%  │  7d █████▊░░░░  58%  -6%');
     assert.deepEqual(row.slice(1, 8), [
         { text: 'ctx ', color: '#585858' },
         { text: '██', color: '#d7ffd7' },
@@ -352,4 +353,12 @@ test('a narrow first row drops 遠端 before 本站, 等你 and tasks', async ()
     assert.ok(gated.endsWith('  遠端 ✓'));
     assert.equal(line(band(m, { cols: 65, remote: false })[0]), '▌FANKEEL BUILD  ●●●●○○○  tasks 4/5  本站 38 分  等你 2 分  遠端 ✗');
     assert.equal(line(band(m, { cols: 64, remote: false })[0]), '▌FANKEEL BUILD  ●●●●○○○  tasks 4/5  本站 38 分  等你 2 分');
+});
+
+test('the 5h meter carries a grey │ at the share of the five hours gone by, as 7d does in TokenBar', async () => {
+    const m = await load();
+    const early = { kind: 'five_hour', percentUsed: 66, resetsAt: new Date(NOW + 255 * 60000).toISOString() };
+    assert.equal(line(band(m, { limits: [early], context: null })[1]), '▌5h █│████▌░░░  66%');
+    const bare = { kind: 'five_hour', percentUsed: 66 };
+    assert.equal(line(band(m, { limits: [bare], context: null })[1]), '▌5h ██████▌░░░  66%', 'no resetsAt, no mark');
 });
