@@ -479,12 +479,13 @@ test('dashRecent marks a session\'s cost 估', () => {
     none(boot('#/', PLAIN).x.dashRecent(PLAIN));
 });
 
-test('the dashboard caption marks today\'s cost 估', () => {
+test('the dashboard\'s spend card marks today\'s cost 估', () => {
     const p = boot('#/', EST);
     p.x.dashPage();
     const cap = (R, sessions) => boot('#/', sessions).x.dashPage();
-    assert.match(cap(EST, EST), /今天<b>\$4\.00 估<\/b>|今天<b>\$4\.00 估/);
-    none(cap(PLAIN, PLAIN).match(/<p class="kcap">[\s\S]*?<\/p>/)[0]);
+    const kv = (html) => html.match(/<div class="dkv">[\s\S]*?<\/div>/)[0];
+    assert.match(kv(cap(EST, EST)), /今天 <b>\$4\.00 估<\/b>/);
+    none(kv(cap(PLAIN, PLAIN)));
 });
 
 test('the session list row marks the cost 估 from the session\'s estimated ids, the plain row not', () => {

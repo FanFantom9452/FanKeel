@@ -30,7 +30,7 @@ test('the masthead carries the film glyph and the appearance group, and no class
 test('every keel rule is scoped, and no rule is left for a part only the classic look had', () => {
     assert.match(css, /^:root\[data-style=keel\]\{/m);
     assert.doesNotMatch(css, /:root:not\(\[data-style=keel\]\)|\.c-only|\.styletog|\.navfoot|\.classic-mark|\.td-more|\.td-done \.td-grp/);
-    assert.match(css, /\.td-mb\[aria-expanded="true"\] \.ico,\.dch-b\[data-dchmv="-1"\] \.ico\{transform:rotate\(180deg\)\}/);
+    assert.match(css, /\.td-mb\[aria-expanded="true"\] \.ico\{transform:rotate\(180deg\)\}/);
     assert.doesNotMatch(css, /^\.mk\{|\.mk-/m, 'the mockup-only label rules stay out');
     const before = css.slice(0, css.indexOf('/* ==== keel:'));
     assert.ok(before.length > 1000, 'the keel block was not found');

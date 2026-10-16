@@ -1448,7 +1448,7 @@ test('dashRecent lists exactly 5 rows out of more than 5 eligible ones, newest f
 // tests above already cover directly off explicit rows.
 test('dashPage assembles all four cards in dashLive, dashGate, dashSpend, dashRecent order', () => {
     const html = DASH.dashPage();
-    assert.match(html, /<h1>.*儀表板<\/h1>/);
+    assert.match(html, /^<div class="dash kdash" data-block="dashboard">/, 'no head row above the grid');
     for (const key of ['dash-live', 'waiting-card', 'dash-spend', 'dash-recent']) {
         assert.match(html, new RegExp('data-block="' + key + '"'));
     }
@@ -1684,13 +1684,12 @@ test('quota share stays off the projects table cost cell and the tune-table cost
     } finally { S.profiles = undefined; }
 });
 
-test('quota share stays off the keel header caption and the sessions list cost cell', () => {
+test('the spend card says today\'s cost, and quota share stays off the sessions list cost cell', () => {
     const d = mkDash([Object.assign({}, HOME[0], { id: 'cap-1', state: 'down' })]);
     d.S.profiles = { machine: { values: { 'quota.week': 20 } }, projects: {} };
-    const cap = d.x.dashPage().match(/<p class="kcap">[\s\S]*?<\/p>/)[0].match(/<span>今天<b>[^<]*<\/b><\/span>/);
-    assert.ok(cap, 'the today caption is there');
-    assert.match(cap[0], /<b>\$[\d.]+<\/b>/);
-    assert.doesNotMatch(cap[0], /%\)/);
+    const cap = d.x.dashPage().match(/<div class="dkv">[\s\S]*?<\/div>/)[0].match(/<span>今天 <b>[^<]*<\/b><\/span>/);
+    assert.ok(cap, 'the today figure is there');
+    assert.match(cap[0], /<b>\$[\d.]+/);
     assert.equal(typeof V.drawList, 'function'); // tests/source.test.js counts an export as used only through V.<name>
     try {
         d.x.drawList();

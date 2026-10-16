@@ -1,6 +1,6 @@
 'use strict';
-// The dashboard's TODO card and card chooser (mockup blocks dash-todo and
-// dash-chooser, docs/90-agent/plans/2026-10-01-todo-sweep.md Task 5).
+// The dashboard's TODO card (docs/90-agent/plans/2026-10-01-todo-sweep.md
+// Task 5) and its in-grid edit mode (2026-10-16-station-dashboard Task 4).
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -41,6 +41,29 @@ function page(kept) {
     vm.runInNewContext(SRC, box);
     return box.module.exports;
 }
+
+test('the dashboard has no chooser and no head row; editing lives in the grid', () => {
+    const V2 = page({});
+    const html = V2.dashPage({ view: 'now' });
+    assert.doesNotMatch(html, /data-block="dash-chooser"/);
+    assert.doesNotMatch(html, /data-block="dash-head"/);
+    assert.doesNotMatch(html, /class="kcap"/);
+    assert.match(html, /<div class="dash kdash" data-block="dashboard">[\s\S]*id="dchtog"/);
+});
+
+test('every card kind has a builder and the default five are on', () => {
+    const V2 = page({});
+    const kinds = V2.dashKinds();
+    for (const id of ['dash-live', 'waiting-card', 'dash-todo', 'dash-spend', 'dash-recent']) {
+        assert.equal(typeof kinds[id].render, 'function', id);
+        assert.equal(V2.dashOrder(null).find((c) => c.id === id).on, true, id);
+    }
+});
+
+test('a hidden card is still stored as off in station.dash', () => {
+    const kept = { 'station.dash': JSON.stringify({ order: ['dash-live', 'waiting-card', 'dash-todo', 'dash-spend', 'dash-recent'], off: ['dash-recent'] }) };
+    assert.doesNotMatch(page(kept).dashPage({ view: 'now' }), /data-block="dash-recent"/);
+});
 
 test('dash-todo counts every ready entry across the projects, one row per project with any, most first', () => {
     const html = V.dashTodo([PROJECTS[1], PROJECTS[0], PROJECTS[2]]);
@@ -88,26 +111,12 @@ test('dashOrder keeps a stored order, drops unknown ids, appends missing ones, a
     assert.deepEqual(got.filter((c) => !c.on).map((c) => c.id), ['dash-spend']);
 });
 
-test('the chooser lists the five cards, disables the ends, and offers 還原預設 only off the default', () => {
-    const def = V.dashChooserHtml(V.dashOrder(null));
-    assert.match(def, /data-block="dash-chooser"/);
-    assert.equal(count(def, /class="dch-row"/g), 5);
-    assert.match(def, /data-dchmv="-1" data-card="dash-live"[^>]*disabled/);
-    assert.match(def, /data-dchmv="1" data-card="dash-recent"[^>]*disabled/);
-    assert.match(def, /data-dchreset="1" disabled/);
-    assert.match(def, /目前是預設/);
-    const moved = V.dashChooserHtml(V.dashOrder(JSON.stringify({ order: ['dash-todo'], off: ['dash-recent'] })));
-    assert.doesNotMatch(moved, /data-dchreset="1" disabled/);
-    assert.match(moved, /跟預設不同/);
-    assert.match(moved, /<input type="checkbox" data-dchshow="dash-recent"/);
-    assert.match(moved, /<input type="checkbox" checked data-dchshow="dash-todo"/);
-});
-
-test('dashPage draws the cards in the stored order, leaves a switched-off card out, and offers 調整卡片', () => {
+test('dashPage draws the cards in the stored order, leaves a switched-off card out, and offers 編輯版面', () => {
     const X = page({ 'station.dash': JSON.stringify({ order: ['dash-todo', 'dash-recent'], off: ['dash-spend'] }) });
     const html = X.dashPage();
     assert.match(html, /id="dchtog"/);
-    assert.doesNotMatch(html, /data-block="dash-chooser"/, 'the chooser opens on a press');
+    assert.doesNotMatch(html, /data-block="dash-edit"/, 'edit mode opens on a press');
+    assert.doesNotMatch(html, /data-dhide=|data-dmv=/);
     assert.doesNotMatch(html, /data-block="dash-spend"/);
     const at = (k) => html.indexOf('data-block="' + k + '"');
     assert.ok(at('dash-recent') < at('dash-live'), 'the wide column keeps the stored order');
@@ -115,27 +124,27 @@ test('dashPage draws the cards in the stored order, leaves a switched-off card o
     assert.match(html, /<div class="dbig">5<small>/, 'the TODO card reads S.projects');
 });
 
-test('dash-head reads the rows the cards read: its Ready is the TODO card\'s, and the cards sit in two columns', () => {
-    const X = page({});
-    const html = X.dashPage();
-    const head = html.slice(html.indexOf('data-block="dash-head"'), html.indexOf('data-block="dashboard"'));
-    const ready = PROJECTS.reduce((n, p) => n + p.todos.reduce((m, t) => m + t.open.filter((x) => x.state === 'ready').length, 0), 0);
-    assert.match(head, new RegExp('<span><b>' + ready + '</b>筆 Ready 可以開工</span>'));
-    const card = html.slice(html.indexOf('data-block="dash-todo"'));
-    const rows = [...card.matchAll(/<span class="tn">(\d+)<\/span>/g)].reduce((n, m) => n + Number(m[1]), 0);
-    assert.equal(rows, ready, 'the head and the card rows agree');
-    assert.match(head, /<span><b>0<\/b>個 live session<\/span><span class="ok">沒有 gate 在等你<\/span>/);
-    assert.match(head, /id="dchtog"/);
+test('the cards sit in two columns, and 編輯版面 is the narrow one\'s last slot', () => {
+    const html = page({}).dashPage();
     assert.match(html, /<div class="dash kdash" data-block="dashboard"><div class="dcol" data-col="main">/);
     const side = html.slice(html.indexOf('data-col="side"'));
     assert.ok(side.includes('data-block="waiting-card"') && side.includes('data-block="dash-todo"'), 'the narrow column holds what waits');
     assert.ok(!side.includes('data-block="dash-live"') && !side.includes('data-block="dash-spend"'), 'and only that');
+    assert.match(side, /<button type="button" class="btn dslot" id="dchtog" data-dchtog="1"[^>]*>[\s\S]*編輯版面[\s\S]*<\/button><\/div><\/div>$/);
+});
+
+test('dashOrder appends a kind the stored order lacks: on if it is a default card, off if not', () => {
+    const kinds = page({}).dashKinds();
+    assert.ok(Object.values(kinds).every((k) => typeof k.name === 'string' && typeof k.hint === 'string' && typeof k.side === 'boolean'));
+    assert.deepEqual(Object.keys(kinds).filter((id) => kinds[id].side), ['waiting-card', 'dash-todo']);
+    const got = page({}).dashOrder(JSON.stringify({ order: ['dash-recent'], off: [] }));
+    assert.ok(got.every((c) => c.on), 'the default five come back on');
 });
 
 // station.js booted as page() does, but with the document's listeners kept,
-// so a test can press the chooser and read what the page then draws and what
-// it stored.
-function chooser(kept) {
+// so a test can press the edit mode's buttons and read what the page then
+// draws and what it stored.
+function editor(kept) {
     const listeners = {};
     const els = {};
     let writes = 0;
@@ -160,226 +169,178 @@ function chooser(kept) {
             projects: PROJECTS.map((p) => Object.assign({ gone: false, unreadable: 0, build: [], mapAt: null }, p)),
             profiles: { machine: { values: {}, sources: {}, unreadable: [] }, projects: {} }, profileKeys: {}, classes: {}, sessions: [] } };
     vm.runInNewContext(SRC, { window: win, document: doc, URLSearchParams, fetch: () => Promise.resolve({ ok: true }), module: { exports: {} } });
-    const fire = (type, target) => { for (const fn of listeners[type] || []) fn({ target, preventDefault() {}, stopPropagation() {} }); };
+    const fire = (type, target, more) => { for (const fn of listeners[type] || []) fn(Object.assign({ target, preventDefault() {}, stopPropagation() {} }, more)); };
     // A pressed button: `closest` answers only for a selector that names one of its attributes.
     const press = (attrs) => fire('click', { getAttribute: (k) => (k in attrs ? attrs[k] : null), hasAttribute: (k) => k in attrs,
         closest(sel) { return Object.keys(attrs).some((k) => sel.includes('[' + k + ']')) ? this : null; } });
-    const tick = (id, checked) => fire('change', { checked, getAttribute: (k) => (k === 'data-dchshow' ? id : null) });
-    return { press, tick, fire, page: () => els.page.innerHTML, draws: () => writes };
+    // Something inside the card `id`, 100px tall from y 0: a key pressed on it, or a drag over it.
+    const inCard = (id) => ({ closest: (sel) => (sel === '[data-dcard]' ? { getAttribute: () => id, getBoundingClientRect: () => ({ top: 0, height: 100 }), classList: { add() {}, remove() {} } }
+        : sel.includes('dashboard') ? {} : null) });
+    const key = (k, id, alt) => fire('keydown', inCard(id), { key: k, altKey: !!alt });
+    const drag = (from, onto, y) => { fire('dragstart', inCard(from)); fire('drop', inCard(onto), { clientY: y }); };
+    return { press, key, drag, fire, page: () => els.page.innerHTML, draws: () => writes };
 }
-
-test('pressing 調整卡片 opens the chooser and pressing it again, or 完成, shuts it', () => {
-    const c = chooser({});
-    assert.doesNotMatch(c.page(), /data-block="dash-chooser"/);
-    c.press({ 'data-dchtog': '1' });
-    assert.match(c.page(), /data-block="dash-chooser"/);
-    c.press({ 'data-dchtog': '1' });
-    assert.doesNotMatch(c.page(), /data-block="dash-chooser"/);
-    c.press({ 'data-dchtog': '1' });
-    c.press({ 'data-dchdone': '1' });
-    assert.doesNotMatch(c.page(), /data-block="dash-chooser"/);
-});
-
-test('moving a card stores its order as station.dash, moving it back stores no key, and 還原預設 clears it', () => {
-    const kept = {};
-    const c = chooser(kept);
-    c.press({ 'data-dchmv': '1', 'data-card': 'dash-live' });
-    assert.equal(kept['station.dash'], '{"order":["waiting-card","dash-live","dash-todo","dash-spend","dash-recent"],"off":[]}');
-    c.press({ 'data-dchmv': '-1', 'data-card': 'dash-live' });
-    assert.equal('station.dash' in kept, false, 'the default order is stored as no key');
-    c.press({ 'data-dchmv': '-1', 'data-card': 'dash-live' });
-    assert.equal('station.dash' in kept, false, 'a move off the top edge changes nothing');
-    c.press({ 'data-dchmv': '1', 'data-card': 'dash-recent' });
-    assert.equal('station.dash' in kept, false, 'a move off the bottom edge changes nothing');
-    c.press({ 'data-dchmv': '1', 'data-card': 'nope' });
-    assert.equal('station.dash' in kept, false, 'an unknown card id stores nothing');
-    c.press({ 'data-dchmv': '1', 'data-card': 'dash-live' });
-    assert.ok('station.dash' in kept);
-    const before = kept['station.dash'];
-    c.press({ 'data-dchmv': '1', 'data-card': 'dash-spend' });
-    const mid = kept['station.dash'];
-    assert.notEqual(mid, before, 'a move from a middle slot of a stored order changes it');
-    c.press({ 'data-dchmv': '1', 'data-card': 'dash-spend' });
-    assert.equal(kept['station.dash'], mid, 'a move off the bottom edge of a stored order leaves it byte for byte');
-    c.press({ 'data-dchmv': '-1', 'data-card': 'waiting-card' });
-    assert.equal(kept['station.dash'], mid, 'waiting-card is first in the stored order, so a move up leaves it byte for byte');
-    c.press({ 'data-dchmv': '1', 'data-card': 'nope' });
-    assert.equal(kept['station.dash'], mid, 'an unknown card id changes nothing in a stored order');
-    c.press({ 'data-dchreset': '1' });
-    assert.equal('station.dash' in kept, false);
-});
-
-test('ticking a card off stores it in off and the page leaves it out, ticking it on stores no key again', () => {
-    const kept = {};
-    const c = chooser(kept);
-    const drawn = /<div class="dash kdash" data-block="dashboard">[\s\S]*data-block="dash-spend"/;
-    assert.match(c.page(), drawn, 'dash-spend is drawn while it is on');
-    c.tick('dash-spend', false);
-    assert.equal(kept['station.dash'], '{"order":["dash-live","waiting-card","dash-todo","dash-spend","dash-recent"],"off":["dash-spend"]}');
-    assert.doesNotMatch(c.page(), drawn);
-    c.tick('dash-spend', true);
-    assert.equal('station.dash' in kept, false);
-});
-
-test('完成 alone shuts an open chooser with one repaint, and stays shut when pressed while closed', () => {
-    const c = chooser({});
-    c.press({ 'data-dchtog': '1' });
-    assert.match(c.page(), /data-block="dash-chooser"/);
-    const d = c.draws();
-    c.press({ 'data-dchdone': '1' });
-    assert.doesNotMatch(c.page(), /data-block="dash-chooser"/, 'the chooser is gone');
-    assert.equal(c.draws(), d + 1, 'one repaint');
-    c.press({ 'data-dchdone': '1' });
-    assert.doesNotMatch(c.page(), /data-block="dash-chooser"/, 'pressed while closed it stays closed');
-});
-
-test('完成 pressed on a fresh, closed chooser leaves it closed', () => {
-    const c = chooser({});
-    assert.doesNotMatch(c.page(), /data-block="dash-chooser"/, 'fresh: closed');
-    c.press({ 'data-dchdone': '1' });
-    assert.doesNotMatch(c.page(), /data-block="dash-chooser"/, 'still closed after 完成');
-});
-
-test('重設 alone repaints once and clears a stored order', () => {
-    const kept = {};
-    const c = chooser(kept);
-    c.press({ 'data-dchmv': '1', 'data-card': 'dash-live' });
-    assert.equal('station.dash' in kept, true, 'a non-default order is stored');
-    const d = c.draws();
-    c.press({ 'data-dchreset': '1' });
-    assert.equal('station.dash' in kept, false, 'the key is gone');
-    assert.equal(c.draws(), d + 1, 'one repaint');
-});
-
-test('a move naming an unknown card, pressed twice, stores nothing and repaints nothing', () => {
-    const kept = {};
-    const c = chooser(kept);
-    const d = c.draws();
-    c.press({ 'data-dchmv': '1', 'data-card': 'nope' });
-    c.press({ 'data-dchmv': '1', 'data-card': 'nope' });
-    assert.equal('station.dash' in kept, false, 'no key');
-    assert.equal(c.draws(), d, 'no repaint');
-});
-
-test('a move that falls off either edge, or names no card, repaints nothing and stores nothing', () => {
-    const kept = {};
-    const c = chooser(kept);
-    const still = (what) => { const d = c.draws(); return () => { assert.equal(c.draws(), d, what + ': no repaint'); assert.equal('station.dash' in kept, false, what + ': no key'); }; };
-    let ok = still('last card down');
-    c.press({ 'data-dchmv': '1', 'data-card': 'dash-recent' });
-    ok();
-    ok = still('first card up');
-    c.press({ 'data-dchmv': '-1', 'data-card': 'dash-live' });
-    ok();
-    ok = still('unknown card');
-    c.press({ 'data-dchmv': '1', 'data-card': 'nope' });
-    ok();
-    // a stored, non-default order: the edges are its own
-    c.press({ 'data-dchmv': '1', 'data-card': 'dash-live' });
-    const mid = kept['station.dash'];
-    assert.ok(mid);
-    const d = c.draws();
-    c.press({ 'data-dchmv': '1', 'data-card': 'dash-recent' });
-    c.press({ 'data-dchmv': '-1', 'data-card': 'waiting-card' });
-    c.press({ 'data-dchmv': '1', 'data-card': 'nope' });
-    assert.equal(c.draws(), d, 'edges of a stored order: no repaint');
-    assert.equal(kept['station.dash'], mid);
-});
-
-test('a real move, 調整卡片 and 還原預設 each repaint exactly once', () => {
-    const kept = {};
-    const c = chooser(kept);
-    let d = c.draws();
-    c.press({ 'data-dchmv': '1', 'data-card': 'dash-live' });
-    assert.equal(c.draws(), d + 1, 'a move repaints once');
-    assert.ok('station.dash' in kept);
-    d = c.draws();
-    c.press({ 'data-dchtog': '1' });
-    assert.equal(c.draws(), d + 1, 'the toggle repaints once');
-    assert.match(c.page(), /data-block="dash-chooser"/, 'the toggle opened it');
-    d = c.draws();
-    c.press({ 'data-dchreset': '1' });
-    assert.equal(c.draws(), d + 1, 'the reset repaints once');
-    assert.equal('station.dash' in kept, false, 'the reset clears the key');
-});
-
-// The change handler, one behaviour per test: each of these is red under
-// a different single-branch mutation of the doc 'change' listener.
 const DEF = ['dash-live', 'waiting-card', 'dash-todo', 'dash-spend', 'dash-recent'];
 const dashKey = (order, off) => JSON.stringify({ order, off });
+const EDITING = /<div class="dash kdash editing" data-block="dashboard">/;
 
-test('a change on a box that is not a card tick draws nothing and stores nothing', () => {
-    const kept = { 'station.dash': dashKey(DEF, ['dash-spend']) };
-    const c = chooser(kept);
-    const d = c.draws();
-    c.tick(null, true);
-    c.tick('', false);
-    assert.equal(c.draws(), d, 'no repaint');
-    assert.equal(kept['station.dash'], dashKey(DEF, ['dash-spend']), 'no store');
+test('pressing 編輯版面 enters edit mode, and pressing it again, 完成 or Esc leaves it', () => {
+    const c = editor({});
+    assert.doesNotMatch(c.page(), EDITING);
+    c.press({ 'data-dchtog': '1' });
+    assert.match(c.page(), EDITING);
+    assert.match(c.page(), /<div class="dedit" data-block="dash-edit"/);
+    assert.doesNotMatch(c.page(), /id="dchtog"/, '編輯版面 gives way while editing');
+    c.press({ 'data-dchtog': '1' });
+    assert.doesNotMatch(c.page(), EDITING);
+    c.press({ 'data-dchtog': '1' });
+    c.press({ 'data-dchdone': '1' });
+    assert.doesNotMatch(c.page(), EDITING);
+    assert.doesNotMatch(c.page(), /data-block="dash-edit"/);
+    c.press({ 'data-dchtog': '1' });
+    c.key('Escape', 'dash-live');
+    assert.doesNotMatch(c.page(), EDITING, 'Esc leaves it');
 });
 
-test('a change with no target at all is ignored', () => {
-    const c = chooser({});
+test('完成 and Esc while not editing draw nothing', () => {
+    const c = editor({});
     const d = c.draws();
-    assert.doesNotThrow(() => c.fire('change', undefined));
+    c.press({ 'data-dchdone': '1' });
+    c.key('Escape', 'dash-live');
     assert.equal(c.draws(), d);
+    assert.doesNotMatch(c.page(), EDITING);
 });
 
-test('a change whose target cannot be asked for an attribute is ignored', () => {
-    const c = chooser({});
-    const d = c.draws();
-    assert.doesNotThrow(() => c.fire('change', {}));
-    assert.equal(c.draws(), d);
+test('edit mode arms every card with a grip, ↑ ↓ and 隱藏, and offers 還原預設 only off the default', () => {
+    const c = editor({});
+    c.press({ 'data-dchtog': '1' });
+    const html = c.page();
+    for (const id of DEF) {
+        assert.match(html, new RegExp('<section draggable="true" data-dcard="' + id + '" class="dcard"'), id);
+        assert.match(html, new RegExp('data-dmv="-1" data-card="' + id + '"'), id);
+        assert.match(html, new RegExp('data-dmv="1" data-card="' + id + '"'), id);
+        assert.match(html, new RegExp('data-dhide="' + id + '"[^>]*aria-label="隱藏「'), id);
+    }
+    assert.equal(count(html, /class="dgrip"/g), 5);
+    assert.match(html, /data-dchreset="1" data-key="dchreset" disabled/);
+    assert.match(html, /<span class="dch-st" role="status">目前是預設<\/span>/);
+    c.press({ 'data-dmv': '1', 'data-card': 'dash-live' });
+    assert.doesNotMatch(c.page(), /data-dchreset="1" data-key="dchreset" disabled/);
+    assert.match(c.page(), /已調整/);
 });
 
-test('ticking two cards off stores exactly those two in off', () => {
+test('↑ ↓ pass the next card in the card\'s own column, and moving it back stores no key', () => {
     const kept = {};
-    const c = chooser(kept);
-    c.tick('dash-spend', false);
-    c.tick('dash-todo', false);
-    assert.equal(kept['station.dash'], dashKey(DEF, ['dash-todo', 'dash-spend']));
+    const c = editor(kept);
+    c.press({ 'data-dmv': '1', 'data-card': 'dash-live' });
+    assert.equal(kept['station.dash'], dashKey(['dash-spend', 'waiting-card', 'dash-todo', 'dash-live', 'dash-recent'], []), 'dash-live passes dash-spend, not waiting-card');
+    c.press({ 'data-dmv': '-1', 'data-card': 'dash-live' });
+    assert.equal('station.dash' in kept, false, 'the default order is stored as no key');
+    c.press({ 'data-dmv': '1', 'data-card': 'waiting-card' });
+    assert.equal(kept['station.dash'], dashKey(['dash-live', 'dash-todo', 'waiting-card', 'dash-spend', 'dash-recent'], []));
+    c.press({ 'data-dchreset': '1' });
+    assert.equal('station.dash' in kept, false, '還原預設 clears it');
 });
 
-test('ticking a card on from an off list removes it from off and keeps the rest', () => {
-    const kept = { 'station.dash': dashKey(DEF, ['dash-spend', 'dash-todo']) };
-    chooser(kept).tick('dash-spend', true);
-    assert.equal(kept['station.dash'], dashKey(DEF, ['dash-todo']));
+test('a move off either end of its column, or naming no card, repaints nothing and stores nothing', () => {
+    const kept = {};
+    const c = editor(kept);
+    const d = c.draws();
+    c.press({ 'data-dmv': '-1', 'data-card': 'dash-live' });
+    c.press({ 'data-dmv': '1', 'data-card': 'dash-recent' });
+    c.press({ 'data-dmv': '-1', 'data-card': 'waiting-card' });
+    c.press({ 'data-dmv': '1', 'data-card': 'dash-todo' });
+    c.press({ 'data-dmv': '1', 'data-card': 'nope' });
+    c.press({ 'data-dmv': '2', 'data-card': 'dash-live' });
+    assert.equal(c.draws(), d, 'no repaint');
+    assert.equal('station.dash' in kept, false, 'no key');
 });
 
-test('ticking the one card that is off back on clears the key', () => {
-    const kept = { 'station.dash': dashKey(DEF, ['dash-spend']) };
-    chooser(kept).tick('dash-spend', true);
+test('Alt + ↓ on a card moves it as ↓ does; a bare ↓ does nothing', () => {
+    const kept = {};
+    const c = editor(kept);
+    c.key('ArrowDown', 'dash-live', true);
+    assert.equal('station.dash' in kept, false, 'not editing: nothing');
+    c.press({ 'data-dchtog': '1' });
+    c.key('ArrowDown', 'dash-live', false);
+    assert.equal('station.dash' in kept, false, 'no Alt: nothing');
+    c.key('ArrowDown', 'dash-live', true);
+    assert.equal(kept['station.dash'], dashKey(['dash-spend', 'waiting-card', 'dash-todo', 'dash-live', 'dash-recent'], []));
+    c.key('ArrowUp', 'dash-live', true);
     assert.equal('station.dash' in kept, false);
 });
 
-test('a tick repaints exactly once', () => {
-    const c = chooser({});
+test('a dragged card dropped on the top half of another goes before it, on the bottom half after, and never across columns', () => {
+    const kept = {};
+    const c = editor(kept);
+    c.press({ 'data-dchtog': '1' });
+    c.drag('dash-recent', 'dash-live', 10);
+    assert.equal(kept['station.dash'], dashKey(['dash-recent', 'dash-live', 'waiting-card', 'dash-todo', 'dash-spend'], []));
+    c.drag('dash-recent', 'dash-spend', 90);
+    assert.equal('station.dash' in kept, false, 'back to the default order: no key');
     const d = c.draws();
-    c.tick('dash-spend', false);
-    assert.equal(c.draws(), d + 1);
+    c.drag('dash-live', 'waiting-card', 10);
+    assert.equal(c.draws(), d, 'across columns: no repaint');
+    assert.equal('station.dash' in kept, false, 'and no key');
 });
 
-test('ticking one card off leaves every other card drawn', () => {
-    const c = chooser({});
-    c.tick('dash-spend', false);
-    for (const id of ['dash-live', 'waiting-card', 'dash-todo', 'dash-recent']) assert.match(c.page(), new RegExp('data-block="' + id + '"'), id);
-});
-
-test('ticking off a card that is already off keeps it off', () => {
-    const kept = { 'station.dash': dashKey(DEF, ['dash-spend']) };
-    chooser(kept).tick('dash-spend', false);
+test('隱藏 stores the card in off; outside edit mode the page leaves it out, inside it keeps its header marked 已隱藏', () => {
+    const kept = {};
+    const c = editor(kept);
+    c.press({ 'data-dhide': 'dash-spend' });
     assert.equal(kept['station.dash'], dashKey(DEF, ['dash-spend']));
+    assert.doesNotMatch(c.page(), /data-block="dash-spend"/);
+    c.press({ 'data-dchtog': '1' });
+    assert.match(c.page(), /<section draggable="true" data-dcard="dash-spend" class="dcard off"/);
+    assert.match(c.page(), /<span class="doff">已隱藏<\/span>/);
+    assert.match(c.page(), /data-dhide="dash-spend"[^>]*aria-label="顯示「/);
+    for (const id of ['dash-live', 'waiting-card', 'dash-todo', 'dash-recent']) assert.match(c.page(), new RegExp('data-dcard="' + id + '" class="dcard"'), id);
+    c.press({ 'data-dhide': 'dash-spend' });
+    assert.equal('station.dash' in kept, false, '顯示 again: no key');
 });
 
-test('a tick rewrites the stored list whole, filling in the cards a stale key lacks', () => {
-    const kept = { 'station.dash': dashKey(['dash-recent', 'dash-spend'], []) };
-    chooser(kept).tick('dash-spend', true);
-    assert.equal(kept['station.dash'], dashKey(['dash-recent', 'dash-spend', 'dash-live', 'waiting-card', 'dash-todo'], []));
+test('隱藏 reads the stored list: a card already off stays off, and a stale key is filled in whole', () => {
+    const kept = { 'station.dash': dashKey(['dash-recent', 'dash-spend'], ['dash-todo']) };
+    editor(kept).press({ 'data-dhide': 'dash-spend' });
+    assert.equal(kept['station.dash'], dashKey(['dash-recent', 'dash-spend', 'dash-live', 'waiting-card', 'dash-todo'], ['dash-spend', 'dash-todo']));
 });
 
-test('a tick reads the stored list, so a card already off stays off when another is ticked', () => {
-    const order = ['dash-recent', 'dash-spend', 'dash-live', 'waiting-card', 'dash-todo'];
-    const kept = { 'station.dash': dashKey(order, ['dash-todo']) };
-    chooser(kept).tick('dash-spend', false);
-    assert.equal(kept['station.dash'], dashKey(order, ['dash-spend', 'dash-todo']));
+test('加入 puts an off card last and on; on a card already on, or an unknown one, it does nothing', () => {
+    const kept = { 'station.dash': dashKey(DEF, ['dash-live']) };
+    const c = editor(kept);
+    const d = c.draws();
+    c.press({ 'data-dadd': 'dash-spend' });
+    c.press({ 'data-dadd': 'nope' });
+    c.press({ 'data-dhide': 'nope' });
+    assert.equal(c.draws(), d, 'no repaint');
+    assert.equal(kept['station.dash'], dashKey(DEF, ['dash-live']), 'no store');
+    c.press({ 'data-dadd': 'dash-live' });
+    assert.equal(kept['station.dash'], dashKey(['waiting-card', 'dash-todo', 'dash-spend', 'dash-recent', 'dash-live'], []));
+    assert.equal(c.draws(), d + 1, 'one repaint');
+});
+
+test('each press that changes something repaints exactly once', () => {
+    const c = editor({});
+    let d = c.draws();
+    c.press({ 'data-dchtog': '1' });
+    assert.equal(c.draws(), d + 1, '編輯版面');
+    d = c.draws();
+    c.press({ 'data-dmv': '1', 'data-card': 'dash-live' });
+    assert.equal(c.draws(), d + 1, '↓');
+    d = c.draws();
+    c.press({ 'data-dhide': 'dash-todo' });
+    assert.equal(c.draws(), d + 1, '隱藏');
+    d = c.draws();
+    c.press({ 'data-dchreset': '1' });
+    assert.equal(c.draws(), d + 1, '還原預設');
+    d = c.draws();
+    c.press({ 'data-dchdone': '1' });
+    assert.equal(c.draws(), d + 1, '完成');
+});
+
+test('a click on nothing the edit mode owns is ignored', () => {
+    const c = editor({});
+    const d = c.draws();
+    assert.doesNotThrow(() => c.fire('click', { closest: () => null }));
+    assert.equal(c.draws(), d);
 });

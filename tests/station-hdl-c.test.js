@@ -18,9 +18,9 @@ const NOW = Date.parse('2026-10-01T12:00:00.000Z');
 // The listeners this file presses, by their place in document.addEventListener
 // order (station.js registers them in a fixed order, so a mutation of a
 // listener's own text cannot lose it).
-const KEY_FBAR = 3, KEY_BIG = 5, KEY_GATE = 6, CLICK_WZ = 8;
+const KEY_FBAR = 4, KEY_BIG = 6, KEY_GATE = 7, CLICK_WZ = 8;
 // A literal unique to each document listener in station.js, so a listener added or reordered ahead of one fails loudly.
-const MARKERS = { 'keydown:3': '.wz .fbar .fsg', 'keydown:5': '.rpop, .rwrap', 'keydown:6': 'data-gop', 'click:8': '.wz [data-go]' };
+const MARKERS = { 'keydown:4': '.wz .fbar .fsg', 'keydown:6': '.rpop, .rwrap', 'keydown:7': 'data-gop', 'click:8': '.wz [data-go]' };
 
 // station.js booted on `hash`, with every document listener kept by type, the
 // `#page` element counting its redraws, and `doc.querySelector` answering only
