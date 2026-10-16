@@ -8,8 +8,8 @@
     "node": ">=22.5"
   },
   "scripts": {
-    "test": "node --test",
-    "test:fast": "node --test --test-skip-pattern=@slow",
+    "test": "node --test --require ./tests/subprocess-timeout.js",
+    "test:fast": "node --test --test-skip-pattern=@slow --require ./tests/subprocess-timeout.js",
     "clean": "node scripts/tmp-clean.js"
   }
 }
