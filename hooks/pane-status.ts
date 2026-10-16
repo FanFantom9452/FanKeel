@@ -16,10 +16,12 @@ export type Other = { id: string; entry: Entry }
 // `color` is a hex, or absent for the terminal's own. The segments of a row
 // touch: one that wants a space before it carries the space in its text.
 // `press` makes the segment a Button on the Pane (hooks/pane.ts piece): 'station' opens the station's page,
-// 'fold' folds or opens the block `fold` names.
-export type Seg = { text: string; color?: string; bold?: boolean; press?: 'station' | 'fold'; fold?: Fold }
-// The blocks a head row folds; docs/90-agent/plans/2026-10-17-pane-fold-todo-design.md section 1.
-export type Fold = 'route' | 'tasks'
+// 'fold' folds or opens the block `fold` names, 'todo' opens the station at the hash `to`.
+export type Seg = { text: string; color?: string; bold?: boolean; press?: 'station' | 'fold' | 'todo'; fold?: Fold; to?: string }
+// The blocks a head row folds; docs/90-agent/plans/2026-10-17-pane-fold-todo-design.md sections 1 and 2.
+export type Fold = 'route' | 'tasks' | 'todo'
+// One open entry of the project's TODO bucket (hooks/pane.ts todosOf): its file name without `.md`, its title, its state.
+export type TodoEntry = { id: string; title: string; state: string }
 // One drawn row. No segments is the blank row above a block. `who` is the
 // neighbour a clash row names: hooks/pane.ts counts them against the band's flag.
 export type Row = { block: string; segs: Seg[]; who?: string }
@@ -44,6 +46,9 @@ export type StatusInput = {
   station?: string | null
   // The blocks folded to their head row (hooks/pane.ts state); absent is every block open.
   folded?: Partial<Record<Fold, boolean>>
+  // The project's open TODO entries, Ready first (hooks/pane.ts todosOf), and the station's key for the project.
+  todos?: TodoEntry[]
+  pkey?: string
 }
 
 // Each block's rail, a fixed colour whatever the stage, on its first drawn row;
@@ -54,6 +59,7 @@ export const RAILS: Record<string, string> = {
   tasks: WHERE,
   agents: WHERE,
   notes: WHERE,
+  todo: WHERE,
   foot: DIM,
 }
 
@@ -294,6 +300,23 @@ function stationRow(url: string | null | undefined, inner: number): Row {
   return row('foot', { text: label, press: 'station' }, dim(cut(` ${url}`, Math.max(4, inner - width(label) - 4))))
 }
 
+// The most TODO titles the block lists.
+const TODO_ROWS = 6
+
+// The project's open TODO entries under a fold head that counts them: a title a
+// row, each a Button opening the station's TODO panel on that entry, and past
+// TODO_ROWS a grey Button opening the whole panel. The terminal draws a Button
+// four cells wider than its label. No entries, no block.
+function todoBlock(todos: TodoEntry[], pkey: string, inner: number, folded: boolean): Row[] {
+  if (!todos.length) return []
+  const at = `#/p/${encodeURIComponent(pkey)}/todo`
+  const rows = [row('todo', head('todo', folded, `TODO ${todos.length}`))]
+  if (folded) return rows
+  for (const t of todos.slice(0, TODO_ROWS)) rows.push(row('todo', { text: cut(t.title, Math.max(4, inner - 4)), press: 'todo', to: `${at}/${encodeURIComponent(t.id)}` }))
+  if (todos.length > TODO_ROWS) rows.push(row('todo', { text: `還有 ${todos.length - TODO_ROWS} 條`, color: WHERE, press: 'todo', to: at }))
+  return rows
+}
+
 // A row cut to `cols` cells: the segment that crosses the edge is cut, and the ones after it go.
 function fit(r: Row, cols: number): Row {
   let left = cols
@@ -341,9 +364,9 @@ function agentsBlock(nodes: AgentNode[], inner: number, now: number): Row[] {
   return rows
 }
 
-// Given up in this order when the rows do not fit: `agents` and `tasks` keep their title rows.
+// Given up in this order when the rows do not fit: `todo`, `agents` and `tasks` keep their head rows.
 // The task, the clash and the foot never go.
-const DROP = ['notes', 'agents', 'tasks']
+const DROP = ['todo', 'notes', 'agents', 'tasks']
 // The blocks that are alarms, not sections: every row of one keeps its rail.
 const ALARMS = ['clash']
 
@@ -372,6 +395,10 @@ export function statusRows(input: StatusInput): Row[] {
   const notes = list(entry.notes).slice(-3)
   if (notes.length) blocks.push([row('notes', title('notes', 'notes')), ...notes.map((note) => row('notes', { text: cut(`· ${note}`, inner) }))])
 
+  // With no station up nothing opens a TODO: the foot's `station 未啟動` stands for both.
+  const todo = input.station ? todoBlock(input.todos ?? [], input.pkey ?? '', inner, !!folded.todo) : []
+  if (todo.length) blocks.push(todo)
+
   // The probe is asked for by hand (hooks/pane.ts probeOf): it is drawn whole, in the block that never drops.
   const probed = input.probe ? wrap(input.probe, inner).map((text) => row('foot', dim(text))) : []
   blocks.push([...probed, row('foot', dim(cut(`${id.slice(0, 8)} · /fankeel-panel 關閉`, inner))), stationRow(input.station, inner)])
@@ -382,7 +409,7 @@ export function statusRows(input: StatusInput): Row[] {
     if (size() <= room) break
     const at = blocks.findIndex((block) => block[0].block === name)
     if (at < 0) continue
-    if (name === 'tasks' || name === 'agents') blocks[at] = blocks[at].slice(0, 1)
+    if (name !== 'notes') blocks[at] = blocks[at].slice(0, 1)
     else blocks.splice(at, 1)
   }
   // A section's rail is on its first drawn row alone: the rows under it open

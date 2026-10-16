@@ -1313,3 +1313,93 @@ test('the fold flags live in the module\'s memory: a fresh register starts with 
     await log.ticks[1].fn();
     assert.deepEqual(buttons(await draw(second)).map((b) => b.props.label), ['▾ route 2/3']);
 });
+
+// A project's docs.json with its todo bucket, and one entry file a TODO.
+const STATION = 'http://127.0.0.1:28888/';
+const todoFiles = (dir, entries) => Object.assign({
+    [dir + '/.fankeel/docs.json']: JSON.stringify({ buckets: [{ path: 'docs/notes', role: 'reference' }, { path: 'docs/todo', role: 'todo' }] }),
+}, ...entries.map(([id, state, title]) => ({ [dir + '/docs/todo/' + id + '.md']: '---\nlabel: x\n' + (title === undefined ? '' : 'title: ' + title + '\n') + 'state: ' + state + '\n---\n\nbody\n' })));
+function todoRig(entries, over) {
+    const cfg = 'C:/cfg';
+    const mine = Object.assign({}, live, { configDir: cfg }, over);
+    const dir = mine.project ? ROOT + '/' + mine.project : ROOT;
+    const files = Object.assign(entryFile(mine), { [cfg + '/fankeel/serve.json']: JSON.stringify({ pid: 1, port: 28888, url: STATION, started: 1 }) }, todoFiles(dir, entries));
+    return fake({ files, env: { OS: 'Windows_NT' } });
+}
+
+test('the TODO block lists six open titles, Ready first, and a 還有 N 條; a title opens the station on its entry and the rest on the panel', async () => {
+    const hooks = await wired();
+    const entries = [['w-1', 'watch', 'watch one'], ['b-1', 'blocked', 'blocked one'], ['r-2', 'ready', 'ready two'], ['r-1', 'ready', 'ready one'],
+        ['d-1', 'decision', 'decide one'], ['x-1', 'done', 'finished'], ['r-3', 'ready', undefined], ['b-2', 'blocked', 'blocked two'], ['w-2', 'watch', 'watch two']];
+    const { $, log } = todoRig(entries);
+    const ran = [];
+    $.process = { run: async (argv) => { ran.push(argv); return { exitCode: 0, stdout: '', stderr: '' }; } };
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const tree = await hooks['ui.render']($, { viewport: { columns: 44, rows: 60 } });
+    const labels = buttons(tree).map((b) => b.props.label);
+    // Eight open: the done one is not counted; an entry with no title shows its id.
+    assert.deepEqual(labels.slice(labels.indexOf('▾ TODO 8')), ['▾ TODO 8', 'ready one', 'ready two', 'r-3', 'decide one', 'blocked one', 'blocked two', '還有 2 條', '開啟 station']);
+    const key = encodeURIComponent(ROOT);
+    await buttons(tree).find((b) => b.props.label === 'ready two').props.onPress({ surface: 'terminal' });
+    await buttons(tree).find((b) => b.props.label === '還有 2 條').props.onPress({ surface: 'terminal' });
+    assert.deepEqual(ran, [['cmd', '/c', 'start', '', STATION + '#/p/' + key + '/todo/r-2'], ['cmd', '/c', 'start', '', STATION + '#/p/' + key + '/todo']]);
+    // The fold head folds the list to itself.
+    await buttons(tree).find((b) => b.props.key === 'fold-todo').props.onPress({ surface: 'terminal' });
+    const folded = buttons(await hooks['ui.render']($, { viewport: { columns: 44, rows: 60 } })).map((b) => b.props.label);
+    assert.deepEqual(folded.slice(folded.indexOf('▸ TODO 8')), ['▸ TODO 8', '開啟 station']);
+});
+
+test('the TODO entries are the entry\'s project\'s, keyed root/project, and with no station there is no TODO block', async () => {
+    const hooks = await wired();
+    const { $, log, store } = todoRig([['r-1', 'ready', 'in the app']], { project: 'app' });
+    const ran = [];
+    $.process = { run: async (argv) => { ran.push(argv); return { exitCode: 0, stdout: '', stderr: '' }; } };
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const draw = async () => buttons(await hooks['ui.render']($, { viewport: { columns: 44, rows: 60 } }));
+    await (await draw()).find((b) => b.props.label === 'in the app').props.onPress({ surface: 'terminal' });
+    assert.deepEqual(ran, [['cmd', '/c', 'start', '', STATION + '#/p/' + encodeURIComponent(ROOT + '/app') + '/todo/r-1']]);
+    delete store['C:/cfg/fankeel/serve.json'];
+    await log.ticks[0].fn();
+    assert.deepEqual((await draw()).map((b) => b.props.key), ['fold-route']);
+});
+
+test('an entry file is read again only when it moved, and a docs.json that does not parse is no TODO block', async () => {
+    const hooks = await wired();
+    const { $, log, store, mtimes } = todoRig([['r-1', 'ready', 'one']]);
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    await log.ticks[0].fn();
+    const file = ROOT + '/docs/todo/r-1.md';
+    assert.equal(log.reads.filter((p) => p === file).length, 1);
+    store[file] = store[file].replace('title: one', 'title: one, renamed');
+    mtimes[file] = 2;
+    await log.ticks[0].fn();
+    assert.equal(log.reads.filter((p) => p === file).length, 2);
+    assert.ok(buttons(await hooks['ui.render']($, { viewport: { columns: 44, rows: 60 } })).some((b) => b.props.label === 'one, renamed'));
+    store[ROOT + '/.fankeel/docs.json'] = '{';
+    await log.ticks[0].fn();
+    assert.ok(!buttons(await hooks['ui.render']($, { viewport: { columns: 44, rows: 60 } })).some((b) => b.props.key === 'fold-todo'));
+});
+
+test('the TODO head counts what lib/todo.js counts open in this repository, and the list draws from that many', async () => {
+    const hooks = await wired();
+    const fs = require('node:fs');
+    const repo = path.join(__dirname, '..');
+    const open = require('../lib/todo.js').load(repo).all.filter((e) => e.state !== 'done').length;
+    const dir = path.join(repo, 'docs', '90-agent', 'todo');
+    const files = { [ROOT + '/.fankeel/docs.json']: fs.readFileSync(path.join(repo, '.fankeel', 'docs.json'), 'utf8') };
+    for (const name of fs.readdirSync(dir)) files[ROOT + '/docs/90-agent/todo/' + name] = fs.readFileSync(path.join(dir, name), 'utf8');
+    const cfg = 'C:/cfg';
+    const { $, log } = fake({ files: Object.assign(files, entryFile(Object.assign({}, live, { configDir: cfg })), { [cfg + '/fankeel/serve.json']: JSON.stringify({ url: STATION }) }) });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const labels = buttons(await hooks['ui.render']($, { viewport: { columns: 44, rows: 80 } })).map((b) => b.props.label);
+    assert.ok(open > 6, 'the repository has ' + open + ' open entries');
+    assert.ok(labels.includes('▾ TODO ' + open), labels.join(' | '));
+    const listed = labels.slice(labels.indexOf('▾ TODO ' + open) + 1, labels.indexOf('開啟 station'));
+    assert.equal(listed.length, 7);
+    assert.equal(listed[6], '還有 ' + (open - 6) + ' 條');
+});
+

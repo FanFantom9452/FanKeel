@@ -1,7 +1,7 @@
 import type { Register, EngineInterface, UiPressArgument } from 'claude-code'
 import { parentOf, isActive, SESSION_ID, thresholdWith } from './compact.ts'
 import { statusRows, ledgerDoneIds, planTasks } from './pane-status.ts'
-import type { Entry, Other, PlanInfo, PlanTask, Seg as StatusSeg, Row as StatusRow, StatusInput, Fold } from './pane-status.ts'
+import type { Entry, Other, PlanInfo, PlanTask, Seg as StatusSeg, Row as StatusRow, StatusInput, Fold, TodoEntry } from './pane-status.ts'
 import type { Context, Limit } from './pane-bar.ts'
 import { taskDir, pendingName, parsePending } from './pane-gate.ts'
 import type { Pending } from './pane-gate.ts'
@@ -39,6 +39,9 @@ type Seen = {
   agents: AgentNode[]
   // The station's url from serve.json (stationOf), or null when none is up.
   station: string | null
+  // The station's key for this task's project (lib/station.js pkeyOf), and its open TODO entries while a station is up (todosOf).
+  pkey: string
+  todos: TodoEntry[]
 }
 
 // What a file last parsed to, and the time and size it had then: the tick runs
@@ -47,10 +50,10 @@ type Seen = {
 // session's own registry file, the pending file and the ledger are read every tick.
 type Cache = Map<string, { stamp: string; value: unknown }>
 
-const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, context: null, limits: [], plan: null, remote: false, probe: null, agents: [], station: null })
+const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, context: null, limits: [], plan: null, remote: false, probe: null, agents: [], station: null, pkey: '', todos: [] })
 
 // The last message each silent catch logged: the tick runs four times a second, and a failure that stays is said once.
-type Logged = { context: string; plan: string; open: string; registry: string; neighbour: string; gate: string; live: string; remote: string; bandSvg: string; paneSvg: string; agents: string; station: string }
+type Logged = { context: string; plan: string; open: string; registry: string; neighbour: string; gate: string; live: string; remote: string; bandSvg: string; paneSvg: string; agents: string; station: string; todo: string }
 
 // A registry file that is there and does not parse: told apart so `tick` can wait it out for a while, then give up on it.
 class Unreadable extends Error {}
@@ -341,6 +344,53 @@ async function stationOf($: EngineInterface, entry: Entry | null, logged: Logged
   }
 }
 
+// lib/todo.js STATES, the open ones in the order the station's TODO panel files them; any other state but `done` comes after.
+const TODO_ORDER = ['ready', 'decision', 'blocked', 'watch']
+
+// One frontmatter field of an entry file, as lib/docs.js frontmatter reads it: a `key: value` line between the opening `---` fences, quotes trimmed.
+function field(text: string, key: string): string {
+  const fm = /^---\r?\n([\s\S]*?)\r?\n---/.exec(text)
+  const kv = fm ? new RegExp(`^${key}\\s*:\\s*(.*)$`, 'mi').exec(fm[1]) : null
+  return kv ? kv[1].trim().replace(/^["']|["']$/g, '') : ''
+}
+
+// The project's open TODO entries: the `todo` bucket `<dir>/.fankeel/docs.json` declares (lib/todo.js bucketPath), each
+// `.md` file in it one entry, its id the file name, every state but `done` open, as lib/station.js todoOf counts them;
+// Ready first, then by id. A file is read again only when its listing stamp moved. Anything unreadable is no entries.
+async function todosOf($: EngineInterface, dir: string, cache: Cache, logged: Logged): Promise<TodoEntry[]> {
+  try {
+    const conf = await readJson($, `${dir}/.fankeel/docs.json`)
+    const buckets = conf && Array.isArray(conf.buckets) ? (conf.buckets as unknown[]) : []
+    const bucket = buckets.find((b): b is Record<string, unknown> => !!b && typeof b === 'object' && (b as Record<string, unknown>).role === 'todo')
+    if (!bucket || typeof bucket.path !== 'string') return []
+    const folder = `${dir}/${bucket.path}`
+    if (!(await $.fs.exists(folder))) return []
+    const todos: TodoEntry[] = []
+    const listed = new Set<string>()
+    for (const f of await $.fs.list(folder)) {
+      if (!f.name.endsWith('.md')) continue
+      const path = `${folder}/${f.name}`
+      listed.add(path)
+      const stamp = `${f.mtimeMs}:${f.size}`
+      let hit = cache.get(path)
+      if (!hit || hit.stamp !== stamp) {
+        const text = String(await $.fs.read(path))
+        hit = { stamp, value: { id: f.name.slice(0, -3), title: field(text, 'title'), state: field(text, 'state') } }
+        cache.set(path, hit)
+      }
+      const t = hit.value as TodoEntry
+      if (t.state !== 'done') todos.push({ ...t, title: t.title || t.id })
+    }
+    for (const key of cache.keys()) if (key.startsWith(`${folder}/`) && !listed.has(key)) cache.delete(key)
+    const rank = (state: string): number => (TODO_ORDER.includes(state) ? TODO_ORDER.indexOf(state) : TODO_ORDER.length)
+    logged.todo = ''
+    return todos.sort((a, b) => rank(a.state) - rank(b.state) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+  } catch (err) {
+    logOnce($, logged, 'todo', `fankeel pane: TODO entries unreadable, ${String(err)}`)
+    return []
+  }
+}
+
 // Opens the station's page in the host's browser: `start` on Windows, else
 // `open`, then `xdg-open`. When none of them runs, the url is copied instead,
 // and when that fails too a toast says so with the url in it.
@@ -426,7 +476,10 @@ async function look($: EngineInterface, cache: Cache, logged: Logged): Promise<S
   const remote = await remoteOf($, entry, id, cache, logged)
   const agents = await agentsOf($, entry, id, found.root, cache, logged)
   const station = await stationOf($, entry, logged)
-  return { id, entry, others, pending, context, limits, plan, remote, probe, agents, station }
+  // lib/station.js pkeyOf: the registry root, and the entry's project under it when it names one.
+  const pkey = typeof entry.project === 'string' && entry.project ? `${found.root}/${entry.project}` : found.root
+  const todos = station ? await todosOf($, pkey, cache, logged) : []
+  return { id, entry, others, pending, context, limits, plan, remote, probe, agents, station, pkey, todos }
 }
 
 type State = {
@@ -473,7 +526,7 @@ async function tick($: EngineInterface, state: State): Promise<void> {
     const clock = next.entry ? await $.clock.now() : 0
     const minute = Math.floor(clock / 60000)
     const second = next.pending ? Math.floor(clock / 1000) : 0
-    const now = JSON.stringify([next.entry, next.others, next.context, next.limits, next.plan, next.remote, next.probe, next.agents, next.station, minute, second])
+    const now = JSON.stringify([next.entry, next.others, next.context, next.limits, next.plan, next.remote, next.probe, next.agents, next.station, next.pkey, next.todos, minute, second])
     // The opens and closes have their own memory, `edge`, which moves only when they all went through: a rejected
     // one is met again next tick as the same edge, while `seen` and the redraw below never wait on them.
     try {
@@ -508,7 +561,7 @@ async function tick($: EngineInterface, state: State): Promise<void> {
 export const register: Register = (on) => {
   const state: State = {
     seen: blank(''), print: '', mine: false, edge: { task: false }, bad: 0, busy: false, cache: new Map(),
-    logged: { context: '', plan: '', open: '', registry: '', neighbour: '', gate: '', live: '', remote: '', bandSvg: '', paneSvg: '', agents: '', station: '' },
+    logged: { context: '', plan: '', open: '', registry: '', neighbour: '', gate: '', live: '', remote: '', bandSvg: '', paneSvg: '', agents: '', station: '', todo: '' },
     folded: {},
   }
 
@@ -597,6 +650,8 @@ export const register: Register = (on) => {
       agents: seen.agents,
       station: seen.station,
       folded: state.folded,
+      todos: seen.todos,
+      pkey: seen.pkey,
     }
     const status = statusRows(input)
     const blankRow = () => h(Text, {}, ' ')
@@ -604,6 +659,8 @@ export const register: Register = (on) => {
     const piece = (seg: StatusSeg) => {
       const url = seen.station
       if (seg.press === 'station' && url) return h(Button, { key: 'station', label: seg.text, hotkey: 's', onPress: (press: UiPressArgument) => openStation($, url, press.surface) })
+      const to = seg.to
+      if (seg.press === 'todo' && to && url) return h(Button, { key: to, label: seg.text, onPress: (press: UiPressArgument) => openStation($, url + to, press.surface) })
       const fold = seg.fold
       if (seg.press === 'fold' && fold) {
         return h(Button, { key: `fold-${fold}`, label: seg.text, onPress: () => {

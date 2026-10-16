@@ -27,7 +27,7 @@ const entry = {
 const other = { id: 'aaaaaaaa-0000-4000-8000-000000000001', entry: { task: '站頁看得到對話全文', stage: 'build', active: true, claims: ['hooks/mod.ts'], updated: '2026-10-10T22:00:00.000Z' } };
 const apart = { id: 'bbbbbbbb-0000-4000-8000-000000000002', entry: { task: 'x', stage: 'plan', active: true, claims: ['lib/x.js'] } };
 const SECOND = '#8a8a8a';
-const RAIL = { clash: '#ff5f5f', tasks: SECOND, agents: SECOND, notes: SECOND, foot: '#585858' };
+const RAIL = { clash: '#ff5f5f', tasks: SECOND, agents: SECOND, notes: SECOND, todo: SECOND, foot: '#585858' };
 // A row as the Pane shows it: its segments touch.
 const line = (row) => row.segs.map((seg) => seg.text).join('');
 const drawn = (rows, block) => rows.filter((r) => r.block === block && r.segs.length);
@@ -484,4 +484,37 @@ test('route and tasks open under a ▾ head and fold to it under ▸, the route 
     assert.deepEqual(heads(status(m, { plan, folded: { tasks: true } })), [['route', '▾ route 2/7'], ['tasks', '▸ tasks 2/5']]);
     // A stage that is not on the route draws no route and no head.
     assert.deepEqual(heads(status(m, { entry: Object.assign({}, entry, { stage: 'nowhere' }) })), []);
+});
+
+test('the TODO block is a fold head counting the open entries, then at most six titles and a grey 還有 N 條, each a Button with its station hash', async () => {
+    const m = await load();
+    const url = 'http://127.0.0.1:28888/';
+    const pkey = 'F:/ws/app';
+    const todos = Array.from({ length: 8 }, (_, i) => ({ id: 'a-' + (i + 1), title: 'entry ' + (i + 1), state: 'ready' }));
+    const rows = status(m, { station: url, todos, pkey });
+    assert.deepEqual(blocksOf(rows), ['task', 'notes', 'todo', 'foot']);
+    const segs = body(rows, 'todo').map((s) => s[0]);
+    assert.deepEqual(segs[0], { text: '▾ TODO 8', color: SECOND, bold: true, press: 'fold', fold: 'todo' });
+    assert.deepEqual(segs.slice(1, 7).map((s) => [s.text, s.press, s.to]), todos.slice(0, 6).map((t) => [t.title, 'todo', '#/p/F%3A%2Fws%2Fapp/todo/' + t.id]));
+    assert.deepEqual(segs[7], { text: '還有 2 條', color: SECOND, press: 'todo', to: '#/p/F%3A%2Fws%2Fapp/todo' });
+    assert.equal(segs.length, 8);
+    // Six or fewer: no 還有 row. Folded: the head alone. No station, or no entries: no block.
+    assert.equal(drawn(status(m, { station: url, todos: todos.slice(0, 6), pkey }), 'todo').length, 7);
+    assert.deepEqual(text(status(m, { station: url, todos, pkey, folded: { todo: true } }), 'todo'), ['▌▸ TODO 8']);
+    assert.deepEqual(drawn(status(m, { station: null, todos, pkey }), 'todo'), []);
+    assert.deepEqual(drawn(status(m, { station: url, todos: [], pkey }), 'todo'), []);
+    // A long title is cut four cells short of the row: the terminal draws a Button as `[ label ]`.
+    const long = status(m, { station: url, todos: [{ id: 'l-1', title: '一個很長很長的 TODO 標題，'.repeat(4), state: 'ready' }], pkey, cols: 41 });
+    assert.ok(m.width(body(long, 'todo')[1][0].text) <= 40 - 4);
+});
+
+test('with no room the TODO list goes first, down to its head row', async () => {
+    const m = await load();
+    const todos = Array.from({ length: 3 }, (_, i) => ({ id: 'a-' + i, title: 'entry ' + i, state: 'ready' }));
+    const rows = (room) => status(m, { station: 'http://127.0.0.1:28888/', todos, pkey: 'F:/ws', room });
+    const full = rows(60).length;
+    assert.equal(drawn(rows(full), 'todo').length, 4);
+    assert.deepEqual(text(rows(full - 1), 'todo'), ['▌▾ TODO 3']);
+    assert.deepEqual(blocksOf(rows(full - 1)), ['task', 'notes', 'todo', 'foot']);
+    assert.deepEqual(blocksOf(rows(-9)), ['task', 'todo', 'foot']);
 });
