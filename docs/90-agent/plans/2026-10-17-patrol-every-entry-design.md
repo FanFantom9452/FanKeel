@@ -20,6 +20,7 @@ patrol also does what this survey found buildable.
   `json gate` block, naming it — by id or by title — together with one of the
   dispositions `do now`, `needs the user`, `waiting on`, `keep`.
 - The refusal names the missing ids, so the stage agent knows which to add.
+- Scope: entry-file TODOs and a controlled survey only — a hand-written `TODO.md` yields no list, and an in-session survey has no handoff file to read; the skill says so.
 - `hooks/gate.js`, `hooks/gate-write.js` and `scripts/gate-check.js` pass the
   list, so the stage agent hears it as it writes the file and the controller
   is refused before the question goes out.

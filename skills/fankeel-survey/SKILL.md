@@ -340,7 +340,11 @@ back by the user.
 A script holds this now. `readGate` (`lib/handoff.js`) refuses a patrol's
 survey gate while any open entry has no line, above the gate block, naming it
 by id or title beside `do now`, `needs the user`, `waiting on` or `keep`, and
-the refusal lists the ids still missing. 2026-10-17: a report that counted 29
+the refusal lists the ids still missing. It reaches two cases only: a TODO kept
+as entry files (a hand-written `TODO.md` yields no list), and a controlled
+survey whose report is a handoff file — a patrol survey run in this session
+has no file to read, so there the rule above is the whole check.
+2026-10-17: a report that counted 29
 and checked 7 was the reason.
 
 **Ready and Needs a decision.** Each entry is re-checked in the code it links

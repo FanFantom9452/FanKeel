@@ -402,6 +402,7 @@ status: design-intent
 | A patrol is a task whose route is exactly `survey,plan,build,verify,land`, the | Task 3 |
 | `readGate` refuses the gate when any open entry has no line, above the last | Task 3 |
 | The refusal names the missing ids, so the stage agent knows which to add. | Task 3 |
+| Scope: entry-file TODOs and a controlled survey only — a hand-written | Task 3 (fix row, the skill paragraph) |
 | `hooks/gate.js`, `hooks/gate-write.js` and `scripts/gate-check.js` pass the | Task 4 |
 | The survey skill's `## The patrol` says the check exists. | Task 3 |
 | `docs/90-agent/reference/station.md`'s three references to | Task 1 |
