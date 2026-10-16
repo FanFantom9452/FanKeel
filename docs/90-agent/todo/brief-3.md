@@ -16,5 +16,5 @@ link: hooks/brief.js
 2. 終端執行 `claude --plugin-dir docs/90-agent/reports/evidence/2026-10-03-mod-probe-3/mod --debug-file <log>`，在 session 裡 `/plugin` → Enable for this session。debug log 要有 `hooks module … loaded`；沒有就是 rollout 旗標 `tengu_plugin_hooks_modules` 關著，停在這步並記下。
 3. 派三個 description 含 `mod-probe b` 的子代理，prompt 各不相同。
 4. 每一個：看 `<session 目錄>/subagents/agent-<agentId>.jsonl` 第 1 行是否以 `MOD-PROBE-SPAWN-<nonce>` 結尾。互動式 session 的 jsonl 可能不落地（mod-probe-3 只見 `.meta.json`），不在就改看 records 裡的 `agent.spawn` 紀錄，並記下「transcript 未落地」。
-5. `session.append`：repo 裡沒有呼叫它的程式。先讀 `docs/90-agent/reports/evidence/2026-10-03-mod-probe-3/mod/.claude-plugin/types/claude-code/index.d.ts` 裡 `SessionAppendArgs` 的欄位名，再在 probe 加一段，於第二個子代理執行中帶它的 agentId 呼叫一次，記下回傳或 `{deny}`。
+5. `session.append`：repo 裡沒有呼叫它的程式。先讀 `SessionAppendArgs` 的欄位名：它在 probe 的 mod 資料夾底下 `.claude-plugin/types/claude-code/index.d.ts`，這份型別檔是 mod 載入時由引擎產生的，不在 git 裡，所以要在步驟 1 的 session 開過、mod 載入後才有，再在 probe 加一段，於第二個子代理執行中帶它的 agentId 呼叫一次，記下回傳或 `{deny}`。
 6. 三個都成立，就另開 design 決定 `hooks/brief.js` 哪一部分搬到 `agent.spawn`；任一不成立，就把結果寫進本條並關閉。
