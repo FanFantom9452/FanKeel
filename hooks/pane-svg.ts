@@ -443,7 +443,7 @@ export type Part = { rows: Row[] } | { source: string; alt: string; isInteractiv
 // The desktop Pane from the rows statusRows drew for the same input: the task
 // title, `next:`, notes and the foot stay rows; the route rows, the clash
 // and the tasks become one Svg each, whose alt is those rows'
-// text. A block statusRows cut to its title (the tasks, when the Pane is short),
+// text. A block statusRows cut to its head row (the tasks, when the Pane is short or folded),
 // a drawing with nothing in it, or one over SVG_MAX stays rows.
 export function paneParts(input: StatusInput, rows: Row[]): Part[] {
   const parts: Part[] = []
@@ -480,8 +480,11 @@ export function paneParts(input: StatusInput, rows: Row[]): Part[] {
       keep(body.slice(0, from))
       draw(routeSvg(entry, now, cols), body.slice(from), false)
     } else if (name === 'clash') draw(clashSvg(entry, input.others, now, cols), body, false)
-    else if (name === 'tasks' && plan && plan.tasks.length && body.length > 1) draw(tasksSvg(entry, plan, now, cols), body, true)
-    else keep(body)
+    else if (name === 'tasks' && plan && plan.tasks.length && body.length > 1) {
+      // The head row stays a row, the Button that folds the drawing under it.
+      keep(body.slice(0, 1))
+      draw(tasksSvg(entry, plan, now, cols), body.slice(1), true)
+    } else keep(body)
   }
   return parts
 }

@@ -295,7 +295,9 @@ async function drawn(over) {
     return { band, pane, store, logs, tick: ticks[0] };
 }
 const kids = (tree) => tree.children.filter((c) => c && c.tag);
-const textOf = (node) => (node.tag === 'Text' ? String(node.children.join('')) : (node.children || []).filter((c) => c && c.tag).map(textOf).join(''));
+const textOf = (node) => (node.tag === 'Text' ? String(node.children.join('')) : node.tag === 'Button' ? String(node.props.label) : (node.children || []).filter((c) => c && c.tag).map(textOf).join(''));
+// A drawing without its onPress handlers: each render makes new ones, so two renders compare by what they draw.
+const bare = (tree) => JSON.parse(JSON.stringify(tree));
 // The terminal's rows, without the cell each one opens with.
 const plain = (tree) => kids(tree).map(textOf).map((t) => t.slice(1));
 
@@ -326,8 +328,10 @@ test('on Claude Desktop the Pane draws the route, the clash and the tasks as Svg
     const rows = plain(term);
     const block = (from, to) => rows.slice(rows.findIndex((t) => t.startsWith(from)), to === undefined ? undefined : rows.findIndex((t) => t.startsWith(to)) - 1).join('\n');
     assert.equal(svgs[0].props.alt, 'survey › design › plan › build › verify\nland');
-    assert.equal(svgs[1].props.alt, block('⚑ hooks/pane.ts', 'tasks '));
-    assert.equal(svgs[2].props.alt, block('tasks 4 of 9', 'notes'));
+    assert.equal(svgs[1].props.alt, block('⚑ hooks/pane.ts', '▾ tasks '));
+    // The tasks head is a Button row above the drawing; the drawing stands for the rows under it.
+    assert.equal(svgs[2].props.alt, block('✓ 完成 4', 'notes'));
+    assert.ok(rows.includes('▾ tasks 4/9'));
     // 400k of 450k is past four fifths of the threshold; the band alone says so.
     assert.ok(!rows.some((t) => t.startsWith('context')));
     assert.ok(!svgs.some((n) => n.props.alt.startsWith('context')));
@@ -348,7 +352,7 @@ test('every surface but the desktop draws the text exactly, and asks the engine 
     const { band, pane } = await drawn();
     for (const surface of ['terminal', 'vscode', 'mobile']) {
         assert.deepEqual(await band(surface), await band(undefined), surface);
-        assert.deepEqual(await pane(surface), await pane(undefined), surface);
+        assert.deepEqual(bare(await pane(surface)), bare(await pane(undefined)), surface);
     }
     const tags = (node) => [node.tag, ...(node.children || []).filter((c) => c && c.tag).flatMap(tags)];
     assert.ok(!tags(await pane('terminal')).includes('Svg'));
@@ -434,8 +438,8 @@ test('a band drawing that throws on Claude Desktop falls back to the terminal ro
 
 test('a Pane drawing that throws on Claude Desktop falls back to the terminal rows, and logs once to debug', async () => {
     const { pane, logs } = await drawn({ svgThrows: true });
-    assert.deepEqual(await pane('desktop'), await pane('terminal'));
-    assert.deepEqual(await pane('desktop'), await pane('terminal'));
+    assert.deepEqual(bare(await pane('desktop')), bare(await pane('terminal')));
+    assert.deepEqual(bare(await pane('desktop')), bare(await pane('terminal')));
     const said = logs.filter(([t]) => /Pane Svg not drawn/.test(t));
     assert.equal(said.length, 1);
     assert.equal(said[0][1].to, 'debug');

@@ -1,7 +1,7 @@
 import type { Register, EngineInterface, UiPressArgument } from 'claude-code'
 import { parentOf, isActive, SESSION_ID, thresholdWith } from './compact.ts'
 import { statusRows, ledgerDoneIds, planTasks } from './pane-status.ts'
-import type { Entry, Other, PlanInfo, PlanTask, Seg as StatusSeg, Row as StatusRow, StatusInput } from './pane-status.ts'
+import type { Entry, Other, PlanInfo, PlanTask, Seg as StatusSeg, Row as StatusRow, StatusInput, Fold } from './pane-status.ts'
 import type { Context, Limit } from './pane-bar.ts'
 import { taskDir, pendingName, parsePending } from './pane-gate.ts'
 import type { Pending } from './pane-gate.ts'
@@ -441,6 +441,8 @@ type State = {
   busy: boolean
   cache: Cache
   logged: Logged
+  // The blocks folded to their head row: memory only, so a new session starts with every block open.
+  folded: Partial<Record<Fold, boolean>>
 }
 
 // An unplaced pane (narrow terminal) is registered but not drawn: not open.
@@ -507,6 +509,7 @@ export const register: Register = (on) => {
   const state: State = {
     seen: blank(''), print: '', mine: false, edge: { task: false }, bad: 0, busy: false, cache: new Map(),
     logged: { context: '', plan: '', open: '', registry: '', neighbour: '', gate: '', live: '', remote: '', bandSvg: '', paneSvg: '', agents: '', station: '' },
+    folded: {},
   }
 
   on('session.start', async ($, e, next) => {
@@ -593,6 +596,7 @@ export const register: Register = (on) => {
       gateAt: seen.pending ? (seen.pending.at ?? now) : null,
       agents: seen.agents,
       station: seen.station,
+      folded: state.folded,
     }
     const status = statusRows(input)
     const blankRow = () => h(Text, {}, ' ')
@@ -600,6 +604,13 @@ export const register: Register = (on) => {
     const piece = (seg: StatusSeg) => {
       const url = seen.station
       if (seg.press === 'station' && url) return h(Button, { key: 'station', label: seg.text, hotkey: 's', onPress: (press: UiPressArgument) => openStation($, url, press.surface) })
+      const fold = seg.fold
+      if (seg.press === 'fold' && fold) {
+        return h(Button, { key: `fold-${fold}`, label: seg.text, onPress: () => {
+          state.folded[fold] = !state.folded[fold]
+          $.ui.invalidate('ui.render')
+        } })
+      }
       return h(Text, { color: seg.color, bold: seg.bold, wrap: 'truncate-end' }, seg.text)
     }
     const line = (row: StatusRow) => (row.segs.length === 0 ? blankRow() : h(Box, { flexDirection: 'row' }, ...row.segs.map(piece)))

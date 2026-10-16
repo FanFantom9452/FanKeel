@@ -76,7 +76,9 @@ async function wired() {
     return hooks;
 }
 const entryFile = (data) => ({ [ROOT + '/.fankeel/sessions/' + ID + '.json']: JSON.stringify(data) });
-const texts = (node) => (node.tag === 'Text' || node.tag === 'Button' ? [String(node.children.join(''))] : node.children.flatMap(texts));
+const texts = (node) => (node.tag === 'Text' ? [String(node.children.join(''))] : node.tag === 'Button' ? [String(node.props.label)] : node.children.flatMap(texts));
+// The station's Button, apart from the fold heads.
+const stationButtons = (tree) => buttons(tree).filter((b) => b.props.key === 'station');
 const buttons = (node) => (node.tag === 'Button' ? [node] : (node.children || []).filter((c) => c && c.tag).flatMap(buttons));
 const leaves = (node) => (node.tag === 'Text' ? [node] : (node.children || []).filter((c) => c && c.tag).flatMap(leaves));
 const bandLines = (tree) => tree.children.map((row) => leaves(row).map((n) => n.children.join('')).join(''));
@@ -124,6 +126,7 @@ test('the Pane draws the task block on top, then what is looked up, each block u
     const tree = await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } });
     assert.deepEqual(paneLines(tree), [
         '▌demo task',
+        ' ▾ route 2/3',
         ' survey › design › build',
         ' ',
         '▌notes',
@@ -133,7 +136,7 @@ test('the Pane draws the task block on top, then what is looked up, each block u
         ' station 未啟動',
     ]);
     assert.doesNotMatch(paneLines(tree).join('\n'), /touched|▸|本站|2 of 3|bounded|400k|450k/);
-    assert.equal(buttons(tree).length, 0);
+    assert.deepEqual(buttons(tree).map((b) => b.props.label), ['▾ route 2/3']);
 });
 
 test('the band above the prompt draws the stage, the dots and the minutes, then the context bar, from the registry file', async () => {
@@ -317,7 +320,7 @@ test('a waiting gate is not the Pane\'s: no gate row or button, no open, no toas
     assert.equal(log.opened.length, opened, 'the gate opened the Pane');
     assert.deepEqual(log.toasts, []);
     const tree = await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } });
-    assert.equal(buttons(tree).length, 0);
+    assert.deepEqual(buttons(tree).map((b) => b.props.key), ['fold-route']);
     assert.doesNotMatch(paneLines(tree).join('\n'), /gate|Go on|Stay/);
     assert.match(bandLines(await hooks.band($, BAND, passed))[0], /gate 在等 {3}還 \d+ 秒/);
 });
@@ -509,7 +512,7 @@ test('a pending file that is not JSON is logged once and draws no gate, and one 
     await hooks['session.start'](torn.$, {}, async () => ({}));
     for (let i = 0; i < 3; i++) await torn.log.ticks[0].fn();
     assert.deepEqual(torn.log.logs.filter((m) => /pending file/.test(m)), ['fankeel pane: pending file does not parse, ' + PENDING], JSON.stringify(torn.log.logs));
-    assert.equal(buttons(await hooks['ui.render'](torn.$, { viewport: { columns: 44, rows: 40 } })).length, 0);
+    assert.deepEqual(buttons(await hooks['ui.render'](torn.$, { viewport: { columns: 44, rows: 40 } })).map((b) => b.props.key), ['fold-route']);
 
     const hooks2 = await wired();
     const old = fake({ files: Object.assign(entryFile(live), { [PENDING]: JSON.stringify(Object.assign({}, gate, { until: Date.now() - 1000 })) }) });
@@ -529,16 +532,16 @@ test('a claimed plan with a build ledger draws its tasks, on the band as a count
     });
     const { $, log, store } = fake({ files });
     const draw = async () => paneLines(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
-    const tasks = (seen) => seen.slice(seen.indexOf(seen.find((t) => t.startsWith('▌tasks '))), seen.findIndex((t) => t.startsWith('▌abcdef12')) - 1);
+    const tasks = (seen) => seen.slice(seen.indexOf(seen.find((t) => t.startsWith('▌▾ tasks '))), seen.findIndex((t) => t.startsWith('▌abcdef12')) - 1);
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
-    assert.deepEqual(tasks(await draw()), ['▌tasks 1 of 2', ' ● 1 one', ' ◐ 2 two · 你的']);
+    assert.deepEqual(tasks(await draw()), ['▌▾ tasks 1/2', ' ● 1 one', ' ◐ 2 two · 你的']);
     assert.match(bandLines(await hooks.band($, BAND, passed))[0], / {2}tasks 1\/2 {2}/);
     const after = log.invalidated;
     store[LEDGER] += 'Task 2: complete — two\n';
     await log.ticks[0].fn();
     assert.equal(log.invalidated, after + 1);
-    assert.deepEqual(tasks(await draw()), ['▌tasks 2 of 2', ' ● 1 one', ' ● 2 two']);
+    assert.deepEqual(tasks(await draw()), ['▌▾ tasks 2/2', ' ● 1 one', ' ● 2 two']);
     assert.match(bandLines(await hooks.band($, BAND, passed))[0], / {2}tasks 2\/2 {2}/);
     assert.equal(log.reads.filter((p) => p === ROOT + '/' + PLAN).length, 1, 'the plan file was read again though it had not changed');
     store[LEDGER] = HEAD + 'docs/plans/other.md\nTask 1: complete — one\n';
@@ -598,8 +601,8 @@ test('the Pane is laid out in its own body columns and rows, each block under on
     assert.equal(paneLines(tree).filter((t) => /… @ build · \d+m$/.test(t)).length, 2);
     const foot = leaves(tree).find((n) => n.children.join('').startsWith('abcdef12'));
     assert.equal(foot.props.color, '#8a8a8a');
-    // 15 rows in all: the task 4, the clash 4, notes 2, the foot 2 (its station row last), and three blank rows between.
-    assert.equal(tree.children.length, 15);
+    // 16 rows in all: the task 5 (the route's head among them), the clash 4, notes 2, the foot 2 (its station row last), and three blank rows between.
+    assert.equal(tree.children.length, 16);
     assert.deepEqual(heads(await at(14)), [], 'the room is the body rows the surface gave, not the viewport');
 });
 
@@ -1115,7 +1118,7 @@ test('with a station up the Pane carries a button that opens its url, and copies
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
     const tree = await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } });
-    const found = buttons(tree);
+    const found = stationButtons(tree);
     assert.equal(found.length, 1);
     assert.equal(found[0].props.label, '開啟 station');
     assert.ok(paneLines(tree).some((l) => l.includes(url)));
@@ -1158,7 +1161,7 @@ test('off Windows the button tries open, then xdg-open; a url that is not the lo
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
     const draw = async () => hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } });
-    await buttons(await draw())[0].props.onPress({ surface: 'terminal' });
+    await stationButtons(await draw())[0].props.onPress({ surface: 'terminal' });
     assert.deepEqual(ran, [['open', url], ['xdg-open', url]]);
     // The url is in the redraw key: a station that goes away redraws on the next tick.
     const after = log.invalidated;
@@ -1166,7 +1169,7 @@ test('off Windows the button tries open, then xdg-open; a url that is not the lo
     await log.ticks[0].fn();
     assert.equal(log.invalidated, after + 1);
     const tree = await draw();
-    assert.equal(buttons(tree).length, 0);
+    assert.equal(stationButtons(tree).length, 0);
     assert.ok(paneLines(tree).includes(' station 未啟動'));
 });
 
@@ -1261,4 +1264,52 @@ test('a cached subagents directory that no longer lists is looked for again on t
     $.fs.list = list;
     await log.ticks[0].fn();
     assert.equal(projects(), 2);
+});
+
+test('a fold head\'s onPress folds its block to that one row and opens it again, in the terminal and on Claude Desktop', async () => {
+    const hooks = await wired();
+    const PLAN = 'docs/plans/2026-10-17-demo.md';
+    const files = Object.assign(entryFile(Object.assign({}, live, { claims: ['a.js', PLAN] })), {
+        [ROOT + '/' + PLAN]: ['# Demo', '', '## Task 1: one', '', '**Dispatch:** implementer, sonnet — code.', '', '## Task 2: two', '', '**Dispatch:** implementer, sonnet — code.', '', '## Coverage', ''].join('\n'),
+        [ROOT + '/.fankeel/build/2026-10-17-demo/progress.md']: '# fankeel build ledger — plan: ' + PLAN + '\nTask 1: complete — one\n',
+    });
+    const { $, log } = fake({ files });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const draw = async (surface) => hooks['ui.render']($, { surface, viewport: { columns: 44, rows: 40 } });
+    const press = async (fold) => buttons(await draw()).find((b) => b.props.key === 'fold-' + fold).props.onPress({ surface: 'terminal' });
+    const open = ['▌demo task', ' ▾ route 2/3', ' survey › design › build', ' ', '▌▾ tasks 1/2', ' ● 1 one', ' ○ 2 two', ' ', '▌abcdef12 · /fankeel-panel 關閉', ' station 未啟動'];
+    assert.deepEqual(paneLines(await draw()), open);
+    const before = log.invalidated;
+    await press('tasks');
+    assert.equal(log.invalidated, before + 1);
+    assert.deepEqual(paneLines(await draw()), ['▌demo task', ' ▾ route 2/3', ' survey › design › build', ' ', '▌▸ tasks 1/2', ' ', '▌abcdef12 · /fankeel-panel 關閉', ' station 未啟動']);
+    await press('route');
+    assert.equal(log.invalidated, before + 2);
+    assert.deepEqual(paneLines(await draw()), ['▌demo task', ' ▸ route 2/3 design', ' ', '▌▸ tasks 1/2', ' ', '▌abcdef12 · /fankeel-panel 關閉', ' station 未啟動']);
+    // Claude Desktop: folded, a block draws no Svg, and its head is the same Button.
+    $.ui.resolve = () => ({ Box: 'Box', Text: 'Text', Button: 'Button', Svg: 'Svg' });
+    const svgs = async () => (await draw('desktop')).children.filter((n) => n.tag === 'Svg').length;
+    assert.equal(await svgs(), 0);
+    assert.deepEqual(buttons(await draw('desktop')).map((b) => b.props.label), ['▸ route 2/3 design', '▸ tasks 1/2']);
+    await press('route');
+    await press('tasks');
+    assert.equal(await svgs(), 2);
+    assert.deepEqual(buttons(await draw('desktop')).map((b) => b.props.label), ['▾ route 2/3', '▾ tasks 1/2']);
+    $.ui.resolve = () => ({ Box: 'Box', Text: 'Text', Button: 'Button' });
+    assert.deepEqual(paneLines(await draw()), open);
+});
+
+test('the fold flags live in the module\'s memory: a fresh register starts with every block open', async () => {
+    const first = await wired();
+    const { $, log } = fake({ files: entryFile(live) });
+    await first['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const draw = async (hooks) => hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } });
+    await buttons(await draw(first)).find((b) => b.props.key === 'fold-route').props.onPress({ surface: 'terminal' });
+    assert.deepEqual(buttons(await draw(first)).map((b) => b.props.label), ['▸ route 2/3 design']);
+    const second = await wired();
+    await second['session.start']($, {}, async () => ({}));
+    await log.ticks[1].fn();
+    assert.deepEqual(buttons(await draw(second)).map((b) => b.props.label), ['▾ route 2/3']);
 });

@@ -15,8 +15,11 @@ export type Entry = Record<string, unknown>
 export type Other = { id: string; entry: Entry }
 // `color` is a hex, or absent for the terminal's own. The segments of a row
 // touch: one that wants a space before it carries the space in its text.
-// `press` makes the segment a Button on the Pane (hooks/pane.ts piece): 'station' opens the station's page.
-export type Seg = { text: string; color?: string; bold?: boolean; press?: 'station' }
+// `press` makes the segment a Button on the Pane (hooks/pane.ts piece): 'station' opens the station's page,
+// 'fold' folds or opens the block `fold` names.
+export type Seg = { text: string; color?: string; bold?: boolean; press?: 'station' | 'fold'; fold?: Fold }
+// The blocks a head row folds; docs/90-agent/plans/2026-10-17-pane-fold-todo-design.md section 1.
+export type Fold = 'route' | 'tasks'
 // One drawn row. No segments is the blank row above a block. `who` is the
 // neighbour a clash row names: hooks/pane.ts counts them against the band's flag.
 export type Row = { block: string; segs: Seg[]; who?: string }
@@ -39,6 +42,8 @@ export type StatusInput = {
   agents?: AgentNode[]
   // The station's url, from <configDir>/fankeel/serve.json (hooks/pane.ts stationOf); absent or null when none is up.
   station?: string | null
+  // The blocks folded to their head row (hooks/pane.ts state); absent is every block open.
+  folded?: Partial<Record<Fold, boolean>>
 }
 
 // Each block's rail, a fixed colour whatever the stage, on its first drawn row;
@@ -60,6 +65,8 @@ const title = (block: string, text: string): Seg => ({ text, color: RAILS[block]
 const record = (v: unknown): Record<string, unknown> => (v && typeof v === 'object' ? (v as Record<string, unknown>) : {})
 // Labels and secondary text.
 const dim = (text: string): Seg => ({ text, color: WHERE })
+// A fold head: ▾ while the block under it is open, ▸ while it is folded, drawn as a Button.
+const head = (fold: Fold, folded: boolean, text: string): Seg => ({ text: `${folded ? '▸' : '▾'} ${text}`, color: WHERE, bold: true, press: 'fold', fold })
 
 // The tail of `s` that fits: a path is told apart by its end.
 function tail(s: string, cols: number): string {
@@ -155,7 +162,7 @@ export function planTasks(text: string): PlanTask[] {
 export const planTotal = (text: string): number => planTasks(text).length
 
 // `inner` is the cells a row has after its rail.
-function taskBlock(entry: Entry, inner: number): Row[] {
+function taskBlock(entry: Entry, inner: number, folded: boolean): Row[] {
   const rows = wrap(str(entry.task) || '—', inner).map((text) => row('task', { text, bold: true }))
   const next = str(entry.next)
   // 5: the cells of `next:`, which opens the first row.
@@ -165,7 +172,9 @@ function taskBlock(entry: Entry, inner: number): Row[] {
   // The stations behind the stage are green, the stage is the terminal's own and bold, those ahead are grey.
   const route = list(entry.route)
   const at = route.indexOf(str(entry.stage))
-  if (at >= 0) {
+  // The route opens with its head row, `▾ route 2/6`; folded, the head alone, with the stage after it.
+  if (at >= 0) rows.push(row('task', head('route', folded, `route ${at + 1}/${route.length}${folded ? ` ${route[at]}` : ''}`)))
+  if (at >= 0 && !folded) {
     let cur: Seg[] = []
     let used = 0
     route.forEach((name, i) => {
@@ -229,7 +238,7 @@ const WHOLE = 6
 // agents are out (lib/registry.js inflights); the mod cannot tell which tasks a
 // dispatch group holds, so the agent is drawn on the first open task that is
 // not the user's. With no ledger, a mark on this stage is one row of its own.
-function tasksBlock(entry: Entry, plan: PlanInfo | null, inner: number, now: number): Row[] {
+function tasksBlock(entry: Entry, plan: PlanInfo | null, inner: number, now: number, folded: boolean): Row[] {
   const stage = str(entry.stage)
   const marks = Array.isArray(entry.inflight) ? entry.inflight : [entry.inflight]
   const mark = marks.map(record).find((m) => m.stage === stage)
@@ -261,9 +270,10 @@ function tasksBlock(entry: Entry, plan: PlanInfo | null, inner: number, now: num
     if (t.user) return row('tasks', { text: '◐', color: GUARD }, { text: name(' · 你的') }, dim(' · 你的'))
     return row('tasks', { text: '○', color: TODO }, { text: name('') })
   }
-  const head = row('tasks', title('tasks', 'tasks'), { text: ` ${count} of ${plan.tasks.length}` })
-  if (plan.tasks.length <= WHOLE) return [head, ...plan.tasks.map(one)]
-  const rows = [head]
+  const top = row('tasks', head('tasks', folded, `tasks ${count}/${plan.tasks.length}`))
+  if (folded) return [top]
+  if (plan.tasks.length <= WHOLE) return [top, ...plan.tasks.map(one)]
+  const rows = [top]
   if (count) rows.push(row('tasks', { text: '✓', color: DONE }, dim(` 完成 ${count}`)))
   rows.push(...open.slice(0, 3).map(one))
   const rest = open.slice(3)
@@ -349,10 +359,11 @@ export function statusRows(input: StatusInput): Row[] {
   }
   // 1: the cell every drawn row opens with, its block's rail or the space under it.
   const inner = Math.max(4, cols - 1)
-  const blocks: Row[][] = [taskBlock(entry, inner)]
+  const folded = input.folded ?? {}
+  const blocks: Row[][] = [taskBlock(entry, inner, !!folded.route)]
   const clash = clashBlock(entry, others, inner, now)
   if (clash.length) blocks.push(clash)
-  const tasks = tasksBlock(entry, input.plan, inner, now)
+  const tasks = tasksBlock(entry, input.plan, inner, now, !!folded.tasks)
   if (tasks.length) blocks.push(tasks)
   const agents = agentsBlock(input.agents ?? [], inner, now)
   if (agents.length) blocks.push(agents)

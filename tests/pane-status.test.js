@@ -47,8 +47,8 @@ test('the frame is task, clash, notes, foot: a section\'s rail is on its first r
         const rail = row.block === 'task' ? { text: '▌' } : { text: '▌', color: RAIL[row.block] };
         assert.deepEqual(row.segs[0], first || row.block === 'clash' ? rail : { text: ' ' }, line(row));
     });
-    // The task 5 rows (the route wraps to two), the clash 2, notes 3, the foot 2: the session, then the station.
-    assert.equal(rows.filter((r) => r.segs.length).map((r) => r.segs[0].text).join(''), '▌    ▌▌▌  ▌ ');
+    // The task 6 rows (the route's head, then the route wrapped to two), the clash 2, notes 3, the foot 2: the session, then the station.
+    assert.equal(rows.filter((r) => r.segs.length).map((r) => r.segs[0].text).join(''), '▌     ▌▌▌  ▌ ');
     assert.deepEqual(m.RAILS, RAIL);
 });
 
@@ -102,10 +102,10 @@ test('the route row names the stations in order: those behind green, the current
     assert.ok(rows.every((r) => r.block !== 'session' && r.block !== 'quota'));
     // A route that is empty, or has not the stage, draws no row; a narrow pane wraps between stations.
     const rowsOf = (over, cols) => text(status(m, { entry: Object.assign({}, entry, { next: '' }, over), cols }), 'task').length;
-    assert.equal(rowsOf({ route, stage: 'build' }, 41), 3);
+    assert.equal(rowsOf({ route, stage: 'build' }, 41), 4);
     assert.equal(rowsOf({ route: [], stage: 'build' }, 41), 2);
     assert.equal(rowsOf({ route, stage: 'plan' }, 41), 2);
-    assert.deepEqual(text(status(m, { entry: Object.assign({}, entry, { next: '', task: 't', route, stage: 'build' }), cols: 22 }), 'task'), ['▌t', ' survey › design', ' build › verify › land']);
+    assert.deepEqual(text(status(m, { entry: Object.assign({}, entry, { next: '', task: 't', route, stage: 'build' }), cols: 22 }), 'task'), ['▌t', ' ▾ route 3/5', ' survey › design', ' build › verify › land']);
 });
 
 test('the clash block is each file a neighbour holds too, then that neighbour\'s task, stage and how long since it moved', async () => {
@@ -177,12 +177,12 @@ test('no entry draws only the empty block, with no rail', async () => {
 test('with no room notes go first; task, clash and foot never do', async () => {
     const m = await load();
     const rows = (room) => status(m, { others: [other], room });
-    assert.equal(rows(60).length, 15);
-    assert.deepEqual(blocksOf(rows(15)), ['task', 'clash', 'notes', 'foot']);
-    assert.deepEqual(blocksOf(rows(14)), ['task', 'clash', 'foot']);
+    assert.equal(rows(60).length, 16);
+    assert.deepEqual(blocksOf(rows(16)), ['task', 'clash', 'notes', 'foot']);
+    assert.deepEqual(blocksOf(rows(15)), ['task', 'clash', 'foot']);
     assert.deepEqual(blocksOf(rows(-9)), ['task', 'clash', 'foot']);
-    assert.equal(rows(-9).length, 11);
-    for (const room of [15, 14, 11])assert.ok(rows(room).length <= room, room + ' < ' + rows(room).length);
+    assert.equal(rows(-9).length, 12);
+    for (const room of [16, 15, 12])assert.ok(rows(room).length <= room, room + ' < ' + rows(room).length);
 });
 
 test('no row is wider than the pane, and CJK counts two', async () => {
@@ -271,7 +271,7 @@ test('six tasks or fewer are listed whole: done, open, and the user\'s own', asy
     const m = await load();
     const rows = status(m, { plan: planOf(5, [1, 2], [4]) });
     assert.deepEqual(body(rows, 'tasks'), [
-        [{ text: 'tasks', color: SECOND, bold: true }, { text: ' 2 of 5' }],
+        [{ text: '▾ tasks 2/5', color: SECOND, bold: true, press: 'fold', fold: 'tasks' }],
         [{ text: '●', color: '#87af5f' }, { text: ' 1 task 1', color: SECOND }],
         [{ text: '●', color: '#87af5f' }, { text: ' 2 task 2', color: SECOND }],
         [{ text: '○', color: '#767676' }, { text: ' 3 task 3' }],
@@ -279,7 +279,7 @@ test('six tasks or fewer are listed whole: done, open, and the user\'s own', asy
         [{ text: '○', color: '#767676' }, { text: ' 5 task 5' }],
     ]);
     assert.equal(drawn(status(m, { plan: planOf(6, []) }), 'tasks').length, 7);
-    assert.deepEqual(text(status(m, { plan: planOf(3, [1, 9]) }), 'tasks')[0], '▌tasks 1 of 3');
+    assert.deepEqual(text(status(m, { plan: planOf(3, [1, 9]) }), 'tasks')[0], '▌▾ tasks 1/3');
     assert.deepEqual(blocksOf(status(m, { others: [other], plan: planOf(5, []) })), ['task', 'clash', 'tasks', 'notes', 'foot']);
     assert.deepEqual(text(status(m, { plan: null }), 'tasks'), []);
 });
@@ -303,22 +303,22 @@ test('an agent out on this stage is marked on the first open task that is not th
 test('more than six tasks fold to the count done, the first open task and the two after it, and how many are left', async () => {
     const m = await load();
     assert.deepEqual(text(status(m, { entry: busy, plan: planOf(13, [1, 2, 3, 4], [13]) }), 'tasks'), [
-        '▌tasks 4 of 13',
+        '▌▾ tasks 4/13',
         ' ✓ 完成 4',
         ' ◉  5 task 5 · 出去 12 分',
         ' ○  6 task 6',
         ' ○  7 task 7',
         ' ○ 還有 6 個，1 個是你的',
     ]);
-    assert.deepEqual(body(status(m, { plan: planOf(13, [1, 2, 3, 4]) }), 'tasks').filter((segs) => /完成|還有/.test(segs[1].text)), [
+    assert.deepEqual(body(status(m, { plan: planOf(13, [1, 2, 3, 4]) }), 'tasks').slice(1).filter((segs) => /完成|還有/.test(segs[1].text)), [
         [{ text: '✓', color: '#87af5f' }, { text: ' 完成 4', color: SECOND }],
         [{ text: '○', color: '#767676' }, { text: ' 還有 6 個', color: SECOND }],
     ]);
-    assert.deepEqual(text(status(m, { plan: planOf(7, []) }), 'tasks'), ['▌tasks 0 of 7', ' ○ 1 task 1', ' ○ 2 task 2', ' ○ 3 task 3', ' ○ 還有 4 個']);
+    assert.deepEqual(text(status(m, { plan: planOf(7, []) }), 'tasks'), ['▌▾ tasks 0/7', ' ○ 1 task 1', ' ○ 2 task 2', ' ○ 3 task 3', ' ○ 還有 4 個']);
     // Complete out of order: the window is still the first three that are open.
-    assert.deepEqual(text(status(m, { plan: planOf(8, [1, 3, 8]) }), 'tasks'), ['▌tasks 3 of 8', ' ✓ 完成 3', ' ○ 2 task 2', ' ○ 4 task 4', ' ○ 5 task 5', ' ○ 還有 2 個']);
-    assert.deepEqual(text(status(m, { plan: planOf(9, [1, 2, 3, 4, 5, 6, 7, 8]) }), 'tasks'), ['▌tasks 8 of 9', ' ✓ 完成 8', ' ○ 9 task 9']);
-    assert.deepEqual(text(status(m, { plan: planOf(7, [1, 2, 3, 4, 5, 6, 7]) }), 'tasks'), ['▌tasks 7 of 7', ' ✓ 完成 7']);
+    assert.deepEqual(text(status(m, { plan: planOf(8, [1, 3, 8]) }), 'tasks'), ['▌▾ tasks 3/8', ' ✓ 完成 3', ' ○ 2 task 2', ' ○ 4 task 4', ' ○ 5 task 5', ' ○ 還有 2 個']);
+    assert.deepEqual(text(status(m, { plan: planOf(9, [1, 2, 3, 4, 5, 6, 7, 8]) }), 'tasks'), ['▌▾ tasks 8/9', ' ✓ 完成 8', ' ○ 9 task 9']);
+    assert.deepEqual(text(status(m, { plan: planOf(7, [1, 2, 3, 4, 5, 6, 7]) }), 'tasks'), ['▌▾ tasks 7/7', ' ✓ 完成 7']);
     // Three open is the window exactly; four open leaves one.
     assert.deepEqual(text(status(m, { plan: planOf(7, [1, 2, 3, 4]) }), 'tasks').slice(2), [' ○ 5 task 5', ' ○ 6 task 6', ' ○ 7 task 7']);
     assert.deepEqual(text(status(m, { plan: planOf(8, [1, 2, 3, 4]) }), 'tasks').slice(-1), [' ○ 還有 1 個']);
@@ -330,7 +330,7 @@ test('thirty tasks never take more than seven rows, however many are done', asyn
     for (let done = 0; done <= 30; done++) {
         const rows = drawn(status(m, { entry: busy, plan: planOf(30, Array.from({ length: done }, (_, i) => i + 1), [29, 30]) }), 'tasks');
         assert.ok(rows.length <= 7, done + ' done: ' + rows.length + ' rows');
-        assert.equal(line(rows[0]), '▌tasks ' + done + ' of 30');
+        assert.equal(line(rows[0]), '▌▾ tasks ' + done + '/30');
     }
 });
 
@@ -381,7 +381,7 @@ test('every section of the whole Pane carries one rail, its first row\'s, at any
     }
     for (const row of drawn(rows, 'clash')) assert.deepEqual(row.segs[0], { text: '▌', color: '#ff5f5f' }, line(row));
     // A tasks block cut to its title row, and the task block's first row, are still first rows.
-    assert.deepEqual(text(whole({ room: -9 }), 'tasks'), ['▌tasks 2 of 13']);
+    assert.deepEqual(text(whole({ room: -9 }), 'tasks'), ['▌▾ tasks 2/13']);
     for (const cols of [20, 30, 41, 88]) {
         for (const room of [60, 20, -9]) {
             const seen = whole({ cols, room });
@@ -399,15 +399,15 @@ test('with no room the blocks go in the order notes, the tasks window', async ()
     const m = await load();
     const rows = (room) => status(m, { others: [other], plan: planOf(5, [1, 2]), room });
     const all = ['task', 'clash', 'tasks', 'notes', 'foot'];
-    // 22 rows: the task 5, the clash 2, tasks 6, notes 3, the foot 2, and four blank rows between.
-    assert.equal(rows(60).length, 22);
-    assert.deepEqual(blocksOf(rows(22)), all);
-    assert.deepEqual(blocksOf(rows(21)), ['task', 'clash', 'tasks', 'foot']);
-    assert.equal(drawn(rows(18), 'tasks').length, 6);
-    assert.deepEqual(text(rows(17), 'tasks'), ['▌tasks 2 of 5']);
+    // 23 rows: the task 6, the clash 2, tasks 6, notes 3, the foot 2, and four blank rows between.
+    assert.equal(rows(60).length, 23);
+    assert.deepEqual(blocksOf(rows(23)), all);
+    assert.deepEqual(blocksOf(rows(22)), ['task', 'clash', 'tasks', 'foot']);
+    assert.equal(drawn(rows(19), 'tasks').length, 6);
+    assert.deepEqual(text(rows(18), 'tasks'), ['▌▾ tasks 2/5']);
     assert.deepEqual(blocksOf(rows(-9)), ['task', 'clash', 'tasks', 'foot']);
-    assert.equal(rows(-9).length, 13);
-    for (const room of [22, 21, 18, 17, 13]) assert.ok(rows(room).length <= room, room + ' < ' + rows(room).length);
+    assert.equal(rows(-9).length, 14);
+    for (const room of [23, 22, 19, 18, 14]) assert.ok(rows(room).length <= room, room + ' < ' + rows(room).length);
 });
 
 test('a block the entry lacks is skipped, not removed in its place: with no notes, tasks or clash in a room too small, the task and the foot stay', async () => {
@@ -466,4 +466,22 @@ test('the station is the foot\'s last row: a button and the whole url, or grey w
     assert.equal(text(status(m, { station: url }), 'foot')[1], ' 開啟 station ' + url);
     const empty = status(m, { entry: null, others: [], station: url });
     assert.deepEqual(empty[empty.length - 1], { block: 'empty', segs: on });
+});
+
+test('route and tasks open under a ▾ head and fold to it under ▸, the route head naming the stage', async () => {
+    const m = await load();
+    const plan = planOf(5, [1, 2], [4]);
+    const heads = (rows) => rows.flatMap((r) => r.segs.filter((s) => s.press === 'fold')).map((s) => [s.fold, s.text]);
+    const open = status(m, { plan });
+    assert.deepEqual(heads(open), [['route', '▾ route 2/7'], ['tasks', '▾ tasks 2/5']]);
+    assert.deepEqual(open.flatMap((r) => r.segs).find((s) => s.fold === 'route'), { text: '▾ route 2/7', color: SECOND, bold: true, press: 'fold', fold: 'route' });
+    const folded = status(m, { plan, folded: { route: true, tasks: true } });
+    assert.deepEqual(heads(folded), [['route', '▸ route 2/7 design'], ['tasks', '▸ tasks 2/5']]);
+    // Folded, each block is its head row: the two route rows and the task rows go, the title and next: stay.
+    assert.deepEqual(text(folded, 'tasks'), ['▌▸ tasks 2/5']);
+    assert.equal(drawn(folded, 'task').length, drawn(open, 'task').length - 2);
+    assert.ok(!text(folded, 'task').some((t) => t.includes(' › ')));
+    assert.deepEqual(heads(status(m, { plan, folded: { tasks: true } })), [['route', '▾ route 2/7'], ['tasks', '▸ tasks 2/5']]);
+    // A stage that is not on the route draws no route and no head.
+    assert.deepEqual(heads(status(m, { entry: Object.assign({}, entry, { stage: 'nowhere' }) })), []);
 });
