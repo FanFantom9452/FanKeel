@@ -5,13 +5,11 @@
 
 import { WHERE, FLAG, GUARD, TODO, claimsOf } from './pane-band.ts'
 import { str, list, width, cut, WIDE, DIM, minutes } from './pane-bar.ts'
-import type { Context } from './pane-bar.ts'
 import { tokenLabel } from './pane-agents.ts'
 import type { AgentNode } from './pane-agents.ts'
 
 // Kept as exports of this file: hooks/pane.ts imports them from here.
 export { str, list, width, cut, WIDE }
-export type { Context }
 
 export type Entry = Record<string, unknown>
 export type Other = { id: string; entry: Entry }
@@ -30,7 +28,6 @@ export type StatusInput = {
   id: string
   entry: Entry | null
   others: Other[]
-  context: Context | null
   plan: PlanInfo | null
   cols: number
   room: number

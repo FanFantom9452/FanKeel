@@ -1,8 +1,8 @@
 import type { Register, EngineInterface, UiPressArgument } from 'claude-code'
 import { parentOf, isActive, SESSION_ID, thresholdWith } from './compact.ts'
 import { statusRows, ledgerDoneIds, planTasks } from './pane-status.ts'
-import type { Entry, Other, Context, PlanInfo, PlanTask, Seg as StatusSeg, Row as StatusRow, StatusInput } from './pane-status.ts'
-import type { Limit } from './pane-bar.ts'
+import type { Entry, Other, PlanInfo, PlanTask, Seg as StatusSeg, Row as StatusRow, StatusInput } from './pane-status.ts'
+import type { Context, Limit } from './pane-bar.ts'
 import { taskDir, pendingName, parsePending } from './pane-gate.ts'
 import type { Pending } from './pane-gate.ts'
 import { agentTree, agentTokens } from './pane-agents.ts'
@@ -510,7 +510,7 @@ export const register: Register = (on) => {
   }
 
   on('session.start', async ($, e, next) => {
-    await $.command.register({ name: COMMAND, description: 'fankeel 面板：任務、撞檔、tasks、context、用量額度與 notes' })
+    await $.command.register({ name: COMMAND, description: 'fankeel 面板：任務、撞檔、tasks、用量額度與 notes' })
     $.clock.every(POLL_MS, () => tick($, state))
     return next(e)
   })
@@ -585,7 +585,6 @@ export const register: Register = (on) => {
       id: seen.id,
       entry: seen.entry,
       others: seen.others,
-      context: seen.context,
       plan: seen.plan,
       cols,
       room,
@@ -604,7 +603,7 @@ export const register: Register = (on) => {
       return h(Text, { color: seg.color, bold: seg.bold, wrap: 'truncate-end' }, seg.text)
     }
     const line = (row: StatusRow) => (row.segs.length === 0 ? blankRow() : h(Box, { flexDirection: 'row' }, ...row.segs.map(piece)))
-    // Claude Desktop draws the route, the clash, the tasks and the context as Svg; every other surface draws the text.
+    // Claude Desktop draws the route, the clash and the tasks as Svg; every other surface draws the text.
     if (e.surface === 'desktop') {
       try {
         const { Svg } = $.ui.resolve(e)

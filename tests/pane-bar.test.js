@@ -78,7 +78,7 @@ test('bar fills in eighths of a cell, rounded down, and the track takes the rest
 
 test('ctxPaint steps through TokenBar\'s ramp by percent of the threshold, bold from sixty, marked from eighty', async () => {
     const { ctxPaint, nearCompact } = await load();
-    // The eighty percent line is one definition: the band's mark and the Pane's context block both ask it.
+    // The eighty percent line is one definition: the band's mark asks it.
     assert.equal(nearCompact(80000, 100000), true);
     assert.equal(nearCompact(79999, 100000), false);
     assert.equal(nearCompact(360000, 450000), true);

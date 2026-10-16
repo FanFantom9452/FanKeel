@@ -450,7 +450,7 @@ test('paneParts keeps a block as rows when its drawing is empty', async () => {
     const { paneParts } = await load('pane-svg');
     const seg = (text) => ({ text });
     const clashRows = [{ block: 'clash', segs: [seg('▌'), seg('⚑ hooks/pane.ts')] }];
-    const base = { id: 'x', entry, others: [], context: null, plan: null, cols: 41, room: 60, now: NOW };
+    const base = { id: 'x', entry, others: [], plan: null, cols: 41, room: 60, now: NOW };
     // No other session holds a file: clashSvg draws nothing, so the rows stay.
     assert.deepEqual(paneParts(base, clashRows), [{ rows: clashRows }]);
 });
@@ -458,7 +458,7 @@ test('paneParts keeps a block as rows when its drawing is empty', async () => {
 test('paneParts keeps a block as rows when its drawing is over SVG_MAX', async () => {
     const { paneParts } = await load('pane-svg');
     const clashRows = [{ block: 'clash', segs: [{ text: '▌' }, { text: '⚑ hooks/pane.ts' }] }];
-    const base = { id: 'x', entry, others: [], context: null, plan: null, cols: 41, room: 60, now: NOW };
+    const base = { id: 'x', entry, others: [], plan: null, cols: 41, room: 60, now: NOW };
     // 2000 shared files draw far past 131072 characters.
     const files = Array.from({ length: 2000 }, (_, i) => 'f/' + i + '.ts');
     const big = Object.assign({}, entry, { claims: files });
@@ -473,14 +473,14 @@ test('paneParts draws nothing as Svg when there is no task', async () => {
         { block: 'notes', segs: [] },
         { block: 'notes', segs: [{ text: '▌' }, { text: 'notes' }] },
     ];
-    const parts = paneParts({ id: 'x', entry: null, others: [], context: null, plan: null, cols: 41, room: 60, now: NOW }, rows);
+    const parts = paneParts({ id: 'x', entry: null, others: [], plan: null, cols: 41, room: 60, now: NOW }, rows);
     assert.deepEqual(parts, [{ rows }]);
 });
 
 test('paneParts leaves the tasks block as rows when statusRows cut it to its title', async () => {
     const { paneParts } = await load('pane-svg');
     const rows = [{ block: 'tasks', segs: [{ text: '▌' }, { text: 'tasks' }, { text: ' 4 of 9' }] }];
-    const parts = paneParts({ id: 'x', entry, others: [], context: null, plan: planOf(9, 4), cols: 41, room: 60, now: NOW }, rows);
+    const parts = paneParts({ id: 'x', entry, others: [], plan: planOf(9, 4), cols: 41, room: 60, now: NOW }, rows);
     assert.deepEqual(parts, [{ rows }]);
 });
 
@@ -488,7 +488,7 @@ test('paneParts: a task titled like a station keeps its title row as Text and th
     const { paneParts } = await load('pane-svg');
     const { statusRows } = await load('pane-status');
     const named = Object.assign({}, entry, { task: 'build' });
-    const input = { id: 'x', entry: named, others: [], context: null, plan: null, cols: 41, room: 60, now: NOW };
+    const input = { id: 'x', entry: named, others: [], plan: null, cols: 41, room: 60, now: NOW };
     const rows = statusRows(input);
     const parts = paneParts(input, rows);
     const svgs = parts.filter((p) => 'source' in p);
@@ -540,7 +540,7 @@ test('nothing the band or the Pane draws is animated, and the route is never dra
         mod.tasksSvg(entry, planOf(40, 10), NOW, 41),
     ];
     for (const source of drawn) assert.ok(!/<animate|fk-br|fk-pulse|class="[^"]*live/.test(source), source.slice(0, 80));
-    const input = { id: 'x', entry, others: [], context: null, plan: null, cols: 41, room: 60, now: NOW };
+    const input = { id: 'x', entry, others: [], plan: null, cols: 41, room: 60, now: NOW };
     const route = mod.paneParts(input, statusRows(input)).find((p) => 'source' in p && p.alt.startsWith('survey'));
     assert.ok(route && !route.isInteractive);
 });

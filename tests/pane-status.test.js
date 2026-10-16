@@ -34,7 +34,7 @@ const drawn = (rows, block) => rows.filter((r) => r.block === block && r.segs.le
 const text = (rows, block) => drawn(rows, block).map(line);
 // A block's rows without the cell each one opens with: its rail, or the space under it.
 const body = (rows, block) => drawn(rows, block).map((r) => r.segs.slice(1));
-const status = (m, over) => m.statusRows(Object.assign({ id: ID, entry, others: [], context: null, plan: null, cols: 41, room: 60, now: NOW }, over));
+const status = (m, over) => m.statusRows(Object.assign({ id: ID, entry, others: [], plan: null, cols: 41, room: 60, now: NOW }, over));
 const blocksOf = (rows) => [...new Set(rows.map((r) => r.block))];
 
 test('the frame is task, clash, notes, foot: a section\'s rail is on its first row alone, and every clash row keeps its own', async () => {
@@ -434,7 +434,7 @@ test('the agents block is a tree: the counts, ○ running, ● stopped, └ unde
     const { statusRows } = await load();
     const kid = { id: 'r1', title: 'Patrol check group C', type: 'fankeel:fankeel-reader', model: 'sonnet 5.5', effort: 'low', at: NOW - 8 * 60000, end: NOW - 2 * 60000, tokens: null, kids: [] };
     const root = { id: 'b1', title: 'survey stage agent', type: 'fankeel:fankeel-brain', model: 'opus 5.5', effort: 'high', at: NOW - 10 * 60000, end: null, tokens: 79418, kids: [kid] };
-    const base = { id: ID, entry, others: [], context: null, plan: null, cols: 60, room: 60, now: NOW };
+    const base = { id: ID, entry, others: [], plan: null, cols: 60, room: 60, now: NOW };
     const text = (r) => r.segs.map((s) => s.text).join('');
     const block = statusRows({ ...base, agents: [root] }).filter((r) => r.block === 'agents' && r.segs.length).map(text);
     assert.deepEqual(block, [
@@ -451,7 +451,7 @@ test('the agents block lists six roots and three under each, and folds the rest'
     const node = (id, kids = []) => ({ id, title: id, type: '', model: 'sonnet 5.5', effort: 'medium', at: NOW - 60000, end: null, kids });
     const roots = [node('a', ['k1', 'k2', 'k3', 'k4', 'k5'].map((k) => node(k))), ...['b', 'c', 'd', 'e', 'f', 'g', 'h'].map((id) => node(id))];
     const text = (r) => r.segs.map((s) => s.text).join('');
-    const block = statusRows({ id: ID, entry, others: [], context: null, plan: null, cols: 60, room: 80, now: NOW, agents: roots }).filter((r) => r.block === 'agents' && r.segs.length).map(text);
+    const block = statusRows({ id: ID, entry, others: [], plan: null, cols: 60, room: 80, now: NOW, agents: roots }).filter((r) => r.block === 'agents' && r.segs.length).map(text);
     assert.equal(block.filter((t) => / ○ [a-h] /.test(t)).length, 6);
     assert.equal(block.filter((t) => /├|└ ○/.test(t)).length, 3);
     assert.ok(block.includes('  └ 還有 2 個'));

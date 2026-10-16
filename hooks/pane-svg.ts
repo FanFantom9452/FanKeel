@@ -438,7 +438,7 @@ export function tasksSvg(entry: Entry, plan: PlanInfo, now: number, cols: number
 export type Part = { rows: Row[] } | { source: string; alt: string; isInteractive?: boolean }
 
 // The desktop Pane from the rows statusRows drew for the same input: the task
-// title, `next:`, notes and the foot stay rows; the route rows, the clash, the
+// title, `next:`, notes and the foot stay rows; the route rows, the clash
 // and the tasks become one Svg each, whose alt is those rows'
 // text. A block statusRows cut to its title (the tasks, when the Pane is short),
 // a drawing with nothing in it, or one over SVG_MAX stays rows.
