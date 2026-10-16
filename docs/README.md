@@ -578,6 +578,7 @@ is corrected by the next one, not by rewriting this.
 | Can the route dots breathe while the stage is live? | [90-agent/judgements/2026-10-15-route-dots-breathe.md](90-agent/judgements/2026-10-15-route-dots-breathe.md) — *judged 2026-10-15, fable* |
 | Judge brief 1 — agent effort, agent coverage, mandatory render review | [90-agent/judgements/2026-10-15-agent-effort-usage-render.md](90-agent/judgements/2026-10-15-agent-effort-usage-render.md) — *judged 2026-10-15, fable* |
 | Brief: Pane 上能不能放常駐、可點、打開 station 網頁的元件，並顯示完整網址 | [90-agent/judgements/2026-10-16-pane-station-link.md](90-agent/judgements/2026-10-16-pane-station-link.md) — *judged 2026-10-16, fable* |
+| 判官題：對話裡那張勾選清單是誰畫的？ | [90-agent/judgements/2026-10-16-desktop-task-list.md](90-agent/judgements/2026-10-16-desktop-task-list.md) — *judged 2026-10-16, fable* |
 
 ## The five scanners
 
