@@ -87,6 +87,24 @@
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/brief.js\"",
             "timeout": 5,
             "statusMessage": "Briefing the subagent..."
+          },
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-end.js\"",
+            "timeout": 5,
+            "statusMessage": "Noting the subagent for the panel..."
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-end.js\"",
+            "timeout": 5,
+            "statusMessage": "Noting the subagent for the panel..."
           }
         ]
       }
