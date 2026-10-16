@@ -11,6 +11,8 @@ global.window = { STATION: { serve: false } };
 const V = require('../assets/station/station.js');
 const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
 const NOW = Date.parse('2026-10-01T12:00:00.000Z');
+// The library's kinds (Task 5): off by default, so a stored key carries them off at its tail.
+const REST = ['dash-clash', 'dash-byproj', 'dash-tokens7', 'dash-models', 'dash-gatewait', 'dash-landed', 'dash-blocked', 'dash-agents'];
 
 const e = (id, title, state, label) => ({ id, label: label || '', title, description: '', state, condition: '', stamp: '' });
 const ALPHA = { pkey: 'F:\\ws\\alpha', mode: 'folder', folder: 'docs/todo', done: [], open: [
@@ -103,12 +105,12 @@ test('no Ready anywhere says so', () => {
 
 test('dashOrder keeps a stored order, drops unknown ids, appends missing ones, and reads bad JSON as the default', () => {
     const DEF = ['dash-live', 'waiting-card', 'dash-todo', 'dash-spend', 'dash-recent'];
-    assert.deepEqual(V.dashOrder(null).map((c) => c.id), DEF);
-    assert.ok(V.dashOrder(null).every((c) => c.on));
-    assert.deepEqual(V.dashOrder('not json').map((c) => c.id), DEF);
+    assert.deepEqual(V.dashOrder(null).map((c) => c.id), DEF.concat(REST));
+    assert.ok(V.dashOrder(null).filter((c) => DEF.includes(c.id)).every((c) => c.on));
+    assert.deepEqual(V.dashOrder('not json').map((c) => c.id), DEF.concat(REST));
     const got = V.dashOrder(JSON.stringify({ order: ['dash-todo', 'nope', 'dash-live', 'dash-todo'], off: ['dash-spend'] }));
-    assert.deepEqual(got.map((c) => c.id), ['dash-todo', 'dash-live', 'waiting-card', 'dash-spend', 'dash-recent']);
-    assert.deepEqual(got.filter((c) => !c.on).map((c) => c.id), ['dash-spend']);
+    assert.deepEqual(got.map((c) => c.id), ['dash-todo', 'dash-live', 'waiting-card', 'dash-spend', 'dash-recent'].concat(REST));
+    assert.deepEqual(got.filter((c) => !c.on).map((c) => c.id), ['dash-spend'].concat(REST));
 });
 
 test('dashPage draws the cards in the stored order, leaves a switched-off card out, and offers 編輯版面', () => {
@@ -136,9 +138,9 @@ test('the cards sit in two columns, and 編輯版面 is the narrow one\'s last s
 test('dashOrder appends a kind the stored order lacks: on if it is a default card, off if not', () => {
     const kinds = page({}).dashKinds();
     assert.ok(Object.values(kinds).every((k) => typeof k.name === 'string' && typeof k.hint === 'string' && typeof k.side === 'boolean'));
-    assert.deepEqual(Object.keys(kinds).filter((id) => kinds[id].side), ['waiting-card', 'dash-todo']);
+    assert.deepEqual(Object.keys(kinds).filter((id) => kinds[id].side && kinds[id].def), ['waiting-card', 'dash-todo']);
     const got = page({}).dashOrder(JSON.stringify({ order: ['dash-recent'], off: [] }));
-    assert.ok(got.every((c) => c.on), 'the default five come back on');
+    assert.ok(got.filter((c) => kinds[c.id].def).every((c) => c.on), 'the default five come back on');
 });
 
 // station.js booted as page() does, but with the document's listeners kept,
@@ -181,7 +183,7 @@ function editor(kept) {
     return { press, key, drag, fire, page: () => els.page.innerHTML, draws: () => writes };
 }
 const DEF = ['dash-live', 'waiting-card', 'dash-todo', 'dash-spend', 'dash-recent'];
-const dashKey = (order, off) => JSON.stringify({ order, off });
+const dashKey = (order, off) => { const tail = REST.filter((id) => !order.includes(id)); return JSON.stringify({ order: order.concat(tail), off: off.concat(tail) }); };
 const EDITING = /<div class="dash kdash editing" data-block="dashboard">/;
 
 test('pressing 編輯版面 enters edit mode, and pressing it again, 完成 or Esc leaves it', () => {
@@ -300,7 +302,7 @@ test('隱藏 stores the card in off; outside edit mode the page leaves it out, i
 });
 
 test('隱藏 reads the stored list: a card already off stays off, and a stale key is filled in whole', () => {
-    const kept = { 'station.dash': dashKey(['dash-recent', 'dash-spend'], ['dash-todo']) };
+    const kept = { 'station.dash': JSON.stringify({ order: ['dash-recent', 'dash-spend'], off: ['dash-todo'] }) };
     editor(kept).press({ 'data-dhide': 'dash-spend' });
     assert.equal(kept['station.dash'], dashKey(['dash-recent', 'dash-spend', 'dash-live', 'waiting-card', 'dash-todo'], ['dash-spend', 'dash-todo']));
 });
@@ -315,7 +317,7 @@ test('加入 puts an off card last and on; on a card already on, or an unknown o
     assert.equal(c.draws(), d, 'no repaint');
     assert.equal(kept['station.dash'], dashKey(DEF, ['dash-live']), 'no store');
     c.press({ 'data-dadd': 'dash-live' });
-    assert.equal(kept['station.dash'], dashKey(['waiting-card', 'dash-todo', 'dash-spend', 'dash-recent', 'dash-live'], []));
+    assert.equal(kept['station.dash'], JSON.stringify({ order: ['waiting-card', 'dash-todo', 'dash-spend', 'dash-recent'].concat(REST, ['dash-live']), off: REST }));
     assert.equal(c.draws(), d + 1, 'one repaint');
 });
 

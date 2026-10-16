@@ -1584,6 +1584,15 @@
             + '<path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/>',
         plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
         undo: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
+        files: '<path d="M20 7h-3a2 2 0 0 1-2-2V2"/><path d="M9 18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l4 4v10a2 2 0 0 1-2 2Z"/><path d="M3 7.6v12.8A1.6 1.6 0 0 0 4.6 22h9.8"/>',
+        barh: '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M7 16h8"/><path d="M7 11h12"/><path d="M7 6h3"/>',
+        barv: '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
+        pie: '<path d="M21 12c.552 0 1.005-.449.95-.998a10 10 0 0 0-8.953-8.951c-.55-.055-.998.398-.998.95v8a1 1 0 0 0 1 1z"/><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>',
+        timer: '<line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/>',
+        commit: '<circle cx="12" cy="12" r="3"/><line x1="3" x2="9" y1="12" y2="12"/><line x1="15" x2="21" y1="12" y2="12"/>',
+        calclock: '<path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h5"/><path d="M17.5 17.5 16 16.3V14"/><circle cx="16" cy="16" r="6"/>',
+        bot: '<path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>',
+        close: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
     };
     function icon(name) {
         if (ICONS24[name]) {
@@ -3145,21 +3154,160 @@
         e.preventDefault();
         tdShow(b.closest('.tdlg'), tabs[j].getAttribute('data-st'), true);
     });
+    // The eight cards the library adds (2026-10-16 mockup, dash-library), each
+    // off by default and read off fields `window.STATION` already carries.
+    // A list card's rows are `[k, t, v]`, already escaped.
+    var DASH_SHOWN = 6;
+    function dashXList(rows, none) {
+        if (!rows.length) return '<p class="dnone">' + none + '</p>';
+        var more = rows.length - DASH_SHOWN;
+        return '<ul class="xc-list">' + rows.slice(0, DASH_SHOWN).map(function (r) {
+            return '<li><span class="k">' + r[0] + '</span><span class="t" title="' + r[1] + '">' + r[1] + '</span><span class="v">' + r[2] + '</span></li>';
+        }).join('') + '</ul>' + (more > 0 ? '<p class="xc-note">' + loc('dash.nMoreTodo', '還有 {n} 筆', { n: more }) + '</p>' : '');
+    }
+    function dashTodoName(pkey) { return esc(shortLabel(NAMES[pkey] || pkey)); }
+    // A file two or more live sessions claim at once.
+    function dashClash(R) {
+        var by = {};
+        R.filter(function (s) { return s.state === 'live'; }).forEach(function (s) {
+            (s.claims || []).forEach(function (f) {
+                var list = by[f] || (by[f] = []);
+                if (list.indexOf(s) < 0) list.push(s);
+            });
+        });
+        var files = Object.keys(by).filter(function (f) { return by[f].length > 1; })
+            .sort(function (a, b) { return by[b].length - by[a].length || (a < b ? -1 : 1); });
+        return '<section class="dcard" data-block="dash-clash">' + dashHead('files', loc('dash.cardClash', '撞檔與共用檔案'), '#/live', files.length, files.length ? 'warn' : '')
+            + dashXList(files.map(function (f) {
+                var names = by[f].map(dashRowName).filter(function (n, i, a) { return a.indexOf(n) === i; });
+                return [loc('dash.nSessionsShort', '{n} 個', { n: by[f].length }), esc(f), names.join(loc('dash.listSep', '、'))];
+            }), loc('dash.noClash', '沒有兩個 session 同時在改的檔案')) + '</section>';
+    }
+    // Sums of `dayBars` parts across the window, one per key, largest first.
+    function dashParts(bars) {
+        var sum = {}, est = {};
+        bars.days.forEach(function (b) {
+            Object.keys(b.parts).forEach(function (k) { sum[k] = (sum[k] || 0) + b.parts[k]; if (b.est[k]) est[k] = true; });
+        });
+        return Object.keys(sum).map(function (k) { return { k: k, v: sum[k], estimated: !!est[k] }; }).sort(function (a, b) { return b.v - a.v; });
+    }
+    function dashByProj(R) {
+        var rows = dashParts(dayBars(R, 'usd', 'project', DAYS)), mx = rows.length ? rows[0].v : 1;
+        return '<section class="dcard" data-block="dash-byproj">' + dashHead('barh', loc('dash.cardByProj', '依專案花費'), '#/projects')
+            + (rows.length ? '<div class="xc-bars">' + rows.slice(0, DASH_SHOWN).map(function (r, i) {
+                return '<span class="k" title="' + esc(NAMES[r.k] || r.k) + '">' + dashTodoName(r.k) + '</span><span class="bar' + (i ? '' : ' top') + '"><i style="--w:'
+                    + (r.v / mx * 100).toFixed(1) + '%"></i></span><span class="v">' + usd(r.v, true) + estMark(r) + '</span>';
+            }).join('') + '</div>' : '<p class="dnone">' + loc('dash.noSpend30d', '近 30 天沒有花費') + '</p>') + '</section>';
+    }
+    // The last seven days' tokens, the four kinds `dayBars` reads off `days[].tokens`.
+    function dashTokens7(R) {
+        var bars = dayBars(R, 'tokens', 'kind', DAYS.slice(-7)), list = bars.days, mx = bars.max || 1;
+        var kind = {};
+        dashParts(bars).forEach(function (r) { kind[r.k] = r.v; });
+        var tot = list.reduce(function (n, b) { return n + b.total; }, 0);
+        return '<section class="dcard" data-block="dash-tokens7">' + dashHead('barv', loc('dash.cardTokens7', '近 7 天 token'), '#/days')
+            + '<div class="dbig">' + tokens(tot) + '</div>'
+            + '<div class="xc-cols" role="img" aria-label="' + esc(loc('dash.cardTokens7', '近 7 天 token')) + '">' + list.map(function (b) {
+                return '<i title="' + esc(b.day + ' ' + tokens(b.total)) + '" style="--h:' + (b.total / mx * 100).toFixed(1) + '%"></i>';
+            }).join('') + '</div>' + (list.length ? '<div class="xc-days"><span>' + list[0].day.slice(5) + '</span><span>' + list[list.length - 1].day.slice(5) + '</span></div>' : '')
+            + '<div class="dkv">' + [['input', 'input'], ['output', 'output'], ['cacheRead', 'cache read'], ['cacheWrite', 'cache write']].map(function (k) {
+                return '<span>' + k[1] + ' <b>' + tokens(kind[k[0]] || 0) + '</b></span>';
+            }).join('') + '</div></section>';
+    }
+    function dashModels(R) {
+        var rows = dashParts(dayBars(R, 'usd', 'model', DAYS)), tot = rows.reduce(function (n, r) { return n + r.v; }, 0);
+        var pct = function (r) { return Math.round(r.v / tot * 100) + '%'; };
+        var c = function (r) { return 'var(--m-' + (r.k === 'other' ? 'other' : r.k.split('-')[0]) + ')'; };
+        return '<section class="dcard" data-block="dash-models">' + dashHead('pie', loc('dash.cardModels', '模型用量分布'), '#/days')
+            + (rows.length ? '<div class="xc-stack">' + rows.map(function (r) {
+                return '<i title="' + esc(modelLabel(r.k)) + '" style="--w:' + (r.v / tot * 100).toFixed(1) + '%;--c:' + c(r) + '"></i>';
+            }).join('') + '</div><ul class="xc-key">' + rows.map(function (r) {
+                return '<li style="--c:' + c(r) + '">' + esc(modelLabel(r.k)) + ' <b>' + pct(r) + '</b></li>';
+            }).join('') + '</ul><p class="xc-note">' + loc('dash.modelsBySpend', '按近 30 天的花費算') + '</p>' : '<p class="dnone">' + loc('dash.noSpend30d', '近 30 天沒有花費') + '</p>') + '</section>';
+    }
+    // A stage that waited on you is a gate; the average is over those started
+    // in the last seven days.
+    function dashGateWait(R) {
+        var now = S.serve ? Date.now() : NOW, from = now - 7 * 864e5, waits = [];
+        R.forEach(function (s) {
+            (s.stages || []).forEach(function (w) { if (w.waited > 0 && msOf(w.from) >= from) waits.push(w.waited); });
+        });
+        var avg = waits.length ? waits.reduce(function (a, b) { return a + b; }, 0) / waits.length : NaN;
+        return '<section class="dcard" data-block="dash-gatewait">' + dashHead('timer', loc('dash.cardGateWait', 'gate 平均等待時間'), '#/live')
+            + (waits.length ? '<div class="dbig">' + waitFor(avg) + '<small>' + loc('dash.gateWaitOf', '近 7 天 {n} 次 gate 的平均', { n: waits.length }) + '</small></div>'
+                + '<div class="dkv"><span>' + loc('dash.longest', '最久') + ' <b>' + waitFor(Math.max.apply(null, waits)) + '</b></span></div>'
+                : '<p class="dnone">' + loc('dash.noGateWait7d', '近 7 天沒有等你的 gate') + '</p>') + '</section>';
+    }
+    // Done TODO entries and sessions standing at land, newest first.
+    function dashLanded(R, St) {
+        var rows = [];
+        (St.projects || []).forEach(function (p) {
+            (p.todos || []).forEach(function (t) {
+                (t && t.done || []).forEach(function (e) {
+                    rows.push({ at: msOf(e.at), r: [esc(e.sha ? String(e.sha).slice(0, 7) : e.label || ''), esc(String(e.title || '').split('**').join('')), dashTodoName(t.pkey)] });
+                });
+            });
+        });
+        R.forEach(function (s) {
+            if (s.stage === 'land') rows.push({ at: msOf(s.updated), r: ['land', esc(s.task || loc('dash.unnamed', '（未命名）')), dashRowName(s)] });
+        });
+        rows.sort(function (a, b) { return (b.at || 0) - (a.at || 0); });
+        return '<section class="dcard" data-block="dash-landed">' + dashHead('commit', loc('dash.cardLanded', '最近 commits / land'), '#/sessions')
+            + dashXList(rows.map(function (x) { return x.r; }), loc('dash.noLanded', '還沒有 land 的紀錄')) + '</section>';
+    }
+    // Blocked TODO entries, the soonest stamp first: the stamp is when to look again.
+    function dashBlocked(St) {
+        var rows = [];
+        (St.projects || []).forEach(function (p) {
+            (p.todos || []).forEach(function (t) {
+                (t && t.open || []).forEach(function (e) { if (e.state === 'blocked') rows.push({ e: e, pkey: t.pkey }); });
+            });
+        });
+        rows.sort(function (a, b) { var x = String(a.e.stamp || '9'), y = String(b.e.stamp || '9'); return x < y ? -1 : x > y ? 1 : 0; });
+        return '<section class="dcard" data-block="dash-blocked">' + dashHead('calclock', loc('dash.cardBlocked', 'TODO Blocked 到期'), '#/projects', rows.length)
+            + dashXList(rows.map(function (x) {
+                return [esc(x.e.id || x.e.label || ''), esc(String(x.e.title || '').split('**').join('')), esc(String(x.e.stamp || '—').slice(5))];
+            }), loc('dash.noBlocked', '沒有 Blocked 的條目')) + '</section>';
+    }
+    function dashAgents(R) {
+        var live = R.filter(function (s) { return s.state === 'live' && s.subagents && s.subagents.length; });
+        var n = live.reduce(function (a, s) { return a + s.subagents.length; }, 0);
+        return '<section class="dcard" data-block="dash-agents">' + dashHead('bot', loc('dash.cardAgents', '子代理派工'), '#/live', n)
+            + dashXList(live.map(function (s) {
+                return [dashRowName(s), esc(s.task || loc('dash.unnamed', '（未命名）')), loc('dash.nRunning', '{n} 個在跑', { n: s.subagents.length })];
+            }), loc('dash.noAgents', '沒有 session 在派 agent')) + '</section>';
+    }
     // dash-kinds (station-11): every card the dashboard can draw. `side` puts
     // one in the narrow column, `def` on a fresh dashboard; `render(R, St)`
     // draws it off `homeRows()` and `window.STATION`.
     function dashKinds() {
         return {
-            'dash-live': { name: loc('dash.inProgress', '進行中'), hint: loc('dash.cardLiveHint', '正在跑的 session 和它們走到哪一站'), side: false, def: true,
+            'dash-live': { name: loc('dash.inProgress', '進行中'), hint: loc('dash.cardLiveHint', '正在跑的 session 和它們走到哪一站'), side: false, def: true, ico: 'now',
                 render: function (R) { return dashLive(R); } },
-            'waiting-card': { name: loc('dash.waitingOnYou', '等你回答'), hint: loc('dash.cardGateHint', '停在 gate、等你按下去的問題'), side: true, def: true,
+            'waiting-card': { name: loc('dash.waitingOnYou', '等你回答'), hint: loc('dash.cardGateHint', '停在 gate、等你按下去的問題'), side: true, def: true, ico: 'gate',
                 render: function (R) { return dashGate(R); } },
-            'dash-todo': { name: loc('dash.readyToStart', '可以開工'), hint: loc('dash.cardTodoHint', '各專案 TODO 裡 Ready 的條目'), side: true, def: true,
+            'dash-todo': { name: loc('dash.readyToStart', '可以開工'), hint: loc('dash.cardTodoHint', '各專案 TODO 裡 Ready 的條目'), side: true, def: true, ico: 'check',
                 render: function (R, St) { return dashTodo(St.projects); } },
-            'dash-spend': { name: loc('dash.last30dCost', '近 30 天花費'), hint: loc('dash.cardSpendHint', '每日花費長條、今天和昨天'), side: false, def: true,
+            'dash-spend': { name: loc('dash.last30dCost', '近 30 天花費'), hint: loc('dash.cardSpendHint', '每日花費長條、今天和昨天'), side: false, def: true, ico: 'spend',
                 render: function (R) { return dashSpend(R); } },
-            'dash-recent': { name: loc('dash.recentSessions', '最近 sessions'), hint: loc('dash.cardRecentHint', '最近五個 session 的階段與花費'), side: false, def: true,
+            'dash-recent': { name: loc('dash.recentSessions', '最近 sessions'), hint: loc('dash.cardRecentHint', '最近五個 session 的階段與花費'), side: false, def: true, ico: 'sessions',
                 render: function (R) { return dashRecent(R); } },
+            'dash-clash': { name: loc('dash.cardClash', '撞檔與共用檔案'), hint: loc('dash.cardClashHint', '兩個以上 session 同時在改的檔案，撞上之前先看到'), side: true, def: false, ico: 'files',
+                render: function (R) { return dashClash(R); } },
+            'dash-byproj': { name: loc('dash.cardByProj', '依專案花費'), hint: loc('dash.cardByProjHint', '近 30 天的花費按專案分開，看錢花在哪'), side: false, def: false, ico: 'barh',
+                render: function (R) { return dashByProj(R); } },
+            'dash-tokens7': { name: loc('dash.cardTokens7', '近 7 天 token'), hint: loc('dash.cardTokens7Hint', '每天用掉多少 token，input、output、cache 分開'), side: false, def: false, ico: 'barv',
+                render: function (R) { return dashTokens7(R); } },
+            'dash-models': { name: loc('dash.cardModels', '模型用量分布'), hint: loc('dash.cardModelsHint', '各個模型占近 30 天花費的多少'), side: false, def: false, ico: 'pie',
+                render: function (R) { return dashModels(R); } },
+            'dash-gatewait': { name: loc('dash.cardGateWait', 'gate 平均等待時間'), hint: loc('dash.cardGateWaitHint', 'gate 送出到你回答，平均等多久'), side: true, def: false, ico: 'timer',
+                render: function (R) { return dashGateWait(R); } },
+            'dash-landed': { name: loc('dash.cardLanded', '最近 commits / land'), hint: loc('dash.cardLandedHint', '各專案最近完成的條目與 land，新的在上'), side: false, def: false, ico: 'commit',
+                render: function (R, St) { return dashLanded(R, St); } },
+            'dash-blocked': { name: loc('dash.cardBlocked', 'TODO Blocked 到期'), hint: loc('dash.cardBlockedHint', '等的條件到期、該再看一次的 Blocked 條目'), side: true, def: false, ico: 'calclock',
+                render: function (R, St) { return dashBlocked(St); } },
+            'dash-agents': { name: loc('dash.cardAgents', '子代理派工'), hint: loc('dash.cardAgentsHint', '哪些 session 正在派 agent，各有幾個在跑'), side: true, def: false, ico: 'bot',
+                render: function (R) { return dashAgents(R); } },
         };
     }
     if (typeof module !== 'undefined' && module.exports) module.exports.dashKinds = dashKinds;
@@ -3237,15 +3385,16 @@
     }
     // Two columns (2026-10-01 layout): the wide one for what moves, the narrow
     // one for what waits; `station.dash`'s order holds inside each. 編輯版面
-    // is the narrow column's last slot; while editing it gives way to the
-    // kinds that are off, each offered to add.
+    // is the narrow column's last slot; while editing it gives way to 新增卡片,
+    // which opens the library (`dashLibrary`).
     function dashPage() {
         var R = homeRows(), kinds = dashKinds(), list = dashOrder(stored('station.dash')), edit = !!view.dashEdit;
         var drawn = list.filter(function (c) { return c.on || (edit && kinds[c.id].def); });
-        var slot = edit ? list.filter(function (c) { return !c.on && !kinds[c.id].def; }).map(function (c) {
-            return '<button type="button" class="dadd" data-dadd="' + c.id + '" data-key="dadd-' + c.id + '" aria-label="' + esc(loc('dash.addCard', '加入「{c}」', { c: kinds[c.id].name })) + '">'
-                + '<span class="dpl">' + icon('plus') + '</span><b>' + kinds[c.id].name + '</b><small>' + kinds[c.id].hint + '</small></button>';
-        }).join('') : '<button type="button" class="btn dslot" id="dchtog" data-dchtog="1" data-key="dchtog" aria-expanded="false">'
+        var left = list.filter(function (c) { return !c.on && !kinds[c.id].def; }).length, hid = list.filter(function (c) { return !c.on && kinds[c.id].def; }).length;
+        var slot = edit ? '<button type="button" class="dadd" data-dlib="1" data-key="dlib" aria-haspopup="dialog">'
+            + '<span class="dpl">' + icon('plus') + '</span><b>' + loc('dash.newCard', '新增卡片') + '</b><small>'
+            + (left ? loc('dash.nKindsLeft', '還有 {n} 種卡片可加', { n: left }) : loc('dash.allAdded', '每一種都加過了'))
+            + (hid ? loc('dash.nHiddenBack', '，{n} 張隱藏中可加回', { n: hid }) : '') + '</small></button>' :'<button type="button" class="btn dslot" id="dchtog" data-dchtog="1" data-key="dchtog" aria-expanded="false">'
             + icon('pen') + '<span class="bl">' + loc('dash.editLayout', '編輯版面') + '</span><span class="dts">' + loc('dash.editTip', '排順序、隱藏、加入卡片') + '</span></button>';
         var col = function (wide) {
             return '<div class="dcol" data-col="' + (wide ? 'main' : 'side') + '">' + drawn.filter(function (c) { return !kinds[c.id].side === wide; }).map(function (c) {
@@ -3254,6 +3403,60 @@
             }).join('') + (wide ? '' : slot) + '</div>';
         };
         return '<div class="dash kdash' + (edit ? ' editing' : '') + '" data-block="dashboard">' + col(true) + col(false) + (edit ? dashEditBar(list) : '') + '</div>';
+    }
+    // dash-library: the hidden default cards, each put back in place by
+    // `data-dhide`, then every non-default kind, `data-dadd` while it is off.
+    // `msg` is the status line after a press inside it.
+    function dashLibrary(list, msg) {
+        var kinds = dashKinds();
+        var hid = list.filter(function (c) { return !c.on && kinds[c.id].def; }), more = list.filter(function (c) { return !kinds[c.id].def; });
+        var row = function (c, small, btn) {
+            var k = kinds[c.id];
+            return '<li><span class="dli">' + icon(k.ico) + '</span><div><b>' + k.name + '</b><small>' + small + '</small></div>' + btn + '</li>';
+        };
+        var sec = function (id, title, n, rows) {
+            return '<section data-lib="' + id + '" aria-labelledby="dlib-' + id + '"><h3 id="dlib-' + id + '">' + title + '<span class="kn">' + n + '</span></h3><ul class="dll">' + rows + '</ul></section>';
+        };
+        var close = esc(loc('dash.close', '關閉'));
+        return '<dialog class="dlib" data-block="dash-library" aria-labelledby="dlib-h"><div class="dlib-hd"><b id="dlib-h">' + loc('dash.newCard', '新增卡片') + '</b>'
+            + '<span class="dlib-sub">' + loc('dash.libSub', '加入後排在它那一欄的最後，可再拖曳換位置') + '</span>'
+            + '<button type="button" class="dlib-x" data-lib-close="" aria-label="' + close + '" title="' + close + '">' + icon('close') + '</button></div><div class="dlib-p">'
+            + (hid.length ? sec('hidden', loc('dash.libHidden', '隱藏中'), hid.length, hid.map(function (c) {
+                return row(c, loc('dash.libHiddenHint', '隱藏中；加回就照原來的位置展開'), '<button type="button" class="btn" data-dhide="' + c.id + '" aria-label="'
+                    + esc(loc('dash.putBack', '加回「{c}」', { c: kinds[c.id].name })) + '">' + icon('undo') + '<span>' + loc('dash.putBackShort', '加回') + '</span></button>');
+            }).join('')) : '')
+            + sec('more', loc('dash.libMore', '更多卡片'), more.filter(function (c) { return !c.on; }).length, more.map(function (c) {
+                var k = kinds[c.id];
+                return row(c, k.hint, c.on
+                    ? '<button type="button" class="btn" disabled aria-label="' + esc(loc('dash.added', '已加入「{c}」', { c: k.name })) + '">' + icon('check') + '<span>' + loc('dash.addedShort', '已加入') + '</span></button>'
+                    : '<button type="button" class="btn" data-dadd="' + c.id + '" aria-label="' + esc(loc('dash.addCard', '加入「{c}」', { c: k.name })) + '">' + icon('plus') + '<span>' + loc('dash.addShort', '加入') + '</span></button>');
+            }).join(''))
+            + '</div><div class="dlib-ft"><span class="dlib-st" role="status">' + (msg || '') + '</span><button type="button" class="btn" data-lib-close="">' + loc('dash.close', '關閉') + '</button></div></dialog>';
+    }
+    if (typeof module !== 'undefined' && module.exports) module.exports.dashLibrary = dashLibrary;
+    // The library hangs off <body>, as the TODO quick look does, so the 3 s
+    // redraw of the grid does not close it; closing it hands focus back to 新增卡片.
+    function dashLibOpen(list) {
+        var holder = doc.createElement('div');
+        holder.innerHTML = dashLibrary(list);
+        var d = holder.firstChild;
+        doc.body.appendChild(d);
+        d.addEventListener('click', function (e) {
+            if (e.target === d || (e.target.closest && e.target.closest('[data-lib-close]'))) d.close();
+        });
+        d.addEventListener('close', function () { if (d.parentNode) d.parentNode.removeChild(d); dashFocus('[data-dlib]'); });
+        d.showModal();
+    }
+    // After a press inside the open library, its rows are drawn again and focus
+    // moves to the next one still to press.
+    function dashLibSync(msg) {
+        var d = doc.querySelector ? doc.querySelector('dialog.dlib[open]') : null;
+        if (!d) return;
+        var holder = doc.createElement('div');
+        holder.innerHTML = dashLibrary(dashOrder(stored('station.dash')), msg);
+        d.innerHTML = holder.firstChild.innerHTML;
+        var next = d.querySelector('[data-dhide], [data-dadd]') || d.querySelector('[data-lib-close]');
+        if (next) next.focus();
     }
     // Edit mode's presses: 編輯版面 and 完成 (or Esc) enter and leave it,
     // ↑ ↓, Alt + ↑ ↓ and a drop move a card, 隱藏 / 顯示 folds one, 加入 puts
@@ -3271,10 +3474,13 @@
         if (el && el.focus) el.focus();
     }
     doc.addEventListener('click', function (e) {
-        var b = e.target && e.target.closest ? e.target.closest('[data-dchtog], [data-dchdone], [data-dchreset], [data-dmv], [data-dhide], [data-dadd]') : null;
+        var b = e.target && e.target.closest ? e.target.closest('[data-dchtog], [data-dchdone], [data-dchreset], [data-dmv], [data-dhide], [data-dadd], [data-dlib]') : null;
         if (!b) return;
-        var list = dashOrder(stored('station.dash')), to = null;
-        if (b.hasAttribute('data-dchtog')) {
+        var list = dashOrder(stored('station.dash')), to = null, msg = '';
+        if (b.hasAttribute('data-dlib')) {
+            if (view.dashEdit) dashLibOpen(list);
+            return;
+        } else if (b.hasAttribute('data-dchtog')) {
             view.dashEdit = !view.dashEdit;
             to = view.dashEdit ? '[data-dchdone]' : '#dchtog';
         } else if (b.hasAttribute('data-dchdone')) {
@@ -3294,9 +3500,12 @@
             if (add) list.push(list.splice(list.indexOf(c), 1)[0]);
             c.on = add || !c.on;
             dashSave(list);
+            var name = dashKinds()[id].name;
+            msg = add ? loc('dash.added', '已加入「{c}」', { c: name }) : c.on ? loc('dash.putBackDone', '「{c}」已加回', { c: name }) : '';
         }
         repaint();
         if (to) dashFocus(to);
+        dashLibSync(msg);
     });
     doc.addEventListener('keydown', function (e) {
         if (!view.dashEdit || route.view !== 'now') return;
