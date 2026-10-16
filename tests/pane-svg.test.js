@@ -28,11 +28,12 @@ const limits = [
     { kind: 'seven_day', percentUsed: 64, resetsAt: new Date(NOW + 2.8 * 86400e3).toISOString() },
 ];
 const bandInput = (over) => Object.assign({ entry, others, gateUntil: null, gateAt: null, context, limits, tasks: { done: 4, total: 9 }, cols: 80, now: NOW }, over);
-// The route's dots in order, each with its state and its colour: the one ring of r 5 is the station the task is at.
+// The route's dots in order, each with its state and its colour: the one hollow ring of r 5 is the station the
+// task is at, and a filled r 5 reads as a done dot, so the state list catches a here-dot that is filled again.
 function dots(source) {
     return [...source.matchAll(/<circle cx="[\d.]+" cy="11" r="([\d.]+)" fill="(#[0-9a-f]{6}|none)"(?: stroke="(#[0-9a-f]{6})")?/g)]
         .map((m) => ({ r: m[1], fill: m[2], stroke: m[3] })).filter((c) => c.r !== '6.5')
-        .map((c) => (c.r === '5' ? { state: 'here', colour: c.stroke } : c.fill === 'none' ? { state: 'ahead', colour: c.stroke } : { state: 'done', colour: c.fill }));
+        .map((c) => (c.r === '5' && c.fill === 'none' ? { state: 'here', colour: c.stroke } : c.fill === 'none' ? { state: 'ahead', colour: c.stroke } : { state: 'done', colour: c.fill }));
 }
 // The text of every <text> element, in order.
 const words = (source) => [...source.matchAll(/<text [^>]*>([^<]*)<\/text>/g)].map((m) => m[1]);
