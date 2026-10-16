@@ -64,11 +64,9 @@ function fake({ files = {}, placed = true, surfaces = ['terminal'], tokens = 312
 }
 
 // Two hooks share the event `ui.render`: the Pane's stays under that name, the band's is `band`.
-// The turn flag is clear at every load in a session; here one module instance serves every test.
 // The module's one turn.complete is compact.ts's, so the hooks come from mod.ts, which registers both.
 async function wired() {
     const { register } = await import(pathToFileURL(path.join(__dirname, '..', 'hooks', 'mod.ts')).href);
-    (await import(pathToFileURL(path.join(__dirname, '..', 'hooks', 'turn.ts')).href)).turn.running = false;
     const hooks = {};
     register((event, a, b) => {
         const key = event === 'ui.render' && a && a.component === 'AbovePrompt' ? 'band' : event;
@@ -1112,51 +1110,22 @@ test('Remote Control: two files of this session with the same mtime are connecte
     }
 });
 
-test('turn.start and turn.complete are hooked and pass the event on', async () => {
+test('turn.complete is hooked and passes the event on, and turn.start is not hooked', async () => {
     const hooks = await wired();
     const { $ } = fake({ files: entryFile(live) });
-    for (const name of ['turn.start', 'turn.complete']) {
-        assert.equal(typeof hooks[name], 'function', name + ' is not hooked');
-        assert.deepEqual(await hooks[name]($, { n: 1 }, async (e) => ({ got: e })), { got: { n: 1 } });
-    }
+    assert.equal(hooks['turn.start'], undefined);
+    assert.equal(typeof hooks['turn.complete'], 'function');
+    assert.deepEqual(await hooks['turn.complete']($, { n: 1 }, async (e) => ({ got: e })), { got: { n: 1 } });
 });
 
-test('the band\'s first row is never drawn interactive, turn or not', async () => {
+test('the band\'s rows are never drawn interactive', async () => {
     const hooks = await wired();
     const { $, log } = fake({ files: entryFile(live), surfaces: ['desktop'] });
     $.ui.resolve = () => ({ Box: 'Box', Svg: 'Svg', Text: 'Text' });
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
     const draw = async () => (await hooks['band']($, { surface: 'desktop', ...BAND }, passed)).children;
-    assert.equal((await draw())[0].props.isInteractive, undefined);
-    await hooks['turn.start']($, {}, passed);
     assert.deepEqual((await draw()).map((n) => n.props.isInteractive), [undefined, undefined]);
-});
-
-test('a subagent\'s turn.complete leaves the main turn running; the main one ends it', async () => {
-    const hooks = await wired();
-    const { turn } = await import(pathToFileURL(path.join(__dirname, '..', 'hooks', 'turn.ts')).href);
-    const { $, log } = fake({ files: entryFile(live), surfaces: ['desktop'] });
-    await hooks['session.start']($, {}, async () => ({}));
-    await log.ticks[0].fn();
-    await hooks['turn.start']($, {}, passed);
-    await hooks['turn.complete']($, { agentId: 'a1' }, passed);
-    assert.equal(turn.running, true);
-    await hooks['turn.complete']($, {}, passed);
-    assert.equal(turn.running, false);
-});
-
-test('a turn flag that changes redraws once on the next tick, and not again', async () => {
-    const hooks = await wired();
-    const { $, log } = fake({ files: entryFile(live) });
-    await hooks['session.start']($, {}, async () => ({}));
-    await log.ticks[0].fn();
-    await hooks['turn.start']($, {}, passed);
-    log.invalidated = 0;
-    await log.ticks[0].fn();
-    assert.equal(log.invalidated, 1);
-    await log.ticks[0].fn();
-    assert.equal(log.invalidated, 1);
 });
 
 test('with a station up the Pane carries a button that opens its url, and copies it when nothing opens', async () => {

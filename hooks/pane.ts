@@ -1,5 +1,4 @@
 import type { Register, EngineInterface, UiPressArgument } from 'claude-code'
-import { turn } from './turn.ts'
 import { parentOf, isActive, SESSION_ID, thresholdWith } from './compact.ts'
 import { statusRows, ledgerDoneIds, planTasks } from './pane-status.ts'
 import type { Entry, Other, Context, PlanInfo, PlanTask, Seg as StatusSeg, Row as StatusRow, StatusInput } from './pane-status.ts'
@@ -454,7 +453,7 @@ async function tick($: EngineInterface, state: State): Promise<void> {
     const clock = next.entry ? await $.clock.now() : 0
     const minute = Math.floor(clock / 60000)
     const second = next.pending ? Math.floor(clock / 1000) : 0
-    const now = JSON.stringify([next.entry, next.others, next.context, next.limits, next.plan, next.remote, next.probe, next.agents, next.station, minute, second, turn.running])
+    const now = JSON.stringify([next.entry, next.others, next.context, next.limits, next.plan, next.remote, next.probe, next.agents, next.station, minute, second])
     // The opens and closes have their own memory, `edge`, which moves only when they all went through: a rejected
     // one is met again next tick as the same edge, while `seen` and the redraw below never wait on them.
     try {
@@ -495,13 +494,6 @@ export const register: Register = (on) => {
   on('session.start', async ($, e, next) => {
     await $.command.register({ name: COMMAND, description: 'fankeel 面板：任務、撞檔、tasks、context、用量額度與 notes' })
     $.clock.every(POLL_MS, () => tick($, state))
-    return next(e)
-  })
-
-  // A turn is running: the band and the Pane redraw when it starts and when it completes.
-  on('turn.start', async ($, e, next) => {
-    turn.running = true
-    $.ui.invalidate('ui.render')
     return next(e)
   })
 
