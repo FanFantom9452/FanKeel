@@ -4825,7 +4825,9 @@
         var fk = doc.getElementById('fk');
         if (!fk) return;
         var held = S.sessions.some(function (s) { return s.pending && s.pending.questions && s.pending.questions.length; });
+        var old = doc.getElementById('fkp'), top = old ? old.scrollTop : 0;
         fk.innerHTML = floatHtml(S.sessions, view.notes, view.fkOpen, S.serve ? Date.now() : NOW, view.pg, w.Notification ? w.Notification.permission : 'denied', view.fkBox);
+        var p = doc.getElementById('fkp'); if (p && top) p.scrollTop = top;
         fk.className = 'fk' + (held ? ' hasgate' : '');
     }
     // Dragging the gate panel by its title bar, resizing it by its corner
