@@ -46,3 +46,11 @@ test('running agents come before stopped ones, then the newest first', async () 
     const f = (id, at) => ({ id, at, meta: { description: id }, prefix: null });
     assert.deepEqual(agentTree([f('a', NOW - 3 * M), f('b', NOW - 2 * M), f('c', NOW - M)], { c: NOW }, 0).map((n) => n.id), ['b', 'a', 'c']);
 });
+
+test('an agent dispatched at the very ms the task started is listed, and one whose parent is not listed is a root', async () => {
+    const { agentTree } = await load();
+    const at = { id: 'e1', at: NOW - 60 * M, meta: { description: 'edge' }, prefix: null };
+    assert.deepEqual(agentTree([at], {}, NOW - 60 * M).map((n) => n.id), ['e1']);
+    const tree = agentTree([reader, old], {}, NOW - 60 * M);
+    assert.deepEqual(tree.map((n) => [n.id, n.kids.length]), [['r1', 0]]);
+});
