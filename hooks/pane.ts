@@ -6,6 +6,8 @@ import type { Entry, Other, Context, PlanInfo, PlanTask, Seg as StatusSeg, Row a
 import type { Limit } from './pane-bar.ts'
 import { taskDir, pendingName, parsePending } from './pane-gate.ts'
 import type { Pending } from './pane-gate.ts'
+import { agentTree } from './pane-agents.ts'
+import type { AgentFile, AgentNode } from './pane-agents.ts'
 import { bandRows } from './pane-band.ts'
 import type { Seg as BandSeg, BandInput } from './pane-band.ts'
 import { bandRow1Svg, bandRow2Svg, paneParts, altOf, SVG_MAX } from './pane-svg.ts'
@@ -34,6 +36,8 @@ type Seen = {
   remote: boolean
   // What probeOf read, or null while FANKEEL_PANE_PROBE is unset.
   probe: string | null
+  // This task's subagents as a tree, from Claude Code's subagents files (agentsOf).
+  agents: AgentNode[]
 }
 
 // What a file last parsed to, and the time and size it had then: the tick runs
@@ -42,10 +46,10 @@ type Seen = {
 // session's own registry file, the pending file and the ledger are read every tick.
 type Cache = Map<string, { stamp: string; value: unknown }>
 
-const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, context: null, limits: [], plan: null, remote: false, probe: null })
+const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, context: null, limits: [], plan: null, remote: false, probe: null, agents: [] })
 
 // The last message each silent catch logged: the tick runs four times a second, and a failure that stays is said once.
-type Logged = { context: string; plan: string; open: string; registry: string; neighbour: string; gate: string; live: string; remote: string; bandSvg: string; paneSvg: string }
+type Logged = { context: string; plan: string; open: string; registry: string; neighbour: string; gate: string; live: string; remote: string; bandSvg: string; paneSvg: string; agents: string }
 
 // A registry file that is there and does not parse: told apart so `tick` can wait it out for a while, then give up on it.
 class Unreadable extends Error {}
@@ -173,16 +177,22 @@ async function liveOf($: EngineInterface, root: string, logged: Logged): Promise
   }
 }
 
+// The config directory this session runs under: the one its entry recorded, else ~/.claude; '' when neither is known.
+async function configDirOf($: EngineInterface, entry: Entry): Promise<string> {
+  const home = (await $.env.get('HOME')) || (await $.env.get('USERPROFILE'))
+  const configDir = typeof entry.configDir === 'string' && entry.configDir ? entry.configDir : home ? `${home}/.claude` : ''
+  return configDir.replace(/[\\/]+$/, '')
+}
+
 // Whether Remote Control is on for this session: Claude Code writes <configDir>/sessions/<pid>.json with
 // the session's `sessionId`, and a `bridgeSessionId` that is a non-empty string while it is connected
 // (null once switched off, absent if it never was; measured on 2.1.295). The file for this session is
 // found by its sessionId, not by its name. A directory or file that cannot be read counts as not connected.
 async function remoteOf($: EngineInterface, entry: Entry, id: string, cache: Cache, logged: Logged): Promise<boolean> {
   try {
-    const home = (await $.env.get('HOME')) || (await $.env.get('USERPROFILE'))
-    const configDir = typeof entry.configDir === 'string' && entry.configDir ? entry.configDir : home ? `${home}/.claude` : ''
+    const configDir = await configDirOf($, entry)
     if (!configDir) return false
-    const dir = `${configDir.replace(/[\\/]+$/, '')}/sessions`
+    const dir = `${configDir}/sessions`
     if (!(await $.fs.exists(dir))) return false
     // Several files can name this session (a dead pid leaves its own behind): the newest one is the truth.
     let newest = -Infinity
@@ -216,6 +226,67 @@ async function remoteOf($: EngineInterface, entry: Entry, id: string, cache: Cac
   } catch (err) {
     logOnce($, logged, 'remote', `fankeel pane: Remote Control state unreadable, ${String(err)}`)
     return false
+  }
+}
+
+// How long a session with no subagents directory yet waits before projects/ is listed again.
+const SUB_RETRY_MS = 10000
+
+// This task's subagents, from Claude Code's own files under
+// <configDir>/projects/<slug>/<session>/subagents (hooks/pane-agents.ts) and
+// the stops hooks/agent-end.js wrote. The session's directory is found by its
+// name under projects/ and kept; a meta or prefix file is read again only
+// when it moved. Anything unreadable is no agents.
+async function agentsOf($: EngineInterface, entry: Entry, id: string, root: string, cache: Cache, logged: Logged): Promise<AgentNode[]> {
+  try {
+    const started = Date.parse(String(entry.started))
+    if (!Number.isFinite(started)) return []
+    const key = `subagents:${id}`
+    const known = cache.get(key)
+    let sub = known && typeof known.value === 'string' ? known.value : ''
+    if (!sub) {
+      if (known && Date.now() - Number(known.stamp) < SUB_RETRY_MS) return []
+      const configDir = await configDirOf($, entry)
+      const projects = `${configDir}/projects`
+      if (configDir && (await $.fs.exists(projects))) {
+        for (const dir of await $.fs.list(projects)) {
+          const at = `${projects}/${dir.name}/${id}/subagents`
+          if (await $.fs.exists(at)) {
+            sub = at
+            break
+          }
+        }
+      }
+      cache.set(key, { stamp: String(Date.now()), value: sub })
+      if (!sub) return []
+    }
+    const listed = await $.fs.list(sub)
+    const stamps = new Map(listed.map((f) => [f.name, `${f.mtimeMs}:${f.size}`]))
+    const read = async (name: string): Promise<Record<string, unknown> | null> => {
+      const stamp = stamps.get(name)
+      if (!stamp) return null
+      const path = `${sub}/${name}`
+      let hit = cache.get(path)
+      if (!hit || hit.stamp !== stamp) {
+        hit = { stamp, value: await readJson($, path) }
+        // A file caught mid-write is read again next tick.
+        if (hit.value) cache.set(path, hit)
+      }
+      return (hit.value as Record<string, unknown> | null) ?? null
+    }
+    const files: AgentFile[] = []
+    for (const f of listed) {
+      const m = /^agent-(.+)\.meta\.json$/.exec(f.name)
+      if (!m || f.mtimeMs < started) continue
+      files.push({ id: m[1], at: f.mtimeMs, meta: await read(f.name), prefix: await read(`agent-${m[1]}.prefix.json`) })
+    }
+    const ends = await readJson($, `${root}/.fankeel/build/agents-${id}.json`)
+    const ended = ends && ends.ended && typeof ends.ended === 'object' ? (ends.ended as Record<string, number>) : {}
+    logged.agents = ''
+    return agentTree(files, ended, started)
+  } catch (err) {
+    logOnce($, logged, 'agents', `fankeel pane: agents unreadable, ${String(err)}`)
+    return []
   }
 }
 
@@ -280,7 +351,8 @@ async function look($: EngineInterface, cache: Cache, logged: Logged): Promise<S
   const plan = await planOf($, found.root, entry, cache, logged)
   const probe = await probeOf($)
   const remote = await remoteOf($, entry, id, cache, logged)
-  return { id, entry, others, pending, context, limits, plan, remote, probe }
+  const agents = await agentsOf($, entry, id, found.root, cache, logged)
+  return { id, entry, others, pending, context, limits, plan, remote, probe, agents }
 }
 
 type State = {
@@ -360,7 +432,7 @@ async function tick($: EngineInterface, state: State): Promise<void> {
 export const register: Register = (on) => {
   const state: State = {
     seen: blank(''), print: '', mine: false, edge: { task: false }, bad: 0, busy: false, cache: new Map(),
-    logged: { context: '', plan: '', open: '', registry: '', neighbour: '', gate: '', live: '', remote: '', bandSvg: '', paneSvg: '' },
+    logged: { context: '', plan: '', open: '', registry: '', neighbour: '', gate: '', live: '', remote: '', bandSvg: '', paneSvg: '', agents: '' },
   }
 
   on('session.start', async ($, e, next) => {
@@ -455,6 +527,7 @@ export const register: Register = (on) => {
       probe: seen.probe,
       turn: turn.running,
       gateAt: seen.pending ? (seen.pending.at ?? now) : null,
+      agents: seen.agents,
     }
     const status = statusRows(input)
     const blankRow = () => h(Text, {}, ' ')

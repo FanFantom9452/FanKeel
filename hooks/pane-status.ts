@@ -7,6 +7,7 @@ import { WHERE, FLAG, GUARD, TODO, claimsOf } from './pane-band.ts'
 import { str, list, width, cut, WIDE, DIM, minutes, nearCompact } from './pane-bar.ts'
 import type { Context } from './pane-bar.ts'
 import { HARD } from './compact.ts'
+import type { AgentNode } from './pane-agents.ts'
 
 // Kept as exports of this file: hooks/pane.ts imports them from here.
 export { str, list, width, cut, WIDE }
@@ -38,6 +39,8 @@ export type StatusInput = {
   turn?: boolean
   // When the question the pending file holds went out; the band reads the same, so both stop together.
   gateAt?: number | null
+  // This task's subagents as a tree (hooks/pane-agents.ts agentTree); absent or empty draws no block.
+  agents?: AgentNode[]
 }
 
 // Each block's rail, a fixed colour whatever the stage, on its first drawn row;
@@ -46,6 +49,7 @@ export type StatusInput = {
 export const RAILS: Record<string, string> = {
   clash: FLAG,
   tasks: WHERE,
+  agents: WHERE,
   context: WHERE,
   notes: WHERE,
   foot: DIM,
@@ -312,10 +316,41 @@ function fit(r: Row, cols: number): Row {
   return { ...r, segs }
 }
 
-// Given up in this order when the rows do not fit: `tasks` keeps its title row.
+// The most roots the agents block lists, and the most agents under each.
+const AGENT_ROOTS = 6
+const AGENT_KIDS = 3
+
+// This task's subagents: a title row with how many run and how many stopped,
+// then a row an agent — ○ running in OUT, ● stopped in DONE — its title, its
+// model, its effort and its minutes, out so far or out in all. An agent's
+// own agents sit under it behind ├ and └, one level deep.
+function agentsBlock(nodes: AgentNode[], inner: number, now: number): Row[] {
+  if (!nodes.length) return []
+  const all = (list: AgentNode[]): AgentNode[] => list.flatMap((n) => [n, ...all(n.kids)])
+  const every = all(nodes)
+  const running = every.filter((n) => n.end === null).length
+  const one = (n: AgentNode, lead: string): Row => {
+    const after = ` · ${n.model} · ${n.effort} · ${mins((n.end ?? now) - n.at)} 分`
+    const name = cut(n.title || n.type || n.id, Math.max(4, inner - width(lead) - 2 - width(after)))
+    const mark: Seg = n.end === null ? { text: '○', color: OUT } : { text: '●', color: DONE }
+    return row('agents', { text: lead }, mark, n.end === null ? { text: ` ${name}`, bold: true } : dim(` ${name}`), dim(after))
+  }
+  const rows = [row('agents', title('agents', 'agents'), dim(`  ${running} 在跑 · ${every.length - running} 完成`))]
+  for (const n of nodes.slice(0, AGENT_ROOTS)) {
+    rows.push(one(n, ''))
+    const kids = n.kids.slice(0, AGENT_KIDS)
+    const folded = n.kids.length > AGENT_KIDS
+    kids.forEach((k, i) => rows.push(one(k, i === kids.length - 1 && !folded ? ' └ ' : ' ├ ')))
+    if (folded) rows.push(row('agents', dim(` └ 還有 ${n.kids.length - AGENT_KIDS} 個`)))
+  }
+  if (nodes.length > AGENT_ROOTS) rows.push(row('agents', dim(`還有 ${nodes.length - AGENT_ROOTS} 個`)))
+  return rows
+}
+
+// Given up in this order when the rows do not fit: `agents` and `tasks` keep their title rows.
 // The task, the clash, the context block — drawn
 // only once a compact is close — and the foot never go.
-const DROP = ['notes', 'tasks']
+const DROP = ['notes', 'agents', 'tasks']
 // The blocks that are alarms, not sections: every row of one keeps its rail.
 const ALARMS = ['clash']
 
@@ -334,6 +369,8 @@ export function statusRows(input: StatusInput): Row[] {
   if (clash.length) blocks.push(clash)
   const tasks = tasksBlock(entry, input.plan, inner, now)
   if (tasks.length) blocks.push(tasks)
+  const agents = agentsBlock(input.agents ?? [], inner, now)
+  if (agents.length) blocks.push(agents)
   const context = input.context ? contextBlock(input.context, inner) : []
   if (context.length) blocks.push(context)
 
@@ -351,7 +388,7 @@ export function statusRows(input: StatusInput): Row[] {
     if (size() <= room) break
     const at = blocks.findIndex((block) => block[0].block === name)
     if (at < 0) continue
-    if (name === 'tasks') blocks[at] = blocks[at].slice(0, 1)
+    if (name === 'tasks' || name === 'agents') blocks[at] = blocks[at].slice(0, 1)
     else blocks.splice(at, 1)
   }
   // A section's rail is on its first drawn row alone: the rows under it open

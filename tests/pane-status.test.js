@@ -28,7 +28,7 @@ const entry = {
 const other = { id: 'aaaaaaaa-0000-4000-8000-000000000001', entry: { task: '站頁看得到對話全文', stage: 'build', active: true, claims: ['hooks/mod.ts'], updated: '2026-10-10T22:00:00.000Z' } };
 const apart = { id: 'bbbbbbbb-0000-4000-8000-000000000002', entry: { task: 'x', stage: 'plan', active: true, claims: ['lib/x.js'] } };
 const SECOND = '#8a8a8a';
-const RAIL = { clash: '#ff5f5f', tasks: SECOND, context: SECOND, notes: SECOND, foot: '#585858' };
+const RAIL = { clash: '#ff5f5f', tasks: SECOND, agents: SECOND, context: SECOND, notes: SECOND, foot: '#585858' };
 // A row as the Pane shows it: its segments touch.
 const line = (row) => row.segs.map((seg) => seg.text).join('');
 const drawn = (rows, block) => rows.filter((r) => r.block === block && r.segs.length);
@@ -472,4 +472,32 @@ test('compact.at off measures the block against HARD from four fifths of it, and
         [{ text: '不會自動壓縮；要壓縮請手動 /compact', color: SECOND }],
     ]);
     assert.doesNotMatch(text(at(2000000), 'context').join('\n'), /留 task|compact 中/);
+});
+
+test('the agents block is a tree: the counts, ○ running, ● stopped, └ under its parent, the model and effort on each', async () => {
+    const { statusRows } = await load();
+    const kid = { id: 'r1', title: 'Patrol check group C', type: 'fankeel:fankeel-reader', model: 'sonnet 5.5', effort: 'low', at: NOW - 8 * 60000, end: NOW - 2 * 60000, kids: [] };
+    const root = { id: 'b1', title: 'survey stage agent', type: 'fankeel:fankeel-brain', model: 'opus 5.5', effort: 'high', at: NOW - 10 * 60000, end: null, kids: [kid] };
+    const base = { id: ID, entry, others: [], context: null, plan: null, cols: 60, room: 60, now: NOW };
+    const text = (r) => r.segs.map((s) => s.text).join('');
+    const block = statusRows({ ...base, agents: [root] }).filter((r) => r.block === 'agents' && r.segs.length).map(text);
+    assert.deepEqual(block, [
+        '▌agents  1 在跑 · 1 完成',
+        ' ○ survey stage agent · opus 5.5 · high · 10 分',
+        '  └ ● Patrol check group C · sonnet 5.5 · low · 6 分',
+    ]);
+    assert.ok(!statusRows(base).some((r) => r.block === 'agents'));
+    assert.ok(!statusRows({ ...base, agents: [] }).some((r) => r.block === 'agents'));
+});
+
+test('the agents block lists six roots and three under each, and folds the rest', async () => {
+    const { statusRows } = await load();
+    const node = (id, kids = []) => ({ id, title: id, type: '', model: 'sonnet 5.5', effort: 'medium', at: NOW - 60000, end: null, kids });
+    const roots = [node('a', ['k1', 'k2', 'k3', 'k4', 'k5'].map((k) => node(k))), ...['b', 'c', 'd', 'e', 'f', 'g', 'h'].map((id) => node(id))];
+    const text = (r) => r.segs.map((s) => s.text).join('');
+    const block = statusRows({ id: ID, entry, others: [], context: null, plan: null, cols: 60, room: 80, now: NOW, agents: roots }).filter((r) => r.block === 'agents' && r.segs.length).map(text);
+    assert.equal(block.filter((t) => / ○ [a-h] /.test(t)).length, 6);
+    assert.equal(block.filter((t) => /├|└ ○/.test(t)).length, 3);
+    assert.ok(block.includes('  └ 還有 2 個'));
+    assert.equal(block[block.length - 1], ' 還有 2 個');
 });
