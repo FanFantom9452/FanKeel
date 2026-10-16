@@ -1,0 +1,2 @@
+suite runs (k1, k4, k6, k8, k8c8): eight detached worktrees made with `git worktree add --detach <dir> HEAD` at HEAD 1f0b344f (git rev-parse --short HEAD printed right after), 2026-10-16 ~14:50 local.
+bench batches: provenance.txt (HEAD 9264531e).

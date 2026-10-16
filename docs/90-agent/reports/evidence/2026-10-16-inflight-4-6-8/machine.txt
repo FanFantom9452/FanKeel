@@ -1,0 +1,7 @@
+# machine, 2026-10-16
+cpu: AMD Ryzen Threadripper PRO 9985WX 64-Cores     
+cores: 64  logical: 128
+ram GB: 127
+os: Windows 11 Pro 10.0.26200
+node v24.21.0 availableParallelism 64
+while a 16-thread CPU burner (burn.js) ran, 21 logical processors were over 50% busy: 18 numbered 64-127, 3 numbered 0-63 (Get-Counter Processor Information, sampled once), so threads are not held to the 64 node reports.

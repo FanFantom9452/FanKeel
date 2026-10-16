@@ -19,3 +19,7 @@ pid    start     cpu_s  script (under worktree wtN)
 each: 0 child processes; pid 76160 had 4 threads (wait reasons: Unknown 1, UserRequest 2, EventPairLow 1).
 each parent is a node --test worker of the suite in the same worktree, started 15:43:12-22.
 cpu.csv starts at 16:31 (local); 16:40-18:40, 1194 samples: avg 9.4%, min 0, max 66.4 (other sessions shared the machine).
+
+suites still running at ~18:40, the node --test children of suites.js (pid 34880), all started 15:43:08:
+63168, 4796, 13148, 71356, 46632, 63620, 65952 — seven of eight; suite 5 had finished (k8-s5-summary.txt).
+stopped by hand at ~18:45 with `taskkill /T /F /PID 34880` (the suites.js tree); no k8.json was written.
