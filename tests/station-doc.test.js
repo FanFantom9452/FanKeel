@@ -52,8 +52,15 @@ test('every localStorage key station.js stores appears on docs/station.md', () =
 test('station.md describes the 2026-10-01 layout and no longer the classic look', () => {
     const page = fs.readFileSync(path.join(ROOT, 'docs', '90-agent', 'reference', 'station.md'), 'utf8');
     assert.doesNotMatch(page, /newest ten|station\.style|style-classic|foot of the sidenav/);
-    for (const b of ['dash-head', 'sessions-head', 'live-head', 'session-head', 'session-tabs']) {
+    for (const b of ['dashboard', 'sessions-head', 'live-head', 'session-head', 'session-tabs']) {
         assert.ok(page.includes('`data-block="' + b + '"`'), b + ' is not on the page');
     }
     assert.match(page, /newest three/);
+});
+
+test('the station page names the dashboard edit mode and no longer the chooser', () => {
+    const page = fs.readFileSync(path.join(ROOT, 'docs', '90-agent', 'reference', 'station.md'), 'utf8');
+    assert.ok(page.includes('`data-block="dashboard"`'));
+    assert.ok(!page.includes('dash-chooser'));
+    assert.ok(page.includes('station.dash'));
 });

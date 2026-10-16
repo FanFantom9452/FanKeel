@@ -672,20 +672,42 @@ newest sessions out of the 30-day window, linking to `#/sessions`.
 titles and how many more, beside its decision, blocked and watch counts, each
 row linking to the project page. A project with none is named in the card's
 foot line, and a `TODO.md` whose entries carry no state is counted there and
-not listed. 調整卡片 above the grid opens `data-block="dash-chooser"`: tick
-which cards show and move them with ↑ ↓. The choice is `station.dash`, read by
-`dashOrder`, which drops an id it does not know and appends one the stored
-order lacks; 還原預設 clears the key. The default is the five cards in the
-order 進行中, 等你回答, 可以開工, 近 30 天花費, 最近 sessions.
+not listed. Its row opens a quick-look dialog (`dashTodoDialog`) with tabs
+Ready, Blocked, Watch, Decision — only when the project has one — and Done
+(the newest eight).
+
+The cards sit in `data-block="dashboard"`, in two columns: 進行中, 近 30 天花費
+and 最近 sessions in the wide one, 等你回答 and 可以開工 in the narrow one.
+There is no row of figures above them and no chooser: the page title is in the
+header (below), and 編輯版面 is a dashed slot, the narrow column's last. It
+turns on edit mode (`view.dashEdit`), where each card head takes a grip, ↑ ↓
+and 隱藏 / 顯示; Alt + ↑ ↓ from anywhere in a card moves it too, and a card
+can be dragged to a new place within its own column only. A hidden card keeps
+its head, marked 已隱藏. The slot becomes the library, 新增卡片, offering each
+card that is off by default; 還原預設 clears the key and 完成, or Esc, leaves
+edit mode. The choice is `station.dash`, `{order, off}`, read by `dashOrder`,
+which drops an id it does not know and appends one the stored order lacks —
+on if it is a default card, off if not. The five default cards are, in order,
+進行中, 等你回答, 可以開工, 近 30 天花費, 最近 sessions. Eight more
+kinds (`dashKinds`) are off until added from 新增卡片, one id each:
+
+- `dash-clash`
+- `dash-byproj`
+- `dash-tokens7`
+- `dash-models`
+- `dash-gatewait`
+- `dash-landed`
+- `dash-blocked`
+- `dash-agents`
+
+The header shows the page title in `#side` (`pageTitle`, an `h1.ptitle`) in
+place of the old crumbs, and serve's state as an icon (`serveIconHtml`) whose
+tooltip says 連線中 or 已停.
 
 Since the 2026-10-01 layout (`docs/99-archive/2026-10-01-station-layout-design.md`)
 each page opens with the film's header lockup: a title, a rule, then one mono
-line of where things stand. On the dashboard it is `data-block="dash-head"` —
-live sessions, gates waiting, today's spend and the Ready count, each the
-figure its card counts (`dashStatus`), with 調整卡片 on the right — and the
-cards sit in two columns: 進行中, 最近 sessions and 近 30 天花費 in the wide one,
-等你回答 and 可以開工 in the narrow one, the chooser's order holding inside
-each. 進行中 and 等你回答 carry their count as a pill in the card head.
+line of where things stand. 進行中 and 等你回答 carry their count as a pill in
+the card head.
 最近 sessions opens with `data-block="sessions-head"` — the count, the live
 count, the Sessions tabs on its right — over one line a row, a stage on its
 route drawn as the film's glyph and `0N / 0M stage`. One session opens with
@@ -760,7 +782,7 @@ stored value is read and set as `data-theme` on `<html>` before the page's
 first paint, so a reader on 深色 never sees a flash of light first
 (`assets/station/station.js:23`, `themeSet(stored('station.theme'));`).
 `station.dash` holds the dashboard's card order and the cards switched off,
-written by the chooser above. The other two, `station.lang` and
+written by edit mode above. The other two, `station.lang` and
 `station.fkBox`, are described further down, where the page's language and the
 floating box's position are. The promo film's look is the only look:
 `assets/station/index.html` opens `<html data-style="keel">` and nothing takes
