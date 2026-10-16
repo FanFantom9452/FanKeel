@@ -475,7 +475,6 @@
             'wiz.ofWhichNDiffer': ', of which <b>{n}</b> differ from the recommendation',
             'wiz.backToPrev': '← Back to previous question',
             'wiz.settingsHeading': 'Settings',
-            // cmp — crumbs and the compare page (used across the router)
             // tune — block-changed notifications and pending gates
             'tune.doneColon': 'Done: ',
             'tune.notChangedColon': 'Not changed: ',
@@ -885,7 +884,7 @@
             'todo.submit': 'Submit',
             'todo.stationTag': '[station]',
             'todo.colon': ': ',
-            // cmp — the compare page and crumbs (see also the shared crumb keys above)
+            // cmp — the compare page
             'cmp.startedAtDot': '{t} started · ',
             'cmp.dotNSegments': ' · {n} segments',
             'cmp.idContextNPointsPeak': '{id}’s context, {n} points, peak {peak}',

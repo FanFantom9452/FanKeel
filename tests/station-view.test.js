@@ -1690,6 +1690,7 @@ test('the spend card says today\'s cost, and quota share stays off the sessions 
     const cap = d.x.dashPage().match(/<div class="dkv">[\s\S]*?<\/div>/)[0].match(/<span>今天 <b>[^<]*<\/b><\/span>/);
     assert.ok(cap, 'the today figure is there');
     assert.match(cap[0], /<b>\$[\d.]+/);
+    assert.doesNotMatch(cap[0], /%\)/, 'the spend card figures carry no quota share');
     assert.equal(typeof V.drawList, 'function'); // tests/source.test.js counts an export as used only through V.<name>
     try {
         d.x.drawList();
