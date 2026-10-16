@@ -3041,7 +3041,7 @@
             + '<div class="dbig">' + total + '<small>' + loc('dash.nReadyInP', '筆 Ready，分在 {p} 個專案', { p: ready.length }) + '</small></div>'
             + (ready.length ? '<div class="dlist">' + ready.map(function (r) {
                 var more = r.ready.length - SHOWN;
-                return '<a class="drow trow" href="' + projectHash(r.t.pkey) + '" title="' + esc(loc('dash.openTodoOf', '開啟 {p} 的 TODO', { p: shortLabel(r.t.pkey) })) + '">'
+                return '<a class="drow trow" data-tdlg="' + esc(r.t.pkey) + '" aria-haspopup="dialog" href="' + projectHash(r.t.pkey) + '" title="' + esc(loc('dash.openTodoOf', '開啟 {p} 的 TODO', { p: shortLabel(r.t.pkey) })) + '">'
                     + '<span class="trh"><span class="dp">' + esc(shortLabel(r.t.pkey)) + '</span><span class="tpill"><span class="tn">' + r.ready.length + '</span><span class="tnl">Ready</span></span>'
                     + '<span class="spacer"></span>' + side(r).map(function (x) { return '<span class="tq" data-st="' + x[0] + '">' + x[0] + ' <b>' + x[1] + '</b></span>'; }).join('') + '</span>'
                     + '<ul class="trl">' + r.ready.slice(0, SHOWN).map(function (x) {
@@ -3051,6 +3051,94 @@
             }).join('') + '</div>' : '<p class="dnone">' + loc('dash.noReady', '沒有 Ready 的條目') + '</p>')
             + (foot ? '<p class="dnone tfoot">' + foot + '</p>' : '') + '</section>';
     }
+    // dash-todo's quick look (todo-dialog): one project's TODO in four tabs by
+    // state. `todos` is that project's `todos[]`; `href` is where the row
+    // pointed, kept as the way on to the full page. A `decision` or stateless
+    // entry has no tab, so it is counted in none.
+    function dashTodoDialog(todos, href) {
+        var DONE_SHOWN = 8, lists = (todos || []).filter(Boolean);
+        var open = [], done = [];
+        lists.forEach(function (t) { open = open.concat(t.open || []); done = done.concat(t.done || []); });
+        var plain = function (s) { return String(s == null ? '' : s).split('**').join(''); };
+        var by = function (st) { return open.filter(function (x) { return x.state === st; }); };
+        var row = function (x, third) {
+            return '<li><span class="tlb">' + esc(plain(x.label)) + '</span><span class="tt" title="' + esc(plain(x.title)) + '">' + esc(plain(x.title)) + '</span><span class="tid">' + esc(third) + '</span></li>';
+        };
+        var tabs = [['ready', 'Ready', by('ready')], ['blocked', 'Blocked', by('blocked')], ['watch', 'Watch', by('watch')], ['done', 'Done', done]];
+        var folder = lists.length && lists[0].folder ? lists[0].folder : '';
+        var name = lists.length ? shortLabel(lists[0].pkey) : '';
+        return '<dialog class="tdlg" data-block="todo-dialog" aria-labelledby="tdlg-h"' + (folder ? ' aria-describedby="tdlg-src"' : '') + '><div class="tdlg-in">'
+            + '<div class="tdlg-hd"><b id="tdlg-h">' + esc(name) + '</b><span class="tdlg-sub">' + loc('dash.todoGlance', 'TODO 速覽') + '</span>'
+            + '<button type="button" class="tdlg-x" data-tdlg-close="" aria-label="' + esc(loc('dash.close', '關閉')) + '" title="' + esc(loc('dash.close', '關閉')) + '">'
+            + '<svg class="ico" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>'
+            + '<div class="tdlg-tabs" role="tablist" aria-label="' + esc(loc('dash.todoByState', '依狀態看條目')) + '">' + tabs.map(function (g, i) {
+                return '<button type="button" role="tab" id="tdt-' + g[0] + '" data-st="' + g[0] + '" aria-controls="tdp-' + g[0] + '" aria-selected="' + (i === 0) + '"' + (i ? ' tabindex="-1"' : '') + '>' + g[1] + ' <b>' + g[2].length + '</b></button>';
+            }).join('') + '</div>'
+            + tabs.map(function (g, i) {
+                var isDone = g[0] === 'done', list = isDone ? g[2].slice(0, DONE_SHOWN) : g[2], rest = g[2].length - list.length;
+                return '<div class="tdlg-p" id="tdp-' + g[0] + '" data-st="' + g[0] + '" role="tabpanel" aria-labelledby="tdt-' + g[0] + '" tabindex="0"' + (i ? ' hidden' : '') + '><ul class="tdl">'
+                    + (list.length ? list.map(function (x) { return row(x, isDone ? x.at : x.id); }).join('') : '<li class="tnone">' + loc('dash.noEntriesHere', '這個狀態沒有條目。') + '</li>')
+                    + (rest > 0 ? '<li class="tmo">' + loc('dash.nMoreTodo', '還有 {n} 筆', { n: rest }) + '</li>' : '') + '</ul></div>';
+            }).join('')
+            + '<div class="tdlg-ft">' + (folder ? '<span class="tdlg-src" id="tdlg-src">' + loc('dash.todoFrom', '取自 {f}', { f: esc(folder) }) + '</span>' : '')
+            + '<a class="btn go tdlg-go" href="' + esc(href) + '">' + loc('dash.openTodoPage', '開啟完整 TODO 頁 →') + '</a></div></div></dialog>';
+    }
+    if (typeof module !== 'undefined' && module.exports) module.exports.dashTodoDialog = dashTodoDialog;
+    var tdOpener = null;
+    function tdShow(dlg, st, focus) {
+        [].forEach.call(dlg.querySelectorAll('[role=tab]'), function (b) {
+            var on = b.getAttribute('data-st') === st;
+            b.setAttribute('aria-selected', String(on));
+            b.setAttribute('tabindex', on ? '0' : '-1');
+            if (on && focus) b.focus();
+        });
+        [].forEach.call(dlg.querySelectorAll('[role=tabpanel]'), function (p) { p.hidden = p.getAttribute('data-st') !== st; });
+    }
+    // Closing hands focus back to the row that opened it; a repaint may have
+    // replaced that row, so it is found again by its project.
+    function tdBack(pkey) {
+        var o = tdOpener;
+        tdOpener = null;
+        if (!o) return;
+        if (!o.isConnected) o = [].filter.call(doc.querySelectorAll('[data-tdlg]'), function (r) { return r.getAttribute('data-tdlg') === pkey; })[0];
+        if (o) o.focus();
+    }
+    doc.addEventListener('click', function (e) {
+        var t = e.target;
+        if (!t || !t.closest) return;
+        var dlg = t.closest('.tdlg');
+        if (dlg) {
+            var tab = t.closest('[role=tab]');
+            if (tab) tdShow(dlg, tab.getAttribute('data-st'), true);
+            else if (t.closest('[data-tdlg-close]') || t === dlg) dlg.close();
+            else if (t.closest('.tdlg-go')) { tdOpener = null; dlg.close(); }
+            return;
+        }
+        var rowEl = t.closest('[data-tdlg]');
+        if (!rowEl || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey) return;
+        var pkey = rowEl.getAttribute('data-tdlg');
+        var todos = [];
+        (S.projects || []).forEach(function (p) { (p.todos || []).forEach(function (x) { if (x && x.pkey === pkey) todos.push(x); }); });
+        if (!todos.length) return;
+        e.preventDefault();
+        var holder = doc.createElement('div');
+        holder.innerHTML = dashTodoDialog(todos, rowEl.getAttribute('href'));
+        var d = holder.firstChild;
+        doc.body.appendChild(d);
+        tdOpener = rowEl;
+        d.addEventListener('close', function () { if (d.parentNode) d.parentNode.removeChild(d); tdBack(pkey); });
+        d.showModal();
+        tdShow(d, 'ready', true);
+    });
+    doc.addEventListener('keydown', function (e) {
+        var b = e.target && e.target.closest ? e.target.closest('.tdlg [role=tab]') : null;
+        if (!b) return;
+        var tabs = [].slice.call(b.parentNode.querySelectorAll('[role=tab]')), i = tabs.indexOf(b), n = tabs.length;
+        var j = e.key === 'ArrowRight' ? (i + 1) % n : e.key === 'ArrowLeft' ? (i + n - 1) % n : e.key === 'Home' ? 0 : e.key === 'End' ? n - 1 : -1;
+        if (j < 0) return;
+        e.preventDefault();
+        tdShow(b.closest('.tdlg'), tabs[j].getAttribute('data-st'), true);
+    });
     // dash-chooser (station-11): which cards show, in what order. `station.dash`
     // in localStorage holds `{"order": [...], "off": [...]}`; an id this page
     // does not know is dropped, one the stored order lacks is appended shown,
