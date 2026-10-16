@@ -62,3 +62,12 @@ test('a stopped agent with one still running under it sorts with the running, be
     assert.deepEqual(tree.map((n) => n.id), ['old', 'new']);
     assert.deepEqual(tree[0].kids.map((n) => [n.id, n.end]), [['kid', null]]);
 });
+
+test('a running grandchild lifts every stopped ancestor above a newer stopped one', async () => {
+    const { agentTree } = await load();
+    const f = (id, at, parent) => ({ id, at, meta: { description: id, ...(parent ? { parentAgentId: parent } : {}) }, prefix: null });
+    const files = [f('root', NOW - 9 * M), f('mid', NOW - 8 * M, 'root'), f('leaf', NOW - 7 * M, 'mid'), f('midNew', NOW - M, 'root'), f('rootNew', NOW - M)];
+    const tree = agentTree(files, { root: NOW, mid: NOW, midNew: NOW, rootNew: NOW }, 0);
+    assert.deepEqual(tree.map((n) => n.id), ['root', 'rootNew']);
+    assert.deepEqual(tree[0].kids.map((n) => n.id), ['mid', 'midNew']);
+});
