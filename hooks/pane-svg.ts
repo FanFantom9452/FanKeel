@@ -335,10 +335,10 @@ export function clashSvg(entry: Entry, others: Other[], now: number, cols: numbe
   return svgDoc(W, h, b)
 }
 
-// Up to this many tasks: one row of 30px cells. Up to GRID_MAX: rows of ten
-// 24px cells, so task n sits on row ceil(n/10). More: one bar of four parts.
+// Up to this many tasks: one row of 30px cells. Up to GRID_MAX: one row of
+// ten 24px cells. More: one bar of four parts, so a large plan costs one row.
 const ONE_ROW = 9
-const GRID_MAX = 30
+const GRID_MAX = 10
 // A cell's hover ring.
 const TASKS_STYLE = `<style>.fk-t rect.c{transition:stroke-width .15s ease-out}.fk-t g.k:hover rect.c{stroke:${WHERE};stroke-width:2.5}</style>`
 

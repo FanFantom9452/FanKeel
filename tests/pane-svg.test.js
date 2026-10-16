@@ -161,17 +161,17 @@ test('nine tasks or fewer are one row of cells, each with a title, the agent on 
     assert.match(source, /class="fk-t"/);
 });
 
-test('ten to thirty tasks are rows of ten cells; more than thirty are one bar of four counts', async () => {
+test('ten tasks are one row of ten cells; more than ten are one bar of four counts', async () => {
     const { tasksSvg } = await load('pane-svg');
-    const grid = tasksSvg(entry, planOf(24, 11, [16, 20]), NOW, 41);
-    assert.equal(titles(grid).length, 24);
-    // Task 11 opens the second row and task 21 the third.
-    assert.match(grid, /<title>11 · task 11 · 完成<\/title><rect class="c" x="1" y="53" width="24"/);
-    assert.match(grid, /<title>21 · task 21 · 還沒做<\/title><rect class="c" x="1.5" y="82.5" width="23"/);
-    const bar = tasksSvg(entry, planOf(60, 37, [39, 44, 50, 51]), NOW, 41);
-    assert.deepEqual(titles(bar), ['完成 37', '在跑 1', '你的 4', '還沒做 18']);
-    assert.ok(words(bar).includes('還有 1 個是你的'));
-    assert.equal(words(bar).filter((w) => w.endsWith(' · 你的')).length, 3);
+    const grid = tasksSvg(entry, planOf(10, 4, [8]), NOW, 41);
+    assert.equal(titles(grid).length, 10);
+    assert.match(grid, /<title>1 · task 1 · 完成<\/title><rect class="c" x="1" y="24" width="24"/);
+    const bar = tasksSvg(entry, planOf(24, 11, [16, 20]), NOW, 41);
+    assert.deepEqual(titles(bar), ['完成 11', '在跑 1', '你的 2', '還沒做 10']);
+    const big = tasksSvg(entry, planOf(60, 37, [39, 44, 50, 51]), NOW, 41);
+    assert.deepEqual(titles(big), ['完成 37', '在跑 1', '你的 4', '還沒做 18']);
+    assert.ok(words(big).includes('還有 1 個是你的'));
+    assert.equal(words(big).filter((w) => w.endsWith(' · 你的')).length, 3);
 });
 
 test('with no agent out nothing breathes and nothing is named as running', async () => {
@@ -189,13 +189,13 @@ test('the heading counts the tasks the plan completed, not every number in the l
     assert.deepEqual(words(tasksSvg(entry, plan, NOW, 41)).slice(0, 2), ['tasks', '4 of 9']);
 });
 
-test('nine tasks are one row and ten are rows of ten; thirty are rows and thirty-one a bar', async () => {
+test('nine tasks are one row and ten are a row of ten; eleven are a bar', async () => {
     const { tasksSvg } = await load('pane-svg');
     const rowsAt = (n) => (tasksSvg(entry, planOf(n, n), NOW, 41).match(/class="c" x="[\d.]+" y="24" width="(\d+)"/g) || []);
     assert.ok(rowsAt(9).every((m) => m.endsWith('width="30"')) && rowsAt(9).length === 9);
     assert.ok(rowsAt(10).every((m) => m.endsWith('width="24"')) && rowsAt(10).length === 10);
-    assert.equal(titles(tasksSvg(entry, planOf(30, 0), NOW, 41)).length, 30);
-    assert.deepEqual(titles(tasksSvg(entry, planOf(31, 0), NOW, 41)), ['在跑 1', '還沒做 30']);
+    assert.equal(titles(tasksSvg(entry, planOf(10, 0), NOW, 41)).length, 10);
+    assert.deepEqual(titles(tasksSvg(entry, planOf(11, 0), NOW, 41)), ['在跑 1', '還沒做 10']);
 });
 
 test('an agent out on another stage draws no running task', async () => {
