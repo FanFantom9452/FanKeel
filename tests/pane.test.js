@@ -1114,7 +1114,7 @@ test('turn.start and turn.complete are hooked and pass the event on', async () =
     }
 });
 
-test('the band\'s first row is drawn interactive from turn.start to turn.complete', async () => {
+test('the band\'s first row is never drawn interactive, turn or not', async () => {
     const hooks = await wired();
     const { $, log } = fake({ files: entryFile(live), surfaces: ['desktop'] });
     $.ui.resolve = () => ({ Box: 'Box', Svg: 'Svg', Text: 'Text' });
@@ -1123,38 +1123,20 @@ test('the band\'s first row is drawn interactive from turn.start to turn.complet
     const draw = async () => (await hooks['band']($, { surface: 'desktop', ...BAND }, passed)).children;
     assert.equal((await draw())[0].props.isInteractive, undefined);
     await hooks['turn.start']($, {}, passed);
-    const during = await draw();
-    assert.equal(during[0].props.isInteractive, true);
-    assert.equal(during[1].props.isInteractive, undefined);
-    await hooks['turn.complete']($, {}, passed);
-    assert.equal((await draw())[0].props.isInteractive, undefined);
+    assert.deepEqual((await draw()).map((n) => n.props.isInteractive), [undefined, undefined]);
 });
 
 test('a subagent\'s turn.complete leaves the main turn running; the main one ends it', async () => {
     const hooks = await wired();
+    const { turn } = await import(pathToFileURL(path.join(__dirname, '..', 'hooks', 'turn.ts')).href);
     const { $, log } = fake({ files: entryFile(live), surfaces: ['desktop'] });
-    $.ui.resolve = () => ({ Box: 'Box', Svg: 'Svg', Text: 'Text' });
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
-    const draw = async () => (await hooks['band']($, { surface: 'desktop', ...BAND }, passed)).children;
     await hooks['turn.start']($, {}, passed);
     await hooks['turn.complete']($, { agentId: 'a1' }, passed);
-    assert.equal((await draw())[0].props.isInteractive, true);
+    assert.equal(turn.running, true);
     await hooks['turn.complete']($, {}, passed);
-    assert.equal((await draw())[0].props.isInteractive, undefined);
-});
-
-test('a pending question with no at still stops the breathing', async () => {
-    const hooks = await wired();
-    const noAt = { questions: gate.questions, until: Date.now() + 600000 };
-    const files = Object.assign(entryFile(live), { [DIR + '/design-pending.json']: JSON.stringify(noAt) });
-    const { $, log } = fake({ files, surfaces: ['desktop'] });
-    $.ui.resolve = () => ({ Box: 'Box', Svg: 'Svg', Text: 'Text' });
-    await hooks['session.start']($, {}, async () => ({}));
-    await log.ticks[0].fn();
-    await hooks['turn.start']($, {}, passed);
-    const rows = (await hooks['band']($, { surface: 'desktop', ...BAND }, passed)).children;
-    assert.equal(rows[0].props.isInteractive, undefined);
+    assert.equal(turn.running, false);
 });
 
 test('a turn flag that changes redraws once on the next tick, and not again', async () => {

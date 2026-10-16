@@ -28,19 +28,11 @@ const limits = [
     { kind: 'seven_day', percentUsed: 64, resetsAt: new Date(NOW + 2.8 * 86400e3).toISOString() },
 ];
 const bandInput = (over) => Object.assign({ entry, others, gateUntil: null, gateAt: null, context, limits, tasks: { done: 4, total: 9 }, cols: 80, now: NOW }, over);
-// The route's dots in order, each with its state and its colour: a ring of r 6 and the dot in it are one station.
+// The route's dots in order, each with its state and its colour: the one ring of r 5 is the station the task is at.
 function dots(source) {
-    const circles = [...source.matchAll(/<circle cx="[\d.]+" cy="11" r="([\d.]+)" fill="(#[0-9a-f]{6}|none)"(?: stroke="(#[0-9a-f]{6})")?/g)]
-        .map((m) => ({ r: m[1], fill: m[2], stroke: m[3] })).filter((c) => c.r !== '6.5');
-    const out = [];
-    for (let i = 0; i < circles.length; i++) {
-        const c = circles[i];
-        if (c.r === '6') {
-            out.push({ state: 'here', colour: c.stroke });
-            i += 1;
-        } else out.push(c.fill === 'none' ? { state: 'ahead', colour: c.stroke } : { state: 'done', colour: c.fill });
-    }
-    return out;
+    return [...source.matchAll(/<circle cx="[\d.]+" cy="11" r="([\d.]+)" fill="(#[0-9a-f]{6}|none)"(?: stroke="(#[0-9a-f]{6})")?/g)]
+        .map((m) => ({ r: m[1], fill: m[2], stroke: m[3] })).filter((c) => c.r !== '6.5')
+        .map((c) => (c.r === '5' ? { state: 'here', colour: c.stroke } : c.fill === 'none' ? { state: 'ahead', colour: c.stroke } : { state: 'done', colour: c.fill }));
 }
 // The text of every <text> element, in order.
 const words = (source) => [...source.matchAll(/<text [^>]*>([^<]*)<\/text>/g)].map((m) => m[1]);
@@ -58,10 +50,12 @@ test('each dot of the band\'s route is its own station\'s colour, and the state 
     assert.deepEqual(seen, [
         { state: 'done', colour: RAMP.survey },
         { state: 'here', colour: RAMP.plan },
-        { state: 'ahead', colour: RAMP.build },
-        { state: 'ahead', colour: RAMP.verify },
-        { state: 'ahead', colour: RAMP.land },
+        { state: 'ahead', colour: '#767676' },
+        { state: 'ahead', colour: '#767676' },
+        { state: 'ahead', colour: '#767676' },
     ]);
+    // The station the task is at is one hollow ring: no filled dot inside it.
+    assert.equal((bandRow1Svg(bandInput({ entry: short, tasks: null })).match(/cy="11" r="3\.5"/g) || []).length, 1);
     assert.notEqual(seen[1].colour, RAMP.design);
     // A stage off the route draws every station hollow.
     assert.ok(dots(bandRow1Svg(bandInput({ entry: Object.assign({}, entry, { stage: 'init' }) }))).every((d) => d.state === 'ahead'));
@@ -122,6 +116,10 @@ test('the Pane\'s route is a column a station: the minutes from clock, the wait 
     // Three done dots, the ring and its dot, two hollow.
     assert.equal((source.match(/r="4" fill="#87af5f"/g) || []).length, 3);
     assert.equal((source.match(/r="3\.75" fill="none"/g) || []).length, 2);
+    // The station the task is at is one hollow ring in its own colour.
+    const { RAMP } = await load('pane-band');
+    assert.ok(source.includes(`r="6" fill="none" stroke="${RAMP.build}" stroke-width="2.5"`));
+    assert.ok(!/r="2\.5" fill=/.test(source));
     // Each gate's wait is amber at its bar's end.
     assert.equal((source.match(/y="38" width="[\d.]+" height="4" rx="1" fill="#d7af5f"/g) || []).length, 3);
     assert.equal(routeSvg(Object.assign({}, entry, { stage: 'init' }), NOW, 41), '');
@@ -207,22 +205,10 @@ test('an agent out on another stage draws no running task', async () => {
     assert.ok(titles(source).every((t) => !t.includes('agent')));
 });
 
-test('in a bar the running part carries the breathing class', async () => {
-    const { tasksSvg } = await load('pane-svg');
-    const source = tasksSvg(entry, planOf(40, 10), NOW, 41);
-    assert.match(source, /<rect class="c live"/);
-});
-
 test('the hover ring is in the style', async () => {
     const { tasksSvg } = await load('pane-svg');
     const source = tasksSvg(entry, planOf(40, 10), NOW, 41);
     assert.ok(source.includes('g.k:hover rect.c{stroke:#8a8a8a'));
-});
-
-test('the breathing stops under reduced motion', async () => {
-    const { tasksSvg } = await load('pane-svg');
-    const source = tasksSvg(entry, planOf(40, 10), NOW, 41);
-    assert.ok(source.includes('@media (prefers-reduced-motion:reduce){.fk-t .live{animation:none}}'));
 });
 
 test('a long task name under the cells is cut with an ellipsis', async () => {
@@ -347,8 +333,8 @@ test('on Claude Desktop the band is two Svg rows, each alt the row the terminal 
     assert.deepEqual(kids(desk).map((n) => n.tag), ['Svg', 'Svg']);
     assert.deepEqual(kids(desk).map((n) => n.props.alt), plain(term));
     for (const n of kids(desk)) assert.ok(n.props.source.startsWith('<svg ') && n.props.source.length <= 131072);
-    // The fixture's stage agent is out 12 minutes: the first row breathes, so it is drawn interactive; the second never is.
-    assert.deepEqual(kids(desk).map((n) => n.props.isInteractive), [true, undefined]);
+    // Nothing on the band is animated, so neither row is drawn interactive.
+    assert.deepEqual(kids(desk).map((n) => n.props.isInteractive), [undefined, undefined]);
     assert.match(plain(term)[0], /tasks 4\/9/);
     assert.ok(words(kids(desk)[0].props.source).includes('4/9'));
     assert.match(plain(term)[1], /400k\/1M/);
@@ -362,7 +348,7 @@ test('on Claude Desktop the Pane draws the route, the clash, the tasks and the c
     const svgs = kids(desk).filter((n) => n.tag === 'Svg');
     assert.equal(svgs.length, 4);
     for (const n of svgs) assert.ok(n.props.source.startsWith('<svg ') && n.props.source.length <= 131072);
-    assert.deepEqual(svgs.map((n) => n.props.isInteractive === true), [true, false, true, false]);
+    assert.deepEqual(svgs.map((n) => n.props.isInteractive === true), [false, false, true, false]);
     // Each alt is the rows it stands for, as the terminal draws them.
     const rows = plain(term);
     const block = (from, to) => rows.slice(rows.findIndex((t) => t.startsWith(from)), to === undefined ? undefined : rows.findIndex((t) => t.startsWith(to)) - 1).join('\n');
@@ -578,64 +564,19 @@ test('Remote Control not connected, or not said, draws 遠端 ✗ in the grey te
     assert.deepEqual(words(bandRow1Svg(bandInput({ gateUntil: NOW + 42000 }))).slice(-2), ['遠端', '✗']);
 });
 
-test('breathing is true only for a stage agent under twenty minutes or a turn, and never at a question', async () => {
-    const { breathing } = await load('pane-svg');
-    const idle = Object.assign({}, entry, { inflight: null });
-    assert.equal(breathing(entry, NOW, false, null), true);
-    assert.equal(breathing(Object.assign({}, entry, { inflight: { stage: 'build', at: NOW - 21 * M } }), NOW, false, null), false);
-    assert.equal(breathing(idle, NOW, true, null), true);
-    assert.equal(breathing(idle, NOW, false, null), false);
-    assert.equal(breathing(entry, NOW, true, NOW - 1000), false);
-    assert.equal(breathing(Object.assign({}, entry, { gateAt: NOW - 1000 }), NOW, true, null), false);
-    assert.equal(breathing(Object.assign({}, entry, { inflight: [{ stage: 'plan', at: NOW - M }, { stage: 'build', at: NOW - M }] }), NOW, false, null), true);
-});
-
-test('an agent in another stage does not make the current stage breathe', async () => {
-    const { breathing } = await load('pane-svg');
-    assert.equal(breathing(Object.assign({}, entry, { inflight: { stage: 'plan', at: NOW - 60000 } }), NOW, false, null), false);
-});
-
-test('the ring starts invisible and holds both animate tags', async () => {
-    const { routeSvg } = await load('pane-svg');
-    assert.match(routeSvg(entry, NOW, 41, true), /<circle class="fk-br"[^>]*opacity="0"[^>]*>(<animate [^>]*\/>){2}<\/circle>/);
-});
-
-test('the Pane route draws one breathing ring only when told it is live, phase-locked to now', async () => {
-    const { routeSvg } = await load('pane-svg');
-    const on = routeSvg(entry, NOW, 41, true);
-    assert.equal(on.split('class="fk-br"').length - 1, 1);
-    assert.equal(on.split('<animate').length - 1, 2);
-    assert.ok(!routeSvg(entry, NOW, 41, false).includes('fk-br'));
-    const begin = (s) => Number(/begin="-([\d.]+)s"/.exec(s)[1]);
-    const d = (begin(routeSvg(entry, NOW + 1000, 41, true)) - begin(on) + 2.4) % 2.4;
-    assert.ok(Math.abs(d - 1) < 0.02, String(d));
-});
-
-test('the band route draws its ring only while the stage is worked on', async () => {
-    const { bandRow1Svg } = await load('pane-svg');
-    const idle = Object.assign({}, entry, { inflight: null });
-    const count = (s) => s.split('class="fk-br"').length - 1;
-    assert.equal(count(bandRow1Svg(bandInput())), 1);
-    assert.equal(count(bandRow1Svg(bandInput({ gateAt: NOW - 1000 }))), 0);
-    assert.equal(count(bandRow1Svg(bandInput({ entry: idle }))), 0);
-    assert.equal(count(bandRow1Svg(bandInput({ entry: idle, turn: true }))), 1);
-});
-
-test('paneParts draws the route interactive and ringed only while breathing', async () => {
-    const { paneParts } = await load('pane-svg');
+test('nothing the band or the Pane draws is animated, and the route is never drawn interactive', async () => {
+    const mod = await load('pane-svg');
     const { statusRows } = await load('pane-status');
-    const routePart = (e, over) => {
-        const input = Object.assign({ id: 'x', entry: e, others: [], context: null, plan: null, cols: 41, room: 60, now: NOW }, over);
-        return paneParts(input, statusRows(input)).find((p) => 'source' in p && p.source.includes('<svg') && p.alt.startsWith('survey'));
-    };
-    const live = routePart(entry);
-    assert.equal(live.isInteractive, true);
-    assert.ok(live.source.includes('class="fk-br"'));
-    const idle = routePart(Object.assign({}, entry, { inflight: null }));
-    assert.ok(!idle.isInteractive && !idle.source.includes('fk-br'));
-    const asked = routePart(Object.assign({}, entry, { gateAt: NOW - 1000 }));
-    assert.ok(!asked.isInteractive && !asked.source.includes('fk-br'));
-    // A question in the pending file before the registry's gateAt lands: the route stops with the band, turn or not.
-    const pending = routePart(entry, { turn: true, gateAt: NOW - 1000 });
-    assert.ok(!pending.isInteractive && !pending.source.includes('fk-br'));
+    assert.equal(mod.breathing, undefined);
+    const drawn = [
+        mod.bandRow1Svg(bandInput()),
+        mod.bandRow1Svg(bandInput({ turn: true })),
+        mod.routeSvg(entry, NOW, 41),
+        mod.tasksSvg(entry, planOf(9, 4), NOW, 41),
+        mod.tasksSvg(entry, planOf(40, 10), NOW, 41),
+    ];
+    for (const source of drawn) assert.ok(!/<animate|fk-br|fk-pulse|class="[^"]*live/.test(source), source.slice(0, 80));
+    const input = { id: 'x', entry, others: [], context: null, plan: null, cols: 41, room: 60, now: NOW, turn: true };
+    const route = mod.paneParts(input, statusRows(input)).find((p) => 'source' in p && p.alt.startsWith('survey'));
+    assert.ok(route && !route.isInteractive);
 });

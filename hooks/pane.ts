@@ -8,7 +8,7 @@ import { taskDir, pendingName, parsePending } from './pane-gate.ts'
 import type { Pending } from './pane-gate.ts'
 import { bandRows } from './pane-band.ts'
 import type { Seg as BandSeg, BandInput } from './pane-band.ts'
-import { bandRow1Svg, bandRow2Svg, paneParts, altOf, breathing, SVG_MAX } from './pane-svg.ts'
+import { bandRow1Svg, bandRow2Svg, paneParts, altOf, SVG_MAX } from './pane-svg.ts'
 
 // The fankeel mod's two drawings: two rows above the prompt for what is always
 // wanted, and the Pane for what is looked up. The Pane opens itself while the
@@ -369,7 +369,7 @@ export const register: Register = (on) => {
     return next(e)
   })
 
-  // A turn is running: the route's current dot breathes until it completes.
+  // A turn is running: the band and the Pane redraw when it starts and when it completes.
   on('turn.start', async ($, e, next) => {
     turn.running = true
     $.ui.invalidate('ui.render')
@@ -421,8 +421,7 @@ export const register: Register = (on) => {
         const { Box, Svg } = $.ui.resolve(e)
         const sources = rows.map((_, i) => (i === 0 ? bandRow1Svg(band) : bandRow2Svg(band)))
         if (sources.some((source) => !source || source.length > SVG_MAX)) throw new Error('a band row drew empty or over the limit')
-        const live = !!seen.entry && breathing(seen.entry, band.now, turn.running, band.gateAt ?? null)
-        return h(Box, { flexDirection: 'column' }, ...sources.map((source, i) => h(Svg, i === 0 && live ? { source, alt: altOf([rows[i]]), isInteractive: true } : { source, alt: altOf([rows[i]]) })))
+        return h(Box, { flexDirection: 'column' }, ...sources.map((source, i) => h(Svg, { source, alt: altOf([rows[i]]) })))
       } catch (err) {
         logOnce($, state.logged, 'bandSvg', `fankeel pane: band Svg not drawn, ${String(err)}`)
       }
