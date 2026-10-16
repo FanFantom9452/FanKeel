@@ -885,8 +885,9 @@ section records them.
   `scripts/await.js`'s `main()` also clears one agent's mark — not the whole
   record, so a sibling's survives — when it judges that brain `lost`, or, for a
   `group` mark, once that group's handoff arrived (a `close` mark is left for `hooks/gate.js`).
-  `.claude-plugin/plugin.json`
-  has no `SubagentStop` hook, so nothing else does. `SubagentStart` fires again on
+  Nothing else does: the one `SubagentStop` hook, `hooks/agent-end.js`, writes
+  only `.fankeel/build/agents-<session>.json` for the Pane's agent tree and
+  never reads or writes `inflight`. `SubagentStart` fires again on
   every `SendMessage` delivered to a running or resumed agent — ten times for one
   survey agent on 2026-09-27 — and each re-marks it, so a mark says an agent was
   reached since the last matching gate, not that one is working, and
@@ -897,7 +898,7 @@ section records them.
   A stopped agent's transcript ends in a tool call that never got its result,
   and `awaitState` waits ten minutes and one more for such a call before it says
   `lost`, because a foreground Bash call may run that long with nothing written.
-  That wait stays. No `SubagentStop` hook is added: whether it fires when a
+  That wait stays. No `SubagentStop` hook clears a mark: whether it fires when a
   stage agent ends its turn with `waiting` has not been measured, and clearing
   the mark of an agent that is only waiting would let the controller send a
   second one. A group mark whose group handoff reached the controller by any

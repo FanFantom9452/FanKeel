@@ -7,7 +7,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { execFileSync } = require('node:child_process');
+const { execFileSync, spawn } = require('node:child_process');
 const mkTmp = require('./tmp.js');
 const { readEnds } = require('../lib/agentends.js');
 
@@ -55,4 +55,17 @@ test('the manifest runs agent-end.js on SubagentStart and on SubagentStop', () =
     const commands = manifest.hooks[event].flatMap((m) => m.hooks.map((h) => h.command));
     assert.ok(commands.some((c) => c.includes('hooks/agent-end.js')), event);
   }
+});
+
+test('stops landing at the same moment are all kept', async () => {
+  const root = project(true);
+  const lib = path.join(__dirname, '..', 'lib', 'agentends.js');
+  const go = Date.now() + 400;
+  const ids = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8'];
+  // Each child spins to the same instant, then writes its stop.
+  const code = (id) => 'const a=require(' + JSON.stringify(lib) + ');while(Date.now()<' + go + ');a.markEnded(' + JSON.stringify(root) + ',' + JSON.stringify(SESSION) + ',' + JSON.stringify(id) + ',Date.now())';
+  await Promise.all(ids.map((id) => new Promise((resolve, reject) => {
+    spawn(process.execPath, ['-e', code(id)], { stdio: 'inherit' }).on('exit', (c) => (c === 0 ? resolve() : reject(new Error(id + ' exited ' + c))));
+  })));
+  assert.deepEqual(Object.keys(readEnds(root, SESSION)).sort(), ids);
 });
