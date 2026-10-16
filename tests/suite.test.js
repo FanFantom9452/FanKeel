@@ -378,8 +378,8 @@ test('--fast where package.json has no test:fast runs test, says so, and records
 
 test('package.json: test is everything, test:fast skips the @slow tag', () => {
   const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
-  assert.equal(pkg.scripts.test, 'node --test');
-  assert.equal(pkg.scripts['test:fast'], 'node --test --test-skip-pattern=@slow');
+  assert.equal(pkg.scripts.test, 'node --test --require ./tests/subprocess-timeout.js');
+  assert.equal(pkg.scripts['test:fast'], 'node --test --test-skip-pattern=@slow --require ./tests/subprocess-timeout.js');
 });
 
 test('waitLine names the live holder, and says a stuck dead lock must be deleted by hand', () => {

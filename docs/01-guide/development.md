@@ -29,7 +29,10 @@ load — the bench check.sh tests and the git-heavy ones. The tag was chosen
 from one `node --test --test-reporter=tap` run on main at `f92c7a06` (280 s),
 reading each test point's `duration_ms`: 129 points at 10 s or more, 53% of
 the 4928 s summed over all of them. `npm run test:fast` is
-`node --test --test-skip-pattern=@slow`; `npm test` is still everything.
+`node --test --test-skip-pattern=@slow --require ./tests/subprocess-timeout.js`;
+`npm test` is still everything — both load `tests/subprocess-timeout.js`, which
+gives every synchronous subprocess a test starts a timeout (README.md,
+`## Development`).
 Build and verify run `node scripts/suite.js --session <id> --fast`, which
 records `fast: true`; land runs `suite.js` without it, and both its `--check`
 and `task.js land` refuse a fast record.
