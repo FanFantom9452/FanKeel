@@ -129,7 +129,7 @@ test('a build brain\'s brief names its group and the file a group writes instead
   const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain', agent_id: 'a1' })));
   assert.match(brainRules(), /On a build stage whose prompt names a group \(task numbers\) rather than `build close`, you do only those tasks/);
   assert.match(text, /group report: \S*build-g1\.md instead of \S*build\.md/);
-  assert.match(brainRules(), /only `build close` runs the full test suite first, then writes the gate, once every implementer you sent has returned/);
+  assert.match(brainRules(), /only `build close` runs the fast suite \(`suite\.js --fast`\) first, then writes the gate, once every implementer you sent has returned/);
   assert.ok(sizeAtReference(text) <= BRIEF_MAX, 'brain brief is ' + sizeAtReference(text) + ' chars at the reference root');
 });
 

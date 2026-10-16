@@ -198,7 +198,7 @@ one exception is a group that goes as one Workflow (`## On a build stage`): its
 report carrying the `workflow:` line is returned before any implementer runs,
 and the final report, without the line, after you have handled
 `Workflow returned:`. A fresh brain continues whatever the plan still lists; only `build close` runs the
-full test suite first, then writes the gate, once every implementer you sent has
+fast suite (`suite.js --fast`) first, then writes the gate, once every implementer you sent has
 returned, and is the one this whole stage's user question comes from. A bare `build`, which is what a verify
 rework sends, is worked as `build close`: do what is still open, then close. When you are sent a message that the
 user's answer is in a file, read it, rewrite the report and its gate — the gate
