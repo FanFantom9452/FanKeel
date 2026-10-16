@@ -13,7 +13,7 @@
 const { parseArgs } = require('node:util');
 const registry = require('../lib/registry.js');
 const { nextStage, normaliseRoute, FULL_ROUTE } = require('../lib/stages.js');
-const { readGate } = require('../lib/handoff.js');
+const { readGate, patrolEntries } = require('../lib/handoff.js');
 
 const USAGE = 'gate-check.js: usage: gate-check.js --session <id> [--root <dir>] <handoff file>';
 
@@ -31,7 +31,7 @@ function main(argv) {
     const mine = registry.readSession(at, session);
     if (!mine || !mine.stage) return { text: 'gate-check.js: no session ' + session + ' with a stage under ' + at, code: 1 };
     const todo = require('../lib/plain.js').todoIds(at);
-    const gate = readGate(files[0], nextStage(mine.stage, mine.route), normaliseRoute(mine.route) || FULL_ROUTE, { pause: true, floor: mine.floor, ids: todo.ids });
+    const gate = readGate(files[0], nextStage(mine.stage, mine.route), normaliseRoute(mine.route) || FULL_ROUTE, { pause: true, floor: mine.floor, ids: todo.ids, patrol: patrolEntries(at, mine) });
     const warn = todo.warning ? '\nwarning: ' + todo.warning : '';
     if (!gate) return { text: 'gate-check.js: no readable `json gate` block in ' + files[0] + warn, code: 1 };
     if (gate.invalid) return { text: 'gate-check.js: invalid at ' + gate.invalid + ': ' + gate.detail + warn, code: 1 };

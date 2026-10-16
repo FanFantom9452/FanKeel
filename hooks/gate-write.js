@@ -23,7 +23,7 @@
 const registry = require('../lib/registry.js');
 const { targetOf } = require('../lib/guard.js');
 const { nextStage, normaliseRoute, FULL_ROUTE } = require('../lib/stages.js');
-const { handoffPath, readGate } = require('../lib/handoff.js');
+const { handoffPath, readGate, patrolEntries } = require('../lib/handoff.js');
 const { run, parse } = require('../lib/hook.js');
 const path = require('node:path');
 
@@ -67,7 +67,7 @@ function main(raw) {
 
     let result = null;
     try {
-        result = readGate(file, nextStage(mine.stage, mine.route), normaliseRoute(mine.route) || FULL_ROUTE, { pause: true, floor: mine.floor });
+        result = readGate(file, nextStage(mine.stage, mine.route), normaliseRoute(mine.route) || FULL_ROUTE, { pause: true, floor: mine.floor, patrol: patrolEntries(root, mine) });
     } catch (e) { /* housekeeping */ }
     if (!result || !result.invalid) return;
 

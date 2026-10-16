@@ -49,7 +49,7 @@ const crypto = require('node:crypto');
 const registry = require('../lib/registry.js');
 const profileLib = require('../lib/profile.js');
 const { controlling, nextStage, normaliseRoute, FULL_ROUTE } = require('../lib/stages.js');
-const { handoffPath, answerPath, pendingPath, answersSince, answeredOf, handedOffSince, writeAnswer, readGate, skipReason, gateMatches } = require('../lib/handoff.js');
+const { handoffPath, answerPath, pendingPath, answersSince, answeredOf, handedOffSince, writeAnswer, readGate, patrolEntries, skipReason, gateMatches } = require('../lib/handoff.js');
 const { run, parse } = require('../lib/hook.js');
 
 // `stage.agents` as the profile holds it, for a sentence.
@@ -222,7 +222,7 @@ function main(raw) {
         controlled = controlling(mine.stage, values);
         agents = agentsText(values);
         file = handoffPath(root, mine, mine.stage);
-        if (controlled) { const todo = require('../lib/plain.js').todoIds(root); idsWarning = todo.warning; gate = readGate(file, nextStage(mine.stage, mine.route), normaliseRoute(mine.route) || FULL_ROUTE, { pause: true, floor: mine.floor, ids: todo.ids }); }
+        if (controlled) { const todo = require('../lib/plain.js').todoIds(root); idsWarning = todo.warning; gate = readGate(file, nextStage(mine.stage, mine.route), normaliseRoute(mine.route) || FULL_ROUTE, { pause: true, floor: mine.floor, ids: todo.ids, patrol: patrolEntries(root, mine) }); }
         if (!gate) skip = skipReason({ stage: mine.stage, controlled, agents, inflight: runningMark(mine, mine.stage), handoff: file });
     } catch (e) { /* housekeeping */ }
 
