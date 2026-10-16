@@ -24,7 +24,7 @@ status: design-intent
 ## Risks
 
 - Task 2、3、4 的 station.js 範圍重疊（`dashSpend` `:2992`、`dashTodo` `:3021` 都在 Task 4 的 `:2690-3180` 裡），Task 2 與 4 都改 `tests/station-estimated.test.js` — Task 2、3、4 — 各自在 worktree 做，由 build 的主控 cherry-pick 時解衝突；Task 4 不改 `dashSpend`、`dashTodo` 的內文。
-- 拿掉 chooser 會打掉 `tests/station-dash.test.js:118-380` 大半的測試 — Task 4 — 先讀完整個測試檔，再逐條改寫成編輯模式的等價斷言。
+- 拿掉 chooser 會打掉 `tests/station-dash.test.js:118-372` 大半的測試 — Task 4 — 先讀完整個測試檔，再逐條改寫成編輯模式的等價斷言。
 
 ## Task 1: 頂列的 JS 與字串
 
@@ -290,7 +290,7 @@ test('a hidden card is still stored as off in station.dash', () => {
 
 2. Run `node --test tests/station-dash.test.js` — 紅。
 3. 在 `assets/station/station.js` 加 `function dashKinds()`，回傳的物件取代 `dashPage` 的 `card`、`side`（`:3117-3121`）與 `dashChooserHtml` 的 `names`（`:3072-3078`）；下一行 `module.exports.dashKinds = dashKinds`。`dashCards()`／`dashOrder` 改讀 `Object.keys(dashKinds())`。`dashPage` 依 `dashOrder` 畫兩欄，右欄最後放 `<button id="dchtog" class="dslot" data-dchtog>` 寫 `loc('dash.editLayout', '編輯版面')`；`view.dashEdit` 為真時每張卡外加把手（`data-dmv`）與隱藏鈕（`data-dhide`），底部 `<div class="dedit">` 有 `data-dchreset`（`loc('dash.reset', '還原預設')`）與 `data-dchdone`（`loc('dash.done', '完成')`）；keydown Esc 結束編輯；HTML5 drag 與 Alt+方向鍵換位都經 `dashSave`。
-4. 改寫 `tests/station-dash.test.js:81-380` 的 chooser 測試（`dash-head`／`kcap`／`dchtog` 在 head 裡的 `:118-130`，以及 `:183-380` 經 chooser 驅動 `data-dchmv`、`data-dchshow`、`data-dchreset`、`data-dchdone` 的那些）為編輯模式的等價斷言；`tests/station-view.test.js:1690` 與 `tests/station-estimated.test.js:487` 讀 `<p class="kcap">` 的斷言改讀花費卡的 `.dkv`。
+4. 改寫 `tests/station-dash.test.js:81-372` 的 chooser 測試（`dash-head`／`kcap`／`dchtog` 在 head 裡的 `:118-130`，以及 `:183-380` 經 chooser 驅動 `data-dchmv`、`data-dchshow`、`data-dchreset`、`data-dchdone` 的那些）為編輯模式的等價斷言；`tests/station-view.test.js:1690` 與 `tests/station-estimated.test.js:487` 讀 `<p class="kcap">` 的斷言改讀花費卡的 `.dkv`。
 5. 在 `assets/station/station.css:1795-1935` 換成編輯模式樣式；`tests/station-keel.test.js:33` 釘住的規則改成 `.td-mb[aria-expanded="true"] .ico{transform:rotate(180deg)}`；`tests/station-keel-live.test.js:79` 的 `#dchtog` 保留。
 6. Run `node --test tests/station-dash.test.js tests/station-keel.test.js tests/station-keel-live.test.js tests/station-view.test.js tests/station-estimated.test.js tests/station-i18n.test.js tests/station-shell.test.js tests/station-dispatch-view.test.js` — 全綠。
 
