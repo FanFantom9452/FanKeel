@@ -13,3 +13,5 @@ link: hooks/pane.ts
 做法：route、tasks 的標題列畫成 `Button`，`onPress` 切 mod 記憶體裡的收合旗標並 `$.ui.invalidate('ui.render')`；收合時只留一列，例如「▸ tasks 3/5」。Desktop 的按鈕放在對應 Svg 上方。收合狀態只在記憶體，重開 session 回到展開；要記住得寫進 profile，另議。
 
 使用者選了記成 TODO、另開任務，從 design 站畫 mockup 再做。完成條件：兩塊都能在 Desktop 與終端收合再展開，測試在 onPress 不再切旗標時轉紅，使用者在 Desktop 真機點過一次。
+
+2026-10-17 Desktop 真機（0.111.14）：使用者按 route、tasks 的標題，兩塊都收成一列再展開回來，正常。
