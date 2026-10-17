@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # TODO 全表盤點（10-17）：五條 Ready 的真機實測 Implementation Plan
@@ -7,7 +7,7 @@ status: design-intent
 **Goal:** 使用者在場，把五條 Ready（終端啟動讀遠端狀態、面板真機沒看完的四件事、子代理 brief 改走 spawn、接縫「profile 中途翻轉」、Desktop 真機看壓縮視窗）各實測一次，結果寫回條目，成立的關、不成立的寫下差在哪。
 **Architecture:** 五條的核心動作都要使用者親手在終端、Desktop、站頁操作（survey 的結論），所以五個 task 都是 `user`：使用者操作、念出看到的東西，本 session 當場讀 session 檔、records、transcript 佐證，再把結果寫進條目。只有接縫那條另外改 `docs/90-agent/reference/subagents.md`。由快到慢排：遠端狀態、面板四件事、spawn 探測、profile 翻轉、壓縮視窗（要跑過 400k，最慢）。
 **Tech Stack:** Node v24.9.0，Claude Code 安裝版與 Desktop，fankeel 0.111.17（Desktop 讀安裝快照，所以面板那條先 `claude plugin update fankeel@fankeel`）。
-**Spec:** [survey.md](../../../.fankeel/build/task-20261017T125451/survey.md)
+**Spec:** [survey.md](../../.fankeel/build/task-20261017T125451/survey.md)
 
 ## Global Constraints
 

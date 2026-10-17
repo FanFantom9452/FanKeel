@@ -2,8 +2,13 @@
 label: pane
 title: 終端啟動讀遠端狀態
 description: 從終端啟動、再開 Remote Control 的 session，band 尾巴會不會變成 遠端 ✓ — [hooks/pane.ts](hooks/pane.ts).
-state: ready
+state: done
 link: hooks/pane.ts
+done:
+  at: 2026-10-17
+  sha: 8cea5dd6
+  disposition: done
+  session: 398cc390-8239-42f0-8311-1f7f73c7bb88
 ---
 
 來源：2026-10-15 pane-2 關閉時留下。band 讀 Claude Code 的 ~/.claude/sessions/<pid>.json，看 bridgeSessionId 有沒有值；10-14 只在 Desktop 啟動的 session 上實測過。從終端用 claude 啟動、再開 Remote Control 時，這個欄位有沒有寫進去沒驗過。另外，從終端開 Pane 再用 Remote Control 下 /fankeel-panel，只有終端那邊會開關，Desktop 不會畫。
