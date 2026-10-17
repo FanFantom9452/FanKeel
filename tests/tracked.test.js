@@ -244,3 +244,9 @@ test('repoRoot names the repository a subdirectory is in, and null where there i
   assert.equal(tracked.repoRoot(path.join(root, 'missing')), null, 'a directory that is not there was answered for');
   assert.equal(tracked.repoRoot(tmp('fankeel-reporoot-none-')), null, 'a directory in no repository was answered for');
 });
+
+test('posix turns this platform\'s separator into a forward slash, and leaves one alone', () => {
+  assert.equal(tracked.posix(['a', 'b', 'c.js'].join(path.sep)), 'a/b/c.js');
+  assert.equal(tracked.posix('a/b'), 'a/b');
+  assert.equal(tracked.posix(''), '');
+});
