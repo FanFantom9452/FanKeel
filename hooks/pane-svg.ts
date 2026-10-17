@@ -105,14 +105,19 @@ export function bandRow1Svg(input: BandInput): string {
   }
   if (tasks && tasks.total > 0) {
     const done = Math.max(0, Math.min(tasks.done, tasks.total))
-    // Six px a cell, narrower past thirty so the cells stay within 180px.
-    const pitch = Math.min(6, 180 / tasks.total)
     b += text(x, 15, 'tasks')
     x += px('tasks') + 6
-    for (let i = 0; i < tasks.total; i++) {
-      b += `<rect x="${r1(x + i * pitch)}" y="7" width="${r1(Math.max(1, pitch - 2))}" height="8" rx="1" fill="${i < done ? DONE : DIM}"/>`
+    if (tasks.total <= 10) {
+      // Six px a cell while a cell a task still reads.
+      for (let i = 0; i < tasks.total; i++) {
+        b += `<rect x="${r1(x + i * 6)}" y="7" width="4" height="8" rx="1" fill="${i < done ? DONE : DIM}"/>`
+      }
+      x += tasks.total * 6 + 4
+    } else {
+      // Past ten, one bar on the 5h meter's track, so the band stops growing with the plan.
+      b += well(x, done / tasks.total, DONE)
+      x += WELL + 6
     }
-    x += tasks.total * pitch + 4
     const n = `${done}/${tasks.total}`
     b += text(x, 15, n, { bold: true })
     x += px(n) + 12

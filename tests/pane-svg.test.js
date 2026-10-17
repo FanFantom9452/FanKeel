@@ -73,6 +73,25 @@ test('the band\'s tasks are one cell a task with the count beside them, the same
     assert.ok(!bandRow1Svg(bandInput({ tasks: null })).includes('y="7"'), 'cells drawn with no ledger');
 });
 
+test('past ten tasks the band draws one bar as wide as the 5h track, and the band stops growing', async () => {
+    const { bandRow1Svg } = await load('pane-svg');
+    const cells = (source) => (source.match(/<rect x="[\d.]+" y="7" width="[\d.]+" height="8" rx="1" fill="#[0-9a-f]{6}"\/>/g) || []).length;
+    const countAt = (source, n) => Number(new RegExp(`<text x="([\\d.]+)"[^>]*>${n}</text>`).exec(source)[1]);
+    const four = bandRow1Svg(bandInput({ tasks: { done: 2, total: 4 } }));
+    assert.equal(cells(four), 4);
+    const ten = bandRow1Svg(bandInput({ tasks: { done: 3, total: 10 } }));
+    assert.equal(cells(ten), 10);
+    const twenty = bandRow1Svg(bandInput({ tasks: { done: 20, total: 20 } }));
+    assert.equal(cells(twenty), 0);
+    assert.ok(/<rect x="[\d.]+" y="6" width="96" height="10" rx="2"/.test(twenty), 'no 96px track');
+    assert.ok(/<rect x="[\d.]+" y="7" width="94" height="8" rx="1\.5" fill="#87af5f"\/>/.test(twenty), 'the bar is not full at 20/20');
+    assert.ok(words(twenty).includes('20/20'));
+    const eleven = bandRow1Svg(bandInput({ tasks: { done: 0, total: 11 } }));
+    const sixty = bandRow1Svg(bandInput({ tasks: { done: 37, total: 60 } }));
+    assert.equal(countAt(eleven, '0/11'), countAt(twenty, '20/20'));
+    assert.equal(countAt(sixty, '37/60'), countAt(twenty, '20/20'));
+});
+
 test('a waiting gate is a badge and a ring full at the whole wait, with the seconds left beside it', async () => {
     const { bandRow1Svg } = await load('pane-svg');
     const source = bandRow1Svg(bandInput({ gateAt: NOW - 18000, gateUntil: NOW + 42000 }));
