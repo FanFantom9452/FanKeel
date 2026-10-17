@@ -126,11 +126,6 @@ export function ledgerDoneIds(text: string, claim: string): number[] | null {
   return [...done].sort((a, b) => a - b)
 }
 
-export function ledgerDone(text: string, claim: string): number | null {
-  const ids = ledgerDoneIds(text, claim)
-  return ids === null ? null : ids.length
-}
-
 // lib/plantasks.js parsePlan: the `## Task N:` headings of a plan, a fenced one
 // not counted, each with whether its first `**Dispatch:**` line names the user.
 // Any other `## ` heading ends the tasks.
@@ -164,8 +159,6 @@ export function planTasks(text: string): PlanTask[] {
   }
   return tasks
 }
-
-export const planTotal = (text: string): number => planTasks(text).length
 
 // `inner` is the cells a row has after its rail.
 function taskBlock(entry: Entry, inner: number, folded: boolean): Row[] {

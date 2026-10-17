@@ -196,8 +196,8 @@ test('no row is wider than the pane, and CJK counts two', async () => {
     }
 });
 
-test('ledgerDone counts what lib/ledger.js completed() counts, for the plan the ledger names', async () => {
-    const { ledgerDone } = await load();
+test('ledgerDoneIds counts what lib/ledger.js completed() counts, for the plan the ledger names', async () => {
+    const { ledgerDoneIds } = await load();
     const claim = 'docs/90-agent/plans/2026-10-11-fankeel-pane.md';
     const body = [
         ledger.header(claim),
@@ -213,25 +213,25 @@ test('ledgerDone counts what lib/ledger.js completed() counts, for the plan the 
         'Task 7: completed later',
     ].join('\n') + '\n';
     assert.ok(ledger.owns(body, claim));
-    assert.equal(ledgerDone(body, claim), new Set(ledger.completed(body)).size);
-    assert.equal(ledgerDone(body, claim), 3);
-    assert.equal(ledgerDone(body.replace(/\n/g, '\r\n'), claim), 3);
+    assert.equal(ledgerDoneIds(body, claim).length, new Set(ledger.completed(body)).size);
+    assert.equal(ledgerDoneIds(body, claim).length, 3);
+    assert.equal(ledgerDoneIds(body.replace(/\n/g, '\r\n'), claim).length, 3);
     for (const foreign of ['docs/90-agent/plans/other.md', '2026-10-11-fankeel-pane.md']) {
         assert.equal(ledger.owns(body, foreign), false);
-        assert.equal(ledgerDone(body, foreign), null);
+        assert.equal(ledgerDoneIds(body, foreign), null);
     }
-    assert.equal(ledgerDone('', claim), null);
+    assert.equal(ledgerDoneIds('', claim), null);
 });
 
-test('planTotal counts the headings lib/plantasks.js parseTasks counts', async () => {
-    const { planTotal } = await load();
+test('planTasks counts the headings lib/plantasks.js parseTasks counts', async () => {
+    const { planTasks } = await load();
     const fence = '`'.repeat(3);
     const body = ['# Plan', '', '## Global Constraints', '', '## Task 1: one', 'text', fence + 'md', '## Task 9: an example inside a fence', fence,
         '##  Task 2:  two', '### Task 3: a sub-heading', '## Task three: no number', '   ## Task 4: indented', '## Coverage', ''].join('\n');
     assert.equal(plantasks.parseTasks(body).length, 3);
-    assert.equal(planTotal(body), plantasks.parseTasks(body).length);
-    assert.equal(planTotal(body.replace(/\n/g, '\r\n')), 3);
-    assert.equal(planTotal(''), 0);
+    assert.equal(planTasks(body).length, plantasks.parseTasks(body).length);
+    assert.equal(planTasks(body.replace(/\n/g, '\r\n')).length, 3);
+    assert.equal(planTasks('').length, 0);
 });
 
 // A plan of `n` tasks named `task 1` on, `done` complete, `users` the user's own.
@@ -240,7 +240,7 @@ const planOf = (n, done, users) => ({ name: '2026-10-12-pane-band', done, tasks:
 const busy = Object.assign({}, entry, { inflight: { stage: 'design', at: NOW - 12 * 60000 - 30000, group: 2 } });
 
 test('planTasks reads the headings lib/plantasks.js parseTasks reads, and which of them are the user\'s', async () => {
-    const { planTasks, planTotal } = await load();
+    const { planTasks } = await load();
     const fence = '`'.repeat(3);
     const text = ['# Plan', '', '## Task 1: one', '', '**Dispatch:** implementer, sonnet — the code is in the plan.', '', 'text', '**Dispatch:** user — a later line is prose',
         fence + 'md', '## Task 9: an example inside a fence', '**Dispatch:** user', fence,
@@ -250,12 +250,12 @@ test('planTasks reads the headings lib/plantasks.js parseTasks reads, and which 
     assert.deepEqual(planTasks(text).map((t) => [t.n, t.name, t.user]), theirs.map((t) => [t.n, t.name, t.dispatch === 'user']));
     assert.deepEqual(planTasks(text), [{ n: 1, name: 'one', user: false }, { n: 2, name: 'two', user: true }, { n: 4, name: 'indented', user: false }]);
     assert.deepEqual(planTasks(text.replace(/\n/g, '\r\n')), planTasks(text));
-    assert.equal(planTotal(text), 3);
+    assert.equal(planTasks(text).length, 3);
     assert.deepEqual(planTasks(''), []);
 });
 
 test('ledgerDoneIds names the tasks lib/ledger.js completed() names, ascending, for the plan the ledger is of', async () => {
-    const { ledgerDoneIds, ledgerDone } = await load();
+    const { ledgerDoneIds } = await load();
     const claim = 'docs/90-agent/plans/2026-10-12-pane-band.md';
     const text = [ledger.header(claim), ledger.completionLine(2, 'b'), ledger.completionLine(1, 'a'), '  ' + ledger.completionLine(4, 'd'),
         ledger.completionLine(2, 'b, again'), 'Task 7: completed later'].join('\n') + '\n';
@@ -264,7 +264,7 @@ test('ledgerDoneIds names the tasks lib/ledger.js completed() names, ascending, 
     assert.deepEqual(ledgerDoneIds(text.replace(/\n/g, '\r\n'), claim), [1, 2, 4]);
     assert.equal(ledgerDoneIds(text, 'docs/90-agent/plans/other.md'), null);
     assert.equal(ledgerDoneIds('', claim), null);
-    assert.equal(ledgerDone(text, claim), 3);
+    assert.equal(ledgerDoneIds(text, claim).length, 3);
 });
 
 test('six tasks or fewer are listed whole: done, open, and the user\'s own', async () => {
