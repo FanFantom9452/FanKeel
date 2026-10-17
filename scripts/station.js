@@ -436,6 +436,16 @@ async function serve(opts) {
             fail(403, 'wrong nonce: open the page this server printed and try again');
             return null;
         };
+        // The routes that act on one registry of the page read the form and find
+        // that registry the same way. Null when the nonce refused it, which has
+        // already answered; `reg` is undefined when no registry matched, and
+        // each route says that in its own 404.
+        const formAndRegistry = async () => {
+            const form = await formOf();
+            if (!form) return null;
+            const reg = modelNow().registries.find((r) => r.root === path.resolve(form.get('root') || ''));
+            return { form, reg };
+        };
         if (req.method === 'GET' && url.pathname === '/') {
             let html;
             try {
@@ -522,14 +532,12 @@ async function serve(opts) {
             return send(200, TYPES[path.extname(file[1])], body, noStore);
         }
         if (req.method === 'POST' && url.pathname === '/clear') {
-            const form = await formOf();
-            if (!form) return;
-            const root = form.get('root') || '';
+            const got = await formAndRegistry();
+            if (!got) return;
+            const { form, reg } = got;
             const id = form.get('id') || '';
             // The server has just measured liveness for the page; a row that is
             // live is not one the button is for, whatever the age rule says.
-            const model = modelNow();
-            const reg = model.registries.find((r) => r.root === path.resolve(root));
             const row = reg && reg.sessions.find((s) => s.sessionId === id);
             if (!row) {
                 return fail(404, 'no such session on this page');
@@ -544,10 +552,9 @@ async function serve(opts) {
             return redirect('/');
         }
         if (req.method === 'POST' && url.pathname === '/clear-stale') {
-            const form = await formOf();
-            if (!form) return;
-            const model = modelNow();
-            const reg = model.registries.find((r) => r.root === path.resolve(form.get('root') || ''));
+            const got = await formAndRegistry();
+            if (!got) return;
+            const { form, reg } = got;
             if (!reg) {
                 return fail(404, 'no such registry on this page');
             }
@@ -569,10 +576,9 @@ async function serve(opts) {
             return redirect('/?cleared=' + cleared);
         }
         if (req.method === 'POST' && url.pathname === '/todo') {
-            const form = await formOf();
-            if (!form) return;
-            const model = modelNow();
-            const reg = model.registries.find((r) => r.root === path.resolve(form.get('root') || ''));
+            const got = await formAndRegistry();
+            if (!got) return;
+            const { form, reg } = got;
             const row = reg && reg.sessions.find((s) => s.sessionId === form.get('id'));
             if (!row) {
                 return fail(404, 'no such session on this page');
@@ -589,10 +595,9 @@ async function serve(opts) {
         // A gate hooks/gate.js is holding (`gate.station`): the answer goes to
         // the file the hook is reading, in the shape hooks/resume.js writes.
         if (req.method === 'POST' && url.pathname === '/answer') {
-            const form = await formOf();
-            if (!form) return;
-            const model = modelNow();
-            const reg = model.registries.find((r) => r.root === path.resolve(form.get('root') || ''));
+            const got = await formAndRegistry();
+            if (!got) return;
+            const { form, reg } = got;
             const mine = reg ? registry.readSession(reg.root, form.get('id') || '') : null;
             if (!mine) {
                 return fail(404, 'no such session on this page');
