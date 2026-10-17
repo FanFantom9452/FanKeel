@@ -18,4 +18,4 @@ link: lib/context.js
 
 ## 補上第二件（2026-10-17）
 
-- hook 看不看得到：看得到。在專案的 .claude/settings.local.json 臨時加一支 UserPromptSubmit command hook，只把 process.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW 附加到一個 log；log 在 14:12:02 與 14:12:13（UTC）各寫一行 450000。那兩分鐘內唯一有寫入的 transcript 是 Desktop 啟動的 session 398cc390-8239-42f0-8311-1f7f73c7bb88（entrypoint claude-desktop），可見 Claude Code 執行中重讀了 settings.local.json 的 hooks，觸發的是這個 Desktop session 自己的 command hook。測完已把那支 hook 與探針檔拿掉。三件都看過，本條關閉。
+- hook 看不看得到：看得到。在專案的 .claude/settings.local.json 臨時加一支 UserPromptSubmit command hook，只把 process.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW 附加到一個 log；log 在 14:12:02 與 14:12:13（UTC）各寫一行 450000。那兩分鐘內唯一有寫入的 transcript 是 Desktop 啟動的 session 398cc390-8239-42f0-8311-1f7f73c7bb88（entrypoint claude-desktop），log 本身不帶 session id，所以「觸發的是這個 Desktop session 的 command hook」是由此排除法推定，不是 log 證明的；同時也推定 Claude Code 執行中重讀了 settings.local.json 的 hooks。測完已把那支 hook 與探針檔拿掉。三件都看過，本條關閉。
