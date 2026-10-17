@@ -463,28 +463,86 @@ function serveRecord(config, s) {
     fs.writeFileSync(path.join(config, 'fankeel', 'serve.json'), JSON.stringify({ pid: process.pid, port: s.port, url: s.url }));
 }
 
-test('a plan-stage handoff prints a page: line under it when the station answers, and no such line when none does', async () => {
+// A plan-stage session with its station answering, or `null` for no station.
+async function planWith(live, body) {
     const f = fixture({ stage: 'plan', moves: [['plan', 1]] });
-    at(path.join(f.task, 'plan.md'), Date.now());
-    const alone = await awaitCli.main(['--session', SID, '--root', f.root], f.env);
-    assert.match(alone.text, new RegExp('^handoff ' + f.task + '/plan\\.md — '));
-    assert.doesNotMatch(alone.text, /page: /, 'no serve.json: the gate is asked as before');
-    const s = await station();
+    if (body !== undefined) at(path.join(f.task, 'plan.md'), Date.now(), body);
+    const s = live ? await station() : null;
+    if (s) serveRecord(f.config, s);
+    return { f, s };
+}
+
+test('plan page: no serve.json prints the handoff line alone', async () => {
+    const { f } = await planWith(false, 'x\n');
+    const out = await awaitCli.main(['--session', SID, '--root', f.root], f.env);
+    assert.match(out.text, new RegExp('^handoff ' + f.task + '/plan\\.md — '));
+    assert.doesNotMatch(out.text, /page: /);
+});
+
+test('plan page: an answering station puts the session\'s plan tab on a second line', async () => {
+    const { f, s } = await planWith(true, 'x\n');
     try {
-        serveRecord(f.config, s);
-        const out = await awaitCli.main(['--session', SID, '--root', f.root], f.env);
-        const lines = out.text.split('\n');
+        const lines = (await awaitCli.main(['--session', SID, '--root', f.root], f.env)).text.split('\n');
         assert.match(lines[0], new RegExp('^handoff ' + f.task + '/plan\\.md — '));
         assert.equal(lines[1], 'page: ' + s.url + '#/s/' + SID + '/plan');
         assert.equal(lines.length, 2);
-        const b = fixture({});
-        at(path.join(b.task, 'build.md'), Date.now());
-        serveRecord(b.config, s);
-        const build = await awaitCli.main(['--session', SID, '--root', b.root], b.env);
-        assert.doesNotMatch(build.text, /page: /, 'only the plan stage gets the page');
     } finally {
         await s.close();
     }
-    const gone = await awaitCli.main(['--session', SID, '--root', f.root], f.env);
-    assert.doesNotMatch(gone.text, /page: /, 'a serve.json nobody answers for prints no line');
+});
+
+test('plan page: a build-stage handoff gets no page: line from an answering station', async () => {
+    const b = fixture({});
+    at(path.join(b.task, 'build.md'), Date.now());
+    const s = await station();
+    try {
+        serveRecord(b.config, s);
+        const out = await awaitCli.main(['--session', SID, '--root', b.root], b.env);
+        assert.match(out.text, /^handoff /);
+        assert.doesNotMatch(out.text, /page: /);
+    } finally {
+        await s.close();
+    }
+});
+
+test('plan page: a serve.json nobody answers for prints no page: line', async () => {
+    const { f, s } = await planWith(true, 'x\n');
+    await s.close();
+    const out = await awaitCli.main(['--session', SID, '--root', f.root], f.env);
+    assert.match(out.text, /^handoff /);
+    assert.doesNotMatch(out.text, /page: /);
+});
+
+test('plan page: a plan-stage commit line gets no page: line from an answering station', async () => {
+    const { f, s } = await planWith(true);
+    try {
+        at(path.join(f.task, 'plan-commit.md'), Date.now());
+        const out = await awaitCli.main(['--session', SID, '--root', f.root], f.env);
+        assert.match(out.text, /^commit /);
+        assert.doesNotMatch(out.text, /page: /);
+    } finally {
+        await s.close();
+    }
+});
+
+test('plan page: a plan-stage timeout gets no page: line from an answering station', async () => {
+    const { f, s } = await planWith(true);
+    try {
+        const out = await awaitCli.main(['--session', SID, '--root', f.root, '--timeout', '0.2'], f.env);
+        assert.match(out.text, /^timeout — /);
+        assert.doesNotMatch(out.text, /page: /);
+    } finally {
+        await s.close();
+    }
+});
+
+test('plan page: a plan report handing over a workflow gets no page: line from an answering station', async () => {
+    const { f, s } = await planWith(true, 'plan\n\nworkflow: /r/w.js\n');
+    try {
+        const out = await awaitCli.main(['--session', SID, '--root', f.root], f.env);
+        assert.match(out.text, /^workflow \/r\/w\.js — /);
+        assert.doesNotMatch(out.text, /page: /);
+    } finally {
+        await s.close();
+    }
 });

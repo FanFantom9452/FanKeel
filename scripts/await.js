@@ -2,7 +2,8 @@
 'use strict';
 
 // Waits, in the background, on the stage agent a controller has just
-// dispatched or messaged, and prints one line saying what to do next. The
+// dispatched or messaged, and prints one line saying what to do next — on a
+// plan handoff, a `page:` line under it when a station answers. The
 // controller runs it with Bash `run_in_background` after every dispatch and
 // every SendMessage and ends its turn: this script exiting is what hands the
 // turn back, so a hand-back that never arrives — twice on 2026-09-23 — no
@@ -159,9 +160,9 @@ function lineFor(state, o, commitFile) {
 function pageLine(o) {
     if (o.stage !== 'plan' || workflowOf(o.handoff)) return Promise.resolve('');
     const record = readServeRecord(o.configDir);
-    if (!record || typeof record.url !== 'string') return Promise.resolve('');
-    const base = record.url.endsWith('/') ? record.url : record.url + '/';
-    return probe(record).then((up) => (up ? '\npage: ' + base + '#/s/' + encodeURIComponent(o.session) + '/plan' : ''), () => '');
+    // probe resolves false for no record or a url that is not a string, and
+    // never rejects; a recorded url ends in `/` (lib/serve.js).
+    return probe(record).then((up) => (up ? '\npage: ' + record.url + '#/s/' + o.session + '/plan' : ''));
 }
 
 // controller-1: one waiter per in-flight mark. A controller that ran await

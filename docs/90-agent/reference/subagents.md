@@ -607,7 +607,8 @@ does not wait on delivery: after it dispatches the stage agent, after every
 it runs `node <plugin>/scripts/await.js --session <id>` with Bash
 `run_in_background` and ends its turn. The script reads the stage, the
 handoff and commit paths and the agent's id (`inflight`, written by
-`hooks/brief.js`) off the record, and exits on the first of four lines:
+`hooks/brief.js`) off the record, and exits on the first of four lines (a
+plan `handoff` line may carry a second, `page:`, below):
 `commit <file>`, a `<stage>-commit.md` newer than `--since`; `handoff <file>`,
 the report rewritten after `--since`, which defaults to the stage's answer
 file; `lost <id>`, neither, and no `agent-*.jsonl` in the session's
