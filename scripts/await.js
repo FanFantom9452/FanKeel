@@ -161,7 +161,7 @@ function pageLine(o) {
     if (o.stage !== 'plan' || workflowOf(o.handoff)) return Promise.resolve('');
     const record = readServeRecord(o.configDir);
     // probe resolves false for no record or a url that is not a string, and
-    // never rejects; a recorded url ends in `/` (lib/serve.js).
+    // never rejects; a recorded url ends in `/` (scripts/station.js).
     return probe(record).then((up) => (up ? '\npage: ' + record.url + '#/s/' + o.session + '/plan' : ''));
 }
 
