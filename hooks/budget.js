@@ -19,7 +19,7 @@ const registry = require('../lib/registry.js');
 const { inspect, SOFT, HARD } = require('../lib/context.js');
 const { relayPath } = require('../lib/handoff.js');
 const { targetOf } = require('../lib/guard.js');
-const { run, parse } = require('../lib/hook.js');
+const { run, parse, refuse } = require('../lib/hook.js');
 const { sessionDirOf, agentFiles } = require('../lib/usage.js');
 
 // What HARD still allows: writing the relay file this hook is about to tell
@@ -62,16 +62,10 @@ function main(raw) {
             const target = String(targetOf(payload) || '').replace(/\\/g, '/');
             if (target.includes('.fankeel/build/')) return;
         }
-        process.stdout.write(JSON.stringify({
-            hookSpecificOutput: {
-                hookEventName: 'PreToolUse',
-                permissionDecision: 'deny',
-                permissionDecisionReason: 'fankeel: this subagent is at ' + info.used + ' tokens, over the '
-                    + HARD + '-token budget hooks/budget.js enforces. Write your progress to ' + relay
-                    + ' and return that path; every tool but a Write or Edit under .fankeel/build/ is '
-                    + 'refused until this agent ends.',
-            },
-        }));
+        refuse('fankeel: this subagent is at ' + info.used + ' tokens, over the '
+            + HARD + '-token budget hooks/budget.js enforces. Write your progress to ' + relay
+            + ' and return that path; every tool but a Write or Edit under .fankeel/build/ is '
+            + 'refused until this agent ends.');
         return;
     }
 
