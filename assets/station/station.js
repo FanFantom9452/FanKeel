@@ -1326,15 +1326,15 @@
             + roHtml(loc('ses.contextPeak', 'context 峰值'), x ? tokens(x.peak) : '—', '')
             + '</div>';
     }
-    // Four tabs by what a reader comes for: 概覽 is the session's story —
+    // Five tabs by what a reader comes for: 概覽 is the session's story —
     // time, context and money stage by stage — 派工 and 事件 are its two
-    // long lists, and 對話 is what was said, read from the transcript on
-    // demand. `cost` is still in TABS so an old `/cost` link parses; it
+    // long lists, 對話 is what was said, read from the transcript on
+    // demand, and 計畫 is the plan the session claimed. `cost` is still in TABS so an old `/cost` link parses; it
     // opens 概覽, which now holds everything that tab showed. `talk` is the
     // 對話 tab's turn count, and nothing until its first page is in.
     var TAB_SHOWN = ['timeline', 'dispatch', 'events', 'talk', 'plan'];
     function tabsHtml(s, tab, x, talk) {
-        var label = { timeline: loc('ses.tabOverview', '概覽'), dispatch: loc('ses.tabDispatch', '派工'), events: loc('ses.tabEvents', '事件'), talk: loc('ses.tabTalk', '對話'), plan: 'plan' };
+        var label = { timeline: loc('ses.tabOverview', '概覽'), dispatch: loc('ses.tabDispatch', '派工'), events: loc('ses.tabEvents', '事件'), talk: loc('ses.tabTalk', '對話'), plan: loc('ses.tabPlan', '計畫') };
         // plan counts the newest claimed plan's tasks, and wears the gate's
         // hatch while the session sits at the plan gate with a plan to show.
         var plan = x && x.tasks && x.tasks.length ? x.tasks[x.tasks.length - 1] : null;
@@ -1345,7 +1345,7 @@
             return '<a href="' + sessionHash(s.id, k) + '"' + (k === tab ? ' class="on" aria-current="page"' : '') + '>' + label[k]
                 + (n[k] !== null && n[k] !== undefined ? '<small>' + n[k] + '</small>' : '')
                 + (k === 'dispatch' && run ? '<i class="dot live" title="' + loc('ses.nAgentsRunning', '{n} 個 agent running', { n: run }) + '"></i>' : '')
-                + (k === 'plan' && s.stage === 'plan' && n.plan ? '<i class="hatchsw pv-tabgate" aria-label="gate"></i>' : '') + '</a>';
+                + (k === 'plan' && s.stage === 'plan' && n.plan ? '<i class="hatchsw pv-tabgate" aria-label="' + loc('ses.tabPlanGate', '等你回答') + '"></i>' : '') + '</a>';
         }).join('') + '</nav>';
     }
 
@@ -4602,7 +4602,8 @@
                 }).join('') + '</li>' : '') + '</ul>'
                 + '<div class="srcline pv-src" title="' + esc(p.plan) + '">' + esc(p.plan) + '</div>'
                 + '<p class="pv-where"><i class="hatchsw" aria-hidden="true"></i><span>' + loc('det.planWhere', '回答在 Claude Desktop 那邊給；這頁只讓你看清楚要核准什麼，不收答案。') + '</span></p></div>'
-            : '<div class="srcline pv-src pv-plain" title="' + esc(p.plan) + '">' + esc(p.plan) + '</div>';
+            : '<div class="pv-hd" data-block="plan-head"><div class="srcline pv-src" title="' + esc(p.plan) + '">' + esc(p.plan) + '</div>'
+                + '<ul class="pv-counts"><li><b>' + p.tasks.length + '</b>task</li><li>' + loc('det.planGroupsRun', '<b>{n}</b>組，依序跑', { n: p.groups.length }) + '</li></ul></div>';
         var label = { files: loc('det.planKindFiles', '同改一個檔'), read: loc('det.planKindRead', '一個讀、一個改'), interface: loc('det.planKindIface', '用到對方產出的介面'),
             undeclared: loc('det.planKindUndeclared', '有一方沒宣告檔案') };
         var legend = '<div class="pv-legend" data-block="legend"><span class="pv-lh">' + loc('det.planLegend', '相依') + '</span>'

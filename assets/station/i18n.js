@@ -188,6 +188,8 @@
             'ses.tabDispatch': 'Dispatch',
             'ses.tabEvents': 'Events',
             'ses.tabTalk': 'Conversation',
+            'ses.tabPlan': 'Plan',
+            'ses.tabPlanGate': 'waiting for your answer',
             'ses.sessionView': 'session view',
             'ses.nAgentsRunning': '{n} agent(s) running',
             'ses.talkUsers': '{n} user turns',

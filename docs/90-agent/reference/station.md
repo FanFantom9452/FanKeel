@@ -248,7 +248,7 @@ combined figure, agents included.
 ### The session page
 
 A session also opens on a page of its own, `#/s/<id>`, in five tabs — 概覽,
-派工, 事件, 對話 and plan — and `#/s/<id>/<tab>` opens one directly, with `timeline`,
+派工, 事件, 對話 and 計畫 — and `#/s/<id>/<tab>` opens one directly, with `timeline`,
 `dispatch`, `events`, `talk` or `plan`. 概覽 is the default and now folds together what were
 separately 時間線 and 花費: the context chart, 任務 and the list of the
 largest rises, plus the per-stage spend bar and the stage × model table that
@@ -262,7 +262,7 @@ read from `cost`; 事件 is the replay, each gate's row carrying how long it
 waited. The side panel in the next section is the other way in, from 清單,
 and keeps its claims.
 
-plan (`#/s/<id>/plan`) draws the newest plan the session claimed, found
+計畫 (`#/s/<id>/plan`) draws the newest plan the session claimed, found
 through the project's `role: plan` bucket (`tasksOf` in `lib/detail.js`): its
 dispatch groups as columns, left to right from 980px of tab width and stacked
 below that, each task a card with its 改 and 測 paths, its Dispatch line and
@@ -274,7 +274,8 @@ legend gives the three kinds by colour and line style. While the session's
 stage is `plan`, a banner puts the gate's question with the counts of tasks,
 groups, dependencies and implementer models, and says the answer is given in
 Claude Desktop; the tab's label carries the task count, and the gate's hatch
-at that stage. No plan, a plan that will not open and a plan with no
+at that stage. Away from the plan stage a head carries the plan's path and its
+task and group counts in place of the banner. No plan, a plan that will not open and a plan with no
 `## Task N:` heading each say so instead. The controlled plan stage opens this
 page beside its gate from the `page:` line `scripts/await.js` prints.
 

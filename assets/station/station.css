@@ -2292,7 +2292,6 @@ a.td-rf:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-rad
 .pv-empty{margin-top:22px;font-size:13px;line-height:1.6;color:var(--ink2);max-width:70ch}
 .pv-empty.err{color:var(--bad)}
 .pv-empty code{font:12px var(--f-mono);overflow-wrap:anywhere}
-.pv-plain{margin-top:18px}
 
 /* gate-banner: the hatch band is the station's 等你回答 mark */
 .pv-banner{margin:0;padding:22px 26px 18px;border-bottom:1px solid var(--rule);
@@ -2309,6 +2308,12 @@ a.td-rf:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-rad
 .pv-src{margin:0 0 8px;font-size:11.5px}
 .pv-where{display:flex;align-items:center;gap:8px;margin:0;font-size:12.5px;color:var(--ink2);line-height:1.5;max-width:65ch}
 .pv-where .hatchsw{flex:none}
+
+/* plan-head: away from the gate, the plan's path and counts in a tinted head under a dashed keel edge */
+.pv-hd{margin:0;padding:14px 26px 12px;display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 22px;border-top:1.5px dashed var(--keel);
+  border-bottom:1px solid var(--rule);background:color-mix(in srgb,var(--keel-tint) 45%,var(--panel))}
+.pv-hd .pv-src{flex:1 1 24ch;min-width:0;margin:0;order:1}
+.pv-hd .pv-counts{margin:0}
 
 /* legend */
 .pv-legend{display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px;padding:12px 0;font-size:12px;color:var(--ink2);border-bottom:1px solid var(--rule)}
@@ -2328,7 +2333,7 @@ a.td-rf:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-rad
 .pv-surf{color:var(--ink)}
 .pv-par{color:var(--muted)}
 .pv-par::before{content:"·";margin-right:8px;color:var(--faint)}
-.pv-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(208px,1fr));gap:10px;align-items:start}
+.pv-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(280px,100%),1fr));gap:10px;align-items:start}
 .pv-then{display:flex;align-items:center;gap:8px;margin:12px 0;font-size:12px;color:var(--muted)}
 .pv-then::after{content:"";flex:1;border-top:1px solid var(--rule)}
 .pv-then .ico{flex:none;color:var(--faint)}
@@ -2349,14 +2354,14 @@ a.td-rf:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-rad
 .pv-card:hover{border-color:var(--rule2)}
 .pv-card h3{display:flex;align-items:flex-start;gap:8px;margin:0 0 8px;font-size:13px;font-weight:600;line-height:1.45;color:var(--ink)}
 .pv-num{flex:none;font:700 11.5px/1 var(--f-mono);padding:4px 7px;border-radius:5px;background:var(--keel-tint);color:var(--keel-deep);font-variant-numeric:tabular-nums}
-.pv-tt{min-width:0;overflow-wrap:anywhere}
+.pv-tt{min-width:0;overflow-wrap:break-word}
 .pv-tt code{font:600 .92em var(--f-mono)}
 .pv-files{margin:0 0 6px;display:grid;gap:3px}
 .pv-files>div{display:grid;grid-template-columns:1.6em minmax(0,1fr)}
 .pv-files dt{color:var(--muted);font-size:12px}
 .pv-files dd{margin:0;display:flex;flex-wrap:wrap;gap:0 9px}
-.pv-files code{font:12px/1.5 var(--f-mono);color:var(--ink2);overflow-wrap:anywhere}
-.pv-files code small{font-size:11px;color:var(--muted)}
+.pv-files code{font:12px/1.5 var(--f-mono);color:var(--ink2);overflow-wrap:break-word;min-width:0}
+.pv-files code small{font-size:11px;color:var(--muted);white-space:nowrap}
 .pv-disp{margin:0;font-size:12px;color:var(--ink2)}
 .pv-disp>span{white-space:nowrap}
 .pv-m{display:inline-flex;align-items:center;gap:4px;font-family:var(--f-mono)}
@@ -2364,10 +2369,10 @@ a.td-rf:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-rad
 .pv-wait{display:flex;gap:6px;margin:8px 0 0;padding-top:8px;border-top:1px solid var(--rule);font-size:12px}
 .pv-wait.none{display:block;color:var(--muted)}
 .pv-wl{flex:none;color:var(--muted)}
-.pv-wait ul{list-style:none;margin:0;padding:0;display:grid;gap:3px;min-width:0}
-.pv-dep{display:flex;align-items:center;flex-wrap:wrap;gap:2px 6px;border-radius:4px;margin:0 -4px;padding:0 4px}
+.pv-wait ul{flex:1;list-style:none;margin:0;padding:0;display:grid;gap:3px;min-width:0}
+.pv-dep{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 6px;border-radius:4px;margin:0 -4px;padding:0 4px}
 .pv-dep b{font-weight:600;color:var(--ink);white-space:nowrap}
-.pv-dep span{color:var(--ink2);overflow-wrap:anywhere}
+.pv-dep span{flex:1 1 8em;min-width:0;color:var(--ink2);overflow-wrap:break-word}
 .pv-dep code{font:12px var(--f-mono)}
 .pv-dep.is-hit{background:color-mix(in srgb,var(--k) 16%,transparent)}
 
