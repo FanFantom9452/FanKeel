@@ -75,19 +75,19 @@ load the design skill its prompt names.
 just described: when `agent_id` is absent — the main thread, read the same
 way the `Bash|PowerShell` matcher above reads it — and the task's own stage
 is on `stage.agents`'s list, an `Edit`, `Write` or `NotebookEdit` from the
-controller is denied outright (`hooks/guard.js:148`, `if (!payload.agent_id && WRITE_TOOLS.has(payload.tool_name))`),
+controller is denied outright (`hooks/guard.js:134`, `if (!payload.agent_id && WRITE_TOOLS.has(payload.tool_name))`),
 ahead of both `guard` mode and the collision guard below it. That ordering is
 deliberate: the check runs before `guardMode(mine)` is even read
-(`hooks/guard.js:193`, `if (!guardMode(mine)) return;`), so a controller set
+(`hooks/guard.js:167`, `if (!guardMode(mine)) return;`), so a controller set
 to `guard: off` is not exempt from it. `Bash` and `PowerShell` are
 deliberately left out of the set it tests, since a read-only command must pass (`hooks/guard.js:28`, `const WRITE_TOOLS = new Set(['Edit', 'Write', 'NotebookEdit']);`):
 the controller still has to run `scripts/task.js` to dispatch, relay a path
 and ask — and, on `build`, `design` and `plan`, `scripts/commit.js` — and those run through `Bash`;
 the matcher above, not this one, governs them, and refuses the controller's command only when it writes.
 A `fankeel-brain` `Write` under `.fankeel/build/task-*/` is checked too
-(`hooks/guard.js:130`, `if (payload.tool_name === 'Write') {`): when the task directory it targets is not the
+(`hooks/guard.js:118`, `if (payload.tool_name === 'Write') {`): when the task directory it targets is not the
 one `handoff.dirFor` gives for its own session's record, it is denied, and the
-reason names both directories (`lib/guard.js:372`, `return 'fankeel: a fankeel-brain writes only under its own session\'s task directory. '`).
+reason names both directories (`lib/guard.js:373`, `return 'fankeel: a fankeel-brain writes only under its own session\'s task directory. '`).
 
 A fourth entry, matcher `Agent|Task` — both names, because which one the
 host sends for the subagent tool was not verified when it was added — sends
@@ -566,20 +566,20 @@ when what you want is a second opinion on something you have already decided.
 ## A stage agent, behind `stage.agents`
 
 Everything above holds with the profile's `stage.agents` at its default,
-`false` — nothing is controlled (`lib/profile.js:50`, `'stage.agents': { values: ['false', 'true', 'all'], builtin: 'false',`).
+`false` — nothing is controlled (`lib/profile.js:51`, `'stage.agents': { values: ['false', 'true', 'all'], builtin: 'false',`).
 `parseStageAgents` in `lib/profile.js` reads the key as one of four forms:
-`false` controls no stage (`lib/profile.js:174`, `if (s === 'false' || s === '') return { value: [] };`);
+`false` controls no stage (`lib/profile.js:175`, `if (s === 'false' || s === '') return { value: [] };`);
 `true` controls `survey` alone — kept for that one meaning rather than "the
 route's first stage" because every existing doc and the 2026-09-20 A/B
-already mean survey by `true` (`lib/profile.js:175`, `if (s === 'true') return { value: ['survey'] };`);
+already mean survey by `true` (`lib/profile.js:176`, `if (s === 'true') return { value: ['survey'] };`);
 `all` controls every stage in `lib/stages.js`'s `FULL_ROUTE`
-(`lib/profile.js:177`, `if (s === 'all') return { value: canon.slice() };`);
+(`lib/profile.js:178`, `if (s === 'all') return { value: canon.slice() };`);
 and anything else is a comma-separated list of stage names, lowercased,
 deduped and reordered to `FULL_ROUTE`'s own order regardless of what order or
 how many repeats they arrived in, so two profiles naming the same set always
 compare equal — an unknown name in that list is refused with the one message an
 empty list is refused with, in the shape every other bad profile value takes
-(`lib/profile.js:183`, `'stage.agents is one of: false, true, all, or a comma-separated list of: '`).
+(`lib/profile.js:184`, `'stage.agents is one of: false, true, all, or a comma-separated list of: '`).
 `controlling()` and `controlFor()` in `lib/stages.js` read that array
 straight off the profile's `values` rather than off a fixed list only that
 file could change (`lib/stages.js:700`, `const raw = values && values['stage.agents'];`),
@@ -740,7 +740,7 @@ newest 40, dropping an exact duplicate and replacing a fact read again at a
 new sha. `context.js show` marks a line whose sha is not HEAD `(舊)`. The
 ordinary brief inlines the file's content — `renderBrief` and `renderBrainBrief`
 in `lib/render.js` paste it in whole under `BRIEF_MAX`; over it `fit()` keeps the
-newest facts and names the file for the rest (`lib/render.js:750`, `' older ' + (n === 1 ? 'fact' : 'facts')`) — so a
+newest facts and names the file for the rest (`lib/render.js:751`, `' older ' + (n === 1 ? 'fact' : 'facts')`) — so a
 subagent no longer has to `Read` the file itself before using what it holds.
 
 Build now dispatches one `fankeel:fankeel-brain` per disjoint `ledger.js
@@ -808,29 +808,29 @@ model name or `false`. Set `prompt.all` and any of `prompt.survey`, `prompt.desi
 is appended as the rules block's last line, `  - <sentence>`, on every prompt
 that block reaches — `prompt.all` first, then `prompt.<the current stage>`,
 so a task with both set carries two extra rule lines, not one
-(`lib/render.js:128`, `function promptRules(values, stage) {`). `parsePrompt`
+(`lib/render.js:129`, `function promptRules(values, stage) {`). `parsePrompt`
 in `lib/profile.js` holds it to one line and 200 characters — trimmed but not
 lowercased, and refused if it is empty, carries a newline, or runs long
-(`lib/profile.js:230`, `key + ' is one line of 1 to ' + PROMPT_MAX + ' characters' };`).
+(`lib/profile.js:231`, `key + ' is one line of 1 to ' + PROMPT_MAX + ' characters' };`).
 `promptRules` is called once, inside `rulesLines`
-(`lib/render.js:194`, `.concat(promptRules(values, data && data.stage));`),
+(`lib/render.js:195`, `.concat(promptRules(values, data && data.stage));`),
 and by `controlBlock` for a controlled stage's own block
-(`lib/render.js:145`, `return control && Object.assign({}, control, { rules: control.rules.concat(promptRules(values, stage)) });`),
+(`lib/render.js:146`, `return control && Object.assign({}, control, { rules: control.rules.concat(promptRules(values, stage)) });`),
 so `render`, `renderResume` and `renderBrainBrief` — every path that calls
 `rulesLines` — all carry it, controlled stage or not. `renderBrief`, the brief
 a reader, reviewer, fixer or implementer gets, never calls `rulesLines` and so
 never reaches `promptRules` — that return goes to the controller, not to
 whoever typed the sentence
-(`lib/render.js:126`, `never reaches this — a reader's return is`).
+(`lib/render.js:127`, `never reaches this — a reader's return is`).
 
 Setting the key prints what it costs: the estimated tokens the injected line
 adds per prompt, and each stage's remaining room under the reference-root
 2400-character cap with the profile as it now reads — a warning, never a
 refusal, since the cap belongs to the tests and the sentence belongs to the
-user (`scripts/task.js:1246`, `set anyway; this is a warning, not a refusal`)
+user (`scripts/task.js:1247`, `set anyway; this is a warning, not a refusal`)
 — computed in `cmdProfile`'s `set` branch off `input-check.js`'s
 `estimateTokens` and `lib/render.js`'s `blockSizes`
-(`scripts/task.js:1239`, `const n = estimateTokens('\n  - ' + out.value);`).
+(`scripts/task.js:1240`, `const n = estimateTokens('\n  - ' + out.value);`).
 
 ## What a controlled `build` and `verify` were run through
 

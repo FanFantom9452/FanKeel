@@ -149,10 +149,10 @@ deleting the field: absence means `ask` now, so deleting it would turn opting ou
 into opting in.
 
 Three rules keep it from becoming a lockout, all inside `blockers()`
-(`lib/guard.js:127`, `function blockers(`) — two asked of every holder, one
+(`lib/guard.js:128`, `function blockers(`) — two asked of every holder, one
 only when this session holds the file too:
 
-- **A dead session's claim never blocks** — `isLive`, `lib/guard.js:130` (`isLive(liveState, o.sessionId`).
+- **A dead session's claim never blocks** — `isLive`, `lib/guard.js:131` (`isLive(liveState, o.sessionId`).
   Liveness is the session's own file under `sessions/` in the config directory
   **that session recorded**, plus a live process behind its pid; a terminal
   that is gone holds nothing shut. `CLAUDE_CONFIG_DIR` moves that directory, so
@@ -174,12 +174,12 @@ only when this session holds the file too:
   merge}`). An agent worktree under `.claude/worktrees/agent-<hex>/` is folded
   back to the main tree's path before a claim is recorded — `logicalFile`, in
   [subagents.md](subagents.md).
-- **The older task holds** — `claimedFirst`, `lib/guard.js:142` (`!claimedFirst(data, mine)`). When
+- **The older task holds** — `claimedFirst`, `lib/guard.js:143` (`!claimedFirst(data, mine)`). When
   both sessions claim the file, the newer one yields — so two sessions
   that both reached it cannot block each other into a stalemate.
 
 A task never blocking itself is a separate mechanism, and it runs before
-`blockers()` ever sees the other side: `hooks/guard.js:198` filters `others`
+`blockers()` ever sees the other side: `hooks/guard.js:172` filters `others`
 down to entries whose `sessionId` is not this one's, so every rule above is
 already between *sessions* by the time it runs. A subagent inherits its
 parent's session id, so two implementers dispatched by one session are
@@ -197,8 +197,8 @@ them at once.
 ## What the guard does not watch
 
 The scope guard's collision check is wired to one matcher: `.claude-plugin/plugin.json:114` reads `"matcher": "Edit|Write|NotebookEdit"`.
-Inside it, `hooks/guard.js:195` calls `targetOf(payload)`, which reads only
-`tool_input.file_path` and `tool_input.notebook_path`, and `hooks/guard.js:196` is the whole branch for anything else: `if (!file) return;`.
+Inside it, `hooks/guard.js:169` calls `targetOf(payload)`, which reads only
+`tool_input.file_path` and `tool_input.notebook_path`, and `hooks/guard.js:170` is the whole branch for anything else: `if (!file) return;`.
 The same hook has a second entry, `.claude-plugin/plugin.json:136` `"matcher": "Bash|PowerShell"`, and it stops short of that check:
 `hooks/guard.js:77` `if (shell) {` — where `hooks/guard.js:54` `const shell = payload.tool_name === 'Bash' || payload.tool_name === 'PowerShell';` sets it — ends in a `return` of its own, and
 `hooks/guard.js:86` `if (payload.agent_id && readOnlyAgentType(payload.agent_type) && writesFiles(command)) {` denies only when there is an `agent_id` — a session with none, the main thread of an `--agent` session, is not a subagent and passes — and the type is a read-only one and the command writes; one more refusal follows it, for the main thread's writing command while the task's stage is a controlled one ([subagents.md](subagents.md)), and every other call falls through to `emitCommit` and the `return` after it. Both fields are checked because `agent_type` alone is a trap: it is set inside a subagent and on the main thread of an `--agent` session alike, and only `agent_id` tells those two apart — see [subagents.md](subagents.md).

@@ -21,7 +21,7 @@ Generated from `node scripts/map.js` (969 markdown files, 3 planned not built, 3
 - No implementer commits; the build parent commits each group with `scripts/commit.js` and runs `scripts/suite.js --fast` before it.
 - Every hook exits 0 on every path (`lib/hook.js:19-23`); nothing here adds a `throw` or a `process.exit`.
 - The deny object keeps its key order — `hookEventName`, `permissionDecision`, `permissionDecisionReason` — and every reason string stays byte-for-byte as it is; only the wrapper moves.
-- Not touched (other decisions, same files): `hooks/gate.js:158` (`allow`), `hooks/guard.js:216` (`verdict.decision`), `hooks/dispatch-gate.js:143` (`ask`), `lib/sensitive.js:196` and `:212` (`additionalContext`).
+- Not touched (other decisions, same files): `hooks/gate.js:158` (`allow`), `hooks/guard.js:190` (`verdict.decision`), `hooks/dispatch-gate.js:143` (`ask`), `lib/sensitive.js:197` and `:209` (`additionalContext`).
 - Every line number in a task is the file as it stood when this plan was written, before any task ran. Adding a require line shifts what is below it by one, and an earlier task may already have done so (Task 2 before Task 5 in `lib/sensitive.js`). So in every task: make the replacements first and add the require line last, and find each line by the text quoted beside it, which is the authority over the number.
 - Plan caps (`lib/plantasks.js`): FILE_CAP 3 `Modify:` entries per task, READ_CAP 1500 lines per file — `scripts/task.js` (1772 lines) is written as a range.
 - Windows: Git Bash is available; use `/` in paths. No emojis.
