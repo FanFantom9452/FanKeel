@@ -29,3 +29,7 @@ link: docs/90-agent/reference/subagents.md
    - resume：回答後 `.fankeel/build/<task>/<stage>-answer.md` 有寫出是舊，沒寫是新。
    - guard：controller 自己 Edit 一個檔，被擋下 is a controlled stage（`hooks/guard.js:159` 是 `is a controlled stage — its stage`）是舊，放行是新；再派一次 `fankeel:fankeel-brain`，被擋下 is not on stage.agents（`hooks/guard.js:186` 是 `permissionDecisionReason: 'fankeel: `）是新。
 4. `node scripts/task.js profile set stage.agents survey` 還原，把五項結果寫進 `docs/90-agent/reference/subagents.md` 的「The profile moves under a running stage」一節，然後關閉本條。
+
+## 完成紀錄（2026-10-17）
+
+在跑的 design 站移出 stage.agents 的翻轉跑過一次，五個 hook 的結果寫進 subagents.md 的「The profile moves under a running stage」。做法：實測 session 停在受控的 design（brain 已交回），以 `task.js profile set` 把專案的 stage.agents 從 `survey,design` 改成 `false`，翻轉前後各把 Claude Code 會送的 stdin 餵給 inject、brief、gate、resume、guard 一輪；寫的是同一個 .fankeel/profile.json，與站頁送出等價，不經站頁是因為設定精靈要走完八題才寫入。五個都在下一次呼叫就讀新檔，沒有一個讀 session 紀錄裡 `profile` 欄位的快照。翻轉也會立刻改到同專案其他 session：設成 all 時，本盤點自己的 build 下一個 prompt 就變成受控站，Write 被擋。
