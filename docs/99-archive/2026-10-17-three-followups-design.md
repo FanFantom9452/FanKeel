@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # 三條續做 — Desktop 窄 band 裁掉 ⚑、mod 替 brief.js 記 spawn、壓縮視窗 hook 讀變數

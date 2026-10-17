@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # 三條續做：窄 band 的 ⚑、mod 替 brief.js 記 spawn、壓縮視窗 hook 探針 Implementation Plan
