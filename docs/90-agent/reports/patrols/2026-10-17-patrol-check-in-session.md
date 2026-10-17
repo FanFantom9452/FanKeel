@@ -7,7 +7,7 @@ last_verified: 2026-10-17
 
 一句話：0.111.16 的盤點檢查只管得到「一條一個檔的 TODO、交給階段代理跑的 survey」，這次補上另外兩種情況——在本 session 直接跑的盤點，和手寫的 TODO.md——兩種都會在報告漏掉條目時擋下關卡。
 
-前一份報告在 [patrols/2026-10-17-todo-patrol-every-entry.md](patrols/2026-10-17-todo-patrol-every-entry.md)。
+前一份報告在 [patrols/2026-10-17-todo-patrol-every-entry.md](2026-10-17-todo-patrol-every-entry.md)。
 
 ## 做了什麼
 
