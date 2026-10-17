@@ -88,8 +88,8 @@ its own after the preset, whatever the scout's `profile` row says:
   default is not asked again. First run
   `node <plugin>/scripts/compact-window.js show`: when it prints `set <n>`,
   the descriptions say this machine already has a machine-wide
-  `CLAUDE_CODE_AUTO_COMPACT_WINDOW` of `<n>`. The next `task.js start`
-  replaces that `<n>` with the answer, and the descriptions say so. One `AskUserQuestion`, four options in this order: `450000`,
+  `CLAUDE_CODE_AUTO_COMPACT_WINDOW` of `<n>`, which the next `task.js start`
+  replaces with the answer. One `AskUserQuestion`, four options in this order: `450000`,
   recommended (the default); `1000000` — for document work and long files,
   keeps up to 1M in context, spends the most, and needs a 1M-context model;
   `600000` — loose, keeps more in context and spends
@@ -100,22 +100,15 @@ its own after the preset, whatever the scout's `profile` row says:
   fewer tokens — is reachable through **Other**; the key takes only those five
   values. The descriptions say what the answer does: it only applies in a
   session that is running a fankeel task — `hooks/compact.ts` compacts the main
-  conversation once its context reaches that many tokens. It is a mod, so it
-  acts only in an interactive session where the mod is loaded (the session has
-  pressed Enable under `/plugin`), and never in a headless `claude -p` session.
-  The descriptions say so too. The answer is not written to `settings.json`
-  now, but `task.js start` syncs `env.CLAUDE_CODE_AUTO_COMPACT_WINDOW` to
-  `compact.at` each time a task starts, but only once `compact.at` has been
-  chosen (it writes only when the value differs,
-  keeping a `.fankeel-bak` copy of a settings.json that already existed), so
-  the host's own auto-compact, which fires about 30k tokens before the window,
-  then applies to every session on the machine. `off` and a
-  `compact-window.declined` marker left by an earlier init are left alone, and
-  the descriptions say so. When settings.json cannot be written, start prints
-  `compact window: not synced — <reason>` and goes on. When start prints `compact window: <n> written to <file>`,
-  the user restarts Claude Desktop; sessions already open keep the old window.
-  350000, 600000 and 1000000 have not been measured, and the descriptions say so. The
-  answer runs
+  conversation once its context reaches that many tokens, in an interactive
+  session where the mod is loaded, never in a headless `claude -p` session.
+  The answer is not written to `settings.json` now, but `task.js start` syncs
+  `env.CLAUDE_CODE_AUTO_COMPACT_WINDOW` to `compact.at` each time a task starts,
+  once `compact.at` has been chosen. What the sync writes, what it leaves
+  alone (`off`, an earlier init's `compact-window.declined` marker), the
+  `compact window: not synced` line and the restart it asks for are in
+  [profile.md](../../docs/01-guide/profile.md), and the descriptions say
+  that 350000, 600000 and 1000000 have not been measured. The answer runs
   `node <plugin>/scripts/task.js profile set compact.at <value> --default`.
   No answer writes nothing, and `task.js start` then leaves the machine's
   window as it is.
