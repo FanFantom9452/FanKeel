@@ -36,9 +36,9 @@ test('tasks come from the plan, status from the ledger, groups from plantasks; t
         plan: 'docs/plans/2026-09-11-x.md',
         ledgerLines: 1,
         tasks: [
-            { n: 1, title: 'one', status: 'complete', range: 'abc1234..def5678', turns: [4] },
-            { n: 2, title: 'two', status: 'no ledger line', range: null, turns: [6] },
-            { n: 3, title: 'three', status: 'no ledger line', range: null, turns: [] },
+            { n: 1, title: 'one', status: 'complete', range: 'abc1234..def5678', turns: [4], modify: ['a.js'], test: [], read: [], dispatch: null, model: '', effort: '', waits: [] },
+            { n: 2, title: 'two', status: 'no ledger line', range: null, turns: [6], modify: ['b.js'], test: [], read: [], dispatch: null, model: '', effort: '', waits: [] },
+            { n: 3, title: 'three', status: 'no ledger line', range: null, turns: [], modify: ['a.js'], test: [], read: [], dispatch: null, model: '', effort: '', waits: [{ n: 1, kind: 'files', file: 'a.js' }] },
         ],
         groups: [
             { g: 1, tasks: [1, 2], surface: 'agents', turns: [4, 6], hint: true },
@@ -55,4 +55,56 @@ test('one group sent in one turn carries no hint; no plan claimed, or a plan not
     assert.equal(same[0].groups[0].hint, false);
     assert.deepEqual(detail.tasksOf(root, { claims: ['lib/a.js'] }, []), []);
     assert.deepEqual(detail.tasksOf(root, { claims: ['docs/plans/2026-09-11-gone.md'] }, []), []);
+});
+
+// plan gate page §1: the plan is found through the project's own `role: plan`
+// bucket, so a repository filing plans under docs/90-agent/plans gets its
+// task list — the docs/plans/ pattern this replaced returned nothing there.
+test('a plan in the project\'s role: plan bucket is found, and a task that modifies an earlier task\'s file waits on it', () => {
+    const root = tmp('fankeel-tasks-');
+    fs.mkdirSync(path.join(root, '.fankeel'), { recursive: true });
+    fs.writeFileSync(path.join(root, '.fankeel', 'docs.json'), JSON.stringify({ buckets: [{ path: 'docs/90-agent/plans', role: 'plan' }] }));
+    fs.mkdirSync(path.join(root, 'docs', '90-agent', 'plans'), { recursive: true });
+    fs.writeFileSync(path.join(root, 'docs', '90-agent', 'plans', 'x.md'), '# X\n\n' + task(1, 'one', 'lib/a.js') + task(2, 'two', 'lib/a.js'));
+    const got = detail.tasksOf(root, { claims: ['docs/90-agent/plans/x.md'] }, []);
+    assert.equal(got.length, 1);
+    assert.equal(got[0].plan, 'docs/90-agent/plans/x.md');
+    assert.deepEqual(got[0].tasks.map((t) => t.waits), [[], [{ n: 1, kind: 'files', file: 'lib/a.js' }]]);
+    assert.deepEqual(got[0].tasks[1].modify, ['lib/a.js']);
+    // The control: without the docs.json that files it, the same path is in no plan bucket.
+    fs.unlinkSync(path.join(root, '.fankeel', 'docs.json'));
+    assert.deepEqual(detail.tasksOf(root, { claims: ['docs/90-agent/plans/x.md'] }, []), []);
+});
+
+test('waitsOf names what each refused pair shares — the read path, the interface name, nothing for a task with no files — and tasks carry their Dispatch fields', () => {
+    const plan = [
+        '## Task 1: make', '', '**Files:**', '- Modify: `lib/a.js:10-40`', '', '**Interfaces:**', '- Consumes: none', '- Produces: `frob`', '',
+        '**Dispatch:** implementer, opus, high — reasons.', '',
+        '## Task 2: read it', '', '**Files:**', '- Modify: `lib/b.js`', '- Read: `lib/a.js`', '', '**Interfaces:**', '- Consumes: none', '- Produces: none', '',
+        '## Task 3: use it', '', '**Files:**', '- Modify: `lib/c.js`', '', '**Interfaces:**', '- Consumes: `frob`', '- Produces: none', '',
+        '## Task 4: nothing', '', '**Interfaces:**', '- Consumes: none', '- Produces: none', '',
+    ].join('\n');
+    const root = repo();
+    fs.writeFileSync(path.join(root, 'docs', 'plans', '2026-09-11-y.md'), plan);
+    const [p] = detail.tasksOf(root, { claims: ['docs/plans/2026-09-11-y.md'] }, []);
+    assert.deepEqual(p.tasks.map((t) => t.waits), [
+        [],
+        [{ n: 1, kind: 'read', file: 'lib/a.js' }],
+        [{ n: 1, kind: 'interface', file: 'frob' }],
+        [{ n: 1, kind: 'undeclared', file: null }, { n: 2, kind: 'undeclared', file: null }, { n: 3, kind: 'undeclared', file: null }],
+    ]);
+    assert.deepEqual([p.tasks[0].dispatch, p.tasks[0].model, p.tasks[0].effort], ['implementer', 'opus', 'high']);
+    assert.deepEqual(p.tasks[1].read, ['lib/a.js']);
+    assert.deepEqual(detail.waitsOf([]), []);
+});
+
+test('a claimed plan that will not open, or holds no task, is listed with the reason rather than dropped', () => {
+    const root = repo();
+    // A directory named like a plan: it is there, and it does not read as a file.
+    fs.mkdirSync(path.join(root, 'docs', 'plans', '2026-09-11-dir.md'));
+    fs.writeFileSync(path.join(root, 'docs', 'plans', '2026-09-11-empty.md'), '# Empty\n\nno tasks here\n');
+    assert.deepEqual(detail.tasksOf(root, { claims: ['docs/plans/2026-09-11-dir.md', 'docs/plans/2026-09-11-empty.md'] }, []), [
+        { plan: 'docs/plans/2026-09-11-dir.md', error: 'unreadable', ledgerLines: 0, tasks: [], groups: [], unmatched: [] },
+        { plan: 'docs/plans/2026-09-11-empty.md', error: 'no tasks', ledgerLines: 0, tasks: [], groups: [], unmatched: [] },
+    ]);
 });
