@@ -3,3 +3,4 @@ node_modules/
 .claude/worktrees/
 .impeccable/
 .claude/settings.local.json
+/tsconfig.json
