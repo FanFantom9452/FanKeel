@@ -466,12 +466,9 @@ or `Produces` is an answer plans give constantly — the first task of one
 consumes nothing and the last produces nothing.
 `node scripts/ledger.js --plan <file> groups` computes all four over a whole plan
 and prints the groups they make. The build loop sends from `ledger.js ready`
-instead, which asks the same four per task: a task goes out once every earlier
-task it conflicts with is complete, so it no longer waits for a greedy group to
-close, and `TODO.md` and `docs/README.md` (`INDEX_FILES` in `lib/plantasks.js`)
-do not count as a shared file there — `Edit` refuses an `old_string` that moved,
-so a second implementer re-reads rather than writing over the first. The
-default above is still how many are in flight at once.
+instead, which asks the same four per task; [the build
+skill](../../../skills/fankeel-build/SKILL.md) carries when a task leaves, what
+does not count as a shared file, and how many go out at once.
 It prints a fifth thing that is not a predicate and moves no
 task: a `Consumes:` entry whose text names a task already in its own group.
 Prose declares no identifier for a `Produces` to match, so the fourth predicate
@@ -492,12 +489,8 @@ on disk — a file a task is about to create does not exist yet at plan
 time, so a dependency on it is invisible here too.
 
 A task whose `**Dispatch:**` line reads `user — <what the user does>` is not
-dispatched at all: `ledger.js ready` leaves it out and `ledger.js hands` lists
-it. `task.js stage build` prints that list to the session holding
-`AskUserQuestion` — the controller, when `stage.agents` names build — which asks
-the user then and there, notes the answer, and runs the task with them after
-every dispatched task and before the stage's gate; an edit the guard refuses the
-controller goes through an implementer.
+dispatched at all: `ledger.js ready` leaves it out, and [the build
+skill](../../../skills/fankeel-build/SKILL.md) says who asks the user and when.
 
 That is `build`'s unit. Every stage has one or has none, and the rows with none
 are the ones worth reading: they are where a fan-out does not belong.
