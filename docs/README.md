@@ -456,6 +456,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 03-decisions 只收決策（10-10）：land 只在做過取捨時寫決策頁，給人看的決策頁由 docs-check 守白話與骨架，34 頁盤點日誌搬到 reports/patrols | [decisions/2026-10-10-decisions-human.md](03-decisions/2026-10-10-decisions-human.md) — *繁體中文* |
 | 那份設計：land 的紀錄分流、`decision-shape` 檢查、日誌搬家 | `docs/99-archive/2026-10-10-decisions-human-design.md` — *built, 繁體中文* |
 | 那份設計的 3 個 task | `docs/99-archive/2026-10-10-decisions-human.md` — *built, 繁體中文* |
+| 10-10 計畫草稿清掉（10-17）：plans/ 下四份沒進版控的 decisions-human 與 todo-patrol-lint-suite 草稿刪了，定稿在 99-archive | [reports/2026-10-17-drop-10-10-drafts.md](90-agent/reports/2026-10-17-drop-10-10-drafts.md) — *繁體中文* |
+| 那次的 design 與兩個 task | `docs/99-archive/2026-10-17-drop-10-10-drafts-design.md`、`docs/99-archive/2026-10-17-drop-10-10-drafts.md` — *built* |
 | render reviewer 強制、effort 改在派工時傳、未派 agent 的去留（10-15）的 design：render.json 的頁面帶 `src`，ledger 與 `task.js stage` 拒絕沒有 render 判定的頁面變更；六個 effort 複本刪掉 | `docs/99-archive/2026-10-15-render-gate-design.md` — *built* |
 | 那份設計的十二個 task，加上 verify 送回的修正：最近的 render.json、沒有 plan 時讀 git | `docs/99-archive/2026-10-15-render-gate.md` — *built* |
 | Haiku 角色題庫、平行執行器與長任務飄移 2×2 的 design：每角色十二題分三層、`check.sh` 標出失敗類別、`bench.js role` 用 `--jobs` 平行跑、`drift` 量 haiku／sonnet × PostToolUse 重注入 | `docs/99-archive/2026-10-09-haiku-bank-drift-design.md` — *built, 繁體中文* |
