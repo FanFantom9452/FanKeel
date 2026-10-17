@@ -99,6 +99,19 @@ test('the band\'s second row draws ctx, 5h and 7d as meters, the compact point i
     assert.equal(source.match(/<rect x="[\d.]+" y="3" width="1\.5" height="16" fill="#8a8a8a"\/>/g).length, 2);
 });
 
+test('a narrow band draws ⚑N right after the rail, inside the width, when the row would run past it', async () => {
+    const { bandRow2Svg } = await load('pane-svg');
+    // cols 24 is 192px; ctx, 5h and 7d alone run past it, so the flag moves to the front.
+    const source = bandRow2Svg(bandInput({ cols: 24 }));
+    const got = words(source);
+    assert.ok(got.includes('⚑2'), 'the flag is not drawn: ' + JSON.stringify(got));
+    assert.equal(got[0], '⚑2', 'the flag is not first: ' + JSON.stringify(got));
+    const at = /<text x="([\d.]+)"[^>]*>⚑2<\/text>/.exec(source);
+    assert.ok(at, 'no <text> for ⚑2');
+    // ⚑ is one em (12px) wide and the digit three fifths of one (7.2px): hooks/pane-svg.ts px().
+    assert.ok(Number(at[1]) + 12 + 7.2 <= 192, 'the flag ends at ' + (Number(at[1]) + 19.2) + 'px, past 192');
+});
+
 test('compact.at off leaves no compact point; with no window it is the count alone; with nothing to draw there is no row', async () => {
     const { bandRow2Svg } = await load('pane-svg');
     const off = bandRow2Svg(bandInput({ context: { tokens: 212000, at: Infinity, window: 1000000 }, limits: [], others: [] }));

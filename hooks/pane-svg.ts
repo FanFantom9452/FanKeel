@@ -173,69 +173,82 @@ export function bandRow2Svg(input: BandInput): string {
   const { entry, others, context, limits, now, cols } = input
   if (!entry) return ''
   const flags = clashes(entry, others)
-  let b = `<rect x="0" y="2" width="3" height="18" fill="${flags ? CLASH : stageColor(str(entry.stage))}"/>`
-  let x = 10
-  let drawn = 0
-  const open = (label: string): void => {
-    if (drawn++) {
-      x += 14
-      b += `<line x1="${r1(x)}" y1="4" x2="${r1(x)}" y2="18" stroke="${DIM}" stroke-width="1"/>`
-      x += 10
+  const rail = `<rect x="0" y="2" width="3" height="18" fill="${flags ? CLASH : stageColor(str(entry.stage))}"/>`
+  // One pass over the row. `flagFirst` puts ⚑N right after the rail instead of last.
+  const layout = (flagFirst: boolean): { b: string; x: number; drawn: number } => {
+    let b = rail
+    let x = 10
+    let drawn = 0
+    const open = (label: string): void => {
+      if (drawn++) {
+        x += 14
+        b += `<line x1="${r1(x)}" y1="4" x2="${r1(x)}" y2="18" stroke="${DIM}" stroke-width="1"/>`
+        x += 10
+      }
+      b += text(x, 15, label)
+      x += px(label) + 6
     }
-    b += text(x, 15, label)
-    x += px(label) + 6
-  }
-  const after = (s: string, o: { fill?: string; bold?: boolean } = {}, gap = 0): void => {
-    b += text(x + gap, 15, s, o)
-    x += gap + px(s)
-  }
-  if (context) {
-    const window = context.window
-    const sized = typeof window === 'number' && Number.isFinite(window) && window > 0
-    const finite = Number.isFinite(context.at)
-    const paint = sized ? ctxWindowPaint(context.tokens, window as number) : ctxPaint(context.tokens, context.at)
-    const whole = sized ? (window as number) : finite ? context.at : 0
-    open('ctx')
-    if (whole > 0) {
-      const mark = sized && finite && context.at < whole
-        ? `<rect x="${r1(x + 1 + (context.at / whole) * (WELL - 2) - 1)}" y="2" width="2" height="18" rx="1" fill="${WHERE}"/>`
-        : ''
-      b += well(x, context.tokens / whole, paint.color, mark)
+    const after = (s: string, o: { fill?: string; bold?: boolean } = {}, gap = 0): void => {
+      b += text(x + gap, 15, s, o)
+      x += gap + px(s)
+    }
+    if (flags && flagFirst) {
+      after(`⚑${flags}`, { fill: FLAG, bold: true })
+      drawn++
+    }
+    if (context) {
+      const window = context.window
+      const sized = typeof window === 'number' && Number.isFinite(window) && window > 0
+      const finite = Number.isFinite(context.at)
+      const paint = sized ? ctxWindowPaint(context.tokens, window as number) : ctxPaint(context.tokens, context.at)
+      const whole = sized ? (window as number) : finite ? context.at : 0
+      open('ctx')
+      if (whole > 0) {
+        const mark = sized && finite && context.at < whole
+          ? `<rect x="${r1(x + 1 + (context.at / whole) * (WELL - 2) - 1)}" y="2" width="2" height="18" rx="1" fill="${WHERE}"/>`
+          : ''
+        b += well(x, context.tokens / whole, paint.color, mark)
+        x += WELL + 6
+      }
+      after(kilo(context.tokens), { bold: true })
+      if (whole > 0) after(`/${kilo(whole)}`)
+      if (paint.mark) after(paint.mark, { fill: paint.color, bold: true }, 6)
+    }
+    const five = limitOf(limits, 'five_hour')
+    if (five) {
+      const paint = fivePaint(five.percentUsed)
+      open('5h')
+      // The even pace: the share of the five hours gone by, the same thin grey tick as 7d.
+      const gone = elapsed(five, now, FIVE_HOURS)
+      const pace = gone === null ? '' : `<rect x="${r1(x + 1 + gone * (WELL - 2) - 0.75)}" y="3" width="1.5" height="16" fill="${WHERE}"/>`
+      b += well(x, five.percentUsed / 100, paint.color, pace)
       x += WELL + 6
+      after(`${Math.round(five.percentUsed)}%`, { bold: true })
+      if (paint.mark) after(paint.mark, { fill: paint.color, bold: true }, 6)
     }
-    after(kilo(context.tokens), { bold: true })
-    if (whole > 0) after(`/${kilo(whole)}`)
-    if (paint.mark) after(paint.mark, { fill: paint.color, bold: true }, 6)
+    const week = limitOf(limits, 'seven_day')
+    if (week) {
+      const dev = deviation(week, now)
+      const paint = weekPaint(week.percentUsed, dev)
+      open('7d')
+      // The even pace: the share of the seven days gone by, a thin grey tick.
+      const pace = dev === null
+        ? ''
+        : `<rect x="${r1(x + 1 + (Math.max(0, Math.min(100, week.percentUsed - dev)) / 100) * (WELL - 2) - 0.75)}" y="3" width="1.5" height="16" fill="${WHERE}"/>`
+      b += well(x, week.percentUsed / 100, paint.color, pace)
+      x += WELL + 6
+      after(`${Math.round(week.percentUsed)}%`, { bold: true })
+      if (dev !== null) after(signed(dev), {}, 6)
+      if (paint.mark) after(paint.mark, { fill: paint.color, bold: true }, 6)
+    }
+    if (flags && !flagFirst) after(`⚑${flags}`, { fill: FLAG, bold: true }, drawn ? 14 : 0)
+    return { b, x, drawn }
   }
-  const five = limitOf(limits, 'five_hour')
-  if (five) {
-    const paint = fivePaint(five.percentUsed)
-    open('5h')
-    // The even pace: the share of the five hours gone by, the same thin grey tick as 7d.
-    const gone = elapsed(five, now, FIVE_HOURS)
-    const pace = gone === null ? '' : `<rect x="${r1(x + 1 + gone * (WELL - 2) - 0.75)}" y="3" width="1.5" height="16" fill="${WHERE}"/>`
-    b += well(x, five.percentUsed / 100, paint.color, pace)
-    x += WELL + 6
-    after(`${Math.round(five.percentUsed)}%`, { bold: true })
-    if (paint.mark) after(paint.mark, { fill: paint.color, bold: true }, 6)
-  }
-  const week = limitOf(limits, 'seven_day')
-  if (week) {
-    const dev = deviation(week, now)
-    const paint = weekPaint(week.percentUsed, dev)
-    open('7d')
-    // The even pace: the share of the seven days gone by, a thin grey tick.
-    const pace = dev === null
-      ? ''
-      : `<rect x="${r1(x + 1 + (Math.max(0, Math.min(100, week.percentUsed - dev)) / 100) * (WELL - 2) - 0.75)}" y="3" width="1.5" height="16" fill="${WHERE}"/>`
-    b += well(x, week.percentUsed / 100, paint.color, pace)
-    x += WELL + 6
-    after(`${Math.round(week.percentUsed)}%`, { bold: true })
-    if (dev !== null) after(signed(dev), {}, 6)
-    if (paint.mark) after(paint.mark, { fill: paint.color, bold: true }, 6)
-  }
-  if (flags) after(`⚑${flags}`, { fill: FLAG, bold: true }, drawn ? 14 : 0)
-  return drawn || flags ? svgDoc(cols * CELL_PX, BAND_H, b) : ''
+  // Last first. Only when the row as drawn ends past the Svg's width, and there
+  // is something for the flag to move ahead of, does it go to the front.
+  let row = layout(false)
+  if (flags && row.drawn && row.x > cols * CELL_PX) row = layout(true)
+  return row.drawn || flags ? svgDoc(cols * CELL_PX, BAND_H, row.b) : ''
 }
 
 // The Pane's width in px: one cell is CELL_PX.
