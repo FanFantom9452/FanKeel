@@ -25,6 +25,7 @@ const { parseArgs } = require('node:util');
 const bench = require('../lib/bench.js');
 const drift = require('../lib/drift.js');
 const { spawnClaude, spawnClaudeAsync } = require('./eval.js');
+const { readObject } = require('../lib/json.js');
 
 const ROOT = path.join(__dirname, '..');
 
@@ -301,10 +302,8 @@ const defaultEvidence = () => path.join(ROOT, 'docs', '90-agent', 'reports', 'ev
 function cmdRun(a, projectsRoot) {
     const name = a.positionals[1] || '';
     const project = path.join(projectsRoot, name);
-    let conf;
-    try {
-        conf = JSON.parse(fs.readFileSync(path.join(project, 'bench.json'), 'utf8'));
-    } catch (e) {
+    const conf = readObject(path.join(project, 'bench.json'));
+    if (!conf) {
         console.error('bench.js: no bench.json under ' + project);
         return 1;
     }
