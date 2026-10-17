@@ -1,0 +1,62 @@
+'use strict';
+// The plan tab, wired (docs/90-agent/plans/2026-10-18-plan-gate-page-design.md
+// §2): `#/s/<id>/plan` is a tab of its own after 對話, its label carries the
+// newest plan's task count and, at the plan stage, the 等你回答 hatch, and its
+// panel is the plan tab's. station.js is booted as the browser runs it.
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+
+global.window = { STATION: { serve: false, pricesVerified: '2026-09-04' } };
+const V = require('../assets/station/station.js');
+
+const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+const NOW = Date.parse('2026-10-18T12:00:00.000Z');
+const PK = 'F:\\ws\\alpha';
+
+// station.js booted on `hash` with one session and no detail script; returns the page's HTML.
+function boot(hash, stage) {
+    const els = {};
+    const el = (tag) => ({ tagName: String(tag || 'div').toUpperCase(), innerHTML: '', textContent: '', className: '', title: '',
+        placeholder: '', attrs: {}, style: {}, hidden: false, parentNode: null,
+        setAttribute(k, v) { this.attrs[k] = String(v); }, getAttribute(k) { return k in this.attrs ? this.attrs[k] : null; },
+        hasAttribute(k) { return k in this.attrs; }, removeAttribute(k) { delete this.attrs[k]; }, appendChild() {}, addEventListener() {}, focus() {} });
+    els.page = el('div');
+    const win = { location: { hash }, addEventListener() {}, scrollTo() {},
+        setInterval: () => 1, setTimeout: () => 1, clearTimeout() {},
+        navigator: { language: 'zh-TW' }, localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
+        STATION: { generatedAt: new Date(NOW).toISOString(), configDir: 'C:\\cfg', pricesVerified: '2026-09-24', serve: false, nonce: 'N0NCE',
+            projects: [{ root: PK, gone: false, unreadable: 0, build: [], mapAt: null, docs: [] }],
+            profiles: { machine: { values: {}, sources: {}, unreadable: [] }, projects: {} }, profileKeys: {}, classes: {},
+            sessions: [{ id: 's1', pkey: PK, root: PK, task: 't-s1', state: 'live', route: ['survey', 'plan', 'build'], stage: stage || 'plan',
+                stages: [], notes: [], claims: [], conflicts: [], burn: 0, backtracks: 0, updated: NOW - 1000, started: new Date(NOW - 120000).toISOString(), days: [] }] } };
+    const doc = { hidden: false, documentElement: el('html'), body: el('body'), title: '', head: { appendChild() {} },
+        getElementById: (id) => els[id] || (els[id] = el()),
+        addEventListener() {}, createElement: el, querySelectorAll: () => [], querySelector: () => null };
+    vm.runInNewContext(SRC, { window: win, document: doc, URLSearchParams, fetch: () => Promise.resolve({ ok: true }), module: { exports: {} } });
+    return els.page.innerHTML;
+}
+
+test('#/s/<id>/plan parses to the plan tab, and an unknown tab still falls back to 概覽', () => {
+    assert.deepEqual(V.parseHash('#/s/aaaa1111-0000/plan'), { view: 'session', id: 'aaaa1111-0000', tab: 'plan' });
+    assert.deepEqual(V.parseHash('#/s/aaaa1111-0000/plans'), { view: 'session', id: 'aaaa1111-0000', tab: 'timeline' });
+});
+
+test('the plan tab is the fifth, labelled with the newest plan\'s task count, and carries the gate hatch only at the plan stage', () => {
+    const x = { rows: [], events: [], tasks: [{ plan: 'docs/plans/a.md', tasks: [{ n: 1 }] }, { plan: 'docs/plans/b.md', tasks: [{ n: 1 }, { n: 2 }, { n: 3 }] }] };
+    const at = V.tabsHtml({ id: 's1', stage: 'plan' }, 'plan', x);
+    assert.match(at, /<a href="#\/s\/s1\/talk">對話<\/a><a href="#\/s\/s1\/plan" class="on" aria-current="page">plan<small>3<\/small><i class="hatchsw pv-tabgate" aria-label="gate"><\/i><\/a><\/nav>$/);
+    assert.match(V.tabsHtml({ id: 's1', stage: 'build' }, 'timeline', x), /<a href="#\/s\/s1\/plan">plan<small>3<\/small><\/a><\/nav>$/);
+    assert.match(V.tabsHtml({ id: 's1', stage: 'plan' }, 'timeline', { rows: [], events: [], tasks: [] }), /<a href="#\/s\/s1\/plan">plan<\/a><\/nav>$/, 'no plan: no count and no hatch');
+    assert.match(V.tabsHtml({ id: 's1', stage: 'plan' }, 'timeline', null), /<a href="#\/s\/s1\/plan">plan<\/a><\/nav>$/, 'no detail yet');
+});
+
+test('the session page on #/s/<id>/plan marks the tab on and draws the plan tab\'s panel; other tabs keep theirs', () => {
+    const html = boot('#/s/s1/plan');
+    assert.match(html, /<a href="#\/s\/s1\/plan" class="on" aria-current="page">plan<\/a><\/nav>/);
+    assert.match(html, /<section class="panel pv" data-block="plan-tab"><p class="tally">/, 'no detail script here, so the note the other tabs show');
+    assert.match(boot('#/s/s1/dispatch'), /<section class="panel" data-block="dispatch">/);
+    assert.match(boot('#/s/s1'), /<\/nav><section class="panel">/);
+});

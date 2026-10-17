@@ -202,7 +202,7 @@
     // from a session's `days` (dollars, tokens) and `spans` (milliseconds), split
     // by the local day each request happened on — never from the registry's
     // `usd`, which SessionEnd writes once and which is filed under the start day.
-    var TABS = ['timeline', 'cost', 'dispatch', 'events', 'talk'];
+    var TABS = ['timeline', 'cost', 'dispatch', 'events', 'talk', 'plan'];
     var MODEL_KEYS = ['fable', 'opus', 'sonnet', 'haiku', 'other'];
     var TOKEN_KEYS = ['input', 'output', 'cacheRead', 'cacheWrite5m', 'cacheWrite1h'];
     // `kind` splits a day's cost or tokens by where they went, folding the two
@@ -1332,16 +1332,20 @@
     // demand. `cost` is still in TABS so an old `/cost` link parses; it
     // opens 概覽, which now holds everything that tab showed. `talk` is the
     // 對話 tab's turn count, and nothing until its first page is in.
-    var TAB_SHOWN = ['timeline', 'dispatch', 'events', 'talk'];
+    var TAB_SHOWN = ['timeline', 'dispatch', 'events', 'talk', 'plan'];
     function tabsHtml(s, tab, x, talk) {
-        var label = { timeline: loc('ses.tabOverview', '概覽'), dispatch: loc('ses.tabDispatch', '派工'), events: loc('ses.tabEvents', '事件'), talk: loc('ses.tabTalk', '對話') };
-        var n = { dispatch: x ? x.rows.length : null, events: x ? x.events.length : null, talk: talk };
+        var label = { timeline: loc('ses.tabOverview', '概覽'), dispatch: loc('ses.tabDispatch', '派工'), events: loc('ses.tabEvents', '事件'), talk: loc('ses.tabTalk', '對話'), plan: 'plan' };
+        // plan counts the newest claimed plan's tasks, and wears the gate's
+        // hatch while the session sits at the plan gate with a plan to show.
+        var plan = x && x.tasks && x.tasks.length ? x.tasks[x.tasks.length - 1] : null;
+        var n = { dispatch: x ? x.rows.length : null, events: x ? x.events.length : null, talk: talk, plan: plan && plan.tasks.length ? plan.tasks.length : null };
         var run = x ? x.rows.filter(function (r) { return agentState(x, r, s) === 'running'; }).length : 0;
         if (tab === 'cost') tab = 'timeline';
         return '<nav class="tabs" data-block="session-tabs" aria-label="' + loc('ses.sessionView', 'session 檢視') + '">' + TAB_SHOWN.map(function (k) {
             return '<a href="' + sessionHash(s.id, k) + '"' + (k === tab ? ' class="on" aria-current="page"' : '') + '>' + label[k]
                 + (n[k] !== null && n[k] !== undefined ? '<small>' + n[k] + '</small>' : '')
-                + (k === 'dispatch' && run ? '<i class="dot live" title="' + loc('ses.nAgentsRunning', '{n} 個 agent running', { n: run }) + '"></i>' : '') + '</a>';
+                + (k === 'dispatch' && run ? '<i class="dot live" title="' + loc('ses.nAgentsRunning', '{n} 個 agent running', { n: run }) + '"></i>' : '')
+                + (k === 'plan' && s.stage === 'plan' && n.plan ? '<i class="hatchsw pv-tabgate" aria-label="gate"></i>' : '') + '</a>';
         }).join('') + '</nav>';
     }
 
@@ -3832,7 +3836,8 @@
         var body = r.tab === 'dispatch' ? (x ? dispatchStagesHtml(L, s.id, hi) + '<div class="det">' + dispatchHtml(x, s, dispatchUi(s)) + '</div>' : detailNote(s))
             : r.tab === 'events' ? (x ? '<div class="det">' + replayHtml(x, view.kinds, s) + '</div>' : detailNote(s))
                 : r.tab === 'talk' ? talkHtml(s.id, talk)
-                    : overview;
+                    : r.tab === 'plan' ? (x ? planTab(s, x) : detailNote(s))
+                        : overview;
         // The film's header (2026-10-01 layout): the glyph filled as the route
         // is, `0N / 0M stage` over the title, the meta chips beside them.
         return '<section class="panel kshead" data-block="session-head"><div class="eyebrow">session <span class="mono">' + esc(String(s.id).slice(0, 8)) + '</span> · '
@@ -3844,7 +3849,7 @@
                 + esc(s.model) + '</span></span>' : '') + effortChip(s.effort) + '</div></div>'
             + railHtml(s, Boolean(S.serve) && s.state === 'live', S.serve ? Date.now() : NOW)
             + sessionHeadHtml(s, x) + '</section>'
-            + tabsHtml(s, r.tab, x, talk && talk.total !== null ? talk.total : null) + '<section class="panel"' + (r.tab === 'dispatch' ? ' data-block="dispatch"' : '') + '>' + body + '</section>';
+            + tabsHtml(s, r.tab, x, talk && talk.total !== null ? talk.total : null) + '<section class="panel' + (r.tab === 'plan' ? ' pv" data-block="plan-tab"' : '"' + (r.tab === 'dispatch' ? ' data-block="dispatch"' : '')) + '>' + body + '</section>';
     }
     // 對話's turns, per session id, for as long as the page lives: a redraw
     // rewrites the panel, and what was fetched must not go with it. `talkLoad`

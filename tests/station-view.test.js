@@ -893,7 +893,7 @@ test('the session header reads dollars from days and time from the timeline; the
     assert.doesNotMatch(head, /\$99|\$198/);
     const tabs = V.tabsHtml(HOME[0], 'dispatch', DETAIL_X);
     assert.deepEqual([...tabs.matchAll(/href="([^"]+)"/g)].map((x) => x[1]),
-        ['#/s/aaaa1111-0000', '#/s/aaaa1111-0000/dispatch', '#/s/aaaa1111-0000/events', '#/s/aaaa1111-0000/talk']);
+        ['#/s/aaaa1111-0000', '#/s/aaaa1111-0000/dispatch', '#/s/aaaa1111-0000/events', '#/s/aaaa1111-0000/talk', '#/s/aaaa1111-0000/plan']);
     assert.match(tabs, /<a href="#\/s\/aaaa1111-0000\/dispatch" class="on" aria-current="page">派工</);
     assert.match(tabs, /<a href="#\/s\/aaaa1111-0000\/talk">對話<\/a>/, 'no count until the first page is in');
     assert.match(V.tabsHtml(HOME[0], 'talk', DETAIL_X, 210), /<a href="#\/s\/aaaa1111-0000\/talk" class="on" aria-current="page">對話<small>210<\/small><\/a>/);

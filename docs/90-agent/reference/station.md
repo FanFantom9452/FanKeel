@@ -247,20 +247,36 @@ combined figure, agents included.
 
 ### The session page
 
-A session also opens on a page of its own, `#/s/<id>`, in four tabs — 概覽,
-派工, 事件 and 對話 — and `#/s/<id>/<tab>` opens one directly, with `timeline`,
-`dispatch`, `events` or `talk`. 概覽 is the default and now folds together what were
+A session also opens on a page of its own, `#/s/<id>`, in five tabs — 概覽,
+派工, 事件, 對話 and plan — and `#/s/<id>/<tab>` opens one directly, with `timeline`,
+`dispatch`, `events`, `talk` or `plan`. 概覽 is the default and now folds together what were
 separately 時間線 and 花費: the context chart, 任務 and the list of the
 largest rises, plus the per-stage spend bar and the stage × model table that
 used to be 花費's own tab (see below). An old `#/s/<id>/cost` link still
 parses — `cost` stays a valid `TABS` value in `parseHash` — but now opens
 概覽 rather than a separate tab, since `tabsHtml`'s `TAB_SHOWN`
-(`assets/station/station.js:1335`, `['timeline', 'dispatch', 'events', 'talk']`) maps
+(`assets/station/station.js:1335`, `['timeline', 'dispatch', 'events', 'talk', 'plan']`) maps
 `cost` back to `timeline`. 派工 gives
 every row its input and output tokens, read from `split`, and its dollars,
 read from `cost`; 事件 is the replay, each gate's row carrying how long it
 waited. The side panel in the next section is the other way in, from 清單,
 and keeps its claims.
+
+plan (`#/s/<id>/plan`) draws the newest plan the session claimed, found
+through the project's `role: plan` bucket (`tasksOf` in `lib/detail.js`): its
+dispatch groups as columns, left to right from 980px of tab width and stacked
+below that, each task a card with its 改 and 測 paths, its Dispatch line and
+one 等 line for every earlier task `plantasks.conflict` refuses it beside,
+naming the kind (`files`, `read`, `interface`, `undeclared`) and the path or
+name the two share. No edge is drawn as a line: hovering or focusing a card
+lights the cards it waits for and the cards waiting on it, and Esc clears. A
+legend gives the three kinds by colour and line style. While the session's
+stage is `plan`, a banner puts the gate's question with the counts of tasks,
+groups, dependencies and implementer models, and says the answer is given in
+Claude Desktop; the tab's label carries the task count, and the gate's hatch
+at that stage. No plan, a plan that will not open and a plan with no
+`## Task N:` heading each say so instead. The controlled plan stage opens this
+page beside its gate from the `page:` line `scripts/await.js` prints.
 
 對話 (`#/s/<id>/talk`) is what was said, read from the transcript when the
 tab is opened and not from the detail script. It lists the turns in order and
