@@ -7,3 +7,11 @@ link: lib/context.js
 ---
 
 來源：2026-10-12 的任務（docs/99-archive/2026-10-12-compact-window.md）。SBIR 工作區的 Desktop session 9916350f 從 450k 長到 629k，16 次 turn 結束都沒壓縮。量測（docs/90-agent/reports/2026-10-12-compact-window-probe.md）是 headless、haiku、用 shell 的環境變數：視窗 100000 時在 71k 到 75k 壓，200000 時在 165k 到 170k 壓，都在 turn 進行中。沒量的有三件。第一，變數寫在 ~/.claude/settings.json 的 env 時，Claude Desktop 啟動的 session 吃不吃得到，主機會不會在 420k 上下自己壓（transcript 出現 trigger 為 auto 的 compact_boundary）。第二，command hook 的行程看不看得到那個變數：有設而且過 400k 時，注入塊的 context 行不該有 No auto-compact window is set 那一句。第三，1M 視窗的模型在 450000 的實際觸發點。要做的：使用者在 settings 加上那個 env、重開 Desktop，開一個 fankeel 任務跑到過 400k，記下壓縮發生在多少、context 行有沒有那一句。完成條件：三件都看過並記在這裡；主機沒有壓，或那一句誤報，就改回 ready 並寫下差在哪。
+
+## 完成紀錄（2026-10-17）
+
+不必另跑一次：~/.claude/settings.json 的 env 已經有 CLAUDE_CODE_AUTO_COMPACT_WINDOW 450000，10-16 起有三個 Claude Desktop 啟動的 fankeel session 跑過 400k，從它們的 transcript 讀出三件。
+
+- settings env 是否吃得到：吃得到。本盤點的 Desktop session 398cc390-8239-42f0-8311-1f7f73c7bb88 的 shell 讀到 450000；session 5e181f59-060e-43af-b6b4-d2ba247c315a、9e59e535-7d50-4ff5-a017-bb2638612fb8、9cf97941-93c8-4fcb-9cf2-8ef92f52eff5 共有 5 個 trigger 為 auto 的 compact_boundary，主機自己壓。
+- hook 看不看得到：看得到。9cf97941 過 400k 時 context 行是「400k in play, nothing dropped yet」接 hand off 的提示，三個 transcript 裡 No auto-compact window is set 那一句都是 0 次。
+- 1M 視窗在 450000 的觸發點：5 次壓縮前分別是 418056、419608、418571、426881、416911 token，落在 417k 到 427k；同期終端啟動的 SBIR session 也在 417k 到 424k 壓。比視窗少 25k 到 35k，與 10-12 headless 量到的 200000 視窗在 165k 到 170k 壓同一個規律。
