@@ -24,6 +24,13 @@ a plain object — an array included, since `typeof [] === 'object'` would
 otherwise let one through. Every hook that calls it treats `null` the same
 way: return.
 
+`deny(reason)` returns the `PreToolUse` refusal as the `hookSpecificOutput`
+object — `hookEventName`, `permissionDecision: 'deny'`,
+`permissionDecisionReason`, in that order — for a caller that hands it back,
+as `commitVerdict` in `lib/sensitive.js` does. `refuse(reason)` prints
+`{ hookSpecificOutput: deny(reason) }` to stdout, for a hook about to return:
+`hooks/gate.js`, `hooks/guard.js` and `hooks/budget.js`.
+
 ## `lib/report.js`
 
 Four names shared by every scanner that turns a scripted result into text:
