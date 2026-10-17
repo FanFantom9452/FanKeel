@@ -162,16 +162,13 @@ node <plugin>/scripts/version.js 0.35.0       set them
 node <plugin>/scripts/version.js --changes    what has landed since the last one
 ```
 
-Fifteen files carry it: two manifests and one frontmatter line in each of the
-thirteen skills. `npm test` fails when they disagree, so this is a fixer rather
-than a check — and the fixer matters because a release used to be eleven edits,
-where missing one left a skill announcing a version the plugin is not. Wrong in
-the way nobody catches: the number is right in ten places.
+Fifteen files carry it — two manifests and one frontmatter line in each of the
+thirteen skills — and `npm test` fails when they disagree. Why the script
+exists, and the steps a release takes, are in
+[development.md](../../docs/01-guide/development.md).
 
-**Only when the user says this is a release.** Bumping a version is a claim about
-what shipped, which is theirs to make. `--changes` is what to show them when
-asking — the commits since the last `chore: <x.y.z>`, derived from the log rather
-than from a changelog somebody has to remember to write.
+**Only when the user says this is a release.** The number is a claim about what
+shipped, which is theirs to make; `--changes` is what to show them when asking.
 
 ## 3. Rewrite the map
 
