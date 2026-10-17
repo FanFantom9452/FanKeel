@@ -108,3 +108,44 @@ test('a claimed plan that will not open, or holds no task, is listed with the re
         { plan: 'docs/plans/2026-09-11-empty.md', error: 'no tasks', ledgerLines: 0, tasks: [], groups: [], unmatched: [] },
     ]);
 });
+
+test('a docs.json whose buckets give no role: plan still finds the plan under docs/plans, as render.js planDir does', () => {
+    const root = repo();
+    fs.writeFileSync(path.join(root, '.fankeel', 'docs.json'), JSON.stringify({ buckets: [{ path: 'docs/reference', role: 'reference' }] }));
+    const got = detail.tasksOf(root, { claims: ['docs/plans/2026-09-11-x.md'] }, []);
+    assert.deepEqual(got.map((p) => p.plan), ['docs/plans/2026-09-11-x.md']);
+});
+
+test('waitsOf names the evidence from either side of a pair: an earlier task\'s read or consumes, and a Test path on either side', () => {
+    const t = (n, files, ifaces) => [
+        '## Task ' + n + ': t' + n, '', '**Files:**', ...files.map((f) => '- ' + f), '',
+        '**Interfaces:**', ...(ifaces || ['- Consumes: none', '- Produces: none']), '',
+    ].join('\n');
+    const plan = [
+        t(1, ['Modify: `p.js`']),
+        t(2, ['Modify: `q.js`', 'Test: `p.js`']),
+        t(3, ['Modify: `r.js`', 'Test: `s.test.js`']),
+        t(4, ['Modify: `s.test.js`']),
+        t(5, ['Modify: `u.js`', 'Test: `v.test.js`']),
+        t(6, ['Modify: `w.js`', 'Test: `v.test.js`']),
+        t(7, ['Modify: `x.js`', 'Read: `y.js`']),
+        t(8, ['Modify: `y.js`']),
+        t(9, ['Modify: `z1.js`'], ['- Consumes: `zap`', '- Produces: none']),
+        t(10, ['Modify: `z2.js`'], ['- Consumes: none', '- Produces: `zap`']),
+    ].join('\n');
+    const root = repo();
+    fs.writeFileSync(path.join(root, 'docs', 'plans', '2026-09-11-z.md'), plan);
+    const [p] = detail.tasksOf(root, { claims: ['docs/plans/2026-09-11-z.md'] }, []);
+    assert.deepEqual(p.tasks.map((x) => x.waits), [
+        [],
+        [{ n: 1, kind: 'files', file: 'p.js' }],
+        [],
+        [{ n: 3, kind: 'files', file: 's.test.js' }],
+        [],
+        [{ n: 5, kind: 'files', file: 'v.test.js' }],
+        [],
+        [{ n: 7, kind: 'read', file: 'y.js' }],
+        [],
+        [{ n: 9, kind: 'interface', file: 'zap' }],
+    ]);
+});
