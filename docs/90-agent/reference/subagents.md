@@ -273,8 +273,10 @@ across thirteen turns reaches it with no searching at all. The conclusion held;
 the reasoning under it did not:
 [reports/2026-09-03-dispatch-vs-inline-join.md](../reports/2026-09-03-dispatch-vs-inline-join.md).
 
-Dispatch was dearer and slower in every one of the three, without exception —
-1.85×, 1.59× and 2.12× the money, 1.75×, 2.77× and 2.70× the wall-clock.
+Dispatch was dearer and slower in every one of the first three, without exception —
+1.85×, 1.59× and 2.12× the money, 1.75×, 2.77× and 2.70× the wall-clock; a fourth
+pair (join-pair) went the other way, cheaper and faster for dispatch, and
+[sources.md](sources.md) is the ledger for all the figures.
 
 Six things that fail silently when missed: several dispatches must be in **one
 response** to run concurrently; the **model must be passed explicitly**, since an
@@ -783,8 +785,7 @@ No stage agent and no implementer is to write any settings file: that is a rule 
 the spec, and no hook enforces it. The fallback an earlier TODO entry asked about, a
 report returned in the message when the write fails, is not built.
 
-The installed 0.74.0 had no `STAGE_AGENTS` (it exists now, `lib/stages.js:719`, and the
-plugin is 0.111.19), and `profile show` read the list as `false` there, so the order
+The installed 0.74.0 had no `STAGE_AGENTS` (it exists now, `lib/stages.js:719`), and `profile show` read the list as `false` there, so the order
 then was a release first and the switch after: the user released (see
 `Releasing` in [development.md](../../01-guide/development.md)), and only once the installed copy
 carried `STAGE_AGENTS` set the profile with

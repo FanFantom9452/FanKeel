@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-10-02
+last_verified: 2026-10-18
 source_of_truth: lib/todo.js, scripts/todo.js, scripts/todo-check.js
 ---
 

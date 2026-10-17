@@ -16,7 +16,7 @@ and the role says how long a document is meant to stay true:
 | `reference` | describes the system as it is now | no |
 | `decision` | why something is the way it is, written once | yes — it is dated by definition |
 | `plan` | what is about to be done | until it lands, then it is archived |
-| `report` | a dated snapshot: audit, benchmark, meeting, a judge's ruling (`docs/judgements/`) | yes |
+| `report` | a dated snapshot: audit, benchmark, meeting, a judge's ruling (`docs/judgements/` by default; a judgements bucket in docs.json moves it, here `docs/90-agent/judgements/`) | yes |
 | `archive` | retired; checked only that nothing current points at it | yes |
 | `fixture` | a test's own input — describes nothing about the system, checked for links and line numbers only | n/a |
 | `data` | raw data — exports, recordings, source files — not a document. `docs-check` and `docs-audit` never check it, the index and the reading batches leave it out, and it is not counted as unfiled | n/a |
@@ -164,11 +164,11 @@ report where a real parser would cost a dependency this plugin does not have.
 | `worktrees/<id8>/` | 否 | profile `worktree: true` 時 `task.js start` 為一個 session 開的 git worktree，分支 `fk/<id8>`；land 合併、測試全綠後 `git worktree remove` |
 | `sensitive.txt` | 否 | 敏感詞表，一行一詞；詞表本身就是敏感資料，所以不進版控，每台機器各一份（init 的可見度那一步建立） |
 | `station.bat`、`station.sh` | 否 | station 啟動檔，內容是這台機器的外掛絕對路徑；`registry.ensureLayout` 每個 hook 檢查一次，內容不同才重寫，所以外掛升級後自動跟上（`lib/launchers.js`） |
-| `docs/judgements/`（不在 `.fankeel/`） | 是 | `fankeel-judge` 的判斷，寫完不改（`report`） |
+| `docs/judgements/`（預設；`docs.json` 的 judgements 桶會改掉它，本倉庫是 `docs/90-agent/judgements/`；不在 `.fankeel/`） | 是 | `fankeel-judge` 的判斷，寫完不改（`report`） |
 
 `docs.json` 與 `profile.json` 同層、都進版本控制，是這張表裡唯二「提交」的
 `.fankeel/` 檔——其餘七區都在 `.fankeel/.gitignore` 之內。`docs/judgements/`
-不在 `.fankeel/` 底下，卻也是「寫完不改」的一區：它跟 `docs.json`、
+（預設，`docs.json` 的 judgements 桶可改位置）不在 `.fankeel/` 底下，卻也是「寫完不改」的一區：它跟 `docs.json`、
 `profile.json` 一樣提交，但壽命規則更接近一份決定記錄，而不是一份可以重新
 生成的快照。
 

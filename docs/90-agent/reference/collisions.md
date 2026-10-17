@@ -292,7 +292,7 @@ worth paying everywhere — the general guard above still says nothing about a
 
 Whether `agent_type` reaches the hook at all, and in which of the two shapes,
 was checked rather than assumed —
-[docs/reports/2026-09-11-hook-payload-probe.md](../reports/2026-09-11-hook-payload-probe.md)
+[docs/90-agent/reports/2026-09-11-hook-payload-probe.md](../reports/2026-09-11-hook-payload-probe.md)
 is where.
 
 Belt and suspenders: `skills/fankeel-survey/SKILL.md` and

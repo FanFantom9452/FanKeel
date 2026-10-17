@@ -193,8 +193,9 @@ back, and gated properly. Eleven of the twelve stages in that session ended in a
 AskUserQuestion; the twelfth is the one that had a competing contract nearer to
 hand than its own rules.
 
-So there is a second hook. `PostToolUse` matched to `AskUserQuestion` — and to
-nothing else — sends a short form back the moment an answer lands:
+So there is a second hook. The `PostToolUse` entry matched to `AskUserQuestion`
+(`hooks/resume.js`) sends a short form back the moment an answer lands; the other
+`PostToolUse` entries exist for other jobs:
 
 ```
 FANKEEL ACTIVE — rework the 7d deviation colour ramp @ build  (4 of 7)
