@@ -15,3 +15,7 @@ link: lib/context.js
 - settings env 是否吃得到：吃得到。本盤點的 Desktop session 398cc390-8239-42f0-8311-1f7f73c7bb88 的 shell 讀到 450000；session 5e181f59-060e-43af-b6b4-d2ba247c315a、9e59e535-7d50-4ff5-a017-bb2638612fb8、9cf97941-93c8-4fcb-9cf2-8ef92f52eff5 共有 5 個 trigger 為 auto 的 compact_boundary。三個 session 的 profile 都有 compact.at 450000，但 hooks/compact.ts 要到 tokens 不少於 450000 才壓，這 5 次都在那之前，所以是主機依這個視窗自己壓的。
 - hook 看不看得到：沒看到。lib/context.js 的 contextLine 只在變數讀不到、而且 compact.at 不是 350000、450000、600000、1000000 其中一階時才加上 No auto-compact window is set；這三個 session 的 compact.at 都是 450000，那一句本來就不會出現，三個 transcript 裡 0 次證明不了什麼。要看這一件，得在 compact.at 設成 off 的 Desktop session 跑過 400k，再看 context 行有沒有那一句。
 - 1M 視窗在 450000 的觸發點：5 次壓縮前分別是 418056、419608、418571、426881、416911 token，落在 417k 到 427k；同期終端啟動的 SBIR session（4b72ae2c-64c0-4420-b433-6b705e0855d8、244f7c6b-80e8-4270-92f6-6fcd0d36ab65、e3f3fd12-8233-4979-b794-ef8e22fc7c56、e6a02ad2-b675-4021-a65e-c1ce1ec1b8ac、22d6980f-e79c-4891-8bee-f05f8437a8af、25ce35c0-1e88-46e9-8a9b-0bbbacea9fe0）也在 417k 到 425k 壓。比視窗少 25k 到 35k，與 10-12 headless 量到的 200000 視窗在 165k 到 170k 壓同一個規律。
+
+## 補上第二件（2026-10-17）
+
+- hook 看不看得到：看得到。在專案的 .claude/settings.local.json 臨時加一支 UserPromptSubmit command hook，只把 process.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW 附加到一個 log；log 在 14:12:02 與 14:12:13（UTC）各寫一行 450000。那兩分鐘內唯一有寫入的 transcript 是 Desktop 啟動的 session 398cc390-8239-42f0-8311-1f7f73c7bb88（entrypoint claude-desktop），可見 Claude Code 執行中重讀了 settings.local.json 的 hooks，觸發的是這個 Desktop session 自己的 command hook。測完已把那支 hook 與探針檔拿掉。三件都看過，本條關閉。
