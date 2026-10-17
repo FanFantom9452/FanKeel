@@ -84,6 +84,16 @@ the stage produces; it does not approve it.
    declares one, or `docs/judgements/` when it declares none — and adds its
    row to the index where the project has a `## Judgements` table.
 
+   The file's frontmatter carries `judged`, `model`, `agent: fankeel-judge`,
+   `task`, `session` and `stage`, and the brief and the answer follow it
+   copied in whole, not summarised. A `--slug` already on disk gets `-2`
+   rather than overwriting the first record; a missing `--session`, `--brief`,
+   `--answer` or `--slug` exits 1 before anything is written; and where the
+   project has no `## Judgements` heading the command says so rather than
+   inventing one. `--model` is `fable` when left off, `--root <dir>` names the
+   registry and `--project <dir>` the project whose bucket receives the file,
+   for a working directory that does not decide them.
+
    The answer is the judge's last assistant message. For a background
    dispatch that is in `<session>/subagents/agent-<id>.jsonl` — its
    `tasks/<id>.output` is 0 bytes, and `record` refuses the blank answer

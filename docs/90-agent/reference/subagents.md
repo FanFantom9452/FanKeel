@@ -155,30 +155,10 @@ the whole procedure from there. `lib/render.js`'s `renderBrief`, which
 when `payload.agent_type` is `fankeel-judge`: *answer once; the parent will
 not message you again.*
 
-Its answer does not stay in the judge's own context — the parent files it,
-verbatim:
-
-```
-node scripts/judge.js record --session <id> --brief <path> --answer <path|-> --slug <a-z0-9-> [--model <m>] [--root <dir>] [--project <dir>]
-```
-
-It writes `docs/<judgements bucket>/<date>-<slug>.md` — in this repo
-`docs/90-agent/judgements/`, the `docs.json` bucket ending `/judgements`
-(a `judgements` folder under `docs/` only where none is declared; `scripts/judge.js:95-96`): frontmatter carrying `judged`,
-`model`, `agent: fankeel-judge`, `task`, `session` and `stage`, then the brief
-and the answer copied in whole rather than summarised
-(`scripts/judge.js:97-117`, `answer.trimEnd(),`).
-A slug already on disk gets `-2` rather than overwriting the first record
-(`scripts/judge.js:46-50`, `freePath`), and a missing `--session`, `--brief`,
-`--answer` or `--slug` exits 1 before anything is written. It then appends a
-row to `docs/README.md`'s own `## Judgements` table when that heading exists,
-and says so plainly when it does not rather than inventing one
-(`scripts/judge.js:61-77`, `indexRow`).
-
-[The fankeel-ask skill](../../../skills/fankeel-ask/SKILL.md) owns this command and
-every flag on it. The pointer earlier in this section comes *before* the
-restatement above and so does not stop it; this one comes after. This is the
-short form, not the only copy.
+Its answer does not stay in the judge's own context: the parent files it
+verbatim with `scripts/judge.js record`, and [the fankeel-ask
+skill](../../../skills/fankeel-ask/SKILL.md) owns that command, every flag on it
+and what it writes.
 
 `fankeel-reviewer` runs at `model: sonnet`, and answers neither kind of
 question above: it is the shared contract behind plan's reviewer, build's
