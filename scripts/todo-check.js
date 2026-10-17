@@ -374,6 +374,7 @@ function check(target, now) {
     // run in a repository that never declared a tree.
     const { tree } = docs.read(base);
     let problems = [];
+    const add = (line, kind, detail) => problems.push({ line, kind, detail });
     const overdue = [];
     const stale = [];
     const found = loaded ? loaded.entries : entries(text);
@@ -386,52 +387,37 @@ function check(target, now) {
         // were not.
         if (TIMED.includes(entry.section) && entry.timing === null) {
             const line = entry.section === 'Watch' ? 'if: <the event>' : 'on: MM-DD, after: <what> or upstream: <what>';
-            problems.push({
-                line: entry.line,
-                kind: 'untimed',
-                detail: 'under ## ' + entry.section + ' but under no ### timing. Put it beneath the ### naming what it'
-                    + ' waits for, or open one: a title, then a "' + line + '. MM-DD." line.',
-            });
+            add(entry.line, 'untimed',
+                'under ## ' + entry.section + ' but under no ### timing. Put it beneath the ### naming what it'
+                + ' waits for, or open one: a title, then a "' + line + '. MM-DD." line.');
         }
         if (!SECTIONS.includes(entry.section)) {
-            problems.push({
-                line: entry.line,
-                kind: 'unclassified',
-                detail: (entry.section ? 'under "' + entry.section + '"' : 'under no heading')
-                    + '. Every entry sits under one of ' + SECTIONS.map((s) => '## ' + s).join(' · ')
-                    + ', which is what says whether it can be started today.'
-                    + (entry.section === RETIRED
-                        ? ' ## Waiting was split on 2026-09-27: ## Blocked takes on:, after: and upstream:; ## Watch takes if:.'
-                        : ''),
-            });
+            add(entry.line, 'unclassified',
+                (entry.section ? 'under "' + entry.section + '"' : 'under no heading')
+                + '. Every entry sits under one of ' + SECTIONS.map((s) => '## ' + s).join(' · ')
+                + ', which is what says whether it can be started today.'
+                + (entry.section === RETIRED
+                    ? ' ## Waiting was split on 2026-09-27: ## Blocked takes on:, after: and upstream:; ## Watch takes if:.'
+                    : ''));
         }
         const len = entry.text.replace(/\s+/g, ' ').trim().length;
         if (len > MAX_ENTRY_CHARS) {
-            problems.push({
-                line: entry.line,
-                kind: 'too long',
-                detail: len + ' characters, cap is ' + MAX_ENTRY_CHARS + '. Move the detail into the file this points at.',
-            });
+            add(entry.line, 'too long',
+                len + ' characters, cap is ' + MAX_ENTRY_CHARS + '. Move the detail into the file this points at.');
         }
         for (const raw of linksIn(entry.text)) {
             const at = LINE_SUFFIX.exec(raw);
             const target = at ? raw.slice(0, at.index) : raw;
             const full = path.resolve(base, target);
             if (!fs.existsSync(full)) {
-                problems.push({
-                    line: entry.line,
-                    kind: 'dead link',
-                    detail: target + ' does not exist. Either the entry is finished and should be closed (todo.js done) or removed, or the detail moved.',
-                });
+                add(entry.line, 'dead link',
+                    target + ' does not exist. Either the entry is finished and should be closed (todo.js done) or removed, or the detail moved.');
                 continue;
             }
             const role = docs.roleOf(tree, path.relative(base, full));
             if (STALE_ROLES.includes(role)) {
-                problems.push({
-                    line: entry.line,
-                    kind: 'stale citation',
-                    detail: target + ' is filed as ' + role + ', a role that records a moment rather than the present. Point at the code this is about, or at a reference page.',
-                });
+                add(entry.line, 'stale citation',
+                    target + ' is filed as ' + role + ', a role that records a moment rather than the present. Point at the code this is about, or at a reference page.');
             }
         }
         // A file that is missing was already reported as a dead link above, or,
@@ -440,11 +426,8 @@ function check(target, now) {
             const n = lineCount(base, c.target);
             if (n === null || c.to <= n) continue;
             const cited = c.target + ':' + c.from + (c.to !== c.from ? '-' + c.to : '');
-            problems.push({
-                line: entry.line,
-                kind: 'past end',
-                detail: cited + ' is past the end — ' + c.target + ' has ' + n + ' lines. The code moved; cite where it is now.',
-            });
+            add(entry.line, 'past end',
+                cited + ' is past the end — ' + c.target + ' has ' + n + ' lines. The code moved; cite where it is now.');
         }
     }
 
@@ -464,14 +447,11 @@ function check(target, now) {
             if (curNorm.includes(norm)) continue;
             if (completions.has(norm)) continue;
             if (reworded(norm, curNorm)) continue;
-            problems.push({
-                line: 1,
-                kind: 'undocumented deletion',
-                detail: '"' + norm + '" was in TODO.md at the previous commit and is gone from the working'
-                    + ' file, with no matching record in ' + COMPLETIONS_PAGE + '. Add a record there'
-                    + ' (the original text, a disposition — done, measured-no-change or abandoned — and'
-                    + ' the commit sha that closed it) before removing the entry.',
-            });
+            add(1, 'undocumented deletion',
+                '"' + norm + '" was in TODO.md at the previous commit and is gone from the working'
+                + ' file, with no matching record in ' + COMPLETIONS_PAGE + '. Add a record there'
+                + ' (the original text, a disposition — done, measured-no-change or abandoned — and'
+                + ' the commit sha that closed it) before removing the entry.');
         }
     }
 
@@ -479,54 +459,36 @@ function check(target, now) {
     // beneath it, so what used to be asked of each entry is asked here.
     for (const t of timings(text, at)) {
         if (t.stamp === null) {
-            problems.push({
-                line: t.line,
-                kind: 'undated',
-                detail: 'no MM-DD stamp on its condition line. End that line with the date somebody last read'
-                    + ' this timing and confirmed it still holds — without one it cannot be told from'
-                    + ' one nobody has looked at since it was filed.',
-            });
+            add(t.line, 'undated',
+                'no MM-DD stamp on its condition line. End that line with the date somebody last read'
+                + ' this timing and confirmed it still holds — without one it cannot be told from'
+                + ' one nobody has looked at since it was filed.');
         }
         if (t.kind === null || (t.event === null && t.kind !== 'on')) {
-            problems.push({
-                line: t.line,
-                kind: 'unconditioned',
-                detail: 'no condition on the line after it. Under ## Blocked write "on: MM-DD", "after: <what>"'
-                    + ' or "upstream: <what>"; under ## Watch, "if: <the event>". A timing that cannot'
-                    + ' name one is not waiting for anything.',
-            });
+            add(t.line, 'unconditioned',
+                'no condition on the line after it. Under ## Blocked write "on: MM-DD", "after: <what>"'
+                + ' or "upstream: <what>"; under ## Watch, "if: <the event>". A timing that cannot'
+                + ' name one is not waiting for anything.');
         } else if (!CONDITIONS[t.section].includes(t.kind)) {
-            problems.push({
-                line: t.line,
-                kind: 'wrong section',
-                detail: '"' + t.kind + ':" belongs under ' + (t.kind === 'if' ? '## Watch' : '## Blocked')
-                    + ', not ## ' + t.section + '. Blocked takes on:, after: and upstream: — something a session'
-                    + ' can check; Watch takes if: — an event only whoever meets it knows.',
-            });
+            add(t.line, 'wrong section',
+                '"' + t.kind + ':" belongs under ' + (t.kind === 'if' ? '## Watch' : '## Blocked')
+                + ', not ## ' + t.section + '. Blocked takes on:, after: and upstream: — something a session'
+                + ' can check; Watch takes if: — an event only whoever meets it knows.');
         } else if (t.kind === 'on' && !validOn(t.event)) {
-            problems.push({
-                line: t.line,
-                kind: 'bad date',
-                detail: '"on:" is not followed by an MM-DD. It is the day the date is compared against;'
-                    + ' a wait with no day is an "after:".',
-            });
+            add(t.line, 'bad date',
+                '"on:" is not followed by an MM-DD. It is the day the date is compared against;'
+                + ' a wait with no day is an "after:".');
         }
         if (!t.items.length) {
-            problems.push({
-                line: t.line,
-                kind: 'empty timing',
-                detail: 'no entries under it. A timing lifts the entries beneath it; with none it is'
-                    + ' waiting for nothing — remove it.',
-            });
+            add(t.line, 'empty timing',
+                'no entries under it. A timing lifts the entries beneath it; with none it is'
+                + ' waiting for nothing — remove it.');
         }
         const w = width(t.title);
         if (w > MAX_TITLE_WIDTH) {
-            problems.push({
-                line: t.line,
-                kind: 'long title',
-                detail: w + ' columns, cap is ' + MAX_TITLE_WIDTH + ' — a CJK character counts two.'
-                    + ' The title names the timing; the condition goes on the line after it.',
-            });
+            add(t.line, 'long title',
+                w + ' columns, cap is ' + MAX_TITLE_WIDTH + ' — a CJK character counts two.'
+                + ' The title names the timing; the condition goes on the line after it.');
         }
         if (t.due) overdue.push({ line: t.line, days: t.days, title: t.title, kind: t.kind, event: t.event, date: t.date, count: t.items.length });
         if (t.stale) stale.push({ line: t.line, days: t.days, title: t.title, event: t.event, count: t.items.length });
