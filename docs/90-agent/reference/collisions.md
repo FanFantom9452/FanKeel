@@ -79,8 +79,9 @@ is a path a human retypes. A path that arrives on its own, from
 `hooks/touch.js`, drops the oldest to make room; a git pass holding more than
 sixty is refused whole rather than trimmed, as the table says. `task` clears
 both fields, because a task that has just been renamed has touched nothing yet;
-`adopt` carries both across, because where the work went belongs to the task
-rather than to the session; no subcommand sets either.
+`adopt` carries `claims` across, because where the work went belongs to the task
+rather than to the session, and leaves `seen` behind (`cmdAdopt`,
+`scripts/task.js`, builds a fresh record without it); no subcommand sets either.
 
 Two limits, and they are why this is a second path rather than a replacement.
 A claim found this way lands **on the next prompt**, where `touch.js` records it

@@ -104,7 +104,7 @@ A third field is written by nobody the user talks to. `claims` holds every file
 this task has edited and `seen` every path git reports written since the task's
 `started` that no hook saw; `hooks/touch.js` and `hooks/inject.js` write them,
 which is why the table above lists hooks rather than a command as the writer.
-Both hold sixty paths, `task` clears both and `adopt` carries both across.
+Both hold sixty paths, `task` clears both and `adopt` carries `claims` across and leaves `seen` behind.
 [collisions.md](collisions.md) is the page for what each means and how the cap
 behaves.
 
