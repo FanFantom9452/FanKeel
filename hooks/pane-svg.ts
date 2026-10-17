@@ -84,7 +84,7 @@ export function bandRow1Svg(input: BandInput): string {
   let x = 10
   const head = `FANKEEL ${stage.toUpperCase()}`
   b += text(x, 15, head, { fill: colour, bold: true })
-  x += px(head) + 14
+  x += px(head) + 6
   if (route.length) {
     const step = 14
     const x0 = x + 6
@@ -420,21 +420,23 @@ export function tasksSvg(entry: Entry, plan: PlanInfo, now: number, cols: number
     parts.forEach((q, i) => {
       const w = ws[i]
       const shape = q.fill
-        ? `<rect class="c" x="${r1(x)}" y="24" width="${r1(w)}" height="14" rx="4" fill="${q.color}"/>`
-        : `<rect class="c" x="${r1(x + 0.75)}" y="24.75" width="${r1(w - 1.5)}" height="12.5" rx="4" fill="none" stroke="${q.color}" stroke-width="1.5"/>`
+        ? `<rect class="c" x="${r1(x)}" y="24" width="${r1(w)}" height="10" rx="3" fill="${q.color}"/>`
+        : `<rect class="c" x="${r1(x + 0.75)}" y="24.75" width="${r1(w - 1.5)}" height="8.5" rx="3" fill="none" stroke="${q.color}" stroke-width="1.5"/>`
       b += `<g class="k"><title>${esc(`${q.label} ${q.k}`)}</title>${shape}</g>`
       x += w + G
     })
+    // One part repeats the heading, and its hover title still names it.
+    const legend = parts.length > 1
     let lx = 1
-    for (const q of parts) {
+    for (const q of legend ? parts : []) {
       b += q.fill
-        ? `<rect x="${r1(lx)}" y="47" width="10" height="10" rx="2" fill="${q.color}"/>`
-        : `<rect x="${r1(lx + 1)}" y="48" width="8" height="8" rx="2" fill="none" stroke="${q.color}" stroke-width="2"/>`
+        ? `<rect x="${r1(lx)}" y="41" width="10" height="10" rx="2" fill="${q.color}"/>`
+        : `<rect x="${r1(lx + 1)}" y="42" width="8" height="8" rx="2" fill="none" stroke="${q.color}" stroke-width="2"/>`
       const k = String(q.k)
-      b += text(lx + 15, 56, k, { bold: true }) + text(lx + 15 + px(k + ' '), 56, q.label)
+      b += text(lx + 15, 50, k, { bold: true }) + text(lx + 15 + px(k + ' '), 50, q.label)
       lx += 15 + px(`${k} ${q.label}`) + 14
     }
-    y = 80
+    y = legend ? 73 : 56
   }
   if (running) {
     const tail = ` · 出去 ${out} 分`

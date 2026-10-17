@@ -211,6 +211,25 @@ test('ten tasks are one row of ten cells; more than ten are one bar of four coun
     assert.equal(words(big).filter((w) => w.endsWith(' · 你的')).length, 3);
 });
 
+test('the bar is 10px tall, and a bar of one part draws no legend', async () => {
+    const { tasksSvg } = await load('pane-svg');
+    const idle = Object.assign({}, entry, { inflight: null });
+    const one = tasksSvg(idle, planOf(11, 11), NOW, 41);
+    assert.match(one, /class="c" x="1" y="24" width="[\d.]+" height="10" rx="3"/);
+    assert.ok(!words(one).includes('完成'));
+    assert.match(one, /height="42"/);
+    const four = tasksSvg(entry, planOf(24, 11, [16, 20]), NOW, 41);
+    assert.deepEqual(words(four).filter((w) => ['完成', '在跑', '你的', '還沒做'].includes(w)), ['完成', '在跑', '你的', '還沒做']);
+    assert.ok(words(four).includes('16 task 16 · 你的'));
+});
+
+test('the band\'s route starts 12px past its head', async () => {
+    const { bandRow1Svg } = await load('pane-svg');
+    const source = bandRow1Svg(bandInput({ tasks: null }));
+    const cx = Number(source.match(/<circle cx="([\d.]+)" cy="11"/)[1]);
+    assert.equal(cx, 10 + 'FANKEEL BUILD'.length * 12 * 0.6 + 12);
+});
+
 test('with no agent out nothing breathes and nothing is named as running', async () => {
     const { tasksSvg } = await load('pane-svg');
     const idle = Object.assign({}, entry, { inflight: null });
