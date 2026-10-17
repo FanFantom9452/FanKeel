@@ -88,6 +88,9 @@ test('past ten tasks the band draws one bar as wide as the 5h track, and the ban
     assert.ok(words(twenty).includes('20/20'));
     const eleven = bandRow1Svg(bandInput({ tasks: { done: 0, total: 11 } }));
     const sixty = bandRow1Svg(bandInput({ tasks: { done: 37, total: 60 } }));
+    const fill = /<rect x="[\d.]+" y="7" width="([\d.]+)" height="8" rx="1\.5" fill="#87af5f"\/>/;
+    assert.equal(Number(fill.exec(sixty)[1]), Math.round(37 / 60 * 94 * 10) / 10);
+    assert.ok(!fill.test(eleven), 'a fill at 0/11');
     assert.equal(countAt(eleven, '0/11'), countAt(twenty, '20/20'));
     assert.equal(countAt(sixty, '37/60'), countAt(twenty, '20/20'));
 });
