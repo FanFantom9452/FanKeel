@@ -232,3 +232,15 @@ test('a repository the pool could not read is asked once more, serially', () => 
   assert.deepEqual(state.repos, ['p0'], 'the pool said null and the repository was walked instead of re-read');
   assert.deepEqual(state.files, ['p0/a0.js']);
 });
+
+test('repoRoot names the repository a subdirectory is in, and null where there is none', () => {
+  const root = tmp('fankeel-reporoot-');
+  execFileSync('git', ['init', '-q'], { cwd: root });
+  const sub = path.join(root, 'a', 'b');
+  fs.mkdirSync(sub, { recursive: true });
+  const real = (p) => fs.realpathSync.native(p);
+
+  assert.equal(real(tracked.repoRoot(sub)), real(root), 'a subdirectory did not resolve to its repository top');
+  assert.equal(tracked.repoRoot(path.join(root, 'missing')), null, 'a directory that is not there was answered for');
+  assert.equal(tracked.repoRoot(tmp('fankeel-reporoot-none-')), null, 'a directory in no repository was answered for');
+});
