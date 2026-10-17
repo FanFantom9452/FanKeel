@@ -1,7 +1,7 @@
 ---
 label: brief
 title: brief.js 哪段搬到 spawn
-description: 互動式 n=3 探測成立後，決定 hooks/brief.js 的哪一部分改由 agent.spawn 改寫 prompt 與 session.append 送進子代理 — [hooks/brief.js](hooks/brief.js).
+description: 互動式 n=3 探測成立後，決定子代理 brief 的哪一部分改由 agent.spawn 改寫 prompt 與 session.append 送進子代理 — [hooks/brief.js](hooks/brief.js).
 state: decision
 link: hooks/brief.js
 ---
