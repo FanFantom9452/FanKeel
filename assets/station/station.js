@@ -4508,9 +4508,12 @@
     // `pv-`: `.pg` is the pending gate's.
     // The newest plan claimed: claims are kept newest last.
     function planNewest(list) { return list && list.length ? list[list.length - 1] : null; }
+    // A path escaped first, then given a break after every `/`: Chrome breaks
+    // a path at no `/` of its own, so a long one split mid-name in a card.
+    function planPath(x) { return esc(x).replace(/\//g, '/<wbr>'); }
     // What one 等 line says about earlier task `w.n`, as waiting task `t` says it.
     function planReason(t, w) {
-        var f = w.file ? '<code>' + esc(w.file) + '</code>' : '';
+        var f = w.file ? '<code>' + planPath(w.file) + '</code>' : '';
         if (w.kind === 'files') return loc('det.planWaitFiles', '同改 {f}', { f: f });
         if (w.kind === 'interface') return loc('det.planWaitIface', '用它產出的 {f}', { f: f });
         if (w.kind === 'read') {
@@ -4552,7 +4555,7 @@
     function planCard(t, lit, f) {
         var file = function (x) {
             var m = /^(.*?)(:\d+-\d+)?$/.exec(String(x));
-            return '<code>' + esc(m[1]) + (m[2] ? '<small>' + esc(m[2]) + '</small>' : '') + '</code>';
+            return '<code>' + planPath(m[1]) + (m[2] ? '<small>' + esc(m[2]) + '</small>' : '') + '</code>';
         };
         var disp = t.dispatch === 'implementer'
             ? 'implementer · <span class="pv-m"><i class="sw" style="background:var(--m-' + family('claude-' + t.model) + ')"></i>' + esc(t.model || '?')

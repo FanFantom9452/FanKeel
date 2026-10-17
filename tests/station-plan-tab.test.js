@@ -143,8 +143,8 @@ test('a plan path, a task title and a waited-on file are escaped in text and in 
         assert.ok(html.includes('title="docs/plans/&lt;img onerror=x&gt;&quot;q.md"'), stage + ': the path in title=""');
         assert.ok(html.includes('>docs/plans/&lt;img onerror=x&gt;&quot;q.md</div>'), stage + ': the path in text');
         assert.ok(html.includes('<span class="pv-tt">one &lt;img onerror=x&gt;&quot;q</span>'), stage + ': the title');
-        assert.ok(html.includes('<span>同改 <code>lib/&lt;img onerror=x&gt;&quot;q.js</code></span>'), stage + ': the 等 line file');
-        assert.ok(html.includes('Task 2 等這張 · 同改 <code>lib/&lt;img onerror=x&gt;&quot;q.js</code>'), stage + ': the lit tag file');
+        assert.ok(html.includes('<span>同改 <code>lib/<wbr>&lt;img onerror=x&gt;&quot;q.js</code></span>'), stage + ': the 等 line file');
+        assert.ok(html.includes('Task 2 等這張 · 同改 <code>lib/<wbr>&lt;img onerror=x&gt;&quot;q.js</code>'), stage + ': the lit tag file');
     }
     assert.ok(V.planTabHtml({ stage: 'plan' }, [Object.assign({}, list[0], { error: 'unreadable' })], null).includes('<code>docs/plans/&lt;img onerror=x&gt;&quot;q.md</code>'));
 });
@@ -152,13 +152,13 @@ test('a plan path, a task title and a waited-on file are escaped in text and in 
 test('the 等 lines and tags say 讀 for its own Read and 它讀 for the earlier one\'s, ranges in <small>, user and in-session by name', () => {
     const list = synth();
     const html = V.planTabHtml({ stage: 'build' }, list, null);
-    assert.ok(cardOf(html, 2).includes('<b>Task 1</b><span>讀 <code>lib/a.js</code></span>'), 'Task 2 reads lib/a.js itself');
-    assert.ok(cardOf(html, 3).includes('<b>Task 1</b><span>它讀 <code>lib/z.js</code></span>'), 'Task 1 reads what Task 3 changes');
-    assert.ok(cardOf(html, 1).includes('<code>lib/a.js<small>:10-20</small></code>'));
+    assert.ok(cardOf(html, 2).includes('<b>Task 1</b><span>讀 <code>lib/<wbr>a.js</code></span>'), 'Task 2 reads lib/a.js itself');
+    assert.ok(cardOf(html, 3).includes('<b>Task 1</b><span>它讀 <code>lib/<wbr>z.js</code></span>'), 'Task 1 reads what Task 3 changes');
+    assert.ok(cardOf(html, 1).includes('<code>lib/<wbr>a.js<small>:10-20</small></code>'));
     assert.ok(cardOf(html, 1).includes('<p class="pv-disp">交給你</p>'));
     assert.ok(cardOf(html, 2).includes('<p class="pv-disp">主 session 自己做</p>'));
     const lit = V.planTabHtml({ stage: 'build' }, list, 2);
-    assert.ok(cardOf(lit, 1).includes('<p class="pv-tag"><i class="pv-ln" aria-hidden="true"></i>Task 2 等這張 · 讀 <code>lib/a.js</code></p>'));
+    assert.ok(cardOf(lit, 1).includes('<p class="pv-tag"><i class="pv-ln" aria-hidden="true"></i>Task 2 等這張 · 讀 <code>lib/<wbr>a.js</code></p>'));
     assert.ok(cardOf(lit, 4).includes('<p class="pv-tag"><i class="pv-ln" aria-hidden="true"></i>這張等 Task 2 · 有一方沒宣告檔案，保守地等</p>'));
 });
 
@@ -270,7 +270,7 @@ function litTwo(b) {
     assert.equal(l[1].cls, 'is-pre read');
     assert.equal(l[4].cls, 'is-post undeclared');
     assert.equal(l[3].cls, 'is-dim');
-    assert.equal(l[1].tag, '<i class="pv-ln" aria-hidden="true"></i>Task 2 等這張 · 讀 <code>lib/a.js</code>');
+    assert.equal(l[1].tag, '<i class="pv-ln" aria-hidden="true"></i>Task 2 等這張 · 讀 <code>lib/<wbr>a.js</code>');
     assert.equal(l[2].tag, '等 1 張 · 1 張等它');
     assert.equal(l[3].tag, null);
     assert.deepEqual(l[4].hit, [2], 'the line in the waiting card naming Task 2 is hit');
@@ -328,4 +328,15 @@ test('Esc clears the lit card and lets go of the keyboard focus; another key doe
     dark(b);
     assert.equal(b.card(2).blurred, 1);
     assert.doesNotMatch(b.tab('plan'), /is-(focus|pre|post|dim)/);
+});
+
+test('a long path breaks only after its slashes, its range kept whole after the file', () => {
+    const p = 'docs/90-agent/reference/station.md';
+    const list = [{ plan: 'docs/plans/p.md', groups: [{ g: 1, tasks: [1], surface: 'agent' }, { g: 2, tasks: [2], surface: 'agent' }],
+        tasks: [{ n: 1, title: 'one', modify: [p + ':248-264'], test: [], read: [], dispatch: 'implementer', model: 'sonnet', effort: '', waits: [] },
+            { n: 2, title: 'two', modify: [p], test: [], read: [], dispatch: 'implementer', model: 'sonnet', effort: '', waits: [{ n: 1, kind: 'files', file: p }] }] }];
+    const html = V.planTabHtml({ stage: 'build' }, list, null);
+    const broken = 'docs/<wbr>90-agent/<wbr>reference/<wbr>station.md';
+    assert.ok(cardOf(html, 1).includes('<code>' + broken + '<small>:248-264</small></code>'), 'the Modify path');
+    assert.ok(cardOf(html, 2).includes('<span>同改 <code>' + broken + '</code></span>'), 'the 等 line path');
 });
