@@ -785,8 +785,8 @@ No stage agent and no implementer is to write any settings file: that is a rule 
 the spec, and no hook enforces it. The fallback an earlier TODO entry asked about, a
 report returned in the message when the write fails, is not built.
 
-The installed 0.74.0 had no `STAGE_AGENTS` (it exists now, `lib/stages.js:719`), and `profile show` read the list as `false` there, so the order
-then was a release first and the switch after: the user released (see
+The installed 0.74.0 had no `STAGE_AGENTS` (it exists now, `lib/stages.js:719`),
+and `profile show` read the list as `false` there, so the order then was a release first and the switch after: the user released (see
 `Releasing` in [development.md](../../01-guide/development.md)), and only once the installed copy
 carried `STAGE_AGENTS` set the profile with
 `node scripts/task.js profile set stage.agents all`, which writes the project's profile.
