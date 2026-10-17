@@ -400,7 +400,7 @@ between entering the stage it left and the step back.
 the session is live or has ended: a short prose account of how the main loop
 divided dispatch. One line per stage, in the order `seq` first entered it —
 a dispatch's stage is its `out` time run through the same rule
-`lib/detail.js:463`'s `stageWhen` uses: the last `seq` entry at or before it,
+`lib/detail.js:466`'s `stageWhen` uses: the last `seq` entry at or before it,
 or `task 開始前` when there is none. Turn counts come from `x.loops`; a cache
 written before that field existed has none, and the line says so
 (`這份快取沒有逐站回合數（寫於 loops 欄位出現之前）`) instead of printing a
@@ -611,13 +611,13 @@ the search box in the top bar matches task, project, session id, registry
 label, model, state, next, the files touched and its notes — AND-ed.
 
 The same box also opens a grouped-results popover about 200 ms after typing
-stops (`assets/station/station.js:6048`, `}, 200)`): `qGroups`
-(`assets/station/station.js:5964`, `function qGroups(q) {`) buckets what
+stops (`assets/station/station.js:6053`, `}, 200)`): `qGroups`
+(`assets/station/station.js:5969`, `function qGroups(q) {`) buckets what
 matches into Sessions, 專案 and 文件, up to five rows each with a 看全部 link
 when there are more, and `qDraw`
-(`assets/station/station.js:6005`, `function qDraw() {`) draws it with each
+(`assets/station/station.js:6010`, `function qDraw() {`) draws it with each
 match highlighted. `/` focuses the box from anywhere on the page
-(`assets/station/station.js:6133`, `if (e.key === '/')`), the arrow keys
+(`assets/station/station.js:6138`, `if (e.key === '/')`), the arrow keys
 move the selection, Enter opens what is picked and Esc closes the popover.
 文件 in this popover matches only the paths and buckets the page's own data
 carries. The page bodies are searched on 文件 itself — see
@@ -787,11 +787,11 @@ read with `stored()`'s try/catch so a `file:` page or private mode with no
 `localStorage` just has no preference. `station.nav.collapsed` holds which
 categories are folded shut — read once into `navShut` on load and written
 back by `navFoldSet` on every press of a fold button
-(`assets/station/station.js:5572`, `JSON.parse(stored('station.nav.collapsed'))`). `station.theme`
+(`assets/station/station.js:5577`, `JSON.parse(stored('station.nav.collapsed'))`). `station.theme`
 holds the three-state 跟隨系統/淺色/深色 button in the masthead's
 `div.appear` (`id="appear"`, drawn by `drawTheme`); a click cycles it and
 writes the new value
-(`assets/station/station.js:5618`, `store('station.theme', t === 'system' ? null : t);`), and the
+(`assets/station/station.js:5623`, `store('station.theme', t === 'system' ? null : t);`), and the
 stored value is read and set as `data-theme` on `<html>` before the page's
 first paint, so a reader on 深色 never sees a flash of light first
 (`assets/station/station.js:23`, `themeSet(stored('station.theme'));`).
@@ -1312,7 +1312,7 @@ and the model took the hook's answer as the user's; `claude -p` offers no
 before. An answer file older than the wait is an earlier gate's and is not
 read. A file on disk cannot post, so it says to answer in the terminal.
 
-A press says it is on its way (`answerPost`, `assets/station/station.js:6291`, `function answerPost(id, box, line, cls, form, said, failed)`): while `POST /answer` is out the gate's buttons are disabled and its line reads 送出中…. A reply ok keeps them disabled; a refusal, a network error, or 10 seconds with no reply (`SEND_MS`, the fetch aborted through an `AbortController`) gives them back. A refusal shows `<status> — <the server's text>`, with no press-again wording; only a network error (…可以再按一次) and the timeout (還沒確認送到：可以再按一次) say it may be pressed again. The state lives in `view.pg['<id>:send']`, keyed to the gate's `pending.until`, so the poll's redraw draws it as it was and a new gate starts clean.
+A press says it is on its way (`answerPost`, `assets/station/station.js:6296`, `function answerPost(id, box, line, cls, form, said, failed)`): while `POST /answer` is out the gate's buttons are disabled and its line reads 送出中…. A reply ok keeps them disabled; a refusal, a network error, or 10 seconds with no reply (`SEND_MS`, the fetch aborted through an `AbortController`) gives them back. A refusal shows `<status> — <the server's text>`, with no press-again wording; only a network error (…可以再按一次) and the timeout (還沒確認送到：可以再按一次) say it may be pressed again. The state lives in `view.pg['<id>:send']`, keyed to the gate's `pending.until`, so the poll's redraw draws it as it was and a new gate starts clean.
 
 The panel moves and resizes. Drag its title bar to move it and the grip in its bottom-right corner to resize it, with a mouse or a finger (pointer events, `touch-action:none`; `fkBoxParse`, `fkBoxClamp` and the listeners after `drawFloat` in `assets/station/station.js`). Where it ends up is `{x, y, w, h}` in `localStorage` under `station.fkBox`, restored on reload, and it is pulled back inside the window — never smaller than 260 by 160 — while dragging, when the window shrinks, and when a saved place no longer fits. A double-click on the title bar puts it back in its corner and forgets the place. `floatHtml` writes the place into the panel's own `style`, so the 3-second repaint mid-drag draws it where it is; polling and 送出答案 are untouched.
 
