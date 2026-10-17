@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # 注入先開 server、gate 漏抓代號要出聲、brain 模型對照 Implementation Plan

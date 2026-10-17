@@ -55,7 +55,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | Why fankeel ships no output style, and where its voice lives instead | [decisions/2026-09-13-no-output-styles.md](03-decisions/2026-09-13-no-output-styles.md) |
 | What caveman and SEPIA do that this plugin does not — gates, evals, an evidence ledger, thin wrappers — plus the user's own directions, three from 09-08 and five from 09-11 — the ones still open are `TODO.md` entries | [improvement-brief.md](90-agent/reference/improvement-brief.md) — *a backlog, 繁體中文* |
 | Every dated report's headline figure with a stable ID, what its scope does not cover, and which pages cite it | [sources.md](90-agent/reference/sources.md) — *the evidence ledger* |
-| How two implementers running at once was built, task by task — its design is in `docs/archive/` | `docs/99-archive/2026-08-30-parallel-build.md` — *built* |
+| How two implementers running at once was built, task by task — its design is in `docs/99-archive/` | `docs/99-archive/2026-08-30-parallel-build.md` — *built* |
 | Every fankeel session on this machine on one page, what each cost, and how an abandoned one is put down | [decisions/2026-09-04-session-station-design.md](03-decisions/2026-09-04-session-station-design.md) |
 | The ten tasks that build the station, with every test and every file written out | `docs/99-archive/2026-09-04-session-station.md` — *built* |
 | Why the station forgot registries — the lead dies with the badge — and where the page is written now: at `/fankeel`, at every verb, beside the user | `docs/99-archive/2026-09-05-station-at-hand-design.md` — *built* |
@@ -75,7 +75,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | Why the station stopped being one 454 KB file rebuilt every prompt, and why its frame ships as real files rather than as template literals | `docs/99-archive/2026-09-08-station-shell-design.md` — *built* |
 | The six tasks that made the page a static shell over a scan, with the facets, the two views and the deletions each one carried | `docs/99-archive/2026-09-08-station-shell.md` — *built* |
 | Why the station is a server you start once rather than one that times out, and why `.fankeel/` should read as four names instead of a spill of station files | `docs/99-archive/2026-09-08-ready-and-station-serve-design.md` — *built* |
-| A prompt for a later session: a `design` class with its route, an axis lock file, a mode-first routing table and the stage-skill edits — read in from caveman.zip, not yet run | [plans/2026-09-09-design-class-prompt.md](90-agent/plans/2026-09-09-design-class-prompt.md) — *design-intent, 繁體中文* |
+| A prompt for a later session: a `design` class with its route, an axis lock file, a mode-first routing table and the stage-skill edits — read in from caveman.zip, never run | `docs/99-archive/2026-09-09-design-class-prompt.md` — *archived, 繁體中文* |
 | The three tasks behind the 09-23 `## Ready` pair: the lock-wait test timed from the child's own `started`, `readBody` into `lib/body.js`, `parseArgsOrExit` into `lib/cli.js` | `docs/99-archive/2026-09-23-ready-two.md` — *built, 繁體中文* |
 | Why the six entries the 09-18 menu offered are routed by the stage each belongs to rather than flattened into six build tasks, and why storing every gate option's wording closes a statistic that was already losing its denominator | `docs/99-archive/2026-09-18-todo-six-design.md` — *built, 繁體中文* |
 | The five tasks: two correction lines on a decision page, one restatement turned into a link, the `labels` field on the `gates` record, `gateSummary()`'s fallback onto it, and the two reference pages that follow | `docs/99-archive/2026-09-18-todo-six.md` — *built, 繁體中文* |
@@ -155,7 +155,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | Where the station live view and map's directory tree landed — the split of the original ask into this task and the next (stage agents), the design choices behind auto-start and the 3 s re-read, and what build and verify caught: `serve()`'s idle timer ending test processes silently, parallel unanswered tool calls all marked `p`, a served-page test reading another session's row, the map test reddened by untracked directories, and a docs reader that needed a blind control | [decisions/2026-09-19-station-live.md](03-decisions/2026-09-19-station-live.md) — *繁體中文* |
 | Why `/fankeel` starts a detached `serve --open` inside the hook's budget instead of leaving the station a file nobody reopens, why the served page re-reads its list and the open session's detail every 3 s rather than only polling health, why an agent's `running`/`done`/`lost` state and the tool it is on come from its own transcript with no new hook, and why the phone-width layout was cut | `docs/99-archive/2026-09-19-station-live-design.md` — *built, 繁體中文* |
 | The seven tasks that build it — `lib/serve.js`'s probe and detached start, the `README.md` tree `node scripts/map.js` reads, the `/fankeel` hook that detects and opens the station, agent state read off `stepsOf`/`statesOf`, a detail memo, the served page's 3 s re-read loop, then the dispatch panel showing each agent's state and the tool it is on — with twelve fix rows | `docs/99-archive/2026-09-19-station-live.md` — *built, 繁體中文* |
-| A prompt for a later session: each stage starts from a clean context — a Sonnet controller that only dispatches, hands off through a file's path rather than its content, and leaves every gate in the main session — read from platform facts checked 2026-09-19, not yet run | [plans/2026-09-19-stage-agents-design.md](90-agent/plans/2026-09-19-stage-agents-design.md) — *design-intent, 繁體中文* |
+| A prompt for a later session: each stage starts from a clean context — a Sonnet controller that only dispatches, hands off through a file's path rather than its content, and leaves every gate in the main session — read from platform facts checked 2026-09-19, not yet run | `docs/99-archive/2026-09-19-stage-agents-design.md` — *built, 繁體中文* |
 | todo-check 驗行號與主控倍數第一次實測落在哪：`past end` 借 `lineCount`、k 2.29–2.74 夾住 2.5052、verify 站因 harness 的 `git stash` 清掉 override 而不可比，修法另開 task；真正的總花費（verify 站自己的累計值）是 opus $6.36、sonnet $8.95，k = 1.71 | [reports/patrols/2026-09-25-todo-line-and-multiplier.md](90-agent/reports/patrols/2026-09-25-todo-line-and-multiplier.md) — *繁體中文* |
 | todo-check 為什麼借 docs-check 的 `lineCount` 驗行號，以及主控倍數那一對實測怎麼跑、預算多少 | `docs/99-archive/2026-09-25-todo-line-and-multiplier-design.md` — *built, 繁體中文* |
 | Needs-a-decision 清完之後留下什麼：只拆出 fankeel-mockup、effort 分角色、docs tree 兩軸、binding 上限七條、station 答題、模型依版本分，以及 Task 13 真頁面調整時走回頭的地方 | [decisions/2026-09-26-station-redesign.md](03-decisions/2026-09-26-station-redesign.md) — *繁體中文* |
@@ -197,13 +197,13 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 它的 4 個 task | `docs/99-archive/2026-10-01-await-stage-station.md` — *built* |
 | gate-3、handoff-1（10-01）定了什麼、沒做什麼：repeat 過濾排除當前站、交接標記 `next --handoff` | [reports/patrols/2026-10-01-gate-3-handoff-1.md](90-agent/reports/patrols/2026-10-01-gate-3-handoff-1.md) — *繁體中文* |
 | 它的 7 個 task | `docs/99-archive/2026-10-01-gate-3-handoff-1.md` — *built* |
-| TODO 全表盤點（10-01）的 design：退回 build 的 brain 自己寫 gate、主控用標題轉述且 await 不疊、`suggest` 推 `class.default`、STATION 改成宣傳片風格並保留經典樣式 | [plans/2026-10-01-todo-sweep-design.md](90-agent/plans/2026-10-01-todo-sweep-design.md) — *design-intent, 繁體中文* |
-| 那份設計的十個 task | [plans/2026-10-01-todo-sweep.md](90-agent/plans/2026-10-01-todo-sweep.md) — *design-intent, 繁體中文* |
-| 10-01 盤點四件 do-now（commit-3 改 warn、關 data、試 knip 6.39.0、重量 station-8）的 plan，以及盤點列出 `TODO.md` 全表、主控在 gate 前印出全表 | [plans/2026-10-01-patrol-four.md](90-agent/plans/2026-10-01-patrol-four.md) — *design-intent, 繁體中文* |
-| 按角色拆專屬 agent（writer、implementer、mutator、mover），survey 與 design 把讀過的事實記進 `context.md` 的 design | [plans/2026-10-02-docs-writer-design.md](90-agent/plans/2026-10-02-docs-writer-design.md) — *design-intent, 繁體中文* |
-| 那份設計的十四個 task，含 brain、implementer、reviewer 按次決定的 effort | [plans/2026-10-02-docs-writer.md](90-agent/plans/2026-10-02-docs-writer.md) — *design-intent* |
-| 極小實驗 mod 的 design：四項實測（子代理吃不吃得到 `prompt.compose`、`agent.spawn` 改寫後 SendMessage 再送達、`turn.step` 改 effort、mod 與 command hooks 並存）各自的判定、記錄與回退 | [plans/2026-10-03-mod-probe-design.md](90-agent/plans/2026-10-03-mod-probe-design.md) — *design-intent, 繁體中文* |
-| 那份設計的三個 task：寫 mod、加索引、主 session 實測；報告留給下一輪 | [plans/2026-10-03-mod-probe.md](90-agent/plans/2026-10-03-mod-probe.md) — *design-intent, 繁體中文* |
+| TODO 全表盤點（10-01）的 design：退回 build 的 brain 自己寫 gate、主控用標題轉述且 await 不疊、`suggest` 推 `class.default`、STATION 改成宣傳片風格並保留經典樣式 | `docs/99-archive/2026-10-01-todo-sweep-design.md` — *built, 繁體中文* |
+| 那份設計的十個 task | `docs/99-archive/2026-10-01-todo-sweep.md` — *built, 繁體中文* |
+| 10-01 盤點四件 do-now（commit-3 改 warn、關 data、試 knip 6.39.0、重量 station-8）的 plan，以及盤點列出 `TODO.md` 全表、主控在 gate 前印出全表 | `docs/99-archive/2026-10-01-patrol-four.md` — *built, 繁體中文* |
+| 按角色拆專屬 agent（writer、implementer、mutator、mover），survey 與 design 把讀過的事實記進 `context.md` 的 design | `docs/99-archive/2026-10-02-docs-writer-design.md` — *built, 繁體中文* |
+| 那份設計的十四個 task，含 brain、implementer、reviewer 按次決定的 effort | `docs/99-archive/2026-10-02-docs-writer.md` — *built* |
+| 極小實驗 mod 的 design：四項實測（子代理吃不吃得到 `prompt.compose`、`agent.spawn` 改寫後 SendMessage 再送達、`turn.step` 改 effort、mod 與 command hooks 並存）各自的判定、記錄與回退 | `docs/99-archive/2026-10-03-mod-probe-design.md` — *built, 繁體中文* |
+| 那份設計的三個 task：寫 mod、加索引、主 session 實測；報告留給下一輪 | `docs/99-archive/2026-10-03-mod-probe.md` — *built, 繁體中文* |
 | mod 探測第四輪的 design：兩臂對照（一臂載入 mod、一臂不載入）補測 (d)，只從請求本文判斷 fankeel 的注入與 brief 有沒有送到 | `docs/99-archive/2026-10-04-mod-probe-4-design.md` — *built, 繁體中文* |
 | 那份設計的四個 task：儀器、使用者跑兩臂、報告與索引、證據帳與決策頁 | `docs/99-archive/2026-10-04-mod-probe-4.md` — *built, 繁體中文* |
 | TODO 機制改版的 design：TODO.md 去除、只留 docs/90-agent/todo/ 資料夾條目、條目內容加厚、與 station 的關係 | `docs/99-archive/2026-10-02-todo-folder-only-design.md` — *built, 繁體中文* |
@@ -232,8 +232,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 那份決定的 design：逐條回應 10-03 的三個理由、五項排序、拆 await-title 的範圍 | `docs/99-archive/2026-10-07-mod-reopen-design.md` — *built, 繁體中文* |
 | 那份設計的四個 task：拆 await-title、新決策與條目、取代舊決策與索引、使用者關閉 title-3 | `docs/99-archive/2026-10-07-mod-reopen.md` — *built, 繁體中文* |
 | 監控站掛 Chartroom 白板（10-07）定了什麼：白板在 AI 要給人看時才出現、目標取代 Mermaid；整個併進 fankeel 直接可用；寫入照監控站的 nonce，不開例外；怎麼做另開 design | [decisions/2026-10-07-station-chartroom.md](03-decisions/2026-10-07-station-chartroom.md) — *繁體中文* |
-| TODO 全表盤點（10-03）的 plan：子 session 由環境變數證明在跑、todo-check 讀不到就回報且前綴補斜線、commit.js 兩個子句補測試、balanced 註明無來源、mod 路線擱置 | [plans/2026-10-03-todo-patrol-three.md](90-agent/plans/2026-10-03-todo-patrol-three.md) — *design-intent, 繁體中文* |
-| TODO 全表盤點（10-05）的 plan：壓縮重試最多三次的測試、`/fankeel` 頁面寫不出來時 station 行說出來、兩處 timeout 與行號小錯、brain 選模型改放 Watch | [plans/2026-10-05-todo-patrol-ready-three.md](90-agent/plans/2026-10-05-todo-patrol-ready-three.md) — *design-intent, 繁體中文* |
+| TODO 全表盤點（10-03）的 plan：子 session 由環境變數證明在跑、todo-check 讀不到就回報且前綴補斜線、commit.js 兩個子句補測試、balanced 註明無來源、mod 路線擱置 | `docs/99-archive/2026-10-03-todo-patrol-three.md` — *built, 繁體中文* |
+| TODO 全表盤點（10-05）的 plan：壓縮重試最多三次的測試、`/fankeel` 頁面寫不出來時 station 行說出來、兩處 timeout 與行號小錯、brain 選模型改放 Watch | `docs/99-archive/2026-10-05-todo-patrol-ready-three.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-14）的 plan：knip 與 fast mode 兩條上游戳記重蓋、逐塊調整浮層在 land 結案、六條真機條目留在 Ready、pane-band 併回 main | `docs/99-archive/2026-10-14-todo-patrol-restamp.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-14）做了什麼、沒做什麼：逐塊調整浮層不夠直覺關閉、knip 與 fast mode 兩筆重新蓋章、pane-band 併回 main；六筆真機條目留在 Ready，留下五個缺口 | [reports/patrols/2026-10-14-todo-patrol-restamp.md](90-agent/reports/patrols/2026-10-14-todo-patrol-restamp.md) — *繁體中文* |
 | TODO 全表盤點（10-15）的 plan：站上 gate 按鈕送出中與逾時、接縫「在哪提交」記為已知限制、drive.js 首跑移到 Ready、十一筆 Blocked 重蓋戳記 | `docs/99-archive/2026-10-15-todo-patrol-gate-send.md` — *built* |
@@ -276,7 +276,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | TODO 全表盤點（10-13 第二輪）做了什麼、沒做什麼：commit.js 能提交列了舊路徑的搬家、托盤載入就展開，兩筆關閉；verify 退回三件事，留下三個缺口 | [reports/patrols/2026-10-13-todo-patrol-two.md](90-agent/reports/patrols/2026-10-13-todo-patrol-two.md) — *繁體中文* |
 | TODO 全表盤點（10-13）的 plan：面板門檻改讀 `compact.at`、Pane 四處重複、逐塊調整兩條、指南補 init 第 7 步 | `docs/99-archive/2026-10-13-todo-patrol-five.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-13）做了什麼、沒做什麼：面板門檻改讀 `compact.at`、Pane 四處重複收掉、逐塊調整點錯不再整批被退，八筆關閉；逐塊調整真機只試一半，tune-4 留在 Ready | [reports/patrols/2026-10-13-todo-patrol-five.md](90-agent/reports/patrols/2026-10-13-todo-patrol-five.md) — *繁體中文* |
-| Pane 上的 gate 介面（10-07）的 design 草稿：pending 與 answer 檔只有一份，station 頁面板與 Pane 都是它的畫面，mod 沒載入照舊 | [plans/2026-10-07-gate-pane-design.md](90-agent/plans/2026-10-07-gate-pane-design.md) — *design-intent, 繁體中文* |
+| Pane 上的 gate 介面（10-07）的 design 草稿：pending 與 answer 檔只有一份，station 頁面板與 Pane 都是它的畫面，mod 沒載入照舊 | `docs/99-archive/2026-10-07-gate-pane-design.md` — *built, then removed (06921b20), 繁體中文* |
 | TODO 全表盤點（10-12）的 design：Pane 右欄只留會改變下一步的區塊、最上面是任務全貌與每站耗時，站頁多一個對話分頁，14 條 Blocked 重蓋日期 | `docs/99-archive/2026-10-12-pane-talk-design.md` — *built, 繁體中文* |
 | 那份設計的七個 task，含 Remote Control 的探測行與使用者在真機開關一次 | `docs/99-archive/2026-10-12-pane-talk.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-12）做了什麼、沒做什麼：站頁的對話分頁與 Pane 改版做完，14 條 Blocked 重蓋日期，真機看 Remote Control 那一步留成新的 Ready，verify 來回三輪抓到什麼 | [reports/patrols/2026-10-12-todo-patrol-pane-talk.md](90-agent/reports/patrols/2026-10-12-todo-patrol-pane-talk.md) — *繁體中文* |
@@ -296,6 +296,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 沒派過的 agent 怎麼處理（10-15）定了什麼：effort 改在派工時傳、六個複本刪掉，mover、mutator、writer 只給 stage agent 派，init-scout 與 slimmer 不動；放棄了什麼 | [decisions/2026-10-15-unused-agents.md](03-decisions/2026-10-15-unused-agents.md) — *繁體中文* |
 | 開任務時同步壓縮視窗（10-14）定了什麼：start 把主機視窗對齊 `compact.at`、值變了請使用者重開 Desktop；放棄了什麼 | [decisions/2026-10-14-start-syncs-window.md](03-decisions/2026-10-14-start-syncs-window.md) — *繁體中文* |
 | Pane 配色改成安靜版（10-13）定了什麼：標題共用灰、多一行 route、拿掉「這個 session」與「用量額度」兩塊；放棄了什麼 | [decisions/2026-10-13-pane-colour.md](03-decisions/2026-10-13-pane-colour.md) — *繁體中文* |
+| 新專案的設定從聊天裡的 init 開始（10-15）定了什麼：先問開發習慣、一鍵套用建議值，再問一次要不要整理 docs；放棄了什麼 | [decisions/2026-10-15-init-quick-setup.md](03-decisions/2026-10-15-init-quick-setup.md) — *繁體中文* |
+| 路線進度只在那一站有在做事時呼吸（10-15）定了什麼：監控站六角圖示看 busy 才呼吸，Desktop 圓點 10-16 起改用形狀表示；放棄了什麼 | [decisions/2026-10-15-route-dots-breathe.md](03-decisions/2026-10-15-route-dots-breathe.md) — *繁體中文* |
 | TODO 全表盤點（10-12 第二輪）與自動壓縮做了什麼、沒做什麼：壓縮交給主機的視窗，fankeel 只在沒設時提醒；放棄了 mod 心跳與進 build 先壓；盤點沒有可直接做的，新開六筆 | [reports/patrols/2026-10-12-todo-patrol-compact-window.md](90-agent/reports/patrols/2026-10-12-todo-patrol-compact-window.md) — *繁體中文* |
 | fankeel 面板（10-12）定了什麼：輸入框上方兩行常駐、細節與 gate 的完整說明放 Pane、Pane 自己打開、終端與 Claude Desktop 都畫；放棄了什麼 | [decisions/2026-10-12-fankeel-panel.md](03-decisions/2026-10-12-fankeel-panel.md) — *繁體中文* |
 | fankeel 面板（10-11）的 design：一個 id 為 fankeel 的 Pane，/fankeel-panel 開關，gate 在上、狀態在下，改掉 10-07 那頁的 Pane id | `docs/99-archive/2026-10-11-fankeel-pane-design.md` — *built, 繁體中文* |
@@ -437,7 +439,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 0.80.0 到 0.108.1 專案檔案格式的盤點：沒有一項舊格式會壞，upgrade.js 不加步驟 | [reports/2026-10-15-upgrade-080-inventory.md](90-agent/reports/2026-10-15-upgrade-080-inventory.md) — *繁體中文* |
 | 給人看的文字可選風格（10-05）的 design：profile key `prose.style`（`writer`、`plain`、`sepia`、`custom`，預設 `writer`），把所選風格的規則注入站 agent 與 writer 的 brief，build 站不注入 | `docs/99-archive/2026-10-05-prose-style-design.md` — *built, 繁體中文* |
 | 那份設計的四個 task | `docs/99-archive/2026-10-05-prose-style.md` — *built, 繁體中文* |
-| mod 自動壓縮的四個 task：`hooks/compact.ts` 在主 session 超過 450k 且有 fankeel 任務進行中時壓縮 | [plans/2026-10-05-compact-mod.md](90-agent/plans/2026-10-05-compact-mod.md) — *design-intent, 繁體中文* |
+| mod 自動壓縮的四個 task：`hooks/compact.ts` 在主 session 超過 450k 且有 fankeel 任務進行中時壓縮 | `docs/99-archive/2026-10-05-compact-mod.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-10）的 design：逐站開 headless `claude -p` 的 driver、三個上限與 `status` 欄位、重複 helper 合併 | `docs/99-archive/2026-10-10-todo-patrol-drive-design.md` — *built, 繁體中文* |
 | 那份設計的五個 task | `docs/99-archive/2026-10-10-todo-patrol-drive.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-10）定了什麼、沒做什麼：逐站 driver 做出來但沒實跑、三處 helper 合併、knip 重蓋日期、allow 規則實測沒重現 no verdict | [reports/patrols/2026-10-10-todo-patrol-drive.md](90-agent/reports/patrols/2026-10-10-todo-patrol-drive.md) — *繁體中文* |
@@ -449,7 +451,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | TODO 全表盤點（10-16）的 design：預載模組給測試的同步子行程預設逾時，`package.json` 兩個 test script 帶 `--require` | `docs/99-archive/2026-10-16-test-subprocess-timeout-design.md` — *built, 繁體中文* |
 | 那份設計的一個 task | `docs/99-archive/2026-10-16-test-subprocess-timeout.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-16，子行程逾時）定了什麼、沒做什麼：測試的同步子行程有了預設逾時，其餘八條 Ready 留給使用者，serve 測試的偶發失敗登記成 Watch | [reports/patrols/2026-10-16-todo-patrol-subprocess-timeout.md](90-agent/reports/patrols/2026-10-16-todo-patrol-subprocess-timeout.md) — *繁體中文* |
-| 注入先開 server、gate 漏抓代號要出聲、brain 模型對照的三條 TODO：注入先量冷啟動與慢磁碟再讓 `/fankeel` 先問 station 再寫頁，`todoIds` 讀失敗浮出警告並把 2800 毫秒門檻寫成常數，brain 用 opus 或 sonnet 的對照腳本由使用者親手跑 | [plans/2026-10-05-inject-plain-brain.md](90-agent/plans/2026-10-05-inject-plain-brain.md) — *design-intent, 繁體中文* |
+| 注入先開 server、gate 漏抓代號要出聲、brain 模型對照的三條 TODO：注入先量冷啟動與慢磁碟再讓 `/fankeel` 先問 station 再寫頁，`todoIds` 讀失敗浮出警告並把 2800 毫秒門檻寫成常數，brain 用 opus 或 sonnet 的對照腳本由使用者親手跑 | `docs/99-archive/2026-10-05-inject-plain-brain.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-09）定了什麼、沒做什麼：九條 Ready 做掉、四條待決定定案、brief-3 留給使用者、stage-agents-10 仍封鎖、rules-1 新開 | [reports/patrols/2026-10-09-todo-patrol-nine.md](90-agent/reports/patrols/2026-10-09-todo-patrol-nine.md) — *繁體中文* |
 | TODO 全表盤點（10-09）的 plan：brief 散文搬進 brain 檔、ledger 走 registry 根、suite 記紅測名、壓縮 fixture、三頁更新、title hook 看 mtime、第五個 Agent 的 ask gate、四條結案、Pane 草稿核准 | `docs/99-archive/2026-10-09-todo-patrol.md` — *built, 繁體中文* |
 | 六處頁面仍把 4 說成上限（10-09）定了什麼：七句與三個圖節點改成預設四個，哪些句子讀來像上限但沒改、為什麼 | [reports/patrols/2026-10-09-rules-ceiling.md](90-agent/reports/patrols/2026-10-09-rules-ceiling.md) — *繁體中文* |
@@ -479,7 +481,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 一次性 PreToolUse hook 加真的 `claude -p` 量出來：`updatedInput.description` 不帶 `permissionDecision` 也生效，背景列表、tool result 和 `meta.json` 拿到改寫後的標題、模型自己的 tool_use 留原文；`CLAUDE_CODE_SUBAGENT_MODEL` 排在 agent 檔 `model:` 之後；實際派一個 reader 和一個 general-purpose，前綴與 transcript 相符 | [reports/2026-09-29-title-probe.md](90-agent/reports/2026-09-29-title-probe.md) — *a dated snapshot, 繁體中文* |
 | 只設 `CLAUDE_CODE_SUBAGENT_MODEL`、agent 檔沒有 `model:` 的對照 `claude -p` 量測，和 title-probe 的順序結論互為對照 | [reports/2026-09-29-subagent-model-env.md](90-agent/reports/2026-09-29-subagent-model-env.md) — *a dated snapshot, 繁體中文* |
 | 09-30 Ready 十一條的四次量測：serve detached 測試在 fed438fc 乾淨 worktree 全套三次、station-wizard-motion 在 HEAD 全套三次、`hooks/inject.js` 閒置與全套負載下的耗時、8806240d 之後每個 subagent 的 context 峰值與最貴 agent 佔比 | [reports/2026-09-30-ready-eleven-measurements.md](90-agent/reports/2026-09-30-ready-eleven-measurements.md) — *a dated snapshot, 繁體中文* |
-| What every earlier version was for, design and task list both | `docs/archive/`, one pair per release from 0.24.0 — including the directory tree, measured against 43 real README files |
+| What every earlier version was for, design and task list both | `docs/99-archive/`, one pair per release from 0.24.0 — including the directory tree, measured against 43 real README files |
 | Why any of it was built this way | [decisions/fankeel-shell.md](03-decisions/fankeel-shell.md) |
 | Why three lib modules with one caller each were not folded into their callers | [decisions/fankeel-shell.md](03-decisions/fankeel-shell.md) — *one caller is not evidence on its own* |
 | Why a hook says nothing when it is handed a session id it cannot find | [decisions/fankeel-shell.md](03-decisions/fankeel-shell.md) — *a hook that cannot tell a wrong id from no plugin* |
@@ -554,6 +556,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 - [沒派過的 agent 怎麼處理（10-15）：effort 改在派工時傳，六個複本刪掉](03-decisions/2026-10-15-unused-agents.md)
 - [開任務時同步壓縮視窗（10-14）：task.js start 把主機視窗寫成 compact.at](03-decisions/2026-10-14-start-syncs-window.md)
 - [Pane 的配色改成安靜版，多一行 route，拿掉兩塊（10-13）](03-decisions/2026-10-13-pane-colour.md)
+- [新專案的設定從聊天裡的 init 開始（10-15）：先問開發習慣，再問要不要整理 docs](03-decisions/2026-10-15-init-quick-setup.md)
+- [路線進度只在那一站有在做事時呼吸（10-15）：監控站六角圖示看 busy，Desktop 圓點 10-16 起不再呼吸](03-decisions/2026-10-15-route-dots-breathe.md)
 
 ### 其他
 

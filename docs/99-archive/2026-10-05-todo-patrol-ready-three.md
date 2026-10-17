@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # TODO 全表盤點（10-05）：壓縮重試上限、write 失敗的 station 行、兩處 timeout 與行號小錯 Implementation Plan

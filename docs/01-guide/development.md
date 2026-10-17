@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-10-10
+last_verified: 2026-10-18
 source_of_truth: package.json, .claude-plugin/plugin.json, knip.json, scripts/todo-check.js, scripts/version.js, scripts/skills-check.js, scripts/stage-registry.js
 ---
 
@@ -268,8 +268,8 @@ not, and `knip --include exports` gives 156 on both versions: the tree grew, the
 tool did not change. On 2026-10-01 knip 6.39.0 still does not: `knip --trace-export clearBadge` still finds no imports, and `knip --include exports` gives 196. One barrel shows it with one variable changed:
 `knip --trace-export badgeWord`, destructured at `tests/badge.test.js:9`,
 returns `import[badgeWord] ⎆ ✓`; `knip --trace-export clearBadge`, reached as
-`badge.clearBadge`, returns `(no imports found) ✗` — and `scripts/task.js:169`
-and `hooks/inject.js:74` call it. The shape is not rare here: counting lines
+`badge.clearBadge`, returns `(no imports found) ✗` — and `scripts/task.js:159`
+and `hooks/inject.js:76` call it. The shape is not rare here: counting lines
 under `tests/` that bind a module from `../lib/`, `../scripts/` or `../hooks/`
 to a plain identifier rather than destructuring it gives 60 lines across 40 of
 the 74 test files, against 35 destructured lines across 26. a TODO entry carries

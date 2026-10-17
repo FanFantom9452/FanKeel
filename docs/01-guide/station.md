@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-27
+last_verified: 2026-10-18
 source_of_truth: docs/90-agent/reference/station.md, assets/station/station.js, lib/station.js
 ---
 
@@ -21,7 +21,7 @@ source_of_truth: docs/90-agent/reference/station.md, assets/station/station.js, 
 
 | view | 網址 | 看什麼 |
 |---|---|---|
-| 儀表板 | `#/` | 四張卡：進行中幾個、幾個 gate 在等你、近 30 天花費、最近 5 個 session。每張卡的數字等於它「查看全部」那一頁的數字 |
+| 儀表板 | `#/` | 預設五張卡：進行中、等你回答、可以開工、近 30 天花費、最近 sessions；另有八種卡片可加（撞檔與共用檔案、依專案花費等）。按「編輯版面」可排順序、隱藏、用「新增卡片」加入。每張卡的數字等於它「查看全部」那一頁的數字 |
 | 進行中 | `#/live` | 最上面是等你回答的 gate，沒有就一行「沒有在等你的 gate」；然後「正在跑」，每個 session 一列，route 畫成站點，目前那站外圈高亮並標在站時間；每列下方列出現在在跑的 stage agent 與 subagent，沒有就一行「主 session 自己在做」；「可能已經停了」放 `live?` 與 `stale`，stale 的 registry 有 clear 按鈕；最下面是沒有 session 的 registry，一排名字，點了到該專案頁 |
 | 最近 | `#/sessions` | 近 30 天有花費、或還在 live 的 session，新的在上 |
 | 全部清單 | `#/list` | 可排序的表，點一列在旁邊看細節 |

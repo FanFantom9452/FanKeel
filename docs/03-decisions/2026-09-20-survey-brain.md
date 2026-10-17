@@ -11,7 +11,7 @@ last_verified: 2026-09-20
 設計見 [../archive/2026-09-19-survey-brain-design.md](../99-archive/2026-09-19-survey-brain-design.md)，
 計畫見 [../archive/2026-09-19-survey-brain.md](../99-archive/2026-09-19-survey-brain.md)，
 量測見 [../reports/2026-09-20-survey-brain-ab.md](../90-agent/reports/2026-09-20-survey-brain-ab.md)。
-其餘各站要不要跟進，仍在 [../plans/2026-09-19-stage-agents-design.md](../90-agent/plans/2026-09-19-stage-agents-design.md)，
+其餘各站要不要跟進，仍在 [../plans/2026-09-19-stage-agents-design.md](../99-archive/2026-09-19-stage-agents-design.md)，
 `TODO.md` 的 `## Needs a decision` 有一條。
 
 ## 一、定案

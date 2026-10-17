@@ -7,7 +7,7 @@ last_verified: 2026-09-19
 
 原本的請求一次要兩件事：station 即時監看，和主控／站 agent 的分工。09-19 在
 `/fankeel` 上開工，分支 `station-live`，路線七站全走，先把能落地的一半做完，
-第二件留給下一個 task：[../plans/2026-09-19-stage-agents-design.md](../90-agent/plans/2026-09-19-stage-agents-design.md)。
+第二件留給下一個 task：[../plans/2026-09-19-stage-agents-design.md](../99-archive/2026-09-19-stage-agents-design.md)。
 設計見 [../archive/2026-09-19-station-live-design.md](../99-archive/2026-09-19-station-live-design.md)，
 計畫見 [../archive/2026-09-19-station-live.md](../99-archive/2026-09-19-station-live.md)。
 

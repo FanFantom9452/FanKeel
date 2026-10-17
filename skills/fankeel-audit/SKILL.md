@@ -4,7 +4,7 @@ description: Audit documentation against the code it describes — dead referenc
 argument-hint: "[--root <dir>] [--since <days>]"
 version: 0.111.19
 status: current
-last_verified: 2026-10-02
+last_verified: 2026-10-18
 source_of_truth: scripts/docs-check.js, scripts/docs-audit.js, scripts/residue.js, scripts/memory-check.js
 ---
 
@@ -118,8 +118,8 @@ after it was written.
 
 A memory entry `memory-check` finds wrong is corrected by adding a
 `**Corrected YYYY-MM-DD:**` line naming what was wrong, never by a silent
-rewrite — `workflow-run-meta-json.md`'s own corrected line is the working
-example. Deletion is the user's call: remove only the entry the user points
+rewrite, for example `**Corrected 2026-10-18:** <what was wrong, and what is
+true now>`. Deletion is the user's call: remove only the entry the user points
 at from the findings, never one inferred from a scanner alone.
 
 ### What every session loads

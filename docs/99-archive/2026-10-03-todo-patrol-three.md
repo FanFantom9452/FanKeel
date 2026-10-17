@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # TODO 全表盤點（10-03）：子 session 開任務、todo-check 吞錯、balanced 無來源、mod 擱置 Implementation Plan

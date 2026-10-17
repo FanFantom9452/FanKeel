@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-28
+last_verified: 2026-10-18
 source_of_truth: lib/overlap.js, lib/guard.js, lib/live.js, lib/registry.js, lib/dirty.js, scripts/task.js, scripts/orient.js, hooks/touch.js, hooks/inject.js, scripts/commit.js
 ---
 

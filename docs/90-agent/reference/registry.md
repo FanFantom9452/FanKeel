@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-10-13
+last_verified: 2026-10-18
 source_of_truth: lib/registry.js, lib/station.js, lib/render.js, lib/context.js, lib/dirty.js, lib/live.js, lib/usage.js, lib/profile.js, lib/spend.js, scripts/task.js, scripts/spend.js, hooks/touch.js, hooks/inject.js, hooks/carry.js, hooks/gate.js, hooks/resume.js, hooks/leave.js
 ---
 
@@ -232,7 +232,7 @@ session dies at a gate — is overwritten by the next one rather than repaired:
 the interval it measured has no end, so there is nothing to recover.
 
 `inflight` — `{ stage, at, agentId?, lap?, group?, kind? }` — is the other transient field, and not a
-cost. `hooks/brief.js` writes it through `registry.markInflight` when a
+cost. It is one object normally and becomes an array of them when a second mark is live at once (one per build group); `registry.inflights()` reads both shapes. [subagents.md](subagents.md) is the source for how marks are cleared. `hooks/brief.js` writes it through `registry.markInflight` when a
 `fankeel-brain` starts, skipping one it knows is nested (depth 2+); two callers clear it through `registry.clearInflight`,
 each for a different end: `hooks/gate.js` deletes the whole record once that
 stage's handoff carries a real gate, and `scripts/await.js`'s `main()` clears
@@ -263,7 +263,7 @@ Five more fields, written once, by `hooks/leave.js` at `SessionEnd`, and by
 nothing else:
 
 - `ended` — `{ at, reason }`, `reason` is any string the payload
-  carries, cut to 32 characters, and `other` only when it is missing or not a
+  carries, cut to 32 characters, and `other` only when it is missing, empty or not a
   string; `clear`, `logout` and `prompt_input_exit` are the values seen. Written on whatever entry the session owns,
   stood down or not; on one still `active: true` it is what the station shows
   as `stale`.
@@ -335,7 +335,7 @@ nothing else:
   (60), oldest dropped. Written only when the session ends cleanly, because
   `hooks/leave.js` runs at `SessionEnd` alone — a session that never reaches
   it carries no `gates` at all. While the transcript is still there, the
-  detail page's own replay (`lib/detail.js:631`) is still the source for the
+  detail page's own replay (`replay.eventsOf`, `lib/detail.js:680`) is still the source for the
   same questions and answers. Once it is gone, [station.md](station.md)'s
   `gateSummary()` reads `labels` back from here instead — that is why they
   are stored: without them the `swapped` card's denominator would quietly

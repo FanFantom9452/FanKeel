@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # Dedicated agents per kind of write, and effort by task — Implementation Plan

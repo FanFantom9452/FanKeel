@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-27
+last_verified: 2026-10-18
 source_of_truth: docs/02-architecture/pipeline.md, docs/90-agent/reference/registry.md, lib/stages.js, README.md
 ---
 

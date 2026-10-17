@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # mod 自動壓縮主 session Implementation Plan

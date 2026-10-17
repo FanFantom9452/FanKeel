@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # TODO 全表盤點：退回 build 的 gate、主控轉述、suggest 推 class、STATION 改版 Implementation Plan

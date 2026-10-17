@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # TODO 盤點四件與盤點全表 Implementation Plan

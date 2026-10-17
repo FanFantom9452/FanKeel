@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-10-06
+last_verified: 2026-10-18
 source_of_truth: lib/station.js, scripts/station.js, hooks/leave.js, lib/usage.js, lib/registry.js, lib/prices.js, lib/clear.js, lib/profile.js, lib/serve.js, hooks/inject.js, lib/detail.js, lib/replay.js, assets/station/station.js, lib/docsearch.js
 ---
 
@@ -438,7 +438,7 @@ since)` in `lib/detail.js` from three things: the agent's own transcript —
 dispatch came back — whether the session is live, and `since`, the session's
 current process's start (`startedAt` in Claude Code's
 `sessions/<pid>.json`). It reads no `.meta.json`; that file links an agent's
-file to its dispatch row (`lib/usage.js:494`).
+file to its dispatch row (`lib/usage.js:630`).
 Through `parentAgentId`, the same file also names the stage agent that
 dispatched it — the row the 派工 table indents this row under, one level
 deep. No hook writes any of
@@ -757,7 +757,7 @@ carries none, so `navHtml`
 (`assets/station/station.js:1650`, `function navHtml(active, c, ui) {`) renders it as a plain link straight to
 `#/settings` rather than a toggle. Only Sessions and 花費 fold — a category
 with `fold` is one button, the whole row, that only opens and shuts; its
-kids do the navigating (`assets/station/station.js:1458`), and it never
+kids do the navigating (`navHtml`, `assets/station/station.js:1650`), and it never
 navigates on its own. A folding category's kids
 also appear as a subtabs strip under the page itself
 (`assets/station/station.js:1678`, `function subtabsHtml(active) {`) — the
@@ -1111,9 +1111,9 @@ the page `404`, and, in TODO.md mode only (`addTodo`), a `TODO.md` with no `## N
 Where the project keeps entry files — its `.fankeel/docs.json` declares a
 bucket with role `todo` and the folder exists — the same form writes one
 instead: `lib/todo.js` makes a `decision` entry from the text (a leading
-`〔word〕` becomes its label) and the link, and regenerates `TODO.md`. The
-same before-and-after `check()` decides, and a refused entry's file is
-removed and the index rewritten. A clean one answers `201` with the new
+`〔word〕` becomes its label) and the link, and writes only that entry file; no `TODO.md` is generated in this mode. The
+same before-and-after `check()` decides, and an entry that adds a problem has
+its file removed again. A clean one answers `201` with the new
 entry's id. The project page's TODO panel reads each project's `todos` row
 off the data file: open entries in the index's order, and done ones newest
 first where the project keeps entry files. Two sub-routes open the project

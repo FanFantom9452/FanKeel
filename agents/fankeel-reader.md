@@ -5,7 +5,7 @@ tools: [Read, Grep, Glob, Bash]
 model: sonnet
 effort: medium
 status: current
-last_verified: 2026-09-27
+last_verified: 2026-10-18
 source_of_truth: lib/render.js
 ---
 
@@ -33,9 +33,9 @@ its list does not name, the gap stands. `Edit`, `Write` and
 ## Searching
 
 Run `<plugin>/scripts/survey.js <term>...` before turning to `Grep` for the
-same terms — it caps what comes back, though it does not skip
-`docs/archive/**`, so pass over archive hits in its output. Where `Grep` is
-still the right tool, exclude `docs/archive/**` and call it
+same terms — it caps what comes back and already excludes archive, plan,
+decision and report roles. Where `Grep` is still the right tool, exclude the
+archive bucket (`docs/99-archive` here) and call it
 with `output_mode: "files_with_matches"` before asking for `content`: a
 whole-repository `Grep` for one term returns hundreds of KB into a context
 the parent pays for, and which files matched is usually the answer on its

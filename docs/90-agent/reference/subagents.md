@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-10-17
+last_verified: 2026-10-18
 source_of_truth: hooks/brief.js, lib/render.js, lib/stages.js, hooks/carry.js, lib/plantasks.js, lib/requires.js, lib/usage.js, lib/prices.js, scripts/judge.js, scripts/await.js, scripts/commit.js
 ---
 
@@ -105,7 +105,7 @@ read lets the dispatch through.
 `fankeel-writer`, `fankeel-implementer`, `fankeel-mutator` and `fankeel-mover`
 are a stage's hands, one per kind of write, and each replaces a
 `general-purpose` implementer its stage used to send (`lib/stages.js`,
-`STAGE_AGENTS`; [the design](../plans/2026-10-02-docs-writer-design.md)). The
+`STAGE_AGENTS`; `docs/99-archive/2026-10-02-docs-writer-design.md`). The
 writer rewrites one page under `docs/01-guide/` or `README.md` for a person.
 The implementer builds one plan task. The mutator applies one mutation, runs
 one `node --test` command and restores the file, with `Read`, `Edit` and `Bash`
@@ -162,7 +162,9 @@ verbatim:
 node scripts/judge.js record --session <id> --brief <path> --answer <path|-> --slug <a-z0-9-> [--model <m>] [--root <dir>] [--project <dir>]
 ```
 
-It writes `docs/judgements/<date>-<slug>.md`: frontmatter carrying `judged`,
+It writes `docs/<judgements bucket>/<date>-<slug>.md` — in this repo
+`docs/90-agent/judgements/`, the `docs.json` bucket ending `/judgements`
+(a `judgements` folder under `docs/` only where none is declared; `scripts/judge.js:95-96`): frontmatter carrying `judged`,
 `model`, `agent: fankeel-judge`, `task`, `session` and `stage`, then the brief
 and the answer copied in whole rather than summarised
 (`scripts/judge.js:97-117`, `answer.trimEnd(),`).
@@ -559,7 +561,7 @@ dispatched it and the collision warning keeps covering them.
 
 `/fankeel-ask` interrupts whatever stage you are in, puts one question to a
 one-shot judge running on whatever `judge.model` says — Fable unless the
-profile says otherwise — files the answer verbatim under `docs/judgements/`,
+profile says otherwise — files the answer verbatim under the `docs/<judgements bucket>/` (`docs/90-agent/judgements/` here),
 and hands it back to the stage. It never opens the gate; that stays yours, at
 the end of the stage, as always.
 
@@ -693,17 +695,17 @@ Every brain is told to end its report with that block.
 A `design` or `plan` brain may also write one file under the plan bucket, named in an
 `artifact:` rule, and commits it through a commit file as `build` does; an `audit`
 or `land` brain has no Edit and no git write, so `STAGE_AGENTS` gives them
-`fankeel-fixer` (audit only) and an implementer. Whether `land` works this way has
-not been run.
+`fankeel-fixer` (audit only) and an implementer. `land` was run this way in the five
+controlled tasks of 2026-10-03/04 (see the last section).
 
 A brain's `Write` is only ever its handoff, `build`'s/`design`'s/`plan`'s commit
-file, and `design`'s/`plan`'s one plan bucket file (`docs/90-agent/reference/subagents.md:46`
+file, and `design`'s/`plan`'s one plan bucket file (`docs/90-agent/reference/subagents.md:48`
 above) — never the `mockup.html` a frontend `design` task's `design.mockup` rule
 asks for, and `agentsFor('design')` gives a controlled design station only a
 reader and a reviewer, no agent that can write a page. So a controlled design
 station has that rule filtered out rather than handed to a brain that cannot
 follow it; an implementer path for it waits on an actual frontend task landing
-under a controlled design station (`TODO.md`'s `下一個前端任務` section).
+under a controlled design station (the `下一個前端任務` entry in `docs/90-agent/todo/design-2.md`).
 
 The agents a stage agent dispatches — readers and reviewers, and on `build` also a render reviewer, a fixer and implementers, on `verify` a render reviewer, a verifier, a fixer and an implementer, on `audit` a fixer and an implementer, on `land` an implementer — are a second layer down, but their transcripts land
 in the same `subagents/` directory as the stage agent's, each `.meta.json`
@@ -720,11 +722,11 @@ tool_use — measured 2026-09-27 on 290 finished agents in one project, 288
 ending `end_turn` and 2 ending `stop_reason: null` with text alone — and
 running otherwise, unless the file has not moved in 20 minutes.
 
-`survey` is still the only stage this has ever run for, and that is exactly
-why the builtin stayed `false` rather than moving to `true` or `all`, for
-three checkable reasons.
+`survey` was the only stage this had been run for when the builtin was left at
+`false` rather than moved to `true` or `all`, for three checkable reasons (five
+tasks have since run every stage controlled — see the last section).
 
-The one stage that has been measured came back a tie, not a win.
+The one stage that was measured then came back a tie, not a win.
 [reports/2026-09-20-survey-brain-ab.md](../reports/2026-09-20-survey-brain-ab.md)'s
 last round — after four rounds of fixing the stage agent's brief — found the
 controlled arm's cost within 1.05× and 0.97× of the uncontrolled one and its
@@ -742,7 +744,7 @@ landed on this same branch) — `stage.agents` can now name `build` or
 `verify`, but nothing has measured either one there, and those are the two
 stages a default would actually move the number on.
 
-And `build` can be tried now, but has not been run end to end: `STAGE_AGENTS` in
+And `build` could be tried then, before any run end to end: `STAGE_AGENTS` in
 `lib/stages.js` gives its stage agent readers, reviewers, a render reviewer, a
 fixer and implementers, all through the `Agent` tool. The guard above locks the
 *controller* out of `Edit`, `Write` and `NotebookEdit`, and out of a shell command that writes; the stage agent has no
@@ -813,17 +815,18 @@ No stage agent and no implementer is to write any settings file: that is a rule 
 the spec, and no hook enforces it. The fallback an earlier TODO entry asked about, a
 report returned in the message when the write fails, is not built.
 
-The installed 0.74.0 has no `STAGE_AGENTS`, and `profile show` reads the list as `false`
-there, so the order is a release first and the switch after: the user releases (see
+The installed 0.74.0 had no `STAGE_AGENTS` (it exists now, `lib/stages.js:719`, and the
+plugin is 0.111.19), and `profile show` read the list as `false` there, so the order
+then was a release first and the switch after: the user released (see
 `Releasing` in [development.md](../../01-guide/development.md)), and only once the installed copy
-carries `STAGE_AGENTS` sets the profile with
+carried `STAGE_AGENTS` set the profile with
 `node scripts/task.js profile set stage.agents all`, which writes the project's profile.
 The builtin stays `false`.
 What the switch costs is read afterwards from the run it enables, with
 `node scripts/ctx.js <session> --by-stage` and that run's `modelUsage`, against the
 thresholds the design set (a controller of at most 60 turns and a last gate below
 200k — [2026-09-22-all-stages-brain-promoted.md](../../03-decisions/2026-09-22-all-stages-brain-promoted.md)
-has the current record). That run has not happened.
+has the current record). That run happened as the five tasks of 2026-10-03/04 below.
 
 ## A user's own sentence, behind `prompt.*`
 
@@ -933,7 +936,7 @@ section records them.
   the agents' own edits are sidechain and not replayed either. `scripts/ctx.js` prints
   the controller's series and one summed figure for the agents by default; given a
   single agent's transcript file, `node scripts/ctx.js <agent 檔>` now prints that
-  agent's own series directly, which covers the trigger in `TODO.md` for a stage
+  agent's own series directly, which covers the trigger in `docs/90-agent/todo/` for a stage
   agent's own context past 400k. Of 24 resumed agents, 21 had one notification per dispatch (3 had one fewer),
   a resume never re-injected the brief into the agent's context, and the
   transcript keeps the dispatch-time title.

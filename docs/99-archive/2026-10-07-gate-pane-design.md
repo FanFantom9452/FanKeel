@@ -1,5 +1,5 @@
 ---
-status: planned
+status: archived
 approved: 2026-10-09
 last_verified: 2026-10-07
 ---

@@ -629,7 +629,7 @@ shape）、`docs/02-architecture/pipeline.md`。
 > **補記（2026-09-09）**：caveman.zip 的另外兩份讀進來了——
 > [軸表盤點](../reports/2026-09-09-design-axis-inventory.md)（六個已安裝設計 skill 的
 > 16 軸盤點，與四個真正的缺口）與
-> [design-class prompt](../plans/2026-09-09-design-class-prompt.md)（四項交付物、三個
+> `docs/99-archive/2026-09-09-design-class-prompt.md`（四項交付物、三個
 > 必須先答的設計問題，寫成給後續 session 跑的 prompt）。上面的待決清單由那份
 > prompt 接手；TODO 的 design class 條目連到這一節，因為 todo-check 不讓條目直接
 > 指向 plan。
@@ -989,7 +989,7 @@ call、subagent 無 registry entry）今天全部沒被驗證過。A11–A14 全
 東西會回頭重驗。
 
 - 本專案 09-11 的索引有 76 條，多數引了檔名、旗標、行號或量測數字，正是最會過期的那一類。
-- fankeel 只負責把耐久的事實送去那裡：`skills/fankeel/SKILL.md:632`（`## Task memory`）那一節的路由表把
+- fankeel 只負責把耐久的事實送去那裡：`skills/fankeel/SKILL.md:631`（`## Task memory`）那一節的路由表把
   durable fact 指向 memory 目錄，`lib/registry.js:26`（`Task memory is two fields on the entry`）的註解說明 fankeel 不另開一份記憶。
   讀、稽核、清理那個目錄的程式碼一行都沒有。
 
@@ -1066,7 +1066,7 @@ transcript 在各 session 目錄的 `subagents/` 底下，workflow 的在 `subag
 
 **`caveman.zip` 已經讀完了**：repo 根目錄那個 zip（gitignored）只有四份 markdown，沒有
 skill、hook 或 agent。2026-09-09 的 `65f1490` 已經把它讀進 repo：兩份併進本檔，另外兩份
-變成 `docs/90-agent/plans/2026-09-09-design-class-prompt.md` 與
+變成 `docs/99-archive/2026-09-09-design-class-prompt.md` 與
 `docs/90-agent/reports/2026-09-09-design-axis-inventory.md`。zip 裡沒有還沒讀過的東西。
 
 **要盤點的是裝著的外掛**：caveman 1.0.1，20 個 skill、3 個 agent、6 個 command、2 個

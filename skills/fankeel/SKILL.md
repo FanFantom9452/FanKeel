@@ -3,7 +3,7 @@ name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, moving to the next stage, or the station — "show all sessions", "which sessions are still open", "clean up old sessions", "監控站". Runs a task through a route it picks from survey, design, plan, build, verify, audit and land, and warns — optionally blocks — when another live session shares your files.
 version: 0.111.19
 status: current
-last_verified: 2026-10-02
+last_verified: 2026-10-18
 source_of_truth: lib/stages.js, lib/registry.js, lib/live.js, scripts/task.js, lib/guard.js, docs/90-agent/reference/collisions.md, docs/90-agent/reference/registry.md, docs/90-agent/reference/station.md, docs/90-agent/reference/statusline.md
 ---
 
@@ -161,7 +161,7 @@ A fifteenth and sixteenth, `gateAt` and `inflight`, are deliberately not
 below. `gateAt` exists only between a question going out and its answer
 arriving — and a record that lacks it when the answer arrives is what the
 `gate:` line under **While the mode is on** reports. `inflight` —
-`{ stage, at, agentId?, lap?, group? }` — is the other transient field: `hooks/brief.js`
+`{ stage, at, agentId?, lap?, group?, kind? }`, which becomes an array of marks while several build groups run — is the other transient field: `hooks/brief.js`
 marks it when a stage agent starts and `hooks/gate.js` clears it when that
 stage's handoff arrives.
 
@@ -545,10 +545,9 @@ For the *code* half:
 | | |
 |---|---|
 | always | three `fankeel-reviewer` lenses over the whole tree, cuts only — the fankeel-audit skill names them. Its scope is over-engineering only — it says nothing about documents. |
-| graphify or codegraph installed | query the graph rather than grepping. |
 
 `node <plugin>/scripts/task.js show` is not the place to look for this; the audit
-rules name the tools, and the rules are injected while you are in that stage.
+rules name knip and deptry, and the rules are injected while you are in that stage.
 
 **Offer the cleanup at the gate, not before it.** A deep pass that archives
 plans, merges two pages into one source of truth and deletes orphans is a large
