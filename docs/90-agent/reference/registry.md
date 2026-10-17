@@ -101,24 +101,12 @@ this session's id. It is shown as data and never as an instruction, and it lasts
 long as the taker is live, since only live neighbours are listed.
 
 A third field is written by nobody the user talks to. `claims` holds every file
-this task has edited — at most sixty, each recorded whole and never truncated,
-because nothing here is a path a human retypes. `claims` and `seen` reach that cap
-from opposite directions. A path arriving on its own drops the oldest to make
-room (`lib/registry.js:704`, `data[field] = list.slice(-max);` in the shared `appendUnique` helper); a git pass holding more than sixty is refused
-whole rather than trimmed (`lib/dirty.js:184`, `declined: written.length`), because trimming it would evict
-every earlier path in `seen` and put build output in its place.
-[collisions.md](collisions.md) is the page for that. `hooks/touch.js` appends to it,
-which is why the table above lists a hook rather than a command as its writer.
-`hooks/touch.js` adds a path the first time an edit lands on it.
-`hooks/inject.js` writes, once a prompt, every path git reports dirty whose
-mtime is later than the task's `started` into a field of its own, `seen` — the
-writes that reached the disk without any tool a hook matches, a `sed` or a
-`node -e` or a build script. Git names no writer, and a shared tree shows every
-session every dirty file, so `seen` is shown as weak and never enters `claims`.
-It counts toward a collision only where no live session in the same tree holds the path in its own `claims` or `seen` (`effectiveClaims`, `lib/guard.js`).
-The same cap holds it, sixty, and `task` clears it with `claims`. No subcommand sets it. `adopt` carries it across, because where the work went belongs
-to the task rather than to the session, and `task` clears it, because a task that
-has just been renamed has touched nothing yet.
+this task has edited and `seen` every path git reports written since the task's
+`started` that no hook saw; `hooks/touch.js` and `hooks/inject.js` write them,
+which is why the table above lists hooks rather than a command as the writer.
+Both hold sixty paths, `task` clears both and `adopt` carries both across.
+[collisions.md](collisions.md) is the page for what each means and how the cap
+behaves.
 
 # What a stage cost
 

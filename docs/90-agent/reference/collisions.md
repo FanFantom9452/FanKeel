@@ -74,6 +74,14 @@ mattering.
 | cost | one `git status`: **+41ms a prompt**, measured end to end through the hook on Windows 2026-08-28, 185ms before and 226ms after. Near enough a constant — `git status` alone runs 124ms against a 14-file repository and 131ms against a 106-file one, so what is paid for is starting git rather than walking the tree, and `-uall` adds nothing to it |
 | weight | weak. Git names no writer and a shared tree shows every session every dirty file, so a `seen` path counts toward a collision only where no live session in the same tree holds it in its own `claims` or `seen` — `effectiveClaims` in `lib/guard.js`. Two sessions that both only saw a file do not collide over it. It never blocks: `blockers` in `lib/guard.js` reads a neighbour's `claims` only, so under `ask` or `deny` a `seen` path warns and the edit goes through. |
 
+`claims` and `seen` each hold sixty paths, every one stored whole because none
+is a path a human retypes. A path that arrives on its own, from
+`hooks/touch.js`, drops the oldest to make room; a git pass holding more than
+sixty is refused whole rather than trimmed, as the table says. `task` clears
+both fields, because a task that has just been renamed has touched nothing yet;
+`adopt` carries both across, because where the work went belongs to the task
+rather than to the session; no subcommand sets either.
+
 Two limits, and they are why this is a second path rather than a replacement.
 A claim found this way lands **on the next prompt**, where `touch.js` records it
 as the edit lands — the write happens mid-turn and nothing looks until the turn
