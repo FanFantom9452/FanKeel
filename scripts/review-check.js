@@ -11,12 +11,12 @@
 // findings and only findings. The reviewer pastes the output and judges only
 // what the tables cannot: whether each cited test asserts the effect.
 const fs = require('node:fs');
-const { execFileSync } = require('node:child_process');
 const { parseArgs } = require('node:util');
 const { tables, render } = require('../lib/reviewcheck.js');
+const { repoRoot } = require('../lib/tracked.js');
 
 function topLevel() {
-    try { return execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim(); } catch (e) { return process.cwd(); }
+    return repoRoot(process.cwd()) || process.cwd();
 }
 
 const usage = (text) => ({ text: 'review-check: ' + text, ok: false, code: 2 });
