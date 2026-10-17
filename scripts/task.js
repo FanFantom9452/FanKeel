@@ -21,6 +21,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { readObject } = require('../lib/json.js');
+const { posix } = require('../lib/tracked.js');
 const { parseArgs: parseArgv } = require('node:util');
 const { execFileSync } = require('node:child_process');
 
@@ -570,7 +571,7 @@ function onboardLine(projectRoot, configDir) {
         return null;
     }
     if (!r || r.skipped || !r.failing.length) return null;
-    const where = projectRoot.split(path.sep).join('/');
+    const where = posix(projectRoot);
     return 'onboard: ' + where + ' — ' + r.failing.join('; ') + '; Skill fankeel-init --root ' + where + ' before survey';
 }
 
@@ -826,7 +827,7 @@ function handsLines(root, data) {
     try { text = fs.readFileSync(plan, 'utf8'); } catch (e) { return null; }
     const mine = plantasks.parseTasks(text).filter((t) => t.dispatch === 'user');
     if (!mine.length) return null;
-    return ['hands — ' + path.relative(projectRoot, plan).split(path.sep).join('/') + ':']
+    return ['hands — ' + posix(path.relative(projectRoot, plan)) + ':']
         .concat(mine.map((t) => '  Task ' + t.n + ' — ' + (t.dispatchNote || t.name)))
         .concat(['Ask the user now, before the first dispatch: after the other tasks and before build\'s gate, in this session with them (Recommended); they do it first and say when; or skip, each becoming a TODO entry. Then `task.js note "hands: <the answer>"`.']);
 }
@@ -1013,7 +1014,7 @@ function cmdStage(root, opts) {
     if (from === 'design' && name === 'build' && !route.includes('plan')) {
         const shape = handoffPath(root, data, 'design');
         if (shape && !fs.existsSync(shape)) {
-            line += NL + 'design.md is missing — Write the approved file table to ' + path.relative(root, shape).split(path.sep).join('/')
+            line += NL + 'design.md is missing — Write the approved file table to ' + posix(path.relative(root, shape))
                 + ' before building; build reads its denominator there after a compaction.';
         }
     }
@@ -1189,7 +1190,7 @@ function openWorktree(root, repo, id) {
         const said = String((e && e.stderr) || (e && e.message) || '').trim().split(/\r?\n/)[0];
         return { error: said || 'git worktree add failed' };
     }
-    return { worktree: { path: path.relative(root, path.join(repo, rel)).split(path.sep).join('/'), branch } };
+    return { worktree: { path: posix(path.relative(root, path.join(repo, rel))), branch } };
 }
 
 // Nothing here touches a session entry: a profile is the project's, not the
@@ -1269,7 +1270,7 @@ function cmdProfile(root, opts) {
         const keys = Object.keys(values);
         if (!keys.length) { lines.push('  nothing the history answers'); return lines.join('\n'); }
         lines.push('', JSON.stringify(values, null, 2), '');
-        for (const k of keys) lines.push('node ' + path.relative(process.cwd(), __filename).split(path.sep).join('/') + ' profile set ' + k + ' ' + profile.shellWord(values[k]) + (opts.project ? ' --project ' + opts.project : ''));
+        for (const k of keys) lines.push('node ' + posix(path.relative(process.cwd(), __filename)) + ' profile set ' + k + ' ' + profile.shellWord(values[k]) + (opts.project ? ' --project ' + opts.project : ''));
         return lines.join('\n');
     }
     if (verb === 'preset') {
