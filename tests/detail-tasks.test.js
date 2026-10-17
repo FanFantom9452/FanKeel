@@ -132,6 +132,8 @@ test('waitsOf names the evidence from either side of a pair: an earlier task\'s 
         t(8, ['Modify: `y.js`']),
         t(9, ['Modify: `z1.js`'], ['- Consumes: `zap`', '- Produces: none']),
         t(10, ['Modify: `z2.js`'], ['- Consumes: none', '- Produces: `zap`']),
+        t(11, ['Modify: `m.js`', 'Test: `x.test.js`']),
+        t(12, ['Modify: `n.js`', 'Read: `x.test.js`']),
     ].join('\n');
     const root = repo();
     fs.writeFileSync(path.join(root, 'docs', 'plans', '2026-09-11-z.md'), plan);
@@ -147,5 +149,7 @@ test('waitsOf names the evidence from either side of a pair: an earlier task\'s 
         [{ n: 7, kind: 'read', file: 'y.js' }],
         [],
         [{ n: 9, kind: 'interface', file: 'zap' }],
+        [],
+        [{ n: 11, kind: 'read', file: 'x.test.js' }],
     ]);
 });
