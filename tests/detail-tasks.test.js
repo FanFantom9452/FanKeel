@@ -36,9 +36,9 @@ test('tasks come from the plan, status from the ledger, groups from plantasks; t
         plan: 'docs/plans/2026-09-11-x.md',
         ledgerLines: 1,
         tasks: [
-            { n: 1, title: 'one', status: 'complete', range: 'abc1234..def5678', turns: [4], modify: ['a.js'], test: [], read: [], dispatch: null, model: '', effort: '', waits: [] },
-            { n: 2, title: 'two', status: 'no ledger line', range: null, turns: [6], modify: ['b.js'], test: [], read: [], dispatch: null, model: '', effort: '', waits: [] },
-            { n: 3, title: 'three', status: 'no ledger line', range: null, turns: [], modify: ['a.js'], test: [], read: [], dispatch: null, model: '', effort: '', waits: [{ n: 1, kind: 'files', file: 'a.js' }] },
+            { n: 1, title: 'one', status: 'complete', range: 'abc1234..def5678', turns: [4], modify: ['a.js'], test: [], read: [], consumes: [], produces: [], dispatch: null, model: '', effort: '', waits: [] },
+            { n: 2, title: 'two', status: 'no ledger line', range: null, turns: [6], modify: ['b.js'], test: [], read: [], consumes: [], produces: [], dispatch: null, model: '', effort: '', waits: [] },
+            { n: 3, title: 'three', status: 'no ledger line', range: null, turns: [], modify: ['a.js'], test: [], read: [], consumes: [], produces: [], dispatch: null, model: '', effort: '', waits: [{ n: 1, kind: 'files', file: 'a.js' }] },
         ],
         groups: [
             { g: 1, tasks: [1, 2], surface: 'agents', turns: [4, 6], hint: true },
@@ -152,4 +152,28 @@ test('waitsOf names the evidence from either side of a pair: an earlier task\'s 
         [],
         [{ n: 11, kind: 'read', file: 'x.test.js' }],
     ]);
+});
+
+test('each task carries the Consumes and Produces its plan declared, so the page can tell which side of an interface pair produces', () => {
+    const t = (n, ifaces) => ['## Task ' + n + ': t' + n, '', '**Files:**', '- Modify: `f' + n + '.js`', '', '**Interfaces:**', ...ifaces, ''].join('\n');
+    const root = repo();
+    fs.writeFileSync(path.join(root, 'docs', 'plans', '2026-09-11-i.md'),
+        t(9, ['- Consumes: `zap`', '- Produces: none']) + t(10, ['- Consumes: none', '- Produces: `zap`, `zip`']));
+    const [p] = detail.tasksOf(root, { claims: ['docs/plans/2026-09-11-i.md'] }, []);
+    assert.deepEqual(p.tasks.map((x) => [x.consumes, x.produces]), [[['zap'], []], [[], ['zap', 'zip']]]);
+});
+
+test('a session that claimed no markdown file never reads the project\'s docs.json', () => {
+    const docs = require('../lib/docs.js');
+    const saved = [docs.projectRootsFor, docs.read];
+    let calls = 0;
+    docs.projectRootsFor = () => { calls++; return []; };
+    docs.read = () => { calls++; return { tree: null }; };
+    try {
+        assert.deepEqual(detail.tasksOf(repo(), { claims: ['lib/a.js', 'lib/b.json'] }, []), []);
+        assert.deepEqual(detail.tasksOf(repo(), {}, []), []);
+        assert.equal(calls, 0);
+    } finally {
+        [docs.projectRootsFor, docs.read] = saved;
+    }
 });

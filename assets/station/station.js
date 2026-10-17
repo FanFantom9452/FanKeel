@@ -2732,7 +2732,7 @@
             openSections: openSections, downsample: downsample, lineChart: lineChart,
             riseText: riseText, ctxSection: ctxSection, seqHtml: seqHtml, orderSection: orderSection,
             dur: dur, tasksHtml: tasksHtml, dispatchHtml: dispatchHtml, replayHtml: replayHtml, dispatchStagesHtml: dispatchStagesHtml, segmentsOf: segmentsOf, stageCost: stageCost, totalSuffix: totalSuffix, splitHtml: splitHtml, planTabHtml: planTabHtml, planRel: planRel,
-            splitCount: splitCount,
+            splitCount: splitCount, taskCount: taskCount,
             pendingGateHtml: pendingGateHtml, pgAnswers: pgAnswers, todoEntry: todoEntry, riseTodo: riseTodo, backTodo: backTodo, todoSpot: todoSpot,
             figures: figures, compareHtml: compareHtml,
             routeGroups: routeGroups, routeLedger: routeLedger,
@@ -4433,7 +4433,8 @@
                     + (parts.length ? loc('det.dispatchColon', '派工：{p}', { p: parts.join(loc('det.listSep', '、')) }) + (models ? loc('det.semicolon', '；') + models : '') : loc('det.noDispatch', '沒有派工'));
             });
         if (!hasLoops) lines.push(loc('det.cacheHasNoPerStageTurns', '這份快取沒有逐站回合數（寫於 loops 欄位出現之前）'));
-        (x.tasks || []).filter(function (p) { return !p.error; }).forEach(function (p) {
+        var plans = (x.tasks || []).filter(function (p) { return !p.error; });
+        plans.forEach(function (p) {
             var hinted = p.groups.filter(function (g) { return g.hint; });
             var none = p.groups.filter(function (g) { return !g.turns.length; });
             var one = p.groups.length - hinted.length - none.length;
@@ -4447,7 +4448,7 @@
             }
             lines.push(loc('det.planTasksGroups', 'plan {p}：{n} 個 task 分 {g} 組；{bits}', { p: esc(String(p.plan).split('/').pop()), n: p.tasks.length, g: p.groups.length, bits: bits.join(loc('det.listSep', '、')) }));
         });
-        if (!(x.tasks || []).length && (x.dispatches || []).length > 1) lines.push(loc('det.noTaskTableCannotTell', '這頁沒有任務表：其餘派工是否互不相依，無從判斷'));
+        if (!plans.length && (x.dispatches || []).length > 1) lines.push(loc('det.noTaskTableCannotTell', '這頁沒有任務表：其餘派工是否互不相依，無從判斷'));
         return lines.map(function (l) { return '<p class="tally">' + l + '</p>'; }).join('');
     }
     function cents(c) { return '$' + ((c || 0) / 100).toFixed(2); }
@@ -4459,7 +4460,8 @@
         return Math.floor(m / 60) + 'h' + (m % 60 < 10 ? '0' : '') + (m % 60) + 'm';
     }
     function taskCount(list) {
-        if (!list || !list.length) return loc('det.noPlan', '沒有 plan');
+        list = (list || []).filter(function (p) { return !p.error; });
+        if (!list.length) return loc('det.noPlan', '沒有 plan');
         var n = 0, g = 0;
         list.forEach(function (p) { n += p.tasks.length; g += p.groups.length; });
         return loc('det.nTasksGGroups', '{n} 個 · {g} 組', { n: n, g: g });
@@ -4515,7 +4517,10 @@
     function planReason(t, w) {
         var f = w.file ? '<code>' + planPath(w.file) + '</code>' : '';
         if (w.kind === 'files') return loc('det.planWaitFiles', '同改 {f}', { f: f });
-        if (w.kind === 'interface') return loc('det.planWaitIface', '用它產出的 {f}', { f: f });
+        if (w.kind === 'interface') {
+            return (t.consumes || []).indexOf(w.file) >= 0 ? loc('det.planWaitIface', '用它產出的 {f}', { f: f })
+                : loc('det.planWaitIfaceRev', '它要用這裡產出的 {f}', { f: f });
+        }
         if (w.kind === 'read') {
             var mine = (t.read || []).some(function (r) { return String(r).replace(/:\d+(-\d+)?$/, '') === w.file; });
             return mine ? loc('det.planWaitRead', '讀 {f}', { f: f }) : loc('det.planWaitItReads', '它讀 {f}', { f: f });

@@ -130,6 +130,31 @@ test('the dispatch hint lines skip a plan that will not open or has no task', ()
     assert.doesNotMatch(html, /x\.md：0 個 task 分 0 組/);
 });
 
+test('a session whose only plan will not open or has no task counts as no plan, and still cannot tell its dispatches apart', () => {
+    for (const error of ['unreadable', 'no tasks']) {
+        const bad = [{ plan: 'docs/plans/x.md', error, ledgerLines: 0, tasks: [], groups: [], unmatched: [] }];
+        assert.equal(V.taskCount(bad), '沒有 plan', error);
+        const html = V.splitHtml({ seq: [], loops: [], rows: [], tasks: bad, dispatches: [{ surface: 'agent', turn: 1 }, { surface: 'agent', turn: 2 }] });
+        assert.match(html, /這頁沒有任務表：其餘派工是否互不相依，無從判斷/, error);
+    }
+    assert.equal(V.taskCount(synth()), '4 個 · ' + synth()[0].groups.length + ' 組');
+});
+
+test('an interface pair says 用它產出的 when the waiting task consumes, and 它要用這裡產出的 when the earlier one does', () => {
+    const t = (n, ifaces) => ['## Task ' + n + ': t' + n, '', '**Files:**', '- Modify: `f' + n + '.js`', '', '**Interfaces:**', ...ifaces, ''].join('\n');
+    const root = tmp('fankeel-plan-tab-');
+    fs.mkdirSync(path.join(root, 'docs', 'plans'), { recursive: true });
+    fs.writeFileSync(path.join(root, 'docs', 'plans', 'x.md'), [
+        t(1, ['- Consumes: none', '- Produces: `frob`']), t(2, ['- Consumes: `frob`', '- Produces: none']),
+        t(3, ['- Consumes: `zap`', '- Produces: none']), t(4, ['- Consumes: none', '- Produces: `zap`']),
+    ].join('\n'));
+    const list = detail.tasksOf(root, { claims: ['docs/plans/x.md'] }, []);
+    const html = V.planTabHtml({ stage: 'build' }, list, null);
+    assert.ok(cardOf(html, 2).includes('<b>Task 1</b><span>用它產出的 <code>frob</code></span>'), 'Task 2 consumes what Task 1 produces');
+    assert.ok(cardOf(html, 4).includes('<b>Task 3</b><span>它要用這裡產出的 <code>zap</code></span>'), 'Task 3 consumes what Task 4 produces');
+    assert.ok(cardOf(V.planTabHtml({ stage: 'build' }, list, 4), 3).includes('Task 4 等這張 · 它要用這裡產出的 <code>zap</code>'));
+});
+
 test('a plan path, a task title and a waited-on file are escaped in text and in title=""', () => {
     const bad = '<img onerror=x>"q';
     const list = [{ plan: 'docs/plans/' + bad + '.md', ledgerLines: 0, unmatched: [], groups: [{ g: 1, tasks: [1, 2], surface: 'agents' }],

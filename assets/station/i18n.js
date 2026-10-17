@@ -794,6 +794,7 @@
             'det.planNoTasksShort': 'This plan has no task',
             'det.planWaitFiles': 'both change {f}',
             'det.planWaitIface': 'uses its {f}',
+            'det.planWaitIfaceRev': 'it uses {f} produced here',
             'det.planWaitRead': 'reads {f}',
             'det.planWaitItReads': 'it reads {f}',
             'det.planWaitUndeclared': 'one of the two declared no files, so it waits to be safe',
