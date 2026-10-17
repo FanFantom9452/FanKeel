@@ -387,10 +387,15 @@ async function serve(opts) {
         touch();
         const url = new URL(req.url, 'http://127.0.0.1');
         if (req.method === 'POST') shared = null;
-        const fail = (code, msg) => {
-            res.writeHead(code, { 'content-type': 'text/plain' });
-            res.end(msg + '\n');
+        // One way to answer: status, an optional content type, the body, and
+        // any further headers. A 303 passes `null` for the type and no body.
+        const send = (code, type, body, headers) => {
+            res.writeHead(code, Object.assign(type ? { 'content-type': type } : {}, headers));
+            res.end(body);
         };
+        const fail = (code, msg) => send(code, 'text/plain', msg + '\n');
+        const noStore = { 'cache-control': 'no-store' };
+        const redirect = (to) => send(303, null, undefined, { location: to });
         // `/chartroom/<name>/…` is a registry root's architecture board,
         // handed to Chartroom before the nonce check below, on purpose:
         // Chartroom guards its own routes — a Host that is not loopback is
@@ -440,15 +445,9 @@ async function serve(opts) {
                 // asset gone — a shell that will not read means the plugin's
                 // whole `assets/station/` directory is missing or unreadable,
                 // and the reason says that rather than naming a single file.
-                fail(404, 'no such asset: this plugin\'s assets directory is missing or unreadable');
-                return;
+                return fail(404, 'no such asset: this plugin\'s assets directory is missing or unreadable');
             }
-            res.writeHead(200, {
-                'content-type': 'text/html; charset=utf-8',
-                'cache-control': 'no-store',
-            });
-            res.end(html);
-            return;
+            return send(200, 'text/html; charset=utf-8', html, noStore);
         }
         if (req.method === 'GET' && url.pathname === '/station/station-data.js') {
             // Per request, which is what keeps the header's promise that a
@@ -459,20 +458,13 @@ async function serve(opts) {
             // echoing it into a script.
             const said = url.searchParams.get('cleared');
             const cleared = said !== null && /^\d+$/.test(said) ? Number(said) : undefined;
-            res.writeHead(200, {
-                'content-type': 'text/javascript; charset=utf-8',
-                'cache-control': 'no-store',
-            });
-            res.end(station.serialize(sharedModel(), { serve: true, nonce, plugin: PLUGIN, cleared }));
-            return;
+            return send(200, 'text/javascript; charset=utf-8', station.serialize(sharedModel(), { serve: true, nonce, plugin: PLUGIN, cleared }), noStore);
         }
         if (req.method === 'GET' && url.pathname === '/station/search') {
             // The 文件 page's full-text box. The page bodies stay on disk; the
             // answer is at most 20 hits with a snippet each (lib/docsearch.js).
             const out = docsearch.search(docsearch.searchDirs(sharedModel()), url.searchParams.get('q') || '');
-            res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
-            res.end(JSON.stringify(out));
-            return;
+            return send(200, 'application/json; charset=utf-8', JSON.stringify(out), noStore);
         }
         const talk = /^\/station\/talk\/([0-9A-Za-z-]+)$/.exec(url.pathname);
         if (req.method === 'GET' && talk) {
@@ -483,25 +475,21 @@ async function serve(opts) {
             const row = sharedModel().registries.flatMap((r) => r.sessions).find((s) => s.sessionId === talk[1]);
             const file = detail.transcriptOf(row && row.configDir ? row.configDir : gatherOpts.configDir, talk[1]);
             if (!file) {
-                fail(404, 'no transcript for that session');
-                return;
+                return fail(404, 'no transcript for that session');
             }
             const key = detail.keyOf(file);
             if (!talked || talked.id !== talk[1] || talked.key !== key) {
                 const stats = { unparsed: 0 };
                 const entries = entriesOf(file, stats);
                 if (!entries) {
-                    fail(500, 'cannot read that transcript');
-                    return;
+                    return fail(500, 'cannot read that transcript');
                 }
                 const read = conversation.turnsOf(entries);
                 read.skipped.unparsed = stats.unparsed;
                 talked = { id: talk[1], key, read };
             }
             const from = Number(url.searchParams.get('from'));
-            res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
-            res.end(JSON.stringify(conversation.pageOf(talked.read, from, conversation.PAGE)));
-            return;
+            return send(200, 'application/json; charset=utf-8', JSON.stringify(conversation.pageOf(talked.read, from, conversation.PAGE)), noStore);
         }
         const wanted = /^\/station\/detail\/([0-9A-Za-z-]+)\.js$/.exec(url.pathname);
         if (req.method === 'GET' && wanted) {
@@ -510,12 +498,9 @@ async function serve(opts) {
             // off disk.
             const hit = modelNow({ details: wanted[1] }).registries.flatMap((r) => r.sessions).find((s) => s.sessionId === wanted[1]);
             if (!hit || !hit.detail) {
-                fail(404, 'no detail for that session');
-                return;
+                return fail(404, 'no detail for that session');
             }
-            res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-store' });
-            res.end(station.serializeDetail(hit));
-            return;
+            return send(200, 'text/javascript; charset=utf-8', station.serializeDetail(hit), noStore);
         }
         if (req.method === 'GET' && url.pathname === '/station/health') {
             // Read-only and identifies the process, nothing else — no nonce,
@@ -524,9 +509,7 @@ async function serve(opts) {
             // `fingerprint` is what lets `ensureServe` tell a live station
             // from a live station running old code — the same pid, a
             // different answer to "what is on disk right now."
-            res.writeHead(200, { 'content-type': 'application/json' });
-            res.end(JSON.stringify({ station: true, pid: process.pid, started, fingerprint }));
-            return;
+            return send(200, 'application/json', JSON.stringify({ station: true, pid: process.pid, started, fingerprint }));
         }
         const file = req.method === 'GET' ? STATIC.exec(url.pathname) : null;
         if (file) {
@@ -534,12 +517,9 @@ async function serve(opts) {
             try {
                 body = fs.readFileSync(path.join(ASSETS, file[1]), 'utf8');
             } catch (e) {
-                fail(404, 'no such asset');
-                return;
+                return fail(404, 'no such asset');
             }
-            res.writeHead(200, { 'content-type': TYPES[path.extname(file[1])], 'cache-control': 'no-store' });
-            res.end(body);
-            return;
+            return send(200, TYPES[path.extname(file[1])], body, noStore);
         }
         if (req.method === 'POST' && url.pathname === '/clear') {
             const form = await formOf();
@@ -552,21 +532,16 @@ async function serve(opts) {
             const reg = model.registries.find((r) => r.root === path.resolve(root));
             const row = reg && reg.sessions.find((s) => s.sessionId === id);
             if (!row) {
-                fail(404, 'no such session on this page');
-                return;
+                return fail(404, 'no such session on this page');
             }
             if (row.state === 'live') {
-                fail(409, 'that session is running; nothing to clear');
-                return;
+                return fail(409, 'that session is running; nothing to clear');
             }
             const out = clearEntry(reg.root, id, { force: form.get('force') === '1' });
             if (!out.ok && out.reason !== 'inactive') {
-                fail(409, 'not cleared: ' + out.reason + (out.age ? ' (last seen ' + out.age + ' ago; tick force)' : ''));
-                return;
+                return fail(409, 'not cleared: ' + out.reason + (out.age ? ' (last seen ' + out.age + ' ago; tick force)' : ''));
             }
-            res.writeHead(303, { location: '/' });
-            res.end();
-            return;
+            return redirect('/');
         }
         if (req.method === 'POST' && url.pathname === '/clear-stale') {
             const form = await formOf();
@@ -574,8 +549,7 @@ async function serve(opts) {
             const model = modelNow();
             const reg = model.registries.find((r) => r.root === path.resolve(form.get('root') || ''));
             if (!reg) {
-                fail(404, 'no such registry on this page');
-                return;
+                return fail(404, 'no such registry on this page');
             }
             const force = form.get('force') === '1';
             let cleared = 0;
@@ -587,15 +561,12 @@ async function serve(opts) {
                 else if (out.reason !== 'inactive') refused.push(s.sessionId + ': ' + out.reason);
             }
             if (refused.length) {
-                fail(409, 'cleared ' + cleared + '; refused ' + refused.length + '\n' + refused.join('\n'));
-                return;
+                return fail(409, 'cleared ' + cleared + '; refused ' + refused.length + '\n' + refused.join('\n'));
             }
             // Redirect-after-POST, so a refresh does not clear twice — and the
             // count travels in the query rather than in a body this response
             // does not have. `render` prints it above the control bar.
-            res.writeHead(303, { location: '/?cleared=' + cleared });
-            res.end();
-            return;
+            return redirect('/?cleared=' + cleared);
         }
         if (req.method === 'POST' && url.pathname === '/todo') {
             const form = await formOf();
@@ -604,8 +575,7 @@ async function serve(opts) {
             const reg = model.registries.find((r) => r.root === path.resolve(form.get('root') || ''));
             const row = reg && reg.sessions.find((s) => s.sessionId === form.get('id'));
             if (!row) {
-                fail(404, 'no such session on this page');
-                return;
+                return fail(404, 'no such session on this page');
             }
             // The session's own project when it keeps a todo folder or a
             // TODO.md, and the registry's root otherwise.
@@ -614,9 +584,7 @@ async function serve(opts) {
             const out = todoFiles.folderOf(dir)
                 ? addTodoFile(dir, form.get('text') || '', form.get('link') || '', form.get('body') || '')
                 : addTodo(path.join(dir, 'TODO.md'), view.todoEntry(form.get('text') || '', form.get('link') || ''));
-            res.writeHead(out.status, { 'content-type': 'text/plain; charset=utf-8' });
-            res.end(out.text + '\n');
-            return;
+            return send(out.status, 'text/plain; charset=utf-8', out.text + '\n');
         }
         // A gate hooks/gate.js is holding (`gate.station`): the answer goes to
         // the file the hook is reading, in the shape hooks/resume.js writes.
@@ -627,45 +595,36 @@ async function serve(opts) {
             const reg = model.registries.find((r) => r.root === path.resolve(form.get('root') || ''));
             const mine = reg ? registry.readSession(reg.root, form.get('id') || '') : null;
             if (!mine) {
-                fail(404, 'no such session on this page');
-                return;
+                return fail(404, 'no such session on this page');
             }
             const pending = handoff.readPending(reg.root, mine);
             if (!pending) {
-                fail(409, 'no gate is waiting on the station for this session');
-                return;
+                return fail(409, 'no gate is waiting on the station for this session');
             }
             // 「交給終端／手機」: not an answer. The hook stops waiting and the
             // question goes to the terminal, where Remote Control carries it.
             const hand = form.get('handoff');
             if (hand !== null) {
                 if (hand !== 'terminal') {
-                    fail(400, 'handoff is terminal');
-                    return;
+                    return fail(400, 'handoff is terminal');
                 }
                 handoff.writeAnswer(handoff.answerPath(reg.root, mine, mine.stage), JSON.stringify({ handoff: 'terminal' }) + '\n');
-                res.writeHead(201, { 'content-type': 'text/plain; charset=utf-8' });
-                res.end('handed to the terminal\n');
-                return;
+                return send(201, 'text/plain; charset=utf-8', 'handed to the terminal\n');
             }
             let answers = null;
             try { answers = JSON.parse(form.get('answers') || ''); } catch (e) { answers = null; }
             const asked = new Set(pending.questions.map((q) => q && q.question));
             const keys = answers && typeof answers === 'object' && !Array.isArray(answers) ? Object.keys(answers) : [];
             if (!keys.length || keys.some((k) => !asked.has(k) || typeof answers[k] !== 'string' || !answers[k].trim())) {
-                fail(400, 'answers maps each question asked to a non-empty answer');
-                return;
+                return fail(400, 'answers maps each question asked to a non-empty answer');
             }
             // Every question asked, not some: a partial answer used to reach the
             // file, and the hook sent the gate out answered with the rest blank.
             if (keys.length !== asked.size) {
-                fail(400, 'answers every question asked — ' + asked.size + ' asked, ' + keys.length + ' answered');
-                return;
+                return fail(400, 'answers every question asked — ' + asked.size + ' asked, ' + keys.length + ' answered');
             }
             handoff.writeAnswer(handoff.answerPath(reg.root, mine, mine.stage), JSON.stringify({ answers }, null, 2) + '\n');
-            res.writeHead(201, { 'content-type': 'text/plain; charset=utf-8' });
-            res.end('answered ' + keys.length + ' question' + (keys.length === 1 ? '' : 's') + '\n');
-            return;
+            return send(201, 'text/plain; charset=utf-8', 'answered ' + keys.length + ' question' + (keys.length === 1 ? '' : 's') + '\n');
         }
         if (req.method === 'POST' && url.pathname === '/profile') {
             const form = await formOf();
@@ -678,41 +637,34 @@ async function serve(opts) {
                 const model = modelNow();
                 const known = model.registries.some((r) => Object.keys(r.profiles || {}).some((p) => path.resolve(p) === want));
                 if (!known) {
-                    fail(404, 'no such project on this page');
-                    return;
+                    return fail(404, 'no such project on this page');
                 }
                 file = profile.projectFile(want);
             } else {
-                fail(400, 'scope is project or machine');
-                return;
+                return fail(400, 'scope is project or machine');
             }
             const keys = form.getAll('key');
             const values = form.getAll('value');
             if (!keys.length || keys.length !== values.length) {
-                fail(400, 'key and value come in pairs');
-                return;
+                return fail(400, 'key and value come in pairs');
             }
             // Validate every pair before writing any, so a bad second key
             // does not leave the first one applied. An empty value clears the key.
             for (let i = 0; i < keys.length; i++) {
                 if (!Object.prototype.hasOwnProperty.call(profile.KEYS, keys[i]) || (values[i] !== '' && profile.parseValue(keys[i], values[i]).error)) {
-                    fail(400, 'not a profile key/value: ' + keys[i] + '=' + values[i]);
-                    return;
+                    return fail(400, 'not a profile key/value: ' + keys[i] + '=' + values[i]);
                 }
             }
             for (let i = 0; i < keys.length; i++) {
                 const out = values[i] === '' ? profile.unset(file, keys[i]) : profile.write(file, keys[i], values[i]);
                 if (!out.ok) {
-                    fail(409, out.reason);
-                    return;
+                    return fail(409, out.reason);
                 }
             }
             // The wizard posts from #/settings and wants to land there again;
             // anything but a bare page hash is ignored rather than followed.
             const back = String(form.get('back') || '');
-            res.writeHead(303, { location: '/' + (/^#\/[a-z]*$/.test(back) ? back : '') });
-            res.end();
-            return;
+            return redirect('/' + (/^#\/[a-z]*$/.test(back) ? back : ''));
         }
         fail(404, 'not here');
     };
