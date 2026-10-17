@@ -11,6 +11,7 @@ const path = require('node:path');
 const { parseArgs: parseArgv } = require('node:util');
 const registry = require('../lib/registry.js');
 const docs = require('../lib/docs.js');
+const { posix } = require('../lib/tracked.js');
 
 // A literal options table, the same shape `scripts/docs-check.js` already
 // writes its own in. `lib/skills.js`'s `acceptedFlags()` reads this shape (and
@@ -119,7 +120,7 @@ function record(opts) {
     ].join('\n');
     fs.writeFileSync(file, body);
     const indexFile = path.join(projectRoot, 'docs', 'README.md');
-    const rel = path.relative(path.dirname(indexFile), file).split(path.sep).join('/');
+    const rel = posix(path.relative(path.dirname(indexFile), file));
     const indexed = indexRow(indexFile, firstLine(brief), rel, judged, model);
     return 'fankeel — judgement filed: ' + file + '\n' + (indexed ? 'index row: ' + indexFile : 'no ## Judgements table in ' + indexFile + '; add the row by hand');
 }

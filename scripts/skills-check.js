@@ -19,6 +19,7 @@ const { parseArgs: parseArgv } = require('node:util');
 
 const { REQUIRED_CORE, references, acceptedFlags, classify } = require('../lib/skills.js');
 const { resolveRoot } = require('../lib/registry.js');
+const { posix } = require('../lib/tracked.js');
 
 // Shape from scripts/docs-check.js:561-573: `strict: false` keeps an unknown
 // flag silent, `allowPositionals: true` leaves a bare argument unrejected.
@@ -128,7 +129,7 @@ function run(root) {
     const refs = { scripts: [], flags: [] };
     const bullets = [];
     for (const file of files) {
-        const rel = path.relative(root, file).split(path.sep).join('/');
+        const rel = posix(path.relative(root, file));
         const text = fs.readFileSync(file, 'utf8');
         if (file.endsWith('.js')) {
             const found = references(withoutLineComments(text), rel);

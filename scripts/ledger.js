@@ -37,6 +37,7 @@ const profileLib = require('../lib/profile.js');
 const { controlling } = require('../lib/stages.js');
 const { contextPath } = require('../lib/handoff.js');
 const { nearestTargets, pagesReached, renderScope, realPath, renderFileRefusal, verdictRefusal } = require('../lib/shots.js');
+const { posix } = require('../lib/tracked.js');
 
 function fail(message) {
     process.stdout.write(message + '\n');
@@ -526,7 +527,7 @@ function renderNote(root, render) {
     if (render === undefined) return '';
     const refusal = renderFileRefusal(render);
     if (refusal) fail(refusal);
-    return ' — render: ' + path.relative(root, path.resolve(render)).split(path.sep).join('/');
+    return ' — render: ' + posix(path.relative(root, path.resolve(render)));
 }
 
 const SKIP_HOW = 'record `ruling "render skipped" "<why>" "<cost if wrong>"`';
