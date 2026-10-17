@@ -19,6 +19,7 @@ const handoff = require('../lib/handoff.js');
 const profileLib = require('../lib/profile.js');
 const { renderBrief } = require('../lib/render.js');
 const { spawnClaudeAsync } = require('./eval.js');
+const { within } = require('../lib/tracked.js');
 
 const PLUGIN = path.join(__dirname, '..');
 const STATUSES = ['done', 'partial', 'blocked'];
@@ -82,10 +83,7 @@ function lastJson(text) {
     return null;
 }
 
-function insidePlugin(root, plugin) {
-    const rel = path.relative(plugin, path.resolve(root));
-    return rel === '' || (rel !== '..' && !rel.startsWith('..' + path.sep) && !path.isAbsolute(rel));
-}
+const insidePlugin = (root, plugin) => within(plugin, root);
 
 function argsFor(usdLeft, pluginDir = PLUGIN) {
     return ['-p', '--plugin-dir', pluginDir, '--permission-mode', 'acceptEdits', '--allowedTools', 'Bash(node:*),Bash(git:*)', '--output-format', 'json', '--max-budget-usd', usdLeft.toFixed(2)];

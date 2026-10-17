@@ -250,3 +250,12 @@ test('posix turns this platform\'s separator into a forward slash, and leaves on
   assert.equal(tracked.posix('a/b'), 'a/b');
   assert.equal(tracked.posix(''), '');
 });
+
+test('within is the directory itself or below it, never a sibling or above', () => {
+  const root = path.resolve('fankeel-within-root');
+  assert.equal(tracked.within(root, root), true);
+  assert.equal(tracked.within(root, path.join(root, 'a', 'b')), true);
+  assert.equal(tracked.within(root, path.dirname(root)), false);
+  assert.equal(tracked.within(root, root + '-sibling'), false);
+  assert.equal(tracked.within(root, path.join(root, '..', 'elsewhere')), false);
+});
