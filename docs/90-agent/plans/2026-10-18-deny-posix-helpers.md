@@ -5,7 +5,7 @@ last_verified: 2026-10-18
 
 # Deny and Posix Helpers Implementation Plan
 
-**Goal:** Land parts (1) and (2) of `docs/90-agent/todo/cuts-2.md`: one `deny(reason)` / `refuse(reason)` pair in `lib/hook.js` replacing the twelve hand-written PreToolUse deny objects, and one `posix(p)` in `lib/tracked.js` replacing the twenty hand-written `split(path.sep).join('/')`.
+**Goal:** Land all three parts of `docs/90-agent/todo/cuts-2.md`: one `deny(reason)` / `refuse(reason)` pair in `lib/hook.js` replacing the twelve hand-written PreToolUse deny objects, one `posix(p)` in `lib/tracked.js` replacing the twenty hand-written `split(path.sep).join('/')`, and the four smaller merges of part (3) — `within`, `addModels`, the station's form-and-registry lookup, `readObject` (the user put (3) in at the plan gate, 2026-10-18).
 **Architecture:** Both are deletions behind a helper. `deny` returns the `hookSpecificOutput` object a deny has always been, `refuse` writes it to stdout the way every hook site did; `posix` is `lib/bench.js:40`'s one-liner, moved to `lib/tracked.js` (which already requires only `node:` modules, so no cycle) and imported where the copies were. The JSON a hook prints does not change, key order included, so the existing subprocess tests of each hook are the proof; each new helper gets one direct test.
 **Tech Stack:** Node >=22.5 (`package.json` `engines`), CommonJS, `node --test`, no dependencies.
 **Spec:** [../todo/cuts-2.md](../todo/cuts-2.md)
@@ -32,6 +32,10 @@ Generated from `node scripts/map.js` (969 markdown files, 3 planned not built, 3
 - `lib/sensitive.js` is modified by Task 2 and Task 5 — they run one after another (the Files blocks share it) — Task 5 re-reads the require block Task 2 left.
 - `lib/bench.js` exports `posix` and `scripts/bench.js:96,98,147` calls `bench.posix` — Task 3 — `lib/bench.js` keeps `posix` in its `module.exports`, now as the imported function, so `scripts/bench.js` is not touched.
 - `lib/guard.js:72` is the tail of `relPath`, which the TODO entry says not to merge with `within`/`insidePlugin` — Task 4 — only the slash conversion on that one line changes; the rest of `relPath` stays.
+- Part (3) touches files earlier tasks also modify (`lib/tracked.js` Task 3 and 8, `lib/shots.js` Task 5 and 8, `lib/bench.js` Task 3 and 11) — those pairs run one after another, and the line-number rule in Global Constraints covers the shift.
+- `insidePlugin` is exported and tested by name (`tests/drive.test.js:11,239`) — Task 8 — it stays as a one-line wrapper over `within`, so that test is untouched.
+- `lib/usage.js`'s `addModels` adds `m[k]` with no `|| 0`, where `lib/compare.js`'s added `m[k] || 0` — Task 9 — both callers in `lib/compare.js` pass maps that `lib/usage.js` itself built from `blank()`, so every field is present; the task keeps the `|| {}` the entry asks for at the call site.
+- `readObject` returns null for an array or a scalar where `JSON.parse` returned it — Task 11 — a `bench.json` or a `.meta.json` that is not an object was already unusable at each of the three call sites (`conf.arms`, `.agentType`), so the refusal moves earlier and says the same thing.
 - `lib/tracked.js` would be required by modules a hook loads (`lib/guard.js`, `lib/render.js`) — Task 4 — `lib/tracked.js:18-20` requires only `node:child_process`, `node:fs` and `node:path`, so there is no cycle and nothing runs at require time.
 
 ## Task 1: `deny` and `refuse` in `lib/hook.js`, used by `hooks/gate.js` and `hooks/guard.js`
@@ -425,6 +429,225 @@ followed by the rest of that line exactly as it was.
 
 - [ ] Step 8. Run `grep -rn "split(path.sep).join" lib scripts hooks` and see only `lib/tracked.js`; run the Step 1 command again and watch it pass.
 
+## Task 8: `within` in `lib/tracked.js`, used by `lib/shots.js` and `scripts/drive.js`
+
+**Files:**
+- Modify: `lib/tracked.js` — add `within(stop, dir)` beside `posix`, export it
+- Modify: `lib/shots.js` — delete its `within` (lines 127-131), import the shared one
+- Modify: `scripts/drive.js` — `insidePlugin` (lines 85-88) becomes a wrapper over `within`
+- Test: `tests/tracked.test.js`
+
+**Interfaces:**
+- Consumes: `posix` already in `lib/tracked.js` (Task 3) — only as the neighbour to add beside
+- Produces: `within(stop: string, dir: string): boolean` exported from `lib/tracked.js` — true when `dir` is `stop` or under it, both resolved by `path.relative`.
+
+**Dispatch:** implementer, sonnet — the plan carries the code; transcription plus tests.
+
+- [ ] Step 1. In `tests/tracked.test.js`, at the end of the file, add:
+
+```js
+test('within is the directory itself or below it, never a sibling or above', () => {
+  const root = path.resolve('fankeel-within-root');
+  assert.equal(tracked.within(root, root), true);
+  assert.equal(tracked.within(root, path.join(root, 'a', 'b')), true);
+  assert.equal(tracked.within(root, path.dirname(root)), false);
+  assert.equal(tracked.within(root, root + '-sibling'), false);
+  assert.equal(tracked.within(root, path.join(root, '..', 'elsewhere')), false);
+});
+```
+
+- [ ] Step 2. Run `node --test tests/tracked.test.js` and watch the new test fail with `tracked.within is not a function`.
+- [ ] Step 3. In `lib/tracked.js`, directly below the `posix` line Task 3 added, add:
+
+```js
+// Whether `dir` is `stop` or under it. `path.relative` resolves both, so a
+// relative argument is read against the working directory.
+function within(stop, dir) {
+    const rel = path.relative(stop, dir);
+    return rel === '' || (rel !== '..' && !rel.startsWith('..' + path.sep) && !path.isAbsolute(rel));
+}
+```
+
+and add `within` to `module.exports` after `posix`.
+- [ ] Step 4. Run `node --test tests/tracked.test.js` and watch it pass.
+- [ ] Step 5. In `lib/shots.js`, delete the one-line comment that starts `// Whether` and the `function within(stop, dir) { ... }` below it (lines 127-131), then change line 26 to:
+
+```js
+const { repoRoot, posix, within } = require('./tracked.js');
+```
+
+- [ ] Step 6. In `scripts/drive.js`, replace the four lines of `function insidePlugin(root, plugin) { ... }` with:
+
+```js
+const insidePlugin = (root, plugin) => within(plugin, root);
+```
+
+and, in `scripts/drive.js` after line 21 (the line that requires ./eval.js), add:
+
+```js
+const { within } = require('../lib/tracked.js');
+```
+
+- [ ] Step 7. Run `node --test tests/tracked.test.js tests/shots.test.js tests/drive.test.js tests/ledger.test.js` and watch it pass.
+
+## Task 9: `lib/compare.js` uses the `addModels` of `lib/usage.js`
+
+**Files:**
+- Modify: `lib/usage.js` — export `addModels`
+- Modify: `lib/compare.js` — delete its `addModels` (lines 67-72) and `FIELDS` (line 17), call `usage.addModels` with `|| {}`
+- Test: `tests/usage.test.js`
+
+**Interfaces:**
+- Consumes: none
+- Produces: `addModels(into: object, from: object): void` exported from `lib/usage.js`, unchanged in behaviour — folds a per-model token map into another in place.
+
+**Dispatch:** implementer, sonnet — the plan carries the code; transcription plus tests.
+
+- [ ] Step 1. In `tests/usage.test.js`, at the end of the file, add:
+
+```js
+test('addModels folds one model map into another, in place', () => {
+    const into = { m: { input: 1, output: 2, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } };
+    usage.addModels(into, {
+        m: { input: 10, output: 20, cacheRead: 1, cacheWrite5m: 2, cacheWrite1h: 3 },
+        n: { input: 5, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 },
+    });
+    assert.deepEqual(into, {
+        m: { input: 11, output: 22, cacheRead: 1, cacheWrite5m: 2, cacheWrite1h: 3 },
+        n: { input: 5, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 },
+    });
+});
+```
+
+- [ ] Step 2. Run `node --test tests/usage.test.js` and watch the new test fail with `usage.addModels is not a function`.
+- [ ] Step 3. In `lib/usage.js`, change the first line inside `module.exports = {` to:
+
+```js
+    summarise, agentsOf, summariseTree, spanOf, agentFiles, sessionDirOf, addModels,
+```
+
+- [ ] Step 4. Run `node --test tests/usage.test.js` and watch it pass.
+- [ ] Step 5. Run `grep -n FIELDS lib/compare.js` and see it used only on lines 17 and 70. In `lib/compare.js`, delete `function addModels(into, models) { ... }` (the six lines starting at line 67) and the `const FIELDS = [...]` line (line 17). Then in `lib/compare.js`, in `sessionOf`, replace the two `addModels(...)` calls with:
+
+```js
+    usage.addModels(models, (own && own.usage.models) || {});
+    usage.addModels(models, (agents && agents.models) || {});
+```
+
+- [ ] Step 6. Run `node --test tests/usage.test.js tests/usage-compare.test.js tests/station-compare.test.js` and watch it pass.
+
+## Task 10: the station's four registry routes share one lookup
+
+**Files:**
+- Modify: `scripts/station.js:431-600` — add `formAndRegistry` below `formOf`; `/clear`, `/clear-stale`, `/todo` and `/answer` use it
+
+**Interfaces:**
+- Consumes: none
+- Produces: none outside `scripts/station.js` — `formAndRegistry` is a closure inside the request handler, like `formOf`
+
+**Dispatch:** implementer, sonnet — the plan carries the code; transcription plus tests.
+
+No test is written: the station-post, station-todo and station-answer test files already drive each route, its 404 and its nonce refusal through a served station.
+
+- [ ] Step 1. Run `node --test tests/station-post.test.js tests/station-todo.test.js tests/station-answer.test.js tests/station-serve.test.js` and note it passes before the change.
+- [ ] Step 2. In `scripts/station.js`, directly after the closing `};` of `const formOf = async () => {`, add:
+
+```js
+        // The routes that act on one registry of the page read the form and find
+        // that registry the same way. Null when the nonce refused it, which has
+        // already answered; `reg` is undefined when no registry matched, and
+        // each route says that in its own 404.
+        const formAndRegistry = async () => {
+            const form = await formOf();
+            if (!form) return null;
+            const reg = modelNow().registries.find((r) => r.root === path.resolve(form.get('root') || ''));
+            return { form, reg };
+        };
+```
+
+- [ ] Step 3. In `scripts/station.js`, in the `/clear` route, replace everything from `const form = await formOf();` through `const reg = model.registries.find((r) => r.root === path.resolve(root));` — the `root`, `id`, two comment and `model` lines between them included — with:
+
+```js
+            const got = await formAndRegistry();
+            if (!got) return;
+            const { form, reg } = got;
+            const id = form.get('id') || '';
+            // The server has just measured liveness for the page; a row that is
+            // live is not one the button is for, whatever the age rule says.
+```
+
+- [ ] Step 4. In `scripts/station.js`, in each of the `/clear-stale`, `/todo` and `/answer` routes, replace the four lines from `const form = await formOf();` through `const reg = model.registries.find((r) => r.root === path.resolve(form.get('root') || ''));` with:
+
+```js
+            const got = await formAndRegistry();
+            if (!got) return;
+            const { form, reg } = got;
+```
+
+- [ ] Step 5. Run `grep -n "model.registries.find" scripts/station.js` and see none of the four routes; the `/profile` route's `model.registries.some` stays. Run the Step 1 command again and watch it pass.
+
+## Task 11: `readObject` in `scripts/bench.js`, `lib/bench.js` and `lib/drift.js`
+
+**Files:**
+- Modify: `scripts/bench.js` — the require block and `conf` in `cmdRun` (lines 304-310)
+- Modify: `lib/bench.js` — the require block and `agentTypeOf` (lines 268-274)
+- Modify: `lib/drift.js` — the require block and the meta read in the implementer search (lines 182-186)
+- Read: `lib/json.js` — `readObject(file)`, null for absent, unreadable, unparsable or non-object
+
+**Interfaces:**
+- Consumes: `readObject(file)` from `lib/json.js` (already exported)
+- Produces: none
+
+**Dispatch:** implementer, sonnet — the plan carries the code; transcription plus tests.
+
+- [ ] Step 1. Run `node --test tests/bench.test.js tests/bench-projects.test.js tests/drift.test.js` and note it passes before the change.
+- [ ] Step 2. In `scripts/bench.js`, in `cmdRun`, replace `let conf;` and the `try { conf = JSON.parse(...) } catch (e) { ... }` block after it with:
+
+```js
+    const conf = readObject(path.join(project, 'bench.json'));
+    if (!conf) {
+        console.error('bench.js: no bench.json under ' + project);
+        return 1;
+    }
+```
+
+and, in `scripts/bench.js` after line 27 (the line that requires ./eval.js), add:
+
+```js
+const { readObject } = require('../lib/json.js');
+```
+
+- [ ] Step 3. In `lib/bench.js`, replace `function agentTypeOf(file) { ... }` with:
+
+```js
+function agentTypeOf(file) {
+    const meta = readObject(file.replace(/\.jsonl$/, '.meta.json'));
+    return (meta && baseAgent(meta.agentType)) || 'unknown';
+}
+```
+
+and, in `lib/bench.js` after the line that requires ./agentfile.js, add:
+
+```js
+const { readObject } = require('./json.js');
+```
+
+- [ ] Step 4. In `lib/drift.js`, inside the `for (const file of usage.agentFiles(...))` loop, replace the `try { ... } catch (e) { ... }` block with:
+
+```js
+        // An agent with no readable meta.json is not the one asked for.
+        const meta = readObject(file.replace(/\.jsonl$/, '.meta.json'));
+        if (meta && baseAgent(meta.agentType) === 'fankeel-implementer') return file;
+```
+
+and, in `lib/drift.js` after line 15 (the line that requires ./spend.js), add:
+
+```js
+const { readObject } = require('./json.js');
+```
+
+- [ ] Step 5. Run `grep -n "JSON.parse(fs.readFileSync" scripts/bench.js lib/bench.js lib/drift.js` and see only the `role.json` read in `scripts/bench.js` (about line 168), which the entry rejects converting and which stays; run the Step 1 command again and watch it pass.
+
 ## Coverage
 
 | promise | task |
@@ -432,6 +655,9 @@ followed by the rest of that line exactly as it was.
 | (1) hooks/gate.js:248、272、307、332、355 與 hooks/guard.js:87、110、133、155、182 各手寫一次 PreToolUse 的 deny 回應 | Task 1 |
 | hooks/budget.js:68 與 lib/sensitive.js:208 同形也改用 | Task 2 |
 | (2) split(path.sep).join('/') 在 lib、scripts 約二十處，lib/bench.js:40 已有 posix，搬到共用模組後改用 | Tasks 3-7 |
-| (3) 次要、各 3 到 18 行：lib/shots.js:128 within 與 scripts/drive.js:85 insidePlugin 合併 … readObject | struck — the entry's 完成條件 names (1)(2) only; (3) goes to a new TODO entry at land so it is not lost when cuts-2 closes |
+| (3) 次要、各 3 到 18 行：lib/shots.js:128 within 與 scripts/drive.js:85 insidePlugin 合併（lib/guard.js:71 relPath 行為不同，不併） | Task 8 |
+| lib/compare.js:67 addModels 改用 lib/usage.js:54 的（要 export 並在呼叫端補 models || {}） | Task 9 |
+| scripts/station.js:524 四條路由共用 formOf 加 registry 查找（404 訊息各自保留） | Task 10 |
+| scripts/bench.js:306、lib/bench.js:270、lib/drift.js:183 改用 lib/json.js 的 readObject | Task 11 |
 | 已駁回、不要做：兩個 median、readObject 兩處、registry.sleepMs | struck — rejected by the entry itself; no task touches them |
-| 完成條件：(1)(2) 改完，npm test 全綠，git diff 淨減行數，並在完成紀錄寫實際減了幾行 | Tasks 1-7, then verify runs the suite and `git diff --shortstat`; land writes the count into `todo.js done` |
+| 完成條件：(1)(2) 改完，npm test 全綠，git diff 淨減行數，並在完成紀錄寫實際減了幾行 | Tasks 1-11, then verify runs the suite and `git diff --shortstat`; land writes the count into `todo.js done` |
