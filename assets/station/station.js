@@ -2727,7 +2727,7 @@
             statePill: statePill, clearStaleControl: clearStaleControl,
             openSections: openSections, downsample: downsample, lineChart: lineChart,
             riseText: riseText, ctxSection: ctxSection, seqHtml: seqHtml, orderSection: orderSection,
-            dur: dur, tasksHtml: tasksHtml, dispatchHtml: dispatchHtml, replayHtml: replayHtml, dispatchStagesHtml: dispatchStagesHtml, segmentsOf: segmentsOf, stageCost: stageCost, totalSuffix: totalSuffix, splitHtml: splitHtml,
+            dur: dur, tasksHtml: tasksHtml, dispatchHtml: dispatchHtml, replayHtml: replayHtml, dispatchStagesHtml: dispatchStagesHtml, segmentsOf: segmentsOf, stageCost: stageCost, totalSuffix: totalSuffix, splitHtml: splitHtml, planTabHtml: planTabHtml, planRel: planRel,
             splitCount: splitCount,
             pendingGateHtml: pendingGateHtml, pgAnswers: pgAnswers, todoEntry: todoEntry, riseTodo: riseTodo, backTodo: backTodo, todoSpot: todoSpot,
             figures: figures, compareHtml: compareHtml,
@@ -4428,7 +4428,7 @@
                     + (parts.length ? loc('det.dispatchColon', '派工：{p}', { p: parts.join(loc('det.listSep', '、')) }) + (models ? loc('det.semicolon', '；') + models : '') : loc('det.noDispatch', '沒有派工'));
             });
         if (!hasLoops) lines.push(loc('det.cacheHasNoPerStageTurns', '這份快取沒有逐站回合數（寫於 loops 欄位出現之前）'));
-        (x.tasks || []).forEach(function (p) {
+        (x.tasks || []).filter(function (p) { return !p.error; }).forEach(function (p) {
             var hinted = p.groups.filter(function (g) { return g.hint; });
             var none = p.groups.filter(function (g) { return !g.turns.length; });
             var one = p.groups.length - hinted.length - none.length;
@@ -4464,6 +4464,8 @@
     function tasksHtml(list) {
         if (!list || !list.length) return '<p class="tally">' + loc('det.noPlanFileNoTaskTable', '這個 session 的 claims 裡沒有 plan 檔，沒有任務表') + '</p>';
         return list.map(function (p) {
+            if (p.error) return '<div class="srcline" title="' + esc(p.plan) + '">' + esc(p.plan) + '</div><p class="tally">'
+                + (p.error === 'unreadable' ? loc('det.planUnreadableShort', '讀不到這份 plan') : loc('det.planNoTasksShort', '這份 plan 裡沒有 task')) + '</p>';
             var byN = {};
             p.tasks.forEach(function (t) { byN[t.n] = t; });
             var done = p.tasks.filter(function (t) { return t.status === 'complete'; }).length;
@@ -4489,6 +4491,190 @@
                 + (p.unmatched.length ? loc('det.unmatchedDispatches', '；label 裡沒有 task N 的派工 {n} 個，不猜：', { n: p.unmatched.length })
                     + p.unmatched.map(esc).join(loc('det.listSep', '、')) : '') + '</p>';
         }).join('');
+    }
+    // The plan tab (docs/90-agent/plans/2026-10-18-plan-gate-page-design.md
+    // §2), drawn from the newest plan this session claimed: its dispatch
+    // groups as columns of task cards. Each card names every earlier task
+    // `plantasks.conflict` refused it beside — one 等 line per pair, so the
+    // lines on the page and the pairs refused are one count. No edge is drawn
+    // as a line: `focus` is the task hovered or focused, whose neighbours light
+    // (`planRel`). While the session sits at `plan` a banner puts the gate's
+    // question; the answer is given in Claude Desktop, never here. Classes are
+    // `pv-`: `.pg` is the pending gate's.
+    // The newest plan claimed: claims are kept newest last.
+    function planNewest(list) { return list && list.length ? list[list.length - 1] : null; }
+    // What one 等 line says about earlier task `w.n`, as waiting task `t` says it.
+    function planReason(t, w) {
+        var f = w.file ? '<code>' + esc(w.file) + '</code>' : '';
+        if (w.kind === 'files') return loc('det.planWaitFiles', '同改 {f}', { f: f });
+        if (w.kind === 'interface') return loc('det.planWaitIface', '用它產出的 {f}', { f: f });
+        if (w.kind === 'read') {
+            var mine = (t.read || []).some(function (r) { return String(r).replace(/:\d+(-\d+)?$/, '') === w.file; });
+            return mine ? loc('det.planWaitRead', '讀 {f}', { f: f }) : loc('det.planWaitItReads', '它讀 {f}', { f: f });
+        }
+        return loc('det.planWaitUndeclared', '有一方沒宣告檔案，保守地等');
+    }
+    // What lighting Task `f` lights: each task it waits for (`is-pre`) and each
+    // task waiting on it (`is-post`), with the kind and the tag that card wears,
+    // and the focused card's own tag. Every other card dims.
+    function planRel(p, f) {
+        var out = { pre: 0, post: 0, rel: {}, focus: '' };
+        var me = ((p && p.tasks) || []).filter(function (t) { return t.n === f; })[0];
+        if (!me) return out;
+        (me.waits || []).forEach(function (w) {
+            out.pre++;
+            out.rel[w.n] = { cls: 'is-pre ' + w.kind, text: loc('det.planTagPre', 'Task {f} 等這張 · {r}', { f: f, r: planReason(me, w) }) };
+        });
+        p.tasks.forEach(function (t) {
+            (t.waits || []).forEach(function (w) {
+                if (w.n !== f) return;
+                out.post++;
+                out.rel[t.n] = { cls: 'is-post ' + w.kind, text: loc('det.planTagPost', '這張等 Task {f} · {r}', { f: f, r: planReason(t, w) }) };
+            });
+        });
+        out.focus = (out.pre ? loc('det.planFocusPre', '等 {n} 張', { n: out.pre }) : loc('det.planFocusNoPre', '不等誰'))
+            + ' · ' + (out.post ? loc('det.planFocusPost', '{n} 張等它', { n: out.post }) : loc('det.planFocusNoPost', '沒有卡等它'));
+        return out;
+    }
+    // The class and tag card `n` wears while Task `f` is lit; null when nothing is.
+    function planLit(r, n, f) {
+        if (!r) return null;
+        if (n === f) return { cls: 'is-focus', tag: esc(r.focus), hit: false };
+        var x = r.rel[n];
+        return x ? { cls: x.cls, tag: '<i class="pv-ln" aria-hidden="true"></i>' + x.text, hit: x.cls.indexOf('is-post') === 0 }
+            : { cls: 'is-dim', tag: null, hit: false };
+    }
+    function planCard(t, lit, f) {
+        var file = function (x) {
+            var m = /^(.*?)(:\d+-\d+)?$/.exec(String(x));
+            return '<code>' + esc(m[1]) + (m[2] ? '<small>' + esc(m[2]) + '</small>' : '') + '</code>';
+        };
+        var disp = t.dispatch === 'implementer'
+            ? 'implementer · <span class="pv-m"><i class="sw" style="background:var(--m-' + family('claude-' + t.model) + ')"></i>' + esc(t.model || '?')
+                + '</span> · <span>effort ' + esc(t.effort || loc('det.planEffortDefault', '預設')) + '</span>'
+            : t.dispatch === 'user' ? loc('det.planByUser', '交給你')
+                : t.dispatch === 'in-session' ? loc('det.planInSession', '主 session 自己做')
+                    : loc('det.planNoDispatch', '沒有 Dispatch 行');
+        var waits = t.waits || [];
+        var wait = waits.length
+            ? '<div class="pv-wait"><span class="pv-wl">' + loc('det.planWaitLabel', '等') + '</span><ul>' + waits.map(function (w) {
+                return '<li class="pv-dep ' + esc(w.kind) + (lit && lit.hit && w.n === f ? ' is-hit' : '') + '" data-from="' + w.n + '"><i class="pv-ln" aria-hidden="true"></i>'
+                    + '<b>Task ' + w.n + '</b><span>' + planReason(t, w) + '</span></li>';
+            }).join('') + '</ul></div>'
+            : '<p class="pv-wait none">' + loc('det.planWaitsNone', '不等誰：這組一開就能跑') + '</p>';
+        return '<article class="pv-card' + (lit ? ' ' + lit.cls : '') + '" data-block="task-card-' + t.n + '" data-n="' + t.n + '" tabindex="0" aria-label="Task ' + t.n + '">'
+            + (lit && lit.tag !== null ? '<p class="pv-tag">' + lit.tag + '</p>' : '')
+            + '<h3><span class="pv-num">' + t.n + '</span><span class="pv-tt">' + esc(t.title).replace(/`([^`]+)`/g, '<code>$1</code>') + '</span></h3>'
+            + '<dl class="pv-files"><div><dt>' + loc('det.planModify', '改') + '</dt><dd>' + (t.modify || []).map(file).join('') + '</dd></div>'
+            + ((t.test || []).length ? '<div><dt>' + loc('det.planTest', '測') + '</dt><dd>' + t.test.map(file).join('') + '</dd></div>' : '') + '</dl>'
+            + '<p class="pv-disp">' + disp + '</p>' + wait + '</article>';
+    }
+    function planTabHtml(s, list, focus) {
+        var PV_KINDS = ['files', 'read', 'interface'];
+        var PV_THEN = '<svg class="ico" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 6.2 8 9.8l3.5-3.6"/></svg>';
+        var PV_GATE = '<svg class="ico" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.8 13.5 4v4c0 3-2.4 5.3-5.5 6.2C4.9 13.3 2.5 11 2.5 8V4z"/><path d="M8 5.2v3.3M8 10.8v.01"/></svg>';
+        var p = planNewest(list);
+        var code = function (x) { return '<code>' + esc(x) + '</code>'; };
+        if (!p) return '<p class="pv-empty">' + loc('det.planNone', '這個 session 的 claims 裡還沒有 plan 檔。plan stage 寫出 plan 後，這裡列出它的 task 和分組。') + '</p>';
+        if (p.error === 'unreadable') return '<p class="pv-empty err">' + loc('det.planUnreadable', '讀不到 {p}：檔案在，但打不開。', { p: code(p.plan) }) + '</p>';
+        if (!p.tasks.length) return '<p class="pv-empty err">' + loc('det.planNoTasks', '{p} 裡找不到 <code>## Task N:</code> 標題，沒有 task 可畫。', { p: code(p.plan) }) + '</p>';
+        var byN = {}, kinds = { files: 0, read: 0, interface: 0, undeclared: 0 }, edges = 0, models = {};
+        p.tasks.forEach(function (t) {
+            byN[t.n] = t;
+            (t.waits || []).forEach(function (w) { edges++; kinds[w.kind] = (kinds[w.kind] || 0) + 1; });
+            if (t.dispatch === 'implementer' && t.model) models[t.model] = (models[t.model] || 0) + 1;
+        });
+        var f = focus === null || focus === undefined ? null : Number(focus);
+        var r = f !== null && byN[f] ? planRel(p, f) : null;
+        var banner = s && s.stage === 'plan'
+            ? '<div class="pv-banner" data-block="gate-banner"><div class="pv-q"><span class="pill gate">' + PV_GATE + 'gate</span>'
+                + '<h2>' + loc('det.planGateQ', 'plan gate：要用這 {n} 個 task 進 build 嗎？', { n: p.tasks.length }) + '</h2></div>'
+                + '<ul class="pv-counts"><li><b>' + p.tasks.length + '</b>task</li>'
+                + '<li>' + loc('det.planGroupsRun', '<b>{n}</b>組，依序跑', { n: p.groups.length }) + '</li>'
+                + '<li>' + loc('det.planEdges', '<b>{n}</b>條相依', { n: edges }) + '</li>'
+                + (Object.keys(models).length ? '<li class="pv-mods"><span class="pv-ml">implementer</span>' + Object.keys(models).map(function (m) {
+                    return '<span class="chip"><i class="sw" style="background:var(--m-' + family('claude-' + m) + ')"></i>' + esc(m) + ' × ' + models[m] + '</span>';
+                }).join('') + '</li>' : '') + '</ul>'
+                + '<div class="srcline pv-src" title="' + esc(p.plan) + '">' + esc(p.plan) + '</div>'
+                + '<p class="pv-where"><i class="hatchsw" aria-hidden="true"></i><span>' + loc('det.planWhere', '回答在 Claude Desktop 那邊給；這頁只讓你看清楚要核准什麼，不收答案。') + '</span></p></div>'
+            : '<div class="srcline pv-src pv-plain" title="' + esc(p.plan) + '">' + esc(p.plan) + '</div>';
+        var label = { files: loc('det.planKindFiles', '同改一個檔'), read: loc('det.planKindRead', '一個讀、一個改'), interface: loc('det.planKindIface', '用到對方產出的介面') };
+        var legend = '<div class="pv-legend" data-block="legend"><span class="pv-lh">' + loc('det.planLegend', '相依') + '</span>'
+            + PV_KINDS.map(function (k) {
+                return '<span class="pv-li ' + k + (kinds[k] ? '' : ' zero') + '"><i class="pv-ln" aria-hidden="true"></i><b>' + k + '</b>' + label[k]
+                    + '<small>' + (kinds[k] ? loc('det.planKindN', '{n} 條', { n: kinds[k] }) : loc('det.planKindZero', '這份 plan 沒有')) + '</small></span>';
+            }).join('')
+            + '<span class="pv-lnote">' + loc('det.planLegendNote', '一欄跑完才換下一欄，欄內並行；停在或 tab 到一張卡，亮出它等的和等它的卡，Esc 清掉。') + '</span></div>';
+        var groups = p.groups.map(function (g, i) {
+            var par = g.tasks.length === 1 ? loc('det.planAlone', '單獨 1 個') : loc('det.planParallel', '可並行 {n} 個', { n: g.tasks.length });
+            return '<section class="pv-g" data-block="group-g' + g.g + '" aria-label="G' + g.g + ' · ' + par + '">'
+                + '<header class="pv-gh"><span class="gb">G' + g.g + '</span><span class="pv-surf mono">' + esc(g.surface) + '</span><span class="pv-par">' + par + '</span></header>'
+                + '<div class="pv-cards">' + g.tasks.map(function (n) { return byN[n] ? planCard(byN[n], planLit(r, n, f), f) : ''; }).join('') + '</div></section>'
+                + (i < p.groups.length - 1 ? '<div class="pv-then">' + PV_THEN + '<span>' + loc('det.planThen', 'G{a} 全部回來，才派 G{b}', { a: g.g, b: g.g + 1 }) + '</span></div>' : '');
+        }).join('');
+        return banner + legend + '<div class="pv-groups" data-block="group-columns">' + groups + '</div>';
+    }
+    // The tab as the session page draws it: the lit task carried across a
+    // redraw (`planAt`), and the hover, focus and Esc listeners added on the
+    // first draw rather than at load — tests/station-hdl-c.test.js presses the
+    // page's load-time listeners by their place in the order they were added.
+    var planAt = null;
+    var planHeard = false;
+    function planTab(s, x) {
+        planListen();
+        return planTabHtml(s, x.tasks, planAt);
+    }
+    // Lights Task `f`'s neighbours on the drawn tab, or clears them for null,
+    // without a redraw: a redraw would take the keyboard focus with it.
+    function planFocus(f) {
+        planAt = f === null || f === undefined ? null : Number(f);
+        var grid = doc && doc.querySelector ? doc.querySelector('.pv-groups') : null;
+        if (!grid) return;
+        var x = route.view === 'session' ? DETAIL[route.id] : null;
+        var p = x ? planNewest(x.tasks) : null;
+        var r = p && planAt !== null ? planRel(p, planAt) : null;
+        [].forEach.call(grid.querySelectorAll('.pv-card'), function (c) {
+            c.classList.remove('is-focus', 'is-pre', 'is-post', 'is-dim', 'files', 'read', 'interface', 'undeclared');
+            var old = c.querySelector('.pv-tag');
+            if (old) old.parentNode.removeChild(old);
+            [].forEach.call(c.querySelectorAll('.pv-dep.is-hit'), function (d) { d.classList.remove('is-hit'); });
+            var lit = planLit(r, Number(c.getAttribute('data-n')), planAt);
+            if (!lit) return;
+            lit.cls.split(' ').forEach(function (k) { c.classList.add(k); });
+            if (lit.hit) [].forEach.call(c.querySelectorAll('.pv-dep[data-from="' + planAt + '"]'), function (d) { d.classList.add('is-hit'); });
+            if (lit.tag === null) return;
+            var tag = doc.createElement('p');
+            tag.className = 'pv-tag';
+            tag.innerHTML = lit.tag;
+            c.insertBefore(tag, c.firstChild);
+        });
+    }
+    function planListen() {
+        if (planHeard || !doc || !doc.addEventListener) return;
+        planHeard = true;
+        var near = function (e, sel) { return e && e.target && e.target.closest ? e.target.closest(sel) : null; };
+        var on = function (e) {
+            var c = near(e, '.pv-card');
+            if (c && Number(c.getAttribute('data-n')) !== planAt) planFocus(c.getAttribute('data-n'));
+        };
+        doc.addEventListener('mouseover', on);
+        doc.addEventListener('focusin', on);
+        // Leaving the columns clears, unless a card in them holds the keyboard focus.
+        doc.addEventListener('mouseout', function (e) {
+            var g = near(e, '.pv-groups');
+            if (!g || (e.relatedTarget && g.contains(e.relatedTarget)) || g.contains(doc.activeElement)) return;
+            planFocus(null);
+        });
+        doc.addEventListener('focusout', function (e) {
+            var g = near(e, '.pv-groups');
+            if (g && !(e.relatedTarget && g.contains(e.relatedTarget))) planFocus(null);
+        });
+        doc.addEventListener('keydown', function (e) {
+            if (!e || e.key !== 'Escape' || planAt === null) return;
+            var a = doc.activeElement;
+            planFocus(null);
+            if (a && a.closest && a.closest('.pv-card') && a.blur) a.blur();
+        });
     }
     // Every column below is the sum of the rows under it: each row's cents,
     // thousands of tokens and seconds were rounded in `lib/detail.js` by the
