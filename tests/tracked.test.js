@@ -258,4 +258,5 @@ test('within is the directory itself or below it, never a sibling or above', () 
   assert.equal(tracked.within(root, path.dirname(root)), false);
   assert.equal(tracked.within(root, root + '-sibling'), false);
   assert.equal(tracked.within(root, path.join(root, '..', 'elsewhere')), false);
+  if (process.platform === 'win32') assert.equal(tracked.within('C:\\a', 'D:\\b'), false);
 });
