@@ -714,13 +714,8 @@ naming its `parentAgentId` at `spawnDepth` 2 — so `agentFiles()` in
 2026-09-20: one stage agent and five readers in one directory).
 
 The station reads the same directory to say which of them are running now
-(`runningAgents` in `lib/usage.js`, the `live-subagents` row on `#/live`).
-`agent-<id>.meta.json` is written once, at spawn, and carries no end, so the
-end is read off the transcript: an agent is finished when the last assistant
-or user line of `agent-<id>.jsonl` is an assistant line with text and no
-tool_use — measured 2026-09-27 on 290 finished agents in one project, 288
-ending `end_turn` and 2 ending `stop_reason: null` with text alone — and
-running otherwise, unless the file has not moved in 20 minutes.
+(`runningAgents` in `lib/usage.js`, the `live-subagents` row on `#/live`); how
+an agent counts as finished or stopped is [station.md](station.md)'s rule.
 
 `survey` was the only stage this had been run for when the builtin was left at
 `false` rather than moved to `true` or `all`, for three checkable reasons (five

@@ -730,10 +730,7 @@ while it names the current stage: when it was sent and how long it has been
 out) and each subagent `runningAgents` (`lib/usage.js`,
 `function runningAgents(sessionDir, now, opts) {`) reads as mid-turn, with
 its type, the model and effort it last ran (the family when none is recorded), description and age — or one line saying the main
-session is working alone. A subagent is finished when the last assistant or
-user line of its `agent-<id>.jsonl` is an assistant line with text and no
-tool_use; a file that has not moved in 20 minutes is a stopped agent and is
-dropped. Only a live row is read: `gather()` leaves `subagents` empty
+session is working alone. A subagent is finished when the last assistant or user line of its `agent-<id>.jsonl` is an assistant line with text and no tool_use — `agent-<id>.meta.json` is written once, at spawn, and carries no end, so the end is read off the transcript; measured 2026-09-27 on 290 finished agents in one project, 288 ending `end_turn` and 2 ending `stop_reason: null` with text alone. A file that has not moved in 20 minutes is a stopped agent and is dropped. Only a live row is read: `gather()` leaves `subagents` empty
 otherwise; `live-maybe`,
 可能已經停了, the `stale` sessions and the `live?`
 ones, the `live?` pill greyed, with each registry's `clearStaleControl` in
