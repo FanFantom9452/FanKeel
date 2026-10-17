@@ -819,6 +819,7 @@
             'det.planKindFiles': 'both change one file',
             'det.planKindRead': 'one reads what the other changes',
             'det.planKindIface': 'uses an interface the other produces',
+            'det.planKindUndeclared': 'one of the two declared no files',
             'det.planLegend': 'Depends',
             'det.planKindN': '{n} edges',
             'det.planKindZero': 'none in this plan',

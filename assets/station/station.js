@@ -4598,9 +4598,10 @@
                 + '<div class="srcline pv-src" title="' + esc(p.plan) + '">' + esc(p.plan) + '</div>'
                 + '<p class="pv-where"><i class="hatchsw" aria-hidden="true"></i><span>' + loc('det.planWhere', '回答在 Claude Desktop 那邊給；這頁只讓你看清楚要核准什麼，不收答案。') + '</span></p></div>'
             : '<div class="srcline pv-src pv-plain" title="' + esc(p.plan) + '">' + esc(p.plan) + '</div>';
-        var label = { files: loc('det.planKindFiles', '同改一個檔'), read: loc('det.planKindRead', '一個讀、一個改'), interface: loc('det.planKindIface', '用到對方產出的介面') };
+        var label = { files: loc('det.planKindFiles', '同改一個檔'), read: loc('det.planKindRead', '一個讀、一個改'), interface: loc('det.planKindIface', '用到對方產出的介面'),
+            undeclared: loc('det.planKindUndeclared', '有一方沒宣告檔案') };
         var legend = '<div class="pv-legend" data-block="legend"><span class="pv-lh">' + loc('det.planLegend', '相依') + '</span>'
-            + PV_KINDS.map(function (k) {
+            + PV_KINDS.concat(kinds.undeclared ? ['undeclared'] : []).map(function (k) {
                 return '<span class="pv-li ' + k + (kinds[k] ? '' : ' zero') + '"><i class="pv-ln" aria-hidden="true"></i><b>' + k + '</b>' + label[k]
                     + '<small>' + (kinds[k] ? loc('det.planKindN', '{n} 條', { n: kinds[k] }) : loc('det.planKindZero', '這份 plan 沒有')) + '</small></span>';
             }).join('')
@@ -4676,6 +4677,7 @@
             if (a && a.closest && a.closest('.pv-card') && a.blur) a.blur();
         });
     }
+    if (typeof module !== 'undefined' && module.exports) module.exports.planTab = planTab;
     // Every column below is the sum of the rows under it: each row's cents,
     // thousands of tokens and seconds were rounded in `lib/detail.js` by the
     // largest remainder, so the page only adds.
