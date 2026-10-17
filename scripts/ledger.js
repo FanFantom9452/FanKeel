@@ -43,6 +43,17 @@ function fail(message) {
     process.exit(1);
 }
 
+// `--range` is refused on the way in rather than dropped on the way out: a value
+// `ledger.isRange` cannot read back would reach the file and then read as no
+// range at all. `undefined` is no flag and passes; `fix` insists on one before
+// it asks.
+function requireRange(range) {
+    if (range !== undefined && !ledger.isRange(range)) {
+        fail('--range wants two commit shas: <base>..<head>, 7 to 40 hex each. '
+            + '"' + range + '" would reach the file and read back as no range at all.');
+    }
+}
+
 // Every string flag, and the key it lands on. A table rather than a list because
 // `splitAtVerb` reads it too, and two lists of the same flags drift.
 const STRING_FLAGS = { root: 'root', plan: 'plan', range: 'range', group: 'group', render: 'render' };
@@ -681,10 +692,7 @@ function main(argv) {
         // the ledger, since it belongs to an earlier plan.
         let rangeNote = '';
         if (opts.range !== undefined) {
-            if (!ledger.isRange(opts.range)) {
-                fail('--range wants two commit shas: <base>..<head>, 7 to 40 hex each. '
-                    + '"' + opts.range + '" would reach the file and read back as no range at all.');
-            }
+            requireRange(opts.range);
             const already = ledger.planRange(fs.readFileSync(ledgerFile, 'utf8'));
             if (already === null) {
                 ledger.append(root, opts.plan, ledger.planLine(opts.range));
@@ -734,10 +742,7 @@ function main(argv) {
         // reports the row as a task that recorded none — naming two causes,
         // neither of which happened. The shape is `lib/ledger.js`'s own, so this
         // refuses exactly what that parser would have skipped.
-        if (opts.range !== undefined && !ledger.isRange(opts.range)) {
-            fail('--range wants two commit shas: <base>..<head>, 7 to 40 hex each. '
-                + '"' + opts.range + '" would reach the file and read back as no range at all.');
-        }
+        requireRange(opts.range);
         const suffix = renderNote(root, opts.render);
         const refusal = renderRefusal(root, opts.range, opts);
         if (refusal) fail(refusal);
@@ -842,10 +847,7 @@ function main(argv) {
         // that came back from verify, and a fix line with no range is the
         // unreviewed commit this verb exists to rule out.
         if (opts.range === undefined) fail('fix wants --range <base>..<sha>: a fix with no range is a commit nobody reviewed.');
-        if (!ledger.isRange(opts.range)) {
-            fail('--range wants two commit shas: <base>..<head>, 7 to 40 hex each. '
-                + '"' + opts.range + '" would reach the file and read back as no range at all.');
-        }
+        requireRange(opts.range);
         const suffix = renderNote(root, opts.render);
         const refusal = renderRefusal(root, opts.range, opts);
         if (refusal) fail(refusal);
