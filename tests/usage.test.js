@@ -344,3 +344,15 @@ test('a task-notification line inside a sidechain is not counted as a wake', () 
     ]);
     assert.equal(usage.summarise(file).usage.wakes, 0);
 });
+
+test('addModels folds one model map into another, in place', () => {
+    const into = { m: { input: 1, output: 2, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } };
+    usage.addModels(into, {
+        m: { input: 10, output: 20, cacheRead: 1, cacheWrite5m: 2, cacheWrite1h: 3 },
+        n: { input: 5, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 },
+    });
+    assert.deepEqual(into, {
+        m: { input: 11, output: 22, cacheRead: 1, cacheWrite5m: 2, cacheWrite1h: 3 },
+        n: { input: 5, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 },
+    });
+});
