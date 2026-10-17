@@ -13,5 +13,5 @@ link: lib/context.js
 不必另跑一次：~/.claude/settings.json 的 env 已經有 CLAUDE_CODE_AUTO_COMPACT_WINDOW 450000，10-16 起有三個 Claude Desktop 啟動的 fankeel session 跑過 400k，從它們的 transcript 讀出三件。
 
 - settings env 是否吃得到：吃得到。本盤點的 Desktop session 398cc390-8239-42f0-8311-1f7f73c7bb88 的 shell 讀到 450000；session 5e181f59-060e-43af-b6b4-d2ba247c315a、9e59e535-7d50-4ff5-a017-bb2638612fb8、9cf97941-93c8-4fcb-9cf2-8ef92f52eff5 共有 5 個 trigger 為 auto 的 compact_boundary，主機自己壓。
-- hook 看不看得到：看得到。9cf97941 過 400k 時 context 行是「400k in play, nothing dropped yet」接 hand off 的提示，三個 transcript 裡 No auto-compact window is set 那一句都是 0 次。
-- 1M 視窗在 450000 的觸發點：5 次壓縮前分別是 418056、419608、418571、426881、416911 token，落在 417k 到 427k；同期終端啟動的 SBIR session 也在 417k 到 424k 壓。比視窗少 25k 到 35k，與 10-12 headless 量到的 200000 視窗在 165k 到 170k 壓同一個規律。
+- hook 看不看得到：看得到，推得的。那一句只在 hook 讀不到這個變數時由 lib/context.js 加上；session 9cf97941-93c8-4fcb-9cf2-8ef92f52eff5 過 400k 時 context 行是「400k in play, nothing dropped yet」接 hand off 的提示，三個 transcript 裡 No auto-compact window is set 那一句都是 0 次。
+- 1M 視窗在 450000 的觸發點：5 次壓縮前分別是 418056、419608、418571、426881、416911 token，落在 417k 到 427k；同期終端啟動的 SBIR session（4b72ae2c-64c0-4420-b433-6b705e0855d8、244f7c6b-80e8-4270-92f6-6fcd0d36ab65、e3f3fd12-8233-4979-b794-ef8e22fc7c56、e6a02ad2-b675-4021-a65e-c1ce1ec1b8ac、22d6980f-e79c-4891-8bee-f05f8437a8af、25ce35c0-1e88-46e9-8a9b-0bbbacea9fe0）也在 417k 到 425k 壓。比視窗少 25k 到 35k，與 10-12 headless 量到的 200000 視窗在 165k 到 170k 壓同一個規律。

@@ -198,3 +198,8 @@ grep -n compact_boundary <那個 session 的 transcript>.jsonl
 | brief-3 子代理 brief 改走 spawn | Task 3 |
 | stage-agents-5 接縫「profile 中途翻轉」 | Task 4 |
 | compact-4 Desktop 真機看壓縮視窗 | Task 5 |
+
+## Ruling
+
+- Task 4 did not go through the station page: its settings wizard writes only after all eight questions, so the flip was `task.js profile set stage.agents false` on the same file, and the five hooks were fed a hand-built stdin before and after rather than triggered by the probe session — the user asked for it to be done this way. Setting `all` made this patrol's own build controlled, so state A was `survey,design` instead.
+- Task 5 did not need a new run: the env was already in `~/.claude/settings.json`, and three Desktop-launched sessions from 10-16 had already compacted past 400k; the three answers were read from their transcripts.
