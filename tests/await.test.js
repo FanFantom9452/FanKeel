@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const http = require('node:http');
 const { awaitState, awaitHandoff, workflowOf, answerPath } = require('../lib/handoff.js');
 const awaitCli = require('../scripts/await.js');
 const registry = require('../lib/registry.js');
@@ -441,4 +442,49 @@ test('await.js does not hand a workflow over twice when an older answer file exi
     assert.ok(out.text.startsWith('group 7, agent g7: workflow /r/.fankeel/build/p/workflow-g2.js — '), out.text);
     const stale = await awaitCli.main(['--session', SID, '--root', f.root, '--agent', 'g7', '--timeout', '0.3'], f.env);
     assert.ok(stale.text.startsWith('group 7, agent g7: timeout'), 'an answer older than the re-mark does not make the handed-over report news: ' + stale.text);
+});
+
+// plan gate page §3: a station answering /station/health for this process's
+// pid, the way scripts/station.js answers it — all lib/serve.js's probe asks.
+function station() {
+    const server = http.createServer((req, res) => {
+        if (req.url !== '/station/health') { res.writeHead(404); res.end(); return; }
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ station: true, pid: process.pid }));
+    });
+    return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve({
+        port: server.address().port,
+        url: 'http://127.0.0.1:' + server.address().port + '/',
+        close: () => new Promise((r) => { server.closeAllConnections(); server.close(r); }),
+    })));
+}
+function serveRecord(config, s) {
+    fs.mkdirSync(path.join(config, 'fankeel'), { recursive: true });
+    fs.writeFileSync(path.join(config, 'fankeel', 'serve.json'), JSON.stringify({ pid: process.pid, port: s.port, url: s.url }));
+}
+
+test('a plan-stage handoff prints a page: line under it when the station answers, and no such line when none does', async () => {
+    const f = fixture({ stage: 'plan', moves: [['plan', 1]] });
+    at(path.join(f.task, 'plan.md'), Date.now());
+    const alone = await awaitCli.main(['--session', SID, '--root', f.root], f.env);
+    assert.match(alone.text, new RegExp('^handoff ' + f.task + '/plan\\.md — '));
+    assert.doesNotMatch(alone.text, /page: /, 'no serve.json: the gate is asked as before');
+    const s = await station();
+    try {
+        serveRecord(f.config, s);
+        const out = await awaitCli.main(['--session', SID, '--root', f.root], f.env);
+        const lines = out.text.split('\n');
+        assert.match(lines[0], new RegExp('^handoff ' + f.task + '/plan\\.md — '));
+        assert.equal(lines[1], 'page: ' + s.url + '#/s/' + SID + '/plan');
+        assert.equal(lines.length, 2);
+        const b = fixture({});
+        at(path.join(b.task, 'build.md'), Date.now());
+        serveRecord(b.config, s);
+        const build = await awaitCli.main(['--session', SID, '--root', b.root], b.env);
+        assert.doesNotMatch(build.text, /page: /, 'only the plan stage gets the page');
+    } finally {
+        await s.close();
+    }
+    const gone = await awaitCli.main(['--session', SID, '--root', f.root], f.env);
+    assert.doesNotMatch(gone.text, /page: /, 'a serve.json nobody answers for prints no line');
 });

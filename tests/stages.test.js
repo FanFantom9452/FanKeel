@@ -1184,3 +1184,20 @@ test('verify runs the suite through suite.js, land asks --check first, and both 
     assert.ok(s.prompt_bytes <= s.prompt_byte_budget, s.name + ' spends ' + s.prompt_bytes + ' of ' + s.prompt_byte_budget + ' bytes');
   }
 });
+
+// plan gate page §3: the plan gate asks about tasks nobody has seen, so the
+// controlled plan block prints await's page: line above it and opens the
+// page in a browser pane first; no other stage's block mentions it.
+test('only the controlled plan stage prints the await page: line above its gate and opens it in a browser pane', () => {
+  const { controlFor } = require('../lib/stages.js');
+  const all = ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land'];
+  for (const stage of all) {
+    const text = controlFor(stage, { 'stage.agents': all }, { handoff: '/r/h.md' }).rules.join('\n');
+    if (stage === 'plan') {
+      assert.match(text, /an await `page: <url>` line goes above the gate as printed/);
+      assert.match(text, /with a browser-pane tool, open that url there before AskUserQuestion/);
+    } else {
+      assert.doesNotMatch(text, /page: <url>/, stage);
+    }
+  }
+});

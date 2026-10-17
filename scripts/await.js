@@ -25,6 +25,7 @@ const { newestPlan } = require('../lib/render.js');
 const { transcriptOf } = require('../lib/detail.js');
 const { sessionDirOf, agentFiles } = require('../lib/usage.js');
 const { configDirOf } = require('../lib/profile.js');
+const { readServeRecord, probe } = require('../lib/serve.js');
 
 const USAGE = 'await.js: usage: await.js --session <id> [--root <dir>] [--since <file>] [--idle <seconds>] [--timeout <seconds>] [--agent <id>]';
 const COMMIT_SCRIPT = path.join(__dirname, 'commit.js').replace(/\\/g, '/');
@@ -123,7 +124,11 @@ function waitFor(opts, env) {
     // than the mark is the one already handed over.
     if (group !== undefined && mark && Number.isFinite(mark.at)) since = Math.max(since, mark.at);
     const activity = own ? () => (fs.existsSync(own) ? agentFiles(dir) : []) : () => [];
-    return { root, handoff, commit: commitCandidates(root, data, lap, group), since, agentId, group, lap, kind, activity, idleMs: opts.idle * 1000, timeoutMs: opts.timeout * 1000 };
+    return {
+        root, handoff, commit: commitCandidates(root, data, lap, group), since, agentId, group, lap, kind, activity,
+        idleMs: opts.idle * 1000, timeoutMs: opts.timeout * 1000,
+        stage: data.stage, session: opts.session, configDir: data.configDir || configDirOf(env),
+    };
 }
 
 // The word first, so the controller's rule can name it; then what to do, so
@@ -143,6 +148,20 @@ function lineFor(state, o, commitFile) {
     if (state === 'commit') return tag + 'commit ' + commitFile + ' — run `node ' + COMMIT_SCRIPT + ' "' + commitFile + '"` and SendMessage the agent what it printed, exactly. After a `commit.js:` line, run await again with `--since "' + commitFile + '"` added.';
     if (state === 'lost') return tag + 'lost ' + o.agentId + ' — the stage agent stopped with neither file written: dispatch a fresh one with the same line.';
     return tag + 'timeout — nothing moved in ' + Math.round(o.timeoutMs / 60000) + ' minutes: run await again.';
+}
+
+// plan gate page §3 (docs/90-agent/plans/2026-10-18-plan-gate-page-design.md):
+// a plan stage's report asks the user to approve tasks they have not seen, so
+// with a station answering — the record in `<configDir>/fankeel/serve.json`,
+// probed for half a second — the handoff line gains the station's plan tab
+// for this session on a line of its own. No record, no answer, any other
+// stage, or a workflow hand-over: nothing more, and the gate is asked as before.
+function pageLine(o) {
+    if (o.stage !== 'plan' || workflowOf(o.handoff)) return Promise.resolve('');
+    const record = readServeRecord(o.configDir);
+    if (!record || typeof record.url !== 'string') return Promise.resolve('');
+    const base = record.url.endsWith('/') ? record.url : record.url + '/';
+    return probe(record).then((up) => (up ? '\npage: ' + base + '#/s/' + encodeURIComponent(o.session) + '/plan' : ''), () => '');
 }
 
 // controller-1: one waiter per in-flight mark. A controller that ran await
@@ -200,7 +219,8 @@ function main(argv, env) {
         const handedOver = state === 'handoff' && Number.isInteger(o.group) && Boolean(workflowOf(o.handoff));
         if (handedOver) registry.markInflight(o.root, opts.session, 'build', o.agentId, o.lap, o.group, o.kind);
         else if (state === 'lost' || (state === 'handoff' && o.kind !== 'close' && Number.isInteger(o.group))) registry.clearInflight(o.root, opts.session, o.agentId);
-        return { text: lineFor(state, o, state === 'commit' ? newestCommit(o.commit, o.since) : null) };
+        const line = lineFor(state, o, state === 'commit' ? newestCommit(o.commit, o.since) : null);
+        return state === 'handoff' ? pageLine(o).then((page) => ({ text: line + page })) : { text: line };
     }, (e) => {
         release();
         throw e;
