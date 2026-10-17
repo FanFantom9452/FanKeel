@@ -782,6 +782,46 @@ test('a brain whose meta file is not there when the hook runs is read as depth 1
   assert.equal(data.inflight.agentId, 'a7');
 });
 
+// docs/90-agent/plans/2026-10-17-three-followups-design.md §2: the mod writes
+// .fankeel/build/spawn/<agentId>.json at agent.spawn, before the subagent has a
+// transcript or a meta file, and brief.js reads it first.
+function seedSpawn(root, id, record) {
+  const spawn = path.join(root, '.fankeel', 'build', 'spawn');
+  fs.mkdirSync(spawn, { recursive: true });
+  fs.writeFileSync(path.join(spawn, id + '.json'), JSON.stringify({ subagentType: 'fankeel:fankeel-brain', at: new Date().toISOString(), ...record }));
+}
+
+test('a brain with no transcript and no meta but a spawn record naming a parent is nested and does not mark inflight', () => {
+  const root = tmp();
+  seedProfile(root, { 'stage.agents': ['build'] });
+  seed(root, { stage: 'build', started: '2026-09-19T09:30:12.345Z' });
+  seedSpawn(root, 'a8', { prompt: 'build group 2', parentAgentId: 'a1' });
+  run(root, start(root, { agent_type: 'fankeel:fankeel-brain', agent_id: 'a8' }));
+  const data = JSON.parse(fs.readFileSync(path.join(root, '.fankeel', 'sessions', SESSION + '.json'), 'utf8'));
+  assert.equal(data.inflight, undefined, 'a nested brain named by its spawn record must not add an inflight mark');
+});
+
+test('a spawn record with no parent still marks inflight, and its prompt names the stage the brain was sent for', () => {
+  const root = tmp();
+  seedProfile(root, { 'stage.agents': ['build'] });
+  seed(root, { stage: 'build', started: '2026-09-19T09:30:12.345Z' });
+  seedSpawn(root, 'a6', { prompt: 'build group 3', parentAgentId: '' });
+  run(root, start(root, { agent_type: 'fankeel:fankeel-brain', agent_id: 'a6' }));
+  const data = JSON.parse(fs.readFileSync(path.join(root, '.fankeel', 'sessions', SESSION + '.json'), 'utf8'));
+  assert.equal(data.inflight.agentId, 'a6');
+  assert.equal(data.inflight.group, 3, 'the group comes from the record\'s prompt');
+});
+
+test('a spawn record for a brain sent for another stage is a late wake: no mark', () => {
+  const root = tmp();
+  seedProfile(root, { 'stage.agents': ['build'] });
+  seed(root, { stage: 'build', started: '2026-09-19T09:30:12.345Z' });
+  seedSpawn(root, 'a5', { prompt: 'audit', parentAgentId: '' });
+  run(root, start(root, { agent_type: 'fankeel:fankeel-brain', agent_id: 'a5' }));
+  const data = JSON.parse(fs.readFileSync(path.join(root, '.fankeel', 'sessions', SESSION + '.json'), 'utf8'));
+  assert.equal(data.inflight, undefined);
+});
+
 // 2026-09-24: a controlled build of 14 tasks sent its controller 19 commits,
 // one round trip each; then one per `ledger.js groups` group, which waited on
 // the slowest task of each group. Now: whenever nothing it sent is running.

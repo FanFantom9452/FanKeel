@@ -33,6 +33,16 @@ const { sessionDirOf } = require('../lib/usage.js');
 const { baseAgent } = require('../lib/agentfile.js');
 const { NAMES } = require('../lib/stages.js');
 
+// What the mod wrote at agent.spawn (hooks/mod.ts): the dispatch prompt's first
+// line, the agent type and the parent's agent id, under the project root. It
+// exists before the subagent has a transcript or a meta file, which is the gap
+// the two readers below fall back from. No mod, no file, an agent_id that is not
+// a plain name, or bad JSON: null, and the readers go on as they always did.
+function spawnRecord(root, agentId) {
+    if (typeof agentId !== 'string' || !/^[\w.-]+$/.test(agentId)) return null;
+    return readObject(path.join(root, '.fankeel', 'build', 'spawn', agentId + '.json'));
+}
+
 // A `fankeel-brain` dispatching a nested `fankeel-brain` of its own — build's
 // fixer-round resume does this — fires this same SubagentStart for the inner
 // one, and Claude Code's SubagentStart payload carries no depth of its own to
@@ -44,7 +54,9 @@ const { NAMES } = require('../lib/stages.js');
 // a missed nested mark only costs a spurious `group` (today's behaviour), a
 // missed real mark breaks the controller, so unknown must not skip the mark.
 // Measured: the file is not there while this hook runs, even waiting 500 ms — docs/90-agent/reports/2026-09-28-spawndepth-timing.md.
-function nestedBrain(payload) {
+function nestedBrain(payload, root) {
+    const spawn = spawnRecord(root, payload.agent_id);
+    if (spawn) return typeof spawn.parentAgentId === 'string' && spawn.parentAgentId !== '';
     const dir = sessionDirOf(payload.transcript_path);
     if (!dir) return false;
     const metaFile = path.join(dir, 'subagents', 'agent-' + payload.agent_id + '.meta.json');
@@ -60,7 +72,9 @@ function nestedBrain(payload) {
 // dispatch: Claude Code writes the transcript after this hook returns, as it
 // does the meta file, docs/90-agent/reports/2026-09-28-spawndepth-timing.md),
 // bad JSON.
-function promptOfAgent(payload) {
+function promptOfAgent(payload, root) {
+    const spawn = spawnRecord(root, payload.agent_id);
+    if (spawn && typeof spawn.prompt === 'string' && spawn.prompt) return spawn.prompt;
     const dir = sessionDirOf(payload.transcript_path);
     if (!dir || !payload.agent_id) return null;
     let line;
@@ -120,8 +134,8 @@ function main(raw) {
     // `group` is the one it names in a build's brief: `markInflight` assigns
     // it, so this is the one place both the mark and the brief agree on it.
     let group = null;
-    if (mine.stage && baseAgent(payload.agent_type) === 'fankeel-brain' && !nestedBrain(payload)) {
-        const prompt = promptOfAgent(payload);
+    if (mine.stage && baseAgent(payload.agent_type) === 'fankeel-brain' && !nestedBrain(payload, root)) {
+        const prompt = promptOfAgent(payload, root);
         // A brain sent for another stage is a late wake: no mark, and no brief,
         // since it already holds the one it started with.
         const sentFor = stageOfPrompt(prompt);
