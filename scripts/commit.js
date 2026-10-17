@@ -22,6 +22,7 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const sensitive = require('../lib/sensitive.js');
 const profile = require('../lib/profile.js');
+const { repoRoot } = require('../lib/tracked.js');
 
 function parseBlock(text) {
     const at = text.search(/\r?\n[ \t]*\r?\n/);
@@ -210,11 +211,10 @@ function main(argv, cwd) {
     if (parsed.error) return { text: 'commit.js: ' + parsed.error, code: 1 };
 
     const run = (dir, args, input, env) => spawnSync('git', args, { cwd: dir, encoding: 'utf8', input, env: env ? Object.assign({}, process.env, env) : process.env });
-    const top = run(cwd, ['rev-parse', '--show-toplevel']);
-    if (top.status !== 0) return { text: 'commit.js: not inside a git repository', code: 1 };
+    const home = repoRoot(cwd);
+    if (!home) return { text: 'commit.js: not inside a git repository', code: 1 };
     // Where the profile and .fankeel/sensitive.txt are read: the checkout this
     // was started in, which is the main one when the controller runs it.
-    const home = top.stdout.trim();
     // `into <path>`: every block lands in that worktree of this repository
     // rather than here. The controller runs this from the main checkout with
     // no cd (lib/stages.js COMMIT_RULE), so without the line a task with its
@@ -223,12 +223,12 @@ function main(argv, cwd) {
     let topDir = home;
     if (into) {
         const want = path.resolve(home, into[1]);
-        const there = fs.existsSync(want) ? run(want, ['rev-parse', '--show-toplevel']) : null;
+        const there = fs.existsSync(want) ? repoRoot(want) : null;
         const mine = commonDir(run, home);
-        if (!there || there.status !== 0 || !mine || commonDir(run, want) !== mine) {
+        if (!there || !mine || commonDir(run, want) !== mine) {
             return { text: 'commit.js: into names no worktree of this repository: ' + into[1], code: 1 };
         }
-        topDir = there.stdout.trim();
+        topDir = there;
     }
     const git = (args, input, env) => run(topDir, args, input, env);
     if (git(['rev-parse', 'HEAD']).status !== 0) return { text: 'commit.js: the repository has no commit yet', code: 1 };

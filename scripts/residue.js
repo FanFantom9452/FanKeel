@@ -28,7 +28,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { parseArgs: parseArgv } = require('node:util');
 
-const { isRepo } = require('../lib/tracked.js');
+const { isRepo, repoRoot } = require('../lib/tracked.js');
 const { human, plural, section } = require('../lib/report.js');
 const { resolveRoot, findStateRoot, readActive } = require('../lib/registry.js');
 
@@ -235,7 +235,7 @@ function worktreesOf(root) {
     // The one you are standing in is the second: run from inside a linked
     // worktree, its own branch is merged into HEAD because HEAD *is* that
     // branch, so without this it reports itself as spent every time.
-    const here = (git(root, ['rev-parse', '--show-toplevel']) || [])[0];
+    const here = repoRoot(root);
     const used = worktreesInUse(root);
     return all.slice(1)
         .filter((w) => !here || path.relative(w.path, here) !== '')
