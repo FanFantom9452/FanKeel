@@ -25,7 +25,7 @@ link: docs/90-agent/reference/subagents.md
 3. 逐項看新舊：
    - inject：下一個 prompt 的區塊還有沒有 `You are the controller for <stage>`。有是舊，沒有、換成一般站規則是新。
    - brief：SendMessage 給 brain，讓它重新觸發 SubagentStart；brief 開頭是 `you are the stage agent for` 是舊，`you are a subagent of` 是新。
-   - gate：brain 交回後問 gate；出現 the gate in <handoff> cannot be asked 的拒絕（`hooks/gate.js:252` 是 `permissionDecisionReason: 'fankeel: the gate in '`）或照常驗過是舊，出現 gate not confirmed 的訊息（`hooks/gate.js:234` 是 `'fankeel: gate not confirmed — '`）是新。
+   - gate：brain 交回後問 gate；出現 the gate in <handoff> cannot be asked 的拒絕（`hooks/gate.js:276` 是 `permissionDecisionReason: 'fankeel: the gate in '`）或照常驗過是舊，出現 gate not confirmed 的訊息（`hooks/gate.js:258` 是 `'fankeel: gate not confirmed — '`）是新。
    - resume：回答後 `.fankeel/build/<task>/<stage>-answer.md` 有寫出是舊，沒寫是新。
    - guard：controller 自己 Edit 一個檔，被擋下 is a controlled stage（`hooks/guard.js:159` 是 `is a controlled stage — its stage`）是舊，放行是新；再派一次 `fankeel:fankeel-brain`，被擋下 is not on stage.agents（`hooks/guard.js:186` 是 `permissionDecisionReason: 'fankeel: `）是新。
 4. `node scripts/task.js profile set stage.agents survey` 還原，把五項結果寫進 `docs/90-agent/reference/subagents.md` 的「The profile moves under a running stage」一節，然後關閉本條。

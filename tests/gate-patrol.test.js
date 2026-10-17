@@ -58,3 +58,48 @@ test('a patrol report naming every open entry goes out', () => {
   const out = ask(root, data, '- ' + first.id + ' — do now\n- ' + second.id + ' — waiting on upstream');
   assert.equal(out ? JSON.parse(out).hookSpecificOutput : undefined, undefined, out);
 });
+
+// In session: no stage agent, so the report is the session's own file at the
+// same handoff path, read when the question in hand is the survey's gate.
+function inSession(report) {
+  const { root, data, entries } = patrol();
+  fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({}));
+  if (report !== null) {
+    const file = handoffPath(root, data, 'survey');
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, report(entries));
+  }
+  const out = execFileSync(process.execPath, [GATE], {
+    input: JSON.stringify({ session_id: MINE, cwd: root, tool_name: 'AskUserQuestion', tool_input: { questions: QUESTIONS } }),
+    encoding: 'utf8', env: Object.assign({}, process.env, { CLAUDE_PROJECT_DIR: root }),
+  }).trim();
+  return { out: out ? JSON.parse(out) : {}, entries };
+}
+
+test('an in-session patrol gate over a report that skips an entry is denied, naming it', () => {
+  const { out, entries: [, second] } = inSession(([first]) => '- ' + first.id + ' — do now\n');
+  assert.equal(out.hookSpecificOutput && out.hookSpecificOutput.permissionDecision, 'deny');
+  assert.match(out.hookSpecificOutput.permissionDecisionReason, new RegExp(second.id));
+});
+
+test('an in-session patrol gate with no report file is denied, naming the path', () => {
+  const { out } = inSession(null);
+  assert.equal(out.hookSpecificOutput && out.hookSpecificOutput.permissionDecision, 'deny');
+  assert.match(out.hookSpecificOutput.permissionDecisionReason, /survey\.md/);
+});
+
+test('an in-session patrol gate over a report naming every entry goes out', () => {
+  const { out } = inSession(([first, second]) => '- ' + first.id + ' — do now\n- ' + second.id + ' — keep\n');
+  assert.equal(out.hookSpecificOutput && out.hookSpecificOutput.permissionDecision, undefined, JSON.stringify(out));
+});
+
+test('an in-session patrol question that is not the gate is not checked', () => {
+  const { root } = patrol();
+  fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({}));
+  const mid = [{ header: '範圍', question: '讀深一點？', multiSelect: false, options: [{ label: '是', description: 'a' }, { label: '否', description: 'b' }] }];
+  const out = execFileSync(process.execPath, [GATE], {
+    input: JSON.stringify({ session_id: MINE, cwd: root, tool_name: 'AskUserQuestion', tool_input: { questions: mid } }),
+    encoding: 'utf8', env: Object.assign({}, process.env, { CLAUDE_PROJECT_DIR: root }),
+  }).trim();
+  assert.doesNotMatch(out, /deny/);
+});

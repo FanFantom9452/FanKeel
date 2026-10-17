@@ -255,6 +255,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | TODO 全表盤點（10-17）做了什麼、沒做什麼：Pane 的 route、tasks、TODO 可收合，TODO 標題跳到 station 那一條，brief-3 探測檔備好 | [reports/patrols/2026-10-17-todo-patrol-pane-fold-todo.md](90-agent/reports/patrols/2026-10-17-todo-patrol-pane-fold-todo.md) — *繁體中文* |
 | 那份盤點的 design 與六個 task | `docs/99-archive/2026-10-17-pane-fold-todo-design.md`、`docs/99-archive/2026-10-17-pane-fold-todo.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-17 第二輪）做了什麼、沒做什麼：盤點報告每條都要有一行，少一條關卡就退回；station.md 三處引用、README 認可量特徵 | [reports/patrols/2026-10-17-todo-patrol-every-entry.md](90-agent/reports/patrols/2026-10-17-todo-patrol-every-entry.md) — *繁體中文* |
+| 盤點檢查補上在本 session 跑的盤點與手寫 TODO.md：做了什麼、沒做什麼 | [reports/2026-10-17-patrol-check-in-session.md](90-agent/reports/2026-10-17-patrol-check-in-session.md) — *繁體中文* |
 | 那份盤點的 design 與四個 task | `docs/99-archive/2026-10-17-patrol-every-entry-design.md`、`docs/99-archive/2026-10-17-patrol-every-entry.md` — *built, 繁體中文* |
 | 換站時印出新一站規則（10-16）的 design：cmdStage 印 rulesLines、受控站維持 controller 區塊、最後一行同回合開工 | `docs/99-archive/2026-10-16-stage-prints-rules-design.md` — *built, 繁體中文* |
 | 那份設計的一個 task | `docs/99-archive/2026-10-16-stage-prints-rules.md` — *built* |

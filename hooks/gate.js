@@ -49,7 +49,7 @@ const crypto = require('node:crypto');
 const registry = require('../lib/registry.js');
 const profileLib = require('../lib/profile.js');
 const { controlling, nextStage, normaliseRoute, FULL_ROUTE } = require('../lib/stages.js');
-const { handoffPath, answerPath, pendingPath, answersSince, answeredOf, handedOffSince, writeAnswer, readGate, patrolEntries, skipReason, gateMatches } = require('../lib/handoff.js');
+const { handoffPath, answerPath, pendingPath, answersSince, answeredOf, handedOffSince, writeAnswer, readGate, patrolEntries, reportProblem, skipReason, gateMatches } = require('../lib/handoff.js');
 const { run, parse } = require('../lib/hook.js');
 
 // `stage.agents` as the profile holds it, for a sentence.
@@ -180,9 +180,15 @@ function hashOf(questions) {
 // it names the next stage on the route as a whole word, or, at the route's
 // last stage, says `down` or 收工.
 function thinGate(mine, questions) {
+    const options = isGate(mine, questions);
+    return options && options.length < 3 ? 'fankeel: this gate has ' + options.length + ' options — three at least, never dropping the pause.' : null;
+}
+
+// The first question's options when it is this stage's gate, else null.
+function isGate(mine, questions) {
     const first = Array.isArray(questions) ? questions[0] : null;
     const options = first && Array.isArray(first.options) ? first.options : null;
-    if (!options || options.length >= 3) return null;
+    if (!options) return null;
     const label = String((options[0] && options[0].label) || '');
     const steps = normaliseRoute(mine.route) || FULL_ROUTE;
     const stage = String(mine.stage || '').toLowerCase();
@@ -190,7 +196,7 @@ function thinGate(mine, questions) {
     const named = next
         ? new RegExp('\\b' + next + '\\b', 'i').test(label)
         : steps[steps.length - 1] === stage && (/\bdown\b/i.test(label) || label.includes('收工'));
-    return named ? 'fankeel: this gate has ' + options.length + ' options — three at least, never dropping the pause.' : null;
+    return named ? options : null;
 }
 
 function main(raw) {
@@ -231,6 +237,24 @@ function main(raw) {
     // never checked left no trace of which condition failed. A message, not a
     // decision: the question still goes out.
     if (!gate) {
+        // A patrol survey run in session owes the same line per entry as a
+        // stage agent's, in a report it wrote itself at the handoff path.
+        let owed = null;
+        try {
+            const entries = values && !controlled && isGate(mine, payload.tool_input && payload.tool_input.questions) ? patrolEntries(root, mine) : null;
+            if (entries && entries.length) owed = reportProblem(file, entries);
+        } catch (e) { /* housekeeping */ }
+        if (owed) {
+            process.stdout.write(JSON.stringify({
+                hookSpecificOutput: {
+                    hookEventName: 'PreToolUse',
+                    permissionDecision: 'deny',
+                    permissionDecisionReason: 'fankeel: this patrol\'s survey gate cannot go out — ' + owed.detail
+                        + '. Write ' + file + ' so every open entry has its line, then ask again.',
+                },
+            }));
+            return;
+        }
         const said = skip ? ['fankeel: gate not confirmed — ' + skip + '.'] : [];
         // `values` is null when the profile could not be read: nothing then
         // says whether the stage is controlled, so nothing is said about it.

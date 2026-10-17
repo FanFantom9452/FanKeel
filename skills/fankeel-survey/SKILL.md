@@ -340,10 +340,13 @@ back by the user.
 A script holds this now. `readGate` (`lib/handoff.js`) refuses a patrol's
 survey gate while any open entry has no line, above the gate block, naming it
 by id or title beside `do now`, `needs the user`, `waiting on` or `keep`, and
-the refusal lists the ids still missing. It reaches two cases only: a TODO kept
-as entry files (a hand-written `TODO.md` yields no list), and a controlled
-survey whose report is a handoff file — a patrol survey run in this session
-has no file to read, so there the rule above is the whole check.
+the refusal lists the ids still missing. A line counts for one entry, so two
+entries on one line leave one of them missing. A hand-written `TODO.md` has no ids,
+so there each bullet is named by its title — its first clause, as `migrate`
+would cut it. A patrol survey run in this session writes its report to the
+same handoff path (`.fankeel/build/task-<started>/survey.md`) before its
+gate: `hooks/gate.js` reads it when the question's option one names `plan`,
+and refuses the gate while the file is missing or skips an entry.
 2026-10-17: a report that counted 29 and checked 7 was the reason.
 
 **Ready and Needs a decision.** Each entry is re-checked in the code it links
