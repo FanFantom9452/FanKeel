@@ -427,7 +427,7 @@ function requireRange(range) {
 
 **Dispatch:** implementer, sonnet — the plan carries the code; transcription plus tests.
 
-- [ ] Step 1. Run `node --test tests/map.test.js tests/map-cli.test.js`; both pass. `readIf` is not exported (`lib/map.js:499` exports `firstTable, signpost, layoutBlock, pagesByStatus, markdownUnder, buildMap, PLUGIN_ROOT`), so no other file can depend on it.
+- [ ] Step 1. Run `node --test tests/map.test.js tests/map-cli.test.js`; both pass. `readIf` is not exported (`lib/map.js:491` exports `firstTable, signpost, layoutBlock, pagesByStatus, markdownUnder, buildMap, PLUGIN_ROOT`), so no other file can depend on it.
 - [ ] Step 2. In `lib/map.js`, add the import under `const requires = require('./requires.js');`:
 
 ```js
