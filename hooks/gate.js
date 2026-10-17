@@ -50,7 +50,7 @@ const registry = require('../lib/registry.js');
 const profileLib = require('../lib/profile.js');
 const { controlling, nextStage, normaliseRoute, FULL_ROUTE } = require('../lib/stages.js');
 const { handoffPath, answerPath, pendingPath, answersSince, answeredOf, handedOffSince, writeAnswer, readGate, patrolEntries, reportProblem, skipReason, gateMatches } = require('../lib/handoff.js');
-const { run, parse } = require('../lib/hook.js');
+const { run, parse, refuse } = require('../lib/hook.js');
 
 // `stage.agents` as the profile holds it, for a sentence.
 const agentsText = (values) => {
@@ -245,14 +245,8 @@ function main(raw) {
             if (entries && entries.length) owed = reportProblem(file, entries);
         } catch (e) { /* housekeeping */ }
         if (owed) {
-            process.stdout.write(JSON.stringify({
-                hookSpecificOutput: {
-                    hookEventName: 'PreToolUse',
-                    permissionDecision: 'deny',
-                    permissionDecisionReason: 'fankeel: this patrol\'s survey gate cannot go out — ' + owed.detail
-                        + '. Write ' + file + ' so every open entry has its line, then ask again.',
-                },
-            }));
+            refuse('fankeel: this patrol\'s survey gate cannot go out — ' + owed.detail
+                + '. Write ' + file + ' so every open entry has its line, then ask again.');
             return;
         }
         const said = skip ? ['fankeel: gate not confirmed — ' + skip + '.'] : [];
@@ -269,16 +263,10 @@ function main(raw) {
     // well-formed even though the controller is the one typing it now. Deny
     // instead, naming the field, so the controller can send it back.
     if (gate.invalid) {
-        process.stdout.write(JSON.stringify({
-            hookSpecificOutput: {
-                hookEventName: 'PreToolUse',
-                permissionDecision: 'deny',
-                permissionDecisionReason: 'fankeel: the gate in ' + handoffPath(root, mine, mine.stage)
-                    + ' cannot be asked — `' + gate.invalid + '`: ' + gate.detail + '. SendMessage the stage agent to'
-                    + ' rewrite the gate block at the end of that file so `' + gate.invalid + '` holds (option one names'
-                    + ' the next stage, or a stage on this route to send the work back to), then ask again when it returns the path. Do not write the question yourself.',
-            },
-        }));
+        refuse('fankeel: the gate in ' + handoffPath(root, mine, mine.stage)
+            + ' cannot be asked — `' + gate.invalid + '`: ' + gate.detail + '. SendMessage the stage agent to'
+            + ' rewrite the gate block at the end of that file so `' + gate.invalid + '` holds (option one names'
+            + ' the next stage, or a stage on this route to send the work back to), then ask again when it returns the path. Do not write the question yourself.');
         return;
     }
 
@@ -304,15 +292,9 @@ function main(raw) {
         const looksLikeAttempt = headerMatches
             && charOverlap(textOf(first), textOf(gateFirst)) > ATTEMPT_THRESHOLD;
         if (looksLikeAttempt) {
-            process.stdout.write(JSON.stringify({
-                hookSpecificOutput: {
-                    hookEventName: 'PreToolUse',
-                    permissionDecision: 'deny',
-                    permissionDecisionReason: 'fankeel: this question does not match ' + file
-                        + '\'s `json gate` block word for word. Re-read the file and copy its `questions` array exactly'
-                        + ' — do not retype or summarize it — then ask again.',
-                },
-            }));
+            refuse('fankeel: this question does not match ' + file
+                + '\'s `json gate` block word for word. Re-read the file and copy its `questions` array exactly'
+                + ' — do not retype or summarize it — then ask again.');
             return;
         }
         // A question the user already answered at an earlier stage's gate is
@@ -329,14 +311,8 @@ function main(raw) {
         try { answered = answeredOf(root, mine).filter((a) => !a.stale && !a.lead && a.stage !== mine.stage); } catch (e) { /* housekeeping */ }
         const again = repeatOf(asked, answered);
         if (again) {
-            process.stdout.write(JSON.stringify({
-                hookSpecificOutput: {
-                    hookEventName: 'PreToolUse',
-                    permissionDecision: 'deny',
-                    permissionDecisionReason: 'fankeel: already answered (' + again.stage + '): ' + again.question + ' -> ' + again.answer
-                        + '. The user settled this at the ' + again.stage + ' gate; act on that answer instead of asking again.',
-                },
-            }));
+            refuse('fankeel: already answered (' + again.stage + '): ' + again.question + ' -> ' + again.answer
+                + '. The user settled this at the ' + again.stage + ' gate; act on that answer instead of asking again.');
             return;
         }
         skip = skipReason({ stage: mine.stage, controlled, matches: false, agents, inflight: runningMark(mine, mine.stage), handoff: file });
@@ -352,14 +328,8 @@ function main(raw) {
     try { answeredAt = fs.statSync(answer).mtimeMs; } catch (e) { /* no answer yet */ }
     if (before && before.stage === mine.stage && before.hash === hash && Number.isFinite(before.at)
         && answeredAt !== null && answeredAt > before.at) {
-        process.stdout.write(JSON.stringify({
-            hookSpecificOutput: {
-                hookEventName: 'PreToolUse',
-                permissionDecision: 'deny',
-                permissionDecisionReason: 'fankeel: this gate is unchanged since the user answered it (' + answer + '). SendMessage the stage agent to'
-                    + ' rewrite the gate in ' + file + ', taking out the options that answer settled, then ask again when it returns the path.',
-            },
-        }));
+        refuse('fankeel: this gate is unchanged since the user answered it (' + answer + '). SendMessage the stage agent to'
+            + ' rewrite the gate in ' + file + ', taking out the options that answer settled, then ask again when it returns the path.');
         return;
     }
 

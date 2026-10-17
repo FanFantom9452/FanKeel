@@ -18,7 +18,7 @@ const profileLib = require('../lib/profile.js');
 const { controlling } = require('../lib/stages.js');
 const { baseAgent } = require('../lib/agentfile.js');
 const { caseOfPrompt } = require('../lib/handoff.js');
-const { run, parse } = require('../lib/hook.js');
+const { run, parse, refuse } = require('../lib/hook.js');
 const { isCommit, commitVerdict } = require('../lib/sensitive.js');
 
 // The tool names the controlled-stage matcher below cares about. A module
@@ -84,16 +84,10 @@ function main(raw) {
         // on the field to use — search it for "offered one".
         const command = (payload.tool_input && payload.tool_input.command) || '';
         if (payload.agent_id && readOnlyAgentType(payload.agent_type) && writesFiles(command)) {
-            process.stdout.write(JSON.stringify({
-                hookSpecificOutput: {
-                    hookEventName: 'PreToolUse',
-                    permissionDecision: 'deny',
-                    permissionDecisionReason: 'fankeel: this is a subagent call (agent_id is set) with the '
-                        + 'read-only agent_type ' + payload.agent_type + ', and this command writes to disk. '
-                        + 'Redirect to /dev/null (or $null), or ask for a fankeel-verifier if the result needs '
-                        + 'to be written.',
-                },
-            }));
+            refuse('fankeel: this is a subagent call (agent_id is set) with the '
+                + 'read-only agent_type ' + payload.agent_type + ', and this command writes to disk. '
+                + 'Redirect to /dev/null (or $null), or ask for a fankeel-verifier if the result needs '
+                + 'to be written.');
             return;
         }
         // docs/90-agent/plans/2026-10-10-workflow-gaps-design.md §12: the shell
@@ -107,15 +101,9 @@ function main(raw) {
                 controlled = controlling(mine.stage, profileLib.profileFor(root, mine).values);
             } catch (e) { /* housekeeping */ }
             if (controlled) {
-                process.stdout.write(JSON.stringify({
-                    hookSpecificOutput: {
-                        hookEventName: 'PreToolUse',
-                        permissionDecision: 'deny',
-                        permissionDecisionReason: 'fankeel: ' + mine.stage + ' is a controlled stage — this command '
-                            + 'writes to disk, and its stage agent does the writing here, not the controller. '
-                            + 'Dispatch it, relay a path, ask.',
-                    },
-                }));
+                refuse('fankeel: ' + mine.stage + ' is a controlled stage — this command '
+                    + 'writes to disk, and its stage agent does the writing here, not the controller. '
+                    + 'Dispatch it, relay a path, ask.');
                 return;
             }
         }
@@ -130,9 +118,7 @@ function main(raw) {
     if (payload.tool_name === 'Write') {
         const reason = brainWriteReason({ agentType: payload.agent_type, root, file: targetOf(payload), mine });
         if (reason) {
-            process.stdout.write(JSON.stringify({
-                hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'deny', permissionDecisionReason: reason },
-            }));
+            refuse(reason);
             return;
         }
     }
@@ -152,14 +138,8 @@ function main(raw) {
             controlled = controlling(mine.stage, values);
         } catch (e) { /* housekeeping */ }
         if (controlled) {
-            process.stdout.write(JSON.stringify({
-                hookSpecificOutput: {
-                    hookEventName: 'PreToolUse',
-                    permissionDecision: 'deny',
-                    permissionDecisionReason: 'fankeel: ' + mine.stage + ' is a controlled stage — its stage '
-                        + 'agent does the writing here, not the controller. Dispatch it, relay a path, ask.',
-                },
-            }));
+            refuse('fankeel: ' + mine.stage + ' is a controlled stage — its stage '
+                + 'agent does the writing here, not the controller. Dispatch it, relay a path, ask.');
             return;
         }
     }
@@ -179,14 +159,8 @@ function main(raw) {
         } catch (e) { return; }
         if (controlling(mine.stage, values)) return noteDispatch(root, payload, mine);
         const listed = Array.isArray(values['stage.agents']) && values['stage.agents'].length ? values['stage.agents'].join(',') : 'none';
-        process.stdout.write(JSON.stringify({
-            hookSpecificOutput: {
-                hookEventName: 'PreToolUse',
-                permissionDecision: 'deny',
-                permissionDecisionReason: 'fankeel: `' + (mine.stage || 'no stage') + '` is not on stage.agents (' + listed
-                    + '), so no fankeel-brain runs it and its gate would never be substituted. Do the stage here, in this session.',
-            },
-        }));
+        refuse('fankeel: `' + (mine.stage || 'no stage') + '` is not on stage.agents (' + listed
+            + '), so no fankeel-brain runs it and its gate would never be substituted. Do the stage here, in this session.');
         return;
     }
 

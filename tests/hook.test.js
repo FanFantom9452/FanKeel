@@ -8,7 +8,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { parse, run } = require('../lib/hook.js');
+const { parse, run, deny, refuse } = require('../lib/hook.js');
 
 test('a payload is an object or it is nothing', () => {
   assert.deepEqual(parse('{"session_id":"a"}'), { session_id: 'a' });
@@ -39,4 +39,18 @@ test('a bare scalar is not a payload either', () => {
 test('run is what every hook ends with, and it takes the function', () => {
   assert.equal(typeof run, 'function');
   assert.equal(run.length, 1);
+});
+
+test('deny is the PreToolUse refusal, keys in the order the hooks always printed them', () => {
+  const d = deny('fankeel: no');
+  assert.deepEqual(Object.keys(d), ['hookEventName', 'permissionDecision', 'permissionDecisionReason']);
+  assert.deepEqual(d, { hookEventName: 'PreToolUse', permissionDecision: 'deny', permissionDecisionReason: 'fankeel: no' });
+});
+
+test('refuse writes the deny as the hook output, and nothing else', (t) => {
+  const written = [];
+  t.mock.method(process.stdout, 'write', (s) => { written.push(s); return true; });
+  refuse('fankeel: no');
+  t.mock.restoreAll();
+  assert.deepEqual(written, [JSON.stringify({ hookSpecificOutput: deny('fankeel: no') })]);
 });
