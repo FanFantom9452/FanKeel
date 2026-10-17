@@ -22,3 +22,10 @@ link: hooks/brief.js
 ## 探測準備（2026-10-17）
 
 步驟 1 與步驟 5 已備好，檔案在 `.fankeel/build/2026-10-17-spawn-probe/`（不進 git）。`mod/hooks/probe.ts` 的 LOG 指向同一目錄的 `records`，nonce 改存在 `probe.nonce4`。第二個 description 含 `mod-probe b` 的子代理跑到第一步時，probe 對它呼叫一次 `session.append`，結果記成 `session.append.call`。欄位照 `.claude-plugin/types/claude-code/index.d.ts:10541` 的 `SessionAppendArgs`：`message` 與 `agentId`；這份型別檔在這個 checkout 已經有，不必先載入 mod。`node .fankeel/build/2026-10-17-spawn-probe/check.mjs` 在假引擎上驗過這三件事。步驟 2 起要使用者在互動式 session 跑：`claude --plugin-dir .fankeel/build/2026-10-17-spawn-probe/mod --debug-file <log>`。
+
+## 探測結果（2026-10-17，互動式）
+
+- module 載入：VS Code 終端的 Claude Code 2.1.302，`claude --plugin-dir` 帶 mod 啟動，debug log 有 `hooks module fankeel-mod-probe@inline loaded`，事件含 `agent.spawn` 與 `session.append`；不必另外按 Enable。mod 目錄要有 `.claude-plugin/plugin.json`，10-17 備料時漏了，從 mod-probe-3 複製一份後才載入。
+- 三個子代理的第 1 行：同一個回應派出的三個 haiku 子代理（session 2cc94879-0b29-448c-9449-0fa2828ba921），transcript 都落地，第 1 行都以 `MOD-PROBE-SPAWN-` 加 nonce 結尾，prompt 各多 53 字元。fankeel 的 title hook 先把 description 前面加上模型與 effort，probe 用子字串比對，照樣認得。
+- session.append：對第二個子代理呼叫一次，回傳 uuid、沒有 deny；那一列以 isMeta 的 user 列寫進它的 transcript，它的下一則 assistant 回應就接在這一列後面。
+- 結論：成立。brief.js 哪一部分搬到 agent.spawn，另開 brief-6 決定；本條關閉。
