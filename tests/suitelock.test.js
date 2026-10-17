@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const lock = require('../lib/suitelock.js');
+const registry = require('../lib/registry.js');
 const tmp = require('./tmp.js');
 
 const scratch = () => path.join(tmp('fankeel-suitelock-'), 'suite.lock');
@@ -108,4 +109,10 @@ test('a lock reading null or [], or a directory at the lock path, is unreadable:
   fs.mkdirSync(dir);
   fs.utimesSync(dir, old, old);
   lock.acquire({ file: dir, onWait: waited }).release();
+});
+
+test('sleepMs, the one wait suitelock polls with, blocks for at least the time it is given', () => {
+  const t0 = Date.now();
+  registry.sleepMs(40);
+  assert.ok(Date.now() - t0 >= 35, 'sleepMs returned early');
 });
