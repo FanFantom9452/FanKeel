@@ -64,14 +64,14 @@ function fake({ files = {}, placed = true, surfaces = ['terminal'], tokens = 312
     return { $, log, store, mtimes };
 }
 
-// Two hooks share the event `ui.render`: the Pane's stays under that name, the band's is `band`.
-// The module's one turn.complete is compact.ts's, so the hooks come from mod.ts, which registers both.
 async function drive(gen) {
     let r;
     do { r = await gen.next(); } while (!r.done);
     return r.value;
 }
 
+// Two hooks share the event `ui.render`: the Pane's stays under that name, the band's is `band`.
+// The module's one turn.complete is compact.ts's, so the hooks come from mod.ts, which registers both.
 async function wired() {
     const { register } = await import(pathToFileURL(path.join(__dirname, '..', 'hooks', 'mod.ts')).href);
     const hooks = {};
