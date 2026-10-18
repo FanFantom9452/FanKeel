@@ -1483,6 +1483,19 @@ test('a turn.step from an agent leaves the band effort as the main loop set it',
 test('a change of effort alone redraws the Pane', async () => {
     const hooks = await wired();
     const { $, log } = fake({ files: entryFile(live) });
+
+test('a change of model alone redraws the Pane', async () => {
+    const hooks = await wired();
+    const { $, log } = fake({ files: entryFile(live) });
+    log.model = 'claude-sonnet-5-5';
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const before = log.invalidated;
+    log.model = 'claude-opus-4-7';
+    await log.ticks[0].fn();
+    assert.equal(log.invalidated, before + 1);
+});
+
     log.model = 'claude-sonnet-5-5';
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
