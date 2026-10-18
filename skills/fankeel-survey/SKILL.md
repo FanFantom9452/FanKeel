@@ -232,7 +232,7 @@ answers — so the round buys nothing and costs a turn of their attention.
 
 - **One workflow, not several dispatches.** `fankeel-reader` readers are its
   first stage and the `path:line` check is its second, so what returns is the
-  join rather than every reader's whole reading. **`dispatch.inflight`, four by default, sets
+  join rather than every reader's whole reading. **`dispatch.inflight`, eight by default, sets
   the dispatches** — the fankeel skill's *Dispatch by default, never the
   filtering* says why — and a script is the exception the default names,
   because it holds the list rather than guessing at the split.

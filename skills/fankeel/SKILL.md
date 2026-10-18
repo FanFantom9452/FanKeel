@@ -1113,7 +1113,7 @@ Six rules that make it work, each of which fails silently when missed:
   exactly three. Same model, same shape of task. A contract without its reason is
   a preference.
 
-**Profile `dispatch.inflight` sets how many go in one response, four by
+**Profile `dispatch.inflight` sets how many go in one response, eight by
 default.** Past that you are guessing at the split rather than deciding it, and every reader costs a system prompt whether or
 not it had a distinct question. The test is what comes back: **if two readers
 would return the same shape of answer about different files, they are one reader
@@ -1144,9 +1144,9 @@ The surface is the batch shape, not the implementer decision: a task whose own
 `**Dispatch:**` line reads `in-session` is not dispatched at all, whatever
 surface its group carries.
 
-**`dispatch.inflight` (four by default) has one exception that is not yours to press.**
-Four is where guessing at the split begins; a script does not guess, because it
-holds the list and it holds the join. So the shape a four-agent batch cannot
+**`dispatch.inflight` (eight by default) has one exception that is not yours to press.**
+Eight is where guessing at the split begins; a script does not guess, because it
+holds the list and it holds the join. So the shape an eight-agent batch cannot
 express is a fan-out whose
 output feeds another fan-out — review six dimensions, then verify each finding
 one of them returned. As dispatches that is two round-trips through this context,

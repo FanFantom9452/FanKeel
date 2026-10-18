@@ -296,9 +296,9 @@ then asks this stage's gate.
    so a worktree's HEAD can be many commits stale against what the brain just
    read.
 
-   **Profile `dispatch.inflight` sets how many are in flight, four by
+   **Profile `dispatch.inflight` sets how many are in flight, eight by
    default**, and that number applies only with a plan — with no plan one row
-   is out at a time: `ready` listing six sends four (at the default), then one more as each returns. With a plan, two or more listed at once
+   is out at a time: `ready` listing ten sends eight (at the default), then one more as each returns. With a plan, two or more listed at once
    with nothing else in flight may go as one Workflow, step 4's `workflow`
    case; anything else goes as Agents.
 3. **`in-session` only** — test first where the task says so. If you did not
