@@ -155,10 +155,12 @@ the whole procedure from there. `lib/render.js`'s `renderBrief`, which
 when `payload.agent_type` is `fankeel-judge`: *answer once; the parent will
 not message you again.* It leaves out the return rule "You do not
 dispatch subagents of your own" (`RETURN_RULES[2]`) for the judge only, because
-the judge sends any named file over 300 lines to a `fankeel:fankeel-reader`
-(sonnet, or opus when one figure or sentence decides the pick), opens at least
-one cited `path:line` itself as a spot-check, and returns a fifth line,
-`delegated:`.
+the judge reads in three rounds: it writes a checklist and, in that same
+response, sends one `fankeel:fankeel-reader` per line (sonnet, or opus when one
+figure or sentence decides the pick); it opens one cited `path:line` per reader
+in one more response; and it returns six fields, `delegated:` and `checklist:`
+among them, followed by a `## Summary` of any length. It sends no `Workflow`:
+a subagent's tool list has none.
 
 Its answer does not stay in the judge's own context: the parent files it
 verbatim with `scripts/judge.js record`, and [the fankeel-ask

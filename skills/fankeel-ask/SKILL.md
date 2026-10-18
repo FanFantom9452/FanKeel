@@ -72,9 +72,11 @@ the stage produces; it does not approve it.
    every other dispatch in this plugin carries. `node <plugin>/scripts/task.js
    profile show` prints it. Say how many and on which model in the response
    that sends it — one judge, on whatever `judge.model` answered. The judge
-   sends any named file over 300 lines to a `fankeel:fankeel-reader` itself,
-   on sonnet, or opus where one figure in it decides the pick; its
-   `delegated:` line says which.
+   writes a checklist of what it must find out, sends one
+   `fankeel:fankeel-reader` per checklist line in that same response, on
+   sonnet, or opus where one figure decides the pick, and returns six fields
+   with a `## Summary` of any length after them; `delegated:` says which
+   reader read what.
 3. **Record the answer verbatim:**
 
    ```

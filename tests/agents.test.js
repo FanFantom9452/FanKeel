@@ -147,25 +147,32 @@ test('the stage agent writes its handoff and dispatches readers, on sonnet', () 
     assert.equal(f.effort, 'medium');
 });
 
-// judge-1: every token the judge reads is paid at fable xhigh, so a file over
-// 300 lines goes to a reader, and the judge checks one line of what it got.
-test('the judge sends large reads to readers and checks what they return', () => {
+// judge-2: every round the judge takes re-reads its whole context, so it lists
+// what it must check, sends every reader in that same response, checks one line
+// per reader in one more, and returns a long summary after its six fields.
+test('the judge lists its reads, sends every reader at once, and returns a summary', () => {
     const file = path.join(ROOT, 'agents', 'fankeel-judge.md');
     const f = front(file);
     const tools = f.tools.slice(1, -1).split(',').map((s) => s.trim());
     assert.ok(tools.includes('Agent'), 'it dispatches its readers');
     const text = fs.readFileSync(file, 'utf8');
     const reading = text.split('\n## Reading\n')[1].split('\n## ')[0];
+    assert.match(reading, /checklist/);
+    assert.match(reading, /in the same response/i);
     assert.match(reading, /fankeel:fankeel-reader/);
-    assert.match(reading, /over 300 lines/);
     assert.match(reading, /model: "sonnet"/);
     assert.match(reading, /model: "opus"/);
     assert.match(reading, /path:line/);
+    assert.doesNotMatch(text, /over 300 lines/);
     assert.match(text, /^delegated: /m);
-    assert.doesNotMatch(text, /Do not dispatch a subagent/);
+    assert.match(text, /^checklist: /m);
+    assert.match(text, /^## Summary$/m);
     const ask = fs.readFileSync(path.join(ROOT, 'skills', 'fankeel-ask', 'SKILL.md'), 'utf8');
-    assert.doesNotMatch(ask, /one, always/);
-    assert.match(ask, /fankeel:fankeel-reader/);
+    assert.doesNotMatch(ask, /over 300 lines/);
+    assert.match(ask, /checklist/);
+    const ref = fs.readFileSync(path.join(ROOT, 'docs', '90-agent', 'reference', 'subagents.md'), 'utf8');
+    assert.doesNotMatch(ref, /over 300 lines/);
+    assert.match(ref, /checklist:/);
 });
 
 // brief-2: a brief over Claude Code's inline limit reaches the brain as a 2KB
