@@ -261,3 +261,15 @@ test('land counts the main session\'s time, draws the suite record\'s pass and f
     const bare = V.gateTabHtml({ stage: 'land' }, report('land', LAND, { run: null }), []);
     assert.doesNotMatch(bare, /主 session<\/li>|gv-suite|gv-bar/);
 });
+
+test('a mockup whose screenshot directory cannot be read says so, with the path escaped', () => {
+    const html = V.gateTabHtml({ stage: 'design' }, report('design', DESIGN, { mockup: Object.assign({}, MOCKUP, { shotUnreadable: 'F:/r/<x>' }) }), []);
+    assert.match(html, /<p class="gv-red">讀不到截圖目錄 <code>F:\/r\/&lt;x&gt;<\/code>/);
+    assert.doesNotMatch(V.gateTabHtml({ stage: 'design' }, report('design', DESIGN, { mockup: MOCKUP }), []), /讀不到截圖目錄/);
+});
+
+test('a land gate whose suite.json cannot be read says so, with the path escaped', () => {
+    const html = V.gateTabHtml({ stage: 'land' }, report('land', LAND, { runUnreadable: 'F:/r/<s>.json' }), []);
+    assert.match(html, /<p class="gv-red">讀不到 <code>F:\/r\/&lt;s&gt;\.json<\/code>/);
+    assert.doesNotMatch(V.gateTabHtml({ stage: 'land' }, report('land', LAND, {}), []), /讀不到/);
+});

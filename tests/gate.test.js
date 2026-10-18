@@ -871,7 +871,7 @@ test('gate.away ask skips the question when the station already answered', async
 });
 
 test("the committed profile makes gate waits open the station at 120s and ask when away", () => {
-  const profile = JSON.parse(fs.readFileSync(path.join(ROOT, ".fankeel", "profile.json"), "utf8"));
+  const profile = JSON.parse(execFileSync("git", ["show", "HEAD:.fankeel/profile.json"], { cwd: ROOT, encoding: "utf8" }));
   assert.equal(profile["gate.station"], 120);
   assert.equal(profile["gate.away"], "ask");
 });

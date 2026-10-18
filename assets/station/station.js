@@ -4789,7 +4789,8 @@
         var shot = p.mockup ? '<figure class="gv-shot">'
             + (src ? '<a href="' + esc(p.mockup.href) + '" target="_blank" rel="noopener"><img src="' + esc(src) + '" alt="' + loc('det.gateShotAlt', 'mockup 的截圖') + '" loading="lazy"></a>' : '')
             + '<figcaption><span>' + loc('det.gateShot', 'mockup，design gate 時核准用') + '</span><a href="'
-            + esc(p.mockup.href) + '" target="_blank" rel="noopener">' + esc(p.mockup.path) + '</a></figcaption></figure>' : '';
+            + esc(p.mockup.href) + '" target="_blank" rel="noopener">' + esc(p.mockup.path) + '</a></figcaption>'
+            + (p.mockup.shotUnreadable ? '<p class="gv-red">' + loc('det.gateShotUnreadable', '讀不到截圖目錄 {path}：目錄在，但打不開。', { path: '<code>' + esc(p.mockup.shotUnreadable) + '</code>' }) + '</p>' : '') + '</figure>' : '';
         var body = (p.approach ? '<p class="gv-approach">' + gateText(p.approach) + '</p>' : '')
             + '<div class="gv-cols">' + gateSec(loc('det.gateSecFiles', '動到的檔'), files.length, tbl) + shot + '</div>'
             + gateKv([[loc('det.gateProves', '證明做完'), gateList(p.provesList, p.proves)], [loc('det.gateMap', '對照地圖'), gateText(p.map)],
@@ -4859,6 +4860,7 @@
         var badge = run && run.pass !== null && run.pass !== undefined
             ? '<span class="gv-suite' + (run.ok ? '' : ' gv-red') + '">' + (run.ok ? icon('check') : '') + loc('det.gateSuiteRun', '{p} 通過 · {f} 失敗', { p: esc(run.pass), f: esc(run.fail === null ? '?' : run.fail) }) + '</span>'
             : '';
+        if (p.runUnreadable) badge += '<p class="gv-red">' + loc('det.gateRunUnreadable', '讀不到 {path}：檔案在，但打不開。', { path: '<code>' + esc(p.runUnreadable) + '</code>' }) + '</p>';
         var side = gateSec('suite', null, badge + (p.suite ? '<code class="gv-cmd">' + esc(p.suite) + '</code>' : ''))
             + gateSec(loc('det.gateSecCost', '花了多少'), null, p.cost ? '<div class="gv-split">' + gateText(p.cost) + '</div>' : '')
             + gateSec(loc('det.gateSecTime', '各站時間'), null, time.html)
