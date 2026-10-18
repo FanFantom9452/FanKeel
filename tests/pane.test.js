@@ -1210,6 +1210,23 @@ test('the Pane lists this session\'s subagents: the running, the stopped, and no
     assert.ok(lines.some((l) => l.includes('1 在跑') && l.includes('1 完成')));
 });
 
+test('the agents head folds the agent rows away and opens them again', async () => {
+    const hooks = await wired();
+    const { $, log } = agentRig();
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const press = async () => buttons(await hooks['ui.render']($, { viewport: { columns: 60, rows: 60 } })).find((b) => b.props.key === 'fold-agents').props.onPress({ surface: 'terminal' });
+    assert.ok((await drawn(hooks, $)).some((l) => l.includes('building it')));
+    const before = log.invalidated;
+    await press();
+    assert.equal(log.invalidated, before + 1);
+    const folded = await drawn(hooks, $);
+    assert.ok(folded.includes('▌▸ agents  1 在跑 · 1 完成'), folded.join('\n'));
+    assert.ok(!folded.some((l) => l.includes('building it') || l.includes('checking it')));
+    await press();
+    assert.ok((await drawn(hooks, $)).some((l) => l.includes('building it')));
+});
+
 test('an agent\'s transcript is read again only when it moved', async () => {
     const hooks = await wired();
     const { $, log } = agentRig();

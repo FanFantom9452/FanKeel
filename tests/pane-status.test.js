@@ -438,12 +438,24 @@ test('the agents block is a tree: the counts, ○ running, ● stopped, └ unde
     const text = (r) => r.segs.map((s) => s.text).join('');
     const block = statusRows({ ...base, agents: [root] }).filter((r) => r.block === 'agents' && r.segs.length).map(text);
     assert.deepEqual(block, [
-        '▌agents  1 在跑 · 1 完成',
+        '▌▾ agents  1 在跑 · 1 完成',
         ' ○ survey stage agent · opus 5.5 · high · 10 分 · 79.4k',
         '  └ ● Patrol check group C · sonnet 5.5 · low · 6 分',
     ]);
     assert.ok(!statusRows(base).some((r) => r.block === 'agents'));
     assert.ok(!statusRows({ ...base, agents: [] }).some((r) => r.block === 'agents'));
+});
+
+test('the agents block opens under a ▾ head and folds to it under ▸, its counts beside the head', async () => {
+    const { statusRows } = await load();
+    const root = { id: 'b1', title: 'survey stage agent', type: '', model: 'opus 5.5', effort: 'high', at: NOW - 10 * 60000, end: null, tokens: null, kids: [] };
+    const base = { id: ID, entry, others: [], plan: null, cols: 60, room: 60, now: NOW, agents: [root] };
+    const rows = (over) => statusRows(Object.assign({}, base, over)).filter((r) => r.block === 'agents' && r.segs.length);
+    assert.deepEqual(rows({})[0].segs[1], { text: '▾ agents', color: SECOND, bold: true, press: 'fold', fold: 'agents' });
+    assert.equal(rows({}).length, 2);
+    const folded = rows({ folded: { agents: true } });
+    assert.deepEqual(folded.map((r) => r.segs.map((s) => s.text).join('')), ['▌▸ agents  1 在跑 · 0 完成']);
+    assert.deepEqual(folded[0].segs[1], { text: '▸ agents', color: SECOND, bold: true, press: 'fold', fold: 'agents' });
 });
 
 test('the agents block lists six roots and three under each, and folds the rest', async () => {

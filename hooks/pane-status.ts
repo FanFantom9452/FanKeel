@@ -19,7 +19,7 @@ export type Other = { id: string; entry: Entry }
 // 'fold' folds or opens the block `fold` names, 'todo' opens the station at the hash `to`.
 export type Seg = { text: string; color?: string; bold?: boolean; press?: 'station' | 'fold' | 'todo'; fold?: Fold; to?: string }
 // The blocks a head row folds; docs/90-agent/plans/2026-10-17-pane-fold-todo-design.md sections 1 and 2.
-export type Fold = 'route' | 'tasks' | 'todo'
+export type Fold = 'route' | 'tasks' | 'todo' | 'agents'
 // One open entry of the project's TODO bucket (hooks/pane.ts todosOf): its file name without `.md`, its title, its state.
 export type TodoEntry = { id: string; title: string; state: string }
 // One drawn row. No segments is the blank row above a block. `who` is the
@@ -327,13 +327,13 @@ function fit(r: Row, cols: number): Row {
 const AGENT_ROOTS = 6
 const AGENT_KIDS = 3
 
-// This task's subagents: a title row with how many run and how many stopped,
-// then a row an agent — ○ running in OUT, ● stopped in DONE — its title, its
+// This task's subagents: a fold head, `▾ agents` with how many run and how many
+// stopped, then a row an agent — ○ running in OUT, ● stopped in DONE — its title, its
 // model, its effort, its minutes, out so far or out in all, and the tokens it
 // spent where its transcript was there to read. An agent's
 // own agents sit under it behind ├ and └, one level drawn; the counts in the
-// title row include every descendant, drawn or not.
-function agentsBlock(nodes: AgentNode[], inner: number, now: number): Row[] {
+// head row include every descendant, drawn or not. Folded, the head row alone.
+function agentsBlock(nodes: AgentNode[], inner: number, now: number, folded: boolean): Row[] {
   if (!nodes.length) return []
   const all = (list: AgentNode[]): AgentNode[] => list.flatMap((n) => [n, ...all(n.kids)])
   const every = all(nodes)
@@ -345,7 +345,8 @@ function agentsBlock(nodes: AgentNode[], inner: number, now: number): Row[] {
     const mark: Seg = n.end === null ? { text: '○', color: OUT } : { text: '●', color: DONE }
     return row('agents', { text: lead }, mark, n.end === null ? { text: ` ${name}`, bold: true } : dim(` ${name}`), dim(after))
   }
-  const rows = [row('agents', title('agents', 'agents'), dim(`  ${running} 在跑 · ${every.length - running} 完成`))]
+  const rows = [row('agents', head('agents', folded, 'agents'), dim(`  ${running} 在跑 · ${every.length - running} 完成`))]
+  if (folded) return rows
   for (const n of nodes.slice(0, AGENT_ROOTS)) {
     rows.push(one(n, ''))
     const kids = n.kids.slice(0, AGENT_KIDS)
@@ -381,7 +382,7 @@ export function statusRows(input: StatusInput): Row[] {
   if (clash.length) blocks.push(clash)
   const tasks = tasksBlock(entry, input.plan, inner, now, !!folded.tasks)
   if (tasks.length) blocks.push(tasks)
-  const agents = agentsBlock(input.agents ?? [], inner, now)
+  const agents = agentsBlock(input.agents ?? [], inner, now, !!folded.agents)
   if (agents.length) blocks.push(agents)
 
   // The registry keeps the newest note last.
