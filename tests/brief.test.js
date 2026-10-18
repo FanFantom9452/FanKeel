@@ -251,6 +251,15 @@ test('a judge is not told it cannot dispatch, since it may dispatch readers', ()
   assert.match(contextOf(run(root, start(root, { agent_type: 'Explore' }))), rule);
 });
 
+test('a judge is not told its final message is findings, since its Summary is longer', () => {
+  const root = tmp();
+  seed(root);
+  const rule = /Your final message is the return value/;
+  assert.doesNotMatch(contextOf(run(root, start(root, { agent_type: 'fankeel-judge' }))), rule);
+  assert.doesNotMatch(contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-judge' }))), rule);
+  assert.match(contextOf(run(root, start(root, { agent_type: 'fankeel-reader' }))), rule);
+});
+
 test('a payload with no session id says nothing', () => {
   const root = tmp();
   seed(root);
