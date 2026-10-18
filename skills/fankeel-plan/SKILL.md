@@ -156,8 +156,9 @@ by a different measure.
 
 **And it decides how they go out.** `lib/plantasks.js` groups tasks by disjoint
 `**Files:**` and by whether one consumes what another produces, then gives each
-group a dispatch surface: one task is `agent`, two are `agents` in one response,
-three or more are one `workflow`, except that when build runs under a stage
+group a dispatch surface: one task is `agent`, two or more are one `workflow`
+(`agents` when a prose `Consumes:` or a missing `Files:` or `Interfaces:` block
+leaves the grouping unproven), except that when build runs under a stage
 agent (`stage.agents` names build) `groups` prints `agents` for it, because that
 agent has no Workflow tool. `node <plugin>/scripts/ledger.js --plan <f>
 groups` prints it, and `build` sends from `ledger.js ready`, which asks the same

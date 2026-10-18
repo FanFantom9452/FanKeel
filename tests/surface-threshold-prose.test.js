@@ -33,3 +33,9 @@ test('the fankeel skill and subagents.md say two or more are one workflow', () =
   assert.doesNotMatch(sub, /whose row has three or more/);
   assert.match(sub, /a require-edge diagnostic is printed beside the group and leaves it where it is/);
 });
+
+test('the plan skill says two or more tasks are one workflow', () => {
+  const text = flat('skills/fankeel-plan/SKILL.md');
+  assert.doesNotMatch(text, /two are `agents` in one response, three or more are one `workflow`/);
+  assert.match(text, /two or more are one `workflow`/);
+});
