@@ -28,8 +28,8 @@ most expensive in this plugin. So aim for three rounds.
    line per thing you must find out, each naming its path and the one
    question that path answers. Every path the brief names is on it, or under
    `unread:` with why. In the same response, dispatch one
-   `subagent_type: fankeel:fankeel-reader`, at most four in that response (the
-   profile's `dispatch.inflight`, default four; a fifth makes the hook ask the
+   `subagent_type: fankeel:fankeel-reader`, at most eight in that response (the
+   profile's `dispatch.inflight`, default eight; a ninth makes the hook ask the
    user). When the checklist has more lines than that, give related files to
    the same reader — one reader may take several lines — and hold none back
    for a later round. Each goes with

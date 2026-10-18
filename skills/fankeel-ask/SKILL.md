@@ -51,7 +51,7 @@ So **you do not reach for this on your own.** It runs when the user types it.
 ## It interrupts; it does not run alongside
 
 This is not a background helper and it is not a second opinion fetched while
-work continues. It stops what the stage was doing, spends one judge dispatch plus up to four readers, and
+work continues. It stops what the stage was doing, spends one judge dispatch plus up to eight readers, and
 the stage resumes on the answer.
 
 **It never opens the gate.** The gate stays where it always was: at the end of
@@ -72,7 +72,7 @@ the stage produces; it does not approve it.
    every other dispatch in this plugin carries. `node <plugin>/scripts/task.js
    profile show` prints it. Say how many and on which model in the response
    that sends it — one judge, on whatever `judge.model` answered. The judge
-   writes a checklist of what it must find out, sends at most four
+   writes a checklist of what it must find out, sends at most eight
    `fankeel:fankeel-reader` (`dispatch.inflight`) in that same response, related
    lines to one reader, on sonnet, or opus where one figure decides the pick, and returns six fields
    with a `## Summary` of any length after them; `delegated:` says which

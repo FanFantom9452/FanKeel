@@ -35,6 +35,18 @@ const PAGES = {
     gone: [/\(four by default\)/],
     now: [/\(eight by default\)/],
   },
+  'skills/fankeel-ask/SKILL.md': {
+    gone: [/plus up to four readers/, /sends at most four `fankeel:fankeel-reader`/],
+    now: [/plus up to eight readers/, /sends at most eight `fankeel:fankeel-reader`/],
+  },
+  'agents/fankeel-judge.md': {
+    gone: [/at most four in that response/, /default four; a fifth/],
+    now: [/at most eight in that response/, /default eight; a ninth/],
+  },
+  'agents/fankeel-brain.md': {
+    gone: [/\(four by default\)/],
+    now: [/\(eight by default\)/],
+  },
 };
 
 test('the pages that state the dispatch.inflight default say eight', () => {
