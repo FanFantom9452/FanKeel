@@ -129,6 +129,26 @@ test('serve answers a design gate\'s mockup screenshot, and 404 where the gate h
     }
 });
 
+test('serve answers 404 for a mockup shot that a ../ spec puts outside .fankeel/build', async () => {
+    const f = fixture();
+    registry.writeSession(f.r1, SID, { task: 'with a transcript', stage: 'design', route: ['design'], active: false, claims: [],
+        started: T(0), updated: T(9), configDir: f.cfg, ended: { at: T(9), reason: 'exit' }, moves: [['design', 1]] });
+    const task = path.join(f.r1, '.fankeel', 'build', 'task-20260911T100000');
+    const out = path.join(f.r1, '.fankeel', 'outside');
+    fs.mkdirSync(task, { recursive: true });
+    fs.mkdirSync(path.join(out, 'shot-1600'), { recursive: true });
+    fs.writeFileSync(path.join(task, 'design.md'), 'An approach.\n\nspec: `.fankeel/build/../outside/mockup.html`\n');
+    fs.writeFileSync(path.join(out, 'mockup.html'), '<html></html>');
+    fs.writeFileSync(path.join(out, 'shot-1600', 'render.png'), 'the shot');
+    const { serve } = require('../scripts/station.js');
+    const s = await serve({ configDir: f.cfg, roots: [f.r1], port: 0, idleMs: 60e3, open: false });
+    try {
+        assert.equal((await get(s.url + 'station/shot/' + SID + '.png')).status, 404);
+    } finally {
+        s.close();
+    }
+});
+
 // The overview and the project page add up `days` from station-data.js alone.
 // A session whose transcript is gone keeps an older cache with no `days`, and
 // its usd is spent whole on the local day it started.
