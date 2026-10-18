@@ -4,7 +4,7 @@ description: Interrupt the stage you are in and put one question to a stronger m
 argument-hint: "[the question, in one line]"
 version: 0.111.29
 status: current
-last_verified: 2026-09-26
+last_verified: 2026-10-18
 source_of_truth: scripts/judge.js
 ---
 
@@ -71,7 +71,10 @@ the stage produces; it does not approve it.
    from the profile's `judge.model` — **never inherited**, the same discipline
    every other dispatch in this plugin carries. `node <plugin>/scripts/task.js
    profile show` prints it. Say how many and on which model in the response
-   that sends it — one, always, and whatever `judge.model` answered.
+   that sends it — one judge, on whatever `judge.model` answered. The judge
+   sends any named file over 300 lines to a `fankeel:fankeel-reader` itself,
+   on sonnet, or opus where one figure in it decides the pick; its
+   `delegated:` line says which.
 3. **Record the answer verbatim:**
 
    ```

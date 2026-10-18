@@ -147,6 +147,27 @@ test('the stage agent writes its handoff and dispatches readers, on sonnet', () 
     assert.equal(f.effort, 'medium');
 });
 
+// judge-1: every token the judge reads is paid at fable xhigh, so a file over
+// 300 lines goes to a reader, and the judge checks one line of what it got.
+test('the judge sends large reads to readers and checks what they return', () => {
+    const file = path.join(ROOT, 'agents', 'fankeel-judge.md');
+    const f = front(file);
+    const tools = f.tools.slice(1, -1).split(',').map((s) => s.trim());
+    assert.ok(tools.includes('Agent'), 'it dispatches its readers');
+    const text = fs.readFileSync(file, 'utf8');
+    const reading = text.split('\n## Reading\n')[1].split('\n## ')[0];
+    assert.match(reading, /fankeel:fankeel-reader/);
+    assert.match(reading, /over 300 lines/);
+    assert.match(reading, /model: "sonnet"/);
+    assert.match(reading, /model: "opus"/);
+    assert.match(reading, /path:line/);
+    assert.match(text, /^delegated: /m);
+    assert.doesNotMatch(text, /Do not dispatch a subagent/);
+    const ask = fs.readFileSync(path.join(ROOT, 'skills', 'fankeel-ask', 'SKILL.md'), 'utf8');
+    assert.doesNotMatch(ask, /one, always/);
+    assert.match(ask, /fankeel:fankeel-reader/);
+});
+
 // brief-2: a brief over Claude Code's inline limit reaches the brain as a 2KB
 // preview and a saved file. On 2026-10-01 two build brains sent `build` plus a
 // paragraph never opened the file; the one sent a bare `build` did.
