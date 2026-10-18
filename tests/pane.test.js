@@ -29,6 +29,7 @@ function fake({ files = {}, placed = true, surfaces = ['terminal'], tokens = 312
             usage: async () => ({ startedAt: 0, context: { tokens: log.tokens === null ? undefined : log.tokens, window: 1000000, percent: 31 }, rateLimits: [] }),
             surfaces: async () => surfaces,
             surface: async () => (surfaces.length ? surfaces[0] : null),
+            model: async () => log.model,
         },
         env: { get: async (name) => env[name] },
         fs: {
@@ -616,7 +617,7 @@ test('the engine\'s rate limits are bars on the band and no reset time in the Pa
     const pane = async () => paneLines(await hooks['ui.render']($, { viewport: { columns: 44, rows: 60 } }));
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
-    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ███░│░░░░░ 312k/1M  │  5h ██████│░░░  66%  │  7d █████▊░░░░  58%  -6%');
+    assert.equal(bandLines(await hooks.band($, BAND, passed))[1], '▌ctx ███░│░░░░░ 312k/1M  │  5h ██████│░░░  66%  │  7d █████▊│░░░  58%  -6%');
     assert.doesNotMatch((await pane()).join('\n'), /█|░|%|剩|↻|重置|用量額度/);
     const after = log.invalidated;
     limits[0] = Object.assign({}, limits[0], { percentUsed: 67 });
@@ -1431,3 +1432,28 @@ test('the TODO head counts what lib/todo.js counts open in this repository, and 
     assert.deepEqual(labels.slice(labels.indexOf('▾ TODO ' + open) + 1, labels.indexOf('開啟 station')), want);
 });
 
+
+test('with no plan, an inflight mark on this stage draws no agent row in the Pane', async () => {
+    const hooks = await wired();
+    const { $, log } = fake({ files: entryFile(Object.assign({}, live, { inflight: { stage: 'design', at: Date.parse('2026-10-11T23:50:00.000Z') } })) });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const tree = await hooks['ui.render']($, { viewport: { columns: 60, rows: 40 } });
+    assert.doesNotMatch(paneLines(tree).join(' '), /agent 出去/);
+});
+
+test('the band row ends with the session model and the effort turn.step last carried', async () => {
+    const hooks = await wired();
+    const { $, log } = fake({ files: entryFile(live) });
+    log.model = 'claude-sonnet-5-5';
+    await hooks['session.start']($, {}, async () => ({}));
+    let passedOn = null;
+    const out = await hooks['turn.step']($, { turnId: 't', index: 0, model: 'm', effort: 'high', messageCount: 1 }, async (e) => { passedOn = e; return 'kept'; });
+    assert.equal(out, 'kept');
+    assert.equal(passedOn.effort, 'high');
+    await log.ticks[0].fn();
+    assert.match(bandLines(await hooks['band']($, { surface: 'terminal', props: { bodyColumns: 200 } }, passed))[0], /sonnet 5.5 · high$/);
+    await hooks['turn.step']($, { turnId: 't', index: 1, model: 'm', effort: 8000, messageCount: 2 }, async (e) => e);
+    await log.ticks[0].fn();
+    assert.match(bandLines(await hooks['band']($, { surface: 'terminal', props: { bodyColumns: 200 } }, passed))[0], /sonnet 5.5 · 8000$/);
+});

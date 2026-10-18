@@ -334,15 +334,12 @@ test('thirty tasks never take more than seven rows, however many are done', asyn
     }
 });
 
-test('with no ledger an agent out on this stage is one row with its group; with neither there is no tasks block', async () => {
+test('with no ledger there is no tasks block, whether or not an agent is out on this stage', async () => {
     const m = await load();
     const out = (inflight, plan) => body(status(m, { entry: Object.assign({}, entry, { inflight }), plan: plan || null }), 'tasks');
-    assert.deepEqual(out(busy.inflight), [[{ text: 'agent 出去 12 分 · 第 2 組' }]]);
-    assert.deepEqual(out({ stage: 'design', at: NOW - 95 * 60000, group: 3 }), [[{ text: 'agent 出去 95 分 · 第 3 組', color: '#d7af5f' }]]);
-    assert.deepEqual(out({ stage: 'design' }), [[{ text: 'agent 出去 ? 分' }]]);
-    assert.deepEqual(out({ stage: 'design', at: 'soon', group: 2 }), [[{ text: 'agent 出去 ? 分 · 第 2 組' }]]);
-    assert.deepEqual(out(busy.inflight, planOf(0, [])), [[{ text: 'agent 出去 12 分 · 第 2 組' }]]);
-    assert.deepEqual(out({ stage: 'survey', at: NOW - 60000 }), []);
+    assert.deepEqual(out(busy.inflight), []);
+    assert.deepEqual(out({ stage: 'design' }), []);
+    assert.deepEqual(out(busy.inflight, planOf(0, [])), []);
     assert.deepEqual(out(undefined), []);
 });
 

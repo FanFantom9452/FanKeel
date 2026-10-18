@@ -5,7 +5,7 @@ import type { Entry, Other, PlanInfo, PlanTask, Seg as StatusSeg, Row as StatusR
 import type { Context, Limit } from './pane-bar.ts'
 import { taskDir, pendingName, parsePending } from './pane-gate.ts'
 import type { Pending } from './pane-gate.ts'
-import { agentTree, agentTokens } from './pane-agents.ts'
+import { agentTree, agentTokens, modelAlias } from './pane-agents.ts'
 import type { AgentFile, AgentNode } from './pane-agents.ts'
 import { bandRows } from './pane-band.ts'
 import type { Seg as BandSeg, BandInput } from './pane-band.ts'
@@ -42,6 +42,9 @@ type Seen = {
   // The station's key for this task's project (lib/station.js pkeyOf), and its open TODO entries while a station is up (todosOf).
   pkey: string
   todos: TodoEntry[]
+  // The session's model alias, read each tick; the effort the last main-loop turn.step carried, which only that observer sets.
+  model: string | null
+  effort: string | null
 }
 
 // What a file last parsed to, and the time and size it had then: the tick runs
@@ -50,7 +53,7 @@ type Seen = {
 // session's own registry file, the pending file and the ledger are read every tick.
 type Cache = Map<string, { stamp: string; value: unknown }>
 
-const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, context: null, limits: [], plan: null, remote: false, probe: null, agents: [], station: null, pkey: '', todos: [] })
+const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, context: null, limits: [], plan: null, remote: false, probe: null, agents: [], station: null, pkey: '', todos: [], model: null, effort: null })
 
 // The last message each silent catch logged: the tick runs four times a second, and a failure that stays is said once.
 type Logged = { context: string; plan: string; open: string; registry: string; neighbour: string; gate: string; live: string; remote: string; bandSvg: string; paneSvg: string; agents: string; station: string; todo: string }
@@ -479,7 +482,8 @@ async function look($: EngineInterface, cache: Cache, logged: Logged): Promise<S
   // lib/station.js pkeyOf: the registry root, and the entry's project under it when it names one.
   const pkey = typeof entry.project === 'string' && entry.project ? `${found.root}/${entry.project}` : found.root
   const todos = station ? await todosOf($, pkey, cache, logged) : []
-  return { id, entry, others, pending, context, limits, plan, remote, probe, agents, station, pkey, todos }
+  const model = await $.session.model().then((m) => (m ? modelAlias(String(m)) : null), () => null)
+  return { id, entry, others, pending, context, limits, plan, remote, probe, agents, station, pkey, todos, model, effort: null }
 }
 
 type State = {
@@ -525,10 +529,11 @@ async function tick($: EngineInterface, state: State): Promise<void> {
     }
     // The minute is in the key so the minutes, the neighbours' ages and the reset countdowns move while
     // nothing else does; while a gate waits the second is too, for the seconds it has left.
+    next.effort = state.seen.effort
     const clock = next.entry ? await $.clock.now() : 0
     const minute = Math.floor(clock / 60000)
     const second = next.pending ? Math.floor(clock / 1000) : 0
-    const now = JSON.stringify([next.entry, next.others, next.context, next.limits, next.plan, next.remote, next.probe, next.agents, next.station, next.pkey, next.todos, minute, second])
+    const now = JSON.stringify([next.entry, next.others, next.context, next.limits, next.plan, next.remote, next.probe, next.agents, next.station, next.pkey, next.todos, next.model, next.effort, minute, second])
     // The opens and closes have their own memory, `edge`, which moves only when they all went through: a rejected
     // one is met again next tick as the same edge, while `seen` and the redraw below never wait on them.
     try {
@@ -573,6 +578,12 @@ export const register: Register = (on) => {
     return next(e)
   })
 
+  // Observe only: the main loop's effort, a level or a budget, is what the band shows.
+  on('turn.step', async ($, e, next) => {
+    if (!e.agentId) state.seen.effort = e.effort === undefined ? null : String(e.effort)
+    return next(e)
+  })
+
   on('command.run', { command: COMMAND }, async ($) => {
     state.mine = false
     if (await isOpen($)) {
@@ -605,6 +616,8 @@ export const register: Register = (on) => {
       limits: seen.limits,
       tasks: plan ? { done: plan.tasks.filter((t) => plan.done.includes(t.n)).length, total: plan.tasks.length } : null,
       remote: seen.remote,
+      model: seen.model,
+      effort: seen.effort,
       cols,
       now,
     }

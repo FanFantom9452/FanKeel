@@ -274,13 +274,7 @@ function tasksBlock(entry: Entry, plan: PlanInfo | null, agents: AgentNode[], in
   const known = !!mark && typeof mark.at === 'number' && Number.isFinite(mark.at)
   const out = mark ? mins(known ? now - (mark.at as number) : null) : ''
   const late = known && Number(out) >= LONG
-  if (!plan || !plan.tasks.length) {
-    if (!mark) return []
-    const group = Number.isInteger(mark.group) ? ` · 第 ${mark.group} 組` : ''
-    const seg: Seg = { text: cut(`agent 出去 ${out} 分${group}`, inner) }
-    if (late) seg.color = GUARD
-    return [row('tasks', seg)]
-  }
+  if (!plan || !plan.tasks.length) return []
   const done = new Set(plan.done)
   const open = plan.tasks.filter((t) => !done.has(t.n))
   const count = plan.tasks.length - open.length
