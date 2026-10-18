@@ -58,14 +58,14 @@ const LAND = [
 const PLAN = [{ plan: 'docs/90-agent/plans/p.md', tasks: [{ n: 1, title: 'the `reader`', status: 'complete', range: 'a23fcfd..9cfaaea' },
     { n: 2, title: 'the tab', status: 'no ledger line', range: null }] }];
 const drawn = () => [
-    V.gateTabHtml({ stage: 'survey' }, SURVEY_G, []),
+    V.gateTabHtml({ stage: 'survey', gateAt: 1 }, SURVEY_G, []),
     V.gateTabHtml({ stage: 'design' }, report('design', DESIGN, { mockup: MOCKUP }), []),
     V.gateTabHtml({ stage: 'build' }, report('build', BUILD), PLAN),
     V.gateTabHtml({ stage: 'land' }, report('land', LAND), []),
 ];
 
 test('the survey banner counts as many findings as it draws rows, and as the report has bullets', () => {
-    const html = V.gateTabHtml({ stage: 'survey' }, SURVEY_G, []);
+    const html = V.gateTabHtml({ stage: 'survey', gateAt: 1 }, SURVEY_G, []);
     const count = Number(/<b>(\d+)<\/b>處發現/.exec(html)[1]);
     const rows = /<ul class="gv-rows" data-block="gate-findings">([\s\S]*?)<\/ul>/.exec(html)[1].match(/<li>/g).length;
     const bullets = TEXT.match(/^- \S+:\d+ — /gm).length;
@@ -160,7 +160,7 @@ test('report lines no rule recognised are escaped in the rest', () => {
 
 test('at the gate with no gate question to read, the banner says so instead of a bare colon', () => {
     for (const gate of [null, { questions: [] }]) {
-        const html = V.gateTabHtml({ stage: 'survey' }, Object.assign(report('survey', '- a.js:1 — x'), { gate }), []);
+        const html = V.gateTabHtml({ stage: 'survey', gateAt: 1 }, Object.assign(report('survey', '- a.js:1 — x'), { gate }), []);
         const h2 = /<h2>([\s\S]*?)<\/h2>/.exec(html)[1];
         assert.doesNotMatch(h2, /[：:]$/);
         assert.match(h2, /survey<\/span> gate：報告裡沒有讀得出的 gate 問題$/);
@@ -171,4 +171,17 @@ test('a stage with no gate page says so rather than that its handoff is missing'
     const html = V.gateTabHtml({ stage: 'verify' }, null, []);
     assert.equal(html, '<p class="pv-empty">verify 沒有關卡頁：這頁只列 survey、design、build、land 的 gate 報告；plan 的 gate 在「計畫」tab。</p>');
     assert.doesNotMatch(html, /還沒寫出/);
+});
+
+test('a report at the session\'s own stage draws the banner only while the session waits at that gate', () => {
+    // A group brain's build-g<N>.md lands mid-build, long before build's gate.
+    const g = report('build', BUILD);
+    const busy = V.gateTabHtml({ stage: 'build' }, g, PLAN);
+    assert.match(busy, /^<div class="pv-hd" data-block="gate-head">/);
+    assert.doesNotMatch(busy, /gate-banner/);
+    assert.doesNotMatch(V.tabsHtml({ id: 'x', stage: 'build' }, 'gate', { rows: [], events: [], tasks: [], gate: g }, null), /pv-tabgate/);
+    for (const s of [{ stage: 'build', gateAt: 1 }, { stage: 'build', pending: { questions: [{ question: 'q' }] } }]) {
+        assert.match(V.gateTabHtml(s, g, PLAN), /^<div class="pv-banner" data-block="gate-banner">/);
+        assert.match(V.tabsHtml(Object.assign({ id: 'x' }, s), 'gate', { rows: [], events: [], tasks: [], gate: g }, null), /pv-tabgate/);
+    }
 });

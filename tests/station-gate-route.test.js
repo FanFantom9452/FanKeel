@@ -31,7 +31,7 @@ function boot(hash, stage, detail) {
         STATION: { generatedAt: new Date(NOW).toISOString(), configDir: 'C:\\cfg', pricesVerified: '2026-09-24', serve: false, nonce: 'N0NCE',
             projects: [{ root: PK, gone: false, unreadable: 0, build: [], mapAt: null, docs: [] }],
             profiles: { machine: { values: {}, sources: {}, unreadable: [] }, projects: {} }, profileKeys: {}, classes: {},
-            sessions: [{ id: 's1', pkey: PK, root: PK, task: 't-s1', state: 'live', route: ['survey', 'plan', 'build'], stage: stage || 'build', hasDetail: Boolean(detail),
+            sessions: [{ id: 's1', pkey: PK, root: PK, task: 't-s1', state: 'live', route: ['survey', 'plan', 'build'], stage: stage || 'build', gateAt: NOW - 5000, hasDetail: Boolean(detail),
                 stages: [], notes: [], claims: [], conflicts: [], burn: 0, backtracks: 0, updated: NOW - 1000, started: new Date(NOW - 120000).toISOString(), days: [] }] } };
     const doc = { hidden: false, documentElement: el('html'), body: el('body'), title: '', head: { appendChild() {} },
         getElementById: (id) => els[id] || (els[id] = el()),
@@ -52,14 +52,14 @@ test('#/s/<id>/gate parses to the gate tab, and an unknown tab still falls back 
 test('the gate tab is the last, and wears the hatch only at survey, design, build or land with that stage\'s report', () => {
     for (const stage of ['survey', 'design', 'build', 'land']) {
         const x = { rows: [], events: [], tasks: [], gate: GATE(stage) };
-        assert.match(V.tabsHtml({ id: 's1', stage }, 'gate', x),
+        assert.match(V.tabsHtml({ id: 's1', stage, gateAt: 1 }, 'gate', x),
             /<a href="#\/s\/s1\/gate" class="on" aria-current="page">關卡<i class="hatchsw pv-tabgate" aria-label="等你回答"><\/i><\/a><\/nav>$/, stage);
     }
     const quiet = /<a href="#\/s\/s1\/gate">關卡<\/a><\/nav>$/;
-    assert.match(V.tabsHtml({ id: 's1', stage: 'verify' }, 'timeline', { rows: [], events: [], tasks: [], gate: GATE('verify') }), quiet, 'verify has no gate page');
-    assert.match(V.tabsHtml({ id: 's1', stage: 'build' }, 'timeline', { rows: [], events: [], tasks: [], gate: GATE('design') }), quiet, 'another stage\'s report');
-    assert.match(V.tabsHtml({ id: 's1', stage: 'build' }, 'timeline', { rows: [], events: [], tasks: [], gate: { error: 'none', stage: 'build', path: 'p' } }), quiet, 'no report yet');
-    assert.match(V.tabsHtml({ id: 's1', stage: 'build' }, 'timeline', null), quiet, 'no detail yet');
+    assert.match(V.tabsHtml({ id: 's1', stage: 'verify', gateAt: 1 }, 'timeline', { rows: [], events: [], tasks: [], gate: GATE('verify') }), quiet, 'verify has no gate page');
+    assert.match(V.tabsHtml({ id: 's1', stage: 'build', gateAt: 1 }, 'timeline', { rows: [], events: [], tasks: [], gate: GATE('design') }), quiet, 'another stage\'s report');
+    assert.match(V.tabsHtml({ id: 's1', stage: 'build', gateAt: 1 }, 'timeline', { rows: [], events: [], tasks: [], gate: { error: 'none', stage: 'build', path: 'p' } }), quiet, 'no report yet');
+    assert.match(V.tabsHtml({ id: 's1', stage: 'build', gateAt: 1 }, 'timeline', null), quiet, 'no detail yet');
 });
 
 test('the session page on #/s/<id>/gate marks the tab on and draws the gate tab\'s panel', () => {

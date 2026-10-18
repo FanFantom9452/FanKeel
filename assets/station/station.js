@@ -1335,8 +1335,8 @@
     var TAB_SHOWN = ['timeline', 'dispatch', 'events', 'talk', 'plan', 'gate'];
     function tabsHtml(s, tab, x, talk) {
         var label = { timeline: loc('ses.tabOverview', '概覽'), dispatch: loc('ses.tabDispatch', '派工'), events: loc('ses.tabEvents', '事件'), talk: loc('ses.tabTalk', '對話'), plan: loc('ses.tabPlan', '計畫'), gate: loc('ses.tabGate', '關卡') };
-        // plan counts the newest claimed plan's tasks; plan and gate wear the
-        // gate's hatch while the session waits at that tab's gate with something to show.
+        // plan counts the newest claimed plan's tasks; plan wears the gate's hatch
+        // at the plan stage with tasks to show, gate while `gateAt` says it waits.
         var plan = x && x.tasks && x.tasks.length ? x.tasks[x.tasks.length - 1] : null;
         var n = { dispatch: x ? x.rows.length : null, events: x ? x.events.length : null, talk: talk, plan: plan && plan.tasks.length ? plan.tasks.length : null };
         var run = x ? x.rows.filter(function (r) { return agentState(x, r, s) === 'running'; }).length : 0;
@@ -4697,11 +4697,14 @@
     // lib/gatereport.js reads the newest handoff report of the session's
     // current stage onto the detail's `gate`; this draws it by stage — survey
     // and build compact, design and land richer — under the plan tab's banner
-    // while the session waits at that stage's gate. Pure, and no listener:
+    // while `gateAt` says the session waits at that stage's gate. Pure, and no listener:
     // nothing on it changes without a redraw.
     function gateStage(st) { return ['survey', 'design', 'build', 'land'].indexOf(st) >= 0; }
+    // Waiting is the registry's `gateAt` stamp (lib/registry.js `gateOpen`) or a
+    // pending file with questions: a group brain's build-g<N>.md lands mid-build.
     function gateAt(s, g) {
-        return Boolean(s && g && !g.error && g.stage === s.stage && gateStage(g.stage));
+        var waits = s && (Number.isFinite(s.gateAt) || Boolean(s.pending && s.pending.questions && s.pending.questions.length));
+        return Boolean(waits && g && !g.error && g.stage === s.stage && gateStage(g.stage));
     }
     // Report text: escaped, its `code` spans drawn as code; '' for none.
     function gateText(t) { return t ? esc(t).replace(/`([^`]+)`/g, '<code>$1</code>') : ''; }
