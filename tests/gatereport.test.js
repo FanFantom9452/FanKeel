@@ -292,6 +292,26 @@ test('read gives a design mockup its widest screenshot, and land the suite recor
     assert.deepEqual(read(r, land).parts.run, { pass: 3, fail: 1, ok: false, fast: false, command: 'node --test tests/' });
 });
 
+test('read marks an unreadable screenshot directory and an unparsable suite record, and keeps absence silent', () => {
+    const { r, dir } = root();
+    const design = { stage: 'design', started: STARTED, moves: [['design', 1]] };
+    put(path.join(dir, 'design.md'), 'An approach.\n\nspec: `.fankeel/build/m/mockup.html`\n');
+    let m = read(r, design).parts.mockup;
+    assert.equal(m.shot, null);
+    assert.equal(m.shotUnreadable, undefined);
+    put(path.join(r, '.fankeel/build/m'), 'a file where the directory should be');
+    m = read(r, design).parts.mockup;
+    assert.equal(m.shot, null);
+    assert.equal(m.shotUnreadable, '.fankeel/build/m');
+    const land = { stage: 'land', started: STARTED, moves: [['land', 1]] };
+    put(path.join(dir, 'land.md'), '1d7cf209 chore: x\nsuite: suite.js: 3 pass, 1 fail\n');
+    assert.equal(read(r, land).parts.runUnreadable, undefined);
+    put(path.join(dir, 'suite.json'), '{ not json');
+    const p = read(r, land).parts;
+    assert.equal(p.run, null);
+    assert.match(p.runUnreadable, /suite\.json$/);
+});
+
 test('read counts a build gate\'s verify to build round trips from the session\'s moves', () => {
     const { r, dir } = root();
     put(path.join(dir, 'build-3.md'), 'done: 2 of 2\n');
