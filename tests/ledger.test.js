@@ -897,7 +897,7 @@ test('fix records a Fix line with its range, ranges lists it beside the tasks, a
   assert.match(ok.out, /fix recorded/);
   const text = fs.readFileSync(ledger.ledgerPath(dir, plan), 'utf8');
   assert.match(text, /^Fix: \[bbbbbbb\.\.ccccccc\] — the guard counted an empty object$/m);
-  assert.deepEqual(ledger.fixes(text), [{ what: 'the guard counted an empty object', range: 'bbbbbbb..ccccccc' }]);
+  assert.deepEqual(ledger.fixes(text), [{ what: 'the guard counted an empty object', range: 'bbbbbbb..ccccccc', task: null }]);
   const { out } = run(dir, plan, 'ranges');
   assert.match(out, /  1 aaaaaaa\.\.bbbbbbb\n  fix bbbbbbb\.\.ccccccc — the guard counted an empty object/);
   const bad = run(dir, plan, 'fix', 'no range');
@@ -906,6 +906,27 @@ test('fix records a Fix line with its range, ranges lists it beside the tasks, a
   const badRange = run(dir, plan, '--range', 'notasha', 'fix', 'x');
   assert.equal(badRange.code, 1);
   assert.match(badRange.out, /two commit shas/);
+});
+
+test('fix --task names the task a fix belongs to, ranges shows it, and a task the plan lacks is refused', () => {
+  const dir = root();
+  const plan = writePair(dir);
+  run(dir, plan, 'init');
+  const ok = run(dir, plan, '--range', 'bbbbbbb..ccccccc', '--task', '2', 'fix', 'the bound was off by one');
+  assert.equal(ok.code, 0, ok.out);
+  const text = fs.readFileSync(ledger.ledgerPath(dir, plan), 'utf8');
+  assert.match(text, /^Fix: \[bbbbbbb\.\.ccccccc\] task 2 — the bound was off by one$/m);
+  assert.deepEqual(ledger.fixes(text), [{ what: 'the bound was off by one', range: 'bbbbbbb..ccccccc', task: 2 }]);
+  assert.match(run(dir, plan, 'ranges').out, / {2}fix task 2 bbbbbbb\.\.ccccccc — the bound was off by one/);
+  const missing = run(dir, plan, '--range', 'ccccccc..ddddddd', '--task', '9', 'fix', 'x');
+  assert.equal(missing.code, 1);
+  assert.match(missing.out, /no Task 9/);
+  const word = run(dir, plan, '--range', 'ccccccc..ddddddd', '--task', 'two', 'fix', 'x');
+  assert.equal(word.code, 1);
+  assert.match(word.out, /--task wants/);
+  assert.equal(ledger.fixes(fs.readFileSync(ledger.ledgerPath(dir, plan), 'utf8')).length, 1);
+  assert.equal(ledger.fixLine('legacy', 'aaaaaaa..bbbbbbb'), 'Fix: [aaaaaaa..bbbbbbb] — legacy');
+  assert.deepEqual(ledger.fixes('Fix: [aaaaaaa..bbbbbbb] — task 3: an old line'), [{ what: 'task 3: an old line', range: 'aaaaaaa..bbbbbbb', task: null }]);
 });
 
 // `serialCause`'s `reason === 'read'` branch had no test naming it: a Read of

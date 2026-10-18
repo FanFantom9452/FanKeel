@@ -571,7 +571,7 @@ then asks this stage's gate.
    `<the task's previous sha>..<the new one>`. A fix round left uncommitted is
    a finding nobody can re-diff; one committed without a range of its own
    walks into whatever task is reviewed next. Record it too:
-   `node <plugin>/scripts/ledger.js --plan <file> --range <the task's previous sha>..<the new one> fix "<what>"`,
+   `node <plugin>/scripts/ledger.js --plan <file> --range <the task's previous sha>..<the new one> --task <n> fix "<what>"`,
    so `ranges` lists every reviewed commit on the branch and not only the
    tasks.
 7. `ledger.js --plan <file> --range <BASE>..<the sha> complete <n> "<what landed>"`.
@@ -588,10 +588,12 @@ or the fix made in-session, the parent's commit, one reviewer on the template
 above over `BASE..<sha>`, and then
 
 ```
-node <plugin>/scripts/ledger.js --plan <file> --range <BASE>..<sha> fix "<what>"
+node <plugin>/scripts/ledger.js --plan <file> --range <BASE>..<sha> --task <n> fix "<what>"
 ```
 
-which writes a `Fix:` line `ranges` lists beside the task rows. The five
+which writes a `Fix:` line `ranges` lists beside the task rows. `--task <n>`
+names the task the defeated row cites, and is left off for a row no task owns;
+the station's gate tab counts each task's fix rounds from it. The five
 commits that landed during `verify` on 2026-09-06 had no reviewer, and the
 third return to build was made of their defects; `--range` is required on
 `fix` for exactly that reason.

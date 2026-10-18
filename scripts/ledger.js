@@ -57,7 +57,7 @@ function requireRange(range) {
 
 // Every string flag, and the key it lands on. A table rather than a list because
 // `splitAtVerb` reads it too, and two lists of the same flags drift.
-const STRING_FLAGS = { root: 'root', plan: 'plan', range: 'range', group: 'group', render: 'render' };
+const STRING_FLAGS = { root: 'root', plan: 'plan', range: 'range', group: 'group', render: 'render', task: 'task' };
 
 // The verbs, in the order the refusal at the bottom lists them. A set rather
 // than four literals for the same reason the flags are a table: `splitAtVerb`
@@ -69,7 +69,7 @@ const VERBS = new Set(['init', 'complete', 'ruling', 'show', 'groups', 'ready', 
 // where a range is recorded; `--render` only on `complete` and `fix`. A flag outside its verb's list is refused rather
 // than ignored: `ranges --range x` used to exit 0 having read nothing of it.
 const BASE_FLAGS = ['root', 'plan'];
-const VERB_FLAGS = { init: BASE_FLAGS.concat(['range']), complete: BASE_FLAGS.concat(['range', 'render']), fix: BASE_FLAGS.concat(['range', 'render']), brief: BASE_FLAGS.concat(['group', 'prefix']), ready: BASE_FLAGS.concat(['worktree']), workflow: BASE_FLAGS.concat(['group']) };
+const VERB_FLAGS = { init: BASE_FLAGS.concat(['range']), complete: BASE_FLAGS.concat(['range', 'render']), fix: BASE_FLAGS.concat(['range', 'render', 'task']), brief: BASE_FLAGS.concat(['group', 'prefix']), ready: BASE_FLAGS.concat(['worktree']), workflow: BASE_FLAGS.concat(['group']) };
 
 // `strict: false` lets an unknown flag through to the verb check below, which
 // refuses it by name. A declared flag given no value comes back `true` rather
@@ -837,10 +837,19 @@ function main(argv) {
         // unreviewed commit this verb exists to rule out.
         if (opts.range === undefined) fail('fix wants --range <base>..<sha>: a fix with no range is a commit nobody reviewed.');
         requireRange(opts.range);
+        // The task this fix belongs to, when the defeated row cites one: checked
+        // against the plan's own headings, so a typo never reaches the file.
+        let task = null;
+        if (opts.task !== undefined) {
+            if (!/^[1-9]\d*$/.test(opts.task)) fail('--task wants the number of the task this fix belongs to, got "' + opts.task + '".');
+            task = Number(opts.task);
+            const { file, text: planText } = readPlan(root, opts.plan);
+            if (!plantasks.parsePlan(planText).tasks.some((t) => t.n === task)) fail('fix: no Task ' + task + ' in ' + file + '.');
+        }
         const suffix = renderNote(root, opts.render);
         const refusal = renderRefusal(root, opts.range, opts);
         if (refusal) fail(refusal);
-        ledger.append(root, opts.plan, ledger.fixLine(what + suffix, opts.range));
+        ledger.append(root, opts.plan, ledger.fixLine(what + suffix, opts.range, task));
         return 'fankeel ledger — fix recorded.';
     }
 
@@ -853,7 +862,7 @@ function main(argv) {
         if (!plan && !rows.length && !fixed.length) return 'fankeel ledger — nothing complete yet at ' + file;
         const lines = (plan ? ['  plan ' + plan] : [])
             .concat(rows.map((r) => '  ' + r.n + ' ' + (r.range || '(no range recorded)')))
-            .concat(fixed.map((r) => '  fix ' + (r.range || '(no range recorded)') + ' — ' + r.what));
+            .concat(fixed.map((r) => '  fix ' + (r.task ? 'task ' + r.task + ' ' : '') + (r.range || '(no range recorded)') + ' — ' + r.what));
         // A missing range is named rather than dropped. Silence here is a task
         // that landed and never got a verifier, which is the failure this verb
         // exists to prevent.
