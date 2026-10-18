@@ -52,6 +52,28 @@ function main(raw) {
     const root = registry.rootFor(payload);
     const mine = registry.readSession(root, payload.session_id);
     const shell = payload.tool_name === 'Bash' || payload.tool_name === 'PowerShell';
+    const command = (payload.tool_input && payload.tool_input.command) || '';
+    // A second matcher, `Bash|PowerShell`, checked before the collision guard
+    // below: six named read-only agent types (READ_ONLY_AGENTS) are denied a command that writes,
+    // regardless of `guard` mode — this is about a read-only contract, not
+    // about two sessions overlapping a file.
+    if (shell) {
+        // `agent_type` is set inside a subagent AND on the main thread of a
+        // session started with `--agent` — and that second one is a real
+        // session that owns tasks and must be able to write. `agent_id` is
+        // present only inside a subagent, so both are needed: the id says
+        // whether this is a subagent at all, the type says whether it is a
+        // read-only one. docs/subagents.md quotes Claude Code's own wording
+        // on the field to use — search it for "offered one".
+        if (payload.agent_id && readOnlyAgentType(payload.agent_type) && writesFiles(command)) {
+            refuse('fankeel: this is a subagent call (agent_id is set) with the '
+                + 'read-only agent_type ' + payload.agent_type + ', and this command writes to disk. '
+                + 'Redirect to /dev/null (or $null), or ask for a fankeel-verifier if the result needs '
+                + 'to be written.');
+            return;
+        }
+    }
+
     if (!mine || mine.active !== true) {
         if (shell) emitCommit(root, mine, payload);
         return;
@@ -70,26 +92,7 @@ function main(raw) {
     // a neighbour to check liveness for. Both are inside the noise of spawning
     // the node process this hook already is, which is why the gate moved rather
     // than grew.
-    // A second matcher, `Bash|PowerShell`, checked before the collision guard
-    // below: six named read-only agent types (READ_ONLY_AGENTS) are denied a command that writes,
-    // regardless of `guard` mode — this is about a read-only contract, not
-    // about two sessions overlapping a file.
     if (shell) {
-        // `agent_type` is set inside a subagent AND on the main thread of a
-        // session started with `--agent` — and that second one is a real
-        // session that owns tasks and must be able to write. `agent_id` is
-        // present only inside a subagent, so both are needed: the id says
-        // whether this is a subagent at all, the type says whether it is a
-        // read-only one. docs/subagents.md quotes Claude Code's own wording
-        // on the field to use — search it for "offered one".
-        const command = (payload.tool_input && payload.tool_input.command) || '';
-        if (payload.agent_id && readOnlyAgentType(payload.agent_type) && writesFiles(command)) {
-            refuse('fankeel: this is a subagent call (agent_id is set) with the '
-                + 'read-only agent_type ' + payload.agent_type + ', and this command writes to disk. '
-                + 'Redirect to /dev/null (or $null), or ask for a fankeel-verifier if the result needs '
-                + 'to be written.');
-            return;
-        }
         // docs/90-agent/plans/2026-10-10-workflow-gaps-design.md §12: the shell
         // half of the controlled-stage rule below. The controller's Edit and
         // Write are refused there; a `sed -i` or a redirect is the same write

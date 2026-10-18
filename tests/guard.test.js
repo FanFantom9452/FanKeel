@@ -453,9 +453,10 @@ test('the writes the first list missed are denied too, and git reads still pass'
   }
 });
 
-test('a session with no entry is not guarded on Bash either', () => {
+test('a session with no entry is not guarded on Bash for the collision guard, but a read-only subagent write is still denied', () => {
   const root = tmp();
-  assert.equal(run(root, bashCall('fankeel-reader', 'ls > x')), '');
+  assert.equal(decisionOf(run(root, bashCall('fankeel-reader', 'ls > x'))), 'deny');
+  assert.equal(run(root, bashCall(undefined, 'ls > x')), '');
 });
 
 // `agent_type` alone is a trap: it is set both inside a subagent and on the
@@ -470,6 +471,34 @@ test('a read-only agent_type with no agent_id is a real session, not a subagent'
     session_id: MINE, cwd: undefined, tool_name: 'Bash', agent_type: 'fankeel-reader',
     tool_input: { command: 'echo x > f.txt' },
   });
+  assert.equal(out, '');
+});
+
+// A read-only subagent's write is refused whether or not the session has an
+// active task: the contract is about the agent, not about a task.
+test('a read-only subagent write is denied when the session has no active task', () => {
+  const root = tmp();
+  seed(root, MINE, { active: false });
+  const out = run(root, bashCall('fankeel-reader', 'echo x > f.txt'));
+  assert.equal(decisionOf(out), 'deny');
+});
+
+test('a read-only subagent write is denied when the session is unknown', () => {
+  const root = tmp();
+  const out = run(root, bashCall('fankeel-reader', 'echo x > f.txt', 'PowerShell'));
+  assert.equal(decisionOf(out), 'deny');
+});
+
+test('a read-only subagent read passes when the session has no active task', () => {
+  const root = tmp();
+  seed(root, MINE, { active: false });
+  assert.equal(run(root, bashCall('fankeel-reader', 'cat a.txt | grep foo')), '');
+});
+
+test('the main thread with a read-only agent_type and no active task is not denied', () => {
+  const root = tmp();
+  seed(root, MINE, { active: false });
+  const out = run(root, { session_id: MINE, tool_name: 'Bash', agent_type: 'fankeel-reader', tool_input: { command: 'echo x > f.txt' } });
   assert.equal(out, '');
 });
 
