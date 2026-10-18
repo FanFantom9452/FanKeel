@@ -10,7 +10,7 @@ const path = require('node:path');
 
 global.window = { STATION: { serve: false, pricesVerified: '2026-09-04' } };
 const V = require('../assets/station/station.js');
-const { parseReport } = require('../lib/gatereport.js');
+const { parseReport, derive } = require('../lib/gatereport.js');
 const { readGate } = require('../lib/handoff.js');
 
 const ROOT = path.join(__dirname, '..');
@@ -20,7 +20,7 @@ const CSS = fs.readFileSync(path.join(ROOT, 'assets', 'station', 'station.css'),
 const SRC = fs.readFileSync(path.join(ROOT, 'assets', 'station', 'station.js'), 'utf8');
 
 const report = (stage, text, extra) => ({ stage, path: '.fankeel/build/task-20261018T093023/' + stage + '.md', text, gate: null,
-    parts: Object.assign(parseReport(stage, text), extra || {}) });
+    parts: Object.assign(derive(stage, parseReport(stage, text)), extra || {}) });
 const SURVEY_G = Object.assign(report('survey', TEXT), { gate: readGate(SURVEY) });
 const DESIGN = [
     'Add a gate tab that reads the newest handoff.',
@@ -86,7 +86,7 @@ test('away from that stage\'s gate the report keeps a quiet head and no banner',
 
 test('design draws the approach, the file table, the mockup link and its check lines, unverified marked', () => {
     const html = V.gateTabHtml({ stage: 'design' }, report('design', DESIGN, { mockup: MOCKUP }), []);
-    assert.match(html, /<li><b>2<\/b>個檔<\/li><li>附 mockup<\/li>/);
+    assert.match(html, /<li><b>2<\/b>個檔<\/li><li><b>1<\/b>條證明做完<\/li><li><b>1<\/b>件沒驗<\/li><li>附 mockup<\/li>/);
     assert.match(html, /<p class="gv-approach">Add a gate tab/);
     assert.equal(html.match(/<tr><td><code class="gv-path">/g).length, 2);
     assert.match(html, /<figure class="gv-shot">.*<a href="file:\/\/\/F:\/r\/\.fankeel\/build\/2026-10-18-gate-tab\/mockup\.html"[^>]*>\.fankeel\/build\/2026-10-18-gate-tab\/mockup\.html<\/a>/);
@@ -184,4 +184,51 @@ test('a report at the session\'s own stage draws the banner only while the sessi
         assert.match(V.gateTabHtml(s, g, PLAN), /^<div class="pv-banner" data-block="gate-banner">/);
         assert.match(V.tabsHtml(Object.assign({ id: 'x' }, s), 'gate', { rows: [], events: [], tasks: [], gate: g }, null), /pv-tabgate/);
     }
+});
+
+test('the survey lead is its head and numbered points, and the banner counts what is unverified and what was not opened', () => {
+    const html = V.gateTabHtml({ stage: 'survey', gateAt: 1 }, SURVEY_G, []);
+    const lead = /<div class="gv-lead">([\s\S]*?)<\/div>/.exec(html)[1];
+    assert.match(lead, /^<b>結論先說：三件事都有可動手的內容。<\/b><ol>/);
+    assert.equal((lead.match(/<li>/g) || []).length, 3);
+    assert.match(html, /<li><b>5<\/b>處發現<\/li><li><b>3<\/b>件沒驗<\/li><li><b>1528<\/b>個檔沒打開<\/li>/);
+    assert.match(V.gateTabHtml({ stage: 'survey' }, report('survey', 'Just one thing.\n- a.js:1 — x'), []), /<p class="gv-lead">Just one thing\.<\/p>/);
+});
+
+test('survey draws unknown and skipped as lists when they hold more than one item', () => {
+    const html = V.gateTabHtml({ stage: 'survey' }, SURVEY_G, []);
+    assert.match(html, /<dt>unknown<\/dt><dd><ul><li>pane 在 AskUserQuestion 前或後出現<\/li><li>800px pane 是否要橫捲（gate-10 自己列為沒驗）<\/li><li>/);
+    assert.match(html, /<dt>skipped<\/dt><dd><ul><li>1528 個檔案/);
+    assert.match(V.gateTabHtml({ stage: 'survey' }, report('survey', '- a.js:1 — x\nunknown: one thing'), []), /<dt>unknown<\/dt><dd>one thing<\/dd>/);
+});
+
+test('survey folds the TODO patrol under its count and each disposition\'s, with the group lines inside', () => {
+    const html = V.gateTabHtml({ stage: 'survey' }, SURVEY_G, []);
+    assert.match(html, /<details class="gv-more" data-block="gate-patrol"><summary>TODO 盤點 23 條<small>do now 1 · waiting on 8 · keep 14<\/small><\/summary>/);
+    assert.match(html, /<div><dt>waiting on<\/dt><dd>audit-1、build-1、docs-1、foreign-1、model-4、quota-1、security-1、spend-2<\/dd><\/div>/);
+    assert.doesNotMatch(V.gateTabHtml({ stage: 'survey' }, report('survey', '- a.js:1 — x'), []), /gate-patrol/);
+});
+
+test('design counts its checks and what is unverified, swatches each dispatch\'s model, and shows the mockup\'s screenshot', () => {
+    const two = DESIGN.replace('counts the findings', 'counts the findings; tests/station-gate-tab.test.js draws them').replace('unverified: the pane order', 'unverified: the pane order; the 800px scroll');
+    const shot = Object.assign({}, MOCKUP, { shot: { path: '.fankeel/build/2026-10-18-gate-tab/shot-1600/render.png', href: 'file:///F:/r/.fankeel/build/2026-10-18-gate-tab/shot-1600/render.png' } });
+    const html = V.gateTabHtml({ id: 'abc-1', stage: 'design' }, report('design', two, { mockup: shot }), []);
+    assert.match(html, /<li><b>2<\/b>個檔<\/li><li><b>2<\/b>條證明做完<\/li><li><b>2<\/b>件沒驗<\/li><li>附 mockup<\/li>/);
+    assert.equal(html.match(/<td class="pv-disp"><span class="pv-m"><i class="sw" style="background:var\(--m-opus\)"><\/i>opus<\/span><\/td>/g).length, 2);
+    assert.match(html, /<dt>證明做完<\/dt><dd><ul><li>tests\/gatereport\.test\.js counts the findings<\/li><li>tests\/station-gate-tab\.test\.js draws them<\/li><\/ul><\/dd>/);
+    assert.match(html, /<figure class="gv-shot"><a href="file:\/\/\/F:\/r\/[^"]*mockup\.html" target="_blank" rel="noopener"><img src="file:\/\/\/F:\/r\/[^"]*shot-1600\/render\.png" alt="mockup 的截圖" loading="lazy"><\/a>/);
+    global.window.STATION.serve = true;
+    try {
+        assert.match(V.gateTabHtml({ id: 'abc-1', stage: 'design' }, report('design', two, { mockup: shot }), []), /<img src="station\/shot\/abc-1\.png"/);
+    } finally {
+        global.window.STATION.serve = false;
+    }
+    assert.doesNotMatch(V.gateTabHtml({ stage: 'design' }, report('design', DESIGN, { mockup: Object.assign({}, MOCKUP, { shot: null }) }), []), /<img /);
+    assert.match(V.gateTabHtml({ stage: 'design' }, report('design', DESIGN.replace('implementer, opus |', 'in-session, the tab |'), { mockup: MOCKUP }), []), /<td class="pv-disp">in-session, the tab<\/td>/);
+});
+
+test('design draws a dispatch cell\'s effort after the model\'s swatch, and none when the cell names none', () => {
+    const html = V.gateTabHtml({ stage: 'design' }, report('design', DESIGN.replace('implementer, opus |', 'implementer, opus, high |'), { mockup: MOCKUP }), []);
+    assert.match(html, /<td class="pv-disp"><span class="pv-m"><i class="sw" style="background:var\(--m-opus\)"><\/i>opus<\/span> · high<\/td>/);
+    assert.doesNotMatch(V.gateTabHtml({ stage: 'design' }, report('design', DESIGN, { mockup: MOCKUP }), []), / · high|opus<\/span> ·/);
 });

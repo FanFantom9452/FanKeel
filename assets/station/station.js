@@ -4726,36 +4726,74 @@
         return '<details class="gv-more"><summary>' + loc('det.gateRest', '報告其餘') + '<small>' + loc('det.gateRestN', '{n} 行', { n: rest.length }) + '</small></summary>'
             + '<pre class="gv-rest">' + esc(rest.join('\n')) + '</pre></details>';
     }
+    // A report value `derive` (lib/gatereport.js) split into items: a list when it holds two or more, else the value as written.
+    function gateList(list, text) {
+        if (list && list.length > 1) return '<ul>' + list.map(function (x) { return '<li>' + gateText(x) + '</li>'; }).join('') + '</ul>';
+        return gateText(text);
+    }
+    // A survey's TODO patrol (`derive`'s `patrol`), folded under its count and each disposition's,
+    // its group lines inside.
+    function gatePatrol(t) {
+        if (!t) return '';
+        var counts = ['do now', 'needs the user', 'waiting on', 'keep'].filter(function (k) { return t.counts && t.counts[k]; })
+            .map(function (k) { return k + ' ' + t.counts[k]; }).join(' · ');
+        return '<details class="gv-more" data-block="gate-patrol"><summary>' + loc('det.gatePatrol', 'TODO 盤點 {n} 條', { n: t.listed === null ? '?' : t.listed })
+            + (counts ? '<small>' + esc(counts) + '</small>' : '') + '</summary>'
+            + gateKv((t.groups || []).map(function (x) { return [esc(x.name), gateText(x.text)]; })) + '</details>';
+    }
     function gateSurvey(p) {
         var f = p.findings || [];
+        var unknown = p.unknownList || [];
         var cls = p['class'] ? String(p['class']).split(' — ')[0] : '';
         var counts = '<li>' + loc('det.gateNFindings', '<b>{n}</b>處發現', { n: f.length }) + '</li>'
+            + (unknown.length ? '<li>' + loc('det.gateNUnknown', '<b>{n}</b>件沒驗', { n: unknown.length }) + '</li>' : '')
+            + (p.skippedFiles ? '<li>' + loc('det.gateNSkipped', '<b>{n}</b>個檔沒打開', { n: p.skippedFiles }) + '</li>' : '')
             + (cls ? '<li>class <code class="gv-sum">' + esc(cls) + '</code></li>' : '');
         var rows = f.length ? '<ul class="gv-rows" data-block="gate-findings">' + f.map(function (x) {
             return '<li><code class="gv-path">' + esc(x.path) + '<small>:' + esc(x.line) + '</small></code><span>' + gateText(x.what) + '</span></li>';
         }).join('') + '</ul>' : '';
         var side = gateSec(loc('det.gateSecClass', '分類與路線'), null, gateKv([['class', gateText(p['class'])], ['route', gateText(p.route)]]))
-            + gateSec(loc('det.gateSecMissed', '沒查到、沒打開'), null, gateKv([['unknown', gateText(p.unknown)], ['skipped', gateText(p.skipped)],
+            + gateSec(loc('det.gateSecMissed', '沒查到、沒打開'), null, gateKv([['unknown', gateList(p.unknownList, p.unknown)], ['skipped', gateList(p.skippedList, p.skipped)],
                 ['not built', gateText(p.planned)], ['not found', gateText(p.notFound)]]));
-        var body = (p.conclusion ? '<p class="gv-lead">' + gateText(p.conclusion) + '</p>' : '')
-            + '<div class="gv-cols">' + gateSec(loc('det.gateSecFindings', '發現'), f.length, rows) + (side ? '<div class="gv-side">' + side + '</div>' : '') + '</div>';
+        var points = p.lead && p.lead.points ? p.lead.points : [];
+        var lead = points.length
+            ? '<div class="gv-lead">' + (p.lead.head ? '<b>' + gateText(p.lead.head) + '</b>' : '') + '<ol>' + points.map(function (x) { return '<li>' + gateText(x) + '</li>'; }).join('') + '</ol></div>'
+            : p.conclusion ? '<p class="gv-lead">' + gateText(p.conclusion) + '</p>' : '';
+        var body = lead
+            + '<div class="gv-cols">' + gateSec(loc('det.gateSecFindings', '發現'), f.length, rows) + (side ? '<div class="gv-side">' + side + '</div>' : '') + '</div>'
+            + gatePatrol(p.patrol);
         return { counts: counts, body: body };
     }
-    function gateDesign(p) {
+    // A file row's dispatch: `implementer, <model>[, <effort>]` as the model's swatch and the effort, the rest as written.
+    function gateDisp(d) {
+        var m = /^implementer,\s*([a-z]+)(?:,\s*(low|medium|high|xhigh|max))?/i.exec(String(d || ''));
+        if (!m) return gateText(d);
+        return '<span class="pv-m"><i class="sw" style="background:var(--m-' + family('claude-' + m[1].toLowerCase()) + ')"></i>' + esc(m[1]) + '</span>'
+            + (m[2] ? ' · ' + esc(m[2]) : '') + gateText(String(d).slice(m[0].length));
+    }
+    function gateDesign(p, s) {
         var files = p.files || [];
+        var proves = p.provesList || [];
+        var unverified = p.unverifiedList || [];
         var counts = '<li>' + loc('det.gateNFiles', '<b>{n}</b>個檔', { n: files.length }) + '</li>'
+            + (proves.length ? '<li>' + loc('det.gateNProves', '<b>{n}</b>條證明做完', { n: proves.length }) + '</li>' : '')
+            + (unverified.length ? '<li>' + loc('det.gateNUnknown', '<b>{n}</b>件沒驗', { n: unverified.length }) + '</li>' : '')
             + (p.mockup ? '<li>' + loc('det.gateMockup', '附 mockup') + '</li>' : '');
         var tbl = files.length ? '<table class="gv-tbl"><thead><tr><th scope="col">' + loc('det.gateColFile', '檔') + '</th><th scope="col">'
             + loc('det.gateColChange', '改什麼') + '</th><th scope="col">' + loc('det.gateColDispatch', '派工') + '</th></tr></thead><tbody>' + files.map(function (f) {
-                return '<tr><td><code class="gv-path">' + esc(f.path) + '</code></td><td>' + gateText(f.change) + '</td><td>' + gateText(f.dispatch) + '</td></tr>';
+                return '<tr><td><code class="gv-path">' + esc(f.path) + '</code></td><td>' + gateText(f.change) + '</td><td class="pv-disp">' + gateDisp(f.dispatch) + '</td></tr>';
             }).join('') + '</tbody></table>' : '';
+        // Served, the screenshot comes from the station (GET /station/shot/<id>.png): a file:// image does not load in an http page.
+        var src = p.mockup && p.mockup.shot ? (S.serve ? 'station/shot/' + encodeURIComponent(s && s.id ? s.id : '') + '.png' : p.mockup.shot.href) : '';
         // A file:// link from the served page may do nothing; the path is its text, so it still reads.
-        var shot = p.mockup ? '<figure class="gv-shot"><figcaption><span>' + loc('det.gateShot', 'mockup，design gate 時核准用') + '</span><a href="'
+        var shot = p.mockup ? '<figure class="gv-shot">'
+            + (src ? '<a href="' + esc(p.mockup.href) + '" target="_blank" rel="noopener"><img src="' + esc(src) + '" alt="' + loc('det.gateShotAlt', 'mockup 的截圖') + '" loading="lazy"></a>' : '')
+            + '<figcaption><span>' + loc('det.gateShot', 'mockup，design gate 時核准用') + '</span><a href="'
             + esc(p.mockup.href) + '" target="_blank" rel="noopener">' + esc(p.mockup.path) + '</a></figcaption></figure>' : '';
         var body = (p.approach ? '<p class="gv-approach">' + gateText(p.approach) + '</p>' : '')
             + '<div class="gv-cols">' + gateSec(loc('det.gateSecFiles', '動到的檔'), files.length, tbl) + shot + '</div>'
-            + gateKv([[loc('det.gateProves', '證明做完'), gateText(p.proves)], [loc('det.gateMap', '對照地圖'), gateText(p.map)],
-                [loc('det.gateUnverified', '沒驗'), gateText(p.unverified), 'warn'], ['spec', gateText(p.spec)]], 'gv-checks');
+            + gateKv([[loc('det.gateProves', '證明做完'), gateList(p.provesList, p.proves)], [loc('det.gateMap', '對照地圖'), gateText(p.map)],
+                [loc('det.gateUnverified', '沒驗'), gateList(p.unverifiedList, p.unverified), 'warn'], ['spec', gateText(p.spec)]], 'gv-checks');
         return { counts: counts, body: body };
     }
     function gateBuild(p, plan) {
@@ -4807,7 +4845,7 @@
         if (!g || g.error === 'none') return '<p class="pv-empty">' + loc('det.gateNone', '這個 session 還沒寫出 {s} 的 handoff。stage 走到 gate 時，這裡列出它的報告。', { s: esc(stage) }) + '</p>';
         if (g.error) return '<p class="pv-empty err">' + loc('det.gateUnreadable', '讀不到 {p}：檔案在，但打不開。', { p: '<code>' + esc(g.path) + '</code>' }) + '</p>';
         var p = g.parts || {};
-        var drawn = g.stage === 'survey' ? gateSurvey(p) : g.stage === 'design' ? gateDesign(p) : g.stage === 'build' ? gateBuild(p, planNewest(tasks))
+        var drawn = g.stage === 'survey' ? gateSurvey(p) : g.stage === 'design' ? gateDesign(p, s) : g.stage === 'build' ? gateBuild(p, planNewest(tasks))
             : g.stage === 'land' ? gateLand(p) : { counts: '', body: '' };
         var q = g.gate && g.gate.questions && g.gate.questions[0] ? g.gate.questions[0].question : '';
         var src = '<div class="srcline pv-src" title="' + esc(g.path) + '">' + esc(g.path) + '</div>';
