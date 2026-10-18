@@ -1124,9 +1124,10 @@ a shared checkout, not CPU; its range is 1 to 16.
 **Where a plan exists, none of that is guesswork and none of it is yours.**
 `lib/plantasks.js` groups a plan's tasks by disjoint `**Files:**` and by whether
 one consumes what another produces, and `surfaces()` gives each group its
-dispatch surface — one task is `agent`, two are `agents` in one response, three
-or more are `workflow`, except that when build runs under a stage agent
-(`stage.agents` names build) `groups` prints `agents` for it, because that
+dispatch surface — one task is `agent`, two or more are one `workflow` (`agents` when a prose
+`Consumes:` or a missing block leaves the grouping unproven), except that when
+build runs under a stage agent (`stage.agents` names build) `groups` prints
+`agents` for it, because that
 agent has no Workflow tool. `node <plugin>/scripts/ledger.js --plan <f> groups`
 prints it beside each group, and `build` reads it there rather than deriving one
 from the group's size, which cannot see what the next paragraph can.
