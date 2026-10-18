@@ -243,6 +243,14 @@ test('a judge is told it answers once', () => {
     'the prefixed type is what a real dispatch sends');
 });
 
+test('a judge is not told it cannot dispatch, since it may dispatch readers', () => {
+  const root = tmp();
+  seed(root);
+  const rule = /You do not dispatch subagents of your own/;
+  assert.doesNotMatch(contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-judge' }))), rule);
+  assert.match(contextOf(run(root, start(root, { agent_type: 'Explore' }))), rule);
+});
+
 test('a payload with no session id says nothing', () => {
   const root = tmp();
   seed(root);
