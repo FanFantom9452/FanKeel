@@ -18,7 +18,8 @@
 // word is denied too, pointing the controller back at the file. Otherwise
 // `updatedInput` alone is not a decision — the probe behind this found that a
 // PreToolUse hook returning only `updatedInput` still lets the user pick — and
-// this file no longer writes one at all: on a controlled stage, the controller
+// the only one this file writes is gate.away's extra 離開 question (and the
+// station answers), never a substitution of the gate: on a controlled stage, the controller
 // itself reads the handoff file's own gate and types the real AskUserQuestion
 // call, word for word, so there is nothing left to substitute. This file's
 // job is validation, not substitution.
@@ -48,6 +49,7 @@ const fs = require('node:fs');
 const crypto = require('node:crypto');
 const registry = require('../lib/registry.js');
 const profileLib = require('../lib/profile.js');
+const { inspect, awayLine, AWAY_QUESTION } = require('../lib/context.js');
 const { controlling, nextStage, normaliseRoute, FULL_ROUTE } = require('../lib/stages.js');
 const { handoffPath, answerPath, pendingPath, answersSince, answeredOf, handedOffSince, writeAnswer, readGate, patrolEntries, reportProblem, skipReason, gateMatches } = require('../lib/handoff.js');
 const { run, parse, refuse } = require('../lib/hook.js');
@@ -160,6 +162,22 @@ function emit(out, payload, root, mine, values) {
             updatedInput: Object.assign({}, payload.tool_input, { answers }),
         };
     }
+    // `gate.away`: past AWAY tokens in play, a hint line, and with `ask` one
+    // more question. Not on a question the station already answered.
+    try {
+        const mode = values ? values['gate.away'] : 'off';
+        const line = mode === 'hint' || mode === 'ask' ? awayLine(inspect(payload.transcript_path)) : null;
+        if (line) {
+            out.systemMessage = out.systemMessage ? out.systemMessage + ' ' + line : line;
+            const asked = payload.tool_input && payload.tool_input.questions;
+            if (mode === 'ask' && !answers && Array.isArray(asked) && asked.length < 4 && isGate(mine, asked)) {
+                out.hookSpecificOutput = {
+                    hookEventName: 'PreToolUse',
+                    updatedInput: Object.assign({}, payload.tool_input, { questions: [...asked, AWAY_QUESTION] }),
+                };
+            }
+        }
+    } catch (e) { /* housekeeping: the question goes out as it was */ }
     if (Object.keys(out).length) process.stdout.write(JSON.stringify(out));
 }
 

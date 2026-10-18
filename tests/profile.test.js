@@ -702,3 +702,11 @@ test('profile preset refuses a name that is not a preset, and --default reads no
     assert.doesNotMatch(out, /from history/);
     assert.equal(JSON.parse(fs.readFileSync(profile.machineFile(cfg), 'utf8'))['land.integration'], 'merge');
 });
+
+test('gate.away is off, hint or ask, hint by default', () => {
+    for (const ok of ['off', 'hint', 'ask']) assert.deepEqual(profile.parseValue('gate.away', ok), { value: ok }, ok);
+    for (const bad of ['on', 'true', '']) assert.ok(profile.parseValue('gate.away', bad).error, bad);
+    const r = profile.read(dir(), null);
+    assert.equal(r.values['gate.away'], 'hint');
+    assert.equal(r.sources['gate.away'], 'builtin');
+});

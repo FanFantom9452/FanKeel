@@ -288,3 +288,31 @@ test('the summary is told to keep the design.md and context.md paths', async () 
     assert.ok(lines.includes('- the design.md and context.md paths under .fankeel/build/, when the conversation named them'), lines.join(' | '));
     assert.equal(lines[lines.length - 1], '- the plugin scripts live under F:/plugin/scripts');
 });
+
+test('awayAt on the entry compacts under the threshold; without it the same tokens do not', async () => {
+    const mod = await load();
+    const away = fake({ tokens: 5, files: entryAt('F:/proj', { ...live, awayAt: 1 }) });
+    await fire(handlerOf(mod), away.$);
+    assert.equal(away.calls.length, 1);
+    const stay = fake({ tokens: 5, files: entryAt('F:/proj', live) });
+    await fire(handlerOf(mod), stay.$);
+    assert.equal(stay.calls.length, 0);
+});
+
+test('awayAt on an inactive entry compacts nothing', async () => {
+    const { $, calls } = fake({ tokens: CONTEXT_HARD + 1, files: entryAt('F:/proj', { ...live, active: false, awayAt: 1 }) });
+    await fire(handlerOf(await load()), $);
+    assert.equal(calls.length, 0);
+});
+
+test('one awayAt compacts once; a later awayAt compacts again', async () => {
+    const handler = handlerOf(await load());
+    const away = (at) => fake({ tokens: 5, files: entryAt('F:/proj', { ...live, awayAt: at }) });
+    const first = away(Date.now() + 1000);
+    await fire(handler, first.$);
+    await fire(handler, first.$);
+    assert.equal(first.calls.length, 1);
+    const later = away(Date.now() + 5000);
+    await fire(handler, later.$);
+    assert.equal(later.calls.length, 1);
+});

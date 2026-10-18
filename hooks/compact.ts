@@ -11,7 +11,7 @@ export const HARD = 450000
 // lib/registry.js SESSION_ID: the registry file is named by this id.
 export const SESSION_ID = /^[0-9a-fA-F][0-9a-fA-F-]{7,63}$/
 
-type Entry = { project?: unknown; configDir?: unknown; task?: unknown; stage?: unknown; class?: unknown; active?: unknown }
+type Entry = { project?: unknown; configDir?: unknown; task?: unknown; stage?: unknown; class?: unknown; active?: unknown; awayAt?: unknown }
 
 export function parentOf(dir: string): string | null {
   const trimmed = dir.replace(/[\\/]+$/, '')
@@ -136,6 +136,7 @@ async function compactWithRetry($: EngineInterface, instructions: string): Promi
 
 export const register: Register = (on) => {
   let pending = false
+  let awayDone = 0
   // The module's one turn.complete: the engine refuses a second without a matcher.
   on('turn.complete', async ($, e, next) => {
     const out = await next(e)
@@ -155,11 +156,16 @@ export const register: Register = (on) => {
         },
         found,
       )
-      if (typeof context.tokens !== 'number' || context.tokens < at) return out
       if (!found || !isActive(found.entry)) return out
+      // hooks/resume.js sets awayAt when the user answered the gate "leaving" (gate.away): compact now, whatever compact.at says.
+      // Only an awayAt newer than the last one acted on: nothing here clears it, inject.js does on the next prompt.
+      const awayAt = found.entry.awayAt
+      const away = typeof awayAt === 'number' && awayAt > awayDone
+      if (typeof context.tokens !== 'number' || (context.tokens < at && !away)) return out
       const entry = found.entry
       pending = true
-      $.ui.log(`fankeel compact: ${context.tokens} tokens >= ${at}, compacting`, { to: 'debug' })
+      if (away) awayDone = awayAt
+      $.ui.log(away ? `fankeel compact: user is away, ${context.tokens} tokens, compacting` : `fankeel compact: ${context.tokens} tokens >= ${at}, compacting`, { to: 'debug' })
       void compactWithRetry($, instructionsFor(id, entry, $.plugin.root)).finally(() => {
         pending = false
       })

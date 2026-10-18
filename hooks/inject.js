@@ -274,6 +274,7 @@ function main(raw) {
     try {
         const info = context.inspect(payload.transcript_path);
         registry.touch(root, sessionId, info && info.used);
+        registry.clearAway(root, sessionId);
     } catch (e) { /* housekeeping */ }
 
     const cfg = profileLib.configDirOf();

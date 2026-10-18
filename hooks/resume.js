@@ -23,6 +23,7 @@ const profileLib = require('../lib/profile.js');
 const { controlling, nextStage, normaliseRoute, FULL_ROUTE } = require('../lib/stages.js');
 const { handoffPath, answerPath, writeAnswer, readGate, answersGate } = require('../lib/handoff.js');
 const { run, parse } = require('../lib/hook.js');
+const { AWAY_QUESTION } = require('../lib/context.js');
 
 function main(raw) {
     const payload = parse(raw);
@@ -33,6 +34,30 @@ function main(raw) {
 
     const mine = registry.readSession(root, sessionId);
     if (!mine || mine.active !== true) return;
+
+    // Unverified in a real session: that PostToolUse tool_input carries the
+    // injected question (the tests feed it in by hand).
+    // The `離開` question hooks/gate.js added (gate.away = ask) is not the
+    // gate's: it leaves before the gate is compared, and a "leaving" answer
+    // marks the session to compact when this turn ends.
+    let asked = payload.tool_input && payload.tool_input.questions;
+    let response = payload.tool_response;
+    let leaving = false;
+    try {
+        const extra = Array.isArray(asked) ? asked.find((q) => q && q.header === AWAY_QUESTION.header) : null;
+        if (extra) {
+            const answers = response && response.answers;
+            const said = answers && typeof answers === 'object' ? String(answers[extra.question] || '') : '';
+            leaving = said.startsWith('要離開');
+            asked = asked.filter((q) => q !== extra);
+            if (answers && typeof answers === 'object') {
+                const rest = Object.assign({}, answers);
+                delete rest[extra.question];
+                response = Object.assign({}, response, { answers: rest });
+            }
+            if (leaving) registry.setAway(root, sessionId);
+        }
+    } catch (e) { /* housekeeping */ }
 
     // The project's standing answers. A read failure costs one line, never
     // the injection: `read` returns unreadable paths rather than throwing, but
@@ -45,7 +70,11 @@ function main(raw) {
     // No badge written and no other session read. Neither can have changed since
     // the question went out a few seconds ago, and this hook runs several times a
     // stage — what it does has to stay proportionate to that.
-    const context = renderResume({ mine: { sessionId, data: mine }, profile, transcript: payload.transcript_path, root });
+    let context = renderResume({ mine: { sessionId, data: mine }, profile, transcript: payload.transcript_path, root });
+    if (leaving) {
+        const stop = 'fankeel: the user is leaving; this session compacts when the turn ends. End your turn now and start no new work.';
+        context = context ? context + '\n' + stop : stop;
+    }
     if (!context) return;
 
     process.stdout.write(JSON.stringify({
@@ -76,9 +105,7 @@ function main(raw) {
     try {
         if (controlling(mine.stage, profile && profile.values)) {
             const gate = readGate(handoffPath(root, mine, mine.stage), nextStage(mine.stage, mine.route), normaliseRoute(mine.route) || FULL_ROUTE);
-            const asked = payload.tool_input && payload.tool_input.questions;
             const file = answerPath(root, mine, mine.stage);
-            const response = payload.tool_response;
             if (gate && file && response != null) {
                 // The answer that never arrives used to be silent. Beside the answer
                 // file, `<stage>-answer.miss.json` says why not and holds both question

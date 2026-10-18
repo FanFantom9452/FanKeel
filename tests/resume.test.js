@@ -412,3 +412,36 @@ test('the same question count with a different option count writes no answer', (
   assert.equal(fs.existsSync(path.join(SURVEY_DIR(root), 'survey-answer.md')), false);
   assert.ok(fs.existsSync(path.join(SURVEY_DIR(root), 'survey-answer.miss.json')));
 });
+
+// gate.away = ask: the 離開 question rides the gate and is not the gate's.
+const AWAY_Q = { question: '要離開超過 1 小時嗎？', header: '離開', multiSelect: false, options: [{ label: '不離開', description: 'a' }, { label: '要離開，先壓縮', description: 'b' }] };
+const withAway = (root, said) => run({
+  cwd: root, session_id: MINE,
+  tool_input: { questions: [...JSON.parse(JSON.stringify(GATE_QUESTIONS)), AWAY_Q] },
+  tool_response: { answers: { 'q?': '暫停', [AWAY_Q.question]: said } },
+});
+
+test('the 離開 question is stripped before the gate is compared and from the written answer', () => {
+  const root = tmp('fankeel-resume-');
+  surveyWithGate(root);
+  withAway(root, '不離開');
+  assert.equal(fs.existsSync(path.join(SURVEY_DIR(root), 'survey-answer.miss.json')), false);
+  const written = fs.readFileSync(path.join(SURVEY_DIR(root), 'survey-answer.md'), 'utf8');
+  assert.doesNotMatch(written, /離開/);
+  assert.equal(readEntry(root, MINE).awayAt, undefined);
+});
+
+test('answering 要離開 sets awayAt and tells the model to end its turn', () => {
+  const root = tmp('fankeel-resume-');
+  surveyWithGate(root);
+  const out = withAway(root, '要離開，先壓縮');
+  assert.ok(Number.isFinite(readEntry(root, MINE).awayAt));
+  assert.match(context(out), /End your turn now/);
+});
+
+test('a prompt clears awayAt', () => {
+  const root = tmp('fankeel-resume-');
+  seed(root, MINE, { awayAt: Date.now() });
+  run({ cwd: root, session_id: MINE, prompt: 'hello' }, INJECT);
+  assert.equal(readEntry(root, MINE).awayAt, undefined);
+});

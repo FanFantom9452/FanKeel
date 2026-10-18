@@ -292,3 +292,17 @@ test('a row that names compact_boundary and carries a dropped count, and is not 
     assert.equal(ctx.inspect(transcript([usage(40000), row])).dropped, 0, name + ' alone was read as a compaction');
   }
 });
+
+// gate.away: strictly more than AWAY tokens in play earns the line.
+test('awayLine: over 200k names /compact, exactly 200k and under say nothing, no info says nothing', () => {
+  assert.equal(ctx.AWAY, 200000);
+  assert.match(ctx.awayLine({ dropped: 0, used: 200001 }), /\/compact/);
+  assert.equal(ctx.awayLine({ dropped: 0, used: 200000 }), null);
+  assert.equal(ctx.awayLine({ dropped: 0, used: 150000 }), null);
+  assert.equal(ctx.awayLine(null), null);
+});
+
+test('AWAY_QUESTION is headed 離開 and offers not leaving and leaving', () => {
+  assert.equal(ctx.AWAY_QUESTION.header, '離開');
+  assert.deepEqual(ctx.AWAY_QUESTION.options.map((o) => o.label), ['不離開', '要離開，先壓縮']);
+});

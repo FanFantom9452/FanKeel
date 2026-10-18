@@ -766,3 +766,80 @@ test('a controlled stage: the option count is not this check\'s to say', () => {
   assert.doesNotMatch(out.systemMessage, /this gate has/);
   assert.equal(out.hookSpecificOutput, undefined);
 });
+
+// gate.away: past 200k tokens in play.
+const usageRow = (total) => JSON.stringify({ type: 'assistant', message: { usage: { input_tokens: 1, cache_creation_input_tokens: 0, cache_read_input_tokens: total - 1 } } });
+const awayRun = (mode, total, over) => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, Object.assign({ stage: 'design' }, over));
+  if (mode) fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'gate.away': mode }));
+  const transcript = path.join(root, 't.jsonl');
+  fs.writeFileSync(transcript, usageRow(total) + '\n');
+  const ask = (questions) => run(GATE, root, { transcript_path: transcript, tool_input: { questions } }).trim();
+  return { root, ask };
+};
+const parsed = (out) => (out ? JSON.parse(out) : {});
+
+test('gate.away hint (the builtin): 250k in play prints a systemMessage naming /compact; 200k and 150k print nothing', () => {
+  assert.match(parsed(awayRun(null, 250000).ask(QUESTIONS)).systemMessage, /\/compact/);
+  assert.equal(awayRun('hint', 200000).ask(QUESTIONS), '');
+  assert.equal(awayRun('hint', 150000).ask(QUESTIONS), '');
+});
+
+test('gate.away off is silent even at 250k, and hint adds no updatedInput', () => {
+  assert.equal(awayRun('off', 250000).ask(QUESTIONS), '');
+  assert.equal(parsed(awayRun('hint', 250000).ask(QUESTIONS)).hookSpecificOutput, undefined);
+});
+
+test('gate.away hint merges into an existing systemMessage without overwriting it', () => {
+  const { root, ask } = awayRun('hint', 250000, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'gate.away': 'hint', 'stage.agents': 'true' }));
+  const out = parsed(ask(QUESTIONS));
+  assert.match(out.systemMessage, /^fankeel: gate not confirmed — .*survey\.md does not exist yet.* \/compact/);
+});
+
+const PLAN_Q = QUESTIONS.map((q) => Object.assign({}, q, { header: 'design', options: [Object.assign({}, q.options[0], { label: '進 plan' }), ...q.options.slice(1)] }));
+test('gate.away ask at 250k returns updatedInput with the 離開 question appended and no permissionDecision', () => {
+  const out = parsed(awayRun('ask', 250000).ask(PLAN_Q));
+  assert.equal(out.hookSpecificOutput.permissionDecision, undefined);
+  const qs = out.hookSpecificOutput.updatedInput.questions;
+  assert.equal(qs.length, 2);
+  assert.equal(qs[1].header, '離開');
+  assert.deepEqual(qs[0], PLAN_Q[0]);
+});
+
+test('gate.away ask at 150k and at exactly 200k adds no question', () => {
+  for (const total of [150000, 200000]) assert.equal(awayRun('ask', total).ask(QUESTIONS), '');
+});
+
+test('gate.away ask leaves a gate of four questions alone, but still hints', () => {
+  const four = [0, 1, 2, 3].map((i) => Object.assign({}, PLAN_Q[0], { question: 'q' + i + '?' }));
+  const out = parsed(awayRun('ask', 250000).ask(four));
+  assert.equal(out.hookSpecificOutput, undefined);
+  assert.match(out.systemMessage, /\/compact/);
+});
+
+test('gate.away ask on a question that is not the stage gate hints but appends nothing', () => {
+  const other = JSON.parse(JSON.stringify(PLAN_Q));
+  other[0].options[0].label = 'Use the cache';
+  const out = parsed(awayRun('ask', 250000).ask(other));
+  assert.equal(out.hookSpecificOutput, undefined);
+  assert.match(out.systemMessage, /\/compact/);
+});
+
+test('gate.away ask skips the question when the station already answered', async () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'design', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'gate.away': 'ask', 'gate.station': 5 }));
+  const transcript = path.join(root, 't.jsonl');
+  fs.writeFileSync(transcript, usageRow(250000) + '\n');
+  const pending = path.join(taskDir(root), 'design-pending.json');
+  const done = runAsync(GATE, root, { transcript_path: transcript, tool_input: askOf(PLAN_Q) });
+  for (let i = 0; i < 50 && !fs.existsSync(pending); i++) await new Promise((r) => setTimeout(r, 100));
+  assert.ok(fs.existsSync(pending), 'the hook never wrote the pending file');
+  fs.writeFileSync(path.join(taskDir(root), 'design-answer.md'), JSON.stringify({ answers: { [PLAN_Q[0].question]: '暫停' } }));
+  const out = JSON.parse(await done);
+  assert.ok(out.hookSpecificOutput.updatedInput.answers);
+  assert.equal(out.hookSpecificOutput.updatedInput.questions.length, 1);
+  assert.match(out.systemMessage, /\/compact/);
+});
