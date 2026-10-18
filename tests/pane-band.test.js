@@ -169,11 +169,12 @@ test('the second row is ctx, 5h and 7d as bars, parted by a bar of their own', a
         { text: '│', color: '#585858', gap: 2 },
         { text: '7d ', color: '#585858', gap: 2 },
         { text: '█████▊', color: '#87ff87' },
-        { text: '░░░░', color: '#585858' },
+        { text: '│', color: '#8a8a8a' },
+        { text: '░░░', color: '#585858' },
         { text: ' 58%', color: '#87ff87', gap: 1 },
         { text: '-6%', color: '#87ff87', gap: 2 },
     ]);
-    assert.equal(line(row), '▌ctx ████▋░░░░░ 212k/450k  │  5h ██████│░░░  66%  │  7d █████▊░░░░  58%  -6%');
+    assert.equal(line(row), '▌ctx ████▋░░░░░ 212k/450k  │  5h ██████│░░░  66%  │  7d █████▊│░░░  58%  -6%');
     assert.equal(width(line(row)), 76);
 });
 
@@ -181,10 +182,10 @@ test('the second row draws no reset countdown at any width: a reset is read in t
     const m = await load();
     const { width } = await at('pane-bar.ts');
     const row = (cols) => line(band(m, { cols })[1]);
-    const wide = '▌ctx ████▋░░░░░ 212k/450k  │  5h ██████│░░░  66%  │  7d █████▊░░░░  58%  -6%';
+    const wide = '▌ctx ████▋░░░░░ 212k/450k  │  5h ██████│░░░  66%  │  7d █████▊│░░░  58%  -6%';
     assert.equal(width(wide), 76);
     for (const cols of [200, 100, 99, 86, 80, 76]) assert.equal(row(cols), wide, 'at ' + cols);
-    assert.equal(row(75), '▌ctx ████▋░░░░░ 212k/450k │ 5h ██████│░░░  66% │ 7d █████▊░░░░  58%  -6%');
+    assert.equal(row(75), '▌ctx ████▋░░░░░ 212k/450k │ 5h ██████│░░░  66% │ 7d █████▊│░░░  58%  -6%');
     for (const cols of [200, 100, 80, 50, 20]) {
         for (const over of [{}, { context: null }, { limits: [five] }, { gateUntil: NOW + 44500 }, { others: [other, second] }]) {
             assert.doesNotMatch(band(m, Object.assign({ cols }, over)).map(line).join('\n'), /↻/, 'at ' + cols);
@@ -196,7 +197,7 @@ test('with no rate limits the second row is ctx alone; with nothing to draw ther
     const m = await load();
     assert.deepEqual(band(m, { limits: [] }).map(line)[1], '▌ctx ████▋░░░░░ 212k/450k');
     assert.equal(band(m, { limits: [five] }).map(line)[1], '▌ctx ████▋░░░░░ 212k/450k  │  5h ██████│░░░  66%');
-    assert.equal(band(m, { context: null }).map(line)[1], '▌5h ██████│░░░  66%  │  7d █████▊░░░░  58%  -6%');
+    assert.equal(band(m, { context: null }).map(line)[1], '▌5h ██████│░░░  66%  │  7d █████▊│░░░  58%  -6%');
     assert.equal(band(m, { context: null, limits: [] }).length, 1);
     assert.deepEqual(band(m, { context: null, limits: [], others: [other] }).map(line)[1], '▌  ⚑1');
 });
@@ -218,9 +219,9 @@ test('a second row that does not fit closes up, shortens its bars, then drops 7d
     const m = await load();
     const { width } = await at('pane-bar.ts');
     const row = (cols) => line(band(m, { context: hot, others: [other, second], cols })[1]);
-    assert.equal(row(80), '▌ctx █████████▌ 432k/450k ⚠ │ 5h ██████│░░░  66% │ 7d █████▊░░░░  58%  -6%  ⚑2');
+    assert.equal(row(80), '▌ctx █████████▌ 432k/450k ⚠ │ 5h ██████│░░░  66% │ 7d █████▊│░░░  58%  -6%  ⚑2');
     assert.equal(width(row(80)), 78);
-    assert.equal(row(70), '▌ctx ██████▋ 432k/450k ⚠ │ 5h ████│░░  66% │ 7d ████░░░  58%  -6%  ⚑2');
+    assert.equal(row(70), '▌ctx ██████▋ 432k/450k ⚠ │ 5h ████│░░  66% │ 7d ████│░░  58%  -6%  ⚑2');
     assert.equal(width(row(70)), 69);
     assert.equal(row(50), '▌ctx ████████▋ 432k/450k ⚠ │ 5h █████│░░░  66%  ⚑2');
     assert.equal(width(row(50)), 50);
@@ -284,7 +285,7 @@ test('with a window the ctx bar is tokens over window and a white line marks the
     const m = await load();
     const sized = (tokens, over) => band(m, Object.assign({ context: { tokens, at: 450000, window: 1000000 } }, over));
     const row = sized(212000)[1];
-    assert.equal(line(row), '▌ctx ██░░│░░░░░ 212k/1M  │  5h ██████│░░░  66%  │  7d █████▊░░░░  58%  -6%');
+    assert.equal(line(row), '▌ctx ██░░│░░░░░ 212k/1M  │  5h ██████│░░░  66%  │  7d █████▊│░░░  58%  -6%');
     assert.deepEqual(row.slice(1, 8), [
         { text: 'ctx ', color: '#585858' },
         { text: '██', color: '#d7ffd7' },
@@ -361,4 +362,30 @@ test('the 5h meter carries a grey │ at the share of the five hours gone by, as
     assert.equal(line(band(m, { limits: [early], context: null })[1]), '▌5h █│████▌░░░  66%');
     const bare = { kind: 'five_hour', percentUsed: 66 };
     assert.equal(line(band(m, { limits: [bare], context: null })[1]), '▌5h ██████▌░░░  66%', 'no resetsAt, no mark');
+});
+
+test('the 7d meter carries a grey │ at the share of the week gone by', async () => {
+    const m = await load();
+    const half = { kind: 'seven_day', percentUsed: 80, resetsAt: new Date(NOW + 84 * HOUR).toISOString() };
+    const row = band(m, { limits: [half], context: null })[1];
+    const cells = row.slice(row.findIndex((seg) => seg.text === '7d ') + 1).map((seg) => seg.text).join('');
+    assert.ok(cells.slice(0, 10).includes('│'));
+    assert.deepEqual(row.find((seg) => seg.text === '│' && seg.color === '#8a8a8a'), { text: '│', color: '#8a8a8a' });
+});
+
+test('row one ends with the model and effort, dropped before 遠端 when it does not fit', async () => {
+    const m = await load();
+    const text = (over) => line(band(m, over)[0]);
+    assert.ok(text({ cols: 200, model: 'opus 5.5', effort: 'medium' }).endsWith('遠端 ✗  opus 5.5 · medium'));
+    const narrow = text({ cols: 65, model: 'opus 5.5', effort: 'medium' });
+    assert.ok(!narrow.includes('opus') && narrow.endsWith('遠端 ✗'));
+});
+
+test('no effort draws the alias alone, no model draws nothing', async () => {
+    const m = await load();
+    const text = (over) => line(band(m, Object.assign({ cols: 200 }, over))[0]);
+    assert.ok(text({ model: 'opus 5.5' }).endsWith('遠端 ✗  opus 5.5'));
+    assert.ok(text({ model: 'opus 5.5', effort: null }).endsWith('opus 5.5'));
+    assert.ok(text({ effort: 'medium' }).endsWith('遠端 ✗'));
+    assert.ok(!text({ model: null, effort: 'medium' }).includes('medium'));
 });

@@ -4,7 +4,7 @@
 // tests/pane-band.test.js runs it under plain node.
 // docs/90-agent/plans/2026-10-12-pane-band-design.md sections 1 and 2.
 
-import { str, list, width, bar, markedBar, ctxPaint, ctxWindowPaint, fivePaint, weekPaint, deviation, elapsed, FIVE_HOURS, limitOf, pct, kilo, signed, minutes, secondsLeft, DIM } from './pane-bar.ts'
+import { str, list, width, bar, markedBar, ctxPaint, ctxWindowPaint, fivePaint, weekPaint, deviation, elapsed, FIVE_HOURS, WEEK, limitOf, pct, kilo, signed, minutes, secondsLeft, DIM } from './pane-bar.ts'
 import type { Context, Limit, Paint } from './pane-bar.ts'
 
 // `gap` is the cells of space before the segment; without one it sits against the last.
@@ -23,6 +23,9 @@ export type BandInput = {
   tasks: { done: number; total: number } | null
   // Whether Remote Control is connected: Claude Code's session file has a bridgeSessionId.
   remote?: boolean
+  // The session's model alias and effort; row one ends with them when there is a model.
+  model?: string | null
+  effort?: string | null
   cols: number
   now: number
 }
@@ -131,16 +134,18 @@ export function bandRows(input: BandInput): Seg[][] | null {
     : [{ text: `等你 ${waited} 分`, color: GUARD, gap: 2 }]
   // Last on row one while it fits (the first group dropped): ✓ in green while Remote Control is connected, ✗ in the grey text colour when not (off is normal, not an alarm).
   const remote: Seg[] = [{ text: '遠端', color: WHERE, gap: 2 }, input.remote ? { text: '✓', color: CONNECTED, gap: 1 } : { text: '✗', color: WHERE, gap: 1 }]
-  // `drop` is how many of the four droppable groups are gone: 遠端, then the stage minutes, then the wait, then tasks.
+  const model: Seg[] = input.model ? [{ text: input.effort ? `${input.model} · ${input.effort}` : input.model, color: WHERE, gap: 2 }] : []
+  // `drop` is how many of the five droppable groups are gone: the model, then 遠端, then the stage minutes, then the wait, then tasks.
   const firstAt = (drop: number): Seg[] => {
-    const a = drop < 4 ? count : []
-    const b = drop < 3 ? yours : []
-    const c = drop < 2 ? here : []
-    const r = drop < 1 ? remote : []
-    return gateUntil === null ? [...head, ...a, ...c, ...b, ...r] : [...head, ...a, ...gate, ...b, ...c, ...r]
+    const a = drop < 5 ? count : []
+    const b = drop < 4 ? yours : []
+    const c = drop < 3 ? here : []
+    const r = drop < 2 ? remote : []
+    const m = drop < 1 ? model : []
+    return gateUntil === null ? [...head, ...a, ...c, ...b, ...r, ...m] : [...head, ...a, ...gate, ...b, ...c, ...r, ...m]
   }
   let first = firstAt(0)
-  for (let drop = 1; drop <= 4 && used(first) > cols; drop++) first = firstAt(drop)
+  for (let drop = 1; drop <= 5 && used(first) > cols; drop++) first = firstAt(drop)
 
   const five = limitOf(limits, 'five_hour')
   const week = limitOf(limits, 'seven_day')
@@ -204,7 +209,14 @@ export function bandRows(input: BandInput): Seg[][] | null {
       const dev = deviation(week, now)
       const paint = weekPaint(week.percentUsed, dev)
       open('7d ')
-      draw(week.percentUsed, 100, paint)
+      const gone = elapsed(week, now, WEEK)
+      if (gone === null) draw(week.percentUsed, 100, paint)
+      else {
+        for (const p of markedBar(week.percentUsed, 100, shape.cells, gone * 100)) {
+          if (p.kind === 'fill') row.push(inked(p.text, paint))
+          else row.push({ text: p.text, color: p.kind === 'mark' ? WHERE : DIM })
+        }
+      }
       row.push(inked(pct(week.percentUsed), paint, 1))
       if (dev !== null) {
         row.push(inked(signed(dev), paint, 2))

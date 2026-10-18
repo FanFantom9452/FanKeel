@@ -148,7 +148,7 @@ export function resetMs(limit: Limit): number | null {
   return Number.isFinite(at) ? at : null
 }
 
-const WEEK = 7 * 24 * 3600 * 1000
+export const WEEK = 7 * 24 * 3600 * 1000
 export const FIVE_HOURS = 5 * 3600 * 1000
 
 // The share of a `span`-long window already gone by, 0 to 1, or null with no `resetsAt`.
