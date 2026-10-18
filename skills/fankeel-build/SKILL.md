@@ -596,11 +596,28 @@ commits that landed during `verify` on 2026-09-06 had no reviewer, and the
 third return to build was made of their defects; `--range` is required on
 `fix` for exactly that reason.
 
-Then one whole-branch review when the last task is done.
+**The close runs three things at once.** When the last task is done, send them
+in one response: the fast suite in the background —
+`node <plugin>/scripts/suite.js --session <id> --fast` with `run_in_background`,
+which skips the tests named `@slow`; land runs them — and the one whole-branch
+review, and run docs-check below yourself while both are out. They used to go
+one after another, and four builds on 2026-10-18 spent 18–29 minutes at their
+ends with no agent running
+(`docs/90-agent/judgements/2026-10-18-plan-parallelism.md`); `suite.json` now
+carries each run's `ms`, so how long the suite takes can be read off it. Take
+the three returns together before changing anything. docs-check only reads, but
+its tier 1 rewrite and tier 2 round start once the suite has returned, so no page
+changes under a running suite. A red suite is this stage's own — the failing
+test names are in `suite.json`'s `failed` — and so are the review's findings:
+both go into one `fankeel:fankeel-fixer` round with tier 2's. When that round
+changes anything but `.md`, run `suite.js --fast` once more, because the record
+goes stale on any code change; a green suite and a round that touched only `.md`
+need no second run.
 
-**Then docs-check, at close.** After the fast suite — `node <plugin>/scripts/suite.js --session <id> --fast`, which skips the tests named `@slow`; land runs them — run
-`node <plugin>/scripts/docs-check.js` — the check verify runs — and treat what
-it finds as this stage's own, in three tiers, each run once and never looped:
+**Then docs-check, at close.** Run
+`node <plugin>/scripts/docs-check.js` — the check verify runs — beside the suite
+and the review, and treat what it finds as this stage's own, in three tiers, each
+run once and never looped:
 
 1. A `moved` finding that names one new line (`— it is at :N`) is rewritten
    by `node <plugin>/scripts/docs-moved.js`, with no agent; it prints `fixed`

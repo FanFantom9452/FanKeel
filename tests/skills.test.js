@@ -1458,6 +1458,18 @@ test('build review carries the five checks verify kept sending back on 2026-10-0
   assert.match(close[0].replace(/\s+/g, ' '), /checked on the build's first BASE/);
 });
 
+test('build closes with the fast suite in the background beside the whole-branch review and docs-check, and a red suite joins the fixer round', () => {
+  const build = read('fankeel-build').replace(/\s+/g, ' ');
+  const par = /\*\*The close runs three things at once\.\*\* (.*?) \*\*Then docs-check, at close\.\*\*/.exec(build);
+  assert.ok(par, 'the parallel close paragraph is not where this test looks for it');
+  assert.match(par[1], /suite\.js --session <id> --fast` with `run_in_background`/);
+  assert.match(par[1], /whole-branch review/);
+  assert.match(par[1], /A red suite is this stage's own/);
+  assert.match(par[1], /one `fankeel:fankeel-fixer` round/);
+  assert.match(par[1], /`ms`/);
+  assert.doesNotMatch(build, /After the fast suite — /);
+});
+
 // dispatch-1 made four dispatches in one response a default, not a cap
 // (lib/render.js: "four by default in one response"); four skill pages kept
 // calling it the ceiling. The walk's file cap and AskUserQuestion's four
