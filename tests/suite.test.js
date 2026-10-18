@@ -56,6 +56,16 @@ test('parseTap keeps the leaf name of each not ok line, not its failing parent, 
   assert.deepEqual(suite.parseTap(tap).failed, ['leaf one', 'a']);
 });
 
+test('runSuite records how long the run took in whole milliseconds, and record keeps it in the run and in runs', () => {
+  const dir = repo();
+  const r = suite.runSuite(dir, 'node -e "setTimeout(() => {}, 50)"');
+  assert.ok(Number.isInteger(r.ms) && r.ms >= 20, 'ms was ' + r.ms);
+  const file = suite.record(dir, DATA, r);
+  const rec = JSON.parse(fs.readFileSync(file, 'utf8'));
+  assert.equal(rec.ms, r.ms, 'the top level lost ms');
+  assert.equal(rec.runs[rec.runs.length - 1].ms, r.ms, 'the entry in runs lost ms');
+});
+
 test('a red run records the failing test names in suite.json, a green one none @slow', () => {
   const dir = repo();
   assert.deepEqual(suite.runSuite(dir, 'node --test').failed, []);
