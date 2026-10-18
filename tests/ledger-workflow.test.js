@@ -101,11 +101,18 @@ test('it refuses a group that is not workflow, a group outside the plan, and no 
   assert.ok(!fs.existsSync(path.join(dir, '.fankeel', 'build', 'p', 'workflow-g2.js')));
 });
 
-test('it refuses a group sending fewer than three implementers', () => {
-  const { dir, file } = setup(plan(undefined, 'in-session — one shell call.'));
+test('it refuses a group sending fewer than two implementers', () => {
+  const { dir, file } = setup(plan('in-session — one shell call.', 'in-session — one shell call.'));
   const { code, out } = run(dir, file, ['workflow', '--group', '1']);
   assert.equal(code, 1);
-  assert.match(out, /sends 2 implementers, fewer than three/);
+  assert.match(out, /sends 1 implementers, fewer than two/);
+});
+
+test('it writes a script for a group sending two implementers', () => {
+  const { dir, file } = setup(plan(undefined, 'in-session — one shell call.'));
+  const { code, out } = run(dir, file, ['workflow', '--group', '1']);
+  assert.equal(code, 0, out);
+  assert.match(out, /1, 2\.$/m);
 });
 
 test('it refuses a task with no model on its Dispatch line by name', () => {

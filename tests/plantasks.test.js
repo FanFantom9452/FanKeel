@@ -273,8 +273,15 @@ test('a lone group is one dispatch', () => {
     assert.deepStrictEqual(out, [{ tasks: [1], surface: 'agent' }]);
 });
 
-test('a pair is two dispatches in one response', () => {
+test('a pair is one workflow', () => {
     const out = plantasks.surfaces(plan(taskBlock(1, ['a.js']), taskBlock(2, ['b.js'])));
+    assert.deepStrictEqual(out, [{ tasks: [1, 2], surface: 'workflow' }]);
+});
+
+test('a pair whose Consumes is prose stays agents', () => {
+    const out = plantasks.surfaces(plan(
+        taskBlock(1, ['a.js']),
+        taskBlock(2, ['b.js'], '- Consumes: the flag name from Task 1.\n- Produces: nothing.')));
     assert.deepStrictEqual(out, [{ tasks: [1, 2], surface: 'agents' }]);
 });
 

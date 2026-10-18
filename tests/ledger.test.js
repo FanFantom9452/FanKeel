@@ -272,6 +272,20 @@ test('groups prints workflow for three disjoint tasks when build is not on stage
   assert.match(after, /1 groups over 3 tasks/);
 });
 
+const TWO_DISJOINT = THREE_DISJOINT.split('## Task 3: three')[0];
+
+test('groups prints workflow for two disjoint tasks when build is not on stage.agents, and agents when it is', () => {
+  const dir = root();
+  const plan = path.join(dir, 'plan.md');
+  fs.writeFileSync(plan, TWO_DISJOINT);
+  const before = execFileSync(process.execPath, [SCRIPT, '--root', dir, '--plan', plan, 'groups'], { encoding: 'utf8' });
+  assert.match(before, /1: 1, 2 {2}— workflow/);
+  fs.mkdirSync(path.join(dir, '.fankeel'), { recursive: true });
+  fs.writeFileSync(path.join(dir, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': ['build'] }));
+  const after = execFileSync(process.execPath, [SCRIPT, '--root', dir, '--plan', plan, 'groups'], { encoding: 'utf8' });
+  assert.match(after, /1: 1, 2 {2}— agents/);
+});
+
 test('groups under a brain build says nothing of workflow for a task with no Interfaces block', () => {
   const dir = root();
   const plan = path.join(dir, 'plan.md');
@@ -1034,9 +1048,9 @@ test('ready --worktree sends two tasks that share a Modify file together; ready 
 });
 
 // design §4: a require edge inside a group with no declared Consumes is
-// reported, and keeps that group off `workflow` even though its files and
+// reported, and the group stays `workflow` even though its files and
 // its Interfaces blocks alone would have grouped it as one.
-test('groups names a require edge inside its own group and keeps it off workflow', () => {
+test('groups names a require edge inside its own group and still prints it workflow', () => {
   const dir = root();
   fs.mkdirSync(path.join(dir, 'lib'), { recursive: true });
   fs.writeFileSync(path.join(dir, 'lib', 'a.js'), "'use strict';\nconst b = require('./b.js');\nmodule.exports = { b };\n");
@@ -1053,7 +1067,7 @@ test('groups names a require edge inside its own group and keeps it off workflow
   ].join('\n'));
   const out = execFileSync(process.execPath, [SCRIPT, '--root', dir, '--plan', plan, 'groups'], { encoding: 'utf8' });
   assert.match(out, /1 groups over 3 tasks/);
-  assert.match(out, /1: 1, 2, 3  — agents/);
+  assert.match(out, /1: 1, 2, 3  — workflow/);
   assert.match(out, /Task 1 `lib\/a\.js` requires Task 2 `lib\/b\.js` at line 2/);
 });
 

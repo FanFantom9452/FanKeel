@@ -202,20 +202,6 @@ function readPlan(root, plan) {
     }
 }
 
-// The surface each group takes from its tasks alone: `surfaces`, with a group
-// carrying a require-edge diagnostic held off `workflow` the way a group with
-// no Interfaces block already is. Whether build runs under a stage agent is
-// not asked here: `groups` applies that, and `workflow` writes the script a
-// stage agent cannot open but the session holding the Workflow tool can.
-function taskSurfaces(tasks, requireHits) {
-    const flagged = new Set(requireHits.flatMap((r) => [r.a, r.b]));
-    return plantasks.surfaces(tasks).map((g) => (
-        g.surface === 'workflow' && g.tasks.some((n) => flagged.has(n))
-            ? { tasks: g.tasks, surface: 'agents' }
-            : g
-    ));
-}
-
 // The whole `groups` report, as one string. `groups` prints it and `scan`
 // writes it into the ledger, and both read it from here so the two can never
 // drift into two different tables for the same plan.
@@ -229,8 +215,10 @@ function groupsReport(root, planOpt) {
     }
     const tasks = plantasks.parseTasks(text);
     const rows = plantasks.groups(tasks);
-    // A group carrying a require-edge diagnostic never reads as `workflow`,
-    // the same way a group carrying no Interfaces block never does.
+    // A require-edge diagnostic is listed below and leaves its group on
+    // `workflow`: it says a file may be wrong, which a pipeline whose reviewers
+    // read each task's own diff does not change. A group with no Interfaces
+    // block still never reads as `workflow`.
     // Computed before the empty-plan check below because that check returns
     // before either `rows` or the original `surfaced` was ever used either.
     const requireHits = plantasks.requireConflicts(tasks, root);
@@ -246,7 +234,7 @@ function groupsReport(root, planOpt) {
         brainBuild = controlling('build', prof.values);
         unreadable = prof.unreadable || [];
     } catch (e) { /* no profile: what it always printed */ }
-    const surfaced = taskSurfaces(tasks, requireHits).map((g) => (
+    const surfaced = plantasks.surfaces(tasks).map((g) => (
         g.surface === 'workflow' && brainBuild ? { tasks: g.tasks, surface: 'agents' } : g
     ));
     if (!tasks.length) {
@@ -635,7 +623,7 @@ function writeBrief(root, planOpt, n) {
 function workflowFile(root, planOpt, group) {
     const { text } = readPlan(root, planOpt);
     const tasks = plantasks.parseTasks(text);
-    const rows = taskSurfaces(tasks, plantasks.requireConflicts(tasks, root));
+    const rows = plantasks.surfaces(tasks);
     const n = Number(group);
     if (!Number.isInteger(n) || n < 1 || n > rows.length) {
         fail('workflow wants --group 1..' + rows.length + ' for this plan, got ' + group);
@@ -645,8 +633,8 @@ function workflowFile(root, planOpt, group) {
         fail('fankeel ledger — group ' + n + ' is `' + row.surface + '`, not `workflow`: send its tasks as Agents.');
     }
     const sent = tasks.filter((t) => row.tasks.includes(t.n) && t.dispatch === 'implementer');
-    if (sent.length < 3) {
-        fail('fankeel ledger — group ' + n + ' sends ' + sent.length + ' implementers, fewer than three: send them as Agents.');
+    if (sent.length < 2) {
+        fail('fankeel ledger — group ' + n + ' sends ' + sent.length + ' implementers, fewer than two: send them as Agents.');
     }
     const briefs = {};
     for (const t of sent) briefs[t.n] = writeBrief(root, planOpt, t.n);
