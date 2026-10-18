@@ -845,7 +845,7 @@
             'det.gateColDispatch': 'Dispatch',
             'det.gateShotUnreadable': 'Cannot read the screenshot directory {path}: it is there, but will not open.',
             'det.gateRunUnreadable': 'Cannot read {path}: it is there, but will not open.',
-            'det.gateShot':'the mockup approved at the design gate',
+            'det.gateShot': 'the mockup approved at the design gate',
             'det.gateProves': 'proves it done',
             'det.gateMap': 'against the map',
             'det.gateUnverified': 'unverified',
