@@ -53,6 +53,15 @@ test('lint names a Read: of a file a neighbour writes, once per pair', () => {
   assert.match(out[0], /^Task 2 `Read:` `lib\/shots\.js`, which Task 1 writes /);
 });
 
+test('lint is silent for a Read: of a file whose writer groups already separates', () => {
+  const plan = [
+    task(1, { modify: ['lib/shots.js', 'lib/z.js'] }),
+    task(2, { modify: ['lib/z.js'] }),
+    task(3, { modify: ['lib/other.js'], read: ['lib/shots.js'] }),
+  ].join('\n');
+  assert.deepEqual(plantasks.lint(plan, design), []);
+});
+
 test('the plan skill says lint reports both', () => {
   const text = fs.readFileSync(path.join(__dirname, '..', 'skills', 'fankeel-plan', 'SKILL.md'), 'utf8').replace(/\s+/g, ' ');
   assert.match(text, /`ledger\.js lint` reports a file that three or more tasks write/);
