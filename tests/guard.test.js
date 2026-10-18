@@ -495,6 +495,12 @@ test('a read-only subagent read passes when the session has no active task', () 
   assert.equal(run(root, bashCall('fankeel-reader', 'cat a.txt | grep foo')), '');
 });
 
+test('a write-capable subagent writing with no active task is not denied', () => {
+  const root = tmp();
+  seed(root, MINE, { active: false });
+  assert.equal(run(root, bashCall('fankeel-implementer', 'echo x > f.txt')), '');
+});
+
 test('the main thread with a read-only agent_type and no active task is not denied', () => {
   const root = tmp();
   seed(root, MINE, { active: false });
