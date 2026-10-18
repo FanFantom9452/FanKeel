@@ -464,6 +464,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | TODO 全表盤點（10-18 第二輪）定了什麼、沒做什麼：band tasks 條超過十個改畫定寬長條並結案，其餘 22 條條件都沒到、照舊 | [reports/patrols/2026-10-18-todo-patrol-band-tasks-bar.md](90-agent/reports/patrols/2026-10-18-todo-patrol-band-tasks-bar.md) — *繁體中文* |
 | TODO 全表盤點（10-18）定了什麼、沒做什麼：兩條 Ready 拆成 20 個 task 做完並結案、兩條 Blocked 改成 Watch，程式碼刪減與文件整併 | [reports/patrols/2026-10-18-todo-patrol-cuts-merges.md](90-agent/reports/patrols/2026-10-18-todo-patrol-cuts-merges.md) — *繁體中文* |
 | TODO 全表盤點（10-18 第三輪）定了什麼、沒做什麼：合併 deny 回應與斜線 helper 拆成 11 個 task 做完並結案，程式碼淨減 49 行未達估的 80 行 | [reports/patrols/2026-10-18-todo-patrol-deny-posix.md](90-agent/reports/patrols/2026-10-18-todo-patrol-deny-posix.md) — *繁體中文* |
+| TODO 全表盤點（10-19）定了什麼、沒做什麼：九條拆成 23 個任務做完並結案，驗證找出的七項殘留回建置修掉；新面板沒在瀏覽器裡截圖檢查 | [reports/patrols/2026-10-19-todo-patrol.md](90-agent/reports/patrols/2026-10-19-todo-patrol.md) — *繁體中文* |
 | 注入先開 server、gate 漏抓代號要出聲、brain 模型對照的三條 TODO：注入先量冷啟動與慢磁碟再讓 `/fankeel` 先問 station 再寫頁，`todoIds` 讀失敗浮出警告並把 2800 毫秒門檻寫成常數，brain 用 opus 或 sonnet 的對照腳本由使用者親手跑 | `docs/99-archive/2026-10-05-inject-plain-brain.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-09）定了什麼、沒做什麼：九條 Ready 做掉、四條待決定定案、brief-3 留給使用者、stage-agents-10 仍封鎖、rules-1 新開 | [reports/patrols/2026-10-09-todo-patrol-nine.md](90-agent/reports/patrols/2026-10-09-todo-patrol-nine.md) — *繁體中文* |
 | TODO 全表盤點（10-09）的 plan：brief 散文搬進 brain 檔、ledger 走 registry 根、suite 記紅測名、壓縮 fixture、三頁更新、title hook 看 mtime、第五個 Agent 的 ask gate、四條結案、Pane 草稿核准 | `docs/99-archive/2026-10-09-todo-patrol.md` — *built, 繁體中文* |
