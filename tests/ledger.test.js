@@ -777,7 +777,7 @@ const PLAN_TASKS = [
   '**Interfaces:**', '- Consumes: nothing.', '- Produces: `makeA` — `makeA(x)` → `{ a }`, the thing Task 2 reads', '',
   'In `lib/a.js`, add:', '', '```js', 'x', '```', '',
   '## Task 2: the second', '',
-  '**Files:**', '- Modify: `lib/b.js`', '- Read: `lib/a.js` — for makeA', '',
+  '**Files:**', '- Modify: `lib/b.js`', '- Read: `lib/z.js` — for makeA', '',
   '**Interfaces:**', '- Consumes: `makeA` from Task 1.', '- Produces: nothing.', '',
   'Then run:', '', '```', 'node --test', '```', '',
 ].join('\n');
@@ -870,7 +870,7 @@ test('brief writes the task section, the constraints, the producer entry and the
   assert.match(brief, /\*\*Spec:\*\* \[design\.md\]/);
   assert.match(brief, /## Global Constraints\n\n- \*\*No dependency may be added\.\*\*\n- four-space indent/);
   assert.doesNotMatch(brief, /## File structure/);
-  assert.match(brief, /## Task 2: the second[\s\S]*- Read: `lib\/a\.js`[\s\S]*node --test/);
+  assert.match(brief, /## Task 2: the second[\s\S]*- Read: `lib\/z\.js`[\s\S]*node --test/);
   assert.doesNotMatch(brief, /## Task 1: the first/);
   assert.match(brief, /## From the tasks this consumes\n\n- Task 1 produces: `makeA` — `makeA\(x\)` → `\{ a \}`, the thing Task 2 reads/);
   assert.match(brief, /## Rules you cannot infer/);

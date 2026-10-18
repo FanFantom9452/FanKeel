@@ -166,6 +166,11 @@ predicates per task: a task goes out once every earlier task it conflicts with
 is complete, and `TODO.md` and `docs/README.md` do not count as a shared file
 there.
 
+`ledger.js lint` reports a file that three or more tasks write, and a `Read:`
+of a file a neighbour writes, one line each: those are what cut a plan into a
+chain of small groups that build one after another. Give each task its own test
+file, or fold the tasks, and the lines go.
+
 Every task carries an **Interfaces** block, and `none` is an answer — the block
 is what says so. A task without it has declared nothing, and `ledger.js groups`
 keeps its group off `workflow` for exactly that reason:
