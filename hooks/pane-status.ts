@@ -25,8 +25,9 @@ export type TodoEntry = { id: string; title: string; state: string }
 // One drawn row. No segments is the blank row above a block. `who` is the
 // neighbour a clash row names: hooks/pane.ts counts them against the band's flag.
 export type Row = { block: string; segs: Seg[]; who?: string }
-// A task of the plan: its number, its heading, and whether it is the user's to do.
-export type PlanTask = { n: number; name: string; user: boolean }
+// A task of the plan: its number, its heading, whether it is the user's to do, and its
+// first `**Dispatch:**` line up to its ` — ` (`implementer, sonnet`), '' where it has none.
+export type PlanTask = { n: number; name: string; user: boolean; dispatch?: string }
 // A plan's build ledger: its basename, the task numbers recorded complete, the tasks it has.
 export type PlanInfo = { name: string; done: number[]; tasks: PlanTask[] }
 export type StatusInput = {
@@ -138,7 +139,7 @@ export function planTasks(text: string): PlanTask[] {
     const line = raw.trim()
     const t = fence ? null : /^##\s+Task\s+(\d+):\s*(.*)$/.exec(line)
     if (t) {
-      task = { n: Number(t[1]), name: t[2].trim(), user: false }
+      task = { n: Number(t[1]), name: t[2].trim(), user: false, dispatch: '' }
       said = false
       tasks.push(task)
       continue
@@ -154,6 +155,7 @@ export function planTasks(text: string): PlanTask[] {
     const d = /^\*\*Dispatch:\*\*\s*(.*)$/.exec(line)
     if (!d) continue
     said = true
+    task.dispatch = d[1].split(' — ')[0].trim()
     const word = /^([a-z][a-z-]*)/i.exec(d[1])
     task.user = !!word && word[1].toLowerCase() === 'user'
   }
@@ -231,13 +233,38 @@ const LONG = 20
 // A plan of more tasks than this folds into a window.
 const WHOLE = 6
 
+// The subagent a task's row reads its model, minutes and tokens from: the newest
+// in the whole tree whose title names `task <n>` — lib/detail.js TASK_REF ties a
+// dispatch to a task the same way, and by nothing else.
+const TASK_REF = /\btask\s+(\d+)\b/i
+export function agentOf(nodes: AgentNode[], n: number): AgentNode | null {
+  const all = (list: AgentNode[]): AgentNode[] => list.flatMap((a) => [a, ...all(a.kids)])
+  let best: AgentNode | null = null
+  for (const a of all(nodes)) {
+    const m = TASK_REF.exec(a.title || '')
+    if (m && Number(m[1]) === n && (!best || a.at > best.at)) best = a
+  }
+  return best
+}
+
+// The model a plan's Dispatch line names: `implementer, sonnet, high` is sonnet;
+// `in-session` is itself; any other line is ''.
+export function dispatchModel(dispatch: string): string {
+  const m = /^implementer,\s*([a-z][a-z0-9.-]*)/i.exec(dispatch)
+  if (m) return m[1]
+  return /^in-session\b/i.test(dispatch) ? 'in-session' : ''
+}
+
 // The plan's tasks against its ledger. Six or fewer are listed; more fold to
 // the count done, the first open task and the two after it, and how many are
-// left — six rows at most. `inflight` is one mark, or a list of them once two
-// agents are out (lib/registry.js inflights); the mod cannot tell which tasks a
-// dispatch group holds, so the agent is drawn on the first open task that is
-// not the user's. With no ledger, a mark on this stage is one row of its own.
-function tasksBlock(entry: Entry, plan: PlanInfo | null, inner: number, now: number, folded: boolean): Row[] {
+// left — six rows at most. Each row names who it went to: the subagent whose
+// title names the task (agentOf) with its model, minutes and tokens, running
+// while that agent runs; before one has gone out, the plan's Dispatch model.
+// `inflight` is one mark, or a list of them once two agents are out
+// (lib/registry.js inflights); with no agent tied to an open task by name, the
+// mark is drawn on the first open task that is not the user's. With no ledger, a
+// mark on this stage is one row of its own.
+function tasksBlock(entry: Entry, plan: PlanInfo | null, agents: AgentNode[], inner: number, now: number, folded: boolean): Row[] {
   const stage = str(entry.stage)
   const marks = Array.isArray(entry.inflight) ? entry.inflight : [entry.inflight]
   const mark = marks.map(record).find((m) => m.stage === stage)
@@ -254,20 +281,29 @@ function tasksBlock(entry: Entry, plan: PlanInfo | null, inner: number, now: num
   const done = new Set(plan.done)
   const open = plan.tasks.filter((t) => !done.has(t.n))
   const count = plan.tasks.length - open.length
-  const running = mark ? open.find((t) => !t.user) : undefined
+  const live = (t: PlanTask): boolean => {
+    const a = agentOf(agents, t.n)
+    return !!a && a.end === null
+  }
+  const running = mark && !open.some(live) ? open.find((t) => !t.user) : undefined
   // Numbers right-aligned to the widest one.
   const pad = String(Math.max(...plan.tasks.map((t) => t.n))).length
   const one = (t: PlanTask): Row => {
     const label = ` ${String(t.n).padStart(pad)} `
     // 1: the mark every task row opens with.
     const name = (after: string): string => label + cut(t.name, Math.max(4, inner - 1 - width(label) - width(after)))
-    if (done.has(t.n)) return row('tasks', { text: '●', color: DONE }, dim(name('')))
+    const agent = agentOf(agents, t.n)
+    const spent = agent && typeof agent.tokens === 'number' ? ` · ${tokenLabel(agent.tokens)}` : ''
+    const model = dispatchModel(str(t.dispatch))
+    const by = agent ? ` · ${agent.model} · ${mins((agent.end ?? now) - agent.at)} 分${spent}` : model ? ` · ${model}` : ''
+    if (done.has(t.n)) return row('tasks', { text: '●', color: DONE }, dim(name(by) + by))
+    if (agent && agent.end === null) return row('tasks', { text: '◉', color: OUT }, { text: name(by), bold: true }, { text: by, color: OUT })
     if (t === running) {
       const after = ` · 出去 ${out} 分`
       return row('tasks', { text: '◉', color: OUT }, { text: name(after), bold: true }, { text: after, color: late ? GUARD : OUT })
     }
     if (t.user) return row('tasks', { text: '◐', color: GUARD }, { text: name(' · 你的') }, dim(' · 你的'))
-    return row('tasks', { text: '○', color: TODO }, { text: name('') })
+    return row('tasks', { text: '○', color: TODO }, { text: name(by) }, dim(by))
   }
   const top = row('tasks', head('tasks', folded, `tasks ${count}/${plan.tasks.length}`))
   if (folded) return [top]
@@ -380,7 +416,7 @@ export function statusRows(input: StatusInput): Row[] {
   const blocks: Row[][] = [taskBlock(entry, inner, !!folded.route)]
   const clash = clashBlock(entry, others, inner, now)
   if (clash.length) blocks.push(clash)
-  const tasks = tasksBlock(entry, input.plan, inner, now, !!folded.tasks)
+  const tasks = tasksBlock(entry, input.plan, input.agents ?? [], inner, now, !!folded.tasks)
   if (tasks.length) blocks.push(tasks)
   const agents = agentsBlock(input.agents ?? [], inner, now, !!folded.agents)
   if (agents.length) blocks.push(agents)

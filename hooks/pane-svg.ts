@@ -7,15 +7,13 @@
 import { TODO, GUARD, CONNECTED, FLAG, WHERE, CLASH, INK, stageColor, since, clashes, claimsOf } from './pane-band.ts'
 import type { BandInput } from './pane-band.ts'
 import { str, list, kilo, cut, ctxPaint, ctxWindowPaint, fivePaint, weekPaint, deviation, elapsed, FIVE_HOURS, limitOf, signed, minutes, secondsLeft, DIM } from './pane-bar.ts'
-import { ago, DONE, OUT } from './pane-status.ts'
-import type { Entry, Other, PlanInfo, Row, StatusInput } from './pane-status.ts'
+import { ago, DONE } from './pane-status.ts'
+import type { Entry, Other, Row, StatusInput } from './pane-status.ts'
 
 // The engine's bound on SvgProps.source, in characters.
 export const SVG_MAX = 131072
 // One terminal cell in CSS pixels: the Pane's 41 cells are 328px, the band's 80 are 640px.
 const CELL_PX = 8
-// The figure on a filled task cell.
-const ON_FILL = '#1f1e1d'
 const FONT = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace'
 // The characters a 12px monospace face draws a full em wide: hooks/pane-bar.ts WIDE, and ⚑.
 const WIDE_PX = /[ᄀ-ᅟ⺀-꓏가-힣豈-﫿︰-﹏＀-｠￠-￦⚑]/
@@ -354,117 +352,14 @@ export function clashSvg(entry: Entry, others: Other[], now: number, cols: numbe
   return svgDoc(W, h, b)
 }
 
-// Up to this many tasks: one row of 30px cells. Up to GRID_MAX: one row of
-// ten 24px cells. More: one bar of four parts, so a large plan costs one row.
-const ONE_ROW = 9
-const GRID_MAX = 10
-// A cell's hover ring.
-const TASKS_STYLE = `<style>.fk-t rect.c{transition:stroke-width .15s ease-out}.fk-t g.k:hover rect.c{stroke:${WHERE};stroke-width:2.5}</style>`
-
-// The plan's tasks against its ledger, drawn by how many there are. Every cell
-// and every part of the bar carries a <title>; the titles and the hover
-// need the Svg drawn interactive, which the caller sets. The agent is on the first open task that is not the user's, as
-// hooks/pane-status.ts tasksBlock draws it; under the cells or the bar, that
-// task and up to three of the user's are named.
-export function tasksSvg(entry: Entry, plan: PlanInfo, now: number, cols: number): string {
-  const W = paneW(cols)
-  const done = new Set(plan.done)
-  const open = plan.tasks.filter((t) => !done.has(t.n))
-  const stage = str(entry.stage)
-  const marks = (Array.isArray(entry.inflight) ? entry.inflight : [entry.inflight]).filter(Boolean)
-  const mark = marks.map(record).find((m) => m.stage === stage)
-  const running = mark ? open.find((t) => !t.user) : undefined
-  const out = mark && typeof mark.at === 'number' && Number.isFinite(mark.at) ? String(minutes(now - mark.at)) : '?'
-  const you = open.filter((t) => t.user)
-  const n = plan.tasks.length
-  const count = n - open.length
-  let b = TASKS_STYLE + text(0, 14, 'tasks', { bold: true }) + text(px('tasks '), 14, `${count} of ${n}`)
-  let y = 0
-  if (n <= GRID_MAX) {
-    const [S, G, per] = n <= ONE_ROW ? [30, 4, ONE_ROW] : [24, 5, 10]
-    plan.tasks.forEach((t, i) => {
-      const x = (i % per) * (S + G) + 1
-      const top = 24 + Math.floor(i / per) * (S + G)
-      const ty = top + S / 2 + 4
-      const isDone = done.has(t.n)
-      const tip = `${t.n} · ${t.name}${isDone ? ' · 完成' : t === running ? ` · agent 出去 ${out} 分` : t.user ? ' · 你的' : ' · 還沒做'}`
-      let cell: string
-      if (isDone) {
-        cell = `<rect class="c" x="${x}" y="${top}" width="${S}" height="${S}" rx="4" fill="${DONE}"/>` + text(x + S / 2, ty, String(t.n), { anchor: 'middle', fill: ON_FILL, bold: true })
-      } else if (t === running) {
-        cell = `<rect x="${x - 2}" y="${top - 2}" width="${S + 4}" height="${S + 4}" rx="5" fill="none" stroke="${OUT}" stroke-width="1.5"/>`
-          + `<rect class="c" x="${x}" y="${top}" width="${S}" height="${S}" rx="4" fill="${OUT}"/>` + text(x + S / 2, ty, String(t.n), { anchor: 'middle', fill: ON_FILL, bold: true })
-      } else if (t.user) {
-        cell = `<rect class="c" x="${x + 1}" y="${top + 1}" width="${S - 2}" height="${S - 2}" rx="4" fill="none" stroke="${GUARD}" stroke-width="2"/>` + text(x + S / 2, ty, String(t.n), { anchor: 'middle', fill: GUARD, bold: true })
-      } else {
-        cell = `<rect class="c" x="${x + 0.5}" y="${top + 0.5}" width="${S - 1}" height="${S - 1}" rx="4" fill="none" stroke="${TODO}" stroke-width="1"/>` + text(x + S / 2, ty, String(t.n), { anchor: 'middle' })
-      }
-      b += `<g class="k"><title>${esc(tip)}</title>${cell}</g>`
-    })
-    const rows = Math.ceil(n / per)
-    y = 24 + rows * S + (rows - 1) * G + 22
-  } else {
-    // One bar of four parts in this order: done, running, the user's, not begun.
-    const parts = [
-      { k: count, label: '完成', color: DONE, fill: true },
-      { k: running ? 1 : 0, label: '在跑', color: OUT, fill: true },
-      { k: you.length, label: '你的', color: GUARD, fill: false },
-      { k: open.length - (running ? 1 : 0) - you.length, label: '還沒做', color: TODO, fill: false },
-    ].filter((q) => q.k > 0)
-    const G = 2
-    const room = W - 2 - G * (parts.length - 1)
-    const ws = parts.map((q) => Math.max(6, (q.k / n) * room))
-    // A part kept at its 6px floor takes its width from the widest.
-    ws[ws.indexOf(Math.max(...ws))] -= ws.reduce((s, w) => s + w, 0) - room
-    let x = 1
-    parts.forEach((q, i) => {
-      const w = ws[i]
-      const shape = q.fill
-        ? `<rect class="c" x="${r1(x)}" y="24" width="${r1(w)}" height="10" rx="3" fill="${q.color}"/>`
-        : `<rect class="c" x="${r1(x + 0.75)}" y="24.75" width="${r1(w - 1.5)}" height="8.5" rx="3" fill="none" stroke="${q.color}" stroke-width="1.5"/>`
-      b += `<g class="k"><title>${esc(`${q.label} ${q.k}`)}</title>${shape}</g>`
-      x += w + G
-    })
-    // One part repeats the heading, and its hover title still names it.
-    const legend = parts.length > 1
-    let lx = 1
-    for (const q of legend ? parts : []) {
-      b += q.fill
-        ? `<rect x="${r1(lx)}" y="41" width="10" height="10" rx="2" fill="${q.color}"/>`
-        : `<rect x="${r1(lx + 1)}" y="42" width="8" height="8" rx="2" fill="none" stroke="${q.color}" stroke-width="2"/>`
-      const k = String(q.k)
-      b += text(lx + 15, 50, k, { bold: true }) + text(lx + 15 + px(k + ' '), 50, q.label)
-      lx += 15 + px(`${k} ${q.label}`) + 14
-    }
-    y = legend ? 73 : 56
-  }
-  if (running) {
-    const tail = ` · 出去 ${out} 分`
-    b += `<rect x="1" y="${y - 9}" width="10" height="10" rx="2" fill="${OUT}"/>`
-    b += text(18, y, fitPx(`${running.n} ${running.name}`, W - 18 - px(tail)) + tail)
-    y += 20
-  }
-  for (const t of you.slice(0, 3)) {
-    b += `<rect x="2" y="${y - 8}" width="8" height="8" rx="2" fill="none" stroke="${GUARD}" stroke-width="2"/>`
-    b += text(18, y, fitPx(`${t.n} ${t.name}`, W - 18 - px(' · 你的')) + ' · 你的')
-    y += 20
-  }
-  if (you.length > 3) {
-    b += text(18, y, `還有 ${you.length - 3} 個是你的`, { fill: GUARD })
-    y += 20
-  }
-  return svgDoc(W, y - 14, b, ' class="fk-t"')
-}
-
 // One piece of the desktop Pane, top to bottom: rows drawn as Text, as the
 // terminal draws them, or one Svg.
 export type Part = { rows: Row[] } | { source: string; alt: string; isInteractive?: boolean }
 
 // The desktop Pane from the rows statusRows drew for the same input: the task
-// title, `next:`, notes and the foot stay rows; the route rows, the clash
-// and the tasks become one Svg each, whose alt is those rows'
-// text. A block statusRows cut to its head row (the tasks, when the Pane is short or folded),
-// a drawing with nothing in it, or one over SVG_MAX stays rows.
+// title, `next:`, the tasks, the agents, notes and the foot stay rows; the route
+// rows and the clash become one Svg each, whose alt is those rows' text. A
+// drawing with nothing in it, or one over SVG_MAX, stays rows.
 export function paneParts(input: StatusInput, rows: Row[]): Part[] {
   const parts: Part[] = []
   const keep = (rs: Row[]): void => {
@@ -484,7 +379,7 @@ export function paneParts(input: StatusInput, rows: Row[]): Part[] {
     if (!r.segs.length || !blocks.length) blocks.push([r])
     else blocks[blocks.length - 1].push(r)
   }
-  const { entry, plan, now, cols } = input
+  const { entry, now, cols } = input
   for (const block of blocks) {
     const lead = block[0].segs.length ? [] : [block[0]]
     const body = block.slice(lead.length)
@@ -500,11 +395,7 @@ export function paneParts(input: StatusInput, rows: Row[]): Part[] {
       keep(body.slice(0, from))
       draw(routeSvg(entry, now, cols), body.slice(from), false)
     } else if (name === 'clash') draw(clashSvg(entry, input.others, now, cols), body, false)
-    else if (name === 'tasks' && plan && plan.tasks.length && body.length > 1) {
-      // The head row stays a row, the Button that folds the drawing under it.
-      keep(body.slice(0, 1))
-      draw(tasksSvg(entry, plan, now, cols), body.slice(1), true)
-    } else keep(body)
+    else keep(body)
   }
   return parts
 }

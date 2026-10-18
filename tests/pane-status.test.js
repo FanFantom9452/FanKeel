@@ -248,7 +248,7 @@ test('planTasks reads the headings lib/plantasks.js parseTasks reads, and which 
         '## Coverage', '**Dispatch:** user', ''].join('\n');
     const theirs = plantasks.parseTasks(text);
     assert.deepEqual(planTasks(text).map((t) => [t.n, t.name, t.user]), theirs.map((t) => [t.n, t.name, t.dispatch === 'user']));
-    assert.deepEqual(planTasks(text), [{ n: 1, name: 'one', user: false }, { n: 2, name: 'two', user: true }, { n: 4, name: 'indented', user: false }]);
+    assert.deepEqual(planTasks(text), [{ n: 1, name: 'one', user: false, dispatch: 'implementer, sonnet' }, { n: 2, name: 'two', user: true, dispatch: 'User' }, { n: 4, name: 'indented', user: false, dispatch: '' }]);
     assert.deepEqual(planTasks(text.replace(/\n/g, '\r\n')), planTasks(text));
     assert.equal(planTasks(text).length, 3);
     assert.deepEqual(planTasks(''), []);
@@ -356,6 +356,32 @@ test('a long task name is cut so its row, tail and all, stays inside the pane', 
         assert.ok(line(rows[2]).endsWith('… · 出去 12 分'), line(rows[2]));
         assert.ok(line(rows[4]).endsWith('… · 你的'), line(rows[4]));
     }
+});
+
+test('a task row names who it went to: the subagent whose title names the task, its model, minutes and tokens; else the plan\'s Dispatch model', async () => {
+    const m = await load();
+    const plan = { name: 'p', done: [1], tasks: [
+        { n: 1, name: 'one', user: false, dispatch: 'implementer, sonnet' },
+        { n: 2, name: 'two', user: false, dispatch: 'implementer, opus, high' },
+        { n: 3, name: 'three', user: false, dispatch: 'in-session' },
+    ] };
+    const agent = (id, title, at, end, tokens) => ({ id, title, type: 'fankeel:fankeel-implementer', model: 'sonnet 5.5', effort: 'medium', at, end, tokens, kids: [] });
+    const agents = [agent('a2', 'Task 2: two', NOW - 7 * 60000, null, 12345), agent('a1', 'Task 1: one', NOW - 30 * 60000, NOW - 20 * 60000, 800)];
+    assert.deepEqual(text(status(m, { plan, agents }), 'tasks'), [
+        '▌▾ tasks 1/3',
+        ' ● 1 one · sonnet 5.5 · 10 分 · 800',
+        ' ◉ 2 two · sonnet 5.5 · 7 分 · 12.3k',
+        ' ○ 3 three · in-session',
+    ]);
+    assert.deepEqual(body(status(m, { plan, agents }), 'tasks')[2], [{ text: '◉', color: '#af87d7' }, { text: ' 2 two', bold: true }, { text: ' · sonnet 5.5 · 7 分 · 12.3k', color: '#af87d7' }]);
+    // No agent yet: the plan's model.
+    assert.deepEqual(text(status(m, { plan }), 'tasks').slice(1), [' ● 1 one · sonnet', ' ○ 2 two · opus', ' ○ 3 three · in-session']);
+    // An agent under another counts too, and the newest naming the task wins.
+    const parent = agent('p', 'group 1', NOW - 40 * 60000, null, null);
+    parent.kids = [agent('old', 'implement task 3', NOW - 9 * 60000, NOW - 8 * 60000, null), agent('k', 'implement task 3', NOW - 2 * 60000, null, null)];
+    assert.equal(text(status(m, { plan, agents: [parent] }), 'tasks')[3], ' ◉ 3 three · sonnet 5.5 · 2 分');
+    assert.equal(m.agentOf([parent], 2), null);
+    assert.deepEqual([m.dispatchModel('implementer, opus, high'), m.dispatchModel('in-session — why'), m.dispatchModel('user'), m.dispatchModel('')], ['opus', 'in-session', '', '']);
 });
 
 const context = { tokens: 212000, at: 450000 };

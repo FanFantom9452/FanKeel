@@ -535,13 +535,13 @@ test('a claimed plan with a build ledger draws its tasks, on the band as a count
     const tasks = (seen) => seen.slice(seen.indexOf(seen.find((t) => t.startsWith('▌▾ tasks '))), seen.findIndex((t) => t.startsWith('▌abcdef12')) - 1);
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
-    assert.deepEqual(tasks(await draw()), ['▌▾ tasks 1/2', ' ● 1 one', ' ◐ 2 two · 你的']);
+    assert.deepEqual(tasks(await draw()), ['▌▾ tasks 1/2', ' ● 1 one · sonnet', ' ◐ 2 two · 你的']);
     assert.match(bandLines(await hooks.band($, BAND, passed))[0], / {2}tasks 1\/2 {2}/);
     const after = log.invalidated;
     store[LEDGER] += 'Task 2: complete — two\n';
     await log.ticks[0].fn();
     assert.equal(log.invalidated, after + 1);
-    assert.deepEqual(tasks(await draw()), ['▌▾ tasks 2/2', ' ● 1 one', ' ● 2 two']);
+    assert.deepEqual(tasks(await draw()), ['▌▾ tasks 2/2', ' ● 1 one · sonnet', ' ● 2 two']);
     assert.match(bandLines(await hooks.band($, BAND, passed))[0], / {2}tasks 2\/2 {2}/);
     assert.equal(log.reads.filter((p) => p === ROOT + '/' + PLAN).length, 1, 'the plan file was read again though it had not changed');
     store[LEDGER] = HEAD + 'docs/plans/other.md\nTask 1: complete — one\n';
@@ -1295,7 +1295,7 @@ test('a fold head\'s onPress folds its block to that one row and opens it again,
     await log.ticks[0].fn();
     const draw = async (surface) => hooks['ui.render']($, { surface, viewport: { columns: 44, rows: 40 } });
     const press = async (fold) => buttons(await draw()).find((b) => b.props.key === 'fold-' + fold).props.onPress({ surface: 'terminal' });
-    const open = ['▌demo task', ' ▾ route 2/3', ' survey › design › build', ' ', '▌▾ tasks 1/2', ' ● 1 one', ' ○ 2 two', ' ', '▌abcdef12 · /fankeel-panel 關閉', ' station 未啟動'];
+    const open = ['▌demo task', ' ▾ route 2/3', ' survey › design › build', ' ', '▌▾ tasks 1/2', ' ● 1 one · sonnet', ' ○ 2 two · sonnet', ' ', '▌abcdef12 · /fankeel-panel 關閉', ' station 未啟動'];
     assert.deepEqual(paneLines(await draw()), open);
     const before = log.invalidated;
     await press('tasks');
@@ -1311,7 +1311,7 @@ test('a fold head\'s onPress folds its block to that one row and opens it again,
     assert.deepEqual(buttons(await draw('desktop')).map((b) => b.props.label), ['▸ route 2/3 design', '▸ tasks 1/2']);
     await press('route');
     await press('tasks');
-    assert.equal(await svgs(), 2);
+    assert.equal(await svgs(), 1);
     assert.deepEqual(buttons(await draw('desktop')).map((b) => b.props.label), ['▾ route 2/3', '▾ tasks 1/2']);
     $.ui.resolve = () => ({ Box: 'Box', Text: 'Text', Button: 'Button' });
     assert.deepEqual(paneLines(await draw()), open);

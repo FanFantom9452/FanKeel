@@ -180,101 +180,12 @@ const planOf = (total, done, user = []) => ({
     done: Array.from({ length: done }, (_, i) => i + 1),
     tasks: Array.from({ length: total }, (_, i) => ({ n: i + 1, name: 'task ' + (i + 1), user: user.includes(i + 1) })),
 });
-const titles = (source) => [...source.matchAll(/<title>([^<]*)<\/title>/g)].map((m) => m[1]);
-
-test('nine tasks or fewer are one row of cells, each with a title, the agent on the first open task that is not the user\'s', async () => {
-    const { tasksSvg } = await load('pane-svg');
-    const source = tasksSvg(entry, planOf(9, 4, [6]), NOW, 41);
-    assert.deepEqual(words(source).slice(0, 2), ['tasks', '4 of 9']);
-    assert.deepEqual(titles(source), [
-        '1 · task 1 · 完成', '2 · task 2 · 完成', '3 · task 3 · 完成', '4 · task 4 · 完成',
-        '5 · task 5 · agent 出去 12 分', '6 · task 6 · 你的', '7 · task 7 · 還沒做', '8 · task 8 · 還沒做', '9 · task 9 · 還沒做',
-    ]);
-    // One row: every cell at y 24, 30px wide.
-    assert.equal((source.match(/class="c" x="[\d.]+" y="24" width="30"/g) || []).length, 5);
-    // Under the cells: the running task and the user's.
-    assert.ok(words(source).includes('5 task 5 · 出去 12 分'));
-    assert.ok(words(source).includes('6 task 6 · 你的'));
-    assert.match(source, /class="fk-t"/);
-});
-
-test('ten tasks are one row of ten cells; more than ten are one bar of four counts', async () => {
-    const { tasksSvg } = await load('pane-svg');
-    const grid = tasksSvg(entry, planOf(10, 4, [8]), NOW, 41);
-    assert.equal(titles(grid).length, 10);
-    assert.match(grid, /<title>1 · task 1 · 完成<\/title><rect class="c" x="1" y="24" width="24"/);
-    const bar = tasksSvg(entry, planOf(24, 11, [16, 20]), NOW, 41);
-    assert.deepEqual(titles(bar), ['完成 11', '在跑 1', '你的 2', '還沒做 10']);
-    const big = tasksSvg(entry, planOf(60, 37, [39, 44, 50, 51]), NOW, 41);
-    assert.deepEqual(titles(big), ['完成 37', '在跑 1', '你的 4', '還沒做 18']);
-    assert.ok(words(big).includes('還有 1 個是你的'));
-    assert.equal(words(big).filter((w) => w.endsWith(' · 你的')).length, 3);
-});
-
-test('the bar is 10px tall, and a bar of one part draws no legend', async () => {
-    const { tasksSvg } = await load('pane-svg');
-    const idle = Object.assign({}, entry, { inflight: null });
-    const one = tasksSvg(idle, planOf(11, 11), NOW, 41);
-    assert.match(one, /class="c" x="1" y="24" width="[\d.]+" height="10" rx="3"/);
-    assert.ok(!words(one).includes('完成'));
-    assert.match(one, /height="42"/);
-    const four = tasksSvg(entry, planOf(24, 11, [16, 20]), NOW, 41);
-    assert.deepEqual(words(four).filter((w) => ['完成', '在跑', '你的', '還沒做'].includes(w)), ['完成', '在跑', '你的', '還沒做']);
-    assert.ok(words(four).includes('16 task 16 · 你的'));
-});
 
 test('the band\'s route starts 12px past its head', async () => {
     const { bandRow1Svg } = await load('pane-svg');
     const source = bandRow1Svg(bandInput({ tasks: null }));
     const cx = Number(source.match(/<circle cx="([\d.]+)" cy="11"/)[1]);
     assert.equal(cx, 10 + 'FANKEEL BUILD'.length * 12 * 0.6 + 12);
-});
-
-test('with no agent out nothing breathes and nothing is named as running', async () => {
-    const { tasksSvg } = await load('pane-svg');
-    const idle = Object.assign({}, entry, { inflight: null });
-    const source = tasksSvg(idle, planOf(9, 4), NOW, 41);
-    assert.ok(!source.includes('class="live"'));
-    assert.ok(!words(source).some((w) => w.includes('出去')));
-});
-
-test('the heading counts the tasks the plan completed, not every number in the ledger', async () => {
-    const { tasksSvg } = await load('pane-svg');
-    const plan = planOf(9, 4);
-    plan.done.push(99);
-    assert.deepEqual(words(tasksSvg(entry, plan, NOW, 41)).slice(0, 2), ['tasks', '4 of 9']);
-});
-
-test('nine tasks are one row and ten are a row of ten; eleven are a bar', async () => {
-    const { tasksSvg } = await load('pane-svg');
-    const rowsAt = (n) => (tasksSvg(entry, planOf(n, n), NOW, 41).match(/class="c" x="[\d.]+" y="24" width="(\d+)"/g) || []);
-    assert.ok(rowsAt(9).every((m) => m.endsWith('width="30"')) && rowsAt(9).length === 9);
-    assert.ok(rowsAt(10).every((m) => m.endsWith('width="24"')) && rowsAt(10).length === 10);
-    assert.equal(titles(tasksSvg(entry, planOf(10, 0), NOW, 41)).length, 10);
-    assert.deepEqual(titles(tasksSvg(entry, planOf(11, 0), NOW, 41)), ['在跑 1', '還沒做 10']);
-});
-
-test('an agent out on another stage draws no running task', async () => {
-    const { tasksSvg } = await load('pane-svg');
-    const other = Object.assign({}, entry, { inflight: { stage: 'verify', at: NOW - 12 * M } });
-    const source = tasksSvg(other, planOf(9, 4), NOW, 41);
-    assert.ok(!source.includes('class="live"') && !source.includes('出去'));
-    assert.ok(titles(source).every((t) => !t.includes('agent')));
-});
-
-test('the hover ring is in the style', async () => {
-    const { tasksSvg } = await load('pane-svg');
-    const source = tasksSvg(entry, planOf(40, 10), NOW, 41);
-    assert.ok(source.includes('g.k:hover rect.c{stroke:#8a8a8a'));
-});
-
-test('a long task name under the cells is cut with an ellipsis', async () => {
-    const { tasksSvg } = await load('pane-svg');
-    const plan = planOf(9, 4);
-    plan.tasks[4].name = 'x'.repeat(80);
-    const w = words(tasksSvg(entry, plan, NOW, 41));
-    const line = w.find((t) => t.startsWith('5 xxx'));
-    assert.ok(line && line.includes('…') && line.endsWith(' · 出去 12 分'));
 });
 
 // hooks/pane.ts on a fake engine: the parts of tests/pane.test.js fake() the two drawings read, and `resolve` hands
@@ -370,36 +281,32 @@ test('on Claude Desktop the band is two Svg rows, each alt the row the terminal 
     assert.ok(words(kids(desk)[1].props.source).includes('400k'));
 });
 
-test('on Claude Desktop the Pane draws the route, the clash and the tasks as Svg, and the rest as the terminal does; no context block, at the threshold or past it', async () => {
+test('on Claude Desktop the Pane draws the route and the clash as Svg, and the tasks and the rest as the terminal does; no context block, at the threshold or past it', async () => {
     const { pane } = await drawn();
     const desk = await pane('desktop');
     const term = await pane('terminal');
     const svgs = kids(desk).filter((n) => n.tag === 'Svg');
-    assert.equal(svgs.length, 3);
+    assert.equal(svgs.length, 2);
     for (const n of svgs) assert.ok(n.props.source.startsWith('<svg ') && n.props.source.length <= 131072);
-    assert.deepEqual(svgs.map((n) => n.props.isInteractive === true), [false, false, true]);
-    // Each alt is the rows it stands for, as the terminal draws them.
+    assert.deepEqual(svgs.map((n) => n.props.isInteractive === true), [false, false]);
     const rows = plain(term);
     const block = (from, to) => rows.slice(rows.findIndex((t) => t.startsWith(from)), to === undefined ? undefined : rows.findIndex((t) => t.startsWith(to)) - 1).join('\n');
     assert.equal(svgs[0].props.alt, 'survey › design › plan › build › verify\nland');
     assert.equal(svgs[1].props.alt, block('⚑ hooks/pane.ts', '▾ tasks '));
-    // The tasks head is a Button row above the drawing; the drawing stands for the rows under it.
-    assert.equal(svgs[2].props.alt, block('✓ 完成 4', 'notes'));
     assert.ok(rows.includes('▾ tasks 4/9'));
-    // 400k of 450k is past four fifths of the threshold; the band alone says so.
     assert.ok(!rows.some((t) => t.startsWith('context')));
     assert.ok(!svgs.some((n) => n.props.alt.startsWith('context')));
     const hot = await drawn({ tokens: 463000 });
     assert.ok(!plain(await hot.pane('terminal')).some((t) => t.startsWith('context')));
-    assert.equal(kids(await hot.pane('desktop')).filter((n) => n.tag === 'Svg').length, 3);
-    // The title, next:, notes and the foot are the terminal's own rows.
+    assert.equal(kids(await hot.pane('desktop')).filter((n) => n.tag === 'Svg').length, 2);
     const words2 = kids(desk).filter((n) => n.tag !== 'Svg').map(textOf);
     assert.ok(words2.includes('▌Pane 視覺化改版'));
     assert.ok(words2.some((t) => t.startsWith(' next: task 5')));
     assert.ok(words2.includes('▌notes'));
     assert.ok(words2.some((t) => t.startsWith('▌abcdef12 · /fankeel-panel')));
-    // The tasks Svg counts what the text counts.
-    assert.ok(words(svgs[2].props.source).includes('4 of 9'));
+    // The tasks are the terminal's own rows on the desktop too: a row a task.
+    assert.ok(words2.includes(' ◉ 5 task 5 · 出去 12 分'), words2.join('\n'));
+    assert.ok(words2.includes(' ○ 7 task 7 · sonnet'), words2.join('\n'));
 });
 
 test('every surface but the desktop draws the text exactly, and asks the engine for no Svg', async () => {
@@ -426,16 +333,14 @@ test('a gate waiting on Claude Desktop draws its ring from the pending file\'s a
 });
 
 test('sixty tasks and a long clash stay far under the engine\'s 131072 characters', async () => {
-    const { tasksSvg, clashSvg, SVG_MAX } = await load('pane-svg');
-    const big = { name: 'big', done: Array.from({ length: 37 }, (_, i) => i + 1), tasks: Array.from({ length: 60 }, (_, i) => ({ n: i + 1, name: 'x'.repeat(200), user: i === 50 })) };
+    const { clashSvg, SVG_MAX } = await load('pane-svg');
     const many = Array.from({ length: 20 }, (_, i) => ({ id: 'n' + i, entry: { task: 'y'.repeat(200), stage: 'build', claims: entry.claims } }));
     const { bandRow1Svg, bandRow2Svg, routeSvg } = await load('pane-svg');
     const long = Object.assign({}, entry, { task: 'z'.repeat(300), next: 'w'.repeat(300) });
     const heavy = bandInput({ entry: long, others: many, gateAt: NOW - 18000, gateUntil: NOW + 42000, tasks: { done: 37, total: 60 }, cols: 200 });
     const stages = Array.from({ length: 40 }, (_, i) => 's' + 'x'.repeat(30) + i);
     const longRoute = Object.assign({}, entry, { route: stages, stage: stages[30], clock: Object.fromEntries(stages.slice(0, 31).map((s, i) => [s, [NOW - (40 - i) * M, i === 30 ? null : NOW - (39 - i) * M]])), waited: Object.fromEntries(stages.map((s) => [s, 9 * M])) });
-    for (const source of [tasksSvg(entry, big, NOW, 41), tasksSvg(entry, Object.assign({}, big, { tasks: big.tasks.slice(0, 30) }), NOW, 41), clashSvg(entry, many, NOW, 41),
-        bandRow1Svg(heavy), bandRow2Svg(heavy), routeSvg(longRoute, NOW, 200)]) {
+    for (const source of [clashSvg(entry, many, NOW, 41), bandRow1Svg(heavy), bandRow2Svg(heavy), routeSvg(longRoute, NOW, 200)]) {
         assert.ok(source.length > 0 && source.length < SVG_MAX / 4, String(source.length));
     }
     assert.equal(SVG_MAX, 131072);
@@ -464,14 +369,6 @@ test('the band\'s window and compact.at-off wording are the rows bandRows produc
         for (const w of drawn) assert.ok(said.includes(w), `${w} not in ${JSON.stringify(said)} for ${JSON.stringify(ctx)}`);
         assert.equal(drawn.filter((w) => w[0] === '/').length, said.filter((w) => w[0] === '/').length);
     }
-});
-
-test('the agent that is out is on the first open task that is not the user\'s, even when the user\'s comes first', async () => {
-    const { tasksSvg } = await load('pane-svg');
-    const t = titles(tasksSvg(entry, planOf(9, 4, [5]), NOW, 41));
-    assert.equal(t[4], '5 · task 5 · 你的');
-    assert.equal(t[5], '6 · task 6 · agent 出去 12 分');
-    assert.equal(t.filter((x) => x.includes('agent 出去')).length, 1);
 });
 
 test('a band with one row on Claude Desktop is one Svg', async () => {
@@ -596,11 +493,21 @@ test('nothing the band or the Pane draws is animated, and the route is never dra
     const drawn = [
         mod.bandRow1Svg(bandInput()),
         mod.routeSvg(entry, NOW, 41),
-        mod.tasksSvg(entry, planOf(9, 4), NOW, 41),
-        mod.tasksSvg(entry, planOf(40, 10), NOW, 41),
     ];
     for (const source of drawn) assert.ok(!/<animate|fk-br|fk-pulse|class="[^"]*live/.test(source), source.slice(0, 80));
     const input = { id: 'x', entry, others: [], plan: null, cols: 41, room: 60, now: NOW };
     const route = mod.paneParts(input, statusRows(input)).find((p) => 'source' in p && p.alt.startsWith('survey'));
     assert.ok(route && !route.isInteractive);
+});
+
+test('paneParts keeps the tasks block as rows, its head Button and a row a task, and draws no Svg for it', async () => {
+    const { paneParts } = await load('pane-svg');
+    const { statusRows } = await load('pane-status');
+    const input = { id: 'x', entry, others: [], plan: planOf(4, 2), cols: 41, room: 60, now: NOW };
+    const parts = paneParts(input, statusRows(input));
+    assert.deepEqual(parts.filter((p) => 'source' in p).map((p) => p.alt.split('\n')[0]), ['survey › design › plan › build › verify']);
+    const kept = parts.filter((p) => 'rows' in p).flatMap((p) => p.rows).filter((r) => r.block === 'tasks' && r.segs.length);
+    assert.equal(kept.length, 5);
+    assert.equal(kept[0].segs[1].press, 'fold');
+    assert.equal((await load('pane-svg')).tasksSvg, undefined);
 });
