@@ -156,8 +156,9 @@ the whole procedure from there. `lib/render.js`'s `renderBrief`, which
 when `payload.agent_type` is `fankeel-judge`: *answer once; the parent will
 not message you again.* It leaves out two return rules for the judge only. One is "You do not
 dispatch subagents of your own" (`RETURN_RULES[2]`), because
-the judge reads in three rounds: it writes a checklist and, in that same
-response, sends one `fankeel:fankeel-reader` per line (sonnet, or opus when one
+the judge aims for three rounds: it writes a checklist and, in that same
+response, sends at most four `fankeel:fankeel-reader` (`dispatch.inflight`),
+giving related lines to one reader (sonnet, or opus when one
 figure or sentence decides the pick); it opens one cited `path:line` per reader
 in one more response; and it returns six fields, `delegated:` and `checklist:`
 among them, followed by a `## Summary` of any length. The other is "findings and conclusions, not a narration of what

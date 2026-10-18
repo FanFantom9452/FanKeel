@@ -163,6 +163,9 @@ test('the judge lists its reads, sends every reader at once, and returns a summa
     assert.match(reading, /model: "sonnet"/);
     assert.match(reading, /model: "opus"/);
     assert.match(reading, /path:line/);
+    assert.match(reading, /at most four/);
+    assert.match(reading, /dispatch\.inflight/);
+    assert.match(reading, /none\s+back for a later round|hold none back/);
     assert.doesNotMatch(text, /over 300 lines/);
     assert.match(text, /^delegated: /m);
     assert.match(text, /^checklist: /m);

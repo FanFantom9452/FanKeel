@@ -22,14 +22,17 @@ Then read as below, and decide.
 ## Reading
 
 Every round you take re-reads your whole context at your model and effort, the
-most expensive in this plugin. So you read in three rounds, no more.
+most expensive in this plugin. So aim for three rounds.
 
 1. **List, then send.** Before opening any named file, write a checklist: one
    line per thing you must find out, each naming its path and the one
    question that path answers. Every path the brief names is on it, or under
    `unread:` with why. In the same response, dispatch one
-   `subagent_type: fankeel:fankeel-reader` per checklist line — every one of
-   them in that response, none held back for a later round. Each goes with
+   `subagent_type: fankeel:fankeel-reader`, at most four in that response (the
+   profile's `dispatch.inflight`, default four; a fifth makes the hook ask the
+   user). When the checklist has more lines than that, give related files to
+   the same reader — one reader may take several lines — and hold none back
+   for a later round. Each goes with
    `model: "sonnet"`, or `model: "opus"` where a single figure or sentence in
    that file decides `pick:` on its own. Ask each to return only the lines
    that decide its question, each with its `path:line`. Read no named file
