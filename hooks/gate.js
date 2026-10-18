@@ -149,7 +149,16 @@ function stationAnswers(root, mine, values, questions) {
 
 // What this hook has to say, once the station has had its chance: an answer
 // that arrived in time goes out as an allowed call carrying `answers`.
+//
+// The gate opens here and nowhere earlier: every `refuse()` in `main` returns
+// before `emit`, and a refused question never reaches PostToolUse's
+// `gateClose` (hooks/resume.js), so a stamp left by a refusal would read as a
+// gate still waiting on the station's gate tab and waiting cards. It is stamped
+// before `stationAnswers` waits, so the page sees the gate for that wait too.
 function emit(out, payload, root, mine, values) {
+    try {
+        registry.gateOpen(root, payload.session_id, { stage: mine.stage, hash: hashOf(payload.tool_input && payload.tool_input.questions) });
+    } catch (e) { /* housekeeping */ }
     let answers = null;
     try {
         answers = stationAnswers(root, mine, values, payload.tool_input && payload.tool_input.questions);
@@ -227,9 +236,6 @@ function main(raw) {
 
     const hash = hashOf(payload.tool_input && payload.tool_input.questions);
     const before = mine.gateAsked && typeof mine.gateAsked === 'object' ? mine.gateAsked : null;
-    try {
-        registry.gateOpen(root, payload.session_id, { stage: mine.stage, hash });
-    } catch (e) { /* housekeeping */ }
 
     // `stage.agents`: validate rather than substitute. The controller is the
     // one that typed the AskUserQuestion call now, so what reaches this hook

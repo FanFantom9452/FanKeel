@@ -697,6 +697,32 @@ test('stage.agents: a survey gate with no pause, or naming bounded on an archite
   assert.match(b.hookSpecificOutput.permissionDecisionReason, /questions\[0\]\.options\[1\]\.label/);
 });
 
+test('a gate the hook refuses leaves no gateAt and no gateAsked, so the station does not wait on it', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'survey', floor: 'architectural', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  agentsOn(root);
+  const noPause = [{ question: 'survey 的結論？', header: 'survey', multiSelect: false, options: [{ label: '進 design', description: 'a' }, { label: '再讀一輪', description: 'b' }] }];
+  handoff(root, { questions: noPause, next: 'n' });
+  const invalid = JSON.parse(run(GATE, root, { tool_input: askOf(noPause) }));
+  assert.equal(invalid.hookSpecificOutput.permissionDecision, 'deny', 'the invalid gate was refused');
+  assert.equal(readEntry(root, MINE).gateAt, undefined, 'a refused invalid gate stamped gateAt');
+  assert.equal(readEntry(root, MINE).gateAsked, undefined, 'a refused invalid gate stamped gateAsked');
+});
+
+test('a botched copy of the gate is refused with no gateAt, and the copy that goes out stamps it', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  agentsOn(root);
+  handoff(root, { questions: QUESTIONS, next: 'n' });
+  const botched = JSON.parse(JSON.stringify(QUESTIONS));
+  botched[0].options[0].description = 'retyped by the controller';
+  const refused = JSON.parse(run(GATE, root, { tool_input: askOf(botched) }));
+  assert.equal(refused.hookSpecificOutput.permissionDecision, 'deny', 'the botched copy was refused');
+  assert.equal(readEntry(root, MINE).gateAt, undefined, 'a refused copy stamped gateAt');
+  assert.equal(run(GATE, root, { tool_input: askOf(QUESTIONS) }).trim(), '', 'the verbatim copy goes out');
+  assert.equal(Number.isFinite(readEntry(root, MINE).gateAt), true, 'the gate that went out stamped gateAt');
+});
+
 // docs/90-agent/plans/2026-10-10-workflow-gaps-design.md §11: off stage.agents
 // nothing compares a gate with a file, so the option count is the one thing
 // left to say — as a message, never a decision.
