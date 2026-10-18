@@ -121,17 +121,18 @@ export async function thresholdWith(io: ThresholdIo, found: { entry: Entry; root
 
 // Not awaited by the hook: compact rejects while a turn runs, and the turn may
 // still count as running until this hook returns. Three tries, a second apart; tests/compact.test.js pins the three.
-async function compactWithRetry($: EngineInterface, instructions: string): Promise<void> {
+async function compactWithRetry($: EngineInterface, instructions: string): Promise<boolean> {
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
       const res = await $.session.compact({ instructions })
       $.ui.log(`fankeel compact: attempt ${attempt} ${res && res.skip ? 'skipped by a hook' : 'done'}`, { to: 'debug' })
-      return
+      return true
     } catch (err) {
       $.ui.log(`fankeel compact: attempt ${attempt} rejected: ${String(err)}`, { to: 'debug' })
       await $.clock.sleep(1000)
     }
   }
+  return false
 }
 
 export const register: Register = (on) => {
@@ -164,9 +165,11 @@ export const register: Register = (on) => {
       if (typeof context.tokens !== 'number' || (context.tokens < at && !away)) return out
       const entry = found.entry
       pending = true
-      if (away) awayDone = awayAt
       $.ui.log(away ? `fankeel compact: user is away, ${context.tokens} tokens, compacting` : `fankeel compact: ${context.tokens} tokens >= ${at}, compacting`, { to: 'debug' })
-      void compactWithRetry($, instructionsFor(id, entry, $.plugin.root)).finally(() => {
+      void compactWithRetry($, instructionsFor(id, entry, $.plugin.root)).then((ok) => {
+        // A failed compaction leaves awayDone alone: the next turn.complete retries this awayAt.
+        if (ok && away) awayDone = awayAt
+      }).finally(() => {
         pending = false
       })
     } catch (err) {

@@ -55,7 +55,7 @@ function main(raw) {
                 delete rest[extra.question];
                 response = Object.assign({}, response, { answers: rest });
             }
-            if (leaving) registry.setAway(root, sessionId);
+            if (leaving) leaving = registry.setAway(root, sessionId);
         }
     } catch (e) { /* housekeeping */ }
 

@@ -439,6 +439,15 @@ test('answering 要離開 sets awayAt and tells the model to end its turn', () =
   assert.match(context(out), /End your turn now/);
 });
 
+test('answering 要離開 while the record is locked writes no awayAt and does not announce leaving', () => {
+  const root = tmp('fankeel-resume-');
+  surveyWithGate(root);
+  fs.mkdirSync(path.join(root, '.fankeel', 'sessions', MINE + '.lock'));
+  const out = withAway(root, '要離開，先壓縮');
+  assert.equal(readEntry(root, MINE).awayAt, undefined);
+  assert.doesNotMatch(context(out) || '', /End your turn now/);
+});
+
 test('a prompt clears awayAt', () => {
   const root = tmp('fankeel-resume-');
   seed(root, MINE, { awayAt: Date.now() });

@@ -322,6 +322,28 @@ test('gatesFrom keeps every option label in the order AskUserQuestion declared t
     assert.equal(out[0].picked, '留在 design');
 });
 
+test('gatesFrom drops the 離開 question the gate.away hook added', () => {
+    const entries = [
+        {
+            type: 'assistant', timestamp: '2026-09-18T00:00:00.000Z',
+            message: { content: [{
+                type: 'tool_use', id: 'a1', name: 'AskUserQuestion',
+                input: { questions: [
+                    { question: 'q', header: 'design', options: [{ label: 'x' }] },
+                    { question: 'away?', header: '離開', options: [{ label: '不離開' }, { label: '要離開，先壓縮' }] },
+                ] },
+            }] },
+        },
+        {
+            type: 'user', timestamp: '2026-09-18T00:00:01.000Z',
+            message: { content: [{ type: 'tool_result', tool_use_id: 'a1' }] },
+            toolUseResult: { answers: { q: 'x', 'away?': '不離開' } },
+        },
+    ];
+    const out = gates.gatesFrom(entries, [], function (a) { return a; });
+    assert.deepEqual(out.map((g) => g.header), ['design']);
+});
+
 // Fix round 1: an empty or missing label must keep its slot rather than being
 // dropped, because `labels[0]` is read as option one — dropping a blank
 // label would shift every label after it up one index.

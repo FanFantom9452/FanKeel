@@ -305,6 +305,20 @@ test('awayAt on an inactive entry compacts nothing', async () => {
     assert.equal(calls.length, 0);
 });
 
+test('an awayAt whose compaction failed every attempt is compacted again on the next turn', async () => {
+  const handler = handlerOf(await load());
+  const { $, calls } = fake({ tokens: 5, files: entryAt('F:/proj', { ...live, awayAt: Date.now() + 1000 }) });
+  let fail = true;
+  $.session.compact = async (input) => { calls.push(input); if (fail) throw new Error('a turn is running'); return {}; };
+  await fire(handler, $);
+  assert.equal(calls.length, 3);
+  fail = false;
+  await fire(handler, $);
+  assert.equal(calls.length, 4);
+  await fire(handler, $);
+  assert.equal(calls.length, 4);
+});
+
 test('one awayAt compacts once; a later awayAt compacts again', async () => {
     const handler = handlerOf(await load());
     const away = (at) => fake({ tokens: 5, files: entryAt('F:/proj', { ...live, awayAt: at }) });
