@@ -586,9 +586,9 @@ export const register: Register = (on) => {
   })
 
   // Observe only: the main loop's effort, a level or a budget, is what the band shows.
-  on('turn.step', async ($, e, next) => {
+  on('turn.step', async function* ($, e, next) {
     if (!e.agentId) state.seen.effort = e.effort === undefined ? null : String(e.effort)
-    return next(e)
+    return yield* next(e)
   })
 
   on('command.run', { command: COMMAND }, async ($) => {

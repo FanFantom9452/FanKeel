@@ -66,6 +66,12 @@ function fake({ files = {}, placed = true, surfaces = ['terminal'], tokens = 312
 
 // Two hooks share the event `ui.render`: the Pane's stays under that name, the band's is `band`.
 // The module's one turn.complete is compact.ts's, so the hooks come from mod.ts, which registers both.
+async function drive(gen) {
+    let r;
+    do { r = await gen.next(); } while (!r.done);
+    return r.value;
+}
+
 async function wired() {
     const { register } = await import(pathToFileURL(path.join(__dirname, '..', 'hooks', 'mod.ts')).href);
     const hooks = {};
@@ -1448,12 +1454,12 @@ test('the band row ends with the session model and the effort turn.step last car
     log.model = 'claude-sonnet-5-5';
     await hooks['session.start']($, {}, async () => ({}));
     let passedOn = null;
-    const out = await hooks['turn.step']($, { turnId: 't', index: 0, model: 'm', effort: 'high', messageCount: 1 }, async (e) => { passedOn = e; return 'kept'; });
+    const out = await drive(hooks['turn.step']($, { turnId: 't', index: 0, model: 'm', effort: 'high', messageCount: 1 }, async function* (e) { passedOn = e; return 'kept'; }));
     assert.equal(out, 'kept');
     assert.equal(passedOn.effort, 'high');
     await log.ticks[0].fn();
     assert.match(bandLines(await hooks['band']($, { surface: 'terminal', props: { bodyColumns: 200 } }, passed))[0], /sonnet 5.5 · high$/);
-    await hooks['turn.step']($, { turnId: 't', index: 1, model: 'm', effort: 8000, messageCount: 2 }, async (e) => e);
+    await drive(hooks['turn.step']($, { turnId: 't', index: 1, model: 'm', effort: 8000, messageCount: 2 }, async function* (e) { return e; }));
     await log.ticks[0].fn();
     assert.match(bandLines(await hooks['band']($, { surface: 'terminal', props: { bodyColumns: 200 } }, passed))[0], /sonnet 5.5 · 8000$/);
 });
@@ -1474,8 +1480,8 @@ test('a turn.step from an agent leaves the band effort as the main loop set it',
     const { $, log } = fake({ files: entryFile(live) });
     log.model = 'claude-sonnet-5-5';
     await hooks['session.start']($, {}, async () => ({}));
-    await hooks['turn.step']($, { turnId: 't', index: 0, model: 'm', effort: 'high', messageCount: 1 }, async (e) => e);
-    await hooks['turn.step']($, { turnId: 't', index: 0, agentId: 'a1', model: 'm', effort: 'low', messageCount: 1 }, async (e) => e);
+    await drive(hooks['turn.step']($, { turnId: 't', index: 0, model: 'm', effort: 'high', messageCount: 1 }, async function* (e) { return e; }));
+    await drive(hooks['turn.step']($, { turnId: 't', index: 0, agentId: 'a1', model: 'm', effort: 'low', messageCount: 1 }, async function* (e) { return e; }));
     await log.ticks[0].fn();
     assert.match(bandLines(await hooks['band']($, { surface: 'terminal', props: { bodyColumns: 200 } }, passed))[0], /· high$/);
 });
@@ -1483,6 +1489,14 @@ test('a turn.step from an agent leaves the band effort as the main loop set it',
 test('a change of effort alone redraws the Pane', async () => {
     const hooks = await wired();
     const { $, log } = fake({ files: entryFile(live) });
+    log.model = 'claude-sonnet-5-5';
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const before = log.invalidated;
+    await drive(hooks['turn.step']($, { turnId: 't', index: 0, model: 'm', effort: 'high', messageCount: 1 }, async function* (e) { return e; }));
+    await log.ticks[0].fn();
+    assert.equal(log.invalidated, before + 1);
+});
 
 test('a change of model alone redraws the Pane', async () => {
     const hooks = await wired();
@@ -1492,15 +1506,6 @@ test('a change of model alone redraws the Pane', async () => {
     await log.ticks[0].fn();
     const before = log.invalidated;
     log.model = 'claude-opus-4-7';
-    await log.ticks[0].fn();
-    assert.equal(log.invalidated, before + 1);
-});
-
-    log.model = 'claude-sonnet-5-5';
-    await hooks['session.start']($, {}, async () => ({}));
-    await log.ticks[0].fn();
-    const before = log.invalidated;
-    await hooks['turn.step']($, { turnId: 't', index: 0, model: 'm', effort: 'high', messageCount: 1 }, async (e) => e);
     await log.ticks[0].fn();
     assert.equal(log.invalidated, before + 1);
 });
