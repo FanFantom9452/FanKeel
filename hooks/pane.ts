@@ -671,7 +671,7 @@ export const register: Register = (on) => {
       return h(Text, { color: seg.color, bold: seg.bold, wrap: 'truncate-end' }, seg.text)
     }
     const line = (row: StatusRow) => (row.segs.length === 0 ? blankRow() : h(Box, { flexDirection: 'row' }, ...row.segs.map(piece)))
-    // Claude Desktop draws the route, the clash and the tasks as Svg; every other surface draws the text.
+    // Claude Desktop draws the route and the clash as Svg; every other surface draws the text.
     if (e.surface === 'desktop') {
       try {
         const { Svg } = $.ui.resolve(e)
