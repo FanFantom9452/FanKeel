@@ -261,6 +261,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 那份盤點的五個 task | `docs/99-archive/2026-10-17-todo-patrol-hands-five.md` — *built, 繁體中文* |
 | 三條續做（10-17）的 design 與四個 task：Desktop 窄 band 的 ⚑、mod 替 brief.js 記 spawn、壓縮視窗探針 | `docs/99-archive/2026-10-17-three-followups-design.md`、`docs/99-archive/2026-10-17-three-followups.md` — *built, 繁體中文* |
 | plan gate 附 station 計畫頁（10-18）的 design 與四個 task：tasksOf 讀 plan bucket 並給 waits、await 印 page: 行、計畫 tab | `docs/99-archive/2026-10-18-plan-gate-page-design.md`、`docs/99-archive/2026-10-18-plan-gate-page.md` — *built, 繁體中文* |
+| 其他四道 gate 附 station 關卡頁（10-18）的 design 與六個 task：gatereport 讀 handoff、await 印 /gate 的 page: 行、land 白話行、關卡 tab | `docs/99-archive/2026-10-18-gate-tab-design.md`、`docs/99-archive/2026-10-18-gate-tab.md` — *built, 繁體中文* |
 | 換站時印出新一站規則（10-16）的 design：cmdStage 印 rulesLines、受控站維持 controller 區塊、最後一行同回合開工 | `docs/99-archive/2026-10-16-stage-prints-rules-design.md` — *built, 繁體中文* |
 | 那份設計的一個 task | `docs/99-archive/2026-10-16-stage-prints-rules.md` — *built* |
 | Station 儀表板改版（10-16）的 design：頂列、花費 hover、可以開工彈窗、編輯模式、新增卡片、通知面板捲動 | `docs/99-archive/2026-10-16-station-dashboard-design.md` — *built, 繁體中文* |
@@ -295,6 +296,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 開站也印規則、git 逾時讓測試調高（10-16）定了什麼：start/task 印第一站規則；FANKEEL_GIT_TIMEOUT 只給測試調高；放棄了什麼 | [decisions/2026-10-16-git-timeout-env.md](03-decisions/2026-10-16-git-timeout-env.md) — *繁體中文* |
 | mod 替 brief.js 記 spawn（10-17）定了什麼：agent.spawn 寫 prompt 第一行與 parentAgentId，brief.js 先讀它，brief 本身不搬；放棄了什麼 | [decisions/2026-10-17-spawn-record.md](03-decisions/2026-10-17-spawn-record.md) — *繁體中文* |
 | plan gate 附 station 計畫頁（10-18）定了什麼：視覺化交給 station、依賴只取 plantasks.conflict、邊不畫線、回答仍在 Desktop；放棄了什麼 | [decisions/2026-10-18-plan-gate-page.md](03-decisions/2026-10-18-plan-gate-page.md) — *繁體中文* |
+| 其他四道 gate 附 station 關卡頁（10-18）定了什麼：四道共用一個關卡 tab、報告照範本拆欄、land 加白話、只認 gateAt 或 pending 為在等；放棄了什麼 | [decisions/2026-10-18-gate-tab.md](03-decisions/2026-10-18-gate-tab.md) — *繁體中文* |
 | 沒派過的 agent 怎麼處理（10-15）定了什麼：effort 改在派工時傳、六個複本刪掉，mover、mutator、writer 只給 stage agent 派，init-scout 與 slimmer 不動；放棄了什麼 | [decisions/2026-10-15-unused-agents.md](03-decisions/2026-10-15-unused-agents.md) — *繁體中文* |
 | 開任務時同步壓縮視窗（10-14）定了什麼：start 把主機視窗對齊 `compact.at`、值變了請使用者重開 Desktop；放棄了什麼 | [decisions/2026-10-14-start-syncs-window.md](03-decisions/2026-10-14-start-syncs-window.md) — *繁體中文* |
 | Pane 配色改成安靜版（10-13）定了什麼：標題共用灰、多一行 route、拿掉「這個 session」與「用量額度」兩塊；放棄了什麼 | [decisions/2026-10-13-pane-colour.md](03-decisions/2026-10-13-pane-colour.md) — *繁體中文* |
@@ -560,6 +562,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 - [開站也印規則、git 逾時讓測試調高（10-16）：openingLines 三處共用，FANKEEL_GIT_TIMEOUT](03-decisions/2026-10-16-git-timeout-env.md)
 - [mod 替 brief.js 記 spawn，brief 本身不搬（10-17）](03-decisions/2026-10-17-spawn-record.md)
 - [plan gate 附 station 計畫頁（10-18）](03-decisions/2026-10-18-plan-gate-page.md)
+- [其他四道 gate 附 station 關卡頁（10-18）](03-decisions/2026-10-18-gate-tab.md)
 - [沒派過的 agent 怎麼處理（10-15）：effort 改在派工時傳，六個複本刪掉](03-decisions/2026-10-15-unused-agents.md)
 - [開任務時同步壓縮視窗（10-14）：task.js start 把主機視窗寫成 compact.at](03-decisions/2026-10-14-start-syncs-window.md)
 - [Pane 的配色改成安靜版，多一行 route，拿掉兩塊（10-13）](03-decisions/2026-10-13-pane-colour.md)
