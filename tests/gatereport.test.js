@@ -162,6 +162,23 @@ test('no stage or no start reads as null; no file and a file that will not open 
     assert.deepEqual(read(r, data), { error: 'unreadable', stage: 'design', path: TASK + '/design.md' });
 });
 
+test('a task directory that will not list reads as unreadable, not as no report', () => {
+    const r = tmp('fankeel-gatereport-');
+    // A file where the task directory goes: listing it fails with ENOTDIR, not ENOENT.
+    put(path.join(r, TASK), 'not a directory');
+    const got = read(r, { stage: 'build', started: STARTED, moves: [['build', 1]] });
+    assert.deepEqual(got, { error: 'unreadable', stage: 'build', path: TASK + '/build.md' });
+});
+
+test('a lead line with a colon in it is still the lead, not rest', () => {
+    const d = parseReport('design', 'Add a tab: it reads the file.\n\nspec: x.md\n');
+    assert.equal(d.approach, 'Add a tab: it reads the file.');
+    assert.deepEqual(d.rest, []);
+    const s = parseReport('survey', 'Three things matter: foo\n\n- lib/a.js:3 — a\n\nLater prose.\n');
+    assert.equal(s.conclusion, 'Three things matter: foo');
+    assert.deepEqual(s.rest, ['Later prose.']);
+});
+
 test('a design whose spec is an HTML page under .fankeel/build/ links it as a mockup; any other spec does not', () => {
     const { r, dir } = root();
     const data = { stage: 'design', started: STARTED, moves: [['design', 1]] };
