@@ -56,7 +56,7 @@ type Cache = Map<string, { stamp: string; value: unknown }>
 const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, context: null, limits: [], plan: null, remote: false, probe: null, agents: [], station: null, pkey: '', todos: [], model: null, effort: null })
 
 // The last message each silent catch logged: the tick runs four times a second, and a failure that stays is said once.
-type Logged = { context: string; plan: string; open: string; registry: string; neighbour: string; gate: string; live: string; remote: string; bandSvg: string; paneSvg: string; agents: string; station: string; todo: string }
+type Logged = { context: string; plan: string; open: string; registry: string; neighbour: string; gate: string; live: string; remote: string; bandSvg: string; paneSvg: string; agents: string; station: string; todo: string; model: string }
 
 // A registry file that is there and does not parse: told apart so `tick` can wait it out for a while, then give up on it.
 class Unreadable extends Error {}
@@ -482,7 +482,14 @@ async function look($: EngineInterface, cache: Cache, logged: Logged): Promise<S
   // lib/station.js pkeyOf: the registry root, and the entry's project under it when it names one.
   const pkey = typeof entry.project === 'string' && entry.project ? `${found.root}/${entry.project}` : found.root
   const todos = station ? await todosOf($, pkey, cache, logged) : []
-  const model = await $.session.model().then((m) => (m ? modelAlias(String(m)) : null), () => null)
+  let model: string | null = null
+  try {
+    const m = await $.session.model()
+    model = m ? modelAlias(String(m)) : null
+    logged.model = ''
+  } catch (err) {
+    logOnce($, logged, 'model', `fankeel pane: session model unreadable, ${String(err)}`)
+  }
   return { id, entry, others, pending, context, limits, plan, remote, probe, agents, station, pkey, todos, model, effort: null }
 }
 
@@ -568,7 +575,7 @@ async function tick($: EngineInterface, state: State): Promise<void> {
 export const register: Register = (on) => {
   const state: State = {
     seen: blank(''), print: '', mine: false, edge: { task: false }, bad: 0, busy: false, cache: new Map(),
-    logged: { context: '', plan: '', open: '', registry: '', neighbour: '', gate: '', live: '', remote: '', bandSvg: '', paneSvg: '', agents: '', station: '', todo: '' },
+    logged: { context: '', plan: '', open: '', registry: '', neighbour: '', gate: '', live: '', remote: '', bandSvg: '', paneSvg: '', agents: '', station: '', todo: '', model: '' },
     folded: {}, todoOpen: null,
   }
 

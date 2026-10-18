@@ -1457,3 +1457,37 @@ test('the band row ends with the session model and the effort turn.step last car
     await log.ticks[0].fn();
     assert.match(bandLines(await hooks['band']($, { surface: 'terminal', props: { bodyColumns: 200 } }, passed))[0], /sonnet 5.5 · 8000$/);
 });
+
+test('a session.model() that rejects leaves the band without a model and says so once', async () => {
+    const hooks = await wired();
+    const { $, log } = fake({ files: entryFile(live) });
+    $.session.model = async () => { throw new Error('no model'); };
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    await log.ticks[0].fn();
+    assert.doesNotMatch(bandLines(await hooks['band']($, { surface: 'terminal', props: { bodyColumns: 200 } }, passed))[0], /sonnet|opus|haiku/);
+    assert.equal(log.logs.filter((m) => /session model unreadable/.test(m)).length, 1, JSON.stringify(log.logs));
+});
+
+test('a turn.step from an agent leaves the band effort as the main loop set it', async () => {
+    const hooks = await wired();
+    const { $, log } = fake({ files: entryFile(live) });
+    log.model = 'claude-sonnet-5-5';
+    await hooks['session.start']($, {}, async () => ({}));
+    await hooks['turn.step']($, { turnId: 't', index: 0, model: 'm', effort: 'high', messageCount: 1 }, async (e) => e);
+    await hooks['turn.step']($, { turnId: 't', index: 0, agentId: 'a1', model: 'm', effort: 'low', messageCount: 1 }, async (e) => e);
+    await log.ticks[0].fn();
+    assert.match(bandLines(await hooks['band']($, { surface: 'terminal', props: { bodyColumns: 200 } }, passed))[0], /· high$/);
+});
+
+test('a change of effort alone redraws the Pane', async () => {
+    const hooks = await wired();
+    const { $, log } = fake({ files: entryFile(live) });
+    log.model = 'claude-sonnet-5-5';
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const before = log.invalidated;
+    await hooks['turn.step']($, { turnId: 't', index: 0, model: 'm', effort: 'high', messageCount: 1 }, async (e) => e);
+    await log.ticks[0].fn();
+    assert.equal(log.invalidated, before + 1);
+});
