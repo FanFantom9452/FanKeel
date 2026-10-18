@@ -277,7 +277,7 @@ Claude Desktop; the tab's label carries the task count, and the gate's hatch
 at that stage. Away from the plan stage a head carries the plan's path and its
 task and group counts in place of the banner. No plan, a plan that will not open and a plan with no
 `## Task N:` heading each say so instead. The `page:` line `scripts/await.js`
-prints on a plan handoff points here, and `PAGE_OPEN` before it tells the
+prints on a plan handoff, when a station is serving, points here, and `PAGE_OPEN` before it tells the
 session holding the gate to open it in a browser pane first.
 
 關卡 (`#/s/<id>/gate`) draws the newest handoff report of the session's
@@ -298,7 +298,7 @@ included, a head carries the report's path and counts. No report yet, and a
 report that will not open, each say so; at plan, verify or audit
 `det.gateNoPage` says that stage has no gate page and that plan's is the 計畫
 tab. The `page:` line `scripts/await.js` prints on a survey, design, build or
-land handoff points here, and `PAGE_OPEN` before it tells the session holding
+land handoff, when a station is serving and not for a group brain's, points here, and `PAGE_OPEN` before it tells the session holding
 the gate to open it in a browser pane first.
 
 對話 (`#/s/<id>/talk`) is what was said, read from the transcript when the
