@@ -247,15 +247,15 @@ combined figure, agents included.
 
 ### The session page
 
-A session also opens on a page of its own, `#/s/<id>`, in five tabs — 概覽,
-派工, 事件, 對話 and 計畫 — and `#/s/<id>/<tab>` opens one directly, with `timeline`,
-`dispatch`, `events`, `talk` or `plan`. 概覽 is the default and now folds together what were
+A session also opens on a page of its own, `#/s/<id>`, in six tabs — 概覽,
+派工, 事件, 對話, 計畫 and 關卡 — and `#/s/<id>/<tab>` opens one directly, with `timeline`,
+`dispatch`, `events`, `talk`, `plan` or `gate`. 概覽 is the default and now folds together what were
 separately 時間線 and 花費: the context chart, 任務 and the list of the
 largest rises, plus the per-stage spend bar and the stage × model table that
 used to be 花費's own tab (see below). An old `#/s/<id>/cost` link still
 parses — `cost` stays a valid `TABS` value in `parseHash` — but now opens
 概覽 rather than a separate tab, since `tabsHtml`'s `TAB_SHOWN`
-(`assets/station/station.js:1335`, `['timeline', 'dispatch', 'events', 'talk', 'plan']`) maps
+(`assets/station/station.js:1335`, `['timeline', 'dispatch', 'events', 'talk', 'plan', 'gate']`) maps
 `cost` back to `timeline`. 派工 gives
 every row its input and output tokens, read from `split`, and its dollars,
 read from `cost`; 事件 is the replay, each gate's row carrying how long it
@@ -278,6 +278,22 @@ at that stage. Away from the plan stage a head carries the plan's path and its
 task and group counts in place of the banner. No plan, a plan that will not open and a plan with no
 `## Task N:` heading each say so instead. The controlled plan stage opens this
 page beside its gate from the `page:` line `scripts/await.js` prints.
+
+關卡 (`#/s/<id>/gate`) draws the newest handoff report of the session's
+current stage, read by `lib/gatereport.js` onto the detail's `gate` — the
+plain `<stage>.md` of that lap or a group brain's `-g<N>` file, whichever was
+written last — laid out by stage: survey's conclusion, `path:line` findings,
+class and route; design's approach, file table, the `spec:` mockup linked when
+it is an HTML page under `.fankeel/build/`, and its three check lines; build's
+task cards from the claimed plan and its changed files by kind with their line
+counts; land's 白話 paragraph first, then the commit, what shipped, the suite,
+the cost and what is still open. A line the parser does not recognise is kept
+under 報告其餘. While the session waits at a survey, design, build or land gate
+with that stage's report, a banner in the 計畫 tab's style carries the gate's
+question and the tab's label wears the hatch; away from it a head carries the
+report's path and counts. No report yet, and a report that will not open, each
+say so. The controlled stage opens this page beside its gate from the `page:`
+line `scripts/await.js` prints.
 
 對話 (`#/s/<id>/talk`) is what was said, read from the transcript when the
 tab is opened and not from the detail script. It lists the turns in order and

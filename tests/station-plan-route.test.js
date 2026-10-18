@@ -48,15 +48,15 @@ test('#/s/<id>/plan parses to the plan tab, and an unknown tab still falls back 
 test('the plan tab is the fifth, labelled with the newest plan\'s task count, and carries the gate hatch only at the plan stage', () => {
     const x = { rows: [], events: [], tasks: [{ plan: 'docs/plans/a.md', tasks: [{ n: 1 }] }, { plan: 'docs/plans/b.md', tasks: [{ n: 1 }, { n: 2 }, { n: 3 }] }] };
     const at = V.tabsHtml({ id: 's1', stage: 'plan' }, 'plan', x);
-    assert.match(at, /<a href="#\/s\/s1\/talk">對話<\/a><a href="#\/s\/s1\/plan" class="on" aria-current="page">計畫<small>3<\/small><i class="hatchsw pv-tabgate" aria-label="等你回答"><\/i><\/a><\/nav>$/);
-    assert.match(V.tabsHtml({ id: 's1', stage: 'build' }, 'timeline', x), /<a href="#\/s\/s1\/plan">計畫<small>3<\/small><\/a><\/nav>$/);
-    assert.match(V.tabsHtml({ id: 's1', stage: 'plan' }, 'timeline', { rows: [], events: [], tasks: [] }), /<a href="#\/s\/s1\/plan">計畫<\/a><\/nav>$/, 'no plan: no count and no hatch');
-    assert.match(V.tabsHtml({ id: 's1', stage: 'plan' }, 'timeline', null), /<a href="#\/s\/s1\/plan">計畫<\/a><\/nav>$/, 'no detail yet');
+    assert.match(at, /<a href="#\/s\/s1\/talk">對話<\/a><a href="#\/s\/s1\/plan" class="on" aria-current="page">計畫<small>3<\/small><i class="hatchsw pv-tabgate" aria-label="等你回答"><\/i><\/a><a href="#\/s\/s1\/gate">關卡<\/a><\/nav>$/);
+    assert.match(V.tabsHtml({ id: 's1', stage: 'build' }, 'timeline', x), /<a href="#\/s\/s1\/plan">計畫<small>3<\/small><\/a><a href="#\/s\/s1\/gate">關卡<\/a><\/nav>$/);
+    assert.match(V.tabsHtml({ id: 's1', stage: 'plan' }, 'timeline', { rows: [], events: [], tasks: [] }), /<a href="#\/s\/s1\/plan">計畫<\/a><a href="#\/s\/s1\/gate">關卡<\/a><\/nav>$/, 'no plan: no count and no hatch');
+    assert.match(V.tabsHtml({ id: 's1', stage: 'plan' }, 'timeline', null), /<a href="#\/s\/s1\/plan">計畫<\/a><a href="#\/s\/s1\/gate">關卡<\/a><\/nav>$/, 'no detail yet');
 });
 
 test('the session page on #/s/<id>/plan marks the tab on and draws the plan tab\'s panel; other tabs keep theirs', () => {
     const html = boot('#/s/s1/plan');
-    assert.match(html, /<a href="#\/s\/s1\/plan" class="on" aria-current="page">計畫<\/a><\/nav>/);
+    assert.match(html, /<a href="#\/s\/s1\/plan" class="on" aria-current="page">計畫<\/a><a href="#\/s\/s1\/gate">關卡<\/a><\/nav>/);
     assert.match(html, /<section class="panel pv" data-block="plan-tab"><p class="tally">/, 'no detail script here, so the note the other tabs show');
     assert.match(boot('#/s/s1/dispatch'), /<section class="panel" data-block="dispatch">/);
     assert.match(boot('#/s/s1'), /<\/nav><section class="panel">/);

@@ -202,7 +202,7 @@
     // from a session's `days` (dollars, tokens) and `spans` (milliseconds), split
     // by the local day each request happened on — never from the registry's
     // `usd`, which SessionEnd writes once and which is filed under the start day.
-    var TABS = ['timeline', 'cost', 'dispatch', 'events', 'talk', 'plan'];
+    var TABS = ['timeline', 'cost', 'dispatch', 'events', 'talk', 'plan', 'gate'];
     var MODEL_KEYS = ['fable', 'opus', 'sonnet', 'haiku', 'other'];
     var TOKEN_KEYS = ['input', 'output', 'cacheRead', 'cacheWrite5m', 'cacheWrite1h'];
     // `kind` splits a day's cost or tokens by where they went, folding the two
@@ -1326,17 +1326,17 @@
             + roHtml(loc('ses.contextPeak', 'context 峰值'), x ? tokens(x.peak) : '—', '')
             + '</div>';
     }
-    // Five tabs by what a reader comes for: 概覽 is the session's story —
+    // Six tabs by what a reader comes for: 概覽 is the session's story —
     // time, context and money stage by stage — 派工 and 事件 are its two
-    // long lists, 對話 is what was said, read from the transcript on
-    // demand, and 計畫 is the plan the session claimed. `cost` is still in TABS so an old `/cost` link parses; it
+    // long lists, 對話 is what was said, 計畫 the plan the session claimed and
+    // 關卡 the report its stage waits at a gate with. `cost` is still in TABS so an old `/cost` link parses; it
     // opens 概覽, which now holds everything that tab showed. `talk` is the
     // 對話 tab's turn count, and nothing until its first page is in.
-    var TAB_SHOWN = ['timeline', 'dispatch', 'events', 'talk', 'plan'];
+    var TAB_SHOWN = ['timeline', 'dispatch', 'events', 'talk', 'plan', 'gate'];
     function tabsHtml(s, tab, x, talk) {
-        var label = { timeline: loc('ses.tabOverview', '概覽'), dispatch: loc('ses.tabDispatch', '派工'), events: loc('ses.tabEvents', '事件'), talk: loc('ses.tabTalk', '對話'), plan: loc('ses.tabPlan', '計畫') };
-        // plan counts the newest claimed plan's tasks, and wears the gate's
-        // hatch while the session sits at the plan gate with a plan to show.
+        var label = { timeline: loc('ses.tabOverview', '概覽'), dispatch: loc('ses.tabDispatch', '派工'), events: loc('ses.tabEvents', '事件'), talk: loc('ses.tabTalk', '對話'), plan: loc('ses.tabPlan', '計畫'), gate: loc('ses.tabGate', '關卡') };
+        // plan counts the newest claimed plan's tasks; plan and gate wear the
+        // gate's hatch while the session waits at that tab's gate with something to show.
         var plan = x && x.tasks && x.tasks.length ? x.tasks[x.tasks.length - 1] : null;
         var n = { dispatch: x ? x.rows.length : null, events: x ? x.events.length : null, talk: talk, plan: plan && plan.tasks.length ? plan.tasks.length : null };
         var run = x ? x.rows.filter(function (r) { return agentState(x, r, s) === 'running'; }).length : 0;
@@ -1345,7 +1345,7 @@
             return '<a href="' + sessionHash(s.id, k) + '"' + (k === tab ? ' class="on" aria-current="page"' : '') + '>' + label[k]
                 + (n[k] !== null && n[k] !== undefined ? '<small>' + n[k] + '</small>' : '')
                 + (k === 'dispatch' && run ? '<i class="dot live" title="' + loc('ses.nAgentsRunning', '{n} 個 agent running', { n: run }) + '"></i>' : '')
-                + (k === 'plan' && s.stage === 'plan' && n.plan ? '<i class="hatchsw pv-tabgate" aria-label="' + loc('ses.tabPlanGate', '等你回答') + '"></i>' : '') + '</a>';
+                + ((k === 'plan' && s.stage === 'plan' && n.plan) || (k === 'gate' && gateAt(s, x && x.gate)) ? '<i class="hatchsw pv-tabgate" aria-label="' + loc('ses.tabPlanGate', '等你回答') + '"></i>' : '') + '</a>';
         }).join('') + '</nav>';
     }
 
