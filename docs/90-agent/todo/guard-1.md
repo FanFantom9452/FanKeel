@@ -1,7 +1,7 @@
 ---
 label: guard
 title: 唯讀 agent 無任務時不擋
-description: hooks/guard.js:55-57 在 mine 不存在或 active 不是 true 時直接 return，排在唯讀 agent 的寫檔檢查之前，所以沒有作用中任務的 session 派出的 fankeel-reader 等唯讀 agent，Bash 寫檔不會被拒
+description: guard hook 在 mine 不存在或 active 不是 true 時直接 return，排在唯讀 agent 的寫檔檢查之前，所以沒有作用中任務的 session 派出的 fankeel-reader 等唯讀 agent，Bash 寫檔不會被拒
 state: done
 link: hooks/guard.js
 done:
