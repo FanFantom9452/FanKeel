@@ -369,7 +369,7 @@ session's detail, read out of its transcript by `lib/detail.js` and loaded
 the first time the session is opened; a session with no transcript under
 this machine's config directory and no detail cached here has none, and the
 panel says so rather than drawing an empty chart. Where one was cached here
-once, `lib/detail.js:733` keeps it and the panel draws that instead — a
+once, `lib/detail.js:809` keeps it and the panel draws that instead — a
 transcript Claude Code has since deleted leaves the cache as all there is.
 
 **context** is one line. x is time and y the context each request carried —
