@@ -283,13 +283,31 @@ session holding the gate to open it in a browser pane first.
 關卡 (`#/s/<id>/gate`) draws the newest handoff report of the session's
 current stage, read by `lib/gatereport.js` onto the detail's `gate` — the
 plain `<stage>.md` of that lap or a group brain's `-g<N>` file, whichever was
-written last — laid out by stage: survey's conclusion, `path:line` findings,
-class and route; design's approach, file table, the `spec:` mockup linked when
-it is an HTML page under `.fankeel/build/`, and its three check lines; build's
-task cards from the claimed plan and its changed files by kind with their line
-counts; land's 白話 paragraph first, then the commit, what shipped, the suite,
-the cost and what is still open. A line the parser does not recognise is kept
-under 報告其餘. While the session waits at a survey, design, build or land gate
+written last — laid out by stage. `parseReport` reads the report by its
+template, and `derive` adds what the page counts without a template field
+(gate-11, `docs/90-agent/judgements/2026-10-18-gate-report-fields.md`): the
+survey lead split at its `(1)` `(2)` points, `unknown:` and `skipped:` as
+lists with the file count `skipped:` names, and a TODO patrol's `entries:`
+line with each disposition counted; design's `proves it done:` and
+`unverified:` as lists. `read` adds the widest `shot-<width>/render.png`
+beside a design mockup, and at land the task's `suite.json` record
+(`lib/suite.js`) as `run`; `tasksOf` (`lib/detail.js`) counts the ledger's
+`Fix:` and `Ruling:` lines, and each task's fixes by their `task <n>`, and
+`read` counts a build gate's verify → build round trips from the session's
+`moves` as `rounds`. Survey
+draws its conclusion with those points, `path:line` findings, class and route,
+the unverified and unopened counts and the patrol folded under its counts;
+design its approach, file table with each dispatch's model swatch and effort,
+the `spec:` mockup's screenshot and link when it is an HTML page under
+`.fankeel/build/`, and its check lines; build its task cards from the claimed
+plan with each task's fix rounds, the fix, verify-round and ruling totals, and its changed
+files by kind with each kind's line counts; land its 白話 paragraph first, then
+the commit, what shipped, the suite record's pass and fail beside the report's
+`suite:` line, the cost, the main session's time by stage as a bar with a
+legend from the session's `stages`, and what is still open. Which test files a
+suite ran is recorded nowhere — `suite.json`'s `tree` is the directory it ran
+in — so the page shows the command and no file list. A line the parser does
+not recognise is kept under 報告其餘. While the session waits at a survey, design, build or land gate
 — the registry's `gateAt` stamp or a pending file with questions — with that
 stage's report, a banner in the 計畫 tab's style carries the gate's question,
 or `det.gateNoQ` where the report has no `json gate` question to read, and the

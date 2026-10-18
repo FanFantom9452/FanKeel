@@ -34,14 +34,14 @@ test('tasks come from the plan, status from the ledger, groups from plantasks; t
     ];
     assert.deepEqual(detail.tasksOf(root, data, rows), [{
         plan: 'docs/plans/2026-09-11-x.md',
-        ledgerLines: 1,
+        ledgerLines: 1, fixes: 0, rulings: 0,
         tasks: [
-            { n: 1, title: 'one', status: 'complete', range: 'abc1234..def5678', turns: [4], modify: ['a.js'], test: [], read: [], consumes: [], produces: [], dispatch: null, model: '', effort: '', waits: [] },
-            { n: 2, title: 'two', status: 'no ledger line', range: null, turns: [6], modify: ['b.js'], test: [], read: [], consumes: [], produces: [], dispatch: null, model: '', effort: '', waits: [] },
-            { n: 3, title: 'three', status: 'no ledger line', range: null, turns: [], modify: ['a.js'], test: [], read: [], consumes: [], produces: [], dispatch: null, model: '', effort: '', waits: [{ n: 1, kind: 'files', file: 'a.js' }] },
+            { n: 1, title: 'one', status: 'complete', range: 'abc1234..def5678', fixes: 0, turns: [4], modify: ['a.js'], test: [], read: [], consumes: [], produces: [], dispatch: null, model: '', effort: '', waits: [] },
+            { n: 2, title: 'two', status: 'no ledger line', range: null, fixes: 0, turns: [6], modify: ['b.js'], test: [], read: [], consumes: [], produces: [], dispatch: null, model: '', effort: '', waits: [] },
+            { n: 3, title: 'three', status: 'no ledger line', range: null, fixes: 0, turns: [], modify: ['a.js'], test: [], read: [], consumes: [], produces: [], dispatch: null, model: '', effort: '', waits: [{ n: 1, kind: 'files', file: 'a.js' }] },
         ],
         groups: [
-            { g: 1, tasks: [1, 2], surface: 'agents', turns: [4, 6], hint: true },
+            { g: 1, tasks: [1, 2], surface: 'workflow', turns: [4, 6], hint: true },
             { g: 2, tasks: [3], surface: 'agent', turns: [], hint: false },
         ],
         unmatched: ['Plan reviewer'],
@@ -176,4 +176,17 @@ test('a session that claimed no markdown file never reads the project\'s docs.js
     } finally {
         [docs.projectRootsFor, docs.read] = saved;
     }
+});
+
+test('a task carries the fix rounds the ledger names it in, and the plan its fix and ruling totals', () => {
+    const root = repo();
+    fs.appendFileSync(path.join(root, '.fankeel', 'build', '2026-09-11-x', 'progress.md'), [
+        'Fix: [abc1234..def5678] task 1 — the bound',
+        'Fix: [def5678..aaa1111] task 1 — the bound, again',
+        'Fix: [aaa1111..bbb2222] — a verify row no task owns',
+        'Ruling: render skipped — no page — costs if wrong: a page',
+    ].join('\n') + '\n');
+    const got = detail.tasksOf(root, { claims: ['docs/plans/2026-09-11-x.md'] }, []);
+    assert.deepEqual([got[0].fixes, got[0].rulings], [3, 1]);
+    assert.deepEqual(got[0].tasks.map((t) => t.fixes), [2, 0, 0]);
 });

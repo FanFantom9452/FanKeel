@@ -9,7 +9,7 @@ const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const registry = require('../lib/registry.js');
 const station = require('../lib/station.js');
-const { read, parseReport } = require('../lib/gatereport.js');
+const { read, parseReport, derive } = require('../lib/gatereport.js');
 const tmp = require('./tmp.js');
 
 const SURVEY = path.join(__dirname, '..', 'docs', '90-agent', 'reports', 'evidence', '2026-10-18-gate-tab', 'survey.md');
@@ -213,7 +213,7 @@ test('a design whose spec is an HTML page under .fankeel/build/ links it as a mo
     const { r, dir } = root();
     const data = { stage: 'design', started: STARTED, moves: [['design', 1]] };
     put(path.join(dir, 'design.md'), 'An approach.\n\nspec: `.fankeel/build/m/mockup.html`\n');
-    assert.deepEqual(read(r, data).parts.mockup, { path: '.fankeel/build/m/mockup.html', href: pathToFileURL(path.join(r, '.fankeel/build/m/mockup.html')).href });
+    assert.deepEqual(read(r, data).parts.mockup, { path: '.fankeel/build/m/mockup.html', href: pathToFileURL(path.join(r, '.fankeel/build/m/mockup.html')).href, shot: null });
     put(path.join(dir, 'design.md'), 'An approach.\n\nspec: docs/90-agent/plans/2026-10-18-gate-tab-design.md\n');
     assert.equal(read(r, data).parts.mockup, null);
 });
@@ -249,4 +249,54 @@ test('a gate block handoff.readGate refuses reads as no question, the report sti
     const got = read(r, { stage: 'survey', started: STARTED, moves: [['survey', 1]] });
     assert.equal(got.gate, null);
     assert.equal(got.parts.findings.length, 1);
+});
+
+test('derive splits the survey lead at its numbered points, unknown and skipped into lists, and counts the patrol', () => {
+    const p = derive('survey', parseReport('survey', TEXT));
+    assert.equal(p.lead.head, '結論先說：三件事都有可動手的內容。');
+    assert.equal(p.lead.points.length, 3);
+    assert.match(p.lead.points[0], /^gate-10 的觸發條件/);
+    assert.deepEqual(p.unknownList, ['pane 在 AskUserQuestion 前或後出現', '800px pane 是否要橫捲（gate-10 自己列為沒驗）', 'model-4 的上游官方頁這次沒重讀（本 stage 沒有網路工具）']);
+    assert.deepEqual(p.skippedList, ['1528 個檔案沒有對應語言的宣告模式，只算檔名，不再打開', '沒派 reader，全部自己讀']);
+    assert.equal(p.skippedFiles, 1528);
+    assert.deepEqual([p.patrol.listed, p.patrol.inTodo], [23, 23]);
+    assert.deepEqual(p.patrol.counts, { 'do now': 1, 'needs the user': 0, 'waiting on': 8, keep: 14 });
+    assert.deepEqual(p.patrol.groups.map((g) => g.name), ['do now', 'needs the user', 'waiting on']);
+    // The parse is untouched: derive adds to a copy.
+    assert.equal(parseReport('survey', TEXT).lead, undefined);
+    const plain = derive('survey', parseReport('survey', 'One thing.\n\n- a.js:1 — x\nunknown: none\nskipped: none — every file was read\n'));
+    assert.deepEqual([plain.lead, plain.unknownList, plain.skippedList, plain.skippedFiles, plain.patrol], [{ head: 'One thing.', points: [] }, [], [], null, null]);
+});
+
+test('derive splits design\'s proves and unverified lines into lists', () => {
+    const p = derive('design', parseReport('design', 'An approach.\n\nproves it done: a test; another test\nunverified: none\n'));
+    assert.deepEqual([p.provesList, p.unverifiedList], [['a test', 'another test'], []]);
+});
+
+test('read gives a design mockup its widest screenshot, and land the suite record beside the report', () => {
+    const { r, dir } = root();
+    const design = { stage: 'design', started: STARTED, moves: [['design', 1]] };
+    put(path.join(dir, 'design.md'), 'An approach.\n\nspec: `.fankeel/build/m/mockup.html`\n');
+    put(path.join(r, '.fankeel/build/m/mockup.html'), '<html></html>');
+    put(path.join(r, '.fankeel/build/m/shot-800/render.png'), 'png');
+    put(path.join(r, '.fankeel/build/m/shot-1600/render.png'), 'png');
+    const shot = '.fankeel/build/m/shot-1600/render.png';
+    assert.deepEqual(read(r, design).parts.mockup.shot, { path: shot, href: pathToFileURL(path.join(r, shot)).href });
+    fs.rmSync(path.join(r, '.fankeel/build/m/shot-1600'), { recursive: true });
+    fs.rmSync(path.join(r, '.fankeel/build/m/shot-800'), { recursive: true });
+    assert.equal(read(r, design).parts.mockup.shot, null);
+    const land = { stage: 'land', started: STARTED, moves: [['land', 1]] };
+    put(path.join(dir, 'land.md'), '1d7cf209 chore: x\nsuite: suite.js: 3 pass, 1 fail\n');
+    assert.equal(read(r, land).parts.run, null);
+    put(path.join(dir, 'suite.json'), JSON.stringify({ sha: null, at: STARTED, command: 'node --test tests/', pass: 3, fail: 1, failed: ['x'], ok: false, runs: [] }));
+    assert.deepEqual(read(r, land).parts.run, { pass: 3, fail: 1, ok: false, fast: false, command: 'node --test tests/' });
+});
+
+test('read counts a build gate\'s verify to build round trips from the session\'s moves', () => {
+    const { r, dir } = root();
+    put(path.join(dir, 'build-3.md'), 'done: 2 of 2\n');
+    put(path.join(dir, 'build.md'), 'done: 1 of 2\n');
+    const moves = [['build', 1], ['verify', 2], ['build', 3], ['verify', 4], ['build', 5], ['land', 6]];
+    assert.equal(read(r, { stage: 'build', started: STARTED, moves }).parts.rounds, 2);
+    assert.equal(read(r, { stage: 'build', started: STARTED, moves: [['build', 1]] }).parts.rounds, 0);
 });
