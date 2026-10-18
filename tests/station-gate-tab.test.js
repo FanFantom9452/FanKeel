@@ -57,11 +57,12 @@ const LAND = [
 ].join('\n');
 const PLAN = [{ plan: 'docs/90-agent/plans/p.md', tasks: [{ n: 1, title: 'the `reader`', status: 'complete', range: 'a23fcfd..9cfaaea' },
     { n: 2, title: 'the tab', status: 'no ledger line', range: null }] }];
+const STAGES = [{ stage: 'survey', from: 0, to: 2 * 60000 }, { stage: 'build', from: 2 * 60000, to: 59 * 60000 }, { stage: 'land', from: 59 * 60000, to: 66 * 60000 }];
 const drawn = () => [
     V.gateTabHtml({ stage: 'survey', gateAt: 1 }, SURVEY_G, []),
     V.gateTabHtml({ stage: 'design' }, report('design', DESIGN, { mockup: MOCKUP }), []),
     V.gateTabHtml({ stage: 'build' }, report('build', BUILD), PLAN),
-    V.gateTabHtml({ stage: 'land' }, report('land', LAND), []),
+    V.gateTabHtml({ stage: 'land', stages: STAGES }, report('land', LAND, { run: { pass: 3, fail: 1, ok: false, fast: false, command: 'x' } }), []),
 ];
 
 test('the survey banner counts as many findings as it draws rows, and as the report has bullets', () => {
@@ -231,4 +232,32 @@ test('design draws a dispatch cell\'s effort after the model\'s swatch, and none
     const html = V.gateTabHtml({ stage: 'design' }, report('design', DESIGN.replace('implementer, opus |', 'implementer, opus, high |'), { mockup: MOCKUP }), []);
     assert.match(html, /<td class="pv-disp"><span class="pv-m"><i class="sw" style="background:var\(--m-opus\)"><\/i>opus<\/span> · high<\/td>/);
     assert.doesNotMatch(V.gateTabHtml({ stage: 'design' }, report('design', DESIGN, { mockup: MOCKUP }), []), / · high|opus<\/span> ·/);
+});
+
+test('build counts its fix rounds and rulings, each task\'s own rounds, and each kind\'s lines', () => {
+    const plan = [{ plan: 'docs/90-agent/plans/p.md', fixes: 3, rulings: 5, tasks: [Object.assign({}, PLAN[0].tasks[0], { fixes: 2 }), Object.assign({}, PLAN[0].tasks[1], { fixes: 0 })] }];
+    const html = V.gateTabHtml({ stage: 'build' }, report('build', BUILD, { rounds: 2 }), plan);
+    assert.match(html, /<li><b>3<\/b>輪修正<\/li><li><b>2<\/b>輪驗證往返<\/li><li><b>5<\/b>條裁定<\/li>/);
+    assert.doesNotMatch(V.gateTabHtml({ stage: 'build' }, report('build', BUILD, { rounds: 0 }), plan), /輪驗證往返/);
+    assert.equal((html.match(/<span>修 2 輪<\/span>/g) || []).length, 1);
+    assert.doesNotMatch(html, /修 0 輪/);
+    assert.match(html, /<p class="gv-fg"><b>程式<\/b><span>2 個 · <span class="gv-add">\+305<\/span> <span class="gv-del">−27<\/span><\/span><\/p>/);
+    assert.match(html, /<p class="gv-fg"><b>測試<\/b><span>1 個 · <span class="gv-add">\+0<\/span> <span class="gv-del">−0<\/span><\/span><\/p>/);
+    assert.match(html, /<p class="gv-fg"><b>文件<\/b><span>1 個 · <span class="gv-add">\+48<\/span> <span class="gv-del">−31<\/span><\/span><\/p>/);
+    assert.doesNotMatch(V.gateTabHtml({ stage: 'build' }, report('build', BUILD), PLAN), /輪修正|條裁定/);
+});
+
+test('land counts the main session\'s time, draws the suite record\'s pass and fail, and the time by stage as a bar and legend', () => {
+    const run = { pass: 1520, fail: 0, ok: true, fast: false, command: 'node --test tests/' };
+    const html = V.gateTabHtml({ stage: 'land', stages: STAGES }, report('land', LAND, { run }), []);
+    assert.match(html, /<li><b>1h6m<\/b>主 session<\/li>/);
+    assert.match(html, /<span class="gv-suite">[\s\S]*?1520 pass · 0 fail<\/span><code class="gv-cmd">suite\.js: 1520 pass, 0 fail<\/code>/);
+    const bar = /<div class="gv-bar" role="img" aria-label="([^"]*)">([\s\S]*?)<\/div>/.exec(html);
+    assert.equal(bar[1], '主 session 各站時間：survey 2m, build 57m, land 7m');
+    assert.equal((bar[2].match(/<i style="--c:var\(--st-/g) || []).length, 3);
+    assert.match(html, /<ul class="gv-legend" aria-hidden="true"><li><i style="--c:var\(--st-survey\)"><\/i>survey <b>2m<\/b><\/li>/);
+    const red = V.gateTabHtml({ stage: 'land', stages: STAGES }, report('land', LAND, { run: Object.assign({}, run, { ok: false, fail: 2 }) }), []);
+    assert.match(red, /<span class="gv-suite gv-red">1520 pass · 2 fail<\/span>/);
+    const bare = V.gateTabHtml({ stage: 'land' }, report('land', LAND, { run: null }), []);
+    assert.doesNotMatch(bare, /主 session<\/li>|gv-suite|gv-bar/);
 });

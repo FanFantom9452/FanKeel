@@ -870,6 +870,13 @@
             'det.gatePatrol': 'TODO patrol: {n} entries',
             'det.gateNProves': '<b>{n}</b> checks that prove it done',
             'det.gateShotAlt': 'screenshot of the mockup',
+            'det.gateNFixes': '<b>{n}</b> fix rounds',
+            'det.gateNRounds': '<b>{n}</b> verify round trips',
+            'det.gateNRulings': '<b>{n}</b> rulings',
+            'det.gateTaskFixes': '{n} fix rounds',
+            'det.gateMain': '<b>{t}</b> main session',
+            'det.gateSecTime': 'Time by stage',
+            'det.gateTimeAria': 'Main session time by stage: {list}',
             'det.gateNoPage': '{s} has no gate page: this tab lists only the survey, design, build and land gate reports; the plan gate is on the Plan tab.',
             // disp — the dispatch tab, agent rows and step lists
             'disp.write': 'write',

@@ -4802,20 +4802,29 @@
         files.forEach(function (f) { add += f.add || 0; del += f.del || 0; });
         var done = p.done && typeof p.done === 'object' ? p.done : null;
         var counts = (done && done.n !== null ? '<li>' + loc('det.gateNDone', '<b>{n}</b>/ {m} task 完成', { n: done.n, m: done.m }) + '</li>' : '')
-            + '<li>' + loc('det.gateNFiles', '<b>{n}</b>個檔', { n: files.length }) + ' <span class="gv-sum"><span class="gv-add">+' + add + '</span> <span class="gv-del">\u2212' + del + '</span></span></li>';
+            + '<li>' + loc('det.gateNFiles', '<b>{n}</b>個檔', { n: files.length }) + ' <span class="gv-sum"><span class="gv-add">+' + add + '</span> <span class="gv-del">\u2212' + del + '</span></span></li>'
+            + (plan && typeof plan.fixes === 'number' ? '<li>' + loc('det.gateNFixes', '<b>{n}</b>輪修正', { n: plan.fixes }) + '</li>' : '')
+            // gatereport.read: the session's verify -> build round trips from `moves`; none drawn at zero.
+            + (p.rounds ? '<li>' + loc('det.gateNRounds', '<b>{n}</b>輪驗證往返', { n: p.rounds }) + '</li>' : '')
+            // lib/detail.js tasksOf counts fixes and rulings from the ledger's `Fix:` and `Ruling:` lines.
+            + (plan && typeof plan.rulings === 'number' ? '<li>' + loc('det.gateNRulings', '<b>{n}</b>條裁定', { n: plan.rulings }) + '</li>' : '');
         var tasks = plan && plan.tasks && plan.tasks.length ? '<div class="gv-tasks">' + plan.tasks.map(function (t) {
             var state = t.status === 'complete'
                 ? '<span class="gv-ok">' + icon('check') + loc('det.gateDone', '完成') + '</span>' + (t.range ? '<code>' + esc(t.range) + '</code>' : '')
                 : '<span>' + loc('det.gateNoLedger', '還沒有 ledger 行') + '</span>';
+            var rounds = t.fixes ? '<span>' + loc('det.gateTaskFixes', '修 {n} 輪', { n: t.fixes }) + '</span>' : '';
             return '<article class="pv-card gv-mini" aria-label="Task ' + t.n + '"><h3><span class="pv-num">' + t.n + '</span><span class="pv-tt gv-tt">' + gateText(t.title) + '</span></h3>'
-                + '<p class="gv-state">' + state + '</p></article>';
+                + '<p class="gv-state">' + state + rounds + '</p></article>';
         }).join('') + '</div>' : '';
         var kindOf = function (f) { return /^tests\//.test(f.path) ? 'test' : /\.md$/.test(f.path) ? 'doc' : 'code'; };
         var kinds = [['code', loc('det.gateKindCode', '程式')], ['test', loc('det.gateKindTest', '測試')], ['doc', loc('det.gateKindDoc', '文件')]];
         var byKind = kinds.map(function (k) {
             var got = files.filter(function (f) { return kindOf(f) === k[0]; });
             if (!got.length) return '';
-            return '<p class="gv-fg"><b>' + k[1] + '</b><span>' + loc('det.gateKindN', '{n} 個', { n: got.length }) + '</span></p><ul class="gv-rows gv-files">' + got.map(function (f) {
+            var a = 0, d = 0;
+            got.forEach(function (f) { a += f.add || 0; d += f.del || 0; });
+            return '<p class="gv-fg"><b>' + k[1] + '</b><span>' + loc('det.gateKindN', '{n} 個', { n: got.length })
+                + ' · <span class="gv-add">+' + a + '</span> <span class="gv-del">−' + d + '</span></span></p><ul class="gv-rows gv-files">' + got.map(function (f) {
                 return '<li><code class="gv-path">' + esc(f.path) + '</code><span class="gv-d">' + (f.isNew ? loc('det.gateNew', '新檔')
                     : '<span class="gv-add">+' + f.add + '</span> <span class="gv-del">\u2212' + f.del + '</span>') + '</span><span>' + gateText(f.what) + '</span></li>';
             }).join('') + '</ul>';
@@ -4825,11 +4834,34 @@
             + gateKv([['done', done ? gateText(done.text) : ''], ['docs-check', gateText(p.docsCheck)], ['deferred', gateText(p.deferred)]]);
         return { counts: counts, body: body };
     }
-    function gateLand(p) {
+    // The main session's time by stage, from the session row's `stages` (lib/station.js, each stage's
+    // first and last touch): a bar, a stage as wide as it lasted, a legend under it, and the total.
+    function gateTime(s) {
+        var segs = (s && s.stages ? s.stages : []).filter(function (w) { return isFinite(w.from) && isFinite(w.to) && w.to > w.from; });
+        if (!segs.length) return { total: 0, html: '' };
+        var total = segs.reduce(function (n, w) { return n + (w.to - w.from); }, 0);
+        var list = segs.map(function (w) { return esc(w.stage) + ' ' + mins(w.to - w.from); }).join(', ');
+        var bar = '<div class="gv-bar" role="img" aria-label="' + loc('det.gateTimeAria', '主 session 各站時間：{list}', { list: list }) + '">' + segs.map(function (w) {
+            return '<i style="--c:var(--st-' + esc(w.stage) + ');flex:' + Math.round((w.to - w.from) / 1000) + '"></i>';
+        }).join('') + '</div>';
+        var legend = '<ul class="gv-legend" aria-hidden="true">' + segs.map(function (w) {
+            return '<li><i style="--c:var(--st-' + esc(w.stage) + ')"></i>' + esc(w.stage) + ' <b>' + mins(w.to - w.from) + '</b></li>';
+        }).join('') + '</ul>';
+        return { total: total, html: bar + legend };
+    }
+    function gateLand(p, s) {
         var ship = p.shipped || [];
-        var counts = '<li>' + loc('det.gateNShipped', '<b>{n}</b>件做得到了', { n: ship.length }) + '</li>';
-        var side = gateSec('suite', null, p.suite ? '<code class="gv-cmd">' + esc(p.suite) + '</code>' : '')
+        var time = gateTime(s);
+        var counts = '<li>' + loc('det.gateNShipped', '<b>{n}</b>件做得到了', { n: ship.length }) + '</li>'
+            + (time.total ? '<li>' + loc('det.gateMain', '<b>{t}</b>主 session', { t: mins(time.total) }) + '</li>' : '');
+        // lib/gatereport.js: the task's suite.json, its last run. Which files it ran is recorded nowhere.
+        var run = p.run;
+        var badge = run && run.pass !== null && run.pass !== undefined
+            ? '<span class="gv-suite' + (run.ok ? '' : ' gv-red') + '">' + (run.ok ? icon('check') : '') + esc(run.pass) + ' pass · ' + esc(run.fail === null ? '?' : run.fail) + ' fail</span>'
+            : '';
+        var side = gateSec('suite', null, badge + (p.suite ? '<code class="gv-cmd">' + esc(p.suite) + '</code>' : ''))
             + gateSec(loc('det.gateSecCost', '花了多少'), null, p.cost ? '<div class="gv-split">' + gateText(p.cost) + '</div>' : '')
+            + gateSec(loc('det.gateSecTime', '各站時間'), null, time.html)
             + gateSec(loc('det.gateSecOpen', '還沒完'), null, p.open ? '<ul class="gv-open"><li>' + gateText(p.open) + '</li></ul>' : '');
         var body = (p.plain ? '<section class="gv-plain" aria-label="' + loc('det.gatePlain', '白話') + '"><h3>' + loc('det.gatePlain', '白話') + '</h3><p>' + gateText(p.plain) + '</p></section>' : '')
             + (p.sha ? '<p class="gv-commit"><code>' + esc(p.sha) + '</code><span>' + gateText(p.subject) + '</span></p>' : '')
@@ -4846,7 +4878,7 @@
         if (g.error) return '<p class="pv-empty err">' + loc('det.gateUnreadable', '讀不到 {p}：檔案在，但打不開。', { p: '<code>' + esc(g.path) + '</code>' }) + '</p>';
         var p = g.parts || {};
         var drawn = g.stage === 'survey' ? gateSurvey(p) : g.stage === 'design' ? gateDesign(p, s) : g.stage === 'build' ? gateBuild(p, planNewest(tasks))
-            : g.stage === 'land' ? gateLand(p) : { counts: '', body: '' };
+            : g.stage === 'land' ? gateLand(p, s) : { counts: '', body: '' };
         var q = g.gate && g.gate.questions && g.gate.questions[0] ? g.gate.questions[0].question : '';
         var src = '<div class="srcline pv-src" title="' + esc(g.path) + '">' + esc(g.path) + '</div>';
         var counts = drawn.counts ? '<ul class="pv-counts">' + drawn.counts + '</ul>' : '';
