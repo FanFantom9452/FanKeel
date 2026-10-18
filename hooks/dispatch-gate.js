@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 
-// PreToolUse on `Agent|Task`: the profile's `dispatch.inflight` (default four)
+// PreToolUse on `Agent|Task`: the profile's `dispatch.inflight` (default eight)
 // is how many Agent calls one response may make, and the next and later in the same assistant message are asked
 // of the user first, with what they are likely to cost (dispatch-1). Claude
 // Code writes one transcript line per content block, so one message's calls
@@ -20,7 +20,7 @@ const { readObject } = require('../lib/json.js');
 
 const profileLib = require('../lib/profile.js');
 
-const DEFAULT = 4;
+const DEFAULT = 8;
 const DISPATCH = new Set(['Agent', 'Task']);
 const EVIDENCE = path.join(__dirname, '..', 'docs', '90-agent', 'reports', 'evidence');
 
@@ -136,7 +136,7 @@ function main(raw) {
         const root = registry.rootFor(payload);
         const values = data ? profileLib.profileFor(root, data).values : profileLib.read(root, profileLib.configDirOf()).values;
         limit = profileLib.inflightOf(values);
-    } catch (e) { /* no profile: four */ }
+    } catch (e) { /* no profile: eight */ }
     const out = decide(payload, { data, evidenceRoot: EVIDENCE, limit });
     if (!out) return;
     process.stdout.write(JSON.stringify({

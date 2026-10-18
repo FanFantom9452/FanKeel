@@ -1,6 +1,7 @@
 'use strict';
-// dispatch-1: four Agent calls in one response is the default; the fifth and
-// later in the same assistant message are asked of the user, with a figure.
+// dispatch-1: eight Agent calls in one response is the default (four until
+// 2026-10-19); the ninth and later in the same assistant message are asked of
+// the user, with a figure.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -8,7 +9,10 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const tmp = require('./tmp.js');
 const { costOf } = require('../lib/prices.js');
-const { positionOf, benchPerDispatch, spentSoFar, decide } = require('../hooks/dispatch-gate.js');
+const { positionOf, benchPerDispatch, spentSoFar, decide: decideAt } = require('../hooks/dispatch-gate.js');
+// Most tests below are about the fifth call of five, so they pin the limit at 4;
+// the default itself is pinned by the tests at the end of the file.
+const decide = (p, o) => decideAt(p, { limit: 4, ...o });
 
 const HOOK = path.join(__dirname, '..', 'hooks', 'dispatch-gate.js');
 const SID = 'aaaaaaaa-0000-4000-8000-000000000001';
@@ -90,6 +94,8 @@ test('with spend recorded the figure is the registry spend priced by lib/prices.
 
 test('as a hook: the fifth call prints ask with its reason, the fourth prints nothing, both exit 0', () => {
     const dir = tmp('fankeel-dispatch-gate-');
+    fs.mkdirSync(path.join(dir, '.fankeel'), { recursive: true });
+    fs.writeFileSync(path.join(dir, '.fankeel', 'profile.json'), JSON.stringify({ 'dispatch.inflight': 4 }));
     const fire = (entries, id) => spawnSync(process.execPath, [HOOK], { input: JSON.stringify(payload(transcript(dir, entries), id)), encoding: 'utf8',
         env: { ...process.env, CLAUDE_PROJECT_DIR: dir } });
     const asked = fire(five, 'toolu_5');
@@ -180,10 +186,9 @@ test('opts.limit moves the line: with 6 the sixth call is quiet and the seventh 
     const opts = { data: null, evidenceRoot: path.join(dir, 'none'), limit: 6 };
     assert.equal(decide(payload(file, 'toolu_6'), opts), null);
     assert.match(decide(payload(file, 'toolu_7'), opts).reason, /dispatch\.inflight \(6\)/);
-    assert.match(decide(payload(file, 'toolu_5'), { data: null, evidenceRoot: opts.evidenceRoot }).reason, /dispatch\.inflight \(4\)/);
 });
 
-test('as a hook, the limit is the project profile dispatch.inflight; a bad value falls back to 4', () => {
+test('as a hook, the limit is the project profile dispatch.inflight; a bad value falls back to 8', () => {
     const run = (value, count, id) => {
         const dir = tmp('fankeel-dispatch-gate-');
         fs.mkdirSync(path.join(dir, '.fankeel'), { recursive: true });
@@ -198,12 +203,21 @@ test('as a hook, the limit is the project profile dispatch.inflight; a bad value
     assert.match(run('6', 7, 7), /dispatch\.inflight \(6\)/);
     assert.equal(run(6, 6, 6), '');
     assert.match(run(6, 7, 7), /dispatch\.inflight \(6\)/);
-    assert.equal(run('x', 4, 4), '');
-    assert.match(run('x', 5, 5), /dispatch\.inflight \(4\)/);
+    assert.equal(run('x', 8, 8), '');
+    assert.match(run('x', 9, 9), /dispatch\.inflight \(8\)/);
 });
 
 test('with neither spend nor a bench report the reason says there is no figure', () => {
     const dir = tmp('fankeel-dispatch-gate-');
     const out = decide(payload(transcript(dir, five), 'toolu_5'), { data: null, evidenceRoot: path.join(dir, 'none') });
     assert.match(out.reason, /No figure: no stage has recorded spend and no bench ran reader/);
+});
+
+test('with no limit given the line is dispatch.inflight 8: the eighth call is quiet, the ninth is asked', () => {
+    const dir = tmp('fankeel-dispatch-gate-');
+    const nine = Array.from({ length: 9 }, (_, i) => agentLine(i + 1));
+    const file = transcript(dir, nine);
+    const opts = { data: null, evidenceRoot: path.join(dir, 'none') };
+    assert.equal(decideAt(payload(file, 'toolu_8'), opts), null);
+    assert.match(decideAt(payload(file, 'toolu_9'), opts).reason, /Agent call 9 in one response, past dispatch\.inflight \(8\)/);
 });

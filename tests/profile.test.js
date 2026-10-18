@@ -388,12 +388,12 @@ test('gate.station is off or whole seconds from 1 to 600, off by default', () =>
     assert.equal(profile.read(d, null).sources['gate.station'], 'builtin');
 });
 
-test('dispatch.inflight is a whole number from 1 to 16, 4 by default', () => {
+test('dispatch.inflight is a whole number from 1 to 16, 8 by default', () => {
     for (const ok of [1, '6', 16]) assert.deepEqual(profile.parseValue('dispatch.inflight', ok), { value: Number(ok) }, String(ok));
     for (const bad of ['0', '17', 'x', '1.5']) assert.match(profile.parseValue('dispatch.inflight', bad).error, /dispatch.inflight is a whole number from 1 to 16/, bad);
-    assert.equal(profile.inflightOf({}), 4);
-    assert.equal(profile.inflightOf({ 'dispatch.inflight': 8 }), 8);
-    assert.equal(profile.read(dir(), null).values['dispatch.inflight'], 4);
+    assert.equal(profile.inflightOf({}), 8);
+    assert.equal(profile.inflightOf({ 'dispatch.inflight': 4 }), 4);
+    assert.equal(profile.read(dir(), null).values['dispatch.inflight'], 8);
 });
 
 test('a project profile dispatch.inflight, string or number, reads as the number', () => {
