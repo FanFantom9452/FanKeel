@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # plan gate 頁 — design
