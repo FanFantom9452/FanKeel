@@ -51,7 +51,7 @@ So **you do not reach for this on your own.** It runs when the user types it.
 ## It interrupts; it does not run alongside
 
 This is not a background helper and it is not a second opinion fetched while
-work continues. It stops what the stage was doing, spends one dispatch, and
+work continues. It stops what the stage was doing, spends one judge dispatch plus one reader per checklist line, and
 the stage resumes on the answer.
 
 **It never opens the gate.** The gate stays where it always was: at the end of
@@ -127,5 +127,6 @@ filed: docs/judgements/<date>-<slug>.md
 accepted: <what the stage now does differently, one line>
 ```
 
-Four lines. The judgement itself is in the file; repeating it here spends the
+The reply here is the four lines shown. The judgement itself, with its six
+fields and its `## Summary`, is in the file; repeating it here spends the
 context the one-shot shape was protecting.

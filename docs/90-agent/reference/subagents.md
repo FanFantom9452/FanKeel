@@ -145,22 +145,25 @@ send as `general-purpose`.
 
 `fankeel-judge` runs at `model: fable` by default — the profile's
 `judge.model` — and answers a different kind of
-question: not a multi-file read inside a stage's own work, but the in-stage
-question that would otherwise stop the stage to ask a person — design's one
-question at a time, survey's class, plan's split, build's stop-and-ask. No
+question: the in-stage question that would otherwise stop the stage to ask a
+person — design's one question at a time, survey's class, plan's split,
+build's stop-and-ask — and its reading is done by the readers it sends, not by
+itself. No
 stage carries a rule for it any more: it runs when the user types
 `/fankeel-ask`, and [the skill](../../../skills/fankeel-ask/SKILL.md) carries
 the whole procedure from there. `lib/render.js`'s `renderBrief`, which
 `hooks/brief.js` calls, gives it one line the reader's brief does not carry,
 when `payload.agent_type` is `fankeel-judge`: *answer once; the parent will
-not message you again.* It leaves out the return rule "You do not
-dispatch subagents of your own" (`RETURN_RULES[2]`) for the judge only, because
+not message you again.* It leaves out two return rules for the judge only. One is "You do not
+dispatch subagents of your own" (`RETURN_RULES[2]`), because
 the judge reads in three rounds: it writes a checklist and, in that same
 response, sends one `fankeel:fankeel-reader` per line (sonnet, or opus when one
 figure or sentence decides the pick); it opens one cited `path:line` per reader
 in one more response; and it returns six fields, `delegated:` and `checklist:`
-among them, followed by a `## Summary` of any length. It sends no `Workflow`:
-a subagent's tool list has none.
+among them, followed by a `## Summary` of any length. The other is "findings and conclusions, not a narration of what
+you read" (`RETURN_RULES[0]`), because it pulls against the judge's `## Summary`
+of what each reader found and what the spot-checks showed. It sends no
+`Workflow`: a subagent's tool list has none.
 
 Its answer does not stay in the judge's own context: the parent files it
 verbatim with `scripts/judge.js record`, and [the fankeel-ask
@@ -555,9 +558,11 @@ The command exists for the times *you* decide it is worth the money.
 
 Fable is about twice the per-token rate of the Opus tier — `lib/prices.js`
 carries the table this repository bills against, rather than a second copy of
-it here. That ratio is why a single bounded question is the only shape that
-pays: you are buying one judgement at twice the rate, not running a session at
-twice the rate. Worth typing when
+it here. That ratio is why a single bounded question is still the only shape that
+pays, and an ask buys the judge plus its readers: the checklist report
+(`docs/90-agent/reports/2026-10-18-judge-checklist.md`) measured that at about
+2.1 times a judge that reads for itself. You are buying one judgement at that
+cost, not running a session at twice the rate. Worth typing when
 
 - the question spans subsystems and the answer is a judgement rather than a
   lookup — no amount of grepping settles it;

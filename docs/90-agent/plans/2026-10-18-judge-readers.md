@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: superseded-by docs/90-agent/plans/2026-10-18-judge-checklist.md
 ---
 
 # 判官大量閱讀改派讀者 Implementation Plan
