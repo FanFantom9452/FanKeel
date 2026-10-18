@@ -1197,3 +1197,14 @@ test('every controlled stage prints await\'s page: line beside the path', () => 
     assert.ok(!rules.some((r) => /Plan only/.test(r)), stage);
   }
 });
+
+// gate tab §3: land's report carries a plain-language paragraph for a reader
+// who does not write code, which the station's 關卡 tab puts first; the
+// stand-down rule gave up its reason (skills/fankeel-land/SKILL.md keeps it)
+// so the uncontrolled land block stays under its 2400-character cap.
+test('the land template ends on a 白話 line after open:, and the clear rule keeps its order without its reason', () => {
+  assert.match(templateFor('land'), /\nopen: <what is still not done>\n白話: <2-3 sentences for a non-coder, in the user's language>\nthen AskUserQuestion$/);
+  const text = byName('land').rules.join(' ');
+  assert.match(text, /`\/clear` after, never before\./);
+  assert.doesNotMatch(text, /new id leaves the entry active/);
+});

@@ -803,6 +803,7 @@ shipped:
 suite: <suite.js line>
 cost: <what it took>
 open: <what is still not done>
+白話: <2-3 sentences for a non-coder, in the user's language>
 then AskUserQuestion
 ```
 

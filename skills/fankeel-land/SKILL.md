@@ -340,16 +340,18 @@ shipped:
 suite: <suite.js line>
 cost: <what it took>
 open: <what is still not done>
+白話: <2-3 sentences for a non-coder, in the user's language>
 then AskUserQuestion
 ```
 
-Four lines and the list. `suite:` is `suite.js`'s line from the run in step 1,
+Five lines and the list. `suite:` is `suite.js`'s line from the run in step 1,
 and a red one stops here: where the project has a suite, `task.js land`
 refuses without a green record, so this stage's own `Done when` is enforced
 rather than reported. `shipped:` is one line per thing someone can now do
 that they could not — from the ledger's completed entries where the task had a
 plan, listed by hand where it did not. A commit subject already holds the change;
 what it cannot hold is a task that shipped four of them. Not a tour of the diff.
+`白話:` is two or three sentences for a reader who does not write code, in the user's language — what they can now do and what is still open, with no path or function name; the station's 關卡 tab puts it first.
 
 `land` has no successor — what follows a finished route is a new task, which is a
 decision rather than a transition.
