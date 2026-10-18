@@ -446,8 +446,12 @@ test('no row of the whole Pane is wider than it, at any width', async () => {
     const long = { id: other.id, entry: Object.assign({}, other.entry, { task: '另一個很長的任務標題，'.repeat(6), claims: entry.claims }) };
     for (const cols of [20, 30, 41, 88]) {
         for (const ctx of [context, { tokens: 463000, at: 450000 }]) {
-            for (const row of status(m, { entry: busy, others: [long], plan: planOf(13, [1, 2], [13]), context: ctx, cols })) {
-                assert.ok(m.width(line(row)) <= cols, cols + ' < ' + m.width(line(row)) + ': ' + line(row));
+            const todos = ['ready', 'decision', 'blocked', 'watch'].map((state, i) => ({ id: 't-' + i, title: '一個很長的 TODO 標題 ' + i, state }));
+            const agents = [{ id: 'a1', title: 'task 13 build', type: 'fankeel:fankeel-implementer', model: 'sonnet 5.5', effort: 'high', at: NOW - 60000, end: null, tokens: 1000, kids: [] }];
+            for (const row of status(m, { entry: busy, others: [long], plan: planOf(13, [1, 2], [13]), context: ctx, cols, agents, todos, pkey: 'F:/ws', station: 'http://127.0.0.1:28888/', todoOpen: 'ready' })) {
+                // The terminal draws each Button four cells wider than its label.
+                const cells = m.width(line(row)) + 4 * row.segs.filter((seg) => seg.press).length;
+                assert.ok(cells <= cols, cols + ' < ' + cells + ': ' + line(row));
             }
         }
     }
@@ -558,4 +562,13 @@ test('with no room the TODO block goes first, down to its head row', async () =>
     assert.deepEqual(text(rows(full - 1), 'todo'), ['▌▾ TODO 3']);
     assert.deepEqual(blocksOf(rows(full - 1)), ['task', 'notes', 'todo', 'foot']);
     assert.deepEqual(blocksOf(rows(-9)), ['task', 'todo', 'foot']);
+});
+
+test('agentOf prefers the implementer: a newer reviewer whose title names the task does not cover its row', async () => {
+    const m = await load();
+    const node = (id, type, at) => ({ id, title: 'task 7 ' + id, type, model: 'm', effort: 'low', at, end: null, tokens: null, kids: [] });
+    const impl = node('impl', 'fankeel:fankeel-implementer', NOW - 9000);
+    const review = node('rev', 'fankeel:fankeel-reviewer', NOW - 1000);
+    assert.equal(m.agentOf([impl, review], 7).id, 'impl');
+    assert.equal(m.agentOf([review], 7).id, 'rev');
 });

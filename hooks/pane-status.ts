@@ -245,7 +245,11 @@ export function agentOf(nodes: AgentNode[], n: number): AgentNode | null {
   let best: AgentNode | null = null
   for (const a of all(nodes)) {
     const m = TASK_REF.exec(a.title || '')
-    if (m && Number(m[1]) === n && (!best || a.at > best.at)) best = a
+    if (!m || Number(m[1]) !== n) continue
+    // A reviewer's title can name the task too; the row is the implementer's.
+    const rank = /implementer$/.test(a.type || '') ? 1 : 0
+    const held = best ? (/implementer$/.test(best.type || '') ? 1 : 0) : -1
+    if (rank > held || (rank === held && a.at > best!.at)) best = a
   }
   return best
 }
@@ -362,10 +366,12 @@ function fit(r: Row, cols: number): Row {
   let left = cols
   const segs: Seg[] = []
   for (const seg of r.segs) {
-    if (left <= 0) break
+    // The terminal draws a Button four cells wider than its label.
+    const extra = seg.press ? 4 : 0
+    if (left - extra <= 0) break
     const w = width(seg.text)
-    segs.push(w <= left ? seg : { ...seg, text: cut(seg.text, left) })
-    left -= w
+    segs.push(w + extra <= left ? seg : { ...seg, text: cut(seg.text, left - extra) })
+    left -= w + extra
   }
   return { ...r, segs }
 }
