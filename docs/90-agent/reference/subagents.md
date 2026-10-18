@@ -30,14 +30,14 @@ find — a third never launched, and a cell that did not run is not a result
 Fourteen subagent types are not just described in prose — they are declared as
 `agents` in `.claude-plugin/plugin.json` and shipped as files under `agents/`:
 `fankeel-reader`, `fankeel-judge`, `fankeel-reviewer`, `fankeel-verifier`, `fankeel-fixer`, `fankeel-brain`, `fankeel-render-reviewer`, `fankeel-mockup`, `fankeel-slimmer`, `fankeel-init-scout`, `fankeel-writer`, `fankeel-implementer`, `fankeel-mutator` and `fankeel-mover`.
-Six of them — `fankeel-reader`, `fankeel-judge`, `fankeel-reviewer`,
-`fankeel-render-reviewer`, `fankeel-slimmer` and `fankeel-init-scout` — carry `tools: [Read, Grep, Glob, Bash]` — Edit, Write and
-NotebookEdit are simply absent from the list, so calling any of them to change
+Five of them — `fankeel-reader`, `fankeel-reviewer`,
+`fankeel-render-reviewer`, `fankeel-slimmer` and `fankeel-init-scout` — carry `tools: [Read, Grep, Glob, Bash]`; `fankeel-judge` lists those four plus `Agent`. Edit, Write and
+NotebookEdit are simply absent from every one of those lists, so calling any of them to change
 a file is refused by the harness rather than left to a rule somebody has to
 remember. Bash stays on the list for `git` — and, for the reader and the
 reviewer, this plugin's own read-only scripts, the reviewer's `node --test` on the
 one file its prompt names included — a named residual rather than a claim that
-any of the six cannot write anything.
+any of them cannot write anything.
 
 `fankeel-verifier` is no longer the only agent carrying `Write` —
 `fankeel-fixer` does too, with `Edit` beside it and no `Bash` at all,
@@ -153,7 +153,12 @@ stage carries a rule for it any more: it runs when the user types
 the whole procedure from there. `lib/render.js`'s `renderBrief`, which
 `hooks/brief.js` calls, gives it one line the reader's brief does not carry,
 when `payload.agent_type` is `fankeel-judge`: *answer once; the parent will
-not message you again.*
+not message you again.* It leaves out the return rule "You do not
+dispatch subagents of your own" (`RETURN_RULES[2]`) for the judge only, because
+the judge sends any named file over 300 lines to a `fankeel:fankeel-reader`
+(sonnet, or opus when one figure or sentence decides the pick), opens at least
+one cited `path:line` itself as a spot-check, and returns a fifth line,
+`delegated:`.
 
 Its answer does not stay in the judge's own context: the parent files it
 verbatim with `scripts/judge.js record`, and [the fankeel-ask
