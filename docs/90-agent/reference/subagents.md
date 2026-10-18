@@ -157,7 +157,7 @@ when `payload.agent_type` is `fankeel-judge`: *answer once; the parent will
 not message you again.* It leaves out two return rules for the judge only. One is "You do not
 dispatch subagents of your own" (`RETURN_RULES[2]`), because
 the judge aims for three rounds: it writes a checklist and, in that same
-response, sends at most four `fankeel:fankeel-reader` (`dispatch.inflight`),
+response, sends at most eight `fankeel:fankeel-reader` (`dispatch.inflight`),
 giving related lines to one reader (sonnet, or opus when one
 figure or sentence decides the pick); it opens one cited `path:line` per reader
 in one more response; and it returns six fields, `delegated:` and `checklist:`
@@ -333,12 +333,12 @@ shape.
 
 ## The one thing four dispatches cannot do
 
-Four in one response is the default, not a cap (profile `dispatch.inflight`), and the reason is that past four you
+Eight in one response is the default, not a cap (profile `dispatch.inflight`), and the reason is that past eight you
 are guessing at the split rather than deciding it. A script does not guess. It
 holds the list, and it holds the join.
 
 The number is profile `dispatch.inflight`, a whole number from 1 to 16 with a
-builtin of 4, and `hooks/dispatch-gate.js` reads it: the call past it asks the
+builtin of 8, and `hooks/dispatch-gate.js` reads it: the call past it asks the
 user. It guards API spend, the main context's residue and collisions in a shared
 checkout, not CPU. 16 is the key's maximum, by decision. Measured 2026-10-16
 on a 64-core machine: 24 readers took 167 seconds at 4 and 118 at 8, for the

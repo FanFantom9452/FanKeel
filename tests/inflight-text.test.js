@@ -47,6 +47,14 @@ const PAGES = {
     gone: [/\(four by default\)/],
     now: [/\(eight by default\)/],
   },
+  'docs/02-architecture/pipeline.md': {
+    gone: [/in flight, four by default/, /`?dispatch\.inflight`?, four by default; dispatch\.floor/],
+    now: [/in flight, eight by default/, /dispatch\.inflight, eight by default; dispatch\.floor/],
+  },
+  'docs/90-agent/reference/subagents.md': {
+    gone: [/sends at most four `fankeel:fankeel-reader`/, /Four in one response is the default/, /past four you are guessing/, /a builtin of 4,/],
+    now: [/sends at most eight `fankeel:fankeel-reader`/, /Eight in one response is the default/, /past eight you are guessing/, /a builtin of 8,/],
+  },
 };
 
 test('the pages that state the dispatch.inflight default say eight', () => {
