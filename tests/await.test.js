@@ -491,15 +491,65 @@ test('plan page: an answering station puts the session\'s plan tab on a second l
     }
 });
 
-test('plan page: a build-stage handoff gets no page: line from an answering station', async () => {
-    const b = fixture({});
-    at(path.join(b.task, 'build.md'), Date.now());
+// gate tab §1 (docs/90-agent/plans/2026-10-18-gate-tab-design.md): survey,
+// design, build and land have the station's gate tab, plan its own; the
+// handoff line says to open the page, and verify and audit have none.
+test('gate page: a land-stage handoff from an answering station prints the session\'s gate tab', async () => {
+    const f = fixture({ stage: 'land', moves: [['land', 1]] });
+    at(path.join(f.task, 'land.md'), Date.now());
     const s = await station();
     try {
-        serveRecord(b.config, s);
-        const out = await awaitCli.main(['--session', SID, '--root', b.root], b.env);
-        assert.match(out.text, /^handoff /);
-        assert.doesNotMatch(out.text, /page: /);
+        serveRecord(f.config, s);
+        const lines = (await awaitCli.main(['--session', SID, '--root', f.root], f.env)).text.split('\n');
+        assert.equal(lines[1], 'page: ' + s.url + '#/s/' + SID + '/gate');
+        assert.ok(lines[0].endsWith(' Open its `page:` line below in a browser pane first, if you have one.'), lines[0]);
+        assert.equal(lines.length, 2);
+    } finally {
+        await s.close();
+    }
+});
+
+test('gate page: survey, design and build print the gate tab; verify and audit print the handoff line alone', async () => {
+    const s = await station();
+    try {
+        for (const stage of ['survey', 'design', 'build', 'verify', 'audit']) {
+            const f = fixture({ stage, moves: [[stage, 1]] });
+            at(path.join(f.task, stage + '.md'), Date.now());
+            serveRecord(f.config, s);
+            const lines = (await awaitCli.main(['--session', SID, '--root', f.root], f.env)).text.split('\n');
+            if (stage === 'verify' || stage === 'audit') assert.equal(lines.length, 1, stage + ': ' + lines.join(' | '));
+            else assert.equal(lines[1], 'page: ' + s.url + '#/s/' + SID + '/gate', stage);
+        }
+    } finally {
+        await s.close();
+    }
+});
+
+test('gate page: a group brain\'s report, a timeout and a workflow hand-over get no page: line', async () => {
+    const s = await station();
+    try {
+        const g = fixture({ inflight: [{ stage: 'build', at: 1, agentId: 'g7', group: 7, kind: 'group' }] });
+        const dir = path.join(g.config, 'projects', 'F--x', SID);
+        at(path.join(g.config, 'projects', 'F--x', SID + '.jsonl'), Date.now());
+        at(path.join(dir, 'subagents', 'agent-g7.jsonl'), Date.now(), JSON.stringify({ message: { role: 'user', content: 'build group 2: tasks 3, 4, 5.' } }) + '\n');
+        at(path.join(g.task, 'build-g7.md'), Date.now(), 'group 7\n');
+        serveRecord(g.config, s);
+        const group = await awaitCli.main(['--session', SID, '--root', g.root, '--agent', 'g7'], g.env);
+        assert.ok(group.text.startsWith('group 7, agent g7: handoff '), group.text);
+        assert.doesNotMatch(group.text, /page: /);
+
+        const t = fixture({ stage: 'land', moves: [['land', 1]] });
+        serveRecord(t.config, s);
+        const timeout = await awaitCli.main(['--session', SID, '--root', t.root, '--timeout', '0.1'], t.env);
+        assert.match(timeout.text, /^timeout — /);
+        assert.doesNotMatch(timeout.text, /page: /);
+
+        const w = fixture({ stage: 'survey', moves: [['survey', 1]] });
+        at(path.join(w.task, 'survey.md'), Date.now(), 'workflow: /r/.fankeel/build/p/workflow-g2.js\n');
+        serveRecord(w.config, s);
+        const workflow = await awaitCli.main(['--session', SID, '--root', w.root], w.env);
+        assert.match(workflow.text, /^workflow /);
+        assert.doesNotMatch(workflow.text, /page: /);
     } finally {
         await s.close();
     }

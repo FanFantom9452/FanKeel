@@ -925,15 +925,15 @@ test('option one is told to run the stage its own label names, not a pre-baked a
 // 2026-10-01: a patrol survey that relayed only its path showed the user
 // nothing of the 25 entries it had checked. The controller prints a survey's
 // report before the gate; every other stage still prints the path alone.
-test('a controlled survey prints its report above the gate before asking; other stages print the path alone', () => {
+test('a controlled survey prints its report above the gate before asking; every stage prints a returned path and any page: line', () => {
   const { controlFor } = require('../lib/stages.js');
   const all = ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land'];
   for (const stage of all) {
     const rules = controlFor(stage, { 'stage.agents': all }, { handoff: '/r/h.md' }).rules;
-    const rule = rules.find((r) => r.startsWith('When it returns a path'));
+    const rule = rules.find((r) => r.startsWith('Print a returned path'));
     assert.ok(rule, stage + ': no return rule');
-    if (stage === 'survey') assert.ok(rule.startsWith('When it returns a path, print it and the report\'s text above its gate block, as written, then read /r/h.md'), rule);
-    else assert.ok(rule.startsWith('When it returns a path, print it, then read /r/h.md'), stage + ': ' + rule);
+    if (stage === 'survey') assert.ok(rule.startsWith('Print a returned path and any `page:` line and the report\'s text above its gate block, as written, then read /r/h.md'), rule);
+    else assert.ok(rule.startsWith('Print a returned path and any `page:` line, then read /r/h.md'), stage + ': ' + rule);
   }
 });
 
@@ -1185,19 +1185,15 @@ test('verify runs the suite through suite.js, land asks --check first, and both 
   }
 });
 
-// plan gate page §3: the plan gate asks about tasks nobody has seen, so the
-// controlled plan block prints await's page: line above it and opens the
-// page in a browser pane first; no other stage's block mentions it.
-test('only the controlled plan stage prints the await page: line above its gate and opens it in a browser pane', () => {
+// gate tab §1: every controlled stage's gate has a station page, so every
+// controlled block prints await's page: line beside the path it relays; the
+// browser-pane sentence rides await's own handoff line, not the block.
+test('every controlled stage prints await\'s page: line beside the path', () => {
   const { controlFor } = require('../lib/stages.js');
   const all = ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land'];
   for (const stage of all) {
-    const text = controlFor(stage, { 'stage.agents': all }, { handoff: '/r/h.md' }).rules.join('\n');
-    if (stage === 'plan') {
-      assert.match(text, /an await `page: <url>` line goes above the gate as printed/);
-      assert.match(text, /with a browser-pane tool, open that url there before AskUserQuestion/);
-    } else {
-      assert.doesNotMatch(text, /page: <url>/, stage);
-    }
+    const rules = controlFor(stage, { 'stage.agents': all }, { handoff: '/r/h.md' }).rules;
+    assert.equal(rules.filter((r) => r.includes('`page:` line')).length, 1, stage);
+    assert.ok(!rules.some((r) => /Plan only/.test(r)), stage);
   }
 });

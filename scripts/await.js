@@ -3,7 +3,7 @@
 
 // Waits, in the background, on the stage agent a controller has just
 // dispatched or messaged, and prints one line saying what to do next — on a
-// plan handoff, a `page:` line under it when a station answers. The
+// survey, design, plan, build or land handoff, `page:` under it if a station answers. The
 // controller runs it with Bash `run_in_background` after every dispatch and
 // every SendMessage and ends its turn: this script exiting is what hands the
 // turn back, so a hand-back that never arrives — twice on 2026-09-23 — no
@@ -151,18 +151,23 @@ function lineFor(state, o, commitFile) {
     return tag + 'timeout — nothing moved in ' + Math.round(o.timeoutMs / 60000) + ' minutes: run await again.';
 }
 
-// plan gate page §3 (docs/90-agent/plans/2026-10-18-plan-gate-page-design.md):
-// a plan stage's report asks the user to approve tasks they have not seen, so
-// with a station answering — the record in `<configDir>/fankeel/serve.json`,
-// probed for half a second — the handoff line gains the station's plan tab
-// for this session on a line of its own. No record, no answer, any other
-// stage, or a workflow hand-over: nothing more, and the gate is asked as before.
+// gate tab §1 (docs/90-agent/plans/2026-10-18-gate-tab-design.md): a stage
+// that stops at a gate the station draws gets its page — the plan tab for
+// plan, the gate tab for survey, design, build and land — with a station
+// answering (the record in `<configDir>/fankeel/serve.json`, probed for half a
+// second), on a line of its own. No record, no answer, verify or audit, a
+// group brain's report, or a workflow hand-over: nothing more.
+const PAGE_TAB = { survey: 'gate', design: 'gate', plan: 'plan', build: 'gate', land: 'gate' };
+// Said on the handoff line itself, so the controller's block only has to
+// print the page line beside the path (the block sits at its 2400 cap).
+const PAGE_OPEN = ' Open its `page:` line below in a browser pane first, if you have one.';
 function pageLine(o) {
-    if (o.stage !== 'plan' || workflowOf(o.handoff)) return Promise.resolve('');
+    const tab = PAGE_TAB[o.stage];
+    if (!tab || Number.isInteger(o.group) || workflowOf(o.handoff)) return Promise.resolve('');
     const record = readServeRecord(o.configDir);
     // probe resolves false for no record or a url that is not a string, and
     // never rejects; a recorded url ends in `/` (scripts/station.js).
-    return probe(record).then((up) => (up ? '\npage: ' + record.url + '#/s/' + o.session + '/plan' : ''));
+    return probe(record).then((up) => (up ? '\npage: ' + record.url + '#/s/' + o.session + '/' + tab : ''));
 }
 
 // controller-1: one waiter per in-flight mark. A controller that ran await
@@ -221,7 +226,7 @@ function main(argv, env) {
         if (handedOver) registry.markInflight(o.root, opts.session, 'build', o.agentId, o.lap, o.group, o.kind);
         else if (state === 'lost' || (state === 'handoff' && o.kind !== 'close' && Number.isInteger(o.group))) registry.clearInflight(o.root, opts.session, o.agentId);
         const line = lineFor(state, o, state === 'commit' ? newestCommit(o.commit, o.since) : null);
-        return state === 'handoff' ? pageLine(o).then((page) => ({ text: line + page })) : { text: line };
+        return state === 'handoff' ? pageLine(o).then((page) => ({ text: line + (page ? PAGE_OPEN : '') + page })) : { text: line };
     }, (e) => {
         release();
         throw e;
