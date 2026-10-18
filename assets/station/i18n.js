@@ -865,6 +865,7 @@
             'det.gateUnreadable': 'Cannot read {p}: the file is there, but it will not open.',
             'det.gateQ': '{st} gate: {q}',
             'det.gateNoQ': 'no gate question can be read from the report',
+            'det.gateNoPage': '{s} has no gate page: this tab lists only the survey, design, build and land gate reports; the plan gate is on the Plan tab.',
             // disp — the dispatch tab, agent rows and step lists
             'disp.write': 'write',
             'disp.read': 'read',

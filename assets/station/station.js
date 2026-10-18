@@ -4699,8 +4699,9 @@
     // and build compact, design and land richer — under the plan tab's banner
     // while the session waits at that stage's gate. Pure, and no listener:
     // nothing on it changes without a redraw.
+    function gateStage(st) { return ['survey', 'design', 'build', 'land'].indexOf(st) >= 0; }
     function gateAt(s, g) {
-        return Boolean(s && g && !g.error && g.stage === s.stage && ['survey', 'design', 'build', 'land'].indexOf(g.stage) >= 0);
+        return Boolean(s && g && !g.error && g.stage === s.stage && gateStage(g.stage));
     }
     // Report text: escaped, its `code` spans drawn as code; '' for none.
     function gateText(t) { return t ? esc(t).replace(/`([^`]+)`/g, '<code>$1</code>') : ''; }
@@ -4798,6 +4799,8 @@
     }
     function gateTabHtml(s, g, tasks) {
         var stage = g && g.stage ? g.stage : s && s.stage ? s.stage : '';
+        // lib/gatereport.js reads no report at plan, verify or audit: none is not missing there.
+        if (!g && !gateStage(stage)) return '<p class="pv-empty">' + loc('det.gateNoPage', '{s} 沒有關卡頁：這頁只列 survey、design、build、land 的 gate 報告；plan 的 gate 在「計畫」tab。', { s: esc(stage) }) + '</p>';
         if (!g || g.error === 'none') return '<p class="pv-empty">' + loc('det.gateNone', '這個 session 還沒寫出 {s} 的 handoff。stage 走到 gate 時，這裡列出它的報告。', { s: esc(stage) }) + '</p>';
         if (g.error) return '<p class="pv-empty err">' + loc('det.gateUnreadable', '讀不到 {p}：檔案在，但打不開。', { p: '<code>' + esc(g.path) + '</code>' }) + '</p>';
         var p = g.parts || {};

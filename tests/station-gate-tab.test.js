@@ -166,3 +166,9 @@ test('at the gate with no gate question to read, the banner says so instead of a
         assert.match(h2, /survey<\/span> gate：報告裡沒有讀得出的 gate 問題$/);
     }
 });
+
+test('a stage with no gate page says so rather than that its handoff is missing', () => {
+    const html = V.gateTabHtml({ stage: 'verify' }, null, []);
+    assert.equal(html, '<p class="pv-empty">verify 沒有關卡頁：這頁只列 survey、design、build、land 的 gate 報告；plan 的 gate 在「計畫」tab。</p>');
+    assert.doesNotMatch(html, /還沒寫出/);
+});
