@@ -23,6 +23,18 @@ const PAGES = {
     gone: [/`dispatch\.inflight`, four by default/],
     now: [/`dispatch\.inflight`, eight by default/],
   },
+  'skills/fankeel-verify/SKILL.md': {
+    gone: [/`dispatch\.inflight`, four by default/, /\(four by default\)/, /a plan of six goes four then two/],
+    now: [/`dispatch\.inflight`, eight by default/, /\(eight by default\)/, /a plan of ten goes eight then two/],
+  },
+  'skills/fankeel-audit/SKILL.md': {
+    gone: [/\(four by default\)/],
+    now: [/\(eight by default\)/],
+  },
+  'skills/fankeel-init/SKILL.md': {
+    gone: [/\(four by default\)/],
+    now: [/\(eight by default\)/],
+  },
 };
 
 test('the pages that state the dispatch.inflight default say eight', () => {
