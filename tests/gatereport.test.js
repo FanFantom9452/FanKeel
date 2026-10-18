@@ -170,6 +170,36 @@ test('a task directory that will not list reads as unreadable, not as no report'
     assert.deepEqual(got, { error: 'unreadable', stage: 'build', path: TASK + '/build.md' });
 });
 
+test('a survey quoting the scanner block takes its lead from prose, and its own skipped: over the scanner\'s', () => {
+    // The block `node scripts/survey.js gate page` prints, quoted as a report quotes it.
+    const text = [
+        '# Survey: gate page',
+        '',
+        'fankeel survey — 2766 files, matching: gate, page',
+        'source: git',
+        'skipped: 1528 with no pattern for their extension',
+        'excluded: 322 archive files, 2 plan files — pass --include-role <role,...> to include',
+        '',
+        '結論先說：兩件事要動。',
+        '',
+        '- lib/a.js:3 — a',
+        '',
+        'skipped: none — every matching file was read',
+        'class: small — one file',
+    ].join('\n');
+    const p = parseReport('survey', text);
+    assert.equal(p.conclusion, '結論先說：兩件事要動。');
+    assert.equal(p.skipped, 'none — every matching file was read');
+    assert.ok(p.rest.includes('source: git'));
+    assert.ok(p.rest.includes('skipped: 1528 with no pattern for their extension'));
+});
+
+test('a session at a stage with no gate page reads as null, its handoff never copied', () => {
+    const { r, dir } = root();
+    put(path.join(dir, 'verify.md'), 'verified: all\n');
+    assert.equal(read(r, { stage: 'verify', started: STARTED, moves: [['verify', 1]] }), null);
+});
+
 test('a lead line with a colon in it is still the lead, not rest', () => {
     const d = parseReport('design', 'Add a tab: it reads the file.\n\nspec: x.md\n');
     assert.equal(d.approach, 'Add a tab: it reads the file.');
