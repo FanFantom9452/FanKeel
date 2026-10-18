@@ -269,7 +269,7 @@ tool did not change. On 2026-10-01 knip 6.39.0 still does not: `knip --trace-exp
 `knip --trace-export badgeWord`, destructured at `tests/badge.test.js:9`,
 returns `import[badgeWord] ⎆ ✓`; `knip --trace-export clearBadge`, reached as
 `badge.clearBadge`, returns `(no imports found) ✗` — and `scripts/task.js:160`
-and `hooks/inject.js:76` call it. The shape is not rare here: counting lines
+and `hooks/inject.js:77` call it. The shape is not rare here: counting lines
 under `tests/` that bind a module from `../lib/`, `../scripts/` or `../hooks/`
 to a plain identifier rather than destructuring it gives 60 lines across 40 of
 the 74 test files, against 35 destructured lines across 26. a TODO entry carries

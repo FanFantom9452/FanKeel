@@ -16,6 +16,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const registry = require('../lib/registry.js');
+const { checkoutFor } = require('../lib/handoff.js');
 const live = require('../lib/live.js');
 const badge = require('../lib/badge.js');
 const station = require('../lib/station.js');
@@ -208,6 +209,16 @@ function main(raw) {
     // would put two different moments in one block. The entry is re-read for the
     // same reason. It stays inside a try — if this throws, `unclaimed` is 0, the
     // entry is the one already in hand, and the injection goes out regardless.
+    // A record written before `checkout` was, in a Claude Desktop worktree:
+    // stored once, so every reader of the record — task.js, await.js, the
+    // station — finds the handoffs where this session's stage agents write them.
+    try {
+        const checkout = mine.checkout ? null : checkoutFor(root, launch);
+        if (checkout && registry.update(root, sessionId, (d) => { if (d.checkout) return false; d.checkout = checkout; })) {
+            mine = registry.readSession(root, sessionId) || mine;
+        }
+    } catch (e) { /* housekeeping */ }
+
     let unclaimed = 0;
     try {
         const found = claimWrites(root, sessionId, mine);

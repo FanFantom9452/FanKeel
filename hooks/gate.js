@@ -51,7 +51,7 @@ const registry = require('../lib/registry.js');
 const profileLib = require('../lib/profile.js');
 const { inspect, awayLine, AWAY_QUESTION } = require('../lib/context.js');
 const { controlling, nextStage, normaliseRoute, FULL_ROUTE } = require('../lib/stages.js');
-const { handoffPath, answerPath, pendingPath, answersSince, answeredOf, handedOffSince, writeAnswer, readGate, patrolEntries, reportProblem, skipReason, gateMatches } = require('../lib/handoff.js');
+const { handoffPath, answerPath, pendingPath, answersSince, answeredOf, handedOffSince, writeAnswer, readGate, patrolEntries, reportProblem, skipReason, gateMatches, withCheckout } = require('../lib/handoff.js');
 const { run, parse, refuse } = require('../lib/hook.js');
 
 // `stage.agents` as the profile holds it, for a sentence.
@@ -222,7 +222,7 @@ function main(raw) {
     if (!payload) return;
 
     const root = registry.rootFor(payload);
-    const mine = registry.readSession(root, payload.session_id);
+    const mine = withCheckout(root, registry.readSession(root, payload.session_id), registry.launchRoot(payload));
     if (!mine || mine.active !== true) return;
 
     const hash = hashOf(payload.tool_input && payload.tool_input.questions);

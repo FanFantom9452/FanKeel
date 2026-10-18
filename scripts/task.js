@@ -40,7 +40,7 @@ const profile = require('../lib/profile.js');
 const compactWindow = require('./compact-window.js');
 const docs = require('../lib/docs.js');
 const suite = require('../lib/suite.js');
-const { handoffPath, readGate, lapsUsed, contextPath } = require('../lib/handoff.js');
+const { handoffPath, readGate, lapsUsed, contextPath, checkoutFor, baseFor } = require('../lib/handoff.js');
 const { controlRulesFor, rulesLines, PLUGIN_MARK, PLUGIN_ROOT, newestPlan, blockSizes, BLOCK_CAP } = require('../lib/render.js');
 const { estimateTokens } = require('./input-check.js');
 const plantasks = require('../lib/plantasks.js');
@@ -651,6 +651,9 @@ function cmdStart(root, opts) {
         // is, and liveness is read from CLAUDE_CONFIG_DIR. `--claude-dir` moves
         // the badge and nothing else.
         configDir: live.liveConfigDir() || undefined,
+        // The Claude Desktop worktree this session runs in, relative to the
+        // root: its stage agents write their handoffs there (lib/handoff.js).
+        checkout: checkoutFor(root, registry.launchRoot()) || undefined,
         // The plugin's own package.json version at the moment this ran. Only
         // the version number: the installed cache has no .git for a commit
         // sha, and scripts/version.js does not bake one in at release time.
@@ -961,6 +964,11 @@ function cmdStage(root, opts) {
         // write. Leaving it to the hook put the boundary at the next prompt
         // instead — minutes later, and the per-stage cost split with it.
         registry.stampEntry(d, name);
+        // A record from before `checkout`: the worktree this runs in.
+        if (!d.checkout) {
+            const checkout = checkoutFor(root, registry.launchRoot());
+            if (checkout) d.checkout = checkout;
+        }
         data = d;
         return true;
     });
@@ -1014,7 +1022,7 @@ function cmdStage(root, opts) {
     if (from === 'design' && name === 'build' && !route.includes('plan')) {
         const shape = handoffPath(root, data, 'design');
         if (shape && !fs.existsSync(shape)) {
-            line += NL + 'design.md is missing — Write the approved file table to ' + posix(path.relative(root, shape))
+            line += NL + 'design.md is missing — Write the approved file table to ' + posix(path.relative(baseFor(root, data), shape))
                 + ' before building; build reads its denominator there after a compaction.';
         }
     }

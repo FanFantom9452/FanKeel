@@ -21,7 +21,7 @@ const registry = require('../lib/registry.js');
 const { renderResume } = require('../lib/render.js');
 const profileLib = require('../lib/profile.js');
 const { controlling, nextStage, normaliseRoute, FULL_ROUTE } = require('../lib/stages.js');
-const { handoffPath, answerPath, writeAnswer, readGate, answersGate } = require('../lib/handoff.js');
+const { handoffPath, answerPath, writeAnswer, readGate, answersGate, withCheckout } = require('../lib/handoff.js');
 const { run, parse } = require('../lib/hook.js');
 const { AWAY_QUESTION } = require('../lib/context.js');
 
@@ -32,7 +32,8 @@ function main(raw) {
     const sessionId = payload.session_id;
     const root = registry.rootFor(payload);
 
-    const mine = registry.readSession(root, sessionId);
+    // In a worktree, the handoffs and the answer beside them are in it.
+    const mine = withCheckout(root, registry.readSession(root, sessionId), registry.launchRoot(payload));
     if (!mine || mine.active !== true) return;
 
     // Unverified in a real session: that PostToolUse tool_input carries the

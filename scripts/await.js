@@ -21,7 +21,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { readObject } = require('../lib/json.js');
 const registry = require('../lib/registry.js');
-const { handoffPath, commitPath, ledgerCommitPath, answerPath, awaitHandoff, newestCommit, caseOfPrompt, promptOf, workflowOf } = require('../lib/handoff.js');
+const { handoffPath, commitPath, ledgerCommitPath, answerPath, awaitHandoff, newestCommit, caseOfPrompt, promptOf, workflowOf, withCheckout } = require('../lib/handoff.js');
 const { newestPlan } = require('../lib/render.js');
 const { transcriptOf } = require('../lib/detail.js');
 const { sessionDirOf, agentFiles } = require('../lib/usage.js');
@@ -85,7 +85,7 @@ function commitCandidates(root, data, lap, group) {
 // that just dispatched a brain is waiting on that one.
 function waitFor(opts, env) {
     const root = opts.root ? registry.resolveRoot(opts.root) : registry.rootFor({ cwd: process.cwd() });
-    const data = registry.readSession(root, opts.session);
+    const data = withCheckout(root, registry.readSession(root, opts.session), registry.launchRoot());
     if (!data) return { error: 'no session ' + opts.session + ' under ' + root };
     const running = registry.inflights(data).filter((m) => m.stage === data.stage);
     if (opts.agent && !running.some((m) => m.agentId === opts.agent)) return { error: 'no in-flight mark for agent ' + opts.agent + ' at stage ' + data.stage };

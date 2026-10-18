@@ -23,7 +23,7 @@
 const registry = require('../lib/registry.js');
 const { targetOf } = require('../lib/guard.js');
 const { nextStage, normaliseRoute, FULL_ROUTE } = require('../lib/stages.js');
-const { handoffPath, readGate, patrolEntries } = require('../lib/handoff.js');
+const { handoffPath, readGate, patrolEntries, withCheckout } = require('../lib/handoff.js');
 const { run, parse } = require('../lib/hook.js');
 const path = require('node:path');
 
@@ -51,7 +51,7 @@ function main(raw) {
     if (!payload) return;
 
     const root = registry.rootFor(payload);
-    const mine = registry.readSession(root, payload.session_id);
+    const mine = withCheckout(root, registry.readSession(root, payload.session_id), registry.launchRoot(payload));
     if (!mine || mine.active !== true) return;
 
     const written = targetOf(payload);

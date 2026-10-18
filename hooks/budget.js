@@ -17,7 +17,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const registry = require('../lib/registry.js');
 const { inspect, SOFT, HARD } = require('../lib/context.js');
-const { relayPath } = require('../lib/handoff.js');
+const { relayPath, withCheckout } = require('../lib/handoff.js');
 const { targetOf } = require('../lib/guard.js');
 const { run, parse, refuse } = require('../lib/hook.js');
 const { sessionDirOf, agentFiles } = require('../lib/usage.js');
@@ -33,7 +33,7 @@ function main(raw) {
     if (!payload.agent_id) return;
 
     const root = registry.rootFor(payload);
-    const mine = registry.readSession(root, payload.session_id);
+    const mine = withCheckout(root, registry.readSession(root, payload.session_id), registry.launchRoot(payload));
     if (!mine || mine.active !== true) return;
 
     const dir = sessionDirOf(payload.transcript_path);

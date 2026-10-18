@@ -87,7 +87,7 @@ the matcher above, not this one, governs them, and refuses the controller's comm
 A `fankeel-brain` `Write` under `.fankeel/build/task-*/` is checked too
 (`hooks/guard.js:118`, `if (payload.tool_name === 'Write') {`): when the task directory it targets is not the
 one `handoff.dirFor` gives for its own session's record, it is denied, and the
-reason names both directories (`lib/guard.js:373`, `return 'fankeel: a fankeel-brain writes only under its own session\'s task directory. '`).
+reason names both directories (`lib/guard.js:375`, `return 'fankeel: a fankeel-brain writes only under its own session\'s task directory. '`).
 
 A fourth entry, matcher `Agent|Task` — both names, because which one the
 host sends for the subagent tool was not verified when it was added — sends
@@ -828,10 +828,10 @@ Setting the key prints what it costs: the estimated tokens the injected line
 adds per prompt, and each stage's remaining room under the reference-root
 2400-character cap with the profile as it now reads — a warning, never a
 refusal, since the cap belongs to the tests and the sentence belongs to the
-user (`scripts/task.js:1247`, `set anyway; this is a warning, not a refusal`)
+user (`scripts/task.js:1255`, `set anyway; this is a warning, not a refusal`)
 — computed in `cmdProfile`'s `set` branch off `input-check.js`'s
 `estimateTokens` and `lib/render.js`'s `blockSizes`
-(`scripts/task.js:1240`, `const n = estimateTokens('\n  - ' + out.value);`).
+(`scripts/task.js:1248`, `const n = estimateTokens('\n  - ' + out.value);`).
 
 ## What a controlled `build` and `verify` were run through
 

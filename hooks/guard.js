@@ -17,7 +17,7 @@ const { decide, guardMode, targetOf, readOnlyAgentType, writesFiles, brainWriteR
 const profileLib = require('../lib/profile.js');
 const { controlling } = require('../lib/stages.js');
 const { baseAgent } = require('../lib/agentfile.js');
-const { caseOfPrompt } = require('../lib/handoff.js');
+const { caseOfPrompt, withCheckout } = require('../lib/handoff.js');
 const { run, parse, refuse } = require('../lib/hook.js');
 const { isCommit, commitVerdict } = require('../lib/sensitive.js');
 
@@ -116,7 +116,7 @@ function main(raw) {
     // `.fankeel/build/task-*/`. Only `Write` is checked; `Edit` and
     // `NotebookEdit` are not. Anything outside that tree is untouched.
     if (payload.tool_name === 'Write') {
-        const reason = brainWriteReason({ agentType: payload.agent_type, root, file: targetOf(payload), mine });
+        const reason = brainWriteReason({ agentType: payload.agent_type, root, file: targetOf(payload), mine: withCheckout(root, mine, registry.launchRoot(payload)) });
         if (reason) {
             refuse(reason);
             return;
