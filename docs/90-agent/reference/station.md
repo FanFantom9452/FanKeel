@@ -276,8 +276,9 @@ groups, dependencies and implementer models, and says the answer is given in
 Claude Desktop; the tab's label carries the task count, and the gate's hatch
 at that stage. Away from the plan stage a head carries the plan's path and its
 task and group counts in place of the banner. No plan, a plan that will not open and a plan with no
-`## Task N:` heading each say so instead. The controlled plan stage opens this
-page beside its gate from the `page:` line `scripts/await.js` prints.
+`## Task N:` heading each say so instead. The `page:` line `scripts/await.js`
+prints on a plan handoff points here, and `PAGE_OPEN` before it tells the
+session holding the gate to open it in a browser pane first.
 
 關卡 (`#/s/<id>/gate`) draws the newest handoff report of the session's
 current stage, read by `lib/gatereport.js` onto the detail's `gate` — the
@@ -289,11 +290,16 @@ task cards from the claimed plan and its changed files by kind with their line
 counts; land's 白話 paragraph first, then the commit, what shipped, the suite,
 the cost and what is still open. A line the parser does not recognise is kept
 under 報告其餘. While the session waits at a survey, design, build or land gate
-with that stage's report, a banner in the 計畫 tab's style carries the gate's
-question and the tab's label wears the hatch; away from it a head carries the
-report's path and counts. No report yet, and a report that will not open, each
-say so. The controlled stage opens this page beside its gate from the `page:`
-line `scripts/await.js` prints.
+— the registry's `gateAt` stamp or a pending file with questions — with that
+stage's report, a banner in the 計畫 tab's style carries the gate's question,
+or `det.gateNoQ` where the report has no `json gate` question to read, and the
+tab's label wears the hatch; away from it, a group brain's report mid-build
+included, a head carries the report's path and counts. No report yet, and a
+report that will not open, each say so; at plan, verify or audit
+`det.gateNoPage` says that stage has no gate page and that plan's is the 計畫
+tab. The `page:` line `scripts/await.js` prints on a survey, design, build or
+land handoff points here, and `PAGE_OPEN` before it tells the session holding
+the gate to open it in a browser pane first.
 
 對話 (`#/s/<id>/talk`) is what was said, read from the transcript when the
 tab is opened and not from the detail script. It lists the turns in order and
@@ -627,13 +633,13 @@ the search box in the top bar matches task, project, session id, registry
 label, model, state, next, the files touched and its notes — AND-ed.
 
 The same box also opens a grouped-results popover about 200 ms after typing
-stops (`assets/station/station.js:6177`, `}, 200)`): `qGroups`
-(`assets/station/station.js:6093`, `function qGroups(q) {`) buckets what
+stops (`assets/station/station.js:6183`, `}, 200)`): `qGroups`
+(`assets/station/station.js:6099`, `function qGroups(q) {`) buckets what
 matches into Sessions, 專案 and 文件, up to five rows each with a 看全部 link
 when there are more, and `qDraw`
-(`assets/station/station.js:6134`, `function qDraw() {`) draws it with each
+(`assets/station/station.js:6140`, `function qDraw() {`) draws it with each
 match highlighted. `/` focuses the box from anywhere on the page
-(`assets/station/station.js:6262`, `if (e.key === '/')`), the arrow keys
+(`assets/station/station.js:6268`, `if (e.key === '/')`), the arrow keys
 move the selection, Enter opens what is picked and Esc closes the popover.
 文件 in this popover matches only the paths and buckets the page's own data
 carries. The page bodies are searched on 文件 itself — see
@@ -803,11 +809,11 @@ read with `stored()`'s try/catch so a `file:` page or private mode with no
 `localStorage` just has no preference. `station.nav.collapsed` holds which
 categories are folded shut — read once into `navShut` on load and written
 back by `navFoldSet` on every press of a fold button
-(`assets/station/station.js:5701`, `JSON.parse(stored('station.nav.collapsed'))`). `station.theme`
+(`assets/station/station.js:5707`, `JSON.parse(stored('station.nav.collapsed'))`). `station.theme`
 holds the three-state 跟隨系統/淺色/深色 button in the masthead's
 `div.appear` (`id="appear"`, drawn by `drawTheme`); a click cycles it and
 writes the new value
-(`assets/station/station.js:5747`, `store('station.theme', t === 'system' ? null : t);`), and the
+(`assets/station/station.js:5753`, `store('station.theme', t === 'system' ? null : t);`), and the
 stored value is read and set as `data-theme` on `<html>` before the page's
 first paint, so a reader on 深色 never sees a flash of light first
 (`assets/station/station.js:23`, `themeSet(stored('station.theme'));`).
@@ -1328,7 +1334,7 @@ and the model took the hook's answer as the user's; `claude -p` offers no
 before. An answer file older than the wait is an earlier gate's and is not
 read. A file on disk cannot post, so it says to answer in the terminal.
 
-A press says it is on its way (`answerPost`, `assets/station/station.js:6420`, `function answerPost(id, box, line, cls, form, said, failed)`): while `POST /answer` is out the gate's buttons are disabled and its line reads 送出中…. A reply ok keeps them disabled; a refusal, a network error, or 10 seconds with no reply (`SEND_MS`, the fetch aborted through an `AbortController`) gives them back. A refusal shows `<status> — <the server's text>`, with no press-again wording; only a network error (…可以再按一次) and the timeout (還沒確認送到：可以再按一次) say it may be pressed again. The state lives in `view.pg['<id>:send']`, keyed to the gate's `pending.until`, so the poll's redraw draws it as it was and a new gate starts clean.
+A press says it is on its way (`answerPost`, `assets/station/station.js:6426`, `function answerPost(id, box, line, cls, form, said, failed)`): while `POST /answer` is out the gate's buttons are disabled and its line reads 送出中…. A reply ok keeps them disabled; a refusal, a network error, or 10 seconds with no reply (`SEND_MS`, the fetch aborted through an `AbortController`) gives them back. A refusal shows `<status> — <the server's text>`, with no press-again wording; only a network error (…可以再按一次) and the timeout (還沒確認送到：可以再按一次) say it may be pressed again. The state lives in `view.pg['<id>:send']`, keyed to the gate's `pending.until`, so the poll's redraw draws it as it was and a new gate starts clean.
 
 The panel moves and resizes. Drag its title bar to move it and the grip in its bottom-right corner to resize it, with a mouse or a finger (pointer events, `touch-action:none`; `fkBoxParse`, `fkBoxClamp` and the listeners after `drawFloat` in `assets/station/station.js`). Where it ends up is `{x, y, w, h}` in `localStorage` under `station.fkBox`, restored on reload, and it is pulled back inside the window — never smaller than 260 by 160 — while dragging, when the window shrinks, and when a saved place no longer fits. A double-click on the title bar puts it back in its corner and forgets the place. `floatHtml` writes the place into the panel's own `style`, so the 3-second repaint mid-drag draws it where it is; polling and 送出答案 are untouched.
 
