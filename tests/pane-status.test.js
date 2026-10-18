@@ -524,34 +524,40 @@ test('route and tasks open under a ▾ head and fold to it under ▸, the route 
     assert.deepEqual(heads(status(m, { entry: Object.assign({}, entry, { stage: 'nowhere' }) })), []);
 });
 
-test('the TODO block is a fold head counting the open entries, then at most six titles and a grey 還有 N 條, each a Button with its station hash', async () => {
+test('the TODO block is a fold head counting the open entries, then a Button a state with its count, and the pressed state\'s titles', async () => {
     const m = await load();
     const url = 'http://127.0.0.1:28888/';
     const pkey = 'F:/ws/app';
-    const todos = Array.from({ length: 8 }, (_, i) => ({ id: 'a-' + (i + 1), title: 'entry ' + (i + 1), state: 'ready' }));
-    const rows = status(m, { station: url, todos, pkey });
-    assert.deepEqual(blocksOf(rows), ['task', 'notes', 'todo', 'foot']);
-    const segs = body(rows, 'todo').map((s) => s[0]);
-    assert.deepEqual(segs[0], { text: '▾ TODO 8', color: SECOND, bold: true, press: 'fold', fold: 'todo' });
-    assert.deepEqual(segs.slice(1, 7).map((s) => [s.text, s.press, s.to]), todos.slice(0, 6).map((t) => [t.title, 'todo', '#/p/F%3A%2Fws%2Fapp/todo/' + t.id]));
-    assert.deepEqual(segs[7], { text: '還有 2 條', color: SECOND, press: 'todo', to: '#/p/F%3A%2Fws%2Fapp/todo' });
-    assert.equal(segs.length, 8);
-    // Six or fewer: no 還有 row. Folded: the head alone. No station, or no entries: no block.
-    assert.equal(drawn(status(m, { station: url, todos: todos.slice(0, 6), pkey }), 'todo').length, 7);
-    assert.deepEqual(text(status(m, { station: url, todos, pkey, folded: { todo: true } }), 'todo'), ['▌▸ TODO 8']);
+    const todos = [...Array.from({ length: 8 }, (_, i) => ({ id: 'r-' + (i + 1), title: 'ready ' + (i + 1), state: 'ready' })),
+        { id: 'b-1', title: 'blocked 1', state: 'blocked' }, { id: 'w-1', title: 'watch 1', state: 'watch' }];
+    const shut = body(status(m, { station: url, todos, pkey }), 'todo');
+    assert.deepEqual(shut, [
+        [{ text: '▾ TODO 10', color: SECOND, bold: true, press: 'fold', fold: 'todo' }],
+        [{ text: 'Ready 8', press: 'todoState', state: 'ready' }, { text: ' ' }, { text: 'Needs a decision 0', color: SECOND }],
+        [{ text: 'Blocked 1', press: 'todoState', state: 'blocked' }, { text: ' ' }, { text: 'Watch 1', press: 'todoState', state: 'watch' }],
+    ]);
+    const open = body(status(m, { station: url, todos, pkey, todoOpen: 'ready' }), 'todo');
+    assert.deepEqual(open[1][0], { text: 'Ready 8', press: 'todoState', state: 'ready', bold: true });
+    assert.deepEqual(open.slice(3, 9).map((s) => [s[0].text, s[0].press, s[0].to]), todos.slice(0, 6).map((t) => [t.title, 'todo', '#/p/F%3A%2Fws%2Fapp/todo/' + t.id]));
+    assert.deepEqual(open[9], [{ text: '還有 2 條', color: SECOND, press: 'todo', to: '#/p/F%3A%2Fws%2Fapp/todo' }]);
+    assert.equal(open.length, 10);
+    assert.deepEqual(text(status(m, { station: url, todos, pkey, todoOpen: 'blocked' }), 'todo').slice(3), [' blocked 1']);
+    // Folded: the head alone. No station, or no entries: no block.
+    assert.deepEqual(text(status(m, { station: url, todos, pkey, todoOpen: 'ready', folded: { todo: true } }), 'todo'), ['▌▸ TODO 10']);
     assert.deepEqual(drawn(status(m, { station: null, todos, pkey }), 'todo'), []);
     assert.deepEqual(drawn(status(m, { station: url, todos: [], pkey }), 'todo'), []);
+    assert.deepEqual(m.TODO_STATES.map((s) => s[0]), ['ready', 'decision', 'blocked', 'watch']);
     // A long title is cut four cells short of the row: the terminal draws a Button as `[ label ]`.
-    const long = status(m, { station: url, todos: [{ id: 'l-1', title: '一個很長很長的 TODO 標題，'.repeat(4), state: 'ready' }], pkey, cols: 41 });
-    assert.ok(m.width(body(long, 'todo')[1][0].text) <= 40 - 4);
+    const long = status(m, { station: url, todos: [{ id: 'l-1', title: '一個很長很長的 TODO 標題，'.repeat(4), state: 'ready' }], pkey, cols: 41, todoOpen: 'ready' });
+    assert.ok(m.width(body(long, 'todo')[3][0].text) <= 40 - 4);
 });
 
-test('with no room the TODO list goes first, down to its head row', async () => {
+test('with no room the TODO block goes first, down to its head row', async () => {
     const m = await load();
     const todos = Array.from({ length: 3 }, (_, i) => ({ id: 'a-' + i, title: 'entry ' + i, state: 'ready' }));
     const rows = (room) => status(m, { station: 'http://127.0.0.1:28888/', todos, pkey: 'F:/ws', room });
     const full = rows(60).length;
-    assert.equal(drawn(rows(full), 'todo').length, 4);
+    assert.equal(drawn(rows(full), 'todo').length, 3);
     assert.deepEqual(text(rows(full - 1), 'todo'), ['▌▾ TODO 3']);
     assert.deepEqual(blocksOf(rows(full - 1)), ['task', 'notes', 'todo', 'foot']);
     assert.deepEqual(blocksOf(rows(-9)), ['task', 'todo', 'foot']);

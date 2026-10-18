@@ -1344,7 +1344,7 @@ function todoRig(entries, over) {
     return fake({ files, env: { OS: 'Windows_NT' } });
 }
 
-test('the TODO block lists six open titles, Ready first, and a 還有 N 條; a title opens the station on its entry and the rest on the panel', async () => {
+test('the TODO block is a Button a state with its count; pressing one lists its titles, which open the station on the entry', async () => {
     const hooks = await wired();
     const entries = [['w-1', 'watch', 'watch one'], ['b-1', 'blocked', 'blocked one'], ['r-2', 'ready', 'ready two'], ['r-1', 'ready', 'ready one'],
         ['d-1', 'decision', 'decide one'], ['x-1', 'done', 'finished'], ['r-3', 'ready', undefined], ['b-2', 'blocked', 'blocked two'], ['w-2', 'watch', 'watch two']];
@@ -1353,18 +1353,26 @@ test('the TODO block lists six open titles, Ready first, and a 還有 N 條; a t
     $.process = { run: async (argv) => { ran.push(argv); return { exitCode: 0, stdout: '', stderr: '' }; } };
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
-    const tree = await hooks['ui.render']($, { viewport: { columns: 44, rows: 60 } });
-    const labels = buttons(tree).map((b) => b.props.label);
-    // Eight open: the done one is not counted; an entry with no title shows its id.
-    assert.deepEqual(labels.slice(labels.indexOf('▾ TODO 8')), ['▾ TODO 8', 'ready one', 'ready two', 'r-3', 'decide one', 'blocked one', 'blocked two', '還有 2 條', '開啟 station']);
-    const key = encodeURIComponent(ROOT);
-    await buttons(tree).find((b) => b.props.label === 'ready two').props.onPress({ surface: 'terminal' });
-    await buttons(tree).find((b) => b.props.label === '還有 2 條').props.onPress({ surface: 'terminal' });
-    assert.deepEqual(ran, [['cmd', '/c', 'start', '', STATION + '#/p/' + key + '/todo/r-2'], ['cmd', '/c', 'start', '', STATION + '#/p/' + key + '/todo']]);
-    // The fold head folds the list to itself.
-    await buttons(tree).find((b) => b.props.key === 'fold-todo').props.onPress({ surface: 'terminal' });
-    const folded = buttons(await hooks['ui.render']($, { viewport: { columns: 44, rows: 60 } })).map((b) => b.props.label);
-    assert.deepEqual(folded.slice(folded.indexOf('▸ TODO 8')), ['▸ TODO 8', '開啟 station']);
+    const draw = async () => buttons(await hooks['ui.render']($, { viewport: { columns: 44, rows: 60 } }));
+    const from = (bs) => { const labels = bs.map((b) => b.props.label); return labels.slice(labels.findIndex((l) => /^[▾▸] TODO /.test(l))); };
+    const press = async (label) => (await draw()).find((b) => b.props.label === label).props.onPress({ surface: 'terminal' });
+    // Eight open: the done one is not counted; nothing is listed until a state is pressed.
+    assert.deepEqual(from(await draw()), ['▾ TODO 8', 'Ready 3', 'Needs a decision 1', 'Blocked 2', 'Watch 2', '開啟 station']);
+    const before = log.invalidated;
+    await press('Ready 3');
+    assert.equal(log.invalidated, before + 1);
+    // An entry with no title shows its id.
+    assert.deepEqual(from(await draw()), ['▾ TODO 8', 'Ready 3', 'Needs a decision 1', 'Blocked 2', 'Watch 2', 'ready one', 'ready two', 'r-3', '開啟 station']);
+    await press('ready two');
+    assert.deepEqual(ran, [['cmd', '/c', 'start', '', STATION + '#/p/' + encodeURIComponent(ROOT) + '/todo/r-2']]);
+    // Another state swaps the list; the same state again closes it.
+    await press('Blocked 2');
+    assert.deepEqual(from(await draw()).slice(5), ['blocked one', 'blocked two', '開啟 station']);
+    await press('Blocked 2');
+    assert.deepEqual(from(await draw()).slice(5), ['開啟 station']);
+    // The fold head folds the block to itself.
+    await (await draw()).find((b) => b.props.key === 'fold-todo').props.onPress({ surface: 'terminal' });
+    assert.deepEqual(from(await draw()), ['▸ TODO 8', '開啟 station']);
 });
 
 test('the TODO entries are the entry\'s project\'s, keyed root/project, and with no station there is no TODO block', async () => {
@@ -1375,6 +1383,7 @@ test('the TODO entries are the entry\'s project\'s, keyed root/project, and with
     await hooks['session.start']($, {}, async () => ({}));
     await log.ticks[0].fn();
     const draw = async () => buttons(await hooks['ui.render']($, { viewport: { columns: 44, rows: 60 } }));
+    await (await draw()).find((b) => b.props.label === 'Ready 1').props.onPress({ surface: 'terminal' });
     await (await draw()).find((b) => b.props.label === 'in the app').props.onPress({ surface: 'terminal' });
     assert.deepEqual(ran, [['cmd', '/c', 'start', '', STATION + '#/p/' + encodeURIComponent(ROOT + '/app') + '/todo/r-1']]);
     delete store['C:/cfg/fankeel/serve.json'];
@@ -1394,6 +1403,7 @@ test('an entry file is read again only when it moved, and a docs.json that does 
     mtimes[file] = 2;
     await log.ticks[0].fn();
     assert.equal(log.reads.filter((p) => p === file).length, 2);
+    await buttons(await hooks['ui.render']($, { viewport: { columns: 44, rows: 60 } })).find((b) => b.props.label === 'Ready 1').props.onPress({ surface: 'terminal' });
     assert.ok(buttons(await hooks['ui.render']($, { viewport: { columns: 44, rows: 60 } })).some((b) => b.props.label === 'one, renamed'));
     store[ROOT + '/.fankeel/docs.json'] = '{';
     await log.ticks[0].fn();
@@ -1404,7 +1414,8 @@ test('the TODO head counts what lib/todo.js counts open in this repository, and 
     const hooks = await wired();
     const fs = require('node:fs');
     const repo = path.join(__dirname, '..');
-    const open = require('../lib/todo.js').load(repo).all.filter((e) => e.state !== 'done').length;
+    const all = require('../lib/todo.js').load(repo).all;
+    const open = all.filter((e) => e.state !== 'done').length;
     const dir = path.join(repo, 'docs', '90-agent', 'todo');
     const files = { [ROOT + '/.fankeel/docs.json']: fs.readFileSync(path.join(repo, '.fankeel', 'docs.json'), 'utf8') };
     for (const name of fs.readdirSync(dir)) files[ROOT + '/docs/90-agent/todo/' + name] = fs.readFileSync(path.join(dir, name), 'utf8');
@@ -1415,8 +1426,8 @@ test('the TODO head counts what lib/todo.js counts open in this repository, and 
     const labels = buttons(await hooks['ui.render']($, { viewport: { columns: 44, rows: 80 } })).map((b) => b.props.label);
     assert.ok(open > 6, 'the repository has ' + open + ' open entries');
     assert.ok(labels.includes('▾ TODO ' + open), labels.join(' | '));
-    const listed = labels.slice(labels.indexOf('▾ TODO ' + open) + 1, labels.indexOf('開啟 station'));
-    assert.equal(listed.length, 7);
-    assert.equal(listed[6], '還有 ' + (open - 6) + ' 條');
+    const want = [['ready', 'Ready'], ['decision', 'Needs a decision'], ['blocked', 'Blocked'], ['watch', 'Watch']]
+        .map(([s, l]) => [l, all.filter((e) => e.state === s).length]).filter(([, n]) => n > 0).map(([l, n]) => l + ' ' + n);
+    assert.deepEqual(labels.slice(labels.indexOf('▾ TODO ' + open) + 1, labels.indexOf('開啟 station')), want);
 });
 
