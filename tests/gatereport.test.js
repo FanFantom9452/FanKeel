@@ -241,3 +241,12 @@ test('gather puts the report on the session beside tasks, and the detail script 
     assert.equal(find(BARE).gate, null, 'no transcript, no detail, no report read');
     assert.ok(station.serializeDetail(find(SID)).includes('"gate":{"stage":"build","path":"' + TASK + '/build.md"'));
 });
+
+test('a gate block handoff.readGate refuses reads as no question, the report still drawn', () => {
+    const { r, dir } = root();
+    const bad = { questions: [{ header: 'h', question: '要往下走嗎？', multiSelect: false, options: [{ label: 'only one', description: 'd' }] }] };
+    put(path.join(dir, 'survey.md'), '- lib/a.js:3 — a\n\n```json gate\n' + JSON.stringify(bad) + '\n```\n');
+    const got = read(r, { stage: 'survey', started: STARTED, moves: [['survey', 1]] });
+    assert.equal(got.gate, null);
+    assert.equal(got.parts.findings.length, 1);
+});
