@@ -6,13 +6,13 @@ source_of_truth: agents/fankeel-judge.md
 
 # 三版判官，同一份架構級 brief — 2026-10-18
 
-一句話：三版 pick 都是 B；清單版判官自身 473,597（比自己讀多 32%），加讀者合計 756,046（約 2.1 倍），請求 8 輪對 6 輪，但五個讀者都在同一則訊息派出、全部抽查一致、沒有未讀。
+一句話：三版 pick 都是 B；清單版判官自身 473,597（比自己讀多 32%），加讀者合計 756,046（約 2.1 倍），請求 8 輪對 6 輪，但五個讀者都在同一則訊息派出、每位讀者各抽查一段、皆相符、沒有未讀。
 
 ## 1. 怎麼量
 
 同一份 brief（`.fankeel/build/ask/judge-checklist-brief.md`，五個檔共 3501 行，兩個超過 1000 行），三個 general-purpose agent 都跑 fable、都不指定 effort：e45b3579 的判官（自己讀全部）、9bce6868 的判官（超過 300 行才派讀者）、現在的判官（先列清單、一次派出、長總結）。effort 跟 session 走，不是判官檔的 xhigh，所以絕對數字比真的 ask 低，三版互比才是重點。
 
-- token 是每個不重複的 assistant message id 的 input、cache read、cache write、output 加總；每一輪都重讀前面的 context，所以這是累計量。transcript 裡的 output token 數看起來偏低。
+- token 是每個不重複的 assistant message id 的 input、cache read、cache write、output 加總；每一輪都重讀前面的 context，所以這是累計量。transcript 裡的 output token 數看起來偏低。同一個 message id 在串流中會出現多筆 usage，這裡取最後一筆（473,597；取中間一筆會差 89）。
 - 已安裝的 plugin 的 brief hook 仍注入「不得自行派 subagent」；arm 2 與 arm 3 的 prompt 多一句說明這條不適用。
 
 ## 2. 結果
@@ -29,7 +29,7 @@ source_of_truth: agents/fankeel-judge.md
 
 ## 3. 清單版有沒有照做
 
-checklist 5 行、讀者 5 個，五個 Agent 呼叫全在同一則 assistant 訊息；`unread:` 為 nothing；每個被引用的行都抽查過，全部相符；Summary 約 30 行。它還找到 inject.js:129（只在 init 記錄）與 lib/clear.js:35，arm 1 與 arm 2 都沒點名。
+checklist 5 行、讀者 5 個，五個 Agent 呼叫全在同一則 assistant 訊息；`unread:` 為 nothing；Summary 約 30 行。抽查是每位讀者各一段，不是每個被引用的行都查過：判官自己的 `would flip if:` 寫明只抽查了 :49-58 與 :86-91，hooks/guard.js:118-145 沒有開。它找到 hooks/inject.js:130（只在 init 記錄），但 arm 1 的回傳已點名這一處；這一版新找到的只有 lib/clear.js:35。另外，抽查沒有在一則回應裡完成，而是分成三次 Bash 請求，這就是它用了 8 輪、而不是計畫所說三輪的原因。
 
 ## 4. 沒量到的
 
