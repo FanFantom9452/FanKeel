@@ -52,7 +52,7 @@ test('the habits step offers three presets and 逐項設定, each preset one com
   assert.ok(step.indexOf('profile preset') < step.indexOf('compact-window.js show'), 'compact.at is asked after the preset');
 });
 
-test('drift goes to fankeel-reader by batch, four at once by default, each page settled one of three ways', () => {
+test('drift goes to fankeel-reader by batch, eight at once by default, each page settled one of three ways', () => {
   const f = flat();
   assert.match(f, /docs-audit\.js --batches --root <project>/);
   assert.match(f, /fankeel:fankeel-reader/);

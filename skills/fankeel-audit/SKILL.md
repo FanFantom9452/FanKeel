@@ -210,8 +210,8 @@ TODO entry (folder mode: `todo.js new --state decision --body <text>`; hand-writ
 than rewriting the page to match a change nobody meant to make.
 
 So dispatch it: one reader per pair, **several in one response** so they run at
-once, each told the file they share and asked which page the code supports. Four
-in one response is the default — the fankeel skill's *Dispatch by default, never
+once, each told the file they share and asked which page the code supports. Eight
+in one response is the default (`dispatch.inflight`) — the fankeel skill's *Dispatch by default, never
 the filtering* says why, and pairs past that are one reader with a list. Pass
 `subagent_type: fankeel:fankeel-reader` and the model explicitly — the profile's
 `dispatch.floor`, `sonnet` by default — and compare what comes back

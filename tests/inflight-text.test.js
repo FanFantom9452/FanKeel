@@ -28,8 +28,8 @@ const PAGES = {
     now: [/`dispatch\.inflight`, eight by default/, /\(eight by default\)/, /a plan of ten goes eight then two/],
   },
   'skills/fankeel-audit/SKILL.md': {
-    gone: [/\(four by default\)/],
-    now: [/\(eight by default\)/],
+    gone: [/\(four by default\)/, /Four in one response is the default/],
+    now: [/\(eight by default\)/, /Eight in one response is the default/],
   },
   'skills/fankeel-init/SKILL.md': {
     gone: [/\(four by default\)/],
