@@ -221,7 +221,6 @@ table.t{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
 .route i.todo{box-shadow:inset 0 0 0 1.5px var(--rule2)}
 
 /* layout blocks */
-.rcol>.panel:last-child{margin-bottom:0}
 .docs .dproj{border-top:1px solid var(--rule);margin-top:12px;padding-top:2px}
 .docs .dproj:first-child{border-top:0;margin-top:0;padding-top:0}
 .docs summary{list-style:none;cursor:pointer;display:flex;align-items:baseline;gap:10px;padding:12px 2px 10px;border-radius:6px}
@@ -1427,7 +1426,7 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
 .csseg span{font-weight:600}
 .csseg b{font:600 10.5px var(--f-mono);opacity:.9}
 .csbar:has(.on) .csseg:not(.on){opacity:.35}
-.csseg:focus-visible,.csrow:focus-visible,.cschip:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
+.csseg:focus-visible,.csrow:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
 .cstbl .csrow{cursor:pointer}
 .cstbl .csrow:hover td{background:var(--wash)}
 .cstbl .csrow.on td{background:var(--inset)}
@@ -1438,11 +1437,6 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
 .csmore>summary{cursor:pointer;font-size:13.5px;font-weight:600;color:var(--ink2)}
 .csmore>summary small{font-weight:400;color:var(--muted);margin-left:6px}
 .csmore[open]>summary{margin-bottom:12px}
-.csagent{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin-bottom:14px;font-size:12px}
-.cschip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:var(--r-pill);background:var(--inset);
-  text-decoration:none;color:var(--ink2)}
-.cschip:hover{color:var(--ink);background:var(--wash)}
-.cschip b{font:600 11.5px var(--f-mono);color:var(--ink)}
 @media (prefers-reduced-motion:reduce){.csseg,.tl .seg{transition:none}}
 /* 派工 as bars: the stage bars above, one bar per dispatch below, split by
    agent in the --m-* model colours with the 2px gap .csbar uses. */
@@ -1564,7 +1558,6 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
 /* waiting-card: stage chip and a wait column wide enough for "等了 1 時 5 分". */
 .drow .dstage{flex:none}
 .drow .dw{flex:none;min-width:88px;text-align:right;font-size:11.5px;color:var(--stale-ink);font-variant-numeric:tabular-nums}
-.dbig .dfrom{display:block;margin-top:2px}
 
 /* live-subagents: a third lane row under the rail, rows split by 1px rules. */
 .lane.wsubs{grid-template-areas:"who task when" "who rail when" "who subs subs"}
@@ -1933,7 +1926,6 @@ a.td-rf:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-rad
 @media (prefers-reduced-motion:reduce){.dlib[open],.dlib[open]::backdrop{animation:none}}
 
 /* ---- dash-todo ---- */
-.dhint{cursor:default}
 .trow{flex-direction:column;align-items:stretch;gap:3px;padding:8px 6px}
 .trh{display:flex;align-items:baseline;gap:6px;min-width:0}
 .trh .dp{max-width:none;font-size:12px;color:var(--ink2);font-weight:600}
@@ -2011,7 +2003,6 @@ a.td-rf:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-rad
 /* ---- the TODO panel ---- */
 .td-mb{font-weight:600;color:var(--ink)}
 .td-mb .ico{width:14px;height:14px}
-.td-mb-top{margin-left:auto}
 .donel .td-row{grid-template-columns:112px minmax(0,1fr) 88px 148px 136px}
 .td-fold{box-shadow:inset 0 2px 0 var(--keel,var(--ink2))}
 /* keel: the panel is a film file card; its head is the folder, its counts are pills */
