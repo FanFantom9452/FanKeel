@@ -197,7 +197,7 @@ it every single time, and it is worth it even when nothing else about the
 delegation changes.
 
 The brief is capped, and the cap is a test rather than a habit:
-`tests/brief.test.js:262`, `assert.ok(text.length < 1400` (the first of three such assertions in that file). Measured 2026-09-11
+`tests/brief.test.js:270`, `assert.ok(text.length < 1400` (the first of three such assertions in that file). Measured 2026-09-11
 against that test's own seed, the rendered brief is 1,098 characters — 823 before
 the working-tree rule was added to `RETURN_RULES`. A `TODO.md` entry carried 777
 as the figure until it closed on 2026-09-11; it matched nothing, in the code or
