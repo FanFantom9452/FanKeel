@@ -4857,7 +4857,7 @@
         // lib/gatereport.js: the task's suite.json, its last run. Which files it ran is recorded nowhere.
         var run = p.run;
         var badge = run && run.pass !== null && run.pass !== undefined
-            ? '<span class="gv-suite' + (run.ok ? '' : ' gv-red') + '">' + (run.ok ? icon('check') : '') + esc(run.pass) + ' pass · ' + esc(run.fail === null ? '?' : run.fail) + ' fail</span>'
+            ? '<span class="gv-suite' + (run.ok ? '' : ' gv-red') + '">' + (run.ok ? icon('check') : '') + loc('det.gateSuiteRun', '{p} 通過 · {f} 失敗', { p: esc(run.pass), f: esc(run.fail === null ? '?' : run.fail) }) + '</span>'
             : '';
         var side = gateSec('suite', null, badge + (p.suite ? '<code class="gv-cmd">' + esc(p.suite) + '</code>' : ''))
             + gateSec(loc('det.gateSecCost', '花了多少'), null, p.cost ? '<div class="gv-split">' + gateText(p.cost) + '</div>' : '')

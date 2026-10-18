@@ -870,6 +870,7 @@
             'det.gatePatrol': 'TODO patrol: {n} entries',
             'det.gateNProves': '<b>{n}</b> checks that prove it done',
             'det.gateShotAlt': 'screenshot of the mockup',
+            'det.gateSuiteRun': '{p} pass · {f} fail',
             'det.gateNFixes': '<b>{n}</b> fix rounds',
             'det.gateNRounds': '<b>{n}</b> verify round trips',
             'det.gateNRulings': '<b>{n}</b> rulings',

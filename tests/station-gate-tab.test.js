@@ -251,13 +251,13 @@ test('land counts the main session\'s time, draws the suite record\'s pass and f
     const run = { pass: 1520, fail: 0, ok: true, fast: false, command: 'node --test tests/' };
     const html = V.gateTabHtml({ stage: 'land', stages: STAGES }, report('land', LAND, { run }), []);
     assert.match(html, /<li><b>1h6m<\/b>主 session<\/li>/);
-    assert.match(html, /<span class="gv-suite">[\s\S]*?1520 pass · 0 fail<\/span><code class="gv-cmd">suite\.js: 1520 pass, 0 fail<\/code>/);
+    assert.match(html, /<span class="gv-suite">[\s\S]*?1520 通過 · 0 失敗<\/span><code class="gv-cmd">suite\.js: 1520 pass, 0 fail<\/code>/);
     const bar = /<div class="gv-bar" role="img" aria-label="([^"]*)">([\s\S]*?)<\/div>/.exec(html);
     assert.equal(bar[1], '主 session 各站時間：survey 2m, build 57m, land 7m');
     assert.equal((bar[2].match(/<i style="--c:var\(--st-/g) || []).length, 3);
     assert.match(html, /<ul class="gv-legend" aria-hidden="true"><li><i style="--c:var\(--st-survey\)"><\/i>survey <b>2m<\/b><\/li>/);
     const red = V.gateTabHtml({ stage: 'land', stages: STAGES }, report('land', LAND, { run: Object.assign({}, run, { ok: false, fail: 2 }) }), []);
-    assert.match(red, /<span class="gv-suite gv-red">1520 pass · 2 fail<\/span>/);
+    assert.match(red, /<span class="gv-suite gv-red">1520 通過 · 2 失敗<\/span>/);
     const bare = V.gateTabHtml({ stage: 'land' }, report('land', LAND, { run: null }), []);
     assert.doesNotMatch(bare, /主 session<\/li>|gv-suite|gv-bar/);
 });
