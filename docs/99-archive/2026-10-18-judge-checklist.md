@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # 判官先列清單、一次派出、長總結 Implementation Plan
