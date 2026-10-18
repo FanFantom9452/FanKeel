@@ -607,6 +607,11 @@ writes the page only when no station serves, otherwise the server reads per
 request, and a changed session costs about half a second — and a session reached after that reuses its cache as it
 stands. `node scripts/station.js` reads every changed session however long it
 takes, and `serve` answers the same file at `GET /station/detail/<id>.js`.
+`GET /station/shot/<id>.png` answers the screenshot beside that session's
+design mockup — the path `lib/gatereport.js` put on the gate's
+`parts.mockup.shot`, refused unless it is a `.png` under that root's
+`.fankeel/build/` — for the 關卡 tab's thumbnail, which a `file://` image
+cannot be on a served page.
 Both the page and the cache sit where git does not look — the registry copy's
 `station/` is ignored and the cache is under the config directory — so the
 prompt fragments a replay quotes stay on this machine. So does the full text of

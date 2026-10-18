@@ -98,6 +98,37 @@ test('serve answers a session\'s detail script, and 404 for a session with none'
     }
 });
 
+test('serve answers a design gate\'s mockup screenshot, and 404 where the gate has none', async () => {
+    const f = fixture();
+    registry.writeSession(f.r1, SID, { task: 'with a transcript', stage: 'design', route: ['design'], active: false, claims: [],
+        started: T(0), updated: T(9), configDir: f.cfg, ended: { at: T(9), reason: 'exit' }, moves: [['design', 1]] });
+    const task = path.join(f.r1, '.fankeel', 'build', 'task-20260911T100000');
+    const m = path.join(f.r1, '.fankeel', 'build', 'm');
+    fs.mkdirSync(task, { recursive: true });
+    fs.mkdirSync(path.join(m, 'shot-1600'), { recursive: true });
+    fs.writeFileSync(path.join(task, 'design.md'), 'An approach.\n\nspec: `.fankeel/build/m/mockup.html`\n');
+    fs.writeFileSync(path.join(m, 'mockup.html'), '<html></html>');
+    fs.writeFileSync(path.join(m, 'shot-1600', 'render.png'), 'the shot');
+    const raw = (url) => new Promise((resolve, reject) => {
+        http.get(url, (res) => {
+            let text = '';
+            res.setEncoding('utf8');
+            res.on('data', (c) => { text += c; });
+            res.on('end', () => resolve({ status: res.statusCode, type: res.headers['content-type'], text }));
+        }).on('error', reject);
+    });
+    const { serve } = require('../scripts/station.js');
+    const s = await serve({ configDir: f.cfg, roots: [f.r1], port: 0, idleMs: 60e3, open: false });
+    try {
+        assert.deepEqual(await raw(s.url + 'station/shot/' + SID + '.png'), { status: 200, type: 'image/png', text: 'the shot' });
+        assert.equal((await raw(s.url + 'station/shot/' + BARE + '.png')).status, 404);
+        fs.rmSync(path.join(m, 'shot-1600'), { recursive: true });
+        assert.equal((await raw(s.url + 'station/shot/' + SID + '.png')).status, 404);
+    } finally {
+        s.close();
+    }
+});
+
 // The overview and the project page add up `days` from station-data.js alone.
 // A session whose transcript is gone keeps an older cache with no `days`, and
 // its usd is spent whole on the local day it started.

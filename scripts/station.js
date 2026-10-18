@@ -512,6 +512,27 @@ async function serve(opts) {
             }
             return send(200, 'text/javascript; charset=utf-8', station.serializeDetail(hit), noStore);
         }
+        const shotOf = /^\/station\/shot\/([0-9A-Za-z-]+)\.png$/.exec(url.pathname);
+        if (req.method === 'GET' && shotOf) {
+            // The design gate's mockup screenshot for the 關卡 tab: a file://
+            // image does not load in a page served over http. The path is the
+            // one lib/gatereport.js put on the gate, never the request's, and it
+            // has to resolve to a .png under that root's .fankeel/build/.
+            const reg = modelNow({ details: shotOf[1] }).registries.find((r) => r.sessions.some((x) => x.sessionId === shotOf[1]));
+            const hit = reg ? reg.sessions.find((x) => x.sessionId === shotOf[1]) : null;
+            const mockup = hit && hit.gate && hit.gate.parts ? hit.gate.parts.mockup : null;
+            const rel = mockup && mockup.shot ? mockup.shot.path : null;
+            const build = reg ? path.resolve(reg.root, '.fankeel', 'build') + path.sep : '';
+            const file = rel ? path.resolve(reg.root, rel) : '';
+            if (!file || !file.startsWith(build) || path.extname(file) !== '.png') return fail(404, 'no mockup shot for that session');
+            let body;
+            try {
+                body = fs.readFileSync(file);
+            } catch (e) {
+                return fail(404, 'no mockup shot for that session');
+            }
+            return send(200, 'image/png', body, noStore);
+        }
         if (req.method === 'GET' && url.pathname === '/station/health') {
             // Read-only and identifies the process, nothing else — no nonce,
             // so `probe` above (and a `--detach` poll) can tell a live station
