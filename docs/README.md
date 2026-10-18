@@ -615,6 +615,7 @@ is corrected by the next one, not by rewriting this.
 | 判官題：對話裡那張勾選清單是誰畫的？ | [90-agent/judgements/2026-10-16-desktop-task-list.md](90-agent/judgements/2026-10-16-desktop-task-list.md) — *judged 2026-10-16, fable* |
 | Brief: Pane 要不要顯示所有 background task，網頁服務能不能自動出現打開的 Button | [90-agent/judgements/2026-10-16-pane-background-tasks.md](90-agent/judgements/2026-10-16-pane-background-tasks.md) — *judged 2026-10-16, fable* |
 | Brief: tasks bar size, the band's head gap, progress for verify/audit | [90-agent/judgements/2026-10-17-pane-tasks-size.md](90-agent/judgements/2026-10-17-pane-tasks-size.md) — *judged 2026-10-17, fable* |
+| Brief 1 — 為什麼主 session 花費佔比仍最高，cache read/write 為何仍大，compact.at 450K 該不該降 | [90-agent/judgements/2026-10-18-main-session-cost.md](90-agent/judgements/2026-10-18-main-session-cost.md) — *judged 2026-10-18, fable* |
 
 ## The five scanners
 

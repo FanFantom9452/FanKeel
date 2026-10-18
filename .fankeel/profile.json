@@ -4,7 +4,9 @@
   "land.archivePlan": true,
   "design.mockup": "opus",
   "stage.agents": [
-    "survey"
+    "survey",
+    "build",
+    "verify"
   ],
   "guard": "deny",
   "gate.station": "off",
@@ -12,5 +14,6 @@
   "agent.fankeel-mutator.model": "haiku",
   "agent.fankeel-mover.model": "haiku",
   "agent.fankeel-implementer.model": "haiku",
-  "agent.fankeel-reader.model": "sonnet"
+  "agent.fankeel-reader.model": "sonnet",
+  "compact.at": "350000"
 }
