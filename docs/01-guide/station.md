@@ -32,7 +32,7 @@ source_of_truth: docs/90-agent/reference/station.md, assets/station/station.js, 
 | 導覽 | `#/tour` | 一支 60 秒的動態宣傳片，配純音樂，中英兩版跟著監控站的語言，七站各用一個動畫講它在做什麼；要從 serve 開的頁面才看得到 |
 | 設定 | `#/settings` | profile 精靈，見 [profile.md](profile.md) |
 
-點任一個 session 會進它自己的頁面 `#/s/<id>`，有五個分頁。概覽是 context 曲線、任務與每站花費。派工是每個 agent 的 token 與錢。事件是重播，看得到每個 gate 等了多久。對話是這個 session 的整段對話，你和 Claude 的文字全文，一次 100 則。對話的網址是 `#/s/<id>/talk`，文字只留在這台機器上。計畫（`#/s/<id>/plan`）畫出這個 session 最新的 plan：一組一欄，每個 task 一張卡，寫它改哪些檔、等哪幾個 task；停在 plan gate 時，上方會問你要不要核准，答案在 Claude Desktop 給。
+點任一個 session 會進它自己的頁面 `#/s/<id>`，有六個分頁。概覽是 context 曲線、任務與每站花費。派工是每個 agent 的 token 與錢。事件是重播，看得到每個 gate 等了多久。對話是這個 session 的整段對話，你和 Claude 的文字全文，一次 100 則。對話的網址是 `#/s/<id>/talk`，文字只留在這台機器上。計畫（`#/s/<id>/plan`）畫出這個 session 最新的 plan：一組一欄，每個 task 一張卡，寫它改哪些檔、等哪幾個 task；停在 plan gate 時，上方會問你要不要核准，答案在 Claude Desktop 給。關卡（`#/s/<id>/gate`）在 survey、design、build、land 停在 gate 時，把那一站交回的報告排成一頁：發現、要改的檔、改了什麼、白話結案；答案一樣在 Claude Desktop 給。
 
 ## 數字怎麼讀
 

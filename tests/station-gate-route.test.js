@@ -14,7 +14,7 @@ const V = require('../assets/station/station.js');
 
 const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
 const NOW = Date.parse('2026-10-18T12:00:00.000Z');
-const PK = 'F:\ws\alpha';
+const PK = 'F:\\ws\\alpha';
 
 // station.js booted on `hash` with one session; returns the page's HTML.
 // `detail`, when given, is the session's detail script, already loaded.
@@ -28,7 +28,7 @@ function boot(hash, stage, detail) {
     const win = { location: { hash }, addEventListener() {}, scrollTo() {}, STATION_DETAIL: detail ? { s1: detail } : {},
         setInterval: () => 1, setTimeout: () => 1, clearTimeout() {},
         navigator: { language: 'zh-TW' }, localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
-        STATION: { generatedAt: new Date(NOW).toISOString(), configDir: 'C:\cfg', pricesVerified: '2026-09-24', serve: false, nonce: 'N0NCE',
+        STATION: { generatedAt: new Date(NOW).toISOString(), configDir: 'C:\\cfg', pricesVerified: '2026-09-24', serve: false, nonce: 'N0NCE',
             projects: [{ root: PK, gone: false, unreadable: 0, build: [], mapAt: null, docs: [] }],
             profiles: { machine: { values: {}, sources: {}, unreadable: [] }, projects: {} }, profileKeys: {}, classes: {},
             sessions: [{ id: 's1', pkey: PK, root: PK, task: 't-s1', state: 'live', route: ['survey', 'plan', 'build'], stage: stage || 'build', hasDetail: Boolean(detail),
