@@ -4808,7 +4808,8 @@
         var counts = drawn.counts ? '<ul class="pv-counts">' + drawn.counts + '</ul>' : '';
         var head = gateAt(s, g)
             ? '<div class="pv-banner" data-block="gate-banner"><div class="pv-q"><span class="pill gate">' + icon('gate') + 'gate</span>'
-                + '<h2>' + loc('det.gateQ', '{st} gate：{q}', { st: '<span class="gv-st" style="--c:var(--st-' + esc(g.stage) + ')">' + esc(g.stage) + '</span>', q: esc(q) }) + '</h2></div>'
+                + '<h2>' + loc('det.gateQ', '{st} gate：{q}', { st: '<span class="gv-st" style="--c:var(--st-' + esc(g.stage) + ')">' + esc(g.stage) + '</span>',
+                    q: q ? esc(q) : loc('det.gateNoQ', '報告裡沒有讀得出的 gate 問題') }) + '</h2></div>'
                 + counts + src
                 + '<p class="pv-where"><i class="hatchsw" aria-hidden="true"></i><span>' + loc('det.planWhere', '回答在 Claude Desktop 那邊給；這頁只讓你看清楚要核准什麼，不收答案。') + '</span></p></div>'
             : '<div class="pv-hd" data-block="gate-head">' + src + counts + '</div>';

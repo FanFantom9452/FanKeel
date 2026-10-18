@@ -863,6 +863,7 @@
             'det.gateNone': 'This session has not written a {s} handoff yet. When the stage reaches its gate, its report is listed here.',
             'det.gateUnreadable': 'Cannot read {p}: the file is there, but it will not open.',
             'det.gateQ': '{st} gate: {q}',
+            'det.gateNoQ': 'no gate question can be read from the report',
             // disp — the dispatch tab, agent rows and step lists
             'disp.write': 'write',
             'disp.read': 'read',

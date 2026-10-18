@@ -2388,10 +2388,9 @@ a.td-rf:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-rad
 .pv-card.is-dim:hover,.pv-card.is-dim:focus-visible{opacity:1}
 @media (prefers-reduced-motion:reduce){.pv-card{transition:none}}
 
-
-/* Proposal for the ~800px Claude Desktop pane (gate-10's open item): below
-   1000px the body drops its min-width and the left bar folds away, so the
-   tab panel gets the pane's whole width instead of scrolling sideways. */
+/* Below 1000px (the ~800px Claude Desktop pane) the body drops its min-width
+   and the left bar and search fold away, so a tab panel gets the whole width
+   instead of scrolling sideways. */
 @media (max-width:999px){
   body{min-width:0}
   .shell,:root[data-style=keel] .shell{grid-template-columns:minmax(0,1fr)}
@@ -2411,7 +2410,6 @@ a.td-rf:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-rad
 .gv-cols{display:grid;gap:18px 28px;grid-template-columns:minmax(0,1fr)}
 @container (min-width:860px){
   .gv-cols{grid-template-columns:minmax(0,1.7fr) minmax(0,1fr)}
-  .gv-cols.even{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
 }
 .gv-sec h3{display:flex;align-items:baseline;gap:7px;margin:0 0 6px;font-size:12.5px;font-weight:600;color:var(--ink2)}
 .gv-sec h3 small{font:500 11.5px var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
@@ -2421,24 +2419,17 @@ a.td-rf:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-rad
 
 /* survey: the conclusion first, then path:line rows */
 .gv-lead{margin:0;max-width:68ch;font-size:13.5px;line-height:1.6;color:var(--ink)}
-.gv-lead b{font-weight:600}
-.gv-lead ol{margin:6px 0 0;padding-left:1.4em;color:var(--ink2);font-size:12.5px;display:grid;gap:2px}
 .gv-rows{list-style:none;margin:0;padding:0;border-top:1px solid var(--rule)}
 .gv-rows li{display:grid;grid-template-columns:minmax(0,1fr);gap:0 14px;padding:6px 0;border-bottom:1px solid var(--rule);font-size:12.5px;line-height:1.5}
 @container (min-width:620px){.gv-rows li{grid-template-columns:minmax(14em,.9fr) minmax(0,1.4fr)}}
 .gv-rows li>span{color:var(--ink2);min-width:0;overflow-wrap:break-word}
-.gv-rows li>.gv-nopath{color:var(--muted)}
 .gv-kv{margin:0;display:grid;border-top:1px solid var(--rule)}
 .gv-kv>div{display:grid;grid-template-columns:7.5em minmax(0,1fr);gap:0 10px;padding:6px 0;border-bottom:1px solid var(--rule);font-size:12.5px;line-height:1.5}
 .gv-kv dt{color:var(--muted);font:500 12px/1.5 var(--f-mono)}
 .gv-kv dd{margin:0;color:var(--ink2);min-width:0;overflow-wrap:break-word}
-.gv-kv dd b{color:var(--ink);font-weight:600}
-.gv-kv dd ul{margin:0;padding-left:1.1em;display:grid;gap:2px}
-.gv-route{display:block;font:11.5px/1.5 var(--f-mono);color:var(--muted)}
 .gv-more{border-top:1px solid var(--rule);padding-top:10px;font-size:12.5px;color:var(--ink2)}
 .gv-more summary{cursor:pointer;color:var(--ink);font-weight:600;width:fit-content;border-radius:3px}
 .gv-more summary small{font-weight:400;color:var(--muted);margin-left:6px}
-.gv-more .gv-kv{margin-top:8px}
 
 /* design: approach, file table, mockup shot, the three check lines */
 .gv-approach{margin:0;max-width:62ch;font-size:15.5px;line-height:1.6;font-weight:500;color:var(--ink);text-wrap:pretty}
@@ -2456,7 +2447,6 @@ a.td-rf:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-rad
 .gv-shot{margin:0;display:grid;gap:6px;align-content:start;max-width:440px}
 .gv-shot a{display:block;border:1px solid var(--rule2);border-radius:var(--r-sm);overflow:hidden;aspect-ratio:16/10;background:var(--inset)}
 .gv-shot a:hover{border-color:var(--keel)}
-.gv-shot img{display:block;width:100%;height:100%;object-fit:cover;object-position:top center}
 .gv-shot figcaption{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;font-size:12px;color:var(--muted)}
 .gv-shot figcaption a{all:unset;cursor:pointer;color:var(--keel-deep);text-decoration:underline;text-underline-offset:3px;border-radius:3px}
 .gv-shot figcaption a:focus-visible{outline:2px solid var(--keel);outline-offset:2px}
@@ -2496,31 +2486,14 @@ a.td-rf:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-rad
 .gv-commit{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin:0;font-size:13px}
 .gv-commit code{font:600 12.5px var(--f-mono);padding:1px 7px;border-radius:5px;background:var(--inset);color:var(--ink)}
 .gv-commit span{color:var(--ink);font-weight:600}
-.gv-commit small{font-size:12px;color:var(--muted)}
 .gv-ship{list-style:none;margin:0;padding:0;border-top:1px solid var(--rule)}
 .gv-ship li{padding:7px 0 7px 18px;border-bottom:1px solid var(--rule);font-size:13px;line-height:1.55;color:var(--ink);position:relative}
 .gv-ship li::before{content:"+";position:absolute;left:2px;top:7px;font:600 12px/1.55 var(--f-mono);color:var(--pass-ink)}
 .gv-ship li code{font-size:12px;color:var(--ink2)}
-.gv-big{font-size:22px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1.2}
 .gv-split{color:var(--muted);font-size:12px}
-.gv-bar{display:flex;height:8px;margin:8px 0 6px;border-radius:2px;overflow:hidden;gap:2px}
-.gv-bar i{display:block;background:var(--c);min-width:2px}
-.gv-legend{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:2px 12px;font:11.5px/1.5 var(--f-mono);color:var(--muted)}
-.gv-legend b{font-weight:600;color:var(--ink2)}
-.gv-legend li{display:inline-flex;align-items:center;gap:5px}
-.gv-legend i{width:8px;height:8px;border-radius:2px;background:var(--c)}
-.gv-suite{display:inline-flex;align-items:center;gap:6px;font:600 12.5px var(--f-mono);color:var(--pass-ink);background:var(--pass-tint);padding:1px 8px;border-radius:5px}
 .gv-cmd{display:block;margin-top:4px;font:11.5px/1.5 var(--f-mono);color:var(--muted);overflow-wrap:anywhere}
 .gv-open{margin:0;padding-left:1.1em;display:grid;gap:4px;font-size:12.5px;line-height:1.5;color:var(--ink2)}
-.gv-open b{color:var(--ink);font-weight:600}
 .gv-side{display:grid;gap:16px;align-content:start}
 
-/* states */
-.gv-states{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(min(260px,100%),1fr));padding-top:4px}
-.gv-states>div{border:1px dashed var(--rule2);border-radius:var(--r-sm);padding:10px 12px;font-size:12.5px;line-height:1.55;color:var(--ink2)}
-.gv-states b{display:block;margin-bottom:2px;color:var(--ink);font-weight:600}
-.gv-states .err span{color:var(--bad)}
-.gv-states code{font:12px var(--f-mono)}
-.gv-sh{margin:0;font-size:12px;color:var(--muted)}
 /* gate tab: the report lines no parser rule recognised, as written */
 .gv-rest{margin:8px 0 0;white-space:pre-wrap;font:12px/1.55 var(--f-mono);color:var(--ink2);overflow-wrap:anywhere}

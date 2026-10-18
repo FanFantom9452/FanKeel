@@ -150,3 +150,19 @@ test('the gate tab adds no listener', () => {
     assert.ok(from > 0 && to > from, 'the block is where it was put');
     assert.doesNotMatch(SRC.slice(from, to), /addEventListener/);
 });
+
+test('report lines no rule recognised are escaped in the rest', () => {
+    const g = report('build', '- a.js +1/-0 — x\n<img src=x>\n');
+    assert.deepEqual(g.parts.rest, ['<img src=x>'], 'the line lands in rest');
+    const rest = /<pre class="gv-rest">([\s\S]*?)<\/pre>/.exec(V.gateTabHtml({ stage: 'build' }, g, []))[1];
+    assert.equal(rest, '&lt;img src=x&gt;');
+});
+
+test('at the gate with no gate question to read, the banner says so instead of a bare colon', () => {
+    for (const gate of [null, { questions: [] }]) {
+        const html = V.gateTabHtml({ stage: 'survey' }, Object.assign(report('survey', '- a.js:1 — x'), { gate }), []);
+        const h2 = /<h2>([\s\S]*?)<\/h2>/.exec(html)[1];
+        assert.doesNotMatch(h2, /[：:]$/);
+        assert.match(h2, /survey<\/span> gate：報告裡沒有讀得出的 gate 問題$/);
+    }
+});
