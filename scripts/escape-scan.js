@@ -8,7 +8,7 @@
 // and how many tool calls did not parse at all (`__unparsedToolInput`). Run it
 // again with --since to compare a later week against the first numbers.
 //
-//   node escape-scan.js [--config-dir <dir>] [--since <YYYY-MM-DD>]
+//   node escape-scan.js [--config-dir <dir>] [--since <YYYY-MM-DD | ISO time with Z or ±HH:MM>]
 
 const fs = require('node:fs');
 const path = require('node:path');
@@ -16,7 +16,7 @@ const { parseArgs } = require('node:util');
 const { liveConfigDir } = require('../lib/live.js');
 const { rareChars, hasCjk } = require('../lib/cjk.js');
 
-const USAGE = 'escape-scan.js: usage: escape-scan.js [--config-dir <dir>] [--since <YYYY-MM-DD>]';
+const USAGE = 'escape-scan.js: usage: escape-scan.js [--config-dir <dir>] [--since <YYYY-MM-DD | YYYY-MM-DDTHH:MM[:SS]Z | ...±HH:MM>]';
 const TOOLS = ['AskUserQuestion', 'TodoWrite', 'Write', 'update_plan', 'wrap_up'];
 
 // An MCP tool is mcp__<server>__<tool>: update_plan and wrap_up are matched on
@@ -108,7 +108,8 @@ function main(argv) {
         return { text: USAGE + ': ' + e.message, code: 2 };
     }
     const since = parsed.values.since;
-    if (since !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(since)) return { text: USAGE + ': --since is a date, YYYY-MM-DD', code: 2 };
+    const shape = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2}))?$/;
+    if (since !== undefined && !(shape.test(since) && Number.isFinite(Date.parse(since)))) return { text: USAGE + ': --since is a date, or a time with Z or an offset', code: 2 };
     const configDir = parsed.values['config-dir'] || liveConfigDir();
     return { text: report(configDir, scan(configDir, { since }), since), code: 0 };
 }

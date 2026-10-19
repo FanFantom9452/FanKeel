@@ -78,3 +78,17 @@ test('the report prints a row per tool, the flagged characters and the unparsed 
     assert.equal(main(['--since', 'last week']).code, 2);
     assert.equal(main(['--bogus']).code, 2);
 });
+
+test('--since takes an ISO time with a zone and cuts inside one day; a time with no zone is refused', () => {
+    const dir = config();
+    const later = main(['--config-dir', dir, '--since', '2026-10-19T09:00Z']);
+    assert.equal(later.code, 0);
+    assert.match(later.text, /^ {2}AskUserQuestion\s+2\s+2\s+1\s+50\.00%$/m);
+    assert.match(later.text, /, since 2026-10-19T09:00Z$/m);
+    const after = main(['--config-dir', dir, '--since', '2026-10-19T19:00+08:00']);
+    assert.match(after.text, /^ {2}AskUserQuestion\s+0\s+0\s+0\s+-$/m);
+    const none = main(['--config-dir', dir, '--since', '2026-10-19T11:00Z']);
+    assert.match(none.text, /^ {2}AskUserQuestion\s+0\s+0\s+0\s+-$/m);
+    assert.equal(main(['--config-dir', dir, '--since', '2026-10-19T09:00']).code, 2);
+    assert.equal(main(['--config-dir', dir, '--since', '2026-13-45T09:00Z']).code, 2);
+});
