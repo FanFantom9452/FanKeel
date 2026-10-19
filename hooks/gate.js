@@ -53,6 +53,7 @@ const { inspect, awayLine, AWAY_QUESTION } = require('../lib/context.js');
 const { controlling, nextStage, normaliseRoute, FULL_ROUTE } = require('../lib/stages.js');
 const { handoffPath, answerPath, pendingPath, answersSince, answeredOf, handedOffSince, writeAnswer, readGate, patrolEntries, reportProblem, skipReason, gateMatches, withCheckout } = require('../lib/handoff.js');
 const { run, parse, refuse } = require('../lib/hook.js');
+const { askSlip } = require('../lib/cjk.js');
 
 // `stage.agents` as the profile holds it, for a sentence.
 const agentsText = (values) => {
@@ -233,6 +234,17 @@ function main(raw) {
     const root = registry.rootFor(payload);
     const mine = withCheckout(root, registry.readSession(root, payload.session_id), registry.launchRoot(payload));
     if (!mine || mine.active !== true) return;
+
+    // escape-1: a question carrying a character an escape slip lands on is sent
+    // back once, naming it (`askSlip` in lib/cjk.js); the same text asked again
+    // goes out. First, so a refused question stamps no gate time.
+    try {
+        const slip = askSlip(root, payload.session_id, payload.tool_input);
+        if (slip) {
+            refuse(slip);
+            return;
+        }
+    } catch (e) { /* housekeeping */ }
 
     const hash = hashOf(payload.tool_input && payload.tool_input.questions);
     const before = mine.gateAsked && typeof mine.gateAsked === 'object' ? mine.gateAsked : null;
