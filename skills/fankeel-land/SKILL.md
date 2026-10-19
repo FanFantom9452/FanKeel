@@ -220,6 +220,21 @@ already lost one by the time `land` reads them. Read the notes before standing
 the task down, and put anything still needed into one of the four durable places
 above.
 
+**A retro, offered and never assumed.** Before standing the task down, offer
+one read of this session's transcript as an option on the gate:
+`fankeel-retro` reads it with `scripts/conversation.js --session <id>` and
+returns a unified diff proposing edits to `skills/` or `CLAUDE.md`, one
+`evidence:` line per hunk, and writes nothing. The option's description says
+what it costs and what it reads: the whole transcript passes through one
+sonnet context, tens of thousands of tokens on a long session, and that
+transcript holds everything said here — so nothing runs until the user says
+yes in this session. On the yes, say how many and on which model before it
+goes: one `subagent_type: fankeel:fankeel-retro`, on the sonnet its file
+pins, its prompt naming `session <id>` and `<plugin>`. Its diff is shown at
+the next gate and never applied on the same yes; an approved hunk goes to one
+`fankeel:fankeel-fixer` per file, as the slimmer's do. A land brain sends it
+only when its brief carries that yes; otherwise its gate carries the offer.
+
 The commit is the same three parts every time, and `build` commits one task at a
 time with the same skeleton — injected here, and read from step 4 of its own
 skill there, because its injection has no room for the rule:

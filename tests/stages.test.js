@@ -1017,12 +1017,32 @@ test('the controller passes model opus for design and plan and no model for the 
   }
 });
 
-test('audit may dispatch a fixer and a mover, land only a mover', () => {
+test('audit may dispatch a fixer and a mover, land a mover and no fixer', () => {
   const { agentsFor } = require('../lib/stages.js');
   assert.ok(agentsFor('audit').includes('fankeel:fankeel-fixer'));
   assert.ok(agentsFor('audit').some((a) => a.startsWith('a mover')));
   assert.equal(agentsFor('land').includes('fankeel:fankeel-fixer'), false);
   assert.ok(agentsFor('land').some((a) => a.startsWith('a mover')));
+});
+
+// docs/90-agent/plans/2026-10-19-patrol-3-design.md §7: the retro is land's,
+// and the land skill sends it only on the user's yes, saying what it costs and
+// what it reads.
+test('land may dispatch the retro reviewer, and its skill sends it only on a yes', () => {
+  const { agentsFor } = require('../lib/stages.js');
+  assert.ok(agentsFor('land').some((a) => a.includes('`fankeel:fankeel-retro`')), 'land does not list the retro');
+  for (const stage of ['survey', 'design', 'plan', 'build', 'verify', 'audit']) {
+    assert.ok(!agentsFor(stage).some((a) => a.includes('fankeel-retro')), stage + ' lists the retro');
+  }
+  assert.ok(agentsFor('land')[agentsFor('land').length - 1].startsWith('a mover'), 'the mover is no longer last');
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const land = fs.readFileSync(path.join(__dirname, '..', 'skills', 'fankeel-land', 'SKILL.md'), 'utf8').replace(/\s+/g, ' ');
+  assert.match(land, /subagent_type: fankeel:fankeel-retro/);
+  assert.match(land, /scripts\/conversation\.js --session <id>/);
+  assert.match(land, /nothing runs until the user says yes/);
+  assert.match(land, /tens of thousands of tokens/);
+  assert.match(land, /holds everything said here/);
 });
 
 // An interjection mid-stage re-injects the controller's block; with a stage
