@@ -45,8 +45,10 @@ const profile = require('../lib/profile.js');
 const handoff = require('../lib/handoff.js');
 const docsearch = require('../lib/docsearch.js');
 const detail = require('../lib/detail.js');
+const compare = require('../lib/compare.js');
+const spendrange = require('../lib/spendrange.js');
 const conversation = require('../lib/conversation.js');
-const { entriesOf } = require('../lib/usage.js');
+const { entriesOf, summarise } = require('../lib/usage.js');
 const todoCheck = require('./todo-check.js');
 const todoFiles = require('../lib/todo.js');
 const view = require('../assets/station/station.js');
@@ -57,7 +59,7 @@ const ASSETS = path.join(PLUGIN, 'assets', 'station');
 // The files `serve` answers from ASSETS, by name: the page's own two, the
 // language table, and the tour (`tour.html` and what it loads). A list, so
 // nothing else under the plugin directory is reachable by url.
-const STATIC = /^\/station\/((?:station|i18n)\.js|station\.css|tour(?:-[a-z]+)*\.(?:js|css|html))$/;
+const STATIC = /^\/station\/((?:station|i18n|spend-[a-z]+)\.js|station\.css|tour(?:-[a-z]+)*\.(?:js|css|html))$/;
 const TYPES = { '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.html': 'text/html; charset=utf-8' };
 
 // `--root`/`--scan` are `multiple: true`: `values.root`/`values.scan` come
@@ -336,6 +338,9 @@ async function serve(opts) {
     // says its transcript has not moved: turning a page must not parse a
     // 20 MB transcript again.
     let talked = null;
+    // Every session row the 花費 page's range report has read, by transcript,
+    // held while `keyOf` says its files have not moved (lib/spendrange.js).
+    const spendMemo = new Map();
     // Every Chartroom handler this run has built, one per registry root,
     // each on that root's first `/chartroom/<name>/` request; `close()`
     // below closes them all.
@@ -476,6 +481,28 @@ async function serve(opts) {
             const out = docsearch.search(docsearch.searchDirs(sharedModel()), url.searchParams.get('q') || '');
             return send(200, 'application/json; charset=utf-8', JSON.stringify(out), noStore);
         }
+        if (req.method === 'GET' && url.pathname === '/station/spend') {
+            // The 花費 page's range report (lib/spendrange.js): every
+            // transcript under this server's config dir, chosen by
+            // lib/compare.js's rule, so its total is the one
+            // scripts/usage-compare.js prints for the same range. The first
+            // request reads every transcript; `spendMemo` makes the next ones
+            // read only what moved.
+            let range;
+            try {
+                range = compare.parseRange(String(url.searchParams.get('from')) + '..' + String(url.searchParams.get('to')));
+            } catch (e) {
+                return fail(400, e.message);
+            }
+            const n = Number(url.searchParams.get('top'));
+            let out;
+            try {
+                out = spendrange.report(gatherOpts.configDir, range, { memo: spendMemo, top: Number.isInteger(n) && n > 0 && n <= 50 ? n : 10 });
+            } catch (e) {
+                return fail(500, e.message);
+            }
+            return send(200, 'application/json; charset=utf-8', JSON.stringify(out), noStore);
+        }
         const talk = /^\/station\/talk\/([0-9A-Za-z-]+)$/.exec(url.pathname);
         if (req.method === 'GET' && talk) {
             // The 對話 tab: one page of a session's turns (lib/conversation.js)
@@ -496,6 +523,10 @@ async function serve(opts) {
                 }
                 const read = conversation.turnsOf(entries);
                 read.skipped.unparsed = stats.unparsed;
+                // What each compaction and each cache rewrite after an hour
+                // away cost (lib/conversation.js `spendOf`), read once with
+                // the turns and held with them.
+                read.spend = conversation.spendOf(entries, summarise(file, { series: true }));
                 talked = { id: talk[1], key, read };
             }
             const from = Number(url.searchParams.get('from'));
