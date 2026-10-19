@@ -110,8 +110,35 @@ the scan itself finding no script reference anywhere — the last of those is
 node <plugin>/scripts/todo-check.js [--root <dir>]
 ```
 
+### 2.0 File the record first
+
+Run the suite with `--check` first; red stops the stage. Then write the five
+typed fields in the user's language, to plain-language.md, and pipe them in:
+
+```
+node <plugin>/scripts/record.js write --session <id> <<'EOF'
+要求: <the ask, one line>
+做了什麼:
+  - <what someone can now do that they could not>
+為什麼這樣做: <the approach; what was given up>
+驗過・沒驗過: <checked; not checked>
+還剩什麼: <what is still not done>
+EOF
+```
+
+It refuses a missing field, a sentence over 160 columns and a bare code, and
+writes nothing; fix and pipe again. On success it adds 花費 from the session's
+own transcript, files the record on the registry entry and in the month's file,
+and prints `filed: <file>#<anchor>` and the six lines.
+
+The task is still active at this point, which `write` requires, so it runs
+before Execute stands the task down. The month file it writes is a changed file
+that the step 4 notes commit (or this change's commit) must include, so it lands
+with the work. `--root <dir>`, `--project <dir>` and `--config-dir <dir>` are
+available when the session is registered under another root.
+
 Close the TODO entries this work finished — whoever finishes the work closes
-the entry in the same change (folder mode: `todo.js done <id> --sha <sha> --record "<one or two sentences on this entry>. 詳見[任務紀錄](../records/<YYYY-MM>.md#<anchor>)" --commits <sha,sha>` — the anchor is the one `record.js write` printed on its `filed:` line, and the record itself lives there, not here; the file stays and gains a `## 完成紀錄` section — written to [plain-language.md](../../docs/90-agent/reference/plain-language.md), no `path:line`, never edited after, `--commits` naming every commit of the work but not the one that writes the record; hand-written `TODO.md`: remove the line). A plan that just moved is a link that just changed
+the entry in the same change (folder mode: `todo.js done <id> --sha <sha> --record "<one or two sentences on this entry>. 詳見 <link to the record>" --commits <sha,sha>` — the link is the `filed:` path from `record.js write` written relative to the TODO file, with its anchor, as a markdown link whose text is 任務紀錄 and whose target is that path and anchor, and the record itself lives there, not here; the file stays and gains a `## 完成紀錄` section — written to [plain-language.md](../../docs/90-agent/reference/plain-language.md), no `path:line`, never edited after, `--commits` naming every commit of the work but not the one that writes the record; hand-written `TODO.md`: remove the line). A plan that just moved is a link that just changed
 address, so run this after anything moves.
 
 Update `last_verified` on every page you re-read and found true. That date is the
@@ -364,27 +391,6 @@ delete them.
 Clean up only worktrees the project created under `.worktrees/`, `worktrees/` or `.fankeel/worktrees/`.
 Anything else belongs to the host environment.
 
-## 8. File the record
-
-Run the suite with `--check` first; red stops the stage. Then write the five
-typed fields in the user's language, to plain-language.md, and pipe them in:
-
-```
-node <plugin>/scripts/record.js write --session <id> <<'EOF'
-要求: <the ask, one line>
-做了什麼:
-  - <what someone can now do that they could not>
-為什麼這樣做: <the approach; what was given up>
-驗過・沒驗過: <checked; not checked>
-還剩什麼: <what is still not done>
-EOF
-```
-
-It refuses a missing field, a sentence over 160 columns and a bare code, and
-writes nothing; fix and pipe again. On success it adds 花費 from the session's
-own transcript, files the record on the registry entry and in the month's file,
-and prints `filed: <file>#<anchor>` and the six lines.
-
 ## Output
 
 ```
@@ -402,7 +408,7 @@ then AskUserQuestion
 ```
 
 The report above the gate is the commit line, the six lines as `record.js`
-printed them (step 8), `suite:` from step 1, and `紀錄:` with the `filed:`
+printed them (step 2.0), `suite:` from step 1, and `紀錄:` with the `filed:`
 value. `做了什麼:` is one line per thing someone can now do that they could not,
 not a tour of the diff. Option one's
 description names the month file and anchor.

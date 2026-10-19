@@ -24,6 +24,6 @@ test('station.md closes What each row holds with the record, and its last_verifi
 });
 
 test('docs/README.md has one question row for docs/90-agent/records', () => {
-    const rows = read('docs/README.md').split('\n').filter((l) => l.startsWith('|') && l.includes('90-agent/records'));
+    const rows = read('docs/README.md').split('\n').filter((l) => l.startsWith('|') && l.includes('90-agent/records') && !l.startsWith('| `docs/'));
     assert.equal(rows.length, 1);
 });

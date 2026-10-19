@@ -76,7 +76,7 @@ Not in this table: the `INIT` rules of the `/fankeel` prompt (no stage yet), the
 | land.0 | Commit: type: what changed under | `scripts/commit.js`, `scripts/land.js` | none | Only where the profile sets `commit.format`: every block of a commit file commit.js lands, and land.js's merge subject, are refused when the subject misses it (formatMiss). An in-session `git commit` passes through neither, and the bullets are not checked. |
 | land.1 | Close the TODO entries this | none — prose only | `scripts/todo-check.js` | `scripts/task.js` stage land prints the `todo.js done` line for each entry the task named; nothing checks they ran. todo-check reports a TODO that is no longer an index. |
 | land.2 | Update last_verified on pages re-checked | none — prose only | none | `scripts/map.js` rewrites the map when run; nothing checks that `last_verified` moved. |
-| land.3 | shipped: is one line per | none — prose only | none | — |
+| land.3 | 做了什麼: one line per thing | none — prose only | none | — |
 | land.4 | Option one stands the task | none — prose only | none | `hooks/carry.js` offers an entry a `/clear` left active back on the next session's first prompt — a repair after the fact, not a refusal. |
 | land.5 | Integration — {{PROFILE_LAND}}. | none — prose only | none | — |
 | land.6 | Read the fankeel-land skill on | none — prose only | none | — |
