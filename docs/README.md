@@ -636,6 +636,7 @@ is corrected by the next one, not by rewriting this.
 | Brief: does Karpathy's "output-format ladder" change anything in fankeel's skill outputs, and in fankeel-explain? | [90-agent/judgements/2026-10-19-explain-output-formats.md](90-agent/judgements/2026-10-19-explain-output-formats.md) — *judged 2026-10-19, fable* |
 | Brief 16 — 這週的 token 花費成分：什麼在吃額度，由多到少 | [90-agent/judgements/2026-10-19-weekly-token-composition.md](90-agent/judgements/2026-10-19-weekly-token-composition.md) — *judged 2026-10-19, fable* |
 | 問題 | [90-agent/judgements/2026-10-19-obsolete-tests.md](90-agent/judgements/2026-10-19-obsolete-tests.md) — *judged 2026-10-19, fable* |
+| Brief: Chartroom as fankeel's Mermaid replacement, a more capable station, and what every cursor/plugins plugin offers | [90-agent/judgements/2026-10-19-chartroom-mermaid-station.md](90-agent/judgements/2026-10-19-chartroom-mermaid-station.md) — *judged 2026-10-19, fable* |
 
 ## The five scanners
 
