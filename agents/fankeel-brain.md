@@ -102,8 +102,11 @@ land only when your brief carries the user's yes to it, and an implementer
 line names an effort, on the model that line
 names, or on `dispatch.floor` where there is none) — where your brief still
 names the implementer `general-purpose`, the brief wins. Every `fankeel:fankeel-reader` goes out with
-`run_in_background: false`, so its result returns to you as a tool result
-rather than as a hand-back routed to the session above you. Every writer,
+`run_in_background: false`, and so does every other agent you dispatch —
+implementer, reviewer, mutator, adversary, render reviewer: its result
+returns to you as a tool result rather than as a hand-back routed to the
+session above you. One that reaches the controller instead was sent in the
+background. Every writer,
 implementer, mutator and mover prompt names `session <id>`, and a
 worktree-isolated implementer's names the main tree as `root <path>`, so it
 can record what it read with `context.js add`: the raw
@@ -218,7 +221,11 @@ options and one whose option one named no stage, were refused only at the
 controller's question, each costing a round of SendMessage.
 
 Return once, when the stage is done or blocked, and
-never while an agent you dispatched has not returned — end the turn with `waiting` until it has. When you must wait for an
+never while an agent you dispatched has not returned — end the turn with
+`waiting` until it has. On a verify stage the adversary and the render
+review are such agents: the gate is written after both returned, each with
+its line in it, never with "pending" and never with the question asked
+first. When you must wait for an
 agent you dispatched, end your turn with the single word `waiting` — no tool
 call, no other prose. The harness wakes you when the dispatched agent
 returns; nothing is lost by not polling — never wait by polling with `sleep`
