@@ -19,7 +19,8 @@
 // --fast runs package.json's test:fast — the suite without the tests named
 // @slow — and records fast: true, which land refuses; with no test:fast it
 // runs test and says so. The run waits on lib/suitelock.js's machine-wide
-// lock while another suite.js holds it, and gives its command
+// lock while another suite.js holds it, keeps that lock's `out` fresh while its
+// suite prints, and gives its command
 // FANKEEL_SUITE_HELD so a suite.js inside that run takes no lock.
 const fs = require('node:fs');
 const path = require('node:path');
@@ -30,14 +31,16 @@ const suite = require('../lib/suite.js');
 const lock = require('../lib/suitelock.js');
 const { worktreeOf } = require('../lib/guard.js');
 
-// The one line a waiting run prints: who holds the lock, where, since when — or,
-// stuck, that the lock is dead and could not be removed.
-function waitLine(h, file, stuck) {
+// The one line a waiting run prints: who holds the lock, where, since when and
+// how long ago its suite last printed — or, stuck, that the lock is dead and
+// could not be removed.
+function waitLine(h, file, stuck, now = Date.now()) {
     if (stuck) return 'suite: waiting — lock ' + file + ' is stale and could not be removed; delete it by hand';
     if (h.unreadable) return 'suite: waiting — lock ' + file + ' is being written';
     const at = new Date(h.at);
     const since = String(at.getHours()).padStart(2, '0') + ':' + String(at.getMinutes()).padStart(2, '0');
-    return 'suite: waiting — pid ' + h.pid + (h.session ? ' (session ' + h.session + ')' : '') + ' has run the suite in ' + (h.tree || '?') + ' since ' + since + '; lock ' + file;
+    const printed = Number.isFinite(h.out) ? '; last output ' + Math.floor((now - h.out) / 60000) + ' min ago' : '; no output recorded yet';
+    return 'suite: waiting — pid ' + h.pid + (h.session ? ' (session ' + h.session + ')' : '') + ' has run the suite in ' + (h.tree || '?') + ' since ' + since + printed + '; lock ' + file;
 }
 
 function main(argv) {
@@ -76,7 +79,7 @@ function main(argv) {
         : lock.acquire({ file: lockAt, owner: { session: values.session, tree, command }, onWait: (h, stuck) => process.stdout.write(waitLine(h, lockAt, stuck) + '\n') });
     let result;
     try {
-        result = suite.runSuite(tree, command, { FANKEEL_SUITE_HELD: lockAt });
+        result = suite.runSuite(tree, command, { FANKEEL_SUITE_HELD: lockAt }, { lock: held ? { file: lockAt, pid: held.pid, at: held.at } : null });
     } finally {
         // A lock left behind is cleared once this pid is gone; losing the record of a
         // suite that already ran is worse, so a failed release is said and not thrown.

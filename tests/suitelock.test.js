@@ -111,6 +111,70 @@ test('a lock reading null or [], or a directory at the lock path, is unreadable:
   lock.acquire({ file: dir, onWait: waited }).release();
 });
 
+test('a live holder whose at is past maxAgeMs but whose out is fresh is not stale: waited on', () => {
+  const file = scratch();
+  hold(file, { pid: process.pid, at: new Date(Date.now() - lock.MAX_AGE_MS - 1000).toISOString(), out: Date.now() });
+  let stuck = null;
+  assert.throws(() => lock.acquire({ file, onWait: (h, s) => { stuck = s; waited(); } }), /waited/);
+  assert.equal(stuck, false);
+});
+
+test('a live holder whose at and out are both past maxAgeMs is cleared and taken', () => {
+  const file = scratch();
+  const old = Date.now() - lock.MAX_AGE_MS - 1000;
+  hold(file, { pid: process.pid, at: new Date(old).toISOString(), out: old });
+  lock.acquire({ file, onWait: waited }).release();
+});
+
+test('an out that is not a number is ignored: an old at alone makes the holder stale', () => {
+  const file = scratch();
+  hold(file, { pid: process.pid, at: new Date(Date.now() - lock.MAX_AGE_MS - 1000).toISOString(), out: new Date().toISOString() });
+  lock.acquire({ file, onWait: waited }).release();
+});
+
+test('acquire stamps at when it takes the lock, not when its wait began, and returns pid and at', () => {
+  const file = scratch();
+  hold(file, { pid: process.pid, at: new Date().toISOString() });
+  let freed = 0;
+  const h = lock.acquire({ file, pollMs: 10, onWait: () => { registry.sleepMs(30); fs.unlinkSync(file); freed = Date.now(); } });
+  assert.equal(h.pid, process.pid);
+  assert.ok(Date.parse(h.at) >= freed, 'at ' + h.at + ' predates the release at ' + new Date(freed).toISOString());
+  assert.equal(JSON.parse(fs.readFileSync(file, 'utf8')).at, h.at);
+  h.release();
+});
+
+test('touch writes out into the lock it names, and into no other', () => {
+  const file = scratch();
+  const mine = { pid: process.pid, at: new Date().toISOString() };
+  hold(file, { ...mine, session: 's' });
+  assert.equal(lock.touch(file, mine, 12345), true);
+  assert.deepEqual(JSON.parse(fs.readFileSync(file, 'utf8')), { ...mine, session: 's', out: 12345 });
+  hold(file, { pid: process.pid + 1, at: mine.at });
+  assert.equal(lock.touch(file, mine, 99999), false);
+  assert.equal(JSON.parse(fs.readFileSync(file, 'utf8')).out, undefined);
+  fs.unlinkSync(file);
+  assert.equal(lock.touch(file, mine, 99999), false);
+  assert.equal(fs.existsSync(file), false, 'touch created a lock that was gone');
+});
+
+test('the refresher touches the lock at most once per REFRESH_MS, counted from at', () => {
+  const file = scratch();
+  const t0 = Date.parse('2026-10-19T09:00:00.000Z');
+  const mine = { pid: process.pid, at: new Date(t0).toISOString() };
+  hold(file, mine);
+  const out = () => JSON.parse(fs.readFileSync(file, 'utf8')).out;
+  const seen = lock.refresher(file, mine);
+  assert.equal(lock.REFRESH_MS, 30000);
+  assert.equal(seen(t0 + 10000), false);
+  assert.equal(out(), undefined);
+  assert.equal(seen(t0 + 31000), true);
+  assert.equal(out(), t0 + 31000);
+  assert.equal(seen(t0 + 40000), false);
+  assert.equal(out(), t0 + 31000);
+  assert.equal(seen(t0 + 61000), true);
+  assert.equal(out(), t0 + 61000);
+});
+
 test('sleepMs, the one wait suitelock polls with, blocks for at least the time it is given', () => {
   const t0 = Date.now();
   registry.sleepMs(40);

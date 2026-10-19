@@ -76,6 +76,24 @@ test('a red run records the failing test names in suite.json, a green one none @
   assert.deepEqual(JSON.parse(fs.readFileSync(file, 'utf8')).failed, ['a']);
 });
 
+test('runSuite holding the lock passes the output and exit status through, and touches the lock once the refresh is due', () => {
+  const dir = repo();
+  const file = path.join(tmp('fankeel-suitelock-'), 'suite.lock');
+  const at = new Date(Date.now() - 31000).toISOString();
+  fs.writeFileSync(file, JSON.stringify({ pid: process.pid, at }) + '\n');
+  const before = Date.now();
+  const green = suite.runSuite(dir, 'node --test', {}, { lock: { file, pid: process.pid, at } });
+  assert.equal(green.ok, true);
+  assert.equal(green.pass, 1);
+  const held = JSON.parse(fs.readFileSync(file, 'utf8'));
+  assert.equal(held.at, at);
+  assert.ok(Number.isFinite(held.out) && held.out >= before, 'out was ' + held.out);
+  fs.writeFileSync(path.join(dir, 'a.test.js'), RED);
+  const red = suite.runSuite(dir, 'node --test', {}, { lock: { file, pid: process.pid, at } });
+  assert.equal(red.ok, false);
+  assert.deepEqual(red.failed, ['a']);
+});
+
 test('blocker: no record where a suite is runnable; a red record; a record older than a code change; null otherwise @slow', () => {
   const dir = repo();
   const sha = git(dir, ['rev-parse', 'HEAD']);
@@ -335,7 +353,7 @@ test('suite.js waits while a live pid holds the lock, says on what, and runs onc
       await new Promise((r) => setTimeout(r, 100));
     }
     assert.equal(run.child.exitCode, null, 'suite.js ran while the lock was held');
-    assert.match(run.out(), /^suite: waiting — pid \d+ \(session neighbour\) has run the suite in F:\/elsewhere since \d\d:\d\d; lock .*suite\.lock$/m);
+    assert.match(run.out(), /^suite: waiting — pid \d+ \(session neighbour\) has run the suite in F:\/elsewhere since \d\d:\d\d; no output recorded yet; lock .*suite\.lock$/m);
   } catch (e) {
     run.child.kill();
     throw e;
@@ -392,8 +410,12 @@ test('package.json: test is everything, test:fast skips the @slow tag', () => {
   assert.equal(pkg.scripts['test:fast'], 'node --test --test-timeout=300000 --test-force-exit --test-skip-pattern=@slow --require ./tests/subprocess-timeout.js');
 });
 
-test('waitLine names the live holder, and says a stuck dead lock must be deleted by hand', () => {
-  const h = { pid: 42, session: 's', tree: 'T', at: new Date(2026, 9, 16, 9, 5).toISOString() };
-  assert.equal(waitLine(h, 'x.lock', false), 'suite: waiting — pid 42 (session s) has run the suite in T since 09:05; lock x.lock');
-  assert.equal(waitLine(h, 'x.lock', true), 'suite: waiting — lock x.lock is stale and could not be removed; delete it by hand');
+test('waitLine names the live holder, says a stuck dead lock must be deleted by hand, and how long ago the holder last printed', () => {
+  const at = new Date(2026, 9, 16, 9, 5);
+  const now = at.getTime() + 20 * 60000;
+  const h = { pid: 42, session: 's', tree: 'T', at: at.toISOString() };
+  assert.equal(waitLine(h, 'x.lock', false, now), 'suite: waiting — pid 42 (session s) has run the suite in T since 09:05; no output recorded yet; lock x.lock');
+  assert.equal(waitLine(h, 'x.lock', true, now), 'suite: waiting — lock x.lock is stale and could not be removed; delete it by hand');
+  h.out = now - 7 * 60000 - 5000;
+  assert.equal(waitLine(h, 'x.lock', false, now), 'suite: waiting — pid 42 (session s) has run the suite in T since 09:05; last output 7 min ago; lock x.lock');
 });
