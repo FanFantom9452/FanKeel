@@ -134,6 +134,23 @@ test('await.js writes a failure handoff on lost and on timeout, and counts repea
     assert.ok(two.text.includes('Failure handoff: '), two.text);
 });
 
+test('await.js marks a failure handoff it could not read or write', async () => {
+    const g = fixture({ inflight: { stage: 'build', at: 1, agentId: 'a3f9c2' } });
+    at(path.join(g.config, 'projects', 'F--x', SID + '.jsonl'), Date.now());
+    at(path.join(g.config, 'projects', 'F--x', SID, 'subagents', 'agent-a3f9c2.jsonl'), Date.now() - 600000);
+    fs.mkdirSync(g.task + '/build-failed.md', { recursive: true });
+    const lost = await awaitCli.main(['--session', SID, '--root', g.root, '--idle', '0.2'], g.env);
+    assert.match(lost.text, /^lost a3f9c2 /);
+    assert.ok(lost.text.endsWith(' (failure handoff not written)'), lost.text);
+    assert.ok(!lost.text.includes('Failure handoff:'), lost.text);
+
+    const f = fixture({});
+    fs.mkdirSync(f.task + '/build-failed.md', { recursive: true });
+    const since = path.join(f.task, 'build-commit.md');
+    const un = await awaitCli.main(['--session', SID, '--root', f.root, '--since', since, '--timeout', '0.2'], f.env);
+    assert.ok(un.text.endsWith(' (failure handoff not written)'), un.text);
+});
+
 test('await.js with no answer file counts only a handoff newer than the in-flight mark as new', async () => {
     const f = fixture({ inflight: { stage: 'build', at: T, agentId: 'a1' } });
     const handoff = path.join(f.task, 'build.md').split(path.sep).join('/');

@@ -146,7 +146,10 @@ function writeFailure(state, o) {
     try {
         const prior = /^count: (\d+)$/m.exec(fs.readFileSync(file, 'utf8'));
         if (prior) count = Number(prior[1]) + 1;
-    } catch (e) { /* first failure */ }
+    } catch (e) {
+        // Anything but a missing file means the count is unknown: say so rather than restart it.
+        if (e.code !== 'ENOENT') return null;
+    }
     const next = count >= 2 ? 'stop retrying and ask the user — two failures in a row'
         : state === 'lost' ? 'dispatch a fresh stage agent with the same line'
         : 'run await again';
@@ -252,9 +255,15 @@ function main(argv, env) {
         if (handedOver) registry.markInflight(o.root, opts.session, 'build', o.agentId, o.lap, o.group, o.kind);
         else if (state === 'lost' || (state === 'handoff' && o.kind !== 'close' && Number.isInteger(o.group))) registry.clearInflight(o.root, opts.session, o.agentId);
         const failed = state === 'lost' || state === 'timeout' ? writeFailure(state, o) : null;
-        if (state === 'handoff') { try { fs.unlinkSync(failedPath(o.handoff)); } catch (e) { /* none */ } }
+        // Only a handoff state on this stage and group deletes the file; a commit
+        // between two failures does not reset the count.
+        let stale = '';
+        if (state === 'handoff') {
+            try { fs.unlinkSync(failedPath(o.handoff)); } catch (e) { if (e.code !== 'ENOENT') stale = ' (stale failure handoff not removed)'; }
+        }
         const line = lineFor(state, o, state === 'commit' ? newestCommit(o.commit, o.since) : null)
-            + (failed ? ' Failure handoff: ' + failed.replace(/\\/g, '/') + '.' : '');
+            + (failed ? ' Failure handoff: ' + failed.replace(/\\/g, '/') + '.' : state === 'lost' || state === 'timeout' ? ' (failure handoff not written)' : '')
+            + stale;
         return state === 'handoff' ? pageLine(o).then((page) => ({ text: line + (page ? PAGE_OPEN : '') + page })) : { text: line };
     }, (e) => {
         release();
