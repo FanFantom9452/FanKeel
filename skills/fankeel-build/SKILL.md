@@ -13,9 +13,11 @@ Produces the change.
 
 **Done when** the denominator lists nothing open, each piece has had its review
 as it landed, and the whole-branch review has run. **The denominator is the
-ledger where there is a plan**, the same way the decomposition is `plan`'s — and
-`design`'s file table where there is no plan, which is every `bounded` task. A
-`spike` has neither, and what it counts against is the question it was asked.
+ledger where there is a plan** — and `design`'s file table
+where there is no plan, which is every `bounded` task. A `spike` has neither, and what it
+counts against is the question it was asked: its gate gives the answer, never
+an offer to do the work; lasting code first upgrades the route to `bounded` —
+say so, then ask.
 
 - **One path, never a search.** `<plugin>` is two directories up from this
   file; resolve every script this skill names against that root and nowhere
