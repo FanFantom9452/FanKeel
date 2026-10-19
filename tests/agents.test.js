@@ -436,7 +436,6 @@ test('the init scout is read-only, runs onboard.js, and returns status and draft
     assert.ok(READ_ONLY_AGENTS.has('fankeel-init-scout'));
 });
 
-// MEMORY.md is an index; the slimmer proposes, the fixer applies.
 // Land's optional retro (docs/90-agent/plans/2026-10-19-patrol-3-design.md §7):
 // one session's transcript in, a diff with one evidence line per hunk out,
 // nothing written. Without a session id it reads nothing at all.
@@ -457,6 +456,7 @@ test('the retro reads one session through conversation.js and returns a diff wit
     assert.match(refuse, /Never write/);
 });
 
+// MEMORY.md is an index; the slimmer proposes, the fixer applies.
 test('the slimmer cuts fat hooks first, compares stale entries, returns a token line and hands the diff to the fixer', () => {
     const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-slimmer.md'), 'utf8').replace(/\s+/g, ' ');
     const job = text.slice(text.indexOf('## Job'), text.indexOf('## Return'));
