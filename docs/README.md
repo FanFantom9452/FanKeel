@@ -471,6 +471,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | TODO 全表盤點（10-19）定了什麼、沒做什麼：九條拆成 23 個任務做完並結案，驗證找出的七項殘留回建置修掉；新面板沒在瀏覽器裡截圖檢查 | [reports/patrols/2026-10-19-todo-patrol.md](90-agent/reports/patrols/2026-10-19-todo-patrol.md) — *繁體中文* |
 | TODO 全表盤點（10-19 第二輪）的 plan：五條 do now 加受控站 ask 例外、skill 量測與無人值守不做，八個 task | `docs/99-archive/2026-10-19-todo-patrol-eight.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-19 第二輪）定了什麼、沒做什麼：八個任務做完、七條結案，await group 編號回建置修掉；多候選設計與等鎖回報留著 | [reports/patrols/2026-10-19-todo-patrol-eight.md](90-agent/reports/patrols/2026-10-19-todo-patrol-eight.md) — *繁體中文* |
+| 舊引用、--since 接時間、盤點不誤標已落地條目的 plan：三個任務一組 | `docs/99-archive/2026-10-20-stale-refs-since-patrol.md` — *built, 繁體中文* |
+| 舊引用、--since 接時間、盤點不誤標已落地條目：做了什麼、沒做什麼 | [reports/2026-10-20-stale-refs-since-patrol.md](90-agent/reports/2026-10-20-stale-refs-since-patrol.md) — *繁體中文* |
 | TODO 全表盤點（10-20）定了什麼、沒做什麼：沒有要寫的程式，「工具參數中文寫成轉義」記下第二次掃描、改成 10-27 重量 | [reports/patrols/2026-10-20-todo-patrol-ten.md](90-agent/reports/patrols/2026-10-20-todo-patrol-ten.md) — *繁體中文* |
 | TODO 全表盤點（10-19 第三輪）的 plan：十六條拆成 34 個 task，要離開不停工、回報與轉送上限、站 agent 等子 agent、中文直接寫字、監控站花費頁 | `docs/99-archive/2026-10-20-todo-patrol-nine.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-19 第三輪）定了什麼、沒做什麼：34 個任務做完、14 條結案，兩條 10-27 重量、轉義再量一週 | [reports/patrols/2026-10-20-todo-patrol-nine.md](90-agent/reports/patrols/2026-10-20-todo-patrol-nine.md) — *繁體中文* |

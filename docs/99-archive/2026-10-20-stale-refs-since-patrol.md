@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # 舊引用、escape-scan --since 接時間、盤點不誤標已落地條目 Implementation Plan
