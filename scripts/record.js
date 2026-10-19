@@ -81,7 +81,7 @@ function duration(ms) {
 
 const short = (id) => String(id).replace(/^claude-/, '');
 
-// The station's own figure (lib/station.js:775-776, usd + agentUsd) read from
+// The station's own figure (lib/station.js:784-785, usd + agentUsd) read from
 // the same transcript, plus the time since the task started.
 function costLine(data, sessionId, configDir, now) {
     const time = duration(now - Date.parse(data.started));
@@ -133,11 +133,14 @@ function write(opts) {
     const anchor = taken ? base + '-' + (taken + 1) : base;
     const corrected = Boolean(mine.record);
     const head = before ? before.replace(/\n*$/, '\n\n') : '# 任務完成紀錄 ' + rel.slice(-10, -3) + '\n\n';
-    fs.mkdirSync(path.dirname(file), { recursive: true });
-    fs.writeFileSync(file, head + section(mine.task || opts.session, day, anchor, fields, corrected));
-    registry.update(root, opts.session, (d) => {
+    // The entry first: a month section with no entry behind it would be filed
+    // twice by the retry, the second time not marked as a correction.
+    const saved = registry.update(root, opts.session, (d) => {
         d.record = { at: new Date(now).toISOString(), file: rel, anchor, fields };
     });
+    if (!saved) fail('Nothing written: the registry entry for ' + opts.session + ' could not be updated (lock or read failed). Pipe the record again.');
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, head + section(mine.task || opts.session, day, anchor, fields, corrected));
     const out = ['filed: ' + rel + '#' + anchor];
     for (const [name, key] of FIELDS) {
         if (key === 'did') out.push(name + ':', ...fields.did.map((d) => '  - ' + d));

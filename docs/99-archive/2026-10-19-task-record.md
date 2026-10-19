@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # 任務完成紀錄 Implementation Plan
