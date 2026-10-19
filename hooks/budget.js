@@ -21,6 +21,14 @@ const { relayPath, withCheckout } = require('../lib/handoff.js');
 const { targetOf } = require('../lib/guard.js');
 const { run, parse, refuse } = require('../lib/hook.js');
 const { sessionDirOf, agentFiles } = require('../lib/usage.js');
+const { outstanding, heldReason } = require('../lib/children.js');
+
+// brain-1: a child's stop is written by its own SubagentStop hook, which can
+// trail the result its parent already holds by a moment, so the hold looks
+// three times, half a second apart, before it refuses.
+const SETTLE_TRIES = 3;
+const SETTLE_MS = 500;
+const pause = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 
 // What HARD still allows: writing the relay file this hook is about to tell
 // the agent to write. Denying that too would leave it with no way to hand
@@ -35,6 +43,23 @@ function main(raw) {
     const root = registry.rootFor(payload);
     const mine = withCheckout(root, registry.readSession(root, payload.session_id), registry.launchRoot(payload));
     if (!mine || mine.active !== true) return;
+
+    // brain-1: a hand-back while an agent this subagent dispatched has not
+    // stopped is refused (lib/children.js). On PreToolUse of SubagentHandback
+    // rather than as a SubagentStop block: a stage agent that waits ends its
+    // turn with `waiting` (agents/fankeel-brain.md), and a stop hook that cannot
+    // tell that turn end from a return would refuse the wait itself.
+    if (payload.hook_event_name === 'PreToolUse' && payload.tool_name === 'SubagentHandback') {
+        let held = outstanding(root, payload.session_id, payload.agent_id, payload.transcript_path);
+        for (let i = 0; held.length && i < SETTLE_TRIES; i++) {
+            pause(SETTLE_MS);
+            held = outstanding(root, payload.session_id, payload.agent_id, payload.transcript_path);
+        }
+        if (held.length) {
+            refuse(heldReason(held));
+            return;
+        }
+    }
 
     const dir = sessionDirOf(payload.transcript_path);
     if (!dir) return;

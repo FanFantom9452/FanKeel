@@ -668,6 +668,20 @@ of the same day sent six readers in the foreground and all six returned to
 it. Whether a background `/fankeel-ask` judge with foreground readers gets
 them all back is not yet observed.
 
+**A hand-back waits for the agents it sent.** `hooks/budget.js` refuses a
+subagent's `SubagentHandback` while an agent that subagent dispatched has not
+stopped, and tells it to end its turn with `waiting`. `outstanding` in
+`lib/children.js` reads the parent's id off each `.fankeel/build/spawn/<id>.json`
+(`hooks/mod.ts` writes one per Agent call) and the stops `hooks/agent-end.js`
+writes, and lets a child go once neither its transcript nor its spawn record
+has moved for 11 minutes, the `BUSY_MS` above. It refuses the hand-back call
+rather than blocking `SubagentStop`: Claude Code lets `SubagentStop` block
+(`decision: "block"`), but a stage agent that waits ends its turn with `waiting`, and whether that
+turn end fires `SubagentStop` has not been measured. With no mod there are no
+spawn records, and nothing is held. Seen: on 2026-10-19 a verify gate went out
+before its adversary and render review returned
+([brain-1](../todo/brain-1.md)).
+
 ### What a stage agent is told to read, and what it may write
 
 `renderBrainBrief` prints a `read first:` rule: the newest earlier stage's report
