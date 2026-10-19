@@ -1126,7 +1126,7 @@ test('an explicit group is used as-is, and clearInflight with no agentId clears 
   assert.equal(readEntryInflight(root, SID), undefined);
 });
 
-test('a group resets per lap: group 1 is free again once lap 1\'s only mark clears, even with a mark already running at lap 2', () => {
+test('groups number per stage and lap through groupSeq: lap 1 starts at group 1 even with a mark already running at lap 2', () => {
   const root = tmpRoot();
   seed(root, SID, { active: true, stage: 'build' });
   registry.markInflight(root, SID, 'build', 'a', 2);
