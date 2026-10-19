@@ -312,6 +312,18 @@ test('a bad fragment into a real page is reported the same way a dead link is', 
   assert.match(gone[0].what, /links to target\.md#not-a-real-heading/);
 });
 
+// record.js files each task record under `<a id="r-...">`, and land links a
+// closed TODO entry to it.
+test('a fragment into an <a id> anchor resolves', () => {
+  const root = repoWith('fankeel-docscheck-frag-aid-', {
+    'docs/README.md': '# index\n',
+    'docs/target.md': '# index\n\n<a id="r-2026-10-19-45487ab9"></a>\n\n## 2026-10-19 盤點\n',
+    'docs/page.md': 'See [record](target.md#r-2026-10-19-45487ab9).\n',
+  });
+  const gone = scan(root, []).findings.filter((f) => f.tag === 'gone');
+  assert.equal(gone.length, 0);
+});
+
 test('a heading repeated in one document resolves its second copy at -1', () => {
   const root = repoWith('fankeel-docscheck-frag-dup-', {
     'docs/README.md': '# index\n',

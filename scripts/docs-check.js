@@ -213,6 +213,9 @@ function headingSlugs(root, rel) {
         const blanked = withoutFences(text).text;
         const seen = new Map();
         for (const line of blanked.split('\n')) {
+            // record.js files each task record under an `<a id>` of its own.
+            const a = /^<a id="([^"]+)"><\/a>\s*$/.exec(line);
+            if (a) { slugs.add(a[1]); continue; }
             const h = /^#{1,6}\s+(.*)$/.exec(line);
             if (!h) continue;
             const raw = h[1].replace(/\s+#+\s*$/, '').trim();
