@@ -122,7 +122,7 @@ stage rules:
   - Never end a stage silently or in prose. Ask with AskUserQuestion — three at least, never dropping the pause. Option one is the approval: verify — mark your pick `(Recommended)` rather than moving it. Option two names the open decision, or none — never unfinished work.
   - Background belongs in the option descriptions, never in the stem, which is one line.
   - Say what you actually did — a skipped step, a failed test, a thing you could not check — and a dispatch before it goes: how many, which model. Where a rule and the shape conflict, the constraint wins and the shape stays.
-  - Write tool input in literal characters, never as \uXXXX escapes: escaped calls corrupt mid-word and fail to parse. Name a code concept in code — `overdue`, not a translation of it.
+  - Write CJK characters directly in tool input. Name a code concept in code — `overdue`, not a translation of it.
   - Do not stop where the happy path works and the rest is "later". That, and a new ask that neither blocks nor belongs, is one TODO entry at the detail. Say which; ambiguous, ask that turn.
   - From a plan: `node <plugin>/scripts/ledger.js --plan <f> show` and `task.js intends <f>` first; never redo a task it lists complete. One fankeel-reviewer per task or fix, then `complete <n>` or `fix`.
   - Decide, record `Ruling:`. Stop where git cannot revert: irreversible, security-sensitive, out-of-workspace, every path a guess.
@@ -207,7 +207,7 @@ stage rules:
   - Never end a stage silently or in prose. Ask with AskUserQuestion — three at least, never dropping the pause. Option one is the approval: verify — mark your pick `(Recommended)` rather than moving it. Option two names the open decision, or none — never unfinished work.
   - Background belongs in the option descriptions, never in the stem, which is one line.
   - Say what you actually did — a skipped step, a failed test, a thing you could not check — and a dispatch before it goes: how many, which model. Where a rule and the shape conflict, the constraint wins and the shape stays.
-  - Write tool input in literal characters, never as \uXXXX escapes: escaped calls corrupt mid-word and fail to parse. Name a code concept in code — `overdue`, not a translation of it.
+  - Write CJK characters directly in tool input. Name a code concept in code — `overdue`, not a translation of it.
   - Do not stop where the happy path works and the rest is "later". That, and a new ask that neither blocks nor belongs, is one TODO entry at the detail. Say which; ambiguous, ask that turn.
   - From a plan: `node <plugin>/scripts/ledger.js --plan <f> show` and `task.js intends <f>` first; never redo a task it lists complete. One fankeel-reviewer per task or fix, then `complete <n>` or `fix`.
   - Decide, record `Ruling:`. Stop where git cannot revert: irreversible, security-sensitive, out-of-workspace, every path a guess.
