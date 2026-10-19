@@ -164,14 +164,20 @@ test('serve.json is written once the listener binds and removed once it closes',
     const record = path.join(f.cfg, 'fankeel', 'serve.json');
     assert.equal(fs.existsSync(record), false, 'nothing before the server has bound');
     const s = await serve({ configDir: f.cfg, port: 0, idleMs: 0, open: false });
-    assert.ok(fs.existsSync(record), 'serve.json exists once the listener is bound');
-    const data = JSON.parse(fs.readFileSync(record, 'utf8'));
-    assert.equal(data.pid, process.pid);
-    assert.equal(data.url, s.url);
-    assert.ok(Number.isInteger(data.port) && data.port > 0);
-    assert.ok(typeof data.started === 'string' && !Number.isNaN(Date.parse(data.started)));
-    s.close();
-    assert.equal(fs.existsSync(record), false, 'serve.json is removed once the server closes');
+    let closed = false;
+    try {
+        assert.ok(fs.existsSync(record), 'serve.json exists once the listener is bound');
+        const data = JSON.parse(fs.readFileSync(record, 'utf8'));
+        assert.equal(data.pid, process.pid);
+        assert.equal(data.url, s.url);
+        assert.ok(Number.isInteger(data.port) && data.port > 0);
+        assert.ok(typeof data.started === 'string' && !Number.isNaN(Date.parse(data.started)));
+        s.close();
+        closed = true;
+        assert.equal(fs.existsSync(record), false, 'serve.json is removed once the server closes');
+    } finally {
+        if (!closed) s.close();
+    }
 });
 
 test('idleMs: 0 arms no timer, rather than the old default falling back on a falsy value', async (t) => {
