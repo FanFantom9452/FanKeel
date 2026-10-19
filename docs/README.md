@@ -625,6 +625,7 @@ is corrected by the next one, not by rewriting this.
 | Brief 1 — 為什麼主 session 花費佔比仍最高，cache read/write 為何仍大，compact.at 450K 該不該降 | [90-agent/judgements/2026-10-18-main-session-cost.md](90-agent/judgements/2026-10-18-main-session-cost.md) — *judged 2026-10-18, fable* |
 | Brief — are recent plans' build stages parallelised as far as they could be? | [90-agent/judgements/2026-10-18-plan-parallelism.md](90-agent/judgements/2026-10-18-plan-parallelism.md) — *judged 2026-10-18, fable* |
 | Brief — gate-11: put the missing gate-tab fields into the report templates? | [90-agent/judgements/2026-10-18-gate-report-fields.md](90-agent/judgements/2026-10-18-gate-report-fields.md) — *judged 2026-10-18, fable* |
+| Brief: what cursor/plugins (above all pstack) does differently from fankeel, and what fankeel should take | [90-agent/judgements/2026-10-18-cursor-plugins-pstack.md](90-agent/judgements/2026-10-18-cursor-plugins-pstack.md) — *judged 2026-10-18, fable* |
 | Brief 15 — TencentDB-Agent-Memory: what it means for our MEMORY.md management and workflow | [90-agent/judgements/2026-10-18-tencentdb-agent-memory.md](90-agent/judgements/2026-10-18-tencentdb-agent-memory.md) — *judged 2026-10-18, fable* |
 
 ## The five scanners
