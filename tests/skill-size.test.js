@@ -5,12 +5,27 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const { skillFiles, main } = require('../scripts/input-check.js');
 
-// A ratchet, not a target: each cap sits just above the size measured on
-// 2026-10-19 (`node scripts/input-check.js --skills`), so a skill can shrink
-// freely and cannot grow unnoticed. Slimming lowers the number in the same
-// change; growing past it is a decision, made by raising it here.
-const CAPS = { 'fankeel': 65600, 'fankeel-build': 40100 };
-const OTHER = 24000;
+// A ratchet, not a target: each cap is the smallest multiple of 100 above the
+// size measured on 2026-10-20 (`node scripts/input-check.js --skills`;
+// skills-4: measure first, then cap), so a skill can shrink freely and cannot
+// grow unnoticed. Slimming lowers the number in the same change; growing past
+// it is a decision, made by raising it here. One per skill: a shared fallback
+// let the smallest skill grow fifteen-fold unnoticed.
+const CAPS = {
+    'fankeel': 65500,
+    'fankeel-build': 40100,
+    'fankeel-survey': 23500,
+    'fankeel-land': 22200,
+    'fankeel-audit': 20500,
+    'fankeel-plan': 19000,
+    'fankeel-verify': 19000,
+    'fankeel-design': 14900,
+    'fankeel-init': 13100,
+    'fankeel-ask': 7600,
+    'fankeel-explain': 4400,
+    'fankeel-upgrade': 2100,
+    'fankeel-station': 1600,
+};
 
 test('input-check --skills lists every stage skill with its size', () => {
     const root = path.join(__dirname, '..');
@@ -21,10 +36,12 @@ test('input-check --skills lists every stage skill with its size', () => {
     assert.match(out, /skills\/fankeel-build\/SKILL\.md/);
 });
 
-test('no SKILL.md grows past its byte cap', () => {
-    for (const s of skillFiles(path.join(__dirname, '..'))) {
+test('every SKILL.md has its own byte cap, and none grows past it', () => {
+    const list = skillFiles(path.join(__dirname, '..'));
+    const names = list.map((s) => path.basename(path.dirname(s.file))).sort();
+    assert.deepEqual(names, Object.keys(CAPS).sort(), 'a skill with no cap of its own, or a cap for no skill');
+    for (const s of list) {
         const name = path.basename(path.dirname(s.file));
-        const cap = CAPS[name] || OTHER;
-        assert.ok(s.bytes <= cap, name + ' is ' + s.bytes + ' bytes, cap ' + cap);
+        assert.ok(s.bytes <= CAPS[name], name + ' is ' + s.bytes + ' bytes, cap ' + CAPS[name]);
     }
 });
