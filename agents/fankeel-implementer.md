@@ -61,6 +61,11 @@ config for a value that never changes, no scaffolding for later.
 
 ## A bug fix
 
+Before the fix, reproduce it yourself through the same interface the bug was
+met in, and land that repro as a failing test first. Then write one line in
+your return, `Root cause: <X> because <Y>`; a fix you cannot finish that line
+for is a symptom patch.
+
 Fix the cause, not the symptom. Before editing a function, grep every caller
 of it: one guard in the shared function is a smaller diff than one in every
 caller, and patching only the path the task names leaves its siblings broken.

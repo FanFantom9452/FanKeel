@@ -173,8 +173,9 @@ clarification.
 | Ask | Criterion |
 |---|---|
 | "add validation" | tests for the invalid inputs, failing, then passing |
-| "fix the bug" | a test reproducing it, failing, then passing |
-| "refactor X" | the suite green before and after |
+| "fix the bug" | reproduced through the same interface the user hit, that repro committed failing, then passing; the cause stated as `Root cause: <X> because <Y>` |
+| "make it faster" | a baseline first, the limiting factor named, at least five runs, median and range, before and after |
+| "refactor X" | the behaviour pinned by tests before, the suite green after, no shim left behind, and reverted if it does not leave the code easier to read |
 
 **And one row on the artefact, wherever the change produces one.** A rendered
 page, a written file, a printed report — checked against itself, not against a

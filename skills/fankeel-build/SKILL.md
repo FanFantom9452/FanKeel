@@ -540,6 +540,10 @@ then asks this stage's gate.
 6. Fix rounds are bounded at **five**. A finding you overrule is a ruling, not a
    silence.
 
+   Before a third round, write down the premise the first two rounds shared —
+   `ledger.js ruling` — and test that premise before fixing again: two fixes
+   that failed on one assumption fail a third time on it.
+
    **A finding that would defeat a verify row is fixed in this task, now.**
    When a reviewer's finding — or one the parent sees in its return — names
    something verify will test this task against (a mark missing from a
