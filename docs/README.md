@@ -300,6 +300,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | plan gate 附 station 計畫頁（10-18）定了什麼：視覺化交給 station、依賴只取 plantasks.conflict、邊不畫線、回答仍在 Desktop；放棄了什麼 | [decisions/2026-10-18-plan-gate-page.md](03-decisions/2026-10-18-plan-gate-page.md) — *繁體中文* |
 | 其他四道 gate 附 station 關卡頁（10-18）定了什麼：四道共用一個關卡 tab、報告照範本拆欄、land 加白話、只認 gateAt 或 pending 為在等；放棄了什麼 | [decisions/2026-10-18-gate-tab.md](03-decisions/2026-10-18-gate-tab.md) — *繁體中文* |
 | 判官先列清單、讀者一次派出（10-19）定了什麼：三輪為目標、每則最多四位讀者、略過兩條回傳規則、Summary 放長文；放棄了什麼 | [decisions/2026-10-19-judge-checklist.md](03-decisions/2026-10-19-judge-checklist.md) — *繁體中文* |
+| 不讓常備答案代答 gate（10-19）定了什麼：離開時 gate 仍問人，不加代答的 profile 鍵；放棄了什麼 | [decisions/2026-10-19-no-unattended-gate.md](03-decisions/2026-10-19-no-unattended-gate.md) — *繁體中文* |
 | 沒派過的 agent 怎麼處理（10-15）定了什麼：effort 改在派工時傳、六個複本刪掉，mover、mutator、writer 只給 stage agent 派，init-scout 與 slimmer 不動；放棄了什麼 | [decisions/2026-10-15-unused-agents.md](03-decisions/2026-10-15-unused-agents.md) — *繁體中文* |
 | 開任務時同步壓縮視窗（10-14）定了什麼：start 把主機視窗對齊 `compact.at`、值變了請使用者重開 Desktop；放棄了什麼 | [decisions/2026-10-14-start-syncs-window.md](03-decisions/2026-10-14-start-syncs-window.md) — *繁體中文* |
 | Pane 配色改成安靜版（10-13）定了什麼：標題共用灰、多一行 route、拿掉「這個 session」與「用量額度」兩塊；放棄了什麼 | [decisions/2026-10-13-pane-colour.md](03-decisions/2026-10-13-pane-colour.md) — *繁體中文* |
@@ -570,6 +571,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 - [plan gate 附 station 計畫頁（10-18）](03-decisions/2026-10-18-plan-gate-page.md)
 - [其他四道 gate 附 station 關卡頁（10-18）](03-decisions/2026-10-18-gate-tab.md)
 - [判官先列清單、讀者一次派出（10-19）](03-decisions/2026-10-19-judge-checklist.md)
+- [不讓常備答案代答 gate（10-19）](03-decisions/2026-10-19-no-unattended-gate.md)
 - [沒派過的 agent 怎麼處理（10-15）：effort 改在派工時傳，六個複本刪掉](03-decisions/2026-10-15-unused-agents.md)
 - [開任務時同步壓縮視窗（10-14）：task.js start 把主機視窗寫成 compact.at](03-decisions/2026-10-14-start-syncs-window.md)
 - [Pane 的配色改成安靜版，多一行 route，拿掉兩塊（10-13）](03-decisions/2026-10-13-pane-colour.md)
