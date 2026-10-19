@@ -154,4 +154,4 @@ function main(argv) {
 
 if (require.main === module) main(process.argv.slice(2));
 
-module.exports = { parse, problems, costLine, section };
+module.exports = { parse, problems };
