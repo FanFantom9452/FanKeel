@@ -631,6 +631,7 @@ is corrected by the next one, not by rewriting this.
 | Brief — gate-11: put the missing gate-tab fields into the report templates? | [90-agent/judgements/2026-10-18-gate-report-fields.md](90-agent/judgements/2026-10-18-gate-report-fields.md) — *judged 2026-10-18, fable* |
 | Brief: what cursor/plugins (above all pstack) does differently from fankeel, and what fankeel should take | [90-agent/judgements/2026-10-18-cursor-plugins-pstack.md](90-agent/judgements/2026-10-18-cursor-plugins-pstack.md) — *judged 2026-10-18, fable* |
 | Brief 15 — TencentDB-Agent-Memory: what it means for our MEMORY.md management and workflow | [90-agent/judgements/2026-10-18-tencentdb-agent-memory.md](90-agent/judgements/2026-10-18-tencentdb-agent-memory.md) — *judged 2026-10-18, fable* |
+| Brief: does Karpathy's "output-format ladder" change anything in fankeel's skill outputs, and in fankeel-explain? | [90-agent/judgements/2026-10-19-explain-output-formats.md](90-agent/judgements/2026-10-19-explain-output-formats.md) — *judged 2026-10-19, fable* |
 
 ## The five scanners
 
