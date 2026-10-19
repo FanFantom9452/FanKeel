@@ -918,6 +918,11 @@ rules themselves are read rather than what any one stage produces.
 see "At the end of a stage, ask" above — never partway through one. A rule
 that would stop mid-stage to check in has invented a second gate nothing
 asked for.
+Nor is a fact a run can observe a question: what a command, a test or a
+throwaway prototype would show is answered by running it, and only a product
+or preference judgement no experiment settles goes to the user — the same line
+`fankeel-build`'s four stops draw, where nothing short of those four stops the
+loop.
 
 **Two rules in conflict name both.** State which one wins and why, in the
 turn that hits the conflict, rather than quietly following one and dropping

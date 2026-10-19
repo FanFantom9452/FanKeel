@@ -106,7 +106,32 @@ test('await.js prints the line for each state, reading paths and the agent off t
     at(path.join(g.config, 'projects', 'F--x', SID + '.jsonl'), Date.now());
     at(path.join(g.config, 'projects', 'F--x', SID, 'subagents', 'agent-a3f9c2.jsonl'), Date.now() - 600000);
     const lost = await awaitCli.main(['--session', SID, '--root', g.root, '--idle', '0.2'], g.env);
-    assert.equal(lost.text, 'lost a3f9c2 — the stage agent stopped with neither file written: dispatch a fresh one with the same line.');
+    assert.equal(lost.text, 'lost a3f9c2 — the stage agent stopped with neither file written: dispatch a fresh one with the same line. Failure handoff: ' + g.task + '/build-failed.md.');
+});
+
+test('await.js writes a failure handoff on lost and on timeout, and counts repeats', async () => {
+    const g = fixture({ inflight: { stage: 'build', at: 1, agentId: 'a3f9c2' } });
+    at(path.join(g.config, 'projects', 'F--x', SID + '.jsonl'), Date.now());
+    at(path.join(g.config, 'projects', 'F--x', SID, 'subagents', 'agent-a3f9c2.jsonl'), Date.now() - 600000);
+    const lost = await awaitCli.main(['--session', SID, '--root', g.root, '--idle', '0.2'], g.env);
+    const failed = g.task + '/build-failed.md';
+    assert.ok(lost.text.endsWith(' Failure handoff: ' + failed + '.'), lost.text);
+    const body = fs.readFileSync(failed, 'utf8');
+    assert.match(body, /^mode: lost$/m);
+    assert.match(body, /^agent: a3f9c2$/m);
+    assert.match(body, /^count: 1$/m);
+    assert.match(body, /^next: dispatch a fresh stage agent with the same line$/m);
+
+    const f = fixture({});
+    const since = path.join(f.task, 'build-commit.md');
+    const one = await awaitCli.main(['--session', SID, '--root', f.root, '--since', since, '--timeout', '0.2'], f.env);
+    const two = await awaitCli.main(['--session', SID, '--root', f.root, '--since', since, '--timeout', '0.2'], f.env);
+    assert.match(one.text, /^timeout — /);
+    const again = fs.readFileSync(f.task + '/build-failed.md', 'utf8');
+    assert.match(again, /^mode: timeout$/m);
+    assert.match(again, /^count: 2$/m);
+    assert.match(again, /^next: stop retrying and ask the user — two failures in a row$/m);
+    assert.ok(two.text.includes('Failure handoff: '), two.text);
 });
 
 test('await.js with no answer file counts only a handoff newer than the in-flight mark as new', async () => {
@@ -251,7 +276,7 @@ test('await.js clears only the lost agent\'s own in-flight mark, leaving a sibli
     at(path.join(f.config, 'projects', 'F--x', SID + '.jsonl'), Date.now());
     at(path.join(f.config, 'projects', 'F--x', SID, 'subagents', 'agent-a1.jsonl'), Date.now() - 600000);
     const out = await awaitCli.main(['--session', SID, '--root', f.root, '--agent', 'a1', '--idle', '0.2'], f.env);
-    assert.equal(out.text, 'group 1, agent a1: lost a1 — the stage agent stopped with neither file written: dispatch a fresh one with the same line.');
+    assert.ok(out.text.startsWith('group 1, agent a1: lost a1 — the stage agent stopped with neither file written: dispatch a fresh one with the same line. Failure handoff: '), out.text);
     const after = registry.inflights(registry.readSession(f.root, SID));
     assert.deepEqual(after.map((m) => m.agentId), ['a2'], 'a1\'s mark is gone, a2\'s sibling mark survives');
 });

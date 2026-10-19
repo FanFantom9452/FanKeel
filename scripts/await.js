@@ -132,6 +132,32 @@ function waitFor(opts, env) {
     };
 }
 
+// A stage agent that dies leaves nothing behind but the await line, and the
+// line is gone with the turn. This writes what happened beside the handoff it
+// never wrote, so the next dispatch — or the user — reads the mode and what to
+// try, and a second failure in a row says to stop retrying rather than loop.
+function failedPath(handoff) {
+    return handoff.replace(/\.md$/, '-failed.md');
+}
+
+function writeFailure(state, o) {
+    const file = failedPath(o.handoff);
+    let count = 1;
+    try {
+        const prior = /^count: (\d+)$/m.exec(fs.readFileSync(file, 'utf8'));
+        if (prior) count = Number(prior[1]) + 1;
+    } catch (e) { /* first failure */ }
+    const next = count >= 2 ? 'stop retrying and ask the user — two failures in a row'
+        : state === 'lost' ? 'dispatch a fresh stage agent with the same line'
+        : 'run await again';
+    try {
+        fs.mkdirSync(path.dirname(file), { recursive: true });
+        fs.writeFileSync(file, ['mode: ' + state, 'agent: ' + (o.agentId || '?'), 'at: ' + new Date().toISOString(),
+            'count: ' + count, 'next: ' + next, ''].join('\n'));
+    } catch (e) { return null; }
+    return file;
+}
+
 // The word first, so the controller's rule can name it; then what to do, so
 // the rule does not have to carry every case under the injection's cap.
 // `commitFile` is the candidate that actually matched — `o.commit` may be
@@ -225,7 +251,10 @@ function main(argv, env) {
         const handedOver = state === 'handoff' && Number.isInteger(o.group) && Boolean(workflowOf(o.handoff));
         if (handedOver) registry.markInflight(o.root, opts.session, 'build', o.agentId, o.lap, o.group, o.kind);
         else if (state === 'lost' || (state === 'handoff' && o.kind !== 'close' && Number.isInteger(o.group))) registry.clearInflight(o.root, opts.session, o.agentId);
-        const line = lineFor(state, o, state === 'commit' ? newestCommit(o.commit, o.since) : null);
+        const failed = state === 'lost' || state === 'timeout' ? writeFailure(state, o) : null;
+        if (state === 'handoff') { try { fs.unlinkSync(failedPath(o.handoff)); } catch (e) { /* none */ } }
+        const line = lineFor(state, o, state === 'commit' ? newestCommit(o.commit, o.since) : null)
+            + (failed ? ' Failure handoff: ' + failed.replace(/\\/g, '/') + '.' : '');
         return state === 'handoff' ? pageLine(o).then((page) => ({ text: line + (page ? PAGE_OPEN : '') + page })) : { text: line };
     }, (e) => {
         release();
