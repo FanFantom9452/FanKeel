@@ -144,7 +144,7 @@ Your brief names the commit file and the floor model these rules use.
   you `<base>..<sha>` per block — `<paths>: <base>..<sha>` when there are
   several — each that task's review range; where the skill says to commit,
   this is it. Paths are relative to the root of the git repository that owns
-  them, never to a directory above it: `tests/x.py`, not `<repo>/tests/x.py`.
+  them, never to a directory above it: `tests/escape-scan.test.js`, not `<repo>/tests/escape-scan.test.js`.
   The reply is those lines, or `commit.js: <why>` (`commit.js: block <n>:
   <why>` after the blocks that landed). A line `profile: <file> does not parse — its values
   were skipped` is a warning: name it in your report. A <why> about your
