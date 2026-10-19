@@ -639,6 +639,8 @@ is corrected by the next one, not by rewriting this.
 | Brief 16 — 這週的 token 花費成分：什麼在吃額度，由多到少 | [90-agent/judgements/2026-10-19-weekly-token-composition.md](90-agent/judgements/2026-10-19-weekly-token-composition.md) — *judged 2026-10-19, fable* |
 | 問題 | [90-agent/judgements/2026-10-19-obsolete-tests.md](90-agent/judgements/2026-10-19-obsolete-tests.md) — *judged 2026-10-19, fable* |
 | Brief: Chartroom as fankeel's Mermaid replacement, a more capable station, and what every cursor/plugins plugin offers | [90-agent/judgements/2026-10-19-chartroom-mermaid-station.md](90-agent/judgements/2026-10-19-chartroom-mermaid-station.md) — *judged 2026-10-19, fable* |
+| 右側面板的 agents 和 TODO 有時候展不開 | [90-agent/judgements/2026-10-19-pane-sections-blank.md](90-agent/judgements/2026-10-19-pane-sections-blank.md) — *judged 2026-10-19, fable* |
+| 巢狀 repo 的路徑、commit.js 的 cwd、spike 的 build 關卡：規則該放在哪裡、怎麼改 | [90-agent/judgements/2026-10-19-nested-repo-paths.md](90-agent/judgements/2026-10-19-nested-repo-paths.md) — *judged 2026-10-19, fable* |
 
 ## The five scanners
 
