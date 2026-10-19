@@ -12,7 +12,7 @@ Every fankeel session on this machine, shown on one page. The page is served fro
 
 ## Sub-features
 
-- The session table: one row per session in every registry the station knows. Each row opens a detail panel, served as `/station/detail/<sessionId>.js`.
+- The page lists every session of every registry the station knows: the full list is at the `#/sessions` route, the dashboard shows the five most recent, and the footer count `<n> sessions` totals them. Each row opens a detail panel, served as `/station/detail/<sessionId>.js`.
 - The POST routes behind the page's buttons: `/clear`, `/clear-stale`, `/todo`, `/answer`, `/profile`. Each one needs the per-run nonce the page carries.
 - Doc search (`/station/search`) and the conversation view (`/station/talk/<sessionId>`).
 - The tour, `/station/tour.html`, served from `assets/station/` with the scripts it loads.
@@ -31,7 +31,7 @@ Every fankeel session on this machine, shown on one page. The page is served fro
 
 1. With the same `CLAUDE_CONFIG_DIR`, run `node scripts/station.js --json --root <repo>` and count the sessions under `registries[].sessions`.
 2. Start the server as under Reach. Read the url from its first line; never assume 28888.
-3. `node scripts/render.js <url> --out .fankeel/build/task-<started>/verify/station/` writes `render.png` and `render.html`. The table in them has as many rows as step 1 counted.
+3. `node scripts/render.js <url> --out .fankeel/build/task-<started>/verify/station/` writes `render.png` and `render.html`. The footer `#nreg` in `render.html` reads `<registries> 個 registry · <n> sessions`, and `<n>` equals the count from step 1.
 4. GET `<url>station/health` answers 200 with `station: true` and the `pid` recorded in `<configDir>/fankeel/serve.json`.
 5. Take one row's `sessionId` from step 1. GET `<url>station/detail/<sessionId>.js` answers 200; a 404 `no detail for that session` means that session has no detail to read, so pick another row.
 6. POST `<url>clear` with no nonce answers 403 `wrong nonce`: the guard holds.
