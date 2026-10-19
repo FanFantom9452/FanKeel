@@ -50,6 +50,11 @@
       "role": "report"
     },
     {
+      "path": ".fankeel/verify",
+      "role": "reference",
+      "audience": "agent"
+    },
+    {
       "path": ".claude/agents",
       "role": "reference"
     },

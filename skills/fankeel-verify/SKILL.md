@@ -194,6 +194,25 @@ Give each one its range, the task's text from the plan, and the path to
 a returned diff puts the whole change back in this context, which is the cost
 dispatching exists to avoid.
 
+**A feature file covers the change: the verifier cites it.** Where
+`.fankeel/verify/` holds feature files, run this for each row's range before
+the verifiers go out:
+
+```
+node <plugin>/scripts/verify-map.js --range <range>
+```
+
+It matches the range's changed paths against each feature file's `src`, using
+`pagesTouched()` (`lib/shots.js:87` `function pagesTouched(targets, paths)`). For a `kind: page` file with `render:`, the `src` is that of the
+render.json pages it names. It prints one feature file per line, or `none`.
+Give that row's verifier every file printed, beside the map. The verifier
+runs the file's `## Doctor` first: a check that fails becomes a `blocked` row,
+not a pass. It then follows `## Drive` and cites `<feature>.md` and the step
+number in every row it writes from them. `.fankeel/verify/README.md` holds the
+format and the rule that cleanup never deletes evidence. In this first slice,
+a changed path that no feature file covers produces no row. `none` is the
+common answer and needs no mention in the report.
+
 A row reading `(no range recorded)` is a task that landed without one. It is not
 skipped — it is verified here, against `git log`, and the reason it has no range
 is a finding for the report.

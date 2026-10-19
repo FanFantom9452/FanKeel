@@ -68,6 +68,26 @@ not skipped for a quarter.
 and `orient`'s `todo:` block says `audit: N 天未跑` once that is more than 14
 days old. That line is the whole reminder: no cron, no routine.
 
+**The verification map, reconciled.** Where `.fankeel/verify/` holds
+feature files, the same fortnightly pass runs
+
+```
+node <plugin>/scripts/verify-map.js [--root <dir>]
+```
+
+and quotes its `warn:` lines along with the five above. Then send one
+`subagent_type: fankeel:fankeel-reader` per feature file, several in one
+response (`dispatch.inflight`, eight by default), on the profile's
+`dispatch.floor`. Each reader gets the file's path and reads its `## Reach`,
+`## Drive`, `## Gotchas` and `## Doctor` against the source its `src` names.
+It returns one line: `clean` when every command, route and flag the file
+names is still in that source; `changed` with the step and the `path:line`
+that moved; or `blocked` with what it could not read. A `changed` file is
+fixed the way a dead reference is, by a `fankeel:fankeel-fixer` given the file
+and the correction. The fix also rewrites `status` and `last_checked`. These
+readers only read source and never drive the feature. The live pass, which
+does drive it, is not part of this audit yet.
+
 Quote what came back. A description of what a scanner said is not what it said.
 
 A dead path is a bug in a reference document and history in an archive.
