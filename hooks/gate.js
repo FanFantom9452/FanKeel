@@ -148,6 +148,25 @@ function stationAnswers(root, mine, values, questions) {
     }
 }
 
+// gate.away: the user answered 要離開 at an earlier gate (hooks/resume.js set
+// leavingAt) and the work went on. This is the next question that needs them,
+// so it is held rather than left waiting for an hour: awayAt makes
+// hooks/compact.ts compact when this turn ends — an engine module compacts
+// only between turns, and a waiting AskUserQuestion keeps the turn open — and
+// hooks/inject.js has it asked again on the user's next message. With
+// gate.station on, the station is where an away user answers, so the question
+// goes out as it always did. Not held when awayAt cannot be written: nothing
+// would then compact, and nothing would ask it again.
+const HOLD = 'fankeel: the user answered 要離開 at an earlier gate, so this question is held, not asked.'
+    + ' End your turn now with the question and its options written out as text, and start no new work.'
+    + ' The session compacts when the turn ends; on the user\'s next message, ask it again with AskUserQuestion.';
+
+function holdsForAway(mine, values) {
+    if (!mine || typeof mine.leavingAt !== 'number') return false;
+    const wait = values ? values['gate.station'] : 'off';
+    return !(Number.isInteger(wait) && wait > 0);
+}
+
 // What this hook has to say, once the station has had its chance: an answer
 // that arrived in time goes out as an allowed call carrying `answers`.
 //
@@ -157,6 +176,12 @@ function stationAnswers(root, mine, values, questions) {
 // gate still waiting on the station's gate tab and waiting cards. It is stamped
 // before `stationAnswers` waits, so the page sees the gate for that wait too.
 function emit(out, payload, root, mine, values) {
+    try {
+        if (holdsForAway(mine, values) && registry.setAway(root, payload.session_id)) {
+            refuse(HOLD);
+            return;
+        }
+    } catch (e) { /* housekeeping: the question goes out as it was */ }
     try {
         registry.gateOpen(root, payload.session_id, { stage: mine.stage, hash: hashOf(payload.tool_input && payload.tool_input.questions) });
     } catch (e) { /* housekeeping */ }

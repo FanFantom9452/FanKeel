@@ -29,6 +29,11 @@ export function isActive(entry: Entry | null): boolean {
 }
 
 export function instructionsFor(id: string, entry: Entry, pluginRoot: string): string {
+  // hooks/gate.js held a question back from a user who is away (awayAt):
+  // hooks/inject.js asks it again on the user's next message, from the summary.
+  const held = typeof entry.awayAt === 'number'
+    ? ['- the question held back while the user was away, word for word with its options: ask it again on the user\'s next message']
+    : []
   return [
     'fankeel: this session is running a fankeel task. The summary must keep, word for word:',
     `- session ${id} (every task.js call needs --session ${id})`,
@@ -38,6 +43,7 @@ export function instructionsFor(id: string, entry: Entry, pluginRoot: string): s
     '- the agentId of every dispatched agent that has not returned yet, and what it was sent to do',
     '- the last handoff and commit file paths named in the conversation',
     '- the design.md and context.md paths under .fankeel/build/, when the conversation named them',
+    ...held,
     `- the plugin scripts live under ${pluginRoot}/scripts`,
   ].join('\n')
 }
@@ -158,8 +164,8 @@ export const register: Register = (on) => {
         found,
       )
       if (!found || !isActive(found.entry)) return out
-      // hooks/resume.js sets awayAt when the user answered the gate "leaving" (gate.away): compact now, whatever compact.at says.
-      // Only an awayAt newer than the last one acted on: nothing here clears it, inject.js does on the next prompt.
+      // hooks/gate.js sets awayAt when it holds a question back from a user who answered 要離開 (gate.away): compact now, whatever compact.at says.
+      // Only an awayAt newer than the last one acted on: nothing here clears it, inject.js does on the user's next prompt.
       const awayAt = found.entry.awayAt
       const away = typeof awayAt === 'number' && awayAt > awayDone
       if (typeof context.tokens !== 'number' || (context.tokens < at && !away)) return out

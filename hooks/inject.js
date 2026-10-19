@@ -249,6 +249,14 @@ function main(raw) {
         profile = profileLib.profileFor(root, mine);
     } catch (e) { /* housekeeping */ }
 
+    // gate.away: awayAt means hooks/gate.js held a question back from a user
+    // who answered 要離開, and the session compacted. A real prompt is the user
+    // back, so the held question is asked first. A background task notification
+    // also fires this hook, and it is not the user: it clears nothing.
+    const notice = /^\s*<task-notification>/.test(String(payload.prompt || ''));
+    const back = !notice && typeof mine.awayAt === 'number';
+    const BACK = 'fankeel: the user is back. Before anything else, ask again with AskUserQuestion the question held while they were away.';
+
     // Output first, side effects after. A failure while refreshing a timestamp or
     // writing a statusline flag must not cost the injection, which is the only
     // reason this process was started. The scan above is not a side effect: it
@@ -256,7 +264,7 @@ function main(raw) {
     process.stdout.write(JSON.stringify({
         hookSpecificOutput: {
             hookEventName: 'UserPromptSubmit',
-            additionalContext: render({ mine: { sessionId, data: mine }, others: alive, now, root, launch, transcript: payload.transcript_path, unclaimed, profile }),
+            additionalContext: render({ mine: { sessionId, data: mine }, others: alive, now, root, launch, transcript: payload.transcript_path, unclaimed, profile }) + (back ? '\n' + BACK : ''),
         },
     }));
 
@@ -285,7 +293,7 @@ function main(raw) {
     try {
         const info = context.inspect(payload.transcript_path);
         registry.touch(root, sessionId, info && info.used);
-        registry.clearAway(root, sessionId);
+        if (!notice) registry.clearAway(root, sessionId);
     } catch (e) { /* housekeeping */ }
 
     const cfg = profileLib.configDirOf();
