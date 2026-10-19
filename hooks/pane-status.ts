@@ -272,13 +272,13 @@ export function dispatchModel(dispatch: string): string {
 // mark is drawn on the first open task that is not the user's. With no ledger, a
 // mark on this stage is one row of its own.
 function tasksBlock(entry: Entry, plan: PlanInfo | null, agents: AgentNode[], inner: number, now: number, folded: boolean): Row[] {
+  if (!plan || !plan.tasks.length) return []
   const stage = str(entry.stage)
   const marks = Array.isArray(entry.inflight) ? entry.inflight : [entry.inflight]
   const mark = marks.map(record).find((m) => m.stage === stage)
   const known = !!mark && typeof mark.at === 'number' && Number.isFinite(mark.at)
   const out = mark ? mins(known ? now - (mark.at as number) : null) : ''
   const late = known && Number(out) >= LONG
-  if (!plan || !plan.tasks.length) return []
   const done = new Set(plan.done)
   const open = plan.tasks.filter((t) => !done.has(t.n))
   const count = plan.tasks.length - open.length

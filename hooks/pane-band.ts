@@ -164,6 +164,12 @@ export function bandRows(input: BandInput): Seg[][] | null {
       if (fill) row.push(inked(fill, paint))
       if (track) row.push({ text: track, color: DIM })
     }
+    const marked = (part: number, whole: number, at: number, paint: Paint, markSeg: (text: string) => Seg): void => {
+      for (const p of markedBar(part, whole, shape.cells, at)) {
+        if (p.kind === 'fill') row.push(inked(p.text, paint))
+        else row.push(p.kind === 'mark' ? markSeg(p.text) : { text: p.text, color: DIM })
+      }
+    }
     if (context) {
       const { window } = context
       const sized = typeof window === 'number' && Number.isFinite(window) && window > 0
@@ -173,10 +179,7 @@ export function bandRows(input: BandInput): Seg[][] | null {
       if (sized) {
         // The white line sits at the compact threshold, when that is a point inside the window.
         if (context.at < window) {
-          for (const p of markedBar(context.tokens, window, shape.cells, context.at)) {
-            if (p.kind === 'fill') row.push(inked(p.text, paint))
-            else row.push(p.kind === 'mark' ? { text: p.text, color: '#ffffff', bold: true } : { text: p.text, color: DIM })
-          }
+          marked(context.tokens, window, context.at, paint, (text) => ({ text, color: '#ffffff', bold: true }))
         } else {
           draw(context.tokens, window, paint)
         }
@@ -197,10 +200,7 @@ export function bandRows(input: BandInput): Seg[][] | null {
       const gone = elapsed(five, now, FIVE_HOURS)
       if (gone === null) draw(five.percentUsed, 100, paint)
       else {
-        for (const p of markedBar(five.percentUsed, 100, shape.cells, gone * 100)) {
-          if (p.kind === 'fill') row.push(inked(p.text, paint))
-          else row.push({ text: p.text, color: p.kind === 'mark' ? WHERE : DIM })
-        }
+        marked(five.percentUsed, 100, gone * 100, paint, (text) => ({ text, color: WHERE }))
       }
       row.push(inked(pct(five.percentUsed), paint, 1))
       if (paint.mark) row.push(inked(paint.mark, paint, 1))
@@ -212,10 +212,7 @@ export function bandRows(input: BandInput): Seg[][] | null {
       const gone = elapsed(week, now, WEEK)
       if (gone === null) draw(week.percentUsed, 100, paint)
       else {
-        for (const p of markedBar(week.percentUsed, 100, shape.cells, gone * 100)) {
-          if (p.kind === 'fill') row.push(inked(p.text, paint))
-          else row.push({ text: p.text, color: p.kind === 'mark' ? WHERE : DIM })
-        }
+        marked(week.percentUsed, 100, gone * 100, paint, (text) => ({ text, color: WHERE }))
       }
       row.push(inked(pct(week.percentUsed), paint, 1))
       if (dev !== null) {
