@@ -87,3 +87,52 @@ test('pageOf carries the breaks a read holds, and null when it holds none', () =
     read.spend = spendOf(file);
     assert.deepEqual(conversation.pageOf(read, 0, 100).spend, read.spend);
 });
+
+const compact = (h, m) => [
+    { type: 'system', subtype: 'compact_boundary', timestamp: T(h, m), compactMetadata: { trigger: 'manual', preTokens: 21000 } },
+    { type: 'user', timestamp: T(h, m), isCompactSummary: true, message: { role: 'user', content: 'Summary' } },
+];
+
+test('a request after a compaction that is also an hour later and writes more than it reads is one compact break, not an expiry too', () => {
+    const sp = spendOf(transcript([
+        ask('開始', 10, 0),
+        req('r1', 10, 1, use(10, 100, 0, 20000)),
+        req('r2', 10, 5, use(5, 50, 20000, 1000)),
+        ...compact(10, 10),
+        // 85 minutes after r2 and it writes more than it reads, but the compaction already explains the rewrite.
+        req('r3', 11, 30, use(0, 200, 0, 8000)),
+    ]));
+    assert.deepEqual(sp.marks.map((m) => [m.kind, m.n]), [['compact', 3]]);
+    near(sp.total, sp.head + sp.marks.reduce((n, m) => n + m.usd, 0));
+    near(sp.total, sp.sessionUsd);
+});
+
+test('an expiry before a later compaction comes first, and head plus every segment is still the session total', () => {
+    const sp = spendOf(transcript([
+        ask('開始', 10, 0),
+        req('r1', 10, 1, use(10, 100, 0, 20000)),
+        req('r2', 11, 30, use(0, 300, 0, 9000)),
+        req('r3', 11, 31, use(0, 40, 9000, 500)),
+        ...compact(11, 40),
+        req('r4', 11, 41, use(0, 200, 0, 8000)),
+    ]));
+    assert.deepEqual(sp.marks.map((m) => [m.kind, m.n]), [['expiry', 2], ['compact', 4]]);
+    near(sp.marks[0].usd, cost(use(0, 300, 0, 9000)) + cost(use(0, 40, 9000, 500)));
+    near(sp.total, sp.head + sp.marks.reduce((n, m) => n + m.usd, 0));
+    near(sp.total, sp.sessionUsd);
+});
+
+test('two compactions with no request between them: the first carries no dollars and the total holds', () => {
+    const sp = spendOf(transcript([
+        ask('開始', 10, 0),
+        req('r1', 10, 1, use(10, 100, 0, 20000)),
+        ...compact(10, 10),
+        ...compact(10, 20),
+        req('r2', 10, 21, use(0, 200, 0, 8000)),
+    ]));
+    assert.deepEqual(sp.marks.map((m) => [m.kind, m.n, m.at]), [['compact', 2, T(10, 10)], ['compact', 2, T(10, 20)]]);
+    assert.equal(sp.marks[0].usd, 0);
+    near(sp.marks[1].usd, cost(use(0, 200, 0, 8000)));
+    near(sp.total, sp.head + sp.marks.reduce((n, m) => n + m.usd, 0));
+    near(sp.total, sp.sessionUsd);
+});
