@@ -45,7 +45,7 @@ function run(s, input) {
 }
 
 const month = () => new Date().toISOString().slice(0, 7);
-const recordsDir = (root) => path.join(root, 'docs', 'records');
+const recordsDir = (root) => path.join(root, 'docs', '90-agent', 'records');
 
 test('a record missing 為什麼這樣做 exits 1, names the field, and writes nothing', () => {
     const s = seed();
@@ -82,8 +82,8 @@ test('a complete record lands on the registry and as one section of the month fi
     assert.equal((text.match(/^## /gm) || []).length, 1);
     assert.match(text, /^## \d{4}-\d{2}-\d{2} 六欄紀錄$/m);
     for (const name of ['要求', '做了什麼', '為什麼這樣做', '驗過・沒驗過', '花費', '還剩什麼']) assert.match(text, new RegExp('^- ' + name + '：', 'm'));
-    assert.equal(rec.file, 'docs/records/' + month() + '.md');
-    assert.match(out.out, new RegExp('^filed: docs/records/' + month() + '\\.md#' + rec.anchor + '$', 'm'));
+    assert.equal(rec.file, 'docs/90-agent/records/' + month() + '.md');
+    assert.match(out.out, new RegExp('^filed: docs/90-agent/records/' + month() + '\\.md#' + rec.anchor + '$', 'm'));
     assert.match(text, new RegExp('<a id="' + rec.anchor + '"></a>'));
 });
 
@@ -106,4 +106,32 @@ test('parse reads the five typed fields and ignores a typed 花費; problems nam
     assert.equal(f.cost, undefined);
     assert.equal(f.did.length, 2);
     assert.deepEqual(problems(Object.assign({}, f, { why: '很'.repeat(81) + '。' }), []).length, 1);
+});
+
+test('a project without a records bucket writes under docs/90-agent/records/YYYY-MM.md', () => {
+    const s = seed();
+    const out = run(s, GOOD);
+    assert.equal(out.code, 0, out.out);
+    assert.equal(registry.readSession(s.root, A).record.file, 'docs/90-agent/records/' + month() + '.md');
+    assert.ok(fs.existsSync(path.join(s.root, 'docs', '90-agent', 'records', month() + '.md')));
+    assert.equal(fs.existsSync(path.join(s.root, 'docs', 'records')), false);
+});
+
+test('a missing transcript says the amount was not counted', () => {
+    const s = seed();
+    fs.rmSync(s.transcript);
+    const out = run(s, GOOD);
+    assert.equal(out.code, 0, out.out);
+    assert.equal(registry.readSession(s.root, A).record.fields.cost, '對話紀錄找不到，金額沒算；從開始到現在 1 小時 30 分。');
+});
+
+test('agent transcripts name their models in 花費', () => {
+    const s = seed();
+    const dir = path.join(s.transcript.slice(0, -'.jsonl'.length), 'subagents');
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'agent-abc123.jsonl'), JSON.stringify({ type: 'assistant', requestId: 'r2', isSidechain: true, timestamp: new Date().toISOString(),
+        message: { role: 'assistant', model: 'claude-haiku-4-5', usage: { input_tokens: 1000, output_tokens: 0 }, content: [] } }) + '\n');
+    const out = run(s, GOOD);
+    assert.equal(out.code, 0, out.out);
+    assert.match(registry.readSession(s.root, A).record.fields.cost, /，1 個 agent（主 session sonnet-5-5，agent 用 haiku-4-5）。$/);
 });

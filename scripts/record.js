@@ -124,7 +124,7 @@ function write(opts) {
     fields.cost = costLine(mine, opts.session, opts['config-dir'] || mine.configDir || live.liveConfigDir(), now);
     const { tree } = docs.read(projectRoot);
     const bucket = tree && tree.buckets.find((b) => /(^|\/)records$/.test(b.path));
-    const rel = (bucket ? bucket.path : 'docs/records') + '/' + new Date(now).toISOString().slice(0, 7) + '.md';
+    const rel = (bucket ? bucket.path : 'docs/90-agent/records') + '/' + new Date(now).toISOString().slice(0, 7) + '.md';
     const file = path.join(projectRoot, ...rel.split('/'));
     const day = new Date(now).toISOString().slice(0, 10);
     const before = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';

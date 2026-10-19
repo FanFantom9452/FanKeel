@@ -218,12 +218,14 @@ files at land: six fields — 要求, 做了什麼, 為什麼這樣做, 驗過�
 file under `docs/90-agent/records`. The page draws it in three places, each a
 block you can name in a mockup: `record` is the card in the opened row,
 `record-page` is the same record at full width on the session page, and
-`list-ask` is the one-line 要求 under a finished row in the list. A session
-that landed before the record existed has no `s.record`: `record` and
-`record-page` give way to a muted one-line `record-none` in the card and
-`record-page-none` on the session page, reading 「完成紀錄在 land 時寫。」 while
-the session runs and 「這個任務沒有完成紀錄。」 once it has ended, and `list-ask`
-is not drawn for it.
+`list-ask` is the one-line 要求 under a row in the list, drawn for any session
+whose record has a non-empty 要求 (a live session shows it right after
+`record.js write`, before Execute stands the task down). A session with no
+`s.record`: `record` and `record-page` give way to a muted one-line
+`record-none` in the card and `record-page-none` on the session page, reading
+「完成紀錄在 land 時寫。」 for any state other than `down` (a stale session too)
+and 「這個任務沒有完成紀錄。」 only when it is `down`, and `list-ask` is not
+drawn for it.
 
 ### The stage strip
 

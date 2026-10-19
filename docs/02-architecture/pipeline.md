@@ -812,8 +812,9 @@ then AskUserQuestion
 
 A commit subject holds one change. A task that shipped four of them had nowhere
 to say so, which is what `做了什麼:` is for — one line per thing someone can now
-do, taken from the ledger's completed entries where the task had a plan and
-listed by hand where it did not.
+do. Land files that list inside a six-field record with
+`node scripts/record.js write --session <id>`, which stores it in the registry's
+`record` field and in a monthly file under `docs/90-agent/records`.
 
 **The commit body is that list rewritten for the next session.** `init` and
 `survey` read `git log` before they read any code, so the subject says what

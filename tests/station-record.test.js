@@ -27,8 +27,8 @@ test('the detail and the page draw the same six fields in order, and the month f
 });
 
 test('no record is one muted line, never an empty block', () => {
-    assert.match(V.recordHtml({ id: 'a', state: 'down', record: null }), /^<p class="rec-none" data-block="record-none">[^<]+<\/p>$/);
-    assert.match(V.recordPageHtml({ id: 'a', state: 'live', record: null }), /^<p class="recp-none" data-block="record-page-none">[^<]+<\/p>$/);
+    assert.match(V.recordHtml({ id: 'a', state: 'down', record: null }), /^<p class="rec-none" data-block="record-none">這個任務沒有完成紀錄。<\/p>$/);
+    assert.match(V.recordPageHtml({ id: 'a', state: 'live', record: null }), /^<p class="recp-none" data-block="record-page-none">完成紀錄在 land 時寫。<\/p>$/);
 });
 
 test('a landed row gets its 要求 as a second row; a row with none gets nothing', () => {
@@ -94,5 +94,4 @@ test('drawDetail writes the record block into the detail panel', () => {
 test('the session page draws the record page block', () => {
     const p = boot('#/session/a', [SES]);
     assert.match(p.x.sessionPage({ id: 'a' }), /data-block="record-page"[\s\S]*寫六欄紀錄/);
-    assert.equal(typeof V.sessionPage, 'function');
 });
