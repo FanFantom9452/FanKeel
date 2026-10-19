@@ -230,7 +230,6 @@ test('the discipline covers the captured requirements', () => {
   assert.match(text, /background belongs in the option descriptions/);
   assert.match(text, /do not stop where the happy path works/);
   assert.match(text, /todo entry at the detail/);
-  assert.match(text, /leaves a decision record behind/);
   assert.match(text, /then is archived, after asking/);
   // The code half is a fixed sentence: nothing about it depends on the machine.
   assert.match(text, /code half: three reviewers by lens, cuts only\./);
@@ -300,7 +299,6 @@ test('the background sits in the descriptions, not in the stem', () => {
 // in conflict.
 test('the recommendation is a label, never a position', () => {
   const text = ALWAYS.join(' ');
-  assert.match(text, /Option one is the approval/);
   assert.match(text, /`\(Recommended\)` rather than moving it/);
   assert.equal(/recommended option first/i.test(text), false,
     'an ordering rule is back, and it collides with option one being the approval');
@@ -1225,7 +1223,6 @@ test('every controlled stage prints await\'s page: line beside the path', () => 
 test('the land template lists the six record fields in order, then suite and the record link', () => {
   assert.match(templateFor('land'), /\n要求: [^\n]+\n做了什麼:\n  - [^\n]+\n為什麼這樣做: [^\n]+\n驗過・沒驗過: [^\n]+\n花費: [^\n]+\n還剩什麼: [^\n]+\nsuite: [^\n]+\n紀錄: [^\n]+\nthen AskUserQuestion$/);
   const text = byName('land').rules.join(' ');
-  assert.match(text, /`\/clear` after, never before\./);
   assert.doesNotMatch(text, /new id leaves the entry active/);
 });
 

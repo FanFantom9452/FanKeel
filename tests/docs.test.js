@@ -679,28 +679,33 @@ test('the lifetime section lists every trackedFiles call site in scripts/ and li
     + ', bullets pointing at no call site: ' + JSON.stringify(declared.filter((x) => !a.has(x))));
 });
 
-test('there are seventeen trackedFiles call sites, thirteen under scripts/ and four under lib/', () => {
-  const actual = callSites(path.join(__dirname, '..'));
-  assert.equal(actual.length, 17, 'call sites: ' + JSON.stringify(actual));
-  assert.equal(actual.filter((s) => s.startsWith('scripts/')).length, 13,
-    'under scripts/: ' + JSON.stringify(actual));
-  assert.equal(actual.filter((s) => s.startsWith('lib/')).length, 4,
-    'under lib/: ' + JSON.stringify(actual));
-});
-
-// The sentence above the list carries the same two numbers in words, and a
-// bullet added without the sentence moving is the drift this guards against.
-// The section is whitespace-stripped first: that sentence is hard-wrapped, and
+// The sentence above the list carries the call-site counts in words. They are
+// derived from the code here, so a new call site moves one place — the page —
+// and the drift this guards against is the sentence not moving with it. The
+// section is whitespace-stripped first: that sentence is hard-wrapped, and
 // pinning one wrap position makes this go red for the wrong reason the next
 // time the paragraph reflows.
-test('the sentence above the list says seventeen, and thirteen under scripts/', () => {
-  const flat = lifetimeSection(path.join(__dirname, '..')).replace(/\s+/g, '');
-  assert.ok(flat.includes('其後十七條是它的十七個呼叫端'),
-    'the sentence above the list does not say 其後十七條 / 十七個呼叫端');
-  assert.ok(flat.includes('`scripts/`十三處與`lib/`四處'),
-    'the sentence does not say scripts/ 十三處與 lib/ 四處');
-  assert.ok(flat.includes('十七個之中只有這一處自己（`scan`函式本身）直接讀'),
-    'the survey.js bullet does not say 十七個之中');
+const DIGITS = '〇一二三四五六七八九';
+function zh(n) {
+  if (n < 10) return DIGITS[n];
+  const tens = Math.floor(n / 10);
+  const ones = n % 10;
+  return (tens === 1 ? '' : DIGITS[tens]) + '十' + (ones ? DIGITS[ones] : '');
+}
+
+test('the sentence above the list says how many call sites the code has, and how many under scripts/ and lib/', () => {
+  const root = path.join(__dirname, '..');
+  const actual = callSites(root);
+  const all = zh(actual.length);
+  const scripts = zh(actual.filter((s) => s.startsWith('scripts/')).length);
+  const lib = zh(actual.filter((s) => s.startsWith('lib/')).length);
+  const flat = lifetimeSection(root).replace(/\s+/g, '');
+  assert.ok(flat.includes('其後' + all + '條是它的' + all + '個呼叫端'),
+    'the sentence above the list does not say 其後' + all + '條 / ' + all + '個呼叫端');
+  assert.ok(flat.includes('`scripts/`' + scripts + '處與`lib/`' + lib + '處'),
+    'the sentence does not say scripts/ ' + scripts + '處與 lib/ ' + lib + '處');
+  assert.ok(flat.includes(all + '個之中只有這一處自己（`scan`函式本身）直接讀'),
+    'the survey.js bullet does not say ' + all + '個之中');
 });
 
 // docs/plans/2026-09-26-station-redesign.md Task 6. A decision marked
