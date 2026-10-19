@@ -589,8 +589,9 @@ sees the shape it always had, is in [registry.md](registry.md).
 
 The page is five files and a directory. `index.html` is a shell with no session data in it,
 copied byte for byte from `assets/station/index.html`, at the top of
-`.fankeel/`; its four siblings live under `.fankeel/station/` —
-`station.css`, `station.js` and `i18n.js` are copied the same way, and `station-data.js`
+`.fankeel/`; its eight sibling files live under `.fankeel/station/` —
+`station.css`, `station.js`, `i18n.js` and the four modules `spend-talk.js`,
+`spend-kinds.js`, `spend-range.js` and `spend-panel.js` are copied the same way, and `station-data.js`
 is the only generated one, and holds `window.STATION` — the scan, and nothing
 else. The shell is copied rather than pointed at, because the plugin directory
 carries its version in its path and the copy under `<root>/.fankeel/` would
@@ -1315,7 +1316,8 @@ player waits on `TOUR_PROMO30V5.ready` before the first frame.
 `promo30`, `promo30v3` and `promo30v4` render byte-identically.
 
 `serve` answers a fixed list of files from `assets/station/` — `STATIC` in
-`scripts/station.js`: `station.js`, `station.css`, `i18n.js`, `tour.html`,
+`scripts/station.js`: `station.js`, `station.css`, `i18n.js`, the four spend modules
+`spend-talk.js`, `spend-kinds.js`, `spend-range.js` and `spend-panel.js`, `tour.html`,
 `tour.css`, `tour.js` and every `tour-<name>.js` (any number of hyphenated
 segments, so `tour-reel-kit.js` and the like are served too). Any other name
 under `/station/` is a 404, so nothing else in the plugin directory is

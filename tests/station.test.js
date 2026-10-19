@@ -593,10 +593,10 @@ test('the shell carries no session text and the data file carries all of it', ()
     assert.ok(read('station/station-data.js').includes('live one'), 'the data file lost a task line');
 });
 
-// The shell moved to the top of the written directory and its three siblings
-// moved under station/, so a flat four-name listing can no longer describe
+// The shell moved to the top of the written directory and its siblings (eight
+// files and the detail directory) moved under station/, so a flat four-name listing can no longer describe
 // what write() leaves behind — it has to be read as a tree.
-test('write leaves the shell at the top and its three siblings under station/', () => {
+test('write leaves the shell at the top and its siblings under station/', () => {
     const f = fixture();
     station.write({ configDir: f.cfg, root: f.r1 });
     const dir = path.join(f.cfg, 'fankeel');

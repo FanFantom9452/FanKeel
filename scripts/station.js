@@ -57,7 +57,7 @@ const PLUGIN = path.resolve(__dirname, '..');
 const ASSETS = path.join(PLUGIN, 'assets', 'station');
 
 // The files `serve` answers from ASSETS, by name: the page's own two, the
-// language table, and the tour (`tour.html` and what it loads). A list, so
+// language table, the four spend-*.js modules, and the tour (`tour.html` and what it loads). A list, so
 // nothing else under the plugin directory is reachable by url.
 const STATIC = /^\/station\/((?:station|i18n|spend-[a-z]+)\.js|station\.css|tour(?:-[a-z]+)*\.(?:js|css|html))$/;
 const TYPES = { '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.html': 'text/html; charset=utf-8' };
