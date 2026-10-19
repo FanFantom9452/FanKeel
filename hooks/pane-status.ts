@@ -411,7 +411,7 @@ function agentsBlock(nodes: AgentNode[], inner: number, now: number, folded: boo
   return rows
 }
 
-// Given up in this order when the rows do not fit: `todo`, `agents` and `tasks` keep their head rows.
+// Given up in this order when the rows do not fit, after the agents' own agents: `todo`, `agents` and `tasks` keep their head rows.
 // The task, the clash and the foot never go.
 const DROP = ['todo', 'notes', 'agents', 'tasks']
 // The blocks that are alarms, not sections: every row of one keeps its rail.
@@ -452,12 +452,16 @@ export function statusRows(input: StatusInput): Row[] {
 
   // Every block but the first costs a blank row above it.
   const size = (): number => blocks.reduce((n, block) => n + block.length, blocks.length - 1)
+  // Before any block goes, the agents' own agents do: their rows open with ├ or └.
+  const ag = blocks.findIndex((block) => block[0].block === 'agents')
+  if (size() > room && ag >= 0) blocks[ag] = blocks[ag].filter((r) => !/^ [├└] /.test(r.segs[1]?.text ?? ''))
   for (const name of DROP) {
     if (size() <= room) break
     const at = blocks.findIndex((block) => block[0].block === name)
     if (at < 0) continue
-    if (name !== 'notes') blocks[at] = blocks[at].slice(0, 1)
-    else blocks.splice(at, 1)
+    if (name === 'notes') blocks.splice(at, 1)
+    // A head cut down to itself says so: its ▾ is the fold's, and would read as open and empty.
+    else if (blocks[at].length > 1) blocks[at] = [{ ...blocks[at][0], segs: [...blocks[at][0].segs, dim(' · 列數不夠')] }]
   }
   // A section's rail is on its first drawn row alone: the rows under it open
   // with one plain space instead, so `inner` holds and no wrap or cut moves.

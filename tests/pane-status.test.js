@@ -404,7 +404,7 @@ test('every section of the whole Pane carries one rail, its first row\'s, at any
     }
     for (const row of drawn(rows, 'clash')) assert.deepEqual(row.segs[0], { text: '▌', color: '#ff5f5f' }, line(row));
     // A tasks block cut to its title row, and the task block's first row, are still first rows.
-    assert.deepEqual(text(whole({ room: -9 }), 'tasks'), ['▌▾ tasks 2/13']);
+    assert.deepEqual(text(whole({ room: -9 }), 'tasks'), ['▌▾ tasks 2/13 · 列數不夠']);
     for (const cols of [20, 30, 41, 88]) {
         for (const room of [60, 20, -9]) {
             const seen = whole({ cols, room });
@@ -427,7 +427,7 @@ test('with no room the blocks go in the order notes, the tasks window', async ()
     assert.deepEqual(blocksOf(rows(23)), all);
     assert.deepEqual(blocksOf(rows(22)), ['task', 'clash', 'tasks', 'foot']);
     assert.equal(drawn(rows(19), 'tasks').length, 6);
-    assert.deepEqual(text(rows(18), 'tasks'), ['▌▾ tasks 2/5']);
+    assert.deepEqual(text(rows(18), 'tasks'), ['▌▾ tasks 2/5 · 列數不夠']);
     assert.deepEqual(blocksOf(rows(-9)), ['task', 'clash', 'tasks', 'foot']);
     assert.equal(rows(-9).length, 14);
     for (const room of [23, 22, 19, 18, 14]) assert.ok(rows(room).length <= room, room + ' < ' + rows(room).length);
@@ -559,9 +559,36 @@ test('with no room the TODO block goes first, down to its head row', async () =>
     const rows = (room) => status(m, { station: 'http://127.0.0.1:28888/', todos, pkey: 'F:/ws', room });
     const full = rows(60).length;
     assert.equal(drawn(rows(full), 'todo').length, 3);
-    assert.deepEqual(text(rows(full - 1), 'todo'), ['▌▾ TODO 3']);
+    assert.deepEqual(text(rows(full - 1), 'todo'), ['▌▾ TODO 3 · 列數不夠']);
     assert.deepEqual(blocksOf(rows(full - 1)), ['task', 'notes', 'todo', 'foot']);
     assert.deepEqual(blocksOf(rows(-9)), ['task', 'todo', 'foot']);
+});
+
+test('with no room the agents\' own agents go before any block does, so the roots and the TODO keep their rows', async () => {
+    const m = await load();
+    const node = (id, kids = []) => ({ id, title: id, type: '', model: 'sonnet 5.5', effort: 'medium', at: NOW - 60000, end: null, kids });
+    const agents = ['a', 'b', 'c', 'd', 'e', 'f'].map((id) => node(id, [1, 2, 3, 4].map((k) => node(id + k))));
+    const todos = Array.from({ length: 3 }, (_, i) => ({ id: 'a-' + i, title: 'entry ' + i, state: 'ready' }));
+    const rows = (room) => status(m, { station: 'http://127.0.0.1:28888/', todos, pkey: 'F:/ws', cols: 60, agents, room });
+    const full = rows(80).length;
+    // Six roots, three under each and a `└ 還有 1 個` row: 24 rows of their own agents.
+    const cut = rows(full - 24);
+    assert.deepEqual(text(cut, 'agents'), ['▌▾ agents  30 在跑 · 0 完成', ...' ○ a· ○ b· ○ c· ○ d· ○ e· ○ f'.split('·').map((t) => t + ' · sonnet 5.5 · medium · 1 分')]);
+    assert.equal(drawn(cut, 'todo').length, 3);
+    assert.deepEqual(blocksOf(cut), ['task', 'agents', 'notes', 'todo', 'foot']);
+});
+
+test('a head cut down by the room says 列數不夠; a head folded by hand does not', async () => {
+    const m = await load();
+    const agents = [{ id: 'a', title: 'a', type: '', model: 'm', effort: 'low', at: NOW - 60000, end: null, kids: [] }];
+    const todos = [{ id: 't', title: 't', state: 'ready' }];
+    const rows = (over) => status(m, Object.assign({ station: 'http://127.0.0.1:28888/', todos, pkey: 'F:/ws', cols: 60, agents }, over));
+    const tight = rows({ room: -9 });
+    assert.deepEqual(text(tight, 'agents'), ['▌▾ agents  1 在跑 · 0 完成 · 列數不夠']);
+    assert.deepEqual(body(tight, 'todo')[0].slice(-1), [{ text: ' · 列數不夠', color: SECOND }]);
+    const folded = rows({ room: -9, folded: { agents: true, todo: true } });
+    assert.deepEqual(text(folded, 'agents'), ['▌▸ agents  1 在跑 · 0 完成']);
+    assert.deepEqual(text(folded, 'todo'), ['▌▸ TODO 1']);
 });
 
 test('agentOf prefers the implementer: a newer reviewer whose title names the task does not cover its row', async () => {
