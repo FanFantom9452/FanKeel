@@ -4,7 +4,7 @@
 // Every file Claude Code loads into every session's input, how large each
 // is, and what in it could go.
 //
-//   node input-check.js [--root <dir>] [--config-dir <dir>] [--section-bytes <n>]
+//   node input-check.js [--root <dir>] [--config-dir <dir>] [--section-bytes <n>] [--skills]
 //
 // The global CLAUDE.md under the config directory, each CLAUDE.md above the
 // root, each project's CLAUDE.md — the root and every directory directly
@@ -167,6 +167,33 @@ function scan(root, configDir, opts) {
     return { root: path.resolve(root), configDir, sources: list };
 }
 
+// The stage skills are read once, on entering a stage, rather than in every
+// session — so they are listed apart from the always-loaded files above, and
+// only when asked for.
+function skillFiles(root) {
+    const dir = path.join(root, 'skills');
+    let names = [];
+    try { names = fs.readdirSync(dir); } catch (e) { return []; }
+    return names.map((name) => path.join(dir, name, 'SKILL.md'))
+        .filter((file) => fs.existsSync(file))
+        .map((file) => {
+            const text = fs.readFileSync(file, 'utf8');
+            return { file, bytes: Buffer.byteLength(text, 'utf8'), lines: text.split('\n').length, tokens: estimateTokens(text) };
+        })
+        .sort((a, b) => b.bytes - a.bytes);
+}
+
+function skillReport(root, list) {
+    const n = (v) => v.toLocaleString('en-US');
+    const lines = ['fankeel input-check --skills — ' + path.resolve(root).replace(/\\/g, '/'),
+        '  ' + list.length + ' SKILL.md files, each read once on entering its stage', ''];
+    for (const s of list) {
+        lines.push('  ' + n(s.bytes).padStart(8) + ' B  ' + n(s.lines).padStart(5) + ' lines  ~' + n(s.tokens).padStart(7) + ' tok  '
+            + path.relative(root, s.file).replace(/\\/g, '/'));
+    }
+    return lines.join('\n');
+}
+
 function report(result) {
     const n = (v) => v.toLocaleString('en-US');
     const lines = ['fankeel input-check — ' + result.root.replace(/\\/g, '/')];
@@ -195,20 +222,22 @@ function parseArgs(argv) {
         args: argv,
         strict: false,
         allowPositionals: true,
-        options: { root: { type: 'string' }, 'config-dir': { type: 'string' }, 'section-bytes': { type: 'string' } },
+        options: { root: { type: 'string' }, 'config-dir': { type: 'string' }, 'section-bytes': { type: 'string' }, skills: { type: 'boolean' } },
     });
     const bytes = parseInt(values['section-bytes'], 10);
     return {
         root: resolveRoot(values.root),
         configDir: typeof values['config-dir'] === 'string' && values['config-dir'] ? path.resolve(values['config-dir']) : liveConfigDir(),
         sectionBytes: Number.isFinite(bytes) && bytes > 0 ? bytes : SECTION_BYTES,
+        skills: values.skills === true,
     };
 }
 
 // Always 0: this lists, it does not judge. A file being large is what it is
 // for, not a failure of the run.
 function main(argv) {
-    const { root, configDir, sectionBytes } = parseArgs(argv);
+    const { root, configDir, sectionBytes, skills } = parseArgs(argv);
+    if (skills) return { text: skillReport(root, skillFiles(root)), code: 0 };
     return { text: report(scan(root, configDir, { sectionBytes })), code: 0 };
 }
 
@@ -218,4 +247,4 @@ if (require.main === module) {
     process.exit(code);
 }
 
-module.exports = { scan, report, main, parseArgs, sources, projectsUnder, estimateTokens, duplicates, deadLinks, bigSections };
+module.exports = { scan, report, main, parseArgs, sources, projectsUnder, estimateTokens, skillFiles, duplicates, deadLinks, bigSections };
