@@ -212,7 +212,7 @@ function main(argv, cwd) {
 
     const run = (dir, args, input, env) => spawnSync('git', args, { cwd: dir, encoding: 'utf8', input, env: env ? Object.assign({}, process.env, env) : process.env });
     const home = repoRoot(cwd);
-    if (!home) return { text: 'commit.js: not inside a git repository', code: 1 };
+    if (!home) return { text: 'commit.js: not inside a git repository — run it from the repository that owns the listed paths, with paths relative to its root', code: 1 };
     // Where the profile and .fankeel/sensitive.txt are read: the checkout this
     // was started in, which is the main one when the controller runs it.
     // `into <path>`: every block lands in that worktree of this repository

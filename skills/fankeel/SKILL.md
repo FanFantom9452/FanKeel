@@ -630,10 +630,11 @@ the user's words and `session <id>`: it runs `node <plugin>/scripts/todo.js
 new` with a body of at least 200 characters saying where it came from, what
 it should become and what counts as done, runs `todo-check.js`, writes a
 commit file — the entry's path, a blank line, the message — and returns
-`commit <file>`. Run `node <plugin>/scripts/commit.js <file>` yourself:
+`commit <file>`. Run `node <plugin>/scripts/commit.js <file>` yourself, in the
+entry's repo:
 `commit -o` takes only that path, so whatever the stage agent has staged
 stays where it was. If the implementer reports its `todo.js` refused, do not
-run it in its place; give the user the exact `!` line to run. A note is for a
+run it in its place; give the user the exact `!` line. A note is for a
 dead end or a decision inside the task, never for a TODO.
 
 Notes are never version-controlled and die with the task. If a note still matters
