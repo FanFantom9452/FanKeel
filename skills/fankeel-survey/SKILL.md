@@ -282,6 +282,17 @@ skip work is itself the doubt.
 Say the classification before acting on it, so it can be overridden. A
 classification made silently is one nobody can disagree with.
 
+**An `architectural` class adds a history lens** — one more
+`fankeel:fankeel-reader`, sent once the class is said, over the files the scan
+named. Its brief: run `git log -S<term>` and `git blame -L` over them and read
+the commit text, then return per finding the commit, the `path:line`, and one
+tier — Direct (a commit message says it), Supported (code and commit agree),
+Inferred (reasoned from both), Speculative (a guess worth checking), Unknown
+(git does not say). It closes with a list headed `git cannot show:` — choices
+made in chat, work squashed away, anything older than the clone. The tiers
+belong to this brief only; `agents/fankeel-reader.md` keeps `EXTRACTED` /
+`INFERRED` for every other dispatch.
+
 ### 6. Write it down
 
 The entry already exists: `task.js start` ran at `/fankeel`, with the class said
