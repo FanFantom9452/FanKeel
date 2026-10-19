@@ -186,12 +186,14 @@ node <plugin>/scripts/task.js profile show | set <key> <value> [--project|--defa
 node <plugin>/scripts/task.js down    --session <id>
 node <plugin>/scripts/task.js adopt   <other-session-id> --session <id>
 node <plugin>/scripts/task.js clear   <session-id> [--force] --session <id>
+node <plugin>/scripts/task.js release <session-id> <path>... --session <id>
 ```
 
 `task` is how one task becomes the next without standing down: it takes the new
 task line, clears `claims`, `notes` and `next`, and resets `stage` to the head of
 the route. `project`, `route`, `guard` and `started` stay. Nothing else clears
-claims.
+claims, except `release`: it takes the paths it is given off another session's
+`claims`, and nothing else of that entry changes.
 
 `<plugin>` is two directories up from this file — resolve `../../scripts/task.js`
 against it. Add `--root <dir>` only to override where the registry is; without it
@@ -215,14 +217,16 @@ Breaking any one of these makes the registry lie, and a registry that lies is
 worse than none because people stop reading it.
 
 1. **Never write another session's file.** The exceptions are the adopt step
-   below, which deactivates the source in the same change, and `clear`, which
-   deactivates it without taking the task.
+   below, which deactivates the source in the same change; `clear`, which
+   deactivates it without taking the task; and `release`, which takes the
+   paths the user named off its `claims` and leaves the rest of it as it was.
 2. **Never set `active: false` without the user asking.** No timer, no session
    end, no tidying up.
 3. **Never edit `updated` or `claims`.** The hooks own both — `updated` from
    every prompt, `claims` from every edit that lands. `claims` is the only
    record of where this task actually went, so a path put there by hand is a
    claim on a file nobody touched, and it blocks a neighbour over nothing.
+   `release` is the one exception, and only for paths the user named.
 4. **Never delete a session file.** Standing down sets `active: false`.
 5. **Never advance `stage` without saying so.** The stage decides which rules
    are injected, so a wrong stage silently swaps the discipline.

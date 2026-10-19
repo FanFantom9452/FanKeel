@@ -9,7 +9,7 @@ const { skillFiles, main } = require('../scripts/input-check.js');
 // 2026-10-19 (`node scripts/input-check.js --skills`), so a skill can shrink
 // freely and cannot grow unnoticed. Slimming lowers the number in the same
 // change; growing past it is a decision, made by raising it here.
-const CAPS = { 'fankeel': 65200, 'fankeel-build': 40100 };
+const CAPS = { 'fankeel': 65600, 'fankeel-build': 40100 };
 const OTHER = 24000;
 
 test('input-check --skills lists every stage skill with its size', () => {

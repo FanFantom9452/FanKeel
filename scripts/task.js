@@ -1538,6 +1538,43 @@ function cmdClear(root, opts) {
         + NL + 'it accepts.';
 }
 
+// The third place another session's file is written, and the smallest. `clear`
+// puts the whole task down; this takes named paths off its `claims` and leaves
+// stage, notes, `next`, every other claim and `active` as they were — a
+// neighbour still at land keeps landing. All or nothing: one path it does not
+// hold refuses the lot, so a typo never half-releases.
+//
+// No age gate, unlike `clear`: nothing is stood down, and the neighbour's next
+// edit to one of these paths claims it again through `hooks/touch.js`.
+function cmdRelease(root, opts) {
+    const id = requireSession(opts);
+    const target = opts.positional[0];
+    if (!target) fail('Give the session id, then the paths to release.');
+    if (target === id) fail('That is this session. Its claims come from its own edits; `task` clears them.');
+    if (!registry.sessionPath(root, target)) fail('Not a session id: ' + target);
+    const paths = splitScope(opts.positional.slice(1).join(','));
+    if (!paths.length) fail('Give the paths to release after the session id.');
+
+    let data = null;
+    let missing = [];
+    const wrote = registry.update(root, target, (d) => {
+        data = d;
+        if (d.active !== true) return false;
+        const held = registry.claimsOf(d);
+        missing = paths.filter((p) => !held.includes(p));
+        if (missing.length) return false;
+        d.claims = held.filter((p) => !paths.includes(p));
+        return true;
+    });
+    if (!data) fail('No entry for ' + target + ' under ' + root);
+    if (data.active !== true) return 'fankeel — already stood down: its claims block nobody.';
+    if (missing.length) fail('Not held by ' + target + ': ' + missing.join(', ') + NL + 'Nothing released.');
+    if (!wrote) fail('Could not write the entry.');
+    return 'fankeel — released from ' + (data.task || 'untitled') + ' @ ' + (data.stage || '?') + ': ' + paths.join(', ')
+        + NL + 'Its stage, notes, next and other claims are as they were.'
+        + NL + 'Its next edit to one of these paths claims it again.';
+}
+
 // Re-routing is a separate command from `stage` on purpose. Moving along a route
 // is routine; changing what the route *is* is a decision about the shape of the
 // task, and the two should not be one keystroke apart.
@@ -1710,6 +1747,7 @@ const COMMANDS = {
     adopt: cmdAdopt,
     take: cmdTake,
     clear: cmdClear,
+    release: cmdRelease,
     land: cmdLand,
     intends: cmdIntends,
 };
@@ -1741,6 +1779,8 @@ const USAGE = [
     '  take <session-id> "<part>"        record that this session took that part of its work;',
     '                                    it shows on the also-in-progress line of that session',
     '  clear <session-id> [--force]      put down a claim nobody is behind; never deletes',
+    '  release <session-id> <path>...    take named paths off another entry\'s claims;',
+    '                                    its stage, notes and other claims stay',
     '',
     'Every command takes --session <id>, and --root <dir> to override where the',
     'registry is. Without --root it is found the way the hooks find it: the nearest',
@@ -1752,7 +1792,7 @@ const USAGE = [
     '',
     'clear is the exception. It takes the badge down on the session being cleared',
     'and never touches this one, so a clash it resolves goes on showing until the',
-    'next prompt.',
+    'next prompt. release touches no badge at all.',
 ].join('\n');
 
 // The commands, as the split reads them. `COMMANDS` is already the list, so
