@@ -276,9 +276,9 @@ function rootOf(opts) {
 // failure it was built for — an id off a background task's output directory,
 // while real sessions were listed beside it.
 //
-// `clear <id>` and `adopt <id>` take the other session's id positionally rather
-// than through `--session`, so a dead neighbour is still reachable — which is the
-// whole point of those two commands.
+// `adopt`, `take`, `clear` and `release` take the other session's id positionally
+// rather than through `--session`, so a dead neighbour is still reachable — which
+// is the whole point of those commands.
 function requireSession(opts) {
     const id = opts.session;
     if (!id) fail('--session <id> is required. The /fankeel prompt makes the hook say it; use that one.');
@@ -1566,7 +1566,11 @@ function cmdRelease(root, opts) {
         d.claims = held.filter((p) => !paths.includes(p));
         return true;
     });
-    if (!data) fail('No entry for ' + target + ' under ' + root);
+    if (!data) {
+        // The update never ran: no file, or `withLock` gave up on a held lock.
+        if (registry.readSession(root, target)) fail('Could not write the entry for ' + target + ' (its lock is held).');
+        fail('No entry for ' + target + ' under ' + root);
+    }
     if (data.active !== true) return 'fankeel — already stood down: its claims block nobody.';
     if (missing.length) fail('Not held by ' + target + ': ' + missing.join(', ') + NL + 'Nothing released.');
     if (!wrote) fail('Could not write the entry.');
