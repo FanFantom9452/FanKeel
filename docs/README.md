@@ -48,6 +48,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | What a plan is checked for before its gate, and what an implementer's brief file holds | [pipeline.md](02-architecture/pipeline.md) — *plan* and *build* |
 | What the badge word means, and how to colour each stage | [statusline.md](90-agent/reference/statusline.md) |
 | Every session on this machine, where the page finds the registries, and what `stale` means | [station.md](90-agent/reference/station.md) |
+| 每個任務 land 時留下的六欄完成紀錄放哪、怎麼寫、監控站在哪裡畫它 | [plain-language.md](90-agent/reference/plain-language.md) — *完成紀錄*；月檔在 `docs/90-agent/records/` |
 | Which model each role runs on, and the effort that goes with it — an open decision | [model-choice.md](90-agent/reference/model-choice.md) |
 | How Chinese written for a person is checked: one thing per sentence, 160 columns at most, names instead of codes | [plain-language.md](90-agent/reference/plain-language.md) |
 | Why `buildDirs` stops following junctions, and why `ensureServe` probes at least 250ms | [decisions/2026-10-05-station-write-timeout.md](03-decisions/2026-10-05-station-write-timeout.md) |

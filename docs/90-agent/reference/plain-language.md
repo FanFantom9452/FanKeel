@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-10-10
+last_verified: 2026-10-19
 source_of_truth: lib/plain.js, lib/prose.js
 ---
 
@@ -30,11 +30,12 @@ source_of_truth: lib/plain.js, lib/prose.js
 
 ## 完成紀錄
 
-有 TODO 條目的任務，land 時在條目檔底下寫一段 `## 完成紀錄`：用白話說這次做了什麼，最後列出做事的 commit。
+每個任務 land 時都寫一份完成紀錄，不論有沒有 TODO 條目。用 `scripts/record.js write` 寫，六欄：要求、做了什麼、為什麼這樣做、驗過・沒驗過、花費、還剩什麼。
 
-- 一條紀錄可以對多個 commit，記清單，不記單一 sha。
+- 花費由程式算，自己寫的會被丟掉。
+- 紀錄存在兩處：registry 條目給監控站讀，`docs/90-agent/records` 的月檔給 git 留底。
 - 紀錄不寫 `path:line`，免得程式改動後 todo 的行號檢查誤報。
 - 紀錄寫好就不再改。
-- 寫紀錄的 commit 記不到自己的 sha，所以只列做事的 commit。
+- 寫紀錄的 commit 記不到自己的 sha，所以不列 sha。
 
-station 的 TODO 面板在已完成的條目上只顯示這一段；沒有這一段的舊條目，照舊顯示整個 body。
+有 TODO 條目的任務，條目檔底下也寫一段 `## 完成紀錄`。station 的 TODO 面板在已完成的條目上只看這一段；沒有這一段的舊條目，照舊顯示整個 body。

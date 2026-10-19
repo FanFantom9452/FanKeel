@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-10-18
+last_verified: 2026-10-19
 source_of_truth: lib/station.js, scripts/station.js, hooks/leave.js, lib/usage.js, lib/registry.js, lib/prices.js, lib/clear.js, lib/profile.js, lib/serve.js, hooks/inject.js, lib/detail.js, lib/replay.js, assets/station/station.js, lib/docsearch.js
 ---
 
@@ -211,6 +211,16 @@ the page that a project was left out: no count, no note on the footer. `station.
 summary — not the served page — does print how many projects it excluded
 (`scripts/station.js:900`, `hidden by station.hide`), but names none of
 them; the terminal is the only place the fact surfaces at all.
+
+The last thing a row holds is the completion record `scripts/record.js write`
+files at land: six fields — 要求, 做了什麼, 為什麼這樣做, 驗過・沒驗過, 花費,
+還剩什麼 — kept on the registry entry as `s.record` and, for git, in the month's
+file under `docs/90-agent/records`. The page draws it in three places, each a
+block you can name in a mockup: `record` is the card in the opened row,
+`record-page` is the same record at full width on the session page, and
+`list-ask` is the one-line 要求 under a finished row in the list. A session
+that landed before the record existed has no `s.record`, and none of the three
+is drawn for it.
 
 ### The stage strip
 
