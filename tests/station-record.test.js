@@ -95,3 +95,7 @@ test('the session page draws the record page block', () => {
     const p = boot('#/session/a', [SES]);
     assert.match(p.x.sessionPage({ id: 'a' }), /data-block="record-page"[\s\S]*寫六欄紀錄/);
 });
+
+test('the session page names an id it has no session for', () => {
+    assert.match(V.sessionPage({ id: 'zz' }), /class="note"[^>]*>[^<]*zz/);
+});
