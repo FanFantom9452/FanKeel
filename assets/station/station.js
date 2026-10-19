@@ -2755,6 +2755,7 @@
             NAV_TREE: NAV_TREE,
             tuneOpen: tuneOpen, tuneEvents: tuneEvents, toastText: toastText, floatHtml: floatHtml, fkBoxParse: fkBoxParse, fkBoxClamp: fkBoxClamp, gateCountdownHtml: gateCountdownHtml, noteHtml: noteHtml, floatNotes: floatNotes, clock: gateClock,
             changedParts: changedParts, seenHtml: seenHtml, drawList: drawList,
+            recordHtml: recordHtml, recordPageHtml: recordPageHtml, listAskRow: listAskRow,
         };
     }
     if (!doc) return;
@@ -3802,6 +3803,55 @@
         m.segs.forEach(function (g) { if (n[g.stage] === 1 && isFinite(by[g.stage])) { g.usd = by[g.stage]; g.estimated = est[g.stage]; } });
         return m;
     }
+    // ---- the completion record: the six fields land files -------------------
+    // The six-field record land files (scripts/record.js): first in the
+    // detail, above the tabs on the session page, and its 要求 under a landed
+    // row of the list. One muted line where there is none.
+    function recLabel(k) {
+        switch (k) {
+        case 'ask': return loc('rec.ask', '要求');
+        case 'did': return loc('rec.did', '做了什麼');
+        case 'why': return loc('rec.why', '為什麼這樣做');
+        case 'checked': return loc('rec.checked', '驗過・沒驗過');
+        case 'cost': return loc('rec.cost', '花費');
+        default: return loc('rec.left', '還剩什麼');
+        }
+    }
+    function recordRows(f, cls) {
+        return ['ask', 'did', 'why', 'checked', 'cost', 'left'].map(function (k) {
+            var v = f[k];
+            var body = k === 'did'
+                ? '<ul class="rec-ul">' + (Array.isArray(v) ? v : []).map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>'
+                : esc(v || '');
+            return '<div class="' + cls + '-r' + (k === 'ask' ? ' ' + cls + '-ask' : '') + '"><dt>' + recLabel(k) + '</dt>'
+                + '<dd' + (k === 'cost' ? ' class="rec-num"' : '') + '>' + body + '</dd></div>';
+        }).join('');
+    }
+    function recordNone(s) {
+        return s && s.state !== 'down' ? loc('rec.noneYet', '完成紀錄在 land 時寫。') : loc('rec.none', '這個任務沒有完成紀錄。');
+    }
+    function recordSrc(r, cls) {
+        return r.file ? '<p class="' + cls + '-src">' + loc('rec.alsoIn', '也記在 {f}', { f: '<span class="mono">' + esc(r.file) + '</span>' }) + '</p>' : '';
+    }
+    function recordHtml(s) {
+        var r = s && s.record;
+        if (!r || !r.fields) return '<p class="rec-none" data-block="record-none">' + recordNone(s) + '</p>';
+        return '<section class="rec" data-block="record" aria-labelledby="rec-h"><h3 class="rec-h" id="rec-h">' + loc('rec.title', '完成紀錄') + '</h3>'
+            + '<dl class="rec-f">' + recordRows(r.fields, 'rec') + '</dl>' + recordSrc(r, 'rec') + '</section>';
+    }
+    function recordPageHtml(s) {
+        var r = s && s.record;
+        if (!r || !r.fields) return '<p class="recp-none" data-block="record-page-none">' + recordNone(s) + '</p>';
+        return '<section class="panel recp" data-block="record-page" aria-labelledby="recp-h"><div class="h2" id="recp-h">' + loc('rec.title', '完成紀錄') + '</div>'
+            + '<dl class="recp-f">' + recordRows(r.fields, 'recp') + '</dl>' + recordSrc(r, 'recp') + '</section>';
+    }
+    function listAskRow(s, sel) {
+        var a = s && s.record && s.record.fields ? s.record.fields.ask : '';
+        if (!a) return '';
+        return '<tr class="ask" data-block="list-ask" data-id="' + esc(s.id) + '" aria-selected="' + (sel === s.id) + '"><td></td><td colspan="7">'
+            + '<div class="ask-l" title="' + esc(a) + '"><span class="ask-k">' + loc('rec.ask', '要求') + '</span>' + esc(a) + '</div></td></tr>';
+    }
+    // ---- 儀表板 (`#/`), again: the pages that draw it ---------
     function sessionPage(r) {
         var s = S.sessions.filter(function (x) { return x.id === r.id; })[0];
         if (!s) return '<section class="panel"><p class="note">' + loc('dash.noSessionOnPage', '這頁上沒有 session {id}', { id: esc(r.id) }) + '</p></section>';
@@ -3849,7 +3899,7 @@
             + (s.model ? '<span class="chip"><i class="sw" style="background:var(--m-' + family(s.model) + ')"></i>' + loc('dash.mainSession', '主 session') + ' <span class="mono">'
                 + esc(s.model) + '</span></span>' : '') + effortChip(s.effort) + '</div></div>'
             + railHtml(s, Boolean(S.serve) && s.state === 'live', S.serve ? Date.now() : NOW)
-            + sessionHeadHtml(s, x) + '</section>'
+            + sessionHeadHtml(s, x) + '</section>' + recordPageHtml(s)
             + tabsHtml(s, r.tab, x, talk && talk.total !== null ? talk.total : null) + '<section class="panel' + (r.tab === 'plan' ? ' pv" data-block="plan-tab"' : r.tab === 'gate' ? ' pv gv" data-block="gate-tab"' : '"' + (r.tab === 'dispatch' ? ' data-block="dispatch"' : '')) + '>' + body + '</section>';
     }
     // 對話's turns, per session id, for as long as the page lives: a redraw
@@ -4026,7 +4076,8 @@
                 + '>' + c[1] + '</th>';
         }).join('') + '</tr>';
         doc.getElementById('lb').innerHTML = R.map(function (s) {
-            return '<tr data-id="' + esc(s.id) + '" aria-selected="' + (sel === s.id) + '">'
+            var ask = listAskRow(s, sel);
+            return '<tr' + (ask ? ' class="has-ask"' : '') + ' data-id="' + esc(s.id) + '" aria-selected="' + (sel === s.id) + '">'
                 + '<td><input type="checkbox" data-cmp="' + esc(s.id) + '" aria-label="' + loc('dash.pickToCompare', '選來比較') + '"'
                 + (picked.indexOf(s.id) >= 0 ? ' checked' : '')
                 + (s.hasDetail ? '' : ' disabled title="' + loc('dash.noTranscriptToCompare', '沒有 transcript，沒有細節可比') + '"') + '></td>'
@@ -4035,7 +4086,7 @@
                 + '<td class="r num">' + usd(cost(s), true) + estMark({ estimated: s.estimated && s.estimated.length }) + '</td>'
                 + '<td class="c-state">' + statePill(s) + runningTag(s) + '</td>'
                 + '<td class="num mute" style="font-size:11.5px">' + day(s.started) + '</td>'
-                + '<td class="num mute" style="font-size:11.5px">' + ago(s.updated) + '</td></tr>';
+                + '<td class="num mute" style="font-size:11.5px">' + ago(s.updated) + '</td></tr>' + ask;
         }).join('') || '<tr><td colspan="8"><div class="empty">' + loc('dash.noMatchingSessions', '沒有符合的 session') + '</div></td></tr>';
         if (R.length && !R.some(function (s) { return s.id === sel; })) sel = R[0].id;
         drawDetail();
@@ -4098,6 +4149,7 @@
                 + esc(s.model.replace(/^claude-/, '')) + '</span>' : '') + '</div>'
             + '<h2 style="font-size:15px;line-height:1.45;margin-bottom:12px">'
             + esc(s.task || loc('dash.unnamed', '（未命名）')) + '</h2>'
+            + recordHtml(s)
             + secOpen('s-sum', loc('dash.summary', '摘要'), esc(s.stage || '—') + ' · ' + mins(tot)
                 + (x ? ' · ' + x.requests + ' requests' : ''), open)
             + (s.stages.length
@@ -4865,7 +4917,14 @@
             + gateSec(loc('det.gateSecCost', '花了多少'), null, p.cost ? '<div class="gv-split">' + gateText(p.cost) + '</div>' : '')
             + gateSec(loc('det.gateSecTime', '各站時間'), null, time.html)
             + gateSec(loc('det.gateSecOpen', '還沒完'), null, p.open ? '<ul class="gv-open"><li>' + gateText(p.open) + '</li></ul>' : '');
-        var body = (p.plain ? '<section class="gv-plain" aria-label="' + loc('det.gatePlain', '白話') + '"><h3>' + loc('det.gatePlain', '白話') + '</h3><p>' + gateText(p.plain) + '</p></section>' : '')
+        var said = [['ask', loc('det.gateAsk', '要求')], ['why', loc('det.gateWhy', '為什麼這樣做')], ['checked', loc('det.gateChecked', '驗過・沒驗過')]]
+            .filter(function (k) { return p[k[0]]; });
+        var lead = said.length
+            ? '<section class="gv-plain" aria-label="' + loc('det.gateRecord', '完成紀錄') + '">' + said.map(function (k) {
+                return '<h3>' + k[1] + '</h3><p>' + gateText(p[k[0]]) + '</p>';
+            }).join('') + '</section>'
+            : p.plain ? '<section class="gv-plain" aria-label="' + loc('det.gatePlain', '白話') + '"><h3>' + loc('det.gatePlain', '白話') + '</h3><p>' + gateText(p.plain) + '</p></section>' : '';
+        var body = lead
             + (p.sha ? '<p class="gv-commit"><code>' + esc(p.sha) + '</code><span>' + gateText(p.subject) + '</span></p>' : '')
             + '<div class="gv-cols">' + gateSec(loc('det.gateSecShipped', '做得到了'), ship.length, ship.length ? '<ul class="gv-ship">' + ship.map(function (x) {
                 return '<li>' + gateText(x) + '</li>';

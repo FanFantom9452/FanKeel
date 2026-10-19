@@ -2501,3 +2501,43 @@ p.gv-red{color:var(--fail-ink)}
 
 /* gate tab: the report lines no parser rule recognised, as written */
 .gv-rest{margin:8px 0 0;white-space:pre-wrap;font:12px/1.55 var(--f-mono);color:var(--ink2);overflow-wrap:anywhere}
+
+/* The completion record (scripts/record.js): the detail's first block,
+   the session page above its tabs, and a landed row's 要求 in the list. */
+#det .rec{background:var(--soft);border-radius:var(--r-sm);padding:12px 13px 10px;margin:0 0 4px}
+.rec-h{margin:0 0 4px;font:600 12.5px/1.4 var(--sans);color:var(--fg)}
+.rec-f{margin:0}
+.rec-r{padding:8px 0;border-top:1px solid var(--line)}
+.rec-h + .rec-f .rec-r:first-child{border-top:0;padding-top:4px}
+.rec-r dt{font:600 11px/1.4 var(--sans);letter-spacing:.04em;color:var(--mute);margin:0 0 3px}
+.rec-r dd{margin:0;font-size:12.5px;line-height:1.6;color:var(--fg);max-width:65ch}
+.rec-ask dd{font-size:13px;font-weight:600}
+.rec-num{font-variant-numeric:tabular-nums}
+.rec-ul{margin:0;padding:0 0 0 1.1em}
+.rec-ul li{padding:1px 0}
+.rec-ul li::marker{color:var(--mute)}
+.rec-src{margin:6px 0 0;padding-top:8px;border-top:1px solid var(--line);font-size:12px;color:var(--mute)}
+.rec-src .mono{color:var(--fg-2)}
+#det .rec + details.sec{border-top:1px solid var(--line);margin-top:12px}
+.rec-none{margin:0 0 2px;font-size:12px;line-height:1.5;color:var(--mute)}
+.listcard tbody tr.has-ask td{border-bottom:0;padding-bottom:3px}
+.listcard tbody tr.ask td{padding:0 10px 10px;vertical-align:top}
+.ask-l{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;line-height:1.5;color:var(--mute)}
+.ask-k{font-weight:600;font-size:11px;letter-spacing:.04em;margin-right:8px;color:var(--fg-2)}
+.listcard tbody tr.has-ask:not([aria-selected=true]):has(+ tr.ask:hover),
+.listcard tbody tr.has-ask:not([aria-selected=true]):hover + tr.ask{background:var(--soft)}
+.recp{padding-top:18px;padding-bottom:16px}
+.recp .h2{margin:0 0 8px;font-weight:600}
+.recp-f{margin:0}
+.recp-r{display:grid;grid-template-columns:120px minmax(0,72ch);column-gap:24px;padding:10px 0;border-top:1px solid var(--line)}
+.recp-r:first-child{border-top:0;padding-top:4px}
+.recp-r dt{font:600 12px/1.6 var(--sans);letter-spacing:.04em;color:var(--mute);margin:0}
+.recp-r dd{margin:0;font-size:13px;line-height:1.6;color:var(--fg)}
+.recp-ask dd{font-size:14px;font-weight:600}
+.recp-src{margin:6px 0 0;padding:10px 0 0 144px;border-top:1px solid var(--line);font-size:12px;color:var(--mute)}
+.recp-src .mono{color:var(--fg-2)}
+.recp-none{margin:0 0 14px;padding:0 4px;font-size:12.5px;line-height:1.5;color:var(--mute)}
+@media(max-width:1100px){
+  .recp-r{grid-template-columns:minmax(0,1fr);row-gap:3px}
+  .recp-src{padding-left:0}
+}
