@@ -776,7 +776,7 @@ test('a controlled build tells its controller to run commit.js on `commit <file>
   const on = { values: { 'stage.agents': ['survey', 'build', 'verify'] }, sources: {}, unreadable: [] };
   const at = (stage) => entry(MINE, { stage, started: '2026-09-19T09:30:12.345Z' });
   for (const out of [render({ mine: at('build'), others: [], now: NOW, root: '/r', profile: on }), renderResume({ mine: at('build'), profile: on, root: '/r' })]) {
-    assert.match(out, /If it returns `commit <file>`, run `node <plugin>\/scripts\/commit\.js "<file>"` and SendMessage it what that printed, exactly\. No gate; wait for it to return again\./);
+    assert.match(out, /If it returns `commit <file>`, run `node <plugin>\/scripts\/commit\.js "<file>"` and SendMessage it what that printed, exactly\. No gate; wait\./);
     assert.equal(out.includes('{{'), false);
     assert.ok(sizeAtReference(out) < 2400, 'a controlled build block is ' + sizeAtReference(out) + ' chars at a real plugin root');
   }
