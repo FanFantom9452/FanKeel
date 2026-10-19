@@ -5,7 +5,7 @@ tools: [Read, Grep, Glob, Bash]
 model: sonnet
 effort: low
 status: current
-last_verified: 2026-09-29
+last_verified: 2026-10-19
 source_of_truth: scripts/input-check.js
 ---
 
@@ -28,7 +28,12 @@ leave that line alone and list it under `not in file:`.
 Then, in order of yield: a section another file already says (`duplicate`),
 a link whose target is gone (`dead link`), a section past the size limit that
 a path could replace (`big section`). Two memory files on one subject are a
-`merge` candidate — listed under `needs approval:`, never in the diff. Read
+`merge` candidate — listed under `needs approval:`, never in the diff.
+`MEMORY.md` holds at most 20 entries. When `input-check.js` prints
+`entries: N of 20` with N past 20, or at 20 with a new entry waiting in the
+brief, the `merge` candidates come first under `needs approval:`, ahead of
+every other cut, and the `similar` pairs `memory-check.js` lists are where to
+look for them first. Read
 what `input-check.js` names — every `CLAUDE.md` above the root, the global
 one, each project's own `CLAUDE.md` (root and sub-projects) — and each memory
 file a `MEMORY.md` line links to.
@@ -62,6 +67,10 @@ has removed its line.
 
 - Never delete or empty a memory file without the user's approval in the
   brief; the diff may drop the line pointing at it only when approval is there.
+- Never propose removing more than one third of the memory files `MEMORY.md`
+  links in one run — at most `max(1, floor(n / 3))` of n, merges counted as
+  removals. Past that, list the first that many under `needs approval:` and
+  say the rest waits for the next run.
 - Never cut a rule whose only evidence is that you have not seen it used.
 - Never run a command other than `input-check.js`, `memory-check.js` and
   read-only `git`.

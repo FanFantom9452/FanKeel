@@ -190,6 +190,24 @@ was never a note:
 | why a change was made | the commit message |
 | work deliberately deferred | folder mode: a new entry via `todo.js new --body`; hand-written `TODO.md`: one line, under the heading for what it is short of — under `## Blocked`, beneath a `### <timing>` whose next line is `on: MM-DD`, `after: <what>` or `upstream: <what>`; under `## Watch`, one whose next line is `if: <the event>`; either line ending in a `MM-DD` stamp; step 2's `todo-check` ran before this note existed, so run it again once the notes land |
 
+**Before a durable fact goes to the memory directory, one of four decisions.**
+Grep the directory for the fact's subject first, then:
+
+- `store` — nothing there says it: a new file and one `MEMORY.md` line. When
+  `input-check.js` already prints `entries: 20 of 20` or more, the store
+  waits behind a `merge` the slimmer proposes.
+- `update` — one file says it and is now wrong or short: edit that file, with
+  a `**Corrected YYYY-MM-DD:**` line where it was wrong, and leave no second
+  copy beside it.
+- `merge` — two files already say it: listed for `fankeel-slimmer`'s
+  `needs approval:`, never done here.
+- `skip` — it is already said as well as this note would say it.
+
+Four kinds are never stored: a secret — a key, token or password, or where one
+is kept —, a raw log or command output, a transient state that clears itself
+(a lock held, a server down, a branch mid-rebase), and a fact another memory
+file already holds, which is an `update` rather than a second file.
+
 If this task wrote to the memory directory, run
 `node <plugin>/scripts/memory-check.js` once before standing the task down. A
 wrong entry it finds is corrected in place with a `**Corrected
