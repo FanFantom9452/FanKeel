@@ -26,7 +26,7 @@ Decisions taken at this stage, in the user's words where they chose:
 - Six fields, in this order and with these names: 要求、做了什麼、為什麼這樣做、驗過・沒驗過、花費、還剩什麼.
 - 做了什麼 is a list, one line per thing someone can now do that they could not; the other five are one to three sentences.
 - Written to plain-language.md: no sha, no TODO id, no `path:line`, no bare code name. `lib/plain.js`'s existing checks are the gate on it.
-- 花費 is filled by the script from the station's own figures for the session (money, wall time, agent count, models), not typed by the model.
+- 花費 is filled by the script from the station's own figures for the session (money, wall time, agent count, models), not typed by the model. The registry carries no money while a session runs (`hooks/leave.js` writes `spend` at the end), so the script reads the session's transcript with `lib/usage.js` `summariseTree` and prices it with the station's formula (`usd + agentUsd`, `lib/station.js:775-776`); the figure is a snapshot at land.
 
 ## 2. Writing it — `scripts/record.js`
 
@@ -62,4 +62,4 @@ Decisions taken at this stage, in the user's words where they chose:
 
 ## Not verified
 
-- That `lib/station.js` can produce one session's money and time cheaply enough to call from `record.js` at land; if it cannot, 花費 falls back to the land stage's own cost line.
+- How long `summariseTree` takes on a long session's transcript at land; it is the same read `hooks/leave.js` makes at session end, so it is expected to take seconds.
