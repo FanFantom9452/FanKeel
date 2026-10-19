@@ -32,9 +32,15 @@ of them is affected either way. `survey.js` leaves pages out by role instead:
 every file whose role is `archive`, `plan`, `decision` or `report` is dropped
 and counted on its `excluded:` line unless `--include-role` names that role.
 
-The three shapes that ship — `flat`, `phased` and `audience` — and what happens
-to a markdown file in no bucket are stated in [the skill](../../../skills/fankeel/SKILL.md),
-under *Where documents live*. What belongs here is why the question is put that
+The three shapes that ship are `flat` (one `docs/` with a numbered series) and
+`phased` (`01-vision` through `99-archive`), both taken from real repositories,
+and `audience` — the folders a person reads numbered to the front (`01-guide`,
+`02-architecture`, `03-decisions`), everything written for an agent under
+`90-agent/`, and `99-archive` last. The roles are what fankeel needs, not the
+paths. What happens to a markdown file in no bucket is stated in
+[the skill](../../../skills/fankeel/SKILL.md), under *Where documents live*; it
+is reported because it is the thing nobody decided the lifetime of, and so the
+one most likely to rot unnoticed. What belongs here is why the question is put that
 way: it is asked in two places — `fankeel-init`, on a project's first
 onboarding, and survey — both only where no `docs.json` exists, and both write
 the answer with `lib/docs.js`'s `write`.

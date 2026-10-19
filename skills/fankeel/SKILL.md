@@ -92,20 +92,14 @@ registry. Nobody types one: `hooks/touch.js` adds a path the first time an edit
 lands on it, and `hooks/inject.js` adds, once a prompt, whatever git reports
 dirty since the task started — so a `sed`, a `node -e` or a build script is on
 the list too. Either way it is what happened rather than what anyone intended. An
-edit to `lib/badge.js` claims `lib/badge.js` and not `lib` — rolling up to the
-directory would read two sessions in two files of one directory as a collision,
-and accuracy is the whole reason to observe rather than ask. Sixty at most, and
-the two writers hit that cap differently: a path arriving on its own drops the
-oldest, where a git pass holding more than sixty is refused whole rather than
-trimmed.
+edit to `lib/badge.js` claims `lib/badge.js` and not `lib`. Sixty at most.
 
 [docs/registry.md](../../docs/90-agent/reference/registry.md) is where that cap lives — both
 halves, the constant they come from, and the run that set it. This section is
 the short form, not the only copy.
 
 `project` is the only field anyone declares: which repository, so the docs lookup
-knows whose tree applies. One registry can cover five of them and nothing else
-needs to know which. Ask for it only when the root holds more than one, and never
+knows whose tree applies. Ask for it only when the root holds more than one, and never
 ask for a file list — there is nothing to declare and nothing to get wrong.
 
 Fourteen more are written without anyone typing them. Five of those —
@@ -114,8 +108,7 @@ Fourteen more are written without anyone typing them. Five of those —
 [docs/registry.md](../../docs/90-agent/reference/registry.md) has their shape; the nine below
 are the ones every session carries. `route` and `class` come from
 the class picked at `start`, `configDir` records which config directory this
-session runs under, so another session can look for its liveness in the right
-place, `version` is the plugin's own `package.json` version, fixed at `start`
+session runs under, `version` is the plugin's own `package.json` version, fixed at `start`
 or `adopt` and left alone when `task` renames the task, and `burn` is what
 each stage cost — two token counts per stage, written by the same prompt hook
 that refreshes `updated`.
@@ -132,38 +125,22 @@ copies it and `task` leaves it.
 `clock` is those same two slots with a wall-clock reading in place of the token
 count — epoch milliseconds, which `task.js` renders as minutes — and `waited` is
 how much of that the user spent at a gate. It is written only in a process that
-started after the manifest carried `hooks/gate.js`: Claude Code reads its hook
-list once per process and `/clear` does not re-read it, which is why two days of
-records held no `waited` a hook had put there and every session of a newer
-process has one, from 2026-09-02 on. [docs/registry.md](../../docs/90-agent/reference/registry.md)
-has that run, and what the older process looked like from inside.
+started after the manifest carried `hooks/gate.js`;
+[docs/registry.md](../../docs/90-agent/reference/registry.md) has why, and the run.
 
 `moves` is the order those stages came in: one `[stage, at, used]` for each
-change of stage, stamped at the `task.js` command that made it where one did,
-and at the next `touch()` sighting where none did — only an answered gate
-still reaches a stage that way; `task.js task`, the rename, now stamps its
-own move through `stampEntry` too, the same as `start` and `stage`. So a
-verify that went back to build and
-returned reads as two visits rather than one long one. `used` is the context
-reading, filled in afterwards by the first `touch()` that has one, because a
-command has no transcript to read one from at the time; so what a return to
-`build` cost is the gap between two readings. Sixty at most, oldest dropped.
-
-`clock` and `burn` part company in one place: `burn` is only written when a
-token figure arrives, and an answered question is not a prompt, so a stage that
-ends in a gate records none. A clock has no such threshold, so it is written
-beside `updated` and every touch is a sighting. What measures the wait, why it
-is not `Stop`, and what it does instead of measuring anything, is in
+change of stage, so a verify that went back to build and returned reads as two
+visits. Sixty at most, oldest dropped. When each part is stamped, why `burn`
+records nothing for a stage that ends in a gate while `clock` does, and what
+measures the wait, are in
 [docs/registry.md](../../docs/90-agent/reference/registry.md) — this is the short form, not the
 only copy.
 
-A fifteenth and sixteenth, `gateAt` and `inflight`, are deliberately not
-below. `gateAt` exists only between a question going out and its answer
-arriving — and a record that lacks it when the answer arrives is what the
-`gate:` line under **While the mode is on** reports. `inflight` —
-`{ stage, at, agentId?, lap?, group?, kind? }`, which becomes an array of marks while several build groups run — is the other transient field: `hooks/brief.js`
-marks it when a stage agent starts and `hooks/gate.js` clears it when that
-stage's handoff arrives.
+A fifteenth and sixteenth, `gateAt` and `inflight`, are transient and
+deliberately not below: `gateAt` exists only between a question going out and
+its answer arriving — a record that lacks it when the answer arrives is what the
+`gate:` line under **While the mode is on** reports — and `inflight` only while a
+stage agent runs.
 
 ```json
 {
@@ -185,20 +162,13 @@ stage's handoff arrives.
 }
 ```
 
-A record written before claims shipped carries `scope` where `claims` is here. It
-is read as the claim list, and the old field goes when `task` renames the task —
-that is the one writer that deletes it, because it is the one clearing the claim
-list on purpose. Every other write leaves it where it is.
-
 The current session id is in the `FANKEEL ACTIVE` block when the mode is on. When
 it is not, the `/fankeel` prompt is answered with it: one line, from the hook that
 holds it. Use that one. A background task's output directory and a scratch
 directory both carry a session id in the same shape and are not always this
-session's, and an entry written under the wrong one is invisible — every hook goes
-quiet on a miss, because a miss is what a session not using the plugin looks like.
+session's, and an entry written under the wrong one is invisible.
 `task.js` refuses an id no running session claims rather than writing it — when
-it can see other sessions running and this is not one of them. A scan that finds
-nobody at all found nobody including the caller, so it proves nothing and allows.
+it can see other sessions running and this is not one of them.
 
 **Never write that file by hand.** Every change to it goes through one script:
 
@@ -220,9 +190,8 @@ node <plugin>/scripts/task.js clear   <session-id> [--force] --session <id>
 
 `task` is how one task becomes the next without standing down: it takes the new
 task line, clears `claims`, `notes` and `next`, and resets `stage` to the head of
-the route. `project`, `route`, `guard` and `started` stay — `started` because it
-is the collision tie-break, and which session reached this repository first is not
-re-opened by renaming the task. Nothing else clears claims.
+the route. `project`, `route`, `guard` and `started` stay. Nothing else clears
+claims.
 
 `<plugin>` is two directories up from this file — resolve `../../scripts/task.js`
 against it. Add `--root <dir>` only to override where the registry is; without it
@@ -230,14 +199,11 @@ the script finds it exactly the way the hooks do, which is the point.
 
 It creates `.fankeel/.gitignore` along with the directory, enforces the caps and
 the invariants below, and refuses rather than guessing. It exits non-zero when it
-refuses, so read the output. Hand-written JSON gets the `.gitignore` wrong every
-time, and a `sessions/` directory that is not ignored ends up committed.
+refuses, so read the output.
 
 `start`, `task`, `stage`, `route`, `guard`, `adopt` and `down` also set this
-session's statusline badge, so it is there on the turn the change happened. The hook keeps it current
-from then on — it runs *before* a prompt, so a badge left to the hook alone would
-not appear until the user typed again, and until then turning the mode on looks
-exactly like failing to.
+session's statusline badge, so it is there on the turn the change happened. The
+hook keeps it current from then on.
 
 `clear` is the one that does not. It takes the badge down on the session being
 cleared and never touches this one, so a `clash` it resolves stays on this
@@ -607,21 +573,16 @@ a document is meant to stay true, and therefore what is worth checking.
 
 A decision may carry `binding: true`: an ADR is a decision, not another role. At most seven stand at once — docs-check counts them, and `superseded_by` retires one.
 
-Three shapes ship: `flat` (one `docs/` with a numbered series) and `phased`
-(`01-vision` through `99-archive`), both taken from real repositories, and
-`audience` — the folders a person reads numbered to the front (`01-guide`,
-`02-architecture`, `03-decisions`), everything written for an agent under
-`90-agent/`, and `99-archive` last. A bucket may carry `audience: human` or
+Three shapes ship — `flat`, `phased` and `audience` — and
+[docs/documents.md](../../docs/90-agent/reference/documents.md) lays each out. A bucket may carry `audience: human` or
 `audience: agent`: a person's page is short, in the user's language, and read
 by the user at land; an agent's is dense, cites `path:line`. Audience decides
 who a page is written for; docs-check grades every page by its role. Only a
 project with no `docs.json` is asked, once, at survey — step 2
 of the fankeel-survey skill — with `audience` first and the shape `detect()`
-names second. A project that already has one is not asked again; the roles are
-what fankeel needs, not the paths.
+names second. A project that already has one is not asked again.
 
-A markdown file in no bucket is reported. Not as an error — as the thing nobody
-decided the lifetime of, which is the one most likely to rot unnoticed.
+A markdown file in no bucket is reported, as unfiled rather than as an error.
 
 The reasoning behind all of that — why the offer is "this one?" rather than a
 menu, why the scan is re-run rather than stored, and one dated run of the scanner
@@ -637,12 +598,8 @@ Two fields, both capped in code: at most five notes of 100 characters, and one
 written, what happens to them when a task is renamed, and the run the caps
 came from. This section is the short form, not the only copy.
 
-The caps are deliberate. Claude Code already remembers in four places —
-`CLAUDE.md` for project conventions, its own memory directory for durable facts,
-git history for what landed and why, the compaction summary for earlier in this
-session. The one thing none of them holds is the state of a task in flight, and
-that is all this is for. Anything that belongs in the other four goes there
-instead:
+The caps are deliberate: this holds the state of a task in flight and nothing
+else. Anything that belongs elsewhere goes there instead:
 
 | | |
 |---|---|
@@ -660,8 +617,7 @@ made that would otherwise have to be rediscovered. One line, no preamble. Set
 obvious.
 
 A TODO the user asks for during a controlled stage lands that turn, not as a
-note waiting for down: the guard refuses this session's own Edit and Write
-(or a shell write) there, and a note is re-injected on every prompt until it is moved. Dispatch
+note waiting for down. Dispatch
 one `fankeel:fankeel-reader` with the user's words, to run
 `node <plugin>/scripts/todo.js list` and grep the repository for what they
 describe, returning `duplicate <id>`, `exists <path:line>` or `new`. A
@@ -681,49 +637,31 @@ Notes are never version-controlled and die with the task. If a note still matter
 after the task lands, it was never a note — move it to one of the four above
 during `land`.
 
-The TODO — the todo bucket's entries, or a hand-written `TODO.md` — is an index whose entries `init` also offers as the task options when a
-session starts, so what it offers is read twice: the bullet is short and the
-detail lives in a file it links to. The heading it sits under is the third half
-of that convention — `## Ready`, `## Needs a decision`, `## Blocked`, `## Watch` — and it
-answers what the entry is still short of rather than what it is about, because
-what `init` has to know is which entries can become a task this morning.
-`node <plugin>/scripts/todo-check.js` says when any of the four has stopped being
-true, and the `land` rules call for it — a plan deleted at `land` is a link that
-just died. It also refuses a link that still resolves but lands on a plan, a
-decision record, a report or an archive: those four roles record a moment rather
-than the present, so the detail behind the bullet is pointing at history — and a
-decision record kept scrupulously current is a scrupulously current account of a
-decision, which is why the check reads the role and not a `last_verified` date.
+The TODO — the todo bucket's entries, or a hand-written `TODO.md` — is an index
+whose entries `init` also offers as the task options: the bullet is short and
+the detail lives in a file it links to. The heading it sits under — `## Ready`,
+`## Needs a decision`, `## Blocked`, `## Watch` — says what the entry is still
+short of rather than what it is about. `node <plugin>/scripts/todo-check.js` says
+when any of the four has stopped being true, and the `land` rules call for it.
+It also refuses a link that lands on a plan, a decision record, a report or an
+archive: those record a moment rather than the present.
 
 ## On `/fankeel`
 
 Run `task.js show --session <id>`, which lists this session's entry and every
 other live one — and first, under `handed off`, any entry passed on with `task.js next --handoff`, live or not. Add `--all` for the registry itself: every entry the directory
 holds, stood down included, newest first, with the stage each reached and what it
-cost. Nothing here deletes, so that is a month of finished tasks and the only
-view of them.
+cost.
 
 For every registry on the machine rather than this one, the station. The
-`/fankeel` prompt detects and opens it: the hook asks `serve.json` whether a
-station answers, and when none does starts
-`node <plugin>/scripts/station.js serve --open` detached, so the browser opens
-only when this prompt started it. While a station serves, the hook writes no
-page — the station renders every request itself. The block's `station:` line
-names the served url — say it. A line ending `serve is busy loading` means the
-station is mid-render and the page fills in on its own; `serve is starting`
-means the browser opens when it binds. A line with `stale` and `live` counts,
-the file and `serve --open` means nothing serves (`FANKEEL_SERVE=off`, or the
-start failed), so the hook wrote the page, and `.fankeel/index.html` beside you,
-instead. There is nothing to invoke;
-[docs/station.md](../../docs/90-agent/reference/station.md) is the reference.
+`/fankeel` prompt detects and opens it, and the block's `station:` line names
+the served url — say it. There is nothing to invoke;
+[docs/station.md](../../docs/90-agent/reference/station.md) is the reference,
+and its table says what each ending of that line means.
 
-The page is also where a file that does not parse is counted. The hooks drop
-those silently and correctly — a miss is what a session not using the plugin
-looks like — so the `unreadable` figure is the only place a corrupt entry
-surfaces at all. The footer carries the total across every registry, and a
-registry's card its own count; the total is hidden only on 清單 once a
-registry is selected there. Read it out rather than counting
-the directory by hand.
+The page is also where a file that does not parse is counted, as `unreadable`
+— the only place a corrupt entry surfaces at all. Read it out rather than
+counting the directory by hand.
 
 Show the active ones: task, stage, what each has touched, and — for any last
 touched more than 12 hours ago — how long ago that was. Mark this session's own.
@@ -963,19 +901,15 @@ A subagent starts with its own context and none of this one's, so a
 task has touched, and what its return value costs. Background subagents get the
 same brief.
 
-You do not write that brief and you do not repeat it. What it is worth knowing
-here is what it says, because it changes how to use a subagent while the mode is
-on:
+You do not write that brief and you do not repeat it. What it says changes how
+to use a subagent while the mode is on:
 
 - **The return value is the expensive part.** Everything a subagent reads is
   spent in a context that gets thrown away; what it returns lands in this one and
   stays for the rest of the session. Delegating a wide search saves this
-  context and nothing else — measured 2026-09-03, it cost 1.85 times the money
-  and 1.75 times the wall-clock to do it. Delegating something that has to
-  report at length does not even buy that.
-- **A subagent has no entry in the registry and must not be given one.** It is
-  not a session and it does not own a task. Writing one would put a second
-  claimant on this task's own files.
+  context and nothing else; delegating something that has to report at length
+  does not even buy that.
+- **A subagent has no entry in the registry and must not be given one.**
 - **The scope guard still applies to it.** A subagent editing a file another live
   session claimed hits the same block this session would, and its own edits are
   claimed for this task — `PostToolUse` fires inside it and writes to this
@@ -985,10 +919,8 @@ on:
 
 **Dispatch is the default. Doing it here is what needs a reason.**
 
-The thing that costs is residue: files opened, output read, dead ends followed,
-all of it left in this context and re-read on every later turn for the rest of
-the session. Work done in a subagent leaves none of it — the reading happens in a
-context that is thrown away and only the answer arrives.
+The thing that costs is residue — files opened, output read, dead ends followed,
+all left in this context for the rest of the session.
 
 So the question is not "is this big enough to delegate". It is **can I get rid of
 the leftovers without a subagent** — and there are exactly two ways:
@@ -1004,69 +936,26 @@ A user who has said, this session, not to dispatch is not a third way: nothing
 removes the leftovers, and the work stays here — for this session, and written
 down as this session's. The plan writes `in-session — the user said so this
 session` on Task 1's `**Dispatch:**` line and `same reason as Task 1` after it,
-the build reviewer runs here as a ruling recorded once, and step 5 of the
-fankeel-build skill says what that costs and how half of it is bought back.
+and the build reviewer runs here as a ruling recorded once.
 Nothing else settles it that way — not a host, and not a tool's gate read as
 an instruction. The host opens one tool, **Workflow**, on five things:
 `ultracode` in the prompt, ultracode on for the session, the user asking for a
 workflow in their own words, a skill the user invoked whose instructions say to
 run one, or a saved workflow by name; the **Agent** tool has no gate, and the
-Workflow tool's own description points at it for anything short of a workflow. A
-session that read *only when the user has opted in* off the wrong tool and
-stopped sending Agent readers had forbidden itself: 2026-09-01, and two builds
-ran in-session over it before anyone checked which tool the sentence was about.
-
-The tempting version is to run whole stages in background agents to keep the
-context small. For one kind of work, measured on this repository, that is the
-wrong tool for the thing it is aimed at:
-
-```
-measured 2026-08-26
-npm test, full output             about fifty thousand characters
-the two lines that decide it      twenty-four
-```
-
-A subagent would read the whole of that in a context that gets thrown away, and
-cost its own system prompt to do it. `| grep -E '^ℹ (pass|fail)'` costs nothing
-and is some two thousand times better. **Rounded on purpose.** An exact figure
-here has gone stale four times, each time falsified by the next commit that added
-a test, and each stale one was read as current because it looked precise. The
-date says when it was measured; the exact characters belong in that day's commit
-message, not on a page nobody re-measures.
+Workflow tool's own description points at it for anything short of a workflow.
 
 **What stacks up a context is raw output arriving in it, not work being done** —
 and the fix for that is at the source, which is what every stage's `Output:` rule
-is for.
+is for: measured 2026-08-26, a `| grep` kept the two lines of a full `npm test`
+run that decide it, some two thousand times better than a subagent reading it.
 
-But that measures **filtering output you have already produced**. It says nothing
-about work not yet done, where the arithmetic runs the other way: a dispatched
-reader opens the files, follows the dead ends and reads the failed runs in a
-context that is thrown away, and what lands here is the answer. Measured on one
-fan-out of four readers over another plugin's skills: 240,881 tokens spent, about
-4,000 characters returned, 121 seconds of wall-clock rather than 352 because they
-went out in one response.
-
-That figure had no control. Measured on 2026-09-03 against a session asked the
-same question with the `Agent` tool taken away: dispatch left 57,652 tokens in
-the parent against 532,322, and paid 1.85 times the money and 1.75 times the
-wall-clock for it. Not cheaper, not faster — residue is what it buys
-([docs/reports/2026-09-03-dispatch-vs-inline.md](../../docs/90-agent/reports/2026-09-03-dispatch-vs-inline.md)).
-
-A second pair the same day named the seven files it wanted read, so neither arm
-had to search. The residue advantage fell from 9.2× to 1.5× while the money
-stayed at 1.59× and the wall-clock got worse, 2.77× — so what the first pair
-measured was the inline arm *searching*, not the inline arm reading
-([docs/reports/2026-09-03-dispatch-vs-inline-named.md](../../docs/90-agent/reports/2026-09-03-dispatch-vs-inline-named.md)).
-A third pair filled the middle: the first pair's question with its eight files
-spelled out, so the join stayed and the searching went — 2.55×. Naming with the
-join held drops the advantage 3.62×; the join with naming held raises it 1.68×.
-Both are real and naming is the larger, so what decides whether a dispatch pays
-is mostly whether the question has to find things — as a gradient, not a step
-([docs/reports/2026-09-03-dispatch-vs-inline-join.md](../../docs/90-agent/reports/2026-09-03-dispatch-vs-inline-join.md)).
+But that measures **filtering output you have already produced**; work not yet
+done is where dispatch pays, in residue rather than money or wall-clock. The runs
+are in [docs/subagents.md](../../docs/90-agent/reference/subagents.md), `## When to dispatch one`.
 
 | | |
 |---|---|
-| **delegate** | wide reading with a narrow answer — *read these six documents and say whether any contradicts the code*. A judgement, so no filter can pick it out. Most of the payoff is in the **finding** — 1.52× where the files were already named against 9.23× where they were not — but this row's own example still joins across those documents, and a named question that joins measured 2.55× |
+| **delegate** | wide reading with a narrow answer — *read these six documents and say whether any contradicts the code*. A judgement, so no filter can pick it out |
 | **do not delegate** | anything a pipe already removes. One command's output is not worth a system prompt |
 
 Six rules that make it work, each of which fails silently when missed:
@@ -1077,16 +966,13 @@ Six rules that make it work, each of which fails silently when missed:
   `sonnet` by default, raised to at least `opus` for an architectural task.** An omitted model
   inherits this session's, which is usually the most capable and most expensive
   one available. The exception is a dispatch whose `subagent_type` is an
-  agent file that pins its own — `fankeel-reviewer` for plan's, build's and
-  verify's reviewers, `fankeel-render-reviewer` for build's and verify's
-  rendering review, and `fankeel-verifier` for verify's per-row
-  verifiers — where omitting it is the point: the file's `model:` is
+  agent file that pins its own — the fankeel reviewers and `fankeel-verifier` —
+  where omitting it is the point: the file's `model:` is
   the floor the harness itself enforces. Inside a Workflow script the same rule holds: every `agent`
-  call carries `model` and the floor the brief names (`dispatch.floor`, `opus` at least if architectural) is the floor there too; the authoring
-  reference's advice to omit it and inherit is the host's default, not this
-  plugin's. `subagent_type: "fork"` is a second exception, and the wrong
-  direction: it inherits the whole context and ignores `model` outright — the
-  Agent tool's own description says so — so fankeel never dispatches one.
+  call carries `model` and the floor the brief names (`dispatch.floor`, `opus` at least if architectural) is the floor there too.
+  `subagent_type: "fork"` is a second exception, and the wrong
+  direction: it inherits the whole context and ignores `model` outright, so
+  fankeel never dispatches one.
 - **Say how many, and on which model.** In the response that sends them, not
   after they come back. A fan-out is spend the user is paying for and cannot see
   coming, and for a long time `survey` was the only stage that said it — which
@@ -1094,56 +980,32 @@ Six rules that make it work, each of which fails silently when missed:
   `verify` and `audit` all dispatch too, and all four say it now.
 - **Write the `description` as the title alone** — `survey stage agent`,
   `write plan`. `hooks/title.js` opens it with `<alias> <version> · <effort>`
-  before the dispatch runs: the model from the call's `model`, else the agent
-  file's `model:`, else `CLAUDE_CODE_SUBAGENT_MODEL`, else the session's
-  (the word `inherit` when its transcript names none); a
-  full id is parsed as it stands, an alias takes its version off the newest
-  real `message.model` of that family in this project's subagent transcripts,
-  left out when there is none; the effort from the call's `effort`, else
-  the agent file's `effort:`, else `inherit`. Another plugin's agent, or an agent file it cannot read,
-  gets no prefix — the model there is not one it can know. The
-  description is the title a background agent runs under, and the one place
-  the user sees what is spending while it runs — so it is computed, never
-  written: on 2026-09-29 three titles read `sonnet 5` for agents that ran
-  claude-sonnet-5-5. A Workflow `agent()` call's `label` has no hook: open it
-  with the alias and the effort, never a version.
-- **Spot-check the results against each other.** Independently dispatched agents
-  share a prompt style and a model, so they make correlated mistakes that reading
-  each summary on its own will not catch.
+  before the dispatch runs, so the model in a title is computed, never
+  written; [docs/subagents.md](../../docs/90-agent/reference/subagents.md) has
+  where each part comes from. A Workflow `agent()` call's `label` has no hook:
+  open it with the alias and the effort, never a version.
+- **Spot-check the results against each other.** Agents dispatched alike make
+  correlated mistakes.
 - **State the return contract, and say what it costs.** Name the shape you want
   back and add why: every line a subagent returns lands in this context and is
-  re-read on every later turn for the rest of the session. Measured here — one
-  reviewer told "return only three lines, no preamble" returned those plus a
-  twelve-bullet verification log; the next, told the same and *why*, returned
-  exactly three. Same model, same shape of task. A contract without its reason is
-  a preference.
+  re-read on every later turn for the rest of the session. A contract without
+  its reason is a preference.
 
 **Profile `dispatch.inflight` sets how many go in one response, eight by
 default.** Past that you are guessing at the split rather than deciding it, and every reader costs a system prompt whether or
 not it had a distinct question. The test is what comes back: **if two readers
 would return the same shape of answer about different files, they are one reader
 with a list** — give it the list. Fan out on distinct questions, not on file
-count. The key guards API spend, the main context's residue and collisions in
-a shared checkout, not CPU; its range is 1 to 16.
+count. Its range is 1 to 16.
 
 **Where a plan exists, none of that is guesswork and none of it is yours.**
-`lib/plantasks.js` groups a plan's tasks by disjoint `**Files:**` and by whether
-one consumes what another produces, and `surfaces()` gives each group its
-dispatch surface — one task is `agent`, two or more are one `workflow` (`agents` when a prose
-`Consumes:` or a missing block leaves the grouping unproven), except that when
-build runs under a stage agent (`stage.agents` names build) `groups` prints
-`agents` for it, because that
-agent has no Workflow tool. `node <plugin>/scripts/ledger.js --plan <f> groups`
+`lib/plantasks.js` groups a plan's tasks and gives each group its dispatch
+surface — one task is `agent`, two or more are one `workflow`, and `agents`
+where the grouping is unproven or build runs under a stage agent; the
+fankeel-plan skill has the rules. `node <plugin>/scripts/ledger.js --plan <f> groups`
 prints it beside each group, and `build` reads it there rather than deriving one
-from the group's size, which cannot see what the next paragraph can.
-
-A group carrying a diagnostic never reaches `workflow`, whatever its size.
-`conflict()` reads only a backticked identifier out of `Consumes:`, so a
-dependency written as prose declares nothing for the other side to match and the
-pair looks independent. Two Agents survive that — the parent reads both returns,
-so the grouping's mistake is in front of it. A Workflow does not come back
-between its steps, so it wants a group shown to be disjoint rather than one
-merely not refuted.
+from the group's size. A group carrying a diagnostic never reaches `workflow`,
+whatever its size.
 
 The surface is the batch shape, not the implementer decision: a task whose own
 `**Dispatch:**` line reads `in-session` is not dispatched at all, whatever
@@ -1154,32 +1016,22 @@ Eight is where guessing at the split begins; a script does not guess, because it
 holds the list and it holds the join. So the shape an eight-agent batch cannot
 express is a fan-out whose
 output feeds another fan-out — review six dimensions, then verify each finding
-one of them returned. As dispatches that is two round-trips through this context,
-and every intermediate finding stays in it for the rest of the session even
-though only the verified ones matter; as a `pipeline` in the **Workflow** tool
-the intermediates live inside the script and what comes back is the join.
+one of them returned. As a `pipeline` in the **Workflow** tool the intermediates
+live inside the script and what comes back is the join.
 
 `/fankeel` is the fourth of those five: where a stage's rule names a chain as
 one workflow, that rule is the opt-in, and the host's own run dialog is where
 the spend is authorised — it lists the phases and the agent count before
 anything runs. A shape no rule names is offered, not launched: name it and
-roughly what it would cost, and let the user say so. That is not the
-foreordained gate this pipeline strips out elsewhere: your own reading needs no
-permission, and a dozen agents is spend, which is theirs to authorise. It is
+roughly what it would cost, and let the user say so. It is
 still a job inside a stage rather than the stage itself — a workflow's
 `phases` are its own, declared in its script, and none of them is this route's
-gate. **Unmeasured against a control here**: chains have run as workflows on
-this repository — this task's own build and verify, written up in
-[docs/reports/2026-09-04-chains-as-workflows.md](../../docs/90-agent/reports/2026-09-04-chains-as-workflows.md)
-— with no four-dispatch arm beside either, so the paragraph above still argues
-from where the intermediate output lands, which is structural, and quotes no
-figure here; the figures live in the report, dated.
+gate. **Unmeasured against a control here**; the runs are in
+[docs/reports/2026-09-04-chains-as-workflows.md](../../docs/90-agent/reports/2026-09-04-chains-as-workflows.md), dated.
 
 **Delegate a job inside a stage; never the stage itself.** A subagent receives the
-brief and nothing else: `hooks/inject.js` is a `UserPromptSubmit` hook and a
-subagent has no prompt, so `ALWAYS`, the stage's own rules and its output shape
-never reach it. A stage run inside one loses its gate, its report shape and every
-rule at once, and nothing anywhere says so. What you dispatch is a question with
+brief and nothing else, so a stage run inside one loses its gate, its report
+shape and every rule at once. What you dispatch is a question with
 an answer — *read these six documents and say whether any contradicts the code*.
 The judgement it feeds, the evidence and the gate stay here, where the rules are.
 
@@ -1198,15 +1050,12 @@ note the answer with `task.js note`, and run them with the user once the stage
 agent's report is in and before you ask its gate, sending any edit or shell write the guard
 refuses you here to an implementer.
 
-`survey` dispatches readers; `build` dispatches per task, and the plan's
-`**Dispatch:**` line is where that was decided.
-
 The judge is no longer triggered from inside a stage: a user who wants one
 runs `/fankeel-ask`, and the fankeel-ask skill carries the whole procedure.
 
 ## The scope guard
 
-A collision always warns. Since 2026-08-30 it also **asks** by default: an edit
+A collision always warns. It also **asks** by default: an edit
 to a file another live session claimed raises a permission prompt naming that
 task. `task.js guard ask|deny|off` sets `guard` on this session's own entry:
 
@@ -1219,23 +1068,15 @@ task. `task.js guard ask|deny|off` sets `guard` on this session's own entry:
 
 The one worth offering is `"off"`, and only when the prompts are landing on a
 collision the user has already decided about. `"deny"` is the other direction and
-needs asking for: it is where an unreadable config directory would cost real
-work, because liveness that cannot be measured counts as live.
+needs asking for.
 
 Do not describe the default as a lock, and do not turn it off to get past a
 prompt — that is the same working-around the last paragraph of this section is
 about.
 
-Two things it deliberately does not do, so do not describe it as a lock. A claim
-whose session has exited never blocks — liveness is that session's own file under
-`sessions/` in the config directory **it recorded**, plus a live process behind
-its pid. `CLAUDE_CONFIG_DIR` moves that directory, so each entry names its own and
-readers check the neighbour against the one the neighbour named; a directory that
-cannot be read counts as live, while a session that named no directory, or the
-one already scanned, is judged by that scan only when the scan is known good. A terminal
-that is gone holds nothing shut. And when both sessions hold the file, the older
-task holds and the newer yields, so two sessions that both reached it cannot block
-each other into a stalemate.
+Two things it deliberately does not do, so do not describe it as a lock: a claim
+whose session has exited never blocks, and when both sessions hold the file the
+older task holds and the newer yields.
 
 When an edit is refused, do not work around it — not by a different tool, not by
 a shell command. Report which task holds the file and ask the user what they want

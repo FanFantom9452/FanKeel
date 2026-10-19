@@ -68,6 +68,24 @@ checked out twice on one machine gets one registry rather than two.
 than one registry; every other script that takes `--root` takes it once, as
 a single override.
 
+Why the fankeel skill's short form of the registry says what it says. A
+`claims` entry is the file an edit landed on, never its directory: rolling up to
+the directory would read two sessions in two files of one directory as a
+collision, and accuracy is the whole reason to observe rather than ask.
+`configDir` is recorded so another session can look for this one's liveness in
+the right place. `started` survives a rename because it is the collision
+tie-break, and which session reached a repository first is not re-opened by
+renaming the task. A record written before claims shipped carries `scope` where
+`claims` is now; it is read as the claim list, and `task` — the one writer that
+clears the claim list on purpose — is the one that deletes it. `task.js` writes
+`.fankeel/.gitignore` along with the directory because hand-written JSON gets it
+wrong every time, and a `sessions/` directory that is not ignored ends up
+committed. It also sets the badge on the turn a change happens, because the hook
+runs *before* a prompt: a badge left to the hook alone would not appear until the
+user typed again, and until then turning the mode on looks exactly like failing
+to. One registry can cover five projects, and nothing but the docs lookup needs
+to know which one a task is in.
+
 # Task memory
 
 Two fields on the task, both capped in code: at most five notes of 100
@@ -91,6 +109,18 @@ keeps. It is never version-controlled and it dies when the task is stood down �
 or renamed, because `task.js task` clears `notes` and `next` along with `claims`
 when one task becomes the next. If a note still matters after the task lands, it
 was never a note, and `land` is where it moves to one of the four.
+
+A TODO the user asks for during a controlled stage is never left as a note
+waiting for `down`: the guard refuses the session's own Edit and Write (or a
+shell write) there, and a note is re-injected on every prompt until it is moved.
+The TODO itself is read twice — `init` offers its entries as the task options —
+so the bullet is short and the detail lives in the file it links to. Its heading
+says what the entry is still short of rather than what it is about, because what
+`init` has to know is which entries can become a task this morning. `todo-check`
+runs at `land` because a plan deleted there is a link that just died, and it
+refuses a link landing on a plan, a decision record, a report or an archive by
+role rather than by `last_verified`: a decision record kept scrupulously current
+is a current account of a decision, not of the present.
 
 `takes` is `[{ "from": "<session id>", "part": "<text>" }]`, at most five, each
 `part` trimmed to 100 characters. `task.js take <session-id> "<part>"` writes it on
@@ -395,7 +425,8 @@ that is a person asking rather than a hook firing can say so out loud.
 `--all` asks the operating system nothing. `active` is what an entry says about
 itself, where the `other live sessions` block above it is `lib/live.js` measuring
 a process. An entry listed here may have no terminal behind it, and putting that
-claim down is what `/fankeel` → **Clear out** is for.
+claim down is what `/fankeel` → **Clear out** is for. Nothing in the registry
+deletes, so `show --all` is a month of finished tasks and the only view of them.
 
 # The mode never switches itself off
 
