@@ -272,8 +272,8 @@ test('the stage that produced the wall of text now carries a length', () => {
 // fifteen written in characters all went through.
 test('tool input is written in characters, not escapes', () => {
   const text = ALWAYS.join(' ');
-  assert.match(text, /literal characters/);
-  assert.match(text, /\\uXXXX/);
+  assert.match(text, /Write CJK characters directly in tool input/);
+  assert.doesNotMatch(text, /\\u/);
   // And the drift one level up: a translated identifier becomes a homophone.
   assert.match(text, /Name a code concept in code/);
 });
