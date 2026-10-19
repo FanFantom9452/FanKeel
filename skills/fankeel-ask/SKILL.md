@@ -2,7 +2,7 @@
 name: fankeel-ask
 description: Interrupt the stage you are in and put one question to a stronger model — a one-shot judge whose answer is filed verbatim and then acted on. Use for /fankeel-ask, "問判官", "叫 fable", "這題我們解不開", or when a mid-stage question is worth a model above the one running the session.
 argument-hint: "[the question, in one line]"
-version: 0.111.34
+version: 0.111.35
 status: current
 last_verified: 2026-10-18
 source_of_truth: scripts/judge.js
@@ -83,11 +83,11 @@ the stage produces; it does not approve it.
 3. **Record the answer verbatim:**
 
    ```
-   node <plugin>/scripts/judge.js record --session <id> --brief <path> --answer - --slug <slug> --model <m>
+   node <plugin>/scripts/judge.js record --session <id> --brief <path> --transcript <session>/subagents/agent-<id>.jsonl --slug <slug> --model <m>
    ```
 
-   Pipe the answer in on stdin rather than retyping it — retyping is where a
-   judgement quietly becomes a paraphrase of one. This is what writes it,
+   Point it at the judge's transcript rather than retyping the answer —
+   retyping is where a judgement quietly becomes a paraphrase of one. This is what writes it,
    dated, under the project's own judgements bucket — wherever `.fankeel/docs.json`
    declares one, or `docs/judgements/` when it declares none — and adds its
    row to the index where the project has a `## Judgements` table.
@@ -95,17 +95,20 @@ the stage produces; it does not approve it.
    The file's frontmatter carries `judged`, `model`, `agent: fankeel-judge`,
    `task`, `session` and `stage`, and the brief and the answer follow it
    copied in whole, not summarised. A `--slug` already on disk gets `-2`
-   rather than overwriting the first record; a missing `--session`, `--brief`,
-   `--answer` or `--slug` exits 1 before anything is written; and where the
+   rather than overwriting the first record; a missing `--session`, `--brief`
+   or `--slug`, or neither or both of `--answer` and `--transcript`, exits 1
+   before anything is written; and where the
    project has no `## Judgements` heading the command says so rather than
    inventing one. `--model` is `fable` when left off, `--root <dir>` names the
    registry and `--project <dir>` the project whose bucket receives the file,
    for a working directory that does not decide them.
 
-   The answer is the judge's last assistant message. For a background
-   dispatch that is in `<session>/subagents/agent-<id>.jsonl` — its
-   `tasks/<id>.output` is 0 bytes, and `record` refuses the blank answer
-   piping that file would give it.
+   `--transcript` takes the message of the judge's `SubagentHandback` call,
+   and the last assistant text only where there is none: a judge that hands
+   back ends on a line like "handing back now", which is not the answer.
+   `tasks/<id>.output` of a background dispatch is 0 bytes, so it is never the
+   source. `--answer <path|->` still takes the text directly, and `record`
+   refuses any answer, from either flag, with no `pick:` line.
 4. **Say what the stage accepted, in one line, and carry on.** Name the file
    the record landed in. At the next gate, option one's description names it
    too, so approving the stage's output also shows what it was decided on.

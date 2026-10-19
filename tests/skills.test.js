@@ -1211,7 +1211,7 @@ test('fankeel-ask: the skill carries the whole procedure, and the main skill no 
   assert.match(body, /subagent_type: fankeel:fankeel-judge/, 'the skill does not name subagent_type');
   assert.match(body, /judge\.model/, 'the skill does not name the profile key for its model');
   assert.match(body.replace(/\s+/g, ' '),
-    /judge\.js record --session <id> --brief <path> --answer - --slug <slug> --model <m>/,
+    /judge\.js record --session <id> --brief <path> --transcript <session>\/subagents\/agent-<id>\.jsonl --slug <slug> --model <m>/,
     'the skill does not give the record command in full');
   assert.match(body, /never opens the gate/i, 'the skill does not say the gate stays with the user');
   assert.doesNotMatch(read('fankeel'), /### The judge/,

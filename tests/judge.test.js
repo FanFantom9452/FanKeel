@@ -87,6 +87,45 @@ test('a blank answer exits 1, says where the answer lives, and files nothing', (
     assert.equal(fs.existsSync(path.join(root, 'docs', 'judgements')), false);
 });
 
+// Filed on 2026-10-19 as one line, "Handing back the judgement now.": the judge
+// returned through a SubagentHandback call, and the last text message was piped.
+function transcript(root, name, entries) {
+    const file = path.join(root, name);
+    fs.writeFileSync(file, entries.map((content) => JSON.stringify({ type: 'assistant', message: { role: 'assistant', content } })).join('\n') + '\n');
+    return file;
+}
+
+test('--transcript takes the SubagentHandback message over the last text, and the last text where there is none', () => {
+    const root = seed();
+    const args = ['record', '--session', A, '--brief', path.join(root, 'brief.md'), '--slug', 'ramp'];
+    const handback = transcript(root, 'agent-h.jsonl', [
+        [{ type: 'text', text: 'Reading.' }],
+        [{ type: 'tool_use', name: 'SubagentHandback', input: { message: 'pick: b\nwhy: handed back' } }],
+        [{ type: 'text', text: 'Handing back the judgement now.' }],
+    ]);
+    const plain = transcript(root, 'agent-t.jsonl', [
+        [{ type: 'text', text: 'Reading.' }],
+        [{ type: 'text', text: 'pick: a\nwhy: last text' }],
+    ]);
+    assert.equal(run(root, args.concat(['--transcript', handback])).code, 0);
+    assert.equal(run(root, args.concat(['--transcript', plain])).code, 0);
+    const dir = path.join(root, 'docs', 'judgements');
+    const read = (end) => fs.readFileSync(path.join(dir, fs.readdirSync(dir).find((f) => f.endsWith(end))), 'utf8');
+    assert.ok(read('-ramp.md').includes('pick: b\nwhy: handed back') && !read('-ramp.md').includes('Handing back'));
+    assert.ok(read('-ramp-2.md').includes('pick: a\nwhy: last text'));
+});
+
+test('an answer with no pick: line exits 1, names --transcript, and files nothing', () => {
+    const root = seed();
+    const args = ['record', '--session', A, '--brief', path.join(root, 'brief.md'), '--slug', 'ramp', '--answer', '-'];
+    const out = run(root, args, 'All checks done; handing back the judgement now.\n');
+    assert.equal(out.code, 1);
+    assert.match(out.out, /pick:/);
+    assert.match(out.out, /--transcript/);
+    assert.equal(run(root, ['record', '--session', A, '--brief', path.join(root, 'brief.md'), '--slug', 'ramp', '--answer', '-', '--transcript', 'x.jsonl']).code, 1);
+    assert.equal(fs.existsSync(path.join(root, 'docs', 'judgements')), false);
+});
+
 test('firstLine strips a leading heading marker and truncates past 120 characters', () => {
     assert.equal(firstLine('# Which ramp?\n\noptions: a, b\n'), 'Which ramp?');
     assert.equal(firstLine('\n\n  \n# Second line is first non-blank\nmore\n'), 'Second line is first non-blank');

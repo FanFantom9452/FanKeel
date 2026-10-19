@@ -22,6 +22,7 @@ const OPTIONS = {
     session: { type: 'string' },
     brief: { type: 'string' },
     answer: { type: 'string' },
+    transcript: { type: 'string' },
     slug: { type: 'string' },
     model: { type: 'string' },
     root: { type: 'string' },
@@ -42,6 +43,27 @@ function parse(argv) {
 function readAnswer(spec) {
     if (spec === '-') return fs.readFileSync(0, 'utf8');
     return fs.readFileSync(spec, 'utf8');
+}
+
+// A judge hands back through a SubagentHandback call when it has one: the call's
+// message is the judgement, and the text after it is only "handing back now".
+// Without one, the answer is the last assistant text. Filed on 2026-10-19 as
+// that one trailing line, because the skill said "the last assistant message".
+function answerFromTranscript(file) {
+    let handback = null;
+    let text = '';
+    for (const line of fs.readFileSync(file, 'utf8').split('\n')) {
+        let entry;
+        try { entry = JSON.parse(line); } catch { continue; }
+        const content = entry && entry.type === 'assistant' && entry.message && entry.message.content;
+        if (!Array.isArray(content)) continue;
+        for (const c of content) {
+            if (c.type === 'tool_use' && c.name === 'SubagentHandback' && c.input && typeof c.input.message === 'string') handback = c.input.message;
+        }
+        const said = content.filter((c) => c.type === 'text').map((c) => c.text).join('\n');
+        if (said.trim()) text = said;
+    }
+    return handback !== null ? handback : text;
 }
 
 function freePath(dir, base) {
@@ -79,17 +101,20 @@ function indexRow(indexFile, question, rel, judged, model) {
 
 function record(opts) {
     if (!opts.session) fail('--session <id> is required: the record names the session that asked.');
-    if (!opts.brief || !opts.answer || !opts.slug) fail('record needs --brief <path>, --answer <path|-> and --slug <a-z0-9->.');
+    if (!opts.brief || !opts.slug || !opts.answer === !opts.transcript) fail('record needs --brief <path>, --slug <a-z0-9-> and one of --answer <path|-> or --transcript <agent-<id>.jsonl>.');
     if (!/^[a-z0-9][a-z0-9-]*$/.test(opts.slug)) fail('--slug is lowercase ascii, digits and dashes.');
     const root = opts.root ? path.resolve(opts.root) : registry.rootFor({ cwd: process.cwd() });
     const mine = registry.readSession(root, opts.session);
     if (!mine || mine.active !== true) fail('No active entry for ' + opts.session + ' under ' + root);
     const projectRoot = docs.projectRootsFor(root, opts.project ? [opts.project] : (mine.project ? [mine.project] : []))[0] || root;
     const brief = fs.readFileSync(opts.brief, 'utf8');
-    const answer = readAnswer(opts.answer);
+    const answer = opts.transcript ? answerFromTranscript(opts.transcript) : readAnswer(opts.answer);
     // Filed on 2026-09-11 with nothing under `## Answer`: the answer came from a
     // background agent's `tasks/<id>.output`, which is 0 bytes, and this exited 0.
     if (!answer.trim()) fail('The answer is empty, so there is nothing to record. A background judge\'s answer is the last assistant message in <session>/subagents/agent-<id>.jsonl; its tasks/<id>.output is 0 bytes.');
+    // The judge's shape opens with `pick:` (agents/fankeel-judge.md); without it
+    // what was piped is not the judgement, whatever else it says.
+    if (!/^pick:/m.test(answer)) fail('The answer has no pick: line, so it is not what the judge answered. Pass --transcript <session>/subagents/agent-<id>.jsonl and record takes the SubagentHandback message, or the last assistant text where there is none.');
     const judged = new Date().toISOString();
     const model = opts.model || 'fable';
     const { tree } = docs.read(projectRoot);
@@ -127,7 +152,7 @@ function record(opts) {
 
 function main(argv) {
     const { verb, opts } = parse(argv);
-    if (verb !== 'record') fail('judge.js record --session <id> --brief <path> --answer <path|-> --slug <slug> [--model <m>] [--root <dir>] [--project <dir>]');
+    if (verb !== 'record') fail('judge.js record --session <id> --brief <path> (--answer <path|-> | --transcript <jsonl>) --slug <slug> [--model <m>] [--root <dir>] [--project <dir>]');
     return record(opts);
 }
 
