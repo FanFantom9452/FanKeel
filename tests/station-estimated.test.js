@@ -77,7 +77,7 @@ test('segTip marks the day sum 估', () => {
     none(tipOf(PLAIN, 'opus-5'));
 });
 
-test('histSvg with the kind split carries the estimate onto each of the four kinds', () => {
+test('histSvg with the kind split carries the estimate onto each of the five kinds', () => {
     const e = V.histSvg(V.dayBars(EST, 'usd', 'kind', DAYS), Object.assign({}, O, { dim: 'kind' }));
     assert.match(e, /；output \$[\d.]+ 估/);
     none(V.histSvg(V.dayBars(PLAIN, 'usd', 'kind', DAYS), Object.assign({}, O, { dim: 'kind' })));
@@ -151,14 +151,14 @@ test('costHtml marks the dispatch figure in the sumline', () => {
 test('costHtml marks each per-kind USD cell and the row total of a stage x model row', () => {
     const e = costOnly(EST, false);
     const child = e.slice(e.indexOf('<tr class="child">'), e.indexOf('</tr>', e.indexOf('<tr class="child">')));
-    assert.equal((child.match(/<td class="r">\$[\d.]+ 估<\/td>/g) || []).length, 5, 'a cost cell for each of the four kinds and the row total');
+    assert.equal((child.match(/<td class="r">\$[\d.]+ 估<\/td>/g) || []).length, 6, 'a cost cell for each of the five kinds and the row total');
 });
 
 test('costHtml marks only the per-kind USD cells that carry money: a kind with none stays a dash', () => {
     const zero = [{ day: TODAY, stage: 'build', model: 'claude-haiku-5-5', who: 'main', tokens: tok, cost: { input: 2, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 }, usd: 2, estimated: true }];
     const e = V.costHtml(V.costModel(zero), { loops: LOOPS(false) });
     const child = e.slice(e.indexOf('<tr class="child">'), e.indexOf('</tr>', e.indexOf('<tr class="child">')));
-    assert.equal((child.match(/<td class="r">—<\/td>/g) || []).length, 3);
+    assert.equal((child.match(/<td class="r">—<\/td>/g) || []).length, 4);
     assert.equal((child.match(/估/g) || []).length, 2, 'the one kind with money and the row total');
 });
 

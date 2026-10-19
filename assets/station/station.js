@@ -205,15 +205,31 @@
     var TABS = ['timeline', 'cost', 'dispatch', 'events', 'talk', 'plan', 'gate'];
     var MODEL_KEYS = ['fable', 'opus', 'sonnet', 'haiku', 'other'];
     var TOKEN_KEYS = ['input', 'output', 'cacheRead', 'cacheWrite5m', 'cacheWrite1h'];
-    // `kind` splits a day's cost or tokens by where they went, folding the two
-    // cache-write rates `TOKEN_KEYS` keeps apart back into one segment — the
-    // same four kinds and order the cost tab's `costHtml` already shows.
-    var KIND_KEYS = ['input', 'output', 'cacheRead', 'cacheWrite'];
-    var KIND_LABEL = { input: 'input', output: 'output', cacheRead: 'cache read', cacheWrite: 'cache write' };
-    var KIND_COLOR = { input: '--t-in', output: '--t-out', cacheRead: '--t-cr', cacheWrite: '--t-cw' };
+    // `kind` splits a day's cost or tokens by where they went: the five token
+    // kinds, the two cache-write rates kept apart, because they are two
+    // caches — 1h is what the main session writes each turn, 5m what each
+    // agent writes from its first turn on (station-30). The cost tab's
+    // `costHtml`, the kind split on 花費 and the 7-day card share this order.
+    var KIND_KEYS = ['input', 'output', 'cacheRead', 'cacheWrite1h', 'cacheWrite5m'];
+    var KIND_LABEL = { input: 'input', output: 'output', cacheRead: 'cache read',
+        cacheWrite1h: loc('shared.kindCw1h', 'cache write 1h · 主對話'), cacheWrite5m: loc('shared.kindCw5m', 'cache write 5m · agent') };
+    var KIND_COLOR = { input: '--t-in', output: '--t-out', cacheRead: '--t-cr', cacheWrite1h: '--t-cw1h', cacheWrite5m: '--t-cw' };
     var WHO_LABEL = { main: loc('shared.main', '主 session'), agent: loc('shared.agent', '背景 agent'), workflow: 'workflow' };
     var DIM_LABEL = { model: loc('shared.byModel', '依 model'), project: loc('shared.byProject', '依專案'), stage: loc('shared.byStage', '依 stage'),
-        who: loc('shared.mainVsAgent', '主 session 對 agent'), version: loc('shared.byVersion', '依版本'), kind: loc('shared.byKind', '依成分') };
+        who: loc('shared.mainVsAgent', '主 session 對 agent'), version: loc('shared.byVersion', '依版本'), kind: loc('shared.byKind', '依成分'),
+        type: loc('shared.byAgentType', '依 agent 類型') };
+    // An agent type is on a `days` row (lib/detail.js stamps it); a span
+    // records only stage and who, so 時間 has none to split by.
+    var NO_TIME_TYPE = loc('shared.noTimeByType', '時間沒有 agent 類型可分：spans 只記 stage 與誰在跑');
+    // Dollars to the cent, whatever the size: a break's cost and the range
+    // report's tables are compared against figures printed that way.
+    function usd2(n) { return '$' + (n || 0).toFixed(2); }
+    // What the page's own modules (assets/station/spend-*.js) draw with. They
+    // load before this file and read `w.FK_KIT` only when they draw, so a
+    // helper is written once, here.
+    w.FK_KIT = { esc: esc, tokens: tokens, usd2: usd2, comma: comma, delta: delta, roHtml: roHtml, segHtml: segHtml,
+        sessionHash: sessionHash, localDay: localDay, lastDays: lastDays, fillVars: fillVars,
+        KIND_KEYS: KIND_KEYS, KIND_LABEL: KIND_LABEL, KIND_COLOR: KIND_COLOR };
     var METRIC_LABEL = { usd: loc('shared.cost', '花費'), tokens: 'token', time: loc('shared.time', '時間') };
     function localDay(ms) {
         var d = new Date(ms);
@@ -281,13 +297,14 @@
     function tokenSum(t) {
         return t ? TOKEN_KEYS.reduce(function (n, k) { return n + (t[k] || 0); }, 0) : 0;
     }
-    // `kind` is not here: it is not one key per row, it is four (see
+    // `kind` is not here: it is not one key per row, it is five (see
     // `dayBars`), so it never goes through `dimKey`.
     function dimKey(dim, s, r) {
         if (dim === 'model') return modelKey(r.model);
         if (dim === 'project') return s.pkey;
         if (dim === 'stage') return r.stage || 'none';
         if (dim === 'version') return s.version || 'none';
+        if (dim === 'type') return r.who === 'main' ? 'main' : (r.type || 'unknown');
         return r.who;
     }
     // Versions parsed as dotted numbers and compared newest first; a version
@@ -328,7 +345,7 @@
     }
     // A project's colour is its place in `pkeys`, the 30-day order, so it is
     // the same on every chart; the sixth project on shares `--p-5`. `kind`
-    // instead reuses the cost tab's own four custom properties. `version` has
+    // instead reuses the cost tab's own five custom properties. `version` has
     // no equivalent 30-day-order list of its own, so its callers hand this
     // the current bar set's own `bars.keys` in `pkeys`' place — already
     // newest-first from `orderKeys` — so the newest version lands on `--p-0`,
@@ -349,6 +366,7 @@
         if (dim === 'stage') return ROUTE.indexOf(key) >= 0 ? 'var(--st-' + key + ')' : 'var(--st-none)';
         if (dim === 'who') return 'var(--s-' + key + ')';
         if (dim === 'kind') return 'var(' + (KIND_COLOR[key] || '--st-none') + ')';
+        if (dim === 'type' && key === 'main') return 'var(--s-main)';
         if (dim === 'version' && key === 'none') return 'var(--st-none)';
         var i = (pkeys || []).indexOf(key);
         return 'var(--p-' + (i < 0 ? 5 : Math.min(i, 5)) + ')';
@@ -358,6 +376,7 @@
         if (dim === 'stage') return key === 'none' ? loc('shared.beforeStepOne', '第一步之前') : key;
         if (dim === 'project') return (names && names[key]) || key;
         if (dim === 'kind') return KIND_LABEL[key] || key;
+        if (dim === 'type') return key === 'main' ? WHO_LABEL.main : key === 'unknown' ? loc('shared.typeUnknown', '未記類型') : key;
         if (dim === 'version') return key === 'none' ? loc('shared.noVersionRecorded', '未記版本') : key;
         if (dim === 'model') return modelLabel(key);
         return key;
@@ -370,6 +389,7 @@
     // bucket is "older than the field", not "not one of ours". Every other
     // key's label is the whole story, so this returns '' for them.
     function keyHint(dim, key) {
+        if (dim === 'kind') return w.FK_KINDS ? w.FK_KINDS.notes(S.prices)[key] || '' : '';
         return dim === 'version' && key === 'none' ? loc('shared.noVersionField', '跑的時候 registry 還沒有 version 這個欄位，不是別處來的 session') : '';
     }
     function projectNames(sessions) {
@@ -439,6 +459,9 @@
         if (metric === 'time' && dim === 'kind') {
             return { days: [], keys: [], max: 0, disabled: loc('shared.noTimeByKind', '時間沒有成分可分：spans 只記 stage 與誰在跑，不記 token 或花費') };
         }
+        if (metric === 'time' && dim === 'type') {
+            return { days: [], keys: [], max: 0, disabled: NO_TIME_TYPE };
+        }
         var at = {}, seen = {};
         days.forEach(function (d) { at[d] = { day: d, total: 0, parts: {}, est: {}, estimated: false }; });
         var add = function (d, key, v, e) {
@@ -454,8 +477,8 @@
                 return;
             }
             (s.days || []).forEach(function (r) {
-                // `kind` is four segments of the same row, not one key per
-                // row, so it calls `add` four times instead of once — the
+                // `kind` is five segments of the same row, not one key per
+                // row, so it calls `add` five times instead of once — the
                 // comment above this function still holds: the total is
                 // added in the same pass as the parts, so it stays their sum.
                 // `r.cost`/`r.tokens` is null for a model `lib/prices.js` has
@@ -464,10 +487,7 @@
                 if (dim === 'kind') {
                     var src = metric === 'usd' ? r.cost : r.tokens;
                     if (!src) return;
-                    add(r.day, 'input', src.input, r.estimated);
-                    add(r.day, 'output', src.output, r.estimated);
-                    add(r.day, 'cacheRead', src.cacheRead, r.estimated);
-                    add(r.day, 'cacheWrite', (src.cacheWrite5m || 0) + (src.cacheWrite1h || 0), r.estimated);
+                    KIND_KEYS.forEach(function (k) { add(r.day, k, src[k], r.estimated); });
                     return;
                 }
                 add(r.day, dimKey(dim, s, r), metric === 'usd' ? r.usd || 0 : tokenSum(r.tokens), metric === 'usd' && r.estimated);
@@ -508,10 +528,10 @@
     function roHtml(l, v, d) {
         return '<div class="ro"><div class="l">' + l + '</div><div class="v">' + v + '</div><div class="d">' + d + '</div></div>';
     }
-    function kpiHtml(cur, prev) {
+    function kpiHtml(cur, prev, label) {
         var share = function (t) { return t.main + t.wait ? t.wait / (t.main + t.wait) : 0; };
         var out = '<div class="readouts">'
-            + roHtml(loc('shared.cost30d', '30 天花費'), usd(cur.usd) + estMark(cur), delta(cur.usd, prev.usd) + (quotaDay() ? ' · ' + loc('shared.quotaCalibrated', '週額度 {d} 校準', { d: quotaDay() }) : ''))
+            + roHtml(label || loc('shared.cost30d', '30 天花費'), usd(cur.usd) + estMark(cur), delta(cur.usd, prev.usd) + (quotaDay() ? ' · ' + loc('shared.quotaCalibrated', '週額度 {d} 校準', { d: quotaDay() }) : ''))
             + roHtml('token', tokens(cur.tokens), delta(cur.tokens, prev.tokens))
             + roHtml(loc('shared.activeTime', 'active 時間'), hours(cur.active), delta(cur.active, prev.active))
             + roHtml('<i class="hatchsw"></i>' + loc('shared.waitShare', '等待佔比'), Math.round(share(cur) * 1000) / 10 + '<span class="u">%</span>',
@@ -612,7 +632,7 @@
     // afresh. With nothing off it is the list the chart always used.
     function paletteOf(bars, o) {
         var off = o.off || {};
-        return ((o.dim === 'version' || o.dim === 'model') ? bars.keys : o.pkeys || []).filter(function (k) { return !off[k]; });
+        return ((o.dim === 'version' || o.dim === 'model' || o.dim === 'type') ? bars.keys : o.pkeys || []).filter(function (k) { return !off[k]; });
     }
     // The shown keys that get a legend entry of their own; the rest share
     // 其他 N 個. Pass an `o` without `off` for the unfiltered grouping.
@@ -1140,17 +1160,16 @@
         });
         return out + '</svg>';
     }
-    // Stage by model, each of the four token kinds with its own dollars, from
+    // Stage by model, each of the five token kinds with its own dollars, from
     // the session's `days` — the same rows the home page's bars add up.
     function costModel(days) {
         var cell = function () {
-            return { tokens: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, usd: 0, estimated: false };
+            var zero = function () { var o = {}; KIND_KEYS.forEach(function (k) { o[k] = 0; }); return o; };
+            return { tokens: zero(), cost: zero(), usd: 0, estimated: false };
         };
         var add = function (a, r) {
             var t = r.tokens || {}, c = r.cost || {};
-            ['input', 'output', 'cacheRead'].forEach(function (k) { a.tokens[k] += t[k] || 0; a.cost[k] += c[k] || 0; });
-            a.tokens.cacheWrite += (t.cacheWrite5m || 0) + (t.cacheWrite1h || 0);
-            a.cost.cacheWrite += (c.cacheWrite5m || 0) + (c.cacheWrite1h || 0);
+            KIND_KEYS.forEach(function (k) { a.tokens[k] += t[k] || 0; a.cost[k] += c[k] || 0; });
             a.usd += r.usd || 0;
             if (r.estimated && r.usd) a.estimated = true;
         };
@@ -1185,7 +1204,7 @@
         var pct = stageUsd ? lp.overUsd / stageUsd * 100 : 0;
         var z = lp.over === 0;
         return '<tr class="loop">' + (foot ? '<td><span class="lp">' + loc('ses.mainLoop', '主迴圈') + '</span></td><td></td>' : '<td></td><td><span class="lp">' + loc('ses.mainLoop', '主迴圈') + '</span></td>')
-            + '<td colspan="8"><div class="lf">'
+            + '<td colspan="' + KIND_KEYS.length * 2 + '"><div class="lf">'
             + '<span><b>' + lp.turns + '</b>' + loc('ses.turns', '回合') + '</span>'
             + '<span' + (z ? ' class="zero"' : '') + '><b>' + lp.over + '</b>' + loc('ses.turnsOver400k', '回合 ≥ 400k') + '</span>'
             + '<span' + (z ? ' class="zero"' : '') + '><b>' + usd(lp.overUsd) + (lp.overUsd ? estMark(lp) : '') + '</b>' + loc('ses.thoseTurns', '那些回合') + '</span>'
@@ -1279,15 +1298,14 @@
             }).join('') + '</div>';
     }
     function costHtml(m, x) {
-        var KINDS = [['input', 'input', '--t-in'], ['output', 'output', '--t-out'], ['cacheRead', 'cache read', '--t-cr'],
-            ['cacheWrite', 'cache write', '--t-cw']];
+        var notes = w.FK_KINDS ? w.FK_KINDS.notes(S.prices) : {};
         var cells = function (a, cls) {
-            return KINDS.map(function (k) {
-                return '<td class="r muted">' + tokens(a.tokens[k[0]]) + '</td><td class="r">' + usd(a.cost[k[0]]) + (a.cost[k[0]] ? estMark(a) : '') + '</td>';
+            return KIND_KEYS.map(function (k) {
+                return '<td class="r muted">' + tokens(a.tokens[k]) + '</td><td class="r">' + usd(a.cost[k]) + (a.cost[k] ? estMark(a) : '') + '</td>';
             }).join('') + '<td class="r' + (cls ? ' ' + cls : '') + '">' + usd(a.usd) + estMark(a) + '</td>';
         };
         var share = function (v) { return m.total.usd ? Math.round(v / m.total.usd * 1000) / 10 + '%' : '—'; };
-        var allTok = KINDS.reduce(function (n, k) { return n + m.total.tokens[k[0]]; }, 0);
+        var allTok = KIND_KEYS.reduce(function (n, k) { return n + m.total.tokens[k]; }, 0);
         var loops = x && Array.isArray(x.loops) ? x.loops : null;
         var loopBy = {};
         (loops || []).forEach(function (r) { loopBy[r.stage === null ? 'none' : r.stage] = r; });
@@ -1296,9 +1314,9 @@
             + '<div>' + loc('ses.cacheReadShareOfTokens', 'cache read 佔 token') + '<b>' + (allTok ? Math.round(m.total.tokens.cacheRead / allTok * 1000) / 10 + '%' : '—') + '</b></div></div>'
             + '<div class="h2">stage × model <small>' + loc('ses.stageModelHint', 'token 與各自的 USD；stage 列是小計') + '</small></div>'
             + '<div class="tbl-wrap"><table class="t"><thead><tr><th rowspan="2">stage</th><th rowspan="2">' + loc('ses.modelOfSession', 'model · 佔 session') + '</th>'
-            + KINDS.map(function (k) { return '<th colspan="2"><i class="sw" style="background:var(' + k[2] + ')"></i> ' + k[1] + '</th>'; }).join('')
+            + KIND_KEYS.map(function (k) { return '<th colspan="2"' + (notes[k] ? ' title="' + esc(notes[k]) + '"' : '') + '><i class="sw" style="background:var(' + KIND_COLOR[k] + ')"></i> ' + esc(KIND_LABEL[k]) + '</th>'; }).join('')
             + '<th rowspan="2" class="r">USD</th></tr><tr>'
-            + KINDS.map(function () { return '<th class="r">token</th><th class="r">USD</th>'; }).join('') + '</tr></thead><tbody>'
+            + KIND_KEYS.map(function () { return '<th class="r">token</th><th class="r">USD</th>'; }).join('') + '</tr></thead><tbody>'
             + m.stages.map(function (g) {
                 return '<tr class="sub"><td><span class="pchip"><i class="sw" style="background:' + colorOf('stage', g.stage) + '"></i>'
                     + esc(g.stage === 'none' ? loc('ses.beforeStepOne', '第一步之前') : g.stage) + '</span></td><td class="muted">' + share(g.sub.usd) + '</td>'

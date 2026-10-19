@@ -552,23 +552,23 @@ const VER = [
       days: [dayRow('2026-09-10', 'build', 'claude-opus-5', 'main', 5, 100)] },
 ];
 
-test('dayBars splits kind into the cost tab\'s four segments and folds the two cache-write rates into one', () => {
+test('dayBars splits kind into the cost tab\'s five segments, the two cache-write rates apart', () => {
     const i = DAYS.indexOf('2026-09-14');
     const bars = V.dayBars(HOME, 'usd', 'kind', DAYS);
-    assert.deepEqual(bars.days[i].parts, { input: 1.6875, output: 3.375, cacheRead: 0.84375, cacheWrite: 0.84375 });
-    assert.equal(bars.days[i].total, 6.75, 'a kind bar is still the sum of its four segments');
-    assert.deepEqual(bars.keys, ['input', 'output', 'cacheRead', 'cacheWrite'], 'the cost tab\'s own fixed order');
+    assert.deepEqual(bars.days[i].parts, { input: 1.6875, output: 3.375, cacheRead: 0.84375, cacheWrite1h: 0.421875, cacheWrite5m: 0.421875 });
+    assert.equal(bars.days[i].total, 6.75, 'a kind bar is still the sum of its five segments');
+    assert.deepEqual(bars.keys, ['input', 'output', 'cacheRead', 'cacheWrite1h', 'cacheWrite5m'], 'the cost tab\'s own fixed order');
 });
 
-test('a kind split under token counts reads r.tokens, not r.cost, and folds the two cache writes the same way', () => {
+test('a kind split under token counts reads r.tokens, not r.cost, and keeps the two cache writes apart the same way', () => {
     const i = DAYS.indexOf('2026-09-14');
     const bars = V.dayBars(HOME, 'tokens', 'kind', DAYS);
     // 4,300 input tokens over the day's three rows, and `tok5`'s fixed ratios
     // off that: output a tenth, cache read four times, the 5m and 1h writes a
-    // half and a quarter folded into one. Reading `r.cost` here instead would
-    // give the 花費 figures above, which share no value with these.
-    assert.deepEqual(bars.days[i].parts, { input: 4300, output: 430, cacheRead: 17200, cacheWrite: 3225 });
-    assert.equal(bars.days[i].total, 25155, 'a kind bar is its four segments summed under tokens as under 花費');
+    // half and a quarter. Reading `r.cost` here instead would give the 花費
+    // figures above, which share no value with these.
+    assert.deepEqual(bars.days[i].parts, { input: 4300, output: 430, cacheRead: 17200, cacheWrite1h: 1075, cacheWrite5m: 2150 });
+    assert.equal(bars.days[i].total, 25155, 'a kind bar is its five segments summed under tokens as under 花費');
 });
 
 test('kind is disabled under 時間, like model: a span carries no cost or tokens to split by kind', () => {
@@ -809,8 +809,8 @@ test('costModel lays a session\'s days out stage by model, subtotals main and ag
     assert.deepEqual(m.stages.map((g) => [g.stage, g.sub.usd, g.models.map((x) => x.model)]),
         [['build', 1.75, ['claude-opus-5', 'claude-sonnet-5']], ['verify', 2, ['claude-opus-5']]]);
     assert.deepEqual([m.main.usd, m.agent.usd, m.total.usd], [3.25, 0.5, 3.75]);
-    assert.deepEqual(m.total.tokens, { input: 6000, output: 600, cacheRead: 24000, cacheWrite: 4500 });
-    assert.deepEqual([m.stages[0].sub.cost.output, m.stages[0].sub.cost.cacheWrite], [0.875, 0.21875]);
+    assert.deepEqual(m.total.tokens, { input: 6000, output: 600, cacheRead: 24000, cacheWrite1h: 1500, cacheWrite5m: 3000 });
+    assert.deepEqual([m.stages[0].sub.cost.output, m.stages[0].sub.cost.cacheWrite1h, m.stages[0].sub.cost.cacheWrite5m], [0.875, 0.109375, 0.109375]);
     assert.deepEqual(V.costModel(null).total.usd, 0);
 });
 
@@ -905,8 +905,8 @@ test('the session header reads dollars from days and time from the timeline; the
 test('a kept v1 cache\'s single row: the cost tab counts its dollars, zero tokens and no per-kind dollars', () => {
     const m = V.costModel(KEPT.days);
     assert.deepEqual([m.total.usd, m.main.usd, m.agent.usd], [2.5, 2.5, 0]);
-    assert.deepEqual(m.total.tokens, { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 });
-    assert.deepEqual(m.total.cost, { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 });
+    assert.deepEqual(m.total.tokens, { input: 0, output: 0, cacheRead: 0, cacheWrite1h: 0, cacheWrite5m: 0 });
+    assert.deepEqual(m.total.cost, { input: 0, output: 0, cacheRead: 0, cacheWrite1h: 0, cacheWrite5m: 0 });
     assert.deepEqual(m.stages.map((g) => [g.stage, g.sub.usd]), [['none', 2.5]]);
     const html = V.costHtml(m);
     assert.match(html.split('<tfoot>')[1], /<td>合計<\/td>[\s\S]*?<td class="r total">\$2\.50<\/td>/);
