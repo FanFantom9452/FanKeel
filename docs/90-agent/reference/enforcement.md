@@ -62,7 +62,7 @@ Not in this table: the `INIT` rules of the `/fankeel` prompt (no stage yet), the
 | verify.2 | Anything half-built sends this back | none — prose only | none | — |
 | verify.3 | Run node {{DOCS_CHECK}} and name | none — prose only | `scripts/docs-check.js` | Reports dead references when run; naming the page this change made false is judgement. |
 | verify.4 | A coverage claim states its | none — prose only | none | — |
-| verify.5 | Before the question, one read-only | none — prose only | none | — |
+| verify.5 | Before the question, one read-only | none — prose only | `scripts/gate-check.js` | Exits 1 when the first `adversary:` line says it has not returned; a keyword match on that one line, so an adversary that was never dispatched is not caught. |
 | verify.6 | Read the fankeel-verify skill on | none — prose only | none | — |
 | verify.7 | Output: the command and the | none — prose only | none | — |
 | verify.when.security.local | security.local: run node {{SECURITY_LOCAL}} before | none — prose only | `scripts/security-local.js` | The security lens's first pass on a local model, when run. |
