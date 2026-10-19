@@ -110,6 +110,14 @@ test('touched matches a feature by its own src, with either slash', (t) => {
     assert.deepEqual(touched(dir, ['site/page.js']), []);
 });
 
+test('touched warns about a feature file whose globs are empty, so none is not silent', (t) => {
+    const page = { feature: 'home', kind: 'page', render: '[nope]', last_checked: '2026-10-19', status: 'clean' };
+    const dir = project(t, { '.fankeel/render.json': RENDER, '.fankeel/verify/home.md': front(page) + BODY });
+    const warnings = [];
+    assert.deepEqual(touched(dir, ['site/page.js'], warnings), []);
+    assert.deepEqual(warnings, ['.fankeel/verify/home.md: names no src and no render.json page src, so no change reaches it']);
+});
+
 test('the CLI only warns: a warn line, the count, exit 0', (t) => {
     const dir = project(t, { '.fankeel/verify/tool.md': front(GOOD) + NO_DOCTOR });
     const r = spawnSync(process.execPath, [SCRIPT, '--root', dir], { encoding: 'utf8' });
@@ -225,9 +233,10 @@ test('--range warns with render.json\'s refusal instead of a silent none', (t) =
     const r = range(dir, 'HEAD~1..HEAD');
     assert.equal(r.status, 0, r.stderr);
     const lines = r.stdout.trim().split(/\r?\n/);
-    assert.equal(lines.length, 2, r.stdout);
+    assert.equal(lines.length, 3, r.stdout);
     assert.match(lines[0], /^warn: \.fankeel\/render\.json: \S/);
-    assert.equal(lines[1], 'none');
+    assert.match(lines[1], /^warn: \.fankeel\/verify\/home\.md: names no src/);
+    assert.equal(lines[2], 'none');
 });
 
 test('--range warns on a feature file with no frontmatter instead of skipping it', (t) => {

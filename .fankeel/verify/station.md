@@ -34,7 +34,7 @@ Every fankeel session on this machine, shown on one page. The page is served fro
 3. `node scripts/render.js <url> --out .fankeel/build/task-<started>/verify/station/` writes `render.png` and `render.html`. The footer `#nreg` in `render.html` reads `<registries> 個 registry · <n> sessions`, and `<n>` equals the count from step 1.
 4. GET `<url>station/health` answers 200 with `station: true` and the `pid` recorded in `<configDir>/fankeel/serve.json`.
 5. Take one row's `sessionId` from step 1. GET `<url>station/detail/<sessionId>.js` answers 200; a 404 `no detail for that session` means that session has no detail to read, so pick another row.
-6. POST `<url>clear` with no nonce answers 403 `wrong nonce`: the guard holds.
+6. POST `<url>clear` with no nonce answers 403 `wrong nonce`: the guard holds. The other half: GET `<url>station/station-data.js` answers 200 and its body carries the per-run nonce (`scripts/station.js` passes it as the `nonce` option of `station.serialize`, which writes `out.nonce`). The nonce is read from there. A POST with it is not driven here, because `/clear` changes the registry.
 7. Run the same `serve` command again with the same `CLAUDE_CONFIG_DIR`. It prints the first server's url and binds no port of its own: this is the join.
 8. GET `<url>station/tour.html` answers 200.
 9. Cleanup: kill the pid recorded in `serve.json`, then delete the temporary config directory. Keep the evidence from step 3.

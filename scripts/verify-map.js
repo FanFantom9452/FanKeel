@@ -148,6 +148,7 @@ function touched(root, paths, warnings = []) {
         }
         const globs = globsOf(front, targets);
         if (globs.length) src.set(rel, globs);
+        else warnings.push(rel + ': names no src and no render.json page src, so no change reaches it');
     }
     return pagesTouched({ src }, paths);
 }
