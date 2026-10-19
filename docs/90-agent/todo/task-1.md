@@ -2,8 +2,13 @@
 label: task
 title: 只放開檔案佔用
 description: task.js clear --force 會連鄰居整個任務一起停掉，要一個只放開檔案佔用的指令
-state: ready
+state: done
 link: scripts/task.js
+done:
+  at: 2026-10-20
+  sha: 3db50cab
+  disposition: done
+  session: 45487ab9-c8fc-44c7-a0db-d46d41bb4796
 ---
 
 ## 現況
@@ -17,3 +22,10 @@ link: scripts/task.js
 ## 完成條件
 
 測試裡兩個 session 佔用同一檔，用新指令放開後，鄰居仍是 active、stage 不變，只少了那一個檔案的佔用。
+
+## 完成紀錄
+
+task.js release 可以放掉另一個 session 指名的 claim。 詳見[任務紀錄](../records/2026-10.md#r-2026-10-19-45487ab9)
+
+- commit 3db50cab
+- commit db459481

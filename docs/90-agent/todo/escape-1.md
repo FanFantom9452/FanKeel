@@ -34,3 +34,5 @@ stamp: 2026-10-19
 完成條件：第 1 步有數字。第 2–4 步做完後，同樣的量法再跑一週，安靜錯字和解析失敗都要比第 1 步少。
 
 第 1 步的第一筆資料（2026-10-19，六欄完成紀錄這個任務的主 session，模型是 Opus 5.5）：同一個 session 裡至少 10 次把中文寫成轉義。地方是 wrap_up 的按鈕文字、AskUserQuestion 的題目和選項、update_plan 的步驟。每一輪都有注入這條規則，第五次就在剛承認過第四次之後，後面五次是 build、verify、land 和 retro 關卡的選單。這幾次都解碼正常，使用者看到的是正確的中文。
+
+第 1 步的第一次全機掃描（2026-10-20，`node scripts/escape-scan.js`，8877 份 transcript）：AskUserQuestion 1161 次中 11 次被標出（0.95%）；Write 1358 次中 33 次（2.43%，大多是寫進 regex 程式碼裡的區塊邊界字，偏高）；使用者的 prompt 7149 則中 68 則（0.95%）；「饋」被標了 19 次；__unparsedToolInput 2 次。第 2–4 步已在 2026-10-20 落地（ALWAYS[3] 改寫、控制區塊與 brief 帶規則、AskUserQuestion 錯字退回一次），一週後用同一支腳本重量比較。

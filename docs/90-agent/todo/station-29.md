@@ -2,8 +2,13 @@
 label: station
 title: 花費成分說明
 description: station 花費表每個成分旁加說明，花費頁放一張成分說明表，單價讀 `lib/prices.js`
-state: ready
+state: done
 link: assets/station/station.js
+done:
+  at: 2026-10-20
+  sha: f84805d9
+  disposition: done
+  session: 45487ab9-c8fc-44c7-a0db-d46d41bb4796
 ---
 
 來源：2026-10-19 使用者要求監控站顯示花費成分，本週判斷書（連結）。
@@ -15,3 +20,10 @@ link: assets/station/station.js
 - uncached input：最後一小段沒落在快取的輸入，通常接近 0。
 價目以 lib/prices.js 為準，說明裡的單價要從那裡讀，不寫死。
 完成條件：每個顯示成分的地方都有說明可看，價格跟 lib/prices.js 一致。
+
+## 完成紀錄
+
+每個花費成分旁有說明，並有成分說明表。 詳見[任務紀錄](../records/2026-10.md#r-2026-10-19-45487ab9)
+
+- commit f84805d9
+- commit 1438ce18

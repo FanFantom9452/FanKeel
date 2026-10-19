@@ -2,8 +2,13 @@
 label: tests
 title: 拿掉四處重複的測試斷言
 description: 判官點名 stages.test.js 三處、docs.test.js 一處重複的斷言，拿掉或併進已經涵蓋的那條
-state: ready
+state: done
 link: tests/stages.test.js
+done:
+  at: 2026-10-20
+  sha: e4315bfd
+  disposition: done
+  session: 45487ab9-c8fc-44c7-a0db-d46d41bb4796
 ---
 
 ## 現況
@@ -22,3 +27,9 @@ link: tests/stages.test.js
 ## 完成條件
 
 node --test tests/stages.test.js tests/docs.test.js 全過，四處重複都不在了，完整 suite 綠燈。
+
+## 完成紀錄
+
+四組重複的斷言已從 stages 和 docs 的測試拿掉。 詳見[任務紀錄](../records/2026-10.md#r-2026-10-19-45487ab9)
+
+- commit e4315bfd

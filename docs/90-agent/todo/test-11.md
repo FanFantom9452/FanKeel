@@ -2,8 +2,13 @@
 label: test
 title: 等鎖時報出持有者沒有新輸出
 description: suite 等全機鎖時只說誰拿著鎖，看不出持有者是在跑還是卡住；要不要在鎖裡記輸出位置，等太久沒新輸出就報出來
-state: decision
+state: done
 link: lib/suitelock.js
+done:
+  at: 2026-10-20
+  sha: b60f82f8
+  disposition: abandoned
+  session: 45487ab9-c8fc-44c7-a0db-d46d41bb4796
 ---
 
 來源：2026-10-19 TODO 全表盤點（第二輪）的「卡住的測試佔住全機套件鎖」。那一條做了另一半：測試帶 --test-timeout=300000 與 --test-force-exit，卡住的測試五分鐘內變紅結束。條目裡寫著「考慮」的這一半沒做，因為鎖檔沒有記下持有者的輸出位置（lib/suitelock.js 約第 103 行只記 pid、session、tree、at），要先設計。
@@ -11,3 +16,9 @@ link: lib/suitelock.js
 要決定的是：鎖檔要不要多記一個輸出檔路徑，等鎖的一方在持有者若干分鐘沒有新輸出時印出一行提示；或是有了測試逾時之後，這件事已經不值得做。
 
 完成的樣子：選定方向；若做，waitLine 會多一種「持有者 N 分鐘沒有新輸出」的訊息並有測試；若不做，記錄理由後關閉。
+
+## 完成紀錄
+
+盤點決定不做：測試已帶 --test-timeout=300000，卡住的測試五分鐘內變紅結束，再多報一行不值得。 詳見[任務紀錄](../records/2026-10.md#r-2026-10-19-45487ab9)
+
+- commit b60f82f8
