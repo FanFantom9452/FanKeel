@@ -635,6 +635,7 @@ is corrected by the next one, not by rewriting this.
 | Brief 15 — TencentDB-Agent-Memory: what it means for our MEMORY.md management and workflow | [90-agent/judgements/2026-10-18-tencentdb-agent-memory.md](90-agent/judgements/2026-10-18-tencentdb-agent-memory.md) — *judged 2026-10-18, fable* |
 | Brief: does Karpathy's "output-format ladder" change anything in fankeel's skill outputs, and in fankeel-explain? | [90-agent/judgements/2026-10-19-explain-output-formats.md](90-agent/judgements/2026-10-19-explain-output-formats.md) — *judged 2026-10-19, fable* |
 | Brief 16 — 這週的 token 花費成分：什麼在吃額度，由多到少 | [90-agent/judgements/2026-10-19-weekly-token-composition.md](90-agent/judgements/2026-10-19-weekly-token-composition.md) — *judged 2026-10-19, fable* |
+| 問題 | [90-agent/judgements/2026-10-19-obsolete-tests.md](90-agent/judgements/2026-10-19-obsolete-tests.md) — *judged 2026-10-19, fable* |
 
 ## The five scanners
 
