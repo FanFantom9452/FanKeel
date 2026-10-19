@@ -9,7 +9,7 @@
     "verify"
   ],
   "guard": "deny",
-  "gate.station": 120,
+  "gate.station": "off",
   "gate.away": "ask",
   "language": "繁體中文",
   "agent.fankeel-mutator.model": "haiku",
