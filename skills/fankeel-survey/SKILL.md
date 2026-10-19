@@ -33,8 +33,8 @@ which is the one thing option two may never be — so the gate is asked once.
 
 | Looks like a finding | Why it is not |
 |---|---|
-| Code that does not match a `status: design-intent` page | That page describes what the system is meant to become, not what it is — `lib/stages.js:219` lists such pages as `planned but not built`, and code catching up to them later is the page doing its job. |
-| A nonzero `skipped:` count in the scan report | Files with no declaration pattern, over the size cap, or otherwise unreadable are named or counted, never silently dropped — `lib/stages.js:223` (`its counts are only reported`). |
+| Code that does not match a `status: design-intent` page | That page describes what the system is meant to become, not what it is — `lib/stages.js:225` lists such pages as `planned but not built`, and code catching up to them later is the page doing its job. |
+| A nonzero `skipped:` count in the scan report | Files with no declaration pattern, over the size cap, or otherwise unreadable are named or counted, never silently dropped — `lib/stages.js:229` (`its counts are only reported`). |
 | A page dated by git rather than by anyone reading it | An `undeclared` page carries no frontmatter contract, so its date is whatever git last touched, not proof anyone verified it — a whitespace fix moves the date and confirms nothing. |
 
 ## The six steps
@@ -305,7 +305,7 @@ the class step 5 arrived at, when it differs:
 node <plugin>/scripts/task.js route "survey,design,build,verify,land" --session <id>
 ```
 
-`route` takes the stages and derives the class from them (`scripts/task.js:1580`, `classForRoute(given)`);
+`route` takes the stages and derives the class from them (`scripts/task.js:1621`, `classForRoute(given)`);
 the stage the task is in has to be on the new route. Quote its output on the
 `route:` line of the report, or write `unchanged`. Up is always allowed. Down is
 allowed only from the seven-stage default nobody said — a class someone said at

@@ -62,6 +62,14 @@ test('without leavingAt the same question goes out and no awayAt is written', ()
   assert.equal(entry(root).awayAt, undefined);
 });
 
+test('with gate.station a positive integer the question after 要離開 goes out and no awayAt is written', () => {
+  const root = seed({ leavingAt: Date.now() - 1000 });
+  fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'gate.station': 5 }));
+  const out = fire(GATE, root, ASK);
+  assert.doesNotMatch(out, /held, not asked/);
+  assert.equal(entry(root).awayAt, undefined);
+});
+
 test('the user\'s next message clears both marks and asks for the held question', () => {
   const root = seed({ leavingAt: 1, awayAt: 2 });
   const out = JSON.parse(fire(INJECT, root, { prompt: '回來了' }));

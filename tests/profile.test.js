@@ -459,15 +459,10 @@ test('profile set prompt.* prints what the line costs a turn and each stage\'s r
     assert.ok(grew === n || grew === n - 1, 'the block grew by ' + grew + ' tok against ' + n + ' printed');
     const roomLine = /^room under 2400: (.*)$/m.exec(out)[1];
     assert.match(out, /^room under 2400: survey -?\d+ · design -?\d+ · plan -?\d+ · build -?\d+ · verify -?\d+ · audit -?\d+ · land -?\d+$/m);
-    // audit's stage-rules block already sits over the 2400 cap under a plain default profile
-    // (docs/plans/2026-09-24-todo-clear.md ledger: a pre-existing condition, not this test's mechanism),
-    // so it is asserted separately as the one stage allowed to be over.
     const room = Object.fromEntries(roomLine.split(' · ').map((p) => p.split(' ')).map(([s, r]) => [s, Number(r)]));
-    for (const s of ['survey', 'design', 'plan', 'build', 'verify', 'land']) {
+    for (const s of ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land']) {
         assert.ok(room[s] > 0, s + ' stays under the cap: ' + roomLine);
     }
-    assert.ok(room.audit <= 0, 'audit is expected to already be over the cap: ' + roomLine);
-    assert.match(out, /^over the cap: audit — set anyway/m);
     assert.equal(run('profile', 'set', 'guard', 'deny').trim().split('\n').length, 1, 'a key that is not a prompt prints the one line it always did');
 });
 
