@@ -1495,3 +1495,9 @@ test('build and verify name --render and the per-task skip ruling, and build nam
   assert.match(verify, /--render <file> fix/);
   assert.match(verify, /`Ruling: render skipped — <why>`/);
 });
+
+// 2026-10-20: a patrol marked 工具參數中文寫成轉義 `do now` while its body
+// said the work had landed and only the one-week re-measure was left.
+test('the patrol reads an entry body that says it landed as waiting, not do now', () => {
+  assert.match(read('fankeel-survey'), /its last dated record: one that says its work landed and only a later re-measure or event is left is `waiting on` that date or event/);
+});

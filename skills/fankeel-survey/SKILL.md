@@ -364,7 +364,7 @@ and refuses the gate while the file is missing or skips an entry.
 to: still true, already done, a bug rather than a decision, or a duplicate of
 another entry. The report ends with one line per entry in three groups —
 `do now`, `needs the user`, `waiting on <what>` — so the gate can offer the
-do-now ones as the next stage. Every Ready entry still true and buildable in this session is `do now`. The
+do-now ones as the next stage. Every Ready entry still true and buildable in this session is `do now`. Read an entry's body to its last dated record: one that says its work landed and only a later re-measure or event is left is `waiting on` that date or event, and moves to Blocked under `on:` or `after:` — never `do now`. The
 route already carries `plan` and `verify`, so it is not widened for them;
 adding `design` is free where an entry needs one.
 
