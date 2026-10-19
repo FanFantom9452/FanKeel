@@ -25,13 +25,13 @@ reproduce whatever had been put in front of them, with no needle in the prompt t
 find — a third never launched, and a cell that did not run is not a result
 ([reports/2026-09-04-subagent-brief-probe.md](../reports/2026-09-04-subagent-brief-probe.md)).
 
-## The fourteen agents this plugin defines
+## The fifteen agents this plugin defines
 
-Fourteen subagent types are not just described in prose — they are declared as
+Fifteen subagent types are not just described in prose — they are declared as
 `agents` in `.claude-plugin/plugin.json` and shipped as files under `agents/`:
-`fankeel-reader`, `fankeel-judge`, `fankeel-reviewer`, `fankeel-verifier`, `fankeel-fixer`, `fankeel-brain`, `fankeel-render-reviewer`, `fankeel-mockup`, `fankeel-slimmer`, `fankeel-init-scout`, `fankeel-writer`, `fankeel-implementer`, `fankeel-mutator` and `fankeel-mover`.
-Five of them — `fankeel-reader`, `fankeel-reviewer`,
-`fankeel-render-reviewer`, `fankeel-slimmer` and `fankeel-init-scout` — carry `tools: [Read, Grep, Glob, Bash]`; `fankeel-judge` lists those four plus `Agent`. Edit, Write and
+`fankeel-reader`, `fankeel-judge`, `fankeel-reviewer`, `fankeel-verifier`, `fankeel-fixer`, `fankeel-brain`, `fankeel-render-reviewer`, `fankeel-mockup`, `fankeel-slimmer`, `fankeel-init-scout`, `fankeel-writer`, `fankeel-implementer`, `fankeel-mutator`, `fankeel-mover` and `fankeel-retro`.
+Six of them — `fankeel-reader`, `fankeel-reviewer`,
+`fankeel-render-reviewer`, `fankeel-slimmer`, `fankeel-init-scout` and `fankeel-retro` — carry `tools: [Read, Grep, Glob, Bash]`; `fankeel-judge` lists those four plus `Agent`. Edit, Write and
 NotebookEdit are simply absent from every one of those lists, so calling any of them to change
 a file is refused by the harness rather than left to a rule somebody has to
 remember. Bash stays on the list for `git` — and, for the reader and the
@@ -52,7 +52,7 @@ whose matcher is `Edit|Write|NotebookEdit`. `Bash` is matched now too:
 `.claude-plugin/plugin.json` registers `hooks/guard.js` a second time,
 matcher `Bash|PowerShell`, and it denies a command that writes files —
 `lib/guard.js`'s `writesFiles` — when `agent_id` is set **and** `agent_type` is
-`fankeel-reader`, `fankeel-reviewer`, `fankeel-judge`, `fankeel-render-reviewer`, `fankeel-slimmer` or `fankeel-init-scout`; it also denies the main thread's writing command (no `agent_id`) while the task's stage is a controlled one. The id is the half that
+`fankeel-reader`, `fankeel-reviewer`, `fankeel-judge`, `fankeel-render-reviewer`, `fankeel-slimmer`, `fankeel-init-scout` or `fankeel-retro`; it also denies the main thread's writing command (no `agent_id`) while the task's stage is a controlled one. The id is the half that
 says this is a subagent at all: the main thread of a session started with
 `--agent` carries the type without it and must be able to write, so the id is
 checked in the same condition as the type (`hooks/guard.js:81`, `if (payload.agent_id && readOnlyAgentType(payload.agent_type) && writesFiles(command)) {`).
@@ -62,8 +62,8 @@ The return applies only to a session with no active entry at all, one that never
 sent `/fankeel`; a session that has sent it has an active `init` entry
 (`hooks/inject.js` writes it), so its read-only subagents are denied.
 [collisions.md](collisions.md)
-carries what that denylist actually matches, not restated here. Thirteen of
-the fourteen agents hold `Bash`; `fankeel-fixer` is the one that does not,
+carries what that denylist actually matches, not restated here. Fourteen of
+the fifteen agents hold `Bash`; `fankeel-fixer` is the one that does not,
 because it edits the file itself rather than returning something for the
 parent to run a test against. `tests/agents.test.js` names every writer as an
 exemption, each with its argument beside it, rather than dropping the assertion.
@@ -127,14 +127,14 @@ that day, with the script that wrote them. A transcript written before then
 still names them, and `baseAgent` in `lib/agentfile.js` still reads such a
 name as its base.
 
-Three of the fourteen are dispatched only by a stage agent: `fankeel-mover`,
+Three of the fifteen are dispatched only by a stage agent: `fankeel-mover`,
 `fankeel-mutator` and `fankeel-writer`. They exist because a stage agent
 cannot `Edit`. A stage run in the session does that work itself: audit and
 land move their own files, verify there has no mutation step, and build and
 audit write their pages for a person directly — so a project that keeps
 every stage in the session never sends them. `fankeel-init-scout` and
 `fankeel-slimmer` are sent by `fankeel-init` alone. The ruling on each is
-[the 2026-10-15 decision](../../03-decisions/2026-10-15-unused-agents.md).
+[the 2026-10-15 decision](../../03-decisions/2026-10-15-unused-agents.md). `fankeel-retro` is sent at `land` alone, and only on the user's yes.
 
 `fankeel-reader` runs at `model: sonnet` by default — the profile's
 `dispatch.floor`, which the survey, verify and audit skills ask their reader

@@ -7,7 +7,7 @@ const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
 const FRONT = /^---\r?\n([\s\S]*?)\r?\n---/;
-const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-verifier', 'fankeel-fixer', 'fankeel-brain', 'fankeel-render-reviewer', 'fankeel-mockup', 'fankeel-slimmer', 'fankeel-init-scout', 'fankeel-writer', 'fankeel-implementer', 'fankeel-mutator', 'fankeel-mover'];
+const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-verifier', 'fankeel-fixer', 'fankeel-brain', 'fankeel-render-reviewer', 'fankeel-mockup', 'fankeel-slimmer', 'fankeel-init-scout', 'fankeel-writer', 'fankeel-implementer', 'fankeel-mutator', 'fankeel-mover', 'fankeel-retro'];
 
 // `fankeel-verifier` is the one named exception: it writes evidence rows to a
 // file for the Workflow join, and `Write` is what that takes. It is not less
@@ -261,7 +261,7 @@ const EFFORT = {
     'fankeel-render-reviewer': 'medium', 'fankeel-fixer': 'low', 'fankeel-judge': 'xhigh',
     'fankeel-brain': 'medium', 'fankeel-mockup': 'high', 'fankeel-slimmer': 'low', 'fankeel-init-scout': 'medium',
     'fankeel-writer': 'medium', 'fankeel-implementer': 'medium',
-    'fankeel-mutator': 'low', 'fankeel-mover': 'low',
+    'fankeel-mutator': 'low', 'fankeel-mover': 'low', 'fankeel-retro': 'medium',
 };
 test('every agent names its effort, and none of them is max', () => {
     for (const name of NAMES) {
@@ -437,6 +437,26 @@ test('the init scout is read-only, runs onboard.js, and returns status and draft
 });
 
 // MEMORY.md is an index; the slimmer proposes, the fixer applies.
+// Land's optional retro (docs/90-agent/plans/2026-10-19-patrol-3-design.md §7):
+// one session's transcript in, a diff with one evidence line per hunk out,
+// nothing written. Without a session id it reads nothing at all.
+test('the retro reads one session through conversation.js and returns a diff with evidence', () => {
+    const f = front(path.join(ROOT, 'agents', 'fankeel-retro.md'));
+    assert.equal(f.tools, '[Read, Grep, Glob, Bash]');
+    assert.equal(f.model, 'sonnet');
+    const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-retro.md'), 'utf8').replace(/\s+/g, ' ');
+    const job = text.slice(text.indexOf('## Job'), text.indexOf('## Return'));
+    const ret = text.slice(text.indexOf('## Return'), text.indexOf('## Refuse'));
+    const refuse = text.slice(text.indexOf('## Refuse'));
+    assert.match(job, /scripts\/conversation\.js --session <id>/);
+    assert.match(job, /At most five hunks/);
+    assert.match(ret, /`evidence: turn <n> — /);
+    assert.match(ret, /A hunk with no evidence line is not returned/);
+    assert.match(ret, /subagent_type: fankeel:fankeel-fixer/);
+    assert.match(refuse, /`refused: no session id`/);
+    assert.match(refuse, /Never write/);
+});
+
 test('the slimmer cuts fat hooks first, compares stale entries, returns a token line and hands the diff to the fixer', () => {
     const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-slimmer.md'), 'utf8').replace(/\s+/g, ' ');
     const job = text.slice(text.indexOf('## Job'), text.indexOf('## Return'));
