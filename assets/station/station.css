@@ -14,7 +14,7 @@
   --m-fable:#1e2925; --m-opus:#46534e; --m-sonnet:#73817c; --m-haiku:#9daca6; --m-other:#c3cac3;
   --p-0:#015f98; --p-1:#cd5d8e; --p-2:#c0a320; --p-3:#6959ae; --p-4:#14938d; --p-5:#8d9793;
   --s-main:#4a5954; --s-agent:#dc932e; --s-workflow:#bc4c31;
-  --t-in:#246099; --t-cw:#5e8dbe; --t-cr:#9bbbdd; --t-out:#cf6139;
+  --t-in:#246099; --t-cw:#5e8dbe; --t-cw1h:#2f5f92; --t-cr:#9bbbdd; --t-out:#cf6139;
   --ctx:#161c1a; --ctx-wash:rgba(22,28,26,.07);
   --f-ui:"Bahnschrift","Microsoft JhengHei UI","Microsoft JhengHei","PingFang TC","Noto Sans TC","DIN Alternate",system-ui,sans-serif;
   --f-mono:"Cascadia Mono","Cascadia Code",Consolas,"SF Mono",ui-monospace,monospace;
@@ -44,7 +44,7 @@
   --m-fable:#c5d3cd; --m-opus:#9aa8a2; --m-sonnet:#727f7a; --m-haiku:#4d5a55; --m-other:#36403c;
   --p-0:#4a8fd6; --p-1:#d76797; --p-2:#ae931d; --p-3:#8071c8; --p-4:#209993; --p-5:#65706b;
   --s-main:#93a39d; --s-agent:#bf8b1f; --s-workflow:#c9553c;
-  --t-in:#8bbcef; --t-cw:#5b90c7; --t-cr:#32669a; --t-out:#dd6d45;
+  --t-in:#8bbcef; --t-cw:#5b90c7; --t-cw1h:#3b74ad; --t-cr:#32669a; --t-out:#dd6d45;
   --ctx:#e8ece6; --ctx-wash:rgba(232,236,230,.08);
   --up-bg:rgba(92,194,122,.14); --dn-bg:rgba(239,138,106,.14);
   --live:#5cc27a; --live-bg:rgba(92,194,122,.14); --stale:#e0a53a; --stale-bg:rgba(224,165,58,.16);
@@ -63,7 +63,7 @@
   --m-fable:#c5d3cd; --m-opus:#9aa8a2; --m-sonnet:#727f7a; --m-haiku:#4d5a55; --m-other:#36403c;
   --p-0:#4a8fd6; --p-1:#d76797; --p-2:#ae931d; --p-3:#8071c8; --p-4:#209993; --p-5:#65706b;
   --s-main:#93a39d; --s-agent:#bf8b1f; --s-workflow:#c9553c;
-  --t-in:#8bbcef; --t-cw:#5b90c7; --t-cr:#32669a; --t-out:#dd6d45;
+  --t-in:#8bbcef; --t-cw:#5b90c7; --t-cw1h:#3b74ad; --t-cr:#32669a; --t-out:#dd6d45;
   --ctx:#e8ece6; --ctx-wash:rgba(232,236,230,.08);
   --up-bg:rgba(92,194,122,.14); --dn-bg:rgba(239,138,106,.14);
   --live:#5cc27a; --live-bg:rgba(92,194,122,.14); --stale:#e0a53a; --stale-bg:rgba(224,165,58,.16);
