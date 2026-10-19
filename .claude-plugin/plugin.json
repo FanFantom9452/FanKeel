@@ -177,6 +177,17 @@
         ]
       },
       {
+        "matcher": "SendMessage|mcp__ccd_session_mgmt__send_message",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/relay-cap.js\"",
+            "timeout": 5,
+            "statusMessage": "Measuring the message..."
+          }
+        ]
+      },
+      {
         "hooks": [
           {
             "type": "command",

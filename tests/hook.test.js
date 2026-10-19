@@ -1,6 +1,6 @@
 'use strict';
 
-// What all thirteen hooks do before they do anything of their own. The hooks
+// What all fourteen hooks do before they do anything of their own. The hooks
 // themselves are tested as subprocesses with real payloads, which is where the
 // behaviour is; this covers the inputs a real payload never has and a malformed
 // one might.
