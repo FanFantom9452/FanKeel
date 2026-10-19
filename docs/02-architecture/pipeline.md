@@ -798,17 +798,20 @@ The report `land` ends on carries a list nothing else in the pipeline does:
 
 ```
 <sha> <subject>
-shipped:
+要求: <the ask, one line>
+做了什麼:
   - <what someone can now do that they could not>
+為什麼這樣做: <the approach; what was given up>
+驗過・沒驗過: <checked; not checked>
+花費: <from record.js>
+還剩什麼: <what is still not done>
 suite: <suite.js line>
-cost: <what it took>
-open: <what is still not done>
-白話: <2-3 sentences for a non-coder, in the user's language>
+紀錄: <filed: line>
 then AskUserQuestion
 ```
 
 A commit subject holds one change. A task that shipped four of them had nowhere
-to say so, which is what `shipped:` is for — one line per thing someone can now
+to say so, which is what `做了什麼:` is for — one line per thing someone can now
 do, taken from the ledger's completed entries where the task had a plan and
 listed by hand where it did not.
 

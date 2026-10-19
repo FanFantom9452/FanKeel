@@ -33,7 +33,7 @@ what the gate asks — never something to settle first and report afterwards.
 | Looks like a finding | Why it is not |
 |---|---|
 | A commit with only one short paragraph of prose | `lib/stages.js:211` caps it there (`one paragraph only for what a bullet cannot hold`) — the bullets are the record; more prose is not owed. |
-| A `做了什麼:` list that skips files the diff touched | It is one line per new capability, not one per file — `lib/stages.js:394` (`做了什麼: one line per thing someone can now do that they could not`) — a file with no capability of its own has nothing to add there. |
+| A `做了什麼:` list that skips files the diff touched | It is one line per new capability, not one per file — `lib/stages.js:394` (`做了什麼: one line per thing someone can now do`) — a file with no capability of its own has nothing to add there. |
 | A landed plan still sitting on disk, not yet archived | `lib/stages.js:403` archives it only `then is archived, after asking` — a plan waiting on that answer is not forgotten, it is mid-step. |
 
 ## 1. The full suite, on the tree you are about to integrate
@@ -249,7 +249,7 @@ type: what changed, under 60 characters with the type
 decision that went the other way>
 ```
 
-The bullets are the `shipped:` list rewritten for the next session's `init`,
+The bullets are the `做了什麼:` list rewritten for the next session's `init`,
 which reads `git log` before it reads any code: a capability in the report, a
 change and the module it landed in here. Asking for the reason instead came back
 as five paragraphs of it under a 107-character subject, and the reader had to
@@ -406,10 +406,6 @@ printed them (step 8), `suite:` from step 1, and `紀錄:` with the `filed:`
 value. `做了什麼:` is one line per thing someone can now do that they could not,
 not a tour of the diff. Option one's
 description names the month file and anchor.
-
-After the user answers, the session's last message is the six lines as printed,
-and nothing after them. A follow-up question the user asks after that is
-answered, then the six lines are repeated as the last thing said.
 
 After the user answers, the session's last message is the six lines as printed,
 and nothing after them. A follow-up question the user asks after that is
