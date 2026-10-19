@@ -295,6 +295,10 @@ fankeel:fankeel-reviewer` with its agent file's `## Verify` mode, the same
 range, and the whole list the adversary defeated — one dispatch, not one
 per row. Only a row it marks `CONFIRMED` or `PLAUSIBLE` is a defeated row
 at the gate; one it drops did not hold after all.
+This one is the exception to letting the agent file pin the model: pass
+`model` on it, a model other than the adversary's — the adversary ran on the
+file's own `sonnet`, so the confirmer goes as `opus` — because a confirmer
+sharing the adversary's model shares its blind spots.
 
 ## Half-built sends it back
 

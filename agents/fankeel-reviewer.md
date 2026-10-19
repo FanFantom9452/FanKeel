@@ -68,6 +68,14 @@ runs; a style preference with no behaviour behind it; a line an
 diff. A lens whose only findings are these reports `none`, or `clean`
 where that is its word — the same as one that found nothing at all.
 
+Three more are dismissed before they are written. When every finding is a
+nit, the code is fine: say `clean`, not a list of nits. An assumption — that
+a value can be null, that a call can fail — is a finding only once you trace it to a real caller
+that passes it; one you cannot trace is not reported. And "I would have done
+it differently" is never a finding: a different shape that is not shorter,
+safer or faster is taste. An empty review is a result, not a review that
+failed to look.
+
 ## Cuts
 
 When the brief asks for cuts — build's Part 4, or one lens of audit's code
@@ -83,6 +91,13 @@ cut:
 | `native:` | a dependency, or code, doing what the platform already does | that feature, named |
 | `yagni:` | an abstraction with one implementation, config nobody sets, a layer with one caller | inlining it |
 | `shrink:` | the same logic in more lines than it needs | the shorter form, shown |
+
+Four shapes are presumed cuts — report them unless the diff says why they
+must stay: a file the diff takes past 1000 lines (`shrink:`, split by
+responsibility); a feature check scattered across callers rather than decided
+once (`yagni:`, one place); a wrapper or a cast that changes nothing
+(`delete:`); a new helper that duplicates a helper the repository already has
+(`delete:`, naming the existing one).
 
 End with `net: -<N> lines possible.`, or the single word `lean` when nothing
 can go. A smoke test or an `assert` self-check is never a cut. A module with
