@@ -2,11 +2,11 @@
 label: escape
 title: 工具參數中文寫成轉義
 description: 模型在工具參數裡把中文寫成 \uXXXX 轉義，寫錯一位就變成別的字而且不報錯；ALWAYS 規則每輪都在仍擋不住，受控站與 brief 根本沒帶這條
-state: ready
+state: blocked
 link: lib/stages.js
 group: 工具參數的中文
-timing: now
-stamp: 2026-10-19
+timing: on: 10-27
+stamp: 2026-10-20
 ---
 
 來源：2026-10-19 使用者在 SBIR 的 session 看到模型自己認錯「選單又寫成 \uXXXX，第四次」，問是不是 prompt 不夠細、網路上有沒有人遇過。使用者在畫面上沒有看到轉義字。
@@ -36,3 +36,5 @@ stamp: 2026-10-19
 第 1 步的第一筆資料（2026-10-19，六欄完成紀錄這個任務的主 session，模型是 Opus 5.5）：同一個 session 裡至少 10 次把中文寫成轉義。地方是 wrap_up 的按鈕文字、AskUserQuestion 的題目和選項、update_plan 的步驟。每一輪都有注入這條規則，第五次就在剛承認過第四次之後，後面五次是 build、verify、land 和 retro 關卡的選單。這幾次都解碼正常，使用者看到的是正確的中文。
 
 第 1 步的第一次全機掃描（2026-10-20，`node scripts/escape-scan.js`，8877 份 transcript）：AskUserQuestion 1161 次中 11 次被標出（0.95%）；Write 1358 次中 33 次（2.43%，大多是寫進 regex 程式碼裡的區塊邊界字，偏高）；使用者的 prompt 7149 則中 68 則（0.95%）；「饋」被標了 19 次；__unparsedToolInput 2 次。第 2–4 步已在 2026-10-20 落地（ALWAYS[3] 改寫、控制區塊與 brief 帶規則、AskUserQuestion 錯字退回一次），一週後用同一支腳本重量比較。
+
+2026-10-20 一週後的重量(`node scripts/escape-scan.js`,9070 份 transcript):AskUserQuestion 1213 次中 11 次(0.93%);Write 2152 次中 34 次(2.32%);update_plan 356 次中 0 次;wrap_up 178 次中 0 次;使用者的 prompt 19460 則中 82 則(1.13%);__unparsedToolInput 2 次。這還不是乾淨的修後數字:`--since` 只收日期、當成 UTC 午夜,而修正在 2026-10-19T17:24Z 落地(commit 64d9e5a6),這次掃描離落地約 3 小時;`--since 2026-10-19` 得 AskUserQuestion 2/106(兩筆都是「瑋」),但前後混在一起。所以這是第二個基準點,2026-10-27 重量時必須以落地時間為界切開。
