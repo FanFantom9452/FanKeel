@@ -219,8 +219,11 @@ file under `docs/90-agent/records`. The page draws it in three places, each a
 block you can name in a mockup: `record` is the card in the opened row,
 `record-page` is the same record at full width on the session page, and
 `list-ask` is the one-line 要求 under a finished row in the list. A session
-that landed before the record existed has no `s.record`, and none of the three
-is drawn for it.
+that landed before the record existed has no `s.record`: `record` and
+`record-page` give way to a muted one-line `record-none` in the card and
+`record-page-none` on the session page, reading 「完成紀錄在 land 時寫。」 while
+the session runs and 「這個任務沒有完成紀錄。」 once it has ended, and `list-ask`
+is not drawn for it.
 
 ### The stage strip
 
