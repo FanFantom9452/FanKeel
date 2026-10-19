@@ -34,7 +34,7 @@ ledger where there is a plan**, the same way the decomposition is `plan`'s — a
 
 | Looks like a finding | Why it is not |
 |---|---|
-| Dead code left in the diff, not deleted | Only dead code this change created gets removed — `lib/stages.js:306` (`Remove what your own change orphaned`), so an orphan predating this task is correctly still there, just named: the injected rule lost its "dead code you did not create gets mentioned, not deleted" clause to the cap on 2026-09-09, and this row is where that half now lives. |
+| Dead code left in the diff, not deleted | Only dead code this change created gets removed — `lib/stages.js:306` (`Remove what your own change orphaned`), so an orphan predating this task is correctly still there, just named. |
 | A new ask from mid-build routed to a TODO entry instead of built | That is the routing rule working, not the ask dropped — `lib/stages.js:303` (`is one TODO entry at the detail`), not silence. |
 | A ruling recorded instead of a fifth stopper firing | `lib/stages.js:305` names deciding as the normal outcome (`Decide`) — only irreversible, security-sensitive, out-of-workspace or every-path-a-guess actually stop the loop. |
 
@@ -68,18 +68,13 @@ node <plugin>/scripts/ledger.js --plan <plan bucket>/<file>.md --range <the sha 
 
 **Pass the plan stage's own range on `init`.** `--range` is optional and records
 the commits that wrote the plan itself — `ranges` then lists that row beside
-the tasks, and verify no longer reads the plan's own commit as a change
-nobody reviewed. A second `init --range` with the same range leaves the
+the tasks. A second `init --range` with the same range leaves the
 ledger in place; a different range replaces it (it belongs to an earlier plan).
 
 **`--plan` goes before the verb, always.** Everything after the verb is text, so
-a completion note or a ruling keeps every word — including one spelled exactly
-like a flag, which is what `complete` and `ruling` are for the moment the thing
-that landed was a flag.
+a completion note or a ruling keeps every word.
 
-**And no flag takes a verb as its value.** `--plan init complete 1 note` once
-filed `init` as the plan, wrote a ledger under it and reported the task
-complete — a tick on a ledger the loop would never read again.
+**And no flag takes a verb as its value.**
 
 **Conversation memory does not survive compaction; this does.** A task the ledger
 lists as complete is done — do not redo it. Resume at the first task without a
@@ -89,22 +84,16 @@ recollection.
 A ledger whose header names a different plan is another plan's progress. Leave it
 where it is; `init` starts your own beside it.
 
-After a compaction the ledger beats memory: what it lists complete was
-committed, and what it does not list is what is left. The commit message shape
-is `land`'s `COMMIT` rule; nothing here repeats it.
+The commit message shape is `land`'s `COMMIT` rule; step 4 carries its skeleton.
 
 **With no plan file there is no ledger and nothing to `init`.** The rows of
 `design`'s file table are the tasks instead: they are worked in the same loop
 below, each gets its review, and a ruling or a completion line goes in the
 response and then the commit message rather than through `ledger.js`.
 
-**The rows run in order, one at a time.** Nothing groups them: `parseTasks`
-reads `## Task` headings and the `**Files:**` and `**Interfaces:**` blocks
-under them, so a file table of any width yields no tasks at all and `groups` has
-nothing to group. Teaching the table to declare its paths would not be enough
-either — with no `**Interfaces:**` block `Consumes` and `Produces` stay empty,
-so the shared-cause check has nothing to match and two rows on different files
-would read as independent even where one produces what the next consumes.
+**The rows run in order, one at a time.** Nothing groups them: `groups` reads
+only `## Task` headings, never a file table, and with no `**Interfaces:**` block
+the shared-cause check has nothing to match.
 
 ### 3. Scan the plan before the first task
 
@@ -128,8 +117,7 @@ node <plugin>/scripts/ledger.js --plan <plan bucket>/<file>.md groups
 It computes the first row's predicates over the whole plan: tasks in one group
 have disjoint `**Files:**` and neither consumes what another produces. A fix
 round inherits its task's `**Files:**` for this purpose, so two fix rounds
-that touch one file are sequenced rather than grouped, exactly as two tasks
-on that file would be.
+that touch one file are sequenced rather than grouped.
 
 Record it in the ledger beside the table:
 
@@ -142,10 +130,7 @@ node <plugin>/scripts/ledger.js --plan <plan bucket>/<file>.md scan
 replaces it, so running it again after nothing has changed appends no second
 copy.
 
-**With no plan there is nothing here to scan.** Both rows of the table above
-compare things a file-table row does not carry — one pair of tasks
-against another's interfaces, one task's specified tests against its specified
-code — and there is no ledger to write it into either.
+**With no plan there is nothing here to scan**, and no ledger to write it into.
 
 `groups` now prints a surface beside each group, and it is the batch
 shape the scan records; what goes out next is step 2's `ledger.js ready`:
@@ -161,8 +146,7 @@ group of two or more, because that agent has no Workflow tool. It is the batch
 shape only — a task whose `**Dispatch:**` line reads `in-session` or `user` is
 not dispatched at all, whatever its group carries. Do not re-derive the surface
 from the group size: a group of any size carrying a prose `Consumes:` or a task
-with no `**Files:**` or `**Interfaces:**` block prints `agents`, and the size
-alone cannot tell you that. A require-edge line under the table does not change
+with no `**Files:**` or `**Interfaces:**` block prints `agents`. A require-edge line under the table does not change
 the row: the group stays `workflow`.
 
 ## The task loop
@@ -175,7 +159,7 @@ the group in step 1's BASE rule, the tasks `ledger.js ready` sends in step 2, th
 `| file | change | dispatch |` row carries its `**Dispatch:**` line in the third
 cell, in the same two forms, and the loop reads it there. The three things a
 dispatch carries become the fit line with the row's place in the table; in place
-of a brief file — there is no plan for `brief` to slice — the row itself
+of a brief file the row itself
 verbatim — its `change` cell is the whole brief, so a cell that could not brief a
 stranger is a design failure — with the design's `proves it done` line where
 Global Constraints would be and the brief's footer rules said in the dispatch;
@@ -189,9 +173,7 @@ stage agent and design does not, design wrote it by rule before its gate
 move from design to build, `task.js stage build` prints
 `design.md is missing` with the path, and the table is written there before
 the first row is built. After a compaction, read the denominator back from
-that file, never from the summary. `design` puts `plan` on the route the
-moment two rows are independent, so what runs without one is a short dependent
-chain, and the registry's `next` line is its ledger. The implementer
+that file, never from the summary. The implementer
 does not commit; step 4 stages the paths in the row's `file` cell, which may name
 more than one, and step 5 reviews the range as it would a task's. A no-plan route
 runs one row per pass, and every other step of the loop is unchanged.
@@ -212,9 +194,7 @@ to an implementer — commits and reviews each like any other task, and only
 then asks this stage's gate.
 
 1. Record `git rev-parse HEAD` as BASE — **immediately before this task's
-   commit, not when its group went out.** The tasks in a group that committed
-   before it are already in HEAD, and a BASE taken at dispatch time would pull
-   their diffs into this task's review.
+   commit, not when its group went out.**
 2. Do what the task's `**Dispatch:**` line says. `in-session` means implement it
    here; `implementer, <model>` means dispatch one as
    `subagent_type: fankeel:fankeel-implementer` — with `effort: "<the field>"`
@@ -249,18 +229,15 @@ then asks this stage's gate.
 
    A dispatched implementer **does not commit. It returns a status line, the
    paths it wrote, the `ℹ pass` / `ℹ fail` line, and one line per new test:
-   `<test name> — red when: <the mutation>`.** Never a diff — a returned diff
-   puts the whole change back in this context, which is the one cost
-   dispatching exists to avoid, and step 5 reads it from git once the parent
-   has committed. The mutation lines are the return contract's new half: a
-   new test with no line naming what reddens it is a finding before the
-   reviewer reads anything, and eight of them on 2026-09-06 cost five fix
-   rounds. Save the return as it came, to `.fankeel/build/task-<started>/review-<n>.txt`
+   `<test name> — red when: <the mutation>`.** Never a diff: step 5 reads the
+   change from git once the parent has committed. A new test with no line
+   naming what reddens it is a finding before the reviewer reads anything.
+   Save the return as it came, to `.fankeel/build/task-<started>/review-<n>.txt`
    where `<n>` is the task number, before the reviewer is sent: that is the
    file `review-check.js --returned` reads for table (b). And a brief whose task text names a file its Files block does not
    list comes back as `blocked: <the file> is named but not declared` in the
    implementer's first turn, never built around — that is a plan defect, ruled
-   on here, and a task built around it ships a feature nothing can reach.
+   on here.
 
    **What goes out is what `ledger.js ready` lists**, on the plan path — with
    no plan the rows run one per pass, as above.
@@ -270,11 +247,8 @@ then asks this stage's gate.
    to send. Send every task it lists that is not already out, in one
    response, and say how many and on which model. Each time a task is
    recorded complete, run it again and send what it newly lists in that same
-   response: a task leaves the moment what it depends on has landed, not when
-   a greedy group closes. `TODO.md` and `docs/README.md` do not count as a
-   shared file there (`INDEX_FILES` in `lib/plantasks.js`): `Edit` refuses an
-   `old_string` that moved, so the second implementer re-reads rather than
-   writing over the first. A task whose `**Dispatch:**` line reads `user` is
+   response. `TODO.md` and `docs/README.md` do not count as a
+   shared file there (`INDEX_FILES` in `lib/plantasks.js`). A task whose `**Dispatch:**` line reads `user` is
    never listed — the hands paragraph above step 1 has it.
 
    **A stage agent's implementers each build in a worktree.** A
@@ -284,44 +258,33 @@ then asks this stage's gate.
    one back. It sends every implementer with `isolation: "worktree"`; the commit
    file's first line is `into <path>`, the main tree the cherry-pick lands on, and each
    task's block opens with `worktree <path>`, the path that
-   implementer's Agent result names. `scripts/commit.js` commits the block in
-   that worktree and cherry-picks it onto HEAD. A reply `conflict <paths>`
+   implementer's Agent result names. A reply `conflict <paths>`
    means that task is not in HEAD: send it once more, fresh, on the new HEAD,
    without asking; the same task conflicting a second time stops the build,
    and the handoff names the paths for the controller to ask about. Before
    dispatching, the brain runs `git rev-parse HEAD` itself and tells every
    worktree-isolated implementer, before its first edit, to run
-   `git reset --hard <that sha>` in its own worktree — `isolation: "worktree"`
-   bases a new worktree on `origin/main`, and this repository is never pushed,
-   so a worktree's HEAD can be many commits stale against what the brain just
-   read.
+   `git reset --hard <that sha>` in its own worktree.
 
    **Profile `dispatch.inflight` sets how many are in flight, eight by
    default**, and that number applies only with a plan — with no plan one row
    is out at a time: `ready` listing ten sends eight (at the default), then one more as each returns. With a plan, two or more listed at once
    with nothing else in flight may go as one Workflow, step 4's `workflow`
    case; anything else goes as Agents.
-3. **`in-session` only** — test first where the task says so. If you did not
-   watch the test fail, you do not know it tests the right thing. A dispatched
-   implementer did this inside its own run; it does not happen twice.
+3. **`in-session` only** — test first where the task says so, and watch it
+   fail. A dispatched implementer did this inside its own run.
 4. Commit —
 
    **`agent` and `agents`**: unchanged. The parent commits each task as its
    implementer returns, and reviews the pinned `BASE..<sha>` range.
 
    **`workflow`**: the group is one Workflow of two stages, implement then
-   review, and **nothing commits while it runs**. That is what makes the review
-   range safe without a sha: with no commit landing during the run, no
-   neighbour's work can walk into a review, so
+   review, and **nothing commits while it runs**, so
 
        git diff HEAD -- <the task's declared Modify and Test paths>
 
    is that task's change and nothing else — a range pinned by path where a
    committed one is pinned by sha.
-
-   **Both halves are load-bearing, and the second is the one that is easy to
-   skip.** No commit landing during the run is what keeps a *committed*
-   neighbour out.
 
    Every implementer in the run gets its brief file, and the brief's footer
    carries the three things it cannot infer — neighbours in the same tree so
@@ -332,20 +295,15 @@ then asks this stage's gate.
    group's order, then records `--range BASE..<sha> complete <n>`. The reviews
    already happened, so what the parent adds is the commit and the ledger line.
 
-   The message is the skeleton `land` uses. `land` gets it injected; this
-   stage's injection has no room for it, so this paragraph is where `build`
-   reads it: `type: what changed` under 60 characters, one bullet per change
-   with the module it landed in, and one paragraph only for what a bullet
-   cannot hold. The next session's `init` reads those bullets before it reads
-   any code.
+   The message is the skeleton `land` uses: `type: what changed` under 60
+   characters, one bullet per change with the module it landed in, and one
+   paragraph only for what a bullet cannot hold.
 
    Keep BASE and that sha together — step 7 records them as the task's review
-   range, and they are the only durable record of where this task's diff begins
-   and ends.
+   range.
 
-   Anything written outside those paths stays unstaged, so `git status` after
-   the commit is where a wrong `**Files:**` block shows up, before the review
-   rather than after it.
+   Anything written outside those paths stays unstaged: read `git status` after
+   the commit for a wrong `**Files:**` block.
 
    **Opening a `workflow` group.** The script is written, not authored, and
    only on the plan path — with no plan there is no group to write:
@@ -368,10 +326,8 @@ then asks this stage's gate.
    asks for each task's commit and records it from there.
 5. One reviewer, on this template and no other, against the brief and the
    diff. **Pin the range at both ends** — `BASE..<the sha this task's commit
-   produced>`. Every task has one, `in-session` included, because step 4
-   commits them all; there is no `HEAD` form left, and that is deliberate.
-   An open upper end is not a range: the next task's commits walk into the
-   review the moment they land.
+   produced>`. Every task has one, `in-session` included; there is no `HEAD`
+   form.
 
    ```
    You are reviewing ONE task's change in <repo>. READ-ONLY: never mutate the
@@ -407,9 +363,7 @@ then asks this stage's gate.
      is a finding as printed. A check the diff adds that is not a test (a
      script, a guard, a verify line) needs one input it must reject and
      proof it rejects it. Two mutations that redden exactly the same tests
-     are a gap — one test that tells them apart is missing. How this part
-     came to be written this way — verify's eleven returns on 2026-10-01 —
-     is docs/90-agent/reports/2026-10-01-verify-eleven-returns.md, not here.
+     are a gap — one test that tells them apart is missing.
    Part 3 — every changed line traces to the task's text; the patterns
      already in the repository are followed. Then name the page this
      change makes false (a renamed export, a changed default, a removed
@@ -425,13 +379,7 @@ then asks this stage's gate.
      the changed value, and for each mark the change adds there, the
      test that renders it through its caller and goes red when the mark
      is removed. A surface with no reader, a literal string, or a place
-     with no such test is a finding. (2026-10-06: the estimated mark on
-     family-priced spend reached the station page, the spend bucket
-     table, the quota calibration line and the stage curve one verify
-     return at a time — commits f25995cc, 02b1e174, 83f7710b, 2b5951df,
-     7b17034d, 05dd0250; f25995cc also gave day and loop rows a new
-     estimated field, and 7b17034d replaced a hard-coded "est." with
-     the page's string table.)
+     with no such test is a finding.
    Part 4 — cuts, over the lines this diff added and no others, in the
      format of the `## Cuts` section of your agent file. A cut is a finding.
 
@@ -469,12 +417,10 @@ then asks this stage's gate.
    Its first line is `disposition: recapture`, `fix` or `ship`; anything but
    `ship` goes back to the implementer like the first reviewer's findings.
    A page task runs it by default, every time. The exception is a task that is
-   one request of the tuning loop below: there the user is looking at the real
-   page and judging it, so the render reviewer is skipped for that request, and
-   a `fankeel-reviewer` alone reviews it. The user may also say, this session,
-   to skip it (or to run it) for any page task; that is a ruling, not a
-   stopper, and a skip is written for each page task it covers, because the
-   completion reads only the rulings written since the last task's line.
+   one request of the tuning loop below: the render reviewer is skipped for
+   that request, and a `fankeel-reviewer` alone reviews it. The user may also
+   say, this session, to skip it (or to run it) for any page task; that is a
+   ruling, not a stopper, and a skip is written for each page task it covers.
 
    **The render verdict is what lets a page task complete.** Where
    `.fankeel/render.json` gives a page `src` globs, a range that changed a
@@ -491,9 +437,6 @@ then asks this stage's gate.
    With no plan there is no ledger, so the same check runs when the task
    leaves build: `task.js stage <next> --session <id> --render <file>`, or
    `task.js note "Ruling: render skipped — <why>" --session <id>` first.
-   That check reads the task's claims and what git says it changed since it
-   started — commits, uncommitted and untracked files — so a page a claim no
-   longer names is still caught.
 
    **Where the task changed a page**, a tuning
    loop on the real page follows once it lands, served by the
@@ -501,15 +444,11 @@ then asks this stage's gate.
    `node <plugin>/scripts/tune.js serve --proxy <the server's url> --src <the
    files that draw it>` — add `--rebuild "<cmd>"` only where the server does
    not read those files on every request — and the url it prints goes to the
-   user. Every route, form and poll on that page is the real one; a click
-   still reaches the page until the fankeel logo in its bottom-right corner
-   asks for one — its tray drafts items, each one or more picked elements
-   under one note, and 全部送出 sends them all as one request. Loop until the
-   user says the page is done: `node <plugin>/scripts/tune.js wait` prints the
-   next request with the element's `selector`, `classes` and `text`, and
-   `sources`, up to ten `file:line` places — its `data-block` first, then the
-   lines naming its classes — and `items`, those fields and `sources` for
-   every item; dispatch one `subagent_type: fankeel:fankeel-mockup` per request —
+   user. A click reaches the page until the fankeel logo in its bottom-right
+   corner asks for one, and 全部送出 sends its drafted items as one request.
+   Loop until the user says the page is done:
+   `node <plugin>/scripts/tune.js wait` prints the next request with its
+   `sources` and `items`; dispatch one `subagent_type: fankeel:fankeel-mockup` per request —
    no model unless `design.mockup` names one other than opus — to
    change the source there and nothing else; then
    `node <plugin>/scripts/tune.js done <id>`, which puts back and refuses an
@@ -517,16 +456,12 @@ then asks this stage's gate.
    the same way. Verify comes after the loop, not during it.
 
    **When the user has said, this session, not to dispatch**, the reviewer runs
-   here, in this session. That is a ruling, not a stopper: the four things that
-   stop the loop are listed below, and a dispatch the user declined is not among
-   them. Record it once — at the top of the ledger, or in the response where a
+   here, in this session. That is a ruling, not a stopper. Record it once — at
+   the top of the ledger, or in the response where a
    `bounded` task puts its rulings — not once per task; the plan's
    `**Dispatch:**` lines already read `in-session — the user said so this
-   session` for the same reason. Two builds here ran in-session,
-   `docs/99-archive/2026-09-01-ready-backlog.md` and then
-   `docs/90-agent/reports/2026-09-02-process-state-review.md`, on a session that had
-   read the Workflow tool's `ultracode` gate as the Agent tool's; the Agent tool
-   has no gate, and both would have dispatched.
+   session` for the same reason. Only the user settles it: the Agent tool
+   has no gate.
 
    **When the first round returns a finding, one more reviewer confirms it
    before any fix round starts.** Step 5's reviewer returning anything but
@@ -541,8 +476,7 @@ then asks this stage's gate.
    silence.
 
    Before a third round, write down the premise the first two rounds shared —
-   `ledger.js ruling` — and test that premise before fixing again: two fixes
-   that failed on one assumption fail a third time on it.
+   `ledger.js ruling` — and test that premise before fixing again.
 
    **A finding that would defeat a verify row is fixed in this task, now.**
    When a reviewer's finding — or one the parent sees in its return — names
@@ -550,17 +484,11 @@ then asks this stage's gate.
    display, a test that stays green when its branch is removed, a citation
    off by a line), it goes into this task's next fix round. It is never
    written up as a note for the gate, a ruling, or a later task while
-   rounds remain: verify finds it again, and the work comes back to this
-   loop as a defeated row at the cost of a whole verify pass. (2026-10-06:
-   the task that prices an unknown model id from its family, commit
-   dde0f1fb, came back from verify five times; each time the controller
-   added one review check to the build prompt by hand, this one among
-   them, and each lived only for that round.)
+   rounds remain.
 
    When the fifth round ends with findings still open, record what remains as
    rulings with their cost — `ledger.js ruling` — and mark the task complete
-   with them named. A cap that silently drops what it caps is the failure
-   this is preventing.
+   with them named.
 
    A finding that is a reference-page correction or a one-line fix with no
    test cycle of its own does not need a fix round at all: dispatch
@@ -572,16 +500,14 @@ then asks this stage's gate.
    **A fix round lands the same way the task did**: the resumed implementer
    returns paths and does not commit, and the parent stages that task's
    declared paths and commits them. Re-review
-   `<the task's previous sha>..<the new one>`. A fix round left uncommitted is
-   a finding nobody can re-diff; one committed without a range of its own
-   walks into whatever task is reviewed next. Record it too:
+   `<the task's previous sha>..<the new one>`. Record it too:
    `node <plugin>/scripts/ledger.js --plan <file> --range <the task's previous sha>..<the new one> --task <n> fix "<what>"`,
    so `ranges` lists every reviewed commit on the branch and not only the
    tasks.
 7. `ledger.js --plan <file> --range <BASE>..<the sha> complete <n> "<what landed>"`.
    The flag precedes the verb; everything after `complete` is the note. A task
    completed with no `--range` is recorded and reported as such by `ranges`,
-   which is worse than it sounds: it is a task that landed and gets no verifier.
+   and gets no verifier.
    Where `.fankeel/render.json` gives a page `src`, it is not recorded at all:
    it is refused unless a `Ruling: render skipped — <why>` covers the task.
 
@@ -597,27 +523,21 @@ node <plugin>/scripts/ledger.js --plan <file> --range <BASE>..<sha> --task <n> f
 
 which writes a `Fix:` line `ranges` lists beside the task rows. `--task <n>`
 names the task the defeated row cites, and is left off for a row no task owns;
-the station's gate tab counts each task's fix rounds from it. The five
-commits that landed during `verify` on 2026-09-06 had no reviewer, and the
-third return to build was made of their defects; `--range` is required on
-`fix` for exactly that reason.
+the station's gate tab counts each task's fix rounds from it. `--range` is
+required on `fix`.
 
 **The close runs three things at once.** When the last task is done, send them
 in one response: the fast suite in the background —
 `node <plugin>/scripts/suite.js --session <id> --fast` with `run_in_background`,
 which skips the tests named `@slow`; land runs them — and the one whole-branch
-review, and run docs-check below yourself while both are out. They used to go
-one after another, and four builds on 2026-10-18 spent 18–29 minutes at their
-ends with no agent running
-(`docs/90-agent/judgements/2026-10-18-plan-parallelism.md`); `suite.json` now
-carries each run's `ms`, so how long the suite takes can be read off it. Take
+review, and run docs-check below yourself while both are out; `suite.json`
+carries each run's `ms`. Take
 the three returns together before changing anything. docs-check only reads, but
 its tier 1 rewrite and tier 2 round start once the suite has returned, so no page
 changes under a running suite. A red suite is this stage's own — the failing
 test names are in `suite.json`'s `failed` — and so are the review's findings:
 both go into one `fankeel:fankeel-fixer` round with tier 2's. When that round
-changes anything but `.md`, run `suite.js --fast` once more, because the record
-goes stale on any code change; a green suite and a round that touched only `.md`
+changes anything but `.md`, run `suite.js --fast` once more; a green suite and a round that touched only `.md`
 need no second run.
 
 **Then docs-check, at close.** Run
@@ -641,12 +561,9 @@ to fix — is checked on the build's first BASE before it is called that:
 open the citing page and its target with `git show <BASE>:<path>` at the
 cited line, and only a citation broken there too may be reported as
 earlier. One that held at BASE is this build's, and goes to the tiers
-above. (2026-10-06: the controller added this check to the build prompt
-by hand on one of the same five returns from verify.)
+above.
 
-The `docs-check:` line of the output says what came of it. On 2026-10-02
-build closed on 3396 passing tests without this step, and verify sent the
-work back twice — a dead `TODO.md` link, then 35 moved line numbers.
+The `docs-check:` line of the output says what came of it.
 
 ## Rulings, not stalls
 
@@ -676,8 +593,7 @@ settles what neither answers.
 
 Where a task's whole justification is that a change is cheaper, faster or
 lighter, its steps name the script that measures the claim and record what it
-printed before the change — the same discipline
-`docs/90-agent/reports/2026-09-03-dispatch-vs-inline.md` already keeps by hand. Run
+printed before the change. Run
 that same script again once the change lands, before treating the task as
 done.
 
@@ -703,20 +619,15 @@ three ways:
 Say which of the three it fell into, and why.
 
 Two requests arriving together are routed one at a time. Route the clear one and
-ask about the other; batching them into one judgement is how the unclear one
-rides in on the clear one's answer.
+ask about the other.
 
 ## What delegation costs
 
-Everything pasted into a dispatch prompt stays resident in this context and is
-re-read on every later turn. **Hand artefacts over as files.** A reviewer gets
+**Hand artefacts over as files.** A reviewer gets
 paths; it does not get the conversation. A dispatch describes one task, not the
 session's history.
 
-Say what you want back, and why it costs. A dispatch that ends "return only the
-status, the sha and the test line — every extra line stays in this session
-permanently" gets that; one that ends "return only the status, the sha and the
-test line" gets a report as well.
+Say what you want back, and why it costs.
 
 The same asymmetry runs the other way. What you send is read once in a context
 that is thrown away; what comes back is read on every later turn. So spend words
@@ -724,14 +635,11 @@ on the dispatch and buy them back on the return — a brief that names the exact
 files, the exact anchors and the exact wording costs nothing that lasts, and it
 is the difference between one round and three.
 
-A fix round **resumes** that implementer rather than starting a new one — its
-context is already thrown-away context and it holds the reading a fresh dispatch
-would redo. When a round stops shrinking the
+A fix round **resumes** that implementer rather than starting a new one. When a round stops shrinking the
 findings, the next one is a fresh dispatch one tier up; the five-round bound in
 step 6 stays as the backstop.
 
-One fix dispatch carries the **whole** findings list. One fixer per finding makes
-each of them rebuild context and re-run the suite.
+One fix dispatch carries the **whole** findings list.
 
 The reviewer in step 5 is **read-only**: it never mutates the working tree, the
 index, `HEAD` or branch state — `git show`, `git diff` and `git log` are how it
@@ -742,8 +650,7 @@ wrong.
 
 **Whose findings you may fix depends on who implemented the task.** For a
 **dispatched** implementer, never patch its work here: resume that implementer
-with the findings, because a fix made in this session skips the review that found
-it and throws away the context the implementer already holds. For an
+with the findings. For an
 **`in-session`** task there is no implementer to resume — its findings are fixed
 in place, by you, and the fix goes back to the reviewer like any other round.
 
@@ -755,10 +662,9 @@ that was wrong. If a task turns out not to carry its own test cycle, say so: tha
 is a defect in the plan's task boundaries, and the fix is to merge it with its
 neighbour rather than to commit something red.
 
-**A file table is wrong the same way and ruled on the same way.** The
-task-boundary half has nothing to say there — a row is a line in a table, not a
-task carrying its own test cycle — so a row that turns out to need two is split
-where you are, rather than being a defect in a document.
+**A file table is wrong the same way and ruled on the same way**, except that
+the task-boundary half has nothing to say there: a row that turns out to need
+two is split where you are.
 
 ## The patrol
 
@@ -767,10 +673,9 @@ A task started by picking the patrol — `TODO 全表盤點` — at `/fankeel` a
 are the plan's tasks and are built here as ordinary tasks, each
 closing its own TODO entry (`todo.js done` in folder mode, removing the `TODO.md` line in legacy mode).
 
-By the time it reaches this stage (survey, then plan, have run) `survey` has
-checked every `## Blocked` timing and put the stale `## Watch` timings it
-had room for to the user as keep-or-drop, so there is no gate left to ask here,
-only the moves those answers decide. A Blocked timing whose condition checked
+`survey` has already checked every `## Blocked` timing and put the stale
+`## Watch` timings to the user, so there is no gate left to ask here, only the
+moves those answers decide. A Blocked timing whose condition checked
 out has its whole entry moved, together, to `## Ready` or `## Needs a decision`,
 whichever survey sent it to, dropping its `###` heading and its `on:`, `after:`
 or `upstream:` line. One that did not check out gets today's date as its stamp;
@@ -778,8 +683,7 @@ an `on:` whose day came while the work is still not possible gets a later
 `on:` date instead. A Watch timing the user kept gets today's date as its stamp;
 one the user dropped is deleted — heading, `if:` line and entries. All of a
 batch's changes land in one commit — the stamps, the lifts and the drops
-together — the way a batch of stamps and one lift landed in commit `22eff773`
-on 2026-09-25, one hunk each.
+together.
 
 A Watch entry also leaves by another door, not through this stage: a session
 that meets the event an `if:` names moves the entry to `## Ready` or
