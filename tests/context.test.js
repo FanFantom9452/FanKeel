@@ -302,7 +302,7 @@ test('awayLine: over 200k names /compact, exactly 200k and under say nothing, no
   assert.equal(ctx.awayLine(null), null);
 });
 
-test('AWAY_QUESTION is headed 離開 and offers not leaving and leaving', () => {
+test('AWAY_QUESTION is headed 離開 and offers not leaving and leaving with the work going on', () => {
   assert.equal(ctx.AWAY_QUESTION.header, '離開');
-  assert.deepEqual(ctx.AWAY_QUESTION.options.map((o) => o.label), ['不離開', '要離開，先壓縮']);
+  assert.deepEqual(ctx.AWAY_QUESTION.options.map((o) => o.label), ['不離開', '要離開，繼續做']);
 });

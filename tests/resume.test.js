@@ -414,7 +414,7 @@ test('the same question count with a different option count writes no answer', (
 });
 
 // gate.away = ask: the 離開 question rides the gate and is not the gate's.
-const AWAY_Q = { question: '要離開超過 1 小時嗎？', header: '離開', multiSelect: false, options: [{ label: '不離開', description: 'a' }, { label: '要離開，先壓縮', description: 'b' }] };
+const AWAY_Q = { question: '要離開超過 1 小時嗎？', header: '離開', multiSelect: false, options: [{ label: '不離開', description: 'a' }, { label: '要離開，繼續做', description: 'b' }] };
 const withAway = (root, said) => run({
   cwd: root, session_id: MINE,
   tool_input: { questions: [...JSON.parse(JSON.stringify(GATE_QUESTIONS)), AWAY_Q] },
@@ -431,21 +431,24 @@ test('the 離開 question is stripped before the gate is compared and from the w
   assert.equal(readEntry(root, MINE).awayAt, undefined);
 });
 
-test('answering 要離開 sets awayAt and tells the model to end its turn', () => {
+test('answering 要離開 sets leavingAt and tells the model to keep working', () => {
   const root = tmp('fankeel-resume-');
   surveyWithGate(root);
-  const out = withAway(root, '要離開，先壓縮');
-  assert.ok(Number.isFinite(readEntry(root, MINE).awayAt));
-  assert.match(context(out), /End your turn now/);
+  const out = withAway(root, '要離開，繼續做');
+  const entry = readEntry(root, MINE);
+  assert.ok(Number.isFinite(entry.leavingAt));
+  assert.equal(entry.awayAt, undefined);
+  assert.match(context(out), /Do not stop or wait here/);
+  assert.doesNotMatch(context(out), /End your turn now/);
 });
 
-test('answering 要離開 while the record is locked writes no awayAt and does not announce leaving', () => {
+test('answering 要離開 while the record is locked writes no leavingAt and does not announce leaving', () => {
   const root = tmp('fankeel-resume-');
   surveyWithGate(root);
   fs.mkdirSync(path.join(root, '.fankeel', 'sessions', MINE + '.lock'));
-  const out = withAway(root, '要離開，先壓縮');
-  assert.equal(readEntry(root, MINE).awayAt, undefined);
-  assert.doesNotMatch(context(out) || '', /End your turn now/);
+  const out = withAway(root, '要離開，繼續做');
+  assert.equal(readEntry(root, MINE).leavingAt, undefined);
+  assert.doesNotMatch(context(out) || '', /Do not stop or wait here/);
 });
 
 test('a prompt clears awayAt', () => {

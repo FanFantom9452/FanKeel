@@ -40,7 +40,8 @@ function main(raw) {
     // injected question (the tests feed it in by hand).
     // The `離開` question hooks/gate.js added (gate.away = ask) is not the
     // gate's: it leaves before the gate is compared, and a "leaving" answer
-    // marks the session to compact when this turn ends.
+    // marks the session leavingAt. The work goes on; hooks/gate.js holds the
+    // next question that needs the user, and the session compacts there.
     let asked = payload.tool_input && payload.tool_input.questions;
     let response = payload.tool_response;
     let leaving = false;
@@ -56,7 +57,7 @@ function main(raw) {
                 delete rest[extra.question];
                 response = Object.assign({}, response, { answers: rest });
             }
-            if (leaving) leaving = registry.setAway(root, sessionId);
+            if (leaving) leaving = registry.setLeaving(root, sessionId);
         }
     } catch (e) { /* housekeeping */ }
 
@@ -73,8 +74,8 @@ function main(raw) {
     // stage — what it does has to stay proportionate to that.
     let context = renderResume({ mine: { sessionId, data: mine }, profile, transcript: payload.transcript_path, root });
     if (leaving) {
-        const stop = 'fankeel: the user is leaving; this session compacts when the turn ends. End your turn now and start no new work.';
-        context = context ? context + '\n' + stop : stop;
+        const go = 'fankeel: the user is leaving and wants the work to go on. Do not stop or wait here: carry on to the next question that needs them. hooks/gate.js holds that question back, and the session compacts when that turn ends.';
+        context = context ? context + '\n' + go : go;
     }
     if (!context) return;
 
