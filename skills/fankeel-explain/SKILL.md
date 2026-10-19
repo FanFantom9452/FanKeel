@@ -76,6 +76,10 @@ real uncertainty; deleting it manufactures confidence.
 Then read only the first line and the last. If the reader cannot tell what
 happened and what to do next, rewrite those two.
 
+A slip the reader never saw is not news. Tool input written as escapes that
+decoded to the right characters showed the user the right text, so saying it
+was escaped is noise; say so only when a character came out wrong, and name it.
+
 ## Voice
 
 Lead with the result. Drop filler — *just*, *really*, *basically*, *simply* —

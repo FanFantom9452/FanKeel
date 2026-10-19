@@ -427,10 +427,9 @@ path or a first sentence, and never the reason for picking it.
 before they show up in prose, because tool input is where the writing is
 quickest:
 
-- Write the characters, never `\uXXXX` escapes. Seventeen questions in one real
-  session; the two that escaped their Chinese both corrupted mid-word — `\u9privately\u9375`
-  where a word should have been — and neither parsed. The fifteen written in
-  characters all went through.
+- Write CJK characters directly in tool input. Seventeen questions in one real
+  session: the two not written that way corrupted mid-word and neither parsed;
+  the fifteen written as characters all went through.
 - Name a code concept in code. `overdue`, not a translation of it: a translated
   identifier drifts to a homophone the second time it is typed, and the two
   spellings then read as two concepts. Same session, one identifier: 35 times one
@@ -896,7 +895,7 @@ them, not for balance:
 | `ALWAYS[0]` — ask with `AskUserQuestion`; option one is the approval; `(Recommended)` is a label, never a position | a real design stage ended with three numbered options in a paragraph — asking, and also the failure: the options were on screen and the user still had to type one out (`lib/stages.js`, the comment above `ALWAYS`) | Bad: "Here are three options: 1)… 2)… 3)… which would you like?" typed in prose. Good: an `AskUserQuestion` call, option one wired to advance, `(Recommended)` on whichever finding backs it | none |
 | `ALWAYS[1]` — background sits in the option descriptions, never in the stem | `background inside the question` was read as *inside the question stem*, and a design stage asked a 491-character question (`tests/stages.test.js`, the comment above this rule's test) | Bad: a one-line stem carrying the whole rationale ahead of the options. Good: a short stem, the rationale moved into the description of the option it is about | none |
 | `ALWAYS[2]` — say what you actually did, and a dispatch before it goes: how many, which model | only `survey` said what it was sending; a fan-out nobody announced is spend the user is paying for and could not see coming (`lib/stages.js`, the comment above `ALWAYS`) | Bad: naming one model in the wrap-up, after four subagents already ran. Good: "dispatching 4 readers, sonnet" stated before they go | none — covers every stage that dispatches |
-| `ALWAYS[3]` — literal characters, never `\uXXXX` escapes; a code concept named in code, not translated | two of seventeen `AskUserQuestion` calls in one real session serialised their Chinese as unicode escapes, corrupted mid-word, and did not parse (`lib/stages.js`, the comment above `ALWAYS`) | Bad: `這樣` inside a tool call's JSON string. Good: writing `這樣` directly | none |
+| `ALWAYS[3]` — CJK characters written directly; a code concept named in code, not translated | two of seventeen `AskUserQuestion` calls in one real session serialised their Chinese as escapes, corrupted mid-word, and did not parse (`lib/stages.js`, the comment above `ALWAYS`) | Bad: Chinese typed as escape sequences in a tool call. Good: the characters themselves | none |
 
 ## Subagents
 
