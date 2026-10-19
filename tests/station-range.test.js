@@ -84,6 +84,7 @@ test('listen adds its change listener once, and a date box picks the range', () 
     R.listen(doc, (a, b) => { picked = [a, b]; });
     R.listen(doc, () => {});
     assert.equal(heard.length, 1);
+    assert.equal(heard[0][0], 'change');
     const box = (v) => ({ value: v });
     const group = { querySelector: (s) => (s.includes('from') ? box('2026-10-01') : box('2026-10-05')) };
     heard[0][1]({ target: { getAttribute: () => 'from', parentNode: group } });
