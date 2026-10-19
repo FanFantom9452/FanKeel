@@ -1243,13 +1243,15 @@ skipped, turns, spend }`, where `spend` is the read's spend marks object
 from index `from` (`pageOf` in `lib/conversation.js`; a `from` that is not a
 whole number above 0 is 0). A turn is `{ kind, at, text }`, `kind` one of
 `user`, `claude`, `interrupt`, `summary` or `compact`, and a `compact` turn also
-carries `trigger` and `preTokens`. A session with no transcript here is a 404. One whose
+carries `trigger` and `preTokens`. The answer also carries `spend` (`spendOf` in `lib/conversation.js`): `{ head, total, sessionUsd, marks }`, one mark per compaction and per request that wrote the cache again after an hour away, each `{ kind, trigger, at, n, context, writeUsd, usd }` — `usd` is every request from it to the next mark, so `head` plus every `usd` is `total`, which is `sessionUsd`, the main transcript's own total; the tab prints both. A session with no transcript here is a 404. One whose
 transcript is there and cannot be read is a 500, which the tab draws as
 `讀不到對話` with a retry rather than as a transcript this machine no longer has.
 The conversation last read is held in memory and parsed again only when
 `keyOf` (`lib/detail.js`) says the transcript moved. None of it is written to
 `station-data.js`, a detail script or any copy of the page: the full text stays
 on this machine.
+
+`GET /station/spend?from=<YYYY-MM-DD>&to=<YYYY-MM-DD>[&top=<n>]` is the 花費 page's range report (`scripts/station.js`, the `/station/spend` branch; `report` in `lib/spendrange.js`). It reads every transcript under this server's config dir — not only the registry's sessions — and picks the sessions by `lib/compare.js`'s rule, a session in the range its first line falls in with its agents, so `usd` is what `scripts/usage-compare.js` prints for the same range. It answers JSON: `range`, `prev` (the same number of days before it, with `sessions` and `usd`), `sessions`, `usd`, `kinds` and `tokens` (`main` and `agent`, each the five kinds with the two cache writes apart), `types` (the main session and each agent type, `fankeel:` and `fankeel-` dropped, largest first, with `count`, `usd`, `share`, `cost`), `top` (the `n` costliest sessions, 10 by default and at most 50, each with `id`, `project`, `first`, `usd`, `share`, `mainUsd`, `agentUsd`, `agents`, `turns`, `avgCtx`, `peak`) and `verified`. A range that does not parse is a 400. Each session's row is held in memory while `keyOf` (`lib/detail.js`) says its files have not moved, so only the first request reads every transcript. The data file also carries `prices`, `lib/prices.js`'s `perMillion`, which the component notes read their unit prices from. The page's own modules `assets/station/spend-talk.js`, `assets/station/spend-kinds.js`, `assets/station/spend-range.js` and `assets/station/spend-panel.js` are served and written under `station/` beside `station.js`.
 
 導覽 (`#/tour`) frames `station/tour.html`, the tour's own page
 (`assets/station/tour.html`). Only a served page can show it; the written file
