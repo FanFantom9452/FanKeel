@@ -165,3 +165,22 @@ test('indexRow appends a row under the heading and reports false with no such he
     assert.equal(none, false);
     assert.equal(fs.readFileSync(withoutHeading, 'utf8'), before);
 });
+
+// 2026-10-19: a background reader's hand-back reached the top session, not the
+// judge that sent it. Readers go out in the foreground, so the result is the
+// dispatching agent's own tool result.
+const AGENTS = path.join(__dirname, '..', 'agents');
+
+test('the judge sends every reader with run_in_background: false', () => {
+    const text = fs.readFileSync(path.join(AGENTS, 'fankeel-judge.md'), 'utf8');
+    const reading = text.split('\n## Reading\n')[1].split('\n## ')[0];
+    assert.match(reading, /Each goes with\s+`run_in_background: false`/);
+    assert.match(reading, /returns to you as a tool result/);
+});
+
+test('the stage agent sends every reader with run_in_background: false', () => {
+    const text = fs.readFileSync(path.join(AGENTS, 'fankeel-brain.md'), 'utf8');
+    const tools = text.split('\n## Tools\n')[1].split('\n## ')[0];
+    assert.match(tools, /Every `fankeel:fankeel-reader` goes out with\s+`run_in_background: false`/);
+    assert.match(tools, /returns to you as a tool result/);
+});

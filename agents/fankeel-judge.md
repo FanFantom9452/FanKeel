@@ -33,6 +33,8 @@ most expensive in this plugin. So aim for three rounds.
    user). When the checklist has more lines than that, give related files to
    the same reader — one reader may take several lines — and hold none back
    for a later round. Each goes with
+   `run_in_background: false`, so its result returns to you as a tool result
+   rather than as a hand-back routed to the session above you, and with
    `model: "sonnet"`, or `model: "opus"` where a single figure or sentence in
    that file decides `pick:` on its own. Ask each to return only the lines
    that decide its question, each with its `path:line`. Read no named file

@@ -658,6 +658,16 @@ candidates, and on `build` `await.js` watches both `commitPath()` and
 `ledgerCommitPath()` (the same plan-stem directory) at once — whichever one a
 stage agent actually writes to still wakes the controller.
 
+A stage agent's or a judge's own readers go the other way: each goes out
+with `run_in_background: false` (`agents/fankeel-judge.md`'s `## Reading`,
+`agents/fankeel-brain.md`'s `## Tools`), so its result comes back as the
+dispatching agent's own tool result. On 2026-10-19 a judge sent a reader in
+the background, and the reader's hand-back reached the top session rather
+than the judge, which was left with nothing to judge. The design-stage judge
+of the same day sent six readers in the foreground and all six returned to
+it. Whether a background `/fankeel-ask` judge with foreground readers gets
+them all back is not yet observed.
+
 ### What a stage agent is told to read, and what it may write
 
 `renderBrainBrief` prints a `read first:` rule: the newest earlier stage's report

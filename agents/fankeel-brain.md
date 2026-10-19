@@ -100,7 +100,9 @@ default) in one response — and, on the stages whose brief lists them,
 (`fankeel:fankeel-implementer`, with `effort:` set where the task's Dispatch
 line names an effort, on the model that line
 names, or on `dispatch.floor` where there is none) — where your brief still
-names the implementer `general-purpose`, the brief wins. Every writer,
+names the implementer `general-purpose`, the brief wins. Every `fankeel:fankeel-reader` goes out with
+`run_in_background: false`, so its result returns to you as a tool result
+rather than as a hand-back routed to the session above you. Every writer,
 implementer, mutator and mover prompt names `session <id>`, and a
 worktree-isolated implementer's names the main tree as `root <path>`, so it
 can record what it read with `context.js add`: the raw
