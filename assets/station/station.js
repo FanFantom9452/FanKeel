@@ -2754,7 +2754,7 @@
             dashTodo: dashTodo, dashOrder: dashOrder,
             NAV_TREE: NAV_TREE,
             tuneOpen: tuneOpen, tuneEvents: tuneEvents, toastText: toastText, floatHtml: floatHtml, fkBoxParse: fkBoxParse, fkBoxClamp: fkBoxClamp, gateCountdownHtml: gateCountdownHtml, noteHtml: noteHtml, floatNotes: floatNotes, clock: gateClock,
-            changedParts: changedParts, seenHtml: seenHtml, drawList: drawList,
+            changedParts: changedParts, seenHtml: seenHtml, drawList: drawList, sessionPage: sessionPage,
             recordHtml: recordHtml, recordPageHtml: recordPageHtml, listAskRow: listAskRow,
         };
     }
@@ -3817,6 +3817,7 @@
         default: return loc('rec.left', '還剩什麼');
         }
     }
+    function recTitle() { return loc('rec.title', '完成紀錄'); }
     function recordRows(f, cls) {
         return ['ask', 'did', 'why', 'checked', 'cost', 'left'].map(function (k) {
             var v = f[k];
@@ -3836,13 +3837,13 @@
     function recordHtml(s) {
         var r = s && s.record;
         if (!r || !r.fields) return '<p class="rec-none" data-block="record-none">' + recordNone(s) + '</p>';
-        return '<section class="rec" data-block="record" aria-labelledby="rec-h"><h3 class="rec-h" id="rec-h">' + loc('rec.title', '完成紀錄') + '</h3>'
+        return '<section class="rec" data-block="record" aria-labelledby="rec-h"><h3 class="rec-h" id="rec-h">' + recTitle() + '</h3>'
             + '<dl class="rec-f">' + recordRows(r.fields, 'rec') + '</dl>' + recordSrc(r, 'rec') + '</section>';
     }
     function recordPageHtml(s) {
         var r = s && s.record;
         if (!r || !r.fields) return '<p class="recp-none" data-block="record-page-none">' + recordNone(s) + '</p>';
-        return '<section class="panel recp" data-block="record-page" aria-labelledby="recp-h"><div class="h2" id="recp-h">' + loc('rec.title', '完成紀錄') + '</div>'
+        return '<section class="panel recp" data-block="record-page" aria-labelledby="recp-h"><div class="h2" id="recp-h">' + recTitle() + '</div>'
             + '<dl class="recp-f">' + recordRows(r.fields, 'recp') + '</dl>' + recordSrc(r, 'recp') + '</section>';
     }
     function listAskRow(s, sel) {
@@ -4917,10 +4918,10 @@
             + gateSec(loc('det.gateSecCost', '花了多少'), null, p.cost ? '<div class="gv-split">' + gateText(p.cost) + '</div>' : '')
             + gateSec(loc('det.gateSecTime', '各站時間'), null, time.html)
             + gateSec(loc('det.gateSecOpen', '還沒完'), null, p.open ? '<ul class="gv-open"><li>' + gateText(p.open) + '</li></ul>' : '');
-        var said = [['ask', loc('det.gateAsk', '要求')], ['why', loc('det.gateWhy', '為什麼這樣做')], ['checked', loc('det.gateChecked', '驗過・沒驗過')]]
+        var said = [['ask', recLabel('ask')], ['why', recLabel('why')], ['checked', recLabel('checked')]]
             .filter(function (k) { return p[k[0]]; });
         var lead = said.length
-            ? '<section class="gv-plain" aria-label="' + loc('det.gateRecord', '完成紀錄') + '">' + said.map(function (k) {
+            ? '<section class="gv-plain" aria-label="' + recTitle() + '">' + said.map(function (k) {
                 return '<h3>' + k[1] + '</h3><p>' + gateText(p[k[0]]) + '</p>';
             }).join('') + '</section>'
             : p.plain ? '<section class="gv-plain" aria-label="' + loc('det.gatePlain', '白話') + '"><h3>' + loc('det.gatePlain', '白話') + '</h3><p>' + gateText(p.plain) + '</p></section>' : '';

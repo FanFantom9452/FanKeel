@@ -881,10 +881,6 @@
             'det.gateSecTime': 'Time by stage',
             'det.gateTimeAria': 'Main session time by stage: {list}',
             'det.gateNoPage': '{s} has no gate page: this tab lists only the survey, design, build and land gate reports; the plan gate is on the Plan tab.',
-            'det.gateAsk': 'Asked',
-            'det.gateWhy': 'Why this way',
-            'det.gateChecked': 'Checked / not checked',
-            'det.gateRecord': 'Completion record',
             // rec — the completion record, scripts/record.js
             'rec.title': 'Completion record',
             'rec.ask': 'Asked',

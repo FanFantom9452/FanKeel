@@ -55,3 +55,44 @@ test('every rec-, recp- and ask- class drawn has a rule in station.css', () => {
     const used = new Set([...html.matchAll(/class="([^"]+)"/g)].flatMap((m) => m[1].split(/\s+/)).filter((c) => /^(rec|recp|ask)(-|$)/.test(c)));
     for (const c of used) assert.match(CSS, new RegExp('\\.' + c + '\\b'), c);
 });
+
+// ---- the call sites: each surface through its real caller --------------------------
+const vm = require('node:vm');
+const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+function boot(hash, sessions) {
+    const els = {};
+    const el = () => ({ innerHTML: '', textContent: '', className: '', title: '', attrs: {}, style: {}, hidden: false, addEventListener() {}, setAttribute() {}, getAttribute() { return null; }, hasAttribute() { return false; }, removeAttribute() {}, appendChild() {} });
+    const doc = { hidden: false, documentElement: el(), body: el(), title: '', head: { appendChild() {} },
+        getElementById: (id) => els[id] || (els[id] = el()), addEventListener() {}, createElement: el, querySelectorAll: () => [], querySelector: () => null };
+    const win = { location: { hash }, addEventListener() {}, scrollTo() {}, setInterval: () => 1, setTimeout: () => 1, clearTimeout() {},
+        navigator: { language: 'zh-TW' }, localStorage: { getItem: () => null, setItem() {}, removeItem() {} }, STATION_DETAIL: {},
+        STATION: { generatedAt: new Date().toISOString(), configDir: 'C:\\cfg', pricesVerified: '2026-09-24', serve: false,
+            projects: [{ root: 'F:\\ws\\a', gone: false, unreadable: 0, build: [], mapAt: null, docs: [] }],
+            profiles: { machine: { values: {}, sources: {}, unreadable: [] }, projects: {} }, profileKeys: {}, classes: {}, sessions } };
+    const ctx = vm.createContext({ window: win, document: doc, URLSearchParams, fetch() { return Promise.resolve({ ok: true, text: () => Promise.resolve('') }); }, module: { exports: {} } });
+    vm.runInContext(SRC, ctx);
+    return { els, x: ctx.module.exports };
+}
+const SES = Object.assign({ root: 'F:\\ws\\a', project: null, pkey: 'F:\\ws\\a', task: 'task a', stage: 'build', route: ['build'],
+    started: new Date().toISOString(), updated: Date.now() - 60000, usd: 0, agentUsd: 0, estimated: [], unpriced: [], hasDetail: false,
+    stages: [], notes: [], claims: [], conflicts: [], burn: 0, backtracks: 0, days: [], spans: [] }, S);
+
+test('drawList writes the 要求 row under the selected landed session and marks it has-ask', () => {
+    const p = boot('#/list', [SES]);
+    try { p.x.drawList(); } catch (e) { /* drawDetail, run last, may lack data; the list is written before it */ }
+    const lb = p.els.lb.innerHTML;
+    assert.match(lb, /<tr class="ask" data-block="list-ask" data-id="a"[^>]*>.*留一份紀錄。/);
+    assert.match(lb, /<tr class="has-ask" data-id="a"/);
+});
+
+test('drawDetail writes the record block into the detail panel', () => {
+    const p = boot('#/list', [SES]);
+    try { p.x.drawList(); } catch (e) { /* the panel is written by drawDetail, after the list */ }
+    assert.match(p.els.det.innerHTML, /data-block="record"[\s\S]*寫六欄紀錄/);
+});
+
+test('the session page draws the record page block', () => {
+    const p = boot('#/session/a', [SES]);
+    assert.match(p.x.sessionPage({ id: 'a' }), /data-block="record-page"[\s\S]*寫六欄紀錄/);
+    assert.equal(typeof V.sessionPage, 'function');
+});
