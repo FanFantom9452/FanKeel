@@ -670,6 +670,7 @@ is explained, and it is the one thing to know before adding a page here.
 | `skills/` | reference | no |
 | `bench/` | fixture | n/a — the fixed inputs and two-sided controls `scripts/bench.js` runs: `add-feature/`, `fix-bug/` and `review-planted/`, the whole tasks `run` compares arms on; `roles/`, one directory per role; and `drift/`, the long task the drift 2×2 checks step by step; a test's own input, checked for links and line numbers only, never for symbols |
 | `evals/` | fixture | n/a — a test's own input; a prompt names paths only its scaffold has, so it is checked for links and line numbers only, never for symbols |
+| `.fankeel/verify/` | reference | no — one file per feature, read by `scripts/verify-map.js`; its `src` globs are checked there against the tracked files |
 | `.claude/agents/` | reference | no |
 | `agents/` | reference | no — the agents the plugin ships, one file each, read by Claude Code at process start |
 

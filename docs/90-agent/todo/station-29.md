@@ -1,7 +1,7 @@
 ---
 label: station
 title: 花費成分說明
-description: station 花費表每個成分旁加說明，花費頁放一張成分說明表，單價讀 lib/prices.js
+description: station 花費表每個成分旁加說明，花費頁放一張成分說明表，單價讀 `lib/prices.js`
 state: ready
 link: docs/90-agent/judgements/2026-10-19-weekly-token-composition.md
 ---

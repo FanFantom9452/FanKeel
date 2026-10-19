@@ -3,13 +3,13 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
 const path = require('node:path');
 const { spawnSync, execFileSync } = require('node:child_process');
 
 const ROOT = path.join(__dirname, '..');
 const SCRIPT = path.join(ROOT, 'scripts', 'verify-map.js');
-const { lint, touched } = require(SCRIPT);
+const tmp = require('./tmp.js');
+const { lint, touched } = require('../scripts/verify-map.js');
 
 const BODY = [
     '## Sub-features', '- one', '',
@@ -34,8 +34,7 @@ function front(fields) {
 // a glob at, plus whatever the test adds. Not under `bin/`: the walk in
 // lib/tracked.js skips that directory name, so a glob there matches nothing.
 function project(t, files) {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'verify-map-'));
-    t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+    const dir = tmp('verify-map-');
     const all = Object.assign({ 'tool/run.js': '// tool\n', 'site/page.js': '// page\n' }, files);
     for (const [rel, text] of Object.entries(all)) {
         fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true });

@@ -176,4 +176,4 @@ function main(argv) {
 
 if (require.main === module) process.stdout.write(main(process.argv.slice(2)) + '\n');
 
-module.exports = { lint, touched, sections, list, main, KINDS, STATUSES, SECTIONS };
+module.exports = { lint, touched };

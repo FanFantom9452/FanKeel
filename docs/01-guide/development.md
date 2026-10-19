@@ -56,7 +56,7 @@ every test at or over the threshold whose name a literal spells, and prints
 temp directory, or `FANKEEL_SUITE_LOCK` — so a second run waits and says on
 whom rather than running beside the first. Two suites at once on 2026-10-16
 failed a different handful of tests each run, every one green alone. A lock
-whose pid is dead, older than an hour, or unparsed for 5 s is cleared. A dead
+whose pid is dead, held by a holder silent for an hour (a suite that keeps printing is not), or unparsed for 5 s is cleared. A dead
 lock Windows will not let it move is said instead —
 `suite: waiting — lock <file> is stale and could not be removed; delete it by
 hand` — and deleting that file lets the run go on. `npm test` run by hand
