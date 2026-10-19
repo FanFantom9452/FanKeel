@@ -67,6 +67,9 @@ the stage produces; it does not approve it.
    what counts as an answer, and the shape the answer should come back in.
    `build/` is already in `.fankeel/.gitignore`, so this adds no new ignored
    name.
+   On a controlled stage the guard refuses every other controller write but
+   lets this one through (`asksBrief`, `hooks/guard.js`), so the judge is asked
+   from the stage the user is in — no `task.js route` detour.
 2. **Dispatch it once**, `subagent_type: fankeel:fankeel-judge`, and read the model
    from the profile's `judge.model` — **never inherited**, the same discipline
    every other dispatch in this plugin carries. `node <plugin>/scripts/task.js

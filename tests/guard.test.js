@@ -749,6 +749,18 @@ test('a controlled stage lets the controller\'s read-only commands and its own s
   }
 });
 
+test('a controlled stage lets the controller write its /fankeel-ask brief and nothing else', () => {
+  const root = tmp();
+  seed(root, MINE, { stage: 'survey', claims: [] });
+  agentsOn(root, 'survey,build,verify');
+  const write = (file) => ({ session_id: MINE, cwd: root, tool_name: 'Write', tool_input: { file_path: file, content: 'q' } });
+  assert.equal(run(root, write(path.join(root, '.fankeel', 'build', 'ask', '1-memory-brief.md'))), '');
+  assert.equal(run(root, write('.fankeel/build/ask/2-memory-brief.md')), '');
+  assert.equal(decisionOf(run(root, write(path.join(root, '.fankeel', 'build', 'ask', '..', 'survey.md')))), 'deny');
+  assert.equal(decisionOf(run(root, write(path.join(root, 'notes.md')))), 'deny');
+  assert.equal(run(root, shellCall(root, 'node scripts/judge.js record --session x --brief .fankeel/build/ask/1-memory-brief.md --answer - --slug memory')), '');
+});
+
 test('the same shell write is let through at a stage off stage.agents\'s list', () => {
   const root = tmp();
   seed(root, MINE, { stage: 'build', claims: [] });
