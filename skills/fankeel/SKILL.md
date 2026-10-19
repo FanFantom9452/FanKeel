@@ -1030,8 +1030,9 @@ gate. **Unmeasured against a control here**; the runs are in
 [docs/reports/2026-09-04-chains-as-workflows.md](../../docs/90-agent/reports/2026-09-04-chains-as-workflows.md), dated.
 
 **Delegate a job inside a stage; never the stage itself.** A subagent receives the
-brief and nothing else, so a stage run inside one loses its gate, its report
-shape and every rule at once. What you dispatch is a question with
+brief and nothing else — it has no prompt for the per-prompt rules to ride on —
+so a stage run inside one loses its gate, its report shape and every rule at
+once. What you dispatch is a question with
 an answer — *read these six documents and say whether any contradicts the code*.
 The judgement it feeds, the evidence and the gate stay here, where the rules are.
 
