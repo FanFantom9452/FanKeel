@@ -870,8 +870,8 @@ test('gate.away ask skips the question when the station already answered', async
   assert.match(out.systemMessage, /\/compact/);
 });
 
-test("the committed profile makes gate waits open the station at 120s and ask when away", () => {
+test("the committed profile keeps gate waits in Desktop, never the station, and asks when away", () => {
   const profile = JSON.parse(execFileSync("git", ["show", "HEAD:.fankeel/profile.json"], { cwd: ROOT, encoding: "utf8" }));
-  assert.equal(profile["gate.station"], 120);
+  assert.equal(profile["gate.station"], "off");
   assert.equal(profile["gate.away"], "ask");
 });
