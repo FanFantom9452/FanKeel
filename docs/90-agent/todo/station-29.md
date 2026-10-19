@@ -3,7 +3,7 @@ label: station
 title: 花費成分說明
 description: station 花費表每個成分旁加說明，花費頁放一張成分說明表，單價讀 `lib/prices.js`
 state: ready
-link: docs/90-agent/judgements/2026-10-19-weekly-token-composition.md
+link: assets/station/station.js
 ---
 
 來源：2026-10-19 使用者要求監控站顯示花費成分，本週判斷書（連結）。

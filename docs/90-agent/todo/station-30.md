@@ -3,7 +3,7 @@ label: station
 title: cache write 拆 5m 與 1h
 description: 成分表、days 依成分、dashboard 卡片把 cache write 拆兩列並標主對話或 agent
 state: ready
-link: docs/90-agent/judgements/2026-10-19-weekly-token-composition.md
+link: assets/station/station.js
 ---
 
 來源：2026-10-19 使用者要求監控站顯示花費成分，本週判斷書（連結）。

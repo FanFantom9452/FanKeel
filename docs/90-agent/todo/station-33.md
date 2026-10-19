@@ -3,7 +3,7 @@ label: station
 title: 最貴 session 前 N 名
 description: 依所選區間列出花費前 N 名 session，點進對話頁
 state: ready
-link: docs/90-agent/judgements/2026-10-19-weekly-token-composition.md
+link: assets/station/station.js
 ---
 
 來源：2026-10-19 使用者要求監控站顯示花費成分，本週判斷書（連結）。

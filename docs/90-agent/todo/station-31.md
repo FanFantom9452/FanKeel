@@ -3,7 +3,7 @@ label: station
 title: 依 agent 類型彙總花費
 description: days 頁新增依 agent 類型維度與表，fankeel: 前綴合併
 state: ready
-link: docs/90-agent/judgements/2026-10-19-weekly-token-composition.md
+link: assets/station/station.js
 ---
 
 來源：2026-10-19 使用者要求監控站顯示花費成分，本週判斷書（連結）。

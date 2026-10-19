@@ -3,7 +3,7 @@ label: station
 title: 週與自訂區間、週對週比較
 description: 區間選擇：本週、上週、近 30 天、自訂起訖，KPI 顯示與前一同長度區間的差
 state: ready
-link: docs/90-agent/judgements/2026-10-19-weekly-token-composition.md
+link: assets/station/station.js
 ---
 
 來源：2026-10-19 使用者要求監控站顯示花費成分，本週判斷書（連結）。
