@@ -27,6 +27,17 @@ const SECTION_BYTES = 4000;
 const MAX_PER_FILE = 20;
 const SKIP_DIRS = new Set(['node_modules']);
 
+// MEMORY.md is an index, and past twenty lines it stops being read as one.
+// docs/90-agent/judgements/2026-10-18-tencentdb-agent-memory.md §5.1 took
+// 15-20 from TencentDB's scene cap; agents/fankeel-slimmer.md puts a merge
+// before any new entry once the count reaches it.
+const MEMORY_CAP = 20;
+
+// One entry per bullet line — the index's own shape, one line per memory file.
+function entryCount(text) {
+    return String(text).split(/\r?\n/).filter((line) => /^\s*[-*]\s+\S/.test(line)).length;
+}
+
 // One token each rather than about a quarter: CJK, Hangul, compatibility
 // ideographs and full-width forms. Code points as numbers, because an
 // ideograph retyped through a tool can come back as a different one.
@@ -161,6 +172,7 @@ function scan(root, configDir, opts) {
     const limit = opts && opts.sectionBytes > 0 ? opts.sectionBytes : SECTION_BYTES;
     const list = sources(root, configDir).map((s) => ({
         kind: s.kind, file: s.file, bytes: s.bytes, tokens: s.tokens,
+        entries: s.kind === 'memory' ? entryCount(s.text) : null,
         findings: [...duplicates(s.text), ...deadLinks(s.file, s.text), ...bigSections(s.text, limit)],
     }));
     list.sort((a, b) => b.bytes - a.bytes);
@@ -208,6 +220,10 @@ function report(result) {
     lines.push('');
     for (const s of result.sources) {
         lines.push('  ' + n(s.bytes).padStart(8) + ' B  ~' + n(s.tokens).padStart(7) + ' tok  ' + s.kind.padEnd(7) + ' ' + s.file.replace(/\\/g, '/'));
+        if (typeof s.entries === 'number') {
+            lines.push('      entries: ' + s.entries + ' of ' + MEMORY_CAP
+                + (s.entries > MEMORY_CAP ? ' — over the cap; merge before adding (fankeel-slimmer)' : ''));
+        }
         for (const f of s.findings.slice(0, MAX_PER_FILE)) lines.push('      ' + f.tag + ': ' + f.what);
         if (s.findings.length > MAX_PER_FILE) lines.push('      ... and ' + (s.findings.length - MAX_PER_FILE) + ' more, not listed');
     }
@@ -247,4 +263,4 @@ if (require.main === module) {
     process.exit(code);
 }
 
-module.exports = { scan, report, main, parseArgs, sources, projectsUnder, estimateTokens, skillFiles, duplicates, deadLinks, bigSections };
+module.exports = { scan, report, main, parseArgs, sources, projectsUnder, estimateTokens, skillFiles, duplicates, deadLinks, bigSections, MEMORY_CAP, entryCount };

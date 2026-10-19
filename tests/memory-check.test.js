@@ -9,6 +9,7 @@ const tmp = require('./tmp.js');
 
 const {
   scan, report, main, projectSlug, memoryDir, parseArgs, indexEntries, citations, lastCommit,
+  wikiLinks, wordSet, jaccard, similarPairs, SIMILAR,
 } = require('../scripts/memory-check.js');
 
 function tmpProject() {
@@ -238,4 +239,69 @@ test('report() counts stale entries, not the citations they carry @slow', () => 
   const result = scan(root, configDir);
   assert.equal(result.stale.length, 3);
   assert.match(report(result), /^2 entries cite a file changed since they were written, 3 citations:$/m);
+});
+
+test('wikiLinks reads [[name]], [[name|label]] and [[name#part]], and not a markdown link', () => {
+  assert.deepEqual(wikiLinks('see [[a-b]] and [[c|label]] and [[ d#part ]] but not [x](y.md)'), ['a-b', 'c', 'd']);
+  assert.deepEqual(wikiLinks('no links here'), []);
+});
+
+test('scan() follows a [[name]] link between memory files and reports one that resolves to nothing', () => {
+  const root = tmpProject();
+  const configDir = tmpConfig();
+  const dir = memoryDir(configDir, root);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'MEMORY.md'),
+    '- [P note](p-note.md) — a hook\n- [Q note](q-note.md) — a hook\n- [R file](r-file.md) — a hook\n');
+  seedNote(dir, 'p-note.md', 'Before this, see [[q-note]] and [[r-alias]].');
+  seedNote(dir, 'q-note.md', 'And see [[gone-note]] too.');
+  fs.writeFileSync(path.join(dir, 'r-file.md'),
+    '---\nname: r-alias\ndescription: x\nmetadata:\n  type: reference\n---\n\nNamed apart from its file.\n');
+  const result = scan(root, configDir);
+  assert.deepEqual(result.findings.filter((f) => f.tag === 'dead').map((f) => f.what),
+    ['q-note.md links [[gone-note]], which is no memory file here']);
+  assert.equal(main(['--root', root, '--config-dir', configDir]).code, 1);
+});
+
+test('jaccard is shared words over all words, and 0 for two empty sets', () => {
+  assert.equal(jaccard(new Set(['a', 'b']), new Set(['b', 'c'])), 1 / 3);
+  assert.equal(jaccard(new Set(), new Set()), 0);
+});
+
+test('wordSet takes name, description and body, not the rest of the frontmatter', () => {
+  const words = wordSet('---\nname: chrome-path\ndescription: the browser\nmetadata:\n  type: reference\n  originSessionId: abc123\n---\n\nRun it on Edge. 中文\n');
+  for (const w of ['chrome', 'path', 'the', 'browser', 'run', 'edge', '中', '文']) assert.ok(words.has(w), w);
+  for (const w of ['reference', 'originsessionid', 'abc123', 'metadata', 'it', 'on']) assert.ok(!words.has(w), w);
+});
+
+test('scan() lists two memory files on one subject as a similar pair, and it does not fail the run', () => {
+  const root = tmpProject();
+  const configDir = tmpConfig();
+  const dir = memoryDir(configDir, root);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'MEMORY.md'), [
+    '- [Chrome path](chrome-path.md) — a hook',
+    '- [Chrome path again](chrome-path-again.md) — a hook',
+    '- [Reply in Chinese](reply-chinese.md) — a hook',
+    '',
+  ].join('\n'));
+  seedNote(dir, 'chrome-path.md', 'Run the suite with FANKEEL_BROWSER set to the full chrome.exe path, or the render tests fail on Edge.');
+  seedNote(dir, 'chrome-path-again.md', 'Set FANKEEL_BROWSER to the full chrome.exe path before running the suite, or the render tests fail on Edge.');
+  seedNote(dir, 'reply-chinese.md', 'Reply to the user in Traditional Chinese in every gate question and recap.');
+  const result = scan(root, configDir);
+  assert.equal(result.similar.length, 1);
+  assert.deepEqual([result.similar[0].name, result.similar[0].other].sort(), ['chrome-path-again.md', 'chrome-path.md']);
+  assert.ok(result.similar[0].ratio >= SIMILAR);
+  assert.match(report(result), /^1 pair of memory files reads as one subject — a merge for the slimmer to propose:$/m);
+  assert.equal(main(['--root', root, '--config-dir', configDir]).code, 0);
+});
+
+test('similarPairs keeps a pair at or above the threshold and drops one below it', () => {
+  const files = [
+    { name: 'a.md', words: new Set(['x', 'y', 'z']) },
+    { name: 'b.md', words: new Set(['x', 'y', 'w']) },
+    { name: 'c.md', words: new Set(['q']) },
+  ];
+  assert.deepEqual(similarPairs(files, 0.5).map((p) => [p.name, p.other]), [['a.md', 'b.md']]);
+  assert.deepEqual(similarPairs(files, 0.6), []);
 });

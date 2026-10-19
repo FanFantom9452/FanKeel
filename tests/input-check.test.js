@@ -8,6 +8,7 @@ const tmp = require('./tmp.js');
 const { memoryDir } = require('../scripts/memory-check.js');
 const {
   scan, report, main, parseArgs, sources, projectsUnder, estimateTokens, duplicates, deadLinks, bigSections,
+  MEMORY_CAP, entryCount,
 } = require('../scripts/input-check.js');
 
 function fixture() {
@@ -96,4 +97,29 @@ test('sources lists each file once, and parseArgs reads the flags', () => {
   const a = parseArgs(['--root', root, '--config-dir', configDir, '--section-bytes', '100']);
   assert.equal(a.configDir, path.resolve(configDir));
   assert.equal(a.sectionBytes, 100);
+});
+
+test('the MEMORY.md line carries its entry count against the cap of 20', () => {
+  const { configDir, root } = fixture();
+  assert.equal(MEMORY_CAP, 20);
+  const result = scan(root, configDir);
+  const memory = result.sources.find((s) => s.kind === 'memory');
+  assert.equal(memory.entries, 3);
+  assert.equal(result.sources.find((s) => s.kind === 'global').entries, null);
+  assert.match(report(result), /^ {6}entries: 3 of 20$/m);
+});
+
+test('a MEMORY.md past twenty entries is named over the cap', () => {
+  const { configDir, root, mem } = fixture();
+  const lines = [];
+  for (let i = 1; i <= 21; i++) lines.push('- [Entry number ' + i + '](entry-' + i + '.md) — hook');
+  fs.writeFileSync(path.join(mem, 'MEMORY.md'), lines.join('\n') + '\n');
+  const result = scan(root, configDir);
+  assert.equal(result.sources.find((s) => s.kind === 'memory').entries, 21);
+  assert.match(report(result), /entries: 21 of 20 — over the cap; merge before adding \(fankeel-slimmer\)/);
+});
+
+test('entryCount counts bullet lines and nothing else', () => {
+  assert.equal(entryCount('# Memory\n\n- [A](a.md) — one\n* [B](b.md) — two\ntext\n  - [C](c.md) — three\n-\n'), 3);
+  assert.equal(entryCount(''), 0);
 });

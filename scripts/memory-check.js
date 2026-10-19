@@ -34,6 +34,58 @@ const { LINK, CODE, PATHISH, resolveRef, external } = require('./docs-check.js')
 
 const MAX_FINDINGS = 200;
 
+// Two memory files on one subject are a merge the slimmer proposes. The
+// measure is the Jaccard ratio of their word sets — name, description and
+// body; each Han character one word, any other run of three or more letters
+// or digits one word, so `the`, `run` and `中` count and `it`, `on` do not.
+// 0.5, because on 2026-10-19 the six pairs of this project's four memory
+// files ranged 0.067-0.165 (the top pair cross-links with [[...]]), and one
+// fact said twice in different words measured 0.72. A pair is listed, never a
+// failing finding, so a false one costs a line.
+const SIMILAR = 0.5;
+const FRONT = /^---\r?\n[\s\S]*?\r?\n---\r?(?:\n|$)/;
+const WORD = /\p{Script=Han}|[\p{L}\p{N}]{3,}/gu;
+
+// `[[name]]`, `[[name|label]]`, `[[name#part]]` — how memory files cite one
+// another. docs-check.js's LINK wants `](` and never sees these.
+const WIKI = /\[\[([^\]\n|#]+)(?:[|#][^\]\n]*)?\]\]/g;
+
+function wikiLinks(text) {
+    const out = [];
+    WIKI.lastIndex = 0;
+    let m;
+    while ((m = WIKI.exec(String(text))) !== null) out.push(m[1].trim());
+    return out;
+}
+
+function wordSet(text) {
+    const fm = docs.frontmatter(text) || {};
+    const body = String(text).replace(FRONT, '');
+    return new Set([fm.name || '', fm.description || '', body].join(' ').toLowerCase().match(WORD) || []);
+}
+
+function jaccard(a, b) {
+    if (!a.size && !b.size) return 0;
+    let both = 0;
+    for (const w of a) if (b.has(w)) both++;
+    return both / (a.size + b.size - both);
+}
+
+function similarPairs(files, threshold) {
+    const out = [];
+    for (let i = 0; i < files.length; i++) {
+        for (let j = i + 1; j < files.length; j++) {
+            const ratio = jaccard(files[i].words, files[j].words);
+            if (ratio < threshold) continue;
+            out.push({
+                tag: 'similar', name: files[i].name, other: files[j].name, ratio,
+                what: files[i].name + ' and ' + files[j].name + ' share ' + Math.round(ratio * 100) + '% of their words',
+            });
+        }
+    }
+    return out;
+}
+
 // `F:\ymlab\EMU3000_Web` -> `F--ymlab-EMU3000-Web`. Every character that is
 // not a letter or a digit becomes `-` — Claude Code's own scheme, read off
 // ~/.claude/projects on 2026-09-24, where `_` and `.` are replaced too.
@@ -113,7 +165,7 @@ function scan(root, configDir) {
     const dir = memoryDir(configDir, root);
     const indexFile = path.join(dir, 'MEMORY.md');
     const indexText = readFile(indexFile);
-    if (indexText === null) return { dir, present: false, findings: [], stale: [], indexed: 0, onDisk: 0 };
+    if (indexText === null) return { dir, present: false, findings: [], stale: [], similar: [], indexed: 0, onDisk: 0 };
 
     let names;
     try {
@@ -136,10 +188,25 @@ function scan(root, configDir) {
     const tracked = trackedFiles(root);
     const roots = new Set((tracked ? tracked.files : []).map((f) => f.split('/')[0]));
 
-    const stale = [];
+    const texts = new Map();
     for (const name of onDisk) {
         const text = readFile(path.join(dir, name));
-        if (text === null) continue;
+        if (text !== null) texts.set(name, text);
+    }
+    // A [[name]] resolves to a file of that name or to one whose frontmatter
+    // `name:` is it.
+    const known = new Set();
+    for (const [name, text] of texts) {
+        known.add(name.replace(/\.md$/, ''));
+        const fm = docs.frontmatter(text);
+        if (fm && fm.name) known.add(fm.name);
+    }
+
+    const stale = [];
+    for (const [name, text] of texts) {
+        for (const target of wikiLinks(text)) {
+            if (!known.has(target)) findings.push({ tag: 'dead', what: name + ' links [[' + target + ']], which is no memory file here' });
+        }
         const fm = docs.frontmatter(text) || {};
         const modified = fm['metadata.modified'] ? Date.parse(fm['metadata.modified']) : NaN;
 
@@ -166,7 +233,8 @@ function scan(root, configDir) {
         }
     }
 
-    return { dir, present: true, findings, stale, indexed: indexed.length, onDisk: onDisk.size };
+    const similar = similarPairs([...texts].map(([name, text]) => ({ name, words: wordSet(text) })), SIMILAR);
+    return { dir, present: true, findings, stale, similar, indexed: indexed.length, onDisk: onDisk.size };
 }
 
 function report(result) {
@@ -187,6 +255,9 @@ function report(result) {
     lines.push(...section(plural(staleEntries, 'entry cites a file changed since it was written', 'entries cite a file changed since they were written')
         + (result.stale.length === staleEntries ? ':' : ', ' + result.stale.length + ' citations:'),
         result.stale.map((f) => f.what), MAX_FINDINGS));
+    const similar = result.similar || [];
+    lines.push(...section(plural(similar.length, 'pair of memory files reads as one subject', 'pairs of memory files read as one subject')
+        + ' — a merge for the slimmer to propose:', similar.map((f) => f.what), MAX_FINDINGS));
     return lines.join('\n');
 }
 
@@ -218,4 +289,4 @@ if (require.main === module) {
     process.exit(code);
 }
 
-module.exports = { scan, report, parseArgs, main, projectSlug, memoryDir, indexEntries, citations, lastCommit };
+module.exports = { scan, report, parseArgs, main, projectSlug, memoryDir, indexEntries, citations, lastCommit, wikiLinks, wordSet, jaccard, similarPairs, SIMILAR };
