@@ -28,20 +28,21 @@ const { isCommit, commitVerdict } = require('../lib/sensitive.js');
 // each read better than six `===`s repeated at every call site.
 const WRITE_TOOLS = new Set(['Edit', 'Write', 'NotebookEdit']);
 
-// docs/90-agent/plans/2026-09-30-init-design.md §2c: every `git commit` that
-// passes through Claude Code, in a task or not. A regex on the command is all
-// any other shell call pays; git runs only for a commit.
 // /fankeel-ask's first step is the controller writing its brief, and a judge
 // is asked from whatever stage the user is in — controlled ones included. So
 // the one directory the brief goes to is let through, and nothing outside it:
-// a `..` that climbs back out is refused like any other controller write.
+// a `..` is resolved away before the prefix test, so ask/../survey.md
+// is refused like any other controller write.
 const ASK_DIR = '.fankeel/build/ask/';
 function asksBrief(root, file) {
     if (typeof file !== 'string' || !file) return false;
     const rel = path.relative(root, path.resolve(root, file)).replace(/\\/g, '/');
-    return rel.startsWith(ASK_DIR) && !rel.split('/').includes('..');
+    return rel.startsWith(ASK_DIR);
 }
 
+// docs/90-agent/plans/2026-09-30-init-design.md §2c: every `git commit` that
+// passes through Claude Code, in a task or not. A regex on the command is all
+// any other shell call pays; git runs only for a commit.
 function emitCommit(root, mine, payload) {
     const command = (payload.tool_input && payload.tool_input.command) || '';
     if (!isCommit(command)) return;
