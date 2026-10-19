@@ -6,7 +6,7 @@ source_of_truth: this file is the index; each page below is its own source
 
 # FanKeel documentation
 
-Twenty pages, one question each. The front page has install, update and
+Twenty-one pages, one question each. The front page has install, update and
 uninstall, the two diagrams and a short introduction to each of these;
 everything that needs more than a paragraph is here. For a person who is not
 running a session, the station's 文件 page (`#/docs`) turns each project's own
@@ -30,6 +30,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | How to read the whole registry without a session open, and where a corrupt entry surfaces | [registry.md](90-agent/reference/registry.md) — *reading it from outside* |
 | Why the mode never switches itself off | [registry.md](90-agent/reference/registry.md) |
 | What the `context:` line in the injected block means | [registry.md](90-agent/reference/registry.md) |
+| Which injected rule a hook or a script enforces, and which are prose only | [enforcement.md](90-agent/reference/enforcement.md) |
 | How to run a task one headless `claude -p` per stage, and where it stops | [drive.md](90-agent/reference/drive.md) |
 | What `[FANKEEL:CLASH]` means | [collisions.md](90-agent/reference/collisions.md) |
 | Why an edit to a file another session holds asks first, and how to turn that off | [collisions.md](90-agent/reference/collisions.md) — *the scope guard* |

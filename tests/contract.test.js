@@ -360,7 +360,7 @@ test('the index says as many pages as docs/ has', () => {
   const root = path.join(__dirname, '..');
   const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven',
     'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen',
-    'sixteen', 'seventeen', 'eighteen', 'nineteen', 'twenty'];
+    'sixteen', 'seventeen', 'eighteen', 'nineteen', 'twenty', 'twenty-one'];
 
   const { tree } = docs.read(root);
   const buckets = tree.buckets.filter((b) => b.role === 'reference' && !b.depth
