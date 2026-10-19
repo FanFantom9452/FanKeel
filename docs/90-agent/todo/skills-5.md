@@ -1,7 +1,7 @@
 ---
 label: skills
 title: stage skill 瘦身到上限以下
-description: fankeel 與 build 兩份 SKILL.md 依 input-check --skills 的量測瘦身，並把 tests/skill-size.test.js 的上限一起調低
+description: fankeel 與 build 兩份 SKILL.md 依 input-check --skills 的量測瘦身，並把上限一起調低
 state: ready
 link: scripts/input-check.js
 ---
