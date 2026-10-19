@@ -380,7 +380,14 @@ test('markInflight never hands out a group number a finished brain used', () => 
     assert.equal(registry.markInflight(f.root, SID, 'build', 'a4', undefined, undefined, 'group'), 4, 'group 3 is still running, so the next is 4, not the freed 1');
     registry.clearInflight(f.root, SID, 'a3');
     registry.clearInflight(f.root, SID, 'a4');
-    assert.equal(registry.markInflight(f.root, SID, 'build', 'a5', undefined, undefined, 'group'), 1, 'with nothing in use the count starts again at 1');
+    assert.equal(registry.markInflight(f.root, SID, 'build', 'a5', undefined, undefined, 'group'), 5, 'numbers keep rising within one stage and lap, even with nothing standing');
+});
+
+test('markInflight numbers a second group 2 once the first group mark has cleared', () => {
+    const f = fixture({});
+    assert.equal(registry.markInflight(f.root, SID, 'build', 'a1', undefined, undefined, 'group'), 1);
+    registry.clearInflight(f.root, SID, 'a1');
+    assert.equal(registry.markInflight(f.root, SID, 'build', 'a2', undefined, undefined, 'group'), 2);
 });
 
 test('a second await on the same mark says already awaiting and returns at once; the first removes its marker when it ends', async () => {
