@@ -6,7 +6,8 @@
 // ends — so the only way to keep one from running the way session f44b1c61's
 // i18n implementer did (409 requests, 36k to 544k tokens) is to end it before
 // it gets there. This hook is design §3's two thresholds: nudge it to hand
-// off at SOFT, refuse everything but that handoff at HARD.
+// off at SOFT, refuse everything but that handoff at HARD; it also refuses a
+// SubagentHandback while an agent the subagent dispatched has not stopped.
 //
 // Same discipline as every hook here: exit 0 on every path, and cost nothing
 // for a call this plugin has no opinion about — which for this hook is
@@ -25,7 +26,8 @@ const { outstanding, heldReason } = require('../lib/children.js');
 
 // brain-1: a child's stop is written by its own SubagentStop hook, which can
 // trail the result its parent already holds by a moment, so the hold looks
-// three times, half a second apart, before it refuses.
+// once at once, then three more times after a 500 ms pause each (four looks
+// over 1.5 s), before it refuses.
 const SETTLE_TRIES = 3;
 const SETTLE_MS = 500;
 const pause = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
