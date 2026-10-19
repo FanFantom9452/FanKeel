@@ -132,14 +132,22 @@ function lint(root) {
 }
 
 // The feature files whose globs match any of `paths` (relative to `root`).
-function touched(root, paths) {
+// What hides a feature from the match (a render.json refusal, a file with no
+// frontmatter) goes into `warnings` when given, so `none` is not a silent miss.
+function touched(root, paths, warnings = []) {
     const loaded = renderTargets(root);
     const targets = loaded && loaded.targets ? loaded.targets : null;
+    if (loaded && loaded.refusal) warnings.push('.fankeel/render.json: ' + loaded.refusal);
     const src = new Map();
     for (const name of featureFiles(root)) {
+        const rel = REL + '/' + name;
         const front = frontmatter(fs.readFileSync(path.join(root, REL, name), 'utf8'));
-        const globs = front ? globsOf(front, targets) : [];
-        if (globs.length) src.set(REL + '/' + name, globs);
+        if (!front) {
+            warnings.push(rel + ': no frontmatter, so no change reaches it');
+            continue;
+        }
+        const globs = globsOf(front, targets);
+        if (globs.length) src.set(rel, globs);
     }
     return pagesTouched({ src }, paths);
 }
@@ -155,8 +163,9 @@ function main(argv) {
         } catch (e) {
             return 'verify-map: git could not read ' + values.range;
         }
-        const hit = touched(root, changed);
-        return hit.length ? hit.join('\n') : 'none';
+        const warnings = [];
+        const hit = touched(root, changed, warnings);
+        return warnings.map((w) => 'warn: ' + w).concat(hit.length ? hit : ['none']).join('\n');
     }
     const { files, warnings } = lint(root);
     const plural = (n, word) => n + ' ' + word + (n === 1 ? '' : 's');

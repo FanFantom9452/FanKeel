@@ -146,6 +146,98 @@ test('--range prints the feature files a commit reaches, or none', (t) => {
     assert.equal(run('HEAD~1..HEAD').stdout.trim(), 'none');
 });
 
+test('a feature file with no frontmatter warns and is not checked further', (t) => {
+    const dir = project(t, { '.fankeel/verify/tool.md': BODY });
+    assert.deepEqual(lint(dir).warnings, ['.fankeel/verify/tool.md: no frontmatter']);
+});
+
+test('a page with neither render nor src warns', (t) => {
+    const page = { feature: 'home', kind: 'page', last_checked: '2026-10-19', status: 'clean' };
+    const dir = project(t, { '.fankeel/verify/home.md': front(page) + BODY });
+    assert.deepEqual(lint(dir).warnings, [
+        '.fankeel/verify/home.md: a page needs `render` naming render.json pages, or `src` where render.json does not declare it',
+    ]);
+});
+
+test('a cli or a hook with no src warns', (t) => {
+    const cli = { feature: 'tool', kind: 'cli', last_checked: '2026-10-19', status: 'clean' };
+    const hook = Object.assign({}, cli, { feature: 'gate', kind: 'hook' });
+    const dir = project(t, { '.fankeel/verify/tool.md': front(cli) + BODY, '.fankeel/verify/gate.md': front(hook) + BODY });
+    assert.deepEqual(lint(dir).warnings, [
+        '.fankeel/verify/gate.md: a hook needs `src`',
+        '.fankeel/verify/tool.md: a cli needs `src`',
+    ]);
+});
+
+test('render with no render.json in the project warns', (t) => {
+    const page = { feature: 'home', kind: 'page', render: '[home]', last_checked: '2026-10-19', status: 'clean' };
+    const dir = project(t, { '.fankeel/verify/home.md': front(page) + BODY });
+    assert.deepEqual(lint(dir).warnings, [
+        '.fankeel/verify/home.md: `render` names "home" and there is no readable .fankeel/render.json',
+    ]);
+});
+
+test('a render.json page with no src warns on the feature that names it', (t) => {
+    const render = JSON.stringify({ pages: [{ name: 'home', url: 'http://127.0.0.1:1/' }], roles: [{ name: 'guest' }] });
+    const page = { feature: 'home', kind: 'page', render: '[home]', last_checked: '2026-10-19', status: 'clean' };
+    const dir = project(t, { '.fankeel/render.json': render, '.fankeel/verify/home.md': front(page) + BODY });
+    assert.deepEqual(lint(dir).warnings, [
+        '.fankeel/verify/home.md: render.json page "home" has no `src`, so no change reaches this file through it',
+    ]);
+});
+
+test('an unreadable render.json warns with its refusal', (t) => {
+    const dir = project(t, { '.fankeel/render.json': '{ not json', '.fankeel/verify/tool.md': front(GOOD) + BODY });
+    const w = lint(dir).warnings;
+    assert.equal(w.length, 1, w.join('\n'));
+    assert.match(w[0], /^\.fankeel\/render\.json: \S/);
+});
+
+// A git repository holding the project as one commit, then a second commit
+// changing site/page.js.
+function committed(t, files) {
+    const dir = project(t, files);
+    git(dir, 'init', '-q');
+    git(dir, 'config', 'user.email', 'test@example.invalid');
+    git(dir, 'config', 'user.name', 'test');
+    git(dir, 'config', 'commit.gpgsign', 'false');
+    git(dir, 'add', '.');
+    git(dir, 'commit', '-qm', 'base');
+    fs.writeFileSync(path.join(dir, 'site', 'page.js'), '// page, changed\n');
+    git(dir, 'commit', '-qam', 'page');
+    return dir;
+}
+
+function range(dir, r) {
+    return spawnSync(process.execPath, [SCRIPT, '--root', dir, '--range', r], { encoding: 'utf8' });
+}
+
+test('--range on a directory git cannot read says so and exits 0', (t) => {
+    const dir = project(t, { '.fankeel/verify/tool.md': front(GOOD) + BODY });
+    // A ref no repository has, so a temp dir that sits inside one still fails.
+    const r = range(dir, 'no-such-ref-verify-map..HEAD');
+    assert.equal(r.status, 0, r.stderr);
+    assert.equal(r.stdout.trim(), 'verify-map: git could not read no-such-ref-verify-map..HEAD');
+});
+
+test('--range warns with render.json\'s refusal instead of a silent none', (t) => {
+    const page = { feature: 'home', kind: 'page', render: '[home]', last_checked: '2026-10-19', status: 'clean' };
+    const dir = committed(t, { '.fankeel/render.json': '{ not json', '.fankeel/verify/home.md': front(page) + BODY });
+    const r = range(dir, 'HEAD~1..HEAD');
+    assert.equal(r.status, 0, r.stderr);
+    const lines = r.stdout.trim().split(/\r?\n/);
+    assert.equal(lines.length, 2, r.stdout);
+    assert.match(lines[0], /^warn: \.fankeel\/render\.json: \S/);
+    assert.equal(lines[1], 'none');
+});
+
+test('--range warns on a feature file with no frontmatter instead of skipping it', (t) => {
+    const dir = committed(t, { '.fankeel/verify/home.md': BODY });
+    const r = range(dir, 'HEAD~1..HEAD');
+    assert.equal(r.status, 0, r.stderr);
+    assert.equal(r.stdout.trim(), 'warn: .fankeel/verify/home.md: no frontmatter, so no change reaches it\nnone');
+});
+
 test('this repository\'s own map lints clean, and both pages pass docs-check as reference', () => {
     const r = lint(ROOT);
     assert.ok(r.files.includes('.fankeel/verify/station.md'), r.files.join(', '));
