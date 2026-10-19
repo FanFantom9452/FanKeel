@@ -50,6 +50,11 @@
       "role": "report"
     },
     {
+      "path": "docs/90-agent/records",
+      "role": "report",
+      "audience": "human"
+    },
+    {
       "path": ".fankeel/verify",
       "role": "reference",
       "audience": "agent"
