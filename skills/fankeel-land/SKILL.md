@@ -33,7 +33,7 @@ what the gate asks — never something to settle first and report afterwards.
 | Looks like a finding | Why it is not |
 |---|---|
 | A commit with only one short paragraph of prose | `lib/stages.js:211` caps it there (`one paragraph only for what a bullet cannot hold`) — the bullets are the record; more prose is not owed. |
-| A `shipped:` list that skips files the diff touched | It is one line per new capability, not one per file — `lib/stages.js:394` (`shipped: is one line per thing someone can now do that they could not`), drawn from the ledger's completed entries — a file with no capability of its own has nothing to add there. |
+| A `做了什麼:` list that skips files the diff touched | It is one line per new capability, not one per file — `lib/stages.js:394` (`做了什麼: one line per thing someone can now do that they could not`) — a file with no capability of its own has nothing to add there. |
 | A landed plan still sitting on disk, not yet archived | `lib/stages.js:403` archives it only `then is archived, after asking` — a plan waiting on that answer is not forgotten, it is mid-step. |
 
 ## 1. The full suite, on the tree you are about to integrate
@@ -111,7 +111,7 @@ node <plugin>/scripts/todo-check.js [--root <dir>]
 ```
 
 Close the TODO entries this work finished — whoever finishes the work closes
-the entry in the same change (folder mode: `todo.js done <id> --sha <sha> --record "<what the work did, in plain sentences>" --commits <sha,sha>`, the file stays and gains a `## 完成紀錄` section — written to [plain-language.md](../../docs/90-agent/reference/plain-language.md), no `path:line`, never edited after, `--commits` naming every commit of the work but not the one that writes the record; hand-written `TODO.md`: remove the line). A plan that just moved is a link that just changed
+the entry in the same change (folder mode: `todo.js done <id> --sha <sha> --record "<one or two sentences on this entry>. 詳見[任務紀錄](../records/<YYYY-MM>.md#<anchor>)" --commits <sha,sha>` — the anchor is the one `record.js write` printed on its `filed:` line, and the record itself lives there, not here; the file stays and gains a `## 完成紀錄` section — written to [plain-language.md](../../docs/90-agent/reference/plain-language.md), no `path:line`, never edited after, `--commits` naming every commit of the work but not the one that writes the record; hand-written `TODO.md`: remove the line). A plan that just moved is a link that just changed
 address, so run this after anything moves.
 
 Update `last_verified` on every page you re-read and found true. That date is the
@@ -364,27 +364,56 @@ delete them.
 Clean up only worktrees the project created under `.worktrees/`, `worktrees/` or `.fankeel/worktrees/`.
 Anything else belongs to the host environment.
 
+## 8. File the record
+
+Run the suite with `--check` first; red stops the stage. Then write the five
+typed fields in the user's language, to plain-language.md, and pipe them in:
+
+```
+node <plugin>/scripts/record.js write --session <id> <<'EOF'
+要求: <the ask, one line>
+做了什麼:
+  - <what someone can now do that they could not>
+為什麼這樣做: <the approach; what was given up>
+驗過・沒驗過: <checked; not checked>
+還剩什麼: <what is still not done>
+EOF
+```
+
+It refuses a missing field, a sentence over 160 columns and a bare code, and
+writes nothing; fix and pipe again. On success it adds 花費 from the session's
+own transcript, files the record on the registry entry and in the month's file,
+and prints `filed: <file>#<anchor>` and the six lines.
+
 ## Output
 
 ```
 <sha> <subject>
-shipped:
-  - <what someone can now do that they could not>
+要求: <the ask, one line>
+做了什麼:
+  - <what someone can now do>
+為什麼這樣做: <the approach; what was given up>
+驗過・沒驗過: <checked; not checked>
+花費: <from record.js>
+還剩什麼: <what is still not done>
 suite: <suite.js line>
-cost: <what it took>
-open: <what is still not done>
-白話: <2-3 sentences for a non-coder, in the user's language>
+紀錄: <filed: line>
 then AskUserQuestion
 ```
 
-Five lines and the list. `suite:` is `suite.js`'s line from the run in step 1,
-and a red one stops here: where the project has a suite, `task.js land`
-refuses without a green record, so this stage's own `Done when` is enforced
-rather than reported. `shipped:` is one line per thing someone can now do
-that they could not — from the ledger's completed entries where the task had a
-plan, listed by hand where it did not. A commit subject already holds the change;
-what it cannot hold is a task that shipped four of them. Not a tour of the diff.
-`白話:` is two or three sentences for a reader who does not write code, in the user's language — what they can now do and what is still open, with no path or function name; the station's 關卡 tab puts it first.
+The report above the gate is the commit line, the six lines as `record.js`
+printed them (step 8), `suite:` from step 1, and `紀錄:` with the `filed:`
+value. `做了什麼:` is one line per thing someone can now do that they could not,
+not a tour of the diff. Option one's
+description names the month file and anchor.
+
+After the user answers, the session's last message is the six lines as printed,
+and nothing after them. A follow-up question the user asks after that is
+answered, then the six lines are repeated as the last thing said.
+
+After the user answers, the session's last message is the six lines as printed,
+and nothing after them. A follow-up question the user asks after that is
+answered, then the six lines are repeated as the last thing said.
 
 `land` has no successor — what follows a finished route is a new task, which is a
 decision rather than a transition.

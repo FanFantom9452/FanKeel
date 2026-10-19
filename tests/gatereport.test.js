@@ -320,3 +320,27 @@ test('read counts a build gate\'s verify to build round trips from the session\'
     assert.equal(read(r, { stage: 'build', started: STARTED, moves }).parts.rounds, 2);
     assert.equal(read(r, { stage: 'build', started: STARTED, moves: [['build', 1]] }).parts.rounds, 0);
 });
+
+test('land reads the six record fields, the old keys still parse', () => {
+    const p = parseReport('land', [
+        '4992cb98 docs: design',
+        '要求: 每個任務留一份紀錄。',
+        '做了什麼:',
+        '  - 收尾時寫六欄紀錄',
+        '  - 監控站顯示它',
+        '為什麼這樣做: 直接開的任務原本什麼都沒留下。',
+        '驗過・沒驗過: 測試全過；沒有實跑。',
+        '花費: $3.10，40 分，2 個 agent。',
+        '還剩什麼: 舊任務沒有紀錄。',
+        'suite: suite.js: 10 pass, 0 fail',
+        '紀錄: docs/90-agent/records/2026-10.md#r-2026-10-19-aaaaaaaa',
+    ].join('\n'));
+    assert.deepEqual(p.shipped, ['收尾時寫六欄紀錄', '監控站顯示它']);
+    assert.equal(p.ask, '每個任務留一份紀錄。');
+    assert.equal(p.why, '直接開的任務原本什麼都沒留下。');
+    assert.equal(p.checked, '測試全過；沒有實跑。');
+    assert.equal(p.cost, '$3.10，40 分，2 個 agent。');
+    assert.equal(p.open, '舊任務沒有紀錄。');
+    assert.equal(p.record, 'docs/90-agent/records/2026-10.md#r-2026-10-19-aaaaaaaa');
+    assert.deepEqual(p.rest, []);
+});

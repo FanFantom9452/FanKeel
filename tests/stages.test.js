@@ -423,9 +423,9 @@ test('land closes the documents and rewrites the map', () => {
 // active with no session reading it, because a cleared session gets a new id.
 test('land names what shipped, and the order a clear comes in', () => {
   const text = byName('land').rules.join(' ');
-  assert.match(text, /shipped: is one line per thing someone can now do/);
+  assert.match(text, /做了什麼: one line per thing someone can now do/);
   assert.match(text, /`\/clear` after, never before/);
-  assert.match(templateFor('land'), /\nshipped:\n/);
+  assert.match(templateFor('land'), /\n做了什麼:\n/);
 });
 
 // A commit is read by the next session's init before anyone reads the code, so
@@ -1222,9 +1222,16 @@ test('every controlled stage prints await\'s page: line beside the path', () => 
 // who does not write code, which the station's 關卡 tab puts first; the
 // stand-down rule gave up its reason (skills/fankeel-land/SKILL.md keeps it)
 // so the uncontrolled land block stays under its 2400-character cap.
-test('the land template ends on a 白話 line after open:, and the clear rule keeps its order without its reason', () => {
-  assert.match(templateFor('land'), /\nopen: <what is still not done>\n白話: <2-3 sentences for a non-coder, in the user's language>\nthen AskUserQuestion$/);
+test('the land template lists the six record fields in order, then suite and the record link', () => {
+  assert.match(templateFor('land'), /\n要求: [^\n]+\n做了什麼:\n  - [^\n]+\n為什麼這樣做: [^\n]+\n驗過・沒驗過: [^\n]+\n花費: [^\n]+\n還剩什麼: [^\n]+\nsuite: [^\n]+\n紀錄: [^\n]+\nthen AskUserQuestion$/);
   const text = byName('land').rules.join(' ');
   assert.match(text, /`\/clear` after, never before\./);
   assert.doesNotMatch(text, /new id leaves the entry active/);
+});
+
+test('the land skill pipes the record to record.js, names its anchor on option one, and ends on the record', () => {
+  const skill = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'skills', 'fankeel-land', 'SKILL.md'), 'utf8');
+  assert.match(skill, /scripts\/record\.js write --session <id>/);
+  assert.match(skill, /Option one's\s+description names the month file and anchor/);
+  assert.match(skill, /the session's last message is the six lines as printed,\s+and nothing after them/);
 });
