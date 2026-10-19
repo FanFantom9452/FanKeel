@@ -221,9 +221,8 @@ options and one whose option one named no stage, were refused only at the
 controller's question, each costing a round of SendMessage.
 
 Return once, when the stage is done or blocked, and
-never while an agent you dispatched has not returned — end the turn with
-`waiting` until it has. On a verify stage the adversary and the render
-review are such agents: the gate is written after both returned, each with
+never while an agent you dispatched has not returned — end the turn with `waiting` until it has.
+On a verify stage the adversary and the render review are such agents: the gate is written after both returned, each with
 its line in it, never with "pending" and never with the question asked
 first. When you must wait for an
 agent you dispatched, end your turn with the single word `waiting` — no tool
