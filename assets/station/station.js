@@ -1443,11 +1443,11 @@
     // until opened. `c` is the compact turn, `sum` the summary turn, either
     // may be missing — a summary not loaded yet draws the break alone — and
     // `i` is where the block starts, which a redraw finds an opened one by.
-    function talkCut(c, sum, i) {
+    function talkCut(c, sum, i, extra) {
         var meta = [];
         if (c && c.trigger) meta.push('<code>' + esc(c.trigger) + '</code>');
         if (c && c.preTokens !== null && c.preTokens !== undefined) meta.push(loc('ses.talkPreTokens', '壓縮前 context {n}', { n: '<b>' + tokens(c.preTokens) + '</b>' }));
-        var head = '<code class="ck">compact</code><span class="cm">' + meta.join('<i class="sep">·</i>') + '</span><i class="ln" aria-hidden="true"></i>';
+        var head = '<code class="ck">compact</code><span class="cm">' + meta.join('<i class="sep">·</i>') + '</span>' + (extra || '') + '<i class="ln" aria-hidden="true"></i>';
         var at = talkStamp((c || sum).at);
         if (!sum) return '<li class="tk-cut" data-block="talk-compact">' + at + '<div class="cut"><div class="cutbar">' + head + '</div></div></li>';
         return '<li class="tk-cut" data-block="talk-compact">' + at + '<details class="cut" data-key="talk-cut-' + i + '"><summary>' + head
@@ -1455,7 +1455,12 @@
             + '<div class="sum"><div class="sl">' + loc('ses.talkSumNote', 'Claude Code 在壓縮時寫的摘要，之後的對話從這段接下去') + '</div>'
             + '<div class="t">' + esc(sum.text) + '</div></div></details></li>';
     }
-    function talkRows(turns) {
+    function talkRows(turns, spend, all) {
+        // Break records from the server (lib/conversation.js `spendOf`) are
+        // drawn by assets/station/spend-talk.js, with this file's own blocks.
+        if (w.FK_TALK && spend && spend.marks && spend.marks.length) {
+            return w.FK_TALK.rows(turns, spend, all, { cut: talkCut, row: talkRow, stamp: talkStamp });
+        }
         var out = [];
         for (var i = 0; i < turns.length; i++) {
             var t = turns[i];
@@ -1503,7 +1508,7 @@
             : h.state === 'failed' ? '<span>' + failed + '</span>' + btn(retry)
                 : n < h.total ? btn(loc('ses.talkMore', '再載入 {n} 輪', { n: TALK_PAGE })) : '';
         if (h.total === 0) return talkCounts(h) + '<p class="tally">' + loc('ses.talkEmpty', 'transcript 裡沒有可列的對話') + '</p>';
-        return talkCounts(h) + '<ol class="tk" aria-label="' + loc('ses.talkList', '對話，依時間順序') + '">' + talkRows(h.turns) + '</ol>'
+        return talkCounts(h) + (w.FK_TALK ? w.FK_TALK.line(h.spend) : '') + '<ol class="tk" aria-label="' + loc('ses.talkList', '對話，依時間順序') + '">' + talkRows(h.turns, h.spend, n >= h.total) + '</ol>'
             + '<div class="tkmore" data-block="talk-more"><span>' + loc('ses.talkShown', '已顯示 {n} / {m} 輪', { n: '<b>' + comma(n) + '</b>', m: '<b>' + comma(h.total) + '</b>' })
             + '</span>' + tail + '</div>';
     }
@@ -3239,10 +3244,11 @@
                     + (r.v / mx * 100).toFixed(1) + '%"></i></span><span class="v">' + usd(r.v, true) + estMark(r) + '</span>';
             }).join('') + '</div>' : '<p class="dnone">' + loc('dash.noSpend30d', '近 30 天沒有花費') + '</p>') + '</section>';
     }
-    // The last seven days' tokens, the four kinds `dayBars` reads off `days[].tokens`.
+    // The last seven days' tokens, the five kinds `dayBars` reads off `days[].tokens`.
     function dashTokens7(R) {
         var bars = dayBars(R, 'tokens', 'kind', DAYS.slice(-7)), list = bars.days, mx = bars.max || 1;
         var kind = {};
+        var notes = w.FK_KINDS ? w.FK_KINDS.notes(S.prices) : {};
         dashParts(bars).forEach(function (r) { kind[r.k] = r.v; });
         var tot = list.reduce(function (n, b) { return n + b.total; }, 0);
         return '<section class="dcard" data-block="dash-tokens7">' + dashHead('barv', loc('dash.cardTokens7', '近 7 天 token'), '#/days')
@@ -3250,8 +3256,8 @@
             + '<div class="xc-cols" role="img" aria-label="' + esc(loc('dash.cardTokens7', '近 7 天 token')) + '">' + list.map(function (b) {
                 return '<i title="' + esc(b.day + ' ' + tokens(b.total)) + '" style="--h:' + (b.total / mx * 100).toFixed(1) + '%"></i>';
             }).join('') + '</div>' + (list.length ? '<div class="xc-days"><span>' + list[0].day.slice(5) + '</span><span>' + list[list.length - 1].day.slice(5) + '</span></div>' : '')
-            + '<div class="dkv">' + [['input', 'input'], ['output', 'output'], ['cacheRead', 'cache read'], ['cacheWrite', 'cache write']].map(function (k) {
-                return '<span>' + k[1] + ' <b>' + tokens(kind[k[0]] || 0) + '</b></span>';
+            + '<div class="dkv">' + KIND_KEYS.map(function (k) {
+                return '<span' + (notes[k] ? ' title="' + esc(notes[k]) + '"' : '') + '>' + esc(KIND_LABEL[k]) + ' <b>' + tokens(kind[k] || 0) + '</b></span>';
             }).join('') + '</div></section>';
     }
     function dashModels(R) {
@@ -3682,29 +3688,47 @@
     // marked on the chart; there is no day panel any more.
     function daysPage(r) {
         var R = homeRows();
-        var sel = r.day && DAYS.indexOf(r.day) >= 0 ? r.day : null;
+        var RG = w.FK_RANGE || null;
+        // The range (assets/station/spend-range.js): 近 30 天 unless the
+        // reader picked another; without the module the page is as it was.
+        var rng = RG ? RG.rangeOf(view.range, NOW, view.rangeFrom, view.rangeTo) : { kind: '30d', days: DAYS, prev: PREV, from: DAYS[0], to: TODAY };
+        var picked = RG && view.range === 'custom' ? 'custom' : rng.kind;
+        var sel = r.day && rng.days.indexOf(r.day) >= 0 ? r.day : null;
         var o = homeOpts(sel);
+        o.days = rng.days;
+        o.today = rng.to;
         o.off = chartOff[view.dim] || {};
         o.panel = chartPanel;
-        var all = dayBars(R, view.metric, view.dim, DAYS), bars = visibleBars(all, o);
+        var all = dayBars(R, view.metric, view.dim, rng.days), bars = visibleBars(all, o);
         chartBars = bars;
         chartOpts = o;
+        var held = null;
+        if (RG) {
+            RG.listen(doc, function (a, b) { view.range = 'custom'; view.rangeFrom = a; view.rangeTo = b; draw(); });
+            held = S.serve ? RG.load(rng, function () { if (route.view === 'days') draw(); }) : RG.held(rng);
+        }
         return subtabsHtml('days') + '<section class="panel hero" data-block="days"><div class="hero-top"><div class="hero-title"><div class="eyebrow">' + icon('days')
             + heroEyebrow(frozenAt) + '</div>'
-            + '<h1><b>' + DAYS[0].slice(5) + '</b> — <b>' + TODAY.slice(5) + '</b></h1></div>'
-            + kpiHtml(windowTotals(R, DAYS), windowTotals(R, PREV)) + '</div>'
-            + '<div class="controls"><div class="ctlgrp"><label>' + loc('dash.barHeight', '長條高度') + '</label>'
+            + '<h1><b>' + rng.from.slice(5) + '</b> — <b>' + rng.to.slice(5) + '</b></h1></div>'
+            + kpiHtml(windowTotals(R, rng.days), windowTotals(R, rng.prev), picked === '30d' ? null : RG.costLabel()) + '</div>'
+            + (RG ? RG.kpiHtml(held, Boolean(S.serve)) : '')
+            + '<div class="controls">'
+            + (RG ? RG.controlsHtml(picked, rng, view.rangeFrom, view.rangeTo) : '')
+            + '<div class="ctlgrp"><label>' + loc('dash.barHeight', '長條高度') + '</label>'
             + segHtml('metric', [['tokens', 'token'], ['usd', loc('dash.cost', '花費')], ['time', loc('dash.time', '時間')]], view.metric) + '</div>'
             + '<div class="ctlgrp"><label>' + loc('dash.splitBy', '分段') + '</label>'
             + segHtml('dim', [['model', loc('dash.byModel', '依 model')], ['project', loc('dash.byProject', '依專案')], ['stage', loc('dash.byStage', '依 stage')], ['who', loc('dash.mainVsAgent', '主 session 對 agent')],
-                ['version', loc('dash.byVersion', '依版本')], ['kind', loc('dash.byKind', '依成分')]],
-                view.dim, view.metric === 'time' ? { model: loc('dash.noTimeByModel', '時間沒有 model 可分'), kind: loc('dash.noTimeByKind', '時間沒有成分可分') } : null) + '</div></div>'
+                ['type', DIM_LABEL.type], ['version', loc('dash.byVersion', '依版本')], ['kind', loc('dash.byKind', '依成分')]],
+                view.dim, view.metric === 'time' ? { model: loc('dash.noTimeByModel', '時間沒有 model 可分'), kind: loc('dash.noTimeByKind', '時間沒有成分可分'), type: NO_TIME_TYPE } : null) + '</div></div>'
             // The legend has a strip of its own, one line high: however many
             // series a dim has, the switches above and the chart below stay
             // where they are. What does not fit scrolls; 篩選 lists everything.
             + '<div class="lstrip"><div class="legend">' + legendHtml(all, o) + '</div>' + filterHtml(all, o) + '</div>'
-            + '<div class="chart">' + histSvg(bars, o) + '</div></section>';
+            + '<div class="chart">' + histSvg(bars, o) + '</div></section>'
+            + (w.FK_PANEL ? w.FK_PANEL.html(held, S.prices, Boolean(S.serve)) : '')
+            + (w.FK_KINDS ? w.FK_KINDS.table(S.prices, S.pricesVerified) : '');
     }
+    if (typeof module !== 'undefined' && module.exports) module.exports.daysPage = daysPage;
     function sessionsPage() {
         return recentHtml(recentRows(homeRows(), DAYS), homeOpts(null), subtabsHtml('sessions'));
     }
@@ -3873,6 +3897,13 @@
     // ---- 儀表板 (`#/`), again: the pages that draw it ---------
     function sessionPage(r) {
         var s = S.sessions.filter(function (x) { return x.id === r.id; })[0];
+        // A session from the 花費 page's top list need not be in any
+        // registry; its 對話 tab still has a transcript to read, which the
+        // server's talk route finds under its own config dir.
+        if (!s && r.tab === 'talk' && w.FK_PANEL) {
+            if (S.serve && !TALK[r.id]) talkLoad(r.id, true);
+            return w.FK_PANEL.talkOnly(r.id, talkHtml(r.id, S.serve ? TALK[r.id] : { turns: [], total: null, state: 'static' }));
+        }
         if (!s) return '<section class="panel"><p class="note">' + loc('dash.noSessionOnPage', '這頁上沒有 session {id}', { id: esc(r.id) }) + '</p></section>';
         needDetail(s);
         var x = DETAIL[s.id] || null;
@@ -3953,6 +3984,7 @@
                 held.total = page.total;
                 held.counts = page.counts;
                 held.skipped = page.skipped;
+                held.spend = page.spend || null;
                 held.state = '';
             } else {
                 held.state = 'missing';

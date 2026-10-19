@@ -129,7 +129,7 @@ test('依專案花費 sums each project\'s spend, most first', () => {
     assert.match(html, /\$9\.00/);
 });
 
-test('近 7 天 token adds the four kinds and skips a day with no tokens', () => {
+test('近 7 天 token adds the five kinds and skips a day with no tokens', () => {
     const t = TODAY();
     const d = new Date(Date.now() - 10 * 864e5);
     const old = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -139,7 +139,7 @@ test('近 7 天 token adds the four kinds and skips a day with no tokens', () =>
     const V = page({}, R);
     const html = V.dashKinds()['dash-tokens7'].render(R, { projects: [], sessions: R });
     assert.match(html, new RegExp('<div class="dbig">' + V.tokens(2435000) + '<'));
-    for (const [k, n] of [['input', 400000], ['output', 30000], ['cache read', 2000000], ['cache write', 5000]]) assert.match(html, new RegExp(k + ' <b>' + V.tokens(n) + '</b>'), k);
+    for (const [k, n] of [['input', 400000], ['output', 30000], ['cache read', 2000000], ['cache write 5m · agent', 5000], ['cache write 1h · 主對話', 0]]) assert.match(html, new RegExp(k + ' <b>' + V.tokens(n) + '</b>'), k);
 });
 
 test('模型用量分布 splits the spend by model', () => {
