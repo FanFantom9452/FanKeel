@@ -10,12 +10,29 @@
 //
 //   node gate-check.js --session <id> [--root <dir>] <handoff file>
 
+const fs = require('node:fs');
 const { parseArgs } = require('node:util');
 const registry = require('../lib/registry.js');
 const { nextStage, normaliseRoute, FULL_ROUTE } = require('../lib/stages.js');
 const { readGate, patrolEntries } = require('../lib/handoff.js');
 
 const USAGE = 'gate-check.js: usage: gate-check.js --session <id> [--root <dir>] <handoff file>';
+
+// brain-1: on 2026-10-19 a verify gate went out with its adversary line saying
+// the adversary had not come back yet. The line is the verify template's
+// `- adversary: ...` (lib/stages.js), colon half- or full-width. Over the 160
+// verify handoffs under .fankeel/build/ that carry one, these words hit the
+// two genuinely unreturned ones and nothing else; a bare `pending` or `waiting`
+// counts only as the whole answer, since a result can quote "nothing pending".
+const ADVERSARY = /^\s*[-*]?\s*adversary\s*[:：]\s*(.+)$/im;
+const UNRETURNED = /未回|尚未回|還沒回|沒有回來|結果未知|not (?:yet )?returned|has not returned|still running|^\s*(?:pending|waiting)\b/i;
+
+function unreturned(file) {
+    let text;
+    try { text = fs.readFileSync(file, 'utf8'); } catch (e) { return null; }
+    const m = ADVERSARY.exec(text);
+    return m && UNRETURNED.test(m[1]) ? m[1].trim() : null;
+}
 
 function main(argv) {
     let parsed;
@@ -35,6 +52,11 @@ function main(argv) {
     const warn = todo.warning ? '\nwarning: ' + todo.warning : '';
     if (!gate) return { text: 'gate-check.js: no readable `json gate` block in ' + files[0] + warn, code: 1 };
     if (gate.invalid) return { text: 'gate-check.js: invalid at ' + gate.invalid + ': ' + gate.detail + warn, code: 1 };
+    const pending = mine.stage === 'verify' ? unreturned(files[0]) : null;
+    if (pending) {
+        return { text: 'gate-check.js: the adversary line says it has not returned — "' + pending.slice(0, 120)
+            + '". End your turn with `waiting` until it does, put what it defeated on that line, then run this again.' + warn, code: 1 };
+    }
     return { text: 'gate ok' + warn, code: 0 };
 }
 
