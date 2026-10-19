@@ -872,11 +872,12 @@ The 30-day histogram that used to open the page is now **近 30 天**,
 `#/days` — one bar per local day, today at the
 right — whose height switches between tokens, dollars and time and whose
 segments switch between model, project, stage, main session against agent,
-the plugin `version` that ran the session, and the four cost components the
-cost tab already splits — input, output, cache read and the two cache-write
-rates folded into one. Two of those six are disabled under time and say why:
-a span records only a stage and who was running, so it carries no model and
-no tokens to split into components. `version` is not one of them — it belongs
+the plugin `version` that ran the session, the agent type — the main session
+and each agent type beside it — and the five cost components the cost tab
+already splits — input, output, cache read and the two cache-write rates, 1h
+and 5m, kept apart. Three of those seven are disabled under time and say why:
+a span records only a stage and who was running, so it carries no model, no
+agent type and no tokens to split into components. `version` is not one of them — it belongs
 to the session rather than to the row, so it applies to a span as much as to a
 day. 依 model splits by version — `modelKey()`, `Opus 5.5` beside `Opus 5` —
 each family one hue from `--m-<family>`, the newest version that colour and
