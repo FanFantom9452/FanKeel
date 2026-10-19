@@ -243,7 +243,7 @@ this is a guarantee under a background subagent started with the flag, and an
 open question under a project that sets the mode in its settings —
 [reports/2026-09-15-waiting-probes.md](../reports/2026-09-15-waiting-probes.md).
 
-## A named exception: six read-only agents, denied by command
+## A named exception: seven read-only agents, denied by command
 
 `files_ref.txt` is where the paragraph above stopped being enough. A
 `fankeel-reader` dispatched inside the 2026-09-11 survey workflow was told to
@@ -263,7 +263,7 @@ entry — `guard.js` returns first otherwise — and all three of these are true
 set — present only inside a subagent, absent on the main thread of an
 `--agent` session — `payload.agent_type` — read bare or with a `fankeel:`
 prefix, `lib/guard.js`'s `readOnlyAgentType` —
-names `fankeel-reader`, `fankeel-reviewer`, `fankeel-judge`, `fankeel-render-reviewer`, `fankeel-slimmer` or `fankeel-init-scout`, and the command
+names `fankeel-reader`, `fankeel-reviewer`, `fankeel-judge`, `fankeel-render-reviewer`, `fankeel-slimmer`, `fankeel-init-scout` or `fankeel-retro`, and the command
 matches `writesFiles()`'s fixed list — a redirect to anywhere but `/dev/null`
 or `$null`, never counting `=>`, `->`, `>&` or a `>` inside quotes,
 `tee`, `rm`, `mv`, `cp`, `sed -i` or `--in-place`, a `git`
@@ -285,7 +285,7 @@ repository's top and the files the commit carries, and answers with
 The list is a denylist rather than an allowlist for the reason the rejected
 2026-09-10 proposal already named: an allowlist would refuse the `npm test`
 and `node scripts/...` calls these agents are supposed to make. It runs only
-against six named agent types rather than every session's Bash calls, which
+against seven named agent types rather than every session's Bash calls, which
 is the difference that makes the per-call cost worth paying here and not
 worth paying everywhere — the general guard above still says nothing about a
 `Bash` or `PowerShell` call from anything else.

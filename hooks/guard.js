@@ -24,8 +24,8 @@ const { isCommit, commitVerdict } = require('../lib/sensitive.js');
 
 // The tool names the controlled-stage matcher below cares about. A module
 // constant rather than a literal in the condition, for the same reason
-// `lib/guard.js`'s `READ_ONLY_AGENTS` is a set: six names compared once
-// each read better than six `===`s repeated at every call site.
+// `lib/guard.js`'s `READ_ONLY_AGENTS` is a set: seven names compared once
+// each read better than seven `===`s repeated at every call site.
 const WRITE_TOOLS = new Set(['Edit', 'Write', 'NotebookEdit']);
 
 // /fankeel-ask's first step is the controller writing its brief, and a judge
@@ -67,7 +67,7 @@ function main(raw) {
     const shell = payload.tool_name === 'Bash' || payload.tool_name === 'PowerShell';
     const command = (payload.tool_input && payload.tool_input.command) || '';
     // A second matcher, `Bash|PowerShell`, checked before the collision guard
-    // below: six named read-only agent types (READ_ONLY_AGENTS) are denied a command that writes,
+    // below: seven named read-only agent types (READ_ONLY_AGENTS) are denied a command that writes,
     // regardless of `guard` mode — this is about a read-only contract, not
     // about two sessions overlapping a file.
     if (shell) {

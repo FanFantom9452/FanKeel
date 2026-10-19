@@ -21,7 +21,7 @@ test('documents.md: the docs.json question is asked at init and at survey, and d
 test('subagents.md and collisions.md name fankeel-init-scout as read-only', () => {
     assert.match(flat('subagents.md'), /## The fifteen agents this plugin defines/);
     assert.match(flat('subagents.md'), /`fankeel-init-scout` and `fankeel-retro` — carry `tools: \[Read, Grep, Glob, Bash\]`/);
-    assert.match(flat('collisions.md'), /`fankeel-slimmer` or `fankeel-init-scout`, and the command/);
+    assert.match(flat('collisions.md'), /`fankeel-init-scout` or `fankeel-retro`, and the command/);
     assert.match(flat('collisions.md'), /\.fankeel\/sensitive\.txt/);
 });
 
