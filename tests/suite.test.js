@@ -94,6 +94,22 @@ test('runSuite holding the lock passes the output and exit status through, and t
   assert.deepEqual(red.failed, ['a']);
 });
 
+test('runSuite whose lock another run took while it ran says so on stderr, once', () => {
+  const dir = repo();
+  const file = path.join(tmp('fankeel-suitelock-'), 'suite.lock');
+  const at = new Date(Date.now() - 31000).toISOString();
+  fs.writeFileSync(file, JSON.stringify({ pid: process.pid, at }) + '\n');
+  fs.writeFileSync(path.join(dir, 'take.js'), "require('fs').writeFileSync(process.env.TAKE, JSON.stringify({ pid: 1, at: new Date().toISOString() })); console.log('a'); setTimeout(() => console.log('b'), 50);\n");
+  const said = [];
+  const write = process.stderr.write;
+  process.stderr.write = (s) => { said.push(String(s)); return true; };
+  let r;
+  try { r = suite.runSuite(dir, 'node take.js', { TAKE: file }, { lock: { file, pid: process.pid, at } }); } finally { process.stderr.write = write; }
+  assert.equal(r.ok, true);
+  assert.deepEqual(said, ['suite: lock ' + file + ' was taken by another run; results may overlap\n']);
+  assert.equal(JSON.parse(fs.readFileSync(file, 'utf8')).pid, 1, 'the relay wrote into the lock it lost');
+});
+
 test('blocker: no record where a suite is runnable; a red record; a record older than a code change; null otherwise @slow', () => {
   const dir = repo();
   const sha = git(dir, ['rev-parse', 'HEAD']);

@@ -163,7 +163,8 @@ test('the refresher touches the lock at most once per REFRESH_MS, counted from a
   const mine = { pid: process.pid, at: new Date(t0).toISOString() };
   hold(file, mine);
   const out = () => JSON.parse(fs.readFileSync(file, 'utf8')).out;
-  const seen = lock.refresher(file, mine);
+  let lost = 0;
+  const seen = lock.refresher(file, mine, lock.REFRESH_MS, () => { lost++; });
   assert.equal(lock.REFRESH_MS, 30000);
   assert.equal(seen(t0 + 10000), false);
   assert.equal(out(), undefined);
@@ -173,6 +174,11 @@ test('the refresher touches the lock at most once per REFRESH_MS, counted from a
   assert.equal(out(), t0 + 31000);
   assert.equal(seen(t0 + 61000), true);
   assert.equal(out(), t0 + 61000);
+  assert.equal(lost, 0);
+  hold(file, { pid: process.pid + 1, at: mine.at });
+  assert.equal(seen(t0 + 91000), false);
+  assert.equal(seen(t0 + 121000), false);
+  assert.equal(lost, 1, 'onLost ran ' + lost + ' times');
 });
 
 test('sleepMs, the one wait suitelock polls with, blocks for at least the time it is given', () => {
