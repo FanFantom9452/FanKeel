@@ -1236,8 +1236,8 @@ the session id is in the path). It finds the session's transcript under the
 config dir its registry entry recorded, this server's own when the entry has
 none, and answers JSON: `{ total, from, counts: { compact, user, claude },
 skipped, turns, spend }`, where `spend` is the read's spend marks object
-(`lib/conversation.js` `spendOf`), or null until the station page reads it. `total` is every turn of the conversation; `counts` and
-`skipped` (`meta`, `tool`, `notification`, `agent`, `local`, `synthetic`,
+(`lib/conversation.js` `spendOf`), or null until the route attaches it.
+`total` is every turn of the conversation; `counts` and `skipped` (`meta`, `tool`, `notification`, `agent`, `local`, `synthetic`,
 `sidechain`, `unparsed`) are the whole conversation's; `turns` is 100 of them
 from index `from` (`pageOf` in `lib/conversation.js`; a `from` that is not a
 whole number above 0 is 0). A turn is `{ kind, at, text }`, `kind` one of
