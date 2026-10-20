@@ -2636,3 +2636,4 @@ body.focus{min-width:0}
 .gq-next span{color:var(--muted)}
 .gr-hd{padding:18px 26px 0}
 .gr-hd h2{margin:0;font-size:15px;font-weight:700}
+#focus.fm-stale{opacity:.6}

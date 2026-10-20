@@ -66,6 +66,53 @@ test('an id the payload does not hold says so, and a session with no gate report
     assert.match(none, /class="pv-empty"/);
 });
 
+test('background shells sit between the header and the page', () => {
+    const shells = [{ id: 'bg1', state: 'running', command: 'node scripts/suite.js', startedAt: new Date().toISOString(), code: null }];
+    const html = V.focusPageHtml({ sessions: [ROW] }, { [SID]: { tasks: [], gate: null, shells } }, { id: SID, tab: 'plan' });
+    const h = html.indexOf('</header>');
+    const sh = html.indexOf('data-block="s-shells"');
+    const m = html.indexOf('<main class="fm"');
+    assert.ok(h > 0 && sh > h && m > sh, 'header, shells, main');
+    assert.ok(html.includes('node scripts/suite.js'));
+});
+
+// station.js loaded as the focus shell loads it: STATION_FOCUS set, one
+// session's row and detail, a #focus to draw into.
+function focusDom() {
+    const asked = [], heads = [], ticks = [], listened = [];
+    const cls = new Set();
+    const focus = { innerHTML: '', classList: { toggle: (c, on) => { if (on) cls.add(c); else cls.delete(c); }, contains: (c) => cls.has(c) } };
+    const head = { appendChild(t) { t.parentNode = head; heads.push(t); }, removeChild(t) { t.parentNode = null; } };
+    const doc = { hidden: false, head, getElementById: (id) => { asked.push(id); return id === 'focus' ? focus : null; },
+        createElement: () => ({}), addEventListener() { listened.push('doc'); }, querySelectorAll: () => [] };
+    const win = { STATION_FOCUS: { id: SID, tab: 'plan' }, STATION: { serve: true, pricesVerified: '2026-09-04', sessions: [ROW] },
+        STATION_DETAIL: { [SID]: { tasks: [], gate: null } }, location: { hash: '' },
+        setInterval: (fn) => ticks.push(fn), addEventListener() { listened.push('win'); } };
+    vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8'), { window: win, document: doc, URLSearchParams });
+    return { focus, asked, heads, ticks, listened, win };
+}
+
+test('boot: STATION_FOCUS draws the focus page into #focus and the full station never boots', () => {
+    const d = focusDom();
+    assert.match(d.focus.innerHTML, /^<header class="fh" data-block="focus-header">/);
+    assert.deepEqual(d.asked, ['focus'], 'no other element looked up');
+    assert.deepEqual(d.listened, [], 'no listener of the full page');
+    assert.equal(d.ticks.length, 1, 'one re-read timer');
+});
+
+test('boot: a re-read that fails dims the page as stale, the next one that loads clears it', () => {
+    const d = focusDom();
+    d.ticks[0]();
+    d.heads[0].onerror();
+    assert.ok(d.focus.classList.contains('fm-stale'), 'stale after an error');
+    assert.equal(d.heads[0].parentNode, null, 'the failed tag is removed');
+    d.ticks[0]();
+    d.win.STATION = Object.assign({}, d.win.STATION, { sessions: [Object.assign({}, ROW, { task: 'renamed' })] });
+    d.heads[1].onload();
+    assert.ok(!d.focus.classList.contains('fm-stale'), 'fresh after a load');
+    assert.ok(d.focus.innerHTML.includes('renamed'), 'the load repaints');
+});
+
 const get = (url) => new Promise((resolve, reject) => {
     http.get(url, (res) => {
         let text = '';

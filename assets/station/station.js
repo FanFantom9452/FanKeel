@@ -2911,8 +2911,9 @@
             if (doc.hidden) return;
             var tag = doc.createElement('script');
             tag.src = '/station/focus/' + encodeURIComponent(F.id) + '.js?t=' + Date.now();
-            tag.onload = function () { S = w.STATION || S; paint(); if (tag.parentNode) tag.parentNode.removeChild(tag); };
-            tag.onerror = function () { if (tag.parentNode) tag.parentNode.removeChild(tag); };
+            tag.onload = function () { S = w.STATION || S; paint(); el.classList.toggle('fm-stale', false); if (tag.parentNode) tag.parentNode.removeChild(tag); };
+            // A stopped server or a 404 must not leave the last ledger looking current.
+            tag.onerror = function () { el.classList.toggle('fm-stale', true); if (tag.parentNode) tag.parentNode.removeChild(tag); };
             doc.head.appendChild(tag);
         }, 5000);
     }
