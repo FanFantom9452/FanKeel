@@ -354,20 +354,33 @@ async function serve(opts) {
     // request answers from what is cached and the next one carries on, so a
     // cache from an older VERSION is read again a few sessions at a time rather
     // than all in one request the page gives up on.
+    // Held across gathers by lib/station.js: each inactive session's row while
+    // its entry file and transcript stat the same, and each build directory's
+    // file count for a minute (`rowMemo`, `buildMemo` in `gather()`).
+    const rowMemo = new Map();
+    const buildMemo = new Map();
     const modelNow = (extra) => station.gather(Object.assign({}, gatherOpts,
-        { deadline: scanDeadline(gatherOpts.scan), memo, detailBudgetMs: station.DETAIL_BUDGET_MS }, extra));
-    // What `/station/station-data.js` (and `/station/search`) answer from: one
-    // gather() for every request inside `memoMs`. Two open tabs polling every
-    // three seconds each walked every registry on their own. gather() is
-    // synchronous, so requests arriving together are served one after another
-    // and all but the first read this. A POST drops it: the page a write
-    // redirects to is gathered after the write.
+        { deadline: scanDeadline(gatherOpts.scan), memo, rowMemo, buildMemo, detailBudgetMs: station.DETAIL_BUDGET_MS }, extra));
+    // What `/station/station-data.js`, `/station/search` and an ended
+    // session's `/station/detail/<id>.js` answer from: one gather() for every
+    // request inside `memoMs`, dropped sooner when any registry's sessions/
+    // directory moves — every entry write renames a file into it. The window
+    // stays: a live session's transcript and agents move without the registry
+    // moving. gather() is synchronous, so requests arriving together are served
+    // one after another and all but the first read this. A POST drops it.
     const memoMs = Number.isFinite(opts.memoMs) ? opts.memoMs : 2000;
     let shared = null;
+    const stampOf = (model) => model.registries.map((r) => {
+        try {
+            return fs.statSync(path.join(registry.stateDir(r.root), 'sessions')).mtimeMs;
+        } catch (e) {
+            return 0;
+        }
+    }).join(',');
     const sharedModel = () => {
-        if (shared && Date.now() - shared.at < memoMs) return shared.model;
+        if (shared && Date.now() - shared.at < memoMs && stampOf(shared.model) === shared.stamp) return shared.model;
         const model = modelNow();
-        shared = { at: Date.now(), model };
+        shared = { at: Date.now(), model, stamp: stampOf(model) };
         return model;
     };
     let timer = null;
@@ -537,9 +550,14 @@ async function serve(opts) {
         const wanted = /^\/station\/detail\/([0-9A-Za-z-]+)\.js$/.exec(url.pathname);
         if (req.method === 'GET' && wanted) {
             // One session's detail, the script `write()` leaves beside the
-            // data file, rendered from this request's model rather than read
-            // off disk.
-            const hit = modelNow({ details: wanted[1] }).registries.flatMap((r) => r.sessions).find((s) => s.sessionId === wanted[1]);
+            // data file, rendered from a model rather than read off disk. An
+            // ended session's comes from the shared model — nothing under it
+            // moves. An active one's is gathered for this request, because its
+            // transcript and agents move inside the shared window; `rowMemo`
+            // holds every inactive row, so that gather costs the live ones.
+            const find = (model) => model.registries.flatMap((r) => r.sessions).find((s) => s.sessionId === wanted[1]);
+            let hit = find(sharedModel());
+            if (!hit || hit.state !== 'down' || !hit.detail) hit = find(modelNow({ details: wanted[1] }));
             if (!hit || !hit.detail) {
                 return fail(404, 'no detail for that session');
             }
