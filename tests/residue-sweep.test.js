@@ -18,7 +18,7 @@ function repo() {
     fs.writeFileSync(path.join(root, '.gitignore'), '.claude/worktrees/\n');
     git('add', '-A');
     git('commit', '-qm', 'first');
-    return { root, git, home: git('rev-parse', '--abbrev-ref', 'HEAD') };
+    return { root, git };
 }
 
 function agent(r, name, file) {
@@ -66,4 +66,24 @@ test('sweep removes a clean detached agent worktree whose branch is already gone
     const result = sweep(r.root, { now: Date.now() + 3 * HOUR });
     assert.deepEqual(result.removed, [a.where]);
     assert.equal(fs.existsSync(a.where), false);
+});
+
+test('sweep reports a failed git branch listing instead of reading it as nothing to sweep', () => {
+    const notRepo = tmp('fankeel-sweep-norepo-');
+    const result = sweep(notRepo);
+    assert.deepEqual(result.removed, []);
+    assert.match(result.kept.map((k) => k.why).join('\n'), /git branch --list failed/);
+});
+
+test('sweep keeps a worktree it cannot stat @slow', () => {
+    const r = repo();
+    const a = agent(r, 'agent-vanish', 'v.txt');
+    r.git('cherry-pick', a.sha);
+    const real = fs.statSync;
+    fs.statSync = (p, ...rest) => { if (path.normalize(String(p)) === path.normalize(a.where)) throw new Error('EACCES'); return real(p, ...rest); };
+    try {
+        const result = sweep(r.root, { now: Date.now() + 3 * HOUR });
+        assert.deepEqual(result.removed, []);
+        assert.match(result.kept[0].why, /cannot stat/);
+    } finally { fs.statSync = real; }
 });

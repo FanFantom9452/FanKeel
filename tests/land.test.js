@@ -107,6 +107,16 @@ test('clean after a merge removes the worktree and deletes the branch @slow', ()
     assert.equal(git(dir, 'branch', '--list', 'fk/aaaaaaaa'), '');
 });
 
+test('clean appends the sweep lines after a successful clean @slow', () => {
+    const { dir, wt } = started();
+    edit(wt, 'one\ntwo\nTHREE\n');
+    assert.equal(merge(dir).code, 0);
+    git(dir, 'branch', 'worktree-agent-spent');
+    const res = clean(dir);
+    assert.equal(res.code, 0, res.text);
+    assert.equal(res.text, 'removed .fankeel/worktrees/aaaaaaaa, deleted fk/aaaaaaaa\nswept 1 spent agent branch(es): worktree-agent-spent');
+});
+
 test('clean before a merge keeps the branch: git branch -d refuses, said as git said it, never -D', () => {
     const { dir, wt } = started();
     edit(wt, 'one\ntwo\nTHREE\n');

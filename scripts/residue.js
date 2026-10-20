@@ -344,7 +344,7 @@ function scan(root) {
 }
 
 
-// Only the first two sections fail the run. A command that always exits non-zero
+// Only the first four lists fail the run (undecided, worktrees, agentSpent, orphans). A command that always exits non-zero
 // has an exit code that means nothing, and the weight of a build directory is a
 // fact about the project rather than a fault in it.
 function defects(result) {
@@ -406,14 +406,17 @@ function report(result) {
 // worktree when one is checked out and clean, is removed; anything holding
 // uncommitted files or a commit HEAD lacks is kept and said, never forced
 // (TODO agent 分支與 worktree 殘留). A worktree in use by a live session, or
-// touched in the last two hours, may be an agent still running and is kept.
+// whose own directory mtime is within the last two hours, may be an agent
+// still running and is kept (only the directory's mtime is read, not its files').
 const SWEEP_QUIET_MS = 2 * 3600000;
 
-function sweepable(root, w, now) {
+function sweepable(w, now) {
     if (w.inUse) return 'in use by a live session';
     try {
-        if (now - fs.statSync(w.path).mtimeMs < SWEEP_QUIET_MS) return 'touched in the last two hours';
-    } catch (e) {}
+        if (now - fs.statSync(w.path).mtimeMs < SWEEP_QUIET_MS) return 'worktree directory modified in the last two hours';
+    } catch (e) {
+        return 'cannot stat ' + w.path;
+    }
     const status = git(w.path, ['status', '--porcelain']);
     if (status === null || status.length) return 'uncommitted files in ' + w.path;
     return null;
@@ -424,12 +427,14 @@ function sweep(root, { now = Date.now() } = {}) {
     const kept = [];
     const listed = worktreesOf(root);
     const trees = new Map(listed.filter((w) => w.branch).map((w) => [w.branch, w]));
-    for (const name of (git(root, ['branch', '--list', 'worktree-agent-*', '--format=%(refname:short)']) || []).map((s) => s.trim()).filter(Boolean)) {
+    const names = git(root, ['branch', '--list', 'worktree-agent-*', '--format=%(refname:short)']);
+    if (names === null) kept.push({ name: root, why: 'git branch --list failed' });
+    for (const name of (names || []).map((s) => s.trim()).filter(Boolean)) {
         const cherry = git(root, ['cherry', 'HEAD', name]);
         if (cherry === null || cherry.some((l) => l.startsWith('+'))) { kept.push({ name, why: 'holds commits HEAD lacks' }); continue; }
         const w = trees.get(name);
         if (w) {
-            const why = sweepable(root, w, now);
+            const why = sweepable(w, now);
             if (why) { kept.push({ name, why }); continue; }
             if (git(root, ['worktree', 'remove', w.path]) === null) { kept.push({ name, why: 'git worktree remove failed for ' + w.path }); continue; }
         }
@@ -439,10 +444,10 @@ function sweep(root, { now = Date.now() } = {}) {
     for (const w of listed.filter((t) => !t.branch && path.basename(t.path).startsWith('agent-'))) {
         const head = git(w.path, ['rev-parse', 'HEAD']);
         const cherry = head && head[0] ? git(root, ['cherry', 'HEAD', head[0]]) : null;
-        if (cherry === null || cherry.some((l) => l.startsWith('+'))) { kept.push({ name: w.path, why: 'holds commits HEAD lacks' }); continue; }
-        const why = sweepable(root, w, now);
-        if (why) { kept.push({ name: w.path, why }); continue; }
-        if (git(root, ['worktree', 'remove', w.path]) === null) { kept.push({ name: w.path, why: 'git worktree remove failed' }); continue; }
+        if (cherry === null || cherry.some((l) => l.startsWith('+'))) { kept.push({ name: path.normalize(w.path), why: 'holds commits HEAD lacks' }); continue; }
+        const why = sweepable(w, now);
+        if (why) { kept.push({ name: path.normalize(w.path), why }); continue; }
+        if (git(root, ['worktree', 'remove', w.path]) === null) { kept.push({ name: path.normalize(w.path), why: 'git worktree remove failed' }); continue; }
         removed.push(path.normalize(w.path));
     }
     return { removed, kept };
