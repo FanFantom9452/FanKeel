@@ -533,7 +533,7 @@ test('plan page: an answering station puts the session\'s plan tab on a second l
     try {
         const lines = (await awaitCli.main(['--session', SID, '--root', f.root], f.env)).text.split('\n');
         assert.match(lines[0], new RegExp('^handoff ' + f.task + '/plan\\.md — '));
-        assert.equal(lines[1], 'page: ' + s.url + '#/s/' + SID + '/plan');
+        assert.equal(lines[1], 'page: ' + s.url + 'f/' + SID + '/plan');
         assert.equal(lines.length, 2);
     } finally {
         await s.close();
@@ -550,7 +550,7 @@ test('gate page: a land-stage handoff from an answering station prints the sessi
     try {
         serveRecord(f.config, s);
         const lines = (await awaitCli.main(['--session', SID, '--root', f.root], f.env)).text.split('\n');
-        assert.equal(lines[1], 'page: ' + s.url + '#/s/' + SID + '/gate');
+        assert.equal(lines[1], 'page: ' + s.url + 'f/' + SID + '/gate');
         assert.ok(lines[0].endsWith(' Open its `page:` line below in a browser pane first, if you have one.'), lines[0]);
         assert.equal(lines.length, 2);
     } finally {
@@ -567,7 +567,7 @@ test('gate page: survey, design and build print the gate tab; verify and audit p
             serveRecord(f.config, s);
             const lines = (await awaitCli.main(['--session', SID, '--root', f.root], f.env)).text.split('\n');
             if (stage === 'verify' || stage === 'audit') assert.equal(lines.length, 1, stage + ': ' + lines.join(' | '));
-            else assert.equal(lines[1], 'page: ' + s.url + '#/s/' + SID + '/gate', stage);
+            else assert.equal(lines[1], 'page: ' + s.url + 'f/' + SID + '/gate', stage);
         }
     } finally {
         await s.close();

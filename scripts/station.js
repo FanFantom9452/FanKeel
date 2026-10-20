@@ -336,6 +336,20 @@ async function serve(opts) {
     // detail it shows while its session is live; without this each re-read
     // parsed every cached detail on the machine again.
     const memo = new Map();
+    // The focus page's payloads (lib/station.js `focusOf`), held per session
+    // while the files they were read from keep their mtimes, and the registry
+    // root each session id was last found under. Neither runs gather().
+    const focusMemo = new Map();
+    const focusRoots = new Map();
+    const focusRoot = (id) => {
+        const known = focusRoots.get(id);
+        const there = (r) => { const f = registry.sessionPath(r, id); return Boolean(f) && fs.existsSync(f); };
+        if (known && there(known)) return known;
+        // `--scan` walks are left out: a root they found is in roots.json already.
+        const root = station.discover(Object.assign({}, gatherOpts, { scan: [] })).roots.find(there) || null;
+        if (root) focusRoots.set(id, root);
+        return root;
+    };
     // The one conversation last asked for, read once and held while `keyOf`
     // says its transcript has not moved: turning a page must not parse a
     // 20 MB transcript again.
@@ -556,6 +570,23 @@ async function serve(opts) {
             }
             const from = Number(url.searchParams.get('from'));
             return send(200, 'application/json; charset=utf-8', JSON.stringify(conversation.pageOf(talked.read, from, conversation.PAGE)), noStore);
+        }
+        // docs/90-agent/plans/2026-10-21-station-focus-design.md §1: one
+        // session's plan or gate alone, drawn from a script that holds that
+        // session and nothing else. A tab the focus page does not draw opens
+        // the full station on it.
+        const focusPage = /^\/f\/([0-9A-Za-z-]+)\/([a-z]+)\/?$/.exec(url.pathname);
+        if (req.method === 'GET' && focusPage) {
+            const html = station.focusShell(focusPage[1], focusPage[2]);
+            if (!html) return redirect('/#/s/' + focusPage[1] + '/' + focusPage[2]);
+            return send(200, 'text/html; charset=utf-8', html, noStore);
+        }
+        const focusData = /^\/station\/focus\/([0-9A-Za-z-]+)\.js$/.exec(url.pathname);
+        if (req.method === 'GET' && focusData) {
+            const root = focusRoot(focusData[1]);
+            const got = root ? station.focusOf(root, focusData[1], { memo: focusMemo }) : null;
+            if (!got) return fail(404, 'no session ' + focusData[1]);
+            return send(200, 'text/javascript; charset=utf-8', station.serializeFocus(root, got, { serve: true, nonce, plugin: PLUGIN, configDir }), noStore);
         }
         const wanted = /^\/station\/detail\/([0-9A-Za-z-]+)\.js$/.exec(url.pathname);
         if (req.method === 'GET' && wanted) {

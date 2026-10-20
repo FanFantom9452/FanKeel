@@ -181,7 +181,7 @@ function lineFor(state, o, commitFile) {
 }
 
 // gate tab §1 (docs/90-agent/plans/2026-10-18-gate-tab-design.md): a stage
-// that stops at a gate the station draws gets its page — the plan tab for
+// that stops at a gate the station draws gets its focus page, `/f/<id>/<tab>` — the plan tab for
 // plan, the gate tab for survey, design, build and land — with a station
 // answering (the record in `<configDir>/fankeel/serve.json`, probed for half a
 // second), on a line of its own. No record, no answer, verify or audit, a
@@ -196,7 +196,7 @@ function pageLine(o) {
     const record = readServeRecord(o.configDir);
     // probe resolves false for no record or a url that is not a string, and
     // never rejects; a recorded url ends in `/` (scripts/station.js).
-    return probe(record).then((up) => (up ? '\npage: ' + record.url + '#/s/' + o.session + '/' + tab : ''));
+    return probe(record).then((up) => (up ? '\npage: ' + record.url + 'f/' + o.session + '/' + tab : ''));
 }
 
 // controller-1: one waiter per in-flight mark. A controller that ran await
