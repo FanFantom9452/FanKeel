@@ -1,7 +1,7 @@
 'use strict';
 // The focus page's payload (docs/90-agent/plans/2026-10-21-station-focus-design.md §1):
 // lib/station.js `focusOf` reads one session's entry, claimed plan, ledger and
-// handoff — never a transcript — and holds its answer while those files keep
+// handoff — a transcript only for an active session's shells — and holds its answer while those files keep
 // their mtimes. `focusShell` is the page that loads it instead of station-data.js.
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -91,4 +91,69 @@ test('focusShell loads the focus script and never station-data.js; any other tab
     assert.deepEqual(station.FOCUS_TABS, ['plan', 'gate']);
     assert.equal(station.focusShell(SID, 'dispatch'), null);
     assert.equal(station.focusShell('</script>', 'plan'), null);
+});
+
+// tests/station-shells.test.js machine(): a config dir holding this session's
+// transcript with one background shell, and its output file under a temp dir
+// that withTemp makes os.tmpdir() for the call.
+function shellFixture(active) {
+    const f = fixture({ active });
+    const cfg = path.join(f.root, 'cfg');
+    const proj = path.join(cfg, 'projects', 'ws-slug');
+    fs.mkdirSync(proj, { recursive: true });
+    registry.writeSession(f.root, SID, Object.assign({}, f.data, { configDir: cfg }));
+    const line = (o) => JSON.stringify(o) + '\n';
+    const when = new Date(Date.now() - 60000).toISOString();
+    fs.writeFileSync(path.join(proj, SID + '.jsonl'), line({ type: 'assistant', timestamp: when,
+        message: { content: [{ type: 'tool_use', id: 'u1', name: 'Bash', input: { command: 'sleep 60', run_in_background: true } }] } })
+        + line({ type: 'user', timestamp: when, message: { content: [{ type: 'tool_result', tool_use_id: 'u1', content: 'running in background' }] },
+            toolUseResult: { stdout: '', stderr: '', interrupted: false, backgroundTaskId: 'b1' } }));
+    const temp = path.join(f.root, 'temp');
+    const tasks = path.join(temp, 'claude', 'ws-slug', SID, 'tasks');
+    fs.mkdirSync(tasks, { recursive: true });
+    fs.writeFileSync(path.join(tasks, 'b1.output'), 'running\n');
+    return { root: f.root, temp, tasks, when };
+}
+
+// os.tmpdir() reads these at call time: TEMP and TMP on Windows, TMPDIR elsewhere.
+function withTemp(dir, fn) {
+    const keep = { TEMP: process.env.TEMP, TMP: process.env.TMP, TMPDIR: process.env.TMPDIR };
+    Object.assign(process.env, { TEMP: dir, TMP: dir, TMPDIR: dir });
+    try {
+        return fn();
+    } finally {
+        for (const [k, v] of Object.entries(keep)) {
+            if (v === undefined) delete process.env[k];
+            else process.env[k] = v;
+        }
+    }
+}
+
+test('focusOf gives an inactive session no shells, even with shells in its transcript', () => {
+    const s = shellFixture(false);
+    const got = withTemp(s.temp, () => station.focusOf(s.root, SID, {}));
+    assert.deepEqual(got.detail.shells, []);
+});
+
+test('an active session\'s shells reach detail.shells and STATION_DETAIL[id].shells', () => {
+    const s = shellFixture(true);
+    const got = withTemp(s.temp, () => station.focusOf(s.root, SID, {}));
+    const want = [{ id: 'b1', command: 'sleep 60', state: 'running', code: null, startedAt: s.when }];
+    assert.deepEqual(got.detail.shells, want);
+    const box = { window: {} };
+    vm.runInNewContext(station.serializeFocus(s.root, got, {}), box);
+    // Through JSON: the vm context's arrays are not this realm's, which deepEqual tells apart.
+    assert.deepEqual(JSON.parse(JSON.stringify(box.window.STATION_DETAIL[SID].shells)), want);
+});
+
+test('a memo hit reads the shells again: a shell that ended since is shown ended', () => {
+    const s = shellFixture(true);
+    const memo = new Map();
+    const first = withTemp(s.temp, () => station.focusOf(s.root, SID, { memo }));
+    assert.equal(first.detail.shells[0].state, 'running');
+    fs.writeFileSync(path.join(s.tasks, 'b1.output'), 'done\n[exited with code 0]\n');
+    const second = withTemp(s.temp, () => station.focusOf(s.root, SID, { memo }));
+    assert.equal(second.detail.shells[0].state, 'ended');
+    assert.equal(second.detail.shells[0].code, 0);
+    assert.equal(second.detail.tasks, first.detail.tasks, 'answered from the memo, not read again');
 });

@@ -635,11 +635,13 @@ line. It answers a small shell (`focusShell` in `lib/station.js`) that loads
 `station.css`, `i18n.js`, `station.js` and `GET /station/focus/<id>.js`,
 never `station-data.js`; any other tab name is redirected to `#/s/<id>/<tab>`
 on the full station. The focus script carries `window.STATION` with that one
-session's row and `window.STATION_DETAIL[<id>]` with its tasks (`tasksOf`)
-and its gate report (`gatereport.read`), built by `focusOf` from the
-session's registry entry, its handoff directory, its claimed plans and their
-ledgers only — no `gather()`, no transcript — and held in memory while the
-mtimes of those files are unchanged. The page draws a 48 px header
+session's row and `window.STATION_DETAIL[<id>]` with its tasks (`tasksOf`),
+its gate report (`gatereport.read`) and its background shells (`shells`),
+built by `focusOf` from the session's registry entry, its handoff directory,
+its claimed plans and their ledgers — no `gather()`, and no transcript read
+except the one `shellsNow` does for an active session's shells — and held in
+memory while the mtimes of those files are unchanged; the shells are read
+again on every request, and are empty for an inactive session. The page draws a 48 px header
 (`focus-header`: the glyph, the stage with its route dots, the task, the id,
 and 開完整 station linking to `#/s/<id>/<tab>`) over the tab body: for plan,
 `plan-summary` (the counts and one chip per group) and `plan-list` (every
@@ -648,6 +650,7 @@ status, grouped as the plan groups them); for gate, `gate-question` (the
 question and its options, the recommended one marked) above `gate-report`
 (the 關卡 tab's report). It re-reads its script every five seconds while the
 browser tab is visible.
+
 Both the page and the cache sit where git does not look — the registry copy's
 `station/` is ignored and the cache is under the config directory — so the
 prompt fragments a replay quotes stay on this machine. So does the full text of
