@@ -20,7 +20,7 @@ const ALLOW = new Set(["'介面用繁體中文'", "'介面改用繁體中文'", 
 const KEYED = /\bloc\('([a-z]+\.[A-Za-z0-9]+)', '((?:[^'\\\n]|\\.)*)'/g;
 const LEAD = /\bloc\('[a-z]+\.[A-Za-z0-9]+',\s*$/;
 // Marker text → key prefix, in file order; `fmt` before the first marker.
-const SECTIONS = [['the three levels: shared', 'shared'], ['the project page', 'proj'], ['the session page', 'ses'],
+const SECTIONS = [['the three levels: shared', 'shared'], ['the project page', 'proj'], ['the focus page', 'focus'], ['the session page', 'ses'],
     ['the live page', 'live'], ['the left bar', 'nav'], ['設定: the seven-step wizard', 'wiz'], ['tune: a block changed', 'tune'],
     ['儀表板 (`#/`): four', 'dash'], ['the completion record', 'rec'], ['儀表板 (`#/`), again', 'dash'], ['the detail panel', 'det'], ['派工:', 'disp'], ['記成 TODO', 'todo'], ['比較', 'cmp'],
     ['the header search', 'q'], ['language:', 'mast'], ['live refresh', 'poll'], ['serve health polling', 'health']];
