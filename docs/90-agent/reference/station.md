@@ -981,9 +981,10 @@ The second is that the served page keeps itself current. Every three seconds
 it loads `station/station-data.js` again — the list, rebuilt by the server on
 every request — and, while the session whose detail is on screen (the session
 page, or the row selected on 清單) is `live`, that session's
-`station/detail/<id>.js` too. A session that is no longer live has its detail
-re-read no more, because nothing under it can move; a hidden tab re-reads
-nothing. Each re-read is a script tag, as on the first load, with a `?t=` the
+`station/detail/<id>.js` in the same tick, not after the list has landed. A
+session that is no longer live has its detail re-read no more, because nothing
+under it can move; a hidden tab re-reads nothing, and re-reads at once when it
+is shown again (`visibilitychange`). Each re-read is a script tag, as on the first load, with a `?t=` the
 server ignores added so nothing in between answers from a cache. A redraw on
 the same view replaces only the top-level blocks whose markup changed since
 the last draw (`changedParts`), so an unchanged section keeps its DOM, its
@@ -1345,11 +1346,17 @@ segments, so `tour-reel-kit.js` and the like are served too). Any other name
 under `/station/` is a 404, so nothing else in the plugin directory is
 reachable by url.
 
-`/station/station-data.js` and `/station/search` share one `gather()` for two
-seconds (`memoMs` in `serve()`): two open tabs polling every three seconds,
-and a search typed between polls, cost one walk of the registries rather than
-one each. Any POST drops the shared model, so the page a write redirects to is
-gathered after the write.
+`/station/station-data.js`, `/station/search` and an ended session's
+`/station/detail/<id>.js` share one `gather()` for up to two seconds (`memoMs`
+in `serve()`), dropped sooner when any registry's `.fankeel/sessions/`
+directory moves — every entry write renames a file into it. An active
+session's detail is gathered per request, since its transcript and agents move
+without the registry moving. Across gathers the server holds each inactive
+session's row while its entry file and transcript stat the same (`rowMemo`),
+each build directory's file count for a minute (`buildMemo`), and
+`lib/detail.js` holds the `projects/` index for a minute or until `projects/`
+moves. Any POST drops the shared model, so the page a write redirects to is
+gathered after the write. `node bench/station-gather.js` times warm gathers.
 
 The page speaks 繁中 or English (`assets/station/i18n.js`). Every string
 `station.js` draws goes through `loc(key, zh, vars)`: the Chinese is written at

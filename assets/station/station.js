@@ -6544,10 +6544,11 @@
     // ---- live refresh --------------------------------------------------------
     // Served, the page keeps itself current: every three seconds it re-reads the
     // list and — while the session whose detail is on screen is live — that
-    // session's detail, each through a script tag the way it loaded them the
-    // first time, with a query string that only keeps the browser from answering
-    // out of its cache. A session no longer live has its detail re-read no more:
-    // nothing under it can move. A hidden tab re-reads nothing. The file
+    // session's detail, both asked for in the same tick, each through a script
+    // tag the way it loaded them the first time, with a query string that only
+    // keeps the browser from answering out of its cache. A session no longer
+    // live has its detail re-read no more: nothing under it can move. A hidden
+    // tab re-reads nothing, and re-reads at once when it is shown again. The file
     // `/fankeel` writes has no server to ask and keeps the moment it was written,
     // so `S.serve` gates all of this as well as the protocol. Armed before the
     // health poll, which stays the last interval this file sets.
@@ -6723,24 +6724,36 @@
         if (busy || (doc.hidden && !tuneOpen(S.sessions))) return;
         busy = true;
         var before = S.sessions;
-        reload('station/station-data.js', function (ok) {
-            if (!ok || !w.STATION || w.STATION === S) { busy = false; return; }
-            // `cleared` rides on the one load `/clear-stale` redirected to, and
-            // stays on the page rather than vanishing three seconds later.
-            if (isFinite(S.cleared) && w.STATION.cleared === undefined) w.STATION.cleared = S.cleared;
-            S = w.STATION;
-            freshen();
-            polledAt = Date.now();
-            tuneNotify(before, S.sessions);
-            if (doc.hidden) { busy = false; return; }
+        // The detail on screen is asked for beside the list, not after it has
+        // landed: two round trips in a row were most of a re-read's wait. Which
+        // detail is read off the list as it stood; a session that went down in
+        // between costs one read more, and the next tick asks for none.
+        var on = doc.hidden || route.view === 'settings' || route.view === 'tour' ? null : watched();
+        var left = on && on.state === 'live' && on.hasDetail ? 2 : 1;
+        var fresh = false;
+        var landed = function () {
+            if (--left > 0) return;
+            busy = false;
+            if (!fresh || doc.hidden) return;
             // The settings wizard reads nothing live; a redraw there would only
             // throw away what the reader has open. The masthead still moves.
-            if (route.view === 'settings' || route.view === 'tour') { busy = false; drawFloat(); doc.getElementById('gen').textContent = genText(); return; }
-            var s = watched();
-            var done = function () { busy = false; repaint(); };
-            if (s && s.state === 'live' && s.hasDetail) reload('station/detail/' + encodeURIComponent(s.id) + '.js', done);
-            else done();
+            if (route.view === 'settings' || route.view === 'tour') { drawFloat(); doc.getElementById('gen').textContent = genText(); return; }
+            repaint();
+        };
+        reload('station/station-data.js', function (ok) {
+            if (ok && w.STATION && w.STATION !== S) {
+                // `cleared` rides on the one load `/clear-stale` redirected to, and
+                // stays on the page rather than vanishing three seconds later.
+                if (isFinite(S.cleared) && w.STATION.cleared === undefined) w.STATION.cleared = S.cleared;
+                S = w.STATION;
+                freshen();
+                polledAt = Date.now();
+                tuneNotify(before, S.sessions);
+                fresh = true;
+            }
+            landed();
         });
+        if (left === 2) reload('station/detail/' + encodeURIComponent(on.id) + '.js', function (ok) { if (ok) fresh = true; landed(); });
     }
     // A redraw that keeps what the reader had: which sections were open, where
     // the list and the page were scrolled, and which control had focus, found
@@ -6781,6 +6794,9 @@
     if (S.serve && w.location && w.location.protocol !== 'file:' && typeof w.setInterval === 'function') {
         w.setInterval(refresh, POLL_MS);
         w.setInterval(tickNow, 1000);
+        // Back from hidden: every tick while away re-read nothing, so the page
+        // re-reads now rather than up to three seconds from now.
+        doc.addEventListener('visibilitychange', function () { if (!doc.hidden) refresh(); });
     }
 
     // ---- serve health polling ----------------------------------------------
