@@ -662,6 +662,7 @@ is corrected by the next one, not by rewriting this.
 | 巢狀 repo 的路徑、commit.js 的 cwd、spike 的 build 關卡：規則該放在哪裡、怎麼改 | [90-agent/judgements/2026-10-19-nested-repo-paths.md](90-agent/judgements/2026-10-19-nested-repo-paths.md) — *judged 2026-10-19, fable* |
 | Brief: how should land's retro keep a complete, portable record? | [90-agent/judgements/2026-10-20-retro-full-record.md](90-agent/judgements/2026-10-20-retro-full-record.md) — *judged 2026-10-20, fable* |
 | Brief: split the retro — land reviews this session, a skill reviews all of them? | [90-agent/judgements/2026-10-20-retro-land-vs-skill.md](90-agent/judgements/2026-10-20-retro-land-vs-skill.md) — *judged 2026-10-20, fable* |
+| Brief: Pane 能不能像 Claude Code 官方 UI 一樣列出 background task | [90-agent/judgements/2026-10-20-pane-bg-list.md](90-agent/judgements/2026-10-20-pane-bg-list.md) — *judged 2026-10-20, fable* |
 
 ## The five scanners
 
