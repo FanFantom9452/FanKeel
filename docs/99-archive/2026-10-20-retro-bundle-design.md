@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 last_verified: 2026-10-20
 source_of_truth: scripts/record.js, lib/bundle.js, agents/fankeel-retro.md
 ---
