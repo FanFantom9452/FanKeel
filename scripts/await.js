@@ -214,6 +214,19 @@ function alive(pid) {
     }
 }
 
+// A handoff whose gate went out after the file last changed has been asked
+// already: an older await finishing on it has nothing left to say, and its
+// `handoff` line would only wake the session to say so (TODO 舊 await 通知別叫醒主對話).
+function already(root, sessionId, handoff) {
+    try {
+        const rec = registry.readSession(root, sessionId);
+        const at = rec && rec.gateAsked && rec.gateAsked.at;
+        return Number.isFinite(at) && at >= fs.statSync(handoff).mtimeMs;
+    } catch (e) {
+        return false;
+    }
+}
+
 // await-5: a marker held by a live waiter for another agent is no waiter for
 // this one. On 2026-10-01 a stopped brain's waiter outlived its brain, and every
 // await for the brain sent after it read `already awaiting <the old agent>`.
@@ -264,6 +277,7 @@ function main(argv, env) {
         const line = lineFor(state, o, state === 'commit' ? newestCommit(o.commit, o.since) : null)
             + (failed ? ' Failure handoff: ' + failed.replace(/\\/g, '/') + '.' : state === 'lost' || state === 'timeout' ? ' (failure handoff not written)' : '')
             + stale;
+        if (state === 'handoff' && already(o.root, opts.session, o.handoff)) return { text: 'stale ' + o.handoff + ' — already asked; nothing to do, end the turn without a reply.' };
         return state === 'handoff' ? pageLine(o).then((page) => ({ text: line + (page ? PAGE_OPEN : '') + page })) : { text: line };
     }, (e) => {
         release();
@@ -278,4 +292,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { main };
+module.exports = { main, already };
