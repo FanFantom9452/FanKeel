@@ -1272,10 +1272,10 @@ test('costShareHtml with no paid stage prints the 沒有按日的花費 line ins
 });
 
 test('subtabsHtml is empty for a single-link category and a strip with aria-current for a multi-kid one', () => {
-    assert.equal(V.subtabsHtml('now'), '', '儀表板 has no kids');
+    assert.equal(V.subtabsHtml('now'), '', '現在 has no filters');
     assert.equal(V.subtabsHtml('docs'), '', '文件 has no kids');
     const live = V.subtabsHtml('live');
-    assert.match(live, /<nav class="subtabs" data-block="subtabs" aria-label="Sessions">/);
+    assert.match(live, /<nav class="subtabs" data-block="page-filter" aria-label="Sessions">/);
     for (const label of ['進行中', '最近', '全部清單', '比較']) assert.ok(live.includes(label));
     assert.match(live, /<a href="#\/live" aria-current="page">進行中<\/a>/);
     assert.doesNotMatch(live, /<a href="#\/sessions" aria-current="page">/);

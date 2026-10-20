@@ -1705,12 +1705,13 @@
                 + '<span class="hm-stw" style="--c:var(--st-' + esc(s.stage || '') + ')">' + esc(s.stage || '—') + '</span></a>';
         }).join('') + '<p class="jfoot">' + loc('nav.jumpFoot', '<kbd>↑↓</kbd> 選 · <kbd>Enter</kbd> 打開這個 session 的現在這一站') + '</p>';
     }
-    // The tab strip under a Sessions or 花費 page's header: its category's
-    // kids, the current one marked. Empty for a page with no siblings.
+    // A page's filters (Sessions: 進行中 / 最近 / 全部清單 / 比較; 花費:
+    // 近 30 天 / 依專案): its `kids`, the current one marked. Each keeps its
+    // own hash, so an old link lands on its filter. Empty for a page with one.
     function subtabsHtml(active) {
         var g = navGroup(active);
         if (!g || g.kids.length < 2) return '';
-        return '<nav class="subtabs" data-block="subtabs" aria-label="' + esc(g.label) + '">' + g.kids.map(function (k) {
+        return '<nav class="subtabs" data-block="page-filter" aria-label="' + esc(g.label) + '">' + g.kids.map(function (k) {
             return '<a href="' + k[1] + '"' + (k[0] === active ? ' aria-current="page"' : '') + '>' + k[2] + '</a>';
         }).join('') + '</nav>';
     }
@@ -3136,9 +3137,14 @@
     function homeOpts(sel) {
         return { metric: view.metric, dim: view.dim, sel: sel, today: TODAY, days: DAYS, names: NAMES, pkeys: PKEYS };
     }
+    // Sessions' 進行中 view, and under its lanes the cards that left 現在:
+    // 撞檔 and 最近 sessions wide, gate 平均等待 and 最近 land narrow.
     function livePage() {
+        var R = homeRows();
         return (isFinite(S.cleared) ? '<p class="cleared">cleared ' + S.cleared + ' stale rows</p>' : '')
-            + nowHtml(S.projects, homeRows(), subtabsHtml('live'));
+            + nowHtml(S.projects, R, subtabsHtml('live'))
+            + '<div class="dash kdash pcards" data-block="sessions-cards"><div class="dcol" data-col="main">' + dashClash(R) + dashRecent(R)
+            + '</div><div class="dcol" data-col="side">' + dashGateWait(R) + dashLanded(R, S) + '</div></div>';
     }
     // ---- 儀表板 (`#/`): four cards, each read off the rows its full page reads
     // — `homeRows()` through the same filters — so a card's number is the
@@ -3650,6 +3656,8 @@
             + '<div class="lstrip"><div class="legend">' + legendHtml(all, o) + '</div>' + filterHtml(all, o) + '</div>'
             + '<div class="chart">' + histSvg(bars, o) + '</div></section>'
             + (w.FK_PANEL ? w.FK_PANEL.html(held, S.prices, Boolean(S.serve)) : '')
+            + '<div class="dash kdash pcards" data-block="spend-cards"><div class="dcol" data-col="main">' + dashByProj(R) + dashTokens7(R)
+            + '</div><div class="dcol" data-col="side">' + dashModels(R) + '</div></div>'
             + (w.FK_KINDS ? w.FK_KINDS.table(S.prices, S.pricesVerified) : '');
     }
     if (typeof module !== 'undefined' && module.exports) module.exports.daysPage = daysPage;

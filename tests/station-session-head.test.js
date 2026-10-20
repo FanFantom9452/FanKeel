@@ -39,7 +39,7 @@ test('最近 sessions opens with the film\'s head — the counts, the tabs — a
     const head = html.slice(0, html.indexOf('data-block="sessions"'));
     assert.match(head, /<div class="phead khead" data-block="sessions-head"><h1>/);
     assert.match(head, /<span><b>2<\/b>個 session<\/span><span><b>1<\/b>個 live<\/span>/);
-    assert.match(head, /data-block="subtabs"/);
+    assert.match(head, /data-block="page-filter"/);
     assert.match(html, /<section class="panel ksess" data-block="sessions">/);
     assert.match(html, /<td class="task"><a href="#\/s\/aaaa1111-0000" title="a long task name that runs on">/);
     assert.match(html, /<span class="kstage"><svg class="glyph k-only prog"[^>]*>[\s\S]*?<\/svg><span class="kst k-only" style="--c:var\(--st-build\)"><b>04<\/b>/);
