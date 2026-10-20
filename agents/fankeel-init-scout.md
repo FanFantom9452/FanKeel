@@ -5,7 +5,7 @@ tools: [Read, Grep, Glob, Bash]
 model: sonnet
 effort: medium
 status: current
-last_verified: 2026-09-30
+last_verified: 2026-10-21
 source_of_truth: scripts/input-check.js, lib/onboard.js
 ---
 
