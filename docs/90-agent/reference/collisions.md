@@ -274,7 +274,11 @@ cmdlets, a `node -e`/`--eval` script that calls a write (`writeFile`,
 `appendFile`, `createWriteStream`, `rename`, `unlink`, `rm`, `mkdir`,
 `copyFile`), or a `python -c` one that opens a file in a write mode, calls
 `write_text` or `os.remove`, or uses `shutil` at all (`lib/guard.js`'s
-`NODE_EVAL_WRITE` and `PYTHON_WRITE`). `fankeel-verifier` is not on the list —
+`NODE_EVAL_WRITE` and `PYTHON_WRITE`). Every word before those two is matched
+with quoted text taken out, so a `scripts/task.js` note whose quoted text says
+git commit writes nothing, unless the line hands a shell a quoted script —
+`bash -c`, `sh -c`, `powershell -Command`, `cmd /c` or a pipe into one
+(`SHELL_SCRIPT`) — where the quotes are the command. `fankeel-verifier` is not on the list —
 writing its own evidence file is what it is for.
 The same `Bash|PowerShell` entry scans every `git commit`, in a task or
 not: `lib/sensitive.js`'s `commitVerdict` reads `.fankeel/sensitive.txt` at the
