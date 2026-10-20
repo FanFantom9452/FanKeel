@@ -27,7 +27,7 @@ done:
 
 ## 完成紀錄
 
-guard 不再把引號內的 git commit 誤判為寫入：只有 fankeel 認得的筆記指令（task.js、ledger.js、todo.js 的文字動詞）會先忽略引號內文字再比對，其他指令一律讀整行，引號外真正的 git commit 照擋。改動在 lib/guard.js，tests/guard-quoted.test.js 涵蓋放行與照擋兩種情況以及審查者提出的繞過寫法；受控站的實際串接已在 2026-10-21 實測通過。
+guard 不再把引號內的 git commit 誤判為寫入：只有 fankeel 認得的筆記指令（task.js、ledger.js、todo.js 的文字動詞）會先忽略引號內文字再比對。其他指令一律讀整行，引號外真正的 git commit 照擋。改動在 lib/guard.js，tests/guard-quoted.test.js 涵蓋放行與照擋兩種情況以及審查者提出的繞過寫法；受控站的實際串接已在 2026-10-21 實測通過。
 
 - commit 04660fad
 - commit 3af4befa
