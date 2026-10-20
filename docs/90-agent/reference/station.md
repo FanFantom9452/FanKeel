@@ -176,7 +176,7 @@ quota percentage, and with the key unset the page is unchanged.
 When the machine profile also holds `quota.calibrated` and the quota in force is the machine's, the 30-day spend readout's sub-line ends with ` · 週額度 <day> 校準`, the day `scripts/quota.js` calibrated it; a quota set by hand, or a project's own, shows no day.
 
 Every row also carries the registry it belongs to, as `root` on its session
-object (`lib/station.js:787`, `root: s.root`) — the raw path, not the
+object (`lib/station.js:788`, `root: s.root`) — the raw path, not the
 shortened label shown on the row — and `match()` filters on that same field
 (`assets/station/station.js:183`, `s.root !== f.project`) rather than a DOM
 attribute, because every row here is rebuilt from `window.STATION` in the
@@ -185,22 +185,22 @@ below.
 
 A project whose profile sets `station.hide: 'true'` produces no row at
 all — not a greyed-out one, an absent one. The check is one function,
-`hiddenPkeys()` (`lib/station.js:654`, `function hiddenPkeys(model) {`),
+`hiddenPkeys()` (`lib/station.js:655`, `function hiddenPkeys(model) {`),
 and every session under a hidden project is dropped before anything else on
 the page is built from it: `flatten()` is where that happens
-(`lib/station.js:682`, `if (hidden.has(pkeyOf(row))) continue;`), and
+(`lib/station.js:683`, `if (hidden.has(pkeyOf(row))) continue;`), and
 everything the page renders — the facets, the charts, four of the home
 page's five cards — reads `flatten()`'s output rather than the model
 itself, so no view filters a second time. Every aggregation that walks
 `model.registries` instead carries its own check, and a new one has to:
 the live/stale/down counts `write()` returns for the terminal summary
-(`lib/station.js:870`, `if (hidden.has(s.project ? r.root + '/' + s.project : r.root)) continue;`),
+(`lib/station.js:871`, `if (hidden.has(s.project ? r.root + '/' + s.project : r.root)) continue;`),
 the fifth card's gate tally
-(`lib/station.js:714`, `if (hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))) continue;`),
+(`lib/station.js:715`, `if (hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))) continue;`),
 the `docs` list `serialize()` hands the page for the 文件 card
-(`lib/station.js:768`, `docs: (r.docs || []).filter((d) => !hidden.has(d.pkey)),`),
+(`lib/station.js:769`, `docs: (r.docs || []).filter((d) => !hidden.has(d.pkey)),`),
 the profile list `serialize()` hands the page
-(`lib/station.js:777`, `if (values && values['station.hide'] === true) continue;`) —
+(`lib/station.js:778`, `if (values && values['station.hide'] === true) continue;`) —
 an inline copy of the predicate rather than a `hiddenPkeys()` call, because
 that loop is keyed by the raw profiles directory rather than by pkey —
 `write()`'s detail-file loop described below, and `--json`'s own pass
@@ -255,7 +255,7 @@ before this shipped ever will — and even once it exists, a stage whose models
 the price table does not know has no dollar figure, not a figure of zero:
 `costOf` returns `usd: 0` there, and `gather` reads `priced.length` before
 believing it, so an unpriced stage's own `usd` is `null` rather than a silent
-zero (`lib/station.js:542`, `usd: priced ? mine + agents : null`) — the same
+zero (`lib/station.js:543`, `usd: priced ? mine + agents : null`) — the same
 line that folds the session and its agents together rather than pricing the
 parent alone, which is why the ledger's total already matches `cost(s)`'s own
 combined figure, agents included.
@@ -628,6 +628,13 @@ design mockup — the path `lib/gatereport.js` put on the gate's
 `parts.mockup.shot`, refused unless it is a `.png` under that root's
 `.fankeel/build/` — for the 關卡 tab's thumbnail, which a `file://` image
 cannot be on a served page.
+Both the page and the cache sit where git does not look — the registry copy's
+`station/` is ignored and the cache is under the config directory — so the
+prompt fragments a replay quotes stay on this machine. So does the full text of
+the 對話 tab, which is in neither: `GET /station/talk/<id>` (under Search, the
+tour and the served files) reads the transcript when asked, and no written copy
+holds it.
+
 `GET /station/board/<sessionId>/<name>.svg` draws a task's Chartroom board —
 `<name>.board` directly in that session's build directory,
 `.fankeel/build/task-<started>/` (`handoff.dirFor`) — to SVG with the render
@@ -636,15 +643,9 @@ code vendored in `lib/chartroom/` (`lib/board.js`), for the session card's
 `boards: [{ name, updated }]`. Like the screenshot it skips the nonce: it is a
 GET that writes nothing. `<name>` must match `^[0-9A-Za-z._-]+$` and resolve
 inside that directory, or the answer is 404; a board that does not parse is
-422 with the parser's message. The SVG goes out with
-`Content-Security-Policy: default-src 'none'`, so one opened in its own tab
-runs no script.
-Both the page and the cache sit where git does not look — the registry copy's
-`station/` is ignored and the cache is under the config directory — so the
-prompt fragments a replay quotes stay on this machine. So does the full text of
-the 對話 tab, which is in neither: `GET /station/talk/<id>` (under Search, the
-tour and the served files) reads the transcript when asked, and no written copy
-holds it.
+422 (`text/plain; charset=utf-8`) with the parser's message. The SVG goes out with
+`Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'`, so one
+opened in its own tab runs no script.
 
 `days` and `spans` are a second derivation, and they do not replace `spend`.
 `extract()` computes them in the same transcript read that fills the detail
@@ -670,7 +671,7 @@ them on this page. Every filter from here down narrows what the browser
 draws from data that already arrived: clearing a facet or the search box
 brings a row straight back, because it was in `window.STATION` all along.
 `station.hide` instead runs once, before that, in `flatten()`
-(`lib/station.js:676`, `function flatten(model) {`), which `serialize()`
+(`lib/station.js:677`, `function flatten(model) {`), which `serialize()`
 calls to build `sessions` before any of it reaches the browser (see What
 each row holds, above). There is no view state that could bring a hidden
 project's rows back, because the browser never received them; the only way
@@ -719,7 +720,7 @@ hidden only on 清單 once a registry there is selected: one that is not gone
 carries the same count on its own card
 (`assets/station/station.js:4259`, `a corrupt-entry count must`), and a gone
 one has no session files left to count
-(`lib/station.js:612`, `gone: true, unreadable: 0`); everywhere
+(`lib/station.js:613`, `gone: true, unreadable: 0`); everywhere
 else — a project page included, whose own card shows only its registry's
 count — the footer keeps the total, so a corrupt entry is never a click away
 from being found.
@@ -899,15 +900,15 @@ before them — the window's spend, tokens, active time and waiting ratio —
 and the fifth does not compare windows at all: it
 names the option-one gate wording most often swapped for another answer,
 `最常被換掉`, with how many times out of how many it was asked beneath it
-(`lib/station.js:705`, `function gateSummary(model, hidden) {`;
+(`lib/station.js:706`, `function gateSummary(model, hidden) {`;
 `assets/station/station.js:541`, `loc('shared.mostSwapped', '最常被換掉')`). Unlike the other
 four, it does not move with the 30-day window or the search box: it is
 counted once, across every shown session's gate answers
-(`lib/station.js:785`, `gates: gateSummary(model, hidden),`), not from the
+(`lib/station.js:786`, `gates: gateSummary(model, hidden),`), not from the
 filtered set the other four sum. It walks the model rather than
 `flatten()`'s output, so it takes the hidden set as an argument and skips
 those sessions itself
-(`lib/station.js:714`, `if (hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))) continue;`).
+(`lib/station.js:715`, `if (hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))) continue;`).
 While a session's transcript is still there, its source is `lib/detail.js`'s
 own replay; once the transcript is gone, `gateSummary()` falls back to the
 entry's own `gates` (see [registry.md](registry.md)), so this denominator no
@@ -1053,7 +1054,7 @@ registry; the footer on both says when it was generated.
 A session under a hidden project produces no `station/detail/<id>.js`
 either, on every one of those four writes. `write()` walks
 `model.registries` directly for this loop rather than through `flatten()`,
-so it carries its own check (`lib/station.js:934`, `hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))`):
+so it carries its own check (`lib/station.js:935`, `hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))`):
 hiding a project after its sessions already had a detail file does not
 delete that file, it just stops being rewritten — nothing in `write()`
 removes a file it once wrote.

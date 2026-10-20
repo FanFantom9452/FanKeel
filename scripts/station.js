@@ -586,7 +586,7 @@ async function serve(opts) {
             try {
                 svg = await board.renderBoard(text);
             } catch (e) {
-                return e && e.name === 'ParseError' ? fail(422, e.message) : fail(500, 'cannot draw that board: ' + (e && e.message));
+                return e && e.name === 'ParseError' ? send(422, 'text/plain; charset=utf-8', e.message + '\n') : fail(500, 'cannot draw that board: ' + (e && e.message));
             }
             return send(200, 'image/svg+xml', svg, Object.assign({ 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'" }, noStore));
         }
