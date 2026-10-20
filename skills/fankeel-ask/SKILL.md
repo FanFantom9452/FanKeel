@@ -112,6 +112,8 @@ the stage produces; it does not approve it.
 4. **Say what the stage accepted, in one line, and carry on.** Name the file
    the record landed in. At the next gate, option one's description names it
    too, so approving the stage's output also shows what it was decided on.
+   Carrying on happens in this same turn: where the ask also started the task,
+   the stage's own work follows the four lines instead of waiting to be told.
 
 ## When it is worth the money
 

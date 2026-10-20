@@ -86,6 +86,9 @@ records that beside the task's handoffs. **Red stops everything**, and since
 has changed since (`lib/suite.js`, `blocker`). Report the failures and
 stop; the menu comes after a green run. A green run earlier in the session
 only proves the tree it ran on, and the record says which.
+`suite.json` keeps the failing tests' names, not why they failed: before
+changing code for one, run the same command with `--test-reporter=tap` into a
+file in the task's build directory and read that test's `not ok` block.
 
 Where the suite was red on an earlier run of this task and is green now,
 `task.js land` says so under its own line — `suite: green on run <N>; red on
