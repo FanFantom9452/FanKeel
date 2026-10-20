@@ -105,6 +105,31 @@ test('typing in the box opens the list, ↓ moves the mark, Enter goes to the ma
     assert.equal(p.els.jq.focused, true);
 });
 
+test('↑ from the first match wraps to the last, and Esc empties the box and shuts the list', () => {
+    const p = boot('#/', true);
+    p.get('jq').value = 'l';
+    p.fire('input', { target: p.els.jq });
+    assert.equal((p.els.jpop.innerHTML.match(/role="option"/g) || []).length, 3);
+    assert.match(p.els.jpop.innerHTML, /hm-jr on[^>]*href="\/f\/a5bb742d/);
+    p.fire('keydown', { target: p.els.jq, key: 'ArrowUp' });
+    assert.match(p.els.jpop.innerHTML, /hm-jr on[^>]*href="\/f\/14affe41/);
+    p.fire('keydown', { target: p.els.jq, key: 'Escape' });
+    assert.equal(p.els.jq.value, '');
+    assert.equal(p.els.jpop.hidden, true);
+    assert.equal(p.els.jq.attrs['aria-expanded'], 'false');
+});
+
+test('a click outside the jump box shuts the list, a click inside keeps it open', () => {
+    const p = boot('#/', true);
+    p.get('jq').value = '盤點';
+    p.fire('input', { target: p.els.jq });
+    const at = (inJump) => ({ closest: (sel) => (sel === '.jump' && inJump ? {} : null), getAttribute: () => null });
+    p.fire('click', { target: at(true) });
+    assert.equal(p.els.jpop.hidden, false);
+    p.fire('click', { target: at(false) });
+    assert.equal(p.els.jpop.hidden, true);
+});
+
 test('a redraw replaces only the links, so the box keeps what was typed', () => {
     const p = boot('#/');
     const first = p.els.nav.innerHTML;
