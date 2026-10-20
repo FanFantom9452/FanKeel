@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-10-10
+last_verified: 2026-10-21
 source_of_truth: lib/stages.js, lib/render.js, lib/profile.js, skills/fankeel-survey/SKILL.md, skills/fankeel-design/SKILL.md, skills/fankeel-plan/SKILL.md, skills/fankeel-build/SKILL.md, skills/fankeel-verify/SKILL.md, skills/fankeel-audit/SKILL.md, skills/fankeel-land/SKILL.md, scripts/residue.js, hooks/carry.js, scripts/orient.js
 ---
 
@@ -80,14 +80,14 @@ It writes nothing. Orientation that changes what it is describing is not
 orientation.
 
 Every change to a registry entry goes through one script rather than being
-hand-written — `task.js start`, `task`, `stage`, `note`, `next`, `guard`, `down`,
+hand-written — `task.js start`, `task`, `stage`, `route`, `note`, `next`, `guard`, `down`,
 `adopt`. It creates `.fankeel/.gitignore` with the directory, enforces the caps
 and refuses rather than guessing. It was the last operation without a script, and
 it failed the way unsupported steps fail — quietly, leaving no registry at all,
 with the missing badge as the only symptom.
 
-It also sets the badge itself on `start`, `task`, `stage`, `route`, `guard`,
-`adopt` and `down`.
+It also sets the badge itself on `start`, `task`, `stage`, `route`, `guard`
+and `adopt`, and clears it on `down` (`scripts/task.js:1358`).
 The hook runs *before* a prompt, so a badge left to it alone appears only when the
 user types again — and for that whole gap, turning the mode on is indistinguishable
 from failing to turn it on.
@@ -814,7 +814,11 @@ A commit subject holds one change. A task that shipped four of them had nowhere
 to say so, which is what `做了什麼:` is for — one line per thing someone can now
 do. Land files that list inside a six-field record with
 `node scripts/record.js write --session <id>`, which stores it in the registry's
-`record` field and in a monthly file under `docs/90-agent/records`.
+`record` field and in a monthly file under `docs/90-agent/records`. After it the
+gate asks one question it never skips, whether to export the session
+(`record.js session` writes a masked bundle under `.fankeel/bundles/`); only after
+an export is the retro offered, and it reads that bundle
+(`skills/fankeel-land/SKILL.md:253`).
 
 **The commit body is that list rewritten for the next session.** `init` and
 `survey` read `git log` before they read any code, so the subject says what
@@ -926,6 +930,9 @@ fankeel residue — on main
 1 worktree is already merged into main:
   /repo/.claude/worktrees/registry-staleness  (worktree-registry-staleness)
 
+1 spent agent branch has no worktree and nothing main lacks — `git branch -D` clears each:
+  worktree-agent-a91dbacdebee4e369
+
 2 environments nothing here can rebuild or run:
   services/spec-rag/.venv  105.2M
       no Python manifest beside it; interpreter gone: C:\Users\user\...\Python311
@@ -938,9 +945,11 @@ fankeel residue — on main
 ```
 
 Untracked and unignored means somebody has to commit it, ignore it or delete it
-and nobody has; a worktree whose branch is merged is one already spent; an
-environment with no manifest beside it and an interpreter that is not on this
-machine is weight nobody can use. Those three fail the run. Weight and empty
+and nobody has; a worktree whose branch is merged is one already spent; so is a
+`worktree-agent-*` branch with no worktree left whose every patch is already in
+HEAD (`scripts/residue.js:311`); an environment with no manifest beside it and an
+interpreter that is not on this machine is weight nobody can use. Those four fail
+the run (`scripts/residue.js:351`). Weight and empty
 directories are context — a 73 GB build directory is not a bug, but not knowing
 about it is.
 

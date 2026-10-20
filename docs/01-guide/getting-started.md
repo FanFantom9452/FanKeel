@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-10-18
+last_verified: 2026-10-21
 source_of_truth: README.md, docs/02-architecture/pipeline.md, docs/90-agent/reference/station.md, skills/fankeel/SKILL.md, scripts/orient.js, scripts/task.js
 ---
 
