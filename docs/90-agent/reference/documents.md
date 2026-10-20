@@ -169,11 +169,12 @@ report where a real parser would cost a dependency this plugin does not have.
 | `index.html`、`station/` | 否 | 這台機器的 station 副本，每次 prompt 重寫 |
 | `worktrees/<id8>/` | 否 | profile `worktree: true` 時 `task.js start` 為一個 session 開的 git worktree，分支 `fk/<id8>`；land 合併、測試全綠後 `git worktree remove` |
 | `sensitive.txt` | 否 | 敏感詞表，一行一詞；詞表本身就是敏感資料，所以不進版控，每台機器各一份（init 的可見度那一步建立） |
+| `bundles/<day>-<id8>.jsonl.gz` | 否 | land 時答應匯出才由 `record.js session` 寫：這個 session 與它 adopt 來源的全部對話，敏感字已遮蔽；不清理。`--commit` 且 2 MB 以內的改寫到紀錄目錄的 `sessions/` 跟著提交，不在這裡 |
 | `station.bat`、`station.sh` | 否 | station 啟動檔，內容是這台機器的外掛絕對路徑；`registry.ensureLayout` 每個 hook 檢查一次，內容不同才重寫，所以外掛升級後自動跟上（`lib/launchers.js`） |
 | `docs/judgements/`（預設；`docs.json` 的 judgements 桶會改掉它，本倉庫是 `docs/90-agent/judgements/`；不在 `.fankeel/`） | 是 | `fankeel-judge` 的判斷，寫完不改（`report`） |
 
 `docs.json` 與 `profile.json` 同層、都進版本控制，是這張表裡唯二「提交」的
-`.fankeel/` 檔——其餘七區都在 `.fankeel/.gitignore` 之內。`docs/judgements/`
+`.fankeel/` 檔——其餘八區都在 `.fankeel/.gitignore` 之內。`docs/judgements/`
 （預設，`docs.json` 的 judgements 桶可改位置）不在 `.fankeel/` 底下，卻也是「寫完不改」的一區：它跟 `docs.json`、
 `profile.json` 一樣提交，但壽命規則更接近一份決定記錄，而不是一份可以重新
 生成的快照。
