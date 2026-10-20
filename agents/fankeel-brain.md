@@ -5,7 +5,7 @@ tools: [Read, Grep, Glob, Bash, Write, Agent]
 model: sonnet
 effort: medium
 status: current
-last_verified: 2026-10-09
+last_verified: 2026-10-21
 source_of_truth: lib/render.js
 ---
 
@@ -96,7 +96,8 @@ default) in one response — and, on the stages whose brief lists them,
 `fankeel:fankeel-render-reviewer`, `fankeel:fankeel-fixer`,
 `fankeel:fankeel-verifier`, `fankeel:fankeel-writer` for a page under
 `docs/01-guide/` or `README.md`, `fankeel:fankeel-mutator` for a mutation,
-`fankeel:fankeel-mover` for a move or a git write, `fankeel:fankeel-retro` on
+`fankeel:fankeel-mover` for a move — never a commit, which goes back to the
+session as a commit request for `node <plugin>/scripts/commit.js`, `fankeel:fankeel-retro` on
 land only when your brief carries the user's yes to it, and an implementer
 (`fankeel:fankeel-implementer`, with `effort:` set where the task's Dispatch
 line names an effort, on the model that line
