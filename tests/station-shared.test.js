@@ -88,3 +88,45 @@ test('an ended row is read once across the server\'s gathers', async (t) => {
     await get(s.url + 'station/station-data.js');
     assert.equal(spy.mock.calls.filter((c) => c.arguments[1] && c.arguments[1].task === 'shared').length, 1);
 });
+
+// A live session's transcript and agents move without the registry moving, so
+// its detail is gathered for the request rather than read off the shared model.
+test('a live session\'s detail shows its transcript growing inside the shared window', async (t) => {
+    const { f, s } = await served(t, { memoMs: 60e3 });
+    registry.writeSession(f.ws, SID, { task: 'shared', stage: 'build', route: ['survey', 'build'], active: true, claims: [],
+        started: T(0), updated: T(9), configDir: f.cfg });
+    const sub = path.join(f.cfg, 'projects', 'ws-slug', SID, 'subagents');
+    fs.mkdirSync(sub, { recursive: true });
+    const agent = path.join(sub, 'agent-a1b2c3.jsonl');
+    const said = (n, content) => line({ type: 'assistant', isSidechain: true, requestId: 'q' + n, timestamp: T(n),
+        message: { model: 'claude-sonnet-5', usage: { input_tokens: 5 }, content } });
+    fs.writeFileSync(agent, line({ type: 'user', isSidechain: true, timestamp: T(3), message: { content: 'look' } })
+        + said(4, [{ type: 'tool_use', id: 'u1', name: 'Read', input: { file_path: 'F:/ws/lib/a.js' } }]));
+    const url = s.url + 'station/detail/' + SID + '.js';
+    assert.match((await get(url)).text, /ws\/lib\/a\.js/);
+    fs.appendFileSync(agent, line({ type: 'user', isSidechain: true, timestamp: T(5),
+        message: { content: [{ type: 'tool_result', tool_use_id: 'u1', content: 'x' }] } })
+        + said(6, [{ type: 'tool_use', id: 'u2', name: 'Grep', input: { pattern: 'keyOf' } }]));
+    assert.match((await get(url)).text, /Grep keyOf/);
+});
+
+// stampOf is taken before the gather: an entry a neighbour writes while it
+// runs must not be recorded as already seen.
+test('a registry write during a gather is seen by the next request', async (t) => {
+    const { f, s } = await served(t, { memoMs: 60e3 });
+    const pause = () => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 40);
+    await get(s.url + 'station/station-data.js');
+    const write = (id, task) => registry.writeSession(f.ws, id, { task, stage: 'survey', route: ['survey'], active: false, claims: [],
+        started: T(0), updated: T(1), configDir: f.cfg });
+    const real = station.gather;
+    t.mock.method(station, 'gather', function (o) {
+        const model = real.call(this, o);
+        pause();
+        write(OTHER, 'written mid gather');
+        return model;
+    }, { times: 1 });
+    pause();
+    write('efefefef-5656-4565-8565-565656565656', 'written before');
+    assert.match((await get(s.url + 'station/station-data.js')).text, /written before/);
+    assert.match((await get(s.url + 'station/station-data.js')).text, /written mid gather/);
+});

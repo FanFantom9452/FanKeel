@@ -347,6 +347,11 @@ async function serve(opts) {
     // each on that root's first `/chartroom/<name>/` request; `close()`
     // below closes them all.
     const boards = new Map();
+    // Held across gathers by lib/station.js: each inactive session's row while
+    // its entry file and transcript stat the same, and each build directory's
+    // file count for a minute (`rowMemo`, `buildMemo` in `gather()`).
+    const rowMemo = new Map();
+    const buildMemo = new Map();
     // A deadline is an absolute moment, so it is taken per request rather than
     // once at listen: a `--scan` here is re-walked on every render, and one
     // timestamp fixed at startup would leave every later request walking with a
@@ -354,11 +359,6 @@ async function serve(opts) {
     // request answers from what is cached and the next one carries on, so a
     // cache from an older VERSION is read again a few sessions at a time rather
     // than all in one request the page gives up on.
-    // Held across gathers by lib/station.js: each inactive session's row while
-    // its entry file and transcript stat the same, and each build directory's
-    // file count for a minute (`rowMemo`, `buildMemo` in `gather()`).
-    const rowMemo = new Map();
-    const buildMemo = new Map();
     const modelNow = (extra) => station.gather(Object.assign({}, gatherOpts,
         { deadline: scanDeadline(gatherOpts.scan), memo, rowMemo, buildMemo, detailBudgetMs: station.DETAIL_BUDGET_MS }, extra));
     // What `/station/station-data.js`, `/station/search` and an ended
@@ -370,17 +370,27 @@ async function serve(opts) {
     // one after another and all but the first read this. A POST drops it.
     const memoMs = Number.isFinite(opts.memoMs) ? opts.memoMs : 2000;
     let shared = null;
-    const stampOf = (model) => model.registries.map((r) => {
+    // The roots the last gather found: the stamp is taken before the next
+    // gather runs, when only these are known.
+    let known = [];
+    const stampOf = (roots) => roots.map((root) => {
         try {
-            return fs.statSync(path.join(registry.stateDir(r.root), 'sessions')).mtimeMs;
+            return fs.statSync(path.join(registry.stateDir(root), 'sessions')).mtimeMs;
         } catch (e) {
             return 0;
         }
     }).join(',');
     const sharedModel = () => {
-        if (shared && Date.now() - shared.at < memoMs && stampOf(shared.model) === shared.stamp) return shared.model;
+        if (shared && Date.now() - shared.at < memoMs && stampOf(known) === shared.stamp) return shared.model;
+        // Stamped before the gather, so an entry written while it runs reads
+        // as moved on the next request instead of as already seen. A first
+        // gather, or one that found other roots, can only be stamped after.
+        const before = stampOf(known);
         const model = modelNow();
-        shared = { at: Date.now(), model, stamp: stampOf(model) };
+        const roots = model.registries.map((r) => r.root);
+        const same = roots.length === known.length && roots.every((r, i) => r === known[i]);
+        known = roots;
+        shared = { at: Date.now(), model, stamp: same ? before : stampOf(roots) };
         return model;
     };
     let timer = null;

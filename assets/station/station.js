@@ -6548,7 +6548,8 @@
     // tag the way it loaded them the first time, with a query string that only
     // keeps the browser from answering out of its cache. A session no longer
     // live has its detail re-read no more: nothing under it can move. A hidden
-    // tab re-reads nothing, and re-reads at once when it is shown again. The file
+    // tab re-reads nothing, unless a tune request is open, and re-reads at once
+    // when it is shown again. The file
     // `/fankeel` writes has no server to ask and keeps the moment it was written,
     // so `S.serve` gates all of this as well as the protocol. Armed before the
     // health poll, which stays the last interval this file sets.
@@ -6753,7 +6754,7 @@
             }
             landed();
         });
-        if (left === 2) reload('station/detail/' + encodeURIComponent(on.id) + '.js', function (ok) { if (ok) fresh = true; landed(); });
+        if (left === 2) reload('station/detail/' + encodeURIComponent(on.id) + '.js', landed);
     }
     // A redraw that keeps what the reader had: which sections were open, where
     // the list and the page were scrolled, and which control had focus, found
@@ -6794,7 +6795,8 @@
     if (S.serve && w.location && w.location.protocol !== 'file:' && typeof w.setInterval === 'function') {
         w.setInterval(refresh, POLL_MS);
         w.setInterval(tickNow, 1000);
-        // Back from hidden: every tick while away re-read nothing, so the page
+        // Back from hidden: every tick while away re-read nothing (unless a tune
+        // request was open), so the page
         // re-reads now rather than up to three seconds from now.
         doc.addEventListener('visibilitychange', function () { if (!doc.hidden) refresh(); });
     }

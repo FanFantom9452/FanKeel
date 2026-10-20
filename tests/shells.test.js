@@ -78,6 +78,17 @@ test('the three-row cut: four running shells show the newest three, and no ended
     assert.deepEqual(shells.cutShells([row('e1', 'ended', 1), row('r1', 'running', 2), row('e2', 'ended', 3), row('e3', 'ended', 4)]).map((r) => r.id),
         ['r1', 'e3', 'e2']);
     assert.deepEqual(shells.cutShells([]), []);
+    // No running shell to tell the two limits apart: ENDED_ROWS (2) caps the ended ones, not ROWS (3).
+    const ended = session([['u1', 'b1', 'one', 1], ['u2', 'b2', 'two', 2], ['u3', 'b3', 'three', 3]],
+        { b1: '[exited with code 0]\n', b2: '[exited with code 0]\n', b3: '[exited with code 0]\n' });
+    assert.deepEqual(shells.shellsOf(ended.transcript, ended.tasks).map((r) => r.id), ['b3', 'b2']);
+});
+
+test('a transcript shorter than the read offset was rewritten and is read whole', () => {
+    const s = session([['u1', 'b1', 'first', 1], ['u2', 'b2', 'second', 2]], { b1: '', b2: '', b9: '' });
+    assert.deepEqual(shells.shellsOf(s.transcript, s.tasks).map((r) => r.id), ['b2', 'b1']);
+    fs.writeFileSync(s.transcript, launch('u9', 'fresh', at(9)) + started('u9', 'b9', at(9)));
+    assert.deepEqual(shells.shellsOf(s.transcript, s.tasks).map((r) => r.id), ['b9']);
 });
 
 test('a transcript read once is read on from where it stopped, and a line still being written waits for its newline', () => {

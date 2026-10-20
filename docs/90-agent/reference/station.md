@@ -983,8 +983,8 @@ every request — and, while the session whose detail is on screen (the session
 page, or the row selected on 清單) is `live`, that session's
 `station/detail/<id>.js` in the same tick, not after the list has landed. A
 session that is no longer live has its detail re-read no more, because nothing
-under it can move; a hidden tab re-reads nothing, and re-reads at once when it
-is shown again (`visibilitychange`). Each re-read is a script tag, as on the first load, with a `?t=` the
+under it can move; a hidden tab re-reads nothing, unless a tune request is open, and re-reads at
+once when it is shown again (`visibilitychange`). Each re-read is a script tag, as on the first load, with a `?t=` the
 server ignores added so nothing in between answers from a cache. A redraw on
 the same view replaces only the top-level blocks whose markup changed since
 the last draw (`changedParts`), so an unchanged section keeps its DOM, its

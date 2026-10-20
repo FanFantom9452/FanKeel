@@ -63,7 +63,9 @@ async function openPage(url, hash) {
     const listeners = {};
     const asked = [];
     const pending = [];
-    const win = { location: { hash, protocol: 'http:' }, addEventListener() {}, scrollTo() {},
+    const seen = { failList: false, repaints: 0 };
+    // repaint() ends in scrollTo, which a bare draw() does not call.
+    const win = { location: { hash, protocol: 'http:' }, addEventListener() {}, scrollTo() { seen.repaints++; },
         setInterval: (fn, ms) => { timers[ms] = fn; return 1; }, setTimeout: () => 1, clearTimeout() {} };
     const ctx = vm.createContext({ window: win, URLSearchParams, fetch: () => Promise.resolve({ ok: true }) });
     ctx.document = {
@@ -76,6 +78,7 @@ async function openPage(url, hash) {
             appendChild(s) {
                 asked.push(String(s.src).replace(/[?&]t=\d+$/, ''));
                 s.parentNode = { removeChild() {} };
+                if (seen.failList && /station-data.js/.test(s.src)) { pending.push(Promise.resolve().then(() => s.onerror())); return; }
                 pending.push(get(url + s.src).then((text) => { vm.runInContext(text, ctx); s.onload(); }, () => s.onerror()));
             },
         },
@@ -86,7 +89,7 @@ async function openPage(url, hash) {
     await drain();
     asked.length = 0;
     return {
-        doc: ctx.document, asked, drain,
+        doc: ctx.document, asked, drain, seen,
         tick: () => timers[3000](),
         fire: (type) => (listeners[type] || []).forEach((fn) => fn()),
     };
@@ -119,4 +122,13 @@ test('a hidden tab re-reads nothing, and re-reads at once when it is shown again
     p.fire('visibilitychange');
     assert.deepEqual(p.asked, BOTH);
     await p.drain();
+});
+
+test('a detail that lands while the list failed does not repaint the page', async (t) => {
+    const p = await opened(t);
+    p.seen.failList = true;
+    p.tick();
+    assert.deepEqual(p.asked, BOTH);
+    await p.drain();
+    assert.equal(p.seen.repaints, 0, 'repainted against the old list');
 });

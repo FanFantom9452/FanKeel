@@ -132,9 +132,13 @@ test('served, the page re-reads the list and the live session on screen every th
     next = station('stale', 'third');
     const again = p.loaded.length;
     p.timers[3000](); await settle(); await settle(); await settle();
-    assert.deepEqual(p.loaded.slice(again).map((s) => s.split('?')[0]), ['station/station-data.js'],
-        'a session no longer live has its detail re-read no more');
+    assert.deepEqual(p.loaded.slice(again).map((s) => s.split('?')[0]), ['station/station-data.js', 'station/detail/aaaa1111-0000.js'],
+        'the detail is asked for beside the list, off the list as it stood (live), so the tick that learns the session ended still reads it once');
     assert.match(p.html(), /<span class="livetag off"/);
+    const last = p.loaded.length;
+    p.timers[3000](); await settle(); await settle(); await settle();
+    assert.deepEqual(p.loaded.slice(last).map((s) => s.split('?')[0]), ['station/station-data.js'],
+        'a session no longer live has its detail re-read no more');
 });
 
 test('the file /fankeel writes re-reads nothing: no timer under file:, and only the health poll for data no server wrote', () => {
@@ -155,7 +159,8 @@ test('a re-read whose script never loads or errors gives up after its deadline, 
     const at = p.loaded.length;
     p.timers[3000]();
     await settle(); await settle();
-    assert.equal(p.loaded.length, at + 1, 'one attempt was made');
+    assert.deepEqual(p.loaded.slice(at).map((s) => s.split('?')[0]), ['station/station-data.js', 'station/detail/aaaa1111-0000.js'],
+        'one attempt was made: the list and the detail asked for in the same tick');
     assert.match(p.html(), /<h1 class="s-title">first<\/h1>/, 'a hung load has not redrawn the page yet');
     // The deadline passing, simulated: the same one-shot a real setTimeout gives.
     p.fireTimeouts();
@@ -179,7 +184,8 @@ test('two 3-second ticks fired before the first re-read settles load station-dat
     p.timers[3000]();
     p.timers[3000]();
     await settle(); await settle();
-    assert.equal(p.loaded.length, at + 1, 'the second tick found the first still in flight and loaded nothing');
+    assert.deepEqual(p.loaded.slice(at).map((s) => s.split('?')[0]), ['station/station-data.js', 'station/detail/aaaa1111-0000.js'],
+        'the first tick asked for the list and the detail; the second found them still in flight and loaded nothing');
 });
 
 test('a hidden tab re-reads nothing on its tick', async () => {
@@ -236,7 +242,8 @@ test('a re-read that errors leaves the page\'s data as it was, and clears busy f
     const at = p.loaded.length;
     p.timers[3000]();
     await settle(); await settle();
-    assert.equal(p.loaded.length, at + 1, 'one attempt was made');
+    assert.deepEqual(p.loaded.slice(at).map((s) => s.split('?')[0]), ['station/station-data.js', 'station/detail/aaaa1111-0000.js'],
+        'one attempt was made: the list and the detail asked for in the same tick');
     assert.match(p.html(), /<h1 class="s-title">first<\/h1>/,
         'a failed re-read leaves the page showing what it had, not the half-written data behind it');
     mode = null;
