@@ -93,7 +93,8 @@ function main(argv) {
         ? 'suite: ' + result.pass + ' pass, ' + result.fail + ' fail @ ' + sha
         : 'suite: ' + (result.ok ? 'ok' : 'red') + ' @ ' + sha;
     const noFast = values.fast && !values.command && !fast ? ' (no test:fast script — ran the whole suite)' : '';
-    return { text: line + noFast + (file ? '' : ' (not recorded: the entry has no started stamp)'), ok: result.ok };
+    const tap = file && !result.ok && fs.existsSync(suite.tapPath(file)) ? ' — TAP: ' + suite.tapPath(file) : '';
+    return { text: line + noFast + tap + (file ? '' : ' (not recorded: the entry has no started stamp)'), ok: result.ok };
 }
 
 if (require.main === module) {
