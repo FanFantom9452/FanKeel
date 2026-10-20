@@ -1,7 +1,7 @@
 ---
 name: fankeel-init
 description: First-use onboarding for a project fankeel has not organised — its docs tree, raw data, TODO, directory tree, CLAUDE.md, memory and a sensitive-word list — one question at a time until the onboarding checks pass. Use when `task.js start` prints an `onboard:` line, or for /fankeel-init.
-version: 0.111.50
+version: 0.111.51
 status: current
 last_verified: 2026-10-15
 source_of_truth: scripts/onboard.js, lib/onboard.js, agents/fankeel-init-scout.md, scripts/compact-window.js, hooks/compact.ts
@@ -133,6 +133,8 @@ One `AskUserQuestion` after the habits, three options in this order:
 ## 3. Visibility and the word list
 
 First of the docs half, because everything it writes is committed afterwards.
+
+When init runs from a controlled survey's `onboard:` line, the guard refuses the controller's Edit; each write in steps 3–9 goes to one `fankeel:fankeel-implementer`.
 
 - `gh repo view --json visibility` answers `public` or `private`; no remote is
   `local`; no `gh`, or no answer, is `unknown`. Visibility only sets how hard to

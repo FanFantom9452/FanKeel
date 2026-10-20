@@ -1,7 +1,7 @@
 ---
 name: fankeel-land
 description: The land stage — a green suite, the documents closed, the map rewritten, and the integration decision left to the user. Use for the land stage of a fankeel task, finishing a development branch, deciding between merge and PR, or cleaning up a worktree when work is complete.
-version: 0.111.50
+version: 0.111.51
 status: current
 last_verified: 2026-10-18
 source_of_truth: lib/stages.js, scripts/todo-check.js, scripts/map.js, hooks/carry.js, scripts/land.js, lib/suite.js
@@ -41,7 +41,9 @@ what the gate asks — never something to settle first and report afterwards.
 When this land is a release, do step 2a first — set the number and commit
 it — and only then run this step: `package.json` is code to the record, so a
 suite run before the bump is stale after it, `--check` below refuses on it,
-and so does `task.js land`.
+and so does `task.js land`. A standing rule that every land releases — a
+memory or `CLAUDE.md` line — counts as the user saying so: bump before this
+step, never after it.
 
 Verify ran the fast suite, so this check usually refuses; ask anyway, because
 a whole run recorded earlier — an earlier land attempt, or verify's in a
@@ -218,7 +220,7 @@ was never a note:
 | a project convention | `CLAUDE.md` |
 | a durable fact about the user or repository | the memory directory |
 | why a change was made | the commit message |
-| work deliberately deferred | folder mode: a new entry via `todo.js new --body`; hand-written `TODO.md`: one line, under the heading for what it is short of — under `## Blocked`, beneath a `### <timing>` whose next line is `on: MM-DD`, `after: <what>` or `upstream: <what>`; under `## Watch`, one whose next line is `if: <the event>`; either line ending in a `MM-DD` stamp; step 2's `todo-check` ran before this note existed, so run it again once the notes land |
+| work deliberately deferred | folder mode: a new entry via `todo.js new --label --title --description --state --body`, the title at most 28 columns (a CJK character counts two), and a body paragraph opening `要做成：` does not count toward todo-check's 200 characters of reason; hand-written `TODO.md`: one line, under the heading for what it is short of — under `## Blocked`, beneath a `### <timing>` whose next line is `on: MM-DD`, `after: <what>` or `upstream: <what>`; under `## Watch`, one whose next line is `if: <the event>`; either line ending in a `MM-DD` stamp; step 2's `todo-check` ran before this note existed, so run it again once the notes land |
 
 **Before a durable fact goes to the memory directory, one of four decisions.**
 Grep the directory for the fact's subject first, then:

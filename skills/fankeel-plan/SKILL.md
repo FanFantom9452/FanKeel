@@ -1,7 +1,7 @@
 ---
 name: fankeel-plan
 description: The plan stage — decompose an approved design into tasks someone with no context could execute, with constraints generated from the project rather than remembered. Use for the plan stage of a fankeel task, writing an implementation plan, or breaking a spec into tasks before any code is written.
-version: 0.111.50
+version: 0.111.51
 status: current
 last_verified: 2026-10-09
 source_of_truth: lib/stages.js, scripts/map.js, lib/plantasks.js, scripts/ledger.js
@@ -317,7 +317,8 @@ These are **plan failures**, not shorthand:
 - a task with no `**Dispatch:**` line
 - a task with no `**Files:**` block, or one whose `Modify:` list is empty
 - a language fence with no file named in the three lines above it
-- a `Read:` left off when the task calls a helper from a file it does not modify
+- a `Read:` left off when the task calls a helper from a file it does not modify,
+  or names a path in backticks, glob included, that its Files block does not list
 
 ## Coverage, then lint, then a reviewer — before the gate
 
