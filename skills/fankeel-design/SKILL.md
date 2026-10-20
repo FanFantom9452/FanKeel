@@ -221,6 +221,13 @@ defined interfaces. For each: what does it do, how is it used, what does it
 depend on? If someone cannot answer those without reading its internals, the
 boundaries need work.
 
+**A task's diagram is a `.board`.** An architecture, flow or dependency
+diagram for a task is a Chartroom `.board` in its build directory,
+`.fankeel/build/task-<started>/<name>.board` —
+one record per line, no coordinates; the station lays it out and draws it on
+the session card.
+Sequence and gantt diagrams stay Mermaid.
+
 ### 7. The spec — `architectural` only
 
 `<plan bucket>/YYYY-MM-DD-<topic>-design.md` — the `role: plan` bucket in `docs.json`, `docs/plans/` where none is declared — , with `status: design-intent`

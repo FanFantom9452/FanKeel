@@ -22,6 +22,8 @@ done:
 
 監控站現在能在 /chartroom/<專案>/ 底下打開該專案的架構白板。profile 新增 station.chartroom 鍵，填 Chartroom 套件根的絕對路徑；沒設就沒有白板，請求照舊得到 404。三個懸而未決的問題這樣裁定：每個專案的板子由註冊根定出位置，第一次請求才建一個 handler，關閉監控站時一併 close；Chartroom 的 POST 不驗 nonce，改由它自己擋跨來源與非 loopback Host；頁面引用 Chartroom 安裝路徑下 build 好的 dist/app，fankeel 不帶 dist。專案卡片也多了開啟白板的連結。
 
+任務的架構、流程與依賴圖改由 [2026-10-20-chartroom-board-design.md](../plans/2026-10-20-chartroom-board-design.md) 取代：寫成任務 build 目錄裡的 .board 檔，由監控站畫成 SVG 掛在 session 卡片上；這裡的 /chartroom/ 路由只留給專案自己的 architecture.board。
+
 - commit 94f510ec
 - commit 40b61b39
 - commit d5a8f499
