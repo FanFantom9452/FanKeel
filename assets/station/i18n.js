@@ -897,6 +897,12 @@
             'rec.alsoIn': 'Also in {f}',
             'rec.none': 'This task has no completion record.',
             'rec.noneYet': 'The completion record is written at land.',
+            'rec.boards': 'Diagrams the AI drew',
+            'rec.boardsHint': '{n} · click one to open the full diagram in a new tab',
+            'rec.boardOpen': '{f}, opens the full diagram in a new tab',
+            'rec.boardAlt': 'Thumbnail of {f}',
+            'rec.boardGo': 'New tab',
+            'rec.boardsIn': 'Files in {d}',
             // disp — the dispatch tab, agent rows and step lists
             'disp.write': 'write',
             'disp.read': 'read',

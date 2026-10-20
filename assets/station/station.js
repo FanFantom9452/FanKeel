@@ -2778,7 +2778,7 @@
             NAV_TREE: NAV_TREE,
             tuneOpen: tuneOpen, tuneEvents: tuneEvents, toastText: toastText, floatHtml: floatHtml, fkBoxParse: fkBoxParse, fkBoxClamp: fkBoxClamp, gateCountdownHtml: gateCountdownHtml, noteHtml: noteHtml, floatNotes: floatNotes, clock: gateClock,
             changedParts: changedParts, seenHtml: seenHtml, drawList: drawList, sessionPage: sessionPage,
-            recordHtml: recordHtml, recordPageHtml: recordPageHtml, listAskRow: listAskRow,
+            recordHtml: recordHtml, recordPageHtml: recordPageHtml, boardsHtml: boardsHtml, listAskRow: listAskRow,
         };
     }
     if (!doc) return;
@@ -3888,6 +3888,29 @@
         return '<section class="panel recp" data-block="record-page" aria-labelledby="recp-h"><div class="h2" id="recp-h">' + recTitle() + '</div>'
             + '<dl class="recp-f">' + recordRows(r.fields, 'recp') + '</dl>' + recordSrc(r, 'recp') + '</section>';
     }
+    // A task's Chartroom boards (lib/board.js), drawn by the served station at
+    // GET /station/board/<id>/<name>.svg — the mockup's data-block="boards".
+    // An <img>, never inline SVG: the labels are an agent's, and an SVG in an
+    // <img> runs no script. A static copy has no route to draw them, so it
+    // shows no block; `?v=` is the file's mtime, so a redrawn board reloads.
+    function boardsHtml(s, served) {
+        var list = s && Array.isArray(s.boards) ? s.boards : [];
+        if (!served || !list.length) return '';
+        var id = encodeURIComponent(String(s.id));
+        var at = String(s.started || '').replace(/[-:]/g, '').slice(0, 15);
+        var icon = '<svg class="ico" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+            + '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>';
+        return '<section class="panel boards" data-block="boards" aria-labelledby="boards-h"><div class="h2" id="boards-h">' + icon
+            + loc('rec.boards', 'AI 畫的圖') + '<small>' + loc('rec.boardsHint', '{n} 張・點一下在新分頁開完整的圖', { n: list.length }) + '</small></div>'
+            + '<ul class="bd-grid">' + list.map(function (b) {
+                var src = 'station/board/' + id + '/' + encodeURIComponent(String(b.name)) + '.svg?v=' + encodeURIComponent(String(b.updated));
+                return '<li><a class="bd" href="' + esc(src) + '" target="_blank" rel="noopener" title="' + esc(loc('rec.boardOpen', '{f}，在新分頁開完整的圖', { f: b.name + '.board' })) + '">'
+                    + '<span class="bd-th"><img src="' + esc(src) + '" alt="' + esc(loc('rec.boardAlt', '{f} 的縮圖', { f: b.name })) + '" loading="lazy" decoding="async"></span>'
+                    + '<span class="bd-ft"><span class="bd-nm"><b>' + esc(b.name) + '</b>.board</span><span class="bd-go">' + loc('rec.boardGo', '開新分頁') + '</span></span></a></li>';
+            }).join('') + '</ul>'
+            + (/^\d{8}T\d{6}$/.test(at) ? '<p class="bd-src">' + loc('rec.boardsIn', '檔案在 {d}', { d: '<span class="mono">' + esc('.fankeel/build/task-' + at + '/') + '</span>' }) + '</p>' : '')
+            + '</section>';
+    }
     function listAskRow(s, sel) {
         var a = s && s.record && s.record.fields ? s.record.fields.ask : '';
         if (!a) return '';
@@ -3949,7 +3972,7 @@
             + (s.model ? '<span class="chip"><i class="sw" style="background:var(--m-' + family(s.model) + ')"></i>' + loc('dash.mainSession', '主 session') + ' <span class="mono">'
                 + esc(s.model) + '</span></span>' : '') + effortChip(s.effort) + '</div></div>'
             + railHtml(s, Boolean(S.serve) && s.state === 'live', S.serve ? Date.now() : NOW)
-            + sessionHeadHtml(s, x) + '</section>' + recordPageHtml(s)
+            + sessionHeadHtml(s, x) + '</section>' + recordPageHtml(s) + boardsHtml(s, Boolean(S.serve))
             + tabsHtml(s, r.tab, x, talk && talk.total !== null ? talk.total : null) + '<section class="panel' + (r.tab === 'plan' ? ' pv" data-block="plan-tab"' : r.tab === 'gate' ? ' pv gv" data-block="gate-tab"' : '"' + (r.tab === 'dispatch' ? ' data-block="dispatch"' : '')) + '>' + body + '</section>';
     }
     // 對話's turns, per session id, for as long as the page lives: a redraw

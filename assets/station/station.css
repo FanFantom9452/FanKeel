@@ -2537,6 +2537,24 @@ p.gv-red{color:var(--fail-ink)}
 .recp-src{margin:6px 0 0;padding:10px 0 0 144px;border-top:1px solid var(--line);font-size:12px;color:var(--mute)}
 .recp-src .mono{color:var(--fg-2)}
 .recp-none{margin:0 0 14px;padding:0 4px;font-size:12.5px;line-height:1.5;color:var(--mute)}
+/* the session card's boards block (AI 畫的圖) — mockup data-block="boards" */
+.boards{padding-top:18px;padding-bottom:16px}
+.boards .h2{margin:0 0 12px;font-weight:600}
+/* the narrow fallback is in the track: min(220px,100%) folds to one column */
+.bd-grid{list-style:none;margin:0;padding:0;display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(min(220px,100%),1fr))}
+.bd{display:flex;flex-direction:column;min-height:44px;text-decoration:none;color:var(--fg);border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden;background:var(--soft);transition:border-color .16s ease-out}
+.bd:hover{border-color:var(--line-2)}
+.bd:hover .bd-go{color:var(--fg)}
+.bd:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:var(--r-sm)}
+.bd-th{display:flex;align-items:center;justify-content:center;aspect-ratio:16/10;padding:10px;background:var(--inset);border-bottom:1px solid var(--line)}
+.bd-th img{display:block;width:auto;height:auto;max-width:100%;max-height:100%;min-width:0;min-height:0}
+.bd-ft{display:flex;align-items:baseline;gap:10px;padding:9px 12px 10px;background:var(--panel)}
+.bd-nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:12.5px/1.5 var(--mono);color:var(--mute)}
+.bd-nm b{font-weight:600;color:var(--fg)}
+.bd-go{flex:none;font-size:12px;line-height:1.5;color:var(--fg-2)}
+.bd-src{margin:12px 0 0;padding-top:10px;border-top:1px solid var(--line);font-size:12px;line-height:1.5;color:var(--mute)}
+.bd-src .mono{font-family:var(--mono);color:var(--fg-2)}
+@media(prefers-reduced-motion:reduce){.bd{transition:none}}
 @media(max-width:1100px){
   .recp-r{grid-template-columns:minmax(0,1fr);row-gap:3px}
   .recp-src{padding-left:0}
