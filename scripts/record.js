@@ -246,13 +246,59 @@ function listBundles(opts) {
     process.stdout.write((rows.length ? rows.join('\n') : 'no bundles') + '\n');
 }
 
+const RETRO_HEAD = /^retro: (\S+) — (\d+) turns read, (\d+) hunks/;
+
+// The retro's hand-back as it returned it, copied from its transcript the way
+// judge.js copies a judgement, and the disposition the gate settled on stdin.
+function fileRetro(opts) {
+    const { root, mine, projectRoot } = activeEntry(opts);
+    if (!mine.record) fail('No record for ' + opts.session + ' yet: a retro is filed under the task\'s record, so run `record.js write` first.');
+    if (!opts.transcript) fail('--transcript <session>/subagents/agent-<id>.jsonl is required: the hand-back is copied from there, never retyped.');
+    const { answerFromTranscript } = require('./judge.js');
+    let answer;
+    try { answer = answerFromTranscript(opts.transcript).trim(); } catch (e) { fail('Nothing written: ' + opts.transcript + ' could not be read (' + e.code + ').'); }
+    const head = RETRO_HEAD.exec(answer);
+    if (!head) fail('Nothing written: the hand-back does not open with `retro: <session> — <n> turns read, <n> hunks`, so it is not what the retro returned.');
+    const disposition = fs.readFileSync(0, 'utf8').trim();
+    const at = new Date().toISOString();
+    const block = ['', '<details>', '<summary>retro ' + String(opts.session).slice(0, 8) + ' · ' + at + ' · 原文</summary>', '',
+        '````text', answer, '````', '', '```text', disposition || '（沒有處置）', '```', '', '</details>'].join('\n');
+    const month = path.join(projectRoot, ...mine.record.file.split('/'));
+    if (!appendUnder(month, mine.record.anchor, block)) fail('Nothing written: ' + mine.record.file + ' has no #' + mine.record.anchor + '.');
+    const saved = registry.update(root, opts.session, (d) => {
+        d.record.retro = { at, turns: Number(head[2]), hunks: Number(head[3]) };
+    });
+    if (!saved) fail('Retro filed in ' + mine.record.file + '#' + mine.record.anchor + ', but the registry entry for ' + opts.session + ' could not be updated: do not file it again.');
+    process.stdout.write('filed: ' + mine.record.file + '#' + mine.record.anchor + '\n');
+}
+
+// /fankeel-retro-all's ranked report, as its own section of the month file.
+function fileCross(opts) {
+    const root = opts.root ? path.resolve(opts.root) : registry.rootFor({ cwd: process.cwd() });
+    const projectRoot = opts.project ? path.resolve(opts.project) : root;
+    const report = fs.readFileSync(0, 'utf8').trim();
+    if (!/^(recurring: |clean$)/m.test(report)) fail('Nothing written: a cross-bundle report holds `recurring:` lines, or `clean`.');
+    const day = new Date().toISOString().slice(0, 10);
+    const rel = recordsRel(projectRoot) + '/' + day.slice(0, 7) + '.md';
+    const file = path.join(projectRoot, ...rel.split('/'));
+    const before = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
+    const base = 'x-' + day;
+    const taken = (before.match(new RegExp('<a id="' + base + '(-\\d+)?"></a>', 'g')) || []).length;
+    const anchor = taken ? base + '-' + (taken + 1) : base;
+    const head = before ? before.replace(/\n*$/, '\n\n') : '# 任務完成紀錄 ' + day.slice(0, 7) + '\n\n';
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, head + ['<a id="' + anchor + '"></a>', '', '## ' + day + ' 跨 session 回顧', '', '````text', report, '````', ''].join('\n'));
+    process.stdout.write('filed: ' + rel + '#' + anchor + '\n');
+}
+
 function main(argv) {
     const { values, positionals } = parseArgv({ args: argv, options: OPTIONS, allowPositionals: true });
     const verb = positionals[0];
     if (verb === 'write') return write(values);
     if (verb === 'session') return exportSession(values);
     if (verb === 'sessions' && values.list) return listBundles(values);
-    fail('record.js write|session|sessions --list --session <id> [--commit] [--root <dir>] [--project <dir>] [--config-dir <dir>]');
+    if (verb === 'retro') return values.cross ? fileCross(values) : fileRetro(values);
+    fail('record.js write|session|retro|sessions --list --session <id> [--commit] [--transcript <jsonl>] [--cross] [--root <dir>] [--project <dir>] [--config-dir <dir>]');
 }
 
 if (require.main === module) main(process.argv.slice(2));
