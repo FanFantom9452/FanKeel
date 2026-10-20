@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-10-18
+last_verified: 2026-10-21
 source_of_truth: package.json, .claude-plugin/plugin.json, knip.json, scripts/todo-check.js, scripts/version.js, scripts/skills-check.js, scripts/stage-registry.js
 ---
 
@@ -29,7 +29,7 @@ load — the bench check.sh tests and the git-heavy ones. The tag was chosen
 from one `node --test --test-reporter=tap` run on main at `f92c7a06` (280 s),
 reading each test point's `duration_ms`: 129 points at 10 s or more, 53% of
 the 4928 s summed over all of them. `npm run test:fast` is
-`node --test --test-skip-pattern=@slow --require ./tests/subprocess-timeout.js`;
+`node --test --test-timeout=300000 --test-force-exit --test-skip-pattern=@slow --require ./tests/subprocess-timeout.js`;
 `npm test` is still everything — both load `tests/subprocess-timeout.js`, which
 gives every synchronous subprocess a test starts a timeout (README.md,
 `## Development`).
@@ -175,12 +175,12 @@ under its own heading below the verdict, the same non-failing way. `lib/blame.js
 holds the shared reading, because `scripts/orient.js`'s own `## Needs a decision`
 ordering in its `todo:` block needs the same history.
 
-## `version.js` — the release number in fifteen files
+## `version.js` — the release number in sixteen files
 
-`node scripts/version.js` is the release number in the fifteen files that carry it —
-two manifests and one frontmatter line in each of the thirteen skills. With a number
+`node scripts/version.js` is the release number in the sixteen files that carry it —
+two manifests and one frontmatter line in each of the fourteen skills. With a number
 it sets them all; with `--changes` it lists the commits since the last
-`chore: <x.y.z>`, which is what a release contains. With `--changes --since <x.y.z>` it lists the commits since that release instead. `npm test` fails when the fifteen
+`chore: <x.y.z>`, which is what a release contains. With `--changes --since <x.y.z>` it lists the commits since that release instead. `npm test` fails when the sixteen
 disagree, so the script is what makes them agree rather than what notices. A
 release used to be eleven edits, and missing one left a skill announcing a version
 the plugin is not, unnoticed until [`tests/contract.test.js`](../../tests/contract.test.js)
@@ -199,13 +199,13 @@ before. These are the eight 0.70.0 went through, in order.
 2. **`node scripts/version.js --changes`** lists the commits since the last
    `chore: <x.y.z>`. That list *is* the release, and it is what to put in front
    of whoever is choosing the number — there is no changelog to read instead.
-3. **`node scripts/version.js <x.y.z>`** writes the fifteen places and says how
+3. **`node scripts/version.js <x.y.z>`** writes the sixteen places and says how
    many it changed. Only on the user's say-so: the number is a claim about what
    shipped, and that claim is theirs.
 4. **Commit it as `chore: <x.y.z> — <one line>`.** That subject is the marker
    `--changes` counts back to, so a release committed under any other subject
    leaves the next one listing this one's commits again.
-5. **`npm test` again.** `tests/contract.test.js:262` reads all fifteen and
+5. **`npm test` again.** `tests/contract.test.js:262` reads all sixteen and
    compares them, so the bump is only proven by a run that happened after it.
 6. **Integrate.** `land.push` is `false` in this project's profile, so a local
    merge to `main` is where a release stops unless the user says otherwise.
@@ -272,7 +272,7 @@ returns `import[badgeWord] ⎆ ✓`; `knip --trace-export clearBadge`, reached a
 and `hooks/inject.js:77` call it. The shape is not rare here: counting lines
 under `tests/` that bind a module from `../lib/`, `../scripts/` or `../hooks/`
 to a plain identifier rather than destructuring it gives 60 lines across 40 of
-the 74 test files, against 35 destructured lines across 26. a TODO entry carries
+the 74 test files there were on 2026-10-01, against 35 destructured lines across 26; tests/ held 348 test files on 2026-10-21. a TODO entry carries
 what would lift the exclusion.
 
 **A green run has to be able to go red.** An `ignore` wide enough to silence 228
