@@ -80,6 +80,7 @@ Not in this table: the `INIT` rules of the `/fankeel` prompt (no stage yet), the
 | land.4 | Option one stands the task | none — prose only | none | `hooks/carry.js` offers an entry a `/clear` left active back on the next session's first prompt — a repair after the fact, not a refusal. |
 | land.5 | Integration — {{PROFILE_LAND}}. | none — prose only | none | — |
 | land.6 | Read the fankeel-land skill on | none — prose only | none | — |
-| land.7 | Output: node {{SUITE}} --session <id> | `scripts/task.js` | none | The land verb refuses through blocker in `lib/suite.js`: no record, a red one, a fast one, or code changed since its sha. The output shape is not checked. |
+| land.7 | Gate asks record.js session first; | none — prose only | none | — |
+| land.8 | Output: node {{SUITE}} --session <id> | `scripts/task.js` | none | The land verb refuses through blocker in `lib/suite.js`: no record, a red one, a fast one, or code changed since its sha. The output shape is not checked. |
 | land.when.land.archivePlan | A plan that chose an | none — prose only | none | — |
 | land.when.!land.archivePlan | A plan that chose an | none — prose only | none | — |

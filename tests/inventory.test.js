@@ -20,6 +20,7 @@ const SKILLS = [
     'fankeel-init',
     'fankeel-land',
     'fankeel-plan',
+    'fankeel-retro-all',
     'fankeel-station',
     'fankeel-survey',
     'fankeel-upgrade',
