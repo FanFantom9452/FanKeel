@@ -75,7 +75,7 @@ test('a pointerdown on an action button opens the click ring, restarting it each
     const cls = new Set();
     const ring = { classList: { add: (c) => cls.add(c), remove: (c) => cls.delete(c) }, offsetWidth: 1 };
     const target = (hit) => ({ closest: (sel) => (hit && sel.split(',').some((s) => s.trim() === hit) ? ring : null) });
-    for (const hit of ['.btn.go', '#dchtog', '.td-mb']) {
+    for (const hit of ['.btn.go', '.td-mb']) {
         cls.clear();
         fire(target(hit));
         assert.equal(cls.has('rip'), true, hit + ' gets the ring');

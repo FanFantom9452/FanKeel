@@ -244,10 +244,10 @@ test('the undeclared count is one line, not a list of every page', () => {
   }
   files['docs/README.md'] = links.join('\n') + '\n';
   const r = sweep(withTree(tree(files), 'flat'));
-  assert.equal(r.undeclared, 13, 'the index is a reference document like any other');
+  assert.equal(r.undeclared, 12, 'a README carries no frontmatter, so the index is not counted');
   const text = audit.report(r);
-  assert.match(text, /13 reference documents have no frontmatter contract/);
-  assert.equal(text.includes('docs/11-a.md'), false, 'the fix is a convention, not thirteen edits');
+  assert.match(text, /12 reference documents have no frontmatter contract/);
+  assert.equal(text.includes('docs/11-a.md'), false, 'the fix is a convention, not twelve edits');
 });
 
 // Sixteen files carry the version and nothing kept them together: two manifests
