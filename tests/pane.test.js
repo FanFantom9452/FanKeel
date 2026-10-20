@@ -1552,6 +1552,36 @@ test('a shell whose output file vanishes is listed as ended with no code', async
     assert.ok(lines.includes(' ● sleep 30 · 0 分 · 結束'), lines.join('\n'));
 });
 
+test('two ticks within the shell poll read the output file once; a new background call reads it again at once', async () => {
+    const hooks = await wired();
+    const { $, log } = fake({ files: Object.assign(entryFile(live), { [OUTPUT]: 'working\n' }), env: { TEMP } });
+    log.now = Date.now();
+    await hooks['session.start']($, {}, passed);
+    await hooks['tool.call']($, background('sleep 30'), answered('b1'));
+    await log.ticks[0].fn();
+    log.now += 1000;
+    await log.ticks[0].fn();
+    assert.equal(log.reads.filter((p) => p === OUTPUT).length, 1);
+    await hooks['tool.call']($, background('sleep 40'), answered('b2'));
+    await log.ticks[0].fn();
+    assert.equal(log.reads.filter((p) => p === OUTPUT).length, 2);
+});
+
+test('with no tasks directory the shells stay as recorded, said once', async () => {
+    const hooks = await wired();
+    const { $, log } = fake({ files: entryFile(live), env: { TEMP } });
+    log.now = Date.now();
+    await hooks['session.start']($, {}, passed);
+    await hooks['tool.call']($, background('sleep 30'), answered('b1'));
+    for (let i = 0; i < 3; i += 1) {
+        await log.ticks[0].fn();
+        log.now += 6000;
+    }
+    assert.equal(log.logs.filter((m) => /tasks directory not found/.test(m)).length, 1, JSON.stringify(log.logs));
+    const lines = paneLines(await hooks['ui.render']($, PANE));
+    assert.ok(lines.includes('▌▾ shells  1 在跑 · 0 結束'), lines.join('\n'));
+});
+
 test('a foreground call records nothing, its result comes back as next gave it, and no shells block is drawn', async () => {
     const hooks = await wired();
     const { $, log } = fake({ files: entryFile(live), env: { TEMP } });

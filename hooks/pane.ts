@@ -525,7 +525,10 @@ async function shellsOf($: EngineInterface, state: State, id: string, now: numbe
   state.shellAt = now
   try {
     const dir = await shellDirOf($, state, id)
-    if (!dir) return state.shells
+    if (!dir) {
+      logOnce($, state.logged, 'shells', `fankeel pane: background shell tasks directory not found for session ${id}`)
+      return state.shells
+    }
     const settled = new Map<string, Shell>()
     for (const s of state.shells) {
       if (s.end !== null) continue
