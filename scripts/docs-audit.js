@@ -412,6 +412,18 @@ function resolveTree(root) {
     return { tree: declared.tree || (implied ? docs.normalise(docs.PRESETS[implied]) : null), implied };
 }
 
+// A README.md is the page a directory's reader opens first, filed or not
+// (TODO audit-3). One in a directory no bucket covers is read as `reference`,
+// in a batch named for that directory; one a bucket covers keeps that
+// bucket's role. It carries no frontmatter — GitHub renders a block on a
+// README as a stray table — so its date is git's, and it is neither
+// `unfiled` nor `undeclared`.
+const isReadme = (rel) => path.posix.basename(rel) === 'README.md';
+function readmeBucket(tree, rel) {
+    if (!tree || !rel.includes('/') || !isReadme(rel) || docs.bucketOf(tree, rel)) return null;
+    return { path: path.posix.dirname(rel), role: 'reference' };
+}
+
 function batches(root) {
     const listed = trackedFiles(root);
     if (!listed) return [];
@@ -419,7 +431,7 @@ function batches(root) {
     const groups = new Map();
     for (const rel of listed.files.filter(isMarkdown)) {
         const b = docs.isSignpost(rel) ? { path: '.', role: 'reference' }
-            : tree ? docs.bucketOf(tree, rel)
+            : tree ? docs.bucketOf(tree, rel) || readmeBucket(tree, rel)
                 : { path: rel.includes('/') ? rel.split('/')[0] : '.', role: 'reference' };
         if (!b || ['archive', 'fixture', 'todo', 'data'].includes(b.role)) continue;
         if (!groups.has(b.path)) groups.set(b.path, []);
@@ -478,7 +490,7 @@ function sweep(root, since, now, settled = LANDED_QUIET) {
     // filed anywhere, treating markdown as reference is the only reading
     // available, and a project in that state wants the checks more than it wants
     // the precision.
-    const roleOf = (rel) => docs.roleOf(tree, rel) || (tree ? null : 'reference');
+    const roleOf = (rel) => docs.roleOf(tree, rel) || (readmeBucket(tree, rel) || {}).role || (tree ? null : 'reference');
     const roots = new Set(files.map((f) => f.split('/')[0]));
     const points = new Map();
     const bodies = new Map();
@@ -723,7 +735,7 @@ function sweep(root, since, now, settled = LANDED_QUIET) {
 
     // 9. Markdown nobody filed. One line: the fix is a bucket in docs.json, not
     // twenty edits, and naming twenty files at somebody obscures that.
-    const unfiled = docs.unfiledOf(tree, markdown);
+    const unfiled = docs.unfiledOf(tree, markdown).filter((rel) => !readmeBucket(tree, rel));
     const codeDirs = new Set(files.filter((f) => isCode(f) && f.includes('/')).map((f) => f.split('/')[0]));
     const uncovered = [...codeDirs].filter((d) => !described.has(d)).sort();
 
@@ -792,6 +804,7 @@ function sweep(root, since, now, settled = LANDED_QUIET) {
     // there would be a date somebody has to remember to bump standing in for a
     // check that already runs continuously.
     const undeclared = markdown.filter((rel) => rel.includes('/')
+        && !isReadme(rel)
         && roleOf(rel) === 'reference'
         && !(contracts.get(rel) || {}).declared);
 
