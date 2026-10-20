@@ -388,6 +388,19 @@ test('gate.station is off or whole seconds from 1 to 600, off by default', () =>
     assert.equal(profile.read(d, null).sources['gate.station'], 'builtin');
 });
 
+test('station.link is false or a stage list in canonical order, every hand-off stage but audit by default, and not a wizard key', () => {
+    assert.deepEqual(profile.parseValue('station.link', 'land, survey ,plan,plan').value, ['survey', 'plan', 'land']);
+    assert.deepEqual(profile.parseValue('station.link', 'false').value, []);
+    assert.deepEqual(profile.parseValue('station.link', '').value, []);
+    assert.match(profile.parseValue('station.link', 'survey,deploy').error, /^station\.link is false or a comma-separated list of: survey, design, plan, build, verify, audit, land$/);
+    const root = tmp('fankeel-link-');
+    const { values, sources } = profile.read(root, null);
+    assert.deepEqual(values['station.link'], ['survey', 'design', 'plan', 'build', 'verify', 'land']);
+    assert.equal(sources['station.link'], 'builtin');
+    assert.equal(profile.display(values['station.link']), 'survey,design,plan,build,verify,land');
+    assert.equal(Object.prototype.hasOwnProperty.call(profile.WIZARD_KEYS, 'station.link'), false);
+});
+
 test('dispatch.inflight is a whole number from 1 to 16, 8 by default', () => {
     for (const ok of [1, '6', 16]) assert.deepEqual(profile.parseValue('dispatch.inflight', ok), { value: Number(ok) }, String(ok));
     for (const bad of ['0', '17', 'x', '1.5']) assert.match(profile.parseValue('dispatch.inflight', bad).error, /dispatch.inflight is a whole number from 1 to 16/, bad);

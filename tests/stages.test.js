@@ -920,19 +920,37 @@ test('option one is told to run the stage its own label names, not a pre-baked a
   assert.match(text, /for down\/收工/, 'a label that says down/收工 runs the down command, not `stage down`');
 });
 
-// 2026-10-01: a patrol survey that relayed only its path showed the user
-// nothing of the 25 entries it had checked. The controller prints a survey's
-// report before the gate; every other stage still prints the path alone.
-test('a controlled survey prints its report above the gate before asking; every stage prints a returned path and any page: line', () => {
-  const { controlFor } = require('../lib/stages.js');
+// docs/90-agent/plans/2026-10-21-station-focus-design.md §4: a stage in
+// profile `station.link` prints the path and await's `page:` line, and the
+// report's text only when no `page:` line came back (the station is down); a
+// stage taken off the list prints the report's text above its gate as written.
+test('a stage in station.link prints the path and page: line, the report only without one; a stage off it prints the report', () => {
+  const { controlFor, linked } = require('../lib/stages.js');
   const all = ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land'];
+  const ruleOf = (stage, values) => controlFor(stage, Object.assign({ 'stage.agents': all }, values), { handoff: '/r/h.md' }).rules.find((r) => r.startsWith('Print a returned path'));
+  const ALWAYS_TEXT = 'Print a returned path and any `page:` line and the report\'s text above its gate block, as written, then read /r/h.md';
+  const LINK_TEXT = 'Print a returned path and its `page:` line, else the report\'s text, then read /r/h.md';
+  // No `station.link` in values: the builtin, every stage but audit.
   for (const stage of all) {
-    const rules = controlFor(stage, { 'stage.agents': all }, { handoff: '/r/h.md' }).rules;
-    const rule = rules.find((r) => r.startsWith('Print a returned path'));
+    const rule = ruleOf(stage, {});
     assert.ok(rule, stage + ': no return rule');
-    if (stage === 'survey') assert.ok(rule.startsWith('Print a returned path and any `page:` line and the report\'s text above its gate block, as written, then read /r/h.md'), rule);
-    else assert.ok(rule.startsWith('Print a returned path and any `page:` line, then read /r/h.md'), stage + ': ' + rule);
+    if (stage === 'audit') assert.ok(rule.startsWith(ALWAYS_TEXT), stage + ': ' + rule);
+    else assert.ok(rule.startsWith(LINK_TEXT), stage + ': ' + rule);
+    assert.equal(linked(stage, {}), stage !== 'audit', stage);
   }
+  // `plan` taken off the list gets the report-text rule; the rest keep the link rule.
+  const without = { 'station.link': ['survey', 'design', 'build', 'verify', 'land'] };
+  assert.ok(ruleOf('plan', without).startsWith(ALWAYS_TEXT), ruleOf('plan', without));
+  assert.ok(ruleOf('build', without).startsWith(LINK_TEXT), ruleOf('build', without));
+  assert.ok(!ruleOf('build', without).includes('as written'), 'a linked stage has no unconditional report-text rule');
+  // An empty list is the old path-only block plus the report everywhere.
+  for (const stage of all) assert.ok(ruleOf(stage, { 'station.link': [] }).startsWith(ALWAYS_TEXT), stage);
+});
+
+test('the controller asks again through the path rule, not a second "ask again" tail', () => {
+  const { controlFor } = require('../lib/stages.js');
+  const rules = controlFor('build', { 'stage.agents': ['build'] }, { answer: '/r/a.md' }).rules;
+  assert.ok(rules.includes('Any other answer: SendMessage that agent exactly `The user\'s answer is in /r/a.md.`'), rules.join('\n'));
 });
 
 test('the controller waits out a return that is not a path, and sends a finished agent with no path to the await', () => {
