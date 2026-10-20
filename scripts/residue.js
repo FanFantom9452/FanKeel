@@ -406,12 +406,14 @@ function report(result) {
 // worktree when one is checked out and clean, is removed; anything holding
 // uncommitted files or a commit HEAD lacks is kept and said, never forced
 // (TODO agent 分支與 worktree 殘留). A worktree in use by a live session, or
-// whose directory or any file under it was modified within the last two
+// whose directory or any file under it, outside .git and node_modules, was modified within the last two
 // hours, may be an agent still running and is kept.
 const SWEEP_QUIET_MS = 2 * 3600000;
 
 // The first path under `dir` modified after `after`, `.git` and node_modules
-// skipped, or null. A directory's own mtime moves only when an entry directly
+// skipped, or null. Only ENOENT (gone mid-walk) is skipped: a path that cannot
+// be read (EACCES, EPERM, a long path) cannot be shown quiet, so it is returned
+// and the worktree kept. A directory's own mtime moves only when an entry directly
 // in it is added or removed, so an agent editing a file three levels down left
 // the root two hours old and the worktree sweepable (test-13).
 function touchedSince(dir, after) {
@@ -419,12 +421,18 @@ function touchedSince(dir, after) {
     while (stack.length) {
         const at = stack.pop();
         let entries;
-        try { entries = fs.readdirSync(at, { withFileTypes: true }); } catch (e) { continue; }
+        try { entries = fs.readdirSync(at, { withFileTypes: true }); } catch (e) {
+            if (e.code === 'ENOENT') continue;
+            return at;
+        }
         for (const e of entries) {
             if (e.name === '.git' || e.name === 'node_modules') continue;
             const full = path.join(at, e.name);
             let st;
-            try { st = fs.lstatSync(full); } catch (err) { continue; }
+            try { st = fs.lstatSync(full); } catch (err) {
+                if (err.code === 'ENOENT') continue;
+                return full;
+            }
             if (st.mtimeMs > after) return full;
             if (e.isDirectory()) stack.push(full);
         }

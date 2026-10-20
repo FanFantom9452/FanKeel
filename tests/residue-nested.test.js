@@ -15,9 +15,10 @@ const tmp = require('./tmp.js');
 
 const HOUR = 3600000;
 
-test('sweep keeps a clean agent worktree with a nested file touched in the last two hours @slow', () => {
+const git = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
+
+function landedNested() {
   const root = tmp('fankeel-sweep-nested-');
-  const git = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
   git(root, 'init', '-q');
   git(root, 'config', 'user.email', 't@example.com');
   git(root, 'config', 'user.name', 'T');
@@ -33,6 +34,11 @@ test('sweep keeps a clean agent worktree with a nested file touched in the last 
   git(where, 'commit', '-qm', 'nested');
   git(root, 'cherry-pick', git(where, 'rev-parse', 'HEAD'));
 
+  return { root, where, nested };
+}
+
+test('sweep keeps a clean agent worktree with a nested file touched in the last two hours @slow', () => {
+  const { root, where, nested } = landedNested();
   const later = Date.now() + 3 * HOUR;
   // The agent touches the file three levels down without changing it: the
   // tree stays clean, and neither the root nor a/ nor a/b/ gets a new mtime.
@@ -41,5 +47,21 @@ test('sweep keeps a clean agent worktree with a nested file touched in the last 
   assert.deepEqual(result.removed, []);
   const why = Object.fromEntries(result.kept.map((k) => [k.name, k.why]));
   assert.equal(why['worktree-agent-nested'], 'a file in the worktree modified in the last two hours: a/b/n.txt');
+  assert.equal(fs.existsSync(where), true);
+});
+
+test('sweep keeps a clean agent worktree when a nested directory cannot be read @slow', () => {
+  const { root, where } = landedNested();
+  const later = Date.now() + 3 * HOUR;
+  const real = fs.readdirSync;
+  fs.readdirSync = (p, ...rest) => {
+    if (path.resolve(String(p)) === path.join(where, 'a')) throw Object.assign(new Error('EACCES: permission denied'), { code: 'EACCES' });
+    return real(p, ...rest);
+  };
+  let result;
+  try { result = sweep(root, { now: later }); } finally { fs.readdirSync = real; }
+  assert.deepEqual(result.removed, []);
+  const why = Object.fromEntries(result.kept.map((k) => [k.name, k.why]));
+  assert.equal(why['worktree-agent-nested'], 'a file in the worktree modified in the last two hours: a');
   assert.equal(fs.existsSync(where), true);
 });
