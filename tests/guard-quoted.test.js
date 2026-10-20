@@ -2,7 +2,7 @@
 
 // docs/90-agent/todo/guard-2.md: writesFiles reads the command words outside
 // quotes, so a note quoting `git commit` is not a write; a git commit outside
-// quotes, or a shell handed a quoted script, still is. The second test drives
+// quotes, or on a line where quoted text can run, still is. The second test drives
 // the real hook at a controlled stage, the way the controller chains a note.
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -16,12 +16,13 @@ const tmp = require('./tmp.js');
 const HOOK = path.join(__dirname, '..', 'hooks', 'guard.js');
 const MINE = 'aaaaaaaa-0000-4000-8000-000000000016';
 
-test('writesFiles reads the command words outside quotes, unless a shell is handed the quoted script', () => {
+test('writesFiles reads the command words outside quotes, unless quoted text on the line can run', () => {
   for (const cmd of [
     'node scripts/task.js note "ran git commit after the suite" --session x',
     "node scripts/task.js note 'git add, then git commit; rm the scratch' --session x",
     'node scripts/task.js note "git commit later" --session x && node scripts/todo.js list',
     'grep -n "tee" lib/guard.js',
+    'node scripts/task.js note "ran git commit -m x" --session x',
   ]) {
     assert.equal(guard.writesFiles(cmd), false, cmd);
   }
@@ -34,6 +35,16 @@ test('writesFiles reads the command words outside quotes, unless a shell is hand
     "echo 'rm -rf x' | sh",
     "node -e \"require('fs').writeFileSync('x', 'y')\"",
     "python -c \"open('x', 'w')\"",
+    'eval "git commit -m x"',
+    'echo "$(git commit -m x)"',
+    "node -e \"require('child_process').execSync('git commit -m x')\"",
+    "python -c \"import os; os.system('rm -rf x')\"",
+    "'rm' -rf x",
+    '"rm" -rf x',
+    'ssh h "rm x"',
+    "echo don\\'t; git commit -m 'x'",
+    'bash -lc "rm x"',
+    'bash <<< "rm x"',
   ]) {
     assert.equal(guard.writesFiles(cmd), true, cmd);
   }

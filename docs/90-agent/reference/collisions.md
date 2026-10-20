@@ -275,10 +275,14 @@ cmdlets, a `node -e`/`--eval` script that calls a write (`writeFile`,
 `copyFile`), or a `python -c` one that opens a file in a write mode, calls
 `write_text` or `os.remove`, or uses `shutil` at all (`lib/guard.js`'s
 `NODE_EVAL_WRITE` and `PYTHON_WRITE`). Every word before those two is matched
-with quoted text taken out, so a `scripts/task.js` note whose quoted text says
-git commit writes nothing, unless the line hands a shell a quoted script —
-`bash -c`, `sh -c`, `powershell -Command`, `cmd /c` or a pipe into one
-(`SHELL_SCRIPT`) — where the quotes are the command. `fankeel-verifier` is not on the list —
+with quoted text taken out only on a line where none of `RUNS_RAW` and
+`RUNS_BARE`'s fixed shapes appears — `$(`, a backtick, an escaped quote, any
+`-c` flag, an interpreter's `-e`/`-p`/`--eval`, a herestring, `eval`, `ssh`,
+`xargs`, `sudo`, `env`, a shell or PowerShell by name, a pipe into one, or a
+quoted, escaped or `$` word where a command or a git subcommand goes — so a
+`scripts/task.js` note whose quoted text says git commit writes nothing; a line
+with any of those shapes is read whole, quotes included, and a shape on neither
+list is read with its quotes taken out. `fankeel-verifier` is not on the list —
 writing its own evidence file is what it is for.
 The same `Bash|PowerShell` entry scans every `git commit`, in a task or
 not: `lib/sensitive.js`'s `commitVerdict` reads `.fankeel/sensitive.txt` at the
