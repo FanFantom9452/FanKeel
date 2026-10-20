@@ -35,7 +35,7 @@ test('the dialog groups a project TODO into four tabs with counts', () => {
 test('the dialog links on to the page the row pointed at, and each row names its project', () => {
     const V = page();
     assert.match(V.dashTodoDialog([T], '#/p/x'), /<a [^>]*href="#\/p\/x"/);
-    assert.match(V.dashTodo([{ root: 'F:\\ws\\a', todos: [T] }]), /class="drow trow" data-tdlg="[^"]+"/);
+    assert.match(V.homeTodo([{ root: 'F:\\ws\\a', todos: [T] }], '2026-10-21'), /<a href="#\/p\/[^"]+" data-tdlg="F:\\ws\\a" aria-haspopup="dialog">/);
 });
 
 test('a decision entry gets its own tab, and only when there is one', () => {

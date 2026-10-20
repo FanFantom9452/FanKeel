@@ -44,7 +44,7 @@ const live = (route, stage) => ({ id: 'k1', pkey: 'F:\\ws\\alpha', task: 'keel o
 const count = (s, re) => (s.match(re) || []).length;
 
 test('a live row carries the glyph filled to its stage and the film\'s 0N / 0M count, and no classic route dots', () => {
-    const html = boot().V.dashLive([live(ROUTE7, 'build')]);
+    const html = boot().V.recentHtml([Object.assign(live(ROUTE7, 'build'), { days: [] })], { names: {}, pkeys: ['F:\\ws\\alpha'] }, '');
     assert.equal(count(html, /class="gseg done"/g), 3);
     assert.equal(count(html, /class="gseg now"/g), 1);
     assert.equal(count(html, /class="gseg todo"/g), 2);
@@ -56,18 +56,17 @@ test('a live row carries the glyph filled to its stage and the film\'s 0N / 0M c
 });
 
 test('a stage the route skips is left out of the glyph, and a route with no land has no edge', () => {
-    const html = boot().V.dashLive([live(['survey', 'build', 'verify'], 'verify')]);
+    const html = boot().V.recentHtml([Object.assign(live(['survey', 'build', 'verify'], 'verify'), { days: [] })], { names: {}, pkeys: ['F:\\ws\\alpha'] }, '');
     assert.equal(count(html, /class="gseg /g), 3);
     assert.equal(count(html, /class="gedge /g), 0);
     assert.match(html, /<b>03<\/b><i>&nbsp;\/&nbsp;03<\/i><u>verify<\/u>/);
 });
 
-test('the recent row names its stage for the underline, and the empty gate card shows the check', () => {
+test('the recent row names its stage for the underline, and an empty home-live says so', () => {
     const { V } = boot();
     const recent = V.dashRecent([{ id: 'r1', pkey: 'F:\\ws\\alpha', task: 'recent', state: 'live', stage: 'plan', updated: NOW - 1000, started: NOW - 7200e3, days: [] }]);
     assert.match(recent, /<span class="ds mono" data-st="plan" style="--c:var\(--st-plan\)">plan<\/span>/);
-    assert.match(V.dashGate([]), /<p class="dnone"><span class="okdot k-only" aria-hidden="true"><svg class="ico"/);
-    assert.match(V.dashGate([]), /沒有在等你的 gate/);
+    assert.match(V.homeLive([], NOW, false), /<p class="dnone">沒有進行中的 session<\/p>/);
 });
 
 test('a pointerdown on an action button opens the click ring, restarting it each time, and one on anything else does not', () => {

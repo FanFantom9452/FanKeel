@@ -450,28 +450,6 @@ function boot(hash, sessions, detail) {
     vm.runInContext(SRC, ctx);
     return { els, x: ctx.module.exports };
 }
-const flat = (sessions) => sessions.map((s) => Object.assign({}, s, { usd: 0, agentUsd: 0 }));
-
-test('dashSpend marks the 30-day total 估', () => {
-    assert.match(boot('#/', flat(EST)).x.dashSpend(EST), /<div class="dbig">\$4\.00 估<\/div>/);
-    none(boot('#/', PLAIN).x.dashSpend(PLAIN));
-});
-
-test('dashSpend marks the day\'s bar tip 估', () => {
-    assert.match(boot('#/', flat(EST)).x.dashSpend(EST), new RegExp('data-tip="' + TODAY + ' \\$4\\.00 估"'));
-});
-
-test('dashSpend marks today\'s figure 估 and yesterday\'s empty one not', () => {
-    const html = boot('#/', flat(EST)).x.dashSpend(EST);
-    assert.match(html, /今天 <b>\$4\.00 估<\/b>/);
-    assert.match(html, /昨天 <b>—<\/b>/);
-});
-
-test('dashSpend marks yesterday\'s figure when yesterday holds the estimated row', () => {
-    const y = V.localDay(NOW - 864e5);
-    const R = [sess('y', [Object.assign(dr('claude-haiku-5-5', 'main', 2, true), { day: y })])];
-    assert.match(boot('#/', R).x.dashSpend(R), /昨天 <b>\$2\.00 估<\/b>/);
-});
 
 test('dashRecent marks a session\'s cost 估', () => {
     const html = boot('#/', EST).x.dashRecent(EST);
@@ -479,13 +457,11 @@ test('dashRecent marks a session\'s cost 估', () => {
     none(boot('#/', PLAIN).x.dashRecent(PLAIN));
 });
 
-test('the dashboard\'s spend card marks today\'s cost 估', () => {
-    const p = boot('#/', EST);
-    p.x.dashPage();
-    const cap = (R, sessions) => boot('#/', sessions).x.dashPage();
-    const kv = (html) => html.match(/<div class="dkv">[\s\S]*?<\/div>/)[0];
-    assert.match(kv(cap(EST, EST)), /今天 <b>\$4\.00 估<\/b>/);
-    none(kv(cap(PLAIN, PLAIN)));
+test('home-spend marks today\'s and this week\'s cost 估', () => {
+    const html = boot('#/', EST).x.homeSpend(EST, NOW);
+    assert.match(html, /今天<b>\$4\.00 估<\/b>/);
+    assert.match(html, /本週<b>\$4\.00 估<\/b>/);
+    none(boot('#/', PLAIN).x.homeSpend(PLAIN, NOW));
 });
 
 test('the session list row marks the cost 估 from the session\'s estimated ids, the plain row not', () => {

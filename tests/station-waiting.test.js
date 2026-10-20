@@ -35,21 +35,16 @@ const DASH = (() => {
 const gated = (extra) => Object.assign({ id: 'w1', pkey: 'F:\\ws\\alpha', task: 'the task', stage: 'design', updated: NOW - 90 * MIN,
     pending: { questions: [{ header: 'design done' }], at: NOW - 40 * MIN, until: NOW + 48 * MIN } }, extra);
 
-test('the waiting card counts a gate from gateAt, not from the pending file or the last write', () => {
-    const html = DASH.dashGate([gated({ gateAt: NOW - 12 * MIN })], NOW);
-    assert.match(html, /<section class="dcard" data-block="waiting-card">/);
-    assert.match(html, /<b>等你回答<\/b><span class="kn warn">1<\/span>/);
-    assert.ok(html.includes('<a class="drow" href="#/s/w1"><span class="dp">'), html);
-    assert.ok(html.includes('<span class="chip dstage"><i class="sw" style="background:var(--st-design)"></i>design</span>'
-        + '<span class="dt">design done</span><span class="dw" title="問題 15:48 送出，還剩 48 分">等了 12 分</span></a>'), html);
+test('a waiting row on home-live counts its wait from gateAt, not from the pending file or the last write', () => {
+    const html = DASH.homeLive([gated({ state: 'live', gateAt: NOW - 12 * MIN })], NOW, false);
+    assert.match(html, /<span class="kn wait">1 等你回答<\/span>/);
+    assert.match(html, /<a class="hm-lv wait" href="#\/s\/w1"/);
+    assert.match(html, /<span class="hm-lv-r" title="在 gate 等了 12m">等 12m<\/span>/);
 });
 
-test('without gateAt the wait falls back to pending.at, then to the last write; past an hour it reads hours and minutes', () => {
-    assert.match(DASH.dashGate([gated({})], NOW), /等了 40 分<\/span>/);
-    assert.match(DASH.dashGate([gated({ pending: { questions: [{ header: 'h' }] } })], NOW), /等了 1 時 30 分<\/span>/);
-    assert.match(DASH.dashGate([gated({ gateAt: NOW - 65 * MIN })], NOW), /等了 1 時 5 分<\/span>/);
-    assert.match(DASH.dashGate([gated({ gateAt: NOW - 120 * MIN })], NOW), /等了 2 時<\/span>/);
-    assert.match(DASH.dashGate([], NOW), /<b>等你回答<\/b><span class="kn">0<\/span>/);
+test('without gateAt the wait falls back to pending.at, then to the last write', () => {
+    assert.match(DASH.homeLive([gated({ state: 'live' })], NOW, false), />等 40m<\/span>/);
+    assert.match(DASH.homeLive([gated({ state: 'live', pending: { questions: [{ header: 'h' }] } })], NOW, false), />等 1h30m<\/span>/);
 });
 
 test('#/live counts its gate rows from gateAt too', () => {

@@ -45,7 +45,7 @@ test('without records, or without the module, the 對話 tab draws what it drew 
 test('the 7-day card lists five kinds, 1h before 5m, each with its note', () => {
     const R = [{ id: 'a', days: [{ day: today(), tokens: { input: 1000, output: 2000, cacheRead: 3000, cacheWrite5m: 5000, cacheWrite1h: 7000 } }] }];
     const { V, M } = page(ALL, { sessions: R });
-    const html = V.dashKinds()['dash-tokens7'].render(R, { projects: [], sessions: R });
+    const html = V.dashTokens7(R);
     const n = M['spend-kinds.js'].notes(prices.perMillion);
     assert.ok(html.includes('<span title="' + n.cacheWrite1h + '">cache write 1h · 主對話 <b>7k</b></span>'));
     assert.match(html, /cache write 5m · agent <b>5k<\/b>/);

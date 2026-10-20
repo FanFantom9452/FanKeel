@@ -1208,9 +1208,6 @@ test('the nine newly exported names are reachable off a plain require()', () => 
     assert.equal(typeof V.stageShare, 'function');
     assert.equal(typeof V.costShareHtml, 'function');
     assert.equal(typeof V.subtabsHtml, 'function');
-    assert.equal(typeof V.dashLive, 'function');
-    assert.equal(typeof V.dashGate, 'function');
-    assert.equal(typeof V.dashSpend, 'function');
     assert.equal(typeof V.dashRecent, 'function');
     assert.equal(typeof V.dashPage, 'function');
     assert.ok(Array.isArray(V.NAV_TREE));
@@ -1374,55 +1371,6 @@ const mkDash = (sessions) => {
 };
 const DASH = mkDash([]).x;
 
-const DASH_LIVE = [
-    { id: 'dl-live', pkey: 'F:\\ws\\alpha', task: 'live one', state: 'live', updated: NOW - 1000, started: NOW - 120000, route: [], stage: 'build' },
-    { id: 'dl-stale', pkey: 'F:\\ws\\alpha', task: 'stale one', state: 'stale', updated: NOW - 2000, started: NOW - 90000, route: [], stage: 'plan' },
-    { id: 'dl-down', pkey: 'F:\\ws\\alpha', task: 'down one', state: 'down', updated: NOW - 3000, started: NOW - 60000, route: [], stage: 'verify' },
-];
-
-test('dashLive counts and lists only the live rows, each linking to its session hash', () => {
-    const html = DASH.dashLive(DASH_LIVE);
-    assert.match(html, /data-block="dash-live"/);
-    assert.match(html, /<b>進行中<\/b><span class="kn">1<\/span>/);
-    assert.doesNotMatch(html, /class="dbig"/);
-    assert.equal(count(html, /class="drow"/g), 1);
-    assert.match(html, /<a class="drow" href="#\/s\/dl-live"/);
-    assert.doesNotMatch(html, /#\/s\/dl-stale|#\/s\/dl-down/);
-    assert.match(DASH.dashLive([]), /沒有進行中的 session/);
-});
-
-const DASH_GATE = [
-    { id: 'dg-open', pkey: 'F:\\ws\\alpha', task: 'waiting', updated: NOW - 500000,
-      pending: { questions: [{ header: 'q1' }], at: NOW - 400000, until: NOW + 600000 } },
-    { id: 'dg-none', pkey: 'F:\\ws\\alpha', task: 'no pending field', updated: NOW - 500000, pending: undefined },
-    { id: 'dg-empty', pkey: 'F:\\ws\\alpha', task: 'empty questions', updated: NOW - 500000, pending: { questions: [] } },
-];
-
-test('dashGate counts and lists only rows with a non-empty pending.questions', () => {
-    const html = DASH.dashGate(DASH_GATE);
-    assert.match(html, /data-block="waiting-card"/);
-    assert.match(html, /<b>等你回答<\/b><span class="kn warn">1<\/span>/);
-    assert.equal(count(html, /class="drow"/g), 1);
-    assert.match(html, /<a class="drow" href="#\/s\/dg-open"/);
-    assert.doesNotMatch(html, /#\/s\/dg-none|#\/s\/dg-empty/);
-    assert.match(DASH.dashGate([]), /沒有在等你的 gate/);
-});
-
-const DASH_SPEND_R = [
-    { id: 'ds1', pkey: 'F:\\ws\\alpha', days: [dayRow('2026-09-14', 'build', 'claude-opus-5', 'main', 3, 100)] },
-    { id: 'ds2', pkey: 'F:\\ws\\alpha', days: [dayRow('2026-09-13', 'build', 'claude-opus-5', 'main', 2, 100)] },
-];
-
-test('dashSpend does not throw on an empty or single-session R, and its dbig total matches windowTotals(R, DAYS).usd', () => {
-    assert.doesNotThrow(() => DASH.dashSpend([]));
-    assert.doesNotThrow(() => DASH.dashSpend([DASH_SPEND_R[0]]));
-    const html = DASH.dashSpend(DASH_SPEND_R);
-    assert.match(html, /data-block="dash-spend"/);
-    const tot = V.windowTotals(DASH_SPEND_R, DAYS).usd;
-    assert.equal(tot, 5);
-    assert.ok(html.includes('<div class="dbig">' + V.usd(tot) + '</div>'), html);
-});
-
 const DASH_RECENT_R = Array.from({ length: 7 }, (_, i) => ({
     id: 'rec' + i, pkey: 'F:\\ws\\alpha', task: 'task ' + i, state: 'down', stage: 'build',
     updated: NOW - i * 60000, days: [dayRow('2026-09-14', 'build', 'claude-opus-5', 'main', 1, 10)],
@@ -1438,24 +1386,10 @@ test('dashRecent lists exactly 5 rows out of more than 5 eligible ones, newest f
     assert.match(DASH.dashRecent([]), /近 30 天沒有 session/);
 });
 
-// `dashPage()` reads `S`/`homeRows()` the same way `sessionsPage`/`nowPage`
-// do, and this file has no existing pattern for driving that class of
-// function directly (no other test calls `nowHtml`/`sessionsPage` through
-// module state rather than a plain parameter list). `DASH.dashPage()` is
-// reachable here only because building `DASH` above already routes around
-// the same `doc`/`freshen()` gap; boot-time `STATION.sessions` is `[]`, so
-// this checks assembly and order rather than card content, which the four
-// tests above already cover directly off explicit rows.
-test('dashPage assembles all four cards in dashLive, dashGate, dashSpend, dashRecent order', () => {
+test('dashPage draws 現在 as the four home groups and nothing else', () => {
     const html = DASH.dashPage();
-    assert.match(html, /^<div class="dash kdash" data-block="dashboard">/, 'no head row above the grid');
-    for (const key of ['dash-live', 'waiting-card', 'dash-spend', 'dash-recent']) {
-        assert.match(html, new RegExp('data-block="' + key + '"'));
-    }
-    const wide = html.slice(0, html.indexOf('data-col="side"'));
-    assert.ok(wide.indexOf('dash-live') < wide.indexOf('dash-spend'));
-    assert.ok(wide.indexOf('dash-spend') < wide.indexOf('dash-recent'));
-    assert.ok(html.indexOf('data-col="side"') < html.indexOf('waiting-card'), 'the gate card sits in the narrow column');
+    assert.match(html, /^<div class="dash kdash home" data-block="home">/);
+    assert.deepEqual([...html.matchAll(/data-block="([^"]+)"/g)].map((m) => m[1]), ['home', 'home-live', 'home-running', 'home-todo', 'home-spend']);
 });
 
 test('recentRows keeps what spent inside the window or is still live, newest first', () => {
@@ -1687,7 +1621,7 @@ test('quota share stays off the projects table cost cell and the tune-table cost
 test('the spend card says today\'s cost, and quota share stays off the sessions list cost cell', () => {
     const d = mkDash([Object.assign({}, HOME[0], { id: 'cap-1', state: 'down' })]);
     d.S.profiles = { machine: { values: { 'quota.week': 20 } }, projects: {} };
-    const cap = d.x.dashPage().match(/<div class="dkv">[\s\S]*?<\/div>/)[0].match(/<span>今天 <b>[^<]*<\/b><\/span>/);
+    const cap = d.x.dashPage().match(/<span class="sl-k">今天<b>[^<]*<\/b><\/span>/);
     assert.ok(cap, 'the today figure is there');
     assert.match(cap[0], /<b>\$[\d.]+/);
     assert.doesNotMatch(cap[0], /%\)/, 'the spend card figures carry no quota share');

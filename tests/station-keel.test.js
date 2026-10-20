@@ -39,7 +39,7 @@ test('every keel rule is scoped, and no rule is left for a part only the classic
 
 test('the approved mockup\'s layout rules are in, under keel', () => {
     for (const sel of ['.phead.khead', '.dash.kdash', '.panel.ksess', '.lv.klv', '.klv .lv-card', '.panel.kshead', '.td-sum', '.mast .appear',
-        '.kdash [data-block=waiting-card] .dcard-h .kn.warn']) {
+        '.home .dcard-h .kn.wait']) {
         assert.ok(css.includes(':root[data-style=keel] ' + sel), sel);
     }
 });
