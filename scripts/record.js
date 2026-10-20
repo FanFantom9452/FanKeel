@@ -16,6 +16,8 @@ const usage = require('../lib/usage.js');
 const detail = require('../lib/detail.js');
 const prices = require('../lib/prices.js');
 const live = require('../lib/live.js');
+const bundle = require('../lib/bundle.js');
+const sensitive = require('../lib/sensitive.js');
 
 // The literal table `lib/skills.js` reads a script's flags from.
 const OPTIONS = {
@@ -23,6 +25,10 @@ const OPTIONS = {
     root: { type: 'string' },
     project: { type: 'string' },
     'config-dir': { type: 'string' },
+    commit: { type: 'boolean' },
+    list: { type: 'boolean' },
+    transcript: { type: 'string' },
+    cross: { type: 'boolean' },
 };
 
 // Field name as the user reads it, and as the registry stores it.
@@ -111,20 +117,48 @@ function section(title, day, anchor, fields, corrected) {
     return lines.join('\n') + '\n';
 }
 
-function write(opts) {
+// A bundle over this stays on this machine even with --commit: a long session
+// gzips to tens of MB (docs/90-agent/judgements/2026-10-20-retro-land-vs-skill.md).
+const BUNDLE_MAX = 2 * 1024 * 1024;
+
+function activeEntry(opts) {
     if (!opts.session) fail('--session <id> is required: the record belongs to one task.');
     const root = opts.root ? path.resolve(opts.root) : registry.rootFor({ cwd: process.cwd() });
     const mine = registry.readSession(root, opts.session);
     if (!mine || mine.active !== true) fail('No active entry for ' + opts.session + ' under ' + root);
     const projectRoot = docs.projectRootsFor(root, opts.project ? [opts.project] : (mine.project ? [mine.project] : []))[0] || root;
+    return { root, mine, projectRoot };
+}
+
+function recordsRel(projectRoot) {
+    const { tree } = docs.read(projectRoot);
+    const bucket = tree && tree.buckets.find((b) => /(^|\/)records$/.test(b.path));
+    return bucket ? bucket.path : 'docs/90-agent/records';
+}
+
+// `text` goes at the end of the section `anchor` opens: before the next
+// entry's anchor, or at the end of the file. False when the anchor is not there.
+function appendUnder(file, anchor, text) {
+    let before;
+    try { before = fs.readFileSync(file, 'utf8'); } catch (e) { return false; }
+    const at = before.indexOf('<a id="' + anchor + '"></a>');
+    if (at < 0) return false;
+    const next = before.indexOf('\n<a id="', at + 1);
+    const cut = next < 0 ? before.length : next + 1;
+    const head = before.slice(0, cut).replace(/\n*$/, '\n');
+    const tail = before.slice(cut);
+    fs.writeFileSync(file, head + text.replace(/\n*$/, '\n') + (tail ? '\n' + tail : ''));
+    return true;
+}
+
+function write(opts) {
+    const { root, mine, projectRoot } = activeEntry(opts);
     const fields = parse(fs.readFileSync(0, 'utf8'));
     const found = problems(fields, plain.todoIds(projectRoot).ids);
     if (found.length) fail('Nothing written. Fix these and pipe the record again:\n' + found.map((p) => '  - ' + p).join('\n'));
     const now = Date.now();
     fields.cost = costLine(mine, opts.session, opts['config-dir'] || mine.configDir || live.liveConfigDir(), now);
-    const { tree } = docs.read(projectRoot);
-    const bucket = tree && tree.buckets.find((b) => /(^|\/)records$/.test(b.path));
-    const rel = (bucket ? bucket.path : 'docs/90-agent/records') + '/' + new Date(now).toISOString().slice(0, 7) + '.md';
+    const rel = recordsRel(projectRoot) + '/' + new Date(now).toISOString().slice(0, 7) + '.md';
     const file = path.join(projectRoot, ...rel.split('/'));
     const day = new Date(now).toISOString().slice(0, 10);
     const before = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
@@ -149,12 +183,69 @@ function write(opts) {
     process.stdout.write(out.join('\n') + '\n');
 }
 
+function exportSession(opts) {
+    const { root, mine, projectRoot } = activeEntry(opts);
+    if (!mine.record) fail('No record for ' + opts.session + ' yet: run `record.js write` first, so the bundle has an entry to hang under.');
+    const list = sensitive.readList(projectRoot);
+    if (list.error) fail('Nothing written: .fankeel/sensitive.txt exists but could not be read (' + list.error + '), so nothing could be masked against it.');
+    const configDir = opts['config-dir'] || mine.configDir || live.liveConfigDir();
+    const ids = (Array.isArray(mine.sessions) ? mine.sessions : []).concat(opts.session);
+    const files = [].concat(...ids.map((id) => bundle.filesOf(configDir, id)));
+    if (!files.length) fail('Nothing written: no transcript for ' + ids.join(', ') + ' under ' + configDir + '/projects.');
+    const counts = {};
+    const gz = bundle.pack(ids, files, list.words, counts);
+    const name = new Date().toISOString().slice(0, 10) + '-' + String(opts.session).slice(0, 8) + '.jsonl.gz';
+    const committed = Boolean(opts.commit) && gz.length <= BUNDLE_MAX;
+    const rel = committed ? recordsRel(projectRoot) + '/sessions/' + name : '.fankeel/bundles/' + name;
+    if (!committed) registry.ensureIgnored(projectRoot, ['bundles/']);
+    const file = path.join(projectRoot, ...rel.split('/'));
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, gz);
+    const size = (gz.length / 1048576).toFixed(1) + ' MB';
+    const month = path.join(projectRoot, ...mine.record.file.split('/'));
+    if (!appendUnder(month, mine.record.anchor, '- 對話紀錄：' + rel + '（' + size + '，' + (committed ? 'committed' : 'local') + '）')) {
+        fail('Bundle written to ' + rel + ', but ' + mine.record.file + ' has no #' + mine.record.anchor + ' to link it under.');
+    }
+    registry.update(root, opts.session, (d) => {
+        d.record.bundle = { path: rel, bytes: gz.length, committed, sessions: ids, redacted: counts };
+    });
+    const out = ['bundle: ' + rel, 'size: ' + size + '，' + files.length + ' transcripts from ' + ids.length + ' sessions',
+        'masked: ' + (Object.keys(counts).map((k) => k + ' ' + counts[k]).join(', ') || 'nothing')];
+    if (opts.commit && !committed) out.push('kept local: over ' + BUNDLE_MAX / 1048576 + ' MB, so it was not put where git would carry it.');
+    process.stdout.write(out.join('\n') + '\n');
+}
+
+function listBundles(opts) {
+    const root = opts.root ? path.resolve(opts.root) : registry.rootFor({ cwd: process.cwd() });
+    const projectRoot = opts.project ? path.resolve(opts.project) : root;
+    const records = recordsRel(projectRoot);
+    const recordsDir = path.join(projectRoot, ...records.split('/'));
+    let months = '';
+    try {
+        for (const n of fs.readdirSync(recordsDir)) if (n.endsWith('.md')) months += fs.readFileSync(path.join(recordsDir, n), 'utf8');
+    } catch (e) { /* no records yet */ }
+    const rows = [];
+    for (const [dir, where] of [['.fankeel/bundles', 'local'], [records + '/sessions', 'committed']]) {
+        let names = [];
+        try { names = fs.readdirSync(path.join(projectRoot, ...dir.split('/'))).filter((n) => n.endsWith('.jsonl.gz')).sort(); } catch (e) { continue; }
+        for (const n of names) {
+            const bytes = fs.statSync(path.join(projectRoot, ...dir.split('/'), n)).size;
+            const filed = months.includes('<summary>retro ' + n.slice(11, 19) + ' ');
+            rows.push(dir + '/' + n + '  ' + (bytes / 1048576).toFixed(1) + ' MB  ' + where + '  retro: ' + (filed ? 'filed' : 'none'));
+        }
+    }
+    process.stdout.write((rows.length ? rows.join('\n') : 'no bundles') + '\n');
+}
+
 function main(argv) {
     const { values, positionals } = parseArgv({ args: argv, options: OPTIONS, allowPositionals: true });
-    if (positionals[0] !== 'write') fail('record.js write --session <id> [--root <dir>] [--project <dir>] [--config-dir <dir>] < record');
-    write(values);
+    const verb = positionals[0];
+    if (verb === 'write') return write(values);
+    if (verb === 'session') return exportSession(values);
+    if (verb === 'sessions' && values.list) return listBundles(values);
+    fail('record.js write|session|sessions --list --session <id> [--commit] [--root <dir>] [--project <dir>] [--config-dir <dir>]');
 }
 
 if (require.main === module) main(process.argv.slice(2));
 
-module.exports = { parse, problems };
+module.exports = { parse, problems, activeEntry, recordsRel, appendUnder };
