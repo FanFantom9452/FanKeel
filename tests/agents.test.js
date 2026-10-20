@@ -442,12 +442,13 @@ test('the init scout is read-only, runs onboard.js, and returns status and draft
 test('the retro reads one session through conversation.js and returns a diff with evidence', () => {
     const f = front(path.join(ROOT, 'agents', 'fankeel-retro.md'));
     assert.equal(f.tools, '[Read, Grep, Glob, Bash]');
-    assert.equal(f.model, 'sonnet');
+    assert.equal(f.model, 'opus');
     const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-retro.md'), 'utf8').replace(/\s+/g, ' ');
     const job = text.slice(text.indexOf('## Job'), text.indexOf('## Return'));
     const ret = text.slice(text.indexOf('## Return'), text.indexOf('## Refuse'));
     const refuse = text.slice(text.indexOf('## Refuse'));
-    assert.match(job, /scripts\/conversation\.js --session <id>/);
+    assert.match(job, /scripts\/conversation\.js --bundle <path> --part <id>\.jsonl --tools/);
+    assert.match(job, /`bundle <path>`/);
     assert.match(job, /At most five hunks/);
     assert.match(ret, /`evidence: turn <n> — /);
     assert.match(ret, /A hunk with no evidence line is not returned/);

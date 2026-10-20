@@ -1037,7 +1037,10 @@ test('land may dispatch the retro reviewer, and its skill sends it only on a yes
   const path = require('node:path');
   const land = fs.readFileSync(path.join(__dirname, '..', 'skills', 'fankeel-land', 'SKILL.md'), 'utf8').replace(/\s+/g, ' ');
   assert.match(land, /subagent_type: fankeel:fankeel-retro/);
-  assert.match(land, /scripts\/conversation\.js --session <id>/);
+  assert.match(land, /scripts\/record\.js session --session <id>/);
+  assert.match(land, /scripts\/record\.js retro --session <id> --transcript/);
+  assert.match(land, /scripts\/conversation\.js --bundle <path> --tools/);
+  assert.ok(byName('land').rules.some((r) => /record\.js session/.test(r)), 'the land rules do not ask for the export');
   assert.match(land, /nothing runs until the user says yes/);
   assert.match(land, /tens of thousands of tokens/);
   assert.match(land, /holds everything said here/);

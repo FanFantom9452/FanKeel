@@ -247,20 +247,31 @@ already lost one by the time `land` reads them. Read the notes before standing
 the task down, and put anything still needed into one of the four durable places
 above.
 
-**A retro, offered and never assumed.** Before standing the task down, offer
-one read of this session's transcript as an option on the gate:
-`fankeel-retro` reads it with `scripts/conversation.js --session <id>` and
-returns a unified diff proposing edits to `skills/` or `CLAUDE.md`, one
-`evidence:` line per hunk, and writes nothing. The option's description says
-what it costs and what it reads: the whole transcript passes through one
-sonnet context, tens of thousands of tokens on a long session, and that
-transcript holds everything said here — so nothing runs until the user says
-yes in this session. On the yes, say how many and on which model before it
-goes: one `subagent_type: fankeel:fankeel-retro`, on the sonnet its file
-pins, its prompt naming `session <id>` and `<plugin>`. Its diff is shown at
-the next gate and never applied on the same yes; an approved hunk goes to one
-`fankeel:fankeel-fixer` per file, as the slimmer's do. A land brain sends it
-only when its brief carries that yes; otherwise its gate carries the offer.
+**An export, asked every time; a retro, offered after it.** After `record.js
+write` and before standing the task down, the gate asks one question it never
+skips: export this session? On yes, `node <plugin>/scripts/record.js session --session <id>`
+packs the main transcript and every subagent transcript of this session and of
+the sessions it was adopted from, masks every word of `.fankeel/sensitive.txt`
+and every key shape as `[REDACTED:<kind>]`, writes
+`.fankeel/bundles/<day>-<id8>.jsonl.gz`, and adds a `對話紀錄` line under the
+task's record; `--commit` puts a bundle of 2 MB or less in the records bucket
+instead, so it travels with the work. Only after an export is the retro offered,
+as an option on the gate: `fankeel-retro` reads the bundle with
+`scripts/conversation.js --bundle <path> --tools` and returns a unified diff
+proposing edits to `skills/` or `CLAUDE.md`, one `evidence:` line per hunk, and
+writes nothing. The option's description says what it costs and what it reads:
+the whole session, tool results included, passes through one opus context, tens
+of thousands of tokens on a long session, and that bundle holds everything said
+here — so nothing runs until the user says yes in this session. On the yes, say
+how many and on which model before it goes: one `subagent_type: fankeel:fankeel-retro`,
+on the opus its file pins, its prompt naming `session <id>`, `bundle <path>` and
+`<plugin>`. Its diff is shown at the next gate and never applied on the same
+yes; an approved hunk goes to one `fankeel:fankeel-fixer` per file, as the
+slimmer's do. Then file it: `node <plugin>/scripts/record.js retro --session <id> --transcript <session>/subagents/agent-<id>.jsonl`,
+the disposition — which hunks were approved, which rejected and why, where each
+`backlog:` went — on stdin. The bundle and the filed retro are what
+`/fankeel-retro-all` reads later. A land brain sends it only when its brief
+carries that yes; otherwise its gate carries the offer.
 
 The commit is the same three parts every time, and `build` commits one task at a
 time with the same skeleton — injected here, and read from step 4 of its own
