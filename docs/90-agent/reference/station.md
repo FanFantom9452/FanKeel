@@ -292,7 +292,7 @@ Claude Desktop; the tab's label carries the task count, and the gate's hatch
 at that stage. Away from the plan stage a head carries the plan's path and its
 task and group counts in place of the banner. No plan, a plan that will not open and a plan with no
 `## Task N:` heading each say so instead. The `page:` line `scripts/await.js`
-prints on a plan handoff, when a station is serving, points here, and `PAGE_OPEN` before it tells the
+prints on a plan handoff, when a station is serving, points at this tab drawn alone on the focus page (`/f/<id>/plan`, below), and `PAGE_OPEN` before it tells the
 session holding the gate to open it in a browser pane first.
 
 關卡 (`#/s/<id>/gate`) draws the newest handoff report of the session's
@@ -331,7 +331,7 @@ included, a head carries the report's path and counts. No report yet, and a
 report that will not open, each say so; at plan, verify or audit
 `det.gateNoPage` says that stage has no gate page and that plan's is the 計畫
 tab. The `page:` line `scripts/await.js` prints on a survey, design, build or
-land handoff, when a station is serving and not for a group brain's, points here, and `PAGE_OPEN` before it tells the session holding
+land handoff, when a station is serving and not for a group brain's, points at this tab drawn alone on the focus page (`/f/<id>/gate`, below), and `PAGE_OPEN` before it tells the session holding
 the gate to open it in a browser pane first.
 
 對話 (`#/s/<id>/talk`) is what was said, read from the transcript when the
@@ -628,6 +628,26 @@ design mockup — the path `lib/gatereport.js` put on the gate's
 `parts.mockup.shot`, refused unless it is a `.png` under that root's
 `.fankeel/build/` — for the 關卡 tab's thumbnail, which a `file://` image
 cannot be on a served page.
+
+The focus page is one session's 計畫 or 關卡 tab alone, at `GET /f/<id>/plan`
+and `GET /f/<id>/gate` — the URL `scripts/await.js` prints on its `page:`
+line. It answers a small shell (`focusShell` in `lib/station.js`) that loads
+`station.css`, `i18n.js`, `station.js` and `GET /station/focus/<id>.js`,
+never `station-data.js`; any other tab name is redirected to `#/s/<id>/<tab>`
+on the full station. The focus script carries `window.STATION` with that one
+session's row and `window.STATION_DETAIL[<id>]` with its tasks (`tasksOf`)
+and its gate report (`gatereport.read`), built by `focusOf` from the
+session's registry entry, its handoff directory, its claimed plans and their
+ledgers only — no `gather()`, no transcript — and held in memory while the
+mtimes of those files are unchanged. The page draws a 48 px header
+(`focus-header`: the glyph, the stage with its route dots, the task, the id,
+and 開完整 station linking to `#/s/<id>/<tab>`) over the tab body: for plan,
+`plan-summary` (the counts and one chip per group) and `plan-list` (every
+task with its number, title, files, tests, waits, dispatch model and ledger
+status, grouped as the plan groups them); for gate, `gate-question` (the
+question and its options, the recommended one marked) above `gate-report`
+(the 關卡 tab's report). It re-reads its script every five seconds while the
+browser tab is visible.
 Both the page and the cache sit where git does not look — the registry copy's
 `station/` is ignored and the cache is under the config directory — so the
 prompt fragments a replay quotes stay on this machine. So does the full text of
