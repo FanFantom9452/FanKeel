@@ -275,14 +275,17 @@ cmdlets, a `node -e`/`--eval` script that calls a write (`writeFile`,
 `copyFile`), or a `python -c` one that opens a file in a write mode, calls
 `write_text` or `os.remove`, or uses `shutil` at all (`lib/guard.js`'s
 `NODE_EVAL_WRITE` and `PYTHON_WRITE`). Every word before those two is matched
-with quoted text taken out only on a line where none of `RUNS_RAW` and
-`RUNS_BARE`'s fixed shapes appears — `$(`, a backtick, an escaped quote, any
-`-c` flag, an interpreter's `-e`/`-p`/`--eval`, a herestring, `eval`, `ssh`,
-`xargs`, `sudo`, `env`, a shell or PowerShell by name, a pipe into one, or a
-quoted, escaped or `$` word where a command or a git subcommand goes — so a
-`scripts/task.js` note whose quoted text says git commit writes nothing; a line
-with any of those shapes is read whole, quotes included, and a shape on neither
-list is read with its quotes taken out. `fankeel-verifier` is not on the list —
+on the whole line, quotes included, except on a fankeel note-style call: an
+unquoted `node <path>scripts/task.js note`, `scripts/ledger.js`
+`complete`/`ruling`/`fix` or `scripts/todo.js` `new`/`done`, alone or joined by
+`&&` to more of them or to quote-free calls of those three scripts, whose text
+outside quotes holds only plain argument characters (no `;`, `|`, `&`, `<`,
+`>`, `$`, `#`, backtick, newline or backslash in an argument), whose quoted
+text holds no `$(` or backtick, and which has no escaped quote. Only there is
+quoted text taken out, so a note whose quoted text says git commit writes
+nothing. The cost: a quoted `git commit`, `rm` or `tee` anywhere else —
+`grep -n "tee" lib/guard.js` included — is still judged a write.
+`fankeel-verifier` is not on the list —
 writing its own evidence file is what it is for.
 The same `Bash|PowerShell` entry scans every `git commit`, in a task or
 not: `lib/sensitive.js`'s `commitVerdict` reads `.fankeel/sensitive.txt` at the

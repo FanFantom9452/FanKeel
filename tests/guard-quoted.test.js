@@ -1,9 +1,11 @@
 'use strict';
 
-// docs/90-agent/todo/guard-2.md: writesFiles reads the command words outside
-// quotes, so a note quoting `git commit` is not a write; a git commit outside
-// quotes, or on a line where quoted text can run, still is. The second test drives
-// the real hook at a controlled stage, the way the controller chains a note.
+// docs/90-agent/todo/guard-2.md: writesFiles reads the command words on the
+// whole line, quotes included, except on a fankeel note-style call — node
+// scripts/task.js note, ledger.js complete|ruling|fix, todo.js new|done — whose
+// line holds nothing a shell runs; there a note quoting `git commit` is not a
+// write. The second test drives the real hook at a controlled stage, the way
+// the controller chains a note.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -16,13 +18,15 @@ const tmp = require('./tmp.js');
 const HOOK = path.join(__dirname, '..', 'hooks', 'guard.js');
 const MINE = 'aaaaaaaa-0000-4000-8000-000000000016';
 
-test('writesFiles reads the command words outside quotes, unless quoted text on the line can run', () => {
+test('writesFiles blanks quoted text only on a recognised fankeel note call', () => {
   for (const cmd of [
     'node scripts/task.js note "ran git commit after the suite" --session x',
     "node scripts/task.js note 'git add, then git commit; rm the scratch' --session x",
     'node scripts/task.js note "git commit later" --session x && node scripts/todo.js list',
-    'grep -n "tee" lib/guard.js',
     'node scripts/task.js note "ran git commit -m x" --session x',
+    'node F:\\ymlab\\fankeel\\scripts\\ledger.js --range a..b fix "rm the stale git add" --task 3',
+    'node scripts/ledger.js ruling "keep tee" "git commit is the land\'s" "a redo"',
+    "node scripts/todo.js new --title 'git stash leak' --body 'rm, mv and git reset were run'",
   ]) {
     assert.equal(guard.writesFiles(cmd), false, cmd);
   }
@@ -45,6 +49,30 @@ test('writesFiles reads the command words outside quotes, unless quoted text on 
     "echo don\\'t; git commit -m 'x'",
     'bash -lc "rm x"',
     'bash <<< "rm x"',
+    // The cost of the allowlist: quoted text outside a recognised call is read.
+    'grep -n "tee" lib/guard.js',
+    "# check that it's clean\ngit add -A && git commit -m 'x'",
+    "echo ok # don't\nrm -rf x; echo 'y'",
+    'bash <(echo "rm x")',
+    '. <(echo "rm x")',
+    'timeout 5 "rm" x',
+    'stdbuf -o0 "rm" x',
+    'su root "rm x"',
+    'FOO=1 "rm" x',
+    "awk 'BEGIN{system(\"rm x\")}'",
+    "git config alias.x '!rm' && git x",
+    'node scripts/task.js note "$(git commit -m x)" --session x',
+    'node scripts/task.js note "`rm x`" --session x',
+    'node scripts/task.js note "x" --session x; sh -c "rm y"',
+    'node scripts/task.js note "x" --session x | sh -c "rm y"',
+    'node scripts/task.js note "x" --session x && sh -c "rm y"',
+    'node scripts/task.js note "a\\" b" ; rm x ; "c\\" d" --session x',
+    // unquoted() ends the span at \" where bash does not, and pairs the rest
+    // so that `; rm x ;` is masked: the escaped-quote refusal is what holds.
+    'node scripts/task.js note "\'\\"" ; rm x ; \\"',
+    'node scripts/task.js show "git commit" --session x',
+    'node scripts/other.js note "git commit" --session x',
+    'node scripts/task.js note "x" --session x\nsh -c "rm y"',
   ]) {
     assert.equal(guard.writesFiles(cmd), true, cmd);
   }
