@@ -43,6 +43,7 @@ const { readBody } = require('../lib/body.js');
 const { clearEntry } = require('../lib/clear.js');
 const profile = require('../lib/profile.js');
 const handoff = require('../lib/handoff.js');
+const board = require('../lib/board.js');
 const docsearch = require('../lib/docsearch.js');
 const detail = require('../lib/detail.js');
 const compare = require('../lib/compare.js');
@@ -563,6 +564,31 @@ async function serve(opts) {
                 return fail(404, 'no mockup shot for that session');
             }
             return send(200, 'image/png', body, noStore);
+        }
+        const boardOf = /^\/station\/board\/([0-9A-Za-z-]+)\/([^/]+)\.svg$/.exec(url.pathname);
+        if (req.method === 'GET' && boardOf) {
+            // A task's .board drawn to SVG for its session card (lib/board.js).
+            // No nonce, like the shot above: a GET that writes nothing. The
+            // name has to pass board.NAME and resolve directly inside that
+            // session's own build directory; a board that does not parse is
+            // 422 with the parser's message. The CSP is for the full SVG opened
+            // in its own tab, where an SVG could otherwise run script.
+            const hit = modelNow({ details: false }).registries.flatMap((r) => r.sessions).find((x) => x.sessionId === boardOf[1]);
+            const file = hit ? board.boardFile(hit.boardDir, boardOf[2]) : null;
+            if (!file) return fail(404, 'no such board for that session');
+            let text;
+            try {
+                text = fs.readFileSync(file, 'utf8');
+            } catch (e) {
+                return fail(404, 'no such board for that session');
+            }
+            let svg;
+            try {
+                svg = await board.renderBoard(text);
+            } catch (e) {
+                return e && e.name === 'ParseError' ? fail(422, e.message) : fail(500, 'cannot draw that board: ' + (e && e.message));
+            }
+            return send(200, 'image/svg+xml', svg, Object.assign({ 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'" }, noStore));
         }
         if (req.method === 'GET' && url.pathname === '/station/health') {
             // Read-only and identifies the process, nothing else — no nonce,
