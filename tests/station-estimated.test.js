@@ -121,17 +121,6 @@ test('projectHead carries the estimate of the window it sums', () => {
     assert.equal(V.projectHead(PLAIN, 'F:\\ws\\a', DAYS).estimated, false);
 });
 
-test('navHtml marks the 30-day badge 估 when navCounts says an estimated row is in the window', () => {
-    const nav = (R) => V.navHtml('days', V.navCounts(R, [], DAYS));
-    assert.match(nav(EST), /<span class="nb">\$4\.00 估<\/span>/);
-    none(nav(PLAIN));
-});
-
-test('navCounts flags estimated from the window\'s rows', () => {
-    assert.equal(V.navCounts(EST, [], DAYS).estimated, true);
-    assert.equal(V.navCounts(PLAIN, [], DAYS).estimated, false);
-});
-
 // ---- the session page --------------------------------------------------------
 const LOOPS = (est) => [{ stage: 'build', turns: 5, over: 2, overUsd: 0.5, estimated: est }];
 const costOnly = (R, est) => V.costHtml(V.costModel(R[0].days), { loops: LOOPS(est) });

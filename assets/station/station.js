@@ -1580,16 +1580,9 @@
             return s.state === 'live' || (s.days || []).some(function (r) { return inside[r.day]; });
         }).sort(function (a, b) { return (b.updated || 0) - (a.updated || 0); });
     }
-    // Every badge is the count of what its page shows, from the same rows.
-    function navCounts(sessions, projects, days) {
-        return {
-            live: sessions.filter(function (s) { return s.state === 'live'; }).length,
-            usd: windowTotals(sessions, days).usd,
-            estimated: windowTotals(sessions, days).estimated,
-            sessions: recentRows(sessions, days).length,
-            projects: projectRows(sessions, days).length,
-            docs: [].concat.apply([], projects.map(function (p) { return p.docs || []; })).length,
-        };
+    // The bar's one count: the sessions waiting on you, on 現在.
+    function navCounts(sessions) {
+        return { waiting: sessions.filter(function (s) { return s.state === 'live' && s.pending && s.pending.questions && s.pending.questions.length; }).length };
     }
     // One line icon per page, 16px on a 1.5px stroke in currentColor: the left
     // bar and each page's own header draw the same one, so a page is known by
@@ -1636,22 +1629,27 @@
         return ICONS[name] ? '<svg class="ico" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor"'
             + ' stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' + ICONS[name] + '</svg>' : '';
     }
-    // Six categories. A category with `kids` is a heading over its sub-pages,
-    // and those same kids are the tab strip on each of their pages
-    // (`subtabsHtml`), so the bar and the strip cannot list different pages.
+    // Six pages, one level, no folds (mockup 2026-10-21-station-home): 現在,
+    // Sessions, 花費 and 文件, then 設定 and 導覽 pinned under them (`pin`).
+    // `kids` are a page's filters — the strip on each of its pages
+    // (`subtabsHtml`) — so the strip, the title and the lit entry agree.
     var NAV_TREE = [
-        { ico: 'dash', label: loc('nav.dashboard', '儀表板'), v: 'now', href: '#/' },
-        { ico: 'sessions', label: 'Sessions', fold: 'sessions', kids: [['live', '#/live', loc('nav.inProgress', '進行中')], ['sessions', '#/sessions', loc('nav.recent', '最近')],
+        { ico: 'now', label: loc('nav.now', '現在'), v: 'now', href: '#/' },
+        { ico: 'sessions', label: 'Sessions', v: 'sessions', href: '#/sessions', kids: [['live', '#/live', loc('nav.inProgress', '進行中')], ['sessions', '#/sessions', loc('nav.recent', '最近')],
             ['list', '#/list', loc('nav.fullList', '全部清單')], ['cmp', '#/cmp', loc('nav.compare', '比較')]] },
-        { ico: 'spend', label: loc('nav.spend', '花費'), fold: 'spend', kids: [['days', '#/days', loc('nav.last30d', '近 30 天')], ['projects', '#/projects', loc('nav.byProject', '依專案')]] },
+        { ico: 'spend', label: loc('nav.spend', '花費'), v: 'days', href: '#/days', kids: [['days', '#/days', loc('nav.last30d', '近 30 天')], ['projects', '#/projects', loc('nav.byProject', '依專案')]] },
         { ico: 'docs', label: loc('nav.docs', '文件'), v: 'docs', href: '#/docs' },
-        { ico: 'settings', label: loc('nav.settings', '設定'), kids: [['settings', '#/settings', loc('nav.wizard', '精靈')]] },
-        { ico: 'tour', label: loc('nav.tour', '導覽'), v: 'tour', href: '#/tour', block: 'tour-nav', title: loc('nav.tourTitle', 'fankeel 怎麼跑一個任務，一段動畫看完') },
+        { ico: 'settings', label: loc('nav.settings', '設定'), v: 'settings', href: '#/settings', pin: true, kids: [['settings', '#/settings', loc('nav.wizard', '精靈')]] },
+        { ico: 'tour', label: loc('nav.tour', '導覽'), v: 'tour', href: '#/tour', pin: true, block: 'tour-nav', title: loc('nav.tourTitle', 'fankeel 怎麼跑一個任務，一段動畫看完') },
     ];
     // A detail page lights the page it was opened from.
     function navOn(active) { return active === 'project' ? 'projects' : active === 'session' ? 'sessions' : active; }
     function navGroup(v) {
         return NAV_TREE.filter(function (g) { return (g.kids || []).some(function (k) { return k[0] === v; }); })[0] || null;
+    }
+    // The bar entry a view lights: the page itself, or the one whose filters hold it.
+    function navTop(v) {
+        return NAV_TREE.filter(function (g) { return g.v === v || (g.kids || []).some(function (k) { return k[0] === v; }); })[0] || null;
     }
     // The three theme states the button in the masthead cycles
     // through: [state, icon, what it says, the state a click moves to].
@@ -1665,33 +1663,49 @@
             + ' title="' + loc('nav.themeTitle', '主題：{cur}（按一下換{next}）', { cur: t[1], next: THEMES[t[2]][1] }) + '" aria-label="' + loc('nav.themeAriaLabel', '主題：{cur}，按一下換{next}', { cur: t[1], next: THEMES[t[2]][1] }) + '">'
             + icon(t[0]) + '</button>';
     }
-    // `ui.shut` holds the `fold` keys the reader collapsed. A category with `fold` is one button, the whole row, that only
-    // opens and shuts; its kids do the navigating. The chevron shows which.
-    function navHtml(active, c, ui) {
-        var on = navOn(active), shut = (ui && ui.shut) || {};
-        // Each badge sits on the page whose rows it counts.
-        var badges = { now: null, live: [c.live + ' live', c.live ? 'live' : ''], days: [usd(c.usd, true) + estMark(c)], sessions: [c.sessions],
-            projects: [c.projects], docs: [c.docs] };
-        var link = function (v, href, inner, title) {
-            var b = badges[v];
-            return '<a href="' + href + '"' + (on === v ? ' aria-current="page"' : '') + (title ? ' title="' + esc(title) + '"' : '') + '>' + inner
-                + (b ? '<span class="nb' + (b[1] ? ' ' + b[1] : '') + '">' + b[0] + '</span>' : '') + '</a>';
+    // The bar: the jump box, then `#navlinks`, which `drawNav` alone redraws.
+    function navHtml(active, c) {
+        return '<nav class="sidenav hm-flat" data-block="nav" aria-label="' + loc('nav.functions', '功能') + '"><div class="navbox">' + jumpHtml()
+            + '<div id="navlinks">' + navLinksHtml(active, c) + '</div></div></nav>';
+    }
+    function navLinksHtml(active, c) {
+        var on = navTop(navOn(active)), n = c && c.waiting;
+        var item = function (g) {
+            var b = g.v === 'now' && n ? '<span class="nb wait" title="' + esc(loc('nav.nWaiting', '{n} 個 session 在等你回答', { n: n })) + '">' + n + '</span>' : '';
+            return '<li class="navcat"' + (g.block ? ' data-block="' + g.block + '"' : '') + '><a href="' + g.href + '"' + (on === g ? ' aria-current="page"' : '')
+                + (g.title ? ' title="' + esc(g.title) + '"' : '') + '>' + icon(g.ico) + '<span>' + g.label + '</span>' + b + '</a></li>';
         };
-        return '<nav class="sidenav" data-block="nav" aria-label="' + loc('nav.functions', '功能') + '"><ul>' + NAV_TREE.map(function (g) {
-            if (!g.kids) {
-                return '<li class="navcat"' + (g.block ? ' data-block="' + g.block + '"' : '') + '>'
-                    + link(g.v, g.href, icon(g.ico) + '<span>' + g.label + '</span>', g.title) + '</li>';
-            }
-            var inside = g.kids.some(function (k) { return k[0] === on; }), closed = Boolean(g.fold && shut[g.fold]);
-            var kids = '<ul class="navkids"' + (g.fold ? ' id="navkids-' + g.fold + '"' : '') + '>' + g.kids.map(function (k) {
-                return '<li>' + link(k[0], k[1], '<span>' + k[2] + '</span>') + '</li>';
-            }).join('') + '</ul>';
-            return '<li class="navcat' + (inside ? ' in' : '') + (closed ? ' shut' : '') + '"' + (g.fold ? ' data-fold="' + g.fold + '"' : '') + '>'
-                + (g.fold ? '<button type="button" class="navrow navhd" data-navfold="' + g.fold + '"'
-                    + ' aria-controls="navkids-' + g.fold + '" aria-expanded="' + !closed + '">' + icon(g.ico) + '<span>' + g.label + '</span>'
-                    + '<span class="navchev">' + icon('chev') + '</span></button>'
-                    : '<a class="navhd" href="' + g.kids[0][1] + '">' + icon(g.ico) + '<span>' + g.label + '</span></a>') + (g.fold ? '<div class="navwrap">' + kids + '</div>' : kids) + '</li>';
-        }).join('') + '</ul></nav>';
+        return '<ul class="navmain">' + NAV_TREE.filter(function (g) { return !g.pin; }).map(item).join('') + '</ul>'
+            + '<ul class="navpin">' + NAV_TREE.filter(function (g) { return g.pin; }).map(item).join('') + '</ul>';
+    }
+    // The jump box (mockup block jump): a session by task text, project or id
+    // prefix, straight to its focus page (`focusHref`). Live sessions first.
+    function jumpHtml() {
+        return '<div class="jump" data-block="jump"><label class="hm-sr" for="jq">' + loc('nav.jumpLabel', '跳到 session：輸入任務文字或 id') + '</label>'
+            + '<div class="jump-box"><input id="jq" autocomplete="off" placeholder="' + esc(loc('nav.jumpPlaceholder', '跳到 session…')) + '" role="combobox"'
+            + ' aria-autocomplete="list" aria-controls="jpop" aria-expanded="false"><kbd>Ctrl K</kbd></div>'
+            + '<div class="jpop" id="jpop" role="listbox" aria-label="' + esc(loc('nav.jumpMatches', '符合的 session')) + '" hidden></div></div>';
+    }
+    function jumpHits(sessions, q, nameOf, max) {
+        var v = String(q || '').trim().toLowerCase();
+        if (!v) return [];
+        return (sessions || []).filter(function (s) {
+            return String(s.id || '').toLowerCase().indexOf(v) === 0 || String(s.task || '').toLowerCase().indexOf(v) >= 0
+                || String(nameOf(s) || '').toLowerCase().indexOf(v) >= 0;
+        }).sort(function (a, b) {
+            return (b.state === 'live' ? 1 : 0) - (a.state === 'live' ? 1 : 0) || (b.updated || 0) - (a.updated || 0);
+        }).slice(0, max || 8);
+    }
+    function jumpListHtml(hits, q, on, serve, nameOf) {
+        var v = String(q || '').trim().toLowerCase();
+        if (!hits.length) return '<p class="jnone">' + loc('nav.jumpNone', '沒有符合的 session。試試任務裡的一個詞，或 id 的前幾碼。') + '</p>';
+        return hits.map(function (s, i) {
+            var id8 = String(s.id).slice(0, 8), byId = String(s.id).toLowerCase().indexOf(v) === 0;
+            var idm = byId ? '<mark>' + esc(id8.slice(0, v.length)) + '</mark>' + esc(id8.slice(v.length)) : esc(id8);
+            return '<a class="hm-jr' + (i === on ? ' on' : '') + '" role="option" aria-selected="' + (i === on) + '" href="' + esc(focusHref(s.id, s.stage, serve)) + '">'
+                + '<span class="hm-jr-t">' + esc(s.task || loc('nav.unnamed', '（未命名）')) + '</span><span class="hm-jr-m">' + esc(nameOf(s)) + ' · ' + idm + '</span>'
+                + '<span class="hm-stw" style="--c:var(--st-' + esc(s.stage || '') + ')">' + esc(s.stage || '—') + '</span></a>';
+        }).join('') + '<p class="jfoot">' + loc('nav.jumpFoot', '<kbd>↑↓</kbd> 選 · <kbd>Enter</kbd> 打開這個 session 的現在這一站') + '</p>';
     }
     // The tab strip under a Sessions or 花費 page's header: its category's
     // kids, the current one marked. Empty for a page with no siblings.
@@ -5818,22 +5832,13 @@
         doc.getElementById('gen').textContent = genText();
         focusTodo();
     }
-    // The left bar's folds, kept as `{fold: true}` for each one the reader
-    // shut. Arriving on a page opens its category once; shutting it again
-    // while there holds through the 3 s redraw, and the heading shows active.
-    var navShut = (function () { try { return JSON.parse(stored('station.nav.collapsed')) || {}; } catch (e) { return {}; } }());
-    var navFold = null;
-    function navSave() { store('station.nav.collapsed', JSON.stringify(navShut)); }
+    // The bar: whole on the first draw, then only `#navlinks`, so the jump
+    // box keeps its text and caret through the 3 s redraw.
+    var navDrawn = false;
     function drawNav() {
-        var g = navGroup(navOn(route.view)), fold = g && g.fold || null;
-        if (fold && fold !== navFold && navShut[fold]) { delete navShut[fold]; navSave(); }
-        navFold = fold;
-        // A redraw under a focused chevron keeps the focus.
-        var a = doc.activeElement && doc.activeElement.getAttribute ? doc.activeElement : null;
-        var keep = a && a.hasAttribute('data-navfold') ? '[data-navfold="' + a.getAttribute('data-navfold') + '"]' : null;
-        doc.getElementById('nav').innerHTML = navHtml(route.view, navCounts(homeRows(), S.projects, DAYS), { shut: navShut });
-        var back = keep && doc.querySelector ? doc.querySelector('#nav ' + keep) : null;
-        if (back) back.focus();
+        var c = navCounts(homeRows());
+        if (navDrawn) doc.getElementById('navlinks').innerHTML = navLinksHtml(route.view, c);
+        else { doc.getElementById('nav').innerHTML = navHtml(route.view, c); navDrawn = true; }
         drawTheme();
     }
     // The masthead's theme button: drawn with the bar, and again on its own
@@ -5847,30 +5852,63 @@
         var back = had && box.querySelector ? box.querySelector('[data-themecycle]') : null;
         if (back) back.focus();
     }
-    // Folding changes the class on the row already drawn rather than
-    // redrawing, so the height and chevron transitions have something to run.
-    function navFoldSet(fold, closed) {
-        if (closed) navShut[fold] = true; else delete navShut[fold];
-        navSave();
-        var li = doc.querySelector('#nav [data-fold="' + fold + '"]');
-        if (!li) return;
-        li.classList.toggle('shut', closed);
-        var b = li.querySelector('[data-navfold]');
-        if (b) b.setAttribute('aria-expanded', String(!closed));
-    }
     doc.addEventListener('click', function (e) {
-        var n = e.target.closest ? e.target.closest('#nav [data-navfold], [data-themecycle]') : null;
+        var n = e.target.closest ? e.target.closest('[data-themecycle]') : null;
         if (!n) return;
-        if (n.hasAttribute('data-navfold')) {
-            var fold = n.getAttribute('data-navfold');
-            navFoldSet(fold, !navShut[fold]);
-            return;
-        }
         var t = n.getAttribute('data-themecycle');
         store('station.theme', t === 'system' ? null : t);
         themeSet(t);
         drawTheme();
     });
+    // The jump box: typing lists matches, ↑ ↓ move the mark, Enter opens the
+    // marked one, Esc clears; Ctrl K (⌘ K) from anywhere puts the caret in it.
+    var jumpOn = 0, jumpList = [];
+    function jumpName(s) { return s.project || shortLabel(NAMES[s.pkey] || s.pkey); }
+    function jumpDraw() {
+        var q = doc.getElementById('jq'), pop = doc.getElementById('jpop');
+        if (!q || !pop) return;
+        jumpList = jumpHits(S.sessions, q.value, jumpName, 8);
+        jumpOn = Math.min(jumpOn, Math.max(jumpList.length - 1, 0));
+        var open = Boolean(String(q.value || '').trim());
+        pop.innerHTML = open ? jumpListHtml(jumpList, q.value, jumpOn, Boolean(S.serve), jumpName) : '';
+        pop.hidden = !open;
+        q.setAttribute('aria-expanded', String(open));
+    }
+    doc.addEventListener('input', function (e) {
+        if (!e.target || e.target.id !== 'jq') return;
+        jumpOn = 0;
+        jumpDraw();
+    });
+    doc.addEventListener('keydown', function (e) {
+        if ((e.ctrlKey || e.metaKey) && String(e.key).toLowerCase() === 'k') {
+            var q = doc.getElementById('jq');
+            if (!q || !q.focus) return;
+            e.preventDefault();
+            q.focus();
+            if (q.select) q.select();
+            return;
+        }
+        if (!e.target || e.target.id !== 'jq') return;
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            var n = Math.max(jumpList.length, 1);
+            jumpOn = (jumpOn + (e.key === 'ArrowDown' ? 1 : n - 1)) % n;
+            jumpDraw();
+        } else if (e.key === 'Enter' && jumpList[jumpOn]) {
+            e.preventDefault();
+            w.location.href = focusHref(jumpList[jumpOn].id, jumpList[jumpOn].stage, Boolean(S.serve));
+        } else if (e.key === 'Escape') {
+            e.target.value = '';
+            jumpDraw();
+        }
+    });
+    doc.addEventListener('click', function (e) {
+        var pop = e.target && e.target.closest && !e.target.closest('.jump') ? doc.getElementById('jpop') : null;
+        if (pop) pop.hidden = true;
+    });
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports.jumpHits = jumpHits; module.exports.jumpListHtml = jumpListHtml; module.exports.navLinksHtml = navLinksHtml;
+    }
     // 概覽's stage mark. Set from the bar, the table, the timeline or 派工's
     // chips; a second press on the same stage clears it. Keyed to the session
     // so another session's page opens unmarked.
@@ -5899,8 +5937,6 @@
     // Back, forward and every link on the page arrive here.
     w.addEventListener('hashchange', function () {
         sel = null;
-        // Edit mode belongs to one visit of the dashboard: another page ends it.
-        view.dashEdit = false;
         focusFor = w.location.hash;
         draw();
         if (focusFor !== null) w.scrollTo(0, 0);

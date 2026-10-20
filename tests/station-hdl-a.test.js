@@ -115,119 +115,11 @@ test('tdmore: a click whose target has no closest does not throw', () => {
     assert.doesNotThrow(() => pick(p, 'click', TD)({ target: {} }));
 });
 
-// ---- #nav fold and theme -------------------------------------------------
-const NAV = "'#nav [data-navfold], [data-themecycle]'";
-const SHUT = { 'station.nav.collapsed': '{"sessions":true}' };
+// ---- theme -------------------------------------------------
+const NAV = "'[data-themecycle]'";
 const navBtn = (attrs) => ({ attrs, getAttribute(k) { return k in this.attrs ? this.attrs[k] : null; }, hasAttribute(k) { return k in this.attrs; },
     setAttribute(k, v) { this.attrs[k] = String(v); } });
-// A fold button inside its row; the row answers the one selector the handler asks.
-function foldRig(p, o) {
-    o = o || {};
-    const btn = navBtn({ 'data-navfold': 'sessions', 'aria-expanded': o.aria || 'true' });
-    const li = { shut: !!o.liShut, classList: { toggle(c, f) { li.shut = f === undefined ? !li.shut : !!f; return li.shut; } },
-        querySelector: (sel) => (sel === '[data-navfold]' && !o.noBtn ? btn : null) };
-    p.qs = (sel) => (sel === '#nav [data-fold="sessions"]' && !o.noLi ? li : null);
-    return { btn, li, press: () => fire(pick(p, 'click', NAV), tgt({ '#nav [data-navfold], [data-themecycle]': btn })) };
-}
-const themePress = (p, v) => fire(pick(p, 'click', NAV), tgt({ '#nav [data-navfold], [data-themecycle]': navBtn({ 'data-themecycle': v }) }));
-const COLL = 'station.nav.collapsed';
-
-test('nav fold: shutting a fold stores it in station.nav.collapsed', () => {
-    const p = boot();
-    foldRig(p).press();
-    assert.equal(p.kept[COLL], '{"sessions":true}');
-});
-
-test('nav fold: opening a shut fold stores the empty set', () => {
-    const p = boot({ kept: SHUT });
-    foldRig(p).press();
-    assert.equal(p.kept[COLL], '{}');
-});
-
-test('nav fold: two presses leave the row open, so the memory behind the toggle follows each press', () => {
-    const p = boot();
-    const r = foldRig(p);
-    r.press();
-    r.press();
-    assert.equal(r.li.shut, false);
-});
-
-test('nav fold: a press on an open row puts the shut class on it', () => {
-    const p = boot();
-    const r = foldRig(p);
-    r.press();
-    assert.equal(r.li.shut, true);
-});
-
-test('nav fold: a press on a shut row whose class is there takes the class off', () => {
-    const p = boot({ kept: SHUT });
-    const r = foldRig(p, { liShut: true });
-    r.press();
-    assert.equal(r.li.shut, false);
-});
-
-test('nav fold: a press that opens a fold sets the class to off even when the row did not carry it', () => {
-    const p = boot({ kept: SHUT });
-    const r = foldRig(p, { liShut: false });
-    r.press();
-    assert.equal(r.li.shut, false);
-});
-
-test('nav fold: shutting sets aria-expanded to false on the chevron button', () => {
-    const p = boot();
-    const r = foldRig(p, { aria: 'true' });
-    r.press();
-    assert.equal(r.btn.attrs['aria-expanded'], 'false');
-});
-
-test('nav fold: opening sets aria-expanded to true on the chevron button', () => {
-    const p = boot({ kept: SHUT });
-    const r = foldRig(p, { aria: 'false' });
-    r.press();
-    assert.equal(r.btn.attrs['aria-expanded'], 'true');
-});
-
-test('nav fold: a button that already reads false stays false when the press shuts', () => {
-    const p = boot();
-    const r = foldRig(p, { aria: 'false' });
-    r.press();
-    assert.equal(r.btn.attrs['aria-expanded'], 'false');
-});
-
-test('nav fold: a button that already reads true stays true when the press opens', () => {
-    const p = boot({ kept: SHUT });
-    const r = foldRig(p, { aria: 'true' });
-    r.press();
-    assert.equal(r.btn.attrs['aria-expanded'], 'true');
-});
-
-test('nav fold: a row the page does not hold still stores the fold and does not throw', () => {
-    const p = boot();
-    const r = foldRig(p, { noLi: true });
-    assert.doesNotThrow(() => r.press());
-    assert.equal(p.kept[COLL], '{"sessions":true}');
-});
-
-test('nav fold: a row with no chevron button is still toggled and does not throw', () => {
-    const p = boot();
-    const r = foldRig(p, { noBtn: true });
-    assert.doesNotThrow(() => r.press());
-    assert.equal(r.li.shut, true);
-});
-
-test('nav fold: a fold press leaves the stored theme alone', () => {
-    const p = boot({ kept: { 'station.theme': 'dark' } });
-    foldRig(p).press();
-    assert.equal(p.kept['station.theme'], 'dark');
-});
-
-test('nav fold: a fold press does not redraw the bar, so the row keeps its height transition', () => {
-    const p = boot();
-    const r = foldRig(p);
-    p.els.nav.innerHTML = 'SENTINEL';
-    r.press();
-    assert.equal(p.els.nav.innerHTML, 'SENTINEL');
-});
+const themePress = (p, v) => fire(pick(p, 'click', NAV), tgt({ '[data-themecycle]': navBtn({ 'data-themecycle': v }) }));
 
 test('nav theme: pressing a theme stores it', () => {
     const p = boot();
@@ -269,7 +161,6 @@ test('nav: a click off the bar, or with no closest, changes nothing and does not
     p.els.nav.innerHTML = 'SENTINEL';
     assert.doesNotThrow(() => fire(fn, tgt({})));
     assert.equal(p.els.nav.innerHTML, 'SENTINEL');
-    assert.equal(COLL in p.kept, false);
 });
 
 test('nav: a target without closest does not throw', () => {

@@ -148,7 +148,7 @@ test('EN: the left bar, the crumbs and the masthead carry no CJK character', () 
 
 test('zh: the same boot draws the Chinese bar and masthead (the control)', () => {
     const p = boot('zh');
-    assert.match(p.els.nav.innerHTML, /儀表板/);
+    assert.match(p.els.nav.innerHTML, /現在/);
     assert.equal(p.els.brandw.textContent, '');
     assert.equal(p.root.attrs.lang, 'zh-Hant');
     assert.equal(p.els.langzh.attrs['aria-pressed'], 'true');

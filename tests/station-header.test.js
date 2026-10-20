@@ -22,10 +22,11 @@ function page() {
 
 test('the header names the page from NAV_TREE, top level and kids alike', () => {
     const V = page();
-    assert.equal(V.pageTitle({ view: 'now' }), '儀表板');
-    assert.equal(V.pageTitle({ view: 'days' }), '近 30 天');
+    assert.equal(V.pageTitle({ view: 'now' }), '現在');
+    assert.equal(V.pageTitle({ view: 'days' }), '花費');
+    assert.equal(V.pageTitle({ view: 'live' }), '進行中');
     assert.equal(V.pageTitle({ view: 'project' }), '依專案');
-    assert.equal(V.pageTitle({ view: 'settings' }), '設定', 'a one-page group titles by the group');
+    assert.equal(V.pageTitle({ view: 'settings' }), '設定', 'a page with one filter titles by the page');
 });
 
 test('the serve state is an icon with its words only in title and aria-label', () => {
@@ -41,4 +42,4 @@ test('the serve state is an icon with its words only in title and aria-label', (
 
 test('the drawn page puts its title in the header, not the crumbs', () => {
     const V = page();
-    assert.equal(V.els.side.innerHTML, '<h1 class="ptitle">儀表板</h1>');});
+    assert.equal(V.els.side.innerHTML, '<h1 class="ptitle">現在</h1>');});

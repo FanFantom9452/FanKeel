@@ -1135,59 +1135,14 @@ const NAV_SESSIONS = [
 ];
 const NAV_PROJECTS = [{ root: '/r', gone: false, docs: [{ pkey: 'p' }] }, { root: '/gone', gone: true, docs: [] }];
 
-test('navHtml marks the current page, links every page, and has no dropdown', () => {
-    const out = V.navHtml('days', { live: 2, usd: 12.5, sessions: 3, projects: 1, docs: 0 });
+test('navHtml lights the page a view belongs to and links all six', () => {
+    const out = V.navHtml('days', { waiting: 0 });
     assert.match(out, /<a href="#\/days" aria-current="page">/);
-    for (const h of ['#/', '#/sessions', '#/projects', '#/docs', '#/settings', '#/list', '#/cmp']) {
-        assert.ok(out.includes('<a href="' + h + '"'), h);
-    }
+    for (const h of ['#/', '#/sessions', '#/days', '#/docs', '#/settings', '#/tour']) assert.ok(out.includes('<a href="' + h + '"'), h);
     assert.match(out, /data-block="nav"/);
-    assert.match(out, /2 live/);
-    assert.ok(!out.includes('<select'));
-    assert.match(V.navHtml('project', { live: 0, usd: 0, sessions: 0, projects: 0, docs: 0 }), /<a href="#\/projects" aria-current="page">/);
-    assert.match(V.navHtml('session', { live: 0, usd: 0, sessions: 0, projects: 0, docs: 0 }), /<a href="#\/sessions" aria-current="page">/);
-});
-
-// NAV_TREE's five categories, unreachable directly (it is not in
-// module.exports), so this reads them off what navHtml renders instead.
-test('navHtml renders all five NAV_TREE categories', () => {
-    const out = V.navHtml('now', { live: 0, usd: 0, sessions: 0, projects: 0, docs: 0 });
-    for (const label of ['儀表板', 'Sessions', '花費', '文件', '設定']) {
-        assert.ok(out.includes('<span>' + label + '</span>'), label);
-    }
-});
-
-test('navHtml folds a shut category under aria-expanded="false" and leaves an unshut one open, while the fold-less 設定 category never gets a toggle button', () => {
-    const c = { live: 0, usd: 0, sessions: 0, projects: 0, docs: 0 };
-    const shut = V.navHtml('live', c, { shut: { sessions: true } });
-    // Sessions is shut and its active page ('live') is inside it: both classes apply.
-    assert.match(shut, /<li class="navcat in shut" data-fold="sessions">/);
-    assert.match(shut, /<button type="button" class="navrow navhd" data-navfold="sessions"[^>]*aria-expanded="false"/);
-    // 花費 was not named in `ui.shut`, so it stays open even though it too has a fold key.
-    assert.match(shut, /<button type="button" class="navrow navhd" data-navfold="spend"[^>]*aria-expanded="true"/);
-    // Its kids still render in the markup either way — CSS, not the server, hides them.
-    assert.match(shut, /<span>進行中<\/span>/);
-    assert.match(shut, /<span>最近<\/span>/);
-    // 設定 has no `fold`, so it is always a plain link to its first (only) kid, never a button.
-    assert.doesNotMatch(shut, /data-navfold="settings"/);
-    assert.match(shut, /<a class="navhd" href="#\/settings">/);
-    assert.match(shut, /<span>精靈<\/span>/);
-    // With no `ui` at all every fold defaults open.
-    const open = V.navHtml('now', c);
-    assert.match(open, /data-navfold="sessions"[^>]*aria-expanded="true"/);
-});
-
-test('navHtml badges follow the new `badges` map: live gets a live-class count, 儀表板 and 文件 carry no badge at all', () => {
-    const out = V.navHtml('days', { live: 3, usd: 12.5, sessions: 0, projects: 0, docs: 4 });
-    assert.match(out, /<a href="#\/live"><span>進行中<\/span><span class="nb live">3 live<\/span><\/a>/);
-    // `v: 'now'` (儀表板) maps to `badges.now === null` — no badge span at all.
-    const dashLink = out.match(/<a href="#\/">[\s\S]*?<\/a>/)[0];
-    assert.match(dashLink, /<span>儀表板<\/span><\/a>$/, '儀表板\'s label is the last thing in its link, nothing after it');
-    assert.doesNotMatch(dashLink, /class="nb/, '儀表板 never gets a badge');
-    // 文件 (`v: 'docs'`) does carry a badge, the doc count.
-    const docsLink = out.match(/<a href="#\/docs">[\s\S]*?<\/a>/)[0];
-    assert.match(docsLink, /<span>文件<\/span><span class="nb">4<\/span><\/a>$/);
-    assert.equal(V.navCounts([{ state: 'live' }], [], []).live, 1, 'the count navHtml\'s live badge is built from');
+    assert.match(V.navHtml('project', { waiting: 0 }), /<a href="#\/days" aria-current="page">/);
+    assert.match(V.navHtml('session', { waiting: 0 }), /<a href="#\/sessions" aria-current="page">/);
+    assert.ok(Array.isArray(V.NAV_TREE) && V.NAV_TREE.every((g) => !g.fold));
 });
 
 // --- fix: stageShare, costShareHtml, subtabsHtml and the four 儀表板 cards —
@@ -1397,20 +1352,15 @@ test('recentRows keeps what spent inside the window or is still live, newest fir
     assert.deepEqual(rows.map((s) => s.id), ['n1', 'n2']);
 });
 
-test('the live badge counts exactly the rows 現在 marks live', () => {
+test('現在\'s lanes are the live and stale rows of open registries', () => {
     global.window.STATION.serve = false;
-    const c = V.navCounts(NAV_SESSIONS, NAV_PROJECTS, NAV_DAYS);
     const now = V.nowHtml(NAV_PROJECTS, NAV_SESSIONS);
-    assert.equal(c.live, 1);
-    assert.equal((now.match(/data-state="live"/g) || []).length, c.live);
+    assert.equal((now.match(/data-state="live"/g) || []).length, 1);
     assert.equal((now.match(/data-state="stale"/g) || []).length, 1);
     assert.ok(!now.includes('data-state="down"'), 'a session that is down is not on 現在');
     assert.ok(!now.includes('/gone'), 'a gone registry gets no card');
     assert.match(now, /data-block="now"/);
     assert.ok(!now.includes('<select'));
-    assert.equal(c.sessions, V.recentRows(NAV_SESSIONS, NAV_DAYS).length);
-    assert.equal(c.usd, 3);
-    assert.equal(c.docs, 1);
 });
 
 // docs/90-agent/plans/2026-09-27-five-items-design.md §1: `#/live` is four
@@ -1557,7 +1507,6 @@ test('quota share stays off text in a fixed box: ticks, bar totals, nav badge, c
         const chart = V.projectChart([{ pkey: 'p', name: 'p', colour: 'var(--p-0)', points: pts }], { metric: 'usd', t0, t1, days: DAYS, today: DAYS[29] });
         assert.match(bare(chart), /class="tick"[^>]*>\$/);
         assert.doesNotMatch(bare(chart), /class="tick"[^>]*>[^<]*%\)/);
-        assert.match(V.navHtml('days', { live: 0, usd: 12.5, sessions: 0, projects: 0, docs: 0 }), /<span class="nb">\$12\.50<\/span>/);
         const cs = V.costShareHtml(V.stageShare(STAGE_S, null), null);
         assert.doesNotMatch(cs.replace(/<tr[\s\S]*<\/tr>/g, '').replace(/<small>[\s\S]*?<\/small>/, ''), /%\) ·/, 'bar label and title read "$ · stage share%", not two percents');
         assert.match(V.sessionHeadHtml(HOME[0], DETAIL_X), /花費<\/div><div class="v">\$[\d.]+<\/div><div class="d">\([\d.]+%\) · /);
