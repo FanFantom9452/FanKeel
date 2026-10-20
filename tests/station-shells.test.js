@@ -118,3 +118,27 @@ test('every class shellsHtml draws but its own wrapper already has a rule in sta
     drawn.delete('s-shells');
     for (const c of drawn) assert.match(CSS, new RegExp('\\.' + c + '[\\s{.:+,]'), c);
 });
+
+test('an ended shell with no exit code reads 結束 alone, never "exit null"', () => {
+    const { V } = page();
+    const html = V.shellsHtml([{ id: 'b1', command: 'x', state: 'ended', code: null, startedAt: '2026-10-21T00:00:00.000Z' }], Date.now());
+    assert.match(html, /<span class="delta flat">結束<\/span>/);
+    assert.doesNotMatch(html, /exit null/);
+});
+
+test('a shell with an empty startedAt shows a dash, never NaNm', () => {
+    const { V } = page();
+    const html = V.shellsHtml([{ id: 'b1', command: 'x', state: 'running', code: null, startedAt: '' }], Date.now());
+    assert.match(html, /<span class="sa-for">—<\/span>/);
+    assert.doesNotMatch(html, /NaN/);
+});
+
+test('a running session with no transcript file reads no shells and does not throw', () => {
+    const m = machine(true);
+    const proj = path.join(m.cfg, 'projects', 'ws-slug');
+    for (const f of fs.readdirSync(proj)) fs.unlinkSync(path.join(proj, f));
+    const row = withTemp(m.temp, () => station.gather({ configDir: m.cfg, details: false })).registries.flatMap((r) => r.sessions)
+        .find((s) => s.sessionId === SID);
+    assert.equal(row.state, 'live');
+    assert.deepEqual(row.shells, []);
+});
