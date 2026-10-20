@@ -378,8 +378,10 @@ test('a stage agent gets its stage\'s rules and shape, its skill, and where to w
   // The controller prints a survey's report above the gate, but the question
   // goes out on its own card, so a gate that says "the answer is above" still
   // points at nothing the card holds.
-  assert.ok(text.includes('The controller prints your report above its gate block, but the question is asked on its own card'), 'the gate must stand on its own');
-  assert.ok(!text.includes('The user sees only the path to your report'), 'a survey report is printed, so this would be false');
+  // station focus §4: survey is in `station.link`'s builtin, so the user sees
+  // the path and the station page, and the report only when the station is down.
+  assert.ok(text.includes('The user sees the path and the station page, your report\'s text only when the station is down, so the question'), 'the gate must stand on its own');
+  assert.ok(!text.includes('The controller prints your report above its gate block'), 'a linked survey report is not printed while the station is up');
   // Run one command per call, the stage agent took 34 and 48 tool calls over a
   // survey a main session did in 5 and 6, each call re-sending its context.
   assert.ok(text.includes('Run independent commands in one Bash call'), 'the brief must ask for batched commands');
@@ -549,6 +551,17 @@ test('the brain agent file names the commit file it may write and refuses to run
   assert.match(section('Refusals'), /on a build\s+stage the commit file/);
   assert.match(section('Refusals'), /Do not run `scripts\/commit\.js`/);
   assert.match(section('Return'), /`commit <path>` for the tasks that returned since the last commit/);
+});
+
+test('a stage taken off station.link is told its report is printed above the gate', () => {
+  const root = tmp();
+  seedProfile(root, { 'stage.agents': ['audit', 'plan'], 'station.link': 'survey,design,build,verify,land' });
+  for (const stage of ['audit', 'plan']) {
+    seed(root, { stage, started: '2026-09-19T09:30:12.345Z' });
+    const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
+    assert.ok(text.includes('The controller prints your report above its gate block, but the question is asked on its own card'), stage);
+    assert.ok(!text.includes('The user sees the path and the station page'), stage);
+  }
 });
 
 test('a controlled build\'s brain brief stays under the 10,000-character cap on one additionalContext', () => {
