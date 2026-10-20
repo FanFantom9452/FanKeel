@@ -1,0 +1,20 @@
+{"chartroom":1,"title":"LevelMark 架構","root":"系統總覽","lang":"zh-TW"}
+{"view":"系統總覽","title":"系統總覽"}
+{"view":"執行期服務","title":"執行期服務"}
+{"node":"api","in":"系統總覽","label":"api\nFlask · REST","shape":"round","x":40,"y":90,"w":168,"h":64,"frame":"f-back","detail":"執行期服務"}
+{"node":"collab","in":"系統總覽","label":"collab\nNode · Yjs","shape":"round","x":226,"y":210,"w":168,"h":64,"frame":"f-back"}
+{"node":"f-back","in":"系統總覽","label":"後端","shape":"frame","x":340,"y":40,"w":580,"h":520}
+{"node":"f-front","in":"系統總覽","label":"前端","shape":"frame","x":40,"y":80,"w":240,"h":176}
+{"node":"postgres","in":"系統總覽","label":"postgres\nPostgreSQL 16","shape":"cylinder","x":220,"y":370,"w":180,"h":100,"frame":"f-back","owner":"平台組"}
+{"node":"web","in":"系統總覽","label":"web\nReact · Vite","shape":"round","x":40,"y":50,"w":160,"h":64,"frame":"f-front"}
+{"node":"worker","in":"系統總覽","label":"worker\n轉錄 · 跑在 host","shape":"round","frame":"f-back","note":"AI 新增，尚未擺放"}
+{"edge":"e-api-pg","in":"系統總覽","from":"api","to":"postgres","label":"SQL"}
+{"edge":"e-web-api","in":"系統總覽","from":"web","to":"api","label":"REST"}
+{"edge":"e-web-collab","in":"系統總覽","from":"web","to":"collab","label":"WebSocket","dash":true,"arrow":"both"}
+{"edge":"e-worker-api","in":"系統總覽","from":"worker","to":"api","label":"REST"}
+{"node":"jobs","in":"執行期服務","label":"任務佇列\nRQ · Redis","shape":"cylinder"}
+{"node":"routes","in":"執行期服務","label":"路由\n/api/*"}
+{"node":"驗證","in":"執行期服務","label":"驗證\nJWT"}
+{"edge":"e-routes-jobs","in":"執行期服務","from":"routes","to":"jobs","label":"enqueue"}
+{"edge":"e-routes-驗證","in":"執行期服務","from":"routes","to":"驗證"}
+{"comment":"worker 由 AI 新增、還沒擺放位置；postgres 的 owner 是未知 key"}
