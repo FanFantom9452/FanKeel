@@ -138,13 +138,21 @@ function recordsRel(projectRoot) {
 
 // `text` goes at the end of the section `anchor` opens: before the next
 // entry's anchor, or at the end of the file. False when the anchor is not there.
-function appendUnder(file, anchor, text) {
+// A line of that section starting with `replace` is overwritten instead.
+function appendUnder(file, anchor, text, replace) {
     let before;
     try { before = fs.readFileSync(file, 'utf8'); } catch (e) { return false; }
     const at = before.indexOf('<a id="' + anchor + '"></a>');
     if (at < 0) return false;
     const next = before.indexOf('\n<a id="', at + 1);
     const cut = next < 0 ? before.length : next + 1;
+    const old = replace ? before.slice(at, cut).indexOf('\n' + replace) : -1;
+    if (old >= 0) {
+        const from = at + old + 1;
+        const end = before.indexOf('\n', from);
+        fs.writeFileSync(file, before.slice(0, from) + text.replace(/\n*$/, '') + (end < 0 ? '\n' : before.slice(end)));
+        return true;
+    }
     const head = before.slice(0, cut).replace(/\n*$/, '\n');
     const tail = before.slice(cut);
     fs.writeFileSync(file, head + text.replace(/\n*$/, '\n') + (tail ? '\n' + tail : ''));
@@ -203,7 +211,8 @@ function exportSession(opts) {
     fs.writeFileSync(file, gz);
     const size = (gz.length / 1048576).toFixed(1) + ' MB';
     const month = path.join(projectRoot, ...mine.record.file.split('/'));
-    if (!appendUnder(month, mine.record.anchor, '- 對話紀錄：' + rel + '（' + size + '，' + (committed ? 'committed' : 'local') + '）')) {
+    const link = '- 對話紀錄：' + rel + '（';
+    if (!appendUnder(month, mine.record.anchor, link + size + '，' + (committed ? 'committed' : 'local') + '）', link)) {
         fail('Bundle written to ' + rel + ', but ' + mine.record.file + ' has no #' + mine.record.anchor + ' to link it under.');
     }
     registry.update(root, opts.session, (d) => {

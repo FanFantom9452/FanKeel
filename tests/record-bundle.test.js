@@ -96,3 +96,57 @@ test('appendUnder puts the line at the end of its own entry, before the next one
     assert.equal(fs.readFileSync(file, 'utf8'), '# m\n\n<a id="r-1"></a>\n\n## one\n\n- 還剩什麼：沒有。\n- 對話紀錄：x\n\n<a id="r-1-2"></a>\n\n## two\n');
     assert.equal(appendUnder(file, 'r-9', '- y'), false);
 });
+
+test('session refuses when sensitive.txt exists but cannot be read, and writes no bundle', () => {
+    const s = seed();
+    run(s, ['write', '--session', A], GOOD);
+    const list = path.join(s.root, '.fankeel', 'sensitive.txt');
+    fs.rmSync(list);
+    fs.mkdirSync(list);
+    const r = run(s, ['session', '--session', A]);
+    assert.equal(r.code, 1);
+    assert.match(r.out, /sensitive\.txt exists but could not be read/);
+    assert.equal(fs.existsSync(path.join(s.root, '.fankeel', 'bundles')), false);
+});
+
+test('a second session export the same day replaces its link line instead of adding one', () => {
+    const s = seed();
+    run(s, ['write', '--session', A], GOOD);
+    assert.equal(run(s, ['session', '--session', A]).code, 0);
+    assert.equal(run(s, ['session', '--session', A]).code, 0);
+    const lines = fs.readFileSync(monthFile(s.root), 'utf8').split('\n').filter((l) => l.startsWith('- 對話紀錄：'));
+    assert.equal(lines.length, 1, lines.join('\n'));
+});
+
+test('sessions --list names a committed bundle as committed', () => {
+    const s = seed();
+    run(s, ['write', '--session', A], GOOD);
+    run(s, ['session', '--session', A, '--commit']);
+    const r = run(s, ['sessions', '--list']);
+    assert.equal(r.code, 0, r.out);
+    assert.match(r.out, /docs\/90-agent\/records\/sessions\/\S+aaaaaaaa\.jsonl\.gz\s+[\d.]+ MB\s+committed\s+retro: none/);
+});
+
+test('sessions --list says retro: filed when a month file holds a retro of the bundle', () => {
+    const s = seed();
+    run(s, ['write', '--session', A], GOOD);
+    run(s, ['session', '--session', A]);
+    fs.appendFileSync(monthFile(s.root), '\n<details><summary>retro aaaaaaaa 匯出對話</summary>\n</details>\n');
+    const r = run(s, ['sessions', '--list']);
+    assert.equal(r.code, 0, r.out);
+    assert.match(r.out, /aaaaaaaa\.jsonl\.gz\s+[\d.]+ MB\s+local\s+retro: filed/);
+});
+
+test('--commit keeps a bundle over the size cap local and says so', () => {
+    const s = seed();
+    run(s, ['write', '--session', A], GOOD);
+    // Hex of random bytes gzips to about half its length: 5.6 MB of it stays over 2 MB.
+    const noise = require('node:crypto').randomBytes(2.8 * 1024 * 1024).toString('hex');
+    fs.appendFileSync(path.join(s.cfg, 'projects', 'p', A + '.jsonl'), JSON.stringify({ type: 'user', message: { role: 'user', content: noise } }) + '\n');
+    const r = run(s, ['session', '--session', A, '--commit']);
+    assert.equal(r.code, 0, r.out);
+    assert.match(r.out, /kept local:/);
+    assert.equal(fs.readdirSync(path.join(s.root, '.fankeel', 'bundles')).length, 1);
+    assert.equal(fs.existsSync(path.join(s.root, 'docs', '90-agent', 'records', 'sessions')), false);
+    assert.equal(registry.readSession(s.root, A).record.bundle.committed, false);
+});
