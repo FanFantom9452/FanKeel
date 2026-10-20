@@ -23,6 +23,7 @@ const CAPS = {
     'fankeel-init': 13100,
     'fankeel-ask': 7600,
     'fankeel-explain': 4400,
+    'fankeel-retro-all': 3000,
     'fankeel-upgrade': 2100,
     'fankeel-station': 1600,
 };

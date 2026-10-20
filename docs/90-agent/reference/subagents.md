@@ -134,7 +134,7 @@ land move their own files, verify there has no mutation step, and build and
 audit write their pages for a person directly — so a project that keeps
 every stage in the session never sends them. `fankeel-init-scout` and
 `fankeel-slimmer` are sent by `fankeel-init` alone. The ruling on each is
-[the 2026-10-15 decision](../../03-decisions/2026-10-15-unused-agents.md). `fankeel-retro` is sent at `land` alone, and only on the user's yes.
+[the 2026-10-15 decision](../../03-decisions/2026-10-15-unused-agents.md). `fankeel-retro` is sent at `land`, only on the user's yes and only after an export, and by `/fankeel-retro-all`, one per bundle with no retro filed.
 
 `fankeel-reader` runs at `model: sonnet` by default — the profile's
 `dispatch.floor`, which the survey, verify and audit skills ask their reader

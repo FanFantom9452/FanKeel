@@ -250,7 +250,7 @@ test('the undeclared count is one line, not a list of every page', () => {
   assert.equal(text.includes('docs/11-a.md'), false, 'the fix is a convention, not thirteen edits');
 });
 
-// Fifteen files carry the version and nothing kept them together: two manifests
+// Sixteen files carry the version and nothing kept them together: two manifests
 // and one line of frontmatter in each skill. A release that missed one left a
 // skill announcing a version the plugin is not, which is the kind of wrong
 // nobody reads carefully enough to catch — the number is right everywhere else.
@@ -276,7 +276,7 @@ test('every file that carries the version carries the same one', () => {
     found.set(rel, m[1]);
   }
 
-  assert.equal(found.size, 15, 'the count moved: ' + [...found.keys()].join(', '));
+  assert.equal(found.size, 16, 'the count moved: ' + [...found.keys()].join(', '));
   const versions = [...new Set(found.values())];
   assert.equal(versions.length, 1,
     'versions disagree — ' + [...found].map(([f, v]) => f + ' ' + v).join(', '));
