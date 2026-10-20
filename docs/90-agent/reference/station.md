@@ -136,7 +136,7 @@ by hand.
 
 The `scannedAt` key sitting beside the roots in that file is the record of the
 first-run walk, not the guard against a second: it says when the machine was
-swept and what stopped the sweep. `rememberRoots` owns the root records in
+swept, how long the walk took (`ms`) and what stopped the sweep. `rememberRoots` owns the root records in
 `roots.json` and carries every other key across untouched, which is what keeps
 that record alive past the next `/fankeel` prompt.
 

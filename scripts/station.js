@@ -173,7 +173,8 @@ function driveRoots() {
 // One shared deadline across every drive, so a slow first drive leaves nothing
 // for the rest rather than each getting its own five seconds.
 function autoScan() {
-    const deadline = Date.now() + AUTO_BUDGET_MS;
+    const started = Date.now();
+    const deadline = started + AUTO_BUDGET_MS;
     const roots = [];
     let depthCuts = 0;
     let timedOut = false;
@@ -183,7 +184,7 @@ function autoScan() {
         depthCuts += found.depthCuts;
         if (found.timedOut) timedOut = true;
     }
-    return { roots, depthCuts, timedOut };
+    return { roots, depthCuts, timedOut, ms: Date.now() - started };
 }
 
 // The record of the first-run walk, written beside the roots so a reader can
@@ -945,6 +946,7 @@ function main() {
             roots: scan.roots.length,
             depthCuts: scan.depthCuts,
             timedOut: scan.timedOut,
+            ms: scan.ms,
         });
         process.stdout.write('station: first run — scanned this machine\'s drives, found '
             + scan.roots.length + ' registr' + (scan.roots.length === 1 ? 'y' : 'ies')

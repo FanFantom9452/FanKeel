@@ -253,16 +253,7 @@ test('the first run scans once and records that it did', () => {
     const rootsFile = path.join(cfg, 'fankeel', 'roots.json');
     assert.ok(!fs.existsSync(rootsFile), 'nothing has written roots.json for this config dir yet');
 
-    // A busy machine slows node's own start-up, which AUTO_BUDGET_MS does not
-    // bound: a run of nothing, timed just before, is taken off the reading below.
-    // 10-14 a red run of this test took 13.5s against its 20s `timeout`, so it
-    // was the 9000 below that failed, not the timeout.
-    const n0 = Date.now();
-    execFileSync(process.execPath, ['-e', ''], { encoding: 'utf8', timeout: 20000 });
-    const idle = Date.now() - n0;
-    const t0 = Date.now();
     const out1 = execFileSync(process.execPath, [CLI], { cwd: base, env, encoding: 'utf8', timeout: 20000 });
-    const elapsed1 = Date.now() - t0;
     assert.match(out1, /first run/);
 
     const after1 = JSON.parse(fs.readFileSync(rootsFile, 'utf8'));
@@ -309,12 +300,14 @@ test('the first run scans once and records that it did', () => {
     assert.ok(elapsed2 < 3000, 'a run with roots.json already present does not re-walk the drives (took ' + elapsed2 + 'ms)');
     // The first run is the one AUTO_BUDGET_MS exists to bound, and until this
     // line the suite measured it and threw the number away — a budget raised to
-    // anything under this test's own 20-second `timeout` shipped green. Measured
-    // here on 2026-09-06: 6.0 seconds for a 5-second budget — node start-up,
-    // now taken off as `idle`, the readdir in flight when the deadline landed,
-    // and the write of the page. Nine seconds leaves that margin doubled and still
-    // catches a budget moved to ten seconds or beyond. It is deliberately a
-    // literal rather than `AUTO_BUDGET_MS + slack`: a bound that moves with the
-    // budget is a bound the budget cannot break.
-    assert.ok(elapsed1 - idle < 9000, 'the first run stays inside its scan budget (took ' + elapsed1 + 'ms, ' + idle + 'ms of it node start-up)');
+    // anything under this test's own 20-second `timeout` shipped green. The
+    // reading is the walk's own wall time, recorded by the CLI, not the whole
+    // run: spawn, the roots.json write and the page write grow with machine
+    // load (13.8s whole on a busy suite) and the budget does not bound them.
+    // Seven seconds is the 5-second budget plus the readdir in flight when the
+    // deadline landed, and still catches a budget moved to 7 seconds or beyond.
+    // It is deliberately a literal rather than `AUTO_BUDGET_MS + slack`: a bound
+    // that moves with the budget is a bound the budget cannot break.
+    assert.equal(typeof after1.scannedAt.ms, 'number', 'the record carries how long the walk took');
+    assert.ok(after1.scannedAt.ms < 7000, 'the first run stays inside its scan budget (the walk took ' + after1.scannedAt.ms + 'ms)');
 });
