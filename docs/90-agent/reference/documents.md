@@ -354,13 +354,14 @@ has to remember to bump standing in for a check that already runs. Neither has a
 fix worth offering, and a list of things nobody may act on stops being read.
 
 **A README no bucket files is still read.** `scripts/docs-audit.js`'s
-`readmeBucket` gives a `README.md` beside code, in a directory no bucket in
-`docs.json` covers, the role `reference` and a batch named for its directory:
-`--batches` sends it to a reader, and drift grades it, which is the step the
-onboarding drift check reads. A README a bucket covers keeps that bucket's
-role. It carries no frontmatter, for the reason the root one does not, so its
-date is git's last commit to it, and it is counted neither `unfiled` nor
-`undeclared`.
+`readmeBucket` gives a `README.md` in a directory no bucket in `docs.json`
+covers the role `reference` and a batch named for its directory: `--batches`
+sends it to a reader, and drift grades it, which is the step the onboarding
+drift check reads. A README a bucket covers keeps that bucket's role. It carries
+no frontmatter, for the reason the root one does not, so its date is git's last
+commit to it, and `docs-audit`'s sweep counts it neither `unfiled` nor
+`undeclared`. The onboarding unfiled check still does: it counts through
+`docs.unfiledOf`, which knows nothing of `readmeBucket`.
 
 `lib/map.js` was the exception until 2026-08-31, by age rather than by choice:
 `pagesByStatus` was written before `isSignpost` existed. What made it worth

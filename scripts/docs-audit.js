@@ -416,8 +416,8 @@ function resolveTree(root) {
 // (TODO audit-3). One in a directory no bucket covers is read as `reference`,
 // in a batch named for that directory; one a bucket covers keeps that
 // bucket's role. It carries no frontmatter — GitHub renders a block on a
-// README as a stray table — so its date is git's, and it is neither
-// `unfiled` nor `undeclared`.
+// README as a stray table — so its date is git's, and sweep() counts it
+// neither `unfiled` nor `undeclared` (lib/onboard.js's unfiled count still does).
 const isReadme = (rel) => path.posix.basename(rel) === 'README.md';
 function readmeBucket(tree, rel) {
     if (!tree || !rel.includes('/') || !isReadme(rel) || docs.bucketOf(tree, rel)) return null;
