@@ -18,6 +18,7 @@ const profile = require('../lib/profile.js');
 const { worktreeOf } = require('../lib/guard.js');
 const { classForRoute } = require('../lib/stages.js');
 const { formatMiss } = require('./commit.js');
+const { sweep, sweepLines } = require('./residue.js');
 
 const run = (dir, args) => spawnSync('git', args, { cwd: dir, encoding: 'utf8' });
 const oneLine = (text) => String(text || '').trim().replace(/\s+/g, ' ').slice(0, 300);
@@ -90,7 +91,11 @@ function main(argv) {
         return { text: 'land.js: usage: land.js merge|clean --session <id> [--root <dir>]', code: 2 };
     }
     const root = typeof values.root === 'string' ? path.resolve(values.root) : (registry.findStateRoot(process.cwd()) || process.cwd());
-    return verb === 'merge' ? merge(root, values.session) : clean(root, values.session);
+    if (verb === 'merge') return merge(root, values.session);
+    const r = clean(root, values.session);
+    if (r.code !== 0) return r;
+    const swept = sweepLines(sweep(root));
+    return swept.length ? { ...r, text: r.text + '\n' + swept.join('\n') } : r;
 }
 
 if (require.main === module) {

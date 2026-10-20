@@ -402,11 +402,64 @@ function report(result) {
     return lines.join('\n');
 }
 
+// Every worktree-agent-* branch whose commits HEAD already has, with its
+// worktree when one is checked out and clean, is removed; anything holding
+// uncommitted files or a commit HEAD lacks is kept and said, never forced
+// (TODO agent 分支與 worktree 殘留). A worktree in use by a live session, or
+// touched in the last two hours, may be an agent still running and is kept.
+const SWEEP_QUIET_MS = 2 * 3600000;
+
+function sweepable(root, w, now) {
+    if (w.inUse) return 'in use by a live session';
+    try {
+        if (now - fs.statSync(w.path).mtimeMs < SWEEP_QUIET_MS) return 'touched in the last two hours';
+    } catch (e) {}
+    const status = git(w.path, ['status', '--porcelain']);
+    if (status === null || status.length) return 'uncommitted files in ' + w.path;
+    return null;
+}
+
+function sweep(root, { now = Date.now() } = {}) {
+    const removed = [];
+    const kept = [];
+    const listed = worktreesOf(root);
+    const trees = new Map(listed.filter((w) => w.branch).map((w) => [w.branch, w]));
+    for (const name of (git(root, ['branch', '--list', 'worktree-agent-*', '--format=%(refname:short)']) || []).map((s) => s.trim()).filter(Boolean)) {
+        const cherry = git(root, ['cherry', 'HEAD', name]);
+        if (cherry === null || cherry.some((l) => l.startsWith('+'))) { kept.push({ name, why: 'holds commits HEAD lacks' }); continue; }
+        const w = trees.get(name);
+        if (w) {
+            const why = sweepable(root, w, now);
+            if (why) { kept.push({ name, why }); continue; }
+            if (git(root, ['worktree', 'remove', w.path]) === null) { kept.push({ name, why: 'git worktree remove failed for ' + w.path }); continue; }
+        }
+        if (git(root, ['branch', '-D', name]) === null) { kept.push({ name, why: 'git branch -D failed' }); continue; }
+        removed.push(name);
+    }
+    for (const w of listed.filter((t) => !t.branch && path.basename(t.path).startsWith('agent-'))) {
+        const head = git(w.path, ['rev-parse', 'HEAD']);
+        const cherry = head && head[0] ? git(root, ['cherry', 'HEAD', head[0]]) : null;
+        if (cherry === null || cherry.some((l) => l.startsWith('+'))) { kept.push({ name: w.path, why: 'holds commits HEAD lacks' }); continue; }
+        const why = sweepable(root, w, now);
+        if (why) { kept.push({ name: w.path, why }); continue; }
+        if (git(root, ['worktree', 'remove', w.path]) === null) { kept.push({ name: w.path, why: 'git worktree remove failed' }); continue; }
+        removed.push(path.normalize(w.path));
+    }
+    return { removed, kept };
+}
+
+function sweepLines(result) {
+    const lines = [];
+    if (result.removed.length) lines.push('swept ' + result.removed.length + ' spent agent branch(es): ' + result.removed.join(', '));
+    for (const k of result.kept) lines.push('kept ' + k.name + ' — ' + k.why);
+    return lines;
+}
+
 // A declared flag given no value comes back `true` rather than a string, so the
 // default is restored by type; `strict: false` keeps an unknown flag silent.
 function parseArgs(argv) {
-    const { values } = parseArgv({ args: argv, strict: false, allowPositionals: true, options: { root: { type: 'string' } } });
-    return { root: resolveRoot(typeof values.root === 'string' ? values.root : undefined) };
+    const { values } = parseArgv({ args: argv, strict: false, allowPositionals: true, options: { root: { type: 'string' }, sweep: { type: 'boolean' } } });
+    return { root: resolveRoot(typeof values.root === 'string' ? values.root : undefined), sweep: values.sweep === true };
 }
 
 function main(argv) {
@@ -415,10 +468,15 @@ function main(argv) {
 }
 
 if (require.main === module) {
-    const { root } = parseArgs(process.argv.slice(2));
+    const args = parseArgs(process.argv.slice(2));
+    if (args.sweep) {
+        process.stdout.write((sweepLines(sweep(args.root)).join('\n') || 'nothing to sweep') + '\n');
+        process.exit(0);
+    }
+    const { root } = args;
     const result = scan(root);
     process.stdout.write(report(result) + '\n');
     process.exit(defects(result) > 0 ? 1 : 0);
 }
 
-module.exports = { scan, report, defects, emptyDirs, sizeOf, parseArgs };
+module.exports = { scan, report, defects, emptyDirs, sizeOf, parseArgs, sweep, sweepLines };
