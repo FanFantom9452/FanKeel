@@ -13,6 +13,8 @@ const { parseArgs } = require('node:util');
 
 const fs = require('node:fs');
 const { checkFile } = require('./docs-check.js');
+// todo-check's own `no reason` judgement, so new and todo-check share one threshold (todo-6).
+const { reasonChars } = require('./todo-check.js');
 const todo = require('../lib/todo.js');
 const { resolveRoot } = require('../lib/registry.js');
 
@@ -54,6 +56,12 @@ function main(argv, now) {
             if (n < todo.MIN_BODY_CHARS) {
                 return { text: 'fankeel todo: --body is ' + n + ' characters, at least ' + todo.MIN_BODY_CHARS
                     + ' — where it came from, what it should become, and what counts as done', ok: false };
+            }
+            const reason = reasonChars(body, str('description'));
+            if (reason < todo.MIN_BODY_CHARS) {
+                return { text: 'fankeel todo: --body has ' + reason + ' characters of reason once the migration template and the description'
+                    + ' are taken out, at least ' + todo.MIN_BODY_CHARS + ' — ' + (todo.MIN_BODY_CHARS - reason) + ' short: say why it is still open,'
+                    + ' the incident, session or sha it came from, and what done looks like', ok: false };
             }
             const made = todo.add(root, {
                 id: str('id'), label: str('label'), title: str('title'), description: str('description'), state,

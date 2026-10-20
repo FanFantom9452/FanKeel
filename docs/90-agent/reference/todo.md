@@ -83,7 +83,9 @@ names moves the entry to `ready` or `decision` and drops its `group`,
 - `node scripts/todo.js new --label <word> --title <title> --description <line> --state <state> --body <text>`,
   with `--link`, and `--group`, `--timing` and `--stamp` for a timed one,
   writes the file. It refuses an entry with no `--body` or one under 200
-  characters, and one that `scripts/docs-check.js` would fail as a reference
+  characters, one whose text outside the migration template and its own
+  description is under 200 — todo-check's `no reason`, by the same
+  `reasonChars`, saying how many it lacks — and one that `scripts/docs-check.js` would fail as a reference
   page — a path that is gone, a symbol nothing declares, a cited line that no
   longer holds its quote — and leaves no file behind. A file the entry asks
   for, not yet written, is named without backticks.
