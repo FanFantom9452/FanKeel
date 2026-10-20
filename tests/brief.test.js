@@ -375,11 +375,9 @@ test('a stage agent gets its stage\'s rules and shape, its skill, and where to w
   assert.ok(text.includes('Write your report to .fankeel/build/task-20260919T093012/survey.md'));
   assert.ok(text.includes(SESSION));
   assert.ok(!text.includes(RETURN_RULES[2]), 'the no-dispatch rule is left out');
-  // The controller prints a survey's report above the gate, but the question
-  // goes out on its own card, so a gate that says "the answer is above" still
-  // points at nothing the card holds.
   // station focus §4: survey is in `station.link`'s builtin, so the user sees
-  // the path and the station page, and the report only when the station is down.
+  // the path and the station page, and the report only when the station is down;
+  // the question goes out on its own card, so the gate must stand on its own.
   assert.ok(text.includes('The user sees the path and the station page, your report\'s text only when the station is down, so the question'), 'the gate must stand on its own');
   assert.ok(!text.includes('The controller prints your report above its gate block'), 'a linked survey report is not printed while the station is up');
   // Run one command per call, the stage agent took 34 and 48 tool calls over a
