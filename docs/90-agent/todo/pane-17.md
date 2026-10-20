@@ -14,6 +14,8 @@ link: hooks/pane.ts
 
 完成條件：探針結果寫進本條；Pane 在背景 shell 跑時列出它、結束後顯示結束碼；.output 中途消失視為已結束；測試涵蓋尾標記解析與裁切。
 
+探針結果（2026-10-21，Claude Code 2.1.305）：hooks module 的 `tool.call` 包裝 `next(e)` 結果帶 `backgroundTaskId`。Pane 的 shells 區塊在背景 shell 跑時列出 ○，結束後換成 ● 與紅色的 exit 3（使用者在實機上看到兩張圖都出現，結束約在 90 秒後）。
+
 ## 為什麼還開著
 
 使用者要把它和其他 Pane 相關任務融合成一個任務一起做，不單獨開；探針也還沒跑，最關鍵的 backgroundTaskId 是否拿得到仍未證實。

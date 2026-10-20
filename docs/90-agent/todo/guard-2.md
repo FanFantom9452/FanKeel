@@ -14,6 +14,8 @@ link: lib/guard.js
 
 完成條件：測試涵蓋「引號內含 git commit 的 task.js note 放行」與「引號外的 git commit 照擋」兩種情況，並在受控站實際串接一次 note 不被拒。
 
+受控站實測（2026-10-21）：引號內 git commit 的 note 串接放行，引號外的 git commit 照擋。
+
 ## 為什麼還開著
 
 retro 只列成 backlog，這次 land 沒有改程式；guard 是受控站的安全邊界，放寬比對要有測試同時證明沒放掉真正的寫入，屬於要單獨規劃與驗證的一件事。
