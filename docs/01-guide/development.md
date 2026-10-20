@@ -272,7 +272,7 @@ returns `import[badgeWord] ⎆ ✓`; `knip --trace-export clearBadge`, reached a
 and `hooks/inject.js:77` call it. The shape is not rare here: counting lines
 under `tests/` that bind a module from `../lib/`, `../scripts/` or `../hooks/`
 to a plain identifier rather than destructuring it gives 60 lines across 40 of
-the 74 test files there were on 2026-10-01, against 35 destructured lines across 26; tests/ held 348 test files on 2026-10-21. a TODO entry carries
+the 74 test files there were on 2026-10-01, against 35 destructured lines across 26; tests/ held 352 test files on 2026-10-21. a TODO entry carries
 what would lift the exclusion.
 
 **A green run has to be able to go red.** An `ignore` wide enough to silence 228

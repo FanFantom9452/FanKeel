@@ -391,6 +391,11 @@ spent agent branches. Offer those, and only those, for cleanup with
 `git branch -D <name>` — `scripts/commit.js` landed them by cherry-pick, so
 most are not ancestors and `-d` refuses them. One listed as holding commits HEAD
 lacks is the user's call.
+`node <plugin>/scripts/land.js clean` now sweeps these itself
+(`residue.js --sweep`): it removes a clean spent agent worktree and runs
+`git branch -D` on its branch, and prints what it kept. It keeps a dirty
+worktree, one in use or touched in the last two hours, and any branch or
+worktree holding commits HEAD lacks.
 
 **PR:** push, open it against the base, report the URL. **Keep the worktree** —
 PR feedback gets fixed there.

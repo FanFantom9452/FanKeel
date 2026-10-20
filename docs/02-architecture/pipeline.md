@@ -816,7 +816,8 @@ do. Land files that list inside a six-field record with
 `node scripts/record.js write --session <id>`, which stores it in the registry's
 `record` field and in a monthly file under `docs/90-agent/records`. After it the
 gate asks one question it never skips, whether to export the session
-(`record.js session` writes a masked bundle under `.fankeel/bundles/`); only after
+(`record.js session` writes a masked bundle, under `.fankeel/bundles/` only when
+the bundle is not committed, `scripts/record.js:208`); only after
 an export is the retro offered, and it reads that bundle
 (`skills/fankeel-land/SKILL.md:253`).
 
