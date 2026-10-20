@@ -83,3 +83,27 @@ test('--cross files a report as its own section, and refuses one with no recurri
     assert.match(text, /<a id="x-\d{4}-\d{2}-\d{2}"><\/a>\n\n## \d{4}-\d{2}-\d{2} 跨 session 回顧/);
     assert.ok(text.includes('recurring: mover commits'));
 });
+
+test('--bundle files a stdin retro once, listBundles then says filed, and a second call or bad head or short id is refused', () => {
+    const s = seed();
+    const dir = path.join(s.root, '.fankeel', 'bundles');
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, '2026-10-20-cccccccc.jsonl.gz'), 'x');
+    const list = () => run(s, ['sessions', '--list']).out;
+    assert.match(list(), /retro: none/);
+    assert.equal(run(s, ['retro', '--bundle', 'cccccccc'], 'handing back now').code, 1);
+    assert.equal(fs.existsSync(monthFile(s.root)), false);
+    assert.equal(run(s, ['retro', '--bundle', 'ccc'], HANDBACK).code, 1);
+    assert.equal(run(s, ['retro', '--bundle', 'a"b>c d1'], HANDBACK).code, 1);
+    assert.equal(fs.existsSync(monthFile(s.root)), false);
+    const hb = 'retro: cccccccc-1 — 5 turns read, 0 hunks\nclean';
+    const r = run(s, ['retro', '--bundle', 'cccccccc'], hb);
+    assert.equal(r.code, 0, r.out);
+    const text = fs.readFileSync(monthFile(s.root), 'utf8');
+    assert.ok(text.includes('<a id="r-cccccccc"></a>') && text.includes(hb));
+    assert.match(list(), /retro: filed/);
+    const again = run(s, ['retro', '--bundle', 'cccccccc'], hb);
+    assert.equal(again.code, 1);
+    assert.match(again.out, /already filed/);
+    assert.equal(fs.readFileSync(monthFile(s.root), 'utf8'), text);
+});

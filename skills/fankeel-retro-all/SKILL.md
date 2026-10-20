@@ -9,8 +9,6 @@ source_of_truth: scripts/record.js, agents/fankeel-retro.md
 
 # fankeel-retro-all
 
-Ranks the problems that recur across bundles and offers at most five edits.
-
 **Done when** every bundle the user picked has a retro, filed or fresh, the
 recurring problems are ranked with their evidence, the report is filed with
 `record.js retro --cross`, and the gate has asked about the edits.
@@ -38,15 +36,15 @@ A `retro: none` bundle gets one `subagent_type: fankeel:fankeel-retro`,
 on the opus its file pins, prompt `session <id8>`, `bundle <path>` and
 `<plugin>`. Send at most `dispatch.inflight` in one response (eight by
 default), saying how many and on which model. Only the
-retros' returns reach this context, never a bundle.
+returns reach this context. Pipe each to
+`node <plugin>/scripts/record.js retro --bundle <id8>`: the next list shows `filed`.
 
 ## 3. Rank
 
 A problem is **recurring** when two or more bundles carry evidence for it.
 Only a recurring problem gets a hunk — five at most, by bundles —
 touching `skills/`, `agents/`, `lib/stages.js` or
-`CLAUDE.md`. A problem seen once is listed as `once:` with no hunk, because
-one session is not evidence for a rule. A fix that needs code is a `backlog:`
+`CLAUDE.md`. A problem seen once is a `once:` line, no hunk: one session is no evidence. A fix that needs code is a `backlog:`
 line.
 
 The report, in this order:

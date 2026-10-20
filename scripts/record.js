@@ -29,6 +29,7 @@ const OPTIONS = {
     list: { type: 'boolean' },
     transcript: { type: 'string' },
     cross: { type: 'boolean' },
+    bundle: { type: 'string' },
 };
 
 // Field name as the user reads it, and as the registry stores it.
@@ -224,15 +225,20 @@ function exportSession(opts) {
     process.stdout.write(out.join('\n') + '\n');
 }
 
+function monthsText(recordsDir) {
+    let months = '';
+    try {
+        for (const n of fs.readdirSync(recordsDir)) if (n.endsWith('.md')) months += fs.readFileSync(path.join(recordsDir, n), 'utf8');
+    } catch (e) { /* no records yet */ }
+    return months;
+}
+
 function listBundles(opts) {
     const root = opts.root ? path.resolve(opts.root) : registry.rootFor({ cwd: process.cwd() });
     const projectRoot = opts.project ? path.resolve(opts.project) : root;
     const records = recordsRel(projectRoot);
     const recordsDir = path.join(projectRoot, ...records.split('/'));
-    let months = '';
-    try {
-        for (const n of fs.readdirSync(recordsDir)) if (n.endsWith('.md')) months += fs.readFileSync(path.join(recordsDir, n), 'utf8');
-    } catch (e) { /* no records yet */ }
+    const months = monthsText(recordsDir);
     const rows = [];
     for (const [dir, where] of [['.fankeel/bundles', 'local'], [records + '/sessions', 'committed']]) {
         let names = [];
@@ -272,6 +278,27 @@ function fileRetro(opts) {
     process.stdout.write('filed: ' + mine.record.file + '#' + mine.record.anchor + '\n');
 }
 
+// A retro of a bundle with no registry entry, from /fankeel-retro-all: the
+// hand-back arrives on stdin and is filed once per id8 as its own section.
+function fileBundleRetro(opts) {
+    const id8 = String(opts.bundle);
+    if (!/^[0-9a-f]{8}$/.test(id8)) fail('Nothing written: --bundle takes the 8-character hex session id, got "' + id8 + '".');
+    const root = opts.root ? path.resolve(opts.root) : registry.rootFor({ cwd: process.cwd() });
+    const projectRoot = opts.project ? path.resolve(opts.project) : root;
+    const answer = fs.readFileSync(0, 'utf8').trim();
+    if (!RETRO_HEAD.test(answer)) fail('Nothing written: the hand-back does not open with `retro: <session> — <n> turns read, <n> hunks`, so it is not what the retro returned.');
+    const dir = path.join(projectRoot, ...recordsRel(projectRoot).split('/'));
+    if (monthsText(dir).includes('<summary>retro ' + id8 + ' ')) fail('Nothing written: a retro for ' + id8 + ' is already filed.');
+    const day = new Date().toISOString().slice(0, 10);
+    const file = path.join(dir, day.slice(0, 7) + '.md');
+    const before = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
+    const head = before ? before.replace(/\n*$/, '\n\n') : '# 任務完成紀錄 ' + day.slice(0, 7) + '\n\n';
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(file, head + ['<a id="r-' + id8 + '"></a>', '', '## ' + day + ' retro ' + id8, '', '<details>',
+        '<summary>retro ' + id8 + ' · ' + new Date().toISOString() + ' · 原文</summary>', '', '````text', answer, '````', '', '</details>', ''].join('\n'));
+    process.stdout.write('filed: ' + path.relative(projectRoot, file).split(path.sep).join('/') + '#r-' + id8 + '\n');
+}
+
 // /fankeel-retro-all's ranked report, as its own section of the month file.
 function fileCross(opts) {
     const root = opts.root ? path.resolve(opts.root) : registry.rootFor({ cwd: process.cwd() });
@@ -297,8 +324,8 @@ function main(argv) {
     if (verb === 'write') return write(values);
     if (verb === 'session') return exportSession(values);
     if (verb === 'sessions' && values.list) return listBundles(values);
-    if (verb === 'retro') return values.cross ? fileCross(values) : fileRetro(values);
-    fail('record.js write|session|retro|sessions --list --session <id> [--commit] [--transcript <jsonl>] [--cross] [--root <dir>] [--project <dir>] [--config-dir <dir>]');
+    if (verb === 'retro') return values.cross ? fileCross(values) : values.bundle ? fileBundleRetro(values) : fileRetro(values);
+    fail('record.js write|session|retro|sessions --list --session <id> [--commit] [--transcript <jsonl>] [--cross] [--bundle <id8>] [--root <dir>] [--project <dir>] [--config-dir <dir>]');
 }
 
 if (require.main === module) main(process.argv.slice(2));
