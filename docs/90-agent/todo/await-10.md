@@ -2,8 +2,13 @@
 label: await
 title: 舊 await 通知別叫醒主對話
 description: 舊 await 結束的背景通知讓主 session 空轉，一個 session 裡出現五個只說「舊的等待結束了」的回合 — [scripts/await.js](scripts/await.js).
-state: ready
+state: done
 link: scripts/await.js
+done:
+  at: 2026-10-21
+  sha: 6df93ffe
+  disposition: done
+  session: b7a7d8d4-46d0-4e7f-b839-06dbca750114
 ---
 
 來源：2026-10-20 任務「retro 存成完整單檔」的 retro（第 28、31–33、47 回合）。前一組 agent 已經交回後，先前起的 await 才結束並發出通知，主 session 每次都得開一個回合說明可以忽略。
@@ -15,3 +20,9 @@ link: scripts/await.js
 ## 為什麼還開著
 
 stage rules 要求每次 SendMessage 或派工後都起一個 await，前一個 await 還在等同一個 agent 時，後一個會印 already awaiting，但先起的那個結束後仍會通知；這次 build 與 verify 之間就有五個這樣的空回合，每個都要花一次主 session 的上下文。
+
+## 完成紀錄
+
+舊的 await 遇到已經問過、之後沒再改過的 handoff 時，只回一行 stale，主對話不必再為它多開回合。詳見 [任務紀錄](../records/2026-10.md#r-2026-10-20-b7a7d8d4)
+
+- commit 6df93ffe

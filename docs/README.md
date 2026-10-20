@@ -497,7 +497,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 那份設計的 4 個 task | `docs/99-archive/2026-10-20-chartroom-board.md` — *built* |
 | retro 包（10-20）的 design：land 匯出遮蔽過的 session 包，retro 在 opus 讀包，`/fankeel-retro-all` 讀全部 | `docs/99-archive/2026-10-20-retro-bundle-design.md` — *built* |
 | 那份設計的 8 個 task | `docs/99-archive/2026-10-20-retro-bundle.md` — *built* |
-| TODO 全表盤點（10-21）的 plan：四條 do-now（舊 await 安靜退出、紅燈留 TAP、residue --sweep、mover 不 commit）加 knip 重跑與文件對照 | [plans/2026-10-21-todo-patrol.md](90-agent/plans/2026-10-21-todo-patrol.md) — *design-intent* |
+| TODO 全表盤點（10-21）的 plan：四條 do-now（舊 await 安靜退出、紅燈留 TAP、residue --sweep、mover 不 commit）加 knip 重跑與文件對照 `docs/99-archive/2026-10-21-todo-patrol.md` — *built* |
+| TODO 全表盤點（10-21）定了什麼、沒做什麼：四條結案（舊 await 安靜、紅燈留 TAP、agent 殘留清理、mover 不 commit），README 與指南對回程式；三個測試缺口記成新條目 | [reports/patrols/2026-10-21-todo-patrol.md](90-agent/reports/patrols/2026-10-21-todo-patrol.md) — *繁體中文* |
 | Haiku 角色題庫、平行執行器與長任務飄移 2×2 的 design：每角色十二題分三層、`check.sh` 標出失敗類別、`bench.js role` 用 `--jobs` 平行跑、`drift` 量 haiku／sonnet × PostToolUse 重注入 | `docs/99-archive/2026-10-09-haiku-bank-drift-design.md` — *built, 繁體中文* |
 | 那份設計的十二個 task：失敗類別與共用判分、四組題庫、平行執行器、逐步檢查與重注入、報告產生器，以及使用者親手跑的付費批次 | `docs/99-archive/2026-10-09-haiku-bank-drift.md` — *built, 繁體中文* |
 | 監控站在 `/chartroom/<專案>/` 開架構白板（10-08）的 design：handler 在 nonce 檢查之前剝前綴，轉交該專案懶建的 Chartroom `createHandler`，Chartroom 路徑取自 profile `station.chartroom`，板子固定在 `<專案>/.fankeel/architecture.board` | `docs/99-archive/2026-10-08-station-chartroom-design.md` — *built, 繁體中文* |

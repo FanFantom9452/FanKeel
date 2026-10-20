@@ -2,8 +2,13 @@
 label: land
 title: agent 分支與 worktree 殘留
 description: worktree-agent-* 分支與 worktree 只在成功路徑清理，其餘留下且不回報
-state: ready
+state: done
 link: scripts/commit.js
+done:
+  at: 2026-10-21
+  sha: 310df451
+  disposition: done
+  session: b7a7d8d4-46d0-4e7f-b839-06dbca750114
 ---
 
 出處：2026-10-20 倉庫裡有 27 條非 main 分支，其中 10 條是 worktree-agent-*，worktree 在 .claude/worktrees/ 底下（3 個有未提交的修改，1 個有一筆從未 land 的 commit），另有 15 條已合併的舊功能分支。使用者不希望其他人用 fankeel 時也累積同樣的殘留。
@@ -13,3 +18,12 @@ link: scripts/commit.js
 要變成什麼：每一條會留下 agent worktree 或分支的路徑，要嘛清掉，要嘛記錄下來讓 land 回報。land（或 residue 加旗標）要掃掉用完的 worktree-agent-* worktree 與分支，條件是內容 main 已經有（git cherry 看不到未 pick 的 commit）而且沒有未提交檔案；並說明留下了什麼、為什麼留。沒有使用者同意，絕不刪未提交的工作或尚未 land 的 commit。
 
 完成判準：有一個測試重現 commit.js 錯誤路徑留下的 worktree，並顯示 land 或 residue 把它移除；一次全新的 build 加 land 之後，git branch --list 'worktree-agent-*' 為空。
+
+## 完成紀錄
+
+residue.js --sweep 與 land.js clean 會清掉內容已在 main、沒有未提交檔、兩小時沒動的 agent worktree 與分支，其餘留下並說原因。詳見 [任務紀錄](../records/2026-10.md#r-2026-10-20-b7a7d8d4)
+
+- commit 310df451
+- commit 7a4f3cb9
+- commit 5432b5e8
+- commit f7cd8ee4
