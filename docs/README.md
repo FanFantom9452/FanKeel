@@ -650,6 +650,8 @@ is corrected by the next one, not by rewriting this.
 | Brief: Chartroom as fankeel's Mermaid replacement, a more capable station, and what every cursor/plugins plugin offers | [90-agent/judgements/2026-10-19-chartroom-mermaid-station.md](90-agent/judgements/2026-10-19-chartroom-mermaid-station.md) — *judged 2026-10-19, fable* |
 | 右側面板的 agents 和 TODO 有時候展不開 | [90-agent/judgements/2026-10-19-pane-sections-blank.md](90-agent/judgements/2026-10-19-pane-sections-blank.md) — *judged 2026-10-19, fable* |
 | 巢狀 repo 的路徑、commit.js 的 cwd、spike 的 build 關卡：規則該放在哪裡、怎麼改 | [90-agent/judgements/2026-10-19-nested-repo-paths.md](90-agent/judgements/2026-10-19-nested-repo-paths.md) — *judged 2026-10-19, fable* |
+| Brief: how should land's retro keep a complete, portable record? | [90-agent/judgements/2026-10-20-retro-full-record.md](90-agent/judgements/2026-10-20-retro-full-record.md) — *judged 2026-10-20, fable* |
+| Brief: split the retro — land reviews this session, a skill reviews all of them? | [90-agent/judgements/2026-10-20-retro-land-vs-skill.md](90-agent/judgements/2026-10-20-retro-land-vs-skill.md) — *judged 2026-10-20, fable* |
 
 ## The five scanners
 
