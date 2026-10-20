@@ -237,6 +237,15 @@ function holder(file, agentId) {
     return m.agentId && agentId && m.agentId !== agentId ? null : m;
 }
 
+// await-11: whether the agent this waiter watched has come back. Its mark goes
+// when the await that read its handoff clears it (main, below) or when
+// hooks/gate.js confirms the gate. A waiter with no agent cannot tell.
+function reported(root, sessionId, agentId) {
+    if (!agentId) return false;
+    const rec = registry.readSession(root, sessionId);
+    return Boolean(rec) && !registry.inflights(rec).some((m) => m.agentId === agentId);
+}
+
 function main(argv, env) {
     const opts = parseArgs(argv);
     if (!opts) return Promise.resolve({ text: USAGE, code: 2 });
@@ -267,6 +276,11 @@ function main(argv, env) {
         const handedOver = state === 'handoff' && Number.isInteger(o.group) && Boolean(workflowOf(o.handoff));
         if (handedOver) registry.markInflight(o.root, opts.session, 'build', o.agentId, o.lap, o.group, o.kind);
         else if (state === 'lost' || (state === 'handoff' && o.kind !== 'close' && Number.isInteger(o.group))) registry.clearInflight(o.root, opts.session, o.agentId);
+        // An old waiter outliving an agent that already reported: nothing is
+        // stuck, so no failure handoff is written and none is pointed at.
+        if (state === 'timeout' && reported(o.root, opts.session, o.agentId)) {
+            return { text: 'stale ' + o.agentId + ' — that agent already reported: nothing to do, end the turn without a reply.' };
+        }
         const failed = state === 'lost' || state === 'timeout' ? writeFailure(state, o) : null;
         // Only a handoff state on this stage and group deletes the file; a commit
         // between two failures does not reset the count.
