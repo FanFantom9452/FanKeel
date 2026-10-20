@@ -134,7 +134,7 @@ One `AskUserQuestion` after the habits, three options in this order:
 
 First of the docs half, because everything it writes is committed afterwards.
 
-When init runs from a controlled survey's `onboard:` line, the guard refuses the controller's Edit; each write in steps 3–9 goes to one `fankeel:fankeel-implementer`.
+Under a controlled survey, steps 3–9 write through a `fankeel:fankeel-implementer`.
 
 - `gh repo view --json visibility` answers `public` or `private`; no remote is
   `local`; no `gh`, or no answer, is `unknown`. Visibility only sets how hard to

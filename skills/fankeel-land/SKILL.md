@@ -41,9 +41,8 @@ what the gate asks — never something to settle first and report afterwards.
 When this land is a release, do step 2a first — set the number and commit
 it — and only then run this step: `package.json` is code to the record, so a
 suite run before the bump is stale after it, `--check` below refuses on it,
-and so does `task.js land`. A standing rule that every land releases — a
-memory or `CLAUDE.md` line — counts as the user saying so: bump before this
-step, never after it.
+and so does `task.js land`. A standing rule that every land
+releases counts as the user saying so.
 
 Verify ran the fast suite, so this check usually refuses; ask anyway, because
 a whole run recorded earlier — an earlier land attempt, or verify's in a
@@ -194,10 +193,8 @@ node <plugin>/scripts/version.js 0.35.0       set them
 node <plugin>/scripts/version.js --changes    what has landed since the last one
 ```
 
-Sixteen files carry it — two manifests and one frontmatter line in each of the
-fourteen skills — and `npm test` fails when they disagree. Why the script
-exists, and the steps a release takes, are in
-[development.md](../../docs/01-guide/development.md).
+Sixteen files carry it; `npm test` fails when they disagree; the release
+steps are in [development.md](../../docs/01-guide/development.md).
 
 **Only when the user says this is a release.** The number is a claim about what
 shipped, which is theirs to make; `--changes` is what to show them when asking.
@@ -220,7 +217,7 @@ was never a note:
 | a project convention | `CLAUDE.md` |
 | a durable fact about the user or repository | the memory directory |
 | why a change was made | the commit message |
-| work deliberately deferred | folder mode: a new entry via `todo.js new --label --title --description --state --body`, the title at most 28 columns (a CJK character counts two), and a body paragraph opening `要做成：` does not count toward todo-check's 200 characters of reason; hand-written `TODO.md`: one line, under the heading for what it is short of — under `## Blocked`, beneath a `### <timing>` whose next line is `on: MM-DD`, `after: <what>` or `upstream: <what>`; under `## Watch`, one whose next line is `if: <the event>`; either line ending in a `MM-DD` stamp; step 2's `todo-check` ran before this note existed, so run it again once the notes land |
+| work deliberately deferred | folder mode: a new entry via `todo.js new` (title ≤ 28 columns, CJK as two; `要做成：` is not reason); hand-written `TODO.md`: one line, under the heading for what it is short of — under `## Blocked`, beneath a `### <timing>` whose next line is `on: MM-DD`, `after: <what>` or `upstream: <what>`; under `## Watch`, one whose next line is `if: <the event>`; either line ending in a `MM-DD` stamp; step 2's `todo-check` ran before this note existed, so run it again once the notes land |
 
 **Before a durable fact goes to the memory directory, one of four decisions.**
 Grep the directory for the fact's subject first, then:

@@ -318,7 +318,7 @@ These are **plan failures**, not shorthand:
 - a task with no `**Files:**` block, or one whose `Modify:` list is empty
 - a language fence with no file named in the three lines above it
 - a `Read:` left off when the task calls a helper from a file it does not modify,
-  or names a path in backticks, glob included, that its Files block does not list
+  or names a backticked path or glob its Files lacks
 
 ## Coverage, then lint, then a reviewer — before the gate
 
