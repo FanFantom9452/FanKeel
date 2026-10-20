@@ -5,6 +5,8 @@ import type { Entry, Other, PlanInfo, PlanTask, Seg as StatusSeg, Row as StatusR
 import type { Context, Limit } from './pane-bar.ts'
 import { taskDir, pendingName, parsePending } from './pane-gate.ts'
 import type { Pending } from './pane-gate.ts'
+import { settle, remember, TAIL } from './pane-shell.ts'
+import type { Shell } from './pane-shell.ts'
 import { agentTree, agentTokens, modelAlias } from './pane-agents.ts'
 import type { AgentFile, AgentNode } from './pane-agents.ts'
 import { bandRows } from './pane-band.ts'
@@ -37,6 +39,8 @@ type Seen = {
   probe: string | null
   // This task's subagents as a tree, from Claude Code's subagents files (agentsOf).
   agents: AgentNode[]
+  // The background shells this session started, as the tool.call observer recorded them and the tick settled them (shellsOf).
+  shells: Shell[]
   // The station's url from serve.json (stationOf), or null when none is up.
   station: string | null
   // The station's key for this task's project (lib/station.js pkeyOf), and its open TODO entries while a station is up (todosOf).
@@ -53,10 +57,10 @@ type Seen = {
 // session's own registry file, the pending file and the ledger are read every tick.
 type Cache = Map<string, { stamp: string; value: unknown }>
 
-const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, context: null, limits: [], plan: null, remote: false, probe: null, agents: [], station: null, pkey: '', todos: [], model: null, effort: null })
+const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, context: null, limits: [], plan: null, remote: false, probe: null, agents: [], shells: [], station: null, pkey: '', todos: [], model: null, effort: null })
 
 // The last message each silent catch logged: the tick runs four times a second, and a failure that stays is said once.
-type Logged = { context: string; plan: string; open: string; registry: string; neighbour: string; gate: string; live: string; remote: string; bandSvg: string; paneSvg: string; agents: string; station: string; todo: string; model: string }
+type Logged = { context: string; plan: string; open: string; registry: string; neighbour: string; gate: string; live: string; remote: string; bandSvg: string; paneSvg: string; agents: string; station: string; todo: string; model: string; shells: string }
 
 // A registry file that is there and does not parse: told apart so `tick` can wait it out for a while, then give up on it.
 class Unreadable extends Error {}
@@ -490,7 +494,52 @@ async function look($: EngineInterface, cache: Cache, logged: Logged): Promise<S
   } catch (err) {
     logOnce($, logged, 'model', `fankeel pane: session model unreadable, ${String(err)}`)
   }
-  return { id, entry, others, pending, context, limits, plan, remote, probe, agents, station, pkey, todos, model, effort: null }
+  return { id, entry, others, pending, context, limits, plan, remote, probe, agents, shells: [], station, pkey, todos, model, effort: null }
+}
+
+// How often the running shells' output files are read again: `$.fs.read` takes a file whole, and a suite's output grows every tick.
+const SHELL_POLL_MS = 2000
+
+// Where Claude Code writes this session's background output: <temp>/claude/<slug>/<session>/tasks, the slug
+// being whichever directory under <temp>/claude holds this session. Found once and kept; '' while there is none.
+async function shellDirOf($: EngineInterface, state: State, id: string): Promise<string> {
+  if (state.tasksDir) return state.tasksDir
+  const temp = ((await $.env.get('TEMP')) || (await $.env.get('TMP')) || (await $.env.get('TMPDIR')) || '/tmp').replace(/[\\/]+$/, '')
+  const base = `${temp}/claude`
+  if (!(await $.fs.exists(base))) return ''
+  for (const dir of await $.fs.list(base)) {
+    const at = `${base}/${dir.name}/${id}/tasks`
+    if (await $.fs.exists(at)) {
+      state.tasksDir = at
+      return at
+    }
+  }
+  return ''
+}
+
+// The recorded shells, each running one settled against its output file's last TAIL characters
+// (hooks/pane-shell.ts settle): a missing file past the grace is ended with no code. Read at most every
+// SHELL_POLL_MS, and only while one runs. Anything unreadable leaves the shells as they were, said once.
+async function shellsOf($: EngineInterface, state: State, id: string, now: number): Promise<Shell[]> {
+  if (!state.shells.some((s) => s.end === null) || now - state.shellAt < SHELL_POLL_MS) return state.shells
+  state.shellAt = now
+  try {
+    const dir = await shellDirOf($, state, id)
+    if (!dir) return state.shells
+    const settled = new Map<string, Shell>()
+    for (const s of state.shells) {
+      if (s.end !== null) continue
+      const file = `${dir}/${s.id}.output`
+      const tail = (await $.fs.exists(file)) ? String(await $.fs.read(file)).slice(-TAIL) : null
+      settled.set(s.id, settle(s, tail, now))
+    }
+    // Merged by id: the observer may have recorded a new shell while the files were read.
+    state.shells = state.shells.map((s) => settled.get(s.id) ?? s)
+    state.logged.shells = ''
+  } catch (err) {
+    logOnce($, state.logged, 'shells', `fankeel pane: background shell output unreadable, ${String(err)}`)
+  }
+  return state.shells
 }
 
 type State = {
@@ -509,6 +558,11 @@ type State = {
   folded: Partial<Record<Fold, boolean>>
   // The TODO state whose entries the Pane lists, or null: memory only, as the folds are.
   todoOpen: string | null
+  // The background shells the tool.call observer recorded, newest last (hooks/pane-shell.ts remember): memory only.
+  shells: Shell[]
+  // When shellsOf last read the output files, and the tasks directory once found ('' until then).
+  shellAt: number
+  tasksDir: string
 }
 
 // An unplaced pane (narrow terminal) is registered but not drawn: not open.
@@ -538,9 +592,10 @@ async function tick($: EngineInterface, state: State): Promise<void> {
     // nothing else does; while a gate waits the second is too, for the seconds it has left.
     next.effort = state.seen.effort
     const clock = next.entry ? await $.clock.now() : 0
+    next.shells = next.entry ? await shellsOf($, state, next.id, clock) : []
     const minute = Math.floor(clock / 60000)
     const second = next.pending ? Math.floor(clock / 1000) : 0
-    const now = JSON.stringify([next.entry, next.others, next.context, next.limits, next.plan, next.remote, next.probe, next.agents, next.station, next.pkey, next.todos, next.model, next.effort, minute, second])
+    const now = JSON.stringify([next.entry, next.others, next.context, next.limits, next.plan, next.remote, next.probe, next.agents, next.shells, next.station, next.pkey, next.todos, next.model, next.effort, minute, second])
     // The opens and closes have their own memory, `edge`, which moves only when they all went through: a rejected
     // one is met again next tick as the same edge, while `seen` and the redraw below never wait on them.
     try {
@@ -575,8 +630,8 @@ async function tick($: EngineInterface, state: State): Promise<void> {
 export const register: Register = (on) => {
   const state: State = {
     seen: blank(''), print: '', mine: false, edge: { task: false }, bad: 0, busy: false, cache: new Map(),
-    logged: { context: '', plan: '', open: '', registry: '', neighbour: '', gate: '', live: '', remote: '', bandSvg: '', paneSvg: '', agents: '', station: '', todo: '', model: '' },
-    folded: {}, todoOpen: null,
+    logged: { context: '', plan: '', open: '', registry: '', neighbour: '', gate: '', live: '', remote: '', bandSvg: '', paneSvg: '', agents: '', station: '', todo: '', model: '', shells: '' },
+    folded: {}, todoOpen: null, shells: [], shellAt: 0, tasksDir: '',
   }
 
   on('session.start', async ($, e, next) => {
@@ -589,6 +644,20 @@ export const register: Register = (on) => {
   on('turn.step', async function* ($, e, next) {
     if (!e.agentId) state.seen.effort = e.effort === undefined ? null : String(e.effort)
     return yield* next(e)
+  })
+
+  // Observe only: a Bash or PowerShell call the engine sent to the background answers with its
+  // `backgroundTaskId`, and the shells block lists it from here (shellsOf). Every other call passes untouched.
+  on('tool.call', async ($, e, next) => {
+    const out = await next(e)
+    const call = e as unknown as { tool?: string; command?: unknown }
+    const result = (out as unknown as { result?: { backgroundTaskId?: unknown } }).result
+    const task = result && typeof result === 'object' ? result.backgroundTaskId : undefined
+    if ((call.tool === 'Bash' || call.tool === 'PowerShell') && typeof task === 'string' && task && typeof call.command === 'string') {
+      state.shells = remember(state.shells, { id: task, command: call.command, at: await $.clock.now(), end: null, code: null })
+      state.shellAt = 0
+    }
+    return out
   })
 
   on('command.run', { command: COMMAND }, async ($) => {
@@ -670,6 +739,7 @@ export const register: Register = (on) => {
       probe: seen.probe,
       gateAt: seen.pending ? (seen.pending.at ?? now) : null,
       agents: seen.agents,
+      shells: seen.shells,
       station: seen.station,
       folded: state.folded,
       todos: seen.todos,

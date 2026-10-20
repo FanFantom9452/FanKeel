@@ -7,6 +7,8 @@ import { WHERE, FLAG, GUARD, TODO, claimsOf } from './pane-band.ts'
 import { str, list, width, cut, WIDE, DIM, minutes } from './pane-bar.ts'
 import { tokenLabel } from './pane-agents.ts'
 import type { AgentNode } from './pane-agents.ts'
+import { cutShells, commandLine, KEEP_MS } from './pane-shell.ts'
+import type { Shell } from './pane-shell.ts'
 
 // Kept as exports of this file: hooks/pane.ts imports them from here.
 export { str, list, width, cut, WIDE }
@@ -20,7 +22,7 @@ export type Other = { id: string; entry: Entry }
 // 'todoState' lists or closes the TODO entries in the state `state`.
 export type Seg = { text: string; color?: string; bold?: boolean; press?: 'station' | 'fold' | 'todo' | 'todoState'; fold?: Fold; to?: string; state?: string }
 // The blocks a head row folds; docs/90-agent/plans/2026-10-17-pane-fold-todo-design.md sections 1 and 2.
-export type Fold = 'route' | 'tasks' | 'todo' | 'agents'
+export type Fold = 'route' | 'tasks' | 'todo' | 'agents' | 'shells'
 // One open entry of the project's TODO bucket (hooks/pane.ts todosOf): its file name without `.md`, its title, its state.
 export type TodoEntry = { id: string; title: string; state: string }
 // One drawn row. No segments is the blank row above a block. `who` is the
@@ -44,6 +46,8 @@ export type StatusInput = {
   gateAt?: number | null
   // This task's subagents as a tree (hooks/pane-agents.ts agentTree); absent or empty draws no block.
   agents?: AgentNode[]
+  // This session's background shells (hooks/pane.ts shellsOf); absent, or none running or lately ended, draws no block.
+  shells?: Shell[]
   // The station's url, from <configDir>/fankeel/serve.json (hooks/pane.ts stationOf); absent or null when none is up.
   station?: string | null
   // The blocks folded to their head row (hooks/pane.ts state); absent is every block open.
@@ -62,6 +66,7 @@ export const RAILS: Record<string, string> = {
   clash: FLAG,
   tasks: WHERE,
   agents: WHERE,
+  shells: WHERE,
   notes: WHERE,
   todo: WHERE,
   foot: DIM,
@@ -411,9 +416,31 @@ function agentsBlock(nodes: AgentNode[], inner: number, now: number, folded: boo
   return rows
 }
 
-// Given up in this order when the rows do not fit, after the agents' own agents: `todo`, `agents` and `tasks` keep their head rows.
+// This session's background shells: a fold head, `▾ shells` with how many run
+// and how many ended within KEEP_MS, then at most three rows (hooks/pane-shell.ts
+// cutShells) — ○ running in OUT with its minutes so far, ● ended in DONE with the
+// minutes it ran and `exit N`, in FLAG when N is not 0, or 結束 where no code
+// could be read. Folded, the head row alone; none to show, no block.
+export function shellsBlock(shells: Shell[], inner: number, now: number, folded: boolean): Row[] {
+  const shown = shells.filter((s) => s.end === null || now - s.end < KEEP_MS)
+  if (!shown.length) return []
+  const running = shown.filter((s) => s.end === null).length
+  const rows = [row('shells', head('shells', folded, 'shells'), dim(`  ${running} 在跑 · ${shown.length - running} 結束`))]
+  if (folded) return rows
+  for (const s of cutShells(shells, now)) {
+    const ended = s.end !== null
+    const after = ` · ${mins((s.end ?? now) - s.at)} 分${ended ? ' · ' : ''}`
+    const exit = !ended ? '' : s.code === null ? '結束' : `exit ${s.code}`
+    const name = cut(commandLine(s.command), Math.max(4, inner - 2 - width(after) - width(exit)))
+    if (!ended) rows.push(row('shells', { text: '○', color: OUT }, { text: ` ${name}`, bold: true }, dim(after)))
+    else rows.push(row('shells', { text: '●', color: DONE }, dim(` ${name}${after}`), s.code === null || s.code === 0 ? dim(exit) : { text: exit, color: FLAG }))
+  }
+  return rows
+}
+
+// Given up in this order when the rows do not fit, after the agents' own agents: `todo`, `shells`, `agents` and `tasks` keep their head rows.
 // The task, the clash and the foot never go.
-const DROP = ['todo', 'notes', 'agents', 'tasks']
+const DROP = ['todo', 'notes', 'shells', 'agents', 'tasks']
 // The blocks that are alarms, not sections: every row of one keeps its rail.
 const ALARMS = ['clash']
 
@@ -437,6 +464,8 @@ export function statusRows(input: StatusInput): Row[] {
   if (tasks.length) blocks.push(tasks)
   const agents = agentsBlock(input.agents ?? [], inner, now, !!folded.agents)
   if (agents.length) blocks.push(agents)
+  const shells = shellsBlock(input.shells ?? [], inner, now, !!folded.shells)
+  if (shells.length) blocks.push(shells)
 
   // The registry keeps the newest note last.
   const notes = list(entry.notes).slice(-3)

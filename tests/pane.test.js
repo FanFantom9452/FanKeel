@@ -1509,3 +1509,55 @@ test('a change of model alone redraws the Pane', async () => {
     await log.ticks[0].fn();
     assert.equal(log.invalidated, before + 1);
 });
+
+const TEMP = 'C:/tmp';
+const OUTPUT = TEMP + '/claude/F--proj/' + ID + '/tasks/b1.output';
+const PANE = { props: { bodyColumns: 41, scroll: { bodyRows: 60 } } };
+const background = (command) => ({ tool: 'Bash', tool_use_id: 't1', command, run_in_background: true });
+const answered = (id) => async () => ({ result: { stdout: '', stderr: '', interrupted: false, backgroundTaskId: id } });
+
+test('a background Bash call is listed under shells while its output has no exit line, then with its exit code', async () => {
+    const hooks = await wired();
+    const { $, log, store, mtimes } = fake({ files: Object.assign(entryFile(live), { [OUTPUT]: 'working\n' }), env: { TEMP } });
+    // The shells are timed on $.clock and drawn against Date.now(): the two agree in the engine, so here too.
+    log.now = Date.now();
+    await hooks['session.start']($, {}, passed);
+    const out = await hooks['tool.call']($, background('sleep 30'), answered('b1'));
+    assert.equal(out.result.backgroundTaskId, 'b1');
+    await log.ticks[0].fn();
+    let lines = paneLines(await hooks['ui.render']($, PANE));
+    assert.ok(lines.includes('▌▾ shells  1 在跑 · 0 結束'), lines.join('\n'));
+    assert.ok(lines.some((l) => l.startsWith(' ○ sleep 30 · ')), lines.join('\n'));
+    store[OUTPUT] = 'working\n[exited with code 1]\nShell cwd was reset to F:\\proj\n';
+    mtimes[OUTPUT] = 2;
+    log.now += 3000;
+    await log.ticks[0].fn();
+    lines = paneLines(await hooks['ui.render']($, PANE));
+    assert.ok(lines.includes(' ● sleep 30 · 0 分 · exit 1'), lines.join('\n'));
+    assert.ok(lines.includes('▌▾ shells  0 在跑 · 1 結束'), lines.join('\n'));
+});
+
+test('a shell whose output file vanishes is listed as ended with no code', async () => {
+    const hooks = await wired();
+    const { $, log, store } = fake({ files: Object.assign(entryFile(live), { [OUTPUT]: 'working\n' }), env: { TEMP } });
+    log.now = Date.now();
+    await hooks['session.start']($, {}, passed);
+    await hooks['tool.call']($, background('sleep 30'), answered('b1'));
+    await log.ticks[0].fn();
+    delete store[OUTPUT];
+    store[TEMP + '/claude/F--proj/' + ID + '/tasks/a0000000000000001.output'] = '';
+    log.now += 6000;
+    await log.ticks[0].fn();
+    const lines = paneLines(await hooks['ui.render']($, PANE));
+    assert.ok(lines.includes(' ● sleep 30 · 0 分 · 結束'), lines.join('\n'));
+});
+
+test('a foreground call records nothing, its result comes back as next gave it, and no shells block is drawn', async () => {
+    const hooks = await wired();
+    const { $, log } = fake({ files: entryFile(live), env: { TEMP } });
+    await hooks['session.start']($, {}, passed);
+    const given = { result: { stdout: 'a.js', stderr: '', interrupted: false } };
+    assert.equal(await hooks['tool.call']($, { tool: 'Bash', tool_use_id: 't2', command: 'ls' }, async () => given), given);
+    await log.ticks[0].fn();
+    assert.ok(!paneLines(await hooks['ui.render']($, PANE)).some((l) => l.includes('shells')));
+});

@@ -27,7 +27,7 @@ const entry = {
 const other = { id: 'aaaaaaaa-0000-4000-8000-000000000001', entry: { task: '站頁看得到對話全文', stage: 'build', active: true, claims: ['hooks/mod.ts'], updated: '2026-10-10T22:00:00.000Z' } };
 const apart = { id: 'bbbbbbbb-0000-4000-8000-000000000002', entry: { task: 'x', stage: 'plan', active: true, claims: ['lib/x.js'] } };
 const SECOND = '#8a8a8a';
-const RAIL = { clash: '#ff5f5f', tasks: SECOND, agents: SECOND, notes: SECOND, todo: SECOND, foot: '#585858' };
+const RAIL = { clash: '#ff5f5f', tasks: SECOND, agents: SECOND, shells: SECOND, notes: SECOND, todo: SECOND, foot: '#585858' };
 // A row as the Pane shows it: its segments touch.
 const line = (row) => row.segs.map((seg) => seg.text).join('');
 const drawn = (rows, block) => rows.filter((r) => r.block === block && r.segs.length);
@@ -598,4 +598,55 @@ test('agentOf prefers the implementer: a newer reviewer whose title names the ta
     const review = node('rev', 'fankeel:fankeel-reviewer', NOW - 1000);
     assert.equal(m.agentOf([impl, review], 7).id, 'impl');
     assert.equal(m.agentOf([review], 7).id, 'rev');
+});
+
+const MIN = 60000;
+const shellOf = (id, command, at, end = null, code = null) => ({ id, command, at, end, code });
+const shellsFixture = [
+    shellOf('b1', 'node scripts/tune.js serve', NOW - 4 * MIN),
+    shellOf('b2', 'node --test', NOW - MIN),
+    shellOf('b3', 'node scripts/render.js', NOW - 20 * MIN, NOW - 11 * MIN, 1),
+    shellOf('b4', 'git log', NOW - 30 * MIN, NOW - 18 * MIN, 0),
+];
+const oneAgent = [{ id: 'a1', title: 'shells mockup', type: '', model: 'opus 5.5', effort: 'high', at: NOW - MIN, end: null, tokens: null, kids: [] }];
+
+test('the shells block sits under agents: running first, then the newest ended, three rows, the head counting them all', async () => {
+    const m = await load();
+    const rows = status(m, { agents: oneAgent, shells: shellsFixture, cols: 60 });
+    const order = blocksOf(rows);
+    assert.equal(order.indexOf('shells'), order.indexOf('agents') + 1);
+    assert.deepEqual(text(rows, 'shells'), [
+        '▌▾ shells  2 在跑 · 2 結束',
+        ' ○ node --test · 1 分',
+        ' ○ node scripts/tune.js serve · 4 分',
+        ' ● node scripts/render.js · 9 分 · exit 1',
+    ]);
+    // A non-zero exit is the flag's red; the running mark is OUT's, the ended one DONE's.
+    const shown = body(rows, 'shells');
+    assert.deepEqual(shown[3][shown[3].length - 1], { text: 'exit 1', color: '#ff5f5f' });
+    assert.equal(shown[1][0].color, m.OUT);
+    assert.equal(shown[3][0].color, m.DONE);
+});
+
+test('the shells block: exit 0 is dim, a shell with no code says 結束, folded is the head alone, none draws no block', async () => {
+    const m = await load();
+    const ended = [shellOf('b4', 'git log', NOW - 30 * MIN, NOW - 18 * MIN, 0), shellOf('b5', 'gone', NOW - 3 * MIN, NOW - MIN, null)];
+    assert.deepEqual(text(status(m, { shells: ended, cols: 60 }), 'shells').slice(1), [' ● gone · 2 分 · 結束', ' ● git log · 12 分 · exit 0']);
+    assert.deepEqual(text(status(m, { shells: shellsFixture, cols: 60, folded: { shells: true } }), 'shells'), ['▌▸ shells  2 在跑 · 2 結束']);
+    assert.deepEqual(drawn(status(m, { shells: [] }), 'shells'), []);
+    // Ended over an hour ago: nothing left to show.
+    assert.deepEqual(drawn(status(m, { shells: [shellOf('old', 'x', NOW - 90 * MIN, NOW - 61 * MIN, 0)] }), 'shells'), []);
+    // A long command is cut to the row.
+    const long = status(m, { shells: [shellOf('b9', 'node '.repeat(40), NOW - MIN)], cols: 41 });
+    assert.ok(text(long, 'shells')[1].endsWith('… · 1 分'));
+});
+
+test('with no room the shells block goes down to its head row before agents loses a row', async () => {
+    const m = await load();
+    const bare = Object.assign({}, entry, { notes: [] });
+    const rows = (room) => status(m, { entry: bare, agents: oneAgent, shells: shellsFixture, cols: 60, room });
+    const full = rows(99).length;
+    assert.equal(drawn(rows(full), 'shells').length, 4);
+    assert.deepEqual(text(rows(full - 1), 'shells'), ['▌▾ shells  2 在跑 · 2 結束 · 列數不夠']);
+    assert.equal(drawn(rows(full - 1), 'agents').length, 2);
 });
