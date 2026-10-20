@@ -779,37 +779,25 @@ is one line with today's and this week's spend, linking to `#/days`.
 `homeTodo` (`assets/station/station.js:3273`, `function homeTodo(projects, today) {`),
 `data-block="home-todo"`, reads every project's `todos` rows off the data file
 — the rows the project page's TODO panel reads — and counts the entries whose
-`state` is `ready`: one row per project with any, most first, its first three
-titles and how many more, beside its decision, blocked and watch counts, each
-row linking to the project page. A project with none is named in the card's
-foot line, and a `TODO.md` whose entries carry no state is counted there and
-not listed. Its row opens a quick-look dialog (`dashTodoDialog`) with tabs
-Ready, Blocked, Watch, Decision — only when the project has one — and Done
-(the newest eight).
+`state` is `ready`: the total as one big figure, then one chip per project with
+any, most first, each showing its count and linking to the project page; with
+none, the card says 沒有 Ready 的條目. Under the chips, Blocked 到期 lists the
+`blocked` entries whose stamp, the day to look again, is today or earlier,
+soonest first, each linking to its entry. A chip opens a quick-look dialog
+(`dashTodoDialog`, `assets/station/station.js:3331`) with tabs Ready, Blocked,
+Watch, Decision — only when the project has one — and Done (the newest eight);
+an entry with no `state` has no tab.
 
-The cards sit in `data-block="dashboard"`, in two columns: 進行中, 近 30 天花費
-and 最近 sessions in the wide one, 等你回答 and 可以開工 in the narrow one.
-There is no row of figures above them and no chooser: the page title is in the
-header (below), and 編輯版面 is a dashed slot, the narrow column's last. It
-turns on edit mode (`view.dashEdit`), where each card head takes a grip, ↑ ↓
-and 隱藏 / 顯示; Alt + ↑ ↓ from anywhere in a card moves it too, and a card
-can be dragged to a new place within its own column only. A hidden card keeps
-its head, marked 已隱藏. The slot becomes the library, 新增卡片, offering each
-card that is off by default; 還原預設 clears the key and 完成, or Esc, leaves
-edit mode. The choice is `station.dash`, `{order, off}`, read by `dashOrder`,
-which drops an id it does not know and appends one the stored order lacks —
-on if it is a default card, off if not. The five default cards are, in order,
-進行中, 等你回答, 可以開工, 近 30 天花費, 最近 sessions. Eight more
-kinds (`dashKinds`) are off until added from 新增卡片, one id each:
-
-- `dash-clash`
-- `dash-byproj`
-- `dash-tokens7`
-- `dash-models`
-- `dash-gatewait`
-- `dash-landed`
-- `dash-blocked`
-- `dash-agents`
+The page has two columns and no edit mode: `homeLive` and `homeRunning` in the
+wide one, `homeTodo` and `homeSpend` in the narrow one
+(`assets/station/station.js:3522`, `function dashPage() {`). The cards that
+used to sit here moved to the pages they belong to: 撞檔與共用檔案
+(`dashClash`) and 最近 sessions (`dashRecent`) wide, gate 平均等待時間
+(`dashGateWait`) and 最近 commits / land (`dashLanded`) narrow, under the lanes
+on 進行中 (`livePage`, `assets/station/station.js:3142`); and 依專案花費
+(`dashByProj`) and 近 7 天 token (`dashTokens7`) wide, 模型用量分布
+(`dashModels`) narrow, under the chart on 花費 (`daysPage`,
+`assets/station/station.js:3619`).
 
 The header shows the page title in `#side` (`pageTitle`, an `h1.ptitle`) in
 place of the old crumbs, and serve's state as an icon (`serveIconHtml`) whose
@@ -817,8 +805,8 @@ tooltip says 連線中 or 已停.
 
 Since the 2026-10-01 layout (`docs/99-archive/2026-10-01-station-layout-design.md`)
 each page opens with the film's header lockup: a title, a rule, then one mono
-line of where things stand. 進行中 and 等你回答 carry their count as a pill in
-the card head.
+line of where things stand. The 進行中 card head carries its live count and a
+pill counting the sessions waiting on you (等你回答).
 最近 sessions opens with `data-block="sessions-head"` — the count, the live
 count, the Sessions tabs on its right — over one line a row, a stage on its
 route drawn as the film's glyph and `0N / 0M stage`. One session opens with
@@ -879,8 +867,8 @@ writes the new value
 stored value is read and set as `data-theme` on `<html>` before the page's
 first paint, so a reader on 深色 never sees a flash of light first
 (`assets/station/station.js:23`, `themeSet(stored('station.theme'));`).
-`station.dash` holds the dashboard's card order and the cards switched off,
-written by edit mode above. The other two, `station.lang` and
+`station.dash` is no longer written: the home page lost its edit mode, and a
+value an older station stored is never read. The other two, `station.lang` and
 `station.fkBox`, are described further down, where the page's language and the
 floating box's position are. The promo film's look is the only look:
 `assets/station/index.html` opens `<html data-style="keel">` and nothing takes
