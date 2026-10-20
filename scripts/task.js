@@ -1411,6 +1411,9 @@ function cmdAdopt(root, opts) {
         // files first: re-stamping it lost that answer permanently, so a session
         // inheriting three days of work yielded to a task opened a minute ago.
         started: source.started || stamp,
+        // Every session this task passed through, oldest first, so land's
+        // export (`record.js session`) can bundle all of them.
+        sessions: (Array.isArray(source.sessions) ? source.sessions : []).concat(from),
         updated: stamp,
     };
     if (source.notes) data.notes = source.notes;
