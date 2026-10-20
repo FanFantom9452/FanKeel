@@ -285,6 +285,9 @@
             'nav.capGates': '<b>{n}</b> gates waiting on you',
             'nav.capNoGates': 'No gate waiting on you',
             'nav.noRegistry': 'No registry',
+            'nav.shellsRunning': '{n} running',
+            'nav.shellRunning': 'running',
+            'nav.shellEnded': 'ended',
             // wiz — the settings wizard
             'wiz.local': 'local',
             'wiz.remote': 'remote',

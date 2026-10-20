@@ -1783,6 +1783,29 @@
                     + '<span class="sa-for">' + mins(now - a.startedAt) + '</span></div>';
             }).join('') + '</div>';
     }
+    // A session's background shells (lib/shells.js shellsOf, already cut to
+    // three, running first), on the subagent rows' grid: the shell's id, a pill
+    // for running or how it ended (red for a non-zero exit), the command, and
+    // the minutes since it started. None draws nothing, so home-running and the
+    // focus header can call it for every session.
+    function shellsHtml(shells, now) {
+        var list = shells || [];
+        if (!list.length) return '';
+        var run = list.filter(function (x) { return x.state === 'running'; }).length;
+        return '<div class="s-shells" data-block="s-shells"><div class="sa-h"><b>shells</b><span>'
+            + loc('nav.shellsRunning', '{n} 個在跑', { n: run }) + '</span></div>'
+            + list.map(function (x) {
+                var t = Date.parse(x.startedAt);
+                var known = x.code !== null && x.code !== undefined;
+                var st = x.state === 'running'
+                    ? '<span class="delta up"><i class="dot live"></i>' + loc('nav.shellRunning', '在跑') + '</span>'
+                    : '<span class="delta ' + (known && x.code !== 0 ? 'dn' : 'flat') + '">' + loc('nav.shellEnded', '結束')
+                        + (known ? ' · exit ' + esc(x.code) : '') + '</span>';
+                return '<div class="sa"><span class="sa-type">' + esc(x.id) + '</span>' + st
+                    + '<span class="sa-desc" title="' + esc(x.command) + '">' + esc(x.command) + '</span>'
+                    + '<span class="sa-for">' + (isFinite(t) ? mins(now - t) : '—') + '</span></div>';
+            }).join('') + '</div>';
+    }
     // One session: who (project, else the registry's short label, and the
     // root), the task, the rail, and when. A lane that is not confirmed live
     // carries its state pill instead of how long it has been open.
@@ -2773,7 +2796,7 @@
             segTip: segTip,
             tk: tk,
             stageShare: stageShare, costShareHtml: costShareHtml, subtabsHtml: subtabsHtml,
-            dashLive: dashLive, dashGate: dashGate, liveSubsHtml: liveSubsHtml, dashSpend: dashSpend, dashRecent: dashRecent, dashPage: dashPage,
+            dashLive: dashLive, dashGate: dashGate, liveSubsHtml: liveSubsHtml, shellsHtml: shellsHtml, dashSpend: dashSpend, dashRecent: dashRecent, dashPage: dashPage,
             dashTodo: dashTodo, dashOrder: dashOrder,
             NAV_TREE: NAV_TREE,
             tuneOpen: tuneOpen, tuneEvents: tuneEvents, toastText: toastText, floatHtml: floatHtml, fkBoxParse: fkBoxParse, fkBoxClamp: fkBoxClamp, gateCountdownHtml: gateCountdownHtml, noteHtml: noteHtml, floatNotes: floatNotes, clock: gateClock,
