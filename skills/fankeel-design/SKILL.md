@@ -225,7 +225,7 @@ boundaries need work.
 diagram for a task is a Chartroom `.board` in its build directory,
 `.fankeel/build/task-<started>/<name>.board` —
 one record per line, no coordinates; the station lays it out and draws it on
-the session card.
+the session card. Format: lib/chartroom/README.md.
 Sequence and gantt diagrams stay Mermaid.
 
 ### 7. The spec — `architectural` only

@@ -642,8 +642,12 @@ code vendored in `lib/chartroom/` (`lib/board.js`), for the session card's
 `AI 畫的圖` block; each session in `station-data.js` lists its boards as
 `boards: [{ name, updated }]`. Like the screenshot it skips the nonce: it is a
 GET that writes nothing. `<name>` must match `^[0-9A-Za-z._-]+$` and resolve
-inside that directory, or the answer is 404; a board that does not parse is
-422 (`text/plain; charset=utf-8`) with the parser's message. The SVG goes out with
+inside that directory, or the answer is 404; an unknown session, a name that
+fails `board.NAME`, or a file that cannot be read is also 404
+(`no such board for that session`). A board that does not parse is
+422 (`text/plain; charset=utf-8`) with the parser's message, and any other
+failure to draw (the vendored ESM failing to load, say) answers 500
+`cannot draw that board: …`. The SVG goes out with
 `Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'`, so one
 opened in its own tab runs no script.
 
@@ -1089,8 +1093,9 @@ command on each `stale` row instead of the button.
 
 Superseded for task diagrams by [2026-10-20-chartroom-board-design.md](../plans/2026-10-20-chartroom-board-design.md):
 a task's architecture, flow or dependency diagram is a `.board` in its build
-directory, drawn by `GET /station/board/<sessionId>/<name>.svg` above. This
-route stays for the per-project `.fankeel/architecture.board`.
+directory, drawn by `GET /station/board/<sessionId>/<name>.svg` above. The
+`/chartroom/<name>/` route below stays for the per-project
+`.fankeel/architecture.board`.
 
 Under `/chartroom/<name>/` the served station hands a request to
 Chartroom, the board editor installed elsewhere on this machine, so a
