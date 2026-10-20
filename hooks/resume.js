@@ -17,6 +17,7 @@
 // the middle of somebody else's turn, which is its own kind of broken. A session
 // not in the mode reads one file that is not there and leaves.
 
+const fs = require('node:fs');
 const registry = require('../lib/registry.js');
 const { renderResume } = require('../lib/render.js');
 const profileLib = require('../lib/profile.js');
@@ -106,9 +107,23 @@ function main(raw) {
     // nothing about which question this answer is to.
     try {
         if (controlling(mine.stage, profile && profile.values)) {
-            const gate = readGate(handoffPath(root, mine, mine.stage), nextStage(mine.stage, mine.route), normaliseRoute(mine.route) || FULL_ROUTE);
+            const handoff = handoffPath(root, mine, mine.stage);
+            const gate = readGate(handoff, nextStage(mine.stage, mine.route), normaliseRoute(mine.route) || FULL_ROUTE);
             const file = answerPath(root, mine, mine.stage);
-            if (gate && file && response != null) {
+            // A gate that cannot be compared — a handoff with no block that
+            // parses (2026-10-20: a gate written through a shell lost a `\\`),
+            // or one that fails gateProblem — still gets its answer filed. The
+            // agent is told to read this file next, and the controller may not
+            // write it; a miss file beside it says the match was never checked.
+            const unchecked = handoff && response != null && (gate ? Boolean(gate.invalid) : fs.existsSync(handoff));
+            if (file && unchecked) {
+                const why = gate ? 'the handoff\'s gate is invalid at ' + gate.invalid + ': ' + gate.detail
+                    : 'the handoff holds no readable `json gate` block, so the questions were not compared; the answer is filed anyway';
+                try {
+                    writeAnswer(file, typeof response === 'string' ? response : JSON.stringify(response, null, 2));
+                    writeAnswer(file.replace(/-answer\.md$/, '-answer.miss.json'), JSON.stringify({ at: Date.now(), reason: why, asked: asked === undefined ? null : asked, filed: null }, null, 2));
+                } catch (e) { process.stderr.write('fankeel resume: cannot write ' + file + ': ' + e.message + '\n'); }
+            } else if (gate && file && response != null) {
                 // The answer that never arrives used to be silent. Beside the answer
                 // file, `<stage>-answer.miss.json` says why not and holds both question
                 // lists. Diagnostic only: nothing reads it, and a controller's own
@@ -123,9 +138,7 @@ function main(raw) {
                 };
                 // The answer is matched by count and order (answersGate), not by wording.
                 if (!answersGate(asked, gate.questions)) {
-                    note(gate.invalid
-                        ? 'the handoff\'s gate is invalid at ' + gate.invalid + ': ' + gate.detail
-                        : 'the questions asked do not match the handoff\'s gate in question or option count');
+                    note('the questions asked do not match the handoff\'s gate in question or option count');
                 } else {
                     try {
                         writeAnswer(file, typeof response === 'string' ? response : JSON.stringify(response, null, 2));

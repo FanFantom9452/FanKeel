@@ -683,6 +683,20 @@ test('a brain is told the gate shape and that option one names the next stage', 
   assert.match(text, /`next` is never empty/);
 });
 
+// 2026-10-20, task-20261020T134844: a survey gate headed `context7 處置` (13
+// columns), a last-stage gate whose option one said 結案 rather than 收工, and a
+// gate written through a shell that no longer parsed — each cost a round trip.
+test('a last-stage brain is told the words option one needs, and to write and check its gate', () => {
+  const root = tmp();
+  seedProfile(root, { 'stage.agents': ['land'] });
+  seed(root, { stage: 'land', started: '2026-09-19T09:30:12.345Z' });
+  const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
+  assert.match(text, /option one's label names `down` or `收工`/);
+  assert.match(text, /`context7 處置` is 13/);
+  assert.match(text, /Write the file with Write, never a shell/);
+  assert.match(text, /scripts\/gate-check\.js --session \S+ \S*land\.md` and return the path once it prints `gate ok`/);
+});
+
 // The test above only proves the cap lies somewhere between a line that fits
 // (604 chars) and two lines whose sum does not (1208) — a gap of hundreds of
 // characters. A single line of exactly the cap, and one of cap+1, pin the

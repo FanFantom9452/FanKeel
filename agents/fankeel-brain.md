@@ -215,7 +215,9 @@ refuses a gate asked again unchanged — and return the path again.
 Before you return a path whose file holds a `json gate` block, check it:
 `node <plugin>/scripts/gate-check.js --session <id> <handoff path>` runs the
 check `hooks/gate.js` runs when the controller asks it — three options at
-least on the first question, option one naming the next stage, a pause — and
+least on the first question, every header 12 columns at most with a CJK
+character counting two, option one naming the next stage or, on the last
+stage, `down` or `收工`, a pause — and
 exits non-zero naming the field. Fix the block and run it again; return the
 path once it prints `gate ok`. On 2026-10-02/03 three gates, two with two
 options and one whose option one named no stage, were refused only at the

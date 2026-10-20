@@ -395,6 +395,40 @@ test('reworded questions and labels with the same counts still write the answer 
   assert.equal(fs.existsSync(path.join(SURVEY_DIR(root), 'survey-answer.miss.json')), false);
 });
 
+// 2026-10-20, task-20261020T134844: the user typed an answer through "Other".
+// The host files it under the question like any picked label, so the answer
+// file holds the user's own words.
+test('an Other answer typed in free text writes the answer file with the text', () => {
+  const root = tmp('fankeel-resume-');
+  surveyWithGate(root);
+  const said = '這個你幫我搜尋網路上 這個真的有用嗎?';
+  run({ cwd: root, session_id: MINE, tool_input: { questions: JSON.parse(JSON.stringify(GATE_QUESTIONS)) }, tool_response: { answers: { [GATE_QUESTIONS[0].question]: said } } });
+  const filed = JSON.parse(fs.readFileSync(path.join(SURVEY_DIR(root), 'survey-answer.md'), 'utf8'));
+  assert.equal(filed.answers[GATE_QUESTIONS[0].question], said);
+});
+
+// The same run: the stage agent wrote its gate through a shell, a `\\U` lost
+// one backslash, and the block no longer parsed. The answer was dropped with
+// no miss file, and the agent sent to read it found nothing.
+test('a handoff whose gate block does not parse still gets the answer, and a miss file says why', () => {
+  const root = tmp('fankeel-resume-');
+  surveyWithGate(root);
+  const handoff = path.join(SURVEY_DIR(root), 'survey.md');
+  fs.writeFileSync(handoff, fs.readFileSync(handoff, 'utf8').replace('"next":"n"', '"next":"C:\\Users"'));
+  answered(root, JSON.parse(JSON.stringify(GATE_QUESTIONS)));
+  assert.ok(fs.existsSync(path.join(SURVEY_DIR(root), 'survey-answer.md')));
+  const miss = JSON.parse(fs.readFileSync(path.join(SURVEY_DIR(root), 'survey-answer.miss.json'), 'utf8'));
+  assert.match(miss.reason, /no readable/);
+});
+
+test('a stage with no handoff file yet writes no answer', () => {
+  const root = tmp('fankeel-resume-');
+  surveyWithGate(root);
+  fs.unlinkSync(path.join(SURVEY_DIR(root), 'survey.md'));
+  answered(root, JSON.parse(JSON.stringify(GATE_QUESTIONS)));
+  assert.equal(fs.existsSync(path.join(SURVEY_DIR(root), 'survey-answer.md')), false);
+});
+
 test('a different number of questions writes no answer and leaves a miss file', () => {
   const root = tmp('fankeel-resume-');
   surveyWithGate(root, [GATE_QUESTIONS[0], Object.assign({}, GATE_QUESTIONS[0], { question: 'second?' })]);
