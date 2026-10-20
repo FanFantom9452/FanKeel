@@ -1617,14 +1617,7 @@
     // keeps their stroke at the bar's 1.5-on-16 weight.
     var ICONS24 = {
         tour: '<circle cx="12" cy="12" r="10"/><path d="m10 8 6 4-6 4Z"/>',
-        // the dashboard's edit mode (mockup 2026-10-16-station-dashboard)
-        pen: '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/>',
-        grip: '<circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/>',
-        eye: '<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>',
-        eyeoff: '<path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/>'
-            + '<path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/>',
         plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
-        undo: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
         files: '<path d="M20 7h-3a2 2 0 0 1-2-2V2"/><path d="M9 18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l4 4v10a2 2 0 0 1-2 2Z"/><path d="M3 7.6v12.8A1.6 1.6 0 0 0 4.6 22h9.8"/>',
         barh: '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M7 16h8"/><path d="M7 11h12"/><path d="M7 6h3"/>',
         barv: '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
@@ -1822,7 +1815,7 @@
     // Waiting is what `pendingGateHtml` answers: a pending file with questions.
     // The wait runs from `gateAt`, stamped when the question went out
     // (`gateOpen` in lib/registry.js), else the pending file's `at`, else the
-    // session's last registry write, as on the dashboard's gate card.
+    // session's last registry write.
     function liveGate(rows, name, now) {
         var at = rows.filter(function (s) { return s.pending && s.pending.questions && s.pending.questions.length; });
         if (!at.length) {
@@ -6450,7 +6443,7 @@
     applyChrome();
     // The film's click ring: a keel ring opens out from a pressed action button.
     doc.addEventListener('pointerdown', function (e) {
-        var b = e.target && e.target.closest ? e.target.closest('.btn.go, #dchtog, .td-mb') : null;
+        var b = e.target && e.target.closest ? e.target.closest('.btn.go, .td-mb') : null;
         if (!b || !b.classList) return;
         b.classList.remove('rip');
         void b.offsetWidth;
