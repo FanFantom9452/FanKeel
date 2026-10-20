@@ -304,6 +304,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 判官先列清單、讀者一次派出（10-19）定了什麼：三輪為目標、每則最多四位讀者、略過兩條回傳規則、Summary 放長文；放棄了什麼 | [decisions/2026-10-19-judge-checklist.md](03-decisions/2026-10-19-judge-checklist.md) — *繁體中文* |
 | 不讓常備答案代答 gate（10-19）定了什麼：離開時 gate 仍問人，不加代答的 profile 鍵；放棄了什麼 | [decisions/2026-10-19-no-unattended-gate.md](03-decisions/2026-10-19-no-unattended-gate.md) — *繁體中文* |
 | ilsbench 探針設每週成本上限（10-19）定了什麼：探針可再跑、改用 sonnet、每週 100 美元；放棄了什麼 | [decisions/2026-10-19-ilsbench-probe-cap.md](03-decisions/2026-10-19-ilsbench-probe-cap.md) — *繁體中文* |
+| 任務的圖由 station 畫成 SVG（10-20）定了什麼：任務 build 目錄裡的 .board 由 station 畫成 SVG 掛在卡片上，只複製 Chartroom 的繪圖部分；放棄了什麼 | [decisions/2026-10-20-task-boards-as-svg.md](03-decisions/2026-10-20-task-boards-as-svg.md) — *繁體中文* |
 | 沒派過的 agent 怎麼處理（10-15）定了什麼：effort 改在派工時傳、六個複本刪掉，mover、mutator、writer 只給 stage agent 派，init-scout 與 slimmer 不動；放棄了什麼 | [decisions/2026-10-15-unused-agents.md](03-decisions/2026-10-15-unused-agents.md) — *繁體中文* |
 | 開任務時同步壓縮視窗（10-14）定了什麼：start 把主機視窗對齊 `compact.at`、值變了請使用者重開 Desktop；放棄了什麼 | [decisions/2026-10-14-start-syncs-window.md](03-decisions/2026-10-14-start-syncs-window.md) — *繁體中文* |
 | Pane 配色改成安靜版（10-13）定了什麼：標題共用灰、多一行 route、拿掉「這個 session」與「用量額度」兩塊；放棄了什麼 | [decisions/2026-10-13-pane-colour.md](03-decisions/2026-10-13-pane-colour.md) — *繁體中文* |
@@ -491,6 +492,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 那次的 design 與兩個 task | `docs/99-archive/2026-10-17-drop-10-10-drafts-design.md`、`docs/99-archive/2026-10-17-drop-10-10-drafts.md` — *built* |
 | render reviewer 強制、effort 改在派工時傳、未派 agent 的去留（10-15）的 design：render.json 的頁面帶 `src`，ledger 與 `task.js stage` 拒絕沒有 render 判定的頁面變更；六個 effort 複本刪掉 | `docs/99-archive/2026-10-15-render-gate-design.md` — *built* |
 | 那份設計的十二個 task，加上 verify 送回的修正：最近的 render.json、沒有 plan 時讀 git | `docs/99-archive/2026-10-15-render-gate.md` — *built* |
+| Chartroom 第一步（10-20）的 design：繪圖部分複製進 `lib/chartroom/`，station 把任務的 .board 畫成 SVG 掛在 session 卡片上 | `docs/99-archive/2026-10-20-chartroom-board-design.md` — *built* |
+| 那份設計的 4 個 task | `docs/99-archive/2026-10-20-chartroom-board.md` — *built* |
 | Haiku 角色題庫、平行執行器與長任務飄移 2×2 的 design：每角色十二題分三層、`check.sh` 標出失敗類別、`bench.js role` 用 `--jobs` 平行跑、`drift` 量 haiku／sonnet × PostToolUse 重注入 | `docs/99-archive/2026-10-09-haiku-bank-drift-design.md` — *built, 繁體中文* |
 | 那份設計的十二個 task：失敗類別與共用判分、四組題庫、平行執行器、逐步檢查與重注入、報告產生器，以及使用者親手跑的付費批次 | `docs/99-archive/2026-10-09-haiku-bank-drift.md` — *built, 繁體中文* |
 | 監控站在 `/chartroom/<專案>/` 開架構白板（10-08）的 design：handler 在 nonce 檢查之前剝前綴，轉交該專案懶建的 Chartroom `createHandler`，Chartroom 路徑取自 profile `station.chartroom`，板子固定在 `<專案>/.fankeel/architecture.board` | `docs/99-archive/2026-10-08-station-chartroom-design.md` — *built, 繁體中文* |
@@ -583,6 +586,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 - [判官先列清單、讀者一次派出（10-19）](03-decisions/2026-10-19-judge-checklist.md)
 - [不讓常備答案代答 gate（10-19）](03-decisions/2026-10-19-no-unattended-gate.md)
 - [ilsbench 探針設每週成本上限（10-19）](03-decisions/2026-10-19-ilsbench-probe-cap.md)
+- [任務的圖由 station 畫成 SVG（10-20）](03-decisions/2026-10-20-task-boards-as-svg.md)
 - [沒派過的 agent 怎麼處理（10-15）：effort 改在派工時傳，六個複本刪掉](03-decisions/2026-10-15-unused-agents.md)
 - [開任務時同步壓縮視窗（10-14）：task.js start 把主機視窗寫成 compact.at](03-decisions/2026-10-14-start-syncs-window.md)
 - [Pane 的配色改成安靜版，多一行 route，拿掉兩塊（10-13）](03-decisions/2026-10-13-pane-colour.md)

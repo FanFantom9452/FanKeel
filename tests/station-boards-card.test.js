@@ -1,5 +1,5 @@
 'use strict';
-// The session card's AI 畫的圖 block (docs/90-agent/plans/2026-10-20-chartroom-board-design.md §5;
+// The session card's AI 畫的圖 block (docs/99-archive/2026-10-20-chartroom-board-design.md §5;
 // mockup .fankeel/build/2026-10-20-chartroom-board/mockup.html, data-block="boards"):
 // one <img> thumbnail per board, opening the full SVG in a new tab; no board, no block.
 const test = require('node:test');

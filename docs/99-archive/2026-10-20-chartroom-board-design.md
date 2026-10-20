@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # Chartroom 第一步：station 把任務的 .board 畫成 SVG — design

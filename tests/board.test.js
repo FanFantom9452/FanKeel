@@ -1,7 +1,7 @@
 'use strict';
 // lib/board.js: a task's .board files, listed and drawn to SVG by the
 // Chartroom render code vendored in lib/chartroom/
-// (docs/90-agent/plans/2026-10-20-chartroom-board-design.md §1-§2).
+// (docs/99-archive/2026-10-20-chartroom-board-design.md §1-§2).
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');

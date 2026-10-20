@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # Chartroom board on the session card Implementation Plan

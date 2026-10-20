@@ -7,7 +7,7 @@ render subset, 1768 lines. ESM under this directory's `{"type":"module"}`;
 `lib/board.js` loads it with dynamic `import()`. `src/server/` is not copied.
 
 Do not edit these files: re-copy from the source repository and update the
-commit above. Design: docs/90-agent/plans/2026-10-20-chartroom-board-design.md.
+commit above. Design: docs/99-archive/2026-10-20-chartroom-board-design.md.
 
 ## Format
 

@@ -2,7 +2,7 @@
 // A task's boards on the station: each session serialises the *.board files
 // in its build directory as boards[], and serve draws one at
 // GET /station/board/<sessionId>/<name>.svg without the nonce
-// (docs/90-agent/plans/2026-10-20-chartroom-board-design.md §3, §4, §6).
+// (docs/99-archive/2026-10-20-chartroom-board-design.md §3, §4, §6).
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -85,5 +85,5 @@ test('serve draws a board as image/svg+xml without the nonce, 422 for a malforme
 test('station.md documents the board route and marks the /chartroom/ section superseded for task diagrams', () => {
     const md = fs.readFileSync(path.join(__dirname, '..', 'docs', '90-agent', 'reference', 'station.md'), 'utf8');
     assert.match(md, /`GET \/station\/board\/<sessionId>\/<name>\.svg`/);
-    assert.match(md, /Superseded for task diagrams by \[2026-10-20-chartroom-board-design\.md\]\(\.\.\/plans\/2026-10-20-chartroom-board-design\.md\)/);
+    assert.match(md, /Superseded for task diagrams by \[the 10-20 board decision\]\(\.\.\/\.\.\/03-decisions\/2026-10-20-task-boards-as-svg\.md\)/);
 });

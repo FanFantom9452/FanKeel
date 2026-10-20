@@ -1091,7 +1091,7 @@ process and returns once it has started, so closing the terminal does not
 take the station with it. The static copies carry the `task.js clear`
 command on each `stale` row instead of the button.
 
-Superseded for task diagrams by [2026-10-20-chartroom-board-design.md](../plans/2026-10-20-chartroom-board-design.md):
+Superseded for task diagrams by [the 10-20 board decision](../../03-decisions/2026-10-20-task-boards-as-svg.md):
 a task's architecture, flow or dependency diagram is a `.board` in its build
 directory, drawn by `GET /station/board/<sessionId>/<name>.svg` above. The
 `/chartroom/<name>/` route below stays for the per-project

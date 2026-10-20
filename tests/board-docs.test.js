@@ -1,5 +1,5 @@
 'use strict';
-// Design §6 (docs/90-agent/plans/2026-10-20-chartroom-board-design.md): the
+// Design §6 (docs/99-archive/2026-10-20-chartroom-board-design.md): the
 // station-15 completion record says task diagrams moved to the board design,
 // and the design skill files a task's diagram as a .board in the build
 // directory, sequence and gantt staying Mermaid.
@@ -9,7 +9,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const read = (rel) => fs.readFileSync(path.join(__dirname, '..', rel), 'utf8');
-const LINK = '[2026-10-20-chartroom-board-design.md](../plans/2026-10-20-chartroom-board-design.md)';
+const LINK = '[2026-10-20-chartroom-board-design.md](../../99-archive/2026-10-20-chartroom-board-design.md)';
 
 test('station-15\'s completion record is marked superseded for task diagrams', () => {
     const t = read('docs/90-agent/todo/station-15.md');
