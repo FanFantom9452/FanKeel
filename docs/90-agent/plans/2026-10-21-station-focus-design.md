@@ -42,9 +42,9 @@ Pane block).
 ## 2. Server speed
 
 - `transcriptOf` looks the id up in the `transcriptIndex` built once per gather instead of walking every project directory; the index is cached on the projects directory's mtime, and a transcript's own change is caught by a stat of that file.
-- Each session's row is cached on its registry file's mtime plus its transcript's, so an ended session costs one stat.
+- Each session's row is cached on its registry file's mtime plus its transcript's, so an ended session costs one entry read and two stats.
 - `buildDirs`/`countFiles` results are cached for 60 s.
-- `/station/detail/<id>.js` goes through `sharedModel`; the shared model is invalidated by a registry directory mtime change rather than a fixed 2 s.
+- `/station/detail/<id>.js` goes through `sharedModel`; the shared model is also dropped on a registry directory mtime change, on top of its 2 s window, which live rows need: their transcripts move without the registry directory moving.
 - The page fetches the data and detail scripts in parallel, and stops polling while the tab is hidden.
 - Done when: `bench/station-gather.js` shows warm `gather()` and `/station/detail` at 150 ms or less, median of five, and a test counts one `readdir` of the projects directory per gather.
 
@@ -54,7 +54,7 @@ Pane block).
 - A `jump` box above the nav (Ctrl+K) finds a session by task text or id and opens its focus page.
 - Home holds four groups and nothing else: `home-live` (waiting-on-you first, each row linking to `/f/<id>/<stage>`), `home-running` (subagents and background shells), `home-todo` (Ready count, due Blocked), `home-spend` (one line: today, this week).
 - The cards that leave home move to their pages: 撞檔 to Sessions' live view; 依專案花費 and 模型用量分布 to 花費; gate 平均等待, 最近 land and 最近 sessions to Sessions.
-- Sessions' 進行中, 最近 and 全部清單 become filters on one page; 花費's 近 30 天 and 依專案 become a toggle on one page.
+- Sessions' 進行中, 最近 and 全部清單 become filters on one page — a filter strip over the existing routes, one nav entry lit for all of them; 花費’s 近 30 天 and 依專案 a toggle the same way.
 - Old hashes (`#/live`, `#/sessions`, `#/list`, `#/days`, `#/projects`) land on the page that replaced them.
 - Done when: a render test finds exactly the four `home-*` blocks and no nav fold; every `home-live` link is `/f/<id>/<stage>` and their count equals the live sessions.
 
