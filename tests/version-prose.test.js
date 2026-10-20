@@ -12,11 +12,11 @@ const path = require('node:path');
 const ROOT = path.join(__dirname, '..');
 const flat = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8').replace(/\s+/g, ' ');
 
-test('the version prose says fifteen files and thirteen skills, and fourteen nowhere', () => {
+test('the version prose says sixteen files and fourteen skills, and fifteen nowhere', () => {
   for (const rel of ['CONTRIBUTING.md', 'docs/01-guide/development.md', 'skills/fankeel-land/SKILL.md']) {
     const text = flat(rel);
-    assert.match(text, /fifteen/i, rel);
-    assert.doesNotMatch(text, /fourteen (files|places)/i, rel);
-    assert.doesNotMatch(text, /twelve skills/i, rel);
+    assert.match(text, /sixteen/i, rel);
+    assert.doesNotMatch(text, /fifteen (files|places)/i, rel);
+    assert.doesNotMatch(text, /thirteen skills/i, rel);
   }
 });

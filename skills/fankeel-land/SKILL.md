@@ -187,13 +187,13 @@ docs index changes from *design-intent* to *built* by hand.
 ## 2a. The release number, when the work is one
 
 ```
-node <plugin>/scripts/version.js              what the fifteen places say
+node <plugin>/scripts/version.js              what the sixteen places say
 node <plugin>/scripts/version.js 0.35.0       set them
 node <plugin>/scripts/version.js --changes    what has landed since the last one
 ```
 
-Fifteen files carry it — two manifests and one frontmatter line in each of the
-thirteen skills — and `npm test` fails when they disagree. Why the script
+Sixteen files carry it — two manifests and one frontmatter line in each of the
+fourteen skills — and `npm test` fails when they disagree. Why the script
 exists, and the steps a release takes, are in
 [development.md](../../docs/01-guide/development.md).
 
@@ -385,17 +385,13 @@ git said it — never retried with `-D`. A red suite leaves both in place, as
 above. `scripts/residue.js` lists that worktree as in use, not spent, for as
 long as the task's record is active.
 
-**Agent branches.** `node <plugin>/scripts/residue.js` lists the
-`worktree-agent-*` branches with no worktree left and nothing HEAD lacks under
-spent agent branches. Offer those, and only those, for cleanup with
-`git branch -D <name>` — `scripts/commit.js` landed them by cherry-pick, so
-most are not ancestors and `-d` refuses them. One listed as holding commits HEAD
-lacks is the user's call.
-`node <plugin>/scripts/land.js clean` now sweeps these itself
-(`residue.js --sweep`): it removes a clean spent agent worktree and runs
-`git branch -D` on its branch, and prints what it kept. It keeps a dirty
-worktree, one in use or touched in the last two hours, and any branch or
-worktree holding commits HEAD lacks.
+**Agent branches.** `node <plugin>/scripts/residue.js` lists spent agent branches
+(`worktree-agent-*`); commit.js landed
+them by cherry-pick, so `-d` refuses them. `node <plugin>/scripts/land.js clean`
+sweeps them (`residue.js --sweep`): it removes a clean spent worktree, runs
+`git branch -D` on its branch, and prints what it kept — a dirty worktree, one
+touched in two hours, any branch holding commits HEAD lacks.
+Only what the sweep kept gets `git branch -D <name>` by hand.
 
 **PR:** push, open it against the base, report the URL. **Keep the worktree** —
 PR feedback gets fixed there.

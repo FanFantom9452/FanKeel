@@ -5,7 +5,10 @@
 // main checkout is on with `--no-ff`: the first line `merge: <task>`, then
 // two trailers, `Fankeel-Task` and `Fankeel-Class`. `clean`, run once the
 // suite is green on the merged result, removes the worktree and deletes the
-// branch with `-d`. It never tags, never pushes and never forces.
+// task branch with `-d`, then sweeps spent agent worktrees and branches
+// (`residue.js --sweep`, which uses `git branch -D` only on branches whose
+// commits HEAD already has). It never tags, never pushes and never forces a
+// branch holding commits HEAD lacks.
 // scripts/commit.js is the other layer: it cherry-picks an implementer's
 // agent worktree into the task's checkout, and merges nothing.
 // docs/99-archive/2026-10-02-worktree-habit-design.md §3.

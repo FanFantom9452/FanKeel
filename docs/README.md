@@ -48,7 +48,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | What a plan is checked for before its gate, and what an implementer's brief file holds | [pipeline.md](02-architecture/pipeline.md) — *plan* and *build* |
 | What the badge word means, and how to colour each stage | [statusline.md](90-agent/reference/statusline.md) |
 | Every session on this machine, where the page finds the registries, and what `stale` means | [station.md](90-agent/reference/station.md) |
-| 每個任務 land 時留下的六欄完成紀錄放哪、怎麼寫、監控站在哪裡畫它 | [plain-language.md](90-agent/reference/plain-language.md) — *完成紀錄*；月檔在 `docs/90-agent/records/` |
+| 每個任務 land 時留下的六欄完成紀錄放哪、怎麼寫、監控站在哪裡畫它 | [plain-language.md](90-agent/reference/plain-language.md) — *完成紀錄* |
 | Which model each role runs on, and the effort that goes with it — an open decision | [model-choice.md](90-agent/reference/model-choice.md) |
 | How Chinese written for a person is checked: one thing per sentence, 160 columns at most, names instead of codes | [plain-language.md](90-agent/reference/plain-language.md) |
 | Why `buildDirs` stops following junctions, and why `ensureServe` probes at least 250ms | [decisions/2026-10-05-station-write-timeout.md](03-decisions/2026-10-05-station-write-timeout.md) |
@@ -695,6 +695,7 @@ is explained, and it is the one thing to know before adding a page here.
 | `docs/90-agent/judgements/` | report | it is what `fankeel-judge` answered on that day, filed verbatim by `scripts/judge.js` |
 | `docs/90-agent/records/` | report | the completion record every task leaves at land, one month file each, written by `scripts/record.js` and never edited after |
 | `docs/90-agent/todo/` | todo | n/a — one TODO entry per file, current, checked for links and line numbers only; its date is its own `stamp` |
+| `lib/chartroom/` | reference | no — the drawing code copied for the monitor station's whiteboard |
 | `skills/` | reference | no |
 | `bench/` | fixture | n/a — the fixed inputs and two-sided controls `scripts/bench.js` runs: `add-feature/`, `fix-bug/` and `review-planted/`, the whole tasks `run` compares arms on; `roles/`, one directory per role; and `drift/`, the long task the drift 2×2 checks step by step; a test's own input, checked for links and line numbers only, never for symbols |
 | `evals/` | fixture | n/a — a test's own input; a prompt names paths only its scaffold has, so it is checked for links and line numbers only, never for symbols |
