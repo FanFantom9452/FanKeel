@@ -790,7 +790,8 @@ an entry with no `state` has no tab.
 
 The page has two columns and no edit mode: `homeLive` and `homeRunning` in the
 wide one, `homeTodo` and `homeSpend` in the narrow one
-(`assets/station/station.js:3522`, `function dashPage() {`). The cards that
+(`assets/station/station.js:3522`, `function dashPage() {`). The page root is a
+block marked `data-block="home"`. The cards that
 used to sit here moved to the pages they belong to: 撞檔與共用檔案
 (`dashClash`) and 最近 sessions (`dashRecent`) wide, gate 平均等待時間
 (`dashGateWait`) and 最近 commits / land (`dashLanded`) narrow, under the lanes

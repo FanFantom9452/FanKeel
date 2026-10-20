@@ -2,8 +2,13 @@
 label: pane
 title: Pane 列出背景 shell
 description: Pane 在 agents 下加「背景 shell」一區，每 tick 從 tasks/<id>.output 尾標記判斷在跑或結束
-state: ready
+state: done
 link: hooks/pane.ts
+done:
+  at: 2026-10-21
+  sha: 524245f4
+  disposition: done
+  session: 9f451488-d5a6-4838-8cfc-9a451fd4f0e1
 ---
 
 來源：2026-10-21 TODO 全表盤點 land 站，使用者問「background task 有辦法顯示嗎？為甚麼官方可以？我們 Pane 能顯示嗎？」，/fankeel-ask 判官（fable）答 B 修改版，見 [判決](../judgements/2026-10-20-pane-bg-list.md)。使用者決定記成 TODO，之後和其他任務融合一起做。
@@ -16,6 +21,12 @@ link: hooks/pane.ts
 
 探針結果（2026-10-21，Claude Code 2.1.305）：hooks module 的 `tool.call` 包裝 `next(e)` 結果帶 `backgroundTaskId`。Pane 的 shells 區塊在背景 shell 跑時列出 ○，結束後換成 ● 與紅色的 exit 3（使用者在實機上看到兩張圖都出現，結束約在 90 秒後）。
 
-## 為什麼還開著
+## 結案說明
 
-使用者要把它和其他 Pane 相關任務融合成一個任務一起做，不單獨開；探針已跑過（見上），剩下的是融合後的實作與測試。
+這件事已在 524245f4 完成（hooks/pane-shell.ts、tests/pane-shell.test.js，以及 hooks/pane.ts 與 hooks/pane-status.ts 的 shells 區），本條已結案。
+
+## 完成紀錄
+
+Pane 現在會在 agents 下方列出背景 shell：在跑的顯示空心圓，結束後換成實心圓並標出結束碼。純函式放在 hooks/pane-shell.ts，hooks/pane.ts 包住 Bash 的 tool.call 取得背景任務編號並每個 tick 讀輸出檔尾端，hooks/pane-status.ts 畫出 shells 區塊；tests/pane-shell.test.js 涵蓋尾標記解析與裁切。探針結果已記在本條上方。
+
+- commit 524245f4
