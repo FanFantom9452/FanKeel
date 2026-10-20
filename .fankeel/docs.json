@@ -72,6 +72,10 @@
       "role": "reference"
     },
     {
+      "path": "lib/chartroom",
+      "role": "reference"
+    },
+    {
       "path": "evals",
       "role": "fixture"
     },
