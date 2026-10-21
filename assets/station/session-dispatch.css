@@ -1,0 +1,35 @@
+/* assets/station/session-dispatch.css — the session page's 派工 tab (station redesign §4;
+   mockup _sess/r62-dispatch.js). Model colours are session-page.css's --dx-* properties. */
+.dx{display:flex;flex-direction:column}
+.dx .fable{--m:var(--dx-fable);--on:var(--dx-fable-on)}
+.dx .opus{--m:var(--dx-opus);--on:var(--dx-opus-on)}
+.dx .sonnet{--m:var(--dx-sonnet);--on:var(--dx-sonnet-on)}
+.dx .haiku{--m:var(--dx-haiku);--on:var(--dx-haiku-on)}
+.dx .other{--m:var(--dx-other);--on:var(--dx-other-on)}
+.dx-q{margin:0 0 0 14px;padding-left:14px;border-left:1px solid var(--rule);font:600 15px/1.3 var(--f-ui);color:var(--ink)}
+.dx-key{margin-left:auto;display:flex;flex-wrap:wrap;gap:4px 12px}
+.dx-key .kk{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink2);border-radius:4px}
+.dx-b{display:inline-grid;place-items:center;flex:none;width:18px;height:18px;border-radius:4px;background:var(--m);color:var(--on);font:700 11px/1 var(--f-mono);font-style:normal}
+.dx-b.none{background:transparent;box-shadow:inset 0 0 0 1.5px var(--rule2);color:var(--muted)}
+.dx-strip{display:flex;gap:14px;margin-top:12px;padding-bottom:10px;border-bottom:1px solid var(--rule)}
+.dx-g{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dx-gl{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;max-width:100%;font-size:12.5px;font-weight:600;color:var(--ink);white-space:nowrap;border-radius:4px}
+.dx-gl>i{flex:none;width:8px;height:8px;border-radius:2px;background:var(--c)}
+.dx-gc{display:flex;gap:2px;height:30px;box-shadow:inset 0 -3px 0 -1px var(--c)}
+.dx-c{display:grid;place-items:center;min-width:2px;height:24px;border-radius:3px;background:var(--m);overflow:hidden;font-style:normal}
+.dx-c b{font:700 11px/1 var(--f-mono);color:var(--on)}
+.dx-c:hover,.dx-bar i:hover,.dx-b:hover{filter:brightness(1.12)}
+.dx-lh,.dx-r{display:grid;grid-template-columns:minmax(0,250px) 140px 72px minmax(0,1fr) minmax(0,1fr);column-gap:18px;align-items:center}
+.dx-lh{padding:8px 0 4px;font-size:12px;color:var(--muted)}
+.dx-l{list-style:none;margin:0;padding:0}
+.dx-r{min-height:28px;border-top:1px solid var(--rule)}
+.dx-r:hover{background:var(--wash)}
+.dx-n{display:flex;align-items:center;gap:8px;min-width:0;font-size:12.5px;color:var(--ink)}
+.dx-n>i{flex:none;width:8px;height:8px;border-radius:2px;background:var(--c)}
+.dx-n>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dx-role{font:12px var(--f-mono);color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dx-ms{display:flex;gap:4px}
+.dx-bar{display:flex;gap:1px;height:12px}
+.dx-bar i{display:block;flex:none;min-width:2px;height:100%;border-radius:2px;background:var(--m)}
+.dx [tabindex]:focus-visible{outline:2px solid var(--keel);outline-offset:2px}
+@media (max-width:999px){.dx-lh,.dx-r{grid-template-columns:minmax(0,170px) 100px 64px minmax(0,1fr) minmax(0,1fr);column-gap:12px}.dx-q{font-size:14px}}
