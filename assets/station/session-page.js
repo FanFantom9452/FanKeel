@@ -95,7 +95,10 @@
     }
     // The registry keeps a stage's first and last touch only, so a backtrack
     // (build, verify, build, verify) leaves windows that overlap: of those
-    // holding `t`, the one entered last is the stage running then.
+    // holding `t`, the stage entered most recently is the one running then. A
+    // re-entered earlier stage therefore reads as the later one, because
+    // registry.clock keeps only first and last touch (the registry's own
+    // convention, lib/registry.js:469 and windowsFrom at :593).
     function stageOf(stages, t) {
         if (!num(t)) return null;
         var at = null;
