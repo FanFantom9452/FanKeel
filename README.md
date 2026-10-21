@@ -1,277 +1,91 @@
 # FanKeel
 
-A keel is the one structural member a hull cannot lose.
+> **English.** fankeel is a Claude Code plugin for long-running projects. Each session holds one task and walks it through a route of up to seven stages — survey, design, plan, build, verify, audit, land — stopping at a gate after every stage to ask you before it moves on. It remembers what was tried, and warns when two live sessions edit the same file. Install with the two commands below, restart Claude Code, then type `/fankeel` in any project. The user guides are in Traditional Chinese under [docs/01-guide](docs/01-guide/); the design reference, [docs/02-architecture](docs/02-architecture/), is in English.
 
-fankeel is a Claude Code plugin that carries a development discipline and states
-it on every prompt — and again on every answer — rather than once at the top of a
-session. It holds a task, moves it along a route it picked through seven stages,
-keeps a capped note of what has been tried, and shows which other live sessions
-are in the same files.
+fankeel 是 Claude Code 插件。每個 session 扛一件 task，照 route 一站一站走，每站做完停下來問你；它記得試過什麼，並在兩個 session 動到同一個檔時提醒你。
 
-It exists because long-running projects rot in ways that are invisible from
-inside any one session: components rebuilt because nobody knew an equivalent
-existed, design documents piling up after the work they described has shipped,
-conventions that hold for a month and then quietly stop, and two terminals
-editing one file because neither knows the other is there.
+它要擋的是長期專案裡看不見的腐爛：已經有的東西又被重做一次、工作做完了計畫文件還堆著、約定守了一個月就悄悄失效、兩個終端機改同一個檔卻互不知道。
 
-## Install
+## 安裝
 
 ```
 claude plugin marketplace add FanFantom9452/FanKeel
 claude plugin install fankeel@fankeel
 ```
 
-Restart Claude Code afterwards. Nothing else is installed: no dependencies, and
-the tests run on `node --test`, which is built in. Then, in any project:
+裝完重開 Claude Code。不用裝別的套件，Node 22.5 以上即可。repo 叫 `FanKeel`，但你打的一律是小寫 `fankeel`——插件 id 必須是 kebab-case。
 
-```
-/fankeel
-```
+想一次裝好整台機器，用 [claude-kit](https://github.com/FanFantom9452/claude-kit)：它會順便設定 [TokenBar](https://github.com/FanFantom9452/ClaudeCodeCLI-TokenBar)，statusline 上的 badge 靠它畫。
 
-It looks before it asks — what is under this directory, which of them is a
-repository, which was touched today — and then asks at most two questions with
-the options already on screen: which project, skipped when there is only one, and
-what the task is, read from the project's TODO — its todo folder, or a root `TODO.md`. It never asks which
-files you will touch; those are recorded as the edits land.
-
-> The repository is `FanKeel` and everything you type is `fankeel`. Plugin and
-> marketplace ids have to be kebab-case — Claude Code accepts anything else, and
-> the Claude.ai marketplace sync does not — so the id, the command, the badge
-> word and the `.fankeel/` directory are all lowercase.
-
-It is also one of the plugins [claude-kit](https://github.com/FanFantom9452/claude-kit)
-installs, if you would rather take a whole machine's worth in one command — and
-that kit wires up TokenBar, which is what draws the badge.
-
-## Update
+**更新**——先更新 marketplace，再更新插件，然後重開：
 
 ```
 claude plugin marketplace update fankeel
 claude plugin update fankeel@fankeel
 ```
 
-Restart Claude Code afterwards, the same as installing. The marketplace line comes
-first because `plugin update` compares against the listing already on disk — skip
-it and there is nothing newer to find. Given no name, `marketplace update`
-refreshes every marketplace at once. Re-running `claude plugin install` is not the
-update path: the plugin is already installed, and what needs refreshing is the
-marketplace listing behind it.
-
-## Uninstall
+**移除**——專案裡的 `.fankeel/` 屬於專案，會留著，不要就自己刪：
 
 ```
 claude plugin uninstall fankeel@fankeel
 claude plugin marketplace remove fankeel
 ```
 
-`.fankeel/` is left in place — it is the project's, not the plugin's. Delete it by
-hand if you want it gone. Stale `~/.claude/modes/<session_id>/fankeel` flags are
-pruned after 30 days while the plugin is installed; after uninstalling, remove any
-that remain.
+## 五分鐘上手
 
-## The pipeline
+1. 在專案目錄打 `/fankeel`。它先看目錄、git 狀態與 TODO，再最多問兩題：哪個專案、做什麼 task。它不會問你要動哪些檔——動了才記。
+2. 它替 task 選一個類別，類別決定 route，並說出來讓你可以不同意：
 
-Seven stages, each named for what it produces rather than how it feels:
+   | 類別 | route |
+   |---|---|
+   | `spike` | survey → build |
+   | `bounded` | survey → design → build → verify → land |
+   | `architectural` | survey → design → plan → build → verify → audit → land |
 
-```mermaid
-flowchart LR
-    S["<b>survey</b><br/>search the code, read the docs —<br/>does this already exist?"]
-    D["<b>design</b><br/>one approach, its trade-offs,<br/>and the test that settles it"]
-    P["<b>plan</b><br/>split into tasks you can test<br/>and review one at a time"]
-    B["<b>build</b><br/>write it, test it, commit it —<br/>one review per task"]
-    V["<b>verify</b><br/>run the tests, check that what<br/>you changed actually changed"]
-    A["<b>audit</b><br/>find the pages that stopped<br/>being true"]
-    L["<b>land</b><br/>close the TODOs, rewrite the map,<br/>then merge, PR, or keep"]
-
-    S --> D --> P --> B --> V --> A --> L
-```
-
-**A route is the stages one task actually needs, in order.** Not every task is
-seven. A class picks one when the task starts, and every prompt from then on
-carries it with your position bracketed, so a two-stage task is never reported as
-permanently unfinished at 2 of 7:
-
-```
-spike          route: [survey] → build                                          (1 of 2)
-bounded        route: survey → design → [build] → verify → land                 (3 of 5)
-architectural  route: survey → design → plan → [build] → verify → audit → land  (4 of 7)
-```
-
-Only the current stage's rules are sent, and they are sent again every turn — a
-pointer is only as strong as the salience of what it points at. What each stage
-produces, what happens inside one, and how a class picks a route are in
-[docs/pipeline.md](docs/02-architecture/pipeline.md).
-
-## Every stage ends at a gate
+3. 每站做完停在 gate：選項一核准並往下一站，選項二留在這站，選項三暫停——下一步寫進 registry，下次 `/fankeel` 接著做。
+4. statusline 的 badge 顯示目前在哪站，例如 `[FANKEEL:BUILD]`；別的 session 動到你的檔時變成 `[FANKEEL:CLASH]`。
+5. 監控站把這台機器的所有 session 畫成一頁。網址在 `/fankeel` 注入的 `station:` 那行；分頁關了，Windows 雙擊 `.fankeel/station.bat`，其他系統執行 `.fankeel/station.sh`。
 
 ```mermaid
 flowchart LR
-    W["do the work"] --> R["report in this<br/>stage's shape"]
-    R --> Q{"AskUserQuestion"}
-    Q -- "1 · approve, move on" --> N["next stage<br/>on the route"]
-    Q -- "1 · at the last stage" --> D["stand the task down"]
-    Q -- "2 · stay here" --> W
-    Q -- "3 · pause" --> P["next is written down;<br/>the task outlives the session"]
-    N --> W
+    S["survey<br/>已經有什麼"] --> D["design<br/>一個做法"] --> P["plan<br/>拆成 task"] --> B["build<br/>寫、測、提交"] --> V["verify<br/>證據"] --> A["audit<br/>哪些文件不再是真的"] --> L["land<br/>收尾、merge 或 PR"]
 ```
 
-The gate is not conditional on there being something to decide: finishing a stage
-is the moment the next decision exists, and the answer being predictable is not
-the same as it having been given. Picking option one *is* the approval, so its
-description says what is being approved — after `design`, that is the approach
-itself. Each stage also ships the shape of its report, not only a description
-of one — the shape `build` ships:
+## 指令
 
-```
-- path +12/-3 — what changed
-- path (new) — what it is
-
-done: <n> of <m> — ledger or file table
-docs-check: clean, or <n> fixed and <n> left
-deferred: <heading> — <TODO entry, or omit this line>
-then AskUserQuestion
-```
-
-## The badge, and the station
-
-fankeel writes one word to `~/.claude/modes/<session_id>/fankeel`, and
-[TokenBar](https://github.com/FanFantom9452/ClaudeCodeCLI-TokenBar) renders any
-flag it finds there — so the two work together with no wiring on either side:
-
-```
-[FANKEEL:BUILD] | Opus 5 | my-project | main ↑2 +42/-7 ?1
-ctx ███▊░░░░░░  38%    ·    5h ██████▌░░░  66%   ↻ 1h 46m    ·    7d █████▊░░░░  58%
-```
-
-The word is the stage, not an intensity. `clash` takes the slot when another live
-session is in your files, and `init` is the gap between `/fankeel` being submitted
-and a task existing. The seven stage colours ship with TokenBar from v1.4.0 on;
-the palette, both config formats and what each colour is doing are in
-[docs/statusline.md](docs/90-agent/reference/statusline.md).
-
-Every session this machine has run, live or abandoned or stood down, is one page:
-the station — less any project whose profile sets `station.hide`, which appears
-on no row, in no total and in no detail file. `node scripts/station.js --open` opens the newest, and `serve` in
-place of that is the live form — [docs/station.md](docs/90-agent/reference/station.md).
-
-## The five scanners
-
-| | |
+| 指令 | 做什麼 |
 |---|---|
-| `node scripts/docs-check.js` | Every reference still resolves. A second to run, and the `verify` and `audit` rules call for it. |
-| `node scripts/residue.js` | What is in this tree that nobody decided about: untracked and unignored, a worktree whose branch is merged and has nothing uncommitted, an environment nothing can rebuild or run, the weight of what is ignored, directories holding no files. It lists; only `--sweep` (which land's `clean` also runs) removes spent agent worktrees and branches. |
-| `node scripts/docs-audit.js` | The fortnightly deep pass: which pages have stopped being true, and which two of them disagree. `/fankeel-audit` is the whole sweep — it runs all five, reads the shortlist they produce, then offers the cleanup. |
-| `node scripts/memory-check.js` | Claude Code's own memory for this project: the index and the directory agreeing, cited paths that still exist, `path:line` inside its file. |
-| `node scripts/input-check.js` | Every file loaded into every session's input — global and project `CLAUDE.md`, each project's `MEMORY.md` — largest first with bytes and estimated tokens, then what could be trimmed. Lists, never fails, never edits. |
+| `/fankeel` | 開始、接續、接手或收掉 task |
+| `/fankeel-station` | 重開監控站 |
+| `/fankeel-audit` | 文件與程式碼的整套稽核 |
+| `/fankeel-ask` | 把卡住的一題交給更強的模型判 |
+| `/fankeel-init` | 第一次在一個專案使用時的導入 |
+| `/fankeel-explain` | 簡報、報告、進度同步 |
+| `/fankeel-upgrade` | 舊專案升級到新版的設定 |
+| `/fankeel-retro-all` | 回顧所有匯出的 session |
+| `/fankeel-panel` | 開關側邊的 Pane |
 
-None of them decides that two documents contradict each other, because nothing
-mechanical can. What the cap is, and why comparing two runs beats comparing two
-headline counts, is in [docs/documents.md](docs/90-agent/reference/documents.md).
+## 深入閱讀
 
-## Where to find things
-
-| I want to know | Page |
+| 想知道 | 頁面 |
 |---|---|
-| What `/fankeel` asks me, the seven stages, and how a route is chosen | [docs/pipeline.md](docs/02-architecture/pipeline.md) |
-| What `.fankeel/map.md` holds, and why a page marked design-intent is not drift | [docs/pipeline.md](docs/02-architecture/pipeline.md) |
-| What gets written to disk, what is committed, and what `notes` and `next` are for | [docs/registry.md](docs/90-agent/reference/registry.md) |
-| What `[FANKEEL:CLASH]` means, and how to stop a collision raising a prompt | [docs/collisions.md](docs/90-agent/reference/collisions.md) |
-| What `docs.json` declares, and why an archive naming deleted code is not a bug | [docs/documents.md](docs/90-agent/reference/documents.md) |
-| What a subagent is told when it starts, and when `/fankeel-ask` is worth the money | [docs/subagents.md](docs/90-agent/reference/subagents.md) |
-| The badge word, and how to colour each stage | [docs/statusline.md](docs/90-agent/reference/statusline.md) |
-| Every session on this machine on one page, and how to put an abandoned one down | [docs/station.md](docs/90-agent/reference/station.md) |
-| Why fankeel ships no output style, and where its voice lives instead | [docs/decisions/2026-09-13-no-output-styles.md](docs/03-decisions/2026-09-13-no-output-styles.md) |
-| How the plugin is built and checked, and the four scripts that stop a claim drifting | [docs/development.md](docs/01-guide/development.md) |
-| How to run the behaviour eval, and what to do when `claude plugin eval` says early access | [docs/evals.md](docs/90-agent/reference/evals.md) |
-| How a deferred thing becomes a TODO entry under `docs/90-agent/todo/`, and what `todo-check` refuses | [docs/todo.md](docs/90-agent/reference/todo.md) |
-| What a task's `.board` drawing is, and where the station shows it as `AI 畫的圖` | [docs/station.md](docs/90-agent/reference/station.md) |
-| How a session is exported as one masked bundle under `.fankeel/bundles/`, and how every bundle is reviewed at once | [skills/fankeel-retro-all](skills/fankeel-retro-all/SKILL.md) |
-| Why any of it was built this way | [docs/decisions/fankeel-shell.md](docs/03-decisions/fankeel-shell.md) |
+| 從安裝到走完第一條 route | [開始使用](docs/01-guide/getting-started.md) |
+| 七站、三種類別、gate 怎麼答、registry | [概念](docs/01-guide/concepts.md) |
+| 把常答的 gate 先寫好、調整派工與壓縮 | [Profile](docs/01-guide/profile.md) |
+| 監控站每個 view 看什麼 | [監控站](docs/01-guide/station.md) |
+| fankeel 在背景做了什麼 | [背景在做什麼](docs/01-guide/what-runs.md) |
+| 五支掃描器怎麼用 | [掃描器](docs/01-guide/scanners.md) |
+| 裝了沒反應、badge 不見、編輯被擋 | [疑難排解](docs/01-guide/troubleshooting.md) |
+| 每一站裡面的步驟、route 怎麼選（英文） | [pipeline.md](docs/02-architecture/pipeline.md) |
+| 每個目錄與檔案負責什麼（英文） | [layout.md](docs/02-architecture/layout.md) |
+| 為什麼這樣設計 | [決策紀錄](docs/03-decisions/fankeel-shell.md)，全部決策見 [docs/README.md](docs/README.md) |
+| 開發與發版、測試怎麼跑（英文） | [development.md](docs/01-guide/development.md)、[CONTRIBUTING.md](CONTRIBUTING.md) |
 
-The full index, question by question, is [docs/README.md](docs/README.md).
-
-## What lives where
-
-One row per directory, and under the three that run, every hook and the
-`lib/` and `scripts/` files worth opening first: `hooks/` is what Claude Code
-calls, `scripts/` is what a person or a skill runs, and `lib/` is what both of
-them call.
-`node scripts/layout.js` prints the half of this a listing can derive; the
-right-hand column is the half it cannot.
-
-```
-fankeel/
-├── .claude-plugin/    plugin.json — the skills, the agents, every hook and its timeout — and marketplace.json
-├── .fankeel/          this repository's own settings: docs.json files each page, profile.json answers gates, .gitignore; and, generated and ignored, .fankeel/station.bat and station.sh, which open this machine's station
-├── agents/            every subagent the stages dispatch, one file each — reader, reviewer, verifier, judge, fixer, brain, implementer, mover, mutator, writer, render-reviewer, mockup and the rest — with its tools and model
-├── assets/            station/, the station page: index.html, station.css and station.js, copied beside every page a write produces, and tour.html, tour.css and tour*.js, the one-minute promo film; tune/overlay.js, which scripts/tune.js serve injects into every page it sends
-├── bench/             the fixed inputs and two-sided controls scripts/bench.js runs: add-feature/, fix-bug/ and review-planted/, the whole tasks `run` compares arms on; roles/, one directory per role, each holding twelve items in three tiers; drift/, the long task the drift 2×2 checks step by step
-├── docs/              reference pages by audience: 01-guide/, 02-architecture/, 03-decisions/, and 90-agent/ (reference/, plans/, reports/, judgements/) with 99-archive/ for what it retires
-├── evals/             behaviour eval cases, one directory each, graded by scripts/eval.js with claude -p
-├── hooks/             every hook Claude Code runs; each reads stdin, exits 0 on every path and leaves the work to lib/. Six are not rowed below: agent-end.js (SubagentStop and SubagentStart: when each subagent stopped, in .fankeel/build/agents-<session>.json, for the Pane's agent tree; a start takes the stop away; a stop whose final message runs past 3000 characters is refused once, the judge excepted), title.js (PreToolUse on Agent|Task: a dispatch's description opens with its model, version and effort, and a profile override's pinned model is swapped in), dispatch-gate.js (PreToolUse on Agent|Task: the fifth Agent or Task dispatch in one assistant message asks first, with a cost estimate), budget.js (PreToolUse and PostToolUse, subagents only: a soft context threshold nudges a handoff, the hard one refuses all but it, and a SubagentHandback is refused while an agent that subagent dispatched has not stopped), gate-write.js (PostToolUse on Write: a stage agent's handoff gate is checked the moment it is written) and relay-cap.js (PreToolUse on SendMessage and the session send_message tool: a message over 2000 characters is refused, and a file path asked for instead)
-│   ├── inject.js      UserPromptSubmit: the block on every prompt, the init block on /fankeel, the badge
-│   ├── resume.js      PostToolUse on AskUserQuestion: the stage's rules again once a gate is answered
-│   ├── gate.js        PreToolUse on AskUserQuestion: stamps when a gate opened, so the wait can be timed; on a controlled stage it also validates that the controller's own question copies the handoff's gate word for word, denying a botched attempt or a malformed file gate; with `gate.station` set, it first waits that many seconds for the station's answer; it also carries `gate.away` (past 200k tokens in play, a `/compact` hint, and with `ask` one more question; once that one is answered 要離開 the work goes on, the next question that needs the user is held back instead of asked, the turn ends, and compact.ts compacts)
-│   ├── guard.js       PreToolUse on writes, shells and subagent dispatches: the scope guard, read-only agents kept read-only, and no fankeel-brain for a stage stage.agents does not name; and every git commit scanned for the words in .fankeel/sensitive.txt
-│   ├── touch.js       PostToolUse on Edit, Write, NotebookEdit: the files this task touched
-│   ├── brief.js       SubagentStart: what a subagent is told about the task it was sent from
-│   ├── carry.js       SessionStart on clear or fork: offers the task a /clear left behind
-│   ├── compact.ts     not a command hook: an engine module that hooks/mod.ts, declared in hooks/hooks.json, registers, compacting the main session at the profile's `compact.at` (450k tokens by default, `off` never), or at the end of the turn in which hooks/gate.js held a question back from a user who answered 要離開 (`awayAt`), while it owns an active fankeel task, in an interactive session where the module was enabled; pane.ts beside it, with pane-bar.ts, pane-band.ts, pane-status.ts, pane-gate.ts, pane-svg.ts and pane-agents.ts, is the same module's two drawings: two rows above the prompt while the session owns a task (the stage, the route as dots, tasks N/M and the minutes, with a badge and a countdown while a gate waits; then context, the 5h quota and the 7d quota as bars, and a count of the live sessions in the same files), and the Pane, opened by itself while the session owns a task and toggled by the /fankeel-panel command pane.ts registers (the task and next in full with the route row, the files a live session shares and who shares them, the plan's tasks, a row each with its status and who it went to — the subagent whose description names task N, with its model, minutes and tokens, or before one goes out the plan's Dispatch model — the task's subagents as a tree, context against the compact threshold, the three newest notes, while a station is up the project's open TODO entries under four buttons — Ready, Needs a decision, Blocked and Watch, each with its count — the one pressed listing up to six of its titles, each a button that opens the station's TODO panel on that entry, then 還有 N 條 for the rest, and a foot with the session id and a button that opens the station; the route, tasks, agents and TODO each sit under a ▾ head button that folds the block to that one row, and a new session starts with every block open; tasks, TODO, agents, context and notes on one grey rail); on Claude Desktop the band's two rows and the Pane's route and clash are drawn as Svg from the same rows, and every other surface draws the text; Remote Control and the mobile app draw neither, and Claude Desktop runs the snapshot taken at install, so a new version shows there only after claude plugin update fankeel@fankeel
-│   └── leave.js       SessionEnd: how the session ended and what it spent, and the station rewritten
-├── lib/               the logic, as functions tested directly; nothing here reaches into scripts/ or hooks/
-│   ├── registry.js    one entry per session under .fankeel/sessions/, written by rename so no read is torn
-│   ├── stages.js      the seven stages, the three classes and their routes, every stage's rules and output shape
-│   ├── render.js      the injected blocks: every prompt, after a gate, on /fankeel, when a task is renamed, for a subagent, after /clear
-│   ├── live.js        which sessions are running, read from Claude Code's own sessions/<pid>.json; overlap.js is which of them have touched the same files
-│   ├── guard.js       the scope guard's answer to an edit in another live session's files: nothing, ask or deny
-│   ├── badge.js       the statusline word and lead line TokenBar draws
-│   ├── map.js         .fankeel/map.md: the signpost, the filing, this tree, the planned and retired pages
-│   ├── docs.js        docs.json: buckets, roles, and which pages may be out of date
-│   ├── onboard.js     the three cheap onboarding checks task.js start runs on a task's project
-│   ├── sensitive.js   the words in .fankeel/sensitive.txt, found in what a commit carries
-│   ├── station.js     the station's model: finding every registry, the rows, the data and detail scripts; detail.js takes one session apart, cached by its files' size and mtime
-│   ├── usage.js       what a transcript spent: requests, models, agents and every dispatch; replay.js is a session's events in time order, and one agent's own steps
-│   ├── plantasks.js   a plan's tasks, and which of them may run at once
-│   ├── handoff.js     a stage agent's report and the user's answer, under .fankeel/build/task-<started>/
-│   └── profile.js     the project and machine profile: the standing answers to a gate
-├── scripts/           the command line, thin wrappers over lib/
-│   ├── task.js        start a task, move its stage, note, pause, stand it down
-│   ├── orient.js      what is under this directory, before /fankeel asks anything
-│   ├── map.js         writes .fankeel/map.md
-│   ├── onboard.js     prints the onboarding checks, pass or fail; --full adds docs-check and drift
-│   ├── layout.js      prints the half of this tree a listing can derive
-│   ├── survey.js      what already exists here, for the survey stage
-│   ├── ledger.js      the build ledger: init, complete, groups, lint, brief
-│   ├── station.js     writes the station page, or serves it live
-│   ├── docs-check.js  every reference in the documents still resolves
-│   ├── docs-audit.js  which pages stopped being true, and which two disagree
-│   ├── residue.js     what is in the tree that nobody decided about
-│   ├── todo-check.js  whether the TODO entries are still an index
-│   ├── upgrade.js     which migrations an older project still needs, and --apply for the safe one
-│   └── version.js     the release number, in every place that carries it
-├── skills/            one directory per skill — fankeel, one per stage, ask, audit, explain, init, retro-all, station, upgrade — and registry.json
-└── tests/             node --test, one file per module or behaviour; tmp.js is where every scratch directory comes from
-```
-
-## Development
+## 開發
 
 ```
 npm test
 claude plugin validate .
 ```
 
-Run one `npm test` at a time. Some tests used to share fixed temp file names, so concurrent suites unlinked each other's files; that is fixed in `tests/sensitive.test.js` and `tests/render.test.js`. A few tests still time real work against budgets the code itself promises — the station's first scan of the drives (`tests/station-cli.test.js`), the 2.5 seconds a prompt waits for `git status` (`lib/dirty.js`), and the `/fankeel` probe of a busy station (`tests/inject.test.js`) — and three suites at once can starve those of CPU, so one of them fails with nothing wrong. Those bounds are the product's own, so they are not loosened to let parallel runs pass — with one exception: the git timeout (`gitTimeout` in `lib/guard.js`, used by `lib/dirty.js`) reads `FANKEEL_GIT_TIMEOUT` in milliseconds, 2500 when unset, and the tests that need git's answer rather than its timing (`tests/dirty.test.js`, `tests/inject.test.js`, `tests/worktree-paths.test.js`) set it to 30000. A different failure shares the symptom: two full suites at once on a machine short of commit memory fail with `VirtualAlloc failed`, exit `0xC0000409`, `0xC000012D` (STATUS_COMMITMENT_LIMIT) or git's `Out of memory` — that is Windows running out of commit, not a failing test, and one suite alone passes, which is why two suites are never run at once.
-
-Every synchronous subprocess a test starts has a timeout even when the test names none: `npm test` and `npm run test:fast` load `tests/subprocess-timeout.js` with `--require`, which gives `execFileSync`, `spawnSync` and `execSync` a default of 120000 milliseconds, or `FANKEEL_TEST_SUBPROCESS_TIMEOUT` when it is set. A child that never exits turns its own test red with `ETIMEDOUT` instead of hanging the run. Running one file with a bare `node --test tests/<file>` skips it; add `--require ./tests/subprocess-timeout.js` to get it there too.
-
-`node scripts/suite.js --session <id>` queues on its own: a second run on
-the same machine waits for the first and prints whose run it is waiting on.
-`npm run test:fast` skips the tests named `@slow`; `npm test` runs them all.
-
-`lib/` is pure logic, tested directly; `hooks/` is where stdin, stdout and process
-exit live, and every hook exits 0 on every path, because a hook that throws blocks
-the thing it was called for and a plugin that can wedge your terminal is worse than
-no plugin. `todo-check.js`, `version.js`, `skills-check.js` and
-`stage-registry.js` each hold one written claim to the code it describes, and
-[docs/development.md](docs/01-guide/development.md) says what each of them checks. The
-behaviour eval and its runner are in [docs/evals.md](docs/90-agent/reference/evals.md).
+一次只跑一個 `npm test`。其餘見 [development.md](docs/01-guide/development.md)。
