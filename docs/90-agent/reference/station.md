@@ -587,11 +587,14 @@ attributed to `survey` — the stage that opened the gate — rather than droppe
 deleted from `usage` when it is written, and why every existing reader still
 sees the shape it always had, is in [registry.md](registry.md).
 
-The page is five files and a directory. `index.html` is a shell with no session data in it,
+The page is an `index.html` and a directory. `index.html` is a shell with no session data in it,
 copied byte for byte from `assets/station/index.html`, at the top of
-`.fankeel/`; its nine sibling files live under `.fankeel/station/` —
+`.fankeel/`; its twenty-seven sibling files live under `.fankeel/station/` —
 `station.css`, `station.js`, `i18n.js` and the five modules `spend-talk.js`,
-`spend-kinds.js`, `spend-range.js`, `spend-panel.js` and `remote-card.js` are copied the same way, and `station-data.js`
+`spend-kinds.js`, `spend-range.js`, `spend-panel.js` and `remote-card.js`, and the
+redesigned pages' nine modules `tip`, `live-page`, `sessions-page`, `projects-page`,
+`project-page`, `session-page`, `session-dispatch`, `session-talk` and `gate-frame`, each
+a `.js` and a `.css` (eighteen files), are copied the same way, and `station-data.js`
 is the only generated one, and holds `window.STATION` — the scan, and nothing
 else. The shell is copied rather than pointed at, because the plugin directory
 carries its version in its path and the copy under `<root>/.fankeel/` would
@@ -1274,7 +1277,7 @@ The conversation last read is held in memory and parsed again only when
 `station-data.js`, a detail script or any copy of the page: the full text stays
 on this machine.
 
-`GET /station/spend?from=<YYYY-MM-DD>&to=<YYYY-MM-DD>[&top=<n>]` is the 花費 page's range report (`scripts/station.js`, the `/station/spend` branch; `report` in `lib/spendrange.js`). It reads every transcript under this server's config dir — not only the registry's sessions — and picks the sessions by `lib/compare.js`'s rule, a session in the range its first line falls in with its agents, so `usd` is what `scripts/usage-compare.js` prints for the same range. It answers JSON: `range`, `prev` (the same number of days before it, with `sessions` and `usd`), `sessions`, `usd`, `kinds` and `tokens` (`main` and `agent`, each the five kinds with the two cache writes apart), `types` (the main session and each agent type, `fankeel:` and `fankeel-` dropped, largest first, with `count`, `usd`, `share`, `cost`), `byModel` (per model id, `lib/spendrange.js`'s `modelsInto`: `cost` and `tokens` by kind, `usd`, `share`), `top` (the `n` costliest sessions, 10 by default and at most 50, each with `id`, `project`, `first`, `usd`, `share`, `mainUsd`, `agentUsd`, `agents`, `turns`, `avgCtx`, `peak`) and `verified`. A range that does not parse is a 400. Each session's row is held in memory while `keyOf` (`lib/detail.js`) says its files have not moved, so only the first request reads every transcript. The data file also carries `prices`, `lib/prices.js`'s `perMillion`, which the component notes read their unit prices from. The page's own modules `assets/station/spend-talk.js`, `assets/station/spend-kinds.js`, `assets/station/spend-range.js` and `assets/station/spend-panel.js`, with the 手機遠端 card's `assets/station/remote-card.js`, are served and written under `station/` beside `station.js`.
+`GET /station/spend?from=<YYYY-MM-DD>&to=<YYYY-MM-DD>[&top=<n>]` is the 花費 page's range report (`scripts/station.js`, the `/station/spend` branch; `report` in `lib/spendrange.js`). It reads every transcript under this server's config dir — not only the registry's sessions — and picks the sessions by `lib/compare.js`'s rule, a session in the range its first line falls in with its agents, so `usd` is what `scripts/usage-compare.js` prints for the same range. It answers JSON: `range`, `prev` (the same number of days before it, with `sessions` and `usd`), `sessions`, `usd`, `kinds` and `tokens` (`main` and `agent`, each the five kinds with the two cache writes apart), `types` (the main session and each agent type, `fankeel:` and `fankeel-` dropped, largest first, with `count`, `usd`, `share`, `cost`), `byModel` (per model id, `lib/spendrange.js`'s `modelsInto`: `cost` and `tokens` by kind, `usd`, `share`), `top` (the `n` costliest sessions, 10 by default and at most 50, each with `id`, `project`, `first`, `usd`, `share`, `mainUsd`, `agentUsd`, `agents`, `turns`, `avgCtx`, `peak`) and `verified`. A range that does not parse is a 400. Each session's row is held in memory while `keyOf` (`lib/detail.js`) says its files have not moved, so only the first request reads every transcript. The data file also carries `prices`, `lib/prices.js`'s `perMillion`, which the component notes read their unit prices from. The page's own modules `assets/station/spend-talk.js`, `assets/station/spend-kinds.js`, `assets/station/spend-range.js` and `assets/station/spend-panel.js`, with the 手機遠端 card's `assets/station/remote-card.js`, are served and written under `station/` beside `station.js`. The redesigned pages' modules (`tip`, the five pages, `session-dispatch`, `session-talk` and `gate-frame`, each a script and a stylesheet) are served and written the same way.
 
 導覽 (`#/tour`) frames `station/tour.html`, the tour's own page
 (`assets/station/tour.html`). Only a served page can show it; the written file
@@ -1340,7 +1343,9 @@ player waits on `TOUR_PROMO30V5.ready` before the first frame.
 `serve` answers a fixed list of files from `assets/station/` — `STATIC` in
 `scripts/station.js`: `station.js`, `station.css`, `i18n.js`, the four spend modules
 `spend-talk.js`, `spend-kinds.js`, `spend-range.js` and `spend-panel.js`, the
-手機遠端 card's `remote-card.js`, the phone page's `mobile.js` and `mobile.css`,
+手機遠端 card's `remote-card.js`, the redesigned pages' nine modules as `<name>.js` and
+`<name>.css` (`tip`, `live-page`, `sessions-page`, `projects-page`, `project-page`,
+`session-page`, `session-dispatch`, `session-talk` and `gate-frame`), the phone page's `mobile.js` and `mobile.css`,
 `tour.html`, `tour.css`, `tour.js` and every `tour-<name>.js` (any number of hyphenated
 segments, so `tour-reel-kit.js` and the like are served too). Any other name
 under `/station/` is a 404, so nothing else in the plugin directory is
