@@ -22,7 +22,7 @@ const path = require('node:path');
 const util = require('node:util');
 const { readObject } = require('../lib/json.js');
 const registry = require('../lib/registry.js');
-const { handoffPath, commitPath, ledgerCommitPath, answerPath, awaitHandoff, newestCommit, caseOfPrompt, promptOf, workflowOf, withCheckout } = require('../lib/handoff.js');
+const { handoffPath, commitPath, ledgerCommitPath, answerPath, awaitHandoff, newestCommit, caseOfPrompt, promptOf, workflowOf, readGate, withCheckout } = require('../lib/handoff.js');
 const { newestPlan } = require('../lib/render.js');
 const { transcriptOf } = require('../lib/detail.js');
 const { sessionDirOf, agentFiles } = require('../lib/usage.js');
@@ -203,6 +203,18 @@ function pageLine(o) {
     return probe(record).then((up) => (up ? '\npage: ' + record.url + 'f/' + o.session + '/' + tab : ''));
 }
 
+// 2026-10-21 await-gate-crlf judgement: the controller copies a gate's
+// `questions` and nothing else — hooks/gate.js compares only those — so they
+// are printed here, parsed by the readGate the hook uses: one line, CRLF
+// gone. No readable gate, one that would be refused, a group brain's report,
+// or a workflow hand-over: nothing.
+const QUESTIONS_SAID = ' Its `questions:` line below is that gate\'s questions, as AskUserQuestion takes them.';
+function questionsLine(o) {
+    if (Number.isInteger(o.group) || workflowOf(o.handoff)) return '';
+    const gate = readGate(o.handoff);
+    return gate && !gate.invalid ? '\nquestions: ' + JSON.stringify(gate.questions) : '';
+}
+
 // A handoff whose gate went out after the file last changed has been asked
 // already: an older await finishing on it has nothing left to say, and its
 // `handoff` line would only wake the session to say so (TODO 舊 await 通知別叫醒主對話).
@@ -287,7 +299,9 @@ function main(argv, env) {
             + (failed ? ' Failure handoff: ' + failed.replace(/\\/g, '/') + '.' : state === 'lost' || state === 'timeout' ? ' (failure handoff not written)' : '')
             + stale;
         if (state === 'handoff' && already(o.root, opts.session, o.handoff)) return { text: 'stale ' + o.handoff + ' — already asked; nothing to do, end the turn without a reply.' };
-        return state === 'handoff' ? pageLine(o).then((page) => ({ text: line + (page ? PAGE_OPEN : '') + page })) : { text: line };
+        if (state !== 'handoff') return { text: line };
+        const questions = questionsLine(o);
+        return pageLine(o).then((page) => ({ text: line + (questions ? QUESTIONS_SAID : '') + (page ? PAGE_OPEN : '') + page + questions }));
     }, (e) => {
         release();
         throw e;

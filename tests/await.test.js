@@ -645,3 +645,31 @@ test('plan page: a plan report handing over a workflow gets no page: line from a
         await s.close();
     }
 });
+
+// 2026-10-21 await-gate-crlf judgement: a CRLF handoff's gate questions come
+// back on one line that parses as they are, multiSelect filled the way
+// hooks/gate.js reads it; a gate that would be refused prints none.
+const GATE_TICKS = '`'.repeat(3);
+const CRLF_GATE = { questions: [{ header: '下一站', question: 'plan?', options: [{ label: 'plan', description: 'a' }, { label: 'stay', description: 'b' }, { label: 'pause', description: 'c' }] }], next: 'plan' };
+
+test('a CRLF handoff prints its gate questions on one line that parses', async () => {
+    const f = fixture({ stage: 'survey', moves: [['survey', 1]] });
+    const body = ['report', '', GATE_TICKS + 'json gate', JSON.stringify(CRLF_GATE, null, 2), GATE_TICKS, ''].join('\n').replace(/\n/g, '\r\n');
+    at(path.join(f.task, 'survey.md'), Date.now(), body);
+    const out = await awaitCli.main(['--session', SID, '--root', f.root], f.env);
+    assert.doesNotMatch(out.text, /\r/);
+    const lines = out.text.split('\n');
+    assert.ok(lines[0].includes(' Its `questions:` line below is that gate\'s questions'), lines[0]);
+    const q = lines.find((l) => l.startsWith('questions: '));
+    assert.ok(q, out.text);
+    assert.deepEqual(JSON.parse(q.slice('questions: '.length)), CRLF_GATE.questions.map((x) => Object.assign({}, x, { multiSelect: false })));
+});
+
+test('a handoff whose gate would be refused prints no questions line', async () => {
+    const f = fixture({ stage: 'survey', moves: [['survey', 1]] });
+    const bad = { questions: [{ header: '下一站', question: 'plan?', options: [{ label: 'plan', description: 'a' }] }], next: 'plan' };
+    at(path.join(f.task, 'survey.md'), Date.now(), GATE_TICKS + 'json gate\n' + JSON.stringify(bad) + '\n' + GATE_TICKS + '\n');
+    const out = await awaitCli.main(['--session', SID, '--root', f.root], f.env);
+    assert.doesNotMatch(out.text, /questions: /);
+    assert.doesNotMatch(out.text, /Its `questions:` line/);
+});
