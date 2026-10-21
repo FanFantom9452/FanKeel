@@ -302,6 +302,11 @@ on what was picked.
 TODO entries point at plans — an entry's `link`, or a `TODO.md` line's. Moving a plan changes an address, so run
 `node <plugin>/scripts/todo-check.js` after anything moves.
 
+Record what this stage verified that a later stage will need again, one fact a
+line: `node <plugin>/scripts/context.js add "<fact>" --at <path:line> --session <id>`.
+Do not reopen a `path:line` that context.md already lists; its content is
+inlined in your brief.
+
 ## Output
 
 ```

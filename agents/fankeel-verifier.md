@@ -47,6 +47,12 @@ the list and cannot be called.
 - Do not answer from memory what a check would show — run it, or say you did
   not.
 
+A fact this task's later stages will need again belongs in `context.md`: run
+`node <plugin>/scripts/context.js add "<fact>" --at <path:line> --session <id>`
+for it before you return.
+Do not reopen a `path:line` that context.md already lists;
+its content is inlined in your brief.
+
 ## Return
 
 The path you wrote, and nothing else. The rows themselves stay in the file;

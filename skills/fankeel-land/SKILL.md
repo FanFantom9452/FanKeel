@@ -405,6 +405,11 @@ delete them.
 Clean up only worktrees the project created under `.worktrees/`, `worktrees/` or `.fankeel/worktrees/`.
 Anything else belongs to the host environment.
 
+Record what this stage verified that a later stage will need again, one fact a
+line: `node <plugin>/scripts/context.js add "<fact>" --at <path:line> --session <id>`.
+Do not reopen a `path:line` that context.md already lists; its content is
+inlined in your brief.
+
 ## Output
 
 ```

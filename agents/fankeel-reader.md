@@ -71,3 +71,5 @@ belongs in `context.md`, not only in your return: run
 `node <plugin>/scripts/context.js add "<fact>" --at <path:line> --session <id>`
 for it before you return. Your return is this reader's alone; `context.md`
 is what the next reader, and the next stage, reads instead of re-deriving it.
+Do not reopen a `path:line` that context.md already lists; its content is
+inlined in your brief.

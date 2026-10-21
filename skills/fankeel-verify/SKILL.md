@@ -329,6 +329,11 @@ one reviewer over its range and a `Fix:` line in the ledger. On 2026-09-06 five
 fix commits landed during this stage with no reviewer, and the next lap's
 findings were theirs.
 
+Record what this stage verified that a later stage will need again, one fact a
+line: `node <plugin>/scripts/context.js add "<fact>" --at <path:line> --session <id>`.
+Do not reopen a `path:line` that context.md already lists; its content is
+inlined in your brief.
+
 ## Output
 
 ```

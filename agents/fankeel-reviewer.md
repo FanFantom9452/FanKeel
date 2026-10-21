@@ -265,6 +265,12 @@ not returned at all, not marked and not counted.
 End with `verify: <N> confirmed, <M> plausible, <K> dropped.` A finding
 whose path or line no longer exists is dropped, never `PLAUSIBLE`.
 
+A fact this task's later stages will need again belongs in `context.md`: run
+`node <plugin>/scripts/context.js add "<fact>" --at <path:line> --session <id>`
+for it before you return.
+Do not reopen a `path:line` that context.md already lists;
+its content is inlined in your brief.
+
 ## Return
 
 A finding's line ends `— fails when <the input or state> → <the wrong result>`;

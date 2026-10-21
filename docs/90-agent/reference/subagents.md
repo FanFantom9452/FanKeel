@@ -779,6 +779,7 @@ ordinary brief inlines the file's content — `renderBrief` and `renderBrainBrie
 in `lib/render.js` paste it in whole under `BRIEF_MAX`; over it `fit()` keeps the
 newest facts and names the file for the rest (`lib/render.js:758`, `' older ' + (n === 1 ? 'fact' : 'facts')`) — so a
 subagent no longer has to `Read` the file itself before using what it holds.
+Every stage and every dispatched agent writes its verified facts there.
 
 Build now dispatches one `fankeel:fankeel-brain` per disjoint `ledger.js
 groups` group, in parallel, each ending with its own group rather than one

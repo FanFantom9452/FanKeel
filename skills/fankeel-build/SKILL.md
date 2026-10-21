@@ -699,6 +699,11 @@ that meets the event an `if:` names moves the entry to `## Ready` or
 | "A stash will set the neighbours aside" | 2026-09-25: a `git stash push -u` then drop cleared an uncommitted `stage.agents` override, and the verify station dispatched a brain it should not have (`docs/90-agent/reports/patrols/2026-09-25-todo-line-and-multiplier.md`). |
 | "I will find the definition on disk" | 2026-09-06: a reviewer not told where `tokens` lived ran `find /` and sat 38 minutes (`skills/fankeel-plan/SKILL.md`, `Read:`). |
 
+Record what this stage verified that a later stage will need again, one fact a
+line: `node <plugin>/scripts/context.js add "<fact>" --at <path:line> --session <id>`.
+Do not reopen a `path:line` that context.md already lists; its content is
+inlined in your brief.
+
 ## Output
 
 ```

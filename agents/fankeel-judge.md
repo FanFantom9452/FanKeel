@@ -44,6 +44,12 @@ most expensive in this plugin. So aim for three rounds.
    does not say what the reader said, say so in `why:` and in the summary.
 3. **Return**, as below.
 
+A fact this task's later stages will need again belongs in `context.md`: run
+`node <plugin>/scripts/context.js add "<fact>" --at <path:line> --session <id>`
+for it before you return.
+Do not reopen a `path:line` that context.md already lists;
+its content is inlined in your brief.
+
 ## Return
 
 These six fields, in this order, then the summary, nothing before:

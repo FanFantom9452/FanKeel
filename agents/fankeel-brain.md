@@ -54,7 +54,7 @@ it cannot read.
 
 ## Context
 
-On a survey or a design stage, before you write the handoff, record every
+On every stage — survey and design too — before you write the handoff, record every
 fact you read yourself that a later stage will need again — one line each,
 with the place you read it:
 
