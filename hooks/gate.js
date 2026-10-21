@@ -14,7 +14,7 @@
 // session that is not in the mode. It writes a permission decision in two
 // cases only: a stage agent's gate that AskUserQuestion would reject is
 // denied, naming the field; and a question that looks like an attempted copy
-// of that gate (headed with the stage's name) but does not match it word for
+// of that gate (headed with the stage's name or the file gate's own first header) but does not match it word for
 // word is denied too, pointing the controller back at the file. Otherwise
 // `updatedInput` alone is not a decision — the probe behind this found that a
 // PreToolUse hook returning only `updatedInput` still lets the user pick — and
@@ -28,7 +28,7 @@
 // compared against what the controller actually asked (`gateMatches` in
 // lib/handoff.js). A match reaching the user is the real gate, correctly
 // typed: the in-flight mark clears and nothing more is written. A mismatch
-// whose first question is headed with the stage's name is a candidate for a
+// whose first question is headed with the stage's name or the file gate's own first header is a candidate for a
 // botched copy attempt — a paraphrase, a typo, a stale draft — but the header
 // alone is not enough to convict it: every question the controller asks
 // during a controlled stage carries that same header by convention, gate or
