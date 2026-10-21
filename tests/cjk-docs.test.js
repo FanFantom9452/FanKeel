@@ -19,6 +19,6 @@ test('fankeel-explain does not confess an escape that decoded correctly', () => 
     assert.match(read('skills/fankeel-explain/SKILL.md'), /A slip the reader never saw is not news\./);
 });
 
-test('README names the hand-back hold on budget.js', () => {
-    assert.match(read('README.md'), /a SubagentHandback is refused while an agent that subagent dispatched has not stopped/);
+test('layout.md names the hand-back hold on budget.js', () => {
+    assert.match(read('docs/02-architecture/layout.md'), /a SubagentHandback is refused while an agent that subagent dispatched has not stopped/);
 });

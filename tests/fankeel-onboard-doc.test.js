@@ -18,8 +18,8 @@ test('the fankeel skill files data and sends an onboard: line to fankeel-init be
   assert.match(start, /prints an `onboard:` line, run the fankeel-init skill on the project it names first, then survey/);
 });
 
-test('the README tree names the three new files', () => {
-  const readme = read('README.md');
+test('the layout.md tree names the three new files', () => {
+  const readme = read('docs/02-architecture/layout.md');
   for (const row of [/│ {3}├── onboard\.js {5}the three cheap onboarding checks/, /│ {3}├── sensitive\.js {3}the words in \.fankeel\/sensitive\.txt/, /│ {3}├── onboard\.js {5}prints the onboarding checks/]) {
     assert.match(readme, row);
   }

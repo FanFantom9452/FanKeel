@@ -1,7 +1,7 @@
 'use strict';
 
 // gate-14 and spend-6, as the user reads them: the profile key's own words and
-// the README's hook rows.
+// the hook rows in docs/02-architecture/layout.md.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -16,8 +16,8 @@ test('gate.away says the work goes on to the next decision and compacts there', 
   assert.doesNotMatch(desc, /在這輪結束時自動壓縮/);
 });
 
-test('README rows describe the hold, the compaction point and both caps', () => {
-  const readme = read('README.md');
+test('layout.md rows describe the hold, the compaction point and both caps', () => {
+  const readme = read('docs/02-architecture/layout.md');
   assert.match(readme, /Six are not rowed below/);
   assert.match(readme, /relay-cap\.js \(PreToolUse on SendMessage/);
   assert.match(readme, /past 3000 characters is refused once/);
