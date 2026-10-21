@@ -54,6 +54,7 @@ const { controlling, nextStage, normaliseRoute, FULL_ROUTE } = require('../lib/s
 const { handoffPath, answerPath, pendingPath, answersSince, answeredOf, handedOffSince, writeAnswer, readGate, patrolEntries, reportProblem, skipReason, gateMatches, withCheckout } = require('../lib/handoff.js');
 const { run, parse, refuse } = require('../lib/hook.js');
 const { askSlip } = require('../lib/cjk.js');
+const notify = require('../lib/notify.js');
 
 // `stage.agents` as the profile holds it, for a sentence.
 const agentsText = (values) => {
@@ -185,6 +186,18 @@ function emit(out, payload, root, mine, values) {
     try {
         registry.gateOpen(root, payload.session_id, { stage: mine.stage, hash: hashOf(payload.tool_input && payload.tool_input.questions) });
     } catch (e) { /* housekeeping */ }
+    // docs/90-agent/plans/2026-10-21-station-remote-design.md §5: every question
+    // this hook lets out is a gate waiting, said once to ntfy when `notify.gate`
+    // is on — here, before `stationAnswers` holds it, so the phone hears of it
+    // while the station can still answer. Every `refuse()` returns before
+    // `emit`, so a refused question sends nothing. A detached child sends the
+    // publish (lib/notify.js): nothing here waits on the network, and nothing
+    // about it reaches this hook's stdout or exit code. `values` is null when
+    // the profile could not be read, and `fire` then sends nothing.
+    try {
+        notify.fire(values, notify.gateEvent(mine, payload.tool_input && payload.tool_input.questions, payload.session_id, root),
+            { configDir: mine.configDir || profileLib.configDirOf() });
+    } catch (e) { /* housekeeping: a notification never changes the question */ }
     let answers = null;
     try {
         answers = stationAnswers(root, mine, values, payload.tool_input && payload.tool_input.questions);
