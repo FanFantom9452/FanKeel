@@ -46,6 +46,18 @@ fankeel 把一件工作切成幾站走，每站做完停下來問你一次。這
 
 選項都不合意，就用 Other 自己寫。profile 可以替某些 gate 先寫好答案，例如收尾要 merge 還是開 PR，見 [profile.md](profile.md)。設了 `gate.station` 的話，gate 也會出現在監控站上，可以在頁面上答。
 
+每一站也帶著它報告的骨架，不只是一段描述。`build` 的骨架長這樣：
+
+```text
+- path +12/-3 — what changed
+- path (new) — what it is
+
+done: <n> of <m> — ledger or file table
+docs-check: clean, or <n> fixed and <n> left
+deferred: <heading> — <TODO entry, or omit this line>
+then AskUserQuestion
+```
+
 ## registry
 
 registry 是專案裡的 `.fankeel/` 目錄，每個 session 一個檔：
