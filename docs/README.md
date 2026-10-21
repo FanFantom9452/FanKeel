@@ -666,6 +666,8 @@ is corrected by the next one, not by rewriting this.
 | Brief: how should land's retro keep a complete, portable record? | [90-agent/judgements/2026-10-20-retro-full-record.md](90-agent/judgements/2026-10-20-retro-full-record.md) — *judged 2026-10-20, fable* |
 | Brief: split the retro — land reviews this session, a skill reviews all of them? | [90-agent/judgements/2026-10-20-retro-land-vs-skill.md](90-agent/judgements/2026-10-20-retro-land-vs-skill.md) — *judged 2026-10-20, fable* |
 | Brief: Pane 能不能像 Claude Code 官方 UI 一樣列出 background task | [90-agent/judgements/2026-10-20-pane-bg-list.md](90-agent/judgements/2026-10-20-pane-bg-list.md) — *judged 2026-10-20, fable* |
+| 判官題目：land 的結案順序要不要改成「紀錄寫完才結案」 | [90-agent/judgements/2026-10-21-land-close-order.md](90-agent/judgements/2026-10-21-land-close-order.md) — *judged 2026-10-21, fable* |
+| 判官題目：await.js 要不要直接印出去掉 CRLF 的 gate 區塊 | [90-agent/judgements/2026-10-21-await-gate-crlf.md](90-agent/judgements/2026-10-21-await-gate-crlf.md) — *judged 2026-10-21, fable* |
 
 ## The five scanners
 
