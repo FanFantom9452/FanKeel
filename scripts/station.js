@@ -68,6 +68,8 @@ const ASSETS = path.join(PLUGIN, 'assets', 'station');
 // nothing else under the plugin directory is reachable by url.
 const STATIC = /^\/station\/((?:station|i18n|spend-[a-z]+)\.js|station\.css|tour(?:-[a-z]+)*\.(?:js|css|html))$/;
 const TYPES = { '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.html': 'text/html; charset=utf-8' };
+const CHARTROOM = /^\/chartroom\/([^/?#]+)(.*)$/;
+const SVG_CSP = { 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'" };
 
 // `--root`/`--scan` are `multiple: true`: `values.root`/`values.scan` come
 // back as an array of every occurrence, in order, rather than a hand-rolled
@@ -465,7 +467,10 @@ async function serve(opts) {
         let device = null;
         if (kind === 'tailnet') {
             const rule = remote.policy(req.method, url.pathname);
-            if (rule === 'local') return fail(403, 'this route answers on this machine only');
+            // The policy reads the normalised pathname, the Chartroom hand-off
+            // below the raw url: `/chartroom/p/../../station/x` is `device` to
+            // one and Chartroom's to the other, so either refuses it here.
+            if (rule === 'local' || CHARTROOM.test(req.url) || CHARTROOM.test(url.pathname)) return fail(403, 'this route answers on this machine only');
             if (req.method === 'POST' && !remote.sameOrigin(req.headers, tailnet.dnsName)) return fail(403, 'wrong origin');
             if (rule === 'device') {
                 device = remote.deviceFor(configDir, remote.tokenOf(req.headers.cookie), Date.now());
@@ -475,13 +480,14 @@ async function serve(opts) {
         if (req.method === 'POST') shared = null;
         // `/chartroom/<name>/…` is a registry root's architecture board,
         // handed to Chartroom before the nonce check below, on purpose:
-        // Chartroom guards its own routes — a Host that is not loopback is
-        // refused, and so is a POST whose Origin does not match its Host or
-        // whose body is not application/json — which a page on another
-        // origin cannot get past, while the AI posting ops from a shell has
-        // no nonce to send. `<name>` is the root's folder name. With
-        // `station.chartroom` unset this is the ordinary 404 at the end.
-        const chartroomHit = /^\/chartroom\/([^/?#]+)(.*)$/.exec(req.url);
+        // only loopback gets here — any other Host, the tailnet's included,
+        // was refused above — and Chartroom guards its own routes besides: a
+        // POST whose Origin does not match its Host or whose body is not
+        // application/json is refused, which a page on another origin cannot
+        // get past, while the AI posting ops from a shell has no nonce to
+        // send. `<name>` is the root's folder name. With `station.chartroom`
+        // unset this is the ordinary 404 at the end.
+        const chartroomHit = CHARTROOM.exec(req.url);
         const chartroomRoot = chartroomHit && profile.read(null, configDir).values['station.chartroom'];
         if (chartroomRoot) {
             let name;
@@ -683,7 +689,7 @@ async function serve(opts) {
             } catch (e) {
                 return e && e.name === 'ParseError' ? send(422, 'text/plain; charset=utf-8', e.message + '\n') : fail(500, 'cannot draw that board: ' + (e && e.message));
             }
-            return send(200, 'image/svg+xml', svg, Object.assign({ 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'" }, noStore));
+            return send(200, 'image/svg+xml', svg, Object.assign({}, SVG_CSP, noStore));
         }
         // The 手機遠端 card on #/settings (docs/90-agent/plans/2026-10-21-station-remote-design.md
         // §3). These four answer loopback only — `remote.policy` refuses them
@@ -716,11 +722,10 @@ async function serve(opts) {
             const code = remote.liveCode(configDir, Date.now());
             const svg = qr.qrSvg(tailnet.url + 'm#/pair/' + code.value);
             if (!svg) return fail(500, 'the pairing url is too long for a QR');
-            return send(200, 'image/svg+xml', svg, Object.assign({ 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'" }, noStore));
+            return send(200, 'image/svg+xml', svg, Object.assign({}, SVG_CSP, noStore));
         }
         if (req.method === 'POST' && url.pathname === '/station/remote/code') {
-            const form = await formOf();
-            if (!form) return;
+            if (!await formOf()) return;
             if (!tailnet.on) return fail(409, 'remote is off: nothing to pair with');
             const code = remote.newCode(configDir, Date.now());
             return send(201, 'application/json; charset=utf-8', JSON.stringify({ code: code.value, until: code.until }), noStore);
@@ -901,8 +906,11 @@ async function serve(opts) {
             if (scope === 'machine') {
                 const after = profile.read(null, configDir).values;
                 const trigger = keys.some((k, i) => /^notify\.(gate|stage|end)$/.test(k) && String(values[i]).trim().toLowerCase() === 'true');
-                if (trigger && !after['notify.topic']) profile.write(file, 'notify.topic', notify.newTopic());
                 if (keys.includes('station.remote')) refreshRemote();
+                if (trigger && !after['notify.topic']) {
+                    const out = profile.write(file, 'notify.topic', notify.newTopic());
+                    if (!out.ok) return fail(409, out.reason);
+                }
             }
             // The wizard posts from #/settings and wants to land there again;
             // anything but a bare page hash is ignored rather than followed.

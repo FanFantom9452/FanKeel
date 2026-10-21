@@ -61,7 +61,8 @@ const request = (url, o) => new Promise((resolve, reject) => {
     const opts = o || {};
     const post = opts.body !== undefined;
     const headers = Object.assign(post ? { 'content-type': 'application/x-www-form-urlencoded' } : {}, opts.headers);
-    const req = http.request(url, { method: post ? 'POST' : 'GET', headers }, (res) => {
+    // `path`, when given, goes on the wire as written: a url string has its `..` resolved first.
+    const req = http.request(url, Object.assign({ method: post ? 'POST' : 'GET', headers }, opts.path ? { path: opts.path } : {}), (res) => {
         let text = '';
         res.setEncoding('utf8');
         res.on('data', (c) => { text += c; });
@@ -232,6 +233,36 @@ test('POST /profile: the first trigger turned on writes a topic, and station.rem
         assert.equal((await request(s.url, { headers: { host: NAME } })).status, 421, 'refused from the next request');
         assert.equal(ts.calls.length, before, 'turning it off does not touch tailscale');
         assert.equal(readServeRecord(f.cfg).remote, undefined);
+    } finally {
+        s.close();
+    }
+});
+
+// The policy reads the normalised pathname and the Chartroom hand-off the raw
+// url, so `/chartroom/ws/../../station/x` is `device` to one and a board to the
+// other. Chartroom here is a fake that answers 200 to whatever it is handed.
+test('through the tailnet a paired phone never reaches Chartroom, .. or not: 403, and Chartroom is handed nothing', async () => {
+    const f = fixture(true);
+    const dir = path.join(path.dirname(f.cfg), 'chartroom');
+    fs.mkdirSync(path.join(dir, 'src', 'server'), { recursive: true });
+    fs.writeFileSync(path.join(dir, 'package.json'), '{ "type": "module" }\n');
+    fs.writeFileSync(path.join(dir, 'src', 'server', 'handler.js'),
+        'export function createHandler() { return Object.assign((req, res) => { (globalThis.__remoteChartroom ||= []).push(req.url); res.end("board"); }, { close() {} }); }\n');
+    assert.equal(profile.write(profile.machineFile(f.cfg), 'station.chartroom', dir).ok, true);
+    fs.writeFileSync(require('../lib/station.js').boardPath(f.r1), '');
+    globalThis.__remoteChartroom = [];
+    const s = await start(f, fakeTailscale());
+    try {
+        assert.equal((await request(s.url + 'chartroom/ws/')).status, 200, 'loopback still reaches the board');
+        const code = JSON.parse((await request(s.url + 'station/remote')).text).code;
+        const paired = await request(s.url + 'station/remote/pair', { headers: TAILNET, body: form({ code, name: 'phone' }) });
+        assert.equal(paired.status, 201, paired.text);
+        const jar = Object.assign({ cookie: paired.headers['set-cookie'][0].split(';')[0] }, TAILNET);
+        for (const p of ['/chartroom/ws/../../station/x', '/chartroom/p/../../station/x', '/chartroom/ws/x', '/chartroom/p/x']) {
+            const got = await request(s.url, { path: p, headers: jar });
+            assert.equal(got.status, 403, p + ': ' + got.text);
+        }
+        assert.deepEqual(globalThis.__remoteChartroom, ['/'], 'only the loopback request was handed on');
     } finally {
         s.close();
     }

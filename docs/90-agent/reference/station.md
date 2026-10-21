@@ -1072,7 +1072,8 @@ every request, takes a POST from the clear button on a `stale` row, answers
 `409` for a `live` one and for a row touched in the last twelve hours unless
 `force` is ticked — the age-and-liveness rule is
 [collisions.md](collisions.md)'s — and `403` without the per-run nonce, on every POST but the
-`/chartroom/` route's below. It binds the fixed
+`/chartroom/` route's below and a paired phone's, which carries its device
+cookie through the tailnet instead. It binds the fixed
 port `28888` by default (inside 15001–32767, a range no platform hands out as
 an ephemeral port), falling back to an ephemeral one only when `28888` is
 already taken — and then keeps trying `28888` every thirty seconds; the first
@@ -1114,10 +1115,12 @@ naming the path, two roots with the same folder name are a 409 listing
 both, and a handler that will not load is a 500 naming the file, while
 the rest of the station keeps serving.
 
-This route alone skips the nonce, and Chartroom's own guard stands in
-for it: Chartroom refuses any Host that is not loopback, and any POST
-whose Origin does not match its Host or whose body is not
-`application/json`. A page on another origin can send a form POST,
+This route alone skips the nonce, and two guards stand in for it. The
+station answers it on loopback only: any other Host is `421` with remote
+off, and through the tailnet it is `403` like the card's own routes,
+paired phone or not, whether the path starts `/chartroom/` as sent or
+once its `..` is resolved. Chartroom then refuses any POST whose Origin does not
+match its Host or whose body is not `application/json`. A page on another origin can send a form POST,
 which is refused as not JSON, or a JSON one, which carries that page's
 Origin and is refused for it — the cross-site write the nonce stops
 everywhere else. The AI that posts `POST /api/ops` from a shell has no
