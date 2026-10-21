@@ -88,7 +88,8 @@ test('TODO tabs count each state; an entry id opens its tab and marks it', () =>
     assert.ok(html.includes('data-pp-tab="blocked" aria-selected="true"'));
     assert.ok(html.includes('<li id="todo-blk-1" aria-current="true"'));
     assert.ok(/class="tr-due soon"/.test(html), 'a due entry is marked');
-    P.onClick({ target: { getAttribute: () => 'ready', closest() { return this; } } });
+    assert.ok(html.includes('data-pp-tab="ready"'), 'the tab markup carries the attribute onClick looks for');
+    P.onClick({ target: { getAttribute: (n) => (n === 'data-pp-tab' ? 'ready' : null), closest(sel) { return sel === '[data-pp-tab]' ? this : null; } } });
     assert.equal(P.state().tab, 'ready');
 });
 

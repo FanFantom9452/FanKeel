@@ -5,8 +5,8 @@
 // project-trend, project-stages, project-lists). Head (back to 專案, the name,
 // the running session), six KPI tiles for the last 30 days printed from
 // FK_PROJECTS.rowsOf — the row #/projects prints, computed once — a four-week
-// trend of cost (main / agents) and landings, one card a stage with its median
-// stay split 做事 / 等你 on one scale, the TODO tabs (`#/p/<pkey>/todo/<id>`
+// trend of cost (main / agents) and landings, one card a stage with the median
+// 做事 and the median 等你 drawn end to end on one scale, the TODO tabs (`#/p/<pkey>/todo/<id>`
 // opens that entry's tab), and the recent landings. Reads `w.FK_KIT` when it draws.
 (function (w, doc) {
     var EN = {
@@ -45,13 +45,9 @@
         'pp.noLanded': 'Nothing has landed yet.',
     };
     function has(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
-    function fill(s, vars) {
-        if (!vars) return s;
-        return String(s).replace(/\{(\w+)\}/g, function (m, k) { return has(vars, k) ? String(vars[k]) : m; });
-    }
     function loc(key, zh, vars) {
         var I = w && w.FK_I18N;
-        return fill(I && I.lang === 'en' && has(EN, key) ? EN[key] : zh, vars);
+        return kit().fillVars(I && I.lang === 'en' && has(EN, key) ? EN[key] : zh, vars);
     }
     function kit() { return (w && w.FK_KIT) || {}; }
     function esc(s) { return kit().esc(s); }
@@ -63,8 +59,6 @@
         var s = xs.slice().sort(function (a, b) { return a - b; }), h = s.length >> 1;
         return s.length % 2 ? s[h] : (s[h - 1] + s[h]) / 2;
     }
-    function two(n) { return ('0' + n).slice(-2); }
-    function md(t) { var d = new Date(t); return two(d.getMonth() + 1) + '-' + two(d.getDate()); }
     function since(t, now) {
         if (!t) return '—';
         var m = Math.max(0, Math.round((now - t) / 60000));
@@ -136,7 +130,8 @@
                     + tip(label, [loc('pp.nLanded', '落地 {n} 筆', { n: wk.land })]) + '></i>' : '') + '</span></span>';
             }).join('') + '</div></div></section>';
     }
-    // One card a stage: the median stay of the project's timed stages, 做事 / 等你, on one scale.
+    // One card a stage: the median 做事 and, taken separately, the median 等你 of the project's
+    // timed stays, drawn end to end on one scale — their sum is not the median stay.
     function stagesHtml(list) {
         var k = kit(), by = {};
         list.forEach(function (s) {
@@ -181,7 +176,7 @@
                     return '<li' + id + (hit && x === hit ? ' aria-current="true"' : '') + '><div class="tr"><span class="tr-lb">' + esc(x.label || '') + '</span>'
                         + '<span class="tr-tx"><b>' + esc(plain(x.title)) + '</b>' + (x.description ? '<span class="tr-cd">' + esc(plain(x.description)) + '</span>' : '')
                         + (x.condition ? '<span class="tr-cd">' + esc(plain(x.condition)) + '</span>' : '') + '</span>'
-                        + (x.dueAt ? '<span class="tr-due' + (x.due ? ' soon' : '') + '">' + esc(loc('pp.dueOn', '{d} 到期', { d: md(x.dueAt) })) + '</span>' : '<span></span>')
+                        + (x.dueAt ? '<span class="tr-due' + (x.due ? ' soon' : '') + '">' + esc(loc('pp.dueOn', '{d} 到期', { d: kit().localDay(x.dueAt).slice(5) })) + '</span>' : '<span></span>')
                         + '</div></li>';
                 }).join('') + '</ul>' : '<p class="an-empty">' + loc('pp.noTodo', '這個狀態沒有條目。') + '</p>')
                 : '<p class="an-empty">' + loc('pp.noList', '這個專案沒有 TODO 條目。') + '</p>') + '</section>';
@@ -193,7 +188,7 @@
             + '<div class="dcard-h"><b>' + loc('pp.landedList', '最近落地') + '</b></div>'
             + (land.length ? '<ul class="pl-l">' + land.map(function (s) {
                 return '<li><a href="' + esc(k.sessionHash(s.id)) + '"><span class="pl-t">' + esc(s.task || s.id) + '</span>'
-                    + '<span class="pl-d">' + md(ms(s.updated)) + '</span><span class="pl-u">' + k.usd(k.cost ? k.cost(s) : (s.usd || 0) + (s.agentUsd || 0), true) + '</span></a></li>';
+                    + '<span class="pl-d">' + k.localDay(ms(s.updated)).slice(5) + '</span><span class="pl-u">' + k.usd(k.cost(s), true) + '</span></a></li>';
             }).join('') + '</ul>' : '<p class="an-empty">' + loc('pp.noLanded', '還沒有任務走到 land。') + '</p>') + '</section>';
     }
 
