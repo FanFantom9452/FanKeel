@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 last_verified: 2026-10-21
 source_of_truth: scripts/station.js, lib/station.js, lib/detail.js, assets/station/station.js, scripts/await.js, lib/stages.js, lib/profile.js, hooks/pane.ts, hooks/pane-status.ts
 ---

@@ -506,8 +506,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | Haiku 5.5 的派工與可重置的模型實驗台（10-08）的 design，第二版：按角色量，reader、mutator、mover、照抄計畫的 implementer 各自 haiku 對 sonnet，並先修好 profile 指定的模型被派工時明寫的模型蓋過 | `docs/99-archive/2026-10-08-haiku-bench-design.md` — *built, 繁體中文* |
 | 第一版設計的七個 task：兩列價目、超過 100K 的記帳、`scripts/bench.js`、三個 bench 專案、外部報告歸檔；使用者親手跑的 Task 7 由按角色量的計畫取代 | `docs/99-archive/2026-10-08-haiku-bench.md` — *built, 繁體中文* |
 | 按角色量的四個 task：`hooks/title.js` 讓 override 的模型蓋過明寫的模型、`bench.js role`、四組角色輸入與兩側控制組，以及使用者親手跑的 40 次 | `docs/99-archive/2026-10-08-haiku-bench-roles.md` — *built, 繁體中文* |
-| 監控站單一 session 焦點頁（10-21）的 design：焦點頁、速度、首頁與導覽、chat 印出連結、背景 shell，以及巡查找到的五個修正 | [plans/2026-10-21-station-focus-design.md](90-agent/plans/2026-10-21-station-focus-design.md) — *design-intent, English* |
-| 那份設計的 20 個 task 的實作計畫 | [plans/2026-10-21-station-focus.md](90-agent/plans/2026-10-21-station-focus.md) — *design-intent, English* |
+| 監控站單一 session 焦點頁（10-21）的 design：焦點頁、速度、首頁與導覽、chat 印出連結、背景 shell，以及巡查找到的五個修正 | `docs/99-archive/2026-10-21-station-focus-design.md` — *built, English* |
+| 那份設計的 20 個 task 的實作計畫 | `docs/99-archive/2026-10-21-station-focus.md` — *built, English* |
 | 真的 `claude -p` 巢狀派兩個 agent 量出來：`SubagentStart` 觸發當下 `agent-<id>.meta.json` 兩個 agent 都還沒帶 `spawnDepth`（`atHook`／`depthAtHook` 一致為 `false`／`null`），`nestedBrain()` 退回 fallback 分支，事後檔案才補齊且巢狀關係正確 | [reports/2026-09-28-spawndepth-timing.md](90-agent/reports/2026-09-28-spawndepth-timing.md) — *a dated snapshot, 繁體中文* |
 | 真的 `claude -p` 派 `isolation: "worktree"` 的 subagent 量出來：回傳文字裡沒有路徑也沒有分支（`pathInResult`／`branchInResult` 皆 `false`），readable: no——brain 拿不到路徑可以直接寫進 commit file，`task.js` 的 `openWorktree` 退路還要 design 定義；留下的 worktree 開在 repo 根目錄之內，`lib/guard.js` 的 `relPath` 對不回主樹路徑 | [reports/2026-09-28-worktree-probe.md](90-agent/reports/2026-09-28-worktree-probe.md) — *a dated snapshot, 繁體中文* |
 | 本地 `moondream` 判斷十張 fankeel 測站截圖（五正常五破壞）：正常圖 5/5 判對、壞圖只抓到 1/5（全透明文字那張），平均 0.24 秒；`UI-TARS-1.5-7B-GGUF` 卡在下載時被擋跨主機 redirect，座標題沒問成 | [reports/2026-09-28-local-judge-trial.md](90-agent/reports/2026-09-28-local-judge-trial.md) — *a dated snapshot, 繁體中文* |
@@ -597,6 +597,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 - [判官先列清單、讀者一次派出（10-19）](03-decisions/2026-10-19-judge-checklist.md)
 - [不讓常備答案代答 gate（10-19）](03-decisions/2026-10-19-no-unattended-gate.md)
 - [ilsbench 探針設每週成本上限（10-19）](03-decisions/2026-10-19-ilsbench-probe-cap.md)
+- [監控站的連結直接開在要看的東西上（10-21）](03-decisions/2026-10-21-station-focus.md)
 - [任務的圖由 station 畫成 SVG（10-20）](03-decisions/2026-10-20-task-boards-as-svg.md)
 - [retro 讀整份遮蔽過的 session 包（10-20）](03-decisions/2026-10-20-retro-bundle.md)
 - [沒派過的 agent 怎麼處理（10-15）：effort 改在派工時傳，六個複本刪掉](03-decisions/2026-10-15-unused-agents.md)
