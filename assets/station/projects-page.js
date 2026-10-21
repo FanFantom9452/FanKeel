@@ -111,7 +111,7 @@
         function at(pkey) {
             if (!by[pkey]) {
                 by[pkey] = { pkey: pkey, usd: 0, main: 0, agent: 0, landed: 0, toLand: [], blockedOldest: null, overdue: 0, todo: 0,
-                    todoBy: { ready: 0, decision: 0, blocked: 0, watch: 0 }, gate: null, live: false, run: null, last: 0, hasTodo: false };
+                    todoBy: { ready: 0, decision: 0, blocked: 0, watch: 0 }, gate: null, live: false, run: null, last: 0 };
                 order.push(pkey);
             }
             return by[pkey];
@@ -135,7 +135,6 @@
         ((S && S.projects) || []).forEach(function (p) {
             (p.todos || []).forEach(function (t) {
                 var r = at(t.pkey);
-                r.hasTodo = true;
                 (t.open || []).forEach(function (x) {
                     r.todo++;
                     if (has(r.todoBy, x.state)) r.todoBy[x.state]++;
@@ -184,7 +183,7 @@
             }).join('') + '</span></div></div>'
             + (st.p > 30 ? '<p class="pj-note">' + loc('pj.spend30', '花費只記得近 30 天左右，更早的日子算不到') + '</p>' : '');
     }
-    function line2(r, names) {
+    function line2(r) {
         var k = kit();
         if (r.gate) return '<a class="pt-l2 wait" href="' + esc(k.sessionHash(r.gate.id)) + '"><span class="waitchip">' + loc('pj.waiting', '等你回答') + '</span><span class="pt-rt">' + esc(r.gate.task || '') + '</span></a>';
         if (r.run) return '<a class="pt-l2" href="' + esc(k.sessionHash(r.run.id)) + '"><span class="hm-stw" style="--c:var(--st-' + esc(r.run.stage) + ')">' + esc(r.run.stage) + '</span><span class="pt-rt">' + esc(r.run.task || loc('pj.running', '在跑')) + '</span></a>';
@@ -194,7 +193,7 @@
     function rowHtml(r, names, max, now) {
         var k = kit();
         return '<div class="pt-row' + (r.gate ? ' wait' : '') + '" role="row" data-pkey="' + esc(r.pkey) + '" data-usd="' + r.usd + '" data-landed="' + r.landed + '">'
-            + '<span class="pt-c pt-nm" role="cell"><a href="' + esc(k.projectHash(r.pkey)) + '" title="' + esc(names[r.pkey] || r.pkey) + '"><b><span class="pt-nmt">' + esc(nameOf(r.pkey, names)) + '</span></b></a>' + line2(r, names) + '</span>'
+            + '<span class="pt-c pt-nm" role="cell"><a href="' + esc(k.projectHash(r.pkey)) + '" title="' + esc(names[r.pkey] || r.pkey) + '"><b><span class="pt-nmt">' + esc(nameOf(r.pkey, names)) + '</span></b></a>' + line2(r) + '</span>'
             + '<span class="pt-c pt-usd" role="cell">' + bar([{ v: r.main, cls: 'main', label: loc('pj.main', '主 session'), vals: [k.usd(r.main, true)] },
                 { v: r.agent, cls: 'agent', label: loc('pj.agent', '派工'), vals: [k.usd(r.agent, true)] }], max)
             + '<span class="pt-v' + (r.usd ? '' : ' zero') + '">' + k.usd(r.usd, true) + '</span></span>'
@@ -278,14 +277,14 @@
         }).join('') + '</ul>';
     }
     // 產出速度: landings per week over the period, one scale, and the median days to land.
+    // Weeks run from the period's first day, so only the last column, this week, is short.
     function pace(S, rows, now) {
-        var k = kit(), weeks = Math.ceil(st.p / 7), end = dayStart(now) + 864e5, from = dayStart(now) - (st.p - 1) * 864e5, counts = [];
+        var k = kit(), weeks = Math.ceil(st.p / 7), days = k.lastDays(now, st.p), from = dayStart(now) - (st.p - 1) * 864e5, counts = [];
         for (var i = 0; i < weeks; i++) counts.push(0);
         ((S && S.sessions) || []).forEach(function (s) {
             var up = ms(s.updated);
             if (s.stage !== 'land' || s.state !== 'down' || !(up >= from && up <= now)) return;
-            var wk = Math.floor((end - up) / (7 * 864e5));
-            if (wk < weeks) counts[weeks - 1 - wk]++;
+            counts[Math.min(weeks - 1, Math.floor((up - from) / (7 * 864e5)))]++;
         });
         var total = counts.reduce(function (a, b) { return a + b; }, 0);
         if (!total) return empty(loc('pj.noPace', '這段期間沒有任務走到 land。'));
@@ -293,7 +292,7 @@
         rows.forEach(function (r) { all = all.concat(r.toLand); });
         return '<p class="an-take">' + esc(loc('pj.medianLand', '從開始到 land 中位 {t} 天', { t: days1(median(all)) })) + '</p>'
             + '<div class="an-cols">' + counts.map(function (c, j) {
-                var wkFrom = k.lastDays(end - (weeks - j) * 7 * 864e5 + 864e5, 1)[0].slice(5);
+                var wkFrom = days[j * 7].slice(5);
                 return '<span class="an-col"><i class="seg land" style="height:' + (c ? Math.max(2, Math.round(c / max * 100)) : 0) + '%"'
                     + tip(loc('pj.week', '{d} 那週', { d: wkFrom }), [loc('pj.nLanded', '落地 {n} 筆', { n: c })]) + '></i><small>' + wkFrom + '</small></span>';
             }).join('') + '</div>';

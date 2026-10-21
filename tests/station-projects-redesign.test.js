@@ -129,6 +129,41 @@ test('stall reads ISO stage stamps; pace counts only landings inside the period'
     assert.ok(P.page(old, { names: NAMES, now: NOW, redraw() {}, hash: '#/projects/analysis/pace' }).includes('<p class="an-empty">'), 'landed 32 days back is outside 30 days');
 });
 
+test('pace columns start at the period\'s first day, each labelled by its own first day, and add up to rowsOf landed', () => {
+    const P = mod();
+    const o = { names: NAMES, now: NOW, redraw() {}, hash: '#/projects/analysis/pace' };
+    const S2 = { sessions: [ses('p1', { started: at(30), updated: at(29) }), ses('p2', { started: at(24), updated: at(23) }), ses('p3', { updated: at(1) })], projects: [] };
+    const cols = (html) => [...html.matchAll(/<span class="an-col"><i class="seg land" style="height:(\d+)%"[^>]*data-tip-v="[^"\d]*(\d+)[^"]*"[^>]*><\/i><small>([\d-]+)<\/small>/g)]
+        .map((m) => ({ h: Number(m[1]), n: Number(m[2]), d: m[3] }));
+    const month = cols(P.page(S2, o));
+    assert.deepEqual(month.map((c) => c.d), [dayOf(29), dayOf(22), dayOf(15), dayOf(8), dayOf(1)].map((d) => d.slice(5)));
+    assert.deepEqual(month.map((c) => c.n), [2, 0, 0, 0, 1], 'the first column holds 7 whole days from the period\'s first');
+    assert.equal(month.reduce((n, c) => n + c.n, 0), P.rowsOf(S2, 30, NOW).reduce((n, r) => n + r.landed, 0));
+    P.onClick({ target: btn({ 'data-pj-p': '7' }) });
+    const week = cols(P.page(S2, o));
+    assert.deepEqual(week.map((c) => c.d), ['10-16']);
+    assert.deepEqual(week.map((c) => c.n), [1]);
+});
+
+test('the page binds its period control to the document\'s click', () => {
+    const listeners = [];
+    const el = () => ({ innerHTML: '', textContent: '', className: '', title: '', addEventListener() {} });
+    const document = { getElementById: el, addEventListener(type, fn) { listeners.push([type, fn]); }, createElement: el, head: { appendChild() {} }, querySelectorAll: () => [] };
+    const { win } = page(['tip.js', 'projects-page.js'], {}, { document });
+    const P = win.FK_PROJECTS;
+    P.reset();
+    const o = { names: NAMES, now: NOW, redraw() { this.n = (this.n || 0) + 1; }, hash: '#/projects' };
+    const before = listeners.length;
+    P.page(S, o);
+    const clicks = listeners.slice(before).filter(([type]) => type === 'click');
+    assert.equal(clicks.length, 1, 'one click listener, bound when the page first draws');
+    P.page(S, o);
+    assert.equal(listeners.slice(before).filter(([type]) => type === 'click').length, 1, 'not bound twice');
+    clicks[0][1]({ target: btn({ 'data-pj-p': '7' }) });
+    assert.equal(P.state().p, 7);
+    assert.equal(o.n, 1);
+});
+
 test('English comes from the module table, and every string has it', () => {
     const P = mod('en');
     const html = P.page(S, { names: NAMES, now: NOW, redraw() {}, hash: '#/projects' });
