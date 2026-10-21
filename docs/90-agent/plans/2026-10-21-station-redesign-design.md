@@ -51,7 +51,7 @@ four blocks on `#/`; its one-level nav stays.
 
 - `#/sessions` draws `route-sessions.html`: a now-strip linking to `#/live`, four period tiles (今天 / 近 7 天 / 近 30 天 / 全部) that filter the list, then a table of ten rows a page — tick, task · project, result (glyph, stage n/len), cost, last move, elapsed — sortable on cost, last move and elapsed.
 - Filters are popovers for project, stage reached and cost floor, with 重設篩選.
-- Ticking two or three rows opens the compare dialog in place; `#/cmp` lands on this list with the compare tray, so it is never an empty page.
+- Ticking two or three rows and pressing 比較 opens the compare dialog in place; `#/cmp` lands on this list with the compare tray, so it is never an empty page.
 - The compare dialog shows the fields `lib/compare.js` already returns; the larger of each pair is marked, equal figures read 一樣.
 
 ## 3. 專案, overview and analysis
