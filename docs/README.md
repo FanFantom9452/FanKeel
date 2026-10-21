@@ -6,7 +6,7 @@ source_of_truth: this file is the index; each page below is its own source
 
 # FanKeel documentation
 
-Twenty-one pages, one question each. The front page has install, update and
+Twenty-five pages, one question each. The front page has install, update and
 uninstall, the two diagrams and a short introduction to each of these;
 everything that needs more than a paragraph is here. For a person who is not
 running a session, the station's 文件 page (`#/docs`) turns each project's own
@@ -18,12 +18,16 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 七站各產出什麼、三種類別、gate 怎麼答、registry 是什麼（給人讀的短版） | [concepts.md](01-guide/concepts.md) |
 | 每個 profile key 的意思與建議值，以及在站頁精靈怎麼套 | [profile.md](01-guide/profile.md) |
 | 監控站每個 view 看什麼、數字怎麼讀 | [station.md](01-guide/station.md) |
+| fankeel 在背景做什麼：每個 hook 何時觸發、每個 agent 做什麼 | [what-runs.md](01-guide/what-runs.md) |
+| 五支掃描器怎麼跑、各自回報什麼 | [scanners.md](01-guide/scanners.md) |
+| `/fankeel` 沒反應、badge 不見、編輯被擋時怎麼辦 | [troubleshooting.md](01-guide/troubleshooting.md) |
 | What `/fankeel` asks me, and what each answer does | [pipeline.md](02-architecture/pipeline.md) |
 | What the seven stages are and what each produces | [pipeline.md](02-architecture/pipeline.md) |
 | What the steps inside one stage are, and where it branches | [pipeline.md](02-architecture/pipeline.md) — *inside each stage* |
 | Why my task is only three stages and not seven | [pipeline.md](02-architecture/pipeline.md) — *a route per task* |
 | What spike, bounded and architectural mean | [pipeline.md](02-architecture/pipeline.md) — *three classes, three routes* |
 | What `.fankeel/map.md` holds and why it is generated | [pipeline.md](02-architecture/pipeline.md) — *the project map* |
+| Where each file of the plugin lives, and what each hook, lib and script file is for | [layout.md](02-architecture/layout.md) |
 | What gets written to disk, and what is committed | [registry.md](90-agent/reference/registry.md) |
 | What `notes` and `next` are for, and why they are capped | [registry.md](90-agent/reference/registry.md) |
 | What a stage cost, in tokens and in minutes, and how the gate wait is told apart | [registry.md](90-agent/reference/registry.md) — *what a stage cost* |
@@ -670,6 +674,8 @@ is corrected by the next one, not by rewriting this.
 | Brief: Pane 能不能像 Claude Code 官方 UI 一樣列出 background task | [90-agent/judgements/2026-10-20-pane-bg-list.md](90-agent/judgements/2026-10-20-pane-bg-list.md) — *judged 2026-10-20, fable* |
 | 判官題目：land 的結案順序要不要改成「紀錄寫完才結案」 | [90-agent/judgements/2026-10-21-land-close-order.md](90-agent/judgements/2026-10-21-land-close-order.md) — *judged 2026-10-21, fable* |
 | 判官題目：await.js 要不要直接印出去掉 CRLF 的 gate 區塊 | [90-agent/judgements/2026-10-21-await-gate-crlf.md](90-agent/judgements/2026-10-21-await-gate-crlf.md) — *judged 2026-10-21, fable* |
+| Brief — why does the plan stage take 40+ minutes, and would one brain + parallel plan writers be faster? | [90-agent/judgements/2026-10-21-plan-stage-duration.md](90-agent/judgements/2026-10-21-plan-stage-duration.md) — *judged 2026-10-21, fable* |
+| Brief — should every stage run as a brain with a curated context carried from the stages before it, so agents stop re… | [90-agent/judgements/2026-10-21-stage-context-carry.md](90-agent/judgements/2026-10-21-stage-context-carry.md) — *judged 2026-10-21, fable* |
 
 ## The five scanners
 
