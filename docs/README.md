@@ -681,6 +681,7 @@ is corrected by the next one, not by rewriting this.
 | 判官題目：await.js 要不要直接印出去掉 CRLF 的 gate 區塊 | [90-agent/judgements/2026-10-21-await-gate-crlf.md](90-agent/judgements/2026-10-21-await-gate-crlf.md) — *judged 2026-10-21, fable* |
 | Brief — why does the plan stage take 40+ minutes, and would one brain + parallel plan writers be faster? | [90-agent/judgements/2026-10-21-plan-stage-duration.md](90-agent/judgements/2026-10-21-plan-stage-duration.md) — *judged 2026-10-21, fable* |
 | Brief — should every stage run as a brain with a curated context carried from the stages before it, so agents stop re… | [90-agent/judgements/2026-10-21-stage-context-carry.md](90-agent/judgements/2026-10-21-stage-context-carry.md) — *judged 2026-10-21, fable* |
+| Brief: why did this land take so long, and what does the main session miss? | [90-agent/judgements/2026-10-21-land-slow.md](90-agent/judgements/2026-10-21-land-slow.md) — *judged 2026-10-21, fable* |
 
 ## The five scanners
 
