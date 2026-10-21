@@ -1,0 +1,56 @@
+/* assets/station/gate-frame.css — the gate page, /f/<id>/gate (station redesign §5; mockup
+   gate-plan-a.html). Scoped under .gt-frame: the head classes share names with the session page's. */
+.gt-frame{display:flex;flex-direction:column;gap:18px;max-width:1440px;margin:0 auto;padding:18px 22px 40px}
+.gt-frame .dcard.gt-head,:root[data-style=keel] .gt-frame .dcard.gt-head{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"g id";
+  align-items:center;column-gap:16px;padding:14px 18px}
+.gt-frame .gt-head .glyph.prog{grid-area:g;width:40px;height:40px;display:block}
+.gt-frame .gt-id{grid-area:id;min-width:0}
+.gt-frame .gt-task{margin:0;font-size:18px;font-weight:700;letter-spacing:-.01em;line-height:1.35;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gh-link{color:inherit;text-decoration:none;border-radius:4px}
+.gh-link:hover{text-decoration:underline;text-decoration-color:var(--keel-mid);text-decoration-thickness:1.5px;text-underline-offset:4px}
+.gh-link:focus-visible{outline:2px solid var(--keel);outline-offset:2px}
+.gt-meta{display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;margin:6px 0 0;font:12px var(--f-mono);color:var(--muted)}
+.gt-meta .gt-st{display:inline-flex;align-items:center;gap:6px;font-weight:700;color:var(--ink2)}
+.gt-meta .gt-st::before{content:"";width:8px;height:8px;border-radius:2px;background:var(--c)}
+.gt-meta .of{font-variant-numeric:tabular-nums}
+.gt-meta .sep{color:var(--faint)}
+
+/* ---- two columns: the report wide, the decision narrow and in view while the report scrolls ---- */
+.gt-grid{display:grid;grid-template-columns:minmax(0,7fr) minmax(320px,5fr);gap:18px;align-items:start}
+.gt-grid>.gt-side{align-self:stretch}
+.gt-side .gt-pin{display:flex;flex-direction:column;gap:18px}
+@media (min-width:1181px) and (min-height:760px){.gt-side .gt-pin{position:sticky;top:16px}}
+@media (max-width:1180px){.gt-grid{grid-template-columns:minmax(0,1fr)}.gt-grid>.gt-side{order:-1}}
+.gt-frame .dcard-h .gt-hr{margin-left:auto;min-width:0}
+:root[data-style=keel] .gt-frame .dcard-h .kn.wait{background:var(--signal-tint);color:var(--signal-ink)}
+
+/* ---- the decision ---- */
+.gq-cd{display:flex;align-items:center;gap:10px;margin:12px 0 0;font-size:12px;line-height:1.5;color:var(--ink2)}
+.gq-cd .hatchsw{flex:none}
+.gt-q{margin:10px 0 14px;font-size:17px;font-weight:700;line-height:1.45;letter-spacing:-.005em;color:var(--ink);text-wrap:balance}
+.gt-opts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.gt-opts>li{display:grid;grid-template-columns:22px minmax(0,1fr) auto;align-items:start;column-gap:10px;padding:8px 6px 8px 10px;border-top:1px solid var(--rule)}
+.gt-opts>li:first-child{border-top:0}
+.gt-opts>li.is-rec{background:var(--keel-tint);border-radius:7px;border-top-color:transparent}
+.gt-opts>li.is-rec+li{border-top-color:transparent}
+.gt-opts>li.on{box-shadow:inset 0 0 0 1.5px var(--keel);border-radius:7px}
+.gt-n{font:700 12px/30px var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.gt-opts .is-rec .gt-n{color:var(--keel-deep)}
+.gq-b{min-width:0}
+.gq-l{display:flex;align-items:center;gap:6px;width:100%;min-height:30px;padding:0;border:0;background:transparent;text-align:left;cursor:pointer;color:var(--ink)}
+.gq-l .ico{flex:none;width:16px;height:16px;color:var(--muted);transition:transform .18s cubic-bezier(.16,1,.3,1)}
+.is-open>.gq-b>.gq-l .ico{transform:rotate(180deg)}
+.gq-l:focus-visible{outline:2px solid var(--keel);outline-offset:1px;border-radius:4px}
+.gt-l{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;font-size:14px;font-weight:700;line-height:20px}
+.gt-rec{font:700 11px var(--f-mono);padding:1px 7px;border-radius:5px;background:var(--keel);color:var(--on-keel)}
+.gt-d{margin:4px 0 6px;font-size:12.5px;line-height:1.6;color:var(--ink2);max-width:62ch}
+.gq-pick{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 6px 0 11px;border:0;border-radius:7px;background:var(--panel);
+  box-shadow:inset 0 0 0 1px var(--rule2);font:600 12.5px var(--f-ui);color:var(--ink);cursor:pointer;white-space:nowrap}
+.gq-pick:hover{box-shadow:inset 0 0 0 1.5px var(--keel)}
+.gt-opts .is-rec .gq-pick,.gq-pick[aria-pressed="true"]{background:var(--keel);color:var(--on-keel);box-shadow:none}
+.gq-pick kbd{display:grid;place-items:center;min-width:18px;height:18px;border-radius:4px;background:var(--inset);font:700 11px var(--f-mono);color:var(--ink2)}
+.gt-opts .is-rec .gq-pick kbd,.gq-pick[aria-pressed="true"] kbd{background:color-mix(in srgb,var(--on-keel) 22%,transparent);color:var(--on-keel)}
+.gq-pick:focus-visible{outline:2px solid var(--keel);outline-offset:1px}
+.gt-next{margin:14px 0 0;padding:10px 0 0;border-top:1px solid var(--rule);display:grid;gap:3px;font-size:13px;color:var(--ink)}
+.gt-next span{font-size:12px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.gq-l .ico{transition:none}}
