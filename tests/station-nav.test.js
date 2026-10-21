@@ -63,7 +63,7 @@ test('a sub-page, a detail page and an old hash light the bar entry that holds i
 
 test('with nothing waiting 現在 carries no count', () => {
     const { V } = boot('#/');
-    assert.deepEqual({ ...V.navCounts([row('x')]) }, { waiting: 0 });
+    assert.deepEqual({ ...require('../assets/station/station.js').navCounts([row('x')]) }, { waiting: 0 });
     assert.doesNotMatch(V.navHtml('now', { waiting: 0 }), /class="nb/);
 });
 

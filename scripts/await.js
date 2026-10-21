@@ -19,6 +19,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const util = require('node:util');
 const { readObject } = require('../lib/json.js');
 const registry = require('../lib/registry.js');
 const { handoffPath, commitPath, ledgerCommitPath, answerPath, awaitHandoff, newestCommit, caseOfPrompt, promptOf, workflowOf, withCheckout } = require('../lib/handoff.js');
@@ -27,11 +28,12 @@ const { transcriptOf } = require('../lib/detail.js');
 const { sessionDirOf, agentFiles } = require('../lib/usage.js');
 const { configDirOf } = require('../lib/profile.js');
 const { readServeRecord, probe } = require('../lib/serve.js');
+const { alive } = require('../lib/suitelock.js');
 
 const USAGE = 'await.js: usage: await.js --session <id> [--root <dir>] [--since <file>] [--idle <seconds>] [--timeout <seconds>] [--agent <id>]';
 const COMMIT_SCRIPT = path.join(__dirname, 'commit.js').replace(/\\/g, '/');
 
-// Flag and value pairs only. Null for anything else, which prints the usage line.
+// The flags in USAGE only. Null for anything else, which prints the usage line.
 function parseArgs(argv) {
     // idle was 120 (two minutes) until 2026-09-23, the same number as the
     // Claude Code harness's own default foreground-Bash timeout — so one
@@ -42,20 +44,22 @@ function parseArgs(argv) {
     // so the idle check fired and read `lost` before the real result arrived.
     // 180 (three minutes) clears the observed 121.5s gap with 58+ seconds of
     // margin. docs/reports/2026-09-23-brain-wakeup.md.
-    const opts = { idle: 180, timeout: 1800 };
-    for (let i = 0; i < argv.length; i += 2) {
-        const key = argv[i];
-        const value = argv[i + 1];
-        if (value === undefined) return null;
-        if (key === '--session') opts.session = value;
-        else if (key === '--root') opts.root = value;
-        else if (key === '--since') opts.since = value;
-        else if (key === '--agent') opts.agent = value;
-        else if (key === '--idle' || key === '--timeout') {
-            const n = Number(value);
-            if (!(n > 0)) return null;
-            opts[key.slice(2)] = n;
-        } else return null;
+    let values;
+    try {
+        ({ values } = util.parseArgs({
+            args: argv,
+            strict: true,
+            options: { session: { type: 'string' }, root: { type: 'string' }, since: { type: 'string' }, agent: { type: 'string' }, idle: { type: 'string' }, timeout: { type: 'string' } },
+        }));
+    } catch {
+        return null;
+    }
+    const opts = { idle: 180, timeout: 1800, ...values };
+    for (const key of ['idle', 'timeout']) {
+        if (values[key] === undefined) continue;
+        const n = Number(values[key]);
+        if (!(n > 0)) return null;
+        opts[key] = n;
     }
     return opts.session ? opts : null;
 }
@@ -199,21 +203,6 @@ function pageLine(o) {
     return probe(record).then((up) => (up ? '\npage: ' + record.url + 'f/' + o.session + '/' + tab : ''));
 }
 
-// controller-1: one waiter per in-flight mark. A controller that ran await
-// again before the last one returned stacked two, and the old ones kept
-// printing after the stage was over. The first waiter writes
-// `<handoff>.await` with its pid; a second one that finds a live pid there
-// prints one line and exits 0. A marker whose pid is gone counts as none.
-function alive(pid) {
-    if (!Number.isInteger(pid) || pid <= 0) return false;
-    try {
-        process.kill(pid, 0);
-        return true;
-    } catch (e) {
-        return e.code === 'EPERM';
-    }
-}
-
 // A handoff whose gate went out after the file last changed has been asked
 // already: an older await finishing on it has nothing left to say, and its
 // `handoff` line would only wake the session to say so (TODO 舊 await 通知別叫醒主對話).
@@ -227,6 +216,12 @@ function already(root, sessionId, handoff) {
     }
 }
 
+// controller-1: one waiter per in-flight mark. A controller that ran await
+// again before the last one returned stacked two, and the old ones kept
+// printing after the stage was over. The first waiter writes
+// `<handoff>.await` with its pid; a second one that finds a live pid there
+// prints one line and exits 0. A marker whose pid is gone counts as none.
+//
 // await-5: a marker held by a live waiter for another agent is no waiter for
 // this one. On 2026-10-01 a stopped brain's waiter outlived its brain, and every
 // await for the brain sent after it read `already awaiting <the old agent>`.

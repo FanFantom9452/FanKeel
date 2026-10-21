@@ -1608,14 +1608,12 @@
     // keeps their stroke at the bar's 1.5-on-16 weight.
     var ICONS24 = {
         tour: '<circle cx="12" cy="12" r="10"/><path d="m10 8 6 4-6 4Z"/>',
-        plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
         files: '<path d="M20 7h-3a2 2 0 0 1-2-2V2"/><path d="M9 18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l4 4v10a2 2 0 0 1-2 2Z"/><path d="M3 7.6v12.8A1.6 1.6 0 0 0 4.6 22h9.8"/>',
         barh: '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M7 16h8"/><path d="M7 11h12"/><path d="M7 6h3"/>',
         barv: '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
         pie: '<path d="M21 12c.552 0 1.005-.449.95-.998a10 10 0 0 0-8.953-8.951c-.55-.055-.998.398-.998.95v8a1 1 0 0 0 1 1z"/><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>',
         timer: '<line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/>',
         commit: '<circle cx="12" cy="12" r="3"/><line x1="3" x2="9" y1="12" y2="12"/><line x1="15" x2="21" y1="12" y2="12"/>',
-        calclock: '<path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h5"/><path d="M17.5 17.5 16 16.3V14"/><circle cx="16" cy="16" r="6"/>',
         bot: '<path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>',
         close: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
     };
@@ -2904,9 +2902,10 @@
             + (gate ? focusGateHtml(s, x.gate, x.tasks || []) : focusPlanHtml(x.tasks)) + '</main>';
     }
     // Below the guard's `if (!doc) return;`: draws once, then re-reads the one
-    // session's script every five seconds while the browser tab is visible —
-    // the ledger moves while a build runs. Only `w.*` and hoisted functions
-    // here: the full page's `var`s further down are never assigned.
+    // session's script through `reload` every five seconds while the browser
+    // tab is visible — the ledger moves while a build runs. Only `w.*` and
+    // hoisted functions here: the full page's `var`s further down are never
+    // assigned, which is why `reload` holds its timeout as a literal.
     function focusBoot() {
         var F = w.STATION_FOCUS;
         var el = doc.getElementById('focus');
@@ -2915,12 +2914,11 @@
         if (!S.serve || !w.setInterval) return;
         w.setInterval(function () {
             if (doc.hidden) return;
-            var tag = doc.createElement('script');
-            tag.src = '/station/focus/' + encodeURIComponent(F.id) + '.js?t=' + Date.now();
-            tag.onload = function () { S = w.STATION || S; paint(); el.classList.toggle('fm-stale', false); if (tag.parentNode) tag.parentNode.removeChild(tag); };
-            // A stopped server or a 404 must not leave the last ledger looking current.
-            tag.onerror = function () { el.classList.toggle('fm-stale', true); if (tag.parentNode) tag.parentNode.removeChild(tag); };
-            doc.head.appendChild(tag);
+            // A stopped server, a 404 or a hang must not leave the last ledger looking current.
+            reload('/station/focus/' + encodeURIComponent(F.id) + '.js', function (ok) {
+                if (ok) { S = w.STATION || S; paint(); }
+                el.classList.toggle('fm-stale', !ok);
+            });
         }, 5000);
     }
     // ---- tune: a block changed, continued: what the tests import -----------
@@ -6531,8 +6529,8 @@
     // connection) is given up on: the tag is dropped and `done(false)` runs,
     // so `busy` always clears and the next tick tries again rather than going
     // silent forever. `settled` keeps a late `onload` after that point from
-    // running `done` a second time.
-    var RELOAD_TIMEOUT_MS = 4000;
+    // running `done` a second time. 4000 is a literal, not a `var`: the focus
+    // page calls this before any `var` down here is assigned.
     function reload(src, done) {
         var el = doc.createElement('script');
         var settled = false;
@@ -6541,7 +6539,7 @@
             settled = true;
             if (el.parentNode) el.parentNode.removeChild(el);
             done(false);
-        }, RELOAD_TIMEOUT_MS);
+        }, 4000);
         var finish = function (ok) {
             if (settled) return;
             settled = true;

@@ -30,7 +30,6 @@ const { outstanding, heldReason } = require('../lib/children.js');
 // over 1.5 s), before it refuses.
 const SETTLE_TRIES = 3;
 const SETTLE_MS = 500;
-const pause = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 
 // What HARD still allows: writing the relay file this hook is about to tell
 // the agent to write. Denying that too would leave it with no way to hand
@@ -54,7 +53,7 @@ function main(raw) {
     if (payload.hook_event_name === 'PreToolUse' && payload.tool_name === 'SubagentHandback') {
         let held = outstanding(root, payload.session_id, payload.agent_id, payload.transcript_path);
         for (let i = 0; held.length && i < SETTLE_TRIES; i++) {
-            pause(SETTLE_MS);
+            registry.sleepMs(SETTLE_MS);
             held = outstanding(root, payload.session_id, payload.agent_id, payload.transcript_path);
         }
         if (held.length) {

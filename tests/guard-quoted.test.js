@@ -67,7 +67,7 @@ test('writesFiles blanks quoted text only on a recognised fankeel note call', ()
     'node scripts/task.js note "x" --session x | sh -c "rm y"',
     'node scripts/task.js note "x" --session x && sh -c "rm y"',
     'node scripts/task.js note "a\\" b" ; rm x ; "c\\" d" --session x',
-    // unquoted() ends the span at \" where bash does not, and pairs the rest
+    // The quote mask (QUOTED) ends the span at \" where bash does not, and pairs the rest
     // so that `; rm x ;` is masked: the escaped-quote refusal is what holds.
     'node scripts/task.js note "\'\\"" ; rm x ; \\"',
     'node scripts/task.js show "git commit" --session x',

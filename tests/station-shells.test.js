@@ -94,7 +94,7 @@ test('a row that is not active reads no shells, and a detail without them says n
 test('shellsHtml draws nothing for no shells, and one .sa row a shell: running with a live dot, ended with its exit code, non-zero in red', () => {
     const { V } = page();
     const now = Date.parse('2026-10-21T01:00:00.000Z');
-    assert.equal(V.shellsHtml([], now), '');
+    assert.equal(require('../assets/station/station.js').shellsHtml([], now), '');
     assert.equal(V.shellsHtml(undefined, now), '');
     const html = V.shellsHtml([
         { id: 'b2', command: 'node --test 2>&1 | tail -40', state: 'running', code: null, startedAt: '2026-10-21T00:56:00.000Z' },

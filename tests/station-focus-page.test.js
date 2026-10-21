@@ -79,7 +79,7 @@ test('background shells sit between the header and the page', () => {
 // station.js loaded as the focus shell loads it: STATION_FOCUS set, one
 // session's row and detail, a #focus to draw into.
 function focusDom() {
-    const asked = [], heads = [], ticks = [], listened = [];
+    const asked = [], heads = [], ticks = [], listened = [], waits = [];
     const cls = new Set();
     const focus = { innerHTML: '', classList: { toggle: (c, on) => { if (on) cls.add(c); else cls.delete(c); }, contains: (c) => cls.has(c) } };
     const head = { appendChild(t) { t.parentNode = head; heads.push(t); }, removeChild(t) { t.parentNode = null; } };
@@ -87,9 +87,9 @@ function focusDom() {
         createElement: () => ({}), addEventListener() { listened.push('doc'); }, querySelectorAll: () => [] };
     const win = { STATION_FOCUS: { id: SID, tab: 'plan' }, STATION: { serve: true, pricesVerified: '2026-09-04', sessions: [ROW] },
         STATION_DETAIL: { [SID]: { tasks: [], gate: null } }, location: { hash: '' },
-        setInterval: (fn) => ticks.push(fn), addEventListener() { listened.push('win'); } };
+        setInterval: (fn) => ticks.push(fn), setTimeout: (fn, ms) => waits.push(ms), clearTimeout() {}, addEventListener() { listened.push('win'); } };
     vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8'), { window: win, document: doc, URLSearchParams });
-    return { focus, asked, heads, ticks, listened, win };
+    return { focus, asked, heads, ticks, listened, win, waits };
 }
 
 test('boot: STATION_FOCUS draws the focus page into #focus and the full station never boots', () => {
@@ -111,6 +111,9 @@ test('boot: a re-read that fails dims the page as stale, the next one that loads
     d.heads[1].onload();
     assert.ok(!d.focus.classList.contains('fm-stale'), 'fresh after a load');
     assert.ok(d.focus.innerHTML.includes('renamed'), 'the load repaints');
+    assert.ok(d.heads[1].src.startsWith('/station/focus/' + SID + '.js?t='), 'the one session script, cache-busted');
+    // reload's give-up timer: the full page's RELOAD_TIMEOUT_MS is still unassigned when focusBoot runs.
+    assert.deepEqual(d.waits, [4000, 4000], 'each re-read gives up after four seconds');
 });
 
 const get = (url) => new Promise((resolve, reject) => {
