@@ -3,10 +3,11 @@
 // (docs/90-agent/plans/2026-10-21-station-remote-design.md §4; the approved
 // mockup's blocks tabbar, tab-gates, gate-sheet, tab-tasks, tab-done,
 // pair-scan, pair-error, gates-empty). Reads /station/mobile.json
-// (lib/mobile.js) every five seconds while the page is visible and no gate
-// sheet is open; answers a held gate through POST /answer and pairs through
-// POST /station/remote/pair, both on the device cookie, which the browser
-// sends itself. Carries its own strings — station.js's loc() table is not on
+// (lib/mobile.js) every five seconds, and again when the page comes back into
+// view, while no gate sheet is open, so a reload never redraws what is being
+// picked or typed. Pairs through POST /station/remote/pair, whose 201 sets the
+// device cookie, and answers a held gate through POST /answer on that cookie,
+// which the browser sends itself. Carries its own strings — station.js's loc() table is not on
 // this page. The drawing functions are pure and exported for the tests;
 // `boot` runs only on a page with #app.
 (function (w) {
@@ -16,13 +17,13 @@
             'gates.waiting': '{n} 個在等', 'gates.empty': '沒有在等你的 gate', 'gates.emptyHint': '有新的會推播通知你。',
             'gate.word': 'gate', 'gate.waited': '等了 {t}', 'gate.report': '看 {stage} 報告', 'gate.pick': '選一個答案', 'gate.pickMany': '可以選幾個',
             'gate.own': '自己寫答案…', 'gate.rec': '建議', 'gate.send': '送出答案', 'gate.sending': '送出中…', 'gate.needAll': '每一題都要有答案',
-            'gate.failed': '沒送到：可以再按一次', 'gate.gone': '這個 gate 已經不在等了', 'gate.more': '還有 {n} 題',
+            'gate.failed': '沒送到：可以再按一次', 'gate.gone': '這個 gate 已經不在等了', 'gate.refused': '測站沒收下（{code}）：{why}', 'gate.more': '還有 {n} 題',
             'tasks.empty': '沒有在跑的任務', 'tasks.route': 'route {route}，現在 {stage}', 'tasks.gate': '待答',
             'done.empty': '48 小時內沒有完成的', 'done.end': '任務結束', 'done.stage': '完成 ·', 'done.today': '今天', 'done.yesterday': '昨天', 'done.upTo': '到 {t}',
             'ago.now': '剛剛', 'ago.min': '{n} 分', 'ago.hour': '{n} 小時', 'ago.day': '{n} 天',
             'host.on': '已連上 {host}', 'host.station': '測站',
             'pair.title': '掃桌機測站上的 QR', 'pair.where': '在 <b>設定</b> › <b>手機遠端</b>', 'pair.frame': '相機取景框', 'pair.type': '輸入配對碼',
-            'pair.code': '8 位配對碼', 'pair.go': '配對', 'pair.busy': '配對中…', 'pair.failed': '連不到測站：再試一次',
+            'pair.code': '8 位配對碼', 'pair.go': '配對', 'pair.busy': '配對中…', 'pair.failed': '連不到測站：再試一次', 'pair.bad': '配對碼是 8 個英文字母或數字', 'pair.refused': '配對沒成功（{code}）：{why}',
             'off.title': '連不到 {host}', 'off.hint': '打開手機的 Tailscale 再試。', 'off.badge': 'Tailscale 未連線', 'off.retry': '重試', 'off.repair': '重新配對',
         },
         en: {
@@ -30,13 +31,13 @@
             'gates.waiting': '{n} waiting', 'gates.empty': 'No gate is waiting on you', 'gates.emptyHint': 'A new one will notify you.',
             'gate.word': 'gate', 'gate.waited': 'waiting {t}', 'gate.report': 'Read the {stage} report', 'gate.pick': 'Pick one answer', 'gate.pickMany': 'Pick any number',
             'gate.own': 'Write your own answer…', 'gate.rec': 'Recommended', 'gate.send': 'Send answer', 'gate.sending': 'Sending…', 'gate.needAll': 'Every question needs an answer',
-            'gate.failed': 'Not sent: press again', 'gate.gone': 'This gate is no longer waiting', 'gate.more': '{n} more',
+            'gate.failed': 'Not sent: press again', 'gate.gone': 'This gate is no longer waiting', 'gate.refused': 'The station refused it ({code}): {why}', 'gate.more': '{n} more',
             'tasks.empty': 'No task is running', 'tasks.route': 'route {route}, now {stage}', 'tasks.gate': 'Gate',
             'done.empty': 'Nothing finished in the last 48 hours', 'done.end': 'Task ended', 'done.stage': 'done ·', 'done.today': 'Today', 'done.yesterday': 'Yesterday', 'done.upTo': 'up to {t}',
             'ago.now': 'now', 'ago.min': '{n} min', 'ago.hour': '{n} h', 'ago.day': '{n} d',
             'host.on': 'Connected to {host}', 'host.station': 'the station',
             'pair.title': 'Scan the QR on the desktop station', 'pair.where': 'Under <b>Settings</b> › <b>Phone remote</b>', 'pair.frame': 'Camera viewfinder', 'pair.type': 'Type the pairing code',
-            'pair.code': '8-character code', 'pair.go': 'Pair', 'pair.busy': 'Pairing…', 'pair.failed': 'Could not reach the station: try again',
+            'pair.code': '8-character code', 'pair.go': 'Pair', 'pair.busy': 'Pairing…', 'pair.failed': 'Could not reach the station: try again', 'pair.bad': 'A pairing code is 8 letters or digits', 'pair.refused': 'Pairing refused ({code}): {why}',
             'off.title': 'Cannot reach {host}', 'off.hint': 'Turn on Tailscale on this phone and try again.', 'off.badge': 'Tailscale not connected', 'off.retry': 'Retry', 'off.repair': 'Pair again',
         },
     };
@@ -405,32 +406,37 @@
                     win.location.hash = '#/gates';
                     return load();
                 }
-                return r.text().then(function (text) { st.ui = pairUi({ manual: true, say: String(text || r.status).trim() }); draw(); });
+                return r.text().then(function (text) { st.ui = pairUi({ manual: true, say: t('pair.refused', { code: r.status, why: String(text || '').trim() }) }); draw(); });
             }, function () { st.ui = pairUi({ manual: true, say: t('pair.failed') }); draw(); });
         }
         // 401 is an unpaired phone; anything else that is not a 2xx, or no
-        // answer at all, is a station this phone cannot reach.
+        // whole reply at all, is a station this phone cannot reach. Only the
+        // request is judged so: a drawing error is a bug, thrown where the
+        // console shows it, never a pair-error screen.
         function load() {
+            var UNPAIRED = {};
             st.loading = true;
             return win.fetch('/station/mobile.json', { credentials: 'same-origin', cache: 'no-store' }).then(function (r) {
-                if (r.status === 401) {
-                    var R = route();
-                    if (R.pair && st.tried !== R.pair) { st.tried = R.pair; pairWith(R.pair); return; }
-                    st.ui = pairUi({});
-                    draw();
-                    return;
-                }
+                if (r.status === 401) return UNPAIRED;
                 if (!r.ok) throw new Error(String(r.status));
-                return r.json().then(function (M) {
-                    st.M = M;
-                    st.ui = { mode: 'app' };
-                    if (M && M.host) store('station.m.host', String(M.host));
-                    draw();
-                });
-            }).catch(function () {
+                return r.json();
+            }).then(function (M) {
+                st.loading = false;
+                if (M === UNPAIRED) {
+                    var R = route();
+                    if (R.pair && st.tried !== R.pair) { st.tried = R.pair; return pairWith(R.pair); }
+                    st.ui = pairUi({});
+                    return draw();
+                }
+                st.M = M;
+                st.ui = { mode: 'app' };
+                if (M && M.host) store('station.m.host', String(M.host));
+                draw();
+            }, function () {
+                st.loading = false;
                 st.ui = { mode: 'off', host: store('station.m.host') };
                 draw();
-            }).then(function () { st.loading = false; });
+            }).then(null, function (e) { win.setTimeout(function () { throw e; }); });
         }
         function gateOf(id) {
             return ((st.M && st.M.gates) || []).filter(function (g) { return g.id === id; })[0] || null;
@@ -449,7 +455,7 @@
             say.textContent = t('gate.sending');
             post('/answer', { root: g.root, id: g.id, answers: JSON.stringify(answers) }).then(function (r) {
                 if (r.status === 201) { win.location.hash = '#/gates'; return load(); }
-                return r.text().then(function (text) { btn.disabled = false; say.textContent = r.status + ' — ' + String(text).trim(); });
+                return r.text().then(function (text) { btn.disabled = false; say.textContent = t('gate.refused', { code: r.status, why: String(text || '').trim() }); });
             }, function () { btn.disabled = false; say.textContent = t('gate.failed'); });
         }
         d.addEventListener('submit', function (e) {
@@ -461,7 +467,7 @@
                 var input = f.querySelector('input');
                 var code = codeIn(input ? input.value : '');
                 if (code) pairWith(code);
-                else { st.ui = pairUi({ manual: true, say: t('pair.code') }); draw(); }
+                else { st.ui = pairUi({ manual: true, say: t('pair.bad') }); draw(); }
             }
         });
         d.addEventListener('click', function (e) {
@@ -484,7 +490,7 @@
         d.addEventListener('input', own);
         d.addEventListener('focusin', own);
         d.addEventListener('keydown', function (e) { if (e.key === 'Escape' && route().open) win.location.hash = '#/gates'; });
-        d.addEventListener('visibilitychange', function () { if (d.visibilityState === 'visible' && st.ui.mode === 'app') load(); });
+        d.addEventListener('visibilitychange', function () { if (d.visibilityState === 'visible' && st.ui.mode === 'app' && !route().open) load(); });
         win.addEventListener('hashchange', function () { draw(); if (route().open && !gateOf(route().open)) load(); });
         win.setInterval(function () {
             if (!st.loading && d.visibilityState === 'visible' && st.ui.mode === 'app' && !route().open) load();
@@ -494,8 +500,7 @@
     }
 
     var api = {
-        parseRoute: parseRoute, screen: screen, answersOf: answersOf, collect: collect, codeIn: codeIn, setLang: setLang, deviceName: deviceName,
-        gatesHtml: gatesHtml, sheetHtml: sheetHtml, tasksHtml: tasksHtml, doneHtml: doneHtml, pairHtml: pairHtml, offHtml: offHtml, tabbar: tabbar, STR: STR,
+        parseRoute: parseRoute, screen: screen, answersOf: answersOf, collect: collect, codeIn: codeIn, setLang: setLang, STR: STR,
     };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     if (w) w.FK_M = api;

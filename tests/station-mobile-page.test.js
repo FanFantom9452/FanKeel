@@ -226,26 +226,51 @@ test('mobile.css carries a rule for every class the screens draw, and the real p
     assert.doesNotMatch(css, /\.gest|\.mk|\.phone\{|\.cbar|\.shade|\.nt-|\.rm-|\.m-switch/, 'the mockup\'s frame and the desktop card stay out');
 });
 
-// The page in a context of its own: a document with #app, a fake fetch.
+// The page in a context of its own: a document with #app, a fake fetch, and
+// the listeners it adds kept so a test can fire the real events at them.
 const SRC = read('mobile.js');
 function boot(o) {
     const app = { innerHTML: '' };
     const calls = [];
     const store = Object.assign({}, o.store);
+    const on = { doc: {}, win: {} };
+    const listen = (where) => (type, fn) => { (on[where][type] = on[where][type] || []).push(fn); };
     const doc = {
         getElementById: (id) => (id === 'app' ? app : null), documentElement: {}, body: { insertAdjacentHTML() {} },
-        addEventListener() {}, querySelector: () => null, visibilityState: 'visible',
+        addEventListener: listen('doc'), querySelector: () => null, visibilityState: 'visible',
     };
-    const win = {
+    const win = Object.assign({
         document: doc, location: { hash: o.hash || '' },
         navigator: { language: 'zh-TW', userAgent: 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 Chrome/141.0 Mobile Safari/537.36' },
         localStorage: { getItem: (k) => (Object.prototype.hasOwnProperty.call(store, k) ? store[k] : null), setItem: (k, v) => { store[k] = String(v); } },
-        addEventListener() {}, setInterval() {}, setTimeout, URLSearchParams,
+        addEventListener: listen('win'), setInterval() {}, setTimeout, URLSearchParams,
         fetch: (url, init) => { calls.push({ url, init: init || {} }); return o.fetch(url, init || {}); },
-    };
+    }, o.win);
     vm.runInNewContext(SRC, { window: win });
-    return { app, calls, store, win };
+    const fire = (where, type, e) => { (on[where][type] || []).forEach((fn) => fn(e)); return e; };
+    const reads = () => calls.filter((c) => c.url === '/station/mobile.json').length;
+    return { app, calls, store, win, doc, reads, fire: (type, e) => fire('doc', type, e || {}), fireWin: (type, e) => fire('win', type, e || {}) };
 }
+// A gate sheet as answer() reads it: data-id, its .sh-say line, its .cta button, its inputs.
+function sheetForm(id, inputs) {
+    const say = { textContent: '' };
+    const btn = { disabled: false };
+    return {
+        id: 'gate-sheet', say, btn,
+        getAttribute: (a) => (a === 'data-id' ? id : null),
+        querySelector: (s) => (s === '.sh-say' ? say : s === '.cta' ? btn : null),
+        querySelectorAll: () => inputs,
+    };
+}
+const pick = (name, value, checked) => ({ name, value, checked, getAttribute: () => null });
+const ownBox = (qi, value) => ({ name: '', value, checked: false, getAttribute: (a) => (a === 'data-own' ? String(qi) : null) });
+const pairForm = (value) => ({ id: '', getAttribute: (a) => (a === 'data-pair-form' ? '1' : null), querySelector: () => ({ value }) });
+const submit = (target) => ({ target, prevented: false, preventDefault() { this.prevented = true; } });
+const tap = (attrs) => {
+    const el = { getAttribute: (a) => (Object.prototype.hasOwnProperty.call(attrs, a) ? attrs[a] : null) };
+    el.closest = () => el;
+    return { target: el };
+};
 const reply = (status, body) => Promise.resolve({
     status, ok: status >= 200 && status < 300,
     json: () => Promise.resolve(body), text: () => Promise.resolve(typeof body === 'string' ? body : JSON.stringify(body)),
@@ -287,6 +312,149 @@ test('boot: a pairing url opened on an unpaired phone pairs with its code, then 
     assert.equal(pair.init.body, 'code=ABCD2345&name=Android');
     assert.equal(page.win.location.hash, '#/gates');
     assert.match(page.app.innerHTML, /data-block="tab-gates"/);
+});
+
+test('boot: 送出答案 posts the picked answers to /answer, and its 201 closes the sheet and reads again', async () => {
+    const page = boot({ hash: '#/gate/aaaa-1', fetch: (url) => (url === '/answer' ? reply(201, '') : reply(200, M)) });
+    await settle();
+    const f = sheetForm('aaaa-1', [pick('q0', '改 mockup', true), pick('q0', '__other', false), ownBox(0, 'ignored')]);
+    const e = page.fire('submit', submit(f));
+    assert.equal(e.prevented, true);
+    assert.equal(f.say.textContent, '送出中…');
+    assert.equal(f.btn.disabled, true);
+    await settle();
+    const sent = page.calls.filter((c) => c.url === '/answer');
+    assert.equal(sent.length, 1);
+    assert.equal(sent[0].init.method, 'POST');
+    assert.equal(sent[0].init.headers['content-type'], 'application/x-www-form-urlencoded');
+    assert.equal(sent[0].init.body, new URLSearchParams({ root: '/ws/fankeel', id: 'aaaa-1', answers: JSON.stringify({ [Q1[0].question]: '改 mockup' }) }).toString());
+    assert.equal(page.win.location.hash, '#/gates');
+    assert.equal(page.reads(), 2);
+});
+
+test('boot: a refused or lost answer, a question left blank, a gate no longer held each change only the sheet\'s line', async () => {
+    let answer = () => reply(409, ' already answered ');
+    const page = boot({ hash: '#/gate/aaaa-1', fetch: (url) => (url === '/answer' ? answer() : reply(200, M)) });
+    await settle();
+    const f = sheetForm('aaaa-1', [pick('q0', '改 mockup', true)]);
+    page.fire('submit', submit(f));
+    await settle();
+    assert.equal(f.say.textContent, '測站沒收下（409）：already answered');
+    assert.equal(f.btn.disabled, false);
+    assert.equal(page.win.location.hash, '#/gate/aaaa-1');
+    answer = () => Promise.reject(new Error('offline'));
+    page.fire('submit', submit(f));
+    await settle();
+    assert.equal(f.say.textContent, '沒送到：可以再按一次');
+    assert.equal(f.btn.disabled, false);
+    const blank = sheetForm('aaaa-1', [pick('q0', '__other', true), ownBox(0, '   ')]);
+    page.fire('submit', submit(blank));
+    assert.equal(blank.say.textContent, '每一題都要有答案');
+    const gone = sheetForm('nobody', [pick('q0', '改 mockup', true)]);
+    page.fire('submit', submit(gone));
+    assert.equal(gone.say.textContent, '這個 gate 已經不在等了');
+    assert.equal(page.calls.filter((c) => c.url === '/answer').length, 2, 'a blank or gone sheet posts nothing');
+});
+
+test('boot: the typed code pairs, a bad one says what a code is, a refusal and a lost station say so', async () => {
+    let answer;
+    const page = boot({ fetch: (url) => (url === '/station/remote/pair' ? answer() : reply(401, 'pair this phone first')) });
+    await settle();
+    page.fire('submit', submit(pairForm('nope')));
+    assert.match(page.app.innerHTML, /<p class="say" role="status">配對碼是 8 個英文字母或數字<\/p>/);
+    let release;
+    answer = () => new Promise((r) => { release = r; });
+    const e = page.fire('submit', submit(pairForm(' abcd2345 ')));
+    assert.equal(e.prevented, true);
+    assert.match(page.app.innerHTML, /配對中…/);
+    assert.equal(page.calls.find((c) => c.url === '/station/remote/pair').init.body, 'code=ABCD2345&name=Android');
+    release(reply(403, 'wrong pairing code'));
+    await settle();
+    assert.match(page.app.innerHTML, /配對沒成功（403）：wrong pairing code/);
+    answer = () => Promise.reject(new Error('offline'));
+    page.fire('submit', submit(pairForm('ABCD2345')));
+    await settle();
+    assert.match(page.app.innerHTML, /連不到測站：再試一次/);
+});
+
+test('boot: a tap on the dim or grab closes the sheet; retry reads again, repair and manual show pair-scan', async () => {
+    let up = false;
+    const page = boot({ hash: '#/gate/aaaa-1', store: { 'station.m.host': 'ymlab-pc' }, fetch: () => (up ? reply(200, M) : Promise.reject(new Error('offline'))) });
+    await settle();
+    assert.match(page.app.innerHTML, /data-block="pair-error"/);
+    up = true;
+    page.fire('click', tap({ 'data-act': 'retry' }));
+    await settle();
+    assert.equal(page.reads(), 2);
+    assert.match(page.app.innerHTML, /data-block="gate-sheet"/);
+    page.fire('click', tap({ 'data-close': '1' }));
+    assert.equal(page.win.location.hash, '#/gates');
+    page.fire('click', tap({ 'data-act': 'repair' }));
+    assert.match(page.app.innerHTML, /data-block="pair-scan"/);
+    page.app.innerHTML = '';
+    page.fire('click', tap({ 'data-act': 'manual' }));
+    assert.match(page.app.innerHTML, /data-pair-form="1"/);
+});
+
+test('boot: Escape closes an open sheet and nothing else', async () => {
+    const page = boot({ hash: '#/gate/aaaa-1', fetch: () => reply(200, M) });
+    await settle();
+    page.fire('keydown', { key: 'a' });
+    assert.equal(page.win.location.hash, '#/gate/aaaa-1');
+    page.fire('keydown', { key: 'Escape' });
+    assert.equal(page.win.location.hash, '#/gates');
+});
+
+test('boot: typing in a 自己寫 box ticks its own __other', async () => {
+    const page = boot({ fetch: () => reply(200, M) });
+    await settle();
+    for (const type of ['input', 'focusin']) {
+        const other = { checked: false };
+        const label = { querySelector: (s) => (s === 'input[value="__other"]' ? other : null) };
+        page.fire(type, { target: { getAttribute: (a) => (a === 'data-own' ? '0' : null), closest: () => label } });
+        assert.equal(other.checked, true, type);
+    }
+});
+
+test('boot: a hash change redraws, and one naming a gate not held reads again', async () => {
+    const page = boot({ hash: '#/gates', fetch: () => reply(200, M) });
+    await settle();
+    page.win.location.hash = '#/done';
+    page.fireWin('hashchange');
+    assert.match(page.app.innerHTML, /data-block="tab-done"/);
+    assert.equal(page.reads(), 1);
+    page.win.location.hash = '#/gate/zzzz-9';
+    page.fireWin('hashchange');
+    await settle();
+    assert.equal(page.reads(), 2);
+});
+
+test('boot: coming back into view reads again, but never under an open sheet, so what was typed stays', async () => {
+    const page = boot({ hash: '#/gates', fetch: () => reply(200, M) });
+    await settle();
+    page.doc.visibilityState = 'hidden';
+    page.fire('visibilitychange');
+    assert.equal(page.reads(), 1);
+    page.doc.visibilityState = 'visible';
+    page.fire('visibilitychange');
+    await settle();
+    assert.equal(page.reads(), 2);
+    page.win.location.hash = '#/gate/aaaa-1';
+    page.fireWin('hashchange');
+    page.app.innerHTML = 'the sheet as typed';
+    page.fire('visibilitychange');
+    await settle();
+    assert.equal(page.reads(), 2);
+    assert.equal(page.app.innerHTML, 'the sheet as typed');
+});
+
+test('boot: a screen that fails to draw is thrown, not shown as a station out of reach', async () => {
+    const thrown = [];
+    const page = boot({ fetch: () => reply(200, { host: 'ymlab-pc', gates: { length: 1 } }), win: { setTimeout: (fn) => { thrown.push(fn); } } });
+    await settle();
+    assert.doesNotMatch(page.app.innerHTML, /pair-error/);
+    assert.equal(thrown.length, 1);
+    assert.throws(thrown[0], /gates\.map is not a function/);
 });
 
 // The service worker against fake caches and a fetch that can go offline.
