@@ -1494,7 +1494,11 @@ station writes one: `fankeel-` and 20 hex digits (`newTopic` in
 (`hooks/gate.js`, `task.js stage`, `hooks/leave.js`) read every `notify.*` key
 from the machine profile alone (`profile.read(null, configDir)`): a project's
 `.fankeel/profile.json` setting them is ignored, so a cloned repository cannot
-send a task or a gate question to a host it names.
+send a task or a gate question to a host it names. A publish that does not go
+out (nothing answers, or the server refuses) is one line in
+`<configDir>/fankeel/notify-failed.log`, beside the machine profile: the time,
+the server's host and `unreachable or refused`, never the topic or the
+message, the last 20 kept (`recordFailure` in `scripts/notify.js`).
 
 ## When a tuned block is done
 

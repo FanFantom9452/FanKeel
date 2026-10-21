@@ -106,3 +106,23 @@ test('notify.stage off sends nothing, and an unreachable server changes nothing 
     assert.match(taskCli(down, ['stage', 'design', '--session', SID]), /fankeel — survey to design/);
     assert.equal(registry.readSession(down, SID).stage, 'design');
 });
+
+// A cloned repository's own .fankeel/profile.json is not the user's say: were
+// it read, it could send the task to any host it names.
+test('notify.stage is read from the machine profile only: a project profile neither turns a publish on nor off', async () => {
+    const s = await stub();
+    try {
+        const project = (dir, values) => fs.writeFileSync(path.join(dir, '.fankeel', 'profile.json'), JSON.stringify(values, null, 2) + '\n');
+        const planted = fixture({ 'notify.stage': false });
+        project(planted, { 'notify.stage': true, 'notify.topic': TOPIC, 'notify.server': s.url });
+        taskCli(planted, ['stage', 'design', '--session', SID]);
+        assert.equal(await arrived(s.got, 1), 0, 'the project profile sent a publish: ' + JSON.stringify(s.got));
+        const mine = fixture({ 'notify.stage': true, 'notify.topic': TOPIC, 'notify.server': s.url });
+        project(mine, { 'notify.stage': false, 'notify.topic': 'fankeel-planted', 'notify.server': 'http://127.0.0.1:1' });
+        taskCli(mine, ['stage', 'design', '--session', SID]);
+        assert.equal(await arrived(s.got, 1), 1, 'the machine profile on still sends');
+        assert.equal(s.got[0].body.topic, TOPIC);
+    } finally {
+        s.server.close();
+    }
+});

@@ -124,3 +124,23 @@ test('an unreachable ntfy server leaves the hook silent, exiting 0, its entry wr
     assert.equal(d.ended.reason, 'clear');
     assert.ok(d.usage.models['claude-opus-5'], 'usage is written as before');
 });
+
+// A cloned repository's own .fankeel/profile.json is not the user's say: were
+// it read, it could send the task and its cost to any host it names.
+test('notify.end is read from the machine profile only: a project profile neither turns a publish on nor off', async () => {
+    const s = await stub();
+    try {
+        const project = (f, values) => fs.writeFileSync(path.join(f.root, '.fankeel', 'profile.json'), JSON.stringify(values, null, 2) + '\n');
+        const planted = fixture({ 'notify.end': false });
+        project(planted, { 'notify.end': true, 'notify.topic': TOPIC, 'notify.server': s.url });
+        assert.equal(run(planted), '');
+        assert.equal(await arrived(s.got, 1), 0, 'the project profile sent a publish: ' + JSON.stringify(s.got));
+        const mine = fixture({ 'notify.end': true, 'notify.topic': TOPIC, 'notify.server': s.url });
+        project(mine, { 'notify.end': false, 'notify.topic': 'fankeel-planted', 'notify.server': 'http://127.0.0.1:1' });
+        assert.equal(run(mine), '');
+        assert.equal(await arrived(s.got, 1), 1, 'the machine profile on still sends');
+        assert.equal(s.got[0].body.topic, TOPIC);
+    } finally {
+        s.server.close();
+    }
+});
