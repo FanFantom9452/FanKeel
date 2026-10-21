@@ -104,26 +104,33 @@ test('home-running with no shells on the row yet draws the shells group empty', 
     assert.match(html, /<p class="dnone">沒有子代理在跑<\/p>/);
 });
 
-const e = (id, title, state, stamp) => ({ id, label: '', title, description: '', state, condition: state === 'blocked' ? 'waits on x' : '', stamp: stamp || '' });
+// Each entry as lib/station.js `todoOf` hands it over: `due` and `dueAt` from
+// lib/todo.js `dueOf` (design §6). `a-7` was stamped before today but is not
+// due yet — the case the old `stamp <= today` rule listed.
+const day = (m, d) => new Date(2026, m - 1, d).getTime();
+const e = (id, title, state, stamp, dueAt) => ({ id, label: '', title, description: '', state, condition: state === 'blocked' ? 'waits on x' : '',
+    stamp: stamp || '', due: dueAt != null && dueAt <= NOW, dueAt: dueAt == null ? null : dueAt });
 const ALPHA = { pkey: 'F:\\ws\\alpha', mode: 'folder', folder: 'docs/todo', done: [], open: [e('a-1', 'A one', 'ready'), e('a-2', 'A two', 'ready'),
-    e('a-3', 'A three', 'ready'), e('a-4', '**A** four', 'ready'), e('a-5', 'A due', 'blocked', '2026-10-12'), e('a-6', 'A later', 'blocked', '2026-12-01')] };
-const BETA = { pkey: 'F:\\ws\\beta', mode: 'folder', folder: 'docs/todo', done: [], open: [e('b-1', 'B one', 'ready'), e('b-2', 'B due', 'blocked', '2026-10-20')] };
+    e('a-3', 'A three', 'ready'), e('a-4', '**A** four', 'ready'), e('a-5', 'A due', 'blocked', '2026-10-05', day(10, 12)),
+    e('a-6', 'A later', 'blocked', '2026-11-24', day(12, 1)), e('a-7', 'A stamped', 'blocked', '2026-10-15', day(10, 22))] };
+const BETA = { pkey: 'F:\\ws\\beta', mode: 'folder', folder: 'docs/todo', done: [], open: [e('b-1', 'B one', 'ready'), e('b-2', 'B due', 'blocked', '2026-10-13', day(10, 20))] };
 
-test('home-todo counts Ready across projects, most first, and lists only the Blocked entries whose date has come', () => {
+test('home-todo counts Ready across projects, most first, and lists only the Blocked entries lib/todo.js calls due', () => {
     const { V } = boot();
-    const html = V.homeTodo([{ root: 'F:\\ws\\beta', todos: [BETA] }, { root: 'F:\\ws\\alpha', todos: [ALPHA] }], '2026-10-21');
+    const html = V.homeTodo([{ root: 'F:\\ws\\beta', todos: [BETA] }, { root: 'F:\\ws\\alpha', todos: [ALPHA] }]);
     assert.match(html, /<div class="hm-td-big"><b>5<\/b><span>筆 Ready，分在 2 個專案<\/span><\/div>/);
     assert.match(html, /<a href="#\/p\/F%3A%5Cws%5Calpha" data-tdlg="F:\\ws\\alpha" aria-haspopup="dialog">alpha <b>4<\/b><\/a><a href="#\/p\/F%3A%5Cws%5Cbeta"/);
     assert.match(html, /<b>Blocked 到期<\/b><span>重看日已到，2 筆<\/span>/);
-    assert.ok(html.indexOf('A due') < html.indexOf('B due'), 'soonest date first');
+    assert.ok(html.indexOf('A due') < html.indexOf('B due'), 'soonest due first');
     assert.doesNotMatch(html, /A later/);
+    assert.doesNotMatch(html, /A stamped/, 'stamped before today is not due: due is seven days after the stamp');
     assert.match(html, /<a class="hm-tdb" href="#\/p\/F%3A%5Cws%5Calpha\/todo\/a-5"><span class="hm-tdb-t">A due<\/span><span class="hm-tdb-m">alpha · blocked · waits on x<\/span><span class="hm-tdb-d">到期 10-12<\/span><\/a>/);
-    assert.match(V.homeTodo([], '2026-10-21'), /沒有 Ready 的條目/);
+    assert.match(V.homeTodo([]), /沒有 Ready 的條目/);
 });
 
 test('home-todo and the project page agree on how many entries are Ready', () => {
     const { V } = boot();
-    const home = Number(/<div class="hm-td-big"><b>(\d+)<\/b>/.exec(V.homeTodo([{ todos: [ALPHA] }], '2026-10-21'))[1]);
+    const home = Number(/<div class="hm-td-big"><b>(\d+)<\/b>/.exec(V.homeTodo([{ todos: [ALPHA] }]))[1]);
     const panel = Number(/<b class="mono">Ready<\/b><span class="mute">(\d+) 筆/.exec(V.todoPanelHtml(ALPHA, []))[1]);
     assert.equal(home, 4);
     assert.equal(home, panel);

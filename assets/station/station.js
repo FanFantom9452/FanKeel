@@ -2868,8 +2868,17 @@
             + '<span>' + loc('focus.colFiles', '改的檔') + '</span><span>' + loc('focus.colTest', '測') + '</span><span>' + loc('focus.colWait', '等') + '</span>'
             + '<span>' + loc('focus.colDispatch', '派工') + '</span><span>ledger</span></div>' + groups + '</section>';
     }
+    // The 關卡 tab's report under its own head, without the tab's banner: the
+    // question is drawn elsewhere — above it here, beside it in gate-frame.js.
+    function focusReportHtml(s, g, tasks) {
+        var stage = g && g.stage ? g.stage : s.stage || '';
+        // gateTabHtml with no wait on the row draws its head, not its banner.
+        var calm = Object.assign({}, s, { gateAt: null, pending: null });
+        return '<section class="panel pv gv gr" data-block="gate-report"><div class="gr-hd"><h2>' + loc('focus.report', '{s} 報告', { s: esc(stage) }) + '</h2></div>'
+            + gateTabHtml(calm, g, tasks) + '</section>';
+    }
     // The gate first: its question and options as the session will ask them,
-    // then the 關卡 tab's report under it, without the tab's own banner.
+    // then the report under it.
     function focusGateHtml(s, g, tasks) {
         var REC = /\s*\(Recommended\)\s*$/;
         var q = g && g.gate && g.gate.questions && g.gate.questions[0] ? g.gate.questions[0] : null;
@@ -2887,10 +2896,7 @@
             + opts
             + (g && g.gate && g.gate.next ? '<p class="gq-next"><span>' + loc('focus.reportNext', '報告寫的下一步') + '</span>' + esc(g.gate.next) + '</p>' : '')
             + '<p class="pv-where"><i class="hatchsw" aria-hidden="true"></i><span>' + loc('focus.where', '回答在 Claude Desktop 那邊給；這頁只讓你看清楚要核准什麼，不收答案。') + '</span></p></div></section>';
-        // gateTabHtml with no wait on the row draws its head, not its banner: the question is above already.
-        var calm = Object.assign({}, s, { gateAt: null, pending: null });
-        return ask + '<section class="panel pv gv gr" data-block="gate-report"><div class="gr-hd"><h2>' + loc('focus.report', '{s} 報告', { s: esc(stage) }) + '</h2></div>'
-            + gateTabHtml(calm, g, tasks) + '</section>';
+        return ask + focusReportHtml(s, g, tasks);
     }
     function focusPageHtml(st, details, focus) {
         var s = ((st && st.sessions) || []).filter(function (x) { return x.id === focus.id; })[0];
@@ -2898,7 +2904,15 @@
         var x = (details || {})[s.id] || { tasks: [], gate: null };
         var gate = focus.tab === 'gate';
         // Background shells sit under the header (design §5), drawn by Task 5's shellsHtml.
-        return focusHeader(s, focus.tab) + (x.shells && x.shells.length ? shellsHtml(x.shells, Date.now()) : '') + '<main class="fm" data-block="focus-' + (gate ? 'gate' : 'plan') + '">'
+        var shells = x.shells && x.shells.length ? shellsHtml(x.shells, Date.now()) : '';
+        // The redesigned gate page (station redesign §5) is assets/station/gate-frame.js:
+        // loaded, it draws the whole tab — its own head with no tabs, the report
+        // in the main column, the question in the side column — around the
+        // report drawn here, which only station.js can draw.
+        if (gate && w.FK_GATE && typeof w.FK_GATE.frame === 'function') {
+            return w.FK_GATE.frame({ session: s, gate: x.gate, tasks: x.tasks || [], reportHtml: focusReportHtml(s, x.gate, x.tasks || []), shellsHtml: shells });
+        }
+        return focusHeader(s, focus.tab) + shells + '<main class="fm" data-block="focus-' + (gate ? 'gate' : 'plan') + '">'
             + (gate ? focusGateHtml(s, x.gate, x.tasks || []) : focusPlanHtml(x.tasks)) + '</main>';
     }
     // Below the guard's `if (!doc) return;`: draws once, then re-reads the one
@@ -2921,6 +2935,15 @@
             });
         }, 5000);
     }
+    // What the redesigned pages' modules (assets/station/*-page.js, tip.js,
+    // gate-frame.js) draw with, beside the spend modules' helpers above: a
+    // session's cost is `usd + agentUsd` on every page (station redesign §6), and
+    // the glyph, chips, ages and links are the ones the old pages drew. All
+    // hoisted declarations, so this one assign sees them even though some are
+    // written further down; it sits above `if (!doc) return;` so a module test
+    // under `require` has them too.
+    Object.assign(w.FK_KIT, { cost: cost, usd: usd, mins: mins, ago: ago, stamp: stamp, keelGlyph: keelGlyph, shortLabel: shortLabel,
+        projectHash: projectHash, family: family, modelKey: modelKey, modelLabel: modelLabel, icon: icon, loc: loc, ROUTE: ROUTE });
     // ---- tune: a block changed, continued: what the tests import -----------
 
     if (typeof module !== 'undefined' && module.exports) {
@@ -3266,21 +3289,23 @@
     }
     // home-todo: the Ready count off every project's `todos`, the rows the
     // project page's TODO panel reads, one chip per project (the quick look
-    // opens from it, `data-tdlg`); then the Blocked entries whose stamp — the
-    // day to look again — has come, soonest first.
-    function homeTodo(projects, today) {
+    // opens from it, `data-tdlg`); then the Blocked entries lib/todo.js `dueOf`
+    // calls due — `on:` from its date, otherwise seven days after the stamp,
+    // the rule todo-check reads (station redesign §6) — soonest first, each
+    // with the day it fell due.
+    function homeTodo(projects) {
         var by = {}, order = [], due = [];
         var plain = function (s) { return String(s == null ? '' : s).split('**').join(''); };
         (projects || []).forEach(function (p) {
             (p.todos || []).forEach(function (t) {
                 (t && t.open || []).forEach(function (x) {
                     if (x.state === 'ready') { if (!by[t.pkey]) { by[t.pkey] = 0; order.push(t.pkey); } by[t.pkey]++; }
-                    if (x.state === 'blocked' && x.stamp && String(x.stamp).slice(0, 10) <= today) due.push({ x: x, pkey: t.pkey });
+                    if (x.state === 'blocked' && x.due === true) due.push({ x: x, pkey: t.pkey });
                 });
             });
         });
         order.sort(function (a, b) { return by[b] - by[a]; });
-        due.sort(function (a, b) { var p = String(a.x.stamp), q = String(b.x.stamp); return p < q ? -1 : p > q ? 1 : 0; });
+        due.sort(function (a, b) { return (a.x.dueAt || 0) - (b.x.dueAt || 0); });
         var total = order.reduce(function (n, k) { return n + by[k]; }, 0);
         return '<section class="dcard" data-block="home-todo" aria-label="TODO"><div class="dcard-h">' + icon('check') + '<b>TODO</b></div>'
             + '<div class="hm-td-big"><b>' + total + '</b><span>' + loc('dash.nReadyInP', '筆 Ready，分在 {p} 個專案', { p: order.length }) + '</span></div>'
@@ -3291,7 +3316,7 @@
                 + due.map(function (r) {
                     return '<a class="hm-tdb" href="' + projectHash(r.pkey) + '/todo/' + encodeURIComponent(r.x.id || '') + '"><span class="hm-tdb-t">' + esc(plain(r.x.title)) + '</span>'
                         + '<span class="hm-tdb-m">' + esc(shortLabel(r.pkey)) + ' · blocked' + (r.x.condition ? ' · ' + esc(plain(r.x.condition)) : '') + '</span>'
-                        + '<span class="hm-tdb-d">' + loc('dash.dueOn', '到期 {d}', { d: esc(String(r.x.stamp).slice(5, 10)) }) + '</span></a>';
+                        + '<span class="hm-tdb-d">' + loc('dash.dueOn', '到期 {d}', { d: esc(r.x.dueAt ? localDay(r.x.dueAt).slice(5) : '') }) + '</span></a>';
                 }).join('') : '') + '</section>';
     }
     // home-spend: one line, today and the calendar week from Monday, the whole line a link to 花費.
@@ -3520,7 +3545,7 @@
     function dashPage() {
         var R = homeRows(), now = S.serve ? Date.now() : NOW, serve = Boolean(S.serve);
         return '<div class="dash kdash home" data-block="home"><div class="dcol" data-col="main">' + homeLive(R, now, serve) + homeRunning(R, now, serve)
-            + '</div><div class="dcol" data-col="side">' + homeTodo(S.projects, localDay(now)) + homeSpend(R, now) + '</div></div>';
+            + '</div><div class="dcol" data-col="side">' + homeTodo(S.projects) + homeSpend(R, now) + '</div></div>';
     }
     if (typeof module !== 'undefined' && module.exports) {
         module.exports.dashClash = dashClash; module.exports.dashByProj = dashByProj; module.exports.dashTokens7 = dashTokens7;
