@@ -206,13 +206,23 @@ function pageLine(o) {
 // 2026-10-21 await-gate-crlf judgement: the controller copies a gate's
 // `questions` and nothing else — hooks/gate.js compares only those — so they
 // are printed here, parsed by the readGate the hook uses: one line, CRLF
-// gone. No readable gate, one that fails readGate's own checks, a group brain's report,
-// or a workflow hand-over: nothing.
+// gone. A group brain's report or a workflow hand-over: nothing.
+// await-13: fs.watch can fire while the handoff is still being written, so a
+// gate that is missing or fails readGate is read once more after
+// GATE_SETTLE_MS; still not, and the line says so instead of saying nothing.
+// It never opens with `questions: `, so nobody parses it as the gate.
 const QUESTIONS_SAID = ' Its `questions:` line below is that gate\'s questions, as AskUserQuestion takes them.';
-function questionsLine(o) {
-    if (Number.isInteger(o.group) || workflowOf(o.handoff)) return '';
-    const gate = readGate(o.handoff);
-    return gate && !gate.invalid ? '\nquestions: ' + JSON.stringify(gate.questions) : '';
+const GATE_SETTLE_MS = 300;
+function questionsSaid(gate) {
+    if (gate && !gate.invalid) return '\nquestions: ' + JSON.stringify(gate.questions);
+    const why = gate ? 'its gate fails `' + gate.invalid + '`: ' + gate.detail : 'it holds no `json gate` block that parses yet';
+    return '\nno questions: ' + why + ' — read the last `json gate` block in that file yourself and ask its questions exactly as written.';
+}
+function questionsLine(o, settleMs = GATE_SETTLE_MS) {
+    if (Number.isInteger(o.group) || workflowOf(o.handoff)) return Promise.resolve('');
+    const first = readGate(o.handoff);
+    if (first && !first.invalid) return Promise.resolve(questionsSaid(first));
+    return new Promise((resolve) => setTimeout(() => resolve(questionsSaid(readGate(o.handoff))), settleMs));
 }
 
 // A handoff whose gate went out after the file last changed has been asked
@@ -300,8 +310,9 @@ function main(argv, env) {
             + stale;
         if (state === 'handoff' && already(o.root, opts.session, o.handoff)) return { text: 'stale ' + o.handoff + ' — already asked; nothing to do, end the turn without a reply.' };
         if (state !== 'handoff') return { text: line };
-        const questions = questionsLine(o);
-        return pageLine(o).then((page) => ({ text: line + (questions ? QUESTIONS_SAID : '') + (page ? PAGE_OPEN : '') + page + questions }));
+        return Promise.all([questionsLine(o), pageLine(o)]).then(([questions, page]) => ({
+            text: line + (questions.startsWith('\nquestions: ') ? QUESTIONS_SAID : '') + (page ? PAGE_OPEN : '') + page + questions,
+        }));
     }, (e) => {
         release();
         throw e;
@@ -315,4 +326,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { main, already };
+module.exports = { main, already, questionsLine };

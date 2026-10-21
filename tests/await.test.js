@@ -266,7 +266,7 @@ test('a non-build brain carrying a group waits on the plain handoff, the path it
     const plain = path.join(f.task, 'survey.md').split(path.sep).join('/');
     at(plain, Date.now());
     const out = await awaitCli.main(['--session', SID, '--root', f.root, '--timeout', '0.5'], f.env);
-    assert.ok(out.text.endsWith(plain + ' — print this path and ask its gate as your rules say, unless you already asked it and the file has not changed since.'), out.text);
+    assert.ok(out.text.split('\n')[0].endsWith(plain + ' — print this path and ask its gate as your rules say, unless you already asked it and the file has not changed since.'), out.text);
     assert.doesNotMatch(out.text, /-g1/);
 });
 
@@ -534,7 +534,8 @@ test('plan page: an answering station puts the session\'s plan tab on a second l
         const lines = (await awaitCli.main(['--session', SID, '--root', f.root], f.env)).text.split('\n');
         assert.match(lines[0], new RegExp('^handoff ' + f.task + '/plan\\.md — '));
         assert.equal(lines[1], 'page: ' + s.url + 'f/' + SID + '/plan');
-        assert.equal(lines.length, 2);
+        assert.match(lines[2], /^no questions: /);
+        assert.equal(lines.length, 3);
     } finally {
         await s.close();
     }
@@ -552,7 +553,8 @@ test('gate page: a land-stage handoff from an answering station prints the sessi
         const lines = (await awaitCli.main(['--session', SID, '--root', f.root], f.env)).text.split('\n');
         assert.equal(lines[1], 'page: ' + s.url + 'f/' + SID + '/gate');
         assert.ok(lines[0].endsWith(' Open its `page:` line below in a browser pane first, if you have one.'), lines[0]);
-        assert.equal(lines.length, 2);
+        assert.match(lines[2], /^no questions: /);
+        assert.equal(lines.length, 3);
     } finally {
         await s.close();
     }
@@ -566,7 +568,7 @@ test('gate page: survey, design and build print the gate tab; verify and audit p
             at(path.join(f.task, stage + '.md'), Date.now());
             serveRecord(f.config, s);
             const lines = (await awaitCli.main(['--session', SID, '--root', f.root], f.env)).text.split('\n');
-            if (stage === 'verify' || stage === 'audit') assert.equal(lines.length, 1, stage + ': ' + lines.join(' | '));
+            if (stage === 'verify' || stage === 'audit') assert.equal(lines.length, 2, stage + ': ' + lines.join(' | '));
             else assert.equal(lines[1], 'page: ' + s.url + 'f/' + SID + '/gate', stage);
         }
     } finally {
@@ -665,11 +667,28 @@ test('a CRLF handoff prints its gate questions on one line that parses', async (
     assert.deepEqual(JSON.parse(q.slice('questions: '.length)), CRLF_GATE.questions.map((x) => Object.assign({}, x, { multiSelect: false })));
 });
 
-test('a handoff whose gate would be refused prints no questions line', async () => {
+// await-13: a gate that fails readGate's own checks is said, never skipped in silence.
+test('a handoff whose gate would be refused says why on a no questions: line, and never a questions: line', async () => {
     const f = fixture({ stage: 'survey', moves: [['survey', 1]] });
     const bad = { questions: [{ header: '下一站', question: 'plan?', options: [{ label: 'plan', description: 'a' }] }], next: 'plan' };
     at(path.join(f.task, 'survey.md'), Date.now(), GATE_TICKS + 'json gate\n' + JSON.stringify(bad) + '\n' + GATE_TICKS + '\n');
     const out = await awaitCli.main(['--session', SID, '--root', f.root], f.env);
-    assert.doesNotMatch(out.text, /questions: /);
+    assert.match(out.text, /\nno questions: its gate fails `questions\[0\]\.options`: options must be 2 to 4, found 1 — read the last `json gate` block in that file yourself/);
+    assert.doesNotMatch(out.text, /^questions: /m);
     assert.doesNotMatch(out.text, /Its `questions:` line/);
+});
+
+// await-13: on 2026-10-21 build close's first handoff was caught by fs.watch
+// before its gate was written, and await printed no questions line at all.
+test('questionsLine reads once more when the gate lands after the report, and says so when it never does', async () => {
+    const dir = tmp('fankeel-await-');
+    const late = at(path.join(dir, 'task', 'survey.md'), Date.now(), 'report\n');
+    setTimeout(() => fs.appendFileSync(late, '\n' + GATE_TICKS + 'json gate\n' + JSON.stringify(CRLF_GATE) + '\n' + GATE_TICKS + '\n'), 50);
+    const got = await awaitCli.questionsLine({ handoff: late }, 300);
+    assert.ok(got.startsWith('\nquestions: '), got);
+    assert.deepEqual(JSON.parse(got.slice('\nquestions: '.length)), CRLF_GATE.questions.map((x) => Object.assign({}, x, { multiSelect: false })));
+    const never = at(path.join(dir, 'task2', 'survey.md'), Date.now(), 'report\n');
+    const none = await awaitCli.questionsLine({ handoff: never }, 50);
+    assert.equal(none, '\nno questions: it holds no `json gate` block that parses yet — read the last `json gate` block in that file yourself and ask its questions exactly as written.');
+    assert.equal(await awaitCli.questionsLine({ handoff: never, group: 2 }, 50), '');
 });
