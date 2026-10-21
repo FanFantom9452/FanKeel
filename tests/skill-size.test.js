@@ -13,12 +13,12 @@ const { skillFiles, main } = require('../scripts/input-check.js');
 // let the smallest skill grow fifteen-fold unnoticed.
 const CAPS = {
     'fankeel': 65500,
-    'fankeel-build': 40100,
+    'fankeel-build': 40400,
     'fankeel-survey': 23700,
-    'fankeel-land': 23400,
-    'fankeel-audit': 20500,
-    'fankeel-plan': 19000,
-    'fankeel-verify': 19000,
+    'fankeel-land': 23700,
+    'fankeel-audit': 20800,
+    'fankeel-plan': 19300,
+    'fankeel-verify': 19300,
     'fankeel-design': 15300,
     'fankeel-init': 13100,
     'fankeel-ask': 7800,

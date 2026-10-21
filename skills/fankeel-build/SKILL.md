@@ -702,7 +702,7 @@ that meets the event an `if:` names moves the entry to `## Ready` or
 Record what this stage verified that a later stage will need again, one fact a
 line: `node <plugin>/scripts/context.js add "<fact>" --at <path:line> --session <id>`.
 Do not reopen a `path:line` that context.md already lists; its content is
-inlined in your brief.
+inlined in your prompt.
 
 ## Output
 
