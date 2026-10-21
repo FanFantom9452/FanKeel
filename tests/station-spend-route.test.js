@@ -88,7 +88,7 @@ test('the four modules are served byte for byte, and the shell loads them before
     }
     const shell = fs.readFileSync(path.join(ASSETS, 'index.html'), 'utf8');
     const order = [...shell.matchAll(/<script src="station\/([^"]+)"><\/script>/g)].map((m) => m[1]);
-    assert.deepEqual(order, ['i18n.js'].concat(MODULES, ['station.js']));
+    assert.deepEqual(order, ['i18n.js'].concat(MODULES, ['remote-card.js', 'station.js']));
 }));
 
 test('the data file carries lib/prices.js\'s table, and a written copy carries the modules', () => {

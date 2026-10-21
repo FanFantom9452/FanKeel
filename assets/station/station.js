@@ -5673,7 +5673,10 @@
     function settingsPage() {
         var profiles = S.profiles || { machine: null, projects: {} }, keys = S.profileKeys || {};
         if (!wiz) wiz = wizLoad(profiles, keys, Object.keys(profiles.projects || {})[0] || 'machine');
-        return wizHtml(keys, wiz, profiles, { serve: Boolean(S.serve), nonce: S.nonce, plugin: S.plugin, configDir: S.configDir });
+        // The 手機遠端 card (assets/station/remote-card.js) under the wizard. It
+        // draws nothing on a file on disk, which has no server to ask.
+        return wizHtml(keys, wiz, profiles, { serve: Boolean(S.serve), nonce: S.nonce, plugin: S.plugin, configDir: S.configDir })
+            + (w.FK_REMOTE ? w.FK_REMOTE.html(Boolean(S.serve)) : '');
     }
     VIEWS.settings = settingsPage;
     var drawnHash = null;
