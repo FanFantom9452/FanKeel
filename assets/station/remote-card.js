@@ -8,8 +8,9 @@
 // when the card is first drawn and again after each action, and held in
 // between, so the page's redraw draws the held card rather than starting
 // over. The icons are Lucide (ISC), as in the mockup, inlined because the
-// mockup's sprite is not on this page. Loaded before station.js, whose
-// settingsPage calls `html(serve)`.
+// mockup's sprite is not on this page. To be loaded before station.js,
+// whose settingsPage will call `html(serve)` once the plan's Tasks 10-11
+// add it to MODULES and mount it.
 (function (w, doc) {
     var EN = {
         'rm.title': 'Phone remote',
@@ -23,6 +24,7 @@
         'rm.notLinked': 'Tailscale is not serving the station: {why}',
         'rm.copy': 'Copy',
         'rm.copied': 'Copied',
+        'rm.copyFailed': 'Copy failed',
         'rm.qr': 'Pairing QR',
         'rm.scan': 'Scan this QR with the phone',
         'rm.once': 'One-time, valid for 10 minutes.',
@@ -205,7 +207,9 @@
             else if (kind === 'copy' && w && w.navigator && w.navigator.clipboard) {
                 w.navigator.clipboard.writeText(c.getAttribute('data-url')).then(function () {
                     c.textContent = loc('rm.copied', '已複製');
-                }, function () {});
+                }, function () {
+                    c.textContent = loc('rm.copyFailed', '複製失敗');
+                });
             }
         });
     }

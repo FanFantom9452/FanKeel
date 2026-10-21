@@ -45,7 +45,7 @@ function boot(opts) {
         const a = answers[method + ' ' + url] || (method === 'GET' ? { status: 200, json: o.state || ACTIVE } : { status: 200, text: '' });
         return Promise.resolve({ ok: a.status < 400, status: a.status, json: () => Promise.resolve(a.json), text: () => Promise.resolve(a.text || '') });
     };
-    const win = { STATION: { serve: true, nonce: 'N0NCE' }, navigator: { clipboard: { writeText: (t) => { copied.push(t); return Promise.resolve(); } } } };
+    const win = { STATION: { serve: true, nonce: 'N0NCE' }, navigator: { clipboard: { writeText: (t) => { copied.push(t); return o.clipboardFails ? Promise.reject(new Error('denied')) : Promise.resolve(); } } } };
     if (o.lang) win.FK_I18N = { lang: o.lang };
     const doc = { getElementById: (id) => (id === 'rm-card' ? card : null), addEventListener(type, fn) { (listeners[type] = listeners[type] || []).push(fn); } };
     const box = { window: win, document: doc, fetch, URLSearchParams, module: { exports: {} } };
@@ -158,6 +158,20 @@ test('複製 puts the url on the clipboard and says so, posting nothing', async 
     assert.deepEqual(b.copied, ['https://' + NAME + '/']);
     assert.equal(c.textContent, '已複製');
     assert.equal(b.calls.length, 0);
+});
+
+test('複製 says so on the button when the clipboard refuses', async () => {
+    const b = boot({ clipboardFails: true });
+    const c = ctl({ 'data-rm': 'copy', 'data-url': 'https://' + NAME + '/' });
+    b.fire('click', c);
+    await settle();
+    assert.equal(c.textContent, '複製失敗');
+    assert.equal(b.calls.length, 0);
+    const e = boot({ clipboardFails: true, lang: 'en' });
+    const d = ctl({ 'data-rm': 'copy', 'data-url': 'https://' + NAME + '/' });
+    e.fire('click', d);
+    await settle();
+    assert.equal(d.textContent, 'Copy failed');
 });
 
 test('in English the card carries no CJK, and every string has English', () => {
