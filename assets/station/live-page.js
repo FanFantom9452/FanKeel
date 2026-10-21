@@ -36,14 +36,9 @@
         'lv.hour': '{n}h ago',
         'lv.day': '{n}d ago',
     };
-    function has(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
-    function fill(s, vars) {
-        if (!vars) return s;
-        return String(s).replace(/\{(\w+)\}/g, function (m, k) { return has(vars, k) ? String(vars[k]) : m; });
-    }
     function loc(key, zh, vars) {
         var I = w && w.FK_I18N;
-        return fill(I && I.lang === 'en' && has(EN, key) ? EN[key] : zh, vars);
+        return kit().fillVars(I && I.lang === 'en' && Object.prototype.hasOwnProperty.call(EN, key) ? EN[key] : zh, vars);
     }
     function kit() { return (w && w.FK_KIT) || {}; }
     function esc(s) { return kit().esc(s); }
@@ -148,6 +143,11 @@
         doc.addEventListener('click', function (e) {
             var t = e.target, sm = t && typeof t.closest === 'function' ? t.closest('summary[data-lv-sum]') : null;
             if (sm && sm.parentNode) openUn[sm.getAttribute('data-lv-sum')] = !sm.parentNode.open;
+        });
+        // Keyboard focus shows the peek (live-page.css); Esc hides it by giving the focus up.
+        doc.addEventListener('keydown', function (e) {
+            var a = doc.activeElement;
+            if (e.key === 'Escape' && a && typeof a.matches === 'function' && a.matches('a.sxr')) a.blur();
         });
     }
     // Named rows by last move, then the unnamed: one is a row, more fold into "N 個未命名".

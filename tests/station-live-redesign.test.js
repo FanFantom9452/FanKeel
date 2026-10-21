@@ -31,6 +31,21 @@ function live(lang) {
     return win.FK_LIVE;
 }
 const draw = (sessions, lang) => live(lang).page({ sessions }, { names: { 'F:\\w/app': 'w / app' }, now: NOW });
+// The module with a document that keeps what it listens for. The module binds
+// on its first draw, so `fire` reaches only listeners added after the load,
+// not station.js's or tip.js's.
+function bound() {
+    const on = [];
+    const el = () => ({ innerHTML: '', textContent: '', className: '', title: '', addEventListener() {} });
+    const document = { getElementById: el, createElement: el, head: { appendChild() {} }, querySelectorAll: () => [], activeElement: null,
+        addEventListener(type, fn) { on.push([type, fn]); } };
+    const L = page(['tip.js', 'live-page.js'], {}, { document }).win.FK_LIVE;
+    const loaded = on.length;
+    const draw = () => L.page({ sessions: SESSIONS }, { names: {}, now: NOW });
+    draw();
+    const fire = (type, e) => on.slice(loaded).forEach(([t, fn]) => { if (t === type) fn(e); });
+    return { document, fire, draw };
+}
 
 test('groups: a gate waiting, running, may have stopped; an ended session is in none', () => {
     const g = live().groups(SESSIONS);
@@ -80,6 +95,35 @@ test('two or more unnamed sessions fold into one row; one stays a row', () => {
     const lone = draw([SESSIONS[2]]);
     assert.ok(!lone.includes('sx-un'));
     assert.ok(lone.includes('href="#/s/cccccccc-0003"'));
+});
+
+test('a fold opened by its summary stays open across the poll redraw, and closes again', () => {
+    const b = bound();
+    const OPEN = '<details class="sx-un" data-lv-un="run" open>';
+    assert.ok(!b.draw().includes(OPEN));
+    const click = (open) => {
+        const sm = { parentNode: { open }, getAttribute: (n) => (n === 'data-lv-sum' ? 'run' : null) };
+        b.fire('click', { target: { closest: (sel) => (sel === 'summary[data-lv-sum]' ? sm : null) } });
+    };
+    click(false);
+    assert.ok(b.draw().includes(OPEN), 'the click opened the fold, the redraw keeps it');
+    click(true);
+    assert.ok(!b.draw().includes(OPEN), 'the click closed the fold, the redraw keeps it closed');
+});
+
+test('Esc hides the peek keyboard focus showed: it blurs a focused row, nothing else', () => {
+    const b = bound();
+    let blurred = 0;
+    const row = (sel) => ({ matches: (s) => s === sel, blur() { blurred++; } });
+    b.document.activeElement = row('a.sxr');
+    b.fire('keydown', { key: 'Enter' });
+    assert.equal(blurred, 0, 'only Esc');
+    b.fire('keydown', { key: 'Escape' });
+    assert.equal(blurred, 1, 'Esc blurs the focused row');
+    b.document.activeElement = row('input');
+    b.fire('keydown', { key: 'Escape' });
+    assert.equal(blurred, 1, 'Esc leaves focus elsewhere alone');
+    assert.match(CSS, /a\.sxr:focus-visible>\.sx-pk\{visibility:visible/);
 });
 
 test('a stopped row is quieter, and an empty group says so', () => {
