@@ -205,11 +205,11 @@ an inline copy of the predicate rather than a `hiddenPkeys()` call, because
 that loop is keyed by the raw profiles directory rather than by pkey —
 `write()`'s detail-file loop described below, and `--json`'s own pass
 outside this file
-(`scripts/station.js:916`, `r.sessions = r.sessions.filter((s) => !hidden.has(s.project ? r.root + '/' + s.project : r.root));`).
+(`scripts/station.js:1086`, `r.sessions = r.sessions.filter((s) => !hidden.has(s.project ? r.root + '/' + s.project : r.root));`).
 There is no trace on
 the page that a project was left out: no count, no note on the footer. `station.js`'s own text
 summary — not the served page — does print how many projects it excluded
-(`scripts/station.js:1018`, `hidden by station.hide`), but names none of
+(`scripts/station.js:1188`, `hidden by station.hide`), but names none of
 them; the terminal is the only place the fact surfaces at all.
 
 The last thing a row holds is the completion record `scripts/record.js write`
@@ -711,13 +711,13 @@ the search box in the top bar matches task, project, session id, registry
 label, model, state, next, the files touched and its notes — AND-ed.
 
 The same box also opens a grouped-results popover about 200 ms after typing
-stops (`assets/station/station.js:6340`, `}, 200)`): `qGroups`
-(`assets/station/station.js:6256`, `function qGroups(q) {`) buckets what
+stops (`assets/station/station.js:6343`, `}, 200)`): `qGroups`
+(`assets/station/station.js:6259`, `function qGroups(q) {`) buckets what
 matches into Sessions, 專案 and 文件, up to five rows each with a 看全部 link
 when there are more, and `qDraw`
-(`assets/station/station.js:6297`, `function qDraw() {`) draws it with each
+(`assets/station/station.js:6300`, `function qDraw() {`) draws it with each
 match highlighted. `/` focuses the box from anywhere on the page
-(`assets/station/station.js:6425`, `if (e.key === '/')`), the arrow keys
+(`assets/station/station.js:6428`, `if (e.key === '/')`), the arrow keys
 move the selection, Enter opens what is picked and Esc closes the popover.
 文件 in this popover matches only the paths and buckets the page's own data
 carries. The page bodies are searched on 文件 itself — see
@@ -862,7 +862,7 @@ read with `stored()`'s try/catch so a `file:` page or private mode with no
 holds the three-state 跟隨系統/淺色/深色 button in the masthead's
 `div.appear` (`id="appear"`, drawn by `drawTheme`); a click cycles it and
 writes the new value
-(`assets/station/station.js:5863`, `store('station.theme', t === 'system' ? null : t);`), and the
+(`assets/station/station.js:5866`, `store('station.theme', t === 'system' ? null : t);`), and the
 stored value is read and set as `data-theme` on `<html>` before the page's
 first paint, so a reader on 深色 never sees a flash of light first
 (`assets/station/station.js:23`, `themeSet(stored('station.theme'));`).
@@ -1053,7 +1053,7 @@ registry; the footer on both says when it was generated.
 A session under a hidden project produces no `station/detail/<id>.js`
 either, on every one of those four writes. `write()` walks
 `model.registries` directly for this loop rather than through `flatten()`,
-so it carries its own check (`lib/station.js:1132`, `hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))`):
+so it carries its own check (`lib/station.js:1133`, `hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))`):
 hiding a project after its sessions already had a detail file does not
 delete that file, it just stops being rewritten — nothing in `write()`
 removes a file it once wrote.
@@ -1422,7 +1422,7 @@ and the model took the hook's answer as the user's; `claude -p` offers no
 before. An answer file older than the wait is an earlier gate's and is not
 read. A file on disk cannot post, so it says to answer in the terminal.
 
-A press says it is on its way (`answerPost`, `assets/station/station.js:6585`, `function answerPost(id, box, line, cls, form, said, failed)`): while `POST /answer` is out the gate's buttons are disabled and its line reads 送出中…. A reply ok keeps them disabled; a refusal, a network error, or 10 seconds with no reply (`SEND_MS`, the fetch aborted through an `AbortController`) gives them back. A refusal shows `<status> — <the server's text>`, with no press-again wording; only a network error (…可以再按一次) and the timeout (還沒確認送到：可以再按一次) say it may be pressed again. The state lives in `view.pg['<id>:send']`, keyed to the gate's `pending.until`, so the poll's redraw draws it as it was and a new gate starts clean.
+A press says it is on its way (`answerPost`, `assets/station/station.js:6588`, `function answerPost(id, box, line, cls, form, said, failed)`): while `POST /answer` is out the gate's buttons are disabled and its line reads 送出中…. A reply ok keeps them disabled; a refusal, a network error, or 10 seconds with no reply (`SEND_MS`, the fetch aborted through an `AbortController`) gives them back. A refusal shows `<status> — <the server's text>`, with no press-again wording; only a network error (…可以再按一次) and the timeout (還沒確認送到：可以再按一次) say it may be pressed again. The state lives in `view.pg['<id>:send']`, keyed to the gate's `pending.until`, so the poll's redraw draws it as it was and a new gate starts clean.
 
 The panel moves and resizes. Drag its title bar to move it and the grip in its bottom-right corner to resize it, with a mouse or a finger (pointer events, `touch-action:none`; `fkBoxParse`, `fkBoxClamp` and the listeners after `drawFloat` in `assets/station/station.js`). Where it ends up is `{x, y, w, h}` in `localStorage` under `station.fkBox`, restored on reload, and it is pulled back inside the window — never smaller than 260 by 160 — while dragging, when the window shrinks, and when a saved place no longer fits. A double-click on the title bar puts it back in its corner and forgets the place. `floatHtml` writes the place into the panel's own `style`, so the 3-second repaint mid-drag draws it where it is; polling and 送出答案 are untouched.
 
@@ -1582,7 +1582,7 @@ from 清單 — `serialize()`'s `profiles.projects` drops it exactly where
 button left on the served page to reach it again. This is not because the
 `POST` above would refuse it: `known` here builds its own fresh, unfiltered
 model rather than reading the page's filtered one
-(`scripts/station.js:781`, `const known = model.registries.some(`), so a
+(`scripts/station.js:913`, `const known = model.registries.some(`), so a
 hidden project's directory is still in it, and a request naming one that
 somehow still reached the server would succeed, not `404`. The scope button
 is simply never drawn to click, so unhiding is
