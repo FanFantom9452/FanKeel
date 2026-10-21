@@ -360,9 +360,9 @@ test('the page that counts the always-on rules counts as many as there are', () 
   assert.match(page, new RegExp('The ' + word + ' always-on rules'));
 });
 
-// The front page shows `build`'s report shape as an example, and it had been
-// missing the ledger line since before the change that added it. Nothing read
-// this repository's own README, which is why a shape shown to every new reader
+// The guide page concepts.md shows `build`'s report shape as an example, and
+// it had been missing the ledger line since before the change that added it.
+// Nothing read that page, which is why a shape shown to every new reader
 // could differ from the one every build stage is actually given.
 test('concepts.md shows the build template as build actually ships it', () => {
   const readme = require('node:fs').readFileSync(
