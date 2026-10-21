@@ -5,6 +5,8 @@ last_verified: 2026-10-21
 
 # 監控站的連結直接開在要看的東西上（10-21）
 
+首頁四塊的部分已由 [2026-10-22-station-live-home](2026-10-22-station-live-home.md) 改成「進行中」頁；一層導覽照舊。
+
 一句話：chat 印出的連結會開一張只載入單一 session 的焦點頁，直接看到這一站要審的計畫或 gate；首頁縮成四塊，左側導覽只剩一層；背景 shell 會出現在監控站和 Pane 上。
 
 設計與計畫在 [99-archive/2026-10-21-station-focus-design.md](../99-archive/2026-10-21-station-focus-design.md)。同一個任務也收掉了巡查找到的五條 TODO。

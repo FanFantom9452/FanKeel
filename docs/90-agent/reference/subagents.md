@@ -725,7 +725,9 @@ naming its `parentAgentId` at `spawnDepth` 2 — so `agentFiles()` in
 2026-09-20: one stage agent and five readers in one directory).
 
 The station reads the same directory to say which of them are running now
-(`runningAgents` in `lib/usage.js`, the `live-subagents` row on `#/live`); how
+(`runningAgents` in `lib/usage.js`, the `live-subagents` row drawn by the fallback `livePage` in
+`assets/station/station.js`; the redesigned `#/live` in `live-page.js` does not
+draw it); how
 an agent counts as finished or stopped is [station.md](station.md)'s rule.
 
 `survey` was the only stage this had been run for when the builtin was left at

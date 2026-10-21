@@ -245,8 +245,8 @@ Below the strip is the table it is drawn from — one row per stage, with the
 minutes, the burn distance and a third column, `等你`: how much of that
 stage's minutes went on a gate rather than on work. Neither carries a dollar
 figure any more; a stage's own cost surfaces in the per-route stage
-ledger on each project page, and per stage and model inside the session
-page's 概覽, under a `<details class="csmore">` element
+ledger on the old project page (the fallback when `project-page.js` is
+missing), and per stage and model inside the old session page's 概覽, under a `<details class="csmore">` element
 (`assets/station/station.js:3906`, `'<details class="csmore"><summary>'`) — not on this table's rows.
 
 A stage's dollar figure needs `spend`, which `hooks/leave.js` writes once, at
@@ -262,7 +262,16 @@ combined figure, agents included.
 
 ### The session page
 
-A session also opens on a page of its own, `#/s/<id>`, in six tabs — 概覽,
+A session also opens on a page of its own, `#/s/<id>`, drawn by `FK_SESSION`
+(`assets/station/session-page.js`) in three tabs, 經過, 派工 and 對話
+(`assets/station/session-page.js:173`, `var list = [['timeline', loc('spage.tabRun', '經過')], ['dispatch', loc('spage.tabDisp', '派工')], ['talk', loc('spage.tabTalk', '對話')]];`),
+with 派工 and 對話 drawn by `assets/station/session-dispatch.js` and
+`assets/station/session-talk.js`; a 關卡 link joins them only while the
+session's `gateAt` is set, to `/f/<id>/gate` when served. `#/s/<id>/cost`
+opens 經過. 事件, 計畫 and 關卡 stay on the old page
+(`assets/station/station.js:5730`, `var SESSION_TABS = ['timeline', 'cost', 'dispatch', 'talk'];`),
+which also draws every tab when the module is missing. The rest of this
+section describes that old page. It had six tabs — 概覽,
 派工, 事件, 對話, 計畫 and 關卡 — and `#/s/<id>/<tab>` opens one directly, with `timeline`,
 `dispatch`, `events`, `talk`, `plan` or `gate`. 概覽 is the default and now folds together what were
 separately 時間線 and 花費: the context chart, 任務 and the list of the
@@ -359,7 +368,7 @@ page. Where the transcript is not on this machine the tab says so, and a page
 written to a file, which has no server to ask, says it can only be read from
 `serve`.
 
-Under the title, the session's state and — served — how fresh the page is:
+On the old page, under the title, the session's state and — served — how fresh the page is:
 `即時・剛更新`, then `即時・N 秒前更新`, while the session is live, and
 `已停止更新・最後一次 hh:mm:ss` once it is not. Under that, the route
 as a rail: a stop per stage,
@@ -384,8 +393,8 @@ into its agents. A lane of ticks marks every main-session request in its
 model's colour, and the context line above shares the axis, marked where an
 agent's return entered the main context.
 
-Where a stage's dollars live is no longer its own tab: the stage × model
-table now sits inside 概覽, under a `<details>` element titled "stage × model
+On the old page, where a stage's dollars live is no longer its own tab: the stage × model
+table sits inside 概覽, under a `<details>` element titled "stage × model
 明細" (`assets/station/station.js:3906`, `<details class="csmore">`). Above
 it, when the session has a detail loaded, sits the timeline chart, which now
 also tints its background by stage; and above that sits `costShareHtml`
@@ -635,8 +644,10 @@ cannot be on a served page.
 The focus page is one session's 計畫 or 關卡 tab alone, at `GET /f/<id>/plan`
 and `GET /f/<id>/gate` — the URL `scripts/await.js` prints on its `page:`
 line. It answers a small shell (`focusShell` in `lib/station.js`) that loads
-`station.css`, `i18n.js`, `station.js` and `GET /station/focus/<id>.js`,
-never `station-data.js`; any other tab name is redirected to `#/s/<id>/<tab>`
+`station.css`, `tip.css`, `gate-frame.css`, `GET /station/focus/<id>.js`,
+`i18n.js`, `tip.js`, `gate-frame.js` and `station.js`
+and never the full station data file (`lib/station.js:1050-1058`).
+Any other tab name is redirected to `#/s/<id>/<tab>`
 on the full station. The focus script carries `window.STATION` with that one
 session's row and `window.STATION_DETAIL[<id>]` with its tasks (`tasksOf`),
 its gate report (`gatereport.read`) and its background shells (`shells`),
@@ -651,7 +662,13 @@ and 開完整 station linking to `#/s/<id>/<tab>`) over the tab body: for plan,
 task with its number, title, files, tests, waits, dispatch model and ledger
 status, grouped as the plan groups them); for gate, `gate-question` (the
 question and its options, the recommended one marked) above `gate-report`
-(the 關卡 tab's report). It re-reads its script every five seconds while the
+(the 關卡 tab's report) — but that gate layout is now the fallback: with
+`gate-frame.js` loaded, the whole gate tab is `FK_GATE.frame`
+(`assets/station/station.js:2912`, `if (gate && w.FK_GATE && typeof w.FK_GATE.frame === 'function') {`):
+a head with no tabs whose title opens the full station, the report
+station.js draws in the main column, and the question in a sticky side
+column, each option showing its label and opening its description on click; a
+pick only marks it and says to answer in Claude Desktop. It re-reads its script every five seconds while the
 browser tab is visible.
 
 Both the page and the cache sit where git does not look — the registry copy's
@@ -767,7 +784,11 @@ are one directory spelled two ways; `tests/station-view.test.js` carries both
 fixtures, the one that must merge and the nested root that must not. A nested
 root separates on its own and always did.
 
-`#/` is now **現在**, four groups and nothing else, each reading the same rows
+`#/` and `#/live` both draw **進行中** now: `assets/station/station.js:5718-5719`
+(`VIEWS.now = function (r) { return w.FK_LIVE ? w.FK_LIVE.page(S, modOpts()) : OLD.now(r); };`)
+hand both routes to `FK_LIVE` in `assets/station/live-page.js`, described
+below. What follows is the old 現在, which `dashPage` still draws when that
+module is missing: four groups, each reading the same rows
 its own full page reads so its numbers always match that page:
 `homeLive` (`assets/station/station.js:3243`, `function homeLive(R, now, serve) {`)
 counts today's `live` sessions and lists them, the ones waiting on you first,
@@ -799,7 +820,8 @@ block marked `data-block="home"`. The cards that
 used to sit here moved to the pages they belong to: 撞檔與共用檔案
 (`dashClash`) and 最近 sessions (`dashRecent`) wide, gate 平均等待時間
 (`dashGateWait`) and 最近 commits / land (`dashLanded`) narrow, under the lanes
-on 進行中 (`livePage`, `assets/station/station.js:3142`); and 依專案花費
+on the old 進行中 (`livePage`, `assets/station/station.js:3163`, itself only a
+fallback now, so with `live-page.js` loaded these four cards are not drawn); and 依專案花費
 (`dashByProj`) and 近 7 天 token (`dashTokens7`) wide, 模型用量分布
 (`dashModels`) narrow, under the chart on 花費 (`daysPage`,
 `assets/station/station.js:3619`).
@@ -810,18 +832,22 @@ tooltip says 連線中 or 已停.
 
 Since the 2026-10-01 layout (`docs/99-archive/2026-10-01-station-layout-design.md`)
 each page opens with the film's header lockup: a title, a rule, then one mono
-line of where things stand. The 進行中 card head carries its live count and a
-pill counting the sessions waiting on you (等你回答).
-最近 sessions opens with `data-block="sessions-head"` — the count, the live
-count, the Sessions tabs on its right — over one line a row, a stage on its
-route drawn as the film's glyph and `0N / 0M stage`. One session opens with
-`data-block="session-head"`, the 64px glyph filled as the route is and the
-count above the title; its tabs are `data-block="session-tabs"`. 現在 opens
-with `data-block="live-head"` — running, maybe stopped, the gate line, the
-tabs — and each running session is a raised card led by its glyph; the
-maybe-stopped ones share one card (`div.lv-card`).
+line of where things stand. One session opens with
+`data-block="session-head"` and its tabs are `data-block="session-tabs"`.
 
-`#/live` (進行中) is `nowHtml`, four blocks top to bottom, each writing its
+進行中 (`#/` and `#/live`) is `FK_LIVE.page` (`assets/station/live-page.js`),
+all inside `data-block="live-page"`: a `data-block="live-head"` carrying the
+進行中 | 全部 switch with a count on each, then three cards, each its own
+`data-block` — `live-wait`, 等你回答, every session with `gateAt` set that is
+not `down`; `live-run`, 正在跑, the `live` ones; `live-stop`, 可能停了, the
+`stale` ones (`assets/station/live-page.js:72`, `if (s.gateAt && s.state !== 'down') g.wait.push(s);`).
+A session sits in one card only, the first that takes it. A row is one link
+to the session — the glyph, the project over the task, the route as n/len,
+cost (main + agents) and the last move as an age — with a peek on hover or
+focus; two or more unnamed sessions in one card fold into one row. An empty
+card says so in its head.
+
+Without that module, `#/live` falls back to `nowHtml`, four blocks top to bottom, each writing its
 own `data-block`: `live-gate`, the sessions whose `s.pending.questions` is
 non-empty, one row each naming the question and how long it has waited, or
 the one line `沒有在等你的 gate` when none is; `live-run`, 正在跑, every
@@ -916,9 +942,13 @@ own replay; once the transcript is gone, `gateSummary()` falls back to the
 entry's own `gates` (see [registry.md](registry.md)), so this denominator no
 longer shrinks quietly as transcripts age. A day in the hash, `#/d/<day>`,
 only marks that day on the chart now — there is no day panel any more. A
-project, `#/p/<pkey>` with the key URI-encoded, plots its
-sessions as points over the same 30 days, can lay a second project's line on
-the same axes, lists its sessions, and carries the per-route stage ledger. A delta whose previous window holds nothing prints
+project, `#/p/<pkey>` with the key URI-encoded, is `FK_PROJECT`
+(`assets/station/project-page.js:2-9`): a head (back to 專案, the name, the
+running session), six KPI tiles for the last 30 days, a four-week trend of
+cost and landings, one card a stage with its median 做事 and 等你, the TODO
+tabs and the recent landings. Without that module the old page plots its
+sessions as points over the same 30 days, lists them, and carries the
+per-route stage ledger. A delta whose previous window holds nothing prints
 `前期無資料` rather than a percentage against zero, because this repository's
 usage records begin on 2026-09-04 and its burn records on 08-28; the waiting
 ratio moves in percentage points, and a rise in it is the bad direction.
@@ -934,10 +964,19 @@ counts — is counted in its group but kept out of its averages, on a `有倒退
 row of its own, and every group's heading says how many such sessions it has
 and how many backward steps between them.
 
-**最近 sessions** is its own page, `#/sessions`: `recentRows` — a session
-with spend inside the window, or one still `live` whether or not it has
-spent yet — newest first, with the full list shown rather than cut to 12
-rows. **專案** is `#/projects`.
+**全部**, `#/sessions`, is `FK_SESSIONS` (`assets/station/sessions-page.js`,
+`assets/station/station.js:5720`): a now-strip linking to 進行中, four period
+tiles (今天 / 近 7 天 / 近 30 天 / 全部) that are also the date filter, then one
+card with filters in its head and ten rows a page, sorted on last move, cost
+or elapsed, with the pager and the compare tray in its foot. `recentRows` — a
+session with spend inside the window, or one still `live` — draws the old
+最近 sessions list only when that module is missing.
+
+**專案**, `#/projects`, is `FK_PROJECTS` (`assets/station/projects-page.js`):
+one head with 總覽 | 分析 and a 7 / 30 / 90 day period control (30 by
+default) that drives every figure on both tabs. 總覽 is one row a project,
+grouped 需要注意 and 其他; 分析 is five angles, at
+`#/projects/analysis/<angle>`.
 
 **文件** is its own page, `#/docs`, one section per project whose `.fankeel/map.md`
 exists: the registry root's own, plus `<root>/<project>/.fankeel/map.md` for
@@ -959,7 +998,11 @@ own so it stays reachable as a sort key, the same reason the page this
 replaces sorted by it (`assets/station/station.js:3978`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
 `updated` descending, so the page's first sort is the one it arrived in.
 
-**比較** is a third view. Tick two sessions on 清單 or a project page — only a
+**比較**, `#/cmp`, is now the 全部 list with its compare tray open
+(`assets/station/station.js:5722`, `VIEWS.cmp = function (r) { return w.FK_SESSIONS ? w.FK_SESSIONS.page(S, modOpts({ tray: true })) : OLD.cmp(r); };`):
+ticking two or three rows there opens a compare dialog of the fields
+`lib/compare.js` returns, so the page is never empty. The old view below is
+the fallback when `sessions-page.js` is not loaded. Tick two sessions on 清單 or a project page — only a
 session with a detail can be ticked, and a third tick drops the first — and
 比較 in the left bar opens them one above the other: two context lines on one y
 axis and one x
@@ -1190,10 +1233,11 @@ page still prints that count in a banner above the rows
 (`assets/station/station.js:3165`, `cleared ' + S.cleared + ' stale rows`); a
 refusal answers `409` with which rows it refused and why, since a redirect
 has nowhere to say it. It takes the same `force` tick and the same nonce as
-the single-row button, and the 可能已經停了 block carries one per registry with a stale row:
-`clearStaleControl` in `assets/station/station.js` renders the form when the
-page is served, and prints the copyable command when it is not — a static
-file cannot post.
+the single-row button. `clearStaleControl` in `assets/station/station.js`
+renders the form when the page is served, and prints the copyable command when
+it is not — a static file cannot post; it sits in the old 可能已經停了 block,
+which draws only when `assets/station/live-page.js` is not loaded — the
+redesigned 可能停了 card carries no clear control.
 
 `POST /todo` is the third write the served page can make, and one of two
 outside the registry (`POST /profile`, below, is the other): one entry under `## Needs a decision` in the session's
@@ -1226,7 +1270,9 @@ happens once, after the first draw that has the panel, and not again on the
 the engine's root; a pkey that differs from a session's only in the
 direction of its slashes or the case of its letters is read as that
 session's (`knownPkey` in `assets/station/station.js`).
-The panel sits right under the project's head, above the chart. Shut, the
+On the redesigned project page (`assets/station/project-page.js`) the TODO
+panel is its tabs, below the stage cards; on the old page, still drawn when
+that module is missing, it sits right under the project's head, above the chart. Shut, the
 done list is one summary strip — how many, a bar for each of the newest three
 days and the rest as 更早, a count per disposition — over the newest three;
 展開全部（N） in the strip shows the rest below a cut, the strip stays on top
