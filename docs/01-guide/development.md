@@ -31,8 +31,7 @@ reading each test point's `duration_ms`: 129 points at 10 s or more, 53% of
 the 4928 s summed over all of them. `npm run test:fast` is
 `node --test --test-timeout=300000 --test-force-exit --test-skip-pattern=@slow --require ./tests/subprocess-timeout.js`;
 `npm test` is still everything — both load `tests/subprocess-timeout.js`, which
-gives every synchronous subprocess a test starts a timeout (README.md,
-`## Development`).
+gives every synchronous subprocess a test starts a timeout (see `## One suite at a time` below).
 Build and verify run `node scripts/suite.js --session <id> --fast`, which
 records `fast: true`; land runs `suite.js` without it, and both its `--check`
 and `task.js land` refuse a fast record.
@@ -61,6 +60,37 @@ lock Windows will not let it move is said instead —
 `suite: waiting — lock <file> is stale and could not be removed; delete it by
 hand` — and deleting that file lets the run go on. `npm test` run by hand
 takes no lock.
+
+## One suite at a time
+
+Run one `npm test` at a time. A few tests time real work against budgets the
+code itself promises:
+
+- the station's first scan of the drives (`tests/station-cli.test.js`);
+- the 2.5 seconds a prompt waits for `git status` (`lib/dirty.js`);
+- the `/fankeel` probe of a busy station (`tests/inject.test.js`).
+
+Three suites at once can starve those of CPU, so one of them fails with
+nothing wrong. Those bounds are the product's own, so they are not loosened to
+let parallel runs pass, with one exception. The git timeout (`gitTimeout` in
+`lib/guard.js`, used by `lib/dirty.js`) reads `FANKEEL_GIT_TIMEOUT` in
+milliseconds, 2500 when unset. The tests that need git's answer rather than
+its timing set it to 30000: `tests/dirty.test.js`, `tests/inject.test.js` and
+`tests/worktree-paths.test.js`.
+
+Every synchronous subprocess a test starts has a timeout even when the test
+names none. `tests/subprocess-timeout.js`, loaded with `--require`, gives
+`execFileSync`, `spawnSync` and `execSync` a default of 120000 milliseconds,
+or `FANKEEL_TEST_SUBPROCESS_TIMEOUT` when it is set. Running one file with a
+bare `node --test tests/<file>` skips it; add
+`--require ./tests/subprocess-timeout.js` to get it there too.
+
+A different failure shares the symptom. Two full suites at once on a machine
+short of commit memory fail with `VirtualAlloc failed`, exit `0xC0000409`,
+`0xC000012D` (STATUS_COMMITMENT_LIMIT) or git's `Out of memory`. That is
+Windows running out of commit, not a failing test, and one suite alone passes.
+
+`lib/` is pure logic, tested directly; `hooks/` is where stdin, stdout and process exit live, and every hook exits 0 on every path, because a hook that throws blocks the thing it was called for.
 
 ### 2026-09-24: the file split
 
