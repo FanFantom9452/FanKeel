@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # 2026-10-21 盤點的四件：land 先紀錄後結案、brain 不寫裸 id、gate-write 查 id、await 印 questions Implementation Plan
