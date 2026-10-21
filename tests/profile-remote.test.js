@@ -28,7 +28,11 @@ test('notify.server is an http or https url of at most 200 characters, its trail
     assert.equal(profile.parseValue('notify.server', 'https://example.com/ntfy/').value, 'https://example.com/ntfy');
     assert.ok(profile.parseValue('notify.server', 'ftp://example.com').error);
     assert.ok(profile.parseValue('notify.server', 'https://exa mple.com').error);
-    assert.ok(profile.parseValue('notify.server', 'https://' + 'a'.repeat(200)).error);
+    assert.equal(profile.parseValue('notify.server', 'https://example.com//').value, 'https://example.com');
+    const at200 = 'https://' + 'a'.repeat(192);
+    assert.equal(profile.parseValue('notify.server', at200).value, at200);
+    assert.ok(profile.parseValue('notify.server', at200 + 'a').error);
+    assert.ok(profile.parseValue('notify.server', 'https:///x').error);
     assert.ok(profile.parseValue('notify.server', '').error);
 });
 
@@ -37,6 +41,7 @@ test('notify.topic is letters, digits, - and _, 1 to 64 of them', () => {
     assert.equal(profile.parseValue('notify.topic', 'a_B-9').value, 'a_B-9');
     assert.ok(profile.parseValue('notify.topic', 'has space').error);
     assert.ok(profile.parseValue('notify.topic', 'a/b').error);
+    assert.equal(profile.parseValue('notify.topic', 'a'.repeat(64)).value, 'a'.repeat(64));
     assert.ok(profile.parseValue('notify.topic', 'a'.repeat(65)).error);
     assert.ok(profile.parseValue('notify.topic', '').error);
 });
