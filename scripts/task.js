@@ -845,9 +845,13 @@ function todoLines(root, id, data) {
     if (!todoFiles.folderOf(dir)) return null;
     const script = path.join(__dirname, 'todo.js');
     const named = titledIds(dir, ids);
-    return ['close at land, each with the sha that landed it:']
+    // 2026-10-21 land-close-order judgement: the record is filed first, and
+    // each done line carries it — `--record` is text (lib/todo.js), its link
+    // the `filed:` path, so it is a placeholder here like `--sha <sha>`.
+    return ['close at land once `record.js write` has printed `filed:`, each with the sha that landed it and a --record linking that file:']
         .concat(...ids.map((t, i) => ['  ' + named[i],
-            '  node ' + script + ' done ' + t + ' --sha <sha> --session ' + id + ' --root ' + dir]));
+            '  node ' + script + ' done ' + t + ' --sha <sha> --session ' + id + ' --root ' + dir
+            + ' --record "<一兩句>. 詳見 [任務紀錄](<filed: 的路徑，相對 TODO 檔>)" --commits <sha,sha>']));
 }
 
 // Leaving build on a route with no plan there is no ledger, so the render

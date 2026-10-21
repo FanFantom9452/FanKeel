@@ -48,6 +48,9 @@ test('stage land prints the todo.js done line for each id where the project keep
   task(dir, ['start', '--task', 'close one', '--route', 'build,land', '--todo', 'a-1']);
   const out = task(dir, ['stage', 'land']);
   assert.match(out, new RegExp('todo\\.js done a-1 --sha <sha> --session ' + A));
+  // 2026-10-21 land-close-order judgement: close only after the record is filed, and carry it.
+  assert.match(out, /close at land once `record\.js write` has printed `filed:`/);
+  assert.match(out, new RegExp('todo\\.js done a-1 --sha <sha> --session ' + A + ' --root .+ --record "[^"]+" --commits <sha,sha>'));
   // The closing block sits under land's rules, and the same-turn line ends the output.
   assert.ok(out.includes('stage rules:'), out);
   assert.ok(out.indexOf('stage rules:') < out.indexOf('close at land'), out);
@@ -91,6 +94,8 @@ test('the land rule names the todo.js done lines and still runs todo-check', () 
   const rule = byName('land').rules.find((r) => r.includes('Close the TODO entries'));
   assert.match(rule, /`todo\.js done`/);
   assert.match(rule, /`node \{\{TODO_CHECK\}\}`/);
+  assert.match(rule, /only after `record\.js write` prints `filed:`/);
+  assert.match(rule, /--record/);
 });
 
 test('adopt carries the todo ids to the successor session', () => {

@@ -94,11 +94,13 @@ names moves the entry to `ready` or `decision` and drops its `group`,
   total.
 - `task.js start --todo <id>`, once per entry, links a session to the entries
   it means to close; `orient`'s `todo:` block prints the ids it offers.
-- `task.js stage land` prints `todo.js done <id> --sha <sha> --session <id>`
-  for each; run it with the sha that landed the work. The entry turns
-  `state: done` with a `done:` record, and the file stays. Adding
-  `--record <text> --commits <sha,sha>` also appends a plain-language
-  completion section: write full sentences, with no jargon, then the commits.
+- `task.js stage land` prints `todo.js done <id> --sha <sha> --session <id>
+  --root <dir> --record "<text>" --commits <sha,sha>` for each; run it once
+  `record.js write` has printed `filed:`, with the sha that landed the work.
+  The entry turns `state: done` with a `done:` record, and the file stays.
+  `--record` appends a plain-language completion section: write full
+  sentences, with no jargon, ending in a link to the `filed:` record, then the
+  commits.
   A commit that is not a sha is refused before anything is written.
 - `node scripts/todo.js migrate` converts a hand-written `TODO.md` and its
   completions page into entry files, once, into an empty folder: each body is
