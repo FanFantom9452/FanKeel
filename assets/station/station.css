@@ -2566,3 +2566,40 @@ body.focus{min-width:0}
 .gr-hd{padding:18px 26px 0}
 .gr-hd h2{margin:0;font-size:15px;font-weight:700}
 #focus.fm-stale{opacity:.6}
+/* ---- the 手機遠端 card on #/settings (assets/station/remote-card.js; mockup remote-on, remote-off) ---- */
+.rm{box-shadow:var(--lift);margin-top:14px;max-width:560px}
+.rm .dcard-h .sp{flex:1}
+.m-switch{position:relative;display:inline-flex;align-items:center;gap:10px;font-size:13px;color:var(--ink2);cursor:pointer}
+.m-switch input{position:absolute;opacity:0}
+.m-switch .tr{position:relative;width:40px;height:24px;border-radius:var(--r-pill);background:var(--rule2);transition:background-color .2s cubic-bezier(.16,1,.3,1)}
+.m-switch .tr::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--panel);box-shadow:0 1px 2px rgba(11,15,21,.3);transition:transform .2s cubic-bezier(.16,1,.3,1)}
+.m-switch input:checked+.tr{background:var(--keel)}
+.m-switch input:checked+.tr::after{transform:translateX(16px)}
+.m-switch input:focus-visible+.tr{outline:2px solid var(--keel);outline-offset:2px}
+.m-switch input:disabled+.tr{opacity:.5}
+.rm-st{display:flex;align-items:center;gap:8px;margin:14px 0 12px;font-size:13.5px}
+.rm-st .mono{color:var(--ink2)}
+.rm-url{display:flex;align-items:center;gap:8px;height:38px;padding:0 4px 0 12px;border-radius:var(--r-sm);background:var(--inset)}
+.rm-url code{flex:1;min-width:0;font:12.5px var(--f-mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;user-select:all}
+.rm-url .btn{min-height:30px}
+.rm-pair{display:grid;grid-template-columns:148px minmax(0,1fr);gap:18px;align-items:center;margin:16px 0 4px}
+.qr{position:relative;width:148px;height:148px;padding:10px;border-radius:var(--r-sm);background:#fbfcfc;box-shadow:inset 0 0 0 1px var(--rule)}
+.qr img{display:block;width:100%;height:100%}
+.rm-pair h3{font-size:15px;font-weight:700}
+.rm-pair p{margin:4px 0 10px;font-size:13px;color:var(--ink2)}
+.rm-code{display:block;margin:0 0 10px;font:600 15px var(--f-mono);letter-spacing:.12em;color:var(--ink);user-select:all}
+.rm-sub{display:flex;align-items:center;gap:10px;margin:14px -18px 0;padding:12px 18px 0;border-top:1px solid var(--rule);font-size:13px}
+.rm-sub>b{font-weight:600;min-width:4.5em;color:var(--ink2)}
+.rm-sub .sp{flex:1}
+.rm-devs{display:grid;gap:6px;flex:1}
+.rm-dev{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center}
+.rm-dev .ico{width:18px;height:18px;color:var(--muted)}
+.rm-none{color:var(--muted)}
+.rm-trg{display:flex;flex-wrap:wrap;gap:6px}
+.rm-trg label{display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:0 10px;border-radius:var(--r-pill);box-shadow:inset 0 0 0 1px var(--rule2);font-size:12.5px;cursor:pointer}
+.rm-trg input{accent-color:var(--keel);margin:0}
+.rm-topic{margin:8px 0 0;font-size:12.5px;color:var(--ink2)}
+.rm-topic code{font:12px var(--f-mono);user-select:all}
+.rm-say{margin:10px 0 0;font-size:12.5px;color:var(--bad)}
+.rm-off .rm-st{margin-bottom:0;color:var(--ink2)}
+@media (prefers-reduced-motion:reduce){.m-switch .tr,.m-switch .tr::after{transition:none}}
