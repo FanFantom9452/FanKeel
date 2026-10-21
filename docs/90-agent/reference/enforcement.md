@@ -57,7 +57,7 @@ Not in this table: the `INIT` rules of the `/fankeel` prompt (no stage yet), the
 | build.4 | A new document is the | none — prose only | none | — |
 | build.5 | Read the fankeel-build skill on | none — prose only | none | — |
 | build.6 | Output: one line per file, | none — prose only | none | — |
-| verify.0 | Run node {{SUITE}} --session <id> | none — prose only | none | Not at verify: land.7's refusal is what a skipped or red suite meets later. |
+| verify.0 | Run node {{SUITE}} --session <id> | none — prose only | none | Not at verify: land.8's refusal is what a skipped or red suite meets later. |
 | verify.1 | Check that what you claimed | none — prose only | none | — |
 | verify.2 | Anything half-built sends this back | none — prose only | none | — |
 | verify.3 | Run node {{DOCS_CHECK}} and name | none — prose only | `scripts/docs-check.js` | Reports dead references when run; naming the page this change made false is judgement. |

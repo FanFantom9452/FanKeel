@@ -21,7 +21,8 @@ source_of_truth: docs/90-agent/reference/station.md, assets/station/station.js, 
 
 | view | 網址 | 看什麼 |
 |---|---|---|
-| 儀表板 | `#/` | 預設五張卡：進行中、等你回答、可以開工、近 30 天花費、最近 sessions；另有八種卡片可加（撞檔與共用檔案、依專案花費等）。按「編輯版面」可排順序、隱藏、用「新增卡片」加入。每張卡的數字等於它「查看全部」那一頁的數字 |
+| 現在 | `#/` | 只有四組：等你回答與正在跑的 session，每一個點了開它的 focus 頁 `/f/<id>/<stage>`；正在跑的 subagent 與背景 shell；TODO，寫 Ready 幾條與到期的 Blocked；一行花費，今天與這一週。原本放在首頁的卡片移到 Sessions 與花費兩頁 |
+| focus 頁 | `/f/<session-id>/<tab>` | 一個 session 的精簡頁，打開就停在這一站要你看的東西；任何頁按 Ctrl+K 可以跳到某個 session |
 | 進行中 | `#/live` | 最上面是等你回答的 gate，沒有就一行「沒有在等你的 gate」；然後「正在跑」，每個 session 一列，route 畫成站點，目前那站外圈高亮並標在站時間；每列下方列出現在在跑的 stage agent 與 subagent，沒有就一行「主 session 自己在做」；「可能已經停了」放 `live?` 與 `stale`，stale 的 registry 有 clear 按鈕；最下面是沒有 session 的 registry，一排名字，點了到該專案頁 |
 | 最近 | `#/sessions` | 近 30 天有花費、或還在 live 的 session，新的在上 |
 | 全部清單 | `#/list` | 可排序的表，點一列在旁邊看細節 |

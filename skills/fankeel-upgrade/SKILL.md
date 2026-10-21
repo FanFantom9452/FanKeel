@@ -4,7 +4,7 @@ description: Bring a project up to what the installed fankeel expects — what c
 disable-model-invocation: true
 version: 0.111.51
 status: current
-last_verified: 2026-09-30
+last_verified: 2026-10-21
 source_of_truth: scripts/upgrade.js, scripts/version.js
 ---
 

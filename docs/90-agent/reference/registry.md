@@ -353,7 +353,7 @@ nothing else:
   (60), oldest dropped. Written only when the session ends cleanly, because
   `hooks/leave.js` runs at `SessionEnd` alone — a session that never reaches
   it carries no `gates` at all. While the transcript is still there, the
-  detail page's own replay (`replay.eventsOf`, `lib/detail.js:756`) is still the source for the
+  detail page's own replay (`replay.eventsOf`, `lib/detail.js:809`) is still the source for the
   same questions and answers. Once it is gone, [station.md](station.md)'s
   `gateSummary()` reads `labels` back from here instead — that is why they
   are stored: without them the `swapped` card's denominator would quietly
