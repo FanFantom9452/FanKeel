@@ -553,5 +553,8 @@ test('the brain checks its own gate with gate-check.js before it returns the pat
     for (const name of ['fankeel-brain']) {
         const text = fs.readFileSync(path.join(ROOT, 'agents', name + '.md'), 'utf8');
         assert.match(text, /node <plugin>\/scripts\/gate-check\.js --session <id> <handoff path>/, name);
+        // gate-15: two patrol gates on 2026-10-21 named entries by id and one report grouped six entries on three lines.
+        assert.match(text, /no TODO entry named by its id\s+anywhere in the gate/, name);
+        assert.match(text, /one report line per open\s+entry/, name);
     }
 });
