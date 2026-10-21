@@ -1,0 +1,133 @@
+/* assets/station/session-page.css — the session page, #/s/<id> (station redesign §4;
+   mockup route-session.html, blocks session-head, session-tabs, session-run, session-landed).
+   The model colours were validated in the mockup (_sess/r62-dispatch.js): fable violet, opus
+   orange, sonnet a neutral slate; every chip also carries its letter. */
+:root{--dx-fable:#7a4fd0;--dx-opus:#d9601f;--dx-sonnet:#7d8798;--dx-haiku:var(--m-haiku);--dx-other:var(--m-other);
+  --dx-fable-on:#fbfcfc;--dx-opus-on:#10151d;--dx-sonnet-on:#10151d;--dx-haiku-on:var(--ink);--dx-other-on:var(--ink);
+  --wait:color-mix(in srgb,var(--ink) 9%,var(--panel)) repeating-linear-gradient(45deg,var(--hatch) 0 1.6px,transparent 1.6px 4.2px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--dx-fable:#8a70e6;--dx-opus:#e06a2c;--dx-sonnet:#5e6a80;--dx-fable-on:#10151d;--dx-opus-on:#10151d;--dx-sonnet-on:#f2f4f6}}
+:root[data-theme=dark]{--dx-fable:#8a70e6;--dx-opus:#e06a2c;--dx-sonnet:#5e6a80;--dx-fable-on:#10151d;--dx-opus-on:#10151d;--dx-sonnet-on:#f2f4f6}
+.ssp{display:flex;flex-direction:column;gap:14px}
+.ssp .hatchsw{background:var(--wait)}
+.ssp .dcard-h .gt-hr{margin-left:auto;min-width:0}
+
+/* ---- head: which session, then time, cost and dispatch as three bars ---- */
+.dcard.gt-head,:root[data-style=keel] .dcard.gt-head{display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"g id viz";
+  align-items:center;column-gap:16px;padding:14px 18px}
+.gt-head .glyph.prog{grid-area:g;width:40px;height:40px;display:block}
+.gt-id{grid-area:id;min-width:0}
+.sh-tl{display:flex;align-items:center;flex-wrap:wrap;gap:6px 12px;min-width:0}
+.gt-task{margin:0;font-size:18px;font-weight:700;letter-spacing:-.01em;line-height:1.35;color:var(--ink)}
+.sh-proj{display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:6px;box-shadow:inset 0 0 0 1px var(--rule2);
+  font:600 12px var(--f-mono);color:var(--ink2);text-decoration:none}
+.sh-proj:hover{color:var(--ink);background:var(--wash)}
+.sh-proj:focus-visible{outline:2px solid var(--keel);outline-offset:2px}
+.ss-st{display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:6px;font:600 12px var(--f-ui)}
+.ss-st.down{background:var(--pass-tint);color:var(--pass-ink)}
+.ss-st.live{background:var(--keel-tint);color:var(--keel-deep)}
+.ss-st.stale{background:var(--signal-tint);color:var(--signal-ink)}
+.sh-viz{grid-area:viz;display:flex;align-items:stretch}
+.sv{display:flex;flex-direction:column;justify-content:center;gap:6px;padding:0 0 0 18px;margin:0 0 0 18px;border-left:1px solid var(--rule)}
+.sv:first-child{margin-left:0;padding-left:0;border-left:0}
+.sv-l{font-size:12px;color:var(--muted);white-space:nowrap;text-decoration:none}
+a.sv-l:hover{color:var(--ink)}
+.sv-bar{display:flex;gap:2px;height:12px;border-radius:3px}
+.sv-bar i{display:block;min-width:3px;border-radius:2px}
+.sv-bar.none{background:var(--inset)}
+.sv-time{width:220px}
+.sv-time .wk{background:var(--keel)}
+.sv-time .wt{background:var(--wait)}
+.sv-cost{width:150px}
+.sv-cost .m,.rd-cost i.m,.rd-key .ksw.m{background:var(--keel)}
+.sv-cost .a,.rd-cost i.a,.rd-key .ksw.a{background:color-mix(in srgb,var(--keel) 42%,var(--panel))}
+.sv-pips{display:flex;align-items:center;gap:5px;height:16px;min-width:40px}
+.sv-pips .g{display:flex;gap:2px;border-radius:2px}
+.sv-pips i{display:block;width:4px;height:14px;border-radius:1px;background:var(--c)}
+.sv-pips i.none{width:5px;box-sizing:border-box;background:transparent;box-shadow:inset 0 0 0 1px var(--signal-ink)}
+.sv-bar i:hover,.sv-pips .g:hover i{filter:brightness(1.2)}
+.sv-bar i:focus-visible,.sv-pips .g:focus-visible{outline:2px solid var(--keel);outline-offset:2px}
+@media (max-width:1100px){.dcard.gt-head,:root[data-style=keel] .dcard.gt-head{grid-template-columns:auto minmax(0,1fr);grid-template-areas:"g id" "viz viz";row-gap:12px}}
+
+/* ---- tabs: home's sub-tabs; 關卡 leaves for the gate page ---- */
+.ss-tabs{display:flex;align-items:center}
+.ss-tabs .subtabs{margin:0}
+:root[data-style=keel] .ss-tabs .subtabs{background:var(--panel);box-shadow:inset 0 0 0 1px var(--rule)}
+.ss-tabs .subtabs a{display:inline-flex;align-items:center;gap:6px;min-height:22px}
+.ss-tabs .subtabs a .ico{width:14px;height:14px}
+:root[data-style=keel] .ss-tabs .subtabs a[aria-selected="true"]{background:var(--keel-tint);color:var(--keel-deep);box-shadow:inset 0 -2.5px 0 var(--keel);border-radius:6px 6px 2px 2px}
+.ss-tabs .subtabs a.out{color:var(--signal-ink)}
+.ss-tabs .subtabs a:focus-visible{outline:2px solid var(--keel);outline-offset:1px}
+
+/* ---- 經過: one row a stage, time and cost each on one scale ---- */
+.ss-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;align-items:start}
+.ss-grid.with-landed{grid-template-columns:minmax(0,1fr) 320px}
+@media (max-width:1180px){.ss-grid.with-landed{grid-template-columns:minmax(0,1fr)}}
+.rd-key{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:4px 12px;font-size:12px;font-weight:400;color:var(--muted)}
+.rd-key>span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.rd-key .wksw{display:inline-block;width:14px;height:10px;border-radius:2px;background:linear-gradient(90deg,var(--st-survey) 0 33%,var(--st-build) 33% 67%,var(--st-land) 67%)}
+.rd-key .hatchsw{width:14px}
+.rd-key .ksw{display:inline-block;width:10px;height:10px;border-radius:2px}
+.ss-run{--rd-cols:14px 72px minmax(0,1fr) 112px 16px}
+.rd-axis,.rd-h,.rd-mark,.rd-b{display:grid;grid-template-columns:var(--rd-cols);column-gap:10px;align-items:center}
+.rd-axis{padding:12px 0 4px;font-size:12px;color:var(--muted)}
+.rd-axis .ax{grid-column:3}
+.rd-axis .cx{grid-column:4}
+.rd{list-style:none;margin:0;padding:0}
+.rd>li{position:relative}
+.rd>li::before{content:"";position:absolute;left:6px;top:0;bottom:0;width:2px;background:var(--rule2)}
+.rd>li:first-child::before{top:50%}
+.rd>li:last-child::before{bottom:50%}
+.rd>li+li{border-top:1px solid var(--rule)}
+.rd-dot{grid-column:1;justify-self:center;position:relative;width:12px;height:12px;border-radius:50%;background:var(--c);box-shadow:0 0 0 3px var(--panel)}
+.rd-nm{grid-column:2;justify-self:start;font:700 13.5px/22px var(--f-mono);color:var(--ink);white-space:nowrap}
+.rd-mark{min-height:40px}
+.rd-mark .rd-dot{width:8px;height:8px;background:var(--panel);box-shadow:0 0 0 3px var(--panel),inset 0 0 0 1.5px var(--faint)}
+.rd-mark .rd-nm{font:500 12.5px/22px var(--f-ui);color:var(--muted)}
+.rd-stop>summary{list-style:none;cursor:pointer;border-radius:6px;min-height:50px}
+.rd-stop>summary::-webkit-details-marker{display:none}
+.rd-stop>summary:hover{background:var(--wash)}
+.rd-stop>summary:focus-visible{outline:2px solid var(--keel);outline-offset:-2px}
+.rd-bar{grid-column:3;display:flex;align-items:center;min-width:0;height:22px}
+.rd-seg{display:flex;gap:2px;flex:none;width:var(--w);min-width:3px;height:14px}
+.rd-seg i{display:block;min-width:3px;border-radius:2px}
+.rd-seg .wk{background:var(--c)}
+.rd-seg .wt{background:var(--wait)}
+.rd-cost{grid-column:4;display:block;height:10px}
+.rd-cost>span{display:flex;gap:2px;width:var(--w);min-width:3px;height:100%}
+.rd-cost i{display:block;min-width:3px;border-radius:2px}
+.rd-cost i.o{background:var(--faint)}
+.rd-seg i:hover,.rd-cost i:hover{filter:brightness(1.18);box-shadow:0 0 0 1.5px var(--ink2)}
+.rd-seg i:focus-visible,.rd-cost i:focus-visible,.ch:focus-visible,.sl-t:focus-visible{outline:2px solid var(--keel);outline-offset:2px}
+.rd-h>.ico{grid-column:5;width:16px;height:16px;color:var(--muted);transition:transform .18s cubic-bezier(.16,1,.3,1)}
+.rd-stop[open] .rd-h>.ico{transform:rotate(90deg)}
+.rd-b{align-items:start;padding:0 0 10px}
+.rd-ch{grid-column:3/5;display:flex;flex-wrap:wrap;align-items:center;gap:2px;margin:0;padding:0;list-style:none}
+.rd-none{grid-column:3/5;margin:0;font-size:12px;color:var(--muted)}
+.ch{display:inline-flex;align-items:center;justify-content:center;height:24px;min-width:22px;padding:0 3px;box-sizing:border-box;border-radius:5px;color:var(--ink2)}
+.ch .ico{width:14px;height:14px}
+.ch:hover{background:var(--wash)}
+.ch.cm{color:var(--muted)}
+.ch.ok{color:var(--pass-ink)}
+.ch.bad{color:var(--fail-ink)}
+.ch.ask,.ch.you{color:var(--keel)}
+.ch .you-dot{width:8px;height:8px;border-radius:50%;background:currentColor}
+@media (prefers-reduced-motion:reduce){.rd-h>.ico{transition:none}}
+@media (max-width:720px){.ss-run{--rd-cols:14px 64px minmax(0,1fr) 16px}.rd-cost,.rd-axis .cx{display:none}.rd-h>.ico{grid-column:4}.rd-ch,.rd-none{grid-column:2/4}}
+
+/* ---- what landed: done chips filled, not-done hollow; the dialog lists them ---- */
+.sl-open{height:28px;padding:0 10px;border:0;border-radius:7px;background:transparent;box-shadow:inset 0 0 0 1px var(--rule2);font:600 12px var(--f-ui);color:var(--ink2);cursor:pointer}
+.sl-open:hover{color:var(--ink);background:var(--wash)}
+.sl-open:focus-visible{outline:2px solid var(--keel);outline-offset:2px}
+.sl-chips{display:flex;flex-wrap:wrap;gap:4px;padding:12px 0 0}
+.sl-t{display:inline-flex;align-items:center;height:24px;padding:0 7px;border-radius:6px;background:var(--pass-tint);font:700 12px var(--f-mono);color:var(--pass-ink)}
+.sl-t.no{background:transparent;box-shadow:inset 0 0 0 1.5px var(--signal-ink);color:var(--signal-ink)}
+.tdlg.sl-dlg{width:min(720px,calc(100vw - 32px));height:fit-content;max-height:calc(100vh - 48px)}
+.sl-dlg .tdlg-in{height:auto;max-height:calc(100vh - 48px)}
+.sl-dlg .tdlg-hd>.ico{width:16px;height:16px;color:var(--st-land)}
+.sl-sh{display:flex;align-items:center;gap:8px;margin:14px 0 4px;font:600 13.5px var(--f-ui)}
+.sl-sh span{font:600 12px var(--f-mono);color:var(--muted)}
+.sl-sh.ok{color:var(--pass-ink)}
+.sl-sh.no{color:var(--signal-ink)}
+.sl-l{list-style:none;margin:0;padding:0}
+.sl-l li{display:grid;grid-template-columns:44px minmax(0,1fr);column-gap:10px;align-items:center;min-height:36px;border-top:1px solid var(--rule);font-size:13px;color:var(--ink)}
+.sl-l b{font:700 12px var(--f-mono);color:var(--ink2)}
