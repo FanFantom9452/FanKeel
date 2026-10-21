@@ -25,6 +25,7 @@ const { targetOf } = require('../lib/guard.js');
 const { nextStage, normaliseRoute, FULL_ROUTE } = require('../lib/stages.js');
 const { handoffPath, readGate, patrolEntries, withCheckout } = require('../lib/handoff.js');
 const { run, parse } = require('../lib/hook.js');
+const { todoIds } = require('../lib/plain.js');
 const path = require('node:path');
 
 // Absolute, forward-slash, for comparing a tool call's own `file_path`
@@ -67,7 +68,7 @@ function main(raw) {
 
     let result = null;
     try {
-        result = readGate(file, nextStage(mine.stage, mine.route), normaliseRoute(mine.route) || FULL_ROUTE, { pause: true, floor: mine.floor, patrol: patrolEntries(root, mine) });
+        result = readGate(file, nextStage(mine.stage, mine.route), normaliseRoute(mine.route) || FULL_ROUTE, { pause: true, floor: mine.floor, ids: todoIds(root).ids, patrol: patrolEntries(root, mine) });
     } catch (e) { /* housekeeping */ }
     if (!result || !result.invalid) return;
 
