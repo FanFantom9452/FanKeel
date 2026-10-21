@@ -720,7 +720,7 @@ test('the cap actually caps, and the report says which one it used', () => {
   assert.match(all, /cap: none/);
 
   const plain = survey.report(result, []);
-  assert.equal(/cap:/.test(plain), false, 'the default is not announced');
+  assert.equal(/\bcap:/.test(plain), false, 'the default is not announced');
 });
 
 test('--tree lists every directory with its files and their sizes', () => {

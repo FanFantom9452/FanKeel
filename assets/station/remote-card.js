@@ -9,8 +9,8 @@
 // between, so the page's redraw draws the held card rather than starting
 // over. The icons are Lucide (ISC), as in the mockup, inlined because the
 // mockup's sprite is not on this page. To be loaded before station.js,
-// whose settingsPage will call `html(serve)` once the plan's Tasks 10-11
-// add it to MODULES and mount it.
+// whose settingsPage calls `html(serve)`; the module is listed in MODULES
+// in lib/station.js.
 (function (w, doc) {
     var EN = {
         'rm.title': 'Phone remote',
