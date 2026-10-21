@@ -1,7 +1,7 @@
 ---
 label: station-signal-test
 title: serve 訊號收尾沒測試
-description: scripts/station.js main() 的 serve 在 SIGINT/SIGTERM 呼叫 close() 撤銷 tailscale serve，但沒有測試覆蓋。
+description: station 的 main() 的 serve 在 SIGINT/SIGTERM 呼叫 close() 撤銷 tailscale serve，但沒有測試覆蓋。
 state: ready
 ---
 
