@@ -1,6 +1,6 @@
 'use strict';
 // assets/station/tip.js — the one tooltip every chart on the redesigned
-// station pages shares (docs/90-agent/plans/2026-10-21-station-redesign-design.md,
+// station pages shares (docs/99-archive/2026-10-21-station-redesign-design.md,
 // "Rules every redesigned page keeps"; mockup _sess/r59-tip.js). A mark
 // carries its own label and at most two values, written into its tag by
 // `attr()`; one `.fk-tip` box shows them on hover and on keyboard focus and

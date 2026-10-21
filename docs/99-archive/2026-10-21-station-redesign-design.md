@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 last_verified: 2026-10-22
 source_of_truth: assets/station/station.js, assets/station/station.css, assets/station/i18n.js, lib/station.js, lib/detail.js, lib/spendrange.js, lib/tailscale.js, scripts/station.js
 ---

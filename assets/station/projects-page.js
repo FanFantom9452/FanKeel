@@ -1,6 +1,6 @@
 'use strict';
 // assets/station/projects-page.js — 專案, the page `#/projects` and
-// `#/projects/analysis/<angle>` draw (docs/90-agent/plans/2026-10-21-station-redesign-design.md
+// `#/projects/analysis/<angle>` draw (docs/99-archive/2026-10-21-station-redesign-design.md
 // §3; mockup route-projects.html, blocks period, projects-tabs, projects-table,
 // analysis, analysis-nav, angle-*). One head with 總覽 | 分析 and the period
 // control (7 / 30 / 90 days, default 30), which drives every figure on both

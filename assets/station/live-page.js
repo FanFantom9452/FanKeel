@@ -1,6 +1,6 @@
 'use strict';
 // assets/station/live-page.js — 進行中, the page `#/` and `#/live` draw
-// (docs/90-agent/plans/2026-10-21-station-redesign-design.md §1; mockup
+// (docs/99-archive/2026-10-21-station-redesign-design.md §1; mockup
 // route-live-a.html, blocks live-head, live-wait, live-run, live-stop; the
 // row is _lp/r56-row.js). One head with the 進行中 | 全部 switch, then three
 // cards: 等你回答 (a gate open, the session not ended), 正在跑 (live) and

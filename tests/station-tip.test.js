@@ -1,6 +1,6 @@
 'use strict';
 // assets/station/tip.js — the one tooltip the redesigned pages share
-// (docs/90-agent/plans/2026-10-21-station-redesign-design.md, "Rules every
+// (docs/99-archive/2026-10-21-station-redesign-design.md, "Rules every
 // redesigned page keeps": a tooltip belongs to one segment, one label line and
 // at most two values; keyboard focus shows the same tip as hover; Esc hides
 // it). The module runs in its own vm with a document that records listeners.

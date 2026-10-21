@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-10-21
+last_verified: 2026-10-22
 source_of_truth: this file is the index; each page below is its own source
 ---
 
@@ -311,6 +311,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 任務的圖由 station 畫成 SVG（10-20）定了什麼：任務 build 目錄裡的 .board 由 station 畫成 SVG 掛在卡片上，只複製 Chartroom 的繪圖部分；放棄了什麼 | [decisions/2026-10-20-task-boards-as-svg.md](03-decisions/2026-10-20-task-boards-as-svg.md) — *繁體中文* |
 | retro 讀整份遮蔽過的 session 包（10-20）定了什麼：land 每次問匯出、遮蔽敏感字、retro 在 opus 讀包、retro-all 只改重複出現的問題；放棄了什麼 | [decisions/2026-10-20-retro-bundle.md](03-decisions/2026-10-20-retro-bundle.md) — *繁體中文* |
 | README 改成 quick start（10-21）定了什麼：雙語 README 只留入門、目錄樹搬到 layout.md、補 what-runs／scanners／troubleshooting、audit 修正指南與 pipeline；放棄了什麼 | [decisions/2026-10-21-readme-quickstart.md](03-decisions/2026-10-21-readme-quickstart.md) — *繁體中文* |
+| 監控站首頁改成「進行中」（10-22）定了什麼：#/ 與 #/live 開三組的進行中頁，取代 10-21 四塊首頁；放棄了什麼 | [decisions/2026-10-22-station-live-home.md](03-decisions/2026-10-22-station-live-home.md) — *繁體中文* |
 | 沒派過的 agent 怎麼處理（10-15）定了什麼：effort 改在派工時傳、六個複本刪掉，mover、mutator、writer 只給 stage agent 派，init-scout 與 slimmer 不動；放棄了什麼 | [decisions/2026-10-15-unused-agents.md](03-decisions/2026-10-15-unused-agents.md) — *繁體中文* |
 | 開任務時同步壓縮視窗（10-14）定了什麼：start 把主機視窗對齊 `compact.at`、值變了請使用者重開 Desktop；放棄了什麼 | [decisions/2026-10-14-start-syncs-window.md](03-decisions/2026-10-14-start-syncs-window.md) — *繁體中文* |
 | Pane 配色改成安靜版（10-13）定了什麼：標題共用灰、多一行 route、拿掉「這個 session」與「用量額度」兩塊；放棄了什麼 | [decisions/2026-10-13-pane-colour.md](03-decisions/2026-10-13-pane-colour.md) — *繁體中文* |
@@ -482,6 +483,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 舊引用、--since 接時間、盤點不誤標已落地條目：做了什麼、沒做什麼 | [reports/2026-10-20-stale-refs-since-patrol.md](90-agent/reports/2026-10-20-stale-refs-since-patrol.md) — *繁體中文* |
 | 盤點三件（10-21）的 plan：await 不略過問題、gate 選項數、land 白話選項 | `docs/99-archive/2026-10-21-patrol-three.md` — *built, 繁體中文* |
 | 盤點三件（10-21）：做了什麼、沒做什麼 | [reports/2026-10-21-patrol-three.md](90-agent/reports/2026-10-21-patrol-three.md) — *繁體中文* |
+| station 改版（10-21）的設計：進行中當首頁、全部 sessions、專案總覽與分析、session 頁三分頁、關卡頁框架、資料修正、遠端關掉撤 serve | `docs/99-archive/2026-10-21-station-redesign-design.md` — *built, English* |
+| 做它的 16 個 task——資料修正、tip、五個頁面模組、派工與對話分頁、關卡頁框架、接線與路由 | `docs/99-archive/2026-10-21-station-redesign.md` — *built, English* |
 | TODO 全表盤點（10-20）定了什麼、沒做什麼：沒有要寫的程式，「工具參數中文寫成轉義」記下第二次掃描、改成 10-27 重量 | [reports/patrols/2026-10-20-todo-patrol-ten.md](90-agent/reports/patrols/2026-10-20-todo-patrol-ten.md) — *繁體中文* |
 | TODO 全表盤點（10-19 第三輪）的 plan：十六條拆成 34 個 task，要離開不停工、回報與轉送上限、站 agent 等子 agent、中文直接寫字、監控站花費頁 | `docs/99-archive/2026-10-20-todo-patrol-nine.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-19 第三輪）定了什麼、沒做什麼：34 個任務做完、14 條結案，兩條 10-27 重量、轉義再量一週 | [reports/patrols/2026-10-20-todo-patrol-nine.md](90-agent/reports/patrols/2026-10-20-todo-patrol-nine.md) — *繁體中文* |

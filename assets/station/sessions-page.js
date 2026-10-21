@@ -1,6 +1,6 @@
 'use strict';
 // assets/station/sessions-page.js — 全部, the page `#/sessions` and `#/cmp`
-// draw (docs/90-agent/plans/2026-10-21-station-redesign-design.md §2; mockups
+// draw (docs/99-archive/2026-10-21-station-redesign-design.md §2; mockups
 // route-sessions.html and route-list-cmp.html). Top to bottom: a now-strip
 // counting what runs and linking to 進行中, four period tiles (今天 / 近 7 天 /
 // 近 30 天 / 全部) that are both the summary and the date filter, then one card:

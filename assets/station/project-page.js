@@ -1,6 +1,6 @@
 'use strict';
 // assets/station/project-page.js — the project page `#/p/<pkey>` in the
-// report layout (docs/90-agent/plans/2026-10-21-station-redesign-design.md §3,
+// report layout (docs/99-archive/2026-10-21-station-redesign-design.md §3,
 // last bullet; mockup route-projects.html, blocks project-head, project-kpis,
 // project-trend, project-stages, project-lists). Head (back to 專案, the name,
 // the running session), six KPI tiles for the last 30 days printed from
