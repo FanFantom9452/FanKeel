@@ -405,6 +405,33 @@ test('stage.agents at survey: a genuinely different question headed with the sta
   assert.equal(out.hookSpecificOutput, undefined, 'a low-overlap question sharing only the header is not an attempted copy');
 });
 
+// gate-17: on 2026-10-21 a controlled build gate headed `build 完成` went out
+// with two of its file's three options. The header was not the stage's name,
+// so the mismatch was never read as a copy attempt and the hook only noted it.
+const OWN_HEAD = QUESTIONS.map((q) => Object.assign({}, q, { header: 'survey 完成' }));
+
+test('a copy under the gate\'s own header that drops an option is denied, though the header is not the stage', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  agentsOn(root);
+  handoff(root, { questions: OWN_HEAD, next: 'n' });
+  const thin = JSON.parse(JSON.stringify(OWN_HEAD));
+  thin[0].options.pop();
+  const out = JSON.parse(run(GATE, root, { tool_input: { questions: thin } }));
+  assert.equal(out.hookSpecificOutput.permissionDecision, 'deny');
+  assert.match(out.hookSpecificOutput.permissionDecisionReason, /word for word/);
+});
+
+test('a different question under the gate\'s own header still goes out as written', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  agentsOn(root);
+  handoff(root, { questions: OWN_HEAD, next: 'n' });
+  const different = { questions: [{ header: 'survey 完成', question: '要不要先開一個新任務？', options: [{ label: '要', description: 'a' }, { label: '不要', description: 'b' }] }] };
+  const out = JSON.parse(run(GATE, root, { tool_input: different }));
+  assert.equal(out.hookSpecificOutput, undefined, 'a low-overlap question under the gate header is not an attempted copy');
+});
+
 // gate.station: the hook holds the question while the station can answer it.
 function runAsync(hook, root, payload) {
   return new Promise((resolve) => {
@@ -584,8 +611,9 @@ const LAP_TWO_NEAR = '全套 3092 全綠、7 個 mutation 全紅，但 click han
 const VERIFY_GATE = [{ question: LAP_TWO, header: 'verify 結果', options: [{ label: 'land：收尾 (Recommended)', description: 'a' }, { label: '回 build：補測試', description: 'b' }, { label: '暫停', description: 'c' }] }];
 // The controller's copy differs from the filed gate (one option description is
 // reworded), so it is not the filed gate word for word and the hook does not
-// exit early: only the repeat check stands between it and the user.
-const LAP_ASK = [Object.assign({}, VERIFY_GATE[0], { options: [VERIFY_GATE[0].options[0], Object.assign({}, VERIFY_GATE[0].options[1], { description: 'b, reworded' }), VERIFY_GATE[0].options[2]] })];
+// exit early: only the repeat check stands between it and the user. Its header
+// is neither the stage's nor the filed gate's (gate-17), so it is no copy attempt.
+const LAP_ASK = [Object.assign({}, VERIFY_GATE[0], { header: '再問一次', options: [VERIFY_GATE[0].options[0], Object.assign({}, VERIFY_GATE[0].options[1], { description: 'b, reworded' }), VERIFY_GATE[0].options[2]] })];
 function lapRoot(earlier, answered = LAP_ONE, questions = []) {
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'verify', started: '2026-09-19T09:30:12.345Z', route: ['build', 'verify', 'land'], moves: [['build', 1], ['verify', 2], ['build', 3], ['verify', 4]], configDir: tmp('fankeel-cfg-') });

@@ -361,8 +361,15 @@ function main(raw) {
         // Chinese/English text, where splitting into words is unreliable).
         const first = Array.isArray(asked) && asked[0];
         const gateFirst = Array.isArray(gate.questions) && gate.questions[0];
-        const headerMatches = !!first && typeof first.header === 'string'
-            && first.header.toLowerCase() === String(mine.stage || '').toLowerCase();
+        // gate-17: the file gate's own first header counts too. A controller
+        // copying a gate headed `build 完成` and dropping an option was let
+        // through on 2026-10-21 because only the stage's name counted. Not
+        // the header alone: two gates in one house style overlap past 0.5
+        // (REPEAT_THRESHOLD's note), so the overlap test below still decides.
+        const headerOf = (q) => (q && typeof q.header === 'string' ? q.header.toLowerCase() : null);
+        const askedHeader = headerOf(first);
+        const headerMatches = askedHeader !== null
+            && (askedHeader === String(mine.stage || '').toLowerCase() || askedHeader === headerOf(gateFirst));
         const textOf = (q) => (q && q.question || '') + '|' + (Array.isArray(q && q.options) ? q.options.map((o) => o && o.label).join('|') : '');
         const looksLikeAttempt = headerMatches
             && charOverlap(textOf(first), textOf(gateFirst)) > ATTEMPT_THRESHOLD;
