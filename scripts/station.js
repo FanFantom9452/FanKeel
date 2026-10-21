@@ -58,15 +58,19 @@ const remote = require('../lib/remote.js');
 const tailscale = require('../lib/tailscale.js');
 const qr = require('../lib/qr.js');
 const notify = require('../lib/notify.js');
+const os = require('node:os');
+const mobile = require('../lib/mobile.js');
 const view = require('../assets/station/station.js');
 
 const PLUGIN = path.resolve(__dirname, '..');
 const ASSETS = path.join(PLUGIN, 'assets', 'station');
 
 // The files `serve` answers from ASSETS, by name: the page's own two, the
-// language table, the four spend-*.js modules, and the tour (`tour.html` and what it loads). A list, so
-// nothing else under the plugin directory is reachable by url.
-const STATIC = /^\/station\/((?:station|i18n|spend-[a-z]+)\.js|station\.css|tour(?:-[a-z]+)*\.(?:js|css|html))$/;
+// language table, the four spend-*.js modules, the 手機遠端 card's
+// remote-card.js, the phone page's mobile.js and mobile.css, and the tour
+// (`tour.html` and what it loads). A list, so nothing else under the plugin
+// directory is reachable by url.
+const STATIC = /^\/station\/((?:station|i18n|mobile|remote-card|spend-[a-z]+)\.js|(?:station|mobile)\.css|tour(?:-[a-z]+)*\.(?:js|css|html))$/;
 const TYPES = { '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.html': 'text/html; charset=utf-8' };
 const CHARTROOM = /^\/chartroom\/([^/?#]+)(.*)$/;
 const SVG_CSP = { 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'" };
@@ -531,6 +535,9 @@ async function serve(opts) {
             const reg = modelNow().registries.find((r) => r.root === path.resolve(form.get('root') || ''));
             return { form, reg };
         };
+        // Through the tailnet `/` is the phone's page (design §4); this
+        // machine's own browser keeps the desktop page there.
+        if (kind === 'tailnet' && req.method === 'GET' && url.pathname === '/') return redirect('/m');
         if (req.method === 'GET' && url.pathname === '/') {
             let html;
             try {
@@ -753,6 +760,36 @@ async function serve(opts) {
             // from a live station running old code — the same pid, a
             // different answer to "what is on disk right now."
             return send(200, 'application/json', JSON.stringify({ station: true, pid: process.pid, started, fingerprint }));
+        }
+        // The phone station (lib/mobile.js; assets/station/mobile.js). The
+        // shell, the manifest and the icon are built, not files; the service
+        // worker is assets/station/sw.js served from the root, so its scope
+        // can be the whole origin.
+        if (req.method === 'GET' && url.pathname === '/m') {
+            return send(200, 'text/html; charset=utf-8', mobile.shell(), noStore);
+        }
+        if (req.method === 'GET' && url.pathname === '/m/manifest.webmanifest') {
+            return send(200, 'application/manifest+json', mobile.manifest(), noStore);
+        }
+        if (req.method === 'GET' && url.pathname === '/m/icon.svg') {
+            return send(200, 'image/svg+xml', mobile.icon(), noStore);
+        }
+        if (req.method === 'GET' && url.pathname === '/sw.js') {
+            let body;
+            try {
+                body = fs.readFileSync(path.join(ASSETS, 'sw.js'), 'utf8');
+            } catch (e) {
+                return fail(404, 'no such asset');
+            }
+            return send(200, 'text/javascript; charset=utf-8', body, Object.assign({ 'service-worker-allowed': '/' }, noStore));
+        }
+        if (req.method === 'GET' && url.pathname === '/station/mobile.json') {
+            // A few kilobytes the phone reads every 5 s — never station-data.js.
+            // The machine is named by its tailnet name's first label while the
+            // tailnet is on, by its hostname otherwise.
+            const model = sharedModel();
+            const host = (tailnet.on && tailnet.dnsName ? tailnet.dnsName.split('.')[0] : '') || os.hostname();
+            return send(200, 'application/json', JSON.stringify(mobile.mobileModel(model, Date.now(), host, station.hiddenPkeys(model))), noStore);
         }
         const file = req.method === 'GET' ? STATIC.exec(url.pathname) : null;
         if (file) {

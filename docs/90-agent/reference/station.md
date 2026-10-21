@@ -1338,11 +1338,28 @@ player waits on `TOUR_PROMO30V5.ready` before the first frame.
 
 `serve` answers a fixed list of files from `assets/station/` — `STATIC` in
 `scripts/station.js`: `station.js`, `station.css`, `i18n.js`, the four spend modules
-`spend-talk.js`, `spend-kinds.js`, `spend-range.js` and `spend-panel.js`, `tour.html`,
-`tour.css`, `tour.js` and every `tour-<name>.js` (any number of hyphenated
+`spend-talk.js`, `spend-kinds.js`, `spend-range.js` and `spend-panel.js`, the
+手機遠端 card's `remote-card.js`, the phone page's `mobile.js` and `mobile.css`,
+`tour.html`, `tour.css`, `tour.js` and every `tour-<name>.js` (any number of hyphenated
 segments, so `tour-reel-kit.js` and the like are served too). Any other name
 under `/station/` is a 404, so nothing else in the plugin directory is
 reachable by url.
+
+The phone station has five routes of its own. `/m` is its page, the shell
+`lib/mobile.js` builds (`shell()`), which loads `station.css`, `mobile.css` and
+`mobile.js`; `/m/manifest.webmanifest` (`manifest()`, served as
+`application/manifest+json`) and `/m/icon.svg` (`icon()`) make it installable;
+`/sw.js` is `assets/station/sw.js`, served from the root with
+`service-worker-allowed: /` so it can cache the shell; and
+`/station/mobile.json` is the page's data, `mobileModel(model, now, host,
+hidden)`: the held gates oldest first, the live tasks, and the stages finished
+and tasks ended in the last 48 hours — a few kilobytes, read every 5 s while
+the page is visible, never `station-data.js`. `host` is the first label of the
+tailnet name while the tailnet is on, `os.hostname()` otherwise. Through the
+tailnet `/` answers 303 to `/m`, and `/m`, its manifest, its icon, `/sw.js`,
+`station.css`, `mobile.css` and `mobile.js` need no paired phone, while
+`/station/mobile.json` answers 401 without one (`remote.policy` in
+`lib/remote.js`); from this machine `/` is still the desktop page.
 
 `/station/station-data.js`, `/station/search` and an ended session's
 `/station/detail/<id>.js` share one `gather()` for up to two seconds (`memoMs`
