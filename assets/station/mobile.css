@@ -1,0 +1,175 @@
+/* assets/station/mobile.css — the phone station, /m
+   (docs/90-agent/plans/2026-10-21-station-remote-design.md §4). The approved
+   mockup's rules, loaded over station.css as the mockup was: the keel tokens,
+   .route, .hm-stw, .dot, .pill.gate, .gq-rec and .glyph come from there.
+   Radius scale stays --r-sm / --r / --r-pill; --r-sheet is a bottom sheet's
+   top edge (2 x --r). */
+:root{--r-sheet:20px;--on-signal:#18202c;--scrim:rgba(11,15,21,.52)}
+
+/* ---- icons: Lucide (ISC) on 24, the station's own set on 16 ---- */
+.ic{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.ic.g24{stroke-width:2.1}
+
+/* ---- the screen ---- */
+.scr{position:relative;height:100%;display:flex;flex-direction:column;color:var(--ink);font-size:15px;line-height:1.45;
+  background:var(--ground) radial-gradient(circle,var(--dot) 1.2px,transparent 1.7px) 11px 11px/22px 22px}
+
+/* app bar: one big title, the machine you are on */
+.ab{flex:none;display:flex;align-items:center;gap:10px;padding:10px 16px 14px 20px;min-height:64px}
+.ab h1{font-size:27px;font-weight:700;letter-spacing:-.02em;line-height:1.15}
+.ab .n{font:700 15px var(--f-mono);color:var(--muted);margin-left:2px}
+.ab .sp{flex:1}
+.host{display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:0 4px 0 12px;font-size:13px;color:var(--ink2);background:none;border:0}
+.host .dot{width:8px;height:8px}
+
+.body{flex:1;min-height:0;overflow:hidden;padding:0 12px 96px}
+.grp{background:var(--panel);border-radius:var(--r);box-shadow:inset 0 0 0 1px var(--rule)}
+.grp-h{display:flex;align-items:baseline;gap:8px;margin:6px 8px 8px;font-size:13px;font-weight:700;color:var(--ink2)}
+.grp-h span{font-weight:400;color:var(--muted)}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center;padding:14px 12px 14px 16px;min-height:76px;
+  border-top:1px solid var(--rule);text-decoration:none;color:inherit;-webkit-tap-highlight-color:transparent}
+.grp>.row:first-child{border-top:0}
+.row:active{background:var(--wash)}
+.row:focus-visible{outline-offset:-2px;border-radius:var(--r)}
+.r-meta{display:flex;align-items:center;gap:8px;min-width:0;font-size:12.5px;color:var(--muted);white-space:nowrap}
+.r-meta .pj{font:12.5px var(--f-mono);overflow:hidden;text-overflow:ellipsis}
+.r-t{margin:0;font-size:16px;font-weight:600;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.r-q{margin:0;font-size:14px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.r-l{display:grid;gap:3px;min-width:0}
+.r-side{display:grid;justify-items:end;gap:4px;align-self:stretch;align-content:center}
+.r-side .ic{color:var(--faint);width:20px;height:20px}
+.ago{font:12.5px var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ago.wait{color:var(--signal-ink);font-weight:600}
+.scr .hm-stw{font-size:13px}
+.scr .route{gap:4px}
+.scr .route i{width:9px;height:9px}
+.r-st{display:flex;align-items:center;gap:10px;margin-top:3px}
+.scr .pill.gate{font-size:12px;padding:3px 10px}
+
+/* bottom tab bar: three places, thumbs-first */
+.tabbar{position:absolute;left:0;right:0;bottom:0;z-index:2;display:grid;grid-template-columns:repeat(3,1fr);padding:6px 8px 22px;
+  background:var(--panel);box-shadow:0 -1px 0 var(--rule)}
+.tb{position:relative;display:grid;justify-items:center;gap:3px;min-height:56px;padding:6px 0 2px;text-decoration:none;color:var(--muted);font-size:12.5px;font-weight:600;border-radius:var(--r)}
+.tb .ind{display:grid;place-items:center;width:60px;height:32px;border-radius:var(--r-pill);transition:background-color .2s cubic-bezier(.16,1,.3,1)}
+.tb .ic{width:22px;height:22px}
+.tb[aria-current=page]{color:var(--ink)}
+.tb[aria-current=page] .ind{background:var(--keel-tint);color:var(--keel-deep)}
+.tb .bdg{position:absolute;top:2px;left:calc(50% + 10px);min-width:20px;height:20px;padding:0 6px;border-radius:var(--r-pill);
+  background:var(--stale);color:var(--on-signal);font:700 12px/20px var(--f-mono);text-align:center;box-shadow:0 0 0 2px var(--panel)}
+
+/* ---- gate sheet: the one bold place ---- */
+.dim{position:absolute;inset:0;z-index:4;background:var(--scrim)}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:5;display:flex;flex-direction:column;max-height:calc(100% - 52px);
+  background:var(--panel);border-radius:var(--r-sheet) var(--r-sheet) 0 0;box-shadow:0 -12px 32px -8px rgba(11,15,21,.45);
+  animation:sh-in .32s cubic-bezier(.16,1,.3,1) both}
+@keyframes sh-in{from{transform:translateY(32px)}to{transform:none}}
+.grab{display:block;width:40px;height:4px;margin:10px auto 6px;border-radius:var(--r-pill);background:var(--rule2)}
+.sh-b{flex:1;min-height:0;overflow:hidden;padding:4px 16px 0}
+.sh-m{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.sh-m .pj{font-family:var(--f-mono)}
+.sh-task{margin:6px 0 0;font-size:13.5px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sh-q{margin:6px 0 4px;font-size:23px;font-weight:700;line-height:1.3;letter-spacing:-.015em;text-wrap:balance}
+.sh-rep{display:flex;align-items:center;gap:8px;min-height:44px;margin:0 -4px 6px;padding:0 4px;color:var(--keel-deep);font-size:14px;font-weight:600;text-decoration:none;border-radius:var(--r-sm)}
+.sh-rep .ic{width:18px;height:18px}
+.sh-rep .sp{flex:1}
+.opts{display:grid;gap:10px;margin:0;padding:0;border:0}
+.opt{position:relative;display:grid;grid-template-columns:24px minmax(0,1fr);gap:2px 12px;align-items:start;min-height:72px;padding:14px 16px 14px 14px;
+  border-radius:var(--r);background:var(--panel);box-shadow:inset 0 0 0 1px var(--rule2);cursor:pointer;
+  transition:box-shadow .18s cubic-bezier(.16,1,.3,1),background-color .18s cubic-bezier(.16,1,.3,1)}
+.opt input{position:absolute;opacity:0;pointer-events:none}
+.opt .rd{grid-row:1/3;width:22px;height:22px;margin-top:1px;border-radius:50%;box-shadow:inset 0 0 0 2px var(--rule2);display:grid;place-items:center}
+.opt .rd::after{content:"";width:10px;height:10px;border-radius:50%;background:var(--on-keel);transform:scale(0);transition:transform .18s cubic-bezier(.16,1,.3,1)}
+.opt-l{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;font-size:16.5px;font-weight:700;line-height:1.35}
+.opt-d{font-size:14px;line-height:1.45;color:var(--ink2)}
+.opt:has(input:checked){background:var(--keel-tint);box-shadow:inset 0 0 0 2px var(--keel)}
+.opt:has(input:checked) .rd{background:var(--keel);box-shadow:none}
+.opt:has(input:checked) .rd::after{transform:scale(1)}
+.opt:has(input:focus-visible){outline:2px solid var(--keel);outline-offset:2px}
+.opt.other{min-height:56px;align-items:center;grid-template-columns:24px minmax(0,1fr)}
+.opt.other .ic{width:20px;height:20px;color:var(--muted);justify-self:center}
+.opt.other span{font-size:15px;color:var(--muted)}
+.sheet .gq-rec{font-size:12px;padding:2px 9px}
+.sh-f{flex:none;padding:12px 16px 30px;background:var(--panel);box-shadow:0 -1px 0 var(--rule)}
+.cta{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:54px;border:0;border-radius:var(--r);
+  background:var(--keel);color:var(--on-keel);font:700 17px var(--f-ui);cursor:pointer}
+.cta:active{background:var(--keel-deep)}
+.cta:focus-visible{outline:2px solid var(--keel);outline-offset:3px}
+.ghost{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:50px;border:0;border-radius:var(--r);
+  background:transparent;color:var(--ink);font:600 15.5px var(--f-ui);box-shadow:inset 0 0 0 1px var(--rule2);cursor:pointer}
+.ghost .ic{width:18px;height:18px}
+
+/* ---- 完成 ---- */
+.dn-sum{display:flex;align-items:baseline;gap:6px;margin:0 8px 10px;font-size:13px;color:var(--muted)}
+.dn-sum b{font:700 13px var(--f-mono);color:var(--ink2)}
+.end{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:700;color:var(--good)}
+.end .ic{width:16px;height:16px;stroke-width:2}
+.usd{font:700 15px var(--f-mono);font-variant-numeric:tabular-nums;color:var(--ink)}
+.row.fin .r-t{font-weight:700}
+
+/* ---- 配對 / 連不到 ---- */
+.solo{flex:1;display:flex;flex-direction:column;align-items:center;padding:28px 24px 34px;text-align:center}
+.lock{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:700;letter-spacing:-.03em}
+.lock .glyph{width:30px;height:30px}
+.vf{position:relative;width:264px;height:264px;margin:40px 0 28px;border-radius:var(--r);overflow:hidden;
+  background:var(--term) radial-gradient(circle at 50% 45%,rgba(201,209,220,.10),transparent 70%)}
+.vf i{position:absolute;width:40px;height:40px;border:4px solid var(--keel);}
+.vf i:nth-child(1){top:18px;left:18px;border-right:0;border-bottom:0;border-top-left-radius:var(--r-sm)}
+.vf i:nth-child(2){top:18px;right:18px;border-left:0;border-bottom:0;border-top-right-radius:var(--r-sm)}
+.vf i:nth-child(3){bottom:18px;left:18px;border-right:0;border-top:0;border-bottom-left-radius:var(--r-sm)}
+.vf i:nth-child(4){bottom:18px;right:18px;border-left:0;border-top:0;border-bottom-right-radius:var(--r-sm)}
+.vf .scan{position:absolute;left:30px;right:30px;top:30px;height:2px;border-radius:2px;background:var(--keel);opacity:.8;animation:scan 2.2s cubic-bezier(.45,0,.55,1) infinite alternate}
+@keyframes scan{to{transform:translateY(200px)}}
+.solo h2{margin:0;font-size:21px;font-weight:700;letter-spacing:-.01em}
+.solo .one{margin:8px 0 0;font-size:15px;color:var(--ink2)}
+.solo .sp{flex:1}
+.solo .acts{display:grid;gap:10px;width:100%}
+.solo .path{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center}
+.solo .path b{font-weight:600;color:var(--ink)}
+.off{display:grid;place-items:center;width:88px;height:88px;margin:96px 0 24px;border-radius:50%;background:var(--inset);color:var(--muted)}
+.off .ic{width:40px;height:40px;stroke-width:1.8}
+.solo .tsx{display:inline-flex;align-items:center;gap:7px;margin-top:16px;padding:4px 12px;border-radius:var(--r-pill);background:var(--fail-tint);color:var(--fail-ink);font-size:13px;font-weight:600}
+.solo .tsx .dot{background:var(--bad)}
+.empty{display:grid;justify-items:center;gap:6px;padding:120px 24px 0;text-align:center}
+.empty .off{margin:0 0 14px;color:var(--good);background:var(--pass-tint)}
+.empty h2{font-size:19px;font-weight:700;color:var(--ink)}
+.empty p{margin:0;font-size:14.5px;color:var(--ink2)}
+
+/* ---- the real page: the window is the phone. station.css holds every
+   page at 1000 px and the mockup drew a 360 x 780 frame; here the screen is
+   the viewport, full-bleed under 600 px and a centred 480 px column above. ---- */
+html,body.m{margin:0;height:100%}
+body.m{min-width:0;background:var(--ground);overscroll-behavior-y:contain}
+body.m .scr{height:100dvh}
+body.m .ab{padding-top:calc(10px + env(safe-area-inset-top))}
+body.m .body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(96px + env(safe-area-inset-bottom))}
+body.m .tabbar,body.m .sheet,body.m .dim{position:fixed}
+body.m .tabbar{padding-bottom:calc(10px + env(safe-area-inset-bottom))}
+body.m .sheet{max-height:calc(100dvh - 52px)}
+body.m .sh-b{overflow-y:auto}
+body.m .sh-f{padding-bottom:calc(16px + env(safe-area-inset-bottom))}
+body.m .solo{padding-top:calc(28px + env(safe-area-inset-top));padding-bottom:calc(34px + env(safe-area-inset-bottom))}
+@media (min-width:601px){
+  body.m .scr{max-width:480px;margin:0 auto;box-shadow:0 0 0 1px var(--rule)}
+  body.m .tabbar,body.m .sheet{left:50%;right:auto;width:480px;margin-left:-240px}
+}
+/* The camera behind the viewfinder's corners. */
+.vf video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+/* The 自己寫答案 box is a text input inside its option: not hidden like the radios. */
+.opt .own{position:static;opacity:1;pointer-events:auto;min-width:0;width:100%;height:28px;padding:0;border:0;background:transparent;color:var(--ink);font:400 15px var(--f-ui);outline:none}
+.opt .own::placeholder{color:var(--muted)}
+/* The task a notification's tap opened. */
+.row[data-focus]{background:var(--keel-tint)}
+.scr .pill.gate .ic{width:13px;height:13px}
+.cta .ic{width:18px;height:18px}
+/* The sheet's one line: sending, refused, or not sent. */
+.sh-say{margin:0 0 10px;font-size:13.5px;color:var(--fail-ink)}
+.sh-say:empty{display:none}
+.solo .say{margin:16px 0 0;font-size:14px;color:var(--fail-ink)}
+.solo .code{box-sizing:border-box;width:100%;height:54px;padding:0 16px;border:0;border-radius:var(--r);background:var(--inset);color:var(--ink);
+  font:700 22px var(--f-mono);letter-spacing:.18em;text-align:center;text-transform:uppercase;box-shadow:inset 0 0 0 1px var(--rule2)}
+.solo .code:focus-visible{outline:2px solid var(--keel);outline-offset:2px}
+
+@media (prefers-reduced-motion:reduce){
+  .sheet,.vf .scan{animation:none}
+  .opt,.opt .rd::after,.tb .ind{transition:none}
+}
