@@ -815,11 +815,12 @@ to say so, which is what `做了什麼:` is for — one line per thing someone c
 do. Land files that list inside a six-field record with
 `node scripts/record.js write --session <id>`, which stores it in the registry's
 `record` field and in a monthly file under `docs/90-agent/records`. After it the
-gate asks one question it never skips, whether to export the session
-(`record.js session` writes a masked bundle, under `.fankeel/bundles/` only when
-the bundle is not committed, `scripts/record.js:208`); only after
-an export is the retro offered, and it reads that bundle
-(`skills/fankeel-land/SKILL.md:253`).
+gate carries four options in this order — `收工`, what is still open,
+`匯出並回顧` and `暫停` (`skills/fankeel-land/SKILL.md`, land-8). `匯出並回顧`
+exports the session (`record.js session` writes a masked bundle, under
+`.fankeel/bundles/` only when the bundle is not committed,
+`scripts/record.js:208`) and then always sends the retro on that bundle, with
+no second question; the user reads it as 「回顧這次哪裡可以改進」.
 
 **The commit body is that list rewritten for the next session.** `init` and
 `survey` read `git log` before they read any code, so the subject says what

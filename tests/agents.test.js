@@ -457,6 +457,18 @@ test('the retro reads one session through conversation.js and returns a diff wit
     assert.match(refuse, /Never write/);
 });
 
+// land-8 (2026-10-21): the retro follows every 匯出並回顧 at land; there is no
+// yes of its own to wait for, and nothing calls it optional any more.
+test('the brain and the retro say the retro follows the export, not a yes of its own', () => {
+    const brain = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-brain.md'), 'utf8').replace(/\s+/g, ' ');
+    const retro = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-retro.md'), 'utf8').replace(/\s+/g, ' ');
+    for (const [name, text] of [['fankeel-brain', brain], ['fankeel-retro', retro]]) {
+        assert.doesNotMatch(text, /the user's yes/, name);
+        assert.match(text, /匯出並回顧/, name);
+    }
+    assert.doesNotMatch(retro, /optional retro/);
+});
+
 // MEMORY.md is an index; the slimmer proposes, the fixer applies.
 test('the slimmer cuts fat hooks first, compares stale entries, returns a token line and hands the diff to the fixer', () => {
     const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-slimmer.md'), 'utf8').replace(/\s+/g, ' ');
