@@ -338,6 +338,10 @@ async function serve(opts) {
     // is — and `recordData` the last record written, rewritten when this moves.
     let tailnet = { on: false, dnsName: null, url: null, warning: null };
     let boundPort = null;
+    // Whether this run's `ensureServe` made the proxy (`already: false`). Only
+    // then does the station take it down: one found already there was put up
+    // by someone else, or by a run that will not come back for it.
+    let madeServe = false;
     let recordData = null;
     // One timestamp for this run, reused by `/station/health` and every write
     // of `serve.json` below — a record rewritten once the fixed-port retry
@@ -434,6 +438,7 @@ async function serve(opts) {
         if (timer) { clearTimeout(timer); timer = null; }
         if (!(opts.idleMs > 0)) return;
         timer = setTimeout(() => {
+            teardownRemote();
             server.close();
             // Off by default: `serve()` is also called in-process by tests
             // (station-cli, station-detail, station-todo), and an idle exit
@@ -939,7 +944,7 @@ async function serve(opts) {
             // §5: the first trigger turned on gets a topic, so the card has
             // something to say to subscribe to. §2: a `station.remote` write
             // asks Tailscale again now, and its answer is in force from the
-            // next request — off included, which touches nothing in Tailscale.
+            // next request — off included, which takes down a proxy this run made.
             if (scope === 'machine') {
                 const after = profile.read(null, configDir).values;
                 const trigger = keys.some((k, i) => /^notify\.(gate|stage|end)$/.test(k) && String(values[i]).trim().toLowerCase() === 'true');
@@ -968,9 +973,18 @@ async function serve(opts) {
         fs.writeFileSync(record, JSON.stringify(Object.assign({}, data, tailnet.on ? { remote: { url: tailnet.url } } : {}), null, 2) + '\n');
         return record;
     };
+    // The proxy this station made comes down with it (station-remote-1): when
+    // `station.remote` is written off, when `close()` runs, and on the idle
+    // exit. Never fatal — a failure is one stderr line and shutdown goes on.
+    const teardownRemote = () => {
+        if (!madeServe) return;
+        madeServe = false;
+        const off = tailscale.disable(opts.tailscaleRun);
+        if (!off.ok) process.stderr.write('station: tailscale serve left on — ' + off.warning + '\n');
+    };
     // Asks Tailscale again: at listen, and whenever `station.remote` is
     // written from the page. Never fatal — a warning on stderr and on the
-    // card, and loopback keeps serving. Off asks Tailscale nothing.
+    // card, and loopback keeps serving. Off takes down a proxy this run made.
     const refreshRemote = () => {
         const want = profile.read(null, configDir).values['station.remote'] === true;
         if (want && boundPort) {
@@ -978,9 +992,11 @@ async function serve(opts) {
             tailnet = got.ok
                 ? { on: true, dnsName: got.dnsName, url: got.url, warning: null }
                 : { on: false, dnsName: null, url: null, warning: got.warning };
+            if (got.ok && got.already === false) madeServe = true;
             if (!got.ok) process.stderr.write('station: remote stays off — ' + got.warning + '\n');
         } else {
             tailnet = { on: false, dnsName: null, url: null, warning: null };
+            teardownRemote();
         }
         if (recordData) writeRecord(recordData);
     };
@@ -1044,6 +1060,7 @@ async function serve(opts) {
                 close() {
                     if (timer) clearTimeout(timer);
                     if (retryTimer) clearInterval(retryTimer);
+                    teardownRemote();
                     // Before the server: a board's open event streams would
                     // otherwise hold server.close() until they end.
                     for (const board of boards.values()) {
@@ -1146,6 +1163,12 @@ function main() {
         serve({ configDir, roots: args.roots, scan: args.scan, port: args.port, idleMs: args.idleMs, open: args.open, portWasExplicit: args.portWasExplicit, exitOnIdle: true }).then((s) => {
             process.stdout.write('fankeel station — ' + s.url
                 + (args.idleMs > 0 ? '  (exits after ' + Math.round(args.idleMs / 60e3) + ' idle minutes, or Ctrl+C)' : '  (Ctrl+C to exit)') + '\n');
+            // Ctrl+C runs close(), so the proxy this station made and serve.json
+            // go with it. A hard kill runs nothing; the reference page says how
+            // to take the proxy down by hand then.
+            for (const sig of ['SIGINT', 'SIGTERM']) {
+                process.once(sig, () => { s.close(); process.exit(0); });
+            }
         }, (e) => {
             process.stderr.write('station: could not listen: ' + (e && e.message) + '\n');
             process.exit(1);

@@ -1449,9 +1449,15 @@ missing or not running, with no MagicDNS name, or with another proxy already on
 stays the loopback address — `hooks/pane.ts` accepts nothing else — and the
 tailnet address sits beside it as `remote.url`. The proxy is made for the port
 bound first; the fixed-port retry leaves it there, and that listener stays
-open. Turning `station.remote` off does not touch Tailscale: the tailnet Host
-is refused from the next request, and `tailscale serve --https=443 off`
-removes the proxy.
+open. Writing `station.remote` off refuses the tailnet Host from the next
+request. A proxy this station made comes down with it: writing
+`station.remote` off, `close()`, Ctrl+C on `serve`, and the `--idle` exit each
+run `tailscale serve --https=443 off` (`disable` in `lib/tailscale.js`,
+`teardownRemote` in `scripts/station.js`). A proxy that was already there when
+the station asked (`already` from `ensureServe`) is left on. A failed teardown
+is one stderr line, `station: tailscale serve left on — <why>`, and shutdown
+goes on. A hard kill runs none of this; `tailscale serve --https=443 off` by
+hand removes the proxy then.
 
 Through the tailnet, `policy` in `lib/remote.js` decides what a request may
 reach. Open: `GET /`, `/m`, `/m/manifest.webmanifest`, `/m/icon.svg`, `/sw.js`,
