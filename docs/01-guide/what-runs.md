@@ -25,7 +25,7 @@ source_of_truth: .claude-plugin/plugin.json, hooks/mod.ts, hooks/pane.ts
 | `guard.js` | 寫檔、shell、派 subagent 前 | scope guard：別的 live session 動過的檔，預設先問你；`git commit` 前掃 `.fankeel/sensitive.txt` 的字 |
 | `touch.js` | Edit、Write、NotebookEdit 之後 | 把動過的檔記進這個 task 的 `claims` |
 | `title.js` | 派 Agent 前 | 在 subagent 標題前加上模型、版本與 effort |
-| `dispatch-gate.js` | 同一則訊息派第五個 Agent 時 | 先問你，附上花費估計 |
+| `dispatch-gate.js` | 同一則訊息派的 Agent 超過 profile 的 dispatch.inflight（預設 8）時 | 先問你，附上花費估計 |
 | `brief.js` | subagent 開始時 | 告訴它屬於哪個 task、動過哪些檔、回傳值有多貴 |
 | `budget.js` | subagent 的每次工具呼叫前後 | context 快滿時提醒它交接，太滿就只准交接 |
 | `agent-end.js` | subagent 開始與結束時 | 記下它何時起、何時停，給 Pane 的 agent 樹 |
