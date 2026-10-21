@@ -81,13 +81,13 @@ orientation.
 
 Every change to a registry entry goes through one script rather than being
 hand-written — `task.js start`, `task`, `stage`, `route`, `note`, `next`, `guard`, `down`,
-`adopt`. It creates `.fankeel/.gitignore` with the directory, enforces the caps
+`adopt`, `take`, `clear`, `release`, `land`, `intends`. It creates `.fankeel/.gitignore` with the directory, enforces the caps
 and refuses rather than guessing. It was the last operation without a script, and
 it failed the way unsupported steps fail — quietly, leaving no registry at all,
 with the missing badge as the only symptom.
 
 It also sets the badge itself on `start`, `task`, `stage`, `route`, `guard`
-and `adopt`, and clears it on `down` (`scripts/task.js:1362`).
+and `adopt`, and clears it on `down` (`hideBadge`, `scripts/task.js:1376`).
 The hook runs *before* a prompt, so a badge left to it alone appears only when the
 user types again — and for that whole gap, turning the mode on is indistinguishable
 from failing to turn it on.
@@ -363,8 +363,9 @@ by tier. Each stage's own `when` array holds `{ when, text }` entries;
 `rulesFor(stage, subs, values)` filters them with `holds(when, values)`
 against the profile's effective values, a leading `!` on `when` negating the
 key. `ALWAYS_WHEN` is the same shape for a rule meant to ride every stage —
-exported and empty today. Two stages use the mechanism today, in the two
-shapes it supports. `design`'s mockup rule is the plain filter: one entry,
+exported and empty today. Three stages use the mechanism today, in the two
+shapes it supports; `verify`'s one entry, keyed `security.local`, is a plain
+filter like the mockup rule. `design`'s mockup rule is the plain filter: one entry,
 keyed `design.mockup`, in the block only when a frontend project names a
 model and gone at `false`. `land`'s archive-plan rule takes the other shape
 instead of a filter: two `when` entries, keyed `land.archivePlan` and
@@ -481,7 +482,7 @@ flowchart TD
     E["<b>6 · present in sections</b><br/>architecture, components, data flow,<br/>errors, testing — approve each"]
     F{"class?"}
     J["design happens in chat.<br/>No spec file, no plan file."]
-    G["<b>7 · the spec</b><br/>docs/plans/&lt;date&gt;-&lt;topic&gt;-design.md<br/>status: design-intent, committed"]
+    G["<b>7 · the spec</b><br/>&lt;plan bucket&gt;/&lt;date&gt;-&lt;topic&gt;-design.md<br/><i>docs.json role: plan; docs/plans/ where none is declared</i><br/>status: design-intent, committed"]
     H["<b>8 · self-review</b><br/>placeholders · internal consistency ·<br/>scope · ambiguity · against the project"]
     I["a person reads it, and you wait"]
 
@@ -517,12 +518,12 @@ The stage exists on its own for one reason, and it is the third box.
 
 ```mermaid
 flowchart TD
-    A["<b>the file</b><br/>docs/plans/&lt;date&gt;-&lt;topic&gt;.md"]
+    A["<b>the file</b><br/>&lt;plan bucket&gt;/&lt;date&gt;-&lt;topic&gt;.md<br/><i>docs.json role: plan; docs/plans/ where none is declared</i>"]
     B["<b>the header</b><br/>goal · architecture · tech stack ·<br/>the spec this argues from"]
     C["<b>Global Constraints</b><br/><i>generated from map.md, not remembered</i><br/>exact values copied, not restated"]
     D["<b>file structure, before tasks</b><br/>what each file is responsible for"]
     E["<b>right-size the tasks</b><br/>the smallest unit carrying its own<br/>test cycle. Fold setup and docs into<br/>the task needing them"]
-    F["<b>per task</b><br/>files, read as well as modified · interfaces consumed and produced ·<br/><b>Dispatch:</b> in-session, a model said out loud,<br/>or user — what the user does<br/>· steps, every fence naming its file"]
+    F["<b>per task</b><br/>files, read as well as modified · interfaces consumed and produced ·<br/><b>Dispatch:</b> in-session, a model said out loud,<br/>or user — what the user does<br/><i>dispatch.floor the floor; an architectural task raises it to opus at effort high</i><br/>· steps, every fence naming its file"]
     G["<b>every step is two to five minutes</b><br/>write the failing test → watch it fail →<br/>implement → watch it pass → commit"]
     H{"<b>self-review, before the gate</b>"}
     H1["every design promise has a task —<br/>a Coverage table, ledger lint, then a reviewer"]
@@ -660,7 +661,7 @@ flowchart TD
     C["then you cannot claim it yet.<br/>Run it."]
     D0["<b>where a ledger exists</b><br/>ledger.js ranges — one verifier per row, a task's or a fix's<br/><i>pinned at both ends is not the same as disjoint</i><br/><i>the last paragraph says what to send</i>"]
     D["docs-check<br/><i>which page did this change<br/>just make untrue?</i><br/><i>a coverage claim states its denominator</i>"]
-    D1["<b>dispatch readers</b><br/>several in one response, one per page<br/><i>dispatch.inflight, eight by default; dispatch.floor the floor</i><br/><i>say how many, and on which model</i><br/><i>the path to a diff file, never a pasted diff</i>"]
+    D1["<b>dispatch readers</b><br/>several in one response, one per page<br/><i>dispatch.inflight, eight by default; dispatch.floor the floor</i><br/><i>say how many, and on which model</i><br/><i>the path to a diff file, never a pasted diff</i><br/><i>an architectural task raises dispatch.floor to opus at effort high</i>"]
     D2["<b>the adversary</b><br/>read-only, over the evidence table<br/><i>was it run · on what · could it have<br/>failed · out of what</i><br/><i>paths never a paste — only the rows it defeats</i><br/><i>where the host opens it, the chain is one workflow</i>"]
     E{"anything half-built?"}
     F["back to build.<br/>Verify is not where<br/>the bar gets lowered."]
@@ -956,7 +957,7 @@ directories are context — a 73 GB build directory is not a bug, but not knowin
 about it is.
 
 There is no heuristic for "unused" anywhere in it and nothing is ever deleted by
-it. **Three of the five sections need git and two do not**, so it answers outside
+it. **Seven of the nine sections need git and two — orphaned environments and empty directories — do not**, so it answers outside
 a repository as well as in one — which is where it finds the most, because a tree
 nobody ran `git init` in is invisible to every check that starts from what is
 committed.

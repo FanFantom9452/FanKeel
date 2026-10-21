@@ -21,8 +21,10 @@ node <plugin>/scripts/docs-check.js [--root <專案>]
 ## docs-audit：哪些頁已經不是真的
 
 ```
-node <plugin>/scripts/docs-audit.js [--root <專案>] [--since <天數>]
+node <plugin>/scripts/docs-audit.js [--root <專案>] [--since <天數>] [--quiet] [--batches] [--batch <n>] [--record]
 ```
+
+`--record` 會把結果寫進 `.fankeel/audit.json`。
 
 大約兩週一次。找出主題改了、文件卻沒跟著改的頁（drift），工作已落地的 plan，索引與實際檔案對不上的地方，以及 mermaid 圖列了一個目錄大半卻漏掉其餘檔案的圖——這四類會讓它失敗。描述同一個原始檔的兩頁、沒人連到的頁、沒歸到任何 bucket 的 markdown 只是線索，不算失敗。
 

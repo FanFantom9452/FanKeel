@@ -373,7 +373,7 @@ function report(result) {
             + ' holding commits HEAD lacks — a human call, not a default cleanup:', result.agentUnmerged));
     } else {
         lines.push('fankeel residue — not a git repository.',
-            'What is committed and what is ignored are what three of the five sections',
+            'What is committed and what is ignored are what seven of the nine sections',
             'compare against, so those are absent. The rest needs only the filesystem.');
     }
 

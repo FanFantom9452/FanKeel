@@ -1,6 +1,7 @@
 ---
 status: decision
 last_verified: 2026-09-22
+superseded_by: `docs/03-decisions/2026-09-22-all-stages-brain-promoted.md`
 ---
 
 # ctx.js --by-stage 先做、其餘五個 task 等量測 — 決策紀錄

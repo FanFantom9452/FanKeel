@@ -15,7 +15,7 @@ claude plugin marketplace add FanFantom9452/FanKeel
 claude plugin install fankeel@fankeel
 ```
 
-裝完重開 Claude Code。沒有別的相依套件要裝。更新是 `claude plugin marketplace update fankeel`，一樣要重開。
+裝完重開 Claude Code。沒有別的相依套件要裝。更新要跑兩行：先 `claude plugin marketplace update fankeel`，再 `claude plugin update fankeel@fankeel`，一樣要重開。
 
 ## 第一次 `/fankeel`
 

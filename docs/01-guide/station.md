@@ -31,9 +31,25 @@ source_of_truth: docs/90-agent/reference/station.md, assets/station/station.js, 
 | 依專案 | `#/projects` | 專案列表；點進 `#/p/<key>` 看它的 session 散點、可疊第二個專案、各 route 每站的平均 |
 | 文件 | `#/docs` | 每個專案 `.fankeel/map.md` 的統計卡：文件數、狀態分布、planned 未做、未宣告；上方有全文搜尋，搜各專案 reference、guide、decision 頁的內文（要從 serve 開的頁面用） |
 | 導覽 | `#/tour` | 一支 60 秒的動態宣傳片，配純音樂，中英兩版跟著監控站的語言，七站各用一個動畫講它在做什麼；要從 serve 開的頁面才看得到 |
-| 設定 | `#/settings` | profile 精靈，見 [profile.md](profile.md) |
+| 設定 | `#/settings` | profile 精靈，見 [profile.md](profile.md)；精靈下面是「手機遠端」卡片，見下方〈從手機看〉 |
 
 點任一個 session 會進它自己的頁面 `#/s/<id>`，有六個分頁。概覽是 context 曲線、任務與每站花費。派工是每個 agent 的 token 與錢。事件是重播，看得到每個 gate 等了多久。對話是這個 session 的整段對話，你和 Claude 的文字全文，一次 100 則。對話的網址是 `#/s/<id>/talk`，文字只留在這台機器上。計畫（`#/s/<id>/plan`）畫出這個 session 最新的 plan：一組一欄，每個 task 一張卡，寫它改哪些檔、等哪幾個 task；停在 plan gate 時，上方會問你要不要核准，答案在 Claude Desktop 給。關卡（`#/s/<id>/gate`）把 survey、design、build、land 這一站交回的報告排成一頁：發現、要改的檔、改了什麼；land 這一站則是六欄完成紀錄（要求、做了什麼、為什麼這樣做、驗過・沒驗過、花費、還剩什麼）；停在那一站的 gate 時，上方多一條問題，答案一樣在 Claude Desktop 給。session 卡上若這個任務畫過圖，會多一塊「AI 畫的圖」，點開是那張 `.board` 畫成的 SVG；專案卡則連到專案的架構圖。
+
+## 從手機看
+
+監控站可以經這台機器的 Tailscale 讓手機連進來，但預設是關的。開關是 profile 的 `station.remote`，只讀機器層 profile，內建 `false`；關著時只有本機（`127.0.0.1`）連得到，因為監控站看得到每個 session 的整段對話，不該在你沒說要的時候離開這台機器。打開時監控站跑 `tailscale serve`，只在你自己的 tailnet（Tailscale 串起來的私人網路）裡開放，從不跑 `tailscale funnel` 對外公開；Tailscale 沒裝、沒在跑或 Funnel 開著時，遠端維持關閉，原因寫在卡片上，本機照常可用。
+
+開關在 `#/settings` 精靈下面的「手機遠端」卡片：打開後卡片給出 tailnet 網址（附「複製」）、一張配對 QR、已配對的手機（可「解除」），以及三個推播開關。配對碼一次性、10 分鐘內有效，因為從 tailnet 來的請求沒有配對過的手機一律擋下。手機掃 QR 後打開的是手機頁 `/m`：從 tailnet 打開監控站根網址 `/` 會自動轉到 `/m`，本機瀏覽器開 `/` 仍是桌面版。要關掉時把卡片的開關關上；監控站下一個請求起就拒絕 tailnet，但不動 Tailscale 本身，要連代理一起拿掉就自己跑：
+
+```
+tailscale serve --https=443 off
+```
+
+推播走 ntfy（一個開放的推播服務，手機裝 ntfy app 訂閱一個 topic 就收得到）。卡片上的三個開關對應 `notify.gate`、`notify.stage`、`notify.end`，內建都關：`notify.gate` 在 gate 等你回答時推一則高優先、會響的通知，附「打開 gate」；`notify.stage` 在一站做完時推一則靜音通知；`notify.end` 在任務結束時推一則靜音通知，附含子代理的花費。第一次從卡片打開任一個時，監控站會在 `notify.topic` 寫一個 `fankeel-` 開頭的亂數 topic，卡片上寫出要訂閱哪一個。這五個 key 和 `station.remote` 一樣只讀機器層，clone 下來的 repo 沒辦法把你的 gate 題目推到它指定的伺服器；完整說明與手機沒響時要看的 `notify-failed.log` 見 [profile.md](profile.md)。自架 ntfy 時改 `notify.server`：
+
+```
+node <plugin>/scripts/task.js profile set notify.server https://ntfy.example.com --default
+```
 
 ## 數字怎麼讀
 

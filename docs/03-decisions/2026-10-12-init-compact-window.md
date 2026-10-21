@@ -1,6 +1,7 @@
 ---
 status: decision
 last_verified: 2026-10-12
+superseded_by: `docs/03-decisions/2026-10-12-compact-at.md`
 ---
 
 # 壓縮視窗由 init 幫忙設（10-12）：問一題，答是才寫使用者的設定檔

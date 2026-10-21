@@ -235,7 +235,7 @@ before. These are the eight 0.70.0 went through, in order.
 4. **Commit it as `chore: <x.y.z> — <one line>`.** That subject is the marker
    `--changes` counts back to, so a release committed under any other subject
    leaves the next one listing this one's commits again.
-5. **`npm test` again.** `tests/contract.test.js:262` reads all sixteen and
+5. **`npm test` again.** `tests/contract.test.js:261` reads all sixteen and
    compares them, so the bump is only proven by a run that happened after it.
 6. **Integrate.** `land.push` is `false` in this project's profile, so a local
    merge to `main` is where a release stops unless the user says otherwise.
@@ -302,7 +302,7 @@ returns `import[badgeWord] ⎆ ✓`; `knip --trace-export clearBadge`, reached a
 and `hooks/inject.js:77` call it. The shape is not rare here: counting lines
 under `tests/` that bind a module from `../lib/`, `../scripts/` or `../hooks/`
 to a plain identifier rather than destructuring it gives 60 lines across 40 of
-the 74 test files there were on 2026-10-01, against 35 destructured lines across 26; tests/ held 352 test files on 2026-10-21. a TODO entry carries
+the 74 test files there were on 2026-10-01, against 35 destructured lines across 26; tests/ held 386 test files on 2026-10-21. a TODO entry carries
 what would lift the exclusion.
 
 **A green run has to be able to go red.** An `ignore` wide enough to silence 228

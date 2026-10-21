@@ -60,7 +60,7 @@ then AskUserQuestion
 
 ## registry
 
-registry 是專案裡的 `.fankeel/` 目錄，每個 session 一個檔：
+registry 是專案裡的 `.fankeel/sessions/` 目錄（`.fankeel/` 本身還放 map.md、docs.json、profile.json 等其他檔），每個 session 一個檔：
 
 ```
 .fankeel/

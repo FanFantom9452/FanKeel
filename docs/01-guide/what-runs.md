@@ -16,7 +16,7 @@ source_of_truth: .claude-plugin/plugin.json, hooks/mod.ts, hooks/pane.ts
 |---|---|---|
 | `inject.js` | 你送出 prompt | 注入目前 task、這站的規則與報告骨架、其他 live session；`/fankeel` 時注入開場區塊；更新 badge |
 | `resume.js` | `AskUserQuestion` 被回答後 | 再送一次這站的規則——回答不是 prompt，沒有這個就沒人提醒 |
-| `gate.js` | `AskUserQuestion` 送出前 | 記下 gate 開的時間以量等待；設了 `gate.station` 時先等監控站上的回答 |
+| `gate.js` | `AskUserQuestion` 送出前 | 記下 gate 開的時間以量等待；設了 `gate.away` 且你離開時先擋下問題並提示；開了 `notify.gate` 時發一則 ntfy 通知；設了 `gate.station` 時先等監控站上的回答 |
 
 ## 編輯與派工
 
@@ -30,14 +30,14 @@ source_of_truth: .claude-plugin/plugin.json, hooks/mod.ts, hooks/pane.ts
 | `budget.js` | subagent 的每次工具呼叫前後 | context 快滿時提醒它交接，太滿就只准交接 |
 | `agent-end.js` | subagent 開始與結束時 | 記下它何時起、何時停，給 Pane 的 agent 樹 |
 | `gate-write.js` | Write 之後 | stage agent 寫出 handoff 時，當場檢查它的 gate 格式 |
-| `relay-cap.js` | 傳訊息給另一個 session 前 | 超過 2000 字就擋下，改傳檔案路徑 |
+| `relay-cap.js` | 傳訊息給另一個 session 或 agent 前（`SendMessage`、`mcp__ccd_session_mgmt__send_message`） | 只在這個 session 有進行中的 task 時作用：最長的字串值（含一層巢狀）超過 2000 字就擋下，要你改傳檔案路徑 |
 
 ## session 開始與結束
 
 | hook | 觸發 | 做什麼 |
 |---|---|---|
 | `carry.js` | session 開啟、`/clear` 或 fork 之後 | 找交接過來或留下的 task，提議接回 |
-| `leave.js` | session 結束 | 記下怎麼結束、花了多少，並重寫監控站 |
+| `leave.js` | session 結束 | 記下怎麼結束、花了多少，並重寫監控站；開了 `notify.end` 時發一則靜默的 ntfy 通知 |
 
 ## 畫在畫面上的
 
