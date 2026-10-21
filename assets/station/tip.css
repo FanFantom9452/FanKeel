@@ -1,0 +1,11 @@
+/* assets/station/tip.css — the one tooltip (assets/station/tip.js): a label
+   line and at most two values, above the mark it belongs to. */
+.fk-tip{position:absolute;z-index:90;max-width:260px;padding:6px 10px 7px;border-radius:7px;background:var(--ink);color:var(--panel);
+  font:12px/1.45 var(--f-ui);pointer-events:none;transform:translate(-50%,calc(-100% - 8px));
+  box-shadow:0 8px 20px -6px color-mix(in srgb,var(--ink) 40%,transparent)}
+.fk-tip[hidden]{display:none}
+.fk-tip b{display:block;font-weight:700;white-space:nowrap}
+.fk-tip span{display:block;font:12px var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+[data-tip]{cursor:default}
+[data-tip]:focus{outline:none}
+[data-tip]:focus-visible{outline:2px solid var(--keel);outline-offset:1px}
