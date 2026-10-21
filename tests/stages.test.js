@@ -1041,12 +1041,14 @@ test('audit may dispatch a fixer and a mover, land a mover and no fixer', () => 
   assert.ok(agentsFor('land').some((a) => a.startsWith('a mover')));
 });
 
-// docs/90-agent/plans/2026-10-19-patrol-3-design.md §7: the retro is land's,
-// and the land skill sends it only on the user's yes, saying what it costs and
-// what it reads.
-test('land may dispatch the retro reviewer, and its skill sends it only on a yes', () => {
+// docs/90-agent/plans/2026-10-19-patrol-3-design.md §7: the retro is land's.
+// land-8 (2026-10-21): the land gate is 收工, what is still open, 匯出並回顧
+// and 暫停, in that order; the retro is no option of its own but runs after
+// every export, and the user reads 「回顧這次哪裡可以改進」, never the word retro.
+test('land may dispatch the retro reviewer, and its skill runs it after every export, never as a gate option', () => {
   const { agentsFor } = require('../lib/stages.js');
   assert.ok(agentsFor('land').some((a) => a.includes('`fankeel:fankeel-retro`')), 'land does not list the retro');
+  assert.ok(agentsFor('land').some((a) => a.includes('only when your brief says the user picked 匯出')), 'the retro still waits on a yes of its own');
   for (const stage of ['survey', 'design', 'plan', 'build', 'verify', 'audit']) {
     assert.ok(!agentsFor(stage).some((a) => a.includes('fankeel-retro')), stage + ' lists the retro');
   }
@@ -1058,8 +1060,13 @@ test('land may dispatch the retro reviewer, and its skill sends it only on a yes
   assert.match(land, /scripts\/record\.js session --session <id>/);
   assert.match(land, /scripts\/record\.js retro --session <id> --transcript/);
   assert.match(land, /scripts\/conversation\.js --bundle <path> --tools/);
-  assert.ok(byName('land').rules.some((r) => /record\.js session/.test(r)), 'the land rules do not ask for the export');
-  assert.match(land, /nothing runs until the user says yes/);
+  const rules = byName('land').rules;
+  assert.ok(rules.includes('Gate: 收工, open, `record.js session` then retro, 暫停.'), 'the land rule does not give the four options in order');
+  assert.ok(!rules.some((r) => /retro only after/.test(r)), 'the land rule still offers the retro after the export');
+  assert.match(land, /1\. `收工 \(Recommended\)`.*2\. .*3\. `匯出並回顧`.*4\. `暫停`/);
+  assert.doesNotMatch(land, /retro, offered after it|its gate carries the offer|the retro is offered/);
+  assert.match(land, /回顧這次哪裡可以改進/);
+  assert.match(land, /nothing runs until the user picks `匯出並回顧`/);
   assert.match(land, /tens of thousands of tokens/);
   assert.match(land, /holds everything said here/);
 });
