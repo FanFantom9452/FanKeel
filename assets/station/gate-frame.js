@@ -32,11 +32,13 @@
     function kit() { return (w && w.FK_KIT) || {}; }
     function esc(s) { return kit().esc(s); }
 
-    // Per session: the option picked (0 for none) and the options opened.
-    // The focus page repaints every 5 s; this survives it. CUR is the session
-    // the last frame drew, with its option labels, for the keys and clicks.
-    var STATE = {}, CUR = { id: null, labels: [] }, heard = false;
-    function state(id) { return STATE[id] || (STATE[id] = { pick: 0, more: {} }); }
+    // Per gate: the option picked (0 for none) and the options opened. The
+    // focus page repaints every 5 s; this survives it. A gate is the session,
+    // its stage and its question, so a new gate in the same session starts
+    // with no pick. CUR is the gate the last frame drew, with its option
+    // labels, for the keys and clicks.
+    var STATE = {}, CUR = { key: null, labels: [] }, heard = false;
+    function state(key) { return STATE[key] || (STATE[key] = { pick: 0, more: {} }); }
     function lineText(st) {
         var l = st.pick ? CUR.labels[st.pick - 1] : null;
         return l !== null && l !== undefined
@@ -64,7 +66,7 @@
         var k = kit(), n = i + 1, raw = String((o && o.label) || ''), rec = REC.test(raw), d = o && o.description, open = st.more[n] === true;
         var cls = [rec ? 'is-rec' : '', st.pick === n ? 'on' : '', open ? 'is-open' : ''].filter(Boolean).join(' ');
         return '<li data-gq="' + n + '"' + (cls ? ' class="' + cls + '"' : '') + '><span class="gt-n">' + n + '</span><div class="gq-b">'
-            + '<button type="button" class="gq-l" data-gq-more="' + n + '" aria-expanded="' + (open ? 'true' : 'false') + '"' + (d ? ' aria-controls="gq-d-' + n + '"' : '') + '>'
+            + '<button type="button" class="gt-more" data-gq-more="' + n + '" aria-expanded="' + (open ? 'true' : 'false') + '"' + (d ? ' aria-controls="gq-d-' + n + '"' : '') + '>'
             + '<span class="gt-l">' + esc(raw.replace(REC, '')) + (rec ? '<span class="gt-rec">' + loc('gf.rec', '建議') + '</span>' : '') + '</span>' + (d ? k.icon('chev') : '') + '</button>'
             + (d ? '<p class="gt-d" id="gq-d-' + n + '"' + (open ? '' : ' hidden') + '>' + esc(d) + '</p>' : '') + '</div>'
             + '<button type="button" class="gq-pick" data-gq-pick="' + n + '" aria-pressed="' + (st.pick === n ? 'true' : 'false') + '">' + loc('gf.pick', '選這個') + '<kbd>' + n + '</kbd></button></li>';
@@ -76,15 +78,15 @@
             + '<span class="kn wait">' + esc(stage) + ' gate</span>' + (q && q.header ? '<span class="gt-hr chip">' + esc(q.header) + '</span>' : '') + '</div>'
             + '<p class="gq-cd" role="status" aria-live="polite"><i class="hatchsw" aria-hidden="true"></i><span id="gq-line">' + esc(lineText(st)) + '</span></p>'
             + '<h2 class="gt-q">' + (q ? esc(q.question) : loc('gf.noQ', '報告裡沒有讀得出的 gate 問題')) + '</h2>'
-            + (opts.length ? '<ol class="gt-opts gq-opts">' + opts.map(function (o, i) { return option(o, i, st); }).join('') + '</ol>' : '')
+            + (opts.length ? '<ol class="gt-opts">' + opts.slice(0, 9).map(function (o, i) { return option(o, i, st); }).join('') + '</ol>' : '')
             + (next ? '<p class="gt-next"><span>' + loc('gf.next', '報告寫的下一步') + '</span>' + esc(next) + '</p>' : '') + '</section>';
     }
 
     // A repaint in place after a click or a key, without waiting for the
     // focus page's next 5 s draw, which draws the same from STATE.
     function paint() {
-        if (!doc || !doc.querySelectorAll || CUR.id === null) return;
-        var st = state(CUR.id);
+        if (!doc || !doc.querySelectorAll || CUR.key === null) return;
+        var st = state(CUR.key);
         [].forEach.call(doc.querySelectorAll('[data-gq]'), function (li) {
             var n = Number(li.getAttribute('data-gq')), open = st.more[n] === true;
             li.classList.toggle('on', st.pick === n);
@@ -98,14 +100,14 @@
         if (line) line.textContent = lineText(st);
     }
     function pick(n) {
-        if (CUR.id === null || !(n >= 1 && n <= CUR.labels.length)) return false;
-        state(CUR.id).pick = n;
+        if (CUR.key === null || !(n >= 1 && n <= CUR.labels.length)) return false;
+        state(CUR.key).pick = n;
         paint();
         return true;
     }
     function more(n) {
-        if (CUR.id === null) return;
-        var st = state(CUR.id);
+        if (CUR.key === null) return;
+        var st = state(CUR.key);
         st.more[n] = st.more[n] !== true;
         paint();
     }
@@ -121,9 +123,13 @@
         if (e.preventDefault) e.preventDefault();
         return pick(n);
     }
-    function listen() {
-        if (heard || !doc || !doc.addEventListener) return;
+    // `d` is the document to listen on, the page's own when none is given;
+    // paint() repaints in the one listened on.
+    function listen(d) {
+        d = d || doc;
+        if (heard || !d || !d.addEventListener) return;
         heard = true;
+        doc = d;
         doc.addEventListener('click', function (e) {
             var t = e && e.target && e.target.closest ? e.target : null;
             if (!t) return;
@@ -139,14 +145,15 @@
         listen();
         var s = o.session || {}, g = o.gate || null, stage = g && g.stage ? g.stage : s.stage || '';
         var q = g && g.gate && g.gate.questions && g.gate.questions[0] ? g.gate.questions[0] : null;
-        CUR = { id: s.id, labels: (q && Array.isArray(q.options) ? q.options : []).slice(0, 9).map(function (x) { return String((x && x.label) || '').replace(REC, ''); }) };
-        var st = state(s.id);
+        CUR = { key: [s.id, stage, q ? q.question : ''].join('\n'),
+            labels: (q && Array.isArray(q.options) ? q.options : []).slice(0, 9).map(function (x) { return String((x && x.label) || '').replace(REC, ''); }) };
+        var st = state(CUR.key);
         return '<main class="fm gt-frame" data-block="gate-frame">' + head(s, stage) + (o.shellsHtml || '')
             + '<div class="gt-grid" data-block="gate-columns"><div class="gt-main" data-block="gate-main">' + (o.reportHtml || '') + '</div>'
             + '<aside class="gt-side" data-block="gate-side"><div class="gt-pin">' + ask(g, stage, st) + '</div></aside></div></main>';
     }
 
-    var api = { frame: frame, pickable: pickable, onKey: onKey, pick: pick, more: more, EN: EN };
+    var api = { frame: frame, listen: listen, pickable: pickable, onKey: onKey, pick: pick, more: more, EN: EN };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     if (w) w.FK_GATE = api;
 }(typeof window !== 'undefined' ? window : null, typeof document !== 'undefined' ? document : null));
