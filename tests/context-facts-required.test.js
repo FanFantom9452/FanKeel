@@ -102,7 +102,7 @@ test('task.js stage says nothing leaving a stage section 5 does not name', () =>
 
 const NO_REOPEN = 'a `path:line` that context.md already lists';
 const CARRIERS = ['plan', 'build', 'verify', 'audit', 'land'].map(s => path.join('skills', 'fankeel-' + s, 'SKILL.md'))
-    .concat(['reader', 'reviewer', 'verifier', 'judge'].map(a => path.join('agents', 'fankeel-' + a + '.md')));
+    .concat(['reader', 'reviewer', 'verifier', 'judge', 'brain'].map(a => path.join('agents', 'fankeel-' + a + '.md')));
 
 test('every stage skill and checking agent records facts with context.js add and does not reopen listed ones', () => {
     for (const rel of CARRIERS) {

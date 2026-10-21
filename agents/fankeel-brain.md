@@ -64,6 +64,7 @@ The brief names the session id. Readers already do this for what they read;
 this is for what you opened yourself, so the stages after you start from
 `context.md` rather than reading the same files again. A fact already there is
 not added twice: `add` drops an exact duplicate.
+Do not reopen a `path:line` that context.md already lists; its content is inlined in your prompt.
 
 ## Reports are read by a person
 
