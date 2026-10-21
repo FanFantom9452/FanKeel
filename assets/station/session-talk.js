@@ -184,6 +184,11 @@
         var tail = h.state === 'loading' ? '<span>' + loc('stalk.loading', '讀取中…') + '</span>'
             : h.state === 'failed' ? '<span>' + loc('stalk.failed', '讀不到對話') + '</span>' + btn(loc('stalk.retry', '重試'))
                 : n < h.total ? btn(loc('stalk.more', '再載入 {n} 輪', { n: PAGE })) : '';
+        // A route change removes the dialog without a close event, so FOCUS.id
+        // alone would reopen it on the next visit: reopen only over a dialog
+        // still open in the page this markup replaces.
+        var cur = focusEl();
+        if (!(cur && cur.open === true)) FOCUS.id = null;
         if (FOCUS.id === id && w && w.setTimeout) w.setTimeout(reopen, 0);
         return '<section class="dcard tx-card" data-block="session-talk" data-stalk="' + esc(id) + '"><div class="dcard-h">' + kit().icon('list') + '<b>' + loc('stalk.title', '對話') + '</b>'
             + '<span class="gt-hr tx-acts"><button type="button" class="tx-tools" data-stalk-all="1" aria-pressed="' + (all ? 'true' : 'false') + '">'
