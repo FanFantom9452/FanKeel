@@ -67,10 +67,13 @@ const ASSETS = path.join(PLUGIN, 'assets', 'station');
 
 // The files `serve` answers from ASSETS, by name: the page's own two, the
 // language table, the four spend-*.js modules, the 手機遠端 card's
-// remote-card.js, the phone page's mobile.js and mobile.css, and the tour
-// (`tour.html` and what it loads). A list, so nothing else under the plugin
-// directory is reachable by url.
-const STATIC = /^\/station\/((?:station|i18n|mobile|remote-card|spend-[a-z]+)\.js|(?:station|mobile)\.css|tour(?:-[a-z]+)*\.(?:js|css|html))$/;
+// remote-card.js, the redesigned pages' modules (tip, the five pages, the
+// session page's two tabs and the gate frame, a script and a stylesheet
+// each), the phone page's mobile.js and mobile.css, and the tour (`tour.html`
+// and what it loads). A list, so nothing else under the plugin directory is
+// reachable by url.
+const PAGE_NAMES = 'tip|gate-frame|live-page|sessions-page|projects-page|project-page|session-page|session-dispatch|session-talk';
+const STATIC = new RegExp('^/station/((?:station|i18n|mobile|remote-card|spend-[a-z]+|' + PAGE_NAMES + ')\\.js|(?:station|mobile|' + PAGE_NAMES + ')\\.css|tour(?:-[a-z]+)*\\.(?:js|css|html))$');
 const TYPES = { '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.html': 'text/html; charset=utf-8' };
 const CHARTROOM = /^\/chartroom\/([^/?#]+)(.*)$/;
 const SVG_CSP = { 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'" };
