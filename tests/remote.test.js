@@ -84,6 +84,12 @@ test('pair trades a live code once for a token; the store holds its SHA-256 and 
     assert.equal(remote.pair(cfg, remote.newCode(cfg, NOW).value, 'x'.repeat(60), NOW).device.name.length, 40);
 });
 
+test('a device name loses control characters, quotes, &, backticks and angle brackets, and its whitespace runs fold to one space', () => {
+    const cfg = tmp('fankeel-remote-');
+    const name = '  Pixel\u0007 "8"   Pro & \'me\' `x` <b>\u007f ';
+    assert.equal(remote.pair(cfg, remote.newCode(cfg, NOW).value, name, NOW).device.name, 'Pixel 8 Pro me x b');
+});
+
 test('five wrong tries drop the code, the right one included', () => {
     const cfg = tmp('fankeel-remote-');
     const c = remote.newCode(cfg, NOW);
@@ -116,10 +122,33 @@ test('the cookie lives a year, HttpOnly, Secure, SameSite=Strict, and is read ba
     assert.equal(remote.tokenOf(undefined), null);
 });
 
+test('tokenOf refuses a token under 20 characters and a cookie whose name only ends in fk_device', () => {
+    const t = 'abc_DEF-0123456789abcdefghij';
+    assert.equal(remote.tokenOf('fk_device=abc_DEF-0123'), null);
+    assert.equal(remote.tokenOf('x=1; fk_device=abc_DEF-0123; y=2'), null);
+    assert.equal(remote.tokenOf('my_fk_device=' + t), null);
+    assert.equal(remote.tokenOf('x=1; xfk_device=' + t), null);
+});
+
 test('a store that does not parse reads as nothing paired', () => {
     const cfg = tmp('fankeel-remote-');
     fs.mkdirSync(path.join(cfg, 'fankeel'), { recursive: true });
     fs.writeFileSync(store(cfg), 'not json');
     assert.deepEqual(remote.devicesOf(cfg), []);
     assert.equal(remote.deviceFor(cfg, 'abc_DEF-0123456789abcdefghij', NOW), null);
+});
+
+test('a hand-edited store keeps only devices with a 64-hex hash and only a code with a finite until', () => {
+    const cfg = tmp('fankeel-remote-');
+    const token = 'abc_DEF-0123456789abcdefghij';
+    const good = { id: 'c', hash: crypto.createHash('sha256').update(token).digest('hex'), name: 'ok', paired: NOW, seen: NOW };
+    fs.mkdirSync(path.join(cfg, 'fankeel'), { recursive: true });
+    fs.writeFileSync(store(cfg), JSON.stringify({
+        code: { value: 'ABCDEFGH', until: '1e400', misses: 0 },
+        devices: [{ id: 'a', hash: 'abc', name: 'short', paired: NOW, seen: NOW }, { id: 'b', hash: 'z'.repeat(64), name: 'non-hex', paired: NOW, seen: NOW }, good],
+    }));
+    assert.equal(remote.deviceFor(cfg, 'not-the-token-0123456789', NOW), null, 'a bad hash is skipped, not handed to timingSafeEqual');
+    assert.equal(remote.deviceFor(cfg, token, NOW).id, 'c');
+    assert.deepEqual(remote.devicesOf(cfg).map((x) => x.id), ['c']);
+    assert.equal(remote.pair(cfg, 'ABCDEFGH', 'x', NOW).ok, false, 'an until that is no finite number is no live code');
 });
