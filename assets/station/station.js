@@ -5704,6 +5704,41 @@
             + (w.FK_REMOTE ? w.FK_REMOTE.html(Boolean(S.serve)) : '');
     }
     VIEWS.settings = settingsPage;
+    // The redesigned pages (station redesign §1–§4) are modules the shell
+    // loads before this file: live-page.js, sessions-page.js, projects-page.js,
+    // project-page.js, session-page.js. A route goes to its module when it is
+    // loaded and to the view above when it is not, so this file still draws
+    // every page on its own — the tests that boot station.js alone draw those.
+    // `OLD` is the table as it stood; each module is handed the station and
+    // what this file derives from it.
+    function modOpts(extra) {
+        return Object.assign({ names: NAMES, now: S.serve ? Date.now() : NOW, serve: Boolean(S.serve), redraw: draw }, extra);
+    }
+    var OLD = Object.assign({}, VIEWS);
+    VIEWS.now = function (r) { return w.FK_LIVE ? w.FK_LIVE.page(S, modOpts()) : OLD.now(r); };
+    VIEWS.live = function (r) { return w.FK_LIVE ? w.FK_LIVE.page(S, modOpts()) : OLD.live(r); };
+    VIEWS.sessions = function (r) { return w.FK_SESSIONS ? w.FK_SESSIONS.page(S, modOpts({ tray: false })) : OLD.sessions(r); };
+    // 比較 lands on the list with its compare tray, so it is never an empty page.
+    VIEWS.cmp = function (r) { return w.FK_SESSIONS ? w.FK_SESSIONS.page(S, modOpts({ tray: true })) : OLD.cmp(r); };
+    VIEWS.projects = function (r) {
+        return w.FK_PROJECTS ? w.FK_PROJECTS.page(S, modOpts({ hash: String(w.location.hash || '') })) : OLD.projects(r);
+    };
+    VIEWS.project = function (r) { return w.FK_PROJECT ? w.FK_PROJECT.page(S, r.pkey, modOpts({ todo: r.todo })) : OLD.project(r); };
+    // The session page has three tabs, 經過 / 派工 / 對話; the old 花費 tab is
+    // 經過 now. 計畫, 事件 and 關卡 stay on the old page, as does a session
+    // only the 花費 page knows (its 對話 is FK_PANEL.talkOnly's).
+    var SESSION_TABS = ['timeline', 'cost', 'dispatch', 'talk'];
+    VIEWS.session = function (r) {
+        var s = S.sessions.filter(function (x) { return x.id === r.id; })[0];
+        if (!w.FK_SESSION || !s || SESSION_TABS.indexOf(r.tab) < 0) return OLD.session(r);
+        needDetail(s);
+        var tab = r.tab === 'cost' ? 'timeline' : r.tab, talk;
+        if (tab === 'talk') {
+            if (S.serve && !TALK[s.id]) talkLoad(s.id, true);
+            talk = S.serve ? TALK[s.id] : { turns: [], total: null, state: 'static' };
+        }
+        return w.FK_SESSION.page(s, DETAIL[s.id] || null, modOpts({ tab: tab, talk: talk }));
+    };
     var drawnHash = null;
     var drawnParts = null;
     // The page's top-level elements as markup, or null where this document
