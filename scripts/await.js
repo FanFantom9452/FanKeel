@@ -206,7 +206,7 @@ function pageLine(o) {
 // 2026-10-21 await-gate-crlf judgement: the controller copies a gate's
 // `questions` and nothing else — hooks/gate.js compares only those — so they
 // are printed here, parsed by the readGate the hook uses: one line, CRLF
-// gone. No readable gate, one that would be refused, a group brain's report,
+// gone. No readable gate, one that fails readGate's own checks, a group brain's report,
 // or a workflow hand-over: nothing.
 const QUESTIONS_SAID = ' Its `questions:` line below is that gate\'s questions, as AskUserQuestion takes them.';
 function questionsLine(o) {

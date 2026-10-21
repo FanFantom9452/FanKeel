@@ -648,7 +648,7 @@ test('plan page: a plan report handing over a workflow gets no page: line from a
 
 // 2026-10-21 await-gate-crlf judgement: a CRLF handoff's gate questions come
 // back on one line that parses as they are, multiSelect filled the way
-// hooks/gate.js reads it; a gate that would be refused prints none.
+// hooks/gate.js reads it; a gate that fails readGate's own checks prints none.
 const GATE_TICKS = '`'.repeat(3);
 const CRLF_GATE = { questions: [{ header: '下一站', question: 'plan?', options: [{ label: 'plan', description: 'a' }, { label: 'stay', description: 'b' }, { label: 'pause', description: 'c' }] }], next: 'plan' };
 
