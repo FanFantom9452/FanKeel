@@ -1,6 +1,7 @@
 {
   "preset": "audience",
   "index": "docs/README.md",
+  "layout": { "file": "docs/02-architecture/layout.md", "heading": "What lives where" },
   "buckets": [
     {
       "path": "docs/90-agent/todo",

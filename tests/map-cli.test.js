@@ -90,7 +90,7 @@ test('this repository\'s README carries a tree the map reads whole, with no row 
   const lines = out.split(/\r?\n/);
   const head = lines.find((l) => l.startsWith('tree — '));
   assert.ok(head, 'no tree line: ' + lines.filter((l) => /tree/.test(l)).join(' | '));
-  assert.match(head, /^tree — \d+ rows from README\.md, under What lives where$/);
+  assert.match(head, /^tree — \d+ rows from docs\/02-architecture\/layout\.md, under What lives where$/);
   assert.doesNotMatch(head, /with no responsibility/);
   assert.doesNotMatch(head, /shown/, 'the map cut the tree short');
   assert.ok(Number(/^tree — (\d+) rows/.exec(head)[1]) <= 50, head);
