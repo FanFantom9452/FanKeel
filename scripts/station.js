@@ -27,7 +27,9 @@
 //
 // Zero dependencies, as everywhere in this repository: `node:http` and a form.
 // The per-run nonce is what stops a page on some other origin from posting to
-// this port; the address is loopback so nothing off this machine reaches it.
+// this port. The address is loopback, and with `station.remote` off every Host
+// but loopback's is refused with 421; on, `tailscale serve` is the one way in
+// from off this machine, and what it may reach is `policy` in lib/remote.js.
 const fs = require('node:fs');
 const path = require('node:path');
 const { readObject } = require('../lib/json.js');
@@ -52,6 +54,10 @@ const conversation = require('../lib/conversation.js');
 const { entriesOf, summarise } = require('../lib/usage.js');
 const todoCheck = require('./todo-check.js');
 const todoFiles = require('../lib/todo.js');
+const remote = require('../lib/remote.js');
+const tailscale = require('../lib/tailscale.js');
+const qr = require('../lib/qr.js');
+const notify = require('../lib/notify.js');
 const view = require('../assets/station/station.js');
 
 const PLUGIN = path.resolve(__dirname, '..');
@@ -318,6 +324,15 @@ async function serve(opts) {
         try { fs.unlinkSync(serveRecordPath(configDir)); } catch (e) { /* already gone */ }
     }
     const nonce = crypto.randomBytes(16).toString('hex');
+    // docs/90-agent/plans/2026-10-21-station-remote-design.md §1-§2: the
+    // tailnet address `tailscale serve` gives this port while the machine
+    // profile's `station.remote` is on and Tailscale agreed. `dnsName` null is
+    // remote off, and then every Host but loopback's is refused. `boundPort` is
+    // the first port bound — the fixed-port retry leaves the proxy where it
+    // is — and `recordData` the last record written, rewritten when this moves.
+    let tailnet = { on: false, dnsName: null, url: null, warning: null };
+    let boundPort = null;
+    let recordData = null;
     // One timestamp for this run, reused by `/station/health` and every write
     // of `serve.json` below — a record rewritten once the fixed-port retry
     // succeeds names the same start time as its first write, not the moment
@@ -430,7 +445,6 @@ async function serve(opts) {
     const handler = async (req, res) => {
         touch();
         const url = new URL(req.url, 'http://127.0.0.1');
-        if (req.method === 'POST') shared = null;
         // One way to answer: status, an optional content type, the body, and
         // any further headers. A 303 passes `null` for the type and no body.
         const send = (code, type, body, headers) => {
@@ -440,6 +454,25 @@ async function serve(opts) {
         const fail = (code, msg) => send(code, 'text/plain', msg + '\n');
         const noStore = { 'cache-control': 'no-store' };
         const redirect = (to) => send(303, null, undefined, { location: to });
+        // docs/90-agent/plans/2026-10-21-station-remote-design.md §1, §3: who
+        // is asking. Off, only loopback is answered — a DNS-rebinding page's
+        // Host is refused here too. Through the tailnet, `remote.policy`
+        // decides: the phone page and pairing are open, the card's own routes
+        // are this machine's, and the rest needs a paired device's cookie; every
+        // POST from there also needs the tailnet Origin.
+        const kind = remote.hostKind(req.headers, tailnet.on ? tailnet.dnsName : null);
+        if (!kind) return fail(421, 'this station answers on 127.0.0.1 only');
+        let device = null;
+        if (kind === 'tailnet') {
+            const rule = remote.policy(req.method, url.pathname);
+            if (rule === 'local') return fail(403, 'this route answers on this machine only');
+            if (req.method === 'POST' && !remote.sameOrigin(req.headers, tailnet.dnsName)) return fail(403, 'wrong origin');
+            if (rule === 'device') {
+                device = remote.deviceFor(configDir, remote.tokenOf(req.headers.cookie), Date.now());
+                if (!device) return fail(401, 'pair this phone first: scan the QR on the station\'s 手機遠端 card');
+            }
+        }
+        if (req.method === 'POST') shared = null;
         // `/chartroom/<name>/…` is a registry root's architecture board,
         // handed to Chartroom before the nonce check below, on purpose:
         // Chartroom guards its own routes — a Host that is not loopback is
@@ -472,11 +505,13 @@ async function serve(opts) {
             req.url = rest.startsWith('/') ? rest : '/' + rest;
             return board(req, res);
         }
-        // Every POST carries the nonce this server printed. One that does not is
-        // refused before its form is read further; null tells the route to stop.
+        // Every POST carries the nonce this server printed, or — through the
+        // tailnet, where the nonce is no key — a paired device's cookie, checked
+        // above. One with neither is refused before its form is read further;
+        // null tells the route to stop.
         const formOf = async () => {
             const form = new URLSearchParams(await readBody(req));
-            if (form.get('nonce') === nonce) return form;
+            if (device || form.get('nonce') === nonce) return form;
             fail(403, 'wrong nonce: open the page this server printed and try again');
             return null;
         };
@@ -650,6 +685,61 @@ async function serve(opts) {
             }
             return send(200, 'image/svg+xml', svg, Object.assign({ 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'" }, noStore));
         }
+        // The 手機遠端 card on #/settings (docs/90-agent/plans/2026-10-21-station-remote-design.md
+        // §3). These four answer loopback only — `remote.policy` refuses them
+        // through the tailnet above. The code shown is the live one, minted
+        // when none is; the QR is the pairing url that code makes.
+        if (req.method === 'GET' && url.pathname === '/station/remote') {
+            const v = profile.read(null, configDir).values;
+            const code = tailnet.on ? remote.liveCode(configDir, Date.now()) : null;
+            return send(200, 'application/json; charset=utf-8', JSON.stringify({
+                on: v['station.remote'] === true,
+                active: tailnet.on,
+                url: tailnet.url,
+                dnsName: tailnet.dnsName,
+                warning: tailnet.warning,
+                code: code ? code.value : null,
+                until: code ? code.until : null,
+                pairUrl: code ? tailnet.url + 'm#/pair/' + code.value : null,
+                devices: remote.devicesOf(configDir),
+                notify: {
+                    server: v['notify.server'] || null,
+                    topic: v['notify.topic'] || null,
+                    gate: v['notify.gate'] === true,
+                    stage: v['notify.stage'] === true,
+                    end: v['notify.end'] === true,
+                },
+            }), noStore);
+        }
+        if (req.method === 'GET' && url.pathname === '/station/remote/qr.svg') {
+            if (!tailnet.on) return fail(409, 'remote is off: nothing to pair with');
+            const code = remote.liveCode(configDir, Date.now());
+            const svg = qr.qrSvg(tailnet.url + 'm#/pair/' + code.value);
+            if (!svg) return fail(500, 'the pairing url is too long for a QR');
+            return send(200, 'image/svg+xml', svg, Object.assign({ 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'" }, noStore));
+        }
+        if (req.method === 'POST' && url.pathname === '/station/remote/code') {
+            const form = await formOf();
+            if (!form) return;
+            if (!tailnet.on) return fail(409, 'remote is off: nothing to pair with');
+            const code = remote.newCode(configDir, Date.now());
+            return send(201, 'application/json; charset=utf-8', JSON.stringify({ code: code.value, until: code.until }), noStore);
+        }
+        if (req.method === 'POST' && url.pathname === '/station/remote/revoke') {
+            const form = await formOf();
+            if (!form) return;
+            return remote.revoke(configDir, form.get('id') || '') ? send(200, 'text/plain; charset=utf-8', 'revoked\n') : fail(404, 'no such device');
+        }
+        // The phone's side: a live code for a device token, set as a cookie for
+        // a year. Only through the tailnet (its Origin was checked above); it
+        // reads its own form, since it has neither a nonce nor a cookie yet.
+        if (req.method === 'POST' && url.pathname === '/station/remote/pair') {
+            if (kind !== 'tailnet') return fail(403, 'pair from the phone, through the tailnet address');
+            const form = new URLSearchParams(await readBody(req));
+            const got = remote.pair(configDir, form.get('code') || '', form.get('name') || '', Date.now());
+            if (!got.ok) return fail(403, got.reason);
+            return send(201, 'application/json; charset=utf-8', JSON.stringify({ device: got.device }), Object.assign({ 'set-cookie': remote.cookieFor(got.token) }, noStore));
+        }
         if (req.method === 'GET' && url.pathname === '/station/health') {
             // Read-only and identifies the process, nothing else — no nonce,
             // so `probe` above (and a `--detach` poll) can tell a live station
@@ -804,6 +894,16 @@ async function serve(opts) {
                     return fail(409, out.reason);
                 }
             }
+            // §5: the first trigger turned on gets a topic, so the card has
+            // something to say to subscribe to. §2: a `station.remote` write
+            // asks Tailscale again now, and its answer is in force from the
+            // next request — off included, which touches nothing in Tailscale.
+            if (scope === 'machine') {
+                const after = profile.read(null, configDir).values;
+                const trigger = keys.some((k, i) => /^notify\.(gate|stage|end)$/.test(k) && String(values[i]).trim().toLowerCase() === 'true');
+                if (trigger && !after['notify.topic']) profile.write(file, 'notify.topic', notify.newTopic());
+                if (keys.includes('station.remote')) refreshRemote();
+            }
             // The wizard posts from #/settings and wants to land there again;
             // anything but a bare page hash is ignored rather than followed.
             const back = String(form.get('back') || '');
@@ -813,12 +913,31 @@ async function serve(opts) {
     };
     server = http.createServer(handler);
     // Factored so the first bind and the fixed-port retry below write the
-    // exact same shape, rather than one drifting from the other.
+    // exact same shape, rather than one drifting from the other. `url` is the
+    // loopback address in every state — hooks/pane.ts accepts nothing else —
+    // and the tailnet address, while there is one, sits beside it as `remote.url`.
     const writeRecord = (data) => {
+        recordData = data;
         const record = serveRecordPath(configDir);
         fs.mkdirSync(path.dirname(record), { recursive: true });
-        fs.writeFileSync(record, JSON.stringify(data, null, 2) + '\n');
+        fs.writeFileSync(record, JSON.stringify(Object.assign({}, data, tailnet.on ? { remote: { url: tailnet.url } } : {}), null, 2) + '\n');
         return record;
+    };
+    // Asks Tailscale again: at listen, and whenever `station.remote` is
+    // written from the page. Never fatal — a warning on stderr and on the
+    // card, and loopback keeps serving. Off asks Tailscale nothing.
+    const refreshRemote = () => {
+        const want = profile.read(null, configDir).values['station.remote'] === true;
+        if (want && boundPort) {
+            const got = tailscale.enable(boundPort, opts.tailscaleRun);
+            tailnet = got.ok
+                ? { on: true, dnsName: got.dnsName, url: got.url, warning: null }
+                : { on: false, dnsName: null, url: null, warning: got.warning };
+            if (!got.ok) process.stderr.write('station: remote stays off — ' + got.warning + '\n');
+        } else {
+            tailnet = { on: false, dnsName: null, url: null, warning: null };
+        }
+        if (recordData) writeRecord(recordData);
     };
     const result = await new Promise((resolve, reject) => {
         let usedFallback = false;
@@ -840,6 +959,12 @@ async function serve(opts) {
         server.listen(opts.port || 0, '127.0.0.1', () => {
             const url = 'http://127.0.0.1:' + server.address().port + '/';
             const record = writeRecord({ pid: process.pid, port: server.address().port, url, started });
+            // The proxy goes to the port bound first, and the fixed-port retry
+            // below leaves it there: that listener stays open. Asked after
+            // serve.json is written, so `/fankeel` finds the station while
+            // tailscale answers — five seconds a call at most.
+            boundPort = server.address().port;
+            refreshRemote();
             touch();
             if (opts.open) openInBrowser(url);
             let retryTimer = null;

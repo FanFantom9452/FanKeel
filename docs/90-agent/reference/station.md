@@ -1406,6 +1406,72 @@ A press says it is on its way (`answerPost`, `assets/station/station.js:6585`, `
 
 The panel moves and resizes. Drag its title bar to move it and the grip in its bottom-right corner to resize it, with a mouse or a finger (pointer events, `touch-action:none`; `fkBoxParse`, `fkBoxClamp` and the listeners after `drawFloat` in `assets/station/station.js`). Where it ends up is `{x, y, w, h}` in `localStorage` under `station.fkBox`, restored on reload, and it is pulled back inside the window — never smaller than 260 by 160 — while dragging, when the window shrinks, and when a saved place no longer fits. A double-click on the title bar puts it back in its corner and forgets the place. `floatHtml` writes the place into the panel's own `style`, so the 3-second repaint mid-drag draws it where it is; polling and 送出答案 are untouched.
 
+## Reaching the station from a phone
+
+Off by default. `station.remote`, read from the machine profile only
+(`<configDir>/fankeel/profile.json`), is `false`, and then the station answers
+only a request whose Host is `127.0.0.1`, `localhost` or `[::1]` and that
+carries none of `X-Forwarded-For`, `X-Forwarded-Host`, `Forwarded` and
+`Tailscale-User-Login`; anything else is 421 (`hostKind` in `lib/remote.js`) —
+the tailnet name, and a DNS-rebinding page's Host as well. The server listens
+on `127.0.0.1` in every state.
+
+Turned on — the 手機遠端 card's switch on `#/settings` posts `station.remote`
+to `POST /profile` with `scope=machine` — the station asks Tailscale at listen
+and on every write of `station.remote` from the page (`refreshRemote` in
+`scripts/station.js`): `tailscale status --json` for this machine's MagicDNS
+name, then `tailscale serve --bg <port>` only when `tailscale serve status
+--json` shows no proxy to that port yet (`enable` in `lib/tailscale.js`). It
+never runs `tailscale funnel`. With Funnel on for the machine, with Tailscale
+missing or not running, with no MagicDNS name, or with another proxy already on
+`/`, remote stays off, the reason goes to stderr as `station: remote stays off
+— <why>` and onto the card, and loopback keeps serving. `serve.json`'s `url`
+stays the loopback address — `hooks/pane.ts` accepts nothing else — and the
+tailnet address sits beside it as `remote.url`. The proxy is made for the port
+bound first; the fixed-port retry leaves it there, and that listener stays
+open. Turning `station.remote` off does not touch Tailscale: the tailnet Host
+is refused from the next request, and `tailscale serve --https=443 off`
+removes the proxy.
+
+Through the tailnet, `policy` in `lib/remote.js` decides what a request may
+reach. Open: `GET /`, `/m`, `/m/manifest.webmanifest`, `/m/icon.svg`, `/sw.js`,
+`/station/station.css`, `/station/mobile.js`, `/station/mobile.css`, and
+`POST /station/remote/pair`. This machine's only (403): the card's own routes
+`/station/remote`, `/station/remote/qr.svg`, `/station/remote/code` and
+`/station/remote/revoke`, `/station/health`, and Chartroom. Everything else —
+reads included, since `/station/talk/<id>` serves whole transcripts — needs a
+paired device's cookie and answers 401 without one. Every POST from the
+tailnet also needs `Origin: https://<name>` (403 `wrong origin`), and takes the
+device cookie in place of the nonce: `/answer`, `/clear`, `/clear-stale`,
+`/todo` and `/profile` from a paired phone carry no nonce, and from loopback
+they need it as before.
+
+Pairing. `GET /station/remote` is the card's state: `on` (the profile's
+`station.remote`), `active` (Tailscale agreed), `url`, `dnsName`, `warning`,
+the live `code` with its `until`, `pairUrl` (`<url>m#/pair/<code>`), `devices`
+(`id`, `name`, `paired`, `seen`) and `notify` (`server`, `topic`, `gate`,
+`stage`, `end`). `GET /station/remote/qr.svg` is `pairUrl` as a QR
+(`lib/qr.js`), 409 while remote is off. A code is 8 characters from
+`23456789ABCDEFGHJKMNPQRSTUVWXYZ`, one-time, live for 10 minutes; `POST
+/station/remote/code` (nonce) mints a new one, 201 `{"code","until"}`, and five
+wrong tries drop it. `POST /station/remote/pair` from the tailnet trades a live
+`code`, with the phone's `name`, for a device token: 201
+`{"device":{"id","name"}}` and `Set-Cookie: fk_device=<token>; Path=/;
+Max-Age=31536000; HttpOnly; Secure; SameSite=Strict`; a code that is wrong,
+spent or late is 403 with the reason, and from loopback the route is 403.
+Only each token's SHA-256 is kept, in `<configDir>/fankeel/remote.json`, which
+lives in the config directory and never in a repository. `POST
+/station/remote/revoke` (nonce, `id`) drops one device — 200 `revoked`, 404
+for an id not paired — and its cookie answers 401 from the next request.
+
+A phone answers a gate only while the gate hook holds it for the station, so
+`gate.station` has to be above 0 (the section above).
+
+The first time `notify.gate`, `notify.stage` or `notify.end` is set to `true`
+through `POST /profile` with `scope=machine` and no `notify.topic` is set, the
+station writes one: `fankeel-` and 20 hex digits (`newTopic` in
+`lib/notify.js`), the topic the phone subscribes to in ntfy.
+
 ## When a tuned block is done
 
 Each live session's row carries its project's tune queue (`tuneOf` in
