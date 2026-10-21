@@ -1,7 +1,7 @@
 ---
 label: gate
 title: 提問時也查 gate 選項數
-description: hooks/gate.js 只在 header 等於 stage 名時才擋，控制者少抄選項會被放行
+description: `hooks/gate.js` 只在 header 等於 stage 名時才擋，控制者少抄選項會被放行
 state: ready
 link: hooks/gate.js
 ---
