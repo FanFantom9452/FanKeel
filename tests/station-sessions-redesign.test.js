@@ -153,6 +153,84 @@ test('the compare grid marks the larger figure, reads equal figures 一樣, and 
     assert.ok(!g.includes('verify'), 'a stage no session spent on is left out');
 });
 
+test('the requests row says it counts the agents\' requests only', () => {
+    // lib/station.js:867 fills `requests` from s.agents.requests; the main
+    // session's own count is not on the row, unlike lib/compare.js sessionOf.
+    const zh = mod().compareHtml([ses(1, { requests: 30 }), ses(2)], {});
+    assert.ok(zh.includes('<div class="k">派工 API 請求</div><div class="v top">30</div><div class="v">10</div>'), zh);
+    const en = mod('en').compareHtml([ses(1), ses(2)], {});
+    assert.ok(en.includes('<div class="k">Agent API requests</div>'), en);
+});
+
+test('a period tile sets the date filter', () => {
+    const P = mod();
+    let redraws = 0;
+    const S = { sessions: [ses(1, { started: at(1), updated: at(0.5) }), ses(2, { started: at(11), updated: at(10) })] };
+    const o = { names: {}, now: NOW, redraw: () => { redraws++; } };
+    assert.equal((P.page(S, o).match(/<tr data-ss-row=/g) || []).length, 2);
+    click(P, { 'data-ss-d': '7' });
+    assert.equal(P.state().d, '7');
+    assert.equal(redraws, 1);
+    const html = P.page(S, o);
+    assert.ok(html.includes('data-ss-d="7" aria-pressed="true"'));
+    assert.deepEqual([...html.matchAll(/data-ss-row="([^"]+)"/g)].map((m) => m[1]), ['id000001-x']);
+    click(P, { 'data-ss-d': '' });
+    assert.equal(P.state().d, '');
+});
+
+test('取消勾選 clears the ticks and closes the dialog', () => {
+    const P = mod();
+    let redraws = 0;
+    const S = { sessions: [ses(1), ses(2)] };
+    const o = { names: {}, now: NOW, redraw: () => { redraws++; } };
+    click(P, { 'data-ss-tick': 'id000001-x' });
+    click(P, { 'data-ss-tick': 'id000002-x' });
+    click(P, { 'data-ss-cmp': '' });
+    P.page(S, o);
+    redraws = 0;
+    click(P, { 'data-ss-clear': '' });
+    assert.deepEqual(Array.from(P.state().picked), []);
+    assert.equal(P.state().cmp, false);
+    assert.equal(redraws, 1);
+});
+
+test('a title link in the dialog closes it as the page moves on', () => {
+    const P = mod();
+    click(P, { 'data-ss-tick': 'id000001-x' });
+    click(P, { 'data-ss-tick': 'id000002-x' });
+    click(P, { 'data-ss-cmp': '' });
+    assert.equal(P.state().cmp, true);
+    P.onClick({ target: el({ href: '#/s/id000001-x' }, el({ 'data-block': 'sessions-compare' })) });
+    assert.equal(P.state().cmp, false);
+});
+
+test('Escape closes the dialog first, then an open popover', () => {
+    const keys = [];
+    const doc = { getElementById: () => ({ innerHTML: '', addEventListener() {} }), createElement: () => ({ addEventListener() {} }), head: { appendChild() {} }, querySelectorAll: () => [],
+        addEventListener(type, fn) { if (type === 'keydown') keys.push(fn); } };
+    const { win } = page(['tip.js', 'sessions-page.js'], {}, { document: doc });
+    const P = win.FK_SESSIONS;
+    P.reset();
+    let redraws = 0;
+    keys.length = 0;
+    P.page({ sessions: [ses(1), ses(2)] }, { names: {}, now: NOW, redraw: () => { redraws++; } });
+    assert.equal(keys.length, 1, 'page() binds one keydown listener');
+    const esc = () => keys[0]({ key: 'Escape' });
+    click(P, { 'data-ss-tick': 'id000001-x' });
+    click(P, { 'data-ss-tick': 'id000002-x' });
+    click(P, { 'data-ss-cmp': '' });
+    click(P, { 'data-ss-pop': 'p' });
+    redraws = 0;
+    keys[0]({ key: 'Enter' });
+    assert.equal(P.state().cmp, true, 'another key leaves the dialog');
+    esc();
+    assert.equal(P.state().cmp, false);
+    assert.equal(P.state().pop, 'p', 'the first Escape is the dialog\'s');
+    esc();
+    assert.equal(P.state().pop, '');
+    assert.equal(redraws, 1);
+});
+
 test('English comes from the module table, and every string has it', () => {
     const P = mod('en');
     const html = P.page({ sessions: [ses(1)] }, { names: {}, now: NOW, redraw() {} });

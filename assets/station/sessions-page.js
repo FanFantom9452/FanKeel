@@ -81,7 +81,7 @@
         'ss.same': 'same',
         'ss.main': 'Main session',
         'ss.agentUsd': 'Agents',
-        'ss.requests': 'API requests',
+        'ss.agentRequests': 'Agent API requests',
         'ss.agents': 'Agents sent',
         'ss.tokens': 'Tokens',
         'ss.started': 'Started',
@@ -326,7 +326,8 @@
             + line(loc('ss.cost', '花費'), list.map(function (s) { return k.cost(s); }), usdF)
             + line(loc('ss.main', '主 session'), list.map(function (s) { return s.usd || 0; }), usdF)
             + line(loc('ss.agentUsd', '派工'), list.map(function (s) { return s.agentUsd || 0; }), usdF)
-            + line(loc('ss.requests', 'API 請求'), list.map(function (s) { return s.requests || 0; }), String)
+            // station.js fills `requests` from the agents alone (lib/station.js:867); the main session's count is not there.
+            + line(loc('ss.agentRequests', '派工 API 請求'), list.map(function (s) { return s.requests || 0; }), String)
             + line(loc('ss.agents', '派出 agent'), list.map(function (s) { return s.agents || 0; }), String)
             + line(loc('ss.tokens', 'token'), list.map(tokensOf), k.tokens)
             + '<div class="k">' + loc('ss.started', '開始') + '</div>' + list.map(function (s) { return '<div class="v">' + when(ms(s.started)) + '</div>'; }).join('');
