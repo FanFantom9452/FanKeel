@@ -125,6 +125,70 @@ test('the landed card shows the plan tasks done and not done, opens a dialog, an
     }
 });
 
+// The page booted on a document that keeps the click listener the module adds
+// and hands back a stand-in <dialog> under the id the drawn markup gives it,
+// so a listener selector or getElementById id that drifts from the markup
+// finds nothing.
+function bootDoc() {
+    const els = {};
+    const listeners = [];
+    const el = () => ({ innerHTML: '', textContent: '', className: '', title: '', addEventListener() {} });
+    let dlgId = null;
+    let dlg = null;
+    const document = { getElementById: (id) => (id === dlgId ? dlg : els[id] || (els[id] = el())),
+        addEventListener(type, fn) { listeners.push([type, fn]); }, createElement: el, head: { appendChild() {} }, querySelectorAll: () => [] };
+    const p = page(['session-page.js'], { sessions: [session()] }, { document });
+    // A timer fires after the redraw has put the new HTML in place.
+    const timers = [];
+    p.win.setTimeout = (fn) => { timers.push(fn); };
+    const booted = listeners.length;
+    const M = p.M['session-page.js'];
+    // A redraw: the page's HTML replaces the dialog with a new, closed one.
+    const draw = () => {
+        const html = M.page(session(), DETAIL, { tab: 'timeline' });
+        dlgId = (html.match(/<dialog[^>]*\bid="([^"]+)"/) || [])[1];
+        dlg = { open: false, onclose: null, showModal() { this.open = true; }, close() { this.open = false; if (this.onclose) this.onclose(); } };
+        timers.splice(0).forEach((fn) => fn());
+        return html;
+    };
+    // A click on the drawn button carrying `attr`: its closest() matches the
+    // attributes that button really has.
+    const click = (html, attr) => {
+        const tag = html.match(new RegExp('<button[^>]*\\b' + attr + '="[^"]*"[^>]*>'));
+        assert.ok(tag, attr + ' is drawn');
+        const names = new Set([...tag[0].matchAll(/([\w-]+)="/g)].map((m) => m[1]));
+        const target = { closest: (sel) => { const m = /^\[([\w-]+)\]$/.exec(sel); return m && names.has(m[1]) ? target : null; } };
+        for (const [type, fn] of listeners.slice(booted)) if (type === 'click') fn({ target });
+    };
+    return { draw, click, dialog: () => dlg };
+}
+
+test('the landed button opens the dialog, its close button shuts it, and a redraw while open opens the new one', () => {
+    const { draw, click, dialog } = bootDoc();
+    let html = draw();
+    click(html, 'data-sl-open');
+    assert.equal(dialog().open, true, 'the open button shows the dialog');
+    html = draw();
+    assert.equal(dialog().open, true, 'the 3 s redraw shows the dialog it drew');
+    click(html, 'data-sl-close');
+    assert.equal(dialog().open, false, 'the close button shuts it');
+    draw();
+    assert.equal(dialog().open, false, 'a redraw after closing leaves it shut');
+});
+
+test('an agent is billed to the most recent stage whose window holds it, when a backtrack makes windows overlap', () => {
+    const { M } = boot();
+    // build -> verify -> build -> verify: the registry keeps each stage's first
+    // and last touch, so build [0, 60] and verify [20, 80] overlap.
+    const st = M.stagesOf(session({ stages: [{ stage: 'build', from: T0, to: T0 + 60 * MIN, usd: 1 },
+        { stage: 'verify', from: T0 + 20 * MIN, to: T0 + 80 * MIN, usd: 1 }] }));
+    assert.equal(M.stageOf(st, T0 + 25 * MIN), 'verify');
+    assert.equal(M.stageOf(st, T0 + 10 * MIN), 'build');
+    assert.equal(M.stageOf(st, T0 + 70 * MIN), 'verify');
+    assert.equal(M.stageOf(st, T0 + 90 * MIN), null);
+    assert.equal(M.stageOf(st, NaN), null);
+});
+
 test('派工 and 對話 are drawn by their modules, handed the session', () => {
     const { M, win } = boot();
     const told = [];

@@ -73,6 +73,13 @@
         return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
     }
     function clip(t, n) { var s = String(t || ''); return s.length > n ? s.slice(0, n - 1) + '…' : s; }
+    // One flex segment of a bar, `v` in `unit` ('ms' or 'usd'), its tooltip
+    // the amount and its share of `all`; nothing when `v` is 0.
+    function seg(cls, unit, v, all, label) {
+        var k = kit();
+        return v ? '<i class="' + cls + '" style="flex:' + v + '" data-' + unit + '="' + v + '"'
+            + tip(label, [unit === 'ms' ? k.mins(v) : k.usd(v, true), loc('spage.share', '佔 {p}', { p: pct(v, all) })]) + '></i>' : '';
+    }
 
     var LETTER = { fable: 'F', opus: 'O', sonnet: 'S', haiku: 'H', other: '?' };
     function fam(model) { var f = kit().family(model); return has(LETTER, f) ? f : 'other'; }
@@ -86,10 +93,17 @@
             return { stage: g.stage, from: g.from, to: g.to, span: span, wait: wait, work: span - wait, usd: num(g.usd) && g.usd > 0 ? g.usd : 0 };
         });
     }
+    // The registry keeps a stage's first and last touch only, so a backtrack
+    // (build, verify, build, verify) leaves windows that overlap: of those
+    // holding `t`, the one entered last is the stage running then.
     function stageOf(stages, t) {
         if (!num(t)) return null;
-        for (var i = 0; i < stages.length; i++) if (t >= stages[i].from && t <= stages[i].to) return stages[i].stage;
-        return null;
+        var at = null;
+        for (var i = 0; i < stages.length; i++) {
+            var g = stages[i];
+            if (t >= g.from && t <= g.to && (!at || g.from > at.from)) at = g;
+        }
+        return at ? at.stage : null;
     }
     // When an agent began: its first request, else when its dispatch went out.
     function agentAt(x, r) {
@@ -109,22 +123,18 @@
             edge: state('land'), c: at >= 0 ? 'var(--st-' + esc(s.stage) + ')' : '' });
     }
     function timeBar(st) {
-        var k = kit(), work = 0, wait = 0;
+        var work = 0, wait = 0;
         st.forEach(function (g) { work += g.work; wait += g.wait; });
         var all = work + wait;
         if (!all) return '<span class="sv-bar sv-time none"></span>';
-        return '<span class="sv-bar sv-time">'
-            + (work ? '<i class="wk" style="flex:' + work + '" data-ms="' + work + '"' + tip(loc('spage.work', '做事'), [k.mins(work), loc('spage.share', '佔 {p}', { p: pct(work, all) })]) + '></i>' : '')
-            + (wait ? '<i class="wt" style="flex:' + wait + '" data-ms="' + wait + '"' + tip(loc('spage.wait', '等你回答'), [k.mins(wait), loc('spage.share', '佔 {p}', { p: pct(wait, all) })]) + '></i>' : '')
-            + '</span>';
+        return '<span class="sv-bar sv-time">' + seg('wk', 'ms', work, all, loc('spage.work', '做事'))
+            + seg('wt', 'ms', wait, all, loc('spage.wait', '等你回答')) + '</span>';
     }
     function costBar(s) {
-        var k = kit(), main = s.usd || 0, ag = s.agentUsd || 0, all = main + ag;
+        var main = s.usd || 0, ag = s.agentUsd || 0, all = main + ag;
         if (!(all > 0)) return '<span class="sv-bar sv-cost none"></span>';
-        return '<span class="sv-bar sv-cost">'
-            + (main ? '<i class="m" style="flex:' + main + '" data-usd="' + main + '"' + tip(loc('spage.main', '主 session'), [k.usd(main, true), loc('spage.share', '佔 {p}', { p: pct(main, all) })]) + '></i>' : '')
-            + (ag ? '<i class="a" style="flex:' + ag + '" data-usd="' + ag + '"' + tip(loc('spage.agents', '派工'), [k.usd(ag, true), loc('spage.share', '佔 {p}', { p: pct(ag, all) })]) + '></i>' : '')
-            + '</span>';
+        return '<span class="sv-bar sv-cost">' + seg('m', 'usd', main, all, loc('spage.main', '主 session'))
+            + seg('a', 'usd', ag, all, loc('spage.agents', '派工')) + '</span>';
     }
     // One pip an agent, grouped by the dispatch that sent it and coloured by
     // model; the group's tooltip spells the models out as letters, so the
@@ -205,16 +215,14 @@
         var maxU = Math.max.apply(null, st.map(function (g) { return g.usd; }).concat(rest > 0.005 ? [rest] : [])) || 1;
         var row = function (g) {
             var ag = Math.min(g.usd, by[g.stage] || 0), main = g.usd - ag, name = esc(g.stage);
-            var seg = '<span class="rd-bar"><span class="rd-seg" style="--w:' + (g.span / maxT * 100).toFixed(3) + '%">'
-                + (g.work ? '<i class="wk" style="flex:' + g.work + '" data-ms="' + g.work + '"' + tip(g.stage + ' · ' + loc('spage.work', '做事'), [k.mins(g.work), loc('spage.share', '佔 {p}', { p: pct(g.work, g.span) })]) + '></i>' : '')
-                + (g.wait ? '<i class="wt" style="flex:' + g.wait + '" data-ms="' + g.wait + '"' + tip(g.stage + ' · ' + loc('spage.wait', '等你回答'), [k.mins(g.wait), loc('spage.share', '佔 {p}', { p: pct(g.wait, g.span) })]) + '></i>' : '')
-                + '</span></span>';
+            var time = '<span class="rd-bar"><span class="rd-seg" style="--w:' + (g.span / maxT * 100).toFixed(3) + '%">'
+                + seg('wk', 'ms', g.work, g.span, g.stage + ' · ' + loc('spage.work', '做事'))
+                + seg('wt', 'ms', g.wait, g.span, g.stage + ' · ' + loc('spage.wait', '等你回答')) + '</span></span>';
             var cost = g.usd ? '<span class="rd-cost"><span style="--w:' + (g.usd / maxU * 100).toFixed(3) + '%">'
-                + (main ? '<i class="m" style="flex:' + main + '" data-usd="' + main + '"' + tip(g.stage + ' · ' + loc('spage.main', '主 session'), [k.usd(main, true), loc('spage.share', '佔 {p}', { p: pct(main, g.usd) })]) + '></i>' : '')
-                + (ag ? '<i class="a" style="flex:' + ag + '" data-usd="' + ag + '"' + tip(g.stage + ' · ' + loc('spage.agents', '派工'), [k.usd(ag, true), loc('spage.share', '佔 {p}', { p: pct(ag, g.usd) })]) + '></i>' : '')
-                + '</span></span>' : '<span class="rd-cost none"></span>';
+                + seg('m', 'usd', main, g.usd, g.stage + ' · ' + loc('spage.main', '主 session'))
+                + seg('a', 'usd', ag, g.usd, g.stage + ' · ' + loc('spage.agents', '派工')) + '</span></span>' : '<span class="rd-cost none"></span>';
             return '<li><details class="rd-stop" data-key="rd-' + name + '" style="--c:var(--st-' + name + ')"><summary class="rd-h"><span class="rd-dot" aria-hidden="true"></span>'
-                + '<b class="rd-nm">' + name + '</b>' + seg + cost + k.icon('chev') + '</summary>'
+                + '<b class="rd-nm">' + name + '</b>' + time + cost + k.icon('chev') + '</summary>'
                 + '<div class="rd-b">' + (x ? chain(g, x) : '<p class="rd-none">' + detailNote(s) + '</p>') + '</div></details></li>';
         };
         var other = rest > 0.005 ? '<li class="rd-mark"><span class="rd-dot" aria-hidden="true"></span><span class="rd-nm">' + loc('spage.rest', '其他') + '</span><span class="rd-bar"></span>'
