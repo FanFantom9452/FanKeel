@@ -774,17 +774,18 @@ record without one falls back to the pending file's `at`, then to the last
 registry write. `homeRunning`
 (`assets/station/station.js:3233`, `function homeRunning(R, now, serve) {`) lists
 the subagents and background shells the live sessions have running;
-`homeSpend` (`assets/station/station.js:3298`, `function homeSpend(R, nowMs) {`)
+`homeSpend` (`assets/station/station.js:3323`, `function homeSpend(R, nowMs) {`)
 is one line with today's and this week's spend, linking to `#/days`.
-`homeTodo` (`assets/station/station.js:3271`, `function homeTodo(projects, today) {`),
+`homeTodo` (`assets/station/station.js:3296`, `function homeTodo(projects) {`),
 `data-block="home-todo"`, reads every project's `todos` rows off the data file
 — the rows the project page's TODO panel reads — and counts the entries whose
 `state` is `ready`: the total as one big figure, then one chip per project with
 any, most first, each showing its count and linking to the project page; with
 none, the card says 沒有 Ready 的條目. Under the chips, Blocked 到期 lists the
-`blocked` entries whose stamp, the day to look again, is today or earlier,
+`blocked` entries with `due === true` (`dueOf` in `lib/todo.js`: the `on:` date
+when there is one, otherwise the stamp plus 7 days, is today or earlier),
 soonest first, each linking to its entry. A chip opens a quick-look dialog
-(`dashTodoDialog`, `assets/station/station.js:3331`) with tabs Ready, Blocked,
+(`dashTodoDialog`, `assets/station/station.js:3354`) with tabs Ready, Blocked,
 Watch, Decision — only when the project has one — and Done (the newest eight);
 an entry with no `state` has no tab.
 
@@ -1273,7 +1274,7 @@ The conversation last read is held in memory and parsed again only when
 `station-data.js`, a detail script or any copy of the page: the full text stays
 on this machine.
 
-`GET /station/spend?from=<YYYY-MM-DD>&to=<YYYY-MM-DD>[&top=<n>]` is the 花費 page's range report (`scripts/station.js`, the `/station/spend` branch; `report` in `lib/spendrange.js`). It reads every transcript under this server's config dir — not only the registry's sessions — and picks the sessions by `lib/compare.js`'s rule, a session in the range its first line falls in with its agents, so `usd` is what `scripts/usage-compare.js` prints for the same range. It answers JSON: `range`, `prev` (the same number of days before it, with `sessions` and `usd`), `sessions`, `usd`, `kinds` and `tokens` (`main` and `agent`, each the five kinds with the two cache writes apart), `types` (the main session and each agent type, `fankeel:` and `fankeel-` dropped, largest first, with `count`, `usd`, `share`, `cost`), `top` (the `n` costliest sessions, 10 by default and at most 50, each with `id`, `project`, `first`, `usd`, `share`, `mainUsd`, `agentUsd`, `agents`, `turns`, `avgCtx`, `peak`) and `verified`. A range that does not parse is a 400. Each session's row is held in memory while `keyOf` (`lib/detail.js`) says its files have not moved, so only the first request reads every transcript. The data file also carries `prices`, `lib/prices.js`'s `perMillion`, which the component notes read their unit prices from. The page's own modules `assets/station/spend-talk.js`, `assets/station/spend-kinds.js`, `assets/station/spend-range.js` and `assets/station/spend-panel.js`, with the 手機遠端 card's `assets/station/remote-card.js`, are served and written under `station/` beside `station.js`.
+`GET /station/spend?from=<YYYY-MM-DD>&to=<YYYY-MM-DD>[&top=<n>]` is the 花費 page's range report (`scripts/station.js`, the `/station/spend` branch; `report` in `lib/spendrange.js`). It reads every transcript under this server's config dir — not only the registry's sessions — and picks the sessions by `lib/compare.js`'s rule, a session in the range its first line falls in with its agents, so `usd` is what `scripts/usage-compare.js` prints for the same range. It answers JSON: `range`, `prev` (the same number of days before it, with `sessions` and `usd`), `sessions`, `usd`, `kinds` and `tokens` (`main` and `agent`, each the five kinds with the two cache writes apart), `types` (the main session and each agent type, `fankeel:` and `fankeel-` dropped, largest first, with `count`, `usd`, `share`, `cost`), `byModel` (per model id, `lib/spendrange.js`'s `modelsInto`: `cost` and `tokens` by kind, `usd`, `share`), `top` (the `n` costliest sessions, 10 by default and at most 50, each with `id`, `project`, `first`, `usd`, `share`, `mainUsd`, `agentUsd`, `agents`, `turns`, `avgCtx`, `peak`) and `verified`. A range that does not parse is a 400. Each session's row is held in memory while `keyOf` (`lib/detail.js`) says its files have not moved, so only the first request reads every transcript. The data file also carries `prices`, `lib/prices.js`'s `perMillion`, which the component notes read their unit prices from. The page's own modules `assets/station/spend-talk.js`, `assets/station/spend-kinds.js`, `assets/station/spend-range.js` and `assets/station/spend-panel.js`, with the 手機遠端 card's `assets/station/remote-card.js`, are served and written under `station/` beside `station.js`.
 
 導覽 (`#/tour`) frames `station/tour.html`, the tour's own page
 (`assets/station/tour.html`). Only a served page can show it; the written file
