@@ -30,8 +30,7 @@ find — a third never launched, and a cell that did not run is not a result
 Fifteen subagent types are not just described in prose — they are declared as
 `agents` in `.claude-plugin/plugin.json` and shipped as files under `agents/`:
 `fankeel-reader`, `fankeel-judge`, `fankeel-reviewer`, `fankeel-verifier`, `fankeel-fixer`, `fankeel-brain`, `fankeel-render-reviewer`, `fankeel-mockup`, `fankeel-slimmer`, `fankeel-init-scout`, `fankeel-writer`, `fankeel-implementer`, `fankeel-mutator`, `fankeel-mover` and `fankeel-retro`.
-Six of them — `fankeel-reader`, `fankeel-reviewer`,
-`fankeel-render-reviewer`, `fankeel-slimmer`, `fankeel-init-scout` and `fankeel-retro` — carry `tools: [Read, Grep, Glob, Bash]`; `fankeel-judge` lists those four plus `Agent`. Edit, Write and
+Four of them — `fankeel-render-reviewer`, `fankeel-slimmer`, `fankeel-init-scout` and `fankeel-retro` — carry `tools: [Read, Grep, Glob, Bash]`; `fankeel-reader` and `fankeel-reviewer` list those four plus `LSP`, the read-only language-server lookup that finds definitions, references and callers across files where a language-server plugin is installed; `fankeel-judge` lists those four plus `Agent`. Edit, Write and
 NotebookEdit are simply absent from every one of those lists, so calling any of them to change
 a file is refused by the harness rather than left to a rule somebody has to
 remember. Bash stays on the list for `git` — and, for the reader and the
@@ -175,7 +174,7 @@ and what it writes.
 question above: it is the shared contract behind plan's reviewer, build's
 per-task reviewer, verify's adversary and audit's code half, all four of which
 dispatch `subagent_type: fankeel:fankeel-reviewer` instead of writing a model by hand. What tells it apart
-from `fankeel-reader` is not the tool list — both carry the same four — but
+from `fankeel-reader` is not the tool list — both carry the same five — but
 the shape of the question: a reader is asked what a file says, a reviewer
 is asked what a diff, a table or the tree gets wrong — or, when the brief asks
 for cuts, what it could lose — and it returns only what it defeats and those

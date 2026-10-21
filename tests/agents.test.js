@@ -135,6 +135,18 @@ test('the reader is told to send reads that do not depend on each other in one r
     assert.match(searching, /same response/);
 });
 
+// The language server answers who calls what across files, which Grep only
+// approximates; the reader and the reviewer carry it, and still nothing that writes.
+test('the reader and the reviewer carry LSP, with Grep as the fallback, and no write tool', () => {
+    for (const name of ['fankeel-reader', 'fankeel-reviewer']) {
+        const file = path.join(ROOT, 'agents', name + '.md');
+        assert.equal(front(file).tools, '[Read, Grep, Glob, Bash, LSP]', name);
+        const tools = fs.readFileSync(file, 'utf8').split('\n## Tools\n')[1].split('\n## ')[0];
+        assert.match(tools, /`LSP`/, name);
+        assert.match(tools, /`Grep`/, name);
+    }
+});
+
 test('the stage agent writes its handoff and dispatches readers, on sonnet', () => {
     const f = front(path.join(ROOT, 'agents', 'fankeel-brain.md'));
     const tools = f.tools.slice(1, -1).split(',').map((s) => s.trim());

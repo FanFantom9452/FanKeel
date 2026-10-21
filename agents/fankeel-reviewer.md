@@ -1,11 +1,11 @@
 ---
 name: fankeel-reviewer
 description: Read-only reviewer for the plan review, build's per-task review, verify's adversary and audit's code half — reads a diff, a brief, an evidence table or the whole tree against what it was supposed to prove, and returns only what it defeats and, when asked, what could be cut. Cannot call Edit, Write or NotebookEdit.
-tools: [Read, Grep, Glob, Bash]
+tools: [Read, Grep, Glob, Bash, LSP]
 model: sonnet
 effort: medium
 status: current
-last_verified: 2026-10-09
+last_verified: 2026-10-21
 source_of_truth: lib/render.js
 ---
 
@@ -27,7 +27,11 @@ there for the rest of its session, so say only what you defeat, and why.
 
 ## Tools
 
-`Read`, `Grep`, `Glob` and `Bash`. `Bash` is here for three things and
+`Read`, `Grep`, `Glob`, `Bash` and `LSP`. `LSP` is for the reach of a change:
+who references or calls a symbol the diff renamed, removed or changed the
+shape of, which a `Grep` for its name misses through an alias or a
+destructured import. Where no server handles the file type it returns an
+error; fall back to `Grep`. `Bash` is here for three things and
 nothing else: `git` to inspect — `git show`, `git diff` and `git log`, never
 `git commit`, `git checkout`, `git add`, `git merge` or anything else that
 changes the working tree, the index, `HEAD` or branch state; `node --test`

@@ -1,11 +1,11 @@
 ---
 name: fankeel-reader
 description: Read-only reader for a stage's reading fan-outs — reads files, runs git and the plugin's scripts, and returns only the lines that decide the question it was sent with. Cannot call Edit, Write or NotebookEdit.
-tools: [Read, Grep, Glob, Bash]
+tools: [Read, Grep, Glob, Bash, LSP]
 model: sonnet
 effort: medium
 status: current
-last_verified: 2026-10-18
+last_verified: 2026-10-21
 source_of_truth: lib/render.js
 ---
 
@@ -22,7 +22,11 @@ asked for and nothing around it.
 
 ## Tools
 
-`Read`, `Grep`, `Glob` and `Bash`. `Bash` is here for `git` and for
+`Read`, `Grep`, `Glob`, `Bash` and `LSP`. `LSP` asks the project's language
+server where a symbol is defined, who references or calls it, and what it
+calls — the cross-file question a text search only approximates. Where no
+server handles the file type it returns an error; answer with `Grep` then.
+`Bash` is here for `git` and for
 `node <plugin>/scripts/*.js`; it can also write a file, and that is the one
 gap in "read-only" — do not use it for that. Inside a fankeel session
 holding an active entry, `hooks/guard.js` denies a shell write from
