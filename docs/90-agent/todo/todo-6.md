@@ -2,8 +2,13 @@
 label: todo
 title: todo.js new 先查理由字數
 description: todo.js new 只查標題寬度，理由不足要等 todo-check 才報 no reason
-state: ready
+state: done
 link: scripts/todo.js
+done:
+  at: 2026-10-21
+  sha: 4a8c4829
+  disposition: done
+  session: 9f451488-d5a6-4838-8cfc-9a451fd4f0e1
 ---
 
 來源：2026-10-21 TODO 全表盤點（session b7a7d8d4）land 站的 retro 讀完整段對話後列為 backlog，使用者在 land gate 選「全記成 TODO」。

@@ -2,8 +2,13 @@
 label: await
 title: 逾時的舊 await 別推交接檔
 description: agent 已經回來後，舊的 await 逾時仍把失敗交接檔推給主對話
-state: ready
+state: done
 link: scripts/await.js
+done:
+  at: 2026-10-21
+  sha: abb16b4e
+  disposition: done
+  session: 9f451488-d5a6-4838-8cfc-9a451fd4f0e1
 ---
 
 來源：2026-10-21 TODO 全表盤點（session b7a7d8d4）land 站的 retro 讀完整段對話後列為 backlog，使用者在 land gate 選「全記成 TODO」。

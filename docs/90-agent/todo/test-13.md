@@ -2,8 +2,13 @@
 label: test
 title: patrol 留下的三個測試缺口
 description: patrol verify 找到三個沒有測試或判斷偏弱的地方 — [scripts/residue.js](scripts/residue.js).
-state: ready
+state: done
 link: scripts/residue.js
+done:
+  at: 2026-10-21
+  sha: 1699fa45
+  disposition: done
+  session: 9f451488-d5a6-4838-8cfc-9a451fd4f0e1
 ---
 
 來源：2026-10-21 TODO 全表盤點的 verify，對抗檢查者沒有推翻任何一列，但指出三個缺口（見 .fankeel/build 下該任務的 verify.md）。

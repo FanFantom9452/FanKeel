@@ -2,8 +2,13 @@
 label: audit
 title: docs-audit 不看 README
 description: docs-audit 的漂移檢查不涵蓋 README.md，過時的 README 要靠使用者指出
-state: ready
+state: done
 link: scripts/docs-audit.js
+done:
+  at: 2026-10-21
+  sha: 0ddba2c6
+  disposition: done
+  session: 9f451488-d5a6-4838-8cfc-9a451fd4f0e1
 ---
 
 來源：2026-10-21 TODO 全表盤點（session b7a7d8d4）land 站的 retro 讀完整段對話後列為 backlog，使用者在 land gate 選「全記成 TODO」。
