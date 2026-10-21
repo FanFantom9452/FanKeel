@@ -1381,9 +1381,6 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
 .drow .dc{flex:none;min-width:48px;text-align:right;font-variant-numeric:tabular-nums}
 .drow .dr{flex:none;min-width:44px;text-align:right;color:var(--muted);font-size:11.5px;font-variant-numeric:tabular-nums}
 .dnone{margin:0;padding:10px 6px;border-top:1px solid var(--rule);font-size:12px;color:var(--muted)}
-.dspark{display:flex;align-items:flex-end;gap:2px;width:100%;height:56px;border-bottom:1px solid var(--rule2)}
-.dspark .db{flex:1 1 0;min-width:0;position:relative;border-radius:2px 2px 0 0;background:var(--m-sonnet);outline:none;transition:opacity .2s ease-out,background-color .2s ease-out,transform .2s ease-out}
-.dspark .db.today{background:var(--ink)}
 .dkv{display:flex;gap:18px;margin-top:8px;font-size:12px;color:var(--muted)}
 .dkv b{font:600 12.5px var(--f-mono);color:var(--ink);font-variant-numeric:tabular-nums;margin-left:4px}
 
@@ -1769,11 +1766,7 @@ a.td-rf:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-rad
 :root[data-style=keel] .drow{border-top-color:var(--rule)}
 :root[data-style=keel] .drow .dp{font-family:var(--f-mono);font-size:11px}
 
-/* dash-live: each session drawn as the v5 header — its glyph filling stage by stage, then `0N / 0M stage` */
-:root[data-style=keel] [data-block=dash-live] .drow{display:grid;grid-template-columns:30px minmax(0,1fr) auto;grid-template-areas:"g p r" "g t st";gap:1px 10px;padding:8px 6px;align-items:center}
-:root[data-style=keel] [data-block=dash-live] .dp{grid-area:p;max-width:none}
-:root[data-style=keel] [data-block=dash-live] .dt{grid-area:t;font-weight:600}
-:root[data-style=keel] [data-block=dash-live] .dr{grid-area:r;font-size:11px}
+/* a session's progress: its glyph filling stage by stage, then `0N / 0M stage` */
 :root[data-style=keel] .glyph.prog{grid-area:g;width:30px;height:30px}
 .glyph .gseg.todo{fill:var(--rule2)}
 .glyph .gseg.now{fill:var(--c)}
@@ -1785,14 +1778,9 @@ a.td-rf:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-rad
 .kst i{font-style:normal;color:var(--muted);margin-right:7px}
 .kst u{font:700 12.5px var(--f-ui);text-decoration:underline 2px var(--c);text-underline-offset:4px}
 
-/* waiting-card: all clear reads as the verify frame's green check */
-.okdot{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--good);color:var(--panel);margin-right:8px;vertical-align:-4px}
-.okdot .ico{width:12px;height:12px;stroke-width:2.2}
 :root[data-style=keel] .dnone{color:var(--ink2)}
 
-/* dash-spend: the hook's counter card — pale keel bars, today in full keel; figures as terminal output */
-:root[data-style=keel] .dspark .db{background:var(--keel-mid)}
-:root[data-style=keel] .dspark .db.today{background:var(--keel)}
+/* figures as terminal output */
 :root[data-style=keel] .dkv{align-items:center}
 :root[data-style=keel] .dkv b{background:var(--term);color:var(--term-ink);padding:3px 8px;border-radius:5px;margin-left:6px;font-weight:600}
 
@@ -1800,74 +1788,10 @@ a.td-rf:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-rad
 :root[data-style=keel] .drow .ds[data-st]{font:700 11.5px var(--f-ui);color:color-mix(in srgb,var(--c) 72%,var(--ink));text-decoration:underline 2px var(--c);text-underline-offset:4px}
 :root[data-style=keel] .drow .dc{font-weight:600}
 
-/* ---- dash edit mode (mockup 2026-10-16-station-dashboard): 編輯版面 (#dchtog) is the narrow column's last slot, a
-   dashed tile. Pressed, every card shows a grip, ↑ ↓, a 隱藏 / 顯示 toggle and a dashed outline, a hidden card keeps its
-   header alone, and dash-edit (what changed, 還原預設, 完成) opens under the grid and holds to the window's foot. ---- */
 .btn.go{background:var(--ink);color:var(--panel);border-color:var(--ink)}
 .btn.go:hover{background:var(--ink2);color:var(--panel)}
 .dash{grid-auto-flow:row dense}
-.dash>[data-block=dash-todo]{grid-row:span 2}
-[data-block=dashboard] .dgrip,[data-block=dashboard] .dmv,[data-block=dashboard] .deye,[data-block=dashboard] .doff{display:none}
-[data-block=dashboard] .ico.g24{stroke-width:2}
-[data-block=dashboard] .dmv[data-dmv="-1"] .ico{transform:rotate(180deg)}
-:root[data-style=keel] [data-block=dashboard] #dchtog{justify-content:center;gap:8px;width:100%;min-height:44px;box-sizing:border-box;padding:0 16px;
-  border:1px dashed var(--rule2);border-radius:var(--r);background:transparent;color:var(--ink2);font:600 13px var(--f-ui);box-shadow:none;
-  transition:border-color .15s ease-out,color .15s ease-out,background-color .15s ease-out}
-:root[data-style=keel] [data-block=dashboard] #dchtog:hover{border-color:var(--keel);color:var(--ink);background:var(--wash)}
-:root[data-style=keel] [data-block=dashboard] #dchtog:focus-visible{outline:2px solid var(--keel);outline-offset:2px}
-:root[data-style=keel] [data-block=dashboard] #dchtog .ico{width:15px;height:15px;color:var(--keel)}
-[data-block=dashboard] #dchtog .dts{font-weight:400;color:var(--muted)}
-:root[data-style=keel] .kdash.editing .dadd{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto;align-items:center;column-gap:14px;
-  width:100%;min-height:96px;box-sizing:border-box;padding:16px 18px;border:1.5px dashed var(--keel-mid);border-radius:var(--r);background:transparent;
-  color:var(--ink);font:inherit;text-align:left;cursor:pointer;transition:border-color .15s ease-out,background-color .15s ease-out}
-:root[data-style=keel] .kdash.editing .dadd:hover{border-color:var(--keel);background:var(--keel-tint)}
-:root[data-style=keel] .kdash.editing .dadd:focus-visible{outline:2px solid var(--keel);outline-offset:2px}
-[data-block=dashboard] .dadd .dpl{grid-row:1/3;display:grid;place-items:center;width:36px;height:36px;border-radius:var(--r-pill);background:var(--keel-tint);color:var(--keel-deep)}
-[data-block=dashboard] .dadd .dpl .ico{width:18px;height:18px}
-[data-block=dashboard] .dadd b{align-self:end;font-size:14px;font-weight:700}
-[data-block=dashboard] .dadd small{align-self:start;font-size:12.5px;color:var(--muted)}
-/* every card while editing */
-:root[data-style=keel] .kdash.editing .dcard{outline:1.5px dashed var(--rule2);outline-offset:4px;transition:outline-color .15s ease-out,opacity .15s ease-out}
-:root[data-style=keel] .kdash.editing .dcard:hover,:root[data-style=keel] .kdash.editing .dcard:focus-within{outline-color:var(--keel)}
-:root[data-style=keel] .kdash.editing .dcard.dragging{opacity:.45;outline-color:var(--keel)}
-:root[data-style=keel] .kdash.editing .dcard>:not(.dcard-h){opacity:.55;pointer-events:none;user-select:none}
-:root[data-style=keel] .kdash.editing .dcard-h .dmore{display:none}
-:root[data-style=keel] .kdash.editing :is(.dgrip,.dmv){display:grid;place-items:center;flex:none;width:28px;height:32px;padding:0;border:0;
-  border-radius:var(--r-sm);background:transparent;color:var(--muted);cursor:pointer}
-:root[data-style=keel] .kdash.editing .dgrip{margin-left:-10px;cursor:grab;touch-action:none}
-:root[data-style=keel] .kdash.editing :is(.dgrip,.dmv):hover{background:var(--wash);color:var(--ink)}
-:root[data-style=keel] .kdash.editing .dcard.dragging .dgrip{cursor:grabbing}
-:root[data-style=keel] .kdash.editing .deye{display:inline-flex;align-items:center;gap:6px;flex:none;margin-left:4px;min-height:30px;padding:0 10px;
-  border:1px solid var(--rule2);border-radius:7px;background:var(--panel);color:var(--ink2);font:600 12.5px var(--f-ui);cursor:pointer}
-:root[data-style=keel] .kdash.editing .deye:hover{color:var(--ink);background:var(--wash)}
-:root[data-style=keel] .kdash.editing :is(.deye,.dgrip,.dmv) .ico{width:15px;height:15px}
-:root[data-style=keel] .kdash.editing :is(.dgrip,.dmv,.deye):focus-visible{outline:2px solid var(--keel);outline-offset:1px}
-/* hidden, while editing: the header alone, on the ground, in muted ink, with 已隱藏 beside the title */
-:root[data-style=keel] .kdash.editing .dcard.off{display:block;padding-bottom:0;background:transparent;box-shadow:none}
-:root[data-style=keel] .kdash.editing .dcard.off>:not(.dcard-h){display:none}
-:root[data-style=keel] .kdash.editing .dcard.off .dcard-h{border-bottom:0;color:var(--muted)}
-:root[data-style=keel] .kdash.editing .dcard.off .dcard-h :is(b,.ico,.kn){color:var(--muted);background:none}
-:root[data-style=keel] .kdash.editing .dcard.off .deye{color:var(--keel-deep);border-color:var(--keel-mid);background:var(--keel-tint)}
-:root[data-style=keel] .kdash.editing .dcard.off .doff{display:inline;margin-left:8px;font-size:12px;color:var(--muted)}
-/* dash-edit: under the grid, held to the window's foot while the grid runs past it */
-:root[data-style=keel] [data-block=dash-edit]{grid-column:1/-1;position:sticky;bottom:16px;z-index:2;display:flex;align-items:center;gap:12px;height:52px;
-  box-sizing:border-box;padding:0 8px 0 16px;border-radius:var(--r);background:var(--panel);box-shadow:var(--lift),inset 0 0 0 1px var(--keel-mid);
-  font-size:12.5px;color:var(--ink2)}
-[data-block=dash-edit] .dch-t{display:inline-flex;align-items:center;gap:7px;flex:none;font-size:13px;font-weight:700;color:var(--keel-deep)}
-[data-block=dash-edit] .dch-t .ico{display:block;flex:none;width:15px;height:15px}
-[data-block=dash-edit] .dch-hint{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-[data-block=dash-edit] .dch-hint .ico{display:inline-block;width:13px;height:13px;vertical-align:-2px;color:var(--ink)}
-[data-block=dash-edit] .dch-hint code{font:11.5px var(--f-mono)}
-[data-block=dash-edit] .dch-st{margin-left:auto;flex:none;white-space:nowrap;color:var(--muted)}
-[data-block=dash-edit] .btn{flex:none;gap:6px;min-height:34px}
-[data-block=dash-edit] .btn .ico{width:14px;height:14px}
-[data-block=dash-edit] .btn[disabled]{opacity:.45;cursor:default}
-[data-block=dash-edit] .btn:focus-visible{outline:2px solid var(--keel);outline-offset:2px}
-@media (max-width:1359px){[data-block=dash-edit] .dch-where{display:none}}
-@media (prefers-reduced-motion:reduce){
-  :root[data-style=keel] [data-block=dashboard] #dchtog,:root[data-style=keel] .kdash.editing .dcard,:root[data-style=keel] .kdash.editing .dadd{transition:none}
-}
-/* the eight cards the library adds: a list, bars across, columns, a stack */
+/* the extra cards: a list, bars across, columns, a stack */
 .kdash .xc-list{list-style:none;margin:4px 0 0;padding:0}
 .kdash .xc-list li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:baseline;gap:10px;padding:9px 0;border-top:1px solid var(--rule);font-size:13px}
 .kdash .xc-list li:first-child{border-top:0}
@@ -1891,76 +1815,8 @@ a.td-rf:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-rad
 .kdash .xc-key li::before{content:"";width:10px;height:10px;border-radius:2px;background:var(--c)}
 .kdash .xc-key b{font:600 12px var(--f-mono);color:var(--ink)}
 .kdash .xc-note{margin:10px 0 0;font-size:12px;color:var(--muted)}
-/* dash-library: the picker 新增卡片 opens; it hangs off <body>, so it is styled by its own class */
-.dlib{width:min(640px,calc(100vw - 32px));max-height:min(640px,calc(100vh - 48px));max-width:none;padding:0;border:0;
-  border-radius:var(--r);background:var(--panel);color:var(--ink);box-shadow:var(--lift),inset 0 0 0 1px var(--rule);overflow:hidden}
-/* the scrim is the one raw colour here, as in the TODO quick look: a backdrop sits outside the theme's tokens in some browsers */
-.dlib::backdrop{background:rgba(10,14,20,.5)}
-.dlib[open]{display:flex;flex-direction:column;animation:dlib-in .2s cubic-bezier(.16,1,.3,1)}
-.dlib[open]::backdrop{animation:dlib-fade .2s ease-out}
-@keyframes dlib-in{from{opacity:0;transform:translateY(8px) scale(.985)}}
-@keyframes dlib-fade{from{opacity:0}}
-.dlib-hd{display:flex;align-items:center;gap:10px;flex:none;height:56px;padding:0 10px 0 20px;border-bottom:1px solid var(--rule)}
-.dlib-hd b{font-size:15px;font-weight:700}
-.dlib-sub{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px;color:var(--muted)}
-.dlib-x{margin-left:auto;display:grid;place-items:center;flex:none;width:32px;height:32px;border:0;border-radius:var(--r-sm);background:transparent;color:var(--muted);cursor:pointer}
-.dlib-x:hover{background:var(--wash);color:var(--ink)}
-.dlib-x .ico{width:16px;height:16px}
-.dlib-p{flex:1 1 auto;min-height:0;overflow:auto;padding:6px 20px 10px}
-.dlib-p h3{display:flex;align-items:center;gap:8px;margin:12px 0 2px;font-size:12.5px;font-weight:600;color:var(--muted)}
-.dlib-p h3 .kn{font:700 11.5px var(--f-mono);padding:1px 7px;border-radius:5px;background:var(--inset);color:var(--ink2)}
-.dll{list-style:none;margin:0;padding:0}
-.dll li{display:grid;grid-template-columns:36px minmax(0,1fr) auto;align-items:center;column-gap:14px;padding:11px 0;border-top:1px solid var(--rule)}
-.dll li:first-child{border-top:0}
-.dli{display:grid;place-items:center;width:36px;height:36px;border-radius:var(--r-sm);background:var(--inset);color:var(--keel-deep)}
-.dli .ico{width:18px;height:18px}
-.dll b{display:block;font-size:13.5px;font-weight:700;color:var(--ink)}
-.dll small{display:block;margin-top:1px;font-size:12.5px;color:var(--ink2)}
-.dll .btn{gap:6px;min-width:76px;justify-content:center}
-.dll .btn .ico{width:14px;height:14px}
-.dll .btn[disabled]{background:transparent;border-color:transparent;color:var(--pass-ink);cursor:default}
-.dlib-ft{display:flex;align-items:center;gap:12px;flex:none;padding:12px 16px 12px 20px;border-top:1px solid var(--rule)}
-.dlib-st{min-width:0;font-size:12.5px;color:var(--muted)}
-.dlib-ft .btn{margin-left:auto;flex:none}
-.dlib :focus-visible{outline:2px solid var(--keel);outline-offset:2px}
-@media (prefers-reduced-motion:reduce){.dlib[open],.dlib[open]::backdrop{animation:none}}
 
-/* ---- dash-todo ---- */
-.trow{flex-direction:column;align-items:stretch;gap:3px;padding:8px 6px}
-.trh{display:flex;align-items:baseline;gap:6px;min-width:0}
-.trh .dp{max-width:none;font-size:12px;color:var(--ink2);font-weight:600}
-.tpill{display:inline-flex;align-items:baseline;gap:6px}
-.tn{font:700 15px var(--f-mono);color:var(--keel,var(--ink));font-variant-numeric:tabular-nums;margin-left:4px}
-.tnl{font-size:11px;color:var(--muted)}
-.tq{font:11px var(--f-mono);color:var(--muted);margin-left:8px;white-space:nowrap}
-.tq b{font-weight:600;color:var(--ink2)}
-.trl{list-style:none;margin:0;padding:0 0 0 2px;display:flex;flex-direction:column;gap:1px}
-.trl li{font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-left:12px;position:relative}
-.trl li::before{content:"";position:absolute;left:1px;top:.62em;width:5px;height:5px;border-radius:1px;background:var(--rule2)}
-.trl .tlb{font:11px var(--f-mono);color:var(--muted);margin-right:7px}
-.trl .tmore{color:var(--muted);font-size:12px}
-.trl .tmore::before{content:none}
-.tfoot{font-size:11.5px;line-height:1.5}
-/* keel: a project is the film's folder row; states are the film's tinted pills */
-.fi{width:14px;height:14px;flex:none;align-self:center}
-:root[data-style=keel] .trow{padding:10px 6px 9px;gap:5px}
-:root[data-style=keel] .trh{align-items:center;gap:5px 7px;flex-wrap:wrap}
-:root[data-style=keel] .trh .spacer{flex:1 0 8px}
-:root[data-style=keel] .trh .dp{font:700 12px var(--f-mono);color:var(--ink)}
-:root[data-style=keel] .tpill{align-items:center;gap:4px;padding:1px 8px 1px 6px;border-radius:5px;background:var(--pass-tint);color:var(--pass-ink);margin-left:4px}
-:root[data-style=keel] .tn{color:inherit;font-size:12.5px;margin:0}
-:root[data-style=keel] .tnl{color:inherit;font-weight:600}
-:root[data-style=keel] .tq{padding:1px 6px;border-radius:5px;margin-left:4px}
-:root[data-style=keel] .tq b{color:inherit}
-:root[data-style=keel] .tq[data-st=decision]{background:var(--signal-tint);color:var(--signal-ink)}
-:root[data-style=keel] .tq[data-st=blocked]{background:var(--fail-tint);color:var(--fail-ink)}
-:root[data-style=keel] .tq[data-st=watch]{background:var(--keel-tint);color:var(--keel-deep)}
-:root[data-style=keel] .trl{margin-left:6px;padding-left:12px;border-left:2px solid var(--keel-mid)}
-:root[data-style=keel] .trl li{padding-left:0}
-:root[data-style=keel] .trl li::before{content:none}
-:root[data-style=keel] .trl .tlb{padding:0 5px;border-radius:4px;box-shadow:inset 0 0 0 1px var(--rule2);color:var(--ink2)}
 /* the quick look a project row opens: four tabs by state, the full page one link further */
-.trow{cursor:pointer}
 .tdlg{width:min(600px,calc(100vw - 32px));height:min(560px,calc(100vh - 48px));max-width:none;max-height:none;padding:0;border:0;border-radius:var(--r);background:var(--panel);color:var(--ink);box-shadow:var(--lift,0 12px 32px -8px rgba(0,0,0,.35)),inset 0 0 0 1px var(--rule);overflow:hidden}
 /* the scrim is the one raw colour here: a backdrop sits outside the theme's tokens in some browsers */
 .tdlg::backdrop{background:rgba(10,14,20,.5)}
@@ -2077,23 +1933,6 @@ a.td-rf:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-rad
 :root[data-style=keel] .dcard-h .kn{font:700 11.5px var(--f-mono);padding:1px 7px;border-radius:5px;background:var(--keel-tint);color:var(--keel-deep)}
 :root[data-style=keel] .kdash .dlist{margin-top:4px}
 :root[data-style=keel] .kdash .dlist>.drow:first-child{border-top:0}
-/* dash-spend: the figure and the bars side by side, so the card is one band */
-:root[data-style=keel] .kdash [data-block=dash-spend]{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"h h" "big bars" "kv bars";column-gap:28px;align-items:end}
-:root[data-style=keel] .kdash [data-block=dash-spend] .dcard-h{grid-area:h}
-:root[data-style=keel] .kdash [data-block=dash-spend] .dbig{grid-area:big;margin:14px 0 4px}
-:root[data-style=keel] .kdash [data-block=dash-spend] .dspark{grid-area:bars;height:72px;margin-top:14px}
-:root[data-style=keel] .kdash [data-block=dash-spend] .dkv{grid-area:kv;margin:0;gap:14px}
-/* dash-spend hover: the day lifts and brightens, the rest dim, a tip gives its date and cost */
-.dspark:hover .db:not(:hover),.dspark:focus-within .db:not(:focus-visible){opacity:.35}
-.dspark .db:hover,.dspark .db:focus-visible{opacity:1;transform:translateY(-3px);background:var(--keel,var(--ink))}
-.dspark .db:focus-visible{box-shadow:0 0 0 2px var(--keel,var(--ink))}
-/* An empty day is a hit area, never a bar: it must beat the keel bar and today colours, whose selectors are longer. */
-.dspark .db.none,.dspark .db.none:hover{background:transparent!important;transform:none!important}
-.dspark .db[data-tip]::after{content:attr(data-tip);position:absolute;z-index:3;left:50%;bottom:calc(100% + 9px);white-space:nowrap;padding:4px 8px;border-radius:var(--r-sm);background:var(--ink);color:var(--panel);box-shadow:var(--lift,none);font:400 12px/1.4 var(--f-mono);pointer-events:none;opacity:0;transform:translate(-50%,4px);transition:opacity .12s ease-in,transform .12s ease-in}
-.dspark .db:hover::after,.dspark .db:focus-visible::after{opacity:1;transform:translate(-50%,0)}
-.dspark .db.end::after{left:auto;right:0;transform:translate(0,4px)}
-.dspark .db.end:hover::after,.dspark .db.end:focus-visible::after{transform:translate(0,0)}
-@media(prefers-reduced-motion:reduce){.dspark .db,.dspark .db[data-tip]::after{transition:none}.dspark .db:hover,.dspark .db:focus-visible{transform:none}}
 /* ==== 現在 and the bar (mockup .fankeel/build/2026-10-21-station-home): one-level nav, the jump box, four home groups ==== */
 .hm-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 #navlinks{display:contents}
