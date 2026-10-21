@@ -131,8 +131,9 @@ function main(raw) {
                 const own = prices.costOf(u.models);
                 const theirs = prices.costOf(u.subagents && u.subagents.models);
                 const usd = own.priced.length || theirs.priced.length ? own.usd + theirs.usd : null;
-                notify.fire(profile.profileFor(root, after).values, notify.endEvent(after, usd, sessionId, root),
-                    { configDir: after.configDir || profile.configDirOf() });
+                // The machine profile alone, as hooks/gate.js reads it.
+                const configDir = after.configDir || profile.configDirOf();
+                notify.fire(profile.read(null, configDir).values, notify.endEvent(after, usd, sessionId, root), { configDir });
             }
         } catch (e) { /* housekeeping: a notification never changes the hook */ }
     }

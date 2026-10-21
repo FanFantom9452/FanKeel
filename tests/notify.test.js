@@ -54,7 +54,7 @@ test('notifications are off under node --test unless FANKEEL_NOTIFY_TEST=1', () 
     assert.ok(process.env.NODE_TEST_CONTEXT, 'node --test no longer sets NODE_TEST_CONTEXT: the guard in fire() guards nothing');
     const env = Object.assign({}, process.env);
     delete env.FANKEEL_NOTIFY_TEST;
-    assert.equal(notify.fire(ON, notify.gateEvent(MINE, Q, ID, '/home/me/fankeel'), { base: null, env }), false);
+    assert.equal(notify.fire(ON, notify.gateEvent(MINE, Q, ID), { base: null, env }), false);
 });
 
 test('newTopic is fankeel- and 20 hex digits, fresh each time', () => {
@@ -64,14 +64,14 @@ test('newTopic is fankeel- and 20 hex digits, fresh each time', () => {
 });
 
 test('a gate event: the stage, the first question and the task, each cut to 80', () => {
-    assert.deepEqual(notify.gateEvent(MINE, Q, ID, 'F:\\ymlab\\fankeel'),
+    assert.deepEqual(notify.gateEvent(MINE, Q, ID),
         { kind: 'gate', id: ID, tab: 'gate', title: 'design gate 在等你', message: '核准這份 design？ — ' + TASK });
-    const long = notify.gateEvent(Object.assign({}, MINE, { task: 'x'.repeat(200) }), [{ question: 'q '.repeat(100) }], ID, '/r');
+    const long = notify.gateEvent(Object.assign({}, MINE, { task: 'x'.repeat(200) }), [{ question: 'q '.repeat(100) }], ID);
     const [q, t] = long.message.split(' — ');
     assert.equal(q.length, 80);
     assert.equal(t.length, 80);
     assert.ok(q.endsWith('…') && t.endsWith('…'));
-    assert.equal(notify.gateEvent(MINE, null, ID, '/r').message, TASK, 'no question: the task alone');
+    assert.equal(notify.gateEvent(MINE, null, ID).message, TASK, 'no question: the task alone');
 });
 
 test('a stage event and an end event name the task, the project and the cost', () => {
@@ -87,7 +87,7 @@ test('a stage event and an end event name the task, the project and the cost', (
 });
 
 test('request: only for a trigger turned on, with a topic and a server; the tap opens the phone page', () => {
-    const gate = notify.gateEvent(MINE, Q, ID, '/home/me/fankeel');
+    const gate = notify.gateEvent(MINE, Q, ID);
     const req = notify.request(ON, gate, BASE);
     assert.equal(req.url, 'https://ntfy.sh/');
     assert.deepEqual(req.body, {
@@ -113,7 +113,7 @@ test('request: only for a trigger turned on, with a topic and a server; the tap 
 });
 
 test('what leaves for ntfy is those fields and nothing else of the entry', () => {
-    const req = notify.request(ON, notify.gateEvent(MINE, Q, ID, '/home/me/fankeel'), BASE);
+    const req = notify.request(ON, notify.gateEvent(MINE, Q, ID), BASE);
     assert.deepEqual(Object.keys(req.body).sort(), ['actions', 'click', 'message', 'priority', 'tags', 'title', 'topic']);
     const text = JSON.stringify(req);
     for (const secret of ['lib/secret-path.js', 'a private note', 'private next step', '第二題']) assert.ok(!text.includes(secret), secret + ' left the machine');
@@ -155,7 +155,7 @@ test('fire sends exactly one publish from a detached child', async () => {
     const s = await stub();
     try {
         const values = Object.assign({}, ON, { 'notify.server': s.url });
-        assert.equal(notify.fire(values, notify.gateEvent(MINE, Q, ID, '/home/me/fankeel'), { base: BASE, env: TESTING }), true);
+        assert.equal(notify.fire(values, notify.gateEvent(MINE, Q, ID), { base: BASE, env: TESTING }), true);
         assert.equal(await waitFor(() => s.got.length >= 1, 5000), true, 'no publish reached the stub ntfy');
         await new Promise((r) => setTimeout(r, 700));
         assert.equal(s.got.length, 1, 'exactly one publish');
@@ -169,9 +169,9 @@ test('fire sends exactly one publish from a detached child', async () => {
 
 test('fire never throws, and sends nothing without a request to send', () => {
     assert.equal(notify.fire(null, null, { env: TESTING }), false);
-    assert.equal(notify.fire({}, notify.gateEvent(MINE, Q, ID, '/r'), { base: null, env: TESTING }), false, 'trigger off');
+    assert.equal(notify.fire({}, notify.gateEvent(MINE, Q, ID), { base: null, env: TESTING }), false, 'trigger off');
     assert.equal(notify.fire(ON, { kind: 'nope' }, { base: null, env: TESTING }), false);
-    assert.equal(notify.fire(ON, notify.gateEvent(MINE, Q, ID, '/r'), null), false, 'no options: the guard holds');
+    assert.equal(notify.fire(ON, notify.gateEvent(MINE, Q, ID), null), false, 'no options: the guard holds');
 });
 
 test('scripts/notify.js reads one request off argv and exits 0 whatever happens', () => {

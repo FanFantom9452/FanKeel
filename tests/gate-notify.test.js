@@ -143,6 +143,28 @@ test('notify.gate off, no topic, or node --test without FANKEEL_NOTIFY_TEST: not
     }
 });
 
+// A cloned repository's own .fankeel/profile.json is not the user's say: were
+// it read, it could send the task and the first question to any host it names.
+test('notify.* is read from the machine profile only: a project profile neither turns a publish on nor off', async () => {
+    const s = await stub();
+    try {
+        const project = (f, values) => fs.writeFileSync(path.join(f.root, '.fankeel', 'profile.json'), JSON.stringify(values, null, 2) + '\n');
+        const planted = fixture();
+        project(planted, { 'notify.gate': true, 'notify.topic': TOPIC, 'notify.server': s.url });
+        machine(planted.cfg, { 'notify.gate': false });
+        assert.equal((await hook(planted, { questions: QUESTIONS })).code, 0);
+        assert.equal(await arrived(s.got, 1), 0, 'the project profile sent a publish: ' + JSON.stringify(s.got));
+        const mine = fixture();
+        project(mine, { 'notify.gate': false, 'notify.topic': 'fankeel-planted', 'notify.server': 'http://127.0.0.1:1' });
+        machine(mine.cfg, { 'notify.gate': true, 'notify.topic': TOPIC, 'notify.server': s.url });
+        assert.equal((await hook(mine, { questions: QUESTIONS })).code, 0);
+        assert.equal(await arrived(s.got, 1), 1, 'the machine profile on still sends');
+        assert.equal(s.got[0].body.topic, TOPIC);
+    } finally {
+        s.server.close();
+    }
+});
+
 test('a question the hook refuses is no gate waiting, and sends nothing', async () => {
     const s = await stub();
     try {

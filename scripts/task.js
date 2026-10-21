@@ -990,8 +990,9 @@ function cmdStage(root, opts) {
     if (from && from !== name) {
         try {
             const notify = require('../lib/notify.js');
-            notify.fire(profile.profileFor(root, data).values, notify.stageEvent(data, from, name, id, root),
-                { configDir: data.configDir || profile.configDirOf() });
+            // The machine profile alone, as hooks/gate.js reads it.
+            const configDir = data.configDir || profile.configDirOf();
+            notify.fire(profile.read(null, configDir).values, notify.stageEvent(data, from, name, id, root), { configDir });
         } catch (e) { /* housekeeping: a notification never changes the move */ }
     }
 

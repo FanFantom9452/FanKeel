@@ -192,11 +192,12 @@ function emit(out, payload, root, mine, values) {
     // while the station can still answer. Every `refuse()` returns before
     // `emit`, so a refused question sends nothing. A detached child sends the
     // publish (lib/notify.js): nothing here waits on the network, and nothing
-    // about it reaches this hook's stdout or exit code. `values` is null when
-    // the profile could not be read, and `fire` then sends nothing.
+    // about it reaches this hook's stdout or exit code. The triggers, topic and
+    // server are the machine profile's alone: a cloned repository's own
+    // .fankeel/profile.json could otherwise send the question to any host.
     try {
-        notify.fire(values, notify.gateEvent(mine, payload.tool_input && payload.tool_input.questions, payload.session_id, root),
-            { configDir: mine.configDir || profileLib.configDirOf() });
+        const configDir = mine.configDir || profileLib.configDirOf();
+        notify.fire(profileLib.read(null, configDir).values, notify.gateEvent(mine, payload.tool_input && payload.tool_input.questions, payload.session_id), { configDir });
     } catch (e) { /* housekeeping: a notification never changes the question */ }
     let answers = null;
     try {
