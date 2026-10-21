@@ -970,7 +970,8 @@ tiles (今天 / 近 7 天 / 近 30 天 / 全部) that are also the date filter, 
 card with filters in its head and ten rows a page, sorted on last move, cost
 or elapsed, with the pager and the compare tray in its foot. `recentRows` — a
 session with spend inside the window, or one still `live` — draws the old
-最近 sessions list only when that module is missing.
+最近 sessions list, under `data-block="sessions-head"`, only when that module is
+missing.
 
 **專案**, `#/projects`, is `FK_PROJECTS` (`assets/station/projects-page.js`):
 one head with 總覽 | 分析 and a 7 / 30 / 90 day period control (30 by
