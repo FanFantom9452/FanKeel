@@ -1,0 +1,84 @@
+'use strict';
+// The session page's 對話 tab (assets/station/session-talk.js; design
+// 2026-10-21-station-redesign §4): the turns the station already loads, each
+// one expandable, a stage rule where a stage began, 全部展開 / 收起, the
+// load-more button station.js's talkLoad answers, the 專注 dialog with j / k
+// / o / Esc, and the states a page with no turns can be in.
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const { page, stringsLeft } = require('./station-module.js');
+
+const MIN = 60e3;
+const T0 = Date.parse('2026-10-20T10:00:00.000Z');
+const at = (m) => new Date(T0 + m * MIN).toISOString();
+const ID = 'cccccccc-3333-4333-8333-333333333333';
+const HELD = { total: 7, state: '', turns: [
+    { kind: 'user', at: at(1), text: 'look at the plan' },
+    { kind: 'claude', at: at(2), text: 'Read it.\nTwo tasks.' },
+    { kind: 'compact', at: at(12), trigger: 'auto', preTokens: 317000 },
+    { kind: 'summary', at: at(12), text: 'Summary of what came before' },
+    { kind: 'interrupt', at: at(13), text: '[Request interrupted by user]' }] };
+const STAGES = [{ stage: 'survey', from: T0, to: T0 + 10 * MIN }, { stage: 'build', from: T0 + 10 * MIN, to: T0 + 70 * MIN }];
+const T = () => page(['session-talk.js']).M['session-talk.js'];
+const tab = (html) => html.slice(0, html.indexOf('<dialog'));
+
+test('every turn is an expandable item, a compaction carries its summary, and a stage rule marks where a stage began', () => {
+    const html = tab(T().html(ID, HELD, { stages: STAGES, task: 'talk' }));
+    const items = html.match(/<details class="tx-it [^"]*" data-key="tk-\d+"/g) || [];
+    assert.deepEqual(items.map((s) => /class="tx-it tx-(u|a|cut|n)"/.exec(s)[1]), ['u', 'a', 'cut', 'n']);
+    assert.ok(html.includes('Summary of what came before'), 'the summary is the compaction\'s body');
+    assert.ok(html.includes('317k'));
+    assert.ok(html.indexOf('--st-survey') < html.indexOf('look at the plan'));
+    assert.ok(html.indexOf('look at the plan') < html.indexOf('--st-build'));
+    assert.ok(html.indexOf('--st-build') < html.indexOf('317k'));
+});
+
+test('全部展開 and 專注 sit on the head; more turns load through data-talk', () => {
+    const html = tab(T().html(ID, HELD, {}));
+    assert.ok(html.includes('data-stalk-all="1" aria-pressed="false">全部展開</button>'));
+    assert.ok(html.includes('data-stalk-focus="1"'));
+    assert.ok(html.includes('data-talk="' + ID + '"'));
+    assert.ok(html.includes('再載入 100 輪'));
+    assert.ok(html.includes('已顯示 5 / 7 輪'));
+    const all = T().html(ID, Object.assign({}, HELD, { total: 5 }), {});
+    assert.ok(!all.includes('再載入'), 'nothing left to load');
+});
+
+test('the 專注 dialog repeats the items with the cursor on the first, and names j, k, o and Esc', () => {
+    const html = T().html(ID, HELD, { task: 'talk' });
+    const dlg = html.slice(html.indexOf('<dialog'));
+    assert.ok(dlg.startsWith('<dialog class="tdlg txf" id="stalk-focus"'));
+    assert.equal((dlg.match(/txf-it/g) || []).length, 4);
+    assert.match(dlg, /class="tx-it tx-u txf-it is-cur" data-key="fk-0"/);
+    for (const k of ['<kbd>j</kbd>', '<kbd>k</kbd>', '<kbd>o</kbd>', '<kbd>Esc</kbd>']) assert.ok(dlg.includes(k), k);
+});
+
+test('j and k move the cursor one item and stop at either end', () => {
+    const { step } = T();
+    assert.equal(step(0, 4, 'j'), 1);
+    assert.equal(step(3, 4, 'j'), 3);
+    assert.equal(step(2, 4, 'k'), 1);
+    assert.equal(step(0, 4, 'k'), 0);
+    assert.equal(step(2, 4, 'o'), 2);
+    assert.equal(step(5, 0, 'j'), 0);
+});
+
+test('a page with no turns says why: missing, static, loading, failed, empty', () => {
+    const M = T();
+    assert.ok(M.html(ID, { turns: [], total: null, state: 'missing' }).includes('這台機器上已經沒有這個 session 的 transcript'));
+    assert.ok(M.html(ID, { turns: [], total: null, state: 'static' }).includes('要從 serve 開的頁面才讀得到對話'));
+    assert.ok(M.html(ID, { turns: [], total: null, state: 'loading' }).includes('讀取中…'));
+    const failed = M.html(ID, { turns: [], total: null, state: 'failed' });
+    assert.ok(failed.includes('讀不到對話') && failed.includes('data-talk="' + ID + '"'));
+    assert.ok(M.html(ID, { turns: [], total: 0, state: '' }).includes('transcript 裡沒有可列的對話'));
+    assert.ok(M.html(ID, undefined).includes('讀取中…'));
+});
+
+test('every string has English, and the classes have rules in session-talk.css', () => {
+    const M = T();
+    assert.deepEqual(stringsLeft('session-talk.js', M.EN), []);
+    const css = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'session-talk.css'), 'utf8');
+    for (const name of ['.tx-it', '.tx-u', '.tx-a', '.tx-cut', '.tx-div', '.tx-tools', '.tdlg.txf', '.txf-it.is-cur', 'prefers-reduced-motion']) assert.ok(css.includes(name), name);
+});

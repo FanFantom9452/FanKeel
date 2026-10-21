@@ -1,0 +1,54 @@
+/* assets/station/session-talk.css — the session page's 對話 tab (station redesign §4; mockup
+   _sess/r58-chat.css): your turns in a bubble on the right, Claude's words as plain text, a stage
+   rule where a stage began; 專注 is the conversation alone in a full-viewport dialog. */
+.tx-card{padding-bottom:0}
+.tx-acts{display:inline-flex;gap:6px}
+.tx-tools{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border:0;border-radius:7px;background:transparent;
+  box-shadow:inset 0 0 0 1px var(--rule2);font:600 12px var(--f-ui);color:var(--ink2);cursor:pointer;white-space:nowrap}
+.tx-tools:hover{color:var(--ink);background:var(--wash)}
+.tx-tools.tx-fb{background:var(--keel-tint);box-shadow:none;color:var(--keel-deep)}
+.tx-tools.tx-fb:hover{box-shadow:inset 0 0 0 1px var(--keel)}
+.tx-tools:focus-visible{outline:2px solid var(--keel);outline-offset:1px}
+.tx-scroll{position:relative;max-height:calc(100vh - 340px);min-height:260px;overflow:auto;margin:0 -18px;padding:6px 18px 24px}
+.tx{display:flex;flex-direction:column;max-width:760px;margin:0 auto}
+.tx-it>summary{display:block;list-style:none;cursor:pointer;border-radius:6px}
+.tx-it>summary::-webkit-details-marker{display:none}
+.tx-it>summary:focus-visible{outline:2px solid var(--keel);outline-offset:2px}
+.tx-at{white-space:pre-wrap;overflow-wrap:anywhere}
+.tx-it:not([open])>summary .tx-at{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.tx-it time{font:12px var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.tx-u{align-self:flex-end;max-width:min(560px,82%);margin:14px 0 2px}
+.tx-u>summary{padding:9px 14px;border-radius:16px 16px 4px 16px;background:var(--inset);box-shadow:inset 0 0 0 1px var(--rule);font-size:13.5px;line-height:1.6;color:var(--ink)}
+.tx-u time{display:block;margin-top:3px;text-align:right}
+.tx-a{margin:10px 0 2px;font-size:13.5px;line-height:1.7;color:var(--ink)}
+.tx-a>summary{margin:0 -8px;padding:2px 8px}
+.tx-a>summary:hover{background:var(--wash)}
+.tx-a time{display:block;margin-top:2px}
+.tx-n,.tx-cut{margin:10px 0;font-size:12.5px;color:var(--muted)}
+.tx-n>summary,.tx-cut>summary{display:flex;align-items:baseline;gap:10px;padding:4px 8px;border-radius:6px;background:var(--inset)}
+.tx-n b,.tx-cut b{font:600 12px var(--f-mono);color:var(--ink2)}
+.tx-n time,.tx-cut time{margin-left:auto}
+.tx-ab{margin:8px 0 0;padding:8px 12px;border-left:2px solid var(--rule2);font-size:13px;line-height:1.65;color:var(--ink2);white-space:pre-wrap;overflow-wrap:anywhere}
+.tx-div{display:flex;align-items:center;gap:10px;margin:22px 0 6px;font:12px var(--f-mono);color:var(--muted)}
+.tx-div::before,.tx-div::after{content:"";flex:1;border-top:1px solid var(--rule)}
+.tx-div b{display:inline-flex;align-items:center;gap:7px;font-weight:700;color:var(--ink2)}
+.tx-div b::before{content:"";width:8px;height:8px;border-radius:2px;background:var(--c)}
+.tx-div:first-child{margin-top:8px}
+
+/* ---- 專注 review: the conversation alone, a 760px column, j / k moving a quiet cursor ---- */
+.tdlg.txf{width:100%;height:100%;max-width:none;max-height:none;margin:0;border-radius:0;box-shadow:none}
+.txf-hd{gap:12px;padding:0 12px 0 22px}
+.txf-keys{display:inline-flex;gap:14px;margin-left:auto;font-size:12px;color:var(--muted)}
+.txf-keys>span{display:inline-flex;align-items:center;gap:4px}
+.txf kbd{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:4px;background:var(--inset);box-shadow:inset 0 -1px 0 var(--rule2);font:600 11.5px var(--f-mono);color:var(--ink2)}
+.txf-hd .tdlg-x{margin-left:4px}
+.txf-sc{flex:1 1 auto;min-height:0;overflow:auto;padding:0 64px 45vh;outline:0}
+.txf-tx{max-width:760px;margin:0 auto}
+.txf-tx .tx-div{position:sticky;top:0;z-index:2;margin:0;padding:18px 0 10px;background:var(--panel)}
+.txf-it{position:relative;isolation:isolate}
+.txf-it::before{content:"";position:absolute;inset:-4px -12px;z-index:-1;border-radius:8px;pointer-events:none;opacity:0;transition:opacity .15s ease-out}
+.txf-it.is-cur::before{opacity:1;background:var(--wash);box-shadow:inset 0 0 0 1px var(--rule2)}
+.tdlg.txf[open]{animation:txf-in .18s ease-out}
+@keyframes txf-in{from{opacity:0}}
+@media (prefers-reduced-motion:reduce){.txf-it::before{transition:none}.tdlg.txf[open]{animation:none}}
+@media (max-width:900px){.txf-keys{display:none}.txf-sc{padding:0 16px 45vh}}
