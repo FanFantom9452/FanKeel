@@ -196,7 +196,7 @@ itself, so no view filters a second time. Every aggregation that walks
 the live/stale/down counts `write()` returns for the terminal summary
 (`lib/station.js:1076`, `if (hidden.has(s.project ? r.root + '/' + s.project : r.root)) continue;`),
 the fifth card's gate tally
-(`lib/station.js:777`, `if (hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))) continue;`),
+(`lib/station.js:781`, `if (hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))) continue;`),
 the `docs` list `serialize()` hands the page for the 文件 card
 (`lib/station.js:835`, `docs: (r.docs || []).filter((d) => !hidden.has(d.pkey)),`),
 the profile list `serialize()` hands the page
@@ -455,7 +455,7 @@ between entering the stage it left and the step back.
 the session is live or has ended: a short prose account of how the main loop
 divided dispatch. One line per stage, in the order `seq` first entered it —
 a dispatch's stage is its `out` time run through the same rule
-`lib/detail.js:472`'s `stageWhen` uses: the last `seq` entry at or before it,
+`lib/detail.js:485`'s `stageWhen` uses: the last `seq` entry at or before it,
 or `task 開始前` when there is none. Turn counts come from `x.loops`; a cache
 written before that field existed has none, and the line says so
 (`這份快取沒有逐站回合數（寫於 loops 欄位出現之前）`) instead of printing a
@@ -910,7 +910,7 @@ counted once, across every shown session's gate answers
 filtered set the other four sum. It walks the model rather than
 `flatten()`'s output, so it takes the hidden set as an argument and skips
 those sessions itself
-(`lib/station.js:777`, `if (hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))) continue;`).
+(`lib/station.js:781`, `if (hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))) continue;`).
 While a session's transcript is still there, its source is `lib/detail.js`'s
 own replay; once the transcript is gone, `gateSummary()` falls back to the
 entry's own `gates` (see [registry.md](registry.md)), so this denominator no
@@ -1057,7 +1057,7 @@ registry; the footer on both says when it was generated.
 A session under a hidden project produces no `station/detail/<id>.js`
 either, on every one of those four writes. `write()` walks
 `model.registries` directly for this loop rather than through `flatten()`,
-so it carries its own check (`lib/station.js:1133`, `hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))`):
+so it carries its own check (`lib/station.js:1143`, `hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))`):
 hiding a project after its sessions already had a detail file does not
 delete that file, it just stops being rewritten — nothing in `write()`
 removes a file it once wrote.
