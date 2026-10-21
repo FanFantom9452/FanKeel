@@ -277,9 +277,11 @@ test('the first run scans once and records that it did', () => {
             'the data carries the same count of depth cuts the record does');
     }
 
-    const t1 = Date.now();
+    // A second run that walked the drives again would rewrite `scannedAt`, so
+    // the unchanged stamp below is the proof it did not. Not a stopwatch: the
+    // run's wall time grew past any fixed bound on a busy suite (3103ms on
+    // 10-21) while the stamp stayed put.
     const out2 = execFileSync(process.execPath, [CLI], { cwd: base, env, encoding: 'utf8', timeout: 20000 });
-    const elapsed2 = Date.now() - t1;
     assert.ok(!/first run/.test(out2), 'a second run does not announce a scan');
 
     const after2 = JSON.parse(fs.readFileSync(rootsFile, 'utf8'));
@@ -293,11 +295,6 @@ test('the first run scans once and records that it did', () => {
     assert.deepEqual(after3.scannedAt, after2.scannedAt,
         'a write of the page from outside this CLI leaves the scan record alone');
 
-    // The budget is 5 seconds; a run that actually walked the machine's drives
-    // again would sit near it, the way the first run just did. Three seconds
-    // is comfortably below that and comfortably above what an ordinary run —
-    // read a small registry, render a page — costs.
-    assert.ok(elapsed2 < 3000, 'a run with roots.json already present does not re-walk the drives (took ' + elapsed2 + 'ms)');
     // The first run is the one AUTO_BUDGET_MS exists to bound, and until this
     // line the suite measured it and threw the number away — a budget raised to
     // anything under this test's own 20-second `timeout` shipped green. The
