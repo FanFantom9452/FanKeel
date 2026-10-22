@@ -45,7 +45,13 @@ function main(raw) {
     if (!mine) return;
     const now = Date.now();
     try {
-        phone.append(root, sid, { role: 'assistant', text: String(payload.last_assistant_message || ''), at: now });
+        const reply = String(payload.last_assistant_message || '');
+        // A Stop that fires twice for one turn must not draw two bubbles
+        // (station-46): the last spoken line already saying it is enough.
+        const spoken = phone.chat(root, sid, 0).filter((x) => x.role === 'desktop' || x.role === 'phone' || x.role === 'assistant');
+        const last = spoken[spoken.length - 1];
+        const same = last && last.role === 'assistant' && (last.text === reply || (reply.length > 8000 && last.text === reply.slice(0, 8000) + '…'));
+        if (!same) phone.append(root, sid, { role: 'assistant', text: reply, at: now });
         phone.writeBackground(root, sid, payload.background_tasks, now);
     } catch (e) { /* housekeeping */ }
     if (payload.stop_hook_active !== true) {

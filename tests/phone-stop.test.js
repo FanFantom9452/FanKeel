@@ -41,6 +41,16 @@ test('attached with a message waiting: the Stop blocks with the phone text, even
     assert.deepEqual(phone.chat(p.root, SID, 0).map((x) => [x.role, x.text]), [['assistant', 'done'], ['phone', '跑吧']]);
 });
 
+test('the same reply from two Stops lands once; a repeat after a new message lands again', () => {
+    const p = project(false);
+    fire(p, { last_assistant_message: 'same' });
+    fire(p, { last_assistant_message: 'same' });
+    assert.deepEqual(phone.chat(p.root, SID, 0).map((x) => [x.role, x.text]), [['assistant', 'same']]);
+    phone.append(p.root, SID, { role: 'phone', text: 'again?', at: Date.now() });
+    fire(p, { last_assistant_message: 'same' });
+    assert.deepEqual(phone.chat(p.root, SID, 0).map((x) => x.role), ['assistant', 'phone', 'assistant']);
+});
+
 test('not attached: nothing printed, the reply and the background list recorded, [] clears it', () => {
     const p = project(false);
     const item = { id: 'b1', type: 'shell', status: 'running', description: 'build', command: 'npm run build' };
