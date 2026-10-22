@@ -765,3 +765,12 @@ test('gate.away is off, hint or ask, hint by default', () => {
     assert.equal(r.values['gate.away'], 'hint');
     assert.equal(r.sources['gate.away'], 'builtin');
 });
+
+test('ui.lang is not written to a project file or unset from one', () => {
+    const d = dir();
+    const file = profile.projectFile(d);
+    const r = profile.write(file, 'ui.lang', 'en');
+    assert.equal(r.ok, false);
+    assert.match(r.reason, /--default/);
+    assert.equal(fs.existsSync(file), false);
+});

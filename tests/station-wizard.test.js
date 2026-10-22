@@ -48,8 +48,8 @@ test('wizLoad reads each key from the scope, the machine layer under it, or the 
 test('the summary lists every profile key, design.skill included, with no dropdown', () => {
     const out = summary(load());
     const rows = out.match(/<div class="sr[^"]*" data-key="/g) || [];
-    assert.equal(rows.length, Object.keys(KEYS).length);
-    assert.equal(rows.length, 20);
+    assert.equal(rows.length, Object.keys(KEYS).length - 1, 'ui.lang is machine-only, not offered at project scope');
+    assert.equal(rows.length, 19);
     assert.match(out, /data-key="design\.skill"/);
     assert.match(out, /data-block="wizard-summary"/);
     assert.ok(!out.includes('<select'));
@@ -236,4 +236,11 @@ test('the wizard\'s 省 context habit and PRESETS.lean write the same stage.agen
     W.step = step;
     W = V.wizApply(W, KEYS, PROFILES, { h: String(h) });
     assert.equal(W.val['stage.agents'], 'all');
+});
+
+test('ui.lang is offered on the machine card and not on a project card', () => {
+    const M = V.wizLoad(PROFILES, KEYS, 'machine');
+    M.step = V.WIZ_STEPS.length;
+    assert.match(V.wizHtml(KEYS, M, PROFILES, CTX), /data-key="ui\.lang"/);
+    assert.doesNotMatch(summary(load()), /data-key="ui\.lang"/);
 });

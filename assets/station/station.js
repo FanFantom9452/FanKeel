@@ -2436,6 +2436,8 @@
             + '<button class="ctl" type="button" data-go="' + (n - 1) + '">' + loc('wiz.backToPrev', '← 回上一題') + '</button>' + wizWriteHtml(ch, W, ctx, file) + '</div></div>';
     }
     function wizHtml(keys, W, profiles, ctx) {
+        // ui.lang is read from the machine file only, so a project card must not offer it.
+        if (W.scope !== 'machine' && keys['ui.lang']) { keys = Object.assign({}, keys); delete keys['ui.lang']; }
         var body = W.step >= WIZ_STEPS.length ? wizSummaryHtml(keys, W, profiles, ctx) : wizStepHtml(keys, W, profiles);
         return '<div class="phead"><h1>' + icon('settings') + loc('wiz.settingsHeading', '設定') + '</h1></div><div class="wz play" data-block="wizard">'
             + wizStepsHtml(W) + '<div class="body">' + body + '</div></div>';
