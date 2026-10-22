@@ -1,7 +1,7 @@
 ---
 name: fankeel-survey
 description: The survey stage — read the project's own map before reading its code, classify the work, and report what is already here. Use for the survey stage of a fankeel task, "what is already here", starting work in an unfamiliar repository, or when a task needs classifying as spike, bounded or architectural.
-version: 0.111.65
+version: 0.111.66
 status: current
 last_verified: 2026-10-18
 source_of_truth: lib/stages.js, lib/map.js, scripts/map.js, scripts/survey.js, scripts/layout.js
@@ -298,7 +298,7 @@ belong to this brief only; `agents/fankeel-reader.md` keeps `EXTRACTED` /
 The entry already exists: `task.js start` ran at `/fankeel`, with the class said
 there — or, when none was said, the profile's `class.default`, or all seven
 stages when there is none — and `start` refuses an active entry
-(`scripts/task.js:585`, `already owns an active task`). What this step writes is
+(`scripts/task.js:586`, `already owns an active task`). What this step writes is
 the class step 5 arrived at, when it differs:
 
 ```
