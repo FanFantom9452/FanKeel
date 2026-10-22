@@ -338,6 +338,18 @@ test('ui.lang is zh or en, unset by default, and a wizard key', () => {
     assert.equal(profile.read(null, cfg).values['ui.lang'], 'en');
 });
 
+test('ui.lang in a project file is ignored: only the machine file sets it', () => {
+    const d = dir();
+    const cfg = path.join(d, 'cfg');
+    fs.mkdirSync(path.join(d, '.fankeel'), { recursive: true });
+    fs.writeFileSync(profile.projectFile(d), JSON.stringify({ 'ui.lang': 'en' }));
+    assert.equal(profile.read(d, cfg).values['ui.lang'], undefined);
+    assert.equal(profile.write(profile.machineFile(cfg), 'ui.lang', 'zh').ok, true);
+    const got = profile.read(d, cfg);
+    assert.equal(got.values['ui.lang'], 'zh');
+    assert.equal(got.sources['ui.lang'], 'machine');
+});
+
 test('a preset only sets keys that exist, to values the table accepts', () => {
     assert.deepEqual(Object.keys(profile.PRESETS), ['manual', 'balanced', 'lean']);
     for (const [id, preset] of Object.entries(profile.PRESETS)) {
