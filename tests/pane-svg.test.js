@@ -454,6 +454,22 @@ test('paneParts: a task titled like a station keeps its title row as Text and th
     assert.equal(svgs[0].alt, 'survey › design › plan › build › verify\nland');
 });
 
+test('paneParts passes input.lang to the route graph: en draws no Chinese, zh and unset do', async () => {
+    const { paneParts } = await load('pane-svg');
+    const CJK = /[㐀-鿿]/;
+    const rows = [
+        { block: 'task', segs: [] },
+        { block: 'task', segs: [{ text: '▌' }, { text: 'build the thing' }] },
+        { block: 'task', segs: [{ text: '▌' }, { text: 'survey' }, { text: ' › ' }, { text: 'design' }] },
+        { block: 'task', segs: [{ text: '▌' }, { text: 'plan' }, { text: ' › ' }, { text: 'build' }] },
+    ];
+    const base = { id: 'x', entry, others: [], plan: null, cols: 41, room: 60, now: NOW };
+    const svgOf = (extra) => paneParts(Object.assign({}, base, extra), rows).find((p) => 'source' in p).source;
+    assert.doesNotMatch(svgOf({ lang: 'en' }), CJK);
+    assert.match(svgOf({ lang: 'zh' }), CJK);
+    assert.match(svgOf({}), CJK);
+});
+
 test('the band Svg ctx follows the TokenBar tier of the window', async () => {
     const { bandRow2Svg } = await load('pane-svg');
     const row = (ctx) => bandRow2Svg(bandInput({ context: ctx, limits: [], others: [] }));
