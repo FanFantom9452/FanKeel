@@ -1074,7 +1074,7 @@ function seedOverflow(root, stage, extra = {}) {
 test('the 2026-10-08 brief that Claude Code saved to a file now fits for a build brain and a plan brain, naming the facts it dropped', () => {
   for (const stage of ['build', 'plan']) {
     const root = tmp();
-    seedProfile(root, { 'stage.agents': ['build', 'plan'], language: '繁體中文' });
+    seedProfile(root, { 'stage.agents': ['build', 'plan'], 'model.lang': '繁體中文' });
     // The build rules left the brief for the agent file (brief-4); a longer task puts it over the cap again.
     const ctx = seedOverflow(root, stage, { task: 'rework the ramp: ' + 'x'.repeat(1500) });
     const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain', agent_id: 'a1' })));
@@ -1090,7 +1090,7 @@ test('the 2026-10-08 brief that Claude Code saved to a file now fits for a build
 
 test('the same task with six long answers fits too, naming the answers it dropped', () => {
   const root = tmp();
-  seedProfile(root, { 'stage.agents': ['build'], language: '繁體中文' });
+  seedProfile(root, { 'stage.agents': ['build'], 'model.lang': '繁體中文' });
   seedOverflow(root, 'build', { route: ROUTE });
   const answers = {};
   for (let i = 1; i <= 6; i++) answers['Question ' + i + ': ' + 'q'.repeat(110)] = 'a'.repeat(150);
@@ -1107,7 +1107,7 @@ test('the same task with six long answers fits too, naming the answers it droppe
 // test pins is that fit() went as far as it can, and no further.
 test('a brief over the cap at the floor keeps one touched path and names every dropped fact and answer', () => {
   const root = tmp();
-  seedProfile(root, { 'stage.agents': ['build'], language: '繁體中文' });
+  seedProfile(root, { 'stage.agents': ['build'], 'model.lang': '繁體中文' });
   seedOverflow(root, 'build', { route: ROUTE, task: 'rework the ramp: ' + 'x'.repeat(5000) });
   const answers = {};
   for (let i = 1; i <= 6; i++) answers['Question ' + i + ': ' + 'q'.repeat(110)] = 'a'.repeat(150);
@@ -1130,7 +1130,7 @@ test('a build brain brief fits at a workspace root of 150 characters or more, it
   const root = path.join(tmp(), 'w'.repeat(45), 'x'.repeat(45), 'y'.repeat(45));
   fs.mkdirSync(root, { recursive: true });
   assert.ok(root.length >= 150, 'the root must be long: ' + root.length);
-  seedProfile(root, { 'stage.agents': ['build'], language: '繁體中文' });
+  seedProfile(root, { 'stage.agents': ['build'], 'model.lang': '繁體中文' });
   seedOverflow(root, 'build', { route: ROUTE });
   const answers = {};
   for (let i = 1; i <= 6; i++) answers['Question ' + i + ': ' + 'q'.repeat(110)] = 'a'.repeat(150);
@@ -1149,7 +1149,7 @@ test('a build brain brief at a 150-character root keeps its worktree line absolu
   const root = path.join(tmp(), 'w'.repeat(45), 'x'.repeat(45), 'y'.repeat(45));
   fs.mkdirSync(root, { recursive: true });
   assert.ok(root.length >= 150, 'the root must be long: ' + root.length);
-  seedProfile(root, { 'stage.agents': ['build'], language: '繁體中文' });
+  seedProfile(root, { 'stage.agents': ['build'], 'model.lang': '繁體中文' });
   seedOverflow(root, 'build', { route: ROUTE, worktree: { path: '.fankeel/worktrees/abcd1234', branch: 'fankeel/wt-test' } });
   const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain', agent_id: 'a1' })));
   const abs = path.resolve(root, '.fankeel/worktrees/abcd1234').split(path.sep).join('/');

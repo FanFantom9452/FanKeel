@@ -93,7 +93,7 @@ translating it.
 
 ## Controlled Chinese
 
-Where the profile's `language` is 繁體中文, prose for the user follows
+Where the profile's `model.lang` is 繁體中文, prose for the user follows
 [plain-language.md](../../docs/90-agent/reference/plain-language.md): one
 thing per sentence, at most 160 columns, the result first, and a name instead
 of a code. A controlled stage's gate is sent back past either limit

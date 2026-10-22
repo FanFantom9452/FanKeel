@@ -874,20 +874,20 @@ test('prompt.all rides every stage\'s block and the stage agent\'s brief; prompt
 
 // TODO 〔stage〕: the brief is English and a stage agent followed it, writing
 // report and gate in English to a user who writes Traditional Chinese. The
-// profile's `language` names the language; unset, the brief says nothing.
+// profile's `model.lang` names the language; unset, the brief says nothing.
 test('a stage agent\'s brief names the profile\'s language for its report and gate; a reader\'s does not, nor a profile without it', () => {
   const { renderBrief } = require('../lib/render.js');
   const base = { 'stage.agents': NAMES.slice(), 'dispatch.floor': 'sonnet' };
-  const on = { values: Object.assign({ language: '繁體中文' }, base), sources: {}, unreadable: [] };
+  const on = { values: Object.assign({ 'model.lang': '繁體中文' }, base), sources: {}, unreadable: [] };
   const mine = entry(MINE, { stage: 'plan', started: '2026-09-19T09:30:12.345Z' });
-  const phrase = 'in 繁體中文 (profile `language`)';
+  const phrase = 'in 繁體中文 (profile `model.lang`)';
   const brain = renderBrief({ mine, agentType: 'fankeel:fankeel-brain', root: '/r', profile: on });
   assert.ok(brain.includes('\n  - Write your report\'s prose and every gate string'), 'the stage agent\'s brief');
   assert.ok(brain.includes(phrase), 'the stage agent\'s brief names the language');
   const reader = renderBrief({ mine, agentType: 'fankeel:fankeel-reader', root: '/r', profile: on });
-  assert.ok(!reader.includes('(profile `language`)'), 'a reader\'s brief');
+  assert.ok(!reader.includes('(profile `model.lang`)'), 'a reader\'s brief');
   const unset = renderBrief({ mine, agentType: 'fankeel:fankeel-brain', root: '/r', profile: { values: base, sources: {}, unreadable: [] } });
-  assert.ok(!unset.includes('(profile `language`)'), 'no language, no line');
+  assert.ok(!unset.includes('(profile `model.lang`)'), 'no language, no line');
 });
 
 // docs/plans/2026-09-26-three-ready.md Task 1. Relative to the registry root,
