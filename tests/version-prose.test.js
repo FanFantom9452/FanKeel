@@ -12,11 +12,14 @@ const path = require('node:path');
 const ROOT = path.join(__dirname, '..');
 const flat = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8').replace(/\s+/g, ' ');
 
-test('the version prose says sixteen files and fourteen skills, and fifteen nowhere', () => {
-  for (const rel of ['CONTRIBUTING.md', 'docs/01-guide/development.md', 'skills/fankeel-land/SKILL.md']) {
+const COUNTED = ['CONTRIBUTING.md', 'docs/01-guide/development.md', 'skills/fankeel-land/SKILL.md'];
+
+test('the version prose counts seventeen files and fifteen skills', () => {
+  for (const rel of COUNTED) {
     const text = flat(rel);
-    assert.match(text, /sixteen/i, rel);
-    assert.doesNotMatch(text, /fifteen (files|places)/i, rel);
-    assert.doesNotMatch(text, /thirteen skills/i, rel);
+    assert.match(text, /seventeen/i, rel);
+    assert.doesNotMatch(text, /sixteen (files|places)/i, rel);
+    assert.doesNotMatch(text, /fourteen skills/i, rel);
   }
+  assert.match(flat('docs/01-guide/development.md'), /fifteen skills/i);
 });

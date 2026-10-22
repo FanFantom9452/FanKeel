@@ -276,7 +276,7 @@ test('every file that carries the version carries the same one', () => {
     found.set(rel, m[1]);
   }
 
-  assert.equal(found.size, 16, 'the count moved: ' + [...found.keys()].join(', '));
+  assert.equal(found.size, 17, 'the count moved: ' + [...found.keys()].join(', '));
   const versions = [...new Set(found.values())];
   assert.equal(versions.length, 1,
     'versions disagree — ' + [...found].map(([f, v]) => f + ' ' + v).join(', '));
