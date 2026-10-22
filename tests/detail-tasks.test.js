@@ -41,7 +41,7 @@ test('tasks come from the plan, status from the ledger, groups from plantasks; t
             { n: 3, title: 'three', status: 'no ledger line', range: null, fixes: 0, turns: [], modify: ['a.js'], test: [], read: [], consumes: [], produces: [], dispatch: null, model: '', effort: '', waits: [{ n: 1, kind: 'files', file: 'a.js' }] },
         ],
         groups: [
-            { g: 1, tasks: [1, 2], surface: 'workflow', turns: [4, 6], hint: true },
+            { g: 1, tasks: [1, 2], surface: 'agents', turns: [4, 6], hint: true },
             { g: 2, tasks: [3], surface: 'agent', turns: [], hint: false },
         ],
         unmatched: ['Plan reviewer'],

@@ -633,8 +633,8 @@ function workflowFile(root, planOpt, group) {
         fail('fankeel ledger — group ' + n + ' is `' + row.surface + '`, not `workflow`: send its tasks as Agents.');
     }
     const sent = tasks.filter((t) => row.tasks.includes(t.n) && t.dispatch === 'implementer');
-    if (sent.length < 2) {
-        fail('fankeel ledger — group ' + n + ' sends ' + sent.length + ' implementers, fewer than two: send them as Agents.');
+    if (sent.length < 3) {
+        fail('fankeel ledger — group ' + n + ' sends ' + sent.length + ' implementers, fewer than three: send them as Agents.');
     }
     const briefs = {};
     for (const t of sent) briefs[t.n] = writeBrief(root, planOpt, t.n);

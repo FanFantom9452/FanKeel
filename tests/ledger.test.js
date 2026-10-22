@@ -274,12 +274,13 @@ test('groups prints workflow for three disjoint tasks when build is not on stage
 
 const TWO_DISJOINT = THREE_DISJOINT.split('## Task 3: three')[0];
 
-test('groups prints workflow for two disjoint tasks when build is not on stage.agents, and agents when it is', () => {
+test('groups prints agents for two disjoint tasks, whether or not build is on stage.agents', () => {
   const dir = root();
   const plan = path.join(dir, 'plan.md');
   fs.writeFileSync(plan, TWO_DISJOINT);
   const before = execFileSync(process.execPath, [SCRIPT, '--root', dir, '--plan', plan, 'groups'], { encoding: 'utf8' });
-  assert.match(before, /1: 1, 2 {2}— workflow/);
+  assert.match(before, /1: 1, 2 {2}— agents/);
+  assert.doesNotMatch(before, /— workflow/);
   fs.mkdirSync(path.join(dir, '.fankeel'), { recursive: true });
   fs.writeFileSync(path.join(dir, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': ['build'] }));
   const after = execFileSync(process.execPath, [SCRIPT, '--root', dir, '--plan', plan, 'groups'], { encoding: 'utf8' });

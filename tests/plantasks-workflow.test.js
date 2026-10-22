@@ -1,6 +1,6 @@
 'use strict';
 
-// A stage agent has no Workflow tool, so a group of two or more disjoint
+// A stage agent has no Workflow tool, so a group of three or more disjoint
 // tasks is written as a script the session holding that tool opens by path.
 // The script is run here the way the host runs it — plain JavaScript with
 // `agent` and `pipeline` in scope and top-level await and return — minus the
@@ -106,16 +106,10 @@ test('an implementer that returned nothing gets no reviewer', async () => {
   assert.deepEqual(result[1], { n: 2, implementer: null, review: null });
 });
 
-test('a group sending fewer than two implementers has no script', () => {
-  assert.equal(workflowScript(TASKS, [1], OPTS), null);
-  const inSession = plan('implementer, sonnet', 'in-session — one shell call.', 'in-session — one shell call.');
+test('a group sending fewer than three implementers has no script', () => {
+  assert.equal(workflowScript(TASKS, [1, 2], OPTS), null);
+  const inSession = plan('implementer, sonnet', 'implementer, sonnet', 'in-session — one shell call.');
   assert.equal(workflowScript(inSession, [1, 2, 3], OPTS), null);
-});
-
-test('a group sending two implementers gets a script naming both', () => {
-  const script = workflowScript(TASKS, [1, 2], OPTS);
-  const meta = JSON.parse(script.split('\n')[0].replace(/^export const meta = /, '').replace(/;$/, ''));
-  assert.match(meta.description, /Tasks 1, 2$/);
 });
 
 test('a task with no model on its Dispatch line is refused by name', () => {
