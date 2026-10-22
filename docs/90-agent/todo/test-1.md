@@ -35,6 +35,6 @@ stamp: 2026-10-21
 
 2026-10-20：任務「retro 存成完整單檔」的 land 在 235138ca 上連跑三次整套：兩次 4922 過、1 失敗，紅的都是 station-cli 的「the first run scans once and records that it did」；第三次 4923 全過，但那一條跑了 13.8 秒，當時有 19 個 node、14 個 claude 行程。原因是那條斷言量整個 CLI 的耗時，除了走磁碟，還含寫 roots.json、寫頁面與行程開銷，這些不受 `AUTO_BUDGET_MS` 管，機器忙時就會超過 9 秒。已改成 `autoScan` 把走磁碟本身的毫秒數記進 `scannedAt.ms`，測試檢查它小於 7 秒。這一條不再算候選；其他紅過的測試仍照本條觀察。
 
-2026-10-20（同一天稍晚）：修掉 station-cli 那條之後，在 2242c6bf 上透過 suite.js 再跑：一次紅的仍記成 station-cli 那條，一次用 relay 保留 TAP，紅的換成 await 測試檔的「gate page: survey, design and build print the gate tab」（`tests/await.test.js:561`，survey 那一輪少了 `page:` 行），那個檔單獨跑三次都是 38 條全過；再跑一次整套 4923 全過。紅的測試又換了一條，負載仍是候選原因；完整 TAP 存在 `.fankeel/build/task-20261020T124214/flaky-run-4.txt`。
+2026-10-20（同一天稍晚）：修掉 station-cli 那條之後，在 2242c6bf 上透過 suite.js 再跑：一次紅的仍記成 station-cli 那條，一次用 relay 保留 TAP，紅的換成 await 測試檔的「gate page: survey, design and build print the gate tab」（`tests/await.test.js:563`，survey 那一輪少了 `page:` 行），那個檔單獨跑三次都是 38 條全過；再跑一次整套 4923 全過。紅的測試又換了一條，負載仍是候選原因；完整 TAP 存在 `.fankeel/build/task-20261020T124214/flaky-run-4.txt`。
 
 2026-10-21：盤點任務「TODO 全表盤點」的 land 在 603a7f5e 上跑整套，前兩輪紅的都是 station-cli 的「the first run scans once and records that it did」，這次是第二次執行的 3 秒牆鐘門檻（量到 3103ms），不是 10-20 修過的第一次執行那條。該檔單獨跑 12 過。這個門檻量的是整支 CLI 含 node 啟動的時間，機器忙就會超過；而同一條測試已經檢查第二次執行沒有宣告掃描、`scannedAt` 時間戳記沒被改寫，這兩項才是「沒有重掃」的證據。使用者決定拿掉這個 3 秒門檻、保留時間戳記檢查；變異測試把 `scripts/station.js` 的 `firstRun` 改成恆真，這條測試照樣變紅。
