@@ -1265,7 +1265,7 @@ off the data file: open entries in the index's order, and done ones newest
 first where the project keeps entry files. Two sub-routes open the project
 page on the panel: `#/p/<pkey>/todo` scrolls the panel into view, and
 `#/p/<pkey>/todo/<id>` the open entry `<id>` in it — each open row carries
-`id="todo-<id>"` — or the panel when that entry is not open. The scroll
+`id="todo-<id>"` — or the panel when that entry is not open. Each state group's heading in the panel carries `id="todo-state:<state>"`, so `#/p/<pkey>/todo/state%3A<state>` scrolls to that group. The scroll
 happens once, after the first draw that has the panel, and not again on the
 3-second redraw. The Pane's TODO buttons open these, building the pkey from
 the engine's root; a pkey that differs from a session's only in the
