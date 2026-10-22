@@ -50,7 +50,7 @@ without it? If nothing, delete it.
 
 A product kept as a file is dispatched: a guide page or `README.md` to
 `fankeel-writer`, any other file to `fankeel-implementer` with these rules in
-its brief. Only what is said in chat is written here.
+its brief; say how many and on which model in the response that sends it. Only chat is written here.
 
 ## A status sync or a project init
 
