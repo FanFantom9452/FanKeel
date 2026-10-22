@@ -6048,8 +6048,23 @@
         form.set('scope', 'machine');
         form.set('key', 'ui.lang');
         form.set('value', lang);
-        var again = function () { w.location.reload(); };
-        fetch('profile', { method: 'POST', body: form }).then(again, again);
+        // A failed write is not followed by a reload: pick() would read the
+        // old machine ui.lang back and the page would show it with no word.
+        var failed = function () {
+            var n = doc.getElementById('langnote');
+            if (!n) {
+                n = doc.createElement('div');
+                n.id = 'langnote';
+                n.setAttribute('role', 'status');
+                n.setAttribute('aria-live', 'polite');
+                n.className = 'dead';
+                (doc.body || doc.documentElement).appendChild(n);
+            }
+            n.textContent = loc('cmp.langWriteFailed', '語言沒有存成功，沒有切換。');
+        };
+        fetch('profile', { method: 'POST', body: form }).then(function (res) {
+            if (res && res.ok) w.location.reload(); else failed();
+        }, failed);
     });
     // The language menu (r-0036): the globe button opens and shuts #langpop;
     // a click anywhere else, or Escape, shuts it. Picking a language is the

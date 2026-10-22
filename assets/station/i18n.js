@@ -1007,6 +1007,7 @@
             'todo.stationTag': '[station]',
             'todo.colon': ': ',
             // cmp — the compare page
+            'cmp.langWriteFailed': 'The language was not saved, so it was not switched.',
             'cmp.startedAtDot': '{t} started · ',
             'cmp.dotNSegments': ' · {n} segments',
             'cmp.idContextNPointsPeak': '{id}’s context, {n} points, peak {peak}',

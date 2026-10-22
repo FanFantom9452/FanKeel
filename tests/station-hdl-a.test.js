@@ -215,6 +215,27 @@ test('lang: served, the press writes ui.lang to the machine profile and reloads 
     assert.equal(p.reloads, 1);
 });
 
+// A write that failed keeps the old language on the machine profile, which pick() puts ahead of the browser's; a reload would show it silently.
+const failedWrite = async (fetchFn) => {
+    const p = boot({ i18n: { ret: true }, serve: true, nonce: 'n0', fetch: fetchFn });
+    langPress(p, 'en');
+    await new Promise((r) => setImmediate(r));
+    return p;
+};
+const noteOf = (p) => p.els.langnote;
+
+test('lang: served, a write answered not-ok does not reload and shows a notice', async () => {
+    const p = await failedWrite(() => Promise.resolve({ ok: false }));
+    assert.equal(p.reloads, 0);
+    assert.match(noteOf(p).textContent, /不|沒/);
+});
+
+test('lang: served, a write that is rejected does not reload and shows a notice', async () => {
+    const p = await failedWrite(() => Promise.reject(new Error('down')));
+    assert.equal(p.reloads, 0);
+    assert.match(noteOf(p).textContent, /不|沒/);
+});
+
 test('lang: a page not served writes no profile and reloads at once', () => {
     const f = profileFetch();
     const p = boot({ i18n: { ret: true }, fetch: f.fn });
