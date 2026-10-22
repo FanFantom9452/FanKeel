@@ -36,7 +36,11 @@ node <plugin>/scripts/task.js profile set station.remote true --confirm --defaul
 
 ## Windows：`spawnSync tailscale ENOENT`
 
-在 Windows 上，卡片若寫著 `tailscale is not installed or not answering: spawnSync tailscale ENOENT`，原因通常是 Claude Code 在裝 Tailscale 之前就已經開著。監控站是直接呼叫 `tailscale` 這個指令名，沒有寫死路徑，所以要靠啟動它的程序 PATH 裡有 `C:\Program Files\Tailscale\`；舊程序的 PATH 是裝之前的樣子。處理方式：關掉 Claude Code（或那個 terminal）再重開，讓它拿到新的 PATH，然後重啟監控站（`/fankeel-station`）。
+Tailscale 的 Windows 安裝程式把 `tailscale.exe` 放在 `%ProgramFiles%\Tailscale\`。
+監控站先照 PATH 找 `tailscale`；找不到（`ENOENT`）時，自動改用
+`%ProgramFiles%\Tailscale\tailscale.exe`，不必重開監控站。
+
+只有裝在別的位置時才需要處理：把那個資料夾加進 PATH，再重開監控站。
 
 ## 成功的樣子
 
