@@ -100,8 +100,8 @@ test('a project station.hide takes off the phone too, and nothing private rides 
     assert.deepEqual(m.tasks.map((g) => g.id), ['shown']);
     const text = JSON.stringify(m);
     assert.ok(!text.includes('lib/private.js') && !text.includes('"private"'), 'claims and notes stay on this machine');
-    assert.deepEqual(mobile.mobileModel({ registries: [] }, NOW, 'h'), { host: 'h', at: NOW, gates: [], tasks: [], done: [] });
-    assert.deepEqual(mobile.mobileModel(null, NOW, null), { host: '', at: NOW, gates: [], tasks: [], done: [] });
+    assert.deepEqual(mobile.mobileModel({ registries: [] }, NOW, 'h'), { host: 'h', at: NOW, gates: [], tasks: [], stopped: [], done: [] });
+    assert.deepEqual(mobile.mobileModel(null, NOW, null), { host: '', at: NOW, gates: [], tasks: [], stopped: [], done: [] });
 });
 
 test('the /m shell: the keel look, its manifest and icon, both stylesheets, the phone script', () => {
@@ -139,4 +139,14 @@ test('subscribeOf: an app link and a web link only when a trigger is on, a topic
     assert.equal(mobile.subscribeOf(Object.assign({}, v, { 'notify.topic': '' })), null);
     assert.equal(mobile.subscribeOf(Object.assign({}, v, { 'notify.server': 'ntfy.sh' })), null);
     assert.equal(mobile.subscribeOf(null), null);
+});
+
+test('stopped: a session no longer live whose gate still holds, and nothing else', () => {
+    const m = mobile.mobileModel(model([
+        row({ sessionId: 'live', pending: waiting(NOW - 60e3, NOW + 30e3) }),
+        row({ sessionId: 'gone', state: 'stale', pending: waiting(NOW - 60e3, NOW + 30e3) }),
+        row({ sessionId: 'over', state: 'stale', pending: waiting(NOW - 600e3, NOW - 1) }),
+    ]), NOW, 'ymlab-pc');
+    assert.deepEqual(m.stopped.map((x) => [x.id, x.state]), [['gone', 'gate']]);
+    assert.deepEqual(m.tasks.map((x) => x.id), ['live']);
 });

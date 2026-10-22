@@ -1585,6 +1585,8 @@ out (nothing answers, or the server refuses) is one line in
 the server's host and `unreachable or refused`, never the topic or the
 message, the last 20 kept (`recordFailure` in `scripts/notify.js`).
 
+A session that stopped while its gate still holds is listed under its own heading, 停了但還在等你答, after the idle ones: `mobileModel` returns it in `stopped` (`lib/mobile.js`), not in `tasks`, so it is never counted as running, and its row opens the same answerable gate screen as a live one (station-47).
+
 ## When a tuned block is done
 
 Each live session's row carries its project's tune queue (`tuneOf` in

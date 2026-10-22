@@ -23,6 +23,7 @@ const ASSETS = path.join(__dirname, '..', 'assets', 'station');
 const NAME = 'ymlab-pc.tail1234.ts.net';
 const ONE = 'ffffffff-8888-4888-8888-888888888881';
 const TWO = 'ffffffff-8888-4888-8888-888888888882';
+const GONE = 'cccccccc-0000-4000-8000-0000000000c3';
 const Q = [{ question: '核准這份 design？', header: 'design', multiSelect: false,
     options: [{ label: '核准，進 plan (Recommended)', description: 'a' }, { label: '暫停', description: 'b' }] }];
 
@@ -174,4 +175,19 @@ test('the phone home draws one 等你答 chip for each gate /station/mobile.json
     const P = require('../assets/station/mobile.js');
     const html = P.screen(json, P.parseRoute('#/'), json.at, { mode: 'app' });
     assert.equal((html.match(/<span class="st ask">/g) || []).length, json.gates.length);
+}));
+
+test('a session that stopped while its gate holds is drawn in its own group on the phone home', () => served(true, async (s) => {
+    const data = { task: '手機版測站 stopped', stage: 'plan', route: ['survey', 'plan'], active: true, claims: [],
+        started: '2026-10-21T09:00:00.000Z', updated: new Date().toISOString(), configDir: s.cfg };
+    registry.writeSession(s.r1, GONE, data);
+    const file = pendingPath(s.r1, data, 'plan');
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, JSON.stringify({ questions: Q, at: Date.now() - 10e3, until: Date.now() + 300e3 }));
+    const json = JSON.parse((await get(s.port, '/station/mobile.json', phone(s.cfg))).text);
+    assert.deepEqual(json.stopped.map((x) => x.id), [GONE]);
+    const P = require('../assets/station/mobile.js');
+    const html = P.screen(json, P.parseRoute('#/'), json.at, { mode: 'app' });
+    assert.match(html, /class="ha-gone/);
+    assert.ok(html.includes('href="#/s/' + GONE + '"'));
 }));

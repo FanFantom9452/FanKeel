@@ -18,7 +18,7 @@
         zh: {
             'home.title': 'Session', 'home.hist': '完成的任務', 'home.sub': '訂閱通知', 'home.subWeb': '網頁', 'home.empty': '沒有在跑的 session',
             'sum.ask': '<b>{n}</b> 個等你', 'sum.run': '<b>{n}</b> 個在跑', 'sum.idle': '<b>{n}</b> 個閒置',
-            'grp.ask': '等你答', 'grp.run': '在跑', 'grp.idle': '停下來',
+            'grp.ask': '等你答', 'grp.run': '在跑', 'grp.idle': '停下來', 'grp.gone': '停了但還在等你答',
             'st.ask': '等你答', 'st.held': '手機接著', 'st.run': '跑中', 'st.bg': '背景跑中 · {n}', 'st.idle': '閒置',
             'home.go': '去答', 'home.left': '剩 {t}', 'home.more': '+{n} 個', 'home.you': '你：', 'home.stopped': '停下來了，沒有在跑的工作',
             'chat.back': '回 Session 清單', 'chat.log': '對話', 'chat.gone': '這個 session 不在了',
@@ -53,7 +53,7 @@
         en: {
             'home.title': 'Session', 'home.hist': 'Finished tasks', 'home.sub': 'Get notified', 'home.subWeb': 'Web', 'home.empty': 'No session is running',
             'sum.ask': '<b>{n}</b> need you', 'sum.run': '<b>{n}</b> running', 'sum.idle': '<b>{n}</b> idle',
-            'grp.ask': 'Needs you', 'grp.run': 'Running', 'grp.idle': 'Stopped',
+            'grp.ask': 'Needs you', 'grp.run': 'Running', 'grp.idle': 'Stopped', 'grp.gone': 'Stopped, still asking',
             'st.ask': 'Needs you', 'st.held': 'On phone', 'st.run': 'Running', 'st.bg': 'Background · {n}', 'st.idle': 'Idle',
             'home.go': 'Answer', 'home.left': '{t} left', 'home.more': '+{n} more', 'home.you': 'You: ', 'home.stopped': 'Stopped, nothing running',
             'chat.back': 'Back to sessions', 'chat.log': 'Conversation', 'chat.gone': 'This session is gone',
@@ -323,6 +323,7 @@
         var tasks = m.tasks || [];
         var asks = tasks.filter(function (x) { return x.state === 'gate'; });
         var idle = tasks.filter(function (x) { return x.state === 'idle'; });
+        var gone = m.stopped || [];
         var live = tasks.filter(function (x) { return x.state !== 'gate' && x.state !== 'idle'; })
             .map(function (x, i) { return { x: x, i: i }; })
             .sort(function (a, b) {
@@ -332,12 +333,13 @@
             }).map(function (o) { return o.x; });
         function rows(list) { return list.map(function (x) { return homeRow(x, at, m); }).join(''); }
         function gh(key, n) { return '<p class="ha-gh">' + t(key) + ' <span>' + n + '</span></p>'; }
-        var body = !tasks.length ? '<div class="empty"><h2>' + t('home.empty') + '</h2></div>'
+        var body = !tasks.length && !gone.length ? '<div class="empty"><h2>' + t('home.empty') + '</h2></div>'
             : '<p class="ha-sum"><span class="a">' + t('sum.ask', { n: asks.length }) + '</span><span class="sep">·</span><span class="r">' + t('sum.run', { n: live.length })
                 + '</span><span class="sep">·</span><span class="i">' + t('sum.idle', { n: idle.length }) + '</span></p>'
                 + (asks.length ? gh('grp.ask', asks.length) + '<div class="ha-ask">' + rows(asks) + '</div>' : '')
                 + (live.length ? gh('grp.run', live.length) + '<div class="ha-list">' + rows(live) + '</div>' : '')
-                + (idle.length ? gh('grp.idle', idle.length) + '<div class="ha-idle ha-list">' + rows(idle) + '</div>' : '');
+                + (idle.length ? gh('grp.idle', idle.length) + '<div class="ha-idle ha-list">' + rows(idle) + '</div>' : '')
+                + (gone.length ? gh('grp.gone', gone.length) + '<div class="ha-gone ha-list">' + rows(gone) + '</div>' : '');
         // The ntfy app opens its subscribe dialog from ntfy://; a phone
         // without the app uses the web topic beside it.
         var sub = m.notify && m.notify.app ? '<a class="ha-subscribe" href="' + esc(m.notify.app) + '">' + t('home.sub') + '</a>'
@@ -463,7 +465,7 @@
     }
 
     function chatHtml(m, id, at, u, P) {
-        var row = (m.tasks || []).filter(function (x) { return x.id === id; })[0];
+        var row = (m.tasks || []).concat(m.stopped || []).filter(function (x) { return x.id === id; })[0];
         // Until its phone.json arrives, the session's mobile.json row stands in.
         var p = P || (row ? Object.assign({}, row, { chat: row.last ? [row.last] : [], waiting: null, gate: null }) : null);
         var back = '<a class="bk" href="#/" aria-label="' + t('chat.back') + '">' + ic('back') + '</a>';
