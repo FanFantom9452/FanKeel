@@ -41,7 +41,7 @@ source_of_truth: docs/90-agent/reference/station.md, assets/station/station.js, 
 
 監控站可以經這台機器的 Tailscale 讓手機連進來，但預設是關的。開關是 profile 的 `station.remote`，只讀機器層 profile，內建 `false`；關著時只有本機（`127.0.0.1`）連得到，因為監控站看得到每個 session 的整段對話，不該在你沒說要的時候離開這台機器。打開時監控站跑 `tailscale serve`，只在你自己的 tailnet（Tailscale 串起來的私人網路）裡開放，從不跑 `tailscale funnel` 對外公開；Tailscale 沒裝、沒在跑或 Funnel 開著時，遠端維持關閉，原因寫在卡片上，本機照常可用。打開開關時卡片會先跳出確認視窗，確認後才寫入 `station.remote`；Tailscale 沒回應時原因寫在卡片上，也會接在 `station:` 那行後面（`remote off: …`），開著時該行接 `phone: <網址>`。
 
-開關在 `#/settings` 精靈下面的「手機遠端」卡片：打開後卡片給出 tailnet 網址（附「複製」）、一張配對 QR、已配對的手機（可「解除」），以及三個推播開關。配對碼一次性、10 分鐘內有效，因為從 tailnet 來的請求沒有配對過的手機一律擋下。手機掃 QR 後打開的是手機頁 `/m`：從 tailnet 打開監控站根網址 `/` 會自動轉到 `/m`，本機瀏覽器開 `/` 仍是桌面版。要關掉時把卡片的開關關上；監控站下一個請求起就拒絕 tailnet。
+開關在 `#/settings` 精靈下面的「手機遠端」卡片：打開後卡片給出 tailnet 網址（附「複製」）、一張配對 QR、已配對的手機（可「解除」），以及三個推播開關。配對碼一次性、10 分鐘內有效，因為從 tailnet 來的請求沒有配對過的手機一律擋下。手機掃 QR 後打開的是手機頁 `/m`：從 tailnet 打開監控站根網址 `/` 會自動轉到 `/m`，本機瀏覽器開 `/` 仍是桌面版。要關掉時把卡片的開關關上；監控站下一個請求起就拒絕 tailnet。第一次接上自己的 Tailscale 的步驟見 [tailscale-setup.md](tailscale-setup.md)。
 
 `tailscale serve` 代理若是這個監控站自己開的，監控站會在三個時候把它撤掉：開關關上時、監控站關閉時（包括 Ctrl+C），以及閒置太久自己結束時。撤掉的方式是跑 `tailscale serve --https=443 --set-path=/ off`。這個指令只撤監控站自己掛在 `/` 的那一條，你在 443 埠其他路徑上掛的 `tailscale serve` 不會動。依 Tailscale 文件，`off` 加在建立 mapping 的旗標後面只撤那一個 mapping（https://tailscale.com/kb/1242/tailscale-serve）。代理在監控站啟動前就已經存在時，監控站沒開它，也就不撤它。撤不掉時只在 stderr 寫一行，關閉照常進行。
 

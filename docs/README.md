@@ -18,6 +18,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 七站各產出什麼、三種類別、gate 怎麼答、registry 是什麼（給人讀的短版） | [concepts.md](01-guide/concepts.md) |
 | 每個 profile key 的意思與建議值，以及在站頁精靈怎麼套 | [profile.md](01-guide/profile.md) |
 | 監控站每個 view 看什麼、數字怎麼讀 | [station.md](01-guide/station.md) |
+| 用自己的 Tailscale 開手機遠端：準備、打開、配對、從手機答 gate | [tailscale-setup.md](01-guide/tailscale-setup.md) |
 | fankeel 在背景做什麼：每個 hook 何時觸發、每個 agent 做什麼 | [what-runs.md](01-guide/what-runs.md) |
 | 五支掃描器怎麼跑、各自回報什麼 | [scanners.md](01-guide/scanners.md) |
 | `/fankeel` 沒反應、badge 不見、編輯被擋時怎麼辦 | [troubleshooting.md](01-guide/troubleshooting.md) |
@@ -540,6 +541,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 看得懂 AI 做了什麼嗎（10-19）：四個任務的實際畫面檢查，沒有一個地方能一次回答要做什麼、改了什麼、為什麼、驗了什麼、花多少、還剩什麼 | [reports/2026-10-19-legibility.md](90-agent/reports/2026-10-19-legibility.md) — *a dated snapshot, 繁體中文* |
 | 記憶規則與 pstack 並比（10-19）：TencentDB 判決的四條記憶規則與 pstack 判決沒有衝突，只在兩處重疊 | [reports/2026-10-19-memory-vs-pstack.md](90-agent/reports/2026-10-19-memory-vs-pstack.md) — *a dated snapshot, 繁體中文* |
 | 兩個候選草圖再由判官選一，試跑一次（10-19）：約 159k subagent token，判官選 A，不足以把它變成 `architectural` 的固定步驟 | [reports/2026-10-19-two-candidate-trial.md](90-agent/reports/2026-10-19-two-candidate-trial.md) — *a dated snapshot, 繁體中文* |
+| 監控站手機遠端的實機檢查（10-22）：S24 經自己的 Tailscale 能配對、能從手機答 gate；PATH 讓第一次開遠端失敗、桌面卡片不刷新、通知沒響，通知與離線、關閉延後或沒測 | [reports/2026-10-21-station-remote-live.md](90-agent/reports/2026-10-21-station-remote-live.md) — *a dated snapshot, 繁體中文* |
 | 09-30 Ready 十一條的四次量測：serve detached 測試在 fed438fc 乾淨 worktree 全套三次、station-wizard-motion 在 HEAD 全套三次、`hooks/inject.js` 閒置與全套負載下的耗時、8806240d 之後每個 subagent 的 context 峰值與最貴 agent 佔比 | [reports/2026-09-30-ready-eleven-measurements.md](90-agent/reports/2026-09-30-ready-eleven-measurements.md) — *a dated snapshot, 繁體中文* |
 | What every earlier version was for, design and task list both | `docs/99-archive/`, one pair per release from 0.24.0 — including the directory tree, measured against 43 real README files |
 | Why any of it was built this way | [decisions/fankeel-shell.md](03-decisions/fankeel-shell.md) |
@@ -697,6 +699,8 @@ is corrected by the next one, not by rewriting this.
 | Brief — should every stage run as a brain with a curated context carried from the stages before it, so agents stop re… | [90-agent/judgements/2026-10-21-stage-context-carry.md](90-agent/judgements/2026-10-21-stage-context-carry.md) — *judged 2026-10-21, fable* |
 | Brief: why did this land take so long, and what does the main session miss? | [90-agent/judgements/2026-10-21-land-slow.md](90-agent/judgements/2026-10-21-land-slow.md) — *judged 2026-10-21, fable* |
 | Brief: why do plan- and build-stage agents sometimes stop unexpectedly? | [90-agent/judgements/2026-10-22-stage-agent-pause.md](90-agent/judgements/2026-10-22-stage-agent-pause.md) — *judged 2026-10-22, fable* |
+| 判官題：station 遠端的推播通知，該不該繼續用第三方 ntfy.sh？ | [90-agent/judgements/2026-10-22-notify-channel.md](90-agent/judgements/2026-10-22-notify-channel.md) — *judged 2026-10-22, fable* |
+| 判官題：station 手機頁 /m 接上語音輸入，照 VoiceLedger 的概念該怎麼做？通知可以延後 | [90-agent/judgements/2026-10-22-phone-voice-input.md](90-agent/judgements/2026-10-22-phone-voice-input.md) — *judged 2026-10-22, fable* |
 
 ## The five scanners
 
