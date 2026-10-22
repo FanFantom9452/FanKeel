@@ -75,7 +75,7 @@ test('the survey banner counts as many findings as it draws rows, and as the rep
     assert.match(html, />survey<\/span> gate：三件事盤點完了，要怎麼往下走？<\/h2>/);
     assert.match(html, /<li>class <code class="gv-sum">architectural<\/code><\/li>/);
     assert.match(html, /回答在 Claude Desktop 那邊給；這頁只讓你看清楚要核准什麼，不收答案。/);
-    assert.match(html, /<details class="gv-more"><summary>報告其餘<small>\d+ 行<\/small><\/summary><pre class="gv-rest">[\s\S]*## 盤點（patrol）/);
+    assert.match(html, /<details class="gv-more" data-gv="rest"><summary>報告其餘<small>\d+ 行<\/small><\/summary><pre class="gv-rest">[\s\S]*## 盤點（patrol）/);
 });
 
 test('away from that stage\'s gate the report keeps a quiet head and no banner', () => {
@@ -205,7 +205,7 @@ test('survey draws unknown and skipped as lists when they hold more than one ite
 
 test('survey folds the TODO patrol under its count and each disposition\'s, with the group lines inside', () => {
     const html = V.gateTabHtml({ stage: 'survey' }, SURVEY_G, []);
-    assert.match(html, /<details class="gv-more" data-block="gate-patrol"><summary>TODO 盤點 23 條<small>do now 1 · waiting on 8 · keep 14<\/small><\/summary>/);
+    assert.match(html, /<details class="gv-more" data-gv="patrol" data-block="gate-patrol"><summary>TODO 盤點 23 條<small>do now 1 · waiting on 8 · keep 14<\/small><\/summary>/);
     assert.match(html, /<div><dt>waiting on<\/dt><dd>audit-1、build-1、docs-1、foreign-1、model-4、quota-1、security-1、spend-2<\/dd><\/div>/);
     assert.doesNotMatch(V.gateTabHtml({ stage: 'survey' }, report('survey', '- a.js:1 — x'), []), /gate-patrol/);
 });

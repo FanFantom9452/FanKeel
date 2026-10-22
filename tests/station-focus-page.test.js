@@ -81,7 +81,8 @@ test('background shells sit between the header and the page', () => {
 function focusDom() {
     const asked = [], heads = [], ticks = [], listened = [], waits = [];
     const cls = new Set();
-    const focus = { innerHTML: '', classList: { toggle: (c, on) => { if (on) cls.add(c); else cls.delete(c); }, contains: (c) => cls.has(c) } };
+    const clicks = [];
+    const focus = { innerHTML: '', addEventListener: (type, fn) => { if (type === 'click') clicks.push(fn); }, classList: { toggle: (c, on) => { if (on) cls.add(c); else cls.delete(c); }, contains: (c) => cls.has(c) } };
     const head = { appendChild(t) { t.parentNode = head; heads.push(t); }, removeChild(t) { t.parentNode = null; } };
     const doc = { hidden: false, head, getElementById: (id) => { asked.push(id); return id === 'focus' ? focus : null; },
         createElement: () => ({}), addEventListener() { listened.push('doc'); }, querySelectorAll: () => [] };
@@ -89,7 +90,7 @@ function focusDom() {
         STATION_DETAIL: { [SID]: { tasks: [], gate: null } }, location: { hash: '' },
         setInterval: (fn) => ticks.push(fn), setTimeout: (fn, ms) => waits.push(ms), clearTimeout() {}, addEventListener() { listened.push('win'); } };
     vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8'), { window: win, document: doc, URLSearchParams });
-    return { focus, asked, heads, ticks, listened, win, waits };
+    return { focus, asked, heads, ticks, listened, win, waits, clicks };
 }
 
 test('boot: STATION_FOCUS draws the focus page into #focus and the full station never boots', () => {
@@ -150,4 +151,26 @@ test('done line: /f/<id>/plan answers under 200 ms with no station-data.js, and 
     } finally {
         s.close();
     }
+});
+
+test('keepOpen marks the folds the reader opened and leaves the rest', () => {
+    const html = '<details class="gv-more" data-gv="rest"><summary>a</summary></details><details class="gv-more" data-gv="patrol"><summary>b</summary></details>';
+    const out = V.keepOpen(html, { rest: true, patrol: false });
+    assert.match(out, /data-gv="rest" open>/);
+    assert.doesNotMatch(out, /data-gv="patrol" open/);
+});
+
+test('the focus page listens for clicks on #focus, not on the document', () => {
+    const d = focusDom();
+    assert.equal(d.clicks.length, 1);
+    assert.deepEqual(d.listened, []);
+    const details = { open: false, getAttribute: (k) => (k === 'data-gv' ? 'rest' : null) };
+    d.clicks[0]({ target: { closest: () => ({ parentNode: details }) } });
+    assert.equal(typeof d.focus.innerHTML, 'string');
+});
+
+test('gateRest and gatePatrol carry a data-gv key', () => {
+    const src = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+    assert.match(src, /<details class="gv-more" data-gv="rest">/);
+    assert.match(src, /<details class="gv-more" data-gv="patrol" data-block="gate-patrol">/);
 });

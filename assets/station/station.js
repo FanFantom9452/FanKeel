@@ -2922,10 +2922,22 @@
     // tab is visible — the ledger moves while a build runs. Only `w.*` and
     // hoisted functions here: the full page's `var`s further down are never
     // assigned, which is why `reload` holds its timeout as a literal.
+    // A <details> on the focus page the reader opened stays open through the
+    // 5 s repaint, which rewrites the whole page (station-37). Only the
+    // report's folds carry a data-gv key; the rest are short.
+    function keepOpen(html, open) {
+        return String(html).replace(/<details class="gv-more" data-gv="([a-z]+)"/g, function (m, k) { return open[k] ? m + ' open' : m; });
+    }
+
     function focusBoot() {
         var F = w.STATION_FOCUS;
         var el = doc.getElementById('focus');
-        var paint = function () { el.innerHTML = focusPageHtml(S, w.STATION_DETAIL, F); };
+        var open = {};
+        if (el.addEventListener) el.addEventListener('click', function (e) {
+            var t = e.target, sm = t && typeof t.closest === 'function' ? t.closest('details[data-gv] > summary') : null;
+            if (sm && sm.parentNode) open[sm.parentNode.getAttribute('data-gv')] = !sm.parentNode.open;
+        });
+        var paint = function () { el.innerHTML = keepOpen(focusPageHtml(S, w.STATION_DETAIL, F), open); };
         paint();
         if (!S.serve || !w.setInterval) return;
         w.setInterval(function () {
@@ -2980,7 +2992,7 @@
             NAV_TREE: NAV_TREE,
             tuneOpen: tuneOpen, tuneEvents: tuneEvents, toastText: toastText, floatHtml: floatHtml, fkBoxParse: fkBoxParse, fkBoxClamp: fkBoxClamp, gateCountdownHtml: gateCountdownHtml, noteHtml: noteHtml, floatNotes: floatNotes, clock: gateClock,
             changedParts: changedParts, seenHtml: seenHtml, drawList: drawList, sessionPage: sessionPage,
-            recordHtml: recordHtml, recordPageHtml: recordPageHtml, boardsHtml: boardsHtml, listAskRow: listAskRow, focusPageHtml: focusPageHtml,
+            recordHtml: recordHtml, recordPageHtml: recordPageHtml, boardsHtml: boardsHtml, listAskRow: listAskRow, focusPageHtml: focusPageHtml, keepOpen: keepOpen,
         };
     }
     if (!doc) return;
@@ -4806,7 +4818,7 @@
     // The lines no rule recognised, as written, never dropped.
     function gateRest(rest) {
         if (!rest || !rest.length) return '';
-        return '<details class="gv-more"><summary>' + loc('det.gateRest', '報告其餘') + '<small>' + loc('det.gateRestN', '{n} 行', { n: rest.length }) + '</small></summary>'
+        return '<details class="gv-more" data-gv="rest"><summary>' + loc('det.gateRest', '報告其餘') + '<small>' + loc('det.gateRestN', '{n} 行', { n: rest.length }) + '</small></summary>'
             + '<pre class="gv-rest">' + esc(rest.join('\n')) + '</pre></details>';
     }
     // A report value `derive` (lib/gatereport.js) split into items: a list when it holds two or more, else the value as written.
@@ -4820,7 +4832,7 @@
         if (!t) return '';
         var counts = ['do now', 'needs the user', 'waiting on', 'keep'].filter(function (k) { return t.counts && t.counts[k]; })
             .map(function (k) { return k + ' ' + t.counts[k]; }).join(' · ');
-        return '<details class="gv-more" data-block="gate-patrol"><summary>' + loc('det.gatePatrol', 'TODO 盤點 {n} 條', { n: t.listed === null ? '?' : t.listed })
+        return '<details class="gv-more" data-gv="patrol" data-block="gate-patrol"><summary>' + loc('det.gatePatrol', 'TODO 盤點 {n} 條', { n: t.listed === null ? '?' : t.listed })
             + (counts ? '<small>' + esc(counts) + '</small>' : '') + '</summary>'
             + gateKv((t.groups || []).map(function (x) { return [esc(x.name), gateText(x.text)]; })) + '</details>';
     }
