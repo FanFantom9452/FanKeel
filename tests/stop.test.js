@@ -7,13 +7,28 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const mkTmp = require('./tmp.js');
-const { refusal, pendingWork } = require('../lib/stop.js');
+const { refusal, pendingWork, STALE_MS } = require('../lib/stop.js');
 
 const asst = (...blocks) => ({ type: 'assistant', message: { role: 'assistant', content: blocks } });
 const user = (content) => ({ type: 'user', message: { role: 'user', content } });
 const bg = (id) => asst({ type: 'tool_use', id, name: 'Bash', input: { command: 'node scripts/await.js --session s', run_in_background: true } });
 const note = (id) => user('<task-notification>\n<task-id>x</task-id>\n<tool-use-id>' + id + '</tool-use-id>\n<status>completed</status>\n</task-notification>');
 const ACTIVE = { active: true, stage: 'build' };
+
+const at = (entry, iso) => Object.assign(entry, { timestamp: iso });
+
+test('a background Bash launched over STALE_MS ago with no notification is no longer pending', () => {
+  const launch = at(bg('toolu_old'), '2026-10-22T10:00:00.000Z');
+  const list = [user('go'), launch, user([{ type: 'tool_result', tool_use_id: 'toolu_old', content: 'Command running in background' }])];
+  const now = Date.parse('2026-10-22T10:00:00.000Z') + STALE_MS + 1;
+  assert.equal(pendingWork(list, now), false);
+  assert.equal(pendingWork(list, now - 2), true);
+});
+
+test('a background Bash whose launch result is an error is not pending', () => {
+  const list = [user('go'), bg('toolu_err'), user([{ type: 'tool_result', tool_use_id: 'toolu_err', is_error: true, content: 'killed' }])];
+  assert.equal(pendingWork(list), false);
+});
 
 function transcript(list) {
   const file = path.join(mkTmp('fankeel-stop-'), 't.jsonl');
