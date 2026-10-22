@@ -1,7 +1,7 @@
 ---
 label: stop
 title: Stop hook 背景無通知永遠待回
-description: lib/stop.js 的 pendingWork 只靠 task-notification 清掉背景工作；沒收到通知的背景 Bash 或 agent 會永遠算進行中，之後的停頓就不再被擋
+description: Stop hook 的 pendingWork 只靠 task-notification 清掉背景工作；沒收到通知的背景 Bash 或 agent 會永遠算進行中，之後的停頓就不再被擋
 state: ready
 link: lib/stop.js
 stamp: 2026-10-22
