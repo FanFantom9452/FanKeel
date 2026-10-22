@@ -973,7 +973,8 @@ async function serve(opts) {
         recordData = data;
         const record = serveRecordPath(configDir);
         fs.mkdirSync(path.dirname(record), { recursive: true });
-        fs.writeFileSync(record, JSON.stringify(Object.assign({}, data, tailnet.on ? { remote: { url: tailnet.url } } : {}), null, 2) + '\n');
+        const remote = tailnet.on ? { remote: { url: tailnet.url } } : (tailnet.warning ? { remote: { warning: tailnet.warning } } : {});
+        fs.writeFileSync(record, JSON.stringify(Object.assign({}, data, remote), null, 2) + '\n');
         return record;
     };
     // The proxy this station made comes down with it (station-remote-1): when

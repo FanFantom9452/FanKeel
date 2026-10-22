@@ -382,3 +382,33 @@ test('a station whose fingerprint no longer matches disk is stopped and started 
         await st.close();
     }
 });
+
+test('ensureServe carries serve.json\'s remote: an https url or a string warning, nothing else', async () => {
+    const cfg = tmp('fankeel-serve-');
+    const st = await listener({ pid: process.pid, fingerprint: serve.diskFingerprint(PLUGIN) });
+    const record = (remote) => writeRecord(cfg, Object.assign({ pid: process.pid, port: 0, url: st.url, started: new Date().toISOString() }, remote === undefined ? {} : { remote }));
+    const ask = () => serve.ensureServe({ configDir: cfg, plugin: PLUGIN, start: () => {} });
+    try {
+        record({ url: 'https://ymlab-pc.tail1234.ts.net/' });
+        assert.deepEqual(await ask(), { state: 'running', url: st.url, remote: { url: 'https://ymlab-pc.tail1234.ts.net/' } });
+        record({ warning: 'tailscale is Stopped, not Running' });
+        assert.deepEqual(await ask(), { state: 'running', url: st.url, remote: { warning: 'tailscale is Stopped, not Running' } });
+        for (const bad of [{ url: 'http://evil.example/' }, { url: 'https://a.b/path' }, { warning: 42 }, { warning: '  ' }, 'x', null, {}]) {
+            record(bad);
+            assert.deepEqual(await ask(), { state: 'running', url: st.url }, JSON.stringify(bad));
+        }
+        record();
+        assert.deepEqual(await ask(), { state: 'running', url: st.url });
+    } finally {
+        await st.close();
+    }
+});
+
+test('a station started by this call brings its remote back with the url', async () => {
+    const cfg = tmp('fankeel-serve-');
+    const start = () => {
+        setTimeout(() => writeRecord(cfg, { pid: 4244, port: 7817, url: 'http://127.0.0.1:7817/', started: 'now', remote: { warning: 'tailscale is Stopped, not Running' } }), 50);
+    };
+    const got = await serve.ensureServe({ configDir: cfg, plugin: PLUGIN, start, until: Date.now() + 3000 });
+    assert.deepEqual(got, { state: 'started', url: 'http://127.0.0.1:7817/', remote: { warning: 'tailscale is Stopped, not Running' } });
+});

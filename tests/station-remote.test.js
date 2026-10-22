@@ -202,7 +202,7 @@ test('a tailscale that is not running leaves remote off with the reason on the c
         assert.equal((await request(s.url, { headers: { host: NAME } })).status, 421);
         assert.equal((await request(s.url)).status, 200);
         assert.equal(ts.calls.some((c) => c.startsWith('serve')), false);
-        assert.equal(readServeRecord(f.cfg).remote, undefined);
+        assert.deepEqual(readServeRecord(f.cfg).remote, { warning: card.warning }, 'the reason rides serve.json so the station: line can print it');
     } finally {
         s.close();
     }
