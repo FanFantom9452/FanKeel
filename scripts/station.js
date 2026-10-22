@@ -1086,6 +1086,16 @@ async function serve(opts) {
     return result;
 }
 
+// Ctrl+C runs close(), so the proxy this station made and serve.json go with
+// it. A hard kill runs nothing; the reference page says how to take the proxy
+// down by hand then. `proc` and `exit` are the seam tests/station-signal.test.js
+// drives: on Windows a child cannot be sent a real SIGINT.
+function closeOnSignals(s, proc = process, exit = (code) => process.exit(code)) {
+    for (const sig of ['SIGINT', 'SIGTERM']) {
+        proc.once(sig, () => { s.close(); exit(0); });
+    }
+}
+
 function main() {
     const args = parseArgs(process.argv.slice(2));
     const configDir = live.liveConfigDir();
@@ -1171,12 +1181,7 @@ function main() {
         serve({ configDir, roots: args.roots, scan: args.scan, port: args.port, idleMs: args.idleMs, open: args.open, portWasExplicit: args.portWasExplicit, exitOnIdle: true }).then((s) => {
             process.stdout.write('fankeel station — ' + s.url
                 + (args.idleMs > 0 ? '  (exits after ' + Math.round(args.idleMs / 60e3) + ' idle minutes, or Ctrl+C)' : '  (Ctrl+C to exit)') + '\n');
-            // Ctrl+C runs close(), so the proxy this station made and serve.json
-            // go with it. A hard kill runs nothing; the reference page says how
-            // to take the proxy down by hand then.
-            for (const sig of ['SIGINT', 'SIGTERM']) {
-                process.once(sig, () => { s.close(); process.exit(0); });
-            }
+            closeOnSignals(s);
         }, (e) => {
             process.stderr.write('station: could not listen: ' + (e && e.message) + '\n');
             process.exit(1);
@@ -1222,4 +1227,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { serve, scanDeadline, parseArgs, probe };
+module.exports = { serve, scanDeadline, parseArgs, probe, closeOnSignals };
