@@ -534,3 +534,18 @@ test('a waiting gate keeps row one inside its width, giving up 遠端 first and 
     assert.ok(words(calm).includes('遠端'), 'with no gate nothing is given up at 80 columns');
     assert.ok(rightEdge(calm) <= widthOf(calm));
 });
+
+test('under ui.lang en the Desktop band and the route are English, inside their width; unset is Chinese', async () => {
+    const { bandRow1Svg, routeSvg } = await load('pane-svg');
+    const CJK = /[\u3400-\u9fff]/;
+    const calm = bandRow1Svg(bandInput({ lang: 'en' }));
+    for (const w of ['stage', 'min', 'on you', 'remote']) assert.ok(words(calm).includes(w), w);
+    assert.doesNotMatch(words(calm).join(' '), CJK);
+    const gated = bandRow1Svg(bandInput({ lang: 'en', gateAt: NOW - 18000, gateUntil: NOW + 42000 }));
+    assert.ok(words(gated).includes('gate waiting') && words(gated).includes('42s'));
+    assert.ok(words(gated).includes('on you 4 min'));
+    assert.ok(rightEdge(gated) <= widthOf(gated), String(rightEdge(gated)));
+    assert.deepEqual(words(routeSvg(entry, NOW, 41, 'en')), ['survey', 'design', 'plan', 'build', 'verify', 'land', '11m', '37m', 'wait 6', '20m', 'wait 2', '47m', 'wait 4']);
+    assert.equal(routeSvg(entry, NOW, 41, 'zh'), routeSvg(entry, NOW, 41));
+    assert.equal(bandRow1Svg(bandInput({ lang: 'zh' })), bandRow1Svg(bandInput()));
+});

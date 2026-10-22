@@ -9,6 +9,8 @@ import type { BandInput } from './pane-band.ts'
 import { str, list, kilo, cut, ctxPaint, ctxWindowPaint, fivePaint, weekPaint, deviation, elapsed, FIVE_HOURS, limitOf, signed, minutes, secondsLeft, DIM } from './pane-bar.ts'
 import { ago, DONE } from './pane-status.ts'
 import type { Entry, Other, Row, StatusInput } from './pane-status.ts'
+import { say } from './pane-lang.ts'
+import type { Lang } from './pane-lang.ts'
 
 // The engine's bound on SvgProps.source, in characters.
 export const SVG_MAX = 131072
@@ -101,14 +103,15 @@ export function bandRow1Svg(input: BandInput): string {
     })
     x = x0 + step * (route.length - 1) + 7 + 12
   }
-  // The row's words, apart so they are written once.
+  // The row's words in the machine's ui.lang (hooks/pane-lang.ts), apart so they are written once.
+  const lang = input.lang
   const word = {
-    gate: 'gate 在等',
-    secs: (n: number): string => `${n} 秒`,
-    here: '本站',
-    you: '等你',
-    min: '分',
-    remote: '遠端',
+    gate: say(lang, 'svg.gate'),
+    secs: (n: number): string => say(lang, 'svg.secs', { n }),
+    here: say(lang, 'band.here'),
+    you: say(lang, 'band.you'),
+    min: say(lang, 'band.min'),
+    remote: say(lang, 'band.remote'),
   }
   // What follows the route, each drawn at x: `w` px of its own, then `gap` px before the next.
   type Group = { name: string; w: number; gap: number; draw: (x: number) => string }
@@ -307,7 +310,7 @@ type Station = { name: string; state: 'done' | 'here' | 'ahead'; min: number | n
 // one hollow ring in its station's colour, ahead hollow grey), a bar of the minutes it took from the entry's
 // `clock` against the longest, and the minutes its gate waited (`waited`) in
 // amber at the bar's end. '' when the stage is not on the route.
-export function routeSvg(entry: Entry, now: number, cols: number): string {
+export function routeSvg(entry: Entry, now: number, cols: number, lang?: Lang): string {
   const route = list(entry.route)
   const at = route.indexOf(str(entry.stage))
   if (at < 0) return ''
@@ -351,8 +354,8 @@ export function routeSvg(entry: Entry, now: number, cols: number): string {
     const x0 = cx(i) - w / 2
     if (w - ww > 0) b += `<rect x="${r1(x0)}" y="38" width="${r1(w - ww)}" height="4" rx="1" fill="${s.state === 'done' ? DONE : WHERE}"/>`
     if (ww) b += `<rect x="${r1(x0 + w - ww)}" y="38" width="${r1(ww)}" height="4" rx="1" fill="${GUARD}"/>`
-    b += text(cx(i), 56, `${s.min}分`, { anchor: 'middle', bold: s.state === 'here' })
-    if (s.wait) b += text(cx(i), 72, `等${s.wait}`, { anchor: 'middle', fill: GUARD })
+    b += text(cx(i), 56, say(lang, 'route.min', { n: s.min }), { anchor: 'middle', bold: s.state === 'here' })
+    if (s.wait) b += text(cx(i), 72, say(lang, 'route.wait', { n: s.wait }), { anchor: 'middle', fill: GUARD })
   })
   return svgDoc(W, 78, b)
 }
@@ -437,7 +440,7 @@ export function paneParts(input: StatusInput, rows: Row[]): Part[] {
       let from = body.length
       while (from > 0 && isRoute(body[from - 1])) from--
       keep(body.slice(0, from))
-      draw(routeSvg(entry, now, cols), body.slice(from), false)
+      draw(routeSvg(entry, now, cols, input.lang), body.slice(from), false)
     } else if (name === 'clash') draw(clashSvg(entry, input.others, now, cols), body, false)
     else keep(body)
   }
