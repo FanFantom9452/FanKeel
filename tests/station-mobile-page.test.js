@@ -344,6 +344,19 @@ test('boot: a /phone/say refusal keeps the draft in the composer and says why', 
     assert.ok(page.app.innerHTML.includes('<p class="note" role="status">測站沒收下（409）：not attached</p>'));
 });
 
+test('boot: a stopped session chat opens from its mobile.json row before phone.json loads, and can be replied to', async () => {
+    const home = Object.assign({}, HOME, { stopped: [row('aaaaaaaa-9', 'holding', { attached: true, task: 'stopped task nine' })] });
+    const page = boot({ hash: '#/s/aaaaaaaa-9', fetch: (url) => (url === '/station/mobile.json' ? reply(200, home) : url.startsWith(PHONE) ? reply(404, 'no such session') : reply(201, '')) });
+    await settle();
+    assert.ok(page.app.innerHTML.includes('stopped task nine'), 'the row stands in for the chat');
+    assert.match(page.app.innerHTML, /id="composer"/);
+    page.fire('submit', submit(composerForm('繼續')));
+    await settle();
+    const sent = callsTo(page, '/phone/say');
+    assert.equal(sent.length, 1);
+    assert.equal(sent[0].init.body, new URLSearchParams({ root: '/w', id: 'aaaaaaaa-9', text: '繼續' }).toString());
+});
+
 test('boot: 接上這個 session posts /phone/attach with the session\'s root and id', async () => {
     const page = boot({ hash: '#/s/aaaaaaaa-2', fetch: routed(sess('running')) });
     await settle();
