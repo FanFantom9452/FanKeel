@@ -45,6 +45,12 @@ test('an async Agent is pending until its notification', () => {
   assert.equal(pendingWork([...launch, note('toolu_ag')]), false);
 });
 
+test('a notification carried by a queued_command attachment clears the background task', () => {
+  const queued = (id) => ({ type: 'attachment', attachment: { type: 'queued_command', prompt: '<task-notification>\n<task-id>x</task-id>\n<tool-use-id>' + id + '</tool-use-id>\n<status>completed</status>\n</task-notification>' } });
+  assert.equal(pendingWork([bg('toolu_bg')]), true);
+  assert.equal(pendingWork([bg('toolu_bg'), queued('toolu_bg')]), false);
+});
+
 test('a foreground Agent that already returned is not pending', () => {
   assert.equal(pendingWork([
     asst({ type: 'tool_use', id: 'toolu_fg', name: 'Agent', input: { prompt: 'read' } }),

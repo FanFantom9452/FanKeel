@@ -196,10 +196,10 @@ them at once.
 
 ## What the guard does not watch
 
-The scope guard's collision check is wired to one matcher: `.claude-plugin/plugin.json:114` reads `"matcher": "Edit|Write|NotebookEdit"`.
+The scope guard's collision check is wired to one matcher: `.claude-plugin/plugin.json:126` reads `"matcher": "Edit|Write|NotebookEdit"`.
 Inside it, `hooks/guard.js:185` calls `targetOf(payload)`, which reads only
 `tool_input.file_path` and `tool_input.notebook_path`, and `hooks/guard.js:186` is the whole branch for anything else: `if (!file) return;`.
-The same hook has a second entry, `.claude-plugin/plugin.json:136` `"matcher": "Bash|PowerShell"`, and it stops short of that check:
+The same hook has a second entry, `.claude-plugin/plugin.json:148` `"matcher": "Bash|PowerShell"`, and it stops short of that check:
 `hooks/guard.js:73` `if (shell) {` — where `hooks/guard.js:67` `const shell = payload.tool_name === 'Bash' || payload.tool_name === 'PowerShell';` sets it — ends in a `return` of its own, and
 `hooks/guard.js:81` `if (payload.agent_id && readOnlyAgentType(payload.agent_type) && writesFiles(command)) {` denies only when there is an `agent_id` — a session with none, the main thread of an `--agent` session, is not a subagent and passes — and the type is a read-only one and the command writes; one more refusal follows it, for the main thread's writing command while the task's stage is a controlled one ([subagents.md](subagents.md)), and every other call falls through to `emitCommit` and the `return` after it. Both fields are checked because `agent_type` alone is a trap: it is set inside a subagent and on the main thread of an `--agent` session alike, and only `agent_id` tells those two apart — see [subagents.md](subagents.md).
 So a `Bash` or `PowerShell` call never reaches `blockers()` — and on this machine
