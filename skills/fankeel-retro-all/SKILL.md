@@ -1,7 +1,7 @@
 ---
 name: fankeel-retro-all
 description: Review every exported session bundle for problems that recur across tasks — this machine's and other users' — and propose skill, agent or stage-rule edits only for what recurs. Use for /fankeel-retro-all, "跑全部 retro", "回顧所有 session", or after pulling bundles another user committed.
-version: 0.111.70
+version: 0.111.71
 status: current
 last_verified: 2026-10-20
 source_of_truth: scripts/record.js, agents/fankeel-retro.md
