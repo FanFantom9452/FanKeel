@@ -61,6 +61,8 @@ The line ends one of six ways:
 | `station: serve is starting; the browser opens when it binds.` | it was started, and had not written its record when the hook had to answer |
 | `<n> stale, <n> live — <file>. Edit the profile with station.js serve --open.` | `FANKEEL_SERVE=off` is set, or the start itself failed: the hook wrote the page, and the counts are that write's |
 | `(<error>).` | on those same two paths, the page write threw — a full disk, or a file sitting where `<configDir>/fankeel` belongs. The line then opens `station: the page was not written` instead of the counts and carries the error's first line (at most 65 characters). No station serves on these paths, so there is no url, and the `; <url> still shows the last one written.` ending is not reached from the hook |
+| `… phone: https://<dns>/m — Tailscale MagicDNS <dns>.` | appended after any of the first three endings when `station.remote` is on and Tailscale answered: `<dns>` is this machine's MagicDNS name, read from `remote.url` in `serve.json` |
+| `… remote off: <reason>.` | appended after any of the first three endings when `station.remote` is on and Tailscale did not answer: the first line of `remote.warning` in `serve.json`, at most 100 characters |
 
 The probe and the wait for the record aim at four seconds of the hook
 starting (`SERVE_BUDGET_MS` in `hooks/inject.js`), one short of the five

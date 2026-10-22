@@ -1014,3 +1014,25 @@ test('a task with facts in context.md gets a facts: line with the path and the c
   assert.ok(controlled.split('\n').includes(line), 'the controller sees it');
   assert.equal(render({ mine, others: [], now: NOW }).includes('facts:'), false, 'no registry root, no line');
 });
+
+test('the station line carries the tailnet phone url, or why remote is off, after a serving ending', () => {
+  const url = 'http://127.0.0.1:7817/';
+  const dns = 'ymlab-pc.tail1234.ts.net';
+  const served = (serve) => renderInit({ sessionId: MINE, station: null, serve });
+  const on = { url: 'https://' + dns + '/' };
+  assert.match(served({ state: 'running', url, remote: on }),
+    /^station: http:\/\/127\.0\.0\.1:7817\/ \(serve was running\)\. phone: https:\/\/ymlab-pc\.tail1234\.ts\.net\/m — Tailscale MagicDNS ymlab-pc\.tail1234\.ts\.net\.$/m);
+  assert.match(served({ state: 'started', url, remote: on }), /\(serve started, browser opened\)\. phone: https:\/\/ymlab-pc\.tail1234\.ts\.net\/m — Tailscale MagicDNS /);
+  assert.match(served({ state: 'busy', url, remote: on }), /\(serve is busy loading; the page fills in when it finishes\)\. phone: https:\/\//);
+  assert.match(served({ state: 'running', url, remote: { warning: 'tailscale is Stopped, not Running' } }),
+    /^station: http:\/\/127\.0\.0\.1:7817\/ \(serve was running\)\. remote off: tailscale is Stopped, not Running\.$/m);
+  const long = served({ state: 'running', url, remote: { warning: 'first line ' + 'x'.repeat(200) + '\nsecond line' } });
+  const said = /remote off: (.*)\.$/m.exec(long)[1];
+  assert.ok(said.length <= 100, 'the reason is cut to 100 characters, got ' + said.length);
+  assert.ok(!long.includes('second line'), 'only the first line of the reason');
+  assert.doesNotMatch(served({ state: 'running', url, remote: { url: 'http://evil.example/' } }), /phone:|remote off/, 'only an https url');
+  assert.doesNotMatch(served({ state: 'running', url, remote: { warning: 42 } }), /phone:|remote off/, 'only a string warning');
+  assert.doesNotMatch(served({ state: 'running', url }), /phone:|remote off/, 'no remote, the line is as it was');
+  assert.doesNotMatch(served({ state: 'starting', url: null, remote: on }), /phone:/, 'a station still starting names nothing');
+  assert.doesNotMatch(served({ state: 'failed', url: null, remote: on }), /phone:/);
+});
