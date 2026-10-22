@@ -1321,6 +1321,21 @@ test('fankeel-land: uninstalling a decoupled plugin is offered, never run here',
   assert.match(flat, /offered here rather than run/);
 });
 
+// land-9: on 2026-10-21 the full suite ran before the report existed, and the
+// rerun, not the first run, met the missing sources.md row.
+test('fankeel-land: the report, its sources.md row and its index row are written before the full suite runs', () => {
+  const flat = read('fankeel-land').replace(/\s+/g, ' ');
+  const one = flat.slice(flat.indexOf('## 1. The full suite'), flat.indexOf('## 1a.'));
+  assert.ok(one.length > 0, 'step 1 is not where this test looks for it');
+  const first = one.indexOf('**Write the report first.**');
+  assert.ok(first >= 0, 'step 1 has no write-the-report-first paragraph');
+  assert.ok(first < one.indexOf('suite.js --session <id> --check'), 'the paragraph sits after the suite command');
+  assert.match(one, /docs\/90-agent\/reference\/sources\.md/);
+  assert.match(one, /docs\/README\.md/);
+  assert.match(one, /tests\/sources-doc\.test\.js/);
+  assert.match(one, /node --test tests\/sources-doc\.test\.js/);
+});
+
 // 2026-09-24: build sends what `ledger.js ready` lists, one task at a time as
 // its dependencies land, and asks about the user's own tasks before the first
 // dispatch. The plan skill carries the fourth Dispatch form that marks them.

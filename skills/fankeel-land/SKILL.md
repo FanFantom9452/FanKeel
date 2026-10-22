@@ -38,6 +38,15 @@ what the gate asks — never something to settle first and report afterwards.
 
 ## 1. The full suite, on the tree you are about to integrate
 
+**Write the report first.** When this land leaves a report in the `report`
+bucket, write it now, with its row in
+`docs/90-agent/reference/sources.md` and its index row in `docs/README.md`,
+and commit them before any suite command below: `tests/sources-doc.test.js`
+goes red on a report with no `sources.md` row, and `lib/suite.js` (`blocker`)
+lets every `.md` change through, so a record made before the report stands
+for a tree that test would fail. Run `node --test tests/sources-doc.test.js`
+first (seconds), then the suite. A land with no report skips this paragraph.
+
 When this land is a release, do step 2a first — set the number and commit
 it — and only then run this step: `package.json` is code to the record, so a
 suite run before the bump is stale after it, `--check` below refuses on it,
