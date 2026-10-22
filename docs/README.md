@@ -489,6 +489,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 主執行緒 Stop hook（10-22）的設計：stage 沒走完、背景沒東西會叫醒時擋一次 | `docs/99-archive/2026-10-22-stop-hook-design.md` — *built, English* |
 | 做它的 2 個 task——lib/stop.js 的判斷、hooks/stop.js 註冊與 hook 計數 | `docs/99-archive/2026-10-22-stop-hook.md` — *built, English* |
 | Tailscale 遠端 gate（10-22）的 4 個 task——station: 行尾巴、serve.json 帶 remote、開關 modal、--confirm | `docs/99-archive/2026-10-22-tailscale-remote-gate.md` — *built, 繁體中文* |
+| 介面語言 ui.lang（10-22）的設計：model.lang 改名、ui.lang 存機器 profile、Pane 與 band 每次重畫讀 | `docs/99-archive/2026-10-22-ui-lang-design.md` — *built, English* |
+| 做它的 9 個 task——profile 兩個鍵、station 寫入、pane-lang 詞表、band／Pane／Desktop 詞、row one 寬度、每 tick 讀 | `docs/99-archive/2026-10-22-ui-lang.md` — *built, 繁體中文* |
 | 手機頁接上 session（10-22）的設計：Stop hook 等手機、五種狀態、方向 A、麥克風、工具步驟 | `docs/99-archive/2026-10-22-mobile-session-design.md` — *built, English* |
 | 做它的 11 個 task——phone.js 頻道、Stop hook、inject、budget 步驟、/fankeel-phone、路由、手機頁、Tailscale Windows | `docs/99-archive/2026-10-22-mobile-session.md` — *built, English* |
 | 全表盤點（10-22）的 plan：land 先寫報告、mockup 逾時、整套單檔重跑、Pane 計數鈕、遠端收尾、serve 訊號測試、Workflow 門檻改回三個 | `docs/99-archive/2026-10-22-patrol.md` — *built, 繁體中文* |
@@ -629,6 +631,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 - [主控結束回合前先問一次 Stop hook（10-22）](03-decisions/2026-10-22-stop-hook.md)
 - [Tailscale 遠端開啟前先擋一次，開著時印出手機網址（10-22）](03-decisions/2026-10-22-tailscale-remote-gate.md)
 - [手機頁直接接上 Claude Code session，取代 Claude mobile（10-22）](03-decisions/2026-10-22-phone-session.md)
+- [station、Pane、band 用同一個介面語言 ui.lang（10-22）](03-decisions/2026-10-22-ui-lang.md)
 - [任務的圖由 station 畫成 SVG（10-20）](03-decisions/2026-10-20-task-boards-as-svg.md)
 - [retro 讀整份遮蔽過的 session 包（10-20）](03-decisions/2026-10-20-retro-bundle.md)
 - [沒派過的 agent 怎麼處理（10-15）：effort 改在派工時傳，六個複本刪掉](03-decisions/2026-10-15-unused-agents.md)
