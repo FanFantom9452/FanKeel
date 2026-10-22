@@ -234,6 +234,7 @@ function parseArgs(head, whole) {
     if (whole.includes('--force')) opts.force = true;
     if (whole.includes('--all')) opts.all = true;
     if (whole.includes('--default')) opts.default = true;
+    if (whole.includes('--confirm')) opts.confirm = true;
     if (whole.includes('--push')) opts.push = true;
     if (whole.includes('--no-push')) opts.push = false;
     if (whole.includes('--from-gate')) opts.fromGate = true;
@@ -1240,6 +1241,12 @@ function cmdProfile(root, opts) {
         const key = opts.positional[1];
         const value = opts.positional[2];
         if (!key || value === undefined) fail('profile set <key> <value>');
+        // station.remote true opens the station to the tailnet. It is an advanced
+        // feature, so the session must ask the user before it writes it; the
+        // station page asks in its own modal, and writes through profile.write.
+        if (key === 'station.remote' && !opts.confirm && profile.parseValue(key, value).value === true) {
+            fail('Tailscale 遠端是進階功能：不熟 Tailscale 的人不該開，開之前要先在這台電腦與手機裝好 Tailscale，並在 admin console 打開 MagicDNS 與 HTTPS 憑證。請先用 AskUserQuestion 問使用者，同意後加 --confirm 再執行一次。');
+        }
         const file = opts.default ? profile.machineFile(cfg) : profile.projectFile(projectRoot);
         if (!file) fail('No config directory to write the machine default to.');
         const out = profile.write(file, key, value);
