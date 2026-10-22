@@ -1,7 +1,7 @@
 ---
 label: station
 title: 指南補 ntfy topic 即密碼
-description: docs/01-guide/station.md 補一段免費 ntfy.sh 的 topic 風險與自架取捨
+description: 監控站指南補一段免費 ntfy.sh 的 topic 風險與自架取捨
 state: ready
 group: station 遠端
 ---
