@@ -396,9 +396,11 @@ test('a joining serve() writes its own leads into roots.json', async () => {
     const first = await serve({ configDir: f.cfg, port: 0, idleMs: 0, open: false });
     try {
         const second = await serve({ configDir: f.cfg, port: 0, idleMs: 0, open: false, roots: [r2] });
-        assert.equal(second.joined, true, 'the second call joined rather than bound');
-        assert.ok(Object.keys(station.readRoots(f.cfg)).includes(path.resolve(r2)),
-            'the joiner\'s own lead reached roots.json');
+        assert.equal(second.joined, true, 'the second call joined rather than bound — it got '
+            + JSON.stringify({ joined: second.joined, url: second.url, first: first.url }));
+        const roots = station.readRoots(f.cfg);
+        assert.ok(Object.keys(roots).includes(path.resolve(r2)),
+            'the joiner\'s own lead reached roots.json — it holds ' + JSON.stringify(Object.keys(roots)));
     } finally {
         first.close();
     }
