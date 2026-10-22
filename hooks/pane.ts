@@ -12,6 +12,8 @@ import type { AgentFile, AgentNode } from './pane-agents.ts'
 import { bandRows } from './pane-band.ts'
 import type { Seg as BandSeg, BandInput } from './pane-band.ts'
 import { bandRow1Svg, bandRow2Svg, paneParts, altOf, SVG_MAX } from './pane-svg.ts'
+import { say, langAt } from './pane-lang.ts'
+import type { Lang } from './pane-lang.ts'
 
 // The fankeel mod's two drawings: two rows above the prompt for what is always
 // wanted, and the Pane for what is looked up. The Pane opens itself while the
@@ -49,6 +51,8 @@ type Seen = {
   // The session's model alias, read each tick; the effort the last main-loop turn.step carried, which only that observer sets.
   model: string | null
   effort: string | null
+  // The machine profile's ui.lang, read each tick (langOf); every word the band and the Pane draw follows it.
+  lang: Lang
 }
 
 // What a file last parsed to, and the time and size it had then: the tick runs
@@ -57,10 +61,10 @@ type Seen = {
 // session's own registry file, the pending file and the ledger are read every tick.
 type Cache = Map<string, { stamp: string; value: unknown }>
 
-const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, context: null, limits: [], plan: null, remote: false, probe: null, agents: [], shells: [], station: null, pkey: '', todos: [], model: null, effort: null })
+const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, context: null, limits: [], plan: null, remote: false, probe: null, agents: [], shells: [], station: null, pkey: '', todos: [], model: null, effort: null, lang: 'zh' })
 
 // The last message each silent catch logged: the tick runs four times a second, and a failure that stays is said once.
-type Logged = { context: string; plan: string; open: string; registry: string; neighbour: string; gate: string; live: string; remote: string; bandSvg: string; paneSvg: string; agents: string; station: string; todo: string; model: string; shells: string }
+type Logged = { context: string; plan: string; open: string; registry: string; neighbour: string; gate: string; live: string; remote: string; bandSvg: string; paneSvg: string; agents: string; station: string; todo: string; model: string; shells: string; lang: string }
 
 // A registry file that is there and does not parse: told apart so `tick` can wait it out for a while, then give up on it.
 class Unreadable extends Error {}
@@ -351,6 +355,25 @@ async function stationOf($: EngineInterface, entry: Entry | null, logged: Logged
   }
 }
 
+// The machine profile's ui.lang (hooks/pane-lang.ts langAt), under the config
+// directory stationOf reads serve.json from: the entry's, else CLAUDE_CONFIG_DIR,
+// else ~/.claude. Read every tick, so a pick on the station shows on the next one.
+async function langOf($: EngineInterface, entry: Entry | null, logged: Logged): Promise<Lang> {
+  try {
+    const recorded = !!entry && typeof entry.configDir === 'string' && !!entry.configDir
+    const configDir = recorded && entry ? await configDirOf($, entry) : ((await $.env.get('CLAUDE_CONFIG_DIR')) || (await configDirOf($, {}))).replace(/[\\/]+$/, '')
+    const io = {
+      exists: (path: string) => $.fs.exists(path),
+      read: async (path: string) => String(await $.fs.read(path)),
+      log: (text: string) => logOnce($, logged, 'lang', text),
+    }
+    return await langAt(io, configDir)
+  } catch (err) {
+    logOnce($, logged, 'lang', `fankeel pane: ui.lang unreadable, ${String(err)}`)
+    return 'zh'
+  }
+}
+
 // lib/todo.js STATES, the open ones in the order the station's TODO panel files them; any other state but `done` comes after.
 const TODO_ORDER = ['ready', 'decision', 'blocked', 'watch']
 
@@ -401,7 +424,7 @@ async function todosOf($: EngineInterface, dir: string, cache: Cache, logged: Lo
 // Opens the station's page in the host's browser: `start` on Windows, else
 // `open`, then `xdg-open`. When none of them runs, the url is copied instead,
 // and when that fails too a toast says so with the url in it.
-async function openStation($: EngineInterface, url: string, surface: UiPressArgument['surface']): Promise<void> {
+async function openStation($: EngineInterface, url: string, surface: UiPressArgument['surface'], lang: Lang): Promise<void> {
   const windows = (await $.env.get('OS')) === 'Windows_NT'
   const tries = windows ? [['cmd', '/c', 'start', '', url]] : [['open', url], ['xdg-open', url]]
   for (const argv of tries) {
@@ -417,7 +440,7 @@ async function openStation($: EngineInterface, url: string, surface: UiPressArgu
   } catch {
     // Said by the toast below, the same as a copy the surface declined.
   }
-  $.ui.toast(`station：開不了瀏覽器，也複製不了網址 ${url}`)
+  $.ui.toast(say(lang, 'pane.toast', { url }))
 }
 
 // Everything both drawings show: this session's entry, the other active
@@ -494,7 +517,7 @@ async function look($: EngineInterface, cache: Cache, logged: Logged): Promise<S
   } catch (err) {
     logOnce($, logged, 'model', `fankeel pane: session model unreadable, ${String(err)}`)
   }
-  return { id, entry, others, pending, context, limits, plan, remote, probe, agents, shells: [], station, pkey, todos, model, effort: null }
+  return { id, entry, others, pending, context, limits, plan, remote, probe, agents, shells: [], station, pkey, todos, model, effort: null, lang: 'zh' }
 }
 
 // How often the running shells' output files are read again: `$.fs.read` takes a file whole, and a suite's output grows every tick.
@@ -592,11 +615,12 @@ async function tick($: EngineInterface, state: State): Promise<void> {
     // The minute is in the key so the minutes, the neighbours' ages and the reset countdowns move while
     // nothing else does; while a gate waits the second is too, for the seconds it has left.
     next.effort = state.seen.effort
+    next.lang = await langOf($, next.entry, state.logged)
     const clock = next.entry ? await $.clock.now() : 0
     next.shells = next.entry ? await shellsOf($, state, next.id, clock) : []
     const minute = Math.floor(clock / 60000)
     const second = next.pending ? Math.floor(clock / 1000) : 0
-    const now = JSON.stringify([next.entry, next.others, next.context, next.limits, next.plan, next.remote, next.probe, next.agents, next.shells, next.station, next.pkey, next.todos, next.model, next.effort, minute, second])
+    const now = JSON.stringify([next.entry, next.others, next.context, next.limits, next.plan, next.remote, next.probe, next.agents, next.shells, next.station, next.pkey, next.todos, next.model, next.effort, next.lang, minute, second])
     // The opens and closes have their own memory, `edge`, which moves only when they all went through: a rejected
     // one is met again next tick as the same edge, while `seen` and the redraw below never wait on them.
     try {
@@ -631,12 +655,12 @@ async function tick($: EngineInterface, state: State): Promise<void> {
 export const register: Register = (on) => {
   const state: State = {
     seen: blank(''), print: '', mine: false, edge: { task: false }, bad: 0, busy: false, cache: new Map(),
-    logged: { context: '', plan: '', open: '', registry: '', neighbour: '', gate: '', live: '', remote: '', bandSvg: '', paneSvg: '', agents: '', station: '', todo: '', model: '', shells: '' },
+    logged: { context: '', plan: '', open: '', registry: '', neighbour: '', gate: '', live: '', remote: '', bandSvg: '', paneSvg: '', agents: '', station: '', todo: '', model: '', shells: '', lang: '' },
     folded: {}, shells: [], shellAt: 0, tasksDir: '',
   }
 
   on('session.start', async ($, e, next) => {
-    await $.command.register({ name: COMMAND, description: 'fankeel 面板：任務、撞檔、tasks、用量額度與 notes' })
+    await $.command.register({ name: COMMAND, description: say(await langOf($, null, state.logged), 'pane.command') })
     $.clock.every(POLL_MS, () => tick($, state))
     return next(e)
   })
@@ -663,16 +687,17 @@ export const register: Register = (on) => {
 
   on('command.run', { command: COMMAND }, async ($) => {
     state.mine = false
+    const lang = state.seen.lang
     if (await isOpen($)) {
       await $.ui.close({ id: PANE })
-      return { text: 'fankeel 面板已關閉。' }
+      return { text: say(lang, 'pane.closed') }
     }
     const opened = await $.ui.open({ id: PANE, title: 'fankeel' })
     await tick($, state)
-    if (opened.isPlaced) return { text: 'fankeel 面板已開啟。' }
+    if (opened.isPlaced) return { text: say(state.seen.lang, 'pane.opened') }
     const surfaces = await $.session.surfaces()
-    if (!surfaces.some((surface) => PLACES.includes(surface))) return { text: 'fankeel 面板開不了：這裡畫不了面板，請在終端或 Claude Desktop 開。' }
-    return { text: opened.reason ? `fankeel 面板開不了：${opened.reason}` : 'fankeel 面板開不了：終端太窄。' }
+    if (!surfaces.some((surface) => PLACES.includes(surface))) return { text: say(state.seen.lang, 'pane.noSurface') }
+    return { text: opened.reason ? say(state.seen.lang, 'pane.reason', { reason: opened.reason }) : say(state.seen.lang, 'pane.narrow') }
   })
 
   // Two rows while the session owns a task; otherwise the band is the next hook's, and with none it is not drawn.
@@ -695,6 +720,7 @@ export const register: Register = (on) => {
       remote: seen.remote,
       model: seen.model,
       effort: seen.effort,
+      lang: seen.lang,
       cols,
       now,
     }
@@ -745,15 +771,16 @@ export const register: Register = (on) => {
       folded: state.folded,
       todos: seen.todos,
       pkey: seen.pkey,
+      lang: seen.lang,
     }
     const status = statusRows(input)
     const blankRow = () => h(Text, {}, ' ')
     // A row's segments touch: each carries its own colour, and its own space where it wants one.
     const piece = (seg: StatusSeg) => {
       const url = seen.station
-      if (seg.press === 'station' && url) return h(Button, { key: 'station', label: seg.text, hotkey: 's', onPress: (press: UiPressArgument) => openStation($, url, press.surface) })
+      if (seg.press === 'station' && url) return h(Button, { key: 'station', label: seg.text, hotkey: 's', onPress: (press: UiPressArgument) => openStation($, url, press.surface, seen.lang) })
       const to = seg.to
-      if (seg.press === 'todo' && to && url) return h(Button, { key: to, label: seg.text, onPress: (press: UiPressArgument) => openStation($, url + to, press.surface) })
+      if (seg.press === 'todo' && to && url) return h(Button, { key: to, label: seg.text, onPress: (press: UiPressArgument) => openStation($, url + to, press.surface, seen.lang) })
       const fold = seg.fold
       if (seg.press === 'fold' && fold) {
         return h(Button, { key: `fold-${fold}`, label: seg.text, onPress: () => {

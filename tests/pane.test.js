@@ -159,6 +159,34 @@ test('the band above the prompt draws the stage, the dots and the minutes, then 
     assert.equal(log.opened.length, 1, 'drawing the band opened a pane beyond the one the task opened');
 });
 
+test('the band and the Pane speak the machine profile\'s ui.lang, and a switch shows on the next tick', async () => {
+    const hooks = await wired();
+    const PROFILE = 'F:/cfg/fankeel/profile.json';
+    const files = Object.assign(entryFile(Object.assign({}, live, { configDir: 'F:/cfg' })), { [PROFILE]: JSON.stringify({ 'ui.lang': 'en' }) });
+    const { $, log, store } = fake({ files });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    assert.equal(bandLines(await hooks.band($, BAND, passed))[0], '▌FANKEEL DESIGN  ●●○  on you 0 min  remote ✗');
+    const pane = paneLines(await hooks['ui.render']($, { viewport: { columns: 44, rows: 40 } }));
+    assert.ok(pane.includes('▌abcdef12 · /fankeel-panel to close'), pane.join('\n'));
+    assert.ok(pane.includes(' station not running'), pane.join('\n'));
+    assert.deepEqual(await hooks['command.run']($, { command: 'fankeel-panel', args: '' }), { text: 'fankeel panel closed.' });
+    const before = log.invalidated;
+    store[PROFILE] = JSON.stringify({ 'ui.lang': 'zh' });
+    await log.ticks[0].fn();
+    assert.ok(log.invalidated > before, 'the switch redraws on the next tick, with nothing else moved');
+    assert.equal(bandLines(await hooks.band($, BAND, passed))[0], '▌FANKEEL DESIGN  ●●○  等你 0 分  遠端 ✗');
+});
+
+test('no machine profile, or one without ui.lang, draws Chinese', async () => {
+    const hooks = await wired();
+    const files = Object.assign(entryFile(Object.assign({}, live, { configDir: 'F:/cfg' })), { 'F:/cfg/fankeel/profile.json': JSON.stringify({ guard: 'deny' }) });
+    const { $, log } = fake({ files });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    assert.equal(bandLines(await hooks.band($, BAND, passed))[0], '▌FANKEEL DESIGN  ●●○  等你 0 分  遠端 ✗');
+});
+
 test('a session root ending in a backslash still finds the registry file', async () => {
     const hooks = await wired();
     const { $, log } = fake({ files: entryFile(live) });
