@@ -790,7 +790,7 @@
         function act(url, fields, done) {
             st.ui.note = '';
             return post(url, fields).then(function (r) {
-                if (r.status === 201) { if (done) done(); return loadChat(); }
+                if (r.ok) { if (done) done(); return loadChat(); }
                 return r.text().then(function (text) { st.ui.note = t('gate.refused', { code: r.status, why: String(text || '').trim() }); draw(); });
             }, function () { st.ui.note = t('gate.failed'); draw(); });
         }

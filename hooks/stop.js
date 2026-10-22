@@ -14,8 +14,9 @@
 // whether or not stop_hook_active is set, since every phone message is one.
 //
 // Same rules as every hook here: exit 0 on every path, and nothing at all for
-// a session that owns no active task. Two things go to stdout: the refusal, or
-// a phone message.
+// a session the registry does not know; a registry session with no active task
+// still has its reply and background recorded, but is never refused. Two things
+// go to stdout: the refusal, or a phone message.
 
 const registry = require('../lib/registry.js');
 const phone = require('../lib/phone.js');

@@ -561,6 +561,19 @@ test('boot: 交還電腦 posts /phone/detach with the session\'s root and id', a
     assert.equal(sent[0].init.body, new URLSearchParams({ root: '/w', id: 'aaaaaaaa-5' }).toString());
 });
 
+// The station answers /phone/detach 200, not 201 (scripts/station.js).
+test('boot: a 200 from /phone/detach reads phone.json again and shows no refusal', async () => {
+    const one = sess('holding', { id: 'aaaaaaaa-5', attached: true });
+    const page = boot({ hash: '#/s/aaaaaaaa-5', fetch: (url) => (url === '/phone/detach' ? reply(200, 'detached\n') : routed(one)(url)) });
+    await settle();
+    const before = callsTo(page, PHONE + 'aaaaaaaa-5').length;
+    page.fire('click', tap({ 'data-act': 'detach' }));
+    await settle();
+    assert.equal(callsTo(page, '/phone/detach').length, 1);
+    assert.ok(callsTo(page, PHONE + 'aaaaaaaa-5').length > before, 'the page reads phone.json again');
+    assert.doesNotMatch(page.app.innerHTML, /測站沒收下/);
+});
+
 test('boot: tapping a finished turn\'s steps line opens its rows, and a second tap closes them', async () => {
     const chat = [{ role: 'phone', text: 'go', at: NOW - 9e3 }, { role: 'tool', id: 't0', tool: 'Bash', label: 'npm test', at: NOW - 8e3 },
         { role: 'tool-end', id: 't0', ok: true, at: NOW - 7e3 }, { role: 'assistant', text: '好了', at: NOW - 6e3 }];

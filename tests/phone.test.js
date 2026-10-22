@@ -26,6 +26,15 @@ test('attach, isAttached, detach', () => {
     assert.equal(phone.isAttached(root, SID), false);
 });
 
+test('detach drops a waiting message: the next attach starts with an empty inbox', () => {
+    const root = tmp('fankeel-phone-');
+    phone.attach(root, SID, 'my-pc', 1);
+    assert.deepEqual(phone.say(root, SID, 'stale', 2), { ok: true });
+    assert.equal(phone.detach(root, SID), true);
+    phone.attach(root, SID, 'my-pc', 3);
+    assert.equal(phone.take(root, SID), null);
+});
+
 test('say refuses empty, too long, unattached and a second message; take empties the inbox', () => {
     const root = tmp('fankeel-phone-');
     assert.equal(phone.say(root, SID, 'hi', 1).code, 409);
