@@ -160,13 +160,22 @@ test('keepOpen marks the folds the reader opened and leaves the rest', () => {
     assert.doesNotMatch(out, /data-gv="patrol" open/);
 });
 
-test('the focus page listens for clicks on #focus, not on the document', () => {
+test('the focus page listens for clicks on #focus, and a click on a fold keeps it open through the repaint', () => {
     const d = focusDom();
     assert.equal(d.clicks.length, 1);
     assert.deepEqual(d.listened, []);
+    d.win.STATION_FOCUS.tab = 'gate';
+    d.win.STATION_DETAIL[SID].gate = { stage: 'survey', path: 'x/survey.md', parts: { rest: ['left over'] } };
+    const repaint = () => { d.ticks[0](); d.heads[d.heads.length - 1].onload(); };
+    repaint();
+    assert.match(d.focus.innerHTML, /data-gv="rest"><summary/);
+    assert.doesNotMatch(d.focus.innerHTML, /data-gv="rest" open/);
+    const asked = [];
     const details = { open: false, getAttribute: (k) => (k === 'data-gv' ? 'rest' : null) };
-    d.clicks[0]({ target: { closest: () => ({ parentNode: details }) } });
-    assert.equal(typeof d.focus.innerHTML, 'string');
+    d.clicks[0]({ target: { closest: (sel) => { asked.push(sel); return { parentNode: details }; } } });
+    assert.deepEqual(asked, ['details[data-gv] > summary']);
+    repaint();
+    assert.match(d.focus.innerHTML, /data-gv="rest" open/);
 });
 
 test('gateRest and gatePatrol carry a data-gv key', () => {

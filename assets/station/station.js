@@ -2917,17 +2917,17 @@
         return focusHeader(s, focus.tab) + shells + '<main class="fm" data-block="focus-' + (gate ? 'gate' : 'plan') + '">'
             + (gate ? focusGateHtml(s, x.gate, x.tasks || []) : focusPlanHtml(x.tasks)) + '</main>';
     }
-    // Below the guard's `if (!doc) return;`: draws once, then re-reads the one
-    // session's script through `reload` every five seconds while the browser
-    // tab is visible — the ledger moves while a build runs. Only `w.*` and
-    // hoisted functions here: the full page's `var`s further down are never
-    // assigned, which is why `reload` holds its timeout as a literal.
     // A <details> on the focus page the reader opened stays open through the
     // 5 s repaint, which rewrites the whole page (station-37). Only the
     // report's folds carry a data-gv key; the rest are short.
     function keepOpen(html, open) {
         return String(html).replace(/<details class="gv-more" data-gv="([a-z]+)"/g, function (m, k) { return open[k] ? m + ' open' : m; });
     }
+    // Below the guard's `if (!doc) return;`: draws once, then re-reads the one
+    // session's script through `reload` every five seconds while the browser
+    // tab is visible — the ledger moves while a build runs. Only `w.*` and
+    // hoisted functions here: the full page's `var`s further down are never
+    // assigned, which is why `reload` holds its timeout as a literal.
 
     function focusBoot() {
         var F = w.STATION_FOCUS;
