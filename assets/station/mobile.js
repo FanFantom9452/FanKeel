@@ -340,8 +340,8 @@
                 + (idle.length ? gh('grp.idle', idle.length) + '<div class="ha-idle ha-list">' + rows(idle) + '</div>' : '');
         // The ntfy app opens its subscribe dialog from ntfy://; a phone
         // without the app uses the web topic beside it.
-        var sub = m.notify && m.notify.app ? '<a class="ha-sub" href="' + esc(m.notify.app) + '">' + t('home.sub') + '</a>'
-            + '<a class="ha-sub-web" href="' + esc(m.notify.web) + '" target="_blank" rel="noopener">' + t('home.subWeb') + '</a>' : '';
+        var sub = m.notify && m.notify.app ? '<a class="ha-subscribe" href="' + esc(m.notify.app) + '">' + t('home.sub') + '</a>'
+            + '<a class="ha-subscribe-web" href="' + esc(m.notify.web) + '" target="_blank" rel="noopener">' + t('home.subWeb') + '</a>' : '';
         return '<div class="pg" data-block="m-home-a"><header class="ab"><h1>' + t('home.title') + '</h1>' + (tasks.length ? '<span class="n">' + tasks.length + '</span>' : '')
             + '<span class="sp"></span>' + sub + '<a class="ha-hist" href="#/done" aria-label="' + t('home.hist') + '" title="' + t('home.hist') + '">' + ic('hist') + '</a>' + hostHtml(m) + '</header>'
             + '<div class="ha-body">' + body + '</div></div>';
