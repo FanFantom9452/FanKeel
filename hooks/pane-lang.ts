@@ -113,7 +113,7 @@ export async function langAt(io: LangIo, configDir: string): Promise<Lang> {
   const file = `${configDir.replace(/[\\/]+$/, '')}/fankeel/profile.json`
   try {
     if (!(await io.exists(file))) return 'zh'
-    const v = (JSON.parse(String(await io.read(file)).replace(/^﻿/, '')) as Record<string, unknown>)['ui.lang']
+    const v = (JSON.parse(String(await io.read(file)).replace(/^\uFEFF/, '')) as Record<string, unknown>)['ui.lang']
     return typeof v === 'string' && v.trim().toLowerCase() === 'en' ? 'en' : 'zh'
   } catch (err) {
     io.log(`fankeel pane: unreadable profile ${file}: ${String(err)}`)

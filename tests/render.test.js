@@ -875,7 +875,7 @@ test('prompt.all rides every stage\'s block and the stage agent\'s brief; prompt
 // TODO 〔stage〕: the brief is English and a stage agent followed it, writing
 // report and gate in English to a user who writes Traditional Chinese. The
 // profile's `model.lang` names the language; unset, the brief says nothing.
-test('a stage agent\'s brief names the profile\'s language for its report and gate; a reader\'s does not, nor a profile without it', () => {
+test('a stage agent\'s brief names the profile\'s model.lang for its report and gate; a reader\'s does not, nor a profile without it', () => {
   const { renderBrief } = require('../lib/render.js');
   const base = { 'stage.agents': NAMES.slice(), 'dispatch.floor': 'sonnet' };
   const on = { values: Object.assign({ 'model.lang': '繁體中文' }, base), sources: {}, unreadable: [] };
