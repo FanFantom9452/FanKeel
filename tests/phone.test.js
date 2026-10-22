@@ -62,18 +62,23 @@ test('append keeps known roles, caps text, trims to the last 200 lines; chat rea
     assert.deepEqual(phone.chat(root, SID, 2).map((x) => x.text), ['203', '204']);
 });
 
-test('two processes appending to a full chat.jsonl both keep their line', () => {
+test('an append waits for the chat.jsonl lock and lands once it is released', () => {
     const { spawn } = require('node:child_process');
+    const { acquire } = require('../lib/suitelock.js');
     const root = tmp('fankeel-phone-race-');
     for (let i = 0; i < 200; i++) phone.append(root, SID, { role: 'desktop', text: String(i), at: i });
-    const script = (tag) => 'const p=require(' + JSON.stringify(require.resolve('../lib/phone.js')) + ');'
-        + 'for(let i=0;i<40;i++)p.append(' + JSON.stringify(root) + ',' + JSON.stringify(SID) + ',{role:"desktop",text:"' + tag + '"+i,at:i});';
-    const run = (tag) => new Promise((done) => spawn(process.execPath, ['-e', script(tag)]).on('exit', done));
-    return Promise.all([run('a'), run('b')]).then(() => {
+    const held = acquire({ file: file(root, 'chat.jsonl') + '.lock', pollMs: 10 });
+    const script = 'require(' + JSON.stringify(require.resolve('../lib/phone.js')) + ').append(' + JSON.stringify(root) + ',' + JSON.stringify(SID) + ',{role:"desktop",text:"late",at:1});';
+    const child = new Promise((done) => spawn(process.execPath, ['-e', script]).on('exit', done));
+    // The child has had 700 ms to run while the lock is held: its line must not be there yet.
+    return new Promise((r) => setTimeout(r, 700)).then(() => {
+        assert.ok(!phone.chat(root, SID, 0).some((x) => x.text === 'late'), 'append went in without the lock');
+        held.release();
+        return child;
+    }).then(() => {
         const texts = phone.chat(root, SID, 0).map((x) => x.text);
         assert.equal(texts.length, 200);
-        assert.ok(texts.includes('a39') && texts.includes('b39'), texts.slice(-4).join(','));
-        assert.equal(texts.filter((t) => /^[ab]\d+$/.test(t)).length, 80);
+        assert.equal(texts[199], 'late');
     });
 });
 
