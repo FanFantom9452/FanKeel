@@ -23,16 +23,14 @@ const { profileFor } = require('../lib/profile.js');
 const { refusal } = require('../lib/stop.js');
 const { run, parse } = require('../lib/hook.js');
 
-// Also the ceiling: plugin.json gives this hook 1805 seconds, and a longer
-// hold would be killed by Claude Code mid-wait.
-const HOLD_MAX = 1800;
+const HOLD_DEFAULT = 1800;
 
 function holdSeconds(root, mine) {
     try {
         const n = Number(profileFor(root, mine).values['phone.hold']);
-        return Number.isInteger(n) && n > 0 && n <= HOLD_MAX ? n : HOLD_MAX;
+        return Number.isInteger(n) && n > 0 ? n : HOLD_DEFAULT;
     } catch (e) {
-        return HOLD_MAX;
+        return HOLD_DEFAULT;
     }
 }
 
@@ -61,6 +59,10 @@ function main(raw) {
         if (!phone.isAttached(root, sid)) return;
         got = phone.hold(root, sid, holdSeconds(root, mine) * 1000);
     } catch (e) {
+        // Left attached, the phone would keep sending into a hook that is gone.
+        try {
+            phone.detach(root, sid);
+        } catch (e2) { /* nothing left to do */ }
         return;
     }
     if (!got || typeof got.text !== 'string') return;

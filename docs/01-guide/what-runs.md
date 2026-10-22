@@ -16,7 +16,7 @@ source_of_truth: .claude-plugin/plugin.json, hooks/mod.ts, hooks/pane.ts
 |---|---|---|
 | `inject.js` | 你送出 prompt | 注入目前 task、這站的規則與報告骨架、其他 live session；`/fankeel` 時注入開場區塊；更新 badge |
 | `resume.js` | `AskUserQuestion` 被回答後 | 再送一次這站的規則——回答不是 prompt，沒有這個就沒人提醒 |
-| `stop.js` | 主 session 一輪結束時 | stage 還開著、而且沒有背景 Bash、非同步 Agent 或 `SendMessage` 在等時，擋下這次結束一次（`decision: block`）；`stop_hook_active` 表示已擋過，第二次就放行；一樣以 0 結束 |
+| `stop.js` | 主 session 一輪結束時 | stage 還開著、而且沒有背景 Bash、非同步 Agent 或 `SendMessage` 在等時，擋下這次結束一次（`decision: block`）；`stop_hook_active` 表示已擋過，這個擋下就不再重複。每次結束都把回覆與背景工作記到手機聊天；手機已接上時，擋下之後再等手機訊息最久 `phone.hold` 秒（預設 1800），收到就當下一個指示擋下，這段等待不看 `stop_hook_active`；一樣以 0 結束 |
 | `gate.js` | `AskUserQuestion` 送出前 | 記下 gate 開的時間以量等待；設了 `gate.away` 且你離開時先擋下問題並提示；開了 `notify.gate` 時發一則 ntfy 通知；設了 `gate.station` 時先等監控站上的回答 |
 
 ## 編輯與派工
@@ -28,7 +28,7 @@ source_of_truth: .claude-plugin/plugin.json, hooks/mod.ts, hooks/pane.ts
 | `title.js` | 派 Agent 前 | 在 subagent 標題前加上模型、版本與 effort |
 | `dispatch-gate.js` | 同一則訊息派的 Agent 超過 profile 的 dispatch.inflight（預設 8）時 | 先問你，附上花費估計 |
 | `brief.js` | subagent 開始時 | 告訴它屬於哪個 task、動過哪些檔、回傳值有多貴 |
-| `budget.js` | subagent 的每次工具呼叫前後 | context 快滿時提醒它交接，太滿就只准交接 |
+| `budget.js` | subagent 的每次工具呼叫前後；registry session 的主執行緒工具呼叫 | context 快滿時提醒 subagent 交接，太滿就只准交接；也把主執行緒的工具步驟記到手機聊天 |
 | `agent-end.js` | subagent 開始與結束時 | 記下它何時起、何時停，給 Pane 的 agent 樹 |
 | `gate-write.js` | Write 之後 | stage agent 寫出 handoff 時，當場檢查它的 gate 格式 |
 | `relay-cap.js` | 傳訊息給另一個 session 或 agent 前（`SendMessage`、`mcp__ccd_session_mgmt__send_message`） | 只在這個 session 有進行中的 task 時作用：最長的字串值（含一層巢狀）超過 2000 字就擋下，要你改傳檔案路徑 |

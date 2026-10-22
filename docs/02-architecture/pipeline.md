@@ -280,7 +280,7 @@ input and therefore the expensive half; it loops if the hook forgets to check
 `stop_hook_active`; and it blocks the legitimate case where somebody asks a
 plain question mid-task and gets a plain answer.
 
-A narrower `Stop` hook now exists (`hooks/stop.js`, `lib/stop.js`): it refuses only a turn that ends with the stage open and nothing pending to wake the session. It refuses once per turn: the second try goes through on `stop_hook_active`.
+A narrower `Stop` hook now exists (`hooks/stop.js`, `lib/stop.js`): it refuses only a turn that ends with the stage open and nothing pending to wake the session. It refuses once per turn: the second try goes through on `stop_hook_active`. The phone hold is separate: when a phone is attached, the hook then waits up to the profile's `phone.hold` seconds (default 1800) for a phone message and blocks with it as the next instruction, and that wait ignores `stop_hook_active`.
 
 # Stages, and the route through them
 

@@ -60,6 +60,15 @@ test('phone.hold runs out: nothing printed and the phone is detached', () => {
     assert.equal(exists(p, 'attach.json'), false);
 });
 
+test('a hold that throws ends the Stop with the phone detached', () => {
+    const p = project(false);
+    phone.attach(p.root, SID, 'my-pc', 1);
+    // A directory where holding.json goes: hold's first write throws.
+    fs.mkdirSync(path.join(phone.dirOf(p.root, SID), 'holding.json'));
+    assert.equal(fire(p), '');
+    assert.equal(exists(p, 'attach.json'), false);
+});
+
 test('a detach while holding releases the hook with nothing printed', async () => {
     const p = project(false);
     phone.attach(p.root, SID, 'my-pc', 1);
