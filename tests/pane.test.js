@@ -1413,7 +1413,7 @@ test('an entry file is read again only when it moved, and a docs.json that does 
     assert.ok(!buttons(await hooks['ui.render']($, { viewport: { columns: 44, rows: 60 } })).some((b) => b.props.key === 'fold-todo'));
 });
 
-test('the TODO head counts what lib/todo.js counts open in this repository, and the list draws from that many', async () => {
+test('the TODO head counts what lib/todo.js counts open in this repository, and one count button a non-empty heading', async () => {
     const hooks = await wired();
     const fs = require('node:fs');
     const repo = path.join(__dirname, '..');
