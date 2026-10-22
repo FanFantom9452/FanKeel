@@ -57,6 +57,7 @@ flowchart LR
 |---|---|
 | `/fankeel` | 開始、接續、接手或收掉 task |
 | `/fankeel-station` | 重開監控站 |
+| `/fankeel-phone` | 把這個 session 交給手機 |
 | `/fankeel-audit` | 文件與程式碼的整套稽核 |
 | `/fankeel-ask` | 把卡住的一題交給更強的模型判 |
 | `/fankeel-init` | 第一次在一個專案使用時的導入 |

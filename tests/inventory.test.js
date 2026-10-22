@@ -19,6 +19,7 @@ const SKILLS = [
     'fankeel-explain',
     'fankeel-init',
     'fankeel-land',
+    'fankeel-phone',
     'fankeel-plan',
     'fankeel-retro-all',
     'fankeel-station',
