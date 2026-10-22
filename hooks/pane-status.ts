@@ -18,9 +18,8 @@ export type Other = { id: string; entry: Entry }
 // `color` is a hex, or absent for the terminal's own. The segments of a row
 // touch: one that wants a space before it carries the space in its text.
 // `press` makes the segment a Button on the Pane (hooks/pane.ts piece): 'station' opens the station's page,
-// 'fold' folds or opens the block `fold` names, 'todo' opens the station at the hash `to`, and
-// 'todoState' lists or closes the TODO entries in the state `state`.
-export type Seg = { text: string; color?: string; bold?: boolean; press?: 'station' | 'fold' | 'todo' | 'todoState'; fold?: Fold; to?: string; state?: string }
+// 'fold' folds or opens the block `fold` names, and 'todo' opens the station at the hash `to`.
+export type Seg = { text: string; color?: string; bold?: boolean; press?: 'station' | 'fold' | 'todo'; fold?: Fold; to?: string }
 // The blocks a head row folds; docs/90-agent/plans/2026-10-17-pane-fold-todo-design.md sections 1 and 2.
 export type Fold = 'route' | 'tasks' | 'todo' | 'agents' | 'shells'
 // One open entry of the project's TODO bucket (hooks/pane.ts todosOf): its file name without `.md`, its title, its state.
@@ -55,8 +54,6 @@ export type StatusInput = {
   // The project's open TODO entries, Ready first (hooks/pane.ts todosOf), and the station's key for the project.
   todos?: TodoEntry[]
   pkey?: string
-  // The TODO state whose entries the block lists (hooks/pane.ts state), or none listed.
-  todoOpen?: string | null
 }
 
 // Each block's rail, a fixed colour whatever the stage, on its first drawn row;
@@ -335,19 +332,17 @@ function stationRow(url: string | null | undefined, inner: number): Row {
   return row('foot', { text: label, press: 'station' }, dim(cut(` ${url}`, Math.max(4, inner - width(label) - 4))))
 }
 
-// The most TODO titles the block lists.
-const TODO_ROWS = 6
-
 // lib/todo.js STATES, the four the TODO block has a Button for, in the station panel's order, each with its label.
 export const TODO_STATES: [string, string][] = [['ready', 'Ready'], ['decision', 'Needs a decision'], ['blocked', 'Blocked'], ['watch', 'Watch']]
 
-// The project's open TODO entries under a fold head that counts them, then a
-// Button a state with its count, two a row — a state with none is grey words —
-// and under them the titles of the state pressed (`open`): a title a row, each a
-// Button opening the station's TODO panel on that entry, and past TODO_ROWS a
-// grey Button opening the whole panel. The terminal draws a Button four cells
-// wider than its label. No entries, no block.
-function todoBlock(todos: TodoEntry[], pkey: string, inner: number, folded: boolean, open: string | null): Row[] {
+// The project's open TODO entries under a fold head that counts them, then the
+// four states each with its count: a state with entries is a Button opening the
+// station's TODO panel on that state's group (`todo/state:<state>`, the id
+// assets/station/station.js gives the group's heading), a state with none is grey
+// words. The counts share one row when they fit `inner` and fall to two rows of
+// two when they do not; no title is listed, so the block is three rows at most.
+// The terminal draws a Button four cells wider than its label. No entries, no block.
+function todoBlock(todos: TodoEntry[], pkey: string, inner: number, folded: boolean): Row[] {
   if (!todos.length) return []
   const at = `#/p/${encodeURIComponent(pkey)}/todo`
   const rows = [row('todo', head('todo', folded, `TODO ${todos.length}`))]
@@ -355,14 +350,12 @@ function todoBlock(todos: TodoEntry[], pkey: string, inner: number, folded: bool
   const keys = TODO_STATES.map(([state, label]): Seg => {
     const n = todos.filter((t) => t.state === state).length
     if (!n) return dim(`${label} 0`)
-    const seg: Seg = { text: `${label} ${n}`, press: 'todoState', state }
-    if (state === open) seg.bold = true
-    return seg
+    return { text: `${label} ${n}`, press: 'todo', to: `${at}/${encodeURIComponent(`state:${state}`)}` }
   })
-  rows.push(row('todo', keys[0], { text: ' ' }, keys[1]), row('todo', keys[2], { text: ' ' }, keys[3]))
-  const shown = open ? todos.filter((t) => t.state === open) : []
-  for (const t of shown.slice(0, TODO_ROWS)) rows.push(row('todo', { text: cut(t.title, Math.max(4, inner - 4)), press: 'todo', to: `${at}/${encodeURIComponent(t.id)}` }))
-  if (shown.length > TODO_ROWS) rows.push(row('todo', { text: `還有 ${shown.length - TODO_ROWS} 條`, color: WHERE, press: 'todo', to: at }))
+  const gap: Seg = { text: ' ' }
+  const cells = keys.reduce((sum, k) => sum + width(k.text) + (k.press ? 4 : 0), 0) + 3
+  if (cells <= inner) rows.push(row('todo', keys[0], gap, keys[1], gap, keys[2], gap, keys[3]))
+  else rows.push(row('todo', keys[0], gap, keys[1]), row('todo', keys[2], gap, keys[3]))
   return rows
 }
 
@@ -472,7 +465,7 @@ export function statusRows(input: StatusInput): Row[] {
   if (notes.length) blocks.push([row('notes', title('notes', 'notes')), ...notes.map((note) => row('notes', { text: cut(`· ${note}`, inner) }))])
 
   // With no station up nothing opens a TODO: the foot's `station 未啟動` stands for both.
-  const todo = input.station ? todoBlock(input.todos ?? [], input.pkey ?? '', inner, !!folded.todo, input.todoOpen ?? null) : []
+  const todo = input.station ? todoBlock(input.todos ?? [], input.pkey ?? '', inner, !!folded.todo) : []
   if (todo.length) blocks.push(todo)
 
   // The probe is asked for by hand (hooks/pane.ts probeOf): it is drawn whole, in the block that never drops.

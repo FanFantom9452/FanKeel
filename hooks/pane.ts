@@ -559,8 +559,6 @@ type State = {
   logged: Logged
   // The blocks folded to their head row: memory only, so a new session starts with every block open.
   folded: Partial<Record<Fold, boolean>>
-  // The TODO state whose entries the Pane lists, or null: memory only, as the folds are.
-  todoOpen: string | null
   // The background shells the tool.call observer recorded, newest last (hooks/pane-shell.ts remember): memory only.
   shells: Shell[]
   // When shellsOf last read the output files, and the tasks directory once found ('' until then).
@@ -634,7 +632,7 @@ export const register: Register = (on) => {
   const state: State = {
     seen: blank(''), print: '', mine: false, edge: { task: false }, bad: 0, busy: false, cache: new Map(),
     logged: { context: '', plan: '', open: '', registry: '', neighbour: '', gate: '', live: '', remote: '', bandSvg: '', paneSvg: '', agents: '', station: '', todo: '', model: '', shells: '' },
-    folded: {}, todoOpen: null, shells: [], shellAt: 0, tasksDir: '',
+    folded: {}, shells: [], shellAt: 0, tasksDir: '',
   }
 
   on('session.start', async ($, e, next) => {
@@ -747,7 +745,6 @@ export const register: Register = (on) => {
       folded: state.folded,
       todos: seen.todos,
       pkey: seen.pkey,
-      todoOpen: state.todoOpen,
     }
     const status = statusRows(input)
     const blankRow = () => h(Text, {}, ' ')
@@ -757,13 +754,6 @@ export const register: Register = (on) => {
       if (seg.press === 'station' && url) return h(Button, { key: 'station', label: seg.text, hotkey: 's', onPress: (press: UiPressArgument) => openStation($, url, press.surface) })
       const to = seg.to
       if (seg.press === 'todo' && to && url) return h(Button, { key: to, label: seg.text, onPress: (press: UiPressArgument) => openStation($, url + to, press.surface) })
-      const which = seg.state
-      if (seg.press === 'todoState' && which) {
-        return h(Button, { key: `todo-${which}`, label: seg.text, onPress: () => {
-          state.todoOpen = state.todoOpen === which ? null : which
-          $.ui.invalidate('ui.render')
-        } })
-      }
       const fold = seg.fold
       if (seg.press === 'fold' && fold) {
         return h(Button, { key: `fold-${fold}`, label: seg.text, onPress: () => {

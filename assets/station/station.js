@@ -2684,7 +2684,7 @@
             var list = t.open.filter(function (e) { return e.state === st[0]; });
             if (!list.length) return '';
             var timed = st[0] === 'blocked' || st[0] === 'watch', prev = null;
-            return '<div class="rgh td-grp" data-st="' + st[0] + '"><b class="mono">' + st[1] + '</b><span class="mute">'
+            return '<div class="rgh td-grp" id="todo-state:' + st[0] + '" data-st="' + st[0] + '"><b class="mono">' + st[1] + '</b><span class="mute">'
                 + loc('proj.todoNRows', '{n} 筆 · {g}', { n: list.length, g: todoGloss(st[0]) }) + '</span></div>'
                 + '<ul class="td-rows' + (timed ? ' timed' : '') + '">' + list.map(function (e) {
                     var rep = timed && e.condition === prev;

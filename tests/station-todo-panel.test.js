@@ -88,8 +88,8 @@ test('three or fewer done entries carry no button, and each state group names it
     const html = V.todoPanelHtml(ROW, []);
     assert.doesNotMatch(html, /data-tdmore/);
     assert.match(html, /<div class="td-sum"><b class="td-sum-h">已完成<\/b>/);
-    assert.match(html, /<div class="rgh td-grp" data-st="ready"><b class="mono">Ready<\/b>/);
-    assert.match(html, /<div class="rgh td-grp" data-st="blocked"><b class="mono">Blocked<\/b>/);
+    assert.match(html, /<div class="rgh td-grp" id="todo-state:ready" data-st="ready"><b class="mono">Ready<\/b>/);
+    assert.match(html, /<div class="rgh td-grp" id="todo-state:blocked" data-st="blocked"><b class="mono">Blocked<\/b>/);
 });
 
 // station.js booted on the project page with its document's listeners kept,
@@ -237,6 +237,11 @@ test('#/p/<pkey>/todo/<id> scrolls that entry into view once the page draws; one
     assert.deepEqual(bootAt(P, ['todo', 'todo-b-1']).scrolled, []);
     // No panel on the page yet: nothing is scrolled, and nothing throws.
     assert.deepEqual(bootAt(P + '/todo/b-1', []).scrolled, []);
+});
+
+test('#/p/<pkey>/todo/state%3A<state> scrolls that state\'s group into view; a state with no group scrolls the panel', () => {
+    assert.deepEqual(bootAt(P + '/todo/state%3Aready', ['todo', 'todo-state:ready']).scrolled, [['todo-state:ready', 'start']]);
+    assert.deepEqual(bootAt(P + '/todo/state%3Awatch', ['todo', 'todo-state:ready']).scrolled, [['todo', 'start']]);
 });
 
 test('arriving on a TODO hash scrolls to it and not back to the top; any other hash goes to the top', () => {

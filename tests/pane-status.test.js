@@ -448,7 +448,7 @@ test('no row of the whole Pane is wider than it, at any width', async () => {
         for (const ctx of [context, { tokens: 463000, at: 450000 }]) {
             const todos = ['ready', 'decision', 'blocked', 'watch'].map((state, i) => ({ id: 't-' + i, title: '一個很長的 TODO 標題 ' + i, state }));
             const agents = [{ id: 'a1', title: 'task 13 build', type: 'fankeel:fankeel-implementer', model: 'sonnet 5.5', effort: 'high', at: NOW - 60000, end: null, tokens: 1000, kids: [] }];
-            for (const row of status(m, { entry: busy, others: [long], plan: planOf(13, [1, 2], [13]), context: ctx, cols, agents, todos, pkey: 'F:/ws', station: 'http://127.0.0.1:28888/', todoOpen: 'ready' })) {
+            for (const row of status(m, { entry: busy, others: [long], plan: planOf(13, [1, 2], [13]), context: ctx, cols, agents, todos, pkey: 'F:/ws', station: 'http://127.0.0.1:28888/' })) {
                 // The terminal draws each Button four cells wider than its label.
                 const cells = m.width(line(row)) + 4 * row.segs.filter((seg) => seg.press).length;
                 assert.ok(cells <= cols, cols + ' < ' + cells + ': ' + line(row));
@@ -525,32 +525,36 @@ test('route and tasks open under a ▾ head and fold to it under ▸, the route 
     assert.deepEqual(heads(status(m, { entry: Object.assign({}, entry, { stage: 'nowhere' }) })), []);
 });
 
-test('the TODO block is a fold head counting the open entries, then a Button a state with its count, and the pressed state\'s titles', async () => {
+test('the TODO block is a fold head counting the open entries, then a Button a state with its count that opens the station on that state; no title is listed', async () => {
     const m = await load();
     const url = 'http://127.0.0.1:28888/';
     const pkey = 'F:/ws/app';
     const todos = [...Array.from({ length: 8 }, (_, i) => ({ id: 'r-' + (i + 1), title: 'ready ' + (i + 1), state: 'ready' })),
         { id: 'b-1', title: 'blocked 1', state: 'blocked' }, { id: 'w-1', title: 'watch 1', state: 'watch' }];
-    const shut = body(status(m, { station: url, todos, pkey }), 'todo');
-    assert.deepEqual(shut, [
-        [{ text: '▾ TODO 10', color: SECOND, bold: true, press: 'fold', fold: 'todo' }],
-        [{ text: 'Ready 8', press: 'todoState', state: 'ready' }, { text: ' ' }, { text: 'Needs a decision 0', color: SECOND }],
-        [{ text: 'Blocked 1', press: 'todoState', state: 'blocked' }, { text: ' ' }, { text: 'Watch 1', press: 'todoState', state: 'watch' }],
-    ]);
-    const open = body(status(m, { station: url, todos, pkey, todoOpen: 'ready' }), 'todo');
-    assert.deepEqual(open[1][0], { text: 'Ready 8', press: 'todoState', state: 'ready', bold: true });
-    assert.deepEqual(open.slice(3, 9).map((s) => [s[0].text, s[0].press, s[0].to]), todos.slice(0, 6).map((t) => [t.title, 'todo', '#/p/F%3A%2Fws%2Fapp/todo/' + t.id]));
-    assert.deepEqual(open[9], [{ text: '還有 2 條', color: SECOND, press: 'todo', to: '#/p/F%3A%2Fws%2Fapp/todo' }]);
-    assert.equal(open.length, 10);
-    assert.deepEqual(text(status(m, { station: url, todos, pkey, todoOpen: 'blocked' }), 'todo').slice(3), [' blocked 1']);
+    const at = '#/p/F%3A%2Fws%2Fapp/todo/';
+    const sp = { text: ' ' };
+    const keys = [
+        { text: 'Ready 8', press: 'todo', to: at + 'state%3Aready' },
+        { text: 'Needs a decision 0', color: SECOND },
+        { text: 'Blocked 1', press: 'todo', to: at + 'state%3Ablocked' },
+        { text: 'Watch 1', press: 'todo', to: at + 'state%3Awatch' },
+    ];
+    const head = { text: '▾ TODO 10', color: SECOND, bold: true, press: 'fold', fold: 'todo' };
+    // Wide: the four counts share one row. Narrow: two rows of two.
+    assert.deepEqual(body(status(m, { station: url, todos, pkey, cols: 100 }), 'todo'), [[head], [keys[0], sp, keys[1], sp, keys[2], sp, keys[3]]]);
+    assert.deepEqual(body(status(m, { station: url, todos, pkey, cols: 41 }), 'todo'), [[head], [keys[0], sp, keys[1]], [keys[2], sp, keys[3]]]);
+    // Never more than the head and two count rows, and never a title, at any width or with any entries.
+    for (const cols of [20, 30, 41, 60, 100]) {
+        const rows = status(m, { station: url, todos, pkey, cols });
+        assert.ok(drawn(rows, 'todo').length <= 3, cols + ': ' + text(rows, 'todo').join(' | '));
+        assert.ok(!text(rows, 'todo').join('\n').includes('ready 1'));
+        assert.ok(!rows.flatMap((r) => r.segs).some((s) => s.press === 'todoState'));
+    }
     // Folded: the head alone. No station, or no entries: no block.
-    assert.deepEqual(text(status(m, { station: url, todos, pkey, todoOpen: 'ready', folded: { todo: true } }), 'todo'), ['▌▸ TODO 10']);
+    assert.deepEqual(text(status(m, { station: url, todos, pkey, folded: { todo: true } }), 'todo'), ['▌▸ TODO 10']);
     assert.deepEqual(drawn(status(m, { station: null, todos, pkey }), 'todo'), []);
     assert.deepEqual(drawn(status(m, { station: url, todos: [], pkey }), 'todo'), []);
     assert.deepEqual(m.TODO_STATES.map((s) => s[0]), ['ready', 'decision', 'blocked', 'watch']);
-    // A long title is cut four cells short of the row: the terminal draws a Button as `[ label ]`.
-    const long = status(m, { station: url, todos: [{ id: 'l-1', title: '一個很長很長的 TODO 標題，'.repeat(4), state: 'ready' }], pkey, cols: 41, todoOpen: 'ready' });
-    assert.ok(m.width(body(long, 'todo')[3][0].text) <= 40 - 4);
 });
 
 test('with no room the TODO block goes first, down to its head row', async () => {
@@ -574,7 +578,7 @@ test('with no room the agents\' own agents go before any block does, so the root
     // Six roots, three under each and a `└ 還有 1 個` row: 24 rows of their own agents.
     const cut = rows(full - 24);
     assert.deepEqual(text(cut, 'agents'), ['▌▾ agents  30 在跑 · 0 完成', ...' ○ a· ○ b· ○ c· ○ d· ○ e· ○ f'.split('·').map((t) => t + ' · sonnet 5.5 · medium · 1 分')]);
-    assert.equal(drawn(cut, 'todo').length, 3);
+    assert.equal(drawn(cut, 'todo').length, drawn(rows(80), 'todo').length);
     assert.deepEqual(blocksOf(cut), ['task', 'agents', 'notes', 'todo', 'foot']);
 });
 

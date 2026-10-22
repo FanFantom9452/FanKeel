@@ -1351,7 +1351,7 @@ function todoRig(entries, over) {
     return fake({ files, env: { OS: 'Windows_NT' } });
 }
 
-test('the TODO block is a Button a state with its count; pressing one lists its titles, which open the station on the entry', async () => {
+test('the TODO block is a Button a state with its count; pressing one opens the station on that state, and no title is listed', async () => {
     const hooks = await wired();
     const entries = [['w-1', 'watch', 'watch one'], ['b-1', 'blocked', 'blocked one'], ['r-2', 'ready', 'ready two'], ['r-1', 'ready', 'ready one'],
         ['d-1', 'decision', 'decide one'], ['x-1', 'done', 'finished'], ['r-3', 'ready', undefined], ['b-2', 'blocked', 'blocked two'], ['w-2', 'watch', 'watch two']];
@@ -1363,20 +1363,17 @@ test('the TODO block is a Button a state with its count; pressing one lists its 
     const draw = async () => buttons(await hooks['ui.render']($, { viewport: { columns: 44, rows: 60 } }));
     const from = (bs) => { const labels = bs.map((b) => b.props.label); return labels.slice(labels.findIndex((l) => /^[▾▸] TODO /.test(l))); };
     const press = async (label) => (await draw()).find((b) => b.props.label === label).props.onPress({ surface: 'terminal' });
-    // Eight open: the done one is not counted; nothing is listed until a state is pressed.
-    assert.deepEqual(from(await draw()), ['▾ TODO 8', 'Ready 3', 'Needs a decision 1', 'Blocked 2', 'Watch 2', '開啟 station']);
+    const counts = ['▾ TODO 8', 'Ready 3', 'Needs a decision 1', 'Blocked 2', 'Watch 2', '開啟 station'];
+    // Eight open: the done one is not counted; only the counts are drawn.
+    assert.deepEqual(from(await draw()), counts);
     const before = log.invalidated;
+    const to = (state) => STATION + '#/p/' + encodeURIComponent(ROOT) + '/todo/' + encodeURIComponent('state:' + state);
     await press('Ready 3');
-    assert.equal(log.invalidated, before + 1);
-    // An entry with no title shows its id.
-    assert.deepEqual(from(await draw()), ['▾ TODO 8', 'Ready 3', 'Needs a decision 1', 'Blocked 2', 'Watch 2', 'ready one', 'ready two', 'r-3', '開啟 station']);
-    await press('ready two');
-    assert.deepEqual(ran, [['cmd', '/c', 'start', '', STATION + '#/p/' + encodeURIComponent(ROOT) + '/todo/r-2']]);
-    // Another state swaps the list; the same state again closes it.
     await press('Blocked 2');
-    assert.deepEqual(from(await draw()).slice(5), ['blocked one', 'blocked two', '開啟 station']);
-    await press('Blocked 2');
-    assert.deepEqual(from(await draw()).slice(5), ['開啟 station']);
+    // A count opens the station on its state and changes nothing in the Pane.
+    assert.deepEqual(ran, [['cmd', '/c', 'start', '', to('ready')], ['cmd', '/c', 'start', '', to('blocked')]]);
+    assert.equal(log.invalidated, before);
+    assert.deepEqual(from(await draw()), counts);
     // The fold head folds the block to itself.
     await (await draw()).find((b) => b.props.key === 'fold-todo').props.onPress({ surface: 'terminal' });
     assert.deepEqual(from(await draw()), ['▸ TODO 8', '開啟 station']);
@@ -1391,8 +1388,7 @@ test('the TODO entries are the entry\'s project\'s, keyed root/project, and with
     await log.ticks[0].fn();
     const draw = async () => buttons(await hooks['ui.render']($, { viewport: { columns: 44, rows: 60 } }));
     await (await draw()).find((b) => b.props.label === 'Ready 1').props.onPress({ surface: 'terminal' });
-    await (await draw()).find((b) => b.props.label === 'in the app').props.onPress({ surface: 'terminal' });
-    assert.deepEqual(ran, [['cmd', '/c', 'start', '', STATION + '#/p/' + encodeURIComponent(ROOT + '/app') + '/todo/r-1']]);
+    assert.deepEqual(ran, [['cmd', '/c', 'start', '', STATION + '#/p/' + encodeURIComponent(ROOT + '/app') + '/todo/state%3Aready']]);
     delete store['C:/cfg/fankeel/serve.json'];
     await log.ticks[0].fn();
     assert.deepEqual((await draw()).map((b) => b.props.key), ['fold-route']);
@@ -1410,8 +1406,8 @@ test('an entry file is read again only when it moved, and a docs.json that does 
     mtimes[file] = 2;
     await log.ticks[0].fn();
     assert.equal(log.reads.filter((p) => p === file).length, 2);
-    await buttons(await hooks['ui.render']($, { viewport: { columns: 44, rows: 60 } })).find((b) => b.props.label === 'Ready 1').props.onPress({ surface: 'terminal' });
-    assert.ok(buttons(await hooks['ui.render']($, { viewport: { columns: 44, rows: 60 } })).some((b) => b.props.label === 'one, renamed'));
+    const after = buttons(await hooks['ui.render']($, { viewport: { columns: 44, rows: 60 } })).map((b) => b.props.label);
+    assert.ok(after.includes('Ready 1') && !after.includes('one, renamed'), after.join(' | '));
     store[ROOT + '/.fankeel/docs.json'] = '{';
     await log.ticks[0].fn();
     assert.ok(!buttons(await hooks['ui.render']($, { viewport: { columns: 44, rows: 60 } })).some((b) => b.props.key === 'fold-todo'));
