@@ -312,6 +312,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | retro 讀整份遮蔽過的 session 包（10-20）定了什麼：land 每次問匯出、遮蔽敏感字、retro 在 opus 讀包、retro-all 只改重複出現的問題；放棄了什麼 | [decisions/2026-10-20-retro-bundle.md](03-decisions/2026-10-20-retro-bundle.md) — *繁體中文* |
 | README 改成 quick start（10-21）定了什麼：雙語 README 只留入門、目錄樹搬到 layout.md、補 what-runs／scanners／troubleshooting、audit 修正指南與 pipeline；放棄了什麼 | [decisions/2026-10-21-readme-quickstart.md](03-decisions/2026-10-21-readme-quickstart.md) — *繁體中文* |
 | 監控站首頁改成「進行中」（10-22）定了什麼：#/ 與 #/live 開三組的進行中頁，取代 10-21 四塊首頁；放棄了什麼 | [decisions/2026-10-22-station-live-home.md](03-decisions/2026-10-22-station-live-home.md) — *繁體中文* |
+| 主控結束回合前先問 Stop hook（10-22）定了什麼：stage 沒走完、背景沒東西會叫醒時擋一次；放棄了什麼 | [decisions/2026-10-22-stop-hook.md](03-decisions/2026-10-22-stop-hook.md) — *繁體中文* |
 | 沒派過的 agent 怎麼處理（10-15）定了什麼：effort 改在派工時傳、六個複本刪掉，mover、mutator、writer 只給 stage agent 派，init-scout 與 slimmer 不動；放棄了什麼 | [decisions/2026-10-15-unused-agents.md](03-decisions/2026-10-15-unused-agents.md) — *繁體中文* |
 | 開任務時同步壓縮視窗（10-14）定了什麼：start 把主機視窗對齊 `compact.at`、值變了請使用者重開 Desktop；放棄了什麼 | [decisions/2026-10-14-start-syncs-window.md](03-decisions/2026-10-14-start-syncs-window.md) — *繁體中文* |
 | Pane 配色改成安靜版（10-13）定了什麼：標題共用灰、多一行 route、拿掉「這個 session」與「用量額度」兩塊；放棄了什麼 | [decisions/2026-10-13-pane-colour.md](03-decisions/2026-10-13-pane-colour.md) — *繁體中文* |
@@ -482,6 +483,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 舊引用、--since 接時間、盤點不誤標已落地條目的 plan：三個任務一組 | `docs/99-archive/2026-10-20-stale-refs-since-patrol.md` — *built, 繁體中文* |
 | 舊引用、--since 接時間、盤點不誤標已落地條目：做了什麼、沒做什麼 | [reports/2026-10-20-stale-refs-since-patrol.md](90-agent/reports/2026-10-20-stale-refs-since-patrol.md) — *繁體中文* |
 | 盤點三件（10-21）的 plan：await 不略過問題、gate 選項數、land 白話選項 | `docs/99-archive/2026-10-21-patrol-three.md` — *built, 繁體中文* |
+| 主執行緒 Stop hook（10-22）的設計：stage 沒走完、背景沒東西會叫醒時擋一次 | `docs/99-archive/2026-10-22-stop-hook-design.md` — *built, English* |
+| 做它的 2 個 task——lib/stop.js 的判斷、hooks/stop.js 註冊與 hook 計數 | `docs/99-archive/2026-10-22-stop-hook.md` — *built, English* |
 | 全表盤點（10-22）的 plan：land 先寫報告、mockup 逾時、整套單檔重跑、Pane 計數鈕、遠端收尾、serve 訊號測試、Workflow 門檻改回三個 | `docs/99-archive/2026-10-22-patrol.md` — *built, 繁體中文* |
 | 盤點三件（10-21）：做了什麼、沒做什麼 | [reports/2026-10-21-patrol-three.md](90-agent/reports/2026-10-21-patrol-three.md) — *繁體中文* |
 | station 改版（10-21）的設計：進行中當首頁、全部 sessions、專案總覽與分析、session 頁三分頁、關卡頁框架、資料修正、遠端關掉撤 serve | `docs/99-archive/2026-10-21-station-redesign-design.md` — *built, English* |
@@ -616,6 +619,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 - [README 改成給使用者的 quick start，細節連到 docs（10-21）](03-decisions/2026-10-21-readme-quickstart.md)
 - [監控站的連結直接開在要看的東西上（10-21）；首頁四塊 10-22 起由 station-live-home 取代](03-decisions/2026-10-21-station-focus.md)
 - [進行中是 station 首頁（10-22）：取代 station-focus 的四塊首頁](03-decisions/2026-10-22-station-live-home.md)
+- [主控結束回合前先問一次 Stop hook（10-22）](03-decisions/2026-10-22-stop-hook.md)
 - [任務的圖由 station 畫成 SVG（10-20）](03-decisions/2026-10-20-task-boards-as-svg.md)
 - [retro 讀整份遮蔽過的 session 包（10-20）](03-decisions/2026-10-20-retro-bundle.md)
 - [沒派過的 agent 怎麼處理（10-15）：effort 改在派工時傳，六個複本刪掉](03-decisions/2026-10-15-unused-agents.md)
@@ -689,6 +693,7 @@ is corrected by the next one, not by rewriting this.
 | Brief — why does the plan stage take 40+ minutes, and would one brain + parallel plan writers be faster? | [90-agent/judgements/2026-10-21-plan-stage-duration.md](90-agent/judgements/2026-10-21-plan-stage-duration.md) — *judged 2026-10-21, fable* |
 | Brief — should every stage run as a brain with a curated context carried from the stages before it, so agents stop re… | [90-agent/judgements/2026-10-21-stage-context-carry.md](90-agent/judgements/2026-10-21-stage-context-carry.md) — *judged 2026-10-21, fable* |
 | Brief: why did this land take so long, and what does the main session miss? | [90-agent/judgements/2026-10-21-land-slow.md](90-agent/judgements/2026-10-21-land-slow.md) — *judged 2026-10-21, fable* |
+| Brief: why do plan- and build-stage agents sometimes stop unexpectedly? | [90-agent/judgements/2026-10-22-stage-agent-pause.md](90-agent/judgements/2026-10-22-stage-agent-pause.md) — *judged 2026-10-22, fable* |
 
 ## The five scanners
 
