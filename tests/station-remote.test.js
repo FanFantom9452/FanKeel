@@ -267,3 +267,20 @@ test('through the tailnet a paired phone never reaches Chartroom, .. or not: 403
         s.close();
     }
 });
+
+test('cold start: serve.json is first written after tailscale answered, so its first record already carries remote', async () => {
+    const f = fixture(true);
+    const ts = fakeTailscale();
+    let recordWhenAsked = 'never asked';
+    const run = (args) => {
+        if (recordWhenAsked === 'never asked') recordWhenAsked = readServeRecord(f.cfg);
+        return ts.run(args);
+    };
+    const s = await serve({ configDir: f.cfg, roots: [f.r1], port: 0, idleMs: 60e3, open: false, tailscaleRun: run });
+    try {
+        assert.equal(recordWhenAsked, null, 'a record written before tailscale answers is what ensureServe reads as started, with no remote');
+        assert.deepEqual(readServeRecord(f.cfg).remote, { url: 'https://' + NAME + '/' });
+    } finally {
+        s.close();
+    }
+});

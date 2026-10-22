@@ -51,7 +51,7 @@ file sorts what comes back three ways.
 - **dead** — anything else: no running pid, a refused connection, a status
   other than 200, a body that is not JSON, or another pid. One is started.
 
-The line ends one of six ways:
+The line ends one of six ways, and the first three can be followed by a remote tail:
 
 | the line ends | when |
 |---|---|
@@ -207,11 +207,11 @@ an inline copy of the predicate rather than a `hiddenPkeys()` call, because
 that loop is keyed by the raw profiles directory rather than by pkey —
 `write()`'s detail-file loop described below, and `--json`'s own pass
 outside this file
-(`scripts/station.js:1121`, `r.sessions = r.sessions.filter((s) => !hidden.has(s.project ? r.root + '/' + s.project : r.root));`).
+(`scripts/station.js:1124`, `r.sessions = r.sessions.filter((s) => !hidden.has(s.project ? r.root + '/' + s.project : r.root));`).
 There is no trace on
 the page that a project was left out: no count, no note on the footer. `station.js`'s own text
 summary — not the served page — does print how many projects it excluded
-(`scripts/station.js:1224`, `hidden by station.hide`), but names none of
+(`scripts/station.js:1227`, `hidden by station.hide`), but names none of
 them; the terminal is the only place the fact surfaces at all.
 
 The last thing a row holds is the completion record `scripts/record.js write`

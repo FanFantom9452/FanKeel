@@ -46,7 +46,7 @@ profile 是 gate 的常備答案：先寫好，fankeel 就不再問那一題。g
 | `station.chartroom` | 監控站從哪個 Chartroom 安裝路徑開架構白板（/chartroom/<專案>/）；沒設就沒有白板 | 一個絕對路徑：Chartroom 套件的根目錄 | 不設 |
 | `gate.station` | gate 發出後，等監控站作答幾秒；off 不等，逾時照常在 terminal 問 | `off`、`60`、`120`、`300`；內建 `off` | 不設，維持內建 |
 | `station.link` | 哪幾站的主控只印交接路徑與 station 頁連結（page:），不印報告全文；station 沒開、沒有 page: 行時照樣印報告 | `false`，或逗號分隔的站名清單；內建 `survey,design,plan,build,verify,land` | 不設，維持內建 |
-| `station.remote` | 監控站要不要經這台機器的 Tailscale（tailscale serve）讓手機連進來；只讀機器層 profile，預設關，關著時只有 127.0.0.1 連得到 | `true` 或 `false`；內建 `false` | 不設，維持內建 |
+| `station.remote` | 監控站要不要經這台機器的 Tailscale（tailscale serve）讓手機連進來；只讀機器層 profile，預設關，關著時只有 127.0.0.1 連得到；這是進階功能，從 CLI 設成 true 要帶 `--confirm` | `true` 或 `false`；內建 `false` | 不設，維持內建 |
 | `notify.server` | ntfy 推播送到哪個伺服器；自架的 ntfy 填它的網址 | 一個 http 或 https 網址：ntfy 伺服器；內建 `https://ntfy.sh` | 不設，維持內建 |
 | `notify.topic` | ntfy 的 topic，手機訂閱它；從監控站第一次打開推播時自動寫一個 `fankeel-` 開頭的亂數 | 英數字、`-`、`_`，最多 64 個字 | 不設 |
 | `notify.gate` | gate 在等你回答時推一則高優先、會響的通知，附「打開 gate」 | `true` 或 `false`；內建 `false` | 不設，維持內建 |

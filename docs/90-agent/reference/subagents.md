@@ -779,7 +779,7 @@ newest 40, dropping an exact duplicate and replacing a fact read again at a
 new sha. `context.js show` marks a line whose sha is not HEAD `(舊)`. The
 ordinary brief inlines the file's content — `renderBrief` and `renderBrainBrief`
 in `lib/render.js` paste it in whole under `BRIEF_MAX`; over it `fit()` keeps the
-newest facts and names the file for the rest (`lib/render.js:758`, `' older ' + (n === 1 ? 'fact' : 'facts')`) — so a
+newest facts and names the file for the rest (`lib/render.js:774`, `' older ' + (n === 1 ? 'fact' : 'facts')`) — so a
 subagent no longer has to `Read` the file itself before using what it holds.
 Every stage and every dispatched agent writes its verified facts there.
 
@@ -869,10 +869,10 @@ Setting the key prints what it costs: the estimated tokens the injected line
 adds per prompt, and each stage's remaining room under the reference-root
 2400-character cap with the profile as it now reads — a warning, never a
 refusal, since the cap belongs to the tests and the sentence belongs to the
-user (`scripts/task.js:1273`, `set anyway; this is a warning, not a refusal`)
+user (`scripts/task.js:1280`, `set anyway; this is a warning, not a refusal`)
 — computed in `cmdProfile`'s `set` branch off `input-check.js`'s
 `estimateTokens` and `lib/render.js`'s `blockSizes`
-(`scripts/task.js:1266`, `const n = estimateTokens('\n  - ' + out.value);`).
+(`scripts/task.js:1273`, `const n = estimateTokens('\n  - ' + out.value);`).
 
 ## What a controlled `build` and `verify` were run through
 

@@ -1029,13 +1029,14 @@ async function serve(opts) {
         });
         server.listen(opts.port || 0, '127.0.0.1', () => {
             const url = 'http://127.0.0.1:' + server.address().port + '/';
-            const record = writeRecord({ pid: process.pid, port: server.address().port, url, started });
             // The proxy goes to the port bound first, and the fixed-port retry
-            // below leaves it there: that listener stays open. Asked after
-            // serve.json is written, so `/fankeel` finds the station while
-            // tailscale answers — five seconds a call at most.
+            // below leaves it there: that listener stays open. Asked before
+            // serve.json is first written — five seconds a call at most — so
+            // the record `ensureServe` reads as `started` already carries
+            // `remote`; refreshRemote writes nothing while recordData is unset.
             boundPort = server.address().port;
             refreshRemote();
+            const record = writeRecord({ pid: process.pid, port: server.address().port, url, started });
             touch();
             if (opts.open) openInBrowser(url);
             let retryTimer = null;
