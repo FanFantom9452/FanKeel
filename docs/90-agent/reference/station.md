@@ -1400,7 +1400,8 @@ segments, so `tour-reel-kit.js` and the like are served too). Any other name
 under `/station/` is a 404, so nothing else in the plugin directory is
 reachable by url.
 
-The phone station has five routes of its own. `/m` is its page, the shell
+The phone station has nine routes of its own: five for the page, below, and
+four for one session, in the next paragraph. `/m` is its page, the shell
 `lib/mobile.js` builds (`shell()`), which loads `station.css`, `mobile.css` and
 `mobile.js`; `/m/manifest.webmanifest` (`manifest()`, served as
 `application/manifest+json`) and `/m/icon.svg` (`icon()`) make it installable;
@@ -1422,8 +1423,10 @@ tailnet `/` answers 303 to `/m`, and `/m`, its manifest, its icon, `/sw.js`,
 items, from `lib/mobile.js`'s `phoneModel` over `lib/phone.js`'s files, 404
 for a session not on this station. The phone acts on a session with `POST
 /phone/attach`, `POST /phone/detach` and `POST /phone/say` (`root`, `id`, and
-`text` for say): attach refuses a session that is not live (409), say refuses
-an unattached session or a second waiting message (409) and answers 201.
+`text` for say): all three answer 404 for a root or id not on this station;
+attach refuses a session that is not live (409); say refuses empty text or
+text over `SAY_MAX` (4000) characters (400), an unattached session or a
+second waiting message (409), and answers 201.
 `mobile.json`'s task rows carry the same `state`, `attached`, `background` and
 `last`, `look` being `lib/phone.js`'s `snapshot`.
 

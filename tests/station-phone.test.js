@@ -98,6 +98,38 @@ test('a paired phone attaches, says, is refused a second message, and detaches',
     }
 });
 
+test('attach refuses a session that is not running', async () => {
+    const f = fixture();
+    // A registry row with no Claude Code process behind it: on the station, not live.
+    const idle = 'ffffffff-9999-4999-8999-000000000002';
+    registry.writeSession(f.r1, idle, { task: 't2', stage: 'build', route: ['survey', 'build'], active: true, claims: [],
+        started: '2026-10-22T08:00:00.000Z', updated: new Date().toISOString(), configDir: f.cfg });
+    const s = await start(f, fakeTailscale());
+    try {
+        const r = await request(s.url + 'phone/attach', { headers: Object.assign({ cookie: f.cookie }, TAILNET), body: form({ root: f.r1, id: idle }) });
+        assert.equal(r.status, 409);
+        assert.equal(phone.isAttached(f.r1, idle), false);
+    } finally {
+        s.close();
+    }
+});
+
+test('say refuses empty text and text over SAY_MAX with 400', async () => {
+    const f = fixture();
+    const s = await start(f, fakeTailscale());
+    const headers = Object.assign({ cookie: f.cookie }, TAILNET);
+    const say = (text) => request(s.url + 'phone/say', { headers, body: form({ root: f.r1, id: SID, text }) });
+    try {
+        assert.equal((await request(s.url + 'phone/attach', { headers, body: form({ root: f.r1, id: SID }) })).status, 201);
+        assert.equal((await say('   ')).status, 400);
+        assert.equal((await say('x'.repeat(phone.SAY_MAX + 1))).status, 400);
+        assert.equal(fs.existsSync(path.join(phone.dirOf(f.r1, SID), 'inbox.json')), false);
+        assert.equal((await say('x'.repeat(phone.SAY_MAX))).status, 201);
+    } finally {
+        s.close();
+    }
+});
+
 test('the phone routes are device routes, and the reference names them', () => {
     assert.equal(remote.policy('POST', '/phone/say'), 'device');
     assert.equal(remote.policy('POST', '/phone/attach'), 'device');
