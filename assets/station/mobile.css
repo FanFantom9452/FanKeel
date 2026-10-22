@@ -1,28 +1,31 @@
 /* assets/station/mobile.css — the phone station, /m
-   (docs/90-agent/plans/2026-10-21-station-remote-design.md §4). The approved
-   mockup's rules, loaded over station.css as the mockup was: the keel tokens,
-   .route, .hm-stw, .dot, .pill.gate, .gq-rec and .glyph come from there.
-   Radius scale stays --r-sm / --r / --r-pill; --r-sheet is a bottom sheet's
-   top edge (2 x --r). */
-:root{--r-sheet:20px;--on-signal:#18202c;--scrim:rgba(11,15,21,.52)}
+   (docs/90-agent/plans/2026-10-22-mobile-session-design.md). The approved
+   mockup's direction A, loaded over station.css as the mockup was: the keel
+   tokens, .hm-stw, .dot, .gq-rec and .glyph come from there. Radius scale
+   stays --r-sm / --r / --r-pill; --r-sheet is a bubble's round (2 x --r). */
+:root{--r-sheet:20px;--on-signal:#18202c}
 
 /* ---- icons: Lucide (ISC) on 24, the station's own set on 16 ---- */
 .ic{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 .ic.g24{stroke-width:2.1}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
 /* ---- the screen ---- */
 .scr{position:relative;height:100%;display:flex;flex-direction:column;color:var(--ink);font-size:15px;line-height:1.45;
   background:var(--ground) radial-gradient(circle,var(--dot) 1.2px,transparent 1.7px) 11px 11px/22px 22px}
+.pg{display:flex;flex-direction:column;min-height:100%}
 
 /* app bar: one big title, the machine you are on */
 .ab{flex:none;display:flex;align-items:center;gap:10px;padding:10px 16px 14px 20px;min-height:64px}
 .ab h1{font-size:27px;font-weight:700;letter-spacing:-.02em;line-height:1.15}
 .ab .n{font:700 15px var(--f-mono);color:var(--muted);margin-left:2px}
 .ab .sp{flex:1}
+.ab .bk{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;margin-left:-8px;color:inherit}
 .host{display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:0 4px 0 12px;font-size:13px;color:var(--ink2);background:none;border:0}
 .host .dot{width:8px;height:8px}
 
-.body{flex:1;min-height:0;overflow:hidden;padding:0 12px 96px}
+.body{flex:1;min-height:0;overflow:hidden;padding:0 12px 24px}
 .grp{background:var(--panel);border-radius:var(--r);box-shadow:inset 0 0 0 1px var(--rule)}
 .grp-h{display:flex;align-items:baseline;gap:8px;margin:6px 8px 8px;font-size:13px;font-weight:700;color:var(--ink2)}
 .grp-h span{font-weight:400;color:var(--muted)}
@@ -34,44 +37,200 @@
 .r-meta{display:flex;align-items:center;gap:8px;min-width:0;font-size:12.5px;color:var(--muted);white-space:nowrap}
 .r-meta .pj{font:12.5px var(--f-mono);overflow:hidden;text-overflow:ellipsis}
 .r-t{margin:0;font-size:16px;font-weight:600;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.r-q{margin:0;font-size:14px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .r-l{display:grid;gap:3px;min-width:0}
 .r-side{display:grid;justify-items:end;gap:4px;align-self:stretch;align-content:center}
-.r-side .ic{color:var(--faint);width:20px;height:20px}
 .ago{font:12.5px var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
-.ago.wait{color:var(--signal-ink);font-weight:600}
-.scr .hm-stw{font-size:13px}
-.scr .route{gap:4px}
-.scr .route i{width:9px;height:9px}
-.r-st{display:flex;align-items:center;gap:10px;margin-top:3px}
-.scr .pill.gate{font-size:12px;padding:3px 10px}
+.scr .hm-stw{font-size:12px}
 
-/* bottom tab bar: three places, thumbs-first */
-.tabbar{position:absolute;left:0;right:0;bottom:0;z-index:2;display:grid;grid-template-columns:repeat(3,1fr);padding:6px 8px 22px;
-  background:var(--panel);box-shadow:0 -1px 0 var(--rule)}
-.tb{position:relative;display:grid;justify-items:center;gap:3px;min-height:56px;padding:6px 0 2px;text-decoration:none;color:var(--muted);font-size:12.5px;font-weight:600;border-radius:var(--r)}
-.tb .ind{display:grid;place-items:center;width:60px;height:32px;border-radius:var(--r-pill);transition:background-color .2s cubic-bezier(.16,1,.3,1)}
-.tb .ic{width:22px;height:22px}
-.tb[aria-current=page]{color:var(--ink)}
-.tb[aria-current=page] .ind{background:var(--keel-tint);color:var(--keel-deep)}
-.tb .bdg{position:absolute;top:2px;left:calc(50% + 10px);min-width:20px;height:20px;padding:0 6px;border-radius:var(--r-pill);
-  background:var(--stale);color:var(--on-signal);font:700 12px/20px var(--f-mono);text-align:center;box-shadow:0 0 0 2px var(--panel)}
+/* ---- the four states a session can be in ---- */
+.st{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px;border-radius:var(--r-pill);font:600 12px var(--f-ui);white-space:nowrap;flex:none}
+.st .ic{width:13px;height:13px;stroke-width:2}
+.st.ask{background:var(--signal-tint);color:var(--signal-ink)}
+.st.held{background:var(--keel);color:var(--on-keel)}
+.st.run{background:var(--live-bg);color:var(--pass-ink)}
+.st.idle{background:var(--inset);color:var(--muted)}
+.st.bg{background:var(--teal-soft);color:var(--teal-ink)}
+.st.bg .lv{background:var(--teal-ink)}
+/* background work: shell or agent, what it is, how long it has run */
+.bgl{display:grid;gap:2px;margin:0;padding:0;list-style:none;font-size:13px;line-height:1.45;color:var(--ink2)}
+.bgl li{display:flex;align-items:center;gap:6px;min-width:0}
+.bgl .ic{width:14px;height:14px;color:var(--teal-ink)}
+.bgl .d{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bgl .t{flex:none;font:12px var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.bgl .t::before{content:"· "}
+.bgl .more{padding-left:20px;font-size:12.5px;color:var(--muted)}
+.lv{position:relative;display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--live);flex:none}
+.lv::after{content:"";position:absolute;inset:0;border-radius:50%;background:inherit;animation:lv 1.8s cubic-bezier(.16,1,.3,1) infinite}
+@keyframes lv{from{transform:scale(1);opacity:.55}to{transform:scale(2.8);opacity:0}}
 
-/* ---- gate sheet: the one bold place ---- */
-.dim{position:absolute;inset:0;z-index:4;background:var(--scrim)}
-.sheet{position:absolute;left:0;right:0;bottom:0;z-index:5;display:flex;flex-direction:column;max-height:calc(100% - 52px);
-  background:var(--panel);border-radius:var(--r-sheet) var(--r-sheet) 0 0;box-shadow:0 -12px 32px -8px rgba(11,15,21,.45);
-  animation:sh-in .32s cubic-bezier(.16,1,.3,1) both}
-@keyframes sh-in{from{transform:translateY(32px)}to{transform:none}}
-.grab{display:block;width:40px;height:4px;margin:10px auto 6px;border-radius:var(--r-pill);background:var(--rule2)}
-.sh-b{flex:1;min-height:0;overflow:hidden;padding:4px 16px 0}
-.sh-m{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
-.sh-m .pj{font-family:var(--f-mono)}
-.sh-task{margin:6px 0 0;font-size:13.5px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sh-q{margin:6px 0 4px;font-size:23px;font-weight:700;line-height:1.3;letter-spacing:-.015em;text-wrap:balance}
-.sh-rep{display:flex;align-items:center;gap:8px;min-height:44px;margin:0 -4px 6px;padding:0 4px;color:var(--keel-deep);font-size:14px;font-weight:600;text-decoration:none;border-radius:var(--r-sm)}
-.sh-rep .ic{width:18px;height:18px}
-.sh-rep .sp{flex:1}
+/* ---- m-home-a: one list in three groups, 等你答 on top, then what still works, then what has stopped ---- */
+[data-block="m-home-a"] .ab{min-height:56px;padding-top:8px;padding-bottom:2px}
+[data-block="m-home-a"] .ab h1{margin:0}
+[data-block="m-home-a"] .host{white-space:nowrap;padding-left:6px}
+.ha-hist{display:grid;place-items:center;width:44px;height:44px;border:0;border-radius:var(--r);background:none;color:var(--ink2);cursor:pointer}
+.ha-hist .ic{width:21px;height:21px}
+.ha-body{flex:1;min-height:0;overflow:hidden;padding:0 12px 16px}
+.ha-sum{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;margin:0 8px;font-size:14.5px;font-weight:700;color:var(--ink)}
+.ha-sum b{font:700 15px var(--f-mono);font-variant-numeric:tabular-nums}
+.ha-sum .a{color:var(--signal-ink)}.ha-sum .r{color:var(--pass-ink)}.ha-sum .i{color:var(--muted)}
+.ha-sum .sep{font-weight:400;color:var(--faint)}
+.ha-gh{display:flex;align-items:baseline;gap:8px;margin:12px 8px 6px;font-size:13px;font-weight:700;color:var(--ink2)}
+.ha-gh span{font:400 12.5px var(--f-mono);color:var(--muted)}
+.ha-list{background:var(--panel);border-radius:var(--r);box-shadow:inset 0 0 0 1px var(--rule)}
+.ha-row{display:grid;grid-template-columns:44px minmax(0,1fr);gap:0 12px;align-items:start;padding:9px 14px 10px 12px;border-top:1px solid var(--rule);text-decoration:none;color:inherit;-webkit-tap-highlight-color:transparent}
+.ha-list>.ha-row:first-child,.ha-ask>.ha-row:first-child{border-top:0}
+.ha-row:active{background:var(--wash)}
+.ha-row:focus-visible{outline-offset:-2px;border-radius:var(--r)}
+.av{display:grid;place-items:center;width:44px;height:44px;border-radius:var(--r);font:700 14px var(--f-mono);letter-spacing:-.02em;
+  background:color-mix(in srgb,var(--pc) 16%,var(--panel));color:color-mix(in srgb,var(--pc) 70%,var(--ink))}
+.ha-main{display:grid;gap:3px;min-width:0}
+.ha-top{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;gap:8px}
+.ha-t{font-size:15.5px;font-weight:600;line-height:1.4;color:var(--ink)}
+.ha-top time{font:12px var(--f-mono);color:var(--muted);white-space:nowrap}
+.ha-sub{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;font:12px var(--f-mono);color:var(--muted)}
+.ha-prev{margin:2px 0 0;font-size:13.5px;line-height:1.45;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ha-ask{background:var(--signal-tint);border-radius:var(--r);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--stale) 55%,transparent)}
+.ha-ask>.ha-row{border-top-color:color-mix(in srgb,var(--stale) 40%,transparent)}
+.ha-ask .av{background:var(--panel)}
+.ha-ask .ha-top time{color:var(--signal-ink);font-weight:600}
+.ha-q{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:10px;margin-top:2px}
+.ha-q>span:first-child{font-size:14px;font-weight:600;line-height:1.45;color:var(--ink)}
+.ha-q .btn{display:inline-flex;align-items:center;gap:2px;min-height:36px;padding:0 8px 0 14px;border-radius:var(--r-pill);background:var(--ink);color:var(--panel);font:700 14px var(--f-ui);white-space:nowrap}
+.ha-q .btn .ic{width:18px;height:18px}
+.ha-held .ha-t{font-weight:700}
+.ha-row .bgl{margin-top:4px}
+.ha-idle .ha-t{color:var(--ink2)}
+.ha-stop{display:flex;align-items:center;gap:6px;margin-top:2px;font-size:13px;font-weight:600;color:var(--ink2)}
+.ha-stop .ic{width:15px;height:15px;color:var(--muted)}
+
+/* ---- a conversation screen's frame ---- */
+.ch-h{flex:none;display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:0 6px;padding:10px 12px 10px 4px;background:var(--panel);box-shadow:0 1px 0 var(--rule);position:relative;z-index:1}
+.bk{display:grid;place-items:center;width:44px;height:44px;border:0;border-radius:var(--r);background:none;color:var(--ink);cursor:pointer}
+.bk .ic{width:24px;height:24px}
+.ch-t{margin:0;font-size:15.5px;font-weight:700;line-height:1.35;color:var(--ink);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ch-m{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;margin:4px 0 0;font:12px var(--f-mono);color:var(--muted)}
+.give{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 12px;border:0;border-radius:var(--r);background:var(--panel);box-shadow:inset 0 0 0 1px var(--rule2);font:600 13.5px var(--f-ui);color:var(--ink);cursor:pointer;white-space:nowrap}
+.give .ic{width:17px;height:17px}
+.ro{display:inline-flex;align-items:center;gap:5px;min-height:44px;padding:0 6px;font-size:13px;color:var(--muted);white-space:nowrap}
+.ro .ic{width:16px;height:16px}
+
+/* bubbles: 電腦 on the right in grey, 手機 on the right in keel, Claude on the left on paper */
+.cv{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:14px;padding:16px 14px 14px}
+.cv>:first-child{margin-top:auto}
+.msg{display:grid;gap:4px;max-width:84%}
+.msg.me{align-self:flex-end;justify-items:end}
+.msg.ai{align-self:flex-start;max-width:92%}
+.who{display:inline-flex;align-items:center;gap:5px;padding:0 6px;font-size:12px;font-weight:600;color:var(--muted)}
+.who .ic{width:14px;height:14px}
+.who time{font:400 12px var(--f-mono)}
+.msg.ph .who{color:var(--keel-deep)}
+.msg.ai .who{color:var(--ink)}
+.bub{margin:0;padding:10px 14px;border-radius:var(--r-sheet);font-size:15px;line-height:1.5;overflow-wrap:anywhere;white-space:pre-wrap}
+.msg.ai .bub{white-space:normal}
+.msg.pc .bub{background:var(--inset);color:var(--ink);border-bottom-right-radius:var(--r-sm)}
+.msg.ph .bub{background:var(--keel);color:var(--on-keel);border-bottom-right-radius:var(--r-sm)}
+.msg.ai .bub{background:var(--panel);color:var(--ink);box-shadow:inset 0 0 0 1px var(--rule);border-bottom-left-radius:var(--r-sm)}
+.bub code{font:13.5px var(--f-mono);padding:0 4px;border-radius:4px;background:var(--inset)}
+.bub p{margin:0}.bub p+p{margin-top:6px}
+.sent{display:inline-flex;align-items:center;gap:4px;padding:0 6px;font-size:12px;color:var(--muted)}
+.sent .ic{width:13px;height:13px;stroke-width:2}
+.ev{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;margin:0;font-size:12.5px;color:var(--muted)}
+.ev::before,.ev::after{content:"";height:1px;background:var(--rule2)}
+.ev span{display:inline-flex;align-items:center;gap:6px}
+.ev .ic{width:14px;height:14px}
+.work{display:inline-flex;align-items:center;gap:10px;align-self:flex-start;min-height:40px;padding:9px 16px;border-radius:var(--r-sheet);background:var(--panel);box-shadow:inset 0 0 0 1px var(--rule);font-size:14px;color:var(--ink2)}
+.work b{font-weight:600;color:var(--ink)}
+.work .mono{font-size:12.5px;color:var(--muted)}
+.dots{display:inline-flex;gap:4px}
+.dots i{width:6px;height:6px;border-radius:50%;background:var(--live);animation:dt 1.2s ease-in-out infinite}
+.dots i:nth-child(2){animation-delay:.15s}.dots i:nth-child(3){animation-delay:.3s}
+@keyframes dt{0%,80%,100%{opacity:.3;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+.note{margin:6px 16px 0;font-size:13px;color:var(--warn,#b45309)}
+
+/* m-tools: a turn's steps, lighter than any bubble, so the conversation reads first */
+.tl{align-self:stretch;display:grid;gap:2px;margin:-4px 0;padding-left:6px}
+.tl-sum{display:inline-flex;align-items:center;flex-wrap:wrap;gap:2px 6px;justify-self:start;min-height:44px;margin:0;padding:0 8px 0 2px;border:0;border-radius:var(--r-sm);background:none;
+  font:12.5px/1.4 var(--f-ui);color:var(--muted);text-align:left;cursor:pointer}
+p.tl-sum{min-height:32px;cursor:default}
+.tl-sum:active{background:var(--wash)}
+.tl-sum .chev{width:15px;height:15px;stroke-width:2;transition:transform .18s cubic-bezier(.16,1,.3,1)}
+.tl-sum[aria-expanded=true] .chev{transform:rotate(90deg)}
+.tl-list{margin:0 0 4px 9px;padding:2px 0 2px 12px;list-style:none;border-left:1px solid var(--rule2)}
+.tl-row{display:grid;grid-template-columns:16px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:28px;font-size:13px;line-height:1.35;color:var(--ink2)}
+.tl-row>.ic{width:15px;height:15px;color:var(--muted)}
+.tl-row .lb{display:flex;align-items:center;gap:6px;min-width:0}
+.tl-row .lb>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tl-row .tm{display:inline-flex;align-items:center;gap:8px;font:12px var(--f-mono);color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.tl-row .bad{display:inline-flex;align-items:center;gap:4px;font:600 12px var(--f-ui);color:var(--fail-ink)}
+.tl-row .bad i{width:6px;height:6px;border-radius:50%;background:var(--bad)}
+.tl-row.fail .lb>span{color:var(--ink)}
+.tl-row.done{color:var(--muted)}
+.tl-row.done>.ic{color:var(--good)}
+.tl-row.now{color:var(--ink)}
+.tl-row.now>.ic{color:var(--keel);animation:tl-spin 1s linear infinite}
+.tl-row.now b{font-weight:700}
+@keyframes tl-spin{to{transform:rotate(360deg)}}
+
+/* ---- m-composer-a: the mic left of the box, send under the right thumb; voice never sends ---- */
+.cmp{flex:none;padding:6px 10px 12px;background:var(--panel);box-shadow:0 -1px 0 var(--rule)}
+.cmp-row{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:end;gap:8px}
+.cmp-row.no-mic{grid-template-columns:1fr auto}
+.mic{position:relative;display:grid;place-items:center;width:44px;height:44px;border:0;border-radius:50%;background:var(--panel);box-shadow:inset 0 0 0 1px var(--rule2);color:var(--ink2);cursor:pointer;
+  transition:background-color .18s cubic-bezier(.16,1,.3,1),color .18s cubic-bezier(.16,1,.3,1)}
+.mic .ic{position:relative;z-index:1;width:20px;height:20px;stroke-width:1.9}
+.mic:active{background:var(--wash)}
+.mic.on{background:var(--fail-tint);color:var(--bad);box-shadow:inset 0 0 0 1.5px var(--bad)}
+.mic.on::after{content:"";position:absolute;inset:0;border-radius:50%;background:var(--bad);opacity:0;animation:mic-p 1.4s cubic-bezier(.16,1,.3,1) infinite}
+@keyframes mic-p{from{transform:scale(1);opacity:.28}to{transform:scale(1.6);opacity:0}}
+.cmp textarea{display:block;box-sizing:border-box;width:100%;min-height:44px;max-height:144px;margin:0;padding:11px 14px;border:0;border-radius:var(--r-sheet);resize:none;overflow-y:auto;
+  background:var(--inset);box-shadow:inset 0 0 0 1px var(--rule);color:var(--ink);font:15px/1.45 var(--f-ui);caret-color:var(--keel)}
+.cmp textarea::placeholder{color:var(--muted)}
+.cmp textarea:focus-visible{outline:2px solid var(--keel);outline-offset:1px}
+.cmp textarea.interim{color:var(--muted)}
+.cmp textarea:disabled{opacity:.6}
+.send{display:grid;place-items:center;width:44px;height:44px;border:0;border-radius:50%;background:var(--keel);color:var(--on-keel);cursor:pointer}
+.send:active{background:var(--keel-deep)}
+.send .ic{width:22px;height:22px;stroke-width:2.2}
+.send:disabled{background:var(--inset);color:var(--faint);cursor:default}
+.cmp-hint{display:flex;align-items:center;flex-wrap:wrap;gap:2px 10px;min-height:20px;margin:6px 4px 0 52px;font-size:12px;line-height:1.4;color:var(--muted)}
+.cmp-row.no-mic+.cmp-hint{margin-left:4px}
+
+/* ---- m-attach: running, not held — read along, and one big way to take it over ---- */
+.att{flex:none;padding:14px 16px 18px;background:var(--panel);box-shadow:0 -1px 0 var(--rule)}
+.att .cta .ic{width:20px;height:20px}
+.att p{margin:10px 4px 0;font-size:13.5px;line-height:1.5;color:var(--ink2);text-align:center}
+
+/* ---- m-background: the turn ended but its work did not; nobody needs to answer ---- */
+.bgp{align-self:stretch;margin:2px 0 0;border-radius:var(--r);background:var(--panel);box-shadow:inset 0 0 0 1px var(--rule)}
+.bgp-h{display:flex;align-items:center;gap:8px;padding:11px 14px 10px;border-bottom:1px solid var(--rule)}
+.bgp-h b{font-size:14.5px;font-weight:700;color:var(--ink)}
+.bgp-h .sp{flex:1}
+.bgp ol{margin:0;padding:0;list-style:none}
+.bgp-i{display:grid;grid-template-columns:32px minmax(0,1fr) auto;align-items:center;gap:2px 10px;padding:10px 14px;border-top:1px solid var(--rule)}
+.bgp-i:first-child{border-top:0}
+.bgp .k{display:grid;place-items:center;width:32px;height:32px;border-radius:var(--r-sm);background:var(--teal-soft);color:var(--teal-ink)}
+.bgp .k .ic{width:17px;height:17px}
+.bgp .d{display:grid;gap:1px;min-width:0}
+.bgp .d b{font-size:14px;font-weight:600;line-height:1.4;color:var(--ink);overflow-wrap:anywhere}
+.bgp .d small{font:12px var(--f-mono);color:var(--muted)}
+.bgp .t{display:grid;justify-items:end;gap:2px;font:12.5px var(--f-mono);color:var(--ink2);white-space:nowrap;font-variant-numeric:tabular-nums}
+.bgp .t span{display:inline-flex;align-items:center;gap:5px;font:600 12px var(--f-ui);color:var(--teal-ink)}
+.bgp-f{display:flex;align-items:flex-start;gap:8px;margin:0;padding:11px 14px 12px;border-top:1px solid var(--rule);border-radius:0 0 var(--r) var(--r);background:var(--teal-soft);font-size:13.5px;line-height:1.5;font-weight:600;color:var(--teal-ink)}
+.bgp-f .ic{width:16px;height:16px;margin-top:2px}
+[data-block="m-background"] .cv{gap:12px}
+
+/* ---- m-idle: nothing on the phone can push it, so the bottom says so and says what does ---- */
+.idl{flex:none;padding:16px 18px 20px;background:var(--panel);box-shadow:0 -1px 0 var(--rule)}
+.idl h3{display:flex;align-items:center;gap:10px;margin:0;font-size:16px;font-weight:700;color:var(--ink)}
+.idl h3 .ic-w{display:grid;place-items:center;width:36px;height:36px;border-radius:var(--r);background:var(--inset);color:var(--ink2)}
+.idl h3 .ic{width:20px;height:20px}
+.idl>p{margin:8px 0 0;font-size:14px;line-height:1.55;color:var(--ink2)}
+.idl dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 12px;margin:12px 0 0;padding:12px 0 0;border-top:1px solid var(--rule);font-size:14px;line-height:1.5}
+.idl dt{font-size:13px;font-weight:700;color:var(--ink);white-space:nowrap}
+.idl dd{margin:0;color:var(--ink2)}
+.idl code{font:600 13.5px var(--f-mono);color:var(--ink);padding:1px 6px;border-radius:var(--r-sm);background:var(--inset);white-space:nowrap}
+
+/* ---- m-gate-inline: the gate as the conversation's last card; the mic picks 自己寫答案 ---- */
 .opts{display:grid;gap:10px;margin:0;padding:0;border:0}
 .opt{position:relative;display:grid;grid-template-columns:24px minmax(0,1fr);gap:2px 12px;align-items:start;min-height:72px;padding:14px 16px 14px 14px;
   border-radius:var(--r);background:var(--panel);box-shadow:inset 0 0 0 1px var(--rule2);cursor:pointer;
@@ -87,20 +246,47 @@
 .opt:has(input:focus-visible){outline:2px solid var(--keel);outline-offset:2px}
 .opt.other{min-height:56px;align-items:center;grid-template-columns:24px minmax(0,1fr)}
 .opt.other .ic{width:20px;height:20px;color:var(--muted);justify-self:center}
-.opt.other span{font-size:15px;color:var(--muted)}
-.sheet .gq-rec{font-size:12px;padding:2px 9px}
-.sh-f{flex:none;padding:12px 16px 30px;background:var(--panel);box-shadow:0 -1px 0 var(--rule)}
+/* The 自己寫答案 box sits inside its option: not hidden like the radios. */
+.opt .own{position:static;opacity:1;pointer-events:auto;min-width:0;width:100%;height:28px;padding:0;border:0;background:transparent;color:var(--ink);font:400 15px var(--f-ui);outline:none}
+.opt .own::placeholder{color:var(--muted)}
+.gc{flex:none;align-self:stretch;margin:0;border-radius:var(--r);background:var(--panel);box-shadow:inset 0 0 0 1.5px var(--stale),0 10px 24px -14px rgba(24,32,44,.35);overflow:hidden}
+.gc-h{display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--signal-tint);color:var(--signal-ink);font-size:13px;font-weight:700}
+.gc-h .ic{width:15px;height:15px}
+.gc-h .sp{flex:1}
+.gc-h .left{font:600 12.5px var(--f-mono);font-variant-numeric:tabular-nums}
+.gc-b{padding:12px 12px 14px}
+.gc-q{margin:0 2px 12px;font-size:17px;font-weight:700;line-height:1.4;letter-spacing:-.01em;color:var(--ink);text-wrap:pretty}
+.gc .opts+.gc-q{margin-top:16px}
+.gc .opts{gap:8px}
+.gc .opt{min-height:0;padding:10px 14px 10px 12px}
+.gc .opt-l{font-size:15.5px}
+.gc .opt-d{font-size:13.5px}
+.gc .gq-rec{font-size:12px;padding:2px 9px}
+.gc .opt.other{grid-template-columns:24px minmax(0,1fr) 44px;align-items:center;min-height:56px;padding:6px 6px 6px 12px}
+.gc .opt.other .rd{grid-row:auto}
+.gc .opt.other .own{height:auto;min-height:24px;resize:none;font:15px/1.45 var(--f-ui);overflow:hidden}
+.gc .opt.other .own.interim{color:var(--muted)}
+.gmic{position:relative;display:grid;place-items:center;width:44px;height:44px;border:0;border-radius:50%;background:var(--panel);box-shadow:inset 0 0 0 1px var(--rule2);color:var(--ink2);cursor:pointer;
+  transition:background-color .18s cubic-bezier(.16,1,.3,1),color .18s cubic-bezier(.16,1,.3,1)}
+.gc .gmic .ic{position:relative;z-index:1;width:20px;height:20px;stroke-width:1.9;color:inherit}
+.gmic.on{background:var(--fail-tint);color:var(--bad);box-shadow:inset 0 0 0 1.5px var(--bad)}
+.gmic.on::after{content:"";position:absolute;inset:0;border-radius:50%;background:var(--bad);opacity:0;animation:mic-p 1.4s cubic-bezier(.16,1,.3,1) infinite}
+.gc-say{min-height:18px;margin:6px 4px 0;font-size:12.5px;line-height:1.4;color:var(--muted)}
+.gc-st{margin:6px 0 0;font-size:13px;min-height:1.2em}
+.gc .cta{margin-top:12px;min-height:50px;font-size:16px}
+[data-block="m-gate-inline"] .cv{gap:12px;padding-bottom:16px}
+
 .cta{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:54px;border:0;border-radius:var(--r);
   background:var(--keel);color:var(--on-keel);font:700 17px var(--f-ui);cursor:pointer}
 .cta:active{background:var(--keel-deep)}
+.cta:disabled{opacity:.6;cursor:default}
 .cta:focus-visible{outline:2px solid var(--keel);outline-offset:3px}
+.cta .ic{width:18px;height:18px}
 .ghost{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:50px;border:0;border-radius:var(--r);
   background:transparent;color:var(--ink);font:600 15.5px var(--f-ui);box-shadow:inset 0 0 0 1px var(--rule2);cursor:pointer}
 .ghost .ic{width:18px;height:18px}
 
 /* ---- 完成 ---- */
-.dn-sum{display:flex;align-items:baseline;gap:6px;margin:0 8px 10px;font-size:13px;color:var(--muted)}
-.dn-sum b{font:700 13px var(--f-mono);color:var(--ink2)}
 .end{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:700;color:var(--good)}
 .end .ic{width:16px;height:16px;stroke-width:2}
 .usd{font:700 15px var(--f-mono);font-variant-numeric:tabular-nums;color:var(--ink)}
@@ -119,6 +305,8 @@
 .vf i:nth-child(4){bottom:18px;right:18px;border-left:0;border-top:0;border-bottom-right-radius:var(--r-sm)}
 .vf .scan{position:absolute;left:30px;right:30px;top:30px;height:2px;border-radius:2px;background:var(--keel);opacity:.8;animation:scan 2.2s cubic-bezier(.45,0,.55,1) infinite alternate}
 @keyframes scan{to{transform:translateY(200px)}}
+/* The camera behind the viewfinder's corners. */
+.vf video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .solo h2{margin:0;font-size:21px;font-weight:700;letter-spacing:-.01em}
 .solo .one{margin:8px 0 0;font-size:15px;color:var(--ink2)}
 .solo .sp{flex:1}
@@ -129,47 +317,34 @@
 .off .ic{width:40px;height:40px;stroke-width:1.8}
 .solo .tsx{display:inline-flex;align-items:center;gap:7px;margin-top:16px;padding:4px 12px;border-radius:var(--r-pill);background:var(--fail-tint);color:var(--fail-ink);font-size:13px;font-weight:600}
 .solo .tsx .dot{background:var(--bad)}
-.empty{display:grid;justify-items:center;gap:6px;padding:120px 24px 0;text-align:center}
-.empty .off{margin:0 0 14px;color:var(--good);background:var(--pass-tint)}
-.empty h2{font-size:19px;font-weight:700;color:var(--ink)}
-.empty p{margin:0;font-size:14.5px;color:var(--ink2)}
-
-/* ---- the real page: the window is the phone. station.css holds every
-   page at 1000 px and the mockup drew a 360 x 780 frame; here the screen is
-   the viewport, full-bleed under 600 px and a centred 480 px column above. ---- */
-html,body.m{margin:0;height:100%}
-body.m{min-width:0;background:var(--ground);overscroll-behavior-y:contain}
-body.m .scr{height:100dvh}
-body.m .ab{padding-top:calc(10px + env(safe-area-inset-top))}
-body.m .body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(96px + env(safe-area-inset-bottom))}
-body.m .tabbar,body.m .sheet,body.m .dim{position:fixed}
-body.m .tabbar{padding-bottom:calc(10px + env(safe-area-inset-bottom))}
-body.m .sheet{max-height:calc(100dvh - 52px)}
-body.m .sh-b{overflow-y:auto}
-body.m .sh-f{padding-bottom:calc(16px + env(safe-area-inset-bottom))}
-body.m .solo{padding-top:calc(28px + env(safe-area-inset-top));padding-bottom:calc(34px + env(safe-area-inset-bottom))}
-@media (min-width:601px){
-  body.m .scr{max-width:480px;margin:0 auto;box-shadow:0 0 0 1px var(--rule)}
-  body.m .tabbar,body.m .sheet{left:50%;right:auto;width:480px;margin-left:-240px}
-}
-/* The camera behind the viewfinder's corners. */
-.vf video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-/* The 自己寫答案 box is a text input inside its option: not hidden like the radios. */
-.opt .own{position:static;opacity:1;pointer-events:auto;min-width:0;width:100%;height:28px;padding:0;border:0;background:transparent;color:var(--ink);font:400 15px var(--f-ui);outline:none}
-.opt .own::placeholder{color:var(--muted)}
-/* The task a notification's tap opened. */
-.row[data-focus]{background:var(--keel-tint)}
-.scr .pill.gate .ic{width:13px;height:13px}
-.cta .ic{width:18px;height:18px}
-/* The sheet's one line: sending, refused, or not sent. */
-.sh-say{margin:0 0 10px;font-size:13.5px;color:var(--fail-ink)}
-.sh-say:empty{display:none}
 .solo .say{margin:16px 0 0;font-size:14px;color:var(--fail-ink)}
 .solo .code{box-sizing:border-box;width:100%;height:54px;padding:0 16px;border:0;border-radius:var(--r);background:var(--inset);color:var(--ink);
   font:700 22px var(--f-mono);letter-spacing:.18em;text-align:center;text-transform:uppercase;box-shadow:inset 0 0 0 1px var(--rule2)}
 .solo .code:focus-visible{outline:2px solid var(--keel);outline-offset:2px}
+.empty{display:grid;justify-items:center;gap:6px;padding:120px 24px 0;text-align:center}
+.empty h2{font-size:19px;font-weight:700;color:var(--ink)}
+.empty p{margin:0;font-size:14.5px;color:var(--ink2)}
+
+/* ---- the real page: the window is the phone. station.css holds every
+   page at 1000 px and the mockup drew a 412 x 868 frame; here the screen is
+   the viewport, full-bleed under 600 px and a centred 480 px column above.
+   #app is the .scr, so a screen fills it and its middle scrolls. ---- */
+html,body.m{margin:0;height:100%}
+body.m{min-width:0;background:var(--ground);overscroll-behavior-y:contain}
+body.m .scr{height:100dvh}
+body.m .pg{flex:1;min-height:0}
+body.m .ab{padding-top:calc(10px + env(safe-area-inset-top))}
+body.m .ch-h{padding-top:calc(10px + env(safe-area-inset-top))}
+body.m .body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(24px + env(safe-area-inset-bottom))}
+body.m .cv,body.m .ha-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+body.m .cmp{padding-bottom:calc(8px + env(safe-area-inset-bottom))}
+body.m .att,body.m .idl{padding-bottom:calc(18px + env(safe-area-inset-bottom))}
+body.m .solo{padding-top:calc(28px + env(safe-area-inset-top));padding-bottom:calc(34px + env(safe-area-inset-bottom))}
+@media (min-width:601px){
+  body.m .scr{max-width:480px;margin:0 auto;box-shadow:0 0 0 1px var(--rule)}
+}
 
 @media (prefers-reduced-motion:reduce){
-  .sheet,.vf .scan{animation:none}
-  .opt,.opt .rd::after,.tb .ind{transition:none}
+  .vf .scan,.lv::after,.dots i,.tl-row.now>.ic,.mic.on::after,.gmic.on::after{animation:none}
+  .opt,.opt .rd::after,.tl-sum .chev,.mic,.gmic{transition:none}
 }

@@ -17,7 +17,6 @@ const remote = require('../lib/remote.js');
 const mobile = require('../lib/mobile.js');
 const { pendingPath } = require('../lib/handoff.js');
 const { serve } = require('../scripts/station.js');
-const M = require('../assets/station/mobile.js');
 const tmp = require('./tmp.js');
 
 const ASSETS = path.join(__dirname, '..', 'assets', 'station');
@@ -167,12 +166,9 @@ test('with remote off, /station/mobile.json from this machine names it by its ho
     assert.equal(JSON.parse(res.text).host, os.hostname());
 }));
 
-test('the phone page\'s 待答 badge, its gate rows and /station/mobile.json\'s gates agree in number', () => served(true, async (s) => {
+test('the phone home\'s 等你答 rows and /station/mobile.json\'s gate states agree in number', () => served(true, async (s) => {
     const json = JSON.parse((await get(s.port, '/station/mobile.json', phone(s.cfg))).text);
-    const html = M.screen(json, M.parseRoute('#/gates'), Date.now(), { mode: 'app' });
-    const rows = (html.match(/href="#\/gate\/[^"]+"/g) || []).length;
-    const badge = Number((/<span class="bdg"[^>]*>(\d+)<\/span>/.exec(html) || [])[1]);
-    assert.equal(json.gates.length, 2);
-    assert.equal(rows, json.gates.length);
-    assert.equal(badge, json.gates.length);
+    const P = require('../assets/station/mobile.js');
+    const html = P.screen(json, P.parseRoute('#/'), json.at, { mode: 'app' });
+    assert.equal((html.match(/<span class="st ask">/g) || []).length, json.tasks.filter((x) => x.state === 'gate').length);
 }));

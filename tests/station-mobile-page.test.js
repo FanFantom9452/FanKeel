@@ -20,36 +20,82 @@ const Q1 = [{ question: '核准這份 design？', header: 'design', multiSelect:
     { label: '改 mockup', description: '回 tune，指出要改的 block' },
     { label: '換做法', description: '回 design 重想連線方式' }] }];
 const Q2 = [Q1[0], { question: '這次一起改哪些？', header: '範圍', multiSelect: true, options: [{ label: 'gate', description: 'a' }, { label: 'tune', description: 'b' }] }];
-const M = {
-    host: 'ymlab-pc', at: NOW,
-    gates: [
-        { id: 'aaaa-1', root: '/ws/fankeel', task: 'station 遠端存取討論', project: 'fankeel', stage: 'design', route: ['survey', 'design', 'plan'], questions: Q1, since: NOW - 240e3, until: NOW + 60e3 },
-        { id: 'bbbb-2', root: '/ws/fankeel', task: 'TODO 全表盤點', project: 'fankeel', stage: 'survey', route: ['survey', 'plan'], questions: Q2, since: NOW - 60e3, until: NOW + 60e3 },
-    ],
-    tasks: [
-        { id: 'aaaa-1', root: '/ws/fankeel', task: 'station 遠端存取討論', project: 'fankeel', stage: 'design', route: ['survey', 'design', 'plan', 'build'], gate: true, updated: NOW - 240e3 },
-        { id: 'cccc-3', root: '/ws/ils', task: 'FSC 下一輪', project: 'ils-bench', stage: 'build', route: ['survey', 'design', 'plan', 'build', 'verify'], gate: false, updated: NOW - 180e3 },
-    ],
-    done: [
-        { id: 'dddd-4', root: '/ws/fankeel', task: 'TODO 全表盤點', project: 'fankeel', stage: 'land', route: [], kind: 'end', at: NOW - 20 * 60e3, usd: 79.71, stages: 6 },
-        { id: 'dddd-4', root: '/ws/fankeel', task: 'TODO 全表盤點', project: 'fankeel', stage: 'land', route: [], kind: 'stage', at: NOW - 49 * 60e3, usd: 2.58 },
-        { id: 'eeee-5', root: '/ws/ils', task: 'fsc-14', project: 'ils-bench', stage: 'verify', route: [], kind: 'stage', at: NOW - 13 * 3600e3, usd: null },
-    ],
-};
+const row = (id, state, extra) => Object.assign({ id, root: '/w', task: 'task ' + id, project: 'proj', stage: 'build', route: [], gate: state === 'gate', updated: NOW, state, attached: false, background: [], last: null }, extra);
+const BG = [{ id: 'b1', type: 'shell', status: 'running', description: 'npm test', command: 'npm test', since: NOW - 90e3 },
+    { id: 'b2', type: 'agent', status: 'running', description: 'review', command: '', since: NOW - 30e3 },
+    { id: 'b3', type: 'shell', status: 'running', description: 'build', command: 'x', since: NOW - 10e3 }];
+const HOME = { host: 'my-pc', at: NOW, gates: [Object.assign(row('aaaaaaaa-1', 'gate'), { questions: Q1, since: NOW - 60e3, until: NOW + 240e3 })],
+    tasks: [row('aaaaaaaa-1', 'gate'), row('aaaaaaaa-2', 'running', { last: { role: 'desktop', text: '跑測試', at: NOW } }), row('aaaaaaaa-3', 'background', { background: BG }), row('aaaaaaaa-4', 'idle'), row('aaaaaaaa-5', 'holding', { attached: true })], done: [] };
+// One session's /station/phone.json; `sess`, not `page`, so a boot test's own `page` does not shadow it.
+const sess = (state, extra) => Object.assign({ id: 'aaaaaaaa-2', root: '/w', task: 't', project: 'proj', stage: 'build', route: [], state, attached: false, waiting: null, chat: [], gate: null, background: [], at: NOW }, extra);
 const APP = { mode: 'app' };
 const count = (html, re) => (html.match(re) || []).length;
 
-test('the hash names the tab, an open gate, a task to find, or a pairing code', () => {
-    const r = (tab, open, focus, pair) => ({ tab, open: open || null, focus: focus || null, pair: pair || null });
-    assert.deepEqual(P.parseRoute(''), r('gates'));
-    assert.deepEqual(P.parseRoute('#/gates'), r('gates'));
-    assert.deepEqual(P.parseRoute('#/tasks'), r('tasks'));
-    assert.deepEqual(P.parseRoute('#/done'), r('done'));
-    assert.deepEqual(P.parseRoute('#/gate/aaaa-1'), r('gates', 'aaaa-1'));
-    assert.deepEqual(P.parseRoute('#/task/cccc-3'), r('tasks', null, 'cccc-3'));
-    assert.deepEqual(P.parseRoute('#/pair/abcd2345'), r('gates', null, null, 'ABCD2345'));
-    assert.deepEqual(P.parseRoute('#/pair/short'), r('gates'));
-    assert.deepEqual(P.parseRoute('#/gate/<x>'), r('gates'));
+test('parseRoute: home, a session, the old gate and task links, done, pair', () => {
+    assert.deepEqual(P.parseRoute(''), { view: 'home', id: null, pair: null });
+    assert.deepEqual(P.parseRoute('#/s/aaaaaaaa-2'), { view: 'chat', id: 'aaaaaaaa-2', pair: null });
+    assert.deepEqual(P.parseRoute('#/gate/aaaaaaaa-1'), { view: 'chat', id: 'aaaaaaaa-1', pair: null });
+    assert.deepEqual(P.parseRoute('#/task/aaaaaaaa-1'), { view: 'chat', id: 'aaaaaaaa-1', pair: null });
+    assert.deepEqual(P.parseRoute('#/done'), { view: 'done', id: null, pair: null });
+    assert.deepEqual(P.parseRoute('#/pair/abcd2345'), { view: 'home', id: null, pair: 'ABCD2345' });
+});
+
+test('home: 等你答 first, then holding, running and background, then idle, under three counts', () => {
+    const html = P.screen(HOME, P.parseRoute('#/'), NOW, APP);
+    assert.match(html, /data-block="m-home-a"/);
+    const order = ['ha-ask', 'ha-list', 'ha-idle'].map((c) => html.indexOf('class="' + c));
+    assert.ok(order.every((i, k) => i > 0 && (k === 0 || i > order[k - 1])), String(order));
+    assert.equal(count(html, /<span class="st ask">/g), 1);
+    assert.ok(html.indexOf('aaaaaaaa-5') < html.indexOf('aaaaaaaa-2') && html.indexOf('aaaaaaaa-2') < html.indexOf('aaaaaaaa-3'));
+    assert.match(html, /\+1 個/, 'a background row names two items and +N for the rest');
+    assert.match(html, /你：跑測試/);
+});
+
+test('each state draws its own screen block', () => {
+    const R = P.parseRoute('#/s/aaaaaaaa-2');
+    for (const [state, extra] of [['idle', {}], ['background', { background: BG }], ['running', {}], ['holding', { attached: true }]]) {
+        const html = P.screen(HOME, R, NOW, APP, sess(state, extra));
+        assert.ok(html.includes(P.SCREEN[state]), state);
+    }
+    const gate = P.screen(HOME, R, NOW, APP, sess('gate', { gate: { questions: Q1, since: NOW - 60e3, until: NOW + 240e3 } }));
+    assert.match(gate, /data-block="m-gate-inline"/);
+    assert.match(gate, /id="gate-card"/);
+    assert.doesNotMatch(gate, /data-block="m-composer-a"/);
+});
+
+test('idle has no composer and names /fankeel-phone; background lists every item and needs no reply', () => {
+    const R = P.parseRoute('#/s/aaaaaaaa-2');
+    const idle = P.screen(HOME, R, NOW, APP, sess('idle'));
+    assert.doesNotMatch(idle, /id="cmp-box"/);
+    assert.match(idle, /\/fankeel-phone/);
+    const bg = P.screen(HOME, R, NOW, APP, sess('background', { background: BG }));
+    assert.equal(count(bg, /class="bgp-i/g), 3);
+    assert.match(bg, /不用回覆/);
+    assert.match(bg, /data-act="attach"/);
+});
+
+test('steps group into one line when the turn is over, and show the last three while it runs', () => {
+    const chat = [{ role: 'phone', text: 'go', at: NOW - 9e3 }];
+    for (let i = 0; i < 5; i++) chat.push({ role: 'tool', id: 't' + i, tool: i === 1 ? 'Edit' : 'Bash', label: 'step ' + i, at: NOW - 8e3 + i }, { role: 'tool-end', id: 't' + i, ok: i !== 2, at: NOW - 7e3 + i });
+    const turns = P.turnsOf(chat);
+    assert.equal(turns.filter((x) => x.kind === 'steps').length, 1);
+    assert.match(P.stepsLine(turns[1].items), /^5 個步驟 · 改了 1 個檔 · 1 個失敗$/);
+    const ran = P.screen(HOME, P.parseRoute('#/s/aaaaaaaa-2'), NOW, APP, sess('running', { chat: chat.concat([{ role: 'tool', id: 't9', tool: 'Bash', label: 'last', at: NOW - 1e3 }]) }));
+    assert.match(ran, /正在：last/);
+    assert.match(ran, /data-block="m-tools"/);
+    assert.equal(P.dur(4200), '4.2 秒');
+    assert.equal(P.dur(42e3), '42 秒');
+    assert.equal(P.dur(125e3), '2 分 5 秒');
+});
+
+test('the composer: a waiting message disables it; the mic is drawn only with a Speech API', () => {
+    const R = P.parseRoute('#/s/aaaaaaaa-5');
+    const held = sess('holding', { attached: true });
+    assert.doesNotMatch(P.screen(HOME, R, NOW, Object.assign({ mic: false }, APP), held), /class="mic"/);
+    assert.match(P.screen(HOME, R, NOW, Object.assign({ mic: true }, APP), held), /data-mic="cmp-box"/);
+    const waiting = P.screen(HOME, R, NOW, APP, Object.assign({}, held, { waiting: { text: '等等', at: NOW } }));
+    assert.match(waiting, /<textarea[^>]*id="cmp-box"[^>]*disabled/);
+    assert.match(waiting, /等這回合跑完就送進去/);
 });
 
 test('codeIn reads a code off the pairing url a QR carries, or one typed', () => {
@@ -77,76 +123,6 @@ test('collect reads the sheet\'s inputs: the picks per question, and the typed t
     assert.deepEqual(got, { picks: { 0: ['__other'], 1: ['gate'] }, others: { 0: '換個做法' } });
 });
 
-test('待答: one row per held gate, oldest first, the badge counting them, a long wait in the signal colour', () => {
-    const html = P.screen(M, P.parseRoute('#/gates'), NOW, APP);
-    assert.match(html, /data-block="tab-gates"/);
-    assert.match(html, /data-block="tabbar"/);
-    assert.deepEqual([...html.matchAll(/data-gate="([^"]+)"/g)].map((m) => m[1]), ['aaaa-1', 'bbbb-2']);
-    assert.match(html, /<span class="bdg" aria-label="2 個在等">2<\/span>/);
-    assert.match(html, /<a class="tb" href="#\/gates" aria-current="page">/);
-    assert.match(html, /href="#\/gate\/aaaa-1"/);
-    assert.match(html, /<span class="ago wait">4 分<\/span>/);
-    assert.match(html, /<span class="ago">1 分<\/span>/);
-    assert.match(html, /還有 1 題/, 'a second question is counted on its row');
-    assert.match(html, /<h1>待答<\/h1><span class="n">2<\/span>/);
-    assert.match(html, /<i class="dot live"><\/i>ymlab-pc/);
-    assert.doesNotMatch(html, /data-block="gate-sheet"/);
-});
-
-test('with no gate held, 待答 is gates-empty and the badge is gone', () => {
-    const html = P.screen(Object.assign({}, M, { gates: [] }), P.parseRoute('#/gates'), NOW, APP);
-    assert.match(html, /data-block="gates-empty"/);
-    assert.match(html, /沒有在等你的 gate/);
-    assert.equal(count(html, /class="bdg"/g), 0);
-    assert.equal(count(html, /data-gate=/g), 0);
-});
-
-test('the gate sheet: every question, the recommended option picked under its own label, a 自己寫答案 box, the report link', () => {
-    const one = P.screen(M, P.parseRoute('#/gate/aaaa-1'), NOW, APP);
-    assert.match(one, /<form class="sheet" id="gate-sheet" data-block="gate-sheet" data-id="aaaa-1"/);
-    assert.match(one, /<div class="dim" data-close="1"/);
-    assert.match(one, /<input type="radio" name="q0" value="核准，進 plan \(Recommended\)" checked>/);
-    assert.match(one, /<span class="opt-l">核准，進 plan<span class="gq-rec">建議<\/span><\/span>/);
-    assert.match(one, /<input type="radio" name="q0" value="改 mockup">/);
-    assert.match(one, /<input type="radio" name="q0" value="__other">/);
-    assert.match(one, /<input class="own" type="text" data-own="0"/);
-    assert.match(one, /href="\/f\/aaaa-1\/gate">.*看 design 報告/);
-    assert.match(one, /等了 4 分/);
-    assert.match(one, /<p class="sh-say" role="status"><\/p><button type="submit" class="cta">送出答案<\/button>/);
-    const two = P.screen(M, P.parseRoute('#/gate/bbbb-2'), NOW, APP);
-    assert.equal(count(two, /<h2 class="sh-q"/g), 2);
-    assert.match(two, /<input type="checkbox" name="q1" value="gate">/);
-    assert.match(two, /<input type="checkbox" name="q1" value="__other">/);
-    const held = P.screen(M, P.parseRoute('#/gate/aaaa-1'), NOW, { mode: 'app', picks: { 0: ['改 mockup'] } });
-    assert.match(held, /value="改 mockup" checked>/);
-    assert.doesNotMatch(held, /\(Recommended\)" checked/);
-    assert.doesNotMatch(P.screen(M, P.parseRoute('#/gate/nobody'), NOW, APP), /gate-sheet/, 'a gate no longer held opens nothing');
-});
-
-test('任務: each running task with its route dots, its stage and a 待答 pill when a gate waits', () => {
-    const html = P.screen(M, P.parseRoute('#/task/cccc-3'), NOW, APP);
-    assert.match(html, /data-block="tab-tasks"/);
-    assert.match(html, /<a class="tb" href="#\/tasks" aria-current="page">/);
-    assert.equal(count(html, /<a class="row"/g), 2);
-    assert.match(html, /href="\/f\/aaaa-1\/design"/);
-    assert.match(html, /<i style="background:var\(--st-survey\)"><\/i><i class="now" style="--c:var\(--st-design\);background:var\(--c\)"><\/i><i class="todo"><\/i><i class="todo"><\/i>/);
-    assert.equal(count(html, /class="pill gate"/g), 1);
-    assert.match(html, /href="\/f\/cccc-3\/build" data-focus="1"/);
-    assert.match(html, /<span class="bdg"[^>]*>2<\/span>/, 'the 待答 badge on every tab');
-    assert.match(html, /<h1>任務<\/h1><span class="n">2<\/span>/);
-});
-
-test('完成: an ended task and a finished stage with their cost, today and yesterday apart', () => {
-    const html = P.screen(M, P.parseRoute('#/done'), NOW, APP);
-    assert.match(html, /data-block="tab-done"/);
-    assert.match(html, /<div class="grp-h">今天<span>到 11:02<\/span><\/div>/);
-    assert.match(html, /<div class="grp-h">昨天<\/div>/);
-    assert.match(html, /<a class="row fin" href="\/f\/dddd-4\/land">.*任務結束.*<span class="usd">\$79\.71<\/span><span class="ago">10:42<\/span>/);
-    assert.match(html, /完成 ·<\/span><span class="pj">fankeel<\/span>.*<span class="usd">\$2\.58<\/span><span class="ago">10:13<\/span>/);
-    assert.match(html, /<span class="usd">—<\/span><span class="ago">22:02<\/span>/, 'nothing priced is a dash');
-    assert.doesNotMatch(html, /<span class="n">/, '完成 carries no count');
-});
-
 test('pair-scan: the viewfinder where a camera can scan, the typed code otherwise; pair-error names the machine', () => {
     const cam = P.screen(null, P.parseRoute(''), NOW, { mode: 'pair', camera: true });
     assert.match(cam, /data-block="pair-scan"/);
@@ -167,63 +143,75 @@ test('pair-scan: the viewfinder where a camera can scan, the typed code otherwis
     assert.match(P.screen(null, null, NOW, { mode: 'off' }), /<h2>連不到 測站<\/h2>/);
 });
 
+const GATE = { questions: Q1, since: NOW - 60e3, until: NOW + 240e3 };
+
 test('every value from the registry is escaped', () => {
     const bad = '<img src=x onerror=alert(1)>';
-    const m = {
+    const home = Object.assign({}, HOME, {
         host: bad,
-        gates: [Object.assign({}, M.gates[0], { task: bad, project: bad, questions: [{ question: bad, options: [{ label: bad, description: bad }] }] })],
-        tasks: [Object.assign({}, M.tasks[0], { task: bad })],
-        done: [Object.assign({}, M.done[0], { task: bad })],
-    };
-    for (const hash of ['#/gate/aaaa-1', '#/tasks', '#/done']) {
-        const html = P.screen(m, P.parseRoute(hash), NOW, APP);
-        assert.ok(!html.includes('<img'), hash);
-        assert.ok(html.includes('&lt;img'), hash);
+        gates: [Object.assign({}, HOME.gates[0], { task: bad, project: bad, questions: [{ question: bad, options: [{ label: bad, description: bad }] }] })],
+        tasks: HOME.tasks.map((x) => Object.assign({}, x, { task: bad, project: bad, last: { role: 'desktop', text: bad, at: NOW } })),
+        done: [{ id: 'dddd-4', root: '/w', task: bad, project: bad, stage: 'land', route: [], kind: 'end', at: NOW - 20 * 60e3, usd: 1, stages: 6 }],
+    });
+    const R = P.parseRoute('#/s/aaaaaaaa-2');
+    const chat = [{ role: 'phone', text: bad, at: NOW - 3e3 }, { role: 'assistant', text: bad, at: NOW - 1e3 }];
+    const screens = [
+        P.screen(home, P.parseRoute('#/'), NOW, APP),
+        P.screen(home, P.parseRoute('#/done'), NOW, APP),
+        P.screen(home, R, NOW, APP, sess('holding', { task: bad, attached: true, chat, waiting: { text: bad, at: NOW } })),
+        P.screen(home, R, NOW, APP, sess('background', { background: [Object.assign({}, BG[0], { description: bad })] })),
+        P.screen(home, R, NOW, APP, sess('gate', { gate: Object.assign({}, GATE, { questions: home.gates[0].questions }) })),
+    ];
+    for (const html of screens) {
+        assert.ok(!html.includes('<img'), html.slice(0, 160));
+        assert.ok(html.includes('&lt;img'), html.slice(0, 160));
     }
 });
 
-test('English: the same keys in both tables, and no CJK left on any screen', () => {
+test('English: the same keys in both tables, and no CJK left on home, a chat in each state, or the pair screens', () => {
     assert.deepEqual(Object.keys(P.STR.en).sort(), Object.keys(P.STR.zh).sort());
     for (const [k, v] of Object.entries(P.STR.en)) assert.ok(!CJK.test(v), k + ' is not English: ' + v);
-    const ascii = JSON.parse(JSON.stringify(M).replace(/[^\x00-\x7f]+/g, 'x'));
+    const ascii = (o) => JSON.parse(JSON.stringify(o).replace(/[^\x00-\x7f]+/g, 'x'));
+    const home = ascii(HOME);
+    const R = P.parseRoute('#/s/aaaaaaaa-2');
     P.setLang('en');
     try {
         const screens = [
-            P.screen(ascii, P.parseRoute('#/gate/bbbb-2'), NOW, APP),
-            P.screen(ascii, P.parseRoute('#/tasks'), NOW, APP),
-            P.screen(ascii, P.parseRoute('#/done'), NOW, APP),
-            P.screen(Object.assign({}, ascii, { gates: [] }), P.parseRoute(''), NOW, APP),
+            P.screen(home, P.parseRoute('#/'), NOW, APP),
+            P.screen(home, P.parseRoute('#/done'), NOW, APP),
+            ...['idle', 'running', 'background', 'holding'].map((s) => P.screen(home, R, NOW, Object.assign({ mic: true }, APP), ascii(sess(s, { attached: s === 'holding', background: BG })))),
+            P.screen(home, R, NOW, APP, ascii(sess('gate', { gate: Object.assign({}, GATE, { questions: Q2 }) }))),
             P.screen(null, null, NOW, { mode: 'pair', camera: true }),
             P.screen(null, null, NOW, { mode: 'pair', camera: false, say: 'x' }),
             P.screen(null, null, NOW, { mode: 'off', host: 'ymlab-pc' }),
         ];
         for (const html of screens) assert.equal(CJK.exec(html), null, html.slice(0, 160));
-        assert.match(screens[0], /Send answer/);
+        assert.match(screens[6], /Send answer/);
     } finally {
         P.setLang('zh');
     }
 });
 
-test('mobile.css carries a rule for every class the screens draw, and the real page\'s overrides', () => {
-    const css = read('mobile.css');
-    // Drawn from station.css, which the shell loads first, as the mockup did.
+test('every class the page draws has a rule, the real page\'s overrides stay, and the old sheet and tab bar are gone', () => {
+    const css = read('mobile.css') + read('station.css');
     const STATION = new Set(['dot', 'live', 'hm-stw', 'route', 'now', 'todo', 'pill', 'gate', 'gq-rec', 'glyph', 'gseg', 'done', 'gedge', 'gcore']);
-    const html = [
-        P.screen(M, P.parseRoute('#/gate/bbbb-2'), NOW, APP), P.screen(M, P.parseRoute('#/task/cccc-3'), NOW, APP), P.screen(M, P.parseRoute('#/done'), NOW, APP),
-        P.screen(Object.assign({}, M, { gates: [] }), null, NOW, APP), P.screen(null, null, NOW, { mode: 'pair', camera: true }),
-        P.screen(null, null, NOW, { mode: 'pair', camera: false, say: 'x' }), P.screen(null, null, NOW, { mode: 'off' }),
-    ].join('');
-    const classes = new Set([...html.matchAll(/class="([^"]+)"/g)].flatMap((m) => m[1].split(/\s+/)));
-    for (const c of classes) {
-        if (STATION.has(c)) continue;
-        assert.match(css, new RegExp('\\.' + c + '(?![\\w-])'), '.' + c + ' has no rule in mobile.css');
+    const R = P.parseRoute('#/s/aaaaaaaa-2');
+    const all = [P.screen(HOME, P.parseRoute('#/'), NOW, APP)]
+        .concat(['idle', 'running', 'background', 'holding'].map((s) => P.screen(HOME, R, NOW, Object.assign({ mic: true }, APP), sess(s, { attached: s === 'holding', background: BG }))))
+        .concat([P.screen(HOME, R, NOW, Object.assign({ mic: true }, APP), sess('gate', { gate: Object.assign({}, GATE, { questions: Q2 }) })),
+            P.screen(null, null, NOW, { mode: 'pair', camera: true }), P.screen(null, null, NOW, { mode: 'pair', camera: false, say: 'x' }), P.screen(null, null, NOW, { mode: 'off' })]);
+    for (const html of all) {
+        for (const m of html.matchAll(/class="([^"]+)"/g)) {
+            for (const c of m[1].split(/\s+/)) if (!STATION.has(c)) assert.ok(new RegExp('\\.' + c + '(?![\\w-])').test(css), c);
+        }
     }
-    assert.ok(css.includes('body.m{min-width:0'), 'station.css holds every page at 1000 px');
-    assert.match(css, /@media \(min-width:601px\)\{/);
-    assert.ok(css.includes('.vf video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}'));
-    assert.ok(css.includes('.opt .own{'), 'the 自己寫 box is not hidden like the radios');
-    assert.match(css, /@media \(prefers-reduced-motion:reduce\)\{/);
-    assert.doesNotMatch(css, /\.gest|\.mk|\.phone\{|\.cbar|\.shade|\.nt-|\.rm-|\.m-switch/, 'the mockup\'s frame and the desktop card stay out');
+    const mcss = read('mobile.css');
+    assert.ok(mcss.includes('body.m{min-width:0'), 'station.css holds every page at 1000 px');
+    assert.match(mcss, /@media \(min-width:601px\)\{/);
+    assert.ok(mcss.includes('.vf video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}'));
+    assert.ok(mcss.includes('.opt .own{'), 'the 自己寫 box is not hidden like the radios');
+    assert.match(mcss, /@media \(prefers-reduced-motion:reduce\)\{/);
+    assert.doesNotMatch(mcss, /\.gest|\.mk|\.phone\{|\.cbar|\.shade|\.nt-|\.rm-|\.m-switch|\.tabbar|\.sheet/);
 });
 
 // The page in a context of its own: a document with #app, a fake fetch, and
@@ -251,17 +239,19 @@ function boot(o) {
     const reads = () => calls.filter((c) => c.url === '/station/mobile.json').length;
     return { app, calls, store, win, doc, reads, fire: (type, e) => fire('doc', type, e || {}), fireWin: (type, e) => fire('win', type, e || {}) };
 }
-// A gate sheet as answer() reads it: data-id, its .sh-say line, its .cta button, its inputs.
-function sheetForm(id, inputs) {
+// The gate card as answer() reads it: data-id, its .gc-st line, its .cta button, its inputs.
+function cardForm(id, inputs) {
     const say = { textContent: '' };
     const btn = { disabled: false };
     return {
-        id: 'gate-sheet', say, btn,
+        id: 'gate-card', say, btn,
         getAttribute: (a) => (a === 'data-id' ? id : null),
-        querySelector: (s) => (s === '.sh-say' ? say : s === '.cta' ? btn : null),
+        querySelector: (s) => (s === '.gc-st' ? say : s === '.cta' ? btn : null),
         querySelectorAll: () => inputs,
     };
 }
+// The composer as its submit reads it: the one textarea.
+const composerForm = (text) => ({ id: 'composer', getAttribute: () => null, querySelector: (s) => (s === 'textarea' ? { value: text } : null) });
 const pick = (name, value, checked) => ({ name, value, checked, getAttribute: () => null });
 const ownBox = (qi, value) => ({ name: '', value, checked: false, getAttribute: (a) => (a === 'data-own' ? String(qi) : null) });
 const pairForm = (value) => ({ id: '', getAttribute: (a) => (a === 'data-pair-form' ? '1' : null), querySelector: () => ({ value }) });
@@ -277,83 +267,129 @@ const reply = (status, body) => Promise.resolve({
 });
 const settle = () => new Promise((r) => setTimeout(r, 30));
 
-test('boot: an unpaired phone sees pair-scan, a paired one 待答, an unreachable station pair-error', async () => {
+const PHONE = '/station/phone.json?id=';
+// mobile.json is HOME, phone.json is `one`, and every POST is a 201.
+const routed = (one) => (url) => (url === '/station/mobile.json' ? reply(200, HOME) : url.startsWith(PHONE) ? reply(200, one) : reply(201, ''));
+const callsTo = (page, url) => page.calls.filter((c) => c.url === url);
+
+test('boot: an unpaired phone sees pair-scan, a paired one the session list, an unreachable station pair-error', async () => {
     const unpaired = boot({ fetch: () => reply(401, 'pair this phone first') });
     await settle();
     assert.equal(unpaired.calls[0].url, '/station/mobile.json');
     assert.match(unpaired.app.innerHTML, /data-block="pair-scan"/);
     assert.match(unpaired.app.innerHTML, /data-pair-form="1"/, 'no BarcodeDetector here: the typed code');
-    const paired = boot({ fetch: () => reply(200, M) });
+    const paired = boot({ fetch: () => reply(200, HOME) });
     await settle();
-    assert.match(paired.app.innerHTML, /data-block="tab-gates"/);
-    assert.equal(paired.store['station.m.host'], 'ymlab-pc');
-    assert.equal(paired.win.FK_M.parseRoute('#/done').tab, 'done');
+    assert.match(paired.app.innerHTML, /data-block="m-home-a"/);
+    assert.equal(paired.store['station.m.host'], 'my-pc');
+    assert.equal(paired.win.FK_M.parseRoute('#/done').view, 'done');
     const away = boot({ store: { 'station.m.host': 'ymlab-pc' }, fetch: () => Promise.reject(new Error('offline')) });
     await settle();
     assert.match(away.app.innerHTML, /data-block="pair-error"/);
     assert.match(away.app.innerHTML, /連不到 ymlab-pc/);
 });
 
-test('boot: a pairing url opened on an unpaired phone pairs with its code, then shows 待答', async () => {
+test('boot: a pairing url opened on an unpaired phone pairs with its code, then shows the session list', async () => {
     let reads = 0;
     const page = boot({
         hash: '#/pair/ABCD2345',
         fetch: (url) => {
             if (url === '/station/remote/pair') return reply(201, { device: { id: '0123456789abcdef', name: 'Android' } });
             reads += 1;
-            return reads === 1 ? reply(401, 'pair this phone first') : reply(200, M);
+            return reads === 1 ? reply(401, 'pair this phone first') : reply(200, HOME);
         },
     });
     await settle();
     const pair = page.calls.find((c) => c.url === '/station/remote/pair');
     assert.ok(pair, 'no pairing POST');
-    assert.equal(pair.init.method, 'POST');
-    assert.equal(pair.init.headers['content-type'], 'application/x-www-form-urlencoded');
     assert.equal(pair.init.body, 'code=ABCD2345&name=Android');
-    assert.equal(page.win.location.hash, '#/gates');
-    assert.match(page.app.innerHTML, /data-block="tab-gates"/);
+    assert.equal(page.win.location.hash, '#/');
+    assert.match(page.app.innerHTML, /data-block="m-home-a"/);
 });
 
-test('boot: 送出答案 posts the picked answers to /answer, and its 201 closes the sheet and reads again', async () => {
-    const page = boot({ hash: '#/gate/aaaa-1', fetch: (url) => (url === '/answer' ? reply(201, '') : reply(200, M)) });
+test('boot: a hash change to #/s/<id> reads that session\'s phone.json and draws its screen', async () => {
+    const page = boot({ hash: '#/', fetch: routed(sess('running')) });
     await settle();
-    const f = sheetForm('aaaa-1', [pick('q0', '改 mockup', true), pick('q0', '__other', false), ownBox(0, 'ignored')]);
-    const e = page.fire('submit', submit(f));
+    page.win.location.hash = '#/s/aaaaaaaa-2';
+    page.fireWin('hashchange');
+    await settle();
+    assert.ok(page.calls.some((c) => c.url === PHONE + 'aaaaaaaa-2'));
+    assert.match(page.app.innerHTML, /data-block="m-attach"/);
+});
+
+test('boot: the composer posts /phone/say, and its 201 reads phone.json again', async () => {
+    const page = boot({ hash: '#/s/aaaaaaaa-5', fetch: routed(sess('holding', { id: 'aaaaaaaa-5', attached: true })) });
+    await settle();
+    const before = callsTo(page, PHONE + 'aaaaaaaa-5').length;
+    const e = page.fire('submit', submit(composerForm('跑測試')));
     assert.equal(e.prevented, true);
-    assert.equal(f.say.textContent, '送出中…');
-    assert.equal(f.btn.disabled, true);
     await settle();
-    const sent = page.calls.filter((c) => c.url === '/answer');
+    const sent = callsTo(page, '/phone/say');
     assert.equal(sent.length, 1);
     assert.equal(sent[0].init.method, 'POST');
     assert.equal(sent[0].init.headers['content-type'], 'application/x-www-form-urlencoded');
-    assert.equal(sent[0].init.body, new URLSearchParams({ root: '/ws/fankeel', id: 'aaaa-1', answers: JSON.stringify({ [Q1[0].question]: '改 mockup' }) }).toString());
-    assert.equal(page.win.location.hash, '#/gates');
+    assert.equal(sent[0].init.body, new URLSearchParams({ root: '/w', id: 'aaaaaaaa-5', text: '跑測試' }).toString());
+    assert.ok(callsTo(page, PHONE + 'aaaaaaaa-5').length > before);
+});
+
+test('boot: 接上這個 session posts /phone/attach with the session\'s root and id', async () => {
+    const page = boot({ hash: '#/s/aaaaaaaa-2', fetch: routed(sess('running')) });
+    await settle();
+    page.fire('click', tap({ 'data-act': 'attach' }));
+    await settle();
+    const sent = callsTo(page, '/phone/attach');
+    assert.equal(sent.length, 1);
+    assert.equal(sent[0].init.body, new URLSearchParams({ root: '/w', id: 'aaaaaaaa-2' }).toString());
+});
+
+test('boot: the gate card\'s 送出答案 posts answersOf\'s JSON to /answer', async () => {
+    const page = boot({ hash: '#/s/aaaaaaaa-1', fetch: routed(sess('gate', { id: 'aaaaaaaa-1', gate: GATE })) });
+    await settle();
+    const f = cardForm('aaaaaaaa-1', [pick('q0', '改 mockup', true), pick('q0', '__other', false), ownBox(0, 'ignored')]);
+    const e = page.fire('submit', submit(f));
+    assert.equal(e.prevented, true);
+    await settle();
+    const sent = callsTo(page, '/answer');
+    assert.equal(sent.length, 1);
+    assert.equal(sent[0].init.body, new URLSearchParams({ root: '/w', id: 'aaaaaaaa-1', answers: JSON.stringify({ [Q1[0].question]: '改 mockup' }) }).toString());
+});
+
+test('boot: retry reads again, repair and manual show pair-scan', async () => {
+    let up = false;
+    const page = boot({ store: { 'station.m.host': 'ymlab-pc' }, fetch: () => (up ? reply(200, HOME) : Promise.reject(new Error('offline'))) });
+    await settle();
+    assert.match(page.app.innerHTML, /data-block="pair-error"/);
+    up = true;
+    page.fire('click', tap({ 'data-act': 'retry' }));
+    await settle();
+    assert.equal(page.reads(), 2);
+    assert.match(page.app.innerHTML, /data-block="m-home-a"/);
+    page.fire('click', tap({ 'data-act': 'repair' }));
+    assert.match(page.app.innerHTML, /data-block="pair-scan"/);
+    page.app.innerHTML = '';
+    page.fire('click', tap({ 'data-act': 'manual' }));
+    assert.match(page.app.innerHTML, /data-pair-form="1"/);
+});
+
+test('boot: coming back into view reads the session list again', async () => {
+    const page = boot({ hash: '#/', fetch: () => reply(200, HOME) });
+    await settle();
+    page.doc.visibilityState = 'hidden';
+    page.fire('visibilitychange');
+    assert.equal(page.reads(), 1);
+    page.doc.visibilityState = 'visible';
+    page.fire('visibilitychange');
+    await settle();
     assert.equal(page.reads(), 2);
 });
 
-test('boot: a refused or lost answer, a question left blank, a gate no longer held each change only the sheet\'s line', async () => {
-    let answer = () => reply(409, ' already answered ');
-    const page = boot({ hash: '#/gate/aaaa-1', fetch: (url) => (url === '/answer' ? answer() : reply(200, M)) });
+test('boot: a screen that fails to draw is thrown, not shown as a station out of reach', async () => {
+    const thrown = [];
+    const page = boot({ fetch: () => reply(200, { host: 'ymlab-pc', gates: [], tasks: { length: 1 } }), win: { setTimeout: (fn) => { thrown.push(fn); } } });
     await settle();
-    const f = sheetForm('aaaa-1', [pick('q0', '改 mockup', true)]);
-    page.fire('submit', submit(f));
-    await settle();
-    assert.equal(f.say.textContent, '測站沒收下（409）：already answered');
-    assert.equal(f.btn.disabled, false);
-    assert.equal(page.win.location.hash, '#/gate/aaaa-1');
-    answer = () => Promise.reject(new Error('offline'));
-    page.fire('submit', submit(f));
-    await settle();
-    assert.equal(f.say.textContent, '沒送到：可以再按一次');
-    assert.equal(f.btn.disabled, false);
-    const blank = sheetForm('aaaa-1', [pick('q0', '__other', true), ownBox(0, '   ')]);
-    page.fire('submit', submit(blank));
-    assert.equal(blank.say.textContent, '每一題都要有答案');
-    const gone = sheetForm('nobody', [pick('q0', '改 mockup', true)]);
-    page.fire('submit', submit(gone));
-    assert.equal(gone.say.textContent, '這個 gate 已經不在等了');
-    assert.equal(page.calls.filter((c) => c.url === '/answer').length, 2, 'a blank or gone sheet posts nothing');
+    assert.doesNotMatch(page.app.innerHTML, /pair-error/);
+    assert.equal(thrown.length, 1);
+    assert.throws(thrown[0], { name: 'TypeError' }, 'the page runs in its own realm, so its TypeError is not this one');
 });
 
 test('boot: the typed code pairs, a bad one says what a code is, a refusal and a lost station say so', async () => {
@@ -377,36 +413,8 @@ test('boot: the typed code pairs, a bad one says what a code is, a refusal and a
     assert.match(page.app.innerHTML, /連不到測站：再試一次/);
 });
 
-test('boot: a tap on the dim or grab closes the sheet; retry reads again, repair and manual show pair-scan', async () => {
-    let up = false;
-    const page = boot({ hash: '#/gate/aaaa-1', store: { 'station.m.host': 'ymlab-pc' }, fetch: () => (up ? reply(200, M) : Promise.reject(new Error('offline'))) });
-    await settle();
-    assert.match(page.app.innerHTML, /data-block="pair-error"/);
-    up = true;
-    page.fire('click', tap({ 'data-act': 'retry' }));
-    await settle();
-    assert.equal(page.reads(), 2);
-    assert.match(page.app.innerHTML, /data-block="gate-sheet"/);
-    page.fire('click', tap({ 'data-close': '1' }));
-    assert.equal(page.win.location.hash, '#/gates');
-    page.fire('click', tap({ 'data-act': 'repair' }));
-    assert.match(page.app.innerHTML, /data-block="pair-scan"/);
-    page.app.innerHTML = '';
-    page.fire('click', tap({ 'data-act': 'manual' }));
-    assert.match(page.app.innerHTML, /data-pair-form="1"/);
-});
-
-test('boot: Escape closes an open sheet and nothing else', async () => {
-    const page = boot({ hash: '#/gate/aaaa-1', fetch: () => reply(200, M) });
-    await settle();
-    page.fire('keydown', { key: 'a' });
-    assert.equal(page.win.location.hash, '#/gate/aaaa-1');
-    page.fire('keydown', { key: 'Escape' });
-    assert.equal(page.win.location.hash, '#/gates');
-});
-
 test('boot: typing in a 自己寫 box ticks its own __other', async () => {
-    const page = boot({ fetch: () => reply(200, M) });
+    const page = boot({ fetch: () => reply(200, HOME) });
     await settle();
     for (const type of ['input', 'focusin']) {
         const other = { checked: false };
@@ -414,47 +422,6 @@ test('boot: typing in a 自己寫 box ticks its own __other', async () => {
         page.fire(type, { target: { getAttribute: (a) => (a === 'data-own' ? '0' : null), closest: () => label } });
         assert.equal(other.checked, true, type);
     }
-});
-
-test('boot: a hash change redraws, and one naming a gate not held reads again', async () => {
-    const page = boot({ hash: '#/gates', fetch: () => reply(200, M) });
-    await settle();
-    page.win.location.hash = '#/done';
-    page.fireWin('hashchange');
-    assert.match(page.app.innerHTML, /data-block="tab-done"/);
-    assert.equal(page.reads(), 1);
-    page.win.location.hash = '#/gate/zzzz-9';
-    page.fireWin('hashchange');
-    await settle();
-    assert.equal(page.reads(), 2);
-});
-
-test('boot: coming back into view reads again, but never under an open sheet, so what was typed stays', async () => {
-    const page = boot({ hash: '#/gates', fetch: () => reply(200, M) });
-    await settle();
-    page.doc.visibilityState = 'hidden';
-    page.fire('visibilitychange');
-    assert.equal(page.reads(), 1);
-    page.doc.visibilityState = 'visible';
-    page.fire('visibilitychange');
-    await settle();
-    assert.equal(page.reads(), 2);
-    page.win.location.hash = '#/gate/aaaa-1';
-    page.fireWin('hashchange');
-    page.app.innerHTML = 'the sheet as typed';
-    page.fire('visibilitychange');
-    await settle();
-    assert.equal(page.reads(), 2);
-    assert.equal(page.app.innerHTML, 'the sheet as typed');
-});
-
-test('boot: a screen that fails to draw is thrown, not shown as a station out of reach', async () => {
-    const thrown = [];
-    const page = boot({ fetch: () => reply(200, { host: 'ymlab-pc', gates: { length: 1 } }), win: { setTimeout: (fn) => { thrown.push(fn); } } });
-    await settle();
-    assert.doesNotMatch(page.app.innerHTML, /pair-error/);
-    assert.equal(thrown.length, 1);
-    assert.throws(thrown[0], /gates\.map is not a function/);
 });
 
 // The service worker against fake caches and a fetch that can go offline.
