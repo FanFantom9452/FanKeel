@@ -359,7 +359,8 @@ The shape above is one question. **How many independent tasks are in front of
 you** is a different one, and `plan` answers it durably: `lib/plantasks.js`
 groups a plan's tasks by disjoint `**Files:**` and by whether one consumes what
 another produces, and `surfaces()` gives each group its dispatch surface — one
-task is `agent`, two or more are one `workflow`.
+task is `agent`, two are `agents` in one response, three or more are one
+`workflow`.
 
 A group carrying a prose `Consumes:`, or a task with no `Interfaces:` block, never reaches `workflow`, whatever its size; a require-edge diagnostic is printed beside the group and leaves it where it is, because it says a file may be wrong and the pipeline's reviewer reads each task's own diff.
 `conflict()` reads only a backticked identifier out of `Consumes:`, so a
@@ -378,7 +379,7 @@ pinned `sonnet`, and the line's effort when it names one — and
 ledger, after every implementer's brief, and prints its path for the session
 holding the Workflow tool to open with `scriptPath`. A stage agent has no
 Workflow tool, so under a brain build `groups` still prints `agents`; a brain
-whose row has two or more runs the same command and puts
+whose row has three or more runs the same command and puts
 `workflow: <path>` in its group report, `workflowOf` in `lib/handoff.js`
 reads it, and `scripts/await.js` tells the controller to open it and message
 the result back, keeping the brain's in-flight mark meanwhile.

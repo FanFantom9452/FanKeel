@@ -9,7 +9,7 @@ last_verified: 2026-10-16
 
 ## 決定
 
-- `workflowScript`（`lib/plantasks.js`）產出一個分組的 script：每個 implementer 任務一個 pipeline 項目，先 implement 再 review，中間沒有 barrier；script 帶工作樹的絕對路徑，不用 `Date.now`、`Math.random`。三個以下的分組不產 script。
+- `workflowScript`（`lib/plantasks.js`）產出一個分組的 script：每個 implementer 任務一個 pipeline 項目，先 implement 再 review，中間沒有 barrier；script 帶工作樹的絕對路徑，不用 `Date.now`、`Math.random`。不到三個的分組不產 script。
 - `ledger.js workflow --group <N>` 先寫好每個任務的 brief，再寫 script，放在 ledger 旁邊，印出路徑與 commit 順序。
 - 主控那邊的規則區塊不加字：`scripts/await.js` 讀到報告裡的 `workflow:` 行，自己印出「用 scriptPath 開、把結果 SendMessage 給哪個 agent」。它也把 brain 的 inflight 記號重設到現在，下一次 await 不會把同一份報告再交一次。
 - brain 的規則（`agents/fankeel-brain.md`）寫明：分組列三個以上才跑指令；收到 `Workflow returned:` 後存回傳、要 commit、記 `complete`；某個 implementer 回傳是 null 的，當作沒跑，改用一個 Agent 重派。
