@@ -611,3 +611,19 @@ test('fankeel-reviewer numbers its findings in one sequence and leaves clean/non
     assert.match(ret, /as `N\. path:line — <the problem>`/);
     assert.match(ret, /also a finding line \(`N\. path:line — <the problem>`\)[^.]*marked NONE/);
 });
+
+test('the workflow script reviewer prompt asks for the numbered N. path:line form', () => {
+    const { parseTasks, workflowScript } = require('../lib/plantasks.js');
+    const tasks = parseTasks(['1', '2', '3'].map((n) => [
+        '## Task ' + n + ': task ' + n, '',
+        '**Files:**', '- Modify: `lib/f' + n + '.js`', '- Test: `tests/t' + n + '.test.js`', '',
+        '**Interfaces:**', '- Consumes: nothing.', '- Produces: nothing.', '',
+        '**Dispatch:** implementer, sonnet', '',
+    ].join('\n')).join('\n'));
+    const script = workflowScript(tasks, [1, 2, 3], {
+        root: '/repo', plan: 'docs/plans/p.md', stem: 'p', group: 1,
+        briefs: { 1: '/b1', 2: '/b2', 3: '/b3' },
+    });
+    assert.match(script, /numbered N\. in one sequence/);
+    assert.match(script, /as N\. path:line -- <the problem>/);
+});
