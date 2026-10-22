@@ -3,7 +3,8 @@ label: ponytail
 title: Ponytail 5.3.2 比較與借鏡
 description: 四個候選暫無對應問題；比較表留此備查，有問題對上再收
 state: watch
-link: docs/90-agent/judgements/2026-10-22-ponytail-5-diff.md
+link: agents/fankeel-reviewer.md
+group: 下一個 Ponytail 借鏡出現
 timing: if: reviewer 回報難以逐條指認，或解除安裝後有殘留事故
 stamp: 2026-10-23
 ---

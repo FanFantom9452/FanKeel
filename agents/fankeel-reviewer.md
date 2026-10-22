@@ -87,7 +87,8 @@ cuts, security, sensitive, silent-failure and comment findings alike. Count from
 once, in a single sequence across the whole return and all lenses, never restarting
 per section. A gate or the fixer can then say "fix 2 and 5" instead of repeating
 path:line. `clean`, `none`, `lean` and the closing `net:` / `verify:` / `security:`
-lines stay unnumbered.
+lines stay unnumbered. Verify mode keeps the first round's numbers on the lines it
+confirms and never renumbers, so a dropped number leaves a gap.
 
 ## Cuts
 

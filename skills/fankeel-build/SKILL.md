@@ -387,8 +387,9 @@ then asks this stage's gate.
    Part 4 — cuts, over the lines this diff added and no others, in the
      format of the `## Cuts` section of your agent file. A cut is a finding.
 
-   RETURN, and nothing else: one line per finding as `path:line — <the
-   problem>`, most serious first, then Part 4's cuts and their `net:` line —
+   RETURN, and nothing else: one line per finding, numbered `N. ` in one
+   sequence across the whole return (agents/fankeel-reviewer.md `## Numbering`),
+   as `N. path:line — <the problem>`, most serious first, then Part 4's cuts and their `net:` line —
    or the single word `clean` ONLY when Parts 1-3 found nothing, Part 4
    found nothing to cut, AND (where the diff changes a listener) every row
    of the selector table has a qualifying test; otherwise `clean` is never
