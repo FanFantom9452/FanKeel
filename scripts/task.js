@@ -1322,7 +1322,7 @@ function cmdProfile(root, opts) {
         if (out.rows.some((r) => r.from === 'history')) for (const e of history.evidence) lines.push('  history: ' + e);
         return lines.join('\n');
     }
-    fail('profile is one of: show, set <key> <value> [--default], unset <key> [--default], suggest, preset <manual|balanced|lean> [--default]');
+    fail('profile is one of: show, set <key> <value> [--default] [--confirm], unset <key> [--default], suggest, preset <manual|balanced|lean> [--default]');
 }
 
 // Invariant 7: never on this script's own initiative, so the value is always
@@ -1801,7 +1801,7 @@ const USAGE = [
     '  guard <ask|deny|off>              only when the user asked for it',
     '  profile show|set <key> <value>|unset <key>|suggest|preset <manual|balanced|lean>',
     '                                    the project\'s standing answers; --default writes the',
-    '                                    machine file, --project <dir> picks a project under the root',
+    '                                    machine file, --project <dir> picks a project under the root; --confirm lets station.remote true through',
     '  land <merge|pr|keep|direct> [--push|--no-push]',
     '                                    record the integration this task actually took',
     '  intends <plan-or-design>          the files it names become this task\'s intends;',
