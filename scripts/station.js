@@ -968,7 +968,8 @@ async function serve(opts) {
     // Factored so the first bind and the fixed-port retry below write the
     // exact same shape, rather than one drifting from the other. `url` is the
     // loopback address in every state — hooks/pane.ts accepts nothing else —
-    // and the tailnet address, while there is one, sits beside it as `remote.url`.
+    // and the tailnet address, while there is one, sits beside it as `remote.url`,
+    // or `remote.warning` when enabling it failed.
     const writeRecord = (data) => {
         recordData = data;
         const record = serveRecordPath(configDir);
