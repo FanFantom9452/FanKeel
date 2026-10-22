@@ -231,7 +231,7 @@ test('POST /profile: the first trigger turned on writes a topic, and station.rem
         const before = ts.calls.length;
         assert.equal((await set('station.remote', 'false')).status, 303);
         assert.equal((await request(s.url, { headers: { host: NAME } })).status, 421, 'refused from the next request');
-        assert.deepEqual(ts.calls.slice(before), ['serve --https=443 off'], 'turning it off takes the proxy this station made down');
+        assert.deepEqual(ts.calls.slice(before), ['serve --https=443 --set-path=/ off'], 'turning it off takes the proxy this station made down');
         assert.equal(readServeRecord(f.cfg).remote, undefined);
     } finally {
         s.close();

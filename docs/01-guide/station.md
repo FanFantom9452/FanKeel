@@ -43,12 +43,12 @@ source_of_truth: docs/90-agent/reference/station.md, assets/station/station.js, 
 
 開關在 `#/settings` 精靈下面的「手機遠端」卡片：打開後卡片給出 tailnet 網址（附「複製」）、一張配對 QR、已配對的手機（可「解除」），以及三個推播開關。配對碼一次性、10 分鐘內有效，因為從 tailnet 來的請求沒有配對過的手機一律擋下。手機掃 QR 後打開的是手機頁 `/m`：從 tailnet 打開監控站根網址 `/` 會自動轉到 `/m`，本機瀏覽器開 `/` 仍是桌面版。要關掉時把卡片的開關關上；監控站下一個請求起就拒絕 tailnet。
 
-`tailscale serve` 代理若是這個監控站自己開的，監控站會在三個時候把它撤掉：開關關上時、監控站關閉時（包括 Ctrl+C），以及閒置太久自己結束時。撤掉的方式是跑 `tailscale serve --https=443 off`，而這個指令清掉的是整個 443 埠上的設定，不只監控站那一條；如果你在 443 上還掛了別的 `tailscale serve`，它會一起消失。代理在監控站啟動前就已經存在時，監控站沒開它，也就不撤它。撤不掉時只在 stderr 寫一行，關閉照常進行。
+`tailscale serve` 代理若是這個監控站自己開的，監控站會在三個時候把它撤掉：開關關上時、監控站關閉時（包括 Ctrl+C），以及閒置太久自己結束時。撤掉的方式是跑 `tailscale serve --https=443 --set-path=/ off`，這個指令只撤監控站自己掛在 `/` 的那一條，你在 443 埠其他路徑上掛的 `tailscale serve` 不會動（依 Tailscale 文件，`off` 加在建立 mapping 的旗標後面只撤那一個 mapping，https://tailscale.com/kb/1242/tailscale-serve）。代理在監控站啟動前就已經存在時，監控站沒開它，也就不撤它。撤不掉時只在 stderr 寫一行，關閉照常進行。
 
 兩種情況不會撤：process 被強制結束（工作管理員結束工作、`kill -9`）時什麼都來不及跑；在 Windows 上，SIGTERM 也一樣不會觸發撤除。這時代理還開著，要自己跑一次：
 
 ```
-tailscale serve --https=443 off
+tailscale serve --https=443 --set-path=/ off
 ```
 
 推播走 ntfy（一個開放的推播服務，手機裝 ntfy app 訂閱一個 topic 就收得到）。卡片上的三個開關對應 `notify.gate`、`notify.stage`、`notify.end`，內建都關：`notify.gate` 在 gate 等你回答時推一則高優先、會響的通知，附「打開 gate」；`notify.stage` 在一站做完時推一則靜音通知；`notify.end` 在任務結束時推一則靜音通知，附含子代理的花費。第一次從卡片打開任一個時，監控站會在 `notify.topic` 寫一個 `fankeel-` 開頭的亂數 topic，卡片上寫出要訂閱哪一個。這五個 key 和 `station.remote` 一樣只讀機器層，clone 下來的 repo 沒辦法把你的 gate 題目推到它指定的伺服器；完整說明與手機沒響時要看的 `notify-failed.log` 見 [profile.md](profile.md)。自架 ntfy 時改 `notify.server`：

@@ -1505,12 +1505,13 @@ bound first; the fixed-port retry leaves it there, and that listener stays
 open. Writing `station.remote` off refuses the tailnet Host from the next
 request. A proxy this station made comes down with it: writing
 `station.remote` off, `close()`, Ctrl+C on `serve`, and the `--idle` exit each
-run `tailscale serve --https=443 off` (`disable` in `lib/tailscale.js`,
+run `tailscale serve --https=443 --set-path=/ off` (`disable` in `lib/tailscale.js`,
 `teardownRemote` in `scripts/station.js`). A proxy that was already there when
 the station asked (`already` from `ensureServe`) is left on. A failed teardown
 is one stderr line, `station: tailscale serve left on — <why>`, and shutdown
-goes on. A hard kill runs none of this; `tailscale serve --https=443 off` by
+goes on. A hard kill runs none of this; `tailscale serve --https=443 --set-path=/ off` by
 hand removes the proxy then.
+The off is the narrow one, `--set-path=/`: the station only ever owns the `/` mount (`ensureServe` refuses to replace a `/` that is taken), and the whole-port `--https=443 off` would take any other handler on 443 with it (station-remote-3).
 
 Through the tailnet, `policy` in `lib/remote.js` decides what a request may
 reach. Open: `GET /`, `/m`, `/m/manifest.webmanifest`, `/m/icon.svg`, `/sw.js`,

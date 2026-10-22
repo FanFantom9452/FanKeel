@@ -14,7 +14,7 @@ const { serve } = require('../scripts/station.js');
 const tmp = require('./tmp.js');
 
 const NAME = 'ymlab-pc.tail1234.ts.net';
-const OFF = 'serve --https=443 off';
+const OFF = 'serve --https=443 --set-path=/ off';
 
 function fixture(remoteOn) {
     const base = tmp('fankeel-station-teardown-');
@@ -130,6 +130,6 @@ test('a teardown that fails is one stderr line, and the station still closes', a
     }
     assert.equal(ts.count(OFF), 1);
     assert.deepEqual(said.filter((l) => l.startsWith('station: tailscale serve left on')),
-        ['station: tailscale serve left on — tailscale serve --https=443 off failed: tailscale: access denied\n']);
+        ['station: tailscale serve left on — tailscale serve --https=443 --set-path=/ off failed: tailscale: access denied\n']);
     await assert.rejects(get(s.url));
 });
