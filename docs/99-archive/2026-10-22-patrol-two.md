@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # 2026-10-22 第二輪盤點：station 小尾巴、source.test 進快速測試、mockup 對齊、五頁逐頁看 Implementation Plan
