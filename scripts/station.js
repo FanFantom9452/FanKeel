@@ -996,7 +996,12 @@ async function serve(opts) {
                 ? { on: true, dnsName: got.dnsName, url: got.url, warning: null }
                 : { on: false, dnsName: null, url: null, warning: got.warning };
             if (got.ok && got.already === false) madeServe = true;
-            if (!got.ok) process.stderr.write('station: remote stays off — ' + got.warning + '\n');
+            if (!got.ok) {
+                process.stderr.write('station: remote stays off — ' + got.warning + '\n');
+                // station-remote-3 (b): a proxy this run made earlier must not
+                // outlive the enable that just failed; a no-op when none was made.
+                teardownRemote();
+            }
         } else {
             tailnet = { on: false, dnsName: null, url: null, warning: null };
             teardownRemote();

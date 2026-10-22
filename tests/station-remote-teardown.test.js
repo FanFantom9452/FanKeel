@@ -39,7 +39,7 @@ function fakeTailscale(o) {
     const run = (args) => {
         const line = args.join(' ');
         calls.push(line);
-        if (args[0] === 'status') return { status: 0, stdout: JSON.stringify({ BackendState: 'Running', Self: { DNSName: NAME + '.' } }), stderr: '' };
+        if (args[0] === 'status') return { status: 0, stdout: JSON.stringify({ BackendState: opts.stopped && opts.stopped() ? 'Stopped' : 'Running', Self: { DNSName: NAME + '.' } }), stderr: '' };
         if (line === 'serve status --json') return { status: 0, stdout: JSON.stringify(opts.pre ? proxy(opts.pre()) : config), stderr: '' };
         if (args[0] === 'serve' && args[1] === '--bg') { config = proxy(args[2]); return { status: 0, stdout: '', stderr: '' }; }
         if (line === OFF) {
@@ -132,4 +132,24 @@ test('a teardown that fails is one stderr line, and the station still closes', a
     assert.deepEqual(said.filter((l) => l.startsWith('station: tailscale serve left on')),
         ['station: tailscale serve left on — tailscale serve --https=443 --set-path=/ off failed: tailscale: access denied\n']);
     await assert.rejects(get(s.url));
+});
+
+// station-remote-3 (b): an enable that fails after this station made the proxy
+// must not leave madeServe true until close.
+test('an enable that fails while the station owns a proxy takes the proxy down at once, once', async () => {
+    let stopped = false;
+    const ts = fakeTailscale({ stopped: () => stopped });
+    const s = await start(fixture(true), ts);
+    const write = process.stderr.write;
+    process.stderr.write = () => true;
+    try {
+        assert.equal(ts.count(OFF), 0);
+        stopped = true;
+        assert.equal((await setRemote(s, 'true')).status, 303);
+        assert.equal(ts.count(OFF), 1, 'torn down when the enable failed, not at close');
+    } finally {
+        process.stderr.write = write;
+        s.close();
+    }
+    assert.equal(ts.count(OFF), 1, 'close does not take it down twice');
 });

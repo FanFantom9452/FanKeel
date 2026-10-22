@@ -1507,7 +1507,8 @@ request. A proxy this station made comes down with it: writing
 `station.remote` off, `close()`, Ctrl+C on `serve`, and the `--idle` exit each
 run `tailscale serve --https=443 --set-path=/ off` (`disable` in `lib/tailscale.js`,
 `teardownRemote` in `scripts/station.js`). A proxy that was already there when
-the station asked (`already` from `ensureServe`) is left on. A failed teardown
+the station asked (`already` from `ensureServe`) is left on.
+When `station.remote` stays on but a later ask fails (Tailscale stopped, Funnel on), the proxy this station made comes down at once instead of waiting for `close()` (station-remote-3). A failed teardown
 is one stderr line, `station: tailscale serve left on — <why>`, and shutdown
 goes on. A hard kill runs none of this; `tailscale serve --https=443 --set-path=/ off` by
 hand removes the proxy then.
