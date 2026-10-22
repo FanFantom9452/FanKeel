@@ -710,9 +710,11 @@ is corrected by the next one, not by rewriting this.
 | 判官題：station 手機頁 /m 接上語音輸入，照 VoiceLedger 的概念該怎麼做？通知可以延後 | [90-agent/judgements/2026-10-22-phone-voice-input.md](90-agent/judgements/2026-10-22-phone-voice-input.md) — *judged 2026-10-22, fable* |
 | 判官題：另一個 session 在產口語化簡報，為什麼沒有主動派 fankeel-writer？是定義切得不夠清楚嗎 | [90-agent/judgements/2026-10-22-writer-dispatch.md](90-agent/judgements/2026-10-22-writer-dispatch.md) — *judged 2026-10-22, fable* |
 | 判官題：除了 Tailscale，手機連 station 還該支援哪些方式？要不要做快速設定 | [90-agent/judgements/2026-10-22-phone-reach.md](90-agent/judgements/2026-10-22-phone-reach.md) — *judged 2026-10-22, fable* |
+| Brief: tune requests the session never receives | [90-agent/judgements/2026-10-22-tune-queue-unreceived.md](90-agent/judgements/2026-10-22-tune-queue-unreceived.md) — *judged 2026-10-22, fable* |
 | Brief 24 — graphify (knowledge graph for coding agents): is it useful to FanKeel? | [90-agent/judgements/2026-10-22-graphify-knowledge-graph.md](90-agent/judgements/2026-10-22-graphify-knowledge-graph.md) — *judged 2026-10-22, fable* |
 | Brief 25 — graphify: actually run it on real FanKeel questions and say if it is useful | [90-agent/judgements/2026-10-22-graphify-run-it.md](90-agent/judgements/2026-10-22-graphify-run-it.md) — *judged 2026-10-22, fable* |
 | Brief 26 — Understand-Anything: is it useful to FanKeel? (analyse, then plan a real run) | [90-agent/judgements/2026-10-22-understand-anything.md](90-agent/judgements/2026-10-22-understand-anything.md) — *judged 2026-10-22, fable* |
+| Brief 27 — Ponytail 4.9.0 → 5.3.2: what changed, how it compares to FanKeel's workflow, and what to borrow | [90-agent/judgements/2026-10-22-ponytail-5-diff.md](90-agent/judgements/2026-10-22-ponytail-5-diff.md) — *judged 2026-10-22, fable* |
 
 ## The five scanners
 

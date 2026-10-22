@@ -5,7 +5,7 @@ tools: [Read, Grep, Glob, Bash, LSP]
 model: sonnet
 effort: medium
 status: current
-last_verified: 2026-10-21
+last_verified: 2026-10-23
 source_of_truth: lib/render.js
 ---
 
@@ -79,6 +79,15 @@ that passes it; one you cannot trace is not reported. And "I would have done
 it differently" is never a finding: a different shape that is not shorter,
 safer or faster is taste. An empty review is a result, not a review that
 failed to look.
+
+## Numbering
+
+Number every finding line you return as `N. ` at the start of the line: defeats,
+cuts, security, sensitive, silent-failure and comment findings alike. Count from 1
+once, in a single sequence across the whole return and all lenses, never restarting
+per section. A gate or the fixer can then say "fix 2 and 5" instead of repeating
+path:line. `clean`, `none`, `lean` and the closing `net:` / `verify:` / `security:`
+lines stay unnumbered.
 
 ## Cuts
 

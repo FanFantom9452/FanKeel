@@ -591,3 +591,15 @@ test('fankeel-build: the reviewer greps tests/ for the old wording of page text 
     assert.match(part3, /where the diff rewrites text a page shows, grep `tests\/` for the old wording and run the tests that assert it/i);
     assert.match(part3, /one still asserting it is a finding/);
 });
+
+// Ponytail 5.3.2 numbers findings in one sequence, so a gate or the fixer can
+// say "fix 2 and 5" instead of repeating path:line.
+test('fankeel-reviewer numbers its findings in one sequence and leaves clean/none/lean unnumbered', () => {
+    const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-reviewer.md'), 'utf8');
+    assert.match(text, /^## Numbering$/m);
+    const start = text.indexOf('## Numbering');
+    const next = text.indexOf('\n## ', start + 1);
+    const flat = text.slice(start, next === -1 ? undefined : next).replace(/\s+/g, ' ');
+    assert.match(flat, /single sequence across the whole return/);
+    assert.match(flat, /`clean`, `none`, `lean`/);
+});
