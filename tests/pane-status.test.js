@@ -300,6 +300,25 @@ test('an agent out on this stage is marked on the first open task that is not th
     assert.equal(mixed[4][0].text, '◉');
 });
 
+test('under ui.lang en the empty block, the foot and the folded tasks are English; unset is Chinese', async () => {
+    const m = await load();
+    assert.deepEqual(status(m, { entry: null, lang: 'en' }), [
+        { block: 'empty', segs: [{ text: 'No task in progress in this session' }] },
+        { block: 'empty', segs: [{ text: '/fankeel to start one', color: SECOND }] },
+        { block: 'empty', segs: [{ text: 'station not running', color: SECOND }] },
+    ]);
+    assert.deepEqual(text(status(m, { lang: 'en' }), 'foot'), ['▌f0a58f35 · /fankeel-panel to close', ' station not running']);
+    assert.deepEqual(text(status(m, { entry: busy, plan: planOf(13, [1, 2, 3, 4], [13]), lang: 'en' }), 'tasks'), [
+        '▌▾ tasks 4/13',
+        ' ✓ 4 done',
+        ' ◉  5 task 5 · out 12 min',
+        ' ○  6 task 6',
+        ' ○  7 task 7',
+        ' ○ 6 more, 1 yours',
+    ]);
+    assert.deepEqual(status(m, { lang: 'zh' }), status(m));
+});
+
 test('more than six tasks fold to the count done, the first open task and the two after it, and how many are left', async () => {
     const m = await load();
     assert.deepEqual(text(status(m, { entry: busy, plan: planOf(13, [1, 2, 3, 4], [13]) }), 'tasks'), [

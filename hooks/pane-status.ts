@@ -9,6 +9,8 @@ import { tokenLabel } from './pane-agents.ts'
 import type { AgentNode } from './pane-agents.ts'
 import { cutShells, commandLine, KEEP_MS } from './pane-shell.ts'
 import type { Shell } from './pane-shell.ts'
+import { say } from './pane-lang.ts'
+import type { Lang } from './pane-lang.ts'
 
 // Kept as exports of this file: hooks/pane.ts imports them from here.
 export { str, list, width, cut, WIDE }
@@ -54,6 +56,8 @@ export type StatusInput = {
   // The project's open TODO entries, Ready first (hooks/pane.ts todosOf), and the station's key for the project.
   todos?: TodoEntry[]
   pkey?: string
+  // The words' language, the machine profile's ui.lang (hooks/pane-lang.ts langAt); absent is Chinese.
+  lang?: Lang
 }
 
 // Each block's rail, a fixed colour whatever the stage, on its first drawn row;
@@ -273,7 +277,7 @@ export function dispatchModel(dispatch: string): string {
 // (lib/registry.js inflights); with no agent tied to an open task by name, the
 // mark is drawn on the first open task that is not the user's. With no ledger, a
 // mark on this stage is one row of its own.
-function tasksBlock(entry: Entry, plan: PlanInfo | null, agents: AgentNode[], inner: number, now: number, folded: boolean): Row[] {
+function tasksBlock(entry: Entry, plan: PlanInfo | null, agents: AgentNode[], inner: number, now: number, folded: boolean, lang?: Lang): Row[] {
   if (!plan || !plan.tasks.length) return []
   const stage = str(entry.stage)
   const marks = Array.isArray(entry.inflight) ? entry.inflight : [entry.inflight]
@@ -298,26 +302,26 @@ function tasksBlock(entry: Entry, plan: PlanInfo | null, agents: AgentNode[], in
     const agent = agentOf(agents, t.n)
     const spent = agent && typeof agent.tokens === 'number' ? ` · ${tokenLabel(agent.tokens)}` : ''
     const model = dispatchModel(str(t.dispatch))
-    const by = agent ? ` · ${agent.model} · ${mins((agent.end ?? now) - agent.at)} 分${spent}` : model ? ` · ${model}` : ''
+    const by = agent ? ` · ${agent.model} · ${say(lang, 'status.min', { n: mins((agent.end ?? now) - agent.at) })}${spent}` : model ? ` · ${model}` : ''
     if (done.has(t.n)) return row('tasks', { text: '●', color: DONE }, dim(name(by) + by))
     if (agent && agent.end === null) return row('tasks', { text: '◉', color: OUT }, { text: name(by), bold: true }, { text: by, color: OUT })
     if (t === running) {
-      const after = ` · 出去 ${out} 分`
+      const after = say(lang, 'status.out', { n: out })
       return row('tasks', { text: '◉', color: OUT }, { text: name(after), bold: true }, { text: after, color: late ? GUARD : OUT })
     }
-    if (t.user) return row('tasks', { text: '◐', color: GUARD }, { text: name(' · 你的') }, dim(' · 你的'))
+    if (t.user) return row('tasks', { text: '◐', color: GUARD }, { text: name(say(lang, 'status.yours')) }, dim(say(lang, 'status.yours')))
     return row('tasks', { text: '○', color: TODO }, { text: name(by) }, dim(by))
   }
   const top = row('tasks', head('tasks', folded, `tasks ${count}/${plan.tasks.length}`))
   if (folded) return [top]
   if (plan.tasks.length <= WHOLE) return [top, ...plan.tasks.map(one)]
   const rows = [top]
-  if (count) rows.push(row('tasks', { text: '✓', color: DONE }, dim(` 完成 ${count}`)))
+  if (count) rows.push(row('tasks', { text: '✓', color: DONE }, dim(say(lang, 'status.done', { n: count }))))
   rows.push(...open.slice(0, 3).map(one))
   const rest = open.slice(3)
   if (rest.length) {
     const yours = rest.filter((t) => t.user).length
-    rows.push(row('tasks', { text: '○', color: TODO }, dim(` 還有 ${rest.length} 個${yours ? `，${yours} 個是你的` : ''}`)))
+    rows.push(row('tasks', { text: '○', color: TODO }, dim(say(lang, 'status.rest', { n: rest.length }) + (yours ? say(lang, 'status.restYours', { n: yours }) : ''))))
   }
   return rows
 }
@@ -326,9 +330,9 @@ function tasksBlock(entry: Entry, plan: PlanInfo | null, agents: AgentNode[], in
 // url beside it, or grey words saying none is up. The terminal draws the
 // button as `[ label ]`, four cells wider than its label; a Pane narrower than
 // the url cuts the url's end.
-function stationRow(url: string | null | undefined, inner: number): Row {
-  if (!url) return row('foot', dim(cut('station 未啟動', inner)))
-  const label = '開啟 station'
+function stationRow(url: string | null | undefined, inner: number, lang?: Lang): Row {
+  if (!url) return row('foot', dim(cut(say(lang, 'status.noStation'), inner)))
+  const label = say(lang, 'status.open')
   return row('foot', { text: label, press: 'station' }, dim(cut(` ${url}`, Math.max(4, inner - width(label) - 4))))
 }
 
@@ -384,28 +388,28 @@ const AGENT_KIDS = 3
 // spent where its transcript was there to read. An agent's
 // own agents sit under it behind ├ and └, one level drawn; the counts in the
 // head row include every descendant, drawn or not. Folded, the head row alone.
-function agentsBlock(nodes: AgentNode[], inner: number, now: number, folded: boolean): Row[] {
+function agentsBlock(nodes: AgentNode[], inner: number, now: number, folded: boolean, lang?: Lang): Row[] {
   if (!nodes.length) return []
   const all = (list: AgentNode[]): AgentNode[] => list.flatMap((n) => [n, ...all(n.kids)])
   const every = all(nodes)
   const running = every.filter((n) => n.end === null).length
   const one = (n: AgentNode, lead: string): Row => {
     const spent = typeof n.tokens === 'number' ? ` · ${tokenLabel(n.tokens)}` : ''
-    const after = ` · ${n.model} · ${n.effort} · ${mins((n.end ?? now) - n.at)} 分${spent}`
+    const after = ` · ${n.model} · ${n.effort} · ${say(lang, 'status.min', { n: mins((n.end ?? now) - n.at) })}${spent}`
     const name = cut(n.title || n.type || n.id, Math.max(4, inner - width(lead) - 2 - width(after)))
     const mark: Seg = n.end === null ? { text: '○', color: OUT } : { text: '●', color: DONE }
     return row('agents', { text: lead }, mark, n.end === null ? { text: ` ${name}`, bold: true } : dim(` ${name}`), dim(after))
   }
-  const rows = [row('agents', head('agents', folded, 'agents'), dim(`  ${running} 在跑 · ${every.length - running} 完成`))]
+  const rows = [row('agents', head('agents', folded, 'agents'), dim(say(lang, 'status.agents', { r: running, d: every.length - running })))]
   if (folded) return rows
   for (const n of nodes.slice(0, AGENT_ROOTS)) {
     rows.push(one(n, ''))
     const kids = n.kids.slice(0, AGENT_KIDS)
     const folded = n.kids.length > AGENT_KIDS
     kids.forEach((k, i) => rows.push(one(k, i === kids.length - 1 && !folded ? ' └ ' : ' ├ ')))
-    if (folded) rows.push(row('agents', dim(` └ 還有 ${n.kids.length - AGENT_KIDS} 個`)))
+    if (folded) rows.push(row('agents', dim(say(lang, 'status.kidsMore', { n: n.kids.length - AGENT_KIDS }))))
   }
-  if (nodes.length > AGENT_ROOTS) rows.push(row('agents', dim(`還有 ${nodes.length - AGENT_ROOTS} 個`)))
+  if (nodes.length > AGENT_ROOTS) rows.push(row('agents', dim(say(lang, 'status.rootsMore', { n: nodes.length - AGENT_ROOTS }))))
   return rows
 }
 
@@ -414,16 +418,16 @@ function agentsBlock(nodes: AgentNode[], inner: number, now: number, folded: boo
 // cutShells) — ○ running in OUT with its minutes so far, ● ended in DONE with the
 // minutes it ran and `exit N`, in FLAG when N is not 0, or 結束 where no code
 // could be read. Folded, the head row alone; none to show, no block.
-export function shellsBlock(shells: Shell[], inner: number, now: number, folded: boolean): Row[] {
+export function shellsBlock(shells: Shell[], inner: number, now: number, folded: boolean, lang?: Lang): Row[] {
   const shown = shells.filter((s) => s.end === null || now - s.end < KEEP_MS)
   if (!shown.length) return []
   const running = shown.filter((s) => s.end === null).length
-  const rows = [row('shells', head('shells', folded, 'shells'), dim(`  ${running} 在跑 · ${shown.length - running} 結束`))]
+  const rows = [row('shells', head('shells', folded, 'shells'), dim(say(lang, 'status.shells', { r: running, d: shown.length - running })))]
   if (folded) return rows
   for (const s of cutShells(shells, now)) {
     const ended = s.end !== null
-    const after = ` · ${mins((s.end ?? now) - s.at)} 分${ended ? ' · ' : ''}`
-    const exit = !ended ? '' : s.code === null ? '結束' : `exit ${s.code}`
+    const after = ` · ${say(lang, 'status.min', { n: mins((s.end ?? now) - s.at) })}${ended ? ' · ' : ''}`
+    const exit = !ended ? '' : s.code === null ? say(lang, 'status.ended') : `exit ${s.code}`
     const name = cut(commandLine(s.command), Math.max(4, inner - 2 - width(after) - width(exit)))
     if (!ended) rows.push(row('shells', { text: '○', color: OUT }, { text: ` ${name}`, bold: true }, dim(after)))
     else rows.push(row('shells', { text: '●', color: DONE }, dim(` ${name}${after}`), s.code === null || s.code === 0 ? dim(exit) : { text: exit, color: FLAG }))
@@ -438,13 +442,13 @@ const DROP = ['todo', 'notes', 'shells', 'agents', 'tasks']
 const ALARMS = ['clash']
 
 export function statusRows(input: StatusInput): Row[] {
-  const { id, entry, others, cols, room, now } = input
+  const { id, entry, others, cols, room, now, lang } = input
   if (!entry) {
     return [
-      { block: 'empty', segs: [{ text: cut('這個 session 沒有進行中的任務', cols) }] },
-      { block: 'empty', segs: [dim(cut('/fankeel 開一個', cols))] },
+      { block: 'empty', segs: [{ text: cut(say(lang, 'status.empty'), cols) }] },
+      { block: 'empty', segs: [dim(cut(say(lang, 'status.start'), cols))] },
       // The station row with its rail left off, as the two above have none.
-      { block: 'empty', segs: stationRow(input.station, cols).segs.slice(1) },
+      { block: 'empty', segs: stationRow(input.station, cols, lang).segs.slice(1) },
     ]
   }
   // 1: the cell every drawn row opens with, its block's rail or the space under it.
@@ -453,11 +457,11 @@ export function statusRows(input: StatusInput): Row[] {
   const blocks: Row[][] = [taskBlock(entry, inner, !!folded.route)]
   const clash = clashBlock(entry, others, inner, now)
   if (clash.length) blocks.push(clash)
-  const tasks = tasksBlock(entry, input.plan, input.agents ?? [], inner, now, !!folded.tasks)
+  const tasks = tasksBlock(entry, input.plan, input.agents ?? [], inner, now, !!folded.tasks, lang)
   if (tasks.length) blocks.push(tasks)
-  const agents = agentsBlock(input.agents ?? [], inner, now, !!folded.agents)
+  const agents = agentsBlock(input.agents ?? [], inner, now, !!folded.agents, lang)
   if (agents.length) blocks.push(agents)
-  const shells = shellsBlock(input.shells ?? [], inner, now, !!folded.shells)
+  const shells = shellsBlock(input.shells ?? [], inner, now, !!folded.shells, lang)
   if (shells.length) blocks.push(shells)
 
   // The registry keeps the newest note last.
@@ -470,7 +474,7 @@ export function statusRows(input: StatusInput): Row[] {
 
   // The probe is asked for by hand (hooks/pane.ts probeOf): it is drawn whole, in the block that never drops.
   const probed = input.probe ? wrap(input.probe, inner).map((text) => row('foot', dim(text))) : []
-  blocks.push([...probed, row('foot', dim(cut(`${id.slice(0, 8)} · /fankeel-panel 關閉`, inner))), stationRow(input.station, inner)])
+  blocks.push([...probed, row('foot', dim(cut(say(lang, 'status.close', { id: id.slice(0, 8) }), inner))), stationRow(input.station, inner, lang)])
 
   // Every block but the first costs a blank row above it.
   const size = (): number => blocks.reduce((n, block) => n + block.length, blocks.length - 1)
@@ -483,7 +487,7 @@ export function statusRows(input: StatusInput): Row[] {
     if (at < 0) continue
     if (name === 'notes') blocks.splice(at, 1)
     // A head cut down to itself says so: its ▾ is the fold's, and would read as open and empty.
-    else if (blocks[at].length > 1) blocks[at] = [{ ...blocks[at][0], segs: [...blocks[at][0].segs, dim(' · 列數不夠')] }]
+    else if (blocks[at].length > 1) blocks[at] = [{ ...blocks[at][0], segs: [...blocks[at][0].segs, dim(say(lang, 'status.noRoom'))] }]
   }
   // A section's rail is on its first drawn row alone: the rows under it open
   // with one plain space instead, so `inner` holds and no wrap or cut moves.
