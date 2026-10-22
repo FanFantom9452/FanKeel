@@ -1019,10 +1019,10 @@ function cmdStage(root, opts) {
         line += NL + 'second return to build from verify — name what verify caught that build\'s'
             + NL + 'review did not, and add that check to the review';
     }
-    // §5: leaving survey or plan with nothing recorded means the next stage
-    // re-derives every fact this one already had open — warned, never
-    // blocked, the same shape as the return-to-build line above.
-    if (from === 'survey' || from === 'plan') {
+    // §5, widened by stage-2: leaving any stage with nothing recorded means
+    // the next stage re-derives every fact this one already had open —
+    // warned, never blocked, the same shape as the return-to-build line above.
+    if (from) {
         const ctxFile = contextPath(root, data);
         let text = '';
         if (ctxFile) {

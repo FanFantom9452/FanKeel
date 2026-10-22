@@ -92,12 +92,12 @@ test('task.js stage build says nothing about design.md on a route with plan', ()
     assert.doesNotMatch(out, /design\.md is missing/);
 });
 
-test('task.js stage says nothing leaving a stage section 5 does not name', () => {
+test('task.js stage warns leaving design with no facts, as it does leaving survey or plan', () => {
     const dir = tmp('fankeel-task-ctx-');
     run(dir, ['start', '--session', A, '--task', 'a fixture task']);
     run(dir, ['stage', 'design', '--session', A]);
     const { out } = run(dir, ['stage', 'plan', '--session', A]);
-    assert.doesNotMatch(out, /context\.md has no facts/);
+    assert.match(out, /context\.md has no facts recorded from design/);
 });
 
 const NO_REOPEN = 'a `path:line` that context.md already lists';
