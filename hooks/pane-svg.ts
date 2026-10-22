@@ -101,61 +101,105 @@ export function bandRow1Svg(input: BandInput): string {
     })
     x = x0 + step * (route.length - 1) + 7 + 12
   }
+  // The row's words, apart so they are written once.
+  const word = {
+    gate: 'gate 在等',
+    secs: (n: number): string => `${n} 秒`,
+    here: '本站',
+    you: '等你',
+    min: '分',
+    remote: '遠端',
+  }
+  // What follows the route, each drawn at x: `w` px of its own, then `gap` px before the next.
+  type Group = { name: string; w: number; gap: number; draw: (x: number) => string }
+  const full = cols * CELL_PX
+  let count: Group | null = null
   if (tasks && tasks.total > 0) {
-    const done = Math.max(0, Math.min(tasks.done, tasks.total))
-    b += text(x, 15, 'tasks')
-    x += px('tasks') + 6
-    if (tasks.total <= 10) {
-      // Six px a cell while a cell a task still reads.
-      for (let i = 0; i < tasks.total; i++) {
-        b += `<rect x="${r1(x + i * 6)}" y="7" width="4" height="8" rx="1" fill="${i < done ? DONE : DIM}"/>`
-      }
-      x += tasks.total * 6 + 4
-    } else {
-      // Past ten, one bar on the 5h meter's track, so the band stops growing with the plan.
-      b += well(x, done / tasks.total, DONE)
-      x += WELL + 6
+    const total = tasks.total
+    const done = Math.max(0, Math.min(tasks.done, total))
+    const n = `${done}/${total}`
+    // Six px a cell while a cell a task still reads; past ten, one bar on the 5h meter's track, so the band stops growing with the plan.
+    const cells = total <= 10 ? total * 6 + 4 : WELL + 6
+    count = {
+      name: 'tasks',
+      w: px('tasks') + 6 + cells + px(n),
+      gap: 12,
+      draw: (x0) => {
+        const x = x0 + px('tasks') + 6
+        let s = text(x0, 15, 'tasks')
+        if (total <= 10) {
+          for (let i = 0; i < total; i++) s += `<rect x="${r1(x + i * 6)}" y="7" width="4" height="8" rx="1" fill="${i < done ? DONE : DIM}"/>`
+        } else s += well(x, done / total, DONE)
+        return s + text(x + cells, 15, n, { bold: true })
+      },
     }
-    const n = `${done}/${tasks.total}`
-    b += text(x, 15, n, { bold: true })
-    x += px(n) + 12
   }
   const waits = record(entry.waited)
   const wait = waits[stage]
   const waited = typeof wait === 'number' && Number.isFinite(wait) ? minutes(wait) : 0
   const started = since(entry, stage)
   const here = started === null ? null : minutes(now - started)
-  const hereAt = (x0: number): string =>
-    here === null ? '' : text(x0, 15, '本站') + text(x0 + px('本站 '), 15, String(here), { bold: true }) + text(x0 + px(`本站 ${here} `), 15, '分')
+  const hereText = `${word.here} ${here} ${word.min}`
+  const youText = `${word.you} ${waited} ${word.min}`
+  let gate: Group | null = null
   if (gateUntil !== null) {
-    const label = 'gate 在等'
-    const w = px(label) + 12
-    b += `<rect x="${r1(x)}" y="2" width="${r1(w)}" height="18" rx="3" fill="${GUARD}"/>`
-    b += text(x + 6, 15, label, { fill: INK, bold: true })
-    x += w + 10
+    const badge = px(word.gate) + 12
     // The ring is full at the gate's whole wait (gate.station), from `at` to `until`.
     const left = secondsLeft(gateUntil, now)
     const whole = gateAt !== null && gateUntil > gateAt ? (gateUntil - gateAt) / 1000 : left
     const share = whole > 0 ? Math.min(1, left / whole) : 0
     const r = 6.5
     const c = 2 * Math.PI * r
-    b += `<circle cx="${r1(x)}" cy="11" r="${r}" fill="none" stroke="${DIM}" stroke-width="2.5"/>`
-    b += `<circle cx="${r1(x)}" cy="11" r="${r}" fill="none" stroke="${GUARD}" stroke-width="2.5" stroke-dasharray="${r1(c * share)} ${r1(c)}" transform="rotate(-90 ${r1(x)} 11)"/>`
-    x += 11
-    b += text(x, 15, `${left} 秒`, { fill: GUARD, bold: true })
-    x += px(`${left} 秒`) + 12
-    b += text(x, 15, `等你 ${waited} 分`, { fill: GUARD })
-    x += px(`等你 ${waited} 分`) + 12
-    b += hereAt(x)
-    if (here !== null) x += px(`本站 ${here} 分`) + 12
-  } else {
-    b += hereAt(x)
-    if (here !== null) x += px(`本站 ${here} 分`) + 14
-    b += text(x, 15, '等你') + text(x + px('等你 '), 15, String(waited), { bold: true }) + text(x + px(`等你 ${waited} `), 15, '分')
-    x += px(`等你 ${waited} 分`) + 12
+    const secs = word.secs(left)
+    gate = {
+      name: 'gate',
+      w: badge + 10 + 11 + px(secs),
+      gap: 12,
+      draw: (x0) => {
+        const x = x0 + badge + 10
+        return `<rect x="${r1(x0)}" y="2" width="${r1(badge)}" height="18" rx="3" fill="${GUARD}"/>`
+          + text(x0 + 6, 15, word.gate, { fill: INK, bold: true })
+          + `<circle cx="${r1(x)}" cy="11" r="${r}" fill="none" stroke="${DIM}" stroke-width="2.5"/>`
+          + `<circle cx="${r1(x)}" cy="11" r="${r}" fill="none" stroke="${GUARD}" stroke-width="2.5" stroke-dasharray="${r1(c * share)} ${r1(c)}" transform="rotate(-90 ${r1(x)} 11)"/>`
+          + text(x + 11, 15, secs, { fill: GUARD, bold: true })
+      },
+    }
   }
-  b += text(x, 15, '遠端') + text(x + px('遠端 '), 15, input.remote ? '✓' : '✗', input.remote ? { fill: CONNECTED } : {})
-  return svgDoc(cols * CELL_PX, BAND_H, b)
+  const stay: Group | null = here === null ? null : {
+    name: 'here',
+    w: px(hereText),
+    gap: gate ? 12 : 14,
+    draw: (x) => text(x, 15, word.here) + text(x + px(`${word.here} `), 15, String(here), { bold: true }) + text(x + px(`${word.here} ${here} `), 15, word.min),
+  }
+  const you: Group = {
+    name: 'wait',
+    w: px(youText),
+    gap: 12,
+    draw: (x) => (gate
+      ? text(x, 15, youText, { fill: GUARD })
+      : text(x, 15, word.you) + text(x + px(`${word.you} `), 15, String(waited), { bold: true }) + text(x + px(`${word.you} ${waited} `), 15, word.min)),
+  }
+  const mark = input.remote ? '✓' : '✗'
+  const remote: Group = {
+    name: 'remote',
+    w: px(`${word.remote} ${mark}`),
+    gap: 0,
+    draw: (x) => text(x, 15, word.remote) + text(x + px(`${word.remote} `), 15, mark, input.remote ? { fill: CONNECTED } : {}),
+  }
+  // The order bandRows lays row one out in, and the order it gives groups up
+  // in (it drops the model first, which this row does not draw): 遠端, the
+  // stage minutes, the wait, tasks. The gate's badge never goes.
+  let kept = (gate ? [count, gate, you, stay, remote] : [count, stay, you, remote]).filter((g): g is Group => g !== null)
+  const end = (list: Group[]): number => list.reduce((n, g) => n + g.w + g.gap, x) - (list.length ? list[list.length - 1].gap : 0)
+  for (const name of ['remote', 'here', 'wait', 'tasks']) {
+    if (end(kept) <= full) break
+    kept = kept.filter((g) => g.name !== name)
+  }
+  for (const g of kept) {
+    b += g.draw(x)
+    x += g.w + g.gap
+  }
+  return svgDoc(full, BAND_H, b)
 }
 
 // A meter: a DIM well, the used part in its paint, then any marks over it.

@@ -472,7 +472,7 @@ test('Remote Control connected draws 遠端 ✓ at the end of the first row, the
     const on = bandRow1Svg(bandInput({ remote: true }));
     assert.deepEqual(words(on).slice(-2), ['遠端', '✓']);
     assert.match(on, /<text [^>]*fill="#87af5f"[^>]*>✓[<][/]text>/);
-    assert.deepEqual(words(bandRow1Svg(bandInput({ remote: true, gateUntil: NOW + 42000 }))).slice(-2), ['遠端', '✓']);
+    assert.deepEqual(words(bandRow1Svg(bandInput({ remote: true, gateUntil: NOW + 42000, cols: 100 }))).slice(-2), ['遠端', '✓']);
 });
 
 test('Remote Control not connected, or not said, draws 遠端 ✗ in the grey text colour, never green or red', async () => {
@@ -483,7 +483,7 @@ test('Remote Control not connected, or not said, draws 遠端 ✗ in the grey te
         assert.match(off, /<text [^>]*fill="#8a8a8a"[^>]*>✗[<][/]text>/);
         assert.ok(!off.includes('>✓<'));
     }
-    assert.deepEqual(words(bandRow1Svg(bandInput({ gateUntil: NOW + 42000 }))).slice(-2), ['遠端', '✗']);
+    assert.deepEqual(words(bandRow1Svg(bandInput({ gateUntil: NOW + 42000, cols: 100 }))).slice(-2), ['遠端', '✗']);
 });
 
 test('nothing the band or the Pane draws is animated, and the route is never drawn interactive', async () => {
@@ -510,4 +510,27 @@ test('paneParts keeps the tasks block as rows, its head Button and a row a task,
     assert.equal(kept.length, 5);
     assert.equal(kept[0].segs[1].press, 'fold');
     assert.equal((await load('pane-svg')).tasksSvg, undefined);
+});
+
+// Row one's right edge: each <text>'s x plus its width by the em rule of hooks/pane-svg.ts px().
+const WIDE_PX = /[ᄀ-ᅟ⺀-꓏가-힣豈-﫿︰-﹏＀-｠￠-￦⚑]/;
+const unesc = (s) => s.replace(/&quot;/g, '"').replace(/&gt;/g, '>').replace(/&lt;/g, '<').replace(/&amp;/g, '&');
+const rightEdge = (source) => Math.max(...[...source.matchAll(/<text x="([\d.]+)"[^>]*>([^<]*)<\/text>/g)]
+    .map((m) => Number(m[1]) + [...unesc(m[2])].reduce((n, ch) => n + (WIDE_PX.test(ch) ? 12 : 7.2), 0)));
+const widthOf = (source) => Number(/^<svg [^>]*width="([\d.]+)"/.exec(source)[1]);
+
+test('a waiting gate keeps row one inside its width, giving up 遠端 first and then the stage minutes', async () => {
+    const { bandRow1Svg } = await load('pane-svg');
+    const gated = (total) => bandRow1Svg(bandInput({ gateAt: NOW - 25000, gateUntil: NOW + 95000, tasks: { done: 4, total } }));
+    for (const total of [9, 20]) {
+        const source = gated(total);
+        assert.ok(rightEdge(source) <= widthOf(source), total + ' tasks: ' + rightEdge(source) + ' > ' + widthOf(source));
+        assert.ok(words(source).includes('gate 在等'), 'the badge never goes');
+        assert.ok(!words(source).includes('遠端'), '遠端 goes first');
+    }
+    assert.ok(words(gated(9)).includes('本站') && words(gated(9)).includes('等你 4 分'), 'at nine tasks only 遠端 had to go');
+    assert.ok(!words(gated(20)).includes('本站') && words(gated(20)).includes('等你 4 分'), 'at twenty the stage minutes go next');
+    const calm = bandRow1Svg(bandInput());
+    assert.ok(words(calm).includes('遠端'), 'with no gate nothing is given up at 80 columns');
+    assert.ok(rightEdge(calm) <= widthOf(calm));
 });
