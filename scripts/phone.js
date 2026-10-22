@@ -6,10 +6,11 @@
 const { parseArgs } = require('node:util');
 const registry = require('../lib/registry.js');
 const phone = require('../lib/phone.js');
+const path = require('node:path');
 const profile = require('../lib/profile.js');
 const live = require('../lib/live.js');
 
-const GUIDE = 'docs/01-guide/tailscale-setup.md';
+const GUIDE = path.join(__dirname, '..', 'docs/01-guide/tailscale-setup.md').replace(/\\/g, '/');
 
 const USAGE = 'usage: phone.js attach|detach --session <id> [--root <dir>]';
 

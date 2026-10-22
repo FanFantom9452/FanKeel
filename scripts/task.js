@@ -1245,7 +1245,7 @@ function cmdProfile(root, opts) {
         // feature, so the session must ask the user before it writes it; the
         // station page asks in its own modal, and writes through profile.write.
         if (key === 'station.remote' && !opts.confirm && profile.parseValue(key, value).value === true) {
-            fail('Tailscale 遠端是進階功能：不熟 Tailscale 的人不該開，開之前要先在這台電腦與手機裝好 Tailscale，並在 admin console 打開 MagicDNS 與 HTTPS 憑證。請先用 AskUserQuestion 問使用者，同意後加 --confirm 再執行一次。設定步驟見 docs/01-guide/tailscale-setup.md。');
+            fail('Tailscale 遠端是進階功能：不熟 Tailscale 的人不該開，開之前要先在這台電腦與手機裝好 Tailscale，並在 admin console 打開 MagicDNS 與 HTTPS 憑證。請先用 AskUserQuestion 問使用者，同意後加 --confirm 再執行一次。設定步驟見 ' + path.join(__dirname, '..', 'docs/01-guide/tailscale-setup.md').replace(/\\/g, '/') + '。');
         }
         const file = opts.default ? profile.machineFile(cfg) : profile.projectFile(projectRoot);
         if (!file) fail('No config directory to write the machine default to.');

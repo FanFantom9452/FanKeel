@@ -13,7 +13,9 @@ source_of_truth: scripts/phone.js, lib/phone.js, hooks/stop.js
 `<plugin>` is two directories up from this file.
 
 1. Run `node <plugin>/scripts/phone.js attach --session <id>`, with the id the
-   fankeel block names on its `--session <id>` line.
+   fankeel block names on its `--session <id>` line. It exits 1 with a message
+   when `station.remote` is off; the guide to turn it on is
+   `docs/01-guide/tailscale-setup.md`.
 2. Answer with its one line, nothing else.
 3. End the turn. Its end is what the Stop hook holds: the next message comes
    from the phone, and a prompt typed here takes the session back.
