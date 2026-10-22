@@ -5,7 +5,7 @@
 //   node scripts/tune.js serve <dir> [--port 7819]   serve <dir> with the overlay injected
 //   node scripts/tune.js serve <dir> --src <file,...> --rebuild "<cmd>"   live mode: the page is built from --src
 //   node scripts/tune.js serve --proxy <url> --src <file,...> [--rebuild "<cmd>"]   the real server's pages, overlay spliced into its HTML
-//   node scripts/tune.js wait [--timeout 600]          block until the next request; print it as JSON, with its items
+//   node scripts/tune.js wait [--timeout 3600]         block until the next request; print it as JSON, with its items
 //   node scripts/tune.js done <id>                     check the edit stayed in its block; tell the page
 //
 // State lives in `.fankeel/build/tune/` under the cwd: `queue.jsonl`, a
@@ -25,6 +25,10 @@ const { parseArgs } = require('node:util');
 const { inject, outside, diffLines, queueState, changedPaths, rankSources } = require('../lib/tune.js');
 const { readBody } = require('../lib/body.js');
 const { relPath } = require('../lib/guard.js');
+
+// How long `wait` blocks when --timeout is not given: one hour, so a user who
+// steps away from the mockup does not come back to a wait that has ended.
+const WAIT_TIMEOUT_SEC = 3600;
 
 const STATE = path.resolve('.fankeel', 'build', 'tune');
 const QUEUE = path.join(STATE, 'queue.jsonl');
@@ -458,9 +462,11 @@ function main() {
     const { values, positionals } = parsed;
     const [cmd, arg] = positionals;
     if (cmd === 'serve' && (arg || values.proxy !== undefined)) return serveArgs(arg, values);
-    if (cmd === 'wait') return wait(values.timeout === undefined ? 600 : Number(values.timeout));
+    if (cmd === 'wait') return wait(values.timeout === undefined ? WAIT_TIMEOUT_SEC : Number(values.timeout));
     if (cmd === 'done' && arg) return done(arg);
     return die('usage: tune.js serve <dir> [--port N] [--src <file,...> --rebuild "<cmd>"] | serve --proxy <url> --src <file,...> [--rebuild "<cmd>"] [--port N] | wait [--timeout S] | done <id>');
 }
 
 if (require.main === module) main();
+
+module.exports = { WAIT_TIMEOUT_SEC };

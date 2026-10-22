@@ -9,6 +9,7 @@ const { inject, outside, diffLines, queueState, sourcesOf, changedPaths, rankSou
 const tmp = require('./tmp.js');
 
 const CLI = path.join(__dirname, '..', 'scripts', 'tune.js');
+const { WAIT_TIMEOUT_SEC } = require('../scripts/tune.js');
 const PAGE = [
     '<!DOCTYPE html><html><body>',
     '<main data-block="page">',
@@ -172,6 +173,16 @@ test('wait with nothing queued gives up with exit 3', () => {
     const r = spawnSync(process.execPath, [CLI, 'wait', '--timeout', '1'], { cwd, encoding: 'utf8' });
     assert.equal(r.status, 3);
     assert.match(r.stderr, /no request in 1s/);
+});
+
+// mockup-wait-1: on 2026-10-21 three `wait`s ended at the old 600 s default
+// while the user was away; the default is one hour, and --timeout still wins.
+test('wait with no --timeout waits one hour, and the usage line says so', () => {
+    assert.equal(WAIT_TIMEOUT_SEC, 3600);
+    const src = fs.readFileSync(CLI, 'utf8');
+    assert.match(src, /values\.timeout === undefined \? WAIT_TIMEOUT_SEC : Number\(values\.timeout\)/);
+    assert.match(src, /wait \[--timeout 3600\]/);
+    assert.doesNotMatch(src, /\b600\b/);
 });
 
 test('sourcesOf names every line that writes the block literally, and none that builds its name', () => {
