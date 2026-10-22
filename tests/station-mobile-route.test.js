@@ -45,6 +45,8 @@ function fixture(on) {
     };
     held(ONE, 'design', '2026-10-21T08:00:00.000Z', Date.now() - 60e3);
     held(TWO, 'survey', '2026-10-21T08:30:00.000Z', Date.now() - 30e3);
+    // Both run as this test's process, so each is a live task row as well as a held gate.
+    for (const id of [ONE, TWO]) fs.writeFileSync(path.join(cfg, 'sessions', id + '.json'), JSON.stringify({ pid: process.pid, sessionId: id, cwd: r1, startedAt: Date.now() }));
     fs.mkdirSync(path.join(cfg, 'fankeel'), { recursive: true });
     fs.writeFileSync(path.join(cfg, 'fankeel', 'roots.json'), JSON.stringify({ [path.resolve(r1)]: '2026-10-21T08:00:00.000Z' }) + '\n');
     if (on) assert.equal(profile.write(profile.machineFile(cfg), 'station.remote', 'true').ok, true);
@@ -166,9 +168,10 @@ test('with remote off, /station/mobile.json from this machine names it by its ho
     assert.equal(JSON.parse(res.text).host, os.hostname());
 }));
 
-test('the phone home\'s 等你答 rows and /station/mobile.json\'s gate states agree in number', () => served(true, async (s) => {
+test('the phone home draws one 等你答 chip for each gate /station/mobile.json holds', () => served(true, async (s) => {
     const json = JSON.parse((await get(s.port, '/station/mobile.json', phone(s.cfg))).text);
+    assert.deepEqual(json.gates.map((g) => g.id), [ONE, TWO]);
     const P = require('../assets/station/mobile.js');
     const html = P.screen(json, P.parseRoute('#/'), json.at, { mode: 'app' });
-    assert.equal((html.match(/<span class="st ask">/g) || []).length, json.tasks.filter((x) => x.state === 'gate').length);
+    assert.equal((html.match(/<span class="st ask">/g) || []).length, json.gates.length);
 }));

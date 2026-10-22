@@ -1410,8 +1410,9 @@ four for one session, in the next paragraph. `/m` is its page, the shell
 `/station/mobile.json` is the page's data, `mobileModel(model, now, host,
 hidden, look)`: the held gates oldest first, the live tasks, and the stages finished
 and tasks ended in the last 48 hours — a few kilobytes, read every 5 s while
-the page is visible, never `station-data.js`. `host` is the first label of the
-tailnet name while the tailnet is on, `os.hostname()` otherwise. Through the
+the page is visible outside a conversation, never `station-data.js`; a
+conversation (`#/s/<id>`) reads `/station/phone.json` every 2 s instead.
+`host` is the first label of the tailnet name while the tailnet is on, `os.hostname()` otherwise. Through the
 tailnet `/` answers 303 to `/m`, and `/m`, its manifest, its icon, `/sw.js`,
 `station.css`, `mobile.css` and `mobile.js` need no paired phone, while
 `/station/mobile.json` answers 401 without one (`remote.policy` in

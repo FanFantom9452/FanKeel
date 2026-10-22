@@ -42,7 +42,7 @@
 .ago{font:12.5px var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
 .scr .hm-stw{font-size:12px}
 
-/* ---- the four states a session can be in ---- */
+/* ---- the five state chips: ask, held, run, idle, bg ---- */
 .st{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px;border-radius:var(--r-pill);font:600 12px var(--f-ui);white-space:nowrap;flex:none}
 .st .ic{width:13px;height:13px;stroke-width:2}
 .st.ask{background:var(--signal-tint);color:var(--signal-ink)}

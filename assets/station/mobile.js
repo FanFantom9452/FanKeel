@@ -634,7 +634,7 @@
         var camera = Boolean(win.BarcodeDetector && win.navigator && win.navigator.mediaDevices && win.navigator.mediaDevices.getUserMedia);
         // The app's own ui lives across pair-error and back, so a draft survives a lost station.
         var APP = { mode: 'app', mic: Boolean(win.SpeechRecognition || win.webkitSpeechRecognition), draft: '', open: {}, note: '' };
-        var st = { M: null, P: null, ui: APP, loading: false, chatLoading: false, tried: null, stream: null, rec: null };
+        var st = { M: null, P: null, ui: APP, loading: false, chatLoading: false, tried: null, stream: null, rec: null, gone: null };
         function store(k, v) {
             try {
                 if (v === undefined) return win.localStorage.getItem(k);
@@ -772,10 +772,14 @@
                 st.chatLoading = false;
                 if (P === UNPAIRED) { st.ui = pairUi({}); return draw(); }
                 if (st.ui.mode !== 'app' || route().id !== id) return null;
+                // Gone is drawn once: a redraw every read would take the composer's focus.
                 if (P === GONE) {
-                    if (st.P && st.P.id === id) st.P = null;
+                    if (st.gone === id) return null;
+                    st.gone = id;
+                    st.P = null;
                     return draw();
                 }
+                st.gone = null;
                 return refresh(st.P && st.P.id === id ? st.P : null, P);
             }, function () {
                 st.chatLoading = false;
@@ -790,11 +794,12 @@
                 return r.text().then(function (text) { st.ui.note = t('gate.refused', { code: r.status, why: String(text || '').trim() }); draw(); });
             }, function () { st.ui.note = t('gate.failed'); draw(); });
         }
+        // phone.json first: a conversation never reads mobile.json again, so
+        // its gates still hold the gate before this one for the same session.
         function gateOf(id) {
-            var g = ((st.M && st.M.gates) || []).filter(function (x) { return x.id === id; })[0];
-            if (g) return g;
             var p = st.P && st.P.id === id && st.P.gate ? st.P : null;
-            return p ? { id: p.id, root: p.root, questions: p.gate.questions } : null;
+            if (p) return { id: p.id, root: p.root, questions: p.gate.questions };
+            return ((st.M && st.M.gates) || []).filter(function (x) { return x.id === id; })[0] || null;
         }
         // 送出答案: a refusal or a network error changes the card's one line
         // and nothing else, so what was picked stays picked.
@@ -897,7 +902,8 @@
             st.ui.note = '';
             draw();
             if (st.ui.mode !== 'app') return;
-            if (route().view === 'chat') loadChat(); else if (!st.M) load();
+            // The list drawn before a conversation is stale by now: read it again.
+            if (route().view === 'chat') loadChat(); else load();
         });
         win.setInterval(function () { poll('home'); }, POLL_MS);
         win.setInterval(function () { poll('chat'); }, CHAT_MS);

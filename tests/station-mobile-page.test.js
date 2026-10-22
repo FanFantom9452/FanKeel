@@ -424,6 +424,157 @@ test('boot: typing in a 自己寫 box ticks its own __other', async () => {
     }
 });
 
+// boot() with the page's polls kept by interval, so a test runs one when it
+// likes, and every assignment to #app counted as a draw.
+function polled(o) {
+    const ticks = {};
+    const page = boot(Object.assign({}, o, { win: Object.assign({ setInterval: (fn, ms) => { ticks[ms] = fn; } }, o.win) }));
+    let draws = 0;
+    let html = '';
+    Object.defineProperty(page.app, 'innerHTML', { get: () => html, set: (v) => { draws += 1; html = v; } });
+    return Object.assign(page, { tick: (ms) => ticks[ms](), draws: () => draws });
+}
+const CHAT_MS = 2000;
+
+test('boot: a second gate for the same session is answered with phone.json\'s questions, not the session list\'s', async () => {
+    const Q3 = [{ question: '第二道 gate：要合併嗎？', header: 'build', multiSelect: false, options: [{ label: '合併', description: '' }] }];
+    const page = boot({ hash: '#/s/aaaaaaaa-1', fetch: routed(sess('gate', { id: 'aaaaaaaa-1', gate: Object.assign({}, GATE, { questions: Q3, until: NOW + 600e3 }) })) });
+    await settle();
+    page.fire('submit', submit(cardForm('aaaaaaaa-1', [pick('q0', '合併', true)])));
+    await settle();
+    const sent = callsTo(page, '/answer');
+    assert.equal(sent.length, 1);
+    assert.equal(sent[0].init.body, new URLSearchParams({ root: '/w', id: 'aaaaaaaa-1', answers: JSON.stringify({ [Q3[0].question]: '合併' }) }).toString());
+});
+
+test('boot: going back from a conversation to #/ reads the session list again', async () => {
+    let home = HOME;
+    const page = boot({ hash: '#/s/aaaaaaaa-1', fetch: (url) => (url === '/station/mobile.json' ? reply(200, home) : url.startsWith(PHONE) ? reply(200, sess('gate', { id: 'aaaaaaaa-1', gate: GATE })) : reply(201, '')) });
+    await settle();
+    assert.equal(page.reads(), 1);
+    home = Object.assign({}, HOME, { gates: [], tasks: HOME.tasks.map((x) => (x.state === 'gate' ? Object.assign({}, x, { state: 'running', gate: false }) : x)) });
+    page.win.location.hash = '#/';
+    page.fireWin('hashchange');
+    await settle();
+    assert.equal(page.reads(), 2);
+    assert.match(page.app.innerHTML, /data-block="m-home-a"/);
+    assert.doesNotMatch(page.app.innerHTML, /class="st ask"/, 'the gate just answered is not 等你答 any more');
+});
+
+test('boot: a session whose phone.json is a 404 is drawn once, not on every read', async () => {
+    const page = polled({ hash: '#/s/aaaaaaaa-5', fetch: (url) => (url === '/station/mobile.json' ? reply(200, HOME) : reply(404, 'no such session')) });
+    await settle();
+    assert.equal(page.draws(), 1);
+    page.tick(CHAT_MS);
+    await settle();
+    page.tick(CHAT_MS);
+    await settle();
+    assert.equal(callsTo(page, PHONE + 'aaaaaaaa-5').length, 3);
+    assert.equal(page.draws(), 1, 'a redraw every two seconds takes the composer\'s focus');
+});
+
+test('boot: an unchanged read draws nothing, a new reply patches only .cv, and the same gate keeps its card', async () => {
+    let one = sess('holding', { id: 'aaaaaaaa-5', attached: true, chat: [{ role: 'assistant', text: '第一句', at: NOW - 5e3 }] });
+    const page = polled({ hash: '#/s/aaaaaaaa-5', fetch: (url) => (url === '/station/mobile.json' ? reply(200, HOME) : url.startsWith(PHONE) ? reply(200, Object.assign({}, one, { at: Date.now() })) : reply(201, '')) });
+    await settle();
+    assert.equal(page.draws(), 1);
+    page.tick(CHAT_MS);
+    await settle();
+    assert.equal(page.draws(), 1, 'the same JSON but its read time draws nothing');
+    const cv = { innerHTML: '', scrollHeight: 0, scrollTop: 0, clientHeight: 0 };
+    page.doc.querySelector = (s) => (s === '.cv' ? cv : null);
+    one = Object.assign({}, one, { chat: one.chat.concat([{ role: 'assistant', text: '第二句', at: NOW }]) });
+    page.tick(CHAT_MS);
+    await settle();
+    assert.equal(page.draws(), 1, 'a reply in the same state is not a whole redraw');
+    assert.match(cv.innerHTML, /第二句/);
+    one = sess('gate', { id: 'aaaaaaaa-5', gate: GATE });
+    page.tick(CHAT_MS);
+    await settle();
+    assert.equal(page.draws(), 2, 'a new state draws the whole screen');
+    cv.innerHTML = '';
+    one = Object.assign({}, one, { chat: [{ role: 'assistant', text: '第三句', at: NOW }] });
+    page.tick(CHAT_MS);
+    await settle();
+    assert.equal(page.draws(), 2, 'the gate card of the same until is not redrawn');
+    assert.equal(cv.innerHTML, '', 'nor is the conversation around it');
+});
+
+// A Web Speech recogniser the test drives: every instance the page made.
+function speech() {
+    const made = [];
+    function SR() { this.started = false; made.push(this); }
+    SR.prototype.start = function () { this.started = true; };
+    SR.prototype.stop = function () { if (this.onend) this.onend(); };
+    return { SR, made };
+}
+const classes = () => {
+    const on = new Set();
+    return { on, add: (c) => on.add(c), remove: (c) => on.delete(c), toggle: (c, v) => (v ? on.add(c) : on.delete(c)) };
+};
+
+test('boot: the mic fills the composer as it hears, wakes the send button, and says why it stopped', async () => {
+    const sp = speech();
+    function Event(type, init) { this.type = type; this.bubbles = Boolean(init && init.bubbles); }
+    const page = boot({ hash: '#/s/aaaaaaaa-5', fetch: routed(sess('holding', { id: 'aaaaaaaa-5', attached: true })), win: { SpeechRecognition: sp.SR, Event } });
+    await settle();
+    assert.match(page.app.innerHTML, /data-mic="cmp-box"/);
+    const line = { textContent: '' };
+    const send = { disabled: true };
+    const form = { querySelector: (s) => (s === '[data-say]' ? line : null) };
+    const box = {
+        id: 'cmp-box', value: '', classList: classes(), getAttribute: () => null, dispatched: [],
+        dispatchEvent(e) { this.dispatched.push(e); page.fire(e.type, { type: e.type, target: box }); },
+    };
+    page.doc.getElementById = (id) => (id === 'cmp-box' ? box : id === 'app' ? page.app : null);
+    page.doc.querySelector = (s) => (s === '#composer .send' ? send : null);
+    const btn = { classList: classes(), getAttribute: (a) => (a === 'data-mic' ? 'cmp-box' : null), closest: (s) => (s === 'form' ? form : s === '[data-act],[data-mic]' ? btn : null) };
+    page.fire('click', { target: btn });
+    const rec = sp.made[0];
+    assert.equal(rec.started, true);
+    assert.equal(rec.lang, 'zh-TW');
+    assert.ok(btn.classList.on.has('on'));
+    assert.equal(line.textContent, '聆聽中… 再按一次停止');
+    rec.onresult({ results: [Object.assign([{ transcript: '跑' }], { isFinal: true }), Object.assign([{ transcript: '測試' }], { isFinal: false })] });
+    assert.equal(box.value, '跑測試');
+    assert.ok(box.classList.on.has('interim'));
+    assert.deepEqual(box.dispatched.map((e) => [e.type, e.bubbles]), [['input', true]]);
+    assert.equal(send.disabled, false, 'the input listener saw the heard text');
+    rec.onerror({ error: 'not-allowed' });
+    rec.onend();
+    assert.ok(!btn.classList.on.has('on'));
+    assert.match(line.textContent, /^沒有麥克風權限/, 'the end of a refused mic keeps saying why');
+    page.fire('click', { target: btn });
+    assert.equal(sp.made.length, 2, 'a mic that ended starts again');
+    sp.made[1].onerror({ error: 'no-speech' });
+    assert.match(line.textContent, /^沒聽清楚/);
+});
+
+test('boot: 交還電腦 posts /phone/detach with the session\'s root and id', async () => {
+    const page = boot({ hash: '#/s/aaaaaaaa-5', fetch: routed(sess('holding', { id: 'aaaaaaaa-5', attached: true })) });
+    await settle();
+    assert.match(page.app.innerHTML, /data-act="detach"/);
+    page.fire('click', tap({ 'data-act': 'detach' }));
+    await settle();
+    const sent = callsTo(page, '/phone/detach');
+    assert.equal(sent.length, 1);
+    assert.equal(sent[0].init.body, new URLSearchParams({ root: '/w', id: 'aaaaaaaa-5' }).toString());
+});
+
+test('boot: tapping a finished turn\'s steps line opens its rows, and a second tap closes them', async () => {
+    const chat = [{ role: 'phone', text: 'go', at: NOW - 9e3 }, { role: 'tool', id: 't0', tool: 'Bash', label: 'npm test', at: NOW - 8e3 },
+        { role: 'tool-end', id: 't0', ok: true, at: NOW - 7e3 }, { role: 'assistant', text: '好了', at: NOW - 6e3 }];
+    const page = boot({ hash: '#/s/aaaaaaaa-5', fetch: routed(sess('holding', { id: 'aaaaaaaa-5', attached: true, chat })) });
+    await settle();
+    assert.match(page.app.innerHTML, /data-key="t0" aria-expanded="false"/);
+    assert.doesNotMatch(page.app.innerHTML, /class="tl-list"/);
+    page.fire('click', tap({ 'data-act': 'steps', 'data-key': 't0' }));
+    assert.match(page.app.innerHTML, /data-key="t0" aria-expanded="true"/);
+    assert.match(page.app.innerHTML, /class="tl-list"/);
+    page.fire('click', tap({ 'data-act': 'steps', 'data-key': 't0' }));
+    assert.match(page.app.innerHTML, /data-key="t0" aria-expanded="false"/);
+});
+
 // The service worker against fake caches and a fetch that can go offline.
 function worker(fetchImpl) {
     const on = {};
