@@ -18,7 +18,7 @@ profile 是 gate 的常備答案：先寫好，fankeel 就不再問那一題。g
 
 專案層蓋過機器層，機器層蓋過內建。一個 key 三層都沒有值，就表示「到時候問我」。
 
-之所以逐個 key 合併、而不是整檔取代，是讓專案只需要寫它跟機器習慣不同的那幾個 key：專案只設了 `land.push`，仍然會拿到機器層的 `guard`。專案層會提交，所以隊友拿到的是同一份答案；只屬於你個人的習慣（例如 `language`）放機器層就不會影響別人。
+之所以逐個 key 合併、而不是整檔取代，是讓專案只需要寫它跟機器習慣不同的那幾個 key：專案只設了 `land.push`，仍然會拿到機器層的 `guard`。專案層會提交，所以隊友拿到的是同一份答案；只屬於你個人的習慣（例如 `model.lang`、`ui.lang`）放機器層就不會影響別人。
 
 兩種壞掉的情形都不會擋住 fankeel，只會讓那個 key 退回下一層：檔案裡某個值不在可選值內，該值當作沒寫；整個檔案不是合法 JSON，該層整個當作沒有，`profile show` 會在最後印出 `unreadable:` 和檔案路徑讓你去修。要補一個 key 時，用下面的 `profile set`，它遇到壞檔會拒絕寫入、請你先手動修好，不會蓋掉你的內容。
 
@@ -58,7 +58,8 @@ profile 是 gate 的常備答案：先寫好，fankeel 就不再問那一題。g
 | `stage.agents` | 哪幾站交給站 agent 在乾淨 context 裡跑，主控只轉路徑 | `false`、`true`、`all`、或逗號分隔的站名清單；內建 `false` | `survey,build,verify` |
 | `security.local` | verify 的 security lens 先交給哪個本地 ollama 模型篩候選；沒設照原流程 | 一個 ollama 模型名稱 | 不設 |
 | `prompt.all`、`prompt.<站>` | 附在每一站（或某一站）規則最後的一句自訂 prompt | 一行文字 | 需要時才設 |
-| `language` | 站 agent 寫報告與 gate 用的語言；不設就照 brief 的英文 | 一種語言的名稱，例如 繁體中文 | 不設 |
+| `model.lang` | 站 agent 寫報告與 gate 用的語言；不設就照 brief 的英文（舊名 language） | 一種語言的名稱，例如 繁體中文 | 不設 |
+| `ui.lang` | 監控站頁、面板與 band 的介面語言：zh 中文、en 英文；只讀機器層，在監控站右上角的地球切換；不設時站頁照瀏覽器、面板照中文 | `zh`、`en` | 不設 |
 | `worktree` | 起任務時開自己的 git worktree（.fankeel/worktrees/<id 前 8 碼>，分支 fk/<id 前 8 碼>）：true 一律開，bounded 對 bounded 以上，architectural 只對 architectural | `true`、`false`、`bounded`、`architectural`；內建 `false` | 不設，維持內建 |
 | `init.skip` | 跳過首次使用的 init 整理；true 時 task.js start 不再印 onboard: 行 | `true`、`false`；內建 `false` | 不設，維持內建 |
 | `sensitive.mode` | commit 帶到 .fankeel/sensitive.txt 的詞時：warn 只提醒、block 擋下 | `warn`、`block`；內建 `warn` | 不設，維持內建 |
@@ -79,12 +80,14 @@ node <plugin>/scripts/task.js profile set stage.agents all --default
 
 本 repo 的 `stage.agents` 現在是 `survey`、`build`、`verify`（`.fankeel/profile.json`）。2026-10-09 起原本只交 `survey`：工作流評審指出 build 加 verify 占長任務花費的 63.9%，當時只量過 survey 打平；之後 build 與 verify 也加了回來。對照腳本在 `docs/90-agent/reports/evidence/2026-10-09-build-verify-ab/ab.sh`，判定規則寫在旁邊的 README。
 
-`security.local`、`commit.format`、`language` 與 `prompt.all`、`prompt.<站>` 幾列是自由文字，精靈沒有欄位給它們，要用下面的指令設。自由文字各有限制，是因為它們會被注入每一輪或交給 `commit.js` 執行：`prompt.*` 與 `language` 限一行、200 字以內，因為每一輪都要付這段 token 的錢，而且各站的規則區塊已經接近上限；`commit.format` 同樣一行、200 字內，而且必須能編譯成正規式；`security.local` 必須是 `ollama list` 印出的模型名稱，例如 `qwen3:14b`，填 `false` 則關掉。設 `prompt.*` 時指令會當場印出多吃幾個 token、各站離上限還剩多少，超過只警告、不拒絕。例：
+`security.local`、`commit.format`、`model.lang` 與 `prompt.all`、`prompt.<站>` 幾列是自由文字，精靈沒有欄位給它們，要用下面的指令設。自由文字各有限制，是因為它們會被注入每一輪或交給 `commit.js` 執行：`prompt.*` 與 `model.lang` 限一行、200 字以內，因為每一輪都要付這段 token 的錢，而且各站的規則區塊已經接近上限；`commit.format` 同樣一行、200 字內，而且必須能編譯成正規式；`security.local` 必須是 `ollama list` 印出的模型名稱，例如 `qwen3:14b`，填 `false` 則關掉。設 `prompt.*` 時指令會當場印出多吃幾個 token、各站離上限還剩多少，超過只警告、不拒絕。例：
 
 ```
 node <plugin>/scripts/task.js profile set commit.format '^(feat|fix|docs)(\([^)]+\))?: '
-node <plugin>/scripts/task.js profile set language 繁體中文
+node <plugin>/scripts/task.js profile set model.lang 繁體中文
 ```
+
+`model.lang` 在 2026-10-22 以前叫 `language`。檔案裡還寫著 `language`、沒寫 `model.lang` 的，照樣讀成 `model.lang`；`profile set language` 會被拒絕，並告訴你改用 `model.lang`。`ui.lang` 是監控站頁、面板與 band 的介面語言，只讀機器層：在監控站右上角的地球選語言，就會寫進機器層 profile，面板和 band 在下一次更新就換過去，不用重開。
 
 `prose.style` 決定站 agent 和 writer 寫給人看的文字用哪種風格，內建 `writer`。`writer` 先講結論再講原因，每一節附一個可以照抄的例子。`plain` 是[中文受控規則](../90-agent/reference/plain-language.md)的白話短句。`sepia` 讓長句和短句交錯，規則改寫自 sepia 外掛的專業文體檢查。三種都不合用時，設成 `custom`，再把自己的規則寫進專案的 `.fankeel/prose.md`，整個檔案就是規則。設定時，指令會印出規則有幾個字、約多少 token，並和建議的 450 字比較；超過只警告。超過 1200 字的上限時，brief 改用 `writer`，檔案不存在時也一樣。build 站的 agent 不注入風格，因為它的 brief 已經貼近 10,000 字元的上限；它派出去的 writer 仍然照風格寫。不論選哪一種，句子不超過 160 欄和不用裸代號這兩項檢查都照舊擋 gate。例：
 

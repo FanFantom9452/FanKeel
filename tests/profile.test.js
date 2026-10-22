@@ -295,12 +295,47 @@ test('every key carries a one-line description', () => {
     }
 });
 
-test('language is one line of free text, kept as written, and not a wizard key', () => {
-    assert.equal(profile.parseValue('language', ' 繁體中文 ').value, '繁體中文');
-    assert.ok(profile.parseValue('language', '').error);
-    assert.ok(profile.parseValue('language', 'a\nb').error);
-    assert.equal(profile.KEYS.language.values.length, 0);
-    assert.equal(Object.prototype.hasOwnProperty.call(profile.WIZARD_KEYS, 'language'), false);
+test('model.lang is one line of free text, kept as written, and not a wizard key', () => {
+    assert.equal(profile.parseValue('model.lang', ' 繁體中文 ').value, '繁體中文');
+    assert.ok(profile.parseValue('model.lang', '').error);
+    assert.ok(profile.parseValue('model.lang', 'a\nb').error);
+    assert.equal(profile.KEYS['model.lang'].values.length, 0);
+    assert.equal(Object.prototype.hasOwnProperty.call(profile.WIZARD_KEYS, 'model.lang'), false);
+    assert.equal(Object.prototype.hasOwnProperty.call(profile.KEYS, 'language'), false);
+});
+
+test('profile set language is refused, naming model.lang', () => {
+    const out = profile.write(profile.projectFile(dir()), 'language', '繁體中文');
+    assert.equal(out.ok, false);
+    assert.match(out.reason, /model\.lang/);
+});
+
+test('a file that still says language is read as model.lang, and model.lang wins where a file has both', () => {
+    const d = dir();
+    const cfg = path.join(d, 'cfg');
+    fs.mkdirSync(path.join(d, '.fankeel'), { recursive: true });
+    fs.mkdirSync(path.join(cfg, 'fankeel'), { recursive: true });
+    fs.writeFileSync(profile.machineFile(cfg), JSON.stringify({ language: 'English' }));
+    let got = profile.read(d, cfg);
+    assert.equal(got.values['model.lang'], 'English');
+    assert.equal(got.sources['model.lang'], 'machine');
+    assert.equal(got.values.language, undefined);
+    fs.writeFileSync(profile.projectFile(d), JSON.stringify({ language: '繁體中文', 'model.lang': '日本語' }));
+    got = profile.read(d, cfg);
+    assert.equal(got.values['model.lang'], '日本語');
+    assert.equal(got.sources['model.lang'], 'project');
+});
+
+test('ui.lang is zh or en, unset by default, and a wizard key', () => {
+    assert.deepEqual(profile.KEYS['ui.lang'].values, ['zh', 'en']);
+    assert.equal(profile.KEYS['ui.lang'].builtin, null);
+    assert.equal(profile.parseValue('ui.lang', 'EN').value, 'en');
+    assert.ok(profile.parseValue('ui.lang', 'fr').error);
+    assert.ok(Object.prototype.hasOwnProperty.call(profile.WIZARD_KEYS, 'ui.lang'));
+    const cfg = path.join(dir(), 'cfg');
+    assert.equal(profile.read(null, cfg).values['ui.lang'], undefined);
+    assert.equal(profile.write(profile.machineFile(cfg), 'ui.lang', 'en').ok, true);
+    assert.equal(profile.read(null, cfg).values['ui.lang'], 'en');
 });
 
 test('a preset only sets keys that exist, to values the table accepts', () => {
@@ -616,11 +651,11 @@ test('applyPreset writes a preset the way wizApply does: a value as write, null 
     const file = path.join(dir(), 'profile.json');
     profile.write(file, 'land.push', 'true');
     profile.write(file, 'class.default', 'bounded');
-    profile.write(file, 'language', '繁體中文');
+    profile.write(file, 'model.lang', '繁體中文');
     const out = profile.applyPreset(file, 'manual');
     assert.equal(out.ok, true);
     assert.deepEqual(JSON.parse(fs.readFileSync(file, 'utf8')), {
-        language: '繁體中文', guard: 'ask', 'stage.agents': profile.parseValue('stage.agents', 'false').value,
+        'model.lang': '繁體中文', guard: 'ask', 'stage.agents': profile.parseValue('stage.agents', 'false').value,
     });
     assert.deepEqual(out.rows.map((r) => r.key), Object.keys(profile.PRESETS.manual.set));
     assert.ok(out.rows.every((r) => r.from === 'preset'));
