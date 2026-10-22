@@ -366,6 +366,10 @@ then asks this stage's gate.
      script, a guard, a verify line) needs one input it must reject and
      proof it rejects it. Two mutations that redden exactly the same tests
      are a gap — one test that tells them apart is missing.
+     A test of locking or ordering must wait on an explicit signal from the
+     other side (a line the other process prints, a marker file), never on a
+     delay, and must go red on every run of the mutation that removes the
+     lock; one that waits a fixed time can pass without exercising the lock.
    Part 3 — every changed line traces to the task's text; the patterns
      already in the repository are followed. Then name the page this
      change makes false (a renamed export, a changed default, a removed

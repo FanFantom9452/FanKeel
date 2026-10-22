@@ -68,13 +68,21 @@ test('an append waits for the chat.jsonl lock and lands once it is released', ()
     const root = tmp('fankeel-phone-race-');
     for (let i = 0; i < 200; i++) phone.append(root, SID, { role: 'desktop', text: String(i), at: i });
     const held = acquire({ file: file(root, 'chat.jsonl') + '.lock', pollMs: 10 });
-    const script = 'require(' + JSON.stringify(require.resolve('../lib/phone.js')) + ').append(' + JSON.stringify(root) + ',' + JSON.stringify(SID) + ',{role:"desktop",text:"late",at:1});';
-    const child = new Promise((done) => spawn(process.execPath, ['-e', script]).on('exit', done));
-    // The child has had 700 ms to run while the lock is held: its line must not be there yet.
-    return new Promise((r) => setTimeout(r, 700)).then(() => {
+    // The child prints "waiting" from the sleep acquire() takes while the lock is held, so the
+    // test checks the line only once the child is known to be blocked on the lock, never after a delay.
+    const script = 'const r=require(' + JSON.stringify(require.resolve('../lib/registry.js')) + ');const s=r.sleepMs;r.sleepMs=(ms)=>{process.stdout.write("waiting\\n");return s(ms);};'
+        + 'require(' + JSON.stringify(require.resolve('../lib/phone.js')) + ').append(' + JSON.stringify(root) + ',' + JSON.stringify(SID) + ',{role:"desktop",text:"late",at:1});';
+    const proc = spawn(process.execPath, ['-e', script], { stdio: ['ignore', 'pipe', 'inherit'] });
+    const exited = new Promise((done) => proc.on('exit', done));
+    const blocked = new Promise((ok, no) => {
+        const timer = setTimeout(() => no(new Error('the child never waited on the lock')), 10000);
+        proc.stdout.once('data', () => { clearTimeout(timer); ok(); });
+        exited.then(() => { clearTimeout(timer); no(new Error('the child finished without waiting on the lock')); });
+    });
+    return blocked.then(() => {
         assert.ok(!phone.chat(root, SID, 0).some((x) => x.text === 'late'), 'append went in without the lock');
         held.release();
-        return child;
+        return exited;
     }).then(() => {
         const texts = phone.chat(root, SID, 0).map((x) => x.text);
         assert.equal(texts.length, 200);
