@@ -22,7 +22,7 @@ const CAPS = {
     'fankeel-design': 15300,
     'fankeel-init': 13100,
     'fankeel-ask': 7800,
-    'fankeel-explain': 4400,
+    'fankeel-explain': 4700,
     'fankeel-retro-all': 3000,
     'fankeel-upgrade': 2100,
     'fankeel-phone': 1600,
