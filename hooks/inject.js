@@ -26,6 +26,7 @@ const { guardMode, sharedWith } = require('../lib/guard.js');
 const { positionIn } = require('../lib/stages.js');
 const { claimWrites } = require('../lib/dirty.js');
 const profileLib = require('../lib/profile.js');
+const phone = require('../lib/phone.js');
 const { run, parse } = require('../lib/hook.js');
 
 // The one prompt trying to turn the mode on. Everything else in this hook keys
@@ -93,6 +94,20 @@ function main(raw) {
     // entry. There is no second flag to disagree with, and no way to be in the
     // mode without having said what you are working on.
     let mine = registry.readSession(root, sessionId);
+    // The phone (docs/90-agent/plans/2026-10-22-mobile-session-design.md §3):
+    // a prompt typed here is the desktop's line in the conversation, and takes
+    // the session back from the phone — for any registry session, so above the
+    // early returns an inactive or init-only entry takes, and the one place the
+    // output-first rule below does not reach. A background task notification is
+    // not the user, and a Stop-hook block carrying the phone's own message
+    // starts with （手機）; neither touches anything.
+    try {
+        const typed = String(payload.prompt || '');
+        if (mine && typed.trim() && !/^\s*<task-notification>/.test(typed) && !typed.startsWith('（手機）')) {
+            phone.append(root, sessionId, { role: 'desktop', text: typed, at: Date.now() });
+            phone.detach(root, sessionId);
+        }
+    } catch (e) { /* housekeeping */ }
     // A session that has only run `/fankeel` holds an entry with no task. It is
     // visible to its neighbours and it is not yet in the mode: its prompts stay
     // on the cheap path below, and a second `/fankeel` still gets the init block.
