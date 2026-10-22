@@ -45,6 +45,7 @@ profile 是 gate 的常備答案：先寫好，fankeel 就不再問那一題。g
 | `station.hide` | 這個專案要不要從監控站隱藏 | `true`、`false`；內建 `false` | 不設，維持內建 |
 | `station.chartroom` | 監控站從哪個 Chartroom 安裝路徑開架構白板（/chartroom/<專案>/）；沒設就沒有白板 | 一個絕對路徑：Chartroom 套件的根目錄 | 不設 |
 | `gate.station` | gate 發出後，等監控站作答幾秒；off 不等，逾時照常在 terminal 問 | `off`、`60`、`120`、`300`；內建 `off` | 不設，維持內建 |
+| `phone.hold` | 手機接上 session 時，每回合結束後 Stop hook 等手機下一句最多幾秒；逾時把 session 交還電腦 | 1 到 1800 的秒數；內建 `1800` | 不設，維持內建 |
 | `station.link` | 哪幾站的主控只印交接路徑與 station 頁連結（page:），不印報告全文；station 沒開、沒有 page: 行時照樣印報告 | `false`，或逗號分隔的站名清單；內建 `survey,design,plan,build,verify,land` | 不設，維持內建 |
 | `station.remote` | 監控站要不要經這台機器的 Tailscale（tailscale serve）讓手機連進來；只讀機器層 profile，預設關，關著時只有 127.0.0.1 連得到；這是進階功能，從 CLI 設成 true 要帶 `--confirm` | `true` 或 `false`；內建 `false` | 不設，維持內建 |
 | `notify.server` | ntfy 推播送到哪個伺服器；自架的 ntfy 填它的網址 | 一個 http 或 https 網址：ntfy 伺服器；內建 `https://ntfy.sh` | 不設，維持內建 |
