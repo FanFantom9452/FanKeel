@@ -524,6 +524,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | TODO 全表盤點（10-21 第二次）定了什麼、沒做什麼：land 先紀錄後結案、brain gate 只寫標題、gate-write 抓裸 id、await 印 questions，五條結案，兩個缺口記成新條目 | [reports/patrols/2026-10-21-todo-patrol-two.md](90-agent/reports/patrols/2026-10-21-todo-patrol-two.md) — *繁體中文* |
 | TODO 全表盤點（10-22）定了什麼、沒做什麼：五條 Ready 做完，Workflow 門檻改回三個、整套單檔重跑、改文字查測試三題當場裁定，八條結案、一條解封、一條新開 | [reports/patrols/2026-10-22-todo-patrol.md](90-agent/reports/patrols/2026-10-22-todo-patrol.md) — *繁體中文* |
 | TODO 全表盤點（10-22 第二次）定了什麼、沒做什麼：station 兩個小尾巴收掉，export 檢查進快速測試並認 vm 載入，mockup 五頁看了兩頁定稿，四條結案、七條新開 | [reports/patrols/2026-10-22-todo-patrol-two.md](90-agent/reports/patrols/2026-10-22-todo-patrol-two.md) — *繁體中文* |
+| TODO 全表盤點（10-22 第三次）的 plan：Stop 背景待回、手機重複氣泡、chat.jsonl 鎖、vm 斷言、Tailscale 警告、gate 摺疊、訂閱按鈕、停住的待答、離站沒事實就警告、explain 派 writer，十二個 task | `docs/99-archive/2026-10-22-todo-patrol.md` — *built* |
+| TODO 全表盤點（10-22 第三次）定了什麼、沒做什麼：十個修補落地、九條結案，gate 摺疊等瀏覽器確認，文件頁與設定頁 mockup 定稿只剩移植 | [reports/patrols/2026-10-23-todo-patrol.md](90-agent/reports/patrols/2026-10-23-todo-patrol.md) — *繁體中文* |
 | TODO 全表盤點（10-21 第二次）的 plan：land 結案順序、brain gate 自查、gate-write 帶 id 清單、await 印 questions | `docs/99-archive/2026-10-21-patrol-four.md` — *built, 繁體中文* |
 | Haiku 角色題庫、平行執行器與長任務飄移 2×2 的 design：每角色十二題分三層、`check.sh` 標出失敗類別、`bench.js role` 用 `--jobs` 平行跑、`drift` 量 haiku／sonnet × PostToolUse 重注入 | `docs/99-archive/2026-10-09-haiku-bank-drift-design.md` — *built, 繁體中文* |
 | 那份設計的十二個 task：失敗類別與共用判分、四組題庫、平行執行器、逐步檢查與重注入、報告產生器，以及使用者親手跑的付費批次 | `docs/99-archive/2026-10-09-haiku-bank-drift.md` — *built, 繁體中文* |
