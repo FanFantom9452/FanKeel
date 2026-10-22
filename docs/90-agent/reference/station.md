@@ -1407,7 +1407,7 @@ The phone station has five routes of its own. `/m` is its page, the shell
 `/sw.js` is `assets/station/sw.js`, served from the root with
 `service-worker-allowed: /` so it can cache the shell; and
 `/station/mobile.json` is the page's data, `mobileModel(model, now, host,
-hidden)`: the held gates oldest first, the live tasks, and the stages finished
+hidden, look)`: the held gates oldest first, the live tasks, and the stages finished
 and tasks ended in the last 48 hours — a few kilobytes, read every 5 s while
 the page is visible, never `station-data.js`. `host` is the first label of the
 tailnet name while the tailnet is on, `os.hostname()` otherwise. Through the
@@ -1415,6 +1415,17 @@ tailnet `/` answers 303 to `/m`, and `/m`, its manifest, its icon, `/sw.js`,
 `station.css`, `mobile.css` and `mobile.js` need no paired phone, while
 `/station/mobile.json` answers 401 without one (`remote.policy` in
 `lib/remote.js`); from this machine `/` is still the desktop page.
+
+`GET /station/phone.json?id=<session>` is one session's conversation screen:
+`state` (`gate`, `holding`, `running`, `background`, `idle`), `attached`,
+`waiting`, the last 50 `chat` lines, the held `gate` and the `background`
+items, from `lib/mobile.js`'s `phoneModel` over `lib/phone.js`'s files, 404
+for a session not on this station. The phone acts on a session with `POST
+/phone/attach`, `POST /phone/detach` and `POST /phone/say` (`root`, `id`, and
+`text` for say): attach refuses a session that is not live (409), say refuses
+an unattached session or a second waiting message (409) and answers 201.
+`mobile.json`'s task rows carry the same `state`, `attached`, `background` and
+`last`, `look` being `lib/phone.js`'s `snapshot`.
 
 `/station/station-data.js`, `/station/search` and an ended session's
 `/station/detail/<id>.js` share one `gather()` for up to two seconds (`memoMs`
@@ -1522,12 +1533,13 @@ reach. Open: `GET /`, `/m`, `/m/manifest.webmanifest`, `/m/icon.svg`, `/sw.js`,
 `POST /station/remote/pair`. This machine's only (403): the card's own routes
 `/station/remote`, `/station/remote/qr.svg`, `/station/remote/code` and
 `/station/remote/revoke`, `/station/health`, and Chartroom. Everything else —
-reads included, since `/station/talk/<id>` serves whole transcripts — needs a
-paired device's cookie and answers 401 without one. Every POST from the
-tailnet also needs `Origin: https://<name>` (403 `wrong origin`), and takes the
-device cookie in place of the nonce: `/answer`, `/clear`, `/clear-stale`,
-`/todo` and `/profile` from a paired phone carry no nonce, and from loopback
-they need it as before.
+reads included, since `/station/talk/<id>` serves whole transcripts and
+`/station/phone.json` a session's conversation — needs a paired device's
+cookie and answers 401 without one. Every POST from the tailnet also needs
+`Origin: https://<name>` (403 `wrong origin`), and takes the device cookie in
+place of the nonce: `/answer`, `/clear`, `/clear-stale`, `/todo`, `/profile`,
+`/phone/attach`, `/phone/detach` and `/phone/say` from a paired phone carry no
+nonce, and from loopback they need it as before.
 
 Pairing. `GET /station/remote` is the card's state: `on` (the profile's
 `station.remote`), `active` (Tailscale agreed), `url`, `dnsName`, `warning`,

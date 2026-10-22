@@ -40,7 +40,24 @@ test('tasks: the running ones, newest first, each saying whether a gate waits', 
     ]), NOW, 'ymlab-pc');
     assert.deepEqual(m.tasks.map((x) => [x.id, x.gate, x.project]), [['new', false, 'sub'], ['old', true, 'fankeel']]);
     assert.equal(m.tasks[0].updated, NOW - 5e3);
-    assert.deepEqual(Object.keys(m.tasks[0]).sort(), ['gate', 'id', 'project', 'root', 'route', 'stage', 'task', 'updated']);
+    assert.deepEqual(Object.keys(m.tasks[0]).sort(), ['attached', 'background', 'gate', 'id', 'last', 'project', 'root', 'route', 'stage', 'state', 'task', 'updated']);
+});
+
+test('a row takes its state from the look it is given, and phoneModel answers one session', () => {
+    const MODEL = model([row()]);
+    const snap = { attached: true, holding: false, waiting: { text: 'hi', at: 1 }, lastRole: 'assistant', last: { role: 'assistant', text: 'ok', at: 1 }, background: [{ id: 'b1' }], chat: [{ role: 'assistant', text: 'ok', at: 1 }] };
+    const look = () => snap;
+    const m = mobile.mobileModel(MODEL, NOW, 'my-pc', new Set(), look);
+    assert.equal(m.tasks[0].state, 'background');
+    assert.equal(m.tasks[0].attached, true);
+    assert.deepEqual(m.tasks[0].last, snap.last);
+    const p = mobile.phoneModel(MODEL, m.tasks[0].id, NOW, new Set(), look);
+    assert.equal(p.state, 'background');
+    assert.deepEqual(p.waiting, snap.waiting);
+    assert.deepEqual(p.chat, snap.chat);
+    assert.equal(p.gate, null);
+    assert.equal(mobile.phoneModel(MODEL, 'ffffffff-0000-4000-8000-000000000000', NOW, new Set(), look), null);
+    assert.equal(mobile.mobileModel(MODEL, NOW, 'my-pc', new Set()).tasks[0].state, 'idle', 'no look: no lines, idle');
 });
 
 test('done: stages finished and tasks ended in the last 48 hours, newest first, an end before its last stage, agents in the cost', () => {

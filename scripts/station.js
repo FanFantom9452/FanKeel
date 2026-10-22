@@ -60,6 +60,7 @@ const qr = require('../lib/qr.js');
 const notify = require('../lib/notify.js');
 const os = require('node:os');
 const mobile = require('../lib/mobile.js');
+const phone = require('../lib/phone.js');
 const view = require('../assets/station/station.js');
 
 const PLUGIN = path.resolve(__dirname, '..');
@@ -797,7 +798,37 @@ async function serve(opts) {
             // tailnet is on, by its hostname otherwise.
             const model = sharedModel();
             const host = (tailnet.on && tailnet.dnsName ? tailnet.dnsName.split('.')[0] : '') || os.hostname();
-            return send(200, 'application/json', JSON.stringify(mobile.mobileModel(model, Date.now(), host, station.hiddenPkeys(model))), noStore);
+            return send(200, 'application/json', JSON.stringify(mobile.mobileModel(model, Date.now(), host, station.hiddenPkeys(model), phone.snapshot)), noStore);
+        }
+        if (req.method === 'GET' && url.pathname === '/station/phone.json') {
+            // One session's conversation, read every 2 s while its screen is open.
+            const model = sharedModel();
+            const got = mobile.phoneModel(model, url.searchParams.get('id') || '', Date.now(), station.hiddenPkeys(model), phone.snapshot);
+            if (!got) return fail(404, 'no such session on this station');
+            return send(200, 'application/json', JSON.stringify(got), noStore);
+        }
+        // The phone's three actions on a session (2026-10-22-mobile-session-design.md §4),
+        // under the same device policy as /answer.
+        const PHONE_ACT = /^\/phone\/(attach|detach|say)$/.exec(url.pathname);
+        if (req.method === 'POST' && PHONE_ACT) {
+            const got = await formAndRegistry();
+            if (!got) return;
+            const { form, reg } = got;
+            const id = form.get('id') || '';
+            const row = reg && reg.sessions.find((s) => s.sessionId === id);
+            if (!row) return fail(404, 'no such session on this station');
+            if (PHONE_ACT[1] === 'attach') {
+                if (row.state !== 'live') return fail(409, 'that session is not running');
+                phone.attach(reg.root, id, device ? device.name : 'this machine', Date.now());
+                return send(201, 'text/plain; charset=utf-8', 'attached\n');
+            }
+            if (PHONE_ACT[1] === 'detach') {
+                phone.detach(reg.root, id);
+                return send(200, 'text/plain; charset=utf-8', 'detached\n');
+            }
+            const said = phone.say(reg.root, id, form.get('text'), Date.now());
+            if (!said.ok) return fail(said.code, said.reason);
+            return send(201, 'text/plain; charset=utf-8', 'waiting for the turn to end\n');
         }
         const file = req.method === 'GET' ? STATIC.exec(url.pathname) : null;
         if (file) {
