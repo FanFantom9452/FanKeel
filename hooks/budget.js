@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 'use strict';
 
-// PreToolUse and PostToolUse, subagent-only. A subagent's context never
+// PreToolUse and PostToolUse. For the main thread, each tool call is a step on
+// the phone's conversation (lib/phone.js); for a subagent, its context never
 // shrinks — every tool result it reads stays in its own transcript until it
 // ends — so the only way to keep one from running the way session f44b1c61's
 // i18n implementer did (409 requests, 36k to 544k tokens) is to end it before
@@ -12,7 +13,7 @@
 // Same discipline as every hook here: exit 0 on every path, and cost nothing
 // for a call this plugin has no opinion about — which for this hook is
 // almost every one, since `agent_id` absent (the main session, or a session
-// started with `--agent`) returns before anything else runs.
+// started with `--agent`) writes its step and returns.
 
 const fs = require('node:fs');
 const path = require('node:path');
@@ -23,6 +24,7 @@ const { targetOf } = require('../lib/guard.js');
 const { run, parse, refuse } = require('../lib/hook.js');
 const { sessionDirOf, agentFiles } = require('../lib/usage.js');
 const { outstanding, heldReason } = require('../lib/children.js');
+const phone = require('../lib/phone.js');
 
 // brain-1: a child's stop is written by its own SubagentStop hook, which can
 // trail the result its parent already holds by a moment, so the hold looks
@@ -36,10 +38,31 @@ const SETTLE_MS = 500;
 // off at all, which defeats the mechanism rather than enforcing it.
 const RELAY_TOOLS = new Set(['Write', 'Edit']);
 
+// The phone's steps (docs/90-agent/plans/2026-10-22-mobile-session-design.md §3b):
+// one chat.jsonl line before each main-thread tool call and one after it, for
+// a session with a registry entry. AskUserQuestion is the gate card, no step.
+function steps(payload) {
+    const tool = String(payload.tool_name || '');
+    if (!tool || tool === 'AskUserQuestion') return;
+    const root = registry.rootFor(payload);
+    if (!registry.readSession(root, payload.session_id)) return;
+    const id = String(payload.tool_use_id || '');
+    const at = Date.now();
+    if (payload.hook_event_name === 'PostToolUse') {
+        phone.append(root, payload.session_id, { role: 'tool-end', id, ok: phone.stepOk(payload.tool_response), at });
+        return;
+    }
+    const step = phone.stepOf(tool, payload.tool_input, payload.cwd);
+    phone.append(root, payload.session_id, Object.assign({ role: 'tool', id, tool, label: step.label, at }, step.background ? { background: true } : {}));
+}
+
 function main(raw) {
     const payload = parse(raw);
     if (!payload) return;
-    if (!payload.agent_id) return;
+    if (!payload.agent_id) {
+        try { steps(payload); } catch (e) { /* housekeeping */ }
+        return;
+    }
 
     const root = registry.rootFor(payload);
     const mine = withCheckout(root, registry.readSession(root, payload.session_id), registry.launchRoot(payload));
