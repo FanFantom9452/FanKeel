@@ -13,7 +13,7 @@ test('the guide tells how to hand a session to the phone and how to talk past ei
 
 test('the layout names the phone channel and keeps its pinned sentences', () => {
     const layout = read('docs', '02-architecture', 'layout.md');
-    assert.ok(layout.includes('phone.js'));
+    assert.ok(layout.includes("mobile.js and phone.js are the phone page's data and its channel to a session"));
     assert.ok(layout.includes('a SubagentHandback is refused while an agent that subagent dispatched has not stopped'));
 });
 
