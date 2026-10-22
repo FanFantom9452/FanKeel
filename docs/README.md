@@ -482,6 +482,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 舊引用、--since 接時間、盤點不誤標已落地條目的 plan：三個任務一組 | `docs/99-archive/2026-10-20-stale-refs-since-patrol.md` — *built, 繁體中文* |
 | 舊引用、--since 接時間、盤點不誤標已落地條目：做了什麼、沒做什麼 | [reports/2026-10-20-stale-refs-since-patrol.md](90-agent/reports/2026-10-20-stale-refs-since-patrol.md) — *繁體中文* |
 | 盤點三件（10-21）的 plan：await 不略過問題、gate 選項數、land 白話選項 | `docs/99-archive/2026-10-21-patrol-three.md` — *built, 繁體中文* |
+| 全表盤點（10-22）的 plan：land 先寫報告、mockup 逾時、整套單檔重跑、Pane 計數鈕、遠端收尾、serve 訊號測試、Workflow 門檻改回三個 | `docs/99-archive/2026-10-22-patrol.md` — *built, 繁體中文* |
 | 盤點三件（10-21）：做了什麼、沒做什麼 | [reports/2026-10-21-patrol-three.md](90-agent/reports/2026-10-21-patrol-three.md) — *繁體中文* |
 | station 改版（10-21）的設計：進行中當首頁、全部 sessions、專案總覽與分析、session 頁三分頁、關卡頁框架、資料修正、遠端關掉撤 serve | `docs/99-archive/2026-10-21-station-redesign-design.md` — *built, English* |
 | 做它的 16 個 task——資料修正、tip、五個頁面模組、派工與對話分頁、關卡頁框架、接線與路由 | `docs/99-archive/2026-10-21-station-redesign.md` — *built, English* |
@@ -510,6 +511,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | TODO 全表盤點（10-21）的 plan：四條 do-now（舊 await 安靜退出、紅燈留 TAP、residue --sweep、mover 不 commit）加 knip 重跑與文件對照 `docs/99-archive/2026-10-21-todo-patrol.md` — *built* |
 | TODO 全表盤點（10-21）定了什麼、沒做什麼：四條結案（舊 await 安靜、紅燈留 TAP、agent 殘留清理、mover 不 commit），README 與指南對回程式；三個測試缺口記成新條目 | [reports/patrols/2026-10-21-todo-patrol.md](90-agent/reports/patrols/2026-10-21-todo-patrol.md) — *繁體中文* |
 | TODO 全表盤點（10-21 第二次）定了什麼、沒做什麼：land 先紀錄後結案、brain gate 只寫標題、gate-write 抓裸 id、await 印 questions，五條結案，兩個缺口記成新條目 | [reports/patrols/2026-10-21-todo-patrol-two.md](90-agent/reports/patrols/2026-10-21-todo-patrol-two.md) — *繁體中文* |
+| TODO 全表盤點（10-22）定了什麼、沒做什麼：五條 Ready 做完，Workflow 門檻改回三個、整套單檔重跑、改文字查測試三題當場裁定，八條結案、一條解封、一條新開 | [reports/patrols/2026-10-22-todo-patrol.md](90-agent/reports/patrols/2026-10-22-todo-patrol.md) — *繁體中文* |
 | TODO 全表盤點（10-21 第二次）的 plan：land 結案順序、brain gate 自查、gate-write 帶 id 清單、await 印 questions | `docs/99-archive/2026-10-21-patrol-four.md` — *built, 繁體中文* |
 | Haiku 角色題庫、平行執行器與長任務飄移 2×2 的 design：每角色十二題分三層、`check.sh` 標出失敗類別、`bench.js role` 用 `--jobs` 平行跑、`drift` 量 haiku／sonnet × PostToolUse 重注入 | `docs/99-archive/2026-10-09-haiku-bank-drift-design.md` — *built, 繁體中文* |
 | 那份設計的十二個 task：失敗類別與共用判分、四組題庫、平行執行器、逐步檢查與重注入、報告產生器，以及使用者親手跑的付費批次 | `docs/99-archive/2026-10-09-haiku-bank-drift.md` — *built, 繁體中文* |
