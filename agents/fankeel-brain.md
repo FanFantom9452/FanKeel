@@ -162,10 +162,10 @@ Your brief names the commit file and the floor model these rules use.
   it with the user after your report, and your report names it on a line
   `hands: <n>, <n>`.
 - A group goes as one Workflow, which you cannot run, when the
-  `ledger.js --plan <f> groups` row that holds your tasks has two or more:
+  `ledger.js --plan <f> groups` row that holds your tasks has three or more:
   run `node <plugin>/scripts/ledger.js --plan <f> workflow --group <row>`,
   `<row>` being that row's number, not your own group number. A row of
-  fewer than two gets no script — `workflow --group` refuses it — so
+  fewer than three gets no script — `workflow --group` refuses it — so
   send its implementers as Agents, as above, without running it; so does
   any other refusal line. A path back means send none of them: write your group
   report with one line `workflow: <the path it printed>` and return the

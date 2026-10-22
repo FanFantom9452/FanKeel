@@ -577,7 +577,7 @@ test('a controlled build\'s brain brief names the workflow script command, and i
   seedProfile(root, { 'stage.agents': ['build'] });
   seed(root, { stage: 'build', started: '2026-09-19T09:30:12.345Z' });
   const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
-  assert.ok(text.includes('  - workflow script: a `groups` row of two or more that holds your tasks goes as one Workflow; your agent file\'s `## On a build stage` says how.'), text);
+  assert.ok(text.includes('  - workflow script: a `groups` row of three or more that holds your tasks goes as one Workflow; your agent file\'s `## On a build stage` says how.'), text);
   assert.ok(sizeAtReference(text) <= BRIEF_MAX, 'brain brief is ' + sizeAtReference(text) + ' chars at the reference root');
   const file = fs.readFileSync(path.join(__dirname, '..', 'agents', 'fankeel-brain.md'), 'utf8');
   const build = file.split(/^## /m).find((s) => s.startsWith('On a build stage'));
@@ -586,7 +586,7 @@ test('a controlled build\'s brain brief names the workflow script command, and i
   assert.match(build, /without\s+the\s+`workflow:`\s+line/);
   assert.match(build, /workflow --group <row>/);
   assert.match(build, /row that holds your tasks/);
-  assert.match(build, /fewer than two gets no script/);
+  assert.match(build, /fewer than three gets no script/);
   const ret = file.split(/^## /m).find((s) => s.startsWith('Return'));
   assert.match(ret, /`workflow:`\s+line\s+is\s+returned\s+before\s+any\s+implementer\s+runs/);
   assert.match(ret, /without\s+the\s+line,\s+after\s+you\s+have\s+handled\s+`Workflow\s+returned:`/);
