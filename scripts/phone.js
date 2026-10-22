@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 'use strict';
-// /fankeel-phone (docs/90-agent/plans/2026-10-22-mobile-session-design.md §3):
+// /fankeel-phone (docs/99-archive/2026-10-22-mobile-session-design.md §3):
 // attach hands a session to the phone — when its turn ends, hooks/stop.js
 // holds it for the phone's next message; detach takes it back.
 const { parseArgs } = require('node:util');

@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 role: plan
 last_verified: 2026-10-22
 source_of_truth: lib/phone.js, hooks/stop.js, hooks/inject.js, hooks/budget.js, scripts/station.js, lib/mobile.js, assets/station/mobile.js
@@ -233,7 +233,7 @@ test('gate wins, a dead session is idle, a holding one is holding, a non-assista
 
 ```js
 'use strict';
-// The phone's channel to one session (docs/90-agent/plans/2026-10-22-mobile-session-design.md §1):
+// The phone's channel to one session (docs/99-archive/2026-10-22-mobile-session-design.md §1):
 // five files under <registry>/.fankeel/station/phone/<session_id>/ — attach.json
 // while the phone holds the session, inbox.json for the one waiting message,
 // holding.json while the Stop hook waits, chat.jsonl the conversation and its
@@ -516,7 +516,7 @@ Beside `parseGateStation` in `lib/profile.js`, add:
 
 ```js
 // `phone.hold`: how many seconds hooks/stop.js holds a turn's end for the
-// phone's next message (docs/90-agent/plans/2026-10-22-mobile-session-design.md §2).
+// phone's next message (docs/99-archive/2026-10-22-mobile-session-design.md §2).
 const PHONE_HOLD_MAX = 1800;
 function parsePhoneHold(raw) {
     const s = String(raw == null ? '' : raw).trim();
@@ -657,7 +657,7 @@ test('the manifest gives the Stop hook 1805 seconds', () => {
 3. Replace the body of `hooks/stop.js` from its requires down:
 
 ```js
-// Then the phone (docs/90-agent/plans/2026-10-22-mobile-session-design.md §2):
+// Then the phone (docs/99-archive/2026-10-22-mobile-session-design.md §2):
 // every Stop of a registry session records the turn's reply and its
 // background_tasks; while the phone has attached the session, the hook holds
 // up to phone.hold seconds for its next message and returns it as a block —
@@ -755,7 +755,7 @@ Keep the existing header comment of `hooks/stop.js` above it, but change its las
 'use strict';
 
 // The desktop side of the phone channel
-// (docs/90-agent/plans/2026-10-22-mobile-session-design.md §3): every prompt
+// (docs/99-archive/2026-10-22-mobile-session-design.md §3): every prompt
 // typed at the desktop is a `desktop` line, and takes the session back.
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -829,7 +829,7 @@ const phone = require('../lib/phone.js');
 In `hooks/inject.js` `main`, directly after `let mine = registry.readSession(root, sessionId);` (:95) and before the `const initOnly = ...` comment block (:96-99) — above the `if (!mine || mine.active !== true || initOnly)` branch whose paths return at :187 and :190 — add:
 
 ```js
-    // The phone (docs/90-agent/plans/2026-10-22-mobile-session-design.md §3):
+    // The phone (docs/99-archive/2026-10-22-mobile-session-design.md §3):
     // a prompt typed here is the desktop's line in the conversation, and takes
     // the session back from the phone — for any registry session, so above the
     // early returns an inactive or init-only entry takes, and the one place the
@@ -935,7 +935,7 @@ const phone = require('../lib/phone.js');
 In `hooks/budget.js`, add above `main`:
 
 ```js
-// The phone's steps (docs/90-agent/plans/2026-10-22-mobile-session-design.md §3b):
+// The phone's steps (docs/99-archive/2026-10-22-mobile-session-design.md §3b):
 // one chat.jsonl line before each main-thread tool call and one after it, for
 // a session with a registry entry. AskUserQuestion is the gate card, no step.
 function steps(payload) {
@@ -1034,7 +1034,7 @@ In `tests/inventory.test.js`, add `'fankeel-phone'` to SKILLS between `'fankeel-
 ```js
 #!/usr/bin/env node
 'use strict';
-// /fankeel-phone (docs/90-agent/plans/2026-10-22-mobile-session-design.md §3):
+// /fankeel-phone (docs/99-archive/2026-10-22-mobile-session-design.md §3):
 // attach hands a session to the phone — when its turn ends, hooks/stop.js
 // holds it for the phone's next message; detach takes it back.
 const { parseArgs } = require('node:util');

@@ -94,7 +94,7 @@ function main(raw) {
     // entry. There is no second flag to disagree with, and no way to be in the
     // mode without having said what you are working on.
     let mine = registry.readSession(root, sessionId);
-    // The phone (docs/90-agent/plans/2026-10-22-mobile-session-design.md §3):
+    // The phone (docs/99-archive/2026-10-22-mobile-session-design.md §3):
     // a prompt typed here is the desktop's line in the conversation, and takes
     // the session back from the phone — for any registry session, so above the
     // early returns an inactive or init-only entry takes, and the one place the

@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 role: plan
 last_verified: 2026-10-22
 source_of_truth: hooks/stop.js, hooks/inject.js, scripts/station.js, assets/station/mobile.js, lib/tailscale.js

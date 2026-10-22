@@ -7,7 +7,7 @@
 // a refusal, so it passes — a turn really waiting on the user ends on its
 // second try.
 //
-// Then the phone (docs/90-agent/plans/2026-10-22-mobile-session-design.md §2):
+// Then the phone (docs/99-archive/2026-10-22-mobile-session-design.md §2):
 // every Stop of a registry session records the turn's reply and its
 // background_tasks; while the phone has attached the session, the hook holds
 // up to phone.hold seconds for its next message and returns it as a block —

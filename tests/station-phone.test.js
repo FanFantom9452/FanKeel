@@ -1,5 +1,5 @@
 'use strict';
-// The phone's routes on the station (docs/90-agent/plans/2026-10-22-mobile-session-design.md
+// The phone's routes on the station (docs/99-archive/2026-10-22-mobile-session-design.md
 // §4): one session's conversation at /station/phone.json and the phone's three
 // actions, /phone/attach, /phone/detach and /phone/say, behind a paired device's
 // cookie like /answer. `tailscaleRun` is faked: no test runs the real tailscale.

@@ -1,7 +1,7 @@
 'use strict';
 
 // The desktop side of the phone channel
-// (docs/90-agent/plans/2026-10-22-mobile-session-design.md §3): every prompt
+// (docs/99-archive/2026-10-22-mobile-session-design.md §3): every prompt
 // typed at the desktop is a `desktop` line, and takes the session back.
 const test = require('node:test');
 const assert = require('node:assert/strict');

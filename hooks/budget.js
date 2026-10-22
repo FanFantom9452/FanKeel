@@ -38,7 +38,7 @@ const SETTLE_MS = 500;
 // off at all, which defeats the mechanism rather than enforcing it.
 const RELAY_TOOLS = new Set(['Write', 'Edit']);
 
-// The phone's steps (docs/90-agent/plans/2026-10-22-mobile-session-design.md §3b):
+// The phone's steps (docs/99-archive/2026-10-22-mobile-session-design.md §3b):
 // one chat.jsonl line before each main-thread tool call and one after it, for
 // a session with a registry entry. AskUserQuestion is the gate card, no step.
 function steps(payload) {

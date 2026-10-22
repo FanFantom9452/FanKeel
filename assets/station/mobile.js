@@ -1,6 +1,6 @@
 'use strict';
 // assets/station/mobile.js — the phone station, /m
-// (docs/90-agent/plans/2026-10-22-mobile-session-design.md; the approved
+// (docs/99-archive/2026-10-22-mobile-session-design.md; the approved
 // mockup's direction A: m-home-a, m-chat-a, m-composer-a, m-tools, m-attach,
 // m-background, m-idle, m-gate-inline, and pair-scan / pair-error from the
 // remote design). The session list reads /station/mobile.json (lib/mobile.js)

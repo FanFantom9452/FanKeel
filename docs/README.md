@@ -315,6 +315,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 監控站首頁改成「進行中」（10-22）定了什麼：#/ 與 #/live 開三組的進行中頁，取代 10-21 四塊首頁；放棄了什麼 | [decisions/2026-10-22-station-live-home.md](03-decisions/2026-10-22-station-live-home.md) — *繁體中文* |
 | 主控結束回合前先問 Stop hook（10-22）定了什麼：stage 沒走完、背景沒東西會叫醒時擋一次；放棄了什麼 | [decisions/2026-10-22-stop-hook.md](03-decisions/2026-10-22-stop-hook.md) — *繁體中文* |
 | Tailscale 遠端開啟前先擋一次（10-22）定了什麼：station 開關跳 modal、CLI 要 --confirm、station: 行印手機網址或原因；放棄了什麼 | [decisions/2026-10-22-tailscale-remote-gate.md](03-decisions/2026-10-22-tailscale-remote-gate.md) — *繁體中文* |
+| 手機頁直接接上 session（10-22）定了什麼：Stop hook 等手機訊息當下一個指示、首頁分等你答／在跑／停下來、只走 Tailscale；放棄了什麼 | [decisions/2026-10-22-phone-session.md](03-decisions/2026-10-22-phone-session.md) — *繁體中文* |
 | 沒派過的 agent 怎麼處理（10-15）定了什麼：effort 改在派工時傳、六個複本刪掉，mover、mutator、writer 只給 stage agent 派，init-scout 與 slimmer 不動；放棄了什麼 | [decisions/2026-10-15-unused-agents.md](03-decisions/2026-10-15-unused-agents.md) — *繁體中文* |
 | 開任務時同步壓縮視窗（10-14）定了什麼：start 把主機視窗對齊 `compact.at`、值變了請使用者重開 Desktop；放棄了什麼 | [decisions/2026-10-14-start-syncs-window.md](03-decisions/2026-10-14-start-syncs-window.md) — *繁體中文* |
 | Pane 配色改成安靜版（10-13）定了什麼：標題共用灰、多一行 route、拿掉「這個 session」與「用量額度」兩塊；放棄了什麼 | [decisions/2026-10-13-pane-colour.md](03-decisions/2026-10-13-pane-colour.md) — *繁體中文* |
@@ -488,6 +489,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 主執行緒 Stop hook（10-22）的設計：stage 沒走完、背景沒東西會叫醒時擋一次 | `docs/99-archive/2026-10-22-stop-hook-design.md` — *built, English* |
 | 做它的 2 個 task——lib/stop.js 的判斷、hooks/stop.js 註冊與 hook 計數 | `docs/99-archive/2026-10-22-stop-hook.md` — *built, English* |
 | Tailscale 遠端 gate（10-22）的 4 個 task——station: 行尾巴、serve.json 帶 remote、開關 modal、--confirm | `docs/99-archive/2026-10-22-tailscale-remote-gate.md` — *built, 繁體中文* |
+| 手機頁接上 session（10-22）的設計：Stop hook 等手機、五種狀態、方向 A、麥克風、工具步驟 | `docs/99-archive/2026-10-22-mobile-session-design.md` — *built, English* |
+| 做它的 11 個 task——phone.js 頻道、Stop hook、inject、budget 步驟、/fankeel-phone、路由、手機頁、Tailscale Windows | `docs/99-archive/2026-10-22-mobile-session.md` — *built, English* |
 | 全表盤點（10-22）的 plan：land 先寫報告、mockup 逾時、整套單檔重跑、Pane 計數鈕、遠端收尾、serve 訊號測試、Workflow 門檻改回三個 | `docs/99-archive/2026-10-22-patrol.md` — *built, 繁體中文* |
 | 盤點三件（10-21）：做了什麼、沒做什麼 | [reports/2026-10-21-patrol-three.md](90-agent/reports/2026-10-21-patrol-three.md) — *繁體中文* |
 | station 改版（10-21）的設計：進行中當首頁、全部 sessions、專案總覽與分析、session 頁三分頁、關卡頁框架、資料修正、遠端關掉撤 serve | `docs/99-archive/2026-10-21-station-redesign-design.md` — *built, English* |
@@ -625,6 +628,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 - [進行中是 station 首頁（10-22）：取代 station-focus 的四塊首頁](03-decisions/2026-10-22-station-live-home.md)
 - [主控結束回合前先問一次 Stop hook（10-22）](03-decisions/2026-10-22-stop-hook.md)
 - [Tailscale 遠端開啟前先擋一次，開著時印出手機網址（10-22）](03-decisions/2026-10-22-tailscale-remote-gate.md)
+- [手機頁直接接上 Claude Code session，取代 Claude mobile（10-22）](03-decisions/2026-10-22-phone-session.md)
 - [任務的圖由 station 畫成 SVG（10-20）](03-decisions/2026-10-20-task-boards-as-svg.md)
 - [retro 讀整份遮蔽過的 session 包（10-20）](03-decisions/2026-10-20-retro-bundle.md)
 - [沒派過的 agent 怎麼處理（10-15）：effort 改在派工時傳，六個複本刪掉](03-decisions/2026-10-15-unused-agents.md)

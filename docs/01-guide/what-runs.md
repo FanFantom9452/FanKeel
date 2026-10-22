@@ -16,7 +16,7 @@ source_of_truth: .claude-plugin/plugin.json, hooks/mod.ts, hooks/pane.ts
 |---|---|---|
 | `inject.js` | 你送出 prompt | 注入目前 task、這站的規則與報告骨架、其他 live session；`/fankeel` 時注入開場區塊；更新 badge |
 | `resume.js` | `AskUserQuestion` 被回答後 | 再送一次這站的規則——回答不是 prompt，沒有這個就沒人提醒 |
-| `stop.js` | 主 session 一輪結束時 | stage 還開著、而且沒有背景 Bash、非同步 Agent 或 `SendMessage` 在等時，擋下這次結束一次（`decision: block`）；`stop_hook_active` 表示已擋過，這個擋下就不再重複。每次結束都把回覆與背景工作記到手機聊天；手機已接上時，擋下之後再等手機訊息最久 `phone.hold` 秒（預設 1800），收到就當下一個指示擋下，這段等待不看 `stop_hook_active`；一樣以 0 結束 |
+| `stop.js` | 主 session 一輪結束時 | stage 還開著、而且沒有背景 Bash、非同步 Agent 或 `SendMessage` 在等時，擋下這次結束一次（`decision: block`）；`stop_hook_active` 表示已擋過，這個擋下就不再重複。每次結束都把回覆與背景工作記到手機聊天；手機已接上時，沒被 stage 擋下的那次結束（通常是擋過之後的下一次）會等手機訊息最久 `phone.hold` 秒（預設 1800），收到就當下一個指示擋下，這段等待不看 `stop_hook_active`；一樣以 0 結束 |
 | `gate.js` | `AskUserQuestion` 送出前 | 記下 gate 開的時間以量等待；設了 `gate.away` 且你離開時先擋下問題並提示；開了 `notify.gate` 時發一則 ntfy 通知；設了 `gate.station` 時先等監控站上的回答 |
 
 ## 編輯與派工
