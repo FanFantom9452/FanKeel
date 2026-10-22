@@ -51,7 +51,7 @@ source_of_truth: docs/90-agent/reference/station.md, assets/station/station.js, 
 tailscale serve --https=443 --set-path=/ off
 ```
 
-推播走 ntfy（一個開放的推播服務，手機裝 ntfy app 訂閱一個 topic 就收得到）。卡片上的三個開關對應 `notify.gate`、`notify.stage`、`notify.end`，內建都關：`notify.gate` 在 gate 等你回答時推一則高優先、會響的通知，附「打開 gate」；`notify.stage` 在一站做完時推一則靜音通知；`notify.end` 在任務結束時推一則靜音通知，附含子代理的花費。第一次從卡片打開任一個時，監控站會在 `notify.topic` 寫一個 `fankeel-` 開頭的亂數 topic，卡片上寫出要訂閱哪一個。這五個 key 和 `station.remote` 一樣只讀機器層，clone 下來的 repo 沒辦法把你的 gate 題目推到它指定的伺服器；完整說明與手機沒響時要看的 `notify-failed.log` 見 [profile.md](profile.md)。自架 ntfy 時改 `notify.server`：
+推播走 ntfy（一個開放的推播服務，手機裝 ntfy app 訂閱一個 topic 就收得到）。卡片上的三個開關對應 `notify.gate`、`notify.stage`、`notify.end`，內建都關：`notify.gate` 在 gate 等你回答時推一則高優先、會響的通知，附「打開 gate」；`notify.stage` 在一站做完時推一則靜音通知；`notify.end` 在任務結束時推一則靜音通知，附含子代理的花費。第一次從卡片打開任一個時，監控站會在 `notify.topic` 寫一個 `fankeel-` 開頭的亂數 topic，卡片上寫出要訂閱哪一個。這五個 key 和 `station.remote` 一樣只讀機器層，clone 下來的 repo 沒辦法把你的 gate 題目推到它指定的伺服器；完整說明與手機沒響時要看的 `notify-failed.log` 見 [profile.md](profile.md)。用免費的 ntfy.sh 時，topic 是唯一的祕密：知道它的人都能訂閱並讀到通知內容。內容包括階段、第一題（最多 80 字）、任務名稱（最多 80 字），以及帶有 tailnet 主機名的點擊連結。保留一個 topic 需要付費的 ntfy Pro。自架在 tailnet 上的 ntfy 不會讓內容經過第三方，代價是 Android app 要維持一條前景連線。自架 ntfy 時改 `notify.server`：
 
 ```
 node <plugin>/scripts/task.js profile set notify.server https://ntfy.example.com --default
