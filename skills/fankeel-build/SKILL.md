@@ -395,11 +395,10 @@ then asks this stage's gate.
    of the selector table has a qualifying test; otherwise `clean` is never
    the whole return. Where the diff changes an event listener, the return
    also carries that listener's selector table (Part 2's table (a)),
-   one row per selector, even beside `clean`, and only those selectors,
-   nothing wider. Rows are evidence, but a row with no qualifying test is
-   also a finding line (`path:line — <problem>`) and stays in the table
-   marked NONE. Every line you return stays in a
-   long-running parent context for the rest of the session.
+   one row per selector, even beside `clean`, and only those selectors.
+   A row with no qualifying test is also a finding line
+   (`N. path:line — <the problem>`) and stays in the table marked NONE.
+   Every line you return stays in a long-running parent context.
    ```
 
    Give it the brief path and the range — never a paste of the session's

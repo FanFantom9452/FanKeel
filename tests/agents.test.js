@@ -602,4 +602,12 @@ test('fankeel-reviewer numbers its findings in one sequence and leaves clean/non
     const flat = text.slice(start, next === -1 ? undefined : next).replace(/\s+/g, ' ');
     assert.match(flat, /single sequence across the whole return/);
     assert.match(flat, /`clean`, `none`, `lean`/);
+    assert.match(flat, /as `N\. ` at the start of the line/);
+    assert.match(flat, /closing `net:` \/ `verify:` \/ `security:` lines stay unnumbered/);
+
+    const skill = fs.readFileSync(path.join(ROOT, 'skills', 'fankeel-build', 'SKILL.md'), 'utf8').replace(/\s+/g, ' ');
+    const ret = skill.slice(skill.indexOf('RETURN, and nothing else'), skill.indexOf('Give it the brief path'));
+    assert.match(ret, /numbered `N\. `/);
+    assert.match(ret, /as `N\. path:line — <the problem>`/);
+    assert.match(ret, /also a finding line \(`N\. path:line — <the problem>`\)[^.]*marked NONE/);
 });
