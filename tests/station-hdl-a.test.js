@@ -43,7 +43,7 @@ function boot(o) {
         addEventListener(type, fn) { (winL[type] = winL[type] || []).push(fn); }, scrollTo() {},
         setInterval: () => 1, setTimeout: () => 1, clearTimeout() {}, navigator: { language: 'zh-TW' },
         localStorage: { getItem: (k) => (k in kept ? kept[k] : null), setItem: (k, v) => { kept[k] = String(v); }, removeItem: (k) => { delete kept[k]; } },
-        STATION: { generatedAt: new Date(NOW).toISOString(), configDir: 'C:\\cfg', pricesVerified: '2026-09-24', serve: false,
+        STATION: { generatedAt: new Date(NOW).toISOString(), configDir: 'C:\\cfg', pricesVerified: '2026-09-24', serve: Boolean(o.serve), nonce: o.nonce,
             projects: [{ root: PK, gone: false, unreadable: 0, build: [], mapAt: null, docs: [], todos: [TODO] }],
             profiles: { machine: { values: {}, sources: {}, unreadable: [] }, projects: {} }, profileKeys: {}, classes: {},
             sessions: o.sessions || [] } };
@@ -56,7 +56,7 @@ function boot(o) {
         const real = I.make(win);
         win.FK_I18N = Object.assign({}, real, { set(l) { p.setCalls.push(l); return o.i18n.ret; } });
     }
-    vm.runInNewContext(SRC, { window: win, document: doc, URLSearchParams, fetch: () => Promise.resolve({ ok: true }), module: { exports: {} } });
+    vm.runInNewContext(SRC, { window: win, document: doc, URLSearchParams, fetch: o.fetch || (() => Promise.resolve({ ok: true })), module: { exports: {} } });
     return p;
 }
 // The one listener of `type` whose source holds `needle`.
@@ -188,6 +188,46 @@ test('lang: a language that was refused does not reload the page', () => {
     const p = boot({ i18n: { ret: false } });
     langPress(p, 'fr');
     assert.equal(p.reloads, 0);
+});
+
+// A fetch that holds the profile write until the test answers it; anything else the page asks is answered at once.
+function profileFetch() {
+    const f = { posts: [], answer: null };
+    f.fn = (url, init) => {
+        if (url !== 'profile') return Promise.resolve({ ok: true, text: () => Promise.resolve(''), json: () => Promise.resolve({}) });
+        f.posts.push({ url, init });
+        return new Promise((r) => { f.answer = r; });
+    };
+    return f;
+}
+
+test('lang: served, the press writes ui.lang to the machine profile and reloads once the write is back', async () => {
+    const f = profileFetch();
+    const p = boot({ i18n: { ret: true }, serve: true, nonce: 'n0', fetch: f.fn });
+    langPress(p, 'en');
+    assert.equal(f.posts.length, 1);
+    assert.equal(f.posts[0].init.method, 'POST');
+    const body = f.posts[0].init.body;
+    assert.deepEqual(['nonce', 'scope', 'key', 'value'].map((k) => body.get(k)), ['n0', 'machine', 'ui.lang', 'en']);
+    assert.equal(p.reloads, 0, 'not before the write is back');
+    f.answer({ ok: true });
+    await new Promise((r) => setImmediate(r));
+    assert.equal(p.reloads, 1);
+});
+
+test('lang: a page not served writes no profile and reloads at once', () => {
+    const f = profileFetch();
+    const p = boot({ i18n: { ret: true }, fetch: f.fn });
+    langPress(p, 'en');
+    assert.deepEqual(f.posts, []);
+    assert.equal(p.reloads, 1);
+});
+
+test('lang: a refused language writes no profile', () => {
+    const f = profileFetch();
+    const p = boot({ i18n: { ret: false }, serve: true, fetch: f.fn });
+    langPress(p, 'fr');
+    assert.deepEqual(f.posts, []);
 });
 
 test('lang: a click off the switch sets nothing and reloads nothing', () => {

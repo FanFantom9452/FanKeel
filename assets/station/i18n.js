@@ -1101,9 +1101,15 @@
             'focus.noSession': 'No session {id} on this page',
         },
     };
-    // A choice the reader made wins; else the browser's language: Chinese for
-    // any `zh*` (or none said), English for anything else.
+    // The machine profile's `ui.lang` first — the key the globe menu writes,
+    // and the one the Pane and the band read (lib/profile.js KEYS) — from
+    // `window.STATION.profiles.machine`, which the shell loads before this
+    // file; then a choice kept in this browser; else the browser's language:
+    // Chinese for any `zh*` (or none said), English for anything else.
     function pick(w) {
+        var prof = null;
+        try { prof = w.STATION.profiles.machine.values['ui.lang']; } catch (e) { prof = null; }
+        if (prof === 'zh' || prof === 'en') return prof;
         var kept = null;
         try { kept = w && w.localStorage ? w.localStorage.getItem(KEY) : null; } catch (e) { kept = null; }
         if (kept === 'zh' || kept === 'en') return kept;

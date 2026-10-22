@@ -52,6 +52,18 @@ test('i18n.js: English for every key, no CJK in it, and the language picked from
     assert.equal(I.pick({}), 'zh');
 });
 
+test('pick: the machine profile\'s ui.lang comes before the stored choice and the browser', () => {
+    const win = (ui, kept, language) => ({
+        STATION: { profiles: { machine: { values: ui === undefined ? {} : { 'ui.lang': ui } } } },
+        navigator: { language }, localStorage: { getItem: () => kept, setItem() {} },
+    });
+    assert.equal(I.pick(win('en', 'zh', 'zh-TW')), 'en');
+    assert.equal(I.pick(win('zh', 'en', 'en-US')), 'zh');
+    assert.equal(I.pick(win(undefined, 'en', 'zh-TW')), 'en');
+    assert.equal(I.pick(win('fr', null, 'en-US')), 'en');
+    assert.equal(I.pick({ STATION: {}, navigator: { language: 'zh-TW' } }), 'zh');
+});
+
 test('t: English by key with {vars} filled, Chinese otherwise, and set() stores the choice', () => {
     const kept = {};
     const w = { navigator: { language: 'en-US' }, localStorage: { getItem: (k) => kept[k] || null, setItem: (k, v) => { kept[k] = v; } } };

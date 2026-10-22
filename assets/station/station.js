@@ -6034,7 +6034,20 @@
     doc.addEventListener('click', function (e) {
         var b = e.target && e.target.closest ? e.target.closest('[data-lang]') : null;
         if (!b || !I18N) return;
-        if (I18N.set(b.getAttribute('data-lang'))) w.location.reload();
+        var lang = b.getAttribute('data-lang');
+        if (!I18N.set(lang)) return;
+        // Served, the pick is also the machine profile's ui.lang, which the
+        // Pane and the band read and which pick() puts ahead of this browser's
+        // choice; the reload waits for the write. A page not served has no
+        // server to write to.
+        if (!S.serve || typeof fetch !== 'function') { w.location.reload(); return; }
+        var form = new URLSearchParams();
+        form.set('nonce', S.nonce || '');
+        form.set('scope', 'machine');
+        form.set('key', 'ui.lang');
+        form.set('value', lang);
+        var again = function () { w.location.reload(); };
+        fetch('profile', { method: 'POST', body: form }).then(again, again);
     });
     // The language menu (r-0036): the globe button opens and shuts #langpop;
     // a click anywhere else, or Escape, shuts it. Picking a language is the

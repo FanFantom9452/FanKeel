@@ -1446,10 +1446,16 @@ gathered after the write. `node bench/station-gather.js` times warm gathers.
 The page speaks 繁中 or English (`assets/station/i18n.js`). Every string
 `station.js` draws goes through `loc(key, zh, vars)`: the Chinese is written at
 the call, and `STRINGS.en[key]` replaces it when the language is English. The
-language is `localStorage['station.lang']` when it holds `zh` or `en`, else
-`navigator.language` — Chinese for any `zh*`, English otherwise. The globe
-button in the masthead opens a menu of 繁體中文 and English (`#langpop`); a
-pick stores the choice and reloads the page, so
+language is the machine profile's `ui.lang` (`profiles.machine` in
+`window.STATION`, which the shell loads before i18n.js) when it holds `zh` or
+`en`, then `localStorage['station.lang']`, else `navigator.language` —
+Chinese for any `zh*`, English otherwise. The globe button in the masthead
+opens a menu of 繁體中文 and English (`#langpop`); a pick stores the choice
+and, on a served page, posts `ui.lang` to `/profile` with `scope=machine` —
+the key the Pane and the band read — then reloads once that write is back. A
+page not served reloads at once and cannot write the profile, so where
+`ui.lang` is set its pick is overruled on reload; the focus page carries no
+profile and keeps the browser's choice. Either way the reload means
 the tables built when the script loads — the left bar's labels among them —
 are built again in the new language. Without `i18n.js` the page is Chinese.
 `tests/station-i18n.test.js` holds the extraction to account: every CJK
