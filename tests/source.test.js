@@ -28,57 +28,82 @@ test('no source file holds a NUL byte', () => {
     assert.deepEqual(guilty, [], 'grep and ripgrep read these as binary');
 });
 
-// Which names another file actually imports from `exporter`. The first version of
-// this searched every file for the bare word, and that version could not fail:
-// `main`, `parseArgs`, `report` and `human` are defined locally in most of these
-// scripts, so every one of them matched itself somewhere else and read as used.
-// It found the eleven unusual names and was blind to the twenty-two ordinary
-// ones — the exact opposite of a test worth having.
+// Which names each file reaches in each file it loads, read once for the whole
+// tree. The first version of this searched every file for the bare word, and that
+// version could not fail: `main`, `parseArgs`, `report` and `human` are defined
+// locally in most of these scripts, so every one of them matched itself somewhere
+// else and read as used. Following the require edge is what makes it mean
+// something. Nothing in this repository calls require() on anything but a string
+// literal, checked, so resolving them statically covers all of it.
 //
-// Following the require edge is what makes it mean something. Nothing in this
-// repository calls require() on anything but a string literal, checked, so
-// resolving them statically covers all of it.
-function imported(exporter, files, body) {
-    const target = path.resolve(ROOT, exporter);
-    const names = new Set();
+// The second version followed the edges again for every exporter, which kept the
+// test at fifteen seconds and so out of the fast suite; the orphan it exists to
+// catch then surfaced only at audit. Indexing every file once is the same answer.
+//
+// A test that loads a file into a vm sandbox — `vm.runInNewContext(
+// fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js')))`
+// — reaches its exports through whatever object it handed the sandbox, so every
+// `.name` in that test counts as reaching that file. Looser than a require edge,
+// and the only reading a static scan can give it.
+function importIndex(files, body) {
+    const index = new Map();
+    const reach = (target, name) => {
+        if (!index.has(target)) index.set(target, new Set());
+        index.get(target).add(name);
+    };
 
     for (const rel of files) {
-        if (rel === exporter) continue;
         const src = body.get(rel);
-        const from = path.dirname(path.resolve(ROOT, rel));
-        const resolves = (spec) => {
+        const self = path.resolve(ROOT, rel);
+        const from = path.dirname(self);
+        const resolve = (spec) => {
             try {
-                return require.resolve(path.resolve(from, spec)) === target;
+                const target = require.resolve(path.resolve(from, spec));
+                return target === self ? null : target;
             } catch (e) {
-                return false;
+                return null;
             }
         };
 
         const bound = /(?:const|let|var)\s+(\{[^}]*\}|[A-Za-z_$][\w$]*)\s*=\s*require\(\s*['"]([^'"]+)['"]\s*\)/g;
         let m;
         while ((m = bound.exec(src))) {
-            if (!resolves(m[2])) continue;
+            const target = resolve(m[2]);
+            if (!target) continue;
             if (m[1].startsWith('{')) {
                 // const { a, b: c } = require(...) — the exported name is the key
                 for (const entry of m[1].slice(1, -1).split(',')) {
                     const key = entry.split(':')[0].trim();
-                    if (key) names.add(key);
+                    if (key) reach(target, key);
                 }
             } else {
                 // const mod = require(...) — every mod.<name> that follows
                 const reached = new RegExp('\\b' + m[1] + '\\.([A-Za-z_$][\\w$]*)', 'g');
                 let d;
-                while ((d = reached.exec(src))) names.add(d[1]);
+                while ((d = reached.exec(src))) reach(target, d[1]);
             }
         }
 
         const inline = /require\(\s*['"]([^'"]+)['"]\s*\)\.([A-Za-z_$][\w$]*)/g;
         while ((m = inline.exec(src))) {
-            if (resolves(m[1])) names.add(m[2]);
+            const target = resolve(m[1]);
+            if (target) reach(target, m[2]);
+        }
+
+        if (/\bvm\.(?:runInNewContext|runInContext|runInThisContext|Script)\b/.test(src)) {
+            const loaded = /readFileSync\(\s*path\.join\(\s*__dirname((?:\s*,\s*['"][^'"]+['"])+)\s*\)/g;
+            while ((m = loaded.exec(src))) {
+                const segments = [...m[1].matchAll(/['"]([^'"]+)['"]/g)].map((s) => s[1]);
+                const target = path.resolve(from, ...segments);
+                if (target === self) continue;
+                const member = /\.([A-Za-z_$][\w$]*)/g;
+                let d;
+                while ((d = member.exec(src))) reach(target, d[1]);
+            }
         }
     }
 
-    return names;
+    return index;
 }
 
 // The names in a `module.exports = {…}`, wherever in the file it sits. The first
@@ -114,22 +139,40 @@ function exportedNames(src) {
 // A name reached only by a test counts as used. Exporting a private helper so a
 // unit test can reach it is a deliberate choice and a common one; what this
 // guards against is the name exported for nobody at all.
-test('every exported name is imported by something @slow', () => {
+test('every exported name is imported by something', () => {
     const files = tracked();
     const body = new Map(files.map((rel) => [rel, fs.readFileSync(path.join(ROOT, rel), 'utf8')]));
+    const index = importIndex(files, body);
     const orphans = [];
 
     for (const rel of files) {
         if (rel.startsWith('tests/')) continue;
         const names = exportedNames(body.get(rel));
         if (!names.length) continue;
-        const used = imported(rel, files, body);
+        const used = index.get(path.resolve(ROOT, rel)) || new Set();
         for (const name of names) {
             if (!used.has(name)) orphans.push(rel + ' — ' + name);
         }
     }
 
     assert.deepEqual(orphans, [], 'exported, and imported by nothing');
+});
+
+// The vm reading, shown on its own: a name reached only through a sandbox's
+// exports counts, a name the test never touches does not, and a vm-free file
+// naming the same path reaches nothing.
+test('a name reached only through a vm sandbox counts as imported', () => {
+    const viaVm = "const vm = require('node:vm');\n"
+        + "const box = { module: { exports: {} } };\n"
+        + "vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'lib', 'only-vm.js'), 'utf8'), box);\n"
+        + 'box.module.exports.onlyVm();\n';
+    const noVm = "const s = fs.readFileSync(path.join(__dirname, '..', 'lib', 'plain-read.js'), 'utf8');\ns.length;\n";
+    const body = new Map([['tests/x.test.js', viaVm], ['tests/y.test.js', noVm]]);
+    const index = importIndex([...body.keys()], body);
+    const vmTarget = index.get(path.resolve(ROOT, 'lib', 'only-vm.js'));
+    assert.ok(vmTarget && vmTarget.has('onlyVm'), 'the sandbox export reached');
+    assert.ok(!vmTarget.has('neverCalled'));
+    assert.equal(index.get(path.resolve(ROOT, 'lib', 'plain-read.js')), undefined, 'reading a file is not loading it');
 });
 
 // The control for the test above. Over the tree an empty answer and a right one
