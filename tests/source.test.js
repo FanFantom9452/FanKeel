@@ -96,7 +96,9 @@ function importIndex(files, body) {
                 const segments = [...m[1].matchAll(/['"]([^'"]+)['"]/g)].map((s) => s[1]);
                 const target = path.resolve(from, ...segments);
                 if (target === self) continue;
-                const member = /\.([A-Za-z_$][\w$]*)/g;
+                // Only what the sandbox's own exports reach counts — a dotted
+                // name elsewhere in the test is not loaded through it (test-vm-1).
+                const member = /\bmodule\.exports\.([A-Za-z_$][\w$]*)/g;
                 let d;
                 while ((d = member.exec(src))) reach(target, d[1]);
             }
@@ -165,7 +167,8 @@ test('a name reached only through a vm sandbox counts as imported', () => {
     const viaVm = "const vm = require('node:vm');\n"
         + "const box = { module: { exports: {} } };\n"
         + "vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'lib', 'only-vm.js'), 'utf8'), box);\n"
-        + 'box.module.exports.onlyVm();\n';
+        + 'box.module.exports.onlyVm();\n'
+        + 'const note = other.neverCalled;\n';
     const noVm = "const s = fs.readFileSync(path.join(__dirname, '..', 'lib', 'plain-read.js'), 'utf8');\ns.length;\n";
     const body = new Map([['tests/x.test.js', viaVm], ['tests/y.test.js', noVm]]);
     const index = importIndex([...body.keys()], body);
