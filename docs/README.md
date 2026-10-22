@@ -701,6 +701,7 @@ is corrected by the next one, not by rewriting this.
 | Brief: why do plan- and build-stage agents sometimes stop unexpectedly? | [90-agent/judgements/2026-10-22-stage-agent-pause.md](90-agent/judgements/2026-10-22-stage-agent-pause.md) — *judged 2026-10-22, fable* |
 | 判官題：station 遠端的推播通知，該不該繼續用第三方 ntfy.sh？ | [90-agent/judgements/2026-10-22-notify-channel.md](90-agent/judgements/2026-10-22-notify-channel.md) — *judged 2026-10-22, fable* |
 | 判官題：station 手機頁 /m 接上語音輸入，照 VoiceLedger 的概念該怎麼做？通知可以延後 | [90-agent/judgements/2026-10-22-phone-voice-input.md](90-agent/judgements/2026-10-22-phone-voice-input.md) — *judged 2026-10-22, fable* |
+| 判官題：另一個 session 在產口語化簡報，為什麼沒有主動派 fankeel-writer？是定義切得不夠清楚嗎 | [90-agent/judgements/2026-10-22-writer-dispatch.md](90-agent/judgements/2026-10-22-writer-dispatch.md) — *judged 2026-10-22, fable* |
 
 ## The five scanners
 
