@@ -141,10 +141,10 @@ shape the scan records; what goes out next is step 2's `ledger.js ready`:
     2: 4        — agent
 
 `agent` is one dispatch, `agents` two in one response, and `workflow` one
-Workflow whose fan-out is that group, from two tasks up; each task is
+Workflow whose fan-out is that group, from three tasks up; each task is
 implemented and then reviewed inside it as one pipeline item. When build runs
 under a stage agent (`stage.agents` names build) `groups` prints `agents` for a
-group of two or more, because that agent has no Workflow tool. It is the batch
+group of three or more, because that agent has no Workflow tool. It is the batch
 shape only — a task whose `**Dispatch:**` line reads `in-session` or `user` is
 not dispatched at all, whatever its group carries. Do not re-derive the surface
 from the group size: a group of any size carrying a prose `Consumes:` or a task
@@ -270,7 +270,7 @@ then asks this stage's gate.
 
    **Profile `dispatch.inflight` sets how many are in flight, eight by
    default**, and that number applies only with a plan — with no plan one row
-   is out at a time: `ready` listing ten sends eight (at the default), then one more as each returns. With a plan, two or more listed at once
+   is out at a time: `ready` listing ten sends eight (at the default), then one more as each returns. With a plan, three or more listed at once
    with nothing else in flight may go as one Workflow, step 4's `workflow`
    case; anything else goes as Agents.
 3. **`in-session` only** — test first where the task says so, and watch it
@@ -321,7 +321,7 @@ then asks this stage's gate.
    `review-<n>.txt`, as step 2 says, before committing; an entry whose
    `implementer` is null never ran, so it is sent again as one Agent rather
    than committed or recorded complete. A stage agent has no
-   Workflow tool, so a build brain whose `groups` row has two or more runs
+   Workflow tool, so a build brain whose `groups` row has three or more runs
    the same command and writes its group report with a line
    `workflow: <path>`; `scripts/await.js` tells the controller to open it and
    SendMessage the brain `Workflow returned:` and the result, and the brain
