@@ -50,7 +50,7 @@ function boot(opts) {
     const doc = { getElementById: (id) => (id === 'rm-card' ? card : null), addEventListener(type, fn) { (listeners[type] = listeners[type] || []).push(fn); } };
     const box = { window: win, document: doc, fetch, URLSearchParams, module: { exports: {} } };
     vm.runInNewContext(SRC, box);
-    const fire = (type, ctl) => (listeners[type] || []).forEach((fn) => fn({ target: { closest: (sel) => (sel === '#rm-card [data-rm]' ? ctl : null) } }));
+    const fire = (type, ctl) => (listeners[type] || []).forEach((fn) => fn(ctl && ctl.key ? ctl : { target: { closest: (sel) => (sel === '#rm-card [data-rm]' ? ctl : null) } }));
     return { R: box.module.exports, card, calls, copied, fire };
 }
 const settle = () => new Promise((r) => setTimeout(r, 0));
@@ -68,7 +68,7 @@ test('on while Tailscale is not serving the station: the warning and the trigger
     const h = R.view(STUCK, NOW);
     assert.match(h, /^<section class="dcard rm" id="rm-card" data-block="remote-on">/);
     assert.match(h, /data-rm="switch" checked aria-label=/);
-    assert.ok(h.includes('<i class="dot stale"></i>Tailscale 沒有替測站開門：tailscale is Stopped, not Running'));
+    assert.ok(h.includes('<i class="dot stale"></i>Tailscale 沒有替測站開門</div><p class="rm-why">tailscale is Stopped, not Running</p>'));
     assert.equal((h.match(/data-rm="trigger"/g) || []).length, 3);
     assert.ok(h.includes('打開任一個就會產生 topic'));
     for (const no of ['rm-url', 'rm-pair', 'data-rm="revoke"']) assert.ok(!h.includes(no), no);
@@ -177,7 +177,7 @@ test('複製 says so on the button when the clipboard refuses', async () => {
 test('in English the card carries no CJK, and every string has English', () => {
     const b = boot({ lang: 'en' });
     for (const s of [ACTIVE, OFF, STUCK, { error: '403' }, Object.assign({}, ACTIVE, { devices: [] })]) {
-        const h = b.R.view(s, NOW);
+        const h = b.R.view(s, NOW, true);
         assert.ok(!CJK.test(h), h);
     }
     assert.ok(!CJK.test(b.R.html(true)));
@@ -187,13 +187,59 @@ test('in English the card carries no CJK, and every string has English', () => {
 test('every class the card draws has a rule in station.css', () => {
     const names = new Set();
     for (const s of [ACTIVE, OFF, STUCK, Object.assign({}, ACTIVE, { devices: [], said: 'x' })]) {
-        for (const m of R.view(s, NOW).matchAll(/class="([^"]+)"/g)) for (const c of m[1].split(/\s+/)) if (/^(?:rm|m-switch|qr)/.test(c)) names.add(c);
+        for (const m of R.view(s, NOW, true).matchAll(/class="([^"]+)"/g)) for (const c of m[1].split(/\s+/)) if (/^(?:rm|m-switch|qr)/.test(c)) names.add(c);
     }
-    for (const c of ['rm', 'rm-off', 'rm-st', 'rm-url', 'rm-pair', 'qr', 'rm-code', 'rm-sub', 'rm-devs', 'rm-dev', 'rm-none', 'rm-trg', 'rm-topic', 'rm-say', 'm-switch']) {
+    for (const c of ['rm', 'rm-off', 'rm-st', 'rm-url', 'rm-pair', 'qr', 'rm-code', 'rm-sub', 'rm-devs', 'rm-dev', 'rm-none', 'rm-trg', 'rm-topic', 'rm-say', 'm-switch', 'rm-ask', 'rm-need', 'rm-after', 'rm-why']) {
         assert.ok(names.has(c), c + ' is not drawn');
     }
     for (const c of names) assert.match(CSS, new RegExp('\\.' + c + '(?![\\w-])'), c + ' has no rule');
     assert.ok(CSS.includes('.qr img{display:block;width:100%;height:100%}'));
     assert.ok(CSS.includes('@media (prefers-reduced-motion:reduce){.m-switch .tr,.m-switch .tr::after{transition:none}}'));
     assert.ok(!CSS.includes('.qr .fp') && !CSS.includes('.qr .mid'), 'the mockup\'s faux QR stays out');
+});
+
+test('the ask dialog is drawn only when asked for, with both buttons and the two prerequisites', () => {
+    assert.ok(!R.view(OFF, NOW).includes('rm-ask'));
+    assert.ok(!R.view(OFF, NOW, false).includes('rm-ask'));
+    const h = R.view(OFF, NOW, true);
+    assert.match(h, /<dialog open class="tdlg rm-ask" id="rm-ask" data-block="modal" aria-labelledby="rm-ask-t">/);
+    assert.ok(h.includes('Tailscale 遠端是進階功能'));
+    assert.equal((h.match(/class="rm-need"/g) || []).length, 1);
+    assert.equal((h.match(/<li>/g) || []).length, 2);
+    assert.match(h, /data-rm="ask-cancel"[^>]*>取消<\/button>/);
+    assert.match(h, /class="btn go" data-rm="ask-on">我了解，開啟<\/button>/);
+    assert.match(h, /<\/dialog><\/section>$/, 'the dialog is inside #rm-card, so a repaint of the card keeps it');
+});
+
+test('switching on opens the ask and posts nothing; cancel closes it; the confirm posts true', async () => {
+    const b = boot({ state: OFF });
+    b.R.html(true);
+    await settle();
+    b.fire('change', ctl({ 'data-rm': 'switch' }, true));
+    await settle();
+    assert.deepEqual(b.calls.filter((c) => c.method === 'POST'), [], 'no POST before the user says yes');
+    assert.ok(b.card.outerHTML.includes('id="rm-ask"'), 'the ask is on the card');
+    assert.ok(!/data-rm="switch" checked/.test(b.card.outerHTML), 'the switch is still off behind the ask');
+    b.fire('click', ctl({ 'data-rm': 'ask-cancel' }));
+    await settle();
+    assert.ok(!b.card.outerHTML.includes('rm-ask'), 'cancel closes it');
+    assert.deepEqual(b.calls.filter((c) => c.method === 'POST'), [], 'cancel posts nothing');
+    b.fire('change', ctl({ 'data-rm': 'switch' }, true));
+    b.fire('click', ctl({ 'data-rm': 'ask-on' }));
+    await settle();
+    const posts = b.calls.filter((c) => c.method === 'POST').map((c) => [c.url, Object.fromEntries(c.body)]);
+    assert.deepEqual(posts, [['/profile', { nonce: 'N0NCE', scope: 'machine', key: 'station.remote', value: 'true' }]]);
+    assert.ok(!b.card.outerHTML.includes('rm-ask'), 'the ask is closed once confirmed');
+});
+
+test('the ask survives a repaint through html(), and Escape cancels it', async () => {
+    const b = boot({ state: OFF });
+    b.R.html(true);
+    await settle();
+    b.fire('change', ctl({ 'data-rm': 'switch' }, true));
+    assert.ok(b.R.html(true).includes('id="rm-ask"'), 'the page redraw draws the ask again');
+    b.fire('keydown', null);
+    b.fire('keydown', { key: 'Escape' });
+    assert.ok(!b.R.html(true).includes('id="rm-ask"'));
+    assert.deepEqual(b.calls.filter((c) => c.method === 'POST'), []);
 });
