@@ -28,6 +28,7 @@ test('station.remote true without --confirm is refused: exit 1, the warning, not
     assert.match(got.out, /Tailscale 遠端是進階功能/);
     assert.match(got.out, /AskUserQuestion/);
     assert.match(got.out, /--confirm/);
+    assert.match(got.out, /docs\/01-guide\/tailscale-setup\.md/);
     assert.notEqual(machineValue(got.cfg), true, 'the profile is unchanged');
     const project = cli(d, 'set', 'station.remote', 'TRUE');
     assert.equal(project.code, 1, 'a project-level write is gated too, and the value is read the way the profile reads it');

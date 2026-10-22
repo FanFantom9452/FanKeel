@@ -6,10 +6,14 @@
 const { parseArgs } = require('node:util');
 const registry = require('../lib/registry.js');
 const phone = require('../lib/phone.js');
+const profile = require('../lib/profile.js');
+const live = require('../lib/live.js');
+
+const GUIDE = 'docs/01-guide/tailscale-setup.md';
 
 const USAGE = 'usage: phone.js attach|detach --session <id> [--root <dir>]';
 
-function main(argv) {
+function main(argv, opts) {
     let parsed;
     try {
         parsed = parseArgs({ args: argv, allowPositionals: true, options: { session: { type: 'string' }, root: { type: 'string' } } });
@@ -24,6 +28,13 @@ function main(argv) {
     if (verb === 'detach') {
         phone.detach(root, sid);
         return { text: 'phone: detached — the session is the desktop\'s again', code: 0 };
+    }
+    // The phone reaches the station only through Tailscale; attaching while
+    // station.remote is off would hold the session for a phone that cannot
+    // connect (station-44).
+    const configDir = (opts && opts.configDir) || live.liveConfigDir();
+    if (profile.read(null, configDir).values['station.remote'] !== true) {
+        return { text: 'phone: station.remote is off, so no phone can reach this machine — turn it on as ' + GUIDE + ' describes, then attach again', code: 1 };
     }
     phone.attach(root, sid, 'desktop', Date.now());
     return { text: 'phone: attached — when this turn ends the session waits for the phone (/m), up to phone.hold seconds', code: 0 };

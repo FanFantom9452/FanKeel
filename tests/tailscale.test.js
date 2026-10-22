@@ -47,6 +47,8 @@ test('selfName: the MagicDNS name without its dot, only while the tailnet is Run
     assert.match(absent.warning, /not installed or not answering/);
     const nameless = tailscale.selfName(fake({ BackendState: 'Running', Self: { DNSName: '' } }, {}).run);
     assert.match(nameless.warning, /MagicDNS/);
+    assert.match(nameless.warning, /login\.tailscale\.com\/admin\/dns/);
+    assert.match(nameless.warning, /docs\/01-guide\/tailscale-setup\.md/);
     const garbled = tailscale.selfName(() => ({ status: 0, stdout: 'not json', stderr: '' }));
     assert.match(garbled.warning, /did not parse/);
 });
