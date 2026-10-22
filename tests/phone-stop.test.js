@@ -3,7 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { execFileSync, spawn } = require('node:child_process');
+const { execFileSync, spawn, spawnSync } = require('node:child_process');
 const phone = require('../lib/phone.js');
 const tmp = require('./tmp.js');
 
@@ -65,7 +65,9 @@ test('a hold that throws ends the Stop with the phone detached', () => {
     phone.attach(p.root, SID, 'my-pc', 1);
     // A directory where holding.json goes: hold's first write throws.
     fs.mkdirSync(path.join(phone.dirOf(p.root, SID), 'holding.json'));
-    assert.equal(fire(p), '');
+    const r = spawnSync(process.execPath, [HOOK], { input: input(p), encoding: 'utf8', env: env(p) });
+    assert.equal(r.stdout, '');
+    assert.match(r.stderr, /^fankeel stop: phone hold failed: \S/m);
     assert.equal(exists(p, 'attach.json'), false);
 });
 

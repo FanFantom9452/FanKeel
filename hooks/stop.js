@@ -60,6 +60,7 @@ function main(raw) {
         if (!phone.isAttached(root, sid)) return;
         got = phone.hold(root, sid, holdSeconds(root, mine) * 1000);
     } catch (e) {
+        process.stderr.write('fankeel stop: phone hold failed: ' + (e && e.message) + '\n');
         // Left attached, the phone would keep sending into a hook that is gone.
         try {
             phone.detach(root, sid);

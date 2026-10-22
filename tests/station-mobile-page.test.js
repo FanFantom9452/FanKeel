@@ -332,6 +332,18 @@ test('boot: the composer posts /phone/say, and its 201 reads phone.json again', 
     assert.ok(callsTo(page, PHONE + 'aaaaaaaa-5').length > before);
 });
 
+test('boot: a /phone/say refusal keeps the draft in the composer and says why', async () => {
+    const one = sess('holding', { id: 'aaaaaaaa-5', attached: true });
+    const ok = routed(one);
+    const page = boot({ hash: '#/s/aaaaaaaa-5', fetch: (url) => (url === '/phone/say' ? reply(409, 'not attached') : ok(url)) });
+    await settle();
+    page.fire('submit', submit(composerForm('跑測試')));
+    await settle();
+    assert.equal(callsTo(page, '/phone/say').length, 1);
+    assert.match(page.app.innerHTML, /<textarea[^>]*id="cmp-box"[^>]*>跑測試<\/textarea>/);
+    assert.ok(page.app.innerHTML.includes('<p class="note" role="status">測站沒收下（409）：not attached</p>'));
+});
+
 test('boot: 接上這個 session posts /phone/attach with the session\'s root and id', async () => {
     const page = boot({ hash: '#/s/aaaaaaaa-2', fetch: routed(sess('running')) });
     await settle();
