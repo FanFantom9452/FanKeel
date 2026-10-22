@@ -692,7 +692,7 @@
         function current() {
             var id = route().id;
             if (st.P && st.P.id === id) return st.P;
-            return ((st.M && st.M.tasks) || []).filter(function (x) { return x.id === id; })[0] || null;
+            return ((st.M && st.M.tasks) || []).concat((st.M && st.M.stopped) || []).filter(function (x) { return x.id === id; })[0] || null;
         }
         function cv() { return d.querySelector ? d.querySelector('.cv') : null; }
         function toEnd() { var c = cv(); if (c) c.scrollTop = c.scrollHeight; }
