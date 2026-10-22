@@ -798,7 +798,9 @@ async function serve(opts) {
             // tailnet is on, by its hostname otherwise.
             const model = sharedModel();
             const host = (tailnet.on && tailnet.dnsName ? tailnet.dnsName.split('.')[0] : '') || os.hostname();
-            return send(200, 'application/json', JSON.stringify(mobile.mobileModel(model, Date.now(), host, station.hiddenPkeys(model), phone.snapshot)), noStore);
+            const body = mobile.mobileModel(model, Date.now(), host, station.hiddenPkeys(model), phone.snapshot);
+            body.notify = mobile.subscribeOf(profile.read(null, configDir).values);
+            return send(200, 'application/json', JSON.stringify(body), noStore);
         }
         if (req.method === 'GET' && url.pathname === '/station/phone.json') {
             // One session's conversation, read every 2 s while its screen is open.
