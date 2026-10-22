@@ -582,3 +582,12 @@ test('the brain checks its own gate with gate-check.js before it returns the pat
         assert.match(text, /one report line per open\s+entry/, name);
     }
 });
+
+// build-12: on 2026-10-21 two tests still asserted a page's old wording and
+// verify's fast suite, not build, was the first to run them.
+test('fankeel-build: the reviewer greps tests/ for the old wording of page text the diff rewrites and runs the tests asserting it', () => {
+    const flat = fs.readFileSync(path.join(ROOT, 'skills', 'fankeel-build', 'SKILL.md'), 'utf8').replace(/\s+/g, ' ');
+    const part3 = flat.slice(flat.indexOf('Part 3 —'), flat.indexOf('Part 4 —'));
+    assert.match(part3, /where the diff rewrites text a page shows, grep `tests\/` for the old wording and run the tests that assert it/i);
+    assert.match(part3, /one still asserting it is a finding/);
+});

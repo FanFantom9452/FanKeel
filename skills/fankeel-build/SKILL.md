@@ -381,7 +381,9 @@ then asks this stage's gate.
      the changed value, and for each mark the change adds there, the
      test that renders it through its caller and goes red when the mark
      is removed. A surface with no reader, a literal string, or a place
-     with no such test is a finding.
+     with no such test is a finding. Where the diff rewrites text a page
+     shows, grep `tests/` for the old wording and run the tests that assert
+     it; one still asserting it is a finding.
    Part 4 — cuts, over the lines this diff added and no others, in the
      format of the `## Cuts` section of your agent file. A cut is a finding.
 
