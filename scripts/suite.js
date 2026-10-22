@@ -99,7 +99,7 @@ function main(argv) {
         ? 'suite: ' + result.pass + ' pass, ' + result.fail + ' fail @ ' + sha
         : 'suite: ' + (result.ok ? 'ok' : 'red') + ' @ ' + sha;
     const retried = result.retried ? ' — retried ' + result.retriedFile + ' alone, passed: ' + result.retried.join('; ') : '';
-    const noFast =values.fast && !values.command && !fast ? ' (no test:fast script — ran the whole suite)' : '';
+    const noFast = values.fast && !values.command && !fast ? ' (no test:fast script — ran the whole suite)' : '';
     const tap = file && !result.ok && fs.existsSync(suite.tapPath(file)) ? ' — TAP: ' + suite.tapPath(file) : '';
     return { text: line + retried + noFast + tap + (file ? '' : ' (not recorded: the entry has no started stamp)'), ok: result.ok };
 }
