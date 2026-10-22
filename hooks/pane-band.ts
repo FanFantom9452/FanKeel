@@ -6,6 +6,8 @@
 
 import { str, list, width, bar, markedBar, ctxPaint, ctxWindowPaint, fivePaint, weekPaint, deviation, elapsed, FIVE_HOURS, WEEK, limitOf, pct, kilo, signed, minutes, secondsLeft, DIM } from './pane-bar.ts'
 import type { Context, Limit, Paint } from './pane-bar.ts'
+import { say } from './pane-lang.ts'
+import type { Lang } from './pane-lang.ts'
 
 // `gap` is the cells of space before the segment; without one it sits against the last.
 export type Seg = { text: string; color?: string; backgroundColor?: string; bold?: boolean; gap?: number }
@@ -26,6 +28,8 @@ export type BandInput = {
   // The session's model alias and effort; row one ends with them when there is a model.
   model?: string | null
   effort?: string | null
+  // The words' language, the machine profile's ui.lang (hooks/pane-lang.ts langAt); absent is Chinese.
+  lang?: Lang
   cols: number
   now: number
 }
@@ -117,23 +121,24 @@ export function bandRows(input: BandInput): Seg[][] | null {
     ? [{ text: 'tasks', color: WHERE, gap: 2 }, { text: `${Math.max(0, Math.min(tasks.done, tasks.total))}/${tasks.total}`, gap: 1 }]
     : []
   const started = since(entry, stage)
+  const lang = input.lang
   const here: Seg[] = started === null
     ? []
-    : [{ text: '本站', color: WHERE, gap: 2 }, { text: String(minutes(now - started)), gap: 1 }, { text: '分', color: WHERE, gap: 1 }]
+    : [{ text: say(lang, 'band.here'), color: WHERE, gap: 2 }, { text: String(minutes(now - started)), gap: 1 }, { text: say(lang, 'band.min'), color: WHERE, gap: 1 }]
   const waits = (entry.waited && typeof entry.waited === 'object' ? entry.waited : {}) as Record<string, unknown>
   const wait = waits[stage]
   const waited = typeof wait === 'number' && Number.isFinite(wait) ? minutes(wait) : 0
   const gate: Seg[] = gateUntil === null
     ? []
     : [
-        { text: ' gate 在等 ', backgroundColor: GUARD, color: INK, bold: true, gap: 2 },
-        { text: `還 ${secondsLeft(gateUntil, now)} 秒`, color: GUARD, bold: true, gap: 2 },
+        { text: say(lang, 'band.gate'), backgroundColor: GUARD, color: INK, bold: true, gap: 2 },
+        { text: say(lang, 'band.left', { n: secondsLeft(gateUntil, now) }), color: GUARD, bold: true, gap: 2 },
       ]
   const yours: Seg[] = gateUntil === null
-    ? [{ text: '等你', color: WHERE, gap: 2 }, { text: String(waited), gap: 1 }, { text: '分', color: WHERE, gap: 1 }]
-    : [{ text: `等你 ${waited} 分`, color: GUARD, gap: 2 }]
+    ? [{ text: say(lang, 'band.you'), color: WHERE, gap: 2 }, { text: String(waited), gap: 1 }, { text: say(lang, 'band.min'), color: WHERE, gap: 1 }]
+    : [{ text: say(lang, 'band.youFor', { n: waited }), color: GUARD, gap: 2 }]
   // Follows the stage groups on row one and is the second group dropped, after the model: ✓ in green while Remote Control is connected, ✗ in the grey text colour when not (off is normal, not an alarm).
-  const remote: Seg[] = [{ text: '遠端', color: WHERE, gap: 2 }, input.remote ? { text: '✓', color: CONNECTED, gap: 1 } : { text: '✗', color: WHERE, gap: 1 }]
+  const remote: Seg[] = [{ text: say(lang, 'band.remote'), color: WHERE, gap: 2 }, input.remote ? { text: '✓', color: CONNECTED, gap: 1 } : { text: '✗', color: WHERE, gap: 1 }]
   const model: Seg[] = input.model ? [{ text: input.effort ? `${input.model} · ${input.effort}` : input.model, color: WHERE, gap: 2 }] : []
   // `drop` is how many of the five droppable groups are gone: the model, then 遠端, then the stage minutes, then the wait, then tasks.
   const firstAt = (drop: number): Seg[] => {

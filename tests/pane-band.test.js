@@ -57,6 +57,36 @@ test('the first row is the rail, the badge, the route as dots, tasks N/M and the
     assert.equal(line(first), '▌FANKEEL BUILD  ●●●●○○○  tasks 4/5  本站 38 分  等你 2 分  遠端 ✗');
 });
 
+test('under ui.lang en the first row says stage, on you, min and remote, and drops in the same order', async () => {
+    const m = await load();
+    const [first] = band(m, { lang: 'en' });
+    assert.deepEqual(first.slice(6), [
+        { text: 'stage', color: '#8a8a8a', gap: 2 },
+        { text: '38', gap: 1 },
+        { text: 'min', color: '#8a8a8a', gap: 1 },
+        { text: 'on you', color: '#8a8a8a', gap: 2 },
+        { text: '2', gap: 1 },
+        { text: 'min', color: '#8a8a8a', gap: 1 },
+        { text: 'remote', color: '#8a8a8a', gap: 2 },
+        { text: '✗', color: '#8a8a8a', gap: 1 },
+    ]);
+    assert.equal(line(first), '▌FANKEEL BUILD  ●●●●○○○  tasks 4/5  stage 38 min  on you 2 min  remote ✗');
+    const [gated] = band(m, { lang: 'en', gateUntil: NOW + 95000, cols: 120 });
+    assert.ok(gated.some((seg) => seg.text === ' gate waiting '));
+    assert.ok(gated.some((seg) => seg.text === '95s left'));
+    assert.ok(gated.some((seg) => seg.text === 'on you 2 min'));
+    assert.doesNotMatch(line(gated), /[㐀-鿿]/);
+    // Narrow, remote goes before the stage minutes, as in Chinese.
+    const narrow = line(band(m, { lang: 'en', cols: 62 })[0]);
+    assert.ok(!narrow.includes('remote') && narrow.includes('stage 38 min'), narrow);
+});
+
+test('an unset or zh lang draws the Chinese row', async () => {
+    const m = await load();
+    assert.deepEqual(band(m, { lang: 'zh' }), band(m));
+    assert.equal(line(band(m, { lang: undefined })[0]), '▌FANKEEL BUILD  ●●●●○○○  tasks 4/5  本站 38 分  等你 2 分  遠端 ✗');
+});
+
 test('the band draws no task title, no next, no guard, no file count and no N of M', async () => {
     const m = await load();
     for (const over of [{}, { gateUntil: NOW + 44500 }, { others: [other] }, { cols: 200 }]) {
