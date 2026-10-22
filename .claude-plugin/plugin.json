@@ -115,8 +115,8 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/stop.js\"",
-            "timeout": 5,
-            "statusMessage": "Checking whether the fankeel stage has anything left to wake it..."
+            "timeout": 1805,
+            "statusMessage": "Checking the fankeel stage, or holding the session for the phone..."
           }
         ]
       }

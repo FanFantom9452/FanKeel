@@ -7,21 +7,67 @@
 // a refusal, so it passes — a turn really waiting on the user ends on its
 // second try.
 //
+// Then the phone (docs/90-agent/plans/2026-10-22-mobile-session-design.md §2):
+// every Stop of a registry session records the turn's reply and its
+// background_tasks; while the phone has attached the session, the hook holds
+// up to phone.hold seconds for its next message and returns it as a block —
+// whether or not stop_hook_active is set, since every phone message is one.
+//
 // Same rules as every hook here: exit 0 on every path, and nothing at all for
-// a session that owns no active task. One thing goes to stdout: the refusal.
+// a session that owns no active task. Two things go to stdout: the refusal, or
+// a phone message.
 
 const registry = require('../lib/registry.js');
+const phone = require('../lib/phone.js');
+const { profileFor } = require('../lib/profile.js');
 const { refusal } = require('../lib/stop.js');
 const { run, parse } = require('../lib/hook.js');
 
+// Also the ceiling: plugin.json gives this hook 1805 seconds, and a longer
+// hold would be killed by Claude Code mid-wait.
+const HOLD_MAX = 1800;
+
+function holdSeconds(root, mine) {
+    try {
+        const n = Number(profileFor(root, mine).values['phone.hold']);
+        return Number.isInteger(n) && n > 0 && n <= HOLD_MAX ? n : HOLD_MAX;
+    } catch (e) {
+        return HOLD_MAX;
+    }
+}
+
 function main(raw) {
     const payload = parse(raw);
-    if (!payload || payload.stop_hook_active === true) return;
+    if (!payload) return;
     if (payload.hook_event_name !== undefined && payload.hook_event_name !== 'Stop') return;
     const root = registry.rootFor(payload);
-    const mine = registry.readSession(root, payload.session_id);
-    const reason = refusal(mine, payload.transcript_path);
-    if (reason) process.stdout.write(JSON.stringify({ decision: 'block', reason }));
+    const sid = payload.session_id;
+    const mine = registry.readSession(root, sid);
+    if (!mine) return;
+    const now = Date.now();
+    try {
+        phone.append(root, sid, { role: 'assistant', text: String(payload.last_assistant_message || ''), at: now });
+        phone.writeBackground(root, sid, payload.background_tasks, now);
+    } catch (e) { /* housekeeping */ }
+    if (payload.stop_hook_active !== true) {
+        const reason = refusal(mine, payload.transcript_path);
+        if (reason) {
+            process.stdout.write(JSON.stringify({ decision: 'block', reason }));
+            return;
+        }
+    }
+    let got = null;
+    try {
+        if (!phone.isAttached(root, sid)) return;
+        got = phone.hold(root, sid, holdSeconds(root, mine) * 1000);
+    } catch (e) {
+        return;
+    }
+    if (!got || typeof got.text !== 'string') return;
+    try {
+        phone.append(root, sid, { role: 'phone', text: got.text, at: Date.now() });
+    } catch (e) { /* housekeeping */ }
+    process.stdout.write(JSON.stringify({ decision: 'block', reason: '（手機）' + got.text }));
 }
 
 run(main);
