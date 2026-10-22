@@ -57,6 +57,24 @@ tailscale serve --https=443 --set-path=/ off
 node <plugin>/scripts/task.js profile set notify.server https://ntfy.example.com --default
 ```
 
+### 手機接上 session
+
+在手機的 session 清單點一個跑中的 session，按「接上這個 session」；或在電腦上的
+session 裡打 `/fankeel-phone`。之後每回合結束，Stop hook 會等手機的下一句，最多
+`phone.hold` 秒（預設 1800，`task.js profile set phone.hold 600` 可改）；逾時就把
+session 交還電腦。手機上按「交還電腦」，或在電腦上直接打字，也會把 session 拿回來。
+
+手機上每個 session 是五種狀態之一：等你答、手機接著、跑中、背景跑中、停下來。停下來
+的 session 手機推不動，要先在電腦上 `/fankeel-phone`。按 Esc 中斷的回合沒有 Stop，
+會一直顯示跑中，直到下一句。
+
+輸入框旁的麥克風用瀏覽器的語音辨識（zh-TW），講的字先填進框裡，不會自己送出；瀏覽器
+沒有語音辨識時不畫麥克風，用鍵盤上的語音鍵即可。
+
+Claude Code 預設最多連續接受 8 次 Stop hook 擋下，所以手機最多連講 8 句就會停。要講
+更多，在自己的 `settings.json` 的 `env` 加 `"CLAUDE_CODE_STOP_HOOK_BLOCK_CAP": "50"`；
+fankeel 不會替你寫這一行。
+
 ## 數字怎麼讀
 
 - **錢**是 transcript 的用量乘上價目表算出來的，不是帳單。session 自己和它派出去的 agent 分開算，再加總。
