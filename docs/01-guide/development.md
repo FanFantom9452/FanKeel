@@ -36,6 +36,14 @@ Build and verify run `node scripts/suite.js --session <id> --fast`, which
 records `fast: true`; land runs `suite.js` without it, and both its `--check`
 and `task.js land` refuse a fast record.
 
+A run that is red in exactly one test file is not the end of it: `suite.js` runs
+that one file again, alone, and when it passes the record is green with
+`retried` (the test names) and `retriedFile`; the line reads
+`— retried <file> alone, passed: <names>`. The user accepted the relaxation on
+2026-10-21 (land three-run case: one `station-cli` red was load jitter), knowing
+a real intermittent failure can pass this way. Two or more red files, or a file
+that is still red alone, fail as before.
+
 The fast set saves about a fifth of the wall-clock, not half. `node --test`
 runs files in parallel but each file's tests one after another, and files of
 many short git-heavy tests set the floor whatever the threshold. The two

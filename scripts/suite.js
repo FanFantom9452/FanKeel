@@ -12,6 +12,10 @@
 // suite runs in --tree when given — a worktree the entry does not record, whose
 // path then goes into suite.json as `tree` — else the entry's worktree when it
 // has one, else the project root; the sha is that tree's HEAD.
+// A node --test run red in exactly one test file is run again on that file
+// alone (lib/suite.js retryOnce); if that passes, the record is green, carries
+// `retried`, and the line says `— retried <file> alone, passed: <names>`.
+// Two or more red files still fail.
 // The command is --command, else that tree's package.json test script.
 // --check runs no test and writes nothing: it asks lib/suite.js's blocker whether
 // the record already made still stands, and prints `suite: record stands @ <sha8>`
@@ -79,7 +83,9 @@ function main(argv) {
         : lock.acquire({ file: lockAt, owner: { session: values.session, tree, command }, onWait: (h, stuck) => process.stdout.write(waitLine(h, lockAt, stuck) + '\n') });
     let result;
     try {
-        result = suite.runSuite(tree, command, { FANKEEL_SUITE_HELD: lockAt }, { lock: held ? { file: lockAt, pid: held.pid, at: held.at } : null });
+        const env = { FANKEEL_SUITE_HELD: lockAt };
+        const opts = { lock: held ? { file: lockAt, pid: held.pid, at: held.at } : null };
+        result = suite.retryOnce(tree, suite.runSuite(tree, command, env, opts), env, opts);
     } finally {
         // A lock left behind is cleared once this pid is gone; losing the record of a
         // suite that already ran is worse, so a failed release is said and not thrown.
@@ -92,9 +98,10 @@ function main(argv) {
     const line = result.pass != null
         ? 'suite: ' + result.pass + ' pass, ' + result.fail + ' fail @ ' + sha
         : 'suite: ' + (result.ok ? 'ok' : 'red') + ' @ ' + sha;
-    const noFast = values.fast && !values.command && !fast ? ' (no test:fast script — ran the whole suite)' : '';
+    const retried = result.retried ? ' — retried ' + result.retriedFile + ' alone, passed: ' + result.retried.join('; ') : '';
+    const noFast =values.fast && !values.command && !fast ? ' (no test:fast script — ran the whole suite)' : '';
     const tap = file && !result.ok && fs.existsSync(suite.tapPath(file)) ? ' — TAP: ' + suite.tapPath(file) : '';
-    return { text: line + noFast + tap + (file ? '' : ' (not recorded: the entry has no started stamp)'), ok: result.ok };
+    return { text: line + retried + noFast + tap + (file ? '' : ' (not recorded: the entry has no started stamp)'), ok: result.ok };
 }
 
 if (require.main === module) {
