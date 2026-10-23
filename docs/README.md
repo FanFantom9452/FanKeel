@@ -635,6 +635,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 - [Tailscale 遠端開啟前先擋一次，開著時印出手機網址（10-22）](03-decisions/2026-10-22-tailscale-remote-gate.md)
 - [手機頁直接接上 Claude Code session，取代 Claude mobile（10-22）](03-decisions/2026-10-22-phone-session.md)
 - [station、Pane、band 用同一個介面語言 ui.lang（10-22）](03-decisions/2026-10-22-ui-lang.md)
+- [station 留 vanilla，拆成 classic script 的 FK_* 模組，index.html 是唯一的模組清單（10-24）](03-decisions/2026-10-24-station-vanilla-modules.md)
 - [任務的圖由 station 畫成 SVG（10-20）](03-decisions/2026-10-20-task-boards-as-svg.md)
 - [retro 讀整份遮蔽過的 session 包（10-20）](03-decisions/2026-10-20-retro-bundle.md)
 - [沒派過的 agent 怎麼處理（10-15）：effort 改在派工時傳，六個複本刪掉](03-decisions/2026-10-15-unused-agents.md)
