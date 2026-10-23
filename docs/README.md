@@ -495,6 +495,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 做它的 11 個 task——phone.js 頻道、Stop hook、inject、budget 步驟、/fankeel-phone、路由、手機頁、Tailscale Windows | `docs/99-archive/2026-10-22-mobile-session.md` — *built, English* |
 | 全表盤點（10-22）的 plan：land 先寫報告、mockup 逾時、整套單檔重跑、Pane 計數鈕、遠端收尾、serve 訊號測試、Workflow 門檻改回三個 | `docs/99-archive/2026-10-22-patrol.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-23）：做了什麼、沒做什麼 | [reports/2026-10-24-todo-patrol.md](90-agent/reports/2026-10-24-todo-patrol.md) — *繁體中文* |
+| TODO 全表盤點（10-24）：做了什麼、沒做什麼 | [reports/2026-10-24-todo-patrol-2.md](90-agent/reports/2026-10-24-todo-patrol-2.md) — *繁體中文* |
 | 盤點三件（10-21）：做了什麼、沒做什麼 | [reports/2026-10-21-patrol-three.md](90-agent/reports/2026-10-21-patrol-three.md) — *繁體中文* |
 | station 改版（10-21）的設計：進行中當首頁、全部 sessions、專案總覽與分析、session 頁三分頁、關卡頁框架、資料修正、遠端關掉撤 serve | `docs/99-archive/2026-10-21-station-redesign-design.md` — *built, English* |
 | 做它的 16 個 task——資料修正、tip、五個頁面模組、派工與對話分頁、關卡頁框架、接線與路由 | `docs/99-archive/2026-10-21-station-redesign.md` — *built, English* |
