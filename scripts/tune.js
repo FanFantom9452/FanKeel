@@ -7,6 +7,7 @@
 //   node scripts/tune.js serve --proxy <url> --src <file,...> [--rebuild "<cmd>"]   the real server's pages, overlay spliced into its HTML
 //   node scripts/tune.js wait [--timeout 3600]         block until the next request; print it as JSON, with its items
 //   node scripts/tune.js done <id>                     check the edit stayed in its block; tell the page
+//   node scripts/tune.js drop <id>                     settle a request nobody will finish; the page is not touched
 //
 // State lives in `.fankeel/build/tune/` under the cwd: `queue.jsonl`, a
 // `<id>.before.html` snapshot taken when a request is waited for, a
@@ -22,7 +23,7 @@ const http = require('node:http');
 const crypto = require('node:crypto');
 const { execFileSync, spawnSync } = require('node:child_process');
 const { parseArgs } = require('node:util');
-const { inject, outside, diffLines, queueState, changedPaths, rankSources } = require('../lib/tune.js');
+const { inject, outside, diffLines, queueState, changedPaths, rankSources, statusOf } = require('../lib/tune.js');
 const { readBody } = require('../lib/body.js');
 const { relPath } = require('../lib/guard.js');
 
@@ -127,7 +128,10 @@ function serve(dir, port, live, upstream) {
             return undefined;
         }
         if (pathname === '/__live/queue') {
-            const rows = requests();
+            // A taken request nobody settled for 24 hours is `expired` here
+            // and counts as neither pending nor editing (lib/tune.js statusOf).
+            const now = Date.now();
+            const rows = requests().map((r) => Object.assign({}, r, { status: statusOf(r, now) }));
             const pending = rows.filter((r) => r.status === 'queued' || r.status === 'taken').length;
             // What `wait` has handed out and `done` has not settled, with how
             // many times that block has been asked for so far — the round.
@@ -379,6 +383,17 @@ function done(id) {
     return settle(r, true, [], 'only ' + (r.blocks || [r.block]).join(', ') + ' changed');
 }
 
+// Settles a request nobody will finish — a `taken` one whose session ended, a
+// `queued` one the user no longer wants — without reading its snapshot or
+// touching the page. `done` stays the only path that checks an edit.
+function drop(id) {
+    const r = requests().find((x) => x.id === id);
+    if (!r) die('no request ' + id);
+    if (r.status !== 'queued' && r.status !== 'taken') die(id + ' is ' + r.status + ', nothing to drop');
+    append({ id: r.id, status: 'dropped' });
+    process.stdout.write('tune: ' + r.id + ' dropped\n');
+}
+
 // Live mode: nothing outside --src may have moved since `wait`, and the page
 // has to rebuild from what did. A tracked file changed outside --src puts
 // every changed file back; a stray new file outside --src is moved aside
@@ -464,7 +479,8 @@ function main() {
     if (cmd === 'serve' && (arg || values.proxy !== undefined)) return serveArgs(arg, values);
     if (cmd === 'wait') return wait(values.timeout === undefined ? WAIT_TIMEOUT_SEC : Number(values.timeout));
     if (cmd === 'done' && arg) return done(arg);
-    return die('usage: tune.js serve <dir> [--port N] [--src <file,...> --rebuild "<cmd>"] | serve --proxy <url> --src <file,...> [--rebuild "<cmd>"] [--port N] | wait [--timeout S] | done <id>');
+    if (cmd === 'drop' && arg) return drop(arg);
+    return die('usage: tune.js serve <dir> [--port N] [--src <file,...> --rebuild "<cmd>"] | serve --proxy <url> --src <file,...> [--rebuild "<cmd>"] [--port N] | wait [--timeout S] | done <id> | drop <id>');
 }
 
 if (require.main === module) main();
