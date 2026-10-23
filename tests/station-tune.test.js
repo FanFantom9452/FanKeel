@@ -52,12 +52,12 @@ test('serialize carries the tune queue summary beside pending, and null with no 
     assert.equal(served(fixture(null)).tune, null);
 });
 
-const at = (status) => [{ id: SID, tune: { open: status === 'taken' ? 1 : 0, done: status === 'done' ? 1 : 0, rejected: status === 'rejected' ? 1 : 0,
+const at = (status) => [{ id: SID, pkey: 'P', tune: { open: status === 'taken' ? 1 : 0, done: status === 'done' ? 1 : 0, rejected: status === 'rejected' ? 1 : 0,
     url: 'http://127.0.0.1:7819/', items: [{ id: 'r-0001', block: 'wizard-step', status }] } }];
 
 test('one request moving from in progress to done or rejected is one event; nothing else is', () => {
-    assert.deepEqual(V.tuneEvents(at('taken'), at('done')), [{ id: 'r-0001', block: 'wizard-step', status: 'done' }]);
-    assert.deepEqual(V.tuneEvents(at('queued'), at('rejected')), [{ id: 'r-0001', block: 'wizard-step', status: 'rejected' }]);
+    assert.deepEqual(V.tuneEvents(at('taken'), at('done')), [{ id: 'P|r-0001', block: 'wizard-step', status: 'done' }]);
+    assert.deepEqual(V.tuneEvents(at('queued'), at('rejected')), [{ id: 'P|r-0001', block: 'wizard-step', status: 'rejected' }]);
     assert.deepEqual(V.tuneEvents(at('done'), at('done')), [], 'already done last time');
     assert.deepEqual(V.tuneEvents([{ id: SID, tune: null }], at('done')), [], 'never seen open: the first read of a page is not news');
     assert.deepEqual(V.tuneEvents(at('taken').concat(at('taken')), at('done').concat(at('done'))).length, 1, 'two sessions on one project, one event');

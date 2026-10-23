@@ -54,7 +54,9 @@ function boot(kept, two) {
     assert.equal(typeof fn, 'function', 'a click listener holds the note close branch');
     const settle = () => {
         intervals[0]();
-        win.STATION = station([{ id: 'n1', block: 'blk-one', status: 'done' }, { id: 'n2', block: 'blk-two', status: 'rejected' }]);
+        if (two) win.STATION = Object.assign(station(), { sessions: [sessions([{ id: 'r-0001', block: 'blk-alpha', status: 'done' }])[0],
+            Object.assign(beta(), { tune: { done: 1, items: [{ id: 'r-0001', block: 'blk-beta', status: 'done' }] } })] });
+        else win.STATION = station([{ id: 'n1', block: 'blk-one', status: 'done' }, { id: 'n2', block: 'blk-two', status: 'rejected' }]);
         scripts[scripts.length - 1].onload();
     };
     return { fn, saved, settle, fetches: () => fetches, fkHtml: () => fk.innerHTML };
@@ -99,7 +101,7 @@ test('notes turn grey once the panel has been open, and stop counting on the bel
     bell(p);
     assert.match(p.fkHtml(), /<span class="fkn"><\/span>/);
     assert.match(p.fkHtml(), /class="nt done read"/);
-    assert.equal(noteIds(p), 'n1,n2');
+    assert.equal(noteIds(p), A + 'n1,' + A + 'n2');
 });
 
 test('the same queue id in two projects: dismissing one keeps the other, also after a reload', () => {
@@ -111,6 +113,15 @@ test('the same queue id in two projects: dismissing one keeps the other, also af
     const q = boot({ [KEY]: p.saved[KEY] }, true);
     bell(q);
     assert.equal(noteIds(q), B + 'r-0001');
+});
+
+test('the same settled request id in two projects: two notes, × on one keeps the other', () => {
+    const p = boot(undefined, true);
+    p.settle();
+    bell(p);
+    assert.equal(noteIds(p), A + 'r-0001,' + B + 'r-0001');
+    press(p, { '[data-note-x]': noteX(A + 'r-0001') });
+    assert.equal(noteIds(p), B + 'r-0001');
 });
 
 test('× on an Editing row and 清掉通知 make no fetch', () => {

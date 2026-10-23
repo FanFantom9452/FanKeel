@@ -2448,13 +2448,13 @@
 
     // ---- tune: a block changed ----------------------------------------------
     // One project's queue can sit on several sessions' rows; an id is one
-    // request wherever it appears. `tuneEvents` is every request that was in
+    // request per project and id (queue ids repeat across projects). `tuneEvents` is every request that was in
     // progress on the last read and has settled on this one — a request first
     // seen settled is not news.
     function tuneItems(sessions) {
         var out = {};
         (sessions || []).forEach(function (s) {
-            ((s.tune && s.tune.items) || []).forEach(function (it) { out[it.id] = it; });
+            ((s.tune && s.tune.items) || []).forEach(function (it) { out[s.pkey + '|' + it.id] = it; });
         });
         return out;
     }
@@ -2463,10 +2463,10 @@
     }
     function tuneEvents(prev, next) {
         var was = tuneItems(prev), now = tuneItems(next), out = [];
-        Object.keys(now).forEach(function (id) {
-            var a = was[id], b = now[id];
+        Object.keys(now).forEach(function (key) {
+            var a = was[key], b = now[key];
             if (a && (a.status === 'queued' || a.status === 'taken') && (b.status === 'done' || b.status === 'rejected')) {
-                out.push({ id: b.id, block: b.block, status: b.status });
+                out.push({ id: key, block: b.block, status: b.status });
             }
         });
         return out;
