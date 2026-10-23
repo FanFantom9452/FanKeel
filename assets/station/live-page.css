@@ -87,8 +87,9 @@ a.sxr:focus-visible>.sx-pk{visibility:visible;opacity:1;transition:none}
 .sx-un>summary::-webkit-details-marker{display:none}
 .sx-un .chev{display:inline-block;width:14px;height:14px;margin-left:6px;vertical-align:-2px;transition:transform .18s cubic-bezier(.16,1,.3,1)}
 .sx-un[open] .chev{transform:rotate(180deg)}
-.sx-sub>.sxr{background:color-mix(in srgb,var(--inset) 45%,transparent)}
-.sx-sub>.sxr:hover{background:var(--wash)}
+.sx-sub .sxr{background:color-mix(in srgb,var(--inset) 45%,transparent)}
+.sx-sub .sxr:hover{background:var(--wash)}
+.lv-row>.hm-lv{flex:1;min-width:0}
 
 @media (prefers-reduced-motion:reduce){.sxp .sx-g.run .gseg.now,.sxp .sx-g.run .gedge.now,.sxp .sx-g.run.bare .gcore{animation:none}.sx-un .chev,.sx-pk,a.sxr:hover>.sx-pk{transition:none}}
 
