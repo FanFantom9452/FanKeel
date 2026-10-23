@@ -108,8 +108,13 @@ every tracked `.js` file's relative `require` and static or dynamic
 `import` edges, and both
 truncated the way every other section below them is, by `lib/report.js`'s
 `section()`. It answers a different question than the tree does: not where a
-file lives, but who already reaches into it. Left out entirely when no `.js`
-file requires another by a relative path.
+file lives, but who already reaches into it. Two sections follow `directories:`:
+`reading order — most required first:` numbers the non-test files by how many
+files require them (leaves first), and `import cycles:` names each group of
+files that require each other, with a lazy `require()` or `import()` inside a
+function counted, or says `import cycles: none`. `requireGraph()` reads
+`require('./x')`, static `import ... from './x'` and dynamic `import('./x')`.
+Left out entirely when no `.js` file requires another by a relative path.
 
 ## survey carries a scanner, not an instruction
 
