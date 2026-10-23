@@ -409,13 +409,6 @@ function boot(hash, sessions, detail) {
     return { els, x: ctx.module.exports };
 }
 
-test('home-spend marks today\'s and this week\'s cost 估', () => {
-    const html = boot('#/', EST).x.homeSpend(EST, NOW);
-    assert.match(html, /今天<b>\$4\.00 估<\/b>/);
-    assert.match(html, /本週<b>\$4\.00 估<\/b>/);
-    none(boot('#/', PLAIN).x.homeSpend(PLAIN, NOW));
-});
-
 test('the session list row marks the cost 估 from the session\'s estimated ids, the plain row not', () => {
     const E = sess('est', [], { usd: 2, agentUsd: 1, estimated: ['claude-haiku-5-5'] });
     const P = sess('plain', [], { usd: 2, agentUsd: 1, updated: NOW - 120000 });

@@ -1,5 +1,5 @@
 'use strict';
-// The dashboard's waiting card and #/live's lanes (design §5; mockup blocks
+// #/live's lanes (design §5; mockup blocks
 // waiting-card and live-subagents): a gate's wait runs from `gateAt`, the
 // moment the question went out, and a live lane lists the stage agent in
 // flight and the subagents running now.
@@ -14,39 +14,6 @@ const V = require('../assets/station/station.js');
 
 const NOW = new Date(2026, 8, 27, 16, 0).getTime();
 const MIN = 60000;
-// The page with a document, so `freshen()` has filled NAMES before the
-// exports are taken — `dashRowName` reads it (the DASH harness of
-// tests/station-view.test.js).
-const DASH = (() => {
-    const { SRC: src } = require('./station-src.js');
-    const els = {};
-    const el = () => ({ innerHTML: '', textContent: '', className: '', title: '', addEventListener() {} });
-    const doc = { getElementById: (id) => els[id] || (els[id] = el()), addEventListener: () => {}, createElement: el,
-        head: { appendChild() {} }, querySelectorAll: () => [] };
-    const win = { location: { hash: '#/' }, addEventListener() {}, scrollTo() {},
-        STATION: { generatedAt: new Date(NOW).toISOString(), configDir: 'C:\\cfg', pricesVerified: '2026-09-04', serve: false,
-            projects: [{ root: 'F:\\ws\\alpha', gone: false, unreadable: 0, build: [], mapAt: null }],
-            profiles: { machine: { values: {}, sources: {}, unreadable: [] }, projects: {} }, profileKeys: {}, classes: {}, sessions: [] } };
-    const sandbox = { window: win, document: doc, URLSearchParams, fetch() {}, module: { exports: {} } };
-    vm.runInNewContext(src, sandbox);
-    return sandbox.module.exports;
-})();
-
-const gated = (extra) => Object.assign({ id: 'w1', pkey: 'F:\\ws\\alpha', task: 'the task', stage: 'design', updated: NOW - 90 * MIN,
-    pending: { questions: [{ header: 'design done' }], at: NOW - 40 * MIN, until: NOW + 48 * MIN } }, extra);
-
-test('a waiting row on home-live counts its wait from gateAt, not from the pending file or the last write', () => {
-    const html = DASH.homeLive([gated({ state: 'live', gateAt: NOW - 12 * MIN })], NOW, false);
-    assert.match(html, /<span class="kn wait">1 等你回答<\/span>/);
-    assert.match(html, /<a class="hm-lv wait" href="#\/s\/w1"/);
-    assert.match(html, /<span class="hm-lv-r" title="在 gate 等了 12m">等 12m<\/span>/);
-});
-
-test('without gateAt the wait falls back to pending.at, then to the last write', () => {
-    assert.match(DASH.homeLive([gated({ state: 'live' })], NOW, false), />等 40m<\/span>/);
-    assert.match(DASH.homeLive([gated({ state: 'live', pending: { questions: [{ header: 'h' }] } })], NOW, false), />等 1h30m<\/span>/);
-});
-
 test('#/live counts its gate rows from gateAt too', () => {
     const t = Date.now();
     const html = V.nowHtml([{ root: 'F:\\ws\\alpha', gone: false }], [{ id: 'g1', root: 'F:\\ws\\alpha', project: null, state: 'live',

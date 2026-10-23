@@ -22,21 +22,6 @@ function page(sessions) {
 }
 const TODAY = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
 
-test('a claim named like an Object method does not break the clash card', () => {
-    const R = [{ id: 'a', state: 'live', claims: ['constructor', 'toString'], project: 'p', days: [] }, { id: 'b', state: 'live', claims: ['constructor'], project: 'p', days: [] }];
-    const html = page(R).dashClash(R);
-    assert.match(html, /constructor/);
-    assert.doesNotMatch(html, /toString/);
-});
-
-test('the clash card lists a file two live sessions claim', () => {
-    const R = [{ id: 'a', state: 'live', claims: ['x.js', 'y.js'], project: 'p', days: [] }, { id: 'b', state: 'live', claims: ['x.js'], project: 'p', days: [] }, { id: 'c', state: 'down', claims: ['y.js'], days: [] }];
-    const html = page(R).dashClash(R);
-    assert.match(html, /data-block="dash-clash"/);
-    assert.match(html, /x\.js/);
-    assert.doesNotMatch(html, /y\.js/);
-});
-
 test('依專案花費 sums each project\'s spend, most first', () => {
     const t = TODAY();
     const R = [{ id: 'a', pkey: 'F:\\w\\alpha', days: [{ day: t, usd: 3 }] }, { id: 'b', pkey: 'F:\\w\\beta', days: [{ day: t, usd: 4 }, { day: t, usd: 5 }] }];
@@ -64,19 +49,4 @@ test('模型用量分布 splits the spend by model', () => {
     const html = page(R).dashModels(R);
     assert.match(html, /Opus 4\.1 <b>75%<\/b>/);
     assert.match(html, /Sonnet 4\.5 <b>25%<\/b>/);
-});
-
-test('gate 平均等待 averages the stages that waited', () => {
-    const now = Date.now();
-    const R = [{ id: 'a', stages: [{ stage: 'design', from: now - 6e5, to: now, waited: 6e5 }, { stage: 'plan', from: now - 6e5, to: now, waited: 18e5 }, { stage: 'build', from: now - 6e5, to: now, waited: 0 },
-        { stage: 'verify', from: now - 8 * 864e5, to: now - 8 * 864e5 + 1, waited: 36e6 }] }];
-    assert.match(page(R).dashGateWait(R), /<div class="dbig">20 分/);
-});
-
-test('最近 land lists done TODO entries and sessions at land, not one still building', () => {
-    const R = [{ id: 's1', state: 'down', stage: 'land', task: 'Land the thing', pkey: 'F:\\w\\a', updated: Date.now() }, { id: 's2', state: 'live', stage: 'build', task: 'Still going', pkey: 'F:\\w\\a', updated: Date.now() }];
-    const S = { projects: [{ todos: [{ pkey: 'F:\\w\\a', open: [], done: [{ label: 'x', title: 'Shipped entry', at: '2026-10-01', sha: 'abcdef1234' }] }] }], sessions: R };
-    const html = page(R).dashLanded(R, S);
-    assert.ok(html.indexOf('Land the thing') >= 0 && html.indexOf('Land the thing') < html.indexOf('Shipped entry'), 'newest first');
-    assert.doesNotMatch(html, /Still going/);
 });

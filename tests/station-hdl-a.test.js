@@ -1,8 +1,8 @@
 'use strict';
-// Four click handlers of station.js, one effect per test, so that two
+// Click handlers of station.js, one effect per test, so that two
 // single-branch mutations of the same handler never redden the same set of
-// tests: the TODO panel's 展開全部 / 收起 ([data-tdmore]), the left bar's
-// fold and theme buttons, the 繁中 / EN switch ([data-lang]) and 概覽's stage
+// tests: the left bar's fold and theme buttons, the 繁中 / EN switch
+// ([data-lang]) and 概覽's stage
 // mark ([data-hist], click and Enter / Space). Each handler's listener is
 // picked by the selector literal in its own source, so a test reaches that
 // handler alone.
@@ -17,11 +17,6 @@ const { SRC } = require('./station-src.js');
 const NOW = Date.parse('2026-10-01T12:00:00.000Z');
 const PK = 'F:\\ws';
 
-const MANY = Array.from({ length: 12 }, (_, i) => ({
-    id: 'd-' + i, label: 'd', title: 'Done ' + i, at: '2026-09-' + String(28 - i).padStart(2, '0'),
-    sha: 'abcdef' + String(i).padStart(4, '0'), disposition: 'done', session: '',
-}));
-const TODO = { pkey: PK, mode: 'folder', folder: 'docs/todo', open: [], done: MANY };
 const session = (id) => ({ id, pkey: PK, root: PK, task: 't-' + id, state: 'live', route: ['survey', 'build', 'verify'], stage: 'build',
     stages: [], backtracks: 0, updated: NOW - 1000, started: new Date(NOW - 120000).toISOString(),
     days: [{ stage: 'build', who: 'main', usd: 1 }, { stage: 'verify', who: 'main', usd: 2 }, { stage: 'survey', who: 'main', usd: 0.5 }] });
@@ -44,7 +39,7 @@ function boot(o) {
         setInterval: () => 1, setTimeout: () => 1, clearTimeout() {}, navigator: { language: 'zh-TW' },
         localStorage: { getItem: (k) => (k in kept ? kept[k] : null), setItem: (k, v) => { kept[k] = String(v); }, removeItem: (k) => { delete kept[k]; } },
         STATION: { generatedAt: new Date(NOW).toISOString(), configDir: 'C:\\cfg', pricesVerified: '2026-09-24', serve: Boolean(o.serve), nonce: o.nonce,
-            projects: [{ root: PK, gone: false, unreadable: 0, build: [], mapAt: null, docs: [], todos: [TODO] }],
+            projects: [{ root: PK, gone: false, unreadable: 0, build: [], mapAt: null, docs: [] }],
             profiles: { machine: { values: {}, sources: {}, unreadable: [] }, projects: {} }, profileKeys: {}, classes: {},
             sessions: o.sessions || [] } };
     p.win = win;
@@ -67,28 +62,6 @@ function pick(p, type, needle) {
 }
 const fire = (fn, target, extra) => { const ev = Object.assign({ target, prevented: 0, preventDefault() { this.prevented++; } }, extra); fn(ev); return ev; };
 const tgt = (map) => ({ closest: (sel) => (sel in map ? map[sel] : null), getAttribute: () => null, hasAttribute: () => false });
-
-// ---- [data-tdmore] -------------------------------------------------------
-const TD = "'[data-tdmore]'";
-const tdBoot = () => boot({ hash: '#/p/' + encodeURIComponent(PK), sessions: [session('k1')] });
-const tdPress = (p, v) => fire(pick(p, 'click', TD), tgt({ '[data-tdmore]': { getAttribute: () => v } }));
-
-test('tdmore: a click off the button draws nothing and does not throw', () => {
-    const p = tdBoot();
-    p.els.page.innerHTML = 'SENTINEL';
-    assert.doesNotThrow(() => fire(pick(p, 'click', TD), tgt({})));
-    assert.equal(p.els.page.innerHTML, 'SENTINEL');
-});
-
-test('tdmore: a click with no target at all does not throw', () => {
-    const p = tdBoot();
-    assert.doesNotThrow(() => pick(p, 'click', TD)({}));
-});
-
-test('tdmore: a click whose target has no closest does not throw', () => {
-    const p = tdBoot();
-    assert.doesNotThrow(() => pick(p, 'click', TD)({ target: {} }));
-});
 
 // ---- theme -------------------------------------------------
 const NAV = "'[data-themecycle]'";

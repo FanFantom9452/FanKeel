@@ -2675,120 +2675,6 @@
     }
 
     // ---- the project page, again: its TODO panel (`todoPanelHtml`) ---------
-    // The approved mockup's three blocks — todo-head, todo-open, todo-done
-    // (.fankeel/build/2026-09-29-todo-files/mockup.html). `t` is one `todos` row
-    // off the data file; `sessions` is `S.sessions`, which says whether this
-    // machine has a done entry's session to link.
-    var TODO_STATES = [['ready', 'Ready'], ['decision', 'Needs a decision'], ['blocked', 'Blocked'], ['watch', 'Watch']];
-    function todoGloss(state) {
-        if (state === 'ready') return loc('proj.todoReadyGloss', '只等人動手');
-        if (state === 'decision') return loc('proj.todoDecisionGloss', '等人決定要怎麼改');
-        if (state === 'blocked') return loc('proj.todoBlockedGloss', '等一個 session 查得到的條件');
-        return loc('proj.todoWatchGloss', '等一件只有碰上的人才知道的事');
-    }
-    function todoChip(label) {
-        return label ? '<span class="chip td-lb">' + esc(label) + '</span>'
-            : '<span class="td-lb td-nolb" aria-label="' + loc('proj.todoNoLabel', '沒有 label') + '"></span>';
-    }
-    function todoPanelHtml(t, sessions, doneOpen, bodyOpen) {
-        if (t && t.mode === 'error') {
-            return '<section class="panel td" id="todo">'
-                + '<div class="h2" data-block="todo-head">TODO</div>'
-                + '<p class="note">' + loc('proj.todoReadError', '無法讀取 TODO：{msg}', { msg: esc(t.error) }) + '</p>'
-                + '</section>';
-        }
-        if (!t || (!t.open.length && !t.done.length)) return '';
-        var known = {};
-        (sessions || []).forEach(function (s) { known[s.id] = true; });
-        var md = function (s) { return esc(s).replace(/`([^`]+)`/g, '<code>$1</code>'); };
-        // A row with a body opens under itself on click or Enter; which are
-        // open is the project page's `view.tdBody`, so a 3 s redraw keeps it.
-        var opened = bodyOpen || {};
-        // An open row carries `id="todo-<id>"`, what `#/p/<pkey>/todo/<id>` scrolls to.
-        var rowOpen = function (e, cls, anchor) {
-            var has = !!(e.body && e.id), on = has && !!opened[e.id];
-            var at = anchor && e.id ? ' id="todo-' + esc(e.id) + '"' : '';
-            return { on: on, head: '<li class="' + cls + (has ? ' td-has" data-tdbody="' + esc(e.id) + '" role="button" tabindex="0" aria-expanded="' + String(on) + '"' : '"') + at + '>' };
-        };
-        var bodyRow = function (e, r) {
-            return r.on ? '<li class="td-body" data-block="todo-body">' + md(e.body) + '</li>' : '';
-        };
-        var open = TODO_STATES.map(function (st) {
-            var list = t.open.filter(function (e) { return e.state === st[0]; });
-            if (!list.length) return '';
-            var timed = st[0] === 'blocked' || st[0] === 'watch', prev = null;
-            return '<div class="rgh td-grp" id="todo-state:' + st[0] + '" data-st="' + st[0] + '"><b class="mono">' + st[1] + '</b><span class="mute">'
-                + loc('proj.todoNRows', '{n} 筆 · {g}', { n: list.length, g: todoGloss(st[0]) }) + '</span></div>'
-                + '<ul class="td-rows' + (timed ? ' timed' : '') + '">' + list.map(function (e) {
-                    var rep = timed && e.condition === prev;
-                    prev = timed ? e.condition : null;
-                    var r = rowOpen(e, 'td-row', true);
-                    return r.head + todoChip(e.label) + '<span class="td-t">' + esc(e.title) + '</span>'
-                        + '<span class="td-d" title="' + esc(e.description) + '">' + md(e.description) + '</span>'
-                        + (timed ? '<span class="td-tm' + (rep ? ' rep' : '') + '" title="' + esc(e.condition || '') + '">' + esc(e.condition || '') + '</span>'
-                            + '<span class="td-st" title="stamp ' + esc(e.stamp || '') + '">' + esc(String(e.stamp || '').slice(5)) + '</span>' : '')
-                        + '</li>' + bodyRow(e, r);
-                }).join('') + '</ul>';
-        }).join('');
-        // The done list keeps its newest three until 展開全部 is pressed
-        // (station-9; three since the 2026-10-01 layout, ten still scrolled
-        // too long); `doneOpen` is the project page's `view.tdOpen`. Above the
-        // list one strip sums all of it — how many, the newest three days and
-        // the rest, each disposition — and holds the button, so 收起 sits at
-        // the top of an open list. Open, the keel look draws the list as the
-        // verify frame's evidence table (the k-only column heads) and the fold
-        // as the plan frame's cut.
-        var NEWEST = 3, all = t.done.length, shut = all > NEWEST && !doneOpen;
-        var doneRow = function (e, fold) {
-            var r = rowOpen(e, 'td-row' + (fold ? ' td-fold' : ''));
-            return r.head + todoChip(e.label) + '<span class="td-t">' + esc(e.title) + '</span>'
-                + '<span class="td-at mono">' + esc(e.at) + '</span><span class="td-dp mono" data-dp="' + esc(e.disposition) + '">' + esc(e.disposition) + '</span>'
-                + (e.session && known[e.session]
-                    ? '<a class="td-rf mono" href="' + sessionHash(e.session) + '" title="' + loc('proj.todoOpenSession', '開啟 session {id}', { id: esc(e.session) }) + '">session ' + esc(e.session.slice(0, 8)) + '</a>'
-                    : '<span class="td-rf mono muted" title="' + loc('proj.todoNoSessionHere', '這台機器沒有這個 session；commit {sha}', { sha: esc(e.sha) }) + '">sha ' + esc(String(e.sha).slice(0, 7)) + '</span>')
-                + '</li>' + bodyRow(e, r);
-        };
-        var doneHead = '<li class="td-row td-hd k-only" aria-hidden="true"><span class="td-lb">' + loc('proj.todoColLabel', '標籤') + '</span>'
-            + '<span class="td-t">' + loc('proj.todoColEntry', '條目') + '</span><span class="td-at">' + loc('proj.todoColAt', '完成於') + '</span>'
-            + '<span class="td-dp">' + loc('proj.todoColDisposition', '處置') + '</span><span class="td-rf">' + loc('proj.todoColRef', '出處') + '</span></li>';
-        var byDay = {}, byDp = {};
-        t.done.forEach(function (e) {
-            byDay[e.at] = (byDay[e.at] || 0) + 1;
-            byDp[e.disposition] = (byDp[e.disposition] || 0) + 1;
-        });
-        var days = Object.keys(byDay).sort().reverse();
-        var older = days.slice(3).reduce(function (n, d) { return n + byDay[d]; }, 0);
-        var sum = '<div class="td-sum"><b class="td-sum-h">' + loc('proj.todoDone', '已完成') + '</b>'
-            + '<span class="td-sum-n">' + loc('proj.todoSumN', '<b>{n}</b> 筆，最新在上', { n: all }) + '</span>'
-            + '<span class="td-days" role="img" aria-label="' + esc(loc('proj.todoDays', '完成日期：{list}', { list: days.map(function (d) {
-                return loc('proj.todoDayN', '{d} {n} 筆', { d: d, n: byDay[d] });
-            }).join(loc('proj.todoListSep', '、')) })) + '">'
-            + days.slice(0, 3).map(function (d) {
-                return '<span class="td-day"><i style="--n:' + byDay[d] + '"></i>' + esc(d.slice(5)) + ' <b>' + byDay[d] + '</b></span>';
-            }).join('')
-            + (older ? '<span class="td-day">' + loc('proj.todoEarlier', '更早') + ' <b>' + older + '</b></span>' : '') + '</span>'
-            + '<span class="td-dps">' + Object.keys(byDp).sort(function (a, b) { return byDp[b] - byDp[a]; }).map(function (k) {
-                return '<span class="td-dp mono" data-dp="' + esc(k) + '">' + esc(k) + ' <b>' + byDp[k] + '</b></span>';
-            }).join('') + '</span>'
-            + (all <= NEWEST ? '' : '<button type="button" class="btn td-mb" data-tdmore="' + (shut ? '1' : '0') + '" aria-expanded="' + String(!shut) + '" aria-controls="donel">' + icon('chev')
-                + (shut ? loc('proj.todoShowAll', '展開全部（{n}）', { n: all }) : loc('proj.todoFoldBack', '收起，只留最新 {n} 筆', { n: NEWEST })) + '</button>')
-            + '</div>';
-        var note = loc('proj.todoSessionNote', 'session 只在跑過它的那台機器上找得到；找不到時列出關掉它的 commit。');
-        var done = !all ? '' : sum
-            + '<ul class="td-rows donel" id="donel">' + (shut ? '' : doneHead) + (shut ? t.done.slice(0, NEWEST) : t.done).map(function (e, i) {
-                return (i === NEWEST ? '<li class="td-cut k-only" aria-hidden="true"><span>' + loc('proj.todoCut', '第 {n} 筆起，展開後才出現', { n: NEWEST + 1 }) + '</span></li>' : '')
-                    + doneRow(e, i === NEWEST);
-            }).join('') + '</ul>'
-            + (shut ? '<p class="td-rest">' + loc('proj.todoNMore', '還有 {n} 筆，{from} 到 {to}', { n: all - NEWEST, from: esc(t.done[NEWEST].at), to: esc(t.done[all - 1].at) }) + ' · ' + note + '</p>'
-                : '<p class="note">' + note + '</p>');
-        return '<section class="panel td" id="todo">'
-            + '<div class="h2" data-block="todo-head">TODO <small><span class="num">' + loc('proj.todoOpenN', '未完成 {n}', { n: t.open.length }) + '</span>'
-            + (t.mode === 'folder' ? ' · <span class="num">' + loc('proj.todoDoneN', '已完成 {n}', { n: t.done.length }) + '</span>' : '') + '</small>'
-            + '<span class="td-src mono muted">' + esc(t.mode === 'folder' ? t.folder + '/' : 'TODO.md') + '</span></div>'
-            + '<div data-block="todo-open">' + open + '</div>'
-            + (done ? '<div class="td-done' + (all > NEWEST && !shut ? ' is-open' : '') + '" data-block="todo-done">' + done + '</div>' : '')
-            + '</section>';
-    }
     // The project card's line to its architecture board. Only a served page
     // has the `/chartroom/` route (a file:// copy has none), only a registry
     // with `.fankeel/architecture.board` has a board (`board`, lib/station.js),
@@ -3130,7 +3016,6 @@
             + '<span class="spacer"></span>'
             + '<a class="dmore" href="' + href + '">' + loc('dash.seeAll', '查看全部 →') + '</a></div>';
     }
-    function dashRowName(s) { return esc(shortLabel(NAMES[s.pkey] || s.pkey)); }
     // The promo film's v5 glyph (assets/station/tour-ring.js promo30v5 `glyph`,
     // its small branch; ported from .fankeel/build/2026-10-01-station-redesign/
     // gen.js) as an SVG string: six segments survey..audit, the edge land, the
@@ -3176,164 +3061,7 @@
     function focusHref(id, stage, serve) {
         return serve ? '/f/' + encodeURIComponent(id) + '/' + encodeURIComponent(stage || 'timeline') : sessionHash(id);
     }
-    function waitsOnYou(s) { return Boolean(s.pending && s.pending.questions && s.pending.questions.length); }
-    // home-live: every live session, the ones waiting on you first, each a link
-    // to its focus page on the stage it is at. A wait runs from `gateAt`, else
-    // the pending file's `at`, else the last write, as the gate tab counts it.
-    function homeLiveRow(s, now, serve) {
-        var w = waitsOnYou(s), stage = esc(s.stage || '—'), name = shortLabel(NAMES[s.pkey] || s.pkey);
-        var since = w ? msOf(s.gateAt || s.pending.at || s.updated) : msOf(s.started), m = mins(now - since);
-        return '<a class="hm-lv' + (w ? ' wait' : '') + '" href="' + esc(focusHref(s.id, s.stage, serve)) + '"'
-            + (w ? ' aria-label="' + esc(loc('dash.waitAria', '等你回答：{p} {t}，停在 {stage} gate {m}', { p: name, t: s.task || '', stage: s.stage || '', m: m })) + '"' : '') + '>'
-            + '<span class="hm-lv-p">' + esc(name) + (w ? '<span class="waitchip">' + icon('gate') + loc('dash.waitChip', '等你回答 · {stage} gate', { stage: stage }) + '</span>' : '') + '</span>'
-            + '<span class="hm-lv-t">' + esc(s.task || loc('dash.unnamed', '（未命名）')) + '</span>'
-            + '<span class="hm-lv-st">' + routeDots(s, true) + '<span class="hm-stw" style="--c:var(--st-' + stage + ')">' + stage + '</span></span>'
-            + '<span class="hm-lv-r"' + (w ? ' title="' + esc(loc('dash.waitTitle', '在 gate 等了 {m}', { m: m })) + '"' : '') + '>'
-            + (w ? loc('dash.waitFor', '等 {m}', { m: m }) : m) + '</span></a>';
-    }
-    function homeLive(R, now, serve) {
-        var live = R.filter(function (s) { return s.state === 'live'; }).sort(function (a, b) {
-            return (waitsOnYou(b) ? 1 : 0) - (waitsOnYou(a) ? 1 : 0) || (b.updated || 0) - (a.updated || 0);
-        });
-        var n = live.filter(waitsOnYou).length, title = loc('dash.inProgress', '進行中');
-        return '<section class="dcard" data-block="home-live" aria-label="' + esc(title) + '"><div class="dcard-h">' + icon('now') + '<b>' + title + '</b>'
-            + '<span class="kn">' + live.length + '</span>' + (n ? '<span class="kn wait">' + loc('dash.waitingN', '{n} 等你回答', { n: n }) + '</span>' : '') + '</div>'
-            + (live.length ? '<div class="dlist">' + live.map(function (s) { return homeLiveRow(s, now, serve); }).join('') + '</div>'
-                : '<p class="dnone">' + loc('dash.noneInProgress', '沒有進行中的 session') + '</p>') + '</section>';
-    }
-    // home-running: the subagents every live session has running, then its
-    // background shells (`shells`, lib/shells.js) — running ones first. A row
-    // with no `shells` yet reads as none, so the group is there, empty.
-    function homeRunning(R, now, serve) {
-        var subs = [], shells = [], RUN = loc('dash.running', '在跑'), title = loc('dash.homeRunning', '正在跑');
-        R.filter(function (s) { return s.state === 'live'; }).forEach(function (s) {
-            (s.subagents || []).forEach(function (a) { subs.push({ s: s, a: a }); });
-            (s.shells || []).forEach(function (x) { shells.push({ s: s, x: x }); });
-        });
-        shells.sort(function (a, b) { return (b.x.state === 'running' ? 1 : 0) - (a.x.state === 'running' ? 1 : 0); });
-        var run = shells.filter(function (r) { return r.x.state === 'running'; }).length;
-        var head = function (t, note) { return '<div class="hm-rn-h"><b>' + t + '</b><span>' + note + '</span></div>'; };
-        var go = function (s) { return esc(focusHref(s.id, s.stage, serve)); };
-        var subRow = function (r) {
-            var fam = saFamily(r.a, r.s), type = r.a.agentType || 'agent';
-            return '<a class="hm-rn" href="' + go(r.s) + '"><span class="hm-rs run" title="' + RUN + '" aria-label="' + RUN + '">○</span>'
-                + '<span class="hm-rn-t">' + esc(saShort(r.a.description) || type) + '<code>' + esc(type) + '</code></span><span class="hm-rn-p">' + dashRowName(r.s) + '</span>'
-                + '<span class="chip"><i class="sw" style="background:var(--m-' + fam + ')"></i>'
-                + (r.a.ranModel && modelKey(r.a.ranModel) !== 'other' ? esc(modelLabel(modelKey(r.a.ranModel))) : fam) + '</span>'
-                + '<span class="hm-rn-r">' + mins(now - r.a.startedAt) + '</span></a>';
-        };
-        var shellRow = function (r) {
-            var x = r.x, on = x.state === 'running', code = x.code === null || x.code === undefined ? '?' : x.code, bad = !on && x.code !== 0;
-            return '<a class="hm-rn' + (on ? '' : ' end') + '" href="' + go(r.s) + '" title="' + esc(x.command) + '">'
-                + '<span class="hm-rs ' + (on ? 'run' : bad ? 'bad' : 'done') + '" title="' + esc(on ? RUN : loc('dash.endedCode', '結束，exit {c}', { c: code }))
-                + '" aria-label="' + esc(on ? RUN : loc('dash.ended', '結束')) + '">' + (on ? '○' : '●') + '</span>'
-                + '<code class="hm-rn-cmd">' + esc(x.command) + '</code><span class="hm-rn-p">' + dashRowName(r.s) + '</span>'
-                + '<span class="chip' + (on ? '' : bad ? ' bad' : ' ok') + '">' + (on ? RUN : 'exit ' + code) + '</span>'
-                + '<span class="hm-rn-r">' + mins(now - msOf(x.startedAt)) + '</span></a>';
-        };
-        return '<section class="dcard" data-block="home-running" aria-label="' + esc(title) + '"><div class="dcard-h">' + icon('bot') + '<b>' + title + '</b>'
-            + '<span class="kn">' + (subs.length + run) + '</span></div>'
-            + head(loc('dash.subagents', '子代理'), loc('dash.nRunning', '{n} 個在跑', { n: subs.length }))
-            + (subs.length ? subs.map(subRow).join('') : '<p class="dnone">' + loc('dash.noSubagents', '沒有子代理在跑') + '</p>')
-            + head(loc('dash.shells', '背景 shell'), loc('dash.nRunEnded', '{n} 在跑 · {e} 結束', { n: run, e: shells.length - run }))
-            + (shells.length ? shells.map(shellRow).join('') : '<p class="dnone">' + loc('dash.noShells', '沒有背景 shell') + '</p>') + '</section>';
-    }
-    // home-todo: the Ready count off every project's `todos`, the rows the
-    // project page's TODO panel reads, one chip per project (the quick look
-    // opens from it, `data-tdlg`); then the Blocked entries lib/todo.js `dueOf`
-    // calls due — `on:` from its date, otherwise seven days after the stamp,
-    // the rule todo-check reads (station redesign §6) — soonest first, each
-    // with the day it fell due.
-    function homeTodo(projects) {
-        var by = {}, order = [], due = [];
-        var plain = function (s) { return String(s == null ? '' : s).split('**').join(''); };
-        (projects || []).forEach(function (p) {
-            (p.todos || []).forEach(function (t) {
-                (t && t.open || []).forEach(function (x) {
-                    if (x.state === 'ready') { if (!by[t.pkey]) { by[t.pkey] = 0; order.push(t.pkey); } by[t.pkey]++; }
-                    if (x.state === 'blocked' && x.due === true) due.push({ x: x, pkey: t.pkey });
-                });
-            });
-        });
-        order.sort(function (a, b) { return by[b] - by[a]; });
-        due.sort(function (a, b) { return (a.x.dueAt || 0) - (b.x.dueAt || 0); });
-        var total = order.reduce(function (n, k) { return n + by[k]; }, 0);
-        return '<section class="dcard" data-block="home-todo" aria-label="TODO"><div class="dcard-h">' + icon('check') + '<b>TODO</b></div>'
-            + '<div class="hm-td-big"><b>' + total + '</b><span>' + loc('dash.nReadyInP', '筆 Ready，分在 {p} 個專案', { p: order.length }) + '</span></div>'
-            + (order.length ? '<div class="hm-td-pr">' + order.map(function (k) {
-                return '<a href="' + projectHash(k) + '" data-tdlg="' + esc(k) + '" aria-haspopup="dialog">' + esc(shortLabel(k)) + ' <b>' + by[k] + '</b></a>';
-            }).join('') + '</div>' : '<p class="dnone">' + loc('dash.noReady', '沒有 Ready 的條目') + '</p>')
-            + (due.length ? '<div class="hm-td-h"><b>' + loc('dash.blockedDue', 'Blocked 到期') + '</b><span>' + loc('dash.blockedDueN', '重看日已到，{n} 筆', { n: due.length }) + '</span></div>'
-                + due.map(function (r) {
-                    return '<a class="hm-tdb" href="' + projectHash(r.pkey) + '/todo/' + encodeURIComponent(r.x.id || '') + '"><span class="hm-tdb-t">' + esc(plain(r.x.title)) + '</span>'
-                        + '<span class="hm-tdb-m">' + esc(shortLabel(r.pkey)) + ' · blocked' + (r.x.condition ? ' · ' + esc(plain(r.x.condition)) : '') + '</span>'
-                        + '<span class="hm-tdb-d">' + loc('dash.dueOn', '到期 {d}', { d: esc(r.x.dueAt ? localDay(r.x.dueAt).slice(5) : '') }) + '</span></a>';
-                }).join('') : '') + '</section>';
-    }
-    // home-spend: one line, today and the calendar week from Monday, the whole line a link to 花費.
-    function homeSpend(R, nowMs) {
-        var t = windowTotals(R, [localDay(nowMs)]), wk = windowTotals(R, lastDays(nowMs, (new Date(nowMs).getDay() + 6) % 7 + 1));
-        var fig = function (x) { return x.usd ? usd(x.usd, true) + estMark(x) : '$0'; };
-        return '<a class="dcard spendline" data-block="home-spend" href="#/days" aria-label="' + esc(loc('dash.spendAria', '花費：今天 {t}，本週 {w}，前往花費', { t: fig(t), w: fig(wk) })) + '">'
-            + icon('spend') + '<span class="sl-k">' + loc('dash.today', '今天') + '<b>' + fig(t) + '</b></span>'
-            + '<span class="sl-k">' + loc('dash.thisWeek', '本週') + '<b>' + fig(wk) + '</b></span><span class="sl-go">' + loc('dash.toSpend', '花費 →') + '</span></a>';
-    }
-    if (typeof module !== 'undefined' && module.exports) {
-        module.exports.focusHref = focusHref; module.exports.homeLive = homeLive; module.exports.homeRunning = homeRunning;
-        module.exports.homeTodo = homeTodo; module.exports.homeSpend = homeSpend;
-    }
-    // A wait in the card's own words: `12 分`, `1 時 5 分`, `2 時`.
-    function waitFor(ms) {
-        if (!isFinite(ms)) return '—';
-        var m = Math.max(0, Math.floor(ms / 60000));
-        if (m < 60) return loc('dash.mMins', '{m} 分', { m: m });
-        return loc('dash.hHours', '{h} 時', { h: Math.floor(m / 60) }) + (m % 60 ? ' ' + loc('dash.mMins', '{m} 分', { m: m % 60 }) : '');
-    }
-    function dashRecent(R) {
-        var list = recentRows(R, DAYS).slice(0, 5);
-        return '<section class="dcard" data-block="dash-recent">' + dashHead('sessions', loc('dash.recentSessions', '最近 sessions'), '#/sessions')
-            + (list.length ? '<div class="dlist">' + list.map(function (s) {
-                return '<a class="drow" href="' + sessionHash(s.id) + '"><span class="dp">' + dashRowName(s) + '</span>'
-                    + '<span class="dt">' + esc(s.task || loc('dash.unnamed', '（未命名）')) + '</span><span class="ds mono"' + (s.stage ? ' data-st="' + esc(s.stage) + '" style="--c:var(--st-' + esc(s.stage) + ')"' : '') + '>' + esc(s.stage || '—') + '</span>'
-                    + '<span class="dc mono">' + usd(sessionTotals(s).usd) + estMark(sessionTotals(s)) + '</span><span class="dr">' + ago(s.updated) + '</span></a>';
-            }).join('') + '</div>' : '<p class="dnone">' + loc('dash.noneLast30d', '近 30 天沒有 session') + '</p>') + '</section>';
-    }
-    // dash-todo's quick look (todo-dialog): one project's TODO in four tabs by
-    // state, and a fifth for `decision` when there is one. `todos` is that
-    // project's `todos[]`; `href` is where the row pointed, kept as the way on
-    // to the full page. A stateless entry has no tab.
-    function dashTodoDialog(todos, href) {
-        var DONE_SHOWN = 8, lists = (todos || []).filter(Boolean);
-        var open = [], done = [];
-        lists.forEach(function (t) { open = open.concat(t.open || []); done = done.concat(t.done || []); });
-        var plain = function (s) { return String(s == null ? '' : s).split('**').join(''); };
-        var by = function (st) { return open.filter(function (x) { return x.state === st; }); };
-        var row = function (x, third) {
-            return '<li><span class="tlb">' + esc(plain(x.label)) + '</span><span class="tt" title="' + esc(plain(x.title)) + '">' + esc(plain(x.title)) + '</span><span class="tid">' + esc(third) + '</span></li>';
-        };
-        // `decision` gets a tab only when there is one: the row that opened this counts it, so the quick look must show it.
-        var tabs = [['ready', 'Ready', by('ready')], ['blocked', 'Blocked', by('blocked')], ['watch', 'Watch', by('watch')], ['decision', 'Decision', by('decision')], ['done', 'Done', done]]
-            .filter(function (g) { return g[0] !== 'decision' || g[2].length; });
-        var folder = lists.length && lists[0].folder ? lists[0].folder : '';
-        var name = lists.length ? shortLabel(lists[0].pkey) : '';
-        return '<dialog class="tdlg" data-block="todo-dialog" aria-labelledby="tdlg-h"' + (folder ? ' aria-describedby="tdlg-src"' : '') + '><div class="tdlg-in">'
-            + '<div class="tdlg-hd"><b id="tdlg-h">' + esc(name) + '</b><span class="tdlg-sub">' + loc('dash.todoGlance', 'TODO 速覽') + '</span>'
-            + '<button type="button" class="tdlg-x" data-tdlg-close="" aria-label="' + esc(loc('dash.close', '關閉')) + '" title="' + esc(loc('dash.close', '關閉')) + '">'
-            + '<svg class="ico" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>'
-            + '<div class="tdlg-tabs" role="tablist" aria-label="' + esc(loc('dash.todoByState', '依狀態看條目')) + '">' + tabs.map(function (g, i) {
-                return '<button type="button" role="tab" id="tdt-' + g[0] + '" data-st="' + g[0] + '" aria-controls="tdp-' + g[0] + '" aria-selected="' + (i === 0) + '"' + (i ? ' tabindex="-1"' : '') + '>' + g[1] + ' <b>' + g[2].length + '</b></button>';
-            }).join('') + '</div>'
-            + tabs.map(function (g, i) {
-                var isDone = g[0] === 'done', list = isDone ? g[2].slice(0, DONE_SHOWN) : g[2], rest = g[2].length - list.length;
-                return '<div class="tdlg-p" id="tdp-' + g[0] + '" data-st="' + g[0] + '" role="tabpanel" aria-labelledby="tdt-' + g[0] + '" tabindex="0"' + (i ? ' hidden' : '') + '><ul class="tdl">'
-                    + (list.length ? list.map(function (x) { return row(x, isDone ? x.at : x.id); }).join('') : '<li class="tnone">' + loc('dash.noEntriesHere', '這個狀態沒有條目。') + '</li>')
-                    + (rest > 0 ? '<li class="tmo">' + loc('dash.nMoreTodo', '還有 {n} 筆', { n: rest }) + '</li>' : '') + '</ul></div>';
-            }).join('')
-            + '<div class="tdlg-ft">' + (folder ? '<span class="tdlg-src" id="tdlg-src">' + loc('dash.todoFrom', '取自 {f}', { f: esc(folder) }) + '</span>' : '')
-            + '<a class="btn go tdlg-go" href="' + esc(href) + '">' + loc('dash.openTodoPage', '開啟完整 TODO 頁 →') + '</a></div></div></dialog>';
-    }
-    if (typeof module !== 'undefined' && module.exports) module.exports.dashTodoDialog = dashTodoDialog;
-    var tdOpener = null;
+    if (typeof module !== 'undefined' && module.exports) module.exports.focusHref = focusHref;
     function tdShow(dlg, st, focus) {
         [].forEach.call(dlg.querySelectorAll('[role=tab]'), function (b) {
             var on = b.getAttribute('data-st') === st;
@@ -3343,41 +3071,14 @@
         });
         [].forEach.call(dlg.querySelectorAll('[role=tabpanel]'), function (p) { p.hidden = p.getAttribute('data-st') !== st; });
     }
-    // Closing hands focus back to the row that opened it; a repaint may have
-    // replaced that row, so it is found again by its project.
-    function tdBack(pkey) {
-        var o = tdOpener;
-        tdOpener = null;
-        if (!o) return;
-        if (!o.isConnected) o = [].filter.call(doc.querySelectorAll('[data-tdlg]'), function (r) { return r.getAttribute('data-tdlg') === pkey; })[0];
-        if (o) o.focus();
-    }
     doc.addEventListener('click', function (e) {
         var t = e.target;
         if (!t || !t.closest) return;
         var dlg = t.closest('.tdlg');
-        if (dlg) {
-            var tab = t.closest('[role=tab]');
-            if (tab) tdShow(dlg, tab.getAttribute('data-st'), true);
-            else if (t.closest('[data-tdlg-close]') || t === dlg) dlg.close();
-            else if (t.closest('.tdlg-go')) { tdOpener = null; dlg.close(); }
-            return;
-        }
-        var rowEl = t.closest('[data-tdlg]');
-        if (!rowEl || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey) return;
-        var pkey = rowEl.getAttribute('data-tdlg');
-        var todos = [];
-        (S.projects || []).forEach(function (p) { (p.todos || []).forEach(function (x) { if (x && x.pkey === pkey) todos.push(x); }); });
-        if (!todos.length) return;
-        e.preventDefault();
-        var holder = doc.createElement('div');
-        holder.innerHTML = dashTodoDialog(todos, rowEl.getAttribute('href'));
-        var d = holder.firstChild;
-        doc.body.appendChild(d);
-        tdOpener = rowEl;
-        d.addEventListener('close', function () { if (d.parentNode) d.parentNode.removeChild(d); tdBack(pkey); });
-        d.showModal();
-        tdShow(d, 'ready', true);
+        if (!dlg) return;
+        var tab = t.closest('[role=tab]');
+        if (tab) tdShow(dlg, tab.getAttribute('data-st'), true);
+        else if (t.closest('[data-tdlg-close]') || t === dlg) dlg.close();
     });
     doc.addEventListener('keydown', function (e) {
         var b = e.target && e.target.closest ? e.target.closest('.tdlg [role=tab]') : null;
@@ -3392,32 +3093,7 @@
     // off by default and read off fields `window.STATION` already carries.
     // A list card's rows are `[k, t, v]`, already escaped.
     var DASH_SHOWN = 6;
-    function dashXList(rows, none) {
-        if (!rows.length) return '<p class="dnone">' + none + '</p>';
-        var more = rows.length - DASH_SHOWN;
-        return '<ul class="xc-list">' + rows.slice(0, DASH_SHOWN).map(function (r) {
-            return '<li><span class="k">' + r[0] + '</span><span class="t" title="' + r[1] + '">' + r[1] + '</span><span class="v">' + r[2] + '</span></li>';
-        }).join('') + '</ul>' + (more > 0 ? '<p class="xc-note">' + loc('dash.nMoreTodo', '還有 {n} 筆', { n: more }) + '</p>' : '');
-    }
     function dashTodoName(pkey) { return esc(shortLabel(NAMES[pkey] || pkey)); }
-    // A file two or more live sessions claim at once.
-    function dashClash(R) {
-        // No prototype: a claimed file may be named `constructor` or `toString`.
-        var by = Object.create(null);
-        R.filter(function (s) { return s.state === 'live'; }).forEach(function (s) {
-            (s.claims || []).forEach(function (f) {
-                var list = by[f] || (by[f] = []);
-                if (list.indexOf(s) < 0) list.push(s);
-            });
-        });
-        var files = Object.keys(by).filter(function (f) { return by[f].length > 1; })
-            .sort(function (a, b) { return by[b].length - by[a].length || (a < b ? -1 : 1); });
-        return '<section class="dcard" data-block="dash-clash">' + dashHead('files', loc('dash.cardClash', '撞檔與共用檔案'), '#/live', files.length, files.length ? 'warn' : '')
-            + dashXList(files.map(function (f) {
-                var names = by[f].map(dashRowName).filter(function (n, i, a) { return a.indexOf(n) === i; });
-                return [loc('dash.nSessionsShort', '{n} 個', { n: by[f].length }), esc(f), names.join(loc('dash.listSep', '、'))];
-            }), loc('dash.noClash', '沒有兩個 session 同時在改的檔案')) + '</section>';
-    }
     // Sums of `dayBars` parts across the window, one per key, largest first.
     function dashParts(bars) {
         var sum = {}, est = {};
@@ -3461,45 +3137,8 @@
                 return '<li style="--c:' + c(r) + '">' + esc(modelLabel(r.k)) + ' <b>' + pct(r) + '</b></li>';
             }).join('') + '</ul><p class="xc-note">' + loc('dash.modelsBySpend', '按近 30 天的花費算') + '</p>' : '<p class="dnone">' + loc('dash.noSpend30d', '近 30 天沒有花費') + '</p>') + '</section>';
     }
-    // A stage that waited on you is a gate; the average is over those started
-    // in the last seven days.
-    function dashGateWait(R) {
-        var now = S.serve ? Date.now() : NOW, from = now - 7 * 864e5, waits = [];
-        R.forEach(function (s) {
-            (s.stages || []).forEach(function (w) { if (w.waited > 0 && msOf(w.from) >= from) waits.push(w.waited); });
-        });
-        var avg = waits.length ? waits.reduce(function (a, b) { return a + b; }, 0) / waits.length : NaN;
-        return '<section class="dcard" data-block="dash-gatewait">' + dashHead('timer', loc('dash.cardGateWait', 'gate 平均等待時間'), '#/live')
-            + (waits.length ? '<div class="dbig">' + waitFor(avg) + '<small>' + loc('dash.gateWaitOf', '近 7 天 {n} 次 gate 的平均', { n: waits.length }) + '</small></div>'
-                + '<div class="dkv"><span>' + loc('dash.longest', '最久') + ' <b>' + waitFor(Math.max.apply(null, waits)) + '</b></span></div>'
-                : '<p class="dnone">' + loc('dash.noGateWait7d', '近 7 天沒有等你的 gate') + '</p>') + '</section>';
-    }
-    // Done TODO entries and sessions standing at land, newest first.
-    function dashLanded(R, St) {
-        var rows = [];
-        (St.projects || []).forEach(function (p) {
-            (p.todos || []).forEach(function (t) {
-                (t && t.done || []).forEach(function (e) {
-                    rows.push({ at: msOf(e.at), r: [esc(e.sha ? String(e.sha).slice(0, 7) : e.label || ''), esc(String(e.title || '').split('**').join('')), dashTodoName(t.pkey)] });
-                });
-            });
-        });
-        R.forEach(function (s) {
-            if (s.stage === 'land') rows.push({ at: msOf(s.updated), r: ['land', esc(s.task || loc('dash.unnamed', '（未命名）')), dashRowName(s)] });
-        });
-        rows.sort(function (a, b) { return (b.at || 0) - (a.at || 0); });
-        return '<section class="dcard" data-block="dash-landed">' + dashHead('commit', loc('dash.cardLanded', '最近 commits / land'), '#/sessions')
-            + dashXList(rows.map(function (x) { return x.r; }), loc('dash.noLanded', '還沒有 land 的紀錄')) + '</section>';
-    }
-    // 現在 (`#/`): four groups and nothing else (mockup 2026-10-21-station-home).
-    function dashPage() {
-        var R = homeRows(), now = S.serve ? Date.now() : NOW, serve = Boolean(S.serve);
-        return '<div class="dash kdash home" data-block="home"><div class="dcol" data-col="main">' + homeLive(R, now, serve) + homeRunning(R, now, serve)
-            + '</div><div class="dcol" data-col="side">' + homeTodo(S.projects) + homeSpend(R, now) + '</div></div>';
-    }
     if (typeof module !== 'undefined' && module.exports) {
-        module.exports.dashClash = dashClash; module.exports.dashByProj = dashByProj; module.exports.dashTokens7 = dashTokens7;
-        module.exports.dashModels = dashModels; module.exports.dashGateWait = dashGateWait; module.exports.dashLanded = dashLanded;
+        module.exports.dashByProj = dashByProj; module.exports.dashTokens7 = dashTokens7; module.exports.dashModels = dashModels;
     }
     // What daysPage last drew, so the hover card reads the same bars the chart
     // did. `chartOff` holds, per dim, the legend entries clicked out of the
@@ -3634,12 +3273,6 @@
             + (w.FK_KINDS ? w.FK_KINDS.table(S.prices, S.pricesVerified) : '');
     }
     if (typeof module !== 'undefined' && module.exports) module.exports.daysPage = daysPage;
-    function sessionsPage() {
-        return recentHtml(recentRows(homeRows(), DAYS), homeOpts(null), subtabsHtml('sessions'));
-    }
-    function projectsPage() {
-        return subtabsHtml('projects') + '<section class="panel" data-block="projects">' + projectsHtml(projectRows(homeRows(), DAYS), homeOpts(null)) + '</section>';
-    }
     view.dsx = { q: '', res: null };
     function docsPage() {
         var list = [].concat.apply([], S.projects.map(function (p) { return p.docs || []; }));
@@ -3648,82 +3281,6 @@
             : '<section class="panel docs"><div class="h2">' + loc('dash.docs', '文件') + '</div>' + dsx
                 + '<p class="mute">' + loc('dash.noProjectDocsYet', '還沒有專案生成 <span class="mono">.fankeel/map.md</span>') + '</p></section>') + '</div>';
     }
-    view.pMetric = 'usd';
-    view.compare = '';
-    // A session counts on this page when it started inside the thirty days or
-    // spent inside them.
-    function inWindow(s) {
-        return Date.parse(s.started) >= dayStart(DAYS[0]) || (s.days || []).some(function (x) { return DAYS.indexOf(x.day) >= 0; });
-    }
-    function projectPage(r) {
-        var all = S.sessions.filter(function (s) { return s.pkey === r.pkey; });
-        if (!all.length) return '<section class="panel"><p class="note">' + loc('dash.noProjectOnPage', '這頁上沒有專案 {p}', { p: esc(r.pkey) }) + '</p></section>';
-        var R = homeRows(), mine = R.filter(function (s) { return s.pkey === r.pkey; });
-        var head = projectHead(R, r.pkey, DAYS), t0 = dayStart(DAYS[0]), t1 = dayStart(TODAY) + 864e5;
-        if (view.compare === r.pkey) view.compare = '';
-        var series = [r.pkey].concat(view.compare ? [view.compare] : []).map(function (k) {
-            return { pkey: k, name: NAMES[k] || k, colour: colorOf('project', k, PKEYS),
-                points: sessionPoints(R.filter(function (s) { return s.pkey === k; }), view.pMetric, t0, t1) };
-        });
-        var others = PKEYS.filter(function (k) { return k !== r.pkey; });
-        var list = mine.filter(inWindow).sort(function (a, b) { return Date.parse(b.started) - Date.parse(a.started); });
-        var ro = function (l, v) { return '<div class="ro"><div class="l">' + l + '</div><div class="v">' + v + '</div></div>'; };
-        // The TODO panel sits right under the head (2026-10-01 layout), above
-        // the chart, the registry note and the session table.
-        var todo = todoPanelHtml((S.projects || []).reduce(function (hit, p) {
-            return hit || (p.todos || []).filter(function (x) { return x.pkey === r.pkey; })[0] || null;
-        }, null), S.sessions, !!view.tdOpen, view.tdBody);
-        return '<section class="panel"><div class="hero-top"><div><div class="eyebrow">' + loc('dash.project', '專案') + '</div>'
-            + '<h1 class="s-title"><i class="sw" style="background:' + colorOf('project', r.pkey, PKEYS) + '"></i> '
-            + esc(NAMES[r.pkey] || r.pkey) + '</h1><div class="mono muted">' + esc(r.pkey) + '</div></div>'
-            + '<div class="readouts">' + ro(loc('dash.last30dCost', '近 30 天花費'), usd(head.usd) + estMark(head)) + ro('token', tokens(head.tokens))
-            + ro(loc('dash.activeTime', 'active 時間'), hours(head.active)) + ro('session', head.n) + '</div></div></section>'
-            + todo + '<section class="panel">'
-            + '<div class="controls"><div class="ctlgrp"><label>' + loc('dash.yAxis', '縱軸') + '</label>'
-            + segHtml('pMetric', [['tokens', 'token'], ['usd', loc('dash.cost', '花費')]], view.pMetric) + '</div>'
-            + (others.length ? '<div class="ctlgrp"><label>' + loc('dash.compareProject', '對照專案') + '</label>' + segHtml('compare', [['', loc('dash.none', '無')]].concat(others.map(function (k) {
-                return [k, NAMES[k] || k];
-            })), view.compare) + '</div>' : '')
-            + '<div class="legend">' + series.map(function (s) {
-                return '<span><i class="sw ln" style="background:' + s.colour + '"></i>' + esc(s.name) + ' <span class="muted">'
-                    + loc('dash.nItems', '{n} 個', { n: s.points.length }) + '</span></span>';
-            }).join('') + '</div></div>'
-            + '<div class="chart">' + projectChart(series, { metric: view.pMetric, t0: t0, t1: t1, days: DAYS, today: TODAY }) + '</div>'
-            + '<div class="note">' + loc('dash.pointPerSessionHint', '每個點是一個 session，放在它開始的時刻；線依時間先後連接，點一下開啟那個 session。') + '</div></section>'
-            + registryNote(all[0].root)
-            + '<section class="panel"><div class="h2">Sessions <small>' + loc('dash.last30dNSorted', '近 30 天 {n} 個，最新在上；勾兩列進比較', { n: list.length }) + '</small>'
-            + '</div>' + projectSessionsHtml(list, picked) + selbarHtml() + '</section>'
-            + '<section class="panel"><div class="h2">' + loc('dash.stagesByRoute', '各 route 的階段') + ' <small>' + loc('dash.thisProjectOnly', '只算這個專案') + '</small></div>' + routeLedger(mine) + '</section>';
-    }
-    VIEWS.project = projectPage;
-    // The TODO panel's 已完成 list: 展開全部 / 收起 set `view.tdOpen`, which
-    // holds across the 3 s redraw and resets on reload.
-    view.tdOpen = false;
-    doc.addEventListener('click', function (e) {
-        var b = e.target && e.target.closest ? e.target.closest('[data-tdmore]') : null;
-        if (!b) return;
-        view.tdOpen = b.getAttribute('data-tdmore') === '1';
-        repaint();
-    });
-    // A TODO row with a body: click, Enter or Space flips it in
-    // `view.tdBody`, which, like `view.tdOpen`, holds across the redraw.
-    view.tdBody = {};
-    var tdBody = function (e) {
-        var b = e.target && e.target.closest ? e.target.closest('[data-tdbody]') : null;
-        if (!b) return;
-        // A link or button inside the row (the done row's session link) is its own control.
-        var inner = e.target.closest('a,button');
-        if (inner && inner !== b) return;
-        if (e.type === 'keydown') {
-            if (e.key !== 'Enter' && e.key !== ' ') return;
-            e.preventDefault();
-        }
-        var id = b.getAttribute('data-tdbody');
-        view.tdBody[id] = !view.tdBody[id];
-        repaint();
-    };
-    doc.addEventListener('click', tdBody);
-    doc.addEventListener('keydown', tdBody);
     view.closed = {};
     // What 派工 and 事件 are showing, kept across every redraw: the agents and
     // prompts opened, the phases opened, the state filter, the replay's hidden
