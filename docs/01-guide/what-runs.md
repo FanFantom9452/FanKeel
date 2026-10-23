@@ -32,6 +32,7 @@ source_of_truth: .claude-plugin/plugin.json, hooks/mod.ts, hooks/pane.ts
 | `agent-end.js` | subagent 開始與結束時 | 記下它何時起、何時停，給 Pane 的 agent 樹 |
 | `gate-write.js` | Write 之後 | stage agent 寫出 handoff 時，當場檢查它的 gate 格式 |
 | `relay-cap.js` | 傳訊息給另一個 session 或 agent 前（`SendMessage`、`mcp__ccd_session_mgmt__send_message`） | 只在這個 session 有進行中的 task 時作用：最長的字串值（含一層巢狀）超過 2000 字就擋下，要你改傳檔案路徑 |
+| `wrap-up.js` | 桌面 app 的下一步框（`mcp__ccd_turn__wrap_up`）呼叫前 | 只在這個 session 有進行中的 task 時作用：帶 `ask` 或 `actions` 的呼叫被擋下，改要求用 AskUserQuestion 問，因為下一步框的決定 station gate 看不到；只有回顧的呼叫照常放行 |
 
 ## session 開始與結束
 

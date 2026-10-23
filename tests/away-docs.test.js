@@ -18,7 +18,8 @@ test('gate.away says the work goes on to the next decision and compacts there', 
 
 test('layout.md rows describe the hold, the compaction point and both caps', () => {
   const readme = read('docs/02-architecture/layout.md');
-  assert.match(readme, /Seven are not rowed below/);
+  assert.match(readme, /Eight are not rowed below/);
+  assert.match(readme, /wrap-up\.js \(PreToolUse on mcp__ccd_turn__wrap_up/);
   assert.match(readme, /relay-cap\.js \(PreToolUse on SendMessage/);
   assert.match(readme, /past 3000 characters is refused once/);
   assert.match(readme, /the next question that needs the user is held back instead of asked/);
