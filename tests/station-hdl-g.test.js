@@ -14,6 +14,7 @@ const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'sta
 const NOW = Date.parse('2026-10-01T12:00:00.000Z');
 const CLICK_PAGE = 9;
 const MARK = '.wz [data-go]';
+const A = 'F:\\ws\\alpha|';
 
 // station.js booted on `hash` with every document listener kept, the `#page`
 // and `#fk` elements counting their redraws, and (with `serve`) the poll's
@@ -100,7 +101,7 @@ const noteIds = (p) => (p.fkHtml().match(/data-note="[^"]*"/g) || []).map((x) =>
 function notes() {
     const p = boot('#/days', true);
     p.settle();
-    assert.equal(noteIds(p), 'n1,n2', 'both notes are filed');
+    assert.equal(noteIds(p), A + 'n1,' + A + 'n2', 'both notes are filed');
     p.reset();
     return p;
 }
@@ -275,8 +276,8 @@ test('the bell redraws the floating panel once and not the page', () => {
 
 test('the bell stops there: a target that is also a close button closes nothing', () => {
     const p = notes();
-    press(p, { '[data-fkb]': {}, '[data-note-x]': noteX('n1') });
-    assert.equal(noteIds(p), 'n1,n2');
+    press(p, { '[data-fkb]': {}, '[data-note-x]': noteX(A + 'n1') });
+    assert.equal(noteIds(p), A + 'n1,' + A + 'n2');
     assert.match(p.fkHtml(), /data-fkb aria-expanded="true"/);
 });
 
@@ -297,38 +298,38 @@ test('the bell also toggles on a page that is not the days page', () => {
 // ---- [data-note-x] -------------------------------------------------------
 test('a note close button redraws the floating panel once', () => {
     const p = notes();
-    press(p, { '[data-note-x]': noteX('n1') });
+    press(p, { '[data-note-x]': noteX(A + 'n1') });
     assert.equal(p.fkDraws(), 1);
     assert.equal(p.draws(), 0);
 });
 
 test('the closed note is gone from the list', () => {
     const p = notes();
-    press(p, { '[data-note-x]': noteX('n1') });
+    press(p, { '[data-note-x]': noteX(A + 'n1') });
     assert.doesNotMatch(listed(p), /n1/);
 });
 
 test('the other note stays after one is closed', () => {
     const p = notes();
-    press(p, { '[data-note-x]': noteX('n1') });
+    press(p, { '[data-note-x]': noteX(A + 'n1') });
     assert.match(listed(p), /n2/);
 });
 
 test('the second note closes by its own id', () => {
     const p = notes();
-    press(p, { '[data-note-x]': noteX('n2') });
-    assert.equal(listed(p), 'n1');
+    press(p, { '[data-note-x]': noteX(A + 'n2') });
+    assert.equal(listed(p), A + 'n1');
 });
 
 test('a close button stops there: a target that is also 清掉通知 keeps the other note', () => {
     const p = notes();
-    press(p, { '[data-note-x]': noteX('n1'), '[data-note-clear]': {} });
-    assert.equal(listed(p), 'n2');
+    press(p, { '[data-note-x]': noteX(A + 'n1'), '[data-note-clear]': {} });
+    assert.equal(listed(p), A + 'n2');
 });
 
 test('a close button does not go on to the later branches', () => {
     const p = notes();
-    press(p, { '[data-note-x]': noteX('n1'), '[data-tune-notify]': {} });
+    press(p, { '[data-note-x]': noteX(A + 'n1'), '[data-tune-notify]': {} });
     assert.equal(p.asked.n, 0);
 });
 
@@ -355,7 +356,7 @@ test('清掉通知 shows no notes in the panel it redraws', () => {
 
 test('清掉通知 after one note was closed empties the rest', () => {
     const p = notes();
-    press(p, { '[data-note-x]': noteX('n1') });
+    press(p, { '[data-note-x]': noteX(A + 'n1') });
     press(p, { '[data-note-clear]': {} });
     assert.equal(listed(p), '');
 });
@@ -363,7 +364,7 @@ test('清掉通知 after one note was closed empties the rest', () => {
 test('the bell is read before 清掉通知: a target that is both keeps every note', () => {
     const p = notes();
     press(p, { '[data-fkb]': {}, '[data-note-clear]': {} });
-    assert.equal(noteIds(p), 'n1,n2');
+    assert.equal(noteIds(p), A + 'n1,' + A + 'n2');
 });
 
 test('a click on nothing redraws nothing and keeps every note', () => {
@@ -371,7 +372,7 @@ test('a click on nothing redraws nothing and keeps every note', () => {
     press(p, {});
     assert.equal(p.draws(), 0);
     assert.equal(p.fkDraws(), 0);
-    assert.equal(listed(p), 'n1,n2');
+    assert.equal(listed(p), A + 'n1,' + A + 'n2');
     assert.match(p.fkHtml(), /data-fkb aria-expanded="true"/);
 });
 
