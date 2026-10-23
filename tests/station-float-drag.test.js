@@ -1,9 +1,10 @@
 'use strict';
-// Dragging the gate panel (docs/90-agent/plans/2026-10-15-todo-patrol-gate-drive-design.md §1),
+// Resizing the gate panel (docs/90-agent/plans/2026-10-15-todo-patrol-gate-drive-design.md §1),
 // driven through the page's own pointer listeners in a vm, the way
 // tests/station-gate-send.test.js drives its click listener. Only the
 // listeners this feature added are fired: the page has other pointerdown and
-// resize listeners that a fake DOM would not survive.
+// resize listeners that a fake DOM would not survive. The panel is no longer
+// dragged: it hangs under the bell in the masthead.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -38,28 +39,16 @@ function boot(saved) {
     const at = (hits) => ({ closest: (sel) => (sel in hits ? hits[sel] : null) });
     return {
         win, kept, panel: () => doc.getElementById('fkp'),
-        down: (hits, x, y, button = 0) => fire(docL, 'pointerdown', 'data-fk-', { button, target: at(hits), clientX: x, clientY: y, preventDefault() {} }),
+        down: (hits, x, y, button = 0) => fire(docL, 'pointerdown', 'fkDrag', { button, target: at(hits), clientX: x, clientY: y, preventDefault() {} }),
         move: (x, y) => fire(winL, 'pointermove', 'fkDrag', { clientX: x, clientY: y }),
-        up: () => fire(winL, 'pointerup', 'fkDrag', {}),
-        cancel: () => fire(winL, 'pointercancel', 'fkDrag', {}),
+        up: () => fire(winL, 'pointerup', 'fkDrop', {}),
+        cancel: () => fire(winL, 'pointercancel', 'fkDrop', {}),
         resize: () => fire(winL, 'resize', 'fkBox', {}),
-        dbl: (hits) => fire(docL, 'dblclick', 'data-fk-', { target: at(hits) }),
     };
 }
 
-const TITLE = { '#fk [data-fk-drag]': {} };
 const GRIP = { '#fk [data-fk-resize]': {} };
-
-test('dragging the title bar moves the panel and keeps where it was dropped', () => {
-    const p = boot();
-    p.down(TITLE, 700, 310);
-    p.move(600, 260);
-    assert.equal(p.panel().style.position, 'fixed');
-    assert.equal(p.panel().style.left, '500px');
-    assert.equal(p.panel().style.top, '250px');
-    p.up();
-    assert.deepEqual(JSON.parse(p.kept.get('station.fkBox')), { x: 500, y: 250, w: 376, h: 400 });
-});
+const TITLE = { '#fk .fkh': {} };
 
 test('dragging the corner grip resizes the panel', () => {
     const p = boot();
@@ -69,52 +58,61 @@ test('dragging the corner grip resizes the panel', () => {
     assert.equal(p.panel().style.height, '460px');
 });
 
-test('a drag past the window edge stops at it', () => {
+test('the title bar is not a drag handle: a drag on it does not move or resize the panel', () => {
     const p = boot();
     p.down(TITLE, 700, 310);
-    p.move(2700, 310);
-    assert.equal(p.panel().style.left, '824px');
-});
-
-test('a button on the title bar is not a drag handle', () => {
-    const p = boot();
-    p.down(Object.assign({ 'button,a': {} }, TITLE), 700, 310);
     p.move(600, 260);
+    assert.equal(p.panel().style.width, undefined);
     assert.equal(p.panel().style.left, undefined);
+    assert.equal(p.kept.has('station.fkBox'), false);
 });
 
-test('a right-button press on the title bar starts no drag', () => {
+test('a right-button press on the grip starts no resize', () => {
     const p = boot();
-    p.down(TITLE, 700, 310, 2);
-    p.move(600, 260);
-    assert.equal(p.panel().style.left, undefined);
+    p.down(GRIP, 976, 700, 2);
+    p.move(1026, 760);
+    assert.equal(p.panel().style.width, undefined);
 });
 
-test('a saved place comes back on reload, pulled inside a smaller window', () => {
+test('a resize past the window edge stops at it', () => {
+    const p = boot();
+    p.down(GRIP, 976, 700);
+    p.move(2700, 2700);
+    assert.equal(p.panel().style.width, '1200px');
+    assert.equal(p.panel().style.height, '800px');
+});
+
+test('a saved size comes back on reload, pulled inside a smaller window', () => {
+    const p = boot(JSON.stringify({ w: 1100, h: 700 }));
+    p.win.innerWidth = 1000;
+    p.win.innerHeight = 600;
+    p.resize();
+    assert.equal(p.panel().style.width, '1000px');
+    assert.equal(p.panel().style.height, '600px');
+});
+
+test('a saved place from before the bell moved is read as its size only', () => {
     const p = boot(JSON.stringify({ x: 900, y: 500, w: 376, h: 400 }));
     p.win.innerWidth = 1000;
     p.win.innerHeight = 700;
     p.resize();
-    assert.equal(p.panel().style.left, '624px');
-    assert.equal(p.panel().style.top, '300px');
+    assert.equal(p.panel().style.left, undefined);
+    assert.equal(p.panel().style.width, '376px');
+    assert.equal(p.panel().style.height, '400px');
 });
 
-test('a double-click on the title bar puts the panel back in its corner', () => {
-    const p = boot(JSON.stringify({ x: 100, y: 100, w: 376, h: 400 }));
-    p.dbl(TITLE);
-    assert.equal(p.kept.has('station.fkBox'), false);
-});
-
-test('a cancelled drag still keeps where the panel got to', () => {
+test('a cancelled resize still keeps the size the panel got to', () => {
     const p = boot();
-    p.down(TITLE, 700, 310);
-    p.move(600, 260);
+    p.down(GRIP, 976, 700);
+    p.move(1026, 760);
     p.cancel();
-    assert.deepEqual(JSON.parse(p.kept.get('station.fkBox')), { x: 500, y: 250, w: 376, h: 400 });
+    assert.deepEqual(JSON.parse(p.kept.get('station.fkBox')), { w: 426, h: 460 });
 });
 
-test('a double-click on a button on the title bar keeps the place', () => {
-    const p = boot(JSON.stringify({ x: 100, y: 100, w: 376, h: 400 }));
-    p.dbl({ 'button,a': {}, '#fk [data-fk-drag]': {} });
-    assert.equal(p.kept.has('station.fkBox'), true);
+test('a finished resize is kept', () => {
+    const p = boot();
+    p.down(GRIP, 976, 700);
+    p.move(1026, 760);
+    p.up();
+    assert.deepEqual(JSON.parse(p.kept.get('station.fkBox')), { w: 426, h: 460 });
 });

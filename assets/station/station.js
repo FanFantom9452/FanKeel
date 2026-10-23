@@ -2523,24 +2523,23 @@
     }
     var FK_BELL = '<svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'
         + '<path d="M5 8a5 5 0 0 1 10 0v4l1.5 2.5h-13L5 12z"/><path d="M8.2 16.5a2 2 0 0 0 3.6 0"/></svg>';
-    // The gate panel's own place and size once dragged: {x, y, w, h} in px
-    // from the viewport's top left, kept in localStorage as `station.fkBox`.
-    // Always pulled back inside the window, never smaller than 260 by 160.
+    // The gate panel's own size once resized: {w, h} in px, kept in localStorage
+    // as `station.fkBox`. Its place is the bell's, so a saved {x, y, w, h} from
+    // before the bell moved into the masthead reads as its w and h alone.
+    // Never smaller than 260 by 160, never larger than the window.
     var FK_MIN_W = 260, FK_MIN_H = 160;
     function fkBoxParse(raw) {
         var b;
         try { b = JSON.parse(raw); } catch (e) { return null; }
-        if (!b || ['x', 'y', 'w', 'h'].some(function (k) { return typeof b[k] !== 'number' || !isFinite(b[k]); })) return null;
-        return { x: b.x, y: b.y, w: b.w, h: b.h };
+        if (!b || ['w', 'h'].some(function (k) { return typeof b[k] !== 'number' || !isFinite(b[k]); })) return null;
+        return { w: b.w, h: b.h };
     }
     function fkBoxClamp(b, vw, vh) {
         if (!b) return null;
-        var wd = Math.max(FK_MIN_W, Math.min(b.w, vw)), ht = Math.max(FK_MIN_H, Math.min(b.h, vh));
-        return { x: Math.max(0, Math.min(b.x, vw - wd)), y: Math.max(0, Math.min(b.y, vh - ht)), w: wd, h: ht };
+        return { w: Math.max(FK_MIN_W, Math.min(b.w, vw)), h: Math.max(FK_MIN_H, Math.min(b.h, vh)) };
     }
     function fkBoxStyle(b) {
-        return b ? ' style="position:fixed;left:' + Math.round(b.x) + 'px;top:' + Math.round(b.y) + 'px;right:auto;bottom:auto;width:'
-            + Math.round(b.w) + 'px;height:' + Math.round(b.h) + 'px;max-height:none"' : '';
+        return b ? ' style="width:' + Math.round(b.w) + 'px;height:' + Math.round(b.h) + 'px"' : '';
     }
     function floatHtml(sessions, notes, open, now, picked, permission, box) {
         var held = (sessions || []).filter(function (s) { return s.pending && s.pending.questions && s.pending.questions.length; });
@@ -2551,7 +2550,7 @@
             if (!tune && s.tune.url) tune = s.tune;
         });
         return '<section class="fkp" id="fkp" aria-label="' + loc('tune.notificationsAndGate', '通知與 gate') + '"' + (open || held.length ? '' : ' hidden') + fkBoxStyle(box) + '>'
-            + '<div class="fkh" data-fk-drag><b>' + loc('tune.notificationsAndGate', '通知與 gate') + '</b><span class="n">' + loc('tune.nItems', '{n} 件', { n: n }) + '</span><span class="spacer"></span>'
+            + '<div class="fkh"><b>' + loc('tune.notificationsAndGate', '通知與 gate') + '</b><span class="n">' + loc('tune.nItems', '{n} 件', { n: n }) + '</span><span class="spacer"></span>'
             + (all.some(function (x) { return x.status !== 'edit'; }) ? '<button class="lk" type="button" data-note-clear>' + loc('tune.clearNotifications', '清掉通知') + '</button>' : '') + '</div>'
             + (held.length ? '<div class="fks">' + loc('tune.waitingOnYou', '等你回答') + ' <b>' + held.length + '</b></div>'
                 + held.map(function (s) { return gateCountdownHtml(s, now, picked); }).join('') : '')
@@ -5774,11 +5773,10 @@
         var p = doc.getElementById('fkp'); if (p && top) p.scrollTop = top;
         fk.className = 'fk' + (held ? ' hasgate' : '');
     }
-    // Dragging the gate panel by its title bar, resizing it by its corner
-    // grip. The move/up/cancel/resize listeners sit on the window and pointerdown/
-    // dblclick on the document, not on #fkp, because drawFloat rebuilds #fkp
-    // every repaint; the place lives in view.fkBox, which pointermove, the window resize and the
-    // double-click reset write, fkDrop stores, and drawFloat passes to floatHtml
+    // Resizing the gate panel by its corner grip. The move/up/cancel listeners sit
+    // on the window and pointerdown on the document, not on #fkp, because drawFloat
+    // rebuilds #fkp every repaint; the size lives in view.fkBox, which pointermove
+    // and the window resize write, fkDrop stores, and drawFloat passes to floatHtml
     // (which only reads it), so a repaint mid-drag draws it where it is.
     var FK_BOX_KEY = 'station.fkBox';
     var fkDrag = null;
@@ -5790,29 +5788,22 @@
     function fkApply() {
         var p = doc.getElementById('fkp'), b = view.fkBox;
         if (!p || !b) return;
-        p.style.position = 'fixed';
-        p.style.left = Math.round(b.x) + 'px';
-        p.style.top = Math.round(b.y) + 'px';
-        p.style.right = 'auto';
-        p.style.bottom = 'auto';
         p.style.width = Math.round(b.w) + 'px';
         p.style.height = Math.round(b.h) + 'px';
-        p.style.maxHeight = 'none';
     }
     doc.addEventListener('pointerdown', function (e) {
         var t = e.target;
-        if (e.button || !t || !t.closest) return;
-        var mode = t.closest('#fk [data-fk-resize]') ? 'size' : (t.closest('#fk [data-fk-drag]') && !t.closest('button,a') ? 'move' : null);
-        var p = mode ? doc.getElementById('fkp') : null;
+        if (e.button || !t || !t.closest || !t.closest('#fk [data-fk-resize]')) return;
+        var p = doc.getElementById('fkp');
         if (!p) return;
         var r = p.getBoundingClientRect();
-        fkDrag = { mode: mode, sx: e.clientX, sy: e.clientY, box: { x: r.left, y: r.top, w: r.width, h: r.height } };
+        fkDrag = { sx: e.clientX, sy: e.clientY, box: { w: r.width, h: r.height } };
         e.preventDefault();
     });
     w.addEventListener('pointermove', function (e) {
         if (!fkDrag) return;
-        var b = fkDrag.box, dx = e.clientX - fkDrag.sx, dy = e.clientY - fkDrag.sy;
-        view.fkBox = fkFit(fkDrag.mode === 'move' ? { x: b.x + dx, y: b.y + dy, w: b.w, h: b.h } : { x: b.x, y: b.y, w: b.w + dx, h: b.h + dy });
+        var b = fkDrag.box;
+        view.fkBox = fkFit({ w: b.w + e.clientX - fkDrag.sx, h: b.h + e.clientY - fkDrag.sy });
         fkApply();
     });
     function fkDrop() {
@@ -5826,13 +5817,6 @@
         if (!view.fkBox) return;
         view.fkBox = fkFit(view.fkBox);
         fkApply();
-    });
-    doc.addEventListener('dblclick', function (e) {
-        var t = e.target;
-        if (!t || !t.closest || !t.closest('#fk [data-fk-drag]') || t.closest('button,a')) return;
-        view.fkBox = null;
-        store(FK_BOX_KEY, null);
-        drawFloat();
     });
     // The hash a `#/p/<pkey>/todo[/<id>]` arrived with, until its TODO panel or
     // entry is scrolled into view; null once it is. Tried after every draw, since

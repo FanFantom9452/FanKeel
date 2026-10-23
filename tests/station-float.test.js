@@ -65,7 +65,7 @@ test('clock says m:ss, floatNotes puts what tune is editing before the settled n
 
 test('the page has one floating icon and no toast box, tune chip or session-page gate form left', () => {
     const page = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'index.html'), 'utf8');
-    assert.match(page, /<div class="fk" id="fk" data-block="float-icon"><\/div>/);
+    assert.match(page, /<div class="fk" id="fk" data-block="bell"><\/div>\n<\/header>/);
     assert.doesNotMatch(page, /id="toasts"|id="tunechip"/);
     const src = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
     assert.doesNotMatch(src, /\+ pendingGateHtml\(s, view\.pg\)/, 'the session page still draws its own held gate');

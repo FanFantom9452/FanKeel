@@ -1472,22 +1472,21 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
 .dxnote>summary .eq{color:var(--up)}.dxnote>summary .ne{color:var(--dn)}
 @media (prefers-reduced-motion:reduce){.dsrow .dst i,.dxb i{transition:none}}
 /* float-icon: the one place notifications and held gates appear (2026-09-26 mockup) */
-.fk{position:fixed;z-index:45;right:20px;bottom:20px;font-family:var(--f-ui)}
-.fkb{all:unset;box-sizing:border-box;position:relative;width:52px;height:52px;border-radius:50%;display:grid;place-items:center;cursor:pointer;
+.fk{position:relative;flex:none;z-index:45;font-family:var(--f-ui)}
+.fkb{all:unset;box-sizing:border-box;position:relative;width:36px;height:36px;border-radius:8px;display:grid;place-items:center;cursor:pointer;
   background:var(--panel);color:var(--ink);box-shadow:inset 0 0 0 1px var(--rule2),0 8px 22px rgba(0,0,0,.28);transition:background .18s,color .18s}
 .fkb:hover{background:var(--inset)}
 .fkb:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
 .fkb[aria-expanded="true"]{background:var(--ink);color:var(--panel)}
-.fkb>svg{width:20px;height:20px}
-.fkn{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 5px;box-sizing:border-box;border-radius:var(--r-pill);display:grid;place-items:center;
+.fkb>svg{width:17px;height:17px}
+.fkn{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;padding:0 4px;box-sizing:border-box;border-radius:var(--r-pill);display:grid;place-items:center;
   font:700 11px/1 var(--f-mono);background:var(--ink2);color:var(--ground);box-shadow:0 0 0 2px var(--ground)}
 .fk.hasgate .fkn{background:var(--stale)}
 .fkn:empty{display:none}
-.fkp{position:absolute;right:0;bottom:66px;width:min(376px,calc(100vw - 24px));max-height:calc(100vh - 116px);overflow:auto;
+.fkp{position:absolute;top:calc(100% + 6px);right:0;bottom:auto;width:min(376px,calc(100vw - 24px));max-height:calc(100vh - 62px);overflow:auto;
   background:var(--panel);border-radius:12px;box-shadow:inset 0 0 0 1px var(--rule2),0 18px 48px rgba(0,0,0,.34)}
 .fkp[hidden]{display:none}
 .fkh{display:flex;align-items:baseline;gap:8px;padding:13px 14px 11px;border-bottom:1px solid var(--rule)}
-.fkh[data-fk-drag]{cursor:move;touch-action:none;user-select:none}
 .fkr{position:sticky;bottom:0;display:block;width:16px;height:16px;margin:-16px 0 0 auto;cursor:nwse-resize;touch-action:none;
   background:linear-gradient(135deg,transparent 0 55%,var(--rule2) 55% 65%,transparent 65% 75%,var(--rule2) 75% 85%,transparent 85%)}
 .fkh b{font-size:13.5px;font-weight:600;color:var(--ink)}
@@ -1548,7 +1547,6 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
 .fkf .spacer{flex:1}
 .fkempty{padding:4px 14px 12px;font-size:12px;color:var(--muted)}
 @media (prefers-reduced-motion:reduce){.gc .gbar i,.fkb{transition:none}}
-@media (max-width:720px){.fk{right:12px;bottom:12px}}
 /* chart view: the running agents keep their rows above the bars */
 .det table.dx.dxlive{margin-bottom:14px}
 
@@ -1706,6 +1704,7 @@ a.td-rf:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-rad
 :root[data-style=keel] :is(.srv.down,#servedown) .dot{background:var(--down)}
 :root[data-style=keel] .mast .langsw{order:4}
 :root[data-style=keel] .mast .appear{order:5}
+:root[data-style=keel] .fk{order:6}
 :root[data-style=keel] .langpop i{display:none}
 /* language and theme share one frame, as the mockup's .mtools: the language half rounds left, the theme half right, a hairline between */
 :root[data-style=keel] header.mast .langsw{border-radius:8px 0 0 8px}
@@ -1896,8 +1895,9 @@ a.td-rf:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-rad
 .td-cut::before{content:"";position:absolute;left:0;right:0;top:11px;border-top:1.5px dashed var(--keel)}
 .td-cut span{position:relative;display:inline-block;margin-left:8px;padding:1px 9px;border-radius:5px;background:var(--keel);color:var(--on-keel);font-size:11px;font-weight:700;line-height:20px}
 
-/* ---- the bell, floating like the film's cards ---- */
-:root[data-style=keel] .fkb{background:var(--panel);box-shadow:inset 0 0 0 1px var(--rule),var(--lift)}
+/* ---- the bell, a masthead chip like .srv; its panel hangs under the header ---- */
+:root[data-style=keel] .fkb{background:var(--panel);box-shadow:inset 0 0 0 1px var(--rule)}
+:root[data-style=keel] .fkp{max-height:calc(100vh - 74px)}
 :root[data-style=keel] .fkb[aria-expanded="true"]{background:var(--keel);color:var(--on-keel)}
 :root[data-style=keel] .fkn{background:var(--keel);color:var(--on-keel)}
 :root[data-style=keel] .foot{font-family:var(--f-mono);font-size:11.5px}
