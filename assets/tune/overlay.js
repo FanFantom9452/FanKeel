@@ -302,7 +302,7 @@
     // null for the corner. press: the pointer that is down on the logo.
     var pos = null;
     var press = null;
-    // opener: the last page element clicked while not picking — what a
+    // opener: the last block-bearing element clicked while not picking — what a
     // dialog or dropdown opened from — described when it was clicked. host:
     // the open <dialog> the outline is drawn inside while picking, so a modal
     // one's top layer does not hide it. seen: each pick's description, taken
