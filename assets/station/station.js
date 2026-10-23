@@ -2674,7 +2674,7 @@
         return frozenAt ? loc('tune.last30dFrozenAt', '近 30 天 · 凍結於 {t}', { t: frozenAt }) : loc('tune.last30d', '近 30 天');
     }
 
-    // ---- the project page, again: its TODO panel (`todoPanelHtml`) ---------
+    // ---- the project page, again: its board link ------------------------------
     // The project card's line to its architecture board. Only a served page
     // has the `/chartroom/` route (a file:// copy has none), only a registry
     // with `.fankeel/architecture.board` has a board (`board`, lib/station.js),
