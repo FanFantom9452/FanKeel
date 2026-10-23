@@ -23,7 +23,7 @@ test('fkBoxClamp: a size inside the window is left alone', () => {
 });
 
 test('fkBoxClamp: larger than the window it shrinks to fit, smaller than 260 by 160 it grows', () => {
-    assert.deepEqual(V.fkBoxClamp({ w: 2000, h: 2000 }, 1200, 800), { w: 1200, h: 800 });
+    assert.deepEqual(V.fkBoxClamp({ w: 2000, h: 2000 }, 1200, 800), { w: 1200, h: 726 });
     assert.deepEqual(V.fkBoxClamp({ w: 40, h: 30 }, 1200, 800), { w: 260, h: 160 });
     assert.equal(V.fkBoxClamp(null, 1200, 800), null);
 });

@@ -54,7 +54,7 @@ test('dragging the corner grip resizes the panel', () => {
     const p = boot();
     p.down(GRIP, 976, 700);
     p.move(1026, 760);
-    assert.equal(p.panel().style.width, '426px');
+    assert.equal(p.panel().style.width, '326px');
     assert.equal(p.panel().style.height, '460px');
 });
 
@@ -77,9 +77,9 @@ test('a right-button press on the grip starts no resize', () => {
 test('a resize past the window edge stops at it', () => {
     const p = boot();
     p.down(GRIP, 976, 700);
-    p.move(2700, 2700);
+    p.move(-1000, 2700);
     assert.equal(p.panel().style.width, '1200px');
-    assert.equal(p.panel().style.height, '800px');
+    assert.equal(p.panel().style.height, '726px');
 });
 
 test('a saved size comes back on reload, pulled inside a smaller window', () => {
@@ -88,7 +88,7 @@ test('a saved size comes back on reload, pulled inside a smaller window', () => 
     p.win.innerHeight = 600;
     p.resize();
     assert.equal(p.panel().style.width, '1000px');
-    assert.equal(p.panel().style.height, '600px');
+    assert.equal(p.panel().style.height, '526px');
 });
 
 test('a saved place from before the bell moved is read as its size only', () => {
@@ -106,7 +106,7 @@ test('a cancelled resize still keeps the size the panel got to', () => {
     p.down(GRIP, 976, 700);
     p.move(1026, 760);
     p.cancel();
-    assert.deepEqual(JSON.parse(p.kept.get('station.fkBox')), { w: 426, h: 460 });
+    assert.deepEqual(JSON.parse(p.kept.get('station.fkBox')), { w: 326, h: 460 });
 });
 
 test('a finished resize is kept', () => {
@@ -114,5 +114,5 @@ test('a finished resize is kept', () => {
     p.down(GRIP, 976, 700);
     p.move(1026, 760);
     p.up();
-    assert.deepEqual(JSON.parse(p.kept.get('station.fkBox')), { w: 426, h: 460 });
+    assert.deepEqual(JSON.parse(p.kept.get('station.fkBox')), { w: 326, h: 460 });
 });

@@ -900,8 +900,8 @@ first paint, so a reader on 深色 never sees a flash of light first
 (`assets/station/station.js:23`, `themeSet(stored('station.theme'));`).
 `station.dash` is no longer written: the home page lost its edit mode, and a
 value an older station stored is never read. The other two, `station.lang` and
-`station.fkBox`, are described further down, where the page's language and the
-floating box's position are. The promo film's look is the only look:
+`station.fkBox`, are described further down: the page's language, and the size the
+header bell's panel is stored at. The promo film's look is the only look:
 `assets/station/index.html` opens `<html data-style="keel">` and nothing takes
 it off, every keel rule sits under `:root[data-style=keel]` at the end of
 `assets/station/station.css` over the base rules above it, the masthead

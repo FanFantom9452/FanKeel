@@ -2089,7 +2089,7 @@
                 { l: loc('wiz.stationH0L', '要，照常顯示'), b: '', s: { 'station.hide': 'false' } },
                 { l: loc('wiz.stationH1L', '不要，藏起來'), b: loc('wiz.stationH1B', '私人或暫時的專案。'), s: { 'station.hide': 'true' } },
             ] },
-        { id: 'answer', t: loc('wiz.answerT', '答 gate'), q: loc('wiz.answerQ', '要不要在網頁上直接回答 gate？'), sub: loc('wiz.answerSub', 'gate 發出後，先在這頁右下角的圖示裡等你 60 秒；逾時，或你按「交給終端／手機」，問題就回到 terminal，Remote Control 也看得到。等的時候 terminal 不顯示問題。'), keys: ['gate.station'],
+        { id: 'answer', t: loc('wiz.answerT', '答 gate'), q: loc('wiz.answerQ', '要不要在網頁上直接回答 gate？'), sub: loc('wiz.answerSub', 'gate 發出後，先在這頁右上角的圖示裡等你 60 秒；逾時，或你按「交給終端／手機」，問題就回到 terminal，Remote Control 也看得到。等的時候 terminal 不顯示問題。'), keys: ['gate.station'],
             habits: [
                 { l: loc('wiz.answerH0L', '不用，在 terminal 答'), b: '', s: { 'gate.station': 'off' } },
                 { l: loc('wiz.answerH1L', '等一分鐘'), b: loc('wiz.answerH1B', '人就在頁面旁邊時。'), s: { 'gate.station': '60' } },
@@ -2526,7 +2526,8 @@
     // The gate panel's own size once resized: {w, h} in px, kept in localStorage
     // as `station.fkBox`. Its place is the bell's, so a saved {x, y, w, h} from
     // before the bell moved into the masthead reads as its w and h alone.
-    // Never smaller than 260 by 160, never larger than the window.
+    // Never smaller than 260 by 160, never taller than the window less the 74px
+    // the keel .fkp max-height leaves (station.css), or the kept size renders capped.
     var FK_MIN_W = 260, FK_MIN_H = 160;
     function fkBoxParse(raw) {
         var b;
@@ -2536,7 +2537,7 @@
     }
     function fkBoxClamp(b, vw, vh) {
         if (!b) return null;
-        return { w: Math.max(FK_MIN_W, Math.min(b.w, vw)), h: Math.max(FK_MIN_H, Math.min(b.h, vh)) };
+        return { w: Math.max(FK_MIN_W, Math.min(b.w, vw)), h: Math.max(FK_MIN_H, Math.min(b.h, vh - 74)) };
     }
     function fkBoxStyle(b) {
         return b ? ' style="width:' + Math.round(b.w) + 'px;height:' + Math.round(b.h) + 'px"' : '';
@@ -5803,7 +5804,7 @@
     w.addEventListener('pointermove', function (e) {
         if (!fkDrag) return;
         var b = fkDrag.box;
-        view.fkBox = fkFit({ w: b.w + e.clientX - fkDrag.sx, h: b.h + e.clientY - fkDrag.sy });
+        view.fkBox = fkFit({ w: b.w - (e.clientX - fkDrag.sx), h: b.h + e.clientY - fkDrag.sy });
         fkApply();
     });
     function fkDrop() {
