@@ -1240,8 +1240,8 @@ the single-row button. `clearStaleControl` in `assets/station/station.js`
 renders the form when the page is served, and prints the copyable command when
 it is not — a static file cannot post; it sits in the old 可能已經停了 block,
 which draws only when `assets/station/live-page.js` is not loaded. The
-redesigned 可能停了 card carries one per stale row: `modOpts` passes
-`clear: clearControl` (`assets/station/station.js:5760`) and `row` in
+redesigned 可能停了 card carries one per stale row: `modOpts`
+(`assets/station/station.js:5761`) passes `clear: clearControl`, and `row` in
 `assets/station/live-page.js` draws it in a `lv-row-clear` beside the row's
 `<a>`, not inside it; without `opts.clear` the row is the bare link.
 
