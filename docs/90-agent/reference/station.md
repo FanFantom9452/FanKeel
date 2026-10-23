@@ -178,7 +178,7 @@ quota percentage, and with the key unset the page is unchanged.
 When the machine profile also holds `quota.calibrated` and the quota in force is the machine's, the 30-day spend readout's sub-line ends with ` · 週額度 <day> 校準`, the day `scripts/quota.js` calibrated it; a quota set by hand, or a project's own, shows no day.
 
 Every row also carries the registry it belongs to, as `root` on its session
-object (`lib/station.js:854`, `root: s.root`) — the raw path, not the
+object (`lib/station.js:857`, `root: s.root`) — the raw path, not the
 shortened label shown on the row — and `match()` filters on that same field
 (`assets/station/station.js:183`, `s.root !== f.project`) rather than a DOM
 attribute, because every row here is rebuilt from `window.STATION` in the
@@ -187,22 +187,22 @@ below.
 
 A project whose profile sets `station.hide: 'true'` produces no row at
 all — not a greyed-out one, an absent one. The check is one function,
-`hiddenPkeys()` (`lib/station.js:721`, `function hiddenPkeys(model) {`),
+`hiddenPkeys()` (`lib/station.js:724`, `function hiddenPkeys(model) {`),
 and every session under a hidden project is dropped before anything else on
 the page is built from it: `flatten()` is where that happens
-(`lib/station.js:749`, `if (hidden.has(pkeyOf(row))) continue;`), and
+(`lib/station.js:752`, `if (hidden.has(pkeyOf(row))) continue;`), and
 everything the page renders — the facets, the charts, three of the home
 page's four groups — reads `flatten()`'s output rather than the model
 itself, so no view filters a second time. Every aggregation that walks
 `model.registries` instead carries its own check, and a new one has to:
 the live/stale/down counts `write()` returns for the terminal summary
-(`lib/station.js:1076`, `if (hidden.has(s.project ? r.root + '/' + s.project : r.root)) continue;`),
+(`lib/station.js:1079`, `if (hidden.has(s.project ? r.root + '/' + s.project : r.root)) continue;`),
 the fifth card's gate tally
-(`lib/station.js:781`, `if (hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))) continue;`),
+(`lib/station.js:784`, `if (hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))) continue;`),
 the `docs` list `serialize()` hands the page for the 文件 card
-(`lib/station.js:835`, `docs: (r.docs || []).filter((d) => !hidden.has(d.pkey)),`),
+(`lib/station.js:838`, `docs: (r.docs || []).filter((d) => !hidden.has(d.pkey)),`),
 the profile list `serialize()` hands the page
-(`lib/station.js:844`, `if (values && values['station.hide'] === true) continue;`) —
+(`lib/station.js:847`, `if (values && values['station.hide'] === true) continue;`) —
 an inline copy of the predicate rather than a `hiddenPkeys()` call, because
 that loop is keyed by the raw profiles directory rather than by pkey —
 `write()`'s detail-file loop described below, and `--json`'s own pass
@@ -240,7 +240,7 @@ time: every row's strip fills the same width, so a ten-minute session and a
 ten-hour one look the same size — only their segments' own widths differ.
 
 No stages at all draws no strip and no table, just one line —
-`沒有分階段紀錄` (`assets/station/station.js:4217`, `沒有分階段紀錄`) — a
+`沒有分階段紀錄` (`assets/station/station.js:4248`, `沒有分階段紀錄`) — a
 session that has not crossed a stage boundary has nothing to proportion.
 
 Below the strip is the table it is drawn from — one row per stage, with the
@@ -249,7 +249,7 @@ stage's minutes went on a gate rather than on work. Neither carries a dollar
 figure any more; a stage's own cost surfaces in the per-route stage
 ledger on the old project page (the fallback when `project-page.js` is
 missing), and per stage and model inside the old session page's 概覽, under a `<details class="csmore">` element
-(`assets/station/station.js:3920`, `'<details class="csmore"><summary>'`) — not on this table's rows.
+(`assets/station/station.js:3951`, `'<details class="csmore"><summary>'`) — not on this table's rows.
 
 A stage's dollar figure needs `spend`, which `hooks/leave.js` writes once, at
 session end — a live session does not have it yet, and no session that ended
@@ -257,7 +257,7 @@ before this shipped ever will — and even once it exists, a stage whose models
 the price table does not know has no dollar figure, not a figure of zero:
 `costOf` returns `usd: 0` there, and `gather` reads `priced.length` before
 believing it, so an unpriced stage's own `usd` is `null` rather than a silent
-zero (`lib/station.js:605`, `usd: priced ? mine + agents : null`) — the same
+zero (`lib/station.js:608`, `usd: priced ? mine + agents : null`) — the same
 line that folds the session and its agents together rather than pricing the
 parent alone, which is why the ledger's total already matches `cost(s)`'s own
 combined figure, agents included.
@@ -271,7 +271,7 @@ with 派工 and 對話 drawn by `assets/station/session-dispatch.js` and
 `assets/station/session-talk.js`; a 關卡 link joins them only while the
 session's `gateAt` is set, to `/f/<id>/gate` when served. `#/s/<id>/cost`
 opens 經過. 事件, 計畫 and 關卡 stay on the old page
-(`assets/station/station.js:5744`, `var SESSION_TABS = ['timeline', 'cost', 'dispatch', 'talk'];`),
+(`assets/station/station.js:5775`, `var SESSION_TABS = ['timeline', 'cost', 'dispatch', 'talk'];`),
 which also draws every tab when the module is missing. The rest of this
 section describes that old page. It had six tabs — 概覽,
 派工, 事件, 對話, 計畫 and 關卡 — and `#/s/<id>/<tab>` opens one directly, with `timeline`,
@@ -397,7 +397,7 @@ agent's return entered the main context.
 
 On the old page, where a stage's dollars live is no longer its own tab: the stage × model
 table sits inside 概覽, under a `<details>` element titled "stage × model
-明細" (`assets/station/station.js:3920`, `<details class="csmore">`). Above
+明細" (`assets/station/station.js:3951`, `<details class="csmore">`). Above
 it, when the session has a detail loaded, sits the timeline chart, which now
 also tints its background by stage; and above that sits `costShareHtml`
 (`assets/station/station.js:1256`, `function costShareHtml(L, hi) {`), a bar
@@ -613,7 +613,7 @@ otherwise point outside the repository it sits in.
 
 Before `station-data.js` arrives the shell has nothing to draw, so
 `station.css` alone fills that wait
-(`assets/station/station.css:1387`, `first load`): CSS-only placeholders
+(`assets/station/station.css:1396`, `first load`): CSS-only placeholders
 stand in for the nav and the page, with a `計算中…` spinner beside where the
 side panel would sit, and the placeholders hold still rather than animate
 under `prefers-reduced-motion`.
@@ -666,7 +666,7 @@ status, grouped as the plan groups them); for gate, `gate-question` (the
 question and its options, the recommended one marked) above `gate-report`
 (the 關卡 tab's report) — but that gate layout is now the fallback: with
 `gate-frame.js` loaded, the whole gate tab is `FK_GATE.frame`
-(`assets/station/station.js:2914`, `if (gate && w.FK_GATE && typeof w.FK_GATE.frame === 'function') {`):
+(`assets/station/station.js:2944`, `if (gate && w.FK_GATE && typeof w.FK_GATE.frame === 'function') {`):
 a head with no tabs whose title opens the full station, the report
 station.js draws in the main column, and the question in a sticky side
 column, each option showing its label with its description open, a click on the label closing it; a
@@ -720,7 +720,7 @@ them on this page. Every filter from here down narrows what the browser
 draws from data that already arrived: clearing a facet or the search box
 brings a row straight back, because it was in `window.STATION` all along.
 `station.hide` instead runs once, before that, in `flatten()`
-(`lib/station.js:743`, `function flatten(model) {`), which `serialize()`
+(`lib/station.js:746`, `function flatten(model) {`), which `serialize()`
 calls to build `sessions` before any of it reaches the browser (see What
 each row holds, above). There is no view state that could bring a hidden
 project's rows back, because the browser never received them; the only way
@@ -728,18 +728,18 @@ is to change the profile and reload.
 
 The facets are on 清單, above its table — state and stage with a count on each
 button, registry with one button per root
-(`assets/station/station.js:4047`, `moved onto the page they narrow`) — and
+(`assets/station/station.js:4078`, `moved onto the page they narrow`) — and
 the search box in the top bar matches task, project, session id, registry
 label, model, state, next, the files touched and its notes — AND-ed.
 
 The same box also opens a grouped-results popover about 200 ms after typing
-stops (`assets/station/station.js:6430`, `}, 200)`): `qGroups`
-(`assets/station/station.js:6346`, `function qGroups(q) {`) buckets what
+stops (`assets/station/station.js:6493`, `}, 200)`): `qGroups`
+(`assets/station/station.js:6409`, `function qGroups(q) {`) buckets what
 matches into Sessions, 專案 and 文件, up to five rows each with a 看全部 link
 when there are more, and `qDraw`
-(`assets/station/station.js:6387`, `function qDraw() {`) draws it with each
+(`assets/station/station.js:6450`, `function qDraw() {`) draws it with each
 match highlighted. `/` focuses the box from anywhere on the page
-(`assets/station/station.js:6515`, `if (e.key === '/')`), the arrow keys
+(`assets/station/station.js:6578`, `if (e.key === '/')`), the arrow keys
 move the selection, Enter opens what is picked and Esc closes the popover.
 文件 in this popover matches only the paths and buckets the page's own data
 carries. The page bodies are searched on 文件 itself — see
@@ -752,14 +752,14 @@ above the list otherwise; it does not merely hide rows.
 A gone registry keeps its facet button, labelled `— gone`, rather than
 dropping off the row, so selecting one never returns a blank pane with nothing
 on the page saying why:
-`goneNote()` (`assets/station/station.js:3128`, `function goneNote(root)`) prints a
+`goneNote()` (`assets/station/station.js:3159`, `function goneNote(root)`) prints a
 card reading `gone — no sessions/ here any more` in its place, alongside the
 `--forget` that would drop it for good.
 
 A registry that is not gone gets its own card once it is the one selected on
 清單, and every project page carries the same card for its own registry no
 matter what is selected there: `registryNote()`
-(`assets/station/station.js:3145`, `function registryNote(root)`) prints its
+(`assets/station/station.js:3176`, `function registryNote(root)`) prints its
 own unreadable-session count, its `map.md` date — or `不存在` when there is
 none — and its build directories with each one's file count, or says there
 are none. The old page carried all three on a per-registry meta line; the
@@ -767,9 +767,9 @@ redesign dropped that line, and this card is where its contents live now. The
 footer's own unreadable count stays the total across every registry and is
 hidden only on 清單 once a registry there is selected: one that is not gone
 carries the same count on its own card
-(`assets/station/station.js:4251`, `a corrupt-entry count must`), and a gone
+(`assets/station/station.js:4282`, `a corrupt-entry count must`), and a gone
 one has no session files left to count
-(`lib/station.js:679`, `gone: true, unreadable: 0`); everywhere
+(`lib/station.js:682`, `gone: true, unreadable: 0`); everywhere
 else — a project page included, whose own card shows only its registry's
 count — the footer keeps the total, so a corrupt entry is never a click away
 from being found.
@@ -792,17 +792,17 @@ hand both routes to `FK_LIVE` in `assets/station/live-page.js`, described
 below. What follows is the old 現在, which `dashPage` still draws when that
 module is missing: four groups, each reading the same rows
 its own full page reads so its numbers always match that page:
-`homeLive` (`assets/station/station.js:3257`, `function homeLive(R, now, serve) {`)
+`homeLive` (`assets/station/station.js:3288`, `function homeLive(R, now, serve) {`)
 counts today's `live` sessions and lists them, the ones waiting on you first,
 each row linking to its focus page; a wait runs from the row's `gateAt`, which
 `registry.gateOpen` stamps when `hooks/gate.js` sees the question go out; a
 record without one falls back to the pending file's `at`, then to the last
 registry write. `homeRunning`
-(`assets/station/station.js:3270`, `function homeRunning(R, now, serve) {`) lists
+(`assets/station/station.js:3301`, `function homeRunning(R, now, serve) {`) lists
 the subagents and background shells the live sessions have running;
-`homeSpend` (`assets/station/station.js:3337`, `function homeSpend(R, nowMs) {`)
+`homeSpend` (`assets/station/station.js:3368`, `function homeSpend(R, nowMs) {`)
 is one line with today's and this week's spend, linking to `#/days`.
-`homeTodo` (`assets/station/station.js:3310`, `function homeTodo(projects) {`),
+`homeTodo` (`assets/station/station.js:3341`, `function homeTodo(projects) {`),
 `data-block="home-todo"`, reads every project's `todos` rows off the data file
 — the rows the project page's TODO panel reads — and counts the entries whose
 `state` is `ready`: the total as one big figure, then one chip per project with
@@ -817,7 +817,7 @@ an entry with no `state` has no tab.
 
 The page has two columns and no edit mode: `homeLive` and `homeRunning` in the
 wide one, `homeTodo` and `homeSpend` in the narrow one
-(`assets/station/station.js:3559`, `function dashPage() {`). The page root is a
+(`assets/station/station.js:3590`, `function dashPage() {`). The page root is a
 block marked `data-block="home"`. The cards that
 used to sit here moved to the pages they belong to: 撞檔與共用檔案
 (`dashClash`) and 最近 sessions (`dashRecent`) wide, gate 平均等待時間
@@ -894,7 +894,7 @@ read with `stored()`'s try/catch so a `file:` page or private mode with no
 holds the three-state 跟隨系統/淺色/深色 button in the masthead's
 `div.appear` (`id="appear"`, drawn by `drawTheme`); a click cycles it and
 writes the new value
-(`assets/station/station.js:5925`, `store('station.theme', t === 'system' ? null : t);`), and the
+(`assets/station/station.js:5969`, `store('station.theme', t === 'system' ? null : t);`), and the
 stored value is read and set as `data-theme` on `<html>` before the page's
 first paint, so a reader on 深色 never sees a flash of light first
 (`assets/station/station.js:23`, `themeSet(stored('station.theme'));`).
@@ -930,15 +930,15 @@ before them — the window's spend, tokens, active time and waiting ratio —
 and the fifth does not compare windows at all: it
 names the option-one gate wording most often swapped for another answer,
 `最常被換掉`, with how many times out of how many it was asked beneath it
-(`lib/station.js:772`, `function gateSummary(model, hidden) {`;
+(`lib/station.js:775`, `function gateSummary(model, hidden) {`;
 `assets/station/station.js:541`, `loc('shared.mostSwapped', '最常被換掉')`). Unlike the other
 four, it does not move with the 30-day window or the search box: it is
 counted once, across every shown session's gate answers
-(`lib/station.js:852`, `gates: gateSummary(model, hidden),`), not from the
+(`lib/station.js:855`, `gates: gateSummary(model, hidden),`), not from the
 filtered set the other four sum. It walks the model rather than
 `flatten()`'s output, so it takes the hidden set as an argument and skips
 those sessions itself
-(`lib/station.js:781`, `if (hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))) continue;`).
+(`lib/station.js:784`, `if (hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))) continue;`).
 While a session's transcript is still there, its source is `lib/detail.js`'s
 own replay; once the transcript is gone, `gateSummary()` falls back to the
 entry's own `gates` (see [registry.md](registry.md)), so this denominator no
@@ -998,11 +998,11 @@ rather than expanding the row, so two sessions can be compared without
 scrolling. Sorting is by task, stage, context, cost, state, started or last
 action, clicking twice to reverse — `started` keeps a column and header of its
 own so it stays reachable as a sort key, the same reason the page this
-replaces sorted by it (`assets/station/station.js:3992`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
+replaces sorted by it (`assets/station/station.js:4023`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
 `updated` descending, so the page's first sort is the one it arrived in.
 
 **比較**, `#/cmp`, is now the 全部 list with its compare tray open
-(`assets/station/station.js:5736`, `VIEWS.cmp = function (r) { return w.FK_SESSIONS ? w.FK_SESSIONS.page(S, modOpts({ tray: true })) : OLD.cmp(r); };`):
+(`assets/station/station.js:5767`, `VIEWS.cmp = function (r) { return w.FK_SESSIONS ? w.FK_SESSIONS.page(S, modOpts({ tray: true })) : OLD.cmp(r); };`):
 ticking two or three rows there opens a compare dialog of the fields
 `lib/compare.js` returns, so the page is never empty. The old view below is
 the fallback when `sessions-page.js` is not loaded. Tick two sessions on 清單 or a project page — only a
@@ -1068,7 +1068,7 @@ Both decisions are pure functions above the `module.exports` guard, so both
 are unit tested: what to say
 (`assets/station/station.js:1567`, `function serveLost(lastOkMs, nowMs, genAbs, genRel) {`)
 and what the eyebrow reads
-(`assets/station/station.js:2642`, `function heroEyebrow(frozenAt) {`). The
+(`assets/station/station.js:2672`, `function heroEyebrow(frozenAt) {`). The
 fetch that feeds them, the bar they fill and the pill are the document half
 below the guard. The eyebrow is rendered rather than patched, so it takes a
 redraw — but only as the state flips, never on a poll that finds nothing
@@ -1103,7 +1103,7 @@ registry; the footer on both says when it was generated.
 A session under a hidden project produces no `station/detail/<id>.js`
 either, on every one of those four writes. `write()` walks
 `model.registries` directly for this loop rather than through `flatten()`,
-so it carries its own check (`lib/station.js:1143`, `hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))`):
+so it carries its own check (`lib/station.js:1146`, `hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))`):
 hiding a project after its sessions already had a detail file does not
 delete that file, it just stops being rewritten — nothing in `write()`
 removes a file it once wrote.
@@ -1233,7 +1233,7 @@ for the child cannot read the old url as the new one.
 `clearEntry` once per row so the checks are the same list rather than a
 second copy of them. A clean run redirects to `/?cleared=N`, and the reloaded
 page still prints that count in a banner above the rows
-(`assets/station/station.js:3179`, `cleared ' + S.cleared + ' stale rows`); a
+(`assets/station/station.js:3210`, `cleared ' + S.cleared + ' stale rows`); a
 refusal answers `409` with which rows it refused and why, since a redirect
 has nowhere to say it. It takes the same `force` tick and the same nonce as
 the single-row button. `clearStaleControl` in `assets/station/station.js`
@@ -1498,7 +1498,7 @@ and the model took the hook's answer as the user's; `claude -p` offers no
 before. An answer file older than the wait is an earlier gate's and is not
 read. A file on disk cannot post, so it says to answer in the terminal.
 
-A press says it is on its way (`answerPost`, `assets/station/station.js:6675`, `function answerPost(id, box, line, cls, form, said, failed)`): while `POST /answer` is out the gate's buttons are disabled and its line reads 送出中…. A reply ok keeps them disabled; a refusal, a network error, or 10 seconds with no reply (`SEND_MS`, the fetch aborted through an `AbortController`) gives them back. A refusal shows `<status> — <the server's text>`, with no press-again wording; only a network error (…可以再按一次) and the timeout (還沒確認送到：可以再按一次) say it may be pressed again. The state lives in `view.pg['<id>:send']`, keyed to the gate's `pending.until`, so the poll's redraw draws it as it was and a new gate starts clean.
+A press says it is on its way (`answerPost`, `assets/station/station.js:6738`, `function answerPost(id, box, line, cls, form, said, failed)`): while `POST /answer` is out the gate's buttons are disabled and its line reads 送出中…. A reply ok keeps them disabled; a refusal, a network error, or 10 seconds with no reply (`SEND_MS`, the fetch aborted through an `AbortController`) gives them back. A refusal shows `<status> — <the server's text>`, with no press-again wording; only a network error (…可以再按一次) and the timeout (還沒確認送到：可以再按一次) say it may be pressed again. The state lives in `view.pg['<id>:send']`, keyed to the gate's `pending.until`, so the poll's redraw draws it as it was and a new gate starts clean.
 
 The bell sits in the masthead, last after 外觀, as a 36px chip like the serve chip; its panel hangs down from it, right edges aligned, and its height is limited to the space under the header. The panel can be resized and not dragged: the grip in its bottom-left corner (`nesw-resize` cursor), with a mouse or a finger (pointer events, `touch-action:none`; `fkBoxParse`, `fkBoxClamp` and the listeners after `drawFloat` in `assets/station/station.js`). Because the panel is right-anchored to the bell, dragging the grip left widens it and dragging down lengthens it, matching the cursor. Below 760px wide the brand shrinks to its glyph (`width:auto`) so the bell stays on screen. Its size is `{w, h}` in `localStorage` under `station.fkBox`, restored on reload, and its height is capped to what fits under the header (the window less 82px) and its width to the window less 64px — never smaller than 260 by 160 — while resizing, when the window shrinks, and when a saved size no longer fits. A saved `{x, y, w, h}` from before the move reads as its `w` and `h`. `floatHtml` writes the size into the panel's own `style`, so the 3-second repaint mid-resize draws it where it is; polling and 送出答案 are untouched.
 

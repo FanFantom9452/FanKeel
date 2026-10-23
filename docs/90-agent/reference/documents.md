@@ -188,8 +188,8 @@ report where a real parser would cost a dependency this plugin does not have.
 這幾區**不能**是 `.fankeel/docs.json` 的一個 bucket，而這值得寫下來，因為路徑
 本身是合法的：`lib/docs.js:217` 的 `if (!p.startsWith(b.path + '/')) continue;`
 是純字串前綴比對，`skills`、`evals`、`agents` 都是 `docs/` 以外的 bucket。擋住
-的是列檔的那一層，而那一層是同一個函式：下面第一條是它跑的旗標，其後十七條是它
-的十七個呼叫端，`scripts/` 十三處與 `lib/` 四處。每一行的引文都必須
+的是列檔的那一層，而那一層是同一個函式：下面第一條是它跑的旗標，其後十八條是它
+的十八個呼叫端，`scripts/` 十四處與 `lib/` 四處。每一行的引文都必須
 跟它的行號同行。`lib/refs.js:54` 是 `function quoteBeside(text, from) {`，
 它只掃到換行為止，而同一行上的第二個路徑會被它自己的 `PATHISH` 擋掉——所以擠
 在一行的兩個引用等於兩個都沒有引文，而被硬換行拆開的引文等於沒寫。
@@ -210,7 +210,8 @@ report where a real parser would cost a dependency this plugin does not have.
 - `scripts/memory-check.js:188` 是 `const tracked = trackedFiles(root);`
 - `scripts/orient.js:267` 是 `result = trackedFiles(dir, { stats });`
 - `scripts/todo-check.js:257` 是 `const t = list ? list(base) : trackedFiles(base);`
-- `scripts/survey.js:198` 是 `const tracked = trackedFiles(root, { stats }) || (stats.unlistable || stats.skippedExt`，十七個之中只有這一處自己（`scan` 函式本身）直接讀 `.buckets`
+- `scripts/survey.js:199` 是 `const tracked = trackedFiles(root, { stats }) || (stats.unlistable || stats.skippedExt`，十八個之中只有這一處自己（`scan` 函式本身）直接讀 `.buckets`
+- `scripts/survey.js:563` 是 `const found = trackedFiles(root);`
 - `scripts/verify-map.js:118` 是 `const result = trackedFiles(root);`
 
 `--exclude-standard` 套用 `.gitignore`，所以宣告出來的 bucket 會
