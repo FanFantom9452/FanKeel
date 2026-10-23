@@ -38,3 +38,21 @@ test('the panel caps match fkBoxClamp', () => {
     assert.ok(r.includes('max-height:calc(100vh - 58px)'));
     assert.ok(CSS.includes(':root[data-style=keel] .fkp{max-height:calc(100vh - 82px)}'));
 });
+
+test('narrow screens: the brand shrinks to its glyph so the bell stays on screen', () => {
+    const at = CSS.indexOf('@media (max-width:759px){');
+    assert.ok(at > CSS.indexOf('@media (max-width:999px){'), 'comes after the 999px block');
+    const block = CSS.slice(at, CSS.indexOf('\n}', at));
+    assert.ok(block.includes(':root[data-style=keel] .mast .brand{width:auto;margin-right:0}'));
+    assert.ok(block.includes(':root[data-style=keel] .mast{gap:6px}'));
+});
+
+test('the resize grip is bottom-left and the cursor matches the leftward widening', () => {
+    const r = rule('.fkr');
+    assert.ok(r.includes('nesw-resize'));
+    assert.ok(!r.includes('nwse-resize'));
+    assert.match(r, /margin:-16px auto 0 0[;\s]/);
+    assert.ok(r.includes('225deg'));
+    const JS = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+    assert.ok(JS.includes('b.w - (e.clientX - fkDrag.sx)'));
+});
