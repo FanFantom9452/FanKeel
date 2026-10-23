@@ -2482,7 +2482,8 @@
         var editing = [];
         (sessions || []).forEach(function (s) {
             ((s.tune && s.tune.items) || []).forEach(function (it) {
-                if (it.status === 'taken' && !(gone && gone[it.id])) editing.push({ id: it.id, block: it.block, status: 'edit' });
+                var key = s.pkey + '|' + it.id;
+                if (it.status === 'taken' && !(gone && gone[key])) editing.push({ id: key, block: it.block, status: 'edit' });
             });
         });
         return editing.concat(notes || []);
@@ -2491,7 +2492,7 @@
     // is read once the reader has had the panel open; a read note stays,
     // greyed, and stops counting on the bell. `gone` holds the ids of editing
     // rows the reader dismissed with ×: those rows come off the sessions'
-    // queues, not off `notes`, so they are remembered by id.
+    // queues, not off `notes`, so they are remembered by project and id (queue ids repeat across projects).
     var GONE_KEEP = 100;
     function readAll(notes) {
         return (notes || []).map(function (x) { return x.read ? x : Object.assign({}, x, { read: true }); });
