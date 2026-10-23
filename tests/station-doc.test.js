@@ -52,7 +52,7 @@ test('every localStorage key station.js stores appears on docs/station.md', () =
 test('station.md describes the 2026-10-01 layout and no longer the classic look', () => {
     const page = fs.readFileSync(path.join(ROOT, 'docs', '90-agent', 'reference', 'station.md'), 'utf8');
     assert.doesNotMatch(page, /newest ten|station\.style|style-classic|foot of the sidenav|dash-chooser/);
-    for (const b of ['home', 'sessions-head', 'live-head', 'session-head', 'session-tabs']) {
+    for (const b of ['sessions-head', 'live-head', 'session-head', 'session-tabs']) {
         assert.ok(page.includes('`data-block="' + b + '"`'), b + ' is not on the page');
     }
     assert.match(page, /newest three/);

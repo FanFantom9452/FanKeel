@@ -1202,8 +1202,7 @@ refusal answers `409` with which rows it refused and why, since a redirect
 has nowhere to say it. It takes the same `force` tick and the same nonce as
 the single-row button. `clearStaleControl` in `assets/station/station.js`
 renders the form when the page is served, and prints the copyable command when
-it is not — a static file cannot post; it sits in the old 可能已經停了 block,
-which draws only when `assets/station/live-page.js` is not loaded. The
+it is not — a static file cannot post. The
 redesigned 可能停了 card carries one per stale row: `modOpts`
 (`assets/station/station.js:5157`) passes `clear: clearControl`, and `row` in
 `assets/station/live-page.js` draws it in a `lv-row-clear` beside the row's
