@@ -733,13 +733,13 @@ the search box in the top bar matches task, project, session id, registry
 label, model, state, next, the files touched and its notes — AND-ed.
 
 The same box also opens a grouped-results popover about 200 ms after typing
-stops (`assets/station/station.js:6445`, `}, 200)`): `qGroups`
-(`assets/station/station.js:6361`, `function qGroups(q) {`) buckets what
+stops (`assets/station/station.js:6430`, `}, 200)`): `qGroups`
+(`assets/station/station.js:6346`, `function qGroups(q) {`) buckets what
 matches into Sessions, 專案 and 文件, up to five rows each with a 看全部 link
 when there are more, and `qDraw`
-(`assets/station/station.js:6402`, `function qDraw() {`) draws it with each
+(`assets/station/station.js:6387`, `function qDraw() {`) draws it with each
 match highlighted. `/` focuses the box from anywhere on the page
-(`assets/station/station.js:6530`, `if (e.key === '/')`), the arrow keys
+(`assets/station/station.js:6515`, `if (e.key === '/')`), the arrow keys
 move the selection, Enter opens what is picked and Esc closes the popover.
 文件 in this popover matches only the paths and buckets the page's own data
 carries. The page bodies are searched on 文件 itself — see
@@ -894,7 +894,7 @@ read with `stored()`'s try/catch so a `file:` page or private mode with no
 holds the three-state 跟隨系統/淺色/深色 button in the masthead's
 `div.appear` (`id="appear"`, drawn by `drawTheme`); a click cycles it and
 writes the new value
-(`assets/station/station.js:5940`, `store('station.theme', t === 'system' ? null : t);`), and the
+(`assets/station/station.js:5925`, `store('station.theme', t === 'system' ? null : t);`), and the
 stored value is read and set as `data-theme` on `<html>` before the page's
 first paint, so a reader on 深色 never sees a flash of light first
 (`assets/station/station.js:23`, `themeSet(stored('station.theme'));`).
@@ -1498,9 +1498,9 @@ and the model took the hook's answer as the user's; `claude -p` offers no
 before. An answer file older than the wait is an earlier gate's and is not
 read. A file on disk cannot post, so it says to answer in the terminal.
 
-A press says it is on its way (`answerPost`, `assets/station/station.js:6690`, `function answerPost(id, box, line, cls, form, said, failed)`): while `POST /answer` is out the gate's buttons are disabled and its line reads 送出中…. A reply ok keeps them disabled; a refusal, a network error, or 10 seconds with no reply (`SEND_MS`, the fetch aborted through an `AbortController`) gives them back. A refusal shows `<status> — <the server's text>`, with no press-again wording; only a network error (…可以再按一次) and the timeout (還沒確認送到：可以再按一次) say it may be pressed again. The state lives in `view.pg['<id>:send']`, keyed to the gate's `pending.until`, so the poll's redraw draws it as it was and a new gate starts clean.
+A press says it is on its way (`answerPost`, `assets/station/station.js:6675`, `function answerPost(id, box, line, cls, form, said, failed)`): while `POST /answer` is out the gate's buttons are disabled and its line reads 送出中…. A reply ok keeps them disabled; a refusal, a network error, or 10 seconds with no reply (`SEND_MS`, the fetch aborted through an `AbortController`) gives them back. A refusal shows `<status> — <the server's text>`, with no press-again wording; only a network error (…可以再按一次) and the timeout (還沒確認送到：可以再按一次) say it may be pressed again. The state lives in `view.pg['<id>:send']`, keyed to the gate's `pending.until`, so the poll's redraw draws it as it was and a new gate starts clean.
 
-The bell sits in the masthead, last after 外觀, as a 36px chip like the serve chip; its panel hangs down from it, right edges aligned, and its height is limited to the space under the header. The panel can be resized and not dragged: the grip in its bottom-right corner, with a mouse or a finger (pointer events, `touch-action:none`; `fkBoxParse`, `fkBoxClamp` and the listeners after `drawFloat` in `assets/station/station.js`). Its size is `{w, h}` in `localStorage` under `station.fkBox`, restored on reload, and it is pulled back inside the window — never smaller than 260 by 160 — while resizing, when the window shrinks, and when a saved size no longer fits. A saved `{x, y, w, h}` from before the move reads as its `w` and `h`. `floatHtml` writes the size into the panel's own `style`, so the 3-second repaint mid-resize draws it where it is; polling and 送出答案 are untouched.
+The bell sits in the masthead, last after 外觀, as a 36px chip like the serve chip; its panel hangs down from it, right edges aligned, and its height is limited to the space under the header. The panel can be resized and not dragged: the grip in its bottom-right corner, with a mouse or a finger (pointer events, `touch-action:none`; `fkBoxParse`, `fkBoxClamp` and the listeners after `drawFloat` in `assets/station/station.js`). Its size is `{w, h}` in `localStorage` under `station.fkBox`, restored on reload, and its height is capped to what fits under the header (the window less 82px) and its width to the window less 64px — never smaller than 260 by 160 — while resizing, when the window shrinks, and when a saved size no longer fits. A saved `{x, y, w, h}` from before the move reads as its `w` and `h`. `floatHtml` writes the size into the panel's own `style`, so the 3-second repaint mid-resize draws it where it is; polling and 送出答案 are untouched.
 
 ## Reaching the station from a phone
 

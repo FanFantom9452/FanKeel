@@ -2537,7 +2537,7 @@
     }
     function fkBoxClamp(b, vw, vh) {
         if (!b) return null;
-        return { w: Math.max(FK_MIN_W, Math.min(b.w, vw)), h: Math.max(FK_MIN_H, Math.min(b.h, vh - 74)) };
+        return { w: Math.max(FK_MIN_W, Math.min(b.w, vw - 64)), h: Math.max(FK_MIN_H, Math.min(b.h, vh - 82)) };
     }
     function fkBoxStyle(b) {
         return b ? ' style="width:' + Math.round(b.w) + 'px;height:' + Math.round(b.h) + 'px"' : '';

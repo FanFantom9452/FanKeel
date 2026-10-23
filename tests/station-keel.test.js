@@ -24,7 +24,7 @@ test('the masthead carries the film glyph and the appearance group, and no class
     assert.match(html, /<a class="brand" href="#\/" id="brand"[^>]*><svg class="glyph k-only mark b1" viewBox="0 0 120 120"/);
     assert.equal((html.match(/class="gseg done"/g) || []).length, 6);
     assert.doesNotMatch(html, /classic-mark|styletog|style-classic/);
-    assert.match(html, /<div class="appear" id="appear" role="group" aria-label="外觀"><\/div>\n<\/header>/);
+    assert.match(html, /<div class="appear" id="appear" role="group" aria-label="外觀"><\/div>\n  <div class="fk" id="fk" data-block="bell"><\/div>\n<\/header>/);
 });
 
 test('every keel rule is scoped, and no rule is left for a part only the classic look had', () => {

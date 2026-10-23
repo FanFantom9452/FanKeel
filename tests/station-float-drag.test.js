@@ -78,8 +78,8 @@ test('a resize past the window edge stops at it', () => {
     const p = boot();
     p.down(GRIP, 976, 700);
     p.move(-1000, 2700);
-    assert.equal(p.panel().style.width, '1200px');
-    assert.equal(p.panel().style.height, '726px');
+    assert.equal(p.panel().style.width, '1136px');
+    assert.equal(p.panel().style.height, '718px');
 });
 
 test('a saved size comes back on reload, pulled inside a smaller window', () => {
@@ -87,8 +87,8 @@ test('a saved size comes back on reload, pulled inside a smaller window', () => 
     p.win.innerWidth = 1000;
     p.win.innerHeight = 600;
     p.resize();
-    assert.equal(p.panel().style.width, '1000px');
-    assert.equal(p.panel().style.height, '526px');
+    assert.equal(p.panel().style.width, '936px');
+    assert.equal(p.panel().style.height, '518px');
 });
 
 test('a saved place from before the bell moved is read as its size only', () => {
