@@ -126,7 +126,7 @@
     }
     function row(s, kind, o) {
         var k = kit(), id8 = esc(String(s.id).slice(0, 8)), c = k.cost(s);
-        return '<a class="hm-lv sxr' + (kind === 'stop' ? ' gone' : '') + '" href="' + esc(k.sessionHash(s.id)) + '" aria-describedby="pk-' + id8 + '">'
+        var a = '<a class="hm-lv sxr' + (kind === 'stop' ? ' gone' : '') + '" href="' + esc(k.sessionHash(s.id)) + '" aria-describedby="pk-' + id8 + '">'
             + glyph(s, kind)
             + '<span class="hm-lv-p">' + chip(s, o) + '</span>'
             + '<span class="hm-lv-t' + (s.task ? '' : ' un') + '">' + taskText(s, o.now) + '</span>'
@@ -134,6 +134,8 @@
             + '<span class="sx-usd' + (c ? '' : ' z') + '">' + k.usd(c, true) + '</span>'
             + '<span class="hm-lv-r">' + since(lastOf(s), o.now) + '</span>'
             + '<div class="sx-pk" id="pk-' + id8 + '" role="tooltip">' + peek(s) + '</div></a>';
+        // The clear control sits beside the link, never inside it: a form in an <a> is invalid and a click would follow the link.
+        return kind === 'stop' && o.clear ? '<div class="lv-row">' + a + '<div class="lv-row-clear">' + o.clear(s) + '</div></div>' : a;
     }
     // Which fold is open, by group, so the poll's redraw keeps it open.
     var openUn = {}, bound = false;
@@ -182,7 +184,7 @@
     function page(S, o) {
         o = o || {};
         bind();
-        var opt = { names: o.names || {}, now: isFinite(o.now) ? o.now : Date.now() };
+        var opt = { names: o.names || {}, now: isFinite(o.now) ? o.now : Date.now(), clear: o.clear };
         var all = (S && S.sessions) || [], g = groups(all), n = g.wait.length + g.run.length + g.stop.length;
         return '<div class="sxp" data-block="live-page">'
             + '<div class="phead khead sxh" data-block="live-head"><nav class="subtabs" aria-label="Sessions">'

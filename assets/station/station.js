@@ -5757,7 +5757,7 @@
     // `OLD` is the table as it stood; each module is handed the station and
     // what this file derives from it.
     function modOpts(extra) {
-        return Object.assign({ names: NAMES, now: S.serve ? Date.now() : NOW, serve: Boolean(S.serve), redraw: draw }, extra);
+        return Object.assign({ names: NAMES, now: S.serve ? Date.now() : NOW, serve: Boolean(S.serve), redraw: draw, clear: clearControl }, extra);
     }
     var OLD = Object.assign({}, VIEWS);
     VIEWS.now = function (r) { return w.FK_LIVE ? w.FK_LIVE.page(S, modOpts()) : OLD.now(r); };
