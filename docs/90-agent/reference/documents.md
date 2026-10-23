@@ -104,7 +104,8 @@ backend because somebody decided it was, and no listing says so.
 `buildMap()` follows the tree with an **orientation** section: the five
 files most required elsewhere in the tree, and which top-level directories
 require which — both counted from `lib/requires.js`'s `requireGraph()` over
-every tracked `.js` file's relative `require`/`import` edges, and both
+every tracked `.js` file's relative `require` and static or dynamic
+`import` edges, and both
 truncated the way every other section below them is, by `lib/report.js`'s
 `section()`. It answers a different question than the tree does: not where a
 file lives, but who already reaches into it. Left out entirely when no `.js`
