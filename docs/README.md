@@ -718,6 +718,7 @@ is corrected by the next one, not by rewriting this.
 | Brief 25 — graphify: actually run it on real FanKeel questions and say if it is useful | [90-agent/judgements/2026-10-22-graphify-run-it.md](90-agent/judgements/2026-10-22-graphify-run-it.md) — *judged 2026-10-22, fable* |
 | Brief 26 — Understand-Anything: is it useful to FanKeel? (analyse, then plan a real run) | [90-agent/judgements/2026-10-22-understand-anything.md](90-agent/judgements/2026-10-22-understand-anything.md) — *judged 2026-10-22, fable* |
 | Brief 27 — Ponytail 4.9.0 → 5.3.2: what changed, how it compares to FanKeel's workflow, and what to borrow | [90-agent/judgements/2026-10-22-ponytail-5-diff.md](90-agent/judgements/2026-10-22-ponytail-5-diff.md) — *judged 2026-10-22, fable* |
+| Brief 28 — i-have-adhd: is it useful to fankeel-explain's output? | [90-agent/judgements/2026-10-22-i-have-adhd-explain.md](90-agent/judgements/2026-10-22-i-have-adhd-explain.md) — *judged 2026-10-22, fable* |
 | Brief: station loading skeletons, and the station's stack going forward | [90-agent/judgements/2026-10-23-station-skeleton-stack.md](90-agent/judgements/2026-10-23-station-skeleton-stack.md) — *judged 2026-10-23, fable* |
 
 ## The five scanners
