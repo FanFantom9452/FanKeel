@@ -911,6 +911,15 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
 .lv-clear button{display:inline-flex;align-items:center;border:1px solid var(--rule2);background:transparent;border-radius:7px;padding:4px 10px;font-size:12.5px;cursor:pointer;color:var(--ink2)}
 .lv-clear button:hover{color:var(--ink);background:var(--wash)}
 .lv-clear code{font-size:11px;color:var(--muted)}
+.lv-row{display:flex;align-items:center;gap:8px}
+.lv-row>.lane{flex:1;min-width:0}
+.lv-row-clear{flex:none;padding-right:10px}
+.lv-row-clear:empty{display:none}
+.lv-row-clear .clearform{margin-top:0}
+.lv-row-clear .claims{margin-top:0!important;font-size:11px}
+.kcap-go{color:inherit;text-decoration:none;border-bottom:1px dotted var(--faint);cursor:pointer}
+.kcap-go:hover{color:var(--ink)}
+.kcap-go:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 @media(max-width:1280px){
   .lane{grid-template-columns:minmax(0,1fr) 100px;grid-template-areas:"who when" "task when" "rail rail";row-gap:6px}
   .lane-who{flex-direction:row;align-items:baseline;gap:10px}

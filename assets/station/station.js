@@ -1862,7 +1862,9 @@
         return '<section class="lv-grp" data-block="live-maybe" aria-labelledby="h-maybe"><div class="lv-h"><h2 id="h-maybe">' + loc('nav.mayHaveStopped', '可能已經停了') + '</h2>'
             + '<span class="lv-n mono">' + maybe.length + '</span><span class="lv-note">' + loc('nav.registryUnconfirmedProcess', 'registry 還標著進行中，但確認不了 process 還在') + '</span>'
             + (clears ? '<span class="spacer"></span>' + clears : '') + '</div>'
-            + '<div class="lv-card">' + maybe.map(function (s) { return liveLane(s, name, now); }).join('') + '</div></section>';
+            + '<div class="lv-card">' + maybe.map(function (s) {
+                return '<div class="lv-row">' + liveLane(s, name, now) + '<div class="lv-row-clear">' + clearControl(s) + '</div></div>';
+            }).join('') + '</div></section>';
     }
     function liveIdle(idle, lab) {
         if (!idle.length) return '';
@@ -1887,7 +1889,8 @@
         var gates = rows.filter(function (s) { return s.pending && s.pending.questions && s.pending.questions.length; }).length;
         return '<div class="phead khead" data-block="live-head"><h1>' + icon('now') + loc('nav.now', '現在') + '</h1>'
             + '<p class="kcap"><span>' + loc('nav.capRunning', '正在跑<b>{n}</b>', { n: run.length }) + '</span>'
-            + '<span>' + loc('nav.capMaybe', '可能已經停了<b>{n}</b>', { n: maybe.length }) + '</span>'
+            + '<span>' + (maybe.length ? '<a class="kcap-go" href="#/live" data-jump="h-maybe">' + loc('nav.capMaybe', '可能已經停了<b>{n}</b>', { n: maybe.length }) + '</a>'
+                : loc('nav.capMaybe', '可能已經停了<b>{n}</b>', { n: maybe.length })) + '</span>'
             + '<span' + (gates ? '' : ' class="ok"') + '>' + (gates ? loc('nav.capGates', '<b>{n}</b>個 gate 在等你', { n: gates }) : loc('nav.capNoGates', '沒有 gate 在等你')) + '</span></p>'
             + '<span class="spacer"></span>' + (tabs || '') + '</div><div class="lv klv" data-block="now">'
             + (open.length ? liveGate(rows, name, now) + liveRun(run, name, now) + liveMaybe(maybe, open, name, now) + liveIdle(idle, lab)
@@ -5952,6 +5955,13 @@
         var back = had && box.querySelector ? box.querySelector('[data-themecycle]') : null;
         if (back) back.focus();
     }
+    doc.addEventListener('click', function (e) {
+        var n = e.target && e.target.closest ? e.target.closest('[data-jump]') : null;
+        var to = n ? doc.getElementById(n.getAttribute('data-jump')) : null;
+        if (!to) return;
+        if (e.preventDefault) e.preventDefault();
+        if (to.scrollIntoView) to.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    });
     doc.addEventListener('click', function (e) {
         var n = e.target.closest ? e.target.closest('[data-themecycle]') : null;
         if (!n) return;

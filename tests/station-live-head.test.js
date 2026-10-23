@@ -18,7 +18,7 @@ test('#/live opens with the film\'s head: running, maybe stopped, the gate line,
     const html = V.nowHtml(P, ROWS, '<nav class="subtabs" data-block="subtabs"></nav>');
     const head = html.slice(0, html.indexOf('data-block="now"'));
     assert.match(head, /^<div class="phead khead" data-block="live-head"><h1>/);
-    assert.match(head, /<p class="kcap"><span>正在跑<b>1<\/b><\/span><span>可能已經停了<b>2<\/b><\/span><span class="ok">沒有 gate 在等你<\/span><\/p><span class="spacer"><\/span><nav class="subtabs"/);
+    assert.match(head, /<p class="kcap"><span>正在跑<b>1<\/b><\/span><span><a class="kcap-go" href="#\/live" data-jump="h-maybe">可能已經停了<b>2<\/b><\/a><\/span><span class="ok">沒有 gate 在等你<\/span><\/p><span class="spacer"><\/span><nav class="subtabs"/);
     assert.match(html, /<div class="lv klv" data-block="now">/);
     const gated = V.nowHtml(P, [lane('g1', 'live', false, { pending: { questions: [{ header: 'h' }] } })], '');
     assert.match(gated, /<span><b>1<\/b>個 gate 在等你<\/span>/);
