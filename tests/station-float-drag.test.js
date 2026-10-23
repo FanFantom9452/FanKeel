@@ -11,7 +11,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+const { SRC } = require('./station-src.js');
 const NOW = Date.parse('2026-10-15T12:00:00.000Z');
 const PK = 'F:\\ws\\alpha';
 const RECT = { left: 600, top: 300, width: 376, height: 400 };

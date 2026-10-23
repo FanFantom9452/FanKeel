@@ -2993,7 +2993,7 @@
 
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
-            todoPanelHtml: todoPanelHtml, knownPkey: knownPkey,
+            knownPkey: knownPkey,
             boardLinkHtml: boardLinkHtml,
             tokens: tokens, mins: mins, hours: hours, usd: usd, ago: ago, day: day,
             stamp: stamp, esc: esc, cost: cost, labels: labels, delta: delta, match: match,
@@ -3003,8 +3003,6 @@
             dur: dur, tasksHtml: tasksHtml, dispatchHtml: dispatchHtml, replayHtml: replayHtml, dispatchStagesHtml: dispatchStagesHtml, segmentsOf: segmentsOf, stageCost: stageCost, totalSuffix: totalSuffix, splitHtml: splitHtml, planTabHtml: planTabHtml, planRel: planRel, gateTabHtml: gateTabHtml,
             splitCount: splitCount, taskCount: taskCount,
             pendingGateHtml: pendingGateHtml, pgAnswers: pgAnswers, todoEntry: todoEntry, riseTodo: riseTodo, backTodo: backTodo, todoSpot: todoSpot,
-            figures: figures, compareHtml: compareHtml,
-            routeGroups: routeGroups, routeLedger: routeLedger,
             localDay: localDay, lastDays: lastDays, parseHash: parseHash, family: family, modelKey: modelKey, modelLabel: modelLabel, sessionTotals: sessionTotals,
             windowTotals: windowTotals, dayBars: dayBars, projectRows: projectRows, kpiHtml: kpiHtml,
             histSvg: histSvg, legendHtml: legendHtml, projectsHtml: projectsHtml, recentHtml: recentHtml,
@@ -3019,7 +3017,7 @@
             segTip: segTip,
             tk: tk,
             stageShare: stageShare, costShareHtml: costShareHtml, subtabsHtml: subtabsHtml,
-            liveSubsHtml: liveSubsHtml, shellsHtml: shellsHtml, dashRecent: dashRecent, dashPage: dashPage,
+            liveSubsHtml: liveSubsHtml, shellsHtml: shellsHtml,
             NAV_TREE: NAV_TREE,
             tuneOpen: tuneOpen, tuneEvents: tuneEvents, toastText: toastText, floatHtml: floatHtml, fkBoxParse: fkBoxParse, fkBoxClamp: fkBoxClamp, gateCountdownHtml: gateCountdownHtml, noteHtml: noteHtml, floatNotes: floatNotes, clock: gateClock,
             readAll: readAll, dismissNote: dismissNote, clearNotes: clearNotes, goneParse: goneParse, goneKeys: goneKeys,
@@ -3055,90 +3053,6 @@
         return S.sessions.filter(function (s) { return match(s, f); });
     };
 
-    // A seven-stage session and a three-stage one averaged together describe
-    // neither, so every cross-session figure is taken inside one route: a
-    // class's route under the class's name, a hand-written route under its
-    // own stages, and no average crosses two groups. A session that stepped
-    // back — `backtracks`, the count the detail panel's stage order prints —
-    // is counted in its group but kept out of its averages, on a row of its
-    // own.
-    function routeName(route, classes) {
-        var key = (route || []).join('>');
-        for (var k in classes || {}) if ((classes[k] || []).join('>') === key) return k;
-        return (route || []).join(' → ') || loc('tune.noRoute', '（沒有 route）');
-    }
-    function routeGroups(R, classes) {
-        var by = {}, order = [];
-        R.forEach(function (s) {
-            var name = routeName(s.route, classes);
-            if (!by[name]) {
-                by[name] = { name: name, route: s.route || [], n: 0, clean: 0, backN: 0, backtracks: 0, stages: {},
-                    back: { ms: 0, wait: 0, burn: 0, usd: 0, estimated: false } };
-                order.push(name);
-            }
-            var g = by[name];
-            g.n++;
-            if (s.backtracks > 0) {
-                g.backN++;
-                g.backtracks += s.backtracks;
-                s.stages.forEach(function (w) {
-                    g.back.ms += Math.max(w.to - w.from, 0);
-                    g.back.wait += w.waited || 0;
-                    g.back.burn += w.burn || 0;
-                    g.back.usd += w.usd || 0;
-                    if (w.estimated && w.usd) g.back.estimated = true;
-                });
-                return;
-            }
-            g.clean++;
-            s.stages.forEach(function (w) {
-                var x = g.stages[w.stage] || (g.stages[w.stage] = { n: 0, ms: 0, wait: 0, burn: 0, usd: 0, estimated: false });
-                x.n++;
-                x.ms += Math.max(w.to - w.from, 0);
-                x.wait += w.waited || 0;
-                x.burn += w.burn || 0;
-                x.usd += w.usd || 0;
-                if (w.estimated && w.usd) x.estimated = true;
-            });
-        });
-        return order.map(function (k) { return by[k]; }).sort(function (a, b) { return b.n - a.n; });
-    }
-    // One table per route group; each stage row a per-session average over the
-    // sessions in the group that reached the stage without stepping back, the
-    // 有倒退 row the same averages over the ones that did. Nothing here is a
-    // total, so nothing here has rows to add up to.
-    function routeLedger(R) {
-        var groups = routeGroups(R, S.classes);
-        if (!groups.length) return '<div class="empty">' + loc('tune.noSessionsInFilter', '這個篩選下沒有 session') + '</div>';
-        return groups.map(function (g) {
-            var names = (g.route.length ? g.route : ROUTE).filter(function (k) { return g.stages[k]; });
-            var per = names.map(function (k) { return (g.stages[k].ms + g.stages[k].wait) / g.stages[k].n; });
-            if (g.backN) per.push((g.back.ms + g.back.wait) / g.backN);
-            var max = Math.max.apply(null, per.concat([0])) || 1;
-            var line = function (label, x, n, colour) {
-                var ms = x.ms / n, wait = x.wait / n;
-                return '<tr><td>' + label + '</td><td><div class="mini"><span style="width:' + (ms / max * 100)
-                    + '%;background:' + colour + '"></span><span style="width:' + (wait / max * 100) + '%;background:'
-                    + colour + '38"></span></div><div class="mute" style="font-size:10.5px;margin-top:4px">'
-                    + loc('tune.workedWaitedN', '{a} 做事 · {b} 等你 · {n} 個', { a: hours(ms), b: hours(wait), n: n }) + '</div></td>'
-                    + '<td class="r num mute">' + tokens(Math.round(x.burn / n)) + '</td>'
-                    + '<td class="r num">' + usd(x.usd / n, true) + estMark(x) + '</td>'
-                    + '<td class="r num" style="color:' + (wait > ms ? 'var(--dn)' : 'var(--mute)') + '">'
-                    + Math.round(wait / (ms + wait || 1) * 100) + '%</td></tr>';
-            };
-            return '<div class="rgh"><b>' + esc(g.name) + '</b><span class="mute">' + loc('tune.nSessionsBacktrack', '{n} 個 session · 有倒退 {backN} 個、倒退 {backT} 次', { n: g.n, backN: g.backN, backT: g.backtracks }) + '</span></div>'
-                + '<table><colgroup><col style="width:96px"><col><col style="width:64px"><col style="width:64px">'
-                + '<col style="width:52px"></colgroup><thead><tr><th>' + loc('tune.thStage', '階段') + '</th><th>' + loc('tune.thAvgWorkWait', '平均：做事 / 等你') + '</th>'
-                + '<th class="r">context</th><th class="r">' + loc('tune.thCost', '花費') + '</th><th class="r">' + loc('tune.thWait', '等待') + '</th></tr></thead><tbody>'
-                + names.map(function (k) {
-                    return line('<span class="chip" style="background:' + STAGE_C[k] + '1f;border-color:transparent;color:'
-                        + STAGE_C[k] + ';font-weight:600">' + k + '</span>', g.stages[k], g.stages[k].n, STAGE_C[k]);
-                }).join('')
-                + (g.backN ? line('<span class="chip" style="color:var(--dn);border-color:var(--dn)">' + loc('tune.hasBacktrack', '有倒退') + '</span>',
-                    g.back, g.backN, 'var(--dn)') : '')
-                + '</tbody></table>';
-        }).join('');
-    }
     function taskCell(s) {
         return '<div class="ell" title="' + esc(s.task) + '" style="font-weight:500">'
             + esc(s.task || loc('tune.unnamed', '（未命名）')) + '</div>'
@@ -3203,15 +3117,6 @@
     }
     function homeOpts(sel) {
         return { metric: view.metric, dim: view.dim, sel: sel, today: TODAY, days: DAYS, names: NAMES, pkeys: PKEYS };
-    }
-    // Sessions' 進行中 view, and under its lanes the cards that left 現在:
-    // 撞檔 and 最近 sessions wide, gate 平均等待 and 最近 land narrow.
-    function livePage() {
-        var R = homeRows();
-        return (isFinite(S.cleared) ? '<p class="cleared">cleared ' + S.cleared + ' stale rows</p>' : '')
-            + nowHtml(S.projects, R, subtabsHtml('live'))
-            + '<div class="dash kdash pcards" data-block="sessions-cards"><div class="dcol" data-col="main">' + dashClash(R) + dashRecent(R)
-            + '</div><div class="dcol" data-col="side">' + dashGateWait(R) + dashLanded(R, S) + '</div></div>';
     }
     // ---- 儀表板 (`#/`): four cards, each read off the rows its full page reads
     // — `homeRows()` through the same filters — so a card's number is the
@@ -3587,7 +3492,6 @@
             + dashXList(rows.map(function (x) { return x.r; }), loc('dash.noLanded', '還沒有 land 的紀錄')) + '</section>';
     }
     // 現在 (`#/`): four groups and nothing else (mockup 2026-10-21-station-home).
-    // The name stays `dashPage`: `VIEWS.now` and `draw()`'s fallback call it.
     function dashPage() {
         var R = homeRows(), now = S.serve ? Date.now() : NOW, serve = Boolean(S.serve);
         return '<div class="dash kdash home" data-block="home"><div class="dcol" data-col="main">' + homeLive(R, now, serve) + homeRunning(R, now, serve)
@@ -5631,63 +5535,6 @@
     }
 
     // ---- 比較 ----------------------------------------------------------------
-    // The figures the comparison sets side by side, each from the field the
-    // session's own panel prints it from.
-    function figures(x) {
-        var P = x.points;
-        return {
-            peak: x.peak, peakN: x.peakN, requests: x.requests, pts: P.length, noTime: x.noTime,
-            cents: x.rows.reduce(function (n, r) { return n + r.c; }, 0), agentCents: x.agentsTotal.cents, estimated: estOf(x.rows),
-            back: x.backtracks, t0: P.length ? P[0].t : 0, t1: P.length ? P[P.length - 1].t : 0,
-        };
-    }
-    // Two lines one above the other, on one y axis and one x length, x being
-    // the time since each one's first request — each chart still one series.
-    function compareHtml(a, xa, b, xb) {
-        var fa = figures(xa), fb = figures(xb);
-        var span = Math.max(fa.t1 - fa.t0, fb.t1 - fb.t0) || 1;
-        var top = Math.max(fa.peak, fb.peak) || 1;
-        var ymax = Math.ceil(top / niceStep(top)) * niceStep(top);
-        var chart = function (s, x, f) {
-            return '<div class="cmph"><span class="sid">' + esc(String(s.id).slice(0, 8)) + '</span><span class="tk" title="'
-                + esc(s.task) + '">' + esc(s.task) + '</span><span class="meta">' + loc('cmp.startedAtDot', '{t} 起 · ', { t: stamp(f.t0) }) + mins(f.t1 - f.t0)
-                + loc('cmp.dotNSegments', ' · {n} 段', { n: s.route.length }) + '</span></div><div class="cx">' + lineChart(x.points, {
-                    W: 720, H: 180, t0: f.t0, t1: f.t0 + span, ymax: ymax, marks: x.marks, elapsed: true,
-                    label: loc('cmp.idContextNPointsPeak', '{id} 的 context，{n} 點，峰值 {peak}', { id: String(s.id).slice(0, 8), n: f.pts, peak: tokens(f.peak) }),
-                }) + '</div>';
-        };
-        var row = function (s, f) {
-            return '<tr><td class="sid">' + esc(String(s.id).slice(0, 8)) + '<span class="s2">' + esc(s.state + ' · ' + s.stage) + '</span></td>'
-                + '<td class="v r">' + tokens(f.peak) + '<span class="s2">' + (f.peakN ? loc('cmp.turnNDot', '回合 {n} · ', { n: f.peakN }) : '') + comma(f.peak) + '</span></td>'
-                + '<td class="v r">' + f.requests + '<span class="s2">' + loc('cmp.nPointsPlusNoTime', '{n} 點 ＋ {t} no time', { n: f.pts, t: f.noTime }) + '</span></td>'
-                + '<td class="v r">' + cents(f.cents) + estMark(f) + '<span class="s2">' + (f.cents === f.agentCents ? loc('cmp.equalsSign', '＝') : loc('cmp.notEqualsSign', '≠'))
-                + ' agentsOf() ' + cents(f.agentCents) + estMark(f) + '</span></td>'
-                + '<td class="v r">' + f.back + '</td></tr>';
-        };
-        return chart(a, xa, fa) + '<div style="height:14px"></div>' + chart(b, xb, fb)
-            + '<p class="cmpnote">' + loc('cmp.sharedAxesNote', '兩張圖共用 y 軸（0 到 {y}）與 x 軸的長度（{x}）；x 是從各自第一個 request 起算的經過時間，所以同一個橫座標是「開工後同樣久」。每張圖仍然只有一條線。', { y: tokens(ymax), x: mins(span) }) + '</p>'
-            + '<div class="figs"><table><thead><tr><th>session</th><th class="r">' + loc('cmp.peakContext', '峰值 context') + '</th><th class="r">requests</th>'
-            + '<th class="r">' + loc('cmp.dispatchUsd', '派工 USD') + '</th><th class="r">' + loc('cmp.backtrack', '倒退') + '</th></tr></thead><tbody>' + row(a, fa) + row(b, fb) + '</tbody></table></div>'
-            + '<p class="cmpnote">' + loc('cmp.figuresSameSource', '每一格都和各自 session 的細節面板出自同一個欄位：峰值與 requests 是 context 折線的，派工 USD 是派工表各列的和，倒退是階段順序的。') + '</p>'
-            + '<div class="cmpseq">' + [[a, xa], [b, xb]].map(function (p) {
-                return '<h3>' + esc(String(p[0].id).slice(0, 8)) + loc('cmp.dotStepsBacktrack', ' · {n} 步 · 倒退 {b}', { n: p[1].seq.length, b: p[1].backtracks }) + '</h3>'
-                    + seqHtml(p[1].seq, p[1].backs, p[0].route, p[0].stage, false);
-            }).join('') + '</div>';
-    }
-    function cmpPage() {
-        var two = picked.map(function (id) {
-            return S.sessions.filter(function (s) { return s.id === id; })[0];
-        }).filter(Boolean);
-        var head = '<div class="phead"><h1>' + icon('cmp') + loc('cmp.compareHeading', '比較') + '</h1><span class="spacer"></span>'
-            + '<a class="ctl" href="#/list">' + loc('cmp.backToList', '☰ 回清單') + '</a></div>' + subtabsHtml('cmp');
-        if (two.length < 2) {
-            return head + '<div class="card"><div class="cbody"><p class="mute">' + loc('cmp.pickTwoToCompareHint', '在專案頁或清單上勾兩個有細節的 session，這裡就上下並排比較它們。') + '</p></div></div>';
-        }
-        two.forEach(needDetail);
-        var xa = DETAIL[two[0].id], xb = DETAIL[two[1].id];
-        return head + '<div class="card cmpcard"><div class="cbody">'
-            + (xa && xb ? compareHtml(two[0], xa, two[1], xb) : '<p class="mute">' + loc('cmp.loadingDetail2', '讀取細節…') + '</p>') + '</div></div>';
-    }
 
     function pageTitle(r) {
         var v = navOn(r && r.view), hit = '';
@@ -5702,11 +5549,7 @@
     function drawSide() {
         doc.getElementById('side').innerHTML = '<h1 class="ptitle">' + esc(pageTitle(route)) + '</h1>';
     }
-    VIEWS.now = dashPage;
-    VIEWS.live = livePage;
     VIEWS.days = daysPage;
-    VIEWS.sessions = sessionsPage;
-    VIEWS.projects = projectsPage;
     VIEWS.docs = docsPage;
     VIEWS.tour = function () { return tourPage(Boolean(S.serve)); };
     // Typing in 文件's box asks the server 250 ms after the last key, and
@@ -5737,7 +5580,6 @@
         }, 250);
     });
     VIEWS.list = listPage;
-    VIEWS.cmp = cmpPage;
     // The wizard's state lives as long as the page: a re-read of the data
     // (the poll) keeps it, a write reloads the page and starts it fresh.
     var wiz = null;
@@ -5751,32 +5593,23 @@
     }
     VIEWS.settings = settingsPage;
     // The redesigned pages (station redesign §1–§4) are modules the shell
-    // loads before this file: live-page.js, sessions-page.js, projects-page.js,
-    // project-page.js, session-page.js. A route goes to its module when it is
-    // loaded and to the view above when it is not, so this file still draws
-    // every page on its own — the tests that boot station.js alone draw those.
-    // `OLD` is the table as it stood; each module is handed the station and
-    // what this file derives from it.
+    // loads before this file; each is handed the station and what this file
+    // derives from it. 計畫, 事件 and 關卡 stay on the session page this file
+    // still draws (sessionPage), as does a session only the 花費 page knows.
     function modOpts(extra) {
         return Object.assign({ names: NAMES, now: S.serve ? Date.now() : NOW, serve: Boolean(S.serve), redraw: draw, clear: clearControl }, extra);
     }
-    var OLD = Object.assign({}, VIEWS);
-    VIEWS.now = function (r) { return w.FK_LIVE ? w.FK_LIVE.page(S, modOpts()) : OLD.now(r); };
-    VIEWS.live = function (r) { return w.FK_LIVE ? w.FK_LIVE.page(S, modOpts()) : OLD.live(r); };
-    VIEWS.sessions = function (r) { return w.FK_SESSIONS ? w.FK_SESSIONS.page(S, modOpts({ tray: false })) : OLD.sessions(r); };
+    VIEWS.now = function (r) { return w.FK_LIVE.page(S, modOpts()); };
+    VIEWS.live = function (r) { return w.FK_LIVE.page(S, modOpts()); };
+    VIEWS.sessions = function (r) { return w.FK_SESSIONS.page(S, modOpts({ tray: false })); };
     // 比較 lands on the list with its compare tray, so it is never an empty page.
-    VIEWS.cmp = function (r) { return w.FK_SESSIONS ? w.FK_SESSIONS.page(S, modOpts({ tray: true })) : OLD.cmp(r); };
-    VIEWS.projects = function (r) {
-        return w.FK_PROJECTS ? w.FK_PROJECTS.page(S, modOpts({ hash: String(w.location.hash || '') })) : OLD.projects(r);
-    };
-    VIEWS.project = function (r) { return w.FK_PROJECT ? w.FK_PROJECT.page(S, r.pkey, modOpts({ todo: r.todo })) : OLD.project(r); };
-    // The session page has three tabs, 經過 / 派工 / 對話; the old 花費 tab is
-    // 經過 now. 計畫, 事件 and 關卡 stay on the old page, as does a session
-    // only the 花費 page knows (its 對話 is FK_PANEL.talkOnly's).
+    VIEWS.cmp = function (r) { return w.FK_SESSIONS.page(S, modOpts({ tray: true })); };
+    VIEWS.projects = function (r) { return w.FK_PROJECTS.page(S, modOpts({ hash: String(w.location.hash || '') })); };
+    VIEWS.project = function (r) { return w.FK_PROJECT.page(S, r.pkey, modOpts({ todo: r.todo })); };
     var SESSION_TABS = ['timeline', 'cost', 'dispatch', 'talk'];
     VIEWS.session = function (r) {
         var s = S.sessions.filter(function (x) { return x.id === r.id; })[0];
-        if (!w.FK_SESSION || !s || SESSION_TABS.indexOf(r.tab) < 0) return OLD.session(r);
+        if (!s || SESSION_TABS.indexOf(r.tab) < 0) return sessionPage(r);
         needDetail(s);
         var tab = r.tab === 'cost' ? 'timeline' : r.tab, talk;
         if (tab === 'talk') {
@@ -5894,7 +5727,7 @@
         var dets = {}, samePage = w.location.hash === drawnHash;
         if (samePage && doc.querySelectorAll) [].forEach.call(doc.querySelectorAll(DETS), function (d) { dets[detKey(d)] = d.open; });
         drawnHash = w.location.hash;
-        var html = (VIEWS[route.view] || dashPage)(route);
+        var html = (VIEWS[route.view] || VIEWS.now)(route);
         var parts = partsOf(html);
         var changed = samePage && parts ? changedParts(drawnParts, parts) : null;
         if (changed && p.children && p.children.length === parts.length) {

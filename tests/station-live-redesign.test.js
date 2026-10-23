@@ -31,19 +31,19 @@ function live(lang) {
     return win.FK_LIVE;
 }
 const draw = (sessions, lang) => live(lang).page({ sessions }, { names: { 'F:\\w/app': 'w / app' }, now: NOW });
-// The module with a document that keeps what it listens for. The module binds
-// on its first draw, so `fire` reaches only listeners added after the load,
+// The module with a document that keeps what it listens for. station.js's
+// boot draws the live page, so the module may bind before the test's draw;
+// `fire` reaches only listeners live-page.js added (by the file on the stack),
 // not station.js's or tip.js's.
 function bound() {
     const on = [];
     const el = () => ({ innerHTML: '', textContent: '', className: '', title: '', addEventListener() {} });
     const document = { getElementById: el, createElement: el, head: { appendChild() {} }, querySelectorAll: () => [], activeElement: null,
-        addEventListener(type, fn) { on.push([type, fn]); } };
+        addEventListener(type, fn) { if (/live-page\.js/.test(new Error().stack)) on.push([type, fn]); } };
     const L = page(['tip.js', 'live-page.js'], {}, { document }).win.FK_LIVE;
-    const loaded = on.length;
     const draw = () => L.page({ sessions: SESSIONS }, { names: {}, now: NOW });
     draw();
-    const fire = (type, e) => on.slice(loaded).forEach(([t, fn]) => { if (t === type) fn(e); });
+    const fire = (type, e) => on.forEach(([t, fn]) => { if (t === type) fn(e); });
     return { document, fire, draw };
 }
 

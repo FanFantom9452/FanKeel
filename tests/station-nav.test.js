@@ -7,7 +7,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+const { SRC } = require('./station-src.js');
 const NOW = Date.parse('2026-10-21T09:00:00.000Z');
 const ROUTE = ['survey', 'design', 'plan', 'build', 'verify', 'land'];
 const row = (id, over) => Object.assign({ id, pkey: 'F:\\ws\\alpha', root: 'F:\\ws\\alpha', project: null, task: 'task ' + id, state: 'live',
@@ -50,7 +50,6 @@ test('the bar is one level: 現在, Sessions, 花費, 文件, then 設定 and �
     assert.doesNotMatch(nav, /data-navfold|navkids|navchev|<button/);
     assert.match(nav, /<a href="#\/" aria-current="page">[\s\S]*?<span>現在<\/span><span class="nb wait" title="1 個 session 在等你回答">1<\/span><\/a>/);
     assert.equal((nav.match(/class="nb/g) || []).length, 1, 'only 現在 carries a count');
-    assert.deepEqual([...els.page.innerHTML.matchAll(/data-block="(home-[^"]+)"/g)].map((m) => m[1]), ['home-live', 'home-running', 'home-todo', 'home-spend']);
 });
 
 test('a sub-page, a detail page and an old hash light the bar entry that holds it', () => {

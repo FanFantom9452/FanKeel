@@ -12,7 +12,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+const { SRC } = require('./station-src.js');
 const NOW = Date.parse('2026-10-01T12:00:00.000Z');
 const DAY = '2026-09-30', TODAY = '2026-10-01';
 const LEG = '.legend [data-key]:not([data-off])';

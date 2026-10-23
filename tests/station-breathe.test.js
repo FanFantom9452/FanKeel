@@ -10,7 +10,7 @@ const registry = require('../lib/registry.js');
 const station = require('../lib/station.js');
 const tmp = require('./tmp.js');
 
-const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+const { SRC } = require('./station-src.js');
 const CSS = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.css'), 'utf8');
 const NOW = Date.parse('2026-10-01T12:00:00.000Z');
 const ROUTE7 = ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land'];

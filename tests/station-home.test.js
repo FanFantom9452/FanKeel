@@ -9,7 +9,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+const { SRC } = require('./station-src.js');
 const NOW = Date.parse('2026-10-21T09:00:00.000Z');
 const MIN = 60000;
 const ROUTE = ['survey', 'design', 'plan', 'build', 'verify', 'land'];
@@ -37,17 +37,6 @@ const row = (id, over) => Object.assign({ id, pkey: 'F:\\ws\\alpha', root: 'F:\\
 const gated = (id, over) => row(id, Object.assign({ stage: 'design', gateAt: NOW - 6 * MIN,
     pending: { questions: [{ header: 'design done' }], at: NOW - 10 * MIN } }, over));
 const blocks = (html) => [...html.matchAll(/data-block="([^"]+)"/g)].map((m) => m[1]);
-
-test('#/ draws exactly the four home groups, what moves on the left and what waits on the right', () => {
-    const { els } = boot({ sessions: [row('a')] });
-    const html = els.page.innerHTML;
-    assert.deepEqual(blocks(html), ['home', 'home-live', 'home-running', 'home-todo', 'home-spend']);
-    assert.match(html, /^<div class="dash kdash home" data-block="home"><div class="dcol" data-col="main"><section class="dcard" data-block="home-live"/);
-    const side = html.slice(html.indexOf('data-col="side"'));
-    assert.ok(side.includes('data-block="home-todo"') && side.includes('data-block="home-spend"'));
-    assert.ok(!side.includes('data-block="home-live"') && !side.includes('data-block="home-running"'));
-    assert.doesNotMatch(html, /id="dchtog"|data-block="dash-/, 'no edit mode and no old card');
-});
 
 test('home-live lists only live sessions, the one waiting on you first, each linking to /f/<id>/<stage> under serve', () => {
     const { V } = boot();
@@ -126,14 +115,6 @@ test('home-todo counts Ready across projects, most first, and lists only the Blo
     assert.doesNotMatch(html, /A stamped/, 'stamped before today is not due: due is seven days after the stamp');
     assert.match(html, /<a class="hm-tdb" href="#\/p\/F%3A%5Cws%5Calpha\/todo\/a-5"><span class="hm-tdb-t">A due<\/span><span class="hm-tdb-m">alpha · blocked · waits on x<\/span><span class="hm-tdb-d">到期 10-12<\/span><\/a>/);
     assert.match(V.homeTodo([]), /沒有 Ready 的條目/);
-});
-
-test('home-todo and the project page agree on how many entries are Ready', () => {
-    const { V } = boot();
-    const home = Number(/<div class="hm-td-big"><b>(\d+)<\/b>/.exec(V.homeTodo([{ todos: [ALPHA] }]))[1]);
-    const panel = Number(/<b class="mono">Ready<\/b><span class="mute">(\d+) 筆/.exec(V.todoPanelHtml(ALPHA, []))[1]);
-    assert.equal(home, 4);
-    assert.equal(home, panel);
 });
 
 test('home-spend is one line: today, then the calendar week from Monday, the whole line a link to 花費', () => {

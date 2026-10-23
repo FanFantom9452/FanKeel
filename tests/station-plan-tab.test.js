@@ -213,7 +213,7 @@ test('the legend lists undeclared when the plan has it, and its rows sum to the 
 // ---- the tab's listeners, pressed through the page's own document listeners
 
 const vm = require('node:vm');
-const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+const { SRC } = require('./station-src.js');
 
 // A drawn tab reduced to what planFocus touches: the columns, each card's
 // classes, its tag and its 等 lines.

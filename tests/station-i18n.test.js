@@ -11,8 +11,8 @@ const path = require('node:path');
 const vm = require('node:vm');
 const I = require('../assets/station/i18n.js');
 
-const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
-const LINES = SRC.split('\n');
+const { SRC } = require('./station-src.js');
+const LINES = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8').split('\n');
 const CJK = /[\u3400-\u9fff\uf900-\ufaff\u3000-\u303f\uff00-\uffef]/;
 const LIT = /'(?:[^'\\\n]|\\.)*'/g;
 // The switch's own titles, and the Chinese option's own name, are in the language they name, on purpose.

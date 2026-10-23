@@ -18,7 +18,7 @@ const MIN = 60000;
 // exports are taken — `dashRowName` reads it (the DASH harness of
 // tests/station-view.test.js).
 const DASH = (() => {
-    const src = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+    const { SRC: src } = require('./station-src.js');
     const els = {};
     const el = () => ({ innerHTML: '', textContent: '', className: '', title: '', addEventListener() {} });
     const doc = { getElementById: (id) => els[id] || (els[id] = el()), addEventListener: () => {}, createElement: el,

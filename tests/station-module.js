@@ -1,7 +1,7 @@
 'use strict';
-// The station page's modules (assets/station/spend-*.js) as the page runs
-// them: station.js first, which puts its helpers on window.FK_KIT, then each
-// module, in one vm context, each file with its own `module` object so a
+// The station page as it runs: every script assets/station/index.html loads,
+// in its order (tests/station-src.js), then any other module a test names
+// (gate-frame.js), in one vm context, each file with its own `module` object so a
 // module's exports do not replace station.js's. And `stringsLeft`, the check
 // tests/station-i18n.test.js gives station.js, applied to a module and its own
 // English table: each CJK literal is the Chinese of a loc() call, each key
@@ -10,6 +10,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const prices = require('../lib/prices.js');
+const { NAMES } = require('./station-src.js');
 
 const ASSETS = path.join(__dirname, '..', 'assets', 'station');
 const CJK = /[\u3400-\u9fff\uf900-\ufaff\u3000-\u303f\uff00-\uffef]/;
@@ -24,15 +25,13 @@ function page(names, station, extra) {
         STATION: Object.assign({ generatedAt: new Date().toISOString(), configDir: 'C:\\cfg', pricesVerified: prices.verified, prices: prices.perMillion,
             serve: false, projects: [], profiles: { machine: { values: {}, sources: {}, unreadable: [] }, projects: {} }, profileKeys: {}, classes: {}, sessions: [] }, station) };
     const box = vm.createContext(Object.assign({ window: win, document: doc, URLSearchParams, fetch() {}, module: { exports: {} } }, extra));
-    vm.runInContext(read('station.js'), box);
-    const V = box.module.exports;
     const M = {};
-    for (const name of names || []) {
+    for (const name of [...NAMES, ...(names || []).filter((n) => !NAMES.includes(n))]) {
         box.module = { exports: {} };
-        vm.runInContext(read(name), box);
+        vm.runInContext(read(name), box, { filename: name });
         M[name] = box.module.exports;
     }
-    return { V, M, win, doc };
+    return { V: M['station.js'], M, win, doc };
 }
 
 function stringsLeft(name, EN) {

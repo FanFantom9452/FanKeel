@@ -13,13 +13,13 @@ const path = require('node:path');
 const vm = require('node:vm');
 const profile = require('../lib/profile.js');
 
-const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+const { SRC } = require('./station-src.js');
 const NOW = Date.parse('2026-10-01T12:00:00.000Z');
-// The listeners this file presses, by their place in document.addEventListener
-// order (station.js registers them in a fixed order, so a mutation of a
-// listener's own text cannot lose it).
+// The listeners this file presses, numbered as station.js registered them
+// when it ran alone; the numbers now only key MARKERS, since tip.js and the
+// page modules register theirs first.
 const KEY_FBAR = 4, KEY_BIG = 6, KEY_GATE = 7, CLICK_WZ = 9;
-// A literal unique to each document listener in station.js, so a listener added or reordered ahead of one fails loudly.
+// A literal unique to each pressed document listener, so the one holding it is found wherever it sits.
 const MARKERS = { 'keydown:4': '.wz .fbar .fsg', 'keydown:6': '.rpop, .rwrap', 'keydown:7': 'data-gop', 'click:9': '.wz [data-go]' };
 
 // station.js booted on `hash`, with every document listener kept by type, the
@@ -54,12 +54,11 @@ function boot(hash, profiles) {
     vm.runInNewContext(SRC, box);
     asked.length = 0;
     const find = (type, n) => {
-        const fn = (listeners[type] || [])[n];
-        assert.equal(typeof fn, 'function', 'the ' + type + ' listener number ' + n + ' exists');
         const mark = MARKERS[type + ':' + n];
         assert.ok(mark, 'the ' + type + ' listener number ' + n + ' has a marker');
-        assert.ok(String(fn).includes(mark), 'the ' + type + ' listener number ' + n + ' is the one holding ' + mark);
-        return fn;
+        const hits = (listeners[type] || []).filter((fn) => String(fn).includes(mark));
+        assert.equal(hits.length, 1, 'one ' + type + ' listener holds ' + mark);
+        return hits[0];
     };
     return { doc, els, win, asked, page, draws: () => draws, html: () => html, find, named,
         // A link followed: the hash moves and the page's own hashchange listener runs.

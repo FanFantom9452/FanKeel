@@ -11,7 +11,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+const { SRC } = require('./station-src.js');
 const NOW = Date.parse('2026-10-01T12:00:00.000Z');
 const PK = 'F:\\ws\\alpha';
 const PENDING = { questions: [{ question: 'Q?', options: [{ label: 'A' }, { label: 'B' }] }] };

@@ -166,7 +166,7 @@ test('every class the three levels render has a rule', () => {
         'split', 'split-h', 'split-bar', 'split-leg', 's-title', 's-meta', 'tabs',
         'lane-legend', 'tl', 'note', 'sumline', 'mini-mix',
         'card', 'phead', 'ctl', 'listwrap', 'det', 'sec', 'tally', 'seq', 'rp',
-        'cmpcard', 'pill', 'delta', 'mute', 'rail', 'livetag', 'runn', 'stname', 'c-state', 'tkr', 'dhead', 'stc', 'axt', 'nowl', 'agdots', 'phl', 'phs', 'axw', 'axh', 'axl', 'lkb',
+        'pill', 'delta', 'mute', 'rail', 'livetag', 'runn', 'stname', 'c-state', 'tkr', 'dhead', 'stc', 'axt', 'nowl', 'agdots', 'phl', 'phs', 'axw', 'axh', 'axl', 'lkb',
         'prm', 'retl', 'emptyd', 'gaprow'];
     for (const c of classes) {
         assert.match(css, new RegExp('\\.' + c + '[\\s{,:.>\\[)]'), 'no rule for .' + c);
@@ -177,6 +177,6 @@ test('every class the three levels render has a rule', () => {
         'a renamed or dropped rule is still there');
     // rules whose only element was deleted or renamed — a rule coming back without
     // an element to carry it should redden this test again.
-    assert.doesNotMatch(css, /\.ev\{|\.ev[ :]|\.filters|\.mixbar|\.up-bad|\.down-bad|\.up-good|\.down-good|\.chd|\.asof|\.bar-in/,
+    assert.doesNotMatch(css, /\.ev\{|\.ev[ :]|\.filters|\.cmpcard|\.cmph|\.figs|\.cmpnote|\.cmpseq|\.mixbar|\.up-bad|\.down-bad|\.up-good|\.down-good|\.chd|\.asof|\.bar-in/,
         'a rule with no emitting element is back');
 });

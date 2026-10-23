@@ -1,18 +1,13 @@
 'use strict';
-// The router (station redesign §1–§4): with the page modules loaded, each
-// hash goes to its module, handed the station and { names, now, serve,
-// redraw }; without them, and for the session tabs the redesign keeps (plan,
-// events, gate), the old view draws. tests/station-remote-mount.test.js's
-// draw(), with stand-in modules set on window before station.js runs, or the
-// real ones run first.
+// The router (station redesign §1–§4): each hash goes to its page module,
+// handed the station and { names, now, serve, redraw }; for the session tabs
+// the redesign keeps (plan, events, gate) the old view draws.
+// tests/station-remote-mount.test.js's draw(), over every script index.html
+// loads, with stand-in modules in place of the real ones when given.
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
 const vm = require('node:vm');
-
-const ASSETS = path.join(__dirname, '..', 'assets', 'station');
-const SRC = fs.readFileSync(path.join(ASSETS, 'station.js'), 'utf8');
+const { SRC } = require('./station-src.js');
 const NOW = Date.parse('2026-10-21T09:00:00.000Z');
 const SID = 'acacacac-1313-4131-8131-131313131313';
 const ROW = { id: SID, pkey: 'F:\\ws', root: 'F:\\ws', project: 'ws', task: 'route test', state: 'live', route: ['survey', 'build'], stage: 'build', stages: [],
@@ -32,14 +27,10 @@ function draw(hash, opts) {
         STATION: { generatedAt: new Date(NOW).toISOString(), configDir: 'cfg', pricesVerified: '2026-09-24', serve: false, nonce: 'N0NCE',
             projects: [{ root: 'F:\\ws', gone: false, unreadable: 0, build: [], mapAt: null, docs: [] }],
             profiles: { machine: { values: {}, sources: {}, unreadable: [] }, projects: {} }, profileKeys: {}, classes: {}, sessions: [ROW] } };
-    const box = vm.createContext({ window: win, document: doc, URLSearchParams, fetch: () => new Promise(() => {}), module: { exports: {} } });
-    for (const f of o.files || []) {
-        box.module = { exports: {} };
-        vm.runInContext(fs.readFileSync(path.join(ASSETS, f), 'utf8'), box);
-    }
-    Object.assign(win, o.mods || {});
-    box.module = { exports: {} };
-    vm.runInContext(SRC, box);
+    // A getter with a no-op setter, so the real module's own `w.FK_X = api`
+    // in SRC does not replace the stand-in.
+    for (const [k, v] of Object.entries(o.mods || {})) Object.defineProperty(win, k, { get: () => v, set() {}, enumerable: true });
+    vm.runInNewContext(SRC, { window: win, document: doc, URLSearchParams, fetch: () => new Promise(() => {}), module: { exports: {} } });
     return els.page.innerHTML;
 }
 // A stand-in page module: keeps what it was handed and draws a marker.
@@ -118,17 +109,10 @@ test('the plan, events and gate tabs, and a session not on the page, keep the ol
     assert.deepEqual(s.told, []);
 });
 
-test('without the modules every route draws the old view', () => {
-    assert.ok(draw('#/live').includes('data-block="live-head"'));
-    assert.ok(draw('#/s/' + SID).includes('class="panel kshead"'));
-    assert.ok(!draw('#/sessions').includes('mod-'));
-});
-
 test('the real session page modules draw #/s/<id> and its 對話 tab', () => {
-    const files = ['session-page.js', 'session-dispatch.js', 'session-talk.js'];
-    const run = draw('#/s/' + SID, { files });
+    const run = draw('#/s/' + SID);
     assert.ok(run.includes('data-block="session-page"') && run.includes('data-block="session-run"'));
     assert.ok(!run.includes('class="panel kshead"'));
-    assert.ok(draw('#/s/' + SID + '/talk', { files }).includes('要從 serve 開的頁面才讀得到對話'));
-    assert.ok(draw('#/s/' + SID + '/dispatch', { files }).includes('data-block="session-tabs"'));
+    assert.ok(draw('#/s/' + SID + '/talk').includes('要從 serve 開的頁面才讀得到對話'));
+    assert.ok(draw('#/s/' + SID + '/dispatch').includes('data-block="session-tabs"'));
 });

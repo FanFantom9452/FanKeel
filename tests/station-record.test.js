@@ -58,7 +58,7 @@ test('every rec-, recp- and ask- class drawn has a rule in station.css', () => {
 
 // ---- the call sites: each surface through its real caller --------------------------
 const vm = require('node:vm');
-const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+const { SRC } = require('./station-src.js');
 function boot(hash, sessions) {
     const els = {};
     const el = () => ({ innerHTML: '', textContent: '', className: '', title: '', attrs: {}, style: {}, hidden: false, addEventListener() {}, setAttribute() {}, getAttribute() { return null; }, hasAttribute() { return false; }, removeAttribute() {}, appendChild() {} });

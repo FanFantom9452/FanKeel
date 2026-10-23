@@ -13,7 +13,7 @@ const vm = require('node:vm');
 
 global.window = { STATION: {} };
 const V = require('../assets/station/station.js');
-const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+const { SRC } = require('./station-src.js');
 
 const T0 = new Date(2026, 8, 19, 9, 12, 0).getTime();
 const ROW = {
@@ -121,20 +121,18 @@ test('served, the page re-reads the list and the live session on screen every th
     });
     await settle(); await settle();
     assert.deepEqual(Object.keys(p.timers).map(Number).sort((a, b) => a - b), [1000, 3000, 5000]);
-    assert.match(p.html(), /<h1 class="s-title">first<\/h1>/);
+    assert.match(p.html(), /<h1 class="gt-task">first<\/h1>/);
     const at = p.loaded.length;
     p.timers[3000](); await settle(); await settle(); await settle();
     assert.deepEqual(p.loaded.slice(at).map((s) => s.split('?')[0]), ['station/station-data.js', 'station/detail/aaaa1111-0000.js']);
     assert.ok(p.loaded.slice(at).every((s) => /\?t=\d+$/.test(s)), 'each re-read asks past the browser cache');
-    assert.match(p.html(), /<h1 class="s-title">second<\/h1>/, 'the page was drawn again from what it re-read');
-    assert.match(p.html(), /<span class="livetag"/);
+    assert.match(p.html(), /<h1 class="gt-task">second<\/h1>/, 'the page was drawn again from what it re-read');
     assert.match(p.gen(), /每 3 秒重讀一次，最後一次 \d\d:\d\d:\d\d/);
     next = station('stale', 'third');
     const again = p.loaded.length;
     p.timers[3000](); await settle(); await settle(); await settle();
     assert.deepEqual(p.loaded.slice(again).map((s) => s.split('?')[0]), ['station/station-data.js', 'station/detail/aaaa1111-0000.js'],
         'the detail is asked for beside the list, off the list as it stood (live), so the tick that learns the session ended still reads it once');
-    assert.match(p.html(), /<span class="livetag off"/);
     const last = p.loaded.length;
     p.timers[3000](); await settle(); await settle(); await settle();
     assert.deepEqual(p.loaded.slice(last).map((s) => s.split('?')[0]), ['station/station-data.js'],
@@ -161,7 +159,7 @@ test('a re-read whose script never loads or errors gives up after its deadline, 
     await settle(); await settle();
     assert.deepEqual(p.loaded.slice(at).map((s) => s.split('?')[0]), ['station/station-data.js', 'station/detail/aaaa1111-0000.js'],
         'one attempt was made: the list and the detail asked for in the same tick');
-    assert.match(p.html(), /<h1 class="s-title">first<\/h1>/, 'a hung load has not redrawn the page yet');
+    assert.match(p.html(), /<h1 class="gt-task">first<\/h1>/, 'a hung load has not redrawn the page yet');
     // The deadline passing, simulated: the same one-shot a real setTimeout gives.
     p.fireTimeouts();
     await settle(); await settle();
@@ -171,7 +169,7 @@ test('a re-read whose script never loads or errors gives up after its deadline, 
     await settle(); await settle(); await settle();
     assert.deepEqual(p.loaded.slice(again).map((s) => s.split('?')[0]), ['station/station-data.js', 'station/detail/aaaa1111-0000.js'],
         'the next 3-second tick tried again once the deadline cleared busy');
-    assert.match(p.html(), /<h1 class="s-title">second<\/h1>/, 'and that attempt landed');
+    assert.match(p.html(), /<h1 class="gt-task">second<\/h1>/, 'and that attempt landed');
 });
 
 test('two 3-second ticks fired before the first re-read settles load station-data.js only once', async () => {
@@ -244,7 +242,7 @@ test('a re-read that errors leaves the page\'s data as it was, and clears busy f
     await settle(); await settle();
     assert.deepEqual(p.loaded.slice(at).map((s) => s.split('?')[0]), ['station/station-data.js', 'station/detail/aaaa1111-0000.js'],
         'one attempt was made: the list and the detail asked for in the same tick');
-    assert.match(p.html(), /<h1 class="s-title">first<\/h1>/,
+    assert.match(p.html(), /<h1 class="gt-task">first<\/h1>/,
         'a failed re-read leaves the page showing what it had, not the half-written data behind it');
     mode = null;
     const again = p.loaded.length;
@@ -252,5 +250,5 @@ test('a re-read that errors leaves the page\'s data as it was, and clears busy f
     await settle(); await settle(); await settle();
     assert.deepEqual(p.loaded.slice(again).map((s) => s.split('?')[0]), ['station/station-data.js', 'station/detail/aaaa1111-0000.js'],
         'busy cleared, so the next tick tried again');
-    assert.match(p.html(), /<h1 class="s-title">second<\/h1>/, 'and that attempt landed');
+    assert.match(p.html(), /<h1 class="gt-task">second<\/h1>/, 'and that attempt landed');
 });

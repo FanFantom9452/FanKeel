@@ -14,7 +14,7 @@ const registry = require('../lib/registry.js');
 const { serve } = require('../scripts/station.js');
 const tmp = require('./tmp.js');
 
-const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+const { SRC } = require('./station-src.js');
 const SID = 'efefefef-5656-4565-8565-565656565656';
 const line = (o) => JSON.stringify(o) + '\n';
 const T = (s) => new Date(Date.now() - 60000 + s * 1000).toISOString();

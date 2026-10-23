@@ -13,7 +13,7 @@ const station = require('../lib/station.js');
 const tmp = require('./tmp.js');
 
 const ASSETS = path.join(__dirname, '..', 'assets', 'station');
-const SRC = fs.readFileSync(path.join(ASSETS, 'station.js'), 'utf8');
+const { SRC } = require('./station-src.js');
 const NOW = Date.parse('2026-10-21T09:00:00.000Z');
 const CARD = '<section class="dcard rm" id="rm-card" data-block="remote-on">card</section>';
 
@@ -34,7 +34,8 @@ function draw(hash, opts) {
         STATION: { generatedAt: new Date(NOW).toISOString(), configDir: 'cfg', pricesVerified: '2026-09-24', serve: Boolean(o.serve), nonce: 'N0NCE',
             projects: [{ root: 'F:\\ws', gone: false, unreadable: 0, build: [], mapAt: null, docs: [] }],
             profiles: { machine: { values: {}, sources: {}, unreadable: [] }, projects: {} }, profileKeys: profile.WIZARD_KEYS, classes: {}, sessions: [] } };
-    if (o.remote) win.FK_REMOTE = o.remote;
+    // A getter with a no-op setter, so remote-card.js's own `w.FK_REMOTE = api` in SRC does not replace the stand-in.
+    if (o.remote) Object.defineProperty(win, 'FK_REMOTE', { get: () => o.remote, set() {}, enumerable: true });
     vm.runInNewContext(SRC, { window: win, document: doc, URLSearchParams, fetch: () => new Promise(() => {}), module: { exports: {} } });
     return els.page.innerHTML;
 }

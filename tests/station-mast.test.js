@@ -8,7 +8,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const ROOT = path.join(__dirname, '..', 'assets', 'station');
-const SRC = fs.readFileSync(path.join(ROOT, 'station.js'), 'utf8');
+const { SRC } = require('./station-src.js');
 const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 const NOW = Date.parse('2026-10-01T12:00:00.000Z');
 

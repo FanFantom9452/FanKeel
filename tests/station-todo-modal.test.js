@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
-const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+const { SRC } = require('./station-src.js');
 
 const e = (id, title, state) => ({ id, label: 'x', title, description: '', state, condition: '', stamp: '' });
 const T = { pkey: 'F:\\ws\\a', mode: 'folder', folder: 'docs/todo', open: [e('1', 'R1', 'ready'), e('2', 'B1', 'blocked'), e('3', 'W1', 'watch'), e('4', 'R2', 'ready')],

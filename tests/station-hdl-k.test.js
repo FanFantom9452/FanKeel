@@ -18,15 +18,12 @@
 //   `.legend [data-key]` / `[data-rest]`, `[data-pick]`, the `.rpop` outside
 //   click, `[data-facet] button`, `input[data-cmp]`, `tr[data-id]`, and the
 //   wizard's `[data-h]` / `[data-st]` / `[data-ask]`.
-// STATION_SRC points the suite at a scratch copy of station.js (mutation runs).
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
 const vm = require('node:vm');
 const profile = require('../lib/profile.js');
 
-const SRC = fs.readFileSync(process.env.STATION_SRC || path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+const { SRC } = require('./station-src.js');
 const NOW = Date.parse('2026-10-01T12:00:00.000Z');
 const PK = 'F:\\ws\\alpha';
 

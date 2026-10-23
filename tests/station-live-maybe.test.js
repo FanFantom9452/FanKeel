@@ -8,7 +8,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+const { SRC } = require('./station-src.js');
 const T = Date.now();
 const lane = (id, state, unknown) => ({ id, root: 'F:\\ws\\alpha', project: null, state, unknown, task: 'task ' + id, stage: 'build',
     route: ['survey', 'design', 'plan', 'build'], started: new Date(T - 600000).toISOString(), updated: T - 60000, stages: [], pending: null });

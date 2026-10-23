@@ -10,9 +10,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+const { SRC } = require('./station-src.js');
 const NOW = Date.parse('2026-10-01T12:00:00.000Z');
-const CLICK_PAGE = 9;
 const MARK = '.wz [data-go]';
 const A = 'F:\\ws\\alpha|';
 
@@ -52,9 +51,9 @@ function boot(hash, serve) {
         createElement: (t) => { const o = el(t); if (t === 'script') scripts.push(o); return o; }, querySelectorAll: () => [],
         querySelector(sel) { return sel in named ? named[sel] : null; }, head: { appendChild() {} } };
     vm.runInNewContext(SRC, { window: win, document: doc, URLSearchParams, fetch: () => new Promise(() => {}), module: { exports: {} } });
-    const fn = listeners.click[CLICK_PAGE];
-    assert.equal(typeof fn, 'function', 'the click listener number ' + CLICK_PAGE + ' exists');
-    assert.ok(String(fn).includes(MARK), 'the click listener number ' + CLICK_PAGE + ' is the one holding ' + MARK);
+    const hits = listeners.click.filter((x) => String(x).includes(MARK));
+    assert.equal(hits.length, 1, 'one click listener holds ' + MARK);
+    const fn = hits[0];
     // Both notes settle: tune finishes n1 and turns n2 down, the poll files two notes.
     const settle = () => {
         intervals[0]();

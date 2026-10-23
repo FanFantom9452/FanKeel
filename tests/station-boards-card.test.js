@@ -11,7 +11,7 @@ const vm = require('node:vm');
 global.window = { STATION: { serve: false, pricesVerified: '2026-09-04' } };
 const V = require('../assets/station/station.js');
 
-const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+const { SRC } = require('./station-src.js');
 const CSS = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.css'), 'utf8');
 const NOW = Date.parse('2026-10-18T12:00:00.000Z');
 const PK = 'F:\\ws\\alpha';
@@ -63,15 +63,6 @@ test('no board, no block; and a static copy, which has no route to draw one, dra
 test('a board name is escaped where it is drawn', () => {
     const html = V.boardsHtml({ id: 's1', started: S.started, boards: [{ name: 'x"><script>', updated: 1 }] }, true);
     assert.doesNotMatch(html, /<script>/);
-});
-
-test('the served session page shows one <img> per entry of boards[], after the record and before the tabs', () => {
-    const html = boot('#/s/s1', BOARDS);
-    const block = /<section class="panel boards" data-block="boards"[\s\S]*?<\/section>/.exec(html);
-    assert.ok(block, 'the block is on the page');
-    assert.equal(imgs(block[0]).length, BOARDS.length);
-    assert.ok(html.indexOf('data-block="boards"') < html.indexOf('data-block="session-tabs"'));
-    assert.doesNotMatch(boot('#/s/s1', []), /data-block="boards"/);
 });
 
 test('station.css carries the mockup\'s boards block', () => {

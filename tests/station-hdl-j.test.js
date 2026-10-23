@@ -15,11 +15,9 @@
 // is read where it lives rather than guessed from a render.
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
 const vm = require('node:vm');
 
-const SRC = fs.readFileSync(process.env.STATION_SRC || path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+const { SRC } = require('./station-src.js');
 const NOW = Date.parse('2026-10-01T12:00:00.000Z');
 const PK = 'F:\\ws\\alpha';
 

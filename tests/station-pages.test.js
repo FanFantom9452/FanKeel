@@ -7,7 +7,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+const { SRC } = require('./station-src.js');
 const NOW = Date.parse('2026-10-21T09:00:00.000Z');
 const ROW = { id: 'aaaa1111-0000', pkey: 'F:\\ws', root: 'F:\\ws', task: 't', state: 'live', route: ['survey', 'build'], stage: 'build', stages: [],
     claims: [], notes: [], updated: NOW - 1000, started: new Date(NOW - 120000).toISOString(), days: [] };
@@ -32,14 +32,6 @@ const blocks = (html) => [...html.matchAll(/data-block="([^"]+)"/g)].map((m) => 
 const chosen = (html) => (/<nav class="subtabs" data-block="page-filter"[^>]*>[\s\S]*?<a href="([^"]+)" aria-current="page">/.exec(html) || [])[1];
 const lit = (nav) => (/<a href="([^"]+)" aria-current="page"/.exec(nav) || [])[1];
 
-test('Sessions\' 進行中 view carries 撞檔, 最近 sessions, gate 平均等待 and 最近 land', () => {
-    const { page } = draw('#/live');
-    const row = page.slice(page.indexOf('data-block="sessions-cards"'));
-    assert.match(page, /<div class="dash kdash pcards" data-block="sessions-cards"><div class="dcol" data-col="main">/);
-    for (const b of ['dash-clash', 'dash-recent', 'dash-gatewait', 'dash-landed']) assert.ok(blocks(row).includes(b), b);
-    assert.ok(page.indexOf('data-block="now"') < page.indexOf('data-block="sessions-cards"'), 'under the lanes');
-});
-
 test('花費\'s 近 30 天 view carries 依專案花費, 模型用量分布 and 近 7 天 token under the chart', () => {
     const { page } = draw('#/days');
     const row = page.slice(page.indexOf('data-block="spend-cards"'));
@@ -49,10 +41,11 @@ test('花費\'s 近 30 天 view carries 依專案花費, 模型用量分布 and 
 });
 
 test('every old hash lands on the page that replaced it, with its own filter chosen', () => {
-    for (const [hash, entry, filter] of [['#/live', '#/sessions', '#/live'], ['#/sessions', '#/sessions', '#/sessions'], ['#/list', '#/sessions', '#/list'],
-        ['#/days', '#/days', '#/days'], ['#/projects', '#/days', '#/projects']]) {
+    // #/live, #/sessions and #/projects are module pages, which draw their own strip.
+    for (const [hash, entry, filter] of [['#/live', '#/sessions'], ['#/sessions', '#/sessions'], ['#/list', '#/sessions', '#/list'],
+        ['#/days', '#/days', '#/days'], ['#/projects', '#/days']]) {
         const d = draw(hash);
         assert.equal(lit(d.nav), entry, hash + ' lights ' + entry);
-        assert.equal(chosen(d.page), filter, hash + ' chooses ' + filter);
+        if (filter) assert.equal(chosen(d.page), filter, hash + ' chooses ' + filter);
     }
 });

@@ -391,39 +391,8 @@ test('the replay segment header marks the estimated segment\'s cost 估', () => 
     assert.match(V.replayHtml(RPX, {}, RP), /<dt>花費<\/dt><dd>\$1\.25 估<\/dd>/);
 });
 
-const cmp = () => V.compareHtml({ id: 'aaaaaaaa', state: 'down', stage: 'build', route: ['build'], task: 'a' }, withRowEst(true),
-    { id: 'bbbbbbbb', state: 'down', stage: 'build', route: ['build'], task: 'b' }, withRowEst(false));
-const cmpRow = (id) => cmp().match(new RegExp('<tr><td class="sid">' + id + '[\\s\\S]*?</tr>'))[0];
-test('compareHtml marks the dispatch USD cell of an estimated session, and not the plain one beside it', () => {
-    assert.match(cmpRow('aaaaaaaa'), /<td class="v r">\$1\.90 估<span class="s2">/);
-    none(cmpRow('bbbbbbbb'));
-});
-
-test('compareHtml marks the agentsOf figure it sets the sum against', () => {
-    assert.match(cmpRow('aaaaaaaa'), /agentsOf\(\) \$1\.90 估<\/span>/);
-});
-
-// ---- tune ledger, dashboard and the pages that need the DOM ------------------------
-const ledgerSes = (id, est, back) => Object.assign(sess(id, []), {
-    route: ['build', 'verify'], backtracks: back,
-    stages: [{ stage: 'build', from: 0, to: 600000, burn: 10, usd: 2, estimated: est, waited: 0 }, { stage: 'verify', from: 600000, to: 900000, burn: 10, usd: 1, estimated: false, waited: 0 }],
-});
-const ledgerRow = (html, label) => html.match(new RegExp('<tr><td><span class="chip"[^>]*>' + label + '</span>[\\s\\S]*?</tr>'))[0];
-test('routeLedger marks an estimated stage\'s average cost 估 and a plain stage beside it not', () => {
-    const html = V.routeLedger([ledgerSes('a', true, 0)]);
-    assert.match(ledgerRow(html, 'build'), /<td class="r num">\$2\.00 估<\/td>/);
-    assert.doesNotMatch(ledgerRow(html, 'verify'), /估/);
-    none(V.routeLedger([ledgerSes('c', false, 0)]));
-});
-
-test('routeLedger marks the 有倒退 row from the estimated windows of the sessions that stepped back', () => {
-    const html = V.routeLedger([ledgerSes('a', false, 0), ledgerSes('b', true, 1)]);
-    assert.match(html, /<td class="r num">\$3\.00 估<\/td>/);
-    assert.doesNotMatch(html, /<td class="r num">\$3\.00 估<\/td>[\s\S]*<td class="r num">\$3\.00 估<\/td>/);
-    none(V.routeLedger([ledgerSes('a', false, 0), ledgerSes('b', false, 1)]));
-});
-
-const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+// ---- the pages that need the DOM ------------------------
+const { SRC } = require('./station-src.js');
 function boot(hash, sessions, detail) {
     const els = {};
     const el = () => ({ innerHTML: '', textContent: '', className: '', title: '', attrs: {}, style: {}, hidden: false, addEventListener() {}, setAttribute() {}, getAttribute() { return null; }, hasAttribute() { return false; }, removeAttribute() {}, appendChild() {} });
@@ -439,12 +408,6 @@ function boot(hash, sessions, detail) {
     vm.runInContext(SRC, ctx);
     return { els, x: ctx.module.exports };
 }
-
-test('dashRecent marks a session\'s cost 估', () => {
-    const html = boot('#/', EST).x.dashRecent(EST);
-    assert.match(html, /<span class="dc mono">\$4\.00 估<\/span>/);
-    none(boot('#/', PLAIN).x.dashRecent(PLAIN));
-});
 
 test('home-spend marks today\'s and this week\'s cost 估', () => {
     const html = boot('#/', EST).x.homeSpend(EST, NOW);
@@ -484,12 +447,4 @@ test('the session detail panel marks the dispatch section title 估 when an agen
     assert.match(detailPanel(E), /3 個 agent · \$1\.73 估/);
     const P = sess('plain', [], { usd: 2, agentUsd: 1 });
     assert.doesNotMatch(detailPanel(P, { rows: DXP.rows, estimated: [] }), /估/);
-});
-
-test('the project page marks the 30-day cost readout 估', () => {
-    const p = boot('#/p/' + encodeURIComponent('F:\\ws\\a'), EST);
-    const html = p.els.page.innerHTML;
-    assert.match(html, /近 30 天花費<\/div><div class="v">\$4\.00 估<\/div>/);
-    const q = boot('#/p/' + encodeURIComponent('F:\\ws\\a'), PLAIN);
-    none(q.els.page.innerHTML.match(/<div class="readouts">[\s\S]*?<\/div><\/div><\/div>/)[0]);
 });

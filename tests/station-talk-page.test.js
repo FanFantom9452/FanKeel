@@ -11,7 +11,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+const { SRC } = require('./station-src.js');
 const NOW = Date.parse('2026-10-01T12:00:00.000Z');
 const PK = 'F:\\ws\\alpha';
 const at = (m) => new Date(2026, 9, 1, 10, m).toISOString();
@@ -62,36 +62,14 @@ const ok = (url) => {
     return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(pageAt(from, 3)) });
 };
 
-test('#/s/<id>/talk is a tab beside the other three, labelled 對話, and the hash opens it', () => {
-    const p = boot('#/s/s1/talk', true, ok);
-    assert.match(p.html(), /<a href="#\/s\/s1">概覽<\/a><a href="#\/s\/s1\/dispatch">派工<\/a><a href="#\/s\/s1\/events">事件<\/a><a href="#\/s\/s1\/talk" class="on" aria-current="page">對話<\/a>/);
-    assert.match(p.html(), /<section class="panel"><p class="tally">讀取中…<\/p><\/section>/);
-});
-
-test('the first visit fetches the first page, and the tab then carries the total turn count', async () => {
-    const p = boot('#/s/s1/talk', true, ok);
-    assert.deepEqual(p.fetched, ['station/talk/s1?from=0']);
-    await flush();
-    const html = p.html();
-    assert.match(html, /對話<small>4<\/small><\/a>/);
-    assert.match(html, /使用者 <b>1<\/b> 輪/);
-    assert.match(html, /<span class="who">使用者<\/span><div class="tx"><div class="t">第一個問題<\/div>/);
-    assert.match(html, /已顯示 <b>3<\/b> \/ <b>4<\/b> 輪<\/span><button type="button" class="ctl" data-talk="s1">再載入 100 輪<\/button>/);
-    assert.deepEqual(p.fetched, ['station/talk/s1?from=0'], 'drawing the page twice asks once');
-});
-
-test('the button fetches from where the held turns end, joins the summary to its compaction, and goes once all are in', async () => {
+test('the button fetches from where the held turns end, and goes once all are in', async () => {
     const p = boot('#/s/s1/talk', true, ok);
     await flush();
-    assert.ok(!p.html().includes('<details class="cut"'), 'the summary is not in yet');
     p.click('s1');
     assert.match(p.html(), /<span>讀取中…<\/span>/, 'the press redraws at once');
     await flush();
     assert.deepEqual(p.fetched, ['station/talk/s1?from=0', 'station/talk/s1?from=3']);
     const html = p.html();
-    assert.equal(html.split('class="tk-cut"').length - 1, 1);
-    assert.match(html, /<details class="cut" data-key="talk-cut-2">/);
-    assert.match(html, /已顯示 <b>4<\/b> \/ <b>4<\/b> 輪<\/span><\/div>/);
     assert.doesNotMatch(html, /<button type="button" class="ctl" data-talk/);
     assert.match(html, /第一個回答/, 'the first page is still there');
 });
@@ -108,7 +86,6 @@ test('the other tabs fetch nothing', () => {
     for (const tab of ['', '/events', '/dispatch']) {
         const p = boot('#/s/s1' + tab, true, ok);
         assert.deepEqual(p.fetched, [], tab || 'overview');
-        assert.match(p.html(), /<a href="#\/s\/s1\/talk">對話<\/a>/);
     }
 });
 

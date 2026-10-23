@@ -3,7 +3,7 @@
 // tab's break costs (station-28), the component notes on the 7-day card and
 // the 成分說明 table (station-29, -30), the range, its readouts and panel on
 // 花費 (station-31, -32, -33), and the 對話 tab of a session no registry
-// holds. Without the modules each draws what it drew before.
+// holds.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const prices = require('../lib/prices.js');
@@ -36,9 +36,9 @@ test('the 對話 tab: the compaction block keeps its markup and gains its cost, 
     assert.match(html, /data-block="talk-counts">[\s\S]*?<\/p><p class="tkc" data-block="talk-spend"><b>2<\/b> 個斷點/);
 });
 
-test('without records, or without the module, the 對話 tab draws what it drew before', () => {
-    const bare = page([]).V.talkHtml('abc', held({ spend: SPEND }));
-    assert.equal(bare, page(ALL).V.talkHtml('abc', held({ spend: null })));
+test('without records the 對話 tab draws no break cost', () => {
+    const bare = page(ALL).V.talkHtml('abc', held({ spend: null }));
+    assert.match(bare, /data-block="talk-compact"/);
     assert.doesNotMatch(bare, /talk-break-cost|talk-expiry|talk-spend/);
 });
 
@@ -60,7 +60,6 @@ test('花費 on a written copy: the range control, the type split, the needs-ser
     assert.match(html, /要從 serve 開的頁面才算得到/);
     assert.match(html, /data-block="kind-notes"/);
     assert.doesNotMatch(html, /data-block="range-kinds"/, 'no report without a server');
-    assert.doesNotMatch(page([]).V.daysPage({ view: 'days' }), /data-seg="range"|kind-notes/, 'without the modules, as before');
 });
 
 test('a session no registry holds still opens its 對話 tab; any other tab is not on this page', () => {

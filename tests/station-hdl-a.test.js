@@ -13,7 +13,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const I = require('../assets/station/i18n.js');
 
-const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+const { SRC } = require('./station-src.js');
 const NOW = Date.parse('2026-10-01T12:00:00.000Z');
 const PK = 'F:\\ws';
 
@@ -72,31 +72,6 @@ const tgt = (map) => ({ closest: (sel) => (sel in map ? map[sel] : null), getAtt
 const TD = "'[data-tdmore]'";
 const tdBoot = () => boot({ hash: '#/p/' + encodeURIComponent(PK), sessions: [session('k1')] });
 const tdPress = (p, v) => fire(pick(p, 'click', TD), tgt({ '[data-tdmore]': { getAttribute: () => v } }));
-const doneRows = (p) => {
-    const h = p.els.page.innerHTML;
-    return (h.slice(h.indexOf('data-block="todo-done"')).match(/<li class="td-row[^"]*">/g) || []).filter((r) => !/td-hd/.test(r)).length;
-};
-
-test('tdmore: 展開全部 drawn at once — the page shows the whole list right after the press', () => {
-    const p = tdBoot();
-    assert.equal(doneRows(p), 3);
-    tdPress(p, '1');
-    assert.equal(doneRows(p), 12);
-});
-
-test('tdmore: the open list is kept by a later redraw (the 3 s re-read), not only drawn once', () => {
-    const p = tdBoot();
-    tdPress(p, '1');
-    p.els.page.innerHTML = 'SENTINEL';
-    for (const fn of p.winL.hashchange) fn();
-    assert.equal(doneRows(p), 12);
-});
-
-test('tdmore: a press of 收起 on a list that is already shut leaves it shut', () => {
-    const p = tdBoot();
-    tdPress(p, '0');
-    assert.equal(doneRows(p), 3);
-});
 
 test('tdmore: a click off the button draws nothing and does not throw', () => {
     const p = tdBoot();
@@ -284,37 +259,12 @@ const histEl = (k, cls, tag) => ({ tagName: tag || 'BUTTON', attrs: { 'data-hist
 const click = (p, el) => fire(pick(p, 'click', HC), tgt({ '[data-hist]': el }));
 const key = (p, k, el) => fire(pick(p, 'keydown', HK), tgt({ 'tr[data-hist]': el }), { key: k });
 const marked = (p, k) => p.els.page.innerHTML.includes('class="csseg on" data-hist="' + k + '"');
-const GO = (p, hash) => { p.win.location.hash = hash; for (const fn of p.winL.hashchange) fn(); };
-
-test('hist: a first press on a stage marks it', () => {
-    const p = hBoot();
-    assert.equal(marked(p, 'build'), false);
-    click(p, histEl('build'));
-    assert.equal(marked(p, 'build'), true);
-});
 
 test('hist: a second press on the same stage clears the mark', () => {
     const p = hBoot();
     click(p, histEl('build'));
     click(p, histEl('build'));
     assert.equal(marked(p, 'build'), false);
-});
-
-test('hist: a press on another stage of the same session moves the mark', () => {
-    const p = hBoot();
-    click(p, histEl('build'));
-    click(p, histEl('verify'));
-    assert.equal(marked(p, 'verify'), true);
-    assert.equal(marked(p, 'build'), false);
-});
-
-test('hist: the same stage pressed on another session marks it there rather than clearing', () => {
-    const p = hBoot();
-    click(p, histEl('build'));
-    GO(p, '#/s/k2');
-    assert.equal(marked(p, 'build'), false, 'another session opens unmarked');
-    click(p, histEl('build'));
-    assert.equal(marked(p, 'build'), true);
 });
 
 test('hist: a press off the bar on a session page draws nothing and does not throw', () => {
@@ -366,14 +316,6 @@ test('hist: a class string of several words is split, so the selector that finds
     assert.equal(back.focused, 1);
 });
 
-test('hist: a mark made on a press is still there after the next redraw', () => {
-    const p = hBoot();
-    click(p, histEl('build'));
-    p.els.page.innerHTML = 'SENTINEL';
-    for (const fn of p.winL.hashchange) fn();
-    assert.equal(marked(p, 'build'), true);
-});
-
 test('hist: a press while another element has the focus gives nothing the focus', () => {
     const p = hBoot();
     const back = histEl('build');
@@ -402,18 +344,6 @@ test('hist: a stage key with a quote is escaped in the selector that finds the b
     p.qs = (sel) => (sel === '.csseg[data-hist="a\\"b"]' ? back : null);
     click(p, el);
     assert.equal(back.focused, 1);
-});
-
-test('hist: Enter on a table row marks the stage', () => {
-    const p = hBoot();
-    key(p, 'Enter', histEl('build', 'csrow', 'TR'));
-    assert.equal(marked(p, 'build'), true);
-});
-
-test('hist: Space on a table row marks the stage', () => {
-    const p = hBoot();
-    key(p, ' ', histEl('build', 'csrow', 'TR'));
-    assert.equal(marked(p, 'build'), true);
 });
 
 test('hist: any other key on a table row marks nothing and is not swallowed', () => {

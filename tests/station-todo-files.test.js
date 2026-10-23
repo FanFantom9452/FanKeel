@@ -97,7 +97,7 @@ test('POST /todo in folder mode writes an entry file with its body and no TODO.m
     }
 });
 
-test('an unreadable entry file gives an error row and a visible panel line, not a project with no TODO', () => {
+test('an unreadable entry file gives an error row, not a project with no TODO', () => {
     const f = fixture();
     fs.mkdirSync(path.join(f.r1, 'docs', 'todo', 'bad-1.md')); // a directory named like an entry: readFileSync throws EISDIR
     const model = station.gather({ configDir: f.cfg, roots: [f.r1], scan: [], cwd: f.r1 });
@@ -108,10 +108,6 @@ test('an unreadable entry file gives an error row and a visible panel line, not 
     const t = row.todos[0];
     assert.equal(t.mode, 'error');
     assert.match(t.error, /EISDIR/);
-    const V = require('../assets/station/station.js');
-    const html = V.todoPanelHtml(t, []);
-    assert.match(html, /data-block="todo-head"/);
-    assert.match(html, /無法讀取 TODO：.*EISDIR/);
 });
 
 test('the project row carries each entry\'s body, open and done', () => {

@@ -925,10 +925,10 @@ test('selecting a registry on 清單 keeps its unreadable-session count on the c
     const vm = require('node:vm');
     const fs = require('node:fs');
     const path = require('node:path');
-    const src = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+    const { SRC: src } = require('./station-src.js');
     const els = {};
     const listeners = {};
-    const el = () => ({ innerHTML: '', textContent: '', className: '', title: '', addEventListener() {} });
+    const el = () => ({ innerHTML: '', textContent: '', className: '', title: '', setAttribute() {}, addEventListener() {} });
     const doc = {
         getElementById: (id) => els[id] || (els[id] = el()),
         addEventListener: (type, fn) => { listeners[type] = fn; },
@@ -975,10 +975,10 @@ test('under file: nothing arms; served, the page re-reads every 3s, ticks every 
     const vm = require('node:vm');
     const fs = require('node:fs');
     const path = require('node:path');
-    const src = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+    const { SRC: src } = require('./station-src.js');
     const armed = (protocol) => {
         const els = {};
-        const el = () => ({ innerHTML: '', textContent: '', className: '', title: '', addEventListener() {} });
+        const el = () => ({ innerHTML: '', textContent: '', className: '', title: '', setAttribute() {}, addEventListener() {} });
         const doc = {
             getElementById: (id) => els[id] || (els[id] = el()),
             addEventListener: () => {},
@@ -1019,7 +1019,7 @@ test('a poll finding no change does not redraw, and each state flip redraws once
     const vm = require('node:vm');
     const fs = require('node:fs');
     const path = require('node:path');
-    const src = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+    const { SRC: src } = require('./station-src.js');
 
     // The page reads `Date.now()` for the poll's baseline and `Date.parse`
     // for every `started`. The subclass inherits the second as a static, so
@@ -1154,17 +1154,11 @@ test('navHtml lights the page a view belongs to and links all six', () => {
 // Matches the reachability check from the fix's own step 2 (`typeof V.x ===
 // 'function'`/`'object'` off a bare `require()`), and doubles as
 // tests/source.test.js's control: that test flags an exported name nobody's
-// `V.<name>` (or a bound require's own alias) ever reaches, and
-// `dashSpend`/`dashRecent`/`dashPage` below are only driven through `DASH.
-// <name>`, never `V.<name>`, because calling them off the plain `require()`
-// crashes (see `DASH` below) — this line is what keeps their names counted
-// as used without adding a crashing call.
+// `V.<name>` (or a bound require's own alias) ever reaches.
 test('the nine newly exported names are reachable off a plain require()', () => {
     assert.equal(typeof V.stageShare, 'function');
     assert.equal(typeof V.costShareHtml, 'function');
     assert.equal(typeof V.subtabsHtml, 'function');
-    assert.equal(typeof V.dashRecent, 'function');
-    assert.equal(typeof V.dashPage, 'function');
     assert.ok(Array.isArray(V.NAV_TREE));
 });
 
@@ -1284,23 +1278,20 @@ test('subtabsHtml is empty for a single-link category and a strip with aria-curr
     assert.match(days, /<a href="#\/projects">依專案<\/a>/);
 });
 
-// `dashLive`, `dashGate`, `dashSpend` and `dashRecent` all read at least one
-// module-scoped var (`NAMES` via `dashRowName`, or `DAYS` via `dayBars`/
-// `recentRows`) that only `freshen()` sets, behind the `if (!doc) return`
-// guard `require()` never crosses — `doc` is `window.document`, undefined in
-// this file's plain Node `require()`, so calling any of them off the `V`
-// above throws ("Cannot read properties of undefined"). `DASH` runs the same
-// source through `vm.runInNewContext` the way the smoke tests further down
-// already do for DOM-touching code, but also hands the sandbox a `module`
-// object — with `document` truthy too, `freshen()` runs before the IIFE
-// returns, so the closures `module.exports` captures are the ones with
-// `NAMES`/`DAYS` already filled in. `DASH.dashLive` etc. can then be called
-// directly, the same as any function on the plain `V`.
+// `drawList` reads module-scoped vars that only `freshen()` sets, behind the
+// `if (!doc) return` guard `require()` never crosses — `doc` is
+// `window.document`, undefined in this file's plain Node `require()`, so
+// calling it off the `V` above throws ("Cannot read properties of
+// undefined"). `mkDash` runs the same source through `vm.runInNewContext`
+// the way the smoke tests further down already do for DOM-touching code, but
+// also hands the sandbox a `module` object — with `document` truthy too,
+// `freshen()` runs before the IIFE returns, so the closures `module.exports`
+// captures are the ones with those vars already filled in.
 const mkDash = (sessions) => {
     const vm = require('node:vm');
     const fs = require('node:fs');
     const path = require('node:path');
-    const src = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+    const { SRC: src } = require('./station-src.js');
     const els = {};
     const el = () => ({ innerHTML: '', textContent: '', className: '', title: '', addEventListener() {} });
     const doc = {
@@ -1324,29 +1315,6 @@ const mkDash = (sessions) => {
     vm.runInNewContext(src, sandbox);
     return { x: sandbox.module.exports, els, S: win.STATION };
 };
-const DASH = mkDash([]).x;
-
-const DASH_RECENT_R = Array.from({ length: 7 }, (_, i) => ({
-    id: 'rec' + i, pkey: 'F:\\ws\\alpha', task: 'task ' + i, state: 'down', stage: 'build',
-    updated: NOW - i * 60000, days: [dayRow('2026-09-14', 'build', 'claude-opus-5', 'main', 1, 10)],
-}));
-
-test('dashRecent lists exactly 5 rows out of more than 5 eligible ones, newest first by recentRows\' own order', () => {
-    const html = DASH.dashRecent(DASH_RECENT_R);
-    assert.match(html, /data-block="dash-recent"/);
-    assert.equal(count(html, /class="drow"/g), 5);
-    const ids = [...html.matchAll(/href="#\/s\/(rec\d)"/g)].map((m) => m[1]);
-    assert.deepEqual(ids, ['rec0', 'rec1', 'rec2', 'rec3', 'rec4'],
-        'the five most recently updated, in the same order recentRows sorts them');
-    assert.match(DASH.dashRecent([]), /近 30 天沒有 session/);
-});
-
-test('dashPage draws 現在 as the four home groups and nothing else', () => {
-    const html = DASH.dashPage();
-    assert.match(html, /^<div class="dash kdash home" data-block="home">/);
-    assert.deepEqual([...html.matchAll(/data-block="([^"]+)"/g)].map((m) => m[1]), ['home', 'home-live', 'home-running', 'home-todo', 'home-spend']);
-});
-
 test('recentRows keeps what spent inside the window or is still live, newest first', () => {
     const rows = V.recentRows(NAV_SESSIONS, NAV_DAYS);
     assert.deepEqual(rows.map((s) => s.id), ['n1', 'n2']);
@@ -1552,7 +1520,7 @@ test('quota share stays off the event-page toc: the segment meta line is plain d
     } finally { S.profiles = undefined; }
 });
 
-test('quota share stays off the projects table cost cell and the tune-table cost cell', () => {
+test('quota share stays off the projects table cost cell', () => {
     const S = global.window.STATION;
     try {
         S.profiles = { machine: { values: { 'quota.week': 20 } } };
@@ -1560,20 +1528,12 @@ test('quota share stays off the projects table cost cell and the tune-table cost
         const cells = proj.match(/<span class="r">\$[^<]*<\/span>/g) || [];
         assert.ok(cells.length, 'a project cost cell is there');
         assert.doesNotMatch(cells.join(''), /%\)/);
-        const R = [{ id: 't1', pkey: 'p', route: ['build'], stage: 'verify', backtracks: 0, stages: [{ stage: 'build', from: T0, to: T0 + 3600000, waited: 0, burn: 10, usd: 5 }] }];
-        const led = V.routeLedger(R);
-        assert.match(led, /<td class="r num">\$[\d.]+<\/td>/, 'the tune cost cell is there');
-        assert.doesNotMatch(led, /%\)/);
     } finally { S.profiles = undefined; }
 });
 
-test('the spend card says today\'s cost, and quota share stays off the sessions list cost cell', () => {
+test('quota share stays off the sessions list cost cell', () => {
     const d = mkDash([Object.assign({}, HOME[0], { id: 'cap-1', state: 'down' })]);
     d.S.profiles = { machine: { values: { 'quota.week': 20 } }, projects: {} };
-    const cap = d.x.dashPage().match(/<span class="sl-k">今天<b>[^<]*<\/b><\/span>/);
-    assert.ok(cap, 'the today figure is there');
-    assert.match(cap[0], /<b>\$[\d.]+/);
-    assert.doesNotMatch(cap[0], /%\)/, 'the spend card figures carry no quota share');
     assert.equal(typeof V.drawList, 'function'); // tests/source.test.js counts an export as used only through V.<name>
     try {
         d.x.drawList();

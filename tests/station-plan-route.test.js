@@ -12,7 +12,7 @@ const vm = require('node:vm');
 global.window = { STATION: { serve: false, pricesVerified: '2026-09-04' } };
 const V = require('../assets/station/station.js');
 
-const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+const { SRC } = require('./station-src.js');
 const NOW = Date.parse('2026-10-18T12:00:00.000Z');
 const PK = 'F:\\ws\\alpha';
 
@@ -54,12 +54,10 @@ test('the plan tab is the fifth, labelled with the newest plan\'s task count, an
     assert.match(V.tabsHtml({ id: 's1', stage: 'plan' }, 'timeline', null), /<a href="#\/s\/s1\/plan">計畫<\/a><a href="#\/s\/s1\/gate">關卡<\/a><\/nav>$/, 'no detail yet');
 });
 
-test('the session page on #/s/<id>/plan marks the tab on and draws the plan tab\'s panel; other tabs keep theirs', () => {
+test('the session page on #/s/<id>/plan marks the tab on and draws the plan tab\'s panel', () => {
     const html = boot('#/s/s1/plan');
     assert.match(html, /<a href="#\/s\/s1\/plan" class="on" aria-current="page">計畫<\/a><a href="#\/s\/s1\/gate">關卡<\/a><\/nav>/);
     assert.match(html, /<section class="panel pv" data-block="plan-tab"><p class="tally">/, 'no detail script here, so the note the other tabs show');
-    assert.match(boot('#/s/s1/dispatch'), /<section class="panel" data-block="dispatch">/);
-    assert.match(boot('#/s/s1'), /<\/nav><section class="panel">/);
 });
 
 // A detail as the detail script carries it, with one plan of two tasks in two groups.

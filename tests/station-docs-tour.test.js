@@ -9,7 +9,7 @@ const vm = require('node:vm');
 
 global.window = { STATION: {} };
 const V = require('../assets/station/station.js');
-const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+const { SRC } = require('./station-src.js');
 
 const HIT = { project: 'fankeel', pkey: 'F:/ymlab/fankeel', path: 'docs/90-agent/reference/registry.md',
     title: 'The registry, and what it remembers', role: 'reference', before: '… `', hit: 'inflight', after: '` — `{ stage, at }` <b> …' };

@@ -9,7 +9,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const I = require('../assets/station/i18n.js');
 
-const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+const { SRC } = require('./station-src.js');
 const NOW = Date.parse('2026-10-01T12:00:00.000Z');
 const ROUTE7 = ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land'];
 
@@ -60,13 +60,6 @@ test('a stage the route skips is left out of the glyph, and a route with no land
     assert.equal(count(html, /class="gseg /g), 3);
     assert.equal(count(html, /class="gedge /g), 0);
     assert.match(html, /<b>03<\/b><i>&nbsp;\/&nbsp;03<\/i><u>verify<\/u>/);
-});
-
-test('the recent row names its stage for the underline, and an empty home-live says so', () => {
-    const { V } = boot();
-    const recent = V.dashRecent([{ id: 'r1', pkey: 'F:\\ws\\alpha', task: 'recent', state: 'live', stage: 'plan', updated: NOW - 1000, started: NOW - 7200e3, days: [] }]);
-    assert.match(recent, /<span class="ds mono" data-st="plan" style="--c:var\(--st-plan\)">plan<\/span>/);
-    assert.match(V.homeLive([], NOW, false), /<p class="dnone">沒有進行中的 session<\/p>/);
 });
 
 test('a pointerdown on an action button opens the click ring, restarting it each time, and one on anything else does not', () => {

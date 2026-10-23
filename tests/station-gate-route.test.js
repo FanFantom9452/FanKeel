@@ -12,7 +12,7 @@ const vm = require('node:vm');
 global.window = { STATION: { serve: false, pricesVerified: '2026-09-04' } };
 const V = require('../assets/station/station.js');
 
-const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+const { SRC } = require('./station-src.js');
 const NOW = Date.parse('2026-10-18T12:00:00.000Z');
 const PK = 'F:\\ws\\alpha';
 
