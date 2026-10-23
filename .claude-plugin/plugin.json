@@ -200,6 +200,17 @@
         ]
       },
       {
+        "matcher": "mcp__ccd_turn__wrap_up",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/wrap-up.js\"",
+            "timeout": 5,
+            "statusMessage": "Checking the next-step box for a decision..."
+          }
+        ]
+      },
+      {
         "hooks": [
           {
             "type": "command",
