@@ -23,7 +23,7 @@ const http = require('node:http');
 const crypto = require('node:crypto');
 const { execFileSync, spawnSync } = require('node:child_process');
 const { parseArgs } = require('node:util');
-const { inject, outside, diffLines, queueState, changedPaths, rankSources, statusOf } = require('../lib/tune.js');
+const { inject, outside, diffLines, queueState, changedPaths, rankSources, statusOf, pageKey } = require('../lib/tune.js');
 const { readBody } = require('../lib/body.js');
 const { relPath } = require('../lib/guard.js');
 
@@ -135,7 +135,16 @@ function serve(dir, port, live, upstream) {
             const pending = rows.filter((r) => r.status === 'queued' || r.status === 'taken').length;
             // What `wait` has handed out and `done` has not settled, with how
             // many times that block has been asked for so far — the round.
-            const editing = rows.filter((r) => r.status === 'taken')
+            // The overlay's fetch carries its page as the Referer: a ring is
+            // drawn for a request made on that page only. No referer, or a
+            // request recorded without a page, keeps the ring (tune-7).
+            let here = null;
+            try {
+                here = pageKey(new URL(req.headers.referer).pathname);
+            } catch (e) {
+                here = null;
+            }
+            const editing = rows.filter((r) => r.status === 'taken' && (!here || !r.page || pageKey(r.page) === here))
                 .map((r) => Object.assign({ id: r.id, block: r.block, round: rows.filter((x) => x.block === r.block && x.id <= r.id).length }, r.blocks ? { blocks: r.blocks } : {}));
             return send(res, 200, TYPES['.json'], JSON.stringify({ pending, editing }));
         }

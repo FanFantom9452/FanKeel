@@ -1598,8 +1598,15 @@ progress to done or rejected is a note in the floating icon's panel —
 已修改完成 or 沒有修改, with its `data-block` (`noteHtml`, `floatNotes`) —
 and, with the tab in the background and notifications allowed from the
 panel's 背景時通知我 button, a browser notification. A block `tune.js wait`
-handed out and not yet settled is a 編輯中 note in the same panel, and the
-panel's foot counts the done requests and links the tune page. The masthead
+handed out and not yet settled is a 編輯中 note in the same panel, with an
+× like any other: the × hides the row on this browser (`station.fkGone` in
+`localStorage`) and does not touch the queue. A request `wait` took more than
+24 hours ago and nobody settled reads as `expired` (`statusOf`, `lib/tune.js`)
+and gets no 編輯中 row; `tune.js drop <id>` settles a `queued` or `taken`
+request by hand, as `dropped`. Opening the panel counts as reading it: a note
+read stays in the list, greyed, and the bell counts only the unread notes and
+the editing rows. The panel's foot counts the done requests and links the tune
+page. The masthead
 chip and the toasts are gone. A hidden tab keeps re-reading
 only while a request is in progress. The changed page itself reloads through
 tune's own overlay; the station opens no connection of its own for this.
