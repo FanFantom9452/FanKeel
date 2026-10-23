@@ -28,6 +28,7 @@ const { trackedFiles, MAX_WALK_FILES, SKIP_EXT } = require('../lib/tracked.js');
 const { human, plural, section } = require('../lib/report.js');
 const { resolveRoot } = require('../lib/registry.js');
 const docsTree = require('../lib/docs.js');
+const { requireGraph, affected: affectedBy } = require('../lib/requires.js');
 
 // The default, not the law. `--max N` and `--all` move it, because a report that
 // silently stops at 25 answers a different question than the one that was asked —
@@ -506,6 +507,7 @@ function parseArgs(argv) {
     let max = DEFAULT_MAX;
     let tree = false;
     let archive = false;
+    let affected = null;
     const include = [];
     const terms = [];
     for (let i = 0; i < argv.length; i++) {
@@ -538,16 +540,59 @@ function parseArgs(argv) {
             }
             continue;
         }
+        // Takes its value with it, as `--root` does: left alone the path would
+        // be read as a search term. A flag with no value stays `''`, so the
+        // report can say what is missing rather than quietly running a scan.
+        if (argv[i] === '--affected') {
+            affected = argv[i + 1] !== undefined ? String(argv[++i]) : '';
+            continue;
+        }
         if (argv[i].startsWith('--')) continue;
         const term = String(argv[i]).toLowerCase().trim();
         if (term && !terms.includes(term)) terms.push(term);
     }
-    return { root, terms, max, tree, archive, include };
+    return { root, terms, max, tree, archive, include, affected };
+}
+
+// Who requires one file, straight away: the non-test files and the tests, each
+// with the lines that do it. The sections ignore the per-section cap unless
+// `--max` was given, because a half list of who a change breaks answers a
+// different question; the output ceiling still bounds the whole.
+function affectedReport(root, target, max) {
+    if (!target) return 'fankeel survey: --affected needs a file, repository-relative or absolute.';
+    const found = trackedFiles(root);
+    if (!found) return 'fankeel survey: nothing readable under that root — no repository, and no files.';
+    const files = found.files.map((f) => String(f).replace(/\\/g, '/'));
+    const rel = path.relative(root, path.resolve(root, target)).split(path.sep).join('/');
+    if (!/\.js$/i.test(rel) || !files.includes(rel)) {
+        return 'fankeel survey: ' + rel + ' is not a tracked .js file under this root. This reads `git ls-files`; check the path.';
+    }
+    const hit = affectedBy(requireGraph(root, files), rel);
+    const rows = (list) => {
+        const byFile = new Map();
+        for (const e of list) byFile.set(e.from, [...(byFile.get(e.from) || []), e.line]);
+        return [...byFile.entries()].map(([from, lines]) => from + ':' + lines.join(','));
+    };
+    const fileRows = rows(hit.files);
+    const testRows = rows(hit.tests);
+    const cap = max === DEFAULT_MAX ? Infinity : max;
+    const out = ['fankeel survey --affected ' + rel + ' — ' + plural(fileRows.length, 'file', 'files')
+        + ' and ' + plural(testRows.length, 'test', 'tests') + ' require it directly'];
+    out.push(...section('files:', fileRows, cap));
+    out.push(...section('tests:', testRows, cap));
+    if (!fileRows.length && !testRows.length) {
+        out.push('', 'Nothing requires it by a relative path. A caller through a package name or a string built at run time is not seen here.');
+    } else {
+        out.push('', 'Direct requirers only; open one of them and run this again to follow a change further.');
+    }
+    return out.join('\n');
 }
 
 function main(argv) {
-    const { root, terms, max, tree, archive, include } = parseArgs(argv);
-    const text = report(scan(root, terms, { archive, include }), terms, { max, tree, root });
+    const { root, terms, max, tree, archive, include, affected } = parseArgs(argv);
+    const text = affected !== null
+        ? affectedReport(root, affected, max)
+        : report(scan(root, terms, { archive, include }), terms, { max, tree, root });
     return max === Infinity ? text : capOutput(text, MAX_OUTPUT_CHARS);
 }
 

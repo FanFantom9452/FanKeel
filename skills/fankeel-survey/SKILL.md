@@ -175,6 +175,7 @@ the rows it cut, for the cost of one command:
 node <plugin>/scripts/survey.js --all <term>...      # every match, no cap
 node <plugin>/scripts/survey.js --tree               # every directory, with sizes
 node <plugin>/scripts/survey.js --include-role archive,plan <term>...  # those roles too
+node <plugin>/scripts/survey.js --affected <file>     # who requires it: files and tests, with lines
 ```
 
 The default scan leaves out every file whose role is `archive`, `plan`, `decision` or `report` and says how many of each on its `excluded:` line — pages that record a moment rather than the present. `--include-role <role,...>` puts back the ones it names; `--archive` is the older spelling of `--include-role archive`.

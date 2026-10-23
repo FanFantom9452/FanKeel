@@ -14,7 +14,7 @@ const { skillFiles, main } = require('../scripts/input-check.js');
 const CAPS = {
     'fankeel': 65600,
     'fankeel-build': 40900,
-    'fankeel-survey': 23700,
+    'fankeel-survey': 23800,
     'fankeel-land': 24100,
     'fankeel-audit': 20800,
     'fankeel-plan': 19400,
