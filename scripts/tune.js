@@ -177,6 +177,8 @@ function serve(dir, port, live, upstream) {
                     const blocks = strs(d.blocks, 200);
                     const selectors = strs(d.selectors, 500);
                     const one = { note: str(d.note, 4000), block: str(d.block, 200) || blocks[0] || '', selector: str(d.selector, 500), classes: Array.isArray(d.classes) ? d.classes.filter((c) => typeof c === 'string').slice(0, 20) : [], text: str(d.text, 80) };
+                    const op = str(d.opener, 500);
+                    if (op) one.opener = op;
                     if (blocks.length > 1) one.blocks = blocks;
                     if (selectors.length > 1) one.selectors = selectors;
                     return one;
@@ -208,7 +210,7 @@ function serve(dir, port, live, upstream) {
                 const first = items[0];
                 const note = items.length > 1 ? items.map((it, i) => (i + 1) + '. ' + it.note).join('\n') : first.note;
                 const id = 'r-' + String(requests().length + 1).padStart(4, '0');
-                append(Object.assign({ id, status: 'queued', page: upstream ? page : relPath(root, file), file, block: first.block, selector: first.selector, classes: first.classes, text: first.text, note }, union.length > 1 || (union.length === 1 && union[0] !== first.block) ? { blocks: union } : {}, many ? { items } : {}));
+                append(Object.assign({ id, status: 'queued', page: upstream ? page : relPath(root, file), file, block: first.block, selector: first.selector, classes: first.classes, text: first.text, note, ...(first.opener ? { opener: first.opener } : {}) }, union.length > 1 || (union.length === 1 && union[0] !== first.block) ? { blocks: union } : {}, many ? { items } : {}));
                 send(res, 200, TYPES['.json'], JSON.stringify({ id }));
                 return broadcast({ type: 'queued', id, block: first.block, selector: first.selector });
             });
@@ -242,6 +244,7 @@ function wait(timeoutSec) {
             append({ id: next.id, status: 'taken' });
             const job = { id: next.id, page: next.page, file: next.file, block: next.block, selector: next.selector || '', classes: next.classes || [], text: next.text || '', note: next.note };
             if (next.blocks) job.blocks = next.blocks;
+            if (next.opener) job.opener = next.opener;
             const texts = live ? live.src.map((f) => ({ file: f, text: fs.readFileSync(f, 'utf8') })) : null;
             if (live) job.sources = rankSources(texts, { block: next.block, classes: next.classes || [] });
             if (next.items) job.items = next.items.map((it) => (live ? Object.assign({}, it, { sources: rankSources(texts, { block: it.block, classes: it.classes || [] }) }) : it));

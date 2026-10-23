@@ -545,3 +545,17 @@ test('live mode: wait ranks the sources of every item', async (t) => {
     assert.deepEqual(job.items[0].sources, ['src/view.js:2']);
     assert.deepEqual(job.items[1].sources, []);
 });
+
+test('a request item carries the opener of an element a click revealed, and the queue row keeps it', async (t) => {
+    const cwd = tmp('fankeel-tune-opener-');
+    fs.mkdirSync(path.join(cwd, 'site'));
+    fs.writeFileSync(path.join(cwd, 'site', 'page.html'), PAGE);
+    const base = await startServer(t, cwd);
+    const made = await request(base + '__live/request', 'POST', { page: '/page.html', items: [{ note: '選項改兩欄', block: 'now', selector: 'dialog > button', opener: 'main > div:nth-of-type(1)' }] });
+    assert.equal(made.status, 200, made.text);
+    const waited = spawnSync(process.execPath, [CLI, 'wait', '--timeout', '5'], { cwd, encoding: 'utf8' });
+    assert.equal(waited.status, 0, waited.stderr);
+    const job = JSON.parse(waited.stdout);
+    assert.equal(job.opener, 'main > div:nth-of-type(1)');
+    assert.equal(job.items[0].opener, 'main > div:nth-of-type(1)');
+});

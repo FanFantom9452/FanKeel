@@ -235,7 +235,7 @@ function loadOverlay(shared) {
     doc.documentElement.appendChild(doc.head);
     doc.documentElement.appendChild(doc.body);
     doc.querySelector = (sel) => doc.documentElement.querySelector(sel);
-    doc.all = (sel) => doc.documentElement.querySelectorAll(sel);
+    doc.all = doc.querySelectorAll = (sel) => doc.documentElement.querySelectorAll(sel);
     doc.contains = (n) => doc.documentElement.contains(n);
     const page = {};
     for (const [name, text] of [['hero', 'Welcome'], ['card', 'Card one'], ['foot', 'Footer']]) {
@@ -673,4 +673,73 @@ test('the row being picked has its note field, and 往外一層 and 完成這則
     assert.equal(t.q('.fk-live-out'), null, 'a row that is not being picked carries 往外一層');
     assert.deepEqual(t.doc.all('textarea').map((x) => x.value), ['先寫備註']);
     assert.equal(t.q('.fk-live-badge').textContent, '1');
+});
+
+// tune-6: an element a click opens — a dialog, a dropdown — can be picked.
+// F2 starts a pick without touching the tray (a click there would close the
+// page's popover, and a modal dialog makes the tray inert); the outline moves
+// into the open dialog so it is drawn above it; an element with no block of
+// its own takes the block of the page click that opened it, and says which.
+function withDialog(t) {
+    const dlg = t.doc.createElement('dialog');
+    dlg.className = 'pick-d';
+    dlg.open = true;
+    const item = t.doc.createElement('button');
+    item.className = 'opt';
+    item.textContent = 'Option A';
+    dlg.appendChild(item);
+    t.doc.body.appendChild(dlg);
+    return { dlg, item };
+}
+
+test('F2 starts a pick without a click on the tray, and the page does not see the key', () => {
+    const t = loadOverlay();
+    const ev = t.fire(t.doc.body, 'keydown', { key: 'F2' });
+    assert.ok(ev._stopNow, 'the page saw F2');
+    assert.ok(ev.defaultPrevented);
+    assert.equal(t.q('.fk-live-hint').hidden, false, 'no pick started');
+    t.fire(t.page.hero, 'click');
+    assert.equal(t.doc.all('.fk-live-chip').length, 1);
+});
+
+test('a click on the tray stops at the tray, so the page\'s outside-click handler never sees it', () => {
+    const t = loadOverlay();
+    t.openTray();
+    let seen = 0;
+    t.doc.addEventListener('click', () => { seen++; });
+    t.fire(t.q('.fk-live-add'), 'click');
+    assert.equal(seen, 0);
+});
+
+test('while picking, the outline is drawn inside an open dialog, and goes back to the body after', () => {
+    const t = loadOverlay();
+    const { dlg, item } = withDialog(t);
+    t.fire(t.doc.body, 'keydown', { key: 'F2' });
+    assert.equal(t.q('.fk-live-box').parentNode, dlg);
+    assert.equal(t.q('.fk-live-box').style.position, 'fixed');
+    t.fire(item, 'mousemove');
+    t.fire(t.doc.body, 'keydown', { key: 'Escape' });
+    assert.equal(t.q('.fk-live-box').parentNode, t.doc.body);
+});
+
+test('an element with no block, opened by a click on a block, is picked with that block and its opener', async () => {
+    const t = loadOverlay();
+    t.page.card.className = 'card-c';
+    t.fire(t.page.card, 'click');
+    const { dlg, item } = withDialog(t);
+    t.fire(t.doc.body, 'keydown', { key: 'F2' });
+    t.fire(item, 'click');
+    assert.equal(t.doc.all('.fk-live-chip').length, 1, 'the dialog\'s element was not taken');
+    t.fire(t.q('.fk-live-fin'), 'click');
+    dlg.remove();
+    t.fire(t.page.hero, 'click');
+    const area = t.doc.all('textarea').pop();
+    area.value = '選項改成兩欄';
+    t.fire(area, 'input');
+    t.fire(t.q('.fk-live-all'), 'click');
+    const body = JSON.parse(t.fetched.filter((f) => f.url === '/__live/request')[0].init.body);
+    assert.equal(body.items[0].block, 'card');
+    assert.match(body.items[0].opener, /section:nth-of-type\(2\)$/);
+    assert.equal(body.items[0].text, 'Option A', 'the pick was described after the dialog closed');
+    await t.tick();
 });

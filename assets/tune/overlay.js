@@ -59,6 +59,7 @@
                 (p.blocks || [p.block]).forEach(function (b) { if (b && union.indexOf(b) < 0) union.push(b); });
             });
             var item = { note: String(d.note).trim(), block: union[0] || '', selector: first.selector, classes: first.classes, text: first.text };
+            if (first.opener) item.opener = first.opener;
             if (union.length > 1) item.blocks = union;
             if (d.picks.length > 1) item.selectors = d.picks.map(function (p) { return p.selector; });
             return item;
@@ -211,15 +212,15 @@
     }
     function place(e, target, pad) {
         var r = target.getBoundingClientRect();
-        e.style.left = (r.left + window.scrollX - (pad || 0)) + 'px';
-        e.style.top = (r.top + window.scrollY - (pad || 0)) + 'px';
+        e.style.left = (r.left + (e.style.position === 'fixed' ? 0 : window.scrollX) - (pad || 0)) + 'px';
+        e.style.top = (r.top + (e.style.position === 'fixed' ? 0 : window.scrollY) - (pad || 0)) + 'px';
         e.style.width = (r.width + 2 * (pad || 0)) + 'px';
         e.style.height = (r.height + 2 * (pad || 0)) + 'px';
     }
     function above(e, target) {
         var r = target.getBoundingClientRect();
-        e.style.left = (r.left + window.scrollX) + 'px';
-        e.style.top = Math.max(0, r.top + window.scrollY - e.offsetHeight - 2) + 'px';
+        e.style.left = (r.left + (e.style.position === 'fixed' ? 0 : window.scrollX)) + 'px';
+        e.style.top = Math.max(0, r.top + (e.style.position === 'fixed' ? 0 : window.scrollY) - e.offsetHeight - 2) + 'px';
     }
 
     // The station's hexagon, from assets/station/index.html, with its classes
@@ -252,9 +253,16 @@
         + '<button type="button" class="fk-live-logo" aria-expanded="false">' + GLYPH + '<span class="fk-live-badge" hidden></span></button>');
     var hint = el('div', 'fk-live-hint',
         '<p><span class="fk-live-num fk-live-open"></span><span class="fk-live-say"></span></p>'
-        + '<div class="fk-live-row"><span class="fk-live-aside"><kbd>Esc</kbd> 取消</span></div>');
+        + '<div class="fk-live-row"><span class="fk-live-aside"><kbd>Esc</kbd> 取消 · <kbd>F2</kbd> 不碰頁面直接圈選</span></div>');
     hint.setAttribute('role', 'status');
     hint.hidden = true;
+
+    // The assistant's own presses and clicks end at the assistant, so a
+    // page's "click outside closes it" handler does not shut the dropdown or
+    // dialog that is about to be picked from.
+    ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'click'].forEach(function (type) {
+        [ast, hint].forEach(function (e) { e.addEventListener(type, function (ev) { ev.stopPropagation(); }); });
+    });
 
     var tray = ast.querySelector('.fk-live-tray');
     var logo = ast.querySelector('.fk-live-logo');
@@ -294,6 +302,26 @@
     // null for the corner. press: the pointer that is down on the logo.
     var pos = null;
     var press = null;
+    // opener: the last page element clicked while not picking — what a
+    // dialog or dropdown opened from — described when it was clicked. host:
+    // the open <dialog> the outline is drawn inside while picking, so a modal
+    // one's top layer does not hide it. seen: each pick's description, taken
+    // when it was picked, for a pick its dialog has since removed.
+    var opener = null;
+    var host = null;
+    var seen = typeof WeakMap === 'function' ? new WeakMap() : null;
+    function openDialog() {
+        var all = [].slice.call(doc.querySelectorAll('dialog'));
+        for (var i = all.length - 1; i >= 0; i--) if (all[i].open) return all[i];
+        return null;
+    }
+    function hostIn(to) {
+        host = to;
+        [box, tag, hint].forEach(function (e) {
+            (to || doc.body).appendChild(e);
+            e.style.position = to ? 'fixed' : '';
+        });
+    }
 
     // The outline says what a click here would take: the block's name, or 外框
     // and how many blocks it holds; amber, and why, when it would take nothing.
@@ -316,8 +344,11 @@
         return p;
     }
     function describe(node) {
+        if (seen && seen.has(node) && !doc.contains(node)) return seen.get(node);
         var names = blocksOf(node);
-        return { block: names[0] || '', blocks: names, selector: selectorOf(node, doc.body), classes: [].slice.call(node.classList).filter(function (c) { return c.indexOf('fk-live-') !== 0; }), text: String(node.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 80) };
+        var d = { block: names[0] || '', blocks: names, selector: selectorOf(node, doc.body), classes: [].slice.call(node.classList).filter(function (c) { return c.indexOf('fk-live-') !== 0; }), text: String(node.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 80) };
+        if (!names.length && opener && opener.block) { d.block = opener.block; d.blocks = [opener.block]; d.opener = opener.selector; }
+        return d;
     }
 
     // The drafts survive the reload a finished request causes: each pick is
@@ -505,6 +536,7 @@
         hover = null;
         trail = [];
         sendErr = '';
+        hostIn(openDialog());
         draw();
     }
     // keep: 完成這則 keeps what was picked; Esc puts the draft back as it
@@ -517,6 +549,7 @@
         hover = null;
         trail = [];
         hide();
+        if (host) hostIn(null);
         if (!keep) d.picks = pickWas || [];
         pickWas = null;
         if (!d.picks.length) remove(at);
@@ -688,21 +721,34 @@
     // walked it out), else the innermost element clicked; preventDefault
     // stops a link from following.
     window.addEventListener('click', function (ev) {
-        if (picking < 0) return;
+        if (picking < 0) {
+            if (!ours(ev.target) && pickable(ev.target) && blocksOf(ev.target).length) opener = { selector: selectorOf(ev.target, doc.body), block: blocksOf(ev.target)[0] };
+            return;
+        }
         if (ours(ev.target)) return;
         ev.preventDefault();
         ev.stopImmediatePropagation();
         var picked = hover && hover.contains(ev.target) ? hover : ev.target;
         if (!pickable(picked)) return;
-        // An element with no block in or around it is shown why, and not taken.
-        if (!blocksOf(picked).length) { show(picked); return; }
+        // An element with no block in or around it is shown why, and not
+        // taken — unless the click that opened it was on a block.
+        if (!blocksOf(picked).length && !(opener && opener.block)) { show(picked); return; }
         drafts[picking].picks = toggleIn(drafts[picking].picks, picked);
+        if (seen) seen.set(picked, describe(picked));
         draw();
     }, true);
 
     // Escape drops a pick, or closes the tray from inside it. Keys typed into
     // the assistant do not reach the page's shortcut handlers.
     window.addEventListener('keydown', function (ev) {
+        if (ev.key === 'F2' && picking < 0 && !ours(ev.target)) {
+            ev.preventDefault();
+            ev.stopImmediatePropagation();
+            drafts.push({ note: '', picks: [] });
+            if (tray.hidden) toggleTray(true);
+            startPick(drafts.length - 1, true);
+            return;
+        }
         if (ev.key === 'Escape' && picking >= 0) {
             ev.stopImmediatePropagation();
             endPick(false);
