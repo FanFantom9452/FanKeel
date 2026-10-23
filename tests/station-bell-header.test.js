@@ -31,3 +31,10 @@ test('.fkp hangs from the bell by its top edge, right-aligned to it', () => {
     assert.match(r, /right:0/);
     assert.doesNotMatch(r, /bottom:66px/);
 });
+
+test('the panel caps match fkBoxClamp', () => {
+    const r = rule('.fkp');
+    assert.ok(r.includes('width:min(376px,calc(100vw - 64px))'));
+    assert.ok(r.includes('max-height:calc(100vh - 58px)'));
+    assert.ok(CSS.includes(':root[data-style=keel] .fkp{max-height:calc(100vh - 82px)}'));
+});

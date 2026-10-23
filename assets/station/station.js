@@ -2526,7 +2526,7 @@
     // The gate panel's own size once resized: {w, h} in px, kept in localStorage
     // as `station.fkBox`. Its place is the bell's, so a saved {x, y, w, h} from
     // before the bell moved into the masthead reads as its w and h alone.
-    // Never smaller than 260 by 160, never taller than the window less the 74px
+    // Never smaller than 260 by 160, never taller than the window less the 82px
     // the keel .fkp max-height leaves (station.css), or the kept size renders capped.
     var FK_MIN_W = 260, FK_MIN_H = 160;
     function fkBoxParse(raw) {
