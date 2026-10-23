@@ -1383,8 +1383,9 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
    The page waits on station/station-data.js, which serve computes per request,
    and station.js is loaded after it, so no script runs until the data is here:
    these placeholders are the stylesheet's alone, on the three boxes the shell
-   leaves empty. The hash is not something CSS can read, so #page takes the
-   儀表板's shape, the page a bare load opens. */
+   leaves empty. The hash is not something CSS can read, so index.html's inline
+   script puts it on #page as data-skel (list, detail, form) first; without
+   one #page takes the 儀表板's shape, the page a bare load opens. */
 #side:empty::before{content:"";width:12px;height:12px;border-radius:50%;border:2px solid var(--rule2);border-top-color:var(--ink2);
   animation:spin .8s linear infinite;flex:none}
 #side:empty::after{content:"計算中…";font-size:12.5px;color:var(--muted)}
@@ -1403,6 +1404,21 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
   background-position:0 0,
     18px 58px,calc(50% + 85px) 58px,18px 86px,calc(50% + 70px) 86px,
     0 40px,100% 40px,0 264px,100% 264px}
+#page:empty[data-skel=list]{
+  background-image:linear-gradient(var(--inset),var(--inset)),linear-gradient(var(--panel),var(--panel)),
+    repeating-linear-gradient(to bottom,var(--inset) 0 14px,transparent 14px 40px);
+  background-size:170px 24px,100% 64px,calc(100% - 36px) 400px;
+  background-position:0 0,0 40px,18px 124px}
+#page:empty[data-skel=detail]{
+  background-image:linear-gradient(var(--inset),var(--inset)),linear-gradient(var(--inset),var(--inset)),
+    repeating-linear-gradient(to right,var(--inset) 0 64px,transparent 64px 80px),linear-gradient(var(--panel),var(--panel));
+  background-size:90px 12px,260px 26px,400px 22px,100% 380px;
+  background-position:0 0,0 22px,0 66px,0 104px}
+#page:empty[data-skel=form]{
+  background-image:linear-gradient(var(--inset),var(--inset)),
+    repeating-linear-gradient(to bottom,var(--inset) 0 12px,transparent 12px 22px,var(--panel) 22px 56px,transparent 56px 72px);
+  background-size:170px 24px,min(560px,100%) 432px;
+  background-position:0 0,0 44px}
 #page:empty::after{content:"";position:absolute;inset:0;
   background:linear-gradient(100deg,transparent 30%,rgba(128,128,128,.13) 50%,transparent 70%);
   transform:translateX(-100%);animation:shimmer 1.5s ease-in-out infinite}
