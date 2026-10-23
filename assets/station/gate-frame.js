@@ -4,7 +4,7 @@
 // tabs whose title opens the session in the full station, the stage report
 // station.js drew (`focusReportHtml`) in the main column, and the question in
 // a side column that stays in view. An option shows its label; its
-// description opens on click; 1 … n pick, unless a dialog is open or a field
+// description starts open and closes on click; 1 … n pick, unless a dialog is open or a field
 // has focus. A pick only marks the option and says to answer in Claude
 // Desktop: the station cannot answer a gate, so nothing here is sent.
 // Loaded by the focus page before station.js, whose focusPageHtml calls frame().
@@ -32,7 +32,7 @@
     function kit() { return (w && w.FK_KIT) || {}; }
     function esc(s) { return kit().esc(s); }
 
-    // Per gate: the option picked (0 for none) and the options opened. The
+    // Per gate: the option picked (0 for none) and the options the reader closed. The
     // focus page repaints every 5 s; this survives it. A gate is the session,
     // its stage and its question, so a new gate in the same session starts
     // with no pick. CUR is the gate the last frame drew, with its option
@@ -63,7 +63,7 @@
             + '</div></section>';
     }
     function option(o, i, st) {
-        var k = kit(), n = i + 1, raw = String((o && o.label) || ''), rec = REC.test(raw), d = o && o.description, open = st.more[n] === true;
+        var k = kit(), n = i + 1, raw = String((o && o.label) || ''), rec = REC.test(raw), d = o && o.description, open = st.more[n] !== false;
         var cls = [rec ? 'is-rec' : '', st.pick === n ? 'on' : '', open ? 'is-open' : ''].filter(Boolean).join(' ');
         return '<li data-gq="' + n + '"' + (cls ? ' class="' + cls + '"' : '') + '><span class="gt-n">' + n + '</span><div class="gq-b">'
             + '<button type="button" class="gt-more" data-gq-more="' + n + '" aria-expanded="' + (open ? 'true' : 'false') + '"' + (d ? ' aria-controls="gq-d-' + n + '"' : '') + '>'
@@ -88,7 +88,7 @@
         if (!doc || !doc.querySelectorAll || CUR.key === null) return;
         var st = state(CUR.key);
         [].forEach.call(doc.querySelectorAll('[data-gq]'), function (li) {
-            var n = Number(li.getAttribute('data-gq')), open = st.more[n] === true;
+            var n = Number(li.getAttribute('data-gq')), open = st.more[n] !== false;
             li.classList.toggle('on', st.pick === n);
             li.classList.toggle('is-open', open);
             var b = li.querySelector('[data-gq-more]'), d = li.querySelector('.gt-d'), p = li.querySelector('[data-gq-pick]');
@@ -108,7 +108,7 @@
     function more(n) {
         if (CUR.key === null) return;
         var st = state(CUR.key);
-        st.more[n] = st.more[n] !== true;
+        st.more[n] = st.more[n] === false;
         paint();
     }
     function pickable(e, d) {

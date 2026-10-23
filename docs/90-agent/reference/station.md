@@ -669,7 +669,7 @@ question and its options, the recommended one marked) above `gate-report`
 (`assets/station/station.js:2914`, `if (gate && w.FK_GATE && typeof w.FK_GATE.frame === 'function') {`):
 a head with no tabs whose title opens the full station, the report
 station.js draws in the main column, and the question in a sticky side
-column, each option showing its label and opening its description on click; a
+column, each option showing its label with its description open, a click on the label closing it; a
 pick only marks it and says to answer in Claude Desktop. It re-reads its script every five seconds while the
 browser tab is visible.
 

@@ -43,22 +43,25 @@ test('the frame is the whole tab: head without tabs, the shells, then the report
     assert.ok(html.includes('<span class="of">3/5</span>'));
 });
 
-test('an option shows its label, the recommended one marked; its description is hidden until opened', () => {
+test('an option shows its label, the recommended one marked; every description starts open and a click closes it', () => {
     const G = boot();
     const html = G.frame(args());
-    assert.match(html, /<li data-gq="1" class="is-rec">[\s\S]*?<span class="gt-l">build<span class="gt-rec">建議<\/span><\/span>/);
+    assert.match(html, /<li data-gq="1" class="is-rec is-open">[\s\S]*?<span class="gt-l">build<span class="gt-rec">建議<\/span><\/span>/);
     assert.ok(!html.includes('(Recommended)'));
-    assert.ok(html.includes('<p class="gt-d" id="gq-d-1" hidden>Approve the plan and start build.</p>'));
+    assert.ok(html.includes('<p class="gt-d" id="gq-d-1">Approve the plan and start build.</p>'));
+    assert.ok(html.includes('<p class="gt-d" id="gq-d-2">Send the plan back.</p>'));
+    assert.ok(html.includes('data-gq-more="1" aria-expanded="true"'));
     assert.ok(html.includes('data-gq-pick="3" aria-pressed="false">選這個<kbd>3</kbd>'));
     assert.ok(html.includes('<h2 class="gt-q">Go to build?</h2>'));
     assert.ok(html.includes('build the twelve tasks'));
     assert.ok(!html.includes('gq-opts') && !html.includes('class="gq-l"'), 'no station.css boxed-card classes');
     G.more(1);
-    const open = G.frame(args());
-    assert.ok(open.includes('<li data-gq="1" class="is-rec is-open">'));
-    assert.ok(open.includes('<p class="gt-d" id="gq-d-1">Approve the plan'));
+    const shut = G.frame(args());
+    assert.ok(shut.includes('<li data-gq="1" class="is-rec">'));
+    assert.ok(shut.includes('id="gq-d-1" hidden'));
+    assert.ok(shut.includes('id="gq-d-2">'), 'the others stay open');
     G.more(1);
-    assert.ok(G.frame(args()).includes('id="gq-d-1" hidden'));
+    assert.ok(G.frame(args()).includes('<p class="gt-d" id="gq-d-1">Approve'));
 });
 
 test('a number key picks; the pick survives the repaint, names the label, and belongs to this session only', () => {
@@ -66,11 +69,11 @@ test('a number key picks; the pick survives the repaint, names the label, and be
     G.frame(args());
     assert.equal(G.onKey(key('2'), quiet), true);
     const html = G.frame(args());
-    assert.ok(html.includes('<li data-gq="2" class="on">'));
+    assert.ok(html.includes('<li data-gq="2" class="on is-open">'));
     assert.ok(html.includes('data-gq-pick="2" aria-pressed="true"'));
     assert.ok(html.includes('你選了「rewrite」'));
     const other = G.frame(args({ session: Object.assign({}, S, { id: 'eeeeeeee-5555-4555-8555-555555555555' }) }));
-    assert.ok(!other.includes('class="on"'));
+    assert.ok(!other.includes('class="on'));
 });
 
 test('a key is swallowed by an open dialog, a focused field, a modifier, or a number past the options', () => {
@@ -83,7 +86,7 @@ test('a key is swallowed by an open dialog, a focused field, a modifier, or a nu
     assert.equal(G.onKey(key('1'), dialogOpen), false);
     assert.equal(G.onKey(key('4'), quiet), false);
     assert.equal(G.onKey(key('x'), quiet), false);
-    assert.ok(!G.frame(args()).includes('class="on"'));
+    assert.ok(!G.frame(args()).includes('class="on'));
 });
 
 test('without a question the frame says so, and the page never sends an answer', () => {
@@ -121,17 +124,17 @@ function fakeDoc(n) {
 const inside = (sel, n) => ({ closest: (s) => (s === sel ? { getAttribute: (a) => (a === sel.slice(1, -1) ? String(n) : null) } : null) });
 const listening = () => { const G = boot(), D = fakeDoc(3); G.listen(D); G.frame(args()); return { G, D }; };
 
-test('a click on an option label opens its description in place, and a second click closes it', () => {
+test('a click on an option label closes its open description in place, and a second click opens it again', () => {
     const { D } = listening();
     D.on.click({ target: inside('[data-gq-more]', 1) });
     const li = D.lis[0];
-    assert.ok(li.cls.has('is-open'));
-    assert.equal(li.parts['[data-gq-more]'].attrs['aria-expanded'], 'true');
-    assert.equal(li.parts['.gt-d'].hidden, false);
-    assert.ok(!D.lis[1].cls.has('is-open'));
-    D.on.click({ target: inside('[data-gq-more]', 1) });
     assert.ok(!li.cls.has('is-open'));
+    assert.equal(li.parts['[data-gq-more]'].attrs['aria-expanded'], 'false');
     assert.equal(li.parts['.gt-d'].hidden, true);
+    D.on.click({ target: inside('[data-gq-more]', 1) });
+    assert.ok(li.cls.has('is-open'));
+    assert.equal(li.parts['.gt-d'].hidden, false);
+    assert.equal(li.parts['[data-gq-more]'].attrs['aria-expanded'], 'true');
 });
 
 test('a click on Pick this marks that option in place and names it on the status line', () => {
@@ -163,9 +166,9 @@ test('a new gate in the same session starts with no pick; the same gate keeps it
     G.frame(args());
     G.pick(2);
     const asked = (q, stage) => ({ stage, gate: Object.assign({}, GATE.gate, { questions: [Object.assign({}, GATE.gate.questions[0], { question: q })] }) });
-    assert.ok(!G.frame(args({ gate: asked('Go to land?', 'plan') })).includes('class="on"'), 'new question');
-    assert.ok(!G.frame(args({ gate: asked('Go to build?', 'build') })).includes('class="on"'), 'new stage');
-    assert.ok(G.frame(args()).includes('<li data-gq="2" class="on">'));
+    assert.ok(!G.frame(args({ gate: asked('Go to land?', 'plan') })).includes('class="on'), 'new question');
+    assert.ok(!G.frame(args({ gate: asked('Go to build?', 'build') })).includes('class="on'), 'new stage');
+    assert.ok(G.frame(args()).includes('<li data-gq="2" class="on is-open">'));
 });
 
 test('the options render no further than the nine a number key can pick', () => {
