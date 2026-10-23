@@ -1541,6 +1541,9 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
 .nt .tx{all:unset;grid-column:3;grid-row:2;justify-self:end;cursor:pointer;color:var(--muted);width:20px;height:20px;display:grid;place-items:center;border-radius:5px}
 .nt .tx:hover{background:var(--wash);color:var(--ink)}
 .nt .tx:focus-visible{outline:2px solid var(--ink)}
+.nt.read{opacity:.55}
+.nt.read .ti{background:var(--inset);color:var(--muted)}
+.nt.read .tt{color:var(--muted)}
 .fkf{display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:1px solid var(--rule);font-size:12px;color:var(--ink2);background:var(--inset);border-radius:0 0 12px 12px}
 .fkf b{font:600 11.5px var(--f-mono);color:var(--ink)}
 .fkf a{font:11px var(--f-mono);color:var(--muted)}

@@ -2475,22 +2475,48 @@
     // §3): a button in the corner with the count, a panel with the gates
     // first. `notes` are the page's own — settled tune requests, newest first
     // — and what tune is editing right now is read off each session's queue.
-    function floatNotes(sessions, notes) {
+    function floatNotes(sessions, notes, gone) {
         var editing = [];
         (sessions || []).forEach(function (s) {
             ((s.tune && s.tune.items) || []).forEach(function (it) {
-                if (it.status === 'taken') editing.push({ id: it.id, block: it.block, status: 'edit' });
+                if (it.status === 'taken' && !(gone && gone[it.id])) editing.push({ id: it.id, block: it.block, status: 'edit' });
             });
         });
         return editing.concat(notes || []);
+    }
+    // The panel's bookkeeping, pure so a test can drive it (station-50). A note
+    // is read once the reader has had the panel open; a read note stays,
+    // greyed, and stops counting on the bell. `gone` holds the ids of editing
+    // rows the reader dismissed with ×: those rows come off the sessions'
+    // queues, not off `notes`, so they are remembered by id.
+    var GONE_KEEP = 100;
+    function readAll(notes) {
+        return (notes || []).map(function (x) { return x.read ? x : Object.assign({}, x, { read: true }); });
+    }
+    function dismissNote(notes, gone, id) {
+        var all = notes || [], kept = all.filter(function (x) { return x.id !== id; }), g = Object.assign({}, gone);
+        if (kept.length === all.length) g[id] = true;
+        return { notes: kept, gone: g };
+    }
+    function clearNotes(sessions, notes, gone) {
+        var g = Object.assign({}, gone);
+        floatNotes(sessions, [], gone).forEach(function (x) { g[x.id] = true; });
+        return { notes: [], gone: g };
+    }
+    function goneKeys(gone) { return Object.keys(gone || {}).slice(-GONE_KEEP); }
+    function goneParse(raw) {
+        var a, out = {};
+        try { a = JSON.parse(raw); } catch (e) { return out; }
+        if (Array.isArray(a)) a.slice(-GONE_KEEP).forEach(function (id) { if (typeof id === 'string') out[id] = true; });
+        return out;
     }
     function noteHtml(n) {
         var t = n.status === 'edit' ? ['edit', '<i></i>', loc('tune.editingColon', '編輯中：'), loc('tune.editingHint', 'tune 正在改這個 block，頁面上有外框標出它。')]
             : n.status === 'done' ? ['done', '✓', loc('tune.doneColon', '已修改完成：'), loc('tune.doneHint', '改過的頁面由 tune 自己重新載入。')]
                 : ['rej', '✕', loc('tune.notChangedColon', '沒有修改：'), loc('tune.rejectedHint', '要求超出這個 block，已退回。')];
-        return '<div class="nt ' + t[0] + '" data-note="' + esc(n.id) + '"><span class="ti" aria-hidden="true">' + t[1] + '</span>'
+        return '<div class="nt ' + t[0] + (n.read ? ' read' : '') + '" data-note="' + esc(n.id) + '"><span class="ti" aria-hidden="true">' + t[1] + '</span>'
             + '<span class="tt">' + t[2] + '<code>' + esc(n.block) + '</code></span>'
-            + (n.status === 'edit' ? '' : '<button class="tx" type="button" data-note-x aria-label="' + loc('tune.close', '關閉') + '">×</button>')
+            + '<button class="tx" type="button" data-note-x aria-label="' + loc('tune.close', '關閉') + '">×</button>'
             + '<span class="tb">' + t[3] + '</span></div>';
     }
     // Exported as `clock`; the page's own `clock(ms)` is the hh:mm one.
@@ -2542,9 +2568,10 @@
     function fkBoxStyle(b) {
         return b ? ' style="width:' + Math.round(b.w) + 'px;height:' + Math.round(b.h) + 'px"' : '';
     }
-    function floatHtml(sessions, notes, open, now, picked, permission, box) {
+    function floatHtml(sessions, notes, open, now, picked, permission, box, gone) {
         var held = (sessions || []).filter(function (s) { return s.pending && s.pending.questions && s.pending.questions.length; });
-        var all = floatNotes(sessions, notes), n = held.length + all.length, tune = null, done = 0;
+        var all = floatNotes(sessions, notes, gone), n = held.length + all.length, tune = null, done = 0;
+        var lit = held.length + all.filter(function (x) { return !x.read; }).length;
         (sessions || []).forEach(function (s) {
             if (!s.tune) return;
             done += s.tune.done;
@@ -2552,7 +2579,7 @@
         });
         return '<section class="fkp" id="fkp" aria-label="' + loc('tune.notificationsAndGate', '通知與 gate') + '"' + (open || held.length ? '' : ' hidden') + fkBoxStyle(box) + '>'
             + '<div class="fkh"><b>' + loc('tune.notificationsAndGate', '通知與 gate') + '</b><span class="n">' + loc('tune.nItems', '{n} 件', { n: n }) + '</span><span class="spacer"></span>'
-            + (all.some(function (x) { return x.status !== 'edit'; }) ? '<button class="lk" type="button" data-note-clear>' + loc('tune.clearNotifications', '清掉通知') + '</button>' : '') + '</div>'
+            + (all.length ? '<button class="lk" type="button" data-note-clear>' + loc('tune.clearNotifications', '清掉通知') + '</button>' : '') + '</div>'
             + (held.length ? '<div class="fks">' + loc('tune.waitingOnYou', '等你回答') + ' <b>' + held.length + '</b></div>'
                 + held.map(function (s) { return gateCountdownHtml(s, now, picked); }).join('') : '')
             + '<div class="fks">' + loc('tune.notifications', '通知') + ' <b>' + all.length + '</b></div>' + all.map(noteHtml).join('')
@@ -2561,8 +2588,8 @@
             + (tune ? '<a href="' + esc(tune.url) + '" target="_blank" rel="noopener">' + esc(tune.url.replace(/^https?:\/\//, '').replace(/\/$/, '')) + '</a>' : '')
             + '<span class="spacer"></span>'
             + (permission === 'default' ? '<button type="button" class="btn" data-tune-notify>' + loc('tune.notifyInBackground', '背景時通知我') + '</button>' : '') + '</div><span class="fkr" data-fk-resize aria-hidden="true"></span></section>'
-            + '<button type="button" class="fkb" data-fkb aria-expanded="' + Boolean(open || held.length) + '" aria-controls="fkp" aria-label="' + loc('tune.notificationsAndGateNItems', '通知與 gate：{n} 件', { n: n })
-            + (held.length ? loc('tune.nGatesWaiting', '，{n} 個 gate 在等', { n: held.length }) : '') + '">' + FK_BELL + '<span class="fkn">' + (n ? n : '') + '</span></button>';
+            + '<button type="button" class="fkb" data-fkb aria-expanded="' + Boolean(open || held.length) + '" aria-controls="fkp" aria-label="' + loc('tune.notificationsAndGateNItems', '通知與 gate：{n} 件', { n: lit })
+            + (held.length ? loc('tune.nGatesWaiting', '，{n} 個 gate 在等', { n: held.length }) : '') + '">' + FK_BELL + '<span class="fkn">' + (lit ? lit : '') + '</span></button>';
     }
 
     // What 送出答案 sends, and how many questions have no answer yet. Typed
@@ -2991,6 +3018,7 @@
             liveSubsHtml: liveSubsHtml, shellsHtml: shellsHtml, dashRecent: dashRecent, dashPage: dashPage,
             NAV_TREE: NAV_TREE,
             tuneOpen: tuneOpen, tuneEvents: tuneEvents, toastText: toastText, floatHtml: floatHtml, fkBoxParse: fkBoxParse, fkBoxClamp: fkBoxClamp, gateCountdownHtml: gateCountdownHtml, noteHtml: noteHtml, floatNotes: floatNotes, clock: gateClock,
+            readAll: readAll, dismissNote: dismissNote, clearNotes: clearNotes, goneParse: goneParse, goneKeys: goneKeys,
             changedParts: changedParts, seenHtml: seenHtml, drawList: drawList, sessionPage: sessionPage,
             recordHtml: recordHtml, recordPageHtml: recordPageHtml, boardsHtml: boardsHtml, listAskRow: listAskRow, focusPageHtml: focusPageHtml, keepOpen: keepOpen,
         };
@@ -5770,7 +5798,7 @@
         if (!fk) return;
         var held = S.sessions.some(function (s) { return s.pending && s.pending.questions && s.pending.questions.length; });
         var old = doc.getElementById('fkp'), top = old ? old.scrollTop : 0;
-        fk.innerHTML = floatHtml(S.sessions, view.notes, view.fkOpen, S.serve ? Date.now() : NOW, view.pg, w.Notification ? w.Notification.permission : 'denied', view.fkBox);
+        fk.innerHTML = floatHtml(S.sessions, view.notes, view.fkOpen, S.serve ? Date.now() : NOW, view.pg, w.Notification ? w.Notification.permission : 'denied', view.fkBox, view.gone);
         var p = doc.getElementById('fkp'); if (p && top) p.scrollTop = top;
         fk.className = 'fk' + (held ? ' hasgate' : '');
     }
@@ -5786,6 +5814,12 @@
         return vw && vh ? fkBoxClamp(b, vw, vh) : b;
     }
     view.fkBox = fkFit(fkBoxParse(stored(FK_BOX_KEY)));
+    // Editing rows the reader dismissed with × (station-50), kept across
+    // reloads; the request itself is settled by `tune.js drop` or its 24-hour
+    // expiry (lib/tune.js statusOf), not by this.
+    var FK_GONE_KEY = 'station.fkGone';
+    view.gone = goneParse(stored(FK_GONE_KEY));
+    function goneSave() { store(FK_GONE_KEY, JSON.stringify(goneKeys(view.gone))); }
     function fkApply() {
         var p = doc.getElementById('fkp'), b = view.fkBox;
         if (!p || !b) return;
@@ -6102,15 +6136,34 @@
         }
         var lg = route.view === 'days' && e.target.closest ? e.target.closest('.legend [data-key], .legend [data-rest]') : null;
         if (lg) { legendToggle(lg); return; }
-        if (e.target.closest('[data-fkb]')) { view.fkOpen = !view.fkOpen; drawFloat(); return; }
+        if (e.target.closest('[data-fkb]')) {
+            // Opening the panel counts as reading what it shows: the draw lights
+            // the unread, the marking after it greys them for the next draw; a
+            // close marks what arrived while it was open. Neither redraws.
+            var wasOpen = view.fkOpen;
+            view.fkOpen = !wasOpen;
+            if (wasOpen) view.notes = readAll(view.notes);
+            drawFloat();
+            if (!wasOpen) view.notes = readAll(view.notes);
+            return;
+        }
         var nx = e.target.closest('[data-note-x]');
         if (nx) {
-            var nid = nx.closest('.nt').getAttribute('data-note');
-            view.notes = view.notes.filter(function (x) { return x.id !== nid; });
+            var gone = dismissNote(view.notes, view.gone, nx.closest('.nt').getAttribute('data-note'));
+            view.notes = gone.notes;
+            view.gone = gone.gone;
+            goneSave();
             drawFloat();
             return;
         }
-        if (e.target.closest('[data-note-clear]')) { view.notes = []; drawFloat(); return; }
+        if (e.target.closest('[data-note-clear]')) {
+            var cleared = clearNotes(S.sessions, view.notes, view.gone);
+            view.notes = cleared.notes;
+            view.gone = cleared.gone;
+            goneSave();
+            drawFloat();
+            return;
+        }
         var gop = e.target.closest('[data-gop]');
         if (gop) {
             gatePost(gop.closest('.gc'), function (form, who) {
