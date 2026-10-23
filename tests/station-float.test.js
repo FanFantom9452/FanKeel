@@ -53,9 +53,9 @@ test('settled tune requests and a block being edited are notes; with nothing, th
 test('clock says m:ss, floatNotes puts what tune is editing before the settled notes, and a gate with no at counts down from 60 s', () => {
     assert.equal(V.clock(65), '1:05');
     assert.equal(V.clock(0), '0:00');
-    const s = { tune: { items: [{ id: 'r-2', block: 'b2', status: 'taken' }, { id: 'r-1', block: 'b1', status: 'queued' }] } };
+    const s = { pkey: 'F:\\ws\\alpha', tune: { items: [{ id: 'r-2', block: 'b2', status: 'taken' }, { id: 'r-1', block: 'b1', status: 'queued' }] } };
     assert.deepEqual(V.floatNotes([s], [{ id: 'r-0', block: 'b0', status: 'done' }]),
-        [{ id: 'r-2', block: 'b2', status: 'edit' }, { id: 'r-0', block: 'b0', status: 'done' }]);
+        [{ id: 'F:\\ws\\alpha|r-2', block: 'b2', status: 'edit' }, { id: 'r-0', block: 'b0', status: 'done' }]);
     const g = held(Q1, 30);
     g.pending.at = null;
     const html = V.gateCountdownHtml(g, NOW, {});
