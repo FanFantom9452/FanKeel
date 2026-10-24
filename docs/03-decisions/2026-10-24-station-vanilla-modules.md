@@ -7,7 +7,7 @@ last_verified: 2026-10-24
 
 一句話：station 的前端維持手寫的 classic script 加 `window.FK_*` 全域、零依賴、無 build；`station.js` 要拆成只管路由、draw/diff、輪詢、事件與 loc/esc 的外殼，其餘畫面各成一個模組，模組清單只寫在 `assets/station/index.html` 一處。
 
-判斷記錄在 [../90-agent/judgements/2026-10-23-station-skeleton-stack.md](../90-agent/judgements/2026-10-23-station-skeleton-stack.md)（Q2），第一段的計畫在 [../90-agent/plans/2026-10-24-station-modules-skeleton-tune.md](../90-agent/plans/2026-10-24-station-modules-skeleton-tune.md)。
+判斷記錄在 [../90-agent/judgements/2026-10-23-station-skeleton-stack.md](../90-agent/judgements/2026-10-23-station-skeleton-stack.md)（Q2），第一段的計畫在 [../90-agent/plans/2026-10-24-station-modules-skeleton-tune.md](../99-archive/2026-10-24-station-modules-skeleton-tune.md)。
 
 ## 決定
 
