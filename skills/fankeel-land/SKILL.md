@@ -1,7 +1,7 @@
 ---
 name: fankeel-land
 description: The land stage — a green suite, the documents closed, the map rewritten, and the integration decision left to the user. Use for the land stage of a fankeel task, finishing a development branch, deciding between merge and PR, or cleaning up a worktree when work is complete.
-version: 0.111.78
+version: 0.111.79
 status: current
 last_verified: 2026-10-18
 source_of_truth: lib/stages.js, scripts/todo-check.js, scripts/map.js, hooks/carry.js, scripts/land.js, lib/suite.js
@@ -60,6 +60,8 @@ project with no `test:fast` — still stands:
 ```
 node <plugin>/scripts/suite.js --session <id> --check
 ```
+
+Run it bare: a `| tail` or `| head` after it returns the pipe's exit, not the suite's.
 
 It runs no test and writes nothing. `suite: record stands @ <sha>` with exit
 0 means a whole-suite record is green and no code changed since, and that line is
