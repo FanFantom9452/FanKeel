@@ -11,6 +11,8 @@
 (function (w, doc) {
     var EN = {
         'gf.open': 'Open this session in the full station',
+        'gf.talk': 'Talk',
+        'gf.talkTitle': 'Back to this session\'s talk page',
         'gf.unnamed': '(unnamed)',
         'gf.ask': 'Your call',
         'gf.noQ': 'No gate question could be read from the report',
@@ -68,7 +70,8 @@
             + '<p class="gt-meta"><span class="gt-st" style="--c:var(--st-' + esc(stage) + ')">' + esc(stage) + '</span>'
             + (at >= 0 ? '<span class="of">' + (at + 1) + '/' + route.length + '</span>' : '')
             + sep + '<span>' + esc(s.project || s.pkey || '') + '</span>' + sep + '<span title="session ' + esc(s.id) + '">' + esc(String(s.id).slice(0, 8)) + '</span></p>'
-            + '</div></section>';
+            + '</div><a class="gt-talk" data-block="gate-talk" href="/#/s/' + encodeURIComponent(s.id) + '/talk" title="' + loc('gf.talkTitle', '回到這個 session 的對話頁') + '">'
+            + kit().icon('chev') + '<span>' + loc('gf.talk', '對話') + '</span></a></section>';
     }
     function option(o, i, st) {
         var k = kit(), n = i + 1, raw = String((o && o.label) || ''), rec = REC.test(raw), d = o && o.description, open = st.more[n] !== false;
