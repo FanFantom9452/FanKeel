@@ -129,7 +129,17 @@ function scan(dirs) {
 
 function main(argv) {
     const { values, positionals } = parseArgsOrExit('css-dead', argv, { json: { type: 'boolean' } });
-    const r = scan(positionals.length ? positionals : ['.']);
+    const dirs = positionals.length ? positionals : ['.'];
+    for (const d of dirs) {
+        try {
+            fs.readdirSync(d);
+        } catch (e) {
+            process.stderr.write('css-dead: cannot read ' + d + ' (' + e.code + ')\n');
+            process.exitCode = 2;
+            return;
+        }
+    }
+    const r = scan(dirs);
     if (values.json) {
         process.stdout.write(JSON.stringify(r) + '\n');
     } else {

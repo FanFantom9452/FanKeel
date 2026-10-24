@@ -58,3 +58,11 @@ test('the CLI prints a dead row and exits 1, and the audit skill runs it', () =>
     const skill = fs.readFileSync(path.join(ROOT, 'skills', 'fankeel-audit', 'SKILL.md'), 'utf8');
     assert.match(skill, /`node <plugin>\/scripts\/css-dead\.js <dir>`/);
 });
+
+test('the CLI on a directory that does not exist exits 2 with a stderr line, not a clean zero', () => {
+    const dir = path.join(tmp('fankeel-css-dead-missing-'), 'no-such-dir');
+    const r = spawnSync(process.execPath, [SCRIPT, dir], { encoding: 'utf8' });
+    assert.equal(r.status, 2, r.stdout);
+    assert.match(r.stderr, /css-dead: cannot read .*no-such-dir/);
+    assert.equal(r.stdout, '');
+});
