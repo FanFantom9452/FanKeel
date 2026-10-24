@@ -2817,6 +2817,27 @@
             + '<p class="pv-where"><i class="hatchsw" aria-hidden="true"></i><span>' + loc('focus.where', '回答在 Claude Desktop 那邊給；這頁只讓你看清楚要核准什麼，不收答案。') + '</span></p></div></section>';
         return ask + focusReportHtml(s, g, tasks);
     }
+    // The gate page's free-text answer: offered when the station is served and
+    // the hook holds exactly one question (POST /answer maps every question
+    // asked to an answer, so a second question could not be answered by one
+    // string). The POST is the one the floating gate makes, to /answer.
+    function focusAnswerOf(s) {
+        var qs = s && s.pending && s.pending.questions;
+        if (!S.serve || !s.root || !qs || qs.length !== 1) return null;
+        var question = qs[0].question;
+        return { question: question, send: function (text) {
+            var answers = {};
+            answers[question] = text;
+            var form = new URLSearchParams();
+            form.set('nonce', S.nonce || '');
+            form.set('root', s.root);
+            form.set('id', s.id);
+            form.set('answers', JSON.stringify(answers));
+            fetch('/answer', { method: 'POST', body: form }).then(function (r) {
+                return r.text().then(function (t) { w.FK_GATE.say(r.ok ? 'ok' : 'bad', (r.ok ? '' : r.status + ' - ') + t.trim()); });
+            }, function () { w.FK_GATE.say('bad', loc('focus.couldNotSendServeRunning', '送不出去：serve 還在跑嗎？')); });
+        } };
+    }
     function focusPageHtml(st, details, focus) {
         var s = ((st && st.sessions) || []).filter(function (x) { return x.id === focus.id; })[0];
         if (!s) return '<main class="fm"><section class="panel"><p class="note">' + loc('focus.noSession', '這頁上沒有 session {id}', { id: esc(focus.id) }) + '</p></section></main>';
@@ -2829,7 +2850,8 @@
         // in the main column, the question in the side column — around the
         // report drawn here, which only station.js can draw.
         if (gate && w.FK_GATE && typeof w.FK_GATE.frame === 'function') {
-            return w.FK_GATE.frame({ session: s, gate: x.gate, tasks: x.tasks || [], reportHtml: focusReportHtml(s, x.gate, x.tasks || []), shellsHtml: shells });
+            return w.FK_GATE.frame({ session: s, gate: x.gate, tasks: x.tasks || [], reportHtml: focusReportHtml(s, x.gate, x.tasks || []), shellsHtml: shells,
+                answer: focusAnswerOf(s) });
         }
         return focusHeader(s, focus.tab) + shells + '<main class="fm" data-block="focus-' + (gate ? 'gate' : 'plan') + '">'
             + (gate ? focusGateHtml(s, x.gate, x.tasks || []) : focusPlanHtml(x.tasks)) + '</main>';
@@ -2846,6 +2868,15 @@
     // hoisted functions here: the full page's `var`s further down are never
     // assigned, which is why `reload` holds its timeout as a literal.
 
+    // Whether the 5 s repaint may replace the page: not when the markup is the
+    // one already drawn (a click in flight keeps its target node), and not
+    // while the reader has a text field focused (the repaint would drop what
+    // they typed). `active` is document.activeElement.
+    function focusRepaint(last, html, active) {
+        if (last === html) return false;
+        var tag = active && active.tagName ? String(active.tagName).toUpperCase() : '';
+        return !(tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT');
+    }
     function focusBoot() {
         var F = w.STATION_FOCUS;
         var el = doc.getElementById('focus');
@@ -2854,7 +2885,13 @@
             var t = e.target, sm = t && typeof t.closest === 'function' ? t.closest('details[data-gv] > summary') : null;
             if (sm && sm.parentNode) open[sm.parentNode.getAttribute('data-gv')] = !sm.parentNode.open;
         });
-        var paint = function () { el.innerHTML = keepOpen(focusPageHtml(S, w.STATION_DETAIL, F), open); };
+        var last = null;
+        var paint = function () {
+            var html = keepOpen(focusPageHtml(S, w.STATION_DETAIL, F), open);
+            if (!focusRepaint(last, html, doc.activeElement)) return;
+            last = html;
+            el.innerHTML = html;
+        };
         paint();
         if (!S.serve || !w.setInterval) return;
         w.setInterval(function () {
@@ -2908,7 +2945,7 @@
             tuneOpen: tuneOpen, tuneEvents: tuneEvents, toastText: toastText, floatHtml: floatHtml, fkBoxParse: fkBoxParse, fkBoxClamp: fkBoxClamp, gateCountdownHtml: gateCountdownHtml, noteHtml: noteHtml, floatNotes: floatNotes, clock: gateClock,
             readAll: readAll, dismissNote: dismissNote, clearNotes: clearNotes, goneParse: goneParse, goneKeys: goneKeys,
             changedParts: changedParts, seenHtml: seenHtml, drawList: drawList, sessionPage: sessionPage,
-            recordHtml: recordHtml, recordPageHtml: recordPageHtml, boardsHtml: boardsHtml, listAskRow: listAskRow, focusPageHtml: focusPageHtml, keepOpen: keepOpen,
+            recordHtml: recordHtml, recordPageHtml: recordPageHtml, boardsHtml: boardsHtml, listAskRow: listAskRow, focusPageHtml: focusPageHtml, keepOpen: keepOpen, focusRepaint: focusRepaint,
         };
     }
     if (!doc) return;

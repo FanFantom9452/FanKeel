@@ -985,6 +985,7 @@
             'focus.rec': 'Recommended',
             'focus.gateQ': '{st} gate: {q}',
             'focus.noQ': 'The report has no gate question to read',
+            'focus.couldNotSendServeRunning': 'Could not send: is serve running?',
             'focus.reportNext': 'Next step in the report',
             'focus.where': 'The answer is given in Claude Desktop; this page only shows what you are approving and takes no answer.',
             'focus.report': '{s} report',

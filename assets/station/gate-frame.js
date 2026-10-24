@@ -19,6 +19,12 @@
         'gf.next': 'Next step the report names',
         'gf.where': 'Answer in Claude Desktop; this page only shows what you are approving and sends nothing.',
         'gf.picked': 'You picked "{l}". Answer it in Claude Desktop; this page sends nothing.',
+        'gf.free': 'Or write your own answer',
+        'gf.freeHint': 'Sent as the answer to this question, the same as choosing "Other".',
+        'gf.send': 'Send answer',
+        'gf.sending': 'Sending…',
+        'gf.sentOk': 'Sent: {t}',
+        'gf.sentBad': 'Could not send: {t}',
     };
     var REC = /\s*\(Recommended\)\s*$/;
     function has(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
@@ -38,7 +44,9 @@
     // with no pick. CUR is the gate the last frame drew, with its option
     // labels, for the keys and clicks.
     var STATE = {}, CUR = { key: null, labels: [] }, heard = false;
-    function state(key) { return STATE[key] || (STATE[key] = { pick: 0, more: {} }); }
+    function state(key) { return STATE[key] || (STATE[key] = { pick: 0, more: {}, free: '', said: null }); }
+    // The page's answer for the gate the last frame drew: { question, send }.
+    var ANSWER = null;
     function lineText(st) {
         var l = st.pick ? CUR.labels[st.pick - 1] : null;
         return l !== null && l !== undefined
@@ -71,6 +79,19 @@
             + (d ? '<p class="gt-d" id="gq-d-' + n + '"' + (open ? '' : ' hidden') + '>' + esc(d) + '</p>' : '') + '</div>'
             + '<button type="button" class="gq-pick" data-gq-pick="' + n + '" aria-pressed="' + (st.pick === n ? 'true' : 'false') + '">' + loc('gf.pick', '選這個') + '<kbd>' + n + '</kbd></button></li>';
     }
+    function sentLine(kind, text) {
+        return kind === 'wait' ? loc('gf.sending', '送出中…')
+            : kind === 'ok' ? loc('gf.sentOk', '已送出：{t}', { t: text }) : loc('gf.sentBad', '送不出去：{t}', { t: text });
+    }
+    function freeHtml(st) {
+        var said = st.said, busy = said && (said.kind === 'wait' || said.kind === 'ok');
+        var line = said ? sentLine(said.kind, said.text) : '';
+        return '<form class="gt-free" data-block="gate-free" onsubmit="return false"><label class="gt-free-l" for="gq-free">' + loc('gf.free', '或寫自己的答案') + '</label>'
+            + '<textarea id="gq-free" class="gt-free-t" data-gq-free rows="3" aria-describedby="gq-free-h">' + esc(st.free) + '</textarea>'
+            + '<p class="gt-free-h" id="gq-free-h">' + loc('gf.freeHint', '會當成這題的答案送出，等同選「其他」。') + '</p>'
+            + '<div class="gt-free-a"><button type="button" class="gq-pick gt-send" data-gq-send' + (busy ? ' disabled' : '') + '>' + loc('gf.send', '送出答案') + '</button>'
+            + '<p id="gq-sent" class="gt-sent' + (said ? ' ' + said.kind : '') + '" role="status" aria-live="polite">' + esc(line) + '</p></div></form>';
+    }
     function ask(g, stage, st) {
         var k = kit(), q = g && g.gate && g.gate.questions && g.gate.questions[0] ? g.gate.questions[0] : null;
         var opts = q && Array.isArray(q.options) ? q.options : [], next = g && g.gate && g.gate.next;
@@ -79,6 +100,7 @@
             + '<p class="gq-cd" role="status" aria-live="polite"><i class="hatchsw" aria-hidden="true"></i><span id="gq-line">' + esc(lineText(st)) + '</span></p>'
             + '<h2 class="gt-q">' + (q ? esc(q.question) : loc('gf.noQ', '報告裡沒有讀得出的 gate 問題')) + '</h2>'
             + (opts.length ? '<ol class="gt-opts">' + opts.slice(0, 9).map(function (o, i) { return option(o, i, st); }).join('') + '</ol>' : '')
+            + (ANSWER ? freeHtml(st) : '')
             + (next ? '<p class="gt-next"><span>' + loc('gf.next', '報告寫的下一步') + '</span>' + esc(next) + '</p>' : '') + '</section>';
     }
 
@@ -111,6 +133,26 @@
         st.more[n] = st.more[n] === false;
         paint();
     }
+    // The page tells the frame how the POST went; the line survives a repaint.
+    function say(kind, text) {
+        if (CUR.key === null) return;
+        state(CUR.key).said = { kind: kind, text: String(text || '') };
+        if (!doc || !doc.getElementById) return;
+        var line = doc.getElementById('gq-sent'), btn = doc.querySelector ? doc.querySelector('[data-gq-send]') : null;
+        if (line) {
+            line.className = 'gt-sent ' + kind;
+            line.textContent = sentLine(kind, text);
+        }
+        if (btn) btn.disabled = kind === 'wait' || kind === 'ok';
+    }
+    function send() {
+        if (CUR.key === null || !ANSWER || typeof ANSWER.send !== 'function' || !doc || !doc.querySelector) return false;
+        var box = doc.querySelector('[data-gq-free]'), text = box ? String(box.value || '').trim() : '';
+        if (!text) return false;
+        say('wait', '');
+        ANSWER.send(text);
+        return true;
+    }
     function pickable(e, d) {
         if (!e || e.ctrlKey || e.metaKey || e.altKey) return false;
         if (d && d.querySelector && d.querySelector('dialog[open]')) return false;
@@ -133,9 +175,14 @@
         doc.addEventListener('click', function (e) {
             var t = e && e.target && e.target.closest ? e.target : null;
             if (!t) return;
-            var m = t.closest('[data-gq-more]'), p = t.closest('[data-gq-pick]');
+            var m = t.closest('[data-gq-more]'), p = t.closest('[data-gq-pick]'), s = t.closest('[data-gq-send]');
             if (m) more(Number(m.getAttribute('data-gq-more')));
             else if (p) pick(Number(p.getAttribute('data-gq-pick')));
+            else if (s) send();
+        });
+        doc.addEventListener('input', function (e) {
+            var f = e && e.target && e.target.closest ? e.target.closest('[data-gq-free]') : null;
+            if (f && CUR.key !== null) state(CUR.key).free = String(f.value || '');
         });
         doc.addEventListener('keydown', function (e) { onKey(e, doc); });
     }
@@ -147,13 +194,14 @@
         var q = g && g.gate && g.gate.questions && g.gate.questions[0] ? g.gate.questions[0] : null;
         CUR = { key: [s.id, stage, q ? q.question : ''].join('\n'),
             labels: (q && Array.isArray(q.options) ? q.options : []).slice(0, 9).map(function (x) { return String((x && x.label) || '').replace(REC, ''); }) };
+        ANSWER = o.answer && o.answer.question === (q ? q.question : null) ? o.answer : null;
         var st = state(CUR.key);
         return '<main class="fm gt-frame" data-block="gate-frame">' + head(s, stage) + (o.shellsHtml || '')
             + '<div class="gt-grid" data-block="gate-columns"><div class="gt-main" data-block="gate-main">' + (o.reportHtml || '') + '</div>'
             + '<aside class="gt-side" data-block="gate-side"><div class="gt-pin">' + ask(g, stage, st) + '</div></aside></div></main>';
     }
 
-    var api = { frame: frame, listen: listen, pickable: pickable, onKey: onKey, pick: pick, more: more, EN: EN };
+    var api = { frame: frame, listen: listen, pickable: pickable, onKey: onKey, pick: pick, more: more, say: say, send: send, EN: EN };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     if (w) w.FK_GATE = api;
 }(typeof window !== 'undefined' ? window : null, typeof document !== 'undefined' ? document : null));
