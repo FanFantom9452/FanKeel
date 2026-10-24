@@ -151,6 +151,12 @@ from the group size: a group of any size carrying a prose `Consumes:` or a task
 with no `**Files:**` or `**Interfaces:**` block prints `agents`. A require-edge line under the table does not change
 the row: the group stays `workflow`.
 
+Under a stage agent (`stage.agents` names build) `groups` is cut by dependency
+depth, not greedily: a task goes in the group after the deepest earlier task it
+conflicts with. Two tasks sharing a `Modify:` or `Test:` file may sit in one
+group, each implementer building in its own worktree, so group numbers differ
+from the greedy example above.
+
 ## The task loop
 
 For each task the denominator does not list as complete:
