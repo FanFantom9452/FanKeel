@@ -15,3 +15,5 @@ link: docs/90-agent/reference/station.md
 進度（2026-10-24）：(a)、(c)、(e) 已在 TODO 全表盤點 10-24 落地，`OLD.*` 後備已移除、三份模組清單由同一份來源讀出、決策紀錄已寫；舊儀表板與舊 TODO 面板直接刪除而非搬遷。(b) 尚未達成：station.js 從 7003 行降到 6393 行，docs、settings、days、list、focus 仍在檔內，要再開兩到三份計畫，每份最多兩個任務寫 station.js。詳見 docs/90-agent/reports/2026-10-24-todo-patrol-2.md。
 
 進度（2026-10-24 第三輪）：文件頁與設定頁已搬成 `FK_DOCS`、`FK_SETTINGS`、`FK_SETDETAIL`，舊文件卡與七步精靈刪除；station.js 降到 5727 行，(b) 仍未達成，days、list、focus 還在檔內。詳見 docs/90-agent/reports/2026-10-24-todo-patrol-3.md。
+
+進度（2026-10-24 第四輪）：焦點頁搬成 FK_FOCUS（focus-page.js），station.js 降到 5553 行，(b) 仍未達成；days 與 list 因與圖表 tooltip、明細面板共用狀態而未搬。詳見 docs/90-agent/reports/2026-10-24-todo-patrol-4.md。

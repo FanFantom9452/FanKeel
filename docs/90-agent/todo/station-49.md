@@ -32,7 +32,7 @@ state: decision
 - WireGuard 手機 app：https://www.wireguard.com/install/（App Store id1441195209、Google Play com.wireguard.android）
 - WireGuard 穿 NAT：無官方文件；https://nettica.com/nat-traversal-hole-punch/ 與 https://forum.mikrotik.com/t/wireguard-best-approach-two-non-public-sites/271189 都說要一端有穩定可達的 IP:port，或靠中繼
 
-現在的安全面（程式裡讀到的）：station 只綁 `127.0.0.1`（`scripts/station.js:1128`、`:1132`、`:1156`），所以只有本機的程式連得到；Host 不是 loopback 的請求回 421（`:476-477`）；遠端唯一的入口是 `tailscale serve`，它在 443 終結 TLS、帶著代理標頭轉進 loopback，`remote.hostKind` 依此判成 `tailnet`（`lib/remote.js:38-49`），之後未配對的裝置只拿得到手機頁與配對（`policy`，`:56`），POST 還要同源（`:51-54`）；配對換來的 device cookie 是 `HttpOnly; Secure; SameSite=Strict`（`:154-156`）。
+現在的安全面（程式裡讀到的）：station 只綁 `127.0.0.1`（`scripts/station.js:1128`、`scripts/station.js:1132`、`scripts/station.js:1156`），所以只有本機的程式連得到；Host 不是 loopback 的請求回 421（`scripts/station.js:476-477`）；遠端唯一的入口是 `tailscale serve`，它在 443 終結 TLS、帶著代理標頭轉進 loopback，`remote.hostKind` 依此判成 `tailnet`（`lib/remote.js:38-49`），之後未配對的裝置只拿得到手機頁與配對（`policy`，`:56`），POST 還要同源（`:51-54`）；配對換來的 device cookie 是 `HttpOnly; Secure; SameSite=Strict`（`:154-156`）。
 
 改綁 0.0.0.0 會壞掉的三件事：
 - Host 檢查不再是邊界。同一個網段的任何人送 `Host: 127.0.0.1:<port>`、不帶代理標頭，`hostKind` 就判成 `loopback`，整個 station（含 transcript 片段）都讀得到；nonce 就寫在 serve 回的資料腳本裡（`scripts/station.js:570`），所以 POST 也擋不住。今天安全，是因為綁的是 127.0.0.1，不是因為 Host 檢查。
