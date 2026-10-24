@@ -489,7 +489,7 @@ test('requireConflicts reports a same-group require edge with no matching Consum
   const planText = task(1, ['lib/a.js'], [], [], []) + '\n' + task(2, ['lib/b.js'], [], [], []);
   const tasks = plantasks.parseTasks(planText);
   const found = plantasks.requireConflicts(tasks, dir);
-  assert.deepEqual(found, [{ a: 1, b: 2, group: 1, from: 'lib/a.js', to: 'lib/b.js', line: 2 }]);
+  assert.deepEqual(found, [{ a: 1, b: 2, group: 1, otherGroup: 1, from: 'lib/a.js', to: 'lib/b.js', line: 2 }]);
 });
 
 test('requireConflicts finds nothing when no require edge crosses the group', () => {

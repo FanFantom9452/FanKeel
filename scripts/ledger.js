@@ -276,8 +276,9 @@ function groupsReport(root, planOpt) {
     const serial = tasks.length > 1 && rows.length === tasks.length;
     const cause = serial ? serialCause(tasks) : '';
     const prose = plantasks.proseConflicts(tasks, rows).map((p) =>
-        'Task ' + p.n + ' names Task ' + p.other + ' in its Consumes text, and both land in group '
-        + p.group + ': "' + p.text + '"');
+        'Task ' + p.n + ' names Task ' + p.other + ' in its Consumes text, and '
+        + (p.otherGroup === p.group ? 'both land in group ' + p.group : 'it lands in group ' + p.group + ' before Task ' + p.other + ' in group ' + p.otherGroup)
+        + ': "' + p.text + '"');
     // A task's own `Files` requiring another task's `Files` in the same
     // group, with no `Consumes` naming what it took — the code already
     // depends on something the plan's own interfaces never said. Only ever a
@@ -285,7 +286,8 @@ function groupsReport(root, planOpt) {
     // not exist yet at plan time, so a dependency on it is invisible here.
     const requireLines = requireHits.map((r) =>
         'Task ' + r.a + ' `' + r.from + '` requires Task ' + r.b + ' `' + r.to + '` at line ' + r.line
-        + ' with no Consumes naming it, both in group ' + r.group);
+        + ' with no Consumes naming it, '
+        + (r.otherGroup === r.group ? 'both in group ' + r.group : 'in group ' + r.group + ' before group ' + r.otherGroup));
     return 'fankeel ledger — ' + rows.length + ' groups over ' + tasks.length + ' tasks\n\n'
         + surfaced.map((g, i) => '  ' + (i + 1) + ': ' + g.tasks.join(', ') + '  — ' + g.surface).join('\n')
         + (undeclared.length

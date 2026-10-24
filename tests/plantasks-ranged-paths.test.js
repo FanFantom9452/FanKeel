@@ -58,5 +58,5 @@ test('requireConflicts keys a ranged Modify: entry by its bare file', () => {
   const planText = task(1, ['lib/a.js:1-2']) + '\n' + task(2, ['lib/b.js']);
   const tasks = plantasks.parseTasks(planText);
   const found = plantasks.requireConflicts(tasks, dir);
-  assert.deepEqual(found, [{ a: 1, b: 2, group: 1, from: 'lib/a.js', to: 'lib/b.js', line: 2 }]);
+  assert.deepEqual(found, [{ a: 1, b: 2, group: 1, otherGroup: 1, from: 'lib/a.js', to: 'lib/b.js', line: 2 }]);
 });

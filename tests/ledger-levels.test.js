@@ -93,3 +93,24 @@ test('groups names a prose Consumes of a task that shares its group only by dept
   brain(dir);
   assert.match(groupsOut(dir, plan), /Task 3 names Task 1 in its Consumes text, and both land in group 1/);
 });
+
+// Task 3 lands in group 1 by depth while the Task 2 it needs waits for Task 1
+// in group 2: the plan's own claim is that 3 comes after 2.
+test('groups warns when a prose Consumes names a task that lands in a later group', () => {
+  const dir = tmp('fankeel-ledger-levels-');
+  const plan = path.join(dir, 'plan.md');
+  fs.writeFileSync(plan, '# p\n\n' + task(1, 'a.js') + task(2, 'b.js', 'a.js') + task(3, 'c.js', null, "Task 2's frob") + task(4, 'd.js'));
+  brain(dir);
+  assert.match(groupsOut(dir, plan), /Task 3 names Task 2 in its Consumes text, and it lands in group 1 before Task 2 in group 2/);
+});
+
+test('groups warns when a require edge points at a task that lands in a later group', () => {
+  const dir = tmp('fankeel-ledger-levels-');
+  fs.mkdirSync(path.join(dir, 'lib'), { recursive: true });
+  for (const f of ['a.js', 'b.js', 'd.js']) fs.writeFileSync(path.join(dir, 'lib', f), "'use strict';\nmodule.exports = {};\n");
+  fs.writeFileSync(path.join(dir, 'lib', 'c.js'), "'use strict';\nconst b = require('./b.js');\nmodule.exports = { b };\n");
+  const plan = path.join(dir, 'plan.md');
+  fs.writeFileSync(plan, '# p\n\n' + task(1, 'a.js') + task(2, 'b.js', 'a.js') + task(3, 'c.js') + task(4, 'd.js'));
+  brain(dir);
+  assert.match(groupsOut(dir, plan), /Task 3 `lib\/c\.js` requires Task 2 `lib\/b\.js` at line 2 with no Consumes naming it, in group 1 before group 2/);
+});
