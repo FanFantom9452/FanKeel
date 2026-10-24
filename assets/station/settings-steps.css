@@ -1,0 +1,4 @@
+/* assets/station/settings-steps.css — station-39: at 390px the agents
+   table's selects (settings-detail.css `.v9-at select`) cut their text;
+   they may now shrink with the column instead of holding it open. */
+.v9-at select{min-width:0;width:100%}
