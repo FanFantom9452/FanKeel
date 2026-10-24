@@ -397,6 +397,7 @@ with, in `skills/fankeel-build/SKILL.md`:
 | `ledger.js groups` 與 `scan` 在 build 由 stage agent 跑時 | Task 2 |
 | `ledger.js` 第 476 行另一處呼叫 `plantasks.groups` 的地方，跟著同一個判斷。 | Task 2（另含 `workflowFile` 與 `lib/detail.js` 的 station 組表） |
 | `skills/fankeel-build/SKILL.md:271-273` 的 `dispatch.inflight` 改成「同一回應最多派幾個」 | Task 3 |
+| `workflow --group <n>`（`scripts/ledger.js:626`）與 station 的組表（`lib/detail.js:458`）也照同一個判斷編組號，組號在每個地方都一樣。 | Task 2 |
 | 同一節加一句：brain 模式下的組照相依深度分層，一組任務可能多於 `dispatch.inflight`，brain 先派滿、每回來一個再補一個。 | Task 3 |
 | 新測試：四任務 fixture，各有自己的 `Test:`。 | Task 1, Task 2 |
 | `groups()` 不帶 opts 的既有測試全部照舊通過。 | Task 1, Task 2 |
