@@ -155,7 +155,7 @@ Under a stage agent (`stage.agents` names build) `groups` is cut by dependency
 depth, not greedily: a task goes in the group after the deepest earlier task it
 conflicts with. Two tasks sharing a `Modify:` or `Test:` file may sit in one
 group, each implementer building in its own worktree, so group numbers differ
-from the greedy example above.
+from the greedy example above; with no plan there are no groups to cut.
 
 ## The task loop
 
