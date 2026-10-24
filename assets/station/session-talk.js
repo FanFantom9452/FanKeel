@@ -53,11 +53,27 @@
         return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
     }
 
+    function hms(at) {
+        var ms = typeof at === 'string' ? Date.parse(at) : at;
+        if (!num(ms)) return '';
+        return hm(ms) + ':' + String(new Date(ms).getSeconds()).padStart(2, '0');
+    }
+    // How long a reply took, from the user turn it answers: 9s, 2m 05s, 1h 06m.
+    function took(ms) {
+        if (!num(ms) || ms < 0) return '';
+        var s = Math.round(ms / 1000), two = function (n) { return String(n).padStart(2, '0'); };
+        if (s < 60) return s + 's';
+        if (s < 3600) return Math.floor(s / 60) + 'm ' + two(s % 60) + 's';
+        return Math.floor(s / 3600) + 'h ' + two(Math.floor(s / 60) % 60) + 'm';
+    }
+
     // One turn as one item: a user turn on the right, Claude's words as plain
     // text, an interruption and a compaction as quiet lines; shut, an item
     // shows two lines of its text, open all of it. A compaction's summary,
     // the turn after it, is its body.
-    function item(t, sum, pre, j, open, cur) {
+    // `since` is how long after the user turn a Claude turn came, already in
+    // words (`took`), or ''.
+    function item(t, sum, pre, j, open, cur, since) {
         var cls = t.kind === 'user' ? 'tx-u' : t.kind === 'claude' ? 'tx-a' : t.kind === 'interrupt' ? 'tx-n' : 'tx-cut';
         var head;
         if (t.kind === 'interrupt') head = '<b>' + loc('stalk.int', '中斷') + '</b> ' + esc(t.text);
@@ -65,8 +81,11 @@
             head = '<b>' + loc('stalk.compact', 'compact') + '</b>' + (num(t.preTokens) ? ' ' + loc('stalk.pre', '壓縮前 context {n}', { n: kit().tokens(t.preTokens) }) : '');
         } else head = esc(t.text);
         var body = sum ? '<div class="tx-ab">' + esc(sum.text) + '</div>' : t.kind === 'summary' ? '<div class="tx-ab">' + esc(t.text) + '</div>' : '';
+        var when = t.kind === 'claude'
+            ? '<time datetime="' + esc(t.at || '') + '">' + hms(t.at) + (since ? '<span class="tx-took"> · +' + since + '</span>' : '') + '</time>'
+            : '<time>' + hm(t.at) + '</time>';
         return '<details class="tx-it ' + cls + (pre === 'fk' ? ' txf-it' + (cur ? ' is-cur' : '') : '') + '" data-key="' + pre + '-' + j + '"' + (open ? ' open' : '') + '>'
-            + '<summary><span class="tx-at">' + head + '</span><time>' + hm(t.at) + '</time></summary>' + body + '</details>';
+            + '<summary><span class="tx-at">' + head + '</span>' + when + '</summary>' + body + '</details>';
     }
     function divider(g) {
         return '<div class="tx-div" style="--c:var(--st-' + esc(g.stage) + ')"><b>' + esc(g.stage) + '</b>' + hm(g.from) + '</div>';
@@ -74,15 +93,22 @@
     // The items in order, a stage rule before the first turn at or after the
     // moment the stage began. `pre` keeps the tab's keys (tk-) apart from the
     // dialog's (fk-); `cur` is the dialog's cursor.
-    function rows(turns, stages, pre, open, cur) {
+    // `sid` is the session, for the sub-agent rows an act turn draws
+    // (talk-acts.js); an act row takes no item key and no cursor slot.
+    function rows(turns, stages, pre, open, cur, sid) {
         var st = (stages || []).filter(function (g) { return num(g.from); }).slice().sort(function (a, b) { return a.from - b.from; });
-        var out = [], si = 0, j = 0;
+        var out = [], si = 0, j = 0, asked = null;
         for (var i = 0; i < turns.length; i++) {
             var t = turns[i], ms = Date.parse(t.at);
             while (si < st.length && num(ms) && ms >= st[si].from) { out.push(divider(st[si])); si++; }
+            if (t.kind === 'act') {
+                out.push(w && w.FK_TACT ? w.FK_TACT.html(t, sid || '', pre + '-a' + i) : '');
+                continue;
+            }
+            if (t.kind === 'user') asked = num(ms) ? ms : null;
             var sum = null;
             if (t.kind === 'compact' && turns[i + 1] && turns[i + 1].kind === 'summary') { sum = turns[i + 1]; i++; }
-            out.push(item(t, sum, pre, j, open, j === cur));
+            out.push(item(t, sum, pre, j, open, j === cur, t.kind === 'claude' && asked !== null && num(ms) ? took(ms - asked) : ''));
             j++;
         }
         return out.join('');
@@ -156,7 +182,7 @@
             + '<span class="txf-keys" aria-hidden="true"><span><kbd>j</kbd><kbd>k</kbd>' + loc('stalk.keysMove', '上下一則') + '</span>'
             + '<span><kbd>o</kbd>' + loc('stalk.keysOpen', '展開') + '</span><span><kbd>Esc</kbd>' + loc('stalk.keysClose', '關閉') + '</span></span>'
             + '<button type="button" class="tdlg-x" data-stalk-close="1" aria-label="' + loc('stalk.close', '關閉') + '">' + k.icon('close') + '</button></div>'
-            + '<div class="txf-sc" tabindex="-1"><div class="tx txf-tx">' + rows(h.turns, o.stages, 'fk', false, cur) + '</div></div></div></dialog>';
+            + '<div class="txf-sc" tabindex="-1"><div class="tx txf-tx">' + rows(h.turns, o.stages, 'fk', false, cur, id) + '</div></div></div></dialog>';
     }
 
     function html(id, held, o) {
@@ -190,11 +216,12 @@
         var cur = focusEl();
         if (!(cur && cur.open === true)) FOCUS.id = null;
         if (FOCUS.id === id && w && w.setTimeout) w.setTimeout(reopen, 0);
+        if (w && w.FK_TACT) w.FK_TACT.watch(id, h);
         return '<section class="dcard tx-card" data-block="session-talk" data-stalk="' + esc(id) + '"><div class="dcard-h">' + kit().icon('list') + '<b>' + loc('stalk.title', '對話') + '</b>'
             + '<span class="gt-hr tx-acts"><button type="button" class="tx-tools" data-stalk-all="1" aria-pressed="' + (all ? 'true' : 'false') + '">'
             + (all ? loc('stalk.none', '全部收起') : loc('stalk.all', '全部展開')) + '</button>'
             + '<button type="button" class="tx-tools tx-fb" data-stalk-focus="1" aria-haspopup="dialog">' + loc('stalk.focus', '專注') + '</button></span></div>'
-            + '<div class="tx-scroll"><div class="tx" role="list" aria-label="' + loc('stalk.list', '對話，依時間順序') + '">' + rows(h.turns, o.stages, 'tk', all, -1) + '</div></div>'
+            + '<div class="tx-scroll"><div class="tx" role="list" aria-label="' + loc('stalk.list', '對話，依時間順序') + '">' + rows(h.turns, o.stages, 'tk', all, -1, id) + '</div></div>'
             + '<div class="tkmore" data-block="talk-more"><span>' + loc('stalk.shown', '已顯示 {n} / {m} 輪', { n: n, m: h.total }) + '</span>' + tail + '</div>'
             + dialog(id, h, o) + '</section>';
     }
