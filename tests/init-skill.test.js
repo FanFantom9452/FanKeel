@@ -43,12 +43,10 @@ test('the habits heading comes before the docs.json heading, and the gate names 
 });
 
 test('the habits step offers three presets and 逐項設定, each preset one command, the cards in the wizard\'s order', () => {
-  global.window = { STATION: {} };
-  const V = require('../assets/station/station.js');
   const step = between('## 1. Habits', '## 2. The gate');
   for (const o of ['**建議值** (`balanced`, recommended)', '**省 context** (`lean`)', '**每關都問** (`manual`)', '**逐項設定**']) assert.ok(step.includes(o), o);
   assert.match(step, /scripts\/task\.js profile preset <balanced\|lean\|manual> --project <name>/);
-  assert.ok(step.includes(V.WIZ_STEPS.map((s) => s.t).join(', ')), 'the cards in WIZ_STEPS order');
+  assert.ok(step.includes('收尾, 任務大小, 前端, context, 撞檔, 模型, 監控站, 答 gate'), 'the cards in the old wizard\'s order');
   assert.ok(step.indexOf('profile preset') < step.indexOf('compact-window.js show'), 'compact.at is asked after the preset');
 });
 

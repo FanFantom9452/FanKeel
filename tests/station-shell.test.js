@@ -163,7 +163,7 @@ test('every class the three levels render has a rule', () => {
     const classes = ['mast', 'crumbs', 'search', 'foot', 'page', 'fixed', 'panel', 'eyebrow', 'h2', 'readouts', 'ro',
         'hatchsw', 'controls', 'ctlgrp', 'seg', 'legend', 'sw', 'chart', 'hit', 'tbl-wrap', 't', 'link', 'chip',
         'pchip', 'route', 'hero-top', 'projrow', 'pth', 'btn',
-        'split', 'split-h', 'split-bar', 'split-leg', 's-title', 's-meta', 'tabs',
+        's-title', 's-meta', 'tabs',
         'lane-legend', 'tl', 'note', 'sumline', 'mini-mix',
         'card', 'phead', 'ctl', 'listwrap', 'det', 'sec', 'tally', 'seq', 'rp',
         'pill', 'delta', 'mute', 'rail', 'livetag', 'runn', 'stname', 'c-state', 'tkr', 'dhead', 'stc', 'axt', 'nowl', 'agdots', 'phl', 'phs', 'axw', 'axh', 'axl', 'lkb',
