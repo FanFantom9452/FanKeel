@@ -30,6 +30,7 @@ function boot(opts) {
     const calls = [];
     const fetch = (url, init) => {
         calls.push({ url, body: init && init.body ? String(init.body) : null });
+        if (url.startsWith('station/suggest') && opts.suggest === 'reject') return Promise.reject(new Error('offline'));
         if (url.startsWith('station/suggest')) return Promise.resolve(opts.suggest === null ? { ok: false } : { ok: true, json: () => Promise.resolve(opts.suggest || SUG) });
         return Promise.resolve({ ok: opts.postOk !== false });
     };
@@ -43,7 +44,7 @@ function boot(opts) {
     let draws = 0;
     const o = { hash: opts.hash || '#/settings', configDir: 'C:\\cfg', redraw: () => { draws++; } };
     const html = () => Q.page(S, o);
-    return { Q, S, o, html, calls, draws: () => draws, win: p.win };
+    return { Q, S, o, html, calls, draws: () => draws, win: p.win, doc: p.doc };
 }
 // A stand-in for an event target: chain[0] the element, then its ancestors, each a map of attributes.
 function el(chain, extra) {
@@ -230,6 +231,114 @@ test('more than one project gets a picker; picking one starts that project over'
     b.Q.onChange({ target: el([{ 'data-sq-proj': '' }, ROOT], { value: 'F:\\ws\\two' }) });
     assert.equal(b.Q.state().dir, 'F:\\ws\\two');
     assert.equal(b.Q.state().at, 'land');
+});
+
+test('a station/suggest that fails says recommendations are unavailable instead of 作者推薦 with no record', async () => {
+    const b = boot({ suggest: null });
+    assert.match(b.html(), /class="qk-src is-author"[^>]*>作者推薦</, 'before the answer it is still the author default');
+    await tick(); await tick();
+    assert.ok(b.draws() >= 1, 'the failure redraws');
+    const h = b.html();
+    assert.match(h, /class="qk-src is-author"[^>]*>推薦取不到</);
+    assert.match(h, /id="qks-main"><b>推薦暫時取不到，這是 fankeel 預設<\/b>/);
+    assert.doesNotMatch(h, /沒有足夠的紀錄可以推/);
+    const r = boot({ suggest: 'reject' });
+    r.html();
+    await tick(); await tick();
+    assert.match(r.html(), /id="qks-main"><b>推薦暫時取不到/, 'a request that never got an answer says so too');
+});
+
+test('the project picker is disabled while a write is in flight, so a switch cannot drop the machine write', async () => {
+    const b = boot({ second: true });
+    b.html();
+    await tick(); await tick();
+    click(b.Q, [{ 'data-all': '' }]);
+    assert.doesNotMatch(b.html(), /<select data-sq-proj disabled>/);
+    click(b.Q, [{ 'data-write': '' }]);
+    assert.equal(b.Q.state().busy, true);
+    assert.match(b.html(), /<select data-sq-proj disabled>/);
+    await tick(); await tick(); await tick();
+    assert.doesNotMatch(b.html(), /<select data-sq-proj disabled>/, 'back on once the write finished');
+});
+
+test('a ? tag toggles its tip open and shut, opening one closes the others, a click elsewhere closes all', () => {
+    const b = boot({ serve: false });
+    b.html();
+    const other = { 'aria-expanded': 'true' };
+    b.doc.querySelectorAll = () => [{ setAttribute: (k, v) => { other[k] = v; } }];
+    const qm = { 'data-qm': '', 'aria-expanded': 'false' };
+    click(b.Q, [qm]);
+    assert.equal(qm['aria-expanded'], 'true');
+    assert.equal(other['aria-expanded'], 'false', 'the other open tip closed');
+    click(b.Q, [qm]);
+    assert.equal(qm['aria-expanded'], 'false');
+    const open = [];
+    b.doc.querySelectorAll = () => [{ setAttribute: (k, v) => open.push(k + '=' + v) }];
+    b.Q.onClick({ target: el([{}]) });
+    assert.deepEqual(open, ['aria-expanded=false'], 'a click outside [data-sq] closes the tips');
+});
+
+test('下一組 and 上一組 walk the five blocks to the write screen and back', () => {
+    const b = boot({ serve: false });
+    b.html();
+    click(b.Q, [{ 'data-next': '' }]);
+    assert.equal(b.Q.state().at, 'parallel');
+    assert.equal(b.Q.state().seen.land, true, 'the block left reads as done');
+    click(b.Q, [{ 'data-prev': '' }]);
+    assert.equal(b.Q.state().at, 'land');
+    click(b.Q, [{ 'data-prev': '' }]);
+    assert.equal(b.Q.state().at, 'land', 'no group before the first');
+    b.Q.state().at = 'away';
+    click(b.Q, [{ 'data-next': '' }]);
+    assert.equal(b.Q.state().at, 'final');
+    assert.equal(b.draws(), 3, "the move before the first group redraws nothing");
+});
+
+test('the rail toggle opens and closes the rail on a narrow screen', () => {
+    const b = boot({ serve: false });
+    b.html();
+    const tg = { 'data-rtog': '', 'aria-expanded': 'false' }, rail = { 'data-rail': '', 'data-open': 'false' };
+    click(b.Q, [tg, rail]);
+    assert.equal(rail['data-open'], 'true');
+    assert.equal(tg['aria-expanded'], 'true');
+    click(b.Q, [tg, rail]);
+    assert.equal(rail['data-open'], 'false');
+    assert.equal(tg['aria-expanded'], 'false');
+});
+
+test('arrow keys move an answer round its question, wrapping; other keys and other targets do nothing', () => {
+    const b = boot({ serve: false });
+    b.html();
+    const key = (k, o) => {
+        let stopped = 0;
+        b.Q.onKey({ key: k, target: el([{ 'data-o': o }, { 'data-q': 'main' }, ROOT]), preventDefault: () => { stopped++; } });
+        return stopped;
+    };
+    const ans = () => b.Q.state().ans.main;
+    assert.equal(key('ArrowDown', 'merge'), 1, 'the arrow does not scroll the page');
+    assert.equal(ans(), 'pr');
+    key('ArrowRight', 'pr');
+    assert.equal(ans(), 'keep');
+    key('ArrowDown', 'keep');
+    assert.equal(ans(), 'direct', 'past the last wraps to the first');
+    key('ArrowUp', 'direct');
+    assert.equal(ans(), 'keep', 'before the first wraps to the last');
+    key('ArrowLeft', 'keep');
+    assert.equal(ans(), 'pr');
+    const before = b.draws();
+    assert.equal(key('Enter', 'pr'), 0);
+    b.Q.onKey({ key: 'ArrowDown', target: el([{ 'data-o': 'pr' }, ROOT]), preventDefault() {} });
+    assert.equal(ans(), 'pr', 'an option outside a question is left alone');
+    assert.equal(b.draws(), before);
+});
+
+test('Escape closes the open tips', () => {
+    const b = boot({ serve: false });
+    b.html();
+    const open = [];
+    b.doc.querySelectorAll = () => [{ setAttribute: (k, v) => open.push(k + '=' + v) }];
+    b.Q.onKey({ key: 'Escape', target: el([{}]) });
+    assert.deepEqual(open, ['aria-expanded=false']);
 });
 
 test('#/settings/detail goes to FK_SETDETAIL', () => {

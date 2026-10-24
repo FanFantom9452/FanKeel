@@ -9,7 +9,8 @@
 // 寫入 posts /profile once a scope. `#/settings/detail…` goes to
 // w.FK_SETDETAIL. The question table, the key names, cur/lab/optHtml and the
 // post are shared with settings-detail.js through FK_SETTINGS. The poll does
-// not repaint #/settings (station.js), so the page redraws only on a click.
+// not repaint #/settings (station.js), so the page redraws on its own events
+// (a click, change or keydown, station/suggest answering, a write finishing).
 (function (w, doc) {
     var EN = {
         'sq.bLand': 'How changes land', 'sq.bParallel': 'How much runs at once', 'sq.bCtx': 'Main thread and reports',
@@ -90,7 +91,7 @@
         'sq.whereStation': 'The station open beside me', 'sq.whereStationE': 'A gate waits on the station for 2 minutes first', 'sq.whereStationS': 'station open',
         'sq.whereAway': 'Often away, on my phone', 'sq.whereAwayE': 'Works to the next decision of yours, compacts and stops', 'sq.whereAwayS': 'often away',
         'sq.whereAwayN': 'You will also be asked whether to write this machine\'s push and phone remote.',
-        'sq.tipRaw': 'Record: {facts}', 'sq.tipAuthor': 'fankeel default; not enough record to go on',
+        'sq.tipRaw': 'Record: {facts}', 'sq.tipNone': 'Recommendations are unavailable right now; this is the fankeel default', 'sq.srcNone': 'No recommendation', 'sq.tipAuthor': 'fankeel default; not enough record to go on',
         'sq.srcRec': 'From your record', 'sq.srcAuthor': 'Author\'s pick', 'sq.srcMine': 'Your pick', 'sq.rec': 'Recommended',
         'sq.whyAsk': 'Why this is asked', 'sq.typed': '(what you type)', 'sq.notSet': '(unset)', 'sq.unset': 'unset',
         'sq.nInteg': 'Into main', 'sq.nPush': 'Push to remote', 'sq.nArchive': 'Archive the plan', 'sq.nCommit': 'Commit format',
@@ -319,7 +320,7 @@
         var ans = {};
         for (var k in AUTHOR) if (has(AUTHOR, k)) ans[k] = AUTHOR[k];
         return { dir: dir, at: 'land', ans: ans, inp: {}, seen: {}, mk: { 'notify.gate': true, 'station.remote': true },
-            mc: '', cf: false, wrote: 0, busy: false, err: '', sug: null, asked: false };
+            mc: '', cf: false, wrote: 0, busy: false, err: '', sug: null, sugErr: false, asked: false };
     }
     var st = fresh(null), last = null, lastS = null, bound = false;
     function optOf(q, o) { for (var i = 0; i < q.opts.length; i++) if (q.opts[i].o === o) return q.opts[i]; return null; }
@@ -388,13 +389,14 @@
         fetch('station/suggest?project=' + encodeURIComponent(dir)).then(function (res) {
             return res && res.ok ? res.json() : null;
         }).then(function (j) {
-            if (!j || st.dir !== dir) return;
+            if (st.dir !== dir) return;
+            if (!j) { st.sugErr = true; redraw(); return; }
             var qs = questions(), keep = {};
             qs.forEach(function (q) { keep[q.id] = st.ans[q.id] !== rec(q).o; });
             st.sug = j;
             qs.forEach(function (q) { if (!keep[q.id]) st.ans[q.id] = rec(q).o; });
             redraw();
-        }, function () { st.asked = true; });
+        }, function () { if (st.dir === dir) { st.sugErr = true; redraw(); } });
     }
 
     // ---- drawing ----
@@ -427,13 +429,13 @@
     }
     function srcHtml(q, r) {
         var isRec = r.src === 'rec', id = 'qks-' + q.id, b;
-        if (!isRec) b = loc('sq.tipAuthor', 'fankeel 預設；沒有足夠的紀錄可以推');
+        if (!isRec) b = st.sugErr ? loc('sq.tipNone', '推薦暫時取不到，這是 fankeel 預設') : loc('sq.tipAuthor', 'fankeel 預設；沒有足夠的紀錄可以推');
         else {
             b = kit().fillVars(q.tip, r.v);
             if (/\{\w+\}/.test(b)) b = loc('sq.tipRaw', '紀錄：{facts}', { facts: Object.keys(r.v).map(function (x) { return x + ' ' + r.v[x]; }).join(' · ') });
         }
         return '<button type="button" class="qk-src ' + (isRec ? 'is-rec' : 'is-author') + '" data-qm aria-describedby="' + id + '" aria-expanded="false">'
-            + (isRec ? loc('sq.srcRec', '依你的紀錄') : loc('sq.srcAuthor', '作者推薦')) + '</button>'
+            + (isRec ? loc('sq.srcRec', '依你的紀錄') : st.sugErr ? loc('sq.srcNone', '推薦取不到') : loc('sq.srcAuthor', '作者推薦')) + '</button>'
             + '<span class="v9-tip qk-stip" role="tooltip" id="' + id + '"><b>' + esc(b) + '</b><small>' + esc(q.from) + '</small></span>';
     }
     function qHtml(q) {
@@ -560,7 +562,7 @@
         ask(S);
         var qs = questions(), B = blocks(), b = null;
         for (var i = 0; i < B.length; i++) if (B[i].id === st.at) b = B[i];
-        var pick = dirs.length > 1 ? '<label class="qk-proj">' + loc('sq.proj', '專案') + ' <select data-sq-proj>' + dirs.map(function (d) {
+        var pick = dirs.length > 1 ? '<label class="qk-proj">' + loc('sq.proj', '專案') + ' <select data-sq-proj' + (st.busy ? ' disabled' : '') + '>' + dirs.map(function (d) {
             return '<option value="' + esc(d) + '"' + (d === st.dir ? ' selected' : '') + '>' + esc(d) + '</option>';
         }).join('') + '</select></label>' : '';
         return '<div class="st v9 qk" data-block="quick-page" data-sq>' + railHtml(S, qs, B)
