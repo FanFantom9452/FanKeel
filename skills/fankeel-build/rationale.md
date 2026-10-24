@@ -67,7 +67,7 @@ a disagreement worth stopping for — one of the two is reading the plan wrong,
 and finding out which is cheaper before the first dispatch than after it.
 
 It reports one more thing, which is not a predicate and moves no task: a
-`Consumes:` entry whose text names a task already in its own group. A
+`Consumes:` entry whose text names a task in its own group or a later one. A
 dependency written as prose declares no identifier for another task's
 `Produces` to match, so nothing conflicts and the pair is grouped as though
 either could go first — the literal `Task <n>` is the only part of such a
