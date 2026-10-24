@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # TODO 全表盤點 10-25：CSS 死碼掃描器、station 供舊 HTML、uninstall、Q7 遠端寫法 Implementation Plan
