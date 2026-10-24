@@ -25,6 +25,8 @@ also sent once with the security lens — `## Security` below. Everything you op
 that is thrown away; what you return lands in the parent's and stays
 there for the rest of its session, so say only what you defeat, and why.
 
+When a diff rewrites the wording of a rule, a sentence or a heading, take its distinctive phrase and grep the whole repository for it (docs/, lib/, scripts/, skills/, agents/) and for its siblings (the same sentence worded for another group, report or page); name every place that still states the old wording as `path:line`. Checking only the pages the diff touched misses the one left behind (2026-10-25: a stray "already" at docs/90-agent/reference/subagents.md:465 passed build's review and was caught by verify).
+
 ## Tools
 
 `Read`, `Grep`, `Glob`, `Bash` and `LSP`. `LSP` is for the reach of a change:

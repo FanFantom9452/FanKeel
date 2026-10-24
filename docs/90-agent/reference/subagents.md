@@ -462,7 +462,7 @@ instead, which asks the same four per task; [the build
 skill](../../../skills/fankeel-build/SKILL.md) carries when a task leaves, what
 does not count as a shared file, and how many go out at once.
 It prints a fifth thing that is not a predicate and moves no
-task: a `Consumes:` entry whose text names a task already in its own group or a later one.
+task: a `Consumes:` entry whose text names a task in its own group or a later one.
 Prose declares no identifier for a `Produces` to match, so the fourth predicate
 cannot see such a dependency at all, and the literal `Task <n>` is the only part
 of the line a command can read. A report carrying that flag withholds its
