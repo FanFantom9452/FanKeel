@@ -1424,6 +1424,12 @@ each build directory's file count for a minute (`buildMemo`), and
 moves. Any POST drops the shared model, so the page a write redirects to is
 gathered after the write. `node bench/station-gather.js` times warm gathers.
 
+The 文件 and 設定 pages read three more paths: `GET /station/docs-health`
+(the health matrix, kept ten minutes; `?fresh=1` reads again),
+`GET /station/doc?pkey=&path=` (one tracked `.md` page's text, `404`
+otherwise) and `GET /station/suggest?project=<dir>` (the quick setup's
+recommendations, `404` for a directory the page does not list).
+
 The page speaks 繁中 or English (`assets/station/i18n.js`). Every string
 `station.js` draws goes through `loc(key, zh, vars)`: the Chinese is written at
 the call, and `STRINGS.en[key]` replaces it when the language is English. The

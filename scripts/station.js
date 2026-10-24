@@ -575,6 +575,28 @@ async function serve(opts) {
             const out = docsearch.search(docsearch.searchDirs(sharedModel()), url.searchParams.get('q') || '');
             return send(200, 'application/json; charset=utf-8', JSON.stringify(out), noStore);
         }
+        if (req.method === 'GET' && url.pathname === '/station/docs-health') {
+            // station-38: the 文件 page's health matrix. A sweep per project is
+            // seconds, so scripts/docs-health.js keeps the answer ten minutes;
+            // the page's 重新檢查 asks with ?fresh=1.
+            const out = require('./docs-health.js').cached(docsearch.searchDirs(sharedModel()), Date.now(), url.searchParams.get('fresh') === '1');
+            return send(200, 'application/json; charset=utf-8', JSON.stringify(out), noStore);
+        }
+        if (req.method === 'GET' && url.pathname === '/station/doc') {
+            // The reader's text: a tracked .md of a project on this page, or 404.
+            const text = require('./docs-health.js').readDoc(docsearch.searchDirs(sharedModel()), url.searchParams.get('pkey') || '', url.searchParams.get('path') || '');
+            if (text === null) return fail(404, 'no such document on this page');
+            return send(200, 'text/markdown; charset=utf-8', text, noStore);
+        }
+        if (req.method === 'GET' && url.pathname === '/station/suggest') {
+            // station-39: the quick setup's preselected answers, for a project
+            // this page already lists — the same known-directory check POST /profile makes.
+            const want = path.resolve(url.searchParams.get('project') || '');
+            const reg = modelNow().registries.find((r) => Object.keys(r.profiles || {}).some((p) => path.resolve(p) === want));
+            if (!reg) return fail(404, 'no such project on this page');
+            const out = require('../lib/settingsuggest.js').suggestFor(want, reg.root, configDir, Date.now());
+            return send(200, 'application/json; charset=utf-8', JSON.stringify(out), noStore);
+        }
         if (req.method === 'GET' && url.pathname === '/station/spend') {
             // The 花費 page's range report (lib/spendrange.js): every
             // transcript under this server's config dir, chosen by
@@ -973,11 +995,13 @@ async function serve(opts) {
         if (req.method === 'POST' && url.pathname === '/profile') {
             const form = await formOf();
             if (!form) return;
+            const agentfile = require('../lib/agentfile.js');
             const scope = form.get('scope');
             let file;
+            let want = null;
             if (scope === 'machine') file = profile.machineFile(configDir);
             else if (scope === 'project') {
-                const want = path.resolve(form.get('project') || '');
+                want =path.resolve(form.get('project') || '');
                 const model = modelNow();
                 const known = model.registries.some((r) => Object.keys(r.profiles || {}).some((p) => path.resolve(p) === want));
                 if (!known) {
@@ -995,7 +1019,8 @@ async function serve(opts) {
             // Validate every pair before writing any, so a bad second key
             // does not leave the first one applied. An empty value clears the key.
             for (let i = 0; i < keys.length; i++) {
-                if (!Object.prototype.hasOwnProperty.call(profile.KEYS, keys[i]) || (values[i] !== '' && profile.parseValue(keys[i], values[i]).error)) {
+                const named = Object.prototype.hasOwnProperty.call(profile.KEYS, keys[i]) || Boolean(agentfile.agentKey(keys[i]));
+                if (!named || (values[i] !== '' && profile.parseValue(keys[i], values[i]).error)) {
                     return fail(400, 'not a profile key/value: ' + keys[i] + '=' + values[i]);
                 }
             }
@@ -1004,6 +1029,19 @@ async function serve(opts) {
                 if (!out.ok) {
                     return fail(409, out.reason);
                 }
+            }
+            // station-39: the detailed page's agents table writes
+            // agent.<name>.model|effort; the override file follows at once,
+            // the way `task.js profile set` does it (scripts/task.js), once per agent.
+            const synced = new Set();
+            for (const k of keys) {
+                const agent = agentfile.agentKey(k);
+                if (!agent || synced.has(agent.name)) continue;
+                synced.add(agent.name);
+                agentfile.syncAgent({
+                    pluginRoot: PLUGIN, profileFile: file, name: agent.name, version: require('../package.json').version,
+                    agentsDir: scope === 'machine' ? path.join(configDir, 'agents') : path.join(want, '.claude', 'agents'),
+                });
             }
             // §5: the first trigger turned on gets a topic, so the card has
             // something to say to subscribe to. §2: a `station.remote` write
