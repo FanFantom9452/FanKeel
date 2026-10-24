@@ -88,7 +88,9 @@ test('a detach while holding releases the hook with nothing printed', async () =
     let out = '';
     child.stdout.on('data', (c) => { out += c; });
     child.stdin.end(input(p));
-    await new Promise((r) => setTimeout(r, 300));
+    for (let t = Date.now(); !exists(p, 'holding.json') && Date.now() - t < 10000;) {
+        await new Promise((r) => setTimeout(r, 20));
+    }
     assert.equal(exists(p, 'holding.json'), true);
     phone.detach(p.root, SID);
     await new Promise((r) => child.on('close', r));
