@@ -648,7 +648,7 @@ and `GET /f/<id>/gate` — the URL `scripts/await.js` prints on its `page:`
 line. It answers a small shell (`focusShell` in `lib/station.js`) that loads
 `station.css`, `tip.css`, `gate-frame.css`, `GET /station/focus/<id>.js`,
 `i18n.js`, `tip.js`, `gate-frame.js`, `focus-page.js` and `station.js`
-and never the full station data file (`lib/station.js:1050-1058`).
+and never the full station data file (`lib/station.js:1096`).
 Any other tab name is redirected to `#/s/<id>/<tab>`
 on the full station. The focus script carries `window.STATION` with that one
 session's row and `window.STATION_DETAIL[<id>]` with its tasks (`tasksOf`),
