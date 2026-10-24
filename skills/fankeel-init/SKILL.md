@@ -61,8 +61,7 @@ only what an answer below writes changes.
   `profile unset` does. Show its lines; one ending `(from history)` is a value
   the history chose over the preset's.
 - 逐項設定 asks one `AskUserQuestion` per card, in the station wizard's order:
-  收尾, 任務大小, 前端, context, 撞檔, 模型, 監控站, 答 gate (`WIZ_STEPS` in
-  `<plugin>/assets/station/station.js`). Each card's options are its habits;
+  收尾, 任務大小, 前端, context, 撞檔, 模型, 監控站, 答 gate. Each card's options are its habits;
   an answer runs `node <plugin>/scripts/task.js profile set <key> <value> --project <name>`
   for each key it sets and `node <plugin>/scripts/task.js profile unset <key> --project <name>`
   for each key it clears.
