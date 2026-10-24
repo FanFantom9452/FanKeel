@@ -1,7 +1,7 @@
 ---
 label: gate
 title: brain 交接先過 gate-check
-description: brain 的交接一再被 hooks/gate.js 退回，退回理由 skill 早已寫明
+description: brain 的交接一再被 `hooks/gate.js` 退回，退回理由 skill 早已寫明
 state: decision
 ---
 
