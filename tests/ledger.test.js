@@ -722,7 +722,7 @@ test('groups names the same cause when a heading does not match', () => {
 // a report with no finding still carrying the sentence -- is
 // 'groups reports the parallelisable sets of a plan' above, so this fix is not
 // a silent deletion of the sentence for every report.
-test('groups flags a Consumes text naming a task already in its group', () => {
+test('groups flags a Consumes text naming a task in its own group or a later one', () => {
   const dir = root();
   const plan = path.join(dir, 'plan.md');
   fs.writeFileSync(plan, [
