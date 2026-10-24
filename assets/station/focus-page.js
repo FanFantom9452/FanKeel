@@ -215,12 +215,12 @@
         if (!s) return '<main class="fm"><section class="panel"><p class="note">' + loc('focus.noSession', '這頁上沒有 session {id}', { id: esc(focus.id) }) + '</p></section></main>';
         var x = (details || {})[s.id] || { tasks: [], gate: null };
         var gate = focus.tab === 'gate';
-        // Background shells sit under the header (design §5), drawn by Task 5's shellsHtml.
+        // Background shells sit under the header (design §5), drawn by shellsHtml (defined in assets/station/station.js).
         var shells = x.shells && x.shells.length ? shellsHtml(x.shells, Date.now()) : '';
         // The redesigned gate page (station redesign §5) is assets/station/gate-frame.js:
         // loaded, it draws the whole tab — its own head with no tabs, the report
         // in the main column, the question in the side column — around the
-        // report drawn here, which only station.js can draw.
+        // report drawn in this module (only the pieces behind gateTabHtml stay in station.js).
         if (gate && w.FK_GATE && typeof w.FK_GATE.frame === 'function') {
             return w.FK_GATE.frame({ session: s, gate: x.gate, tasks: x.tasks || [], reportHtml: focusReportHtml(s, x.gate, x.tasks || []), shellsHtml: shells,
                 answer: focusAnswerOf(st, s) });

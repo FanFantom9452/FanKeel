@@ -3,8 +3,8 @@
 // 2026-10-21-station-redesign §5): a head with no tabs, the report station.js
 // drew in the main column, the question in a sticky side column; an option
 // shows its label, its description opens on click, number keys pick, and an
-// open dialog or a focused field swallows the keys. Task 3's focusPageHtml
-// calls frame() with { session, gate, tasks, reportHtml, shellsHtml }.
+// open dialog or a focused field swallows the keys. FK_FOCUS.page in
+// assets/station/focus-page.js calls frame() with { session, gate, tasks, reportHtml, shellsHtml }.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
