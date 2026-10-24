@@ -2835,7 +2835,7 @@
             form.set('answers', JSON.stringify(answers));
             fetch('/answer', { method: 'POST', body: form }).then(function (r) {
                 return r.text().then(function (t) { w.FK_GATE.say(r.ok ? 'ok' : 'bad', (r.ok ? '' : r.status + ' - ') + t.trim()); });
-            }, function () { w.FK_GATE.say('bad', loc('focus.couldNotSendServeRunning', '送不出去：serve 還在跑嗎？')); });
+            }).catch(function () { w.FK_GATE.say('bad', loc('focus.serveDown', 'serve 還在跑嗎？')); });
         } };
     }
     function focusPageHtml(st, details, focus) {
