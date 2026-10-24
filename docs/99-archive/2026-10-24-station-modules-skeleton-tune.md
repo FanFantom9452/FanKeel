@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # station 拆模組第一段、骨架分版型、tune 抓得到點開才出現的元素 Implementation Plan
