@@ -1,7 +1,7 @@
 ---
 label: station
 title: station.css 的死樣式
-description: 設定精靈與文件卡刪掉後，assets/station/station.css 約 378 行 `.wz` 與 `.dsx*` 規則已無人用，待移除
+description: 設定精靈與文件卡刪掉後，`assets/station/station.css` 約 378 行 `.wz` 與 `.dsx*` 規則已無人用，待移除
 state: ready
 link: assets/station/station.css
 ---
