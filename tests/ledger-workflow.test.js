@@ -119,7 +119,7 @@ test('a brain build still gets the script, while groups still prints agents', ()
   const { dir, file } = setup(plan());
   fs.mkdirSync(path.join(dir, '.fankeel'), { recursive: true });
   fs.writeFileSync(path.join(dir, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': ['build'] }));
-  assert.match(run(dir, file, ['groups']).out, /1: 1, 2, 3 {2}— agents/);
+  assert.match(run(dir, file, ['groups']).out, /1: 1, 2, 3, 4 {2}— agents/);
   const { code, out } = run(dir, file, ['workflow', '--group', '1']);
   assert.equal(code, 0, out);
 });

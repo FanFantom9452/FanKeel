@@ -202,6 +202,18 @@ function readPlan(root, plan) {
     }
 }
 
+// Whether build runs under a stage agent here (`stage.agents` names build) —
+// the one case `groups` cuts by dependency depth, so `groups`, `scan` and
+// `brief --prefix` number a plan's groups the same way. A profile read that
+// throws reads as no stage agent: what these always printed.
+function brainBuildAt(root) {
+    try {
+        return controlling('build', profileLib.profileFor(root, {}).values);
+    } catch (e) {
+        return false;
+    }
+}
+
 // The whole `groups` report, as one string. `groups` prints it and `scan`
 // writes it into the ledger, and both read it from here so the two can never
 // drift into two different tables for the same plan.
@@ -214,14 +226,6 @@ function groupsReport(root, planOpt) {
         return fail('No plan at ' + file);
     }
     const tasks = plantasks.parseTasks(text);
-    const rows = plantasks.groups(tasks);
-    // A require-edge diagnostic is listed below and leaves its group on
-    // `workflow`: it says a file may be wrong, which a pipeline whose reviewers
-    // read each task's own diff does not change. A group with no Interfaces
-    // block still never reads as `workflow`.
-    // Computed before the empty-plan check below because that check returns
-    // before either `rows` or the original `surfaced` was ever used either.
-    const requireHits = plantasks.requireConflicts(tasks, root);
     // A stage agent has no Workflow tool, so when build runs under one
     // (`stage.agents` names build) a group the tasks would call `workflow` is
     // sent as `agents`. A profile read that throws leaves today's answer; a
@@ -234,7 +238,15 @@ function groupsReport(root, planOpt) {
         brainBuild = controlling('build', prof.values);
         unreadable = prof.unreadable || [];
     } catch (e) { /* no profile: what it always printed */ }
-    const surfaced = plantasks.surfaces(tasks).map((g) => (
+    const rows = plantasks.groups(tasks, { levels: brainBuild });
+    // A require-edge diagnostic is listed below and leaves its group on
+    // `workflow`: it says a file may be wrong, which a pipeline whose reviewers
+    // read each task's own diff does not change. A group with no Interfaces
+    // block still never reads as `workflow`.
+    // Computed before the empty-plan check below because that check returns
+    // before either `rows` or the original `surfaced` was ever used either.
+    const requireHits = plantasks.requireConflicts(tasks, root, { levels: brainBuild });
+    const surfaced = plantasks.surfaces(tasks, { levels: brainBuild }).map((g) => (
         g.surface === 'workflow' && brainBuild ? { tasks: g.tasks, surface: 'agents' } : g
     ));
     if (!tasks.length) {
@@ -473,7 +485,7 @@ function readOwnLedger(root, opts) {
 function prefix(root, planOpt, group) {
     const { text } = readPlan(root, planOpt);
     const { tasks } = plantasks.parsePlan(text);
-    const rows = plantasks.groups(tasks);
+    const rows = plantasks.groups(tasks, { levels: brainBuildAt(root) });
     const n = Number(group);
     if (!Number.isInteger(n) || n < 1 || n > rows.length) {
         fail('brief --prefix wants --group 1..' + rows.length + ' for this plan, got ' + group);
@@ -623,7 +635,7 @@ function writeBrief(root, planOpt, n) {
 function workflowFile(root, planOpt, group) {
     const { text } = readPlan(root, planOpt);
     const tasks = plantasks.parseTasks(text);
-    const rows = plantasks.surfaces(tasks);
+    const rows = plantasks.surfaces(tasks, { levels: brainBuildAt(root) });
     const n = Number(group);
     if (!Number.isInteger(n) || n < 1 || n > rows.length) {
         fail('workflow wants --group 1..' + rows.length + ' for this plan, got ' + group);
