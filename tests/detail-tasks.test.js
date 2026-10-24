@@ -178,6 +178,21 @@ test('a session that claimed no markdown file never reads the project\'s docs.js
     }
 });
 
+// The design's four-task fixture: greedy [[1],[2,3],[4]], by depth [[1,3,4],[2]]
+// (docs/90-agent/plans/2026-10-25-ready-groups-design.md).
+test('under a stage.agents profile naming build, the groups are cut by dependency depth', () => {
+    const t = (n, files) => [
+        '## Task ' + n + ': t' + n, '', '**Files:**', ...files.map((f) => '- ' + f), '- Test: `tests/t' + n + '.test.js`', '',
+        '**Interfaces:**', '- Consumes: none', '- Produces: none', '',
+    ].join('\n');
+    const root = repo();
+    fs.writeFileSync(path.join(root, 'docs', 'plans', '2026-09-11-l.md'),
+        t(1, ['Modify: `lib/a.js`']) + t(2, ['Modify: `lib/b.js`', 'Read: `lib/a.js`']) + t(3, ['Modify: `lib/c.js`']) + t(4, ['Modify: `lib/b.js`']));
+    fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': ['build'] }));
+    const [p] = detail.tasksOf(root, { claims: ['docs/plans/2026-09-11-l.md'] }, []);
+    assert.deepEqual(p.groups.map((g) => g.tasks), [[1, 3, 4], [2]]);
+});
+
 test('a task carries the fix rounds the ledger names it in, and the plan its fix and ruling totals', () => {
     const root = repo();
     fs.appendFileSync(path.join(root, '.fankeel', 'build', '2026-09-11-x', 'progress.md'), [

@@ -971,7 +971,7 @@ section records them.
   with exit 1; the brain re-dispatches that task once on the new HEAD without
   asking, and a second conflict stops the build with the paths in its handoff.
   `ledger.js --plan <f> ready --worktree` is what lets two tasks sharing a
-  `Modify:` or `Test:` file go out together; `groups` still counts them.
+  `Modify:` or `Test:` file go out together; `groups` counts them too, except under a brain build (`stage.agents` names build), where it applies the same worktree exemption and cuts by dependency depth.
   Because Agent's `isolation: "worktree"` bases a new worktree on
   `origin/main`, and this repository is never pushed, a worktree's HEAD can
   be stale against what the brain read at dispatch time; before dispatching,

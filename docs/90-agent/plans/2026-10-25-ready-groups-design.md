@@ -30,13 +30,13 @@ source_of_truth: lib/plantasks.js, scripts/ledger.js, skills/fankeel-build/SKILL
 
 - 新測試：四任務 fixture，各有自己的 `Test:`。Task 1 改 `a.js`；Task 2 改 `b.js`、`Read:` `a.js`；Task 3 改 `c.js`；Task 4 改 `b.js`。今天的貪婪切法是 `[[1],[2,3],[4]]`（design 階段實跑）；`groups(tasks, { levels: true })` 要得到 `[[1,3,4],[2]]`：Task 2 讀 Task 1 改的檔，深度 2；Task 4 與 Task 2 共用 `b.js`，worktree 豁免後不衝突，深度 1。這條測試今天會失敗，因為 `levels` 選項不存在。
 - `groups()` 不帶 opts 的既有測試全部照舊通過。
-- 產物檢查：用 `ledger.js groups` 在 brain 模式的 profile 下跑 `docs/99-archive/2026-10-19-todo-patrol.md`，第一行是 `8 groups over 23 tasks`（今天 15），且每組內任兩任務 `conflict()` 為 null。
+- 產物檢查：用 `ledger.js groups` 在 brain 模式的 profile 下跑 `docs/99-archive/2026-10-19-todo-patrol.md`，第一行是 `6 groups over 23 tasks`（今天 15），且每組內任兩任務 `conflict()` 為 null。
 
 ## 實算（design 階段，lib 直接模擬）
 
 | 計畫 | 貪婪 | 分層 | 各層大小 |
 |---|---|---|---|
-| 2026-10-19-todo-patrol | 15 | 8 | 8,6,1,4,1,1,1,1 |
+| 2026-10-19-todo-patrol | 15 | 6 | 9,9,1,1,2,1 |
 | 2026-10-20-todo-patrol-nine | 11 | 8 | 15,5,3,4,2,3,1,1 |
 | 2026-10-15-render-gate | 9 | 6 | 5,2,1,2,1,1 |
 | 2026-10-21-station-focus | 10 | 9 | 8,3,1,1,1,1,1,2,2 |

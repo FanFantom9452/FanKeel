@@ -13,7 +13,7 @@ title: brain 模式照相依深度分組 — implementation plan
 ## Global Constraints
 
 - `lib/` 與 `scripts/` 縮排 4 格、`'use strict'`；`tests/` 縮排 2 格（`tests/ledger.test.js`、`tests/plantasks.test.js`）。
-- `groups(input)` 不帶 opts 時的輸出不得改變：`tests/plantasks.test.js`、`tests/ledger.test.js:260-300`、`tests/ledger-workflow.test.js:122` 照舊通過。
+- `groups(input)` 不帶 opts 時的輸出不得改變：`tests/plantasks.test.js`、`tests/ledger.test.js:260-300` 照舊通過；`tests/ledger-workflow.test.js:122` 已改，預期變成 `1: 1, 2, 3, 4`（Modify-Modify 在 worktree 下豁免）。
 - skill 位元組上限：`skills/fankeel-build/SKILL.md` 40,900（`tests/skill-size.test.js:16`），今天 40,873；超過就把上限調到新大小以上最小的 100 倍數。
 - `READ_CAP` 1500 行、`FILE_CAP` 3（`lib/plantasks.js`）：三個 `Modify:` 檔都在 1,047 行以下。
 - 每個實作者只跑自己的測試檔，不跑整套。
@@ -121,7 +121,7 @@ function groups(input, opts) {
 // group before it is in HEAD. The greedy cut above closes a group at the
 // first conflict, so its next group always waits on the one before it;
 // measured 2026-10-25 on docs/99-archive/2026-10-19-todo-patrol.md, 15 groups
-// greedy, 8 by depth.
+// greedy, 6 by depth.
 function levels(tasks) {
     const depth = [];
     const out = [];
@@ -240,7 +240,7 @@ test('brief --prefix numbers its group the way groups does under a brain build',
   fs.writeFileSync(plan, PLAN);
   fs.mkdirSync(path.join(dir, '.fankeel'), { recursive: true });
   fs.writeFileSync(path.join(dir, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': ['build'] }));
-  const out = execFileSync(process.execPath, [SCRIPT, '--root', dir, '--plan', plan, 'brief', '--prefix', '--group', '1'], { encoding: 'utf8' });
+  const out = execFileSync(process.execPath, [SCRIPT, '--root', dir, '--plan', plan, 'brief', '--group', '1', '--prefix'], { encoding: 'utf8' });
   assert.match(out, /### Task 4: t4/);
   assert.doesNotMatch(out, /### Task 2: t2/);
 });
