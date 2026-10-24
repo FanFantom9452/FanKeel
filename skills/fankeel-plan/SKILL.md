@@ -155,7 +155,7 @@ file. More than three `Modify:` entries (`FILE_CAP`, 3) is the same finding
 by a different measure.
 
 **And it decides how they go out.** `lib/plantasks.js` groups tasks by disjoint
-`**Files:**` and by whether one consumes what another produces, then gives each
+`**Files:**` (under a stage agent, by dependency depth; see fankeel-build) and by whether one consumes what another produces, then gives each
 group a dispatch surface: one task is `agent`, two are `agents` in one response,
 three or more are one `workflow` (`agents` too when a prose `Consumes:` or a
 missing `Files:` or `Interfaces:` block

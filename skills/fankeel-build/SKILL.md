@@ -275,8 +275,8 @@ then asks this stage's gate.
    `git reset --hard <that sha>` in its own worktree.
 
    **Profile `dispatch.inflight` sets how many go out in one response, eight by
-   default**, and that number applies only with a plan — with no plan one row
-   is out at a time: `ready` listing ten sends eight (at the default), then one more as each returns. Under a stage agent `groups` is cut by dependency depth, so one group can hold more than eight: its brain sends eight, then one more as each returns. With a plan, three or more listed at once
+   default**, and with a plan `ready` listing ten sends eight in one response
+   (at the default), then one more as each returns; with no plan one row is out at a time. Under a stage agent `groups` is cut by dependency depth, so one group can hold more than eight: its brain sends eight, then one more as each returns. With a plan, three or more listed at once
    with nothing else in flight may go as one Workflow, step 4's `workflow`
    case; anything else goes as Agents.
 3. **`in-session` only** — test first where the task says so, and watch it
