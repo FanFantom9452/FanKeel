@@ -280,7 +280,7 @@ function groupsReport(root, planOpt) {
         + (p.otherGroup === p.group ? 'both land in group ' + p.group : 'it lands in group ' + p.group + ' before Task ' + p.other + ' in group ' + p.otherGroup)
         + ': "' + p.text + '"');
     // A task's own `Files` requiring another task's `Files` in the same
-    // group, with no `Consumes` naming what it took — the code already
+    // group or a later one, with no `Consumes` naming what it took — the code already
     // depends on something the plan's own interfaces never said. Only ever a
     // `Modify:` file already on disk: a file a task is about to create does
     // not exist yet at plan time, so a dependency on it is invisible here.
@@ -303,7 +303,7 @@ function groupsReport(root, planOpt) {
         // open: a clean group in a plan that carries one prose `Consumes:`
         // somewhere else loses an accurate claim about itself.
         + (prose.length
-            ? '\n\nConsumes text names a task already in its own group, worth a look:\n  '
+            ? '\n\nConsumes text names a task in its own group or a later one, worth a look:\n  '
                 + prose.join('\n  ')
             : '')
         + (requireLines.length

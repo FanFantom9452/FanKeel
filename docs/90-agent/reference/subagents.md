@@ -462,7 +462,7 @@ instead, which asks the same four per task; [the build
 skill](../../../skills/fankeel-build/SKILL.md) carries when a task leaves, what
 does not count as a shared file, and how many go out at once.
 It prints a fifth thing that is not a predicate and moves no
-task: a `Consumes:` entry whose text names a task already in its own group.
+task: a `Consumes:` entry whose text names a task already in its own group or a later one.
 Prose declares no identifier for a `Produces` to match, so the fourth predicate
 cannot see such a dependency at all, and the literal `Task <n>` is the only part
 of the line a command can read. A report carrying that flag withholds its
@@ -470,7 +470,7 @@ closing line about disjoint files — for the whole report rather than the flagg
 group.
 
 A sixth: a task's own `Files` requiring another task's `Files` in the
-same group with no `Consumes` naming what it took — `requireConflicts()`
+same group or a later one with no `Consumes` naming what it took — `requireConflicts()`
 reads the edges `lib/requires.js` finds among tracked `.js` files rather
 than the plan's prose, so it catches what the fourth predicate cannot see
 from either direction: code that already depends on a file the plan

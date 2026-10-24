@@ -379,7 +379,8 @@ then asks this stage's gate.
    Part 3 — every changed line traces to the task's text; the patterns
      already in the repository are followed. Then name the page this
      change makes false (a renamed export, a changed default, a removed
-     flag) as `page:line`.
+     flag) as `page:line` — and any comment or printed heading still stating
+     the old rule.
      Then, where the diff adds a data field or changes a value a person
      sees, three more, over the whole repository and not the changed
      file alone: (a) every surface that shows the record reads the new
