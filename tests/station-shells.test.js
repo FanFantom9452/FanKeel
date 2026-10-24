@@ -101,7 +101,7 @@ test('shellsHtml draws nothing for no shells, and one .sa row a shell: running w
         { id: 'b1', command: 'node scripts/render.js', state: 'ended', code: 1, startedAt: '2026-10-21T00:51:00.000Z' },
         { id: 'b0', command: 'git log', state: 'ended', code: 0, startedAt: '2026-10-21T00:48:00.000Z' },
     ], now);
-    assert.match(html, /^<div class="s-shells" data-block="s-shells"><div class="sa-h"><b>shells<\/b><span>1 個在跑<\/span><\/div>/);
+    assert.match(html, /^<div class="s-shells" data-block="s-shells" title="1 個在跑"><div class="sa">/);
     assert.equal((html.match(/<div class="sa">/g) || []).length, 3);
     assert.match(html, /<span class="sa-desc" title="node --test 2&gt;&amp;1 \| tail -40">node --test 2&gt;&amp;1 \| tail -40<\/span>/);
     assert.match(html, /<span class="delta up"><i class="dot live"><\/i>在跑<\/span>/);

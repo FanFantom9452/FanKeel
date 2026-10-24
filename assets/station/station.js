@@ -1430,6 +1430,7 @@
     }
     // One user turn, one Claude turn, or the interruption line.
     function talkRow(t) {
+        if (t.kind === 'act') return w.FK_TACT ? '<li class="tk-act">' + w.FK_TACT.html(t, '', 'talk-act-' + String(t.at)) + '</li>' : '';
         if (t.kind === 'interrupt') {
             return '<li class="tk-int" data-block="talk-turn-interrupt">' + talkStamp(t.at) + '<span class="who">' + loc('ses.talkWhoInt', '中斷') + '</span>'
                 + '<div class="tx"><div class="t">' + loc('ses.talkIntText', '使用者中斷了 Claude 這一輪') + '<code>' + esc(t.text) + '</code></div></div></li>';
@@ -1796,8 +1797,7 @@
         var list = shells || [];
         if (!list.length) return '';
         var run = list.filter(function (x) { return x.state === 'running'; }).length;
-        return '<div class="s-shells" data-block="s-shells"><div class="sa-h"><b>shells</b><span>'
-            + loc('nav.shellsRunning', '{n} 個在跑', { n: run }) + '</span></div>'
+        return '<div class="s-shells" data-block="s-shells" title="' + loc('nav.shellsRunning', '{n} 個在跑', { n: run }) + '">'
             + list.map(function (x) {
                 var t = Date.parse(x.startedAt);
                 var known = x.code !== null && x.code !== undefined;
@@ -6006,6 +6006,7 @@
         if (e.key === '/') { e.preventDefault(); doc.getElementById('q').focus(); }
     });
 
+    doc.getElementById('fkver').textContent = S.fankeel ? 'fankeel ' + S.fankeel : '';
     doc.getElementById('nreg').textContent = loc('q.nRegistryDot', '{n} 個 registry · ', { n: S.projects.length })
         + S.sessions.length + ' sessions';
     doc.getElementById('cfg').textContent = String(S.configDir || '').replace(/^.*[\\/]/, '')
