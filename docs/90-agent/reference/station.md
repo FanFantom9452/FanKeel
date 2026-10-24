@@ -647,7 +647,7 @@ The focus page is one session's 計畫 or 關卡 tab alone, at `GET /f/<id>/plan
 and `GET /f/<id>/gate` — the URL `scripts/await.js` prints on its `page:`
 line. It answers a small shell (`focusShell` in `lib/station.js`) that loads
 `station.css`, `tip.css`, `gate-frame.css`, `GET /station/focus/<id>.js`,
-`i18n.js`, `tip.js`, `gate-frame.js` and `station.js`
+`i18n.js`, `tip.js`, `gate-frame.js`, `focus-page.js` and `station.js`
 and never the full station data file (`lib/station.js:1050-1058`).
 Any other tab name is redirected to `#/s/<id>/<tab>`
 on the full station. The focus script carries `window.STATION` with that one
@@ -657,7 +657,11 @@ built by `focusOf` from the session's registry entry, its handoff directory,
 its claimed plans and their ledgers — no `gather()`, and no transcript read
 except the one `shellsNow` does for an active session's shells — and held in
 memory while the mtimes of those files are unchanged; the shells are read
-again on every request, and are empty for an inactive session. The page draws a 48 px header
+again on every request, and are empty for an inactive session. The page is
+`FK_FOCUS` (`assets/station/focus-page.js`): `focusBoot` in `station.js`
+paints its `page()` into `#focus`, and what only `station.js` draws — the
+glyph, the stage, the 關卡 tab's report and the shells — reaches the module
+through `window.FK_KIT`. It draws a 48 px header
 (`focus-header`: the glyph, the stage with its route dots, the task, the id,
 and 開完整 station linking to `#/s/<id>/<tab>`) over the tab body: for plan,
 `plan-summary` (the counts and one chip per group) and `plan-list` (every
@@ -666,9 +670,9 @@ status, grouped as the plan groups them); for gate, `gate-question` (the
 question and its options, the recommended one marked) above `gate-report`
 (the 關卡 tab's report) — but that gate layout is now the fallback: with
 `gate-frame.js` loaded, the whole gate tab is `FK_GATE.frame`
-(`assets/station/station.js:2217`, `if (gate && w.FK_GATE && typeof w.FK_GATE.frame === 'function') {`):
+(`focusPageHtml` in `assets/station/focus-page.js`, `if (gate && w.FK_GATE && typeof w.FK_GATE.frame === 'function') {`):
 a head with no tabs whose title opens the full station, the report
-station.js draws in the main column, and the question in a sticky side
+the focus page draws in the main column, and the question in a sticky side
 column, each option showing its label with its description open, a click on the label closing it; a
 pick only marks it and says to answer in Claude Desktop. It re-reads its script every five seconds while the
 browser tab is visible.

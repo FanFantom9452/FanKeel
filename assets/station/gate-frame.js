@@ -2,12 +2,12 @@
 // assets/station/gate-frame.js — the gate page, /f/<id>/gate (design
 // 2026-10-21-station-redesign §5; mockup gate-plan-a.html): a head with no
 // tabs whose title opens the session in the full station, the stage report
-// station.js drew (`focusReportHtml`) in the main column, and the question in
+// the focus page drew (`focusReportHtml`) in the main column, and the question in
 // a side column that stays in view. An option shows its label; its
 // description starts open and closes on click; 1 … n pick, unless a dialog is open or a field
 // has focus. A pick only marks the option and says to answer in Claude
 // Desktop: the station cannot answer a gate, so nothing here is sent.
-// Loaded by the focus page before station.js, whose focusPageHtml calls frame().
+// Loaded by the focus page before focus-page.js, whose page() calls frame().
 (function (w, doc) {
     var EN = {
         'gf.open': 'Open this session in the full station',
