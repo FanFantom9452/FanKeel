@@ -88,7 +88,7 @@ test('the four modules are served byte for byte, and the shell loads them before
     }
     const shell = fs.readFileSync(path.join(ASSETS, 'index.html'), 'utf8');
     const order = [...shell.matchAll(/<script src="station\/([^"]+)"><\/script>/g)].map((m) => m[1]);
-    const PAGES = ['tip', 'live-page', 'sessions-page', 'projects-page', 'project-page', 'session-page', 'session-dispatch', 'session-talk'].map((n) => n + '.js');
+    const PAGES = ['tip', 'live-page', 'sessions-page', 'projects-page', 'project-page', 'session-page', 'session-dispatch', 'session-talk', 'talk-acts', 'docs-page', 'settings-page', 'settings-steps', 'settings-detail'].map((n) => n + '.js');
     assert.deepEqual(order, ['i18n.js'].concat(PAGES, MODULES, ['remote-card.js', 'station.js']));
 }));
 
