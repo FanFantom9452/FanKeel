@@ -15,11 +15,15 @@ const { serve } = require('../scripts/station.js');
 const tmp = require('./tmp.js');
 
 const ASSETS = path.join(__dirname, '..', 'assets', 'station');
-const PAGES = ['tip', 'live-page', 'sessions-page', 'projects-page', 'project-page', 'session-page', 'session-dispatch', 'session-talk'];
+const BEFORE = ['tip', 'live-page', 'sessions-page', 'projects-page', 'project-page', 'session-page', 'session-dispatch', 'session-talk'];
+// 文件 and 設定 (station-38, station-39) load after talk-acts.js, a script with no sheet of its own.
+const AFTER = ['docs-page', 'settings-page', 'settings-steps', 'settings-detail'];
+const PAGES = BEFORE.concat(AFTER);
 const ALL = PAGES.concat(['gate-frame']);
 const SPEND = ['spend-talk.js', 'spend-kinds.js', 'spend-range.js', 'spend-panel.js'];
 const GLOBAL = { tip: 'FK_TIP', 'live-page': 'FK_LIVE', 'sessions-page': 'FK_SESSIONS', 'projects-page': 'FK_PROJECTS', 'project-page': 'FK_PROJECT',
-    'session-page': 'FK_SESSION', 'session-dispatch': 'FK_SDISP', 'session-talk': 'FK_STALK', 'gate-frame': 'FK_GATE' };
+    'session-page': 'FK_SESSION', 'session-dispatch': 'FK_SDISP', 'session-talk': 'FK_STALK', 'gate-frame': 'FK_GATE',
+    'docs-page': 'FK_DOCS', 'settings-page': 'FK_SETTINGS', 'settings-steps': 'FK_SETSTEPS', 'settings-detail': 'FK_SETDETAIL' };
 const SID = 'abababab-1212-4121-8121-121212121212';
 
 function fixture() {
@@ -53,9 +57,30 @@ test('every module has its script and its stylesheet, and sets its global when l
 test('the shell loads tip.js and the page modules after i18n.js and before the spend modules, each with its stylesheet', () => {
     for (const html of [fs.readFileSync(path.join(ASSETS, 'index.html'), 'utf8'), station.render()]) {
         const scripts = [...html.matchAll(/<script src="station\/([^"]+)"><\/script>/g)].map((m) => m[1]);
-        assert.deepEqual(scripts, ['i18n.js'].concat(PAGES.map((n) => n + '.js'), SPEND, ['remote-card.js', 'station.js']));
+        assert.deepEqual(scripts, ['i18n.js'].concat(BEFORE.map((n) => n + '.js'), ['talk-acts.js'], AFTER.map((n) => n + '.js'), SPEND, ['remote-card.js', 'station.js']));
         const sheets = [...html.matchAll(/<link rel="stylesheet" href="station\/([^"]+)">/g)].map((m) => m[1]);
         assert.deepEqual(sheets, ['station.css'].concat(PAGES.map((n) => n + '.css')));
+    }
+});
+
+// Every vm boot of the page (tests/station-src.js, tests/station-module.js page())
+// runs these four before station.js, with a document that has no body and no
+// querySelector; the station-hdl-* tests find document listeners by what they
+// hold. So none of them may touch an element or add a listener at load.
+test('the docs and settings modules touch no element and add no listener at load', () => {
+    for (const n of AFTER) {
+        const added = [];
+        const win = {};
+        vm.runInNewContext(fs.readFileSync(path.join(ASSETS, n + '.js'), 'utf8'),
+            { window: win, document: { addEventListener(type) { added.push(type); } }, module: { exports: {} } });
+        assert.deepEqual(added, [], n + ' added a listener at load');
+        const api = win[GLOBAL[n]];
+        if (n === 'settings-steps') {
+            assert.equal(typeof api.steps, 'function', n);
+            assert.equal(typeof api.chapters, 'function', n);
+        } else {
+            assert.equal(typeof api.page, 'function', n);
+        }
     }
 });
 

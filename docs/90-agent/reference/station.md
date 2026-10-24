@@ -946,17 +946,9 @@ default) that drives every figure on both tabs. 總覽 is one row a project,
 grouped 需要注意 and 其他; 分析 is five angles, at
 `#/projects/analysis/<angle>`.
 
-**文件** is its own page, `#/docs`, one section per project whose `.fankeel/map.md`
-exists: the registry root's own, plus `<root>/<project>/.fankeel/map.md` for
-each project a session under that registry names — one section per file
-found, and a project with none gets no section. It quotes what `map.js`
-already computed rather than reading the tree itself (`lib/station.js`'s
-`parseMapCard`): the document counts and their split by status,
-`planned, not built`, `undeclared`, the filing table with each bucket's
-role, and when the file was generated. It never runs a docs scan of its own,
-and a registry with no project's map anywhere contributes no section; with
-nothing anywhere across every registry, the page prints "還沒有專案生成
-`.fankeel/map.md`" instead of a list.
+**文件**, `#/docs`, is `FK_DOCS` (`assets/station/docs-page.js`). A head card holds the 找文件 box (see [Search, the tour and the served files](#search-the-tour-and-the-served-files)). Under it, `docs-health` is a matrix with one row per project — its name opens the project dialog, with the number of markdown files and the newest one's date beside it — and six columns: drift (a page older than the code it cites), landed (a plan whose work has landed), index (an index row that is dead or missing), diagram (a diagram that leaves out part of its directory), broken (every `scripts/docs-check.js` finding) and unfiled (pages no declared bucket holds; grey, and `—` where the project declares no tree). A zero is a tick; a number is a button, `data-cell="<pkey> <kind>"`, that fills the `docs-findings` card beside the matrix with what that kind means and how to fix it, one row per item (at most 50: path, line, tag, note), and the command that lists them all. The figures come once per visit from `GET /station/docs-health`, which `scripts/docs-health.js` answers by running `scripts/docs-audit.js`'s `sweep` and `scripts/docs-check.js`'s `scan` over every project `lib/docsearch.js`'s `searchDirs` names, keeping the answer ten minutes; 重新檢查 asks again with `?fresh=1`. A row of the findings card opens the `docs-reader` dialog: one page from `GET /station/doc?pkey=<pkey>&path=<rel>`, rendered from its markdown with the frontmatter's `status` and `last_verified` as chips and the cited line marked, ← and → walking the cell's items. The `docs-project` dialog draws what `parseMapCard` (`lib/station.js`) read off the project's `.fankeel/map.md` — the split by status, `planned, not built` and the filing table — from `projects[].docs`. Both dialogs hang off `document.body`, outside `#page`, so the 3 s redraw leaves them open. The matrix draws no relation graph. The file `/fankeel` writes has no server to ask, so there the page says to open it from `serve`.
+
+`GET /station/doc` answers `text/markdown`, and `404` for a `pkey` no project has or a `path` that is not posix, holds `..`, does not end `.md`, is not tracked in that project (`lib/tracked.js` `trackedFiles`) or is over 512 KB.
 
 **清單** is the sortable table and a detail pane. Clicking a row fills the pane
 rather than expanding the row, so two sessions can be compared without
@@ -1254,23 +1246,7 @@ notes and its `next` intact.
 
 ## Search, the tour and the served files
 
-Full-text search sits on 文件 (`#/docs`) under its heading,
-`data-block="docs-search"`. Typing waits 250 ms after the last key, then asks
-`GET /station/search?q=<text>` (`scripts/station.js`,
-`url.pathname === '/station/search'`). `lib/docsearch.js` answers it:
-`searchDirs(model)` takes every registry root that is not `gone` and every
-project under it that a session names, minus the projects `station.hide`
-removes (`hiddenPkeys`); `search(dirs, q)` reads each project's
-`.fankeel/docs.json` — or the preset `docs.detect` recognises when there is
-none — and opens only the markdown pages whose role is `reference` or
-`decision`. `plan`, `report`, `archive` and `fixture` pages are not searched:
-they record a moment, and a hit in one reads as current when it is not. A
-`reference` page in a bucket whose `audience` is `human` is labelled `guide`.
-The match is a case-insensitive substring of the page body with its
-frontmatter removed; pages sort by how often it occurs, and the answer carries
-the total `n` and the first 20, each with 60 characters either side of the
-first hit. The file `/fankeel` writes has no server to ask, so there the block
-is a note saying to open the page from `serve`.
+Full-text search is 文件's 找文件 box (`#/docs`, in the head card above `docs-health`). Typing asks `GET /station/search?q=<text>` (`scripts/station.js`, `url.pathname === '/station/search'`) and paints the hits straight into the `#dq-pop` popover under the box, not into `#page`, so the box keeps its caret through the 3 s redraw; a hit opens its page in the reader. `lib/docsearch.js` answers it: `searchDirs(model)` takes every registry root that is not `gone` and every project under it that a session names, minus the projects `station.hide` removes (`hiddenPkeys`); `search(dirs, q)` reads each project's `.fankeel/docs.json` — or the preset `docs.detect` recognises when there is none — and opens only the markdown pages whose role is `reference` or `decision`. `plan`, `report`, `archive` and `fixture` pages are not searched: they record a moment, and a hit in one reads as current when it is not. A `reference` page in a bucket whose `audience` is `human` is labelled `guide`. The match is a case-insensitive substring of the page body with its frontmatter removed; pages sort by how often it occurs, and the answer carries the total `n` and the first 20, each with 60 characters either side of the first hit. The file `/fankeel` writes has no server to ask, so there the box is a note saying to open the page from `serve`.
 
 `GET /station/talk/<id>?from=<n>` is the 對話 tab's one request
 (`scripts/station.js`, the `/station/talk/` branch, matched by pattern because
@@ -1307,7 +1283,7 @@ The conversation last read is held in memory and parsed again only when
 `station-data.js`, a detail script or any copy of the page: the full text stays
 on this machine.
 
-`GET /station/spend?from=<YYYY-MM-DD>&to=<YYYY-MM-DD>[&top=<n>]` is the 花費 page's range report (`scripts/station.js`, the `/station/spend` branch; `report` in `lib/spendrange.js`). It reads every transcript under this server's config dir — not only the registry's sessions — and picks the sessions by `lib/compare.js`'s rule, a session in the range its first line falls in with its agents, so `usd` is what `scripts/usage-compare.js` prints for the same range. It answers JSON: `range`, `prev` (the same number of days before it, with `sessions` and `usd`), `sessions`, `usd`, `kinds` and `tokens` (`main` and `agent`, each the five kinds with the two cache writes apart), `types` (the main session and each agent type, `fankeel:` and `fankeel-` dropped, largest first, with `count`, `usd`, `share`, `cost`), `byModel` (per model id, `lib/spendrange.js`'s `modelsInto`: `cost` and `tokens` by kind, `usd`, `share`), `top` (the `n` costliest sessions, 10 by default and at most 50, each with `id`, `project`, `first`, `usd`, `share`, `mainUsd`, `agentUsd`, `agents`, `turns`, `avgCtx`, `peak`) and `verified`. A range that does not parse is a 400. Each session's row is held in memory while `keyOf` (`lib/detail.js`) says its files have not moved, so only the first request reads every transcript. The data file also carries `prices`, `lib/prices.js`'s `perMillion`, which the component notes read their unit prices from. The page's own modules `assets/station/spend-talk.js`, `assets/station/spend-kinds.js`, `assets/station/spend-range.js` and `assets/station/spend-panel.js`, with the 手機遠端 card's `assets/station/remote-card.js`, are served and written under `station/` beside `station.js`. The redesigned pages' modules (`tip`, the five pages, `session-dispatch`, `session-talk` and `gate-frame`, each a script and a stylesheet, and `talk-acts`, a script whose rules are in `session-talk.css`) are served and written the same way.
+`GET /station/spend?from=<YYYY-MM-DD>&to=<YYYY-MM-DD>[&top=<n>]` is the 花費 page's range report (`scripts/station.js`, the `/station/spend` branch; `report` in `lib/spendrange.js`). It reads every transcript under this server's config dir — not only the registry's sessions — and picks the sessions by `lib/compare.js`'s rule, a session in the range its first line falls in with its agents, so `usd` is what `scripts/usage-compare.js` prints for the same range. It answers JSON: `range`, `prev` (the same number of days before it, with `sessions` and `usd`), `sessions`, `usd`, `kinds` and `tokens` (`main` and `agent`, each the five kinds with the two cache writes apart), `types` (the main session and each agent type, `fankeel:` and `fankeel-` dropped, largest first, with `count`, `usd`, `share`, `cost`), `byModel` (per model id, `lib/spendrange.js`'s `modelsInto`: `cost` and `tokens` by kind, `usd`, `share`), `top` (the `n` costliest sessions, 10 by default and at most 50, each with `id`, `project`, `first`, `usd`, `share`, `mainUsd`, `agentUsd`, `agents`, `turns`, `avgCtx`, `peak`) and `verified`. A range that does not parse is a 400. Each session's row is held in memory while `keyOf` (`lib/detail.js`) says its files have not moved, so only the first request reads every transcript. The data file also carries `prices`, `lib/prices.js`'s `perMillion`, which the component notes read their unit prices from. The page's own modules `assets/station/spend-talk.js`, `assets/station/spend-kinds.js`, `assets/station/spend-range.js` and `assets/station/spend-panel.js`, with the 手機遠端 card's `assets/station/remote-card.js`, are served and written under `station/` beside `station.js`. The redesigned pages' modules (`tip`, the five pages, `session-dispatch`, `session-talk` and `gate-frame`, each a script and a stylesheet, and `talk-acts`, a script whose rules are in `session-talk.css`) are served and written the same way. So are 文件's and 設定's: `docs-page`, `settings-page`, `settings-steps` and `settings-detail`, each a script and a stylesheet.
 
 導覽 (`#/tour`) frames `station/tour.html`, the tour's own page
 (`assets/station/tour.html`). Only a served page can show it; the written file
@@ -1600,83 +1576,15 @@ tune's own overlay; the station opens no connection of its own for this.
 
 ## Setting a profile from the page
 
-No session view carries a **profile** card any more, and neither does 首頁:
-a profile is set at one page only, `#/settings`. There is no `<select>`,
-and no 套用機器預設 button — the served page's old strip of three habit
-presets (`profilePresets`, `lib/profile.js`'s `PRESETS`) is gone from the
-client too; what recommends and applies values now is the wizard's own
-habit pills, one row per step.
+No session view carries a **profile** card, and neither does 首頁: a profile is set at one page, `#/settings`, which is `FK_SETTINGS` (`assets/station/settings-page.js`). `parseHash` sends every `#/settings/…` hash there, and `FK_SETTINGS` hands `#/settings/detail[/<step>]` to `FK_SETDETAIL` (`assets/station/settings-detail.js`). Both work on one project at a time — the first `profiles.projects` directory, with a `<select data-sq-proj>` when the page knows more than one — and on the machine profile beside it.
 
-The wizard is eight questions, each a habit (`WIZ_STEPS`): `收尾` sets
-`land.integration`, `land.push` and `land.archivePlan`; `任務大小` sets
-`class.default`; `前端` sets `design.mockup`, and adds a `design.skill` row
-once `design.mockup` is on — set to anything but `(ask)`
-or `false`; `context` sets `stage.agents`; `撞檔` sets `guard`; `模型` sets
-`dispatch.floor` and `judge.model`; `監控站` sets `station.hide`; `答 gate` sets `gate.station`. Each step
-opens with a row of `常見組合` pills, two to four of them; pressing one sets
-every key it lists and records it as that step's recommendation, and a
-habit is pre-picked on load when every key it sets already matches the
-effective value (`wizLoad`). Under the pills each key is a group of cards,
-one card per value (`wizCards`), with an ask card where the key has no
-builtin — most cards carry the same `data-k`/`data-o` the buttons did, so
-one sets that key alone, off its recommendation if need be;
-`design.skill`'s cards are chips instead, each carrying `data-k`/`data-m`
-for its multi-select. The cards of `land.integration`, `land.push`,
-`land.archivePlan`, `stage.agents`, `guard` and `gate.station` each hold
-a small scene (`WIZ_SCENES`), and only the chosen card
-and the one under the pointer play theirs; under
-`prefers-reduced-motion: reduce` every scene rests on its last frame.
-`stage.agents` keeps its seven per-stage toggles under its four cards.
-Every other key is one compact row of options.
+**快速設定** is ten questions in five blocks: 改動怎麼收 (`main`, how a change reaches main, which sets `worktree`, `land.integration` and `land.push`; then `push`, asked only when `main` is direct or merge), 同時跑多少 (`sessions`, which sets `guard`, and `worktree` for many sessions; `inflight`, `dispatch.inflight`), 主對話與報告 (`ctx`, `stage.agents`; `lang`, `model.lang`), 驗證與成本 (`gates`, `class.default`; `floor`, `dispatch.floor` and `judge.model`; `screen`, `design.mockup`, asked only when the project has a front end) and 離開電腦時 (`where`, `gate.station` and `gate.away`). Every question is answered before anyone touches it and tagged 依你的紀錄 or 作者推薦: `GET /station/suggest?project=<dir>` (`lib/settingsuggest.js` `suggestFor`) reads the project's git history through `profile.suggest`, how its registry's sessions overlapped, whether it has a front end (`.fankeel/render.json`, or tracked html, css, vue, svelte, jsx or tsx files) and the machine's notify settings; until it answers, or with no server, every answer is the author's. 全部套用推薦 takes every recommendation back. 常離開 adds a machine card — `notify.gate` and `station.remote`, the second tagged 待定 — that writes the machine file only after its own 確認. The last screen lists old → new for every key that changes, split into 專案 and 這台機器, and offers `commit.format` as an unticked box: the format `profile suggest` read off the git log, with `merge` added so `land.js merge` is not refused. A key whose value would not change is not written.
 
-`settingsPage()` opens the wizard on the first `profiles.projects`
-directory if the registry holds one, the machine profile otherwise —
-`wizDefaultScope` was folded into `settingsPage` itself rather than staying
-a separate function. The last step is a summary: one row per key in
-`profileKeys` (`lib/profile.js`'s `KEYS`) with its current value, source
-layer and `desc`, and a scope bar of buttons — 機器預設 plus one per
-`profiles.projects` directory (`wizScopes`) — naming which file the write
-would land in.
+**詳細設定** is one question a screen in ten chapters — 快速設定, 整合收尾, 平行與隔離, 驗證與流程, 成本與模型, Context 與自主, 離開電腦時 (the machine's), 報告與文字, 安全, 其他 — with a rail of chapters and their steps, each marked done or current; 到這裡就好 stops and 繼續 goes on, and `#/settings/detail/<step>` opens that step. Its steps are 快速設定's ten questions followed by the 23 of `FK_SETSTEPS` (`assets/station/settings-steps.js`). The `prompt.*` step is tagged 進階・不建議. The agents step is a table, one row per plugin agent, with a model select and an effort select, each opening on `預設 · <the agent file's own value>`; it writes `agent.<name>.model` and `agent.<name>.effort`, and reads its rows from the page model's `profileSpec` (`lib/station.js` `serialize`: the profile keys, every agent with its frontmatter `model` and `effort`, the efforts, and what each layer holds now). The remote step carries the 手機遠端 card (`assets/station/remote-card.js`, `FK_REMOTE.html(serve)`), which draws nothing on a page with no server.
 
-`wizChanges` decides what actually gets written: a key this scope's own
-file does not already hold is skipped unless the chosen value differs from
-what the layers below it give — the precedence across project, machine and
-builtin is in [registry.md](registry.md); a key the file does hold is
-included whenever the choice now differs from
-what's on file, including a choice of `(ask)`, which is sent as an empty
-value to clear it. The summary's `寫入 N 鍵` button — disabled with nothing
-to write — posts all of it in one `POST /profile`, with `back=#/settings`.
-Where there is no server, the same control prints
-`node <plugin>/scripts/task.js profile set <key> <value> --project <path>`
-(`--default` in place of `--project <path>` for the machine scope) for a
-person to run, one line per key — except a cleared key, which prints
-`從 <file> 刪掉 <key>` instead.
+Both pages write with `fetch` to `POST /profile` (`scripts/station.js`), sending `scope` (`project` or `machine`), `project`, the nonce and a repeated `key`/`value` pair per row changed. A wrong nonce is `403`. Every pair is checked — an unknown key, or a value `profile.parseValue` refuses (a `stage.agents` stage list is one it accepts) — before any of them is written; `agent.<name>.model` and `agent.<name>.effort` are known keys (`lib/agentfile.js` `agentKey`), and after one is written `agentfile.syncAgent` rewrites that agent's file under the scope's agents directory (`<config dir>/agents` for the machine, `<project>/.claude/agents` for a project), as `task.js profile set` does. A bad `scope`, no pair or an unequal count fail the same way, `400`; an empty value is not refused but clears that key from the scope's file (`profile.unset`); an unknown project `404`, a refused write `409`. A form post that lands redirects `303`: to `/` + `back` when `back` matches `^#/[a-z]*$`, and to bare `/` otherwise.
 
-`scripts/station.js serve` still answers at `POST /profile`, taking `scope`
-(`project` or `machine`), `project`, and a repeated `key`/`value` pair per
-row changed. A wrong nonce is `403`. Every pair is checked — an unknown
-key, or a value `profile.parseValue` refuses (a `stage.agents` stage list
-is one it accepts) — before any of them is written, and a bad `scope`, no
-pair or an unequal count fail the same way, `400`; an empty value is not
-refused but clears that key from the scope's file (`profile.unset`); an
-unknown project `404`, a refused write `409`. One that lands redirects
-`303`: to `/` + `back` when `back` matches `^#/[a-z]*$` — the wizard always
-sends `back=#/settings` — and to bare `/` otherwise.
-
-Hiding a project (`station.hide: 'true'`) costs two things, both accepted
-rather than treated as defects. First: the project drops out of the
-wizard's scope buttons (`wizScopes`), the same way its sessions disappear
-from 清單 — `serialize()`'s `profiles.projects` drops it exactly where
-`flatten()` drops its sessions (see What each row holds) — so there is no
-button left on the served page to reach it again. This is not because the
-`POST` above would refuse it: `known` here builds its own fresh, unfiltered
-model rather than reading the page's filtered one
-(`scripts/station.js:952`, `const known = model.registries.some(`), so a
-hidden project's directory is still in it, and a request naming one that
-somehow still reached the server would succeed, not `404`. The scope button
-is simply never drawn to click, so unhiding is
-`node <plugin>/scripts/task.js profile set station.hide false --project <path>`,
-run by hand.
+Hiding a project (`station.hide: 'true'`) costs two things, both accepted rather than treated as defects. First: the project drops out of the settings page's project picker, the same way its sessions disappear from 清單 — `serialize()`'s `profiles.projects` drops it exactly where `flatten()` drops its sessions (see What each row holds) — so there is no control left on the served page to reach it again. This is not because the `POST` above would refuse it: `known` there builds its own fresh, unfiltered model rather than reading the page's filtered one (`scripts/station.js`, `const known = model.registries.some(`), so a hidden project's directory is still in it, and a request naming one that somehow still reached the server would succeed, not `404`. The picker simply never offers it, so unhiding is `node <plugin>/scripts/task.js profile set station.hide false --project <path>`, run by hand.
 
 Second: a project's colour, `--p-0` through `--p-5`
 (`assets/station/station.css:15`, `--p-0:#015f98`), is its position in the
