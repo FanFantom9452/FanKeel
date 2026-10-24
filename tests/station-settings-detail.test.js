@@ -19,10 +19,12 @@ const SPEC = {
 };
 const VALUES = { 'land.integration': 'merge', worktree: 'false', 'land.push': false, guard: 'ask', 'class.default': '', 'dispatch.floor': 'sonnet',
     'judge.model': 'fable', 'stage.agents': false, 'gate.station': 'off', 'gate.away': 'hint', 'design.mockup': false, 'sensitive.review': false };
-function boot(hash, remote) {
+// opt: machine / values replace the two boxes, fetch is the page's fetch, redraw its redraw.
+function boot(hash, remote, opt) {
+    const x = opt || {};
     const p = page(['settings-page.js', 'settings-steps.js', 'settings-detail.js'], {
-        profiles: { machine: { values: { 'station.remote': false }, sources: {}, unreadable: [] }, projects: { [DIR]: { values: VALUES, sources: {}, unreadable: [] } } },
-        profileSpec: SPEC, nonce: 'n1' });
+        profiles: { machine: { values: x.machine || { 'station.remote': false }, sources: {}, unreadable: [] }, projects: { [DIR]: { values: x.values || VALUES, sources: {}, unreadable: [] } } },
+        profileSpec: SPEC, nonce: 'n1' }, x.fetch ? { fetch: x.fetch } : undefined);
     if (remote) p.win.FK_REMOTE = { html: (serve) => '<div class="rm-card" data-serve="' + serve + '"></div>' };
     else delete p.win.FK_REMOTE;
     const D = p.M['settings-detail.js'];
@@ -36,7 +38,7 @@ function boot(hash, remote) {
         done(true);
     };
     D.reset();
-    const o = { hash: hash || '#/settings/detail', serve: true, configDir: 'C:\\cfg', redraw() {} };
+    const o = { hash: hash || '#/settings/detail', serve: true, configDir: 'C:\\cfg', redraw: x.redraw || (() => {}) };
     return { D, posted, html: () => D.page(p.win.STATION, o) };
 }
 // A click (or input) whose target answers closest() for `sel`, the page root
@@ -156,6 +158,109 @@ test('寫入 posts the changed keys through FK_SETTINGS.post, then says 已寫�
     h = html();
     assert.match(h, /已寫入 3 項。/);
     assert.match(h, /data-act="write" disabled>已寫入</);
+});
+
+const tick = () => new Promise((r) => setImmediate(r));
+const SCREEN_NA = /<li class="v9-s is-na" data-sid="screen">/;
+
+test('a station/suggest that answers 404 or rejects says so on the page and keeps the front-end step out', async () => {
+    for (const f of [() => Promise.resolve({ ok: false, status: 404 }), () => Promise.reject(new Error('down'))]) {
+        let redraws = 0;
+        const { D, html } = boot('#/settings/detail', false, { fetch: f, redraw: () => { redraws++; } });
+        html();
+        await tick();
+        assert.equal(redraws, 1, 'the failure asks for a repaint');
+        const h = html();
+        assert.match(h, /推薦取不到，前端相關的步驟先不問/);
+        assert.match(h, SCREEN_NA);
+        assert.equal(D.state().sugErr, true);
+        html();
+        await tick();
+        assert.equal(redraws, 1, 'a failed answer is not asked again on every repaint');
+    }
+});
+
+test('a station/suggest that answers front shows the front-end step and no failure message', async () => {
+    const { html } = boot('#/settings/detail', false, { fetch: () => Promise.resolve({ ok: true, json: () => Promise.resolve({ front: true }) }) });
+    html();
+    await tick();
+    const h = html();
+    assert.doesNotMatch(h, SCREEN_NA);
+    assert.doesNotMatch(h, /推薦取不到/);
+});
+
+test('a machine key is read from the machine box, so the project box neither changes nor hides it', () => {
+    const machine = { 'station.remote': true, 'notify.gate': true };
+    const { D, html } = boot('#/settings/detail', false, { machine, values: Object.assign({}, VALUES, { 'station.remote': false, 'notify.gate': false }) });
+    html();
+    goTo(D, 'where');
+    pick(D, 'away');
+    D.onClick(ev('[data-mc]', { 'data-mc': 'yes' }));
+    assert.deepEqual(plain(D.rows()).filter((r) => r.scope === 'machine'), [], 'the machine already holds both');
+    assert.deepEqual(plain(D.changes()).filter((c) => c.k === 'station.remote' || c.k === 'notify.*'), []);
+});
+
+test('[data-qm] opens a tip and a second click closes it', () => {
+    const { D, html } = boot();
+    html();
+    const qm = () => D.onClick(ev('[data-qm]', { 'data-qm': 'main' }));
+    qm();
+    assert.equal(D.state().tip, 'main');
+    assert.match(html(), /data-qm="main"[^>]*aria-expanded="true"/);
+    qm();
+    assert.equal(D.state().tip, '');
+    assert.match(html(), /data-qm="main"[^>]*aria-expanded="false"/);
+});
+
+test('[data-rtog] opens the rail on a narrow screen and a second click closes it', () => {
+    const { D, html } = boot();
+    html();
+    const rtog = () => D.onClick(ev('[data-rtog]', {}));
+    rtog();
+    assert.equal(D.state().rail, true);
+    assert.match(html(), /class="dcard v9-rail"[^>]*data-open="true"/);
+    rtog();
+    assert.equal(D.state().rail, false);
+    assert.match(html(), /class="dcard v9-rail"[^>]*data-open="false"/);
+});
+
+test('[data-gochap] jumps to the first unanswered step of the chapter, not its first', () => {
+    const { D, html } = boot();
+    html();
+    pick(D, 'merge');
+    act(D, 'next');
+    assert.equal(D.state().at, 'push');
+    goTo(D, 'where');
+    D.onClick(ev('[data-gochap]', { 'data-gochap': 'quick' }));
+    assert.equal(D.state().at, 'push', 'main is answered, push is the first one left');
+});
+
+test('arrow keys move the radio choice with wrap-around, and Escape closes an open tip', () => {
+    const { D, html } = boot();
+    html();
+    const ids = ['direct', 'merge', 'pr', 'keep'];
+    let prevented = 0;
+    const key = (k, o) => {
+        const e = ev('.v9-opt[role=radio]', { 'data-o': o, key: k });
+        e.preventDefault = () => { prevented++; };
+        D.onKey(e);
+    };
+    pick(D, 'direct');
+    key('ArrowDown', 'direct');
+    assert.equal(D.state().ans.main, 'merge');
+    key('ArrowUp', 'direct');
+    assert.equal(D.state().ans.main, ids[3], 'up from the first wraps to the last');
+    key('ArrowRight', 'keep');
+    assert.equal(D.state().ans.main, ids[0], 'down from the last wraps to the first');
+    key('ArrowLeft', 'direct');
+    assert.equal(D.state().ans.main, ids[3]);
+    assert.equal(prevented, 4);
+    key('Enter', 'keep');
+    assert.equal(prevented, 4, 'other keys are left alone');
+    D.onClick(ev('[data-qm]', { 'data-qm': 'main' }));
+    assert.equal(D.state().tip, 'main');
+    D.onKey({ key: 'Escape', target: null, preventDefault() {} });
+    assert.equal(D.state().tip, '');
 });
 
 test('every Chinese literal has its English', () => {

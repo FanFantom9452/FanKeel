@@ -77,6 +77,7 @@
         'sd.okN': '{n} written.',
         'sd.err': 'Not written: {e}',
         'sd.noTable': 'The settings table has not loaded.',
+        'sd.sugErr': 'Recommendations are unavailable, so the front-end steps are not asked.',
         'sd.unsetV': 'unset',
         'sd.def': 'Default',
         'sd.promptName': 'Extra prompt ({st})',
@@ -113,7 +114,7 @@
     var st, cx = null, last = null, bound = false;
     function reset() {
         st = { at: null, ans: {}, inp: {}, mc: '', mck: { 'notify.gate': true, 'station.remote': true }, hist: [],
-            wrote: 0, err: '', busy: false, over: {}, sug: null, sugFor: '', hash: '', tip: '', rail: false, moving: false };
+            wrote: 0, err: '', busy: false, over: {}, sug: null, sugErr: false, sugFor: '', hash: '', tip: '', rail: false, moving: false };
         cx = null;
     }
     reset();
@@ -166,7 +167,7 @@
         return BLANK[k] && v === 'false' ? '' : v;
     }
     function gitFmt() { return (st.sug && st.sug.commitFormat) || GIT_FMT; }
-    function front() { return !st.sug || st.sug.front !== false; }
+    function front() { return !st.sugErr && (!st.sug || st.sug.front !== false); }
     function val(P, k) { return has(P, k) ? P[k].v : cur(k); }
     function optOf(s, o) { for (var i = 0; i < s.opts.length; i++) if (s.opts[i].o === o) return s.opts[i]; return null; }
     function applies(s, P) {
@@ -584,7 +585,14 @@
         st.sugFor = cx.dir;
         var p = fetch('station/suggest?project=' + encodeURIComponent(cx.dir));
         if (!p || typeof p.then !== 'function') return;
-        p.then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j) { st.sug = j; redraw(); } }, function () {});
+        var dir = cx.dir;
+        // A failed answer is kept (sugErr), not retried on every repaint: the page says so, and the
+        // front-end steps stay out because nothing says this repo has a front end.
+        p.then(function (r) { return r && r.ok ? r.json() : null; }).then(function (j) {
+            if (st.sugFor !== dir) return;
+            if (j) st.sug = j; else st.sugErr = true;
+            redraw();
+        }, function () { if (st.sugFor === dir) { st.sugErr = true; redraw(); } });
     }
 
     // ---- events (bound on the first page(), on the document) ----
@@ -664,6 +672,7 @@
         var moving = st.moving;
         st.moving = false;
         return '<div class="st v9' + (moving ? ' is-moving' : '') + '" data-block="v9-page">' + railHtml() + '<section class="dcard v9-wiz" data-block="v9-wizard" aria-label="' + esc(loc('sd.wizard', '設定精靈')) + '">'
+            + (st.sugErr ? '<p class="v9-ev is-warn" role="status">' + esc(loc('sd.sugErr', '推薦取不到，前端相關的步驟先不問。')) + '</p>' : '')
             + (st.at === 'final' ? finalHtml() : stepHtml(cx.byId[st.at])) + footHtml() + '</section></div>';
     }
     function state() { return st; }
