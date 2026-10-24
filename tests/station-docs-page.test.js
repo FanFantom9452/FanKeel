@@ -32,10 +32,11 @@ const S = { projects: [{ root: 'F:/w', docs: [{ pkey: A, generatedAt: '2026-10-2
     filing: { index: 'docs/README.md', rows: [{ bucket: 'docs/ref', role: 'reference' }] } }] }] };
 const flush = () => new Promise((r) => setImmediate(r));
 
-function mod(lang) {
+function mod(lang, failFresh) {
     const calls = [];
     const fetch = (url) => {
         calls.push(url);
+        if (failFresh && url.includes('fresh=1')) return Promise.resolve({ ok: false, status: 500 });
         if (url.startsWith('station/docs-health')) return Promise.resolve({ ok: true, json: () => Promise.resolve(HEALTH) });
         if (url.startsWith('station/search')) return Promise.resolve({ ok: true, json: () => Promise.resolve(SEARCH) });
         if (url.startsWith('station/doc?')) return Promise.resolve({ ok: true, text: () => Promise.resolve(DOC) });
@@ -218,4 +219,108 @@ test('the stylesheet is the mockup\'s rules without style tags', () => {
     const css = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'docs-page.css'), 'utf8');
     for (const rule of ['.dk{', '.dq-pop{', '.dh-t{', '.dh-tip{', '.df-row{', '.rd-body .hl{', '.tdlg.pd{', '.pd-cols{']) assert.ok(css.includes(rule), rule);
     assert.ok(!/<\/?style/.test(css));
+});
+
+test('a failed re-check with the table already loaded still says so above the matrix', async () => {
+    const m = mod(null, true);
+    m.draw();
+    await flush();
+    m.D.onClick({ target: hit('data-dk-run', '1') });
+    await flush();
+    const health = section(m.draw(), 'docs-health');
+    assert.ok(health.includes('讀不到文件檢查：500'));
+    assert.ok(health.includes('class="dh-t"'));
+});
+
+const withReader = async () => {
+    const m = mod();
+    m.draw();
+    await flush();
+    m.D.onClick({ target: hit('data-dk-cell', '0 broken') });
+    m.D.onClick({ target: hit('data-dk-item', '0') });
+    return m;
+};
+const stepTarget = (val, disabled) => ({ closest: (sel) => (sel === '[data-dk-step]' ? { getAttribute: () => val, disabled, closest: () => null } : null) });
+
+test('prev/next buttons step the reader by their sign and do nothing when disabled', async () => {
+    const m = await withReader();
+    m.D.state().list = m.D.state().list.concat(m.D.state().list, m.D.state().list);
+    m.D.state().at = 1;
+    m.D.onClick({ target: stepTarget('1', false) });
+    assert.equal(m.D.state().at, 2);
+    m.D.onClick({ target: stepTarget('-1', false) });
+    m.D.onClick({ target: stepTarget('-1', false) });
+    assert.equal(m.D.state().at, 0);
+    m.D.onClick({ target: stepTarget('1', true) });
+    assert.equal(m.D.state().at, 0);
+});
+
+test('the close button closes its dialog', async () => {
+    const m = await withReader();
+    let closed = false;
+    const dlg = { close: () => { closed = true; } };
+    m.D.onClick({ target: { closest: (sel) => (sel === '[data-dk-close]' ? { closest: () => dlg } : null) } });
+    assert.ok(closed);
+});
+
+test('a click outside the find box hides the hits; inside it leaves them', async () => {
+    const m = mod();
+    m.draw();
+    await flush();
+    m.D.onInput({ target: { id: 'dq', value: 'remote' } });
+    await flush();
+    const pop = m.doc.getElementById('dq-pop');
+    m.D.onClick({ target: { closest: (sel) => (sel === '.dq' ? {} : null) } });
+    assert.equal(pop.hidden, false);
+    m.D.onClick({ target: { closest: () => null } });
+    assert.equal(pop.hidden, true);
+});
+
+test('/ is left to the field when typed in an input, textarea or select', () => {
+    const m = mod();
+    m.draw({ serve: false });
+    let focused = false, prevented = false;
+    m.doc.getElementById('dq').focus = () => { focused = true; };
+    m.D.onKey({ key: '/', target: { closest: (sel) => (sel === 'input,textarea,select' ? {} : null) }, preventDefault() { prevented = true; } });
+    assert.equal(focused, false);
+    assert.equal(prevented, false);
+});
+
+test('focusing the find box again repaints the last hits', async () => {
+    const m = mod();
+    const on = {};
+    m.doc.addEventListener = (t, f) => { on[t] = f; };
+    m.draw();
+    await flush();
+    m.D.onInput({ target: { id: 'dq', value: 'remote' } });
+    await flush();
+    const pop = m.doc.getElementById('dq-pop');
+    pop.hidden = true;
+    on.focusin({ target: { id: 'dq' } });
+    assert.equal(pop.hidden, false);
+});
+
+test('arrow keys walk the open reader; Escape hides the hits', async () => {
+    const m = await withReader();
+    const s = m.D.state();
+    s.list = s.list.concat(s.list);
+    s.at = 0;
+    const rd = m.doc.getElementById('dlg-read');
+    rd.open = true;
+    let prevented = 0;
+    const key = (k) => m.D.onKey({ key: k, target: null, preventDefault() { prevented++; } });
+    key('ArrowRight');
+    assert.equal(s.at, 1);
+    key('ArrowRight');
+    assert.equal(s.at, 1, 'past the end stays');
+    key('ArrowLeft');
+    assert.equal(s.at, 0);
+    assert.equal(prevented, 2);
+    rd.open = false;
+    m.D.onInput({ target: { id: 'dq', value: 'remote' } });
+    await flush();
+    const pop = m.doc.getElementById('dq-pop');
+    assert.equal(pop.hidden, false);
+    key('Escape');
+    assert.equal(pop.hidden, true);
 });

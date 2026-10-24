@@ -327,6 +327,7 @@
             return h + '<p class="df-none">' + (st.err ? esc(loc('dk.loadFail', '讀不到文件檢查：{e}', { e: st.err }))
                 : loc('dk.loading', '每個專案跑一次 docs-check 與 docs-audit，第一次要幾秒…')) + '</p></section>';
         }
+        if (st.err) h += '<p class="df-none">' + esc(loc('dk.loadFail', '讀不到文件檢查：{e}', { e: st.err })) + '</p>';
         return h + '<div id="dh-body">' + matrixHtml() + '</div>' + keyHtml() + '</section>';
     }
 
