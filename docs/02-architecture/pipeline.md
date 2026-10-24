@@ -584,7 +584,7 @@ flowchart TD
     S2["<b>open the ledger</b><br/>ledger show<br/><i>after a compaction, trust it over memory</i>"]
     S3["<b>scan the plan first</b><br/>tasks that contradict each other,<br/>or contradict the constraints"]
     L{"ledger.js ready lists a task<br/>not already out?"}
-    D["<b>every task ready lists, in one response</b><br/>dispatch.inflight in flight, eight by default<br/><i>pass the model explicitly, say how many<br/>and on which model</i>"]
+    D["<b>every task ready lists, in one response</b><br/>dispatch.inflight in one response, eight by default<br/><i>pass the model explicitly, say how many<br/>and on which model</i>"]
     T2a["<b>implement here</b><br/>the in-session tasks among them<br/><i>every changed line traces to the task.<br/>Do not improve adjacent code on the way past</i>"]
     T2b1["implement one task"]
     T2b2["implement one task"]

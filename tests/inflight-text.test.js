@@ -16,8 +16,8 @@ const PAGES = {
     now: [/how many go in one response, eight by default/, /\(eight by default\) has one exception/, /Eight is where guessing/, /an eight-agent batch/],
   },
   'skills/fankeel-build/SKILL.md': {
-    gone: [/how many are in flight, four by default/, /listing six sends four/],
-    now: [/how many are in flight, eight by default/, /listing ten sends eight/],
+    gone: [/how many are in flight, four by default/, /listing six sends four/, /how many are in flight, eight by default/],
+    now: [/how many go out in one response, eight by default/, /listing ten sends eight/, /cut by dependency depth, so one group can hold more than eight: its brain sends eight, then one more as each returns/],
   },
   'skills/fankeel-survey/SKILL.md': {
     gone: [/`dispatch\.inflight`, four by default/],
@@ -48,8 +48,8 @@ const PAGES = {
     now: [/\(eight by default\)/],
   },
   'docs/02-architecture/pipeline.md': {
-    gone: [/in flight, four by default/, /`?dispatch\.inflight`?, four by default; dispatch\.floor/],
-    now: [/in flight, eight by default/, /dispatch\.inflight, eight by default; dispatch\.floor/],
+    gone: [/in flight, four by default/, /`?dispatch\.inflight`?, four by default; dispatch\.floor/, /dispatch\.inflight in flight, eight by default/],
+    now: [/dispatch\.inflight in one response, eight by default/, /dispatch\.inflight, eight by default; dispatch\.floor/],
   },
   'docs/90-agent/reference/subagents.md': {
     gone: [/sends at most four `fankeel:fankeel-reader`/, /Four in one response is the default/, /past four you are guessing/, /a builtin of 4,/],
