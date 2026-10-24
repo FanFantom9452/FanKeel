@@ -1001,7 +1001,7 @@ async function serve(opts) {
             let want = null;
             if (scope === 'machine') file = profile.machineFile(configDir);
             else if (scope === 'project') {
-                want =path.resolve(form.get('project') || '');
+                want = path.resolve(form.get('project') || '');
                 const model = modelNow();
                 const known = model.registries.some((r) => Object.keys(r.profiles || {}).some((p) => path.resolve(p) === want));
                 if (!known) {
@@ -1034,15 +1034,18 @@ async function serve(opts) {
             // agent.<name>.model|effort; the override file follows at once,
             // the way `task.js profile set` does it (scripts/task.js), once per agent.
             const synced = new Set();
+            const unsynced = [];
             for (const k of keys) {
                 const agent = agentfile.agentKey(k);
                 if (!agent || synced.has(agent.name)) continue;
                 synced.add(agent.name);
-                agentfile.syncAgent({
+                const result = agentfile.syncAgent({
                     pluginRoot: PLUGIN, profileFile: file, name: agent.name, version: require('../package.json').version,
                     agentsDir: scope === 'machine' ? path.join(configDir, 'agents') : path.join(want, '.claude', 'agents'),
                 });
+                if (result.state === 'unmarked' || result.state === 'no-source') unsynced.push(agentfile.syncLine(result));
             }
+            if (unsynced.length) return fail(409, 'profile saved, but ' + unsynced.join('\n'));
             // §5: the first trigger turned on gets a topic, so the card has
             // something to say to subscribe to. §2: a `station.remote` write
             // asks Tailscale again now, and its answer is in force from the

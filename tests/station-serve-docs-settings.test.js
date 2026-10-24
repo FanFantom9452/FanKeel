@@ -118,3 +118,14 @@ test('station-data.js carries profileSpec, and POST /profile writes an agent key
     const dir = Object.keys(after).find((k) => path.resolve(k) === path.resolve(f.r1));
     assert.deepEqual(after[dir], { 'agent.fankeel-reader.effort': 'high' });
 }));
+
+test('POST /profile on an agent key answers 409 and leaves a hand-written agent file alone', () => served(async (f, get, post) => {
+    const data = await get('station/station-data.js');
+    const nonce = /"nonce":"([^"]+)"/.exec(data.text)[1];
+    const file = path.join(f.r1, '.claude', 'agents', 'fankeel-reader.md');
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, '---\nname: mine\n---\nown\n');
+    const r = await post(form({ scope: 'project', project: f.r1, key: 'agent.fankeel-reader.effort', value: 'high', nonce }));
+    assert.equal(r.status, 409);
+    assert.equal(fs.readFileSync(file, 'utf8'), '---\nname: mine\n---\nown\n');
+}));
