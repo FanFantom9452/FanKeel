@@ -219,6 +219,32 @@ function writeScanRecord(configDir, record) {
     registry.writeAtomic(file, JSON.stringify(data, null, 2) + '\n');
 }
 
+// station-55: what a page load gets from a station whose code changed on disk
+// after it started. The station is closing behind it; this polls the health
+// route on the same origin until another pid answers, then reloads, so the
+// tab lands on the fresh station without anyone pressing anything.
+function restartPage(pid) {
+    return '<!doctype html>\n<html lang="zh-Hant" data-fankeel-restart><head><meta charset="utf-8"><title>fankeel station</title></head><body>\n'
+        + '<p>監控站的程式在磁碟上改了，正在重新啟動… / The station\'s code changed on disk; restarting…</p>\n'
+        + '<script>(function poll(){fetch("/station/health",{cache:"no-store"}).then(function(r){return r.json();})'
+        + '.then(function(b){if(b.pid!==' + Number(pid) + ')location.reload();else setTimeout(poll,300);},function(){setTimeout(poll,300);});})();</script>\n'
+        + '</body></html>\n';
+}
+
+// station-55: the arguments a station hands its successor — its own, less
+// `serve`, `--detach`, `--open` and any `--port`, plus the port it held, so
+// the tab that asked reloads onto the same address and no second browser opens.
+function successorArgs(argv, port) {
+    const out = [];
+    for (let i = 0; i < argv.length; i++) {
+        const a = argv[i];
+        if (a === 'serve' || a === '--detach' || a === '--open' || a.startsWith('--port=')) continue;
+        if (a === '--port') { i++; continue; }
+        out.push(a);
+    }
+    return out.concat(['--port', String(port)]);
+}
+
 function openInBrowser(target) {
     const [cmd, args] = process.platform === 'win32'
         ? ['cmd', ['/c', 'start', '', target]]
@@ -357,6 +383,32 @@ async function serve(opts) {
     // this on every `/station/health` request would answer a question the
     // files on disk can no longer help this process answer honestly.
     const fingerprint = diskFingerprint(PLUGIN);
+    // station-55: `/fankeel` is not the only one who asks whether this process
+    // is running old code — a page load from this machine asks too, below in
+    // the handler, when `opts.onStale` is given (only `main()` gives it; the
+    // tests that call `serve()` in-process do not). `restart` answers nothing
+    // itself: the request that found the change has its page already, and
+    // this closes every listener and `serve.json`, waits for the port to be
+    // free, and hands it to `onStale`, which starts the successor on it.
+    let closeAll = null;
+    let restarting = false;
+    const stale = () => diskFingerprint(PLUGIN) !== fingerprint;
+    const restart = () => {
+        if (restarting || !closeAll) return;
+        restarting = true;
+        const port = recordData ? recordData.port : boundPort;
+        const open = [server, fixedServer].filter((s) => s && s.listening);
+        const closed = open.map((s) => new Promise((r) => { s.once('close', r); }));
+        closeAll();
+        // Node 22 closes idle keep-alive sockets on close(); one still busy
+        // gets two seconds to finish before it is cut.
+        const force = setTimeout(() => { for (const s of open) s.closeAllConnections(); }, 2000);
+        force.unref();
+        Promise.all(closed).then(() => {
+            clearTimeout(force);
+            opts.onStale(port);
+        });
+    };
     // What this server remembers between requests: every session's detail,
     // held while `keyOf` says nothing under it moved (`detailOf` in
     // lib/detail.js). The page re-reads the list every three seconds and the
@@ -436,6 +488,7 @@ async function serve(opts) {
     };
     let timer = null;
     let server;
+    let fixedServer = null;
     const touch = () => {
         if (timer) { clearTimeout(timer); timer = null; }
         if (!(opts.idleMs > 0)) return;
@@ -545,6 +598,14 @@ async function serve(opts) {
         // Through the tailnet `/` is the phone's page (design §4); this
         // machine's own browser keeps the desktop page there.
         if (kind === 'tailnet' && req.method === 'GET' && url.pathname === '/') return redirect('/m');
+        // station-55: a page load from this machine is where a station finds
+        // out its code moved under it. Through the tailnet `/` is the phone's
+        // and the health route is closed, so only loopback asks.
+        if (req.method === 'GET' && kind === 'loopback' && typeof opts.onStale === 'function' && closeAll
+            && (url.pathname === '/' || url.pathname.startsWith('/f/')) && (restarting || stale())) {
+            res.on('finish', restart);
+            return send(200, 'text/html; charset=utf-8', restartPage(process.pid), noStore);
+        }
         if (req.method === 'GET' && url.pathname === '/') {
             let html;
             try {
@@ -1142,7 +1203,6 @@ async function serve(opts) {
             touch();
             if (opts.open) openInBrowser(url);
             let retryTimer = null;
-            let fixedServer = null;
             if (usedFallback) {
                 // The fixed port was somebody else's a moment ago; it may free
                 // up before this run ends. A timer is what turns "busy at
@@ -1187,6 +1247,7 @@ async function serve(opts) {
             });
         });
     });
+    closeAll = result.close;
     rememberLeads();
     return result;
 }
@@ -1283,7 +1344,12 @@ function main() {
         return;
     }
     if (args.verb === 'serve') {
-        serve({ configDir, roots: args.roots, scan: args.scan, port: args.port, idleMs: args.idleMs, open: args.open, portWasExplicit: args.portWasExplicit, exitOnIdle: true }).then((s) => {
+        serve({ configDir, roots: args.roots, scan: args.scan, port: args.port, idleMs: args.idleMs, open: args.open, portWasExplicit: args.portWasExplicit, exitOnIdle: true,
+            onStale: (port) => {
+                spawn(process.execPath, [__filename, 'serve'].concat(successorArgs(process.argv.slice(2), port)),
+                    { detached: true, stdio: 'ignore', windowsHide: true }).unref();
+                process.exit(0);
+            } }).then((s) => {
             process.stdout.write('fankeel station — ' + s.url
                 + (args.idleMs > 0 ? '  (exits after ' + Math.round(args.idleMs / 60e3) + ' idle minutes, or Ctrl+C)' : '  (Ctrl+C to exit)') + '\n');
             closeOnSignals(s);

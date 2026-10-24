@@ -53,6 +53,16 @@ file sorts what comes back three ways.
 - **dead** — anything else: no running pid, a refused connection, a status
   other than 200, a body that is not JSON, or another pid. One is started.
 
+The station asks the same question itself on every page load from this
+machine — `GET /` and `GET /f/<id>/<tab>`. When the fingerprint on disk is no
+longer the one it started with, that load is answered with a short page
+(`restartPage` in `scripts/station.js`) that polls `station/health`; the
+station closes its listeners and `serve.json`, and once the port is free it
+starts `scripts/station.js serve --port <the same port>` detached and exits.
+The page reloads when another pid answers. Only the CLI's `serve` does this:
+`serve()` called in-process, as the tests do, passes no `onStale` and keeps
+serving.
+
 The line ends one of six ways, and the first three can be followed by a remote tail:
 
 | the line ends | when |
