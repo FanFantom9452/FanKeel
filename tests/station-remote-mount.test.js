@@ -1,8 +1,9 @@
 'use strict';
 // The 手機遠端 card mounted (docs/90-agent/plans/2026-10-21-station-remote-design.md
-// §3): #/settings draws it under the wizard when assets/station/remote-card.js
-// is loaded, the shell loads that module before station.js, and a written
-// station carries it. What the card draws is tests/station-remote-card.test.js's.
+// §3): 詳細設定's remote step (#/settings/detail/remote, FK_SETDETAIL) draws it
+// when assets/station/remote-card.js is loaded, the shell loads that module
+// before station.js, and a written station carries it. What the card draws is
+// tests/station-remote-card.test.js's.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -45,21 +46,21 @@ function stub() {
     return { told, html: (serve) => { told.push(serve); return CARD; } };
 }
 
-test('#/settings draws the card after the wizard, told whether the page is served', () => {
+test('#/settings/detail/remote draws the card inside the remote step, told whether the page is served', () => {
     const off = stub();
-    const page = draw('#/settings', { remote: off });
-    assert.ok(page.includes('data-block="wizard"'));
+    const page = draw('#/settings/detail/remote', { remote: off });
+    assert.ok(page.includes('data-block="v9-away-remote"'), 'the remote step is on screen');
     assert.ok(page.includes(CARD));
-    assert.ok(page.indexOf('data-block="wizard"') < page.indexOf('id="rm-card"'), 'the card sits under the wizard');
+    assert.ok(page.indexOf('data-block="v9-away-remote"') < page.indexOf('id="rm-card"'), 'the card sits in the remote step');
     assert.equal(off.told[0], false);
     const on = stub();
-    draw('#/settings', { remote: on, serve: true });
+    draw('#/settings/detail/remote', { remote: on, serve: true });
     assert.equal(on.told[0], true);
 });
 
-test('without remote-card.js the settings page is the wizard alone', () => {
-    const page = draw('#/settings');
-    assert.ok(page.includes('data-block="wizard"'));
+test('with the real remote-card.js and no server, the remote step draws no card', () => {
+    const page = draw('#/settings/detail/remote');
+    assert.ok(page.includes('data-block="v9-away-remote"'));
     assert.ok(!page.includes('rm-card'));
 });
 

@@ -10,14 +10,13 @@
 // branches assert only that a later [data-wf] branch does not redraw
 // (`writes.page == 0`); they go red because the deleted branch lets it act. The
 // tune-notify one also asserts requestPermission was asked, and fbtn, legend,
-// pick, facet and wz assert the branch's effect before the page count; the fbtn
+// pick and facet assert the branch's effect before the page count; the fbtn
 // toggle-back test asserts the panel shown, then shut.
 //   `[data-tune-notify]`, `[data-answer]` (with its four fetch outcomes) and the
 //   `.gend` line gatePost writes after a `[data-gop]` / `[data-gho]` press;
 //   then the branches no earlier test pressed: `[data-fbtn]`, the legend's
 //   `.legend [data-key]` / `[data-rest]`, `[data-pick]`, the `.rpop` outside
-//   click, `[data-facet] button`, `input[data-cmp]`, `tr[data-id]`, and the
-//   wizard's `[data-h]` / `[data-st]` / `[data-ask]`.
+//   click, `[data-facet] button`, `input[data-cmp]` and `tr[data-id]`.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const vm = require('node:vm');
@@ -844,91 +843,4 @@ test('guard: tr: off the list page a press selects no row', () => {
     const { p, rows } = trPress('#/', 's2');
     assert.equal(rows[1].attrs['aria-selected'], 'x');
     assert.equal(p.asked.includes('#lb tr'), false);
-});
-
-// ---- the wizard's [data-h], [data-st], [data-ask] ------------------------------------------------
-// Each is pressed through the combined selector the listener asks for, on the settings page.
-const WZ = '.wz [data-go], .wz [data-h], .wz [data-st], .wz [data-k], .wz [data-ask], .wz [data-scope]';
-const wz = (p, dataset) => p.press({ [WZ]: { dataset } });
-
-test('wz: a [data-go] press moves the wizard to that step', () => {
-    const p = boot('#/settings');
-    wz(p, { go: '3' });
-    assert.match(p.html(), /data-step="agents"/);
-});
-
-test('wz: a [data-go] press redraws the page once', () => {
-    const p = boot('#/settings');
-    p.reset();
-    wz(p, { go: '3' });
-    assert.equal(p.writes.page, 1);
-});
-
-test('wz: the wizard branch returns before the later branches (a [data-wf] answer does not redraw a second time)', () => {
-    const p = boot('#/settings');
-    p.reset();
-    p.press({ [WZ]: { dataset: { go: '3' } }, '[data-wf]': wfProbe() });
-    assert.match(p.html(), /data-step="agents"/);
-    assert.equal(p.writes.page, 1);
-});
-
-// guard, not a hit for the selector table: it passes if the branch is deleted.
-test('guard: wz: off the settings page the wizard selector is not read', () => {
-    const p = boot('#/');
-    p.reset();
-    p.press({ [WZ]: { dataset: { go: '3' } } });
-    assert.equal(p.writes.page, 0);
-});
-
-const cardOn = (html, j) => new RegExp('data-h="' + j + '" aria-pressed="true"').test(html);
-
-test('wz: a [data-h] press picks that habit card (pressed on card 1, no longer on the preset card 3)', () => {
-    const p = boot('#/settings');
-    assert.equal(cardOn(p.html(), 3), true, 'card 3 (all unset) is the starting pick');
-    wz(p, { h: '1' });
-    assert.equal(cardOn(p.html(), 1), true);
-    assert.equal(cardOn(p.html(), 3), false);
-});
-
-test('wz: a [data-h] press writes the card values into the wizard (the summary has pr pressed for land.integration)', () => {
-    const p = boot('#/settings');
-    wz(p, { h: '1' });
-    wz(p, { go: '8' });
-    assert.match(p.html(), /data-k="land\.integration" data-o="pr" aria-pressed="true"/);
-});
-
-test('wz: a [data-st] press turns that station on (build pressed, survey not)', () => {
-    const p = boot('#/settings');
-    wz(p, { go: '3' });
-    wz(p, { k: 'stage.agents', st: 'build' });
-    assert.match(p.html(), /data-st="build" aria-pressed="true"/);
-    assert.match(p.html(), /data-st="survey" aria-pressed="false"/);
-});
-
-test('wz: a second [data-st] press on the same station turns it off again', () => {
-    const p = boot('#/settings');
-    wz(p, { go: '3' });
-    wz(p, { k: 'stage.agents', st: 'build' });
-    wz(p, { k: 'stage.agents', st: 'build' });
-    assert.match(p.html(), /data-st="build" aria-pressed="false"/);
-});
-
-test('wz: a [data-st] press on a station already on writes the shorter list (survey,build,verify then build leaves build unpressed)', () => {
-    const p = boot('#/settings');
-    wz(p, { go: '3' });
-    wz(p, { h: '2' });
-    assert.match(p.html(), /data-st="build" aria-pressed="true"/);
-    wz(p, { k: 'stage.agents', st: 'build' });
-    assert.match(p.html(), /data-st="build" aria-pressed="false"/);
-    assert.match(p.html(), /data-st="verify" aria-pressed="true"/);
-});
-
-test('wz: an [data-ask] press unsets that key (deny no longer pressed, the rail value reads (ask))', () => {
-    const p = boot('#/settings');
-    wz(p, { k: 'guard', o: 'deny' });
-    wz(p, { go: '4' });
-    assert.match(p.html(), /data-k="guard" data-o="deny" aria-pressed="true"/);
-    wz(p, { ask: 'guard' });
-    assert.match(p.html(), /data-k="guard" data-o="deny" aria-pressed="false"/);
-    assert.match(p.html(), /撞檔<\/span><span class="rv">\(ask\)<\/span>/);
 });

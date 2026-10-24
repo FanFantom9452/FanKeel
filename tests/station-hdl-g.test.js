@@ -1,6 +1,6 @@
 'use strict';
 // Five branches of the page's click listener in assets/station/station.js
-// (the one holding `.wz [data-go]`), pressed through the page's own listener
+// (the one holding `[data-fbtn]`), pressed through the page's own listener
 // list with fake targets: the 篩選 panel's single checkbox and its 全選 /
 // 全不選 buttons, the floating bell, one note's close button and 清掉通知.
 // Each test is red under a different set of single-branch mutations.
@@ -12,7 +12,7 @@ const vm = require('node:vm');
 
 const { SRC } = require('./station-src.js');
 const NOW = Date.parse('2026-10-01T12:00:00.000Z');
-const MARK = '.wz [data-go]';
+const MARK = '[data-fbtn]';
 const A = 'F:\\ws\\alpha|';
 
 // station.js booted on `hash` with every document listener kept, the `#page`

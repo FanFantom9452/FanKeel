@@ -1,11 +1,11 @@
 'use strict';
-// Four document listeners of assets/station/station.js, each pressed through
-// the page's own listener list with fake targets: the settings wizard's
-// 前端 radio arrows, the wizard's click, the page's big keydown listener
-// (Esc on the 篩選 panel, the facet popover, legend keys, inputs, `/`) and the
-// 1-4 keys that answer a held gate. Each test is red under a different set of
-// single-branch mutations of the handler it presses: no two mutations of one
-// handler redden the same tests.
+// Two document listeners of assets/station/station.js, each pressed through
+// the page's own listener list with fake targets: the page's big keydown
+// listener (Esc on the 篩選 panel, the facet popover, legend keys, inputs, `/`)
+// and the 1-4 keys that answer a held gate; the page's click listener opens the
+// panel they close. Each test is red under a different set of single-branch
+// mutations of the handler it presses: no two mutations of one handler redden
+// the same tests.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -18,9 +18,9 @@ const NOW = Date.parse('2026-10-01T12:00:00.000Z');
 // The listeners this file presses, numbered as station.js registered them
 // when it ran alone; the numbers now only key MARKERS, since tip.js and the
 // page modules register theirs first.
-const KEY_FBAR = 4, KEY_BIG = 6, KEY_GATE = 7, CLICK_WZ = 9;
+const KEY_BIG = 6, KEY_GATE = 7, CLICK_PAGE = 9;
 // A literal unique to each pressed document listener, so the one holding it is found wherever it sits.
-const MARKERS = { 'keydown:4': '.wz .fbar .fsg', 'keydown:6': '.rpop, .rwrap', 'keydown:7': 'data-gop', 'click:9': '.wz [data-go]' };
+const MARKERS = { 'keydown:6': '.rpop, .rwrap', 'keydown:7': 'data-gop', 'click:9': '[data-fbtn]' };
 
 // station.js booted on `hash`, with every document listener kept by type, the
 // `#page` element counting its redraws, and `doc.querySelector` answering only
@@ -84,228 +84,6 @@ function within(clauses, extra) {
 }
 const spy = () => ({ focused: 0, clicked: 0, focus() { this.focused++; }, click() { this.clicked++; } });
 
-// ---- 2 first: the wizard's click, which the front bar's tests also press ------
-// A click target that matches only `[data-<attr>]` inside the wizard.
-function dataTgt(attr, dataset) {
-    const elt = { dataset, closest: () => null, getAttribute: () => null, hasAttribute: () => false };
-    return { closest: (sel) => (sel.split(',').some((c) => c.trim() === '.wz [data-' + attr + ']') ? elt : null) };
-}
-const wzClick = (p, attr, dataset) => p.find('click', CLICK_WZ)({ target: dataTgt(attr, dataset) });
-const WZ_SCOPES = { machine: { values: { guard: 'deny' }, sources: { guard: 'machine' }, unreadable: [] },
-    projects: { '/w/app': { values: { guard: 'off' }, sources: { guard: 'project' }, unreadable: [] } } };
-
-for (const [attr, dataset] of [['go', { go: '3' }], ['h', { h: '1' }], ['st', { k: 'stage.agents', st: 'build' }], ['k', { k: 'guard', o: 'deny' }],
-    ['ask', { ask: 'guard' }], ['scope', { scope: 'machine' }]]) {
-    test('a wizard click on a [data-' + attr + '] control is taken by the wizard: one redraw', () => {
-        const p = boot('#/settings');
-        p.reset();
-        wzClick(p, attr, dataset);
-        assert.equal(p.draws(), 1);
-    });
-}
-
-test('a wizard click applies its own dataset: a [data-go] click moves the step', () => {
-    const p = boot('#/settings');
-    wzClick(p, 'go', { go: '3' });
-    assert.match(p.html(), /data-step="agents"/);
-    wzClick(p, 'go', { go: '1' });
-    assert.match(p.html(), /data-step="class"/);
-});
-
-test('a scope click does not throw', () => {
-    const p = boot('#/settings', WZ_SCOPES);
-    assert.doesNotThrow(() => wzClick(p, 'scope', { scope: 'machine' }));
-});
-
-test('a scope click keeps the wizard it got back: the change is written to the machine, not the project', () => {
-    const p = boot('#/settings', WZ_SCOPES);
-    wzClick(p, 'scope', { scope: 'machine' });
-    wzClick(p, 'k', { k: 'guard', o: 'off' });
-    wzClick(p, 'go', { go: '8' });
-    assert.match(p.html(), /profile set guard off --default/);
-    assert.doesNotMatch(p.html(), /--project/);
-});
-
-test('a scope click loads the profiles it was given: the machine file\'s guard is the one pressed', () => {
-    const p = boot('#/settings', WZ_SCOPES);
-    wzClick(p, 'scope', { scope: 'machine' });
-    wzClick(p, 'go', { go: '4' });
-    assert.match(p.html(), /data-k="guard" data-o="deny" aria-pressed="true"/);
-});
-
-test('a scope click to the machine puts the machine-default note on the 監控站 step', () => {
-    const p = boot('#/settings', WZ_SCOPES);
-    wzClick(p, 'go', { go: '6' });
-    assert.doesNotMatch(p.html(), /class="wnote"/);
-    wzClick(p, 'scope', { scope: 'machine' });
-    assert.match(p.html(), /class="wnote"/);
-});
-
-test('a click that is not on the wizard changes nothing on the settings page', () => {
-    const p = boot('#/settings');
-    wzClick(p, 'go', { go: '3' });
-    const before = p.html();
-    p.reset();
-    p.find('click', CLICK_WZ)({ target: { closest: () => null } });
-    assert.equal(p.html(), before);
-    assert.equal(p.draws(), 0);
-});
-
-test('off the settings page the wizard selector is not read', () => {
-    const q = boot('#/');
-    q.reset();
-    q.find('click', CLICK_WZ)({ target: { closest: (sel) => (sel.includes('.wz [data-go]') ? { dataset: { go: '2' } } : null) } });
-    assert.equal(q.draws(), 0);
-});
-
-test('a wizard click returns before the listener\'s later branches: the float is drawn once', () => {
-    const p = boot('#/settings');
-    let n = 0;
-    p.els.fk = { className: '', set innerHTML(v) { n++; }, get innerHTML() { return ''; } };
-    const any = { dataset: { go: '1' }, closest: () => null, getAttribute: () => null, hasAttribute: () => false };
-    p.find('click', CLICK_WZ)({ target: { closest: () => any } });
-    assert.equal(n, 1, 'the wizard branch redrew, then returned; a fall-through would toggle the float and draw it again');
-});
-
-// ---- 1. the 前端 model bar: arrows, Home and End --------------------------
-// The settings page on the 前端 step (step 2) with the five .fsg stops of its bar.
-function front(hash) {
-    const p = boot(hash || '#/settings');
-    wzClick(p, 'go', { go: '2' });
-    const stops = ['false', 'sonnet', 'opus', 'fable', 'auto'].map((o, h) => ({ o, getAttribute: (k) => (k === 'data-h' ? String(h) : null) }));
-    const fq = { querySelectorAll: () => stops };
-    stops.forEach((s) => { s.closest = (sel) => (sel === '.wz .fbar .fsg' ? s : fq); });
-    const on = spy();
-    p.named['.fbar [aria-checked="true"]'] = on;
-    // The stop the page shows as chosen, read after a redraw that changes nothing else.
-    const checked = () => { wzClick(p, 'go', { go: '2' }); const m = /aria-checked="true"[^>]*data-h="(\d)"/.exec(p.html()); return m ? Number(m[1]) : null; };
-    const f = { p, stops, on, key: p.find('keydown', KEY_FBAR), checked };
-    // Choose stop `from`, then press `key` on it.
-    f.press = (from, key) => {
-        wzClick(p, 'h', { h: String(from) });
-        p.reset();
-        const e = ev({ key, target: stops[from] });
-        f.key(e);
-        return e;
-    };
-    return f;
-}
-
-for (const [key, from, to] of [['ArrowRight', 1, 2], ['ArrowDown', 1, 2], ['ArrowLeft', 2, 1], ['ArrowUp', 2, 1], ['Home', 3, 0], ['End', 1, 4]]) {
-    test('the front bar: ' + key + ' on stop ' + from + ' picks stop ' + to, () => {
-        const f = front();
-        f.press(from, key);
-        assert.equal(f.checked(), to);
-    });
-}
-
-test('the front bar: a handled key redraws once', () => {
-    const f = front();
-    f.press(1, 'ArrowRight');
-    assert.equal(f.p.draws(), 1);
-});
-
-test('the front bar: a handled key is prevented', () => {
-    const f = front();
-    assert.equal(f.press(1, 'ArrowRight').prevented, 1);
-});
-
-test('the front bar: a handled key puts focus on the checked stop', () => {
-    const f = front();
-    f.press(1, 'ArrowRight');
-    assert.equal(f.on.focused, 1);
-});
-
-test('the front bar: with no checked stop to focus, the pick still redraws and does not throw', () => {
-    const f = front();
-    f.p.named['.fbar [aria-checked="true"]'] = null;
-    wzClick(f.p, 'h', { h: '1' });
-    f.p.reset();
-    assert.doesNotThrow(() => f.key(ev({ key: 'ArrowRight', target: f.stops[1] })));
-    assert.equal(f.p.draws(), 1);
-});
-
-test('the front bar: Home on the first stop still takes the key', () => {
-    const f = front();
-    const home = f.press(0, 'Home');
-    assert.equal(home.prevented, 1);
-    assert.equal(f.p.draws(), 1);
-});
-
-test('the front bar: End on the last stop still takes the key', () => {
-    const f = front();
-    const end = f.press(4, 'End');
-    assert.equal(end.prevented, 1);
-    assert.equal(f.p.draws(), 1);
-});
-
-test('the front bar: ArrowRight on the last stop stays put', () => {
-    const f = front();
-    f.press(4, 'ArrowRight');
-    assert.equal(f.checked(), 4);
-});
-
-test('the front bar: ArrowLeft on the first stop stays put', () => {
-    const f = front();
-    f.press(0, 'ArrowLeft');
-    assert.equal(f.checked(), 0);
-});
-
-test('the front bar: ArrowDown on the last stop stays put', () => {
-    const f = front();
-    f.press(4, 'ArrowDown');
-    assert.equal(f.checked(), 4);
-});
-
-test('the front bar: ArrowUp on the first stop stays put', () => {
-    const f = front();
-    f.press(0, 'ArrowUp');
-    assert.equal(f.checked(), 0);
-});
-
-test('the front bar: ArrowRight from the first stop moves one, not to the end', () => {
-    const f = front();
-    f.press(0, 'ArrowRight');
-    assert.equal(f.checked(), 1);
-});
-
-test('the front bar: ArrowLeft from the last stop moves one, not to the start', () => {
-    const f = front();
-    f.press(4, 'ArrowLeft');
-    assert.equal(f.checked(), 3);
-});
-
-test('the front bar: any other key is left alone, unprevented and with no redraw', () => {
-    const f = front();
-    const e = f.press(2, 'a');
-    assert.equal(e.prevented, 0);
-    assert.equal(f.p.draws(), 0);
-    assert.equal(f.checked(), 2);
-});
-
-test('the front bar: a key off every stop does nothing', () => {
-    const f = front();
-    f.p.reset();
-    const e = ev({ key: 'ArrowRight', target: { closest: () => null } });
-    f.key(e);
-    assert.equal(e.prevented, 0);
-    assert.equal(f.p.draws(), 0);
-});
-
-test('the front bar: a key off the settings page does nothing', () => {
-    const g = front('#/');
-    g.p.reset();
-    const e = ev({ key: 'ArrowRight', target: g.stops[2] });
-    g.key(e);
-    assert.equal(e.prevented, 0);
-    assert.equal(g.p.draws(), 0);
-});
-
-test('the front bar: a target with no closest does not throw', () => {
-    const f = front();
-    assert.doesNotThrow(() => f.key(ev({ key: 'ArrowRight', target: {} })));
-});
-
 // ---- 3. the big keydown listener -------------------------------------------
 const BIG = KEY_BIG;
 // The days page with its 篩選 panel opened by the button's own click.
@@ -313,7 +91,7 @@ function panelOpen() {
     const p = boot('#/days');
     const btn = spy();
     p.named['[data-fbtn]'] = btn;
-    p.find('click', CLICK_WZ)({ target: tgt({ '[data-fbtn]': {} }) });
+    p.find('click', CLICK_PAGE)({ target: tgt({ '[data-fbtn]': {} }) });
     p.reset();
     btn.focused = 0;
     return { p, btn, key: p.find('keydown', BIG) };
@@ -393,7 +171,7 @@ function popover() {
     p.doc.querySelectorAll = (sel) => (sel === '.rpop [data-v]' ? rows : []);
     p.named['.rpop [data-pickq]'] = q;
     p.named['[data-pick="status"]'] = btn;
-    p.find('click', CLICK_WZ)({ target: tgt({ '[data-pick]': { getAttribute: () => 'status' } }) });
+    p.find('click', CLICK_PAGE)({ target: tgt({ '[data-pick]': { getAttribute: () => 'status' } }) });
     p.reset();
     [q, btn, ...rows].forEach((x) => { x.focused = 0; });
     const inPop = () => within(['.rpop', '.rwrap']);

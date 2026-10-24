@@ -1,10 +1,9 @@
 'use strict';
-// Four `input` listeners of assets/station/station.js, each pinned so that a
+// Three `input` listeners of assets/station/station.js, each pinned so that a
 // one-branch mutation of one of them reddens a set of tests no other mutation
-// of the same listener reddens: the docs search box (#dq), the facet popover's
-// filter ([data-pickq]), the header box (#q) and the gate form's 其他 box
-// ([data-pg-other]). The listeners are anonymous, so each test picks its own
-// by a phrase of its source.
+// of the same listener reddens: the facet popover's filter ([data-pickq]), the
+// header box (#q) and the gate form's 其他 box ([data-pg-other]). The listeners
+// are anonymous, so each test picks its own by a phrase of its source.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -13,7 +12,6 @@ const vm = require('node:vm');
 
 const { SRC } = require('./station-src.js');
 const NOW = Date.parse('2026-10-01T12:00:00.000Z');
-const settle = () => new Promise((r) => { setImmediate(r); });
 
 function boot(o) {
     const opts = o || {};
@@ -49,7 +47,7 @@ function boot(o) {
     const by = (list, phrases) => list.filter((fn) => [].concat(phrases).some((p) => fn.toString().includes(p)))[0];
     return {
         els, win, doc, timers, fetches, draws: () => writes, page: () => els.page.innerHTML,
-        dq: by(docInput, ["'dq'", 'dsxTimer']), pickq: by(docInput, ['data-pickq', 'pickQ', '.rpop']),
+        pickq: by(docInput, ['data-pickq', 'pickQ', '.rpop']),
         pg: by(docInput, ['data-pg-other', 'pgSync']), q: by(qInput, ['f.q', 'draw()']),
         docInput, qInput,
         press: (attrs) => docClick.forEach((fn) => fn({ target: { getAttribute: (k) => (k in attrs ? attrs[k] : null), hasAttribute: (k) => k in attrs,
@@ -59,182 +57,6 @@ function boot(o) {
         debounce: () => { const t = timers.pop(); t.fn(); return t; },
     };
 }
-const dqTarget = (v) => ({ id: 'dq', value: v });
-const hit = (title) => ({ q: 'x', n: 1, hits: [{ pkey: 'k', path: 'p.md', title, role: 'reference', before: 'a', hit: 'x', after: 'b', project: 'pj' }] });
-const ok = (res) => ({ ok: true, json: () => Promise.resolve(res) });
-
-// ---- 1. #dq ---------------------------------------------------------------
-
-test('dq: an input event with no target is left alone', () => {
-    const b = boot();
-    assert.doesNotThrow(() => b.dq({ target: null }));
-});
-
-test('dq: a target with another id starts no search', () => {
-    const b = boot();
-    b.fire(b.dq, { id: 'other', value: 'zzz' });
-    assert.equal(b.timers.length, 0, 'nothing was scheduled');
-    assert.equal(b.fetches.length, 0);
-});
-
-test('dq: the search waits 250 ms after the keystroke', () => {
-    const b = boot();
-    b.fire(b.dq, dqTarget('abc'));
-    assert.equal(b.timers.length, 1);
-    assert.equal(b.timers[0].ms, 250);
-    assert.equal(b.fetches.length, 0, 'the fetch waits for the debounce');
-});
-
-test('dq: the query goes to the search url encoded', () => {
-    const b = boot();
-    b.fire(b.dq, dqTarget('a b&c'));
-    b.debounce();
-    assert.equal(b.fetches[0].url, 'station/search?q=a%20b%26c');
-});
-
-test('dq: a typed query\'s hits and count are painted', async () => {
-    const b = boot();
-    b.fire(b.dq, dqTarget('abc'));
-    b.debounce();
-    b.fetches[0].resolve(ok(hit('Found page')));
-    await settle(); await settle();
-    assert.match(b.els.dsxOut.innerHTML, /Found page/);
-    assert.equal(b.els.dsxN.textContent, '1 頁');
-});
-
-test('dq: a second keystroke cancels the first one\'s timer', () => {
-    const b = boot();
-    b.fire(b.dq, dqTarget('a'));
-    b.fire(b.dq, dqTarget('ab'));
-    assert.equal(b.timers.length, 1, 'only the last keystroke\'s timer is left');
-    b.debounce();
-    assert.equal(b.fetches.length, 1);
-    assert.match(b.fetches[0].url, /q=ab$/);
-});
-
-test('dq: a search success is kept in view, so a redraw of the docs page draws the hits again', async () => {
-    const b = boot();
-    b.fire(b.dq, dqTarget('x'));
-    b.debounce();
-    b.fetches[0].resolve(ok(hit('Kept page')));
-    await settle(); await settle();
-    b.win.location.hash = '#/docs';
-    b.redraw();
-    assert.match(b.page(), /Kept page/);
-});
-
-test('dq: a failed search is kept in view as the error, so a redraw of the docs page draws it again', async () => {
-    const b = boot();
-    b.fire(b.dq, dqTarget('x'));
-    b.debounce();
-    b.fetches[0].reject(new Error('down'));
-    await settle(); await settle();
-    b.win.location.hash = '#/docs';
-    b.redraw();
-    assert.match(b.page(), /搜尋失敗/);
-});
-
-test('dq: a failed search paints the failure message over the hits a success had shown', async () => {
-    const b = boot();
-    b.fire(b.dq, dqTarget('x'));
-    b.debounce();
-    b.fetches[0].resolve(ok(hit('First')));
-    await settle(); await settle();
-    b.fire(b.dq, dqTarget('xy'));
-    b.debounce();
-    b.fetches[1].reject(new Error('down'));
-    await settle(); await settle();
-    assert.match(b.els.dsxOut.innerHTML, /搜尋失敗/);
-});
-
-test('dq: a failed search clears the count a success had shown', async () => {
-    const b = boot();
-    b.fire(b.dq, dqTarget('x'));
-    b.debounce();
-    b.fetches[0].resolve(ok(hit('First')));
-    await settle(); await settle();
-    assert.equal(b.els.dsxN.textContent, '1 頁');
-    b.fire(b.dq, dqTarget('xy'));
-    b.debounce();
-    b.fetches[1].reject(new Error('down'));
-    await settle(); await settle();
-    assert.equal(b.els.dsxN.textContent, '');
-});
-
-test('dq: after a success, a failed search leaves a page that redraws without throwing', async () => {
-    const b = boot();
-    b.fire(b.dq, dqTarget('x'));
-    b.debounce();
-    b.fetches[0].resolve(ok(hit('First')));
-    await settle(); await settle();
-    b.fire(b.dq, dqTarget('xy'));
-    b.debounce();
-    b.fetches[1].reject(new Error('down'));
-    await settle(); await settle();
-    b.win.location.hash = '#/docs';
-    assert.doesNotThrow(() => b.redraw());
-});
-
-test('dq: an answer for a query the box has moved past paints nothing', async () => {
-    const b = boot();
-    b.fire(b.dq, dqTarget('x'));
-    b.debounce();
-    b.fire(b.dq, dqTarget('xy'));
-    b.debounce();
-    b.fetches[0].resolve(ok(hit('Stale page')));
-    await settle(); await settle();
-    assert.equal(b.els.dsxOut, undefined, 'the stale answer painted nothing');
-});
-
-test('dq: a failure for a query the box has moved past paints nothing and keeps no error', async () => {
-    const c = boot();
-    c.fire(c.dq, dqTarget('x'));
-    c.debounce();
-    c.fire(c.dq, dqTarget('xy'));
-    c.debounce();
-    c.fetches[0].reject(new Error('late'));
-    await settle(); await settle();
-    assert.equal(c.els.dsxOut, undefined, 'the stale failure painted nothing');
-    c.win.location.hash = '#/docs';
-    c.redraw();
-    assert.doesNotMatch(c.page(), /搜尋失敗/, 'and kept no error');
-});
-
-test('dq: a blank query starts no fetch', async () => {
-    const b = boot();
-    b.fire(b.dq, dqTarget('x'));
-    b.debounce();
-    b.fetches[0].resolve(ok(hit('Old page')));
-    await settle(); await settle();
-    b.fire(b.dq, dqTarget('   '));
-    b.debounce();
-    assert.equal(b.fetches.length, 1, 'no second fetch');
-});
-
-test('dq: a blank query clears the results and the count a query had painted', async () => {
-    const b = boot();
-    b.fire(b.dq, dqTarget('x'));
-    b.debounce();
-    b.fetches[0].resolve(ok(hit('Old page')));
-    await settle(); await settle();
-    b.fire(b.dq, dqTarget('   '));
-    b.debounce();
-    assert.equal(b.els.dsxOut.innerHTML, '');
-    assert.equal(b.els.dsxN.textContent, '');
-});
-
-test('dq: a blank query also drops the kept result, so a redraw of the docs page draws no hits', async () => {
-    const b = boot();
-    b.fire(b.dq, dqTarget('x'));
-    b.debounce();
-    b.fetches[0].resolve(ok(hit('Old page')));
-    await settle(); await settle();
-    b.fire(b.dq, dqTarget(''));
-    b.debounce();
-    b.win.location.hash = '#/docs';
-    b.redraw();
-    assert.doesNotMatch(b.page(), /Old page/);
-});
 
 // ---- 2. [data-pickq] ------------------------------------------------------
 

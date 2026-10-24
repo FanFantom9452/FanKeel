@@ -526,8 +526,6 @@
             'dash.byKind': 'by kind',
             'dash.noTimeByModel': 'time has no model to split by',
             'dash.noTimeByKind': 'time has no kind to split by',
-            'dash.docs': 'Docs',
-            'dash.noProjectDocsYet': 'No project has generated a <span class="mono">.fankeel/map.md</span> yet',
             'dash.noSessionOnPage': 'No session {id} on this page',
             'dash.stageTint': 'stage tint',
             'dash.waitingOnYouGate': 'waiting on you (gate)',

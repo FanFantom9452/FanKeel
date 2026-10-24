@@ -850,7 +850,7 @@
     }
     // 文件's full-text box. The page bodies live on disk, so only a served
     // page can search them (`GET station/search`, lib/docsearch.js); the file
-    // `/fankeel` writes says where to open one. `st` is `view.dsx`.
+    // `/fankeel` writes says where to open one. `st` is `{ q, res }`.
     function dsxCount(st) { return st && st.res && st.res.q && !st.res.err ? loc('shared.nPages', '{n} 頁', { n: st.res.n }) : ''; }
     function dsxResultsHtml(st) {
         var res = st && st.res;
@@ -3310,14 +3310,6 @@
             + (w.FK_KINDS ? w.FK_KINDS.table(S.prices, S.pricesVerified) : '');
     }
     if (typeof module !== 'undefined' && module.exports) module.exports.daysPage = daysPage;
-    view.dsx = { q: '', res: null };
-    function docsPage() {
-        var list = [].concat.apply([], S.projects.map(function (p) { return p.docs || []; }));
-        var dsx = docsSearchHtml(view.dsx, Boolean(S.serve));
-        return '<div data-block="docs">' + (list.length ? docsCardHtml(list, Object.assign(homeOpts(null), { search: dsx }))
-            : '<section class="panel docs"><div class="h2">' + loc('dash.docs', '文件') + '</div>' + dsx
-                + '<p class="mute">' + loc('dash.noProjectDocsYet', '還沒有專案生成 <span class="mono">.fankeel/map.md</span>') + '</p></section>') + '</div>';
-    }
     view.closed = {};
     // What 派工 and 事件 are showing, kept across every redraw: the agents and
     // prompts opened, the phases opened, the state filter, the replay's hidden
@@ -5144,48 +5136,15 @@
         doc.getElementById('side').innerHTML = '<h1 class="ptitle">' + esc(pageTitle(route)) + '</h1>';
     }
     VIEWS.days = daysPage;
-    VIEWS.docs = docsPage;
+    // 文件 is FK_DOCS (assets/station/docs-page.js): the docs-health matrix,
+    // its findings, the reader and the project dialog (station-38).
+    VIEWS.docs = function (r) { return w.FK_DOCS.page(S, modOpts({ pkeys: PKEYS })); };
     VIEWS.tour = function () { return tourPage(Boolean(S.serve)); };
-    // Typing in 文件's box asks the server 250 ms after the last key, and
-    // paints the answer into its own two places so the box keeps its caret;
-    // a redraw later draws the same answer from `view.dsx`.
-    var dsxTimer = null;
-    function dsxPaint() {
-        var out = doc.getElementById('dsxOut'), n = doc.getElementById('dsxN');
-        if (out) out.innerHTML = dsxResultsHtml(view.dsx);
-        if (n) n.textContent = dsxCount(view.dsx);
-    }
-    doc.addEventListener('input', function (e) {
-        if (!e.target || e.target.id !== 'dq') return;
-        var q = e.target.value;
-        view.dsx.q = q;
-        if (dsxTimer) w.clearTimeout(dsxTimer);
-        dsxTimer = w.setTimeout(function () {
-            if (!q.trim()) { view.dsx.res = null; dsxPaint(); return; }
-            fetch('station/search?q=' + encodeURIComponent(q)).then(function (r) { return r.json(); }).then(function (res) {
-                if (view.dsx.q !== q) return;
-                view.dsx.res = res;
-                dsxPaint();
-            }).catch(function () {
-                if (view.dsx.q !== q) return;
-                view.dsx.res = { q: q, err: true };
-                dsxPaint();
-            });
-        }, 250);
-    });
     VIEWS.list = listPage;
-    // The wizard's state lives as long as the page: a re-read of the data
-    // (the poll) keeps it, a write reloads the page and starts it fresh.
-    var wiz = null;
-    function settingsPage() {
-        var profiles = S.profiles || { machine: null, projects: {} }, keys = S.profileKeys || {};
-        if (!wiz) wiz = wizLoad(profiles, keys, Object.keys(profiles.projects || {})[0] || 'machine');
-        // The 手機遠端 card (assets/station/remote-card.js) under the wizard. It
-        // draws nothing on a file on disk, which has no server to ask.
-        return wizHtml(keys, wiz, profiles, { serve: Boolean(S.serve), nonce: S.nonce, plugin: S.plugin, configDir: S.configDir })
-            + (w.FK_REMOTE ? w.FK_REMOTE.html(Boolean(S.serve)) : '');
-    }
-    VIEWS.settings = settingsPage;
+    // 設定 is FK_SETTINGS (assets/station/settings-page.js, 快速設定), which
+    // hands #/settings/detail[/<step>] to FK_SETDETAIL itself; parseHash sends
+    // every #/settings/… hash here (station-39).
+    VIEWS.settings = function (r) { return w.FK_SETTINGS.page(S, modOpts({ hash: String(w.location.hash || ''), nonce: S.nonce, plugin: S.plugin, configDir: S.configDir })); };
     // The redesigned pages (station redesign §1–§4) are modules the shell
     // loads before this file; each is handed the station and what this file
     // derives from it. 計畫, 事件 and 關卡 stay on the session page this file
@@ -5479,26 +5438,6 @@
         draw();
         if (focusFor !== null) w.scrollTo(0, 0);
     });
-    // The 前端 step's model bar: arrow keys, Home and End walk the three
-    // segments and choose as they go, the way a radio group does.
-    function fePick(h) {
-        wiz = wizApply(wiz, S.profileKeys || {}, S.profiles || { machine: null, projects: {} }, { h: String(h) });
-        draw();
-        var on = doc.querySelector('.fbar [aria-checked="true"]');
-        if (on) on.focus();
-    }
-    doc.addEventListener('keydown', function (e) {
-        var b = route.view === 'settings' && e.target.closest ? e.target.closest('.wz .fbar .fsg') : null;
-        if (!b) return;
-        var stops = [].slice.call(b.closest('.fq').querySelectorAll('.fsg')), i = stops.indexOf(b), j = i;
-        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') j = Math.min(stops.length - 1, i + 1);
-        else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') j = Math.max(0, i - 1);
-        else if (e.key === 'Home') j = 0;
-        else if (e.key === 'End') j = stops.length - 1;
-        else return;
-        e.preventDefault();
-        fePick(stops[j].getAttribute('data-h'));
-    });
     // The 繁中 / EN switch: registered ahead of the click handler below so a
     // harness that keeps only one listener per event type (this file's own
     // node tests among them) still runs the handler those tests exercise.
@@ -5555,13 +5494,6 @@
         if (e && e.key === 'Escape') langMenu(false);
     });
     doc.addEventListener('click', function (e) {
-        var wzt = route.view === 'settings' && e.target.closest
-            ? e.target.closest('.wz [data-go], .wz [data-h], .wz [data-st], .wz [data-k], .wz [data-ask], .wz [data-scope]') : null;
-        if (wzt) {
-            wiz = wizApply(wiz, S.profileKeys || {}, S.profiles || { machine: null, projects: {} }, wzt.dataset);
-            draw();
-            return;
-        }
         // 篩選: the button opens and shuts the panel, a checkbox is one key,
         // 全選/全不選 are every key; a click anywhere else shuts it.
         if (route.view === 'days' && e.target.closest) {
