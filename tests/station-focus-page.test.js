@@ -11,7 +11,8 @@ const http = require('node:http');
 const vm = require('node:vm');
 
 global.window = { STATION: { serve: false, pricesVerified: '2026-09-04' } };
-const V = require('../assets/station/station.js');
+const { page } = require('./station-module.js');
+const F = page(['focus-page.js'], {}).M['focus-page.js'];
 const detail = require('../lib/detail.js');
 const plantasks = require('../lib/plantasks.js');
 const registry = require('../lib/registry.js');
@@ -33,7 +34,7 @@ function claimed(root) {
 
 test('plan: the header, then every task of the plan once, in its group, with its ledger state', () => {
     const tasks = claimed(tmp('fankeel-focus-page-'));
-    const html = V.focusPageHtml({ sessions: [ROW] }, { [SID]: { tasks, gate: null } }, { id: SID, tab: 'plan' });
+    const html = F.page({ sessions: [ROW] }, { [SID]: { tasks, gate: null } }, { id: SID, tab: 'plan' });
     assert.match(html, /^<header class="fh" data-block="focus-header">/);
     assert.ok(html.includes('href="/#/s/' + SID + '/plan"'), 'the full-station link');
     for (const b of ['plan-summary', 'plan-list']) assert.match(html, new RegExp('data-block="' + b + '"'), b);
@@ -48,7 +49,7 @@ test('gate: the question and its options come first, the recommended one marked,
         gate: { questions: [{ header: 'Survey', question: 'Go on to design?', multiSelect: false,
             options: [{ label: 'Design next (Recommended)', description: 'the route goes on' }, { label: 'Stop here', description: 'stand down' }] }], next: 'design' },
         parts: derive('survey', parseReport('survey', 'what is here\n')) };
-    const html = V.focusPageHtml({ sessions: [Object.assign({}, ROW, { stage: 'survey' })] }, { [SID]: { tasks: [], gate: g } }, { id: SID, tab: 'gate' });
+    const html = F.page({ sessions: [Object.assign({}, ROW, { stage: 'survey' })] }, { [SID]: { tasks: [], gate: g } }, { id: SID, tab: 'gate' });
     const q = html.indexOf('data-block="gate-question"');
     const r = html.indexOf('data-block="gate-report"');
     assert.ok(q > 0 && r > q, 'question before report');
@@ -60,15 +61,15 @@ test('gate: the question and its options come first, the recommended one marked,
 });
 
 test('an id the payload does not hold says so, and a session with no gate report says that', () => {
-    assert.match(V.focusPageHtml({ sessions: [] }, {}, { id: 'nope', tab: 'plan' }), /class="note"/);
-    const none = V.focusPageHtml({ sessions: [Object.assign({}, ROW, { stage: 'design' })] }, { [SID]: { tasks: [], gate: { error: 'none', stage: 'design', path: 'x/design.md' } } }, { id: SID, tab: 'gate' });
+    assert.match(F.page({ sessions: [] }, {}, { id: 'nope', tab: 'plan' }), /class="note"/);
+    const none = F.page({ sessions: [Object.assign({}, ROW, { stage: 'design' })] }, { [SID]: { tasks: [], gate: { error: 'none', stage: 'design', path: 'x/design.md' } } }, { id: SID, tab: 'gate' });
     assert.match(none, /data-block="gate-question"/);
     assert.match(none, /class="pv-empty"/);
 });
 
 test('background shells sit between the header and the page', () => {
     const shells = [{ id: 'bg1', state: 'running', command: 'node scripts/suite.js', startedAt: new Date().toISOString(), code: null }];
-    const html = V.focusPageHtml({ sessions: [ROW] }, { [SID]: { tasks: [], gate: null, shells } }, { id: SID, tab: 'plan' });
+    const html = F.page({ sessions: [ROW] }, { [SID]: { tasks: [], gate: null, shells } }, { id: SID, tab: 'plan' });
     const h = html.indexOf('</header>');
     const sh = html.indexOf('data-block="s-shells"');
     const m = html.indexOf('<main class="fm"');
@@ -89,7 +90,9 @@ function focusDom() {
     const win = { STATION_FOCUS: { id: SID, tab: 'plan' }, STATION: { serve: true, pricesVerified: '2026-09-04', sessions: [ROW] },
         STATION_DETAIL: { [SID]: { tasks: [], gate: null } }, location: { hash: '' },
         setInterval: (fn) => ticks.push(fn), setTimeout: (fn, ms) => waits.push(ms), clearTimeout() {}, addEventListener() { listened.push('win'); } };
-    vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8'), { window: win, document: doc, URLSearchParams });
+    // As focusShell loads them: the focus module, then station.js, in one page.
+    const box = vm.createContext({ window: win, document: doc, URLSearchParams });
+    for (const n of ['focus-page.js', 'station.js']) vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', n), 'utf8'), box);
     return { focus, asked, heads, ticks, listened, win, waits, clicks };
 }
 
@@ -146,7 +149,7 @@ test('done line: /f/<id>/plan answers under 200 ms with no station-data.js, and 
         assert.doesNotMatch(page.text, /station-data\.js/);
         const box = { window: {} };
         vm.runInNewContext(data.text, box);
-        const html = V.focusPageHtml(box.window.STATION, box.window.STATION_DETAIL, { id: SID, tab: 'plan' });
+        const html = F.page(box.window.STATION, box.window.STATION_DETAIL, { id: SID, tab: 'plan' });
         assert.equal(count(html, /<li class="fp-row/g), TASKS);
     } finally {
         s.close();
@@ -155,7 +158,7 @@ test('done line: /f/<id>/plan answers under 200 ms with no station-data.js, and 
 
 test('keepOpen marks the folds the reader opened and leaves the rest', () => {
     const html = '<details class="gv-more" data-gv="rest"><summary>a</summary></details><details class="gv-more" data-gv="patrol"><summary>b</summary></details>';
-    const out = V.keepOpen(html, { rest: true, patrol: false });
+    const out = F.keepOpen(html, { rest: true, patrol: false });
     assert.match(out, /data-gv="rest" open>/);
     assert.doesNotMatch(out, /data-gv="patrol" open/);
 });
