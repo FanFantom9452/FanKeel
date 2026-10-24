@@ -84,10 +84,10 @@ test('the docs and settings modules touch no element and add no listener at load
     }
 });
 
-test('the focus page loads tip and gate-frame between i18n.js and station.js', () => {
+test('the focus page loads tip, gate-frame and focus-page between i18n.js and station.js', () => {
     const html = station.focusShell(SID, 'gate');
     const scripts = [...html.matchAll(/<script src="\/station\/([^"]+)"><\/script>/g)].map((m) => m[1]);
-    assert.deepEqual(scripts, ['focus/' + SID + '.js', 'i18n.js', 'tip.js', 'gate-frame.js', 'station.js']);
+    assert.deepEqual(scripts, ['focus/' + SID + '.js', 'i18n.js', 'tip.js', 'gate-frame.js', 'focus-page.js', 'station.js']);
     const sheets = [...html.matchAll(/<link rel="stylesheet" href="\/station\/([^"]+)">/g)].map((m) => m[1]);
     assert.deepEqual(sheets, ['station.css', 'tip.css', 'gate-frame.css']);
 });

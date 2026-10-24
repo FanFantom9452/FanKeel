@@ -2276,7 +2276,9 @@
     // written further down; it sits above `if (!doc) return;` so a module test
     // under `require` has them too.
     Object.assign(w.FK_KIT, { cost: cost, usd: usd, mins: mins, ago: ago, stamp: stamp, keelGlyph: keelGlyph, shortLabel: shortLabel,
-        projectHash: projectHash, family: family, modelKey: modelKey, modelLabel: modelLabel, icon: icon, loc: loc, ROUTE: ROUTE });
+        projectHash: projectHash, family: family, modelKey: modelKey, modelLabel: modelLabel, icon: icon, loc: loc, ROUTE: ROUTE,
+        // The focus page (assets/station/focus-page.js) draws with these too.
+        keelProgress: keelProgress, stageNow: stageNow, planNewest: planNewest, gateTabHtml: gateTabHtml, shellsHtml: shellsHtml });
     // ---- tune: a block changed, continued: what the tests import -----------
 
     if (typeof module !== 'undefined' && module.exports) {
