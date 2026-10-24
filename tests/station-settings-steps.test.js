@@ -2,7 +2,7 @@
 // station-39: the step table of 詳細設定 (assets/station/settings-steps.js)
 // against the approved mockup route-settings-v9.html — ten chapters, 33
 // steps in the mockup's order, every write a value lib/profile.js accepts,
-// prompt.* marked advanced, remote marked pending, and every Chinese string
+// prompt.* marked advanced, and every Chinese string
 // with its English.
 const test = require('node:test');
 const assert = require('node:assert/strict');

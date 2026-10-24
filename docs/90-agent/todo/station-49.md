@@ -2,7 +2,12 @@
 label: station
 title: Tailscale 以外的遠端方案
 description: 設定精靈 Q7 的遠端連線方式待定，要評估 Tailscale 以外的 VPN 選項
-state: decision
+state: done
+done:
+  at: 2026-10-25
+  sha: 4075bb78
+  disposition: done
+  session: a2f7a8a8-8f0b-4f0e-ad4e-9e5104598011
 ---
 
 來由：使用者在設定精靈 Q7「常離開」的機器層確認卡（notify + station.remote 走 tailnet）上標記：遠端連線方式先待定，需要 Tailscale 以外的選項。
