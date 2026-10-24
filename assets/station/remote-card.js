@@ -1,5 +1,5 @@
 'use strict';
-// assets/station/remote-card.js — the 手機遠端 card under the wizard on
+// assets/station/remote-card.js — the 手機遠端 card on
 // #/settings (docs/90-agent/plans/2026-10-21-station-remote-design.md §3;
 // mockup blocks remote-on, remote-off): the `station.remote` switch, the
 // tailnet url with 複製, a QR of the live pairing code with the code typed
