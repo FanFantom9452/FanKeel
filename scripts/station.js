@@ -642,13 +642,17 @@ async function serve(opts) {
             }
             const running = runningAgents(dir, Date.now());
             if (talk[2]) {
-                talkacts.linkAgents(talked.read.turns, dir, running);
-                const agents = talked.read.turns.filter((t) => t.kind === 'act').flatMap((t) => t.agents)
+                // Linked on a copy: linkAgents only moves running to finished,
+                // so linking the cached turns would keep a woken agent finished.
+                const acts = structuredClone(talked.read.turns.filter((t) => t.kind === 'act'));
+                talkacts.linkAgents(acts, dir, running);
+                const agents = acts.flatMap((t) => t.agents)
                     .map((a) => ({ id: a.id, agentId: a.agentId, state: a.state }));
                 return send(200, 'application/json; charset=utf-8', JSON.stringify({ agents }), noStore);
             }
             const from = Number(url.searchParams.get('from'));
             const page = conversation.pageOf(talked.read, from, conversation.PAGE);
+            page.turns = structuredClone(page.turns);
             talkacts.linkAgents(page.turns, dir, running);
             return send(200, 'application/json; charset=utf-8', JSON.stringify(page), noStore);
         }

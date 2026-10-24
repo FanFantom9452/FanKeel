@@ -99,6 +99,28 @@ test('/agents answers every dispatch\'s live state, and one that stopped running
     }
 });
 
+test('/agents follows a dispatch back to running when its file is live again and the cache key is unchanged', async () => {
+    const f = fixture();
+    const s = await serve({ configDir: f.cfg, roots: [f.r1], port: 0, idleMs: 60e3, open: false });
+    try {
+        const sub = path.join(f.cfg, 'projects', 'ws-slug', SID, 'subagents');
+        // detail.keyOf holds the newest mtime and the summed size: a1 ahead of
+        // now keeps the key still while a3 goes from quiet to live.
+        const ahead = Date.now() / 1000 + 3600;
+        fs.utimesSync(path.join(sub, 'agent-a1.jsonl'), ahead, ahead);
+        const quiet = Date.now() / 1000 - 3600;
+        fs.utimesSync(path.join(sub, 'agent-a3.jsonl'), quiet, quiet);
+        assert.equal(JSON.parse((await get(s.url + 'station/talk/' + SID + '/agents')).text).agents[1].state, 'finished');
+        const live = Date.now() / 1000;
+        fs.utimesSync(path.join(sub, 'agent-a3.jsonl'), live, live);
+        assert.equal(JSON.parse((await get(s.url + 'station/talk/' + SID + '/agents')).text).agents[1].state, 'running');
+        const page = JSON.parse((await get(s.url + 'station/talk/' + SID)).text);
+        assert.equal(page.turns[2].agents[1].state, 'running');
+    } finally {
+        s.close();
+    }
+});
+
 test('/agent/<id> answers one sub-agent\'s transcript, its state and its final report; an unknown agent is a 404', async () => {
     const f = fixture();
     const s = await serve({ configDir: f.cfg, roots: [f.r1], port: 0, idleMs: 60e3, open: false });
