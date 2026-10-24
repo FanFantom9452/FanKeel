@@ -24,9 +24,10 @@ claude plugin marketplace update fankeel
 claude plugin update fankeel@fankeel
 ```
 
-**移除**——專案裡的 `.fankeel/` 屬於專案，會留著，不要就自己刪：
+**移除**——先跑 `uninstall.js`：它刪掉 fankeel 寫在專案外的東西（`~/.claude/fankeel/` 底下的監控站頁、`station/`、`serve.json` 等，以及 statusline 的 badge 檔），留下機器層的 `profile.json`，並列出留著的各專案 `.fankeel/`；加 `--dry-run` 只列不刪。`<plugin>` 是插件安裝的目錄，在 `~/.claude/plugins/cache/fankeel/fankeel/<版本>/`。專案裡的 `.fankeel/` 屬於專案，會留著，不要就自己刪：
 
 ```
+node <plugin>/scripts/uninstall.js
 claude plugin uninstall fankeel@fankeel
 claude plugin marketplace remove fankeel
 ```
