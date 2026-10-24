@@ -597,16 +597,33 @@ async function serve(opts) {
             }
             return send(200, 'application/json; charset=utf-8', JSON.stringify(out), noStore);
         }
-        const talk = /^\/station\/talk\/([0-9A-Za-z-]+)$/.exec(url.pathname);
+        const talk = /^\/station\/talk\/([0-9A-Za-z-]+)(?:\/(agents)|\/agent\/([0-9a-f]+))?$/.exec(url.pathname);
         if (req.method === 'GET' && talk) {
             // The 對話 tab: one page of a session's turns (lib/conversation.js)
             // and the counts of the whole conversation, read from the config
             // dir that session recorded. Not part of any written copy: the
             // full text stays on this machine and is read per request.
+            // `/agents` is every dispatch's live state, `/agent/<agentId>`
+            // one sub-agent's own transcript (lib/talkacts.js).
+            const talkacts = require('../lib/talkacts.js');
+            const { runningAgents, sessionDirOf, agentFiles } = require('../lib/usage.js');
             const row = sharedModel().registries.flatMap((r) => r.sessions).find((s) => s.sessionId === talk[1]);
             const file = detail.transcriptOf(row && row.configDir ? row.configDir : gatherOpts.configDir, talk[1]);
             if (!file) {
                 return fail(404, 'no transcript for that session');
+            }
+            const dir = sessionDirOf(file);
+            if (talk[3]) {
+                const own = agentFiles(dir).find((f) => path.basename(f) === 'agent-' + talk[3] + '.jsonl');
+                if (!own) return fail(404, 'no transcript for that agent');
+                const lines = entriesOf(own);
+                if (!lines) return fail(500, 'cannot read that agent transcript');
+                const meta = readObject(path.join(path.dirname(own), 'agent-' + talk[3] + '.meta.json')) || {};
+                const view = talkacts.agentView(conversation.turnsOf(lines, { tools: true, sidechain: true }), {
+                    id: talk[3], agentType: meta.agentType, description: meta.description, model: meta.model,
+                    running: runningAgents(dir, Date.now()).some((a) => a.id === talk[3]),
+                });
+                return send(200, 'application/json; charset=utf-8', JSON.stringify(view), noStore);
             }
             const key = detail.keyOf(file);
             if (!talked || talked.id !== talk[1] || talked.key !== key) {
@@ -615,7 +632,7 @@ async function serve(opts) {
                 if (!entries) {
                     return fail(500, 'cannot read that transcript');
                 }
-                const read = conversation.turnsOf(entries);
+                const read = conversation.turnsOf(entries, { acts: true });
                 read.skipped.unparsed = stats.unparsed;
                 // What each compaction and each cache rewrite after an hour
                 // away cost (lib/conversation.js `spendOf`), read once with
@@ -623,8 +640,17 @@ async function serve(opts) {
                 read.spend = conversation.spendOf(entries, summarise(file, { series: true }));
                 talked = { id: talk[1], key, read };
             }
+            const running = runningAgents(dir, Date.now());
+            if (talk[2]) {
+                talkacts.linkAgents(talked.read.turns, dir, running);
+                const agents = talked.read.turns.filter((t) => t.kind === 'act').flatMap((t) => t.agents)
+                    .map((a) => ({ id: a.id, agentId: a.agentId, state: a.state }));
+                return send(200, 'application/json; charset=utf-8', JSON.stringify({ agents }), noStore);
+            }
             const from = Number(url.searchParams.get('from'));
-            return send(200, 'application/json; charset=utf-8', JSON.stringify(conversation.pageOf(talked.read, from, conversation.PAGE)), noStore);
+            const page = conversation.pageOf(talked.read, from, conversation.PAGE);
+            talkacts.linkAgents(page.turns, dir, running);
+            return send(200, 'application/json; charset=utf-8', JSON.stringify(page), noStore);
         }
         // docs/90-agent/plans/2026-10-21-station-focus-design.md §1: one
         // session's plan or gate alone, drawn from a script that holds that
