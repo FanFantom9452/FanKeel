@@ -261,7 +261,7 @@ needs (`delete:`, `yagni:`), what something else already does (`stdlib:`,
 directory — a reviewer holding a third of the tree cannot see the caller in
 another third, which is [docs/subagents.md](../../docs/90-agent/reference/subagents.md)'s case
 against slicing. Rank what comes back by its `net:` line and offer it at the
-gate beside the documentation findings; never apply a cut unasked.
+gate beside the documentation findings; never apply a cut unasked. `node <plugin>/scripts/css-dead.js <dir>` lists unused CSS classes as `delete:` cuts.
 
 **Where the host opens it, the chain is one workflow.** Pair readers then an
 adversary is the same shape. The pairs come from `docs-audit.js` first, run
