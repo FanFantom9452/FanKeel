@@ -110,12 +110,13 @@ test('/agents follows a dispatch back to running when its file is live again and
         fs.utimesSync(path.join(sub, 'agent-a1.jsonl'), ahead, ahead);
         const quiet = Date.now() / 1000 - 3600;
         fs.utimesSync(path.join(sub, 'agent-a3.jsonl'), quiet, quiet);
-        assert.equal(JSON.parse((await get(s.url + 'station/talk/' + SID + '/agents')).text).agents[1].state, 'finished');
+        const state = async (tail) => JSON.parse((await get(s.url + 'station/talk/' + SID + tail)).text);
+        assert.equal((await state('/agents')).agents[1].state, 'finished');
+        assert.equal((await state('')).turns[2].agents[1].state, 'finished');
         const live = Date.now() / 1000;
         fs.utimesSync(path.join(sub, 'agent-a3.jsonl'), live, live);
-        assert.equal(JSON.parse((await get(s.url + 'station/talk/' + SID + '/agents')).text).agents[1].state, 'running');
-        const page = JSON.parse((await get(s.url + 'station/talk/' + SID)).text);
-        assert.equal(page.turns[2].agents[1].state, 'running');
+        assert.equal((await state('/agents')).agents[1].state, 'running');
+        assert.equal((await state('')).turns[2].agents[1].state, 'running');
     } finally {
         s.close();
     }
