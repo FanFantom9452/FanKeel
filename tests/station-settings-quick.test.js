@@ -1,0 +1,261 @@
+'use strict';
+// station-39: 設定 is the quick setup approved in route-settings-quick.html —
+// five blocks, every question preselected from station/suggest with its
+// source tag, 全部套用推薦, a final screen of old -> new split project and
+// machine with commit.format behind a checkbox, POST /profile, a link to
+// #/settings/detail — and FK_SETTINGS shares its question table.
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const { page, stringsLeft } = require('./station-module.js');
+
+const DIR = 'F:\\ws\\app';
+const SUG = {
+    front: true, commitFormat: '^(chore|docs|feat|fix|merge)(\\([^)]+\\))?: ',
+    recs: {
+        main: { o: 'merge', src: 'rec', v: { local: 103, pr: 0 } }, push: { o: 'false', src: 'rec', v: { unpushed: 304 } },
+        sessions: { o: 'many', src: 'rec', v: { n: 429, share: 28, peak: 6 } }, inflight: { o: '8', src: 'author', v: {} },
+        ctx: { o: 'rw', src: 'rec', v: { from: 'tasks', n: 195 } }, lang: { o: 'zh', src: 'rec', v: { from: 'ui.lang' } },
+        gates: { o: 'survey', src: 'author', v: {} }, floor: { o: 'sonnet', src: 'author', v: {} },
+        screen: { o: 'opus', src: 'rec', v: { mockup: 'opus' } }, where: { o: 'away', src: 'rec', v: { from: 'notify.gate' } },
+    },
+};
+const VALUES = { 'land.integration': 'merge', worktree: false, guard: 'ask', 'dispatch.inflight': 8, 'stage.agents': [], 'dispatch.floor': 'sonnet',
+    'judge.model': 'fable', 'design.mockup': false, 'gate.station': 'off', 'gate.away': 'hint' };
+const tick = () => new Promise((r) => setImmediate(r));
+
+function boot(opts) {
+    opts = opts || {};
+    const calls = [];
+    const fetch = (url, init) => {
+        calls.push({ url, body: init && init.body ? String(init.body) : null });
+        if (url.startsWith('station/suggest')) return Promise.resolve(opts.suggest === null ? { ok: false } : { ok: true, json: () => Promise.resolve(opts.suggest || SUG) });
+        return Promise.resolve({ ok: opts.postOk !== false });
+    };
+    const projects = {};
+    projects[DIR] = { values: Object.assign({}, VALUES), sources: {}, unreadable: [] };
+    if (opts.second) projects['F:\\ws\\two'] = { values: {}, sources: {}, unreadable: [] };
+    const S = { serve: opts.serve !== false, nonce: 'n1', profiles: { machine: { values: { 'notify.gate': false, 'station.remote': false }, sources: {}, unreadable: [] }, projects } };
+    const p = page(['settings-page.js'], {}, { fetch });
+    const Q = p.M['settings-page.js'];
+    Q.reset();
+    let draws = 0;
+    const o = { hash: opts.hash || '#/settings', configDir: 'C:\\cfg', redraw: () => { draws++; } };
+    const html = () => Q.page(S, o);
+    return { Q, S, o, html, calls, draws: () => draws, win: p.win };
+}
+// A stand-in for an event target: chain[0] the element, then its ancestors, each a map of attributes.
+function el(chain, extra) {
+    const node = (i) => Object.assign({
+        getAttribute: (k) => (Object.prototype.hasOwnProperty.call(chain[i], k) ? String(chain[i][k]) : null),
+        setAttribute: (k, v) => { chain[i][k] = v; },
+        closest(sel) { const k = sel.slice(1, -1); for (let j = i; j < chain.length; j++) if (Object.prototype.hasOwnProperty.call(chain[j], k)) return node(j); return null; },
+    }, i === 0 ? extra : {});
+    return node(0);
+}
+const ROOT = { 'data-sq': '' };
+const click = (Q, chain) => Q.onClick({ target: el(chain.concat([ROOT])) });
+
+test('every Chinese string is a loc() call with English, and every English entry is used', () => {
+    const { Q } = boot();
+    assert.deepEqual(stringsLeft('settings-page.js', Q.EN), []);
+});
+
+test('before station/suggest answers every question sits on the author default, tagged 作者推薦', () => {
+    const { html } = boot({ serve: false });
+    const h = html();
+    assert.match(h, /data-block="quick-page"/);
+    assert.equal((h.match(/class="qk-c(?: [a-z- ]+)?" data-b="/g) || []).length, 6, 'five blocks and the write screen in the rail');
+    assert.match(h, /data-block="quick-q-main"[\s\S]*class="qk-src is-author"[^>]*>作者推薦</);
+    assert.match(h, /class="v9-opt is-rec" role="radio" aria-checked="true" tabindex="0" data-o="merge"/);
+    assert.match(h, /<a class="qk-dl" href="#\/settings\/detail">/);
+});
+
+test('station/suggest moves every untouched answer to its recommendation and tags it 依你的紀錄 with the evidence', async () => {
+    const b = boot();
+    b.html();
+    assert.equal(b.calls[0].url, 'station/suggest?project=' + encodeURIComponent(DIR));
+    await tick(); await tick();
+    assert.ok(b.draws() >= 1, 'the answer redraws');
+    const h = b.html();
+    assert.match(h, /class="qk-src is-rec"[^>]*>依你的紀錄<\/button><span class="v9-tip qk-stip" role="tooltip" id="qks-main"><b>git 本機 merge 103 次、PR 0 個<\/b>/);
+    assert.match(h, /id="qks-push"><b>git 有 304 個 commit 不在任何遠端<\/b>/);
+    assert.match(h, /<b>每題都先選好推薦了<\/b><span>7 題依你的紀錄，3 題作者推薦；滑過標籤看根據<\/span>/);
+    b.Q.state().at = 'parallel';
+    const p2 = b.html();
+    assert.match(p2, /aria-checked="true" tabindex="0" data-o="many"/);
+    assert.match(p2, /id="qks-inflight"><b>fankeel 預設；沒有足夠的紀錄可以推<\/b>/);
+    b.Q.state().at = 'ctx';
+    const h3 = b.html();
+    assert.match(h3, /id="qks-ctx"><b>最近 195 個記下設定的任務多半這樣跑<\/b>/);
+    assert.match(h3, /id="qks-lang"><b>紀錄：from ui\.lang<\/b>/, 'a tip whose var this shape lacks shows the raw record');
+});
+
+// Every v shape lib/settingsuggest.js suggestFor (Task 2) returns, per question.
+const SHAPES = {
+    main: [{ local: 1, pr: 0 }], push: [{ unpushed: 1 }], sessions: [{ peak: 2, share: 30, n: 5 }], inflight: [{ now: 8 }],
+    ctx: [{ from: 'profile' }, { from: 'tasks', n: 3 }], lang: [{ lang: 'en' }, { from: 'ui.lang' }], gates: [{ cls: 'bounded' }],
+    floor: [{ floor: 'sonnet' }], screen: [{ mockup: 'opus' }], where: [{ from: 'notify.gate' }, { wait: '120' }, { from: 'gate.away' }],
+};
+
+test('every tip names only variables station/suggest returns for its question', () => {
+    const { Q } = boot();
+    const qs = Q.questions();
+    assert.deepEqual([...qs.map((q) => q.id)].sort(), Object.keys(SHAPES).sort());
+    for (const q of qs) {
+        const vars = (q.tip.match(/\{\w+\}/g) || []).map((x) => x.slice(1, -1));
+        assert.ok(SHAPES[q.id].some((v) => vars.every((x) => Object.prototype.hasOwnProperty.call(v, x))), q.id + ': ' + q.tip);
+    }
+});
+
+test('a question the user moved keeps its answer when the recommendation lands; push hides under a PR', async () => {
+    const b = boot();
+    b.html();
+    click(b.Q, [{ 'data-o': 'pr' }, { 'data-q': 'main' }]);
+    await tick(); await tick();
+    const h = b.html();
+    assert.match(h, /aria-checked="true" tabindex="0" data-o="pr"/);
+    assert.doesNotMatch(h, /data-q="push"/);
+    assert.match(h, /發 PR 一律會推、分支留著一律不推，所以不問推不推。/);
+    assert.match(h, /<b>你改了 1 題推薦<\/b>/);
+});
+
+test('the screen question shows only when a frontend was found', async () => {
+    const b = boot({ suggest: Object.assign({}, SUG, { front: false }) });
+    b.html();
+    await tick(); await tick();
+    b.Q.state().at = 'verify';
+    assert.doesNotMatch(b.html(), /data-q="screen"/);
+    const c = boot();
+    c.html();
+    await tick(); await tick();
+    c.Q.state().at = 'verify';
+    assert.match(c.html(), /data-q="screen"/);
+});
+
+test('全部套用推薦 opens the write screen: old -> new for the project, the machine card, commit.format behind its box', async () => {
+    const b = boot();
+    b.html();
+    await tick(); await tick();
+    click(b.Q, [{ 'data-all': '' }]);
+    assert.equal(b.Q.state().at, 'final');
+    let h = b.html();
+    assert.match(h, /data-block="quick-final"/);
+    const proj = h.slice(h.indexOf('<div data-fin>'), h.indexOf('這台機器 · '));
+    assert.match(proj, /<b>專案 · 8 項<\/b><code title="F:\\ws\\app\\.fankeel\\profile.json">/);
+    assert.match(proj, /<span class="v9-fk"[^>]*>開 worktree<\/span>[\s\S]*?<s title="不開">不開<\/s>[\s\S]*?<b title="一律">一律<\/b>/);
+    assert.match(proj, /<code>stage.agents: survey,build,verify<\/code>/);
+    assert.doesNotMatch(proj, /land\.integration/, 'a value already set is not listed');
+    assert.match(h, /<b>這台機器 · 0 項<\/b><code title="C:\\cfg\\fankeel\\profile.json">[\s\S]*還沒確認。<button type="button" data-go="away">/);
+    assert.doesNotMatch(proj, /commit\.format/);
+    b.Q.onChange({ target: el([{ 'data-cf': '', }, ROOT], { checked: true }) });
+    h = b.html();
+    assert.match(h, /<code>commit\.format: \^\(chore\|docs\|feat\|fix\|merge\)/);
+    assert.match(h, /<p class="qk-more">要逐項調整？<a href="#\/settings\/detail">進入詳細設定<\/a><\/p>/);
+});
+
+test('the machine card keeps 手機遠端 checked and tagged 待定, and writes only after 確認', async () => {
+    const b = boot();
+    b.html();
+    await tick(); await tick();
+    b.Q.state().at = 'away';
+    let h = b.html();
+    assert.match(h, /data-mk="station.remote" checked>[\s\S]*?<span class="v9-tag pend"[^>]*>待定<\/span>/);
+    assert.match(h, /寫進 C:\\cfg\\fankeel\\profile.json。/);
+    click(b.Q, [{ 'data-mc': 'yes' }]);
+    b.Q.state().at = 'final';
+    h = b.html();
+    assert.match(h, /<b>這台機器 · 2 項<\/b>/);
+    assert.match(h, /<s title="關">關<\/s>[\s\S]*?<b title="開">開<\/b>/);
+});
+
+test('寫入 posts the project, then the machine, and the screen says what was written', async () => {
+    const b = boot();
+    b.html();
+    await tick(); await tick();
+    click(b.Q, [{ 'data-all': '' }]);
+    click(b.Q, [{ 'data-mc': 'yes' }]);
+    b.Q.state().at = 'final';
+    assert.match(b.html(), /data-write>寫入 10 項</);
+    click(b.Q, [{ 'data-write': '' }]);
+    await tick(); await tick(); await tick();
+    const posts = b.calls.filter((c) => c.url === 'profile').map((c) => new URLSearchParams(c.body));
+    assert.equal(posts.length, 2);
+    assert.equal(posts[0].get('scope'), 'project');
+    assert.equal(posts[0].get('project'), DIR);
+    assert.equal(posts[0].get('nonce'), 'n1');
+    assert.equal(posts[0].getAll('value')[posts[0].getAll('key').indexOf('stage.agents')], 'survey,build,verify');
+    assert.equal(posts[0].getAll('value')[posts[0].getAll('key').indexOf('model.lang')], '繁體中文');
+    assert.equal(posts[1].get('scope'), 'machine');
+    assert.deepEqual(posts[1].getAll('key'), ['notify.gate', 'station.remote']);
+    const h = b.html();
+    assert.match(h, /已寫入 10 項。/);
+    assert.match(h, /<b>專案 · 0 項<\/b>[\s\S]*跟現在一樣，沒有要改的。/, 'what was written reads as set');
+    assert.equal(b.Q.cur(b.S, DIR, 'stage.agents'), 'survey,build,verify');
+});
+
+test('a failed write says so and the page stays put; unserved, 寫入 is off', async () => {
+    const b = boot({ postOk: false });
+    b.html();
+    await tick(); await tick();
+    click(b.Q, [{ 'data-all': '' }]);
+    click(b.Q, [{ 'data-write': '' }]);
+    await tick(); await tick();
+    assert.match(b.html(), /寫入專案的設定失敗，那邊沒有存。/);
+    const u = boot({ serve: false });
+    u.html();
+    click(u.Q, [{ 'data-all': '' }]);
+    const h = u.html();
+    assert.match(h, /data-write disabled>/);
+    assert.match(h, /這頁不是經由監控站伺服器開的，不能寫入。/);
+    assert.equal(u.calls.length, 0, 'an unserved page asks nothing');
+});
+
+test('typing another language changes the plan without a redraw', () => {
+    const b = boot({ serve: false });
+    b.html();
+    b.Q.state().at = 'ctx';
+    const before = b.draws();
+    b.Q.onInput({ target: el([{ 'data-in': '' }, { 'data-field': 'other' }, { 'data-q': 'lang' }, ROOT], { value: '日本語' }) });
+    assert.equal(b.draws(), before);
+    assert.equal(b.Q.state().ans.lang, 'other');
+    click(b.Q, [{ 'data-go': 'final' }]);
+    assert.match(b.html(), /<code>model\.lang: 日本語<\/code>/);
+});
+
+test('more than one project gets a picker; picking one starts that project over', () => {
+    const b = boot({ serve: false, second: true });
+    assert.match(b.html(), /<select data-sq-proj><option value="F:\\ws\\app" selected>/);
+    b.Q.onChange({ target: el([{ 'data-sq-proj': '' }, ROOT], { value: 'F:\\ws\\two' }) });
+    assert.equal(b.Q.state().dir, 'F:\\ws\\two');
+    assert.equal(b.Q.state().at, 'land');
+});
+
+test('#/settings/detail goes to FK_SETDETAIL', () => {
+    const b = boot({ hash: '#/settings/detail/push' });
+    b.win.FK_SETDETAIL = { page: (S, o) => 'detail ' + o.hash };
+    assert.equal(b.html(), 'detail #/settings/detail/push');
+});
+
+test('the shared table: ten questions in screen order, key names, labels, the merged value as a string', () => {
+    const { Q, S } = boot();
+    assert.deepEqual([...Q.questions().map((q) => q.id)], ['main', 'push', 'sessions', 'inflight', 'ctx', 'lang', 'gates', 'floor', 'screen', 'where']);
+    assert.deepEqual([...Q.MACHINE], ['station.remote', 'notify.gate', 'notify.stage', 'notify.end', 'notify.server', 'phone.hold', 'ui.lang', 'station.chartroom', 'quota.week']);
+    assert.equal(Q.NAME('land.push'), '推不推遠端');
+    assert.equal(Q.NAME['land.push'], '推不推遠端');
+    assert.equal(Q.NAME('notify.topic'), 'notify.topic');
+    assert.equal(Q.lab('land.push', ''), '每次問');
+    assert.equal(Q.lab('guard', 'deny'), '擋下');
+    assert.equal(Q.lab('commit.format', ''), '未設');
+    assert.equal(Q.cur(S, DIR, 'stage.agents'), '');
+    assert.equal(Q.cur(S, DIR, 'worktree'), 'false');
+    assert.equal(Q.cur(S, null, 'notify.gate'), 'false');
+    assert.match(Q.optHtml(Q.questions()[0], 'pr', 'merge', {}, 'v9'), /aria-labelledby="v9q-main"[\s\S]*class="v9-risk">[\s\S]*推到遠端/);
+});
+
+test('settings-page.css is the quick mockup\'s own rules, no <style> tags', () => {
+    const css = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'settings-page.css'), 'utf8');
+    assert.doesNotMatch(css, /<\/?style/);
+    for (const rule of ['.qk-src.is-rec{', '.qk-recs{', '.qk-mc{', '.qk-extra{', '.qk-proj{']) assert.ok(css.includes(rule), rule);
+});

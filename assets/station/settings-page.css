@@ -1,0 +1,140 @@
+/* ==== quick ==== */
+/* Quick setup: v9's eight quick questions in four blocks, one block per screen, every answer
+   preselected with a recommendation. The tag beside each question says where the pick came
+   from (依你的紀錄 / 作者推薦); its tip holds the evidence in one line and the source.
+   The rail is the index of the four blocks and the way out to the detailed screen. */
+.qk-rail .v9-rh{margin-bottom:8px}
+.qk-ix ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.qk-cb{display:grid;grid-template-columns:22px minmax(0,1fr);column-gap:10px;align-items:start;width:100%;min-height:52px;padding:8px 10px;border:0;border-radius:7px;background:transparent;text-align:left;color:var(--ink2);font:inherit;cursor:pointer}
+.qk-cb:hover{background:var(--wash)}
+.qk-cb .v9-cm{margin-top:1px}
+.qk-cn{display:flex;flex-direction:column;min-width:0}
+.qk-cn b{font-size:13px;line-height:22px;font-weight:600;color:var(--ink2)}
+.qk-cn small{font-size:12px;line-height:18px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qk-c.is-done .v9-cm{background:var(--keel);box-shadow:none;color:var(--on-keel)}
+.qk-c.is-done .v9-cm span{display:none}
+.qk-c.is-done .v9-cm svg{display:block}
+.qk-c.is-now>.qk-cb{background:var(--keel-tint)}
+.qk-c.is-now .v9-cm{box-shadow:inset 0 0 0 2px var(--keel);color:var(--keel-deep);background:var(--panel)}
+.qk-c.is-now .v9-cm span{display:inline}
+.qk-c.is-now .v9-cm svg{display:none}
+.qk-c.is-now .qk-cn b{color:var(--ink);font-weight:700}
+.qk-cf{margin-top:4px;padding-top:4px;border-top:1px solid var(--rule)}
+.qk-wi{display:grid;place-items:center;width:22px;height:22px}
+.qk-wi .ico{width:16px;height:16px;color:var(--keel)}
+.qk-cf small{font:600 11.5px/18px var(--f-mono);font-variant-numeric:tabular-nums}
+.qk-detail{margin:8px 2px 0;padding-top:8px;border-top:1px solid var(--rule)}
+.qk-dl{display:flex;align-items:center;gap:10px;min-height:52px;padding:8px 10px;border-radius:7px;color:var(--ink);text-decoration:none}
+.qk-dl span{display:flex;flex-direction:column;min-width:0;margin-right:auto}
+.qk-dl b{font-size:13px;line-height:20px;font-weight:700}
+.qk-dl small{font-size:12px;line-height:18px;color:var(--muted)}
+.qk-dl .ico{width:16px;height:16px;color:var(--keel)}
+.qk-dl:hover{background:var(--wash)}
+.qk-dl:focus-visible,.qk-more a:focus-visible{outline:2px solid var(--keel);outline-offset:2px}
+
+/* top strip */
+:root[data-style=keel] .dcard.v9-wiz.qk-wiz{padding-top:16px}
+.qk-recs{display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap;max-width:820px;margin:0 0 12px;padding:6px 6px 6px 16px;border-radius:var(--r);background:var(--inset);box-shadow:inset 0 0 0 1px var(--rule)}
+.qk-rt{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:12px;margin:0 auto 0 0;min-width:0}
+.qk-rt b{font-size:13.5px;line-height:20px;color:var(--ink)}
+.qk-rt span{font-size:12.5px;line-height:18px;color:var(--ink2)}
+.qk-all{height:40px}
+.qk .v9-foot{margin-top:14px}
+.qk-all[aria-pressed=true]{background:var(--panel);color:var(--ink2);box-shadow:inset 0 0 0 1px var(--rule2)}
+
+/* a block screen */
+.qk-screen{display:flex;flex-direction:column;gap:14px}
+.qk-bh{margin:0;font-size:19px;line-height:1.35;font-weight:700;color:var(--ink);outline:none}
+.qk-fh{display:flex;align-items:center;gap:10px}
+.qk-q{min-width:0}
+.qk-qh{position:relative;display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin:0 0 6px;max-width:820px}
+.qk-qt{margin:0;font-size:15px;line-height:24px;font-weight:700;color:var(--ink2)}
+.qk .v9-opts{gap:6px}
+.qk .v9-opt{min-height:42px;padding:8px 16px;grid-template-columns:18px minmax(0,300px) minmax(0,1fr)}
+.qk-skip{margin:8px 0 0;font-size:12px;color:var(--muted)}
+
+/* where the recommendation came from */
+.qk-src{position:relative;display:inline-flex;align-items:center;height:22px;padding:0 8px;border:0;border-radius:4px;font:600 11.5px/22px var(--f-ui);white-space:nowrap;cursor:help}
+.qk-src::before{content:"";position:absolute;inset:-11px -4px}
+.qk-src.is-rec{background:var(--keel-tint);color:var(--keel-deep)}
+.qk-src.is-author{background:transparent;color:var(--ink2);box-shadow:inset 0 0 0 1px var(--rule2)}
+.qk-src:hover,.qk-src[aria-expanded=true]{box-shadow:inset 0 0 0 1px var(--keel)}
+.qk-src:focus-visible{outline:2px solid var(--keel);outline-offset:2px}
+.qk-stip{top:calc(100% + 6px);left:0;width:max-content;max-width:min(600px,100%)}
+.qk-stip b{display:block;font-weight:600;color:var(--ink)}
+.qk-src:hover+.qk-stip,.qk-src:focus-visible+.qk-stip,.qk-src[aria-expanded=true]+.qk-stip{opacity:1;visibility:visible;transform:none;transition:opacity .2s ease-out,transform .2s ease-out}
+.qk .v9-help{position:static}
+.qk .qk-qh .v9-help .v9-tip{left:0;top:calc(100% + 6px);width:auto;max-width:min(460px,100%)}
+
+/* machine card */
+.qk-mc{margin-top:-6px}
+.qk-mnow{font-size:12px;color:var(--muted)}
+.qk-mpend{flex-basis:100%;margin:-6px 0 6px 26px;font-size:12px;color:var(--muted)}
+.qk-mc .v9-mc-l li{padding:2px 0}
+
+/* final */
+.qk-final-g{display:flex;flex-direction:column;gap:14px}
+.qk-fin-src{font-size:11.5px;color:var(--muted);white-space:nowrap}
+.qk .v9-fin-l li{grid-template-columns:minmax(0,1fr) auto auto}
+.qk-fin-m{margin:0;font-size:13px;color:var(--ink2)}
+.qk-fin-m button{border:0;background:none;padding:0 2px;min-height:32px;font:600 13px var(--f-ui);color:var(--keel-deep);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.qk-extra{position:relative;display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;max-width:900px;padding:10px 0 0;border-top:1px solid var(--rule)}
+.qk-extra input{width:16px;height:16px;margin:0;accent-color:var(--keel)}
+.qk-extra label{font-size:13px;font-weight:600;color:var(--ink);cursor:pointer}
+.qk-cfv{min-width:0;max-width:100%;font:12px var(--f-mono);color:var(--ink2);overflow-wrap:anywhere}
+.qk-cfn{flex-basis:100%;margin:0 0 0 26px;font-size:12px;color:var(--muted)}
+.qk .v9-fin-n{margin:0}
+.qk-more{margin:0;font-size:13px;color:var(--ink2)}
+.qk-more a{font-weight:700;color:var(--keel-deep);text-underline-offset:3px;padding:6px 2px}
+
+@media (pointer:coarse){.qk .v9-opt{min-height:44px}}
+@media (max-width:900px){
+  .qk-rail:not([data-open=true]) .qk-ix{display:none}
+  .qk-detail{margin-top:0;border-top:0;padding-top:0}
+  .qk-rail[data-open=true] .qk-detail{margin-top:8px;border-top:1px solid var(--rule);padding-top:8px}
+  .qk-dl{min-height:44px}
+}
+@media (max-width:640px){
+  :root[data-style=keel] .dcard.v9-wiz.qk-wiz{padding-top:14px}
+  .qk .v9-opt{grid-template-columns:18px minmax(0,1fr)}
+  .qk-recs{padding:10px 12px}
+  .qk-all{width:100%;justify-content:center}
+  .qk .v9-foot [data-write]{margin-left:auto}
+  .qk-bh{font-size:17px}
+  .qk .v9-fin-l li{grid-template-columns:minmax(0,1fr) auto;row-gap:0;padding:4px 0}
+  .qk-fin-src{grid-column:1/-1}
+  .qk-cfn{margin-left:0}
+  .qk-mpend{margin-left:0}
+}
+.qk-mc{position:relative}
+.qk .qk-mc .v9-help{position:relative}
+.qk-fh{position:relative}
+
+/* 推薦 vs 警告 (tune r-0068): 推薦 is the calm positive (pass) token, filled, with a check, and a
+   left edge on the recommended answer; 警告 is the signal token, outlined, with ⚠, and only on
+   answers whose wrong pick cannot be taken back (推到遠端). Cost is a neutral note, not a warning. */
+.qk .v9-tag.rec,.qk [aria-checked=true] .v9-tag.rec{display:inline-flex;align-items:center;gap:3px;padding:0 6px 0 4px;background:var(--pass-tint);color:var(--pass-ink)}
+.qk .v9-tag.rec svg{width:11px;height:11px}
+.qk .v9-opt.is-rec{box-shadow:inset 3px 0 0 var(--pass-ink),inset 0 0 0 1px var(--rule)}
+.qk .v9-opt.is-rec:hover{box-shadow:inset 3px 0 0 var(--pass-ink),inset 0 0 0 1px var(--rule2)}
+.qk .v9-opt.is-rec[aria-checked=true]{box-shadow:inset 3px 0 0 var(--pass-ink),inset 0 0 0 1.5px var(--keel)}
+.qk .v9-risk{background:var(--signal-tint);color:var(--signal-ink);box-shadow:inset 0 0 0 1px var(--signal-ink)}
+.qk-cost{font:600 11px/18px var(--f-ui);padding:0 6px;border-radius:4px;color:var(--ink2);box-shadow:inset 0 0 0 1px var(--rule2);white-space:nowrap}
+
+/* 其他語言: the input sits in the row's effect column once that answer is picked */
+.qk .v9-o.has-in .qk-in{position:absolute;top:50%;left:362px;right:12px;transform:translateY(-50%);display:flex}
+.qk .v9-o.has-in .qk-in[hidden]{display:none}
+.qk .qk-in .v9-in{flex:1;height:30px;border-radius:7px;background:var(--inset);box-shadow:inset 0 0 0 1px var(--rule)}
+.qk .qk-in .v9-in:focus-within{box-shadow:inset 0 0 0 1px var(--keel)}
+.qk .qk-in input{height:30px;font-size:13px}
+.qk .v9-o.has-in:has(.qk-in:not([hidden])) .v9-oe{visibility:hidden}
+@media (max-width:1180px){.qk .v9-o.has-in .qk-in{left:302px}}
+@media (max-width:640px){
+  .qk .v9-o.has-in .qk-in{position:static;transform:none;margin:6px 0 0 48px}
+  .qk .v9-o.has-in:has(.qk-in:not([hidden])) .v9-oe{visibility:visible}
+  .qk .qk-in .v9-in,.qk .qk-in input{height:40px}
+}
+
+/* the project picker when more than one project has a profile */
+.qk-proj{display:flex;align-items:center;gap:8px;margin:0 0 12px;font-size:13px;color:var(--ink2)}
+.qk-proj select{min-width:0;max-width:100%;height:36px;border:0;border-radius:7px;background:var(--inset);box-shadow:inset 0 0 0 1px var(--rule);color:var(--ink);font:13px var(--f-mono)}
