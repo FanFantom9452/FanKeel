@@ -40,8 +40,10 @@ file sorts what comes back three ways.
 
 - **answered** — the response names the record's pid. Its body then has to
   carry a fingerprint matching what is on disk right now — the mtime and size
-  of `lib/station.js` and `assets/station/station.js`, and `package.json`'s
-  `version`, all computed once when `scripts/station.js` started serving. A
+  of `lib/station.js`, `assets/station/station.js`, `assets/station/index.html`
+  and every module that shell loads (`modulesOf` in `lib/station.js`, reading
+  the index.html on disk), and `package.json`'s `version`, computed once when
+  the station started serving. A
   station answering with the old fingerprint is stopped and a fresh one
   started, rather than handing back a page a newer checkout no longer matches.
 - **busy** — the record's pid is running and the request timed out. A station
