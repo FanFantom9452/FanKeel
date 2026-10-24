@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 title: brain 模式照相依深度分組 — implementation plan
 ---
 
