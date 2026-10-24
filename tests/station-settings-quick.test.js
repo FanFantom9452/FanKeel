@@ -156,13 +156,15 @@ test('全部套用推薦 opens the write screen: old -> new for the project, the
     assert.match(h, /<p class="qk-more">要逐項調整？<a href="#\/settings\/detail">進入詳細設定<\/a><\/p>/);
 });
 
-test('the machine card keeps 手機遠端 checked and tagged 待定, and writes only after 確認', async () => {
+test('the machine card keeps 手機遠端 checked, says Tailscale is the default, and writes only after 確認', async () => {
     const b = boot();
     b.html();
     await tick(); await tick();
     b.Q.state().at = 'away';
     let h = b.html();
-    assert.match(h, /data-mk="station.remote" checked>[\s\S]*?<span class="v9-tag pend"[^>]*>待定<\/span>/);
+    assert.match(h, /data-mk="station.remote" checked>[\s\S]*?<span class="qk-mpend">預設走 Tailscale；Cloudflare Tunnel \+ Access 是之後的進階選項，現在還不支援。<\/span>/);
+    const card = h.slice(h.indexOf('data-mk="station.remote"'), h.indexOf('</ul>', h.indexOf('data-mk="station.remote"')));
+    assert.doesNotMatch(card, /待定/);
     assert.match(h, /寫進 C:\\cfg\\fankeel\\profile.json。/);
     click(b.Q, [{ 'data-mc': 'yes' }]);
     b.Q.state().at = 'final';

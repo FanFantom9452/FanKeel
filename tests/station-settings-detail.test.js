@@ -70,7 +70,8 @@ test('#/settings/detail/<step> opens that step, and the remote step carries the 
     let b = boot('#/settings/detail/remote', true);
     const h = b.html();
     assert.match(h, /data-block="v9-away-remote" data-step="remote"[\s\S]*<div class="rm-card" data-serve="true"><\/div><\/div><div class="v9-foot"/);
-    assert.match(h, /<span class="v9-tag pend"[^>]*>待定<\/span>/);
+    assert.doesNotMatch(h, /v9-tag pend/);
+    assert.match(h, /<span class="v9-oe">經 Tailscale 連進來（預設）/);
     b = boot('#/settings/detail/remote', false);
     assert.doesNotMatch(b.html(), /rm-card/);
 });

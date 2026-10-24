@@ -42,11 +42,10 @@
         'sd.and': ', ',
         'sd.mcHead': 'Also written to this machine',
         'sd.mcQ': 'What this card writes',
-        'sd.mcWhy': 'Written to {f}. Only the machine settings are read for these two, so the project file would not take effect, and a cloned repo sends nothing to another machine. How the phone connects remotely is not settled.',
+        'sd.mcWhy': 'Written to {f}. Only the machine settings are read for these two, so the project file would not take effect, and a cloned repo sends nothing to another machine. The phone connects through Tailscale; Cloudflare Tunnel + Access is a later advanced option, not supported yet.',
         'sd.mcGate': 'Push to the phone when a gate waits',
         'sd.mcRemote': 'Phone reaches the station remotely',
-        'sd.pend': 'Pending',
-        'sd.mcPend': 'Remote connection pending: Tailscale or a VPN that covers the LAN',
+        'sd.mcVia': 'Through Tailscale by default',
         'sd.mcOk': 'Confirm, write to this machine',
         'sd.mcNot': 'Not now',
         'sd.mcYes': 'It will be written to this machine.',
@@ -425,9 +424,9 @@
         var say = st.mc === 'yes' ? loc('sd.mcYes', '會寫進這台機器。') : st.mc === 'no' ? loc('sd.mcNo', '這台機器的設定不動；之後可以在「離開電腦時」再開。') : loc('sd.mcWait', '按確認或先不要，才能到下一步。');
         function box(k, id, label) { return '<input type="checkbox" id="' + id + '" data-mk="' + k + '"' + (st.mck[k] ? ' checked' : '') + '><label for="' + id + '">' + esc(label) + '</label>'; }
         return '<div class="v9-mc" data-block="v9-machine-card" data-state="' + st.mc + '" role="group" aria-labelledby="v9mc-h"><div class="v9-mc-h"><b id="v9mc-h">' + esc(loc('sd.mcHead', '還要寫進這台機器')) + '</b>'
-            + help('mc', loc('sd.mcQ', '這張卡寫什麼'), code('notify.gate', 'true') + code('station.remote', 'true') + '<small>' + esc(loc('sd.mcWhy', '寫進 {f}。這兩項只讀機器設定，寫在專案檔不會生效；clone 下來的 repo 也不會把問題送到別台。手機遠端怎麼連還沒定。', { f: machineFile() })) + '</small>')
+            + help('mc', loc('sd.mcQ', '這張卡寫什麼'), code('notify.gate', 'true') + code('station.remote', 'true') + '<small>' + esc(loc('sd.mcWhy', '寫進 {f}。這兩項只讀機器設定，寫在專案檔不會生效；clone 下來的 repo 也不會把問題送到別台。手機遠端走 Tailscale；Cloudflare Tunnel + Access 是之後的進階選項，現在還不支援。', { f: machineFile() })) + '</small>')
             + '</div><ul class="v9-mc-l"><li>' + box('notify.gate', 'v9mc-n', loc('sd.mcGate', 'gate 等你時推播到手機')) + '</li><li>' + box('station.remote', 'v9mc-r', loc('sd.mcRemote', '手機遠端連進監控站'))
-            + '<span class="v9-tag pend">' + esc(loc('sd.pend', '待定')) + '</span><span class="v9-mc-pend">' + esc(loc('sd.mcPend', '遠端連線方式待定：Tailscale 或支援區網的 VPN')) + '</span></li></ul>'
+            + '<span class="v9-mc-pend">' + esc(loc('sd.mcVia', '預設走 Tailscale')) + '</span></li></ul>'
             + '<div class="v9-mc-f"><button type="button" class="v9-btn pri" data-mc="yes">' + esc(loc('sd.mcOk', '確認，寫進這台機器')) + '</button><button type="button" class="v9-btn" data-mc="no">'
             + esc(loc('sd.mcNot', '先不要')) + '</button><span class="v9-mc-say" role="status">' + esc(say) + '</span></div></div>';
     }

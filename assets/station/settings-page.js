@@ -105,8 +105,7 @@
         'sq.mNow': 'This machine now: {v}', 'sq.mcH': 'Also write to this machine', 'sq.thisMachine': 'This machine',
         'sq.mcWhy': 'Written to {file}. Only the machine settings are read for these two; the project file has no effect. Written only after you confirm.',
         'sq.mcAsk': 'What this card writes', 'sq.mcGate': 'Push to my phone when a gate waits', 'sq.mcRemote': 'Reach the station from my phone',
-        'sq.pend': 'Pending', 'sq.pendTip': 'Remote options other than Tailscale are still being evaluated',
-        'sq.pendNote': 'How it connects is pending: options other than Tailscale are still being evaluated',
+        'sq.remoteNote': 'Through Tailscale by default; Cloudflare Tunnel + Access is a later advanced option, not supported yet.',
         'sq.mcOk': 'Confirm, write to this machine', 'sq.mcNot': 'Not now',
         'sq.mcYes': 'Written to this machine along with the rest.', 'sq.mcSame': 'This machine is already set so; nothing is rewritten.',
         'sq.mcNo': 'This machine keeps its settings.', 'sq.mcBoth': 'Both are already on on this machine.',
@@ -460,8 +459,8 @@
                 + esc(loc('sq.mcWhy', '寫進 {file}。這兩項只讀機器設定，寫在專案檔不會生效。要另外按確認才寫。', { file: machineFile(o) })) + '</small>', loc('sq.mcAsk', '這張卡寫什麼')) + '</div>'
             + '<ul class="v9-mc-l"><li>' + box('notify.gate', 'qkmc-n', loc('sq.mcGate', 'gate 等你時推播到手機')) + now('notify.gate') + '</li>'
             + '<li>' + box('station.remote', 'qkmc-r', loc('sq.mcRemote', '手機遠端連進監控站'))
-            + '<span class="v9-tag pend" title="' + esc(loc('sq.pendTip', 'Tailscale 以外的遠端方案還在評估')) + '">' + loc('sq.pend', '待定') + '</span>' + now('station.remote')
-            + '<span class="qk-mpend">' + loc('sq.pendNote', '連線方式待定：Tailscale 以外的方案還在評估') + '</span></li></ul>'
+            + now('station.remote')
+            + '<span class="qk-mpend">' + loc('sq.remoteNote', '預設走 Tailscale；Cloudflare Tunnel + Access 是之後的進階選項，現在還不支援。') + '</span></li></ul>'
             + '<div class="v9-mc-f"><button type="button" class="v9-btn pri" data-mc="yes">' + loc('sq.mcOk', '確認，寫進這台機器') + '</button>'
             + '<button type="button" class="v9-btn" data-mc="no">' + loc('sq.mcNot', '先不要') + '</button><span class="v9-mc-say" role="status">' + esc(say) + '</span></div></div>';
     }

@@ -61,7 +61,7 @@ test('every option has a label and an effect, and every literal write is a value
     }
 });
 
-test('prompt.* is tagged 進階・不建議 with its warning, remote\'s yes is 待定, the rest as the mockup tags them', () => {
+test('prompt.* is tagged 進階・不建議 with its warning, remote\'s yes names Tailscale and is not 待定, the rest as the mockup tags them', () => {
     const { T } = boot();
     const by = Object.fromEntries(plain(T.steps()).map((s) => [s.id, s]));
     assert.equal(by.prompt.adv, '進階・不建議');
@@ -69,7 +69,9 @@ test('prompt.* is tagged 進階・不建議 with its warning, remote\'s yes is �
     assert.deepEqual(by.prompt.opts.map((o) => [o.o, o.rec, o.risk]), [['none', '推薦', ''], ['add', '', '不建議']]);
     assert.ok(by.prompt.field.each);
     const yes = by.remote.opts.find((o) => o.o === 'true');
-    assert.equal(yes.pend, '待定');
+    assert.equal(yes.pend, '');
+    assert.equal(yes.effect, '經 Tailscale 連進來（預設）');
+    assert.match(by.remote.why, /Cloudflare Tunnel \+ Access 是之後的進階選項/);
     assert.equal(yes.risk, '對外開放');
     assert.equal(by.commitfmt.opts.find((o) => o.o === 'git').w['commit.format'], '$git');
     assert.deepEqual(by.notify.key, 'notify.*');

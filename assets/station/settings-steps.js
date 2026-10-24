@@ -62,8 +62,6 @@
         'ss.riskNo': 'Not recommended',
         'ss.riskOpen': 'Opens it up',
         'ss.riskHide': 'Needs a command to undo',
-        'ss.pend': 'Pending',
-        'ss.pendWhy': 'The remote connection is not settled',
         'ss.styleT': 'What should fill the questions you did not answer?',
         'ss.styleY': 'A style compares only 7 settings: stages, subagent model, handed-off stages, file clashes, before you leave, mockups and the sensitive review. How work reaches main, pushing and worktrees are facts of the repo and are not compared. A style only fills what you did not answer; your answers stay.',
         'ss.styleSteady': 'Steady',
@@ -196,10 +194,10 @@
         'ss.ntfyOwnS': 'Own',
         'ss.ntfyField': 'Server address',
         'ss.remoteT': 'Should your phone reach the station?',
-        'ss.remoteY': 'The phone sees the station once paired. How it connects remotely is not settled yet: Tailscale, or a VPN that also covers the LAN; this question is marked until then.',
+        'ss.remoteY': 'The phone sees the station once paired. It connects through Tailscale; Cloudflare Tunnel + Access is a later advanced option, not supported yet. ZeroTier and WireGuard are not offered: neither puts an HTTPS proxy in front of the station.',
         'ss.remoteFalse': 'No',
         'ss.remoteFalseE': 'The station opens on this machine only',
-        'ss.remoteTrueE': 'Remote connection pending: Tailscale or a VPN that covers the LAN',
+        'ss.remoteTrueE': 'Through Tailscale (the default)',
         'ss.holdT': 'With the phone attached, how long to wait for you?',
         'ss.holdY': 'With a phone attached, each turn waits this long for the phone\'s next message, then hands the session back to the computer.',
         'ss.h300': '5 minutes',
@@ -398,10 +396,10 @@
                 field: { label: loc('ss.ntfyField', '伺服器網址'), ph: 'https://ntfy.example.lan', mono: true }, opts: [
                 O('pub', 'ntfy.sh', loc('ss.ntfyPubE', '公開伺服器，不用架'), { 'notify.server': 'https://ntfy.sh' }),
                 O('own', loc('ss.ntfyOwn', '自架伺服器'), loc('ss.ntfyOwnE', '推播不經過公開服務'), { 'notify.server': '$in' }, { s: loc('ss.ntfyOwnS', '自架'), input: true })] },
-            { id: 'remote', kind: 'one', title: loc('ss.remoteT', '手機要能連進監控站嗎？'), why: loc('ss.remoteY', '手機配對後才看得到監控站。遠端連線方式還沒定：Tailscale，或同時支援區網的 VPN；這一題先標記。'), opts: [
+            { id: 'remote', kind: 'one', title: loc('ss.remoteT', '手機要能連進監控站嗎？'), why: loc('ss.remoteY', '手機配對後才看得到監控站。走 Tailscale；Cloudflare Tunnel + Access 是之後的進階選項，現在還不支援。ZeroTier、WireGuard 不列：它們沒有替監控站掛 HTTPS 的代理。'), opts: [
                 O('false', loc('ss.remoteFalse', '不要'), loc('ss.remoteFalseE', '監控站只在這台機器開'), { 'station.remote': 'false' }),
-                O('true', loc('ss.yes', '要'), loc('ss.remoteTrueE', '遠端連線方式待定：Tailscale 或支援區網的 VPN'), { 'station.remote': 'true' },
-                    { pend: loc('ss.pend', '待定'), pendWhy: loc('ss.pendWhy', '遠端連線方式還沒定'), risk: loc('ss.riskOpen', '對外開放') })] },
+                O('true', loc('ss.yes', '要'), loc('ss.remoteTrueE', '經 Tailscale 連進來（預設）'), { 'station.remote': 'true' },
+                    { risk: loc('ss.riskOpen', '對外開放') })] },
             { id: 'hold', kind: 'one', title: loc('ss.holdT', '手機接上時，要等你多久？'), why: loc('ss.holdY', '手機接上 session 時，每回合結束後最多等手機的下一句這麼久；逾時就把 session 交還電腦。'), opts: [
                 O('300', loc('ss.h300', '5 分鐘'), loc('ss.h300E', '沒回就早點交還電腦'), { 'phone.hold': '300' }, { s: loc('ss.h300S', '5 分') }),
                 O('600', loc('ss.h600', '10 分鐘'), loc('ss.h600E', '走開一下還來得及'), { 'phone.hold': '600' }, { s: loc('ss.h600S', '10 分') }),
