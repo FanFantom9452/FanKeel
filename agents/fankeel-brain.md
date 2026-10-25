@@ -222,7 +222,8 @@ character counting two, option one naming the next stage or, on the last
 stage, `down` or `收工`, a pause, no TODO entry named by its id
 anywhere in the gate, parentheses included — its title instead — and on a
 patrol one report line per open
-entry with its disposition — and
+entry with its disposition, a line naming several
+entries counting for one — and
 exits non-zero naming the field. Fix the block and run it again; return the
 path once it prints `gate ok`. On 2026-10-02/03 three gates, two with two
 options and one whose option one named no stage, were refused only at the
