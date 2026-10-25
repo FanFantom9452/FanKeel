@@ -38,14 +38,30 @@ function aliases(src) {
 // Every child-process call in a source string: direct, aliased, or a parenthesised callee like `(a || execFileSync)(`.
 function callsIn(src) {
     const names = NAMES.concat(aliases(src));
-    const direct = new RegExp('(?<![\\w$.])(?:cp\\.|child_process\\.)?(?:' + names.join('|') + ')\\(', 'g');
-    const wrapped = /\(([^()]*)\)\(/g;
+    const ns = ['cp', 'child_process'];
+    for (const m of src.matchAll(/\b(?:const|let|var)\s+([\w$]+)\s*=\s*require\(\s*['"](?:node:)?child_process['"]\s*\)/g)) ns.push(m[1].replace(/\$/g, '\\$'));
+    const list = names.join('|');
+    const direct = new RegExp('(?<![\\w$.])(?:(?:' + ns.join('|') + ')\\.)?(?:' + list + ')\\(', 'g');
+    const viaRequire = new RegExp('require\\(\\s*[\'"](?:node:)?child_process[\'"]\\s*\\)\\.(?:' + list + ')\\(', 'g');
+    const viaBracket = new RegExp('(?<![\\w$.])(?:' + ns.join('|') + ')\\[\\s*[\'"](?:' + list + ')[\'"]\\s*\\]\\(', 'g');
     const starts = [];
-    let m;
-    while ((m = direct.exec(src))) starts.push({ at: m.index, open: m.index + m[0].length - 1 });
-    while ((m = wrapped.exec(src))) {
-        const isCall = m[1].split(/[^\w$.]+/).some((t) => names.includes(t.split('.').pop()));
-        if (isCall) starts.push({ at: m.index, open: m.index + m[0].length - 1 });
+    for (const re of [direct, viaRequire, viaBracket]) {
+        for (const m of src.matchAll(re)) starts.push({ at: m.index, open: m.index + m[0].length - 1 });
+    }
+    // A parenthesised callee `( ... )(`: its balanced inner text names a scanned function that is not itself being called.
+    for (let a = src.indexOf('('); a !== -1; a = src.indexOf('(', a + 1)) {
+        let depth = 0, i = a, q = null;
+        for (; i < src.length; i++) {
+            const c = src[i];
+            if (q) { if (c === '\\') i++; else if (c === q) q = null; continue; }
+            if (c === "'" || c === '"' || c === '`') q = c;
+            else if (c === '(') depth++;
+            else if (c === ')' && --depth === 0) break;
+        }
+        if (src[i + 1] !== '(') continue;
+        const inner = src.slice(a + 1, i);
+        const isCall = [...inner.matchAll(/[\w$.]+/g)].some((t) => names.includes(t[0].split('.').pop()) && !/^\s*\(/.test(inner.slice(t.index + t[0].length)));
+        if (isCall) starts.push({ at: a, open: i + 1 });
     }
     const found = [];
     for (const s of starts.sort((a, b) => a.at - b.at)) {
@@ -112,6 +128,11 @@ test('the scanner finds a call in each shape it could miss, and reads windowsHid
         member: (o) => 'const t = (x.spawn)("a", [], { ' + o + 'stdio: 1 });',
         exec: (o) => 'cp.exec("a", { ' + o + 'cwd: 1 });',
         bareExec: (o) => 'exec("a", { ' + o + 'cwd: 1 });',
+        namespace: (o) => "const childProcess = require('node:child_process');\nchildProcess.spawn('a', [], { " + o + 'stdio: 1 });',
+        inlineRequire: (o) => "require('node:child_process').spawn('a', [], { " + o + 'stdio: 1 });',
+        bracket: (o) => "const cp = require('child_process');\ncp['spawn']('a', [], { " + o + 'stdio: 1 });',
+        nestedParen: (o) => 'const t = (deps.x || wrap(execFileSync))(process.execPath, [], { ' + o + 'encoding: 1 });',
+        nestedCall: (o) => 'const t = (pick(a, b) || spawn)("a", [], { ' + o + 'stdio: 1 });',
         alias: (o) => "const { spawn: spawnChild } = require('node:child_process');\nspawnChild('a', [], { " + o + 'stdio: 1 });',
     };
     for (const [name, make] of Object.entries(shapes)) {
@@ -126,4 +147,5 @@ test('the scanner finds a call in each shape it could miss, and reads windowsHid
 
 test('the scanner ignores regex.exec and other objects exec', () => {
     assert.deepStrictEqual(callsIn('const m = re.exec(s); const n = /a/.exec(s); this.exec(1);'), []);
+    assert.deepStrictEqual(callsIn('const f = foo(bar)(1); const g = (pick(a, b) || other)(2); (() => { x(1); })();'), []);
 });
