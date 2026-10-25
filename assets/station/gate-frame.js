@@ -5,8 +5,9 @@
 // the focus page drew (`focusReportHtml`) in the main column, and the question in
 // a side column that stays in view. An option shows its label; its
 // description starts open and closes on click; 1 … n pick, unless a dialog is open or a field
-// has focus. A pick only marks the option and says to answer in Claude
-// Desktop: the station cannot answer a gate, so nothing here is sent.
+// has focus. Without an answer a pick only marks the option and says to answer in Claude
+// Desktop, unless the station holds the gate (an `answer` is handed in): then
+// a pick sends that option's label, as the hook asked it, as the answer.
 // Loaded by the focus page before focus-page.js, whose page() calls frame().
 (function (w, doc) {
     var EN = {
@@ -20,6 +21,8 @@
         'gf.pick': 'Pick this',
         'gf.next': 'Next step the report names',
         'gf.where': 'Answer in Claude Desktop; this page only shows what you are approving and sends nothing.',
+        'gf.whereSend': 'Pick an option or write your own answer; it is sent as the answer.',
+        'gf.pickedSend': 'You picked "{l}"; it is sent as the answer.',
         'gf.picked': 'You picked "{l}". Answer it in Claude Desktop; this page sends nothing.',
         'gf.free': 'Or write your own answer',
         'gf.freeHint': 'Sent as the answer to this question, the same as choosing "Other".',
@@ -46,13 +49,14 @@
     // its stage and its question, so a new gate in the same session starts
     // with no pick. CUR is the gate the last frame drew, with its option
     // labels, for the keys and clicks.
-    var STATE = {}, CUR = { key: null, labels: [] }, heard = false;
+    var STATE = {}, CUR = { key: null, labels: [], raw: [] }, heard = false;
     function state(key) { return STATE[key] || (STATE[key] = { pick: 0, more: {}, free: '', said: null, marks: [] }); }
     // The page's answer for the gate the last frame drew: { question, send }.
     var ANSWER = null;
     function lineText(st) {
-        var l = st.pick ? CUR.labels[st.pick - 1] : null;
-        return l !== null && l !== undefined
+        var l = st.pick ? CUR.labels[st.pick - 1] : null, has = l !== null && l !== undefined;
+        if (ANSWER) return has ? loc('gf.pickedSend', '你選了「{l}」，已當成答案送出', { l: l }) : loc('gf.whereSend', '選一個選項或寫自己的答案，會直接送出當成答案');
+        return has
             ? loc('gf.picked', '你選了「{l}」，到 Claude Desktop 回答；這頁不送答案', { l: l })
             : loc('gf.where', '回答在 Claude Desktop 那邊給；這頁只讓你看清楚要核准什麼，不收答案');
     }
@@ -74,6 +78,7 @@
             + '</div><a class="gt-talk" data-block="gate-talk" href="/#/s/' + encodeURIComponent(s.id) + '/talk" title="' + loc('gf.talkTitle', '回到這個 session 的對話頁') + '">'
             + kit().icon('chev') + '<span>' + loc('gf.talk', '對話') + '</span></a></section>';
     }
+    function busy(st) { return !!(st.said && (st.said.kind === 'wait' || st.said.kind === 'ok')); }
     function option(o, i, st) {
         var k = kit(), n = i + 1, raw = String((o && o.label) || ''), rec = REC.test(raw), d = o && o.description, open = st.more[n] !== false;
         var cls = [rec ? 'is-rec' : '', st.pick === n ? 'on' : '', open ? 'is-open' : ''].filter(Boolean).join(' ');
@@ -81,19 +86,19 @@
             + '<button type="button" class="gt-more" data-gq-more="' + n + '" aria-expanded="' + (open ? 'true' : 'false') + '"' + (d ? ' aria-controls="gq-d-' + n + '"' : '') + '>'
             + '<span class="gt-l">' + esc(raw.replace(REC, '')) + (rec ? '<span class="gt-rec">' + loc('gf.rec', '建議') + '</span>' : '') + '</span>' + (d ? k.icon('chev') : '') + '</button>'
             + (d ? '<p class="gt-d" id="gq-d-' + n + '"' + (open ? '' : ' hidden') + '>' + esc(d) + '</p>' : '') + '</div>'
-            + '<button type="button" class="gq-pick" data-gq-pick="' + n + '" aria-pressed="' + (st.pick === n ? 'true' : 'false') + '">' + loc('gf.pick', '選這個') + '<kbd>' + n + '</kbd></button></li>';
+            + '<button type="button" class="gq-pick" data-gq-pick="' + n + '" aria-pressed="' + (st.pick === n ? 'true' : 'false') + '"' + (ANSWER && busy(st) ? ' disabled' : '') + '>' + loc('gf.pick', '選這個') + '<kbd>' + n + '</kbd></button></li>';
     }
     function sentLine(kind, text) {
         return kind === 'wait' ? loc('gf.sending', '送出中…')
             : kind === 'ok' ? loc('gf.sentOk', '已送出：{t}', { t: text }) : loc('gf.sentBad', '送不出去：{t}', { t: text });
     }
     function freeHtml(st) {
-        var said = st.said, busy = said && (said.kind === 'wait' || said.kind === 'ok');
+        var said = st.said, wait = busy(st);
         var line = said ? sentLine(said.kind, said.text) : '';
         return '<form class="gt-free" data-block="gate-free" onsubmit="return false"><label class="gt-free-l" for="gq-free">' + loc('gf.free', '或寫自己的答案') + '</label>'
             + '<textarea id="gq-free" class="gt-free-t" data-gq-free rows="3" aria-describedby="gq-free-h">' + esc(st.free) + '</textarea>'
             + '<p class="gt-free-h" id="gq-free-h">' + loc('gf.freeHint', '會當成這題的答案送出，等同選「其他」。') + '</p>'
-            + '<div class="gt-free-a"><button type="button" class="gq-pick gt-send" data-gq-send' + (busy ? ' disabled' : '') + '>' + loc('gf.send', '送出答案') + '</button>'
+            + '<div class="gt-free-a"><button type="button" class="gq-pick gt-send" data-gq-send' + (wait ? ' disabled' : '') + '>' + loc('gf.send', '送出答案') + '</button>'
             + '<p id="gq-sent" class="gt-sent' + (said ? ' ' + said.kind : '') + '" role="status" aria-live="polite">' + esc(line) + '</p></div></form>';
     }
     function ask(g, stage, st) {
@@ -127,7 +132,16 @@
     }
     function pick(n) {
         if (CUR.key === null || !(n >= 1 && n <= CUR.labels.length)) return false;
-        state(CUR.key).pick = n;
+        var st = state(CUR.key);
+        if (ANSWER && typeof ANSWER.send === 'function') {
+            if (busy(st)) return false;
+            st.pick = n;
+            paint();
+            say('wait', '');
+            ANSWER.send(CUR.raw[n - 1]);
+            return true;
+        }
+        st.pick = n;
         paint();
         return true;
     }
@@ -148,6 +162,7 @@
             line.textContent = sentLine(kind, text);
         }
         if (btn) btn.disabled = kind === 'wait' || kind === 'ok';
+        if (ANSWER && doc.querySelectorAll) [].forEach.call(doc.querySelectorAll('[data-gq-pick]'), function (p) { p.disabled = kind === 'wait' || kind === 'ok'; });
     }
     // The one line the marks own in the free field, "標記：A「label」、B「label」"; the
     // reader's other lines are left as they are, and no marks removes the line.
@@ -232,8 +247,8 @@
         listen();
         var s = o.session || {}, g = o.gate || null, stage = g && g.stage ? g.stage : s.stage || '';
         var q = g && g.gate && g.gate.questions && g.gate.questions[0] ? g.gate.questions[0] : null;
-        CUR = { key: [s.id, stage, q ? q.question : ''].join('\n'),
-            labels: (q && Array.isArray(q.options) ? q.options : []).slice(0, 9).map(function (x) { return String((x && x.label) || '').replace(REC, ''); }) };
+        var raw = (q && Array.isArray(q.options) ? q.options : []).slice(0, 9).map(function (x) { return String((x && x.label) || ''); });
+        CUR = { key: [s.id, stage, q ? q.question : ''].join('\n'), raw: raw, labels: raw.map(function (x) { return x.replace(REC, ''); }) };
         ANSWER = o.answer && o.answer.question === (q ? q.question : null) ? o.answer : null;
         var st = state(CUR.key);
         return '<main class="fm gt-frame" data-block="gate-frame">' + head(s, stage) + (o.shellsHtml || '')

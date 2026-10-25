@@ -658,8 +658,8 @@ cannot be on a served page.
 The focus page is one session's 計畫 or 關卡 tab alone, at `GET /f/<id>/plan`
 and `GET /f/<id>/gate` — the URL `scripts/await.js` prints on its `page:`
 line. It answers a small shell (`focusShell` in `lib/station.js`) that loads
-`station.css`, `tip.css`, `diagram.css`, `gate-frame.css`, `GET /station/focus/<id>.js`,
-`i18n.js`, `tip.js`, `diagram.js`, `gate-frame.js`, `focus-page.js` and `station.js`
+`station.css`, `tip.css`, `diagram.css`, `gate-frame.css`, `diagram.js`, `GET /station/focus/<id>.js`,
+`i18n.js`, `tip.js`, `gate-frame.js`, `focus-page.js` and `station.js`
 and never the full station data file (`lib/station.js:1096-1114`).
 Any other tab name is redirected to `#/s/<id>/<tab>`
 on the full station. The focus script carries `window.STATION` with that one

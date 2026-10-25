@@ -81,3 +81,53 @@ test('the page text has English, the CSS has the rules, and gate-frame still nev
     for (const name of ['.gt-free', '.gt-free-t', '.gt-sent']) assert.ok(css.includes(name), name);
     assert.doesNotMatch(fs.readFileSync(path.join(dir, 'gate-frame.js'), 'utf8'), /fetch\(|XMLHttpRequest|sendBeacon/);
 });
+
+const PICKG = { stage: 'plan', gate: { questions: [{ question: 'Go to build?', header: 'plan', options: [{ label: 'build (Recommended)', description: 'd' }, { label: 'wait' }] }] } };
+const pargs = (answer) => Object.assign(args(answer), { gate: PICKG });
+
+test('with an answer, pick(n) sends the raw label, suffix kept, and the hint says so', () => {
+    const G = boot(), sent = [];
+    G.frame(pargs(asked(sent)));
+    assert.equal(G.pick(1), true);
+    assert.deepEqual(sent, ['build (Recommended)']);
+    assert.match(G.frame(pargs(asked(sent))), /data-gq-pick="2"[^>]*disabled/);
+    assert.ok(G.frame(pargs(asked(sent))).includes('已當成答案送出'));
+});
+
+test('with an answer, the click on 選這個 and the key send that option once; a second pick posts nothing', () => {
+    const G = boot(), D = fakeDoc(''), sent = [];
+    G.listen(D);
+    G.frame(pargs(asked(sent)));
+    D.on.click({ target: inside('[data-gq-pick]', { getAttribute: () => '2' }) });
+    assert.deepEqual(sent, ['wait']);
+    G.say('ok', 'answered');
+    D.on.keydown({ key: '1', target: {} });
+    G.pick(1);
+    assert.deepEqual(sent, ['wait']);
+});
+
+test('a failed send lets the reader pick again', () => {
+    const G = boot(), sent = [];
+    G.frame(pargs(asked(sent)));
+    G.pick(2);
+    G.say('bad', '409');
+    G.pick(1);
+    assert.deepEqual(sent, ['wait', 'build (Recommended)']);
+});
+
+test('the key sends the option label', () => {
+    const G = boot(), D = fakeDoc(''), sent = [];
+    G.listen(D);
+    G.frame(pargs(asked(sent)));
+    D.on.keydown({ key: '1', target: {} });
+    assert.deepEqual(sent, ['build (Recommended)']);
+});
+
+test('without an answer a pick only marks: nothing is sent and the Desktop line stays', () => {
+    const G = boot();
+    const html0 = G.frame(pargs(null));
+    assert.ok(html0.includes('Claude Desktop'));
+    assert.equal(G.pick(1), true);
+    const html = G.frame(pargs(null));
+    assert.ok(html.includes('你選了「build」，到 Claude Desktop 回答'));
+});
