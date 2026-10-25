@@ -507,7 +507,7 @@
         return '<div class="gpin' + (u.pin ? ' open' : '') + '" role="region" aria-labelledby="gpin-q"><p class="gpin-h">' + ic('gate') + t('gc.head', { stage: esc(p.stage) })
             + (num(g.until) ? '<span class="left">' + t('gc.left', { t: clock(g.until - at) }) + '</span>' : '') + '<span class="sp"></span>'
             + '<button type="button" class="gpin-go" data-act="gate">' + t('gpin.go') + ic('chev') + '</button></p>'
-            + '<p class="gpin-q" id="gpin-q" data-act="gpin">' + esc(q.question || '') + '</p></div>';
+            + '<p class="gpin-q" id="gpin-q" data-act="gpin" tabindex="0" role="button" aria-expanded="' + (u.pin ? 'true' : 'false') + '">' + esc(q.question || '') + '</p></div>';
     }
 
     function chatHtml(m, id, at, u, P) {
@@ -743,11 +743,31 @@
         }
         function cv() { return d.querySelector ? d.querySelector('.cv') : null; }
         function toEnd() { var c = cv(); if (c) c.scrollTop = c.scrollHeight; }
+        // The question being asked, so a new gate in the same session does not open already expanded.
+        function gateKey(p) {
+            var g = p && p.state === 'gate' ? p.gate || ((st.M && st.M.gates) || []).filter(function (x) { return x.id === p.id; })[0] : null;
+            var q = g && (g.questions || [])[0];
+            return q ? g.until + '|' + q.question : '';
+        }
+        // The report rows the user opened, put back after .cv is written again.
+        function keepOpen(c) {
+            var opened = {};
+            Array.prototype.forEach.call(c.querySelectorAll ? c.querySelectorAll('details[open]') : [], function (x) { opened[x.getAttribute('data-k')] = 1; });
+            return function (to) {
+                Array.prototype.forEach.call(to && to.querySelectorAll ? to.querySelectorAll('details') : [], function (x) { if (opened[x.getAttribute('data-k')]) x.setAttribute('open', ''); });
+            };
+        }
         function draw() {
             stopScan();
             if (st.rec) st.rec.stop();
-            var R = route();
+            var R = route(), c = cv();
+            // Rows are kept only while the same session stays on screen.
+            var keep = c && R.view === 'chat' && st.shown === R.id ? keepOpen(c) : null;
+            var gk = gateKey(R.view === 'chat' ? current() : null);
+            if (gk !== st.gk) { st.ui.pin = false; st.gk = gk; }
             app.innerHTML = screen(st.M, R, Date.now(), st.ui, R.view === 'chat' && st.P && st.P.id === R.id ? st.P : null);
+            st.shown = R.view === 'chat' ? R.id : null;
+            if (keep) keep(cv());
             if (st.ui.mode === 'pair') scan();
             if (R.view === 'chat') toEnd();
         }
@@ -756,10 +776,9 @@
             var c = cv();
             if (!c) return draw();
             var end = c.scrollHeight - c.scrollTop - c.clientHeight < 48;
-            var opened = {};
-            Array.prototype.forEach.call(c.querySelectorAll ? c.querySelectorAll('details[open]') : [], function (x) { opened[x.getAttribute('data-k')] = 1; });
+            var keep = keepOpen(c);
             c.innerHTML = cvInner(st.P, Date.now(), st.ui);
-            Array.prototype.forEach.call(c.querySelectorAll ? c.querySelectorAll('details') : [], function (x) { if (opened[x.getAttribute('data-k')]) x.setAttribute('open', ''); });
+            keep(c);
             if (end) toEnd();
         }
         // A gate card is never redrawn while its gate stands, so what is
@@ -769,6 +788,7 @@
             st.P = P;
             if (!before || before.id !== P.id) return draw();
             if (sameKey(before) === sameKey(P)) return;
+            if (gateKey(before) !== gateKey(P)) return draw();
             if (before.state === 'gate' && P.state === 'gate' && before.gate && P.gate && before.gate.until === P.gate.until) return;
             if (before.state === P.state && before.attached === P.attached && JSON.stringify(before.waiting) === JSON.stringify(P.waiting)) return patch();
             draw();
@@ -895,6 +915,18 @@
                 else { st.ui = pairUi({ manual: true, say: t('pair.bad') }); draw(); }
             }
         });
+        function pinToggle(el) {
+            st.ui.pin = !st.ui.pin;
+            var pin = el.closest('.gpin');
+            if (pin && pin.classList) pin.classList.toggle('open', st.ui.pin);
+            el.setAttribute('aria-expanded', st.ui.pin ? 'true' : 'false');
+        }
+        d.addEventListener('keydown', function (e) {
+            var el = e.target && e.target.closest ? e.target.closest('[data-act=gpin]') : null;
+            if (!el || (e.key !== 'Enter' && e.key !== ' ')) return;
+            e.preventDefault();
+            pinToggle(el);
+        });
         d.addEventListener('click', function (e) {
             var el = e.target && e.target.closest ? e.target.closest('[data-act],[data-mic]') : null;
             if (!el) return;
@@ -921,9 +953,7 @@
                 st.ui.rep = !st.ui.rep;
                 if (st.P) patch(); else draw();
             } else if (what === 'gpin') {
-                st.ui.pin = !st.ui.pin;
-                var pin = el.closest('.gpin');
-                if (pin && pin.classList) pin.classList.toggle('open', st.ui.pin);
+                pinToggle(el);
             } else if (what === 'gate') {
                 var gcard = d.getElementById('gate-card');
                 if (gcard && gcard.scrollIntoView) gcard.scrollIntoView({ block: 'start' });

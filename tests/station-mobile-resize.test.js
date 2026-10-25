@@ -6,6 +6,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const P = require('../assets/station/mobile.js');
+const { boot, target, settle } = require('./mobile-dom.js');
 
 const CSS = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'mobile.css'), 'utf8');
 const NOW = new Date(2026, 9, 26, 11, 2).getTime();
@@ -28,7 +29,7 @@ test('a gate conversation pins the question between the header and the log, with
     const html = P.screen(HOME, P.parseRoute('#/s/aaaaaaaa-2'), NOW, APP, gate([]));
     const pin = html.indexOf('class="gpin"');
     assert.ok(html.indexOf('</header>') < pin && pin < html.indexOf('class="cv"'));
-    assert.match(html, /<p class="gpin-q" id="gpin-q" data-act="gpin">核准這份 design？<\/p>/);
+    assert.match(html, /<p class="gpin-q" id="gpin-q" data-act="gpin" tabindex="0" role="button" aria-expanded="false">核准這份 design？<\/p>/);
     assert.match(html, /<button type="button" class="gpin-go" data-act="gate">看選項/);
     assert.ok(html.indexOf('class="gpin-go"') < html.indexOf('class="gpin-q"'), '看選項 sits in the header row, above the question');
     assert.ok(html.indexOf('class="gpin-go"') < html.indexOf('</p>', html.indexOf('class="gpin-h"')));
@@ -76,6 +77,71 @@ test('the pinned question is clamped to two lines and opens from ui.pin', () => 
     const url = '#/s/aaaaaaaa-2';
     assert.match(P.screen(HOME, P.parseRoute(url), NOW, APP, gate([])), /<div class="gpin" /);
     assert.match(P.screen(HOME, P.parseRoute(url), NOW, Object.assign({ pin: true }, APP), gate([])), /<div class="gpin open" /);
-    const JS = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'mobile.js'), 'utf8');
-    assert.match(JS, /what === 'gpin'\) \{\s*st\.ui\.pin = !st\.ui\.pin;/);
 });
+
+// ---- the pin in the booted page ----------------------------------------------
+const ID = 'aaaaaaaa-2';
+const homeOf = () => Object.assign({}, HOME, { tasks: [row(ID, 'gate')] });
+const gateAt = (until, q) => sess('gate', { gate: { questions: [Object.assign({}, Q[0], { question: q || Q[0].question })], since: NOW - 60e3, until } });
+const pinEl = () => ({ open: false, classList: { toggle(c, on) { this.owner.open = on; } } });
+const pinTarget = (pin) => { pin.classList.owner = pin; return target({ 'data-act': 'gpin', role: 'button', 'aria-expanded': 'false' }, pin); };
+const closed = (page) => /<div class="gpin" [^>]*>.*aria-expanded="false"/.test(page.app.innerHTML);
+
+test('a tap on the pinned question opens it and says so in aria-expanded', async () => {
+    const page = boot('#/s/' + ID, { home: homeOf(), one: gateAt(Date.now() + 1e5) });
+    await settle();
+    assert.ok(closed(page));
+    const pin = pinEl(), el = pinTarget(pin);
+    page.fire('click', { target: el });
+    assert.equal(pin.open, true);
+    assert.equal(el.attrs['aria-expanded'], 'true');
+    page.fire('click', { target: el });
+    assert.equal(pin.open, false);
+    assert.equal(el.attrs['aria-expanded'], 'false');
+});
+// red when: the click branch stops toggling ui.pin or stops writing aria-expanded.
+
+test('Enter and Space on the pinned question toggle it; other keys and other elements do not', async () => {
+    const page = boot('#/s/' + ID, { home: homeOf(), one: gateAt(Date.now() + 1e5) });
+    await settle();
+    const pin = pinEl(), el = pinTarget(pin);
+    const key = (k, t) => { const e = { target: t || el, key: k, prevented: false, preventDefault() { this.prevented = true; } }; page.fire('keydown', e); return e; };
+    assert.equal(key('Enter').prevented, true);
+    assert.equal(pin.open, true);
+    assert.equal(el.attrs['aria-expanded'], 'true');
+    key(' ');
+    assert.equal(pin.open, false);
+    assert.equal(key('a').prevented, false);
+    assert.equal(pin.open, false);
+    key('Enter', target({ 'data-act': 'more' }));
+    assert.equal(pin.open, false);
+});
+// red when: the keydown handler is removed, or answers to any key, or to an element that is not [data-act=gpin].
+
+test('a pin opened on one gate is closed on the next gate of the same session, and after the gate was answered', async () => {
+    const state = { home: homeOf(), one: gateAt(Date.now() + 1e5) };
+    const page = boot('#/s/' + ID, state);
+    await settle();
+    page.fire('click', { target: pinTarget(pinEl()) });
+    state.one = gateAt(Date.now() + 2e5, 'next question?');
+    await page.poll();
+    assert.ok(closed(page), 'a new question comes up closed');
+    assert.ok(page.app.innerHTML.includes('next question?'));
+    page.fire('click', { target: pinTarget(pinEl()) });
+    state.one = sess('running');
+    await page.poll();
+    assert.doesNotMatch(page.app.innerHTML, /gpin/);
+    state.one = gateAt(Date.now() + 2e5, 'next question?');
+    await page.poll();
+    assert.ok(closed(page), 'the same question asked again after an answer is closed too');
+});
+// red when: draw() stops clearing ui.pin on a changed gate key, or refresh() patches instead of drawing when the gate changes.
+
+test('leaving the conversation closes the pin', async () => {
+    const page = boot('#/s/' + ID, { home: homeOf(), one: gateAt(Date.now() + 1e5) });
+    await settle();
+    page.fire('click', { target: pinTarget(pinEl()) });
+    page.goto('#/s/' + ID);
+    assert.ok(closed(page));
+});
+// red when: the hashchange listener stops resetting ui.pin (the gate key is the same here, so only that line closes it).

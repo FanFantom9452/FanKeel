@@ -765,12 +765,19 @@ On `/m` the home header is two lines, the title and history link above the
 host and subscribe row (`assets/station/mobile.js:351`, `class="ab ab2"`;
 `assets/station/mobile.css:360`, `body.m .ab.ab2{display:grid;gap:0;min-height:0;padding:6px 8px 8px 20px}`). A chat
 whose session is at a gate pins the gate's question under the header, with a
-button to the options (`assets/station/mobile.js:475`, `function gpinHtml(p, at) {`;
-`assets/station/mobile.js:506`, `p.state === 'gate' && p.gate ? gpinHtml(p, at)`),
+button to the options (`assets/station/mobile.js:504`, `function gpinHtml(p, at, u) {`;
+`assets/station/mobile.js:535`, `p.state === 'gate' && p.gate ? gpinHtml(p, at, u)`),
 and the last report message is folded to about six lines until
-`展開完整報告` is pressed (`assets/station/mobile.js:444`,
+`展開完整報告` is pressed (`assets/station/mobile.js:471`,
 `var fold = function (i) { return p.state === 'gate' && i === lastAi …`;
 `assets/station/mobile.css:380`, `body.m .rep .bub{position:relative;max-height:calc(15px * 1.75 * 6 + 24px);overflow:hidden;`).
+The pinned question is clamped to two lines and opens on a tap, or on Enter or
+Space (`tabindex="0"`, `role="button"`, `aria-expanded`); a new gate, or the
+gate being answered, closes it again. A turn the harness injected, which the
+desktop log holds as user text starting `<agent-message`, `<task-notification`
+or `<system-reminder`, is drawn as a collapsed row (`<details>`) with the report
+only, never as a user bubble; a row the person opened stays open while the same
+session is on screen.
 
 The gate page draws one column when no gate is held: `held` is true only when
 the session has `gateAt` or a `pending` file, and without it the grid gets
