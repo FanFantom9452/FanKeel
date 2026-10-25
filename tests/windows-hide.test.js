@@ -23,23 +23,34 @@ function files() {
     return out;
 }
 
-// Names a file binds to child_process functions: `const { spawn: spawnChild } = require('node:child_process')`.
-function aliases(src) {
+const CP_REQUIRE = "require\\(\\s*['\"](?:node:)?child_process['\"]\\s*\\)";
+const ownerOf = (ns) => '(?:' + CP_REQUIRE + '|(?:' + ns.join('|') + ')(?![\\w$]))';
+
+// Names a file binds to child_process functions: `const { spawn: spawnChild } = require('node:child_process')` or `= cp`.
+function aliases(src, ns) {
     const out = [];
-    for (const m of src.matchAll(/\{([^}]*)\}\s*=\s*require\(\s*['"](?:node:)?child_process['"]\s*\)/g)) {
+    for (const m of src.matchAll(new RegExp('\\{([^}]*)\\}\\s*=\\s*' + ownerOf(ns), 'g'))) {
         for (const part of m[1].split(',')) {
             const [orig, alias] = part.split(':').map((x) => x.trim());
-            if (alias && NAMES.includes(orig)) out.push(alias);
+            if (alias && NAMES.includes(orig)) out.push(alias.replace(/\$/g, '\\$'));
         }
     }
     return out;
 }
 
+// Local names bound to one child_process function: `const run = promisify(cp.execFile)` or `const sp = cp.spawn`.
+function renames(src, ns) {
+    const owner = ownerOf(ns);
+    const fn = '\\.(?:' + NAMES.join('|') + ')(?![\\w$])';
+    const re = new RegExp('\\b(?:const|let|var)\\s+([\\w$]+)\\s*=\\s*(?:(?:[\\w$]+\\.)?promisify\\(\\s*' + owner + fn + '\\s*\\)|' + owner + fn + '\\s*(?:[;\\n]|$))', 'g');
+    return [...src.matchAll(re)].map((m) => m[1].replace(/\$/g, '\\$'));
+}
+
 // Every child-process call in a source string: direct, aliased, or a parenthesised callee like `(a || execFileSync)(`.
 function callsIn(src) {
-    const names = NAMES.concat(aliases(src));
     const ns = ['cp', 'child_process'];
     for (const m of src.matchAll(/\b(?:const|let|var)\s+([\w$]+)\s*=\s*require\(\s*['"](?:node:)?child_process['"]\s*\)/g)) ns.push(m[1].replace(/\$/g, '\\$'));
+    const names = NAMES.concat(aliases(src, ns), renames(src, ns));
     const list = names.join('|');
     const direct = new RegExp('(?<![\\w$.])(?:(?:' + ns.join('|') + ')\\.)?(?:' + list + ')\\(', 'g');
     const viaRequire = new RegExp('require\\(\\s*[\'"](?:node:)?child_process[\'"]\\s*\\)\\.(?:' + list + ')\\(', 'g');
@@ -133,6 +144,10 @@ test('the scanner finds a call in each shape it could miss, and reads windowsHid
         bracket: (o) => "const cp = require('child_process');\ncp['spawn']('a', [], { " + o + 'stdio: 1 });',
         nestedParen: (o) => 'const t = (deps.x || wrap(execFileSync))(process.execPath, [], { ' + o + 'encoding: 1 });',
         nestedCall: (o) => 'const t = (pick(a, b) || spawn)("a", [], { ' + o + 'stdio: 1 });',
+        promisifyRename: (o) => "const cp = require('node:child_process');\nconst run = promisify(cp.execFile);\nrun('git', [], { " + o + 'cwd: 1 });',
+        plainRename: (o) => "const cp = require('node:child_process');\nconst sp = cp.spawn;\nsp('a', [], { " + o + 'stdio: 1 });',
+        namespaceDestructure: (o) => "const cp = require('node:child_process');\nconst { execFile: ef } = cp;\nef('a', [], { " + o + 'cwd: 1 });',
+        inlinePromisify: (o) => "const run = util.promisify(require('node:child_process').execFile);\nrun('git', [], { " + o + 'cwd: 1 });',
         alias: (o) => "const { spawn: spawnChild } = require('node:child_process');\nspawnChild('a', [], { " + o + 'stdio: 1 });',
     };
     for (const [name, make] of Object.entries(shapes)) {
@@ -143,6 +158,11 @@ test('the scanner finds a call in each shape it could miss, and reads windowsHid
         assert.strictEqual(shown.length, 1, name + ': found once with the option');
         assert.ok(hidden(shown[0]), name + ': hidden');
     }
+});
+
+test('a rename of a non-child_process function is not flagged', () => {
+    assert.deepStrictEqual(callsIn("const run = promisify(somethingElse.execFile);\nrun('git', [], {});"), []);
+    assert.deepStrictEqual(callsIn("const sp = other.spawn;\nsp('a');"), []);
 });
 
 test('the scanner ignores regex.exec and other objects exec', () => {
