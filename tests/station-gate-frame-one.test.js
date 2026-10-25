@@ -36,6 +36,25 @@ test('the free answer has a mic only where SpeechRecognition exists', () => {
     assert.match(html, /<p class="gsay" id="gq-say" role="status">/);
 });
 
+test('the mic button starts listening, fills the box without sending, and a second press stops', () => {
+    const recs = [], sent = [];
+    function SR() { this.calls = []; this.start = () => this.calls.push('start'); this.stop = () => this.calls.push('stop'); recs.push(this); }
+    const G = boot({ SpeechRecognition: SR });
+    const box = { value: 'so', classList: { toggle() {} }, dispatchEvent() {} };
+    const D = { on: {}, addEventListener: (t, fn) => { D.on[t] = fn; }, querySelectorAll: () => [], getElementById: () => null, querySelector: (s) => (s === '[data-gq-free]' ? box : null) };
+    G.listen(D);
+    G.frame(args(Object.assign({}, S, { gateAt: 1 }), { question: 'Go to build?', send: (t) => sent.push(t) }));
+    const mic = { closest: (s) => (s === '[data-gq-mic]' ? {} : null) };
+    D.on.click({ target: mic });
+    assert.deepEqual(recs[0].calls, ['start']);
+    recs[0].onresult({ results: [Object.assign([{ transcript: 'hello' }], { isFinal: true }), Object.assign([{ transcript: ' there' }], { isFinal: false })] });
+    assert.equal(box.value, 'so hello there');
+    assert.deepEqual(sent, []);
+    D.on.click({ target: mic });
+    assert.deepEqual(recs[0].calls, ['start', 'stop']);
+    assert.equal(recs.length, 1);
+});
+
 test('gate-frame.css gives the single column and the gate page mic their rules', () => {
     const css = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'gate-frame.css'), 'utf8');
     assert.match(css, /\.gt-grid\.gt-one\{grid-template-columns:minmax\(0,1fr\)\}/);
