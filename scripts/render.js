@@ -146,10 +146,10 @@ function outDirOf(args) {
 function shoot(browser, url, png, html, size, extra) {
     fs.rmSync(png, { force: true });
     const base = ['--headless=new', '--disable-gpu', ...extra];
-    const shot = spawnSync(browser, [...base, '--screenshot=' + png, '--window-size=' + size, url], { encoding: 'utf8' });
+    const shot = spawnSync(browser, [...base, '--screenshot=' + png, '--window-size=' + size, url], { encoding: 'utf8', windowsHide: true });
     if (shot.status !== 0) return { label: 'screenshot', status: shot.status || 1, message: shot.stderr || String(shot.status) };
     if (!fs.existsSync(png)) return { label: 'screenshot', status: 1, message: 'exited 0 but did not write ' + png };
-    const dump = spawnSync(browser, [...base, '--dump-dom', url], { encoding: 'utf8' });
+    const dump = spawnSync(browser, [...base, '--dump-dom', url], { encoding: 'utf8', windowsHide: true });
     if (dump.status !== 0) return { label: 'dump-dom', status: dump.status || 1, message: dump.stderr || String(dump.status) };
     fs.writeFileSync(html, dump.stdout);
     return null;

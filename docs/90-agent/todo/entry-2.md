@@ -1,7 +1,7 @@
 ---
 label: 測試
 title: suite 偶發 409 測試紅
-description: 整套 suite 跑時 tests/station-chartroom.test.js 的「兩個同名 root 回 409」測試出現一次 fetch failed，單獨跑 5 次都過，原因不明。
+description: 整套 suite 跑時 `tests/station-chartroom.test.js` 的「兩個同名 root 回 409」測試出現一次 fetch failed，單獨跑 5 次都過，原因不明。
 state: decision
 ---
 
