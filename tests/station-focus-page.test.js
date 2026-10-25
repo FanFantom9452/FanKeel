@@ -183,6 +183,6 @@ test('the focus page listens for clicks on #focus, and a click on a fold keeps i
 
 test('gateRest and gatePatrol carry a data-gv key', () => {
     const src = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
-    assert.match(src, /<details class="gv-more" data-gv="rest">/);
+    assert.match(src, /<details class="gv-more" data-gv="rest"' \+ \(dg \? ' open' : ''\)/);
     assert.match(src, /<details class="gv-more" data-gv="patrol" data-block="gate-patrol">/);
 });

@@ -121,3 +121,13 @@ test('MODULES and EMITTED list diagram.js, diagram.css and vendor/pele.js; the f
     assert.ok(html.indexOf('diagram.js') < html.indexOf('gate-frame.js'));
     assert.ok(html.includes('<link rel="stylesheet" href="/station/diagram.css">'));
 });
+
+test('draw with marked ids marks those nodes quietly, in the order given, so a repaint keeps the reader\'s marks', () => {
+    const D = loaded(), f = fake(), got = [];
+    D.draw(f.root, { mark: true, marked: ['B', 'A'], onMark: (m) => got.push(JSON.parse(JSON.stringify(m))), pele: f.pele });
+    assert.ok(f.nodes[0].classList.contains('is-marked') && f.nodes[1].classList.contains('is-marked'));
+    assert.equal(f.count.textContent, '2');
+    assert.deepEqual(got, [], 'restoring is not a new mark');
+    f.handlers.click({ target: f.nodes[0] });
+    assert.deepEqual(got.at(-1), [{ id: 'B', label: 'Done' }]);
+});

@@ -273,3 +273,17 @@ test('a land gate whose suite.json cannot be read says so, with the path escaped
     assert.match(html, /<p class="gv-red">讀不到 <code>F:\/r\/&lt;s&gt;\.json<\/code>/);
     assert.doesNotMatch(V.gateTabHtml({ stage: 'land' }, report('land', LAND, {}), []), /讀不到/);
 });
+
+test('a mermaid fence in the report rest is a data-mermaid figure and opens the fold; a rest without one is the old pre', () => {
+    const rest = ['before', '```mermaid', 'flowchart TD', 'A-->B', '```', 'after'];
+    global.window.FK_DIAGRAM = require('../assets/station/diagram.js');
+    try {
+        const html = V.gateTabHtml({ stage: 'build' }, report('build', BUILD, { rest }), PLAN);
+        assert.match(html, /<details class="gv-more" data-gv="rest" open>/);
+        assert.match(html, /<pre class="gv-rest">before<\/pre><figure class="dg" data-mermaid data-l="2"/);
+        assert.ok(html.includes('<code>flowchart TD\nA--&gt;B</code>'));
+        assert.match(html, /<\/figure><pre class="gv-rest">after<\/pre><\/details>/);
+        const plain = V.gateTabHtml({ stage: 'build' }, report('build', BUILD, { rest: ['a', 'b'] }), PLAN);
+        assert.match(plain, /<details class="gv-more" data-gv="rest"><summary>[^]*<pre class="gv-rest">a\nb<\/pre><\/details>/);
+    } finally { delete global.window.FK_DIAGRAM; }
+});

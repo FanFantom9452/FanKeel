@@ -324,3 +324,13 @@ test('arrow keys walk the open reader; Escape hides the hits', async () => {
     key('Escape');
     assert.equal(pop.hidden, true);
 });
+
+test('render: a mermaid fence is a data-mermaid figure that keeps its source and the cited-line mark; another fence stays pre/code', () => {
+    const { D } = mod();
+    const md = '```mermaid\nflowchart TD\nA-->B\n```\n\n```js\nx < y\n```\n';
+    const r = D.render(md, 0);
+    assert.match(r.html, /<figure class="dg" data-mermaid data-l="1"/);
+    assert.ok(r.html.includes('<pre class="dg-src"><code>flowchart TD\nA--&gt;B</code></pre>'));
+    assert.ok(r.html.includes('<pre data-l="6"><code>x &lt; y</code></pre>'));
+    assert.match(D.render(md, 3).html, /<figure class="dg hl" data-mermaid/);
+});

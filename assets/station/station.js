@@ -2080,6 +2080,7 @@
             if (!FO.repaint(last, html, doc.activeElement)) return;
             last = html;
             el.innerHTML = html;
+            if (w.FK_GATE && w.FK_GATE.diagrams) w.FK_GATE.diagrams(el);
         };
         paint();
         if (!S.serve || !w.setInterval) return;
@@ -3530,8 +3531,21 @@
     // The lines no rule recognised, as written, never dropped.
     function gateRest(rest) {
         if (!rest || !rest.length) return '';
-        return '<details class="gv-more" data-gv="rest"><summary>' + loc('det.gateRest', '報告其餘') + '<small>' + loc('det.gateRestN', '{n} 行', { n: rest.length }) + '</small></summary>'
-            + '<pre class="gv-rest">' + esc(rest.join('\n')) + '</pre></details>';
+        var parts = [], plain = [], dg = false, i = 0, e, fence = /^\s*```\s*mermaid\b/i;
+        var flush = function () { if (plain.length) parts.push('<pre class="gv-rest">' + esc(plain.join('\n')) + '</pre>'); plain = []; };
+        while (i < rest.length) {
+            if (w.FK_DIAGRAM && fence.test(rest[i])) {
+                e = i + 1;
+                while (e < rest.length && !/^\s*```/.test(rest[e])) e++;
+                flush();
+                parts.push(w.FK_DIAGRAM.fence(rest.slice(i + 1, e).join('\n'), i + 1));
+                dg = true;
+                i = e + 1;
+            } else plain.push(rest[i++]);
+        }
+        flush();
+        return '<details class="gv-more" data-gv="rest"' + (dg ? ' open' : '') + '><summary>' + loc('det.gateRest', '報告其餘') + '<small>' + loc('det.gateRestN', '{n} 行', { n: rest.length }) + '</small></summary>'
+            + parts.join('') + '</details>';
     }
     // A report value `derive` (lib/gatereport.js) split into items: a list when it holds two or more, else the value as written.
     function gateList(list, text) {

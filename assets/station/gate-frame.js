@@ -27,6 +27,7 @@
         'gf.sending': 'Sending…',
         'gf.sentOk': 'Sent: {t}',
         'gf.sentBad': 'Could not send: {t}',
+        'gf.marked': 'Marked: ',
     };
     var REC = /\s*\(Recommended\)\s*$/;
     function has(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
@@ -46,7 +47,7 @@
     // with no pick. CUR is the gate the last frame drew, with its option
     // labels, for the keys and clicks.
     var STATE = {}, CUR = { key: null, labels: [] }, heard = false;
-    function state(key) { return STATE[key] || (STATE[key] = { pick: 0, more: {}, free: '', said: null }); }
+    function state(key) { return STATE[key] || (STATE[key] = { pick: 0, more: {}, free: '', said: null, marks: [] }); }
     // The page's answer for the gate the last frame drew: { question, send }.
     var ANSWER = null;
     function lineText(st) {
@@ -148,6 +149,34 @@
         }
         if (btn) btn.disabled = kind === 'wait' || kind === 'ok';
     }
+    // The one line the marks own in the free field, "標記：A「label」、B「label」"; the
+    // reader's other lines are left as they are, and no marks removes the line.
+    var MARKED = /^(標記：|Marked: )/;
+    function markLine(text, list) {
+        var lines = String(text).split('\n'), at = -1, line = list.length
+            ? loc('gf.marked', '標記：') + list.map(function (m) { return m.id + "「" + m.label + "」"; }).join("、") : null;
+        lines.forEach(function (l, i) { if (at < 0 && MARKED.test(l)) at = i; });
+        if (at >= 0 && line === null) lines.splice(at, 1);
+        else if (at >= 0) lines[at] = line;
+        else if (line !== null) return text + (text && !/\n$/.test(text) ? '\n' : '') + line;
+        return lines.join('\n');
+    }
+
+    function mark(list, key) {
+        key = key === undefined ? CUR.key : key;
+        if (key === null) return;
+        var st = state(key), box = doc && doc.querySelector ? doc.querySelector('[data-gq-free]') : null;
+        st.marks = list;
+        st.free = markLine(box ? String(box.value || '') : st.free, list);
+        if (box) box.value = st.free;
+    }
+    // After the focus page wrote the report into `root`: draw its diagrams so a
+    // node click marks, with the nodes this gate had marked put back.
+    function diagrams(root) {
+        if (CUR.key === null || !w || !w.FK_DIAGRAM) return;
+        var key = CUR.key;
+        w.FK_DIAGRAM.draw(root, { mark: true, marked: state(key).marks.map(function (m) { return m.id; }), onMark: function (l) { mark(l, key); } });
+    }
     function send() {
         if (CUR.key === null || !ANSWER || typeof ANSWER.send !== 'function' || !doc || !doc.querySelector) return false;
         var box = doc.querySelector('[data-gq-free]'), text = box ? String(box.value || '').trim() : '';
@@ -204,7 +233,7 @@
             + '<aside class="gt-side" data-block="gate-side"><div class="gt-pin">' + ask(g, stage, st) + '</div></aside></div></main>';
     }
 
-    var api = { frame: frame, listen: listen, pickable: pickable, onKey: onKey, pick: pick, more: more, say: say, send: send, EN: EN };
+    var api = { frame: frame, listen: listen, pickable: pickable, onKey: onKey, pick: pick, more: more, say: say, send: send, mark: mark, diagrams: diagrams, EN: EN };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     if (w) w.FK_GATE = api;
 }(typeof window !== 'undefined' ? window : null, typeof document !== 'undefined' ? document : null));

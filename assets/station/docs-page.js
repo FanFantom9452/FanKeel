@@ -424,7 +424,10 @@
             if (/^\s*```/.test(l)) {
                 e = i + 1;
                 while (e < L.length && !/^\s*```/.test(L[e])) e++;
-                blk('pre', a, e + 1, '<code>' + esc(L.slice(i + 1, e).join('\n')) + '</code>');
+                if (/^\s*```\s*mermaid\b/i.test(l) && w && w.FK_DIAGRAM) {
+                    var fig = w.FK_DIAGRAM.fence(L.slice(i + 1, e).join('\n'), a);
+                    out.push(mark && mark >= a && mark <= e + 1 ? fig.replace('<figure class="dg"', '<figure class="dg hl"') : fig);
+                } else blk('pre', a, e + 1, '<code>' + esc(L.slice(i + 1, e).join('\n')) + '</code>');
                 i = e + 1;
                 continue;
             }
@@ -480,6 +483,7 @@
             return '<span class="rd-fm"><i>' + k + '</i>' + esc(r.meta[k]) + '</span>';
         }).join('');
         body.innerHTML = r.html || '<p class="rd-load">' + loc('dk.empty', '這份文件是空的。') + '</p>';
+        if (w && w.FK_DIAGRAM) w.FK_DIAGRAM.draw(body);
         var hl = body.querySelector ? body.querySelector('.hl') : null;
         if (hl && hl.scrollIntoView) hl.scrollIntoView({ block: 'center' });
     }

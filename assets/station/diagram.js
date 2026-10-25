@@ -148,6 +148,11 @@
             press(dx > 0 ? 'ArrowRight' : 'ArrowLeft', Math.round(Math.abs(dx) / 48));
             press(dy > 0 ? 'ArrowDown' : 'ArrowUp', Math.round(Math.abs(dy) / 48));
         }
+        // marks a repaint rebuilt: the ids the reader had marked, put back without calling onMark
+        (o.marked || []).forEach(function (id) {
+            var g = [].filter.call(nodes(), function (n) { return n.getAttribute('data-id') === id; })[0];
+            if (g && o.mark) toggle(g, true);
+        });
         ctl = pele.enableZoom(pan, { always: true, controls: false, maxScale: 3 });
         if (ctl.fit < FLOOR) ctl.zoomTo(FLOOR);
         show();
