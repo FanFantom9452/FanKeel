@@ -370,7 +370,10 @@ then asks this stage's gate.
      harness and counts as dead, not red. (c): every row that is not `ok`
      is a finding as printed. A check the diff adds that is not a test (a
      script, a guard, a verify line) needs one input it must reject and
-     proof it rejects it. Two mutations that redden exactly the same tests
+     proof it rejects it. A scanner for a pattern needs one fixture per shape it
+     could miss (call in parentheses, aliased import, sibling API like `exec`),
+     each rejected, or it is blind (10-25: `(deps.execFile || execFileSync)(`).
+     Two mutations that redden exactly the same tests
      are a gap — one test that tells them apart is missing.
      A test of locking or ordering must wait on an explicit signal from the
      other side (a line the other process prints, a marker file), never on a

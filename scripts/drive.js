@@ -161,7 +161,7 @@ async function run(opts, deps, root, pluginDir) {
         spawn: deps.spawn,
         pollMs: deps.pollMs || 1000,
         sleep: deps.sleep || ((ms) => new Promise((r) => setTimeout(r, ms))),
-        task: deps.task || ((args) => (deps.execFile || execFileSync)(process.execPath, [path.join(__dirname, 'task.js'), ...args, '--session', opts.session, '--root', root], { encoding: 'utf8', env: taskEnv(opts.env || process.env, opts.session, process.pid) })),
+        task: deps.task || ((args) => (deps.execFile || execFileSync)(process.execPath, [path.join(__dirname, 'task.js'), ...args, '--session', opts.session, '--root', root], { encoding: 'utf8', windowsHide: true, env: taskEnv(opts.env || process.env, opts.session, process.pid) })),
     };
     const state = { rounds: 0, usd: 0, waited: 0, start: Date.now() };
     const stop = (stopped, extra) => {

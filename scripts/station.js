@@ -250,7 +250,7 @@ function openInBrowser(target) {
         ? ['cmd', ['/c', 'start', '', target]]
         : process.platform === 'darwin' ? ['open', [target]] : ['xdg-open', [target]];
     try {
-        spawn(cmd, args, { detached: true, stdio: 'ignore' }).unref();
+        spawn(cmd, args, { detached: true, stdio: 'ignore', windowsHide: true }).unref();
     } catch (e) {
         process.stderr.write('station: could not open a browser; open ' + target + ' yourself\n');
     }
