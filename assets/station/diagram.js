@@ -211,10 +211,15 @@
             var pele = o.pele || w.pele;
             // one mark line per gate: each onMark carries the marks of every figure drawn here, in figure order
             var reads = [];
-            var each = Object.assign({}, o, { onMark: o.onMark && function () {
-                o.onMark([].concat.apply([], reads.map(function (r) { return r ? r() : []; })));
-            } });
+            // each mark carries its figure's index, so a repaint puts it back in that figure only: `marked` takes ids (any figure) or {fig, id}
+            var onMark = o.onMark && function () {
+                o.onMark([].concat.apply([], reads.map(function (r, i) {
+                    return r ? r().map(function (m) { return { fig: i, id: m.id, label: m.label }; }) : [];
+                })));
+            };
             figs.forEach(function (f, i) {
+                var each = Object.assign({}, o, { onMark: onMark, marked: (o.marked || []).filter(function (m) { return typeof m === 'string' || m.fig === i; })
+                    .map(function (m) { return typeof m === 'string' ? m : m.id; }) });
                 if (ok === false || !pele) {
                     var err = f.querySelector('[data-dg-err]');
                     err.textContent = loc('dg.noLoad', '繪圖器沒有載入；按「原始碼」看這張圖。');

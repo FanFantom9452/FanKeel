@@ -63,12 +63,12 @@ test('draw renders the block, applies enableZoom, and a node click marks it, cal
     assert.equal(f.attrs['data-drawn'], '1');
     f.handlers.click({ target: f.nodes[0] });
     assert.ok(f.nodes[0].classList.contains('is-marked'));
-    assert.deepEqual(got.at(-1), [{ id: 'A', label: 'Start' }]);
+    assert.deepEqual(got.at(-1), [{ fig: 0, id: 'A', label: 'Start' }]);
     f.handlers.click({ target: f.nodes[1] });
-    assert.deepEqual(got.at(-1), [{ id: 'A', label: 'Start' }, { id: 'B', label: 'Done' }]);
+    assert.deepEqual(got.at(-1), [{ fig: 0, id: 'A', label: 'Start' }, { fig: 0, id: 'B', label: 'Done' }]);
     f.handlers.click({ target: f.nodes[0] });
     assert.ok(!f.nodes[0].classList.contains('is-marked'));
-    assert.deepEqual(got.at(-1), [{ id: 'B', label: 'Done' }]);
+    assert.deepEqual(got.at(-1), [{ fig: 0, id: 'B', label: 'Done' }]);
 });
 
 test('without mark, a node click marks nothing', () => {
@@ -132,7 +132,7 @@ test('draw with marked ids marks those nodes quietly, in the order given, so a r
     assert.equal(f.count.textContent, '2');
     assert.deepEqual(got, [], 'restoring is not a new mark');
     f.handlers.click({ target: f.nodes[0] });
-    assert.deepEqual(got.at(-1), [{ id: 'B', label: 'Done' }]);
+    assert.deepEqual(got.at(-1), [{ fig: 0, id: 'B', label: 'Done' }]);
 });
 
 const target = (sel, el) => ({ closest: (q) => (q === sel ? el : null) });
@@ -201,4 +201,13 @@ test('a resize after the figure left the page disconnects the observer; a throw 
     f.fig.isConnected = false;
     cb();
     assert.equal(disconnected, 1);
+});
+
+test('two figures sharing a node id: marked {fig, id} puts the mark back in that figure only', () => {
+    const D = loaded(), a = fake(), b = fake(), got = [];
+    D.draw({ querySelectorAll: () => [a.fig, b.fig] }, { mark: true, marked: [{ fig: 0, id: 'A' }], onMark: (m) => got.push(JSON.parse(JSON.stringify(m))), pele: a.pele });
+    assert.ok(a.nodes[0].classList.contains('is-marked'));
+    assert.ok(!b.nodes[0].classList.contains('is-marked'));
+    b.handlers.click({ target: b.nodes[1] });
+    assert.deepEqual(got.at(-1), [{ fig: 0, id: 'A', label: 'Start' }, { fig: 1, id: 'B', label: 'Done' }]);
 });

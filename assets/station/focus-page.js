@@ -231,8 +231,12 @@
     // A <details> on the focus page the reader opened stays open through the
     // 5 s repaint, which rewrites the whole page (station-37). Only the
     // report's folds carry a data-gv key; the rest are short.
+    // A fold the reader closed stays closed even when the page draws it open (a
+    // report with a diagram): `open[k] === false` takes the open off.
     function keepOpen(html, open) {
-        return String(html).replace(/<details class="gv-more" data-gv="([a-z]+)"(?! open)/g, function (m, k) { return open[k] ? m + ' open' : m; });
+        return String(html).replace(/(<details class="gv-more" data-gv="([a-z]+)")( open)?/g, function (m, base, k, on) {
+            return k in open ? base + (open[k] ? ' open' : '') : m;
+        });
     }
     // Whether the 5 s repaint may replace the page: not when the markup is the
     // one already drawn (a click in flight keeps its target node), and not

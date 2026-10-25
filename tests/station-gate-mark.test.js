@@ -17,7 +17,8 @@ function setup(value, lang) {
     const p = page(['gate-frame.js'], { sessions: [S] });
     if (lang) p.win.FK_I18N = { lang };
     const G = p.M['gate-frame.js'], D = { box: { value } };
-    D.addEventListener = () => {};
+    D.on = {};
+    D.addEventListener = (t, f) => { D.on[t] = f; };
     D.querySelectorAll = () => [];
     D.querySelector = (sel) => (sel === '[data-gq-free]' ? D.box : null);
     D.getElementById = () => null;
@@ -60,15 +61,30 @@ test('diagrams draws with marks on, the ids already marked, and onMark wired; th
     assert.equal(draws[0].root, root);
     assert.equal(draws[0].o.mark, true);
     assert.deepEqual([...draws[0].o.marked], []);
-    draws[0].o.onMark([A, B]);
+    draws[0].o.onMark([{ fig: 0, ...A }, { fig: 0, ...B }]);
     assert.equal(D.box.value, 'hi\n標記：A「Start」、B「Done」');
     const html = G.frame(args());
     assert.ok(html.includes('>hi\n標記：A「Start」、B「Done」</textarea>'), 'the repaint draws the field from STATE');
     G.diagrams(root);
-    assert.deepEqual([...draws[1].o.marked], ['A', 'B']);
+    assert.deepEqual(JSON.parse(JSON.stringify(draws[1].o.marked)), [{ fig: 0, id: 'A' }, { fig: 0, id: 'B' }]);
 });
 
 test('gate-frame.js still has English for every Chinese string it shows', () => {
     const { G } = setup('');
     assert.deepEqual(stringsLeft('gate-frame.js', G.EN), []);
+});
+
+test('deleting the 標記 line by hand clears the marks, so the next repaint draws none; editing around it keeps them', () => {
+    const { G, D, draws } = setup('hi');
+    D.box.closest = () => D.box;
+    G.diagrams({});
+    draws[0].o.onMark([{ fig: 0, ...A }]);
+    D.box.value += ' more';
+    D.on.input({ target: D.box });
+    G.diagrams({});
+    assert.deepEqual(JSON.parse(JSON.stringify(draws[1].o.marked)), [{ fig: 0, id: 'A' }]);
+    D.box.value = 'hi';
+    D.on.input({ target: D.box });
+    G.diagrams({});
+    assert.deepEqual([...draws[2].o.marked], []);
 });

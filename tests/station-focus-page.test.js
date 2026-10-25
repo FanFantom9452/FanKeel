@@ -168,6 +168,12 @@ test('keepOpen does not add a second open to a fold that is already open', () =>
     assert.equal(out.match(/ open/g).length, 1);
 });
 
+test('keepOpen takes the open off a fold the reader closed, and leaves one they have not touched', () => {
+    const html = '<details class="gv-more" data-gv="rest" open><summary>a</summary></details>';
+    assert.doesNotMatch(F.keepOpen(html, { rest: false }), /open/);
+    assert.match(F.keepOpen(html, {}), /data-gv="rest" open>/);
+});
+
 test('the focus page listens for clicks on #focus, and a click on a fold keeps it open through the repaint', () => {
     const d = focusDom();
     assert.equal(d.clicks.length, 1);

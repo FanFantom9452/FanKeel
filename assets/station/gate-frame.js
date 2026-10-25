@@ -175,7 +175,7 @@
     function diagrams(root) {
         if (CUR.key === null || !w || !w.FK_DIAGRAM) return;
         var key = CUR.key;
-        w.FK_DIAGRAM.draw(root, { mark: true, marked: state(key).marks.map(function (m) { return m.id; }), onMark: function (l) { mark(l, key); } });
+        w.FK_DIAGRAM.draw(root, { mark: true, marked: state(key).marks.map(function (m) { return { fig: m.fig, id: m.id }; }), onMark: function (l) { mark(l, key); } });
     }
     function send() {
         if (CUR.key === null || !ANSWER || typeof ANSWER.send !== 'function' || !doc || !doc.querySelector) return false;
@@ -214,7 +214,11 @@
         });
         doc.addEventListener('input', function (e) {
             var f = e && e.target && e.target.closest ? e.target.closest('[data-gq-free]') : null;
-            if (f && CUR.key !== null) state(CUR.key).free = String(f.value || '');
+            if (!f || CUR.key === null) return;
+            var st = state(CUR.key);
+            st.free = String(f.value || '');
+            // the reader deleted the 標記 line: a repaint must not draw those nodes marked again
+            if (!st.free.split('\n').some(function (l) { return MARKED.test(l); })) st.marks = [];
         });
         doc.addEventListener('keydown', function (e) { onKey(e, doc); });
     }

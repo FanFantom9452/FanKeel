@@ -3538,6 +3538,7 @@
                 e = i + 1;
                 while (e < rest.length && !/^\s*```/.test(rest[e])) e++;
                 flush();
+                // data-l here is the position in the rest block, not a report line
                 parts.push(w.FK_DIAGRAM.fence(rest.slice(i + 1, e).join('\n'), i + 1));
                 dg = true;
                 i = e + 1;
