@@ -15,15 +15,17 @@ const { entriesOf } = require('../lib/usage.js');
 const { liveConfigDir } = require('../lib/live.js');
 
 const HELP = [
-    'usage: node scripts/conversation.js --session <id> [--format md|jsonl] [--out <file>] [--config-dir <dir>]',
-    '       node scripts/conversation.js --bundle <file.jsonl.gz> [--part <rel>] [--list] [--tools] [--format md|jsonl] [--out <file>]',
+    'usage: node scripts/conversation.js --session <id> [--format md|jsonl] [--out <file>] [--config-dir <dir>] [--sidechain]',
+    '       node scripts/conversation.js --bundle <file.jsonl.gz> [--part <rel>] [--list] [--tools] [--sidechain] [--format md|jsonl] [--out <file>]',
     '--bundle reads a bundle record.js session wrote; --part picks one transcript in it, the first by default;',
-    '--list prints its parts. --tools keeps tool calls and tool results as turns.',
+    '--list prints its parts. --tools keeps tool calls and tool results as turns. A part under subagents/ is the',
+    'transcript of one agent and is read whole; --sidechain reads subagent lines in any other transcript too.',
     '',
     'The whole conversation of one Claude Code session, read from',
     '<config dir>/projects/<project>/<id>.jsonl: what the user typed and what Claude',
     'wrote, in order, with every compaction and its summary marked where it happened.',
-    'System text, tool results and subagent lines are left out, and lines that do not',
+    'System text, tool results and subagent lines are left out — subagent lines are read in a subagents/',
+    'part and with --sidechain — and lines that do not',
     'parse are skipped; both are counted on a "left out:" line. Hook output, thinking',
     'and tool calls are dropped without a count.',
     'md (the default) is for reading; jsonl is one turn a line, for analysis.',
@@ -44,6 +46,7 @@ function main(argv) {
             part: { type: 'string' },
             list: { type: 'boolean' },
             tools: { type: 'boolean' },
+            sidechain: { type: 'boolean' },
             help: { type: 'boolean' },
         },
     });
@@ -60,6 +63,7 @@ function main(argv) {
     let entries;
     let file;
     let session = values.session;
+    let side = Boolean(values.sidechain);
     if (values.bundle) {
         const { head, parts } = bundle.unpack(fs.readFileSync(values.bundle));
         if (values.list) {
@@ -71,6 +75,7 @@ function main(argv) {
             process.stderr.write('conversation: no part ' + rel + ' in ' + values.bundle + '\n');
             return 1;
         }
+        if (/(^|\/)subagents\//.test(rel)) side = true;
         entries = parts.get(rel);
         file = values.bundle + '#' + rel;
         session = session || head.sessions[0];
@@ -87,7 +92,7 @@ function main(argv) {
             return 1;
         }
     }
-    const read = conversation.turnsOf(entries, { tools: Boolean(values.tools) });
+    const read = conversation.turnsOf(entries, { tools: Boolean(values.tools), sidechain: side });
     read.skipped.unparsed = stats.unparsed;
     const text = format === 'jsonl' ? conversation.jsonlOf(read.turns) : conversation.markdownOf(read, { session, file });
     if (values.out) {
