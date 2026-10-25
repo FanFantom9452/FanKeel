@@ -40,6 +40,7 @@
             'mic.on': '聆聽中… 再按一次停止', 'mic.done': '聽好了：可以改字，按送出才會送',
             'mic.denied': '沒有麥克風權限：到瀏覽器設定允許，或改按鍵盤上的語音鍵', 'mic.missed': '沒聽清楚：再按一次麥克風',
             'gc.head': '{stage} gate', 'gc.left': '剩 {t} · 之後轉回電腦',
+            'hx.agent': 'agent 回報', 'hx.note': '任務通知', 'hx.sys': '系統提醒',
             'gpin.go': '看選項', 'rep.more': '展開完整報告', 'rep.less': '收起報告',
             'gate.pick': '選一個答案', 'gate.pickMany': '可以選幾個', 'gate.own': '自己寫答案…', 'gate.rec': '建議', 'gate.send': '送出答案',
             'gate.sending': '送出中…', 'gate.sent': '送出了，等 Claude 接著做', 'gate.needAll': '每一題都要有答案',
@@ -76,6 +77,7 @@
             'mic.on': 'Listening… tap again to stop', 'mic.done': 'Heard: edit it if you like; only Send sends',
             'mic.denied': 'No microphone permission: allow it in the browser settings, or use the keyboard\'s voice key', 'mic.missed': 'Did not catch that: tap the mic again',
             'gc.head': '{stage} gate', 'gc.left': '{t} left · then back to the desktop',
+            'hx.agent': 'Agent report', 'hx.note': 'Task notice', 'hx.sys': 'System reminder',
             'gpin.go': 'See options', 'rep.more': 'Show the full report', 'rep.less': 'Collapse the report',
             'gate.pick': 'Pick one answer', 'gate.pickMany': 'Pick any number', 'gate.own': 'Write your own answer…', 'gate.rec': 'Recommended', 'gate.send': 'Send answer',
             'gate.sending': 'Sending…', 'gate.sent': 'Sent; Claude carries on', 'gate.needAll': 'Every question needs an answer',
@@ -361,8 +363,35 @@
         }).join('');
     }
 
+    // A turn the harness injected through UserPromptSubmit (a subagent's hand-back, a background-task
+    // notice, a system reminder) is logged as the desktop user's text; it is not something the user said.
+    var HARNESS = /^\s*<(agent-message|task-notification|system-reminder)\b/;
+    function harness(text) {
+        var m = HARNESS.exec(String(text || ''));
+        if (!m) return null;
+        var s = String(text).trim(), kind = m[1], body;
+        if (kind === 'agent-message') {
+            var f = s.slice(0, 600).search(/follows:/);
+            body = f >= 0 ? s.slice(f + 8) : s.replace(/^<agent-message\b[^>]*>/, '');
+            body = body.replace(/<\/agent-message>\s*$/, '');
+            var lines = body.replace(/^\s*\n/, '').replace(/\s+$/, '').split('\n');
+            var ind = Math.min.apply(null, lines.filter(function (l) { return l.trim(); }).map(function (l) { return /^ */.exec(l)[0].length; }));
+            body = lines.map(function (l) { return isFinite(ind) ? l.slice(ind) : l; }).join('\n');
+        } else if (kind === 'task-notification') {
+            var sm = /<summary>([\s\S]*?)<\/summary>/.exec(s), rs = /<result>([\s\S]*?)<\/result>/.exec(s);
+            body = sm || rs ? [sm && sm[1], rs && rs[1]].filter(Boolean).map(function (x) { return x.trim(); }).join('\n\n') : s.replace(/<[^>]+>/g, '');
+        } else body = s.replace(/<[^>]+>/g, '');
+        return { label: t(kind === 'agent-message' ? 'hx.agent' : kind === 'task-notification' ? 'hx.note' : 'hx.sys'), body: body.trim() };
+    }
+
     function bubble(role, text, at, sent, fold) {
         var when = num(at) ? ' <time>' + hm(at) + '</time>' : '';
+        var hx = role === 'desktop' ? harness(text) : null;
+        if (hx) {
+            var one = hx.body.replace(/\s+/g, ' ').slice(0, 60);
+            return '<div class="msg rpt-row"><details data-k="' + esc(String(at) + ':' + String(text).length) + '"><summary><b>' + hx.label + '</b>' + when + '<span class="ex">' + esc(one) + '</span></summary>'
+                + '<div class="rpt-b">' + prose(hx.body) + '</div></details></div>';
+        }
         if (role === 'assistant') {
             var more = fold ? '<button type="button" class="rep-more" data-act="more" aria-expanded="' + (fold.open ? 'true' : 'false') + '">' + t(fold.open ? 'rep.less' : 'rep.more') + '</button>' : '';
             return '<div class="msg ai' + (fold ? ' rep' + (fold.open ? ' open' : '') : '') + '"><span class="who">' + t('who.ai') + when + '</span><div class="bub">' + prose(text) + '</div>' + more + '</div>';
@@ -472,13 +501,13 @@
     }
 
     // The question stays under the header while the report scrolls; 看選項 jumps to the answers.
-    function gpinHtml(p, at) {
+    function gpinHtml(p, at, u) {
         var g = p.gate || {}, q = (g.questions || [])[0];
         if (!q) return '';
-        return '<div class="gpin" role="region" aria-labelledby="gpin-q"><p class="gpin-h">' + ic('gate') + t('gc.head', { stage: esc(p.stage) }) + '<span class="sp"></span>'
-            + (num(g.until) ? '<span class="left">' + t('gc.left', { t: clock(g.until - at) }) + '</span>' : '') + '</p>'
-            + '<p class="gpin-q" id="gpin-q">' + esc(q.question || '') + '</p>'
-            + '<button type="button" class="gpin-go" data-act="gate">' + t('gpin.go') + ic('chev') + '</button></div>';
+        return '<div class="gpin' + (u.pin ? ' open' : '') + '" role="region" aria-labelledby="gpin-q"><p class="gpin-h">' + ic('gate') + t('gc.head', { stage: esc(p.stage) })
+            + (num(g.until) ? '<span class="left">' + t('gc.left', { t: clock(g.until - at) }) + '</span>' : '') + '<span class="sp"></span>'
+            + '<button type="button" class="gpin-go" data-act="gate">' + t('gpin.go') + ic('chev') + '</button></p>'
+            + '<p class="gpin-q" id="gpin-q" data-act="gpin">' + esc(q.question || '') + '</p></div>';
     }
 
     function chatHtml(m, id, at, u, P) {
@@ -503,7 +532,7 @@
         }
         return '<div class="pg" ' + SCREEN[attached ? 'attached' : p.state] + '><header class="ch-h">' + back
             + '<div><p class="ch-t">' + esc(p.task) + '</p><p class="ch-m">' + esc(p.project) + stw(p.stage) + chip(p) + '</p></div>' + side + '</header>'
-            + (p.state === 'gate' && p.gate ? gpinHtml(p, at) : '')
+            + (p.state === 'gate' && p.gate ? gpinHtml(p, at, u) : '')
             + '<div class="cv" role="log" aria-label="' + t('chat.log') + '">' + cvInner(p, at, u) + '</div>'
             + (u.note ? '<p class="note" role="status">' + esc(u.note) + '</p>' : '') + bottom + '</div>';
     }
@@ -727,7 +756,10 @@
             var c = cv();
             if (!c) return draw();
             var end = c.scrollHeight - c.scrollTop - c.clientHeight < 48;
+            var opened = {};
+            Array.prototype.forEach.call(c.querySelectorAll ? c.querySelectorAll('details[open]') : [], function (x) { opened[x.getAttribute('data-k')] = 1; });
             c.innerHTML = cvInner(st.P, Date.now(), st.ui);
+            Array.prototype.forEach.call(c.querySelectorAll ? c.querySelectorAll('details') : [], function (x) { if (opened[x.getAttribute('data-k')]) x.setAttribute('open', ''); });
             if (end) toEnd();
         }
         // A gate card is never redrawn while its gate stands, so what is
@@ -888,6 +920,10 @@
             } else if (what === 'more') {
                 st.ui.rep = !st.ui.rep;
                 if (st.P) patch(); else draw();
+            } else if (what === 'gpin') {
+                st.ui.pin = !st.ui.pin;
+                var pin = el.closest('.gpin');
+                if (pin && pin.classList) pin.classList.toggle('open', st.ui.pin);
             } else if (what === 'gate') {
                 var gcard = d.getElementById('gate-card');
                 if (gcard && gcard.scrollIntoView) gcard.scrollIntoView({ block: 'start' });
@@ -931,6 +967,7 @@
         win.addEventListener('hashchange', function () {
             st.ui.note = '';
             st.ui.rep = false;
+            st.ui.pin = false;
             draw();
             if (st.ui.mode !== 'app') return;
             // The list drawn before a conversation is stale by now: read it again.
