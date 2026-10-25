@@ -34,7 +34,7 @@ test('.fkp hangs from the bell by its top edge, right-aligned to it', () => {
 
 test('the panel caps match fkBoxClamp', () => {
     const r = rule('.fkp');
-    assert.ok(r.includes('width:min(376px,calc(100vw - 64px))'));
+    assert.ok(r.includes('width:min(560px,calc(100vw - 32px))'));
     assert.ok(r.includes('max-height:calc(100vh - 58px)'));
     assert.ok(CSS.includes(':root[data-style=keel] .fkp{max-height:calc(100vh - 82px)}'));
 });
@@ -51,7 +51,7 @@ test('the resize grip is bottom-left and the cursor matches the leftward widenin
     const r = rule('.fkr');
     assert.ok(r.includes('nesw-resize'));
     assert.ok(!r.includes('nwse-resize'));
-    assert.match(r, /margin:-16px auto 0 0[;\s]/);
+    assert.match(r, /margin:-24px auto 0 0[;\s]/);
     assert.ok(r.includes('225deg'));
     const JS = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
     assert.ok(JS.includes('b.w - (e.clientX - fkDrag.sx)'));
