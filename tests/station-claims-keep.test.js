@@ -50,3 +50,16 @@ test('a .claims list nobody dragged gets no inline height', () => {
     draw(p);
     assert.equal(p.det.claims[0].style.height, undefined);
 });
+
+test('A dragged, switch to B → B has default height', () => {
+    const a = { ...SES, id: 'a' }, b = { ...SES, id: 'b', task: 'task b', updated: Date.now() - 120000 };
+    const list = [a, b];
+    const p = boot(list);
+    draw(p);
+    p.det.claims[0].style.height = '120px';
+    // a leaves the list, so the selection falls to b while #det still holds a's drawn dragged element
+    list.splice(0, 1);
+    draw(p);
+    assert.ok(/task b/.test(p.det.innerHTML), 'the detail now shows b');
+    assert.equal(p.det.claims[0].style.height, undefined);
+});

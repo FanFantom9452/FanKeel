@@ -2975,15 +2975,18 @@
     }
     // A dragged .claims height lives on the element's inline style, which the
     // repaint above replaces; view.claimsH holds it by position, per session.
+    // view.claimsFor is the session the DOM in #det was drawn for: only that
+    // DOM's height is read back, so A's drag is never saved under B.
     function claimsKeep(d, id) {
+        if (view.claimsFor !== id) { view.claimsH = null; return; }
         var h = [], any = false;
         Array.prototype.forEach.call(d.querySelectorAll ? d.querySelectorAll('.claims') : [], function (el) {
             h.push(el.style.height || ''); if (el.style.height) any = true;
         });
         if (any) view.claimsH = { id: id, h: h };
-        else if (view.claimsH && view.claimsH.id !== id) view.claimsH = null;
     }
     function claimsPut(d, id) {
+        view.claimsFor = id;
         var k = view.claimsH;
         if (!k || k.id !== id || !d.querySelectorAll) return;
         Array.prototype.forEach.call(d.querySelectorAll('.claims'), function (el, i) { if (k.h[i]) el.style.height = k.h[i]; });
