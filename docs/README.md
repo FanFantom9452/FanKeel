@@ -645,6 +645,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 - [手機頁直接接上 Claude Code session，取代 Claude mobile（10-22）](03-decisions/2026-10-22-phone-session.md)
 - [station、Pane、band 用同一個介面語言 ui.lang（10-22）](03-decisions/2026-10-22-ui-lang.md)
 - [station 留 vanilla，拆成 classic script 的 FK_* 模組，index.html 是唯一的模組清單（10-24）](03-decisions/2026-10-24-station-vanilla-modules.md)
+- [station 用 pele 畫 Mermaid，Chartroom 留給任務的板（10-26）：反轉 10-07 白板取代 Mermaid 的方向](03-decisions/2026-10-26-station-mermaid-pele.md)
 - [任務的圖由 station 畫成 SVG（10-20）](03-decisions/2026-10-20-task-boards-as-svg.md)
 - [retro 讀整份遮蔽過的 session 包（10-20）](03-decisions/2026-10-20-retro-bundle.md)
 - [沒派過的 agent 怎麼處理（10-15）：effort 改在派工時傳，六個複本刪掉](03-decisions/2026-10-15-unused-agents.md)
@@ -732,6 +733,8 @@ is corrected by the next one, not by rewriting this.
 | Brief: station loading skeletons, and the station's stack going forward | [90-agent/judgements/2026-10-23-station-skeleton-stack.md](90-agent/judgements/2026-10-23-station-skeleton-stack.md) — *judged 2026-10-23, fable* |
 | 31 — Desktop 的勾選清單：原理、CLI 為何沒有、stage 能不能借它拆得更細 | [90-agent/judgements/2026-10-25-host-task-list-stages.md](90-agent/judgements/2026-10-25-host-task-list-stages.md) — *judged 2026-10-25, fable* |
 | 30 — 前端修改為何沒有自動跑渲染 reviewer | [90-agent/judgements/2026-10-25-render-review-auto.md](90-agent/judgements/2026-10-25-render-review-auto.md) — *judged 2026-10-25, fable* |
+| Brief 32 — Ply / Beautiful Mermaid / official Mermaid vs our Chartroom: what should fankeel draw diagrams with? | [90-agent/judgements/2026-10-25-mermaid-renderers-vs-chartroom.md](90-agent/judgements/2026-10-25-mermaid-renderers-vs-chartroom.md) — *judged 2026-10-25, fable* |
+| Brief 33 — 主訊息下那張勾選清單是 plan 嗎？stage 自己拆 plan 的事，我們控制得了嗎？ | [90-agent/judgements/2026-10-25-desktop-list-vs-build-plan.md](90-agent/judgements/2026-10-25-desktop-list-vs-build-plan.md) — *judged 2026-10-25, fable* |
 
 ## The five scanners
 

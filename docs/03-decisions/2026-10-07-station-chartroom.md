@@ -32,3 +32,7 @@ last_verified: 2026-10-07
 ## 接下來
 
 另開 design：先讀 answer-me-with-html 怎麼在需要時產生給人看的頁面，再定白板何時出現、板檔放哪、怎麼併進 fankeel。算完成的樣子：AI 要把架構或流程畫給人看時，用白板而不是 Mermaid，人在監控站裡打開就能看、能拖。
+
+## 後續（10-26）
+
+「白板取代 Mermaid」這個方向已由 [station 用 pele 畫 Mermaid（10-26）](2026-10-26-station-mermaid-pele.md) 反過來：station 照舊畫 Mermaid，Chartroom 只畫任務的板。
