@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # TODO 全表盤點 10-25 第二輪：子 agent 逐字稿、過期 await、patrol 退回訊息、設定頁窄版 Implementation Plan
