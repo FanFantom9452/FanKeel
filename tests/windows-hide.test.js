@@ -99,7 +99,23 @@ const allowed = (rel, text) => ALLOW.some((a) => a.file === rel && text.includes
 // The text of `const|let|var <name> = { ... }` that applies to a call at index `before`, or '' when none does.
 // Rule: the last matching declaration that starts before the call, so a same-named binding in an earlier
 // or later function is not mistaken for the one the call uses.
+// A name that is a parameter of the function enclosing the call is that caller's own, so no declaration elsewhere applies.
+function isParam(src, name, before) {
+    let depth = 0;
+    for (let i = before - 1; i >= 0; i--) {
+        if (src[i] === '}') depth++;
+        else if (src[i] === '{' && depth-- === 0) {
+            const head = src.slice(Math.max(0, i - 300), i);
+            const h = head.match(/\(([^()]*)\)\s*(?:=>\s*)?$/) || head.match(/([\w$]+)\s*=>\s*$/);
+            if (h && !/(?:if|for|while|switch|catch)\s*\([^()]*\)\s*$/.test(head)) return (h[1].match(/[\w$]+/g) || []).includes(name);
+            depth = 0;
+        }
+    }
+    return false;
+}
+
 function declaration(src, name, before) {
+    if (isParam(src, name, before)) return '';
     let m = null;
     for (const x of src.matchAll(new RegExp('\\b(?:const|let|var)\\s+' + name + '\\s*=\\s*\\{', 'g'))) if (x.index < before) m = x;
     if (!m) return '';
@@ -177,7 +193,7 @@ test('the scanner ignores regex.exec and other objects exec', () => {
     assert.deepStrictEqual(callsIn('const f = foo(bar)(1); const g = (pick(a, b) || other)(2); (() => { x(1); })();'), []);
 });
 
-test('the scanner refuses near-misses: windowsHide false, a comment, a same-named declaration elsewhere', () => {
+test('the scanner refuses near-misses: windowsHide false, a comment, a same-named declaration elsewhere, a parameter', () => {
     const refused = {
         falseValue: "spawn('a', [], { windowsHide: false });",
         lineComment: "spawn('a', [], {\n // windowsHide\n stdio: 1 });",
@@ -186,6 +202,9 @@ test('the scanner refuses near-misses: windowsHide false, a comment, a same-name
         commentInDecl: "const opts = { // windowsHide: true\n cwd: 1 };\nspawn('a', [], opts);",
         earlierFunction: "function a() { const opts = { windowsHide: true }; }\nfunction b() {\n const opts = { cwd: 1 };\n spawn('a', [], opts);\n}",
         laterDeclaration: "function b() { spawn('a', [], opts); }\nfunction a() { const opts = { windowsHide: true }; }",
+        parameter: "function a() { const opts = { windowsHide: true }; }\nfunction b(opts) {\n spawn('a', [], opts);\n}",
+        arrowParameter: "const a = () => { const opts = { windowsHide: true }; };\nconst b = (opts) => {\n spawn('a', [], opts);\n};",
+        spreadInComment: "const opts = { windowsHide: true };\nspawn('a', [], { /* ...opts */ stdio: 1 });",
     };
     for (const [name, src] of Object.entries(refused)) {
         const c = callsIn(src);
@@ -195,4 +214,6 @@ test('the scanner refuses near-misses: windowsHide false, a comment, a same-name
     const ok = callsIn("function a() { const opts = { cwd: 1 }; }\nfunction b() {\n const opts = { windowsHide: true };\n spawn('a', [], opts);\n}");
     assert.strictEqual(ok.length, 1);
     assert.ok(hidden(ok[0]), 'the right declaration carries it');
+    const own = callsIn("function b(opts) {\n spawn('a', [], { windowsHide: true, ...opts });\n}");
+    assert.ok(hidden(own[0]), 'a parameter does not hide the call text saying windowsHide: true');
 });

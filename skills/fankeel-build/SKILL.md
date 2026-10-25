@@ -362,23 +362,23 @@ then asks this stage's gate.
      only what they cannot. (a): a row's test counts only when it presses
      that selector through the listener's OWN event type and goes red when
      the branch is deleted (`if (false && ...)`); a hit that only renders
-     the selector, or asserts that nothing happened and stays green on
-     deletion, is a guard, not a hit, and the row is a finding. (b): pick
+     the selector, or asserts nothing happened and stays green on
+     deletion, is a guard, not a hit: a finding. (b): pick
      one red-when line, apply its mutation to a scratch copy
      (`git show <sha>:<path> > <scratch>`), and confirm the named test
-     reddens; a mutation that reddens every test in the file killed the
-     harness and counts as dead, not red. (c): every row not `ok` is a finding. A check the diff adds that is not a test
+     reddens; one that reddens every test in the file killed the
+     harness: dead, not red. (c): every row not `ok` is a finding. A check the diff adds that is not a test
      needs one input it must reject, with proof. A scanner for a pattern needs one fixture per shape it
      could miss (parenthesised call, alias, sibling `exec`), each rejected,
      or it is blind (10-25: `(deps.execFile || execFileSync)(`). An accept
      predicate needs a near-miss it must refuse (`windowsHide: false`, a
      comment naming the option); a lookup by name needs a fixture where a
-     same-named binding elsewhere would wrongly satisfy it.
-     Two mutations reddening exactly the same tests are a gap.
+     same-named binding elsewhere, or the call's own parameter, would wrongly satisfy it.
+     Two mutations reddening exactly the same tests are a gap — one test that tells them apart is missing.
      A test of locking or ordering must wait on an explicit signal from the
      other side (a line the other process prints, a marker file), never on a
-     delay, and must go red on every run of the mutation that removes the
-     lock; one that waits a fixed time can pass without exercising the lock.
+     delay, and go red on every run of the mutation that removes the
+     lock; a fixed wait can pass without exercising the lock.
    Part 3 — every changed line traces to the task's text; the patterns
      already in the repository are followed. Then name the page this
      change makes false (a renamed export, a changed default, a removed
