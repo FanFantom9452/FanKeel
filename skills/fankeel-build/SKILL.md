@@ -397,7 +397,10 @@ then asks this stage's gate.
      is removed. A surface with no reader, a literal string, or a place
      with no such test is a finding. Where the diff rewrites text a page
      shows, grep `tests/` for the old wording and run the tests that assert
-     it; one still asserting it is a finding.
+     it; one still asserting it is a finding. Where the diff adds or changes a
+     sticky, fixed or pinned element, check it both collapsed and expanded at
+     412x680 (open it to its full height, then focus every control and scroll
+     to the end): a control left under it in either state is a finding.
    Part 4 — cuts, over the lines this diff added and no others, in the
      format of the `## Cuts` section of your agent file. A cut is a finding.
 

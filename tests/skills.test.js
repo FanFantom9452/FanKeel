@@ -1468,6 +1468,7 @@ test('build review carries the five checks verify kept sending back on 2026-10-0
   assert.match(p3, /reads the new field/);
   assert.match(p3, /string table for translation/);
   assert.match(p3, /goes red when the mark is removed/);
+  assert.match(p3, /collapsed and expanded at 412x680/);
   const close = /\n\*\*Then docs-check, at close\.\*\*[\s\S]*?\n## /.exec(build);
   assert.ok(close, 'the docs-check close is not where this test looks for it');
   assert.match(close[0].replace(/\s+/g, ' '), /checked on the build's first BASE/);
