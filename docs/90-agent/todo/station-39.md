@@ -22,3 +22,7 @@ link: .fankeel/build/2026-10-21-station-redesign/route-settings-v9.html
 以下為原始來源紀錄。
 
 來源：2026-10-22 使用者在 patrol-two 的 Task 5 逐頁看 station 改版 mockup，route-focus-plan.html 與 route-spend.html 核可為定稿，其餘頁面他說「這些畫面都記錄到 READY 我之後要逐個調整」。設定頁屬於「station 改版剩下的頁」中尚未定稿的一頁。要變成什麼：使用者在設計階段一塊一塊調整這頁 mockup，定稿後再移植到 assets/station/ 的真實 station。完成標準：使用者宣告 route-settings.html 為定稿，且線上的設定頁與它一致。
+
+2026-10-25 盤點核對：「移植尚未做完」那幾條已大多落地——`lib/settingsuggest.js`（19215e3e）推論 sessions 重疊（90 天內至少 5 個 session 才推）、`stage.agents`（profile 或至少 3 份任務快照）、`model.lang`（profile 或 `ui.lang`）、gate 等你時在哪（`notify.gate`、`gate.station`、`gate.away`）與前端偵測（`.fankeel/render.json` 或 html/css/vue/svelte/jsx/tsx 檔）；遠端方案 station-49 已結案，Q7 卡 4075bb78 改成 Tailscale 預設；v9 agents 表在 440px 以下改成一列一個 agent（`assets/station/settings-detail.css`）。
+
+2026-10-25 使用者對照（1280 與 390）：不一樣的塊：設定頁上方的「專案」選單，原話：「上面專案那邊請你幫我改成顯示 GLOBAL 或是分 PROJECT 再下去選 PROJECT 然後 PROJECT 用 打字篩選 和我們搜尋功能一樣」。這是下一輪的範圍（使用者決定不併入這輪），下一輪先走 design 做 mockup 再改。
