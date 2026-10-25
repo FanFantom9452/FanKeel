@@ -7,6 +7,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const tmp = require('./tmp.js');
 const station = require('../lib/station.js');
 const { serve } = require('../scripts/station.js');
 const { page, stringsLeft } = require('./station-module.js');
@@ -95,8 +96,8 @@ test('diagram.js has English for every Chinese string it shows', () => {
 test('the vendored pele is the pinned build, and the station serves it', async () => {
     const bytes = fs.readFileSync(path.join(ASSETS, 'vendor', 'pele.js'));
     assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'), 'dd70e44152f7d70d62fedc622f588db3f5855859b444f4d8cf274925c12f2651');
-    const cfg = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'fk-dg-'));
-    const root = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'fk-dgr-'));
+    const cfg = tmp('fk-dg-');
+    const root = tmp('fk-dgr-');
     const s = await serve({ configDir: cfg, roots: [root], port: 0, idleMs: 60e3, open: false });
     try {
         const get = (p) => fetch(s.url.replace(/\/$/, '') + p);
