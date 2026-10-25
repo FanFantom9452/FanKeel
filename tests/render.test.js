@@ -707,10 +707,10 @@ test('the station line names the served url without counts, a station busy or st
   const url = 'http://127.0.0.1:7817/';
   const served = (serve) => renderInit({ sessionId: MINE, station: null, serve });
   assert.match(served({ state: 'running', url }), /^station: http:\/\/127\.0\.0\.1:7817\/ \(serve was running\)\.$/m);
-  assert.match(served({ state: 'started', url }), /^station: http:\/\/127\.0\.0\.1:7817\/ \(serve started, browser opened\)\.$/m);
+  assert.match(served({ state: 'started', url }), /^station: http:\/\/127\.0\.0\.1:7817\/ \((serve started)\)\.$/m);
   assert.match(served({ state: 'busy', url }),
     /^station: http:\/\/127\.0\.0\.1:7817\/ \(serve is busy loading; the page fills in when it finishes\)\.$/m);
-  assert.match(served({ state: 'starting', url: null }), /^station: serve is starting; the browser opens when it binds\.$/m);
+  assert.match(served({ state: 'starting', url: null }), /^station: serve is starting; the page fills in when it binds\.$/m);
   assert.match(served({ state: 'failed', url: null }), /^station: no page was written and no serve started\. Run station\.js serve --open\.$/m);
   for (const state of ['running', 'started', 'busy']) {
     assert.doesNotMatch(served({ state, url }), /stale, /, 'a ' + state + ' line carries counts only write() can give');
@@ -1022,7 +1022,7 @@ test('the station line carries the tailnet phone url, or why remote is off, afte
   const on = { url: 'https://' + dns + '/' };
   assert.match(served({ state: 'running', url, remote: on }),
     /^station: http:\/\/127\.0\.0\.1:7817\/ \(serve was running\)\. phone: https:\/\/ymlab-pc\.tail1234\.ts\.net\/m — Tailscale MagicDNS ymlab-pc\.tail1234\.ts\.net\.$/m);
-  assert.match(served({ state: 'started', url, remote: on }), /\(serve started, browser opened\)\. phone: https:\/\/ymlab-pc\.tail1234\.ts\.net\/m — Tailscale MagicDNS /);
+  assert.match(served({ state: 'started', url, remote: on }), /\((serve started)\)\. phone: https:\/\/ymlab-pc\.tail1234\.ts\.net\/m — Tailscale MagicDNS /);
   assert.match(served({ state: 'busy', url, remote: on }), /\(serve is busy loading; the page fills in when it finishes\)\. phone: https:\/\//);
   assert.match(served({ state: 'running', url, remote: { warning: 'tailscale is Stopped, not Running' } }),
     /^station: http:\/\/127\.0\.0\.1:7817\/ \(serve was running\)\. remote off: tailscale is Stopped, not Running\.$/m);

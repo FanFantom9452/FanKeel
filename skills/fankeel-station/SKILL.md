@@ -10,7 +10,7 @@ source_of_truth: scripts/station.js, lib/serve.js, docs/90-agent/reference/stati
 
 # fankeel-station
 
-`/fankeel` already opens the station: its hook starts `serve --open` when no
+`/fankeel` already starts the station: its hook starts `serve` (without `--open`, so no browser opens) when no
 station answers and names the url on the block's `station:` line. This is for
 reopening it by hand — a station that was stopped, or a tab that was closed.
 Run:
