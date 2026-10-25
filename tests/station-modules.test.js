@@ -19,10 +19,10 @@ const BEFORE = ['tip', 'live-page', 'sessions-page', 'projects-page', 'project-p
 // 文件 and 設定 (station-38, station-39) load after talk-acts.js, a script with no sheet of its own.
 const AFTER = ['docs-page', 'settings-page', 'settings-steps', 'settings-detail'];
 const PAGES = BEFORE.concat(AFTER);
-const ALL = PAGES.concat(['gate-frame']);
+const ALL = PAGES.concat(['gate-frame', 'diagram']);
 const SPEND = ['spend-talk.js', 'spend-kinds.js', 'spend-range.js', 'spend-panel.js'];
 const GLOBAL = { tip: 'FK_TIP', 'live-page': 'FK_LIVE', 'sessions-page': 'FK_SESSIONS', 'projects-page': 'FK_PROJECTS', 'project-page': 'FK_PROJECT',
-    'session-page': 'FK_SESSION', 'session-dispatch': 'FK_SDISP', 'session-talk': 'FK_STALK', 'gate-frame': 'FK_GATE',
+    'session-page': 'FK_SESSION', 'session-dispatch': 'FK_SDISP', 'session-talk': 'FK_STALK', 'gate-frame': 'FK_GATE', diagram: 'FK_DIAGRAM',
     'docs-page': 'FK_DOCS', 'settings-page': 'FK_SETTINGS', 'settings-steps': 'FK_SETSTEPS', 'settings-detail': 'FK_SETDETAIL' };
 const SID = 'abababab-1212-4121-8121-121212121212';
 
@@ -57,9 +57,9 @@ test('every module has its script and its stylesheet, and sets its global when l
 test('the shell loads tip.js and the page modules after i18n.js and before the spend modules, each with its stylesheet', () => {
     for (const html of [fs.readFileSync(path.join(ASSETS, 'index.html'), 'utf8'), station.render()]) {
         const scripts = [...html.matchAll(/<script src="station\/([^"]+)"><\/script>/g)].map((m) => m[1]);
-        assert.deepEqual(scripts, ['i18n.js'].concat(BEFORE.map((n) => n + '.js'), ['talk-acts.js'], AFTER.map((n) => n + '.js'), SPEND, ['remote-card.js', 'station.js']));
+        assert.deepEqual(scripts, ['i18n.js'].concat(BEFORE.map((n) => n + '.js'), ['talk-acts.js', 'diagram.js'], AFTER.map((n) => n + '.js'), SPEND, ['remote-card.js', 'station.js']));
         const sheets = [...html.matchAll(/<link rel="stylesheet" href="station\/([^"]+)">/g)].map((m) => m[1]);
-        assert.deepEqual(sheets, ['station.css'].concat(PAGES.map((n) => n + '.css')));
+        assert.deepEqual(sheets, ['station.css'].concat(PAGES.map((n) => n + '.css')).flatMap((n) => (n === 'docs-page.css' ? ['diagram.css', n] : [n])));
     }
 });
 
@@ -87,9 +87,9 @@ test('the docs and settings modules touch no element and add no listener at load
 test('the focus page loads tip, gate-frame and focus-page between i18n.js and station.js', () => {
     const html = station.focusShell(SID, 'gate');
     const scripts = [...html.matchAll(/<script src="\/station\/([^"]+)"><\/script>/g)].map((m) => m[1]);
-    assert.deepEqual(scripts, ['focus/' + SID + '.js', 'i18n.js', 'tip.js', 'gate-frame.js', 'focus-page.js', 'station.js']);
+    assert.deepEqual(scripts, ['focus/' + SID + '.js', 'i18n.js', 'tip.js', 'diagram.js', 'gate-frame.js', 'focus-page.js', 'station.js']);
     const sheets = [...html.matchAll(/<link rel="stylesheet" href="\/station\/([^"]+)">/g)].map((m) => m[1]);
-    assert.deepEqual(sheets, ['station.css', 'tip.css', 'gate-frame.css']);
+    assert.deepEqual(sheets, ['station.css', 'tip.css', 'diagram.css', 'gate-frame.css']);
 });
 
 test('a written station carries every module byte for byte', () => {

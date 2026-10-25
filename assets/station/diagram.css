@@ -1,0 +1,39 @@
+/* diagram.css — a ```mermaid fence drawn by pele (assets/station/diagram.js) on the docs reader and the gate page */
+.dg{margin:12px 0 4px;border:1px solid var(--rule);border-radius:var(--r-sm);background:var(--panel);overflow:hidden;
+  --pele-bg:var(--panel);--pele-fg:var(--ink);--pele-muted:var(--muted);--pele-line:var(--muted);--pele-border:var(--rule2);
+  --pele-surface:var(--inset);--pele-surface-alt:var(--grid);--pele-accent:var(--keel);--pele-error:var(--bad);
+  --pele-font:var(--f-ui);--pele-font-mono:var(--f-mono);--pele-radius:var(--r-sm)}
+.dg-bar{display:flex;align-items:center;flex-wrap:wrap;gap:8px 10px;min-height:40px;padding:4px 6px 4px 12px;border-bottom:1px solid var(--rule)}
+.dg-k{flex:none;font:12px var(--f-mono);color:var(--muted)}
+.dg-zoom{display:inline-flex;align-items:center;gap:4px;margin-left:auto}
+.dg-zoom .btn,.dg .perseg button,.dg-marks .btn{min-height:28px;height:28px;padding:0 10px;font-size:12px}
+.dg-zoom output{min-width:44px;text-align:center;font:600 12px var(--f-mono);font-variant-numeric:tabular-nums;color:var(--ink2)}
+.dg .btn:focus-visible,.dg .perseg button:focus-visible{outline:2px solid var(--keel);outline-offset:1px}
+/* a fixed height the page does not jump around in, drag-resizable; pele pans and zooms the drawing inside it */
+.dg-pan{position:relative;height:320px;min-height:160px;resize:vertical;display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--panel);touch-action:pan-y}
+.gt-frame .dg-pan{height:460px}
+.dg-pan>svg{display:block;width:auto;height:auto;max-width:100%;max-height:100%}
+.dg-pan>svg:focus-visible{outline:2px solid var(--keel);outline-offset:-2px}
+.dg-pan .pele-node{cursor:default}
+.dg[data-mark] .pele-node{cursor:pointer}
+.dg-pan .pele-node:focus-visible{outline:none}
+.dg-pan .pele-node:focus-visible>:is(rect,path,polygon,circle,ellipse){stroke:var(--keel);stroke-width:2px}
+/* station.css sets every svg text to 11px muted; pele lays its labels out for its own size and colour, so they inherit again */
+.dg-pan svg text:not([font-size]){font-size:inherit}
+.dg-pan svg text:not([font-family]){font-family:inherit}
+.dg-pan svg text:not([fill]){fill:inherit}
+/* a marked node: the accent outline and a filled corner tag, so a mark does not rest on colour alone */
+.dg-pan .pele-node.is-marked>:is(rect,path,polygon,circle,ellipse){stroke:var(--keel);stroke-width:3px}
+.dg-pan .pele-node.is-marked .dg-tag rect{fill:var(--keel);stroke:none}
+.dg-pan .pele-node.is-marked .dg-tag text{fill:var(--on-keel);font:700 11px var(--f-mono)}
+.dg-foot{display:none;align-items:center;flex-wrap:wrap;gap:6px 14px;padding:8px 12px;border-top:1px solid var(--rule);font-size:12.5px;line-height:1.5;color:var(--ink2)}
+.dg[data-mark] .dg-foot{display:flex}
+.dg-hint{margin:0;min-width:0}
+.dg-marks{display:inline-flex;align-items:center;gap:8px;margin-left:auto;white-space:nowrap}
+.dg-marks [data-dg-count]{font-weight:600;color:var(--ink)}
+.dg-err{margin:0;padding:6px 12px;font-size:12px;color:var(--muted)}
+.dg-src{margin:0;max-height:460px;overflow:auto;padding:10px 12px;background:var(--inset);font:12px/1.55 var(--f-mono);color:var(--ink2);white-space:pre}
+/* before it is drawn (or when it cannot be) a fence is its source */
+.dg:not([data-drawn]) .dg-bar,.dg:not([data-drawn]) .dg-pan,.dg:not([data-drawn]) .dg-foot{display:none}
+.dg[data-view=diagram] .dg-src,.dg[data-view=source] .dg-pan,.dg[data-view=source] .dg-zoom,.dg[data-view=source] .dg-foot{display:none}
+@media (prefers-reduced-motion:reduce){.dg *{transition:none!important}}

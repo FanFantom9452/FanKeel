@@ -601,7 +601,7 @@ test('write leaves the shell at the top and its siblings under station/', () => 
     station.write({ configDir: f.cfg, root: f.r1 });
     const dir = path.join(f.cfg, 'fankeel');
     const top = fs.readdirSync(dir).filter((n) => n !== 'roots.json' && n !== 'station');
-    const inner = fs.readdirSync(path.join(dir, 'station')).map((n) => 'station/' + n);
+    const inner = fs.readdirSync(path.join(dir, 'station')).flatMap((n) => (n === 'vendor' ? fs.readdirSync(path.join(dir, 'station', n)).map((v) => 'station/vendor/' + v) : ['station/' + n]));
     const written = top.concat(inner);
     const { EMITTED } = require('../lib/station.js');
     assert.deepEqual(written.slice().sort(), EMITTED.slice().sort());

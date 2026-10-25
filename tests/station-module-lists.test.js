@@ -15,7 +15,7 @@ const scripts = NAMES.filter((n) => n !== 'i18n.js' && n !== 'station.js');
 const sheets = [...html.matchAll(/<link rel="stylesheet" href="station\/([^"]+)">/g)].map((m) => m[1]).filter((n) => n !== 'station.css');
 
 test('MODULES is index.html\'s scripts and stylesheets, then gate-frame and focus-page for the focus shell', () => {
-    assert.deepEqual(station.MODULES, [...scripts, ...sheets, 'gate-frame.js', 'gate-frame.css', 'focus-page.js']);
+    assert.deepEqual(station.MODULES, [...scripts, ...sheets, 'gate-frame.js', 'gate-frame.css', 'focus-page.js', 'vendor/pele.js']);
 });
 
 test('serve answers every module by name, and nothing it does not list', () => {
