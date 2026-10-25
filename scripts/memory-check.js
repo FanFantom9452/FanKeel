@@ -112,7 +112,7 @@ function lineCount(file) {
 // which `Date.parse` reads with no translation step.
 function lastCommit(root, rel) {
     try {
-        const out = cp.execFileSync('git', ['log', '-1', '--format=%cI', '--', rel], {
+        const out = cp.execFileSync('git', ['log', '-1', '--format=%cI', '--', rel], { windowsHide: true,
             cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'],
         }).trim();
         return out ? Date.parse(out) : null;

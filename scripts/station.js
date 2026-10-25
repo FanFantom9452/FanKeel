@@ -1324,7 +1324,7 @@ function main() {
                 if (a === 'serve' && !sawVerb) { sawVerb = true; return false; }
                 return true;
             });
-            spawn(process.execPath, [__filename, 'serve'].concat(rest), { detached: true, stdio: 'ignore' }).unref();
+            spawn(process.execPath, [__filename, 'serve'].concat(rest), { windowsHide: true, detached: true, stdio: 'ignore' }).unref();
             const deadline = Date.now() + 5000;
             const poll = () => {
                 const data = readServeRecord(configDir);

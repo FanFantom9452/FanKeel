@@ -210,7 +210,7 @@ function main(argv, cwd) {
     const parsed = parse(into ? body.slice(into[0].length).trimStart() : body);
     if (parsed.error) return { text: 'commit.js: ' + parsed.error, code: 1 };
 
-    const run = (dir, args, input, env) => spawnSync('git', args, { cwd: dir, encoding: 'utf8', input, env: env ? Object.assign({}, process.env, env) : process.env });
+    const run = (dir, args, input, env) => spawnSync('git', args, { windowsHide: true, cwd: dir, encoding: 'utf8', input, env: env ? Object.assign({}, process.env, env) : process.env });
     const home = repoRoot(cwd);
     if (!home) return { text: 'commit.js: not inside a git repository — run it from the repository that owns the listed paths, with paths relative to its root', code: 1 };
     // Where the profile and .fankeel/sensitive.txt are read: the checkout this

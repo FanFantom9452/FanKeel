@@ -70,7 +70,7 @@ function parseArgs(argv) {
 
 function scaffold(dir, script) {
     if (!script) return null;
-    const r = spawnSync('bash', ['-c', script], { cwd: dir, encoding: 'utf8' });
+    const r = spawnSync('bash', ['-c', script], { windowsHide: true, cwd: dir, encoding: 'utf8' });
     return r.status === 0 ? null : 'scaffold_script exited ' + r.status + ': ' + (r.stderr || '').trim();
 }
 
@@ -92,9 +92,9 @@ function cmdQuote(a) {
 // Node refuses to spawn without a shell (EINVAL), and only then does the shell
 // line get built — from quoted arguments.
 function spawnClaude(args, opts) {
-    const r = spawnSync('claude', args, opts);
+    const r = spawnSync('claude', args, { windowsHide: true, ...opts });
     if (r.error && r.error.code === 'EINVAL' && process.platform === 'win32') {
-        return spawnSync('claude', args.map(cmdQuote), { ...opts, shell: true });
+        return spawnSync('claude', args.map(cmdQuote), { windowsHide: true, ...opts, shell: true });
     }
     return r;
 }
@@ -108,7 +108,7 @@ function spawnClaudeAsync(args, opts, spawn = spawnChild, platform = process.pla
     const once = (argv, shell) => new Promise((resolve) => {
         let child;
         try {
-            child = spawn('claude', argv, { cwd: opts.cwd, env: opts.env, shell });
+            child = spawn('claude', argv, { windowsHide: true, cwd: opts.cwd, env: opts.env, shell });
         } catch (e) {
             resolve({ status: null, stdout: '', stderr: '', error: e });
             return;

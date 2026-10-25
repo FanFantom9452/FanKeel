@@ -373,7 +373,7 @@ function withScan(existing, report) {
 function commitsFor(root, range) {
     if (!range) return null;
     try {
-        const out = execFileSync('git', ['rev-list', range], {
+        const out = execFileSync('git', ['rev-list', range], { windowsHide: true,
             cwd: root,
             encoding: 'utf8',
             maxBuffer: 32 * 1024 * 1024,

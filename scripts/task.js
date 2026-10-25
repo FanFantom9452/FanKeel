@@ -1212,7 +1212,7 @@ function openWorktree(root, repo, id) {
     const branch = 'fk/' + id8;
     try {
         registry.ensureIgnored(repo, ['worktrees/']);
-        execFileSync('git', ['worktree', 'add', '-b', branch, rel], { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+        execFileSync('git', ['worktree', 'add', '-b', branch, rel], { windowsHide: true, cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
     } catch (e) {
         const said = String((e && e.stderr) || (e && e.message) || '').trim().split(/\r?\n/)[0];
         return { error: said || 'git worktree add failed' };
@@ -1671,7 +1671,7 @@ function cmdRoute(root, opts) {
 // has no such ref.
 function onBase(dir) {
     const git = (args) => {
-        try { return execFileSync('git', args, { cwd: dir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim(); } catch (e) { return null; }
+        try { return execFileSync('git', args, { windowsHide: true, cwd: dir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim(); } catch (e) { return null; }
     };
     const branch = git(['symbolic-ref', '--quiet', '--short', 'HEAD']);
     if (!branch || branch.startsWith('fk/')) return null;

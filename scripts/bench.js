@@ -54,7 +54,7 @@ function md5(file) {
 }
 
 function git(cwd, args) {
-    return spawnSync('git', args, { cwd, encoding: 'utf8' });
+    return spawnSync('git', args, { windowsHide: true, cwd, encoding: 'utf8' });
 }
 
 function provenance(log, extra) {
@@ -96,13 +96,13 @@ function runOne(ctx, item) {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-bench-'));
     const env = { ...process.env, BENCH_SEED: String(item.seed), BENCH_IMPL: arm.impl, BENCH_PLUGIN: bench.posix(ROOT) };
     try {
-        const s = spawnSync('bash', [bench.posix(path.join(ctx.project, 'setup.sh'))], { cwd: dir, env, encoding: 'utf8' });
+        const s = spawnSync('bash', [bench.posix(path.join(ctx.project, 'setup.sh'))], { windowsHide: true, cwd: dir, env, encoding: 'utf8' });
         if (s.status !== 0) {
             row.error = 'setup.sh exited ' + s.status + ': ' + (s.stderr || '').trim();
             return row;
         }
         for (const [key, value] of Object.entries(arm.profile)) {
-            const p = spawnSync(process.execPath, [path.join(ROOT, 'scripts', 'task.js'), 'profile', 'set', key, value], { cwd: dir, encoding: 'utf8' });
+            const p = spawnSync(process.execPath, [path.join(ROOT, 'scripts', 'task.js'), 'profile', 'set', key, value], { windowsHide: true, cwd: dir, encoding: 'utf8' });
             if (p.status !== 0) {
                 row.error = 'profile set ' + key + ' exited ' + p.status + ': ' + (p.stderr || '').trim();
                 return row;
@@ -145,7 +145,7 @@ function runOne(ctx, item) {
             }
         }
         row.wallS = Math.round((Date.now() - t0) / 1000);
-        const c = spawnSync('bash', [bench.posix(path.join(ctx.project, 'check.sh')), bench.posix(dir)], { env, encoding: 'utf8' });
+        const c = spawnSync('bash', [bench.posix(path.join(ctx.project, 'check.sh')), bench.posix(dir)], { windowsHide: true, env, encoding: 'utf8' });
         row.pass = c.status === 0;
         row.check = ((c.stdout || '') + (c.stderr || '')).trim().slice(-500);
         if (!copyTranscript(row.session, path.join(ctx.batchDir, 'raw', tag)) && !row.error) row.error = 'no transcript for session ' + row.session;
@@ -197,14 +197,14 @@ function prepareRun(ctx, job) {
         pass: false, check: '', exit: null, claudeUsd: 0, wallS: 0, error: null, session: crypto.randomUUID() };
     const dir = (ctx.mkdtemp || (() => fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-bench-role-'))))();
     const env = { ...process.env, ...(ctx.env || {}), BENCH_SEED: String(job.seed), BENCH_IMPL: 'sonnet', BENCH_PLUGIN: bench.posix(ROOT) };
-    const s = spawnSync('bash', [bench.posix(path.join(job.itemDir, 'setup.sh'))], { cwd: dir, env, encoding: 'utf8' });
+    const s = spawnSync('bash', [bench.posix(path.join(job.itemDir, 'setup.sh'))], { windowsHide: true, cwd: dir, env, encoding: 'utf8' });
     if (s.status !== 0) {
         row.error = 'setup.sh exited ' + s.status + ': ' + (s.stderr || '').trim();
         return { row, dir, env };
     }
     if (job.model === 'haiku') {
         const key = 'agent.' + ctx.agent + '.model';
-        const p = spawnSync(process.execPath, [path.join(ROOT, 'scripts', 'task.js'), 'profile', 'set', key, 'haiku'], { cwd: dir, env, encoding: 'utf8' });
+        const p = spawnSync(process.execPath, [path.join(ROOT, 'scripts', 'task.js'), 'profile', 'set', key, 'haiku'], { windowsHide: true, cwd: dir, env, encoding: 'utf8' });
         const f = path.join(dir, '.claude', 'agents', ctx.agent + '.md');
         if (p.status !== 0 || !/^model: haiku$/m.test(fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : '')) {
             row.error = 'profile set ' + key + ' did not pin haiku: ' + (p.stderr || '').trim();
@@ -242,7 +242,7 @@ async function runJob(ctx, job) {
         const f = bench.roleFigures(raw, ctx.agent, job.model, row.input);
         fs.mkdirSync(path.join(dir, '.bench'), { recursive: true });
         fs.writeFileSync(path.join(dir, '.bench', 'result.txt'), f.result);
-        const c = spawnSync('bash', [bench.posix(path.join(job.itemDir, 'check.sh')), bench.posix(dir)], { env, encoding: 'utf8' });
+        const c = spawnSync('bash', [bench.posix(path.join(job.itemDir, 'check.sh')), bench.posix(dir)], { windowsHide: true, env, encoding: 'utf8' });
         row.pass = c.status === 0;
         row.check = ((c.stderr || '') + (c.stdout || '')).trim().slice(-500);
         return row;

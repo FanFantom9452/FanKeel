@@ -160,7 +160,7 @@ function main(argv) {
         let changed;
         try {
             changed = execFileSync('git', ['diff', '--name-only', '--relative', values.range],
-                { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).split(/\r?\n/).filter(Boolean);
+                { windowsHide: true, cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).split(/\r?\n/).filter(Boolean);
         } catch (e) {
             return 'verify-map: git could not read ' + values.range;
         }

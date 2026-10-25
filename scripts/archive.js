@@ -39,7 +39,7 @@ function archiveDir(root) {
     return bucket ? bucket.path : null;
 }
 
-const git = (root, args) => execFileSync('git', args, { cwd: root, stdio: ['ignore', 'pipe', 'pipe'] });
+const git = (root, args) => execFileSync('git', args, { windowsHide: true, cwd: root, stdio: ['ignore', 'pipe', 'pipe'] });
 
 function check(root, rel, dir) {
     const from = String(rel).replace(/\\/g, '/').replace(/^\.\//, '');

@@ -59,7 +59,7 @@ function show(file, head) {
 
 function headOf(dir) {
     try {
-        return execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: dir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+        return execFileSync('git', ['rev-parse', '--short', 'HEAD'], { windowsHide: true, cwd: dir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
     } catch (e) {
         return '';
     }

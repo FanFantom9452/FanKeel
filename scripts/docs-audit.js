@@ -110,7 +110,7 @@ const isCode = (rel) => CODE_EXT.has(path.extname(rel).toLowerCase());
 function commitTimes(root) {
     let out;
     try {
-        out = execFileSync('git', ['log', '--format=%ct', '--name-only', '--no-renames', '-n', String(HISTORY)], {
+        out = execFileSync('git', ['log', '--format=%ct', '--name-only', '--no-renames', '-n', String(HISTORY)], { windowsHide: true,
             cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'],
         });
     } catch (e) {
@@ -141,7 +141,7 @@ function subjectsSince(root, rel, sinceMs, limit = 3) {
     if (!isRepo(root)) return [];
     let out;
     try {
-        out = execFileSync('git', ['log', '--format=%ct%n%s', '--follow', '--', rel], {
+        out = execFileSync('git', ['log', '--format=%ct%n%s', '--follow', '--', rel], { windowsHide: true,
             cwd: root, encoding: 'utf8', maxBuffer: 8 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'],
         });
     } catch (e) {
@@ -172,7 +172,7 @@ function subjectsSince(root, rel, sinceMs, limit = 3) {
 function deletedPaths(root) {
     let out;
     try {
-        out = execFileSync('git', ['log', '--diff-filter=D', '--format=', '--name-only', '--no-renames', '-n', String(HISTORY)], {
+        out = execFileSync('git', ['log', '--diff-filter=D', '--format=', '--name-only', '--no-renames', '-n', String(HISTORY)], { windowsHide: true,
             cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'],
         });
     } catch (e) {

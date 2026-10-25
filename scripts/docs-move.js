@@ -158,7 +158,7 @@ function rewriteText(text, oldRel, newRel, files, dirs) {
 }
 
 function mv(root, srcs, dest) {
-    execFileSync('git', ['mv', '--', ...srcs, dest], { cwd: root, stdio: ['ignore', 'ignore', 'pipe'] });
+    execFileSync('git', ['mv', '--', ...srcs, dest], { windowsHide: true, cwd: root, stdio: ['ignore', 'ignore', 'pipe'] });
 }
 
 // The tree to write after the move: the target preset's buckets, every

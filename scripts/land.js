@@ -23,7 +23,7 @@ const { classForRoute } = require('../lib/stages.js');
 const { formatMiss } = require('./commit.js');
 const { sweep, sweepLines } = require('./residue.js');
 
-const run = (dir, args) => spawnSync('git', args, { cwd: dir, encoding: 'utf8' });
+const run = (dir, args) => spawnSync('git', args, { windowsHide: true, cwd: dir, encoding: 'utf8' });
 const oneLine = (text) => String(text || '').trim().replace(/\s+/g, ' ').slice(0, 300);
 
 // The main working tree: the first entry `git worktree list` prints,

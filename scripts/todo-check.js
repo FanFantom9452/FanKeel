@@ -127,7 +127,7 @@ function completionTexts(base) {
 // would read as a finding about a repository that simply has no history.
 function previousVersion(base, name) {
     try {
-        return execFileSync('git', ['show', 'HEAD:' + name], {
+        return execFileSync('git', ['show', 'HEAD:' + name], { windowsHide: true,
             cwd: base, encoding: 'utf8', maxBuffer: 8 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'],
         });
     } catch (e) {
@@ -189,7 +189,7 @@ const NOTHING_TRACKED = /not a git repository|not a valid object name|unknown re
 
 function trackedIn(base, folder) {
     try {
-        return execFileSync('git', ['ls-tree', '-r', '--name-only', 'HEAD', '--', folder], {
+        return execFileSync('git', ['ls-tree', '-r', '--name-only', 'HEAD', '--', folder], { windowsHide: true,
             cwd: base, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
             env: Object.assign({}, process.env, { LC_ALL: 'C' }),
         }).split('\n').filter((l) => l.endsWith('.md'));

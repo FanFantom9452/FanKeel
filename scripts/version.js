@@ -107,7 +107,7 @@ const RELEASE = /^chore: \d+\.\d+\.\d+\b/;
 function changes(root, since) {
     let out;
     try {
-        out = execFileSync('git', ['log', '--format=%H%x09%s', '-n', '400'], {
+        out = execFileSync('git', ['log', '--format=%H%x09%s', '-n', '400'], { windowsHide: true,
             cwd: root || ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'],
         });
     } catch (e) {

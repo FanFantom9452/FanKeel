@@ -37,7 +37,7 @@ const { resolveRoot, findStateRoot, readActive } = require('../lib/registry.js')
 // the section it feeds is simply absent from the report.
 function git(root, args) {
     try {
-        return execFileSync('git', args, {
+        return execFileSync('git', args, { windowsHide: true,
             cwd: root,
             encoding: 'utf8',
             stdio: ['ignore', 'pipe', 'ignore'],

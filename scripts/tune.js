@@ -285,7 +285,7 @@ function hashOf(bytes) {
 // What HEAD holds at `p`, or null when HEAD has no such path.
 function headBytes(p) {
     try {
-        return execFileSync('git', ['show', 'HEAD:./' + p], { stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 256 * 1024 * 1024 });
+        return execFileSync('git', ['show', 'HEAD:./' + p], { windowsHide: true, stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 256 * 1024 * 1024 });
     } catch (e) {
         return null;
     }
@@ -294,7 +294,7 @@ function headBytes(p) {
 // Every path git says differs from HEAD — modified, deleted, or untracked and
 // not ignored — plus the --src files, minus this script's own state.
 function dirtyPaths(src) {
-    const out = execFileSync('git', ['ls-files', '-m', '-o', '--exclude-standard', '-z'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 64 * 1024 * 1024 });
+    const out = execFileSync('git', ['ls-files', '-m', '-o', '--exclude-standard', '-z'], { windowsHide: true, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 64 * 1024 * 1024 });
     const all = new Set(out.split('\0').filter(Boolean).map((p) => p.replace(/\\/g, '/')));
     for (const f of src) all.add(f);
     return [...all].filter((p) => p !== STATE_REL && !p.startsWith(STATE_REL + '/')).sort();
@@ -437,10 +437,10 @@ function doneLive(r, live) {
         return settle(r, false, stray, 'the edit changed ' + stray.join(', ') + ' outside --src; every file it touched is back as it was');
     }
     if (!live.rebuild) return settle(r, true, [], 'nothing outside --src changed; no --rebuild, the proxied server reads --src as it is');
-    const built = spawnSync(live.rebuild, { shell: true, encoding: 'utf8' });
+    const built = spawnSync(live.rebuild, { windowsHide: true, shell: true, encoding: 'utf8' });
     if (built.status !== 0) {
         restore(r.id, snap, changed);
-        spawnSync(live.rebuild, { shell: true, encoding: 'utf8' });
+        spawnSync(live.rebuild, { windowsHide: true, shell: true, encoding: 'utf8' });
         fs.writeFileSync(path.join(STATE, r.id + '.diff.txt'), String(built.stdout || '') + String(built.stderr || ''));
         return settle(r, false, ['(rebuild)'], '--rebuild `' + live.rebuild + '` exited ' + built.status + '; --src is back as it was and rebuilt');
     }
@@ -458,7 +458,7 @@ function liveArgs(values, proxied) {
     const src = values.src.split(',').map((s) => s.trim()).filter(Boolean).map(rel);
     for (const f of src) if (!fs.existsSync(f)) die('no such --src file: ' + f);
     try {
-        execFileSync('git', ['rev-parse', '--verify', 'HEAD'], { stdio: 'ignore' });
+        execFileSync('git', ['rev-parse', '--verify', 'HEAD'], { windowsHide: true, stdio: 'ignore' });
     } catch (e) {
         die('live mode compares the tree against git HEAD, and there is no HEAD here');
     }

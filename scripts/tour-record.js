@@ -95,7 +95,7 @@ function devtoolsPort(stderr) {
 
 function countFrames(ffprobe, file) {
     const r = spawnSync(ffprobe, ['-v', 'error', '-select_streams', 'v:0', '-count_frames',
-        '-show_entries', 'stream=nb_read_frames', '-of', 'csv=p=0', file], { encoding: 'utf8' });
+        '-show_entries', 'stream=nb_read_frames', '-of', 'csv=p=0', file], { windowsHide: true, encoding: 'utf8' });
     if (r.status !== 0) return null;
     const n = Number(String(r.stdout).trim());
     return Number.isInteger(n) ? n : null;
@@ -105,7 +105,7 @@ function countFrames(ffprobe, file) {
 // ffprobe cannot run or exits nonzero.
 function audioStreams(ffprobe, file) {
     const r = spawnSync(ffprobe, ['-v', 'error', '-select_streams', 'a', '-show_entries', 'stream=duration',
-        '-of', 'csv=p=0', file], { encoding: 'utf8' });
+        '-of', 'csv=p=0', file], { windowsHide: true, encoding: 'utf8' });
     if (r.status !== 0) return null;
     return String(r.stdout).split(/\r?\n/).map((l) => l.trim()).filter(Boolean).map(Number);
 }
@@ -113,7 +113,7 @@ function audioStreams(ffprobe, file) {
 function launch(browser, url, profileDir) {
     const child = spawn(browser, ['--headless=new', '--disable-gpu', '--no-first-run', '--hide-scrollbars',
         '--remote-debugging-port=0', '--user-data-dir=' + profileDir, '--force-device-scale-factor=1',
-        '--window-size=' + SIZE.width + ',' + SIZE.height, url], { stdio: ['ignore', 'ignore', 'pipe'] });
+        '--window-size=' + SIZE.width + ',' + SIZE.height, url], { windowsHide: true, stdio: ['ignore', 'ignore', 'pipe'] });
     return new Promise((resolve, reject) => {
         let err = '';
         const timer = setTimeout(() => reject(new Error('tour-record: the browser never printed its DevTools port')), 30000);
@@ -190,7 +190,7 @@ async function record(args, ffmpeg, browser) {
         fs.mkdirSync(path.dirname(args.out), { recursive: true });
         wav = args.out.replace(/\.mp4$/i, '') + '.wav';
         fs.writeFileSync(wav, scoreWav(args.name));
-        const ff = spawn(ffmpeg, ffmpegArgs(args.out, wav), { stdio: ['pipe', 'ignore', 'inherit'] });
+        const ff = spawn(ffmpeg, ffmpegArgs(args.out, wav), { stdio: ['pipe', 'ignore', 'inherit'], windowsHide: true });
         const done = new Promise((res) => ff.on('exit', (code) => res(code)));
         for (let f = 0; f < total; f++) {
             await evaluate('tour.seek(' + f + '); new Promise(function (r) { requestAnimationFrame(function () { r(true); }); })');

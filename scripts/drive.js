@@ -125,7 +125,7 @@ async function drive(opts, deps = {}) {
     // A loaded plugin's own files are sensitive to Claude Code, so a stage could
     // not write its handoff into the tree it was loaded from; drive from a
     // detached copy of HEAD. docs/90-agent/reports/evidence/2026-10-15-drive-allow/result.tsv
-    const git = deps.git || ((args) => execFileSync('git', args, { encoding: 'utf8', stdio: 'pipe' }));
+    const git = deps.git || ((args) => execFileSync('git', args, { windowsHide: true, encoding: 'utf8', stdio: 'pipe' }));
     const copy = path.join(os.tmpdir(), 'fankeel-drive-plugin-' + process.pid + '-' + Date.now());
     try {
         // A run killed before its finally leaves a registration behind.
