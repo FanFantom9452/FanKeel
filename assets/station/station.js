@@ -1890,6 +1890,19 @@
     }
     // Exported as `clock`; the page's own `clock(ms)` is the hh:mm one.
     function gateClock(sec) { return Math.floor(sec / 60) + ':' + (sec % 60 < 10 ? '0' : '') + (sec % 60); }
+    function micOk() { return Boolean(w && (w.SpeechRecognition || w.webkitSpeechRecognition)); }
+    var MIC_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'
+        + '<path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/></svg>';
+    // The free answer under a single-choice held gate's buttons: the text is the answer, sent through
+    // the same /answer POST. `lock` is ' disabled' while a send is out or after it landed.
+    function gateFreeHtml(s, picked, lock) {
+        var id = 'gfree-' + s.id, draft = String((picked || {})[s.id + ':free'] || '');
+        return '<div class="gfree" data-block="gate-free"><label for="' + esc(id) + '">' + loc('tune.freeLabel', '或自己寫答案') + '</label>'
+            + '<div class="gfrow"><textarea id="' + esc(id) + '" data-gfree="' + esc(s.id) + '" rows="2" placeholder="' + loc('tune.freePlaceholder', '上面都不對的話，寫下你要的答案') + '">' + esc(draft) + '</textarea>'
+            + (micOk() ? '<button type="button" class="gmic" data-mic="' + esc(id) + '" aria-pressed="false" aria-label="' + loc('tune.micLabel', '用講的寫答案') + '" title="' + loc('tune.micLabel', '用講的寫答案') + '">' + MIC_SVG + '</button>' : '')
+            + '</div>' + (micOk() ? '<p class="gsay" role="status">' + loc('tune.micHint', '想用講的：按麥克風，講完可以改字再送出') + '</p>' : '')
+            + '<button type="button" class="gfs" data-gfs' + (draft.trim() && !lock ? '' : ' disabled') + '>' + loc('tune.freeSend', '送出答案') + '</button></div>';
+    }
     // A held gate of one single-choice question is answered by its options as
     // buttons; any other shape keeps the full form, `pendingGateHtml`. The
     // countdown runs from the hook's own `at` to `until`.
@@ -1905,7 +1918,7 @@
                 + (q.options || []).map(function (o, i) {
                     return '<button type="button" class="gop" data-gop="' + i + '"' + lock + '><b>' + esc(o.label) + '</b><small>' + esc(o.description || '')
                         + '</small><kbd>' + (i + 1) + '</kbd></button>';
-                }).join('') + '</div>'
+                }).join('') + gateFreeHtml(s, picked, lock) + '</div>'
             : pendingGateHtml(s, picked);
         return '<div class="gc" data-block="gate-countdown" data-pg-root="' + esc(s.root) + '" data-pg-id="' + esc(s.id) + '" data-until="' + p.until
             + '" data-total="' + total + '"><div class="gsrc"><span class="mono">' + esc(s.project || '') + '</span><i aria-hidden="true"></i><span class="mono">'
@@ -1946,9 +1959,12 @@
             done += s.tune.done;
             if (!tune && s.tune.url) tune = s.tune;
         });
-        return '<section class="fkp" id="fkp" aria-label="' + loc('tune.notificationsAndGate', '通知與 gate') + '"' + (open || held.length ? '' : ' hidden') + fkBoxStyle(box) + '>'
+        var shown = Boolean(open || (held.length && !(picked && picked['fk:shut'])));
+        return '<section class="fkp" id="fkp" aria-label="' + loc('tune.notificationsAndGate', '通知與 gate') + '"' + (shown ? '' : ' hidden') + fkBoxStyle(box) + '>'
+            + '<div class="fkg" aria-hidden="true" data-fkg><i></i></div>'
             + '<div class="fkh"><b>' + loc('tune.notificationsAndGate', '通知與 gate') + '</b><span class="n">' + loc('tune.nItems', '{n} 件', { n: n }) + '</span><span class="spacer"></span>'
-            + (all.length ? '<button class="lk" type="button" data-note-clear>' + loc('tune.clearNotifications', '清掉通知') + '</button>' : '') + '</div>'
+            + (all.length ? '<button class="lk" type="button" data-note-clear>' + loc('tune.clearNotifications', '清掉通知') + '</button>' : '')
+            + '<button type="button" class="fkx" data-fkx aria-label="' + loc('tune.closePanel', '關閉通知與 gate') + '"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>'
             + (held.length ? '<div class="fks">' + loc('tune.waitingOnYou', '等你回答') + ' <b>' + held.length + '</b></div>'
                 + held.map(function (s) { return gateCountdownHtml(s, now, picked); }).join('') : '')
             + '<div class="fks">' + loc('tune.notifications', '通知') + ' <b>' + all.length + '</b></div>' + all.map(noteHtml).join('')
@@ -1957,7 +1973,7 @@
             + (tune ? '<a href="' + esc(tune.url) + '" target="_blank" rel="noopener">' + esc(tune.url.replace(/^https?:\/\//, '').replace(/\/$/, '')) + '</a>' : '')
             + '<span class="spacer"></span>'
             + (permission === 'default' ? '<button type="button" class="btn" data-tune-notify>' + loc('tune.notifyInBackground', '背景時通知我') + '</button>' : '') + '</div><span class="fkr" data-fk-resize aria-hidden="true"></span></section>'
-            + '<button type="button" class="fkb" data-fkb aria-expanded="' + Boolean(open || held.length) + '" aria-controls="fkp" aria-label="' + loc('tune.notificationsAndGateNItems', '通知與 gate：{n} 件', { n: lit })
+            + '<button type="button" class="fkb" data-fkb aria-expanded="' + shown + '" aria-controls="fkp" aria-label="' + loc('tune.notificationsAndGateNItems', '通知與 gate：{n} 件', { n: lit })
             + (held.length ? loc('tune.nGatesWaiting', '，{n} 個 gate 在等', { n: held.length }) : '') + '">' + FK_BELL + '<span class="fkn">' + (lit ? lit : '') + '</span></button>';
     }
 
@@ -4388,10 +4404,16 @@
         var loose = [].some.call(t.content.childNodes, function (n) { return n.nodeType === 3 && n.textContent.trim(); });
         return loose ? null : [].map.call(t.content.children, function (c) { return c.outerHTML; });
     }
-    function drawFloat() {
+    var fkRec = null;
+    // The poll repaints this every few seconds; a box being typed in or a mic that is listening would
+    // lose its place, so only a click (`force`) repaints then.
+    function drawFloat(force) {
         var fk = doc.getElementById('fk');
         if (!fk) return;
+        var ae = doc.activeElement;
+        if (!force && (fkRec || (ae && ae.getAttribute && ae.getAttribute('data-gfree') !== null))) return;
         var held = S.sessions.some(function (s) { return s.pending && s.pending.questions && s.pending.questions.length; });
+        if (!held) delete view.pg['fk:shut'];
         var old = doc.getElementById('fkp'), top = old ? old.scrollTop : 0;
         fk.innerHTML = floatHtml(S.sessions, view.notes, view.fkOpen, S.serve ? Date.now() : NOW, view.pg, w.Notification ? w.Notification.permission : 'denied', view.fkBox, view.gone);
         var p = doc.getElementById('fkp'); if (p && top) p.scrollTop = top;
@@ -4447,6 +4469,64 @@
         if (!view.fkBox) return;
         view.fkBox = fkFit(view.fkBox);
         fkApply();
+    });
+    // Close the panel, also when a held gate would keep it open: `fk:shut` stands until the gate is gone.
+    function fkClose() {
+        var heldNow = S.sessions.some(function (s) { return s.pending && s.pending.questions && s.pending.questions.length; });
+        if (view.fkOpen) view.notes = readAll(view.notes);
+        view.fkOpen = false;
+        if (heldNow) view.pg['fk:shut'] = true;
+        drawFloat(true);
+    }
+    // Voice fills the box and never sends. The same approach as assets/station/mobile.js `listen`.
+    function fkListen(btn, box, say) {
+        var SR = w.SpeechRecognition || w.webkitSpeechRecognition;
+        if (!SR || !box) return null;
+        var base = box.value ? box.value.replace(/\s*$/, ' ') : '', failed = false, rec = new SR();
+        rec.lang = 'zh-TW';
+        rec.interimResults = true;
+        rec.continuous = true;
+        btn.classList.add('on');
+        btn.setAttribute('aria-pressed', 'true');
+        say(loc('cmp.micOn', '聆聽中… 再按一次停止'), true);
+        rec.onresult = function (e) {
+            var fin = '', mid = '';
+            for (var i = 0; i < e.results.length; i++) {
+                if (e.results[i].isFinal) fin += e.results[i][0].transcript; else mid += e.results[i][0].transcript;
+            }
+            box.value = base + fin + mid;
+            box.classList.toggle('interim', Boolean(mid));
+            if (w.Event) box.dispatchEvent(new w.Event('input', { bubbles: true }));
+        };
+        rec.onerror = function (e) {
+            failed = true;
+            say(e.error === 'not-allowed' || e.error === 'service-not-allowed' ? loc('cmp.micDenied', '沒有麥克風權限：到瀏覽器設定允許') : loc('cmp.micMissed', '沒聽清楚：再按一次麥克風'), false);
+        };
+        rec.onend = function () {
+            btn.classList.remove('on');
+            btn.setAttribute('aria-pressed', 'false');
+            box.classList.remove('interim');
+            if (!failed) say(box.value.trim() ? loc('cmp.micDone', '聽好了：可以改字，按送出才會送') : '', false);
+            fkRec = null;
+        };
+        rec.start();
+        return rec;
+    }
+    doc.addEventListener('input', function (e) {
+        var t = e.target && e.target.closest ? e.target.closest('#fk [data-gfree]') : null;
+        if (!t) return;
+        view.pg[t.getAttribute('data-gfree') + ':free'] = t.value;
+        var b = t.closest('.gc').querySelector('[data-gfs]');
+        if (b) b.disabled = !t.value.trim();
+    });
+    var fkSheetY = null;
+    doc.addEventListener('pointerdown', function (e) {
+        if (e.target && e.target.closest && e.target.closest('#fk [data-fkg]')) fkSheetY = e.clientY;
+    });
+    w.addEventListener('pointerup', function (e) {
+        var down = fkSheetY;
+        fkSheetY = null;
+        if (down !== null && e.clientY - down > 60) fkClose();
     });
     // The hash a `#/p/<pkey>/todo[/<id>]` arrived with, until its TODO panel or
     // entry is scrolled into view; null once it is. Tried after every draw, since
@@ -4717,8 +4797,9 @@
             // close marks what arrived while it was open. Neither redraws.
             var wasOpen = view.fkOpen;
             view.fkOpen = !wasOpen;
+            if (view.fkOpen) delete view.pg['fk:shut'];
             if (wasOpen) view.notes = readAll(view.notes);
-            drawFloat();
+            drawFloat(true);
             if (!wasOpen) view.notes = readAll(view.notes);
             return;
         }
@@ -4728,7 +4809,7 @@
             view.notes = gone.notes;
             view.gone = gone.gone;
             goneSave();
-            drawFloat();
+            drawFloat(true);
             return;
         }
         if (e.target.closest('[data-note-clear]')) {
@@ -4736,7 +4817,30 @@
             view.notes = cleared.notes;
             view.gone = cleared.gone;
             goneSave();
-            drawFloat();
+            drawFloat(true);
+            return;
+        }
+        if (e.target.closest('[data-fkx]') || e.target.id === 'fk') {
+            fkClose();
+            return;
+        }
+        var gmic = e.target.closest('#fk [data-mic]');
+        if (gmic) {
+            if (fkRec) { fkRec.stop(); return; }
+            var gbox = doc.getElementById(gmic.getAttribute('data-mic'));
+            var gsay = gmic.closest('.gfree').querySelector('.gsay');
+            fkRec = fkListen(gmic, gbox, function (text, on) { if (gsay) { gsay.textContent = text; gsay.className = 'gsay' + (on ? ' on' : ''); } });
+            return;
+        }
+        var gfs = e.target.closest('#fk [data-gfs]');
+        if (gfs) {
+            var gtext = gfs.closest('.gfree').querySelector('[data-gfree]').value.trim();
+            if (!gtext) return;
+            gatePost(gfs.closest('.gc'), function (form, who) {
+                var q = who.pending.questions[0], a = {};
+                a[q.question] = gtext;
+                form.set('answers', JSON.stringify(a));
+            }, loc('cmp.sentColon', '已送出：'));
             return;
         }
         var gop = e.target.closest('[data-gop]');
@@ -5302,7 +5406,7 @@
     // from there (`gateCountdownHtml`, `pendingGateHtml`).
     var SEND_MS = 10000;
     function answerPost(id, box, line, cls, form, said, failed) {
-        var btns = box.querySelectorAll ? [].slice.call(box.querySelectorAll('[data-gop],[data-gho],[data-answer]')) : [];
+        var btns = box.querySelectorAll ? [].slice.call(box.querySelectorAll('[data-gop],[data-gho],[data-answer],[data-gfs]')) : [];
         var who = S.sessions.filter(function (x) { return x.id === id; })[0], gate = who && who.pending ? who.pending.until : null;
         var ac = typeof AbortController === 'function' ? new AbortController() : null, over = false, timer;
         function show(busy, c, t) {
