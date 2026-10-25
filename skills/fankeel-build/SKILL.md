@@ -367,14 +367,14 @@ then asks this stage's gate.
      one red-when line, apply its mutation to a scratch copy
      (`git show <sha>:<path> > <scratch>`), and confirm the named test
      reddens; a mutation that reddens every test in the file killed the
-     harness and counts as dead, not red. (c): every row that is not `ok`
-     is a finding as printed. A check the diff adds that is not a test (a
-     script, a guard, a verify line) needs one input it must reject and
-     proof it rejects it. A scanner for a pattern needs one fixture per shape it
-     could miss (call in parentheses, aliased import, sibling API like `exec`),
-     each rejected, or it is blind (10-25: `(deps.execFile || execFileSync)(`).
-     Two mutations that redden exactly the same tests
-     are a gap — one test that tells them apart is missing.
+     harness and counts as dead, not red. (c): every row not `ok` is a finding. A check the diff adds that is not a test
+     needs one input it must reject, with proof. A scanner for a pattern needs one fixture per shape it
+     could miss (parenthesised call, alias, sibling `exec`), each rejected,
+     or it is blind (10-25: `(deps.execFile || execFileSync)(`). An accept
+     predicate needs a near-miss it must refuse (`windowsHide: false`, a
+     comment naming the option); a lookup by name needs a fixture where a
+     same-named binding elsewhere would wrongly satisfy it.
+     Two mutations reddening exactly the same tests are a gap.
      A test of locking or ordering must wait on an explicit signal from the
      other side (a line the other process prints, a marker file), never on a
      delay, and must go red on every run of the mutation that removes the

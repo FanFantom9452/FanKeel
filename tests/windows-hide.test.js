@@ -87,7 +87,7 @@ function callsIn(src) {
             else if (c === '(') depth++;
             else if (c === ')' && --depth === 0) break;
         }
-        found.push({ text: src.slice(s.at, i + 1), line: src.slice(0, s.at).split('\n').length, src });
+        found.push({ text: src.slice(s.at, i + 1), line: src.slice(0, s.at).split('\n').length, at: s.at, src });
     }
     return found;
 }
@@ -96,9 +96,12 @@ const calls = (rel) => callsIn(fs.readFileSync(path.join(ROOT, rel), 'utf8'));
 
 const allowed = (rel, text) => ALLOW.some((a) => a.file === rel && text.includes(a.match));
 
-// The text of `const|let|var <name> = { ... }`, or '' when the file declares none.
-function declaration(src, name) {
-    const m = new RegExp('\\b(?:const|let|var)\\s+' + name + '\\s*=\\s*\\{').exec(src);
+// The text of `const|let|var <name> = { ... }` that applies to a call at index `before`, or '' when none does.
+// Rule: the last matching declaration that starts before the call, so a same-named binding in an earlier
+// or later function is not mistaken for the one the call uses.
+function declaration(src, name, before) {
+    let m = null;
+    for (const x of src.matchAll(new RegExp('\\b(?:const|let|var)\\s+' + name + '\\s*=\\s*\\{', 'g'))) if (x.index < before) m = x;
     if (!m) return '';
     let depth = 0;
     for (let i = m.index + m[0].length - 1; i < src.length; i++) {
@@ -108,11 +111,15 @@ function declaration(src, name) {
     return '';
 }
 
+const noComments = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+// Only the option written as a real property, outside comments, counts.
+const sayshidden = (t) => /windowsHide\s*:\s*true\b/.test(noComments(t));
+
 // Options held in a variable carry windowsHide only if the call text or that variable's declaration says so.
 function hidden(c) {
-    if (/windowsHide/.test(c.text)) return true;
-    const names = [...c.text.matchAll(/\.\.\.(\w+)|,\s*(\w+)\s*\)$/g)].map((m) => m[1] || m[2]);
-    return names.some((n) => /windowsHide/.test(declaration(c.src, n)));
+    if (sayshidden(c.text)) return true;
+    const names = [...noComments(c.text).matchAll(/\.\.\.(\w+)|,\s*(\w+)\s*\)$/g)].map((m) => m[1] || m[2]);
+    return names.some((n) => sayshidden(declaration(c.src, n, c.at)));
 }
 
 test('every child-process call in lib/ and scripts/ carries windowsHide or is allowlisted', () => {
@@ -168,4 +175,24 @@ test('a rename of a non-child_process function is not flagged', () => {
 test('the scanner ignores regex.exec and other objects exec', () => {
     assert.deepStrictEqual(callsIn('const m = re.exec(s); const n = /a/.exec(s); this.exec(1);'), []);
     assert.deepStrictEqual(callsIn('const f = foo(bar)(1); const g = (pick(a, b) || other)(2); (() => { x(1); })();'), []);
+});
+
+test('the scanner refuses near-misses: windowsHide false, a comment, a same-named declaration elsewhere', () => {
+    const refused = {
+        falseValue: "spawn('a', [], { windowsHide: false });",
+        lineComment: "spawn('a', [], {\n // windowsHide\n stdio: 1 });",
+        blockComment: "spawn('a', [], { /* windowsHide: true */ stdio: 1 });",
+        falseInDecl: "const opts = { windowsHide: false };\nspawn('a', [], opts);",
+        commentInDecl: "const opts = { // windowsHide: true\n cwd: 1 };\nspawn('a', [], opts);",
+        earlierFunction: "function a() { const opts = { windowsHide: true }; }\nfunction b() {\n const opts = { cwd: 1 };\n spawn('a', [], opts);\n}",
+        laterDeclaration: "function b() { spawn('a', [], opts); }\nfunction a() { const opts = { windowsHide: true }; }",
+    };
+    for (const [name, src] of Object.entries(refused)) {
+        const c = callsIn(src);
+        assert.strictEqual(c.length, 1, name + ': found once');
+        assert.ok(!hidden(c[0]), name + ': must be unhidden');
+    }
+    const ok = callsIn("function a() { const opts = { cwd: 1 }; }\nfunction b() {\n const opts = { windowsHide: true };\n spawn('a', [], opts);\n}");
+    assert.strictEqual(ok.length, 1);
+    assert.ok(hidden(ok[0]), 'the right declaration carries it');
 });
