@@ -2,7 +2,7 @@
 name: fankeel-phone
 description: Hand this session to the phone — when this turn ends the session waits for the next message typed on the station's phone page (/m). Use for /fankeel-phone, "交給手機", or before walking away from a session you want to keep talking to.
 disable-model-invocation: true
-version: 0.115.0
+version: 0.116.0
 status: current
 last_verified: 2026-10-22
 source_of_truth: scripts/phone.js, lib/phone.js, hooks/stop.js
