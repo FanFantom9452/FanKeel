@@ -2912,7 +2912,7 @@
         var tot = s.stages.reduce(function (n, w) {
             return n + Math.max(w.to - w.from, 0);
         }, 0) || 1;
-        claimsKeep(d, s.id);
+        claimsKeep(d);
         d.innerHTML = '<div class="cbody" style="padding-top:16px">'
             + '<div style="display:flex;gap:7px;align-items:center;margin-bottom:10px;'
             + 'flex-wrap:wrap">' + statePill(s)
@@ -2974,22 +2974,25 @@
         claimsPut(d, s.id);
     }
     // A dragged .claims height lives on the element's inline style, which the
-    // repaint above replaces; view.claimsH holds it by position, per session.
-    // view.claimsFor is the session the DOM in #det was drawn for: only that
-    // DOM's height is read back, so A's drag is never saved under B.
-    function claimsKeep(d, id) {
-        if (view.claimsFor !== id) { view.claimsH = null; return; }
+    // repaint above replaces; view.claimsH maps session id -> heights by
+    // position, so each session keeps its own. view.claimsFor is the session
+    // the DOM in #det was drawn for: only that DOM is read back, and it is
+    // saved under that session, so A's drag survives a switch to B and back.
+    function claimsKeep(d) {
+        var f = view.claimsFor;
+        if (!f) return;
         var h = [], any = false;
         Array.prototype.forEach.call(d.querySelectorAll ? d.querySelectorAll('.claims') : [], function (el) {
             h.push(el.style.height || ''); if (el.style.height) any = true;
         });
-        if (any) view.claimsH = { id: id, h: h };
+        view.claimsH = view.claimsH || {};
+        if (any) view.claimsH[f] = h; else delete view.claimsH[f];
     }
     function claimsPut(d, id) {
         view.claimsFor = id;
-        var k = view.claimsH;
-        if (!k || k.id !== id || !d.querySelectorAll) return;
-        Array.prototype.forEach.call(d.querySelectorAll('.claims'), function (el, i) { if (k.h[i]) el.style.height = k.h[i]; });
+        var k = view.claimsH && view.claimsH[id];
+        if (!k || !d.querySelectorAll) return;
+        Array.prototype.forEach.call(d.querySelectorAll('.claims'), function (el, i) { if (k[i]) el.style.height = k[i]; });
     }
     // The scan-time clauses were the old header's `depth stopped the scan in N
     // places` and `the scan ran out of time` — both are how a reader learns

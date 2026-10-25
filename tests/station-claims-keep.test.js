@@ -63,3 +63,35 @@ test('A dragged, switch to B → B has default height', () => {
     assert.ok(/task b/.test(p.det.innerHTML), 'the detail now shows b');
     assert.equal(p.det.claims[0].style.height, undefined);
 });
+
+test('A dragged, B, back to A → A keeps its own height', () => {
+    const a = { ...SES, id: 'a' }, b = { ...SES, id: 'b', task: 'task b', updated: Date.now() - 120000 };
+    const list = [a, b];
+    const p = boot(list);
+    draw(p);
+    p.det.claims[0].style.height = '520px';
+    list.splice(0, 1, b); // the selection falls to b
+    list.length = 1;
+    draw(p);
+    assert.ok(/task b/.test(p.det.innerHTML), 'the detail shows b');
+    assert.equal(p.det.claims[0].style.height, undefined);
+    list.length = 0; list.push(a); // b leaves, the selection falls back to a
+    draw(p);
+    assert.ok(/task a/.test(p.det.innerHTML), 'the detail shows a again');
+    assert.equal(p.det.claims[0].style.height, '520px');
+});
+
+test('A 520px, B 300px, A again, B again → each keeps its own height', () => {
+    const a = { ...SES, id: 'a' }, b = { ...SES, id: 'b', task: 'task b', updated: Date.now() - 120000 };
+    const list = [a, b];
+    const p = boot(list);
+    const show = (s) => { list.length = 0; list.push(s); draw(p); };
+    draw(p);
+    p.det.claims[0].style.height = '520px';
+    show(b);
+    p.det.claims[0].style.height = '300px';
+    show(a);
+    assert.equal(p.det.claims[0].style.height, '520px');
+    show(b);
+    assert.equal(p.det.claims[0].style.height, '300px');
+});
