@@ -27,6 +27,13 @@
         'gf.free': 'Or write your own answer',
         'gf.freeHint': 'Sent as the answer to this question, the same as choosing "Other".',
         'gf.send': 'Send answer',
+        'gf.mic': 'Speak your answer',
+        'gf.micStop': 'Stop listening',
+        'gf.micHint': 'To speak: tap the mic, then edit the text before sending',
+        'gf.micOn': 'Listening… tap again to stop',
+        'gf.micDone': 'Heard: edit it if you like; only Send sends',
+        'gf.micDenied': 'No microphone permission: allow it in the browser settings',
+        'gf.micMissed': 'Did not catch that: tap the mic again',
         'gf.sending': 'Sending…',
         'gf.sentOk': 'Sent: {t}',
         'gf.sentBad': 'Could not send: {t}',
@@ -92,14 +99,69 @@
         return kind === 'wait' ? loc('gf.sending', '送出中…')
             : kind === 'ok' ? loc('gf.sentOk', '已送出：{t}', { t: text }) : loc('gf.sentBad', '送不出去：{t}', { t: text });
     }
+    function micOk() { return Boolean(w && (w.SpeechRecognition || w.webkitSpeechRecognition)); }
+    var MIC_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'
+        + '<path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/></svg>';
     function freeHtml(st) {
-        var said = st.said, wait = busy(st);
+        var said = st.said, wait = busy(st), on = Boolean(st.mic);
         var line = said ? sentLine(said.kind, said.text) : '';
+        var label = on ? loc('gf.micStop', '停止聆聽') : loc('gf.mic', '用講的寫答案');
         return '<form class="gt-free" data-block="gate-free" onsubmit="return false"><label class="gt-free-l" for="gq-free">' + loc('gf.free', '或寫自己的答案') + '</label>'
-            + '<textarea id="gq-free" class="gt-free-t" data-gq-free rows="3" aria-describedby="gq-free-h">' + esc(st.free) + '</textarea>'
+            + '<div class="gfrow"><textarea id="gq-free" class="gt-free-t" data-gq-free rows="3" aria-describedby="gq-free-h">' + esc(st.free) + '</textarea>'
+            + (micOk() ? '<button type="button" class="gmic' + (on ? ' on' : '') + '" data-gq-mic aria-pressed="' + (on ? 'true' : 'false') + '" aria-label="' + label + '" title="' + label + '">' + MIC_SVG + '</button>' : '') + '</div>'
             + '<p class="gt-free-h" id="gq-free-h">' + loc('gf.freeHint', '會當成這題的答案送出，等同選「其他」。') + '</p>'
+            + (micOk() ? '<p class="gsay' + (on ? ' on' : '') + '" id="gq-say" role="status">' + esc(st.micSay || loc('gf.micHint', '想用講的：按麥克風，講完可以改字再送出')) + '</p>' : '')
             + '<div class="gt-free-a"><button type="button" class="gq-pick gt-send" data-gq-send' + (wait ? ' disabled' : '') + '>' + loc('gf.send', '送出答案') + '</button>'
             + '<p id="gq-sent" class="gt-sent' + (said ? ' ' + said.kind : '') + '" role="status" aria-live="polite">' + esc(line) + '</p></div></form>';
+    }
+    // Voice fills the field and never sends. The page repaints every 5 s and replaces the field, so the
+    // box and the button are looked up afresh each time and the listening state lives in `state(key)`.
+    var HEARD = null;
+    function micPaint() {
+        if (!doc || !doc.querySelector || CUR.key === null) return;
+        var st = state(CUR.key), btn = doc.querySelector('[data-gq-mic]'), line = doc.getElementById ? doc.getElementById('gq-say') : null;
+        if (btn) {
+            btn.classList.toggle('on', Boolean(st.mic));
+            btn.setAttribute('aria-pressed', st.mic ? 'true' : 'false');
+        }
+        if (line) {
+            line.textContent = st.micSay || loc('gf.micHint', '想用講的：按麥克風，講完可以改字再送出');
+            line.classList.toggle('on', Boolean(st.mic));
+        }
+    }
+    function micToggle() {
+        if (HEARD) { HEARD.stop(); return; }
+        var SR = w && (w.SpeechRecognition || w.webkitSpeechRecognition), box = doc && doc.querySelector ? doc.querySelector('[data-gq-free]') : null;
+        if (!SR || !box || CUR.key === null) return;
+        var st = state(CUR.key), base = box.value ? box.value.replace(/\s*$/, ' ') : '', failed = false, rec = new SR();
+        rec.lang = 'zh-TW';
+        rec.interimResults = true;
+        rec.continuous = true;
+        st.mic = true;
+        st.micSay = loc('gf.micOn', '聆聽中… 再按一次停止');
+        micPaint();
+        rec.onresult = function (e) {
+            var fin = '', mid = '', f = doc.querySelector('[data-gq-free]');
+            for (var i = 0; i < e.results.length; i++) {
+                if (e.results[i].isFinal) fin += e.results[i][0].transcript; else mid += e.results[i][0].transcript;
+            }
+            if (!f) return;
+            f.value = base + fin + mid;
+            f.classList.toggle('interim', Boolean(mid));
+            if (w.Event) f.dispatchEvent(new w.Event('input', { bubbles: true }));
+        };
+        rec.onerror = function (e) {
+            failed = true;
+            st.micSay = e.error === 'not-allowed' || e.error === 'service-not-allowed' ? loc('gf.micDenied', '沒有麥克風權限：到瀏覽器設定允許') : loc('gf.micMissed', '沒聽清楚：再按一次麥克風');
+        };
+        rec.onend = function () {
+            st.mic = false;
+            HEARD = null;
+            if (!failed) st.micSay = st.free.trim() ? loc('gf.micDone', '聽好了：可以改字，按送出才會送') : '';
+            micPaint();
+        };
+        HEARD = rec;
+        rec.start();
     }
     function ask(g, stage, st) {
         var k = kit(), q = g && g.gate && g.gate.questions && g.gate.questions[0] ? g.gate.questions[0] : null;
@@ -223,10 +285,11 @@
         doc.addEventListener('click', function (e) {
             var t = e && e.target && e.target.closest ? e.target : null;
             if (!t) return;
-            var m = t.closest('[data-gq-more]'), p = t.closest('[data-gq-pick]'), s = t.closest('[data-gq-send]');
+            var m = t.closest('[data-gq-more]'), p = t.closest('[data-gq-pick]'), s = t.closest('[data-gq-send]'), mc = t.closest('[data-gq-mic]');
             if (m) more(Number(m.getAttribute('data-gq-more')));
             else if (p) pick(Number(p.getAttribute('data-gq-pick')));
             else if (s) send();
+            else if (mc) micToggle();
         });
         doc.addEventListener('input', function (e) {
             var f = e && e.target && e.target.closest ? e.target.closest('[data-gq-free]') : null;
@@ -251,9 +314,10 @@
         CUR = { key: [s.id, stage, q ? q.question : ''].join('\n'), raw: raw, labels: raw.map(function (x) { return x.replace(REC, ''); }) };
         ANSWER = o.answer && o.answer.question === (q ? q.question : null) ? o.answer : null;
         var st = state(CUR.key);
+        var held = Boolean(s.gateAt || s.pending);
         return '<main class="fm gt-frame" data-block="gate-frame">' + head(s, stage) + (o.shellsHtml || '')
-            + '<div class="gt-grid" data-block="gate-columns"><div class="gt-main" data-block="gate-main">' + (o.reportHtml || '') + '</div>'
-            + '<aside class="gt-side" data-block="gate-side"><div class="gt-pin">' + ask(g, stage, st) + '</div></aside></div></main>';
+            + '<div class="gt-grid' + (held ? '' : ' gt-one') + '" data-block="gate-columns"><div class="gt-main" data-block="gate-main">' + (o.reportHtml || '') + '</div>'
+            + (held ? '<aside class="gt-side" data-block="gate-side"><div class="gt-pin">' + ask(g, stage, st) + '</div></aside>' : '') + '</div></main>';
     }
 
     var api = { frame: frame, listen: listen, pickable: pickable, onKey: onKey, pick: pick, more: more, say: say, send: send, mark: mark, diagrams: diagrams, EN: EN };

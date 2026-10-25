@@ -28,6 +28,7 @@
 .gt-side .gt-pin{display:flex;flex-direction:column;gap:18px}
 @media (min-width:1181px) and (min-height:760px){.gt-side .gt-pin{position:sticky;top:16px}}
 @media (max-width:1180px){.gt-grid{grid-template-columns:minmax(0,1fr)}.gt-grid>.gt-side{order:-1}}
+.gt-grid.gt-one{grid-template-columns:minmax(0,1fr)}
 .gt-frame .dcard-h .gt-hr{margin-left:auto;min-width:0}
 :root[data-style=keel] .gt-frame .dcard-h .kn.wait{background:var(--signal-tint);color:var(--signal-ink)}
 
@@ -72,4 +73,6 @@
 .gt-send:disabled{opacity:.5;cursor:default}
 .gt-sent{margin:0;font-size:12px;color:var(--ink2)}
 .gt-sent.bad{color:var(--signal-ink)}
+.gt-free .gfrow .gmic{width:40px;height:40px}
+.gt-free .gfrow .gt-free-t{min-height:64px}
 @media (prefers-reduced-motion:reduce){.gt-more .ico{transition:none}}
