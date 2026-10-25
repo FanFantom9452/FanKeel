@@ -151,6 +151,7 @@
     }
     // The one line the marks own in the free field, "標記：A「label」、B「label」"; the
     // reader's other lines are left as they are, and no marks removes the line.
+    // Accepted limit: a reader's own line that starts with 標記： is taken for the marks line.
     var MARKED = /^(標記：|Marked: )/;
     function markLine(text, list) {
         var lines = String(text).split('\n'), at = -1, line = list.length
@@ -218,7 +219,10 @@
             var st = state(CUR.key);
             st.free = String(f.value || '');
             // the reader deleted the 標記 line: a repaint must not draw those nodes marked again
-            if (!st.free.split('\n').some(function (l) { return MARKED.test(l); })) st.marks = [];
+            if (!st.free.split('\n').some(function (l) { return MARKED.test(l); })) {
+                st.marks = [];
+                if (w && w.FK_DIAGRAM && w.FK_DIAGRAM.clearMarks) w.FK_DIAGRAM.clearMarks(doc.querySelector('.gt-main') || doc);
+            }
         });
         doc.addEventListener('keydown', function (e) { onKey(e, doc); });
     }

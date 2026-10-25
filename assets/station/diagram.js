@@ -171,6 +171,9 @@
             });
             ro.observe(pan);
         }
+        fig.dgClear = function () {
+            [].forEach.call(pan.querySelectorAll('.pele-node.is-marked'), function (n) { toggle(n, true); });
+        };
         fig.addEventListener('click', function (e) {
             var t = e && e.target, g, z, v, c;
             if (!t || !t.closest) return;
@@ -188,7 +191,7 @@
                 [].forEach.call(fig.querySelectorAll('[data-dg-view]'), function (x) { x.setAttribute('aria-pressed', String(x === v)); });
             }
             if (c) {
-                [].forEach.call(pan.querySelectorAll('.pele-node.is-marked'), function (n) { toggle(n, true); });
+                fig.dgClear();
                 if (o.onMark) o.onMark([]);
             }
         });
@@ -236,7 +239,13 @@
         if (o.pele) go(true); else load(go);
     }
 
-    var api = { fence: fence, draw: draw, labels: labels, EN: EN };
+    // Unmark every drawn figure under `root` without calling onMark: the marks line was deleted by hand.
+    function clearMarks(root) {
+        if (!root || !root.querySelectorAll) return;
+        [].forEach.call(root.querySelectorAll('[data-mermaid]'), function (f) { if (f.dgClear) f.dgClear(); });
+    }
+
+    var api = { fence: fence, draw: draw, clearMarks: clearMarks, labels: labels, EN: EN };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     if (w) w.FK_DIAGRAM = api;
 }(typeof window !== 'undefined' ? window : null, typeof document !== 'undefined' ? document : null));

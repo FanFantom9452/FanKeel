@@ -88,3 +88,17 @@ test('deleting the 標記 line by hand clears the marks, so the next repaint dra
     G.diagrams({});
     assert.deepEqual([...draws[2].o.marked], []);
 });
+
+test('deleting the 標記 line by hand unmarks the live figures, so the next click writes a line of only that node', () => {
+    const { G, D, win } = setup('hi');
+    D.box.closest = () => D.box;
+    const cleared = [];
+    win.FK_DIAGRAM.clearMarks = (root) => cleared.push(root);
+    G.diagrams({});
+    G.mark([{ fig: 0, ...A }]);
+    D.on.input({ target: D.box });
+    assert.equal(cleared.length, 0, 'the line is still there');
+    D.box.value = 'hi';
+    D.on.input({ target: D.box });
+    assert.equal(cleared.length, 1);
+});

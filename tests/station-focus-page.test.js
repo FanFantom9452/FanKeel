@@ -197,3 +197,18 @@ test('gateRest and gatePatrol carry a data-gv key', () => {
     assert.match(src, /<details class="gv-more" data-gv="rest"' \+ \(dg \? ' open' : ''\)/);
     assert.match(src, /<details class="gv-more" data-gv="patrol" data-block="gate-patrol">/);
 });
+
+test('after a repaint writes the page, FK_GATE.diagrams draws the diagrams into #focus; no FK_GATE is no call', () => {
+    const d = focusDom();
+    const drawn = [];
+    d.win.FK_GATE = { diagrams: (el) => drawn.push(el) };
+    d.win.STATION = Object.assign({}, d.win.STATION, { sessions: [Object.assign({}, ROW, { task: 'again' })] });
+    d.ticks[0]();
+    d.heads[d.heads.length - 1].onload();
+    assert.deepEqual(drawn, [d.focus]);
+    delete d.win.FK_GATE;
+    d.win.STATION = Object.assign({}, d.win.STATION, { sessions: [Object.assign({}, ROW, { task: 'third' })] });
+    d.ticks[0]();
+    d.heads[d.heads.length - 1].onload();
+    assert.ok(d.focus.innerHTML.includes('third'));
+});

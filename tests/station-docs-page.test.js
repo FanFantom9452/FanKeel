@@ -48,7 +48,7 @@ function mod(lang, failFresh) {
     D.reset();
     let redraws = 0;
     const o = { names: {}, now: Date.now(), serve: true, pkeys: [A, B], redraw() { redraws++; } };
-    return { D, doc, calls, o, draw: (extra) => D.page(S, Object.assign({}, o, extra)), redraws: () => redraws };
+    return { D, doc, win, calls, o, draw: (extra) => D.page(S, Object.assign({}, o, extra)), redraws: () => redraws };
 }
 const hit = (attr, val) => ({ closest: (sel) => (sel === '[' + attr + ']' ? { getAttribute: () => val, disabled: false, closest: () => null } : null) });
 const section = (html, block) => {
@@ -333,4 +333,16 @@ test('render: a mermaid fence is a data-mermaid figure that keeps its source and
     assert.ok(r.html.includes('<pre class="dg-src"><code>flowchart TD\nA--&gt;B</code></pre>'));
     assert.ok(r.html.includes('<pre data-l="6"><code>x &lt; y</code></pre>'));
     assert.match(D.render(md, 3).html, /<figure class="dg hl" data-mermaid/);
+});
+
+test('the reader draws the diagrams of the document it just wrote, into the reader body', async () => {
+    const m = mod();
+    const drawn = [];
+    m.win.FK_DIAGRAM = { draw: (b) => drawn.push(b), fence: () => '' };
+    m.draw();
+    await flush();
+    m.D.onClick({ target: hit('data-dk-cell', '0 broken') });
+    m.D.onClick({ target: hit('data-dk-item', '0') });
+    await flush();
+    assert.deepEqual(drawn, [m.doc.getElementById('rd-body')]);
 });

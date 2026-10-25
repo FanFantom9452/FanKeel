@@ -22,3 +22,10 @@ test('changed markup waits while a text field has focus', () => {
     assert.equal(F.repaint('a', 'b', { tagName: 'BUTTON' }), true);
     assert.equal(F.repaint('a', 'b', { tagName: 'BODY' }), true);
 });
+
+test('a repaint is refused while the focus is inside a diagram figure, so a mark does not snap the zoom back', () => {
+    const inFig = { tagName: 'g', closest: (s) => (s === '.dg' ? {} : null) };
+    const out = { tagName: 'g', closest: () => null };
+    assert.equal(F.repaint('a', 'b', inFig), false);
+    assert.equal(F.repaint('a', 'b', out), true);
+});

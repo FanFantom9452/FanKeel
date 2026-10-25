@@ -241,10 +241,13 @@
     // Whether the 5 s repaint may replace the page: not when the markup is the
     // one already drawn (a click in flight keeps its target node), and not
     // while the reader has a text field focused (the repaint would drop what
-    // they typed). `active` is document.activeElement.
+    // they typed), and not while it is on a diagram figure (a mark rewrites the
+    // free field, and the repaint would snap the zoom and pan back). `active` is
+    // document.activeElement.
     function focusRepaint(last, html, active) {
         if (last === html) return false;
         var tag = active && active.tagName ? String(active.tagName).toUpperCase() : '';
+        if (active && active.closest && active.closest('.dg')) return false;
         return !(tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT');
     }
 

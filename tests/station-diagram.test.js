@@ -211,3 +211,14 @@ test('two figures sharing a node id: marked {fig, id} puts the mark back in that
     b.handlers.click({ target: b.nodes[1] });
     assert.deepEqual(got.at(-1), [{ fig: 0, id: 'A', label: 'Start' }, { fig: 1, id: 'B', label: 'Done' }]);
 });
+
+test('clearMarks unmarks the drawn figures without calling onMark, so the next click marks only that node', () => {
+    const D = loaded(), f = fake(), got = [];
+    D.draw(f.root, { mark: true, marked: ['A', 'B'], onMark: (m) => got.push(JSON.parse(JSON.stringify(m.map((x) => x.id)))), pele: f.pele });
+    D.clearMarks(f.root);
+    assert.ok(f.nodes.every((n) => !n.classList.contains('is-marked')));
+    assert.equal(f.count.textContent, '0');
+    assert.deepEqual(got, []);
+    f.handlers.click({ target: f.nodes[1] });
+    assert.deepEqual(got, [['B']]);
+});
