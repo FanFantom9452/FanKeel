@@ -183,8 +183,8 @@ function main(raw) {
 
         // Whether a station is serving, asked only on the prompt whose block
         // names one; every other prompt stays two missing files. `ensureServe`
-        // starts `station.js serve --open` detached when nothing answers, so
-        // the browser opens only when this prompt started the station, and it
+        // starts `station.js serve` detached when nothing answers, with `open: false`
+        // so no browser opens; the page is one the user opens from the url, and it
         // has the whole `SERVE_BUDGET_MS`. A station that is running, started,
         // busy or still starting serves the page itself, so nothing is written;
         // only a start that failed falls back to the page. Required here rather
@@ -194,7 +194,7 @@ function main(raw) {
         // the asking off and writes the page — the tests run so.
         if (speaks && dir && process.env.FANKEEL_SERVE !== 'off') {
             const serveLib = require('../lib/serve.js');
-            serveLib.ensureServe({ configDir: dir, plugin: PLUGIN_ROOT, until: began + SERVE_BUDGET_MS })
+            serveLib.ensureServe({ configDir: dir, plugin: PLUGIN_ROOT, open: false, until: began + SERVE_BUDGET_MS })
                 .then((serve) => {
                     finish(serve && serve.state !== 'failed' ? null : writePage(), serve);
                 }, () => finish(writePage(), null))
