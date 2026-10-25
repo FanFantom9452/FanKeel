@@ -77,21 +77,19 @@
 .ha-sum .sep{font-weight:400;color:var(--faint)}
 .ha-gh{display:flex;align-items:baseline;gap:8px;margin:12px 8px 6px;font-size:13px;font-weight:700;color:var(--ink2)}
 .ha-gh span{font:400 12.5px var(--f-mono);color:var(--muted)}
-.ha-list{background:var(--panel);border-radius:var(--r);box-shadow:inset 0 0 0 1px var(--rule)}
-.ha-row{display:grid;grid-template-columns:44px minmax(0,1fr);gap:0 12px;align-items:start;padding:9px 14px 10px 12px;border-top:1px solid var(--rule);text-decoration:none;color:inherit;-webkit-tap-highlight-color:transparent}
-.ha-list>.ha-row:first-child,.ha-ask>.ha-row:first-child{border-top:0}
+.ha-list,.ha-ask{display:grid;gap:12px}
+.ha-row{display:grid;grid-template-columns:44px minmax(0,1fr);gap:0 12px;align-items:start;padding:16px;background:var(--panel);border-radius:var(--r);box-shadow:inset 0 0 0 1px var(--rule);text-decoration:none;color:inherit;-webkit-tap-highlight-color:transparent}
 .ha-row:active{background:var(--wash)}
-.ha-row:focus-visible{outline-offset:-2px;border-radius:var(--r)}
+.ha-row:focus-visible{outline-offset:2px}
 .av{display:grid;place-items:center;width:44px;height:44px;border-radius:var(--r);font:700 14px var(--f-mono);letter-spacing:-.02em;
-  background:color-mix(in srgb,var(--pc) 16%,var(--panel));color:color-mix(in srgb,var(--pc) 70%,var(--ink))}
+  background:color-mix(in srgb,var(--pc) 8%,var(--panel));color:color-mix(in srgb,var(--pc) 55%,var(--muted))}
 .ha-main{display:grid;gap:3px;min-width:0}
 .ha-top{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;gap:8px}
-.ha-t{font-size:15.5px;font-weight:600;line-height:1.4;color:var(--ink)}
+.ha-t{min-width:0;font-size:15.5px;font-weight:600;line-height:1.4;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ha-top time{font:12px var(--f-mono);color:var(--muted);white-space:nowrap}
 .ha-sub{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;font:12px var(--f-mono);color:var(--muted)}
 .ha-prev{margin:2px 0 0;font-size:13.5px;line-height:1.45;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ha-ask{background:var(--signal-tint);border-radius:var(--r);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--stale) 55%,transparent)}
-.ha-ask>.ha-row{border-top-color:color-mix(in srgb,var(--stale) 40%,transparent)}
+.ha-ask>.ha-row{background:var(--signal-tint);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--stale) 55%,transparent)}
 .ha-ask .av{background:var(--panel)}
 .ha-ask .ha-top time{color:var(--signal-ink);font-weight:600}
 .ha-q{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:10px;margin-top:2px}
@@ -345,10 +343,10 @@ body.m .solo{padding-top:calc(28px + env(safe-area-inset-top));padding-bottom:ca
 body.m .ha-body{padding:0 12px 24px}
 body.m .ha-sum{margin:4px 4px 0;font-size:15px}
 body.m .ha-gh{margin:20px 4px 8px;font-size:13.5px}
-body.m .ha-row{grid-template-columns:40px minmax(0,1fr);gap:0 12px;min-height:72px;padding:14px 16px 14px 12px}
+body.m .ha-row{grid-template-columns:40px minmax(0,1fr);gap:0 12px;min-height:72px;padding:16px}
 body.m .av{width:40px;height:40px}
 body.m .ha-main{gap:6px}
-body.m .ha-t{font-size:16px;line-height:1.55;letter-spacing:.01em;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+body.m .ha-t{font-size:16px;line-height:1.55;letter-spacing:.01em;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 body.m .ha-top time{font-size:12.5px}
 body.m .ha-sub{gap:6px 10px;font-size:12.5px}
 body.m .ha-prev{font-size:15px;line-height:1.7;white-space:normal;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
