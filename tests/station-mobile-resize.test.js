@@ -60,3 +60,10 @@ test('mobile.css has the phone reading sizes, the two-line header and the pinned
     assert.match(CSS, /body\.m \.ha-t\{font-size:16px;line-height:1\.55/);
     assert.match(CSS, /body\.m \.gopts \.opt\{min-height:64px/);
 });
+
+test('the question and the header are drawn once: in the pin, not again in the gate card', () => {
+    const html = P.screen(HOME, P.parseRoute('#/s/aaaaaaaa-2'), NOW, APP, gate([]));
+    assert.equal(html.split('核准這份 design？').length - 1, 1);
+    assert.equal(html.split('design gate').length - 1, 1);
+    assert.match(html, /<form class="gc gopts" id="gate-card"[^>]*aria-labelledby="gpin-q">/);
+});

@@ -418,7 +418,7 @@
         var body = (g.questions || []).map(function (q, qi) {
             var opts = Array.isArray(q.options) ? q.options : [];
             var type = q.multiSelect ? 'checkbox' : 'radio';
-            return '<p class="gc-q" id="gc-q' + qi + '">' + esc(q.question || '') + '</p>'
+            return (qi ? '<p class="gc-q" id="gc-q' + qi + '">' + esc(q.question || '') + '</p>' : '')
                 + '<fieldset class="opts" data-voice><legend class="vh">' + t(q.multiSelect ? 'gate.pickMany' : 'gate.pick') + '</legend>'
                 + opts.map(function (o) { return optionHtml(q, qi, o, REC.test(String((o && o.label) || ''))); }).join('')
                 + '<label class="opt other"><input type="' + type + '" name="q' + qi + '" value="__other"><span class="rd" aria-hidden="true"></span>'
@@ -426,9 +426,7 @@
                 + (u.mic ? '<button type="button" class="gmic" data-mic="gc-own' + qi + '" aria-label="' + t('mic.answer') + '">' + ic('mic') + '</button>' : '')
                 + '</label><p class="gc-say" data-say>' + (u.mic ? t('mic.hint') : '') + '</p></fieldset>';
         }).join('');
-        return '<form class="gc gopts" id="gate-card" data-id="' + esc(p.id) + '" aria-labelledby="gc-q0">'
-            + '<div class="gc-h">' + ic('gate') + t('gc.head', { stage: esc(p.stage) }) + '<span class="sp"></span>'
-            + (num(g.until) ? '<span class="left">' + t('gc.left', { t: clock(g.until - at) }) + '</span>' : '') + '</div>'
+        return '<form class="gc gopts" id="gate-card" data-id="' + esc(p.id) + '" aria-labelledby="gpin-q">'
             + '<div class="gc-b">' + body + '<p class="gc-st" role="status"></p><button type="submit" class="cta">' + t('gate.send') + '</button></div></form>';
     }
 

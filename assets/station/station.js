@@ -2912,6 +2912,7 @@
         var tot = s.stages.reduce(function (n, w) {
             return n + Math.max(w.to - w.from, 0);
         }, 0) || 1;
+        claimsKeep(d, s.id);
         d.innerHTML = '<div class="cbody" style="padding-top:16px">'
             + '<div style="display:flex;gap:7px;align-items:center;margin-bottom:10px;'
             + 'flex-wrap:wrap">' + statePill(s)
@@ -2970,6 +2971,22 @@
             + seenHtml(s.seen) + clearControl(s) + '</details>'
             + (x ? detailSections(s, x, open) : detailNote(s))
             + '</div>';
+        claimsPut(d, s.id);
+    }
+    // A dragged .claims height lives on the element's inline style, which the
+    // repaint above replaces; view.claimsH holds it by position, per session.
+    function claimsKeep(d, id) {
+        var h = [], any = false;
+        Array.prototype.forEach.call(d.querySelectorAll ? d.querySelectorAll('.claims') : [], function (el) {
+            h.push(el.style.height || ''); if (el.style.height) any = true;
+        });
+        if (any) view.claimsH = { id: id, h: h };
+        else if (view.claimsH && view.claimsH.id !== id) view.claimsH = null;
+    }
+    function claimsPut(d, id) {
+        var k = view.claimsH;
+        if (!k || k.id !== id || !d.querySelectorAll) return;
+        Array.prototype.forEach.call(d.querySelectorAll('.claims'), function (el, i) { if (k.h[i]) el.style.height = k.h[i]; });
     }
     // The scan-time clauses were the old header's `depth stopped the scan in N
     // places` and `the scan ran out of time` — both are how a reader learns
