@@ -436,6 +436,7 @@ then asks this stage's gate.
    that request, and a `fankeel-reviewer` alone reviews it. The user may also
    say, this session, to skip it (or to run it) for any page task; that is a
    ruling, not a stopper, and a skip is written for each page task it covers.
+   No `.fankeel/render.json` is not a reason to skip the render reviewer: give it a page path. Skipping needs a prior `Ruling: render skipped — <why>`, never a gate option such as "look manually" or "back to build".
 
    **The render verdict is what lets a page task complete.** Where
    `.fankeel/render.json` gives a page `src` globs, a range that changed a

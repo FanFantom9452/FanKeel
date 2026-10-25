@@ -233,7 +233,7 @@ Return once, when the stage is done or blocked, and
 never while an agent you dispatched has not returned — end the turn with `waiting` until it has.
 On a verify stage the adversary and the render review are such agents: the gate is written after both returned, each with
 its line in it, never with "pending" and never with the question asked
-first. When you must wait for an
+first. A stage that changed a page may not write its gate with neither a render verdict nor a skip ruling: no `.fankeel/render.json` is not a reason to skip the render reviewer (give it a page path); skipping needs a prior `Ruling: render skipped — <why>`, never a gate option such as "look manually" or "back to build". When you must wait for an
 agent you dispatched, end your turn with the single word `waiting` — no tool
 call, no other prose. The harness wakes you when the dispatched agent
 returns; nothing is lost by not polling — never wait by polling with `sleep`

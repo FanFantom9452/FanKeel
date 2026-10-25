@@ -1,0 +1,13 @@
+{
+  "pages": [
+    { "name": "home", "url": "http://127.0.0.1:28888/#/", "src": ["assets/station/**", "lib/station.js", "scripts/station.js"] },
+    { "name": "projects", "url": "http://127.0.0.1:28888/#/projects", "src": ["assets/station/**", "lib/station.js", "scripts/station.js"] },
+    { "name": "project", "url": "http://127.0.0.1:28888/#/p/fankeel", "src": ["assets/station/**", "lib/station.js", "scripts/station.js"] },
+    { "name": "sessions", "url": "http://127.0.0.1:28888/#/sessions", "src": ["assets/station/**", "lib/station.js", "scripts/station.js"] },
+    { "name": "settings", "url": "http://127.0.0.1:28888/#/settings", "src": ["assets/station/**", "lib/station.js", "scripts/station.js"] },
+    { "name": "docs", "url": "http://127.0.0.1:28888/#/docs", "src": ["assets/station/**", "lib/station.js", "scripts/station.js"] },
+    { "name": "live", "url": "http://127.0.0.1:28888/#/live", "src": ["assets/station/**", "lib/station.js", "scripts/station.js"] },
+    { "name": "days", "url": "http://127.0.0.1:28888/#/days", "src": ["assets/station/**", "lib/station.js", "scripts/station.js"] }
+  ],
+  "roles": [{ "name": "guest" }]
+}

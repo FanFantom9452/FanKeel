@@ -278,6 +278,7 @@ file pins `sonnet` — with the ask, the approved mockup's path and
 `.fankeel/render.json`; it shoots every role and page itself, and its first
 line is `disposition: recapture`, `fix` or `ship`. Anything but `ship` is a
 defeated row. Leave it off a change with no screen behind it.
+No `.fankeel/render.json` is not a reason to skip the render reviewer: give it a page path. Skipping needs a prior `Ruling: render skipped — <why>`, never a gate option such as "look manually" or "back to build".
 Its return, saved under `.fankeel/build/task-<started>/`, is the file build
 passes as `ledger.js --plan <file> --range <BASE>..<sha> --render <file> fix "<what>"`
 for the fix that answers a page row; where `render.json` gives that page a `src`, without it, or a
