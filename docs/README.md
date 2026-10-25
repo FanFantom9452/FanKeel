@@ -730,6 +730,8 @@ is corrected by the next one, not by rewriting this.
 | Brief 27 — Ponytail 4.9.0 → 5.3.2: what changed, how it compares to FanKeel's workflow, and what to borrow | [90-agent/judgements/2026-10-22-ponytail-5-diff.md](90-agent/judgements/2026-10-22-ponytail-5-diff.md) — *judged 2026-10-22, fable* |
 | Brief 28 — i-have-adhd: is it useful to fankeel-explain's output? | [90-agent/judgements/2026-10-22-i-have-adhd-explain.md](90-agent/judgements/2026-10-22-i-have-adhd-explain.md) — *judged 2026-10-22, fable* |
 | Brief: station loading skeletons, and the station's stack going forward | [90-agent/judgements/2026-10-23-station-skeleton-stack.md](90-agent/judgements/2026-10-23-station-skeleton-stack.md) — *judged 2026-10-23, fable* |
+| 31 — Desktop 的勾選清單：原理、CLI 為何沒有、stage 能不能借它拆得更細 | [90-agent/judgements/2026-10-25-host-task-list-stages.md](90-agent/judgements/2026-10-25-host-task-list-stages.md) — *judged 2026-10-25, fable* |
+| 30 — 前端修改為何沒有自動跑渲染 reviewer | [90-agent/judgements/2026-10-25-render-review-auto.md](90-agent/judgements/2026-10-25-render-review-auto.md) — *judged 2026-10-25, fable* |
 
 ## The five scanners
 
