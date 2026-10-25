@@ -96,9 +96,6 @@ const calls = (rel) => callsIn(fs.readFileSync(path.join(ROOT, rel), 'utf8'));
 
 const allowed = (rel, text) => ALLOW.some((a) => a.file === rel && text.includes(a.match));
 
-// The text of `const|let|var <name> = { ... }` that applies to a call at index `before`, or '' when none does.
-// Rule: the last matching declaration that starts before the call, so a same-named binding in an earlier
-// or later function is not mistaken for the one the call uses.
 // A name that is a parameter of the function enclosing the call is that caller's own, so no declaration elsewhere applies.
 function isParam(src, name, before) {
     let depth = 0;
@@ -107,13 +104,16 @@ function isParam(src, name, before) {
         else if (src[i] === '{' && depth-- === 0) {
             const head = src.slice(Math.max(0, i - 300), i);
             const h = head.match(/\(([^()]*)\)\s*(?:=>\s*)?$/) || head.match(/([\w$]+)\s*=>\s*$/);
-            if (h && !/(?:if|for|while|switch|catch)\s*\([^()]*\)\s*$/.test(head)) return (h[1].match(/[\w$]+/g) || []).includes(name);
+            if (h && !/\b(?:if|for|while|switch|catch)\s*\([^()]*\)\s*$/.test(head)) return (h[1].match(/[\w$]+/g) || []).includes(name);
             depth = 0;
         }
     }
     return false;
 }
 
+// The text of `const|let|var <name> = { ... }` that applies to a call at index `before`, or '' when none does.
+// Rule: the last matching declaration that starts before the call, so a same-named binding in an earlier
+// or later function is not mistaken for the one the call uses.
 function declaration(src, name, before) {
     if (isParam(src, name, before)) return '';
     let m = null;
@@ -203,6 +203,7 @@ test('the scanner refuses near-misses: windowsHide false, a comment, a same-name
         earlierFunction: "function a() { const opts = { windowsHide: true }; }\nfunction b() {\n const opts = { cwd: 1 };\n spawn('a', [], opts);\n}",
         laterDeclaration: "function b() { spawn('a', [], opts); }\nfunction a() { const opts = { windowsHide: true }; }",
         parameter: "function a() { const opts = { windowsHide: true }; }\nfunction b(opts) {\n spawn('a', [], opts);\n}",
+        paramInBlock: "function a() { const opts = { windowsHide: true }; }\nfunction b(opts) {\n if (x) {\n spawn('a', [], opts);\n }\n}",
         arrowParameter: "const a = () => { const opts = { windowsHide: true }; };\nconst b = (opts) => {\n spawn('a', [], opts);\n};",
         spreadInComment: "const opts = { windowsHide: true };\nspawn('a', [], { /* ...opts */ stdio: 1 });",
     };
@@ -214,6 +215,8 @@ test('the scanner refuses near-misses: windowsHide false, a comment, a same-name
     const ok = callsIn("function a() { const opts = { cwd: 1 }; }\nfunction b() {\n const opts = { windowsHide: true };\n spawn('a', [], opts);\n}");
     assert.strictEqual(ok.length, 1);
     assert.ok(hidden(ok[0]), 'the right declaration carries it');
+    const inBlock = callsIn("function b() {\n const opts = { windowsHide: true };\n if (opts) {\n spawn('a', [], opts);\n }\n}");
+    assert.ok(hidden(inBlock[0]), 'a local declaration is not shadowed by an if condition');
     const own = callsIn("function b(opts) {\n spawn('a', [], { windowsHide: true, ...opts });\n}");
     assert.ok(hidden(own[0]), 'a parameter does not hide the call text saying windowsHide: true');
 });
