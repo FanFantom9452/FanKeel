@@ -252,7 +252,7 @@ time: every row's strip fills the same width, so a ten-minute session and a
 ten-hour one look the same size — only their segments' own widths differ.
 
 No stages at all draws no strip and no table, just one line —
-`沒有分階段紀錄` (`assets/station/station.js:2947`, `沒有分階段紀錄`) — a
+`沒有分階段紀錄` (`assets/station/station.js:2951`, `沒有分階段紀錄`) — a
 session that has not crossed a stage boundary has nothing to proportion.
 
 Below the strip is the table it is drawn from — one row per stage, with the
@@ -283,7 +283,7 @@ with 派工 and 對話 drawn by `assets/station/session-dispatch.js` and
 `assets/station/session-talk.js`; a 關卡 link joins them only while the
 session's `gateAt` is set, to `/f/<id>/gate` when served. `#/s/<id>/cost`
 opens 經過. 事件, 計畫 and 關卡 stay on the old page
-(`assets/station/station.js:4403`, `var SESSION_TABS = ['timeline', 'cost', 'dispatch', 'talk'];`),
+(`assets/station/station.js:4413`, `var SESSION_TABS = ['timeline', 'cost', 'dispatch', 'talk'];`),
 which also draws every tab when the module is missing. The rest of this
 section describes that old page. It had six tabs — 概覽,
 派工, 事件, 對話, 計畫 and 關卡 — and `#/s/<id>/<tab>` opens one directly, with `timeline`,
@@ -737,7 +737,7 @@ when the browser can listen, a mic button beside it
 `fkListen` and a second click stops it (`assets/station/station.js:4829`,
 `if (fkRec) { fkRec.stop(); return; }`); what is heard goes into the box and
 the status line `gsay`, and nothing is sent until the send button is pressed
-(`assets/station/station.js:4501`, `Voice fills the box and never sends`). The
+(`assets/station/station.js:4511`, `Voice fills the box and never sends`). The
 gate page draws the same pair in `freeHtml`
 (`assets/station/gate-frame.js:105`, `function freeHtml(st) {`), toggled by
 `micToggle` (`assets/station/gate-frame.js:132`), which fills the box on
@@ -749,8 +749,8 @@ edge, 85dvh at most, with a grip, `.fkg`, and a 44px close button, `.fkx`
 `assets/station/station.css:1227`, `.fkg,.fkx{display:none}` hides both above
 that width). `fkClose` closes it, and when a gate is still held it sets
 `fk:shut` so the panel stays shut until the gate is gone
-(`assets/station/station.js:4494`, `function fkClose() {`;
-`assets/station/station.js:4498`, `if (heldNow) view.pg['fk:shut'] = true;`).
+(`assets/station/station.js:4504`, `function fkClose() {`;
+`assets/station/station.js:4508`, `if (heldNow) view.pg['fk:shut'] = true;`).
 The sheet hides the resize grip (`assets/station/station.css:1231`,
 `.fkr{display:none}`).
 
@@ -759,7 +759,7 @@ with the 24px resize grip `.fkr` at its bottom left
 (`assets/station/station.css:1137`, `width:min(560px,calc(100vw - 32px))`;
 `assets/station/station.css:1141`, `.fkr{position:sticky;bottom:0;display:block;width:24px;height:24px`).
 A size the person dragged to is still kept as `station.fkBox`
-(`assets/station/station.js:4447`, `var FK_BOX_KEY = 'station.fkBox';`).
+(`assets/station/station.js:4457`, `var FK_BOX_KEY = 'station.fkBox';`).
 
 On `/m` the home header is two lines, the title and history link above the
 host and subscribe row (`assets/station/mobile.js:349`, `class="ab ab2"`;
@@ -803,13 +803,13 @@ the search box in the top bar matches task, project, session id, registry
 label, model, state, next, the files touched and its notes — AND-ed.
 
 The same box also opens a grouped-results popover about 200 ms after typing
-stops (`assets/station/station.js:5182`, `}, 200)`): `qGroups`
-(`assets/station/station.js:5098`, `function qGroups(q) {`) buckets what
+stops (`assets/station/station.js:5192`, `}, 200)`): `qGroups`
+(`assets/station/station.js:5108`, `function qGroups(q) {`) buckets what
 matches into Sessions, 專案 and 文件, up to five rows each with a 看全部 link
 when there are more, and `qDraw`
-(`assets/station/station.js:5139`, `function qDraw() {`) draws it with each
+(`assets/station/station.js:5149`, `function qDraw() {`) draws it with each
 match highlighted. `/` focuses the box from anywhere on the page
-(`assets/station/station.js:5267`, `if (e.key === '/')`), the arrow keys
+(`assets/station/station.js:5277`, `if (e.key === '/')`), the arrow keys
 move the selection, Enter opens what is picked and Esc closes the popover.
 文件 in this popover matches only the paths and buckets the page's own data
 carries. The page bodies are searched on 文件 itself — see
@@ -837,7 +837,7 @@ redesign dropped that line, and this card is where its contents live now. The
 footer's own unreadable count stays the total across every registry and is
 hidden only on 清單 once a registry there is selected: one that is not gone
 carries the same count on its own card
-(`assets/station/station.js:3000`, `a corrupt-entry count must`), and a gone
+(`assets/station/station.js:3010`, `a corrupt-entry count must`), and a gone
 one has no session files left to count
 (`lib/station.js:682`, `gone: true, unreadable: 0`); everywhere
 else — a project page included, whose own card shows only its registry's
@@ -929,7 +929,7 @@ read with `stored()`'s try/catch so a `file:` page or private mode with no
 holds the three-state 跟隨系統/淺色/深色 button in the masthead's
 `div.appear` (`id="appear"`, drawn by `drawTheme`); a click cycles it and
 writes the new value
-(`assets/station/station.js:4661`, `store('station.theme', t === 'system' ? null : t);`), and the
+(`assets/station/station.js:4671`, `store('station.theme', t === 'system' ? null : t);`), and the
 stored value is read and set as `data-theme` on `<html>` before the page's
 first paint, so a reader on 深色 never sees a flash of light first
 (`assets/station/station.js:23`, `themeSet(stored('station.theme'));`).
@@ -1031,7 +1031,7 @@ replaces sorted by it (`assets/station/station.js:2721`, `a sort key with no hea
 `updated` descending, so the page's first sort is the one it arrived in.
 
 **比較**, `#/cmp`, is now the 全部 list with its compare tray open
-(`assets/station/station.js:4400`, `VIEWS.cmp = function (r) { return w.FK_SESSIONS.page(S, modOpts({ tray: true })); };`):
+(`assets/station/station.js:4410`, `VIEWS.cmp = function (r) { return w.FK_SESSIONS.page(S, modOpts({ tray: true })); };`):
 ticking two or three rows there opens a compare dialog of the fields
 `lib/compare.js` returns, so the page is never empty. Tick two sessions on 清單 or a project page — only a
 session with a detail can be ticked, and a third tick drops the first — and
@@ -1261,14 +1261,14 @@ for the child cannot read the old url as the new one.
 `clearEntry` once per row so the checks are the same list rather than a
 second copy of them. A clean run redirects to `/?cleared=N`, and the reloaded
 page still carries that count
-(`assets/station/station.js:5543`, `w.STATION.cleared = S.cleared`); a
+(`assets/station/station.js:5553`, `w.STATION.cleared = S.cleared`); a
 refusal answers `409` with which rows it refused and why, since a redirect
 has nowhere to say it. It takes the same `force` tick and the same nonce as
 the single-row button. `clearStaleControl` in `assets/station/station.js`
 renders the form when the page is served, and prints the copyable command when
 it is not — a static file cannot post. The
 redesigned 可能停了 card carries one per stale row: `modOpts`
-(`assets/station/station.js:4394`) passes `clear: clearControl`, and `row` in
+(`assets/station/station.js:4404`) passes `clear: clearControl`, and `row` in
 `assets/station/live-page.js` draws it in a `lv-row-clear` beside the row's
 `<a>`, not inside it; without `opts.clear` the row is the bare link.
 
@@ -1536,7 +1536,7 @@ and the model took the hook's answer as the user's; `claude -p` offers no
 before. An answer file older than the wait is an earlier gate's and is not
 read. A file on disk cannot post, so it says to answer in the terminal.
 
-A press says it is on its way (`answerPost`, `assets/station/station.js:5428`, `function answerPost(id, box, line, cls, form, said, failed)`): while `POST /answer` is out the gate's buttons are disabled and its line reads 送出中…. A reply ok keeps them disabled; a refusal, a network error, or 10 seconds with no reply (`SEND_MS`, the fetch aborted through an `AbortController`) gives them back. A refusal shows `<status> — <the server's text>`, with no press-again wording; only a network error (…可以再按一次) and the timeout (還沒確認送到：可以再按一次) say it may be pressed again. The state lives in `view.pg['<id>:send']`, keyed to the gate's `pending.until`, so the poll's redraw draws it as it was and a new gate starts clean.
+A press says it is on its way (`answerPost`, `assets/station/station.js:5438`, `function answerPost(id, box, line, cls, form, said, failed)`): while `POST /answer` is out the gate's buttons are disabled and its line reads 送出中…. A reply ok keeps them disabled; a refusal, a network error, or 10 seconds with no reply (`SEND_MS`, the fetch aborted through an `AbortController`) gives them back. A refusal shows `<status> — <the server's text>`, with no press-again wording; only a network error (…可以再按一次) and the timeout (還沒確認送到：可以再按一次) say it may be pressed again. The state lives in `view.pg['<id>:send']`, keyed to the gate's `pending.until`, so the poll's redraw draws it as it was and a new gate starts clean.
 
 The bell sits in the masthead, last after 外觀, as a 36px chip like the serve chip; its panel hangs down from it, right edges aligned, and its height is limited to the space under the header. The panel can be resized and not dragged: the grip in its bottom-left corner (`nesw-resize` cursor), with a mouse or a finger (pointer events, `touch-action:none`; `fkBoxParse`, `fkBoxClamp` and the listeners after `drawFloat` in `assets/station/station.js`). Because the panel is right-anchored to the bell, dragging the grip left widens it and dragging down lengthens it, matching the cursor. Below 760px wide the brand shrinks to its glyph (`width:auto`) so the bell stays on screen. Its size is `{w, h}` in `localStorage` under `station.fkBox`, restored on reload, and its height is capped to what fits under the header (the window less 82px) and its width to the window less 64px — never smaller than 260 by 160 — while resizing, when the window shrinks, and when a saved size no longer fits. A saved `{x, y, w, h}` from before the move reads as its `w` and `h`. `floatHtml` writes the size into the panel's own `style`, so the 3-second repaint mid-resize draws it where it is; polling and 送出答案 are untouched.
 

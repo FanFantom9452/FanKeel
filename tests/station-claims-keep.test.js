@@ -81,6 +81,30 @@ test('A dragged, B, back to A → A keeps its own height', () => {
     assert.equal(p.det.claims[0].style.height, '520px');
 });
 
+test('A 520px, selection empty, back to A → A keeps 520px', () => {
+    const list = [{ ...SES, id: 'a' }];
+    const p = boot(list);
+    draw(p);
+    p.det.claims[0].style.height = '520px';
+    const a = list[0];
+    list.length = 0; // nothing selected: #det holds the pick-a-row state
+    draw(p);
+    assert.equal(p.det.claims.length, 0);
+    list.push(a);
+    draw(p);
+    assert.equal(p.det.claims[0].style.height, '520px');
+});
+
+test('a paint with no .claims element in the DOM does not forget the saved height', () => {
+    const p = boot([{ ...SES, id: 'a' }]);
+    draw(p);
+    p.det.claims[0].style.height = '520px';
+    draw(p); // saved as 520px
+    p.det.claims = []; // the DOM holds no .claims for one paint
+    draw(p);
+    assert.equal(p.det.claims[0].style.height, '520px');
+});
+
 test('A 520px, B 300px, A again, B again → each keeps its own height', () => {
     const a = { ...SES, id: 'a' }, b = { ...SES, id: 'b', task: 'task b', updated: Date.now() - 120000 };
     const list = [a, b];

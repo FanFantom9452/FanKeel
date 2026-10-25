@@ -2904,7 +2904,11 @@
         var d = doc.getElementById('det');
         if (!d) return;
         var hit = S.sessions.filter(function (x) { return x.id === sel; });
-        if (!hit.length) { d.innerHTML = '<div class="empty">' + loc('dash.pickARow', '選一列') + '</div>'; return; }
+        if (!hit.length) {
+            claimsKeep(d); view.claimsFor = null;
+            d.innerHTML = '<div class="empty">' + loc('dash.pickARow', '選一列') + '</div>';
+            return;
+        }
         var s = hit[0];
         needDetail(s);
         var open = openSections(s);
@@ -2982,7 +2986,10 @@
         var f = view.claimsFor;
         if (!f) return;
         var h = [], any = false;
-        Array.prototype.forEach.call(d.querySelectorAll ? d.querySelectorAll('.claims') : [], function (el) {
+        var els = d.querySelectorAll ? d.querySelectorAll('.claims') : [];
+        // no element in the DOM means no height was reset: keep what is saved
+        if (!els.length) return;
+        Array.prototype.forEach.call(els, function (el) {
             h.push(el.style.height || ''); if (el.style.height) any = true;
         });
         view.claimsH = view.claimsH || {};
