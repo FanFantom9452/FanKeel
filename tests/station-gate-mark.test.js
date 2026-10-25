@@ -8,7 +8,7 @@ const assert = require('node:assert/strict');
 const { page, stringsLeft } = require('./station-module.js');
 
 const SID = 'dddddddd-4444-4444-8444-444444444444';
-const S = { id: SID, task: 'Gate mark', project: 'fankeel', state: 'live', stage: 'plan', route: ['survey', 'plan', 'build', 'land'] };
+const S = { id: SID, task: 'Gate mark', project: 'fankeel', state: 'live', stage: 'plan', route: ['survey', 'plan', 'build', 'land'], gateAt: 1 };
 const GATE = { stage: 'plan', gate: { questions: [{ question: 'Go to build?', header: 'plan', options: [{ label: 'build', description: 'd' }] }] } };
 const args = () => ({ session: S, gate: GATE, tasks: [], reportHtml: '', shellsHtml: '', answer: { question: 'Go to build?', send() {} } });
 const A = { id: 'A', label: 'Start' }, B = { id: 'B', label: 'Done' };
