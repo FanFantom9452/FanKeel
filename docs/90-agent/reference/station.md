@@ -727,6 +727,58 @@ holds the time the same way — `main`, `wait`, `agent` and `workflow` — with
 `main` and `wait` clipped to the session's first and last request, and `agent`
 and `workflow` running from an agent file's own first request to its last.
 
+### The bell panel, the gate page and `/m` on a held gate
+
+A held gate can be answered in words as well as by a button. Under the gate's
+buttons the bell panel draws a free-text box, `gfree`
+(`assets/station/station.js:1899`, `var id = 'gfree-' + s.id, draft = String(`), and,
+when the browser can listen, a mic button beside it
+(`assets/station/station.js:1902`, `data-mic`). A click on the mic starts
+`fkListen` and a second click stops it (`assets/station/station.js:4829`,
+`if (fkRec) { fkRec.stop(); return; }`); what is heard goes into the box and
+the status line `gsay`, and nothing is sent until the send button is pressed
+(`assets/station/station.js:4481`, `Voice fills the box and never sends`). The
+gate page draws the same pair in `freeHtml`
+(`assets/station/gate-frame.js:105`, `function freeHtml(st) {`), toggled by
+`micToggle` (`assets/station/gate-frame.js:132`), which fills the box on
+`input` and likewise never sends.
+
+On a phone (under 600px) the bell panel is a bottom sheet: fixed to the bottom
+edge, 85dvh at most, with a grip, `.fkg`, and a 44px close button, `.fkx`
+(`assets/station/station.css:1229`, `@media (max-width:599px){`;
+`assets/station/station.css:1227`, `.fkg,.fkx{display:none}` hides both above
+that width). `fkClose` closes it, and when a gate is still held it sets
+`fk:shut` so the panel stays shut until the gate is gone
+(`assets/station/station.js:4474`, `function fkClose() {`;
+`assets/station/station.js:4478`, `if (heldNow) view.pg['fk:shut'] = true;`).
+The sheet hides the resize grip (`assets/station/station.css:1231`,
+`.fkr{display:none}`).
+
+On a desktop the panel opens wider than before, `min(560px, 100vw - 32px)`,
+with the 24px resize grip `.fkr` at its bottom left
+(`assets/station/station.css:1137`, `width:min(560px,calc(100vw - 32px))`;
+`assets/station/station.css:1141`, `.fkr{position:sticky;bottom:0;display:block;width:24px;height:24px`).
+A size the person dragged to is still kept as `station.fkBox`
+(`assets/station/station.js:4427`, `var FK_BOX_KEY = 'station.fkBox';`).
+
+On `/m` the home header is two lines, the title and history link above the
+host and subscribe row (`assets/station/mobile.js:349`, `class="ab ab2"`;
+`assets/station/mobile.css:364`, `body.m .ab.ab2{display:grid;gap:0;min-height:0;padding:6px 8px 8px 20px}`). A chat
+whose session is at a gate pins the gate's question under the header, with a
+button to the options (`assets/station/mobile.js:477`, `function gpinHtml(p, at) {`;
+`assets/station/mobile.js:508`, `p.state === 'gate' && p.gate ? gpinHtml(p, at)`),
+and the last report message is folded to about six lines until
+`展開完整報告` is pressed (`assets/station/mobile.js:444`,
+`var fold = function (i) { return p.state === 'gate' && i === lastAi …`;
+`assets/station/mobile.css:382`, `body.m .rep .bub{position:relative;max-height:calc(15px * 1.75 * 6 + 24px);overflow:hidden;`).
+
+The gate page draws one column when no gate is held: `held` is true only when
+the session has `gateAt` or a `pending` file, and without it the grid gets
+`gt-one` and the question column is left out
+(`assets/station/gate-frame.js:317`, `var held = Boolean(s.gateAt || s.pending);`;
+`assets/station/gate-frame.js:319`, `(held ? '' : ' gt-one')`;
+`assets/station/gate-frame.css:31`, `.gt-grid.gt-one{grid-template-columns:minmax(0,1fr)}`).
+
 ### Filtering, and the two views
 
 Everything on the page is built in the browser from `window.STATION`, which is
