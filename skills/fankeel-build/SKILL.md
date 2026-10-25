@@ -36,9 +36,9 @@ say so, then ask.
 
 | Looks like a finding | Why it is not |
 |---|---|
-| Dead code left in the diff, not deleted | Only dead code this change created gets removed — `lib/stages.js:312` (`Remove what your own change orphaned`), so an orphan predating this task is correctly still there, just named. |
+| Dead code left in the diff, not deleted | Only dead code this change created gets removed — `lib/stages.js:312` (`Remove what your own change orphaned`); an orphan predating this task stays, named. |
 | A new ask from mid-build routed to a TODO entry instead of built | That is the routing rule working, not the ask dropped — `lib/stages.js:309` (`is one TODO entry at the detail`), not silence. |
-| A ruling recorded instead of a fifth stopper firing | `lib/stages.js:311` names deciding as the normal outcome (`Decide`) — only irreversible, security-sensitive, out-of-workspace or every-path-a-guess actually stop the loop. |
+| A ruling recorded instead of a fifth stopper firing | `lib/stages.js:311` names deciding as the normal outcome (`Decide`) — only irreversible, security-sensitive, out-of-workspace or every-path-a-guess stop the loop. |
 
 Why each rule is what it is, under the same headings: [rationale.md](rationale.md).
 
@@ -127,10 +127,8 @@ Record it in the ledger beside the table:
 node <plugin>/scripts/ledger.js --plan <plan bucket>/<file>.md scan
 ```
 
-`scan` writes exactly what `groups` just printed — the thing two sessions on
-2026-09-05 pasted in by hand — and finds its own previous table by heading and
-replaces it, so running it again after nothing has changed appends no second
-copy.
+`scan` writes exactly what `groups` just printed — the thing two sessions pasted
+by hand — and replaces its own previous table, so a rerun appends no copy.
 
 **With no plan there is nothing here to scan**, and no ledger to write it into.
 
@@ -181,21 +179,19 @@ stage agent and design does not, design wrote it by rule before its gate
 move from design to build, `task.js stage build` prints
 `design.md is missing` with the path, and the table is written there before
 the first row is built. After a compaction, read the denominator back from
-that file, never from the summary. The implementer
-does not commit; step 4 stages the paths in the row's `file` cell, which may name
+that file, never from the summary. The implementer does not commit; step 4 stages the paths in the row's `file` cell, which may name
 more than one, and step 5 reviews the range as it would a task's. A no-plan route
-runs one row per pass, and every other step of the loop is unchanged.
+runs one row per pass; every other step is unchanged.
 
 **Before the first task, the hands** — on the plan path; a file table (no
 plan) has no such row. `node <plugin>/scripts/ledger.js --plan
 <plan bucket>/<file>.md hands` lists every task whose `**Dispatch:**` line reads
 `user — <what the user does>`, and `none` when there is none. `task.js stage
 build` already printed the same list to the session holding
-`AskUserQuestion`, which asks the user then and there — after the other tasks
+`AskUserQuestion`, which asks the user then — after the other tasks
 and before this stage's gate, in this session with them; they do it first and
 say when; or skip, each becoming a TODO entry — and notes the answer with
-`task.js note`, so it rides every prompt. A stage agent asks nothing and sends
-none of them: `ready` never lists them, and its report names them on a line
+`task.js note`, so it rides every prompt. A stage agent asks nothing and sends none: `ready` never lists them, and its report names them on a line
 `hands: <n>, <n>`. When the dispatched tasks are done, the session holding
 `AskUserQuestion` runs them with the user — an edit the guard refuses it goes
 to an implementer — commits and reviews each like any other task, and only
@@ -210,9 +206,8 @@ then asks this stage's gate.
    `implementer, sonnet, high` — **pass the model
    explicitly**, an omitted one inherits this session's, and say how many
    and on which model in the response that sends it. Either way: every
-   changed line traces to the plan's task, follow the patterns already in this
-   repository, do not improve adjacent code, comments or formatting on the way
-   past, and remove what your own change orphaned — dead code you did not create
+   changed line traces to the plan's task, follow the repository's patterns,
+   do not improve adjacent code, comments or formatting on the way past, and remove what your own change orphaned — dead code you did not create
    gets mentioned, not deleted.
 
    A dispatch carries three things and nothing else, and **none of them is a
@@ -232,8 +227,8 @@ then asks this stage's gate.
    dispatch names it.
 
    Everything else the loop needs — BASE, the review range, the diff, the map
-   path, the commit message, the ledger note — is a runtime fact, taken when it
-   is needed and never carried in the plan.
+   path, the commit message, the ledger note — is a runtime fact, taken when
+   needed, never carried in the plan.
 
    A dispatched implementer **does not commit. It returns a status line, the
    paths it wrote, the `ℹ pass` / `ℹ fail` line, and one line per new test:
@@ -241,9 +236,9 @@ then asks this stage's gate.
    change from git once the parent has committed. A new test with no line
    naming what reddens it is a finding before the reviewer reads anything.
    Save the return as it came, to `.fankeel/build/task-<started>/review-<n>.txt`
-   where `<n>` is the task number, before the reviewer is sent: that is the
-   file `review-check.js --returned` reads for table (b). And a brief whose task text names a file its Files block does not
-   list comes back as `blocked: <the file> is named but not declared` in the
+   (`<n>` the task number) before the reviewer is sent: `review-check.js
+   --returned` reads it for table (b). A brief whose task text names a file its
+   Files block does not list comes back as `blocked: <the file> is named but not declared` in the
    implementer's first turn, never built around — that is a plan defect, ruled
    on here.
 
@@ -256,7 +251,7 @@ then asks this stage's gate.
    response, and say how many and on which model. Each time a task is
    recorded complete, run it again and send what it newly lists in that same
    response. `TODO.md` and `docs/README.md` do not count as a
-   shared file there (`INDEX_FILES` in `lib/plantasks.js`). A task whose `**Dispatch:**` line reads `user` is
+   shared file (`INDEX_FILES` in `lib/plantasks.js`). A task whose `**Dispatch:**` line reads `user` is
    never listed — the hands paragraph above step 1 has it.
 
    **A stage agent's implementers each build in a worktree.** A
@@ -275,8 +270,7 @@ then asks this stage's gate.
    `git reset --hard <that sha>` in its own worktree.
 
    **Profile `dispatch.inflight` sets how many go out in one response, eight by
-   default**, and with a plan `ready` listing ten sends eight in one response
-   (at the default), then one more as each returns; with no plan one row is out at a time. Under a stage agent `groups` is cut by dependency depth, so one group can hold more than eight: its brain sends eight, then one more as each returns. With a plan, three or more listed at once
+   default**, and with a plan `ready` listing ten sends eight, then one more as each returns; with no plan one row is out at a time. Under a stage agent `groups` is cut by dependency depth, so one group can hold more than eight: its brain sends eight, then one more as each returns. With a plan, three or more listed at once
    with nothing else in flight may go as one Workflow, step 4's `workflow`
    case; anything else goes as Agents.
 3. **`in-session` only** — test first where the task says so, and watch it
@@ -307,8 +301,7 @@ then asks this stage's gate.
    characters, one bullet per change with the module it landed in, and one
    paragraph only for what a bullet cannot hold.
 
-   Keep BASE and that sha together — step 7 records them as the task's review
-   range.
+   Keep BASE and that sha together: step 7 records them as the review range.
 
    Anything written outside those paths stays unstaged: read `git status` after
    the commit for a wrong `**Files:**` block.
@@ -351,8 +344,7 @@ then asks this stage's gate.
    THE IMPLEMENTER RETURNED: <its status, paths, test line and mutation lines>
 
    Part 1 — against the brief and the coverage rows, in this order:
-     Missing: a promise or step the change does not implement, or claims
-       without evidence.
+     Missing: a promise or step not implemented, or claimed without evidence.
      Extra: a change no line of the task asks for — adjacent code improved,
        a file outside the Files block touched.
      Misunderstood: the right thing built the wrong way.
@@ -374,13 +366,13 @@ then asks this stage's gate.
      predicate needs a near-miss it must refuse (`windowsHide: false`, a
      comment naming the option); a lookup by name needs a fixture where a
      same-named binding elsewhere, or the call's own parameter, would wrongly satisfy it.
-     Two mutations reddening exactly the same tests are a gap — one test that tells them apart is missing.
+     Two mutations reddening exactly the same tests are a gap: no test tells them apart.
      A test of locking or ordering must wait on an explicit signal from the
      other side (a line the other process prints, a marker file), never on a
      delay, and go red on every run of the mutation that removes the
      lock; a fixed wait can pass without exercising the lock.
-   Part 3 — every changed line traces to the task's text; the patterns
-     already in the repository are followed. Then name the page this
+   Part 3 — every changed line traces to the task's text; the repository's
+     patterns are followed. Then name the page this
      change makes false (a renamed export, a changed default, a removed
      flag) as `page:line` — and any comment or printed heading still stating
      the old rule.
@@ -398,9 +390,9 @@ then asks this stage's gate.
      with no such test is a finding. Where the diff rewrites text a page
      shows, grep `tests/` for the old wording and run the tests that assert
      it; one still asserting it is a finding. Where the diff adds or changes a
-     sticky, fixed or pinned element, check it both collapsed and expanded at
-     412x680 (open it to its full height, then focus every control and scroll
-     to the end): a control left under it in either state is a finding.
+     sticky, fixed or pinned element, check it collapsed and expanded at
+     412x680 (full height, focus every control, scroll to the end): a control
+     left under it is a finding.
    Part 4 — cuts, over the lines this diff added and no others, in the
      format of the `## Cuts` section of your agent file. A cut is a finding.
 
@@ -553,14 +545,12 @@ in one response: the fast suite in the background —
 `node <plugin>/scripts/suite.js --session <id> --fast` with `run_in_background`,
 which skips the tests named `@slow`; land runs them — and the one whole-branch
 review, and run docs-check below yourself while both are out; `suite.json`
-carries each run's `ms`. Take
-the three returns together before changing anything. docs-check only reads, but
-its tier 1 rewrite and tier 2 round start once the suite has returned, so no page
+carries each run's `ms`. Take the three returns together before changing anything. docs-check only reads, but its tier 1 rewrite and tier 2 round start once the suite has returned, so no page
 changes under a running suite. A red suite is this stage's own — the failing
 test names are in `suite.json`'s `failed` — and so are the review's findings:
 both go into one `fankeel:fankeel-fixer` round with tier 2's. When that round
-changes anything but `.md`, run `suite.js --fast` once more; a green suite and a round that touched only `.md`
-need no second run.
+changes anything but `.md`, run `suite.js --fast` once more; a round that touched only `.md` needs none.
+An edit under `skills/` or `agents/` runs the full fast suite before the close: the size caps live there.
 
 **Then docs-check, at close.** Run
 `node <plugin>/scripts/docs-check.js` — the check verify runs — beside the suite
