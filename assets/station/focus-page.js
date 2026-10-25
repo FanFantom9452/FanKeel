@@ -232,7 +232,7 @@
     // 5 s repaint, which rewrites the whole page (station-37). Only the
     // report's folds carry a data-gv key; the rest are short.
     function keepOpen(html, open) {
-        return String(html).replace(/<details class="gv-more" data-gv="([a-z]+)"/g, function (m, k) { return open[k] ? m + ' open' : m; });
+        return String(html).replace(/<details class="gv-more" data-gv="([a-z]+)"(?! open)/g, function (m, k) { return open[k] ? m + ' open' : m; });
     }
     // Whether the 5 s repaint may replace the page: not when the markup is the
     // one already drawn (a click in flight keeps its target node), and not

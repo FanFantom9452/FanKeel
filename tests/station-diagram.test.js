@@ -22,6 +22,7 @@ function loaded() {
 // Just enough DOM for draw(): one figure, its pan box, two nodes, and the
 // listeners it adds, which a test calls with a fake event.
 function fake(opts) {
+    const ids = (opts && opts.ids) || ['A', 'B'];
     const handlers = {};
     const node = (id, text) => {
         const cls = new Set(), attrs = { 'data-id': id };
@@ -30,18 +31,20 @@ function fake(opts) {
             querySelector: (s) => (s === 'text' ? { textContent: text } : null), closest: (s) => (s === '.pele-node[data-id]' ? n : null) };
         return n;
     };
-    const nodes = [node('A', 'Start'), node('B', 'Done')];
-    const pan = { innerHTML: '', querySelectorAll: () => nodes, querySelector: () => null, addEventListener() {}, getBoundingClientRect: () => ({ left: 0, top: 0, width: 100, height: 100 }) };
+    const nodes = [node(ids[0], 'Start'), node(ids[1], 'Done')];
+    const pan = { innerHTML: '', querySelectorAll: (s) => (s === '.pele-node.is-marked' ? nodes.filter((n) => n.classList.contains('is-marked')) : nodes), querySelector: () => null, addEventListener() {}, getBoundingClientRect: () => ({ left: 0, top: 0, width: 100, height: 100 }) };
     const out = { textContent: '' }, count = { textContent: '' };
     const attrs = {};
     const fig = {
         querySelector: (s) => (s === 'code' ? { textContent: CODE } : s === '[data-dg-pan]' ? pan : s === '[data-dg-scale]' ? out : s === '[data-dg-count]' ? count : s === '[data-dg-err]' ? err : null),
-        querySelectorAll: () => [], setAttribute(k, v) { attrs[k] = String(v); }, getAttribute: (k) => attrs[k], addEventListener(t, f) { handlers[t] = f; } };
+        querySelectorAll: (s) => (s === '[data-dg-view]' ? views : []), setAttribute(k, v) { attrs[k] = String(v); }, getAttribute: (k) => attrs[k],
+        removeAttribute(k) { delete attrs[k]; }, addEventListener(t, f) { handlers[t] = f; } };
+    const views = ['diagram', 'source'].map((v) => ({ v, pressed: null, getAttribute: () => v, setAttribute(k, x) { this.pressed = x; } }));
     const err = { textContent: '', hidden: true };
     const root = { querySelectorAll: () => [fig] };
-    const ctl = { scale: 1, fit: 1, zoomTo() {}, zoomBy() {}, reset() {} };
-    const pele = { render: () => { if (opts && opts.throws) throw Object.assign(new Error('bad token'), { line: 3 }); return { svg: '<svg></svg>' }; }, enableZoom: () => ctl };
-    return { fig, pan, root, pele, handlers, err, attrs, count, nodes };
+    const calls = [], ctl = { scale: 1, fit: 1, zoomTo() {}, zoomBy(n) { calls.push('by ' + n); }, reset() { calls.push('reset'); } };
+    const pele = { render: () => { if (opts && opts.throws) throw Object.assign(new Error('bad token'), { line: 3 }); return { svg: '<svg></svg>' }; }, enableZoom: () => { if (opts && opts.zoomThrows) throw new Error('no zoom'); return ctl; } };
+    return { fig, pan, root, pele, handlers, err, attrs, count, nodes, views, calls };
 }
 
 test('fence keeps the source html-escaped inside a data-mermaid block that carries its line', () => {
@@ -130,4 +133,72 @@ test('draw with marked ids marks those nodes quietly, in the order given, so a r
     assert.deepEqual(got, [], 'restoring is not a new mark');
     f.handlers.click({ target: f.nodes[0] });
     assert.deepEqual(got.at(-1), [{ id: 'B', label: 'Done' }]);
+});
+
+const target = (sel, el) => ({ closest: (q) => (q === sel ? el : null) });
+
+test('an enableZoom that throws for one figure leaves that one on its source with the grey line, and the next figure still draws', () => {
+    const D = loaded(), a = fake({ zoomThrows: true }), b = fake({ ids: ['X', 'Y'] });
+    D.draw({ querySelectorAll: () => [a.fig, b.fig] }, { pele: { render: a.pele.render, enableZoom: (...x) => (a.pele.enableZoom.calls = (a.pele.enableZoom.calls || 0) + 1, a.pele.enableZoom.calls === 1 ? a.pele.enableZoom(...x) : b.pele.enableZoom(...x)) } });
+    assert.equal(a.attrs['data-view'], 'source');
+    assert.equal(a.attrs['data-drawn'], undefined);
+    assert.equal(a.err.hidden, false);
+    assert.match(a.err.textContent, /no zoom/);
+    assert.equal(b.attrs['data-drawn'], '1');
+    assert.equal(b.attrs['data-view'], 'diagram');
+});
+
+test('the zoom buttons call out, in and fit on the controller', () => {
+    const D = loaded(), f = fake();
+    D.draw(f.root, { pele: f.pele });
+    for (const k of ['out', 'in', 'fit']) f.handlers.click({ target: target('[data-dg-zoom]', { getAttribute: () => k }) });
+    assert.deepEqual(f.calls, ['by 0.8', 'by 1.25', 'reset']);
+});
+
+test('the view switch sets data-view and aria-pressed', () => {
+    const D = loaded(), f = fake();
+    D.draw(f.root, { pele: f.pele });
+    f.handlers.click({ target: target('[data-dg-view]', f.views[1]) });
+    assert.equal(f.attrs['data-view'], 'source');
+    assert.deepEqual(f.views.map((v) => v.pressed), ['false', 'true']);
+    f.handlers.click({ target: target('[data-dg-view]', f.views[0]) });
+    assert.equal(f.attrs['data-view'], 'diagram');
+    assert.deepEqual(f.views.map((v) => v.pressed), ['true', 'false']);
+});
+
+test('clear removes every mark and calls onMark with an empty list', () => {
+    const D = loaded(), f = fake(), got = [];
+    D.draw(f.root, { mark: true, marked: ['A', 'B'], onMark: (m) => got.push(JSON.parse(JSON.stringify(m))), pele: f.pele });
+    f.handlers.click({ target: target('[data-dg-clear]', {}) });
+    assert.ok(f.nodes.every((n) => !n.classList.contains('is-marked')));
+    assert.equal(f.count.textContent, '0');
+    assert.deepEqual(got, [[]]);
+});
+
+test('two figures share one mark list: both figures marks are in each onMark, and unmarking one keeps the other', () => {
+    const D = loaded(), a = fake(), b = fake({ ids: ['X', 'Y'] }), got = [];
+    D.draw({ querySelectorAll: () => [a.fig, b.fig] }, { mark: true, marked: ['B'], onMark: (m) => got.push(JSON.parse(JSON.stringify(m.map((x) => x.id)))), pele: a.pele });
+    a.handlers.click({ target: a.nodes[0] });
+    assert.deepEqual(got.at(-1), ['B', 'A']);
+    b.handlers.click({ target: b.nodes[1] });
+    assert.deepEqual(got.at(-1), ['B', 'A', 'Y']);
+    a.handlers.click({ target: a.nodes[0] });
+    assert.deepEqual(got.at(-1), ['B', 'Y']);
+});
+
+test('a resize after the figure left the page disconnects the observer; a throw inside it shows the grey line', () => {
+    const { win } = page(['diagram.js'], {});
+    let cb, disconnected = 0;
+    win.ResizeObserver = function (f) { cb = f; this.observe = () => {}; this.disconnect = () => { disconnected++; }; };
+    win.requestAnimationFrame = (f) => f();
+    const f = fake();
+    f.fig.isConnected = true;
+    f.pele.enableZoom = () => ({ scale: 0.5, fit: 1, zoomTo() { throw new Error('late'); } });
+    win.FK_DIAGRAM.draw(f.root, { pele: f.pele });
+    cb();
+    assert.equal(f.err.hidden, false);
+    assert.match(f.err.textContent, /late/);
+    f.fig.isConnected = false;
+    cb();
+    assert.equal(disconnected, 1);
 });

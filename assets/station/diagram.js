@@ -38,7 +38,7 @@
     }
 
     function fence(code, line) {
-        var o = '<figure class="dg" data-mermaid data-l="' + Number(line) + '" data-view="source">'
+        return '<figure class="dg" data-mermaid data-l="' + Number(line) + '" data-view="source">'
             + '<figcaption class="dg-bar"><span class="dg-k">mermaid</span>'
             + '<div class="dg-zoom" role="group" aria-label="' + loc('dg.group', '縮放這張圖') + '">'
             + '<button type="button" class="btn" data-dg-zoom="out">' + loc('dg.out', '縮小') + '</button>'
@@ -54,7 +54,6 @@
             + '<span class="dg-marks"><span role="status" aria-live="polite">' + loc('dg.count', '已標記 {n} 個', { n: '<span data-dg-count>0</span>' }) + '</span>'
             + '<button type="button" class="btn" data-dg-clear>' + loc('dg.clear', '清除標記') + '</button></span></div>'
             + '<pre class="dg-src"><code>' + esc(code) + '</code></pre></figure>';
-        return o;
     }
 
     // pele is a classic script, loaded once, next to the diagram.js that is on the page
@@ -80,21 +79,21 @@
         return out;
     }
 
+    function fail(fig, e) {
+        var err = fig.querySelector('[data-dg-err]');
+        err.textContent = e && e.line ? loc('dg.err', '畫不出來（第 {l} 行）：{m}', { l: e.line, m: e.message }) : loc('dg.errNoLine', '畫不出來：{m}', { m: e && e.message });
+        err.hidden = false;
+        fig.setAttribute('data-view', 'source');
+    }
+
+    // draws one figure; returns a reader of its marks. Throws when the drawing fails (draw() puts the source back).
     function one(fig, pele, o) {
         var code = fig.querySelector('code').textContent, pan = fig.querySelector('[data-dg-pan]');
         var out = fig.querySelector('[data-dg-scale]'), count = fig.querySelector('[data-dg-count]');
         var names = labels(code), marks = [], overview = false, ctl;
-        try {
-            var cs = w && w.getComputedStyle ? w.getComputedStyle(fig) : null;
-            var r = pele.render(code, cs ? { fontFamily: cs.getPropertyValue('--pele-font').trim() || undefined, fontFamilyMono: cs.getPropertyValue('--pele-font-mono').trim() || undefined } : {});
-            pan.innerHTML = r.svg;
-        } catch (e) {
-            var err = fig.querySelector('[data-dg-err]');
-            err.textContent = e && e.line ? loc('dg.err', '畫不出來（第 {l} 行）：{m}', { l: e.line, m: e.message }) : loc('dg.errNoLine', '畫不出來：{m}', { m: e && e.message });
-            err.hidden = false;
-            fig.setAttribute('data-view', 'source');
-            return;
-        }
+        var cs = w && w.getComputedStyle ? w.getComputedStyle(fig) : null;
+        var r = pele.render(code, cs ? { fontFamily: cs.getPropertyValue('--pele-font').trim() || undefined, fontFamilyMono: cs.getPropertyValue('--pele-font-mono').trim() || undefined } : {});
+        pan.innerHTML = r.svg;
         function labelOf(g) {
             var id = g.getAttribute('data-id'), t;
             if (has(names, id) && names[id]) return names[id];
@@ -109,10 +108,6 @@
             g.setAttribute('aria-pressed', 'false');
             g.setAttribute('aria-label', loc('dg.nodeAria', '標記 {id}「{t}」', { id: g.getAttribute('data-id'), t: labelOf(g) }));
         });
-        fig.setAttribute('data-drawn', '1');
-        fig.setAttribute('data-view', 'diagram');
-        [].forEach.call(fig.querySelectorAll('[data-dg-view]'), function (x) { x.setAttribute('aria-pressed', String(x.getAttribute('data-dg-view') === 'diagram')); });
-        if (o.mark) fig.setAttribute('data-mark', '1');
 
         // an id tag in the corner, so a mark does not rest on colour alone
         function tag(g, on) {
@@ -156,16 +151,25 @@
         ctl = pele.enableZoom(pan, { always: true, controls: false, maxScale: 3 });
         if (ctl.fit < FLOOR) ctl.zoomTo(FLOOR);
         show();
+        fig.setAttribute('data-drawn', '1');
+        fig.setAttribute('data-view', 'diagram');
+        [].forEach.call(fig.querySelectorAll('[data-dg-view]'), function (x) { x.setAttribute('aria-pressed', String(x.getAttribute('data-dg-view') === 'diagram')); });
+        if (o.mark) fig.setAttribute('data-mark', '1');
         // pele falls back to fit whenever its box resizes; put the reader's scale back unless they asked for the whole drawing
         if (w.ResizeObserver) {
-            new w.ResizeObserver(function () {
+            var ro = new w.ResizeObserver(function () {
+                // a repaint replaced this figure: stop watching a box nobody sees
+                if (fig.isConnected === false) return ro.disconnect();
                 w.requestAnimationFrame(function () {
-                    if (overview || !ctl || ctl.scale >= FLOOR - 0.001) return show();
-                    ctl.zoomTo(FLOOR);
-                    centre(marks.map(function (m) { return m.id; }));
-                    show();
+                    try {
+                        if (overview || !ctl || ctl.scale >= FLOOR - 0.001) return show();
+                        ctl.zoomTo(FLOOR);
+                        centre(marks.map(function (m) { return m.id; }));
+                        show();
+                    } catch (e) { fail(fig, e); }
                 });
-            }).observe(pan);
+            });
+            ro.observe(pan);
         }
         fig.addEventListener('click', function (e) {
             var t = e && e.target, g, z, v, c;
@@ -194,6 +198,7 @@
             if (w.requestAnimationFrame) w.requestAnimationFrame(show);
         });
         ['wheel', 'dblclick', 'pointerup'].forEach(function (t) { pan.addEventListener(t, function () { if (w.requestAnimationFrame) w.requestAnimationFrame(show); }); });
+        return function () { return marks.slice(); };
     }
 
     // `o.pele` stands in for the vendored library (a test's fake).
@@ -204,7 +209,12 @@
         if (!figs.length) return;
         var go = function (ok) {
             var pele = o.pele || w.pele;
-            figs.forEach(function (f) {
+            // one mark line per gate: each onMark carries the marks of every figure drawn here, in figure order
+            var reads = [];
+            var each = Object.assign({}, o, { onMark: o.onMark && function () {
+                o.onMark([].concat.apply([], reads.map(function (r) { return r ? r() : []; })));
+            } });
+            figs.forEach(function (f, i) {
                 if (ok === false || !pele) {
                     var err = f.querySelector('[data-dg-err]');
                     err.textContent = loc('dg.noLoad', '繪圖器沒有載入；按「原始碼」看這張圖。');
@@ -212,7 +222,10 @@
                     return;
                 }
                 f.setAttribute('data-tried', '1');
-                one(f, pele, o);
+                try { reads[i] = one(f, pele, each); } catch (e) {
+                    fail(f, e);
+                    if (f.removeAttribute) f.removeAttribute('data-drawn');
+                }
             });
         };
         if (o.pele) go(true); else load(go);
