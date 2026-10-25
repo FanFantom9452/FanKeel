@@ -40,6 +40,7 @@
             'mic.on': '聆聽中… 再按一次停止', 'mic.done': '聽好了：可以改字，按送出才會送',
             'mic.denied': '沒有麥克風權限：到瀏覽器設定允許，或改按鍵盤上的語音鍵', 'mic.missed': '沒聽清楚：再按一次麥克風',
             'gc.head': '{stage} gate', 'gc.left': '剩 {t} · 之後轉回電腦',
+            'gpin.go': '看選項', 'rep.more': '展開完整報告', 'rep.less': '收起報告',
             'gate.pick': '選一個答案', 'gate.pickMany': '可以選幾個', 'gate.own': '自己寫答案…', 'gate.rec': '建議', 'gate.send': '送出答案',
             'gate.sending': '送出中…', 'gate.sent': '送出了，等 Claude 接著做', 'gate.needAll': '每一題都要有答案',
             'gate.failed': '沒送到：可以再按一次', 'gate.gone': '這個 gate 已經不在等了', 'gate.refused': '測站沒收下（{code}）：{why}',
@@ -75,6 +76,7 @@
             'mic.on': 'Listening… tap again to stop', 'mic.done': 'Heard: edit it if you like; only Send sends',
             'mic.denied': 'No microphone permission: allow it in the browser settings, or use the keyboard\'s voice key', 'mic.missed': 'Did not catch that: tap the mic again',
             'gc.head': '{stage} gate', 'gc.left': '{t} left · then back to the desktop',
+            'gpin.go': 'See options', 'rep.more': 'Show the full report', 'rep.less': 'Collapse the report',
             'gate.pick': 'Pick one answer', 'gate.pickMany': 'Pick any number', 'gate.own': 'Write your own answer…', 'gate.rec': 'Recommended', 'gate.send': 'Send answer',
             'gate.sending': 'Sending…', 'gate.sent': 'Sent; Claude carries on', 'gate.needAll': 'Every question needs an answer',
             'gate.failed': 'Not sent: press again', 'gate.gone': 'This gate is no longer waiting', 'gate.refused': 'The station refused it ({code}): {why}',
@@ -344,8 +346,9 @@
         // without the app uses the web topic beside it.
         var sub = m.notify && m.notify.app ? '<a class="ha-subscribe" href="' + esc(m.notify.app) + '">' + t('home.sub') + '</a>'
             + '<a class="ha-subscribe-web" href="' + esc(m.notify.web) + '" target="_blank" rel="noopener">' + t('home.subWeb') + '</a>' : '';
-        return '<div class="pg" data-block="m-home-a"><header class="ab"><h1>' + t('home.title') + '</h1>' + (tasks.length ? '<span class="n">' + tasks.length + '</span>' : '')
-            + '<span class="sp"></span>' + sub + '<a class="ha-hist" href="#/done" aria-label="' + t('home.hist') + '" title="' + t('home.hist') + '">' + ic('hist') + '</a>' + hostHtml(m) + '</header>'
+        return '<div class="pg" data-block="m-home-a"><header class="ab ab2"><div class="ab-1"><h1>' + t('home.title') + '</h1>' + (tasks.length ? '<span class="n">' + tasks.length + '</span>' : '')
+            + '<span class="sp"></span><a class="ha-hist" href="#/done" aria-label="' + t('home.hist') + '" title="' + t('home.hist') + '">' + ic('hist') + '</a></div>'
+            + '<div class="ab-2">' + hostHtml(m) + (sub ? '<span class="subs">' + sub + '</span>' : '') + '</div></header>'
             + '<div class="ha-body">' + body + '</div></div>';
     }
 
@@ -358,9 +361,12 @@
         }).join('');
     }
 
-    function bubble(role, text, at, sent) {
+    function bubble(role, text, at, sent, fold) {
         var when = num(at) ? ' <time>' + hm(at) + '</time>' : '';
-        if (role === 'assistant') return '<div class="msg ai"><span class="who">' + t('who.ai') + when + '</span><div class="bub">' + prose(text) + '</div></div>';
+        if (role === 'assistant') {
+            var more = fold ? '<button type="button" class="rep-more" data-act="more" aria-expanded="' + (fold.open ? 'true' : 'false') + '">' + t(fold.open ? 'rep.less' : 'rep.more') + '</button>' : '';
+            return '<div class="msg ai' + (fold ? ' rep' + (fold.open ? ' open' : '') : '') + '"><span class="who">' + t('who.ai') + when + '</span><div class="bub">' + prose(text) + '</div>' + more + '</div>';
+        }
         var pc = role === 'desktop';
         return '<div class="msg me ' + (pc ? 'pc' : 'ph') + '"><span class="who">' + ic(pc ? 'laptop' : 'phone') + t(pc ? 'who.pc' : 'who.ph') + when + '</span>'
             + '<p class="bub">' + esc(text) + '</p>' + (sent ? '<span class="sent">' + sent + '</span>' : '') + '</div>';
@@ -420,7 +426,7 @@
                 + (u.mic ? '<button type="button" class="gmic" data-mic="gc-own' + qi + '" aria-label="' + t('mic.answer') + '">' + ic('mic') + '</button>' : '')
                 + '</label><p class="gc-say" data-say>' + (u.mic ? t('mic.hint') : '') + '</p></fieldset>';
         }).join('');
-        return '<form class="gc" id="gate-card" data-id="' + esc(p.id) + '" aria-labelledby="gc-q0">'
+        return '<form class="gc gopts" id="gate-card" data-id="' + esc(p.id) + '" aria-labelledby="gc-q0">'
             + '<div class="gc-h">' + ic('gate') + t('gc.head', { stage: esc(p.stage) }) + '<span class="sp"></span>'
             + (num(g.until) ? '<span class="left">' + t('gc.left', { t: clock(g.until - at) }) + '</span>' : '') + '</div>'
             + '<div class="gc-b">' + body + '<p class="gc-st" role="status"></p><button type="submit" class="cta">' + t('gate.send') + '</button></div></form>';
@@ -433,11 +439,14 @@
         var live = p.state === 'running' || p.state === 'gate';
         var lastPhone = -1;
         turns.forEach(function (g, i) { if (g.kind === 'msg' && g.role === 'phone') lastPhone = i; });
+        var lastAi = -1;
+        turns.forEach(function (g, i) { if (g.kind === 'msg' && g.role === 'assistant') lastAi = i; });
+        var fold = function (i) { return p.state === 'gate' && i === lastAi ? { open: Boolean(u.rep) } : null; };
         var openLast = live && turns.length && turns[turns.length - 1].kind === 'steps';
         var out = turns.map(function (g, i) {
             if (g.kind === 'steps') return stepsHtml(g, openLast && i === turns.length - 1, at, u.open);
             if (g.role !== 'desktop' && g.role !== 'phone' && g.role !== 'assistant') return '';
-            return bubble(g.role, g.text, g.at, i === lastPhone ? ic('check') + t('chat.sent') : '');
+            return bubble(g.role, g.text, g.at, i === lastPhone ? ic('check') + t('chat.sent') : '', fold(i));
         }).join('');
         if (p.state === 'running' && !openLast) {
             var start = null;
@@ -464,6 +473,16 @@
             + '<p class="cmp-hint" data-say>' + hint + (u.mic && !waiting ? ' · ' + t('cmp.voice') : '') + '</p></form>';
     }
 
+    // The question stays under the header while the report scrolls; 看選項 jumps to the answers.
+    function gpinHtml(p, at) {
+        var g = p.gate || {}, q = (g.questions || [])[0];
+        if (!q) return '';
+        return '<div class="gpin" role="region" aria-labelledby="gpin-q"><p class="gpin-h">' + ic('gate') + t('gc.head', { stage: esc(p.stage) }) + '<span class="sp"></span>'
+            + (num(g.until) ? '<span class="left">' + t('gc.left', { t: clock(g.until - at) }) + '</span>' : '') + '</p>'
+            + '<p class="gpin-q" id="gpin-q">' + esc(q.question || '') + '</p>'
+            + '<button type="button" class="gpin-go" data-act="gate">' + t('gpin.go') + ic('chev') + '</button></div>';
+    }
+
     function chatHtml(m, id, at, u, P) {
         var row = (m.tasks || []).concat(m.stopped || []).filter(function (x) { return x.id === id; })[0];
         // Until its phone.json arrives, the session's mobile.json row stands in.
@@ -486,6 +505,7 @@
         }
         return '<div class="pg" ' + SCREEN[attached ? 'attached' : p.state] + '><header class="ch-h">' + back
             + '<div><p class="ch-t">' + esc(p.task) + '</p><p class="ch-m">' + esc(p.project) + stw(p.stage) + chip(p) + '</p></div>' + side + '</header>'
+            + (p.state === 'gate' && p.gate ? gpinHtml(p, at) : '')
             + '<div class="cv" role="log" aria-label="' + t('chat.log') + '">' + cvInner(p, at, u) + '</div>'
             + (u.note ? '<p class="note" role="status">' + esc(u.note) + '</p>' : '') + bottom + '</div>';
     }
@@ -867,6 +887,12 @@
                 var key = el.getAttribute('data-key');
                 st.ui.open[key] = !st.ui.open[key];
                 if (st.P) patch(); else draw();
+            } else if (what === 'more') {
+                st.ui.rep = !st.ui.rep;
+                if (st.P) patch(); else draw();
+            } else if (what === 'gate') {
+                var gcard = d.getElementById('gate-card');
+                if (gcard && gcard.scrollIntoView) gcard.scrollIntoView({ block: 'start' });
             }
         });
         function grow(el) {
@@ -906,6 +932,7 @@
         });
         win.addEventListener('hashchange', function () {
             st.ui.note = '';
+            st.ui.rep = false;
             draw();
             if (st.ui.mode !== 'app') return;
             // The list drawn before a conversation is stale by now: read it again.
