@@ -1,7 +1,7 @@
 ---
 label: station-chartroom-vendored
 title: station 白板改走 vendored
-description: station 白板路由仍讀 profile 的 station.chartroom 外部路徑；lib/chartroom 已 vendored，可改走它並拿掉該設定
+description: station 白板路由仍讀 profile 的 station.chartroom 外部路徑；vendored 的 chartroom 已在 repo，可改走它並拿掉該設定
 state: ready
 ---
 
