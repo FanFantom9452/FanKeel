@@ -686,7 +686,7 @@ question and its options, the recommended one marked) above `gate-report`
 a head with no tabs whose title opens the full station, the report
 the focus page draws in the main column, and the question in a sticky side
 column, each option showing its label with its description open, a click on the label closing it; a
-pick only marks it and says to answer in Claude Desktop. It re-reads its script every five seconds while the
+pick sends that option's exact label as the answer through the same `POST /answer` the free box uses while the station holds the gate (`gate.station`), and only marks it, saying to answer in Claude Desktop, when it does not. It re-reads its script every five seconds while the
 browser tab is visible.
 
 Both the page and the cache sit where git does not look — the registry copy's
