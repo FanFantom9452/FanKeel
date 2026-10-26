@@ -91,11 +91,32 @@ a.sxr:focus-visible>.sx-pk{visibility:visible;opacity:1;transition:none}
 .sx-sub .sxr:hover{background:var(--wash)}
 .lv-row>.hm-lv{flex:1;min-width:0}
 
-@media (prefers-reduced-motion:reduce){.sxp .sx-g.run .gseg.now,.sxp .sx-g.run .gedge.now,.sxp .sx-g.run.bare .gcore{animation:none}.sx-un .chev,.sx-pk,a.sxr:hover>.sx-pk{transition:none}}
+/* RC: Remote Control attached, after the project chip; absent when it is not */
+.sxp .lv-rc{display:inline-flex;align-items:center;gap:4px;flex:none;font:600 11px var(--f-mono);color:var(--ink2);line-height:18px;white-space:nowrap}
+.sxp .lv-rc .dot{width:6px;height:6px}
+
+/* 未登記: a row per live session no registry lists; same column lines as .sxr, not a link */
+.hm-lv.sxu{grid-template-columns:22px minmax(0,1fr) 392px 40px 82px;grid-template-areas:"g p rm st r" "g t rm st r";column-gap:16px;row-gap:3px;padding:9px 10px}
+.hm-lv.sxu:hover{background:none}
+.sxu>.lv-mk{grid-area:g;justify-self:center}
+.lv-mk{display:inline-block;width:10px;height:10px;border-radius:50%;box-sizing:border-box;flex:none}
+.lv-mk.idle{box-shadow:inset 0 0 0 1.5px var(--muted)}
+.lv-mk.busy{background:var(--live);animation:sx-pulse 1.4s ease-in-out infinite alternate}
+.lv-ent{display:inline-block;font:11px var(--f-mono);line-height:18px;padding:0 6px;border-radius:4px;box-shadow:inset 0 0 0 1px var(--rule2);color:var(--ink2)}
+.sxu>.hm-lv-t{white-space:normal;overflow:visible;overflow-wrap:anywhere;line-height:1.45;font-size:13.5px;color:var(--ink)}
+.sxu>.hm-lv-t.un{font-weight:500;color:var(--ink2)}
+.sxu>.lv-cwd{grid-area:rm;min-width:0;font:12px var(--f-mono);color:var(--ink2);overflow-wrap:anywhere}
+.sxu>.lv-st{grid-area:st;text-align:right;font-size:12.5px;color:var(--muted);white-space:nowrap}
+.sxu>.lv-st.busy{color:var(--ink)}
+.sxu>.hm-lv-r{grid-area:r;white-space:nowrap;font-size:12px;color:var(--ink2)}
+
+@media (prefers-reduced-motion:reduce){.sxp .sx-g.run .gseg.now,.sxp .sx-g.run .gedge.now,.sxp .sx-g.run.bare .gcore{animation:none}.sx-un .chev,.sx-pk,a.sxr:hover>.sx-pk{transition:none}.lv-mk.busy{animation:none}}
 
 @media (max-width:1100px){
   .hm-lv.sxr{grid-template-columns:22px minmax(0,1fr) 64px 58px;grid-template-areas:"g p usd r" "g t usd r" "g rm rm rm"}
+  .hm-lv.sxu{grid-template-columns:22px minmax(0,1fr) 40px 82px;grid-template-areas:"g p st r" "g t st r" "g rm rm rm"}
 }
 @media (max-width:640px){
   .hm-lv.sxr{grid-template-columns:22px minmax(0,1fr) 64px;grid-template-areas:"g p usd" "g t r" "g rm rm"}
+  .hm-lv.sxu{grid-template-columns:22px minmax(0,1fr) auto;grid-template-areas:"g p st" "g t r" "g rm rm"}
 }

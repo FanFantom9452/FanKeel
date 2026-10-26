@@ -35,6 +35,12 @@
         'lv.min': '{n}m ago',
         'lv.hour': '{n}h ago',
         'lv.day': '{n}d ago',
+        'lv.rc': 'Remote Control attached',
+        'lv.unreg': 'Unregistered',
+        'lv.unregNote': 'Open, but never ran /fankeel',
+        'lv.busy': 'Busy',
+        'lv.idle': 'Idle',
+        'lv.since': 'started {t}',
     };
     function loc(key, zh, vars) {
         var I = w && w.FK_I18N;
@@ -128,7 +134,7 @@
         var k = kit(), id8 = esc(String(s.id).slice(0, 8)), c = k.cost(s);
         var a = '<a class="hm-lv sxr' + (kind === 'stop' ? ' gone' : '') + '" href="' + esc(k.sessionHash(s.id)) + '" aria-describedby="pk-' + id8 + '">'
             + glyph(s, kind)
-            + '<span class="hm-lv-p">' + chip(s, o) + '</span>'
+            + '<span class="hm-lv-p">' + chip(s, o) + rc(s.bridge) + '</span>'
             + '<span class="hm-lv-t' + (s.task ? '' : ' un') + '">' + taskText(s, o.now) + '</span>'
             + roadmap(s)
             + '<span class="sx-usd' + (c ? '' : ' z') + '">' + k.usd(c, true) + '</span>'
@@ -181,6 +187,44 @@
             + (n ? '' : '<span class="sp"></span><span class="sx-hnote' + (kind === 'wait' ? ' ok' : '') + '" role="status">' + (kind === 'wait' ? k.icon('check') : '') + none + '</span>')
             + '</div>' + (n ? '<div class="dlist">' + rowsOf(list, kind, o) + '</div>' : '') + '</section>';
     }
+    // station-57: running sessions no registry lists (lib/station.js
+    // `unregisteredOf`), newest first. The label is the session's own name, or
+    // the last folder of its cwd; `via` says how it was started.
+    function lastFolder(p) { return String(p || '').split(/[\\/]/).filter(Boolean).pop() || ''; }
+    function unreg(S) {
+        var VIA = { 'claude-desktop': 'Desktop', cli: 'CLI' };
+        return ((S && S.unregistered) || []).slice().sort(function (a, b) { return (b.started || 0) - (a.started || 0); }).map(function (u) {
+            var tail = lastFolder(u.cwd) || u.id;
+            return { id: u.id, label: u.name || tail, via: VIA[u.entrypoint] || u.entrypoint || '', cwd: u.cwd, status: u.status, bridge: Boolean(u.bridge), started: u.started };
+        });
+    }
+    // RC: Remote Control attached to the session; nothing when it is not.
+    function rc(on) {
+        if (!on) return '';
+        var t = loc('lv.rc', 'Remote Control 連著');
+        return '<span class="lv-rc" data-block="live-rc" title="' + esc(t) + '"><i class="dot live" aria-hidden="true"></i>RC'
+            + '<span class="hm-sr">, ' + esc(t) + '</span></span>';
+    }
+    // An unregistered row is not a link: no registry, so no session page to open.
+    function unregRow(u, now) {
+        var busy = u.status === 'busy';
+        return '<div class="hm-lv sxu">'
+            + '<span class="lv-mk ' + (busy ? 'busy' : 'idle') + '" aria-hidden="true"></span>'
+            + '<span class="hm-lv-p"><span class="lv-ent">' + esc(u.via) + '</span>' + rc(u.bridge) + '</span>'
+            + '<span class="hm-lv-t' + (u.label === lastFolder(u.cwd) || u.label === u.id ? ' un' : '') + '">' + esc(u.label) + '</span>'
+            + '<span class="lv-cwd" title="' + esc(u.cwd || '') + '">' + esc(u.cwd || '') + '</span>'
+            + '<span class="lv-st' + (busy ? ' busy' : '') + '">' + (busy ? loc('lv.busy', '忙碌') : loc('lv.idle', '閒置')) + '</span>'
+            + '<span class="hm-lv-r">' + loc('lv.since', '開始 {t}', { t: since(u.started, now) }) + '</span>'
+            + '</div>';
+    }
+    function unregCard(list, now) {
+        if (!list.length) return '';
+        var t = loc('lv.unreg', '未登記');
+        return '<section class="dcard sx-unreg" data-block="live-unreg" aria-label="' + esc(t) + '">'
+            + '<div class="dcard-h">' + kit().icon('sessions') + '<b>' + t + '</b><span class="kn">' + list.length + '</span>'
+            + '<span class="sp"></span><span class="sx-hnote">' + loc('lv.unregNote', '開著、但沒跑過 /fankeel 的 session') + '</span></div>'
+            + '<div class="dlist">' + list.map(function (u) { return unregRow(u, now); }).join('') + '</div></section>';
+    }
     function page(S, o) {
         o = o || {};
         bind();
@@ -190,10 +234,10 @@
             + '<div class="phead khead sxh" data-block="live-head"><nav class="subtabs" aria-label="Sessions">'
             + '<a href="#/live" aria-current="page">' + loc('lv.live', '進行中') + '<b class="kn">' + n + '</b></a>'
             + '<a href="#/sessions">' + loc('lv.all', '全部') + '<b class="kn">' + all.length + '</b></a></nav></div>'
-            + card('wait', g.wait, opt) + card('run', g.run, opt) + card('stop', g.stop, opt) + '</div>';
+            + card('wait', g.wait, opt) + card('run', g.run, opt) + card('stop', g.stop, opt) + unregCard(unreg(S), opt.now) + '</div>';
     }
 
-    var api = { page: page, groups: groups, EN: EN };
+    var api = { page: page, groups: groups, unreg: unreg, EN: EN };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     if (w) w.FK_LIVE = api;
 }(typeof window !== 'undefined' ? window : null, typeof document !== 'undefined' ? document : null));
