@@ -145,3 +145,43 @@ test('pendingChanges does not list a torn line', async () => {
     const { dir } = await tornLog();
     assert.deepEqual(E.pendingChanges(dir).map((p) => p.change.kind), ['edit', 'mark']);
 });
+
+// A torn tail has no newline: the next change must start its own line, not
+// glue onto the torn text and become unreadable with it.
+test('a change appended after a torn tail with no newline is still read', async () => {
+    const { file } = board();
+    const tail = '{"at":1,"kind":"mark","te';
+    fs.writeFileSync(E.changesFile(file), tail);
+    E.markBoard(file, 'a', 'one');
+    await E.editBoard(file, { ops: [{ op: 'set', id: 'a', f: { label: 'Gateway' } }] }, '改名 a');
+    assert.deepEqual(E.readChanges(file).map((c) => c.kind), ['mark', 'edit']);
+    assert.equal(logLines(file)[0], tail);
+});
+
+// A line that parses to a JSON primitive or array is no change either: it is
+// kept as it was and never read as one.
+const PRIMS = ['5', '"x"', 'null', '[1]'];
+function primLog() {
+    const b = board();
+    E.markBoard(b.file, 'a', 'one');
+    fs.appendFileSync(E.changesFile(b.file), PRIMS.join('\n') + '\n');
+    return b;
+}
+
+test('a primitive line is not listed, and markSent keeps it in place', () => {
+    const { dir, file } = primLog();
+    assert.deepEqual(E.pendingChanges(dir).map((p) => p.change.kind), ['mark']);
+    assert.equal(E.markSent(dir), 1);
+    const lines = logLines(file);
+    assert.equal(JSON.parse(lines[0]).sent, true);
+    assert.deepEqual(lines.slice(1), PRIMS);
+});
+
+test('dropping a change keeps primitive lines in place', async () => {
+    const { file } = primLog();
+    await assert.rejects(E.dropChange(file, 1), (e) => e.name === 'NoChange');
+    await E.dropChange(file, 0);
+    const lines = logLines(file);
+    assert.equal(JSON.parse(lines[0]).dropped, true);
+    assert.deepEqual(lines.slice(1), PRIMS);
+});
