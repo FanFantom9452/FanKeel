@@ -46,7 +46,7 @@ test('false needs no confirmation, and neither does any other key', () => {
     const d = tmp('fankeel-confirm-');
     assert.equal(cli(d, 'set', 'station.remote', 'false', '--default').code, 0);
     assert.equal(machineValue(path.join(d, 'cfg')), false);
-    assert.equal(cli(d, 'set', 'notify.gate', 'true', '--default').code, 0, 'only station.remote is gated');
+    assert.equal(cli(d, 'set', 'ui.lang', 'en', '--default').code, 0, 'only station.remote is gated');
 });
 
 test('the station page\'s path, profile.write, is not gated: the page has its own modal', () => {

@@ -2,7 +2,7 @@
 // station-39: the 快速設定 page's preselected answers. Each question carries
 // `rec` when this project's git log, registry or profile says something and
 // `author` when nothing does; these pin both sides of every inference the
-// TODO entry named (sessions overlap, stage.agents, notify, front end, model.lang).
+// TODO entry named (sessions overlap, stage.agents, front end, model.lang).
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -64,11 +64,10 @@ test('a front end, the project profile and the machine file move their answers t
     for (const [k, v] of [['dispatch.floor', 'haiku'], ['model.lang', '繁體中文'], ['stage.agents', 'all'], ['design.mockup', 'auto'], ['dispatch.inflight', '6']]) {
         assert.ok(profile.write(pf, k, v).ok, k);
     }
-    assert.ok(profile.write(profile.machineFile(cfg), 'notify.gate', 'true').ok);
     const out = suggestFor(dir, dir, cfg, NOW);
     assert.equal(out.front, true);
     const got = flat(out.recs);
-    for (const [k, want] of Object.entries({ floor: 'haiku/rec', lang: 'zh/rec', ctx: 'all/rec', screen: 'auto/rec', inflight: '6/rec', where: 'away/rec' })) {
+    for (const [k, want] of Object.entries({ floor: 'haiku/rec', lang: 'zh/rec', ctx: 'all/rec', screen: 'auto/rec', inflight: '6/rec' })) {
         assert.equal(got[k], want, k);
     }
 });
