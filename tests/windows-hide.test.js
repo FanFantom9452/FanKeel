@@ -268,6 +268,9 @@ test('the scanner finds a call in each shape it could miss, and reads windowsHid
         apply: (o) => "const cp = require('node:child_process');\ncp.spawn.apply(cp, ['a', [], { " + o + 'stdio: 1 }]);',
         optional: (o) => "const cp = require('node:child_process');\ncp?.spawn('a', [], { " + o + 'stdio: 1 });',
         commaRename: (o) => "const cp = require('node:child_process');\nconst sp = cp.spawn, n = 1;\nsp('a', [], { " + o + 'stdio: 1 });',
+        optionalRename: (o) => "const sp = cp?.spawn;\nsp('a', [], { " + o + 'stdio: 1 });',
+        optionalRequire: (o) => "require('child_process')?.spawn('a', [], { " + o + 'stdio: 1 });',
+        optionalBracket: (o) => "cp?.['spawn']('a', [], { " + o + 'stdio: 1 });',
         alias: (o) => "const { spawn: spawnChild } = require('node:child_process');\nspawnChild('a', [], { " + o + 'stdio: 1 });',
     };
     for (const [name, make] of Object.entries(shapes)) {
@@ -321,12 +324,17 @@ test('the scanner refuses near-misses: windowsHide false, a comment, a same-name
     assert.ok(hidden(own[0]), 'a parameter does not hide the call text saying windowsHide: true');
     const notShadowed = callsIn("const opts = { windowsHide: true };\nconst b = (x) => spawn('a', [], opts);");
     assert.ok(hidden(notShadowed[0]), 'an arrow whose parameters do not name opts leaves the declaration in force');
+    const afterArrow = callsIn("const b = (opts) => 1;\nconst opts = { windowsHide: true };\nspawn('a', [], opts);");
+    assert.ok(hidden(afterArrow[0]), 'an arrow that ended at a `;` is not the one enclosing the call');
 });
 
 test('a quote in a comment or a paren in a regular expression does not carry a call into the next one', () => {
     for (const src of [
         "spawn('a', [], { // don't\n stdio: 1 });\nspawn('b', [], { windowsHide: true });",
         "spawn('a', [], { re: /\\(/, stdio: 1 });\nspawn('b', [], { windowsHide: true });",
+        "spawn('a', [], { /* don't\n */ stdio: 1 });\nspawn('b', [], { windowsHide: true });",
+        "spawn('a', [], { n: a / 2, s: (b / 3), stdio: 1 });\nspawn('b', [], { windowsHide: true });",
+        "spawn('a', [], { n: a / 2, stdio: 1 }); spawn('b', [], { m: b / 3, windowsHide: true });",
     ]) {
         const c = callsIn(src);
         assert.strictEqual(c.length, 2, src);
