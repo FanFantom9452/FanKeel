@@ -1,9 +1,9 @@
 # lib/chartroom — vendored
 
 Copied verbatim from Chartroom (`F:/ymlab/_ext/chartroom`), commit
-`47506de1108a904de3184b8dc007f2034e2af892`: `src/core/{format,fields,util}.js`
+`47506de1108a904de3184b8dc007f2034e2af892`: `src/core/{format,fields,util,validate,ops,diff}.js`
 and `src/geometry/{measure,layout,route,lanes,shapes,scene,svg}.js` — the
-render subset, 1768 lines. ESM under this directory's `{"type":"module"}`;
+render subset plus the check and edit core. ESM under this directory's `{"type":"module"}`;
 `lib/board.js` loads it with a dynamic import. `src/server/` is not copied.
 
 Do not edit these files: re-copy from the source repository and update the
