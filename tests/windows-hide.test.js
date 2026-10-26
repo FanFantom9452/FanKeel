@@ -41,34 +41,77 @@ function aliases(src, ns) {
 // Local names bound to one child_process function: `const run = promisify(cp.execFile)` or `const sp = cp.spawn`.
 function renames(src, ns) {
     const owner = ownerOf(ns);
-    const fn = '\\.(?:' + NAMES.join('|') + ')(?![\\w$])';
-    const re = new RegExp('\\b(?:const|let|var)\\s+([\\w$]+)\\s*=\\s*(?:(?:[\\w$]+\\.)?promisify\\(\\s*' + owner + fn + '\\s*\\)|' + owner + fn + '\\s*(?:[;\\n]|$))', 'g');
+    const fn = '\\??\\.(?:' + NAMES.join('|') + ')(?![\\w$])';
+    const re = new RegExp('\\b(?:const|let|var)\\s+([\\w$]+)\\s*=\\s*(?:(?:[\\w$]+\\.)?promisify\\(\\s*' + owner + fn + '\\s*\\)|' + owner + fn + '\\s*(?:[;,\\n]|$))', 'g');
     return [...src.matchAll(re)].map((m) => m[1].replace(/\$/g, '\\$'));
 }
 
-// Every child-process call in a source string: direct, aliased, or a parenthesised callee like `(a || execFileSync)(`.
+// The index of the `)` closing the `(` at `open`. What sits inside a string, a comment or a
+// regular-expression literal is not code: an apostrophe in `// don't` or the `(` in `/\(/`
+// must not move the depth, or the call's text runs on into the next call.
+function closeOf(src, open) {
+    let depth = 0;
+    for (let i = open; i < src.length; i++) {
+        const c = src[i];
+        if (c === "'" || c === '"' || c === '`') { i = endOfQuote(src, i); continue; }
+        if (c === '/' && src[i + 1] === '/') { const n = src.indexOf('\n', i); i = n === -1 ? src.length : n; continue; }
+        if (c === '/' && src[i + 1] === '*') { const n = src.indexOf('*/', i + 2); i = n === -1 ? src.length : n + 1; continue; }
+        if (c === '/' && regexCanStart(src, i)) { i = endOfRegex(src, i); continue; }
+        if (c === '(') depth++;
+        else if (c === ')' && --depth === 0) return i;
+    }
+    return src.length - 1;
+}
+
+function endOfQuote(src, i) {
+    for (let j = i + 1; j < src.length; j++) {
+        if (src[j] === '\\') { j++; continue; }
+        if (src[j] === src[i]) return j;
+    }
+    return src.length - 1;
+}
+
+// A `/` opens a regular expression where an operand is expected: after a punctuator, or after
+// a keyword such as `return`. After a name, a number or `)` it is division.
+function regexCanStart(src, i) {
+    let j = i - 1;
+    while (j >= 0 && /\s/.test(src[j])) j--;
+    if (j < 0 || /[(,=:[!&|?{};+\-*%<>~^]/.test(src[j])) return true;
+    return /\b(?:return|typeof|case|do|else|in|of|void|yield|await)$/.test(src.slice(Math.max(0, j - 6), j + 1));
+}
+
+// The index of the `/` closing the literal opened at `i`, or `i` itself when the line ends first
+// (then it was division after all, and the scan goes on from there).
+function endOfRegex(src, i) {
+    let cls = false;
+    for (let j = i + 1; j < src.length; j++) {
+        const c = src[j];
+        if (c === '\\') { j++; continue; }
+        if (c === '\n') return i;
+        if (cls) { if (c === ']') cls = false; continue; }
+        if (c === '[') cls = true;
+        else if (c === '/') return j;
+    }
+    return i;
+}
+
+// Every child-process call in a source string: direct, `?.`, `.call(`/`.apply(`, aliased, or a parenthesised callee like `(a || execFileSync)(`.
 function callsIn(src) {
     const ns = ['cp', 'child_process'];
     for (const m of src.matchAll(/\b(?:const|let|var)\s+([\w$]+)\s*=\s*require\(\s*['"](?:node:)?child_process['"]\s*\)/g)) ns.push(m[1].replace(/\$/g, '\\$'));
     const names = NAMES.concat(aliases(src, ns), renames(src, ns));
     const list = names.join('|');
-    const direct = new RegExp('(?<![\\w$.])(?:(?:' + ns.join('|') + ')\\.)?(?:' + list + ')\\(', 'g');
-    const viaRequire = new RegExp('require\\(\\s*[\'"](?:node:)?child_process[\'"]\\s*\\)\\.(?:' + list + ')\\(', 'g');
-    const viaBracket = new RegExp('(?<![\\w$.])(?:' + ns.join('|') + ')\\[\\s*[\'"](?:' + list + ')[\'"]\\s*\\]\\(', 'g');
+    const tail = '(?:\\.(?:call|apply))?\\(';
+    const direct = new RegExp('(?<![\\w$.])(?:(?:' + ns.join('|') + ')\\??\\.)?(?:' + list + ')' + tail, 'g');
+    const viaRequire = new RegExp('require\\(\\s*[\'"](?:node:)?child_process[\'"]\\s*\\)\\??\\.(?:' + list + ')' + tail, 'g');
+    const viaBracket = new RegExp('(?<![\\w$.])(?:' + ns.join('|') + ')(?:\\?\\.)?\\[\\s*[\'"](?:' + list + ')[\'"]\\s*\\]' + tail, 'g');
     const starts = [];
     for (const re of [direct, viaRequire, viaBracket]) {
         for (const m of src.matchAll(re)) starts.push({ at: m.index, open: m.index + m[0].length - 1 });
     }
     // A parenthesised callee `( ... )(`: its balanced inner text names a scanned function that is not itself being called.
     for (let a = src.indexOf('('); a !== -1; a = src.indexOf('(', a + 1)) {
-        let depth = 0, i = a, q = null;
-        for (; i < src.length; i++) {
-            const c = src[i];
-            if (q) { if (c === '\\') i++; else if (c === q) q = null; continue; }
-            if (c === "'" || c === '"' || c === '`') q = c;
-            else if (c === '(') depth++;
-            else if (c === ')' && --depth === 0) break;
-        }
+        const i = closeOf(src, a);
         if (src[i + 1] !== '(') continue;
         const inner = src.slice(a + 1, i);
         const isCall = [...inner.matchAll(/[\w$.]+/g)].some((t) => names.includes(t[0].split('.').pop()) && !/^\s*\(/.test(inner.slice(t.index + t[0].length)));
@@ -79,14 +122,7 @@ function callsIn(src) {
         const lineStart = src.lastIndexOf('\n', s.at) + 1;
         const prefix = src.slice(lineStart, s.at);
         if (/^\s*(\/\/|\*)/.test(prefix) || /function\s+$/.test(prefix)) continue;
-        let depth = 0, i = s.open, q = null;
-        for (; i < src.length; i++) {
-            const c = src[i];
-            if (q) { if (c === '\\') i++; else if (c === q) q = null; continue; }
-            if (c === "'" || c === '"' || c === '`') q = c;
-            else if (c === '(') depth++;
-            else if (c === ')' && --depth === 0) break;
-        }
+        const i = closeOf(src, s.open);
         found.push({ text: src.slice(s.at, i + 1), line: src.slice(0, s.at).split('\n').length, at: s.at, src });
     }
     return found;
@@ -96,15 +132,72 @@ const calls = (rel) => callsIn(fs.readFileSync(path.join(ROOT, rel), 'utf8'));
 
 const allowed = (rel, text) => ALLOW.some((a) => a.file === rel && text.includes(a.match));
 
+// The names a parameter list declares: each comma-separated piece at depth 0, up to its own `=`,
+// so `opts = defaults()` declares `opts` and not `defaults`.
+function paramNames(list) {
+    const out = [];
+    let depth = 0, piece = '';
+    const flush = () => { out.push(...(piece.split('=')[0].match(/[\w$]+/g) || [])); piece = ''; };
+    for (const c of list) {
+        if (c === '(' || c === '[' || c === '{') depth++;
+        else if (c === ')' || c === ']' || c === '}') depth--;
+        if (c === ',' && depth === 0) { flush(); continue; }
+        piece += c;
+    }
+    flush();
+    return out;
+}
+
+// The parameter list ending at `end` (whitespace skipped): a balanced `( ... )` that is not the
+// head of an `if`/`for`/`while`/`switch`/`catch`/`with`, or — where `bare` says an arrow follows — one bare name.
+function listBefore(src, end, bare) {
+    let j = end;
+    while (j >= 0 && /\s/.test(src[j])) j--;
+    if (src[j] === ')') {
+        for (let k = j, depth = 0; k >= 0; k--) {
+            if (src[k] === ')') depth++;
+            else if (src[k] === '(' && --depth === 0) {
+                return /\b(?:if|for|while|switch|catch|with)\s*$/.test(src.slice(Math.max(0, k - 12), k)) ? null : src.slice(k + 1, j);
+            }
+        }
+        return null;
+    }
+    const m = bare ? /[\w$]+$/.exec(src.slice(Math.max(0, j - 60), j + 1)) : null;
+    return m ? m[0] : null;
+}
+
+// The `=` of the `=>` of an arrow whose expression body holds index `before`: walking back,
+// nothing at the call's own depth closes a statement (`;`) or opens a block (`{`) first. -1 when none.
+function arrowBefore(src, before) {
+    for (let i = before - 1, depth = 0; i > 0; i--) {
+        const c = src[i];
+        if (c === ')' || c === ']' || c === '}') depth++;
+        else if (c === '(' || c === '[') { if (depth > 0) depth--; }
+        else if (c === '{') { if (depth === 0) return -1; depth--; }
+        else if (c === ';' && depth === 0) return -1;
+        else if (c === '>' && src[i - 1] === '=' && depth === 0) return i - 1;
+    }
+    return -1;
+}
+
 // A name that is a parameter of the function enclosing the call is that caller's own, so no declaration elsewhere applies.
+// An expression-bodied arrow has no `{` to find, so it is asked first; a block's head is read balanced, so a default
+// holding parentheses stays inside the list.
 function isParam(src, name, before) {
+    const arrow = arrowBefore(src, before);
+    if (arrow !== -1) {
+        const list = listBefore(src, arrow - 1, true);
+        if (list !== null && paramNames(list).includes(name)) return true;
+    }
     let depth = 0;
     for (let i = before - 1; i >= 0; i--) {
         if (src[i] === '}') depth++;
         else if (src[i] === '{' && depth-- === 0) {
-            const head = src.slice(Math.max(0, i - 300), i);
-            const h = head.match(/\(([^()]*)\)\s*(?:=>\s*)?$/) || head.match(/([\w$]+)\s*=>\s*$/);
-            if (h && !/\b(?:if|for|while|switch|catch)\s*\([^()]*\)\s*$/.test(head)) return (h[1].match(/[\w$]+/g) || []).includes(name);
+            let j = i - 1;
+            while (j >= 0 && /\s/.test(src[j])) j--;
+            const arrowHead = src[j] === '>' && src[j - 1] === '=';
+            const list = listBefore(src, arrowHead ? j - 2 : j, arrowHead);
+            if (list !== null) return paramNames(list).includes(name);
             depth = 0;
         }
     }
@@ -171,6 +264,10 @@ test('the scanner finds a call in each shape it could miss, and reads windowsHid
         plainRename: (o) => "const cp = require('node:child_process');\nconst sp = cp.spawn;\nsp('a', [], { " + o + 'stdio: 1 });',
         namespaceDestructure: (o) => "const cp = require('node:child_process');\nconst { execFile: ef } = cp;\nef('a', [], { " + o + 'cwd: 1 });',
         inlinePromisify: (o) => "const run = util.promisify(require('node:child_process').execFile);\nrun('git', [], { " + o + 'cwd: 1 });',
+        call: (o) => "const cp = require('node:child_process');\ncp.spawn.call(null, 'a', [], { " + o + 'stdio: 1 });',
+        apply: (o) => "const cp = require('node:child_process');\ncp.spawn.apply(cp, ['a', [], { " + o + 'stdio: 1 }]);',
+        optional: (o) => "const cp = require('node:child_process');\ncp?.spawn('a', [], { " + o + 'stdio: 1 });',
+        commaRename: (o) => "const cp = require('node:child_process');\nconst sp = cp.spawn, n = 1;\nsp('a', [], { " + o + 'stdio: 1 });',
         alias: (o) => "const { spawn: spawnChild } = require('node:child_process');\nspawnChild('a', [], { " + o + 'stdio: 1 });',
     };
     for (const [name, make] of Object.entries(shapes)) {
@@ -205,6 +302,9 @@ test('the scanner refuses near-misses: windowsHide false, a comment, a same-name
         parameter: "function a() { const opts = { windowsHide: true }; }\nfunction b(opts) {\n spawn('a', [], opts);\n}",
         paramInBlock: "function a() { const opts = { windowsHide: true }; }\nfunction b(opts) {\n if (x) {\n spawn('a', [], opts);\n }\n}",
         arrowParameter: "const a = () => { const opts = { windowsHide: true }; };\nconst b = (opts) => {\n spawn('a', [], opts);\n};",
+        defaultParen: "function a() { const opts = { windowsHide: true }; }\nfunction b(opts = defaults()) {\n spawn('a', [], opts);\n}",
+        exprArrow: "const opts = { windowsHide: true };\nconst b = opts => spawn('a', [], opts);",
+        exprArrowParen: "const opts = { windowsHide: true };\nconst b = (x, opts) => spawn('a', [], opts);",
         spreadInComment: "const opts = { windowsHide: true };\nspawn('a', [], { /* ...opts */ stdio: 1 });",
     };
     for (const [name, src] of Object.entries(refused)) {
@@ -219,4 +319,18 @@ test('the scanner refuses near-misses: windowsHide false, a comment, a same-name
     assert.ok(hidden(inBlock[0]), 'a local declaration is not shadowed by an if condition');
     const own = callsIn("function b(opts) {\n spawn('a', [], { windowsHide: true, ...opts });\n}");
     assert.ok(hidden(own[0]), 'a parameter does not hide the call text saying windowsHide: true');
+    const notShadowed = callsIn("const opts = { windowsHide: true };\nconst b = (x) => spawn('a', [], opts);");
+    assert.ok(hidden(notShadowed[0]), 'an arrow whose parameters do not name opts leaves the declaration in force');
+});
+
+test('a quote in a comment or a paren in a regular expression does not carry a call into the next one', () => {
+    for (const src of [
+        "spawn('a', [], { // don't\n stdio: 1 });\nspawn('b', [], { windowsHide: true });",
+        "spawn('a', [], { re: /\\(/, stdio: 1 });\nspawn('b', [], { windowsHide: true });",
+    ]) {
+        const c = callsIn(src);
+        assert.strictEqual(c.length, 2, src);
+        assert.ok(!hidden(c[0]), 'the first call is unhidden: ' + c[0].text);
+        assert.ok(hidden(c[1]), 'the second call is hidden');
+    }
 });
