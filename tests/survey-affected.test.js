@@ -71,7 +71,7 @@ test('--affected takes its value with it rather than leaving it as a term', () =
 test('lib/stages.js in this repository: lib/profile.js with its lazy require, and every direct test', () => {
   const root = path.join(__dirname, '..');
   const out = run(root, '--affected', 'lib/stages.js');
-  assert.match(out, /\n {2}lib\/profile\.js:[\d,]*209\b/);
+  assert.match(out, /\n {2}lib\/profile\.js:[\d,]*197\b/);
   const tests = out.split('\ntests:\n')[1].split('\n').filter((l) => /^ {2}tests\//.test(l));
   assert.ok(tests.length >= 17, 'listed ' + tests.length + ' test files');
   assert.doesNotMatch(out, /more, not listed/);
