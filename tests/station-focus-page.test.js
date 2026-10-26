@@ -44,6 +44,27 @@ test('plan: the header, then every task of the plan once, in its group, with its
     assert.doesNotMatch(html, /data-block="(nav|mast|dash)/);
 });
 
+test('plan: every row folds its task\'s own text from the plan, closed, with its line range', () => {
+    const tasks = claimed(tmp('fankeel-focus-page-'));
+    const html = F.page({ sessions: [ROW] }, { [SID]: { tasks, gate: null } }, { id: SID, tab: 'plan' });
+    assert.equal(count(html, /<details class="tb fp-tb" data-gv="task-\d+" data-block="task-body-\d+">/g), TASKS);
+    const first = plantasks.parseTasks(fs.readFileSync(REAL, 'utf8'))[0];
+    const m = new RegExp('data-block="task-body-' + first.n + '">[\\s\\S]*?<pre class="tb-pre">([\\s\\S]*?)</pre>').exec(html);
+    assert.ok(m, 'Task ' + first.n + ' has a fold');
+    const text = m[1].replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"')
+        .replace(/&#39;|&#x27;/g, '\'').replace(/&amp;/g, '&');
+    assert.equal(text, first.body, 'the fold holds the plan text, whole');
+    const lines = first.body.split('\n').length;
+    assert.ok(html.includes('第 ' + first.line + '–' + (first.line + lines - 1) + ' 行 · ' + lines + ' 行'), 'the line range');
+});
+
+test('keepOpen holds a task fold open, or closed, through the repaint', () => {
+    const fold = '<details class="tb fp-tb" data-gv="task-3" data-block="task-body-3"><summary>x</summary></details>';
+    assert.match(F.keepOpen(fold, { 'task-3': true }), /data-gv="task-3" open data-block/);
+    assert.doesNotMatch(F.keepOpen(fold.replace('data-gv="task-3"', 'data-gv="task-3" open'), { 'task-3': false }), / open/);
+    assert.equal(F.keepOpen(fold, {}), fold, 'a fold nobody touched is left as drawn');
+});
+
 test('gate: the question and its options come first, the recommended one marked, the report under them', () => {
     const g = { stage: 'survey', path: '.fankeel/build/task-20261021T100000/survey.md', text: 'what is here\n',
         gate: { questions: [{ header: 'Survey', question: 'Go on to design?', multiSelect: false,

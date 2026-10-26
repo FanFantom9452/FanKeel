@@ -31,6 +31,8 @@
         'focus.groups': '<b>{n}</b> groups, in order',
         'focus.edges': '<b>{n}</b> dependencies',
         'focus.done': '<b>{n}</b> done',
+        'focus.taskBody': 'Plan text',
+        'focus.taskLines': 'lines {a}–{b} · {n} lines',
         'focus.fixes': '<b>{n}</b> fixes',
         'focus.alone': '1 alone',
         'focus.parallel': '{n} in parallel',
@@ -98,6 +100,17 @@
             + (t.fixes ? '<span class="fp-fix">' + loc('focus.fixN', '修 {n} 次', { n: t.fixes }) + '</span>' : '')
             + '<code class="fp-range">' + (range ? esc(range) : loc('focus.noRange', '沒有 commit 範圍')) + '</code>';
     }
+    // The task's own text from the plan, folded under its row: the plan file
+    // is long and the row carries only its title and files. data-gv lets
+    // keepOpen hold it open through the 5 s repaint.
+    function fpBody(t) {
+        if (!t.body) return '';
+        var n = String(t.body).split('\n').length;
+        return '<details class="tb fp-tb" data-gv="task-' + t.n + '" data-block="task-body-' + t.n + '">'
+            + '<summary>' + loc('focus.taskBody', '展開 plan 全文')
+            + '<small>' + loc('focus.taskLines', '第 {a}–{b} 行 · {n} 行', { a: t.line, b: t.line + n - 1, n: n }) + '</small></summary>'
+            + '<pre class="tb-pre">' + esc(t.body) + '</pre></details>';
+    }
     function fpRow(t) {
         var kind = { files: loc('focus.kindFiles', '同改一個檔'), read: loc('focus.kindRead', '一個讀、一個改'),
             interface: loc('focus.kindIface', '用到對方產出的介面'), undeclared: loc('focus.kindUndeclared', '有一方沒宣告檔案') };
@@ -111,7 +124,7 @@
                 return '<span title="' + esc(loc('focus.waitTip', 'Task {n}：{k}', { n: w.n, k: kind[w.kind] || w.kind }) + (w.file ? ' ' + w.file : '')) + '">' + w.n + '</span>';
             }).join('') : '<i>—</i>') + '</span>'
             + '<span class="fp-d">' + fpDispatch(t) + '</span>'
-            + '<span class="fp-s">' + fpStatus(t) + '</span></li>';
+            + '<span class="fp-s">' + fpStatus(t) + '</span>' + fpBody(t) + '</li>';
     }
     // The plan for review: the counts and a chip per group, then every task
     // as a row under its group, in the order build sends them.
@@ -241,11 +254,11 @@
     }
     // A <details> on the focus page the reader opened stays open through the
     // 5 s repaint, which rewrites the whole page (station-37). Only the
-    // report's folds carry a data-gv key; the rest are short.
+    // report's folds and each plan task's text carry a data-gv key; the rest are short.
     // A fold the reader closed stays closed even when the page draws it open (a
     // report with a diagram): `open[k] === false` takes the open off.
     function keepOpen(html, open) {
-        return String(html).replace(/(<details class="gv-more" data-gv="([a-z]+)")( open)?/g, function (m, base, k, on) {
+        return String(html).replace(/(<details class="[^"]*" data-gv="([a-z0-9-]+)")( open)?/g, function (m, base, k, on) {
             return k in open ? base + (open[k] ? ' open' : '') : m;
         });
     }
