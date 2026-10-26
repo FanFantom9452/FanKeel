@@ -41,7 +41,7 @@ test('station.js no longer draws the focus page, and focusBoot paints FK_FOCUS',
     }
     assert.doesNotMatch(src, /FOCUS_ARROW/);
     assert.match(src, /FO\.keepOpen\(FO\.page\(S, w\.STATION_DETAIL, F\), open\)/);
-    assert.match(src, /FO\.repaint\(last, html, doc\.activeElement\)/);
+    assert.match(src, /FO\.repaint\(last, html, doc\.activeElement(, board)?\)/);
     assert.match(src, /^    \/\/ ---- the focus page: /m, 'the section marker stays');
 });
 

@@ -218,10 +218,6 @@
         var gate = focus.tab === 'gate';
         // Background shells sit under the header (design §5), drawn by shellsHtml (defined in assets/station/station.js).
         var shells = x.shells && x.shells.length ? shellsHtml(x.shells, Date.now()) : '';
-        // The redesigned gate page (station redesign §5) is assets/station/gate-frame.js:
-        // loaded, it draws the whole tab — its own head with no tabs, the report
-        // in the main column, the question in the side column — around the
-        // report drawn in this module (only the pieces behind gateTabHtml stay in station.js).
         // The board pane fills its cache once per session, board and gate: its
         // load asks for a repaint even when the read fails, so loading on every
         // draw would loop on a 404 (assets/station/board-edit.js). A new gate
@@ -232,6 +228,10 @@
             loadedBoards[once] = true;
             w.FK_BOARD.load(s, st.nonce, function () { if (w.FK_FOCUS_REDRAW) w.FK_FOCUS_REDRAW(); });
         }
+        // The redesigned gate page (station redesign §5) is assets/station/gate-frame.js:
+        // loaded, it draws the whole tab — its own head with no tabs, the report
+        // in the main column, the question in the side column — around the
+        // report drawn in this module (only the pieces behind gateTabHtml stay in station.js).
         if (gate && w.FK_GATE && typeof w.FK_GATE.frame === 'function') {
             return w.FK_GATE.frame({ session: s, gate: x.gate, tasks: x.tasks || [], reportHtml: focusReportHtml(s, x.gate, x.tasks || []), shellsHtml: shells,
                 answer: focusAnswerOf(st, s) });
