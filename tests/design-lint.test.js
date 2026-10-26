@@ -43,6 +43,37 @@ test('a page drawn to the guide is clean', () => {
     assert.deepEqual(lint(CLEAN, EXCLUDE), []);
 });
 
+const rulesOf = (css, body) => lint('<style>' + css + '</style>' + (body || ''), EXCLUDE).map((h) => h.rule);
+
+test('small-text fails under 12px and passes at 12px', () => {
+    assert.ok(rulesOf('p{font-size:11px}').includes('small-text'));
+    assert.ok(!rulesOf('p{font-size:12px}').includes('small-text'));
+});
+
+test('pure-bw fails on #fff and #000 and passes on #fafafa', () => {
+    assert.ok(rulesOf('p{color:#000}').includes('pure-bw'));
+    assert.ok(rulesOf('p{background:#fff}').includes('pure-bw'));
+    assert.ok(!rulesOf('p{color:#fafafa;background:#111}').includes('pure-bw'));
+});
+
+test('transition-all fails on transition:all and passes on a named property', () => {
+    assert.ok(rulesOf('a{transition:all .2s}').includes('transition-all'));
+    assert.ok(!rulesOf('a{transition:transform .2s}').includes('transition-all'));
+});
+
+test('filler fails on visible placeholder copy and passes when the word is only in a class or style', () => {
+    assert.ok(rulesOf('', '<p>Welcome to Acme</p>').includes('filler'));
+    assert.ok(rulesOf('', '<p>Lorem ipsum dolor</p>').includes('filler'));
+    assert.ok(!rulesOf('.acme{color:red}', '<p class="acme" title="acme">Release notes</p>').includes('filler'));
+});
+
+test('one element with a hover or pseudo-element on the accent is clean; two elements still fail', () => {
+    const one = '<style>:root{--accent:#c2410c}.btn{color:var(--accent)}.btn:hover{color:var(--accent-600)}.btn::before{border-color:var(--accent)}</style>';
+    assert.deepEqual(lint(one, EXCLUDE).map((h) => h.rule), []);
+    const two = '<style>:root{--accent:#c2410c}.a{color:var(--accent)}.b:hover{color:var(--accent-600)}</style>';
+    assert.deepEqual(lint(two, EXCLUDE).map((h) => h.rule), ['accent-overuse', 'accent-overuse']);
+});
+
 test('the accent token on two elements fails, on one it passes', () => {
     const one = '<style>:root{--accent:#c2410c}.a{color:var(--accent)}</style>';
     const two = '<style>:root{--accent:#c2410c}.a{color:var(--accent)}.b{border-color:var(--accent-600)}</style>';

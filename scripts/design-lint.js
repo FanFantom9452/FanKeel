@@ -110,7 +110,9 @@ const RULES = {
     },
     'accent-overuse': (rs) => {
         const users = rs.filter((r) => r.decls.some(([p, v]) => !p.startsWith('--') && /var\(--accent/.test(v))).map((r) => r.sel);
-        return users.length > 1 ? users : [];
+        // :hover, ::before and :not(...) restate the same element, so they are not a second use
+        const bases = new Set(users.flatMap((sel) => sel.split(',').map((x) => x.replace(/::?[\w-]+(\([^)]*\))?/g, '').trim())));
+        return bases.size > 1 ? [...bases] : [];
     },
     emoji: (_rs, html) => text(html).match(/\p{Extended_Pictographic}/gu) || [],
     filler: (_rs, html) => text(html).match(/\blorem ipsum\b|\bacme\b|\bjohn doe\b/gi) || [],
