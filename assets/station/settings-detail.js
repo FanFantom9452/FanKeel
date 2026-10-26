@@ -120,7 +120,7 @@
 
     // ---- the table: quick questions and the step table, in order ----
     function fromQuick(q) {
-        return { id: q.id, kind: 'one', title: q.title || q.r || q.id, why: q.why || '', cond: q.cond || '',
+        return { id: q.id, kind: 'one', title: q.title || q.r || q.id, why: q.why || '', cond: q.cond || '', slider: Boolean(q.slider),
             field: q.id === 'lang' ? { label: loc('sd.langField', '語言'), ph: loc('sd.langPh', '日本語') } : null,
             opts: (q.opts || []).map(function (a) {
                 var wr = a.w || {};
@@ -436,6 +436,7 @@
             + (s.adv ? '<span class="v9-adv">' + esc(s.adv) + '</span>' : '') + help(s.id, loc('sd.why', '為什麼問這題'), esc(s.why)) + '</div>'
             + (s.warn ? '<p class="v9-warnline" role="note">' + WARN + '<span>' + esc(s.warn) + '</span></p>' : '');
         if (s.kind === 'table') h += agentsHtml(s);
+        else if (s.slider) h += setp().sliderHtml(s.opts, cv, 'v9r-' + s.id, 'v9q-' + s.id);
         else {
             h += '<div class="v9-opts" role="' + (s.kind === 'multi' ? 'group' : 'radiogroup') + '" aria-labelledby="v9q-' + esc(s.id) + '">'
                 + s.opts.map(function (a, n) { return optHtml(s, a, n, cv, nv, dv, nr, P); }).join('') + '</div>' + fieldsHtml(s, cv, nv);
@@ -624,6 +625,14 @@
         if (!cx || st.at === 'final' || !inPage(x)) return;
         var mk = x.getAttribute('data-mk');
         if (mk) { if (e.type === 'change') { st.mck[mk] = !!x.checked; redraw(); } return; }
+        if (x.getAttribute('data-slide') !== null) {
+            var sl = cx.byId[st.at], stop = setp().slideSync(x, sl.opts);
+            if (!stop) return;
+            st.ans[sl.id] = stop.o;
+            st.wrote = 0; st.err = '';
+            if (e.type === 'change') { redraw(); focus('#v9r-' + sl.id); }
+            return;
+        }
         var k = x.getAttribute('data-in');
         if (!k) return;
         var s = cx.byId[st.at], f = x.closest('[data-field]');

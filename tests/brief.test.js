@@ -506,6 +506,19 @@ test('a build brain may dispatch a fixer and an implementer, a verify brain a ve
   assert.doesNotMatch(survey, /fankeel-fixer|fankeel-verifier|fankeel-render-reviewer|implementer/);
 });
 
+test('the dispatch line says at most N in one response, or any number when dispatch.inflight is unlimited', () => {
+  const line = (inflight) => {
+    const root = tmp();
+    seedProfile(root, { 'stage.agents': ['build'], 'dispatch.inflight': inflight });
+    seed(root, { stage: 'build', started: '2026-09-19T09:30:12.345Z' });
+    return contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' }))).match(/You cannot run Workflow\. Dispatch[^\n]*/)[0];
+  };
+  assert.match(line(20), /with the Agent tool, at most 20 in one response \(profile `dispatch\.inflight`\)/);
+  const open = line('unlimited');
+  assert.match(open, /with the Agent tool, any number in one response \(profile/);
+  assert.doesNotMatch(open, /at most|Infinity/);
+});
+
 test('a build brain is told to ask for its commits through a commit file, a verify brain to send an implementer for a mutation', () => {
   const brief = (stage) => {
     const root = tmp();

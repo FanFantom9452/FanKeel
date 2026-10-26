@@ -370,3 +370,73 @@ test('settings-page.css is the quick mockup\'s own rules, no <style> tags', () =
     assert.doesNotMatch(css, /<\/?style/);
     for (const rule of ['.qk-src.is-rec{', '.qk-recs{', '.qk-mc{', '.qk-extra{', '.qk-proj{']) assert.ok(css.includes(rule), rule);
 });
+
+// A stand-in range input: value, the question around it, the readout box beside it.
+function slider(value) {
+    const readout = { textContent: '' }, effect = { textContent: '' }, attrs = {};
+    const box = { querySelector: (s) => (s === 'output' ? readout : effect) };
+    const input = { value, getAttribute: (k) => (k === 'data-slide' ? '' : null), setAttribute: (k, v) => { attrs[k] = v; },
+        closest: (s) => (s === '[data-q]' ? { getAttribute: () => 'inflight' } : s === '[data-slider]' ? box : s === '[data-sq]' ? {} : null) };
+    return { input, readout, attrs };
+}
+
+test('同時派幾個 is one range input: 21 stops 1..20 then 無上限, marks 最低 4 and 建議 8, the stop beside it', () => {
+    const b = boot({ serve: false });
+    b.html();
+    b.Q.state().at = 'parallel';
+    const h = b.html();
+    assert.match(h, /<input type="range" class="v9-range" id="qkr-inflight" data-slide min="1" max="21" step="1" value="8" aria-labelledby="qkq-inflight" aria-valuetext="8">/);
+    assert.match(h, /<output class="v9-sval" for="qkr-inflight">8<\/output>/);
+    assert.match(h, /<span class="v9-mk m4">最低 4<\/span><span class="v9-mk m8">建議 8<\/span><span class="v9-mk mu">無上限<\/span>/);
+    assert.doesNotMatch(h, /data-o="12"/, 'no radio buttons for it any more');
+    const stops = b.Q.questions().find((q) => q.id === 'inflight').opts;
+    assert.deepEqual([...stops.map((a) => a.o)], [...Array.from({ length: 20 }, (_, i) => String(i + 1)), 'unlimited']);
+    assert.deepEqual(JSON.parse(JSON.stringify(stops[19].w)), { 'dispatch.inflight': '20' });
+    assert.deepEqual(JSON.parse(JSON.stringify(stops[20].w)), { 'dispatch.inflight': 'unlimited' });
+    b.Q.state().ans.inflight = 'unlimited';
+    assert.match(b.html(), /id="qkr-inflight" data-slide min="1" max="21" step="1" value="21" aria-labelledby="qkq-inflight" aria-valuetext="無上限">/);
+    assert.match(b.html(), /<output class="v9-sval" for="qkr-inflight">無上限<\/output>/);
+});
+
+test('moving the range sets the answer without a redraw; the last stop is unlimited, one past it is ignored', () => {
+    const b = boot({ serve: false });
+    b.html();
+    const before = b.draws();
+    const s20 = slider('20');
+    b.Q.onInput({ target: s20.input });
+    assert.equal(b.Q.state().ans.inflight, '20');
+    assert.equal(s20.readout.textContent, '20');
+    assert.equal(s20.attrs['aria-valuetext'], '20');
+    const s21 = slider('21');
+    b.Q.onInput({ target: s21.input });
+    assert.equal(b.Q.state().ans.inflight, 'unlimited');
+    assert.equal(s21.readout.textContent, '無上限');
+    b.Q.onInput({ target: slider('22').input });
+    b.Q.onInput({ target: slider('0').input });
+    assert.equal(b.Q.state().ans.inflight, 'unlimited', 'a stop past either end is not an answer');
+    assert.equal(b.draws(), before, 'a redraw would drop the drag');
+    b.Q.onChange({ target: slider('3').input });
+    assert.equal(b.Q.state().ans.inflight, '3');
+    assert.equal(b.draws(), before + 1, 'letting go redraws the rail and the strip');
+});
+
+test('unlimited goes to the write screen as dispatch.inflight: unlimited', () => {
+    const b = boot({ serve: false });
+    b.html();
+    b.Q.onInput({ target: slider('21').input });
+    b.Q.state().at = 'final';
+    assert.match(b.html(), /<code>dispatch\.inflight: unlimited<\/code>/);
+});
+
+test('已寫入 N 項 is a compact row under the summary: a 16px check, never the unsized svg', async () => {
+    const b = boot();
+    b.html();
+    click(b.Q, [{ 'data-all': '' }]);
+    click(b.Q, [{ 'data-write': '' }]);
+    await tick(); await tick();
+    const h = b.html();
+    assert.match(h, /<p class="v9-fin-ok" role="status"><svg viewBox="0 0 16 16"[^>]*><path d="[^"]*"\/><\/svg><span>已寫入 \d+ 項。<\/span><\/p>/);
+    assert.ok(h.indexOf('data-fin') < h.indexOf('v9-fin-ok') && h.indexOf('v9-fin-ok') < h.indexOf('qk-extra'), 'right under the summary, above the extras');
+    const css = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'settings-detail.css'), 'utf8');
+    assert.match(css, /\.v9-fin-ok svg\{[^}]*width:16px;[^}]*height:16px/, 'without it the check fills the column');
+});

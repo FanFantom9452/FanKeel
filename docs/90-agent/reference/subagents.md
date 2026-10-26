@@ -336,10 +336,10 @@ Eight in one response is the default, not a cap (profile `dispatch.inflight`), a
 are guessing at the split rather than deciding it. A script does not guess. It
 holds the list, and it holds the join.
 
-The number is profile `dispatch.inflight`, a whole number from 1 to 16 with a
+The number is profile `dispatch.inflight`, a whole number from 1 to 20 (or `unlimited`) with a
 builtin of 8, and `hooks/dispatch-gate.js` reads it: the call past it asks the
 user. It guards API spend, the main context's residue and collisions in a shared
-checkout, not CPU. 16 is the key's maximum, by decision. Measured 2026-10-16
+checkout, not CPU. 20 is the key's maximum, by decision. Measured 2026-10-16
 on a 64-core machine: 24 readers took 167 seconds at 4 and 118 at 8, for the
 same cost. Agents that each run the whole suite are a different limit: four
 suites at once already fail a few timing tests, and eight hang unless each runs

@@ -1000,7 +1000,7 @@ default.** Past that you are guessing at the split rather than deciding it, and 
 not it had a distinct question. The test is what comes back: **if two readers
 would return the same shape of answer about different files, they are one reader
 with a list** — give it the list. Fan out on distinct questions, not on file
-count. Its range is 1 to 16.
+count. Its range is 1 to 20.
 
 **Where a plan exists, none of that is guesswork and none of it is yours.**
 `lib/plantasks.js` groups a plan's tasks and gives each group its dispatch

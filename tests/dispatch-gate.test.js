@@ -207,6 +207,18 @@ test('as a hook, the limit is the project profile dispatch.inflight; a bad value
     assert.match(run('x', 9, 9), /dispatch\.inflight \(8\)/);
 });
 
+test('with dispatch.inflight unlimited no call is asked, however many are in the response', () => {
+    const dir = tmp('fankeel-dispatch-gate-');
+    fs.mkdirSync(path.join(dir, '.fankeel'), { recursive: true });
+    fs.writeFileSync(path.join(dir, '.fankeel', 'profile.json'), JSON.stringify({ 'dispatch.inflight': 'unlimited' }));
+    const entries = Array.from({ length: 25 }, (_, i) => agentLine(i + 1));
+    const r = spawnSync(process.execPath, [HOOK], { input: JSON.stringify(payload(transcript(dir, entries), 'toolu_25')), encoding: 'utf8',
+        env: { ...process.env, CLAUDE_PROJECT_DIR: dir } });
+    assert.equal(r.status, 0);
+    assert.equal(r.stdout, '');
+    assert.equal(decideAt(payload(transcript(dir, entries), 'toolu_25'), { data: null, evidenceRoot: path.join(dir, 'none'), limit: Infinity }), null);
+});
+
 test('with neither spend nor a bench report the reason says there is no figure', () => {
     const dir = tmp('fankeel-dispatch-gate-');
     const out = decide(payload(transcript(dir, five), 'toolu_5'), { data: null, evidenceRoot: path.join(dir, 'none') });

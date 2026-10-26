@@ -73,6 +73,15 @@ test('a front end, the project profile and the machine file move their answers t
     }
 });
 
+test('dispatch.inflight is recommended as itself: 17 stays 17, unlimited stays unlimited', () => {
+    for (const v of ['17', 'unlimited']) {
+        const { dir, cfg } = place();
+        assert.ok(profile.write(profile.projectFile(dir), 'dispatch.inflight', v).ok, v);
+        const r = suggestFor(dir, dir, cfg, NOW).recs.inflight;
+        assert.deepEqual({ o: r.o, src: r.src, now: r.v.now }, { o: v, src: 'rec', now: Number.isNaN(Number(v)) ? v : Number(v) }, v);
+    }
+});
+
 test('a front end with no mockup setting preselects 有，每次先問我 from the author', () => {
     const { dir, cfg } = place();
     fs.writeFileSync(path.join(dir, 'app.css'), 'p{}\n');

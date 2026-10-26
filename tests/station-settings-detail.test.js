@@ -264,6 +264,32 @@ test('arrow keys move the radio choice with wrap-around, and Escape closes an op
     assert.equal(D.state().tip, '');
 });
 
+test('一次派幾個 is the same slider here: 21 stops, input moves the answer, change redraws, past either end is ignored', () => {
+    let draws = 0;
+    const { D, html } = boot('#/settings/detail/inflight', false, { redraw: () => { draws++; } });
+    const h = html();
+    assert.match(h, /<input type="range" class="v9-range" id="v9r-inflight" data-slide min="1" max="21" step="1" value="8" aria-labelledby="v9q-inflight" aria-valuetext="8">/);
+    assert.doesNotMatch(h, /role="radio"/);
+    const move = (value, type) => {
+        const readout = { textContent: '' };
+        const box = { querySelector: (s) => (s === 'output' ? readout : { textContent: '' }) };
+        const el = { value, getAttribute: (k) => (k === 'data-slide' ? '' : null), setAttribute() {},
+            closest: (s) => (s === '[data-block="v9-page"]' ? {} : s === '[data-slider]' ? box : null) };
+        D.onInput({ type, target: el });
+        return readout.textContent;
+    };
+    assert.equal(move('21', 'input'), '無上限');
+    assert.equal(D.state().ans.inflight, 'unlimited');
+    assert.equal(draws, 0, 'dragging does not redraw');
+    move('22', 'input');
+    move('0', 'input');
+    assert.equal(D.state().ans.inflight, 'unlimited');
+    assert.equal(move('20', 'change'), '20');
+    assert.equal(D.state().ans.inflight, '20');
+    assert.equal(draws, 1);
+    assert.match(html(), /id="v9r-inflight" data-slide min="1" max="21" step="1" value="20"/);
+});
+
 test('every Chinese literal has its English', () => {
     const { D } = boot();
     assert.deepEqual(stringsLeft('settings-detail.js', plain(D.EN)), []);

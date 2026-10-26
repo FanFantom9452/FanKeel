@@ -448,12 +448,22 @@ test('station.link is false or a stage list in canonical order, every hand-off s
     assert.equal(Object.prototype.hasOwnProperty.call(profile.WIZARD_KEYS, 'station.link'), false);
 });
 
-test('dispatch.inflight is a whole number from 1 to 16, 8 by default', () => {
-    for (const ok of [1, '6', 16]) assert.deepEqual(profile.parseValue('dispatch.inflight', ok), { value: Number(ok) }, String(ok));
-    for (const bad of ['0', '17', 'x', '1.5']) assert.match(profile.parseValue('dispatch.inflight', bad).error, /dispatch.inflight is a whole number from 1 to 16/, bad);
+test('dispatch.inflight is a whole number from 1 to 20 or unlimited, 8 by default', () => {
+    for (const ok of [1, '6', 20]) assert.deepEqual(profile.parseValue('dispatch.inflight', ok), { value: Number(ok) }, String(ok));
+    assert.deepEqual(profile.parseValue('dispatch.inflight', 'unlimited'), { value: 'unlimited' });
+    for (const bad of ['0', '21', 'x', '1.5', 'Unlimited']) assert.match(profile.parseValue('dispatch.inflight', bad).error, /dispatch.inflight is a whole number from 1 to 20, or unlimited/, bad);
     assert.equal(profile.inflightOf({}), 8);
     assert.equal(profile.inflightOf({ 'dispatch.inflight': 4 }), 4);
+    assert.equal(profile.inflightOf({ 'dispatch.inflight': 'unlimited' }), Infinity);
     assert.equal(profile.read(dir(), null).values['dispatch.inflight'], 8);
+    assert.ok(profile.WIZARD_KEYS['dispatch.inflight'], 'the wizard still gets the key, as a slider');
+});
+
+test('a project profile dispatch.inflight of unlimited reads as unlimited', () => {
+    const d = dir();
+    fs.mkdirSync(path.join(d, '.fankeel'), { recursive: true });
+    fs.writeFileSync(path.join(d, '.fankeel', 'profile.json'), JSON.stringify({ 'dispatch.inflight': 'unlimited' }));
+    assert.equal(profile.read(d, null).values['dispatch.inflight'], 'unlimited');
 });
 
 test('a project profile dispatch.inflight, string or number, reads as the number', () => {
@@ -494,7 +504,7 @@ test('the station wizard gets every key that offers a choice: not the prompts, n
     assert.ok(!wizard.includes('security.local'));
     // `prose.style` offers a choice but is added after the literal, off the
     // wizard: `task.js profile set` prints what its rules cost, and the wizard cannot.
-    assert.deepEqual(wizard, Object.keys(profile.KEYS).filter((k) => profile.KEYS[k].values.length > 0 && k !== 'prose.style'));
+    assert.deepEqual(wizard, Object.keys(profile.KEYS).filter((k) => (profile.KEYS[k].values.length > 0 || profile.KEYS[k].slider) && k !== 'prose.style'));
 });
 
 // docs/plans/2026-09-24-todo-clear.md, "起草時查到": the printed N is

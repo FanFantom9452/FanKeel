@@ -15,7 +15,7 @@
     var EN = {
         'sq.bLand': 'How changes land', 'sq.bParallel': 'How much runs at once', 'sq.bCtx': 'Main thread and reports',
         'sq.bVerify': 'Verification and cost', 'sq.bAway': 'Away from the computer',
-        'sq.riskPush': 'pushes to the remote', 'sq.riskLoad': 'API usage, file clashes', 'sq.cost': 'costs more',
+        'sq.riskPush': 'pushes to the remote', 'sq.cost': 'costs more',
         'sq.mainR': 'How changes reach main', 'sq.mainT': 'How do your changes reach main?',
         'sq.mainY': 'Nothing warns you when this is wrong, so it comes first. The three branch answers open a worktree for each task.',
         'sq.mainSkip': 'A PR always pushes and a kept branch never does, so push is not asked.',
@@ -44,10 +44,9 @@
         'sq.inflY': 'More agents than this from one reply and it stops to ask. It guards API usage, the main context and file clashes in a shared checkout, not the CPU.',
         'sq.inflTip': 'dispatch.inflight is {now} in .fankeel/profile.json',
         'sq.inflFrom': 'Source: dispatch.inflight in .fankeel/profile.json (8 when unset)',
-        'sq.infl4': '4', 'sq.infl4E': 'When the API often throttles or a shared checkout often clashes',
-        'sq.infl6': '6', 'sq.infl6E': 'A little more careful than the default',
-        'sq.infl8': '8', 'sq.infl8E': 'Enough for most work',
-        'sq.infl12': '12', 'sq.infl12E': 'Large parallel work; asks only past 12',
+        'sq.inflE': 'At most {n} in one reply; past that it asks',
+        'sq.inflNo': 'No limit', 'sq.inflNoE': 'Never asks, however many; watch API usage and file clashes yourself',
+        'sq.inflMin': 'Minimum', 'sq.inflRec': 'Suggested',
         'sq.ctxR': 'Stages handed off', 'sq.ctxT': 'On a long task, should the main thread keep the detail?',
         'sq.ctxY': 'A handed-off stage runs in a clean context; the main thread receives only paths and gates.',
         'sq.ctxTip': 'Most of the {n} recent tasks that recorded their settings ran this way',
@@ -160,6 +159,17 @@
         if (x) for (var k in x) if (has(x, k)) r[k] = x[k];
         return r;
     }
+    // dispatch.inflight's slider: a stop for each of 1..20, then one past 20 for no limit. Each
+    // stop is an answer like any other, so the plan, the rail and the recommendation need nothing new.
+    var INFL_MAX = 20;
+    function stops() {
+        var out = [];
+        for (var n = 1; n <= INFL_MAX; n++) {
+            out.push(O(String(n), String(n), loc('sq.inflE', '一次最多 {n} 個；超過就先問', { n: n }), null, { 'dispatch.inflight': String(n) }));
+        }
+        out.push(O('unlimited', loc('sq.inflNo', '無上限'), loc('sq.inflNoE', '再多也不問；API 用量與檔案衝突要自己留意'), null, { 'dispatch.inflight': 'unlimited' }));
+        return out;
+    }
     // The ten quick questions in screen order: id, b (block), cond ('push' | 'front'), r (short
     // name), title, why, tip (evidence with {vars} from the recommendation's v), from, skip, opts.
     function questions() {
@@ -191,11 +201,7 @@
             { id: 'inflight', b: 'parallel', r: loc('sq.inflR', '一次派幾個'), title: loc('sq.inflT', '一次最多同時派幾個 agent？'),
                 why: loc('sq.inflY', '同一個回應派出的 Agent 超過這個數就先停下來問你。擋的是 API 用量、主對話 context 和共用 checkout 的檔案衝突，不是 CPU。'),
                 tip: loc('sq.inflTip', '.fankeel/profile.json 的 dispatch.inflight 是 {now}'),
-                from: loc('sq.inflFrom', '來源：.fankeel/profile.json 的 dispatch.inflight（不設時是 8）'), opts: [
-                    O('4', loc('sq.infl4', '4 個'), loc('sq.infl4E', 'API 常限流，或共用 checkout 常撞檔時'), null, { 'dispatch.inflight': '4' }),
-                    O('6', loc('sq.infl6', '6 個'), loc('sq.infl6E', '比預設保守一點'), null, { 'dispatch.inflight': '6' }),
-                    O('8', loc('sq.infl8', '8 個'), loc('sq.infl8E', '一般情況夠用'), null, { 'dispatch.inflight': '8' }),
-                    O('12', loc('sq.infl12', '12 個'), loc('sq.infl12E', '大型平行任務，超過 12 個才問'), null, { 'dispatch.inflight': '12' }, { risk: loc('sq.riskLoad', 'API 用量、檔案衝突') })] },
+                from: loc('sq.inflFrom', '來源：.fankeel/profile.json 的 dispatch.inflight（不設時是 8）'), slider: true, opts: stops() },
             { id: 'ctx', b: 'ctx', r: loc('sq.ctxR', '交出去幾站'), title: loc('sq.ctxT', '長任務時，主對話要留著細節嗎？'),
                 why: loc('sq.ctxY', '交出去的站在乾淨的 context 裡跑，主對話只收路徑和 gate。'),
                 tip: loc('sq.ctxTip', '最近 {n} 個記下設定的任務多半這樣跑'),
@@ -426,6 +432,29 @@
                 + '</div>';
         }).join('') + '</div>';
     }
+    // A slider question's answers as one native range (arrow keys, Home and End come with it):
+    // opts the stops, sel the answer on, id the input's id, lid the title it is labelled by. The
+    // stop's own label and effect sit beside it; marks name 1, 4 (最低), 8 (建議) and the last.
+    function sliderHtml(opts, sel, id, lid) {
+        var at = -1, ix8 = 0;
+        opts.forEach(function (a, i) { if (a.o === sel) at = i; if (a.o === '8') ix8 = i; });
+        var a = opts[at < 0 ? ix8 : at], name = a.t || a.label;
+        return '<div class="v9-slide" data-slider><p class="v9-sv"><output class="v9-sval" for="' + id + '">' + esc(name) + '</output><span class="v9-sef">' + esc(a.e || a.effect) + '</span></p>'
+            + '<input type="range" class="v9-range" id="' + id + '" data-slide min="1" max="' + opts.length + '" step="1" value="' + ((at < 0 ? ix8 : at) + 1)
+            + '" aria-labelledby="' + lid + '" aria-valuetext="' + esc(name) + '">'
+            + '<div class="v9-marks"><span class="v9-mk m1">1</span><span class="v9-mk m4">' + esc(loc('sq.inflMin', '最低')) + ' 4</span><span class="v9-mk m8">'
+            + esc(loc('sq.inflRec', '建議')) + ' 8</span><span class="v9-mk mu">' + esc(opts[opts.length - 1].t || opts[opts.length - 1].label) + '</span></div></div>';
+    }
+    // Move the readout with the thumb, without a redraw (that would drop the drag); the stop it is on.
+    function slideSync(t, opts) {
+        var a = opts[Number(t.value) - 1], box = t.closest('[data-slider]');
+        if (!a || !box) return null;
+        var name = a.t || a.label, o = box.querySelector('output'), e = box.querySelector('.v9-sef');
+        t.setAttribute('aria-valuetext', name);
+        if (o) o.textContent = name;
+        if (e) e.textContent = a.e || a.effect;
+        return a;
+    }
     function srcHtml(q, r) {
         var isRec = r.src === 'rec', id = 'qks-' + q.id, b;
         if (!isRec) b = st.sugErr ? loc('sq.tipNone', '推薦暫時取不到，這是 fankeel 預設') : loc('sq.tipAuthor', 'fankeel 預設；沒有足夠的紀錄可以推');
@@ -442,7 +471,7 @@
         var r = rec(q), skip = q.skip && st.ans.main !== 'direct' && st.ans.main !== 'merge';
         return '<div class="qk-q" data-block="quick-q-' + q.id + '" data-q="' + q.id + '"><div class="qk-qh"><h3 class="qk-qt" id="qkq-' + q.id + '">' + esc(q.title) + '</h3>'
             + srcHtml(q, r) + helpHtml('qkh-' + q.id, esc(q.why), loc('sq.whyAsk', '為什麼問這題')) + '</div>'
-            + optHtml(q, st.ans[q.id], r.o, st.inp, 'qk') + (skip ? '<p class="qk-skip">' + esc(q.skip) + '</p>' : '') + '</div>';
+            + (q.slider ? sliderHtml(q.opts, st.ans[q.id], 'qkr-' + q.id, 'qkq-' + q.id) : optHtml(q, st.ans[q.id], r.o, st.inp, 'qk')) + (skip ? '<p class="qk-skip">' + esc(q.skip) + '</p>' : '') + '</div>';
     }
     function cardHtml(S, o) {
         if (st.ans.where !== 'away') return '';
@@ -499,6 +528,7 @@
         return '<div class="qk-screen" data-block="quick-final" data-screen="final"><div class="qk-fh"><h2 class="qk-bh" id="qkb-final" tabindex="-1">' + loc('sq.finT', '要寫入這些改動嗎？') + '</h2>'
             + helpHtml('qkh-final', loc('sq.finY', '按寫入才會動 profile.json。專案和這台機器分開寫；跟現在一樣的值不重寫。'), loc('sq.finAsk', '寫入什麼')) + '</div>'
             + '<div data-fin>' + group('p', loc('sq.gProject', '專案'), projectFile(st.dir), ch) + group('m', loc('sq.thisMachine', '這台機器'), machineFile(o), m.rows) + '</div>'
+            + (st.wrote ? '<p class="v9-fin-ok" role="status">' + CHECK + '<span>' + esc(loc('sq.wrote', '已寫入 {n} 項。', { n: st.wrote })) + '</span></p>' : '')
             + (cf ? '<div class="qk-extra"><input type="checkbox" id="qk-cf" data-cf' + (st.cf ? ' checked' : '') + '><label for="qk-cf">' + loc('sq.cfL', '另外檢查 commit 第一行的格式') + '</label>'
                 + '<button type="button" class="qk-src is-rec" data-qm aria-describedby="qks-cf" aria-expanded="false">' + loc('sq.srcRec', '依你的紀錄') + '</button>'
                 + '<span class="v9-tip qk-stip" role="tooltip" id="qks-cf"><b>' + loc('sq.cfTip', 'git 近期的 commit 第一行大多照這個格式寫') + '</b><small>'
@@ -508,7 +538,7 @@
             + '<p class="qk-more">' + loc('sq.more', '要逐項調整？') + '<a href="#/settings/detail">' + loc('sq.detail', '進入詳細設定') + '</a></p>'
             + (S && S.serve ? '' : '<p class="qk-fin-m">' + loc('sq.unserved', '這頁不是經由監控站伺服器開的，不能寫入。') + '</p>')
             + (st.err ? '<p class="qk-fin-m" role="status">' + esc(st.err) + '</p>' : '')
-            + (st.wrote ? '<p class="v9-fin-ok" role="status">' + CHECK + '<span>' + esc(loc('sq.wrote', '已寫入 {n} 項。', { n: st.wrote })) + '</span></p>' : '') + '</div>';
+            + '</div>';
     }
     function railHtml(S, qs, B) {
         var n = total(S, qs), i = ORDER.indexOf(st.at), fin = st.at === 'final';
@@ -659,8 +689,21 @@
         }
     }
     // Typing changes the state only: a redraw would take the caret out of the box.
+    function slid(t) {
+        var q = t && t.getAttribute('data-slide') !== null ? t.closest('[data-q]') : null, qq = null;
+        if (!q) return null;
+        questions().forEach(function (x) { if (x.id === q.getAttribute('data-q')) qq = x; });
+        var a = qq && slideSync(t, qq.opts);
+        if (!a) return null;
+        st.ans[qq.id] = a.o;
+        st.wrote = 0;
+        st.err = '';
+        return qq.id;
+    }
     function onInput(e) {
-        var t = inside(e && e.target), q = t && t.getAttribute('data-in') !== null ? t.closest('[data-q]') : null;
+        var t = inside(e && e.target);
+        if (slid(t)) return;
+        var q = t && t.getAttribute('data-in') !== null ? t.closest('[data-q]') : null;
         if (!q) return;
         var id = q.getAttribute('data-q'), f = t.closest('[data-field]');
         st.inp[id] = String(t.value || '');
@@ -670,6 +713,8 @@
     function onChange(e) {
         var t = inside(e && e.target);
         if (!t) return;
+        var sl = slid(t);
+        if (sl) { redraw(); focusId('qkr-' + sl); return; }
         var k = t.getAttribute('data-mk');
         if (k) { st.mk[k] = Boolean(t.checked); if (st.mc === 'yes') st.mc = ''; redraw(); return; }
         if (t.getAttribute('data-cf') !== null) { st.cf = Boolean(t.checked); st.wrote = 0; redraw(); return; }
@@ -704,7 +749,7 @@
     function state() { return st; }
     function reset() { st = fresh(null); over = {}; last = null; lastS = null; }
 
-    var api = { page: page, questions: questions, blocks: blocks, NAME: NAME, MACHINE: MACHINE, AUTHOR: AUTHOR, cur: cur, lab: lab, optHtml: optHtml, post: post,
+    var api = { page: page, questions: questions, blocks: blocks, NAME: NAME, MACHINE: MACHINE, AUTHOR: AUTHOR, cur: cur, lab: lab, optHtml: optHtml, sliderHtml: sliderHtml, slideSync: slideSync, post: post,
         onClick: onClick, onInput: onInput, onChange: onChange, onKey: onKey, state: state, reset: reset, EN: EN };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     if (w) w.FK_SETTINGS = api;
