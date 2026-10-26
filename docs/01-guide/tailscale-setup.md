@@ -46,7 +46,7 @@ Tailscale 的 Windows 安裝程式把 `tailscale.exe` 放在 `%ProgramFiles%\Tai
 
 ![手機遠端卡片：網址、QR、配對碼與已配對的手機](img/station-remote-card.png)
 
-卡片會給出網址 `https://<機器名>.<tailnet 名>.ts.net/`、一張 QR、一組 8 個字元的配對碼，以及已配對手機的清單（每支可「解除」）。圖裡的主機名、配對碼、QR 和 ntfy topic 都已遮掉。
+卡片會給出網址 `https://<機器名>.<tailnet 名>.ts.net/`、一張 QR、一組 8 個字元的配對碼，以及已配對手機的清單（每支可「解除」）。圖裡的主機名、配對碼和 QR 都已遮掉。
 
 也可以在桌面用指令對一下：
 
@@ -75,10 +75,6 @@ node <plugin>/scripts/task.js profile set gate.station 300
 ## 把它裝到主畫面
 
 在 Samsung Internet 上只會出現「新增至主螢幕」，裝起來是捷徑，不是安裝的 app。這個頁面的 manifest（網頁應用程式的描述檔）只有一個 SVG 圖示，沒有 PNG，可能就是原因，但沒有驗證過。Chrome 的選項可能不同，我們也沒測過。
-
-## 推播
-
-用 ntfy 在 gate 等你、一站做完、任務結束時推通知。這是選配，不開也能用手機看與答。設定見 [station.md](station.md) 的〈從手機看〉。
 
 ## 關掉
 

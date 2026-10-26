@@ -17,7 +17,7 @@ source_of_truth: .claude-plugin/plugin.json, hooks/mod.ts, hooks/pane.ts
 | `inject.js` | 你送出 prompt | 注入目前 task、這站的規則與報告骨架、其他 live session；`/fankeel` 時注入開場區塊；更新 badge |
 | `resume.js` | `AskUserQuestion` 被回答後 | 再送一次這站的規則——回答不是 prompt，沒有這個就沒人提醒 |
 | `stop.js` | 主 session 一輪結束時 | stage 還開著、而且沒有背景 Bash、非同步 Agent 或 `SendMessage` 在等時，擋下這次結束一次（`decision: block`）；`stop_hook_active` 表示已擋過，這個擋下就不再重複。每次結束都把回覆與背景工作記到手機聊天；手機已接上時，沒被 stage 擋下的那次結束（通常是擋過之後的下一次）會等手機訊息最久 `phone.hold` 秒（預設 1800），收到就當下一個指示擋下，這段等待不看 `stop_hook_active`；一樣以 0 結束 |
-| `gate.js` | `AskUserQuestion` 送出前 | 記下 gate 開的時間以量等待；設了 `gate.away` 且你離開時先擋下問題並提示；開了 `notify.gate` 時發一則 ntfy 通知；設了 `gate.station` 時先等監控站上的回答 |
+| `gate.js` | `AskUserQuestion` 送出前 | 記下 gate 開的時間以量等待；設了 `gate.away` 且你離開時先擋下問題並提示；設了 `gate.station` 時先等監控站上的回答 |
 
 ## 編輯與派工
 
@@ -39,7 +39,7 @@ source_of_truth: .claude-plugin/plugin.json, hooks/mod.ts, hooks/pane.ts
 | hook | 觸發 | 做什麼 |
 |---|---|---|
 | `carry.js` | session 開啟、`/clear` 或 fork 之後 | 找交接過來或留下的 task，提議接回 |
-| `leave.js` | session 結束 | 記下怎麼結束、花了多少，並重寫監控站；開了 `notify.end` 時發一則靜默的 ntfy 通知 |
+| `leave.js` | session 結束 | 記下怎麼結束、花了多少，並重寫監控站 |
 
 ## 畫在畫面上的
 
