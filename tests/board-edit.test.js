@@ -109,3 +109,39 @@ test('an edit refused on a board does not hold up the next one on it', async () 
     assert.match(fs.readFileSync(file, 'utf8'), /"label":"Gateway"/);
     assert.equal(E.readChanges(file).length, 1);
 });
+
+// A torn line (a write cut short) is not a change, but it is the user's data:
+// neither rewrite of the log may delete it.
+const TORN = '{"at":1,"kind":"edit","text":"半';
+async function tornLog() {
+    const b = board();
+    await E.editBoard(b.file, { ops: [{ op: 'set', id: 'a', f: { label: 'Gateway' } }] }, '改名 a');
+    fs.appendFileSync(E.changesFile(b.file), TORN + '\n');
+    E.markBoard(b.file, 'b', '拆？');
+    return b;
+}
+const logLines = (file) => fs.readFileSync(E.changesFile(file), 'utf8').split('\n').filter(Boolean);
+
+test('dropping a change keeps a torn line in the log verbatim and in place', async () => {
+    const { file } = await tornLog();
+    await E.dropChange(file, 0);
+    const lines = logLines(file);
+    assert.equal(lines.length, 3);
+    assert.equal(lines[1], TORN);
+    assert.equal(JSON.parse(lines[0]).dropped, true);
+    assert.equal(JSON.parse(lines[2]).kind, 'mark');
+});
+
+test('markSent keeps a torn line in the log verbatim and in place', async () => {
+    const { dir, file } = await tornLog();
+    assert.equal(E.markSent(dir), 2);
+    const lines = logLines(file);
+    assert.equal(lines.length, 3);
+    assert.equal(lines[1], TORN);
+    assert.deepEqual([JSON.parse(lines[0]).sent, JSON.parse(lines[2]).sent], [true, true]);
+});
+
+test('pendingChanges does not list a torn line', async () => {
+    const { dir } = await tornLog();
+    assert.deepEqual(E.pendingChanges(dir).map((p) => p.change.kind), ['edit', 'mark']);
+});
