@@ -885,11 +885,18 @@ line of where things stand. One session opens with
 
 進行中 (`#/` and `#/live`) is `FK_LIVE.page` (`assets/station/live-page.js`),
 all inside `data-block="live-page"`: a `data-block="live-head"` carrying the
-進行中 | 全部 switch with a count on each, then three cards, each its own
+進行中 | 全部 switch with a count on each, then three cards plus a fourth, 未登記, each its own
 `data-block` — `live-wait`, 等你回答, every session with `gateAt` set that is
 not `down`; `live-run`, 正在跑, the `live` ones; `live-stop`, 可能停了, the
 `stale` ones (`assets/station/live-page.js:72`, `if (s.gateAt && s.state !== 'down') g.wait.push(s);`).
-A session sits in one card only, the first that takes it. A row is one link
+The fourth, `live-unreg`, 未登記, lists each running session no registry
+lists, plus an ended registered session whose process still has Remote Control
+open; it is not drawn when that list is empty, its rows are not links, each
+shows the Desktop/CLI entrypoint chip, the name or the last folder of cwd, the
+cwd, idle or busy, and an age, newest first by `unreg(S)`. A row whose session
+has Remote Control attached (`bridge`) carries the mark `data-block="live-rc"`.
+A session sits in one card only, the first that takes it. A row in the first
+three cards is one link
 to the session — the glyph, the project over the task, the route as n/len,
 cost (main + agents) and the last move as an age — with a peek on hover or
 focus; two or more unnamed sessions in one card fold into one row. An empty
