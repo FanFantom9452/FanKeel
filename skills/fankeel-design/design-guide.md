@@ -1,7 +1,7 @@
 ---
 status: current
-last_verified: 2026-09-26
-source_of_truth: distilled on 2026-09-26 from taste-skill 1.0.0 (taste-skill, soft-skill, minimalist-skill), frontend-design 1.1.0, ui-ux-pro-max 2.13.0 and impeccable 4.4.0, as installed; no file in this repository is its upstream
+last_verified: 2026-10-27
+source_of_truth: distilled on 2026-09-26 from taste-skill 1.0.0 (taste-skill, soft-skill, minimalist-skill), frontend-design 1.1.0, ui-ux-pro-max 2.13.0 and impeccable 4.4.0; revised on 2026-10-27 from taste-skill 2.1.5, impeccable 4.7.1 and designer-skills with the user's picks on the rows where they disagree (docs/90-agent/plans/2026-10-27-design-catalog-design.md); no file in this repository is its upstream
 ---
 
 # fankeel design guide
@@ -9,8 +9,13 @@ source_of_truth: distilled on 2026-09-26 from taste-skill 1.0.0 (taste-skill, so
 Read by every mockup `fankeel-mockup` draws, before any design skill the
 prompt names; a named skill is more specific and wins where it disagrees,
 and the mockup says so in one line. Each rule ends with where it came from:
-[taste], [frontend-design], [ui-ux-pro-max], [impeccable], or [all] where
-every one of them says it.
+[taste], [frontend-design], [ui-ux-pro-max], [impeccable], [designer] for
+designer-skills, or [all] where every one of them says it.
+
+The values to draw with — palettes, type pairings, app styles, directions —
+are in `catalog/include.json`, and every excluded style is in
+`catalog/exclude.json`; `scripts/design-lint.js` fails a page on the ones a
+stylesheet shows.
 
 A mockup is one HTML page on the project's own stylesheets. Where a skill
 prescribes a stack (React, Tailwind, a component package, an image
@@ -33,9 +38,11 @@ that survive into plain HTML and CSS.
 
 - Use the project's own font stack; fetch no font from a CDN, and a new face is self-hosted or not used. [taste]
 - Set a clear scale with deliberate weights; carry hierarchy with weight and colour before raw size. [frontend-design] [taste]
-- Body line-height near 1.5, and no body text under 12px. [ui-ux-pro-max] [taste]
-- Numbers that line up in columns use tabular figures or the mono face. [taste]
-- Prose runs no wider than about 65ch. [taste]
+- Body text 16px on ordinary pages and 13px on dense operate screens, line-height near 1.5; no text under 12px. [impeccable] [taste] [designer]
+- At most two families, a text face and an optional display face, plus one mono. [taste] [designer]
+- Mono is for code, ids, paths and numbers that line up in columns; never a costume for "technical". [taste] [designer]
+- Prose runs 45 to 75ch, 65ch by default; interface help text 45 to 65ch. [taste] [impeccable] [designer]
+- No small all-caps letter-spaced labels; labels and table heads are sentence case. [taste]
 - Emphasis inside a heading is the same family's weight or italic, never a second family dropped in. [taste]
 - Inter, Roboto and Arial are not a reflex default; they are fine when the project already uses them or asks for neutral. [taste]
 - Words are design material: name things by what the user controls, in plain active verbs and sentence case. [frontend-design]
@@ -45,7 +52,7 @@ that survive into plain HTML and CSS.
 
 ## Colour
 
-- A neutral ground and one accent, locked across the whole page; the station's accent is its ink. [taste]
+- Three ramps, 50 to 950: primary carries the interface (buttons, links, selection), secondary only a chart's second series and states, accent on one element per screen; the station's primary is its ink. [designer] [taste]
 - Colour carries meaning (state, a chart's series, an error), not decoration. [taste] [ui-ux-pro-max]
 - Colours are semantic tokens in CSS variables; components use the tokens, never raw hex. [ui-ux-pro-max] [taste]
 - Contrast meets WCAG AA: 4.5:1 for body text, 3:1 for large text, checked on buttons, placeholders, labels and focus rings. [ui-ux-pro-max] [taste]
@@ -54,15 +61,17 @@ that survive into plain HTML and CSS.
 - No pure `#000` or `#fff`; off-black and off-white keep depth. [taste]
 - One temperature of grey per page; warm and cool neutrals are not mixed. [taste]
 - Accents stay below full saturation; no neon and no outer glow. [taste]
-- Panels are flat by default; a shadow, where one earns its place, is diffuse and tinted to the ground. [taste]
+- Panels are flat; only floating layers (menus, dialogs, a dragged item) cast a shadow, offset, soft and tinted to the ground. [taste] [impeccable]
 
 ## Space and layout
 
 - One corner-radius scale for the page, applied everywhere; a mixed scale is a written rule or a bug. [taste]
-- Group with space and hairline rules first; a card only where elevation is real hierarchy. [taste]
-- Dense operate screens separate rows with 1px rules, not boxes. [taste]
+- Group with space and tone first; a card only where elevation is real hierarchy, at most two levels deep: a card may sit in a panel, never a card in a card, and the inner level has no shadow or full border. [taste] [designer] [impeccable]
+- Dense operate screens separate rows with 1px single-side rules; other pages draw no rules and no full boxes. [taste]
 - Layout is CSS Grid or plain flex, never percentage arithmetic on widths. [taste]
-- Content sits in a contained, centred width; nothing scrolls sideways at any width the page declares. [taste] [ui-ux-pro-max]
+- Large blocks (images, tables, dense screens) run full width; only prose is capped, by its measure. Nothing scrolls sideways at any width the page declares. [taste] [ui-ux-pro-max]
+- Text over a photo sits on a solid or gradient scrim, never a blur. [designer]
+- A sparkline appears only where real trend data feeds it. [designer] [impeccable]
 - Every multi-column block declares its narrow fallback in the same place it declares the wide one. [taste] [ui-ux-pro-max]
 - Space is reserved for anything that loads late, so nothing shifts when it arrives. [ui-ux-pro-max] [taste]
 - Every interactive element has a visible keyboard focus. [frontend-design] [ui-ux-pro-max]
@@ -76,7 +85,8 @@ that survive into plain HTML and CSS.
 
 - Every animation rests under `prefers-reduced-motion: reduce`: a loop stops, a transition becomes instant, and nothing essential depends on the motion. [taste] [frontend-design] [ui-ux-pro-max]
 - Motion is motivated: it gives feedback, shows a state change, draws the eye in order, or it is cut. [taste] [ui-ux-pro-max] [frontend-design]
-- Animate `transform` and `opacity` only; never width, height, top or left. [taste] [ui-ux-pro-max]
+- Animate `transform` and `opacity`, and — where it runs smoothly — `filter: blur`, `clip-path`, `mask` and shadow; never width, height, top or left. [impeccable] [taste]
+- Content that arrives may fade in; a list never staggers in, and blocks do not each fade and rise. [designer] [taste] [impeccable]
 - UI transitions are short and eased (around 150 to 250ms, ease-out or a custom curve), and an exit is quicker than its entrance. [ui-ux-pro-max]
 - Feedback is never an instant 0ms jump, and never the same duration for every kind of change. [ui-ux-pro-max]
 - One orchestrated moment beats scattered effects; extra motion is what makes a page read as generated. [frontend-design]
@@ -94,7 +104,7 @@ that survive into plain HTML and CSS.
 - A product preview built from styled divs pretending to be a screenshot. [taste]
 - Placeholder names and filler (Acme, John Doe, lorem ipsum) or filler verbs (elevate, seamless, unleash). [taste]
 - Precise-looking numbers that no data supplied. [taste]
-- Grey text on grey ground, or body text under 12px. [ui-ux-pro-max]
+- Grey text on grey ground, or any text under 12px. [ui-ux-pro-max]
 - A removed focus ring, or an affordance that only hover reveals. [ui-ux-pro-max]
 - Flat and skeuomorphic styles mixed at random, or two design systems on one page. [ui-ux-pro-max] [taste]
 - Gradient text on large headings, or a custom cursor. [taste]

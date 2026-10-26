@@ -29,3 +29,20 @@ test('the mockup agent reads the guide first, and the design skill takes a list 
     assert.match(design, /`design\.mockup: auto`/);
     assert.match(design, /`design\.skill` is a list/);
 });
+
+test('the guide carries the 2026-10-27 picks, and the mockup agent uses the catalogue and the lint', () => {
+    const text = fs.readFileSync(GUIDE, 'utf8');
+    assert.match(text, /designer-skills/);
+    assert.match(text, /45 to 75ch/);
+    assert.match(text, /16px on ordinary pages and 13px on dense operate screens/);
+    assert.match(text, /accent on one element per screen/);
+    assert.match(text, /never a card in a card/);
+    assert.match(text, /catalog\/include\.json/);
+    assert.match(text, /scripts\/design-lint\.js/);
+    assert.doesNotMatch(text, /Animate `transform` and `opacity` only/);
+    assert.doesNotMatch(text, /A neutral ground and one accent, locked across the whole page/);
+    const agent = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-mockup.md'), 'utf8');
+    assert.match(agent, /catalog\/include\.json/);
+    assert.match(agent, /`check` is `review`/);
+    assert.match(agent, /scripts\/design-lint\.js/);
+});

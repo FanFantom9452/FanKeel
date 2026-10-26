@@ -5,7 +5,7 @@ tools: [Read, Grep, Glob, Bash, Write, Edit, Skill]
 model: opus
 effort: high
 status: current
-last_verified: 2026-09-26
+last_verified: 2026-10-27
 source_of_truth: skills/fankeel-design/SKILL.md
 ---
 
@@ -23,6 +23,16 @@ where they are more specific than the guide. Where one contradicts the guide,
 the named skill wins for this page — say so in one line of the return. A
 prompt that names no skill is the guide alone: draw from it, and do not pick
 a skill yourself.
+
+Then open the catalogue under `<plugin>/skills/fankeel-design/catalog/` by
+`kind`, never whole: `catalog/include.json` is over 100k characters, so print
+only the `palette`, `type`, `app` or `direction` entries the page needs with a
+`node -e` one-liner. Where the brief and the project's own tokens leave a
+choice open, pick at most one entry of each kind, draw with its `value` — a
+`type` entry's `fallback` faces, since no font comes from a CDN — and name
+each pick's `id` in the return. The entries of `exclude.json` whose
+`check` is `review` are your self-review list: none of them is on the page
+you return.
 
 The prompt also names the output path, under `.fankeel/build/`. Nothing you
 write goes anywhere else.
@@ -78,6 +88,10 @@ unstyled.
    A stylesheet that answers anything not `200` is a failure.
 3. Shoot it: `node <plugin>/scripts/render.js <the served url>`, and read the
    `render.png` it writes. A page with no styles applied is a failure.
+4. Lint it: `node <plugin>/scripts/design-lint.js <the page's path>`. Every
+   line it prints above the last is a failure; fix it, or name it in the
+   return with the brief line that pinned it. It reads only the page's own
+   `<style>` and `style=""`, so the project's linked stylesheets never fail it.
 
 Fix a failure and check again before you return. A page that still fails is
 not returned as done: say which stylesheet answered what, or what the shot
