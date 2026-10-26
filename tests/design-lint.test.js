@@ -4,9 +4,9 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const tmp = require('./tmp.js');
 const { lint, RULES } = require('../scripts/design-lint.js');
 
 const ROOT = path.join(__dirname, '..');
@@ -51,7 +51,7 @@ test('the accent token on two elements fails, on one it passes', () => {
 });
 
 test('the command exits 1 naming the rule and catalogue id, 0 on a clean page', () => {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'design-lint-'));
+    const dir = tmp('design-lint-');
     const bad = path.join(dir, 'bad.html');
     const good = path.join(dir, 'good.html');
     fs.writeFileSync(bad, '<style>b{background-clip:text}</style><b>x</b>');
@@ -62,5 +62,4 @@ test('the command exits 1 naming the rule and catalogue id, 0 on a clean page', 
     const g = spawnSync(process.execPath, [SCRIPT, good], { encoding: 'utf8' });
     assert.equal(g.status, 0, g.stdout);
     assert.match(g.stdout, /design-lint: clean/);
-    fs.rmSync(dir, { recursive: true, force: true });
 });
