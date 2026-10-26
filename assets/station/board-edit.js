@@ -17,22 +17,24 @@
         'bd.markFor': 'Mark {id} for the AI', 'bd.note': 'What the AI should look at',
         'bd.tRename': 'Rename {id}: {a} → {b}', 'bd.tMove': 'Move {id}', 'bd.tDelete': 'Delete {id}', 'bd.tAddNode': 'Add node {id}', 'bd.tAddEdge': 'Add edge {a} → {b}',
         'bd.failed': 'Not written: {t}', 'bd.offline': 'Could not reach the station; nothing was written',
+        'bd.unread': 'Could not read the board: {t}', 'bd.unreached': 'Could not reach the station to read the board',
     };
     function has(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
     function loc(key, zh, vars) {
         var I = w && w.FK_I18N, s = I && I.lang === 'en' && has(EN, key) ? EN[key] : zh;
         return vars ? String(s).replace(/\{(\w+)\}/g, function (m, k) { return has(vars, k) ? String(vars[k]) : m; }) : s;
     }
-    function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+    function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]; }); }
 
-    var CACHE = {}, ERR = {};
+    var CACHE = {}, ERR = {}, LOADERR = {};
     function key(id, name) { return id + '/' + name; }
     function boardOf(s) { return s && Array.isArray(s.boards) && s.boards.length ? s.boards[0].name : null; }
     function cached(s) { var n = boardOf(s); return n ? CACHE[key(s.id, n)] || null : null; }
     function lastLive(st) { var l = st.changes || [], i = l.length - 1; while (i >= 0 && l[i].dropped) i--; return i; }
 
     // The tool in use, the node selected (or the edge's start) on board selK,
-    // and the open editor: { k, kind: 'rename'|'mark', id, box, label, old, note }.
+    // and the open editor: { k, kind: 'rename'|'mark', id, box, label, old, rest, note };
+    // a rename edits a label's first line and keeps `rest`, the lines after it.
     var tool = 'select', sel = null, selBox = null, selK = null, from = null, EDIT = null;
 
     var TOOLS = ['select', 'add-node', 'add-edge', 'mark', 'delete', 'undo'];
@@ -133,9 +135,20 @@
         var n = boardOf(s);
         if (repaint) REPAINT = repaint;
         if (!n || !w || !w.fetch) return;
-        w.fetch('/station/board/' + encodeURIComponent(s.id) + '/' + encodeURIComponent(n) + '.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
-            if (j) { CACHE[key(s.id, n)] = j; REPAINT(); }
-        }, function () { /* the next repaint's load tries again */ });
+        var k = key(s.id, n);
+        function fail(t) { ERR[k] = LOADERR[k] = t; REPAINT(); }
+        w.fetch('/station/board/' + encodeURIComponent(s.id) + '/' + encodeURIComponent(n) + '.json').then(function (r) {
+            return r.text().then(function (t) {
+                var j = null;
+                try { j = JSON.parse(t); } catch (e) { j = null; }
+                if (!r.ok || j === null || typeof j !== 'object') { fail(loc('bd.unread', '讀不到白板：{t}', { t: why(r.status, j, t) })); return; }
+                CACHE[k] = j;
+                // a read that works clears only a read's error, not a refused edit's
+                if (ERR[k] === LOADERR[k]) delete ERR[k];
+                delete LOADERR[k];
+                REPAINT();
+            });
+        }, function () { fail(loc('bd.unreached', '連不到 station，讀不到白板')); });
     }
     function why(status, j, t) {
         if (j && Array.isArray(j.errors)) return j.errors.map(function (e) { return e.message || e.code; }).join('; ');
@@ -152,7 +165,7 @@
                 try { j = JSON.parse(t); } catch (e) { j = null; }
                 var ok = r.ok && j !== null && typeof j === 'object';
                 if (ok) {
-                    // a mark, or dropping one, leaves the drawing as it was and answers svg null
+                    // svg is null only when the board's check has an error; keep the last drawing
                     if (j.svg == null && CACHE[k]) j.svg = CACHE[k].svg;
                     CACHE[k] = j;
                     delete ERR[k];
@@ -176,7 +189,7 @@
     function svgPoint(svg, e) { var p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; return p.matrixTransform(svg.getScreenCTM().inverse()); }
     // The node's shape box in the SVG's own units, through any transform on its groups.
     function boxOf(g) {
-        var s = g.querySelector('.cr-shape') || g, b = s.getBBox(), svg = g.ownerSVGElement;
+        var s = g.querySelector('.cr-shape, .cr-frame') || g, b = s.getBBox(), svg = g.ownerSVGElement;
         var sm = svg && s.getScreenCTM ? s.getScreenCTM() : null, vm = sm && svg.getScreenCTM ? svg.getScreenCTM() : null;
         var x = b.x, y = b.y, x2 = b.x + b.width, y2 = b.y + b.height;
         if (sm && vm) {
@@ -185,6 +198,16 @@
             x2 = m.a * (b.x + b.width) + m.c * (b.y + b.height) + m.e; y2 = m.b * (b.x + b.width) + m.d * (b.y + b.height) + m.f;
         }
         return { x: Math.round(x), y: Math.round(y), w: Math.round(x2 - x), h: Math.round(y2 - y) };
+    }
+    // A node's x/y in the .board is relative to its frame (layout.js absOf) while
+    // the SVG is flat, so its frame is the smallest frame rect holding its box.
+    function frameOf(svg, b) {
+        var best = null;
+        [].forEach.call(svg && svg.querySelectorAll ? svg.querySelectorAll('[data-type="frame"]') : [], function (f) {
+            var r = boxOf(f);
+            if (r.x <= b.x && r.y <= b.y && r.x + r.w >= b.x + b.w && r.y + r.h >= b.y + b.h && (!best || r.w * r.h < best.w * best.h)) best = r;
+        });
+        return best;
     }
     function send(p, nonce, fields) { return post(p[0], p[1], nonce, fields); }
     function edit(p, nonce, t, ctx, text) { return send(p, nonce, { op: 'edit', batch: JSON.stringify(opFor(t, ctx)), text: text }); }
@@ -197,8 +220,8 @@
         var f = doc && doc.querySelector ? doc.querySelector('[data-bd-in]') : null;
         if (f && f.focus) { f.focus(); if (f.select) f.select(); }
     }
-    function open(kind, k, id, box, label) {
-        EDIT = { k: k, kind: kind, id: id, box: box, label: label, old: label, note: '' };
+    function open(kind, k, id, box, label, rest) {
+        EDIT = { k: k, kind: kind, id: id, box: box, label: label, old: label, rest: rest || [], note: '' };
         REPAINT();
         focusEditor();
     }
@@ -210,7 +233,8 @@
         if (ed.kind === 'rename') {
             var label = ed.label.trim();
             if (!label || label === ed.old) { close(); return; }
-            done = edit(p, nonce, 'rename', { id: ed.id, label: label }, loc('bd.tRename', '改名 {id}：{a} → {b}', { id: ed.id, a: ed.old, b: label }));
+            var full = [label].concat(ed.rest).join('\n');
+            done = edit(p, nonce, 'rename', { id: ed.id, label: full }, loc('bd.tRename', '改名 {id}：{a} → {b}', { id: ed.id, a: [ed.old].concat(ed.rest).join('\n'), b: full }));
         } else {
             var note = ed.note.trim();
             if (!note) { close(); return; }
@@ -269,8 +293,8 @@
             if (!g || t.closest('foreignObject')) return;
             var k = key(p[0], p[1]);
             if (!(CACHE[k] || {}).editable) return;
-            var tx = g.querySelector('text');
-            open('rename', k, g.getAttribute('data-id'), boxOf(g), tx ? String(tx.textContent || '').trim() : '');
+            var lines = [].map.call(g.querySelectorAll('text.cr-label'), function (tx) { return String(tx.textContent || '').trim(); });
+            open('rename', k, g.getAttribute('data-id'), boxOf(g), lines.length ? lines[0] : '', lines.slice(1));
         });
         root.addEventListener('input', function (e) {
             var f = e.target && e.target.closest ? e.target.closest('[data-bd-in]') : null, n = f ? f.getAttribute('data-bd-in') : null;
@@ -305,8 +329,8 @@
             if (!drag) return;
             var d = drag; drag = null;
             if (Math.abs(d.dx) < 3 && Math.abs(d.dy) < 3) { undrag(d); return; }
-            var id = d.g.getAttribute('data-id');
-            edit(d.p, nonce, 'move', { id: id, x: Math.round(d.box.x + d.dx), y: Math.round(d.box.y + d.dy), w: d.box.w, h: d.box.h }, loc('bd.tMove', '移動 {id}', { id: id }));
+            var id = d.g.getAttribute('data-id'), f = frameOf(d.svg, d.box) || { x: 0, y: 0 };
+            edit(d.p, nonce, 'move', { id: id, x: Math.round(d.box.x + d.dx - f.x), y: Math.round(d.box.y + d.dy - f.y), w: d.box.w, h: d.box.h }, loc('bd.tMove', '移動 {id}', { id: id }));
         });
     }
     var api = { paneHtml: paneHtml, changesHtml: changesHtml, opFor: opFor, load: load, post: post, listen: listen, EN: EN,

@@ -68,9 +68,10 @@ test('the gate frame draws the pane before the report and the changes inside the
     assert.ok(q > 0 && c > q && c < html.indexOf('data-block="gate-free"'), 'the changes sit in the card, above the free answer');
 });
 
-// A board with one node `a` labelled Old, its pane, and the fakes the
-// delegated listeners walk: closest() answers the selectors the module asks.
-function rig() {
+// A board with nodes (by default one node `a` labelled Old), its pane, and
+// the fakes the delegated listeners walk: closest() answers the selectors the
+// module asks, and the SVG maps client to SVG units one to one.
+function rig(o = {}) {
     const { M, win } = page(['board-edit.js']);
     const P = M['board-edit.js'];
     const sent = [];
@@ -79,23 +80,37 @@ function rig() {
         const answer = { svg: '<svg viewBox="0 0 400 300"></svg>', check: { ok: true, problems: [] }, changes: [], editable: true, root: 'v' };
         return Promise.resolve({ ok: true, status: 200, text: () => Promise.resolve(JSON.stringify(answer)) });
     };
-    P._seed(S.id, 'arch', { svg: '<svg viewBox="0 0 400 300"><g data-id="a" data-type="node"><rect class="cr-shape"/><text>Old</text></g></svg>',
-        check: { ok: true, problems: [] }, changes: [], editable: true, root: 'v' });
+    const nodes = o.nodes || [{ id: 'a', box: { x: 10, y: 20, w: 160, h: 64 }, lines: ['Old'] }];
+    const frames = (o.frames || []).map((b) => ({ querySelector: (s) => (/cr-frame/.test(s) ? { getBBox: () => ({ x: b.x, y: b.y, width: b.w, height: b.h }) } : null) }));
+    const svgText = o.svg || '<svg viewBox="0 0 400 300">' + nodes.map((n) => '<g data-id="' + n.id + '" data-type="node"><rect class="cr-shape"/>'
+        + n.lines.map((l) => '<text class="cr-label">' + l + '</text>').join('') + '</g>').join('') + '</svg>';
+    P._seed(S.id, 'arch', { svg: svgText, check: { ok: true, problems: [] }, changes: o.changes || [], editable: true, root: 'v' });
     const on = {};
     P.listen({ addEventListener: (t, f) => { on[t] = f; } }, 'N1');
     const attrs = {};
     const pane = { getAttribute: (k) => (k === 'data-bd' ? S.id + '/arch' : null) };
-    const svg = { querySelectorAll: () => [] };
-    const shape = { getBBox: () => ({ x: 10, y: 20, width: 160, height: 64 }) };
-    const g = { getAttribute: (k) => ({ 'data-id': 'a', 'data-type': 'node' })[k], setAttribute: (k, v) => { attrs[k] = v; }, removeAttribute() {},
-        querySelector: (s) => (s === '.cr-shape' ? shape : s === 'text' ? { textContent: 'Old' } : null), ownerSVGElement: null };
-    const inNode = { closest: (s) => (s === '[data-bd]' ? pane : s === '[data-type="node"]' ? g : s === 'svg' ? svg : null) };
+    const svg = { querySelectorAll: (s) => (s === '[data-type="frame"]' ? frames : []),
+        createSVGPoint: () => ({ x: 0, y: 0, matrixTransform() { return { x: this.x, y: this.y }; } }),
+        getScreenCTM: () => ({ inverse: () => ({}) }) };
+    const g = {}, inNode = {};
+    for (const n of nodes) {
+        const shape = { getBBox: () => ({ x: n.box.x, y: n.box.y, width: n.box.w, height: n.box.h }) };
+        const texts = n.lines.map((l) => ({ textContent: l }));
+        g[n.id] = { getAttribute: (k) => ({ 'data-id': n.id, 'data-type': 'node' })[k], setAttribute: (k, v) => { attrs[k] = v; }, removeAttribute() {},
+            querySelector: (s) => (/cr-shape/.test(s) ? shape : /text/.test(s) ? texts[0] : null),
+            querySelectorAll: (s) => (/text/.test(s) ? texts : []), ownerSVGElement: svg };
+        inNode[n.id] = { closest: (s) => (s === '[data-bd]' ? pane : s === '[data-type="node"]' ? g[n.id] : s === 'svg' ? svg : null) };
+    }
+    const onSvg = { closest: (s) => (s === '[data-bd]' ? pane : s === 'svg' ? svg : null) };
     const field = (name, value) => { const f = { value, getAttribute: (k) => (k === 'data-bd-in' ? name : null) };
         f.closest = (s) => (s === '[data-bd]' ? pane : s === '[data-bd-in]' ? f : s === 'foreignObject' ? {} : null); return f; };
     const toolBtn = (name) => { const b = { getAttribute: (k) => (k === 'data-bd-tool' ? name : null) };
         b.closest = (s) => (s === '[data-bd]' ? pane : s === '[data-bd-tool]' ? b : null); return b; };
+    const dropBtn = (at) => { const b = { getAttribute: (k) => (k === 'data-bd-drop' ? at : null) };
+        b.closest = (s) => (s === '[data-bd]' ? pane : s === '[data-bd-drop]' ? b : null); return b; };
     const key = (target, k, extra) => on.keydown(Object.assign({ target, key: k, preventDefault() {} }, extra));
-    return { P, on, sent, inNode, field, toolBtn, key, attrs };
+    const batch = (i = 0) => JSON.parse(sent[i].form.get('batch'));
+    return { P, win, on, sent, inNode: inNode[nodes[0].id], nodeOf: inNode, onSvg, field, toolBtn, dropBtn, key, attrs, batch };
 }
 const tick = () => new Promise((r) => setTimeout(r, 0));
 
@@ -157,4 +172,98 @@ test('a refused edit says why on the pane', async () => {
     const res = await P.post(S.id, 'arch', 'N1', { op: 'edit', batch: '{}', text: 't' });
     assert.equal(res.ok, false);
     assert.match(P.paneHtml(S), /role="alert"[^>]*>[^<]*id a already exists/);
+});
+
+test('a move of a framed node sends x/y relative to its innermost frame', () => {
+    // levelmark.board: api is x40 y90 in f-back (340,40), drawn at 380,130; f-outer holds f-back.
+    const r = rig({ nodes: [{ id: 'api', box: { x: 380, y: 130, w: 168, h: 64 }, lines: ['api'] }],
+        frames: [{ x: 300, y: 20, w: 700, h: 600 }, { x: 340, y: 40, w: 611.2, h: 520 }, { x: 40, y: 80, w: 240, h: 176 }] });
+    r.on.pointerdown({ target: r.inNode, button: 0, pointerId: 1, clientX: 400, clientY: 150 });
+    r.on.pointermove({ clientX: 420, clientY: 160 });
+    r.on.pointerup({});
+    assert.equal(r.sent.length, 1);
+    assert.deepEqual(r.batch(), { ops: [{ op: 'set', id: 'api', f: { x: 60, y: 100, w: 168, h: 64 } }] });
+});
+
+test('a move of a top-level node sends its SVG position', () => {
+    const r = rig({ frames: [{ x: 340, y: 40, w: 611, h: 520 }] });
+    r.on.pointerdown({ target: r.inNode, button: 0, pointerId: 1, clientX: 20, clientY: 30 });
+    r.on.pointermove({ clientX: 25, clientY: 50 });
+    r.on.pointerup({});
+    assert.deepEqual(r.batch(), { ops: [{ op: 'set', id: 'a', f: { x: 15, y: 40, w: 160, h: 64 } }] });
+});
+
+test('renaming a two-line node changes line one and keeps the subtitle', () => {
+    const r = rig({ nodes: [{ id: 'api', box: { x: 380, y: 130, w: 168, h: 64 }, lines: ['api', 'Flask · REST'] }] });
+    r.on.dblclick({ target: r.inNode });
+    assert.match(r.P.paneHtml(S), /data-bd-in="label"[^>]*value="api"/);
+    r.key(r.field('label', 'gateway'), 'Enter');
+    assert.deepEqual(r.batch(), { ops: [{ op: 'set', id: 'api', f: { label: 'gateway\nFlask · REST' } }] });
+    assert.match(r.sent[0].form.get('text'), /gateway\nFlask · REST$/);
+});
+
+test('a board that cannot be read says why on the pane', async () => {
+    const r = rig();
+    r.win.fetch = () => Promise.resolve({ ok: false, status: 404, text: () => Promise.resolve('no such board for that session\n') });
+    r.P.load(S, 'N1', () => {});
+    await tick(); await tick();
+    assert.match(r.P.paneHtml(S), /role="alert"[^>]*>[^<]*no such board for that session/);
+    const { M, win } = page(['board-edit.js']);
+    win.fetch = () => Promise.reject(new Error('offline'));
+    M['board-edit.js'].load(S, 'N1', () => {});
+    await tick(); await tick();
+    assert.match(M['board-edit.js'].paneHtml(S), /role="alert"/);
+});
+
+test('a drop button sends op=drop with the index of the change it sits on', () => {
+    const r = rig({ changes: [{ kind: 'edit', text: 'A', dropped: false }, { kind: 'edit', text: 'B', dropped: true }, { kind: 'mark', text: 'C', dropped: false }] });
+    const at = /<span class="bch-t">C<\/span><button[^>]*data-bd-drop="(\d+)"/.exec(r.P.changesHtml(S))[1];
+    r.on.click({ target: r.dropBtn(at) });
+    assert.equal(r.sent.length, 1);
+    assert.deepEqual([r.sent[0].form.get('op'), r.sent[0].form.get('at')], ['drop', '2']);
+});
+
+test('undo drops the last change still live', () => {
+    const r = rig({ changes: [{ kind: 'edit', text: 'A', dropped: false }, { kind: 'edit', text: 'B', dropped: false }, { kind: 'mark', text: 'C', dropped: true }] });
+    r.on.click({ target: r.toolBtn('undo') });
+    assert.equal(r.sent.length, 1);
+    assert.deepEqual([r.sent[0].form.get('op'), r.sent[0].form.get('at')], ['drop', '1']);
+});
+
+test('delete removes the selected node', () => {
+    const r = rig();
+    r.on.click({ target: r.inNode });
+    r.on.click({ target: r.toolBtn('delete') });
+    assert.equal(r.sent.length, 1);
+    assert.deepEqual(r.batch(), { ops: [{ op: 'del', id: 'a' }] });
+    assert.equal(r.sent[0].form.get('text'), '刪除 a');
+});
+
+test('add node places a new node where the board is clicked', () => {
+    const r = rig();
+    r.on.click({ target: r.toolBtn('add-node') });
+    r.on.click({ target: r.onSvg, clientX: 100.4, clientY: 50.6 });
+    assert.equal(r.sent.length, 1);
+    const rec = r.batch().ops[0].rec;
+    assert.match(rec.node, /^n\d+$/);
+    assert.deepEqual([rec.in, rec.x, rec.y], ['v', 100, 51]);
+});
+
+test('add edge joins the two nodes clicked in turn', () => {
+    const r = rig({ nodes: [{ id: 'a', box: { x: 10, y: 20, w: 160, h: 64 }, lines: ['A'] }, { id: 'b', box: { x: 210, y: 20, w: 160, h: 64 }, lines: ['B'] }] });
+    r.on.click({ target: r.toolBtn('add-edge') });
+    r.on.click({ target: r.nodeOf.a });
+    assert.equal(r.sent.length, 0);
+    r.on.click({ target: r.nodeOf.b });
+    assert.equal(r.sent.length, 1);
+    const rec = r.batch().ops[0].rec;
+    assert.deepEqual([rec.from, rec.to, rec.in], ['a', 'b', 'v']);
+    assert.match(rec.edge, /^e\d+$/);
+});
+
+test("a node id with ' keeps its selection highlight after a repaint", () => {
+    const r = rig({ nodes: [{ id: "o'k", box: { x: 10, y: 20, w: 160, h: 64 }, lines: ['OK'] }],
+        svg: '<svg viewBox="0 0 400 300"><g data-id="o&apos;k" data-type="node"><rect class="cr-shape"/><text class="cr-label">OK</text></g></svg>' });
+    r.on.click({ target: r.inNode });
+    assert.match(r.P.paneHtml(S), /data-id="o&apos;k" data-bd-on=""/);
 });
