@@ -14,7 +14,7 @@ const rule = (sel) => {
     const from = at + sel.length + 2;
     return CSS.slice(from, CSS.indexOf('}', from));
 };
-const HOME = { host: 'h', at: NOW, gates: [], done: [], notify: null, tasks: [
+const HOME = { host: 'h', at: NOW, gates: [], done: [], tasks: [
     { id: 'aaaaaaaa-1', root: '/w', task: 'a task', project: 'proj', stage: 'build', route: [], updated: NOW, state: 'running', background: [], last: null }] };
 
 // red when: .ha-row loses its background or border-radius, or gets border-top back

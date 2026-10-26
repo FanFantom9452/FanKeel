@@ -662,11 +662,3 @@ test('sw.js caches the shell at install, serves it network-first, and leaves eve
         assert.equal(e.p, undefined, e.request.url + ' was intercepted');
     }
 });
-
-test('home: a subscribe button opens the ntfy app, with the web topic beside it, only when notify is set', () => {
-    const sub = Object.assign({}, HOME, { notify: { app: 'ntfy://ntfy.sh/fankeel-test', web: 'https://ntfy.sh/fankeel-test' } });
-    const html = P.screen(sub, P.parseRoute('#/'), NOW, APP);
-    assert.match(html, /<a class="ha-subscribe" href="ntfy:\/\/ntfy\.sh\/fankeel-test">/);
-    assert.match(html, /href="https:\/\/ntfy\.sh\/fankeel-test"/);
-    assert.doesNotMatch(P.screen(HOME, P.parseRoute('#/'), NOW, APP), /ha-subscribe/);
-});

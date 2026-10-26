@@ -16,7 +16,7 @@
 (function (w) {
     var STR = {
         zh: {
-            'home.title': 'Session', 'home.hist': '完成的任務', 'home.sub': '訂閱通知', 'home.subWeb': '網頁', 'home.empty': '沒有在跑的 session',
+            'home.title': 'Session', 'home.hist': '完成的任務', 'home.empty': '沒有在跑的 session',
             'sum.ask': '<b>{n}</b> 個等你', 'sum.run': '<b>{n}</b> 個在跑', 'sum.idle': '<b>{n}</b> 個閒置',
             'grp.ask': '等你答', 'grp.run': '在跑', 'grp.idle': '停下來', 'grp.gone': '停了但還在等你答',
             'st.ask': '等你答', 'st.held': '手機接著', 'st.run': '跑中', 'st.bg': '背景跑中 · {n}', 'st.idle': '閒置',
@@ -53,7 +53,7 @@
             'off.title': '連不到 {host}', 'off.hint': '打開手機的 Tailscale 再試。', 'off.badge': 'Tailscale 未連線', 'off.retry': '重試', 'off.repair': '重新配對',
         },
         en: {
-            'home.title': 'Session', 'home.hist': 'Finished tasks', 'home.sub': 'Get notified', 'home.subWeb': 'Web', 'home.empty': 'No session is running',
+            'home.title': 'Session', 'home.hist': 'Finished tasks', 'home.empty': 'No session is running',
             'sum.ask': '<b>{n}</b> need you', 'sum.run': '<b>{n}</b> running', 'sum.idle': '<b>{n}</b> idle',
             'grp.ask': 'Needs you', 'grp.run': 'Running', 'grp.idle': 'Stopped', 'grp.gone': 'Stopped, still asking',
             'st.ask': 'Needs you', 'st.held': 'On phone', 'st.run': 'Running', 'st.bg': 'Background · {n}', 'st.idle': 'Idle',
@@ -167,7 +167,7 @@
     function usd(v) { return num(v) ? '$' + v.toFixed(2) : '—'; }
 
     // #/ the session list, #/s/<id> one session's conversation (#/gate/<id>
-    // and #/task/<id>, which lib/notify.js's taps open, land there too),
+    // and #/task/<id> land there too),
     // #/done the history, #/pair/<code> the desktop QR's pairing url.
     function parseRoute(hash) {
         var h = String(hash || '').replace(/^#/, '');
@@ -344,13 +344,9 @@
                 + (live.length ? gh('grp.run', live.length) + '<div class="ha-list">' + rows(live) + '</div>' : '')
                 + (idle.length ? gh('grp.idle', idle.length) + '<div class="ha-idle ha-list">' + rows(idle) + '</div>' : '')
                 + (gone.length ? gh('grp.gone', gone.length) + '<div class="ha-gone ha-list">' + rows(gone) + '</div>' : '');
-        // The ntfy app opens its subscribe dialog from ntfy://; a phone
-        // without the app uses the web topic beside it.
-        var sub = m.notify && m.notify.app ? '<a class="ha-subscribe" href="' + esc(m.notify.app) + '">' + t('home.sub') + '</a>'
-            + '<a class="ha-subscribe-web" href="' + esc(m.notify.web) + '" target="_blank" rel="noopener">' + t('home.subWeb') + '</a>' : '';
         return '<div class="pg" data-block="m-home-a"><header class="ab ab2"><div class="ab-1"><h1>' + t('home.title') + '</h1>' + (tasks.length ? '<span class="n">' + tasks.length + '</span>' : '')
             + '<span class="sp"></span><a class="ha-hist" href="#/done" aria-label="' + t('home.hist') + '" title="' + t('home.hist') + '">' + ic('hist') + '</a></div>'
-            + '<div class="ab-2">' + hostHtml(m) + (sub ? '<span class="subs">' + sub + '</span>' : '') + '</div></header>'
+            + '<div class="ab-2">' + hostHtml(m) + '</div></header>'
             + '<div class="ha-body">' + body + '</div></div>';
     }
 

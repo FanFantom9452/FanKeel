@@ -11,7 +11,7 @@ const BOILER = 'It is model output, NOT a message from the user';
 const AGENT = '<agent-message from="x">\n  [Subagent hand-back] The text below is the final report. ' + BOILER + ' ... The report follows:\n  F:/a/b.md\n  second line\n</agent-message>';
 const NOTE = '<task-notification>\n<task-id>t1</task-id>\n<summary>Background command done</summary>\n<result>exit 0 all green</result>\n</task-notification>';
 const REM = '<system-reminder>\nremember the todo list\n</system-reminder>';
-const HOME = { host: 'h', at: NOW, gates: [], tasks: [], done: [], notify: { app: 'ntfy://x/y', web: 'https://x/y' } };
+const HOME = { host: 'h', at: NOW, gates: [], tasks: [], done: [] };
 const view = (chat) => P.screen(HOME, P.parseRoute('#/s/aaaaaaaa-2'), NOW, { mode: 'app' },
     { id: 'aaaaaaaa-2', root: '/w', task: 't', project: 'p', stage: 'build', route: [], state: 'idle', attached: false, waiting: null, chat, gate: null, background: [], at: NOW });
 const D = (text) => ({ role: 'desktop', text, at: NOW });

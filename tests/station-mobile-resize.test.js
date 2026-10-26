@@ -12,17 +12,16 @@ const CSS = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'mob
 const NOW = new Date(2026, 9, 26, 11, 2).getTime();
 const Q = [{ question: '核准這份 design？', header: 'design', multiSelect: false, options: [{ label: '核准 (Recommended)', description: 'a' }, { label: '改', description: 'b' }] }];
 const row = (id, state) => ({ id, root: '/w', task: 'task ' + id, project: 'proj', stage: 'build', route: [], gate: state === 'gate', updated: NOW, state, attached: false, background: [], last: null });
-const HOME = { host: 'sh-pro6000', at: NOW, gates: [], tasks: [row('aaaaaaaa-1', 'running')], done: [], notify: { app: 'ntfy://x/y', web: 'https://x/y' } };
+const HOME = { host: 'sh-pro6000', at: NOW, gates: [], tasks: [row('aaaaaaaa-1', 'running')], done: [] };
 const sess = (state, extra) => Object.assign({ id: 'aaaaaaaa-2', root: '/w', task: 't', project: 'proj', stage: 'design', route: [], state, attached: false, waiting: null, chat: [], gate: null, background: [], at: NOW }, extra);
 const gate = (chat) => sess('gate', { chat, gate: { questions: Q, since: NOW - 60e3, until: NOW + 240e3 } });
 const APP = { mode: 'app' };
 
-test('home header: two lines, the title and history first, the host chip and the subscribe pair second', () => {
+test('home header: two lines, the title and history first, the host chip second', () => {
     const html = P.screen(HOME, P.parseRoute('#/'), NOW, APP);
     assert.match(html, /<header class="ab ab2"><div class="ab-1"><h1>/);
     assert.ok(html.indexOf('class="ha-hist"') < html.indexOf('class="ab-2"'), 'history is on the first line');
     assert.ok(html.indexOf('class="ab-2"') < html.indexOf('class="host"'), 'the host is on the second');
-    assert.match(html, /<span class="subs"><a class="ha-subscribe"/);
 });
 
 test('a gate conversation pins the question between the header and the log, with a 看選項 button', () => {
