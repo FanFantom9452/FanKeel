@@ -80,7 +80,7 @@ function main(raw) {
     // ride this hook rather than the page, so an answer given in Claude Desktop
     // carries them too; each is sent once.
     let boardNote = '';
-    const boardFail = (e) => process.stderr.write('fankeel resume: board changes not read: ' + ((e && e.message) || e) + '\n');
+    const boardFail = (e, what) => process.stderr.write('fankeel resume: board changes not ' + (what || 'read') + ': ' + ((e && e.message) || e) + '\n');
     let dir = null;
     try {
         dir = dirFor(root, mine);
@@ -92,9 +92,10 @@ function main(raw) {
         }
     } catch (e) { boardFail(e); }
     // After the notes are in the context: a markSent that fails partway has
-    // still delivered them, and a change left unmarked only comes back once more.
+    // still delivered them; if the failure persists the notes repeat at every
+    // later gate until the file is fixed.
     if (boardNote) {
-        try { boardEdit.markSent(dir); } catch (e) { boardFail(e); }
+        try { boardEdit.markSent(dir); } catch (e) { boardFail(e, 'marked sent'); }
     }
     if (leaving) {
         const go = 'fankeel: the user is leaving and wants the work to go on. Do not stop or wait here: carry on to the next question that needs them. hooks/gate.js holds that question back, and the session compacts when that turn ends.';

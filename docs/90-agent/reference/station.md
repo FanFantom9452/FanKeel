@@ -717,7 +717,7 @@ opened in its own tab runs no script.
 
 `GET /station/board/<sessionId>/<name>.json` is what the gate page draws
 inline: `{ svg, check, changes, editable, root }` — the SVG (on a GET, `null`
-when the check has an error; a POST answer always carries the freshly rendered
+when the check has an error; an `edit` answer always carries the freshly rendered
 SVG of the edited board, even when its check still fails, since an edit is
 refused only for problems it adds), `checkBoard`'s result, the board's `<name>.changes.jsonl`,
 whether the session waits at a gate (`gateAt`, or a pending question), and the

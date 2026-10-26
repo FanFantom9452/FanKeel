@@ -81,7 +81,7 @@ test('a markSent that fails still delivers the notes and says so on stderr', () 
         const r = spawn(root);
         assert.equal(r.status, 0);
         assert.match(JSON.parse(r.stdout).hookSpecificOutput.additionalContext, /arch: 標記 a：拆成兩個？/);
-        assert.match(r.stderr, /fankeel resume: board changes not read: /);
+        assert.match(r.stderr, /fankeel resume: board changes not marked sent: /);
     } finally {
         fs.chmodSync(E.changesFile(file), 0o644);
     }
