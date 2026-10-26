@@ -19,14 +19,12 @@ const CSS = fs.readFileSync(path.join(ASSETS, 'station.css'), 'utf8');
 const CJK = /[\u3400-\u9fff\uf900-\ufaff\u3000-\u303f\uff00-\uffef]/;
 const NAME = 'ymlab-pc.tail1234.ts.net';
 const NOW = Date.parse('2026-10-21T09:00:00.000Z');
-const QUIET = { server: 'https://ntfy.sh', gate: false, stage: false, end: false };
 const ACTIVE = { on: true, active: true, url: 'https://' + NAME + '/', dnsName: NAME, warning: null, code: 'ABCD2345', until: NOW + 600e3,
     pairUrl: 'https://' + NAME + '/m#/pair/ABCD2345',
     devices: [{ id: '0011223344556677', name: 'Galaxy S24', paired: NOW - 86400e3, seen: NOW - 120e3 },
-        { id: '8899aabbccddeeff', name: '<b>tab</b>', paired: NOW - 7200e3, seen: NOW - 3 * 3600e3 }],
-    notify: { server: 'https://ntfy.sh', topic: 'fankeel-00112233445566778899', gate: true, stage: false, end: true } };
-const OFF = { on: false, active: false, url: null, dnsName: null, warning: null, devices: [], notify: QUIET };
-const STUCK = { on: true, active: false, url: null, dnsName: null, warning: 'tailscale is Stopped, not Running', devices: [], notify: QUIET };
+        { id: '8899aabbccddeeff', name: '<b>tab</b>', paired: NOW - 7200e3, seen: NOW - 3 * 3600e3 }] };
+const OFF = { on: false, active: false, url: null, dnsName: null, warning: null, devices: [] };
+const STUCK = { on: true, active: false, url: null, dnsName: null, warning: 'tailscale is Stopped, not Running', devices: [] };
 
 // The card as the page loads it: a window with the nonce (and FK_I18N when a
 // language is given), a document holding only #rm-card and the listeners, and
@@ -61,20 +59,18 @@ test('off: the switch unchecked and only this computer, nothing else', () => {
     assert.match(h, /^<section class="dcard rm rm-off" id="rm-card" data-block="remote-off">/);
     assert.match(h, /<i class="dot down"><\/i>只在這台電腦看得到（127\.0\.0\.1）/);
     assert.match(h, /data-rm="switch" aria-label="手機遠端">/);
-    for (const no of ['rm-url', 'rm-pair', 'data-rm="trigger"', 'data-rm="revoke"']) assert.ok(!h.includes(no), no);
+    for (const no of ['rm-url', 'rm-pair', 'data-rm="revoke"']) assert.ok(!h.includes(no), no);
 });
 
-test('on while Tailscale is not serving the station: the warning and the triggers, no url or QR', () => {
+test('on while Tailscale is not serving the station: the warning, no url or QR', () => {
     const h = R.view(STUCK, NOW);
     assert.match(h, /^<section class="dcard rm" id="rm-card" data-block="remote-on">/);
     assert.match(h, /data-rm="switch" checked aria-label=/);
     assert.ok(h.includes('<i class="dot stale"></i>Tailscale 沒有替測站開門</div><p class="rm-why">tailscale is Stopped, not Running</p>'));
-    assert.equal((h.match(/data-rm="trigger"/g) || []).length, 3);
-    assert.ok(h.includes('打開任一個就會產生 topic'));
     for (const no of ['rm-url', 'rm-pair', 'data-rm="revoke"']) assert.ok(!h.includes(no), no);
 });
 
-test('active: the url with 複製, the QR of the live code typed out, each phone with 解除, the triggers as set', () => {
+test('active: the url with 複製, the QR of the live code typed out, each phone with 解除', () => {
     const h = R.view(ACTIVE, NOW);
     assert.ok(h.includes('<i class="dot live"></i>Tailscale 已連上 <span class="mono">ymlab-pc</span>'));
     assert.ok(h.includes('<code>https://' + NAME + '/</code><button type="button" class="btn" data-rm="copy" data-url="https://' + NAME + '/">'));
@@ -85,10 +81,6 @@ test('active: the url with 複製, the QR of the live code typed out, each phone
     assert.ok(h.includes('Galaxy S24 · 2 分鐘前'));
     assert.ok(h.includes('&lt;b&gt;tab&lt;/b&gt; · 3 小時前'));
     assert.ok(!h.includes('<b>tab</b>'), 'a device name reached the page unescaped');
-    assert.match(h, /data-key="notify\.gate" checked>gate 待答/);
-    assert.match(h, /data-key="notify\.stage">stage 完成/);
-    assert.match(h, /data-key="notify\.end" checked>任務結束/);
-    assert.ok(h.includes('訂閱 <code>https://ntfy.sh/fankeel-00112233445566778899</code>'));
 });
 
 test('no phone paired, an answer that failed, and a refused action each say so', () => {
@@ -123,8 +115,6 @@ test('each control posts with the nonce, then reads the state again', async () =
     b.fire('click', null);
     b.fire('change', ctl({ 'data-rm': 'switch' }, false));
     await settle();
-    b.fire('change', ctl({ 'data-rm': 'trigger', 'data-key': 'notify.stage' }, true));
-    await settle();
     b.fire('click', ctl({ 'data-rm': 'code' }));
     await settle();
     b.fire('click', ctl({ 'data-rm': 'revoke', 'data-id': '8899aabbccddeeff' }));
@@ -134,11 +124,10 @@ test('each control posts with the nonce, then reads the state again', async () =
     const posts = b.calls.filter((c) => c.method === 'POST').map((c) => [c.url, Object.fromEntries(c.body)]);
     assert.deepEqual(posts, [
         ['/profile', { nonce: 'N0NCE', scope: 'machine', key: 'station.remote', value: 'false' }],
-        ['/profile', { nonce: 'N0NCE', scope: 'machine', key: 'notify.stage', value: 'true' }],
         ['/station/remote/code', { nonce: 'N0NCE' }],
         ['/station/remote/revoke', { nonce: 'N0NCE', id: '8899aabbccddeeff' }],
     ], 'a click on the switch is its change event\'s business, not the click\'s');
-    assert.deepEqual(b.calls.map((c) => c.method), ['GET', 'POST', 'GET', 'POST', 'GET', 'POST', 'GET', 'POST', 'GET']);
+    assert.deepEqual(b.calls.map((c) => c.method), ['GET', 'POST', 'GET', 'POST', 'GET', 'POST', 'GET']);
 });
 
 test('a refused post shows the server\'s reason on the card', async () => {
@@ -189,7 +178,7 @@ test('every class the card draws has a rule in station.css', () => {
     for (const s of [ACTIVE, OFF, STUCK, Object.assign({}, ACTIVE, { devices: [], said: 'x' })]) {
         for (const m of R.view(s, NOW, true).matchAll(/class="([^"]+)"/g)) for (const c of m[1].split(/\s+/)) if (/^(?:rm|m-switch|qr)/.test(c)) names.add(c);
     }
-    for (const c of ['rm', 'rm-off', 'rm-st', 'rm-url', 'rm-pair', 'qr', 'rm-code', 'rm-sub', 'rm-devs', 'rm-dev', 'rm-none', 'rm-trg', 'rm-topic', 'rm-say', 'm-switch', 'rm-ask', 'rm-need', 'rm-after', 'rm-why']) {
+    for (const c of ['rm', 'rm-off', 'rm-st', 'rm-url', 'rm-pair', 'qr', 'rm-code', 'rm-sub', 'rm-devs', 'rm-dev', 'rm-none', 'rm-say', 'm-switch', 'rm-ask', 'rm-need', 'rm-after', 'rm-why']) {
         assert.ok(names.has(c), c + ' is not drawn');
     }
     for (const c of names) assert.match(CSS, new RegExp('\\.' + c + '(?![\\w-])'), c + ' has no rule');

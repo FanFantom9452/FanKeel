@@ -3,7 +3,7 @@
 // #/settings (docs/90-agent/plans/2026-10-21-station-remote-design.md §3;
 // mockup blocks remote-on, remote-off): the `station.remote` switch, the
 // tailnet url with 複製, a QR of the live pairing code with the code typed
-// out and 換一個, the paired phones with 解除, and the three ntfy triggers.
+// out and 換一個, and the paired phones with 解除.
 // Its state is GET /station/remote, which answers loopback only: asked once
 // when the card is first drawn and again after each action, and held in
 // between, so the page's redraw draws the held card rather than starting
@@ -32,12 +32,6 @@
         'rm.paired': 'Paired',
         'rm.none': 'No phone paired yet',
         'rm.revoke': 'Unpair',
-        'rm.ntfy': 'ntfy push',
-        'rm.gate': 'gate waiting',
-        'rm.stage': 'stage done',
-        'rm.end': 'task ended',
-        'rm.subscribe': 'Subscribe to',
-        'rm.noTopic': 'turning one on makes a topic',
         'rm.justNow': 'just now',
         'rm.minutes': '{n} min ago',
         'rm.hours': '{n} h ago',
@@ -115,22 +109,6 @@
         var none = '<span class="rm-none">' + loc('rm.none', '還沒有配對的手機') + '</span>';
         return '<div class="rm-sub"><b>' + loc('rm.paired', '已配對') + '</b><span class="rm-devs">' + (rows || none) + '</span></div>';
     }
-    function triggers(n) {
-        var label = {
-            gate: loc('rm.gate', 'gate 待答'),
-            stage: loc('rm.stage', 'stage 完成'),
-            end: loc('rm.end', '任務結束'),
-        };
-        var boxes = ['gate', 'stage', 'end'].map(function (k) {
-            return '<label><input type="checkbox" data-rm="trigger" data-key="notify.' + k + '"' + (n[k] === true ? ' checked' : '') + '>' + label[k] + '</label>';
-        }).join('');
-        var where = esc(String(n.server || '').replace(/\/+$/, '') + '/' + n.topic);
-        var topic = n.topic
-            ? loc('rm.subscribe', '訂閱') + ' <code>' + where + '</code>'
-            : loc('rm.noTopic', '打開任一個就會產生 topic');
-        return '<div class="rm-sub"><b>' + loc('rm.ntfy', 'ntfy 推播') + '</b><span class="rm-trg">' + boxes + '</span></div><p class="rm-topic">' + topic + '</p>';
-    }
-
     // One /station/remote answer as the card. Off (or an answer that failed)
     // is the mockup's remote-off; on is remote-on, with the url, the QR and
     // the phones only while Tailscale is serving the station.
@@ -150,7 +128,7 @@
             if (S.code) body += pair(S.code);
             body += devices(S.devices || [], now);
         }
-        return card('remote-on', body + triggers(S.notify || {}) + said);
+        return card('remote-on', body + said);
     }
     // The ask before the switch goes on (mockup block `modal`). It sits inside
     // #rm-card with `open` rather than through showModal(), so the page's
@@ -238,7 +216,6 @@
             var value = c.checked ? 'true' : 'false';
             if (kind === 'switch' && c.checked) { confirming = true; paint(); }
             else if (kind === 'switch') post('/profile', { scope: 'machine', key: 'station.remote', value: value });
-            else if (kind === 'trigger') post('/profile', { scope: 'machine', key: c.getAttribute('data-key'), value: value });
         });
         doc.addEventListener('click', function (e) {
             var c = controlOf(e);
