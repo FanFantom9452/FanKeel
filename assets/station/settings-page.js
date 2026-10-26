@@ -83,13 +83,13 @@
         'sq.screenAsk': 'Yes, ask me each time', 'sq.screenAskE': 'Frontend work asks before drawing a mockup', 'sq.screenAskS': 'ask, then draw',
         'sq.screenAuto': 'Yes, just draw', 'sq.screenAutoE': 'Draws without asking and opens the page', 'sq.screenAutoS': 'draw',
         'sq.whereR': 'Where you are at a gate', 'sq.whereT': 'Where are you, mostly, when a gate waits for you?',
-        'sq.whereY': 'Mostly friction. Away also writes this machine\'s settings, shown first and confirmed apart.',
+        'sq.whereY': 'Mostly friction. Away also writes this machine\'s phone remote, shown first and confirmed apart.',
         'sq.whereTip': '{from} is already set this way',
-        'sq.whereFrom': 'Source: this machine\'s profile.json (notify.gate), gate.station and gate.away in .fankeel/profile.json',
+        'sq.whereFrom': 'Source: gate.station and gate.away in .fankeel/profile.json',
         'sq.whereTerm': 'At the terminal', 'sq.whereTermE': 'Asked right in the terminal', 'sq.whereTermS': 'at the terminal',
         'sq.whereStation': 'The station open beside me', 'sq.whereStationE': 'A gate waits on the station for 2 minutes first', 'sq.whereStationS': 'station open',
         'sq.whereAway': 'Often away, on my phone', 'sq.whereAwayE': 'Works to the next decision of yours, compacts and stops', 'sq.whereAwayS': 'often away',
-        'sq.whereAwayN': 'You will also be asked whether to write this machine\'s push and phone remote.',
+        'sq.whereAwayN': 'You will also be asked whether to turn on this machine\'s phone remote.',
         'sq.tipRaw': 'Record: {facts}', 'sq.tipNone': 'Recommendations are unavailable right now; this is the fankeel default', 'sq.srcNone': 'No recommendation', 'sq.tipAuthor': 'fankeel default; not enough record to go on',
         'sq.srcRec': 'From your record', 'sq.srcAuthor': 'Author\'s pick', 'sq.srcMine': 'Your pick', 'sq.rec': 'Recommended',
         'sq.whyAsk': 'Why this is asked', 'sq.typed': '(what you type)', 'sq.notSet': '(unset)', 'sq.unset': 'unset',
@@ -97,27 +97,27 @@
         'sq.nWorktree': 'Open a worktree', 'sq.nGuard': 'On a clash', 'sq.nInflight': 'Agents at once', 'sq.nClass': 'Stages to pass',
         'sq.nFloor': 'Agent model', 'sq.nJudge': 'Judge model', 'sq.nAgents': 'Stages handed off', 'sq.nLang': 'Report language',
         'sq.nGateStation': 'Gate waits on the station', 'sq.nGateAway': 'Before leaving', 'sq.nMockup': 'Draw mockups',
-        'sq.nNotifyGate': 'Gate push', 'sq.nRemote': 'Phone remote',
+        'sq.nRemote': 'Phone remote',
         'sq.vMerge': 'local merge', 'sq.vPr': 'open a PR', 'sq.vKeep': 'keep the branch', 'sq.vWtNo': 'none', 'sq.vWtBounded': 'bounded and up',
         'sq.vWtAll': 'always', 'sq.vAsk': 'ask you', 'sq.vDeny': 'block', 'sq.vWarn': 'warn only', 'sq.vNoWait': 'no wait', 'sq.v2m': '2 min',
         'sq.v5m': '5 min', 'sq.vHint': 'hint', 'sq.vAskOne': 'one more question', 'sq.vArchive': 'archive', 'sq.vKeepPlan': 'keep', 'sq.vOn': 'on', 'sq.vOff': 'off',
         'sq.mNow': 'This machine now: {v}', 'sq.mcH': 'Also write to this machine', 'sq.thisMachine': 'This machine',
-        'sq.mcWhy': 'Written to {file}. Only the machine settings are read for these two; the project file has no effect. Written only after you confirm.',
-        'sq.mcAsk': 'What this card writes', 'sq.mcGate': 'Push to my phone when a gate waits', 'sq.mcRemote': 'Reach the station from my phone',
+        'sq.mcWhy': 'Written to {file}. Only the machine settings are read for this one; the project file has no effect. Written only after you confirm.',
+        'sq.mcAsk': 'What this card writes', 'sq.mcRemote': 'Reach the station from my phone',
         'sq.remoteNote': 'Through Tailscale by default; Cloudflare Tunnel + Access is a later advanced option, not supported yet.',
         'sq.mcOk': 'Confirm, write to this machine', 'sq.mcNot': 'Not now',
         'sq.mcYes': 'Written to this machine along with the rest.', 'sq.mcSame': 'This machine is already set so; nothing is rewritten.',
-        'sq.mcNo': 'This machine keeps its settings.', 'sq.mcBoth': 'Both are already on on this machine.',
+        'sq.mcNo': 'This machine keeps its settings.', 'sq.mcBoth': 'It is already on on this machine.',
         'sq.finG': '{g} · {n} items', 'sq.gProject': 'Project',
         'sq.finMNot': 'Not written: where you are at a gate is not away.', 'sq.finMPend': 'Not confirmed yet.',
         'sq.finMBack': 'Confirm under Away from the computer', 'sq.finMNo': 'Not written: you chose not now under Away from the computer.',
-        'sq.finMSame': 'Nothing to write: push and the phone remote are already on here.', 'sq.finSame': 'The same as now; nothing to change.',
+        'sq.finMSame': 'Nothing to write: the phone remote is already on here.', 'sq.finSame': 'The same as now; nothing to change.',
         'sq.cfFrom': 'the commit format in git', 'sq.from': 'From: {r}', 'sq.to': 'becomes',
         'sq.finT': 'Write these changes?', 'sq.finY': 'Only Write touches profile.json. The project and this machine are written apart; a value already set is not rewritten.',
         'sq.finAsk': 'What is written', 'sq.cfL': 'Also check the first line of each commit',
         'sq.cfTip': 'Recent first lines in git mostly follow this format', 'sq.cfSrc': 'Source: task.js profile suggest (git log --no-merges -n 50)',
         'sq.cfN': 'Unticked, nothing is written. The format from git had no merge; it is added here, or it would block land.js merge.',
-        'sq.finN': 'Settings not asked here (sensitive-data review, agents at once, push server...) keep their values.',
+        'sq.finN': 'Settings not asked here (sensitive-data review, agents at once...) keep their values.',
         'sq.more': 'Adjust one by one? ', 'sq.detail': 'Open the detailed settings', 'sq.detailS': 'One screen a setting, adjusted one at a time',
         'sq.wrote': 'Wrote {n} items.', 'sq.failP': 'Writing the project settings failed; nothing there was saved.',
         'sq.failM': 'Writing this machine\'s settings failed; nothing there was saved.',
@@ -140,7 +140,7 @@
     }
     function esc(s) { return kit().esc(s); }
 
-    var MACHINE = ['station.remote', 'notify.gate', 'notify.stage', 'notify.end', 'notify.server', 'phone.hold', 'ui.lang', 'station.chartroom', 'quota.week'];
+    var MACHINE = ['station.remote', 'phone.hold', 'ui.lang', 'quota.week'];
     var AUTHOR = { main: 'merge', push: 'false', sessions: 'some', inflight: '8', ctx: 'rw', lang: 'en', gates: 'survey', floor: 'sonnet', screen: 'opus', where: 'term' };
     // model.lang's value is the language's own name, written untranslated; spelt in code points
     // because a Chinese literal outside loc() fails stringsLeft (tests/station-module.js).
@@ -238,13 +238,13 @@
                     O('opus', loc('sq.screenAsk', '有，每次先問我'), loc('sq.screenAskE', '前端工作先問要不要畫 mockup'), loc('sq.screenAskS', '先問再畫'), { 'design.mockup': 'opus' }, { cost: true }),
                     O('auto', loc('sq.screenAuto', '有，直接畫'), loc('sq.screenAutoE', '不問就畫，畫完打開頁面'), loc('sq.screenAutoS', '直接畫'), { 'design.mockup': 'auto' }, { cost: true })] },
             { id: 'where', b: 'away', r: loc('sq.whereR', 'gate 等你時你在哪'), title: loc('sq.whereT', 'gate 等你的時候，你多半在哪？'),
-                why: loc('sq.whereY', '大多只是摩擦。選「常離開」還要寫這台機器的設定，會先給你看，再另外確認。'),
+                why: loc('sq.whereY', '大多只是摩擦。選「常離開」還要寫這台機器的手機遠端，會先給你看，再另外確認。'),
                 tip: loc('sq.whereTip', '{from} 已經這樣設'),
-                from: loc('sq.whereFrom', '來源：這台機器的 profile.json（notify.gate）、.fankeel/profile.json 的 gate.station 與 gate.away'), opts: [
+                from: loc('sq.whereFrom', '來源：.fankeel/profile.json 的 gate.station 與 gate.away'), opts: [
                     O('term', loc('sq.whereTerm', '就在 terminal 前'), loc('sq.whereTermE', '直接在 terminal 問'), loc('sq.whereTermS', 'terminal 前'), { 'gate.station': 'off', 'gate.away': 'hint' }),
                     O('station', loc('sq.whereStation', '旁邊開著監控站'), loc('sq.whereStationE', 'gate 先在監控站等你 2 分鐘'), loc('sq.whereStationS', '開著監控站'), { 'gate.station': '120', 'gate.away': 'hint' }),
                     O('away', loc('sq.whereAway', '常離開，用手機看'), loc('sq.whereAwayE', '做到下一個要你決定的地方，壓縮後停'), loc('sq.whereAwayS', '常離開'), { 'gate.station': '300', 'gate.away': 'ask' },
-                        { note: loc('sq.whereAwayN', '另外會問要不要寫這台機器的推播與手機遠端。') })] },
+                        { note: loc('sq.whereAwayN', '另外會問要不要打開這台機器的手機遠端。') })] },
         ];
     }
     function blocks() {
@@ -259,7 +259,7 @@
             'dispatch.inflight': loc('sq.nInflight', '一次派幾個'), 'class.default': loc('sq.nClass', '過幾關'), 'dispatch.floor': loc('sq.nFloor', '子代理模型'),
             'judge.model': loc('sq.nJudge', '判官模型'), 'stage.agents': loc('sq.nAgents', '交出去的站'), 'model.lang': loc('sq.nLang', '報告語言'),
             'gate.station': loc('sq.nGateStation', 'gate 頁等你'), 'gate.away': loc('sq.nGateAway', '離開前'), 'design.mockup': loc('sq.nMockup', '畫 mockup'),
-            'notify.gate': loc('sq.nNotifyGate', 'gate 推播'), 'station.remote': loc('sq.nRemote', '手機遠端') };
+            'station.remote': loc('sq.nRemote', '手機遠端') };
     }
     function NAME(k) { var N = names(); return has(N, k) ? N[k] : k; }
     (function () { var N = names(); for (var k in N) if (has(N, k)) NAME[k] = N[k]; }());
@@ -274,7 +274,7 @@
             'gate.station': { off: loc('sq.vNoWait', '不等'), '120': loc('sq.v2m', '2 分'), '300': loc('sq.v5m', '5 分') },
             'gate.away': { hint: loc('sq.vHint', '提示'), ask: loc('sq.vAskOne', '多問一題') },
             'land.archivePlan': { 'true': loc('sq.vArchive', '封存'), 'false': loc('sq.vKeepPlan', '留著') },
-            'notify.gate': onOff, 'station.remote': onOff };
+            'station.remote': onOff };
         if (has(X, k) && has(X[k], v)) return X[k][v];
         var qs = questions();
         for (var i = 0; i < qs.length; i++) {
@@ -324,7 +324,7 @@
     function fresh(dir) {
         var ans = {};
         for (var k in AUTHOR) if (has(AUTHOR, k)) ans[k] = AUTHOR[k];
-        return { dir: dir, at: 'land', ans: ans, inp: {}, seen: {}, mk: { 'notify.gate': true, 'station.remote': true },
+        return { dir: dir, at: 'land', ans: ans, inp: {}, seen: {}, mk: { 'station.remote': true },
             mc: '', cf: false, wrote: 0, busy: false, err: '', sug: null, sugErr: false, asked: false };
     }
     var st = fresh(null), last = null, lastS = null, bound = false;
@@ -367,7 +367,7 @@
     function machine(S) {
         if (st.ans.where !== 'away') return { want: false, rows: [], would: [] };
         var would = [];
-        ['notify.gate', 'station.remote'].forEach(function (k) {
+        ['station.remote'].forEach(function (k) {
             if (st.mk[k] && cur(S, null, k) !== 'true') would.push({ k: k, from: cur(S, null, k) || 'false', to: 'true', by: 'where' });
         });
         return { want: true, rows: st.mc === 'yes' ? would : [], would: would };
@@ -481,13 +481,12 @@
         };
         var box = function (k, id, label) { return '<input type="checkbox" id="' + id + '" data-mk="' + k + '"' + (st.mk[k] ? ' checked' : '') + '><label for="' + id + '">' + esc(label) + '</label>'; };
         var say = st.mc === 'yes' ? (m.rows.length ? loc('sq.mcYes', '會在寫入時一起寫進這台機器。') : loc('sq.mcSame', '這台機器已經是這樣，寫入時不會重寫。'))
-            : st.mc === 'no' ? loc('sq.mcNo', '這台機器維持現在的設定。') : m.would.length ? '' : loc('sq.mcBoth', '這台機器兩項都已經開著。');
+            : st.mc === 'no' ? loc('sq.mcNo', '這台機器維持現在的設定。') : m.would.length ? '' : loc('sq.mcBoth', '這台機器已經開著。');
         return '<div class="v9-mc qk-mc" data-block="quick-machine-card" data-state="' + st.mc + '" role="group" aria-labelledby="qkmc-h">'
             + '<div class="v9-mc-h"><b id="qkmc-h">' + loc('sq.mcH', '還要寫進這台機器') + '</b>'
-            + helpHtml('qkh-mc', '<code>notify.gate: true<i> · ' + esc(here) + '</i></code><code>station.remote: true<i> · ' + esc(here) + '</i></code><small>'
-                + esc(loc('sq.mcWhy', '寫進 {file}。這兩項只讀機器設定，寫在專案檔不會生效。要另外按確認才寫。', { file: machineFile(o) })) + '</small>', loc('sq.mcAsk', '這張卡寫什麼')) + '</div>'
-            + '<ul class="v9-mc-l"><li>' + box('notify.gate', 'qkmc-n', loc('sq.mcGate', 'gate 等你時推播到手機')) + now('notify.gate') + '</li>'
-            + '<li>' + box('station.remote', 'qkmc-r', loc('sq.mcRemote', '手機遠端連進監控站'))
+            + helpHtml('qkh-mc', '<code>station.remote: true<i> · ' + esc(here) + '</i></code><small>'
+                + esc(loc('sq.mcWhy', '寫進 {file}。這一項只讀機器設定，寫在專案檔不會生效。要另外按確認才寫。', { file: machineFile(o) })) + '</small>', loc('sq.mcAsk', '這張卡寫什麼')) + '</div>'
+            + '<ul class="v9-mc-l"><li>' + box('station.remote', 'qkmc-r', loc('sq.mcRemote', '手機遠端連進監控站'))
             + now('station.remote')
             + '<span class="qk-mpend">' + loc('sq.remoteNote', '預設走 Tailscale；Cloudflare Tunnel + Access 是之後的進階選項，現在還不支援。') + '</span></li></ul>'
             + '<div class="v9-mc-f"><button type="button" class="v9-btn pri" data-mc="yes">' + loc('sq.mcOk', '確認，寫進這台機器') + '</button>'
@@ -512,7 +511,7 @@
                 var t = !m.want ? loc('sq.finMNot', '不寫：gate 等你時的答案不是「常離開」。')
                     : st.mc === '' && m.would.length ? loc('sq.finMPend', '還沒確認。') + '<button type="button" data-go="away">' + loc('sq.finMBack', '回「離開電腦時」確認') + '</button>'
                         : st.mc === 'no' ? loc('sq.finMNo', '不寫：你在「離開電腦時」選了先不要。')
-                            : loc('sq.finMSame', '不用寫：推播和手機遠端這台機器都已經開著。');
+                            : loc('sq.finMSame', '不用寫：手機遠端這台機器已經開著。');
                 return h + '<p class="qk-fin-m">' + t + '</p></div>';
             }
             if (!rows.length) return h + '<p class="qk-fin-m">' + loc('sq.finSame', '跟現在一樣，沒有要改的。') + '</p></div>';
@@ -534,7 +533,7 @@
                 + '<span class="v9-tip qk-stip" role="tooltip" id="qks-cf"><b>' + loc('sq.cfTip', 'git 近期的 commit 第一行大多照這個格式寫') + '</b><small>'
                 + loc('sq.cfSrc', '來源：task.js profile suggest（git log --no-merges -n 50）') + '</small></span><code class="qk-cfv">' + esc(cf) + '</code>'
                 + '<p class="qk-cfn">' + loc('sq.cfN', '不勾就不寫。git 推出的格式沒有 merge，這裡已經補上，不然會擋住 land.js merge。') + '</p></div>' : '')
-            + '<p class="v9-fin-n">' + loc('sq.finN', '沒問到的設定（敏感資料審查、一次派幾個、推播伺服器⋯）維持現在的值。') + '</p>'
+            + '<p class="v9-fin-n">' + loc('sq.finN', '沒問到的設定（敏感資料審查、一次派幾個⋯）維持現在的值。') + '</p>'
             + '<p class="qk-more">' + loc('sq.more', '要逐項調整？') + '<a href="#/settings/detail">' + loc('sq.detail', '進入詳細設定') + '</a></p>'
             + (S && S.serve ? '' : '<p class="qk-fin-m">' + loc('sq.unserved', '這頁不是經由監控站伺服器開的，不能寫入。') + '</p>')
             + (st.err ? '<p class="qk-fin-m" role="status">' + esc(st.err) + '</p>' : '')

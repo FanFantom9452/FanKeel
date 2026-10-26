@@ -18,7 +18,7 @@ const SUG = {
         sessions: { o: 'many', src: 'rec', v: { n: 429, share: 28, peak: 6 } }, inflight: { o: '8', src: 'author', v: {} },
         ctx: { o: 'rw', src: 'rec', v: { from: 'tasks', n: 195 } }, lang: { o: 'zh', src: 'rec', v: { from: 'ui.lang' } },
         gates: { o: 'survey', src: 'author', v: {} }, floor: { o: 'sonnet', src: 'author', v: {} },
-        screen: { o: 'opus', src: 'rec', v: { mockup: 'opus' } }, where: { o: 'away', src: 'rec', v: { from: 'notify.gate' } },
+        screen: { o: 'opus', src: 'rec', v: { mockup: 'opus' } }, where: { o: 'away', src: 'rec', v: { wait: '300' } },
     },
 };
 const VALUES = { 'land.integration': 'merge', worktree: false, guard: 'ask', 'dispatch.inflight': 8, 'stage.agents': [], 'dispatch.floor': 'sonnet',
@@ -37,7 +37,7 @@ function boot(opts) {
     const projects = {};
     projects[DIR] = { values: Object.assign({}, VALUES), sources: {}, unreadable: [] };
     if (opts.second) projects['F:\\ws\\two'] = { values: {}, sources: {}, unreadable: [] };
-    const S = { serve: opts.serve !== false, nonce: 'n1', profiles: { machine: { values: { 'notify.gate': false, 'station.remote': false }, sources: {}, unreadable: [] }, projects } };
+    const S = { serve: opts.serve !== false, nonce: 'n1', profiles: { machine: { values: { 'station.remote': false }, sources: {}, unreadable: [] }, projects } };
     const p = page(['settings-page.js'], {}, { fetch });
     const Q = p.M['settings-page.js'];
     Q.reset();
@@ -97,7 +97,7 @@ test('station/suggest moves every untouched answer to its recommendation and tag
 const SHAPES = {
     main: [{ local: 1, pr: 0 }], push: [{ unpushed: 1 }], sessions: [{ peak: 2, share: 30, n: 5 }], inflight: [{ now: 8 }],
     ctx: [{ from: 'profile' }, { from: 'tasks', n: 3 }], lang: [{ lang: 'en' }, { from: 'ui.lang' }], gates: [{ cls: 'bounded' }],
-    floor: [{ floor: 'sonnet' }], screen: [{ mockup: 'opus' }], where: [{ from: 'notify.gate' }, { wait: '120' }, { from: 'gate.away' }],
+    floor: [{ floor: 'sonnet' }], screen: [{ mockup: 'opus' }], where: [{ wait: '120' }, { from: 'gate.away' }],
 };
 
 test('every tip names only variables station/suggest returns for its question', () => {
@@ -169,7 +169,7 @@ test('the machine card keeps 手機遠端 checked, says Tailscale is the default
     click(b.Q, [{ 'data-mc': 'yes' }]);
     b.Q.state().at = 'final';
     h = b.html();
-    assert.match(h, /<b>這台機器 · 2 項<\/b>/);
+    assert.match(h, /<b>這台機器 · 1 項<\/b>/);
     assert.match(h, /<s title="關">關<\/s>[\s\S]*?<b title="開">開<\/b>/);
 });
 
@@ -180,7 +180,7 @@ test('寫入 posts the project, then the machine, and the screen says what was w
     click(b.Q, [{ 'data-all': '' }]);
     click(b.Q, [{ 'data-mc': 'yes' }]);
     b.Q.state().at = 'final';
-    assert.match(b.html(), /data-write>寫入 10 項</);
+    assert.match(b.html(), /data-write>寫入 9 項</);
     click(b.Q, [{ 'data-write': '' }]);
     await tick(); await tick(); await tick();
     const posts = b.calls.filter((c) => c.url === 'profile').map((c) => new URLSearchParams(c.body));
@@ -191,9 +191,9 @@ test('寫入 posts the project, then the machine, and the screen says what was w
     assert.equal(posts[0].getAll('value')[posts[0].getAll('key').indexOf('stage.agents')], 'survey,build,verify');
     assert.equal(posts[0].getAll('value')[posts[0].getAll('key').indexOf('model.lang')], '繁體中文');
     assert.equal(posts[1].get('scope'), 'machine');
-    assert.deepEqual(posts[1].getAll('key'), ['notify.gate', 'station.remote']);
+    assert.deepEqual(posts[1].getAll('key'), ['station.remote']);
     const h = b.html();
-    assert.match(h, /已寫入 10 項。/);
+    assert.match(h, /已寫入 9 項。/);
     assert.match(h, /<b>專案 · 0 項<\/b>[\s\S]*跟現在一樣，沒有要改的。/, 'what was written reads as set');
     assert.equal(b.Q.cur(b.S, DIR, 'stage.agents'), 'survey,build,verify');
 });
@@ -352,16 +352,16 @@ test('#/settings/detail goes to FK_SETDETAIL', () => {
 test('the shared table: ten questions in screen order, key names, labels, the merged value as a string', () => {
     const { Q, S } = boot();
     assert.deepEqual([...Q.questions().map((q) => q.id)], ['main', 'push', 'sessions', 'inflight', 'ctx', 'lang', 'gates', 'floor', 'screen', 'where']);
-    assert.deepEqual([...Q.MACHINE], ['station.remote', 'notify.gate', 'notify.stage', 'notify.end', 'notify.server', 'phone.hold', 'ui.lang', 'station.chartroom', 'quota.week']);
+    assert.deepEqual([...Q.MACHINE], ['station.remote', 'phone.hold', 'ui.lang', 'quota.week']);
     assert.equal(Q.NAME('land.push'), '推不推遠端');
     assert.equal(Q.NAME['land.push'], '推不推遠端');
-    assert.equal(Q.NAME('notify.topic'), 'notify.topic');
+    assert.equal(Q.NAME('quota.week'), 'quota.week');
     assert.equal(Q.lab('land.push', ''), '每次問');
     assert.equal(Q.lab('guard', 'deny'), '擋下');
     assert.equal(Q.lab('commit.format', ''), '未設');
     assert.equal(Q.cur(S, DIR, 'stage.agents'), '');
     assert.equal(Q.cur(S, DIR, 'worktree'), 'false');
-    assert.equal(Q.cur(S, null, 'notify.gate'), 'false');
+    assert.equal(Q.cur(S, null, 'station.remote'), 'false');
     assert.match(Q.optHtml(Q.questions()[0], 'pr', 'merge', {}, 'v9'), /aria-labelledby="v9q-main"[\s\S]*class="v9-risk">[\s\S]*推到遠端/);
 });
 

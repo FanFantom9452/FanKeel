@@ -13,7 +13,7 @@ const { page, stringsLeft } = require('./station-module.js');
 
 const QUICK = ['main', 'push', 'sessions', 'gates', 'floor', 'ctx', 'where', 'screen', 'inflight', 'lang'];
 const OWN = ['style', 'archive', 'commitfmt', 'wt', 'sreview', 'seclocal', 'skill', 'prompt', 'judge', 'agents', 'quota',
-    'compact', 'link', 'notify', 'ntfy', 'remote', 'hold', 'prose', 'uilang', 'smode', 'hide', 'chart', 'initskip'];
+    'compact', 'link', 'remote', 'hold', 'prose', 'uilang', 'smode', 'hide', 'initskip'];
 // The table is built in the page's vm; JSON brings it into this realm for deepEqual.
 const plain = (x) => JSON.parse(JSON.stringify(x));
 function boot() {
@@ -29,10 +29,10 @@ test('ten chapters in the mockup\'s order, and only 離開電腦時 writes the m
     assert.deepEqual(ch.filter((c) => c.machine).map((c) => c.id), ['away']);
 });
 
-test('order() is the 33 steps: the ten quick questions and the 23 the table carries, each under its chapter', () => {
+test('order() is the 30 steps: the ten quick questions and the 20 the table carries, each under its chapter', () => {
     const { T } = boot();
     const ord = plain(T.order());
-    assert.equal(ord.length, 33);
+    assert.equal(ord.length, 30);
     assert.deepEqual(ord.map((e) => e[0]).filter((id) => QUICK.includes(id)), QUICK.slice(0, 8).concat(['inflight', 'lang']));
     assert.deepEqual(plain(T.steps().map((s) => s.id)), OWN);
     const ch = Object.fromEntries(ord.map((e) => [e[0], e[1]]));
@@ -74,7 +74,6 @@ test('prompt.* is tagged 進階・不建議 with its warning, remote\'s yes name
     assert.match(by.remote.why, /Cloudflare Tunnel \+ Access 是之後的進階選項/);
     assert.equal(yes.risk, '對外開放');
     assert.equal(by.commitfmt.opts.find((o) => o.o === 'git').w['commit.format'], '$git');
-    assert.deepEqual(by.notify.key, 'notify.*');
     assert.deepEqual(by.skill.cond, 'skill');
     assert.match(by.agents.table.def, /\{v\}/);
 });

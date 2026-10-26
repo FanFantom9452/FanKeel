@@ -58,7 +58,7 @@ test('the rail has the ten chapters and every step, and the page opens on the fi
     const h = html();
     assert.match(h, /data-block="v9-page"/);
     assert.equal((h.match(/<li class="v9-c[ "]/g) || []).length, 10);
-    assert.equal((h.match(/class="v9-sb" data-go="/g) || []).length, 33);
+    assert.equal((h.match(/class="v9-sb" data-go="/g) || []).length, 30);
     assert.match(h, /class="v9-endb" data-go="final"/);
     assert.match(h, /data-block="v9-q-main" data-step="main"/);
     assert.match(h, /快速設定 · 1 \/ 9/);
@@ -97,7 +97,7 @@ test('常離開 holds 下一步 until the machine card is answered, and the card
     h = html();
     assert.doesNotMatch(h, /data-act="next" disabled/);
     const machine = plain(D.rows()).filter((r) => r.scope === 'machine').map((r) => [r.key, r.value]);
-    assert.deepEqual(machine, [['notify.gate', 'true'], ['station.remote', 'true']]);
+    assert.deepEqual(machine, [['station.remote', 'true']]);
 });
 
 test('a style fills only what was not answered, and a chapter ends on 到這裡就好 / 繼續', () => {
@@ -191,14 +191,14 @@ test('a station/suggest that answers front shows the front-end step and no failu
 });
 
 test('a machine key is read from the machine box, so the project box neither changes nor hides it', () => {
-    const machine = { 'station.remote': true, 'notify.gate': true };
-    const { D, html } = boot('#/settings/detail', false, { machine, values: Object.assign({}, VALUES, { 'station.remote': false, 'notify.gate': false }) });
+    const machine = { 'station.remote': true };
+    const { D, html } = boot('#/settings/detail', false, { machine, values: Object.assign({}, VALUES, { 'station.remote': false }) });
     html();
     goTo(D, 'where');
     pick(D, 'away');
     D.onClick(ev('[data-mc]', { 'data-mc': 'yes' }));
-    assert.deepEqual(plain(D.rows()).filter((r) => r.scope === 'machine'), [], 'the machine already holds both');
-    assert.deepEqual(plain(D.changes()).filter((c) => c.k === 'station.remote' || c.k === 'notify.*'), []);
+    assert.deepEqual(plain(D.rows()).filter((r) => r.scope === 'machine'), [], 'the machine already holds it');
+    assert.deepEqual(plain(D.changes()).filter((c) => c.k === 'station.remote'), []);
 });
 
 test('[data-qm] opens a tip and a second click closes it', () => {

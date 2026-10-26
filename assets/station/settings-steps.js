@@ -7,7 +7,7 @@
 // question, why, options (label, effect, short answer for the rail, writes,
 // rec, risk, pending tag) and input field. A write value `$in` is the text
 // typed into the field, `$each` the prompt.<stage> fields, `$git` the commit
-// format GET /station/suggest inferred; `prompt.*` and `notify.*` are keys
+// format GET /station/suggest inferred; `prompt.*` is a key
 // settings-detail.js expands. STY / SKEYS / TIE are the style step's three
 // styles, the keys a style is compared on, and the order ties go in.
 // Strings are built on each call, so the language switch reaches them.
@@ -45,8 +45,6 @@
         'ss.rQuota': 'Weekly budget',
         'ss.rCompact': 'Auto compact',
         'ss.rLink': 'Links in chat',
-        'ss.rNotify': 'Notifications',
-        'ss.rNtfy': 'Push server',
         'ss.rRemote': 'Phone remote',
         'ss.rHold': 'Phone wait',
         'ss.rLang': 'Report language',
@@ -54,7 +52,6 @@
         'ss.rUilang': 'Interface language',
         'ss.rSmode': 'Sensitive words',
         'ss.rHide': 'Hide from station',
-        'ss.rChart': 'Chartroom',
         'ss.rInitskip': 'Onboarding hint',
         'ss.rec': 'Recommended',
         'ss.recGit': 'From git',
@@ -176,23 +173,6 @@
         'ss.linkFull': 'Full text',
         'ss.linkFullE': 'The full report prints in chat too',
         'ss.linkNote': 'Question 6 keeps every stage in the main conversation, so nothing is handed off and this has no effect.',
-        'ss.notifyT': 'What gets pushed to your phone?',
-        'ss.notifyY': 'Pushed with ntfy; the topic is made when you turn a push on. Read from this machine only, so a cloned repo sends nothing to another one.',
-        'ss.nGate': 'A gate is waiting',
-        'ss.nGateE': 'Rings, with an open-gate button',
-        'ss.nStage': 'Next stage',
-        'ss.nStageE': 'Silent',
-        'ss.nStageS': 'Stage',
-        'ss.nEnd': 'Task ended',
-        'ss.nEndE': 'Silent, with the cost',
-        'ss.nEndS': 'End',
-        'ss.ntfyT': 'Which ntfy server gets the pushes?',
-        'ss.ntfyY': 'On the public server the topic is the password. Fill in the address if you host your own.',
-        'ss.ntfyPubE': 'Public server, nothing to host',
-        'ss.ntfyOwn': 'Self-hosted',
-        'ss.ntfyOwnE': 'Pushes skip the public service',
-        'ss.ntfyOwnS': 'Own',
-        'ss.ntfyField': 'Server address',
         'ss.remoteT': 'Should your phone reach the station?',
         'ss.remoteY': 'The phone sees the station once paired. It connects through Tailscale; Cloudflare Tunnel + Access is a later advanced option, not supported yet. ZeroTier and WireGuard are not offered: neither puts an HTTPS proxy in front of the station.',
         'ss.remoteFalse': 'No',
@@ -236,14 +216,6 @@
         'ss.hideFalseS': 'Shown',
         'ss.hideTrue': 'Hide',
         'ss.hideTrueE': 'Only a command brings it back',
-        'ss.chartT': 'Where is Chartroom installed?',
-        'ss.chartY': 'The station shows the board only with a path set. Read from this machine only.',
-        'ss.chartNone': 'Not installed',
-        'ss.chartNoneE': 'The station shows no board',
-        'ss.chartPath': 'Install path',
-        'ss.chartPathE': 'The station gains a board',
-        'ss.chartPathS': 'Set',
-        'ss.chartField': 'Chartroom install path',
         'ss.initT': 'Still hint at onboarding when a task starts?',
         'ss.initY': 'For a project not yet onboarded, task.js start prints an onboard: line reminding you to run fankeel-init.',
         'ss.initFalse': 'Hint me',
@@ -316,8 +288,6 @@
             ['quota', 'cost', loc('ss.rQuota', '一週額度')],
             ['compact', 'context', loc('ss.rCompact', '自動壓縮')],
             ['link', 'context', loc('ss.rLink', 'chat 只印連結')],
-            ['notify', 'away', loc('ss.rNotify', '推播哪些事')],
-            ['ntfy', 'away', loc('ss.rNtfy', '推播伺服器')],
             ['remote', 'away', loc('ss.rRemote', '手機遠端')],
             ['hold', 'away', loc('ss.rHold', '手機等你多久')],
             ['lang', 'text', loc('ss.rLang', '報告語言')],
@@ -325,7 +295,6 @@
             ['uilang', 'text', loc('ss.rUilang', '介面語言')],
             ['smode', 'safety', loc('ss.rSmode', '敏感詞 commit')],
             ['hide', 'other', loc('ss.rHide', '監控站隱藏')],
-            ['chart', 'other', loc('ss.rChart', '架構白板')],
             ['initskip', 'other', loc('ss.rInitskip', '首次整理提示')],
         ];
     }
@@ -388,14 +357,6 @@
                 note: loc('ss.linkNote', '第 6 題選了「留在主對話」，沒有交出去的站，這題不作用。'), opts: [
                 O('link', loc('ss.linkLink', '只印連結'), loc('ss.linkLinkE', '報告到監控站看'), { 'station.link': LINK_ALL }),
                 O('full', loc('ss.linkFull', '印全文'), loc('ss.linkFullE', '報告全文也印在 chat'), { 'station.link': '' })] },
-            { id: 'notify', kind: 'multi', key: 'notify.*', title: loc('ss.notifyT', '哪些事要推播到手機？'), why: loc('ss.notifyY', '用 ntfy 推播；topic 在開推播時自動產生。只讀這台機器的設定，clone 下來的 repo 不會把問題送到別台。'), opts: [
-                O('gate', loc('ss.nGate', 'gate 在等你'), loc('ss.nGateE', '會響，附「打開 gate」'), {}, { s: 'gate' }),
-                O('stage', loc('ss.nStage', '換到下一站'), loc('ss.nStageE', '靜音'), {}, { s: loc('ss.nStageS', '換站') }),
-                O('end', loc('ss.nEnd', '任務結束'), loc('ss.nEndE', '靜音，附花費'), {}, { s: loc('ss.nEndS', '結束') })] },
-            { id: 'ntfy', kind: 'one', title: loc('ss.ntfyT', '推播送到哪個 ntfy？'), why: loc('ss.ntfyY', '公開伺服器上，topic 就是密碼。自架的話填網址。'),
-                field: { label: loc('ss.ntfyField', '伺服器網址'), ph: 'https://ntfy.example.lan', mono: true }, opts: [
-                O('pub', 'ntfy.sh', loc('ss.ntfyPubE', '公開伺服器，不用架'), { 'notify.server': 'https://ntfy.sh' }),
-                O('own', loc('ss.ntfyOwn', '自架伺服器'), loc('ss.ntfyOwnE', '推播不經過公開服務'), { 'notify.server': '$in' }, { s: loc('ss.ntfyOwnS', '自架'), input: true })] },
             { id: 'remote', kind: 'one', title: loc('ss.remoteT', '手機要能連進監控站嗎？'), why: loc('ss.remoteY', '手機配對後才看得到監控站。走 Tailscale；Cloudflare Tunnel + Access 是之後的進階選項，現在還不支援。ZeroTier、WireGuard 不列：它們沒有替監控站掛 HTTPS 的代理。'), opts: [
                 O('false', loc('ss.remoteFalse', '不要'), loc('ss.remoteFalseE', '監控站只在這台機器開'), { 'station.remote': 'false' }),
                 O('true', loc('ss.yes', '要'), loc('ss.remoteTrueE', '經 Tailscale 連進來（預設）'), { 'station.remote': 'true' },
@@ -419,10 +380,6 @@
             { id: 'hide', kind: 'one', title: loc('ss.hideT', '要從監控站隱藏這個專案嗎？'), why: loc('ss.hideY', '隱藏後，這個專案的 session 與設定都不出現在監控站，要用指令才叫得回來。'), opts: [
                 O('false', loc('ss.hideFalse', '不隱藏'), loc('ss.hideFalseE', '照常顯示'), { 'station.hide': 'false' }, { s: loc('ss.hideFalseS', '顯示') }),
                 O('true', loc('ss.hideTrue', '隱藏'), loc('ss.hideTrueE', '要用指令才叫得回來'), { 'station.hide': 'true' }, { risk: loc('ss.riskHide', '要用指令叫回') })] },
-            { id: 'chart', kind: 'one', title: loc('ss.chartT', '架構白板（Chartroom）裝在哪？'), why: loc('ss.chartY', '設了路徑，監控站才有白板。只讀這台機器。'),
-                field: { label: loc('ss.chartField', 'Chartroom 安裝路徑'), ph: 'C:\\tools\\chartroom', mono: true }, opts: [
-                O('none', loc('ss.chartNone', '沒裝'), loc('ss.chartNoneE', '監控站不顯示白板'), { 'station.chartroom': '' }),
-                O('path', loc('ss.chartPath', '填安裝路徑'), loc('ss.chartPathE', '監控站多一個白板'), { 'station.chartroom': '$in' }, { s: loc('ss.chartPathS', '已填'), input: true })] },
             { id: 'initskip', kind: 'one', title: loc('ss.initT', '起任務時還要提示整理專案嗎？'), why: loc('ss.initY', '沒整理過的專案，task.js start 會印一行 onboard: 提醒你跑 fankeel-init。'), opts: [
                 O('false', loc('ss.initFalse', '要提示'), loc('ss.initFalseE', '還沒整理的專案會提醒'), { 'init.skip': 'false' }, { s: loc('ss.initFalseS', '提示') }),
                 O('true', loc('ss.no', '不用'), loc('ss.initTrueE', '不再提醒 fankeel-init'), { 'init.skip': 'true' }, { s: loc('ss.initTrueS', '不提示') })] },

@@ -38,12 +38,10 @@
         'sd.noChange': 'Changes no setting',
         'sd.unset': 'not written (unset)',
         'sd.onMachine': ' · this machine',
-        'sd.notifyOff': 'notify.*: all off',
         'sd.and': ', ',
         'sd.mcHead': 'Also written to this machine',
         'sd.mcQ': 'What this card writes',
-        'sd.mcWhy': 'Written to {f}. Only the machine settings are read for these two, so the project file would not take effect, and a cloned repo sends nothing to another machine. The phone connects through Tailscale; Cloudflare Tunnel + Access is a later advanced option, not supported yet.',
-        'sd.mcGate': 'Push to the phone when a gate waits',
+        'sd.mcWhy': 'Written to {f}. Only the machine settings are read for this one, so the project file would not take effect, and a cloned repo turns nothing on. The phone connects through Tailscale; Cloudflare Tunnel + Access is a later advanced option, not supported yet.',
         'sd.mcRemote': 'Phone reaches the station remotely',
         'sd.mcVia': 'Through Tailscale by default',
         'sd.mcOk': 'Confirm, write to this machine',
@@ -112,7 +110,7 @@
 
     var st, cx = null, last = null, bound = false;
     function reset() {
-        st = { at: null, ans: {}, inp: {}, mc: '', mck: { 'notify.gate': true, 'station.remote': true }, hist: [],
+        st = { at: null, ans: {}, inp: {}, mc: '', mck: { 'station.remote': true }, hist: [],
             wrote: 0, err: '', busy: false, over: {}, sug: null, sugErr: false, sugFor: '', hash: '', tip: '', rail: false, moving: false };
         cx = null;
     }
@@ -149,7 +147,7 @@
     }
 
     // ---- values: what the files hold now, and what the answers write ----
-    function isMachine(k) { return (setp().MACHINE || []).indexOf(k) >= 0 || k.indexOf('notify.') === 0; }
+    function isMachine(k) { return (setp().MACHINE || []).indexOf(k) >= 0; }
     function scopeOf(k) { return isMachine(k) ? 'machine' : 'project'; }
     function rawAgent(k) {
         var set = (cx.S.profileSpec && cx.S.profileSpec.set) || {};
@@ -158,7 +156,6 @@
     }
     function cur(k) {
         if (has(st.over, scopeOf(k) + ' ' + k)) return st.over[scopeOf(k) + ' ' + k];
-        if (k === 'notify.*') return ['gate', 'stage', 'end'].filter(function (x) { return cur('notify.' + x) === 'true'; }).join(',');
         if (k === 'prompt.*') return STG.some(function (x) { return cur('prompt.' + x) !== ''; }) ? 'set' : '';
         if (k.indexOf('agent.') === 0) return rawAgent(k);
         var v = setp().cur ? setp().cur(cx.S, isMachine(k) ? '' : cx.dir, k) : '';
@@ -214,7 +211,6 @@
             var wr = writes(s, st.ans[s.id], P);
             Object.keys(wr).forEach(function (k) { P[k] = { v: wr[k], by: s.id }; });
             if (s.id === 'where' && st.ans.where === 'away' && st.mc === 'yes') {
-                if (st.mck['notify.gate']) P['notify.*'] = { v: 'gate', by: 'card' };
                 if (st.mck['station.remote']) P['station.remote'] = { v: 'true', by: 'card' };
             }
         }
@@ -274,12 +270,8 @@
         Object.keys(P).forEach(function (k) { if ((P[k].v || '') !== cur(k)) out.push({ k: k, from: cur(k), to: P[k].v, by: P[k].by }); });
         return out;
     }
-    // prompt.* and notify.* are not keys: each becomes the keys it stands for.
+    // prompt.* is not a key: it becomes the keys it stands for.
     function expand(k, v) {
-        if (k === 'notify.*') {
-            var on = v ? v.split(',') : [];
-            return ['gate', 'stage', 'end'].map(function (x) { return ['notify.' + x, on.indexOf(x) >= 0 ? 'true' : 'false']; });
-        }
         if (k === 'prompt.*') return STG.map(function (x) { return ['prompt.' + x, '']; });
         return [[k, v]];
     }
@@ -315,8 +307,8 @@
                 if (ks.length === 1 && ks[0] === k && a.w[k] === v) return a.s;
             }
         }
-        if (k === 'notify.*' || k === 'design.skill') {
-            var ms = cx.byId[k === 'notify.*' ? 'notify' : 'skill'];
+        if (k === 'design.skill') {
+            var ms = cx.byId.skill;
             return v ? v.split(',').map(function (x) { var a = ms && optOf(ms, x); return a ? a.s : x; }).join(loc('sd.and', '、')) : loc('sd.none', '都不');
         }
         if (k.indexOf('agent.') === 0) return v === '' ? loc('sd.def', '預設') : v;
@@ -339,8 +331,7 @@
         return !x ? '' : x.input && t ? t : x.s;
     }
     function code(k, v) {
-        var real = k === 'notify.*' ? (v ? v.split(',').map(function (x) { return 'notify.' + x + ': true'; }).join(loc('sd.and', '、')) : loc('sd.notifyOff', 'notify.*: 全關')) : k + ': ' + v;
-        return '<code>' + esc(real) + (v === '' && k !== 'notify.*' ? '<i>' + esc(loc('sd.unset', '不寫（未設）')) + '</i>' : '')
+        return '<code>' + esc(k + ': ' + v) + (v === '' ? '<i>' + esc(loc('sd.unset', '不寫（未設）')) + '</i>' : '')
             + (isMachine(k) ? '<i>' + esc(loc('sd.onMachine', ' · 這台機器')) + '</i>' : '') + '</code>';
     }
     function codes(wr) {
@@ -357,7 +348,7 @@
             + '" aria-expanded="' + (st.tip === id) + '">?</button><span class="v9-tip" role="tooltip" id="v9h-' + esc(id) + '">' + tipHtml + '</span></span>';
     }
     function wtip(s, a, P) {
-        if (s.kind === 'multi') return s.key === 'notify.*' ? code('notify.' + a.o, 'true') : '<code>design.skill: ' + esc(a.o) + '</code><small>' + esc(loc('sd.multi', '可多選，逗號分隔')) + '</small>';
+        if (s.kind === 'multi') return '<code>design.skill: ' + esc(a.o) + '</code><small>' + esc(loc('sd.multi', '可多選，逗號分隔')) + '</small>';
         if (s.kind === 'style') {
             if (a.o === 'none') return '<small>' + esc(loc('sd.noKeys', '不補任何鍵')) + '</small>';
             return '<small>' + esc(loc('sd.fills', '會補上：')) + '</small>' + codes(writes(s, a.o, P)) + '<small>' + esc(loc('sd.differs', '和你的答案差 {n} 項', { n: diffN(a.o, P) })) + '</small>';
@@ -424,8 +415,8 @@
         var say = st.mc === 'yes' ? loc('sd.mcYes', '會寫進這台機器。') : st.mc === 'no' ? loc('sd.mcNo', '這台機器的設定不動；之後可以在「離開電腦時」再開。') : loc('sd.mcWait', '按確認或先不要，才能到下一步。');
         function box(k, id, label) { return '<input type="checkbox" id="' + id + '" data-mk="' + k + '"' + (st.mck[k] ? ' checked' : '') + '><label for="' + id + '">' + esc(label) + '</label>'; }
         return '<div class="v9-mc" data-block="v9-machine-card" data-state="' + st.mc + '" role="group" aria-labelledby="v9mc-h"><div class="v9-mc-h"><b id="v9mc-h">' + esc(loc('sd.mcHead', '還要寫進這台機器')) + '</b>'
-            + help('mc', loc('sd.mcQ', '這張卡寫什麼'), code('notify.gate', 'true') + code('station.remote', 'true') + '<small>' + esc(loc('sd.mcWhy', '寫進 {f}。這兩項只讀機器設定，寫在專案檔不會生效；clone 下來的 repo 也不會把問題送到別台。手機遠端走 Tailscale；Cloudflare Tunnel + Access 是之後的進階選項，現在還不支援。', { f: machineFile() })) + '</small>')
-            + '</div><ul class="v9-mc-l"><li>' + box('notify.gate', 'v9mc-n', loc('sd.mcGate', 'gate 等你時推播到手機')) + '</li><li>' + box('station.remote', 'v9mc-r', loc('sd.mcRemote', '手機遠端連進監控站'))
+            + help('mc', loc('sd.mcQ', '這張卡寫什麼'), code('station.remote', 'true') + '<small>' + esc(loc('sd.mcWhy', '寫進 {f}。這一項只讀機器設定，寫在專案檔不會生效；clone 下來的 repo 也不會替你打開。手機遠端走 Tailscale；Cloudflare Tunnel + Access 是之後的進階選項，現在還不支援。', { f: machineFile() })) + '</small>')
+            + '</div><ul class="v9-mc-l"><li>' + box('station.remote', 'v9mc-r', loc('sd.mcRemote', '手機遠端連進監控站'))
             + '<span class="v9-mc-pend">' + esc(loc('sd.mcVia', '預設走 Tailscale')) + '</span></li></ul>'
             + '<div class="v9-mc-f"><button type="button" class="v9-btn pri" data-mc="yes">' + esc(loc('sd.mcOk', '確認，寫進這台機器')) + '</button><button type="button" class="v9-btn" data-mc="no">'
             + esc(loc('sd.mcNot', '先不要')) + '</button><span class="v9-mc-say" role="status">' + esc(say) + '</span></div></div>';
