@@ -25,7 +25,7 @@ function copy() {
 test('modulesOf reads a shell the way MODULES was read', () => {
     const shell = fs.readFileSync(path.join(PLUGIN, 'assets', 'station', 'index.html'), 'utf8');
     assert.deepEqual(station.modulesOf(shell), station.MODULES);
-    assert.deepEqual(station.modulesOf(''), ['gate-frame.js', 'gate-frame.css', 'focus-page.js', 'vendor/pele.js']);
+    assert.deepEqual(station.modulesOf(''), ['gate-frame.js', 'gate-frame.css', 'board-edit.js', 'board-edit.css', 'focus-page.js', 'vendor/pele.js']);
 });
 
 test('an edit to any module the shell loads moves the fingerprint', () => {

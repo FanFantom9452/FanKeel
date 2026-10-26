@@ -51,6 +51,7 @@
         'focus.report': '{s} report',
         'focus.noSession': 'No session {id} on this page',
     };
+    var loadedBoards = {};
     function has(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
     function loc(key, zh, vars) {
         var I = w && w.FK_I18N;
@@ -221,6 +222,16 @@
         // loaded, it draws the whole tab — its own head with no tabs, the report
         // in the main column, the question in the side column — around the
         // report drawn in this module (only the pieces behind gateTabHtml stay in station.js).
+        // The board pane fills its cache once per session, board and gate: its
+        // load asks for a repaint even when the read fails, so loading on every
+        // draw would loop on a 404 (assets/station/board-edit.js). A new gate
+        // reads it again, since whether it is editable moves with the gate.
+        var board = s.boards && s.boards[0] && s.boards[0].name;
+        var once = [s.id, board, s.gateAt || '', s.pending ? 1 : 0].join('/');
+        if (gate && board && w.FK_BOARD && !loadedBoards[once]) {
+            loadedBoards[once] = true;
+            w.FK_BOARD.load(s, st.nonce, function () { if (w.FK_FOCUS_REDRAW) w.FK_FOCUS_REDRAW(); });
+        }
         if (gate && w.FK_GATE && typeof w.FK_GATE.frame === 'function') {
             return w.FK_GATE.frame({ session: s, gate: x.gate, tasks: x.tasks || [], reportHtml: focusReportHtml(s, x.gate, x.tasks || []), shellsHtml: shells,
                 answer: focusAnswerOf(st, s) });
@@ -242,13 +253,21 @@
     // one already drawn (a click in flight keeps its target node), and not
     // while the reader has a text field focused (the repaint would drop what
     // they typed), and not while it is on a diagram figure (a mark rewrites the
-    // free field, and the repaint would snap the zoom and pan back). `active` is
-    // document.activeElement.
-    function focusRepaint(last, html, active) {
-        if (last === html) return false;
+    // free field, and the repaint would snap the zoom and pan back), and not
+    // while it is in the board pane (the inline editor). `active` is
+    // document.activeElement. `board` is a redraw the board pane asked for
+    // after a read or a write: it goes through with the focus on the pane's
+    // own toolbar or editor, which the reader just used, but not over a text
+    // field elsewhere on the page.
+    function focusRepaint(last, html, active, board) {
         var tag = active && active.tagName ? String(active.tagName).toUpperCase() : '';
+        var field = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+        var inBoard = Boolean(active && active.closest && active.closest('.bd'));
+        if (board) return !field || inBoard;
+        if (last === html) return false;
         if (active && active.closest && active.closest('.dg')) return false;
-        return !(tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT');
+        if (inBoard) return false;
+        return !field;
     }
 
     var api = { page: focusPageHtml, keepOpen: keepOpen, repaint: focusRepaint, EN: EN };

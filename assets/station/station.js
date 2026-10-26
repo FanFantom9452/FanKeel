@@ -2090,13 +2090,17 @@
             if (sm && sm.parentNode) open[sm.parentNode.getAttribute('data-gv')] = !sm.parentNode.open;
         });
         var last = null;
-        var paint = function () {
+        var paint = function (board) {
             var html = FO.keepOpen(FO.page(S, w.STATION_DETAIL, F), open);
-            if (!FO.repaint(last, html, doc.activeElement)) return;
+            if (!FO.repaint(last, html, doc.activeElement, board)) return;
             last = html;
             el.innerHTML = html;
             if (w.FK_GATE && w.FK_GATE.diagrams) w.FK_GATE.diagrams(el);
         };
+        // The board pane asks for a redraw after it read or wrote the board
+        // (assets/station/board-edit.js), with the focus often still on its toolbar.
+        w.FK_FOCUS_REDRAW = function () { paint(true); };
+        if (w.FK_BOARD && w.FK_BOARD.listen) w.FK_BOARD.listen(el, S.nonce);
         paint();
         if (!S.serve || !w.setInterval) return;
         w.setInterval(function () {
