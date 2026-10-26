@@ -142,3 +142,16 @@ test('a board that does not parse is a 422, and the station keeps serving', asyn
         s.close();
     }
 });
+
+test('/chartroom/<name>?x=1 is sent on to /chartroom/<name>/?x=1', async () => {
+    const f = fixture(['proj'], ['proj']);
+    const s = await start(f);
+    try {
+        const r = await fetch(s.url + 'chartroom/proj?x=1', { redirect: 'manual' });
+        assert.equal(r.status, 303);
+        const to = new URL(r.headers.get('location'), s.url);
+        assert.equal(to.pathname + to.search, '/chartroom/proj/?x=1');
+    } finally {
+        s.close();
+    }
+});

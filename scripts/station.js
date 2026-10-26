@@ -557,7 +557,7 @@ async function serve(opts) {
             if (roots.length === 0) return fail(404, 'no registered project is named ' + name);
             if (roots.length > 1) return fail(409, 'two registered projects are named ' + name + ': ' + roots.join(', '));
             const rest = chartroomHit[2];
-            if (!rest) return redirect('/chartroom/' + chartroomHit[1] + '/');
+            if (!rest.startsWith('/')) return redirect('/chartroom/' + chartroomHit[1] + '/' + rest);
             let page = boards.get(roots[0]);
             if (!page) {
                 const file = station.boardPath(roots[0]);

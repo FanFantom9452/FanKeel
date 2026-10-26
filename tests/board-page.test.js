@@ -62,3 +62,15 @@ test('any other path is 404, any write is 405, and close() is there to call', as
         s.handler.close();
     } finally { s.close(); }
 });
+
+test('a board read that fails for any reason but a missing file is a 500, not a 404', async () => {
+    const dir = path.join(tmp('fankeel-board-page-'), 'architecture.board');
+    fs.mkdirSync(dir);
+    const server = http.createServer(board.boardPage(dir, 'proj'));
+    await new Promise((r) => server.listen(0, '127.0.0.1', r));
+    try {
+        const r = await fetch('http://127.0.0.1:' + server.address().port + '/board.svg');
+        assert.equal(r.status, 500);
+        assert.match(await r.text(), /EISDIR/);
+    } finally { server.close(); }
+});
