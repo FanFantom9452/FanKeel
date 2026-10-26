@@ -688,7 +688,6 @@
             tg.setAttribute('aria-expanded', String(op));
         }
     }
-    // Typing changes the state only: a redraw would take the caret out of the box.
     function slid(t) {
         var q = t && t.getAttribute('data-slide') !== null ? t.closest('[data-q]') : null, qq = null;
         if (!q) return null;
@@ -700,6 +699,7 @@
         st.err = '';
         return qq.id;
     }
+    // Typing changes the state only: a redraw would take the caret out of the box.
     function onInput(e) {
         var t = inside(e && e.target);
         if (slid(t)) return;
