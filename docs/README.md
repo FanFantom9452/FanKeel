@@ -648,6 +648,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 - [station、Pane、band 用同一個介面語言 ui.lang（10-22）](03-decisions/2026-10-22-ui-lang.md)
 - [station 留 vanilla，拆成 classic script 的 FK_* 模組，index.html 是唯一的模組清單（10-24）](03-decisions/2026-10-24-station-vanilla-modules.md)
 - [station 用 pele 畫 Mermaid，Chartroom 留給任務的板（10-26）：反轉 10-07 白板取代 Mermaid 的方向](03-decisions/2026-10-26-station-mermaid-pele.md)
+- [gate 頁上的任務板內嵌、可編輯（10-27）：10-20「卡片用 img」的例外，卡片仍用 img](03-decisions/2026-10-27-gate-board-inline.md)
 - [任務的圖由 station 畫成 SVG（10-20）](03-decisions/2026-10-20-task-boards-as-svg.md)
 - [retro 讀整份遮蔽過的 session 包（10-20）](03-decisions/2026-10-20-retro-bundle.md)
 - [沒派過的 agent 怎麼處理（10-15）：effort 改在派工時傳，六個複本刪掉](03-decisions/2026-10-15-unused-agents.md)
