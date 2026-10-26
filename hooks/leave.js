@@ -26,9 +26,6 @@ const station = require('../lib/station.js');
 const live = require('../lib/live.js');
 const gates = require('../lib/gates.js');
 const replay = require('../lib/replay.js');
-const prices = require('../lib/prices.js');
-const profile = require('../lib/profile.js');
-const notify = require('../lib/notify.js');
 const { run, parse } = require('../lib/hook.js');
 
 // `spend[stage]` carries the parent's own `{requests, models}` and, when agents
@@ -118,24 +115,6 @@ function main(raw) {
             });
         } catch (e) { /* housekeeping */ }
         // docs/90-agent/plans/2026-10-21-station-remote-design.md §5: a task
-        // ended is one silent ntfy publish when `notify.end` is on, carrying
-        // what it cost with its agents — read back from the entry just written
-        // and priced the way the station prices a row, the parent's models and
-        // the agents' apart and then added. A detached child sends it
-        // (lib/notify.js); nothing here waits on it, and this hook still says
-        // nothing.
-        try {
-            const after = registry.readSession(root, sessionId);
-            if (after) {
-                const u = after.usage || {};
-                const own = prices.costOf(u.models);
-                const theirs = prices.costOf(u.subagents && u.subagents.models);
-                const usd = own.priced.length || theirs.priced.length ? own.usd + theirs.usd : null;
-                // The machine profile alone, as hooks/gate.js reads it.
-                const configDir = after.configDir || profile.configDirOf();
-                notify.fire(profile.read(null, configDir).values, notify.endEvent(after, usd, sessionId, root), { configDir });
-            }
-        } catch (e) { /* housekeeping: a notification never changes the hook */ }
     }
 
     try {

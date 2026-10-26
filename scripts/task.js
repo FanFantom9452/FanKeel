@@ -983,18 +983,6 @@ function cmdStage(root, opts) {
     const clash = collisions(root, id, data);
     showBadge(opts, id, badge.badgeWord(name, clash.length > 0), Object.assign({ others: clash.length }, data), root);
     // docs/90-agent/plans/2026-10-21-station-remote-design.md §5: a stage left
-    // for another is one silent ntfy publish when `notify.stage` is on. A
-    // detached child sends it (lib/notify.js), so the move never waits on the
-    // network, and no failure of it reaches this command's output or exit
-    // code. Required here rather than at the top of the file, so this change
-    // stays inside `cmdStage`.
-    if (from && from !== name) {
-        try {
-            const notify = require('../lib/notify.js');
-            // The machine profile alone, as hooks/gate.js reads it.
-            const configDir = data.configDir || profile.configDirOf();
-            notify.fire(profile.read(null, configDir).values, notify.stageEvent(data, from, name, id, root), { configDir });
-        } catch (e) { /* housekeeping: a notification never changes the move */ }
     }
 
     // What the stage just left cost, said at the one moment it is a finished
