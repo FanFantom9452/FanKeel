@@ -735,6 +735,8 @@ is corrected by the next one, not by rewriting this.
 | 30 — 前端修改為何沒有自動跑渲染 reviewer | [90-agent/judgements/2026-10-25-render-review-auto.md](90-agent/judgements/2026-10-25-render-review-auto.md) — *judged 2026-10-25, fable* |
 | Brief 32 — Ply / Beautiful Mermaid / official Mermaid vs our Chartroom: what should fankeel draw diagrams with? | [90-agent/judgements/2026-10-25-mermaid-renderers-vs-chartroom.md](90-agent/judgements/2026-10-25-mermaid-renderers-vs-chartroom.md) — *judged 2026-10-25, fable* |
 | Brief 33 — 主訊息下那張勾選清單是 plan 嗎？stage 自己拆 plan 的事，我們控制得了嗎？ | [90-agent/judgements/2026-10-25-desktop-list-vs-build-plan.md](90-agent/judgements/2026-10-25-desktop-list-vs-build-plan.md) — *judged 2026-10-25, fable* |
+| 判官題：先把第三方通知（ntfy.sh）從 fankeel 拔掉，改記成 watch 狀態的 TODO，之後再做回來？ | [90-agent/judgements/2026-10-26-remove-ntfy.md](90-agent/judgements/2026-10-26-remove-ntfy.md) — *judged 2026-10-26, fable* |
+| 判官題：station 抓得到 Claude Desktop／Remote Control 的「所有」session 嗎？ | [90-agent/judgements/2026-10-26-station-desktop-rc-sessions.md](90-agent/judgements/2026-10-26-station-desktop-rc-sessions.md) — *judged 2026-10-26, fable* |
 
 ## The five scanners
 
