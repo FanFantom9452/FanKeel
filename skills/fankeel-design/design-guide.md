@@ -52,7 +52,7 @@ that survive into plain HTML and CSS.
 
 ## Colour
 
-- Three ramps, 50 to 950: primary carries the interface (buttons, links, selection), secondary only a chart's second series and states, accent on one element per screen; the station's primary is its ink; a complementary pairing exists alongside the ramps. [designer] [taste]
+- Three ramps, 50 to 950: primary carries the interface (buttons, links, selection), secondary only a chart's second series and states, accent on one element per screen; the station's primary is its ink; a complementary colour pair is also defined beside the ramps; it is not a fourth ramp, and the usage split above still holds. [designer] [taste]
 - Colour carries meaning (state, a chart's series, an error), not decoration. [taste] [ui-ux-pro-max]
 - Colours are semantic tokens in CSS variables; components use the tokens, never raw hex. [ui-ux-pro-max] [taste]
 - Contrast meets WCAG AA: 4.5:1 for body text, 3:1 for large text, checked on buttons, placeholders, labels and focus rings. [ui-ux-pro-max] [taste]
@@ -65,7 +65,7 @@ that survive into plain HTML and CSS.
 
 ## Space and layout
 
-- One corner-radius scale for the page, applied everywhere; a mixed scale is a written rule or a bug; the station keeps 10px/6px, and only everything 12–16px is excluded. [taste]
+- One corner-radius scale for the page, applied everywhere; a mixed scale is a written rule or a bug; the station keeps 10px/6px, and the only thing excluded is giving every element the same 12–16px radius. [taste]
 - Group with space and tone first; a card only where elevation is real hierarchy, at most two levels deep: a card may sit in a panel, never a card in a card, and the inner level has no shadow or full border. [taste] [designer] [impeccable]
 - Dense operate screens separate rows with 1px single-side rules; other pages draw no rules and no full boxes. [taste]
 - Layout is CSS Grid or plain flex, never percentage arithmetic on widths. [taste]

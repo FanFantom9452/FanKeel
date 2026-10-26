@@ -74,6 +74,16 @@ test('one element with a hover or pseudo-element on the accent is clean; two ele
     assert.deepEqual(lint(two, EXCLUDE).map((h) => h.rule), ['accent-overuse', 'accent-overuse']);
 });
 
+test('a comma inside :not() does not split the element', () => {
+    const html = '<style>:root{--accent:#c2410c}.btn:not(.a, .b){color:var(--accent)}</style>';
+    assert.deepEqual(lint(html, EXCLUDE).map((h) => h.rule), []);
+});
+
+test('a selector list of two accent users counts the two bases', () => {
+    const html = '<style>:root{--accent:#c2410c}.a:hover, .b{color:var(--accent)}</style>';
+    assert.deepEqual(lint(html, EXCLUDE).map((h) => h.rule), ['accent-overuse', 'accent-overuse']);
+});
+
 test('the accent token on two elements fails, on one it passes', () => {
     const one = '<style>:root{--accent:#c2410c}.a{color:var(--accent)}</style>';
     const two = '<style>:root{--accent:#c2410c}.a{color:var(--accent)}.b{border-color:var(--accent-600)}</style>';
