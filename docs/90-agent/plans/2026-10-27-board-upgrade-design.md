@@ -28,7 +28,7 @@ last_verified: 2026-10-27
 - 類別走既有的 `icon` 欄位，前綴 `fk:`：`fk:ui`、`fk:service`、`fk:store`、`fk:queue`、`fk:external`。不新增欄位，所以不會被檢查當成未知欄位。
 - `lib/board.js` 的類別表把每個類別對到一組 `fill`／`stroke`／`color` 與一個 24×24 內嵌 SVG 圖示（fankeel 自帶，不加依賴）。節點自己寫的 `fill`／`stroke`／`color` 優先於類別。
 - 主題：底色、字型、邊線、frame 的顏色取 station 自己的配色（mockup 定稿的值），以 `theme` 傳給 `toSVG`。只做淺色。
-- 圖例：用到至少一個類別時，在板子左下角畫出（寬度不足 720px 時移到板子下方）類別與各自的數量。圖例由 `lib/board.js` 在 scene 之後補成 SVG 群組，並擴大 viewBox，不改 `lib/chartroom/`。
+- 圖例：用到至少一個類別時，在畫面下方靠左畫出類別與各自的數量（它是 SVG 的一部分，不隨視窗寬度移動）。圖例由 `lib/board.js` 在 scene 之後補成 SVG 群組，並擴大 viewBox，不改 `lib/chartroom/`。
 - 沒有用到任何 `fk:` 類別的舊板子，輸出只差主題顏色。
 
 ## 3. 在 gate 頁上編輯
