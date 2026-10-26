@@ -34,12 +34,14 @@ test('a mention of import() with nothing quoted inside is not an edge', () => {
   assert.deepEqual(requireGraph(dir, ['lib/a.js', 'lib/b.js']), []);
 });
 
-test('lib/board.js reaches the four chartroom modules it import()s', () => {
+test('lib/board.js reaches the six chartroom modules it import()s', () => {
   const root = path.join(__dirname, '..');
   const edges = requireGraph(root, trackedFiles(root).files);
   const into = edges.filter((e) => e.from === 'lib/board.js' && e.to.startsWith('lib/chartroom/')).map((e) => e.to).sort();
   assert.deepEqual(into, [
+    'lib/chartroom/core/fields.js',
     'lib/chartroom/core/format.js',
+    'lib/chartroom/core/validate.js',
     'lib/chartroom/geometry/measure.js',
     'lib/chartroom/geometry/scene.js',
     'lib/chartroom/geometry/svg.js',
