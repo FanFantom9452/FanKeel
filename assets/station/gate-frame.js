@@ -163,7 +163,7 @@
         HEARD = rec;
         rec.start();
     }
-    function ask(g, stage, st) {
+    function ask(g, stage, st, s) {
         var k = kit(), q = g && g.gate && g.gate.questions && g.gate.questions[0] ? g.gate.questions[0] : null;
         var opts = q && Array.isArray(q.options) ? q.options : [], next = g && g.gate && g.gate.next;
         return '<section class="dcard gt-ask" data-block="gate-question"><div class="dcard-h">' + k.icon('gate') + '<b>' + loc('gf.ask', '等你決定') + '</b>'
@@ -171,7 +171,7 @@
             + '<p class="gq-cd" role="status" aria-live="polite"><i class="hatchsw" aria-hidden="true"></i><span id="gq-line">' + esc(lineText(st)) + '</span></p>'
             + '<h2 class="gt-q">' + (q ? esc(q.question) : loc('gf.noQ', '報告裡沒有讀得出的 gate 問題')) + '</h2>'
             + (opts.length ? '<ol class="gt-opts">' + opts.slice(0, 9).map(function (o, i) { return option(o, i, st); }).join('') + '</ol>' : '')
-            + (ANSWER ? freeHtml(st) : '')
+            + (w && w.FK_BOARD ? w.FK_BOARD.changesHtml(s) : '') + (ANSWER ? freeHtml(st) : '')
             + (next ? '<p class="gt-next"><span>' + loc('gf.next', '報告寫的下一步') + '</span>' + esc(next) + '</p>' : '') + '</section>';
     }
 
@@ -316,8 +316,8 @@
         var st = state(CUR.key);
         var held = Boolean(s.gateAt || s.pending);
         return '<main class="fm gt-frame" data-block="gate-frame">' + head(s, stage) + (o.shellsHtml || '')
-            + '<div class="gt-grid' + (held ? '' : ' gt-one') + '" data-block="gate-columns"><div class="gt-main" data-block="gate-main">' + (o.reportHtml || '') + '</div>'
-            + (held ? '<aside class="gt-side" data-block="gate-side"><div class="gt-pin">' + ask(g, stage, st) + '</div></aside>' : '') + '</div></main>';
+            + '<div class="gt-grid' + (held ? '' : ' gt-one') + '" data-block="gate-columns"><div class="gt-main" data-block="gate-main">' + (w && w.FK_BOARD ? w.FK_BOARD.paneHtml(s) : '') + (o.reportHtml || '') + '</div>'
+            + (held ? '<aside class="gt-side" data-block="gate-side"><div class="gt-pin">' + ask(g, stage, st, s) + '</div></aside>' : '') + '</div></main>';
     }
 
     var api = { frame: frame, listen: listen, pickable: pickable, onKey: onKey, pick: pick, more: more, say: say, send: send, mark: mark, diagrams: diagrams, EN: EN };

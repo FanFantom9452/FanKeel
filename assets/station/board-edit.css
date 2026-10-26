@@ -1,0 +1,70 @@
+/* assets/station/board-edit.css — the gate page's board pane (assets/station/board-edit.js;
+   mockup .fankeel/build/2026-10-27-board-upgrade/mockup.html). Category colours are the
+   station's own series palette (--p-*), so the board follows both themes. */
+:root{--cat-ui:var(--p-1);--cat-service:var(--p-4);--cat-store:var(--p-3);--cat-queue:var(--p-0);--cat-external:var(--p-5)}
+
+/* ---- the pane ---- */
+.gt-main>.panel.bd{padding:0;margin:0 0 18px;overflow:hidden}
+.bd-h{display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px;padding:14px 20px 12px;border-bottom:1px solid var(--rule)}
+.bd-h h2{margin:0;font-size:15px;font-weight:700;color:var(--ink)}
+.bd-file{font:12px var(--f-mono);color:var(--muted)}
+
+/* ---- toolbar ---- */
+.bd-bar{display:flex;align-items:center;flex-wrap:wrap;gap:6px 4px;padding:10px 20px;border-bottom:1px solid var(--rule);background:var(--panel)}
+.bd-tool{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border:0;border-radius:6px;background:transparent;
+  font:600 12.5px var(--f-ui);color:var(--ink);cursor:pointer;white-space:nowrap;box-shadow:inset 0 0 0 1px var(--rule2)}
+.bd-tool:hover{background:var(--inset)}
+.bd-tool[aria-pressed="true"]{background:var(--keel);color:var(--on-keel);box-shadow:none}
+.bd-tool:focus-visible{outline:2px solid var(--keel);outline-offset:1px}
+.bd-tool:disabled{opacity:.5;cursor:default;background:transparent}
+.bd-tool.del{color:var(--bad)}
+.bd-n{font:700 11px var(--f-mono);padding:0 6px;border-radius:4px;background:var(--inset);color:var(--ink2);font-variant-numeric:tabular-nums}
+.bd-state{display:inline-flex;align-items:center;gap:8px;margin-left:auto;font-size:12px;line-height:1.5;color:var(--muted)}
+.bd-state i{width:8px;height:8px;border-radius:50%;background:var(--rule2);flex:none}
+.bd-state.on{color:var(--ink2)}
+.bd-state.on i{background:var(--live)}
+.bd-err{margin:0;padding:8px 20px;border-bottom:1px solid var(--rule);background:var(--fail-tint);color:var(--fail-ink);font-size:12.5px;line-height:1.5}
+
+/* ---- the board ---- */
+.bd-svg{position:relative;padding:14px 16px 12px;background:var(--panel)}
+.bd-svg svg{display:block;max-width:100%;height:auto;margin:0 auto;font-family:var(--f-ui)}
+.bd-svg [data-bd-on] .cr-shape{stroke:var(--keel);stroke-width:2.5}
+.bd-svg .bd-selr{fill:none;stroke:var(--keel);stroke-width:2}
+.bd-svg .bd-tip rect{fill:var(--ink)}
+.bd-svg .bd-tip text{font-size:12px;fill:var(--panel)}
+.bd-ned{display:grid;gap:3px;height:100%;box-sizing:border-box;padding:7px 10px 6px}
+.bd-ned input{width:100%;min-width:0;box-sizing:border-box;height:22px;padding:0 5px;margin:0;border:0;border-radius:4px;background:var(--panel);
+  box-shadow:inset 0 0 0 1.5px var(--keel);font:700 14px var(--f-ui);color:var(--ink);outline:none}
+.bd-ned input[readonly]{font:12px var(--f-mono);color:var(--muted);box-shadow:inset 0 0 0 1px var(--rule2)}
+/* marked for the AI */
+.bd-svg .bd-mk{fill:none;stroke:var(--stale);stroke-width:1.5;stroke-dasharray:4 3}
+.bd-svg .bd-bub{fill:var(--signal-tint);stroke:color-mix(in srgb,var(--stale) 70%,var(--panel));stroke-width:1}
+.bd-bubt{display:grid;gap:4px;height:100%;box-sizing:border-box;padding:8px 12px;font:13px/1.5 var(--f-ui);color:var(--ink)}
+.bd-bubt b{font-size:12px;font-weight:700;color:var(--signal-ink)}
+.bd-bubt input{width:100%;min-width:0;box-sizing:border-box;height:24px;padding:0 6px;margin:0;border:0;border-radius:4px;background:var(--panel);
+  box-shadow:inset 0 0 0 1.5px var(--stale);font:13px var(--f-ui);color:var(--ink);outline:none}
+.bd-keys{font-size:11px;color:var(--muted)}
+
+/* ---- check strip ---- */
+.bd-check{padding:10px 20px 12px;border-top:1px solid var(--rule);background:var(--panel);font-size:12.5px;line-height:1.5;color:var(--ink)}
+.bd-check.ok{color:var(--ink2)}
+.bd-check>b{display:block;font-weight:700;color:var(--signal-ink)}
+.bd-check ul{list-style:none;margin:4px 0 0;padding:0;display:grid;gap:4px}
+.bd-check li code{font:600 12px var(--f-mono);padding:0 6px;border-radius:4px;background:var(--signal-tint);color:var(--signal-ink)}
+.bd-check li.error code{background:var(--fail-tint);color:var(--fail-ink)}
+.bd-fix{color:var(--ink2)}
+
+/* ---- side column: this board's changes, inside the question card ---- */
+.bch{margin:14px 0 0;padding:12px 0 0;border-top:1px solid var(--rule)}
+.bch-h{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--ink2)}
+.bch-f{margin-left:auto;font:12px var(--f-mono);font-weight:400;color:var(--muted)}
+.bch ol{list-style:none;margin:6px 0 0;padding:0}
+.bch li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px;min-height:36px;padding:3px 0 3px 2px;border-top:1px solid var(--rule)}
+.bch li:first-child{border-top:0}
+.bch-v{font:700 11px var(--f-mono);padding:1px 6px;border-radius:4px;background:var(--inset);color:var(--ink2);white-space:nowrap}
+.bch-v.mark{background:var(--signal-tint);color:var(--signal-ink)}
+.bch-t{font-size:13px;line-height:1.45;color:var(--ink);min-width:0;overflow-wrap:anywhere}
+.bch-x{display:grid;place-items:center;width:30px;height:30px;border:0;border-radius:6px;background:transparent;color:var(--muted);cursor:pointer;font-size:16px}
+.bch-x:hover{background:var(--inset);color:var(--ink)}
+.bch-x:focus-visible{outline:2px solid var(--keel);outline-offset:1px}
+.bch-n{margin:8px 0 0;font-size:12px;line-height:1.55;color:var(--muted);max-width:60ch}
