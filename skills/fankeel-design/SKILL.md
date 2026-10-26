@@ -226,6 +226,10 @@ diagram for a task is a Chartroom `.board` in its build directory,
 `.fankeel/build/task-<started>/<name>.board` —
 one record per line, no coordinates; the station lays it out and draws it on
 the session card. Format: lib/chartroom/README.md.
+Then run `node <plugin>/scripts/board.js check <file>` and fix every
+`error` it prints; the board is written when it exits 0. Give each node a
+category in `icon` — `fk:ui`, `fk:service`, `fk:store`, `fk:queue` or
+`fk:external` — and the station colours it and counts it in the legend.
 Sequence and gantt diagrams stay Mermaid.
 
 ### 7. The spec — `architectural` only
