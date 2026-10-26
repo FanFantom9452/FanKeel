@@ -739,6 +739,9 @@ is corrected by the next one, not by rewriting this.
 | Brief 33 — 主訊息下那張勾選清單是 plan 嗎？stage 自己拆 plan 的事，我們控制得了嗎？ | [90-agent/judgements/2026-10-25-desktop-list-vs-build-plan.md](90-agent/judgements/2026-10-25-desktop-list-vs-build-plan.md) — *judged 2026-10-25, fable* |
 | 判官題：先把第三方通知（ntfy.sh）從 fankeel 拔掉，改記成 watch 狀態的 TODO，之後再做回來？ | [90-agent/judgements/2026-10-26-remove-ntfy.md](90-agent/judgements/2026-10-26-remove-ntfy.md) — *judged 2026-10-26, fable* |
 | 判官題：station 抓得到 Claude Desktop／Remote Control 的「所有」session 嗎？ | [90-agent/judgements/2026-10-26-station-desktop-rc-sessions.md](90-agent/judgements/2026-10-26-station-desktop-rc-sessions.md) — *judged 2026-10-26, fable* |
+| Brief 36 — archify vs our Chartroom: adopt, borrow, or ignore? | [90-agent/judgements/2026-10-26-archify-vs-chartroom.md](90-agent/judgements/2026-10-26-archify-vs-chartroom.md) — *judged 2026-10-26, fable* |
+| Brief 37 — multica-ai/andrej-karpathy-skills vs fankeel's skills: have we compared deeply, and what should we take? | [90-agent/judgements/2026-10-26-karpathy-skills.md](90-agent/judgements/2026-10-26-karpathy-skills.md) — *judged 2026-10-26, fable* |
+| Brief 38 — Which plugins and skills do recent sessions actually use, and which can go? | [90-agent/judgements/2026-10-26-skill-usage-trim.md](90-agent/judgements/2026-10-26-skill-usage-trim.md) — *judged 2026-10-26, fable* |
 
 ## The five scanners
 
