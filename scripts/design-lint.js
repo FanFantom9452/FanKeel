@@ -40,6 +40,19 @@ function hue(hex) {
     return { h: (x * 60 + 360) % 360, s };
 }
 
+// Every #hex, rgb()/rgba() and hsl()/hsla() colour in a value as { h, s }.
+function colours(v) {
+    const out = [];
+    for (const c of v.match(/#[0-9a-f]{3,6}\b|(?:rgba?|hsla?)\([^)]*\)/gi) || []) {
+        if (c[0] === '#') { out.push(hue(c)); continue; }
+        const n = c.slice(c.indexOf('(') + 1, -1).split(/[\s,/]+/).filter(Boolean).map(parseFloat);
+        if (n.length < 3 || n.slice(0, 3).some(Number.isNaN)) continue;
+        if (/^hsl/i.test(c)) out.push({ h: ((n[0] % 360) + 360) % 360, s: Math.min(n[1], 100) / 100 });
+        else out.push(hue('#' + n.slice(0, 3).map((x) => Math.max(0, Math.min(255, Math.round(x))).toString(16).padStart(2, '0')).join('')));
+    }
+    return out;
+}
+
 function px(t) {
     const m = /^(-?[\d.]+)(px)?$/.exec(t);
     return m ? Number(m[1]) : null;
@@ -76,7 +89,7 @@ function text(html) {
 const RULES = {
     'gradient-text': (rs) => rs.flatMap((r) => r.decls.filter(([p, v]) => /background-clip$/.test(p) && /\btext\b/.test(v)).map(() => r.sel)),
     'purple-gradient': (rs) => rs.flatMap((r) => r.decls.filter(([p, v]) => /^background/.test(p) && /gradient\(/.test(v)
-        && (v.match(/#[0-9a-f]{3,6}\b/gi) || []).some((c) => { const { h, s } = hue(c); return h >= 240 && h <= 300 && s > 0.4; })).map(() => r.sel)),
+        && colours(v).some(({ h, s }) => h >= 240 && h <= 300 && s > 0.4)).map(() => r.sel)),
     glow: (rs) => rs.flatMap((r) => r.decls.filter(([p, v]) => /^(box|text)-shadow$/.test(p)
         && shadows(v).some((s) => !s.inset && s.x === 0 && s.y === 0 && s.blur >= 8 && s.coloured)).map(() => r.sel)),
     'hard-shadow': (rs) => rs.flatMap((r) => r.decls.filter(([p, v]) => p === 'box-shadow'

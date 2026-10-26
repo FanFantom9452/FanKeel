@@ -28,7 +28,7 @@ td{border-bottom:1px solid #dcdcd6}
 
 test('every exclusion with a rule fails on its own sample, with that rule', () => {
     const ruled = EXCLUDE.items.filter((e) => e.check !== 'review');
-    assert.equal(ruled.length, 11);
+    assert.equal(ruled.length, 12);
     for (const e of ruled) {
         const hits = lint(page(e), EXCLUDE).map((h) => h.rule);
         assert.ok(hits.includes(e.check), e.id + ' expected ' + e.check + ', got ' + hits.join(' '));
@@ -48,6 +48,16 @@ test('the accent token on two elements fails, on one it passes', () => {
     const two = '<style>:root{--accent:#c2410c}.a{color:var(--accent)}.b{border-color:var(--accent-600)}</style>';
     assert.deepEqual(lint(one, EXCLUDE), []);
     assert.deepEqual(lint(two, EXCLUDE).map((h) => h.rule), ['accent-overuse', 'accent-overuse']);
+});
+
+test('a purple gradient in rgb() or hsl() hits purple-gradient, a blue-green one does not', () => {
+    const g = (c) => '<style>.a{background:linear-gradient(90deg,' + c + ')}</style>';
+    const rules = (c) => lint(g(c), EXCLUDE).map((h) => h.rule);
+    assert.deepEqual(rules('rgb(124,58,237),rgb(255,255,255)'), ['purple-gradient']);
+    assert.deepEqual(rules('rgba(124,58,237,.8),#eee'), ['purple-gradient']);
+    assert.deepEqual(rules('hsl(270,70%,50%),#eee'), ['purple-gradient']);
+    assert.deepEqual(rules('hsla(270,70%,50%,.5),#eee'), ['purple-gradient']);
+    assert.deepEqual(rules('rgb(20,120,160),#eee'), []);
 });
 
 test('the command exits 1 naming the rule and catalogue id, 0 on a clean page', () => {

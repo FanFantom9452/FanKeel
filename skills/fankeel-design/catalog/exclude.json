@@ -704,9 +704,9 @@
         "at": "guide:49",
         "note": ""
       },
-      "check": "review",
+      "check": "accent-overuse",
       "html": "<p><span>Reports</span><em class=\"a\">NEW</em></p><p><span>Billing</span><em class=\"b\">BETA</em></p><p><span>Team</span><em class=\"c\">HOT</em></p><p><span>Exports</span><em class=\"d\">2</em></p><p><span>Settings</span><em class=\"e\">!</em></p>",
-      "css": "%%{background:#fff;padding:12px 16px;display:flex;flex-direction:column;gap:5px}%% p{display:flex;align-items:center;gap:8px}%% span{font-size:11px;color:#111;width:60px}%% em{font-style:normal;font-size:9px;font-weight:700;color:#fff;padding:1px 6px;border-radius:8px}%% .a{background:#ef4444}%% .b{background:#8b5cf6}%% .c{background:#f97316}%% .d{background:#0ea5e9}%% .e{background:#eab308}"
+      "css": "%%{--accent:#ef4444;background:#fff;padding:12px 16px;display:flex;flex-direction:column;gap:5px}%% p{display:flex;align-items:center;gap:8px}%% span{font-size:11px;color:#111;width:60px}%% em{font-style:normal;font-size:9px;font-weight:700;color:#fff;padding:1px 6px;border-radius:8px}%% .a{background:var(--accent)}%% .b{background:var(--accent)}%% .c{background:var(--accent)}%% .d{background:var(--accent)}%% .e{background:var(--accent)}"
     },
     {
       "id": "ex-colour-interactive-same",
