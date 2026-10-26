@@ -36,9 +36,9 @@ test('tasks come from the plan, status from the ledger, groups from plantasks; t
         plan: 'docs/plans/2026-09-11-x.md',
         ledgerLines: 1, fixes: 0, rulings: 0,
         tasks: [
-            { n: 1, title: 'one', status: 'complete', range: 'abc1234..def5678', fixes: 0, turns: [4], modify: ['a.js'], test: [], read: [], consumes: [], produces: [], dispatch: null, model: '', effort: '', waits: [] },
-            { n: 2, title: 'two', status: 'no ledger line', range: null, fixes: 0, turns: [6], modify: ['b.js'], test: [], read: [], consumes: [], produces: [], dispatch: null, model: '', effort: '', waits: [] },
-            { n: 3, title: 'three', status: 'no ledger line', range: null, fixes: 0, turns: [], modify: ['a.js'], test: [], read: [], consumes: [], produces: [], dispatch: null, model: '', effort: '', waits: [{ n: 1, kind: 'files', file: 'a.js' }] },
+            { n: 1, title: 'one', line: 3, body: task(1, 'one', 'a.js').replace(/\s+$/, ''), status: 'complete', range: 'abc1234..def5678', fixes: 0, turns: [4], modify: ['a.js'], test: [], read: [], consumes: [], produces: [], dispatch: null, model: '', effort: '', waits: [] },
+            { n: 2, title: 'two', line: 11, body: task(2, 'two', 'b.js').replace(/\s+$/, ''), status: 'no ledger line', range: null, fixes: 0, turns: [6], modify: ['b.js'], test: [], read: [], consumes: [], produces: [], dispatch: null, model: '', effort: '', waits: [] },
+            { n: 3, title: 'three', line: 19, body: task(3, 'three', 'a.js').replace(/\s+$/, ''), status: 'no ledger line', range: null, fixes: 0, turns: [], modify: ['a.js'], test: [], read: [], consumes: [], produces: [], dispatch: null, model: '', effort: '', waits: [{ n: 1, kind: 'files', file: 'a.js' }] },
         ],
         groups: [
             { g: 1, tasks: [1, 2], surface: 'agents', turns: [4, 6], hint: true },
