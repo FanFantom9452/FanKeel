@@ -52,6 +52,31 @@ test('serialize carries it, and a registered row says Remote Control is attached
     assert.equal(data.sessions.find((s) => s.id === REG).bridge, true);
 });
 
+function endedMachine(bridgeSessionId) {
+    const base = tmp('fankeel-station-ended-');
+    const cfg = path.join(base, 'cfg');
+    fs.mkdirSync(path.join(cfg, 'sessions'), { recursive: true });
+    const root = path.join(base, 'ws');
+    registry.ensureLayout(root);
+    const now = new Date().toISOString();
+    registry.writeSession(root, REG, { task: 't', stage: 'done', route: ['build'], active: false, started: now, updated: now });
+    fs.writeFileSync(path.join(cfg, 'sessions', 'reg.json'), JSON.stringify({ pid: process.pid, sessionId: REG, cwd: root, startedAt: Date.now(), bridgeSessionId }));
+    return { cfg, root };
+}
+
+test('an ended registry session still running with Remote Control attached is listed as unregistered', () => {
+    const m = endedMachine('session_01z');
+    const model = station.gather({ configDir: m.cfg, roots: [m.root], details: false });
+    assert.deepEqual(model.unregistered.map((u) => u.sessionId), [REG]);
+    assert.deepEqual(S(model).unregistered.map((u) => u.id), [REG]);
+});
+
+test('an ended registry session running without Remote Control stays off the unregistered list', () => {
+    const m = endedMachine('');
+    const model = station.gather({ configDir: m.cfg, roots: [m.root], details: false });
+    assert.deepEqual(model.unregistered, []);
+});
+
 test('an unregistered session inside a hidden project stays off the page; one outside every profile shows', () => {
     const root = path.join('C:', 'fake', 'root1');
     const model = {
