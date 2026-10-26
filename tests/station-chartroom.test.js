@@ -45,14 +45,17 @@ function fixture(names, boards, text) {
 // entry-2: the 409 test failed once in a full-suite run with only `fetch
 // failed` — undici keeps the code (ECONNRESET, UND_ERR_SOCKET, ECONNREFUSED)
 // and the socket's ports on `cause`, which the TAP never showed. `get` puts the
-// whole chain, the port, whether an earlier test in this file was served on
-// that same port, and how long it took into the error. `connection: close`
-// keeps every request on a socket of its own, so none can ride a keep-alive
-// socket undici pooled for an earlier server that has since closed on a port
-// the operating system handed out again.
+// whole chain, the port, whether that port had been served before in this file
+// (a port the operating system handed out again), and how long it took into
+// the error. `connection: close` is a guard against an unproven hypothesis —
+// that a request rides a keep-alive socket undici pooled for an earlier server
+// that has since closed on a reused port. The cause found was `bad port`
+// (below), not this.
 const ports = new Set();
+const reused = new Set();
 function served(s) {
     const port = new URL(s.url).port;
+    if (ports.has(port)) reused.add(port);
     ports.add(port);
     return s;
 }
@@ -67,7 +70,7 @@ async function get(url, init) {
         }
         const port = new URL(url).port;
         throw new Error('fetch ' + url + ' failed after ' + (Date.now() - at) + ' ms; port ' + port
-            + (ports.has(port) ? ' (served earlier in this file)' : '') + ': ' + chain.join(' <- '), { cause: e });
+            + (reused.has(port) ? ' (served earlier in this file)' : '') + ': ' + chain.join(' <- '), { cause: e });
     }
 }
 
@@ -228,18 +231,32 @@ test('fetch refuses some ports outright, and start never hands one back', async 
     }
 });
 
-test('a failed get names the port, the cause chain, and whether the port was served earlier in this file', async () => {
+test('a failed get names the port and the cause chain, and marks only a port served before', async () => {
     const f = fixture(['proj'], ['proj']);
-    const s = await start(f);
-    const url = s.url;
-    s.close();
-    await assert.rejects(get(url + 'station/health'), (e) => {
-        const port = new URL(url).port;
-        assert.match(e.message, new RegExp('port ' + port + ' \\(served earlier in this file\\)'), e.message);
-        assert.match(e.message, /ECONNREFUSED/, e.message);
-        assert.match(e.message, / ms; /, e.message);
-        assert.ok(e.cause, 'the original error rides on cause');
-        return true;
+    // A port nothing listens on, handed out by a stub twice: the first start is a
+    // first use of it, the second a reuse.
+    const free = await new Promise((resolve) => {
+        const probe = require('node:net').createServer().listen(0, '127.0.0.1', () => {
+            const { port } = probe.address();
+            probe.close(() => resolve(port));
+        });
     });
-    await assert.rejects(get('http://127.0.0.1:1/'), (e) => !/served earlier/.test(e.message));
+    const url = 'http://127.0.0.1:' + free + '/';
+    const stub = async () => ({ url, close() {} });
+    const message = async () => {
+        let msg;
+        await assert.rejects(get(url + 'station/health'), (e) => {
+            msg = e.message;
+            assert.match(e.message, new RegExp('port ' + free + '[ :]'), e.message);
+            assert.match(e.message, / ms; /, e.message);
+            assert.ok(e.cause, 'the original error rides on cause');
+            return true;
+        });
+        return msg;
+    };
+    await start(f, stub);
+    assert.doesNotMatch(await message(), /served earlier/, 'first use of the port');
+    await start(f, stub);
+    assert.match(await message(), /\(served earlier in this file\)/, 'second use of the port');
+    assert.match(await message(), /ECONNREFUSED/);
 });
