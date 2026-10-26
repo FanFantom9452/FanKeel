@@ -849,8 +849,11 @@ async function serve(opts) {
                     return json(200, await state());
                 }
                 if (op === 'drop') {
-                    await boardEdit.dropChange(file, Number(form.get('at')));
-                    return json(200, await state());
+                    const c = await boardEdit.dropChange(file, Number(form.get('at')));
+                    // state() draws only a board that passes its check, and the
+                    // page keeps its last drawing on svg null: an undone edit on
+                    // a failing board would leave the edited drawing up.
+                    return json(200, await state(c.kind === 'edit' ? await board.renderBoard(fs.readFileSync(file, 'utf8')) : null));
                 }
                 return fail(400, 'op must be edit, mark or drop');
             } catch (e) {

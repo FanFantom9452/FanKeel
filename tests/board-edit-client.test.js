@@ -33,6 +33,17 @@ test('the changes list draws each change with a drop button, dropped ones left o
     assert.match(html, /data-bd-drop="0"/);
 });
 
+test('changes already sent to the agent are history: not listed, not counted for undo', () => {
+    B._seed(S.id, 'arch', { svg: '<svg/>', check: { ok: true, problems: [] }, editable: true, changes: [
+        { kind: 'edit', text: 'OLD', sent: true, dropped: false },
+        { kind: 'edit', text: 'NEW', sent: false, dropped: false },
+    ] });
+    const html = B.changesHtml(S);
+    assert.doesNotMatch(html, /OLD/);
+    assert.match(html, /<span class="bch-t">NEW<\/span><button[^>]*data-bd-drop="1"/);
+    assert.match(B.paneHtml(S), /data-bd-tool="undo"[^>]*>[^<]*<b class="bd-n">1<\/b>/);
+});
+
 test('opFor builds the batch each tool sends', () => {
     assert.deepEqual(B.opFor('rename', { id: 'a', label: 'Z' }), { ops: [{ op: 'set', id: 'a', f: { label: 'Z' } }] });
     assert.deepEqual(B.opFor('move', { id: 'a', x: 10, y: 20, w: 160, h: 64 }), { ops: [{ op: 'set', id: 'a', f: { x: 10, y: 20, w: 160, h: 64 } }] });
@@ -228,6 +239,13 @@ test('undo drops the last change still live', () => {
     r.on.click({ target: r.toolBtn('undo') });
     assert.equal(r.sent.length, 1);
     assert.deepEqual([r.sent[0].form.get('op'), r.sent[0].form.get('at')], ['drop', '1']);
+});
+
+test('undo never drops a change already sent to the agent', () => {
+    const r = rig({ changes: [{ kind: 'edit', text: 'A', sent: false, dropped: false }, { kind: 'edit', text: 'B', sent: true, dropped: false }] });
+    r.on.click({ target: r.toolBtn('undo') });
+    assert.equal(r.sent.length, 1);
+    assert.deepEqual([r.sent[0].form.get('op'), r.sent[0].form.get('at')], ['drop', '0']);
 });
 
 test('delete removes the selected node', () => {

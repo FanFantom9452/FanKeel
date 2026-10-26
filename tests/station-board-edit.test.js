@@ -101,3 +101,18 @@ test('an edit on a board that does not parse is 422 with checkText and writes no
         assert.equal(fs.readFileSync(f.file, 'utf8'), bad);
     });
 });
+
+test('undoing an edit on a board that fails its check answers with the reverted drawing', async () => {
+    const f = fixture(true);
+    fs.writeFileSync(f.file, B + '{"edge":"e","in":"v","from":"a","to":"ghost"}\n');
+    await served(f, async (url, nonce) => {
+        const ed = await post(url + 'station/board/' + SID + '/arch', { nonce, op: 'edit', text: '改名 a', batch: JSON.stringify({ ops: [{ op: 'set', id: 'a', f: { label: 'Z' } }] }) });
+        assert.equal(ed.status, 200);
+        const dr = await post(url + 'station/board/' + SID + '/arch', { nonce, op: 'drop', at: '0' });
+        assert.equal(dr.status, 200);
+        const j = await dr.json();
+        assert.equal(j.check.ok, false);
+        assert.doesNotMatch(fs.readFileSync(f.file, 'utf8'), /"label":"Z"/);
+        assert.equal(j.svg, await require('../lib/board.js').renderBoard(fs.readFileSync(f.file, 'utf8')));
+    });
+});

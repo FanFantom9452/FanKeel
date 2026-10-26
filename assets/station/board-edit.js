@@ -30,7 +30,11 @@
     function key(id, name) { return id + '/' + name; }
     function boardOf(s) { return s && Array.isArray(s.boards) && s.boards.length ? s.boards[0].name : null; }
     function cached(s) { var n = boardOf(s); return n ? CACHE[key(s.id, n)] || null : null; }
-    function lastLive(st) { var l = st.changes || [], i = l.length - 1; while (i >= 0 && l[i].dropped) i--; return i; }
+    // A change the agent was already sent at an earlier gate is history: the
+    // list shows changes since this gate, and dropping a sent one would revert
+    // the board with nothing telling the agent (pendingChanges skips sent).
+    function isLive(c) { return !c.dropped && !c.sent; }
+    function lastLive(st) { var l = st.changes || [], i = l.length - 1; while (i >= 0 && !isLive(l[i])) i--; return i; }
 
     // The tool in use, the node selected (or the edge's start) on board selK,
     // and the open editor: { k, kind: 'rename'|'mark', id, box, label, old, rest, note };
@@ -93,7 +97,7 @@
         var n = boardOf(s);
         if (!n) return '';
         var k = key(s.id, n), st = CACHE[k] || { svg: null, check: null, changes: [], editable: false };
-        var live = (st.changes || []).filter(function (c) { return !c.dropped; }).length;
+        var live = (st.changes || []).filter(isLive).length;
         var bar = '<div class="bd-bar" data-block="board-toolbar" role="toolbar" aria-label="' + esc(loc('bd.bar', '白板編輯')) + '">' + TOOLS.map(function (t) {
             var mode = t !== 'delete' && t !== 'undo';
             return '<button type="button" class="bd-tool' + (t === 'delete' ? ' del' : '') + '" data-bd-tool="' + t + '"'
@@ -111,7 +115,7 @@
         var n = boardOf(s), st = cached(s);
         if (!n || !st) return '';
         var rows = (st.changes || []).map(function (c, i) {
-            return c.dropped ? '' : '<li><span class="bch-v ' + esc(c.kind) + '">' + esc(c.kind === 'mark' ? loc('bd.kMark', '標記') : loc('bd.kEdit', '改動')) + '</span>'
+            return !isLive(c) ? '' : '<li><span class="bch-v ' + esc(c.kind) + '">' + esc(c.kind === 'mark' ? loc('bd.kMark', '標記') : loc('bd.kEdit', '改動')) + '</span>'
                 + '<span class="bch-t">' + esc(c.text) + '</span><button type="button" class="bch-x" data-bd-drop="' + i + '" aria-label="'
                 + esc(loc('bd.drop', '撤回：{t}', { t: c.text })) + '">×</button></li>';
         }).join('');
