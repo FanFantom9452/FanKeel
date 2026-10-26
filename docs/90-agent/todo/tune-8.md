@@ -11,7 +11,9 @@ stamp: 2026-10-27
 
 現況：逐塊調整靠 assets/tune/overlay.js 自己的圈選浮層，只能選有 data-block 的元素，選好後經 tune.js 的佇列送回 session（scripts/tune.js wait／done）。Claude Desktop 內建瀏覽器有自己的「選取元素」工具，使用者在頁面上點元素就會附到對話裡。
 
-要查清楚（未驗證）：Desktop 的選取工具送進對話的是什麼（selector、outerHTML、截圖、座標？），能不能從頁面或 plugin 端讀到；它與 overlay 同時開會不會互相干擾；mockup 打開時是否預設進內建瀏覽器。
+使用者同日附截圖（同一個 mockup 頁）指給我們看：內建瀏覽器網址列右端有一個游標圖示，按下後頁面底部出現一排標註工具列：選取（游標）、畫筆、形狀下拉（Line、Arrow、Rectangle、Ellipse、Step 編號圈）、文字 T、關閉 X。也就是說 Desktop 不只能選元素，還能直接在頁面上畫線、箭頭、框、橢圓、編號步驟與文字。截圖中這排工具列與我們 overlay 的「修改項」托盤和右下角 fankeel 標誌同時出現、位置重疊在頁面下半部。我們的 overlay 目前只有圈選加文字備註，沒有畫筆、形狀或編號步驟。
+
+要查清楚（未驗證）：Desktop 的選取工具送進對話的是什麼（selector、outerHTML、截圖、座標？畫的標註是一張截圖還是帶座標的圖形？），能不能從頁面或 plugin 端讀到；它與 overlay 同時開會不會互相干擾；mockup 打開時是否預設進內建瀏覽器。
 
 要變成：在 Claude Desktop 裡做逐塊調整時，使用者可以用 Desktop 的選取工具點元素，fankeel 把它對回 data-block（找最近的有 data-block 的祖先）並排進同一個佇列。overlay 留給 terminal／一般瀏覽器使用。怎麼接還沒決定。
 
