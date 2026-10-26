@@ -107,7 +107,7 @@
         if (!t.body) return '';
         var n = String(t.body).split('\n').length;
         return '<details class="tb fp-tb" data-gv="task-' + t.n + '" data-block="task-body-' + t.n + '">'
-            + '<summary>' + loc('focus.taskBody', '展開 plan 全文')
+            + '<summary>' + loc('focus.taskBody', '展開本項 plan 文字')
             + '<small>' + loc('focus.taskLines', '第 {a}–{b} 行 · {n} 行', { a: t.line, b: t.line + n - 1, n: n }) + '</small></summary>'
             + '<pre class="tb-pre">' + esc(t.body) + '</pre></details>';
     }

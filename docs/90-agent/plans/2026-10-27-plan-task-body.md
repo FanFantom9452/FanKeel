@@ -6,7 +6,7 @@ last_verified: 2026-10-27
 # 宿主清單與 plan 全文 Implementation Plan
 
 **Goal:** 轉交的站由 controller 照該站步驟填宿主清單（build 一個 plan Task 一格），監控站的 plan 焦點頁每列可以展開該 task 在 plan 檔裡的全文。
-**Architecture:** `lib/stages.js` 的 controlRules 多一條 `LIST_RULE`；`lib/detail.js` 的 `tasksOf` 把 `lib/plantasks.js` 已解析出的 `body` 與 `line` 一起送出；`assets/station/focus-page.js` 的 `fpRow` 在每列下畫原生 `<details>`，`keepOpen` 放寬成認得任何帶 `data-gv` 的摺疊，讓 5 秒重繪不把它收起。
+**Architecture:** `lib/stages.js` 匯出 `LIST_RULE`，由 `scripts/task.js` 的 `controllerLines` 在進站時印一次（不放進 controlRules，該區塊已在 2400 字上限）；`lib/detail.js` 的 `tasksOf` 把 `lib/plantasks.js` 已解析出的 `body` 與 `line` 一起送出；`assets/station/focus-page.js` 的 `fpRow` 在每列下畫原生 `<details>`，`keepOpen` 放寬成認得任何帶 `data-gv` 的摺疊，讓 5 秒重繪不把它收起。
 **Tech Stack:** Node `>=22.5`，零 runtime 依賴，CommonJS；station 前端是不經 build 的瀏覽器 JS（IIFE，掛在 `window.FK_*`）。
 **Spec:** ../../../.fankeel/build/task-20261026T185438/design.md
 
