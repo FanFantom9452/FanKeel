@@ -16,6 +16,6 @@ done:
 
 ## 完成紀錄
 
-修正早在 abb16b4e 落地；這輪補了一個測試，釘住已回報的 brain 舊 await 逾時不再叫醒主 session. 詳見 [任務紀錄](../records/2026-10.md#r-2026-10-25-00e02e3b)
+修正早在「fix: a timed-out await for an agent that already reported says stale」這個 commit 落地；這輪補了一個測試，釘住已回報的 brain 舊 await 逾時不再叫醒主 session. 詳見 [任務紀錄](../records/2026-10.md#r-2026-10-25-00e02e3b)
 
 - commit 4c24b520
