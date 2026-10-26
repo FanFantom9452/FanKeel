@@ -143,7 +143,7 @@ test('全部套用推薦 opens the write screen: old -> new for the project, the
     assert.equal(b.Q.state().at, 'final');
     let h = b.html();
     assert.match(h, /data-block="quick-final"/);
-    const proj = h.slice(h.indexOf('<div data-fin>'), h.indexOf('這台機器 · '));
+    const proj = h.slice(h.indexOf('<div data-fin>'), h.indexOf('這台機器 · ', h.indexOf('<div data-fin>')));
     assert.match(proj, /<b>專案 · 8 項<\/b><code title="F:\\ws\\app\\.fankeel\\profile.json">/);
     assert.match(proj, /<span class="v9-fk"[^>]*>開 worktree<\/span>[\s\S]*?<s title="不開">不開<\/s>[\s\S]*?<b title="一律">一律<\/b>/);
     assert.match(proj, /<code>stage.agents: survey,build,verify<\/code>/);
@@ -229,8 +229,9 @@ test('typing another language changes the plan without a redraw', () => {
 
 test('more than one project gets a picker; picking one starts that project over', () => {
     const b = boot({ serve: false, second: true });
-    assert.match(b.html(), /<select data-sq-proj><option value="F:\\ws\\app" selected>/);
-    b.Q.onChange({ target: el([{ 'data-sq-proj': '' }, ROOT], { value: 'F:\\ws\\two' }) });
+    assert.match(b.html(), /class="sq-trig"[^>]*aria-haspopup="listbox"/);
+    click(b.Q, [{ 'data-sq-trig': '' }]);
+    click(b.Q, [{ 'data-sq-dir': 'F:\\ws\\two' }]);
     assert.equal(b.Q.state().dir, 'F:\\ws\\two');
     assert.equal(b.Q.state().at, 'land');
 });
@@ -255,12 +256,12 @@ test('the project picker is disabled while a write is in flight, so a switch can
     b.html();
     await tick(); await tick();
     click(b.Q, [{ 'data-all': '' }]);
-    assert.doesNotMatch(b.html(), /<select data-sq-proj disabled>/);
+    assert.doesNotMatch(b.html(), /class="sq-trig"[^>]* disabled/);
     click(b.Q, [{ 'data-write': '' }]);
     assert.equal(b.Q.state().busy, true);
-    assert.match(b.html(), /<select data-sq-proj disabled>/);
+    assert.match(b.html(), /class="sq-trig"[^>]* disabled/);
     await tick(); await tick(); await tick();
-    assert.doesNotMatch(b.html(), /<select data-sq-proj disabled>/, 'back on once the write finished');
+    assert.doesNotMatch(b.html(), /class="sq-trig"[^>]* disabled/, 'back on once the write finished');
 });
 
 test('a ? tag toggles its tip open and shut, opening one closes the others, a click elsewhere closes all', () => {
@@ -368,7 +369,7 @@ test('the shared table: ten questions in screen order, key names, labels, the me
 test('settings-page.css is the quick mockup\'s own rules, no <style> tags', () => {
     const css = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'settings-page.css'), 'utf8');
     assert.doesNotMatch(css, /<\/?style/);
-    for (const rule of ['.qk-src.is-rec{', '.qk-recs{', '.qk-mc{', '.qk-extra{', '.qk-proj{']) assert.ok(css.includes(rule), rule);
+    for (const rule of ['.qk-src.is-rec{', '.qk-recs{', '.qk-mc{', '.qk-extra{', '.sq-bar{']) assert.ok(css.includes(rule), rule);
 });
 
 // A stand-in range input: value, the question around it, the readout box beside it.
@@ -441,8 +442,8 @@ test('已寫入 N 項 is a compact row under the summary: a 16px check, never th
     assert.match(css, /\.v9-fin-ok svg\{[^}]*width:16px;[^}]*height:16px/, 'without it the check fills the column');
 });
 
-test('the project picker label never wraps and the select is the one that shrinks', () => {
+test('the project picker label never wraps and the path is the one that shrinks', () => {
     const css = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'settings-page.css'), 'utf8');
-    assert.match(css, /\.qk-proj\{[^}]*white-space:nowrap/, 'at 412px 專案 wraps to one character per line');
-    assert.match(css, /\.qk-proj select\{[^}]*flex:1 1 0;[^}]*min-width:0/, 'the select must give up width, not the label');
+    assert.match(css, /\.sq-trig \.sq-tl\{[^}]*white-space:nowrap/, 'at 412px 專案 wraps to one character per line');
+    assert.match(css, /\.sq-trig code\{[^}]*flex:1;[^}]*min-width:0;[^}]*text-overflow:ellipsis/, 'the path must give up width, not the label');
 });

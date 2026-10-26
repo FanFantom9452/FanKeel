@@ -131,6 +131,26 @@
         'sq.railH': 'Quick setup', 'sq.railS': '5 groups · about 1 minute', 'sq.railIx': 'Groups of the quick setup',
         'sq.nChg': '{n} changes', 'sq.noChg': 'No changes', 'sq.proj': 'Project',
         'sq.noProject': 'No project to set up yet: start a fankeel task in a project first.', 'sq.noDetail': 'The detailed settings are not loaded.',
+        'sq.nHold': 'Phone wait', 'sq.nQuota': 'Weekly quota', 'sq.nUiLang': 'Interface language', 'sq.scopeG': 'GLOBAL', 'sq.scopeP': 'PROJECT', 'sq.scopeAria': 'What the settings apply to', 'sq.gSub': 'This machine · {n} items', 'sq.pSub': '{n} projects',
+        'sq.pq': 'Find a project: any part of the path', 'sq.pqAria': 'Find a project', 'sq.projList': 'Projects',
+        'sq.pqNone': 'No project path has that text; clear the box to list them all.',
+        'sq.gWhere': 'Written to this machine; every project reads it', 'sq.gRailS': '{n} items · one screen', 'sq.gIx': 'Settings of this machine',
+        'sq.gOnly': 'Read from this machine only', 'sq.gFootN': '{n} to change', 'sq.gFootSame': 'Same as now, nothing to change',
+        'sq.gConfirm': 'Phone remote lets other devices on your tailnet reach this machine\'s station. Turn it on?',
+        'sq.gRemoteT': 'Reach the station from your phone?', 'sq.gRemoteY': 'On, the station is served through this machine\'s Tailscale (tailscale serve) so a phone can open it; off, only 127.0.0.1 can. A value in a project file has no effect.',
+        'sq.gRemoteOn': 'On, through Tailscale', 'sq.gRemoteRisk': 'Other devices can reach it', 'sq.gRemoteOnE': 'A phone on the same tailnet can open the station',
+        'sq.gRemoteOff': 'Off', 'sq.gRemoteOffE': 'Only this machine can reach it',
+        'sq.gHoldT': 'With a phone on a session, how long to wait for your next message each turn?',
+        'sq.gHoldY': 'After each turn the Stop hook waits this long for the phone\'s next message; past it, the session goes back to the computer.',
+        'sq.gHoldDef': '30 minutes', 'sq.gHoldDefE': 'Unset, it is 1800 seconds', 'sq.gHold10': '10 minutes', 'sq.gHold10E': 'Step away longer and the computer takes over',
+        'sq.gHoldCustom': 'Your own seconds', 'sq.gHoldCustomE': '1 to 1800 seconds', 'sq.gHoldSecs': 'Seconds, 1 to 1800',
+        'sq.gQuotaT': 'What does one week of your quota come to in US dollars?',
+        'sq.gQuotaY': 'Once set, the station adds a share after most amounts. node scripts/quota.js can calibrate it from TokenBar\'s reading and writes this very key. A project file that sets it wins.',
+        'sq.gQuotaPh': 'e.g. 3000', 'sq.gQuotaFn': 'Empty is unset: no share after amounts',
+        'sq.gLangT': 'What language should the station and panels use?',
+        'sq.gLangY': 'The same setting as the globe at the top right; either one changes both. Panels and the band switch on their next update.',
+        'sq.gLangZh': 'Chinese', 'sq.gLangZhE': 'Whatever the browser says, Chinese', 'sq.gLangEnE': 'Station, panels and band all in English',
+        'sq.gLangAuto': 'Unset', 'sq.gLangAutoE': 'The station follows the browser, panels use Chinese',
     };
     function has(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
     function kit() { return (w && w.FK_KIT) || {}; }
@@ -328,6 +348,16 @@
             mc: '', cf: false, wrote: 0, busy: false, err: '', sug: null, sugErr: false, asked: false };
     }
     var st = fresh(null), last = null, lastS = null, bound = false;
+    // station-39: GLOBAL or PROJECT, the PROJECT picker (open, filter pq) and the GLOBAL
+    // page's edits g by key. Kept apart from `st`, which `fresh()` replaces on each project change.
+    function freshView() { return { scope: 'project', pq: '', open: false, g: {}, hc: false, busy: false, wrote: 0, err: '' }; }
+    var view = freshView();
+    function matchDirs(dirs, q) {
+        var s = String(q || '').trim().toLowerCase();
+        return s ? dirs.filter(function (d) { return String(d).toLowerCase().indexOf(s) >= 0; }) : dirs.slice();
+    }
+    function setScope(s) { if (s === 'project' || s === 'global') view.scope = s; }
+    function projectDirs(S) { return Object.keys((S && S.profiles && S.profiles.projects) || {}); }
     function optOf(q, o) { for (var i = 0; i < q.opts.length; i++) if (q.opts[i].o === o) return q.opts[i]; return null; }
     // The recommendation for q: station/suggest's when it named an answer q has, else the author's.
     function rec(q) {
@@ -584,18 +614,123 @@
         last = o;
         lastS = S;
         bind();
-        var dirs = Object.keys((S && S.profiles && S.profiles.projects) || {});
-        if (!dirs.length) return '<div class="st v9 qk" data-block="quick-page" data-sq><p class="an-empty">' + loc('sq.noProject', '還沒有專案可以設定：先在一個專案裡起一個 fankeel 任務。') + '</p></div>';
-        if (dirs.indexOf(st.dir) < 0) st = fresh(dirs[0]);
-        ask(S);
-        var qs = questions(), B = blocks(), b = null;
-        for (var i = 0; i < B.length; i++) if (B[i].id === st.at) b = B[i];
-        var pick = dirs.length > 1 ? '<label class="qk-proj">' + loc('sq.proj', '專案') + ' <select data-sq-proj' + (st.busy ? ' disabled' : '') + '>' + dirs.map(function (d) {
-            return '<option value="' + esc(d) + '"' + (d === st.dir ? ' selected' : '') + '>' + esc(d) + '</option>';
-        }).join('') + '</select></label>' : '';
-        return '<div class="st v9 qk" data-block="quick-page" data-sq>' + railHtml(S, qs, B)
-            + '<section class="dcard v9-wiz qk-wiz" data-block="quick-wizard" aria-label="' + esc(loc('sq.railH', '快速設定')) + '">' + pick + stripHtml(qs)
-            + (b ? screenHtml(S, o, qs, b) : finalHtml(S, o, qs)) + footHtml(S, qs, B) + '</section></div>';
+        var dirs = projectDirs(S), g = view.scope === 'global', body;
+        if (g) body = globalHtml(S, o);
+        else if (!dirs.length) body = '<div class="st v9 qk" data-block="quick-page"><p class="an-empty">' + loc('sq.noProject', '還沒有專案可以設定：先在一個專案裡起一個 fankeel 任務。') + '</p></div>';
+        else {
+            if (dirs.indexOf(st.dir) < 0) st = fresh(dirs[0]);
+            ask(S);
+            var qs = questions(), B = blocks(), b = null;
+            for (var i = 0; i < B.length; i++) if (B[i].id === st.at) b = B[i];
+            body = '<div class="st v9 qk" data-block="quick-page">' + railHtml(S, qs, B)
+                + '<section class="dcard v9-wiz qk-wiz" data-block="quick-wizard" aria-label="' + esc(loc('sq.railH', '快速設定')) + '">' + stripHtml(qs)
+                + (b ? screenHtml(S, o, qs, b) : finalHtml(S, o, qs)) + footHtml(S, qs, B) + '</section></div>';
+        }
+        return '<div class="sq" data-block="settings-scope-' + view.scope + '" data-sq>' + barHtml(o, dirs) + body + '</div>';
+    }
+
+    // ---- the GLOBAL | PROJECT bar ----
+    function baseName(p) { var m = String(p).replace(/[\\/]+$/, '').split(/[\\/]/); return m[m.length - 1] || String(p); }
+    function pickHtml(dirs) {
+        var keep = matchDirs(dirs, view.pq), open = view.open && dirs.length > 1;
+        var trig = '<button type="button" class="sq-trig" data-sq-trig aria-haspopup="listbox" aria-expanded="' + open + '" aria-controls="sqp-list"' + (st.busy ? ' disabled' : '') + '>'
+            + '<span class="sq-tl">' + loc('sq.proj', '專案') + '</span><b>' + esc(baseName(st.dir)) + '</b><code title="' + esc(st.dir) + '">' + esc(st.dir) + '</code>' + CHEVRON + '</button>';
+        if (!open) return '<div class="sq-pick" data-block="settings-project-pick" data-sq-pick>' + trig + '</div>';
+        return '<div class="sq-pick" data-block="settings-project-pick" data-sq-pick>' + trig + '<div class="rpop"><div class="sq-qrow"><input type="search" id="sq-pq" data-sq-pq value="' + esc(view.pq)
+            + '" placeholder="' + esc(loc('sq.pq', '找專案：路徑的任一段')) + '" aria-label="' + esc(loc('sq.pqAria', '找專案')) + '" aria-controls="sqp-list" autocomplete="off" spellcheck="false">'
+            + '<span class="sq-cnt" data-sq-cnt aria-live="polite">' + keep.length + ' / ' + dirs.length + '</span></div>'
+            + '<div class="sq-list" role="listbox" id="sqp-list" aria-label="' + esc(loc('sq.projList', '專案')) + '">' + dirs.map(function (d) {
+                return '<button type="button" class="sq-dir" role="option" aria-selected="' + (d === st.dir) + '" data-sq-dir="' + esc(d) + '"' + (keep.indexOf(d) < 0 ? ' hidden' : '') + '>'
+                    + '<span class="ro-m"><span class="fl">' + esc(baseName(d)) + '</span><small>' + esc(d) + '</small></span>' + (d === st.dir ? CHECK : '') + '</button>';
+            }).join('') + '</div><p class="sq-none" data-sq-none' + (keep.length ? ' hidden' : '') + '>'
+            + loc('sq.pqNone', '沒有路徑含這段字的專案；清空篩選框就會列出全部。') + '</p></div></div>';
+    }
+    function barHtml(o, dirs) {
+        var g = view.scope === 'global';
+        var seg = function (id, name, sub) { return '<button type="button" class="sq-sb" data-sq-scope="' + id + '" aria-pressed="' + (view.scope === id) + '"><b>' + name + '</b><small>' + esc(sub) + '</small></button>'; };
+        return '<div class="sq-bar" data-block="settings-scope-bar"><div class="sq-seg" role="group" aria-label="' + esc(loc('sq.scopeAria', '設定的範圍')) + '">'
+            + seg('global', loc('sq.scopeG', '全域'), loc('sq.gSub', '這台機器 · {n} 項', { n: MACHINE.length }))
+            + seg('project', loc('sq.scopeP', '個別'), loc('sq.pSub', '{n} 個專案', { n: dirs.length })) + '</div>'
+            + (g ? '<p class="sq-where"><span>' + loc('sq.gWhere', '寫進這台機器，每個專案都讀得到') + '</span><code>' + esc(machineFile(o)) + '</code></p>' : dirs.length ? pickHtml(dirs) : '') + '</div>';
+    }
+
+    // ---- GLOBAL: the four MACHINE keys, one screen ----
+    function gqs() {
+        var W = function (k, v) { var r = {}; r[k] = v; return r; };
+        return [
+            { id: 'remote', k: 'station.remote', n: NAME('station.remote'), only: true, title: loc('sq.gRemoteT', '要從手機連進監控站嗎？'),
+                why: loc('sq.gRemoteY', '開著時，監控站經這台機器的 Tailscale（tailscale serve）讓手機連進來；關著時只有 127.0.0.1 連得到。寫在專案檔不會生效。'), note: loc('sq.remoteNote', '預設走 Tailscale；Cloudflare Tunnel + Access 是之後的進階選項，現在還不支援。'), opts: [
+                    O('true', loc('sq.gRemoteOn', '開，經 Tailscale'), loc('sq.gRemoteOnE', '手機在同一個 tailnet 就能開監控站'), null, W('station.remote', 'true'), { risk: loc('sq.gRemoteRisk', '別台裝置連得到') }),
+                    O('false', loc('sq.gRemoteOff', '關'), loc('sq.gRemoteOffE', '只有這台機器連得到'), null, W('station.remote', 'false'))] },
+            { id: 'hold', k: 'phone.hold', n: loc('sq.nHold', '手機等你多久'), title: loc('sq.gHoldT', '手機接上 session 時，每回合等你下一句多久？'),
+                why: loc('sq.gHoldY', '每回合結束後，Stop hook 等手機的下一句最多這麼久；逾時就把 session 交還電腦。'), opts: [
+                    O('', loc('sq.gHoldDef', '30 分鐘'), loc('sq.gHoldDefE', '不設時就是 1800 秒'), null, W('phone.hold', '')),
+                    O('600', loc('sq.gHold10', '10 分鐘'), loc('sq.gHold10E', '走開久一點，電腦就接回去'), null, W('phone.hold', '600')),
+                    O('custom', loc('sq.gHoldCustom', '自訂秒數'), loc('sq.gHoldCustomE', '1 到 1800 秒'), null, W('phone.hold', '$in'))] },
+            { id: 'quota', k: 'quota.week', n: loc('sq.nQuota', '一週額度'), title: loc('sq.gQuotaT', '你一週的額度等於多少美元？'), money: true,
+                why: loc('sq.gQuotaY', '填了之後，監控站在多數金額後面接上佔比。node scripts/quota.js 能從 TokenBar 的讀數自動校準，寫的就是這一項。專案檔也設了時，以專案為準。') },
+            { id: 'lang', k: 'ui.lang', n: loc('sq.nUiLang', '介面語言'), only: true, title: loc('sq.gLangT', '監控站和面板用什麼語言？'),
+                why: loc('sq.gLangY', '跟右上角地球是同一個設定，改哪邊都一樣；面板和 band 下一次更新就換過去。'), opts: [
+                    O('zh', loc('sq.gLangZh', '中文'), loc('sq.gLangZhE', '不管瀏覽器，一律中文'), null, W('ui.lang', 'zh')),
+                    O('en', 'English', loc('sq.gLangEnE', '站頁、面板與 band 都換英文'), null, W('ui.lang', 'en')),
+                    O('', loc('sq.gLangAuto', '不設'), loc('sq.gLangAutoE', '站頁照瀏覽器，面板照中文'), null, W('ui.lang', ''))] },
+        ];
+    }
+    function gval(S, k) { return has(view.g, k) ? view.g[k] : cur(S, null, k); }
+    function gOk(k, v) {
+        if (k === 'phone.hold') { var secs = /^\d+$/.test(v) && Number(v) >= 1 && Number(v) <= 1800; return view.hc ? secs : v === '' || secs; }
+        if (k === 'quota.week') return v === '' || (/^\d+(\.\d+)?$/.test(v) && Number(v) > 0);
+        if (k === 'station.remote') return v === 'true' || v === 'false';
+        return v === '' || v === 'zh' || v === 'en';
+    }
+    function gRows(S) {
+        return gqs().map(function (q) { return { k: q.k, from: cur(S, null, q.k), to: gval(S, q.k) }; }).filter(function (r) { return r.to !== r.from && gOk(r.k, r.to); });
+    }
+    function gSel(S, q) {
+        var v = gval(S, q.k);
+        if (q.k === 'phone.hold') return view.hc || (v !== '' && v !== '600') ? 'custom' : v;
+        return q.k === 'station.remote' ? (v === 'true' ? 'true' : 'false') : v;
+    }
+    function gNow(S, k) {
+        var v = cur(S, null, k);
+        if (k === 'phone.hold') return v === '' ? loc('sq.gHoldDef', '30 分鐘') : v === '600' ? loc('sq.gHold10', '10 分鐘') : v;
+        if (k === 'quota.week') return v === '' ? loc('sq.unset', '未設') : '$' + v;
+        if (k === 'ui.lang') return v === 'zh' ? loc('sq.gLangZh', '中文') : v === 'en' ? 'English' : loc('sq.gLangAuto', '不設');
+        return lab(k, v);
+    }
+    function gFootText(S, n) {
+        return view.busy ? loc('sq.writing', '寫入中⋯') : view.wrote && !n ? loc('sq.wroteAll', '已寫入') : n ? loc('sq.writeN', '寫入 {n} 項', { n: n }) : loc('sq.nothing', '沒有要寫的');
+    }
+    function gQHtml(S, q) {
+        var sel = gSel(S, q), body;
+        if (q.money) {
+            body = '<div class="sq-money"><span class="v9-in"><span aria-hidden="true">$</span><input id="sqgi-quota" data-gin="quota.week" inputmode="decimal" aria-labelledby="sqgq-quota" value="' + esc(gval(S, q.k))
+                + '" placeholder="' + esc(loc('sq.gQuotaPh', '例如 3000')) + '" autocomplete="off"></span><span class="sq-fn">' + loc('sq.gQuotaFn', '空著就是不設：金額後面不接佔比') + '</span></div>';
+        } else {
+            body = optHtml(q, sel, null, null, 'sqg') + (sel === 'custom' && q.k === 'phone.hold'
+                ? '<div class="sq-money"><span class="v9-in"><input id="sqgi-hold" data-gin="phone.hold" inputmode="numeric" value="' + esc(gval(S, q.k)) + '" aria-label="' + esc(loc('sq.gHoldSecs', '秒數，1 到 1800'))
+                    + '" autocomplete="off"></span><span class="sq-fn">' + loc('sq.gHoldSecs', '秒數，1 到 1800') + '</span></div>' : '');
+        }
+        return '<div class="qk-q sq-q" data-block="global-q-' + q.id + '" id="sqg-' + q.id + '" data-gq="' + q.k + '"><div class="qk-qh"><h3 class="qk-qt" id="sqgq-' + q.id + '">' + esc(q.title) + '</h3>'
+            + (q.only ? '<span class="sq-only">' + loc('sq.gOnly', '只讀這台機器') + '</span>' : '') + helpHtml('sqgh-' + q.id, esc(q.why), loc('sq.whyAsk', '為什麼問這題')) + '</div>'
+            + body + (q.note ? '<p class="sq-note">' + esc(q.note) + '</p>' : '') + '</div>';
+    }
+    function globalHtml(S, o) {
+        var Q = gqs(), n = gRows(S).length, ix = Q.map(function (q) {
+            return '<li class="qk-c"><button type="button" class="qk-cb sq-gi" data-sq-jump="sqg-' + q.id + '"><span class="qk-cn"><b>' + esc(q.n) + '</b><small>' + esc(gNow(S, q.k)) + '</small></span></button></li>';
+        }).join('');
+        var here = loc('sq.thisMachine', '這台機器'), sub = loc('sq.gRailS', '{n} 項 · 一個畫面', { n: Q.length });
+        return '<div class="st v9 qk" data-block="global-page"><aside class="dcard v9-rail qk-rail" data-block="global-rail" data-rail aria-label="' + esc(here) + '" data-open="false">'
+            + '<button type="button" class="v9-rtog" data-rtog aria-expanded="false"><b>' + esc(here) + '</b><span>' + esc(sub) + '</span>' + CHEVRON + '</button>'
+            + '<div class="v9-rh"><b>' + esc(here) + '</b><span>' + esc(sub) + '</span></div>'
+            + '<nav class="qk-ix" aria-label="' + esc(loc('sq.gIx', '這台機器的設定')) + '"><ol>' + ix + '</ol></nav>'
+            + '<div class="qk-detail"><a class="qk-dl" href="#/settings/detail"><span><b>' + loc('sq.detail', '進入詳細設定') + '</b><small>' + loc('sq.detailS', '每個設定一個畫面，逐項調整') + '</small></span>' + ARROW + '</a></div></aside>'
+            + '<section class="dcard v9-wiz qk-wiz" data-block="global-card" aria-label="' + esc(here) + '"><div class="qk-screen"><h2 class="qk-bh" tabindex="-1">' + esc(here) + '</h2>'
+            + Q.map(function (q) { return gQHtml(S, q); }).join('') + '</div>'
+            + (S && S.serve ? '' : '<p class="qk-fin-m">' + loc('sq.unserved', '這頁不是經由監控站伺服器開的，不能寫入。') + '</p>')
+            + (view.err ? '<p class="qk-fin-m" role="status">' + esc(view.err) + '</p>' : '')
+            + '<div class="v9-foot" data-block="global-foot"><span class="v9-pos" data-gpos aria-live="polite">' + esc(n ? loc('sq.gFootN', '有 {n} 項要改', { n: n }) : loc('sq.gFootSame', '跟現在一樣，沒有要改的')) + '</span>'
+            + '<button type="button" class="v9-btn pri" data-gwrite' + (!n || view.busy || !(S && S.serve) ? ' disabled' : '') + '>' + esc(gFootText(S, n)) + '</button></div></section></div>';
     }
 
     // ---- events: bound on document once, acting only inside [data-sq] ----
@@ -613,6 +748,51 @@
     function closeTips(keep) {
         if (!doc || typeof doc.querySelectorAll !== 'function') return;
         [].forEach.call(doc.querySelectorAll('[data-sq] [data-qm][aria-expanded="true"]'), function (x) { if (x !== keep) x.setAttribute('aria-expanded', 'false'); });
+    }
+    function closePick() { if (view.open) { view.open = false; redraw(); } }
+    function gAnswer(k, o) {
+        if (view.busy) return;
+        if (k === 'phone.hold' && o === 'custom') {
+            var c = cur(lastS, null, k);
+            view.hc = true;
+            view.g[k] = c === '' || c === '600' ? '' : c;
+            focusId('sqgi-hold');
+        } else {
+            if (k === 'phone.hold') view.hc = false;
+            view.g[k] = o;
+        }
+        view.wrote = 0;
+        view.err = '';
+        redraw();
+    }
+    function gWrite() {
+        var S = lastS, rows = S ? gRows(S) : [];
+        if (!S || !S.serve || view.busy || !rows.length) return;
+        var turnsOn = rows.some(function (r) { return r.k === 'station.remote' && r.to === 'true'; });
+        if (turnsOn && w && typeof w.confirm === 'function' && !w.confirm(loc('sq.gConfirm', '手機遠端會讓同一個 tailnet 的其他裝置連得到這台機器的監控站。確定要打開嗎？'))) return;
+        view.busy = true;
+        view.err = '';
+        redraw();
+        post(S, { scope: 'machine' }, rows, function (ok) {
+            view.busy = false;
+            if (ok) { view.g = {}; view.hc = false; view.wrote = rows.length; } else view.err = loc('sq.failM', '寫入這台機器的設定失敗，那邊沒有存。');
+            redraw();
+        });
+    }
+    // Typing updates the foot in place: a redraw would take the caret out of the box.
+    function gFoot() {
+        var b = doc && typeof doc.querySelector === 'function' ? doc.querySelector('[data-gwrite]') : null, p = doc && typeof doc.querySelector === 'function' ? doc.querySelector('[data-gpos]') : null;
+        var n = lastS ? gRows(lastS).length : 0;
+        if (b) { b.disabled = !n || !(lastS && lastS.serve); b.textContent = gFootText(lastS, n); }
+        if (p) p.textContent = n ? loc('sq.gFootN', '有 {n} 項要改', { n: n }) : loc('sq.gFootSame', '跟現在一樣，沒有要改的');
+    }
+    function filterRows() {
+        if (!doc || typeof doc.querySelectorAll !== 'function') return;
+        var all = projectDirs(lastS), keep = matchDirs(all, view.pq), one = function (s) { return typeof doc.querySelector === 'function' ? doc.querySelector(s) : null; };
+        [].forEach.call(doc.querySelectorAll('[data-sq-dir]'), function (r) { r.hidden = keep.indexOf(r.getAttribute('data-sq-dir')) < 0; });
+        var cnt = one('[data-sq-cnt]'), none = one('[data-sq-none]');
+        if (cnt) cnt.textContent = keep.length + ' / ' + all.length;
+        if (none) none.hidden = keep.length > 0;
     }
     function inside(t) { return t && typeof t.closest === 'function' && t.closest('[data-sq]') ? t : null; }
     function write() {
@@ -644,7 +824,25 @@
     }
     function onClick(e) {
         var t = inside(e && e.target);
-        if (!t) { closeTips(null); return; }
+        if (!t) { closeTips(null); closePick(); return; }
+        var sc = t.closest('[data-sq-scope]');
+        if (sc) { setScope(sc.getAttribute('data-sq-scope')); view.open = false; redraw(); return; }
+        var tr = t.closest('[data-sq-trig]');
+        if (tr) {
+            if (!st.busy && projectDirs(lastS).length > 1) { view.open = !view.open; redraw(); if (view.open) focusId('sq-pq'); }
+            return;
+        }
+        var dr = t.closest('[data-sq-dir]');
+        if (dr) {
+            if (!st.busy) { st = fresh(dr.getAttribute('data-sq-dir')); view.open = false; view.pq = ''; redraw(); }
+            return;
+        }
+        if (!t.closest('[data-sq-pick]')) closePick();
+        var jp = t.closest('[data-sq-jump]'), jel = jp && doc && doc.getElementById(jp.getAttribute('data-sq-jump'));
+        if (jel) { if (typeof jel.scrollIntoView === 'function') jel.scrollIntoView({ block: 'start' }); return; }
+        var gb = t.closest('[data-o]'), gq = gb && gb.closest('[data-gq]');
+        if (gq) { gAnswer(gq.getAttribute('data-gq'), gb.getAttribute('data-o')); return; }
+        if (t.closest('[data-gwrite]')) { gWrite(); return; }
         var qm = t.closest('[data-qm]');
         if (qm) {
             var open = qm.getAttribute('aria-expanded') !== 'true';
@@ -701,6 +899,9 @@
     // Typing changes the state only: a redraw would take the caret out of the box.
     function onInput(e) {
         var t = inside(e && e.target);
+        if (t && t.getAttribute('data-sq-pq') !== null) { view.pq = String(t.value || ''); filterRows(); return; }
+        var gin = t && t.getAttribute('data-gin');
+        if (gin) { view.g[gin] = String(t.value || '').trim(); view.wrote = 0; view.err = ''; gFoot(); return; }
         if (slid(t)) return;
         var q = t && t.getAttribute('data-in') !== null ? t.closest('[data-q]') : null;
         if (!q) return;
@@ -716,11 +917,10 @@
         if (sl) { redraw(); focusId('qkr-' + sl); return; }
         var k = t.getAttribute('data-mk');
         if (k) { st.mk[k] = Boolean(t.checked); if (st.mc === 'yes') st.mc = ''; redraw(); return; }
-        if (t.getAttribute('data-cf') !== null) { st.cf = Boolean(t.checked); st.wrote = 0; redraw(); return; }
-        if (t.getAttribute('data-sq-proj') !== null) { st = fresh(String(t.value)); redraw(); }
+        if (t.getAttribute('data-cf') !== null) { st.cf = Boolean(t.checked); st.wrote = 0; redraw(); }
     }
     function onKey(e) {
-        if (e && e.key === 'Escape') { closeTips(null); return; }
+        if (e && e.key === 'Escape') { closeTips(null); closePick(); return; }
         var t = inside(e && e.target), q = t && t.getAttribute('data-o') !== null ? t.closest('[data-q]') : null;
         var step = e && (e.key === 'ArrowDown' || e.key === 'ArrowRight') ? 1 : e && (e.key === 'ArrowUp' || e.key === 'ArrowLeft') ? -1 : 0;
         if (!q || !step) return;
@@ -746,10 +946,11 @@
         doc.addEventListener('keydown', onKey);
     }
     function state() { return st; }
-    function reset() { st = fresh(null); over = {}; last = null; lastS = null; }
+    function scopeView() { return { scope: view.scope, pq: view.pq, open: view.open }; }
+    function reset() { st = fresh(null); over = {}; last = null; lastS = null; view = freshView(); }
 
     var api = { page: page, questions: questions, blocks: blocks, NAME: NAME, MACHINE: MACHINE, AUTHOR: AUTHOR, cur: cur, lab: lab, optHtml: optHtml, sliderHtml: sliderHtml, slideSync: slideSync, post: post,
-        onClick: onClick, onInput: onInput, onChange: onChange, onKey: onKey, state: state, reset: reset, EN: EN };
+        onClick: onClick, onInput: onInput, onChange: onChange, onKey: onKey, state: state, reset: reset, matchDirs: matchDirs, setScope: setScope, view: scopeView, EN: EN };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     if (w) w.FK_SETTINGS = api;
 }(typeof window !== 'undefined' ? window : null, typeof document !== 'undefined' ? document : null));
