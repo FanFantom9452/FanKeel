@@ -114,7 +114,6 @@ function main(raw) {
                 }
             });
         } catch (e) { /* housekeeping */ }
-        // docs/90-agent/plans/2026-10-21-station-remote-design.md §5: a task
     }
 
     try {

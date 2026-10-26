@@ -982,8 +982,6 @@ function cmdStage(root, opts) {
     if (!wrote) fail('Could not write the entry.');
     const clash = collisions(root, id, data);
     showBadge(opts, id, badge.badgeWord(name, clash.length > 0), Object.assign({ others: clash.length }, data), root);
-    // docs/90-agent/plans/2026-10-21-station-remote-design.md §5: a stage left
-    }
 
     // What the stage just left cost, said at the one moment it is a finished
     // number. It goes here rather than into the injected block because `build`
