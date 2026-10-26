@@ -87,3 +87,25 @@ test('a changes log that cannot be read throws instead of reading as empty', () 
     fs.mkdirSync(E.changesFile(file));
     assert.throws(() => E.readChanges(file), (e) => e.code === 'EISDIR');
 });
+
+test('two edits started together on one board both land', async () => {
+    const { file } = board();
+    await Promise.all([
+        E.editBoard(file, { ops: [{ op: 'set', id: 'a', f: { label: 'Gateway' } }] }, ''),
+        E.editBoard(file, { ops: [{ op: 'set', id: 'b', f: { label: 'Store' } }] }, ''),
+    ]);
+    const text = fs.readFileSync(file, 'utf8');
+    assert.match(text, /"label":"Gateway"/);
+    assert.match(text, /"label":"Store"/);
+    assert.equal(E.readChanges(file).length, 2);
+});
+
+test('an edit refused on a board does not hold up the next one on it', async () => {
+    const { file } = board();
+    const bad = E.editBoard(file, { ops: [{ op: 'add', rec: { edge: 'e', in: 'v', from: 'a', to: 'ghost' } }] }, '');
+    const good = E.editBoard(file, { ops: [{ op: 'set', id: 'a', f: { label: 'Gateway' } }] }, '');
+    await assert.rejects(bad, (e) => e.name === 'BatchError');
+    await good;
+    assert.match(fs.readFileSync(file, 'utf8'), /"label":"Gateway"/);
+    assert.equal(E.readChanges(file).length, 1);
+});
