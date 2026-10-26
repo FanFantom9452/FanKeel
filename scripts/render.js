@@ -21,7 +21,10 @@
 // a `--headless=new` screenshot at `--size`, and `render.html`, the DOM
 // `--dump-dom` prints after the page's own script has run — the second is
 // what `fankeel-render-reviewer` reads for what the page's own script
-// wrote. Both paths print on stdout, one per line, nothing else.
+// wrote. Both paths print on stdout, one per line, nothing else. Under
+// `--act`, each `shot` step adds `<name>.png` in the same directory, and every
+// file written prints one per line — the shots in step order, then
+// `render.png` and `render.html`.
 //
 // `FANKEEL_BROWSER` names a browser directly and is tried first, ahead of
 // every other lookup. `FANKEEL_NO_FALLBACK=1` turns off every lookup but
@@ -245,11 +248,22 @@ async function devtoolsPort(profileDir, ms) {
 
 // One DevTools session over `ws`: `send` resolves with a command's result or
 // rejects with its error; `once` resolves on the next event of that method,
-// or rejects after `ms`.
+// or rejects after `ms`. When the socket closes — the browser died or was
+// killed — everything still pending, and anything asked afterwards, rejects:
+// a promise nothing settles would let the event loop drain and the process
+// exit 0 with nothing printed.
 function connect(ws) {
     let id = 0;
+    let closed = false;
     const waiting = new Map();
     const listeners = [];
+    const gone = () => new Error('the browser closed the DevTools connection');
+    ws.addEventListener('close', () => {
+        closed = true;
+        for (const w of waiting.values()) w.reject(gone());
+        waiting.clear();
+        for (const l of listeners.splice(0)) { clearTimeout(l.timer); l.reject(gone()); }
+    });
     ws.addEventListener('message', (m) => {
         const msg = JSON.parse(m.data);
         if (msg.id !== undefined && waiting.has(msg.id)) {
@@ -262,13 +276,15 @@ function connect(ws) {
         for (const l of listeners.slice()) if (l.method === msg.method) l.fire();
     });
     const send = (method, params) => new Promise((resolve, reject) => {
+        if (closed) return reject(gone());
         id += 1;
         waiting.set(id, { resolve, reject });
         ws.send(JSON.stringify({ id, method, params: params || {} }));
     });
     const once = (method, ms) => new Promise((resolve, reject) => {
-        const l = { method, fire: () => { clearTimeout(t); listeners.splice(listeners.indexOf(l), 1); resolve(); } };
-        const t = setTimeout(() => { listeners.splice(listeners.indexOf(l), 1); reject(new Error(method + ' did not come within ' + ms / 1000 + ' s')); }, ms);
+        if (closed) return reject(gone());
+        const l = { method, reject, fire: () => { clearTimeout(l.timer); listeners.splice(listeners.indexOf(l), 1); resolve(); } };
+        l.timer = setTimeout(() => { listeners.splice(listeners.indexOf(l), 1); reject(new Error(method + ' did not come within ' + ms / 1000 + ' s')); }, ms);
         listeners.push(l);
     });
     return new Promise((resolve, reject) => {
@@ -278,6 +294,7 @@ function connect(ws) {
 }
 
 // The centre of the first element `sel` matches, scrolled into view, or null.
+// A selector the page rejects throws, as itself rather than as "no element".
 async function centre(cdp, sel) {
     const r = await cdp.send('Runtime.evaluate', {
         returnByValue: true,
@@ -285,6 +302,10 @@ async function centre(cdp, sel) {
             + ' e.scrollIntoView({ block: "center", inline: "center" }); const b = e.getBoundingClientRect();'
             + ' return [b.left + b.width / 2, b.top + b.height / 2]; })()',
     });
+    if (r.exceptionDetails) {
+        const d = r.exceptionDetails;
+        throw new Error('bad selector ' + sel + ': ' + ((d.exception && d.exception.description) || (r.result && r.result.description) || d.text));
+    }
     return r.result.value;
 }
 
@@ -299,7 +320,8 @@ async function shotTo(cdp, file) {
 }
 
 // Every file it wrote, in order: each `shot`, then render.png and render.html.
-// A step whose selector matches nothing throws, naming the step.
+// A step whose selector matches nothing, or is not a selector, throws naming
+// the step; so does the browser closing mid-run (see `connect`).
 async function runAct(browser, url, steps, outDir, size) {
     const [w, h] = size.split(',').map(Number);
     const profileDir = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-render-'));
@@ -323,7 +345,7 @@ async function runAct(browser, url, steps, outDir, size) {
             const label = 'step ' + (n + 1) + ' (' + step.kind + (step.sel ? ' ' + step.sel : '') + ')';
             if (step.kind === 'wait') { await sleep(step.ms); continue; }
             if (step.kind === 'shot') { wrote.push(await shotTo(cdp, path.join(outDir, step.name + '.png'))); continue; }
-            const at = await centre(cdp, step.sel);
+            const at = await centre(cdp, step.sel).catch((e) => { throw new Error(label + ': ' + e.message); });
             if (!at) throw new Error(label + ': no element matches');
             const [x, y] = at;
             await mouse(cdp, 'mouseMoved', x, y, 0);
@@ -411,4 +433,4 @@ function main() {
 }
 
 if (require.main === module) main();
-module.exports = { findBrowser, toUrl };
+module.exports = { findBrowser, toUrl, connect, centre };

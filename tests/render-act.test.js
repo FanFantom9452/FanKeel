@@ -8,7 +8,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { parseSteps } = require('../lib/act.js');
-const { findBrowser } = require('../scripts/render.js');
+const { findBrowser, connect, centre } =require('../scripts/render.js');
 const tmp = require('./tmp.js');
 
 const RENDER = path.join(__dirname, '..', 'scripts', 'render.js');
@@ -23,9 +23,35 @@ test('parseSteps reads the five kinds', () => {
 test('parseSteps refuses what it cannot run, naming the step', () => {
     for (const [text, said] of [
         ['nope', /is not JSON/], ['[]', /non-empty/], ['[{"hover":"#a"}]', /^step 1: names none/],
-        ['[{"wait":-1}]', /^step 1: wait/], ['[{"shot":"../x"}]', /^step 1: shot/],
+        ['[{"wait":-1}]', /^step 1: wait/], ['[{"wait":30001}]', /^step 1: wait/], ['[{"wait":1.5}]', /^step 1: wait/],
+        ['[{"shot":"../x"}]', /^step 1: shot/], ['[{"shot":5}]', /^step 1: shot/], ['[{"shot":"render"}]', /^step 1: shot/],
         ['[{"click":"#a"},{"drag":"#d"}]', /^step 2: drag needs by/], ['[{"type":"#i"}]', /^step 1: type needs text/],
+        ['[{"click":"  "}]', /^step 1: click is a CSS selector/], ['[{"click":5}]', /^step 1: click is a CSS selector/],
+        ['[{"drag":"#d","by":[1,2,3]}]', /^step 1: drag needs by/], ['[{"drag":"#d","by":[1]}]', /^step 1: drag needs by/],
+        ['[{"drag":"#d","by":[1,"2"]}]', /^step 1: drag needs by/], ['[{"drag":"#d","by":[1,null]}]', /^step 1: drag needs by/],
+        ['[null]', /^step 1: is not an object/], ['[[]]', /^step 1: is not an object/], ['[5]', /^step 1: is not an object/],
+        ['[{"click":"#a"},{"click":"#a","shot":"x"}]', /^step 2: names more than one of/],
     ]) assert.throws(() => parseSteps(text), { message: said }, text);
+});
+
+test('connect rejects what is pending when the socket closes, so a dying browser is an error', async () => {
+    const ws = Object.assign(new EventTarget(), { send() {} });
+    const opened = connect(ws);
+    ws.dispatchEvent(new Event('open'));
+    const cdp = await opened;
+    const sent = cdp.send('Page.enable');
+    const waited = cdp.once('Page.loadEventFired', 60000);
+    ws.dispatchEvent(new Event('close'));
+    await assert.rejects(sent, /closed/);
+    await assert.rejects(waited, /closed/);
+    await assert.rejects(cdp.once('Page.loadEventFired', 60000), /closed/);
+});
+
+test('centre says a selector the page rejects is a bad selector, not a missing element', async () => {
+    const answer = (r) => ({ send: async () => r });
+    await assert.rejects(centre(answer({ exceptionDetails: { text: 'Uncaught' }, result: { description: 'SyntaxError: not a selector' } }), '#a['), /bad selector/);
+    assert.equal(await centre(answer({ result: { value: null } }), '#a'), null);
+    assert.deepEqual(await centre(answer({ result: { value: [3, 4] } }), '#a'), [3, 4]);
 });
 
 test('a bad --act file is refused before any browser is looked for', () => {
