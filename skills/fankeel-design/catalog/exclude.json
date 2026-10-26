@@ -1,0 +1,1342 @@
+{
+  "notice": {
+    "sources": {
+      "T": "taste-skill 2.1.5 (skills/taste-skill), MIT, Copyright (c) 2026 Leonxlnx",
+      "I": "impeccable 4.7.1 (skills/impeccable), licence stated inconsistently (Apache-2.0 in SKILL.md, MIT in plugin.json); concepts only, rewritten",
+      "D": "designer-skills (Owl-Listener/designer-skills), MIT, Copyright (c) 2026 MC Dean"
+    },
+    "mit": "Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software. THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND.",
+    "picks": "Kept by the user on 2026-10-27, all 162 blocks; where sources disagree, skills/fankeel-design/design-guide.md carries the user's pick."
+  },
+  "items": [
+    {
+      "id": "ex-layout-centred-hero",
+      "group": "版面套路",
+      "name": "置中 hero",
+      "why": "置中大標、副標、兩顆按鈕、下方一張截圖，是最常見的生成首屏；taste 沒寫成規則，但抽方向時刻意避開。",
+      "src": [
+        "T/references/tells.md:34"
+      ],
+      "from": "taste",
+      "guide": {
+        "status": "部分",
+        "at": "guide:90",
+        "note": "guide 只禁「漸層上的置中 hero」"
+      },
+      "check": "review",
+      "html": "<div class=\"h\"><b>Ship your roadmap in days</b><span>The workspace for teams that move fast.</span><p><i class=\"p\">Get started</i><i>Learn more</i></p><em></em></div>",
+      "css": "%%{background:#fafafa}%% .h{height:100%;display:flex;flex-direction:column;align-items:center;text-align:center;padding:16px 12px 0;gap:5px}%% b{font-size:17px;font-weight:700;color:#111;letter-spacing:-.01em}%% span{font-size:11px;color:#6b7280}%% p{display:flex;gap:6px;margin:4px 0 0}%% i{font-style:normal;font-size:10px;padding:4px 10px;border-radius:7px;border:1px solid #d1d5db;background:#fff;color:#111}%% i.p{background:#111;border-color:#111;color:#fff}%% em{display:block;width:82%;flex:1;margin-top:8px;border-radius:8px 8px 0 0;background:#e5e7eb;border:1px solid #d1d5db;border-bottom:0}"
+    },
+    {
+      "id": "ex-layout-icon-cards",
+      "group": "版面套路",
+      "name": "三張等大圖示卡",
+      "why": "圓角方框裡一個圖示、一個標題、一段字，三張並排當功能區；impeccable 另說巢狀卡片一律不對。",
+      "src": [
+        "T/references/tells.md:32",
+        "T/SKILL.md:401",
+        "I/reference/craft-floor.md:25"
+      ],
+      "from": "both",
+      "guide": {
+        "status": "有",
+        "at": "guide:90",
+        "note": ""
+      },
+      "check": "review",
+      "html": "<div class=\"c\"><i></i><b>Fast</b><span>Built for speed from day one.</span></div><div class=\"c\"><i></i><b>Secure</b><span>Your data stays yours.</span></div><div class=\"c\"><i></i><b>Scalable</b><span>Grows with your team.</span></div>",
+      "css": "%%{background:#f8fafc;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:24px 10px}%% .c{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:10px 8px;display:flex;flex-direction:column;gap:5px;box-shadow:0 2px 6px rgba(0,0,0,.05)}%% i{width:22px;height:22px;border-radius:7px;background:#eef2ff;position:relative}%% i::after{content:\"\";position:absolute;inset:7px;border-radius:2px;background:#6366f1}%% b{font-size:11px;color:#111}%% span{font-size:9px;color:#6b7280;line-height:1.3}"
+    },
+    {
+      "id": "ex-layout-bento",
+      "group": "版面套路",
+      "name": "Bento 圓角磚格",
+      "why": "一格格大小不一的圓角磚拼成功能區；taste 只在「整齊的板」方向允許磚格，而且要平塗、尺寸嚴格。",
+      "src": [
+        "T/references/tells.md:44"
+      ],
+      "from": "taste",
+      "guide": {
+        "status": "無",
+        "at": "",
+        "note": ""
+      },
+      "check": "review",
+      "html": "<div class=\"g\"><div class=\"a\"><b>All your data</b><span>in one place</span></div><div><b>99.9%</b><span>uptime</span></div><div><b>AI</b><span>built in</span></div><div class=\"d\"><b>Integrations</b><span>200+ apps</span></div></div>",
+      "css": "%%{background:#f4f4f5;padding:10px}%% .g{display:grid;grid-template-columns:2fr 1fr 1fr;grid-template-rows:1fr 1fr;gap:6px;height:100%}%% .g>div{background:#fff;border-radius:14px;padding:8px;border:1px solid #e4e4e7;display:flex;flex-direction:column;justify-content:flex-end}%% .g>.a{grid-row:span 2;background:linear-gradient(160deg,#fff,#eef2f7)}%% .g>.d{grid-column:span 2}%% b{font-size:11px;color:#18181b}%% span{font-size:9px;color:#71717a}"
+    },
+    {
+      "id": "ex-layout-hero-metric",
+      "group": "版面套路",
+      "name": "Hero 大數字",
+      "why": "一個大數字、一行小標、幾個輔助數據再加重點色，impeccable 列為頁面骨架的預設套路。",
+      "src": [
+        "I/reference/craft-floor.md:26"
+      ],
+      "from": "impeccable",
+      "guide": {
+        "status": "無",
+        "at": "",
+        "note": "guide:96 只管沒有資料來源的精確數字"
+      },
+      "check": "review",
+      "html": "<div class=\"m\"><b>98%</b><span>of teams ship faster</span></div><div class=\"s\"><p><b>2.4×</b><span>output</span></p><p><b>12k</b><span>users</span></p><p><b>4.9</b><span>rating</span></p></div>",
+      "css": "%%{background:#fff;padding:16px}%% .m b{display:block;font-size:46px;font-weight:800;line-height:1;color:#2563eb;letter-spacing:-.03em}%% .m span{font-size:11px;color:#6b7280}%% .s{display:flex;gap:18px;margin-top:14px}%% .s p{margin:0}%% .s b{display:block;font-size:15px;color:#111}%% .s span{font-size:9px;color:#6b7280}"
+    },
+    {
+      "id": "ex-layout-all-centred",
+      "group": "版面套路",
+      "name": "全部置中",
+      "why": "每一段的標題和內文都置中；taste 置中超過 72% 就警告，預設靠左，整頁最多一處置中。",
+      "src": [
+        "T/references/tells.md:91",
+        "T/SKILL.md:436"
+      ],
+      "from": "taste",
+      "guide": {
+        "status": "無",
+        "at": "",
+        "note": ""
+      },
+      "check": "review",
+      "html": "<div><b>Why teams choose us</b><span>A short centred paragraph that runs on for two lines under it.</span></div><div><b>How it works</b><span>Another centred block, same width, same rhythm.</span></div><div><b>Start today</b><i>Sign up</i></div>",
+      "css": "%%{background:#fff;display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px;padding:9px 24px}%% div{display:flex;flex-direction:column;align-items:center;gap:1px}%% b{font-size:12px;color:#111}%% span{font-size:9px;color:#6b7280;max-width:180px}%% i{font-style:normal;font-size:9px;background:#111;color:#fff;padding:3px 9px;border-radius:6px;margin-top:3px}"
+    },
+    {
+      "id": "ex-layout-same-family",
+      "group": "版面套路",
+      "name": "每段同一種版型",
+      "why": "每一段都是「左邊標題、右邊一排卡」的同一種構圖；taste 要每段構圖都和鄰段不同。impeccable 反而說變化本身不是目的（I/reference/layout.md:59）。",
+      "src": [
+        "T/references/tells.md:90",
+        "T/SKILL.md:444"
+      ],
+      "from": "taste",
+      "guide": {
+        "status": "無",
+        "at": "",
+        "note": ""
+      },
+      "check": "review",
+      "html": "<div class=\"r\"><b>Features</b><p><i></i><i></i><i></i></p></div><div class=\"r\"><b>Benefits</b><p><i></i><i></i><i></i></p></div><div class=\"r\"><b>Pricing</b><p><i></i><i></i><i></i></p></div>",
+      "css": "%%{background:#fff;padding:10px 12px;display:flex;flex-direction:column;gap:8px}%% .r{display:grid;grid-template-columns:62px 1fr;gap:8px;align-items:center}%% b{font-size:10px;color:#111}%% p{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin:0}%% i{height:34px;border-radius:8px;background:#f1f5f9;border:1px solid #e2e8f0}"
+    },
+    {
+      "id": "ex-layout-long-headline",
+      "group": "版面套路",
+      "name": "標題超過兩行",
+      "why": "一整句話放在大標尺寸、跑三四行；taste 要求每個 h1 到 h6 在任何寬度都不超過兩行，先刪字、再放寬、最後才縮字。",
+      "src": [
+        "T/references/tells.md:88",
+        "T/SKILL.md:388"
+      ],
+      "from": "taste",
+      "guide": {
+        "status": "無",
+        "at": "",
+        "note": ""
+      },
+      "check": "review",
+      "html": "<b>We help modern teams build better products faster than ever before</b><span>Supporting line below the headline.</span>",
+      "css": "%%{background:#fff;padding:12px 14px}%% b{display:block;font-size:22px;line-height:1.12;font-weight:700;color:#111;letter-spacing:-.02em;max-width:224px}%% span{display:block;font-size:9px;color:#6b7280;margin-top:6px}"
+    },
+    {
+      "id": "ex-layout-fake-dashboard",
+      "group": "版面套路",
+      "name": "假儀表板",
+      "why": "用灰條、甜甜圈圖和骨架線拼成的「產品截圖」；要嘛放真的介面片段，要嘛什麼都不放。",
+      "src": [
+        "T/references/tells.md:47",
+        "T/SKILL.md:403"
+      ],
+      "from": "taste",
+      "guide": {
+        "status": "有",
+        "at": "guide:94",
+        "note": ""
+      },
+      "check": "review",
+      "html": "<div class=\"w\"><div class=\"sb\"><i></i><i></i><i></i><i></i></div><div class=\"mn\"><p><i></i><i></i><i></i></p><div class=\"row\"><div class=\"donut\"></div><div class=\"bars\"><i style=\"height:40%\"></i><i style=\"height:70%\"></i><i style=\"height:55%\"></i><i style=\"height:90%\"></i><i style=\"height:65%\"></i></div></div><p class=\"sk\"><i></i><i></i></p></div></div>",
+      "css": "%%{background:#f3f4f6;padding:10px}%% .w{display:grid;grid-template-columns:34px 1fr;gap:6px;height:100%;background:#fff;border-radius:10px;padding:6px;box-shadow:0 8px 24px rgba(0,0,0,.08)}%% .sb{display:flex;flex-direction:column;gap:5px;padding-top:4px}%% .sb i{height:5px;border-radius:3px;background:#e5e7eb}%% .mn{display:flex;flex-direction:column;gap:6px}%% .mn>p{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin:0}%% .mn>p i{height:20px;border-radius:6px;background:#f3f4f6}%% .row{display:grid;grid-template-columns:52px 1fr;gap:6px;flex:1}%% .donut{width:46px;height:46px;border-radius:50%;background:conic-gradient(#6366f1 0 62%,#a5b4fc 62% 84%,#e5e7eb 84%);-webkit-mask:radial-gradient(circle,transparent 13px,#000 14px);mask:radial-gradient(circle,transparent 13px,#000 14px)}%% .bars{display:flex;align-items:flex-end;gap:4px}%% .bars i{flex:1;background:#c7d2fe;border-radius:3px 3px 0 0}%% .sk{display:flex;flex-direction:column;gap:3px;margin:0}%% .sk i{height:4px;border-radius:2px;background:#e5e7eb}%% .sk i+i{width:60%}"
+    },
+    {
+      "id": "ex-layout-card-everything",
+      "group": "版面套路",
+      "name": "什麼都裝進卡片",
+      "why": "每個群組都包一張卡，卡裡再包卡，層級反而被壓平；能用間距就不用邊框，能用底色就不用卡片。",
+      "src": [
+        "D/ui-design/skills/law-of-common-region/SKILL.md:34",
+        "D/ui-design/skills/law-of-common-region/SKILL.md:35",
+        "D/ui-design/skills/law-of-common-region/SKILL.md:39"
+      ],
+      "from": "designer",
+      "guide": {
+        "status": "有",
+        "at": "guide:62",
+        "note": "巢狀深度見「互相矛盾」"
+      },
+      "check": "review",
+      "html": "<div class=\"o\"><b>Account</b><div class=\"c\"><span>Name</span><div class=\"c\"><span>Ana Ruiz</span></div></div><div class=\"c\"><span>Plan</span><div class=\"c\"><span>Team</span></div></div></div>",
+      "css": "%%{background:#f3f4f6;padding:10px}%% .o{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:6px;height:100%}%% b{font-size:11px;color:#111}%% .c{border:1px solid #e5e7eb;border-radius:8px;padding:5px 7px;display:flex;flex-direction:column;gap:4px;box-shadow:0 1px 3px rgba(0,0,0,.06)}%% .c .c{padding:3px 6px}%% span{font-size:9px;color:#374151}"
+    },
+    {
+      "id": "ex-layout-no-scrim",
+      "group": "版面套路",
+      "name": "沒有遮罩的對話框",
+      "why": "白頁上直接彈出白色對話框，只靠邊緣分辨前後；對話框背後要壓暗一層。",
+      "src": [
+        "D/ui-design/skills/law-of-figure-ground/SKILL.md:55",
+        "D/ui-design/skills/law-of-figure-ground/SKILL.md:37"
+      ],
+      "from": "designer",
+      "guide": {
+        "status": "無",
+        "at": "",
+        "note": ""
+      },
+      "check": "review",
+      "html": "<div class=\"pq\"><i></i><i></i><i></i><i></i></div><div class=\"m\"><b>Rename file</b><i class=\"in\"></i><p><em>Save</em></p></div>",
+      "css": "%%{background:#fff}%% .pq{padding:12px 14px;display:flex;flex-direction:column;gap:8px}%% .pq i{display:block;height:8px;background:#eef0f3;border-radius:2px}%% .m{position:absolute;left:44px;top:34px;width:160px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:6px}%% b{font-size:11px;color:#111}%% .in{display:block;height:16px;border:1px solid #d1d5db;border-radius:4px}%% p{display:flex;justify-content:flex-end}%% em{font-style:normal;font-size:9px;background:#111;color:#fff;padding:3px 8px;border-radius:4px}"
+    },
+    {
+      "id": "ex-layout-equal-columns",
+      "group": "版面套路",
+      "name": "沒有主次的等寬兩欄",
+      "why": "兩欄一樣寬、一樣重，看不出哪邊是主要內容。本頁的左右兩欄也是這樣。",
+      "src": [
+        "D/visual-critique/skills/critique-composition/SKILL.md:42"
+      ],
+      "from": "designer",
+      "guide": {
+        "status": "無",
+        "at": "",
+        "note": ""
+      },
+      "check": "review",
+      "html": "<div><b>Overview</b><i></i><i></i><i></i><i class=\"s\"></i></div><div><b>Activity</b><i></i><i></i><i></i><i class=\"s\"></i></div>",
+      "css": "%%{background:#fff;padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:12px}%% div{display:flex;flex-direction:column;gap:6px;background:#f6f7f9;border-radius:6px;padding:10px}%% b{font-size:12px;color:#111}%% i{display:block;height:6px;background:#d6d9de;border-radius:2px}%% i.s{width:60%}"
+    },
+    {
+      "id": "ex-layout-misaligned",
+      "group": "版面套路",
+      "name": "差幾 px 的對不齊",
+      "why": "左緣差 2、3px，眼睛每一行都要重新找起點；看起來就是做得粗。",
+      "src": [
+        "D/ui-design/skills/law-of-continuity/SKILL.md:26",
+        "D/ui-design/skills/law-of-continuity/SKILL.md:70",
+        "D/ui-design/skills/aesthetic-usability/SKILL.md:23"
+      ],
+      "from": "designer",
+      "guide": {
+        "status": "無",
+        "at": "",
+        "note": ""
+      },
+      "check": "review",
+      "html": "<b>Shipping</b><span style=\"margin-left:3px\">Standard, 3 to 5 days</span><i style=\"margin-left:-2px\"></i><span style=\"margin-left:5px\">Express, next day</span><i style=\"margin-left:2px\"></i>",
+      "css": "%%{background:#fff;padding:22px 20px;display:flex;flex-direction:column;align-items:flex-start;gap:6px}%% b{font-size:13px;color:#111}%% span{font-size:11px;color:#374151}%% i{display:block;width:160px;height:16px;border:1px solid #d1d5db;border-radius:4px}"
+    },
+    {
+      "id": "ex-layout-metric-wall",
+      "group": "版面套路",
+      "name": "什麼都放的儀表板",
+      "why": "把每個指標都擺上儀表板、表格開十幾欄；三欄做掉九成的事，其餘放到詳細頁。",
+      "src": [
+        "D/visual-critique/skills/critique-information-density/SKILL.md:41",
+        "D/visual-critique/skills/critique-information-density/SKILL.md:43"
+      ],
+      "from": "designer",
+      "guide": {
+        "status": "無",
+        "at": "",
+        "note": ""
+      },
+      "check": "review",
+      "html": "<div class=\"k\"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class=\"t\"><p></p><p></p><p></p><p></p><p></p></div>",
+      "css": "%%{background:#fff;padding:8px;display:flex;flex-direction:column;gap:6px}%% .k{display:grid;grid-template-columns:repeat(8,1fr);gap:3px}%% .k i{display:block;height:20px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:3px}%% .t{flex:1;display:flex;flex-direction:column;gap:2px}%% .t p{margin:0;flex:1;background:repeating-linear-gradient(90deg,#e5e7eb 0 14px,#fff 14px 16px)}"
+    },
+    {
+      "id": "ex-type-eyebrow",
+      "group": "字與標籤",
+      "name": "Eyebrow 小標",
+      "why": "標題上方小字、加字距、全大寫的標籤；兩邊都禁，impeccable 說任何 brief 都要不回來。fankeel 現況：station.css:106 仍有 .eyebrow，station.js:2495 在用。",
+      "src": [
+        "T/references/tells.md:41",
+        "T/SKILL.md:393",
+        "I/reference/craft-floor.md:27"
+      ],
+      "from": "both",
+      "guide": {
+        "status": "有",
+        "at": "guide:91",
+        "note": ""
+      },
+      "check": "caps-label",
+      "html": "<span class=\"eb\">Features</span><b>Everything you need to scale</b><p>Plan, build and ship from one place.</p><span class=\"eb\">How it works</span><b>Three simple steps</b>",
+      "css": "%%{background:#fff;padding:14px 16px;display:flex;flex-direction:column;gap:3px}%% .eb{font-size:9px;letter-spacing:.18em;font-weight:600;color:#6366f1;text-transform:uppercase}%% b{font-size:15px;color:#111;letter-spacing:-.01em}%% p{margin:0 0 10px;font-size:10px;color:#6b7280}"
+    },
+    {
+      "id": "ex-type-pill-badge",
+      "group": "字與標籤",
+      "name": "標題上的膠囊徽章",
+      "why": "hero 標題上方的「New」「Beta」「Introducing」小膠囊；要說的話寫進說明句。",
+      "src": [
+        "T/references/tells.md:42",
+        "T/SKILL.md:393"
+      ],
+      "from": "taste",
+      "guide": {
+        "status": "無",
+        "at": "",
+        "note": ""
+      },
+      "check": "review",
+      "html": "<span class=\"pl\"><i>New</i>Introducing Flows 2.0 →</span><b>Automate the boring parts</b><p>One sentence under the headline.</p>",
+      "css": "%%{background:#fff;display:flex;flex-direction:column;align-items:center;text-align:center;padding:26px 14px;gap:8px}%% .pl{display:inline-flex;align-items:center;gap:6px;font-size:9px;color:#374151;border:1px solid #e5e7eb;border-radius:999px;padding:3px 9px 3px 3px;background:#f9fafb}%% .pl i{font-style:normal;background:#111;color:#fff;border-radius:999px;padding:1px 6px;font-size:8px}%% b{font-size:17px;color:#111;letter-spacing:-.01em}%% p{margin:0;font-size:10px;color:#6b7280}"
+    },
+    {
+      "id": "ex-type-index-numbers",
+      "group": "字與標籤",
+      "name": "01 / 02 / 03 編號",
+      "why": "不是真順序的內容也加 01、02、03、(001) 或 Step 2；impeccable 只在順序本身帶資訊時允許。",
+      "src": [
+        "T/references/tells.md:75",
+        "T/SKILL.md:395",
+        "I/reference/craft-floor.md:28"
+      ],
+      "from": "both",
+      "guide": {
+        "status": "有",
+        "at": "guide:91",
+        "note": ""
+      },
+      "check": "review",
+      "html": "<div><i>01</i><b>Plan</b><span>Map the work.</span></div><div><i>02</i><b>Build</b><span>Ship the parts.</span></div><div><i>03</i><b>Launch</b><span>Go live.</span></div>",
+      "css": "%%{background:#fafaf9;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:30px 14px}%% div{display:flex;flex-direction:column;gap:3px}%% i{font-style:normal;font-size:30px;font-weight:300;color:#a8a29e;line-height:1;letter-spacing:-.02em}%% b{font-size:12px;color:#1c1917}%% span{font-size:9px;color:#78716c}"
+    },
+    {
+      "id": "ex-type-mono-costume",
+      "group": "字與標籤",
+      "name": "等寬字當「技術感」",
+      "why": "等寬小標、等寬圖說當技術腔；taste 程式碼以外全禁，impeccable 只禁拿它當戲服、程式碼與數據照用。",
+      "src": [
+        "T/references/tells.md:74",
+        "T/SKILL.md:394",
+        "I/reference/craft-floor.md:38"
+      ],
+      "from": "both",
+      "guide": {
+        "status": "衝突",
+        "at": "guide:37",
+        "note": "guide 許對齊的數字用 mono，見「互相矛盾」"
+      },
+      "check": "review",
+      "html": "<span class=\"t\">// SYSTEM_STATUS: ONLINE</span><b>Infrastructure for builders</b><span class=\"t\">[ v2.4.1 ]  LAT 52.37 N</span><p><span class=\"t\">&gt; deploy --prod</span></p>",
+      "css": "%%{background:#0f1115;padding:18px 16px;display:flex;flex-direction:column;gap:6px}%% .t{font-family:Consolas,\"Courier New\",monospace;font-size:9.5px;color:#9ca3af;letter-spacing:.04em}%% b{font-size:16px;color:#f9fafb;font-weight:600}%% p{margin:0}%% p .t{color:#86efac}"
+    },
+    {
+      "id": "ex-type-tiny-caps",
+      "group": "字與標籤",
+      "name": "小字全大寫標籤",
+      "why": "視窗四角散落的小號全大寫加字距圖說；研究裡高分站 16%、低分站 57% 用它。taste 另規定全大寫不超過三個字。",
+      "src": [
+        "T/references/tells.md:79",
+        "T/SKILL.md:400",
+        "T/references/copy.md:176"
+      ],
+      "from": "taste",
+      "guide": {
+        "status": "無",
+        "at": "",
+        "note": ""
+      },
+      "check": "caps-label",
+      "html": "<span style=\"top:9px;left:10px\">Index</span><span style=\"top:9px;right:10px\">Est. 2024</span><b>Studio for spatial design</b><span style=\"bottom:9px;left:10px\">Scroll to explore</span><span style=\"bottom:9px;right:10px\">Based in Lisbon</span>",
+      "css": "%%{background:#efeee9;display:flex;align-items:center;justify-content:center}%% span{position:absolute;font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:#57534e}%% b{font-size:18px;font-weight:500;color:#1c1917;letter-spacing:-.02em;max-width:170px;text-align:center;line-height:1.15}"
+    },
+    {
+      "id": "ex-type-accent-word",
+      "group": "字與標籤",
+      "name": "標題裡的特效字",
+      "why": "標題裡挑一個字換成斜體襯線、上色或加底線；taste 要一種字體、一種顏色，讓字句本身帶重點。",
+      "src": [
+        "T/references/tells.md:43",
+        "T/SKILL.md:404"
+      ],
+      "from": "taste",
+      "guide": {
+        "status": "部分",
+        "at": "guide:39",
+        "note": "guide 只禁換字族，仍許同族的粗細或斜體"
+      },
+      "check": "review",
+      "html": "<b>Design that <em>actually</em> works</b><p>A subtitle under the headline.</p>",
+      "css": "%%{background:#fff;padding:34px 16px}%% b{font-size:22px;font-weight:700;color:#111;letter-spacing:-.02em;line-height:1.1}%% em{font-family:Georgia,\"Times New Roman\",serif;font-style:italic;font-weight:400;color:#7c3aed;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}%% p{margin:8px 0 0;font-size:10px;color:#6b7280}"
+    },
+    {
+      "id": "ex-type-serif-premium",
+      "group": "字與標籤",
+      "name": "襯線當「高級」捷徑",
+      "why": "用高反差或柔和的襯線大標、超大斜體襯線來假裝高級；taste 說字體照抽到的系統，不管它屬哪一類。",
+      "src": [
+        "T/references/tells.md:59",
+        "T/references/tells.md:60"
+      ],
+      "from": "taste",
+      "guide": {
+        "status": "部分",
+        "at": "guide:88",
+        "note": "guide 只禁「米黃底＋襯線＋赤陶」這個組合"
+      },
+      "check": "review",
+      "html": "<b><em>The art of quiet living</em></b><p>Considered objects for the modern home.</p>",
+      "css": "%%{background:#f3f0ea;padding:22px 16px}%% b{display:block;font-family:\"Bodoni MT\",Didot,Georgia,serif;font-weight:400;font-size:30px;line-height:1;color:#1f1b16;letter-spacing:-.01em}%% em{font-style:italic}%% p{margin:10px 0 0;font-size:10px;color:#6b6157;font-family:Georgia,serif}"
+    },
+    {
+      "id": "ex-type-three-faces",
+      "group": "字與標籤",
+      "name": "三種以上字體",
+      "why": "標題襯線、內文無襯線、標籤再來一個等寬；taste 上限兩種、通常一種，impeccable 要第二種字有只有它能做的角色。",
+      "src": [
+        "T/SKILL.md:405",
+        "T/SKILL.md:434",
+        "I/reference/typeset.md:57"
+      ],
+      "from": "both",
+      "guide": {
+        "status": "無",
+        "at": "",
+        "note": ""
+      },
+      "check": "font-families",
+      "html": "<span class=\"m\">CHAPTER_ONE</span><b>A Brief History</b><p>Founded in a small workshop, the company grew one tool at a time.</p><i>Read more</i>",
+      "css": "%%{background:#fff;padding:18px 16px;display:flex;flex-direction:column;gap:5px}%% .m{font-family:Consolas,monospace;font-size:9px;color:#6b7280}%% b{font-family:Georgia,serif;font-size:22px;font-weight:700;color:#111}%% p{margin:0;font-family:\"Segoe UI\",Arial,sans-serif;font-size:10px;color:#374151}%% i{font-family:\"Brush Script MT\",\"Segoe Script\",cursive;font-size:15px;color:#7c2d12}"
+    },
+    {
+      "id": "ex-type-mixed-align",
+      "group": "字與標籤",
+      "name": "置中標題配靠左內文",
+      "why": "標題置中、內文靠左、按鈕靠右，沒有理由地混用對齊。",
+      "src": [
+        "D/visual-critique/skills/critique-typography/SKILL.md:43",
+        "D/visual-critique/skills/critique-typography/SKILL.md:26"
+      ],
+      "from": "designer",
+      "guide": {
+        "status": "無",
+        "at": "",
+        "note": ""
+      },
+      "check": "review",
+      "html": "<b>Release notes</b><p>Version 4 adds offline mode and a faster sync engine for large teams.</p><i>Read more</i>",
+      "css": "%%{background:#fff;padding:22px 18px;display:flex;flex-direction:column;gap:8px}%% b{font-size:15px;color:#111;text-align:center}%% p{font-size:11px;color:#374151;line-height:1.45}%% i{font-style:normal;font-size:10px;color:#2563eb;align-self:flex-end}"
+    },
+    {
+      "id": "ex-type-weight-overuse",
+      "group": "字與標籤",
+      "name": "粗體太多",
+      "why": "同一個畫面超過兩種粗細、到處加粗，粗體就不再是訊號。",
+      "src": [
+        "D/visual-critique/skills/critique-typography/SKILL.md:45",
+        "D/visual-critique/skills/critique-visual-hierarchy/SKILL.md:23"
+      ],
+      "from": "designer",
+      "guide": {
+        "status": "部分",
+        "at": "guide:35",
+        "note": "guide 要刻意的字重，沒有限種數"
+      },
+      "check": "review",
+      "html": "<b style=\"font-weight:800\">Weekly report</b><p><b style=\"font-weight:700\">Revenue</b> grew <b style=\"font-weight:600\">12%</b> while <b style=\"font-weight:700\">churn</b> fell to <b style=\"font-weight:800\">2.1%</b>.</p><p style=\"font-weight:500\"><b style=\"font-weight:600\">Next:</b> <b style=\"font-weight:700\">hire</b> two <b style=\"font-weight:600\">engineers</b>.</p>",
+      "css": "%%{background:#fff;padding:24px 18px;display:flex;flex-direction:column;gap:8px;color:#111}%% >b{font-size:15px}%% p{font-size:11px;line-height:1.5}"
+    },
+    {
+      "id": "ex-colour-purple-gradient",
+      "group": "顏色與質感",
+      "name": "紫藍漸層",
+      "why": "hero、按鈕、光暈用紫到靛藍的漸層，再加模糊色塊和發光的 Get started 按鈕；taste 還禁一切漸層背景與按鈕。",
+      "src": [
+        "T/references/tells.md:27",
+        "T/references/tells.md:30",
+        "T/SKILL.md:397",
+        "T/SKILL.md:399"
+      ],
+      "from": "taste",
+      "guide": {
+        "status": "有",
+        "at": "guide:89",
+        "note": ""
+      },
+      "check": "purple-gradient",
+      "html": "<i class=\"blob a\"></i><i class=\"blob b\"></i><b>Build the future, faster</b><span class=\"btn\">Get started</span>",
+      "css": "%%{background:linear-gradient(135deg,#4c1d95 0%,#6d28d9 40%,#4f46e5 70%,#2563eb 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center}%% .blob{position:absolute;border-radius:50%;filter:blur(18px);opacity:.7}%% .a{width:90px;height:90px;background:#c084fc;top:-20px;left:-10px}%% .b{width:110px;height:110px;background:#38bdf8;bottom:-40px;right:-20px}%% b{position:relative;font-size:17px;color:#fff;font-weight:700}%% .btn{position:relative;font-size:10px;color:#fff;padding:6px 14px;border-radius:999px;background:linear-gradient(90deg,#a855f7,#6366f1);box-shadow:0 0 18px rgba(168,85,247,.8)}"
+    },
+    {
+      "id": "ex-colour-gradient-text",
+      "group": "顏色與質感",
+      "name": "漸層字",
+      "why": "大標填漸層色；兩邊都禁，taste 連顯示字加陰影或描邊也禁，重點靠字重或尺寸。",
+      "src": [
+        "T/references/tells.md:28",
+        "T/references/type.md:93",
+        "I/reference/craft-floor.md:33"
+      ],
+      "from": "both",
+      "guide": {
+        "status": "有",
+        "at": "guide:100",
+        "note": ""
+      },
+      "check": "gradient-text",
+      "html": "<b>Intelligence, reimagined</b><p>The platform for what comes next.</p>",
+      "css": "%%{background:#fff;padding:36px 16px}%% b{display:block;font-size:26px;font-weight:800;letter-spacing:-.03em;line-height:1.05;background:linear-gradient(90deg,#7c3aed,#db2777,#f59e0b);-webkit-background-clip:text;background-clip:text;color:transparent}%% p{margin:8px 0 0;font-size:10px;color:#6b7280}"
+    },
+    {
+      "id": "ex-colour-neon-glow",
+      "group": "顏色與質感",
+      "name": "近黑底＋霓虹＋光暈",
+      "why": "近黑底配一個霓虹重點色，再讓字和按鈕發光；taste 透過陰影與漸層兩條規則一起擋。",
+      "src": [
+        "T/references/tells.md:45",
+        "T/SKILL.md:398"
+      ],
+      "from": "taste",
+      "guide": {
+        "status": "有",
+        "at": "guide:56",
+        "note": "也見 guide:88"
+      },
+      "check": "glow",
+      "html": "<b>Power your <span>stack</span></b><i>Deploy now</i>",
+      "css": "%%{background:#0a0a0a;display:flex;flex-direction:column;justify-content:center;padding:0 18px;gap:12px}%% b{font-size:20px;color:#f5f5f5;font-weight:700}%% span{color:#a3ff12;text-shadow:0 0 12px rgba(163,255,18,.8)}%% i{align-self:flex-start;font-style:normal;font-size:10px;color:#0a0a0a;background:#a3ff12;padding:6px 14px;border-radius:8px;box-shadow:0 0 22px rgba(163,255,18,.65)}"
+    },
+    {
+      "id": "ex-colour-cream-terracotta",
+      "group": "顏色與質感",
+      "name": "米黃底＋赤陶",
+      "why": "黃米色底配赤陶、鏽色、陶土色；為了修前兩波而「暖化」，結果成了最好認的生成樣子。赤陶單獨也禁，米黃單獨警告。",
+      "src": [
+        "T/references/tells.md:58",
+        "T/SKILL.md:399"
+      ],
+      "from": "taste",
+      "guide": {
+        "status": "有",
+        "at": "guide:88",
+        "note": ""
+      },
+      "check": "review",
+      "html": "<b>Slow mornings, good bread</b><p>A neighbourhood bakery since the first loaf.</p><i>Visit us</i>",
+      "css": "%%{background:#f4ecdc;padding:22px 16px;display:flex;flex-direction:column;gap:7px}%% b{font-family:Georgia,\"Times New Roman\",serif;font-size:21px;font-weight:400;color:#2b2118;line-height:1.1}%% p{margin:0;font-size:10px;color:#6b5d4f}%% i{align-self:flex-start;font-style:normal;font-size:10px;color:#fff;background:#c2552d;padding:5px 12px;border-radius:999px}"
+    },
+    {
+      "id": "ex-colour-glass",
+      "group": "顏色與質感",
+      "name": "玻璃與模糊",
+      "why": "背景模糊的半透明卡片、漂浮的膠囊導覽列；taste 兩個以上就警告，impeccable 只禁當裝飾、不是特定效果時。",
+      "src": [
+        "T/references/tells.md:29",
+        "T/references/tells.md:46",
+        "T/SKILL.md:402",
+        "I/reference/craft-floor.md:34"
+      ],
+      "from": "both",
+      "guide": {
+        "status": "部分",
+        "at": "guide:101",
+        "note": "guide 只禁捲動內容上的 backdrop-filter"
+      },
+      "check": "glass",
+      "html": "<i class=\"o1\"></i><i class=\"o2\"></i><nav><b>Lumen</b><span>Product</span><span>Pricing</span></nav><div class=\"card\"><b>Your week at a glance</b><span>3 tasks due today</span></div>",
+      "css": "%%{background:#dbeafe}%% .o1,%% .o2{position:absolute;border-radius:50%}%% .o1{width:120px;height:120px;background:#f472b6;top:10px;left:20px}%% .o2{width:120px;height:120px;background:#60a5fa;bottom:-30px;right:20px}%% nav{position:absolute;top:8px;left:50%;transform:translateX(-50%);display:flex;gap:10px;align-items:center;padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.35);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.6);font-size:9px;color:#1e293b;white-space:nowrap}%% nav b{font-size:10px}%% .card{position:absolute;left:40px;right:40px;top:52px;bottom:18px;border-radius:14px;padding:12px;background:rgba(255,255,255,.3);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.6);display:flex;flex-direction:column;gap:4px}%% .card b{font-size:13px;color:#0f172a}%% .card span{font-size:10px;color:#334155}"
+    },
+    {
+      "id": "ex-colour-card-shadow",
+      "group": "顏色與質感",
+      "name": "每張卡的灰陰影",
+      "why": "每張卡都掛一層柔和灰陰影；taste 只讓真正浮起來的東西（選單、對話框）有陰影，其他靠一階色差。",
+      "src": [
+        "T/references/tells.md:31",
+        "T/SKILL.md:398"
+      ],
+      "from": "taste",
+      "guide": {
+        "status": "部分",
+        "at": "guide:57",
+        "note": "guide 預設平面，但許擴散、帶底色調的陰影"
+      },
+      "check": "review",
+      "html": "<div><b>Analytics</b><span>Track every metric.</span></div><div><b>Reports</b><span>Share with your team.</span></div><div><b>Alerts</b><span>Know when it moves.</span></div>",
+      "css": "%%{background:#f9fafb;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:34px 12px}%% div{background:#fff;border-radius:12px;padding:12px 9px;box-shadow:0 4px 14px rgba(0,0,0,.10),0 1px 3px rgba(0,0,0,.06);display:flex;flex-direction:column;gap:4px}%% b{font-size:11px;color:#111}%% span{font-size:9px;color:#6b7280}"
+    },
+    {
+      "id": "ex-colour-hard-shadow",
+      "group": "顏色與質感",
+      "name": "硬偏移陰影",
+      "why": "box-shadow: 4px 4px 0 的零模糊方塊陰影；不是真正選了新粗獷主義的世界，它就是戲服，不是深度。",
+      "src": [
+        "I/reference/craft-floor.md:36"
+      ],
+      "from": "impeccable",
+      "guide": {
+        "status": "無",
+        "at": "",
+        "note": ""
+      },
+      "check": "hard-shadow",
+      "html": "<div class=\"c\"><b>Weekly drop</b><span>New stickers every Friday.</span></div><i>Shop now</i>",
+      "css": "%%{background:#fde68a;padding:24px 20px;display:flex;flex-direction:column;align-items:flex-start;gap:14px}%% .c{background:#fff;border:2px solid #111;border-radius:6px;box-shadow:4px 4px 0 #111;padding:9px 12px;display:flex;flex-direction:column;gap:3px}%% b{font-size:13px;color:#111}%% span{font-size:9px;color:#333}%% i{font-style:normal;font-size:10px;font-weight:700;background:#f472b6;color:#111;border:2px solid #111;box-shadow:3px 3px 0 #111;padding:4px 12px;border-radius:6px}"
+    },
+    {
+      "id": "ex-colour-hairlines",
+      "group": "顏色與質感",
+      "name": "細線與 1px 框",
+      "why": "到處是細分隔線、零圓角、密排欄位的報紙扮裝，以及 1px 外框的盒子與磚（三個以上就禁）。",
+      "src": [
+        "T/references/tells.md:61",
+        "T/references/tells.md:76",
+        "T/SKILL.md:396",
+        "D/ui-design/skills/law-of-closure/SKILL.md:48",
+        "D/visual-critique/skills/critique-composition/SKILL.md:46"
+      ],
+      "from": [
+        "taste",
+        "designer"
+      ],
+      "guide": {
+        "status": "衝突",
+        "at": "guide:63",
+        "note": "guide:88 禁報紙扮裝，但 guide:62-63 要 1px 列線"
+      },
+      "check": "review",
+      "html": "<div class=\"mh\"><b>The Daily Record</b></div><div class=\"cols\"><div><b>Markets</b><span>Rates hold steady</span><span>Bonds slip again</span></div><div><b>City</b><span>New tram line opens</span><span>Library hours</span></div><div><b>Arts</b><span>Autumn season</span><span>Two new shows</span></div></div><div class=\"boxes\"><i>A</i><i>B</i><i>C</i><i>D</i></div>",
+      "css": "%%{background:#f7f7f4;padding:10px;font-family:Georgia,serif;color:#111}%% .mh{border-top:1px solid #111;border-bottom:1px solid #111;padding:3px 0;text-align:center}%% .mh b{font-size:14px;letter-spacing:.02em}%% .cols{display:grid;grid-template-columns:repeat(3,1fr);margin-top:6px}%% .cols>div{padding:0 6px;border-left:1px solid #bbb;display:flex;flex-direction:column;gap:2px}%% .cols>div:first-child{border-left:0;padding-left:0}%% .cols b{font-size:10px}%% .cols span{font-size:8px;color:#444;border-bottom:1px solid #ddd;padding-bottom:2px}%% .boxes{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:8px}%% .boxes i{font-style:normal;font-size:9px;border:1px solid #111;height:26px;display:flex;align-items:center;justify-content:center}"
+    },
+    {
+      "id": "ex-colour-side-stripe",
+      "group": "顏色與質感",
+      "name": "左側色邊條",
+      "why": "卡片、列表、提示框左邊或右邊超過 1px 的色條。fankeel 現況：station.css:100 的 .dead 正用 3px 左邊條。",
+      "src": [
+        "I/reference/craft-floor.md:35"
+      ],
+      "from": "impeccable",
+      "guide": {
+        "status": "無",
+        "at": "",
+        "note": ""
+      },
+      "check": "side-stripe",
+      "html": "<div class=\"a\"><b>Heads up</b><span>Your trial ends in 3 days.</span></div><div class=\"b\"><b>Tip</b><span>Press K to search.</span></div>",
+      "css": "%%{background:#fff;padding:22px 14px;display:flex;flex-direction:column;gap:10px}%% div{border-left:4px solid #f59e0b;background:#fffbeb;border-radius:6px;padding:8px 10px;display:flex;flex-direction:column;gap:2px}%% .b{border-left-color:#3b82f6;background:#eff6ff}%% b{font-size:11px;color:#111}%% span{font-size:9px;color:#4b5563}"
+    },
+    {
+      "id": "ex-colour-halo",
+      "group": "顏色與質感",
+      "name": "零偏移彩色光暈",
+      "why": "沒有偏移、只往四周擴散的彩色 box-shadow 是裝飾不是深度；impeccable 要陰影有偏移和柔和模糊。",
+      "src": [
+        "I/reference/craft-floor.md:10"
+      ],
+      "from": "impeccable",
+      "guide": {
+        "status": "有",
+        "at": "guide:56",
+        "note": ""
+      },
+      "check": "glow",
+      "html": "<div class=\"c\"><b>Pro plan</b><span>Most popular</span></div>",
+      "css": "%%{background:#f8fafc;display:flex;align-items:center;justify-content:center}%% .c{width:150px;padding:14px;border-radius:12px;background:#fff;box-shadow:0 0 0 1px rgba(99,102,241,.3),0 0 28px 6px rgba(99,102,241,.45);display:flex;flex-direction:column;gap:3px}%% b{font-size:13px;color:#111}%% span{font-size:9px;color:#6366f1}"
+    },
+    {
+      "id": "ex-colour-dark-invert",
+      "group": "顏色與質感",
+      "name": "直接反相的深色模式",
+      "why": "把淺色版直接反相：純黑底、純白字、原本的飽和色照用；深色要降亮度、主色降 10 到 20% 飽和、字用 #E0E0E0。",
+      "src": [
+        "D/ui-design/skills/dark-mode-design/SKILL.md:35",
+        "D/ui-design/skills/dark-mode-design/SKILL.md:22",
+        "D/ui-design/skills/dark-mode-design/SKILL.md:20"
+      ],
+      "from": "designer",
+      "guide": {
+        "status": "部分",
+        "at": "guide:54",
+        "note": "guide 禁純黑純白，沒說降飽和"
+      },
+      "check": "review",
+      "html": "<b>Inbox</b><span>3 new messages from your team</span><p><i class=\"a\">Reply</i><i class=\"g\">Online</i></p>",
+      "css": "%%{background:#000;padding:24px 18px;display:flex;flex-direction:column;gap:7px}%% b{font-size:16px;color:#fff}%% span{font-size:11px;color:#fff}%% p{display:flex;gap:8px;margin-top:6px}%% i{font-style:normal;font-size:10px;padding:4px 10px;border-radius:5px}%% i.a{background:#ff0044;color:#fff}%% i.g{background:#00ff66;color:#000}"
+    },
+    {
+      "id": "ex-colour-faint-controls",
+      "group": "顏色與質感",
+      "name": "看不清的控制項",
+      "why": "低對比底上的幽靈按鈕框幾乎看不見、40% 透明度的 placeholder、彩色底上只剩瀏覽器預設的 focus ring。",
+      "src": [
+        "D/visual-critique/skills/critique-affordance/SKILL.md:41",
+        "D/visual-critique/skills/critique-affordance/SKILL.md:19",
+        "D/visual-critique/skills/critique-color/SKILL.md:42"
+      ],
+      "from": "designer",
+      "guide": {
+        "status": "有",
+        "at": "guide:51",
+        "note": ""
+      },
+      "check": "review",
+      "html": "<i class=\"in\">Search projects</i><p><i class=\"gh\">Cancel</i><i class=\"gh\">Filter</i></p>",
+      "css": "%%{background:#eef1f5;padding:30px 18px;display:flex;flex-direction:column;gap:12px}%% .in{display:block;font-style:normal;font-size:11px;color:rgba(17,24,39,.4);background:#f4f6f9;border:1px solid #e3e7ec;border-radius:5px;padding:7px 8px}%% p{display:flex;gap:8px}%% .gh{font-style:normal;font-size:10px;color:#9aa3ad;border:1px solid #dde2e8;border-radius:5px;padding:5px 12px}"
+    },
+    {
+      "id": "ex-colour-pop-everywhere",
+      "group": "顏色與質感",
+      "name": "到處都是強調",
+      "why": "每個新功能都要一個亮色徽章或高亮，強調多到等於沒有；只能有一個、或極少數不一樣。",
+      "src": [
+        "D/ui-design/skills/von-restorff-effect/SKILL.md:29",
+        "D/ui-design/skills/von-restorff-effect/SKILL.md:30",
+        "D/ui-design/skills/von-restorff-effect/SKILL.md:34"
+      ],
+      "from": "designer",
+      "guide": {
+        "status": "有",
+        "at": "guide:49",
+        "note": ""
+      },
+      "check": "review",
+      "html": "<p><span>Reports</span><em class=\"a\">NEW</em></p><p><span>Billing</span><em class=\"b\">BETA</em></p><p><span>Team</span><em class=\"c\">HOT</em></p><p><span>Exports</span><em class=\"d\">2</em></p><p><span>Settings</span><em class=\"e\">!</em></p>",
+      "css": "%%{background:#fff;padding:12px 16px;display:flex;flex-direction:column;gap:5px}%% p{display:flex;align-items:center;gap:8px}%% span{font-size:11px;color:#111;width:60px}%% em{font-style:normal;font-size:9px;font-weight:700;color:#fff;padding:1px 6px;border-radius:8px}%% .a{background:#ef4444}%% .b{background:#8b5cf6}%% .c{background:#f97316}%% .d{background:#0ea5e9}%% .e{background:#eab308}"
+    },
+    {
+      "id": "ex-colour-interactive-same",
+      "group": "顏色與質感",
+      "name": "可點和不可點同一個樣子",
+      "why": "連結、按鈕和純裝飾的字用同一個顏色，或裝飾看起來像能點；可互動的東西要共用一個別人沒有的特徵。",
+      "src": [
+        "D/visual-critique/skills/critique-color/SKILL.md:44",
+        "D/visual-critique/skills/critique-affordance/SKILL.md:13",
+        "D/ui-design/skills/law-of-similarity/SKILL.md:40"
+      ],
+      "from": "designer",
+      "guide": {
+        "status": "無",
+        "at": "",
+        "note": ""
+      },
+      "check": "review",
+      "html": "<b>Pricing</b><p>Plans start at <span>$12</span> per seat. See <span>the comparison</span> or read <span>our FAQ</span>.</p><p><span>Annual billing</span> saves 20%.</p>",
+      "css": "%%{background:#fff;padding:24px 18px;display:flex;flex-direction:column;gap:8px}%% b{font-size:14px;color:#111}%% p{font-size:11px;line-height:1.5;color:#374151}%% span{color:#2563eb;font-weight:600}"
+    },
+    {
+      "id": "ex-icon-emoji",
+      "group": "圖示與圖片",
+      "name": "Emoji 當圖示",
+      "why": "用 emoji 或 Unicode 符號當圖示和項目符號；impeccable 要一套同筆畫、同粗細的真圖示庫或自繪 SVG。",
+      "src": [
+        "T/references/tells.md:33",
+        "T/SKILL.md:403",
+        "I/reference/craft-floor.md:40"
+      ],
+      "from": "both",
+      "guide": {
+        "status": "有",
+        "at": "guide:93",
+        "note": ""
+      },
+      "check": "emoji",
+      "html": "<p>🚀 <b>Blazing fast</b></p><p>🔒 <b>Secure by default</b></p><p>⚡ <b>Real-time sync</b></p><p>🎯 <b>Built for focus</b></p>",
+      "css": "%%{background:#fff;padding:18px;display:flex;flex-direction:column;gap:8px}%% p{margin:0;font-size:13px;display:flex;gap:8px;align-items:center}%% b{font-weight:500;color:#111;font-size:11px}"
+    },
+    {
+      "id": "ex-icon-sparkline",
+      "group": "圖示與圖片",
+      "name": "Sparkline 與進度環代替內容",
+      "why": "小折線、進度環、柔影圓角方塊，站在本該放真內容的位置。",
+      "src": [
+        "I/reference/craft-floor.md:37"
+      ],
+      "from": "impeccable",
+      "guide": {
+        "status": "無",
+        "at": "",
+        "note": ""
+      },
+      "check": "review",
+      "html": "<div class=\"c\"><span>Revenue</span><svg viewBox=\"0 0 100 30\" preserveAspectRatio=\"none\" aria-hidden=\"true\"><polyline points=\"0,24 12,20 24,22 36,14 48,16 60,9 72,12 84,6 100,8\"/></svg></div><div class=\"c ring\"><i></i><span>Goal</span></div>",
+      "css": "%%{background:#f3f4f6;display:grid;grid-template-columns:1.4fr 1fr;gap:10px;padding:28px 14px}%% .c{background:#fff;border-radius:14px;box-shadow:0 6px 16px rgba(0,0,0,.07);padding:10px;display:flex;flex-direction:column;gap:6px;justify-content:center}%% span{font-size:10px;color:#6b7280}%% svg{width:100%;height:38px}%% polyline{fill:none;stroke:#10b981;stroke-width:2;vector-effect:non-scaling-stroke}%% .ring{align-items:center}%% .ring i{width:48px;height:48px;border-radius:50%;background:conic-gradient(#6366f1 0 72%,#e5e7eb 72%);-webkit-mask:radial-gradient(circle,transparent 17px,#000 18px);mask:radial-gradient(circle,transparent 17px,#000 18px)}"
+    },
+    {
+      "id": "ex-icon-geo-mask",
+      "group": "圖示與圖片",
+      "name": "幾何遮罩代替去背",
+      "why": "用圓形、多邊形或放射漸層去近似照片主體的輪廓，連背景一起被裁進去；要從真圖做 alpha 去背。本樣本沒有照片，用漸層畫場景。",
+      "src": [
+        "I/reference/craft-floor.md:41"
+      ],
+      "from": "impeccable",
+      "guide": {
+        "status": "無",
+        "at": "",
+        "note": ""
+      },
+      "check": "review",
+      "html": "<b>Small batch<br>olive oil</b><div class=\"cut\"></div>",
+      "css": "%%{background:#e7e5e4}%% b{position:absolute;left:16px;top:22px;font-size:22px;font-weight:800;color:#1c1917;letter-spacing:-.02em;line-height:1}%% .cut{position:absolute;right:28px;bottom:0;width:90px;height:132px;clip-path:polygon(34% 0,66% 0,66% 20%,86% 38%,86% 100%,14% 100%,14% 38%,34% 20%);background:radial-gradient(ellipse at 50% 72%,#2f5d50 0 26%,transparent 27%),linear-gradient(180deg,#9ec5d8 0 55%,#c9b79c 55%)}"
+    },
+    {
+      "id": "ex-icon-css-box-image",
+      "group": "圖示與圖片",
+      "name": "CSS 框代替圖片",
+      "why": "該放圖的地方放一個漸層框、色塊或裝飾形狀；沒有圖比佔位框好，為主題畫的圖又比沒有好。",
+      "src": [
+        "T/references/tells.md:95",
+        "T/SKILL.md:403",
+        "T/SKILL.md:457"
+      ],
+      "from": "taste",
+      "guide": {
+        "status": "部分",
+        "at": "guide:94",
+        "note": "guide 只禁假裝成截圖的 div"
+      },
+      "check": "review",
+      "html": "<div class=\"t\"><b>Our story</b><span>Started in a garage with two people and one idea.</span></div><div class=\"img\"><span>Image</span></div>",
+      "css": "%%{background:#fff;display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:20px 14px;align-items:center}%% b{font-size:14px;color:#111;display:block;margin-bottom:3px}%% .t span{font-size:9px;color:#6b7280}%% .img{height:100px;border-radius:10px;background:linear-gradient(135deg,#e0e7ff,#fce7f3);display:flex;align-items:center;justify-content:center;position:relative}%% .img::before{content:\"\";position:absolute;width:40px;height:40px;border-radius:50%;background:#c7d2fe;top:14px;left:14px}%% .img span{position:relative;font-size:9px;color:#6b7280}"
+    },
+    {
+      "id": "ex-icon-tool-chrome",
+      "group": "圖示與圖片",
+      "name": "設計工具的十字線與裁切標記",
+      "why": "十字線、裁切標記、選取控點、虛線參考線、尺規當裝飾；格線要靠對齊被感覺到，不畫出來。",
+      "src": [
+        "T/references/tells.md:77",
+        "T/references/layout.md:60"
+      ],
+      "from": "taste",
+      "guide": {
+        "status": "無",
+        "at": "",
+        "note": ""
+      },
+      "check": "review",
+      "html": "<span class=\"ru\"></span><i class=\"cx\"></i><i class=\"cy\"></i><div class=\"sel\"><b>Form follows</b><i class=\"h tl\"></i><i class=\"h tr\"></i><i class=\"h bl\"></i><i class=\"h br\"></i></div><span class=\"crop c1\"></span><span class=\"crop c2\"></span>",
+      "css": "%%{background:#f4f4f2}%% .ru{position:absolute;left:0;right:0;top:0;height:10px;background:repeating-linear-gradient(90deg,#999 0 1px,transparent 1px 10px);opacity:.6}%% .cx{position:absolute;left:0;right:0;top:50%;border-top:1px dashed #ef4444}%% .cy{position:absolute;top:0;bottom:0;left:50%;border-left:1px dashed #ef4444}%% .sel{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border:1px solid #3b82f6;padding:8px 12px;background:#f4f4f2}%% .sel b{font-size:18px;color:#111;white-space:nowrap}%% .h{position:absolute;width:6px;height:6px;background:#fff;border:1px solid #3b82f6}%% .tl{left:-3px;top:-3px}%% .tr{right:-3px;top:-3px}%% .bl{left:-3px;bottom:-3px}%% .br{right:-3px;bottom:-3px}%% .crop{position:absolute;width:14px;height:14px}%% .c1{left:10px;top:20px;border-left:1px solid #111;border-top:1px solid #111}%% .c2{right:10px;bottom:10px;border-right:1px solid #111;border-bottom:1px solid #111}"
+    },
+    {
+      "id": "ex-icon-text-on-photo",
+      "group": "圖示與圖片",
+      "name": "照片上直接壓字",
+      "why": "字直接放在複雜的照片上，照片搶走前景；designer 要用色層、模糊或漸層隔開，其中模糊和 guide 衝突。",
+      "src": [
+        "D/ui-design/skills/law-of-figure-ground/SKILL.md:57",
+        "D/ui-design/skills/law-of-figure-ground/SKILL.md:67"
+      ],
+      "from": "designer",
+      "guide": {
+        "status": "無",
+        "at": "",
+        "note": "解法見「互相矛盾」"
+      },
+      "check": "review",
+      "html": "<b>Summer in Lisbon</b><span>Book by June 30</span>",
+      "css": "%%{background:radial-gradient(circle at 20% 30%,#fde68a 0 18%,transparent 19%),radial-gradient(circle at 70% 60%,#f8fafc 0 14%,transparent 15%),linear-gradient(120deg,#60a5fa,#f472b6 45%,#fbbf24 70%,#e5e7eb);display:flex;flex-direction:column;justify-content:center;padding:0 18px;gap:4px}%% b{font-size:18px;color:#fff}%% span{font-size:11px;color:#fff}"
+    },
+    {
+      "id": "ex-icon-mixed-icon-style",
+      "group": "圖示與圖片",
+      "name": "圖示風格混用",
+      "why": "線框、實心、粗圓角的圖示混在同一組，筆畫粗細不一，看起來像不同類。",
+      "src": [
+        "D/ui-design/skills/law-of-similarity/SKILL.md:19",
+        "D/ui-design/skills/law-of-similarity/SKILL.md:55"
+      ],
+      "from": "designer",
+      "guide": {
+        "status": "部分",
+        "at": "guide:99",
+        "note": "guide 禁兩套設計系統"
+      },
+      "check": "review",
+      "html": "<p><i class=\"a\"></i><span>Home</span></p><p><i class=\"b\"></i><span>Files</span></p><p><i class=\"c\"></i><span>Team</span></p><p><i class=\"d\"></i><span>Settings</span></p>",
+      "css": "%%{background:#fff;padding:20px 22px;display:flex;flex-direction:column;gap:9px}%% p{display:flex;align-items:center;gap:10px}%% span{font-size:11px;color:#111}%% i{display:block;width:16px;height:16px}%% .a{border:1px solid #111;border-radius:2px}%% .b{background:#111;border-radius:50%}%% .c{border:3px solid #111;border-radius:6px}%% .d{background:#6366f1;transform:rotate(45deg) scale(.8);border-radius:3px}"
+    },
+    {
+      "id": "ex-icon-truncated-axis",
+      "group": "圖示與圖片",
+      "name": "長條圖 y 軸不從 0 起",
+      "why": "長條圖從 80 開始畫，差 3% 看起來像差三倍；也不要只靠紅綠來分。",
+      "src": [
+        "D/ui-design/skills/data-visualization/SKILL.md:24",
+        "D/ui-design/skills/data-visualization/SKILL.md:30"
+      ],
+      "from": "designer",
+      "guide": {
+        "status": "無",
+        "at": "",
+        "note": ""
+      },
+      "check": "review",
+      "html": "<div class=\"ax\"><span>86</span><span>83</span><span>80</span></div><div class=\"b\"><i style=\"height:30%;background:#16a34a\"></i><i style=\"height:90%;background:#dc2626\"></i><i style=\"height:55%;background:#16a34a\"></i></div>",
+      "css": "%%{background:#fff;padding:14px 18px 14px 10px;display:flex;gap:6px}%% .ax{display:flex;flex-direction:column;justify-content:space-between;font-size:9px;color:#6b7280}%% .b{flex:1;display:flex;align-items:flex-end;gap:14px;border-left:1px solid #9ca3af;border-bottom:1px solid #9ca3af;padding:0 12px}%% .b i{display:block;flex:1}"
+    },
+    {
+      "id": "ex-state-spinner-flash",
+      "group": "互動與狀態",
+      "name": "不到 400ms 也轉圈",
+      "why": "動作 400ms 內就完成，還閃一下轉圈；閃過的 spinner 本身就打斷人。同一套裡 loading-states 把線畫在 100ms、doherty-threshold 畫在 400ms，兩處不一致。",
+      "src": [
+        "D/interaction-design/skills/doherty-threshold/SKILL.md:41",
+        "D/interaction-design/skills/loading-states/SKILL.md:21"
+      ],
+      "from": "designer",
+      "guide": {
+        "status": "無",
+        "at": "",
+        "note": "guide:67 只管預留空間"
+      },
+      "check": "review",
+      "html": "<div class=\"b\"><i class=\"sp\"></i>儲存中</div><div class=\"t\"><span></span><em></em></div><p><span>0</span><span>180ms 已完成</span><span>400ms</span></p>",
+      "css": "%%{background:#fff;padding:26px 18px;display:flex;flex-direction:column;gap:14px}%% .b{align-self:flex-start;display:flex;align-items:center;gap:7px;background:#2563eb;color:#fff;font-size:12px;padding:7px 14px;border-radius:6px}%% .sp{width:12px;height:12px;border-radius:50%;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;display:block}%% .t{height:6px;background:#e5e7eb;border-radius:3px;position:relative}%% .t span{position:absolute;left:0;top:0;bottom:0;width:45%;background:#f59e0b;border-radius:3px}%% .t em{position:absolute;right:0;top:-4px;width:2px;height:14px;background:#111}%% p{display:flex;justify-content:space-between;font-size:10px;color:#6b7280}"
+    },
+    {
+      "id": "ex-state-competing-loaders",
+      "group": "互動與狀態",
+      "name": "好幾個載入指示一起轉",
+      "why": "頁頂進度條、側欄轉圈、每張卡各一個 spinner 同時出現，看不出到底在等什麼。",
+      "src": [
+        "D/interaction-design/skills/loading-states/SKILL.md:33"
+      ],
+      "from": "designer",
+      "guide": {
+        "status": "無",
+        "at": "",
+        "note": ""
+      },
+      "check": "review",
+      "html": "<i class=\"bar\"></i><div class=\"w\"><div class=\"sd\"><i class=\"sp\"></i></div><div class=\"cs\"><p><i class=\"sp\"></i></p><p><i class=\"sp\"></i></p><p><i class=\"sp\"></i></p><p><i class=\"sp\"></i></p></div></div>",
+      "css": "%%{background:#f8fafc;display:flex;flex-direction:column}%% .bar{display:block;height:3px;width:60%;background:#6366f1}%% .w{flex:1;display:flex;gap:8px;padding:10px}%% .sd{width:44px;background:#e2e8f0;border-radius:6px;display:flex;justify-content:center;padding-top:12px}%% .cs{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:8px}%% .cs p{margin:0;background:#fff;border:1px solid #e2e8f0;border-radius:6px;display:flex;align-items:center;justify-content:center}%% .sp{display:block;width:16px;height:16px;border-radius:50%;border:2px solid #c7d2fe;border-top-color:#6366f1}"
+    },
+    {
+      "id": "ex-state-blank-wait",
+      "group": "互動與狀態",
+      "name": "等待時一片空白",
+      "why": "資料回來之前整個畫面空白；loading-states 要立刻顯示點東西，長的等待要能取消或返回。",
+      "src": [
+        "D/interaction-design/skills/loading-states/SKILL.md:31",
+        "D/interaction-design/skills/loading-states/SKILL.md:34"
+      ],
+      "from": "designer",
+      "guide": {
+        "status": "部分",
+        "at": "guide:70",
+        "note": "guide 要畫 loading 狀態，沒說不准空白"
+      },
+      "check": "review",
+      "html": "<div class=\"hd\"><b>Orders</b></div><div class=\"bx\"><span>（3 秒，什麼都沒有）</span></div>",
+      "css": "%%{background:#fff;display:flex;flex-direction:column}%% .hd{padding:10px 14px;border-bottom:1px solid #eee}%% .hd b{font-size:13px;color:#111}%% .bx{flex:1;display:flex;align-items:flex-end;justify-content:flex-end;padding:10px}%% .bx span{font-size:10px;color:#9ca3af}"
+    },
+    {
+      "id": "ex-state-are-you-sure",
+      "group": "互動與狀態",
+      "name": "「確定嗎？」對話框",
+      "why": "每個能復原的動作都先跳確認框打斷人；feedback-patterns 要用復原取代。但同一套的 error-handling-ux 仍要破壞性動作用確認框。",
+      "src": [
+        "D/interaction-design/skills/feedback-patterns/SKILL.md:48",
+        "D/interaction-design/skills/feedback-patterns/SKILL.md:49",
+        "D/interaction-design/skills/error-handling-ux/SKILL.md:13"
+      ],
+      "from": "designer",
+      "guide": {
+        "status": "無",
+        "at": "",
+        "note": ""
+      },
+      "check": "review",
+      "html": "<div class=\"m\"><b>確定要封存這 3 項嗎？</b><span>你可以之後再找回來。</span><p><i>取消</i><i class=\"p\">確定</i></p></div>",
+      "css": "%%{background:rgba(17,24,39,.45);display:flex;align-items:center;justify-content:center}%% .m{background:#fff;border-radius:10px;padding:14px 16px;width:190px;display:flex;flex-direction:column;gap:5px;box-shadow:0 10px 30px rgba(0,0,0,.25)}%% b{font-size:12px;color:#111}%% span{font-size:10px;color:#6b7280}%% p{display:flex;justify-content:flex-end;gap:6px;margin-top:6px}%% i{font-style:normal;font-size:10px;padding:4px 10px;border-radius:5px;border:1px solid #d1d5db;color:#111}%% i.p{background:#2563eb;border-color:#2563eb;color:#fff}"
+    },
+    {
+      "id": "ex-state-colour-only",
+      "group": "互動與狀態",
+      "name": "回饋只靠顏色",
+      "why": "欄位只變紅框、狀態只換顏色、目前頁只變色；色盲或灰階下就看不出來。",
+      "src": [
+        "D/interaction-design/skills/feedback-patterns/SKILL.md:50",
+        "D/visual-critique/skills/critique-color/SKILL.md:24",
+        "D/interaction-design/skills/navigation-patterns/SKILL.md:53"
+      ],
+      "from": "designer",
+      "guide": {
+        "status": "有",
+        "at": "guide:52",
+        "note": ""
+      },
+      "check": "review",
+      "html": "<label>Email</label><i class=\"in\">ana@example</i><p><span class=\"g\">Paid</span><span class=\"rd\">Paid</span><span class=\"y\">Paid</span></p>",
+      "css": "%%{background:#fff;padding:18px 16px;display:flex;flex-direction:column;gap:6px}%% label{font-size:10px;color:#374151}%% .in{display:block;font-style:normal;font-size:11px;color:#111;border:1.5px solid #ef4444;border-radius:5px;padding:6px 8px}%% p{display:flex;gap:6px;margin-top:10px}%% p span{font-size:10px;padding:2px 8px;border-radius:9px;color:#fff}%% .g{background:#16a34a}%% .rd{background:#dc2626}%% .y{background:#d97706}"
+    },
+    {
+      "id": "ex-state-vague-error",
+      "group": "互動與狀態",
+      "name": "「Something went wrong」與責怪使用者",
+      "why": "只說出錯了，或說「你輸入了無效的值」；要說發生什麼、為什麼、下一步怎麼做，而且不怪人。",
+      "src": [
+        "D/interaction-design/skills/error-handling-ux/SKILL.md:45",
+        "D/interaction-design/skills/error-handling-ux/SKILL.md:46"
+      ],
+      "from": "designer",
+      "guide": {
+        "status": "有",
+        "at": "guide:43",
+        "note": ""
+      },
+      "check": "review",
+      "html": "<div class=\"e\"><b>Something went wrong.</b><span>Error 0x80040154</span></div><div class=\"e\"><b>You entered an invalid value.</b></div>",
+      "css": "%%{background:#fff;padding:20px 16px;display:flex;flex-direction:column;gap:10px}%% .e{background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:8px 10px;display:flex;flex-direction:column;gap:2px}%% b{font-size:11px;color:#991b1b}%% span{font-size:9px;color:#b91c1c;font-family:Consolas,monospace}"
+    },
+    {
+      "id": "ex-state-clear-form",
+      "group": "互動與狀態",
+      "name": "出錯就清空表單",
+      "why": "送出失敗後表單被清空，使用者得重打一次；應該保留輸入、可以重試。",
+      "src": [
+        "D/interaction-design/skills/error-handling-ux/SKILL.md:29",
+        "D/interaction-design/skills/error-handling-ux/SKILL.md:30"
+      ],
+      "from": "designer",
+      "guide": {
+        "status": "無",
+        "at": "",
+        "note": ""
+      },
+      "check": "review",
+      "html": "<p class=\"er\">送出失敗，請重新填寫。</p><label>姓名</label><i></i><label>地址</label><i></i><label>備註</label><i></i>",
+      "css": "%%{background:#fff;padding:12px 16px;display:flex;flex-direction:column;gap:3px}%% .er{font-size:10px;color:#b91c1c;margin-bottom:4px}%% label{font-size:9px;color:#6b7280}%% i{display:block;height:18px;border:1px solid #d1d5db;border-radius:4px;margin-bottom:3px}"
+    },
+    {
+      "id": "ex-state-dead-end",
+      "group": "互動與狀態",
+      "name": "沒有出口的狀態",
+      "why": "錯誤畫面沒有重試也沒有返回、進度條看不出怎麼走完、同時掛著四五個未完成提示；超過兩三個開著的迴圈只會壓人。",
+      "src": [
+        "D/interaction-design/skills/state-machine/SKILL.md:38",
+        "D/interaction-design/skills/zeigarnik-effect/SKILL.md:51",
+        "D/interaction-design/skills/zeigarnik-effect/SKILL.md:53"
+      ],
+      "from": "designer",
+      "guide": {
+        "status": "部分",
+        "at": "guide:70",
+        "note": "guide 要畫錯誤狀態，沒說要有出口"
+      },
+      "check": "review",
+      "html": "<div class=\"x\"><b>無法載入</b></div><div class=\"pq\"><span>設定完成度 60%</span><i><em></em></i></div><ul><li>完成個人資料</li><li>邀請成員</li><li>連接帳號</li><li>設定通知</li><li>上傳頭像</li></ul>",
+      "css": "%%{background:#fff;padding:10px 14px;display:flex;flex-direction:column;gap:7px}%% .x{background:#f3f4f6;border-radius:6px;padding:8px;text-align:center}%% .x b{font-size:11px;color:#374151}%% .pq span{font-size:9px;color:#6b7280}%% .pq i{display:block;height:5px;background:#e5e7eb;border-radius:3px;margin-top:3px}%% .pq em{display:block;width:60%;height:100%;background:#8b5cf6;border-radius:3px}%% ul{margin:0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:3px}%% li{font-size:9px;background:#fef3c7;color:#92400e;border-radius:8px;padding:1px 6px}"
+    },
+    {
+      "id": "ex-state-hover-only",
+      "group": "互動與狀態",
+      "name": "只有 hover 才看得到的動作",
+      "why": "編輯、刪除藏到滑鼠滑過才出現，觸控碰不到，也沒人知道它們在那裡。",
+      "src": [
+        "D/visual-critique/skills/critique-affordance/SKILL.md:31",
+        "D/visual-critique/skills/critique-affordance/SKILL.md:44"
+      ],
+      "from": "designer",
+      "guide": {
+        "status": "有",
+        "at": "guide:98",
+        "note": ""
+      },
+      "check": "review",
+      "html": "<p><span>Q3 roadmap</span></p><p class=\"h\"><span>Hiring plan</span><em>編輯</em><em>刪除</em></p><p><span>Budget review</span></p><p><span>Offsite notes</span></p><small>只有第二列在滑鼠下才看得到動作</small>",
+      "css": "%%{background:#fff;padding:12px 14px;display:flex;flex-direction:column}%% p{display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid #f1f1f1}%% p span{flex:1;font-size:11px;color:#111}%% p.h{background:#f5f7ff}%% em{font-style:normal;font-size:9px;color:#4f46e5}%% small{font-size:9px;color:#9ca3af;margin-top:8px}"
+    },
+    {
+      "id": "ex-state-multi-cta",
+      "group": "互動與狀態",
+      "name": "好幾顆實心主按鈕",
+      "why": "一個畫面四顆同樣實心的按鈕互搶，看不出該按哪一顆；主要的一顆實心，其他用幽靈按鈕或文字。",
+      "src": [
+        "D/visual-critique/skills/critique-affordance/SKILL.md:24",
+        "D/visual-critique/skills/critique-affordance/SKILL.md:43",
+        "D/ui-design/skills/visual-hierarchy/SKILL.md:34"
+      ],
+      "from": "designer",
+      "guide": {
+        "status": "部分",
+        "at": "guide:27",
+        "note": "guide 說大膽只用在一處，沒講按鈕"
+      },
+      "check": "review",
+      "html": "<b>Project settings</b><p><i>Save</i><i>Publish</i><i>Duplicate</i><i>Export</i></p>",
+      "css": "%%{background:#fff;padding:30px 14px;display:flex;flex-direction:column;gap:12px}%% b{font-size:13px;color:#111}%% p{display:flex;flex-wrap:wrap;gap:6px}%% i{font-style:normal;font-size:10px;padding:6px 10px;border-radius:6px;background:#2563eb;color:#fff}"
+    },
+    {
+      "id": "ex-state-middle-cta",
+      "group": "互動與狀態",
+      "name": "主要動作放在三個的中間",
+      "why": "三個並排時，主要動作不要放中間，放第一或最後；中間那個最容易被忘記。",
+      "src": [
+        "D/interaction-design/skills/serial-position-effect/SKILL.md:63"
+      ],
+      "from": "designer",
+      "guide": {
+        "status": "無",
+        "at": "",
+        "note": ""
+      },
+      "check": "review",
+      "html": "<p><i>Back</i><i class=\"p\">Continue</i><i>Skip</i></p>",
+      "css": "%%{background:#fff;display:flex;align-items:center;justify-content:center}%% p{display:flex;gap:8px}%% i{font-style:normal;font-size:11px;padding:7px 12px;border-radius:6px;border:1px solid #d1d5db;color:#111}%% i.p{background:#111;border-color:#111;color:#fff}"
+    },
+    {
+      "id": "ex-state-hamburger-desktop",
+      "group": "互動與狀態",
+      "name": "桌面主導覽藏進漢堡",
+      "why": "桌面寬度夠，卻把主要導覽藏進漢堡選單，關鍵路徑看不見；漢堡只留給次要導覽或窄螢幕。",
+      "src": [
+        "D/interaction-design/skills/navigation-patterns/SKILL.md:55",
+        "D/interaction-design/skills/navigation-patterns/SKILL.md:16"
+      ],
+      "from": "designer",
+      "guide": {
+        "status": "無",
+        "at": "",
+        "note": ""
+      },
+      "check": "review",
+      "html": "<div class=\"hd\"><b>Northwind</b><span class=\"hb\"><i></i><i></i><i></i></span></div><div class=\"bx\"><i></i><i></i><i></i></div>",
+      "css": "%%{background:#fff;display:flex;flex-direction:column}%% .hd{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid #eee}%% .hd b{font-size:12px;color:#111}%% .hb{display:flex;flex-direction:column;gap:3px}%% .hb i{display:block;width:16px;height:2px;background:#111}%% .bx{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 14px}%% .bx i{display:block;background:#f3f4f6;border-radius:4px}"
+    },
+    {
+      "id": "ex-state-nav-overload",
+      "group": "互動與狀態",
+      "name": "主導覽太多項、層級混在一起",
+      "why": "頂層超過七項，全域與區域導覽擠在同一列；navigation-patterns 用 7 當上限，millers-law 卻說別把 7 當規則，要先分組。",
+      "src": [
+        "D/interaction-design/skills/navigation-patterns/SKILL.md:56",
+        "D/interaction-design/skills/navigation-patterns/SKILL.md:59",
+        "D/interaction-design/skills/millers-law/SKILL.md:24"
+      ],
+      "from": "designer",
+      "guide": {
+        "status": "無",
+        "at": "",
+        "note": ""
+      },
+      "check": "review",
+      "html": "<div class=\"hd\"><span>Home</span><span>Products</span><span>Pricing</span><span>Docs</span><span>Blog</span><span>Careers</span><span>Partners</span><span>Support</span><span>Status</span><span class=\"l\">› Billing</span><span class=\"l\">› Invoices</span></div><div class=\"bx\"></div>",
+      "css": "%%{background:#fff;display:flex;flex-direction:column}%% .hd{display:flex;flex-wrap:wrap;gap:3px 9px;padding:10px 12px;border-bottom:1px solid #eee}%% span{font-size:10px;color:#111}%% span.l{color:#2563eb}%% .bx{flex:1;margin:10px 12px;background:#f3f4f6;border-radius:4px}"
+    },
+    {
+      "id": "ex-state-tour-first",
+      "group": "互動與狀態",
+      "name": "先導覽、先收資料",
+      "why": "使用者還不知道為什麼需要這些功能，就先跑六步導覽，或一開始就要個人資料、偏好、付款資訊。",
+      "src": [
+        "D/interaction-design/skills/onboarding-design/SKILL.md:54",
+        "D/interaction-design/skills/onboarding-design/SKILL.md:55"
+      ],
+      "from": "designer",
+      "guide": {
+        "status": "無",
+        "at": "",
+        "note": ""
+      },
+      "check": "review",
+      "html": "<div class=\"m\"><span>1 / 6</span><b>歡迎！先帶你看看所有功能</b><i></i><i class=\"s\"></i><p><em>略過</em><em class=\"p\">下一步</em></p></div>",
+      "css": "%%{background:rgba(17,24,39,.4);display:flex;align-items:center;justify-content:center}%% .m{background:#fff;border-radius:10px;padding:12px 14px;width:200px;display:flex;flex-direction:column;gap:5px}%% span{font-size:9px;color:#6b7280}%% b{font-size:12px;color:#111}%% i{display:block;height:5px;background:#e5e7eb;border-radius:2px}%% i.s{width:70%}%% p{display:flex;justify-content:space-between;margin-top:6px}%% em{font-style:normal;font-size:10px;color:#6b7280}%% em.p{background:#7c3aed;color:#fff;padding:3px 10px;border-radius:5px}"
+    },
+    {
+      "id": "ex-state-placeholder-label",
+      "group": "互動與狀態",
+      "name": "placeholder 當標籤、全大寫標籤",
+      "why": "欄位只有 placeholder，一打字就不見；或標籤用全大寫。標籤要常駐、在欄位上方、句首大寫。",
+      "src": [
+        "D/interaction-design/skills/form-design/SKILL.md:15",
+        "D/interaction-design/skills/form-design/SKILL.md:16",
+        "D/interaction-design/skills/form-design/SKILL.md:12"
+      ],
+      "from": "designer",
+      "guide": {
+        "status": "有",
+        "at": "guide:71",
+        "note": "全大寫另見「互相矛盾」"
+      },
+      "check": "review",
+      "html": "<i>Email address</i><i>Phone number</i><span>COMPANY NAME</span><i class=\"f\"></i>",
+      "css": "%%{background:#fff;padding:18px 16px;display:flex;flex-direction:column;gap:8px}%% i{display:block;font-style:normal;font-size:11px;color:#b0b0b0;border:1px solid #d1d5db;border-radius:5px;padding:7px 8px}%% i.f{height:28px}%% span{font-size:9px;letter-spacing:.08em;color:#374151;margin-bottom:-4px}"
+    },
+    {
+      "id": "ex-state-admin-ending",
+      "group": "互動與狀態",
+      "name": "以行政或過渡畫面結尾",
+      "why": "人記住的是最高點和結尾；流程不要停在行政或過渡畫面，要停在完成。",
+      "src": [
+        "D/interaction-design/skills/peak-end-rule/SKILL.md:64",
+        "D/interaction-design/skills/peak-end-rule/SKILL.md:61"
+      ],
+      "from": "designer",
+      "guide": {
+        "status": "無",
+        "at": "",
+        "note": ""
+      },
+      "check": "review",
+      "desc": "流程最後一頁是「處理中，請稍候」或一張還要填的表單，而不是完成的那一刻"
+    },
+    {
+      "id": "ex-state-convention-break",
+      "group": "互動與狀態",
+      "name": "為了不一樣而偏離慣例",
+      "why": "想顯得與眾不同、純粹的美感偏好、沒對真人測過的內部慣例，都不算偏離慣例的理由。",
+      "src": [
+        "D/interaction-design/skills/jakobs-law/SKILL.md:50",
+        "D/interaction-design/skills/jakobs-law/SKILL.md:51",
+        "D/interaction-design/skills/jakobs-law/SKILL.md:52"
+      ],
+      "from": "designer",
+      "guide": {
+        "status": "無",
+        "at": "",
+        "note": ""
+      },
+      "check": "review",
+      "desc": "自己發明的關閉手勢、logo 點了不回首頁、把搜尋圖示換成別的形狀，理由只是「想顯得不同」"
+    },
+    {
+      "id": "ex-describe-copy-verbs",
+      "group": "只能描述：文案與動態",
+      "name": "套話動詞與句型",
+      "why": "生成文案的套話動詞、「不只是 X，而是 Y」、三段式標題、拿「Get started」「Learn more」當按鈕字，加上一頁十幾個 em dash。",
+      "src": [
+        "T/references/tells.md:99",
+        "T/references/copy.md:156",
+        "T/references/copy.md:163"
+      ],
+      "from": "taste",
+      "guide": {
+        "status": "有",
+        "at": "guide:95",
+        "note": "em dash 見 guide:102"
+      },
+      "check": "review",
+      "desc": "unlock、unleash、supercharge、elevate、seamless、effortless、cutting-edge、all-in-one；Not just X, it’s Y；Get started／Learn more；整頁十幾個 em dash"
+    },
+    {
+      "id": "ex-describe-copy-labels",
+      "group": "只能描述：文案與動態",
+      "name": "假編輯標籤與機構風小資訊",
+      "why": "裝成編輯的段名，以及當地時間、座標、版本戳、用中點串起來的一串字這類機構風小資訊。",
+      "src": [
+        "T/references/tells.md:62",
+        "T/references/tells.md:78",
+        "T/references/copy.md:158",
+        "T/references/copy.md:160"
+      ],
+      "from": "taste",
+      "guide": {
+        "status": "無",
+        "at": "",
+        "note": ""
+      },
+      "check": "review",
+      "desc": "Field notes／Quietly trusted by／Our philosophy；14:32 local time、52.37° N、v2.4、©2026 Scroll"
+    },
+    {
+      "id": "ex-describe-copy-proof",
+      "group": "只能描述：文案與動態",
+      "name": "捏造的社會證明與處處三件套",
+      "why": "捏造的社會證明（logo、引言、星等、整數），以及不管內容本來有幾個，都湊成三個。",
+      "src": [
+        "T/references/tells.md:94",
+        "T/references/copy.md:166"
+      ],
+      "from": "taste",
+      "guide": {
+        "status": "部分",
+        "at": "guide:96",
+        "note": "guide 只禁沒有資料的精確數字"
+      },
+      "check": "review",
+      "desc": "logo 牆、五顆星、“It changed how we work.”、Trusted by 10,000+ teams；三個功能、三個數字、三個步驟"
+    },
+    {
+      "id": "ex-describe-motion-fade-up",
+      "group": "只能描述：文案與動態",
+      "name": "每塊都淡入上浮",
+      "why": "每個區塊同一個淡入上浮、hero 十幾個錯開進場、每張卡 hover 都上浮或放大；兩邊都要「一個招牌動作」。",
+      "src": [
+        "T/references/tells.md:49",
+        "T/references/motion.md:892",
+        "T/references/motion.md:894",
+        "I/reference/craft-floor.md:13"
+      ],
+      "from": "both",
+      "guide": {
+        "status": "有",
+        "at": "guide:82",
+        "note": ""
+      },
+      "check": "review",
+      "desc": "每塊 opacity 0→1 加 translateY 24px→0；hero 十幾個 stagger；每張卡 hover 都 translateY(-4px) scale(1.02)"
+    },
+    {
+      "id": "ex-describe-motion-bounce",
+      "group": "只能描述：文案與動態",
+      "name": "彈跳緩動",
+      "why": "介面元素用彈跳或彈性緩動；taste 的 lint 會標出來。",
+      "src": [
+        "T/references/tells.md:106",
+        "T/references/motion.md:895"
+      ],
+      "from": "taste",
+      "guide": {
+        "status": "部分",
+        "at": "guide:80",
+        "note": "guide 只說短而 ease-out，沒點名彈跳"
+      },
+      "check": "review",
+      "desc": "cubic-bezier(.68,-.55,.27,1.55)、bounce、elastic，用在按鈕、選單、卡片上"
+    },
+    {
+      "id": "ex-describe-motion-loop",
+      "group": "只能描述：文案與動態",
+      "name": "無意義的無限迴圈",
+      "why": "沒有意義的無限迴圈，以及失敗後在頁面留下一條空白的進場動畫。",
+      "src": [
+        "T/references/motion.md:896",
+        "T/references/motion.md:897"
+      ],
+      "from": "taste",
+      "guide": {
+        "status": "有",
+        "at": "guide:83",
+        "note": ""
+      },
+      "check": "review",
+      "desc": "脈動圓點、漂浮形狀、閃光文字、旋轉徽章；沒觸發的 reveal 留下一條空白帶"
+    },
+    {
+      "id": "ex-describe-motion-purpose",
+      "group": "只能描述：文案與動態",
+      "name": "為動而動",
+      "why": "每個動畫都要傳達一件事，否則拿掉；UI 動畫多半在 400ms 以內。",
+      "src": [
+        "D/interaction-design/skills/animation-principles/SKILL.md:21",
+        "D/interaction-design/skills/animation-principles/SKILL.md:39",
+        "D/interaction-design/skills/animation-principles/SKILL.md:41"
+      ],
+      "from": "designer",
+      "guide": {
+        "status": "有",
+        "at": "guide:78",
+        "note": ""
+      },
+      "check": "review",
+      "desc": "進場、強調、轉場都說不出要傳達什麼；或一段轉場拖過 400ms"
+    }
+  ]
+}
