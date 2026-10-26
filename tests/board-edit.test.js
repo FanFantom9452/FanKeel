@@ -57,3 +57,33 @@ test('pendingChanges lists what is not sent or dropped, by board; markSent clear
     assert.equal(E.markSent(dir), 1);
     assert.deepEqual(E.pendingChanges(dir), []);
 });
+
+// board-edit reads renderBoard off the module object, so the swap reaches it.
+async function withRender(stub, fn) {
+    const B2 = require('../lib/board.js');
+    const real = B2.renderBoard;
+    B2.renderBoard = (text) => stub(text, real);
+    try { return await fn(); } finally { B2.renderBoard = real; }
+}
+
+test('an edit whose render throws leaves the board untouched and the log empty', async () => {
+    const { file } = board();
+    await withRender(async () => { throw new Error('render broke'); }, () =>
+        assert.rejects(E.editBoard(file, { ops: [{ op: 'set', id: 'a', f: { label: 'Gateway' } }] }, ''), /render broke/));
+    assert.equal(fs.readFileSync(file, 'utf8'), B);
+    assert.deepEqual(E.readChanges(file), []);
+});
+
+test('a mark logged while a drop renders survives the drop', async () => {
+    const { file } = board();
+    await E.editBoard(file, { ops: [{ op: 'del', id: 'b' }] }, '刪除節點 b');
+    await withRender(async (text, real) => { E.markBoard(file, 'a', '途中'); return real(text); }, () => E.dropChange(file, 0));
+    assert.match(fs.readFileSync(file, 'utf8'), /"node":"b"/);
+    assert.deepEqual(E.readChanges(file).map((c) => [c.kind, c.dropped]), [['edit', true], ['mark', false]]);
+});
+
+test('a changes log that cannot be read throws instead of reading as empty', () => {
+    const { file } = board();
+    fs.mkdirSync(E.changesFile(file));
+    assert.throws(() => E.readChanges(file), (e) => e.code === 'EISDIR');
+});
