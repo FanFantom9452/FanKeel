@@ -650,6 +650,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 - [station 用 pele 畫 Mermaid，Chartroom 留給任務的板（10-26）：反轉 10-07 白板取代 Mermaid 的方向](03-decisions/2026-10-26-station-mermaid-pele.md)
 - [gate 頁上的任務板內嵌、可編輯（10-27）：10-20「卡片用 img」的例外，卡片仍用 img](03-decisions/2026-10-27-gate-board-inline.md)
 - [轉交的站由 controller 填宿主清單，焦點頁每列可展開 plan 文字（10-27）](03-decisions/2026-10-27-controller-host-list.md)
+- [mockup 照使用者留下的設計目錄畫，design-lint 擋排除的樣式（10-27）](03-decisions/2026-10-27-design-catalog.md)
 - [任務的圖由 station 畫成 SVG（10-20）](03-decisions/2026-10-20-task-boards-as-svg.md)
 - [retro 讀整份遮蔽過的 session 包（10-20）](03-decisions/2026-10-20-retro-bundle.md)
 - [沒派過的 agent 怎麼處理（10-15）：effort 改在派工時傳，六個複本刪掉](03-decisions/2026-10-15-unused-agents.md)

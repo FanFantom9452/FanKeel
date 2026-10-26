@@ -2,9 +2,13 @@
 label: mockup
 title: mockup 參考 design skill
 description: 以 taste-skill、impeccable、designer-skills 的規則為參考重做 fankeel-mockup；對照頁已畫、162 塊全留，剩 17 列矛盾選邊與收錄
-state: ready
+state: done
 link: agents/fankeel-mockup.md
 stamp: 2026-10-27
+done:
+  at: 2026-10-27
+  sha: e54520c5
+  disposition: done
 ---
 
 來源：2026-10-27，使用者看完 plugin 使用量分析（docs/90-agent/judgements/2026-10-26-skill-usage-trim.md）與 taste-skill 的指令說明後說：「TASTE SKILL 還有剛剛那些 DESIGN 相關 SKILL 記錄到 TODO 之後用於我們的 MOCKUP AGENT 我們參考他們的腳本去重新設計 然後我還需要 先知道他們想要排除那些樣是 要先繪製出來給我看 那些是他們希望排除的設計 那些是他們收錄的設計 我要看過 決定哪些可以留下那些不行」。
@@ -24,3 +28,16 @@ stamp: 2026-10-27
 - skills/fankeel-design/design-guide.md（8.3k 字元）依 17 列選邊改寫九行、加七行，並指到目錄與檢查腳本。
 
 完成條件：對照頁使用者看過，逐項決定寫成檔；mockup agent 的新規則只收使用者標「留」的項目，且有一個測試在任一被排除的樣式出現時轉紅。
+
+## 完成紀錄
+
+對照頁的 162 塊全留，17 列矛盾逐列選邊；目錄存成 JSON，design-lint.js 擋排除的樣式，設計指南與 mockup agent 照選邊改寫。詳見 [任務紀錄](../records/2026-10.md#r-2026-10-26-feb572cd)
+
+- commit bd3e0ce2
+- commit a9e1e34e
+- commit f4d50256
+- commit 571713c4
+- commit dfeee6ba
+- commit a2a55f17
+- commit e54520c5
+- commit 880b8784
