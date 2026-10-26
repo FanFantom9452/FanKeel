@@ -22,7 +22,8 @@ const registry = require('../lib/registry.js');
 const { renderResume } = require('../lib/render.js');
 const profileLib = require('../lib/profile.js');
 const { controlling, nextStage, normaliseRoute, FULL_ROUTE } = require('../lib/stages.js');
-const { handoffPath, answerPath, writeAnswer, readGate, answersGate, withCheckout } = require('../lib/handoff.js');
+const { handoffPath, answerPath, writeAnswer, readGate, answersGate, withCheckout, dirFor } = require('../lib/handoff.js');
+const boardEdit = require('../lib/board-edit.js');
 const { run, parse } = require('../lib/hook.js');
 const { AWAY_QUESTION } = require('../lib/context.js');
 
@@ -74,6 +75,21 @@ function main(raw) {
     // the question went out a few seconds ago, and this hook runs several times a
     // stage — what it does has to stay proportionate to that.
     let context = renderResume({ mine: { sessionId, data: mine }, profile, transcript: payload.transcript_path, root });
+    // The board changes the user made on the station's gate page during this
+    // gate (docs/90-agent/plans/2026-10-27-board-upgrade-design.md §3). They
+    // ride this hook rather than the page, so an answer given in Claude Desktop
+    // carries them too; each is sent once.
+    let boardNote = '';
+    try {
+        const dir = dirFor(root, mine);
+        const pending = dir ? boardEdit.pendingChanges(dir) : [];
+        if (pending.length) {
+            boardNote = 'fankeel: board changes made on the station during this gate, already written to the .board files:\n'
+                + pending.map((p) => '- ' + p.board + ': ' + p.change.text).join('\n');
+            boardEdit.markSent(dir);
+            context = context ? context + '\n' + boardNote : boardNote;
+        }
+    } catch (e) { /* housekeeping */ }
     if (leaving) {
         const go = 'fankeel: the user is leaving and wants the work to go on. Do not stop or wait here: carry on to the next question that needs them. hooks/gate.js holds that question back, and the session compacts when that turn ends.';
         context = context ? context + '\n' + go : go;
@@ -120,7 +136,7 @@ function main(raw) {
                 const why = gate ? 'the handoff\'s gate is invalid at ' + gate.invalid + ': ' + gate.detail
                     : 'the handoff holds no readable `json gate` block, so the questions were not compared; the answer is filed anyway';
                 try {
-                    writeAnswer(file, typeof response === 'string' ? response : JSON.stringify(response, null, 2));
+                    writeAnswer(file, (typeof response === 'string' ? response : JSON.stringify(response, null, 2)) + (boardNote ? '\n\n' + boardNote + '\n' : ''));
                     writeAnswer(file.replace(/-answer\.md$/, '-answer.miss.json'), JSON.stringify({ at: Date.now(), reason: why, asked: asked === undefined ? null : asked, filed: null }, null, 2));
                 } catch (e) { process.stderr.write('fankeel resume: cannot write ' + file + ': ' + e.message + '\n'); }
             } else if (gate && file && response != null) {
@@ -141,7 +157,7 @@ function main(raw) {
                     note('the questions asked do not match the handoff\'s gate in question or option count');
                 } else {
                     try {
-                        writeAnswer(file, typeof response === 'string' ? response : JSON.stringify(response, null, 2));
+                        writeAnswer(file, (typeof response === 'string' ? response : JSON.stringify(response, null, 2)) + (boardNote ? '\n\n' + boardNote + '\n' : ''));
                     } catch (e) {
                         note(String((e && e.message) || e));
                     }
