@@ -716,12 +716,13 @@ failure to draw (the vendored ESM failing to load, say) answers 500
 opened in its own tab runs no script.
 
 `GET /station/board/<sessionId>/<name>.json` is what the gate page draws
-inline: `{ svg, check, changes, editable, root }` — the SVG (on a GET, `null`
+inline: `{ svg, check, changes, editable, root, categories }` — the SVG (on a GET, `null`
 when the check has an error; an `edit` answer always carries the freshly rendered
 SVG of the edited board, even when its check still fails, since an edit is
 refused only for problems it adds), `checkBoard`'s result, the board's `<name>.changes.jsonl`,
 whether the session waits at a gate (`gateAt`, or a pending question), and the
-board's root view id, which new nodes and edges go in.
+board's root view id, which new nodes and edges go in, and `lib/board-look.js`
+`CATEGORIES` as `[{ id, name }]`, the add-node tool's choice of category.
 `POST /station/board/<sessionId>/<name>` carries the nonce and `op`: `edit`
 (`batch`, a Chartroom op batch, and `text`, the line shown for it), `mark`
 (`target`, `note`) or `drop` (`at`, the change's index; an edit is undone with

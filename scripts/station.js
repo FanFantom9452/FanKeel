@@ -47,6 +47,7 @@ const profile = require('../lib/profile.js');
 const handoff = require('../lib/handoff.js');
 const board = require('../lib/board.js');
 const boardEdit = require('../lib/board-edit.js');
+const { CATEGORIES } = require('../lib/board-look.js');
 const docsearch = require('../lib/docsearch.js');
 const detail = require('../lib/detail.js');
 const compare = require('../lib/compare.js');
@@ -831,7 +832,8 @@ async function serve(opts) {
                 if (!drawn && check.ok) drawn = await board.renderBoard(text);
                 let root = null;
                 try { const m = await board.load(); root = m.rootOf(m.parse(text)); } catch (e) { /* the check reports it */ }
-                return { svg: drawn, check, changes: boardEdit.readChanges(file), editable, root };
+                const categories = Object.entries(CATEGORIES).map(([id, c]) => ({ id, name: c.name }));
+                return { svg: drawn, check, changes: boardEdit.readChanges(file), editable, root, categories };
             };
             const json = (code, body) => send(code, 'application/json; charset=utf-8', JSON.stringify(body), noStore);
             if (req.method === 'GET') return json(200, await state());

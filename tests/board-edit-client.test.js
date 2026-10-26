@@ -100,7 +100,10 @@ function rig(o = {}) {
     P.listen({ addEventListener: (t, f) => { on[t] = f; } }, 'N1');
     const attrs = {};
     const pane = { getAttribute: (k) => (k === 'data-bd' ? S.id + '/arch' : null) };
-    const svg = { querySelectorAll: (s) => (s === '[data-type="frame"]' ? frames : []),
+    // An edge's label is its own group, data-label-for, drawn apart from its
+    // line's data-type="edge" group (lib/chartroom/geometry/svg.js).
+    const labels = [], inLabel = {}, inEdge = {};
+    const svg = { querySelectorAll: (s) => (s === '[data-type="frame"]' ? frames : s === '[data-label-for]' ? labels : []),
         createSVGPoint: () => ({ x: 0, y: 0, matrixTransform() { return { x: this.x, y: this.y }; } }),
         getScreenCTM: () => ({ inverse: () => ({}) }) };
     const g = {}, inNode = {};
@@ -112,6 +115,17 @@ function rig(o = {}) {
             querySelectorAll: (s) => (/text/.test(s) ? texts : []), ownerSVGElement: svg };
         inNode[n.id] = { closest: (s) => (s === '[data-bd]' ? pane : s === '[data-type="node"]' ? g[n.id] : s === 'svg' ? svg : null) };
     }
+    for (const ed of o.edges || []) {
+        const texts = (ed.lines || []).map((l) => ({ textContent: l }));
+        const bbox = (b) => () => ({ x: b.x, y: b.y, width: b.w, height: b.h });
+        const lab = { getAttribute: (k) => (k === 'data-label-for' ? ed.id : null), querySelector: () => null,
+            querySelectorAll: (s) => (/text/.test(s) ? texts : []), getBBox: bbox(ed.label || { x: 0, y: 0, w: 0, h: 0 }), ownerSVGElement: svg };
+        if (texts.length) labels.push(lab);
+        const line = { getAttribute: (k) => ({ 'data-id': ed.id, 'data-type': 'edge' })[k], querySelector: () => null,
+            querySelectorAll: () => [], getBBox: bbox(ed.line), ownerSVGElement: svg };
+        inLabel[ed.id] = { closest: (s) => (s === '[data-bd]' ? pane : s === '[data-label-for]' ? lab : s === 'svg' ? svg : null) };
+        inEdge[ed.id] = { closest: (s) => (s === '[data-bd]' ? pane : s === '[data-type="edge"]' ? line : s === 'svg' ? svg : null) };
+    }
     const onSvg = { closest: (s) => (s === '[data-bd]' ? pane : s === 'svg' ? svg : null) };
     const field = (name, value) => { const f = { value, getAttribute: (k) => (k === 'data-bd-in' ? name : null) };
         f.closest = (s) => (s === '[data-bd]' ? pane : s === '[data-bd-in]' ? f : s === 'foreignObject' ? {} : null); return f; };
@@ -121,7 +135,9 @@ function rig(o = {}) {
         b.closest = (s) => (s === '[data-bd]' ? pane : s === '[data-bd-drop]' ? b : null); return b; };
     const key = (target, k, extra) => on.keydown(Object.assign({ target, key: k, preventDefault() {} }, extra));
     const batch = (i = 0) => JSON.parse(sent[i].form.get('batch'));
-    return { P, win, on, sent, inNode: inNode[nodes[0].id], nodeOf: inNode, onSvg, field, toolBtn, dropBtn, key, attrs, batch };
+    const catSel = (value) => { const c = { value, getAttribute: (k) => (k === 'data-bd-cat' ? '' : null) };
+        c.closest = (s) => (s === '[data-bd]' ? pane : s === '[data-bd-cat]' ? c : null); return c; };
+    return { P, win, on, sent, inNode: inNode[nodes[0].id], nodeOf: inNode, inLabel, inEdge, onSvg, field, toolBtn, dropBtn, catSel, key, attrs, batch };
 }
 const tick = () => new Promise((r) => setTimeout(r, 0));
 
@@ -265,6 +281,42 @@ test('add node places a new node where the board is clicked', () => {
     const rec = r.batch().ops[0].rec;
     assert.match(rec.node, /^n\d+$/);
     assert.deepEqual([rec.in, rec.x, rec.y], ['v', 100, 51]);
+});
+
+test('add node sends the category chosen in the toolbar', () => {
+    const r = rig();
+    r.P._seed(S.id, 'arch', { svg: '<svg viewBox="0 0 400 300"></svg>', check: { ok: true, problems: [] }, changes: [], editable: true, root: 'v',
+        categories: [{ id: 'service', name: '服務' }, { id: 'store', name: '儲存' }] });
+    assert.match(r.P.paneHtml(S), /<select data-bd-cat=""[^>]*><option value="service" selected>服務<\/option><option value="store">儲存<\/option><\/select>/);
+    r.on.change({ target: r.catSel('store') });
+    assert.match(r.P.paneHtml(S), /<option value="store" selected>/, 'a repaint keeps the choice');
+    r.on.click({ target: r.toolBtn('add-node') });
+    r.on.click({ target: r.onSvg, clientX: 10, clientY: 10 });
+    assert.equal(r.batch().ops[0].rec.icon, 'fk:store');
+});
+
+test('a double-click on an edge label edits the edge text in place', () => {
+    const r = rig({ edges: [{ id: 'e1', lines: ['calls', 'HTTPS'], label: { x: 100, y: 90, w: 50, h: 22 }, line: { x: 80, y: 100, w: 100, h: 2 } }] });
+    r.on.dblclick({ target: r.inLabel.e1 });
+    const html = r.P.paneHtml(S);
+    assert.match(html, /data-bd-in="label" aria-label="連線文字"[^>]*value="calls"/);
+    assert.match(html, /aria-label="連線 id" value="e1"/);
+    assert.match(html, /<foreignObject x="45" y="75" width="160" height="52">/, 'an editor box wide enough for its two fields, on the label');
+    r.key(r.field('label', 'writes'), 'Enter');
+    assert.deepEqual(r.batch(), { ops: [{ op: 'set', id: 'e1', f: { label: 'writes\nHTTPS' } }] });
+    assert.equal(r.sent[0].form.get('text'), '改連線 e1 文字：calls\nHTTPS → writes\nHTTPS');
+});
+
+test('a double-click on an edge line edits its text, an unlabelled edge from empty', () => {
+    const r = rig({ edges: [{ id: 'e1', lines: ['calls'], label: { x: 100, y: 90, w: 50, h: 22 }, line: { x: 80, y: 100, w: 100, h: 2 } },
+        { id: 'e2', line: { x: 0, y: 200, w: 200, h: 0 } }] });
+    r.on.dblclick({ target: r.inEdge.e1 });
+    assert.match(r.P.paneHtml(S), /data-bd-in="label"[^>]*value="calls"/, 'the text comes from the edge\'s label group');
+    r.key(r.field('label', 'Escape'), 'Escape');
+    r.on.dblclick({ target: r.inEdge.e2 });
+    assert.match(r.P.paneHtml(S), /<foreignObject x="20" y="174" width="160" height="52">/);
+    r.key(r.field('label', 'reads'), 'Enter');
+    assert.deepEqual(r.batch(), { ops: [{ op: 'set', id: 'e2', f: { label: 'reads' } }] });
 });
 
 test('add edge joins the two nodes clicked in turn', () => {

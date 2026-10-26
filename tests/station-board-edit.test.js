@@ -52,6 +52,7 @@ test('GET .json carries the svg, the check, the changes and editable', async () 
         assert.equal(j.check.ok, true);
         assert.deepEqual(j.changes, []);
         assert.equal(j.editable, true);
+        assert.deepEqual(j.categories, Object.entries(require('../lib/board-look.js').CATEGORIES).map(([id, c]) => ({ id, name: c.name })));
     });
 });
 

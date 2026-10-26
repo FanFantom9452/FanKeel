@@ -13,9 +13,11 @@
         'bd.delete': 'Delete', 'bd.undo': 'Undo', 'bd.on': 'The session is at a gate: you can edit', 'bd.off': 'Read-only: the session is not at a gate',
         'bd.ok': '✓ 0 problems', 'bd.n': 'Check: {n} problems', 'bd.fix': 'Fix: ', 'bd.changes': 'Changes to this board',
         'bd.sent': 'Written to {f} and appended to the answer when it is sent.', 'bd.drop': 'Undo: {t}', 'bd.kMark': 'Mark', 'bd.kEdit': 'Edit',
-        'bd.newNode': 'New node', 'bd.label': 'Node name', 'bd.id': 'Node id', 'bd.keys': 'Enter saves · Esc cancels',
+        'bd.newNode': 'New node', 'bd.label': 'Node name', 'bd.id': 'Node id', 'bd.edgeText': 'Edge text', 'bd.edgeId': 'Edge id', 'bd.keys': 'Enter saves · Esc cancels',
+        'bd.cat': 'Category of a new node',
         'bd.markFor': 'Mark {id} for the AI', 'bd.note': 'What the AI should look at',
         'bd.tRename': 'Rename {id}: {a} → {b}', 'bd.tMove': 'Move {id}', 'bd.tDelete': 'Delete {id}', 'bd.tAddNode': 'Add node {id}', 'bd.tAddEdge': 'Add edge {a} → {b}',
+        'bd.tRelabel': 'Edge {id} text: {a} → {b}',
         'bd.failed': 'Not written: {t}', 'bd.offline': 'Could not reach the station; nothing was written',
         'bd.unread': 'Could not read the board: {t}', 'bd.unreached': 'Could not reach the station to read the board',
     };
@@ -37,9 +39,10 @@
     function lastLive(st) { var l = st.changes || [], i = l.length - 1; while (i >= 0 && !isLive(l[i])) i--; return i; }
 
     // The tool in use, the node selected (or the edge's start) on board selK,
-    // and the open editor: { k, kind: 'rename'|'mark', id, box, label, old, rest, note };
+    // the open editor: { k, kind: 'rename'|'mark', id, box, label, old, rest, note, edge },
+    // and the category a new node takes;
     // a rename edits a label's first line and keeps `rest`, the lines after it.
-    var tool = 'select', sel = null, selBox = null, selK = null, from = null, EDIT = null;
+    var tool = 'select', sel = null, selBox = null, selK = null, from = null, EDIT = null, cat = 'service';
 
     var TOOLS = ['select', 'add-node', 'add-edge', 'mark', 'delete', 'undo'];
     function toolName(t) {
@@ -68,8 +71,8 @@
         if (ed.kind === 'rename') {
             return '<rect class="bd-selr" x="' + (b.x - 5) + '" y="' + (b.y - 5) + '" width="' + (b.w + 10) + '" height="' + (b.h + 10) + '" rx="12"/>'
                 + '<foreignObject x="' + b.x + '" y="' + b.y + '" width="' + b.w + '" height="' + b.h + '"><div xmlns="http://www.w3.org/1999/xhtml" class="bd-ned">'
-                + '<input data-bd-in="label" aria-label="' + esc(loc('bd.label', '節點名稱')) + '" value="' + esc(ed.label) + '">'
-                + '<input aria-label="' + esc(loc('bd.id', '節點 id')) + '" value="' + esc(ed.id) + '" readonly></div></foreignObject>'
+                + '<input data-bd-in="label" aria-label="' + esc(ed.edge ? loc('bd.edgeText', '連線文字') : loc('bd.label', '節點名稱')) + '" value="' + esc(ed.label) + '">'
+                + '<input aria-label="' + esc(ed.edge ? loc('bd.edgeId', '連線 id') : loc('bd.id', '節點 id')) + '" value="' + esc(ed.id) + '" readonly></div></foreignObject>'
                 + '<g class="bd-tip"><rect x="' + b.x + '" y="' + (b.y + b.h + 14) + '" width="' + b.w + '" height="22" rx="5"/>'
                 + '<text x="' + (b.x + b.w / 2) + '" y="' + (b.y + b.h + 29) + '" text-anchor="middle">' + keys + '</text></g>';
         }
@@ -93,6 +96,15 @@
         return svg;
     }
 
+    // The categories come with the board's state: lib/board-look.js CATEGORIES, by name.
+    function catHtml(st) {
+        var cs = st.categories || [];
+        if (!cs.length) return '';
+        return '<select data-bd-cat="" class="bd-cat" aria-label="' + esc(loc('bd.cat', '新節點的類別')) + '"' + (st.editable ? '' : ' disabled') + '>' + cs.map(function (c) {
+            return '<option value="' + esc(c.id) + '"' + (c.id === cat ? ' selected' : '') + '>' + esc(c.name) + '</option>';
+        }).join('') + '</select>';
+    }
+
     function paneHtml(s) {
         var n = boardOf(s);
         if (!n) return '';
@@ -102,7 +114,7 @@
             var mode = t !== 'delete' && t !== 'undo';
             return '<button type="button" class="bd-tool' + (t === 'delete' ? ' del' : '') + '" data-bd-tool="' + t + '"'
                 + (mode ? ' aria-pressed="' + (t === tool ? 'true' : 'false') + '"' : '') + (st.editable ? '' : ' disabled') + '>' + esc(toolName(t))
-                + (t === 'undo' && live ? ' <b class="bd-n">' + live + '</b>' : '') + '</button>';
+                + (t === 'undo' && live ? ' <b class="bd-n">' + live + '</b>' : '') + '</button>' + (t === 'add-node' ? catHtml(st) : '');
         }).join('') + '<span class="bd-state' + (st.editable ? ' on' : '') + '" role="status"><i aria-hidden="true"></i>'
             + esc(st.editable ? loc('bd.on', 'session 停在 gate，可以編輯') : loc('bd.off', '唯讀：session 不在 gate')) + '</span></div>';
         return '<section class="panel bd" data-block="board-pane" data-bd="' + esc(k) + '"><header class="bd-h"><h2>' + esc(loc('bd.title', '白板')) + '</h2>'
@@ -220,12 +232,13 @@
         if (svg && svg.querySelectorAll) [].forEach.call(svg.querySelectorAll('[data-bd-on]'), function (x) { x.removeAttribute('data-bd-on'); });
         if (g) g.setAttribute('data-bd-on', '');
     }
+    function textOf(g) { return [].map.call(g.querySelectorAll('text.cr-label'), function (tx) { return String(tx.textContent || '').trim(); }); }
     function focusEditor() {
         var f = doc && doc.querySelector ? doc.querySelector('[data-bd-in]') : null;
         if (f && f.focus) { f.focus(); if (f.select) f.select(); }
     }
-    function open(kind, k, id, box, label, rest) {
-        EDIT = { k: k, kind: kind, id: id, box: box, label: label, old: label, rest: rest || [], note: '' };
+    function open(kind, k, id, box, label, rest, edge) {
+        EDIT = { k: k, kind: kind, id: id, box: box, label: label, old: label, rest: rest || [], note: '', edge: Boolean(edge) };
         REPAINT();
         focusEditor();
     }
@@ -238,7 +251,8 @@
             var label = ed.label.trim();
             if (!label || label === ed.old) { close(); return; }
             var full = [label].concat(ed.rest).join('\n');
-            done = edit(p, nonce, 'rename', { id: ed.id, label: full }, loc('bd.tRename', '改名 {id}：{a} → {b}', { id: ed.id, a: [ed.old].concat(ed.rest).join('\n'), b: full }));
+            var was = { id: ed.id, a: [ed.old].concat(ed.rest).join('\n'), b: full };
+            done = edit(p, nonce, 'rename', { id: ed.id, label: full }, ed.edge ? loc('bd.tRelabel', '改連線 {id} 文字：{a} → {b}', was) : loc('bd.tRename', '改名 {id}：{a} → {b}', was));
         } else {
             var note = ed.note.trim();
             if (!note) { close(); return; }
@@ -276,7 +290,7 @@
             if (tool === 'add-node') {
                 if (g) return;
                 var at = svgPoint(svg, e), nid = newId('n', st);
-                edit(p, nonce, 'add-node', { id: nid, view: st.root || '', cat: 'service', x: Math.round(at.x), y: Math.round(at.y) }, loc('bd.tAddNode', '新增節點 {id}', { id: nid }));
+                edit(p, nonce, 'add-node', { id: nid, view: st.root || '', cat: cat, x: Math.round(at.x), y: Math.round(at.y) }, loc('bd.tAddNode', '新增節點 {id}', { id: nid }));
                 return;
             }
             if (!g) { if (tool === 'select') choose(svg, null, k); return; }
@@ -293,12 +307,27 @@
             if (tool === 'mark') open('mark', k, id, selBox, '');
         });
         root.addEventListener('dblclick', function (e) {
-            var t = e.target, p = paneOf(t), g = p ? t.closest('[data-type="node"]') : null;
-            if (!g || t.closest('foreignObject')) return;
+            var t = e.target, p = paneOf(t);
+            if (!p || t.closest('foreignObject')) return;
             var k = key(p[0], p[1]);
             if (!(CACHE[k] || {}).editable) return;
-            var lines = [].map.call(g.querySelectorAll('text.cr-label'), function (tx) { return String(tx.textContent || '').trim(); });
-            open('rename', k, g.getAttribute('data-id'), boxOf(g), lines.length ? lines[0] : '', lines.slice(1));
+            var g = t.closest('[data-type="node"]');
+            if (g) { var lines = textOf(g); open('rename', k, g.getAttribute('data-id'), boxOf(g), lines.length ? lines[0] : '', lines.slice(1)); return; }
+            // An edge's label is drawn apart from its line, in its own data-label-for group.
+            var lab = t.closest('[data-label-for]'), ln = lab ? null : t.closest('[data-type="edge"]'), id;
+            if (ln) {
+                id = ln.getAttribute('data-id');
+                lab = [].filter.call(ln.ownerSVGElement.querySelectorAll('[data-label-for]'), function (x) { return x.getAttribute('data-label-for') === id; })[0] || null;
+            } else if (lab) id = lab.getAttribute('data-label-for');
+            else return;
+            // A label pill is too small for the editor's two fields, and a line's box
+            // can span the board: centre a node-sized box on the label, or on the line.
+            var b = boxOf(lab || ln), bw = lab ? Math.max(b.w, 160) : 160, bh = lab ? Math.max(b.h, 52) : 52, ls = lab ? textOf(lab) : [];
+            open('rename', k, id, { x: Math.round(b.x + b.w / 2 - bw / 2), y: Math.round(b.y + b.h / 2 - bh / 2), w: bw, h: bh }, ls.length ? ls[0] : '', ls.slice(1), true);
+        });
+        root.addEventListener('change', function (e) {
+            var c = e.target && e.target.closest ? e.target.closest('[data-bd-cat]') : null;
+            if (c) cat = String(c.value || cat);
         });
         root.addEventListener('input', function (e) {
             var f = e.target && e.target.closest ? e.target.closest('[data-bd-in]') : null, n = f ? f.getAttribute('data-bd-in') : null;

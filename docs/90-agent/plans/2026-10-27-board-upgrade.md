@@ -305,7 +305,7 @@ category in `icon` — `fk:ui`, `fk:service`, `fk:store`, `fk:queue` or
 - Modify: `lib/board.js` — `renderBoard` 經過 `prepare`／`decorate`；`checkBoard` 加 `unknown-category`
 - Read: `lib/chartroom/geometry/svg.js` — `toSVG(sc, theme, opts)` 的 viewBox 與背景 rect
 - Read: `lib/chartroom/geometry/shapes.js` — `DEFAULT_THEME` 的 key
-- Test: `tests/board-look.test.js`
+- Test: `tests/board-theme.test.js`
 - Test: `tests/board.test.js` — 斷言預設主題顏色的地方改成 `look.THEME` 的值
 
 **Interfaces:**
@@ -314,7 +314,7 @@ category in `icon` — `fk:ui`, `fk:service`, `fk:store`, `fk:queue` or
 
 **Dispatch:** implementer, opus — architectural 任務的地板，無需理由。
 
-1. 寫失敗的測試，`tests/board-look.test.js`：
+1. 寫失敗的測試，`tests/board-theme.test.js`：
 
 ```js
 'use strict';
@@ -370,7 +370,7 @@ test('an fk: id the table does not have is an unknown-category warning', async (
 });
 ```
 
-2. `node --test tests/board-look.test.js`，看它失敗。
+2. `node --test tests/board-theme.test.js`，看它失敗。
 3. 寫 `lib/board-look.js`：
 
 ```js
@@ -490,7 +490,7 @@ async function renderBoard(text) {
         }
 ```
 
-5. `node --test tests/board-look.test.js tests/board-check.test.js tests/board.test.js tests/station-board.test.js`，全部通過。`tests/board.test.js` 若斷言了預設主題的顏色，改成斷言 `look.THEME` 的值，並在提交訊息說明。
+5. `node --test tests/board-theme.test.js tests/board-check.test.js tests/board.test.js tests/station-board.test.js`，全部通過。`tests/board.test.js` 若斷言了預設主題的顏色，改成斷言 `look.THEME` 的值，並在提交訊息說明。
 6. 提交：`feat(board): categories, the station's palette and a legend`。
 
 ## Task 4: 編輯核心——重抄 ops/diff，套 batch 寫檔，記改動
@@ -1352,7 +1352,7 @@ test('no repaint while the focus is inside the board pane', () => {
 | 改動清單由 `hooks/resume.js`（AskUserQuestion 的 PostToolUse）附進回答，不由頁面附。不管是在 station 還是 Claude Desktop 回答，這個 hook 都會跑：它讀這個任務 build 目錄下每個 `*.changes.jsonl` 裡還沒送出的紀錄，附在 `<stage>-answer.md` 的回答之後，也附進它注入的 `additionalContext`，然後把這些紀錄標成已送出。沒有未送出的紀錄時，輸出不變。 | Task 6 |
 | station 代答時這個 hook 也會跑：`hooks/gate.js:192-197` 是以 `permissionDecision: 'allow'` 加上 `updatedInput.answers` 放行，工具照樣執行，所以 PostToolUse 會觸發；這個回答形式在 2026-09-24 的 probe 裡確認過（`docs/90-agent/reference/station.md:1530`）。那次 probe 看的是模型有沒有收到回答，沒有觀察 PostToolUse 本身，所以 verify 要在 `gate.station` 打開的真實 session 跑一次，確認 `<stage>-answer.md` 附上了改動。這個專案的 `gate.station` 目前是 `off`，所以今天每個回答都經由終端或 Desktop。 | struck — 這是事實陳述與 verify 的必跑項，不是要寫的程式；verify 在 `gate.station` 打開的真實 session 跑一次 |
 | `tests/board-check.test.js`：`tests/fixtures/levelmark.board` 回 `unknown-key`（`owner`）；一塊連線指向不存在節點的板子回 `bad-ref` 並 `ok: false`；`scripts/board.js check --json` 的 exit code。現在會失敗，因為 `checkBoard` 與 `scripts/board.js` 不存在。 | Task 2 |
-| `tests/board-theme.test.js`：帶 `fk:store` 的節點畫出類別的 fill 與圖示；圖例的計數等於板子裡該類別的節點數（產物自我對帳：圖例數字與 `.board` 由同一份資料算出，兩者必須相等）。 | Task 3（檔名改為 `tests/board-look.test.js`） |
+| `tests/board-theme.test.js`：帶 `fk:store` 的節點畫出類別的 fill 與圖示；圖例的計數等於板子裡該類別的節點數（產物自我對帳：圖例數字與 `.board` 由同一份資料算出，兩者必須相等）。 | Task 3 |
 | `tests/board-edit.test.js`：session 在 gate 時 POST 一筆改名，檔案改了、`changes.jsonl` 多一行；不在 gate 時 409；會造成 `bad-ref` 的 batch 回 422，檔案不變；nonce 錯誤時 403。 | Task 4（lib 層）、Task 5（路由層 `tests/station-board-edit.test.js`） |
 | `tests/resume-board-changes.test.js`：build 目錄有一筆未送出的 `changes.jsonl` 紀錄時，`hooks/resume.js` 寫出的 `<stage>-answer.md` 與 `additionalContext` 都含那一筆，跑完後該紀錄標成已送出；再跑一次就不再附上。現在會失敗，因為 resume.js 不讀 `changes.jsonl`。 | Task 6 |
 | render reviewer 對照 mockup，檢查 gate 頁的 `board`、`legend`、`board-toolbar`、`board-changes`、`board-check` 五個 block。 | struck — 由 build 的 render reviewer 與 verify 執行，不是一個任務 |
