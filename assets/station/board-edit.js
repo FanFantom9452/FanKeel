@@ -1,7 +1,7 @@
 'use strict';
 // assets/station/board-edit.js — FK_BOARD: a task's .board drawn inline on the
 // gate page and edited there while the session waits at a gate
-// (docs/90-agent/plans/2026-10-27-board-upgrade-design.md §3; mockup
+// (docs/99-archive/2026-10-27-board-upgrade-design.md §3; mockup
 // .fankeel/build/2026-10-27-board-upgrade/mockup.html). The markup reads a
 // cache `load` fills from GET /station/board/<id>/<name>.json, so the focus
 // page's 5 s repaint redraws it without a fetch. The open label editor and

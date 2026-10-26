@@ -7,7 +7,7 @@ last_verified: 2026-10-27
 
 一句話：session 停在 gate 時，gate 頁把任務的 `.board` 以內嵌 SVG 畫出來，可以直接編輯並寫回檔案；session 卡片仍用 `<img>`。
 
-這是 [10-20 決定](2026-10-20-task-boards-as-svg.md)「卡片用 `<img>`、不嵌 SVG」的例外，設計在 [plans/2026-10-27-board-upgrade-design.md](../90-agent/plans/2026-10-27-board-upgrade-design.md)。
+這是 [10-20 決定](2026-10-20-task-boards-as-svg.md)「卡片用 `<img>`、不嵌 SVG」的例外，設計在 [99-archive/2026-10-27-board-upgrade-design.md](../99-archive/2026-10-27-board-upgrade-design.md)。
 
 ## 決定
 

@@ -814,7 +814,7 @@ async function serve(opts) {
             }
             return send(200, 'image/svg+xml', svg, Object.assign({}, SVG_CSP, noStore));
         }
-        // The gate page's board (docs/90-agent/plans/2026-10-27-board-upgrade-design.md §3):
+        // The gate page's board (docs/99-archive/2026-10-27-board-upgrade-design.md §3):
         // GET <name>.json is what the page draws inline — the svg, its check, its
         // changes and whether it may be edited; POST <name> edits, marks or drops
         // a change, only while the session waits at a gate, when its agent is

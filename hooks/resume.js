@@ -76,7 +76,7 @@ function main(raw) {
     // stage — what it does has to stay proportionate to that.
     let context = renderResume({ mine: { sessionId, data: mine }, profile, transcript: payload.transcript_path, root });
     // The board changes the user made on the station's gate page during this
-    // gate (docs/90-agent/plans/2026-10-27-board-upgrade-design.md §3). They
+    // gate (docs/99-archive/2026-10-27-board-upgrade-design.md §3). They
     // ride this hook rather than the page, so an answer given in Claude Desktop
     // carries them too; each is sent once.
     let boardNote = '';

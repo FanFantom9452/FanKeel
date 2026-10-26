@@ -1,5 +1,5 @@
 'use strict';
-// checkBoard (docs/90-agent/plans/2026-10-27-board-upgrade-design.md §1) and
+// checkBoard (docs/99-archive/2026-10-27-board-upgrade-design.md §1) and
 // its CLI: stable codes, a fix hint per code, warnings that do not fail.
 const test = require('node:test');
 const assert = require('node:assert/strict');
