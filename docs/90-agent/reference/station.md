@@ -708,11 +708,26 @@ GET that writes nothing. `<name>` must match `^[0-9A-Za-z._-]+$` and resolve
 inside that directory, or the answer is 404; an unknown session, a name that
 fails `board.NAME`, or a file that cannot be read is also 404
 (`no such board for that session`). A board that does not parse is
-422 (`text/plain; charset=utf-8`) with the parser's message, and any other
+422 (`text/plain; charset=utf-8`) with `checkBoard`'s problems as `checkText`
+writes them (`error parse (line N): …`), and any other
 failure to draw (the vendored ESM failing to load, say) answers 500
 `cannot draw that board: …`. The SVG goes out with
 `Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'`, so one
 opened in its own tab runs no script.
+
+`GET /station/board/<sessionId>/<name>.json` is what the gate page draws
+inline: `{ svg, check, changes, editable, root }` — the SVG (`null` when the
+check has an error), `checkBoard`'s result, the board's `<name>.changes.jsonl`,
+whether the session waits at a gate (`gateAt`, or a pending question), and the
+board's root view id, which new nodes and edges go in.
+`POST /station/board/<sessionId>/<name>` carries the nonce and `op`: `edit`
+(`batch`, a Chartroom op batch, and `text`, the line shown for it), `mark`
+(`target`, `note`) or `drop` (`at`, the change's index; an edit is undone with
+its inverse). It answers the same JSON; `409` when the session is not at a
+gate, `422 { errors }` when the batch would add a reference problem, and then
+the file is not written (`lib/board-edit.js`,
+[the 10-27 decision](../../03-decisions/2026-10-27-gate-board-inline.md)).
+A `.svg` that does not parse is `422` with `checkText`'s lines.
 
 `days` and `spans` are a second derivation, and they do not replace `spend`.
 `extract()` computes them in the same transcript read that fills the detail

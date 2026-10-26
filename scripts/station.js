@@ -46,6 +46,7 @@ const { clearEntry } = require('../lib/clear.js');
 const profile = require('../lib/profile.js');
 const handoff = require('../lib/handoff.js');
 const board = require('../lib/board.js');
+const boardEdit = require('../lib/board-edit.js');
 const docsearch = require('../lib/docsearch.js');
 const detail = require('../lib/detail.js');
 const compare = require('../lib/compare.js');
@@ -807,9 +808,56 @@ async function serve(opts) {
             try {
                 svg = await board.renderBoard(text);
             } catch (e) {
-                return e && e.name === 'ParseError' ? send(422, 'text/plain; charset=utf-8', e.message + '\n') : fail(500, 'cannot draw that board: ' + (e && e.message));
+                if (!e || e.name !== 'ParseError') return fail(500, 'cannot draw that board: ' + (e && e.message));
+                return send(422, 'text/plain; charset=utf-8', board.checkText(await board.checkBoard(text)) + '\n');
             }
             return send(200, 'image/svg+xml', svg, Object.assign({}, SVG_CSP, noStore));
+        }
+        // The gate page's board (docs/90-agent/plans/2026-10-27-board-upgrade-design.md §3):
+        // GET <name>.json is what the page draws inline — the svg, its check, its
+        // changes and whether it may be edited; POST <name> edits, marks or drops
+        // a change, only while the session waits at a gate, when its agent is
+        // not writing. A batch that adds a reference problem is 422 and writes nothing.
+        const boardJson = /^\/station\/board\/([0-9A-Za-z-]+)\/([^/.]+(?:\.[^/.]+)*?)(\.json)?$/.exec(url.pathname);
+        if (boardJson && ((req.method === 'GET' && boardJson[3]) || (req.method === 'POST' && !boardJson[3]))) {
+            const hit = modelNow({ details: false }).registries.flatMap((r) => r.sessions).find((x) => x.sessionId === boardJson[1]);
+            const file = hit ? board.boardFile(hit.boardDir, boardJson[2]) : null;
+            if (!file) return fail(404, 'no such board for that session');
+            const editable = Boolean(hit.gateAt || (hit.pending && Array.isArray(hit.pending.questions) && hit.pending.questions.length));
+            const state = async (svg) => {
+                const text = fs.readFileSync(file, 'utf8');
+                const check = await board.checkBoard(text);
+                let drawn = svg || null;
+                if (!drawn && check.ok) drawn = await board.renderBoard(text);
+                let root = null;
+                try { const m = await board.load(); root = m.rootOf(m.parse(text)); } catch (e) { /* the check reports it */ }
+                return { svg: drawn, check, changes: boardEdit.readChanges(file), editable, root };
+            };
+            const json = (code, body) => send(code, 'application/json; charset=utf-8', JSON.stringify(body), noStore);
+            if (req.method === 'GET') return json(200, await state());
+            const form = await formOf();
+            if (!form) return;
+            if (!editable) return fail(409, 'the session is not at a gate: the board is read-only now');
+            try {
+                const op = form.get('op');
+                if (op === 'edit') {
+                    const r = await boardEdit.editBoard(file, JSON.parse(form.get('batch') || 'null'), form.get('text') || '');
+                    return json(200, await state(r.svg));
+                }
+                if (op === 'mark') {
+                    boardEdit.markBoard(file, form.get('target') || '', form.get('note') || '');
+                    return json(200, await state());
+                }
+                if (op === 'drop') {
+                    await boardEdit.dropChange(file, Number(form.get('at')));
+                    return json(200, await state());
+                }
+                return fail(400, 'op must be edit, mark or drop');
+            } catch (e) {
+                if (e && e.name === 'BatchError') return json(422, { errors: e.errors });
+                if (e && (e.name === 'NoChange' || e instanceof SyntaxError)) return fail(400, e.message);
+                return fail(500, 'cannot edit that board: ' + (e && e.message));
+            }
         }
         // The 手機遠端 card on #/settings (docs/90-agent/plans/2026-10-21-station-remote-design.md
         // §3). These four answer loopback only — `remote.policy` refuses them
