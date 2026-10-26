@@ -1182,41 +1182,21 @@ directory, drawn by `GET /station/board/<sessionId>/<name>.svg` above. The
 `/chartroom/<name>/` route below stays for the per-project
 `.fankeel/architecture.board`.
 
-Under `/chartroom/<name>/` the served station hands a request to
-Chartroom, the board editor installed elsewhere on this machine, so a
-project's architecture board opens inside the station. `<name>` is a
-registry root's folder name, and the board is that root's
-`.fankeel/architecture.board`, committed with the project like
-`.fankeel/profile.json`; the station never creates one, because a GET
-that writes a file is a side effect. The machine profile's
-`station.chartroom` names Chartroom's package root — for example
-`node scripts/task.js profile set station.chartroom F:/ymlab/Latex/production/Chartroom --default`
-— and the station loads Chartroom's server handler from under it with
-`require`, builds one handler per root on that root's first request
-(`boardPath()` in `lib/station.js` names the file), strips the
-`/chartroom/<name>` prefix before passing the request on, and closes
-every handler when it closes. The page is Chartroom's own build, its
-dist/app directory, so Chartroom answers 404 until `npm run build` has
-run there; fankeel carries no copy and adds no build step. With the key
-unset `/chartroom/` is the ordinary 404 and the project card shows no
-link. With it set, an unknown name or a root with no board is a 404
-naming the path, two roots with the same folder name are a 409 listing
-both, and a handler that will not load is a 500 naming the file, while
-the rest of the station keeps serving.
-
-This route alone skips the nonce, and two guards stand in for it. The
-station answers it on loopback only: any other Host is `421` with remote
-off, and through the tailnet it is `403` like the card's own routes,
-paired phone or not, whether the path starts `/chartroom/` as sent or
-once its `..` is resolved. Chartroom then refuses any POST whose Origin does not
-match its Host or whose body is not `application/json`. A page on another origin can send a form POST,
-which is refused as not JSON, or a JSON one, which carries that page's
-Origin and is refused for it — the cross-site write the nonce stops
-everywhere else. The AI that posts `POST /api/ops` from a shell has no
-nonce to send in the first place. The project card's line
-`架構白板：開啟` links to `/chartroom/<name>/` in a new tab when the
-registry has a board, `station.chartroom` is set and the page is
-served rather than a static copy.
+Under `/chartroom/<name>/` the served station answers a registry root's
+architecture board itself: `lib/board.js` `boardPage(file, name)` draws
+`<root>/.fankeel/architecture.board` with the render code vendored under
+`lib/chartroom/` — no Chartroom install and no profile key. `GET /` is a page
+holding `<img src="board.svg">`, `GET /board.svg` is the drawing
+(`image/svg+xml`, `content-security-policy: default-src 'none'`, so no script
+in a label runs), a board that does not parse is `422` with Chartroom's
+message, any other path `404`, and any write `405` — the page is read-only;
+Chartroom's editor is not vendored. `<name>` is the root's folder name: none
+registered is `404`, two is `409` naming both, a root with no board is `404`
+naming where one belongs, and `/chartroom/<name>` without the trailing slash
+is a `303` to it. The route answers before the nonce check, and only on
+loopback: through the tailnet every `/chartroom/` path is `403`, as sent or
+once its `..` is resolved. The project card's `架構白板：開啟` links there in a
+new tab when the registry has a board and the page is served.
 
 Rendering afresh does not mean reading everything afresh. A running `serve`
 holds every session's detail in memory and answers from it while nothing under
@@ -1591,7 +1571,7 @@ reach. Open: `GET /`, `/m`, `/m/manifest.webmanifest`, `/m/icon.svg`, `/sw.js`,
 `/station/station.css`, `/station/mobile.js`, `/station/mobile.css`, and
 `POST /station/remote/pair`. This machine's only (403): the card's own routes
 `/station/remote`, `/station/remote/qr.svg`, `/station/remote/code` and
-`/station/remote/revoke`, `/station/health`, and Chartroom. Everything else —
+`/station/remote/revoke`, `/station/health`, and `/chartroom/`. Everything else —
 reads included, since `/station/talk/<id>` serves whole transcripts and
 `/station/phone.json` a session's conversation — needs a paired device's
 cookie and answers 401 without one. Every POST from the tailnet also needs
@@ -1603,8 +1583,7 @@ nonce, and from loopback they need it as before.
 Pairing. `GET /station/remote` is the card's state: `on` (the profile's
 `station.remote`), `active` (Tailscale agreed), `url`, `dnsName`, `warning`,
 the live `code` with its `until`, `pairUrl` (`<url>m#/pair/<code>`), `devices`
-(`id`, `name`, `paired`, `seen`) and `notify` (`server`, `topic`, `gate`,
-`stage`, `end`). `GET /station/remote/qr.svg` is `pairUrl` as a QR
+(`id`, `name`, `paired`, `seen`). `GET /station/remote/qr.svg` is `pairUrl` as a QR
 (`lib/qr.js`), 409 while remote is off. A code is 8 characters from
 `23456789ABCDEFGHJKMNPQRSTUVWXYZ`, one-time, live for 10 minutes; `POST
 /station/remote/code` (nonce) mints a new one, 201 `{"code","until"}`, and five
@@ -1620,19 +1599,6 @@ for an id not paired — and its cookie answers 401 from the next request.
 
 A phone answers a gate only while the gate hook holds it for the station, so
 `gate.station` has to be above 0 (the section above).
-
-The first time `notify.gate`, `notify.stage` or `notify.end` is set to `true`
-through `POST /profile` with `scope=machine` and no `notify.topic` is set, the
-station writes one: `fankeel-` and 20 hex digits (`newTopic` in
-`lib/notify.js`), the topic the phone subscribes to in ntfy. The three senders
-(`hooks/gate.js`, `task.js stage`, `hooks/leave.js`) read every `notify.*` key
-from the machine profile alone (`profile.read(null, configDir)`): a project's
-`.fankeel/profile.json` setting them is ignored, so a cloned repository cannot
-send a task or a gate question to a host it names. A publish that does not go
-out (nothing answers, or the server refuses) is one line in
-`<configDir>/fankeel/notify-failed.log`, beside the machine profile: the time,
-the server's host and `unreachable or refused`, never the topic or the
-message, the last 20 kept (`recordFailure` in `scripts/notify.js`).
 
 A session that stopped while its gate still holds is listed under its own heading, 停了但還在等你答, after the idle ones: `mobileModel` returns it in `stopped` (`lib/mobile.js`), not in `tasks`, so it is never counted as running, and its row opens the same answerable gate screen as a live one (station-47).
 

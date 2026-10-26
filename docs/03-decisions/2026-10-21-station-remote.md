@@ -7,6 +7,8 @@ last_verified: 2026-10-21
 
 一句話：打開 `station.remote` 後，手機透過自己的 tailnet 開 `/m`，配對一次就能看每個任務走到哪一站、回答正在等的 gate；gate、換站與 session 結束可以用 ntfy 推播到手機。
 
+> 2026-10-26：ntfy 推播已拔掉（[判決](../90-agent/judgements/2026-10-26-remove-ntfy.md)）。下面寫到 ntfy 的部分是當時的決定，現在不成立；手機遠端與配對照舊。
+
 設計與計畫在 [99-archive/2026-10-21-station-remote-design.md](../99-archive/2026-10-21-station-remote-design.md)。
 
 ## 決定
