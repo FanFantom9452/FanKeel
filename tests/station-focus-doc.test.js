@@ -10,7 +10,7 @@ const read = (p) => fs.readFileSync(path.join(__dirname, '..', p), 'utf8');
 
 test('station.md names focus-page.js and FK_FOCUS, and no station.js line for the gate frame', () => {
     const md = read('docs/90-agent/reference/station.md');
-    assert.match(md, /`i18n\.js`, `tip\.js`, `gate-frame\.js`, `focus-page\.js` and `station\.js`/);
+    assert.match(md, /`i18n\.js`, `tip\.js`, `diagram\.js`, `board-edit\.js`, `gate-frame\.js`, `focus-page\.js` and `station\.js`/);
     assert.match(md, /`FK_FOCUS` \(`assets\/station\/focus-page\.js`\)/);
     assert.doesNotMatch(md, /assets\/station\/station\.js:2217/);
 });

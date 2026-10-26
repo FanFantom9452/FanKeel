@@ -1,7 +1,7 @@
 ---
 label: docs
 title: 使用指南補板子編輯
-description: docs/01-guide/station.md 的 gate 段沒提板子面板
+description: 使用指南的 gate 段沒提板子面板
 state: ready
 ---
 
