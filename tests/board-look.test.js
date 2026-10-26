@@ -27,7 +27,9 @@ test('a category paints its tint and colour; a node\'s own fill wins', async () 
 test('each categorised node gets its glyph; the icon field reserves no room', async () => {
     const svg = await renderBoard(B);
     assert.equal((svg.match(/data-glyph-for="/g) || []).length, 4);
-    assert.doesNotMatch(svg, /class="cr-icon"/);
+    // Chartroom's ICON_ROOM (lib/chartroom/geometry/measure.js:48) would make it 72.
+    const a = (/<g data-id="a" data-type="node"><rect [^>]*height="([\d.]+)"/.exec(svg) || [])[1];
+    assert.equal(a, '40');
 });
 
 test('the legend counts equal the board\'s nodes per category', async () => {
@@ -48,4 +50,24 @@ test('an fk: id the table does not have is an unknown-category warning', async (
     const r = await checkBoard('{"chartroom":1,"root":"v"}\n{"view":"v"}\n{"node":"a","in":"v","icon":"fk:robot"}\n');
     assert.equal(r.ok, true);
     assert.deepEqual(r.problems.map((p) => [p.code, p.id, p.level]), [['unknown-category', 'a', 'warn']]);
+});
+
+test('the legend row fits inside the drawing, however narrow the scene', async () => {
+    const svg = await renderBoard([
+        '{"chartroom":1,"root":"v"}', '{"view":"v"}',
+        '{"node":"s","in":"v","icon":"fk:ui"}', '{"node":"a","in":"v","icon":"fk:service"}',
+        '{"node":"b","in":"v","icon":"fk:store"}', '{"node":"c","in":"v","icon":"fk:queue"}',
+        '{"edge":"e1","in":"v","from":"s","to":"a"}', '{"edge":"e2","in":"v","from":"s","to":"b"}',
+        '{"edge":"e3","in":"v","from":"s","to":"c"}',
+    ].join('\n') + '\n');
+    const [vx, , vw] = /viewBox="([-\d.]+) ([-\d.]+) ([-\d.]+) ([-\d.]+)"/.exec(svg).slice(1).map(Number);
+    const [bx, bw] = /<rect x="([-\d.]+)" y="[-\d.]+" width="([-\d.]+)"/.exec(svg).slice(1).map(Number);
+    const legend = (/<g data-legend="">(.*?)<\/g>\n<\/svg>/s.exec(svg) || [])[1] || '';
+    const chips = [...legend.matchAll(/<g data-cat="\w+"><rect x="([-\d.]+)" y="[-\d.]+" width="([-\d.]+)"/g)];
+    assert.equal(chips.length, 4);
+    for (const [, x, w] of chips) {
+        const end = Number(x) + Number(w);
+        assert.ok(end <= vx + vw, 'chip ends at ' + end + ', viewBox at ' + (vx + vw));
+        assert.ok(end <= bx + bw, 'chip ends at ' + end + ', background at ' + (bx + bw));
+    }
 });
