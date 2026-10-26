@@ -31,6 +31,14 @@ return which of these was missing.
    prints the path of `index.json`, which lists every role × page with its
    `png`, `html` and `ok`, and the `size` it shot at. With a single page
    instead: `node scripts/render.js <page> --out .fankeel/build/render/page`.
+   A page that shows what is to be checked only after a click, a drag or
+   typing — a reading frame opened, a diagram node marked — takes
+   `--act <steps.json>` on the single-page form: a JSON array of
+   `{ "click": "<css>" }`, `{ "drag": "<css>", "by": [dx, dy] }`,
+   `{ "type": "<css>", "text": "…" }`, `{ "wait": <ms> }` and
+   `{ "shot": "<name>" }`, run in order before `render.png` is taken; each
+   `shot` adds `<name>.png` beside it. A step whose selector matches nothing
+   exits 1 naming the step — that cell is a recapture, not a ship.
 2. Shoot the mockup at the same size: `node scripts/render.js <mockup> --out
    .fankeel/build/render/mockup --size <the size index.json records>`.
 3. Open the mockup's PNG first, and list its `data-block` elements in your own
