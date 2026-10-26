@@ -89,3 +89,15 @@ test('a board that fails its check is 422 with checkText', async () => {
         assert.match(await r.text(), /^error parse \(line 2\)/);
     });
 });
+
+test('an edit on a board that does not parse is 422 with checkText and writes nothing', async () => {
+    const f = fixture(true);
+    const bad = '{"chartroom":1}\nnot json\n';
+    fs.writeFileSync(f.file, bad);
+    await served(f, async (url, nonce) => {
+        const r = await post(url + 'station/board/' + SID + '/arch', { nonce, op: 'edit', batch: JSON.stringify({ ops: [] }) });
+        assert.equal(r.status, 422);
+        assert.match(await r.text(), /^error parse \(line 2\)/);
+        assert.equal(fs.readFileSync(f.file, 'utf8'), bad);
+    });
+});

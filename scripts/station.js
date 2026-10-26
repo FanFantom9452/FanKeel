@@ -855,6 +855,7 @@ async function serve(opts) {
                 return fail(400, 'op must be edit, mark or drop');
             } catch (e) {
                 if (e && e.name === 'BatchError') return json(422, { errors: e.errors });
+                if (e && e.name === 'ParseError') return send(422, 'text/plain; charset=utf-8', board.checkText(await board.checkBoard(fs.readFileSync(file, 'utf8'))) + '\n');
                 if (e && (e.name === 'NoChange' || e instanceof SyntaxError)) return fail(400, e.message);
                 return fail(500, 'cannot edit that board: ' + (e && e.message));
             }

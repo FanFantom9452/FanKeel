@@ -716,8 +716,10 @@ failure to draw (the vendored ESM failing to load, say) answers 500
 opened in its own tab runs no script.
 
 `GET /station/board/<sessionId>/<name>.json` is what the gate page draws
-inline: `{ svg, check, changes, editable, root }` — the SVG (`null` when the
-check has an error), `checkBoard`'s result, the board's `<name>.changes.jsonl`,
+inline: `{ svg, check, changes, editable, root }` — the SVG (on a GET, `null`
+when the check has an error; a POST answer always carries the freshly rendered
+SVG of the edited board, even when its check still fails, since an edit is
+refused only for problems it adds), `checkBoard`'s result, the board's `<name>.changes.jsonl`,
 whether the session waits at a gate (`gateAt`, or a pending question), and the
 board's root view id, which new nodes and edges go in.
 `POST /station/board/<sessionId>/<name>` carries the nonce and `op`: `edit`
@@ -727,7 +729,8 @@ its inverse). It answers the same JSON; `409` when the session is not at a
 gate, `422 { errors }` when the batch would add a reference problem, and then
 the file is not written (`lib/board-edit.js`,
 [the 10-27 decision](../../03-decisions/2026-10-27-gate-board-inline.md)).
-A `.svg` that does not parse is `422` with `checkText`'s lines.
+A `.svg` that does not parse, or an `edit` or `drop` on a board that does not parse, is
+`422` (`text/plain`) with `checkText`'s lines, and the file is not written.
 
 `days` and `spans` are a second derivation, and they do not replace `spend`.
 `extract()` computes them in the same transcript read that fills the detail
