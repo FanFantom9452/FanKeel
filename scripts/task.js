@@ -35,13 +35,13 @@ const { tokens } = require('../lib/context.js');
 const { guardMode, sharedWith, worktreeOf, effectiveClaims, relPath, WORKTREE_SEGMENT, AGENT_WORKTREE_SEGMENT } = require('../lib/guard.js');
 const { overlapPaths } = require('../lib/overlap.js');
 const { splitAroundVerb } = require('../lib/argv.js');
-const { byName: stageByName, NAMES: STAGE_NAMES, FULL_ROUTE, CLASSES, normaliseRoute, positionIn, routeForClass, classForRoute } = require('../lib/stages.js');
+const { LIST_RULE, byName: stageByName, NAMES: STAGE_NAMES, FULL_ROUTE, CLASSES, normaliseRoute, positionIn, routeForClass, classForRoute } = require('../lib/stages.js');
 const profile = require('../lib/profile.js');
 const compactWindow = require('./compact-window.js');
 const docs = require('../lib/docs.js');
 const suite = require('../lib/suite.js');
 const { handoffPath, readGate, lapsUsed, contextPath, checkoutFor, baseFor } = require('../lib/handoff.js');
-const { controlRulesFor, rulesLines, PLUGIN_MARK, PLUGIN_ROOT, newestPlan, blockSizes, BLOCK_CAP } = require('../lib/render.js');
+const { controlRulesFor, rulesLines, SCRIPTS, PLUGIN_MARK, PLUGIN_ROOT, newestPlan, blockSizes, BLOCK_CAP } = require('../lib/render.js');
 const { estimateTokens } = require('./input-check.js');
 const plantasks = require('../lib/plantasks.js');
 const { nearestTargets, pagesReached, renderScope, renderFileRefusal, verdictRefusal } = require('../lib/shots.js');
@@ -791,8 +791,10 @@ function controllerLines(root, id, data, values) {
     const control = controlRulesFor(data, { values }, { root, sessionId: id });
     if (!control) return null;
     const lines = ['Now ' + data.stage + ', through its stage agent. You are its controller:'];
-    if (control.rules.some((rule) => rule.includes(PLUGIN_MARK))) lines.push(PLUGIN_MARK + ' = ' + PLUGIN_ROOT);
+    const listRule = LIST_RULE.replace('{{LEDGER}}', SCRIPTS.ledger);
+    if ([...control.rules, listRule].some((rule) => rule.includes(PLUGIN_MARK))) lines.push(PLUGIN_MARK + ' = ' + PLUGIN_ROOT);
     for (const rule of control.rules) lines.push('  - ' + rule);
+    lines.push('  - ' + listRule);
     return lines;
 }
 

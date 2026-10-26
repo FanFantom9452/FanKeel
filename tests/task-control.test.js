@@ -1165,3 +1165,19 @@ test('land names the tests that were red on an earlier run of this task, one lin
   assert.equal(out.code, 0);
   assert.doesNotMatch(out.out, /suite: green on run/);
 });
+
+test('stage entry into a controlled stage prints the host task list sentence once, and controlFor rules do not carry it', () => {
+  const { controlFor } = require('../lib/stages.js');
+  const dir = root();
+  const cfg = path.join(dir, 'cfg');
+  run(dir, ['profile', 'set', 'stage.agents', 'survey,design,build,verify', '--default'], { CLAUDE_CONFIG_DIR: cfg });
+  run(dir, ['start', '--session', A, '--task', 'x', '--route', 'survey,design,build,verify'], { CLAUDE_CONFIG_DIR: cfg });
+  for (const stage of ['design', 'build', 'verify']) {
+    const out = run(dir, ['stage', stage, '--session', A], { CLAUDE_CONFIG_DIR: cfg }).out;
+    assert.match(out, /Host task list \(update_plan\/TodoWrite\)/, stage);
+    assert.ok(out.includes('## Task N:'), stage);
+    assert.ok(out.includes('<plugin>/scripts/ledger.js --plan <f> show'), stage);
+    assert.ok(out.includes('<plugin> = ' + PLUGIN_ROOT), stage);
+    assert.ok(!controlFor(stage, { 'stage.agents': ['survey', 'design', 'build', 'verify'] }, {}).rules.join(' ').includes('Host task list'), stage);
+  }
+});
