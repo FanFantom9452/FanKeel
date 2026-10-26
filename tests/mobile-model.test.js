@@ -132,15 +132,6 @@ test('the icon is the keel glyph on keel blue', () => {
     assert.equal((svg.match(/<path d="M[^"]+Z" fill="#fbfcfc"\/>/g) || []).length, 7, 'six segments and the core');
 });
 
-test('subscribeOf: an app link and a web link only when a trigger is on, a topic is set and the server is http(s)', () => {
-    const v = { 'notify.gate': true, 'notify.topic': 'fankeel-test', 'notify.server': 'https://ntfy.sh/' };
-    assert.deepEqual(mobile.subscribeOf(v), { app: 'ntfy://ntfy.sh/fankeel-test', web: 'https://ntfy.sh/fankeel-test' });
-    assert.equal(mobile.subscribeOf(Object.assign({}, v, { 'notify.gate': false })), null);
-    assert.equal(mobile.subscribeOf(Object.assign({}, v, { 'notify.topic': '' })), null);
-    assert.equal(mobile.subscribeOf(Object.assign({}, v, { 'notify.server': 'ntfy.sh' })), null);
-    assert.equal(mobile.subscribeOf(null), null);
-});
-
 test('stopped: a session no longer live whose gate still holds, and nothing else', () => {
     const m = mobile.mobileModel(model([
         row({ sessionId: 'live', pending: waiting(NOW - 60e3, NOW + 30e3) }),

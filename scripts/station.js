@@ -57,7 +57,6 @@ const todoFiles = require('../lib/todo.js');
 const remote = require('../lib/remote.js');
 const tailscale = require('../lib/tailscale.js');
 const qr = require('../lib/qr.js');
-const notify = require('../lib/notify.js');
 const os = require('node:os');
 const mobile = require('../lib/mobile.js');
 const phone = require('../lib/phone.js');
@@ -829,13 +828,6 @@ async function serve(opts) {
                 until: code ? code.until : null,
                 pairUrl: code ? tailnet.url + 'm#/pair/' + code.value : null,
                 devices: remote.devicesOf(configDir),
-                notify: {
-                    server: v['notify.server'] || null,
-                    topic: v['notify.topic'] || null,
-                    gate: v['notify.gate'] === true,
-                    stage: v['notify.stage'] === true,
-                    end: v['notify.end'] === true,
-                },
             }), noStore);
         }
         if (req.method === 'GET' && url.pathname === '/station/remote/qr.svg') {
@@ -904,7 +896,6 @@ async function serve(opts) {
             const model = sharedModel();
             const host = (tailnet.on && tailnet.dnsName ? tailnet.dnsName.split('.')[0] : '') || os.hostname();
             const body = mobile.mobileModel(model, Date.now(), host, station.hiddenPkeys(model), phone.snapshot);
-            body.notify = mobile.subscribeOf(profile.read(null, configDir).values);
             return send(200, 'application/json', JSON.stringify(body), noStore);
         }
         if (req.method === 'GET' && url.pathname === '/station/phone.json') {
@@ -1101,19 +1092,10 @@ async function serve(opts) {
                 if (result.state === 'unmarked' || result.state === 'no-source') unsynced.push(agentfile.syncLine(result));
             }
             if (unsynced.length) return fail(409, 'profile saved, but ' + unsynced.join('\n'));
-            // §5: the first trigger turned on gets a topic, so the card has
-            // something to say to subscribe to. §2: a `station.remote` write
-            // asks Tailscale again now, and its answer is in force from the
-            // next request — off included, which takes down a proxy this run made.
-            if (scope === 'machine') {
-                const after = profile.read(null, configDir).values;
-                const trigger = keys.some((k, i) => /^notify\.(gate|stage|end)$/.test(k) && String(values[i]).trim().toLowerCase() === 'true');
-                if (keys.includes('station.remote')) refreshRemote();
-                if (trigger && !after['notify.topic']) {
-                    const out = profile.write(file, 'notify.topic', notify.newTopic());
-                    if (!out.ok) return fail(409, out.reason);
-                }
-            }
+            // §2: a `station.remote` write asks Tailscale again now, and its
+            // answer is in force from the next request — off included, which
+            // takes down a proxy this run made.
+            if (scope === 'machine' && keys.includes('station.remote')) refreshRemote();
             // The wizard posts from #/settings and wants to land there again;
             // anything but a bare page hash is ignored rather than followed.
             const back = String(form.get('back') || '');

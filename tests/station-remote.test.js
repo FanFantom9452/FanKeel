@@ -146,7 +146,7 @@ test('pairing: a live code from the tailnet, once, for an HttpOnly Secure SameSi
         assert.equal(typeof card.until, 'number');
         assert.equal(card.pairUrl, 'https://' + NAME + '/m#/pair/' + card.code);
         assert.deepEqual(card.devices, []);
-        assert.deepEqual(card.notify, { server: 'https://ntfy.sh', topic: null, gate: false, stage: false, end: false });
+        assert.equal('notify' in card, false, 'the card carries no ntfy triggers');
         const svg = await request(s.url + 'station/remote/qr.svg');
         assert.equal(svg.status, 200);
         assert.equal(svg.headers['content-type'], 'image/svg+xml');
@@ -208,20 +208,13 @@ test('a tailscale that is not running leaves remote off with the reason on the c
     }
 });
 
-test('POST /profile: the first trigger turned on writes a topic, and station.remote turns the tailnet on and off live', async () => {
+test('POST /profile: station.remote turns the tailnet on and off live', async () => {
     const f = fixture(false);
     const ts = fakeTailscale();
     const s = await start(f, ts);
     try {
         const nonce = await nonceOf(s);
         const set = (key, value) => request(s.url + 'profile', { body: form({ nonce, scope: 'machine', key, value }) });
-        const machine = () => JSON.parse(fs.readFileSync(profile.machineFile(f.cfg), 'utf8'));
-        assert.equal((await set('notify.gate', 'true')).status, 303);
-        const topic = machine()['notify.topic'];
-        assert.match(topic, /^fankeel-[0-9a-f]{20}$/);
-        assert.equal(machine()['notify.gate'], true);
-        assert.equal((await set('notify.stage', 'true')).status, 303);
-        assert.equal(machine()['notify.topic'], topic, 'written once');
         assert.equal((await request(s.url, { headers: { host: NAME } })).status, 421);
         assert.equal((await set('station.remote', 'true')).status, 303);
         const on = (await request(s.url, { headers: { host: NAME } })).status;
