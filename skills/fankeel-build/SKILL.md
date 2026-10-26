@@ -372,27 +372,25 @@ then asks this stage's gate.
      delay, and go red on every run of the mutation that removes the
      lock; a fixed wait can pass without exercising the lock.
    Part 3 — every changed line traces to the task's text; the repository's
-     patterns are followed. Then name the page this
-     change makes false (a renamed export, a changed default, a removed
-     flag) as `page:line` — and any comment or printed heading still stating
-     the old rule.
-     Then, where the diff adds a data field or changes a value a person
-     sees, three more, over the whole repository and not the changed
-     file alone: (a) every surface that shows the record reads the new
-     field — grep its name across lib/, scripts/, hooks/ and assets/ and
-     name each page and CLI output that shows the record but never
-     reads it; (b) every new string a person reads goes through the
-     project's string table for translation, never written into a
-     render as a literal; (c) list every place a page or a CLI prints
-     the changed value, and for each mark the change adds there, the
-     test that renders it through its caller and goes red when the mark
-     is removed. A surface with no reader, a literal string, or a place
-     with no such test is a finding. Where the diff rewrites text a page
-     shows, grep `tests/` for the old wording and run the tests that assert
-     it; one still asserting it is a finding. Where the diff adds or changes a
-     sticky, fixed or pinned element, check it collapsed and expanded at
-     412x680 (full height, focus every control, scroll to the end): a control
-     left under it is a finding.
+     patterns are followed. Then name the page this change makes false
+     (renamed export, changed default) as `page:line`, and any comment or
+     heading still stating the old rule. Then, where the diff adds a data
+     field or changes a value a person sees, three more, over the whole
+     repository and not the changed file alone: (a) every surface that
+     shows the record reads the new field — grep its name across lib/,
+     scripts/, hooks/, assets/ and name each that never reads it; (b) every new string a person reads goes through
+     the string table for translation, never a render literal; (c) list
+     every place a page or a CLI prints the changed value, and for each
+     mark the change adds, the test that renders it through its caller and
+     goes red when the mark is removed. A miss in any is a finding. Where
+     the diff rewrites text a page shows, grep `tests/` for the old wording and
+     run the tests that assert it; one still asserting it is a finding.
+     Where the diff adds or changes a sticky, fixed or pinned element,
+     check it collapsed and expanded at 412x680 (focus every control,
+     scroll down): a control left under it is a finding. For any
+     change touching a page or its styles, also check the chrome around it
+     at a true 412-wide viewport: header and title not clipped (`.crumbs`
+     scrollWidth <= clientWidth); a clipped title is a finding.
    Part 4 — cuts, over the lines this diff added and no others, in the
      format of the `## Cuts` section of your agent file. A cut is a finding.
 

@@ -2022,6 +2022,10 @@ a.spendline:hover .sl-go{color:var(--keel-deep);text-decoration-color:var(--keel
   :root[data-style=keel] .mast .brand{width:auto;margin-right:0}
   :root[data-style=keel] .mast{gap:6px}
 }
+/* at phone width the wordmark leaves the title ~30px; the glyph stays and the aria-label names the brand */
+@media (max-width:480px){
+  :root[data-style=keel] .mast .brand b{display:none}
+}
 
 .panel.gv{padding-bottom:24px}
 .gv-st{text-decoration:underline;text-decoration-color:var(--c);text-decoration-thickness:2px;text-underline-offset:4px}

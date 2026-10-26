@@ -16,3 +16,7 @@ test('the keel header styles the page title, the serve icon and hides the langua
     assert.match(CSS, /:root\[data-style=keel\] header\.mast \.appear\{margin-left:-8px;[^}]*box-shadow:inset 0 1px 0 var\(--rule\),inset -1px 0 0 var\(--rule\),inset 0 -1px 0 var\(--rule\)\}/);
     assert.match(CSS, /:root\[data-style=keel\] \.langpop [^{]*i\{display:none\}/);
 });
+
+test('at phone width the keel mast hides the wordmark so the page title keeps its room', () => {
+    assert.match(CSS, /@media \(max-width:480px\)\{\s*:root\[data-style=keel\] \.mast \.brand b\{display:none\}/);
+});
