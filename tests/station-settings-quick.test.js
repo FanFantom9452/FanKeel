@@ -440,3 +440,9 @@ test('已寫入 N 項 is a compact row under the summary: a 16px check, never th
     const css = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'settings-detail.css'), 'utf8');
     assert.match(css, /\.v9-fin-ok svg\{[^}]*width:16px;[^}]*height:16px/, 'without it the check fills the column');
 });
+
+test('the project picker label never wraps and the select is the one that shrinks', () => {
+    const css = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'settings-page.css'), 'utf8');
+    assert.match(css, /\.qk-proj\{[^}]*white-space:nowrap/, 'at 412px 專案 wraps to one character per line');
+    assert.match(css, /\.qk-proj select\{[^}]*flex:1 1 0;[^}]*min-width:0/, 'the select must give up width, not the label');
+});
