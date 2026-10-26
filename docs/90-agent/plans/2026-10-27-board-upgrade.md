@@ -51,7 +51,7 @@ last_verified: 2026-10-27
 
 **Interfaces:**
 - Consumes: none
-- Produces: `lib/chartroom/core/validate.js` 匯出 `validateDoc(doc) → [{ id, code, message }]` 與 `CODES = ['dup-id','no-id','bad-field','bad-ref','cross-view-edge','frame-cycle']`
+- Produces: `validateDoc`；`lib/chartroom/core/validate.js` 匯出 `validateDoc(doc) → [{ id, code, message }]` 與 `CODES = ['dup-id','no-id','bad-field','bad-ref','cross-view-edge','frame-cycle']`
 
 **Dispatch:** in-session — 一次 `cp` 加兩行 README，派出去的讀取成本比做完還高。
 
@@ -114,7 +114,7 @@ render subset plus the check and edit core. ESM under this directory's `{"type":
 
 **Interfaces:**
 - Consumes: Task 1 的 `validateDoc`
-- Produces: `checkBoard(text) → Promise<{ ok: boolean, problems: [{ code, id, line, message, fix, level: 'error'|'warn' }] }>`、`checkText(result) → string`、`load()` 回傳的物件多了 `validateDoc` 與 `FIELDS`；`unknown-category` 由 Task 3 加進 `checkBoard`。
+- Produces: `checkBoard`、`checkText`、`load`；`checkBoard(text) → Promise<{ ok: boolean, problems: [{ code, id, line, message, fix, level: 'error'|'warn' }] }>`、`checkText(result) → string`、`load()` 回傳的物件多了 `validateDoc` 與 `FIELDS`；`unknown-category` 由 Task 3 加進 `checkBoard`。
 
 **Dispatch:** implementer, opus — architectural 任務的地板，無需理由。
 
@@ -309,8 +309,8 @@ category in `icon` — `fk:ui`, `fk:service`, `fk:store`, `fk:queue` or
 - Test: `tests/board.test.js` — 斷言預設主題顏色的地方改成 `look.THEME` 的值
 
 **Interfaces:**
-- Consumes: Task 2 的 `load()`（含 `rootOf`、`scene`、`toSVG`）、`FIXES`、`checkBoard`
-- Produces: `lib/board-look.js` 匯出 `CATEGORIES`（`{ [id]: { name, color, tint, glyph } }`，id 不含前綴）、`THEME`、`prepare(doc) → { doc, cats }`（`cats: Map<nodeId, categoryId>`）、`decorate(svg, sc, cats) → string`、`LEGEND_H`
+- Consumes: Task 2 的 `load`、`checkBoard`；`load()`（含 `rootOf`、`scene`、`toSVG`）、`FIXES`
+- Produces: `renderBoard`；`lib/board-look.js` 匯出 `CATEGORIES`（`{ [id]: { name, color, tint, glyph } }`，id 不含前綴）、`THEME`、`prepare(doc) → { doc, cats }`（`cats: Map<nodeId, categoryId>`）、`decorate(svg, sc, cats) → string`、`LEGEND_H`
 
 **Dispatch:** implementer, opus — architectural 任務的地板，無需理由。
 
@@ -503,8 +503,8 @@ async function renderBoard(text) {
 - Test: `tests/board-edit.test.js`
 
 **Interfaces:**
-- Consumes: Task 2 的 `load()`、Task 3 的 `renderBoard`
-- Produces: `lib/board-edit.js` 匯出
+- Consumes: Task 2 的 `load`、Task 3 的 `renderBoard`
+- Produces: `editBoard`、`markBoard`、`dropChange`、`readChanges`、`pendingChanges`、`markSent`；`lib/board-edit.js` 匯出
   - `editBoard(file, batch, text) → Promise<{ svg, change }>`：`batch` 是 Chartroom 的 `{ ops: [...] }`；`text` 是畫面上給人看的一句（可為空，空時用 `summary.text`）；不合法時 reject，`e.name === 'BatchError'`，`e.errors` 是 `[{ i, code, message }]`
   - `markBoard(file, target, note) → change`
   - `dropChange(file, at) → Promise<change>`：`at` 是 `readChanges` 的索引；編輯以 `inverse` 撤回，標記直接作廢
@@ -696,8 +696,8 @@ module.exports = { changesFile, readChanges, editBoard, markBoard, dropChange, p
 - Test: `tests/station-board-edit.test.js`
 
 **Interfaces:**
-- Consumes: Task 4 全部匯出；Task 2 的 `checkBoard`、`checkText`
-- Produces:
+- Consumes: Task 4 的 `editBoard`、`readChanges`；Task 2 的 `checkBoard`、`checkText`
+- Produces: `boardRoutes`（以下兩條路由）
   - `GET /station/board/<sid>/<name>.json` → `200 application/json` `{ svg, check, changes, editable, root }`（`root` 是板子的 root view id，新增節點與連線用）；`editable` 是 session 停在 gate（`gateAt` 有值，或 `pending` 有題目）
   - `POST /station/board/<sid>/<name>`，form：`nonce`、`op`（`edit`|`mark`|`drop`）、`batch`（JSON，`edit`）、`text`（`edit`）、`target`、`note`（`mark`）、`at`（`drop`）→ 與 GET 同形狀的 JSON；不在 gate 409 `the session is not at a gate: the board is read-only now`；`BatchError` 422 `{ errors }`；nonce 錯 403
 
@@ -919,7 +919,7 @@ last_verified: 2026-10-27
 - Test: `tests/resume-board-changes.test.js`
 
 **Interfaces:**
-- Consumes: Task 4 的 `pendingChanges(dir)`、`markSent(dir)`
+- Consumes: Task 4 的 `pendingChanges`、`markSent`；`pendingChanges(dir)`、`markSent(dir)`
 - Produces: none
 
 **Dispatch:** implementer, opus — architectural 任務的地板，無需理由。
@@ -1025,8 +1025,8 @@ const boardEdit = require('../lib/board-edit.js');
 - Test: `tests/board-edit-client.test.js`
 
 **Interfaces:**
-- Consumes: Task 5 的 `GET …/<name>.json`、`POST …/<name>`
-- Produces: `window.FK_BOARD = { paneHtml(s), changesHtml(s), load(s, nonce, repaint), listen(root, nonce), post(id, name, nonce, fields), opFor(tool, ctx), EN }`；`listen` 在 `root` 上掛一次事件委派（工具列、`[data-bd-drop]`、SVG 內 `[data-id]` 的點擊、雙擊與拖動）；`paneHtml`/`changesHtml` 只讀快取，`load` 取資料後呼叫 `repaint()`
+- Consumes: Task 5 的 `boardRoutes`（`GET …/<name>.json`、`POST …/<name>`）
+- Produces: `FK_BOARD`；`window.FK_BOARD = { paneHtml(s), changesHtml(s), load(s, nonce, repaint), listen(root, nonce), post(id, name, nonce, fields), opFor(tool, ctx), EN }`；`listen` 在 `root` 上掛一次事件委派（工具列、`[data-bd-drop]`、SVG 內 `[data-id]` 的點擊、雙擊與拖動）；`paneHtml`/`changesHtml` 只讀快取，`load` 取資料後呼叫 `repaint()`
 
 **Dispatch:** implementer, opus — architectural 任務的地板；計畫的 `listen` 以 `prompt` 改名與標記，實作者把它換成 mockup 的行內編輯（`foreignObject` 裡兩個 input，Enter 存、Esc 取消）與標記氣泡，送出的 op 不變。
 
@@ -1266,7 +1266,7 @@ test('opFor builds the batch each tool sends', () => {
 - Test: `tests/station-module-lists.test.js` — 第 18 行 `MODULES` 的尾巴加上兩個新名字
 
 **Interfaces:**
-- Consumes: Task 7 的 `FK_BOARD.load(s, nonce, repaint)`、`FK_BOARD.listen(root, nonce)`
+- Consumes: Task 7 的 `FK_BOARD`；`FK_BOARD.load(s, nonce, repaint)`、`FK_BOARD.listen(root, nonce)`
 - Produces: none
 
 **Dispatch:** implementer, opus — architectural 任務的地板，無需理由。
