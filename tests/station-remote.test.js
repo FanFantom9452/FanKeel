@@ -240,17 +240,10 @@ test('POST /profile: the first trigger turned on writes a topic, and station.rem
 
 // The policy reads the normalised pathname and the Chartroom hand-off the raw
 // url, so `/chartroom/ws/../../station/x` is `device` to one and a board to the
-// other. Chartroom here is a fake that answers 200 to whatever it is handed.
-test('through the tailnet a paired phone never reaches Chartroom, .. or not: 403, and Chartroom is handed nothing', async () => {
+// other.
+test('through the tailnet a paired phone never reaches the board, .. or not: 403', async () => {
     const f = fixture(true);
-    const dir = path.join(path.dirname(f.cfg), 'chartroom');
-    fs.mkdirSync(path.join(dir, 'src', 'server'), { recursive: true });
-    fs.writeFileSync(path.join(dir, 'package.json'), '{ "type": "module" }\n');
-    fs.writeFileSync(path.join(dir, 'src', 'server', 'handler.js'),
-        'export function createHandler() { return Object.assign((req, res) => { (globalThis.__remoteChartroom ||= []).push(req.url); res.end("board"); }, { close() {} }); }\n');
-    assert.equal(profile.write(profile.machineFile(f.cfg), 'station.chartroom', dir).ok, true);
-    fs.writeFileSync(require('../lib/station.js').boardPath(f.r1), '');
-    globalThis.__remoteChartroom = [];
+    fs.writeFileSync(require('../lib/station.js').boardPath(f.r1), '{"chartroom":1,"title":"F","root":"main"}\n{"view":"main"}\n');
     const s = await start(f, fakeTailscale());
     try {
         assert.equal((await request(s.url + 'chartroom/ws/')).status, 200, 'loopback still reaches the board');
@@ -261,8 +254,8 @@ test('through the tailnet a paired phone never reaches Chartroom, .. or not: 403
         for (const p of ['/chartroom/ws/../../station/x', '/chartroom/p/../../station/x', '/chartroom/ws/x', '/chartroom/p/x']) {
             const got = await request(s.url, { path: p, headers: jar });
             assert.equal(got.status, 403, p + ': ' + got.text);
+            assert.match(got.text, /this route answers on this machine only/, p);
         }
-        assert.deepEqual(globalThis.__remoteChartroom, ['/'], 'only the loopback request was handed on');
     } finally {
         s.close();
     }

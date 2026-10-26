@@ -2057,14 +2057,13 @@
 
     // ---- the project page, again: its board link ------------------------------
     // The project card's line to its architecture board. Only a served page
-    // has the `/chartroom/` route (a file:// copy has none), only a registry
-    // with `.fankeel/architecture.board` has a board (`board`, lib/station.js),
-    // and only a machine whose profile names a Chartroom install can open it
-    // (`station.chartroom`). The url segment is the root's folder name, the
-    // one scripts/station.js matches; the trailing slash keeps the board
-    // page's relative asset urls under its own prefix.
-    function boardLinkHtml(p, serve, machine) {
-        if (!serve || !p || !p.board || !machine || !machine['station.chartroom']) return '';
+    // has the `/chartroom/` route (a file:// copy has none), and only a registry
+    // with `.fankeel/architecture.board` has a board (`board`, lib/station.js);
+    // the station draws it itself (lib/board.js `boardPage`). The url segment
+    // is the root's folder name, the one scripts/station.js matches; the
+    // trailing slash keeps the page's `board.svg` under its own prefix.
+    function boardLinkHtml(p, serve) {
+        if (!serve || !p || !p.board) return '';
         var name = String(p.root).split(/[\\/]/).filter(Boolean).pop() || '';
         var href = '/chartroom/' + encodeURIComponent(name) + '/';
         return '<p class="mute" style="margin:4px 0 0">' + loc('proj.boardColon', '架構白板：')
@@ -2235,7 +2234,7 @@
                     return esc(b.name) + ' (' + b.files + ')';
                 }).join(loc('tune.listSep', '、')) + '</p>'
                 : '<p class="mute" style="margin:4px 0 0">' + loc('tune.noBuildFolder', '沒有 build 資料夾') + '</p>')
-            + boardLinkHtml(p, S.serve, S.profiles && S.profiles.machine && S.profiles.machine.values)
+            + boardLinkHtml(p, S.serve)
             + '</div></div>';
     }
 

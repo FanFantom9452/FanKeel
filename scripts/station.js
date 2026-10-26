@@ -542,38 +542,32 @@ async function serve(opts) {
             }
         }
         if (req.method === 'POST') shared = null;
-        // `/chartroom/<name>/…` is a registry root's architecture board,
-        // handed to Chartroom before the nonce check below, on purpose:
-        // only loopback gets here — any other Host, the tailnet's included,
-        // was refused above — and Chartroom guards its own routes besides: a
-        // POST whose Origin does not match its Host or whose body is not
-        // application/json is refused, which a page on another origin cannot
-        // get past, while the AI posting ops from a shell has no nonce to
-        // send. `<name>` is the root's folder name. With `station.chartroom`
-        // unset this is the ordinary 404 at the end.
+        // `/chartroom/<name>/…` is a registry root's architecture board, drawn
+        // read-only by the vendored render code (lib/board.js `boardPage`) —
+        // no Chartroom install, no profile key (station-chartroom-vendored-1).
+        // It answers before the nonce check on purpose: only loopback gets
+        // here — any other Host, the tailnet's included, was refused above —
+        // and the page takes no write, a POST being its own 405. `<name>` is
+        // the root's folder name; no trailing slash is sent on to the slash,
+        // so the page's relative `board.svg` stays under its own prefix.
         const chartroomHit = CHARTROOM.exec(req.url);
-        const chartroomRoot = chartroomHit && profile.read(null, configDir).values['station.chartroom'];
-        if (chartroomRoot) {
+        if (chartroomHit) {
             let name;
             try { name = decodeURIComponent(chartroomHit[1]); } catch (e) { name = chartroomHit[1]; }
             const roots = sharedModel().registries.filter((r) => !r.gone && path.basename(r.root) === name).map((r) => r.root);
             if (roots.length === 0) return fail(404, 'no registered project is named ' + name);
             if (roots.length > 1) return fail(409, 'two registered projects are named ' + name + ': ' + roots.join(', '));
-            let board = boards.get(roots[0]);
-            if (!board) {
+            const rest = chartroomHit[2];
+            if (!rest) return redirect('/chartroom/' + chartroomHit[1] + '/');
+            let page = boards.get(roots[0]);
+            if (!page) {
                 const file = station.boardPath(roots[0]);
                 if (!fs.existsSync(file)) return fail(404, 'no architecture board here: put one at ' + file);
-                const entry = path.join(chartroomRoot, 'src', 'server', 'handler.js');
-                try {
-                    board = require(entry).createHandler(file, { staticDir: 'dist/app' });
-                } catch (e) {
-                    return fail(500, 'Chartroom did not load from ' + entry + ': ' + e.message);
-                }
-                boards.set(roots[0], board);
+                page = board.boardPage(file, name);
+                boards.set(roots[0], page);
             }
-            const rest = chartroomHit[2];
             req.url = rest.startsWith('/') ? rest : '/' + rest;
-            return board(req, res);
+            return page(req, res);
         }
         // Every POST carries the nonce this server printed, or — through the
         // tailnet, where the nonce is no key — a paired device's cookie, checked
