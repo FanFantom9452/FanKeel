@@ -2,9 +2,13 @@
 label: tune
 title: tune 浮層像 Desktop 選元素
 description: tune 浮層自己的選取要能像 Claude Desktop 的選取工具那樣點選元素，而不是去接 Desktop 的工具
-state: decision
+state: done
 link: assets/tune/overlay.js
 stamp: 2026-10-27
+done:
+  at: 2026-10-28
+  sha: 39a7b070
+  disposition: done
 ---
 
 來源：2026-10-27，使用者說：「你幫我開個網頁在 CLAUDE DESKTOP 裡面 我有看到 CLAUDE 自己有一個工具 可以 SELECT 元素 這些 我們現在逐塊調整功能也需要這個」。當時在 Claude Desktop 的內建瀏覽器打開了 http://127.0.0.1:7819/.fankeel/build/2026-10-26-station-resize/mockup.html（tune serve 帶 overlay）。
@@ -20,3 +24,14 @@ stamp: 2026-10-27
 完成條件：在 Desktop 內建瀏覽器用它的選取工具點一個 mockup 區塊，session 收到的請求帶著正確的 data-block，並由使用者在真機上確認一次。
 
 2026-10-27 使用者澄清：不是要接 Claude Desktop 的選取元素工具，是要逐塊調整的浮層（assets/tune/overlay.js）自己就能像它那樣點選元素。實測時從 Chrome 送進對話的只有整頁截圖，沒有 selector 或 data-block。下一步要決定的是：浮層的選取要比現在多做什麼（任意元素、不限 data-block，或其他），再拆成 Ready。
+
+## 完成紀錄
+
+tune 浮層改成底部工具列，可選任意元素、畫筆、形狀和文字標註，標註隨那一則送出並有總量上限。詳見 [任務紀錄](../records/2026-10.md#r-2026-10-27-24cb0bb1)
+
+- commit 9fb39d11
+- commit d53dbc8b
+- commit b834471b
+- commit 2e4b40ae
+- commit 215c9b94
+- commit 39a7b070
