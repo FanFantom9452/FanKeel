@@ -503,7 +503,7 @@
             var host = '';
             try { host = new URL(o.url).host; } catch (e) { host = ''; }
             return '<li><a class="mm-row" href="' + esc(o.url) + '" aria-label="' + esc(t('rs.toStation', { name: o.name || host })) + '">' + ic('laptop') + '<span class="mm-m"><span class="mm-n">' + esc(o.name || '') + '</span>'
-                + (host ? '<span class="mm-d">' + esc(host) + '</span>' : '') + '</span>' + ic('out', 'go') + '</a></li>';
+                + (host ? '<span class="mm-d">' + esc(host) + '</span>' : '') + '</span><span></span>' + ic('out', 'go') + '</a></li>';
         }).join('') + '</ul>' : '<p class="mm-empty">' + ic('info') + '<span>' + t('rs.noOthers') + '</span></p>';
         return '<section class="mm" data-block="m-machines" aria-labelledby="mm-t"><h3 class="mm-h" id="mm-t">' + t('rs.others') + (list.length ? '<span>' + list.length + '</span>' : '') + '</h3>' + body + '</section>';
     }

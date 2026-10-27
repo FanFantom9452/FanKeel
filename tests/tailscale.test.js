@@ -107,7 +107,7 @@ const PEERS_STATUS = {
 };
 
 test('peers + probeStations: only an online peer whose probe answers 200 or 401 is listed, with its /m url', async () => {
-    const list = tailscale.peers(fake(PEERS_STATUS, null).run);
+    const list = await tailscale.peers(fake(PEERS_STATUS, null).run);
     assert.deepEqual(list.map((p) => p.name), ['laptop', 'paired', 'nostation']);
     const asked = [];
     const get = (url, ms) => {
@@ -125,7 +125,26 @@ test('peers + probeStations: only an online peer whose probe answers 200 or 401 
     assert.deepEqual(asked[0], ['https://laptop.tail1234.ts.net/station/mobile.json', 1500]);
 });
 
-test('peers: [] when tailscale status fails', () => {
-    assert.deepEqual(tailscale.peers(fake(null, null).run), []);
-    assert.deepEqual(tailscale.peers(() => ({ status: 0, stdout: 'not json', stderr: '' })), []);
+test('peers: [] when tailscale status fails', async () => {
+    assert.deepEqual(await tailscale.peers(fake(null, null).run), []);
+    assert.deepEqual(await tailscale.peers(() => ({ status: 0, stdout: 'not json', stderr: '' })), []);
+});
+
+test('peers without a run: the default runner is async execFile, the event loop keeps turning while it waits', async () => {
+    const calls = [];
+    const exec = (bin, args, o, cb) => {
+        calls.push([bin, args, o]);
+        if (calls.length === 1) return setTimeout(() => cb(Object.assign(new Error('nf'), { code: 'ENOENT' }), '', ''), 30);
+        setTimeout(() => cb(null, JSON.stringify(PEERS_STATUS), ''), 30);
+    };
+    let ticks = 0;
+    const timer = setInterval(() => { ticks++; }, 5);
+    let out;
+    try { out = await tailscale.peers(null, { exec, platform: 'win32', env: { ProgramFiles: 'C:\\PF' } }); } finally { clearInterval(timer); }
+    assert.ok(ticks >= 3, 'timers ran while peers waited: ' + ticks);
+    assert.deepEqual(out.map((p) => p.name), ['laptop', 'paired', 'nostation']);
+    assert.equal(calls[0][0], 'tailscale');
+    assert.match(calls[1][0], /Tailscale.tailscale\.exe$/);
+    assert.deepEqual(calls[0][2], { encoding: 'utf8', timeout: 5000, windowsHide: true });
+    assert.deepEqual(await tailscale.peers(null, { exec: (b, a, o, cb) => cb(Object.assign(new Error('x'), { code: 1 }), '', 'bad'), platform: 'linux' }), []);
 });

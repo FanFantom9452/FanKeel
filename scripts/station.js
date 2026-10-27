@@ -1247,7 +1247,7 @@ async function serve(opts) {
             cur.busy = true;
             cur.at = Date.now();
             const self = tailnet.dnsName;
-            Promise.resolve().then(() => tailscale.probeStations(tailscale.peers(opts.tailscaleRun).filter((p) => p.dnsName !== self), opts.probeGet))
+            tailscale.peers(opts.tailscaleRun).then((all) => tailscale.probeStations(all.filter((p) => p.dnsName !== self), opts.probeGet))
                 .then((list) => { if (others === cur) cur.list = list; }, (e) => { process.stderr.write('station: other computers not probed — ' + (e && e.message || e) + '\n'); })
                 .then(() => { cur.busy = false; });
         }
