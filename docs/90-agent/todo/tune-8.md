@@ -1,7 +1,7 @@
 ---
 label: tune
-title: tune 接 Desktop 選取元素
-description: Claude Desktop 內建瀏覽器有選取元素的工具；逐塊調整要能用它點區塊，對回 data-block 送進 tune 佇列
+title: tune 浮層像 Desktop 選元素
+description: tune 浮層自己的選取要能像 Claude Desktop 的選取工具那樣點選元素，而不是去接 Desktop 的工具
 state: decision
 link: assets/tune/overlay.js
 stamp: 2026-10-27
@@ -18,3 +18,5 @@ stamp: 2026-10-27
 要變成：在 Claude Desktop 裡做逐塊調整時，使用者可以用 Desktop 的選取工具點元素，fankeel 把它對回 data-block（找最近的有 data-block 的祖先）並排進同一個佇列。overlay 留給 terminal／一般瀏覽器使用。怎麼接還沒決定。
 
 完成條件：在 Desktop 內建瀏覽器用它的選取工具點一個 mockup 區塊，session 收到的請求帶著正確的 data-block，並由使用者在真機上確認一次。
+
+2026-10-27 使用者澄清：不是要接 Claude Desktop 的選取元素工具，是要逐塊調整的浮層（assets/tune/overlay.js）自己就能像它那樣點選元素。實測時從 Chrome 送進對話的只有整頁截圖，沒有 selector 或 data-block。下一步要決定的是：浮層的選取要比現在多做什麼（任意元素、不限 data-block，或其他），再拆成 Ready。
