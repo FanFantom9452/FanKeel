@@ -113,10 +113,15 @@ test('peers + probeStations: only an online peer whose probe answers 200 or 401 
     const get = (url, ms) => {
         asked.push([url, ms]);
         if (url.includes('nostation')) return Promise.reject(new Error('connect ECONNREFUSED'));
-        return Promise.resolve({ status: url.includes('laptop') ? 401 : 404 });
+        if (url.includes('laptop')) return Promise.resolve({ status: 401 });
+        if (url.includes('paired')) return Promise.resolve({ status: 200 });
+        return Promise.resolve({ status: 404 });
     };
     const out = await tailscale.probeStations(list, get);
-    assert.deepEqual(out, [{ name: 'laptop', url: 'https://laptop.tail1234.ts.net/m' }]);
+    assert.deepEqual(out, [
+        { name: 'laptop', url: 'https://laptop.tail1234.ts.net/m' },
+        { name: 'paired', url: 'https://paired.tail1234.ts.net/m' },
+    ]);
     assert.deepEqual(asked[0], ['https://laptop.tail1234.ts.net/station/mobile.json', 1500]);
 });
 
