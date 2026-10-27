@@ -1,11 +1,11 @@
 ---
 label: quota
 title: 7d 水位差 4.7 倍的成因
-description: 7d 水位兩點差 4.7 倍，是延遲還是計別的：`hooks/pane-limits.ts` 已把 5h／7d 讀數寫進 .fankeel/build/limits，`readings` 讀它，拿第三點以後的序列來分 — [scripts/spend.js](scripts/spend.js).
+description: 7d 水位兩點差 4.7 倍，是延遲還是計別的：`hooks/pane-limits.ts` 已把 5h／7d 讀數寫進 `.fankeel/build/limits`，`readings` 讀它，拿第三點以後的序列來分 — [scripts/spend.js](scripts/spend.js).
 state: blocked
 link: scripts/spend.js
 group: limits 記錄跨過一次 reset
-timing: after: .fankeel/build/limits 的 sevenResets 跨過一次 7d reset
+timing: after: `.fankeel/build/limits` 的 sevenResets 跨過一次 7d reset
 stamp: 2026-10-27
 ---
 

@@ -5,7 +5,7 @@ description: limits 記錄還沒有任何 7 天視窗內動 10 點以上，quota
 state: blocked
 link: scripts/quota.js
 group: limits 記錄跨過一次 reset
-timing: after: .fankeel/build/limits 在一個 7 天視窗內 seven 累積動 10 點以上
+timing: after: `.fankeel/build/limits` 在一個 7 天視窗內 seven 累積動 10 點以上
 stamp: 2026-10-27
 ---
 
