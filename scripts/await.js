@@ -22,7 +22,7 @@ const path = require('node:path');
 const util = require('node:util');
 const { readObject } = require('../lib/json.js');
 const registry = require('../lib/registry.js');
-const { handoffPath, commitPath, ledgerCommitPath, answerPath, awaitHandoff, newestCommit, caseOfPrompt, promptOf, workflowOf, readGate, withCheckout } = require('../lib/handoff.js');
+const { handoffPath, commitPath, ledgerCommitPath, answerPath, awaitHandoff, newestCommit, launched, caseOfPrompt, promptOf, workflowOf, readGate, withCheckout } = require('../lib/handoff.js');
 const { newestPlan } = require('../lib/render.js');
 const { transcriptOf } = require('../lib/detail.js');
 const { sessionDirOf, agentFiles } = require('../lib/usage.js');
@@ -133,6 +133,8 @@ function waitFor(opts, env) {
         root, handoff, commit: commitCandidates(root, data, lap, group), since, agentId, group, lap, kind, activity,
         idleMs: opts.idle * 1000, timeoutMs: opts.timeout * 1000,
         stage: data.stage, session: opts.session, configDir: data.configDir || configDirOf(env),
+        waiting: () => (own ? launched(own) : []),
+        worktrees: () => (own ? launched(own) : []).map((id) => path.join(root, '.claude', 'worktrees', 'agent-' + id)).filter((p) => fs.existsSync(p)),
     };
 }
 
@@ -156,6 +158,7 @@ function writeFailure(state, o) {
     }
     const next = count >= 2 ? 'stop retrying and ask the user — two failures in a row'
         : state === 'lost' ? 'dispatch a fresh stage agent with the same line'
+        : state === 'stalled' ? 'SendMessage the agent once; stalled again, stop it and dispatch a fresh one'
         : 'run await again';
     try {
         fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -181,6 +184,10 @@ function lineFor(state, o, commitFile) {
     }
     if (state === 'commit') return tag + 'commit ' + commitFile + ' — run `node ' + COMMIT_SCRIPT + ' "' + commitFile + '"` from inside the repository its paths belong to and SendMessage the agent what it printed, exactly. After a `commit.js:` line, run await again with `--since "' + commitFile + '"` added.';
     if (state === 'lost') return tag + 'lost ' + o.agentId + ' — the stage agent stopped with neither file written: dispatch a fresh one with the same line.';
+    if (state === 'stalled') return tag + 'stalled ' + (o.agentId || '?') + ' — it launched ' + (o.waiting || []).join(', ')
+        + ' and says it waits, but nothing was written for ' + Math.round(o.idleMs / 60000) + ' minutes. SendMessage it once to resume and run await again;'
+        + ' stalled a second time: stop it and dispatch a fresh one whose prompt lists the commits since this stage began and the uncommitted worktrees: '
+        + ((o.worktrees || []).join(', ') || 'none') + '.';
     return tag + 'timeout — nothing moved in ' + Math.round(o.timeoutMs / 60000) + ' minutes: run await again.';
 }
 
@@ -281,6 +288,7 @@ function main(argv, env) {
         try { fs.unlinkSync(marker); } catch (e) { /* gone already */ }
     };
     return awaitHandoff(o).then((state) => {
+        if (state === 'stalled') { o.waiting = o.waiting(); o.worktrees = o.worktrees(); }
         release();
         // A group brain returns with no gate, so hooks/gate.js never clears its
         // mark; its own handoff arriving is the only signal there is. A close mark
@@ -298,7 +306,7 @@ function main(argv, env) {
         if (state === 'timeout' && reported(o.root, opts.session, o.agentId)) {
             return { text: 'stale ' + o.agentId + ' — that agent already reported: nothing to do, end the turn without a reply.' };
         }
-        const failed = state === 'lost' || state === 'timeout' ? writeFailure(state, o) : null;
+        const failed = state === 'lost' || state === 'timeout' || state === 'stalled' ? writeFailure(state, o) : null;
         // Only a handoff state on this stage and group deletes the file; a commit
         // between two failures does not reset the count.
         let stale = '';
@@ -306,7 +314,7 @@ function main(argv, env) {
             try { fs.unlinkSync(failedPath(o.handoff)); } catch (e) { if (e.code !== 'ENOENT') stale = ' (stale failure handoff not removed)'; }
         }
         const line = lineFor(state, o, state === 'commit' ? newestCommit(o.commit, o.since) : null)
-            + (failed ? ' Failure handoff: ' + failed.replace(/\\/g, '/') + '.' : state === 'lost' || state === 'timeout' ? ' (failure handoff not written)' : '')
+            + (failed ? ' Failure handoff: ' + failed.replace(/\\/g, '/') + '.' : state === 'lost' || state === 'timeout' || state === 'stalled' ? ' (failure handoff not written)' : '')
             + stale;
         if (state === 'handoff' && already(o.root, opts.session, o.handoff)) return { text: 'stale ' + o.handoff + ' — already asked; nothing to do, end the turn without a reply.' };
         if (state !== 'handoff') return { text: line };
@@ -326,4 +334,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { main, already, questionsLine };
+module.exports = { main, already, questionsLine, lineFor };
