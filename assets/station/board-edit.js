@@ -205,7 +205,14 @@
     var REPAINT = function () {};
     function load(s, nonce, repaint) {
         var n = boardOf(s);
-        if (repaint) REPAINT = repaint;
+        // A redraw replaces the page's markup and the focus with it; a board that had the
+        // focus gets it back, or the next shortcut key would go nowhere.
+        if (repaint) REPAINT = function () {
+            var a = doc && doc.activeElement, had = Boolean(a && a.getAttribute && a.getAttribute('data-bd-view') !== null);
+            repaint();
+            var v = had && doc.querySelector ? doc.querySelector('[data-bd-view]') : null;
+            if (v && v.focus) v.focus();
+        };
         if (!n || !w || !w.fetch) return;
         var k = key(s.id, n);
         function fail(t) { ERR[k] = LOADERR[k] = t; REPAINT(); }
@@ -327,6 +334,7 @@
         function viewOf(t) { return t && t.closest ? t.closest('[data-bd-view]') : null; }
         function current(v, k) {
             var svg = v.querySelector('svg'), r = v.getBoundingClientRect();
+            if (!svg) return null; // the board is still loading, or could not be read
             if (VB[k]) return VB[k];
             var b = (svg.getAttribute('viewBox') || '0 0 ' + r.width + ' ' + r.height).split(/[\s,]+/).map(Number), s = Math.min(r.width / b[2], r.height / b[3]);
             return { x: b[0] - (r.width / s - b[2]) / 2, y: b[1] - (r.height / s - b[3]) / 2, w: r.width / s, h: r.height / s, s: s };
@@ -339,21 +347,25 @@
         }
         function step(v, k, dir) {
             var vb = current(v, k), r = v.getBoundingClientRect();
+            if (!vb) return;
             var s = dir > 0 ? STEPS.filter(function (x) { return x > vb.s + 0.001; })[0] || MAX : STEPS.filter(function (x) { return x < vb.s - 0.001; }).pop() || MIN;
             show(v, k, zoomAt(vb, s, r.width / 2, r.height / 2));
         }
         function zoomClick(b, k) {
-            var v = viewOf(b), z = b.getAttribute('data-bd-zoom'), r = v.getBoundingClientRect();
+            var v = viewOf(b), z = b.getAttribute('data-bd-zoom'), r = v.getBoundingClientRect(), vb = current(v, k);
+            if (!vb) return;
             if (z === 'in') step(v, k, 1); else if (z === 'out') step(v, k, -1);
             else if (z === 'fit') { VB[k] = null; REPAINT(); }
-            else show(v, k, zoomAt(current(v, k), 1, r.width / 2, r.height / 2));
+            else show(v, k, zoomAt(vb, 1, r.width / 2, r.height / 2));
         }
         // Keys on the focused board: + − 0 and arrows move the view; V N E M pick a tool,
         // Delete and Ctrl+Z press their buttons. True when the key was the view's.
         function viewKey(e, k) {
             var v = viewOf(e.target);
             if (!v || e.target !== v) return false;
-            var vb = current(v, k), d = 40 / vb.s, low = String(e.key || '').toLowerCase(), pane = v.closest('[data-bd]');
+            var vb = current(v, k);
+            if (!vb) return false;
+            var d = 40 / vb.s, low = String(e.key || '').toLowerCase(), pane = v.closest('[data-bd]');
             var press = function (t) { var b = pane && pane.querySelector('[data-bd-tool="' + t + '"]'); if (b && !b.disabled) b.click(); };
             if (e.key === '+' || e.key === '=') step(v, k, 1);
             else if (e.key === '-') step(v, k, -1);
@@ -370,8 +382,10 @@
         function panDown(e, k) {
             var v = viewOf(e.target);
             if (!v || e.button || EDIT || e.target.closest('.bd-zoom') || e.target.closest('[data-type="node"]')) return false;
+            var vb = current(v, k);
+            if (!vb) return false;
             pts[e.pointerId] = [e.clientX, e.clientY];
-            var ids = Object.keys(pts), vb = current(v, k);
+            var ids = Object.keys(pts);
             if (ids.length === 2) { var a = pts[ids[0]], c = pts[ids[1]]; pan = { v: v, k: k, pinch: Math.hypot(a[0] - c[0], a[1] - c[1]), vb: vb }; }
             else pan = { v: v, k: k, x0: e.clientX, y0: e.clientY, vb: vb, moved: false };
             return true;
@@ -393,13 +407,18 @@
         }
         function panUp(e) {
             delete pts[e.pointerId];
-            if (!Object.keys(pts).length && pan) { if (pan.moved) { pan.v.classList.remove('panning'); suppress = true; } pan = null; }
+            var left = Object.keys(pts).length;
+            if (!pan) return;
+            // A pinch with one finger left has no pair to measure: it ends there.
+            if (pan.pinch && left < 2) pan = null;
+            else if (!left) { if (pan.moved) { pan.v.classList.remove('panning'); suppress = true; } pan = null; }
         }
         root.addEventListener('wheel', function (e) {
             var v = viewOf(e.target), p = paneOf(e.target);
             if (!v || !p || (!e.ctrlKey && !e.metaKey)) return;
             e.preventDefault();
             var k = key(p[0], p[1]), r = v.getBoundingClientRect(), vb = current(v, k);
+            if (!vb) return;
             show(v, k, zoomAt(vb, vb.s * Math.exp(-e.deltaY * 0.002), e.clientX - r.left, e.clientY - r.top));
         }, { passive: false });
         root.addEventListener('click', function (e) {
@@ -486,6 +505,7 @@
             save(nonce);
         });
         root.addEventListener('pointerdown', function (e) {
+            suppress = false; // a pan that ended in pointercancel has no click coming
             var t = e.target, p = paneOf(t), g = p ? t.closest('[data-type="node"]') : null;
             if (p && panDown(e, key(p[0], p[1]))) return;
             if (!g || e.button || EDIT || tool !== 'select' || t.closest('foreignObject') || !(CACHE[key(p[0], p[1])] || {}).editable) return;

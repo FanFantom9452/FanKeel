@@ -83,7 +83,7 @@ test('the gate frame draws the pane before the report and the changes inside the
 // the fakes the delegated listeners walk: closest() answers the selectors the
 // module asks, and the SVG maps client to SVG units one to one.
 function rig(o = {}) {
-    const { M, win } = page(['board-edit.js']);
+    const { M, win, doc } = page(['board-edit.js']);
     const P = M['board-edit.js'];
     const sent = [];
     win.fetch = (url, opts) => {
@@ -137,7 +137,7 @@ function rig(o = {}) {
     const batch = (i = 0) => JSON.parse(sent[i].form.get('batch'));
     const catSel = (value) => { const c = { value, getAttribute: (k) => (k === 'data-bd-cat' ? '' : null) };
         c.closest = (s) => (s === '[data-bd]' ? pane : s === '[data-bd-cat]' ? c : null); return c; };
-    return { P, win, on, sent, inNode: inNode[nodes[0].id], nodeOf: inNode, inLabel, inEdge, onSvg, field, toolBtn, dropBtn, catSel, key, attrs, batch };
+    return { P, win, doc, pane, on, sent, inNode: inNode[nodes[0].id], nodeOf: inNode, inLabel, inEdge, onSvg, field, toolBtn, dropBtn, catSel, key, attrs, batch };
 }
 const tick = () => new Promise((r) => setTimeout(r, 0));
 
@@ -365,4 +365,128 @@ test('station-61: zoomAt keeps the point under the pointer, and withView writes 
     assert.equal(B._zoomAt(vb, 0.01, 0, 0).s, 0.25, 'clamped to MIN');
     assert.match(B._withView('<svg viewBox="0 0 400 300"><g/></svg>', { x: 10, y: 20, w: 200, h: 150 }), /^<svg viewBox="10 20 200 150"/);
     assert.equal(B._withView('<svg viewBox="0 0 400 300"/>', null), '<svg viewBox="0 0 400 300"/>');
+});
+
+// The board's view and what sits in it: a 400x300 svg shown in a 400x300 box, so
+// fit is scale 1. `noSvg` is a board still loading, which has no svg to read.
+function viewRig(r, o = {}) {
+    const svg = { attrs: {}, getAttribute: (k) => (k === 'viewBox' ? '0 0 400 300' : null), setAttribute: (k, v) => { svg.attrs[k] = v; } };
+    const pct = { textContent: '' };
+    const view = { getBoundingClientRect: () => ({ left: 0, top: 0, width: 400, height: 300 }), classList: { add() {}, remove() {} },
+        querySelector: (s) => (s === 'svg' ? (o.noSvg ? null : svg) : s === '.bd-pct' ? pct : null),
+        getAttribute: (k) => (k === 'data-bd-view' ? '' : null), setPointerCapture() {}, focus() {} };
+    view.closest = (s) => (s === '[data-bd-view]' ? view : s === '[data-bd]' ? r.pane : null);
+    const zoomBtn = (z) => { const b = { getAttribute: (k) => (k === 'data-bd-zoom' ? z : null) };
+        b.closest = (s) => (s === '[data-bd-zoom]' ? b : s === '.bd-zoom' ? b : s === '[data-bd-view]' ? view : s === '[data-bd]' ? r.pane : null); return b; };
+    const viewBox = () => /<svg viewBox="([^"]*)"/.exec(r.P.paneHtml(S))[1];
+    return { view, svg, pct, zoomBtn, viewBox };
+}
+
+test('station-61: the zoom buttons step the view about its centre, 100% and fit', () => {
+    const r = rig(), v = viewRig(r);
+    assert.equal(v.viewBox(), '0 0 400 300');
+    r.on.click({ target: v.zoomBtn('in') });
+    assert.equal(v.svg.attrs.viewBox, '40 30 320 240');
+    assert.equal(v.pct.textContent, '125%');
+    assert.equal(v.viewBox(), '40 30 320 240', 'a repaint draws the same view');
+    r.on.click({ target: v.zoomBtn('one') });
+    assert.equal(v.viewBox(), '0 0 400 300');
+    r.on.click({ target: v.zoomBtn('out') });
+    assert.equal(v.svg.attrs.viewBox, '-50 -37.5 500 375');
+    r.on.click({ target: v.zoomBtn('fit') });
+    assert.equal(v.viewBox(), '0 0 400 300', 'fit forgets the view');
+});
+
+test('station-61: Ctrl+wheel zooms about the pointer, a plain wheel is left alone', () => {
+    const r = rig(), v = viewRig(r);
+    let stopped = 0;
+    const wheel = (o) => r.on.wheel(Object.assign({ target: v.view, deltaY: -100, clientX: 200, clientY: 150, preventDefault() { stopped++; } }, o));
+    wheel({});
+    assert.equal(stopped, 0);
+    assert.equal(v.viewBox(), '0 0 400 300');
+    wheel({ ctrlKey: true });
+    assert.equal(stopped, 1);
+    const w = Number(v.viewBox().split(' ')[2]);
+    assert.ok(w < 400 && w > 300, 'zoomed in: ' + w);
+});
+
+test('station-61: the arrow keys pan and + - 0 zoom on the focused board, other targets are not its keys', () => {
+    const r = rig(), v = viewRig(r);
+    r.key(v.view, 'ArrowRight');
+    assert.equal(v.viewBox(), '40 0 400 300');
+    r.key(v.view, 'ArrowDown');
+    assert.equal(v.viewBox(), '40 40 400 300');
+    r.key(v.view, '+');
+    assert.equal(v.svg.attrs.viewBox, '80 70 320 240');
+    r.key(v.view, '-');
+    assert.equal(v.svg.attrs.viewBox, '40 40 400 300');
+    r.key(v.view, '0');
+    assert.equal(v.viewBox(), '0 0 400 300');
+    r.key(v.zoomBtn('in'), 'ArrowLeft');
+    assert.equal(v.viewBox(), '0 0 400 300', 'a key on a button inside the board is not the view\'s');
+});
+
+test('station-61: a pan moves the view, and the click that ends it is swallowed once', () => {
+    const r = rig(), v = viewRig(r);
+    r.on.pointerdown({ target: v.view, button: 0, pointerId: 1, clientX: 100, clientY: 100 });
+    r.on.pointermove({ pointerId: 1, clientX: 140, clientY: 120 });
+    r.on.pointerup({ pointerId: 1 });
+    assert.equal(v.viewBox(), '-40 -20 400 300');
+    r.on.click({ target: v.zoomBtn('in') });
+    assert.equal(v.viewBox(), '-40 -20 400 300', 'the click after a pan does nothing');
+    r.on.click({ target: v.zoomBtn('in') });
+    assert.notEqual(v.viewBox(), '-40 -20 400 300', 'the next click works');
+});
+
+test('station-61: a pan cancelled by the browser does not swallow the next click', () => {
+    const r = rig({ changes: [{ kind: 'edit', text: 'A', dropped: false }] }), v = viewRig(r);
+    r.on.pointerdown({ target: v.view, button: 0, pointerId: 1, clientX: 100, clientY: 100 });
+    r.on.pointermove({ pointerId: 1, clientX: 140, clientY: 120 });
+    r.on.pointercancel({ pointerId: 1 });
+    r.on.pointerdown({ target: r.toolBtn('undo'), button: 0, pointerId: 2, clientX: 5, clientY: 5 });
+    r.on.click({ target: r.toolBtn('undo') });
+    assert.equal(r.sent.length, 1, 'no click came for the cancelled pan, so the next press is not its click');
+});
+
+test('station-61: lifting one finger of a pinch ends it, the other finger moving throws nothing', () => {
+    const r = rig(), v = viewRig(r);
+    r.on.pointerdown({ target: v.view, button: 0, pointerId: 1, clientX: 100, clientY: 150 });
+    r.on.pointerdown({ target: v.view, button: 0, pointerId: 2, clientX: 300, clientY: 150 });
+    r.on.pointermove({ pointerId: 2, clientX: 400, clientY: 150 });
+    const pinched = v.viewBox();
+    assert.notEqual(pinched, '0 0 400 300', 'two fingers pinch');
+    r.on.pointerup({ pointerId: 1 });
+    assert.doesNotThrow(() => r.on.pointermove({ pointerId: 2, clientX: 100, clientY: 150 }));
+    assert.equal(v.viewBox(), pinched);
+});
+
+test('station-61: a board with no svg yet (loading) throws on no key, button, wheel or touch', () => {
+    const r = rig(), v = viewRig(r, { noSvg: true });
+    assert.doesNotThrow(() => {
+        r.key(v.view, '+');
+        r.key(v.view, 'ArrowLeft');
+        r.on.click({ target: v.zoomBtn('in') });
+        r.on.click({ target: v.zoomBtn('one') });
+        r.on.wheel({ target: v.view, ctrlKey: true, deltaY: -100, clientX: 1, clientY: 1, preventDefault() {} });
+        r.on.pointerdown({ target: v.view, button: 0, pointerId: 1, clientX: 1, clientY: 1 });
+        r.on.pointermove({ pointerId: 1, clientX: 50, clientY: 50 });
+        r.on.pointerup({ pointerId: 1 });
+    });
+});
+
+test('station-61: a repaint that drops the focus from the board gives it back, so the next key still lands', async () => {
+    const r = rig(), v = viewRig(r), body = {};
+    r.doc.activeElement = v.view;
+    r.doc.querySelector = (s) => (s === '[data-bd-view]' ? v.view : null);
+    v.view.focus = () => { r.doc.activeElement = v.view; };
+    r.P.load(S, 'N1', () => { r.doc.activeElement = body; });
+    await tick(); await tick();
+    assert.equal(r.doc.activeElement, v.view);
+    r.key(v.view, 'ArrowRight');
+    r.key(v.view, '0');
+    assert.equal(r.doc.activeElement, v.view, 'the 0 key repainted, and the board is focused still');
+    r.doc.activeElement = body;
+    r.P.load(S, 'N1', () => { r.doc.activeElement = body; });
+    await tick(); await tick();
+    assert.equal(r.doc.activeElement, body, 'a focus that was elsewhere is not taken');
 });
