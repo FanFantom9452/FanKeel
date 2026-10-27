@@ -155,10 +155,10 @@
         'ss.compactT': 'At what size does the main conversation compact?',
         'ss.compactY': 'Only for sessions running a fankeel task. Earlier keeps context small; later keeps more of the original text.',
         'ss.c350': '350k tokens',
-        'ss.c350E': 'Compacts early, context stays small',
+        'ss.c350E': 'Built-in; fewest tokens, enough for long tasks',
         'ss.c350S': '350k',
         'ss.c450': '450k tokens',
-        'ss.c450E': 'Built-in',
+        'ss.c450E': 'Keeps a little more original text',
         'ss.c450S': '450k',
         'ss.c1m': '1M tokens',
         'ss.c1mE': 'Keeps as much original text as it can',
@@ -239,12 +239,13 @@
         return r;
     }
     // The style step compares a style with the answers on these keys only
-    // (v9-data `skeys`); a style also fills land.archivePlan.
+    // (v9-data `skeys`); a style also fills land.archivePlan and compact.at,
+    // which every style writes as 350000 so the host's compact window is synced.
     var SKEYS = ['class.default', 'dispatch.floor', 'stage.agents', 'guard', 'gate.away', 'design.mockup', 'sensitive.review'];
     var STY = {
-        steady: { 'class.default': '', 'dispatch.floor': 'opus', 'stage.agents': '', 'guard': 'ask', 'gate.away': 'hint', 'design.mockup': 'opus', 'sensitive.review': 'true', 'land.archivePlan': '' },
-        balanced: { 'class.default': '', 'dispatch.floor': 'sonnet', 'stage.agents': 'survey,build,verify', 'guard': 'ask', 'gate.away': 'hint', 'design.mockup': 'auto', 'sensitive.review': 'false', 'land.archivePlan': 'true' },
-        free: { 'class.default': 'bounded', 'dispatch.floor': 'sonnet', 'stage.agents': 'survey,design,plan,build,verify,audit,land', 'guard': 'deny', 'gate.away': 'ask', 'design.mockup': 'auto', 'sensitive.review': 'false', 'land.archivePlan': 'true' },
+        steady: { 'class.default': '', 'dispatch.floor': 'opus', 'stage.agents': '', 'guard': 'ask', 'gate.away': 'hint', 'design.mockup': 'opus', 'sensitive.review': 'true', 'land.archivePlan': '', 'compact.at': '350000' },
+        balanced: { 'class.default': '', 'dispatch.floor': 'sonnet', 'stage.agents': 'survey,build,verify', 'guard': 'ask', 'gate.away': 'hint', 'design.mockup': 'auto', 'sensitive.review': 'false', 'land.archivePlan': 'true', 'compact.at': '350000' },
+        free: { 'class.default': 'bounded', 'dispatch.floor': 'sonnet', 'stage.agents': 'survey,design,plan,build,verify,audit,land', 'guard': 'deny', 'gate.away': 'ask', 'design.mockup': 'auto', 'sensitive.review': 'false', 'land.archivePlan': 'true', 'compact.at': '350000' },
     };
     // A tie between two styles goes to the first in this order.
     var TIE = ['balanced', 'free', 'steady'];
@@ -349,8 +350,8 @@
                 O('none', loc('ss.quotaNone', '不設'), loc('ss.quotaNoneE', '花費頁不顯示比例'), { 'quota.week': '' }),
                 O('usd', loc('ss.quotaUsd', '填美元'), loc('ss.quotaUsdE', '花費旁顯示佔一週幾 %'), { 'quota.week': '$in' }, { s: loc('ss.quotaUsdS', '美元'), input: true })] },
             { id: 'compact', kind: 'one', title: loc('ss.compactT', '主對話多大時自動壓縮？'), why: loc('ss.compactY', '只對正在跑 fankeel 任務的 session。壓得早，context 小；壓得晚，保留的原文多。'), opts: [
-                O('350000', loc('ss.c350', '35 萬 token'), loc('ss.c350E', '早一點壓，context 保持小'), { 'compact.at': '350000' }, { s: loc('ss.c350S', '35 萬') }),
-                O('450000', loc('ss.c450', '45 萬 token'), loc('ss.c450E', '內建值'), { 'compact.at': '450000' }, { s: loc('ss.c450S', '45 萬') }),
+                O('350000', loc('ss.c350', '35 萬 token'), loc('ss.c350E', '內建值，最省 token，長任務夠用'), { 'compact.at': '350000' }, { s: loc('ss.c350S', '35 萬'), rec: rec }),
+                O('450000', loc('ss.c450', '45 萬 token'), loc('ss.c450E', '多留一點原文'), { 'compact.at': '450000' }, { s: loc('ss.c450S', '45 萬') }),
                 O('1000000', loc('ss.c1m', '100 萬 token'), loc('ss.c1mE', '盡量保留原文'), { 'compact.at': '1000000' }, { s: loc('ss.c1mS', '100 萬') }),
                 O('off', loc('ss.cOff', '不自動壓縮'), loc('ss.cOffE', 'context 一路長'), { 'compact.at': 'off' }, { s: loc('ss.cOffS', '不壓') })] },
             { id: 'link', kind: 'one', title: loc('ss.linkT', '交出去的站，chat 只印連結嗎？'), why: loc('ss.linkY', '只對交給站 agent 的站有效：chat 只印路徑和監控站連結，不印報告全文。監控站沒開時照印。'),

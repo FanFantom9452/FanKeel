@@ -1,12 +1,13 @@
 import type { Register, EngineInterface } from 'claude-code'
 
 // Compacts the main conversation once its context reaches the profile's
-// compact.at (HARD where nothing sets one, never when it is off), but only in a
+// compact.at (MAIN_AT where nothing sets one, never when it is off), but only in a
 // session that owns an active fankeel task: the user's own autoCompactEnabled
 // is false, and other sessions keep that choice.
-// The engine runs this module; it cannot require lib/, so HARD is written
-// again here and tests/compact.test.js pins it to lib/context.js HARD.
-export const HARD = 450000
+// The engine runs this module; it cannot require lib/, so MAIN_AT is written
+// again here and tests/compact.test.js pins it to lib/profile.js's compact.at
+// builtin. It is not lib/context.js HARD, the subagent cap hooks/budget.js enforces.
+export const MAIN_AT = 350000
 
 // lib/registry.js SESSION_ID: the registry file is named by this id.
 export const SESSION_ID = /^[0-9a-fA-F][0-9a-fA-F-]{7,63}$/
@@ -122,7 +123,7 @@ export async function thresholdWith(io: ThresholdIo, found: { entry: Entry; root
     if (at === 'off') return Infinity
     if (at) return Number(at)
   }
-  return HARD
+  return MAIN_AT
 }
 
 // Not awaited by the hook: compact rejects while a turn runs, and the turn may

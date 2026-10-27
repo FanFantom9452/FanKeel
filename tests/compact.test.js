@@ -3,7 +3,9 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
-const { HARD: CONTEXT_HARD } = require('../lib/context.js');
+const { HARD } = require('../lib/context.js');
+const { KEYS } = require('../lib/profile.js');
+const MAIN_AT = Number(KEYS['compact.at'].builtin);
 
 // hooks/compact.ts runs inside the Claude Code engine; Node 24 strips its
 // types, so the test imports the very file the engine loads.
@@ -52,13 +54,15 @@ async function fire(handler, $, e = {}) {
     return out;
 }
 
-test('the threshold is lib/context.js HARD', async () => {
-    assert.equal((await load()).HARD, CONTEXT_HARD);
+test('the threshold is the compact.at builtin in lib/profile.js, not the subagent cap', async () => {
+    assert.equal((await load()).MAIN_AT, MAIN_AT);
+    assert.equal(MAIN_AT, 350000);
+    assert.notEqual(MAIN_AT, HARD);
 });
 
-test('compacts the main loop at HARD when an ancestor holds this session\'s active entry', async () => {
+test('compacts the main loop at MAIN_AT when an ancestor holds this session\'s active entry', async () => {
     const mod = await load();
-    const { $, calls } = fake({ tokens: CONTEXT_HARD, files: entryAt('F:/proj', live) });
+    const { $, calls } = fake({ tokens: MAIN_AT, files: entryAt('F:/proj', live) });
     const out = await fire(handlerOf(mod), $);
     assert.deepEqual(out, { text: 'ok' });
     assert.equal(calls.length, 1);
@@ -67,14 +71,14 @@ test('compacts the main loop at HARD when an ancestor holds this session\'s acti
     assert.match(calls[0].instructions, /stage: build/);
 });
 
-test('below HARD nothing is compacted', async () => {
-    const { $, calls } = fake({ tokens: CONTEXT_HARD - 1, files: entryAt('F:/proj', live) });
+test('below MAIN_AT nothing is compacted', async () => {
+    const { $, calls } = fake({ tokens: MAIN_AT - 1, files: entryAt('F:/proj', live) });
     await fire(handlerOf(await load()), $);
     assert.equal(calls.length, 0);
 });
 
 test('a subagent\'s turn is never compacted', async () => {
-    const { $, calls } = fake({ tokens: CONTEXT_HARD, files: entryAt('F:/proj', live) });
+    const { $, calls } = fake({ tokens: MAIN_AT, files: entryAt('F:/proj', live) });
     await fire(handlerOf(await load()), $, { agentId: 'a1' });
     assert.equal(calls.length, 0);
 });
@@ -82,7 +86,7 @@ test('a subagent\'s turn is never compacted', async () => {
 test('no entry, an inactive entry or an init-only entry is left alone', async () => {
     const mod = await load();
     for (const files of [{}, entryAt('F:/proj', { ...live, active: false }), entryAt('F:/proj', { stage: 'init', active: true })]) {
-        const { $, calls } = fake({ tokens: CONTEXT_HARD, files });
+        const { $, calls } = fake({ tokens: MAIN_AT, files });
         await fire(handlerOf(mod), $);
         assert.equal(calls.length, 0, JSON.stringify(files));
     }
@@ -97,13 +101,13 @@ test('FANKEEL_COMPACT_AT lowers the threshold', async () => {
 const profileAt = (file, data) => ({ [file]: JSON.stringify(data) });
 
 test('compact.at in the project profile sets the threshold', async () => {
-    const files = { ...entryAt('F:/proj', live), ...profileAt('F:/proj/.fankeel/profile.json', { 'compact.at': '350000' }) };
-    const { $, calls } = fake({ tokens: 360000, files });
+    const files = { ...entryAt('F:/proj', live), ...profileAt('F:/proj/.fankeel/profile.json', { 'compact.at': '600000' }) };
+    const { $, calls } = fake({ tokens: 500000, files });
     await fire(handlerOf(await load()), $);
-    assert.equal(calls.length, 1);
+    assert.equal(calls.length, 0);
 });
 
-test('compact.at off never compacts, even far above HARD', async () => {
+test('compact.at off never compacts, even far above MAIN_AT', async () => {
     const files = { ...entryAt('F:/proj', live), ...profileAt('F:/proj/.fankeel/profile.json', { 'compact.at': 'off' }) };
     const { $, calls } = fake({ tokens: 700000, files });
     await fire(handlerOf(await load()), $);
@@ -117,43 +121,43 @@ test('compact.at is read from the entry\'s project directory and its configDir m
     let r = fake({ tokens: 500000, files: f });
     await fire(handlerOf(mod), r.$);
     assert.equal(r.calls.length, 0);
-    f = { ...entryAt('F:/proj', { ...live, configDir: 'C:/cfg' }), ...profileAt('C:/cfg/fankeel/profile.json', { 'compact.at': '350000' }) };
-    r = fake({ tokens: 360000, files: f });
+    f = { ...entryAt('F:/proj', { ...live, configDir: 'C:/cfg' }), ...profileAt('C:/cfg/fankeel/profile.json', { 'compact.at': '600000' }) };
+    r = fake({ tokens: 500000, files: f });
     await fire(handlerOf(mod), r.$);
-    assert.equal(r.calls.length, 1);
+    assert.equal(r.calls.length, 0);
 });
 
 // lib/docs.js projectRootsFor: the project's first segment, when it is a directory.
 async function projectCompacts(project, extra) {
     const files = {
         ...entryAt('F:/proj', { ...live, project }),
-        ...profileAt('F:/proj/.fankeel/profile.json', { 'compact.at': '350000' }),
-        ...profileAt('F:/proj/app/.fankeel/profile.json', { 'compact.at': 'off' }),
-        ...profileAt('F:/proj/app/src/.fankeel/profile.json', { 'compact.at': '350000' }),
+        ...profileAt('F:/proj/.fankeel/profile.json', { 'compact.at': '600000' }),
+        ...profileAt('F:/proj/app/.fankeel/profile.json', { 'compact.at': '350000' }),
+        ...profileAt('F:/proj/app/src/.fankeel/profile.json', { 'compact.at': 'off' }),
         ...extra,
     };
-    const r = fake({ tokens: 360000, files });
+    const r = fake({ tokens: 500000, files });
     await fire(handlerOf(await load()), r.$);
     return r.calls.length;
 }
 
 test('a project of app/src reads the profile of its first segment, app', async () => {
-    assert.equal(await projectCompacts('app/src', { 'F:/proj/app': '' }), 0);
-    assert.equal(await projectCompacts('.\\app\\src', { 'F:/proj/app': '' }), 0);
+    assert.equal(await projectCompacts('app/src', { 'F:/proj/app': '' }), 1);
+    assert.equal(await projectCompacts('.\\app\\src', { 'F:/proj/app': '' }), 1);
 });
 
 test('a project naming a directory that does not exist reads the root profile', async () => {
-    assert.equal(await projectCompacts('app', {}), 1);
+    assert.equal(await projectCompacts('app', {}), 0);
 });
 
 test('a project whose first segment is a file reads the root profile', async () => {
-    assert.equal(await projectCompacts('app/src', { 'F:/proj/app': 'not a directory' }), 1);
+    assert.equal(await projectCompacts('app/src', { 'F:/proj/app': 'not a directory' }), 0);
 });
 
 test('a project containing .. or starting with / reads the root profile', async () => {
-    assert.equal(await projectCompacts('app/../x', { 'F:/proj/app': '' }), 1);
-    assert.equal(await projectCompacts('/app', { 'F:/proj/app': '' }), 1);
-    assert.equal(await projectCompacts('./', { 'F:/proj/': '' }), 1);
+    assert.equal(await projectCompacts('app/../x', { 'F:/proj/app': '' }), 0);
+    assert.equal(await projectCompacts('/app', { 'F:/proj/app': '' }), 0);
+    assert.equal(await projectCompacts('./', { 'F:/proj/': '' }), 0);
 });
 
 test('the project profile beats the machine one and FANKEEL_COMPACT_AT beats both', async () => {
@@ -171,14 +175,14 @@ test('the project profile beats the machine one and FANKEEL_COMPACT_AT beats bot
     assert.equal(r.calls.length, 1);
 });
 
-test('an unparsable or invalid profile falls back to HARD', async () => {
+test('an unparsable or invalid profile falls back to MAIN_AT', async () => {
     const mod = await load();
     for (const raw of ['{not json', JSON.stringify({ 'compact.at': '123' })]) {
         const files = { ...entryAt('F:/proj', live), 'F:/proj/.fankeel/profile.json': raw };
-        const r = fake({ tokens: CONTEXT_HARD, files });
+        const r = fake({ tokens: MAIN_AT, files });
         await fire(handlerOf(mod), r.$);
         assert.equal(r.calls.length, 1, raw);
-        const b = fake({ tokens: CONTEXT_HARD - 1, files });
+        const b = fake({ tokens: MAIN_AT - 1, files });
         await fire(handlerOf(mod), b.$);
         assert.equal(b.calls.length, 0, raw);
     }
@@ -188,7 +192,7 @@ test('an unparsable profile file logs one debug line naming it; a missing file o
     const mod = await load();
     const file = 'F:/proj/.fankeel/profile.json';
     const run = async (extra) => {
-        const r = fake({ tokens: CONTEXT_HARD, files: { ...entryAt('F:/proj', live), ...extra } });
+        const r = fake({ tokens: MAIN_AT, files: { ...entryAt('F:/proj', live), ...extra } });
         const logs = [];
         r.$.ui.log = (text) => { logs.push(text); };
         await fire(handlerOf(mod), r.$);
@@ -213,24 +217,24 @@ test('compact.at written as a JSON number is that tier; a number outside the tie
     };
     assert.equal(await run(600000, 500000), 0);
     assert.equal(await run(600000, 610000), 1);
-    assert.equal(await run(123, CONTEXT_HARD - 1), 0);
-    assert.equal(await run(123, CONTEXT_HARD), 1);
+    assert.equal(await run(123, MAIN_AT - 1), 0);
+    assert.equal(await run(123, MAIN_AT), 1);
     // Deliberate: lib/profile.js String() would read an array as 600000; the mod keeps it absent.
-    assert.equal(await run([600000], CONTEXT_HARD), 1);
+    assert.equal(await run([600000], MAIN_AT), 1);
 });
 
 test('a profile file that starts with a UTF-8 BOM is read, with no unreadable-profile line', async () => {
-    const files = { ...entryAt('F:/proj', live), 'F:/proj/.fankeel/profile.json': '\uFEFF{"compact.at":"350000"}' };
-    const r = fake({ tokens: 360000, files });
+    const files = { ...entryAt('F:/proj', live), 'F:/proj/.fankeel/profile.json': '\uFEFF{"compact.at":"600000"}' };
+    const r = fake({ tokens: 500000, files });
     const logs = [];
     r.$.ui.log = (text) => { logs.push(text); };
     await fire(handlerOf(await load()), r.$);
-    assert.equal(r.calls.length, 1);
+    assert.equal(r.calls.length, 0);
     assert.deepEqual(logs.filter((l) => /unreadable profile/.test(l)), []);
 });
 
 test('a rejected compaction is retried', async () => {
-    const { $, calls } = fake({ tokens: CONTEXT_HARD, files: entryAt('F:/proj', live) });
+    const { $, calls } = fake({ tokens: MAIN_AT, files: entryAt('F:/proj', live) });
     let first = true;
     $.session.compact = async (input) => {
         calls.push(input);
@@ -245,7 +249,7 @@ test('a rejected compaction is retried', async () => {
 // rejecting until its eleventh call shows a lifted cap as eleven calls rather
 // than as a hang.
 test('a compaction rejected every time is tried three times, each one logged', async () => {
-    const { $, calls } = fake({ tokens: CONTEXT_HARD, files: entryAt('F:/proj', live) });
+    const { $, calls } = fake({ tokens: MAIN_AT, files: entryAt('F:/proj', live) });
     const logs = [];
     let slept = 0;
     $.ui.log = (text) => { logs.push(text); };
@@ -262,7 +266,7 @@ test('a compaction rejected every time is tried three times, each one logged', a
 });
 
 test('a second turn while one compaction is pending starts no other', async () => {
-    const { $, calls } = fake({ tokens: CONTEXT_HARD, files: entryAt('F:/proj', live) });
+    const { $, calls } = fake({ tokens: MAIN_AT, files: entryAt('F:/proj', live) });
     $.session.compact = (input) => { calls.push(input); return new Promise(() => {}); };
     const handler = handlerOf(await load());
     await fire(handler, $);
@@ -300,7 +304,7 @@ test('awayAt on the entry compacts under the threshold; without it the same toke
 });
 
 test('awayAt on an inactive entry compacts nothing', async () => {
-    const { $, calls } = fake({ tokens: CONTEXT_HARD + 1, files: entryAt('F:/proj', { ...live, active: false, awayAt: 1 }) });
+    const { $, calls } = fake({ tokens: MAIN_AT + 1, files: entryAt('F:/proj', { ...live, active: false, awayAt: 1 }) });
     await fire(handlerOf(await load()), $);
     assert.equal(calls.length, 0);
 });

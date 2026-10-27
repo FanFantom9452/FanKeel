@@ -1,7 +1,7 @@
 ---
 name: fankeel-init
 description: First-use onboarding for a project fankeel has not organised — its docs tree, raw data, TODO, directory tree, CLAUDE.md, memory and a sensitive-word list — one question at a time until the onboarding checks pass. Use when `task.js start` prints an `onboard:` line, or for /fankeel-init.
-version: 0.123.0
+version: 0.124.0
 status: current
 last_verified: 2026-10-15
 source_of_truth: scripts/onboard.js, lib/onboard.js, agents/fankeel-init-scout.md, scripts/compact-window.js, hooks/compact.ts
@@ -84,19 +84,19 @@ its own after the preset, whatever the scout's `profile` row says:
 - The auto-compact window — asked when
   `node <plugin>/scripts/task.js profile show` gives `compact.at` the
   source `builtin` (nobody has chosen); a row sourced `project` or a machine
-  default is not asked again. First run
+  default is not asked again (`balanced` and `lean` write `350000`). First run
   `node <plugin>/scripts/compact-window.js show`: when it prints `set <n>`,
   the descriptions say this machine already has a machine-wide
   `CLAUDE_CODE_AUTO_COMPACT_WINDOW` of `<n>`, which the next `task.js start`
-  replaces with the answer. One `AskUserQuestion`, four options in this order: `450000`,
-  recommended (the default); `1000000` — for document work and long files,
+  replaces with the answer. One `AskUserQuestion`, four options in this order: `350000`,
+  recommended (the default) — fewest tokens; `1000000` — for document work and long files,
   keeps up to 1M in context, spends the most, and needs a 1M-context model;
   `600000` — loose, keeps more in context and spends
   more; 不設 (`off`) — fankeel's own mod, `hooks/compact.ts`, never compacts
   (the host's own auto-compact, or a machine-wide
   `CLAUDE_CODE_AUTO_COMPACT_WINDOW`, still can), and the description says this
-  burns tokens heavily. `350000` — conservative, compacts sooner and spends
-  fewer tokens — is reachable through **Other**; the key takes only those five
+  burns tokens heavily. `450000` — keeps a little more in context and spends
+  a little more — is reachable through **Other**; the key takes only those five
   values. The descriptions say what the answer does: it only applies in a
   session that is running a fankeel task — `hooks/compact.ts` compacts the main
   conversation once its context reaches that many tokens, in an interactive

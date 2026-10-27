@@ -125,7 +125,7 @@ export async function recordLimits($: EngineInterface, root: string, id: string,
 }
 
 // The tokens in play against the count hooks/compact.ts compacts at — its own
-// `thresholdWith`, so FANKEEL_COMPACT_AT, the profile's compact.at and HARD are read
+// `thresholdWith`, so FANKEEL_COMPACT_AT, the profile's compact.at and MAIN_AT are read
 // in one place, and `off` is Infinity — and the rate limits the same call
 // reports: `five_hour` and `seven_day` are the two drawn.
 // No context while the engine has no count; neither when it cannot be asked.

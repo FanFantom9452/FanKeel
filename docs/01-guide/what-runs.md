@@ -47,7 +47,7 @@ source_of_truth: .claude-plugin/plugin.json, hooks/mod.ts, hooks/pane.ts
 
 - **band**：有 task 時在 prompt 上方畫兩行——站名、route 圓點、時間，以及 context 與配額的長條。
 - **Pane**：有 task 時自己打開，`/fankeel-panel` 切換；列出 task、plan 的每個 task、subagent 樹、筆記與 TODO。
-- **compact**：context 到 profile 的 `compact.at`（預設 450k tokens）時自動壓縮。
+- **compact**：context 到 profile 的 `compact.at`（預設 350k tokens）時自動壓縮。
 
 Claude Desktop 跑的是安裝當下的快照，新版要 `claude plugin update fankeel@fankeel` 之後才看得到。
 

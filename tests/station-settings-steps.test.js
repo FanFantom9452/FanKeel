@@ -78,11 +78,12 @@ test('prompt.* is tagged 進階・不建議 with its warning, remote\'s yes name
     assert.match(by.agents.table.def, /\{v\}/);
 });
 
-test('the three styles cover the compared keys and land.archivePlan; ties go balanced, free, steady', () => {
+test('the three styles cover the compared keys, land.archivePlan and compact.at 350000; ties go balanced, free, steady', () => {
     const { T } = boot();
     assert.deepEqual(plain(T.SKEYS), ['class.default', 'dispatch.floor', 'stage.agents', 'guard', 'gate.away', 'design.mockup', 'sensitive.review']);
     assert.deepEqual(plain(T.TIE), ['balanced', 'free', 'steady']);
-    for (const id of T.TIE) assert.deepEqual(Object.keys(T.STY[id]).sort(), plain(T.SKEYS).concat('land.archivePlan').sort(), id);
+    for (const id of T.TIE) assert.deepEqual(Object.keys(T.STY[id]).sort(), plain(T.SKEYS).concat('land.archivePlan', 'compact.at').sort(), id);
+    for (const id of T.TIE) assert.equal(T.STY[id]['compact.at'], '350000', id);
     assert.equal(T.STY.free['stage.agents'], 'survey,design,plan,build,verify,audit,land');
 });
 

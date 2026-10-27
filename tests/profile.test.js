@@ -405,8 +405,9 @@ test('the three presets set exactly what the design says, and null is what clear
         'land.integration': null, 'land.push': null, 'land.archivePlan': null, 'class.default': null, guard: 'ask', 'stage.agents': 'false',
     });
     const habit = { 'land.integration': 'merge', 'land.push': 'false', 'land.archivePlan': 'true', guard: 'ask' };
-    assert.deepEqual(profile.PRESETS.balanced.set, Object.assign({}, habit, { 'stage.agents': 'survey,build,verify' }));
-    assert.deepEqual(profile.PRESETS.lean.set, Object.assign({}, habit, { 'stage.agents': 'all' }));
+    assert.deepEqual(profile.PRESETS.balanced.set, Object.assign({}, habit, { 'stage.agents': 'survey,build,verify', 'compact.at': '350000' }));
+    assert.deepEqual(profile.PRESETS.lean.set, Object.assign({}, habit, { 'stage.agents': 'all', 'compact.at': '350000' }));
+    assert.equal('compact.at' in profile.PRESETS.manual.set, false, 'manual leaves compact.at to the init question');
     assert.equal('class.default' in profile.PRESETS.balanced.set, false, 'balanced leaves class.default untouched');
 });
 
@@ -475,11 +476,11 @@ test('a project profile dispatch.inflight, string or number, reads as the number
     }
 });
 
-test('compact.at is 350000, 450000, 600000, 1000000 or off, 450000 by default', () => {
+test('compact.at is 350000, 450000, 600000, 1000000 or off, 350000 by default', () => {
     for (const ok of ['350000', '450000', '600000', '1000000', 'off']) assert.deepEqual(profile.parseValue('compact.at', ok), { value: ok }, ok);
     for (const bad of ['0', '400000', 'on', '']) assert.match(profile.parseValue('compact.at', bad).error, /compact\.at is one of/, bad);
     const r = profile.read(dir(), null);
-    assert.equal(r.values['compact.at'], '450000');
+    assert.equal(r.values['compact.at'], '350000');
     assert.equal(r.sources['compact.at'], 'builtin');
 });
 
