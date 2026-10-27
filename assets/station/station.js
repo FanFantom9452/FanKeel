@@ -2165,7 +2165,9 @@
     // and no hash routes: it draws one session's tab and stops here.
     if (w.STATION_FOCUS) return focusBoot();
     var f = { q: '', state: '', project: '', stage: '' };
-    var route = parseHash(w.location && w.location.hash), sel = null, sortKey = 'updated', sortDir = -1;
+    var route = parseHash(w.location && w.location.hash);
+    // 清單's selected row, sort, 比較 ticks and detail scripts are FK_LIST (assets/station/list-state.js).
+    var LS = w.FK_LIST;
     // The home page's two segmented controls; Tasks 7 and 8 add their own keys.
     var view = { metric: 'usd', dim: 'model', notes: [], fkOpen: false };
     // `hh:mm` while the server is gone, `null` while it answers. The poll at
@@ -2175,8 +2177,6 @@
     // When the data on screen was last read: at load, then at every re-read
     // below. The session page's live tag and the footer both say it.
     var polledAt = Date.now();
-    // The sessions ticked for 比較, oldest tick first; a third tick drops the first.
-    var picked = [];
     // `NOW`, `LAB`, `DAYS`, `PREV`, `TODAY`, `NAMES` and `PKEYS` are derived
     // from `S` by `freshen()`, below the live-refresh guard — called here for
     // the first draw and again on every re-read, so there is one derivation
@@ -2676,14 +2676,14 @@
     // 比較 lays two sessions side by side; a third tick drops the oldest), and
     // 清除. `#ncmp` is the count, rewritten in place on every tick.
     function selbarInner() {
-        var n = picked.length;
+        var n = LS.picked.length;
         return icon('cmp') + '<span>' + loc('dash.pickedN', '已選 <b id="ncmp">{n}</b> 個', { n: n }) + '</span>'
             + (n >= 2 ? '<a class="sbtn pri" href="#/cmp">' + loc('dash.compare', '比較') + '</a>'
                 : '<span title="' + loc('dash.pickAtLeastTwo', '至少選 2 個') + '"><button type="button" class="sbtn pri" disabled>' + loc('dash.compare', '比較') + '</button></span>')
             + '<button type="button" class="sbtn" data-cmpclear' + (n ? '' : ' tabindex="-1"') + '>' + loc('dash.clear', '清除') + '</button>';
     }
     function selbarHtml() {
-        return '<div class="selbar" id="selbar" role="region" aria-label="' + loc('dash.checkedSessionsToCompare', '比較勾選的 session') + '"' + (picked.length ? ' data-on' : ' aria-hidden="true"') + '>'
+        return '<div class="selbar" id="selbar" role="region" aria-label="' + loc('dash.checkedSessionsToCompare', '比較勾選的 session') + '"' + (LS.picked.length ? ' data-on' : ' aria-hidden="true"') + '>'
             + selbarInner() + '</div>';
     }
     function listPage() {
@@ -2706,24 +2706,24 @@
         // The gone-registry branch of listPage() renders no table.
         if (!doc.getElementById('lb')) return;
         var R = rows().sort(function (a, b) {
-            var x = val(a, sortKey), y = val(b, sortKey);
+            var x = val(a, LS.sortKey), y = val(b, LS.sortKey);
             if (typeof x === 'string' || typeof y === 'string') {
-                return sortDir * String(x).localeCompare(String(y));
+                return LS.sortDir * String(x).localeCompare(String(y));
             }
-            return sortDir * ((x || 0) - (y || 0));
+            return LS.sortDir * ((x || 0) - (y || 0));
         });
         doc.getElementById('cnt').textContent = R.length + ' / ' + S.sessions.length;
         doc.getElementById('lh').innerHTML = '<tr><th class="cmpth" aria-label="' + loc('dash.pickToCompare', '選來比較') + '" title="' + loc('dash.checkTwoToCompare', '勾兩個 session 來比較') + '">' + icon('cmp') + '</th>' + COLS.map(function (c) {
             return '<th data-k="' + c[0] + '"'
                 + (['burn', 'cost'].indexOf(c[0]) >= 0 ? ' class="r"' : '')
-                + (sortKey === c[0] ? ' data-dir="' + (sortDir > 0 ? 'asc' : 'desc') + '"' : '')
+                + (LS.sortKey === c[0] ? ' data-dir="' + (LS.sortDir > 0 ? 'asc' : 'desc') + '"' : '')
                 + '>' + c[1] + '</th>';
         }).join('') + '</tr>';
         doc.getElementById('lb').innerHTML = R.map(function (s) {
-            var ask = listAskRow(s, sel);
-            return '<tr' + (ask ? ' class="has-ask"' : '') + ' data-id="' + esc(s.id) + '" aria-selected="' + (sel === s.id) + '">'
+            var ask = listAskRow(s, LS.sel);
+            return '<tr' + (ask ? ' class="has-ask"' : '') + ' data-id="' + esc(s.id) + '" aria-selected="' + (LS.sel === s.id) + '">'
                 + '<td><input type="checkbox" data-cmp="' + esc(s.id) + '" aria-label="' + loc('dash.pickToCompare', '選來比較') + '"'
-                + (picked.indexOf(s.id) >= 0 ? ' checked' : '')
+                + (LS.picked.indexOf(s.id) >= 0 ? ' checked' : '')
                 + (s.hasDetail ? '' : ' disabled title="' + loc('dash.noTranscriptToCompare', '沒有 transcript，沒有細節可比') + '"') + '></td>'
                 + '<td>' + taskCell(s) + '</td><td>' + stageCell(s) + '</td>'
                 + '<td class="r num mute">' + tokens(s.burn) + '</td>'
@@ -2732,7 +2732,7 @@
                 + '<td class="num mute" style="font-size:11.5px">' + day(s.started) + '</td>'
                 + '<td class="num mute" style="font-size:11.5px">' + ago(s.updated) + '</td></tr>' + ask;
         }).join('') || '<tr><td colspan="8"><div class="empty">' + loc('dash.noMatchingSessions', '沒有符合的 session') + '</div></td></tr>';
-        if (R.length && !R.some(function (s) { return s.id === sel; })) sel = R[0].id;
+        if (R.length && !R.some(function (s) { return s.id === LS.sel; })) LS.sel = R[0].id;
         drawDetail();
     }
 
@@ -2775,7 +2775,7 @@
     function drawDetail() {
         var d = doc.getElementById('det');
         if (!d) return;
-        var hit = S.sessions.filter(function (x) { return x.id === sel; });
+        var hit = S.sessions.filter(function (x) { return x.id === LS.sel; });
         if (!hit.length) {
             claimsKeep(d); view.claimsFor = null;
             d.innerHTML = '<div class="empty">' + loc('dash.pickARow', '選一列') + '</div>';
@@ -2906,25 +2906,17 @@
     // One session's detail is a script of its own, `station/detail/<id>.js`,
     // loaded the first time the session is opened: `lib/station.js` keeps it
     // out of `station-data.js`, which every `/fankeel` prompt rewrites.
-    var DETAIL = w.STATION_DETAIL || (w.STATION_DETAIL = {});
-    var asked = {};
+    var DETAIL = LS.details;
     function needDetail(s) {
-        if (!s.hasDetail || DETAIL[s.id] || asked[s.id]) return;
-        asked[s.id] = 'loading';
-        var el = doc.createElement('script');
-        el.src = 'station/detail/' + encodeURIComponent(s.id) + '.js';
-        var redraw = function () {
+        LS.need(s, function () {
             if (route.view === 'cmp' || (route.view === 'session' && route.id === s.id)) draw();
-            else if (sel === s.id) drawDetail();
-        };
-        el.onload = function () { asked[s.id] = 'loaded'; redraw(); };
-        el.onerror = function () { asked[s.id] = 'failed'; redraw(); };
-        doc.head.appendChild(el);
+            else if (LS.sel === s.id) drawDetail();
+        });
     }
     function detailNote(s) {
         return '<p class="tally">' + (!s.hasDetail
             ? loc('det.noTranscriptOnMachine', '這台機器的 config dir 裡沒有這個 session 的 transcript，所以沒有 context、階段順序、派工與過程還原')
-            : asked[s.id] === 'failed' ? loc('det.detailFileUnreadable', '細節檔讀不到：station/detail/{id}.js', { id: esc(s.id) })
+            : LS.status(s.id) === 'failed' ? loc('det.detailFileUnreadable', '細節檔讀不到：station/detail/{id}.js', { id: esc(s.id) })
                 : loc('det.loadingDetail', '讀取細節…')) + '</p>';
     }
     function detailSections(s, x, open) {
@@ -4636,7 +4628,7 @@
     });
     // Back, forward and every link on the page arrive here.
     w.addEventListener('hashchange', function () {
-        sel = null;
+        LS.sel = null;
         focusFor = w.location.hash;
         draw();
         if (focusFor !== null) w.scrollTo(0, 0);
@@ -4880,7 +4872,7 @@
             return;
         }
         if (e.target.closest('[data-cmpclear]')) {
-            picked = [];
+            LS.picked = [];
             if (route.view === 'project') { draw(); return; }
             selbarDraw();
             drawList();
@@ -4890,9 +4882,7 @@
         var cb = e.target.closest('input[data-cmp]');
         if (cb) {
             var id = cb.getAttribute('data-cmp');
-            picked = picked.filter(function (x) { return x !== id; });
-            if (cb.checked) picked.push(id);
-            if (picked.length > 2) picked.shift();
+            LS.tick(id, cb.checked);
             if (route.view === 'project') { draw(); return; }
             selbarDraw();
             drawList();
@@ -4935,16 +4925,15 @@
         var th = e.target.closest('th[data-k]');
         if (th) {
             var k = th.getAttribute('data-k');
-            if (k === sortKey) sortDir = -sortDir;
-            else { sortKey = k; sortDir = k === 'task' ? 1 : -1; }
+            LS.sortBy(k);
             drawList();
             return;
         }
         var tr = e.target.closest('tr[data-id]');
         if (tr && route.view === 'list') {
-            sel = tr.getAttribute('data-id');
+            LS.sel = tr.getAttribute('data-id');
             [].forEach.call(doc.querySelectorAll('#lb tr'), function (x) {
-                x.setAttribute('aria-selected', x.getAttribute('data-id') === sel);
+                x.setAttribute('aria-selected', x.getAttribute('data-id') === LS.sel);
             });
             drawDetail();
         }
@@ -4955,7 +4944,7 @@
         var sb = doc.getElementById('selbar');
         if (!sb) return;
         sb.innerHTML = selbarInner();
-        if (picked.length) { sb.setAttribute('data-on', ''); sb.removeAttribute('aria-hidden'); }
+        if (LS.picked.length) { sb.setAttribute('data-on', ''); sb.removeAttribute('aria-hidden'); }
         else { sb.removeAttribute('data-on'); sb.setAttribute('aria-hidden', 'true'); }
     }
     // Put focus on the last-opened facet trigger (`btn`), the popover's first way in
@@ -5356,7 +5345,7 @@
     // The session whose detail is on screen: the session page's, or the row
     // selected on 清單.
     function watched() {
-        var id = route.view === 'session' ? route.id : route.view === 'list' ? sel : null;
+        var id = route.view === 'session' ? route.id : route.view === 'list' ? LS.sel : null;
         return id ? S.sessions.filter(function (x) { return x.id === id; })[0] || null : null;
     }
     // A settled tune request, kept as a note in the floating icon's panel
