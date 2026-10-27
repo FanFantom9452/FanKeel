@@ -112,6 +112,19 @@ test('through the tailnet `/` goes to /m; from this machine it is still the desk
     assert.ok(home.text.includes('station/station.js'));
 }));
 
+test('/?full=1 stays the desktop page for a paired phone only; plain / still goes to /m', () => served(true, async (s) => {
+    const p = phone(s.cfg);
+    const paired = await get(s.port, '/?full=1', p);
+    assert.equal(paired.status, 200);
+    assert.ok(paired.text.includes('station/station.js'));
+    const bare = await get(s.port, '/?full=1', TAILNET);
+    assert.equal(bare.status, 303);
+    assert.equal(bare.headers.location, '/m');
+    const plain = await get(s.port, '/', p);
+    assert.equal(plain.status, 303);
+    assert.equal(plain.headers.location, '/m');
+}));
+
 test('/m is lib/mobile.js\'s shell, open through the tailnet without a phone paired', () => served(true, async (s) => {
     const page = await get(s.port, '/m', TAILNET);
     assert.equal(page.status, 200);

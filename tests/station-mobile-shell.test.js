@@ -87,6 +87,8 @@ test('the host pill opens the 測站 sheet: one status line, then rows that open
     assert.match(sheet, /已連上 sh-pro6000/);
     assert.match(sheet, /<span class="rs-v">iPhone<\/span><\/span><span class="rs-side">10\/22 配對<\/span>/);
     assert.match(sheet, /<span class="rs-v">task aaaaaaaa-5<\/span><\/span><span class="rs-side">剩 28:10<\/span>/);
+    assert.match(sheet, /<a class="ghost" href="\/\?full=1#\/settings">.*到完整測站的設定頁<\/a>/);
+    assert.doesNotMatch(home, /full=1/);
     assert.doesNotMatch(sheet, /class="rs-x"/);
     assert.match(P.screen(HOME, P.parseRoute('#/'), NOW, APP({ sheet: true, open: { 'rs:held': true } })), /<div class="rs-x">.*data-act="detach" data-id="aaaaaaaa-5"/);
     assert.match(P.screen(Object.assign({}, HOME, { device: null }), P.parseRoute('#/'), NOW, APP({ sheet: true })), /<span class="rs-v">這台電腦<\/span>/);

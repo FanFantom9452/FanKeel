@@ -210,6 +210,7 @@
             'nav.themeLight': 'Light',
             'nav.themeDark': 'Dark',
             'nav.functions': 'Functions',
+            'nav.toPhone': 'Back to the phone page',
             'nav.nWaiting': '{n} session(s) waiting on you',
             'nav.jumpLabel': 'Jump to a session: type task text or an id',
             'nav.jumpPlaceholder': 'Jump to a session…',

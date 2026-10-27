@@ -52,6 +52,16 @@ test('the bar is one level: 現在, Sessions, 花費, 文件, 週報, then 設�
     assert.equal((nav.match(/class="nb/g) || []).length, 1, 'only 現在 carries a count');
 });
 
+test('the way back to the phone shows only when the page was opened with ?full=1', () => {
+    const back = /<a class="navback" href="\/m">回手機版<\/a>/;
+    assert.doesNotMatch(boot('#/').els.nav.innerHTML, /navback/);
+    const b = boot('#/settings');
+    b.win.location.search = '?full=1';
+    assert.match(b.V.navHtml('settings', { waiting: 0 }), back);
+    b.win.location.search = '?x=1';
+    assert.doesNotMatch(b.V.navHtml('settings', { waiting: 0 }), /navback/);
+});
+
 test('a sub-page, a detail page and an old hash light the bar entry that holds it', () => {
     const lit = (hash) => /<a href="([^"]+)" aria-current="page"/.exec(boot(hash).els.nav.innerHTML)[1];
     for (const h of ['#/live', '#/sessions', '#/list', '#/cmp', '#/s/9f451488-d5a6-4838-8cfc-9a451fd4f0e1']) assert.equal(lit(h), '#/sessions', h);

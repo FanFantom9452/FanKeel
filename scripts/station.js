@@ -593,7 +593,9 @@ async function serve(opts) {
         };
         // Through the tailnet `/` is the phone's page (design §4); this
         // machine's own browser keeps the desktop page there.
-        if (kind === 'tailnet' && req.method === 'GET' && url.pathname === '/') return redirect('/m');
+        // `?full=1` is the phone's way to the settings page, for a paired phone only.
+        if (kind === 'tailnet' && req.method === 'GET' && url.pathname === '/'
+            && !(url.searchParams.get('full') === '1' && remote.deviceFor(configDir, remote.tokenOf(req.headers.cookie), Date.now()))) return redirect('/m');
         // station-55: a page load from this machine is where a station finds
         // out its code moved under it. Through the tailnet `/` is the phone's
         // and the health route is closed, so only loopback asks.

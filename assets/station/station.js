@@ -1578,7 +1578,8 @@
     // The bar: the jump box, then `#navlinks`, which `drawNav` alone redraws.
     function navHtml(active, c) {
         return '<nav class="sidenav hm-flat" data-block="nav" aria-label="' + loc('nav.functions', '功能') + '"><div class="navbox">' + jumpHtml()
-            + '<div id="navlinks">' + navLinksHtml(active, c) + '</div></div></nav>';
+            + '<div id="navlinks">' + navLinksHtml(active, c) + '</div>'
+            + (/[?&]full=1(&|$)/.test(String((w.location && w.location.search) || '')) ? '<a class="navback" href="/m">' + loc('nav.toPhone', '回手機版') + '</a>' : '') + '</div></nav>';
     }
     function navLinksHtml(active, c) {
         var on = navTop(navOn(active)), n = c && c.waiting;
