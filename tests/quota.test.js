@@ -200,7 +200,27 @@ test('calibrate returns the family-priced ids it counted as estimated', () => {
 });
 
 test('quota.js names the estimated ids in its calibration line', () => {
-    const out = (() => { const d = estimatedAccount(); return main(['--claude-dir', d, '--log', path.join(d, 'tokenbar-usage.jsonl'), '--dry-run']); })();
+    const d = estimatedAccount();
+    const out = main(['--claude-dir', d, '--log', path.join(d, 'tokenbar-usage.jsonl'), '--dry-run']);
     assert.equal(out.code, 0, out.text);
     assert.match(out.text, /\(calibrated [^)]*estimated: claude-opus-9\)/);
+});
+
+test('quota.js without --log calibrates from the project root\'s limits records', () => {
+    const d = estimatedAccount();
+    const root = mkTmp('fankeel-quota-root-');
+    const limits = path.join(root, '.fankeel', 'build', 'limits');
+    fs.mkdirSync(limits, { recursive: true });
+    const row = (ms, seven) => JSON.stringify({ at: new Date(ms).toISOString(), task: 't', stage: 's', five: 1, fiveResets: null, seven, sevenResets: new Date(9000e3).toISOString() });
+    fs.writeFileSync(path.join(limits, 'sid.jsonl'), [row(100e3, 10), row(400e3, 40)].join('\n') + '\n');
+    const prev = process.cwd();
+    process.chdir(root);
+    let out;
+    try {
+        out = main(['--claude-dir', d, '--dry-run']);
+    } finally {
+        process.chdir(prev);
+    }
+    assert.equal(out.code, 0, out.text);
+    assert.match(out.text, /calibrated [^)]*over 30 points/);
 });

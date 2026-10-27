@@ -97,7 +97,7 @@ node <plugin>/scripts/task.js profile set prose.style custom
 node <plugin>/scripts/task.js profile set quota.week 3000
 ```
 
-`quota.calibrated` 是 `quota.week` 最近一次自動校準的日期（YYYY-MM-DD），由 `node <plugin>/scripts/quota.js` 寫進機器層，平常不用手填。這支腳本讀 TokenBar 的 statusline 每次渲染時寫在 Claude 設定目錄下的 tokenbar-usage.jsonl（`rate_limits.seven_day` 的百分比與重置時間）。在最新一個動了 10 個百分點以上的 7 天視窗裡，它拿頭尾兩筆讀數之間全機所有 transcript 的 API 等價花費，除以動了的百分點再乘 100，寫成 `quota.week`。只用同一視窗內的差值，不用讀數的絕對水位，因為絕對水位與 transcript 花費對不上（見 2026-09-21 的額度校準報告）。沒裝 TokenBar、或沒有夠大的視窗時，它什麼都不寫，`quota.week` 維持手填的值。要重新校準就再跑一次；加 `--dry-run` 只印結果、不寫。監控站在 30 天花費下方的說明行註明用的是哪一天的校準。例：
+`quota.calibrated` 是 `quota.week` 最近一次自動校準的日期（YYYY-MM-DD），由 `node <plugin>/scripts/quota.js` 寫進機器層，平常不用手填。這支腳本讀 pane hook 寫在專案 `.fankeel/build/limits/*.jsonl` 的額度記錄（`seven` 的百分比與 `sevenResets` 重置時間）；`--log <檔>` 可改讀 TokenBar 的 tokenbar-usage.jsonl。在最新一個動了 10 個百分點以上的 7 天視窗裡，它拿頭尾兩筆讀數之間全機所有 transcript 的 API 等價花費，除以動了的百分點再乘 100，寫成 `quota.week`。只用同一視窗內的差值，不用讀數的絕對水位，因為絕對水位與 transcript 花費對不上（見 2026-09-21 的額度校準報告）。沒有 limits 記錄、或沒有夠大的視窗時，它什麼都不寫，`quota.week` 維持手填的值。要重新校準就再跑一次；加 `--dry-run` 只印結果、不寫。監控站在 30 天花費下方的說明行註明用的是哪一天的校準。例：
 
 ```
 node <plugin>/scripts/quota.js --dry-run
