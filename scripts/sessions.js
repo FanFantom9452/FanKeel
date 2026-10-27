@@ -87,6 +87,9 @@ async function processFile(file) {
   const rl = readline.createInterface({ input: fs.createReadStream(file, 'utf8'), crlfDelay: Infinity });
 
   let peakContext = 0;
+  // 一個回合：相鄰兩次主 session 請求之間 context 漲了多少，取最大。compact-7 用它判「compact.at 加一個回合」。
+  let lastTotal = null;
+  let maxStep = 0;
   let agentCalls = 0;
   let subagentChars = 0;
   let allToolResultChars = 0;
@@ -108,6 +111,8 @@ async function processFile(file) {
       if (u) {
         const total = (u.input_tokens || 0) + (u.cache_read_input_tokens || 0) + (u.cache_creation_input_tokens || 0);
         if (total > peakContext) peakContext = total;
+        if (lastTotal !== null && total - lastTotal > maxStep) maxStep = total - lastTotal;
+        lastTotal = total;
       }
       const content = o.message.content;
       if (Array.isArray(content)) {
@@ -168,7 +173,7 @@ async function processFile(file) {
     if (pi !== null && ci !== null && ci < pi) backwardCount++;
   }
 
-  return { size: stat.size, peakContext, agentCalls, subagentChars, allToolResultChars, bigToolResults, notifChars, hadStart, backwardCount, backToBuild, stoodDown, refused, hookErrors };
+  return { size: stat.size, peakContext, maxStep,agentCalls, subagentChars, allToolResultChars, bigToolResults, notifChars, hadStart, backwardCount, backToBuild, stoodDown, refused, hookErrors };
 }
 
 function percentile(arr, p) {
@@ -201,6 +206,8 @@ async function main(argv) {
     fankeelSessions: results.filter((r) => r.hadStart).length,
     medianPeak: percentile(results.map((r) => r.peakContext), 50),
     p90Peak: percentile(results.map((r) => r.peakContext), 90),
+    maxPeak: results.reduce((m, r) => Math.max(m, r.peakContext), 0),
+    maxStep: results.reduce((m, r) => Math.max(m, r.maxStep), 0),
     sumSubagentChars: results.reduce((a, r) => a + r.subagentChars, 0),
     sumAllToolResultChars: results.reduce((a, r) => a + r.allToolResultChars, 0),
     sumNotifChars: results.reduce((a, r) => a + r.notifChars, 0),

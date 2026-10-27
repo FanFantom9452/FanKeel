@@ -208,3 +208,17 @@ test('--breakdowns counts a stand-down that follows another task\'s land', async
   ]);
   assert.deepEqual((await processFile(path.join(dir, 'b.jsonl'))).stoodDown, []);
 });
+
+test('maxPeak is the highest peak and maxStep the biggest rise between two requests', () => {
+  const cfg = tmp('fankeel-sessions-');
+  const dir = path.join(cfg, 'projects', 'p');
+  writeTranscript(dir, 'a.jsonl', [
+    { type: 'assistant', message: { usage: { input_tokens: 100 }, content: [] } },
+    { type: 'assistant', message: { usage: { input_tokens: 400 }, content: [] } },
+    { type: 'assistant', message: { usage: { input_tokens: 50 }, content: [] } },
+  ]);
+  writeTranscript(dir, 'b.jsonl', [{ type: 'assistant', message: { usage: { input_tokens: 900 }, content: [] } }]);
+  const out = JSON.parse(execFileSync(process.execPath, [SCRIPT, '--config-dir', cfg, '--project', 'p'], { encoding: 'utf8' }));
+  assert.equal(out.out.maxPeak, 900);
+  assert.equal(out.out.maxStep, 300);
+});
