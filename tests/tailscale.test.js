@@ -95,3 +95,32 @@ test('enable: the https url when it worked, the warning when it did not', () => 
     const off = tailscale.enable(28888, fake({ BackendState: 'NeedsLogin', Self: {} }, {}).run);
     assert.match(off.warning, /NeedsLogin/);
 });
+
+const PEERS_STATUS = {
+    Peer: {
+        k1: { DNSName: 'laptop.tail1234.ts.net.', Online: true },
+        k2: { DNSName: 'asleep.tail1234.ts.net.', Online: false },
+        k3: { DNSName: 'paired.tail1234.ts.net.', Online: true },
+        k4: { DNSName: 'nostation.tail1234.ts.net.', Online: true },
+        k5: { Online: true },
+    },
+};
+
+test('peers + probeStations: only an online peer whose probe answers 200 or 401 is listed, with its /m url', async () => {
+    const list = tailscale.peers(fake(PEERS_STATUS, null).run);
+    assert.deepEqual(list.map((p) => p.name), ['laptop', 'paired', 'nostation']);
+    const asked = [];
+    const get = (url, ms) => {
+        asked.push([url, ms]);
+        if (url.includes('nostation')) return Promise.reject(new Error('connect ECONNREFUSED'));
+        return Promise.resolve({ status: url.includes('laptop') ? 401 : 404 });
+    };
+    const out = await tailscale.probeStations(list, get);
+    assert.deepEqual(out, [{ name: 'laptop', url: 'https://laptop.tail1234.ts.net/m' }]);
+    assert.deepEqual(asked[0], ['https://laptop.tail1234.ts.net/station/mobile.json', 1500]);
+});
+
+test('peers: [] when tailscale status fails', () => {
+    assert.deepEqual(tailscale.peers(fake(null, null).run), []);
+    assert.deepEqual(tailscale.peers(() => ({ status: 0, stdout: 'not json', stderr: '' })), []);
+});
