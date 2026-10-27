@@ -100,8 +100,8 @@ test('a project station.hide takes off the phone too, and nothing private rides 
     assert.deepEqual(m.tasks.map((g) => g.id), ['shown']);
     const text = JSON.stringify(m);
     assert.ok(!text.includes('lib/private.js') && !text.includes('"private"'), 'claims and notes stay on this machine');
-    assert.deepEqual(mobile.mobileModel({ registries: [] }, NOW, 'h'), { host: 'h', at: NOW, device: null, gates: [], tasks: [], stopped: [], done: [] });
-    assert.deepEqual(mobile.mobileModel(null, NOW, null), { host: '', at: NOW, device: null, gates: [], tasks: [], stopped: [], done: [] });
+    assert.deepEqual(mobile.mobileModel({ registries: [] }, NOW, 'h'), { host: 'h', at: NOW, device: null, gates: [], tasks: [], stopped: [], done: [], others: [] });
+    assert.deepEqual(mobile.mobileModel(null, NOW, null), { host: '', at: NOW, device: null, gates: [], tasks: [], stopped: [], done: [], others: [] });
 });
 
 test('the /m shell: the keel look, its manifest and icon, both stylesheets, the phone script', () => {
@@ -140,4 +140,11 @@ test('stopped: a session no longer live whose gate still holds, and nothing else
     ]), NOW, 'ymlab-pc');
     assert.deepEqual(m.stopped.map((x) => [x.id, x.state]), [['gone', 'gate']]);
     assert.deepEqual(m.tasks.map((x) => x.id), ['live']);
+});
+
+test('mobileModel: others is [] by default and passes a given list through', () => {
+    assert.deepEqual(mobile.mobileModel(model([]), NOW, 'h', new Set()).others, []);
+    assert.deepEqual(mobile.mobileModel(model([]), NOW, 'h', new Set(), null, null, 'x').others, []);
+    const list = [{ name: 'lab', url: 'https://lab.t.ts.net/m' }];
+    assert.deepEqual(mobile.mobileModel(model([]), NOW, 'h', new Set(), null, null, list).others, list);
 });

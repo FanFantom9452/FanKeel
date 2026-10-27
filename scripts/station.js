@@ -972,7 +972,7 @@ async function serve(opts) {
             // tailnet is on, by its hostname otherwise.
             const model = sharedModel();
             const host = (tailnet.on && tailnet.dnsName ? tailnet.dnsName.split('.')[0] : '') || os.hostname();
-            const body = mobile.mobileModel(model, Date.now(), host, station.hiddenPkeys(model), phone.snapshot, device);
+            const body = mobile.mobileModel(model, Date.now(), host, station.hiddenPkeys(model), phone.snapshot, device, othersNow());
             return send(200, 'application/json', JSON.stringify(body), noStore);
         }
         if (req.method === 'GET' && url.pathname === '/station/phone.json') {
@@ -1240,6 +1240,22 @@ async function serve(opts) {
     // The proxy this station made comes down with it (station-remote-1): when
     // `station.remote` is written off, when `close()` runs, and on the idle
     // exit. Never fatal — a failure is one stderr line and shutdown goes on.
+    // Other stations on the tailnet for the phone's switcher: the cached list, refreshed in
+    // the background at most every minute, never awaited by the request.
+    let others = { at: 0, list: [], busy: false };
+    const othersNow = () => {
+        if (!tailnet.on) return [];
+        const cur = others;
+        if (!cur.busy && Date.now() - cur.at >= 60e3) {
+            cur.busy = true;
+            cur.at = Date.now();
+            const self = tailnet.dnsName;
+            Promise.resolve().then(() => tailscale.probeStations(tailscale.peers(opts.tailscaleRun).filter((p) => p.dnsName !== self), opts.probeGet))
+                .then((list) => { if (others === cur) cur.list = list; }, () => {})
+                .then(() => { cur.busy = false; });
+        }
+        return cur.list;
+    };
     const teardownRemote = () => {
         if (!madeServe) return;
         madeServe = false;
@@ -1250,6 +1266,7 @@ async function serve(opts) {
     // written from the page. Never fatal — a warning on stderr and on the
     // card, and loopback keeps serving. Off takes down a proxy this run made.
     const refreshRemote = () => {
+        others = { at: 0, list: [], busy: false };
         const want = profile.read(null, configDir).values['station.remote'] === true;
         if (want && boundPort) {
             const got = tailscale.enable(boundPort, opts.tailscaleRun);
