@@ -108,16 +108,17 @@ async function findEntry($: EngineInterface, id: string): Promise<{ entry: Entry
 
 // hooks/pane-limits.ts decides whether this tick is a new row; this writes it.
 // Only while the session owns a task; a write that fails is said once and the tick goes on.
-let lastLimits = ''
-async function recordLimits($: EngineInterface, root: string, id: string, entry: Entry, limits: Limit[], logged: Logged): Promise<void> {
+// The percentages are account-wide, so the last key is kept per session: a second session's opening row is not deduped away.
+const lastLimits = new Map<string, string>()
+export async function recordLimits($: EngineInterface, root: string, id: string, entry: Entry, limits: Limit[], logged: Logged): Promise<void> {
   if (!isActive(entry) || !limits.length) return
   try {
-    const next = limitRow(limits, entry, await $.clock.now(), lastLimits)
+    const next = limitRow(limits, entry, await $.clock.now(), lastLimits.get(id) ?? '')
     if (!next) return
     const file = `${root}/.fankeel/build/limits/${id}.jsonl`
     const text = (await $.fs.exists(file)) ? String(await $.fs.read(file)) : ''
     await $.fs.write(file, appendRow(text, next.row))
-    lastLimits = next.key
+    lastLimits.set(id, next.key)
   } catch (err) {
     logOnce($, logged, 'limits', `fankeel pane: limits row not written, ${String(err)}`)
   }

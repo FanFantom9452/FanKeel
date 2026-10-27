@@ -40,3 +40,28 @@ test('appendRow keeps the newest LIMITS_MAX rows', async () => {
     assert.equal(lines.length, LIMITS_MAX);
     assert.equal(JSON.parse(lines[0]).at, '3');
 });
+
+test('recordLimits gives each session its own opening row for identical readings, and none to an ended task', async () => {
+    globalThis.h = globalThis.h || ((tag, props, ...children) => ({ tag, props: props || {}, children: children.flat() }));
+    const { recordLimits } = await import(pathToFileURL(path.join(__dirname, '..', 'hooks', 'pane.ts')).href);
+    const store = {};
+    const logs = [];
+    const $ = {
+        clock: { now: async () => NOW },
+        fs: { exists: async (p) => p in store, read: async (p) => store[p], write: async (p, t) => { store[p] = t; } },
+        ui: { log: (m) => logs.push(m) },
+    };
+    const logged = {};
+    const live = { task: 'T', stage: 'build', active: true };
+    await recordLimits($, 'R', 'sess-a', live, L(12, 40), logged);
+    await recordLimits($, 'R', 'sess-a', live, L(12, 40), logged);
+    await recordLimits($, 'R', 'sess-b', live, L(12, 40), logged);
+    await recordLimits($, 'R', 'sess-c', { task: 'T', stage: 'build', active: false }, L(12, 40), logged);
+    assert.equal(store['R/.fankeel/build/limits/sess-a.jsonl'].trim().split('\n').length, 1);
+    assert.equal(store['R/.fankeel/build/limits/sess-b.jsonl'].trim().split('\n').length, 1);
+    assert.equal('R/.fankeel/build/limits/sess-c.jsonl' in store, false);
+    $.fs.write = async () => { throw new Error('disk'); };
+    await recordLimits($, 'R', 'sess-d', live, L(1, 2), logged);
+    await recordLimits($, 'R', 'sess-d', live, L(1, 2), logged);
+    assert.equal(logs.filter((m) => /limits row not written/.test(m)).length, 1);
+});
