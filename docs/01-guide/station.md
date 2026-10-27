@@ -30,6 +30,7 @@ source_of_truth: docs/90-agent/reference/station.md, assets/station/station.js, 
 | 專案 | `#/projects` | 兩個分頁「總覽」與「分析」，共用一個期間切換（7、30、90 天，預設 30）。總覽一個專案一列，分「需要注意」（有 gate 在等、有 session 在跑、有到期的 Blocked）與「其他」；分析從五個角度畫圖。花費只留約 30 天，選 90 天時頁面也會寫明 |
 | 專案報告 | `#/p/<key>` | 一個專案的報告頁。上半是頁首（名稱與正在跑的 session）、近 30 天的 KPI 卡和四週的花費與落地趨勢。下半是每站一張卡（做事與等你的中位數）、TODO 分頁（`#/p/<key>/todo/<id>` 直接開那一條），以及最近的落地 |
 | 文件 | `#/docs` | 文件健檢：上方有全文搜尋，下面是一張矩陣，一個專案一列（附文件數與最新日期），六欄是 drift、landed、index、diagram、broken、unfiled；0 是勾，數字是按鈕，按了在旁邊的發現清單列出該項（路徑、行號、說明與修法），點一列用閱讀器開那一頁。點專案名開專案對話框，看它 `.fankeel/map.md` 的狀態分布、planned 未做與歸檔表。重新檢查會重跑；要從 serve 開的頁面用 |
+| 週報 | `#/weekly` | 歷次週報，依迄日新的在前，點一列在站內開；頁首的按鈕複製 `/fankeel-weekly` 指令。週報由 skill 產生，站只列出與開啟 |
 | 導覽 | `#/tour` | 一支 60 秒的動態宣傳片，配純音樂，中英兩版跟著監控站的語言，七站各用一個動畫講它在做什麼；要從 serve 開的頁面才看得到 |
 | 設定 | `#/settings` | 快速設定：十個問題，每題先填好建議（依你的紀錄或作者推薦），見 [profile.md](profile.md)。詳細設定在 `#/settings/detail`，一次一題、分章節，可從任一步開始。「手機遠端」卡片在詳細設定裡，見下方〈從手機看〉 |
 
@@ -38,6 +39,20 @@ source_of_truth: docs/90-agent/reference/station.md, assets/station/station.js, 
 計畫（`#/s/<id>/plan`）畫出這個 session 最新的 plan：一組一欄，每個 task 一張卡，寫它改哪些檔、等哪幾個 task；停在 plan gate 時，上方會問你要不要核准，答案在 Claude Desktop 給。關卡（`#/s/<id>/gate`）把 survey、design、build、land 這一站交回的報告排成一頁：發現、要改的檔、改了什麼；land 這一站則是六欄完成紀錄（要求、做了什麼、為什麼這樣做、驗過・沒驗過、花費、還剩什麼）；停在那一站的 gate 時，上方多一條問題，答案一樣在 Claude Desktop 給。session 卡上若這個任務畫過圖，會多一塊「AI 畫的圖」，點開是那張 `.board` 畫成的 SVG；專案卡則連到專案的架構圖。
 
 停在 gate 時，關卡頁會把這個任務的第一塊板子畫在頁面裡，可以直接改。狀態列寫「session 停在 gate，可以編輯」；session 不在 gate 時是「唯讀：session 不在 gate」，只能看。工具列有選取、新增節點、新增連線、標記給 AI、刪除、復原：拖曳節點改位置，雙擊節點改名字，用「標記給 AI」在節點上留一句話請 AI 看。每一筆改動都列在板子下方，可以逐筆復原；一批改動整批套用或整批退回，會新增引用問題的那一批整批被拒。你在 Claude Desktop 回答這個 gate 時，改動和標記會一起附進答案。例子：雙擊 `parse` 節點、改成 `parse-csv`，下方會多一行「改名 parse：parse → parse-csv」，檢查列仍是「✓ 0 個問題」。
+
+## 週報
+
+週報是給教授看的一頁 HTML：選一段日期與幾個 repo，說這段時間做了哪幾件事、為什麼、下一步，附每日改動熱度與每個專案的架構圖（這週改到的模組上色）。站本身不寫週報——站沒有模型——寫的是 `/fankeel-weekly` 這個 skill；站上的 `#/weekly` 頁負責列出與開啟。
+
+怎麼產生一份：在 `#/weekly` 頁按「複製指令」，貼到任一個 Claude Code session 執行。skill 會先問區間（預設從上一份的迄日隔天到今天，沒有上一份就從上週五起）與要收哪幾個 repo，收完後把事的清單列成表給你確認（Gate 1），確認了才畫頁，畫好開給你看（Gate 2）。例：
+
+    /fankeel-weekly
+
+產出在 config dir 的 `fankeel/weekly/<迄日>.html`（旁邊一份同名 `.json` 是下一份接續用的紀錄），不進任何 repo，因為工作內容不能 commit 進外掛的 repo。要寄出去就寄這個 html 檔：CSS 與圖都在檔案裡，不引外部檔。
+
+從站上開一份週報時，頁首會多一條導覽列：「← 回週報列表」回到 `#/weekly`，「上一份／下一份」跳到相鄰的週報。這條導覽列只在站上看得到，寄出去的檔案沒有它，教授看不到站的連結。
+
+掃哪些 repo 由 profile 的 `weekly.roots` 決定：一個或多個絕對路徑、逗號分隔，沒設就是 registry 根目錄的上一層；每個根目錄往下一層、再下一層，有 `.git` 的才算。見 [profile.md](profile.md)。
 
 ## 從手機看
 

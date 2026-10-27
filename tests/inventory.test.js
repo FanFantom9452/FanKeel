@@ -26,6 +26,7 @@ const SKILLS = [
     'fankeel-survey',
     'fankeel-upgrade',
     'fankeel-verify',
+    'fankeel-weekly',
 ];
 
 function setDiff(actual, expected) {

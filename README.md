@@ -65,6 +65,7 @@ flowchart LR
 | `/fankeel-explain` | 簡報、報告、進度同步 |
 | `/fankeel-upgrade` | 舊專案升級到新版的設定 |
 | `/fankeel-retro-all` | 回顧所有匯出的 session |
+| `/fankeel-weekly` | 給教授的區間週報：收紀錄與 git、確認清單、畫一頁 HTML |
 | `/fankeel-panel` | 開關側邊的 Pane |
 
 ## 深入閱讀
