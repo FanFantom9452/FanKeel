@@ -201,6 +201,7 @@
             'nav.last30d': 'Last 30 days',
             'nav.byProject': 'By project',
             'nav.docs': 'Docs',
+            'nav.weekly': 'Weekly',
             'nav.settings': 'Settings',
             'nav.wizard': 'Wizard',
             'nav.tour': 'Tour',

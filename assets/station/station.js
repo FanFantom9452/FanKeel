@@ -251,7 +251,7 @@
     // a page opened from file:// can go back through. `#/p/<pkey>/todo` and
     // `#/p/<pkey>/todo/<id>` are the project page with its TODO panel, or that
     // entry in it, scrolled into view: the Pane's TODO buttons open them.
-    var PAGES = ['live', 'sessions', 'projects', 'docs', 'settings', 'tour'];
+    var PAGES = ['live', 'sessions', 'projects', 'docs', 'weekly', 'settings', 'tour'];
     function parseHash(hash) {
         var p = String(hash || '').replace(/^#\/?/, '').split('/');
         var dec = function (v) { try { return decodeURIComponent(v); } catch (e) { return null; } };
@@ -1530,6 +1530,7 @@
         commit: '<circle cx="12" cy="12" r="3"/><line x1="3" x2="9" y1="12" y2="12"/><line x1="15" x2="21" y1="12" y2="12"/>',
         bot: '<path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>',
         close: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+        calendar: '<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>',
     };
     function icon(name) {
         if (ICONS24[name]) {
@@ -1539,8 +1540,8 @@
         return ICONS[name] ? '<svg class="ico" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor"'
             + ' stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' + ICONS[name] + '</svg>' : '';
     }
-    // Six pages, one level, no folds (mockup 2026-10-21-station-home): 現在,
-    // Sessions, 花費 and 文件, then 設定 and 導覽 pinned under them (`pin`).
+    // Seven pages, one level, no folds (mockup 2026-10-21-station-home): 現在,
+    // Sessions, 花費, 文件 and 週報 (2026-10-27), then 設定 and 導覽 pinned under them (`pin`).
     // `kids` are a page's filters — the strip on each of its pages
     // (`subtabsHtml`) — so the strip, the title and the lit entry agree.
     var NAV_TREE = [
@@ -1549,6 +1550,7 @@
             ['list', '#/list', loc('nav.fullList', '全部清單')], ['cmp', '#/cmp', loc('nav.compare', '比較')]] },
         { ico: 'spend', label: loc('nav.spend', '花費'), v: 'days', href: '#/days', kids: [['days', '#/days', loc('nav.last30d', '近 30 天')], ['projects', '#/projects', loc('nav.byProject', '依專案')]] },
         { ico: 'docs', label: loc('nav.docs', '文件'), v: 'docs', href: '#/docs' },
+        { ico: 'calendar', label: loc('nav.weekly', '週報'), v: 'weekly', href: '#/weekly' },
         { ico: 'settings', label: loc('nav.settings', '設定'), v: 'settings', href: '#/settings', pin: true, kids: [['settings', '#/settings', loc('nav.wizard', '精靈')]] },
         { ico: 'tour', label: loc('nav.tour', '導覽'), v: 'tour', href: '#/tour', pin: true, block: 'tour-nav', title: loc('nav.tourTitle', 'fankeel 怎麼跑一個任務，一段動畫看完') },
     ];
