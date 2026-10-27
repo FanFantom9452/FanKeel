@@ -1042,15 +1042,35 @@ test('the design skill and the mockup agent say how to read an item\'s marks', (
     assert.match(read('agents/fankeel-mockup.md'), /An item may also carry `marks`/);
 });
 
-test('roomFor allows a mark while all drafts hold 6000 points or fewer, across drafts, and again once marks are removed', () => {
+test('roomFor allows a mark while all drafts weigh 6000 or less (points + 4 + text), across drafts, and again once marks are removed', () => {
     const { roomFor } = require('../assets/tune/overlay.js');
     const pts = (n) => Array.from({ length: n }, (_, i) => [i, i]);
-    const b = { marks: [{ type: 'pen', points: pts(500) }] };
-    assert.equal(roomFor([b], { type: 'pen', points: pts(500) }), true);
-    const full = { marks: Array.from({ length: 11 }, () => ({ type: 'pen', points: pts(500) })) };
-    assert.equal(roomFor([full, b], { type: 'pen', points: pts(1) }), false, 'the total across two drafts passes 6000');
+    const b = { marks: [{ type: 'pen', points: pts(496) }] };
+    assert.equal(roomFor([b], { type: 'pen', points: pts(496) }), true);
+    const full = { marks: Array.from({ length: 10 }, () => ({ type: 'pen', points: pts(496) })) };
+    assert.equal(roomFor([full, b], { type: 'pen', points: pts(496) }), true, 'exactly 6000 fits');
+    assert.equal(roomFor([full, b], { type: 'step', points: pts(1) }), true, 'a step weighs 5, 5505 fits');
+    full.marks.push({ type: 'pen', points: pts(496) });
+    assert.equal(roomFor([full, b], { type: 'step', points: pts(1) }), false, 'the total across two drafts passes 6000');
     full.marks.pop();
-    assert.equal(roomFor([full, b], { type: 'pen', points: pts(500) }), true);
+    assert.equal(roomFor([full, b], { type: 'pen', points: pts(496) }), true);
+});
+
+test('a text mark weighs its length toward the cap', () => {
+    const { roomFor } = require('../assets/tune/overlay.js');
+    const d = { marks: Array.from({ length: 11 }, () => ({ type: 'text', points: [[0, 0]], text: 'x'.repeat(495) })) };
+    assert.equal(roomFor([d], { type: 'step', points: [[0, 0]] }), true, '11*500 + 5 fits');
+    d.marks.push({ type: 'text', points: [[0, 0]], text: 'x'.repeat(496) });
+    assert.equal(roomFor([d], { type: 'step', points: [[0, 0]] }), false, '6001 + 5 does not');
+    assert.equal(roomFor([{ marks: [] }], { type: 'text', points: [[0, 0]], text: 'x'.repeat(500) }), true);
+});
+
+test('a draft holding 100 marks refuses the 101st', () => {
+    const { roomFor } = require('../assets/tune/overlay.js');
+    const d = { marks: Array.from({ length: 99 }, () => ({ type: 'step', points: [[0, 0]] })) };
+    assert.equal(roomFor([d], { type: 'step', points: [[0, 0]] }, d), true);
+    d.marks.push({ type: 'step', points: [[0, 0]] });
+    assert.equal(roomFor([d], { type: 'step', points: [[0, 0]] }, d), false);
 });
 
 test('a mark past the 6000-point cap is not kept and the draft line says so', () => {
@@ -1061,7 +1081,7 @@ test('a mark past the 6000-point cap is not kept and the draft line says so', ()
     t.fire(t.tool('pen'), 'click');
     for (let k = 0; k < 12; k++) {
         down(0, 0);
-        for (let i = 1; i < 520; i++) move(i * 3, 0);
+        for (let i = 1; i < 496; i++) move(i * 3, 0);
         up();
     }
     t.fire(t.page.hero, 'keydown', { key: 'n' });

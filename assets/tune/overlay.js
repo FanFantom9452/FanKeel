@@ -140,19 +140,22 @@
         var b = m.points[m.points.length - 1];
         return m.points.length > 1 && (a[0] !== b[0] || a[1] !== b[1]);
     }
-    // The request body is capped at 256 KB; 6000 points in all, about 13
-    // bytes a point, keep it near 80 KB beside the notes.
+    // The request body is capped at 256 KB: a mark weighs its points, 4 for
+    // its own fields and its text; the server keeps 100 marks an item.
     var POINT_MAX = 6000;
-    function roomFor(drafts, m) {
-        var n = m.points.length;
-        drafts.forEach(function (d) { d.marks.forEach(function (k) { n += k.points.length; }); });
+    var MARK_MAX = 100;
+    function weigh(k) { return k.points.length + 4 + (k.text ? k.text.length : 0); }
+    function roomFor(drafts, m, d) {
+        if (d && d.marks.length >= MARK_MAX) return false;
+        var n = weigh(m);
+        drafts.forEach(function (x) { x.marks.forEach(function (k) { n += weigh(k); }); });
         return n <= POINT_MAX;
     }
     var capSay = false;
-    // Adds a mark to a draft unless the page already holds as many points as
-    // one send carries; the next draw() says so once.
+    // Adds a mark to a draft unless the page already holds as much as one
+    // send carries; the next draw() says so once.
     function addMark(d, m) {
-        if (roomFor(drafts, m)) { d.marks.push(m); return; }
+        if (roomFor(drafts, m, d)) { d.marks.push(m); return; }
         capSay = true;
     }
     if (typeof document === 'undefined') {
@@ -718,6 +721,7 @@
         textAt = p;
         textBox = el('input', 'fk-live-type');
         textBox.setAttribute('type', 'text');
+        textBox.maxLength = 500;
         textBox.setAttribute('aria-label', '標註文字');
         textBox.style.left = p[0] + 'px';
         textBox.style.top = (p[1] - 14) + 'px';
