@@ -156,9 +156,10 @@ function writeFailure(state, o) {
         // Anything but a missing file means the count is unknown: say so rather than restart it.
         if (e.code !== 'ENOENT') return null;
     }
-    const next = count >= 2 ? 'stop retrying and ask the user — two failures in a row'
+    const next = state === 'stalled' ? (count >= 2 ? 'stop it and dispatch a fresh one listing the commits since the stage began and its worktrees'
+            : 'SendMessage the agent once; stalled again, stop it and dispatch a fresh one')
+        : count >= 2 ? 'stop retrying and ask the user — two failures in a row'
         : state === 'lost' ? 'dispatch a fresh stage agent with the same line'
-        : state === 'stalled' ? 'SendMessage the agent once; stalled again, stop it and dispatch a fresh one'
         : 'run await again';
     try {
         fs.mkdirSync(path.dirname(file), { recursive: true });

@@ -127,3 +127,27 @@ test('lineFor: stalled names the agent, its children and their worktrees, and th
     assert.match(text, /SendMessage/);
     assert.match(text, /stop it/);
 });
+
+const note = (id) => line({ type: 'user', message: { content: [{ type: 'text', text: '<task-notification>\n<task-id>x</task-id>\n<tool-use-id>' + id + '</tool-use-id>\n<status>completed</status>\n</task-notification>' }] } });
+test('launched: a child whose task-notification came back is not waiting; an un-notified one still is', () => {
+    const body = asst('m1', [use('t1')]) + launch('t1', 'aa11') + note('t1') + asst('m2', [use('t2')]) + launch('t2', 'bb22');
+    assert.deepEqual(launched(transcript(body, T)), ['bb22']);
+    assert.deepEqual(launched(transcript(asst('m1', [use('t1')]) + launch('t1', 'aa11') + note('t1'), T)), []);
+});
+
+test('await.js reads a brain whose children all reported back as lost, not stalled', async () => {
+    const g = brain(asst('m1', [use('t1')]) + launch('t1', 'aa11') + note('t1') + asst('m2', [say('all done')]));
+    const out = await awaitMain(['--session', SID, '--root', g.root, '--idle', '0.2'], g.env);
+    assert.match(out.text, /^lost a3f9c2 /, out.text);
+});
+
+test('await.js: a second stalled in a row says stop it and dispatch a fresh one, not ask the user', async () => {
+    const g = brain(WAITS);
+    const args = ['--session', SID, '--root', g.root, '--idle', '0.2'];
+    await awaitMain(args, g.env);
+    await awaitMain(args, g.env);
+    const body = fs.readFileSync(g.task + '/build-failed.md', 'utf8');
+    assert.match(body, /^count: 2$/m);
+    assert.match(body, /^next: .*stop it and dispatch a fresh one/m);
+    assert.doesNotMatch(body, /ask the user/);
+});
