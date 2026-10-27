@@ -483,6 +483,20 @@ body.m .solo{padding-top:calc(28px + var(--safe-top,env(safe-area-inset-top)));p
 .rs-x p{display:flex;gap:7px;margin:0;font-size:13.5px;line-height:1.6;color:var(--ink2)}
 .rs-x p .ic{width:16px;height:16px;margin-top:3px;color:var(--muted)}
 .rs-x .give{justify-self:start;min-height:44px}
+.mm{display:grid;gap:8px;min-width:0}
+.mm-h{display:flex;align-items:baseline;gap:8px;margin:2px 4px 0;font-size:13.5px;font-weight:700;color:var(--ink2)}
+.mm-h span{font:400 12.5px var(--f-mono);color:var(--muted)}
+.mm-list{display:grid;margin:0;padding:0;list-style:none;background:var(--inset);border-radius:var(--r)}
+.mm-list li+li{border-top:1px solid var(--rule)}
+.mm-row{display:grid;grid-template-columns:20px minmax(0,1fr) auto 18px;align-items:center;gap:12px;min-height:60px;padding:9px 12px 9px 14px;box-sizing:border-box;color:inherit;text-decoration:none;-webkit-tap-highlight-color:transparent}
+.mm-row:active{background:var(--wash)}
+.mm-row:focus-visible{outline:2px solid var(--ink);outline-offset:-3px;border-radius:var(--r)}
+.mm-row>.ic{width:20px;height:20px;color:var(--ink2)}
+.mm-row>.go{width:18px;height:18px;color:var(--muted)}
+.mm-m{display:grid;gap:1px;min-width:0}
+.mm-n{font-size:15px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mm-empty{display:flex;gap:8px;margin:0;padding:14px;border-radius:var(--r);background:var(--inset);font-size:13.5px;line-height:1.6;color:var(--muted)}
+.mm-empty .ic{flex:none;width:16px;height:16px;margin-top:3px}
 
 /* ---- the session detail: header, the TokenBar, pane tabs, the pane, the composer ---- */
 body.m .dt .ch-h{padding-top:calc(6px + var(--safe-top,env(safe-area-inset-top)));box-shadow:none}
