@@ -149,6 +149,41 @@ test('a header chip without a tagline shows the name only, never the project lin
     assert.ok(html.includes('<li class="proj-chip" title="一段很長很長的專案說明文字"><b>demo</b></li>'));
 });
 
+test('guard reaches every events.json key outside events: projects, taglines, summary, architecture, labels, carry, next', () => {
+    const bad = { builtin: '開 Session', listed: '交給 ACME', uuid: '3f2a1b4c-1d2e-4f5a-8b9c-0123456789ab', money: '花了 $12' };
+    const put = {
+        projects: (t) => events({ projects: { demo: t } }),
+        taglines: (t) => events({ taglines: { demo: t } }),
+        summary: (t) => events({ summary: [{ repo: 'demo', title: 'x', text: t }] }),
+        architecture: (t) => events({ architecture: { demo: t } }),
+        labels: (t) => events({ labels: { demo: { 'n-src-api': t } } }),
+        carry: (t) => events({ carry: [{ repo: 'demo', said: t, verdict: 'done', now: 'ok' }] }),
+        next: (t) => events({ next: [{ repo: 'demo', text: t }] }),
+    };
+    const where = { projects: 'projects.demo', taglines: 'taglines.demo', summary: 'summary[0].text', architecture: 'architecture.demo', labels: 'labels.demo.n-src-api', carry: 'carry[0].said', next: 'next[0].text' };
+    const word = { builtin: 'session', listed: 'acme', uuid: 'UUID', money: '$ 金額' };
+    for (const key of Object.keys(put)) {
+        for (const kind of Object.keys(bad)) {
+            assert.deepEqual(wr.guard(put[key](bad[kind]), ['acme']), [{ where: where[key], word: word[kind] }], key + ' / ' + kind);
+        }
+    }
+});
+
+test('guardData reads the repo name, the frame and any module name the model gave no label for', () => {
+    const d = data();
+    d.repos[0].name = 'acme-demo';
+    d.repos[0].modules.mods[0].name = 'Station 層';
+    d.repos[0].modules.mods[1].frame = '花了 $12';
+    assert.deepEqual(wr.guardData(d, events(), ['acme']), [
+        { where: 'repos[0].name', word: 'acme' },
+        { where: 'repos[0].modules.mods[0].name', word: 'station' },
+        { where: 'repos[0].modules.mods[1].frame', word: '$ 金額' },
+    ]);
+    const ev = events({ labels: { 'acme-demo': { [d.repos[0].modules.mods[0].id]: '查詢介面' } } });
+    assert.deepEqual(wr.guardData(d, ev, []).map((h) => h.where), ['repos[0].modules.mods[1].frame'], 'a labelled module name never shows, so it is not read');
+    assert.deepEqual(wr.guardData(data(), events(), []), []);
+});
+
 test('the guard walks the taglines', () => {
     assert.deepEqual(wr.guard(events({ taglines: { demo: '工作 Session' } }), []), [{ where: 'taglines.demo', word: 'session' }]);
 });

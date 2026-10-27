@@ -16,7 +16,7 @@ const { readServeRecord, probe } = require('../lib/serve.js');
 const git = require('../lib/weekly-git.js');
 const store = require('../lib/weekly-store.js');
 const { collect, defaultRange } = require('../lib/weekly-collect.js');
-const { render, guard, archiveOf } = require('../lib/weekly-render.js');
+const { render, guard, guardData, archiveOf } = require('../lib/weekly-render.js');
 
 const USAGE = 'usage: weekly.js scan [--since YYYY-MM-DD --until YYYY-MM-DD] [--roots dir1,dir2]\n'
     + '       weekly.js collect --repos dir1,dir2 [--since A --until B] --out data.json\n'
@@ -144,7 +144,7 @@ async function main(argv, opts) {
             }
             for (const w of list.words) if (!words.includes(w)) words.push(w);
         }
-        const hits = guard(events, words);
+        const hits = guard(events, words).concat(guardData(data, events, words));
         if (hits.length) {
             for (const h of hits) err(h.where + ': ' + h.word);
             err('render refused: ' + hits.length + ' word(s) a report for outside readers must not carry; nothing written');

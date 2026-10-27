@@ -119,6 +119,30 @@ test('render refuses a word from a repository\'s .fankeel/sensitive.txt', async 
     assert.ok(r.err.includes('events[0].did: Acme'), r.err.join('\n'));
 });
 
+test('render refuses a sensitive word in a repo or module name from data.json, nothing written', async () => {
+    const w = world();
+    const data = await collected(w);
+    const ev = path.join(w.root, 'events.json');
+    fs.writeFileSync(ev, JSON.stringify(events('新增查詢頁。')));
+    const out = path.join(w.root, 'weekly.html');
+    const d = JSON.parse(fs.readFileSync(data, 'utf8'));
+    d.repos[0].modules.mods[0].name = 'station 層';
+    fs.writeFileSync(data, JSON.stringify(d));
+    const r = await run(['render', '--events', ev, '--data', data, '--out', out], w);
+    assert.equal(r.code, 1);
+    assert.ok(r.err.includes('repos[0].modules.mods[0].name: station'), r.err.join('\n'));
+    assert.equal(fs.existsSync(out), false);
+    d.repos[0].modules.mods[0].name = 'api';
+    d.repos[0].name = 'Acme-' + d.repos[0].name;
+    fs.writeFileSync(data, JSON.stringify(d));
+    fs.mkdirSync(path.join(d.repos[0].path, '.fankeel'), { recursive: true });
+    fs.writeFileSync(path.join(d.repos[0].path, '.fankeel', 'sensitive.txt'), 'acme\n');
+    const r2 = await run(['render', '--events', ev, '--data', data, '--out', out], w);
+    assert.equal(r2.code, 1);
+    assert.ok(r2.err.includes('repos[0].name: acme'), r2.err.join('\n'));
+    assert.equal(fs.existsSync(out), false);
+});
+
 test('render exits 2 naming a sensitive.txt it cannot read, writes nothing; a missing list still renders', async () => {
     const w = world();
     const list = path.join(w.root, 'alpha', '.fankeel', 'sensitive.txt');
