@@ -17,8 +17,8 @@ test('the layout names the phone channel and keeps its pinned sentences', () => 
     assert.ok(layout.includes('a SubagentHandback is refused while an agent that subagent dispatched has not stopped'));
 });
 
-test('version.js counts seventeen files', () => {
+test('version.js counts eighteen files', () => {
     const src = read('scripts', 'version.js');
-    assert.match(src, /seventeen/);
-    assert.doesNotMatch(src, /sixteen|fourteen skills/);
+    assert.match(src, /eighteen/);
+    assert.doesNotMatch(src, /seventeen|fifteen skills/);
 });
