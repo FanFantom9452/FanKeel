@@ -4395,6 +4395,9 @@
     // 文件 is FK_DOCS (assets/station/docs-page.js): the docs-health matrix,
     // its findings, the reader and the project dialog (station-38).
     VIEWS.docs = function (r) { return w.FK_DOCS.page(S, modOpts({ pkeys: PKEYS })); };
+    // 週報 is FK_WEEKLY (assets/station/weekly-page.js): the copy button for
+    // /fankeel-weekly and the archive under <configDir>/fankeel/weekly/.
+    VIEWS.weekly = function (r) { return w.FK_WEEKLY.page(S, modOpts()); };
     VIEWS.tour = function () { return tourPage(Boolean(S.serve)); };
     VIEWS.list = listPage;
     // 設定 is FK_SETTINGS (assets/station/settings-page.js, 快速設定), which

@@ -16,14 +16,14 @@ const tmp = require('./tmp.js');
 
 const ASSETS = path.join(__dirname, '..', 'assets', 'station');
 const BEFORE = ['tip', 'live-page', 'sessions-page', 'projects-page', 'project-page', 'session-page', 'session-dispatch', 'session-talk'];
-// 文件 and 設定 (station-38, station-39) load after talk-acts.js, a script with no sheet of its own.
-const AFTER = ['docs-page', 'settings-page', 'settings-steps', 'settings-detail'];
+// 文件, 設定 and 週報 (station-38, station-39, 2026-10-27) load after talk-acts.js, a script with no sheet of its own.
+const AFTER = ['docs-page', 'settings-page', 'settings-steps', 'settings-detail', 'weekly-page'];
 const PAGES = BEFORE.concat(AFTER);
 const ALL = PAGES.concat(['gate-frame', 'diagram']);
 const SPEND = ['spend-talk.js', 'spend-kinds.js', 'spend-range.js', 'spend-panel.js'];
 const GLOBAL = { tip: 'FK_TIP', 'live-page': 'FK_LIVE', 'sessions-page': 'FK_SESSIONS', 'projects-page': 'FK_PROJECTS', 'project-page': 'FK_PROJECT',
     'session-page': 'FK_SESSION', 'session-dispatch': 'FK_SDISP', 'session-talk': 'FK_STALK', 'gate-frame': 'FK_GATE', diagram: 'FK_DIAGRAM',
-    'docs-page': 'FK_DOCS', 'settings-page': 'FK_SETTINGS', 'settings-steps': 'FK_SETSTEPS', 'settings-detail': 'FK_SETDETAIL' };
+    'docs-page': 'FK_DOCS', 'settings-page': 'FK_SETTINGS', 'settings-steps': 'FK_SETSTEPS', 'settings-detail': 'FK_SETDETAIL', 'weekly-page': 'FK_WEEKLY' };
 const SID = 'abababab-1212-4121-8121-121212121212';
 
 function fixture() {
@@ -67,7 +67,7 @@ test('the shell loads tip.js and the page modules after i18n.js and before the s
 // runs these four before station.js, with a document that has no body and no
 // querySelector; the station-hdl-* tests find document listeners by what they
 // hold. So none of them may touch an element or add a listener at load.
-test('the docs and settings modules touch no element and add no listener at load', () => {
+test('the docs, settings and weekly modules touch no element and add no listener at load', () => {
     for (const n of AFTER) {
         const added = [];
         const win = {};
