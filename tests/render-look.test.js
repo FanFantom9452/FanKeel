@@ -87,10 +87,27 @@ test('--config shoots a page with a viewport at that width and the others as bef
     const rows = JSON.parse(fs.readFileSync(r.stdout.trim(), 'utf8')).cells;
     const by = Object.fromEntries(rows.map((c) => [c.page, c]));
     assert.equal(by.plain.ok, true);
+    assert.equal(by.plain.width, 800);
     assert.equal(by.narrow.ok, true);
     assert.equal(by.narrow.width, 412);
     assert.equal(by.narrow.viewport, '412,700');
     assert.equal(by.narrow.theme, 'dark');
     assert.equal(by.plain.viewport, undefined);
     assert.match(fs.readFileSync(by.narrow.html, 'utf8'), /W412-DARK/);
+});
+
+test('--config fails a viewport cell for a non-guest role instead of shooting the login page @slow', { skip: NO_BROWSER }, () => {
+    const { dir } = fixture();
+    const conf = path.join(dir, 'render.json');
+    fs.writeFileSync(conf, JSON.stringify({
+        pages: [{ name: 'narrow', url: 'p.html', viewport: '412,700' }],
+        roles: [{ name: 'guest' }, { name: 'admin' }],
+    }));
+    const r = run(['--config', conf, '--out', path.join(dir, 'out')]);
+    assert.equal(r.status, 1);
+    const rows = JSON.parse(fs.readFileSync(r.stdout.trim(), 'utf8')).cells;
+    const by = Object.fromEntries(rows.map((c) => [c.role, c]));
+    assert.equal(by.guest.ok, true);
+    assert.equal(by.admin.ok, false);
+    assert.match(by.admin.error, /not supported for role admin/);
 });

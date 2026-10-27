@@ -22,7 +22,8 @@
 // it can be narrower than headless Chrome's 500px window minimum (`--size` cannot:
 // it is cropped from a 500px layout); `--theme light|dark` sets prefers-color-scheme.
 // A page in render.json may carry the same two keys, `viewport` and `theme`; the
-// index row then records them. Either one shoots through DevTools, not `--screenshot`.
+// index row then records them. Either one shoots through DevTools, not `--screenshot`, which has no login
+// profile, so a cell with either one fails for any role but guest.
 //
 // Two files land in `--out` (default `.fankeel/build/render/`): `render.png`,
 // a `--headless=new` screenshot at `--size`, and `render.html`, the DOM
@@ -216,7 +217,9 @@ async function runConfig(args) {
         const html = path.join(dir, c.page + '.html');
         const look = { viewport: c.viewport || args.viewport, theme: c.theme || args.theme };
         let err;
-        if (look.viewport || look.theme) {
+        if ((look.viewport || look.theme) && c.role !== 'guest') {
+            err = { label: 'screenshot', status: 1, message: 'viewport/theme is not supported for role ' + c.role + ' (runAct has no login profile)' };
+        } else if (look.viewport || look.theme) {
             err = await runAct(browser, toUrl(c.url), [], dir, args.size, Object.assign({ stem: c.page }, look)).then(() => null, (e) => ({ label: 'screenshot', status: 1, message: e.message }));
         } else {
             err = shoot(browser, toUrl(c.url), png, html, args.size, ['--user-data-dir=' + path.join(outDir, 'profiles', c.role)]);
