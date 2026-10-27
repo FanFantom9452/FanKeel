@@ -65,3 +65,25 @@ test('in English the 未登記 card carries no CJK', () => {
     assert.match(card, /Unregistered/);
     assert.doesNotMatch(card, /[\u3400-\u9fff]/);
 });
+
+// station-58 (3): a session named the same as its folder is named; only one with no name is dimmed.
+test('unreg carries the name; a row dims only when the session has none', () => {
+    const S2 = { sessions: [], unregistered: [
+        { id: 'n', cwd: 'F:\\ymlab\\Quick-IME', entrypoint: 'cli', name: 'Quick-IME', status: 'idle', bridge: false, started: 2 },
+        { id: 'u', cwd: 'F:\\ymlab\\Quick-IME', entrypoint: 'cli', name: '', status: 'idle', bridge: false, started: 1 },
+    ] };
+    assert.deepEqual(L.unreg(S2).map((u) => [u.id, u.name, u.label]), [['n', 'Quick-IME', 'Quick-IME'], ['u', '', 'Quick-IME']]);
+    const rows = block(draw(S2), 'live-unreg').split('class="hm-lv sxu"').slice(1);
+    assert.match(rows[0], /class="hm-lv-t">Quick-IME</);
+    assert.match(rows[1], /class="hm-lv-t un">Quick-IME</);
+});
+
+// station-58 (2): an ended registry session with Remote Control still attached is on this card too,
+// so the note no longer says every row never ran /fankeel; the title names both kinds.
+test('the \u672a\u767b\u8a18 note says open and untracked, and its title names both kinds of row', () => {
+    const card = block(draw(S), 'live-unreg');
+    assert.doesNotMatch(card, /\u6c92\u8dd1\u904e \/fankeel \u7684 session</);
+    assert.match(card, /<span class="sx-hnote" title="[^"]*\/fankeel[^"]*Remote Control[^"]*">\u9084\u958b\u8457\u3001fankeel \u6c92\u5728\u8ffd\u7684 session<\/span>/);
+    const en = block(draw(S, 'en'), 'live-unreg');
+    assert.match(en, /<span class="sx-hnote" title="[^"]*Remote Control[^"]*">Open, not tracked by fankeel<\/span>/);
+});

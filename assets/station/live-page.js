@@ -37,7 +37,8 @@
         'lv.day': '{n}d ago',
         'lv.rc': 'Remote Control attached',
         'lv.unreg': 'Unregistered',
-        'lv.unregNote': 'Open, but never ran /fankeel',
+        'lv.unregNote': 'Open, not tracked by fankeel',
+        'lv.unregWhy': 'Never ran /fankeel, or ended in fankeel with Remote Control still attached',
         'lv.busy': 'Busy',
         'lv.idle': 'Idle',
         'lv.since': 'started {t}',
@@ -189,13 +190,14 @@
     }
     // station-57: running sessions no registry lists (lib/station.js
     // `unregisteredOf`), newest first. The label is the session's own name, or
-    // the last folder of its cwd; `via` says how it was started.
+    // the last folder of its cwd; `via` says how it was started. Only a row with
+    // no name is drawn dimmed (station-58).
     function lastFolder(p) { return String(p || '').split(/[\\/]/).filter(Boolean).pop() || ''; }
     function unreg(S) {
         var VIA = { 'claude-desktop': 'Desktop', cli: 'CLI' };
         return ((S && S.unregistered) || []).slice().sort(function (a, b) { return (b.started || 0) - (a.started || 0); }).map(function (u) {
             var tail = lastFolder(u.cwd) || u.id;
-            return { id: u.id, label: u.name || tail, via: VIA[u.entrypoint] || u.entrypoint || '', cwd: u.cwd, status: u.status, bridge: Boolean(u.bridge), started: u.started };
+            return { id: u.id, name: u.name || '', label: u.name || tail, via: VIA[u.entrypoint] || u.entrypoint || '', cwd: u.cwd, status: u.status, bridge: Boolean(u.bridge), started: u.started };
         });
     }
     // RC: Remote Control attached to the session; nothing when it is not.
@@ -211,7 +213,7 @@
         return '<div class="hm-lv sxu">'
             + '<span class="lv-mk ' + (busy ? 'busy' : 'idle') + '" aria-hidden="true"></span>'
             + '<span class="hm-lv-p"><span class="lv-ent">' + esc(u.via) + '</span>' + rc(u.bridge) + '</span>'
-            + '<span class="hm-lv-t' + (u.label === lastFolder(u.cwd) || u.label === u.id ? ' un' : '') + '">' + esc(u.label) + '</span>'
+            + '<span class="hm-lv-t' + (u.name ? '' : ' un') + '">' + esc(u.label) + '</span>'
             + '<span class="lv-cwd" title="' + esc(u.cwd || '') + '">' + esc(u.cwd || '') + '</span>'
             + '<span class="lv-st' + (busy ? ' busy' : '') + '">' + (busy ? loc('lv.busy', '忙碌') : loc('lv.idle', '閒置')) + '</span>'
             + '<span class="hm-lv-r">' + loc('lv.since', '開始 {t}', { t: since(u.started, now) }) + '</span>'
@@ -222,7 +224,7 @@
         var t = loc('lv.unreg', '未登記');
         return '<section class="dcard sx-unreg" data-block="live-unreg" aria-label="' + esc(t) + '">'
             + '<div class="dcard-h">' + kit().icon('sessions') + '<b>' + t + '</b><span class="kn">' + list.length + '</span>'
-            + '<span class="sp"></span><span class="sx-hnote">' + loc('lv.unregNote', '開著、但沒跑過 /fankeel 的 session') + '</span></div>'
+            + '<span class="sp"></span><span class="sx-hnote" title="' + esc(loc('lv.unregWhy', '沒跑過 /fankeel 的，或 fankeel 裡已結束、仍掛著 Remote Control 的')) + '">' + loc('lv.unregNote', '還開著、fankeel 沒在追的 session') + '</span></div>'
             + '<div class="dlist">' + list.map(function (u) { return unregRow(u, now); }).join('') + '</div></section>';
     }
     function page(S, o) {
