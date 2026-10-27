@@ -35,7 +35,7 @@
             'steps.ran': '跑了 {t}', 'steps.folded': '前 {n} 個收起', 'steps.now': '正在：{label}', 'steps.fail': '失敗',
             'dur.tenths': '{n} 秒', 'dur.sec': '{n} 秒', 'dur.min': '{m} 分 {s} 秒',
             'cmp.label': '給 Claude 的下一句', 'cmp.ph': '給 Claude 的下一句…', 'cmp.send': '送出',
-            'cmp.held': '手機接著：送出就是下一句', 'cmp.next': '這回合跑完就送進去', 'cmp.waiting': '上一句還在等這回合跑完', 'cmp.voice': '按麥克風用講的',
+            'cmp.held': '手機接著：送出就是下一句', 'cmp.next': '這回合跑完就送進去', 'cmp.waiting': '上一句還在等這回合跑完', 'cmp.voice': '按麥克風用講的', 'pic.label': '附圖片',
             'mic.label': '用講的輸入', 'mic.answer': '用講的寫答案', 'mic.hint': '想用講的：按麥克風，會自動選這一項',
             'mic.on': '聆聽中… 再按一次停止', 'mic.done': '聽好了：可以改字，按送出才會送',
             'mic.denied': '沒有麥克風權限：到瀏覽器設定允許，或改按鍵盤上的語音鍵', 'mic.missed': '沒聽清楚：再按一次麥克風',
@@ -72,7 +72,7 @@
             'steps.ran': 'ran {t}', 'steps.folded': 'first {n} folded', 'steps.now': 'Now: {label}', 'steps.fail': 'failed',
             'dur.tenths': '{n} s', 'dur.sec': '{n} s', 'dur.min': '{m} min {s} s',
             'cmp.label': 'Next message to Claude', 'cmp.ph': 'Next message to Claude…', 'cmp.send': 'Send',
-            'cmp.held': 'On the phone: what you send is the next message', 'cmp.next': 'Goes in when this turn ends', 'cmp.waiting': 'The last message is still waiting for this turn to end', 'cmp.voice': 'tap the mic to speak',
+            'cmp.held': 'On the phone: what you send is the next message', 'cmp.next': 'Goes in when this turn ends', 'cmp.waiting': 'The last message is still waiting for this turn to end', 'cmp.voice': 'tap the mic to speak', 'pic.label': 'Attach a photo',
             'mic.label': 'Speak instead of typing', 'mic.answer': 'Speak your answer', 'mic.hint': 'Tap the mic to speak; it picks this option',
             'mic.on': 'Listening… tap again to stop', 'mic.done': 'Heard: edit it if you like; only Send sends',
             'mic.denied': 'No microphone permission: allow it in the browser settings, or use the keyboard\'s voice key', 'mic.missed': 'Did not catch that: tap the mic again',
@@ -118,6 +118,7 @@
         + '<symbol id="i-phone" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></symbol>'
         + '<symbol id="i-up" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></symbol>'
         + '<symbol id="i-mic" viewBox="0 0 24 24"><path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/></symbol>'
+        + '<symbol id="i-image" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21"/></symbol>'
         + '<symbol id="i-hist" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></symbol>'
         + '<symbol id="i-term" viewBox="0 0 24 24"><path d="M12 19h8"/><path d="m4 17 6-6-6-6"/></symbol>'
         + '<symbol id="i-bot" viewBox="0 0 24 24"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></symbol>'
@@ -449,7 +450,7 @@
                 + '<label class="opt other"><input type="' + type + '" name="q' + qi + '" value="__other"><span class="rd" aria-hidden="true"></span>'
                 + '<textarea class="own" id="gc-own' + qi + '" data-own="' + qi + '" rows="1" placeholder="' + t('gate.own') + '" aria-label="' + t('gate.own') + '"></textarea>'
                 + (u.mic ? '<button type="button" class="gmic" data-mic="gc-own' + qi + '" aria-label="' + t('mic.answer') + '">' + ic('mic') + '</button>' : '')
-                + '</label><p class="gc-say" data-say>' + (u.mic ? t('mic.hint') : '') + '</p></fieldset>';
+                + '</label><label class="gmic" aria-label="' + t('pic.label') + '"><input type="file" accept="image/*" hidden data-pic>' + ic('image') + '</label><p class="gc-say" data-say>' + (u.mic ? t('mic.hint') : '') + '</p></fieldset>';
         }).join('');
         return '<form class="gc gopts" id="gate-card" data-id="' + esc(p.id) + '" aria-labelledby="gpin-q">'
             + '<div class="gc-b">' + body + '<p class="gc-st" role="status"></p><button type="submit" class="cta">' + t('gate.send') + '</button></div></form>';
@@ -492,6 +493,7 @@
             + (u.mic ? '<button type="button" class="mic" data-mic="cmp-box" aria-label="' + t('mic.label') + '">' + ic('mic') + '</button>' : '')
             + '<label class="vh" for="cmp-box">' + t('cmp.label') + '</label>'
             + '<textarea id="cmp-box" name="text" rows="1" placeholder="' + t('cmp.ph') + '"' + (waiting ? ' disabled' : '') + '>' + esc(draft) + '</textarea>'
+            + '<label class="gmic" aria-label="' + t('pic.label') + '"><input type="file" id="cmp-file" accept="image/*" hidden>' + ic('image') + '</label>'
             + '<button type="submit" class="send" aria-label="' + t('cmp.send') + '"' + (waiting || !draft.trim() ? ' disabled' : '') + '>' + ic('up') + '</button></div>'
             + '<p class="cmp-hint" data-say>' + hint + (u.mic && !waiting ? ' · ' + t('cmp.voice') : '') + '</p></form>';
     }
@@ -694,6 +696,14 @@
         function route() { return parseRoute(win.location.hash); }
         function post(url, fields) {
             return win.fetch(url, { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: new win.URLSearchParams(fields).toString() });
+        }
+        // A photo goes up raw, not through post(): the station answers the saved
+        // file's path, and the box carries that path to the session as text.
+        function upload(file, p) {
+            var ext = (String(file.type || '').split('/')[1] || 'png').replace(/[^a-z0-9]/g, '');
+            return win.fetch('/phone/upload?root=' + encodeURIComponent(p.root) + '&id=' + encodeURIComponent(p.id) + '&ext=' + encodeURIComponent(ext),
+                { method: 'POST', credentials: 'same-origin', headers: { 'content-type': file.type }, body: file })
+                .then(function (r) { return r.text().then(function (text) { if (!r.ok) throw new Error(t('gate.refused', { code: r.status, why: String(text || '').trim() })); return String(text).trim(); }); });
         }
         function rethrow(e) { win.setTimeout(function () { throw e; }); }
         function pairUi(extra) {
@@ -978,6 +988,20 @@
             if (pick) pick.checked = true;
             if (e.type === 'input') grow(el);
         }
+        d.addEventListener('change', function (e) {
+            var el = e.target;
+            var file = el && el.files && el.files[0];
+            var p = current();
+            if (!file || !p) return;
+            var gate = el.getAttribute && el.getAttribute('data-pic') !== null;
+            if (el.id !== 'cmp-file' && !gate) return;
+            var box = gate ? (el.closest('fieldset') || el.closest('form')).querySelector('.own') : d.getElementById('cmp-box');
+            if (!box) return;
+            upload(file, p).then(function (where) {
+                box.value += (box.value ? '\n' : '') + '[圖片] ' + where;
+                typed({ target: box, type: 'input' });
+            }, function (err) { st.ui.note = String(err.message || t('gate.failed')); draw(); });
+        });
         d.addEventListener('input', typed);
         d.addEventListener('focusin', typed);
         function poll(view) {

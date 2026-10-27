@@ -332,6 +332,25 @@ test('boot: the composer posts /phone/say, and its 201 reads phone.json again', 
     assert.ok(callsTo(page, PHONE + 'aaaaaaaa-5').length > before);
 });
 
+test('boot: a photo picked in the composer is uploaded raw and its path lands in the box', async () => {
+    const one = sess('holding', { id: 'aaaaaaaa-5', attached: true });
+    const ok = routed(one);
+    const page = boot({ hash: '#/s/aaaaaaaa-5', fetch: (url) => (url === '/phone/upload' || url.startsWith('/phone/upload?') ? reply(201, '/w/.fankeel/station/phone/aaaaaaaa-5/uploads/1.png\n') : ok(url)) });
+    await settle();
+    const box = { value: '', id: 'cmp-box', getAttribute: () => null };
+    page.doc.getElementById = (id) => (id === 'cmp-box' ? box : id === 'app' ? page.app : null);
+    const input = { id: 'cmp-file', files: [{ type: 'image/png', name: 'a.png' }], getAttribute: () => null, classList: { contains: () => false } };
+    page.fire('change', { target: input });
+    await settle();
+    const up = page.calls.filter((c) => c.url.startsWith('/phone/upload'));
+    assert.equal(up.length, 1);
+    assert.equal(up[0].init.method, 'POST');
+    assert.equal(up[0].init.headers['content-type'], 'image/png');
+    assert.equal(up[0].init.body, input.files[0]);
+    assert.match(up[0].url, /root=%2Fw&id=aaaaaaaa-5&ext=png/);
+    assert.match(box.value, /\[圖片\] \/w\/\.fankeel\/station\/phone\/aaaaaaaa-5\/uploads\/1\.png$/);
+});
+
 test('boot: a /phone/say refusal keeps the draft in the composer and says why', async () => {
     const one = sess('holding', { id: 'aaaaaaaa-5', attached: true });
     const ok = routed(one);
