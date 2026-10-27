@@ -2,11 +2,16 @@
 label: compact
 title: SBIR 沒套到 compact.at 350K
 description: SBIR 的主 session 峰值落在 414–420K,沒有在 compact.at 壓縮,要讓沒開任務的 session 也套用同一個值。
-state: blocked
+state: done
 link: lib/profile.js
 group: 一週後重量花費
 timing: on: 10-27
 stamp: 2026-10-20
+done:
+  at: 2026-10-27
+  sha: 81a0db0b492ee5664520abd159d3669fa6315ba7
+  disposition: measured-no-change
+  session: e79bfd5e-08fd-4a90-98d3-155b25ed1c5b
 ---
 
 來源:2026-10-19 的一週 token 花費判斷(連結的 judgement)。本週前 10 貴的 session 有 9 個峰值 414–420K,多數在 F:/ymlab/SBIR。docs/03-decisions/2026-10-14-start-syncs-window.md 記載 CLAUDE_CODE_AUTO_COMPACT_WINDOW 只在開 /fankeel 任務時同步、全機共用、最後開的贏;F:/ymlab/SBIR/.claude/settings.local.json 沒有這個鍵。要做:查全域 settings.json 的實際值,以及 SBIR 沒開任務的 session 實際吃哪個值,讓沒開任務的 session 也落在 compact.at。完成的標準:改完重量一週後,SBIR 主 session 的峰值不超過 compact.at 加一個回合。
@@ -14,3 +19,9 @@ stamp: 2026-10-20
 2026-10-20 落地：機器 profile 的 compact.at 設為 350000，F:/ymlab/SBIR/ProjectWorkspace 的 .claude/settings.local.json 補上同一個值（SBIR 主 session 實際從 ProjectWorkspace 開）。已開的 SBIR session 要重開 Claude Desktop 才會套用。2026-10-27 重量一週峰值。
 
 2026-10-27 重量（`node scripts/sessions.js --project F--ymlab-SBIR-ProjectWorkspace --since 2026-10-20`）：39 個 session，最高峰值 418279、p90 318899，最大單回合增量 302730。最高峰值 418279 超過 compact.at 350000 共 68279；這樣是否可接受，還待判斷。
+
+## 完成紀錄
+
+SBIR 峰值 418279 超過 compact.at 350000 共 68279，使用者 10-27 認定可接受並結案
+
+- commit 81a0db0b
