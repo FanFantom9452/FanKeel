@@ -44,7 +44,7 @@ source_of_truth: docs/90-agent/reference/station.md, assets/station/station.js, 
 
 週報是給教授看的一頁 HTML：選一段日期與幾個 repo，說這段時間做了哪幾件事、為什麼、下一步，附每日改動熱度與每個專案的架構圖（這週改到的模組上色）。站本身不寫週報——站沒有模型——寫的是 `/fankeel-weekly` 這個 skill；站上的 `#/weekly` 頁負責列出與開啟。
 
-怎麼產生一份：在 `#/weekly` 頁按「複製指令」，貼到任一個 Claude Code session 執行。skill 會先問區間（預設從上一份的迄日隔天到今天，沒有上一份就從上週五起）與要收哪幾個 repo，收完後把事的清單列成表給你確認（Gate 1），確認了才畫頁，畫好開給你看（Gate 2）。例：
+怎麼產生一份：在 `#/weekly` 頁按「複製指令」，貼到任一個 Claude Code session 執行。skill 會先問區間（預設從上一份的迄日隔天到今天，沒有上一份就從上週五起）與要收哪幾個 repo。收完後把事的清單列成表給你確認（Gate 1），確認了才畫頁，畫好開給你看（Gate 2）。例：
 
     /fankeel-weekly
 
