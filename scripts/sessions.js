@@ -173,7 +173,7 @@ async function processFile(file) {
     if (pi !== null && ci !== null && ci < pi) backwardCount++;
   }
 
-  return { size: stat.size, peakContext, maxStep,agentCalls, subagentChars, allToolResultChars, bigToolResults, notifChars, hadStart, backwardCount, backToBuild, stoodDown, refused, hookErrors };
+  return { size: stat.size, peakContext, maxStep, agentCalls, subagentChars, allToolResultChars, bigToolResults, notifChars, hadStart, backwardCount, backToBuild, stoodDown, refused, hookErrors };
 }
 
 function percentile(arr, p) {

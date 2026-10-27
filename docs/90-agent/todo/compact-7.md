@@ -13,4 +13,4 @@ stamp: 2026-10-20
 
 2026-10-20 落地：機器 profile 的 compact.at 設為 350000，F:/ymlab/SBIR/ProjectWorkspace 的 .claude/settings.local.json 補上同一個值（SBIR 主 session 實際從 ProjectWorkspace 開）。已開的 SBIR session 要重開 Claude Desktop 才會套用。2026-10-27 重量一週峰值。
 
-2026-10-27 重量（`node scripts/sessions.js --project F--ymlab-SBIR-ProjectWorkspace --since 2026-10-20`）：39 個 session，最高峰值 418279、p90 318899，最大單回合增量 302730；最高峰值沒超過 compact.at 350000 加一個回合，完成條件成立，land 時結案。
+2026-10-27 重量（`node scripts/sessions.js --project F--ymlab-SBIR-ProjectWorkspace --since 2026-10-20`）：39 個 session，最高峰值 418279、p90 318899，最大單回合增量 302730。最高峰值 418279 超過 compact.at 350000 共 68279；這樣是否可接受，還待判斷。
