@@ -140,8 +140,23 @@
         var b = m.points[m.points.length - 1];
         return m.points.length > 1 && (a[0] !== b[0] || a[1] !== b[1]);
     }
+    // The request body is capped at 256 KB; 6000 points in all, about 13
+    // bytes a point, keep it near 80 KB beside the notes.
+    var POINT_MAX = 6000;
+    function roomFor(drafts, m) {
+        var n = m.points.length;
+        drafts.forEach(function (d) { d.marks.forEach(function (k) { n += k.points.length; }); });
+        return n <= POINT_MAX;
+    }
+    var capSay = false;
+    // Adds a mark to a draft unless the page already holds as many points as
+    // one send carries; the next draw() says so once.
+    function addMark(d, m) {
+        if (roomFor(drafts, m)) { d.marks.push(m); return; }
+        capSay = true;
+    }
     if (typeof document === 'undefined') {
-        if (typeof module !== 'undefined') module.exports = { selectorOf: selectorOf, labelOf: labelOf, pathOf: pathOf, toggleIn: toggleIn, itemsOf: itemsOf, SHAPES: SHAPES, toolOfKey: toolOfKey, inkOf: inkOf, stretch: stretch, kept: kept };
+        if (typeof module !== 'undefined') module.exports = { selectorOf: selectorOf, labelOf: labelOf, pathOf: pathOf, toggleIn: toggleIn, itemsOf: itemsOf, SHAPES: SHAPES, toolOfKey: toolOfKey, inkOf: inkOf, stretch: stretch, kept: kept, roomFor: roomFor };
         return;
     }
 
@@ -717,7 +732,7 @@
         var words = String(field.value || '').trim();
         textBox = null;
         field.remove();
-        if (keep && words && picking >= 0) drafts[picking].marks.push({ type: 'text', points: [textAt], text: words });
+        if (keep && words && picking >= 0) addMark(drafts[picking], { type: 'text', points: [textAt], text: words });
         if (!stay) {
             draw();
             return;
@@ -736,6 +751,10 @@
         cur.appendChild(row(drafts[picking], picking));
         draftSay.textContent = '第 ' + (picking + 1) + ' 則：' + (tool === 'select' ? '點元素加入，再點一次移出' : '在頁面上畫標註')
             + ' · 已選 ' + drafts[picking].picks.length + ' 個';
+        if (capSay) {
+            capSay = false;
+            draftSay.textContent = '標註已達上限，先送出再繼續畫';
+        }
     }
     function drawQueue() {
         queueLine.classList.toggle('fk-live-err', !!sendErr);
@@ -991,7 +1010,7 @@
         var p = pageAt(ev);
         var d = drafts[picking];
         if (tool === 'step') {
-            d.marks.push({ type: 'step', points: [p], n: d.marks.filter(function (m) { return m.type === 'step'; }).length + 1 });
+            addMark(d, { type: 'step', points: [p], n: d.marks.filter(function (m) { return m.type === 'step'; }).length + 1 });
             draw();
         } else if (tool === 'text') {
             askText(p);
@@ -1009,7 +1028,7 @@
         if (!inking) return;
         var m = inking;
         inking = null;
-        if (picking >= 0 && kept(m)) drafts[picking].marks.push(m);
+        if (picking >= 0 && kept(m)) addMark(drafts[picking], m);
         draw();
     }, true);
 

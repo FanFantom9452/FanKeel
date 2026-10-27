@@ -1041,3 +1041,31 @@ test('the design skill and the mockup agent say how to read an item\'s marks', (
     assert.match(read('skills/fankeel-design/SKILL.md'), /An item may carry `marks`/);
     assert.match(read('agents/fankeel-mockup.md'), /An item may also carry `marks`/);
 });
+
+test('roomFor allows a mark while all drafts hold 6000 points or fewer, across drafts, and again once marks are removed', () => {
+    const { roomFor } = require('../assets/tune/overlay.js');
+    const pts = (n) => Array.from({ length: n }, (_, i) => [i, i]);
+    const b = { marks: [{ type: 'pen', points: pts(500) }] };
+    assert.equal(roomFor([b], { type: 'pen', points: pts(500) }), true);
+    const full = { marks: Array.from({ length: 11 }, () => ({ type: 'pen', points: pts(500) })) };
+    assert.equal(roomFor([full, b], { type: 'pen', points: pts(1) }), false, 'the total across two drafts passes 6000');
+    full.marks.pop();
+    assert.equal(roomFor([full, b], { type: 'pen', points: pts(500) }), true);
+});
+
+test('a mark past the 6000-point cap is not kept and the draft line says so', () => {
+    const t = loadOverlay();
+    const down = (x, y) => t.fire(t.page.hero, 'pointerdown', { clientX: x, clientY: y });
+    const move = (x, y) => t.fire(t.page.hero, 'pointermove', { clientX: x, clientY: y });
+    const up = () => t.fire(t.page.hero, 'pointerup', {});
+    t.fire(t.tool('pen'), 'click');
+    for (let k = 0; k < 12; k++) {
+        down(0, 0);
+        for (let i = 1; i < 520; i++) move(i * 3, 0);
+        up();
+    }
+    t.fire(t.page.hero, 'keydown', { key: 'n' });
+    down(200, 20); up();
+    assert.equal(t.q('.fk-live-ink').querySelectorAll('circle').length, 0, 'a step past the cap was kept');
+    assert.equal(t.q('.fk-live-say').textContent, '標註已達上限，先送出再繼續畫');
+});
