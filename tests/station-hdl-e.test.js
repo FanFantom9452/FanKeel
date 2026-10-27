@@ -42,7 +42,7 @@ function boot(hash) {
         addEventListener(type, fn) { (listeners[type] = listeners[type] || []).push(fn); }, createElement: el,
         querySelectorAll: (sel) => lists[sel] || [], querySelector: (sel) => (sel in named ? named[sel] : fallback), head: { appendChild() {} } };
     vm.runInNewContext(SRC, { window: win, document: doc, URLSearchParams, fetch: () => Promise.resolve({ ok: true }), module: { exports: {} } });
-    const move = (listeners.mousemove || []).filter((fn) => String(fn).includes('.chart .hit'));
+    const move = (listeners.mousemove || []).filter((fn) => String(fn).includes('FK_DAYS.onMove'));
     assert.equal(move.length, 1, 'exactly one mousemove listener holds the chart hover');
     const svg = el(), guide = el(), tip = els.charttip = els.charttip || el();
     const hseg = Object.assign(el(), { attrs: { 'data-key': 'sonnet-5' } }), other = Object.assign(el(), { attrs: { 'data-key': 'opus-5' } });

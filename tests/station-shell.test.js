@@ -159,7 +159,7 @@ function classTokens(source) {
 
 test('every class the three levels render has a rule', () => {
     const css = fs.readFileSync(CSS, 'utf8');
-    const emitted = classTokens(shell() + fs.readFileSync(JS, 'utf8'));
+    const emitted = classTokens(shell() + fs.readFileSync(JS, 'utf8') + fs.readFileSync(path.join(path.dirname(JS), 'days-page.js'), 'utf8'));
     const classes = ['mast', 'crumbs', 'search', 'foot', 'page', 'fixed', 'panel', 'eyebrow', 'h2', 'readouts', 'ro',
         'hatchsw', 'controls', 'ctlgrp', 'seg', 'legend', 'sw', 'chart', 'hit', 'tbl-wrap', 't', 'link', 'chip',
         'pchip', 'route', 'hero-top', 'projrow', 'pth', 'btn',
