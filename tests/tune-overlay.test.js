@@ -922,6 +922,13 @@ test('the text tool asks for words where the press landed; Enter keeps them, Esc
     assert.equal(t.q('.fk-live-ink').querySelectorAll('text').length, 1);
 });
 
+test('the text field caps its words at 500 characters', () => {
+    const t = loadOverlay();
+    t.fire(t.tool('text'), 'click');
+    t.fire(t.page.hero, 'pointerdown', { clientX: 40, clientY: 50 });
+    assert.equal(t.q('.fk-live-type').maxLength, 500);
+});
+
 test('leaving the text field keeps its words as a mark', () => {
     const t = loadOverlay();
     t.fire(t.tool('text'), 'click');
@@ -1073,7 +1080,7 @@ test('a draft holding 100 marks refuses the 101st', () => {
     assert.equal(roomFor([d], { type: 'step', points: [[0, 0]] }, d), false);
 });
 
-test('a mark past the 6000-point cap is not kept and the draft line says so', () => {
+test('a mark past the 6000-weight cap is not kept and the draft line says so', () => {
     const t = loadOverlay();
     const down = (x, y) => t.fire(t.page.hero, 'pointerdown', { clientX: x, clientY: y });
     const move = (x, y) => t.fire(t.page.hero, 'pointermove', { clientX: x, clientY: y });
