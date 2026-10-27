@@ -197,6 +197,15 @@ test('scan reports a repository whose git fails on stderr and in failed, and sti
     assert.ok(r.err.some((l) => /broken: git failed: .+/.test(l)));
 });
 
+test('scan lists a repository with no commit yet and does not put it in failed', async () => {
+    const w = world();
+    fs.mkdirSync(path.join(w.root, 'fresh'));
+    require('node:child_process').execFileSync('git', ['init', '-q', path.join(w.root, 'fresh')]);
+    const r = await run(['scan', ...RANGE, '--roots', w.root], w);
+    assert.equal(r.code, 0);
+    assert.deepEqual(JSON.parse(r.out.join('\n')).failed, []);
+});
+
 test('collect on a repository whose git fails exits 1 with the message and writes nothing', async () => {
     const w = world();
     breakRepo(w);

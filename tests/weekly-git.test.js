@@ -147,6 +147,14 @@ test('commits, countCommits and lsFiles throw naming the repo and git stderr whe
     }
 });
 
+test('a fresh git init repo with no commit yet gives [] and 0, not a git failure', () => {
+    const dir = path.join(tmp('fankeel-weekly-git-unborn-'), 'fresh');
+    fs.mkdirSync(dir, { recursive: true });
+    require('node:child_process').execFileSync('git', ['init', '-q', dir]);
+    assert.deepEqual(wg.commits(dir, '2025-12-30', '2026-01-02'), []);
+    assert.equal(wg.countCommits(dir, '2025-12-30', '2026-01-02'), 0);
+});
+
 test('an empty range in a healthy repo is still [] and 0, not a failure', () => {
     const dir = repo();
     assert.deepEqual(wg.commits(dir, '2030-01-01', '2030-01-02'), []);
