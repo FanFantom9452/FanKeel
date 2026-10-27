@@ -1459,7 +1459,7 @@ hidden, look)`: the held gates oldest first, the live tasks, and the stages fini
 and tasks ended in the last 48 hours — a few kilobytes, read every 5 s while
 the page is visible outside a conversation, never `station-data.js`; a
 conversation (`#/s/<id>`) reads `/station/phone.json` every 2 s instead.
-`mobile.json` also carries `device`, this phone as `remote.deviceFor` knows it (`name`, `paired`; null from this machine), and each row a `holdUntil`, when the Stop hook's `phone.hold` wait gives up, or null. The shell's `theme-color` is the page ground per theme (`#10151d` dark, `#f2f4f3` light) and the manifest's is `#10151d`.
+`mobile.json` also carries `device`, this phone as `remote.deviceFor` knows it (`name`, `paired`; null from this machine), and each row a `holdUntil`, when the Stop hook's `phone.hold` wait gives up, or null. It also carries `others`, a list of `{ name, url }` for the other online computers on the same tailnet whose station answered 200 or 401 to `GET /station/mobile.json` (found by `peers` and `probeStations` in `lib/tailscale.js`, cached 60 s in `scripts/station.js`, `[]` when remote is off); the /m station sheet lists them as `m-machines` links. The shell's `theme-color` is the page ground per theme (`#10151d` dark, `#f2f4f3` light) and the manifest's is `#10151d`.
 `host` is the first label of the tailnet name while the tailnet is on, `os.hostname()` otherwise. Through the
 tailnet `/` answers 303 to `/m`, and `/m`, its manifest, its icon, `/sw.js`,
 `station.css`, `mobile.css` and `mobile.js` need no paired phone, while
