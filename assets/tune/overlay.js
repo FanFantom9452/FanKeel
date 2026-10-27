@@ -597,7 +597,7 @@
             x.setAttribute('aria-label', '移除 ' + labelOf(p));
             x.addEventListener('click', function () {
                 d.picks = toggleIn(d.picks, p);
-                if (!d.picks.length && i !== picking) remove(i);
+                if (!d.picks.length && !d.marks.length && i !== picking) remove(i);
                 draw();
             });
             chips.appendChild(c);
@@ -706,17 +706,26 @@
         textBox.setAttribute('aria-label', '標註文字');
         textBox.style.left = p[0] + 'px';
         textBox.style.top = (p[1] - 14) + 'px';
-        textBox.addEventListener('blur', function () { putText(true); });
+        // Focus moving to a button of ours is a press in progress: a rebuilt
+        // card would detach that button before its click.
+        textBox.addEventListener('blur', function (ev) { putText(true, ours(ev.relatedTarget)); });
         textBox.focus();
     }
-    function putText(keep) {
+    function putText(keep, stay) {
         if (!textBox) return;
         var field = textBox;
         var words = String(field.value || '').trim();
         textBox = null;
         field.remove();
         if (keep && words && picking >= 0) drafts[picking].marks.push({ type: 'text', points: [textAt], text: words });
-        draw();
+        if (!stay) {
+            draw();
+            return;
+        }
+        var undo = cur.querySelector('.fk-live-undo');
+        if (undo && picking >= 0) undo.disabled = !drafts[picking].marks.length;
+        drawInk();
+        save();
     }
     // The card above the bar holds the item being made: what a press does
     // now, then its row — elements, buttons, note.

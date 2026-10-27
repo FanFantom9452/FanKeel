@@ -11,8 +11,8 @@
 // shapes (the CSS pulse rule and its reduced-motion rule, `q.editing`,
 // `setInterval(refreshQueue, 2000)`), which assert the source says so, not
 // that it runs. Listeners no test dispatches: the fold and clear buttons,
-// window blur, keyup and keypress, scroll and resize, the draft delete
-// button, the chip remove button, and the diff link.
+// window blur, keyup and keypress, scroll, the draft delete button, and the
+// diff link.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -920,6 +920,82 @@ test('the text tool asks for words where the press landed; Enter keeps them, Esc
     assert.equal(t.q('.fk-live-type'), null);
     assert.equal(t.q('.fk-live-draft').hidden, false, 'Escape in the field closed the item');
     assert.equal(t.q('.fk-live-ink').querySelectorAll('text').length, 1);
+});
+
+test('leaving the text field keeps its words as a mark', () => {
+    const t = loadOverlay();
+    t.fire(t.tool('text'), 'click');
+    t.fire(t.page.hero, 'pointerdown', { clientX: 40, clientY: 50 });
+    const field = t.q('.fk-live-type');
+    field.value = '離開輸入框';
+    t.fire(field, 'blur', {});
+    assert.equal(t.q('.fk-live-type'), null);
+    assert.deepEqual(t.q('.fk-live-ink').querySelectorAll('text').map((x) => x.textContent), ['離開輸入框']);
+    assert.equal(t.q('.fk-live-inkline').textContent, '標註 1 筆');
+});
+
+test('focus moving from the text field to a button in the card keeps that button, so its click still lands', () => {
+    const t = loadOverlay();
+    const typeInto = (words) => {
+        t.fire(t.page.hero, 'pointerdown', { clientX: 40, clientY: 50 });
+        const field = t.q('.fk-live-type');
+        field.value = words;
+        return field;
+    };
+    t.fire(t.tool('text'), 'click');
+    // The press that moves focus fires blur with the button as relatedTarget,
+    // and the click follows on the same node only if it was not rebuilt.
+    const field = typeInto('一');
+    const undo = t.q('.fk-live-undo');
+    assert.equal(undo.disabled, true);
+    t.fire(field, 'blur', { relatedTarget: undo });
+    assert.equal(t.q('.fk-live-undo'), undo, 'the undo button was rebuilt under the press');
+    assert.equal(undo.disabled, false, 'the undo button stayed dead for the mark just kept');
+    assert.equal(t.q('.fk-live-ink').querySelectorAll('text').length, 1, 'the words were not drawn');
+    t.fire(undo, 'click');
+    assert.equal(t.q('.fk-live-ink').querySelectorAll('text').length, 0);
+    const again = typeInto('二');
+    const fin = t.q('.fk-live-fin');
+    t.fire(again, 'blur', { relatedTarget: fin });
+    assert.equal(t.q('.fk-live-fin'), fin, '完成這則 was rebuilt under the press');
+    t.fire(fin, 'click');
+    assert.equal(t.q('.fk-live-draft').hidden, true, 'the click on 完成這則 was lost');
+    assert.equal(t.q('.fk-live-count').textContent, '1');
+    assert.equal(JSON.parse(t.sessionStorage.m['fk-live-drafts'])[0].marks[0].text, '二');
+});
+
+test('resizing the window draws the ink at the page\'s new size', () => {
+    const t = loadOverlay();
+    t.fire(t.tool('pen'), 'click');
+    t.fire(t.page.hero, 'pointerdown', { clientX: 0, clientY: 0 });
+    t.fire(t.page.hero, 'pointermove', { clientX: 30, clientY: 0 });
+    t.fire(t.page.hero, 'pointerup', {});
+    const svg = () => t.q('.fk-live-ink').querySelector('svg');
+    assert.equal(svg().getAttribute('width'), '1280');
+    t.doc.documentElement.scrollWidth = 1700;
+    t.doc.documentElement.scrollHeight = 2400;
+    for (const l of t.win._on.resize) l.fn({});
+    assert.equal(svg().getAttribute('width'), '1700');
+    assert.equal(svg().getAttribute('height'), '2400');
+});
+
+test('taking the last chip off an item that has marks keeps the item; with no marks it goes', () => {
+    const t = loadOverlay();
+    t.fire(t.tool('pen'), 'click');
+    t.fire(t.page.hero, 'pointerdown', { clientX: 0, clientY: 0 });
+    t.fire(t.page.hero, 'pointermove', { clientX: 30, clientY: 0 });
+    t.fire(t.page.hero, 'pointerup', {});
+    t.fire(t.page.hero, 'keydown', { key: 'v' });
+    t.fire(t.page.hero, 'click');
+    t.fire(t.q('.fk-live-fin'), 'click');
+    t.fire(t.q('.fk-live-chip').querySelector('button'), 'click');
+    assert.equal(t.doc.all('.fk-live-chip').length, 0);
+    assert.equal(t.q('.fk-live-count').textContent, '1', 'an item with marks went when its last chip did');
+    assert.equal(t.q('.fk-live-inkline').textContent, '標註 1 筆');
+    t.draft(['card'], 'x');
+    assert.equal(t.q('.fk-live-count').textContent, '2');
+    t.fire(t.doc.all('.fk-live-chip')[0].querySelector('button'), 'click');
+    assert.equal(t.q('.fk-live-count').textContent, '1', 'an item with no marks stayed with no element');
 });
 
 test('an item that drew but picked no element is kept, and 全部送出 says which one still needs an element', () => {
