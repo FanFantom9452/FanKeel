@@ -997,12 +997,17 @@ async function serve(opts) {
             const chunks = [];
             let n = 0;
             let over = false;
-            for await (const c of req) {
-                n += c.length;
-                if (n > 10 * 1024 * 1024) over = true;
-                else chunks.push(c);
-                // Keep reading what is left (and drop it) so the 413 reaches a client still sending; a body far past the cap is cut off.
-                if (n > 64 * 1024 * 1024) req.destroy();
+            try {
+                for await (const c of req) {
+                    n += c.length;
+                    if (n > 10 * 1024 * 1024) over = true;
+                    else chunks.push(c);
+                    // Keep reading what is left (and drop it) so the 413 reaches a client still sending; a body far past the cap is cut off.
+                    if (n > 64 * 1024 * 1024) req.destroy();
+                }
+            } catch (e) {
+                // destroy() makes the iterator throw ERR_STREAM_PREMATURE_CLOSE; uncaught it ends the whole station process.
+                if (!over) throw e;
             }
             if (over) return send(413, 'text/plain', 'image over 10 MB\n', { connection: 'close' });
             const bytes = Buffer.concat(chunks);

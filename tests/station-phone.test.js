@@ -180,6 +180,34 @@ test('upload answers 413 for a body over 10 MB', async () => {
     }
 });
 
+test('upload cuts off a body over 64 MB and the station keeps answering', async () => {
+    const f = fixture();
+    const s = await start(f, fakeTailscale());
+    try {
+        const q = '?root=' + encodeURIComponent(f.r1) + '&id=' + SID + '&ext=png';
+        const u = new URL(s.url + 'phone/upload' + q);
+        await new Promise((resolve) => {
+            const req = http.request(u, { method: 'POST', headers: Object.assign({ 'content-type': 'image/png', cookie: f.cookie }, TAILNET) });
+            req.on('response', (res) => res.resume());
+            req.on('error', resolve);
+            req.on('close', resolve);
+            const piece = Buffer.alloc(1024 * 1024);
+            let sent = 0;
+            const pump = () => {
+                while (sent < 80 && !req.destroyed) {
+                    sent++;
+                    if (!req.write(piece)) return req.once('drain', pump);
+                }
+                req.end();
+            };
+            pump();
+        });
+        assert.equal((await fetch(s.url + 'station/station-data.js')).status, 200);
+    } finally {
+        s.close();
+    }
+});
+
 test('upload takes only png, jpeg, webp, gif whose first bytes match, and never overwrites', async () => {
     const f = fixture();
     const s = await start(f, fakeTailscale());
