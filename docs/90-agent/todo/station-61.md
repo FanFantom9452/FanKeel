@@ -2,9 +2,14 @@
 label: station
 title: gate 板子編輯改 icon、互動順
 description: gate 頁板子編輯工具列用 icon 取代文字按鈕，並讓拖曳、平移、縮放順手
-state: ready
+state: done
 link: assets/station/board-edit.js
 stamp: 2026-10-27
+done:
+  at: 2026-10-27
+  sha: 31033914
+  disposition: done
+  session: 94e42e71-74f5-4d2a-915f-706817066f02
 ---
 
 使用者 2026-10-27 在真瀏覽器裡試 gate 頁板子編輯：功能都正常（移動 api、collab 共 6 次都寫進板子檔），但操作不流暢，也不夠視覺化。
@@ -18,3 +23,10 @@ stamp: 2026-10-27
 完成條件：工具列每個工具是 icon（有 title/aria-label 提示文字），拖曳/平移/縮放在真瀏覽器裡使用者說順；走 design 先出 mockup。
 
 併入：2026-10-27 起，「gate 板子面板缺真截圖」(build-15) 的驗收一併在這裡做。那條在 10-27 拍過 412 與 1440，但截圖在 SVG 載入前就拍了，412 寬還會溢出，所以本條完成時要再加兩件事：截圖等板子 SVG 載入後才拍（render.js 的 `--act` 先 `wait`），以及 412 寬不溢出。
+
+## 完成紀錄
+
+gate 板子編輯工具列改成 icon，加上拖曳平移、滾輪與雙指縮放；雙指縮放未在真機上試。詳見 [任務紀錄](../records/2026-10.md#r-2026-10-27-94e42e71)
+
+- commit 055c5bfb
+- commit 31033914
