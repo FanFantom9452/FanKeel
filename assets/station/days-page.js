@@ -207,6 +207,8 @@
         arm: function () { legendArm(); },
         toggle: function (el) { legendToggle(el); },
         panelShut: function (focusBtn) { panelShut(focusBtn); },
+        set: function (keys, on, sel) { chartSet(keys, on, sel); },
+        setAll: function (on, sel) { chartSet(chartBars ? chartBars.keys : [], on, sel); },
         setPanel: function (open) { chartPanel = Boolean(open); },
         panelOpen: function () { return chartPanel; },
         hovering: function () { return chartHover; },

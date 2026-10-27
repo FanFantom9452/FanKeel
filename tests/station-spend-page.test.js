@@ -53,8 +53,8 @@ test('the 7-day card lists five kinds, 1h before 5m, each with its note', () => 
 });
 
 test('花費 on a written copy: the range control, the type split, the needs-serve readout and the 成分說明 table', () => {
-    const { V } = page(ALL);
-    const html = V.daysPage({ view: 'days' });
+    const { V, M } = page(['days-page.js', ...ALL]);
+    const html = M['days-page.js'].page({ view: 'days' }, V.daysCtx());
     assert.match(html, /data-seg="range"/);
     assert.match(html, /<button type="button" data-v="type" aria-pressed="false">依 agent 類型<\/button>/);
     assert.match(html, /要從 serve 開的頁面才算得到/);
