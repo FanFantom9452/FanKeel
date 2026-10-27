@@ -97,13 +97,13 @@ button{font:inherit;color:inherit}
    colours rather than an alarm: the page is readable and every link still
    works, so this states a fact instead of blocking the view. */
 .dead{display:flex;align-items:center;gap:8px 14px;flex-wrap:wrap;max-width:1440px;margin:0 auto;
-  padding:11px 32px;background:var(--stale-bg);color:var(--stale-ink);border-left:3px solid var(--stale)}
+  padding:11px 32px;background:var(--stale-bg);color:var(--stale-ink)}
 .dead b{display:inline-flex;align-items:center;gap:6px;font-weight:600}
 .dead code{font:11px/1.5 var(--mono);user-select:all;margin-left:auto}
 
 .page{max-width:1440px;margin:0 auto;padding:0 32px 72px}
 .panel{background:var(--panel);border-radius:var(--r);padding:22px 26px;margin-bottom:14px}
-.eyebrow{font-size:11px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;font-weight:500}
+.eyebrow{font-size:12px;color:var(--muted);font-weight:500}
 h1,h2,h3{margin:0;font-weight:600}
 .h2{font-size:15px;letter-spacing:.01em;display:flex;align-items:baseline;gap:10px}
 .h2 small{font-size:12px;color:var(--muted);font-weight:400}
