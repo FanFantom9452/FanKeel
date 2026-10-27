@@ -12,6 +12,9 @@ const { parseArgs: parseArgv } = require('node:util');
 const registry = require('../lib/registry.js');
 const docs = require('../lib/docs.js');
 const { posix } = require('../lib/tracked.js');
+const page = require('../lib/judgepage.js');
+
+const STATION_CSS = path.join(__dirname, '..', 'assets', 'station', 'station.css');
 
 // A literal options table, the same shape `scripts/docs-check.js` already
 // writes its own in. `lib/skills.js`'s `acceptedFlags()` reads this shape (and
@@ -37,7 +40,7 @@ function fail(msg) {
 function parse(argv) {
     const { values, positionals } = parseArgv({ args: argv, strict: false, allowPositionals: true, options: OPTIONS });
     for (const f of Object.keys(OPTIONS)) if (values[f] !== undefined && typeof values[f] !== 'string') fail('--' + f + ' needs a value.');
-    return { verb: positionals[0], opts: values };
+    return { verb: positionals[0], file: positionals[1], opts: values };
 }
 
 function readAnswer(spec) {
@@ -99,6 +102,15 @@ function indexRow(indexFile, question, rel, judged, model) {
     return true;
 }
 
+// judge-5: the page beside a record, `<record>.html`, in the station's look.
+function writePage(file) {
+    return page.pageOf(fs.readFileSync(file, 'utf8'), { stationCss: fs.readFileSync(STATION_CSS, 'utf8') }).then((html) => {
+        const out = file.replace(/\.md$/, '') + '.html';
+        fs.writeFileSync(out, html);
+        return out;
+    });
+}
+
 function record(opts) {
     if (!opts.session) fail('--session <id> is required: the record names the session that asked.');
     if (!opts.brief || !opts.slug || !opts.answer === !opts.transcript) fail('record needs --brief <path>, --slug <a-z0-9-> and one of --answer <path|-> or --transcript <agent-<id>.jsonl>.');
@@ -147,15 +159,28 @@ function record(opts) {
     const indexFile = path.join(projectRoot, 'docs', 'README.md');
     const rel = posix(path.relative(path.dirname(indexFile), file));
     const indexed = indexRow(indexFile, firstLine(brief), rel, judged, model);
-    return 'fankeel — judgement filed: ' + file + '\n' + (indexed ? 'index row: ' + indexFile : 'no ## Judgements table in ' + indexFile + '; add the row by hand');
+    // judge-5: the judge's own plain words go back to the session, so the
+    // user reads the pick and why without opening the file.
+    const plain = page.plainOf(answer);
+    const lines = [
+        'fankeel — judgement filed: ' + file,
+        indexed ? 'index row: ' + indexFile : 'no ## Judgements table in ' + indexFile + '; add the row by hand',
+        plain ? 'plain:\n' + plain : 'plain: none — the answer has no ## 白話 section; the judgement is in the file',
+    ];
+    if (!page.wantsHtml(brief)) return lines.join('\n');
+    return writePage(file).then((out) => lines.concat('html: ' + out).join('\n'));
 }
 
 function main(argv) {
-    const { verb, opts } = parse(argv);
-    if (verb !== 'record') fail('judge.js record --session <id> --brief <path> (--answer <path|-> | --transcript <jsonl>) --slug <slug> [--model <m>] [--root <dir>] [--project <dir>]');
+    const { verb, file, opts } = parse(argv);
+    if (verb === 'html') {
+        if (!file || !fs.existsSync(file)) fail('judge.js html <judgement.md>: name a record that exists.');
+        return writePage(path.resolve(file)).then((out) => 'fankeel — judgement page: ' + out);
+    }
+    if (verb !== 'record') fail('judge.js record --session <id> --brief <path> (--answer <path|-> | --transcript <jsonl>) --slug <slug> [--model <m>] [--root <dir>] [--project <dir>]\njudge.js html <judgement.md>');
     return record(opts);
 }
 
-if (require.main === module) process.stdout.write(main(process.argv.slice(2)) + '\n');
+if (require.main === module) Promise.resolve(main(process.argv.slice(2))).then((out) => process.stdout.write(out + '\n'));
 
 module.exports = { firstLine, freePath, indexRow, answerFromTranscript };
