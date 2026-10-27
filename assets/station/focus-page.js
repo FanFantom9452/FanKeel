@@ -100,6 +100,52 @@
             + (t.fixes ? '<span class="fp-fix">' + loc('focus.fixN', '修 {n} 次', { n: t.fixes }) + '</span>' : '')
             + '<code class="fp-range">' + (range ? esc(range) : loc('focus.noRange', '沒有 commit 範圍')) + '</code>';
     }
+    // A plan task's body as HTML: the subset plans use — ## to ####, - and 1.
+    // lists, | tables, ``` fences, **bold** and `code`. Everything is escaped
+    // first; a fence's contents are never parsed.
+    function mdInline(s) {
+        return esc(s).replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    }
+    function mdCells(line) {
+        return line.trim().replace(/^\||\|$/g, '').split('|').map(function (c) { return c.trim(); });
+    }
+    function md(text) {
+        var lines = String(text || '').replace(/\r/g, '').split('\n'), out = [], i = 0, para = [];
+        function flush() { if (para.length) { out.push('<p>' + mdInline(para.join(' ')) + '</p>'); para = []; } }
+        while (i < lines.length) {
+            var l = lines[i], m;
+            if ((m = /^```(\S*)/.exec(l))) {
+                flush();
+                var code = [];
+                for (i++; i < lines.length && !/^```/.test(lines[i]); i++) code.push(lines[i]);
+                i++;
+                out.push('<pre><code' + (m[1] ? ' class="lang-' + esc(m[1]) + '"' : '') + '>' + esc(code.join('\n')) + '</code></pre>');
+                continue;
+            }
+            if ((m = /^(#{2,4})\s+(.*)$/.exec(l))) { flush(); out.push('<h' + m[1].length + '>' + mdInline(m[2]) + '</h' + m[1].length + '>'); i++; continue; }
+            if (/^\s*\|/.test(l) && i + 1 < lines.length && /^\s*\|?\s*:?-{3,}/.test(lines[i + 1])) {
+                flush();
+                var head = mdCells(l), body = [];
+                for (i += 2; i < lines.length && /^\s*\|/.test(lines[i]); i++) body.push(mdCells(lines[i]));
+                out.push('<table><thead><tr>' + head.map(function (c) { return '<th>' + mdInline(c) + '</th>'; }).join('') + '</tr></thead><tbody>'
+                    + body.map(function (r) { return '<tr>' + r.map(function (c) { return '<td>' + mdInline(c) + '</td>'; }).join('') + '</tr>'; }).join('')
+                    + '</tbody></table>');
+                continue;
+            }
+            if ((m = /^\s*([-*]|\d+\.)\s+(.*)$/.exec(l))) {
+                flush();
+                var tag = /\d/.test(m[1]) ? 'ol' : 'ul', items = [];
+                while (i < lines.length && (m = /^\s*([-*]|\d+\.)\s+(.*)$/.exec(lines[i])) && (/\d/.test(m[1]) ? 'ol' : 'ul') === tag) { items.push('<li>' + mdInline(m[2]) + '</li>'); i++; }
+                out.push('<' + tag + '>' + items.join('') + '</' + tag + '>');
+                continue;
+            }
+            if (!l.trim()) { flush(); i++; continue; }
+            para.push(l.trim());
+            i++;
+        }
+        flush();
+        return out.join('');
+    }
     // The task's own text from the plan, folded under its row: the plan file
     // is long and the row carries only its title and files. data-gv lets
     // keepOpen hold it open through the 5 s repaint.
@@ -109,7 +155,7 @@
         return '<details class="tb fp-tb" data-gv="task-' + t.n + '" data-block="task-body-' + t.n + '">'
             + '<summary>' + loc('focus.taskBody', '展開本項 plan 文字')
             + '<small>' + loc('focus.taskLines', '第 {a}–{b} 行 · {n} 行', { a: t.line, b: t.line + n - 1, n: n }) + '</small></summary>'
-            + '<pre class="tb-pre">' + esc(t.body) + '</pre></details>';
+            + '<div class="tb-md">' + md(t.body) + '</div></details>';
     }
     function fpRow(t) {
         var kind = { files: loc('focus.kindFiles', '同改一個檔'), read: loc('focus.kindRead', '一個讀、一個改'),
@@ -283,7 +329,7 @@
         return !field;
     }
 
-    var api = { page: focusPageHtml, keepOpen: keepOpen, repaint: focusRepaint, EN: EN };
+    var api = { md: md, page: focusPageHtml, keepOpen: keepOpen, repaint: focusRepaint, EN: EN };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     if (w) w.FK_FOCUS = api;
 }(typeof window !== 'undefined' ? window : null, typeof document !== 'undefined' ? document : null));

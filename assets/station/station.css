@@ -2260,6 +2260,14 @@ body.focus{min-width:0}
 .tb-pre{margin:6px 0 2px;padding:10px 12px;max-height:28em;overflow:auto;overscroll-behavior:contain;
   background:var(--inset);border:1px solid var(--rule);border-radius:var(--r-sm);
   font:12px/1.6 var(--f-mono);color:var(--ink2);white-space:pre-wrap;overflow-wrap:anywhere;tab-size:4}
+.tb-md{margin:6px 0 2px;padding:10px 12px;max-height:28em;overflow:auto;overscroll-behavior:contain;background:var(--inset);border:1px solid var(--rule);border-radius:var(--r-sm);color:var(--ink2);overflow-wrap:anywhere}
+.tb-md h2,.tb-md h3,.tb-md h4{margin:10px 0 4px;font-size:13px;color:var(--ink)}
+.tb-md p,.tb-md ul,.tb-md ol{margin:4px 0}
+.tb-md ul,.tb-md ol{padding-left:1.4em}
+.tb-md code{font:11.5px var(--f-mono)}
+.tb-md pre{margin:6px 0;padding:8px 10px;overflow-x:auto;background:var(--paper,transparent);border:1px solid var(--rule);border-radius:var(--r-sm);font:12px/1.6 var(--f-mono);white-space:pre;tab-size:4}
+.tb-md table{display:block;overflow-x:auto;border-collapse:collapse;margin:6px 0}
+.tb-md th,.tb-md td{border:1px solid var(--rule);padding:3px 8px;text-align:left;vertical-align:top}
 .fp-row>.fp-tb{grid-column:2/-1;margin-top:4px}
 @container (max-width:819px){
   .fp-cols{display:none}

@@ -49,13 +49,25 @@ test('plan: every row folds its task\'s own text from the plan, closed, with its
     const html = F.page({ sessions: [ROW] }, { [SID]: { tasks, gate: null } }, { id: SID, tab: 'plan' });
     assert.equal(count(html, /<details class="tb fp-tb" data-gv="task-\d+" data-block="task-body-\d+">/g), TASKS);
     const first = plantasks.parseTasks(fs.readFileSync(REAL, 'utf8'))[0];
-    const m = new RegExp('data-block="task-body-' + first.n + '">[\\s\\S]*?<pre class="tb-pre">([\\s\\S]*?)</pre>').exec(html);
+    const m = new RegExp('data-block="task-body-' + first.n + '">[\\s\\S]*?<div class="tb-md">([\\s\\S]*?)</div></details>').exec(html);
     assert.ok(m, 'Task ' + first.n + ' has a fold');
-    const text = m[1].replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"')
-        .replace(/&#39;|&#x27;/g, '\'').replace(/&amp;/g, '&');
-    assert.equal(text, first.body, 'the fold holds the plan text, whole');
+    const head = /^#{2,4}\s+(.*)$/m.exec(first.body)[1].replace(/[`*]/g, '');
+    assert.ok(m[1].replace(/<[^>]+>/g, '').includes(head.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')), 'the first heading is in the fold');
     const lines = first.body.split('\n').length;
     assert.ok(html.includes('第 ' + first.line + '–' + (first.line + lines - 1) + ' 行 · ' + lines + ' 行'), 'the line range');
+});
+
+test('md: headings, lists, bold, inline code, tables and fenced code, all escaped', () => {
+    const html = F.md('## Task 1: a <b>\n\n- **Files:** `x.js`\n1. one\n\n| a | b |\n|---|---|\n| `c` | d |\n\n```js\nif (a < b) { /* ## not a heading */ }\n```');
+    assert.match(html, /<h2>Task 1: a &lt;b&gt;<\/h2>/);
+    assert.match(html, /<ul><li><strong>Files:<\/strong> <code>x\.js<\/code><\/li><\/ul>/);
+    assert.match(html, /<ol><li>one<\/li><\/ol>/);
+    assert.match(html, /<table><thead><tr><th>a<\/th><th>b<\/th><\/tr><\/thead><tbody><tr><td><code>c<\/code><\/td><td>d<\/td><\/tr><\/tbody><\/table>/);
+    assert.match(html, /<pre><code class="lang-js">if \(a &lt; b\) \{ \/\* ## not a heading \*\/ \}<\/code><\/pre>/);
+});
+
+test('md: a checkbox stays its literal text, and plain lines become a paragraph', () => {
+    assert.equal(F.md('- [ ] step\n\nsome\ntext'), '<ul><li>[ ] step</li></ul><p>some text</p>');
 });
 
 test('keepOpen holds a task fold open, or closed, through the repaint', () => {
