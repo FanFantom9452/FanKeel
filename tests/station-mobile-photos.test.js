@@ -74,7 +74,7 @@ function boot(o) {
     const calls = [];
     const listen = (where) => (type, fn) => { (on[where][type] = on[where][type] || []).push(fn); };
     const doc = {
-        getElementById: (id) => (id === 'app' ? app : id === 'ph-box' ? box : null), documentElement: {}, body: { insertAdjacentHTML() {} },
+        getElementById: (id) => (id === 'app' ? app : id === 'ph-box' ? box : id === 'cmp-file' ? o.file || null : null), documentElement: {}, body: { insertAdjacentHTML() {} },
         addEventListener: listen('doc'), visibilityState: 'visible',
         querySelector: (s) => (s === '#composer .send' ? sendBtn : s === '#composer .cmp-hint' ? hint : null),
     };
@@ -85,7 +85,7 @@ function boot(o) {
         URL: { createObjectURL: () => 'blob:' + (++n), revokeObjectURL() {} },
         fetch: (url, init) => {
             calls.push({ url, init: init || {} });
-            if (url === '/station/mobile.json') return reply(200, HOME);
+            if (url === '/station/mobile.json') return reply(200, o.home || HOME);
             if (url.startsWith('/station/phone.json')) return reply(200, one);
             if (url.startsWith('/phone/upload?')) return o.upload ? o.upload(url, init) : reply(201, '/u/' + calls.filter((c) => c.url.startsWith('/phone/upload?')).length + '.png\n');
             return reply(201, '');
@@ -93,7 +93,8 @@ function boot(o) {
     }, o.win);
     vm.runInNewContext(SRC, { window: win });
     const fire = (type, e) => { (on.doc[type] || []).forEach((fn) => fn(e)); return e; };
-    return { app, box, sendBtn, hint, calls, win, fire };
+    const fireWin = (type, e) => { (on.win[type] || []).forEach((fn) => fn(e)); return e; };
+    return { app, box, sendBtn, hint, calls, win, fire, fireWin };
 }
 const files = (k) => Array.from({ length: k }, (_, i) => ({ type: 'image/png', name: i + '.png' }));
 const picked = (list) => ({ target: { id: 'cmp-file', files: list, value: 'C:\\fake', getAttribute: () => null } });
@@ -122,6 +123,49 @@ test('boot: five picked at once: four go up one request each, the fifth is named
     page.fire('submit', submit(composerForm('看這四張')));
     await settle();
     assert.equal(said(page), '看這四張\n[圖片] /u/1.png\n[圖片] /u/2.png\n[圖片] /u/3.png\n[圖片] /u/4.png');
+});
+
+test('boot: the add tile opens the file picker', async () => {
+    let clicked = 0;
+    const page = boot({ file: { click: () => { clicked++; } } });
+    await settle();
+    page.fire('click', tap({ 'data-act': 'ph-add' }));
+    assert.equal(clicked, 1);
+});
+
+test('boot: photos picked in one session are not sent with the message of another session, and a pane change keeps them', async () => {
+    const other = Object.assign({}, one, { id: 'bbbbbbbb-5', updated: NOW, last: null });
+    const page = boot({ home: Object.assign({}, HOME, { tasks: HOME.tasks.concat([other]) }) });
+    await settle();
+    page.fire('change', picked(files(1)));
+    await settle();
+    const go = (hash) => { page.win.location.hash = hash; page.fireWin('hashchange', {}); };
+    go('#/s/aaaaaaaa-5/plan');
+    go('#/s/aaaaaaaa-5');
+    assert.match(page.app.innerHTML, /<li class="ph">/, 'the same session, another pane and back: the photo stays');
+    go('#/s/bbbbbbbb-5');
+    await settle();
+    assert.match(page.app.innerHTML, /id="composer"/);
+    assert.doesNotMatch(page.app.innerHTML, /<li class="ph">/);
+    page.fire('submit', submit(composerForm('另一個')));
+    await settle();
+    assert.equal(said(page), '另一個');
+});
+
+test('boot: typing while a photo uploads keeps send disabled', async () => {
+    class XHR {
+        constructor() { this.upload = {}; }
+        open() {}
+        setRequestHeader() {}
+        send() {}
+    }
+    const page = boot({ win: { XMLHttpRequest: XHR } });
+    await settle();
+    page.fire('change', picked(files(1)));
+    await settle();
+    assert.equal(page.sendBtn.disabled, true);
+    page.fire('input', { target: { id: 'cmp-box', value: '先打字', style: {}, scrollHeight: 40, getAttribute: () => null } });
+    assert.equal(page.sendBtn.disabled, true);
 });
 
 test('boot: a photo removed before sending is not sent, and removing one clears the fifth-photo hint', async () => {

@@ -1495,7 +1495,10 @@
             if (d.visibilityState !== 'visible' || st.ui.mode !== 'app') return;
             if (route().view === 'chat') loadChat(); else load();
         });
+        var inId = route().id;
         win.addEventListener('hashchange', function () {
+            // The strip belongs to the session it was picked in; a pane change inside it keeps them.
+            if (route().id !== inId) { inId = route().id; (st.ui.photos || []).slice().forEach(function (x) { drop(x.key); }); st.ui.over = false; }
             st.ui.note = '';
             st.ui.rep = false;
             st.ui.pin = false;
