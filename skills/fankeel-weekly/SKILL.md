@@ -83,8 +83,8 @@ Write `<scratch>/events.json` — every key below; `labels`, `taglines`,
 How each field is written:
 
 - **`projects`** — for each picked repository, one line on what the project
-  is, for a reader who has never seen it; shown in the overview row, the
-  architecture heading and the chip's tooltip, so keep it one short line.
+  is, for a reader who has never seen it; it shows in three places, so keep
+  it short.
 - **`taglines`** — optional: at most 14 characters per repository, printed
   after its name in the header chip.
 - **One event per record**; records sharing a title (a weekly 盤點, say)

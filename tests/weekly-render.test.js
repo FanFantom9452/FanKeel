@@ -181,6 +181,8 @@ test('guardData reads the repo name, the frame and any module name the model gav
     ]);
     const ev = events({ labels: { 'acme-demo': { [d.repos[0].modules.mods[0].id]: '查詢介面' } } });
     assert.deepEqual(wr.guardData(d, ev, []).map((h) => h.where), ['repos[0].modules.mods[1].frame'], 'a labelled module name never shows, so it is not read');
+    const empty = events({ labels: { 'acme-demo': { [d.repos[0].modules.mods[0].id]: '' } } });
+    assert.ok(wr.guardData(d, empty, ['station']).some((h) => h.where === 'repos[0].modules.mods[0].name'), 'an empty label prints the module name, so it is still read');
     assert.deepEqual(wr.guardData(data(), events(), []), []);
 });
 
