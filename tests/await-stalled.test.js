@@ -9,8 +9,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { awaitState, awaitHandoff, launched } = require('../lib/handoff.js');
-const awaitCli = require('../scripts/await.js');
-const { lineFor } = awaitCli;
+const { main: awaitMain, lineFor } = require('../scripts/await.js');
 const tmp = require('./tmp.js');
 
 const T = 1800000000000;
@@ -86,7 +85,7 @@ function brain(body) {
 test('await.js prints stalled with the children and their existing worktrees, and writes mode: stalled', async () => {
     const g = brain(WAITS);
     fs.mkdirSync(path.join(g.root, '.claude', 'worktrees', 'agent-ac350022849c5b060'), { recursive: true });
-    const out = await awaitCli.main(['--session', SID, '--root', g.root, '--idle', '0.2'], g.env);
+    const out = await awaitMain(['--session', SID, '--root', g.root, '--idle', '0.2'], g.env);
     assert.match(out.text, /^stalled a3f9c2 — it launched ac350022849c5b060 and/, out.text);
     assert.match(out.text, /agent-ac350022849c5b060/, 'the worktree that exists is named');
     assert.match(out.text, /Failure handoff: /);
@@ -94,14 +93,14 @@ test('await.js prints stalled with the children and their existing worktrees, an
     assert.match(body, /^mode: stalled$/m);
     assert.match(body, /^next: SendMessage the agent once; stalled again, stop it and dispatch a fresh one$/m);
     const none = brain(WAITS);
-    const bare = await awaitCli.main(['--session', SID, '--root', none.root, '--idle', '0.2'], none.env);
+    const bare = await awaitMain(['--session', SID, '--root', none.root, '--idle', '0.2'], none.env);
     assert.match(bare.text, /uncommitted worktrees: none\./, 'a worktree that is not on disk is not listed');
 });
 
 test('await.js reads a brain that ran only a foreground implementer as lost, not stalled', async () => {
     const fg = asst('m1', [useOf('t1', 'Agent', { prompt: 'x' })]) + result('t1', 'done\nagentId: abc123\n<usage>total_tokens: 9</usage>') + asst('m2', [say('handing back')]);
     const g = brain(fg);
-    const out = await awaitCli.main(['--session', SID, '--root', g.root, '--idle', '0.2'], g.env);
+    const out = await awaitMain(['--session', SID, '--root', g.root, '--idle', '0.2'], g.env);
     assert.match(out.text, /^lost a3f9c2 /, out.text);
 });
 
