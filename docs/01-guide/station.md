@@ -37,6 +37,8 @@ source_of_truth: docs/90-agent/reference/station.md, assets/station/station.js, 
 
 計畫（`#/s/<id>/plan`）畫出這個 session 最新的 plan：一組一欄，每個 task 一張卡，寫它改哪些檔、等哪幾個 task；停在 plan gate 時，上方會問你要不要核准，答案在 Claude Desktop 給。關卡（`#/s/<id>/gate`）把 survey、design、build、land 這一站交回的報告排成一頁：發現、要改的檔、改了什麼；land 這一站則是六欄完成紀錄（要求、做了什麼、為什麼這樣做、驗過・沒驗過、花費、還剩什麼）；停在那一站的 gate 時，上方多一條問題，答案一樣在 Claude Desktop 給。session 卡上若這個任務畫過圖，會多一塊「AI 畫的圖」，點開是那張 `.board` 畫成的 SVG；專案卡則連到專案的架構圖。
 
+停在 gate 時，關卡頁會把這個任務的第一塊板子畫在頁面裡，可以直接改。狀態列寫「session 停在 gate，可以編輯」；session 不在 gate 時是「唯讀：session 不在 gate」，只能看。工具列有選取、新增節點、新增連線、標記給 AI、刪除、復原：拖曳節點改位置，雙擊節點改名字，用「標記給 AI」在節點上留一句話請 AI 看。每一筆改動都列在板子下方，可以逐筆復原；一批改動整批套用或整批退回，會新增引用問題的那一批整批被拒。你在 Claude Desktop 回答這個 gate 時，改動和標記會一起附進答案。例子：雙擊 `parse` 節點、改成 `parse-csv`，下方會多一行「改名 parse：parse → parse-csv」，檢查列仍是「✓ 0 個問題」。
+
 ## 從手機看
 
 監控站可以經這台機器的 Tailscale 讓手機連進來，但預設是關的。開關是 profile 的 `station.remote`，只讀機器層 profile，內建 `false`；關著時只有本機（`127.0.0.1`）連得到，因為監控站看得到每個 session 的整段對話，不該在你沒說要的時候離開這台機器。打開時監控站跑 `tailscale serve`，只在你自己的 tailnet（Tailscale 串起來的私人網路）裡開放，從不跑 `tailscale funnel` 對外公開；Tailscale 沒裝、沒在跑或 Funnel 開著時，遠端維持關閉，原因寫在卡片上，本機照常可用。打開開關時卡片會先跳出確認視窗，確認後才寫入 `station.remote`；Tailscale 沒回應時原因寫在卡片上，也會接在 `station:` 那行後面（`remote off: …`），開著時該行接 `phone: <網址>`。

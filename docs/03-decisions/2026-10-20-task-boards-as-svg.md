@@ -14,7 +14,7 @@ last_verified: 2026-10-20
 - 只複製把 `.board` 畫成 SVG 需要的 10 個檔（core 3 個、geometry 7 個，共 1768 行），不複製 Chartroom 的 `server/`。
 - `lib/board.js` 用動態 `import()` 載入這些 ESM 檔，所以 Node 下限維持 `>=22.5`。
 - 板子放在任務自己的 build 目錄 `.fankeel/build/task-<started>/`，跟著任務一起歸檔；session 多一個 `boards[]`。
-- station 以 `GET /station/board/<session>/<name>.svg` 送出，卡片用 `<img>` 顯示，不直接把 SVG 嵌進頁面。
+- station 以 `GET /station/board/<session>/<name>.svg` 送出，卡片用 `<img>` 顯示，不直接把 SVG 嵌進頁面。gate 頁例外：停在 gate 的板子直接嵌進頁面讓人編輯，見 [2026-10-27 的決定](2026-10-27-gate-board-inline.md)。
 - 舊的 `/chartroom/<name>/` 路由與專案常駐的 `architecture.board` 先保留。
 
 ## 為什麼
