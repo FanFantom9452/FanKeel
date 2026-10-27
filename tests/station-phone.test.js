@@ -150,6 +150,59 @@ test('POST /phone/upload saves an image under the session and answers its path',
     }
 });
 
+test('upload refuses a loopback caller with a missing or wrong nonce, takes the right one', async () => {
+    const f = fixture();
+    const s = await start(f, fakeTailscale());
+    try {
+        const q = '?root=' + encodeURIComponent(f.r1) + '&id=' + SID + '&ext=png';
+        const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 1, 2, 3]);
+        const headers = { 'content-type': 'image/png' };
+        assert.equal((await request(s.url + 'phone/upload' + q, { headers, body: png })).status, 403);
+        assert.equal((await request(s.url + 'phone/upload' + q + '&nonce=wrong', { headers, body: png })).status, 403);
+        const data = await (await fetch(s.url + 'station/station-data.js')).text();
+        const nonce = JSON.parse(data.replace(/^window\.STATION = /, '').replace(/;\n$/, '')).nonce;
+        assert.equal((await request(s.url + 'phone/upload' + q + '&nonce=' + nonce, { headers, body: png })).status, 201);
+    } finally {
+        s.close();
+    }
+});
+
+test('upload answers 413 for a body over 10 MB', async () => {
+    const f = fixture();
+    const s = await start(f, fakeTailscale());
+    try {
+        const q = '?root=' + encodeURIComponent(f.r1) + '&id=' + SID + '&ext=png';
+        const big = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47]), Buffer.alloc(11 * 1024 * 1024)]);
+        const r = await request(s.url + 'phone/upload' + q, { headers: Object.assign({ 'content-type': 'image/png', cookie: f.cookie }, TAILNET), body: big });
+        assert.equal(r.status, 413);
+    } finally {
+        s.close();
+    }
+});
+
+test('upload takes only png, jpeg, webp, gif whose first bytes match, and never overwrites', async () => {
+    const f = fixture();
+    const s = await start(f, fakeTailscale());
+    const headers = Object.assign({ 'content-type': 'image/png', cookie: f.cookie }, TAILNET);
+    const up = (ext, body) => request(s.url + 'phone/upload?root=' + encodeURIComponent(f.r1) + '&id=' + SID + '&ext=' + ext, { headers, body });
+    try {
+        assert.equal((await up('html', Buffer.from('<script>alert(1)</script>'))).status, 415);
+        assert.equal((await up('png', Buffer.from('<script>alert(1)</script>'))).status, 415);
+        assert.equal((await up('gif', Buffer.from([0x89, 0x50, 0x4e, 0x47, 1]))).status, 415);
+        const jpg = await up('jpg', Buffer.from([0xff, 0xd8, 0xff, 1]));
+        assert.equal(jpg.status, 201);
+        assert.ok(jpg.text.trim().endsWith('.jpeg'));
+        const webp = await up('webp', Buffer.concat([Buffer.from('RIFF'), Buffer.alloc(4), Buffer.from('WEBP')]));
+        assert.equal(webp.status, 201);
+        const paths = new Set();
+        const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 1]);
+        for (let i = 0; i < 5; i++) paths.add((await up('png', png)).text.trim());
+        assert.equal(paths.size, 5);
+    } finally {
+        s.close();
+    }
+});
+
 test('the phone routes are device routes, and the reference names them', () => {
     assert.equal(remote.policy('POST', '/phone/say'), 'device');
     assert.equal(remote.policy('POST', '/phone/attach'), 'device');

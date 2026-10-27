@@ -1483,10 +1483,12 @@ text over `SAY_MAX` (4000) characters (400), an unattached session or a
 second waiting message (409), and answers 201.
 `POST /phone/upload?root=&id=&ext=` takes a photo as the raw request body
 (`content-type: image/*`, at most 10 MB): it is saved under the session's phone
-directory as `uploads/<ms>.<ext>` and answered 201 with that file's absolute
-path, which the answer box appends to its text as `[圖片] <path>` so the session
-can read it; 401 unpaired, 404 not on this station, 413 too large, 415 not an
-image.
+directory as `uploads/<ms>-<random>.<ext>` and answered 201 with that file's
+absolute path, which the answer box appends to its text as `[圖片] <path>` so the
+session can read it. `ext` is png, jpeg (or jpg), webp or gif and the body's
+first bytes must match it; 401 unpaired, 403 loopback without the nonce, 404 not
+on this station, 413 too large (answered with `connection: close`), 415 not an
+image, another type, or bytes that do not match the type.
 `mobile.json`'s task rows carry the same `state`, `attached`, `background` and
 `last`, `look` being `lib/phone.js`'s `snapshot`.
 

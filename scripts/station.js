@@ -988,17 +988,28 @@ async function serve(opts) {
             const reg = modelNow().registries.find((r) => r.root === path.resolve(url.searchParams.get('root') || ''));
             const id = url.searchParams.get('id') || '';
             if (!reg || !reg.sessions.find((x) => x.sessionId === id)) return fail(404, 'no such session on this station');
-            const ext = (url.searchParams.get('ext') || 'png').replace(/[^a-z0-9]/g, '').slice(0, 5) || 'png';
+            const dir = phone.dirOf(reg.root, id);
+            if (!dir) return fail(404, 'no such session on this station');
+            const want = { jpg: 'jpeg' }[url.searchParams.get('ext') || 'png'] || url.searchParams.get('ext') || 'png';
+            const MAGIC = { png: (b) => b.subarray(0, 4).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47])), jpeg: (b) => b.subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff])),
+                gif: (b) => /^GIF8[79]a/.test(b.subarray(0, 6).toString('latin1')), webp: (b) => b.subarray(0, 4).toString('latin1') === 'RIFF' && b.subarray(8, 12).toString('latin1') === 'WEBP' };
+            if (!Object.hasOwn(MAGIC, want)) return fail(415, 'png, jpeg, webp or gif only');
             const chunks = [];
             let n = 0;
+            let over = false;
             for await (const c of req) {
                 n += c.length;
-                if (n > 10 * 1024 * 1024) { req.destroy(); return fail(413, 'image over 10 MB'); }
-                chunks.push(c);
+                if (n > 10 * 1024 * 1024) over = true;
+                else chunks.push(c);
+                // Keep reading what is left (and drop it) so the 413 reaches a client still sending; a body far past the cap is cut off.
+                if (n > 64 * 1024 * 1024) req.destroy();
             }
-            const file = path.join(phone.dirOf(reg.root, id), 'uploads', Date.now() + '.' + ext);
+            if (over) return send(413, 'text/plain', 'image over 10 MB\n', { connection: 'close' });
+            const bytes = Buffer.concat(chunks);
+            if (!MAGIC[want](bytes)) return fail(415, 'the bytes are not a ' + want);
+            const file = path.join(dir, 'uploads', Date.now() + '-' + crypto.randomBytes(3).toString('hex') + '.' + want);
             fs.mkdirSync(path.dirname(file), { recursive: true });
-            fs.writeFileSync(file, Buffer.concat(chunks));
+            fs.writeFileSync(file, bytes, { flag: 'wx' });
             return send(201, 'text/plain; charset=utf-8', file + '\n');
         }
         // The phone's three actions on a session (2026-10-22-mobile-session-design.md §4),
