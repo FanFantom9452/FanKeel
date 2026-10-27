@@ -470,7 +470,7 @@ body.m .solo{padding-top:calc(28px + var(--safe-top,env(safe-area-inset-top)));p
 .rs-h time{display:inline-flex;align-items:center;gap:4px;font:12.5px var(--f-mono);color:var(--muted)}
 .rs-list{display:grid;margin:0;padding:0;list-style:none;background:var(--inset);border-radius:var(--r)}
 .rs-i+.rs-i{border-top:1px solid var(--rule)}
-.rs-row{display:grid;grid-template-columns:20px minmax(0,1fr) auto 18px;align-items:center;gap:12px;width:100%;min-height:56px;padding:8px 12px 8px 14px;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.rs-row{display:grid;grid-template-columns:20px minmax(0,1fr) 18px;align-items:center;gap:12px;width:100%;min-height:56px;padding:8px 12px 8px 14px;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
 .rs-row:focus-visible{outline-offset:-3px;border-radius:var(--r)}
 .rs-row>.ic{width:20px;height:20px;color:var(--ink2)}
 .rs-row .tgl{width:18px;height:18px;color:var(--muted)}
@@ -495,6 +495,7 @@ body.m .solo{padding-top:calc(28px + var(--safe-top,env(safe-area-inset-top)));p
 .mm-row>.go{width:18px;height:18px;color:var(--muted)}
 .mm-m{display:grid;gap:1px;min-width:0}
 .mm-n{font-size:15px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mm-d{font:12.5px var(--f-mono);color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mm-empty{display:flex;gap:8px;margin:0;padding:14px;border-radius:var(--r);background:var(--inset);font-size:13.5px;line-height:1.6;color:var(--muted)}
 .mm-empty .ic{flex:none;width:16px;height:16px;margin-top:3px}
 
