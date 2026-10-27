@@ -2257,9 +2257,6 @@ body.focus{min-width:0}
 .tb summary:hover{color:var(--ink)}
 .tb summary small{margin-left:8px;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 .tb[open] summary{color:var(--ink)}
-.tb-pre{margin:6px 0 2px;padding:10px 12px;max-height:28em;overflow:auto;overscroll-behavior:contain;
-  background:var(--inset);border:1px solid var(--rule);border-radius:var(--r-sm);
-  font:12px/1.6 var(--f-mono);color:var(--ink2);white-space:pre-wrap;overflow-wrap:anywhere;tab-size:4}
 .tb-md{margin:6px 0 2px;padding:10px 12px;max-height:28em;overflow:auto;overscroll-behavior:contain;background:var(--inset);border:1px solid var(--rule);border-radius:var(--r-sm);color:var(--ink2);overflow-wrap:anywhere}
 .tb-md h2,.tb-md h3,.tb-md h4{margin:10px 0 4px;font-size:13px;color:var(--ink)}
 .tb-md p,.tb-md ul,.tb-md ol{margin:4px 0}
