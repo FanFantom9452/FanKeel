@@ -1,0 +1,54 @@
+/* assets/station/weekly-page.css — the 週報 page `#/weekly` (weekly-page.js),
+   lifted from the approved mockup .fankeel/build/2026-10-27-weekly-skill/
+   station-weekly.html. Everything else on the page is station.css. */
+.wk{display:flex;flex-direction:column;gap:14px;padding-top:6px}
+.wk .hm-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.wk .ico{width:15px;height:15px;flex:none}
+.wk a:focus-visible,.wk button:focus-visible{outline:2px solid var(--keel);outline-offset:2px}
+
+/* weekly-copy: the one action, and where its range will start */
+:root[data-style=keel] .dcard.wk-copy{display:flex;align-items:center;flex-wrap:wrap;gap:10px 18px;padding:14px 18px}
+.wk-copy .what{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 360px}
+.wk-copy .what b{font-size:13.5px;font-weight:700;color:var(--ink)}
+.wk-copy .what span{font-size:12.5px;color:var(--ink2)}
+.wk-copy .what .mono{color:var(--ink);font-weight:600}
+.wk-copy .cmd{display:inline-flex;align-items:center;gap:10px}
+.wk-copy code{font:600 13px var(--f-mono);color:var(--ink);background:var(--inset);box-shadow:inset 0 0 0 1px var(--rule);
+  padding:0 10px;height:32px;display:inline-flex;align-items:center;border-radius:7px;user-select:all}
+.wk-copy .btn.go{min-width:132px;justify-content:center}
+.wk-copy .said{min-width:7em;font-size:12.5px;color:var(--good);font-weight:600}
+
+/* weekly-list: one row a report, newest end date first */
+:root[data-style=keel] .dcard.wk-list{padding:0}
+.wk-lh{display:flex;align-items:center;flex-wrap:wrap;gap:6px 14px;min-height:50px;padding:8px 18px;border-bottom:1px solid var(--rule2)}
+.wk-cap{margin:0;display:flex;align-items:baseline;gap:8px;font-size:13.5px;font-weight:700;color:var(--ink);white-space:nowrap}
+.wk-cap small{font-size:12px;font-weight:500;color:var(--muted)}
+.wk-where{margin-left:auto;font-size:12px;color:var(--muted)}
+.wk-where .mono{color:var(--ink2)}
+.wk-t{width:100%;border-collapse:collapse;table-layout:fixed;font-variant-numeric:tabular-nums}
+.wk-t col.rng{width:300px}.wk-t col.n{width:96px}.wk-t col.go{width:120px}
+.wk-t thead th{height:34px;padding:0 10px;border-bottom:1px solid var(--rule);text-align:left;font:500 12px var(--f-ui);color:var(--muted);white-space:nowrap}
+.wk-t thead th:first-child{padding-left:18px}
+.wk-t th.r{text-align:right}
+.wk-t tbody tr{position:relative}
+.wk-t tbody td{padding:10px;border-top:1px solid var(--rule);vertical-align:middle}
+.wk-t tbody tr:first-child td{border-top:0}
+.wk-t tbody td:first-child{padding-left:18px}
+.wk-t tbody td:last-child{padding-right:18px}
+.wk-t tbody tr:hover td{background:var(--wash)}
+.wk-rng{display:inline-flex;align-items:baseline;gap:8px;font:700 13.5px var(--f-mono);color:var(--ink);text-decoration:none;white-space:nowrap}
+/* the whole row is the link: the anchor's box is stretched over the row */
+.wk-rng::after{content:"";position:absolute;inset:0}
+.wk-t tbody tr:hover .wk-rng span{text-decoration:underline;text-decoration-color:var(--keel-mid);text-underline-offset:3px}
+.wk-days{font:12px var(--f-ui);color:var(--muted)}
+.wk-new{margin-left:2px;font:600 11.5px var(--f-ui);padding:1px 7px;border-radius:5px;background:var(--keel-tint);color:var(--keel-deep)}
+.wk-t td.r{text-align:right;font:600 13px var(--f-mono);color:var(--ink)}
+.wk-t td.r.z{color:var(--faint);font-weight:500}
+.wk-proj{display:flex;flex-wrap:wrap;gap:4px 6px}
+.wk-proj .chip{font-size:12px;padding:1px 7px}
+.wk-open{display:inline-flex;align-items:center;justify-content:flex-end;gap:4px;width:100%;font-size:12.5px;font-weight:600;color:var(--ink2)}
+.wk-t tbody tr:hover .wk-open{color:var(--keel)}
+.wk-empty{padding:44px 18px 48px;text-align:center;font-size:13px;line-height:1.7;color:var(--ink2)}
+.wk-empty b{display:block;font-size:14px;color:var(--ink)}
+@media (max-width:999px){.wk-t col.rng{width:250px}.wk-where{display:none}}
+@media (prefers-reduced-motion:reduce){.wk *{transition:none!important}}
