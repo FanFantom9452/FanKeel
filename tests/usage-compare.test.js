@@ -96,6 +96,17 @@ test('the table pins every figure: usd and tokens per session, median, subagent 
     assert.match(out, /^total usd\s+\$48\.00\s+\$12\.00$/m);
 });
 
+test('the 1h cache write share is its dollars over the range total', () => {
+    const cfg = tmp('fankeel-compare-');
+    const dir = path.join(cfg, 'projects', 'p');
+    fs.mkdirSync(dir, { recursive: true });
+    const W = { output_tokens: 1e6, cache_creation: { ephemeral_1h_input_tokens: 1e6 } }; // $10 + $4 on claude-sonnet-5
+    fs.writeFileSync(path.join(dir, 'a1.jsonl'), assistant('r1', at(2026, 9, 2, 9), W));
+    fs.writeFileSync(path.join(dir, 'b1.jsonl'), assistant('r2', at(2026, 9, 16, 9), { output_tokens: 1e6 }));
+    const out = compare.format(compare.compare(cfg, compare.parseRange(A), compare.parseRange(B)));
+    assert.match(out, /^1h cache write share of usd\s+29%\s+0%$/m);
+});
+
 test('an unreadable projects root throws, and the CLI exits non-zero', () => {
     const cfg = tmp('fankeel-compare-');
     assert.throws(() => compare.compare(cfg, compare.parseRange(A), compare.parseRange(B)), /cannot read/);
