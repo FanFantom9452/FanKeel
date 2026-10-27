@@ -675,6 +675,26 @@ async function serve(opts) {
             }
             return send(200, 'application/json; charset=utf-8', JSON.stringify(out), noStore);
         }
+        if (req.method === 'GET' && url.pathname === '/station/weekly') {
+            // The 週報 page's list (lib/weekly-store.js): every report archived
+            // under <configDir>/fankeel/weekly/, newest end date first. The
+            // station writes no report — it has no model — it only lists them.
+            const weekly = require('../lib/weekly-store.js');
+            return send(200, 'application/json; charset=utf-8', JSON.stringify({ reports: weekly.list(configDir) }), noStore);
+        }
+        const wk = /^\/station\/weekly\/(\d{4}-\d{2}-\d{2})\.html$/.exec(url.pathname);
+        if (req.method === 'GET' && wk) {
+            // One archived report, with the weekly-nav bar put at the top of
+            // <body>: back to #/weekly, and the neighbouring end dates. Only
+            // this answer carries it — the file on disk is the copy that is
+            // mailed, and a professor has no station to go back to. No script
+            // runs in it: the SVG routes' policy allows inline style only.
+            const weekly = require('../lib/weekly-store.js');
+            const file = weekly.htmlPath(configDir, wk[1]);
+            if (!file) return fail(404, 'no weekly report ends on ' + wk[1]);
+            const html = weekly.injectNav(fs.readFileSync(file, 'utf8'), weekly.navBar(weekly.neighbours(configDir, wk[1])));
+            return send(200, 'text/html; charset=utf-8', html, Object.assign({}, SVG_CSP, noStore));
+        }
         const talk = /^\/station\/talk\/([0-9A-Za-z-]+)(?:\/(agents)|\/agent\/([0-9a-f]+))?$/.exec(url.pathname);
         if (req.method === 'GET' && talk) {
             // The 對話 tab: one page of a session's turns (lib/conversation.js)
