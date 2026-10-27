@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 'use strict';
 
-// spend-1: calibrate the profile's `quota.week` from TokenBar's readings.
+// spend-1: calibrate the profile's `quota.week` from the limits records.
 //
 //   node scripts/quota.js [--claude-dir <dir>] [--log <file>] [--dry-run]
 //
-// Reads `<claude dir>/tokenbar-usage.jsonl` — TokenBar's statusline writes
-// one line per render, `rate_limits.seven_day` included — prices what every
+// Reads every `.fankeel/build/limits/*.jsonl` (hooks/pane-limits.ts writes a
+// row whenever a 5-hour or 7-day reading changes), or --log's file, prices what every
 // transcript spent between the two readings `lib/quota.js` picks, and writes
 // `quota.week` and `quota.calibrated` into the machine profile. Exit 0 when
 // written or, with --dry-run, printed; 1 when nothing can be calibrated and
@@ -16,7 +16,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { parseArgs } = require('node:util');
 const profile = require('../lib/profile.js');
-const { calibrate } = require('../lib/quota.js');
+const { calibrate, limitsText } = require('../lib/quota.js');
+const registry = require('../lib/registry.js');
 
 const USAGE = 'usage: quota.js [--claude-dir <dir>] [--log <file>] [--dry-run]';
 
@@ -29,12 +30,15 @@ function main(argv) {
     }
     const dir = values['claude-dir'] || profile.configDirOf();
     if (!dir) return { text: 'quota.js: no Claude config directory; pass --claude-dir\n' + USAGE, code: 2 };
-    const log = values.log || path.join(dir, 'tokenbar-usage.jsonl');
     let text;
-    try {
-        text = fs.readFileSync(log, 'utf8');
-    } catch (e) {
-        return { text: 'quota.js: cannot read ' + log + ' (TokenBar writes it); quota.week stays as it was', code: 1 };
+    if (values.log) {
+        try {
+            text = fs.readFileSync(values.log, 'utf8');
+        } catch (e) {
+            return { text: 'quota.js: cannot read ' + values.log + '; quota.week stays as it was', code: 1 };
+        }
+    } else {
+        text = limitsText(registry.rootFor({ cwd: process.cwd() }));
     }
     const r = calibrate(dir, text);
     if (r.error) return { text: 'quota.js: ' + r.error + '; quota.week stays as it was', code: 1 };

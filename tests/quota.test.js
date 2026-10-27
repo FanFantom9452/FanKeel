@@ -35,6 +35,25 @@ test('readings keep only lines carrying a 7-day percent and reset, oldest first'
     assert.deepEqual(quota.readings(text), [{ at: 100, pct: 10, resetsAt: 9000 }, { at: 200, pct: 12, resetsAt: 9000 }]);
 });
 
+test('readings take a limits row too: ISO times become seconds, seven is the percent', () => {
+    const row = JSON.stringify({ at: '2026-10-27T05:23:13.593Z', task: 't', stage: 'survey', five: 9, fiveResets: null, seven: 40, sevenResets: '2026-10-29T19:00:00.000Z' });
+    assert.deepEqual(quota.readings([row, line(100, 10, 9000)].join('\n')), [
+        { at: 100, pct: 10, resetsAt: 9000 },
+        { at: Date.parse('2026-10-27T05:23:13.593Z') / 1000, pct: 40, resetsAt: Date.parse('2026-10-29T19:00:00.000Z') / 1000 },
+    ]);
+});
+
+test('limitsText joins every session file under .fankeel/build/limits', () => {
+    const root = mkTmp('fankeel-quota-limits-');
+    const dir = path.join(root, '.fankeel', 'build', 'limits');
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'a.jsonl'), '{"x":1}\n');
+    fs.writeFileSync(path.join(dir, 'b.jsonl'), '{"x":2}\n');
+    fs.writeFileSync(path.join(dir, 'skip.txt'), 'no');
+    assert.equal(quota.limitsText(root).split('\n').filter(Boolean).length, 2);
+    assert.equal(quota.limitsText(path.join(root, 'none')), '');
+});
+
 test('span takes the newest window that moved MIN_POINTS or more, first reading to last', () => {
     const list = quota.readings([line(100, 5, 9000), line(400, 40, 9030), line(10000, 1, 700000), line(10100, 3, 700000)].join('\n'));
     assert.deepEqual(quota.span(list), { from: 100000, to: 400000, points: 35 }, 'a reset seconds apart is the same window; the newer one moved too little');
@@ -57,11 +76,11 @@ test('quota.js writes quota.week and quota.calibrated to the machine profile; --
     const log = path.join(dir, 'tokenbar-usage.jsonl');
     fs.writeFileSync(log, [line(100, 10, 9000), line(400, 40, 9000)].join('\n') + '\n');
     const week = Math.round(3e6 * prices.rateFor('claude-opus-5').output / 1e6 / 30 * 100);
-    const dry = main(['--claude-dir', dir, '--dry-run']);
+    const dry = main(['--claude-dir', dir, '--log', path.join(dir, 'tokenbar-usage.jsonl'), '--dry-run']);
     assert.equal(dry.code, 0, dry.text);
     assert.match(dry.text, new RegExp('^quota\\.week ' + week + ' \\(calibrated 1970-01-01'));
     assert.equal(fs.existsSync(profile.machineFile(dir)), false);
-    const out = main(['--claude-dir', dir]);
+    const out = main(['--claude-dir', dir, '--log', path.join(dir, 'tokenbar-usage.jsonl')]);
     assert.equal(out.code, 0, out.text);
     const saved = JSON.parse(fs.readFileSync(profile.machineFile(dir), 'utf8'));
     assert.deepEqual([saved['quota.week'], saved['quota.calibrated']], [week, '1970-01-01']);
@@ -69,9 +88,9 @@ test('quota.js writes quota.week and quota.calibrated to the machine profile; --
 
 test('quota.js with no log, or no window that moved enough, writes nothing and exits 1', () => {
     const dir = account();
-    assert.equal(main(['--claude-dir', dir]).code, 1);
+    assert.equal(main(['--claude-dir', dir, '--log', path.join(dir, 'tokenbar-usage.jsonl')]).code, 1);
     fs.writeFileSync(path.join(dir, 'tokenbar-usage.jsonl'), line(100, 10, 9000) + '\n');
-    assert.equal(main(['--claude-dir', dir]).code, 1);
+    assert.equal(main(['--claude-dir', dir, '--log', path.join(dir, 'tokenbar-usage.jsonl')]).code, 1);
     assert.equal(fs.existsSync(profile.machineFile(dir)), false);
     assert.equal(main(['--bogus']).code, 2);
 });
@@ -144,14 +163,14 @@ test('quota.js restores the machine file when the second write fails, and remove
     };
     try {
         failSecond();
-        const none = main(['--claude-dir', dir]);
+        const none = main(['--claude-dir', dir, '--log', path.join(dir, 'tokenbar-usage.jsonl')]);
         assert.equal(none.code, 1);
         assert.match(none.text, /disk full/);
         assert.equal(fs.existsSync(file), false, 'no file before, none after');
         const before = '{\n  "language": "x"\n}\n';
         fs.writeFileSync(file, before);
         failSecond();
-        assert.equal(main(['--claude-dir', dir]).code, 1);
+        assert.equal(main(['--claude-dir', dir, '--log', path.join(dir, 'tokenbar-usage.jsonl')]).code, 1);
         assert.equal(fs.readFileSync(file, 'utf8'), before, 'byte-identical to before');
     } finally {
         profile.write = realWrite;
@@ -181,7 +200,7 @@ test('calibrate returns the family-priced ids it counted as estimated', () => {
 });
 
 test('quota.js names the estimated ids in its calibration line', () => {
-    const out = main(['--claude-dir', estimatedAccount(), '--dry-run']);
+    const out = (() => { const d = estimatedAccount(); return main(['--claude-dir', d, '--log', path.join(d, 'tokenbar-usage.jsonl'), '--dry-run']); })();
     assert.equal(out.code, 0, out.text);
     assert.match(out.text, /\(calibrated [^)]*estimated: claude-opus-9\)/);
 });
