@@ -9,7 +9,7 @@ const { inject, outside, diffLines, queueState, sourcesOf, changedPaths, rankSou
 const tmp = require('./tmp.js');
 
 const CLI = path.join(__dirname, '..', 'scripts', 'tune.js');
-const { WAIT_TIMEOUT_SEC } = require('../scripts/tune.js');
+const { WAIT_TIMEOUT_SEC, marksOf, pairOf } = require('../scripts/tune.js');
 const PAGE = [
     '<!DOCTYPE html><html><body>',
     '<main data-block="page">',
@@ -558,4 +558,57 @@ test('a request item carries the opener of an element a click revealed, and the 
     const job = JSON.parse(waited.stdout);
     assert.equal(job.opener, 'main > div:nth-of-type(1)');
     assert.equal(job.items[0].opener, 'main > div:nth-of-type(1)');
+});
+
+// tune-8: an item's marks are hints beside its note: kept when they are one
+// of the seven kinds with whole-pixel points, dropped otherwise, never a
+// reason to refuse the request.
+test('marksOf keeps the seven kinds of mark with whole-pixel points, and drops the rest', () => {
+    assert.deepEqual(marksOf([
+        { type: 'pen', points: [[1.4, 2.6], [3, 'x'], [5, 6]] },
+        { type: 'step', points: [[10, 20]], n: 2 },
+        { type: 'text', points: [[0, 0]], text: '  太矮  ' },
+        { type: 'text', points: [[0, 0]], text: '   ' },
+        { type: 'blob', points: [[0, 0]] },
+        { type: 'rect', points: [] },
+        null,
+    ]), [
+        { type: 'pen', points: [[1, 3], [5, 6]] },
+        { type: 'step', points: [[10, 20]], n: 2 },
+        { type: 'text', points: [[0, 0]], text: '太矮' },
+    ]);
+    assert.deepEqual(marksOf('no'), []);
+    assert.equal(marksOf(Array(150).fill({ type: 'line', points: [[0, 0], [1, 1]] })).length, 100);
+    assert.equal(marksOf([{ type: 'pen', points: Array(900).fill([1, 1]) }])[0].points.length, 500);
+    assert.deepEqual(pairOf([0, 812.6]), [0, 813]);
+    assert.equal(pairOf([1]), null);
+    assert.equal(pairOf(['a', 1]), null);
+});
+
+test('queueState keeps an item\'s marks when the request moves on', () => {
+    const marks = [{ type: 'arrow', points: [[0, 0], [10, 10]] }];
+    const rows = queueState(JSON.stringify({ id: 'r-0001', status: 'queued', items: [{ note: 'x', block: 'a', marks, scroll: [0, 40], viewport: [1280, 800] }] }) + '\n'
+        + JSON.stringify({ id: 'r-0001', status: 'taken' }) + '\n');
+    assert.equal(rows[0].status, 'taken');
+    assert.deepEqual(rows[0].items[0].marks, marks);
+});
+
+test('an item\'s marks, scroll and viewport reach wait; a bad mark is dropped and an item that drew nothing carries none', async (t) => {
+    const cwd = tmp('fankeel-tune-marks-');
+    fs.mkdirSync(path.join(cwd, 'site'));
+    fs.writeFileSync(path.join(cwd, 'site', 'page.html'), PAGE);
+    const base = await startServer(t, cwd);
+    const made = await request(base + '__live/request', 'POST', { page: '/page.html', items: [
+        { note: '照 1 到 3 排', block: 'now', marks: [{ type: 'step', points: [[712.4, 212]], n: 1 }, { type: 'blob', points: [[0, 0]] }], scroll: [0, 120], viewport: [1280, 800] },
+        { note: '不用畫', block: 'sessions', scroll: [0, 120], viewport: [1280, 800] },
+    ] });
+    assert.equal(made.status, 200, made.text);
+    const waited = spawnSync(process.execPath, [CLI, 'wait', '--timeout', '5'], { cwd, encoding: 'utf8' });
+    assert.equal(waited.status, 0, waited.stderr);
+    const job = JSON.parse(waited.stdout);
+    assert.deepEqual(job.items[0].marks, [{ type: 'step', points: [[712, 212]], n: 1 }]);
+    assert.deepEqual(job.items[0].scroll, [0, 120]);
+    assert.deepEqual(job.items[0].viewport, [1280, 800]);
+    assert.equal(job.items[1].marks, undefined);
+    assert.equal(job.items[1].scroll, undefined);
 });

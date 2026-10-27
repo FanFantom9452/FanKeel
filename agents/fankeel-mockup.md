@@ -69,6 +69,12 @@ applies to its own `block` — or to every name in its `blocks` — and
 `tune.js done` holds the edit to all of them at once. Make every item's
 change in the one pass, and leave a block no item names alone.
 
+An item may also carry `marks` — what the user drew on the page with the
+tune toolbar: `pen`, `line`, `arrow`, `rect`, `ellipse`, a numbered `step`
+or a `text`, each with `points` in page coordinates — beside the item's
+`scroll` and `viewport`. Read them as where on the page the note points,
+and in what order for steps; never draw them into the mockup.
+
 ## Check it served
 
 The page is checked where the user will open it: through a server, never a

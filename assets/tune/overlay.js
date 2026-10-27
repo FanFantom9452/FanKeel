@@ -6,7 +6,8 @@
 // then toggles it in or out of the item, and the request takes the nearest
 // data-block around it; 往外一層 goes out to its parents (out only), and
 // the wheel goes both ways; 完成這則 ends it and Esc throws the pick away.
-// Each item is one note for one or more elements; 全部送出 in the 修改項
+// Each item is one note for one or more elements, and for the marks the
+// pen, a shape or text drew while it was open; 全部送出 in the 修改項
 // panel sends every item as one POST /__live/request with `items`, which
 // `tune.js wait` hands out as one job. The drafts outlive a reload in
 // sessionStorage. The server's events reload the page, and the state that
@@ -51,7 +52,9 @@
     // its picks resolved to, once each: the first as `block`, all of them as
     // `blocks` when there is more than one. A pick that is a frame carries
     // its own `blocks`; `selectors` lists every pick when there are several.
-    function itemsOf(drafts) {
+    // A draft that drew carries its `marks`, and `view` — the page's
+    // `scroll` and `viewport` when it was sent — goes beside them.
+    function itemsOf(drafts, view) {
         return drafts.filter(function (d) { return String(d.note || '').trim() && d.picks.length; }).map(function (d) {
             var first = d.picks[0];
             var union = [];
@@ -62,6 +65,13 @@
             if (first.opener) item.opener = first.opener;
             if (union.length > 1) item.blocks = union;
             if (d.picks.length > 1) item.selectors = d.picks.map(function (p) { return p.selector; });
+            if (d.marks && d.marks.length) {
+                item.marks = d.marks;
+                if (view) {
+                    item.scroll = view.scroll;
+                    item.viewport = view.viewport;
+                }
+            }
             return item;
         });
     }
@@ -84,8 +94,54 @@
         for (var i = 0; i < SHAPES.length; i++) if (SHAPES[i].key === k) return SHAPES[i].id;
         return null;
     }
+    // A mark as the SVG the ink layer draws, in page coordinates: a pen's
+    // polyline, a line, an arrow with its two-stroke head, a box or an
+    // ellipse in the box its two points span, a numbered circle, or a text.
+    // `esc` is a function declaration further down this IIFE, hoisted, so it
+    // is there under Node too.
+    function inkOf(m) {
+        var p = m.points;
+        var a = p[0];
+        var b = p[p.length - 1];
+        if (m.type === 'pen') return '<polyline points="' + p.map(function (q) { return q[0] + ',' + q[1]; }).join(' ') + '"/>';
+        if (m.type === 'line') return '<line x1="' + a[0] + '" y1="' + a[1] + '" x2="' + b[0] + '" y2="' + b[1] + '"/>';
+        if (m.type === 'arrow') {
+            var t = Math.atan2(b[1] - a[1], b[0] - a[0]);
+            var wing = function (s) { return Math.round(b[0] - 14 * Math.cos(t + s)) + ' ' + Math.round(b[1] - 14 * Math.sin(t + s)); };
+            return '<path d="M' + a[0] + ' ' + a[1] + 'L' + b[0] + ' ' + b[1] + 'M' + wing(-0.5) + 'L' + b[0] + ' ' + b[1] + 'L' + wing(0.5) + '"/>';
+        }
+        if (m.type === 'step') return '<g class="fk-live-step"><circle cx="' + a[0] + '" cy="' + a[1] + '" r="12"/><text x="' + a[0] + '" y="' + a[1] + '">' + m.n + '</text></g>';
+        if (m.type === 'text') return '<text class="fk-live-ntext" x="' + a[0] + '" y="' + a[1] + '">' + esc(m.text) + '</text>';
+        var x = Math.min(a[0], b[0]);
+        var y = Math.min(a[1], b[1]);
+        var w = Math.abs(b[0] - a[0]);
+        var h = Math.abs(b[1] - a[1]);
+        if (m.type === 'rect') return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="6"/>';
+        if (m.type === 'ellipse') return '<ellipse cx="' + (x + w / 2) + '" cy="' + (y + h / 2) + '" rx="' + w / 2 + '" ry="' + h / 2 + '"/>';
+        return '';
+    }
+    // A move while drawing: the pen keeps every point 3px or more from its
+    // last one, 500 at most; a line, an arrow, a box and an ellipse keep
+    // their start and move their end.
+    function stretch(m, x, y) {
+        if (m.type === 'pen') {
+            var last = m.points[m.points.length - 1];
+            if (m.points.length < 500 && Math.abs(last[0] - x) + Math.abs(last[1] - y) >= 3) m.points.push([x, y]);
+        } else {
+            m.points[1] = [x, y];
+        }
+        return m;
+    }
+    // Whether a finished mark is kept: a step and a text always; any other
+    // only once its end has left its start.
+    function kept(m) {
+        if (m.type === 'step' || m.type === 'text') return true;
+        var a = m.points[0];
+        var b = m.points[m.points.length - 1];
+        return m.points.length > 1 && (a[0] !== b[0] || a[1] !== b[1]);
+    }
     if (typeof document === 'undefined') {
-        if (typeof module !== 'undefined') module.exports = { selectorOf: selectorOf, labelOf: labelOf, pathOf: pathOf, toggleIn: toggleIn, itemsOf: itemsOf, SHAPES: SHAPES, toolOfKey: toolOfKey };
+        if (typeof module !== 'undefined') module.exports = { selectorOf: selectorOf, labelOf: labelOf, pathOf: pathOf, toggleIn: toggleIn, itemsOf: itemsOf, SHAPES: SHAPES, toolOfKey: toolOfKey, inkOf: inkOf, stretch: stretch, kept: kept };
         return;
     }
 
@@ -197,6 +253,15 @@
         '.fk-live-send .fk-live-row{justify-content:flex-end}',
         '.fk-live-aside{color:#8f939b;font-size:12px}',
         '.fk-live-aside kbd{padding:0 4px;border:1px solid #555a63;border-radius:4px;font:12px ' + MONO + '}',
+        '.fk-live-ink{position:absolute;left:0;top:0;pointer-events:none;z-index:2147482998}',
+        '.fk-live-ink svg{display:block;overflow:visible;fill:none;stroke:#ef6f6c;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}',
+        '.fk-live-ink.fk-live-dim{opacity:.45}',
+        '.fk-live-step circle{fill:#ef6f6c;stroke:#1d2026;stroke-width:2}',
+        '.fk-live-step text{fill:#1d2026;stroke:none;font:700 13px ' + UI + ';text-anchor:middle;dominant-baseline:central}',
+        '.fk-live-ntext{fill:#ef6f6c;stroke:#1d2026;stroke-width:4;paint-order:stroke;font:600 14px ' + UI + '}',
+        '.fk-live-type{position:absolute;z-index:2147483001;box-sizing:border-box;min-width:160px;height:28px;padding:0 8px;border:1px solid #ef6f6c;border-radius:6px;background:rgba(29,32,38,.94);color:#ef6f6c;font:600 14px ' + UI + '}',
+        '.fk-live-inkline{display:inline-flex;align-items:center;gap:6px;color:#b8b8b0;font-size:12px;white-space:nowrap}',
+        '.fk-live-inkline svg{color:#ef6f6c}',
         '@keyframes fk-live-pulse{from{opacity:.35}to{opacity:1}}',
         '.fk-live-edp{position:absolute;pointer-events:none;z-index:2147482998;border-radius:6px;box-shadow:0 0 0 1.5px #22b8cf,0 0 0 5px rgba(34,184,207,.18);animation:fk-live-edp 2.8s ease-in-out infinite}',
         '.fk-live-edp span{position:absolute;top:-9px;right:14px;padding:0 7px;font:600 11px/18px ' + MONO + ';color:#1d2026;background:#22b8cf;border-radius:4px}',
@@ -317,6 +382,7 @@
     var box = el('div', 'fk-live-box');
     var anc = el('div', 'fk-live-anc');
     var tag = el('div', 'fk-live-tag');
+    var ink = el('div', 'fk-live-ink');
     box.style.display = anc.style.display = tag.style.display = 'none';
 
     var bar = el('div', 'fk-live-bar',
@@ -392,6 +458,11 @@
     // item is open. shape: the shape the menu shows, arrow until one is chosen.
     var tool = null;
     var shape = 'arrow';
+    // inking: the mark the pointer is drawing now, null between marks.
+    // textBox: the field a text mark is being typed into, at textAt.
+    var inking = null;
+    var textBox = null;
+    var textAt = null;
     // under: the innermost element last under the pointer. hover: the
     // element outlined now. trail: the elements the wheel walked out of,
     // innermost first, so the other direction walks back in.
@@ -467,7 +538,7 @@
     function save() {
         try {
             sessionStorage.setItem(SAVE, JSON.stringify(drafts.map(function (d) {
-                return { note: d.note, picks: d.picks.map(function (p) { return selectorOf(p, doc.body); }) };
+                return { note: d.note, picks: d.picks.map(function (p) { return selectorOf(p, doc.body); }), marks: d.marks || [] };
             })));
         } catch (e) {
             return;
@@ -488,8 +559,8 @@
             raw = [];
         }
         drafts = (Array.isArray(raw) ? raw : []).map(function (d) {
-            return { note: String(d.note || ''), picks: (Array.isArray(d.picks) ? d.picks : []).map(found).filter(Boolean) };
-        }).filter(function (d) { return d.picks.length; });
+            return { note: String(d.note || ''), picks: (Array.isArray(d.picks) ? d.picks : []).map(found).filter(Boolean), marks: Array.isArray(d.marks) ? d.marks : [] };
+        }).filter(function (d) { return d.picks.length || d.marks.length; });
     }
     function remove(i) {
         drafts.splice(i, 1);
@@ -532,6 +603,24 @@
             chips.appendChild(c);
         });
         head.appendChild(chips);
+        var drawn = (d.marks || []).length;
+        if (drawn) {
+            var inkline = doc.createElement('span');
+            inkline.className = 'fk-live-inkline';
+            inkline.innerHTML = icon('pen', 'fk-live-ico-s') + '標註 ' + drawn + ' 筆';
+            head.appendChild(inkline);
+        }
+        if (i === picking) {
+            var undo = doc.createElement('button');
+            undo.type = 'button';
+            undo.className = 'fk-live-icon fk-live-undo';
+            undo.title = '復原 · Ctrl Z';
+            undo.setAttribute('aria-label', '復原上一筆標註');
+            undo.disabled = !drawn;
+            undo.innerHTML = icon('undo', 'fk-live-ico-s');
+            undo.addEventListener('click', undoMark);
+            head.appendChild(undo);
+        }
         if (i !== picking) {
             var del = doc.createElement('button');
             del.type = 'button';
@@ -589,6 +678,46 @@
             });
         });
     }
+    // Every item's marks on one SVG over the whole page, in page coordinates,
+    // with the mark being drawn on top; faded while the panel is open. The
+    // SVG goes in through innerHTML so the parser gives it the SVG namespace.
+    function drawInk() {
+        var root = doc.documentElement;
+        var w = Math.max(root.scrollWidth || 0, root.clientWidth);
+        var h = Math.max(root.scrollHeight || 0, root.clientHeight);
+        var body = '';
+        drafts.forEach(function (d) { (d.marks || []).forEach(function (m) { body += inkOf(m); }); });
+        if (inking) body += inkOf(inking);
+        ink.classList.toggle('fk-live-dim', !panel.hidden);
+        ink.innerHTML = body ? '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" aria-hidden="true">' + body + '</svg>' : '';
+    }
+    function undoMark() {
+        if (picking < 0 || !drafts[picking].marks.length) return;
+        drafts[picking].marks.pop();
+        draw();
+    }
+    // The text tool: a field where the press landed; Enter or leaving it
+    // keeps the words as a mark on the open item, Escape drops them.
+    function askText(p) {
+        putText(true);
+        textAt = p;
+        textBox = el('input', 'fk-live-type');
+        textBox.setAttribute('type', 'text');
+        textBox.setAttribute('aria-label', '標註文字');
+        textBox.style.left = p[0] + 'px';
+        textBox.style.top = (p[1] - 14) + 'px';
+        textBox.addEventListener('blur', function () { putText(true); });
+        textBox.focus();
+    }
+    function putText(keep) {
+        if (!textBox) return;
+        var field = textBox;
+        var words = String(field.value || '').trim();
+        textBox = null;
+        field.remove();
+        if (keep && words && picking >= 0) drafts[picking].marks.push({ type: 'text', points: [textAt], text: words });
+        draw();
+    }
     // The card above the bar holds the item being made: what a press does
     // now, then its row — elements, buttons, note.
     function drawDraft() {
@@ -638,14 +767,16 @@
         drawDraft();
         drawQueue();
         drawPins();
+        drawInk();
         save();
     }
 
     // A tool button or its letter. With no item open, a tool opens a new one.
     function setTool(id) {
+        putText(true);
         menu.hidden = true;
         if (picking < 0) {
-            drafts.push({ note: '', picks: [] });
+            drafts.push({ note: '', picks: [], marks: [] });
             startPick(drafts.length - 1, true, id);
             return;
         }
@@ -658,7 +789,7 @@
     function startPick(i, fresh, as) {
         picking = i;
         tool = as || 'select';
-        pickWas = fresh ? null : drafts[i].picks.slice();
+        pickWas = fresh ? null : { picks: drafts[i].picks.slice(), marks: drafts[i].marks.slice() };
         hover = null;
         trail = [];
         sendErr = '';
@@ -671,6 +802,8 @@
     // picked goes.
     function endPick(keep) {
         if (picking < 0) return;
+        putText(keep);
+        inking = null;
         var d = drafts[picking];
         var at = picking;
         picking = -1;
@@ -679,9 +812,12 @@
         trail = [];
         hide();
         if (host) hostIn(null);
-        if (!keep) d.picks = pickWas || [];
+        if (!keep) {
+            d.picks = pickWas ? pickWas.picks : [];
+            d.marks = pickWas ? pickWas.marks : [];
+        }
         pickWas = null;
-        if (!d.picks.length) remove(at);
+        if (!d.picks.length && !d.marks.length) remove(at);
         if (keep && drafts.indexOf(d) >= 0) panel.hidden = false;
         draw();
         var i = drafts.indexOf(d);
@@ -722,7 +858,16 @@
             drawQueue();
             return;
         }
-        var payload = { page: location.pathname, items: itemsOf(drafts.map(function (d) { return { note: d.note, picks: d.picks.map(describe) }; })) };
+        var bare = -1;
+        drafts.forEach(function (d, i) { if (bare < 0 && !d.picks.length) bare = i; });
+        if (bare >= 0) {
+            sendErr = '第 ' + (bare + 1) + ' 則還沒選元素';
+            drawQueue();
+            if (list.children[bare]) list.children[bare].classList.add('fk-live-err');
+            return;
+        }
+        var view = { scroll: [Math.round(window.scrollX), Math.round(window.scrollY)], viewport: [doc.documentElement.clientWidth, doc.documentElement.clientHeight] };
+        var payload = { page: location.pathname, items: itemsOf(drafts.map(function (d) { return { note: d.note, picks: d.picks.map(describe), marks: d.marks }; }), view) };
         busy = true;
         sendErr = '';
         draw();
@@ -824,6 +969,41 @@
         walk(ev.deltaY < 0);
     }, { passive: false, capture: true });
 
+    // While an item is open with a drawing tool, a press on the page starts a
+    // mark where it lands, in page coordinates; a move stretches it and the
+    // release keeps it, unless it never left the spot. A step and a text are
+    // placed by the press alone. Registered ahead of the swallowing listeners
+    // below, which stop every later listener on window.
+    function pageAt(ev) {
+        return [Math.round(ev.clientX + window.scrollX), Math.round(ev.clientY + window.scrollY)];
+    }
+    window.addEventListener('pointerdown', function (ev) {
+        if (picking < 0 || !tool || tool === 'select' || ev.button !== 0 || ours(ev.target)) return;
+        var p = pageAt(ev);
+        var d = drafts[picking];
+        if (tool === 'step') {
+            d.marks.push({ type: 'step', points: [p], n: d.marks.filter(function (m) { return m.type === 'step'; }).length + 1 });
+            draw();
+        } else if (tool === 'text') {
+            askText(p);
+        } else {
+            inking = { type: tool, points: [p] };
+        }
+    }, true);
+    window.addEventListener('pointermove', function (ev) {
+        if (!inking) return;
+        var p = pageAt(ev);
+        stretch(inking, p[0], p[1]);
+        drawInk();
+    }, true);
+    window.addEventListener('pointerup', function () {
+        if (!inking) return;
+        var m = inking;
+        inking = null;
+        if (picking >= 0 && kept(m)) drafts[picking].marks.push(m);
+        draw();
+    }, true);
+
     // While picking, a press on the page is the assistant's from the first
     // press: the page's own pointer and mouse handlers do not see it, and
     // mousedown's default (focus, text selection) does not happen.
@@ -868,6 +1048,22 @@
     // letter typed into a field is the field's. Keys typed into the
     // assistant do not reach the page's shortcut handlers.
     window.addEventListener('keydown', function (ev) {
+        if (textBox && ev.target === textBox) {
+            if (ev.key === 'Enter') {
+                ev.preventDefault();
+                putText(true);
+            } else if (ev.key === 'Escape') {
+                putText(false);
+            }
+            ev.stopImmediatePropagation();
+            return;
+        }
+        if (picking >= 0 && (ev.ctrlKey || ev.metaKey) && String(ev.key).toLowerCase() === 'z' && !editable(ev.target)) {
+            ev.preventDefault();
+            ev.stopImmediatePropagation();
+            undoMark();
+            return;
+        }
         var mine = ours(ev.target);
         if (ev.key === 'F2' && picking < 0 && !mine) {
             ev.preventDefault();
@@ -923,7 +1119,7 @@
         drawPins();
     }
     window.addEventListener('scroll', reflow, { passive: true, capture: true });
-    window.addEventListener('resize', reflow);
+    window.addEventListener('resize', function () { reflow(); drawInk(); });
 
     // The queue count, and a ring on every block `tune.js wait` has handed out
     // and `done` has not settled — read every two seconds, because `wait`

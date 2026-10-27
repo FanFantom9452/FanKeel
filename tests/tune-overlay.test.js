@@ -811,3 +811,157 @@ test('an element with no block, opened by a click on a block, is picked with tha
     assert.equal(body.items[0].text, 'Option A', 'the pick was described after the dialog closed');
     await t.tick();
 });
+
+// tune-8: what the user draws on the page goes with the item it was drawn
+// for, in page coordinates, with the scroll and viewport it was seen at.
+test('inkOf draws each kind of mark in page coordinates, and escapes a text', () => {
+    const { inkOf } = require('../assets/tune/overlay.js');
+    assert.equal(inkOf({ type: 'pen', points: [[1, 2], [5, 6]] }), '<polyline points="1,2 5,6"/>');
+    assert.equal(inkOf({ type: 'line', points: [[0, 0], [10, 5]] }), '<line x1="0" y1="0" x2="10" y2="5"/>');
+    assert.equal(inkOf({ type: 'arrow', points: [[0, 0], [100, 0]] }), '<path d="M0 0L100 0M88 7L100 0L88 -7"/>');
+    assert.equal(inkOf({ type: 'rect', points: [[50, 40], [10, 20]] }), '<rect x="10" y="20" width="40" height="20" rx="6"/>');
+    assert.equal(inkOf({ type: 'ellipse', points: [[10, 20], [50, 40]] }), '<ellipse cx="30" cy="30" rx="20" ry="10"/>');
+    assert.equal(inkOf({ type: 'step', points: [[7, 8]], n: 3 }), '<g class="fk-live-step"><circle cx="7" cy="8" r="12"/><text x="7" y="8">3</text></g>');
+    assert.equal(inkOf({ type: 'text', points: [[1, 2]], text: 'a<b' }), '<text class="fk-live-ntext" x="1" y="2">a&lt;b</text>');
+});
+
+test('stretch keeps a pen\'s points 3px apart and moves a shape\'s end; kept drops a shape that never moved', () => {
+    const { stretch, kept } = require('../assets/tune/overlay.js');
+    const pen = { type: 'pen', points: [[0, 0]] };
+    stretch(pen, 1, 1);
+    stretch(pen, 3, 0);
+    stretch(pen, 3, 5);
+    assert.deepEqual(pen.points, [[0, 0], [3, 0], [3, 5]]);
+    const box = { type: 'rect', points: [[0, 0]] };
+    stretch(box, 5, 5);
+    stretch(box, 9, 4);
+    assert.deepEqual(box.points, [[0, 0], [9, 4]]);
+    assert.equal(kept(box), true);
+    assert.equal(kept({ type: 'line', points: [[2, 2]] }), false);
+    assert.equal(kept({ type: 'arrow', points: [[2, 2], [2, 2]] }), false);
+    assert.equal(kept({ type: 'step', points: [[2, 2]], n: 1 }), true);
+});
+
+test('itemsOf puts the marks, the scroll and the viewport on an item that drew, and none on one that did not', () => {
+    const { itemsOf } = require('../assets/tune/overlay.js');
+    const p = { block: 'hero', blocks: ['hero'], selector: 'section', classes: [], text: '' };
+    const marks = [{ type: 'step', points: [[5, 6]], n: 1 }];
+    const got = itemsOf([{ note: 'a', picks: [p], marks }, { note: 'b', picks: [p], marks: [] }], { scroll: [0, 40], viewport: [1280, 800] });
+    assert.deepEqual(got[0].marks, marks);
+    assert.deepEqual(got[0].scroll, [0, 40]);
+    assert.deepEqual(got[0].viewport, [1280, 800]);
+    assert.equal('marks' in got[1], false);
+    assert.equal('scroll' in got[1], false);
+});
+
+test('coral is the ink\'s alone', () => {
+    const coral = fs.readFileSync(SRC, 'utf8').split('\n').filter((l) => /ef6f6c/i.test(l));
+    assert.ok(coral.length > 0, 'the ink has no coral');
+    for (const l of coral) assert.match(l, /^\s*'\.fk-live-(ink|step|ntext|type|inkline)/, 'coral outside the ink: ' + l.trim());
+});
+
+test('the pen, a box and steps draw in page coordinates, undo and Ctrl+Z take the last mark back, and the marks go out with the item', async () => {
+    const t = loadOverlay();
+    t.win.scrollY = 100;
+    const down = (x, y) => t.fire(t.page.hero, 'pointerdown', { clientX: x, clientY: y });
+    const move = (x, y) => t.fire(t.page.hero, 'pointermove', { clientX: x, clientY: y });
+    const up = () => t.fire(t.page.hero, 'pointerup', {});
+    t.fire(t.tool('pen'), 'click');
+    down(10, 10); move(20, 10); move(20, 30); up();
+    const ink = t.q('.fk-live-ink');
+    assert.equal(ink.querySelectorAll('polyline').length, 1);
+    t.fire(t.page.hero, 'keydown', { key: 'r' });
+    down(50, 50); move(90, 80); up();
+    down(5, 5); up();
+    assert.equal(ink.querySelectorAll('rect').length, 1, 'a box that never moved was kept');
+    t.fire(t.page.hero, 'keydown', { key: 'n' });
+    down(200, 20); up();
+    down(200, 60); up();
+    assert.deepEqual(ink.querySelectorAll('text').map((x) => x.textContent), ['1', '2']);
+    assert.equal(t.q('.fk-live-inkline').textContent, '標註 4 筆');
+    t.fire(t.q('.fk-live-undo'), 'click');
+    assert.equal(t.q('.fk-live-inkline').textContent, '標註 3 筆');
+    t.fire(t.page.hero, 'keydown', { key: 'z', ctrlKey: true });
+    assert.equal(t.q('.fk-live-inkline').textContent, '標註 2 筆');
+    t.fire(t.page.hero, 'keydown', { key: 'v' });
+    t.fire(t.page.hero, 'click');
+    t.fire(t.q('.fk-live-fin'), 'click');
+    const area = t.doc.all('textarea').pop();
+    area.value = '輸入框太矮';
+    t.fire(area, 'input');
+    t.fire(t.q('.fk-live-all'), 'click');
+    const item = JSON.parse(t.fetched.find((f) => f.url === '/__live/request').init.body).items[0];
+    assert.equal(item.block, 'hero');
+    assert.deepEqual(item.marks, [
+        { type: 'pen', points: [[10, 110], [20, 110], [20, 130]] },
+        { type: 'rect', points: [[50, 150], [90, 180]] },
+    ]);
+    assert.deepEqual(item.scroll, [0, 100]);
+    assert.deepEqual(item.viewport, [1280, 800]);
+    await t.tick();
+});
+
+test('the text tool asks for words where the press landed; Enter keeps them, Escape drops only the words', () => {
+    const t = loadOverlay();
+    t.fire(t.tool('text'), 'click');
+    t.fire(t.page.hero, 'pointerdown', { clientX: 40, clientY: 50 });
+    const field = t.q('.fk-live-type');
+    assert.ok(field, 'no field for the words');
+    assert.equal(field.style.left, '40px');
+    assert.equal(t.doc.activeElement, field);
+    field.value = '至少三行';
+    t.fire(field, 'keydown', { key: 'Enter' });
+    assert.equal(t.q('.fk-live-type'), null);
+    assert.deepEqual(t.q('.fk-live-ink').querySelectorAll('text').map((x) => x.textContent), ['至少三行']);
+    t.fire(t.page.hero, 'pointerdown', { clientX: 60, clientY: 90 });
+    const again = t.q('.fk-live-type');
+    again.value = '不要';
+    t.fire(again, 'keydown', { key: 'Escape' });
+    assert.equal(t.q('.fk-live-type'), null);
+    assert.equal(t.q('.fk-live-draft').hidden, false, 'Escape in the field closed the item');
+    assert.equal(t.q('.fk-live-ink').querySelectorAll('text').length, 1);
+});
+
+test('an item that drew but picked no element is kept, and 全部送出 says which one still needs an element', () => {
+    const t = loadOverlay();
+    t.fire(t.tool('pen'), 'click');
+    t.fire(t.page.hero, 'pointerdown', { clientX: 0, clientY: 0 });
+    t.fire(t.page.hero, 'pointermove', { clientX: 30, clientY: 0 });
+    t.fire(t.page.hero, 'pointerup', {});
+    t.fire(t.q('.fk-live-fin'), 'click');
+    assert.equal(t.q('.fk-live-count').textContent, '1', 'an item with marks and no element was thrown away');
+    const area = t.doc.all('textarea').pop();
+    area.value = '這裡';
+    t.fire(area, 'input');
+    t.fire(t.q('.fk-live-all'), 'click');
+    assert.equal(t.fetched.filter((f) => f.url === '/__live/request').length, 0);
+    assert.equal(t.q('.fk-live-queue').querySelector('span').textContent, '第 1 則還沒選元素');
+});
+
+test('the marks are saved with the drafts and drawn again on a fresh page; Escape on a re-opened item puts its marks back', () => {
+    const a = loadOverlay();
+    a.fire(a.tool('pen'), 'click');
+    a.fire(a.page.hero, 'keydown', { key: 'l' });
+    a.fire(a.page.hero, 'pointerdown', { clientX: 0, clientY: 0 });
+    a.fire(a.page.hero, 'pointermove', { clientX: 40, clientY: 0 });
+    a.fire(a.page.hero, 'pointerup', {});
+    a.fire(a.page.hero, 'keydown', { key: 'v' });
+    a.fire(a.page.hero, 'click');
+    a.fire(a.q('.fk-live-fin'), 'click');
+    const saved = JSON.parse(a.sessionStorage.m['fk-live-drafts']);
+    assert.deepEqual(saved[0].marks, [{ type: 'line', points: [[0, 0], [40, 0]] }]);
+    const b = loadOverlay({ sessionStorage: a.sessionStorage });
+    assert.equal(b.q('.fk-live-ink').querySelectorAll('line').length, 1);
+    b.openTray();
+    b.fire(b.q('.fk-live-num'), 'click');
+    b.fire(b.page.hero, 'keydown', { key: 'z', ctrlKey: true });
+    assert.equal(b.q('.fk-live-ink').querySelectorAll('line').length, 0);
+    b.fire(b.page.hero, 'keydown', { key: 'Escape' });
+    assert.equal(b.q('.fk-live-ink').querySelectorAll('line').length, 1, 'Escape did not put the undone mark back');
+});
+
+test('the design skill and the mockup agent say how to read an item\'s marks', () => {
+    const read = (p) => fs.readFileSync(path.join(__dirname, '..', p), 'utf8').replace(/\s+/g, ' ');
+    assert.match(read('skills/fankeel-design/SKILL.md'), /An item may carry `marks`/);
+    assert.match(read('agents/fankeel-mockup.md'), /An item may also carry `marks`/);
+});

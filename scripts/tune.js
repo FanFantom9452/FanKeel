@@ -5,7 +5,7 @@
 //   node scripts/tune.js serve <dir> [--port 7819]   serve <dir> with the overlay injected
 //   node scripts/tune.js serve <dir> --src <file,...> --rebuild "<cmd>"   live mode: the page is built from --src
 //   node scripts/tune.js serve --proxy <url> --src <file,...> [--rebuild "<cmd>"]   the real server's pages, overlay spliced into its HTML
-//   node scripts/tune.js wait [--timeout 3600]         block until the next request; print it as JSON, with its items
+//   node scripts/tune.js wait [--timeout 3600]         block until the next request; print it as JSON, with its items and their marks
 //   node scripts/tune.js done <id>                     check the edit stayed in its block; tell the page
 //   node scripts/tune.js drop <id>                     settle a request nobody will finish; the page is not touched
 //
@@ -101,6 +101,39 @@ function send(res, status, type, body) {
     res.end(body);
 }
 
+// What a request item's `marks` may hold: up to 100 marks of the seven kinds
+// the overlay draws, each with up to 500 `[x, y]` points in page
+// coordinates, rounded to whole pixels; a text keeps up to 500 characters and
+// a step its number. Anything else is dropped rather than refused: a mark is
+// a hint beside the note, never the request itself.
+const MARK_TYPES = ['pen', 'line', 'arrow', 'rect', 'ellipse', 'step', 'text'];
+function marksOf(v) {
+    if (!Array.isArray(v)) return [];
+    const whole = (x) => (typeof x === 'number' && Number.isFinite(x) ? Math.round(x) : null);
+    const out = [];
+    for (const m of v.slice(0, 100)) {
+        if (!m || typeof m !== 'object' || !MARK_TYPES.includes(m.type)) continue;
+        const points = (Array.isArray(m.points) ? m.points.slice(0, 500) : [])
+            .map((p) => (Array.isArray(p) ? [whole(p[0]), whole(p[1])] : [null, null]))
+            .filter((p) => p[0] !== null && p[1] !== null);
+        if (!points.length) continue;
+        const one = { type: m.type, points };
+        if (m.type === 'text') {
+            const text = typeof m.text === 'string' ? m.text.trim().slice(0, 500) : '';
+            if (!text) continue;
+            one.text = text;
+        }
+        if (m.type === 'step' && whole(m.n) > 0) one.n = whole(m.n);
+        out.push(one);
+    }
+    return out;
+}
+
+// An item's `scroll` or `viewport`: two finite numbers, rounded; null otherwise.
+function pairOf(v) {
+    return Array.isArray(v) && v.length === 2 && v.every((x) => typeof x === 'number' && Number.isFinite(x)) ? [Math.round(v[0]), Math.round(v[1])] : null;
+}
+
 function serve(dir, port, live, upstream) {
     const root = upstream ? null : path.resolve(dir);
     if (!upstream && (!fs.existsSync(root) || !fs.statSync(root).isDirectory())) die('not a directory: ' + root);
@@ -181,6 +214,14 @@ function serve(dir, port, live, upstream) {
                     if (op) one.opener = op;
                     if (blocks.length > 1) one.blocks = blocks;
                     if (selectors.length > 1) one.selectors = selectors;
+                    const marks = marksOf(d.marks);
+                    if (marks.length) {
+                        one.marks = marks;
+                        const scroll = pairOf(d.scroll);
+                        const viewport = pairOf(d.viewport);
+                        if (scroll) one.scroll = scroll;
+                        if (viewport) one.viewport = viewport;
+                    }
                     return one;
                 };
                 const many = Array.isArray(data.items);
@@ -497,4 +538,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { WAIT_TIMEOUT_SEC };
+module.exports = { WAIT_TIMEOUT_SEC, marksOf, pairOf };
