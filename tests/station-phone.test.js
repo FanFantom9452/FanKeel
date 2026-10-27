@@ -130,10 +130,30 @@ test('say refuses empty text and text over SAY_MAX with 400', async () => {
     }
 });
 
+test('POST /phone/upload saves an image under the session and answers its path', async () => {
+    const f = fixture();
+    const s = await start(f, fakeTailscale());
+    const as = (cookie) => Object.assign({ cookie }, TAILNET);
+    try {
+        const q = '?root=' + encodeURIComponent(f.r1) + '&id=' + SID + '&ext=png';
+        const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 1, 2, 3]);
+        assert.equal((await request(s.url + 'phone/upload' + q, { headers: Object.assign({ 'content-type': 'image/png' }, TAILNET), body: png })).status, 401);
+        const r = await request(s.url + 'phone/upload' + q, { headers: Object.assign({ 'content-type': 'image/png' }, as(f.cookie)), body: png });
+        assert.equal(r.status, 201);
+        const saved = r.text.trim();
+        assert.ok(path.isAbsolute(saved) && saved.endsWith('.png'), saved);
+        assert.deepEqual(fs.readFileSync(saved), png);
+        assert.equal((await request(s.url + 'phone/upload' + q, { headers: Object.assign({ 'content-type': 'text/plain' }, as(f.cookie)), body: Buffer.from('x') })).status, 415);
+        assert.equal((await request(s.url + 'phone/upload?root=' + encodeURIComponent(f.r1) + '&id=nope&ext=png', { headers: Object.assign({ 'content-type': 'image/png' }, as(f.cookie)), body: png })).status, 404);
+    } finally {
+        s.close();
+    }
+});
+
 test('the phone routes are device routes, and the reference names them', () => {
     assert.equal(remote.policy('POST', '/phone/say'), 'device');
     assert.equal(remote.policy('POST', '/phone/attach'), 'device');
     assert.equal(remote.policy('GET', '/station/phone.json'), 'device');
     const ref = fs.readFileSync(path.join(__dirname, '..', 'docs', '90-agent', 'reference', 'station.md'), 'utf8');
-    for (const route of ['/station/phone.json', '/phone/attach', '/phone/detach', '/phone/say']) assert.ok(ref.includes(route), route);
+    for (const route of ['/station/phone.json', '/phone/attach', '/phone/detach', '/phone/say', '/phone/upload']) assert.ok(ref.includes(route), route);
 });

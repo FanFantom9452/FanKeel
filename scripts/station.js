@@ -979,6 +979,28 @@ async function serve(opts) {
             if (!got) return fail(404, 'no such session on this station');
             return send(200, 'application/json', JSON.stringify(got), noStore);
         }
+        // A photo from the phone's answer box: the raw body, saved under the
+        // session's phone directory, answered with its path — the box puts
+        // that path in its text, and the session reads the file.
+        if (req.method === 'POST' && url.pathname === '/phone/upload') {
+            if (!device && url.searchParams.get('nonce') !== nonce) return fail(403, 'wrong nonce: open the page this server printed and try again');
+            if (!/^image\//.test(String(req.headers['content-type'] || ''))) return fail(415, 'an image only');
+            const reg = modelNow().registries.find((r) => r.root === path.resolve(url.searchParams.get('root') || ''));
+            const id = url.searchParams.get('id') || '';
+            if (!reg || !reg.sessions.find((x) => x.sessionId === id)) return fail(404, 'no such session on this station');
+            const ext = (url.searchParams.get('ext') || 'png').replace(/[^a-z0-9]/g, '').slice(0, 5) || 'png';
+            const chunks = [];
+            let n = 0;
+            for await (const c of req) {
+                n += c.length;
+                if (n > 10 * 1024 * 1024) { req.destroy(); return fail(413, 'image over 10 MB'); }
+                chunks.push(c);
+            }
+            const file = path.join(phone.dirOf(reg.root, id), 'uploads', Date.now() + '.' + ext);
+            fs.mkdirSync(path.dirname(file), { recursive: true });
+            fs.writeFileSync(file, Buffer.concat(chunks));
+            return send(201, 'text/plain; charset=utf-8', file + '\n');
+        }
         // The phone's three actions on a session (2026-10-22-mobile-session-design.md §4),
         // under the same device policy as /answer.
         const PHONE_ACT = /^\/phone\/(attach|detach|say)$/.exec(url.pathname);
