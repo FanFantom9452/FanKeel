@@ -13,6 +13,7 @@ import { bandRows } from './pane-band.ts'
 import type { Seg as BandSeg, BandInput } from './pane-band.ts'
 import { bandRow1Svg, bandRow2Svg, paneParts, altOf, SVG_MAX } from './pane-svg.ts'
 import { say, langAt } from './pane-lang.ts'
+import { limitRow, appendRow } from './pane-limits.ts'
 import type { Lang } from './pane-lang.ts'
 
 // The fankeel mod's two drawings: two rows above the prompt for what is always
@@ -64,7 +65,7 @@ type Cache = Map<string, { stamp: string; value: unknown }>
 const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, context: null, limits: [], plan: null, remote: false, probe: null, agents: [], shells: [], station: null, pkey: '', todos: [], model: null, effort: null, lang: 'zh' })
 
 // The last message each silent catch logged: the tick runs four times a second, and a failure that stays is said once.
-type Logged = { context: string; plan: string; open: string; registry: string; neighbour: string; gate: string; live: string; remote: string; bandSvg: string; paneSvg: string; agents: string; station: string; todo: string; model: string; shells: string; lang: string }
+type Logged = { context: string; plan: string; open: string; registry: string; neighbour: string; gate: string; live: string; remote: string; bandSvg: string; paneSvg: string; agents: string; station: string; todo: string; model: string; shells: string; lang: string; limits: string }
 
 // A registry file that is there and does not parse: told apart so `tick` can wait it out for a while, then give up on it.
 class Unreadable extends Error {}
@@ -103,6 +104,23 @@ async function findEntry($: EngineInterface, id: string): Promise<{ entry: Entry
     dir = parentOf(dir)
   }
   return null
+}
+
+// hooks/pane-limits.ts decides whether this tick is a new row; this writes it.
+// Only while the session owns a task; a write that fails is said once and the tick goes on.
+let lastLimits = ''
+async function recordLimits($: EngineInterface, root: string, id: string, entry: Entry, limits: Limit[], logged: Logged): Promise<void> {
+  if (!isActive(entry) || !limits.length) return
+  try {
+    const next = limitRow(limits, entry, await $.clock.now(), lastLimits)
+    if (!next) return
+    const file = `${root}/.fankeel/build/limits/${id}.jsonl`
+    const text = (await $.fs.exists(file)) ? String(await $.fs.read(file)) : ''
+    await $.fs.write(file, appendRow(text, next.row))
+    lastLimits = next.key
+  } catch (err) {
+    logOnce($, logged, 'limits', `fankeel pane: limits row not written, ${String(err)}`)
+  }
 }
 
 // The tokens in play against the count hooks/compact.ts compacts at — its own
@@ -501,6 +519,7 @@ async function look($: EngineInterface, cache: Cache, logged: Logged): Promise<S
   }
 
   const { context, limits } = await contextOf($, logged, found)
+  await recordLimits($, found.root, id, found.entry, limits, logged)
   const plan = await planOf($, found.root, entry, cache, logged)
   const probe = await probeOf($)
   const remote = await remoteOf($, entry, id, cache, logged)
@@ -655,7 +674,7 @@ async function tick($: EngineInterface, state: State): Promise<void> {
 export const register: Register = (on) => {
   const state: State = {
     seen: blank(''), print: '', mine: false, edge: { task: false }, bad: 0, busy: false, cache: new Map(),
-    logged: { context: '', plan: '', open: '', registry: '', neighbour: '', gate: '', live: '', remote: '', bandSvg: '', paneSvg: '', agents: '', station: '', todo: '', model: '', shells: '', lang: '' },
+    logged: { context: '', plan: '', open: '', registry: '', neighbour: '', gate: '', live: '', remote: '', bandSvg: '', paneSvg: '', agents: '', station: '', todo: '', model: '', shells: '', lang: '', limits: '' },
     folded: {}, shells: [], shellAt: 0, tasksDir: '',
   }
 
