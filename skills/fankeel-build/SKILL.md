@@ -456,8 +456,8 @@ then asks this stage's gate.
    `node <plugin>/scripts/tune.js serve --proxy <the server's url> --src <the
    files that draw it>` — add `--rebuild "<cmd>"` only where the server does
    not read those files on every request — and the url it prints goes to the
-   user. A click reaches the page until the fankeel logo in its bottom-right
-   corner asks for one, and 全部送出 sends its drafted items as one request.
+   user. A click reaches the page until the fankeel toolbar centred at its
+   bottom asks for one, and 全部送出 sends its drafted items as one request.
    Loop until the user says the page is done:
    `node <plugin>/scripts/tune.js wait` prints the next request with its
    `sources` and `items`; dispatch one `subagent_type: fankeel:fankeel-mockup` per request —

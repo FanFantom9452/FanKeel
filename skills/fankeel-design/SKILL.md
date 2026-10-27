@@ -133,13 +133,19 @@ the page. The gate approves the page, not the paragraph.
 
 **Before the gate, the page can be tuned block by block.** The url the
 agent returned is already a `tune.js serve`, overlay and all; give the user
-that url: a click reaches the page until the fankeel logo in the
-bottom-right corner asks for one. The logo drags anywhere; the tray is open
-when the page loads, and a click on the logo folds or reopens it; 新增一則
-starts an item, and while it picks, a click on the page
-adds an element or takes it back out, the wheel or 往外一層 walks out to its
-parents, and Esc drops the pick. Each item is one or more elements under one
-note, and 全部送出 sends every item as one request. List what you see, block by
+that url: a click reaches the page until the fankeel toolbar, centred at
+the bottom, asks for one. Select (V), 新增一則 in its 修改項 panel, or F2
+opens an item, and while it is open a click on any element adds it or takes
+it back out — the request takes the element's nearest `data-block`
+ancestor, and the hover label names both — the wheel or 往外一層 walks out
+to its parents, and Esc drops the item. The pen (P), the shape menu (S:
+line, arrow, rectangle, ellipse, numbered step) and text (T) draw on the
+page for the open item, and X folds the toolbar into the logo. Each item is
+one or more elements under one note, and 全部送出 in the panel sends every
+item as one request. An item may carry `marks` — what the user drew, each a
+`type` with `points` in page coordinates — beside the `scroll` and
+`viewport` the page had when it was sent; read them as where the note
+points on the screen the user saw. List what you see, block by
 block, before asking which one
 to change — a list is easier to answer than an empty question. Then loop:
 `node <plugin>/scripts/tune.js wait` prints the next request as JSON, with

@@ -1,21 +1,18 @@
 'use strict';
-// assets/tune/overlay.js has two halves. The pure helpers (itemsOf, clampTo,
-// selectorOf...) are called directly. The DOM half is EXECUTED here against a
-// small hand-written stub document (no jsdom): the logo's drag and click, the
-// tray, the per-item notes, 全部送出, and the capture-phase swallowing while
-// picking are driven by dispatching events through the listeners the script
-// registered. Still not checked: a real browser, real hit-testing, layout,
-// pointer capture, focus, or how it looks. That is the render reviewer's
-// question, at verify. Text checks that remain: wording, endpoint names, and
-// three code shapes (the CSS pulse rule and its reduced-motion rule,
-// `q.editing`, `setInterval(refreshQueue, 2000)`), which assert the source
-// says so, not that it runs. Listeners no test dispatches: the logo's
-// pointercancel, the fold and clear buttons, document mousemove beyond the
-// hovers the two wheel tests fire, window blur, keyup and keypress, scroll and
-// resize, the draft number button click (overlay.js:348), the chip remove x
-// click (:360), the draft delete button click (:373), the diff link click
-// (:769), and the keydown tray-close branch (Escape, or any keystroke from
-// inside the assistant when not picking, overlay.js:676-686).
+// assets/tune/overlay.js has two halves. The pure helpers (itemsOf,
+// toolOfKey, selectorOf...) are called directly. The DOM half is EXECUTED
+// here against a small hand-written stub document (no jsdom): the toolbar,
+// its tools and shape menu, the 修改項 panel, the item card, the per-item
+// notes, 全部送出, and the capture-phase swallowing while picking are driven
+// by dispatching events through the listeners the script registered. Still
+// not checked: a real browser, real hit-testing, layout, focus, or how it
+// looks. That is the render reviewer's question, at verify. Text checks that
+// remain: wording, endpoint names, radii and the font stack, and three code
+// shapes (the CSS pulse rule and its reduced-motion rule, `q.editing`,
+// `setInterval(refreshQueue, 2000)`), which assert the source says so, not
+// that it runs. Listeners no test dispatches: the fold and clear buttons,
+// window blur, keyup and keypress, scroll and resize, the draft delete
+// button, the chip remove button, and the diff link.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -36,7 +33,7 @@ test('the overlay speaks every endpoint tune.js serves it for', () => {
 
 test('the five states carry the words the approved mockup shows', () => {
     const text = fs.readFileSync(SRC, 'utf8');
-    for (const s of ['這塊要怎麼改？', '已送出，等待改寫…', '已改寫 · 只動了 ', '退回：改到區塊外（', '原檔未變', '看差異', '佇列 ']) {
+    for (const s of ['這則要怎麼改？', '已送出，等待改寫…', '已改寫 · 只動了 ', '退回：改到區塊外（', '原檔未變', '看差異', '佇列 ']) {
         assert.ok(text.includes(s), 'overlay.js is missing ' + s);
     }
 });
@@ -80,13 +77,33 @@ test('toggleIn adds an element once and a second toggle removes it', () => {
     assert.deepEqual(toggleIn([a, b], a), [b]);
 });
 
-test('the assistant carries the words the approved mockup shows, and the station glyph', () => {
+test('the toolbar carries the words the approved mockup shows, and the station glyph', () => {
     const text = fs.readFileSync(SRC, 'utf8');
-    for (const s of ['修改項', '新增一則', '收合', '刪除這則', '塊共用一段備註，要怎麼改？', '圈選第 ', '往外一層', '或滾輪：上 往外，下 往內', '完成這則', '全部送出（', '清空', '則待送', '按住拖曳']) {
+    for (const s of ['修改項', '新增一則', '收合修改項', '刪除這則', '個元素共用一段備註，要怎麼改？', '點元素加入，再點一次移出', '往外一層', '或滾輪：上 往外，下 往內', '完成這則', '全部送出（', '清空', '則待送', '選取元素', '畫筆', '形狀：', '文字', '收起工具列', '直線', '箭頭', '方框', '橢圓', '步驟編號', '歸到 data-block']) {
         assert.ok(text.includes(s), 'overlay.js is missing ' + s);
     }
     assert.ok(text.includes('M60.00 39.00L78.19 49.50L78.19 70.50L60.00 81.00L41.81 70.50L41.81 49.50Z'), 'the logo is not the station glyph');
     assert.ok(!/class="g(seg|edge|core)"/.test(text), 'a glyph class without the fk-live- prefix picks up the page\'s own .gseg rules');
+});
+
+test('the toolbar takes the station\'s radii and font, and no square corner is left', () => {
+    const text = fs.readFileSync(SRC, 'utf8');
+    assert.match(text, /\.fk-live-bar\{[^}]*border-radius:10px/);
+    assert.match(text, /\.fk-live-tool\{[^}]*border-radius:6px/);
+    assert.ok(!/border-radius:0[;}]/.test(text), 'a square corner is left over from the old tray');
+    assert.ok(text.includes('"Bahnschrift","Microsoft JhengHei UI","Microsoft JhengHei","PingFang TC","Noto Sans TC",system-ui,sans-serif'), 'the station font stack is missing');
+});
+
+test('toolOfKey maps V, P, T, S and each shape\'s letter, in either case, and nothing else', () => {
+    const { toolOfKey, SHAPES } = require('../assets/tune/overlay.js');
+    assert.deepEqual(SHAPES.map((s) => s.id + ':' + s.key), ['line:l', 'arrow:a', 'rect:r', 'ellipse:o', 'step:n']);
+    assert.equal(toolOfKey('V', 'arrow'), 'select');
+    assert.equal(toolOfKey('p', 'arrow'), 'pen');
+    assert.equal(toolOfKey('t', 'arrow'), 'text');
+    assert.equal(toolOfKey('s', 'ellipse'), 'ellipse');
+    assert.deepEqual(['l', 'A', 'r', 'o', 'n'].map((k) => toolOfKey(k, 'arrow')), ['line', 'arrow', 'rect', 'ellipse', 'step']);
+    assert.equal(toolOfKey('x', 'arrow'), null);
+    assert.equal(toolOfKey('Escape', 'arrow'), null);
 });
 
 test('itemsOf keeps drafts with a note and an element, the first element on the item, every block once', () => {
@@ -104,12 +121,6 @@ test('itemsOf keeps drafts with a note and an element, the first element on the 
     ]);
 });
 
-test('clampTo keeps the logo inside the viewport', () => {
-    const { clampTo } = require('../assets/tune/overlay.js');
-    assert.deepEqual(clampTo(-20, 900, 48, 48, 1280, 800), { x: 0, y: 752 });
-    assert.deepEqual(clampTo(600, 300, 48, 48, 1280, 800), { x: 600, y: 300 });
-});
-
 test('the header says the button goes out only and the wheel goes both ways', () => {
     const head = fs.readFileSync(SRC, 'utf8').split('\n').slice(0, 12).join('\n');
     assert.ok(head.includes('(out only)') && head.includes('the wheel goes both ways'), 'header must say the button is out only');
@@ -120,7 +131,7 @@ test('the design and build skills and the mockup agent describe the assistant an
     for (const p of ['skills/fankeel-design/SKILL.md', 'skills/fankeel-build/SKILL.md']) {
         const text = read(p);
         assert.doesNotMatch(text, /Alt\+click|Alt\+wheel|holding Alt/, p + ' still describes the Alt overlay');
-        assert.match(text, /fankeel logo/, p + ' does not name the assistant');
+        assert.match(text, /fankeel toolbar/, p + ' does not name the toolbar');
         assert.match(text, /全部送出/, p + ' does not say how the items are sent');
         assert.match(text, /`items`/, p + ' does not name the items field');
     }
@@ -280,15 +291,14 @@ function loadOverlay(shared) {
         return ev;
     }
     const q = (sel) => doc.querySelector(sel);
-    const logo = q('.fk-live-logo');
     const t = {
-        doc, win, page, fire, q, logo, fetched, localStorage, sessionStorage, tray: q('.fk-live-tray'), ast: q('.fk-live-ast'),
-        press: (x, y, id = 1) => fire(logo, 'pointerdown', { clientX: x, clientY: y, pointerId: id }),
-        move: (x, y, id = 1) => fire(logo, 'pointermove', { clientX: x, clientY: y, pointerId: id }),
-        release: (id = 1) => fire(logo, 'pointerup', { pointerId: id }),
+        doc, win, page, fire, q, fetched, localStorage, sessionStorage,
+        bar: q('.fk-live-bar'), panel: q('.fk-live-panel'), fab: q('.fk-live-fab'),
+        tool: (id) => doc.all('.fk-live-tool').find((b) => b.getAttribute('data-tool') === id),
         tick: () => new Promise((r) => setImmediate(r)),
     };
-    t.openTray = () => { if (t.tray.hidden) { t.press(5, 5); t.release(); } };
+    // The panel holds 新增一則 and 全部送出; opening it is one click on 修改項.
+    t.openTray = () => { if (t.panel.hidden) fire(q('.fk-live-items'), 'click'); };
     // 新增一則, click each block, 完成這則, then write the note when given one.
     t.draft = (blocks, note) => {
         fire(q('.fk-live-add'), 'click');
@@ -302,74 +312,133 @@ function loadOverlay(shared) {
     return t;
 }
 
-test('dragging the logo moves it, clamps it inside the viewport, keeps the spot, and the click that ends a drag does not fold the tray', () => {
+test('a fresh page shows the toolbar with no tool pressed, the panel shut and no count', () => {
     const t = loadOverlay();
-    assert.equal(t.ast.style.left, '1216px');
-    assert.equal(t.ast.style.top, '736px');
-    t.press(1230, 750);
-    t.move(1231, 751);
-    assert.equal(t.ast.style.left, '1216px', 'a move under 5px is still a click');
-    t.move(930, 550);
-    assert.equal(t.ast.style.left, '916px');
-    assert.equal(t.ast.style.top, '536px');
-    assert.ok(t.logo.classList.contains('fk-live-drag'));
-    t.release();
-    assert.ok(!t.logo.classList.contains('fk-live-drag'));
-    assert.deepEqual(JSON.parse(t.localStorage.m['fk-live-ast-pos']), { x: 916, y: 536 });
-    t.fire(t.logo, 'click', { detail: 1 });
-    assert.equal(t.tray.hidden, false, 'the click that ends a drag folded the tray');
-    assert.equal(t.logo.getAttribute('aria-expanded'), 'true');
-    t.press(930, 550);
-    t.move(2930, 2550);
-    assert.equal(t.ast.style.left, '1232px');
-    assert.equal(t.ast.style.top, '752px');
-    t.release();
-    t.press(1240, 760);
-    t.move(-3000, -3000);
-    assert.equal(t.ast.style.left, '0px');
-    assert.equal(t.ast.style.top, '0px');
-    t.release();
+    assert.equal(t.bar.hidden, false);
+    assert.equal(t.bar.getAttribute('role'), 'toolbar');
+    assert.equal(t.panel.hidden, true);
+    assert.equal(t.fab.hidden, true);
+    assert.equal(t.q('.fk-live-count').hidden, true);
+    assert.deepEqual(['select', 'pen', 'text'].map((id) => t.tool(id).getAttribute('aria-pressed')), ['false', 'false', 'false']);
+    assert.equal(t.q('.fk-live-shape').getAttribute('aria-label'), '形狀：箭頭');
+    assert.equal(t.q('.fk-live-items').getAttribute('aria-label'), '修改項，0 則待送');
 });
 
-test('another pointer\'s move does not drag the logo', () => {
+test('修改項 opens and shuts the panel, and X folds the toolbar into the logo, which a click or F2 opens again', () => {
     const t = loadOverlay();
-    t.press(1230, 750);
-    t.move(930, 550, 2);
-    assert.equal(t.ast.style.left, '1216px', 'a second pointer dragged the logo');
-    assert.ok(!t.logo.classList.contains('fk-live-drag'));
-    t.move(930, 550);
-    assert.equal(t.ast.style.left, '916px', 'the pressing pointer no longer drags');
-    t.release();
+    const items = t.q('.fk-live-items');
+    t.fire(items, 'click');
+    assert.equal(t.panel.hidden, false);
+    assert.equal(items.getAttribute('aria-expanded'), 'true');
+    t.fire(items, 'click');
+    assert.equal(t.panel.hidden, true);
+    t.fire(t.q('.fk-live-close'), 'click');
+    assert.equal(t.bar.hidden, true);
+    assert.equal(t.fab.hidden, false);
+    t.fire(t.fab, 'click');
+    assert.equal(t.bar.hidden, false);
+    assert.equal(t.fab.hidden, true);
+    t.fire(t.q('.fk-live-close'), 'click');
+    t.fire(t.doc.body, 'keydown', { key: 'F2' });
+    assert.equal(t.bar.hidden, false, 'F2 did not open the folded toolbar');
+    assert.equal(t.tool('select').getAttribute('aria-pressed'), 'true');
 });
 
-// tune-5: a first-time reader never noticed the logo in the corner, so the
-// tray is there when the page loads and the logo is what folds it.
-test('a freshly loaded page shows the tray open, and the logo says it folds', () => {
+test('the select tool opens an item; 完成這則 releases every tool and opens the panel on the item\'s note', () => {
     const t = loadOverlay();
-    assert.equal(t.tray.hidden, false, 'the tray is folded behind the logo on load');
-    assert.equal(t.logo.getAttribute('aria-expanded'), 'true');
-    assert.ok(t.ast.classList.contains('fk-live-open'));
-    assert.match(t.logo.getAttribute('aria-label'), /點一下收合$/);
+    t.fire(t.tool('select'), 'click');
+    assert.equal(t.tool('select').getAttribute('aria-pressed'), 'true');
+    assert.equal(t.q('.fk-live-draft').hidden, false);
+    assert.equal(t.q('.fk-live-say').textContent, '第 1 則：點元素加入，再點一次移出 · 已選 0 個');
+    t.fire(t.page.hero, 'click');
+    t.fire(t.q('.fk-live-fin'), 'click');
+    assert.equal(t.tool('select').getAttribute('aria-pressed'), 'false');
+    assert.equal(t.q('.fk-live-draft').hidden, true);
+    assert.equal(t.panel.hidden, false, '完成這則 did not open the panel');
+    assert.equal(t.doc.activeElement, t.doc.all('textarea').pop());
+    assert.equal(t.q('.fk-live-count').textContent, '1');
 });
 
-test('a plain press and release of the logo toggles the tray and aria-expanded, once, and a keyboard click does too', () => {
+test('the shape menu: the button opens it on the current shape, a click or a letter picks a shape, and Escape shuts only the menu', () => {
     const t = loadOverlay();
-    assert.equal(t.logo.getAttribute('aria-expanded'), 'true');
-    t.press(5, 5);
-    t.release();
-    t.fire(t.logo, 'click', { detail: 1 });
-    assert.equal(t.tray.hidden, true);
-    assert.equal(t.logo.getAttribute('aria-expanded'), 'false');
-    t.press(5, 5);
-    t.release();
-    t.fire(t.logo, 'click', { detail: 1 });
-    assert.equal(t.tray.hidden, false);
-    assert.equal(t.logo.getAttribute('aria-expanded'), 'true');
-    t.fire(t.logo, 'click', { detail: 0 });
-    assert.equal(t.logo.getAttribute('aria-expanded'), 'false');
-    t.press(5, 5, 7);
-    t.release(8);
-    assert.equal(t.logo.getAttribute('aria-expanded'), 'false', 'another pointer\'s release must not toggle');
+    const shapeBtn = t.q('.fk-live-shape');
+    const menu = t.q('.fk-live-menu');
+    const items = () => t.doc.all('.fk-live-mi');
+    assert.deepEqual(items().map((b) => b.getAttribute('data-shape')), ['line', 'arrow', 'rect', 'ellipse', 'step']);
+    t.fire(shapeBtn, 'click');
+    assert.equal(menu.hidden, false);
+    assert.equal(shapeBtn.getAttribute('aria-expanded'), 'true');
+    assert.equal(shapeBtn.getAttribute('aria-pressed'), 'true', 'the shape tool is not pressed');
+    t.fire(items()[2], 'click');
+    assert.equal(menu.hidden, true);
+    assert.equal(shapeBtn.getAttribute('aria-label'), '形狀：方框');
+    assert.deepEqual(items().map((b) => b.getAttribute('aria-checked')), ['false', 'false', 'true', 'false', 'false']);
+    t.fire(t.page.hero, 'keydown', { key: 'n' });
+    assert.equal(shapeBtn.getAttribute('aria-label'), '形狀：步驟編號');
+    t.fire(t.page.hero, 'keydown', { key: 's' });
+    assert.equal(menu.hidden, false);
+    t.fire(shapeBtn, 'keydown', { key: 'Escape' });
+    assert.equal(menu.hidden, true);
+    assert.equal(t.q('.fk-live-draft').hidden, false, 'Escape on the open menu closed the item');
+    t.fire(t.page.hero, 'keydown', { key: 'Escape' });
+    assert.equal(t.q('.fk-live-draft').hidden, true);
+});
+
+test('a letter typed into a note is the note\'s, and with no item open a letter on the page is the page\'s', () => {
+    const t = loadOverlay();
+    assert.equal(t.fire(t.page.hero, 'keydown', { key: 'p' })._stopNow, false, 'the page lost a letter while no item was open');
+    assert.equal(t.tool('pen').getAttribute('aria-pressed'), 'false');
+    t.fire(t.tool('select'), 'click');
+    const area = t.q('.fk-live-draft').querySelector('textarea');
+    assert.equal(t.fire(area, 'keydown', { key: 'p' }).defaultPrevented, false, 'a letter typed into the note was taken');
+    assert.equal(t.tool('select').getAttribute('aria-pressed'), 'true');
+    t.fire(t.page.hero, 'keydown', { key: 'p' });
+    assert.equal(t.tool('pen').getAttribute('aria-pressed'), 'true');
+    t.fire(t.page.hero, 'keydown', { key: 'v' });
+    assert.equal(t.tool('select').getAttribute('aria-pressed'), 'true');
+});
+
+test('the hover label names the element and the data-block it goes to, a dashed box sits on that block, and the item carries both', async () => {
+    const t = loadOverlay();
+    const span = t.doc.createElement('span');
+    span.className = 'gop';
+    t.page.card.appendChild(span);
+    t.page.card.rect = { left: 10, top: 300, width: 500, height: 200 };
+    t.fire(t.tool('select'), 'click');
+    t.fire(span, 'mousemove');
+    assert.equal(t.q('.fk-live-tag').textContent, 'span.gop歸到 data-blockcard');
+    const anc = t.q('.fk-live-anc');
+    assert.equal(anc.style.display, '');
+    assert.equal(anc.style.left, '10px');
+    assert.equal(anc.style.top, '300px');
+    t.fire(t.page.hero, 'mousemove');
+    assert.equal(anc.style.display, 'none', 'a dashed box was drawn on a block that is the element itself');
+    t.fire(span, 'mousemove');
+    t.fire(span, 'click');
+    assert.deepEqual(t.doc.all('.fk-live-chip').map((c) => c.textContent), ['span.gop歸到card']);
+    t.fire(t.q('.fk-live-fin'), 'click');
+    const area = t.doc.all('textarea').pop();
+    area.value = '按鈕改成圖示';
+    t.fire(area, 'input');
+    t.fire(t.q('.fk-live-all'), 'click');
+    const item = JSON.parse(t.fetched.find((f) => f.url === '/__live/request').init.body).items[0];
+    assert.equal(item.block, 'card');
+    assert.match(item.selector, /section:nth-of-type\(2\) > span:nth-of-type\(1\)$/);
+    assert.deepEqual(item.classes, ['gop']);
+    await t.tick();
+});
+
+test('with a drawing tool pressed, a click on the page picks nothing and the outline stays off', () => {
+    const t = loadOverlay();
+    t.fire(t.tool('pen'), 'click');
+    assert.equal(t.q('.fk-live-draft').hidden, false, 'the pen did not open an item');
+    t.fire(t.page.hero, 'mousemove');
+    assert.equal(t.q('.fk-live-box').style.display, 'none');
+    assert.equal(t.fire(t.page.hero, 'click')._stopNow, true, 'the page saw a click while drawing');
+    assert.equal(t.doc.all('.fk-live-chip').length, 0);
+    t.fire(t.tool('select'), 'click');
+    t.fire(t.page.hero, 'click');
+    assert.equal(t.doc.all('.fk-live-chip').length, 1);
 });
 
 test('while picking, the capture listeners swallow the page\'s pointer and click events, never the overlay\'s own, and never when not picking', () => {
@@ -377,8 +446,9 @@ test('while picking, the capture listeners swallow the page\'s pointer and click
     const t = loadOverlay();
     const seen = [];
     for (const type of TYPES) t.page.hero.addEventListener(type, () => seen.push(type));
+    const items = t.q('.fk-live-items');
     const own = [];
-    for (const type of TYPES) t.logo.addEventListener(type, () => own.push(type));
+    for (const type of TYPES) items.addEventListener(type, () => own.push(type));
 
     // Not picking: all of it is the page's, Alt or not.
     for (const type of TYPES) {
@@ -386,7 +456,7 @@ test('while picking, the capture listeners swallow the page\'s pointer and click
         assert.equal(ev.defaultPrevented, false, type + ' prevented while not picking');
     }
     assert.deepEqual(seen, TYPES, 'the page missed an event while not picking');
-    assert.equal(t.q('.fk-live-badge').hidden, true, 'an Alt click picked something');
+    assert.equal(t.q('.fk-live-count').hidden, true, 'an Alt click picked something');
 
     t.openTray();
     t.fire(t.q('.fk-live-add'), 'click');
@@ -399,17 +469,16 @@ test('while picking, the capture listeners swallow the page\'s pointer and click
     assert.deepEqual(seen, [], 'the page saw ' + seen);
     assert.equal(t.fire(t.page.hero, 'pointerdown', { button: 2 })._stopNow, false, 'a right-button press is not the assistant\'s');
 
-    // The overlay's own elements are never swallowed. 完成這則 sits in the row
-    // being picked, so it is clicked while that row is there, and a new item
-    // keeps the assistant picking for the logo.
+    // The overlay's own elements are never swallowed: 完成這則 in the item
+    // being picked, and 修改項 on the toolbar while a new item is open.
     assert.equal(t.fire(t.q('.fk-live-fin'), 'click').defaultPrevented, false);
     t.fire(t.q('.fk-live-add'), 'click');
     own.length = 0;
     for (const type of TYPES) {
-        const ev = t.fire(t.logo, type, { button: type === 'auxclick' ? 1 : 0 });
-        assert.equal(ev.defaultPrevented, false, type + ' on the logo was prevented');
+        const ev = t.fire(items, type, { button: type === 'auxclick' ? 1 : 0 });
+        assert.equal(ev.defaultPrevented, false, type + ' on 修改項 was prevented');
     }
-    assert.deepEqual(own, TYPES, 'the logo missed an event while picking');
+    assert.deepEqual(own, TYPES, '修改項 missed an event while picking');
 });
 
 test('while picking, a click on a page element picks it, a second click takes it back, and an Alt click is the same click', () => {
@@ -432,7 +501,7 @@ test('全部送出 posts every draft as items in one /__live/request, with no al
     t.openTray();
     t.draft(['hero'], ' first ');
     t.draft(['card', 'foot'], 'second');
-    assert.equal(t.q('.fk-live-badge').textContent, '2');
+    assert.equal(t.q('.fk-live-count').textContent, '2');
     assert.equal(t.q('.fk-live-all').textContent, '全部送出（2 則）');
     t.fire(t.q('.fk-live-all'), 'click');
     const posts = t.fetched.filter((f) => f.url === '/__live/request');
@@ -451,7 +520,7 @@ test('全部送出 posts every draft as items in one /__live/request, with no al
     assert.deepEqual(body.items[1].blocks, ['card', 'foot']);
     assert.equal(body.items[1].selectors.length, 2);
     await t.tick();
-    assert.equal(t.q('.fk-live-badge').hidden, true, 'the sent drafts stayed');
+    assert.equal(t.q('.fk-live-count').hidden, true, 'the sent drafts stayed');
     assert.ok(t.fetched.indexOf(t.fetched.filter((f) => f.url === '/__live/queue').pop()) > t.fetched.indexOf(posts[0]), 'the queue was not read after sending');
 });
 
@@ -487,7 +556,7 @@ test('the drafts are saved to sessionStorage as note and pick selectors, and a f
     assert.equal(saved[1].note, 'second');
     assert.deepEqual(saved[1].picks, ['section:nth-of-type(2)', 'section:nth-of-type(3)']);
     const b = loadOverlay({ sessionStorage: a.sessionStorage });
-    assert.equal(b.q('.fk-live-badge').textContent, '2', 'the restored drafts are not counted');
+    assert.equal(b.q('.fk-live-count').textContent, '2', 'the restored drafts are not counted');
     b.openTray();
     assert.deepEqual(b.doc.all('textarea').map((x) => x.value), ['first', 'second']);
     assert.equal(b.doc.all('.fk-live-chip').length, 3, 'the picks were not found again on the fresh page');
@@ -547,7 +616,7 @@ test('Escape while picking drops the pick, removes a draft left with no element,
     assert.equal(ev._stopNow, true);
     assert.deepEqual(seen, []);
     assert.equal(t.doc.all('.fk-live-chip').length, 1, 'the unfinished draft stayed');
-    assert.equal(t.q('.fk-live-badge').textContent, '1');
+    assert.equal(t.q('.fk-live-count').textContent, '1');
     assert.equal(t.fire(t.page.card, 'keydown', { key: 'Escape' })._stopNow, false, 'Escape with nothing to end was swallowed');
 });
 
@@ -589,17 +658,17 @@ test('while picking, a click on a frame takes every block inside it, and an elem
     const box = () => t.q('.fk-live-box');
 
     t.fire(gap, 'mousemove');
-    assert.equal(tag().textContent, 'div.gap · 沒有 data-block，往外或往內一層');
+    assert.equal(tag().textContent, 'div.gap沒有 data-block，往外或往內一層');
     assert.ok(box().classList.contains('fk-live-bad'), 'the outline of an element with no block is not amber');
     assert.ok(tag().classList.contains('fk-live-bad'), 'the label of an element with no block is not amber');
     t.fire(gap, 'click');
     assert.deepEqual(chips(), [], 'an element with no data-block in or around it was taken');
 
     t.fire(frame, 'mousemove');
-    assert.equal(tag().textContent, 'div.term · 外框·2 塊');
+    assert.equal(tag().textContent, 'div.term外框·2 塊');
     assert.ok(!box().classList.contains('fk-live-bad'), 'a frame around blocks is outlined amber');
     t.fire(frame, 'click');
-    assert.deepEqual(chips(), ['div.term · 外框·2 塊×']);
+    assert.deepEqual(chips(), ['div.term外框·2 塊']);
 
     t.fire(t.page.hero, 'mousemove');
     assert.equal(tag().querySelector('b').textContent, 'hero', 'the label of an element in a block does not name the block');
@@ -628,7 +697,7 @@ test('a refused send keeps the drafts, marks the item the server named, and says
     t.draft(['card'], 'second');
     t.fire(t.q('.fk-live-all'), 'click');
     await t.tick();
-    assert.equal(t.q('.fk-live-badge').textContent, '2', 'a refused send dropped the drafts');
+    assert.equal(t.q('.fk-live-count').textContent, '2', 'a refused send dropped the drafts');
     assert.deepEqual(t.doc.all('textarea').map((x) => x.value), ['first', 'second']);
     assert.equal(t.q('.fk-live-queue').querySelector('span').textContent, '第 2 則：' + why);
     assert.deepEqual(t.doc.all('.fk-live-item').map((li) => li.classList.contains('fk-live-err')), [false, true]);
@@ -656,7 +725,6 @@ test('the row being picked has its note field, and 往外一層 and 完成這則
     assert.ok(area, 'the row being picked has no note field');
     assert.ok(row().querySelector('.fk-live-out'), '往外一層 is not in the row being picked');
     assert.ok(row().querySelector('.fk-live-fin'), '完成這則 is not in the row being picked');
-    assert.equal(t.q('.fk-live-hint').querySelector('button'), null, 'the hint still carries a button');
 
     area.value = '先寫備註';
     t.fire(area, 'input');
@@ -666,13 +734,13 @@ test('the row being picked has its note field, and 往外一層 and 完成這則
     t.fire(span, 'mousemove');
     t.fire(row().querySelector('.fk-live-out'), 'click');
     t.fire(span, 'click');
-    assert.deepEqual(t.doc.all('.fk-live-chip').map((c) => c.textContent), ['section.hero-c×', 'section.card-c×'], '往外一層 in the row did not walk out to the parent');
+    assert.deepEqual(t.doc.all('.fk-live-chip').map((c) => c.textContent), ['section.hero-c歸到hero', 'section.card-c歸到card'], '往外一層 in the row did not walk out to the parent');
 
     t.fire(row().querySelector('.fk-live-fin'), 'click');
     assert.equal(row(), null, '完成這則 in the row did not end the pick');
     assert.equal(t.q('.fk-live-out'), null, 'a row that is not being picked carries 往外一層');
     assert.deepEqual(t.doc.all('textarea').map((x) => x.value), ['先寫備註']);
-    assert.equal(t.q('.fk-live-badge').textContent, '1');
+    assert.equal(t.q('.fk-live-count').textContent, '1');
 });
 
 // tune-6: an element a click opens — a dialog, a dropdown — can be picked.
@@ -697,7 +765,7 @@ test('F2 starts a pick without a click on the tray, and the page does not see th
     const ev = t.fire(t.doc.body, 'keydown', { key: 'F2' });
     assert.ok(ev._stopNow, 'the page saw F2');
     assert.ok(ev.defaultPrevented);
-    assert.equal(t.q('.fk-live-hint').hidden, false, 'no pick started');
+    assert.equal(t.q('.fk-live-draft').hidden, false, 'no pick started');
     t.fire(t.page.hero, 'click');
     assert.equal(t.doc.all('.fk-live-chip').length, 1);
 });
