@@ -1237,9 +1237,6 @@ async function serve(opts) {
         fs.writeFileSync(record, JSON.stringify(Object.assign({}, data, remote), null, 2) + '\n');
         return record;
     };
-    // The proxy this station made comes down with it (station-remote-1): when
-    // `station.remote` is written off, when `close()` runs, and on the idle
-    // exit. Never fatal — a failure is one stderr line and shutdown goes on.
     // Other stations on the tailnet for the phone's switcher: the cached list, refreshed in
     // the background at most every minute, never awaited by the request.
     let others = { at: 0, list: [], busy: false };
@@ -1251,11 +1248,14 @@ async function serve(opts) {
             cur.at = Date.now();
             const self = tailnet.dnsName;
             Promise.resolve().then(() => tailscale.probeStations(tailscale.peers(opts.tailscaleRun).filter((p) => p.dnsName !== self), opts.probeGet))
-                .then((list) => { if (others === cur) cur.list = list; }, () => {})
+                .then((list) => { if (others === cur) cur.list = list; }, (e) => { process.stderr.write('station: other computers not probed — ' + (e && e.message || e) + '\n'); })
                 .then(() => { cur.busy = false; });
         }
         return cur.list;
     };
+    // The proxy this station made comes down with it (station-remote-1): when
+    // `station.remote` is written off, when `close()` runs, and on the idle
+    // exit. Never fatal — a failure is one stderr line and shutdown goes on.
     const teardownRemote = () => {
         if (!madeServe) return;
         madeServe = false;

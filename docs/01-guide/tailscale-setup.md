@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-10-22
+last_verified: 2026-10-28
 source_of_truth: lib/tailscale.js, lib/remote.js, scripts/station.js, assets/station/mobile.js, docs/01-guide/station.md, docs/01-guide/profile.md
 ---
 
