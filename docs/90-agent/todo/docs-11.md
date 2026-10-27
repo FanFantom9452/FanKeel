@@ -3,7 +3,7 @@ label: docs
 title: 補 layout 漏列並試畫框架圖
 description: layout.md 補漏列的 board、chartroom、weekly 模組，並試畫完整框架圖與 gitdiagram 比較
 state: ready
-link: docs/90-agent/judgements/2026-10-27-gitdiagram-vs-design.md
+link: docs/02-architecture/layout.md
 stamp: 2026-10-27
 ---
 

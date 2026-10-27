@@ -22,8 +22,9 @@
 // it can be narrower than headless Chrome's 500px window minimum (`--size` cannot:
 // it is cropped from a 500px layout); `--theme light|dark` sets prefers-color-scheme.
 // A page in render.json may carry the same two keys, `viewport` and `theme`; the
-// index row then records them. Either one shoots through DevTools, not `--screenshot`, which has no login
-// profile, so a cell with either one fails for any role but guest.
+// index row then records them. Either one shoots through DevTools (runAct), which has
+// no login profile (unlike the `--screenshot` path), so a cell with either one fails
+// for any role but guest.
 //
 // Two files land in `--out` (default `.fankeel/build/render/`): `render.png`,
 // a `--headless=new` screenshot at `--size`, and `render.html`, the DOM
