@@ -41,6 +41,9 @@ test('list is newest first with the counts and projects, and skips an archive th
 
 test('latest is the newest archive with its next list, or null', () => {
     assert.deepEqual(store.latest(three()), { since: '2025-12-27', until: '2026-01-02', next: [{ repo: 'beta', text: '補測試' }] });
+    const cfg = three();
+    fs.writeFileSync(path.join(store.weeklyDir(cfg), '2026-01-09.json'), '{not json');
+    assert.equal(store.latest(cfg).until, '2026-01-02');
     assert.equal(store.latest(tmp('fankeel-weekly-store-none-')), null);
 });
 
@@ -59,6 +62,8 @@ test('neighbours are the adjacent archives by until: prev older, next newer', ()
     assert.deepEqual(store.neighbours(cfg, '2025-12-19'), { prev: null, next: '2025-12-26' });
     assert.deepEqual(store.neighbours(cfg, '2026-01-02'), { prev: '2025-12-26', next: null });
     assert.deepEqual(store.neighbours(cfg, '2030-01-01'), { prev: null, next: null });
+    fs.unlinkSync(path.join(store.weeklyDir(cfg), '2025-12-26.html'));
+    assert.deepEqual(store.neighbours(cfg, '2026-01-02'), { prev: '2025-12-19', next: null });
 });
 
 test('navBar links back to the list and to each neighbour, and injectNav puts it right after <body>', () => {
