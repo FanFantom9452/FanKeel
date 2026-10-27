@@ -332,13 +332,11 @@ test('boot: the composer posts /phone/say, and its 201 reads phone.json again', 
     assert.ok(callsTo(page, PHONE + 'aaaaaaaa-5').length > before);
 });
 
-test('boot: a photo picked in the composer is uploaded raw and its path lands in the box', async () => {
+test('boot: a photo picked in the composer is uploaded raw and its path goes out after the text', async () => {
     const one = sess('holding', { id: 'aaaaaaaa-5', attached: true });
     const ok = routed(one);
-    const page = boot({ hash: '#/s/aaaaaaaa-5', fetch: (url) => (url === '/phone/upload' || url.startsWith('/phone/upload?') ? reply(201, '/w/.fankeel/station/phone/aaaaaaaa-5/uploads/1.png\n') : ok(url)) });
+    const page = boot({ hash: '#/s/aaaaaaaa-5', fetch: (url) => (url.startsWith('/phone/upload?') ? reply(201, '/w/.fankeel/station/phone/aaaaaaaa-5/uploads/1.png\n') : ok(url)) });
     await settle();
-    const box = { value: '', id: 'cmp-box', getAttribute: () => null };
-    page.doc.getElementById = (id) => (id === 'cmp-box' ? box : id === 'app' ? page.app : null);
     const input = { id: 'cmp-file', files: [{ type: 'image/png', name: 'a.png' }], getAttribute: () => null, classList: { contains: () => false } };
     page.fire('change', { target: input });
     await settle();
@@ -348,7 +346,10 @@ test('boot: a photo picked in the composer is uploaded raw and its path lands in
     assert.equal(up[0].init.headers['content-type'], 'image/png');
     assert.equal(up[0].init.body, input.files[0]);
     assert.match(up[0].url, /root=%2Fw&id=aaaaaaaa-5&ext=png/);
-    assert.match(box.value, /\[圖片\] \/w\/\.fankeel\/station\/phone\/aaaaaaaa-5\/uploads\/1\.png$/);
+    page.fire('submit', submit(composerForm('看這張')));
+    await settle();
+    const sent = callsTo(page, '/phone/say');
+    assert.equal(new URLSearchParams(sent[0].init.body).get('text'), '看這張\n[圖片] /w/.fankeel/station/phone/aaaaaaaa-5/uploads/1.png');
 });
 
 const UPLOADED = '/w/.fankeel/station/phone/aaaaaaaa-1/uploads/2.png';
@@ -386,16 +387,16 @@ test('boot: a photo that never reached the station says 沒送到, a refusal say
     assert.ok(refused.app.innerHTML.includes('測站沒收下（413）：too big'));
 });
 
-test('mobile.css: the composer grid has one column for every item the composer emits', async () => {
+test('mobile.css: the composer grid has one column for every item the composer row emits', async () => {
     const page = boot({ hash: '#/s/aaaaaaaa-5', fetch: routed(sess('holding', { id: 'aaaaaaaa-5', attached: true })) });
     await settle();
-    const row = page.app.innerHTML.match(/<div class="cmp-row([^"]*)">([\s\S]*?)<\/div>/);
-    assert.ok(row, 'composer rendered');
-    const items = (row[2].match(/<(?:button|textarea)\b|<label class="gmic"/g) || []).length;
     const css = read('mobile.css');
-    const cols = (sel) => css.match(new RegExp(sel.replace(/\./g, '\\.') + '\\{[^}]*grid-template-columns:([^;}]+)'))[1].trim().split(/\s+(?![^()]*\))/).length;
-    assert.equal(cols(row[1].includes('no-mic') ? '.cmp-row.no-mic' : '.cmp-row'), items);
-    assert.equal(cols('.cmp-row') - 1, cols('.cmp-row.no-mic'));
+    const cols = (sel) => css.match(new RegExp('\\n' + sel.replace(/\./g, '\\.') + '\\{[^}]*grid-template-columns:([^;}]+)'))[1].trim().split(/\s+(?![^()]*\))/).length;
+    const html = page.app.innerHTML;
+    const row = html.slice(html.indexOf('<div class="cmp-row'), html.indexOf('<p class="cmp-hint"'));
+    const items = (row.match(/<button\b|<div class="cmp-field"/g) || []).length;
+    assert.equal(cols(row.includes('no-mic') ? '.cmp-row.v2.no-mic' : '.cmp-row.v2'), items);
+    assert.equal(cols('.cmp-row.v2') - 1, cols('.cmp-row.v2.no-mic'));
 });
 
 test('boot: a /phone/say refusal keeps the draft in the composer and says why', async () => {

@@ -45,6 +45,9 @@
             'gpin.go': '看選項', 'rep.more': '展開完整報告', 'rep.less': '收起報告',
             'gate.pick': '選一個答案', 'gate.pickMany': '可以選幾個', 'gate.own': '自己寫答案…', 'gate.rec': '建議', 'gate.send': '送出答案',
             'gate.sending': '送出中…', 'gate.sent': '送出了，等 Claude 接著做', 'gate.needAll': '每一題都要有答案',
+            'ph.list': '要附上的照片', 'ph.alt': '第 {n} 張照片', 'ph.x': '拿掉第 {n} 張', 'ph.add': '加照片，還能加 {n} 張', 'ph.over': '最多 {n} 張：多選的沒有加進來',
+            'ph.lim': '最多 {n} 張 · 自動縮到 {px}px', 'ph.limWhy': '每張在手機上先縮成長邊 {px}px 的 JPEG（品質 {q}），通常 300–600 KB。這是 Claude 讀圖的大小，再大只多花上傳時間和 token。單張上傳上限 10 MB。',
+            'ph.pick': '加照片，一次可選多張', 'ph.up': '上傳中 {n}%', 'ph.wait': '第 {n} 張還在上傳，傳完才能送出',
             'gate.failed': '沒送到：可以再按一次', 'gate.gone': '這個 gate 已經不在等了', 'gate.refused': '測站沒收下（{code}）：{why}',
             'done.title': '完成', 'done.empty': '48 小時內沒有完成的', 'done.end': '任務結束', 'done.stage': '完成 ·', 'done.today': '今天', 'done.yesterday': '昨天', 'done.upTo': '到 {t}',
             'ago.now': '剛剛', 'ago.min': '{n} 分', 'ago.hour': '{n} 小時', 'ago.day': '{n} 天',
@@ -95,6 +98,9 @@
             'gpin.go': 'See options', 'rep.more': 'Show the full report', 'rep.less': 'Collapse the report',
             'gate.pick': 'Pick one answer', 'gate.pickMany': 'Pick any number', 'gate.own': 'Write your own answer…', 'gate.rec': 'Recommended', 'gate.send': 'Send answer',
             'gate.sending': 'Sending…', 'gate.sent': 'Sent; Claude carries on', 'gate.needAll': 'Every question needs an answer',
+            'ph.list': 'Photos to attach', 'ph.alt': 'Photo {n}', 'ph.x': 'Remove photo {n}', 'ph.add': 'Add photos, {n} more allowed', 'ph.over': 'Up to {n} photos: the extra ones were not added',
+            'ph.lim': 'Up to {n} · shrunk to {px}px', 'ph.limWhy': 'Each photo is shrunk on the phone to a {px}px long edge as JPEG (quality {q}), usually 300-600 KB. That is the size Claude reads images at; larger only costs upload time and tokens. One upload is capped at 10 MB.',
+            'ph.pick': 'Add photos, several at once', 'ph.up': 'Uploading {n}%', 'ph.wait': 'Photo {n} is still uploading; send once it is done',
             'gate.failed': 'Not sent: press again', 'gate.gone': 'This gate is no longer waiting', 'gate.refused': 'The station refused it ({code}): {why}',
             'done.title': 'Done', 'done.empty': 'Nothing finished in the last 48 hours', 'done.end': 'Task ended', 'done.stage': 'done ·', 'done.today': 'Today', 'done.yesterday': 'Yesterday', 'done.upTo': 'up to {t}',
             'ago.now': 'now', 'ago.min': '{n} min', 'ago.hour': '{n} h', 'ago.day': '{n} d',
@@ -120,6 +126,11 @@
     var lang = 'zh';
     var POLL_MS = 5000;
     var CHAT_MS = 2000;
+    // A message's photos (round 3): four at most, each shrunk on the phone to the long edge Claude
+    // reads images at, as JPEG at this quality — larger only costs upload time and tokens.
+    var PH_MAX = 4;
+    var PH_EDGE = 1568;
+    var PH_Q = 0.85;
     var STAGES = ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land'];
     var FIVE_MS = 5 * 3600e3;
     var SEVEN_MS = 7 * 864e5;
@@ -640,17 +651,71 @@
         return out;
     }
 
+    function fitEdge(w, h, edge) {
+        var s = Math.min(1, edge / Math.max(w, h));
+        return { w: Math.round(w * s), h: Math.round(h * s) };
+    }
+
+    // The photo drawn on a canvas at PH_EDGE as JPEG PH_Q, on white (a transparent PNG would turn
+    // black). A browser with no createImageBitmap, or one that cannot decode the photo, sends it as picked.
+    function shrink(win, file) {
+        if (!win || !win.createImageBitmap || !win.document || !win.document.createElement) return Promise.resolve(file);
+        return win.createImageBitmap(file).then(function (bmp) {
+            var to = fitEdge(bmp.width, bmp.height, PH_EDGE);
+            var c = win.document.createElement('canvas');
+            c.width = to.w;
+            c.height = to.h;
+            var g = c.getContext('2d');
+            g.fillStyle = '#fff';
+            g.fillRect(0, 0, to.w, to.h);
+            g.drawImage(bmp, 0, 0, to.w, to.h);
+            if (bmp.close) bmp.close();
+            return new Promise(function (ok) { c.toBlob(function (b) { ok(b || file); }, 'image/jpeg', PH_Q); });
+        }, function () { return file; });
+    }
+
+    function pending(u) {
+        var at = -1;
+        (u.photos || []).forEach(function (x, i) { if (!x.path && at < 0) at = i; });
+        return at;
+    }
+    function canSend(p, u) { return !p.waiting && pending(u) < 0 && Boolean(String(u.draft || '').trim() || (u.photos || []).length); }
+    function hintOf(p, u) {
+        var waiting = Boolean(p.waiting);
+        var up = pending(u);
+        var hint = waiting ? t('cmp.waiting') : up >= 0 ? t('ph.wait', { n: up + 1 }) : p.state === 'holding' ? t('cmp.held') : t('cmp.next');
+        return ic('phone') + hint + (u.mic && !waiting && up < 0 ? ' · ' + t('cmp.voice') : '');
+    }
+    function ring(pct) {
+        return '<span class="ring" role="img" aria-label="' + esc(t('ph.up', { n: pct })) + '"><svg viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="15" pathLength="100"/>'
+            + '<circle class="v" cx="18" cy="18" r="15" pathLength="100" style="stroke-dasharray:' + pct + ' 100"/></svg><b>' + pct + '</b></span>';
+    }
+    // The strip, the fifth-photo hint, the count and the limits: what a pick, a remove or an
+    // upload's progress draws again into #ph-box, never touching the field.
+    function photosHtml(u) {
+        var list = u.photos || [];
+        if (!list.length) return '';
+        return '<ul class="ph-strip" aria-label="' + t('ph.list') + '">' + list.map(function (x, i) {
+            return '<li class="ph">' + (x.url ? '<img src="' + esc(x.url) + '" alt="' + esc(t('ph.alt', { n: i + 1 })) + '">' : ic('image')) + (x.path ? '' : ring(x.pct || 0))
+                + '<button type="button" class="ph-x" data-act="ph-x" data-key="' + esc(x.key) + '" aria-label="' + esc(t('ph.x', { n: i + 1 })) + '"><span>' + ic('x') + '</span></button></li>';
+        }).join('')
+            + (list.length < PH_MAX ? '<li><button type="button" class="ph-add" data-act="ph-add" aria-label="' + esc(t('ph.add', { n: PH_MAX - list.length })) + '">' + ic('imgplus') + '</button></li>' : '') + '</ul>'
+            + (u.over ? '<p class="ph-hint" role="status">' + ic('alert') + t('ph.over', { n: PH_MAX }) + '</p>' : '')
+            + '<div class="ph-meta"><span class="ph-n">' + ic('images') + list.length + '/' + PH_MAX + '</span><span class="sep">·</span>'
+            + '<details class="ph-lim"' + (u.lim ? ' open' : '') + '><summary data-act="lim">' + ic('info') + t('ph.lim', { n: PH_MAX, px: PH_EDGE }) + ic('down', 'tgl') + '</summary>'
+            + '<p>' + t('ph.limWhy', { px: PH_EDGE, q: PH_Q }) + '</p></details></div>';
+    }
+
     function composer(p, u) {
         var waiting = Boolean(p.waiting);
-        var draft = String(u.draft || '');
-        var hint = waiting ? t('cmp.waiting') : p.state === 'holding' ? t('cmp.held') : t('cmp.next');
-        return '<form class="cmp" id="composer" data-block="m-composer-a"><div class="cmp-row' + (u.mic ? '' : ' no-mic') + '">'
+        return '<form class="cmp" id="composer" data-block="m-composer-a"><div class="ph-box" id="ph-box">' + photosHtml(u) + '</div>'
+            + '<div class="cmp-row v2' + (u.mic ? '' : ' no-mic') + '">'
             + (u.mic ? '<button type="button" class="mic" data-mic="cmp-box" aria-label="' + t('mic.label') + '">' + ic('mic') + '</button>' : '')
-            + '<label class="vh" for="cmp-box">' + t('cmp.label') + '</label>'
-            + '<textarea id="cmp-box" name="text" rows="1" placeholder="' + t('cmp.ph') + '"' + (waiting ? ' disabled' : '') + '>' + esc(draft) + '</textarea>'
-            + '<label class="gmic" aria-label="' + t('pic.label') + '"><input type="file" id="cmp-file" accept="image/*" hidden>' + ic('image') + '</label>'
-            + '<button type="submit" class="send" aria-label="' + t('cmp.send') + '"' + (waiting || !draft.trim() ? ' disabled' : '') + '>' + ic('up') + '</button></div>'
-            + '<p class="cmp-hint" data-say>' + hint + (u.mic && !waiting ? ' · ' + t('cmp.voice') : '') + '</p></form>';
+            + '<div class="cmp-field"><label class="vh" for="cmp-box">' + t('cmp.label') + '</label>'
+            + '<textarea id="cmp-box" name="text" rows="1" placeholder="' + t('cmp.ph') + '"' + (waiting ? ' disabled' : '') + '>' + esc(String(u.draft || '')) + '</textarea>'
+            + '<label class="gmic" aria-label="' + t('ph.pick') + '"><input type="file" id="cmp-file" accept="image/*" multiple hidden>' + ic('imgplus') + '</label></div>'
+            + '<button type="submit" class="send" aria-label="' + t('cmp.send') + '"' + (canSend(p, u) ? '' : ' disabled') + '>' + ic('up') + '</button></div>'
+            + '<p class="cmp-hint" data-say>' + hintOf(p, u) + '</p></form>';
     }
 
     // The question stays under the header while the report scrolls; 看選項 jumps to the answers.
@@ -997,7 +1062,7 @@
         if (d.body && d.body.insertAdjacentHTML) d.body.insertAdjacentHTML('afterbegin', SPRITE);
         var camera = Boolean(win.BarcodeDetector && win.navigator && win.navigator.mediaDevices && win.navigator.mediaDevices.getUserMedia);
         // The app's own ui lives across pair-error and back, so a draft survives a lost station.
-        var APP = { mode: 'app', mic: Boolean(win.SpeechRecognition || win.webkitSpeechRecognition), draft: '', open: {}, note: '', sheet: false };
+        var APP = { mode: 'app', mic: Boolean(win.SpeechRecognition || win.webkitSpeechRecognition), draft: '', open: {}, note: '', sheet: false, photos: [], over: false, lim: false };
         var st = { M: null, P: null, ui: APP, loading: false, chatLoading: false, tried: null, stream: null, rec: null, gone: null };
         function store(k, v) {
             try {
@@ -1010,13 +1075,75 @@
         function post(url, fields) {
             return win.fetch(url, { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: new win.URLSearchParams(fields).toString() });
         }
-        // A photo goes up raw, not through post(): the station answers the saved
-        // file's path, and the box carries that path to the session as text.
-        function upload(file, p) {
+        function upUrl(file, p) {
             var ext = (String(file.type || '').split('/')[1] || 'png').replace(/[^a-z0-9]/g, '');
-            return win.fetch('/phone/upload?root=' + encodeURIComponent(p.root) + '&id=' + encodeURIComponent(p.id) + '&ext=' + encodeURIComponent(ext),
-                { method: 'POST', credentials: 'same-origin', headers: { 'content-type': file.type }, body: file })
-                .then(function (r) { return r.text().then(function (text) { if (!r.ok) { var bad = new Error(t('gate.refused', { code: r.status, why: String(text || '').trim() })); bad.refused = true; throw bad; } return String(text).trim(); }); });
+            return '/phone/upload?root=' + encodeURIComponent(p.root) + '&id=' + encodeURIComponent(p.id) + '&ext=' + encodeURIComponent(ext);
+        }
+        function refused(code, text) {
+            var bad = new Error(t('gate.refused', { code: code, why: String(text || '').trim() }));
+            bad.refused = true;
+            return bad;
+        }
+        // A photo goes up raw, not through post(): the station answers the saved file's path.
+        function upload(file, p) {
+            return win.fetch(upUrl(file, p), { method: 'POST', credentials: 'same-origin', headers: { 'content-type': file.type }, body: file })
+                .then(function (r) { return r.text().then(function (text) { if (!r.ok) throw refused(r.status, text); return String(text).trim(); }); });
+        }
+        // The same with its progress, 0 to 1, where XMLHttpRequest can report it.
+        function push(blob, p, prog) {
+            if (!win.XMLHttpRequest) return upload(blob, p);
+            return new Promise(function (ok, no) {
+                var x = new win.XMLHttpRequest();
+                x.open('POST', upUrl(blob, p));
+                x.setRequestHeader('content-type', blob.type);
+                x.upload.onprogress = function (e) { if (e.lengthComputable && e.total) prog(e.loaded / e.total); };
+                x.onload = function () {
+                    var text = String(x.responseText || '').trim();
+                    if (x.status >= 200 && x.status < 300) ok(text); else no(refused(x.status, text));
+                };
+                x.onerror = function () { no(new Error('network')); };
+                x.send(blob);
+            });
+        }
+        var seq = 0;
+        // Only #ph-box, the send button and the hint: the field keeps its focus, its text and its mic.
+        function strip() {
+            var box = d.getElementById('ph-box');
+            if (box) box.innerHTML = photosHtml(st.ui);
+            var p = current();
+            var send = d.querySelector ? d.querySelector('#composer .send') : null;
+            if (send && p) send.disabled = !canSend(p, st.ui);
+            var line = d.querySelector ? d.querySelector('#composer .cmp-hint') : null;
+            if (line && p && !st.rec) line.innerHTML = hintOf(p, st.ui);
+        }
+        function drop(key) {
+            st.ui.photos = st.ui.photos.filter(function (x) {
+                if (x.key !== key) return true;
+                if (x.url && win.URL && win.URL.revokeObjectURL) win.URL.revokeObjectURL(x.url);
+                return false;
+            });
+        }
+        // Up to PH_MAX in the strip; past that the rest are named in the hint, not added.
+        function pick(files, p, input) {
+            var room = PH_MAX - st.ui.photos.length;
+            st.ui.over = files.length > room;
+            files.slice(0, Math.max(0, room)).forEach(function (file) {
+                var x = { key: 'ph' + (++seq), url: win.URL && win.URL.createObjectURL ? win.URL.createObjectURL(file) : '', pct: 0, path: null };
+                st.ui.photos.push(x);
+                shrink(win, file).then(function (blob) {
+                    return push(blob, p, function (f) { x.pct = Math.min(99, Math.round(f * 100)); strip(); });
+                }).then(function (where) {
+                    x.path = where;
+                    x.pct = 100;
+                    strip();
+                }).catch(function (err) {
+                    drop(x.key);
+                    st.ui.note = err && err.refused ? err.message : t('gate.failed');
+                    draw();
+                });
+            });
+            if (input) input.value = '';
+            strip();
         }
         function rethrow(e) { win.setTimeout(function () { throw e; }); }
         function pairUi(extra) {
@@ -1219,13 +1346,21 @@
                 return r.text().then(function (text) { btn.disabled = false; say.textContent = t('gate.refused', { code: r.status, why: String(text || '').trim() }); });
             }, function () { btn.disabled = false; say.textContent = t('gate.failed'); });
         }
+        // The text, then one [圖片] line per photo; nothing goes while a photo is still uploading.
         function say(f) {
             var p = current();
             var box = f.querySelector('textarea');
             var text = String((box && box.value) || '').trim();
-            if (!p || !text) return;
+            var list = st.ui.photos || [];
+            if (!p || (!text && !list.length) || pending(st.ui) >= 0) return;
+            var body = [text].concat(list.map(function (x) { return '[圖片] ' + x.path; })).filter(Boolean).join('\n');
             st.ui.draft = text;
-            act('/phone/say', { root: p.root, id: p.id, text: text }, function () { st.ui.draft = ''; st.P = null; });
+            act('/phone/say', { root: p.root, id: p.id, text: body }, function () {
+                st.ui.draft = '';
+                list.forEach(function (x) { drop(x.key); });
+                st.ui.over = false;
+                st.P = null;
+            });
         }
         d.addEventListener('submit', function (e) {
             var f = e.target;
@@ -1285,6 +1420,17 @@
                 var tp = tkb ? current() : null;
                 if (tkb && tp) { tkb.innerHTML = tokenInner(tp, Date.now(), st.ui); return; }
                 if (el.closest && el.closest('.cv,.ov') && st.P) patch(); else draw();
+            } else if (what === 'ph-x') {
+                drop(el.getAttribute('data-key'));
+                st.ui.over = false;
+                strip();
+            } else if (what === 'ph-add') {
+                var inp = d.getElementById('cmp-file');
+                if (inp && inp.click) inp.click();
+            } else if (what === 'lim') {
+                if (e.preventDefault) e.preventDefault();
+                st.ui.lim = !st.ui.lim;
+                strip();
             } else if (what === 'steps') {
                 var key = el.getAttribute('data-key');
                 st.ui.open[key] = !st.ui.open[key];
@@ -1312,7 +1458,8 @@
             if (el.id === 'cmp-box') {
                 st.ui.draft = el.value;
                 var send = d.querySelector ? d.querySelector('#composer .send') : null;
-                if (send) send.disabled = !String(el.value || '').trim();
+                var cp = current();
+                if (send) send.disabled = !cp || !canSend(cp, st.ui);
                 grow(el);
                 return;
             }
@@ -1324,14 +1471,14 @@
         }
         d.addEventListener('change', function (e) {
             var el = e.target;
-            var file = el && el.files && el.files[0];
             var p = current();
-            if (!file || !p) return;
-            var gate = el.getAttribute && el.getAttribute('data-pic') !== null;
-            if (el.id !== 'cmp-file' && !gate) return;
-            var box = gate ? (el.closest('fieldset') || el.closest('form')).querySelector('.own') : d.getElementById('cmp-box');
+            if (!el || !el.files || !el.files.length || !p) return;
+            if (el.id === 'cmp-file') return pick(Array.prototype.slice.call(el.files), p, el);
+            // A gate question's own photo: one, its path into that question's box.
+            if (!el.getAttribute || el.getAttribute('data-pic') === null) return;
+            var box = (el.closest('fieldset') || el.closest('form')).querySelector('.own');
             if (!box) return;
-            upload(file, p).then(function (where) {
+            shrink(win, el.files[0]).then(function (b) { return upload(b, p); }).then(function (where) {
                 box.value += (box.value ? '\n' : '') + '[圖片] ' + where;
                 typed({ target: box, type: 'input' });
             }).catch(function (err) { st.ui.note = err && err.refused ? err.message : t('gate.failed'); draw(); });
@@ -1381,6 +1528,7 @@
     var api = {
         parseRoute: parseRoute, screen: screen, answersOf: answersOf, collect: collect, codeIn: codeIn, setLang: setLang, STR: STR,
         turnsOf: turnsOf, stepsLine: stepsLine, dur: dur, SCREEN: SCREEN, swipeTo: swipeTo, PANES: PANES,
+        shrink: shrink, fitEdge: fitEdge,
     };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     if (w) w.FK_M = api;
