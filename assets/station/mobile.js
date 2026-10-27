@@ -703,7 +703,7 @@
             var ext = (String(file.type || '').split('/')[1] || 'png').replace(/[^a-z0-9]/g, '');
             return win.fetch('/phone/upload?root=' + encodeURIComponent(p.root) + '&id=' + encodeURIComponent(p.id) + '&ext=' + encodeURIComponent(ext),
                 { method: 'POST', credentials: 'same-origin', headers: { 'content-type': file.type }, body: file })
-                .then(function (r) { return r.text().then(function (text) { if (!r.ok) throw new Error(t('gate.refused', { code: r.status, why: String(text || '').trim() })); return String(text).trim(); }); });
+                .then(function (r) { return r.text().then(function (text) { if (!r.ok) { var bad = new Error(t('gate.refused', { code: r.status, why: String(text || '').trim() })); bad.refused = true; throw bad; } return String(text).trim(); }); });
         }
         function rethrow(e) { win.setTimeout(function () { throw e; }); }
         function pairUi(extra) {
@@ -1000,7 +1000,7 @@
             upload(file, p).then(function (where) {
                 box.value += (box.value ? '\n' : '') + '[圖片] ' + where;
                 typed({ target: box, type: 'input' });
-            }, function (err) { st.ui.note = String(err.message || t('gate.failed')); draw(); });
+            }).catch(function (err) { st.ui.note = err && err.refused ? err.message : t('gate.failed'); draw(); });
         });
         d.addEventListener('input', typed);
         d.addEventListener('focusin', typed);

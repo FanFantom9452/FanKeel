@@ -351,6 +351,53 @@ test('boot: a photo picked in the composer is uploaded raw and its path lands in
     assert.match(box.value, /\[圖片\] \/w\/\.fankeel\/station\/phone\/aaaaaaaa-5\/uploads\/1\.png$/);
 });
 
+const UPLOADED = '/w/.fankeel/station/phone/aaaaaaaa-1/uploads/2.png';
+const gatePhoto = (fetchImpl) => {
+    const ok = routed(sess('gate', { id: 'aaaaaaaa-1', gate: GATE }));
+    return boot({ hash: '#/s/aaaaaaaa-1', fetch: (url, init) => (url.startsWith('/phone/upload?') ? fetchImpl(url, init) : ok(url)) });
+};
+const gateInput = (boxes, at) => {
+    const set = { querySelector: (s) => (s === '.own' ? boxes[at] : null) };
+    return { files: [{ type: 'image/png' }], getAttribute: (a) => (a === 'data-pic' ? '' : null), closest: (s) => (s === 'fieldset' ? set : null) };
+};
+const emptyBox = () => ({ value: '', getAttribute: () => null });
+
+test('boot: a photo picked on a gate question lands in that question\'s own box, not the other', async () => {
+    const page = gatePhoto(() => reply(201, UPLOADED + '\n'));
+    await settle();
+    const boxes = [emptyBox(), Object.assign(emptyBox(), { value: '先寫的' })];
+    page.fire('change', { target: gateInput(boxes, 1) });
+    await settle();
+    assert.equal(boxes[0].value, '');
+    assert.equal(boxes[1].value, '先寫的\n[圖片] ' + UPLOADED);
+});
+
+test('boot: a photo that never reached the station says 沒送到, a refusal says why', async () => {
+    const offline = gatePhoto(() => Promise.reject(new TypeError('Failed to fetch')));
+    await settle();
+    offline.fire('change', { target: gateInput([emptyBox()], 0) });
+    await settle();
+    assert.ok(offline.app.innerHTML.includes('沒送到：可以再按一次'));
+    assert.ok(!offline.app.innerHTML.includes('Failed to fetch'));
+    const refused = gatePhoto(() => reply(413, 'too big'));
+    await settle();
+    refused.fire('change', { target: gateInput([emptyBox()], 0) });
+    await settle();
+    assert.ok(refused.app.innerHTML.includes('測站沒收下（413）：too big'));
+});
+
+test('mobile.css: the composer grid has one column for every item the composer emits', async () => {
+    const page = boot({ hash: '#/s/aaaaaaaa-5', fetch: routed(sess('holding', { id: 'aaaaaaaa-5', attached: true })) });
+    await settle();
+    const row = page.app.innerHTML.match(/<div class="cmp-row([^"]*)">([\s\S]*?)<\/div>/);
+    assert.ok(row, 'composer rendered');
+    const items = (row[2].match(/<(?:button|textarea)\b|<label class="gmic"/g) || []).length;
+    const css = read('mobile.css');
+    const cols = (sel) => css.match(new RegExp(sel.replace(/\./g, '\\.') + '\\{[^}]*grid-template-columns:([^;}]+)'))[1].trim().split(/\s+(?![^()]*\))/).length;
+    assert.equal(cols(row[1].includes('no-mic') ? '.cmp-row.no-mic' : '.cmp-row'), items);
+    assert.equal(cols('.cmp-row') - 1, cols('.cmp-row.no-mic'));
+});
+
 test('boot: a /phone/say refusal keeps the draft in the composer and says why', async () => {
     const one = sess('holding', { id: 'aaaaaaaa-5', attached: true });
     const ok = routed(one);

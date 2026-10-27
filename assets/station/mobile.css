@@ -171,8 +171,8 @@ p.tl-sum{min-height:32px;cursor:default}
 
 /* ---- m-composer-a: the mic left of the box, send under the right thumb; voice never sends ---- */
 .cmp{flex:none;padding:6px 10px 12px;background:var(--panel);box-shadow:0 -1px 0 var(--rule)}
-.cmp-row{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:end;gap:8px}
-.cmp-row.no-mic{grid-template-columns:1fr auto}
+.cmp-row{display:grid;grid-template-columns:44px minmax(0,1fr) 44px 44px;align-items:end;gap:8px}
+.cmp-row.no-mic{grid-template-columns:minmax(0,1fr) 44px 44px}
 .mic{position:relative;display:grid;place-items:center;width:44px;height:44px;border:0;border-radius:50%;background:var(--panel);box-shadow:inset 0 0 0 1px var(--rule2);color:var(--ink2);cursor:pointer;
   transition:background-color .18s cubic-bezier(.16,1,.3,1),color .18s cubic-bezier(.16,1,.3,1)}
 .mic .ic{position:relative;z-index:1;width:20px;height:20px;stroke-width:1.9}
