@@ -71,3 +71,61 @@
 .bch-x:hover{background:var(--inset);color:var(--ink)}
 .bch-x:focus-visible{outline:2px solid var(--keel);outline-offset:1px}
 .bch-n{margin:8px 0 0;font-size:12px;line-height:1.55;color:var(--muted);max-width:60ch}
+
+/* station-61: icon toolbar, the active tool named in words, and a board that pans and zooms
+   (mockup .fankeel/build/2026-10-27-board-icons/mockup.html). Icons: Lucide (ISC). */
+.bd-ic{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---- toolbar: two groups of icon tools ---- */
+.bd-bar{gap:10px 14px}
+.bd-grp{display:inline-flex;align-items:center;gap:4px;padding:3px;border-radius:10px;background:var(--inset)}
+.bd-grp .bd-tool{justify-content:center;min-width:36px;height:36px;padding:0;gap:4px;box-shadow:none;color:var(--ink2);
+  transition:background-color .16s ease-out,color .16s ease-out}
+.bd-grp .bd-tool:hover{background:var(--panel);color:var(--ink)}
+.bd-grp .bd-tool[aria-pressed="true"]{background:var(--keel);color:var(--on-keel)}
+.bd-grp .bd-tool.del{color:var(--bad)}
+.bd-grp .bd-tool.del:hover{background:var(--fail-tint)}
+.bd-grp .bd-tool[data-bd-tool="undo"]{padding:0 9px 0 8px}
+.bd-grp .bd-n{padding:0;background:none;font:600 12px var(--f-ui);color:inherit}
+.bd-grp .bd-cat{height:36px;padding:0 4px 0 8px;box-shadow:none;background:var(--panel)}
+
+/* ---- the active tool, named in words ---- */
+.bd-hint{display:flex;align-items:flex-start;gap:8px;margin:0;padding:8px 20px;border-bottom:1px solid var(--rule);background:var(--panel);
+  font-size:12.5px;line-height:1.5;color:var(--muted)}
+.bd-hint .bd-ic{width:16px;height:16px;margin-top:2px;color:var(--keel)}
+.bd-hint b{font-weight:700;color:var(--ink);white-space:nowrap}
+.bd-hint span{min-width:0}
+
+/* ---- the board: a fixed viewport on dot paper; the viewBox pans and zooms ---- */
+.bd-svg.bd-view{height:clamp(320px,58vh,540px);padding:0;overflow:hidden;touch-action:none;cursor:grab;outline:none;
+  background:var(--inset) radial-gradient(circle,var(--rule2) 1px,transparent 1.6px) 0 0/22px 22px}
+.bd-view:focus-visible{box-shadow:inset 0 0 0 2px var(--keel)}
+.bd-view.panning{cursor:grabbing}
+.bd-svg.bd-view>svg{width:100%;height:100%;max-width:none;margin:0}
+.bd-view .bd-zoom .bd-ic{display:block;width:18px;height:18px;margin:0}
+.bd-view[data-tool="select"] [data-type="node"]{cursor:move}
+.bd-view[data-tool="add-node"]{cursor:crosshair}
+.bd-view[data-tool="add-edge"] [data-type="node"],.bd-view[data-tool="mark"] [data-type="node"]{cursor:pointer}
+.bd-view [data-bd-drag] .cr-shape{filter:drop-shadow(0 6px 8px rgba(16,21,29,.28))}
+
+/* zoom, floating over the board's lower right */
+.bd-zoom{position:absolute;right:12px;bottom:12px;display:flex;align-items:center;gap:2px;padding:3px;border-radius:10px;background:var(--panel);
+  box-shadow:inset 0 0 0 1px var(--rule2),0 8px 18px -8px rgba(16,21,29,.45)}
+.bd-zb,.bd-pct{display:grid;place-items:center;height:36px;border:0;border-radius:6px;background:transparent;color:var(--ink2);cursor:pointer;
+  transition:background-color .16s ease-out,color .16s ease-out}
+.bd-zb{width:36px}
+.bd-pct{min-width:54px;padding:0 6px;font:600 12.5px var(--f-ui);font-variant-numeric:tabular-nums;color:var(--ink)}
+.bd-zb:hover,.bd-pct:hover{background:var(--inset);color:var(--ink)}
+.bd-zb:focus-visible,.bd-pct:focus-visible{outline:2px solid var(--keel);outline-offset:1px}
+.bd-zb:disabled{opacity:.45;cursor:default;background:transparent}
+
+@media (max-width:640px){
+  .bd-bar{padding:10px 12px;gap:8px}
+  .bd-hint{padding:8px 12px}
+  .bd-grp{gap:8px}
+  .bd-grp .bd-tool,.bd-zb{min-width:44px;width:auto;height:44px}
+  .bd-grp .bd-cat,.bd-pct{height:44px}
+  .bd-zoom{right:8px;bottom:8px;gap:4px}
+  .bd-svg.bd-view{height:clamp(280px,46vh,380px)}
+}
+@media (prefers-reduced-motion:reduce){.bd-grp .bd-tool,.bd-zb,.bd-pct{transition:none}}

@@ -15,6 +15,12 @@
         'bd.sent': 'Written to {f} and appended to the answer when it is sent.', 'bd.drop': 'Undo: {t}', 'bd.kMark': 'Mark', 'bd.kEdit': 'Edit',
         'bd.newNode': 'New node', 'bd.label': 'Node name', 'bd.id': 'Node id', 'bd.edgeText': 'Edge text', 'bd.edgeId': 'Edge id', 'bd.keys': 'Enter saves · Esc cancels',
         'bd.cat': 'Category of a new node',
+        'bd.gEdit': 'Edit tools', 'bd.gHistory': 'Changes', 'bd.undoN': 'Undo, {n} changes left', 'bd.gZoom': 'Zoom', 'bd.fitted': 'Fit',
+        'bd.hSelect': 'Drag a node to move it, double-click to rename; drag empty space to pan, Ctrl+wheel or two fingers to zoom',
+        'bd.hNode': 'Click empty space to place a node; dragging empty space still pans', 'bd.hEdge': 'Click the start node, then the end node',
+        'bd.hMark': 'Click a node and write what the AI should look at',
+        'bd.zOut': 'Zoom out (−)', 'bd.zIn': 'Zoom in (+)', 'bd.zOne': 'Back to 100%', 'bd.zNow': 'Now {p}, back to 100%', 'bd.zFit': 'Fit to view (0)',
+        'bd.view': 'Board: arrow keys pan, + and − zoom, 0 fits',
         'bd.markFor': 'Mark {id} for the AI', 'bd.note': 'What the AI should look at',
         'bd.tRename': 'Rename {id}: {a} → {b}', 'bd.tMove': 'Move {id}', 'bd.tDelete': 'Delete {id}', 'bd.tAddNode': 'Add node {id}', 'bd.tAddEdge': 'Add edge {a} → {b}',
         'bd.tRelabel': 'Edge {id} text: {a} → {b}',
@@ -44,7 +50,42 @@
     // a rename edits a label's first line and keeps `rest`, the lines after it.
     var tool = 'select', sel = null, selBox = null, selK = null, from = null, EDIT = null, cat = 'service';
 
-    var TOOLS = ['select', 'add-node', 'add-edge', 'mark', 'delete', 'undo'];
+    var TOOLS = ['select', 'add-node', 'add-edge', 'mark'], HISTORY = ['undo', 'delete'];
+    // The shortcut each tool's title names; `listen`'s keydown handles the same keys.
+    var KEYS = { 'select': 'V', 'add-node': 'N', 'add-edge': 'E', 'mark': 'M', 'undo': 'Ctrl+Z', 'delete': 'Delete' };
+    var BYKEY = { v: 'select', n: 'add-node', e: 'add-edge', m: 'mark' };
+    // Lucide (ISC), 24-unit viewBox, stroked with currentColor by .bd-ic.
+    var ICONS = {
+        'select': '<path d="M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z"/>',
+        'add-node': '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M8 12h8"/><path d="M12 8v8"/>',
+        'add-edge': '<circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><path d="M5 17A12 12 0 0 1 17 5"/>',
+        'mark': '<path d="M12.7 3H4a2 2 0 0 0-2 2v16.286a.71.71 0 0 0 1.212.502l2.202-2.202A2 2 0 0 1 6.828 19H20a2 2 0 0 0 2-2v-4.7"/><circle cx="19" cy="6" r="3"/>',
+        'undo': '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/>',
+        'delete': '<path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+        'zoom-in': '<circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/><line x1="11" x2="11" y1="8" y2="14"/><line x1="8" x2="14" y1="11" y2="11"/>',
+        'zoom-out': '<circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/><line x1="8" x2="14" y1="11" y2="11"/>',
+        'fit': '<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/>'
+    };
+    function icon(n) { return '<svg class="bd-ic" viewBox="0 0 24 24" aria-hidden="true">' + ICONS[n] + '</svg>'; }
+    function hintOf(t) {
+        if (t === 'add-node') return loc('bd.hNode', '點空白處放一個節點；拖空白處仍是平移');
+        if (t === 'add-edge') return loc('bd.hEdge', '先點起點的節點，再點終點的節點');
+        if (t === 'mark') return loc('bd.hMark', '點一個節點，寫下要 AI 看什麼');
+        return loc('bd.hSelect', '拖節點移動，雙擊改名；拖空白處平移，Ctrl+滾輪或兩指縮放');
+    }
+    // The board's view per pane key, in board units: null is the board's own viewBox.
+    var VB = {}, MIN = 0.25, MAX = 3, STEPS = [0.25, 0.33, 0.5, 0.67, 0.8, 1, 1.25, 1.5, 2, 3];
+    // Zoom to scale s (screen px per board unit) so the board point under (px, py) stays there.
+    function zoomAt(vb, s, px, py) {
+        s = Math.max(MIN, Math.min(MAX, s));
+        var bx = vb.x + px / vb.s, by = vb.y + py / vb.s, w = vb.w * vb.s / s, h = vb.h * vb.s / s;
+        return { x: bx - px / s, y: by - py / s, w: w, h: h, s: s };
+    }
+    function withView(svg, vb) {
+        if (!vb) return svg;
+        var v = vb.x + ' ' + vb.y + ' ' + vb.w + ' ' + vb.h;
+        return /viewBox="[^"]*"/.test(svg) ? svg.replace(/viewBox="[^"]*"/, 'viewBox="' + v + '"') : svg.replace(/<svg\b/, '<svg viewBox="' + v + '"');
+    }
     function toolName(t) {
         if (t === 'select') return loc('bd.select', '選取');
         if (t === 'add-node') return loc('bd.addNode', '新增節點');
@@ -93,6 +134,7 @@
         });
         var end = svg.lastIndexOf('</svg>');
         if (EDIT && EDIT.k === k && end >= 0) svg = svg.slice(0, end) + editorSvg(EDIT, vbRight(svg)) + svg.slice(end);
+        svg = withView(svg, VB[k]);
         return svg;
     }
 
@@ -110,17 +152,31 @@
         if (!n) return '';
         var k = key(s.id, n), st = CACHE[k] || { svg: null, check: null, changes: [], editable: false };
         var live = (st.changes || []).filter(isLive).length;
-        var bar = '<div class="bd-bar" data-block="board-toolbar" role="toolbar" aria-label="' + esc(loc('bd.bar', '白板編輯')) + '">' + TOOLS.map(function (t) {
-            var mode = t !== 'delete' && t !== 'undo';
+        function btn(t) {
+            var mode = TOOLS.indexOf(t) >= 0, name = t === 'delete' && sel && selK === k ? loc('bd.tDelete', '刪除 {id}', { id: sel }) : toolName(t);
+            var said = t === 'undo' && live ? loc('bd.undoN', '復原，還有 {n} 個改動', { n: live }) : name;
             return '<button type="button" class="bd-tool' + (t === 'delete' ? ' del' : '') + '" data-bd-tool="' + t + '"'
-                + (mode ? ' aria-pressed="' + (t === tool ? 'true' : 'false') + '"' : '') + (st.editable ? '' : ' disabled') + '>' + esc(toolName(t))
-                + (t === 'undo' && live ? ' <b class="bd-n">' + live + '</b>' : '') + '</button>' + (t === 'add-node' ? catHtml(st) : '');
-        }).join('') + '<span class="bd-state' + (st.editable ? ' on' : '') + '" role="status"><i aria-hidden="true"></i>'
-            + esc(st.editable ? loc('bd.on', 'session 停在 gate，可以編輯') : loc('bd.off', '唯讀：session 不在 gate')) + '</span></div>';
+                + (mode ? ' aria-pressed="' + (t === tool ? 'true' : 'false') + '"' : '') + ' title="' + esc(name + ' (' + KEYS[t] + ')') + '" aria-label="' + esc(said) + '"'
+                + (st.editable ? '' : ' disabled') + '>' + icon(t) + (t === 'undo' && live ? '<b class="bd-n">' + live + '</b>' : '') + '</button>'
+                + (t === 'add-node' ? catHtml(st) : '');
+        }
+        var bar = '<div class="bd-bar" data-block="board-toolbar" role="toolbar" aria-label="' + esc(loc('bd.bar', '白板編輯')) + '">'
+            + '<div class="bd-grp" data-block="board-tools-edit" role="group" aria-label="' + esc(loc('bd.gEdit', '編輯工具')) + '">' + TOOLS.map(btn).join('') + '</div>'
+            + '<div class="bd-grp" data-block="board-tools-history" role="group" aria-label="' + esc(loc('bd.gHistory', '改動')) + '">' + HISTORY.map(btn).join('') + '</div>'
+            + '<span class="bd-state' + (st.editable ? ' on' : '') + '" role="status"><i aria-hidden="true"></i>'
+            + esc(st.editable ? loc('bd.on', 'session 停在 gate，可以編輯') : loc('bd.off', '唯讀：session 不在 gate')) + '</span></div>'
+            + '<p class="bd-hint" data-block="board-hint" role="status">' + icon(tool) + '<b>' + esc(toolName(tool)) + '</b><span>' + esc(hintOf(tool)) + '</span></p>';
+        var pct = VB[k] ? Math.round(VB[k].s * 100) + '%' : loc('bd.fitted', '符合');
+        var zoom = '<div class="bd-zoom" data-block="board-zoom" role="group" aria-label="' + esc(loc('bd.gZoom', '縮放')) + '">'
+            + '<button type="button" class="bd-zb" data-bd-zoom="out" title="' + esc(loc('bd.zOut', '縮小 (−)')) + '" aria-label="' + esc(loc('bd.zOut', '縮小 (−)')) + '">' + icon('zoom-out') + '</button>'
+            + '<button type="button" class="bd-pct" data-bd-zoom="one" title="' + esc(loc('bd.zOne', '回到 100%')) + '" aria-label="' + esc(loc('bd.zNow', '目前 {p}，回到 100%', { p: pct })) + '">' + esc(pct) + '</button>'
+            + '<button type="button" class="bd-zb" data-bd-zoom="in" title="' + esc(loc('bd.zIn', '放大 (+)')) + '" aria-label="' + esc(loc('bd.zIn', '放大 (+)')) + '">' + icon('zoom-in') + '</button>'
+            + '<button type="button" class="bd-zb" data-bd-zoom="fit" title="' + esc(loc('bd.zFit', '符合畫面 (0)')) + '" aria-label="' + esc(loc('bd.zFit', '符合畫面 (0)')) + '">' + icon('fit') + '</button></div>';
         return '<section class="panel bd" data-block="board-pane" data-bd="' + esc(k) + '"><header class="bd-h"><h2>' + esc(loc('bd.title', '白板')) + '</h2>'
             + '<code class="bd-file">' + esc(n) + '.board</code></header>' + bar
             + (ERR[k] ? '<p class="bd-err" role="alert">' + esc(ERR[k]) + '</p>' : '')
-            + '<div class="bd-svg" data-block="board">' + svgOf(k, st) + '</div>' + checkHtml(st.check) + '</section>';
+            + '<div class="bd-svg bd-view" data-block="board" data-bd-view="" tabindex="0" data-tool="' + esc(tool) + '" aria-label="' + esc(loc('bd.view', '白板：方向鍵平移，+ 與 − 縮放，0 符合畫面')) + '">'
+            + svgOf(k, st) + zoom + '</div>' + checkHtml(st.check) + '</section>';
     }
 
     function changesHtml(s) {
@@ -265,9 +321,93 @@
     function listen(root, nonce) {
         if (heard || !root || !root.addEventListener) return;
         heard = true;
+        // station-61: the view. The live svg is changed in place while panning or
+        // zooming, and VB[k] keeps it, so a REPAINT redraws the same view.
+        var suppress = false, pts = {}, pan = null;
+        function viewOf(t) { return t && t.closest ? t.closest('[data-bd-view]') : null; }
+        function current(v, k) {
+            var svg = v.querySelector('svg'), r = v.getBoundingClientRect();
+            if (VB[k]) return VB[k];
+            var b = (svg.getAttribute('viewBox') || '0 0 ' + r.width + ' ' + r.height).split(/[\s,]+/).map(Number), s = Math.min(r.width / b[2], r.height / b[3]);
+            return { x: b[0] - (r.width / s - b[2]) / 2, y: b[1] - (r.height / s - b[3]) / 2, w: r.width / s, h: r.height / s, s: s };
+        }
+        function show(v, k, vb) {
+            VB[k] = vb;
+            var svg = v.querySelector('svg'), p = v.querySelector('.bd-pct');
+            if (vb) { svg.setAttribute('viewBox', vb.x + ' ' + vb.y + ' ' + vb.w + ' ' + vb.h); svg.setAttribute('preserveAspectRatio', 'xMinYMin meet'); }
+            if (p) p.textContent = vb ? Math.round(vb.s * 100) + '%' : loc('bd.fitted', '符合');
+        }
+        function step(v, k, dir) {
+            var vb = current(v, k), r = v.getBoundingClientRect();
+            var s = dir > 0 ? STEPS.filter(function (x) { return x > vb.s + 0.001; })[0] || MAX : STEPS.filter(function (x) { return x < vb.s - 0.001; }).pop() || MIN;
+            show(v, k, zoomAt(vb, s, r.width / 2, r.height / 2));
+        }
+        function zoomClick(b, k) {
+            var v = viewOf(b), z = b.getAttribute('data-bd-zoom'), r = v.getBoundingClientRect();
+            if (z === 'in') step(v, k, 1); else if (z === 'out') step(v, k, -1);
+            else if (z === 'fit') { VB[k] = null; REPAINT(); }
+            else show(v, k, zoomAt(current(v, k), 1, r.width / 2, r.height / 2));
+        }
+        // Keys on the focused board: + − 0 and arrows move the view; V N E M pick a tool,
+        // Delete and Ctrl+Z press their buttons. True when the key was the view's.
+        function viewKey(e, k) {
+            var v = viewOf(e.target);
+            if (!v || e.target !== v) return false;
+            var vb = current(v, k), d = 40 / vb.s, low = String(e.key || '').toLowerCase(), pane = v.closest('[data-bd]');
+            var press = function (t) { var b = pane && pane.querySelector('[data-bd-tool="' + t + '"]'); if (b && !b.disabled) b.click(); };
+            if (e.key === '+' || e.key === '=') step(v, k, 1);
+            else if (e.key === '-') step(v, k, -1);
+            else if (e.key === '0') { VB[k] = null; REPAINT(); }
+            else if (/^Arrow/.test(e.key)) show(v, k, { x: vb.x + (e.key === 'ArrowLeft' ? -d : e.key === 'ArrowRight' ? d : 0), y: vb.y + (e.key === 'ArrowUp' ? -d : e.key === 'ArrowDown' ? d : 0), w: vb.w, h: vb.h, s: vb.s });
+            else if ((e.ctrlKey || e.metaKey) && low === 'z') press('undo');
+            else if (e.key === 'Delete' || e.key === 'Backspace') press('delete');
+            else if (!e.ctrlKey && !e.metaKey && BYKEY[low]) press(BYKEY[low]);
+            else return false;
+            if (e.preventDefault) e.preventDefault();
+            return true;
+        }
+        // One pointer on empty space pans in every tool; two pointers pinch. True when it took the event.
+        function panDown(e, k) {
+            var v = viewOf(e.target);
+            if (!v || e.button || EDIT || e.target.closest('.bd-zoom') || e.target.closest('[data-type="node"]')) return false;
+            pts[e.pointerId] = [e.clientX, e.clientY];
+            var ids = Object.keys(pts), vb = current(v, k);
+            if (ids.length === 2) { var a = pts[ids[0]], c = pts[ids[1]]; pan = { v: v, k: k, pinch: Math.hypot(a[0] - c[0], a[1] - c[1]), vb: vb }; }
+            else pan = { v: v, k: k, x0: e.clientX, y0: e.clientY, vb: vb, moved: false };
+            return true;
+        }
+        function panMove(e) {
+            if (!pan || !pts[e.pointerId]) return false;
+            pts[e.pointerId] = [e.clientX, e.clientY];
+            if (pan.pinch) {
+                var ids = Object.keys(pts), a = pts[ids[0]], c = pts[ids[1]], r = pan.v.getBoundingClientRect();
+                show(pan.v, pan.k, zoomAt(pan.vb, pan.vb.s * Math.hypot(a[0] - c[0], a[1] - c[1]) / pan.pinch, (a[0] + c[0]) / 2 - r.left, (a[1] + c[1]) / 2 - r.top));
+                return true;
+            }
+            var dx = e.clientX - pan.x0, dy = e.clientY - pan.y0;
+            if (!pan.moved && Math.abs(dx) < 3 && Math.abs(dy) < 3) return true;
+            if (!pan.moved && pan.v.setPointerCapture) pan.v.setPointerCapture(e.pointerId);
+            pan.moved = true; pan.v.classList.add('panning');
+            show(pan.v, pan.k, { x: pan.vb.x - dx / pan.vb.s, y: pan.vb.y - dy / pan.vb.s, w: pan.vb.w, h: pan.vb.h, s: pan.vb.s });
+            return true;
+        }
+        function panUp(e) {
+            delete pts[e.pointerId];
+            if (!Object.keys(pts).length && pan) { if (pan.moved) { pan.v.classList.remove('panning'); suppress = true; } pan = null; }
+        }
+        root.addEventListener('wheel', function (e) {
+            var v = viewOf(e.target), p = paneOf(e.target);
+            if (!v || !p || (!e.ctrlKey && !e.metaKey)) return;
+            e.preventDefault();
+            var k = key(p[0], p[1]), r = v.getBoundingClientRect(), vb = current(v, k);
+            show(v, k, zoomAt(vb, vb.s * Math.exp(-e.deltaY * 0.002), e.clientX - r.left, e.clientY - r.top));
+        }, { passive: false });
         root.addEventListener('click', function (e) {
+            if (suppress) { suppress = false; return; }
             var t = e.target, p = paneOf(t);
             if (!p || t.closest('foreignObject')) return;
+            var zb = t.closest('[data-bd-zoom]');
+            if (zb) { zoomClick(zb, key(p[0], p[1])); return; }
             var k = key(p[0], p[1]), st = CACHE[k] || {};
             var dropBtn = t.closest('[data-bd-drop]');
             if (dropBtn) { send(p, nonce, { op: 'drop', at: dropBtn.getAttribute('data-bd-drop') }); return; }
@@ -334,6 +474,8 @@
             if (EDIT && (n === 'label' || n === 'note')) EDIT[n] = String(f.value || '');
         });
         root.addEventListener('keydown', function (e) {
+            var vp = paneOf(e.target);
+            if (vp && viewKey(e, key(vp[0], vp[1]))) return;
             var f = e.target && e.target.closest ? e.target.closest('[data-bd-in]') : null, n = f ? f.getAttribute('data-bd-in') : null;
             if (!EDIT || (n !== 'label' && n !== 'note')) return;
             if (e.key === 'Escape') { if (e.preventDefault) e.preventDefault(); close(); return; }
@@ -345,20 +487,23 @@
         });
         root.addEventListener('pointerdown', function (e) {
             var t = e.target, p = paneOf(t), g = p ? t.closest('[data-type="node"]') : null;
+            if (p && panDown(e, key(p[0], p[1]))) return;
             if (!g || e.button || EDIT || tool !== 'select' || t.closest('foreignObject') || !(CACHE[key(p[0], p[1])] || {}).editable) return;
             var svg = g.ownerSVGElement, at = svgPoint(svg, e);
             if (g.setPointerCapture) g.setPointerCapture(e.pointerId);
             drag = { p: p, g: g, svg: svg, x0: at.x, y0: at.y, box: boxOf(g), was: g.getAttribute('transform'), dx: 0, dy: 0 };
         });
         root.addEventListener('pointermove', function (e) {
+            if (panMove(e)) return;
             if (!drag) return;
             var at = svgPoint(drag.svg, e);
             drag.dx = at.x - drag.x0; drag.dy = at.y - drag.y0;
             drag.g.setAttribute('transform', 'translate(' + drag.dx + ' ' + drag.dy + ')' + (drag.was ? ' ' + drag.was : ''));
         });
         function undrag(d) { if (d.was) d.g.setAttribute('transform', d.was); else d.g.removeAttribute('transform'); }
-        root.addEventListener('pointercancel', function () { if (drag) { undrag(drag); drag = null; } });
-        root.addEventListener('pointerup', function () {
+        root.addEventListener('pointercancel', function (e) { panUp(e); if (drag) { undrag(drag); drag = null; } });
+        root.addEventListener('pointerup', function (e) {
+            panUp(e);
             if (!drag) return;
             var d = drag; drag = null;
             if (Math.abs(d.dx) < 3 && Math.abs(d.dy) < 3) { undrag(d); return; }
@@ -366,7 +511,7 @@
             edit(d.p, nonce, 'move', { id: id, x: Math.round(d.box.x + d.dx - f.x), y: Math.round(d.box.y + d.dy - f.y), w: d.box.w, h: d.box.h }, loc('bd.tMove', '移動 {id}', { id: id }));
         });
     }
-    var api = { paneHtml: paneHtml, changesHtml: changesHtml, opFor: opFor, load: load, post: post, listen: listen, EN: EN,
+    var api = { paneHtml: paneHtml, changesHtml: changesHtml, opFor: opFor, load: load, post: post, listen: listen, EN: EN, _zoomAt: zoomAt, _withView: withView,
         _seed: function (id, name, st) { CACHE[key(id, name)] = st; } };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     if (w) w.FK_BOARD = api;

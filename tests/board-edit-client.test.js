@@ -41,7 +41,7 @@ test('changes already sent to the agent are history: not listed, not counted for
     const html = B.changesHtml(S);
     assert.doesNotMatch(html, /OLD/);
     assert.match(html, /<span class="bch-t">NEW<\/span><button[^>]*data-bd-drop="1"/);
-    assert.match(B.paneHtml(S), /data-bd-tool="undo"[^>]*>[^<]*<b class="bd-n">1<\/b>/);
+    assert.match(B.paneHtml(S), /data-bd-tool="undo"[^>]*>.*?<b class="bd-n">1<\/b>/);
 });
 
 test('opFor builds the batch each tool sends', () => {
@@ -336,4 +336,33 @@ test("a node id with ' keeps its selection highlight after a repaint", () => {
         svg: '<svg viewBox="0 0 400 300"><g data-id="o&apos;k" data-type="node"><rect class="cr-shape"/><text class="cr-label">OK</text></g></svg>' });
     r.on.click({ target: r.inNode });
     assert.match(r.P.paneHtml(S), /data-id="o&apos;k" data-bd-on=""/);
+});
+
+test('station-61: every tool is an icon button carrying its name in aria-label and title', () => {
+    B._seed(S.id, 'arch', { svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"></svg>', check: { ok: true, problems: [] }, changes: [], editable: true });
+    const html = B.paneHtml(S);
+    for (const [t, name] of [['select', '選取'], ['add-node', '新增節點'], ['add-edge', '新增連線'], ['mark', '標記給 AI'], ['delete', '刪除'], ['undo', '復原']]) {
+        const btn = new RegExp('<button[^>]*data-bd-tool="' + t + '"[^>]*>');
+        const tag = btn.exec(html);
+        assert.ok(tag, t + ' button missing');
+        assert.match(tag[0], new RegExp('aria-label="' + name));
+        assert.match(tag[0], new RegExp('title="' + name));
+        assert.match(html.slice(tag.index, html.indexOf('</button>', tag.index)), /<svg class="bd-ic"/);
+    }
+    for (const b of ['board-tools-edit', 'board-tools-history', 'board-hint', 'board-zoom']) assert.match(html, new RegExp('data-block="' + b + '"'));
+    assert.match(html, /data-bd-zoom="fit"/);
+});
+
+test('station-61: zoomAt keeps the point under the pointer, and withView writes the viewBox back', () => {
+    const vb = { x: 0, y: 0, w: 400, h: 300, s: 1 };
+    const z = B._zoomAt(vb, 2, 100, 50);
+    assert.equal(z.s, 2);
+    assert.equal(z.w, 200);
+    assert.equal(z.h, 150);
+    assert.equal(z.x + 100 / 2, 0 + 100 / 1, 'board x under the pointer is unchanged');
+    assert.equal(z.y + 50 / 2, 0 + 50 / 1, 'board y under the pointer is unchanged');
+    assert.equal(B._zoomAt(vb, 9, 0, 0).s, 3, 'clamped to MAX');
+    assert.equal(B._zoomAt(vb, 0.01, 0, 0).s, 0.25, 'clamped to MIN');
+    assert.match(B._withView('<svg viewBox="0 0 400 300"><g/></svg>', { x: 10, y: 20, w: 200, h: 150 }), /^<svg viewBox="10 20 200 150"/);
+    assert.equal(B._withView('<svg viewBox="0 0 400 300"/>', null), '<svg viewBox="0 0 400 300"/>');
 });
