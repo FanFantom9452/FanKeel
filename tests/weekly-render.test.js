@@ -107,6 +107,11 @@ test('guard names each internal word, money, id and listed word, and where it si
     ]);
     assert.deepEqual(wr.guard(events(), []), []);
     assert.deepEqual(wr.guard({ events: [{ did: 'gateway 和 stationary 不算' }] }, []), []);
+    assert.deepEqual(wr.guard({ events: [{ did: 'mysession 和 xstation 不算' }] }, []), []);
+    assert.deepEqual(wr.guard({ events: [{ did: 'Sessions 與 TODOs' }] }, []), [
+        { where: 'events[0].did', word: 'session' },
+        { where: 'events[0].did', word: 'TODO' },
+    ]);
     assert.deepEqual(wr.BUILTIN_WORDS, ['session', 'gate', 'station', 'brain', 'TODO', 'subagent']);
 });
 

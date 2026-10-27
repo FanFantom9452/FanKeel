@@ -101,6 +101,21 @@ test('readSessions keeps what was updated in range, is not at land and has not e
     assert.deepEqual(wc.readSessions(dir, '2025-12-30', '2026-01-02'), [{ task: '做匯出', stage: 'build', updated: '2026-01-01T10:00:00.000Z', claims: ['src/b/y.js', 'src/a/x.js'] }]);
 });
 
+test('readRecords skips a missing month file but throws on any other read error', () => {
+    const dir = tmp('fankeel-weekly-col-err-');
+    assert.deepEqual(wc.readRecords(dir, '2026-01-01', '2026-01-02'), []);
+    fs.mkdirSync(path.join(dir, 'docs', '90-agent', 'records', '2026-01.md'), { recursive: true });
+    assert.throws(() => wc.readRecords(dir, '2026-01-01', '2026-01-02'), { code: 'EISDIR' });
+});
+
+test('readSessions returns [] for a missing sessions dir but throws on any other read error', () => {
+    const dir = tmp('fankeel-weekly-col-serr-');
+    assert.deepEqual(wc.readSessions(dir, '2026-01-01', '2026-01-02'), []);
+    fs.mkdirSync(path.join(dir, '.fankeel'));
+    fs.writeFileSync(path.join(dir, '.fankeel', 'sessions'), 'x');
+    assert.throws(() => wc.readSessions(dir, '2026-01-01', '2026-01-02'), { code: 'ENOTDIR' });
+});
+
 test('a done record takes its modules from its own session\'s claims, at any stage, not from the day\'s commits', () => {
     const FEB = [
         '# 2026-02',
