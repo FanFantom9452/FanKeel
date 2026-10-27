@@ -4261,7 +4261,8 @@
     // 近 30 天 is FK_DAYS (assets/station/days-page.js): it keeps the chart's
     // hover, legend and 篩選 state; this file hands it the helpers each call.
     function daysCtx() {
-        return { S: S, view: view, route: route, NOW: NOW, DAYS: DAYS, PREV: PREV, TODAY: TODAY, frozenAt: frozenAt, draw: draw,
+        // route is reassigned by draw(); a getter keeps a late callback reading the live one.
+        return { S: S, view: view, get route() { return route; }, NOW: NOW, DAYS: DAYS, PREV: PREV, TODAY: TODAY, frozenAt: frozenAt, draw: draw,
             H: { homeRows: homeRows, homeOpts: homeOpts, dayBars: dayBars, visibleBars: visibleBars, histSvg: histSvg, legendHtml: legendHtml,
                 filterHtml: filterHtml, windowTotals: windowTotals, kpiHtml: kpiHtml, segHtml: segHtml, subtabsHtml: subtabsHtml, icon: icon,
                 heroEyebrow: heroEyebrow, loc: loc, DIM_LABEL: DIM_LABEL, NO_TIME_TYPE: NO_TIME_TYPE, dashByProj: dashByProj,

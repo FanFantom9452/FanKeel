@@ -53,3 +53,26 @@ test('station.js routes 近 30 天 to FK_DAYS and holds none of its chart state'
     for (const name of ['var chartBars', 'function chartRestore', 'function daysPage', 'function legendToggle']) assert.ok(!src.includes(name), name);
     assert.match(src, /VIEWS\.days = function \(r\) \{ return w\.FK_DAYS\.page\(r, daysCtx\(\)\); \};/);
 });
+
+test('a range fetch that lands after the reader left 近 30 天 does not redraw', () => {
+    const { page } = require('./station-module.js');
+    const { V, M, win, doc } = page(['days-page.js', 'spend-range.js'], { serve: true }, { fetch: () => new Promise(() => {}) });
+    let late = null, draws = 0;
+    doc.querySelector = () => null;
+    win.location.hash = '#/days';
+    const draw = V.daysCtx().draw;
+    draw();
+    const ctx = V.daysCtx();
+    ctx.draw = () => { draws++; };
+    assert.equal(ctx.route.view, 'days');
+    const real = win.FK_RANGE;
+    win.FK_RANGE = Object.assign({}, real, { rangeOf: () => ({ kind: '30d', days: ['2026-10-27'], prev: [], from: '2026-10-27', to: '2026-10-27' }), listen() {}, held: () => null, load(r, cb) { late = cb; return null; } });
+    M['days-page.js'].page({ view: 'days' }, ctx);
+    assert.equal(typeof late, 'function');
+    win.FK_RANGE = real;
+    win.location.hash = '#/';
+    draw();
+    assert.equal(ctx.route.view, 'now');
+    late();
+    assert.equal(draws, 0);
+});
