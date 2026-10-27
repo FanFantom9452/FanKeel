@@ -510,6 +510,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 10-27 第二輪的計畫：額度改讀記錄、手機附圖、計畫 markdown、days 頁拆模組 | `docs/99-archive/2026-10-27-todo-patrol-2.md` — *built* |
 | TODO 全表盤點第三輪（10-27）：做了什麼、沒做什麼 | [reports/2026-10-27-todo-patrol-3.md](90-agent/reports/2026-10-27-todo-patrol-3.md) — *繁體中文* |
 | 10-27 第三輪的計畫：await 卡住偵測、gate 板子 icon 工具列、station 拆模組行數 | `docs/99-archive/2026-10-27-todo-patrol-3.md` — *built* |
+| TODO 全表盤點第四輪（10-27）：做了什麼、沒做什麼 | [reports/2026-10-27-todo-patrol-4.md](90-agent/reports/2026-10-27-todo-patrol-4.md) — *繁體中文* |
+| 10-27 第四輪的計畫：手機版 /m 外殼與照片、tune 浮層工具列、FK_LIST 模組 | `docs/99-archive/2026-10-27-todo-patrol-4.md` — *built* |
 | 第三輪的 gate／talk 計畫：摺疊、自由輸入、跳回 talk、工具與子 agent 列、頁尾版本 | `docs/99-archive/2026-10-24-station-gate-talk.md` — *built, English* |
 | 第三輪的文件頁與設定頁計畫：FK_DOCS、FK_SETTINGS、FK_SETDETAIL，刪舊精靈 | `docs/99-archive/2026-10-24-station-docs-settings.md` — *built* |
 | 盤點三件（10-21）：做了什麼、沒做什麼 | [reports/2026-10-21-patrol-three.md](90-agent/reports/2026-10-21-patrol-three.md) — *繁體中文* |
