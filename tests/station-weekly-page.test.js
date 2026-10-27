@@ -152,3 +152,9 @@ test('every wk- class the page draws has a rule in weekly-page.css', () => {
     assert.ok(drawn.size >= 10, [...drawn].join(' '));
     for (const c of drawn) assert.match(css, new RegExp('\\.' + c + '(?![\\w-])'), c);
 });
+
+test('below 999px the list panel scrolls inside itself, not the page', () => {
+    const css = fs.readFileSync(path.join(ASSETS, 'weekly-page.css'), 'utf8');
+    const narrow = css.match(/@media \(max-width:999px\)\{(.*)\}\s*\n/)[1];
+    assert.match(narrow, /\.dcard\.wk-list\{position:relative;overflow-x:auto\}/);
+});

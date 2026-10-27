@@ -50,5 +50,5 @@
 .wk-t tbody tr:hover .wk-open{color:var(--keel)}
 .wk-empty{padding:44px 18px 48px;text-align:center;font-size:13px;line-height:1.7;color:var(--ink2)}
 .wk-empty b{display:block;font-size:14px;color:var(--ink)}
-@media (max-width:999px){.wk-t col.rng{width:250px}.wk-where{display:none}}
+@media (max-width:999px){.wk-t col.rng{width:250px}.wk-where{display:none}:root[data-style=keel] .dcard.wk-list{position:relative;overflow-x:auto}}
 @media (prefers-reduced-motion:reduce){.wk *{transition:none!important}}
