@@ -1096,3 +1096,30 @@ test('a mark past the 6000-weight cap is not kept and the draft line says so', (
     assert.equal(t.q('.fk-live-ink').querySelectorAll('circle').length, 0, 'a step past the cap was kept');
     assert.equal(t.q('.fk-live-say').textContent, '標註已達上限，先送出再繼續畫');
 });
+
+// tune-9: a note stops at the server's 4000 characters, and a send the server
+// would refuse with 413 is held back with its size and what to do.
+test('a note field stops at the server\'s 4000 characters, and bytesOf counts UTF-8', () => {
+    const { bytesOf, NOTE_MAX, BODY_MAX } = require('../assets/tune/overlay.js');
+    assert.equal(NOTE_MAX, 4000);
+    assert.equal(BODY_MAX, 262144);
+    assert.equal(bytesOf('ab'), 2);
+    assert.equal(bytesOf('é'), 2);
+    assert.equal(bytesOf('字'), 3);
+    assert.equal(bytesOf('😀'), 4);
+    const t = loadOverlay();
+    t.openTray();
+    const area = t.draft(['hero'], 'x');
+    assert.equal(area.maxLength, 4000);
+});
+
+test('a send past 256 KB is held back with the size and what to do, and nothing is posted', async () => {
+    const t = loadOverlay();
+    t.openTray();
+    for (let i = 0; i < 22; i++) t.draft(['hero'], '字'.repeat(4000));
+    t.fire(t.q('.fk-live-all'), 'click');
+    assert.equal(t.fetched.filter((f) => f.url === '/__live/request').length, 0, 'a body past 256 KB was posted');
+    assert.match(t.q('.fk-live-queue').querySelector('span').textContent, /^這次共 \d+ KB，超過一次能送的 256 KB；刪掉幾則或縮短備註再送$/);
+    assert.equal(t.q('.fk-live-count').textContent, '22', 'the drafts were dropped');
+    await t.tick();
+});

@@ -144,6 +144,23 @@
     // its own fields and its text; the server keeps 100 marks an item.
     var POINT_MAX = 6000;
     var MARK_MAX = 100;
+    // A note is cut to 4000 characters by the server (scripts/tune.js,
+    // `str(d.note, 4000)`) and the whole request refused past 262144 bytes
+    // (its `readBody` max): the field stops at the first, and 全部送出 says
+    // so before the second.
+    var NOTE_MAX = 4000;
+    var BODY_MAX = 262144;
+    function bytesOf(s) {
+        var n = 0;
+        for (var i = 0; i < s.length; i++) {
+            var c = s.charCodeAt(i);
+            if (c < 0x80) n += 1;
+            else if (c < 0x800) n += 2;
+            else if (c >= 0xd800 && c <= 0xdbff) { n += 4; i++; }
+            else n += 3;
+        }
+        return n;
+    }
     function weigh(k) { return k.points.length + 4 + (k.text ? k.text.length : 0); }
     function roomFor(drafts, m, d) {
         if (d && d.marks.length >= MARK_MAX) return false;
@@ -159,7 +176,7 @@
         capSay = true;
     }
     if (typeof document === 'undefined') {
-        if (typeof module !== 'undefined') module.exports = { selectorOf: selectorOf, labelOf: labelOf, pathOf: pathOf, toggleIn: toggleIn, itemsOf: itemsOf, SHAPES: SHAPES, toolOfKey: toolOfKey, inkOf: inkOf, stretch: stretch, kept: kept, roomFor: roomFor };
+        if (typeof module !== 'undefined') module.exports = { selectorOf: selectorOf, labelOf: labelOf, pathOf: pathOf, toggleIn: toggleIn, itemsOf: itemsOf, SHAPES: SHAPES, toolOfKey: toolOfKey, inkOf: inkOf, stretch: stretch, kept: kept, roomFor: roomFor, bytesOf: bytesOf, NOTE_MAX: NOTE_MAX, BODY_MAX: BODY_MAX };
         return;
     }
 
@@ -666,6 +683,7 @@
         label.textContent = d.picks.length > 1 ? '這 ' + d.picks.length + ' 個元素共用一段備註，要怎麼改？' : '這則要怎麼改？';
         var area = doc.createElement('textarea');
         area.rows = 2;
+        area.maxLength = NOTE_MAX;
         area.value = d.note;
         area.addEventListener('input', function () {
             d.note = area.value;
@@ -900,13 +918,20 @@
         }
         var view = { scroll: [Math.round(window.scrollX), Math.round(window.scrollY)], viewport: [doc.documentElement.clientWidth, doc.documentElement.clientHeight] };
         var payload = { page: location.pathname, items: itemsOf(drafts.map(function (d) { return { note: d.note, picks: d.picks.map(describe), marks: d.marks }; }), view) };
+        var body = JSON.stringify(payload);
+        var size = bytesOf(body);
+        if (size > BODY_MAX) {
+            sendErr = '這次共 ' + Math.ceil(size / 1024) + ' KB，超過一次能送的 256 KB；刪掉幾則或縮短備註再送';
+            drawQueue();
+            return;
+        }
         busy = true;
         sendErr = '';
         draw();
         fetch('/__live/request', {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: body
         })
             .then(function (res) {
                 if (!res.ok) return res.text().then(function (why) { throw new Error(why || 'HTTP ' + res.status); });
