@@ -199,12 +199,12 @@ docs index changes from *design-intent* to *built* by hand.
 ## 2a. The release number, when the work is one
 
 ```
-node <plugin>/scripts/version.js              what the seventeen places say
+node <plugin>/scripts/version.js              what the eighteen places say
 node <plugin>/scripts/version.js 0.35.0       set them
 node <plugin>/scripts/version.js --changes    what has landed since the last one
 ```
 
-Seventeen files carry it; `npm test` fails when they disagree; the release
+Eighteen files carry it; `npm test` fails when they disagree; the release
 steps are in [development.md](../../docs/01-guide/development.md).
 
 **Only when the user says this is a release.** The number is a claim about what
