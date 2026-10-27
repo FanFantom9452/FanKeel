@@ -9,7 +9,13 @@
     { "name": "live", "url": "http://127.0.0.1:28888/#/live", "src": ["assets/station/**", "lib/station.js", "scripts/station.js"] },
     { "name": "days", "url": "http://127.0.0.1:28888/#/days", "src": ["assets/station/**", "lib/station.js", "scripts/station.js"] },
     { "name": "weekly", "url": "http://127.0.0.1:28888/#/weekly", "src": ["assets/station/**", "lib/station.js", "scripts/station.js"] },
-    { "name": "weekly-report", "url": "http://127.0.0.1:28888/station/weekly/2026-10-27.html", "src": ["lib/weekly-render.js", "lib/weekly-store.js", "assets/weekly/report.css", "lib/board-look.js", "scripts/station.js"] }
+    { "name": "weekly-412", "url": "http://127.0.0.1:28888/#/weekly", "src": ["assets/station/**", "lib/station.js", "scripts/station.js"], "viewport": "412,900" },
+    { "name": "weekly-light", "url": "http://127.0.0.1:28888/#/weekly", "src": ["assets/station/**", "lib/station.js", "scripts/station.js"], "theme": "light" },
+    { "name": "weekly-412-light", "url": "http://127.0.0.1:28888/#/weekly", "src": ["assets/station/**", "lib/station.js", "scripts/station.js"], "viewport": "412,900", "theme": "light" },
+    { "name": "weekly-report", "url": "http://127.0.0.1:28888/station/weekly/2026-10-27.html", "src": ["lib/weekly-render.js", "lib/weekly-store.js", "assets/weekly/report.css", "lib/board-look.js", "scripts/station.js"] },
+    { "name": "weekly-report-412", "url": "http://127.0.0.1:28888/station/weekly/2026-10-27.html", "src": ["lib/weekly-render.js", "lib/weekly-store.js", "assets/weekly/report.css", "lib/board-look.js", "scripts/station.js"], "viewport": "412,900" },
+    { "name": "weekly-report-light", "url": "http://127.0.0.1:28888/station/weekly/2026-10-27.html", "src": ["lib/weekly-render.js", "lib/weekly-store.js", "assets/weekly/report.css", "lib/board-look.js", "scripts/station.js"], "theme": "light" },
+    { "name": "weekly-report-412-light", "url": "http://127.0.0.1:28888/station/weekly/2026-10-27.html", "src": ["lib/weekly-render.js", "lib/weekly-store.js", "assets/weekly/report.css", "lib/board-look.js", "scripts/station.js"], "viewport": "412,900", "theme": "light" }
   ],
   "roles": [{ "name": "guest" }]
 }

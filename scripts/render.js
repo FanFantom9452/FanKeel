@@ -8,6 +8,7 @@
 //   node scripts/render.js --config [<render.json>] [--out <dir>] [--size W,H]
 //   node scripts/render.js login <role> <url-or-file> [--out <dir>]
 //   node scripts/render.js <url-or-file> --act <steps.json> [--out <dir>] [--size W,H]
+//   node scripts/render.js <url-or-file> [--viewport W,H] [--theme light|dark] [--out <dir>]
 //
 // `--config` shoots every role × page `.fankeel/render.json` declares
 // (`lib/shots.js` reads it) into `<out>/<role>/<page>.png|.html`, each role
@@ -16,6 +17,12 @@
 // It prints the index path, and exits 1 when any cell failed. `login` opens
 // that role's profile in a window for a person to sign in once; the cookies
 // stay in the profile, under `.fankeel/build/`, which git ignores.
+//
+// `--viewport W,H` lays the page out at that size by device-metrics emulation, so
+// it can be narrower than headless Chrome's 500px window minimum (`--size` cannot:
+// it is cropped from a 500px layout); `--theme light|dark` sets prefers-color-scheme.
+// A page in render.json may carry the same two keys, `viewport` and `theme`; the
+// index row then records them. Either one shoots through DevTools, not `--screenshot`.
 //
 // Two files land in `--out` (default `.fankeel/build/render/`): `render.png`,
 // a `--headless=new` screenshot at `--size`, and `render.html`, the DOM
@@ -99,15 +106,27 @@ const OPTIONS = {
     size: { type: 'string' },
     config: { type: 'boolean' },
     act: { type: 'string' },
+    viewport: { type: 'string' },
+    theme: { type: 'string' },
 };
 
 function parseArgs(argv) {
     const { values, positionals } = parseArgsOrExit('render', argv, OPTIONS);
+    if (values.viewport !== undefined && !/^[0-9]+,[0-9]+$/.test(values.viewport)) {
+        process.stderr.write('render: --viewport takes W,H, such as 412,900\n');
+        process.exit(2);
+    }
+    if (values.theme !== undefined && values.theme !== 'light' && values.theme !== 'dark') {
+        process.stderr.write('render: --theme takes light or dark\n');
+        process.exit(2);
+    }
     return {
         out: values.out !== undefined ? values.out : null,
         size: values.size !== undefined ? values.size : '1600,1000',
         config: values.config === true,
         act: values.act !== undefined ? values.act : null,
+        viewport: values.viewport,
+        theme: values.theme,
         positionals,
     };
 }
@@ -178,7 +197,7 @@ function pngSize(file) {
 
 // The config is read before a browser is looked for, so a bad render.json
 // fails the same way on a machine with no browser at all.
-function runConfig(args) {
+async function runConfig(args) {
     const file = path.resolve(args.positionals[0] || path.join('.fankeel', 'render.json'));
     let targets;
     try {
@@ -195,8 +214,16 @@ function runConfig(args) {
         fs.mkdirSync(dir, { recursive: true });
         const png = path.join(dir, c.page + '.png');
         const html = path.join(dir, c.page + '.html');
-        const err = shoot(browser, toUrl(c.url), png, html, args.size, ['--user-data-dir=' + path.join(outDir, 'profiles', c.role)]);
+        const look = { viewport: c.viewport || args.viewport, theme: c.theme || args.theme };
+        let err;
+        if (look.viewport || look.theme) {
+            err = await runAct(browser, toUrl(c.url), [], dir, args.size, Object.assign({ stem: c.page }, look)).then(() => null, (e) => ({ label: 'screenshot', status: 1, message: e.message }));
+        } else {
+            err = shoot(browser, toUrl(c.url), png, html, args.size, ['--user-data-dir=' + path.join(outDir, 'profiles', c.role)]);
+        }
         const row = { role: c.role, page: c.page, url: c.url, png, html, ok: !err };
+        if (look.viewport) row.viewport = look.viewport;
+        if (look.theme) row.theme = look.theme;
         if (err) row.error = err.label + ': ' + String(err.message).trim();
         else Object.assign(row, pngSize(png));
         rows.push(row);
@@ -322,7 +349,13 @@ async function shotTo(cdp, file) {
 // Every file it wrote, in order: each `shot`, then render.png and render.html.
 // A step whose selector matches nothing, or is not a selector, throws naming
 // the step; so does the browser closing mid-run (see `connect`).
-async function runAct(browser, url, steps, outDir, size) {
+// `look` is the optional `{ viewport, theme, stem }`: a `viewport` is laid out
+// by device-metrics emulation, so it can be narrower than the browser's 500px
+// window minimum; a `theme` sets prefers-color-scheme; `stem` names the final
+// shot and DOM (default `render`).
+async function runAct(browser, url, steps, outDir, size, look) {
+    const { viewport, theme, stem = 'render' } = look || {};
+    if (viewport) size = viewport;
     const [w, h] = size.split(',').map(Number);
     const profileDir = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-render-'));
     const child = spawn(browser, ['--headless=new', '--disable-gpu', '--no-first-run', '--remote-debugging-port=0',
@@ -338,6 +371,7 @@ async function runAct(browser, url, steps, outDir, size) {
         const cdp = await connect(ws);
         await cdp.send('Page.enable');
         await cdp.send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 1, mobile: false });
+        if (theme) await cdp.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: theme }] });
         const loaded = cdp.once('Page.loadEventFired', 30000);
         await cdp.send('Page.navigate', { url });
         await loaded;
@@ -359,9 +393,9 @@ async function runAct(browser, url, steps, outDir, size) {
             }
             await sleep(150);
         }
-        wrote.push(await shotTo(cdp, path.join(outDir, 'render.png')));
+        wrote.push(await shotTo(cdp, path.join(outDir, stem + '.png')));
         const dom = await cdp.send('Runtime.evaluate', { expression: 'document.documentElement.outerHTML', returnByValue: true });
-        const html = path.join(outDir, 'render.html');
+        const html = path.join(outDir, stem + '.html');
         fs.writeFileSync(html, '<!doctype html>\n' + dom.result.value);
         wrote.push(html);
     } finally {
@@ -394,7 +428,10 @@ function main() {
             process.exit(2);
         }
     }
-    if (args.config) return runConfig(args);
+    if (args.config) {
+        runConfig(args);
+        return;
+    }
     const target = args.positionals[0];
     if (!target) {
         process.stderr.write('render: give a URL or a file path\n');
@@ -403,8 +440,8 @@ function main() {
     const browser = needBrowser();
     const outDir = outDirOf(args);
     fs.mkdirSync(outDir, { recursive: true });
-    if (steps) {
-        runAct(browser, toUrl(target), steps, outDir, args.size).then((files) => {
+    if (steps || args.viewport || args.theme) {
+        runAct(browser, toUrl(target), steps || [], outDir, args.size, { viewport: args.viewport, theme: args.theme }).then((files) => {
             for (const f of files) process.stdout.write(f + '\n');
         }, (e) => {
             process.stderr.write('render: ' + e.message + '\n');

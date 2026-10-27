@@ -43,7 +43,9 @@ return which of these was missing.
    `shot` adds `<name>.png` beside it. A step whose selector matches nothing
    exits 1 naming the step — that cell is a recapture, not a ship.
 2. Shoot the mockup at the same size: `node scripts/render.js <mockup> --out
-   .fankeel/build/render/mockup --size <the size index.json records>`.
+   .fankeel/build/render/mockup --size <the size index.json records>`. A cell
+   that records a `viewport` or `theme` is shot with the same `--viewport` and
+   `--theme` (a width under 500 is a true layout only that way).
 3. Open the mockup's PNG first, and list its `data-block` elements in your own
    words from the mockup's `.html` — before reading any shot of the change. A
    review anchored on the change inherits whatever the change dropped.
