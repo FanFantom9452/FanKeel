@@ -95,6 +95,46 @@ test('the copy button writes /fankeel-weekly to the clipboard and says so', asyn
     assert.match(draw({ serve: false }), /<span>已複製<\/span>/);
 });
 
+test('loading the module adds no listener; the first draw adds exactly one click listener that reaches the copy', async () => {
+    const vm = require('node:vm');
+    const added = [];
+    const doc = { addEventListener: (t, f) => added.push([t, f]), getElementById: () => null };
+    const win = { FK_KIT: { esc: (s) => String(s) }, navigator: { clipboard: { writeText: (t) => { win.wrote = t; return Promise.resolve(); } } } };
+    const box = vm.createContext({ window: win, document: doc, module: { exports: {} }, fetch() {} });
+    vm.runInContext(fs.readFileSync(path.join(ASSETS, 'weekly-page.js'), 'utf8'), box);
+    assert.equal(added.length, 0, 'load adds none');
+    const W = box.module.exports;
+    W.reset();
+    W.page({}, { serve: false, redraw() {} });
+    W.page({}, { serve: false, redraw() {} });
+    assert.deepEqual(added.map((a) => a[0]), ['click']);
+    added[0][1]({ target: { closest: () => null } });
+    added[0][1]({});
+    await flush();
+    assert.equal(win.wrote, undefined, 'a click elsewhere copies nothing');
+    added[0][1]({ target: { closest: (sel) => (sel === '[data-wk-copy]' ? {} : null) } });
+    await flush();
+    assert.equal(win.wrote, '/fankeel-weekly');
+});
+
+test('with no clipboard the copy selects the command and draws the 已選取 note', async () => {
+    const { W, win, doc, draw } = mod([]);
+    const ranges = [], log = [];
+    const cmd = { id: 'wk-cmd' };
+    doc.getElementById = (id) => (id === 'wk-cmd' ? cmd : null);
+    doc.createRange = () => ({ selectNodeContents: (n) => ranges.push(n) });
+    win.getSelection = () => ({ removeAllRanges: () => log.push('clear'), addRange: () => log.push('add') });
+    win.navigator = {};
+    draw({ serve: false });
+    W.onClick({ target: { closest: (sel) => (sel === '[data-wk-copy]' ? {} : null) } });
+    await flush();
+    assert.deepEqual(ranges, [cmd]);
+    assert.deepEqual(log, ['clear', 'add']);
+    assert.equal(W.state().said, '已選取，按 Ctrl+C 複製');
+    assert.equal(W.state().ok, false);
+    assert.ok(draw({ serve: false }).includes('已選取，按 Ctrl+C 複製'));
+});
+
 test('in English the page reads in English', async () => {
     const { draw } = mod(REPORTS, 'en');
     draw();
