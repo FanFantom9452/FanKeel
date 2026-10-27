@@ -62,8 +62,8 @@ its `next` list, or `null`).
 
 ## 3. Write events.json, then Gate 1
 
-Write `<scratch>/events.json` — every key below; `labels`, `times` and
-`count` may be left out:
+Write `<scratch>/events.json` — every key below; `labels`, `taglines`,
+`times` and `count` may be left out:
 
     {
       "projects": { "<repo>": "…" },
@@ -83,7 +83,8 @@ Write `<scratch>/events.json` — every key below; `labels`, `times` and
 How each field is written:
 
 - **`projects`** — for each picked repository, one line on what the project
-  is, for a reader who has never seen it; the header chip's tooltip.
+  is, for a reader who has never seen it; shown in the overview row, the
+  architecture heading and the chip's tooltip, so keep it one short line.
 - **`taglines`** — optional: at most 14 characters per repository, printed
   after its name in the header chip.
 - **One event per record**; records sharing a title (a weekly 盤點, say)
