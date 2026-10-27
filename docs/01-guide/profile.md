@@ -59,6 +59,7 @@ profile 是 gate 的常備答案：先寫好，fankeel 就不再問那一題。g
 | `sensitive.mode` | commit 帶到 .fankeel/sensitive.txt 的詞時：warn 只提醒、block 擋下 | `warn`、`block`；內建 `warn` | 不設，維持內建 |
 | `sensitive.review` | reviewer 審查時要不要多跑 ## Sensitive lens，確認敏感資料沒寫進去 | `true`、`false`；內建 `false` | 不設，維持內建 |
 | `commit.format` | commit.js 提交前，每則訊息第一行要符合的正規式；不設就不檢查 | 一個 JavaScript 正規式，比對訊息第一行 | 不設 |
+| `weekly.roots` | 週報（/fankeel-weekly）掃描 repo 的根目錄；不設就用 registry root 的上一層 | 逗號分隔的絕對路徑目錄 | 不設 |
 | `quota.calibrated` | 最近一次自動校準 quota.week 的日期（YYYY-MM-DD），由 scripts/quota.js 寫入 |  | 不設 |
 | `prose.style` | 站 agent 與 writer 寫給人看的文字用哪種風格：writer 先結論再附例子、plain 白話短句、sepia 長短句交錯、custom 讀 .fankeel/prose.md | `writer`、`plain`、`sepia`、`custom`；內建 `writer` | 不設，維持內建 |
 <!-- PROFILE_TABLE:END -->
@@ -74,7 +75,7 @@ node <plugin>/scripts/task.js profile set stage.agents all --default
 
 本 repo 的 `stage.agents` 現在是 `survey`、`build`、`verify`（`.fankeel/profile.json`）。2026-10-09 起原本只交 `survey`：工作流評審指出 build 加 verify 占長任務花費的 63.9%，當時只量過 survey 打平；之後 build 與 verify 也加了回來。對照腳本在 `docs/90-agent/reports/evidence/2026-10-09-build-verify-ab/ab.sh`，判定規則寫在旁邊的 README。
 
-`security.local`、`commit.format`、`model.lang` 與 `prompt.all`、`prompt.<站>` 幾列是自由文字，站頁雖然在詳細設定裡有欄位，直接用下面的指令設最清楚。自由文字各有限制，是因為它們會被注入每一輪或交給 `commit.js` 執行：`prompt.*` 與 `model.lang` 限一行、200 字以內，因為每一輪都要付這段 token 的錢，而且各站的規則區塊已經接近上限；`commit.format` 同樣一行、200 字內，而且必須能編譯成正規式；`security.local` 必須是 `ollama list` 印出的模型名稱，例如 `qwen3:14b`，填 `false` 則關掉。設 `prompt.*` 時指令會當場印出多吃幾個 token、各站離上限還剩多少，超過只警告、不拒絕。例：
+`security.local`、`commit.format`、`weekly.roots`、`model.lang` 與 `prompt.all`、`prompt.<站>` 幾列是自由文字，站頁雖然在詳細設定裡有欄位，直接用下面的指令設最清楚。自由文字各有限制，是因為它們會被注入每一輪或交給 `commit.js` 執行：`prompt.*` 與 `model.lang` 限一行、200 字以內，因為每一輪都要付這段 token 的錢，而且各站的規則區塊已經接近上限；`commit.format` 同樣一行、200 字內，而且必須能編譯成正規式；`security.local` 必須是 `ollama list` 印出的模型名稱，例如 `qwen3:14b`，填 `false` 則關掉。`weekly.roots` 是週報掃描 repo 的根目錄，逗號分隔、每個都要是絕對路徑，例如 `F:/ymlab,F:/ymlab/SBIR`；週報會看每個根目錄往下一層與兩層、有 `.git` 的目錄。設 `prompt.*` 時指令會當場印出多吃幾個 token、各站離上限還剩多少，超過只警告、不拒絕。例：
 
 ```
 node <plugin>/scripts/task.js profile set commit.format '^(feat|fix|docs)(\([^)]+\))?: '
