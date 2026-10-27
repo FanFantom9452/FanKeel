@@ -32,6 +32,8 @@ archived by `render` under `<configDir>/fankeel/weekly/<until>.json` and
 prints JSON: the default range — the day after the newest archived report,
 or last Friday when there is none, through today — and every repository
 under the `weekly.roots` profile key with its commit count in that range.
+A repository whose git failed is in `failed` (with git's message), not in
+`repos`: tell the user, never read it as "no work".
 
 Then one AskUserQuestion holding both questions:
 

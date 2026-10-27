@@ -156,3 +156,29 @@ test('a flag not in the table is refused with exit 1, and the table is one skill
     for (const k of ['--since', '--until', '--roots', '--repos', '--out', '--events', '--data']) assert.ok(got.has(k), k);
     assert.equal(got.has('--bogus'), false);
 });
+
+function breakRepo(w) {
+    fs.mkdirSync(path.join(w.root, 'broken'));
+    fs.writeFileSync(path.join(w.root, 'broken', '.git'), 'not a gitfile\n');
+}
+
+test('scan reports a repository whose git fails on stderr and in failed, and still lists the others', async () => {
+    const w = world();
+    breakRepo(w);
+    const r = await run(['scan', ...RANGE, '--roots', w.root], w);
+    assert.equal(r.code, 0);
+    const got = JSON.parse(r.out.join('\n'));
+    assert.deepEqual(got.repos.map((x) => x.name), ['alpha', 'beta']);
+    assert.deepEqual(got.failed.map((x) => x.name), ['broken']);
+    assert.ok(r.err.some((l) => /broken: git failed: .+/.test(l)));
+});
+
+test('collect on a repository whose git fails exits 1 with the message and writes nothing', async () => {
+    const w = world();
+    breakRepo(w);
+    const out = path.join(w.root, 'out', 'data.json');
+    const r = await run(['collect', ...RANGE, '--repos', 'broken', '--out', out], w);
+    assert.equal(r.code, 1);
+    assert.ok(r.err.some((l) => /broken: git failed: .+/.test(l)));
+    assert.equal(fs.existsSync(out), false);
+});

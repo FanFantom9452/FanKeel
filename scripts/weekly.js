@@ -87,10 +87,19 @@ async function main(argv, opts) {
         if (r.error) return usage(r.error);
         const roots = rootsOf(f, cwd, configDir);
         if (roots.error) return usage(roots.error);
-        const repos = git.scanRepos(roots.value)
-            .map((p) => ({ path: p, name: path.basename(p), commits: git.countCommits(p, r.since, r.until) }))
-            .filter((x) => x.commits > 0);
-        log(JSON.stringify({ since: r.since, until: r.until, repos }, null, 1));
+        const repos = [];
+        const failed = [];
+        for (const p of git.scanRepos(roots.value)) {
+            try {
+                const commits = git.countCommits(p, r.since, r.until);
+                if (commits > 0) repos.push({ path: p, name: path.basename(p), commits });
+            } catch (e) {
+                if (!e.gitFailed) throw e;
+                err(e.message);
+                failed.push({ path: p, name: path.basename(p), error: e.message });
+            }
+        }
+        log(JSON.stringify({ since: r.since, until: r.until, repos, failed }, null, 1));
         return 0;
     }
 
@@ -101,7 +110,14 @@ async function main(argv, opts) {
         const repos = f.repos.split(',').map((s) => s.trim()).filter(Boolean).map((p) => path.resolve(cwd, p));
         const missing = repos.find((p) => !fs.existsSync(path.join(p, '.git')));
         if (missing) return usage('not a git repository: ' + missing);
-        const data = collect({ repos, since: r.since, until: r.until, configDir });
+        let data;
+        try {
+            data = collect({ repos, since: r.since, until: r.until, configDir });
+        } catch (e) {
+            if (!e.gitFailed) throw e;
+            err(e.message);
+            return 1;
+        }
         const out = path.resolve(cwd, f.out);
         writeOut(out, JSON.stringify(data, null, 1) + '\n');
         log('wrote: ' + out);

@@ -29,8 +29,6 @@ test('commits reads both ends of the range inclusive, with per-file added and re
     assert.deepEqual(got.find((c) => c.subj === 'fix(api): paging').files, [{ p: 'src/api/a.js', a: 2, d: 0 }]);
     assert.match(add.h, /^[0-9a-f]{7,}$/);
     assert.equal(wg.countCommits(dir, '2025-12-30', '2026-01-02'), 4);
-    assert.deepEqual(wg.commits(path.join(dir, 'nope'), '2025-12-30', '2026-01-02'), []);
-    assert.equal(wg.countCommits(path.join(dir, 'nope'), '2025-12-30', '2026-01-02'), 0);
 });
 
 test('a renamed file is counted under its new path, never as "a => b"', () => {
@@ -132,4 +130,25 @@ test('kindOf: a data extension turns to data above 1000 lines only, case-insensi
     assert.equal(wg.kindOf('docs/a.txt'), 'doc');
     assert.equal(wg.kindOf('mydocs/a.txt'), 'code');
     assert.equal(wg.kindOf('src/docs/a.txt'), 'doc');
+});
+
+function brokenRepo() {
+    const dir = path.join(tmp('fankeel-weekly-git-broken-'), 'bad');
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, '.git'), 'not a gitfile\n');
+    return dir;
+}
+
+test('commits, countCommits and lsFiles throw naming the repo and git stderr when git fails, never an empty result', () => {
+    const dir = brokenRepo();
+    const head = dir.replace(/\\/g, '/') + ': git failed: ';
+    for (const call of [() => wg.commits(dir, '2025-12-30', '2026-01-02'), () => wg.countCommits(dir, '2025-12-30', '2026-01-02'), () => wg.lsFiles(dir)]) {
+        assert.throws(call, (e) => e.gitFailed === true && e.message.startsWith(head) && e.message.length > head.length + 5);
+    }
+});
+
+test('an empty range in a healthy repo is still [] and 0, not a failure', () => {
+    const dir = repo();
+    assert.deepEqual(wg.commits(dir, '2030-01-01', '2030-01-02'), []);
+    assert.equal(wg.countCommits(dir, '2030-01-01', '2030-01-02'), 0);
 });

@@ -170,3 +170,10 @@ test('collect: records for a repo that has them, scope groups for one that has o
     assert.match(rb.board, /^\{"chartroom":1/);
     assert.equal(wc.collect({ repos: [b], since: '2025-12-29', until: '2026-01-02', configDir: cfg }).previous, null, 'a report ending inside the range is not the previous one');
 });
+
+test('collect throws a git failure naming the repo instead of an empty record', () => {
+    const dir = path.join(tmp('fankeel-weekly-collect-broken-'), 'bad');
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, '.git'), 'not a gitfile\n');
+    assert.throws(() => wc.collect({ repos: [dir], since: '2025-12-30', until: '2026-01-02' }), /bad: git failed: /);
+});
