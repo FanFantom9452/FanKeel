@@ -203,7 +203,7 @@ node <plugin>/scripts/verify-map.js --range <range>
 ```
 
 It matches the range's changed paths against each feature file's `src`, using
-`pagesTouched()` (`lib/shots.js:91` `function pagesTouched(targets, paths)`). For a `kind: page` file with `render:`, the `src` is that of the
+`pagesTouched()` (`lib/shots.js:94` `function pagesTouched(targets, paths)`). For a `kind: page` file with `render:`, the `src` is that of the
 render.json pages it names. It prints one feature file per line, or `none`.
 Give that row's verifier every file printed, beside the map. The verifier
 runs the file's `## Doctor` first: a check that fails becomes a `blocked` row,
