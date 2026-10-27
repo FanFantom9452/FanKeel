@@ -1,7 +1,7 @@
 ---
 label: quota
 title: quota.js 改讀 limits 記錄
-description: quota.js 與 lib/quota.js 讀 TokenBar 的 tokenbar-usage.jsonl，改成讀 .fankeel/build/limits/*.jsonl，讓額度差 4.7 倍與 quota.js 成功路徑兩條 Blocked 不再等 TokenBar。
+description: quota.js 與 `lib/quota.js` 讀 TokenBar 的 tokenbar-usage.jsonl，改成讀 .fankeel/build/limits/*.jsonl，讓額度差 4.7 倍與 quota.js 成功路徑兩條 Blocked 不再等 TokenBar。
 state: ready
 link: scripts/quota.js
 ---

@@ -69,4 +69,4 @@ if (require.main === module) {
     }
 }
 
-module.exports = { readRows, table, svg, main };
+module.exports = { main };
