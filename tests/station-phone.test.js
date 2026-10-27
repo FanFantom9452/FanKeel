@@ -67,7 +67,10 @@ const request = (url, o) => new Promise((resolve, reject) => {
     req.end();
 });
 const form = (o) => new URLSearchParams(o).toString();
-const start = (f, ts) => serve({ configDir: f.cfg, roots: [f.r1], port: 0, idleMs: 60e3, open: false, tailscaleRun: ts.run });
+// serve() gathers process.cwd(); run in the fixture dir so the real repo's live sessions never leak in.
+const was = process.cwd();
+test.after(() => process.chdir(was));
+const start = (f, ts) => (process.chdir(path.dirname(f.cfg)), serve({ configDir: f.cfg, roots: [f.r1], port: 0, idleMs: 60e3, open: false, tailscaleRun: ts.run }));
 
 test('a paired phone attaches, says, is refused a second message, and detaches', async () => {
     const f = fixture();
@@ -88,6 +91,7 @@ test('a paired phone attaches, says, is refused a second message, and detaches',
         phone.append(f.r1, SID, { role: 'assistant', text: 'started', at: Date.now() });
         phone.writeBackground(f.r1, SID, [{ id: 'b1', type: 'shell', status: 'running', description: 'build', command: 'npm run build' }], Date.now());
         const m = JSON.parse((await request(s.url + 'station/mobile.json', { headers: as(f.cookie) })).text);
+        assert.equal(m.tasks.length, 1);
         assert.equal(m.tasks[0].state, 'background');
         assert.equal(m.tasks[0].background.length, 1);
         assert.equal((await request(s.url + 'station/phone.json?id=eeeeeeee-0000-4000-8000-000000000000', { headers: as(f.cookie) })).status, 404);
