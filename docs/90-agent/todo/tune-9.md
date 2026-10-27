@@ -2,7 +2,18 @@
 label: tune
 title: overlay 備註無上限
 description: 標註已限量，但備註長度與草稿則數客戶端沒限，全部送出仍可能 413
-state: ready
+state: done
+done:
+  at: 2026-10-28
+  sha: 4c4078d7
+  disposition: done
+  session: aa87333e-bb67-4644-bc77-649a15168e57
 ---
 
 overlay 標註總量已限在權重 6000（約 90 KB，build-3 補的上限），但備註沒有 maxLength、草稿則數沒上限；約 22 則各 4000 個中文字的備註加上選取資訊，就會超過 scripts/tune.js:190 的 262144 位元組而回 413，草稿雖保留但使用者不知原因。完成標準：overlay 限單則備註長度（對齊伺服器 4000）與整份請求大小，超過時在送出前說明原因，並附測試。
+
+## 完成紀錄
+
+tune 浮層的備註最多 4000 字，整份超過 256 KB 不送出並說明。詳見 [任務紀錄](../records/2026-10.md#r-2026-10-27-aa87333e)
+
+- commit 4c4078d7

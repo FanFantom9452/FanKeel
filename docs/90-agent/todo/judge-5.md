@@ -2,8 +2,13 @@
 label: judge
 title: ask 結果看不到也看不懂
 description: /fankeel-ask 回覆只有四行加判決檔路徑，使用者看不到判官分析了什麼；需要時也該能產出視覺化 HTML，而不只是 MD 檔
-state: ready
+state: done
 link: skills/fankeel-ask/SKILL.md
+done:
+  at: 2026-10-28
+  sha: 2e8fbaa9
+  disposition: done
+  session: aa87333e-bb67-4644-bc77-649a15168e57
 ---
 
 來源：2026-10-28 用 /fankeel-ask 評估 Alibaba 的 OCR（open code review）對 fankeel-reviewer 的借鑑價值。判官回答後，主控照 skills/fankeel-ask/SKILL.md 的 Output 只回四行（judged/model/filed/accepted），判決全文只寫進 docs/90-agent/judgements/2026-10-27-ocr-reviewer.md；使用者說「他直接寫成 MD 檔案回去了，我也不知道他到底分析什麼」，必須再追問一次才得到白話解釋。另外有些分析（逐項對照表、基準數據、架構比較）做成視覺化 HTML 頁會比 MD 好讀。
@@ -15,3 +20,12 @@ link: skills/fankeel-ask/SKILL.md
 要決定的：摘要由判官的 Summary 截取、還是主控另寫；HTML 由誰寫（writer？implementer？）、何時值得做。
 
 完成條件：下一次 /fankeel-ask 回覆後，使用者不必追問就能說出判官的 pick 與主要理由；一題指定 HTML 的 ask 會產出可直接開啟的 HTML 頁且路徑出現在回覆裡。
+
+## 完成紀錄
+
+判官寫 ## 白話，ask 原樣轉給使用者；brief 寫 html: yes 時另產一頁 HTML。詳見 [任務紀錄](../records/2026-10.md#r-2026-10-27-aa87333e)
+
+- commit 2e8fbaa9
+- commit f6103ed6
+- commit fa698849
+- commit 67939627

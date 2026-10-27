@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 last_verified: 2026-10-28
 source_of_truth: .fankeel/build/task-20261027T185303/survey.md
 ---
