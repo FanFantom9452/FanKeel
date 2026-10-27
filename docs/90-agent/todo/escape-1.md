@@ -2,11 +2,16 @@
 label: escape
 title: 工具參數中文寫成轉義
 description: 模型在工具參數裡把中文寫成 \uXXXX 轉義，寫錯一位就變成別的字而且不報錯；ALWAYS 規則每輪都在仍擋不住，受控站與 brief 根本沒帶這條
-state: blocked
+state: done
 link: lib/stages.js
 group: 工具參數的中文
 timing: on: 10-27
 stamp: 2026-10-20
+done:
+  at: 2026-10-27
+  sha: 64d9e5a6
+  disposition: done
+  session: 77484d1a-1260-4edb-9870-6239d9de1cd2
 ---
 
 來源：2026-10-19 使用者在 SBIR 的 session 看到模型自己認錯「選單又寫成 \uXXXX，第四次」，問是不是 prompt 不夠細、網路上有沒有人遇過。使用者在畫面上沒有看到轉義字。
@@ -40,3 +45,10 @@ stamp: 2026-10-20
 2026-10-20 一週後的重量(`node scripts/escape-scan.js`,9070 份 transcript):AskUserQuestion 1213 次中 11 次(0.93%);Write 2152 次中 34 次(2.32%);update_plan 356 次中 0 次;wrap_up 178 次中 0 次;使用者的 prompt 19460 則中 82 則(1.13%);__unparsedToolInput 2 次。這還不是乾淨的修後數字:`--since` 只收日期、當成 UTC 午夜,而修正在 2026-10-19T17:24Z 落地(commit 64d9e5a6),這次掃描離落地約 3 小時;`--since 2026-10-19` 得 AskUserQuestion 2/106(兩筆都是「瑋」),但前後混在一起。所以這是第二個基準點,2026-10-27 重量時必須以落地時間為界切開。
 
 2026-10-27 重量（以 2026-10-19T17:24Z、commit 64d9e5a6 落地時間切開，`node scripts/escape-scan.js --since 2026-10-19T17:24:00Z`）：AskUserQuestion 安靜錯字 2/1137（0.18%，修前 11/1161 即 0.95%）、`__unparsedToolInput` 0（修前 2）、wrap_up 0/448。兩項都比第 1 步少，完成條件成立，land 時結案。
+
+## 完成紀錄
+
+修好後一週量到 AskUserQuestion 轉義 2/1127（修前 11/1161），__unparsedToolInput 為 0。詳見 [任務紀錄](../records/2026-10.md#r-2026-10-27-77484d1a)
+
+- commit 64d9e5a6
+- commit dd5364a6
