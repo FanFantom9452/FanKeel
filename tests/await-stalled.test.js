@@ -150,9 +150,11 @@ test('await.js: a second stalled in a row says stop it and dispatch a fresh one,
     const g = brain(WAITS);
     const args = ['--session', SID, '--root', g.root, '--idle', '0.2'];
     await awaitMain(args, g.env);
+    assert.match(fs.readFileSync(g.task + '/build-failed.md', 'utf8'), /^next: .*SendMessage/m);
     await awaitMain(args, g.env);
     const body = fs.readFileSync(g.task + '/build-failed.md', 'utf8');
     assert.match(body, /^count: 2$/m);
+    assert.doesNotMatch(body, /^next: .*SendMessage/m);
     assert.match(body, /^next: .*stop it and dispatch a fresh one/m);
     assert.doesNotMatch(body, /ask the user/);
 });
