@@ -130,3 +130,10 @@ test('report.css is the mockup\'s, with a variable day count and no template mar
     assert.doesNotMatch(reportCss, /repeat\(11|\{\{/);
     assert.doesNotMatch(reportCss, /--heat-0:/, 'token values come from tokens(), not the stylesheet');
 });
+
+test('report.css lets the header project chips wrap on a narrow page', () => {
+    const rule = /\.proj-chip\s*\{([^}]*)\}/.exec(reportCss)[1];
+    assert.doesNotMatch(rule, /white-space:\s*nowrap/);
+    assert.match(rule, /min-width:\s*0/);
+    assert.match(reportCss, /\.page\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/);
+});

@@ -21,6 +21,7 @@ ul, ol { padding: 0; }
   margin: 0 auto;
   padding: 44px 32px 64px;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 20px;
 }
 .panel {
@@ -55,9 +56,15 @@ ul, ol { padding: 0; }
   background: var(--inset);
   font-size: 14px;
   color: var(--ink2);
-  white-space: nowrap;
+  white-space: normal;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
-.proj-chip b { font-weight: 700; color: var(--ink); }
+.proj-chip b { font-weight: 700; color: var(--ink); flex: none; max-width: 100%; }
+.report-head .meta > *, .report-head .meta li { min-width: 0; }
+.report-head .title-row > * { min-width: 0; }
+.stories, .story > *, .stories-foot { min-width: 0; overflow-wrap: anywhere; }
 
 /* section head: a number, the title, one line of lead */
 .sec-h { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 14px; align-items: baseline; padding: 18px 2px 4px; }
