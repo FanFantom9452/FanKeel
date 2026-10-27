@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-10-22
-source_of_truth: lib/tailscale.js, scripts/station.js, assets/station/mobile.js, docs/01-guide/station.md, docs/01-guide/profile.md
+source_of_truth: lib/tailscale.js, lib/remote.js, scripts/station.js, assets/station/mobile.js, docs/01-guide/station.md, docs/01-guide/profile.md
 ---
 
 # 用自己的 Tailscale 開手機遠端
@@ -61,6 +61,14 @@ tailscale serve status
 用手機相機掃卡片上的 QR，或在手機上打開那個網址、手動輸入 8 字元配對碼。配對碼一次性、10 分鐘內有效，因為沒配對過的手機從 tailnet 來的請求一律被擋。碼過期就重新整理卡片拿新的。
 
 已知問題：手機配對成功後，桌面的卡片不會自己更新。想在桌面看到新的那支手機，重新整理桌面頁。
+
+## 同一個 tailnet 有好幾台電腦
+
+每台電腦各自打開自己的手機遠端，手機也對每一台各配對一次，之後就能在手機上直接切換。要這樣做是因為配對記在瀏覽器的 cookie 裡，cookie 只屬於發出它的那一台（沒有 Domain，也不跨主機），所以一台電腦的配對不能替另一台作證。
+
+配對完之後，在手機的 `/m` 點最上面的主機名稱膠囊，打開測站面板，裡面有「其他電腦 / Other computers」清單。清單列的是同一個 tailnet 裡、監控站有回應的電腦；點一台，就在同一個分頁打開那台的 `/m`。例如在 `https://desk-a.<tailnet 名>.ts.net/m` 點 `desk-b`，分頁會換成 `https://desk-b.<tailnet 名>.ts.net/m`。還沒和手機配對過的那台，會照常要你輸入它卡片上的配對碼。
+
+一台電腦要同時符合三件事才會出現：它的監控站正在跑、遠端是開的、這台電腦在 tailnet 上在線。清單大約每分鐘更新一次，因為每次更新都要逐台探測，不想讓每次開面板都等；剛開好遠端的電腦，可能要等一分鐘才看得到。清單是方便你跳過去，不會改變誰能連進來，沒配對的手機仍然被擋。
 
 ## 從手機回答 gate
 
