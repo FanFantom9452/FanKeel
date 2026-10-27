@@ -780,20 +780,14 @@ with the 24px resize grip `.fkr` at its bottom left
 A size the person dragged to is still kept as `station.fkBox`
 (`assets/station/station.js:4344`, `var FK_BOX_KEY = 'station.fkBox';`).
 
-On `/m` each home session is its own rounded card, 12px apart, the title on one
-line ending in an ellipsis and the time at the top right
-(`assets/station/mobile.css:79`, `.ha-list,.ha-ask{display:grid;gap:12px}`;
-`assets/station/mobile.css:80`, `.ha-row{display:grid;`); a gate card keeps the
-signal tint. On `/m` the home header is two lines, the title and history link above the
-host and subscribe row (`assets/station/mobile.js:348`, `class="ab ab2"`;
-`assets/station/mobile.css:357`, `body.m .ab.ab2{display:grid;gap:0;min-height:0;padding:6px 8px 8px 20px}`). A chat
+On `/m` the three list screens — Session (`#/`), 等你 (`#/ask`) and 完成 (`#/done`) — share a bottom tab bar of 64px tabs padded by the home indicator, the 等你 tab carrying the number of held gates (`assets/station/mobile.js:439`, `function tabbar(view, m) {`; `assets/station/mobile.css:385`, `.tabbar{flex:none;display:grid;`); a session's own screen hides it. Each session is a card with its title, project, stage and one status line, and the latest line and background list behind its chevron (`assets/station/mobile.js:400`, `function card(x, at, u, kind) {`); a gate's card is the amber one, listed first, with the question and 去答. The host pill in each list screen's header opens the 測站 sheet: the connection, this phone (`device`), the session the phone holds and its time left (`holdUntil`), and re-pairing; unpairing stays on the desktop's 手機遠端 card, since `/station/remote/revoke` is this machine's only (`assets/station/mobile.js:489`, `function sheetHtml(m, at, u) {`). The header pads by the safe area (`assets/station/mobile.css:323`, `body.m .ab.ab2{display:grid;gap:0;min-height:0;padding:calc(6px + env(safe-area-inset-top)) 8px 8px 20px}`), and station.css's desktop `.pg` frame is cleared on the phone (`assets/station/mobile.css:369`, `body.m .scr>.pg{flex:1;min-height:0;margin:0;padding:0;border:0;border-radius:0;background:none}`). A session's screen, `#/s/<id>/<pane>`, holds a TokenBar — context against the compact line, the 5h and 7d limits with where the time says each should be, one line of three meters that opens to labelled rows in place without redrawing the composer — and six pane tabs, 對話 概覽 計畫 派工 事件 關卡, which a sideways swipe also moves between (`assets/station/mobile.js:807`, `function chatHtml(m, id, at, u, P, pane) {`; `assets/station/mobile.js:252`, `function swipeTo(pane, dx, dy) {`). 概覽 is the session's stages finished in `done`, 計畫 its route (phone.json carries no plan tasks; the row links the desktop plan page), 派工 its background items, 事件 its tool steps and 關卡 its held questions; every row opens on a tap. A chat
 whose session is at a gate pins the gate's question under the header, with a
-button to the options (`assets/station/mobile.js:502`, `function gpinHtml(p, at, u) {`;
-`assets/station/mobile.js:533`, `p.state === 'gate' && p.gate ? gpinHtml(p, at, u)`),
+button to the options (`assets/station/mobile.js:657`, `function gpinHtml(p, at, u) {`;
+`assets/station/mobile.js:829`, `p.state === 'gate' && p.gate ? gpinHtml(p, at, u)`),
 and the last report message is folded to about six lines until
-`展開完整報告` is pressed (`assets/station/mobile.js:471`,
+`展開完整報告` is pressed (`assets/station/mobile.js:623`,
 `var fold = function (i) { return p.state === 'gate' && i === lastAi …`;
-`assets/station/mobile.css:374`, `body.m .rep .bub{position:relative;max-height:calc(15px * 1.75 * 6 + 24px);overflow:hidden;`).
+`assets/station/mobile.css:340`, `body.m .rep .bub{position:relative;max-height:calc(15px * 1.75 * 6 + 24px);overflow:hidden;`).
 The pinned question is clamped to two lines and opens on a tap, or on Enter or
 Space (`tabindex="0"`, `role="button"`, `aria-expanded`); a new gate, or the
 gate being answered, closes it again. A turn the harness injected, which the
@@ -1465,6 +1459,7 @@ hidden, look)`: the held gates oldest first, the live tasks, and the stages fini
 and tasks ended in the last 48 hours — a few kilobytes, read every 5 s while
 the page is visible outside a conversation, never `station-data.js`; a
 conversation (`#/s/<id>`) reads `/station/phone.json` every 2 s instead.
+`mobile.json` also carries `device`, this phone as `remote.deviceFor` knows it (`name`, `paired`; null from this machine), and each row a `holdUntil`, when the Stop hook's `phone.hold` wait gives up, or null. The shell's `theme-color` is the page ground per theme (`#10151d` dark, `#f2f4f3` light) and the manifest's is `#10151d`.
 `host` is the first label of the tailnet name while the tailnet is on, `os.hostname()` otherwise. Through the
 tailnet `/` answers 303 to `/m`, and `/m`, its manifest, its icon, `/sw.js`,
 `station.css`, `mobile.css` and `mobile.js` need no paired phone, while
@@ -1473,8 +1468,7 @@ tailnet `/` answers 303 to `/m`, and `/m`, its manifest, its icon, `/sw.js`,
 
 `GET /station/phone.json?id=<session>` is one session's conversation screen:
 `state` (`gate`, `holding`, `running`, `background`, `idle`), `attached`,
-`waiting`, the last 50 `chat` lines, the held `gate` and the `background`
-items, from `lib/mobile.js`'s `phoneModel` over `lib/phone.js`'s files, 404
+`waiting`, the last 50 `chat` lines, the held `gate`, the `background` items, `holdUntil`, `context` (`tokens` from lib/context.js's `inspect` of the transcript, `at` the profile's `compact.at`, `window` null: only the pane hears the engine's window) and `limits` (the newest `five`, `fiveResets`, `seven`, `sevenResets` in .fankeel/build/limits/<id>.jsonl, the resets in epoch ms), from `lib/mobile.js`'s `phoneModel` over `lib/phone.js`'s files, 404
 for a session not on this station. The phone acts on a session with `POST
 /phone/attach`, `POST /phone/detach` and `POST /phone/say` (`root`, `id`, and
 `text` for say): all three answer 404 for a root or id not on this station;
@@ -1484,8 +1478,7 @@ second waiting message (409), and answers 201.
 `POST /phone/upload?root=&id=&ext=` takes a photo as the raw request body
 (`content-type: image/*`, at most 10 MB): it is saved under the session's phone
 directory as `uploads/<ms>-<random>.<ext>` and answered 201 with that file's
-absolute path, which the answer box appends to its text as `[圖片] <path>` so the
-session can read it. `ext` is png, jpeg (or jpg), webp or gif and the body's
+absolute path. The composer takes up to four photos a message (`multiple`), each drawn on a canvas at a 1568 px long edge and sent as JPEG quality 0.85 (`shrink` in `assets/station/mobile.js`), one request per photo with its progress as a ring on its thumbnail; the message goes out with one `[圖片] <path>` line per photo after the text, so the session can read them. A gate question's own photo button still puts its one path into that question's box. The 10 MB cap is per request. `ext` is png, jpeg (or jpg), webp or gif and the body's
 first bytes must match it; 401 unpaired, 403 loopback without the nonce, 404 not
 on this station, 413 too large (answered with `connection: close`), 415 not an
 image, another type, or bytes that do not match the type.

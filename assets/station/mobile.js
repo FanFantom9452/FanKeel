@@ -3,7 +3,8 @@
 // (docs/99-archive/2026-10-22-mobile-session-design.md; the approved
 // mockup's direction A: m-home-a, m-chat-a, m-composer-a, m-tools, m-attach,
 // m-background, m-idle, m-gate-inline, and pair-scan / pair-error from the
-// remote design). The session list reads /station/mobile.json (lib/mobile.js)
+// remote design; the tab bar, #/ask, #/s/<id>/<pane> and the 測站 sheet from
+// .fankeel/build/2026-10-27-mobile-app/mockup.html). The session list reads /station/mobile.json (lib/mobile.js)
 // every five seconds; a session's conversation reads
 // /station/phone.json?id=<id> every two, and redraws only what changed, so a
 // reload never wipes what is being picked, typed or said. Messages go through
@@ -51,6 +52,19 @@
             'pair.title': '掃桌機測站上的 QR', 'pair.where': '在 <b>設定</b> › <b>手機遠端</b>', 'pair.frame': '相機取景框', 'pair.type': '輸入配對碼',
             'pair.code': '8 位配對碼', 'pair.go': '配對', 'pair.busy': '配對中…', 'pair.failed': '連不到測站：再試一次', 'pair.bad': '配對碼是 8 個英文字母或數字', 'pair.refused': '配對沒成功（{code}）：{why}',
             'off.title': '連不到 {host}', 'off.hint': '打開手機的 Tailscale 再試。', 'off.badge': 'Tailscale 未連線', 'off.retry': '重試', 'off.repair': '重新配對',
+            'tab.nav': '分頁', 'tab.ask': '等你', 'tab.n': '{n} 個等你', 'ask.empty': '沒有在等你答的', 'ask.opts': '{n} 個選項',
+            'host.open': '已連上 {host}，看測站與配對', 'done.dn': '完成', 'span.hm': '{h} 小時 {m} 分',
+            'sc.more': '展開最新一句與背景工作', 'sc.less': '收起最新一句與背景工作', 'sc.held': '手機接著 · 剩 {t}', 'sc.attached': '這回合結束時換手機接', 'sc.bg': '{n} 個背景工作在跑',
+            'rs.me': '這支手機', 'rs.local': '這台電腦', 'rs.paired': '{d} 配對', 'rs.unpair': '要解除配對，到電腦的 <b>設定</b> › <b>手機遠端</b> 按「解除」。', 'rs.localWhy': '從這台電腦打開，不用配對。',
+            'rs.hold': '每回合結束等你下一句；時間到就交還電腦。', 'rs.pairV': '換一台測站或重設', 'rs.pairWhy': '掃電腦上新的 QR，或輸入新的配對碼。',
+            'pn.nav': 'session 檢視，左右滑動也能換', 'pn.talk': '對話', 'pn.timeline': '概覽', 'pn.plan': '計畫', 'pn.dispatch': '派工', 'pn.events': '事件', 'pn.gate': '關卡', 'pn.bg': '{n} 個在背景跑',
+            'tk.ctx': 'context', 'tk.five': '5 小時', 'tk.seven': '7 天', 'tk.aria': '用量：context {c}，5 小時 {f}，7 天 {s}；點開看重置時間',
+            'tk.at': ' · 壓縮線 {n}', 'tk.ofAt': '（到壓縮線）', 'tk.resets': '{t} 重置 · 時間已過 {n}%', 'tk.none': '還沒有讀數',
+            'ov.empty': '這個 session 48 小時內沒有完成的站', 'ov.sum': '{n} 站 · {from} 到 {to}', 'ov.doneAt': '{t} 完成', 'ov.at': '完成於', 'ov.took': '這一站', 'ov.tookV': '{t}（從上一站完成算起）',
+            'ov.cost': '花費', 'ov.share': ' · 全部的 {n}%', 'ov.full': '在完整頁面打開',
+            'pl.empty': '這個 session 沒有路線', 'pl.done': '完成', 'pl.now': '進行中', 'pl.todo': '還沒到', 'pl.notyet': '還沒完成',
+            'dp.empty': '沒有在背景跑的 agent 或 shell', 'dp.kind': '種類', 'dp.cmd': '指令', 'dp.start': '開始',
+            'ev.empty': '還沒有步驟', 'ev.tool': '工具', 'ev.start': '開始', 'ev.took': '花了', 'gt.empty': '沒有在等你答的關卡',
         },
         en: {
             'home.title': 'Session', 'home.hist': 'Finished tasks', 'home.empty': 'No session is running',
@@ -88,12 +102,29 @@
             'pair.title': 'Scan the QR on the desktop station', 'pair.where': 'Under <b>Settings</b> › <b>Phone remote</b>', 'pair.frame': 'Camera viewfinder', 'pair.type': 'Type the pairing code',
             'pair.code': '8-character code', 'pair.go': 'Pair', 'pair.busy': 'Pairing…', 'pair.failed': 'Could not reach the station: try again', 'pair.bad': 'A pairing code is 8 letters or digits', 'pair.refused': 'Pairing refused ({code}): {why}',
             'off.title': 'Cannot reach {host}', 'off.hint': 'Turn on Tailscale on this phone and try again.', 'off.badge': 'Tailscale not connected', 'off.retry': 'Retry', 'off.repair': 'Pair again',
+            'tab.nav': 'Tabs', 'tab.ask': 'Needs you', 'tab.n': '{n} need you', 'ask.empty': 'Nothing is waiting for you', 'ask.opts': '{n} options',
+            'host.open': 'Connected to {host}; see the station and pairing', 'done.dn': 'done', 'span.hm': '{h} h {m} min',
+            'sc.more': 'Show the latest line and background work', 'sc.less': 'Hide the latest line and background work', 'sc.held': 'On the phone · {t} left', 'sc.attached': 'The phone takes over when this turn ends', 'sc.bg': '{n} background jobs running',
+            'rs.me': 'This phone', 'rs.local': 'This computer', 'rs.paired': 'paired {d}', 'rs.unpair': 'To unpair, press Remove under <b>Settings</b> › <b>Phone remote</b> on the desktop.', 'rs.localWhy': 'Opened on this computer; no pairing needed.',
+            'rs.hold': 'Each turn waits for your next message; when time runs out it goes back to the desktop.', 'rs.pairV': 'Another station, or start over', 'rs.pairWhy': 'Scan the new QR on the desktop, or type a new code.',
+            'pn.nav': 'Session views; swipe to switch', 'pn.talk': 'Talk', 'pn.timeline': 'Overview', 'pn.plan': 'Plan', 'pn.dispatch': 'Dispatch', 'pn.events': 'Events', 'pn.gate': 'Gate', 'pn.bg': '{n} running in the background',
+            'tk.ctx': 'context', 'tk.five': '5 hours', 'tk.seven': '7 days', 'tk.aria': 'Usage: context {c}, 5 hours {f}, 7 days {s}; tap for reset times',
+            'tk.at': ' · compacts at {n}', 'tk.ofAt': ' (to the compact line)', 'tk.resets': 'resets {t} · {n}% of the window gone', 'tk.none': 'No reading yet',
+            'ov.empty': 'No stage of this session finished in the last 48 hours', 'ov.sum': '{n} stages · {from} to {to}', 'ov.doneAt': 'done {t}', 'ov.at': 'Done at', 'ov.took': 'This stage', 'ov.tookV': '{t} (since the stage before ended)',
+            'ov.cost': 'Cost', 'ov.share': ' · {n}% of the total', 'ov.full': 'Open the full page',
+            'pl.empty': 'This session has no route', 'pl.done': 'done', 'pl.now': 'in progress', 'pl.todo': 'not yet', 'pl.notyet': 'not finished',
+            'dp.empty': 'No agent or shell is running in the background', 'dp.kind': 'Kind', 'dp.cmd': 'Command', 'dp.start': 'Started',
+            'ev.empty': 'No steps yet', 'ev.tool': 'Tool', 'ev.start': 'Started', 'ev.took': 'Took', 'gt.empty': 'No gate is waiting for you',
         },
     };
     var lang = 'zh';
     var POLL_MS = 5000;
     var CHAT_MS = 2000;
     var STAGES = ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land'];
+    var FIVE_MS = 5 * 3600e3;
+    var SEVEN_MS = 7 * 864e5;
+    // A session's panes in tab order: route key, icon, the pn.<key> label (the desktop focus page's tabs).
+    var PANES = [['talk', 'msg'], ['timeline', 'chart'], ['plan', 'checks'], ['dispatch', 'bot'], ['events', 'zap'], ['gate', 'gate']];
     // Each state's screen root, as the mockup names its block.
     var SCREEN = {
         gate: 'data-block="m-gate-inline"', idle: 'data-block="m-idle"', background: 'data-block="m-background"',
@@ -127,6 +158,31 @@
         + '<symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></symbol>'
         + '<symbol id="i-wifioff" viewBox="0 0 24 24"><path d="M12 20h.01"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><path d="M5 12.859a10 10 0 0 1 5.17-2.69"/><path d="M19 12.859a10 10 0 0 0-2.007-1.523"/><path d="M2 8.82a15 15 0 0 1 4.177-2.643"/><path d="M22 8.82a15 15 0 0 0-11.288-3.764"/><path d="m2 2 20 20"/></symbol>'
         + '<symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></symbol>'
+        + '<symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13"></path><path d="M8 12h13"></path><path d="M8 18h13"></path><path d="M3 6h.01"></path><path d="M3 12h.01"></path><path d="M3 18h.01"></path></symbol>'
+        + '<symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></symbol>'
+        + '<symbol id="i-msg" viewBox="0 0 24 24"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/></symbol>'
+        + '<symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>'
+        + '<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>'
+        + '<symbol id="i-server" viewBox="0 0 24 24"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></symbol>'
+        + '<symbol id="i-link" viewBox="0 0 24 24"><path d="M9 17H7A5 5 0 0 1 7 7h2"/><path d="M15 7h2a5 5 0 1 1 0 10h-2"/><line x1="8" x2="16" y1="12" y2="12"/></symbol>'
+        + '<symbol id="i-layers" viewBox="0 0 24 24"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></symbol>'
+        + '<symbol id="i-activity" viewBox="0 0 24 24"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></symbol>'
+        + '<symbol id="i-checks" viewBox="0 0 24 24"><path d="M13 5h8"/><path d="M13 12h8"/><path d="M13 19h8"/><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/></symbol>'
+        + '<symbol id="i-coins" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></symbol>'
+        + '<symbol id="i-timer" viewBox="0 0 24 24"><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/></symbol>'
+        + '<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>'
+        + '<symbol id="i-qr" viewBox="0 0 24 24"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></symbol>'
+        + '<symbol id="i-brain" viewBox="0 0 24 24"><path d="M12 18V5"/><path d="M15 13a4.17 4.17 0 01-3-4 4.17 4.17 0 01-3 4"/><path d="M17.707 6.294A3 3 0 1012 5a3 3 0 10-5.707 1.294"/><path d="M17.996 5.125a4 4 0 012.526 5.77"/><path d="M18 18a4 4 0 002-7.465"/><path d="M19.967 17.482a4 4 0 11-7.967.517 4 4 0 11-7.967-.517"/><path d="M6 18a4 4 0 01-2-7.465"/><path d="M6.004 5.125a4 4 0 00-2.526 5.77"/></symbol>'
+        + '<symbol id="i-calclock" viewBox="0 0 24 24"><path d="M16 14v2.2l1.6 1"/><path d="M16 2v3"/><path d="M21 7.338V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h2.338"/><path d="M3 9h5.859"/><path d="M8 2v3"/><circle cx="16" cy="16" r="6"/></symbol>'
+        + '<symbol id="i-wifi" viewBox="0 0 24 24"><path d="M12 20h.01"/><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.859a10 10 0 0 1 14 0"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/></symbol>'
+        + '<symbol id="i-zap" viewBox="0 0 24 24"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z"/></symbol>'
+        + '<symbol id="i-hourglass" viewBox="0 0 24 24"><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></symbol>'
+        + '<symbol id="i-images" viewBox="0 0 24 24"><path d="m22 11-1.296-1.296a2.4 2.4 0 0 0-3.408 0L11 16"/><path d="M4 8a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2"/><circle cx="13" cy="7" r="1" fill="currentColor"/><rect x="8" y="2" width="14" height="14" rx="2"/></symbol>'
+        + '<symbol id="i-ask" viewBox="0 0 24 24"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></symbol>'
+        + '<symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></symbol>'
+        + '<symbol id="i-imgplus" viewBox="0 0 24 24"><path d="M16 5h6"/><path d="M19 2v6"/><path d="M21 11.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7.5"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/><circle cx="9" cy="9" r="2"/></symbol>'
+        + '<symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></symbol>'
+        + '<symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"/></symbol>'
         + '</svg>';
     // The masthead's glyph, as pair-scan's lock-up draws it.
     var GLYPH = '<svg class="glyph" viewBox="0 0 120 120" aria-hidden="true">'
@@ -166,18 +222,38 @@
     function clock(ms) { var s = Math.max(0, Math.floor(ms / 1000)); return Math.floor(s / 60) + ':' + pad(s % 60); }
     function dayOf(at) { var d = new Date(at); return d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate(); }
     function usd(v) { return num(v) ? '$' + v.toFixed(2) : '—'; }
+    function stwI(stage) { return '<span class="hm-stw stw-i" style="--c:' + stVar(stage) + '">' + ic('layers') + esc(stage) + '</span>'; }
+    function md(at) { var d = new Date(at); return (d.getMonth() + 1) + '/' + d.getDate(); }
+    // A stage's length: 15 分, 1 小時 30 分.
+    function took(ms) {
+        var m = Math.max(0, Math.round(ms / 60e3));
+        return m < 60 ? t('ago.min', { n: m }) : t('span.hm', { h: Math.floor(m / 60), m: m % 60 });
+    }
+    function kTok(n) { return n >= 1e6 ? (Math.round(n / 1e5) / 10) + 'M' : Math.round(n / 1e3) + 'k'; }
+    function pct(v) { return num(v) ? Math.max(0, Math.min(100, Math.round(v))) : null; }
+    // How much of a window that resets at `resets` and lasts `span` has gone by, in percent.
+    function paceOf(resets, span, at) { return num(resets) ? pct((1 - (resets - at) / span) * 100) : null; }
 
-    // #/ the session list, #/s/<id> one session's conversation (#/gate/<id>
-    // and #/task/<id> land there too),
-    // #/done the history, #/pair/<code> the desktop QR's pairing url.
+    // #/ the session list, #/ask the held gates, #/done the history, #/s/<id>[/<pane>] one
+    // session on one of its six panes (#/gate/<id> and #/task/<id> land on 對話), #/pair/<code>
+    // the desktop QR's pairing url.
     function parseRoute(hash) {
         var h = String(hash || '').replace(/^#/, '');
         var m = /^\/pair\/([A-Za-z0-9]{8})$/.exec(h);
         if (m) return { view: 'home', id: null, pair: m[1].toUpperCase() };
-        m = /^\/(?:s|gate|task)\/([0-9A-Za-z-]+)$/.exec(h);
-        if (m) return { view: 'chat', id: m[1], pair: null };
+        m = /^\/(?:s|gate|task)\/([0-9A-Za-z-]+)(?:\/(talk|timeline|plan|dispatch|events|gate))?$/.exec(h);
+        if (m) return { view: 'chat', id: m[1], pair: null, pane: m[2] || 'talk' };
         if (h === '/done') return { view: 'done', id: null, pair: null };
+        if (h === '/ask') return { view: 'ask', id: null, pair: null };
         return { view: 'home', id: null, pair: null };
+    }
+
+    // The pane a sideways swipe lands on: one over, only for a long and mostly sideways one.
+    function swipeTo(pane, dx, dy) {
+        if (Math.abs(dx) < 60 || Math.abs(dx) < 2 * Math.abs(dy)) return null;
+        var ids = PANES.map(function (x) { return x[0]; });
+        var i = ids.indexOf(pane || 'talk') + (dx < 0 ? 1 : -1);
+        return i >= 0 && i < ids.length ? ids[i] : null;
     }
 
     // A code off the pairing url a QR carries, or eight characters typed.
@@ -288,12 +364,15 @@
         if (x.state === 'gate') return '<span class="st ask">' + ic('gate') + t('st.ask') + '</span>';
         if (x.state === 'idle') return '<span class="st idle">' + ic('kbd') + t('st.idle') + '</span>';
         if (x.state === 'holding' || x.attached) return '<span class="st held">' + ic('phone') + t('st.held') + '</span>';
-        if (x.state === 'background') return '<span class="st bg"><i class="lv"></i>' + t('st.bg', { n: bg }) + '</span>';
-        return '<span class="st run"><i class="lv"></i>' + t('st.run') + '</span>';
+        if (x.state === 'background') return '<span class="st bg">' + ic('bot') + t('st.bg', { n: bg }) + '</span>';
+        return '<span class="st run">' + ic('activity') + t('st.run') + '</span>';
     }
 
-    function hostHtml(m) {
-        return '<span class="host" aria-label="' + esc(t('host.on', { host: m.host || '' })) + '"><i class="dot live"></i>' + esc(m.host || t('host.station')) + '</span>';
+    // The host pill: opens the 測站 sheet (the mockup's round 2: not a fourth tab).
+    function hostHtml(m, u) {
+        var host = m.host || t('host.station');
+        return '<button type="button" class="host" data-act="sheet" aria-haspopup="dialog" aria-expanded="' + Boolean(u && u.sheet) + '" aria-label="' + esc(t('host.open', { host: host })) + '">'
+            + ic('wifi', 'on') + esc(host) + ic('down', 'hc') + '</button>';
     }
 
     function bgList(items, at) {
@@ -305,26 +384,69 @@
             + (items.length > 2 ? '<li class="more">' + t('home.more', { n: items.length - 2 }) + '</li>' : '') + '</ul>';
     }
 
-    function homeRow(x, at, m) {
-        var head = '<a class="ha-row' + (x.state === 'holding' ? ' ha-held' : '') + '" href="#/s/' + esc(x.id) + '">' + avatar(x.project) + '<span class="ha-main">';
-        var sub = '<span class="ha-sub">' + esc(x.project) + stw(x.stage) + chip(x) + '</span>';
-        if (x.state === 'gate') {
-            var g = ((m.gates || []).filter(function (y) { return y.id === x.id; })[0]) || {};
-            var q = (g.questions || [])[0];
-            return head + '<span class="ha-top"><span class="ha-t">' + esc(x.task) + '</span>'
-                + (num(g.until) ? '<time>' + t('home.left', { t: clock(g.until - at) }) + '</time>' : '') + '</span>' + sub
-                + '<span class="ha-q"><span>' + esc((q && q.question) || '') + '</span><span class="btn">' + t('home.go') + ic('chev') + '</span></span></span></a>';
+    // A card's one status line.
+    function stLine(x, at) {
+        var bg = x.background || [];
+        if (x.state === 'idle') return ic('pause') + '<span>' + t('home.stopped') + '</span>';
+        if (x.state === 'holding' || x.attached) {
+            return ic('phone') + '<span>' + (num(x.holdUntil) && x.holdUntil > at ? t('sc.held', { t: clock(x.holdUntil - at) }) : t('sc.attached')) + '</span>';
         }
-        var top = '<span class="ha-top"><span class="ha-t">' + esc(x.task) + '</span>'
-            + (num(x.updated) ? '<time>' + esc(ago(at - x.updated)) + '</time>' : '') + '</span>';
-        var tail = '';
-        if (x.state === 'idle') tail = '<span class="ha-stop">' + ic('pause') + t('home.stopped') + '</span>';
-        else if (x.state === 'background' && (x.background || []).length) tail = bgList(x.background, at);
-        else if (x.last && x.last.text) tail = '<span class="ha-prev">' + (x.last.role === 'desktop' || x.last.role === 'phone' ? t('home.you') : '') + esc(x.last.text) + '</span>';
-        return head + top + sub + tail + '</span></a>';
+        if (x.state === 'background' && bg.length) return ic(bg.some(function (b) { return b.type === 'shell'; }) ? 'term' : 'bot') + '<span>' + t('sc.bg', { n: bg.length }) + '</span>';
+        return ic('activity') + '<span>' + t('chat.work') + '</span>';
     }
 
-    function homeHtml(m, at) {
+    // A session card: title, project, stage chip and one status line; the latest line and the
+    // background list behind the chevron (round 3: progressive disclosure).
+    function card(x, at, u, kind) {
+        var key = 'sc:' + x.id;
+        var open = Boolean(u.open && u.open[key]);
+        var more = [];
+        if (x.last && x.last.text) {
+            more.push('<p class="sm-last">' + ic('msg') + '<span><b>' + t(x.last.role === 'assistant' ? 'who.ai' : x.last.role === 'phone' ? 'who.ph' : 'who.pc') + '</b>' + esc(x.last.text) + '</span></p>');
+        }
+        if ((x.background || []).length) more.push(bgList(x.background, at));
+        return '<div class="sc' + (kind ? ' ' + kind : '') + '"><a class="sc-main" href="#/s/' + esc(x.id) + '"><span class="sc-top"><span class="sc-t">' + esc(x.task) + '</span>'
+            + (num(x.updated) ? '<time>' + ic('clock') + esc(ago(at - x.updated)) + '</time>' : '') + '</span>'
+            + '<span class="sc-meta">' + avatar(x.project) + '<span class="pj">' + esc(x.project) + '</span>' + stwI(x.stage) + '<span class="sp"></span>' + chip(x) + '</span>'
+            + '<span class="sc-stat">' + stLine(x, at) + '</span></a>'
+            + (more.length ? '<button type="button" class="sc-tog" data-act="fold" data-key="' + esc(key) + '" aria-expanded="' + open + '" aria-label="' + t(open ? 'sc.less' : 'sc.more') + '">' + ic('down') + '</button>'
+                + (open ? '<div class="sc-more">' + more.join('') + '</div>' : '') : '')
+            + '</div>';
+    }
+
+    // A held gate's card: the question in ink; on the 等你 tab (`wide`) its time left on its own
+    // line and its options behind a tap.
+    function askCard(x, m, at, u, wide) {
+        var g = ((m.gates || []).filter(function (y) { return y.id === x.id; })[0]) || {};
+        var q = (g.questions || [])[0];
+        var opts = q && Array.isArray(q.options) ? q.options : [];
+        var key = 'gp:' + x.id;
+        var open = Boolean(u.open && u.open[key]);
+        var left = num(g.until) ? ic('timer') + t(wide ? 'gc.left' : 'home.left', { t: clock(g.until - at) }) : '';
+        var go = '<a class="sc-btn" href="#/s/' + esc(x.id) + '">' + t('home.go') + ic('chev') + '</a>';
+        return '<div class="sc ask"><a class="sc-main" href="#/s/' + esc(x.id) + '"><span class="sc-top"><span class="sc-t">' + esc(x.task) + '</span></span>'
+            + '<span class="sc-meta">' + avatar(x.project) + '<span class="pj">' + esc(x.project) + '</span>' + stwI(x.stage) + '</span>'
+            + '<span class="sc-q">' + ic('ask') + '<span>' + esc((q && q.question) || '') + '</span></span></a>'
+            + (wide
+                ? (left ? '<p class="sc-left">' + left + '</p>' : '') + '<div class="sc-go">'
+                    + (opts.length ? '<button type="button" class="sc-pv" data-act="fold" data-key="' + esc(key) + '" aria-expanded="' + open + '">' + ic('checks') + t('ask.opts', { n: opts.length }) + ic('down', 'tgl') + '</button>' : '')
+                    + go + '</div>' + (open && opts.length ? '<ul class="gopt">' + optList(opts) + '</ul>' : '')
+                : '<div class="sc-go"><span class="left">' + left + '</span>' + go + '</div>')
+            + '</div>';
+    }
+
+    // The bottom tab bar (VoiceLedger's nav#tabs): Session, 等你 with its count, 完成.
+    function tabbar(view, m) {
+        var n = (m.tasks || []).filter(function (x) { return x.state === 'gate'; }).length + (m.stopped || []).length;
+        var tab = function (href, v, icon, label, badge) {
+            return '<a href="' + href + '"' + (view === v ? ' aria-current="page"' : '') + '><span class="tab-ico">' + ic(icon) + (badge || '') + '</span><span>' + label + '</span></a>';
+        };
+        return '<nav class="tabbar" aria-label="' + t('tab.nav') + '" data-block="m-tabbar">' + tab('#/', 'home', 'list', t('home.title'))
+            + tab('#/ask', 'ask', 'gate', t('tab.ask'), n ? '<b class="tab-n" aria-label="' + esc(t('tab.n', { n: n })) + '">' + n + '</b>' : '')
+            + tab('#/done', 'done', 'hist', t('done.title')) + '</nav>';
+    }
+
+    function homeHtml(m, at, u) {
         var tasks = m.tasks || [];
         var asks = tasks.filter(function (x) { return x.state === 'gate'; });
         var idle = tasks.filter(function (x) { return x.state === 'idle'; });
@@ -336,19 +458,52 @@
                 var ob = ORDER[b.x.state] === undefined ? 3 : ORDER[b.x.state];
                 return oa - ob || a.i - b.i;
             }).map(function (o) { return o.x; });
-        function rows(list) { return list.map(function (x) { return homeRow(x, at, m); }).join(''); }
-        function gh(key, n) { return '<p class="ha-gh">' + t(key) + ' <span>' + n + '</span></p>'; }
-        var body = !tasks.length && !gone.length ? '<div class="empty"><h2>' + t('home.empty') + '</h2></div>'
-            : '<p class="ha-sum"><span class="a">' + t('sum.ask', { n: asks.length }) + '</span><span class="sep">·</span><span class="r">' + t('sum.run', { n: live.length })
-                + '</span><span class="sep">·</span><span class="i">' + t('sum.idle', { n: idle.length }) + '</span></p>'
-                + (asks.length ? gh('grp.ask', asks.length) + '<div class="ha-ask">' + rows(asks) + '</div>' : '')
-                + (live.length ? gh('grp.run', live.length) + '<div class="ha-list">' + rows(live) + '</div>' : '')
-                + (idle.length ? gh('grp.idle', idle.length) + '<div class="ha-idle ha-list">' + rows(idle) + '</div>' : '')
-                + (gone.length ? gh('grp.gone', gone.length) + '<div class="ha-gone ha-list">' + rows(gone) + '</div>' : '');
+        var ask = function (x) { return askCard(x, m, at, u, false); };
+        var one = function (x) { return card(x, at, u, x.state === 'idle' ? 'idle' : ''); };
+        function group(block, icon, key, list, draw) {
+            return list.length ? '<div data-block="' + block + '"><p class="ha-gh">' + ic(icon) + t(key) + ' <span>' + list.length + '</span></p><div class="sc-list">' + list.map(draw).join('') + '</div></div>' : '';
+        }
+        var any = tasks.length || gone.length;
+        var body = !any ? '<div class="empty"><h2>' + t('home.empty') + '</h2></div>'
+            : group('m-home-ask', 'ask', 'grp.ask', asks, ask) + group('m-home-run', 'activity', 'grp.run', live, one)
+                + group('m-home-idle', 'pause', 'grp.idle', idle, one) + group('m-home-gone', 'gate', 'grp.gone', gone, ask);
+        var sum = any ? '<div class="ab-2"><p class="ha-sum"><span class="a">' + ic('ask') + t('sum.ask', { n: asks.length }) + '</span><span class="r">' + ic('activity') + t('sum.run', { n: live.length })
+            + '</span><span class="i">' + ic('pause') + t('sum.idle', { n: idle.length }) + '</span></p></div>' : '';
         return '<div class="pg" data-block="m-home-a"><header class="ab ab2"><div class="ab-1"><h1>' + t('home.title') + '</h1>' + (tasks.length ? '<span class="n">' + tasks.length + '</span>' : '')
-            + '<span class="sp"></span><a class="ha-hist" href="#/done" aria-label="' + t('home.hist') + '" title="' + t('home.hist') + '">' + ic('hist') + '</a></div>'
-            + '<div class="ab-2">' + hostHtml(m) + '</div></header>'
-            + '<div class="ha-body">' + body + '</div></div>';
+            + '<span class="sp"></span>' + hostHtml(m, u) + '</div>' + sum + '</header>'
+            + '<div class="ha-body">' + body + '</div></div>' + tabbar('home', m);
+    }
+
+    function askHtml(m, at, u) {
+        var list = (m.tasks || []).filter(function (x) { return x.state === 'gate'; }).concat(m.stopped || []);
+        return '<div class="pg" data-block="m-ask-a"><header class="ab tab-ab"><div class="ab-1"><h1>' + t('grp.ask') + '</h1>' + (list.length ? '<span class="n">' + list.length + '</span>' : '')
+            + '<span class="sp"></span>' + hostHtml(m, u) + '</div></header><div class="ha-body">'
+            + (list.length ? '<div class="sc-list" data-block="m-ask-list">' + list.map(function (x) { return askCard(x, m, at, u, true); }).join('') + '</div>'
+                : '<div class="empty"><h2>' + t('ask.empty') + '</h2></div>')
+            + '</div></div>' + tabbar('ask', m);
+    }
+
+    // The 測站 sheet from the host pill: the connection on one line, then this phone, the session
+    // it holds and re-pairing, each opening on a tap. Unpairing has no phone route
+    // (/station/remote/revoke is LOCAL in lib/remote.js), so the row says where on the desktop.
+    function sheetHtml(m, at, u) {
+        var me = m.device || null;
+        var held = (m.tasks || []).filter(function (x) { return num(x.holdUntil) && x.holdUntil > at; })[0] || null;
+        var paired = me && num(me.paired) ? md(me.paired) : '';
+        function row(key, icon, k, v, side, body) {
+            var open = Boolean(u.open && u.open[key]);
+            return '<li class="rs-i' + (open ? ' open' : '') + '"><button type="button" class="rs-row" data-act="fold" data-key="' + key + '" aria-expanded="' + open + '">' + ic(icon)
+                + '<span class="rs-m"><span class="rs-k">' + k + '</span><span class="rs-v">' + v + '</span></span><span class="rs-side">' + side + '</span>' + ic('down', 'tgl') + '</button>'
+                + (open ? '<div class="rs-x">' + body + '</div>' : '') + '</li>';
+        }
+        return '<div class="rs-scrim" data-act="sheet" aria-hidden="true"></div><div class="rs" role="dialog" aria-modal="true" aria-labelledby="rs-t" data-block="m-remote-sheet"><span class="rs-grab" aria-hidden="true"></span>'
+            + '<div class="rs-h"><h2 id="rs-t">' + ic('server') + t('host.station') + '</h2><span class="sp"></span><span class="on">' + ic('wifi') + esc(t('host.on', { host: m.host || '' })) + '</span>'
+            + (num(m.at) ? '<time>' + ic('clock') + hm(m.at) + '</time>' : '') + '</div><ul class="rs-list">'
+            + row('rs:me', 'phone', t('rs.me'), esc(me ? me.name : t('rs.local')), paired ? t('rs.paired', { d: paired }) : '', '<p>' + ic('info') + '<span>' + t(me ? 'rs.unpair' : 'rs.localWhy') + '</span></p>')
+            + (held ? row('rs:held', 'link', t('st.held'), esc(held.task), t('home.left', { t: clock(held.holdUntil - at) }),
+                '<p>' + ic('hourglass') + '<span>' + t('rs.hold') + '</span></p><button type="button" class="give" data-act="detach" data-id="' + esc(held.id) + '">' + ic('laptop') + t('give') + '</button>') : '')
+            + row('rs:pair', 'refresh', t('off.repair'), t('rs.pairV'), '', '<p>' + ic('qr') + '<span>' + t('rs.pairWhy') + '</span></p><button type="button" class="ghost" data-act="repair">' + ic('qr') + t('off.repair') + '</button>')
+            + '</ul>' + (u.note ? '<p class="note" role="status">' + esc(u.note) + '</p>' : '') + '</div>';
     }
 
     // Claude's words: paragraphs on blank lines, `code`, line breaks; cut long.
@@ -508,31 +663,186 @@
             + '<p class="gpin-q" id="gpin-q" data-act="gpin" tabindex="0" role="button" aria-expanded="' + (u.pin ? 'true' : 'false') + '">' + esc(q.question || '') + '</p></div>';
     }
 
-    function chatHtml(m, id, at, u, P) {
+    // The TokenBar: context against the compact line (or the window when the pane knows it),
+    // and the 5h and 7d limits with where the time says they should be.
+    function meters(p, at) {
+        var c = p.context || null;
+        var l = p.limits || {};
+        var wnd = c && num(c.window) && c.window > 0 ? c.window : null;
+        var line = c && num(c.at) && c.at > 0 ? c.at : null;
+        var of = wnd || line;
+        var resets = function (r, span) {
+            return num(r) ? t('tk.resets', { t: (span === SEVEN_MS ? md(r) + ' ' : '') + hm(r), n: paceOf(r, span, at) }) : t('tk.none');
+        };
+        return [
+            { icon: 'brain', label: t('tk.ctx'), v: c && of ? pct(c.tokens / of * 100) : null, mark: wnd && line ? pct(line / wnd * 100) : null,
+                sub: c ? kTok(c.tokens) + (of ? ' / ' + kTok(of) : '') + (wnd && line ? t('tk.at', { n: kTok(line) }) : !wnd && line ? t('tk.ofAt') : '') : t('tk.none') },
+            { icon: 'timer', label: t('tk.five'), v: pct(l.five), mark: paceOf(l.fiveResets, FIVE_MS, at), sub: resets(l.fiveResets, FIVE_MS) },
+            { icon: 'calclock', label: t('tk.seven'), v: pct(l.seven), mark: paceOf(l.sevenResets, SEVEN_MS, at), sub: resets(l.sevenResets, SEVEN_MS) },
+        ];
+    }
+
+    function tokenInner(p, at, u) {
+        var ms = meters(p, at);
+        var open = Boolean(u.open && u.open.tk);
+        var val = function (v) { return v === null ? '—' : v + '%'; };
+        return '<button type="button" class="tkm" data-act="fold" data-key="tk" aria-expanded="' + open + '" aria-controls="tkx" aria-label="' + esc(t('tk.aria', { c: val(ms[0].v), f: val(ms[1].v), s: val(ms[2].v) })) + '">'
+            + ms.map(function (x) { return '<span class="tkm-i">' + ic(x.icon) + '<span class="mb"><i style="--v:' + (x.v || 0) + '%"></i></span><b>' + val(x.v) + '</b></span>'; }).join('')
+            + ic('down', 'tgl') + '</button>'
+            + (open ? '<div class="tkx" id="tkx">' + ms.map(function (x) {
+                return '<div class="tkx-r">' + ic(x.icon) + '<span class="tkx-l">' + x.label + '</span><b class="tk-v">' + val(x.v) + '</b>'
+                    + '<span class="tk-bar"><i style="--v:' + (x.v || 0) + '%"></i>' + (x.mark === null ? '' : '<b style="--p:' + x.mark + '%"></b>') + '</span>'
+                    + '<span class="tk-s">' + esc(x.sub) + '</span></div>';
+            }).join('') + '</div>' : '');
+    }
+
+    function panesNav(p, pane) {
+        var bg = (p.background || []).length;
+        return '<nav class="panes" aria-label="' + t('pn.nav') + '" data-block="m-pane-tabs">' + PANES.map(function (x) {
+            return '<a href="#/s/' + esc(p.id) + '/' + x[0] + '"' + (x[0] === pane ? ' aria-current="page"' : '') + '>' + ic(x[1]) + '<span>' + t('pn.' + x[0]) + '</span>'
+                + (x[0] === 'dispatch' && bg ? '<i class="dot live" aria-label="' + esc(t('pn.bg', { n: bg })) + '"></i>' : '') + '</a>';
+        }).join('') + '</nav>';
+    }
+
+    // The desktop page for what the phone draws only a summary of.
+    function full(p, tab) { return '<a class="ov-link" href="/f/' + esc(p.id) + '/' + tab + '">' + ic('laptop') + t('ov.full') + '</a>'; }
+    function empty(key) { return '<p class="ov-empty">' + ic('info') + t(key) + '</p>'; }
+    // One summary row of the list panes: an icon, a label over its time, the chevron; open, its details.
+    function evRow(key, u, icon, label, time, side, more) {
+        var open = Boolean(u.open && u.open[key]);
+        return '<li class="ov-r ev' + (open ? ' open' : '') + '"><button type="button" class="ov-b ev" data-act="fold" data-key="' + esc(key) + '" aria-expanded="' + open + '">' + icon
+            + '<span class="lb">' + label + '</span><span class="tm">' + time + '</span>' + (side ? '<b class="usd">' + side + '</b>' : '') + ic('down', 'tgl') + '</button>'
+            + (open ? more : '') + '</li>';
+    }
+    function dl(rows) {
+        return '<dl class="ov-x">' + rows.filter(Boolean).map(function (r) { return '<div><dt>' + ic(r[0]) + r[1] + '</dt><dd>' + r[2] + '</dd></div>'; }).join('') + '</dl>';
+    }
+
+    // 概覽: this session's finished stages from mobile.json's done rows, how long each took and what it cost.
+    function overviewInner(p, m, at, u) {
+        var rows = (m.done || []).filter(function (x) { return x.id === p.id && x.kind === 'stage'; }).sort(function (a, b) { return a.at - b.at; });
+        var end = (m.done || []).filter(function (x) { return x.id === p.id && x.kind === 'end'; })[0];
+        if (!rows.length) return empty('ov.empty') + full(p, 'timeline');
+        var total = 0;
+        var top = 0;
+        rows.forEach(function (x) { if (num(x.usd)) { total += x.usd; top = Math.max(top, x.usd); } });
+        var list = rows.map(function (x, i) {
+            var key = 'ov:' + x.stage + ':' + x.at;
+            var open = Boolean(u.open && u.open[key]);
+            var span = i ? x.at - rows[i - 1].at : null;
+            var share = total > 0 && num(x.usd) ? Math.round(x.usd / total * 100) : null;
+            return '<li class="ov-r' + (open ? ' open' : '') + '"><button type="button" class="ov-b" data-act="fold" data-key="' + esc(key) + '" aria-expanded="' + open + '">'
+                + stwI(x.stage) + '<span class="tm">' + ic('clock') + (span === null ? t('ov.doneAt', { t: hm(x.at) }) : esc(took(span))) + '</span>'
+                + '<span class="bar" style="--c:' + stVar(x.stage) + '"><i style="--v:' + (top > 0 && num(x.usd) ? Math.round(x.usd / top * 100) : 0) + '%"></i></span>'
+                + '<b class="usd">' + usd(x.usd) + '</b>' + ic('down', 'tgl') + '</button>'
+                + (open ? dl([['cc', t('ov.at'), hm(x.at)], span === null ? null : ['timer', t('ov.took'), t('ov.tookV', { t: esc(took(span)) })],
+                    ['coins', t('ov.cost'), usd(x.usd) + (share === null ? '' : t('ov.share', { n: share }))]]) : '') + '</li>';
+        }).join('');
+        return '<p class="ov-sum">' + ic('coins') + '<b class="usd">' + usd(total) + '</b><span>' + t('ov.sum', { n: rows.length, from: hm(rows[0].at), to: hm(rows[rows.length - 1].at) }) + '</span></p>'
+            + '<ol class="ov-list">' + list + '</ol>'
+            + (end ? '<p class="ov-end"><span class="end">' + ic('flag') + t('done.end') + '</span><span>' + hm(end.at) + '</span></p>' : '') + full(p, 'timeline');
+    }
+
+    // 計畫: phone.json carries no plan tasks, so the route — done, in progress, not yet — and the desktop plan page.
+    function planInner(p, m, at, u) {
+        var route = (p.route || []).filter(function (s) { return typeof s === 'string'; });
+        if (!route.length) return empty('pl.empty') + full(p, 'plan');
+        var cur = route.indexOf(p.stage);
+        var done = (m.done || []).filter(function (x) { return x.id === p.id && x.kind === 'stage'; });
+        return '<ol class="ov-list">' + route.map(function (s, i) {
+            var hit = done.filter(function (x) { return x.stage === s; }).pop();
+            var state = hit || (cur >= 0 && i < cur) ? 'done' : i === cur ? 'now' : 'todo';
+            return evRow('pl:' + s, u, ic(state === 'done' ? 'cc' : state === 'now' ? 'activity' : 'clock'), stwI(s), t('pl.' + state), hit ? usd(hit.usd) : '',
+                dl([['cc', t('ov.at'), hit ? hm(hit.at) : t('pl.notyet')]]));
+        }).join('') + '</ol>' + full(p, 'plan');
+    }
+
+    // 派工: the agents and shells still running in the background.
+    function dispatchInner(p, at, u) {
+        var list = p.background || [];
+        if (!list.length) return empty('dp.empty') + full(p, 'dispatch');
+        return '<ol class="ov-list">' + list.map(function (b, i) {
+            return evRow('dp:' + (b.id || i), u, ic(b.type === 'shell' ? 'term' : 'bot'), esc(b.description || b.command), (num(b.since) ? esc(ago(at - b.since)) + ' · ' : '') + t('bg.run'), '',
+                dl([['layers', t('dp.kind'), esc(b.type || '')], b.command ? ['term', t('dp.cmd'), esc(b.command)] : null, num(b.since) ? ['clock', t('dp.start'), hm(b.since)] : null]));
+        }).join('') + '</ol>' + full(p, 'dispatch');
+    }
+
+    // 事件: the conversation's tool steps, newest first.
+    function eventsInner(p, at, u) {
+        var steps = [];
+        turnsOf(p.chat).forEach(function (g) { if (g.kind === 'steps') steps = steps.concat(g.items); });
+        steps = steps.slice(-30).reverse();
+        if (!steps.length) return empty('ev.empty');
+        return '<ol class="ov-list">' + steps.map(function (s) {
+            var live = s.end === null || s.end === undefined;
+            var icon = live ? ic('spin') : s.ok === false ? ic('alert') : ic(TOOL_IC[s.tool] || 'check');
+            var time = live ? (num(s.at) ? clock(at - s.at) : '') : num(s.at) && num(s.end) ? dur(s.end - s.at) : '';
+            return evRow('ev:' + s.id, u, icon, esc(s.label), (s.ok === false ? t('steps.fail') + ' · ' : '') + time, '',
+                dl([['term', t('ev.tool'), esc(s.tool || '')], num(s.at) ? ['clock', t('ev.start'), hm(s.at)] : null, time ? ['timer', t('ev.took'), time] : null]));
+        }).join('') + '</ol>';
+    }
+
+    // 關卡: the held gate's questions, each opening on its options; 去答 goes to the card in 對話.
+    function gateInner(p, at, u) {
+        var qs = (p.gate && p.gate.questions) || [];
+        if (!qs.length) return empty('gt.empty');
+        return (num(p.gate.until) ? '<p class="sc-left">' + ic('timer') + t('gc.left', { t: clock(p.gate.until - at) }) + '</p>' : '')
+            + '<ol class="ov-list">' + qs.map(function (q, qi) {
+                var opts = Array.isArray(q.options) ? q.options : [];
+                return evRow('gt:' + qi, u, ic('ask'), esc(q.question || ''), t('ask.opts', { n: opts.length }), '', '<ul class="gopt">' + optList(opts) + '</ul>');
+            }).join('') + '</ol><p class="ov-end"><a class="sc-btn" href="#/s/' + esc(p.id) + '/talk">' + t('home.go') + ic('chev') + '</a></p>';
+    }
+
+    function paneInner(p, pane, at, u, m) {
+        if (pane === 'timeline') return overviewInner(p, m || {}, at, u);
+        if (pane === 'plan') return planInner(p, m || {}, at, u);
+        if (pane === 'dispatch') return dispatchInner(p, at, u);
+        if (pane === 'events') return eventsInner(p, at, u);
+        if (pane === 'gate') return gateInner(p, at, u);
+        return cvInner(p, at, u);
+    }
+
+    // One session: its header, the TokenBar and the pane tabs on top, then the pane; 對話 keeps
+    // the gate pin, the composer or the attach / idle card. No tab bar: it is a drill-down.
+    function chatHtml(m, id, at, u, P, pane) {
         var row = (m.tasks || []).concat(m.stopped || []).filter(function (x) { return x.id === id; })[0];
         // Until its phone.json arrives, the session's mobile.json row stands in.
         var p = P || (row ? Object.assign({}, row, { chat: row.last ? [row.last] : [], waiting: null, gate: null }) : null);
         var back = '<a class="bk" href="#/" aria-label="' + t('chat.back') + '">' + ic('back') + '</a>';
-        if (!p) return '<div class="pg"><header class="ch-h">' + back + '<span></span><span></span></header><div class="empty"><h2>' + t('chat.gone') + '</h2></div></div>';
+        if (!p) return '<div class="pg dt"><header class="ch-h">' + back + '<span></span><span></span></header><div class="empty"><h2>' + t('chat.gone') + '</h2></div></div>';
         if (p.state === 'gate' && !p.gate) p = Object.assign({}, p, { gate: (m.gates || []).filter(function (g) { return g.id === id; })[0] || null });
         var attached = p.attached && p.state !== 'gate' && p.state !== 'idle';
         var side = attached ? '<button type="button" class="give" data-act="detach">' + ic('laptop') + t('give') + '</button>'
             : p.state === 'idle' ? '<span class="ro">' + ic('eye') + t('ro') + '</span>' : '<span></span>';
-        var bottom = '';
-        if (p.state === 'idle') {
-            bottom = '<div class="idl" role="note"><h3><span class="ic-w">' + ic('kbd') + '</span>' + t('idle.title') + '</h3><p>' + t('idle.why') + '</p>'
-                + '<dl><dt>' + t('idle.give.t') + '</dt><dd>' + t('idle.give') + '</dd><dt>' + t('idle.wait.t') + '</dt><dd>' + t('idle.wait') + '</dd></dl></div>';
-        } else if (p.state === 'holding' || attached) {
-            bottom = composer(p, u);
-        } else if (p.state === 'running' || p.state === 'background') {
-            bottom = '<div class="att"><button type="button" class="cta" data-act="attach">' + ic('phone') + t('att.go') + '</button><p>'
-                + t(p.state === 'background' ? 'att.bg' : 'att.run') + '</p></div>';
+        var body;
+        if (pane === 'talk') {
+            var bottom = '';
+            if (p.state === 'idle') {
+                bottom = '<div class="idl" role="note"><h3><span class="ic-w">' + ic('kbd') + '</span>' + t('idle.title') + '</h3><p>' + t('idle.why') + '</p>'
+                    + '<dl><dt>' + t('idle.give.t') + '</dt><dd>' + t('idle.give') + '</dd><dt>' + t('idle.wait.t') + '</dt><dd>' + t('idle.wait') + '</dd></dl></div>';
+            } else if (p.state === 'holding' || attached) {
+                bottom = composer(p, u);
+            } else if (p.state === 'running' || p.state === 'background') {
+                bottom = '<div class="att"><button type="button" class="cta" data-act="attach">' + ic('phone') + t('att.go') + '</button><p>'
+                    + t(p.state === 'background' ? 'att.bg' : 'att.run') + '</p></div>';
+            }
+            body = (p.state === 'gate' && p.gate ? gpinHtml(p, at, u) : '')
+                + '<div class="cv" role="log" aria-label="' + t('chat.log') + '">' + cvInner(p, at, u) + '</div>'
+                + (u.note ? '<p class="note" role="status">' + esc(u.note) + '</p>' : '') + bottom;
+        } else {
+            body = '<div class="ov" data-block="m-pane-' + pane + '" role="region" aria-label="' + t('pn.' + pane) + '">' + paneInner(p, pane, at, u, m) + '</div>';
         }
-        return '<div class="pg" ' + SCREEN[attached ? 'attached' : p.state] + '><header class="ch-h">' + back
-            + '<div><p class="ch-t">' + esc(p.task) + '</p><p class="ch-m">' + esc(p.project) + stw(p.stage) + chip(p) + '</p></div>' + side + '</header>'
-            + (p.state === 'gate' && p.gate ? gpinHtml(p, at, u) : '')
-            + '<div class="cv" role="log" aria-label="' + t('chat.log') + '">' + cvInner(p, at, u) + '</div>'
-            + (u.note ? '<p class="note" role="status">' + esc(u.note) + '</p>' : '') + bottom + '</div>';
+        return '<div class="pg dt" ' + SCREEN[attached ? 'attached' : p.state] + '><div class="dt-top"><header class="ch-h">' + back
+            + '<div><p class="ch-t">' + esc(p.task) + '</p><p class="ch-m">' + avatar(p.project) + esc(p.project) + stwI(p.stage) + chip(p) + '</p></div>' + side + '</header>'
+            + '<div class="tkb" data-block="m-tokenbar">' + tokenInner(p, at, u) + '</div>' + panesNav(p, pane) + '</div>' + body + '</div>';
+    }
+
+    function optList(opts) {
+        return opts.map(function (o) {
+            var l = String((o && o.label) || '');
+            var rec = REC.test(l);
+            return '<li>' + ic('cc', rec ? '' : 'no') + '<span>' + esc(l.replace(REC, '')) + '</span>' + (rec ? '<span class="gq-rec">' + t('gate.rec') + '</span>' : '') + '</li>';
+        }).join('');
     }
 
     function optionHtml(q, qi, o, on) {
@@ -545,15 +855,16 @@
 
     function doneRow(x) {
         var meta = x.kind === 'end'
-            ? '<span class="end">' + ic('cc', 'g24') + t('done.end') + '</span><span>·</span>'
-            : stw(x.stage) + '<span>' + t('done.stage') + '</span>';
+            ? '<span class="end">' + ic('flag') + t('done.end') + '</span>'
+            : stw(x.stage) + '<span class="dn">' + ic('cc') + t('done.dn') + '</span>';
         return '<a class="row' + (x.kind === 'end' ? ' fin' : '') + '" href="/f/' + esc(x.id) + '/' + esc(x.stage || 'gate') + '">'
             + '<div class="r-l"><div class="r-meta">' + meta + '<span class="pj">' + esc(x.project) + '</span></div><p class="r-t">' + esc(x.task) + '</p></div>'
-            + '<div class="r-side"><span class="usd">' + usd(x.usd) + '</span><span class="ago">' + hm(x.at) + '</span></div></a>';
+            + '<div class="r-side"><span class="usd">' + usd(x.usd) + '</span><span class="ago">' + ic('clock') + hm(x.at) + '</span></div></a>';
     }
 
-    function doneBar(m) {
-        return '<header class="ab"><a class="bk" href="#/" aria-label="' + t('chat.back') + '">' + ic('back') + '</a><h1>' + t('done.title') + '</h1><span class="sp"></span>' + hostHtml(m) + '</header>';
+    function doneScreen(m, at, u) {
+        return '<div class="pg" data-block="m-done-a"><header class="ab tab-ab"><div class="ab-1"><h1>' + t('done.title') + '</h1><span class="sp"></span>' + hostHtml(m, u) + '</div></header>'
+            + doneHtml(m, at) + '</div>' + tabbar('done', m);
     }
 
     // Newest first as mobile.json sends it, under one heading per day.
@@ -570,7 +881,7 @@
                 var d = new Date(x.at);
                 var head = day === today ? t('done.today') + '<span>' + t('done.upTo', { t: hm(now) }) + '</span>'
                     : day === yday ? t('done.yesterday') : (d.getMonth() + 1) + '/' + d.getDate();
-                out += (open === null ? '' : '</div>') + '<div class="grp-h">' + head + '</div><div class="grp">';
+                out += (open === null ? '' : '</div>') + '<div class="grp-h">' + ic('calclock') + head + '</div><div class="grp">';
                 open = day;
             }
             out += doneRow(x);
@@ -601,8 +912,8 @@
             + '<button type="button" class="ghost" data-act="repair">' + t('off.repair') + '</button></div></div>';
     }
 
-    // What #app holds: pair-scan, pair-error, the session list, the history,
-    // or one session's conversation drawn from its phone.json `P`.
+    // What #app holds: pair-scan, pair-error, one of the three tabs with the tab bar under it
+    // (and the 測站 sheet over it), or one session's screen drawn from its phone.json `P`.
     function screen(M, R, now, ui, P) {
         var u = ui || {};
         if (u.mode === 'pair') return pairHtml(u);
@@ -610,9 +921,11 @@
         var m = M || {};
         var r = R || parseRoute('');
         var at = num(now) ? now : Date.now();
-        if (r.view === 'done') return '<div class="pg">' + doneBar(m) + doneHtml(m, at) + '</div>';
-        if (r.view === 'chat') return chatHtml(m, r.id, at, u, P);
-        return homeHtml(m, at);
+        if (r.view === 'chat') return chatHtml(m, r.id, at, u, P, r.pane || 'talk');
+        var sheet = u.sheet ? sheetHtml(m, at, u) : '';
+        if (r.view === 'done') return doneScreen(m, at, u) + sheet;
+        if (r.view === 'ask') return askHtml(m, at, u) + sheet;
+        return homeHtml(m, at, u) + sheet;
     }
 
     // Voice fills the field and never sends; in a gate card it ticks 自己寫 first.
@@ -684,7 +997,7 @@
         if (d.body && d.body.insertAdjacentHTML) d.body.insertAdjacentHTML('afterbegin', SPRITE);
         var camera = Boolean(win.BarcodeDetector && win.navigator && win.navigator.mediaDevices && win.navigator.mediaDevices.getUserMedia);
         // The app's own ui lives across pair-error and back, so a draft survives a lost station.
-        var APP = { mode: 'app', mic: Boolean(win.SpeechRecognition || win.webkitSpeechRecognition), draft: '', open: {}, note: '' };
+        var APP = { mode: 'app', mic: Boolean(win.SpeechRecognition || win.webkitSpeechRecognition), draft: '', open: {}, note: '', sheet: false };
         var st = { M: null, P: null, ui: APP, loading: false, chatLoading: false, tried: null, stream: null, rec: null, gone: null };
         function store(k, v) {
             try {
@@ -775,17 +1088,23 @@
             st.shown = R.view === 'chat' ? R.id : null;
             if (keep) keep(cv());
             if (st.ui.mode === 'pair') scan();
-            if (R.view === 'chat') toEnd();
+            if (R.view === 'chat' && R.pane === 'talk') toEnd();
         }
-        // Only the conversation, so the composer keeps its focus, its text and its mic.
+        // The pane's own contents and the TokenBar, never the composer: what is typed, picked or said stays.
+        function pv() { return d.querySelector ? d.querySelector('.cv') || d.querySelector('.ov') : null; }
         function patch() {
-            var c = cv();
+            var c = pv();
             if (!c) return draw();
+            var R = route();
+            var at = Date.now();
+            var talk = !R.pane || R.pane === 'talk';
             var end = c.scrollHeight - c.scrollTop - c.clientHeight < 48;
             var keep = keepOpen(c);
-            c.innerHTML = cvInner(st.P, Date.now(), st.ui);
+            c.innerHTML = talk ? cvInner(st.P, at, st.ui) : paneInner(st.P, R.pane, at, st.ui, st.M);
             keep(c);
-            if (end) toEnd();
+            var tk = d.querySelector('.tkb');
+            if (tk) tk.innerHTML = tokenInner(st.P, at, st.ui);
+            if (end && talk) toEnd();
         }
         // A gate card is never redrawn while its gate stands, so what is
         // picked, typed or said stays; a new reply patches only .cv while the
@@ -872,7 +1191,7 @@
         function act(url, fields, done) {
             st.ui.note = '';
             return post(url, fields).then(function (r) {
-                if (r.ok) { if (done) done(); return loadChat(); }
+                if (r.ok) { if (done) done(); return route().view === 'chat' ? loadChat() : load(); }
                 return r.text().then(function (text) { st.ui.note = t('gate.refused', { code: r.status, why: String(text || '').trim() }); draw(); });
             }, function () { st.ui.note = t('gate.failed'); draw(); });
         }
@@ -928,6 +1247,7 @@
             el.setAttribute('aria-expanded', st.ui.pin ? 'true' : 'false');
         }
         d.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && st.ui.sheet) { st.ui.sheet = false; draw(); return; }
             var el = e.target && e.target.closest ? e.target.closest('[data-act=gpin]') : null;
             if (!el || (e.key !== 'Enter' && e.key !== ' ')) return;
             e.preventDefault();
@@ -950,8 +1270,22 @@
             else if (what === 'retry') load();
             else if (what === 'repair') { st.ui = pairUi({}); draw(); }
             else if (what === 'attach' && p) act('/phone/attach', { root: p.root, id: p.id });
-            else if (what === 'detach' && p) act('/phone/detach', { root: p.root, id: p.id });
-            else if (what === 'steps') {
+            else if (what === 'detach') {
+                var did = el.getAttribute('data-id');
+                var dp = did ? ((st.M && st.M.tasks) || []).filter(function (x) { return x.id === did; })[0] : p;
+                if (dp) act('/phone/detach', { root: dp.root, id: dp.id }, function () { st.ui.sheet = false; });
+            } else if (what === 'sheet') {
+                st.ui.sheet = !st.ui.sheet;
+                draw();
+            } else if (what === 'fold') {
+                var fk = el.getAttribute('data-key');
+                st.ui.open[fk] = !st.ui.open[fk];
+                // The TokenBar opens in place: a full draw would build the composer again.
+                var tkb = fk === 'tk' && d.querySelector ? d.querySelector('.tkb') : null;
+                var tp = tkb ? current() : null;
+                if (tkb && tp) { tkb.innerHTML = tokenInner(tp, Date.now(), st.ui); return; }
+                if (el.closest && el.closest('.cv,.ov') && st.P) patch(); else draw();
+            } else if (what === 'steps') {
                 var key = el.getAttribute('data-key');
                 st.ui.open[key] = !st.ui.open[key];
                 if (st.P) patch(); else draw();
@@ -1018,11 +1352,26 @@
             st.ui.note = '';
             st.ui.rep = false;
             st.ui.pin = false;
+            st.ui.sheet = false;
             draw();
             if (st.ui.mode !== 'app') return;
             // The list drawn before a conversation is stale by now: read it again.
             if (route().view === 'chat') loadChat(); else load();
         });
+        // A sideways swipe on a pane moves to the pane beside it (the mockup's scroll-snap, note 6).
+        var touch = null;
+        d.addEventListener('touchstart', function (e) {
+            var p0 = e.touches && e.touches[0];
+            touch = p0 && e.target && e.target.closest && e.target.closest('.cv,.ov') ? { x: p0.clientX, y: p0.clientY } : null;
+        }, { passive: true });
+        d.addEventListener('touchend', function (e) {
+            var p1 = e.changedTouches && e.changedTouches[0];
+            var R = route();
+            if (!touch || !p1 || R.view !== 'chat') { touch = null; return; }
+            var to = swipeTo(R.pane, p1.clientX - touch.x, p1.clientY - touch.y);
+            touch = null;
+            if (to) win.location.hash = '#/s/' + R.id + '/' + to;
+        }, { passive: true });
         win.setInterval(function () { poll('home'); }, POLL_MS);
         win.setInterval(function () { poll('chat'); }, CHAT_MS);
         if (win.navigator && win.navigator.serviceWorker) win.navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function () { /* the page works without it */ });
@@ -1031,7 +1380,7 @@
 
     var api = {
         parseRoute: parseRoute, screen: screen, answersOf: answersOf, collect: collect, codeIn: codeIn, setLang: setLang, STR: STR,
-        turnsOf: turnsOf, stepsLine: stepsLine, dur: dur, SCREEN: SCREEN,
+        turnsOf: turnsOf, stepsLine: stepsLine, dur: dur, SCREEN: SCREEN, swipeTo: swipeTo, PANES: PANES,
     };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     if (w) w.FK_M = api;

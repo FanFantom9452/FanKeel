@@ -33,22 +33,22 @@ const count = (html, re) => (html.match(re) || []).length;
 
 test('parseRoute: home, a session, the old gate and task links, done, pair', () => {
     assert.deepEqual(P.parseRoute(''), { view: 'home', id: null, pair: null });
-    assert.deepEqual(P.parseRoute('#/s/aaaaaaaa-2'), { view: 'chat', id: 'aaaaaaaa-2', pair: null });
-    assert.deepEqual(P.parseRoute('#/gate/aaaaaaaa-1'), { view: 'chat', id: 'aaaaaaaa-1', pair: null });
-    assert.deepEqual(P.parseRoute('#/task/aaaaaaaa-1'), { view: 'chat', id: 'aaaaaaaa-1', pair: null });
+    assert.deepEqual(P.parseRoute('#/s/aaaaaaaa-2'), { view: 'chat', id: 'aaaaaaaa-2', pair: null, pane: 'talk' });
+    assert.deepEqual(P.parseRoute('#/gate/aaaaaaaa-1'), { view: 'chat', id: 'aaaaaaaa-1', pair: null, pane: 'talk' });
+    assert.deepEqual(P.parseRoute('#/task/aaaaaaaa-1'), { view: 'chat', id: 'aaaaaaaa-1', pair: null, pane: 'talk' });
     assert.deepEqual(P.parseRoute('#/done'), { view: 'done', id: null, pair: null });
     assert.deepEqual(P.parseRoute('#/pair/abcd2345'), { view: 'home', id: null, pair: 'ABCD2345' });
 });
 
 test('home: 等你答 first, then holding, running and background, then idle, under three counts', () => {
-    const html = P.screen(HOME, P.parseRoute('#/'), NOW, APP);
+    const html = P.screen(HOME, P.parseRoute('#/'), NOW, Object.assign({ open: { 'sc:aaaaaaaa-2': true, 'sc:aaaaaaaa-3': true } }, APP));
     assert.match(html, /data-block="m-home-a"/);
-    const order = ['ha-ask', 'ha-list', 'ha-idle'].map((c) => html.indexOf('class="' + c));
+    const order = ['m-home-ask', 'm-home-run', 'm-home-idle'].map((b) => html.indexOf('data-block="' + b + '"'));
     assert.ok(order.every((i, k) => i > 0 && (k === 0 || i > order[k - 1])), String(order));
-    assert.equal(count(html, /<span class="st ask">/g), 1);
+    assert.equal(count(html, /<div class="sc ask">/g), 1);
     assert.ok(html.indexOf('aaaaaaaa-5') < html.indexOf('aaaaaaaa-2') && html.indexOf('aaaaaaaa-2') < html.indexOf('aaaaaaaa-3'));
     assert.match(html, /\+1 個/, 'a background row names two items and +N for the rest');
-    assert.match(html, /你：跑測試/);
+    assert.match(html, /<b>電腦<\/b>跑測試/);
 });
 
 test('each state draws its own screen block', () => {
@@ -192,7 +192,7 @@ test('English: the same keys in both tables, and no CJK left on home, a chat in 
     }
 });
 
-test('every class the page draws has a rule, the real page\'s overrides stay, and the old sheet and tab bar are gone', () => {
+test('every class the page draws has a rule, the real page\'s overrides stay, and the old sheet is gone', () => {
     const css = read('mobile.css') + read('station.css');
     const STATION = new Set(['dot', 'live', 'hm-stw', 'route', 'now', 'todo', 'pill', 'gate', 'gq-rec', 'glyph', 'gseg', 'done', 'gedge', 'gcore']);
     const R = P.parseRoute('#/s/aaaaaaaa-2');
@@ -211,7 +211,7 @@ test('every class the page draws has a rule, the real page\'s overrides stay, an
     assert.ok(mcss.includes('.vf video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}'));
     assert.ok(mcss.includes('.opt .own{'), 'the 自己寫 box is not hidden like the radios');
     assert.match(mcss, /@media \(prefers-reduced-motion:reduce\)\{/);
-    assert.doesNotMatch(mcss, /\.gest|\.mk|\.phone\{|\.cbar|\.shade|\.nt-|\.rm-|\.m-switch|\.tabbar|\.sheet/);
+    assert.doesNotMatch(mcss, /\.gest|\.mk|\.phone\{|\.cbar|\.shade|\.nt-|\.rm-|\.m-switch|\.sheet/);
 });
 
 // The page in a context of its own: a document with #app, a fake fetch, and

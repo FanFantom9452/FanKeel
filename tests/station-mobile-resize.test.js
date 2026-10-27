@@ -17,11 +17,11 @@ const sess = (state, extra) => Object.assign({ id: 'aaaaaaaa-2', root: '/w', tas
 const gate = (chat) => sess('gate', { chat, gate: { questions: Q, since: NOW - 60e3, until: NOW + 240e3 } });
 const APP = { mode: 'app' };
 
-test('home header: two lines, the title and history first, the host chip second', () => {
+test('home header: the title and the host pill on the first line, the counts on the second', () => {
     const html = P.screen(HOME, P.parseRoute('#/'), NOW, APP);
     assert.match(html, /<header class="ab ab2"><div class="ab-1"><h1>/);
-    assert.ok(html.indexOf('class="ha-hist"') < html.indexOf('class="ab-2"'), 'history is on the first line');
-    assert.ok(html.indexOf('class="ab-2"') < html.indexOf('class="host"'), 'the host is on the second');
+    assert.ok(html.indexOf('class="host"') < html.indexOf('class="ab-2"'), 'the host is on the first line');
+    assert.ok(html.indexOf('class="ab-2"') < html.indexOf('class="ha-sum"'), 'the counts are on the second');
 });
 
 test('a gate conversation pins the question between the header and the log, with a 看選項 button', () => {
@@ -56,10 +56,9 @@ test('both languages carry the new strings', () => {
 });
 
 test('mobile.css has the phone reading sizes, the two-line header and the pinned question', () => {
-    for (const r of ['body.m .ha-t{', 'body.m .ha-prev{', 'body.m .ab.ab2{', 'body.m .ab2 .host{', 'body.m .gpin{', 'body.m .gpin-q{', 'body.m .rep .bub{', 'body.m .rep.open .bub{', 'body.m .gopts .opt{']) {
+    for (const r of ['body.m .ab.ab2{', 'body.m .ab2 .host{', 'body.m .gpin{', 'body.m .gpin-q{', 'body.m .rep .bub{', 'body.m .rep.open .bub{', 'body.m .gopts .opt{']) {
         assert.ok(CSS.includes('\n' + r), r);
     }
-    assert.match(CSS, /body\.m \.ha-t\{font-size:16px;line-height:1\.55/);
     assert.match(CSS, /body\.m \.gopts \.opt\{min-height:64px/);
 });
 

@@ -174,7 +174,7 @@ test('the phone home draws one 等你答 chip for each gate /station/mobile.json
     assert.deepEqual(json.gates.map((g) => g.id), [ONE, TWO]);
     const P = require('../assets/station/mobile.js');
     const html = P.screen(json, P.parseRoute('#/'), json.at, { mode: 'app' });
-    assert.equal((html.match(/<span class="st ask">/g) || []).length, json.gates.length);
+    assert.equal((html.match(/<div class="sc ask">/g) || []).length, json.gates.length);
 }));
 
 test('a session that stopped while its gate holds is drawn in its own group on the phone home', () => served(true, async (s) => {
@@ -188,6 +188,6 @@ test('a session that stopped while its gate holds is drawn in its own group on t
     assert.deepEqual(json.stopped.map((x) => x.id), [GONE]);
     const P = require('../assets/station/mobile.js');
     const html = P.screen(json, P.parseRoute('#/'), json.at, { mode: 'app' });
-    assert.match(html, /class="ha-gone/);
+    assert.match(html, /data-block="m-home-gone"/);
     assert.ok(html.includes('href="#/s/' + GONE + '"'));
 }));
