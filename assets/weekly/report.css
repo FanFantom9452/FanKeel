@@ -65,6 +65,9 @@ ul, ol { padding: 0; }
 .report-head .meta > *, .report-head .meta li { min-width: 0; }
 .report-head .title-row > * { min-width: 0; }
 .stories, .story > *, .stories-foot { min-width: 0; overflow-wrap: anywhere; }
+/* a long unbroken word (a path, an English term) wraps instead of widening the page */
+.page { overflow-wrap: anywhere; }
+.page section, .panel, .event, .event > *, .event dl > *, .arch-h > *, .arch-read > *, .hrow > *, .carry .r > *, .next .r > * { min-width: 0; }
 
 /* section head: a number, the title, one line of lead */
 .sec-h { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 14px; align-items: baseline; padding: 18px 2px 4px; }

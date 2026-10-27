@@ -137,3 +137,18 @@ test('report.css lets the header project chips wrap on a narrow page', () => {
     assert.match(rule, /min-width:\s*0/);
     assert.match(reportCss, /\.page\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/);
 });
+
+test('a header chip shows the name and the tagline, the long project line only as its tooltip', async () => {
+    const html = await wr.render(data(), events({ projects: { demo: '一段很長很長的專案說明文字' }, taglines: { demo: '示範用' } }), opts);
+    assert.ok(html.includes('<li class="proj-chip" title="一段很長很長的專案說明文字"><b>demo</b>示範用</li>'));
+    assert.doesNotMatch(html, /<\/b>一段很長/);
+});
+
+test('a header chip without a tagline shows the name only, never the project line', async () => {
+    const html = await wr.render(data(), events({ projects: { demo: '一段很長很長的專案說明文字' } }), opts);
+    assert.ok(html.includes('<li class="proj-chip" title="一段很長很長的專案說明文字"><b>demo</b></li>'));
+});
+
+test('the guard walks the taglines', () => {
+    assert.deepEqual(wr.guard(events({ taglines: { demo: '工作 Session' } }), []), [{ where: 'taglines.demo', word: 'session' }]);
+});

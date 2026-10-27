@@ -67,6 +67,7 @@ Write `<scratch>/events.json` — every key below; `labels`, `times` and
 
     {
       "projects": { "<repo>": "…" },
+      "taglines": { "<repo>": "…" },
       "summary": [{ "repo": "<repo>", "title": "…", "text": "…" }],
       "events": [{ "title": "…", "repo": "<repo>", "status": "done", "point": "…",
                    "did": "…", "why": "…", "next": "…", "evidence": "…",
@@ -82,7 +83,9 @@ Write `<scratch>/events.json` — every key below; `labels`, `times` and
 How each field is written:
 
 - **`projects`** — for each picked repository, one line on what the project
-  is, for a reader who has never seen it.
+  is, for a reader who has never seen it; the header chip's tooltip.
+- **`taglines`** — optional: at most 14 characters per repository, printed
+  after its name in the header chip.
 - **One event per record**; records sharing a title (a weekly 盤點, say)
   become one event with `count` set to how many. A repository with no
   records gives one event per scope group. An open session is one event
