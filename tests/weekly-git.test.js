@@ -87,3 +87,49 @@ test('lsFiles lists the tracked paths with forward slashes', () => {
     const files = wg.lsFiles(repo());
     assert.ok(files.includes('src/core/a.js') && files.includes('docs/guide.md') && !files.includes('src/api/a.js'));
 });
+
+test('newPath: a rename across top-level directories, into a subdirectory and back out keeps the new path', () => {
+    const dir = makeRepo(path.join(tmp('fankeel-weekly-git-mv-'), 'demo'), [
+        { date: '2026-02-01', subj: 'chore: seed', files: { 'src/m.js': lines(10, 'm'), 'top.js': lines(10, 't'), 'src/n.js': lines(10, 'n') } },
+        { date: '2026-02-02', subj: 'refactor: across', mv: [['src/m.js', 'lib/m.js']] },
+        { date: '2026-02-03', subj: 'refactor: whole path', mv: [['top.js', 'sub/c.js']] },
+        { date: '2026-02-04', subj: 'refactor: into', mv: [['src/n.js', 'src/x/n.js']] },
+        { date: '2026-02-05', subj: 'refactor: out', mv: [['src/x/n.js', 'src/n.js']] },
+    ]);
+    const only = (d) => wg.commits(dir, d, d)[0].files.map((f) => f.p);
+    assert.deepEqual(only('2026-02-02'), ['lib/m.js']);
+    assert.deepEqual(only('2026-02-03'), ['sub/c.js']);
+    assert.deepEqual(only('2026-02-04'), ['src/x/n.js']);
+    assert.deepEqual(only('2026-02-05'), ['src/n.js']);
+});
+
+test('gitattributes patterns: ? is one non-slash char, a leading / anchors, trailing / is a directory, **/ is any depth, metacharacters are literal, a match covers what is under it', () => {
+    const k = (p, pat) => wg.kindOf(p, { attrs: [pat] });
+    assert.equal(k('a1.bin', 'a?.bin'), 'data');
+    assert.equal(k('a12.bin', 'a?.bin'), 'code');
+    assert.equal(k('a/.bin', 'a?.bin'), 'code');
+    assert.equal(k('top.bin', '/top.bin'), 'data');
+    assert.equal(k('deep/top.bin', '/top.bin'), 'code');
+    assert.equal(k('deep/top.bin', 'top.bin'), 'data');
+    assert.equal(k('gen/a.js', 'gen/'), 'data');
+    assert.equal(k('src/gen/a.js', 'gen/'), 'data');
+    assert.equal(k('a/b/gen.js', 'a/**/gen.js'), 'data');
+    assert.equal(k('a/gen.js', 'a/**/gen.js'), 'data');
+    assert.equal(k('ab/gen.js', 'a/**/gen.js'), 'code');
+    assert.equal(k('a+b.js', 'a+b.js'), 'data');
+    assert.equal(k('aab.js', 'a+b.js'), 'code');
+    assert.equal(k('axb.js', 'a.b.js'), 'code');
+    assert.equal(k('out/x', 'out'), 'data');
+    assert.equal(k('outer/x', 'out'), 'code');
+    assert.equal(k('a.c', '*.[ch]'), 'code');
+});
+
+test('kindOf: a data extension turns to data above 1000 lines only, case-insensitively, and docs/ is a whole directory name', () => {
+    assert.equal(wg.kindOf('x.json', { lines: 1000 }), 'code');
+    assert.equal(wg.kindOf('x.json', { lines: 1001 }), 'data');
+    assert.equal(wg.kindOf('X.CSV', { lines: 1001 }), 'data');
+    assert.equal(wg.kindOf('X.CSV', { lines: 5 }), 'code');
+    assert.equal(wg.kindOf('docs/a.txt'), 'doc');
+    assert.equal(wg.kindOf('mydocs/a.txt'), 'code');
+    assert.equal(wg.kindOf('src/docs/a.txt'), 'doc');
+});
