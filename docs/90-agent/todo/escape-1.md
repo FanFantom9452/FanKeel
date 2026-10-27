@@ -38,3 +38,5 @@ stamp: 2026-10-20
 第 1 步的第一次全機掃描（2026-10-20，`node scripts/escape-scan.js`，8877 份 transcript）：AskUserQuestion 1161 次中 11 次被標出（0.95%）；Write 1358 次中 33 次（2.43%，大多是寫進 regex 程式碼裡的區塊邊界字，偏高）；使用者的 prompt 7149 則中 68 則（0.95%）；「饋」被標了 19 次；__unparsedToolInput 2 次。第 2–4 步已在 2026-10-20 落地（ALWAYS[3] 改寫、控制區塊與 brief 帶規則、AskUserQuestion 錯字退回一次），一週後用同一支腳本重量比較。
 
 2026-10-20 一週後的重量(`node scripts/escape-scan.js`,9070 份 transcript):AskUserQuestion 1213 次中 11 次(0.93%);Write 2152 次中 34 次(2.32%);update_plan 356 次中 0 次;wrap_up 178 次中 0 次;使用者的 prompt 19460 則中 82 則(1.13%);__unparsedToolInput 2 次。這還不是乾淨的修後數字:`--since` 只收日期、當成 UTC 午夜,而修正在 2026-10-19T17:24Z 落地(commit 64d9e5a6),這次掃描離落地約 3 小時;`--since 2026-10-19` 得 AskUserQuestion 2/106(兩筆都是「瑋」),但前後混在一起。所以這是第二個基準點,2026-10-27 重量時必須以落地時間為界切開。
+
+2026-10-27 重量（以 2026-10-19T17:24Z、commit 64d9e5a6 落地時間切開，`node scripts/escape-scan.js --since 2026-10-19T17:24:00Z`）：AskUserQuestion 安靜錯字 2/1137（0.18%，修前 11/1161 即 0.95%）、`__unparsedToolInput` 0（修前 2）、wrap_up 0/448。兩項都比第 1 步少，完成條件成立，land 時結案。
