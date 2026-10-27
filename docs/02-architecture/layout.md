@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-10-21
+last_verified: 2026-10-27
 source_of_truth: .claude-plugin/plugin.json, hooks/hooks.json, lib/map.js, scripts/layout.js
 ---
 
@@ -16,6 +16,25 @@ calls, `scripts/` is what a person or a skill runs, and `lib/` is what both of
 them call.
 `node scripts/layout.js` prints the half of this a listing can derive; the
 right-hand column is the half it cannot.
+
+```mermaid
+flowchart LR
+  U[user] --> SK[skills: fankeel and one per stage]
+  SK --> BR[stage agent]
+  BR --> RD[readers, implementers, reviewers]
+  RD --> HO[handoff report]
+  HO --> GT[gate question]
+  GT --> U
+  HK[hooks] -. inject rules, guard edits .-> RD
+  HK --> LIB[lib]
+  SC[scripts] --> LIB
+  SK --> SC
+  LIB --> ST[station page and server]
+  ST --> U
+  ST --> CR[lib/chartroom]
+  LIB --> WK[weekly report]
+  WK --> CR
+```
 
 ```
 fankeel/
@@ -47,7 +66,7 @@ fankeel/
 │   ├── docs.js        docs.json: buckets, roles, and which pages may be out of date
 │   ├── onboard.js     the three cheap onboarding checks task.js start runs on a task's project
 │   ├── sensitive.js   the words in .fankeel/sensitive.txt, found in what a commit carries
-│   ├── station.js     the station's model: finding every registry, the rows, the data and detail scripts; detail.js takes one session apart, cached by its files' size and mtime; mobile.js and phone.js are the phone page's data and its channel to a session
+│   ├── station.js     the station's model: finding every registry, the rows, the data and detail scripts; detail.js takes one session apart, cached by its files' size and mtime; mobile.js and phone.js are the phone page's data and its channel to a session; board.js lists a task's Chartroom .board files and board-edit.js applies the gate page's edits to them, drawn by the vendored chartroom/ (core/ 6, geometry/ 7, dynamic import() only); weekly-*.js are the weekly report (git, collect, modules, render, store)
 │   ├── usage.js       what a transcript spent: requests, models, agents and every dispatch; replay.js is a session's events in time order, and one agent's own steps
 │   ├── plantasks.js   a plan's tasks, and which of them may run at once
 │   ├── handoff.js     a stage agent's report and the user's answer, under .fankeel/build/task-<started>/
@@ -60,7 +79,7 @@ fankeel/
 │   ├── layout.js      prints the half of this tree a listing can derive
 │   ├── survey.js      what already exists here, for the survey stage
 │   ├── ledger.js      the build ledger: init, complete, groups, lint, brief
-│   ├── station.js     writes the station page, or serves it live
+│   ├── station.js     writes the station page, or serves it live; board.js checks a .board before it is handed on, weekly.js is the weekly report's command line
 │   ├── docs-check.js  every reference in the documents still resolves
 │   ├── docs-audit.js  which pages stopped being true, and which two disagree
 │   ├── residue.js     what is in the tree that nobody decided about
