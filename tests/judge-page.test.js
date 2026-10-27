@@ -76,6 +76,12 @@ test('pageOf is one self-contained page: the plain summary first, the station to
     assert.ok(!/<script|<link|src="http/i.test(html), 'the page reaches outside itself');
 });
 
+test('pageOf shows the 白話 section once, in the aside, not again in the body', async () => {
+    const html = await pageOf('# q\n\n## 白話\n\n選 b。就像搭車少轉一次。\n\n## Summary\n\nbody text\n', {});
+    assert.equal(html.split('就像搭車少轉一次').length - 1, 1);
+    assert.match(html, /body text/);
+});
+
 test('a board that does not parse is shown as a note, and the page is still written', async () => {
     const html = await pageOf('# q\n\n```chartroom\nnot json\n```\n', {});
     assert.match(html, /<figure class="board"><pre class="bad">這張圖畫不出來：/);
