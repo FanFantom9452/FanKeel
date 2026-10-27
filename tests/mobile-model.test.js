@@ -40,7 +40,7 @@ test('tasks: the running ones, newest first, each saying whether a gate waits', 
     ]), NOW, 'ymlab-pc');
     assert.deepEqual(m.tasks.map((x) => [x.id, x.gate, x.project]), [['new', false, 'sub'], ['old', true, 'fankeel']]);
     assert.equal(m.tasks[0].updated, NOW - 5e3);
-    assert.deepEqual(Object.keys(m.tasks[0]).sort(), ['attached', 'background', 'gate', 'id', 'last', 'project', 'root', 'route', 'stage', 'state', 'task', 'updated']);
+    assert.deepEqual(Object.keys(m.tasks[0]).sort(), ['attached', 'background', 'gate', 'holdUntil', 'id', 'last', 'project', 'root', 'route', 'stage', 'state', 'task', 'updated']);
 });
 
 test('a row takes its state from the look it is given, and phoneModel answers one session', () => {
@@ -100,8 +100,8 @@ test('a project station.hide takes off the phone too, and nothing private rides 
     assert.deepEqual(m.tasks.map((g) => g.id), ['shown']);
     const text = JSON.stringify(m);
     assert.ok(!text.includes('lib/private.js') && !text.includes('"private"'), 'claims and notes stay on this machine');
-    assert.deepEqual(mobile.mobileModel({ registries: [] }, NOW, 'h'), { host: 'h', at: NOW, gates: [], tasks: [], stopped: [], done: [] });
-    assert.deepEqual(mobile.mobileModel(null, NOW, null), { host: '', at: NOW, gates: [], tasks: [], stopped: [], done: [] });
+    assert.deepEqual(mobile.mobileModel({ registries: [] }, NOW, 'h'), { host: 'h', at: NOW, device: null, gates: [], tasks: [], stopped: [], done: [] });
+    assert.deepEqual(mobile.mobileModel(null, NOW, null), { host: '', at: NOW, device: null, gates: [], tasks: [], stopped: [], done: [] });
 });
 
 test('the /m shell: the keel look, its manifest and icon, both stylesheets, the phone script', () => {
@@ -109,7 +109,7 @@ test('the /m shell: the keel look, its manifest and icon, both stylesheets, the 
     assert.match(html, /^<!doctype html>/);
     assert.match(html, /<html lang="zh-Hant" data-style="keel">/);
     assert.match(html, /<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">/);
-    assert.match(html, /<meta name="theme-color" content="#2d5bd8">/);
+    assert.match(html, /<meta name="theme-color" media="\(prefers-color-scheme: dark\)" content="#10151d">/);
     assert.match(html, /<link rel="manifest" href="\/m\/manifest\.webmanifest">/);
     assert.match(html, /<link rel="icon" href="\/m\/icon\.svg" type="image\/svg\+xml">/);
     const a = html.indexOf('href="/station/station.css"');
@@ -121,7 +121,7 @@ test('the /m shell: the keel look, its manifest and icon, both stylesheets, the 
 test('the manifest installs /m standalone with its one svg icon', () => {
     assert.deepEqual(JSON.parse(mobile.manifest()), {
         name: 'fankeel 測站', short_name: 'fankeel', id: '/m', start_url: '/m', scope: '/', display: 'standalone',
-        background_color: '#f2f4f3', theme_color: '#2d5bd8', icons: [{ src: '/m/icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' }],
+        background_color: '#f2f4f3', theme_color: '#10151d', icons: [{ src: '/m/icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' }],
     });
 });
 

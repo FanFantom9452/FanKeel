@@ -62,6 +62,7 @@ const qr = require('../lib/qr.js');
 const os = require('node:os');
 const mobile = require('../lib/mobile.js');
 const phone = require('../lib/phone.js');
+const contextLib = require('../lib/context.js');
 const view = require('../assets/station/station.js');
 
 const PLUGIN = path.resolve(__dirname, '..');
@@ -969,7 +970,7 @@ async function serve(opts) {
             // tailnet is on, by its hostname otherwise.
             const model = sharedModel();
             const host = (tailnet.on && tailnet.dnsName ? tailnet.dnsName.split('.')[0] : '') || os.hostname();
-            const body = mobile.mobileModel(model, Date.now(), host, station.hiddenPkeys(model), phone.snapshot);
+            const body = mobile.mobileModel(model, Date.now(), host, station.hiddenPkeys(model), phone.snapshot, device);
             return send(200, 'application/json', JSON.stringify(body), noStore);
         }
         if (req.method === 'GET' && url.pathname === '/station/phone.json') {
@@ -977,6 +978,11 @@ async function serve(opts) {
             const model = sharedModel();
             const got = mobile.phoneModel(model, url.searchParams.get('id') || '', Date.now(), station.hiddenPkeys(model), phone.snapshot);
             if (!got) return fail(404, 'no such session on this station');
+            // The TokenBar: this session's last usage against its profile's compact.at, and the
+            // newest 5h / 7d row hooks/pane.ts wrote for it. quota.js's limitsText reads every
+            // session's file in the root, so only this one's tail is read here.
+            got.context = mobile.contextOf(contextLib.inspect(detail.transcriptOf(configDir, got.id)), profile.read(got.root, configDir).values['compact.at']);
+            got.limits = mobile.limitsOf(contextLib.readTail(path.join(got.root, '.fankeel', 'build', 'limits', got.id + '.jsonl'), 16 * 1024));
             return send(200, 'application/json', JSON.stringify(got), noStore);
         }
         // A photo from the phone's answer box: the raw body, saved under the
