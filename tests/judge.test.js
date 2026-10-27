@@ -184,3 +184,21 @@ test('the stage agent sends every reader with run_in_background: false', () => {
     assert.match(tools, /Every `fankeel:fankeel-reader` goes out with\s+`run_in_background: false`/);
     assert.match(tools, /returns to you as a tool result/);
 });
+
+// judge-5: the judge writes its plain summary under ## 白話, and the ask skill
+// relays record's plain: block and says how a brief asks for the HTML page.
+test('the judge writes a ## 白話 section, and the ask skill relays record\'s plain: block and names html: yes', () => {
+    const agent = fs.readFileSync(path.join(__dirname, '..', 'agents', 'fankeel-judge.md'), 'utf8');
+    const skill = fs.readFileSync(path.join(__dirname, '..', 'skills', 'fankeel-ask', 'SKILL.md'), 'utf8');
+    assert.match(agent, /^## 白話$/m);
+    assert.match(agent, /html: yes/);
+    assert.match(agent, /```chartroom/);
+    assert.match(skill, /html: yes/);
+    assert.match(skill, /plain:/);
+    assert.match(skill, /judge\.js html/);
+    assert.ok(!/four lines/.test(skill), 'the skill still says the reply is four lines');
+    assert.match(skill, /then a `## 白話`/);
+    assert.match(agent, /then the plain section, then the summary/);
+    const ref = fs.readFileSync(path.join(__dirname, '..', 'docs', '90-agent', 'reference', 'subagents.md'), 'utf8');
+    assert.match(ref, /`## 白話` that `judge\.js record` prints/);
+});

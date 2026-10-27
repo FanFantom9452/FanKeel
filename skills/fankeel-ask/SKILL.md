@@ -4,7 +4,7 @@ description: Interrupt the stage you are in and put one question to a stronger m
 argument-hint: "[the question, in one line]"
 version: 0.127.0
 status: current
-last_verified: 2026-10-18
+last_verified: 2026-10-28
 source_of_truth: scripts/judge.js
 ---
 
@@ -65,6 +65,10 @@ the stage produces; it does not approve it.
    and dashes. It holds the question, its options, the background that would
    otherwise sit in the dispatch stem, the paths the judge needs to read,
    what counts as an answer, and the shape the answer should come back in.
+   Add a line reading exactly `html: yes` when the answer is a comparison
+   table, figures or an architecture the user should see drawn: `record`
+   then writes a self-contained HTML page beside the record, any ```chartroom
+   fence in the judge's summary drawn as a picture.
    `build/` is already in `.fankeel/.gitignore`, so this adds no new ignored
    name.
    On a controlled stage the guard refuses every other controller write but
@@ -77,8 +81,8 @@ the stage produces; it does not approve it.
    that sends it — one judge, on whatever `judge.model` answered. The judge
    writes a checklist of what it must find out, sends at most eight
    `fankeel:fankeel-reader` (`dispatch.inflight`) in that same response, related
-   lines to one reader, on sonnet, or opus where one figure decides the pick, and returns six fields
-   with a `## Summary` of any length after them; `delegated:` says which
+   lines to one reader, on sonnet, or opus where one figure decides the pick, and returns six fields,
+   then a `## 白話` of at most 600 characters, then a `## Summary` of any length; `delegated:` says which
    reader read what.
 3. **Record the answer verbatim:**
 
@@ -109,11 +113,18 @@ the stage produces; it does not approve it.
    `tasks/<id>.output` of a background dispatch is 0 bytes, so it is never the
    source. `--answer <path|->` still takes the text directly, and `record`
    refuses any answer, from either flag, with no `pick:` line.
+
+   After the filed line, `record` prints `plain:` and the judge's `## 白話`
+   section, cut at 600 characters (`PLAIN_MAX`, `lib/judgepage.js`), or
+   `plain: none — …` when the answer has none. Where the brief said
+   `html: yes` it also prints `html: <path>`, the page it wrote;
+   `node <plugin>/scripts/judge.js html <judgement.md>` draws that page again
+   for a record already filed.
 4. **Say what the stage accepted, in one line, and carry on.** Name the file
    the record landed in. At the next gate, option one's description names it
    too, so approving the stage's output also shows what it was decided on.
    Carrying on happens in this same turn: where the ask also started the task,
-   the stage's own work follows the four lines instead of waiting to be told.
+   the stage's own work follows the reply instead of waiting to be told.
 
 ## When it is worth the money
 
@@ -132,9 +143,14 @@ not fixed:
 judged: <the question, one line>
 model: <what judge.model said>
 filed: docs/judgements/<date>-<slug>.md
+html: <the page record wrote — only when the brief said html: yes>
 accepted: <what the stage now does differently, one line>
+
+<the plain: block record printed, copied as it came>
 ```
 
-The reply here is the four lines shown. The judgement itself, with its six
-fields and its `## Summary`, is in the file; repeating it here spends the
-context the one-shot shape was protecting.
+The reply is those lines and the `plain:` block, copied rather than retyped:
+it is the judge's own plain words, already capped, and it is what lets the
+user say the pick and its main reason without asking again. The six fields
+and `## Summary` stay in the file; repeating them here spends the context the
+one-shot shape was protecting.

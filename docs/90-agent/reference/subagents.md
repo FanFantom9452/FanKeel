@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-10-18
+last_verified: 2026-10-28
 source_of_truth: hooks/brief.js, lib/render.js, lib/stages.js, hooks/carry.js, lib/plantasks.js, lib/requires.js, lib/usage.js, lib/prices.js, scripts/judge.js, scripts/await.js, scripts/commit.js
 ---
 
@@ -160,7 +160,8 @@ response, sends at most eight `fankeel:fankeel-reader` (`dispatch.inflight`),
 giving related lines to one reader (sonnet, or opus when one
 figure or sentence decides the pick); it opens one cited `path:line` per reader
 in one more response; and it returns six fields, `delegated:` and `checklist:`
-among them, followed by a `## Summary` of any length. The other is "findings and conclusions, not a narration of what
+among them, then a short plain-language `## 白話` that `judge.js record` prints
+back to the session, then a `## Summary` of any length. The other is "findings and conclusions, not a narration of what
 you read" (`RETURN_RULES[0]`), because it pulls against the judge's `## Summary`
 of what each reader found and what the spot-checks showed. It sends no
 `Workflow`: a subagent's tool list has none.

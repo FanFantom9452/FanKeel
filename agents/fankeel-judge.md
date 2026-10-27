@@ -5,7 +5,7 @@ tools: [Read, Grep, Glob, Bash, Agent]
 model: fable
 effort: xhigh
 status: current
-last_verified: 2026-10-18
+last_verified: 2026-10-28
 source_of_truth: lib/render.js
 ---
 
@@ -52,7 +52,8 @@ its content is inlined in your brief.
 
 ## Return
 
-These six fields, in this order, then the summary, nothing before:
+These six fields, in this order, then the plain section, then the summary,
+nothing before:
 
 ```text
 pick: <one option, or the answer in one line>
@@ -62,6 +63,23 @@ unread: <what the brief named that you did not open, or "nothing">
 delegated: <each path a reader read, with its model, or "nothing">
 checklist: <each checklist line, marked answered or not>
 ```
+
+Then a section headed exactly:
+
+```text
+## 白話
+```
+
+for the person who asked, in their language: the pick in one plain sentence
+first, then why, with an everyday comparison or example before any term — at
+most six lines and 600 characters, no `path:line`, no reader names, the rules
+of `docs/90-agent/reference/plain-language.md`. `judge.js record` prints this
+section back to the session as the reply's body, cut at 600 characters
+(`PLAIN_MAX`, `lib/judgepage.js`), so it is what the user reads first.
+
+Where the brief says `html: yes`, the summary may carry one ```chartroom
+fence — a board in `lib/chartroom/`'s line format, one JSON object a line —
+and `judge.js record` draws it into the HTML page it writes beside the record.
 
 Then a section headed exactly:
 
