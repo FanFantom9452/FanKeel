@@ -173,23 +173,27 @@ const SRC = fs.readFileSync(path.join(ASSETS, 'mobile.js'), 'utf8');
 const reply = (status, body) => Promise.resolve({ status, ok: status >= 200 && status < 300, json: () => Promise.resolve(body), text: () => Promise.resolve(typeof body === 'string' ? body : JSON.stringify(body)) });
 const settle = () => new Promise((r) => setTimeout(r, 30));
 function boot(hash, one) {
-    const app = { innerHTML: '' };
+    let html = '';
+    const writes = { app: 0 };
+    const app = { get innerHTML() { return html; }, set innerHTML(v) { html = v; writes.app++; } };
     const tkb = { innerHTML: '' };
+    const pane = { innerHTML: '', scrollHeight: 0, scrollTop: 0, clientHeight: 0 };
     const on = { doc: {}, win: {} };
     const calls = [];
     const listen = (where) => (type, fn) => { (on[where][type] = on[where][type] || []).push(fn); };
     const doc = { getElementById: (id) => (id === 'app' ? app : null), documentElement: {}, body: { insertAdjacentHTML() {} },
-        addEventListener: listen('doc'), querySelector: (s) => (s === '.tkb' ? tkb : null), visibilityState: 'visible' };
+        addEventListener: listen('doc'), querySelector: (s) => (s === '.tkb' ? tkb : s === '.cv' || s === '.ov' ? pane : null), visibilityState: 'visible' };
     const win = { document: doc, location: { hash }, navigator: { language: 'zh-TW', userAgent: 'x' },
         localStorage: { getItem: () => null, setItem() {} }, addEventListener: listen('win'), setInterval() {}, setTimeout, URLSearchParams,
         fetch: (url, init) => { calls.push({ url, init: init || {} }); return url === '/station/mobile.json' ? reply(200, HOME) : url.startsWith('/station/phone.json') ? reply(200, one) : reply(201, ''); } };
     vm.runInNewContext(SRC, { window: win });
     const fire = (where, type, e) => { (on[where][type] || []).forEach((fn) => fn(e)); return e; };
-    return { app, tkb, win, calls, fire: (type, e) => fire('doc', type, e || {}), fireWin: (type, e) => fire('win', type, e || {}) };
+    return { app, tkb, pane, writes, win, calls, fire: (type, e) => fire('doc', type, e || {}), fireWin: (type, e) => fire('win', type, e || {}) };
 }
-const tap = (attrs) => {
+// inside: the press is on a row of the pane (.cv or .ov), the way a finger on a pane row is.
+const tap = (attrs, inside) => {
     const el = { getAttribute: (a) => (Object.prototype.hasOwnProperty.call(attrs, a) ? attrs[a] : null) };
-    el.closest = (s) => (s === '.cv,.ov' ? null : el);
+    el.closest = (s) => (s === '.cv,.ov' ? (inside ? {} : null) : el);
     return { target: el, preventDefault() {} };
 };
 
@@ -227,4 +231,41 @@ test('boot: 交還電腦 in the sheet detaches the session it names and reads th
     assert.equal(sent.length, 1);
     assert.equal(sent[0].init.body, new URLSearchParams({ root: '/w', id: 'aaaaaaaa-5' }).toString());
     assert.ok(page.calls.filter((c) => c.url === '/station/mobile.json').length > reads);
+});
+
+test('boot: a pane row opens in place, the pane is written again and the screen, composer included, is not', async () => {
+    const page = boot('#/s/aaaaaaaa-5/timeline', sess('holding'));
+    await settle();
+    const drawn = page.writes.app;
+    const key = 'ov:design:' + HOME.done[1].at;
+    page.fire('click', tap({ 'data-act': 'fold', 'data-key': key }, true));
+    assert.equal(page.writes.app, drawn, 'no full redraw');
+    assert.match(page.pane.innerHTML, new RegExp('data-key="' + key + '" aria-expanded="true"'));
+    page.fire('click', tap({ 'data-act': 'fold', 'data-key': key }));
+    assert.equal(page.writes.app, drawn + 1, 'a press outside the pane draws the screen');
+});
+
+const swipe = (page, from, to, onPane) => {
+    page.fire('touchstart', { target: { closest: () => (onPane === false ? null : {}) }, touches: [{ clientX: from[0], clientY: from[1] }] });
+    page.fire('touchend', { changedTouches: [{ clientX: to[0], clientY: to[1] }] });
+};
+
+test('boot: a sideways swipe that starts on a pane moves the hash to the pane beside it', async () => {
+    const page = boot('#/s/aaaaaaaa-5', sess('holding'));
+    await settle();
+    swipe(page, [300, 200], [200, 205]);
+    assert.equal(page.win.location.hash, '#/s/aaaaaaaa-5/timeline');
+    swipe(page, [100, 200], [210, 200]);
+    assert.equal(page.win.location.hash, '#/s/aaaaaaaa-5/talk');
+});
+
+test('boot: a swipe that starts off a pane, or on a screen that is not a session, does not move', async () => {
+    const page = boot('#/s/aaaaaaaa-5', sess('holding'));
+    await settle();
+    swipe(page, [300, 200], [200, 205], false);
+    assert.equal(page.win.location.hash, '#/s/aaaaaaaa-5');
+    const home = boot('#/', sess('holding'));
+    await settle();
+    swipe(home, [300, 200], [200, 205]);
+    assert.equal(home.win.location.hash, '#/');
 });
