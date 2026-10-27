@@ -120,7 +120,14 @@ async function main(argv, opts) {
         }
         if (!data || !DAY.test(String(data.until)) || !Array.isArray(data.repos)) return usage('--data is not a data.json weekly.js collect wrote');
         const words = [];
-        for (const r of data.repos) for (const w of sensitive.readList(r.path).words) if (!words.includes(w)) words.push(w);
+        for (const r of data.repos) {
+            const list = sensitive.readList(r.path);
+            if (list.error) {
+                err('cannot read ' + path.join(r.path, '.fankeel', 'sensitive.txt') + ': ' + list.error);
+                return 2;
+            }
+            for (const w of list.words) if (!words.includes(w)) words.push(w);
+        }
         const hits = guard(events, words);
         if (hits.length) {
             for (const h of hits) err(h.where + ': ' + h.word);

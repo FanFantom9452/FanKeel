@@ -119,6 +119,26 @@ test('render refuses a word from a repository\'s .fankeel/sensitive.txt', async 
     assert.ok(r.err.includes('events[0].did: Acme'), r.err.join('\n'));
 });
 
+test('render exits 2 naming a sensitive.txt it cannot read, writes nothing; a missing list still renders', async () => {
+    const w = world();
+    const list = path.join(w.root, 'alpha', '.fankeel', 'sensitive.txt');
+    fs.mkdirSync(list, { recursive: true });
+    const data = await collected(w);
+    const ev = path.join(w.root, 'events.json');
+    fs.writeFileSync(ev, JSON.stringify(events('做查詢頁。')));
+    const out = path.join(w.root, 'out.html');
+    const r = await run(['render', '--events', ev, '--data', data, '--out', out], w);
+    assert.equal(r.code, 2);
+    assert.ok(r.err.some((s) => s.includes('cannot read ' + list + ': EISDIR')), r.err.join('\n'));
+    assert.equal(fs.existsSync(out), false);
+    assert.equal(fs.existsSync(path.join(w.cfg, 'fankeel', 'weekly')), false);
+    const w2 = world();
+    const data2 = await collected(w2);
+    const ev2 = path.join(w2.root, 'events.json');
+    fs.writeFileSync(ev2, JSON.stringify(events('做查詢頁。')));
+    assert.equal((await run(['render', '--events', ev2, '--data', data2], w2)).code, 0);
+});
+
 test('an unknown verb, a flag with no value or a missing input is a usage error', async () => {
     const w = world();
     assert.equal((await run(['nope'], w)).code, 2);
