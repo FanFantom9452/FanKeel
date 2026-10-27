@@ -135,6 +135,11 @@ test('launched: a child whose task-notification came back is not waiting; an un-
     assert.deepEqual(launched(transcript(asst('m1', [use('t1')]) + launch('t1', 'aa11') + note('t1'), T)), []);
 });
 
+test('launched: a task-notification delivered as an attachment entry also marks the child as returned', () => {
+    const attached = line({ attachment: { prompt: '<task-notification>\n<task-id>x</task-id>\n<tool-use-id>t1</tool-use-id>\n<status>completed</status>\n</task-notification>' } });
+    assert.deepEqual(launched(transcript(asst('m1', [use('t1')]) + launch('t1', 'aa11') + attached, T)), []);
+});
+
 test('await.js reads a brain whose children all reported back as lost, not stalled', async () => {
     const g = brain(asst('m1', [use('t1')]) + launch('t1', 'aa11') + note('t1') + asst('m2', [say('all done')]));
     const out = await awaitMain(['--session', SID, '--root', g.root, '--idle', '0.2'], g.env);
