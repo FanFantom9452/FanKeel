@@ -8,8 +8,9 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { awaitState, launched } = require('../lib/handoff.js');
-const { lineFor } = require('../scripts/await.js');
+const { awaitState, awaitHandoff, launched } = require('../lib/handoff.js');
+const awaitCli = require('../scripts/await.js');
+const { lineFor } = awaitCli;
 const tmp = require('./tmp.js');
 
 const T = 1800000000000;
@@ -34,6 +35,74 @@ test('launched: the background children a transcript dispatched, in order, once 
     assert.deepEqual(launched(transcript(WAITS + launch('t1', 'ac350022849c5b060'), T)), ['ac350022849c5b060']);
     assert.deepEqual(launched(transcript(asst('m1', [say('hi')]), T)), []);
     assert.deepEqual(launched(path.join(tmp('fankeel-await-stalled-'), 'none.jsonl')), []);
+});
+
+const result = (useId, text) => line({ type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: useId, content: text }] } });
+const useOf = (id, name, input) => ({ type: 'tool_use', id, name, input });
+
+test('launched: a foreground Agent result and agentId text read out of code are not launches', () => {
+    const fg = asst('m1', [useOf('f1', 'Agent', { prompt: 'x' })])
+        + result('f1', 'built it\nagentId: abc123 (use SendMessage to resume)\n<usage>total_tokens: 9</usage>')
+        + asst('m2', [useOf('f2', 'Agent', { prompt: 'x', run_in_background: false })])
+        + result('f2', 'agentId: def456\n<usage>total_tokens: 9</usage>');
+    assert.deepEqual(launched(transcript(fg, T)), [], 'foreground results');
+    const code = asst('m1', [useOf('t1', 'Read', { file_path: 'a.js' })]) + result('t1', 'const x = { agentId: o.agentId };');
+    assert.deepEqual(launched(transcript(code, T)), [], 'code text yields no id');
+    assert.deepEqual(launched(transcript(fg + WAITS, T)), ['ac350022849c5b060'], 'only the background launch among them counts');
+});
+
+test('launched: a result counts by its tool_use being a background Agent, or by its Async opening', () => {
+    const byUse = asst('m1', [use('t1')]) + result('t1', 'started\nagentId: aa11');
+    assert.deepEqual(launched(transcript(byUse, T)), ['aa11'], 'matched by tool_use_id');
+    const byText = result('gone', 'Async agent launched successfully.\nagentId: bb22 (internal ID)');
+    assert.deepEqual(launched(transcript(byText, T)), ['bb22'], 'its tool_use fell out of the tail');
+});
+
+test('awaitHandoff passes the waiting thunk through: stalled with it, lost without', async () => {
+    const f = transcript(WAITS, Date.now() - 600000);
+    const o = { handoff: path.join(path.dirname(f), 'build.md'), commit: [], since: 0, idleMs: 200, timeoutMs: 5000, activity: () => [f] };
+    assert.equal(await awaitHandoff({ ...o, waiting: () => ['ac35'] }), 'stalled');
+    assert.equal(await awaitHandoff({ ...o, waiting: () => [] }), 'lost');
+    assert.equal(await awaitHandoff(o), 'lost');
+});
+
+const SID = 'aaaaaaaa-0000-4000-8000-000000000001';
+function brain(body) {
+    const root = tmp('fankeel-await-stalled-root-');
+    fs.mkdirSync(path.join(root, '.fankeel', 'sessions'), { recursive: true });
+    fs.writeFileSync(path.join(root, '.fankeel', 'sessions', SID + '.json'), JSON.stringify({ active: true, stage: 'build', started: '2026-09-23T10:00:00.000Z',
+        moves: [['build', 1]], inflight: { stage: 'build', at: 1, agentId: 'a3f9c2' } }));
+    const config = tmp('fankeel-await-stalled-config-');
+    const session = path.join(config, 'projects', 'F--x');
+    fs.mkdirSync(session, { recursive: true });
+    fs.writeFileSync(path.join(session, SID + '.jsonl'), 'x\n');
+    fs.mkdirSync(path.join(session, SID, 'subagents'), { recursive: true });
+    const own = path.join(session, SID, 'subagents', 'agent-a3f9c2.jsonl');
+    fs.writeFileSync(own, body);
+    fs.utimesSync(own, (Date.now() - 600000) / 1000, (Date.now() - 600000) / 1000);
+    return { root, env: { CLAUDE_CONFIG_DIR: config }, task: path.join(root, '.fankeel', 'build', 'task-20260923T100000').replace(/\\/g, '/') };
+}
+
+test('await.js prints stalled with the children and their existing worktrees, and writes mode: stalled', async () => {
+    const g = brain(WAITS);
+    fs.mkdirSync(path.join(g.root, '.claude', 'worktrees', 'agent-ac350022849c5b060'), { recursive: true });
+    const out = await awaitCli.main(['--session', SID, '--root', g.root, '--idle', '0.2'], g.env);
+    assert.match(out.text, /^stalled a3f9c2 — it launched ac350022849c5b060 and/, out.text);
+    assert.match(out.text, /agent-ac350022849c5b060/, 'the worktree that exists is named');
+    assert.match(out.text, /Failure handoff: /);
+    const body = fs.readFileSync(g.task + '/build-failed.md', 'utf8');
+    assert.match(body, /^mode: stalled$/m);
+    assert.match(body, /^next: SendMessage the agent once; stalled again, stop it and dispatch a fresh one$/m);
+    const none = brain(WAITS);
+    const bare = await awaitCli.main(['--session', SID, '--root', none.root, '--idle', '0.2'], none.env);
+    assert.match(bare.text, /uncommitted worktrees: none\./, 'a worktree that is not on disk is not listed');
+});
+
+test('await.js reads a brain that ran only a foreground implementer as lost, not stalled', async () => {
+    const fg = asst('m1', [useOf('t1', 'Agent', { prompt: 'x' })]) + result('t1', 'done\nagentId: abc123\n<usage>total_tokens: 9</usage>') + asst('m2', [say('handing back')]);
+    const g = brain(fg);
+    const out = await awaitCli.main(['--session', SID, '--root', g.root, '--idle', '0.2'], g.env);
+    assert.match(out.text, /^lost a3f9c2 /, out.text);
 });
 
 test('awaitState: idle past idleMs with children launched is stalled', () => {
