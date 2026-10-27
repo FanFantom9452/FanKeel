@@ -278,8 +278,11 @@ written, `<the finding's own line> — PLAUSIBLE` when it could go either
 way and nothing in front of you settles it, or drop it — a dropped line is
 not returned at all, not marked and not counted.
 
-End with `verify: <N> confirmed, <M> plausible, <K> dropped.` A finding
-whose path or line no longer exists is dropped, never `PLAUSIBLE`.
+End with `verify: <N> confirmed, <M> plausible, <K> dropped.` A finding is
+dropped, never `PLAUSIBLE`, only when its path is outside the range or the
+code it describes cannot be found anywhere in the range. When the code is
+there but at another line, judge the claim as written (`CONFIRMED` or
+`PLAUSIBLE`) and return the line with its `path:line` corrected.
 
 ## Return
 
