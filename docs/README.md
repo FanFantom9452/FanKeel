@@ -754,6 +754,7 @@ is corrected by the next one, not by rewriting this.
 | Brief 38 — Which plugins and skills do recent sessions actually use, and which can go? | [90-agent/judgements/2026-10-26-skill-usage-trim.md](90-agent/judgements/2026-10-26-skill-usage-trim.md) — *judged 2026-10-26, fable* |
 | Ask 1 — 週報 skill：形狀與落點分析 | [90-agent/judgements/2026-10-27-weekly-report-skill.md](90-agent/judgements/2026-10-27-weekly-report-skill.md) — *judged 2026-10-27, fable* |
 | Brief 39 — gitdiagram's picture of fankeel vs our own design: where is the gap, and what do we do about it? | [90-agent/judgements/2026-10-27-gitdiagram-vs-design.md](90-agent/judgements/2026-10-27-gitdiagram-vs-design.md) — *judged 2026-10-27, fable* |
+| Brief 40 — Alibaba's OCR (open code review) vs fankeel-reviewer: is anything worth taking? | [90-agent/judgements/2026-10-27-ocr-reviewer.md](90-agent/judgements/2026-10-27-ocr-reviewer.md) — *judged 2026-10-27, fable* |
 
 ## The five scanners
 
