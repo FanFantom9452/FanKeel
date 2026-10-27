@@ -106,3 +106,14 @@ test('an end date with no report, or a name that is not a date, is a 404', () =>
         assert.equal((await get(s.url + p)).status, 404, p);
     }
 }));
+
+test('a date-shaped name with only its json archived and no html file is a 404', () => served(async (s, f) => {
+    const until = '2026-01-16';
+    const saved = ws.save(f.cfg, until, {
+        json: { since: '2026-01-10', until, generated: until + 'T18:00:00.000Z', projects: ['fankeel'], counts: { done: 0, ongoing: 0 }, events: [], carry: [], next: [] },
+        html: page(until),
+    });
+    fs.unlinkSync(saved.html);
+    assert.ok(fs.existsSync(saved.json), 'the json stays');
+    assert.equal((await get(s.url + 'station/weekly/' + until + '.html')).status, 404);
+}));

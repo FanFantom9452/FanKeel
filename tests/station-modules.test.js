@@ -64,7 +64,7 @@ test('the shell loads tip.js and the page modules after i18n.js and before the s
 });
 
 // Every vm boot of the page (tests/station-src.js, tests/station-module.js page())
-// runs these four before station.js, with a document that has no body and no
+// runs these before station.js, with a document that has no body and no
 // querySelector; the station-hdl-* tests find document listeners by what they
 // hold. So none of them may touch an element or add a listener at load.
 test('the docs, settings and weekly modules touch no element and add no listener at load', () => {
