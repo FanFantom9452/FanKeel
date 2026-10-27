@@ -1,6 +1,7 @@
 'use strict';
 // The 近 30 天 chart hover: the document `mousemove` listener of
-// assets/station/station.js, pressed through the page's own listener list on
+// assets/station/station.js (which forwards to FK_DAYS.onMove, whose chartFocus,
+// chartPlace, chartGuide and chartAt live in assets/station/days-page.js), pressed through the page's own listener list on
 // the real days page with fake chart elements. Each test is red under a
 // different set of single-branch mutations of that listener (guards, the legend
 // branch, the column branch, the no-cell branch, each field of `chartAt` read

@@ -1,2 +1,2 @@
 /* assets/station/days-page.css — the 近 30 天 page `#/days` (days-page.js).
-   Its rules are still in station.css until station.js is rewired to FK_DAYS. */
+   Its rules stay in station.css (station.js already routes to FK_DAYS). */
