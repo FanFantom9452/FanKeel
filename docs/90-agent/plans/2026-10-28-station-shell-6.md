@@ -5,10 +5,10 @@ last_verified: 2026-10-28
 
 # station.js 拆到只剩殼 Implementation Plan（6/6）
 
-**Goal:** `assets/station/station.js` 從 5540 行降到 1,500 行以內，只留殼（狀態、`draw`、`VIEWS`、監聽、`freshen`/`refresh`），其餘函式搬成 `FK_*` classic-script 模組，`npm test` 全綠。
+**Goal:** `assets/station/station.js` 搬完函式，只留殼（狀態、`draw`、`VIEWS`、監聽、`freshen`/`refresh`），其餘函式搬成 `FK_*` classic-script 模組，`npm test` 全綠。
 **Architecture:** 每段區塊的函式宣告整段搬進一個新模組，模組只匯出 `make(K)`；station.js 在原位置留一個惰性取得器（第一次呼叫才 `make`）與每個仍被外面用到的名字一行轉發函式。轉發函式是 hoisted 宣告，所以 `module.exports`（station.js:2129 以下）與兩處 `FK_KIT` 指派一個字都不用改，33 個 `require` station.js 的測試也不用改。死碼連同只測它的斷言刪掉。
 **Tech Stack:** Node `>=22.5`（package.json:8），零 runtime 依賴，無 build；station 前端是瀏覽器 classic script（IIFE，掛 `window.FK_*`），測試用 `node --test` 與 `vm.runInNewContext`（tests/station-src.js 依 index.html 的 `<script>` 順序串接）。
-**Sequence:** 六份之6，照順序跑：前一份落地後才開下一份（每份最多兩個任務寫 station.js，是 `ledger.js lint` 的 SHARED_CAP）。
+**Sequence:** 七份之6，照順序跑：前一份落地後才開下一份（每份最多兩個任務寫 station.js，是 `ledger.js lint` 的 SHARED_CAP）。
 **Spec:** [2026-10-28-station-shell-design.md](2026-10-28-station-shell-design.md)
 
 ## Global Constraints
@@ -160,46 +160,6 @@ test('float.js also holds the float panel drawing and gate posting', () => {
 4. Run `node --test --require ./tests/subprocess-timeout.js tests/station-mod-float-live.test.js tests/station-mod-float.test.js tests/station-view.test.js` and every `tests/station-gate*.test.js` and `tests/station-tune*.test.js` — passes.
 5. `git add tests/station-mod-float-live.test.js`; hand back for commit `refactor: float drawing, gate posting and reload out of station.js into float.js (station-52)`.
 
-## Task 3: 殼的行數上限與文件
-
-**Files:**
-- Modify: `docs/90-agent/reference/station.md:600-640` — 616-618 行的模組清單換成現在的清單
-- Modify: `docs/90-agent/todo/station-52.md` — 進度紀錄加一行今天的行數
-- Read: `assets/station/index.html` — 模組清單的來源
-- Test: `tests/station-shell-size.test.js`
-
-**Interfaces:**
-- Consumes: 前五份計畫與本計畫搬完的 station.js
-- Produces: none
-
-**Dispatch:** implementer, sonnet — 一個斷言與兩處文件。
-
-1. Write `tests/station-shell-size.test.js`:
-
-In `tests/station-shell-size.test.js`:
-
-```js
-'use strict';
-// station-52 (b): station.js is the shell — state, draw, VIEWS, listeners,
-// refresh — and everything else lives in its modules. 1,500 lines is the line.
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
-
-test('station.js stays a shell of at most 1,500 lines', () => {
-    const src = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
-    const lines = src.split('\n').length;
-    assert.ok(lines <= 1500, 'station.js is ' + lines + ' lines');
-});
-```
-
-2. Run `node --test tests/station-shell-size.test.js` — passes if 前五份計畫與本計畫搬完的 landed as planned; if it fails, report the line count and stop (a stop condition, not a reason to move more code unplanned).
-3. In `docs/90-agent/reference/station.md`, replace the module list at :616-618 with the `<script src="station/…">` names from `assets/station/index.html`, in that order.
-4. In `docs/90-agent/todo/station-52.md`, append to the progress log: `10-28：station.js <N> 行，標準 (b) 達成；新模組 fmt chart session-body detail-html gate-tab dispatch-table dash nav float list-page search。`
-5. Run `node --test --require ./tests/subprocess-timeout.js tests/station-shell-size.test.js tests/station-doc.test.js` — passes.
-6. `git add tests/station-shell-size.test.js`; hand back for commit `test: station.js shell stays under 1,500 lines (station-52)`.
-
 ## Coverage
 
 | promise | task |
@@ -221,7 +181,7 @@ test('station.js stays a shell of at most 1,500 lines', () => {
 | 只有測試與 export 用到、畫面已改由模組畫的：`nowHtml` 一串 | struck — 照搬進 nav.js 不刪，刪除改記 TODO：刪它要改 `module.exports`，超出任務的行號範圍 |
 | 804-876 的 project helpers | struck — 照搬進 chart.js 不刪，同上 |
 | 純的先（fmt → records → gate-tab → detail → dispatch → chart → session-body），有狀態的後 | struck — 改照行號範圍排：純的在 1-4 份，有狀態的在 5-6 份，純的仍全在前 |
-| `tests/station-shell-size.test.js`（新）：station.js ≤ 1,500 行。 | Task 3 |
+| `tests/station-shell-size.test.js`（新）：station.js ≤ 1,500 行。 | 移到 `2026-10-28-station-shell-7.md` Task 3，上限改成實測值 |
 | `npm test` 全綠；33 個 `require` 測試與 50 個 vm 測試除死碼斷言外不改。 | build 的父層每組跑 fast suite；verify 跑整套 |
 | 產物：served station 每個 `VIEWS` 路由 | verify（fankeel-render-reviewer） |
-| `docs/90-agent/reference/station.md:616-618` 的模組清單改成新清單。 | Task 3 |
+| `docs/90-agent/reference/station.md:616-618` 的模組清單改成新清單。 | `2026-10-28-station-shell-7.md` Task 3 |

@@ -57,9 +57,15 @@ projectSessionsHtml）。連同只測它們的斷言一起刪——這是唯一�
 純的先（fmt → records → gate-tab → detail → dispatch → chart → session-body），有狀態的後
 （nav → float → list → health）。每步 `npm test` 綠才下一步；每步都寫 station.js，所以全部串行。
 
+### 行數預估（2026-10-28，a483fe04）
+
+計畫 1 落地後 station.js 4,966 行。計畫 2–6 列的 212 個名字都還在檔內、沒有重複；以括號配對估它們的範圍，搬完約剩 **2,221 行**，還沒算轉發與取得器。剩下的大約是 786 行沒列進任何計畫的函式（`draw`、`sessionPage`、`refresh`…）、537 行監聽與 `setInterval` 的本體——計畫的 Global Constraints 把載入時執行的敘述全留在殼——其餘是 `var`、註解與空行。
+
+所以 1,500 行在這套規則下到不了。決定（design gate，2026-10-28）：計畫 2–6 照跑，監聽留在殼；[2026-10-28-station-shell-7.md](2026-10-28-station-shell-7.md) 先刪 nav.js 的舊 live 死碼，再把實測行數往上取到 50 的倍數定為上限。station-52 的 (b) 改成「只剩外殼，行數由測試鎖住」。
+
 ## 驗收
 
-- `tests/station-shell-size.test.js`（新）：station.js ≤ 1,500 行。現在 5540 行，會紅。
+- `tests/station-shell-size.test.js`（新）：station.js ≤ CAP，CAP 是七份計畫落地後的實測值往上取到 50 的倍數。現在 4,966 行，會紅。
 - `npm test` 全綠；33 個 `require` 測試與 50 個 vm 測試除死碼斷言外不改。
 - 產物：served station 每個 `VIEWS` 路由（days docs weekly tour list settings now live sessions cmp projects project session）畫出來的 DOM，搬前搬後逐路由相同、console 0 error——fankeel-render-reviewer 拍。
 - `docs/90-agent/reference/station.md:616-618` 的模組清單改成新清單。
