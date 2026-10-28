@@ -21,3 +21,5 @@ link: docs/90-agent/reference/station.md
 進度（2026-10-27）：前端 `assets/station/station.js` 5550 行，標準 (b) 的 1,500 行仍未達成；1489 行的是伺服器 `scripts/station.js`，這輪 survey 一度把兩者看混。`OLD.*` 0 筆。days 已有 `days-page.js`、list 已有 `sessions-page.js`，依 10-24 第四輪紀錄，它們與圖表 tooltip、明細面板共用的狀態還在 station.js 裡，下一份計畫要先查清楚剩下的 5550 行是哪些區塊。
 
 進度（2026-10-27 Task 7 之後）：前端 `assets/station/station.js` 現為 5539 行（`wc -l`），標準 (b) 的 1,500 行仍未達成，條目保持開著。
+
+進度（2026-10-28）：session-body.js 與 detail-html.js 已搬出，前端 `assets/station/station.js` 降到 4021 行。設計關卡改了 (b)：監聽器留在外殼，1,500 行做不到，改成只剩外殼、行數由 tests/station-shell-size.test.js 的 CAP 鎖住（CAP 由最後一份計畫量測後訂）。還有第三到第七份計畫要做，條目保持開著。
