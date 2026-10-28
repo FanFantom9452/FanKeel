@@ -80,7 +80,7 @@ test('t: English by key with {vars} filled, Chinese otherwise, and set() stores 
     assert.equal(api.set('fr'), false);
 });
 
-test('every CJK string literal in station.js, fmt.js and chart.js is the Chinese of a loc() call (the extraction worklist)', () => {
+test('every CJK string literal in station.js, fmt.js, chart.js, session-body.js and detail-html.js is the Chinese of a loc() call (the extraction worklist)', () => {
     const left = [];
     const FILES = [['station.js', LINES, (i) => PREFIX[i]]].concat(MOVED.map(([n, ls]) => [n, ls, () => 'shared/proj/ses/det']));
     for (const [file, lines, prefixOf] of FILES) lines.forEach((text, i) => {
