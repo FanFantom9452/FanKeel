@@ -15,7 +15,11 @@
     { "name": "weekly-report", "url": "http://127.0.0.1:28888/station/weekly/2026-10-27.html", "src": ["lib/weekly-render.js", "lib/weekly-store.js", "assets/weekly/report.css", "lib/board-look.js", "scripts/station.js"] },
     { "name": "weekly-report-412", "url": "http://127.0.0.1:28888/station/weekly/2026-10-27.html", "src": ["lib/weekly-render.js", "lib/weekly-store.js", "assets/weekly/report.css", "lib/board-look.js", "scripts/station.js"], "viewport": "412,900" },
     { "name": "weekly-report-light", "url": "http://127.0.0.1:28888/station/weekly/2026-10-27.html", "src": ["lib/weekly-render.js", "lib/weekly-store.js", "assets/weekly/report.css", "lib/board-look.js", "scripts/station.js"], "theme": "light" },
-    { "name": "weekly-report-412-light", "url": "http://127.0.0.1:28888/station/weekly/2026-10-27.html", "src": ["lib/weekly-render.js", "lib/weekly-store.js", "assets/weekly/report.css", "lib/board-look.js", "scripts/station.js"], "viewport": "412,900", "theme": "light" }
+    { "name": "weekly-report-412-light", "url": "http://127.0.0.1:28888/station/weekly/2026-10-27.html", "src": ["lib/weekly-render.js", "lib/weekly-store.js", "assets/weekly/report.css", "lib/board-look.js", "scripts/station.js"], "viewport": "412,900", "theme": "light" },
+    { "name": "m-home", "url": "http://127.0.0.1:28889/m#/", "src": ["assets/station/mobile.js", "assets/station/mobile.css", "lib/mobile.js", "lib/peers.js", "scripts/station.js", "tests/fixtures/mobile-station.js"], "viewport": "412,900" },
+    { "name": "m-offline", "url": "http://127.0.0.1:28889/m#/?m=laptop", "src": ["assets/station/mobile.js", "assets/station/mobile.css", "lib/mobile.js", "lib/peers.js", "scripts/station.js", "tests/fixtures/mobile-station.js"], "viewport": "412,900" },
+    { "name": "m-rc", "url": "http://127.0.0.1:28889/m#/rc", "src": ["assets/station/mobile.js", "assets/station/mobile.css", "lib/mobile.js", "lib/rcseen.js", "scripts/station.js", "tests/fixtures/mobile-station.js"], "viewport": "412,900" },
+    { "name": "m-ask", "url": "http://127.0.0.1:28889/m#/ask", "src": ["assets/station/mobile.js", "assets/station/mobile.css", "lib/mobile.js", "lib/peers.js", "scripts/station.js", "tests/fixtures/mobile-station.js"], "viewport": "412,900" }
   ],
   "roles": [{ "name": "guest" }]
 }
