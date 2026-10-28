@@ -433,7 +433,9 @@
     // and none is picked.
     var VIA = { 'claude-desktop': 'Desktop', cli: 'CLI' };
     function lastDir(p) { return String(p || '').split(/[\\/]/).filter(Boolean).pop() || ''; }
-    function many(m) { return ((m && m.machines) || []).filter(function (x) { return x.state !== 'unpaired'; }).length > 1; }
+    // The computers the phone lists: a station not paired yet is not one.
+    function shown(m) { return ((m && m.machines) || []).filter(function (x) { return x.state !== 'unpaired'; }); }
+    function many(m) { return shown(m).length > 1; }
     function shash(m, x) { var h = (m && m.host) || ''; return x && x.machine && x.machine !== h ? '#/m/' + esc(x.machine) + '/' : '#/s/'; }
     function mtag(m, x, u) { return many(m) && !(u && u.pick) && x.machine ? '<span class="mtag">' + ic('server') + esc(x.machine) + '</span>' : ''; }
     // A list row's key, `<computer>/<id>`: the refresh (patchList) finds a row by it.
@@ -463,7 +465,7 @@
     // The filter chips under the title (machine-filter; -picked once one is chosen; -rc on the RC tab):
     // 全部, then one a computer, an offline one with its icon. Links, so the hash is the state.
     function filterHtml(m, u, view) {
-        var list = (m.machines || []).filter(function (x) { return x.state !== 'unpaired'; });
+        var list = shown(m);
         if (list.length < 2) return '';
         var base = view === 'rc' ? '#/rc' : '#/';
         var pick = u.pick || null;
@@ -497,7 +499,7 @@
 
     // The host pill: opens the 測站 sheet (the mockup's round 2: not a fourth tab).
     function hostHtml(m, u) {
-        var list = (m.machines || []).filter(function (x) { return x.state !== 'unpaired'; });
+        var list = shown(m);
         if (list.length > 1) {
             var off = list.filter(function (x) { return x.state === 'off'; }).length;
             return '<button type="button" class="host" data-act="sheet" aria-haspopup="dialog" aria-expanded="' + Boolean(u && u.sheet) + '" aria-label="' + esc(t('host.manyAria', { n: list.length, k: off })) + '">'
@@ -569,7 +571,7 @@
             + '</div>';
     }
 
-    // The bottom tab bar (VoiceLedger's nav#tabs): Session, 等你 with its count, 完成.
+    // The bottom tab bar (VoiceLedger's nav#tabs): Session, 等你 with its count, 完成, RC.
     function tabbar(view, m) {
         var n = (m.tasks || []).filter(function (x) { return x.state === 'gate' && !x.was; }).length + (m.stopped || []).filter(function (x) { return !x.was; }).length;
         var tab = function (href, v, icon, label, badge) {
@@ -1145,7 +1147,7 @@
             + '<button type="button" class="ghost" data-act="repair">' + t('off.repair') + '</button></div></div>';
     }
 
-    // What #app holds: pair-scan, pair-error, one of the three tabs with the tab bar under it
+    // What #app holds: pair-scan, pair-error, a tab view (Session, 等你, 完成, RC) with the tab bar under it
     // (and the 測站 sheet over it), or one session's screen drawn from its phone.json `P`.
     function screen(M, R, now, ui, P) {
         var u = ui || {};
@@ -1221,7 +1223,6 @@
         return m ? m[0] : 'phone';
     }
 
-    // A session's phone.json less its read time, so an unchanged one compares equal.
     // A list screen cut into what a refresh compares (Task 4, refreshing in place): its header, its
     // scrolling body with every row left as a slot, its tab bar, the rest of the page, and each row's
     // html by its data-row key. null when the html is not a list screen. A key seen twice stays inline.
@@ -1265,7 +1266,7 @@
     // The screens a poll refreshes in place.
     var LISTS = { home: true, ask: true, rc: true };
 
-
+    // A session's phone.json less its read time, so an unchanged one compares equal.
     function sameKey(p) { return JSON.stringify(Object.assign({}, p, { at: 0 })); }
 
     function boot(win) {
