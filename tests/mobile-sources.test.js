@@ -30,6 +30,21 @@ test('an unregistered session and another computer\'s rows both come out, each w
     assert.deepEqual(m.rc.ended.map((x) => [x.id, x.machine]), [['eeee', 'lab']]);
 });
 
+test('an answering computer brings its live RC row, its stopped row and its done rows, done cut to 40', () => {
+    const done = Array.from({ length: 45 }, (_, i) => ({ id: 'd' + i, root: '/l', task: 't', project: 'l', stage: 'build', route: [], kind: 'stage', at: NOW - (i + 1) * 1e3, usd: null, machine: 'lab' }));
+    const body = Object.assign(labBody(), {
+        stopped: [{ id: 'hhhh', root: '/l', task: 'held', project: 'l', stage: 'plan', route: [], gate: true, updated: NOW - 8e3, state: 'gate', machine: 'lab' }],
+        done,
+        rc: { live: [{ id: 'ffff', kind: 'unreg', task: '', name: 'live rc', cwd: 'D:/y', entrypoint: 'cli', status: 'idle', started: NOW - 6e5, machine: 'lab' }], ended: [] },
+    });
+    const m = mobile.mobileModel(model(), NOW, 'office', new Set(), null, null, [], { peers: [lab('on', body)] });
+    assert.deepEqual(m.rc.live.map((x) => [x.id, x.machine]), [[SID, 'office'], [U, 'office'], ['ffff', 'lab']]);
+    assert.equal(m.rc.live[2].was, undefined);
+    assert.deepEqual(m.stopped.map((x) => [x.id, x.machine]), [['hhhh', 'lab']]);
+    assert.equal(m.done.length, 40);
+    assert.deepEqual([m.done[0].id, m.done[39].id, m.done[0].machine], ['d0', 'd39', 'lab']);
+});
+
 test('a computer that stopped answering keeps its last rows, marked was, and its gates drop', () => {
     const body = Object.assign(labBody(), {
         gates: [{ id: 'cccc', since: NOW - 9e3, until: NOW + 6e5, questions: [], machine: 'lab' }],
