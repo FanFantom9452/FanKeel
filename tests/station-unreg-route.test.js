@@ -102,3 +102,47 @@ test('peer route: refused from this machine without a phone, and 502 when lab re
     assert.equal((await request(port, '/station/peer/lab/station/phone.json?id=x')).status, 403);
     assert.equal((await request(port, '/station/peer/lab/station/phone.json?id=x', { headers: tailnet(f) })).status, 502);
 }));
+
+test('peer route: a body over 11 MB is answered 413 with connection close and never passed on', async () => {
+    const calls = [];
+    await booted(async (o) => { calls.push(o); return { status: 201, headers: {}, body: Buffer.from('ok') }; }, async (port, f) => {
+        const r = await new Promise((resolve, reject) => {
+            const req = http.request({ hostname: '127.0.0.1', port, path: '/station/peer/lab/phone/upload?ext=png', method: 'POST', headers: Object.assign(tailnet(f, true), { 'content-type': 'image/png' }) }, (res) => {
+                res.resume();
+                res.on('end', () => resolve({ status: res.statusCode, connection: res.headers.connection }));
+            });
+            req.on('error', reject);
+            req.end(Buffer.alloc(11 * 1024 * 1024 + 1));
+        });
+        assert.deepEqual([r.status, r.connection], [413, 'close']);
+        assert.equal(calls.length, 0);
+    });
+});
+
+test('peer route: a name this station has not paired is 404 and never passed on', async () => {
+    const calls = [];
+    await booted(async (o) => { calls.push(o); return { status: 200, headers: {}, body: Buffer.from('{}') }; }, async (port, f) => {
+        assert.equal((await request(port, '/station/peer/nope/station/phone.json?id=x', { headers: tailnet(f) })).status, 404);
+        assert.equal(calls.length, 0);
+    });
+});
+
+test('peer route: a POST whose phone drops mid-body leaves the station answering the next request', async () => {
+    const dead = [];
+    const onDead = (e) => { dead.push(e); };
+    process.on('unhandledRejection', onDead);
+    try {
+        await booted(async () => ({ status: 200, headers: {}, body: Buffer.from('{}') }), async (port, f) => {
+            await new Promise((resolve) => {
+                const req = http.request({ hostname: '127.0.0.1', port, path: '/station/peer/lab/phone/say', method: 'POST', headers: Object.assign(tailnet(f, true), { 'content-length': 1024 * 1024 }) });
+                req.on('error', () => resolve());
+                req.write(Buffer.alloc(64 * 1024));
+                setTimeout(() => { req.destroy(); setTimeout(resolve, 200); }, 100);
+            });
+            assert.equal((await request(port, '/station/peer/lab/station/phone.json?id=x', { headers: tailnet(f) })).status, 200);
+        });
+        assert.deepEqual(dead, []);
+    } finally {
+        process.off('unhandledRejection', onDead);
+    }
+});

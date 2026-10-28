@@ -1046,7 +1046,9 @@ async function serve(opts) {
                         if (n > 64 * 1024 * 1024) req.destroy();
                     }
                 } catch (e) {
-                    if (!over) throw e;
+                    // The phone dropped mid-body: the socket is gone, nothing to answer, and a
+                    // throw here is an unhandled rejection that ends the station.
+                    if (!over) return;
                 }
                 if (over) return send(413, 'text/plain', 'body over 11 MB\n', { connection: 'close' });
                 body = Buffer.concat(chunks);
