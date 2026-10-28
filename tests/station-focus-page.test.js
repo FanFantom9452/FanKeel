@@ -125,7 +125,7 @@ function focusDom() {
         setInterval: (fn) => ticks.push(fn), setTimeout: (fn, ms) => waits.push(ms), clearTimeout() {}, addEventListener() { listened.push('win'); } };
     // As focusShell loads them: the focus module, then station.js, in one page.
     const box = vm.createContext({ window: win, document: doc, URLSearchParams });
-    for (const n of ['focus-page.js', 'fmt.js', 'chart.js', 'station.js']) vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', n), 'utf8'), box);
+    for (const n of ['focus-page.js', 'fmt.js', 'chart.js', 'session-body.js', 'detail-html.js', 'station.js']) vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', n), 'utf8'), box);
     return { focus, asked, heads, ticks, listened, win, waits, clicks };
 }
 
