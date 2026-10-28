@@ -73,8 +73,10 @@ test('no other page draws the card', () => {
 test('the shell loads remote-card.js after the spend modules and before station.js', () => {
     for (const html of [fs.readFileSync(path.join(ASSETS, 'index.html'), 'utf8'), station.render()]) {
         const order = [...html.matchAll(/<script src="station\/([^"]+)"><\/script>/g)].map((m) => m[1]);
-        assert.equal(order.indexOf('remote-card.js'), order.indexOf('station.js') - 2, order.join(', '));
-        assert.equal(order.indexOf('list-state.js'), order.indexOf('station.js') - 1, order.join(', '));
+        assert.equal(order.indexOf('remote-card.js'), order.indexOf('station.js') - 4, order.join(', '));
+        assert.equal(order.indexOf('list-state.js'), order.indexOf('station.js') - 3, order.join(', '));
+        assert.equal(order.indexOf('fmt.js'), order.indexOf('station.js') - 2, order.join(', '));
+        assert.equal(order.indexOf('chart.js'), order.indexOf('station.js') - 1, order.join(', '));
         assert.ok(order.indexOf('spend-panel.js') < order.indexOf('remote-card.js'), order.join(', '));
     }
 });
