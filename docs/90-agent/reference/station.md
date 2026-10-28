@@ -625,7 +625,7 @@ otherwise point outside the repository it sits in.
 
 Before `station-data.js` arrives the shell has nothing to draw, so
 `station.css` alone fills that wait
-(`assets/station/station.css:1022`, `first load`): CSS-only placeholders
+(`assets/station/station.css:1008`, `first load`): CSS-only placeholders
 stand in for the nav and the page, with a `計算中…` spinner beside where the
 side panel would sit, and the placeholders hold still rather than animate
 under `prefers-reduced-motion`.
@@ -764,8 +764,8 @@ gate page draws the same pair in `freeHtml`
 
 On a phone (under 600px) the bell panel is a bottom sheet: fixed to the bottom
 edge, 85dvh at most, with a grip, `.fkg`, and a 44px close button, `.fkx`
-(`assets/station/station.css:1229`, `@media (max-width:599px){`;
-`assets/station/station.css:1227`, `.fkg,.fkx{display:none}` hides both above
+(`assets/station/station.css:1215`, `@media (max-width:599px){`;
+`assets/station/station.css:1213`, `.fkg,.fkx{display:none}` hides both above
 that width). `fkClose` closes it, and when a gate is still held it sets
 `fk:shut` so the panel stays shut until the gate is gone
 (`assets/station/station.js:3810`, `function fkClose() {`;
@@ -775,8 +775,8 @@ The sheet hides the resize grip (`assets/station/station.css:1231`,
 
 On a desktop the panel opens wider than before, `min(560px, 100vw - 32px)`,
 with the 24px resize grip `.fkr` at its bottom left
-(`assets/station/station.css:1137`, `width:min(560px,calc(100vw - 32px))`;
-`assets/station/station.css:1141`, `.fkr{position:sticky;bottom:0;display:block;width:24px;height:24px`).
+(`assets/station/station.css:1123`, `width:min(560px,calc(100vw - 32px))`;
+`assets/station/station.css:1127`, `.fkr{position:sticky;bottom:0;display:block;width:24px;height:24px`).
 A size the person dragged to is still kept as `station.fkBox`
 (`assets/station/station.js:3763`, `var FK_BOX_KEY = 'station.fkBox';`).
 

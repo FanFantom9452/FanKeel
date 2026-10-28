@@ -9,7 +9,7 @@
         var quotaDay = K.quotaDay, localDay = K.localDay, dimKey = K.dimKey;
         var tokenSum = K.tokenSum, orderKeys = K.orderKeys, niceTop = K.niceTop, metricText = K.metricText;
         var colorOf = K.colorOf, keyLabel = K.keyLabel, keyHint = K.keyHint, partEst = K.partEst;
-                var METRIC_LABEL = K.METRIC_LABEL, DIM_LABEL = K.DIM_LABEL, NO_TIME_TYPE = K.NO_TIME_TYPE;
+        var METRIC_LABEL = K.METRIC_LABEL, DIM_LABEL = K.DIM_LABEL, NO_TIME_TYPE = K.NO_TIME_TYPE;
         var KIND_KEYS = K.KIND_KEYS;
         // One bar per day; a bar's total is added in the same pass as its parts,
         // so it is their sum and nothing else.
