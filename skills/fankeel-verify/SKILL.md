@@ -66,6 +66,7 @@ Skipping any step is not verifying.
 | Build succeeds | the build command, exit 0 | the linter passing, logs looking fine |
 | Bug fixed | the original symptom retested | the code changed |
 | Regression test works | red-green verified: revert the fix, watch it fail, restore | it passes once |
+| Tests catch faults | mutations applied N / killed K / survived S, one `path:line` per survivor | one mutation that was killed |
 | An agent finished | the VCS diff | the agent's report |
 | Requirements met | line by line against the plan | tests passing |
 | A cost, token or count figure | one command's raw, unpiped, untruncated output, pasted verbatim | a model's estimate, a retyped command, a number carried over from an earlier run |

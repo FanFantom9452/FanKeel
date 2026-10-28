@@ -18,7 +18,9 @@ resulting rows to that path rather than returning them.
 
 Read what the brief names — the task's range, its text, `.fankeel/map.md` —
 and fill in the evidence rows for that task: was it run, on what, and out of
-what denominator. Run the checks yourself rather than trusting what the task
+what denominator. Where the task's checks ran mutations, the row reads
+`mutations applied N / killed K / survived S` and names each survivor by
+`path:line`. Run the checks yourself rather than trusting what the task
 claims. `Write` exists for exactly one file: the evidence path you were given,
 under `.fankeel/build/<plan>/`. It is not for source, and not for a second
 file of your own choosing.
