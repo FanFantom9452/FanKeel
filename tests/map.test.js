@@ -432,3 +432,18 @@ test('a data bucket is marked in the filing and its pages are never undeclared',
   assert.ok(!map.pagesByStatus(dir).undeclared.includes('raw/minutes.md'));
   assert.match(map.buildMap(dir), /^ {2}raw — data \(raw data, not documents\)$/m);
 });
+
+test('the orientation section lists the largest files by line count right after most required', () => {
+  const dir = withFiles({
+    'lib/a.js': "'use strict';\nconst b = require('./b.js');\nmodule.exports = { b };\n",
+    'lib/b.js': "'use strict';\nmodule.exports = {};\n",
+    'scripts/run.js': "'use strict';\nconst a = require('../lib/a.js');\nconst b = require('../lib/b.js');\n",
+    'docs/long.md': 'x\n'.repeat(40),
+    'data/blob.txt': 'a\0b\n'.repeat(100),
+  });
+  const text = map.buildMap(dir);
+  assert.match(text, /\nlargest:\n {2}docs\/long\.md — 40 lines\n {2}lib\/a\.js — 3 lines\n {2}scripts\/run\.js — 3 lines\n {2}lib\/b\.js — 2 lines\n\ndirectories:/);
+  assert.ok(text.indexOf('most required:') < text.indexOf('largest:'));
+  assert.doesNotMatch(text, /blob\.txt — /);
+  assert.equal(map.largest(dir, ['docs/long.md', 'lib/a.js', 'lib/b.js'], 1).length, 1);
+});
