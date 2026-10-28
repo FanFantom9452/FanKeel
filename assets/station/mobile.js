@@ -83,7 +83,8 @@
             'rc.foot': '只含有開 station 的電腦。其他電腦和網頁上開的 RC 對話，這裡看不到。', 'rc.more': '在 claude.ai/code 看其餘',
             'mm.title': '電腦', 'mm.onN': '{n} 台連上', 'mm.via': '經由 {host}', 'mm.me': '手機經由這台', 'mm.n': '{n} 個 session',
             'mm.on': '已連上', 'mm.off': '離線', 'mm.pair': '去配對', 'mm.waitS': '連線中', 'mm.wait': '剛配對，正在連', 'mm.seen': '最後連上 {t}', 'mm.never': '還沒連上過',
-            'mm.refused': '那台不認這台的配對了，再配對一次', 'mm.unpaired': '有測站，這台還沒跟它配對', 'mm.code': '{name} 的配對碼（在它的 設定 › 手機遠端）', 'mm.paired': '配對好了，下一輪就會讀到它',
+            'mm.refused': '那台不認這台的配對了，再配對一次', 'mm.unpaired': '有測站，這台還沒跟它配對', 'mm.code': '{name} 的配對碼（在它的 設定 › 手機遠端）',
+            'peer.unread': '讀不到 {name}（{code}）：{why}', 'peer.lost': '讀不到 {name}：這台測站沒回話，等一下會再讀', 'mm.paired': '配對好了，下一輪就會讀到它',
             'mm.aria.me': '{name}，已連上，手機經由這台', 'mm.aria.on': '{name}，已連上', 'mm.aria.off': '{name}，離線', 'mm.aria.wait': '{name}，連線中', 'mm.aria.unpaired': '{name}，還沒配對，去配對',
         },
         en: {
@@ -153,7 +154,8 @@
             'rc.foot': 'Only computers running a station. RC sessions on other computers or the web are not here.', 'rc.more': 'See the rest on claude.ai/code',
             'mm.title': 'Computers', 'mm.onN': '{n} connected', 'mm.via': 'via {host}', 'mm.me': 'The phone goes through this one', 'mm.n': '{n} sessions',
             'mm.on': 'Connected', 'mm.off': 'Offline', 'mm.pair': 'Pair', 'mm.waitS': 'Connecting', 'mm.wait': 'Just paired, connecting', 'mm.seen': 'Last reached {t}', 'mm.never': 'Never reached yet',
-            'mm.refused': 'That computer no longer accepts this one; pair again', 'mm.unpaired': 'Runs a station; not paired with this one yet', 'mm.code': 'Pairing code for {name} (its Settings › Phone remote)', 'mm.paired': 'Paired; it is read on the next round',
+            'mm.refused': 'That computer no longer accepts this one; pair again', 'mm.unpaired': 'Runs a station; not paired with this one yet', 'mm.code': 'Pairing code for {name} (its Settings › Phone remote)',
+            'peer.unread': 'Could not read {name} ({code}): {why}', 'peer.lost': 'Could not read {name}: this station did not answer; it is read again shortly', 'mm.paired': 'Paired; it is read on the next round',
             'mm.aria.me': '{name}, connected, the phone goes through it', 'mm.aria.on': '{name}, connected', 'mm.aria.off': '{name}, offline', 'mm.aria.wait': '{name}, connecting', 'mm.aria.unpaired': '{name}, not paired; pair',
         },
     };
@@ -656,7 +658,7 @@
     // machines-sheet (Task 5): one row a computer. Connected and offline rows open that computer's own
     // station; an unpaired (or refused) one opens a box for the code on its 手機遠端 card, which this
     // station redeems there (decision (a)); this computer's row opens re-pairing this phone.
-    function machinesHtml(m, at, u) {
+    function machinesHtml(m, u) {
         var list = Array.isArray(m.machines) && m.machines.length ? m.machines
             : (Array.isArray(m.others) ? m.others : []).map(function (o) { return { name: o.name, url: o.url, state: 'unpaired', me: false }; });
         var https = function (x) { return typeof x.url === 'string' && /^https:\/\//.test(x.url); };
@@ -690,8 +692,9 @@
             + (list.length ? '<ul class="mm-list">' + rows + '</ul>' : '<p class="mm-empty">' + ic('info') + '<span>' + t('rs.noOthers') + '</span></p>') + '</section>';
     }
 
-    // The 測站 sheet from the host pill: the connection on one line, then this phone, the session
-    // it holds and re-pairing, each opening on a tap. Unpairing has no phone route
+    // The 測站 sheet from the host pill: the connection on one line, then this phone and the session
+    // it holds, each opening on a tap, and last the 電腦 list (machinesHtml), where re-pairing this
+    // phone sits inside this computer's own row. Unpairing has no phone route
     // (/station/remote/revoke is LOCAL in lib/remote.js), so the row says where on the desktop.
     // Only an https url is a link; the server already vets it, this is the second lock.
     function sheetHtml(m, at, u) {
@@ -710,7 +713,7 @@
             + row('rs:me', 'phone', t('rs.me'), esc(me ? me.name : t('rs.local')), paired ? t('rs.paired', { d: paired }) : '', '<p>' + ic('info') + '<span>' + t(me ? 'rs.unpair' : 'rs.localWhy') + '</span></p>')
             + (held ? row('rs:held', 'link', t('st.held'), esc(held.task), t('home.left', { t: clock(held.holdUntil - at) }),
                 '<p>' + ic('hourglass') + '<span>' + t('rs.hold') + '</span></p><button type="button" class="give" data-act="detach" data-id="' + esc(held.id) + '">' + ic('laptop') + t('give') + '</button>') : '')
-            + '</ul>' + machinesHtml(m, at, u) + '<a class="ghost" href="/?full=1#/settings">' + ic('laptop') + t('rs.full') + '</a>' + (u.note ? '<p class="note" role="status">' + esc(u.note) + '</p>' : '') + '</div>';
+            + '</ul>' + machinesHtml(m, u) + '<a class="ghost" href="/?full=1#/settings">' + ic('laptop') + t('rs.full') + '</a>' + (u.note ? '<p class="note" role="status">' + esc(u.note) + '</p>' : '') + '</div>';
     }
 
     // Claude's words: paragraphs on blank lines, `code`, line breaks; cut long.
@@ -1063,6 +1066,12 @@
         return cvInner(p, at, u);
     }
 
+    // Why the computer a session lives on could not be read (loadChat).
+    function peerNote(u) { return u.peer ? '<p class="note" role="status">' + esc(u.peer) + '</p>' : ''; }
+    function goneHtml(back, u) {
+        return '<div class="pg dt"><header class="ch-h">' + back + '<span></span><span></span></header>' + (u.peer ? peerNote(u) : '<div class="empty"><h2>' + t('chat.gone') + '</h2></div>') + '</div>';
+    }
+
     // One session: its header, the TokenBar and the pane tabs on top, then the pane; 對話 keeps
     // the gate pin, the composer or the attach / idle card. No tab bar: it is a drill-down.
     function chatHtml(m, id, at, u, P, pane) {
@@ -1070,7 +1079,7 @@
         // Until its phone.json arrives, the session's mobile.json row stands in.
         var p = P || (row ? Object.assign({}, row, { chat: row.last ? [row.last] : [], waiting: null, gate: null }) : null);
         var back = '<a class="bk" href="#/" aria-label="' + t('chat.back') + '">' + ic('back') + '</a>';
-        if (!p) return '<div class="pg dt"><header class="ch-h">' + back + '<span></span><span></span></header><div class="empty"><h2>' + t('chat.gone') + '</h2></div></div>';
+        if (!p) return goneHtml(back, u);
         if (p.state === 'gate' && !p.gate) p = Object.assign({}, p, { gate: (m.gates || []).filter(function (g) { return g.id === id; })[0] || null });
         var attached = p.attached && p.state !== 'gate' && p.state !== 'idle';
         var side = attached ? '<button type="button" class="give" data-act="detach">' + ic('laptop') + t('give') + '</button>'
@@ -1095,7 +1104,7 @@
         }
         return '<div class="pg dt" ' + SCREEN[attached ? 'attached' : p.state] + '><div class="dt-top"><header class="ch-h">' + back
             + '<div><p class="ch-t">' + esc(p.task) + '</p><p class="ch-m">' + avatar(p.project) + esc(p.project) + stwI(p.stage) + chip(p) + '</p></div>' + side + '</header>'
-            + '<div class="tkb" data-block="m-tokenbar">' + tokenInner(p, at, u) + '</div>' + panesNav(p, pane, m) + '</div>' + body + '</div>';
+            + '<div class="tkb" data-block="m-tokenbar">' + tokenInner(p, at, u) + '</div>' + panesNav(p, pane, m) + '</div>' + peerNote(u) + body + '</div>';
     }
 
     // An unregistered session (design §1; Task 5): its own head — how it was started, RC, the computer,
@@ -1106,7 +1115,7 @@
         var row = (m.unregistered || []).concat((m.rc && m.rc.ended) || []).filter(function (x) { return x.id === r.id && (x.machine || m.host) === r.machine; })[0];
         var p = P || (row ? Object.assign({}, row, { chat: [], state: row.at ? 'ended' : row.status === 'busy' ? 'running' : 'idle', context: null, limits: null }) : null);
         var back = '<a class="bk" href="#/" aria-label="' + t('chat.back') + '">' + ic('back') + '</a>';
-        if (!p) return '<div class="pg dt"><header class="ch-h">' + back + '<span></span><span></span></header><div class="empty"><h2>' + t('chat.gone') + '</h2></div></div>';
+        if (!p) return goneHtml(back, u);
         var pane = r.pane === 'events' ? 'events' : 'talk';
         var to = '#/u/' + esc(r.machine) + '/' + esc(p.id) + '/';
         var via = VIA[p.entrypoint] || p.entrypoint || '';
@@ -1124,7 +1133,7 @@
             : '<div class="cv" role="log" aria-label="' + t('chat.log') + '" data-block="session-chat-unregistered"><p class="uwhy">' + ic('info') + '<span>' + t('ur.uwhy') + '</span></p>' + cvInner(p, at, u) + '</div>';
         var foot = '<div class="ufoot" data-block="session-foot-unregistered"><p>' + ic('eye') + '<span>' + t(p.bridge ? 'ur.footRc' : 'ur.foot') + '</span></p>'
             + (p.bridge ? '<a class="ghost" href="https://claude.ai/code" target="_blank" rel="noopener">' + ic('out') + t('ur.app') + '</a>' : '') + '</div>';
-        return '<div class="pg dt" data-block="m-unreg">' + head + body + foot + '</div>';
+        return '<div class="pg dt" data-block="m-unreg">' + head + peerNote(u) + body + foot + '</div>';
     }
 
     function optList(opts) {
@@ -1604,18 +1613,31 @@
                 offline();
             }).then(null, rethrow);
         }
+        // Through /station/peer/ a 403, 404 or 502 is that computer unread (unreachable, kicked, refusing
+        // this station's token), not this station lost nor the session gone: a note names it, the head stays.
+        // Drawn once a reason, as GONE is, so a poll does not take the composer's focus.
+        function unread(id, why) {
+            if (st.ui.mode !== 'app' || route().id !== id || st.ui.peer === why) return null;
+            st.ui.peer = why;
+            return draw();
+        }
         function loadChat() {
             var R0 = route(); var id = R0.id;
             if (!id) return null;
+            var peer = via(R0);
             st.chatLoading = true;
-            return win.fetch(via(R0) + (R0.view === 'unreg' ? '/station/unreg.json?id=' : '/station/phone.json?id=') + encodeURIComponent(id), { credentials: 'same-origin', cache: 'no-store' }).then(function (r) {
+            return win.fetch(peer + (R0.view === 'unreg' ? '/station/unreg.json?id=' : '/station/phone.json?id=') + encodeURIComponent(id), { credentials: 'same-origin', cache: 'no-store' }).then(function (r) {
                 if (r.status === 401) return UNPAIRED;
+                if (peer && (r.status === 403 || r.status === 404 || r.status === 502)) {
+                    return r.text().then(function (text) { return { unread: t('peer.unread', { name: R0.machine, code: r.status, why: String(text || '').trim() }) }; });
+                }
                 if (r.status === 404) return GONE;
                 if (!r.ok) throw new Error(String(r.status));
                 return r.json();
             }).then(function (P) {
                 st.chatLoading = false;
                 if (P === UNPAIRED) { st.ui = pairUi({}); return draw(); }
+                if (P && peer && typeof P.unread === 'string') return unread(id, P.unread);
                 if (st.ui.mode !== 'app' || route().id !== id) return null;
                 // Gone is drawn once: a redraw every read would take the composer's focus.
                 if (P === GONE) {
@@ -1626,9 +1648,11 @@
                 }
                 st.gone = null;
                 if (R0.machine && !P.machine) P.machine = R0.machine;
+                if (st.ui.peer) { st.ui.peer = ''; st.P = P; return draw(); }
                 return refresh(st.P && st.P.id === id ? st.P : null, P);
             }, function () {
                 st.chatLoading = false;
+                if (peer) return unread(id, t('peer.lost', { name: R0.machine }));
                 offline();
             }).then(null, rethrow);
         }
@@ -1831,6 +1855,7 @@
             // The strip belongs to the session it was picked in; a pane change inside it keeps them.
             if (route().id !== inId) { inId = route().id; (st.ui.photos || []).slice().forEach(function (x) { drop(x.key); }); st.ui.over = false; }
             st.ui.note = '';
+            st.ui.peer = '';
             st.ui.rep = false;
             st.ui.pin = false;
             st.ui.sheet = false;
