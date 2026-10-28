@@ -1010,6 +1010,50 @@ async function serve(opts) {
             const body = mobile.mobileModel(model, now, host, hidden, phone.snapshot, device, own ? [] : othersNow(), { peers: own ? [] : machinesNow(), rcEnded });
             return send(200, 'application/json', JSON.stringify(body), noStore);
         }
+        // (b) in docs/90-agent/plans/2026-10-29-mobile-sources.md: an unregistered
+        // session's read-only screen. Its transcript is found by session id in this
+        // config dir's projects/ index (lib/detail.js transcriptOf) — the lookup the
+        // 對話 tab already makes for a session no registry lists — never from its cwd.
+        // One lib/rcseen.js remembers but no process runs still reads, as ended.
+        if (req.method === 'GET' && url.pathname === '/station/unreg.json') {
+            const model = sharedModel();
+            const id = url.searchParams.get('id') || '';
+            const host = hostName();
+            const live = mobile.unregOf(model, station.hiddenPkeys(model), host).find((u) => u.id === id) || null;
+            const u = live || rcseen.find(configDir, id);
+            if (!u) return fail(404, 'no such session on this station');
+            const file = detail.transcriptOf(configDir, id);
+            const got = mobile.unregModel(u, file ? (entriesOf(file) || []) : [], Date.now(), host, Boolean(live));
+            if (file) got.context = mobile.contextOf(contextLib.inspect(file), null);
+            return send(200, 'application/json', JSON.stringify(got), noStore);
+        }
+        // A session on another computer (Task 3): the phone's request passed on with
+        // this station's token for that computer (lib/peers.js forward). Only a paired
+        // phone, which only the tailnet brings; a body is read whole, at most 11 MB.
+        const peerHit = /^\/station\/peer\/([a-z0-9-]+)(\/[A-Za-z0-9/._-]+)$/.exec(url.pathname);
+        if (peerHit) {
+            if (!device) return fail(403, 'only a paired phone reads another computer through this station');
+            let body = null;
+            if (req.method === 'POST') {
+                const chunks = [];
+                let n = 0;
+                let over = false;
+                try {
+                    for await (const c of req) {
+                        n += c.length;
+                        if (n > 11 * 1024 * 1024) over = true;
+                        else chunks.push(c);
+                        if (n > 64 * 1024 * 1024) req.destroy();
+                    }
+                } catch (e) {
+                    if (!over) throw e;
+                }
+                if (over) return send(413, 'text/plain', 'body over 11 MB\n', { connection: 'close' });
+                body = Buffer.concat(chunks);
+            }
+            const got = await peers.forward(configDir, peerHit[1], req.method, peerHit[2] + url.search, req.headers, body, opts.peerSend);
+            return send(got.status, got.type, got.body, noStore);
+        }
         if (req.method === 'GET' && url.pathname === '/station/phone.json') {
             // One session's conversation, read every 2 s while its screen is open.
             const model = sharedModel();

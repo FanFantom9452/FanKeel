@@ -219,11 +219,11 @@ an inline copy of the predicate rather than a `hiddenPkeys()` call, because
 that loop is keyed by the raw profiles directory rather than by pkey —
 `write()`'s detail-file loop described below, and `--json`'s own pass
 outside this file
-(`scripts/station.js:1422`, `r.sessions = r.sessions.filter((s) => !hidden.has(s.project ? r.root + '/' + s.project : r.root));`).
+(`scripts/station.js:1497`, `r.sessions = r.sessions.filter((s) => !hidden.has(s.project ? r.root + '/' + s.project : r.root));`).
 There is no trace on
 the page that a project was left out: no count, no note on the footer. `station.js`'s own text
 summary — not the served page — does print how many projects it excluded
-(`scripts/station.js:1530`, `hidden by station.hide`), but names none of
+(`scripts/station.js:1605`, `hidden by station.hide`), but names none of
 them; the terminal is the only place the fact surfaces at all.
 
 The last thing a row holds is the completion record `scripts/record.js write`
@@ -1447,19 +1447,18 @@ segments, so `tour-reel-kit.js` and the like are served too). `SERVED` takes
 (`const MODULES = modulesOf(SHELL)`, `lib/station.js:1160`). Any other name under the station path is a 404, so nothing else in the plugin directory is
 reachable by url.
 
-The phone station has nine routes of its own: five for the page, below, and
-four for one session, in the next paragraph. `/m` is its page, the shell
+The phone station has twelve routes of its own: five for the page, below, four for one session, in the next paragraph, and three for the other computers and the unregistered sessions, in the paragraph after that. `/m` is its page, the shell
 `lib/mobile.js` builds (`shell()`), which loads `station.css`, `mobile.css` and
 `mobile.js`; `/m/manifest.webmanifest` (`manifest()`, served as
 `application/manifest+json`) and `/m/icon.svg` (`icon()`) make it installable;
 `/sw.js` is `assets/station/sw.js`, served from the root with
 `service-worker-allowed: /` so it can cache the shell; and
 `/station/mobile.json` is the page's data, `mobileModel(model, now, host,
-hidden, look)`: the held gates oldest first, the live tasks, and the stages finished
+hidden, look, me, others, more)`: the held gates oldest first, the live tasks, and the stages finished
 and tasks ended in the last 48 hours — a few kilobytes, read every 5 s while
 the page is visible outside a conversation, never `station-data.js`; a
 conversation (`#/s/<id>`) reads `/station/phone.json` every 2 s instead.
-`mobile.json` also carries `device`, this phone as `remote.deviceFor` knows it (`name`, `paired`; null from this machine), and each row a `holdUntil`, when the Stop hook's `phone.hold` wait gives up, or null. It also carries `others`, a list of `{ name, url }` for the other online computers on the same tailnet whose station answered 200 or 401 to `GET /station/mobile.json` (found by `peers` and `probeStations` in `lib/tailscale.js`, cached 60 s in `scripts/station.js`, `[]` when remote is off); the /m station sheet lists them as `m-machines` links. The shell's `theme-color` is the page ground per theme (`#10151d` dark, `#f2f4f3` light) and the manifest's is `#10151d`.
+`mobile.json` also carries `device`, this phone as `remote.deviceFor` knows it (`name`, `paired`; null from this machine), and each row a `holdUntil`, when the Stop hook's `phone.hold` wait gives up, or null. It also carries `others`, a list of `{ name, url }` for the other online computers on the same tailnet whose station answered 200 or 401 to `GET /station/mobile.json` (found by `peers` and `probeStations` in `lib/tailscale.js`, cached 60 s in `scripts/station.js`, `[]` when remote is off); the /m 測站 sheet lists every one of them as a row of `machines` (below). Each row of `gates`, `tasks`, `stopped`, `done` carries `machine`, the name of the computer it is on, and the answer also carries `unregistered` (`unregisteredOf` as `lib/mobile.js` `unregOf` draws it: `id`, `cwd`, `entrypoint`, `name`, `status`, `bridge`, `started`, `machine`), `rc` (`live`: registry sessions still running with `bridge` and unregistered ones with it, from `rcLive`; `ended`: the ones `lib/rcseen.js` saw in the last 48 hours that no longer run, kept in rc-seen.json in the config dir, at most 40), and `machines` (this computer first, `me: true`, then each computer `lib/peers.js` `poller` knows, with `state` `on`, `off`, `wait` or `unpaired`, `seen`, `paired`, `refused` and `n`, its row count). The shell's `theme-color` is the page ground per theme (`#10151d` dark, `#f2f4f3` light) and the manifest's is `#10151d`.
 `host` is the first label of the tailnet name while the tailnet is on, `os.hostname()` otherwise. Through the
 tailnet `/` answers 303 to `/m`, and `/m`, its manifest, its icon, `/sw.js`,
 `station.css`, `mobile.css` and `mobile.js` need no paired phone, while
@@ -1484,6 +1483,8 @@ on this station, 413 too large (answered with `connection: close`), 415 not an
 image, another type, or bytes that do not match the type.
 `mobile.json`'s task rows carry the same `state`, `attached`, `background` and
 `last`, `look` being `lib/phone.js`'s `snapshot`.
+
+The other computers (docs/03-decisions/2026-10-29-mobile-sources.md). `POST /station/peers/pair` (form `dnsName`, `code`; nonce from this machine, a paired phone through the tailnet) redeems the code on that computer's 手機遠端 card at its own `POST /station/remote/pair`, with its Origin, as a device named `電腦 <this machine>`, and keeps the token in `<configDir>/fankeel/peers.json`: 201 `{ name }`, 404 for a name the tailnet does not list as a station, 409 with remote off, 403 or 502 when that computer refuses or cannot be reached. `lib/peers.js` `poller` then reads each paired computer's `GET /station/mobile.json?own=1` with that token at most every 5 s, never awaited by a request; `own=1` answers that machine's rows alone and starts no reading of its own, so two stations never nest. A computer that answers 401 is `off` and `refused`; one that does not answer 200 is `off` with the rows and `seen` of its last answer, written to `peers.json` at most once a minute; its gates are left out of `gates`, its rows carry `was: true` and `seen`, and its RC rows move to `rc.ended`. `GET /station/unreg.json?id=<session>` is an unregistered session's read-only screen: its transcript is found by session id in the config dir's `projects/` index (`lib/detail.js` `transcriptOf`), turned into chat lines by `lib/mobile.js` `unregModel`, with `state` `running`, `idle` or `ended` and `context`; 404 for a session neither running here nor in `rc-seen.json`. `GET` or `POST /station/peer/<name>/<path>` passes a paired phone's request on to computer `<name>` with this station's token for it (`lib/peers.js` `forward`), only for `GET /station/phone.json`, `GET /station/unreg.json`, `POST /answer`, `/phone/attach`, `/phone/detach`, `/phone/say` and `/phone/upload`: 403 without a paired phone, 404 for any other path or an unpaired name, 413 over 11 MB, 502 when that computer refuses the token or does not answer.
 
 `/station/station-data.js`, `/station/search` and an ended session's
 `/station/detail/<id>.js` share one `gather()` for up to two seconds (`memoMs`
