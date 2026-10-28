@@ -17,7 +17,7 @@ const ROOT = path.join(__dirname, '..');
 const SURVEY = path.join(ROOT, 'docs', '90-agent', 'reports', 'evidence', '2026-10-18-gate-tab', 'survey.md');
 const TEXT = fs.readFileSync(SURVEY, 'utf8');
 const CSS = fs.readFileSync(path.join(ROOT, 'assets', 'station', 'station.css'), 'utf8');
-const SRC = fs.readFileSync(path.join(ROOT, 'assets', 'station', 'station.js'), 'utf8');
+const SRC = fs.readFileSync(path.join(ROOT, 'assets', 'station', 'gate-tab.js'), 'utf8');
 
 const report = (stage, text, extra) => ({ stage, path: '.fankeel/build/task-20261018T093023/' + stage + '.md', text, gate: null,
     parts: Object.assign(derive(stage, parseReport(stage, text)), extra || {}) });
@@ -146,10 +146,8 @@ test('below 1000px the body drops its minimum width and the side bar and search 
 });
 
 test('the gate tab adds no listener', () => {
-    const from = SRC.indexOf('// ---- 關卡: the gate tab');
-    const to = SRC.indexOf('function gateTab(s, x)');
-    assert.ok(from > 0 && to > from, 'the block is where it was put');
-    assert.doesNotMatch(SRC.slice(from, to), /addEventListener/);
+    assert.ok(SRC.includes('function gateTab(s, x)'), 'the gate tab is in gate-tab.js');
+    assert.doesNotMatch(SRC, /addEventListener/);
 });
 
 test('report lines no rule recognised are escaped in the rest', () => {
