@@ -42,5 +42,5 @@ test('.sc-list is a gap grid with no shared background', () => {
 // red when: card() drops the title row, the meta row or the status line
 test('a card is the title with its time, then project and stage, then one status line', () => {
     const html = P.screen(HOME, P.parseRoute('#/'), NOW, { mode: 'app' });
-    assert.match(html, /<div class="sc"><a class="sc-main" href="#\/s\/aaaaaaaa-1"><span class="sc-top"><span class="sc-t">a task<\/span><time>.*?<\/time><\/span><span class="sc-meta">.*?<span class="pj">proj<\/span>.*?<\/span><span class="sc-stat">/);
+    assert.match(html, /<div class="sc" data-row="[^"]*"><a class="sc-main" href="#\/s\/aaaaaaaa-1"><span class="sc-top"><span class="sc-t">a task<\/span><time>.*?<\/time><\/span><span class="sc-meta">.*?<span class="pj">proj<\/span>.*?<\/span><span class="sc-stat">/);
 });

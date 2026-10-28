@@ -45,7 +45,7 @@ test('home: 等你答 first, then holding, running and background, then idle, un
     assert.match(html, /data-block="m-home-a"/);
     const order = ['m-home-ask', 'm-home-run', 'm-home-idle'].map((b) => html.indexOf('data-block="' + b + '"'));
     assert.ok(order.every((i, k) => i > 0 && (k === 0 || i > order[k - 1])), String(order));
-    assert.equal(count(html, /<div class="sc ask">/g), 1);
+    assert.equal(count(html, /<div class="sc ask"[ >]/g), 1);
     assert.ok(html.indexOf('aaaaaaaa-5') < html.indexOf('aaaaaaaa-2') && html.indexOf('aaaaaaaa-2') < html.indexOf('aaaaaaaa-3'));
     assert.match(html, /\+1 個/, 'a background row names two items and +N for the rest');
     assert.match(html, /<b>電腦<\/b>跑測試/);

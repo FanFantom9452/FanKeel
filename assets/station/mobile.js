@@ -69,6 +69,22 @@
             'pl.empty': '這個 session 沒有路線', 'pl.done': '完成', 'pl.now': '進行中', 'pl.todo': '還沒到', 'pl.notyet': '還沒完成',
             'dp.empty': '沒有在背景跑的 agent 或 shell', 'dp.kind': '種類', 'dp.cmd': '指令', 'dp.start': '開始',
             'ev.empty': '還沒有步驟', 'ev.tool': '工具', 'ev.start': '開始', 'ev.took': '花了', 'gt.empty': '沒有在等你答的關卡',
+            'tab.rc': 'RC 對話', 'grp.unreg': '未登記', 'sum.unreg': '<b>{n}</b> 個未登記',
+            'ur.why': '在電腦上開著、但沒登記在 fankeel 的 Claude Code。點進去可以看對話。', 'ur.busy': '忙碌', 'ur.idle': '閒置', 'ur.rcSr': '，Remote Control 連著', 'ur.seen': '最後看到：{s}',
+            'ur.uwhy': '這個 session 沒登記在 fankeel，所以沒有概覽、計畫、派工和關卡。', 'ur.foot': '這裡只能看。它沒開 Remote Control，要回話得回到那台電腦。',
+            'ur.footRc': '這裡只能看。它開著 Remote Control，要回話就到 Claude app 接著說。', 'ur.app': '在 Claude app 接著說',
+            'host.many': '{n} 台電腦', 'host.off': '{n} 離線', 'host.manyAria': '{n} 台電腦，{k} 台離線，看測站與配對',
+            'mf.label': '依電腦篩選', 'mf.all': '全部', 'mf.down': '{name}，離線', 'mf.offNote': '{name} 離線，它的 session 沒列在這裡', 'mf.only': '只看 {name}',
+            'mo.title': '{name} 連不上', 'mo.seen': '最後連上是 {t}。可能關機、睡眠，或 tailnet 斷了；開機後它的測站會自己回來。',
+            'mo.never': '還沒連上過。可能關機、睡眠，或 tailnet 斷了；開機後它的測站會自己回來。', 'mo.retry': '再試一次', 'mo.list': '{t} 看到的',
+            'was.st': '最後看到：{s}', 'was.last': '{t} 最後一句',
+            'rc.title': 'RC 對話', 'rc.why': '每台電腦上開過 Remote Control 的 session，<b>含已結束的</b>。Session 列表上的 RC 小點只表示那一個 session <b>現在</b>連著。',
+            'rc.live': '連著', 'rc.endedH': '已結束', 'rc.on': '連著', 'rc.ended': '已結束', 'rc.was': '電腦離線前看到的', 'rc.empty': '沒有開過 Remote Control 的 session',
+            'rc.foot': '只含有開 station 的電腦。其他電腦和網頁上開的 RC 對話，這裡看不到。', 'rc.more': '在 claude.ai/code 看其餘',
+            'mm.title': '電腦', 'mm.onN': '{n} 台連上', 'mm.via': '經由 {host}', 'mm.me': '手機經由這台', 'mm.n': '{n} 個 session',
+            'mm.on': '已連上', 'mm.off': '離線', 'mm.pair': '去配對', 'mm.waitS': '連線中', 'mm.wait': '剛配對，正在連', 'mm.seen': '最後連上 {t}', 'mm.never': '還沒連上過',
+            'mm.refused': '那台不認這台的配對了，再配對一次', 'mm.unpaired': '有測站，這台還沒跟它配對', 'mm.code': '{name} 的配對碼（在它的 設定 › 手機遠端）', 'mm.paired': '配對好了，下一輪就會讀到它',
+            'mm.aria.me': '{name}，已連上，手機經由這台', 'mm.aria.on': '{name}，已連上', 'mm.aria.off': '{name}，離線', 'mm.aria.wait': '{name}，連線中', 'mm.aria.unpaired': '{name}，還沒配對，去配對',
         },
         en: {
             'home.title': 'Session', 'home.empty': 'No session is running',
@@ -123,6 +139,22 @@
             'pl.empty': 'This session has no route', 'pl.done': 'done', 'pl.now': 'in progress', 'pl.todo': 'not yet', 'pl.notyet': 'not finished',
             'dp.empty': 'No agent or shell is running in the background', 'dp.kind': 'Kind', 'dp.cmd': 'Command', 'dp.start': 'Started',
             'ev.empty': 'No steps yet', 'ev.tool': 'Tool', 'ev.start': 'Started', 'ev.took': 'Took', 'gt.empty': 'No gate is waiting for you',
+            'tab.rc': 'RC', 'grp.unreg': 'Not registered', 'sum.unreg': '<b>{n}</b> not registered',
+            'ur.why': 'Claude Code open on a computer but not registered in fankeel. Tap one to read its conversation.', 'ur.busy': 'Busy', 'ur.idle': 'Idle', 'ur.rcSr': ', Remote Control attached', 'ur.seen': 'Last seen: {s}',
+            'ur.uwhy': 'This session is not registered in fankeel, so it has no overview, plan, dispatch or gate.', 'ur.foot': 'Read only. Remote Control is off, so replies go on that computer.',
+            'ur.footRc': 'Read only. Remote Control is on, so carry on in the Claude app.', 'ur.app': 'Carry on in the Claude app',
+            'host.many': '{n} computers', 'host.off': '{n} offline', 'host.manyAria': '{n} computers, {k} offline; open the station and pairing',
+            'mf.label': 'Filter by computer', 'mf.all': 'All', 'mf.down': '{name}, offline', 'mf.offNote': '{name} is offline; its sessions are not listed here', 'mf.only': 'Only {name}',
+            'mo.title': 'Cannot reach {name}', 'mo.seen': 'Last reached {t}. It may be off, asleep, or off the tailnet; its station comes back when it does.',
+            'mo.never': 'Never reached yet. It may be off, asleep, or off the tailnet; its station comes back when it does.', 'mo.retry': 'Try again', 'mo.list': 'Seen at {t}',
+            'was.st': 'Last seen: {s}', 'was.last': 'last line {t}',
+            'rc.title': 'RC sessions', 'rc.why': 'Sessions on each computer that had Remote Control on, <b>ended ones included</b>. The RC dot on the Session list only says that one session is attached <b>now</b>.',
+            'rc.live': 'Attached', 'rc.endedH': 'Ended', 'rc.on': 'Attached', 'rc.ended': 'Ended', 'rc.was': 'Seen before the computer went offline', 'rc.empty': 'No session has had Remote Control on',
+            'rc.foot': 'Only computers running a station. RC sessions on other computers or the web are not here.', 'rc.more': 'See the rest on claude.ai/code',
+            'mm.title': 'Computers', 'mm.onN': '{n} connected', 'mm.via': 'via {host}', 'mm.me': 'The phone goes through this one', 'mm.n': '{n} sessions',
+            'mm.on': 'Connected', 'mm.off': 'Offline', 'mm.pair': 'Pair', 'mm.waitS': 'Connecting', 'mm.wait': 'Just paired, connecting', 'mm.seen': 'Last reached {t}', 'mm.never': 'Never reached yet',
+            'mm.refused': 'That computer no longer accepts this one; pair again', 'mm.unpaired': 'Runs a station; not paired with this one yet', 'mm.code': 'Pairing code for {name} (its Settings › Phone remote)', 'mm.paired': 'Paired; it is read on the next round',
+            'mm.aria.me': '{name}, connected, the phone goes through it', 'mm.aria.on': '{name}, connected', 'mm.aria.off': '{name}, offline', 'mm.aria.wait': '{name}, connecting', 'mm.aria.unpaired': '{name}, not paired; pair',
         },
     };
     var lang = 'zh';
@@ -248,18 +280,30 @@
     // How much of a window that resets at `resets` and lasts `span` has gone by, in percent.
     function paceOf(resets, span, at) { return num(resets) ? pct((1 - (resets - at) / span) * 100) : null; }
 
-    // #/ the session list, #/ask the held gates, #/done the history, #/s/<id>[/<pane>] one
-    // session on one of its six panes (#/gate/<id> and #/task/<id> land on 對話), #/pair/<code>
-    // the desktop QR's pairing url.
+    // #/ the session list, #/ask the held gates, #/rc the RC sessions, #/done the history; #/ and
+    // #/rc take ?m=<computer> to show one computer. #/s/<id>[/<pane>] one session on this computer on
+    // one of its six panes (#/gate/<id> and #/task/<id> land on 對話); #/m/<computer>/<id>[/<pane>]
+    // one on another computer — its own prefix, so a bad pane after an id is never read as a
+    // computer before one; #/u/<computer>/<id>[/talk|events] an unregistered one, read only;
+    // #/pair/<code> the desktop QR's pairing url. `machine` and `pick` are there only when the
+    // hash names them.
     function parseRoute(hash) {
         var h = String(hash || '').replace(/^#/, '');
+        var q = h.indexOf('?');
+        var pick = q >= 0 ? ((/(?:^|&)m=([a-z0-9-]+)(?:&|$)/.exec(h.slice(q + 1)) || [])[1] || null) : null;
+        if (q >= 0) h = h.slice(0, q);
         var m = /^\/pair\/([A-Za-z0-9]{8})$/.exec(h);
         if (m) return { view: 'home', id: null, pair: m[1].toUpperCase() };
         m = /^\/(?:s|gate|task)\/([0-9A-Za-z-]+)(?:\/(talk|timeline|plan|dispatch|events|gate))?$/.exec(h);
         if (m) return { view: 'chat', id: m[1], pair: null, pane: m[2] || 'talk' };
+        m = /^\/m\/([a-z0-9-]+)\/([0-9A-Za-z-]+)(?:\/(talk|timeline|plan|dispatch|events|gate))?$/.exec(h);
+        if (m) return { view: 'chat', id: m[2], pair: null, pane: m[3] || 'talk', machine: m[1] };
+        m = /^\/u\/([a-z0-9-]+)\/([0-9A-Za-z-]+)(?:\/(talk|events))?$/.exec(h);
+        if (m) return { view: 'unreg', id: m[2], pair: null, pane: m[3] || 'talk', machine: m[1] };
         if (h === '/done') return { view: 'done', id: null, pair: null };
         if (h === '/ask') return { view: 'ask', id: null, pair: null };
-        return { view: 'home', id: null, pair: null };
+        var at = h === '/rc' ? 'rc' : 'home';
+        return pick ? { view: at, id: null, pair: null, pick: pick } : { view: at, id: null, pair: null };
     }
 
     // The pane a sideways swipe lands on: one over, only for a long and mostly sideways one.
@@ -374,6 +418,7 @@
 
     // One state chip; a session the phone holds or is attached to reads 手機接著.
     function chip(x) {
+        if (x.was) return '<span class="st">' + t('was.st', { s: wasName(x) }) + '</span>';
         var bg = (x.background || []).length;
         if (x.state === 'gate') return '<span class="st ask">' + ic('gate') + t('st.ask') + '</span>';
         if (x.state === 'idle') return '<span class="st idle">' + ic('kbd') + t('st.idle') + '</span>';
@@ -382,8 +427,82 @@
         return '<span class="st run">' + ic('activity') + t('st.run') + '</span>';
     }
 
+    // design §2 (docs/90-agent/plans/2026-10-29-mobile-sources.md, Task 4): every row carries the
+    // computer it is on; this station's own rows carry m.host. A row from another computer links
+    // through it, `#/m/<computer>/<id>`; the tag shows only while more than one computer is listed
+    // and none is picked.
+    var VIA = { 'claude-desktop': 'Desktop', cli: 'CLI' };
+    function lastDir(p) { return String(p || '').split(/[\\/]/).filter(Boolean).pop() || ''; }
+    function many(m) { return ((m && m.machines) || []).filter(function (x) { return x.state !== 'unpaired'; }).length > 1; }
+    function shash(m, x) { var h = (m && m.host) || ''; return x && x.machine && x.machine !== h ? '#/m/' + esc(x.machine) + '/' : '#/s/'; }
+    function mtag(m, x, u) { return many(m) && !(u && u.pick) && x.machine ? '<span class="mtag">' + ic('server') + esc(x.machine) + '</span>' : ''; }
+    // A list row's key, `<computer>/<id>`: the refresh (patchList) finds a row by it.
+    function rowKey(m, x) { return esc(x.machine || (m && m.host) || '') + '/' + esc(x.id); }
+    function wasName(x) { return x.state === 'gate' ? t('st.ask') : x.state === 'idle' ? t('st.idle') : x.state === 'holding' ? t('st.held') : t('st.run'); }
+
+    // An unregistered session's card (list-unregistered), and an RC one's (account-rc, o.rc; o.ended
+    // for the 已結束 half). A registry session in the RC list opens its own screen.
+    function urCard(m, x, at, u, o) {
+        var busy = x.status === 'busy';
+        var label = x.name || x.task || lastDir(x.cwd) || x.id;
+        var via = VIA[x.entrypoint] || x.entrypoint || '';
+        var stat = o.ended
+            ? (x.was ? ic('wifioff') + '<span>' + t('rc.was') + '</span>' : ic('check') + '<span>' + t('rc.ended') + '</span>')
+            : x.was ? ic('clock') + '<span class="seen">' + t('ur.seen', { s: t(busy ? 'ur.busy' : 'ur.idle') }) + '</span>'
+                : ic(busy ? 'activity' : 'pause') + '<span' + (busy ? ' class="busy"' : '') + '>' + (o.rc ? t('rc.on') + ' · ' : '') + t(busy ? 'ur.busy' : 'ur.idle') + '</span>';
+        var when = o.ended ? x.at : x.started;
+        var href = x.kind === 'reg' ? shash(m, x) + esc(x.id) : '#/u/' + esc(x.machine || m.host || '') + '/' + esc(x.id);
+        return '<div class="sc ur' + (o.ended ? ' ended' : '') + (x.was ? ' was' : '') + '" data-row="' + rowKey(m, x) + (o.ended ? '/e' : '') + '"><a class="sc-main" href="' + href + '"><span class="sc-top"><span class="sc-t' + (x.name || x.task ? '' : ' un') + '">' + esc(label) + '</span>'
+            + (num(when) ? '<time>' + ic('clock') + esc(ago(at - when)) + '</time>' : '') + '</span>'
+            + '<span class="ur-meta">' + (via ? '<span class="ent">' + esc(via) + '</span>' : '')
+            + (!o.rc && x.bridge ? '<span class="rc' + (x.was ? ' gone' : '') + '">' + (x.was ? '' : '<i class="dot live" aria-hidden="true"></i>') + 'RC<span class="vh">' + t('ur.rcSr') + '</span></span>' : '')
+            + '<span class="cwd">' + esc(x.cwd || '') + '</span></span>'
+            + '<span class="sc-stat">' + stat + mtag(m, x, u) + '</span></a><span class="ur-go" aria-hidden="true">' + ic('chev') + '</span></div>';
+    }
+
+    // The filter chips under the title (machine-filter; -picked once one is chosen; -rc on the RC tab):
+    // 全部, then one a computer, an offline one with its icon. Links, so the hash is the state.
+    function filterHtml(m, u, view) {
+        var list = (m.machines || []).filter(function (x) { return x.state !== 'unpaired'; });
+        if (list.length < 2) return '';
+        var base = view === 'rc' ? '#/rc' : '#/';
+        var pick = u.pick || null;
+        var a = function (name, label, down) {
+            return '<a href="' + base + (name ? '?m=' + esc(name) : '') + '"' + (pick === name ? ' aria-current="true"' : '') + (down ? ' class="down" aria-label="' + esc(t('mf.down', { name: label })) + '"' : '') + '><span class="chip">'
+                + (down ? ic('wifioff') : '') + (name ? '<span class="mono">' + esc(label) + '</span>' : esc(label)) + '</span></a>';
+        };
+        return '<nav class="mf" aria-label="' + t('mf.label') + '" data-block="' + (view === 'rc' ? 'machine-filter-rc' : pick ? 'machine-filter-picked' : 'machine-filter') + '">'
+            + a(null, t('mf.all'), false) + list.map(function (x) { return a(x.name, x.name, x.state === 'off'); }).join('') + '</nav>';
+    }
+
+    // Under 全部: one line per offline computer, saying its sessions are not in the list (list-offline-note).
+    function offNote(m, u) {
+        if (u.pick) return '';
+        return (m.machines || []).filter(function (x) { return x.state === 'off'; }).map(function (x) {
+            return '<p class="offl" data-block="list-offline-note">' + ic('wifioff') + '<span>' + t('mf.offNote', { name: esc(x.name) }) + '</span><a href="#/?m=' + esc(x.name) + '">' + t('mf.only', { name: esc(x.name) }) + '</a></p>';
+        }).join('');
+    }
+
+    // An offline computer picked (list-machine-offline): when it was last reached, then what it had then.
+    function offView(m, mc, rows, unreg, at, u) {
+        var when = num(mc.seen) ? md(mc.seen) + ' ' + hm(mc.seen) : '';
+        var n = rows.length + unreg.length;
+        return '<div data-block="list-machine-offline"><div class="mo"><h2>' + ic('wifioff') + t('mo.title', { name: esc(mc.name) }) + '</h2><p>' + t(when ? 'mo.seen' : 'mo.never', { t: when }) + '</p>'
+            + '<button type="button" class="ghost" data-act="retry">' + ic('refresh') + t('mo.retry') + '</button></div>'
+            + (n ? '<p class="ha-gh">' + ic('hist') + t('mo.list', { t: when }) + ' <span>' + n + '</span></p><div class="sc-list">'
+                + rows.map(function (x) { return card(x, at, u, 'was', m); }).join('') + unreg.map(function (x) { return urCard(m, x, at, u, {}); }).join('') + '</div>' : '')
+            + '</div>';
+    }
+
+
     // The host pill: opens the 測站 sheet (the mockup's round 2: not a fourth tab).
     function hostHtml(m, u) {
+        var list = (m.machines || []).filter(function (x) { return x.state !== 'unpaired'; });
+        if (list.length > 1) {
+            var off = list.filter(function (x) { return x.state === 'off'; }).length;
+            return '<button type="button" class="host" data-act="sheet" aria-haspopup="dialog" aria-expanded="' + Boolean(u && u.sheet) + '" aria-label="' + esc(t('host.manyAria', { n: list.length, k: off })) + '">'
+                + ic('server', 'on') + t('host.many', { n: list.length }) + (off ? '<span class="hoff">' + t('host.off', { n: off }) + '</span>' : '') + ic('down', 'hc') + '</button>';
+        }
         var host = m.host || t('host.station');
         return '<button type="button" class="host" data-act="sheet" aria-haspopup="dialog" aria-expanded="' + Boolean(u && u.sheet) + '" aria-label="' + esc(t('host.open', { host: host })) + '">'
             + ic('wifi', 'on') + esc(host) + ic('down', 'hc') + '</button>';
@@ -400,6 +519,7 @@
 
     // A card's one status line.
     function stLine(x, at) {
+        if (x.was) return ic('clock') + '<span class="seen">' + (x.last && num(x.last.at) ? t('was.last', { t: md(x.last.at) + ' ' + hm(x.last.at) }) : t('was.st', { s: wasName(x) })) + '</span>';
         var bg = x.background || [];
         if (x.state === 'idle') return ic('pause') + '<span>' + t('home.stopped') + '</span>';
         if (x.state === 'holding' || x.attached) {
@@ -411,7 +531,7 @@
 
     // A session card: title, project, stage chip and one status line; the latest line and the
     // background list behind the chevron (round 3: progressive disclosure).
-    function card(x, at, u, kind) {
+    function card(x, at, u, kind, m) {
         var key = 'sc:' + x.id;
         var open = Boolean(u.open && u.open[key]);
         var more = [];
@@ -419,10 +539,10 @@
             more.push('<p class="sm-last">' + ic('msg') + '<span><b>' + t(x.last.role === 'assistant' ? 'who.ai' : x.last.role === 'phone' ? 'who.ph' : 'who.pc') + '</b>' + esc(x.last.text) + '</span></p>');
         }
         if ((x.background || []).length) more.push(bgList(x.background, at));
-        return '<div class="sc' + (kind ? ' ' + kind : '') + '"><a class="sc-main" href="#/s/' + esc(x.id) + '"><span class="sc-top"><span class="sc-t">' + esc(x.task) + '</span>'
+        return '<div class="sc' + (kind ? ' ' + kind : '') + '" data-row="' + rowKey(m, x) + '"><a class="sc-main" href="' + shash(m, x) + esc(x.id) + '"><span class="sc-top"><span class="sc-t">' + esc(x.task) + '</span>'
             + (num(x.updated) ? '<time>' + ic('clock') + esc(ago(at - x.updated)) + '</time>' : '') + '</span>'
             + '<span class="sc-meta">' + avatar(x.project) + '<span class="pj">' + esc(x.project) + '</span>' + stwI(x.stage) + '<span class="sp"></span>' + chip(x) + '</span>'
-            + '<span class="sc-stat">' + stLine(x, at) + '</span></a>'
+            + '<span class="sc-stat">' + stLine(x, at) + mtag(m, x, u) + '</span></a>'
             + (more.length ? '<button type="button" class="sc-tog" data-act="fold" data-key="' + esc(key) + '" aria-expanded="' + open + '" aria-label="' + t(open ? 'sc.less' : 'sc.more') + '">' + ic('down') + '</button>'
                 + (open ? '<div class="sc-more">' + more.join('') + '</div>' : '') : '')
             + '</div>';
@@ -437,9 +557,9 @@
         var key = 'gp:' + x.id;
         var open = Boolean(u.open && u.open[key]);
         var left = num(g.until) ? ic('timer') + t(wide ? 'gc.left' : 'home.left', { t: clock(g.until - at) }) : '';
-        var go = '<a class="sc-btn" href="#/s/' + esc(x.id) + '">' + t('home.go') + ic('chev') + '</a>';
-        return '<div class="sc ask"><a class="sc-main" href="#/s/' + esc(x.id) + '"><span class="sc-top"><span class="sc-t">' + esc(x.task) + '</span></span>'
-            + '<span class="sc-meta">' + avatar(x.project) + '<span class="pj">' + esc(x.project) + '</span>' + stwI(x.stage) + '</span>'
+        var go = '<a class="sc-btn" href="' + shash(m, x) + esc(x.id) + '">' + t('home.go') + ic('chev') + '</a>';
+        return '<div class="sc ask" data-row="' + rowKey(m, x) + '"><a class="sc-main" href="' + shash(m, x) + esc(x.id) + '"><span class="sc-top"><span class="sc-t">' + esc(x.task) + '</span></span>'
+            + '<span class="sc-meta">' + avatar(x.project) + '<span class="pj">' + esc(x.project) + '</span>' + stwI(x.stage) + mtag(m, x, u) + '</span>'
             + '<span class="sc-q">' + ic('ask') + '<span>' + esc((q && q.question) || '') + '</span></span></a>'
             + (wide
                 ? (left ? '<p class="sc-left">' + left + '</p>' : '') + '<div class="sc-go">'
@@ -451,20 +571,25 @@
 
     // The bottom tab bar (VoiceLedger's nav#tabs): Session, 等你 with its count, 完成.
     function tabbar(view, m) {
-        var n = (m.tasks || []).filter(function (x) { return x.state === 'gate'; }).length + (m.stopped || []).length;
+        var n = (m.tasks || []).filter(function (x) { return x.state === 'gate' && !x.was; }).length + (m.stopped || []).filter(function (x) { return !x.was; }).length;
         var tab = function (href, v, icon, label, badge) {
             return '<a href="' + href + '"' + (view === v ? ' aria-current="page"' : '') + '><span class="tab-ico">' + ic(icon) + (badge || '') + '</span><span>' + label + '</span></a>';
         };
-        return '<nav class="tabbar" aria-label="' + t('tab.nav') + '" data-block="m-tabbar">' + tab('#/', 'home', 'list', t('home.title'))
+        return '<nav class="tabbar" aria-label="' + t('tab.nav') + '" data-block="tabbar-rc">' + tab('#/', 'home', 'list', t('home.title'))
             + tab('#/ask', 'ask', 'gate', t('tab.ask'), n ? '<b class="tab-n" aria-label="' + esc(t('tab.n', { n: n })) + '">' + n + '</b>' : '')
+            + tab('#/rc', 'rc', 'link', t('tab.rc'))
             + tab('#/done', 'done', 'hist', t('done.title')) + '</nav>';
     }
 
     function homeHtml(m, at, u) {
-        var tasks = m.tasks || [];
+        var pick = u.pick || null;
+        var mc = pick ? (m.machines || []).filter(function (x) { return x.name === pick; })[0] || null : null;
+        var mine = function (x) { return pick ? (x.machine || m.host) === pick : !x.was; };
+        var tasks = (m.tasks || []).filter(mine);
+        var gone = (m.stopped || []).filter(mine);
+        var unreg = (m.unregistered || []).filter(mine);
         var asks = tasks.filter(function (x) { return x.state === 'gate'; });
         var idle = tasks.filter(function (x) { return x.state === 'idle'; });
-        var gone = m.stopped || [];
         var live = tasks.filter(function (x) { return x.state !== 'gate' && x.state !== 'idle'; })
             .map(function (x, i) { return { x: x, i: i }; })
             .sort(function (a, b) {
@@ -473,23 +598,51 @@
                 return oa - ob || a.i - b.i;
             }).map(function (o) { return o.x; });
         var ask = function (x) { return askCard(x, m, at, u, false); };
-        var one = function (x) { return card(x, at, u, x.state === 'idle' ? 'idle' : ''); };
+        var one = function (x) { return card(x, at, u, x.state === 'idle' ? 'idle' : '', m); };
         function group(block, icon, key, list, draw) {
             return list.length ? '<div data-block="' + block + '"><p class="ha-gh">' + ic(icon) + t(key) + ' <span>' + list.length + '</span></p><div class="sc-list">' + list.map(draw).join('') + '</div></div>' : '';
         }
-        var any = tasks.length || gone.length;
-        var body = !any ? '<div class="empty"><h2>' + t('home.empty') + '</h2></div>'
-            : group('m-home-ask', 'ask', 'grp.ask', asks, ask) + group('m-home-run', 'activity', 'grp.run', live, one)
-                + group('m-home-idle', 'pause', 'grp.idle', idle, one) + group('m-home-gone', 'gate', 'grp.gone', gone, ask);
-        var sum = any ? '<div class="ab-2"><p class="ha-sum"><span class="a">' + ic('ask') + t('sum.ask', { n: asks.length }) + '</span><span class="r">' + ic('activity') + t('sum.run', { n: live.length })
-            + '</span><span class="i">' + ic('pause') + t('sum.idle', { n: idle.length }) + '</span></p></div>' : '';
-        return '<div class="pg" data-block="m-home-a"><header class="ab ab2"><div class="ab-1"><h1>' + t('home.title') + '</h1>' + (tasks.length ? '<span class="n">' + tasks.length + '</span>' : '')
-            + '<span class="sp"></span>' + hostHtml(m, u) + '</div>' + sum + '</header>'
+        var any = tasks.length || gone.length || unreg.length;
+        var body;
+        if (mc && mc.state === 'off') body = offView(m, mc, tasks.concat(gone), unreg, at, u);
+        else if (!any) body = '<div class="empty"><h2>' + t('home.empty') + '</h2></div>';
+        else {
+            body = '<div data-block="list-merged">' + group('m-home-ask', 'ask', 'grp.ask', asks, ask) + group('m-home-run', 'activity', 'grp.run', live, one)
+                + group('m-home-idle', 'pause', 'grp.idle', idle, one) + group('m-home-gone', 'gate', 'grp.gone', gone, ask) + '</div>'
+                + (unreg.length ? '<div data-block="list-unregistered"><p class="ha-gh">' + ic('term') + t('grp.unreg') + ' <span>' + unreg.length + '</span></p><p class="ur-why">' + t('ur.why') + '</p>'
+                    + '<div class="sc-list">' + unreg.map(function (x) { return urCard(m, x, at, u, {}); }).join('') + '</div></div>' : '');
+        }
+        body += offNote(m, u);
+        var sum = any && !(mc && mc.state === 'off') ? '<div class="ab-2"><p class="ha-sum"><span class="a">' + ic('ask') + t('sum.ask', { n: asks.length }) + '</span><span class="r">' + ic('activity') + t('sum.run', { n: live.length })
+            + '</span><span class="i">' + ic('pause') + t('sum.idle', { n: idle.length }) + '</span>'
+            + (unreg.length ? '<span class="u">' + ic('term') + t('sum.unreg', { n: unreg.length }) + '</span>' : '') + '</p></div>' : '';
+        var n = tasks.length + unreg.length;
+        return '<div class="pg" data-block="m-home-a"><header class="ab ab2"><div class="ab-1"><h1>' + t('home.title') + '</h1>' + (n ? '<span class="n">' + n + '</span>' : '')
+            + '<span class="sp"></span>' + hostHtml(m, u) + '</div>' + sum + filterHtml(m, u, 'home') + '</header>'
             + '<div class="ha-body">' + body + '</div></div>' + tabbar('home', m);
     }
 
+    // The RC 對話 tab (account-rc, design §3): every computer's sessions with Remote Control on,
+    // attached now and ended, with what the list cannot hold said at its foot.
+    function rcHtml(m, at, u) {
+        var rc = m.rc || {};
+        var mine = function (x) { return !u.pick || (x.machine || m.host) === u.pick; };
+        var live = (rc.live || []).filter(mine);
+        var ended = (rc.ended || []).filter(mine);
+        var n = live.length + ended.length;
+        var row = function (o) { return function (x) { return urCard(m, x, at, u, o); }; };
+        return '<div class="pg" data-block="m-rc-a"><header class="ab ab2"><div class="ab-1"><h1>' + t('rc.title') + '</h1>' + (n ? '<span class="n">' + n + '</span>' : '')
+            + '<span class="sp"></span>' + hostHtml(m, u) + '</div>' + filterHtml(m, u, 'rc') + '</header>'
+            + '<div class="ha-body" data-block="account-rc"><p class="rcx">' + ic('info') + '<span>' + t('rc.why') + '</span></p>'
+            + (live.length ? '<p class="ha-gh"><i class="dot live" aria-hidden="true"></i>' + t('rc.live') + ' <span>' + live.length + '</span></p><div class="sc-list">' + live.map(row({ rc: true })).join('') + '</div>' : '')
+            + (ended.length ? '<p class="ha-gh">' + ic('hist') + t('rc.endedH') + ' <span>' + ended.length + '</span></p><div class="sc-list">' + ended.map(row({ rc: true, ended: true })).join('') + '</div>' : '')
+            + (n ? '' : '<div class="empty"><h2>' + t('rc.empty') + '</h2></div>')
+            + '<div class="rcfoot"><p>' + ic('info') + '<span>' + t('rc.foot') + '</span></p><a class="ghost" href="https://claude.ai/code" target="_blank" rel="noopener">' + ic('out') + t('rc.more') + '</a></div>'
+            + '</div></div>' + tabbar('rc', m);
+    }
+
     function askHtml(m, at, u) {
-        var list = (m.tasks || []).filter(function (x) { return x.state === 'gate'; }).concat(m.stopped || []);
+        var list = (m.tasks || []).filter(function (x) { return x.state === 'gate' && !x.was; }).concat((m.stopped || []).filter(function (x) { return !x.was; }));
         return '<div class="pg" data-block="m-ask-a"><header class="ab tab-ab"><div class="ab-1"><h1>' + t('grp.ask') + '</h1>' + (list.length ? '<span class="n">' + list.length + '</span>' : '')
             + '<span class="sp"></span>' + hostHtml(m, u) + '</div></header><div class="ha-body">'
             + (list.length ? '<div class="sc-list" data-block="m-ask-list">' + list.map(function (x) { return askCard(x, m, at, u, true); }).join('') + '</div>'
@@ -1002,10 +1155,12 @@
         var r = R || parseRoute('');
         var at = num(now) ? now : Date.now();
         if (r.view === 'chat') return chatHtml(m, r.id, at, u, P, r.pane || 'talk');
-        var sheet = u.sheet ? sheetHtml(m, at, u) : '';
-        if (r.view === 'done') return doneScreen(m, at, u) + sheet;
-        if (r.view === 'ask') return askHtml(m, at, u) + sheet;
-        return homeHtml(m, at, u) + sheet;
+        var v = Object.assign({}, u, { pick: r.pick || null });
+        var sheet = u.sheet ? sheetHtml(m, at, v) : '';
+        if (r.view === 'done') return doneScreen(m, at, v) + sheet;
+        if (r.view === 'ask') return askHtml(m, at, v) + sheet;
+        if (r.view === 'rc') return rcHtml(m, at, v) + sheet;
+        return homeHtml(m, at, v) + sheet;
     }
 
     // Voice fills the field and never sends; in a gate card it ticks 自己寫 first.
@@ -1067,6 +1222,50 @@
     }
 
     // A session's phone.json less its read time, so an unchanged one compares equal.
+    // A list screen cut into what a refresh compares (Task 4, refreshing in place): its header, its
+    // scrolling body with every row left as a slot, its tab bar, the rest of the page, and each row's
+    // html by its data-row key. null when the html is not a list screen. A key seen twice stays inline.
+    function divEnd(h, from) {
+        var re = /<(\/?)div\b/g, depth = 1, x;
+        re.lastIndex = from;
+        while ((x = re.exec(h))) { depth += x[1] ? -1 : 1; if (!depth) return x.index; }
+        return -1;
+    }
+    function cut(html) {
+        var h = String(html || '');
+        var hd = /<header class="ab[^"]*">[\s\S]*?<\/header>/.exec(h);
+        var bo = /<div class="ha-body"[^>]*>/.exec(h);
+        var tb = /<nav class="tabbar"[\s\S]*?<\/nav>/.exec(h);
+        if (!hd || !bo || !tb || !(hd.index < bo.index && bo.index < tb.index)) return null;
+        var from = bo.index + bo[0].length;
+        var to = divEnd(h, from);
+        if (to < 0) return null;
+        var inner = h.slice(from, to);
+        var rows = {};
+        var body = '';
+        var at = 0;
+        var re = /<div [^>]*data-row="([^"]*)"[^>]*>/g, m;
+        while ((m = re.exec(inner))) {
+            var end = divEnd(inner, re.lastIndex);
+            if (end < 0) return null;
+            end += 6;
+            var k = m[1];
+            var row = inner.slice(m.index, end);
+            body += inner.slice(at, m.index) + (rows[k] === undefined ? '<i data-slot="' + k + '"></i>' : row);
+            if (rows[k] === undefined) rows[k] = row;
+            at = end;
+            re.lastIndex = end;
+        }
+        body += inner.slice(at);
+        return {
+            head: hd[0], body: body, tabs: tb[0], rows: rows,
+            rest: h.slice(0, hd.index) + '<header>' + h.slice(hd.index + hd[0].length, from) + '<body>' + h.slice(to, tb.index) + '<nav>' + h.slice(tb.index + tb[0].length),
+        };
+    }
+    // The screens a poll refreshes in place.
+    var LISTS = { home: true, ask: true, rc: true };
+
+
     function sameKey(p) { return JSON.stringify(Object.assign({}, p, { at: 0 })); }
 
     function boot(win) {
@@ -1226,11 +1425,53 @@
             var keep = c && R.view === 'chat' && st.shown === R.id ? keepOpen(c) : null;
             var gk = gateKey(R.view === 'chat' ? current() : null);
             if (gk !== st.gk) { st.ui.pin = false; st.gk = gk; }
-            app.innerHTML = screen(st.M, R, Date.now(), st.ui, R.view === 'chat' && st.P && st.P.id === R.id ? st.P : null);
+            var html = screen(st.M, R, Date.now(), st.ui, R.view === 'chat' && st.P && st.P.id === R.id ? st.P : null);
+            app.innerHTML = html;
+            st.cut = LISTS[R.view] ? cut(html) : null;
+            st.listed = st.cut ? listKey(R) : null;
             st.shown = R.view === 'chat' ? R.id : null;
             if (keep) keep(cv());
             if (st.ui.mode === 'pair') scan();
             if (R.view === 'chat' && R.pane === 'talk') toEnd();
+        }
+        // What a list screen's refresh must match to write in place: the screen, the computer picked,
+        // the sheet open or shut, the language. Anything else changing draws the page whole.
+        function listKey(R) { return [R.view, R.pick || '', st.ui.sheet ? 1 : 0, lang].join('|'); }
+        function swap(sel, html) { var el = d.querySelector ? d.querySelector(sel) : null; if (el) el.outerHTML = html; }
+        // The list's own element stays, so its scroll does; its rows are written again around the
+        // nodes of the ones that did not change, which are put back as they were.
+        function refill(body, next) {
+            var top = body.scrollTop;
+            var old = {};
+            Array.prototype.forEach.call(body.querySelectorAll('[data-row]'), function (el) { old[el.getAttribute('data-row')] = el; });
+            body.innerHTML = next.body;
+            Array.prototype.forEach.call(body.querySelectorAll('[data-slot]'), function (slot) {
+                var k = slot.getAttribute('data-slot');
+                if (old[k] && st.cut.rows[k] === next.rows[k]) slot.replaceWith(old[k]);
+                else slot.outerHTML = next.rows[k];
+            });
+            body.scrollTop = top;
+        }
+        // mobile.json read again on a list screen (the user's 2026-10-29 ask: a refresh must not reset
+        // the scroll): only what changed is written — the header and its counts, the tab bar and its
+        // badge, a row — and a row that did not change keeps its node. Anything else draws whole.
+        function patchList() {
+            var R = route();
+            var body = d.querySelector ? d.querySelector('.ha-body') : null;
+            if (!body || !st.cut || st.listed !== listKey(R) || st.ui.mode !== 'app') return draw();
+            var next = cut(screen(st.M, R, Date.now(), st.ui, null));
+            if (!next || next.rest !== st.cut.rest) return draw();
+            if (next.head !== st.cut.head) swap('header.ab', next.head);
+            if (next.tabs !== st.cut.tabs) swap('.tabbar', next.tabs);
+            if (next.body !== st.cut.body) refill(body, next);
+            else {
+                Object.keys(next.rows).forEach(function (k) {
+                    if (next.rows[k] === st.cut.rows[k]) return;
+                    var el = body.querySelector('[data-row="' + k + '"]');
+                    if (el) el.outerHTML = next.rows[k];
+                });
+            }
+            st.cut = next;
         }
         // The pane's own contents and the TokenBar, never the composer: what is typed, picked or said stays.
         function pv() { return d.querySelector ? d.querySelector('.cv') || d.querySelector('.ov') : null; }
@@ -1296,7 +1537,7 @@
                 st.ui = APP;
                 if (M && M.host) store('station.m.host', String(M.host));
                 if (route().view === 'chat') return loadChat();
-                draw();
+                patchList();
             }, function () {
                 st.loading = false;
                 offline();

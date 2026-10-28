@@ -55,7 +55,7 @@ test('home: 等你 cards first, then the running ones, then idle; a card shows o
     const shut = P.screen(HOME, P.parseRoute('#/'), NOW, APP());
     const at = ['m-home-ask', 'm-home-run', 'm-home-idle'].map((b) => shut.indexOf('data-block="' + b + '"'));
     assert.ok(at.every((i, k) => i > 0 && (k === 0 || i > at[k - 1])), String(at));
-    assert.equal(count(shut, /<div class="sc ask">/g), 1);
+    assert.equal(count(shut, /<div class="sc ask"[ >]/g), 1);
     assert.match(shut, /<span class="sc-q">.*版面照原樣排？/);
     assert.doesNotMatch(shut, /class="sc-more"/);
     assert.match(shut, /<button type="button" class="sc-tog" data-act="fold" data-key="sc:aaaaaaaa-2" aria-expanded="false"/);

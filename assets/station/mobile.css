@@ -381,7 +381,7 @@ body.m .ab2 button.host,body.m .tab-ab button.host{display:inline-flex;align-ite
 .host .hc{width:16px;height:16px;color:var(--muted)}
 
 /* ---- the tab bar ---- */
-.tabbar{flex:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));padding:0 8px var(--safe-bottom,env(safe-area-inset-bottom));
+.tabbar{flex:none;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));padding:0 8px var(--safe-bottom,env(safe-area-inset-bottom));
   background:var(--panel);border:1px solid var(--rule);border-bottom:0;border-radius:var(--r-sheet) var(--r-sheet) 0 0}
 .tabbar a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;height:64px;min-width:0;
   font:500 12px var(--f-ui);color:var(--muted);text-decoration:none;-webkit-tap-highlight-color:transparent}
@@ -616,3 +616,75 @@ body.m .dt .cmp{padding:6px 10px calc(8px + var(--safe-bottom,env(safe-area-inse
 .cmp-row.v2.no-mic{grid-template-columns:minmax(0,1fr) 44px}
 .ph-box:empty{display:none}
 .ph>.ic{display:block;width:56px;height:56px;padding:16px;border-radius:var(--r);background:var(--inset);color:var(--muted)}
+/* Every computer on one list (docs/90-agent/plans/2026-10-29-mobile-sources.md, Task 4). */
+body.m .ab2 button.host .hoff{font:500 12.5px var(--f-ui);color:var(--stale-ink)}
+.mf{display:flex;flex-wrap:wrap;gap:0 6px;margin:2px 0 0 -4px}
+.mf a{display:inline-flex;align-items:center;min-height:44px;padding:0 4px;color:inherit;text-decoration:none;-webkit-tap-highlight-color:transparent}
+.mf .chip{display:inline-flex;align-items:center;gap:5px;height:32px;padding:0 12px;border-radius:var(--r-pill);box-shadow:inset 0 0 0 1px var(--rule2);font:500 13px var(--f-ui);color:var(--ink2);white-space:nowrap;transition:background-color 160ms cubic-bezier(.16,1,.3,1)}
+.mf .chip .mono{font-size:12.5px}
+.mf .chip .ic{width:14px;height:14px}
+.mf a[aria-current="true"] .chip{background:var(--keel-tint);box-shadow:inset 0 0 0 1px var(--keel);color:var(--ink);font-weight:700}
+.mf a.down .chip{color:var(--muted)}
+.mf a.down .chip .ic{color:var(--stale-ink)}
+.mf a:focus-visible{outline:none}
+.mf a:focus-visible .chip{outline:2px solid var(--keel);outline-offset:2px}
+.mtag{display:inline-flex;align-items:center;gap:4px;flex:none;margin-left:auto;font:12px var(--f-mono);color:var(--ink2);white-space:nowrap}
+.sc .mtag .ic{width:14px;height:14px;margin:0;color:var(--muted)}
+.sc-stat>span:not(.mtag){min-width:0}
+.ur-why{margin:-2px 4px 10px;font-size:13px;line-height:1.55;color:var(--muted)}
+.sc.ur{grid-template-columns:minmax(0,1fr) 28px;align-items:center;padding-right:8px}
+.ur-go{display:grid;place-items:center;color:var(--muted)}
+.ur-go .ic{width:18px;height:18px}
+.sc-t.un{font-weight:600;color:var(--ink2)}
+.ur-meta{display:flex;align-items:center;gap:8px;min-width:0}
+.ent{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:var(--r-sm);box-shadow:inset 0 0 0 1px var(--rule2);font:600 12px var(--f-ui);color:var(--ink2);flex:none}
+.rc{display:inline-flex;align-items:center;gap:5px;flex:none;font:700 12px var(--f-mono);color:var(--ink2)}
+.rc .dot{width:7px;height:7px}
+.rc.gone{color:var(--muted);font-weight:500}
+.cwd{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:12px var(--f-mono);color:var(--muted)}
+.ur .sc-stat .busy{color:var(--pass-ink)}
+.ur .sc-stat .busy .ic{color:var(--pass-ink)}
+.offl{display:flex;align-items:center;gap:10px;min-height:52px;margin:18px 0 0;padding:6px 6px 6px 14px;border-radius:var(--r);background:var(--inset);font-size:13.5px;line-height:1.5;color:var(--ink2)}
+.offl>.ic{width:18px;height:18px;color:var(--stale-ink)}
+.offl span{flex:1;min-width:0}
+.offl a{display:inline-flex;align-items:center;min-height:44px;padding:0 10px;border-radius:var(--r-sm);font-weight:600;color:var(--keel);text-decoration:none;white-space:nowrap}
+.mo{display:grid;gap:10px;margin:8px 0 0;padding:14px 16px 16px;border-radius:var(--r);background:var(--stale-bg)}
+.mo h2{display:flex;align-items:center;gap:8px;margin:0;font-size:16px;font-weight:700;color:var(--ink)}
+.mo h2 .ic{width:18px;height:18px;color:var(--stale-ink)}
+.mo p{margin:0;font-size:14px;line-height:1.6;color:var(--ink2)}
+.mo .ghost{justify-self:start;width:auto;min-height:44px;padding:0 16px}
+.sc.was .sc-t{color:var(--ink2)}
+.sc.was .st{background:var(--inset);color:var(--muted)}
+.seen{font:12px var(--f-mono);color:var(--muted)}
+.rcx{display:flex;gap:8px;margin:12px 4px 0;font-size:13.5px;line-height:1.6;color:var(--ink2)}
+.rcx .ic{width:16px;height:16px;margin-top:3px;color:var(--muted)}
+.rcx b{font-weight:600;color:var(--ink)}
+.sc.ended .sc-t{color:var(--ink2)}
+.rcfoot{display:grid;gap:10px;margin:20px 0 0;padding:14px;border-radius:var(--r);background:var(--inset)}
+.rcfoot p{display:flex;gap:7px;margin:0;font-size:13.5px;line-height:1.55;color:var(--ink2)}
+.rcfoot p .ic{width:16px;height:16px;margin-top:2px;color:var(--muted)}
+.rcfoot .ghost{min-height:48px;background:var(--panel);text-decoration:none}
+@media (prefers-reduced-motion:reduce){.mf .chip{transition:none}}
+/* The unregistered session screen and the 測站 sheet's computers (docs/90-agent/plans/2026-10-29-mobile-sources.md, Task 5). */
+.ch-m .mtag{margin-left:0}
+.ch-m .cwd{flex-basis:100%}
+.panes.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.panes.two a{flex-direction:row;gap:8px;height:48px}
+.panes.two a[aria-current="page"]::after{left:30%;right:30%}
+.uwhy{display:flex;gap:8px;align-self:stretch;margin:0;padding:10px 12px;border-radius:var(--r);background:var(--inset);font-size:13px;line-height:1.55;color:var(--ink2)}
+.uwhy .ic{width:16px;height:16px;margin-top:2px;color:var(--muted)}
+.ufoot{flex:none;display:grid;gap:10px;padding:12px 16px calc(14px + var(--safe-bottom,env(safe-area-inset-bottom)));background:var(--panel);border-top:1px solid var(--rule)}
+.ufoot p{display:flex;gap:7px;margin:0;font-size:13.5px;line-height:1.55;color:var(--ink2)}
+.ufoot p .ic{width:16px;height:16px;margin-top:2px;color:var(--muted)}
+.ufoot .ghost{min-height:48px;text-decoration:none}
+.mm-row .st{height:24px}
+.mm-row .st .ic{width:13px;height:13px}
+.mm-d b{font-weight:400;color:var(--ink2)}
+.st.lost{background:var(--stale-bg);color:var(--stale-ink)}
+.mm-row.me{grid-template-columns:20px minmax(0,1fr) auto 18px}
+.mm-h .ok{margin-left:auto;font:500 12.5px var(--f-ui);color:var(--muted)}
+button.mm-row{width:100%;border:0;background:none;font:inherit;text-align:left;cursor:pointer}
+.mm-pair{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:4px 12px 12px 46px}
+.mm-pair label{grid-column:1/-1;font-size:13px;color:var(--ink2)}
+.mm-pair input{min-height:44px;padding:0 12px;border:0;border-radius:var(--r-sm);background:var(--panel);box-shadow:inset 0 0 0 1px var(--rule2);font:600 16px var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ink)}
+.mm-pair .cta{min-height:44px;padding:0 16px}
