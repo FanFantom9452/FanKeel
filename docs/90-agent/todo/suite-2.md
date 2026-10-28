@@ -24,4 +24,4 @@ link: scripts/suite.js
 - scripts/suite.js：100% line
 - 有覆蓋率 20149 ms，無覆蓋率 20265 ms，比值 0.99
 
-結論：接。比值低於 1.5×，成本可忽略；但這是單檔量測，接進 verify 前要在真實 task 的 `--fast --coverage` 再量一次全套的比值。
+結論：暫定接，待 --fast 全套量測。比值低於 1.5×，成本可忽略；但這是單檔量測，接進 verify 前要在真實 task 的 `--fast --coverage` 再量一次全套的比值。

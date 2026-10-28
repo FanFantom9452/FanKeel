@@ -101,7 +101,7 @@ function main(argv) {
     const retried = result.retried ? ' — retried ' + result.retriedFile + ' alone, passed: ' + result.retried.join('; ') : '';
     const noFast = values.fast && !values.command && !fast ? ' (no test:fast script — ran the whole suite)' : '';
     const tap = file && !result.ok && fs.existsSync(suite.tapPath(file)) ? ' — TAP: ' + suite.tapPath(file) : '';
-    const cov = result.coverage ? ' — coverage: ' + Object.keys(result.coverage).length + ' files in ' + file : '';
+    const cov = result.coverage ? ' — coverage: ' + Object.keys(result.coverage).length + ' files in ' + file : values.coverage ? ' — coverage: none (no claimed .js, or no table)' : '';
     return { text: line + retried + noFast + tap + cov + (file ? '' : ' (not recorded: the entry has no started stamp)'), ok: result.ok };
 }
 

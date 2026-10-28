@@ -470,3 +470,22 @@ test('coverageFiles keeps the touched JavaScript outside tests/', () => {
   assert.deepEqual(suite.coverageFiles(['lib/a.js', 'tests/a.test.js', 'docs/x.md', 'scripts/b.mjs']), ['lib/a.js', 'scripts/b.mjs']);
   assert.deepEqual(suite.coverageFiles(undefined), []);
 });
+
+test('runSuite with coverage files returns their line % in result.coverage; null or [] leaves the key out', () => {
+  const dir = repo();
+  fs.writeFileSync(path.join(dir, 'small.js'), 'module.exports = () => 1;\n');
+  fs.writeFileSync(path.join(dir, 'a.test.js'), "const test = require('node:test'); test('a', () => { require('./small.js')(); });\n");
+  const r = suite.runSuite(dir, 'node --test', {}, { coverage: ['small.js'] });
+  assert.equal(r.ok, true);
+  assert.equal(typeof r.coverage['small.js'], 'number');
+  assert.equal('coverage' in suite.runSuite(dir, 'node --test', {}, { coverage: null }), false);
+  assert.equal('coverage' in suite.runSuite(dir, 'node --test', {}, { coverage: [] }), false);
+});
+
+test('suite.js --coverage says coverage: none where the entry claims no .js file', () => {
+  const dir = repo();
+  registry.writeSession(dir, 'abcdef0123', { ...DATA });
+  const r = main(['--session', 'abcdef0123', '--root', dir, '--coverage']);
+  assert.match(r.text, / — coverage: none \(no claimed \.js, or no table\)$/);
+  assert.doesNotMatch(main(['--session', 'abcdef0123', '--root', dir]).text, /coverage/);
+});
