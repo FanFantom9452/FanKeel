@@ -125,7 +125,7 @@ function focusDom() {
         setInterval: (fn) => ticks.push(fn), setTimeout: (fn, ms) => waits.push(ms), clearTimeout() {}, addEventListener() { listened.push('win'); } };
     // As focusShell loads them: the focus module, then station.js, in one page.
     const box = vm.createContext({ window: win, document: doc, URLSearchParams });
-    for (const n of ['focus-page.js', 'fmt.js', 'chart.js', 'session-body.js', 'detail-html.js', 'station.js']) vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', n), 'utf8'), box);
+    for (const n of ['focus-page.js', 'fmt.js', 'chart.js', 'session-body.js', 'detail-html.js', 'gate-tab.js', 'dispatch-table.js', 'station.js']) vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', n), 'utf8'), box);
     return { focus, asked, heads, ticks, listened, win, waits, clicks };
 }
 
@@ -226,7 +226,7 @@ test('the focus page listens for clicks on #focus, and a click on a fold keeps i
 });
 
 test('gateRest and gatePatrol carry a data-gv key', () => {
-    const src = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+    const src = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'gate-tab.js'), 'utf8');
     assert.match(src, /<details class="gv-more" data-gv="rest"' \+ \(dg \? ' open' : ''\)/);
     assert.match(src, /<details class="gv-more" data-gv="patrol" data-block="gate-patrol">/);
 });
