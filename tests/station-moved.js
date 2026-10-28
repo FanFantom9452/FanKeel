@@ -138,7 +138,7 @@ function freeIdents(mod) {
         if (pre.endsWith('.') && !pre.endsWith('..')) continue;
         if (/[{,]$/.test(pre) && /^\s*:(?!:)/.test(post) ) continue;
         if (/^\s*:/.test(post) && /\bcase$|\bdefault$/.test(pre + id)) continue;
-        if (declared.has(id) || id === 'document' || id === 'window' || (id in globalThis && id !== 'process' && id !== 'require') || ['var', 'let', 'const', 'function', 'return', 'if', 'else', 'for', 'while', 'do', 'new', 'typeof', 'in', 'of', 'instanceof', 'case', 'default', 'switch', 'break', 'continue', 'try', 'catch', 'finally', 'throw', 'this', 'null', 'true', 'false', 'void', 'delete'].includes(id)) continue;
+        if (declared.has(id) || id === 'document' || id === 'window' || (id in globalThis && !['process', 'require', 'Buffer', 'global', 'module', 'exports', 'setImmediate', 'clearImmediate', '__dirname', '__filename'].includes(id)) || ['var', 'let', 'const', 'function', 'return', 'if', 'else', 'for', 'while', 'do', 'new', 'typeof', 'in', 'of', 'instanceof', 'case', 'default', 'switch', 'break', 'continue', 'try', 'catch', 'finally', 'throw', 'this', 'null', 'true', 'false', 'void', 'delete'].includes(id)) continue;
         free.add(id);
     }
     return free;
@@ -153,10 +153,10 @@ function moved(file, names) {
     for (const n of names) assert.equal(typeof built[n], 'function', file + ' make(K) returns ' + n);
     const keys = kKeys(shell, file);
     const code = blank(mod);
-    assert.doesNotMatch(code, /\bK\s*\[/, file + ' reads K by computed key');
-    assert.doesNotMatch(code, /=\s*K\s*[;,\n]|=\s*K\s*$/, file + ' aliases K');
-    assert.doesNotMatch(code, /\}\s*=\s*K\b/, file + ' destructures K');
-    for (const m of code.matchAll(/\bK\.(\w+)/g)) assert.ok(keys.has(m[1]), 'station.js make({...}) for ' + file + ' lacks K.' + m[1]);
+    const kUses = code.replace(/function make\(K\)/, 'function make()');
+    const badK = [...kUses.matchAll(/(?<![.\w$])K\b(?!\s*\??\.\s*\w)/g)].map((m) => kUses.slice(Math.max(0, m.index - 15), m.index + 15).replace(/\s+/g, ' '));
+    assert.deepEqual(badK, [], file + ' uses K other than K.name (alias, argument, return, computed key, destructure)');
+    for (const m of code.matchAll(/(?<![.\w$])K\s*\??\.\s*(\w+)/g)) assert.ok(keys.has(m[1]), 'station.js make({...}) for ' + file + ' lacks K.' + m[1]);
     const free = [...freeIdents(mod)];
     assert.deepEqual(free, [], file + ' make body reads names nothing declares: ' + free.join(', '));
     const forwarder = (n) => new RegExp('function ' + n + '\\(\\) \\{ return \\w+\\(\\)\\.' + n + '\\.apply\\(null, arguments\\); \\}');
