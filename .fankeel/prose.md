@@ -1,0 +1,3 @@
+Conclusion first, then why. Every section says what it does, why it is this way, and gives one example the reader can copy. Length follows the stakes: a setting that can lose work gets a paragraph, a cosmetic one a line. Say what a term means the first time it appears, and keep the connectives. Use a list or a table only for things that really enumerate; everything else is paragraphs.
+Each sentence stands alone: a reader who sees only that sentence still understands it. End it on the point, never on a dangling connective (because, so, but, if — 因為、所以、但是、如果).
+Never split a name, a number and its unit, or a fixed phrase across a line or a table cell.
