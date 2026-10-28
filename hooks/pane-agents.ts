@@ -6,7 +6,9 @@
 // .fankeel/build/agents-<session>.json (lib/agentends.js). No engine call
 // here, so tests/pane-agents.test.js runs it under plain node.
 
-export type AgentFile = { id: string; at: number; meta: Record<string, unknown> | null; prefix: Record<string, unknown> | null; tokens?: number | null }
+// at is the meta's mtime, which Claude Code rewrites when the agent stops;
+// started is the transcript's first timestamp, null before its first line.
+export type AgentFile = { id: string; at: number; meta: Record<string, unknown> | null; prefix: Record<string, unknown> | null; tokens?: number | null; started?: number | null }
 export type AgentNode = { id: string; title: string; type: string; model: string; effort: string; at: number; end: number | null; tokens: number | null; kids: AgentNode[] }
 
 const record = (v: unknown): Record<string, unknown> => (v && typeof v === 'object' ? (v as Record<string, unknown>) : {})
@@ -50,6 +52,22 @@ export function agentTokens(text: string): number | null {
   return sum
 }
 
+// When an agent started: the first timestamp in its transcript, null where none parses.
+export function agentStart(text: string): number | null {
+  for (const line of text.split('\n')) {
+    if (!line.trim()) continue
+    let e: Record<string, unknown>
+    try {
+      e = record(JSON.parse(line))
+    } catch {
+      continue
+    }
+    const t = Date.parse(str(e.timestamp))
+    if (Number.isFinite(t)) return t
+  }
+  return null
+}
+
 // A token count the width of a minutes figure: 892, 79.4k, 1.7M.
 export function tokenLabel(n: number): string {
   if (n < 1000) return String(n)
@@ -72,7 +90,8 @@ export function agentTree(files: AgentFile[], ended: Record<string, number>, sin
     const effort = str(state.effortValue) || (titled ? titled[2] : '') || '?'
     const end = typeof ended[f.id] === 'number' && Number.isFinite(ended[f.id]) ? ended[f.id] : null
     const tokens = typeof f.tokens === 'number' && Number.isFinite(f.tokens) ? f.tokens : null
-    const node: AgentNode = { id: f.id, title: titled ? titled[3] : description, type: str(f.meta.agentType), model, effort, at: f.at, end, tokens, kids: [] }
+    const at = typeof f.started === 'number' && Number.isFinite(f.started) ? f.started : f.at
+    const node: AgentNode = { id: f.id, title: titled ? titled[3] : description, type: str(f.meta.agentType), model, effort, at, end, tokens, kids: [] }
     nodes.set(f.id, { node, parent: str(f.meta.parentAgentId) })
   }
   const roots: AgentNode[] = []

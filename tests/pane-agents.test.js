@@ -100,3 +100,30 @@ test('agentTree carries an agent\'s tokens, and null where its file had none', a
     const [root] = agentTree([{ ...brain, tokens: 79418 }, reader], {}, NOW - 60 * M);
     assert.deepEqual([root.tokens, root.kids[0].tokens], [79418, null]);
 });
+
+// Measured on session 4b267ce9: Claude Code rewrites an agent's meta.json when it
+// stops, so the meta's mtime is the stop, not the dispatch. The start is the
+// transcript's first timestamp; without it every row read 0 分.
+test('agentStart reads the first timestamp in an agent\'s transcript, and null where there is none', async () => {
+    const { agentStart } = await load();
+    const text = [
+        JSON.stringify({ type: 'user', timestamp: '2026-10-28T06:04:35.331Z', message: { content: 'build close' } }),
+        JSON.stringify({ type: 'assistant', timestamp: '2026-10-28T06:05:00.000Z', message: {} }),
+    ].join('\n');
+    assert.equal(agentStart(text), Date.parse('2026-10-28T06:04:35.331Z'));
+    assert.equal(agentStart('not json\n' + text), Date.parse('2026-10-28T06:04:35.331Z'));
+    assert.equal(agentStart(JSON.stringify({ type: 'user' })), null);
+    assert.equal(agentStart(''), null);
+});
+
+test('agentTree dates an agent from its transcript\'s start, not the meta\'s mtime the stop rewrote', async () => {
+    const { agentTree } = await load();
+    const end = NOW - M;
+    const stopped = { id: 's1', at: end, started: NOW - 48 * M, meta: { agentType: 'fankeel:fankeel-brain', description: 'build close stage agent' }, prefix: null };
+    const [node] = agentTree([stopped], { s1: end }, NOW - 60 * M);
+    assert.equal(node.at, NOW - 48 * M);
+    assert.equal(node.end - node.at, 47 * M);
+    // No transcript yet: the meta's mtime is all there is.
+    const [fresh] = agentTree([{ ...stopped, started: null }], {}, NOW - 60 * M);
+    assert.equal(fresh.at, end);
+});

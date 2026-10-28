@@ -1245,6 +1245,18 @@ test('the Pane lists this session\'s subagents: the running, the stopped, and no
     assert.ok(lines.some((l) => l.includes('1 在跑') && l.includes('1 完成')));
 });
 
+test('a stopped agent\'s minutes run from its transcript\'s first timestamp, since Claude Code rewrites its meta when it stops', async () => {
+    const hooks = await wired();
+    const end = STARTED + 10 * 60000;
+    const { $, log, store, mtimes } = agentRig({ stop1: end });
+    mtimes[SUBS + '/agent-stop1.meta.json'] = end;
+    store[SUBS + '/agent-stop1.jsonl'] = JSON.stringify({ type: 'user', timestamp: new Date(STARTED + 2000).toISOString(), message: { content: 'go' } });
+    await hooks['session.start']($, {}, async () => ({}));
+    await log.ticks[0].fn();
+    const stop = (await drawn(hooks, $)).find((l) => l.includes('checking it'));
+    assert.ok(stop && stop.includes('· 9 分'), String(stop));
+});
+
 test('the agents head folds the agent rows away and opens them again', async () => {
     const hooks = await wired();
     const { $, log } = agentRig();

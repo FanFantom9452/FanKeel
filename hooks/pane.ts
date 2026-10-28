@@ -7,7 +7,7 @@ import { taskDir, pendingName, parsePending } from './pane-gate.ts'
 import type { Pending } from './pane-gate.ts'
 import { settle, remember, TAIL } from './pane-shell.ts'
 import type { Shell } from './pane-shell.ts'
-import { agentTree, agentTokens, modelAlias } from './pane-agents.ts'
+import { agentStart, agentTree, agentTokens, modelAlias } from './pane-agents.ts'
 import type { AgentFile, AgentNode } from './pane-agents.ts'
 import { bandRows } from './pane-band.ts'
 import type { Seg as BandSeg, BandInput } from './pane-band.ts'
@@ -315,29 +315,32 @@ async function agentsOf($: EngineInterface, entry: Entry, id: string, root: stri
       }
       return (hit.value as Record<string, unknown> | null) ?? null
     }
-    // The transcript's token count, kept by its stamp: a running agent's file grows each request.
-    const spent = async (name: string): Promise<number | null> => {
+    // The transcript's token count and first timestamp, kept by its stamp: a running agent's file grows each request.
+    type Spent = { tokens: number | null; started: number | null }
+    const none: Spent = { tokens: null, started: null }
+    const spent = async (name: string): Promise<Spent> => {
       const stamp = stamps.get(name)
-      if (!stamp) return null
+      if (!stamp) return none
       const path = `${sub}/${name}`
       const hit = cache.get(path)
-      if (hit && hit.stamp === stamp) return typeof hit.value === 'number' ? hit.value : null
+      if (hit && hit.stamp === stamp && hit.value && typeof hit.value === 'object') return hit.value as Spent
       let text: string
       try {
         text = String(await $.fs.read(path))
       } catch {
-        // Gone or locked between the listing and the read: no tokens this tick, tried again the next.
-        return null
+        // Gone or locked between the listing and the read: nothing this tick, tried again the next.
+        return none
       }
-      const tokens = agentTokens(text)
-      cache.set(path, { stamp, value: tokens })
-      return tokens
+      const value: Spent = { tokens: agentTokens(text), started: agentStart(text) }
+      cache.set(path, { stamp, value })
+      return value
     }
     const files: AgentFile[] = []
     for (const f of listed) {
       const m = /^agent-(.+)\.meta\.json$/.exec(f.name)
       if (!m || f.mtimeMs < started) continue
-      files.push({ id: m[1], at: f.mtimeMs, meta: await read(f.name), prefix: await read(`agent-${m[1]}.prefix.json`), tokens: await spent(`agent-${m[1]}.jsonl`) })
+      const { tokens, started: begun } = await spent(`agent-${m[1]}.jsonl`)
+      files.push({ id: m[1], at: f.mtimeMs, meta: await read(f.name), prefix: await read(`agent-${m[1]}.prefix.json`), tokens, started: begun })
     }
     const ends = await readJson($, `${root}/.fankeel/build/agents-${id}.json`)
     const ended: Record<string, number> = {}
