@@ -123,7 +123,7 @@ test('others cache: a request while a round is still busy starts no second round
     }, c.opts);
 });
 
-test('others whole path: mobile.json others, fed to the 測站 sheet, give exactly the one https /m link', () => booted(true, async (port) => {
+test('others whole path: mobile.json others, fed to the 測站 sheet, list paired-not as a computer to pair', () => booted(true, async (port) => {
     await getJson(port);
     let others = [];
     for (let i = 0; i < 40 && !others.length; i++) {
@@ -132,6 +132,7 @@ test('others whole path: mobile.json others, fed to the 測站 sheet, give exact
     }
     const NOW = Date.UTC(2026, 9, 28, 6, 0);
     const html = M.screen({ host: 'office-pc', at: NOW, device: null, gates: [], tasks: [], done: [], others }, M.parseRoute('#/'), NOW, { mode: 'app', open: {}, sheet: true });
-    const blk = /data-block="m-machines"[\s\S]*?<\/section>/.exec(html)[0];
-    assert.deepEqual(blk.match(/<a [^>]*href="[^"]*"/g).map((a) => /href="([^"]*)"/.exec(a)[1]), ['https://paired-not.t.ts.net/m']);
+    const blk = /data-block="machines-sheet"[\s\S]*?<\/section>/.exec(html)[0];
+    assert.match(blk, /paired-not[\s\S]*?去配對/);
+    assert.doesNotMatch(blk, /me\.t\.ts\.net/);
 }));

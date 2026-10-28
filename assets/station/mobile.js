@@ -59,8 +59,8 @@
             'host.open': '已連上 {host}，看測站與配對', 'done.dn': '完成', 'span.hm': '{h} 小時 {m} 分',
             'sc.more': '展開最新一句與背景工作', 'sc.less': '收起最新一句與背景工作', 'sc.held': '手機接著 · 剩 {t}', 'sc.attached': '這回合結束時換手機接', 'sc.bg': '{n} 個背景工作在跑',
             'rs.me': '這支手機', 'rs.local': '這台電腦', 'rs.paired': '{d} 配對', 'rs.unpair': '要解除配對，到電腦的 <b>設定</b> › <b>手機遠端</b> 按「解除」。', 'rs.localWhy': '從這台電腦打開，不用配對。',
-            'rs.others': '其他電腦', 'rs.noOthers': '這個 tailnet 上沒有其他開著手機遠端的測站；在那台電腦的設定 › 手機遠端打開後，就會列在這裡。', 'rs.toStation': '到 {name} 的測站',
-            'rs.full': '到完整測站的設定頁', 'rs.hold': '每回合結束等你下一句；時間到就交還電腦。', 'rs.pairV': '換一台測站或重設', 'rs.pairWhy': '掃電腦上新的 QR，或輸入新的配對碼。',
+            'rs.noOthers': '這個 tailnet 上沒有其他開著手機遠端的測站；在那台電腦的設定 › 手機遠端打開後，就會列在這裡。',
+            'rs.full': '到完整測站的設定頁', 'rs.hold': '每回合結束等你下一句；時間到就交還電腦。', 'rs.pairWhy': '掃電腦上新的 QR，或輸入新的配對碼。',
             'pn.nav': 'session 檢視，左右滑動也能換', 'pn.talk': '對話', 'pn.timeline': '概覽', 'pn.plan': '計畫', 'pn.dispatch': '派工', 'pn.events': '事件', 'pn.gate': '關卡', 'pn.bg': '{n} 個在背景跑',
             'tk.ctx': 'context', 'tk.five': '5 小時', 'tk.seven': '7 天', 'tk.aria': '用量：context {c}，5 小時 {f}，7 天 {s}；點開看重置時間',
             'tk.at': ' · 壓縮線 {n}', 'tk.ofAt': '（到壓縮線）', 'tk.resets': '{t} 重置 · 時間已過 {n}%', 'tk.none': '還沒有讀數',
@@ -129,8 +129,8 @@
             'host.open': 'Connected to {host}; see the station and pairing', 'done.dn': 'done', 'span.hm': '{h} h {m} min',
             'sc.more': 'Show the latest line and background work', 'sc.less': 'Hide the latest line and background work', 'sc.held': 'On the phone · {t} left', 'sc.attached': 'The phone takes over when this turn ends', 'sc.bg': '{n} background jobs running',
             'rs.me': 'This phone', 'rs.local': 'This computer', 'rs.paired': 'paired {d}', 'rs.unpair': 'To unpair, press Remove under <b>Settings</b> › <b>Phone remote</b> on the desktop.', 'rs.localWhy': 'Opened on this computer; no pairing needed.',
-            'rs.others': 'Other computers', 'rs.noOthers': 'No other station on this tailnet has phone remote on. Turn it on in that computer\'s Settings › Phone remote and it will be listed here.', 'rs.toStation': 'Open the station on {name}',
-            'rs.full': 'Open the station settings', 'rs.hold': 'Each turn waits for your next message; when time runs out it goes back to the desktop.', 'rs.pairV': 'Another station, or start over', 'rs.pairWhy': 'Scan the new QR on the desktop, or type a new code.',
+            'rs.noOthers': 'No other station on this tailnet has phone remote on. Turn it on in that computer\'s Settings › Phone remote and it will be listed here.',
+            'rs.full': 'Open the station settings', 'rs.hold': 'Each turn waits for your next message; when time runs out it goes back to the desktop.', 'rs.pairWhy': 'Scan the new QR on the desktop, or type a new code.',
             'pn.nav': 'Session views; swipe to switch', 'pn.talk': 'Talk', 'pn.timeline': 'Overview', 'pn.plan': 'Plan', 'pn.dispatch': 'Dispatch', 'pn.events': 'Events', 'pn.gate': 'Gate', 'pn.bg': '{n} running in the background',
             'tk.ctx': 'context', 'tk.five': '5 hours', 'tk.seven': '7 days', 'tk.aria': 'Usage: context {c}, 5 hours {f}, 7 days {s}; tap for reset times',
             'tk.at': ' · compacts at {n}', 'tk.ofAt': ' (to the compact line)', 'tk.resets': 'resets {t} · {n}% of the window gone', 'tk.none': 'No reading yet',
@@ -652,15 +652,42 @@
             + '</div></div>' + tabbar('ask', m);
     }
 
-    function machines(others) {
-        var list = (Array.isArray(others) ? others : []).filter(function (o) { return o && typeof o.url === 'string' && /^https:\/\//.test(o.url); });
-        var body = list.length ? '<ul class="mm-list">' + list.map(function (o) {
-            var host = '';
-            try { host = new URL(o.url).host; } catch (e) { host = ''; }
-            return '<li><a class="mm-row" href="' + esc(o.url) + '" aria-label="' + esc(t('rs.toStation', { name: o.name || host })) + '">' + ic('laptop') + '<span class="mm-m"><span class="mm-n">' + esc(o.name || '') + '</span>'
-                + (host ? '<span class="mm-d">' + esc(host) + '</span>' : '') + '</span><span></span>' + ic('out', 'go') + '</a></li>';
-        }).join('') + '</ul>' : '<p class="mm-empty">' + ic('info') + '<span>' + t('rs.noOthers') + '</span></p>';
-        return '<section class="mm" data-block="m-machines" aria-labelledby="mm-t"><h3 class="mm-h" id="mm-t">' + t('rs.others') + (list.length ? '<span>' + list.length + '</span>' : '') + '</h3>' + body + '</section>';
+    function hostOf(url) { try { return new URL(url).hostname; } catch (e) { return ''; } }
+    // machines-sheet (Task 5): one row a computer. Connected and offline rows open that computer's own
+    // station; an unpaired (or refused) one opens a box for the code on its 手機遠端 card, which this
+    // station redeems there (decision (a)); this computer's row opens re-pairing this phone.
+    function machinesHtml(m, at, u) {
+        var list = Array.isArray(m.machines) && m.machines.length ? m.machines
+            : (Array.isArray(m.others) ? m.others : []).map(function (o) { return { name: o.name, url: o.url, state: 'unpaired', me: false }; });
+        var https = function (x) { return typeof x.url === 'string' && /^https:\/\//.test(x.url); };
+        var on = list.filter(function (x) { return x.state === 'on'; }).length;
+        var rows = list.map(function (x) {
+            var n = num(x.n) ? t('mm.n', { n: x.n }) : '';
+            var d = x.me ? '<b>' + t('mm.me') + '</b>' + (n ? ' · ' + n : '')
+                : x.state === 'on' ? (num(x.paired) ? t('rs.paired', { d: md(x.paired) }) + (n ? ' · ' + n : '') : n)
+                : x.state === 'off' ? (x.refused ? t('mm.refused') : num(x.seen) ? t('mm.seen', { t: md(x.seen) + ' ' + hm(x.seen) }) : t('mm.never'))
+                : x.state === 'wait' ? t('mm.wait') : t('mm.unpaired');
+            var st = x.state === 'on' ? '<span class="st run">' + ic('wifi') + t('mm.on') + '</span>'
+                : x.state === 'off' ? '<span class="st lost">' + ic('wifioff') + t('mm.off') + '</span>'
+                : x.state === 'wait' ? '<span class="st">' + ic('clock') + t('mm.waitS') + '</span>'
+                : '<span class="st ask">' + ic('qr') + t('mm.pair') + '</span>';
+            var inner = ic(x.state === 'off' ? 'laptop' : 'server') + '<span class="mm-m"><span class="mm-n">' + esc(x.name || '') + '</span><span class="mm-d">' + d + '</span></span>' + st;
+            var label = esc(t('mm.aria.' + (x.me ? 'me' : x.state), { name: x.name || '' }));
+            var key = x.me ? 'mm:me' : 'mm:' + (x.name || '');
+            var open = Boolean(u.open && u.open[key]);
+            var fold = function (cls, body) {
+                return '<li><button type="button" class="mm-row' + cls + '" data-act="fold" data-key="' + esc(key) + '" aria-expanded="' + open + '" aria-label="' + label + '">' + inner + ic('down', 'go') + '</button>' + (open ? body : '') + '</li>';
+            };
+            if (x.me) return fold(' me', '<div class="rs-x"><p>' + ic('qr') + '<span>' + t('rs.pairWhy') + '</span></p><button type="button" class="ghost" data-act="repair">' + ic('qr') + t('off.repair') + '</button></div>');
+            if ((x.state === 'unpaired' || x.refused) && https(x)) {
+                var id = 'mm-c-' + esc(x.name || '');
+                return fold('', '<form class="mm-pair" data-peer-form="' + esc(hostOf(x.url)) + '"><label for="' + id + '">' + t('mm.code', { name: esc(x.name || '') }) + '</label>'
+                    + '<input id="' + id + '" name="code" autocomplete="one-time-code" autocapitalize="characters" maxlength="8" inputmode="text"><button type="submit" class="cta">' + t('pair.go') + '</button></form>');
+            }
+            return '<li>' + (https(x) ? '<a class="mm-row" href="' + esc(x.url) + '" aria-label="' + label + '">' + inner + ic('out', 'go') + '</a>' : '<span class="mm-row" aria-label="' + label + '">' + inner + '<span></span></span>') + '</li>';
+        }).join('');
+        return '<section class="mm" data-block="machines-sheet" aria-labelledby="mm-t"><h3 class="mm-h" id="mm-t">' + t('mm.title') + (list.length ? '<span>' + list.length + '</span>' : '') + (on ? '<span class="ok">' + t('mm.onN', { n: on }) + '</span>' : '') + '</h3>'
+            + (list.length ? '<ul class="mm-list">' + rows + '</ul>' : '<p class="mm-empty">' + ic('info') + '<span>' + t('rs.noOthers') + '</span></p>') + '</section>';
     }
 
     // The 測站 sheet from the host pill: the connection on one line, then this phone, the session
@@ -678,13 +705,12 @@
                 + (open ? '<div class="rs-x">' + body + '</div>' : '') + '</li>';
         }
         return '<div class="rs-scrim" data-act="sheet" aria-hidden="true"></div><div class="rs" role="dialog" aria-modal="true" aria-labelledby="rs-t" data-block="m-remote-sheet"><span class="rs-grab" aria-hidden="true"></span>'
-            + '<div class="rs-h"><h2 id="rs-t">' + ic('server') + t('host.station') + '</h2><span class="sp"></span><span class="on">' + ic('wifi') + esc(t('host.on', { host: m.host || '' })) + '</span>'
+            + '<div class="rs-h"><h2 id="rs-t">' + ic('server') + t('host.station') + '</h2><span class="sp"></span><span class="on">' + ic('wifi') + esc(t(many(m) ? 'mm.via' : 'host.on', { host: m.host || '' })) + '</span>'
             + (num(m.at) ? '<time>' + ic('clock') + hm(m.at) + '</time>' : '') + '</div><ul class="rs-list">'
             + row('rs:me', 'phone', t('rs.me'), esc(me ? me.name : t('rs.local')), paired ? t('rs.paired', { d: paired }) : '', '<p>' + ic('info') + '<span>' + t(me ? 'rs.unpair' : 'rs.localWhy') + '</span></p>')
             + (held ? row('rs:held', 'link', t('st.held'), esc(held.task), t('home.left', { t: clock(held.holdUntil - at) }),
                 '<p>' + ic('hourglass') + '<span>' + t('rs.hold') + '</span></p><button type="button" class="give" data-act="detach" data-id="' + esc(held.id) + '">' + ic('laptop') + t('give') + '</button>') : '')
-            + row('rs:pair', 'refresh', t('off.repair'), t('rs.pairV'), '', '<p>' + ic('qr') + '<span>' + t('rs.pairWhy') + '</span></p><button type="button" class="ghost" data-act="repair">' + ic('qr') + t('off.repair') + '</button>')
-            + '</ul>' + machines(m.others) + '<a class="ghost" href="/?full=1#/settings">' + ic('laptop') + t('rs.full') + '</a>' + (u.note ? '<p class="note" role="status">' + esc(u.note) + '</p>' : '') + '</div>';
+            + '</ul>' + machinesHtml(m, at, u) + '<a class="ghost" href="/?full=1#/settings">' + ic('laptop') + t('rs.full') + '</a>' + (u.note ? '<p class="note" role="status">' + esc(u.note) + '</p>' : '') + '</div>';
     }
 
     // Claude's words: paragraphs on blank lines, `code`, line breaks; cut long.
@@ -931,10 +957,10 @@
             }).join('') + '</div>' : '');
     }
 
-    function panesNav(p, pane) {
+    function panesNav(p, pane, m) {
         var bg = (p.background || []).length;
         return '<nav class="panes" aria-label="' + t('pn.nav') + '" data-block="m-pane-tabs">' + PANES.map(function (x) {
-            return '<a href="#/s/' + esc(p.id) + '/' + x[0] + '"' + (x[0] === pane ? ' aria-current="page"' : '') + '>' + ic(x[1]) + '<span>' + t('pn.' + x[0]) + '</span>'
+            return '<a href="' + shash(m, p) + esc(p.id) + '/' + x[0] + '"' + (x[0] === pane ? ' aria-current="page"' : '') + '>' + ic(x[1]) + '<span>' + t('pn.' + x[0]) + '</span>'
                 + (x[0] === 'dispatch' && bg ? '<i class="dot live" aria-label="' + esc(t('pn.bg', { n: bg })) + '"></i>' : '') + '</a>';
         }).join('') + '</nav>';
     }
@@ -1018,14 +1044,14 @@
     }
 
     // 關卡: the held gate's questions, each opening on its options; 去答 goes to the card in 對話.
-    function gateInner(p, at, u) {
+    function gateInner(p, at, u, m) {
         var qs = (p.gate && p.gate.questions) || [];
         if (!qs.length) return empty('gt.empty');
         return (num(p.gate.until) ? '<p class="sc-left">' + ic('timer') + t('gc.left', { t: clock(p.gate.until - at) }) + '</p>' : '')
             + '<ol class="ov-list">' + qs.map(function (q, qi) {
                 var opts = Array.isArray(q.options) ? q.options : [];
                 return evRow('gt:' + qi, u, ic('ask'), esc(q.question || ''), t('ask.opts', { n: opts.length }), '', '<ul class="gopt">' + optList(opts) + '</ul>');
-            }).join('') + '</ol><p class="ov-end"><a class="sc-btn" href="#/s/' + esc(p.id) + '/talk">' + t('home.go') + ic('chev') + '</a></p>';
+            }).join('') + '</ol><p class="ov-end"><a class="sc-btn" href="' + shash(m, p) + esc(p.id) + '/talk">' + t('home.go') + ic('chev') + '</a></p>';
     }
 
     function paneInner(p, pane, at, u, m) {
@@ -1033,7 +1059,7 @@
         if (pane === 'plan') return planInner(p, m || {}, at, u);
         if (pane === 'dispatch') return dispatchInner(p, at, u);
         if (pane === 'events') return eventsInner(p, at, u);
-        if (pane === 'gate') return gateInner(p, at, u);
+        if (pane === 'gate') return gateInner(p, at, u, m);
         return cvInner(p, at, u);
     }
 
@@ -1069,7 +1095,36 @@
         }
         return '<div class="pg dt" ' + SCREEN[attached ? 'attached' : p.state] + '><div class="dt-top"><header class="ch-h">' + back
             + '<div><p class="ch-t">' + esc(p.task) + '</p><p class="ch-m">' + avatar(p.project) + esc(p.project) + stwI(p.stage) + chip(p) + '</p></div>' + side + '</header>'
-            + '<div class="tkb" data-block="m-tokenbar">' + tokenInner(p, at, u) + '</div>' + panesNav(p, pane) + '</div>' + body + '</div>';
+            + '<div class="tkb" data-block="m-tokenbar">' + tokenInner(p, at, u) + '</div>' + panesNav(p, pane, m) + '</div>' + body + '</div>';
+    }
+
+    // An unregistered session (design §1; Task 5): its own head — how it was started, RC, the computer,
+    // busy or idle, its cwd — then 對話 or 事件 read from its transcript, and a foot saying it is read
+    // only; with Remote Control on, the reply goes to the Claude app. Until its json arrives, its row
+    // from mobile.json stands in.
+    function unregHtml(m, r, at, u, P) {
+        var row = (m.unregistered || []).concat((m.rc && m.rc.ended) || []).filter(function (x) { return x.id === r.id && (x.machine || m.host) === r.machine; })[0];
+        var p = P || (row ? Object.assign({}, row, { chat: [], state: row.at ? 'ended' : row.status === 'busy' ? 'running' : 'idle', context: null, limits: null }) : null);
+        var back = '<a class="bk" href="#/" aria-label="' + t('chat.back') + '">' + ic('back') + '</a>';
+        if (!p) return '<div class="pg dt"><header class="ch-h">' + back + '<span></span><span></span></header><div class="empty"><h2>' + t('chat.gone') + '</h2></div></div>';
+        var pane = r.pane === 'events' ? 'events' : 'talk';
+        var to = '#/u/' + esc(r.machine) + '/' + esc(p.id) + '/';
+        var via = VIA[p.entrypoint] || p.entrypoint || '';
+        var stat = p.state === 'ended' ? '<span class="st">' + ic('check') + t('rc.ended') + '</span>'
+            : p.state === 'running' ? '<span class="st run">' + ic('activity') + t('ur.busy') + '</span>' : '<span class="st idle">' + ic('pause') + t('ur.idle') + '</span>';
+        var head = '<div class="dt-top" data-block="session-head-unregistered"><header class="ch-h">' + back + '<div><p class="ch-t">' + esc(p.name || p.task || lastDir(p.cwd) || p.id) + '</p><p class="ch-m">'
+            + (via ? '<span class="ent">' + esc(via) + '</span>' : '')
+            + (p.bridge ? '<span class="rc"><i class="dot live" aria-hidden="true"></i>RC<span class="vh">' + t('ur.rcSr') + '</span></span>' : '')
+            + '<span class="mtag">' + ic('server') + esc(r.machine) + '</span>' + stat + '<span class="cwd">' + esc(p.cwd || '') + '</span></p></div><span></span></header>'
+            + '<div class="tkb" data-block="m-tokenbar">' + tokenInner(p, at, u) + '</div>'
+            + '<nav class="panes two" aria-label="' + t('pn.nav') + '"><a href="' + to + 'talk"' + (pane === 'talk' ? ' aria-current="page"' : '') + '>' + ic('msg') + '<span>' + t('pn.talk') + '</span></a>'
+            + '<a href="' + to + 'events"' + (pane === 'events' ? ' aria-current="page"' : '') + '>' + ic('zap') + '<span>' + t('pn.events') + '</span></a></nav></div>';
+        var body = pane === 'events'
+            ? '<div class="ov" data-block="m-pane-events" role="region" aria-label="' + t('pn.events') + '">' + eventsInner(p, at, u) + '</div>'
+            : '<div class="cv" role="log" aria-label="' + t('chat.log') + '" data-block="session-chat-unregistered"><p class="uwhy">' + ic('info') + '<span>' + t('ur.uwhy') + '</span></p>' + cvInner(p, at, u) + '</div>';
+        var foot = '<div class="ufoot" data-block="session-foot-unregistered"><p>' + ic('eye') + '<span>' + t(p.bridge ? 'ur.footRc' : 'ur.foot') + '</span></p>'
+            + (p.bridge ? '<a class="ghost" href="https://claude.ai/code" target="_blank" rel="noopener">' + ic('out') + t('ur.app') + '</a>' : '') + '</div>';
+        return '<div class="pg dt" data-block="m-unreg">' + head + body + foot + '</div>';
     }
 
     function optList(opts) {
@@ -1157,6 +1212,7 @@
         var r = R || parseRoute('');
         var at = num(now) ? now : Date.now();
         if (r.view === 'chat') return chatHtml(m, r.id, at, u, P, r.pane || 'talk');
+        if (r.view === 'unreg') return unregHtml(m, r, at, u, P);
         var v = Object.assign({}, u, { pick: r.pick || null });
         var sheet = u.sheet ? sheetHtml(m, at, v) : '';
         if (r.view === 'done') return doneScreen(m, at, v) + sheet;
@@ -1287,12 +1343,15 @@
             return null;
         }
         function route() { return parseRoute(win.location.hash); }
+        // A session on another computer is read and acted on through this station (Task 5).
+        function via(R) { return R && R.machine && st.M && R.machine !== st.M.host ? '/station/peer/' + encodeURIComponent(R.machine) : ''; }
+        function talking(R) { return R.view === 'chat' || R.view === 'unreg'; }
         function post(url, fields) {
-            return win.fetch(url, { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: new win.URLSearchParams(fields).toString() });
+            return win.fetch(via(route()) + url, { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: new win.URLSearchParams(fields).toString() });
         }
         function upUrl(file, p) {
             var ext = (String(file.type || '').split('/')[1] || 'png').replace(/[^a-z0-9]/g, '');
-            return '/phone/upload?root=' + encodeURIComponent(p.root) + '&id=' + encodeURIComponent(p.id) + '&ext=' + encodeURIComponent(ext);
+            return via(route()) + '/phone/upload?root=' + encodeURIComponent(p.root) + '&id=' + encodeURIComponent(p.id) + '&ext=' + encodeURIComponent(ext);
         }
         function refused(code, text) {
             var bad = new Error(t('gate.refused', { code: code, why: String(text || '').trim() }));
@@ -1426,14 +1485,14 @@
             var keep = c && R.view === 'chat' && st.shown === R.id ? keepOpen(c) : null;
             var gk = gateKey(R.view === 'chat' ? current() : null);
             if (gk !== st.gk) { st.ui.pin = false; st.gk = gk; }
-            var html = screen(st.M, R, Date.now(), st.ui, R.view === 'chat' && st.P && st.P.id === R.id ? st.P : null);
+            var html = screen(st.M, R, Date.now(), st.ui, talking(R) && st.P && st.P.id === R.id ? st.P : null);
             app.innerHTML = html;
             st.cut = LISTS[R.view] ? cut(html) : null;
             st.listed = st.cut ? listKey(R) : null;
             st.shown = R.view === 'chat' ? R.id : null;
             if (keep) keep(cv());
             if (st.ui.mode === 'pair') scan();
-            if (R.view === 'chat' && R.pane === 'talk') toEnd();
+            if (talking(R) && R.pane === 'talk') toEnd();
         }
         // What a list screen's refresh must match to write in place: the screen, the computer picked,
         // the sheet open or shut, the language. Anything else changing draws the page whole.
@@ -1497,6 +1556,7 @@
             st.P = P;
             if (!before || before.id !== P.id) return draw();
             if (sameKey(before) === sameKey(P)) return;
+            if (route().view === 'unreg') return draw();
             if (gateKey(before) !== gateKey(P)) return draw();
             if (before.state === 'gate' && P.state === 'gate' && before.gate && P.gate && before.gate.until === P.gate.until) return;
             if (before.state === P.state && before.attached === P.attached && JSON.stringify(before.waiting) === JSON.stringify(P.waiting)) return patch();
@@ -1537,7 +1597,7 @@
                 st.M = M;
                 st.ui = APP;
                 if (M && M.host) store('station.m.host', String(M.host));
-                if (route().view === 'chat') return loadChat();
+                if (talking(route())) return loadChat();
                 patchList();
             }, function () {
                 st.loading = false;
@@ -1545,10 +1605,10 @@
             }).then(null, rethrow);
         }
         function loadChat() {
-            var id = route().id;
+            var R0 = route(); var id = R0.id;
             if (!id) return null;
             st.chatLoading = true;
-            return win.fetch('/station/phone.json?id=' + encodeURIComponent(id), { credentials: 'same-origin', cache: 'no-store' }).then(function (r) {
+            return win.fetch(via(R0) + (R0.view === 'unreg' ? '/station/unreg.json?id=' : '/station/phone.json?id=') + encodeURIComponent(id), { credentials: 'same-origin', cache: 'no-store' }).then(function (r) {
                 if (r.status === 401) return UNPAIRED;
                 if (r.status === 404) return GONE;
                 if (!r.ok) throw new Error(String(r.status));
@@ -1565,6 +1625,7 @@
                     return draw();
                 }
                 st.gone = null;
+                if (R0.machine && !P.machine) P.machine = R0.machine;
                 return refresh(st.P && st.P.id === id ? st.P : null, P);
             }, function () {
                 st.chatLoading = false;
@@ -1575,7 +1636,7 @@
         function act(url, fields, done) {
             st.ui.note = '';
             return post(url, fields).then(function (r) {
-                if (r.ok) { if (done) done(); return route().view === 'chat' ? loadChat() : load(); }
+                if (r.ok) { if (done) done(); return talking(route()) ? loadChat() : load(); }
                 return r.text().then(function (text) { st.ui.note = t('gate.refused', { code: r.status, why: String(text || '').trim() }); draw(); });
             }, function () { st.ui.note = t('gate.failed'); draw(); });
         }
@@ -1624,6 +1685,19 @@
             if (!f || !f.getAttribute) return;
             if (f.id === 'gate-card') { e.preventDefault(); answer(f); return; }
             if (f.id === 'composer') { e.preventDefault(); say(f); return; }
+            if (f.getAttribute('data-peer-form') !== null) {
+                e.preventDefault();
+                var pin = f.querySelector('input');
+                var pc = codeIn(pin ? pin.value : '');
+                if (!pc) { st.ui.note = t('pair.bad'); draw(); return; }
+                post('/station/peers/pair', { dnsName: f.getAttribute('data-peer-form'), code: pc }).then(function (r) {
+                    return r.text().then(function (text) {
+                        st.ui.note = r.status === 201 ? t('mm.paired') : t('pair.refused', { code: r.status, why: String(text || '').trim() });
+                        return load();
+                    });
+                }, function () { st.ui.note = t('pair.failed'); draw(); });
+                return;
+            }
             if (f.getAttribute('data-pair-form') !== null) {
                 e.preventDefault();
                 var input = f.querySelector('input');
@@ -1744,13 +1818,13 @@
         d.addEventListener('focusin', typed);
         function poll(view) {
             if (d.visibilityState !== 'visible' || st.ui.mode !== 'app') return;
-            var chat = route().view === 'chat';
+            var chat = talking(route());
             if (view === 'chat' && chat && !st.chatLoading) loadChat();
             else if (view === 'home' && !chat && !st.loading) load();
         }
         d.addEventListener('visibilitychange', function () {
             if (d.visibilityState !== 'visible' || st.ui.mode !== 'app') return;
-            if (route().view === 'chat') loadChat(); else load();
+            if (talking(route())) loadChat(); else load();
         });
         var inId = route().id;
         win.addEventListener('hashchange', function () {
@@ -1763,7 +1837,7 @@
             draw();
             if (st.ui.mode !== 'app') return;
             // The list drawn before a conversation is stale by now: read it again.
-            if (route().view === 'chat') loadChat(); else load();
+            if (talking(route())) loadChat(); else load();
         });
         // A sideways swipe on a pane moves to the pane beside it (the mockup's scroll-snap, note 6).
         var touch = null;
@@ -1777,7 +1851,7 @@
             if (!touch || !p1 || R.view !== 'chat') { touch = null; return; }
             var to = swipeTo(R.pane, p1.clientX - touch.x, p1.clientY - touch.y);
             touch = null;
-            if (to) win.location.hash = '#/s/' + R.id + '/' + to;
+            if (to) win.location.hash = (R.machine ? '#/m/' + R.machine + '/' : '#/s/') + R.id + '/' + to;
         }, { passive: true });
         win.setInterval(function () { poll('home'); }, POLL_MS);
         win.setInterval(function () { poll('chat'); }, CHAT_MS);
