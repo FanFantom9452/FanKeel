@@ -785,7 +785,7 @@ whose session is at a gate pins the gate's question under the header, with a
 button to the options (`assets/station/mobile.js:921`, `function gpinHtml(p, at, u) {`;
 `assets/station/mobile.js:1099`, `p.state === 'gate' && p.gate ? gpinHtml(p, at, u)`),
 and the last report message is folded to about six lines until
-`展開完整報告` is pressed (`assets/station/mobile.js:623`,
+`展開完整報告` is pressed (`assets/station/mobile.js:833`,
 `var fold = function (i) { return p.state === 'gate' && i === lastAi …`;
 `assets/station/mobile.css:339`, `body.m .rep .bub{position:relative;max-height:calc(15px * 1.75 * 6 + 24px);overflow:hidden;`).
 The pinned question is clamped to two lines and opens on a tap, or on Enter or
