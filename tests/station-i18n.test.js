@@ -24,6 +24,8 @@ const SECTIONS = [['the three levels: shared', 'shared'], ['the project page', '
     ['the live page', 'live'], ['the left bar', 'nav'], ['設定: the seven-step wizard', 'wiz'], ['tune: a block changed', 'tune'],
     ['儀表板 (`#/`): four', 'dash'], ['the completion record', 'rec'], ['儀表板 (`#/`), again', 'dash'], ['the detail panel', 'det'], ['派工:', 'disp'], ['記成 TODO', 'todo'], ['比較', 'cmp'],
     ['the header search', 'q'], ['language:', 'mast'], ['live refresh', 'poll'], ['serve health polling', 'health']];
+// fmt.js and chart.js hold what left the shared and project-page sections, so they own both prefixes.
+const MOVED = ['fmt.js', 'chart.js'].map((n) => [n, fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', n), 'utf8').split('\n')]);
 const PREFIX = (() => {
     const out = [];
     let p = 'fmt';
@@ -78,16 +80,17 @@ test('t: English by key with {vars} filled, Chinese otherwise, and set() stores 
     assert.equal(api.set('fr'), false);
 });
 
-test('every CJK string literal in station.js is the Chinese of a loc() call (the extraction worklist)', () => {
+test('every CJK string literal in station.js, fmt.js and chart.js is the Chinese of a loc() call (the extraction worklist)', () => {
     const left = [];
-    LINES.forEach((text, i) => {
+    const FILES = [['station.js', LINES, (i) => PREFIX[i]]].concat(MOVED.map(([n, ls]) => [n, ls, () => 'shared/proj']));
+    for (const [file, lines, prefixOf] of FILES) lines.forEach((text, i) => {
         if (/^\s*\/\//.test(text)) return;
         LIT.lastIndex = 0;
         let m;
         while ((m = LIT.exec(text))) {
             if (!CJK.test(m[0]) || ALLOW.has(m[0])) continue;
             if (LEAD.test(text.slice(0, m.index))) continue;
-            left.push((i + 1) + '\t' + PREFIX[i] + '\t' + m[0]);
+            left.push(file + ':' + (i + 1) + '\t' + prefixOf(i) + '\t' + m[0]);
         }
     });
     assert.deepEqual(left, [], left.length + ' literals left (line, key prefix, literal):\n' + left.join('\n'));
@@ -96,18 +99,17 @@ test('every CJK string literal in station.js is the Chinese of a loc() call (the
 test('each loc() key has its section\'s prefix, one Chinese string, and an English entry; every entry is used', () => {
     const zhOf = new Map();
     const bad = [];
-    // fmt.js and chart.js hold what left the shared and project-page sections, so they own both prefixes.
-    const MOVED = ['fmt.js', 'chart.js'].flatMap((n) => fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', n), 'utf8').split('\n').map((t) => [t, ['shared', 'proj'], n]));
-    const ENTRIES = LINES.map((t, i) => [t, [PREFIX[i]], 'station.js']).concat(MOVED);
-    ENTRIES.forEach(([text, prefixes, file], i) => {
+    const ENTRIES = [['station.js', LINES, (i) => [PREFIX[i]]]].concat(MOVED.map(([n, ls]) => [n, ls, () => ['shared', 'proj']]));
+    for (const [file, lines, prefixesOf] of ENTRIES) lines.forEach((text, i) => {
+        const prefixes = prefixesOf(i);
         KEYED.lastIndex = 0;
         let m;
         while ((m = KEYED.exec(text))) {
             const [key, zh] = [m[1], m[2]];
             if (!prefixes.includes(key.split('.')[0])) bad.push(file + ':' + (i + 1) + ' ' + key + ' is in section ' + prefixes.join('/'));
-            if (zhOf.has(key) && zhOf.get(key) !== zh) bad.push((i + 1) + ' ' + key + ' carries two strings');
+            if (zhOf.has(key) && zhOf.get(key) !== zh) bad.push(file + ':' + (i + 1) + ' ' + key + ' carries two strings');
             zhOf.set(key, zh);
-            if (!Object.prototype.hasOwnProperty.call(I.STRINGS.en, key)) bad.push((i + 1) + ' ' + key + ' has no English');
+            if (!Object.prototype.hasOwnProperty.call(I.STRINGS.en, key)) bad.push(file + ':' + (i + 1) + ' ' + key + ' has no English');
         }
     });
     for (const k of Object.keys(I.STRINGS.en)) if (!zhOf.has(k)) bad.push(k + ' is in i18n.js and used nowhere');
