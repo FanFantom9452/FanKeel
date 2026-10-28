@@ -9,6 +9,35 @@ const assert = require('node:assert/strict');
 const DIR = path.join(__dirname, '..', 'assets', 'station');
 const read = (f) => fs.readFileSync(path.join(DIR, f), 'utf8');
 
+// End index (after the closing brace) of a `${` body whose text starts at q;
+// strings and nested templates are skipped so their braces do not count.
+function exprEnd(src, q) {
+    let dep = 1;
+    while (q < src.length) {
+        const c = src[q];
+        if (c === '\'' || c === '"') {
+            q++;
+            while (q < src.length && src[q] !== c) q += src[q] === '\\' ? 2 : 1;
+            q++; continue;
+        }
+        if (c === '`') { q = tplEnd(src, q + 1); continue; }
+        if (c === '{') dep++;
+        else if (c === '}' && !--dep) return q + 1;
+        q++;
+    }
+    return assert.fail('unterminated ${ in source');
+}
+// Index after the closing backtick of a template whose text starts at p.
+function tplEnd(src, p) {
+    while (p < src.length) {
+        if (src[p] === '\\') p += 2;
+        else if (src[p] === '`') return p + 1;
+        else if (src[p] === '$' && src[p + 1] === '{') p = exprEnd(src, p + 2);
+        else p++;
+    }
+    return assert.fail('unterminated template in source');
+}
+
 // Source with comments, strings, templates and regex literals blanked (same
 // length), so identifiers and braces can be read off it.
 function blank(src) {
@@ -18,32 +47,34 @@ function blank(src) {
         const c = src[i], d = src[i + 1];
         let j = -1;
         if (c === '/' && d === '/') { j = src.indexOf('\n', i); if (j < 0) j = src.length; }
-        else if (c === '/' && d === '*') { j = src.indexOf('*/', i) + 2; }
+        else if (c === '/' && d === '*') { j = src.indexOf('*/', i); assert.ok(j >= 0, 'unterminated comment'); j += 2; }
         else if (c === '`') {
             // literal text is blanked, `${...}` bodies stay scannable
             let p = i + 1;
             out += ' ';
-            while (src[p] !== '`') {
+            while (p < src.length && src[p] !== '`') {
                 if (src[p] === '\\') { out += '  '; p += 2; continue; }
                 if (src[p] === '$' && src[p + 1] === '{') {
-                    let q = p + 2, dep = 1;
-                    while (dep) { if (src[q] === '{') dep++; else if (src[q] === '}') dep--; q++; }
+                    const q = exprEnd(src, p + 2);
                     out += '  ' + blank(src.slice(p + 2, q - 1)) + ' ';
                     p = q; continue;
                 }
                 out += src[p] === '\n' ? '\n' : ' '; p++;
             }
+            assert.ok(p < src.length, 'unterminated template in source');
             out += ' '; last = 'x'; i = p + 1; continue;
         } else if (c === '\'' || c === '"') {
             j = i + 1;
-            while (src[j] !== c) j += src[j] === '\\' ? 2 : 1;
+            while (j < src.length && src[j] !== c) j += src[j] === '\\' ? 2 : 1;
+            assert.ok(j < src.length, 'unterminated string in source');
             j++;
         } else if (c === '/' && (last === '' || /[(,=:\[!&|?{};+]/.test(last) || /(^|\W)return$/.test(out.trimEnd().slice(-7)))) {
             j = i + 1;
             let cls = false;
-            while (cls || src[j] !== '/') { if (src[j] === '\\') j++; else if (src[j] === '[') cls = true; else if (src[j] === ']') cls = false; j++; }
+            while (j < src.length && (cls || src[j] !== '/')) { if (src[j] === '\\') j++; else if (src[j] === '[') cls = true; else if (src[j] === ']') cls = false; j++; }
+            assert.ok(j < src.length, 'unterminated regex in source');
             j++;
-            while (/[a-z]/.test(src[j])) j++;
+            while (j < src.length && /[a-z]/.test(src[j])) j++;
         }
         if (j < 0) { out += c; if (!/\s/.test(c)) last = c; i++; continue; }
         out += fill(i, j); last = 'x'; i = j;
@@ -107,7 +138,7 @@ function freeIdents(mod) {
         if (pre.endsWith('.') && !pre.endsWith('..')) continue;
         if (/[{,]$/.test(pre) && /^\s*:(?!:)/.test(post) ) continue;
         if (/^\s*:/.test(post) && /\bcase$|\bdefault$/.test(pre + id)) continue;
-        if (declared.has(id) || (id in globalThis && id !== 'process' && id !== 'require') || ['var', 'let', 'const', 'function', 'return', 'if', 'else', 'for', 'while', 'do', 'new', 'typeof', 'in', 'of', 'instanceof', 'case', 'default', 'switch', 'break', 'continue', 'try', 'catch', 'finally', 'throw', 'this', 'null', 'true', 'false', 'void', 'delete'].includes(id)) continue;
+        if (declared.has(id) || id === 'document' || id === 'window' || (id in globalThis && id !== 'process' && id !== 'require') || ['var', 'let', 'const', 'function', 'return', 'if', 'else', 'for', 'while', 'do', 'new', 'typeof', 'in', 'of', 'instanceof', 'case', 'default', 'switch', 'break', 'continue', 'try', 'catch', 'finally', 'throw', 'this', 'null', 'true', 'false', 'void', 'delete'].includes(id)) continue;
         free.add(id);
     }
     return free;
