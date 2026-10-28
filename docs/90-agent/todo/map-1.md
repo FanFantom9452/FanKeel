@@ -1,7 +1,7 @@
 ---
 label: map
 title: 專案地圖列最大檔
-description: lib/map.js 在 most required: 之後加 largest: 五行（path 與行數），零依賴
+description: 專案地圖在 most required: 之後加 largest: 五行（path 與行數），零依賴
 state: ready
 link: lib/map.js
 ---
