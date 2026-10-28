@@ -36,7 +36,7 @@ test('a computer that cannot be read keeps the session head and names it with th
         ['#/u/lab/u2', () => res(502, 'lab refused this station: pair it again from the 測站 sheet'), /pair it again from the 測站 sheet/],
         ['#/u/lab/u2', () => res(404, 'no paired computer named lab'), /no paired computer named lab/],
         ['#/m/lab/t2', () => res(403, 'no paired phone'), /no paired phone/],
-        ['#/m/lab/t2', () => Promise.reject(new Error('net')), /lab/],
+        ['#/m/lab/t2', () => Promise.reject(new Error('net')), /這台測站沒回話，等一下會再讀/],
     ];
     for (const [hash, peer, why] of cases) {
         const h = await page(hash, peer, () => res(500, ''));
@@ -50,6 +50,43 @@ test('a computer that cannot be read keeps the session head and names it with th
     }
     const esc = await page('#/u/lab/u2', () => res(502, '<b>x</b>'), () => res(500, ''));
     assert.match(esc, /&lt;b&gt;x&lt;\/b&gt;/);
+});
+
+// The session on lab read through the peer path: `reply.peer` answers each read, so a test swaps it between polls.
+async function chat(reply) {
+    const b = boot('#/', { home: M, one: null });
+    await settle();
+    b.win.fetch = (url) => (url === '/station/mobile.json' ? res(200, '') : reply.peer());
+    b.goto('#/u/lab/u2');
+    await settle();
+    return b;
+}
+const PU = { id: 'u2', machine: 'lab', name: 'lab job', task: '', cwd: 'D:\\lab\\x', entrypoint: 'cli', bridge: false, status: 'busy', state: 'running',
+    chat: [{ role: 'assistant', text: 'back again', at: NOW - 3e4 }], at: NOW, context: null, limits: null };
+const NOTE = /<p class="note" role="status">讀不到 lab/;
+
+test('a computer read again after a 502 drops the note and draws the session', async () => {
+    const reply = { peer: () => res(502, 'cannot reach lab: connect ETIMEDOUT') };
+    const b = await chat(reply);
+    assert.match(b.app.innerHTML, NOTE);
+    reply.peer = () => Promise.resolve({ status: 200, ok: true, json: () => Promise.resolve(PU), text: () => Promise.resolve('') });
+    await b.poll();
+    assert.doesNotMatch(b.app.innerHTML, NOTE);
+    assert.match(b.app.innerHTML, /back again/);
+});
+
+test('the same 502 read twice draws once, so a poll does not take the composer\'s focus', async () => {
+    const reply = { peer: () => res(502, 'cannot reach lab: connect ETIMEDOUT') };
+    const b = await chat(reply);
+    assert.match(b.app.innerHTML, NOTE);
+    let draws = 0;
+    const html = Object.getOwnPropertyDescriptor(b.app, 'innerHTML');
+    Object.defineProperty(b.app, 'innerHTML', { get: html.get, set(v) { draws++; html.set.call(this, v); } });
+    await b.poll();
+    assert.equal(draws, 0);
+    reply.peer = () => res(502, 'lab refused this station: pair it again from the 測站 sheet');
+    await b.poll();
+    assert.equal(draws, 1, 'a new reason is drawn');
 });
 
 test('this station\'s own failures keep their screens: 404 is gone, no answer is pair-error, 401 is unpaired', async () => {
