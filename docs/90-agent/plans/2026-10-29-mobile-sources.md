@@ -42,6 +42,7 @@ last_verified: 2026-10-29
 - Task 4、5 改 `mobile.js` 會讓 station.md:785-790 的 `assets/station/mobile.js:<n>` 引文位移 — Task 6 — 同上，用 docs-check 的 `it is at :N` 修。
 - 把測站 sheet 的「重新配對」列拿掉，可能有既有測試斷言它 — Task 5 — 查過：只有 `tests/station-mobile-shell.test.js:167` 把 `'rs:pair': true` 放進 open 集合；那一列不畫了，這個鍵就沒有作用，測試不用改。那個測試要每個畫出來的 class 都有 CSS 規則，Task 5 的 class 由 Task 4 step 13 一起寫進 `mobile.css`。
 - 別台的 session 若用 `#/s/<computer>/<id>`，會跟 `#/s/<id>/<壞 pane>` 分不開（`tests/station-mobile-shell.test.js:39` 要後者回 home）— Task 4 — 別台的 session 改用自己的前綴 `#/m/<computer>/<id>[/<pane>]`，`#/s/` 的規則一字不改；Task 4 的測試同時斷言兩者。
+- 每 5 秒讀一次 mobile.json 就整頁 `app.innerHTML` 重畫，捲動位置與列裡打開的東西被重置（`assets/station/mobile.js:1229` 的 `draw`，`:1301` 的 `load` 每次都叫它）— Task 4 — 清單畫面的刷新改走 `patchList`：只換有變的列、標題與 tab bar，沒變的列保留同一個節點；`tests/station-mobile-refresh.test.js` 用保留節點的假 DOM 斷言節點與 `scrollTop` 不變，現在會失敗。列上的相對時間與「等你」卡的倒數每次可能不同，那一列會被換掉，但捲動不受影響。測站 sheet 開著時資料一變仍整頁重畫（sheet 不在 `.ha-body` 裡）。
 - 離線電腦最後看到的 `state: 'gate'` 列混進「等你」與 tab 的數字 — Task 4 — `askHtml` 與 `tabbar` 濾掉 `was`；Task 4 的測試先失敗再通過。
 
 ## Task 1: mobile.json 帶未登記、電腦名、RC，並合併別台的列
@@ -1230,18 +1231,22 @@ The other computers (docs/03-decisions/2026-10-29-mobile-sources.md). `POST /sta
 ## Task 4: 手機列表 — 未登記群組、電腦標籤與篩選、離線、RC 分頁
 
 **Files:**
-- Modify: `assets/station/mobile.js:17-1010` — 字串、`parseRoute`、新 helper、`chip`/`stLine`/`card`/`askCard`/`hostHtml`/`tabbar`/`homeHtml`、新 `rcHtml`、`screen`
-- Modify: `assets/station/mobile.css:380-618` — tab bar 四欄；新區塊的樣式，連同 Task 5 的未登記畫面與 sheet 的樣式（讓 Task 5 不必再動這個檔）
+- Modify: `assets/station/mobile.js:17-1310` — 字串、`parseRoute`、新 helper、`chip`/`stLine`/`card`/`askCard`/`hostHtml`/`tabbar`/`homeHtml`、新 `rcHtml`、`screen`；每張卡帶 `data-row`；`cut`；`boot` 裡 `draw`、`load` 的清單刷新改成只換有變的元素（`patchList`，在 :1221-1304）
+- Modify: `assets/station/mobile.css:384-384` — `.tabbar` 改四欄
+- Modify: `assets/station/mobile.css:618-618` — 檔尾接上新區塊的樣式，連同 Task 5 的未登記畫面與 sheet 的樣式（讓 Task 5 不必再動這個檔）
 - Read: `.fankeel/build/2026-10-29-mobile-sources/mockup.html` — `machine-filter`、`machine-filter-picked`、`machine-filter-rc`、`list-merged`、`list-unregistered`、`list-offline-note`、`list-machine-offline`、`tabbar-rc`、`account-rc` 的樣子
 - Test: `tests/station-mobile-sources-list.test.js`
+- Test: `tests/station-mobile-refresh.test.js`
 
 **Interfaces:**
-- Consumes: `mobile.json` 的 `machines`、`unregistered`、`rc`、每列的 `machine`、`was`、`seen`（Task 1 的形狀，見 Task 1 Interfaces）
+- Consumes: `mobile.json` 的 `machines`、`unregistered`、`rc`、每列的 `machine`、`was`、`seen`——已對過 48dc65f9 的 `lib/mobile.js`：`merge` 給 `machines` 每筆 `{ name, url, state, me, seen, paired, refused, n }`（:109-119），離線電腦的列帶 `was: true, seen`（:120），`unregistered`、`rc: { live, ended }` 在 :105、:125、:189
 - Produces: `parseRoute` 新增 `{ view: 'chat', machine }`（別台的 session 用自己的前綴 `#/m/<machine>/<id>[/<pane>]`；`#/s/<id>[/<pane>]` 不變）、`{ view: 'unreg', id, machine, pane: 'talk'|'events' }`（`#/u/<machine>/<id>[/talk|events]`）、`{ view: 'rc' }`、`#/` 與 `#/rc` 的 `?m=<name>` 給 `pick`；沒有時不帶這兩個鍵
 - Produces（mobile.js 內部，Task 5 用）: `shash(m, x)` → 別台的列 `'#/m/<machine>/'`，這台的 `'#/s/'`；`many(m)` → boolean；`mtag(m, x, u)` → html；`VIA`（`{ 'claude-desktop': 'Desktop', cli: 'CLI' }`）；`lastDir(p)`；`urCard(m, x, at, u, o)`；`STR` 的 `ur.*`、`mm.*` 等全部新鍵（Task 5 的字串也在這裡加）
 - Produces: `screen()` 把 `pick` 放進傳給各畫面的 `u`；`card(x, at, u, kind, m)` 多第五個參數；`askHtml` 與 `tabbar` 的「等你」只數沒有 `was` 的列
+- Produces: 每張清單卡（`card`、`askCard`、`urCard`）的外層 `<div>` 帶 `data-row="<電腦>/<id>"`（RC 已結束的加 `/e`）；`cut(html)` → `{ head, body, tabs, rest, rows }` 或 `null`；Session、等你、RC 對話三個清單畫面被 poll 讀到新資料時走 `patchList()`，不再整頁重畫
+- Produces（Task 5 要知道）: `draw()` 結束時記下 `st.cut` 與 `st.listed`；`load()` 讀完清單叫 `patchList()`，它在不是清單畫面、換了畫面或 sheet 開關時退回 `draw()`
 
-**Dispatch:** implementer, sonnet — 程式碼都在計畫裡，照抄加測試。
+**Dispatch:** implementer, sonnet — 程式碼都在計畫裡，照抄加測試；刷新的比對寫在 `cut` 一個純函式裡，不需要推理 DOM。
 
 1. Write `tests/station-mobile-sources-list.test.js`:
 
@@ -1467,6 +1472,8 @@ test('English: every new string is drawn in English', () => {
     function many(m) { return ((m && m.machines) || []).filter(function (x) { return x.state !== 'unpaired'; }).length > 1; }
     function shash(m, x) { var h = (m && m.host) || ''; return x && x.machine && x.machine !== h ? '#/m/' + esc(x.machine) + '/' : '#/s/'; }
     function mtag(m, x, u) { return many(m) && !(u && u.pick) && x.machine ? '<span class="mtag">' + ic('server') + esc(x.machine) + '</span>' : ''; }
+    // A list row's key, `<computer>/<id>`: the refresh (patchList) finds a row by it.
+    function rowKey(m, x) { return esc(x.machine || (m && m.host) || '') + '/' + esc(x.id); }
     function wasName(x) { return x.state === 'gate' ? t('st.ask') : x.state === 'idle' ? t('st.idle') : x.state === 'holding' ? t('st.held') : t('st.run'); }
 
     // An unregistered session's card (list-unregistered), and an RC one's (account-rc, o.rc; o.ended
@@ -1481,7 +1488,7 @@ test('English: every new string is drawn in English', () => {
                 : ic(busy ? 'activity' : 'pause') + '<span' + (busy ? ' class="busy"' : '') + '>' + (o.rc ? t('rc.on') + ' · ' : '') + t(busy ? 'ur.busy' : 'ur.idle') + '</span>';
         var when = o.ended ? x.at : x.started;
         var href = x.kind === 'reg' ? shash(m, x) + esc(x.id) : '#/u/' + esc(x.machine || m.host || '') + '/' + esc(x.id);
-        return '<div class="sc ur' + (o.ended ? ' ended' : '') + (x.was ? ' was' : '') + '"><a class="sc-main" href="' + href + '"><span class="sc-top"><span class="sc-t' + (x.name || x.task ? '' : ' un') + '">' + esc(label) + '</span>'
+        return '<div class="sc ur' + (o.ended ? ' ended' : '') + (x.was ? ' was' : '') + '" data-row="' + rowKey(m, x) + (o.ended ? '/e' : '') + '"><a class="sc-main" href="' + href + '"><span class="sc-top"><span class="sc-t' + (x.name || x.task ? '' : ' un') + '">' + esc(label) + '</span>'
             + (num(when) ? '<time>' + ic('clock') + esc(ago(at - when)) + '</time>' : '') + '</span>'
             + '<span class="ur-meta">' + (via ? '<span class="ent">' + esc(via) + '</span>' : '')
             + (!o.rc && x.bridge ? '<span class="rc' + (x.was ? ' gone' : '') + '">' + (x.was ? '' : '<i class="dot live" aria-hidden="true"></i>') + 'RC<span class="vh">' + t('ur.rcSr') + '</span></span>' : '')
@@ -1542,7 +1549,7 @@ test('English: every new string is drawn in English', () => {
     }
 ```
 
-9. In `assets/station/mobile.js`, `function card(x, at, u, kind) {` becomes `function card(x, at, u, kind, m) {`; in its return, `href="#/s/' + esc(x.id) + '"` becomes `href="' + shash(m, x) + esc(x.id) + '"`, and `'<span class="sc-stat">' + stLine(x, at) + '</span></a>'` becomes `'<span class="sc-stat">' + stLine(x, at) + mtag(m, x, u) + '</span></a>'`. In `function askCard(x, m, at, u, wide) {`, both `'#/s/' + esc(x.id)` become `shash(m, x) + esc(x.id)`, and `+ stwI(x.stage) + '</span>'` (the end of `sc-meta`) becomes `+ stwI(x.stage) + mtag(m, x, u) + '</span>'`.
+9. In `assets/station/mobile.js`, `function card(x, at, u, kind) {` becomes `function card(x, at, u, kind, m) {`; in its return, `href="#/s/' + esc(x.id) + '"` becomes `href="' + shash(m, x) + esc(x.id) + '"`, and `'<span class="sc-stat">' + stLine(x, at) + '</span></a>'` becomes `'<span class="sc-stat">' + stLine(x, at) + mtag(m, x, u) + '</span></a>'`. In `function askCard(x, m, at, u, wide) {`, both `'#/s/' + esc(x.id)` become `shash(m, x) + esc(x.id)`, and `'<div class="sc ask"><a class="sc-main"` becomes `'<div class="sc ask" data-row="' + rowKey(m, x) + '"><a class="sc-main"`. In `card`'s return, `(kind ? ' ' + kind : '') + '"><a class="sc-main"` becomes `(kind ? ' ' + kind : '') + '" data-row="' + rowKey(m, x) + '"><a class="sc-main"`, and `+ stwI(x.stage) + '</span>'` (the end of `sc-meta`) becomes `+ stwI(x.stage) + mtag(m, x, u) + '</span>'`.
 10. In `assets/station/mobile.js`, an offline computer's gates cannot be answered (docs/03-decisions/2026-10-29-mobile-sources.md), so 等你 and its count leave out `was` rows: in `function askHtml(m, at, u) {`, `var list = (m.tasks || []).filter(function (x) { return x.state === 'gate'; }).concat(m.stopped || []);` becomes `var list = (m.tasks || []).filter(function (x) { return x.state === 'gate' && !x.was; }).concat((m.stopped || []).filter(function (x) { return !x.was; }));`; in `function tabbar(view, m) {`, `var n = (m.tasks || []).filter(function (x) { return x.state === 'gate'; }).length + (m.stopped || []).length;` becomes `var n = (m.tasks || []).filter(function (x) { return x.state === 'gate' && !x.was; }).length + (m.stopped || []).filter(function (x) { return !x.was; }).length;`. Then `function tabbar(view, m) {`'s return becomes:
 
 ```js
@@ -1636,7 +1643,7 @@ test('English: every new string is drawn in English', () => {
     }
 ```
 
-13. In `assets/station/mobile.css` (the second comment block below is Task 5's screens, written here so Task 5 leaves this file alone), in the `.tabbar{flex:none;display:grid;` rule, change `grid-template-columns:repeat(3,minmax(0,1fr))` to `grid-template-columns:repeat(4,minmax(0,1fr))`, then append at the end of `assets/station/mobile.css`:
+13. In `assets/station/mobile.css` (the second comment block below is Task 5's screens, written here so Task 5 leaves this file alone), in the `.tabbar{flex:none;display:grid;` rule at line 384, change `grid-template-columns:repeat(3,minmax(0,1fr))` to `grid-template-columns:repeat(4,minmax(0,1fr))`, then append at the end of `assets/station/mobile.css`:
 
 ```css
 /* Every computer on one list (docs/90-agent/plans/2026-10-29-mobile-sources.md, Task 4). */
@@ -1713,8 +1720,261 @@ button.mm-row{width:100%;border:0;background:none;font:inherit;text-align:left;c
 .mm-pair .cta{min-height:44px;padding:0 16px}
 ```
 
-14. Run `node --test tests/station-mobile-sources-list.test.js tests/station-mobile-page.test.js tests/station-mobile-shell.test.js tests/station-mobile-cards.test.js tests/station-mobile-rows.test.js` — passes.
-15. Hand back for commit `feat: /m lists every computer — unregistered group, filter chips, offline computers, RC tab`.
+14. Write `tests/station-mobile-refresh.test.js`:
+
+```js
+'use strict';
+// Task 4 of docs/90-agent/plans/2026-10-29-mobile-sources.md, refreshing in place: the /m list read
+// again every 5 s writes only what changed — a row, the header's counts, the tab bar's badge — and a
+// row that did not change keeps its DOM node, so the list's scroll and an opened row stay where they
+// were. The document here keeps .ha-body's rows as nodes: a row stays the same object until written.
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+
+const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'mobile.js'), 'utf8');
+const settle = () => new Promise((r) => setTimeout(r, 30));
+const reply = (body) => Promise.resolve({ status: 200, ok: true, json: () => Promise.resolve(body), text: () => Promise.resolve('') });
+
+// Just past the </div> closing the <div> whose open tag ends at `from`.
+function closeAt(h, from) {
+    const re = /<(\/?)div\b/g;
+    re.lastIndex = from;
+    let depth = 1, x;
+    while ((x = re.exec(h))) { depth += x[1] ? -1 : 1; if (!depth) return x.index + 6; }
+    throw new Error('unclosed div');
+}
+
+function bodyNode() {
+    const body = { scrollTop: 0, items: [] };
+    function node(key, html, slot) {
+        const n = { key, html, slot };
+        n.getAttribute = (a) => (a === (slot ? 'data-slot' : 'data-row') ? key : null);
+        Object.defineProperty(n, 'outerHTML', { get: () => n.html, set: (v) => { body.items.splice(body.items.indexOf(n), 1, ...parse(v)); } });
+        n.replaceWith = (o) => { body.items.splice(body.items.indexOf(n), 1, o); };
+        return n;
+    }
+    function parse(h) {
+        const out = [];
+        const re = /<div [^>]*data-row="([^"]*)"[^>]*>|<i data-slot="([^"]*)"><\/i>/g;
+        let at = 0, m;
+        while ((m = re.exec(h))) {
+            out.push(h.slice(at, m.index));
+            if (m[2] !== undefined) { out.push(node(m[2], m[0], true)); at = re.lastIndex; continue; }
+            const end = closeAt(h, re.lastIndex);
+            out.push(node(m[1], h.slice(m.index, end), false));
+            at = end;
+            re.lastIndex = end;
+        }
+        out.push(h.slice(at));
+        return out;
+    }
+    const nodes = (slot) => body.items.filter((x) => typeof x === 'object' && x.slot === slot);
+    Object.defineProperty(body, 'innerHTML', { get: () => body.items.map((x) => (typeof x === 'string' ? x : x.html)).join(''), set: (v) => { body.items = parse(v); } });
+    body.querySelectorAll = (sel) => (sel === '[data-row]' ? nodes(false) : sel === '[data-slot]' ? nodes(true) : []);
+    body.querySelector = (sel) => { const m = /^\[data-row="([^"]*)"\]$/.exec(sel); return m ? nodes(false).find((x) => x.key === m[1]) || null : null; };
+    return body;
+}
+
+// The page as three parts the refresh may write — header, .ha-body, tab bar — and a count of whole redraws.
+function boot(hash, state) {
+    const on = {};
+    const page = { head: null, body: null, tabs: null, draws: 0 };
+    const part = (html) => { const p = { html }; Object.defineProperty(p, 'outerHTML', { get: () => p.html, set: (v) => { p.html = v; } }); return p; };
+    const app = {
+        get innerHTML() { return ''; },
+        set innerHTML(v) {
+            page.draws++;
+            const hd = /<header class="ab[^"]*">[\s\S]*?<\/header>/.exec(v);
+            const tb = /<nav class="tabbar"[\s\S]*?<\/nav>/.exec(v);
+            const bo = /<div class="ha-body"[^>]*>/.exec(v);
+            page.head = hd ? part(hd[0]) : null;
+            page.tabs = tb ? part(tb[0]) : null;
+            page.body = null;
+            if (bo) {
+                const from = bo.index + bo[0].length;
+                page.body = bodyNode();
+                page.body.innerHTML = v.slice(from, closeAt(v, from) - 6);
+            }
+        },
+    };
+    const pick = { '.ha-body': () => page.body, 'header.ab': () => page.head, '.tabbar': () => page.tabs };
+    const doc = {
+        getElementById: (id) => (id === 'app' ? app : null), documentElement: {}, body: { insertAdjacentHTML() {} }, visibilityState: 'visible',
+        addEventListener: (type, fn) => { (on[type] = on[type] || []).push(fn); },
+        querySelector: (s) => (pick[s] ? pick[s]() : null),
+    };
+    const win = {
+        document: doc, location: { hash }, navigator: { language: 'zh-TW', userAgent: 'Mozilla/5.0 (Linux; Android 10; K) Chrome/141.0 Mobile Safari/537.36' },
+        localStorage: { getItem: () => null, setItem() {} }, addEventListener() {}, setInterval() {}, setTimeout, URLSearchParams,
+        fetch: (url) => reply(url === '/station/mobile.json' ? state.home : null),
+    };
+    vm.runInNewContext(SRC, { window: win });
+    // mobile.json read again, as the 5 s poll does.
+    const poll = () => { (on.visibilitychange || []).forEach((fn) => fn({})); return settle(); };
+    return { page, poll };
+}
+
+const NOW = Date.now();
+const task = (id, o) => Object.assign({ id, root: '/r', task: 'task ' + id, project: 'proj', stage: 'build', route: [], gate: false, updated: NOW - 60e3, state: 'running', attached: false, background: [], last: null, holdUntil: null, machine: 'office' }, o);
+const M = { host: 'office', at: NOW, device: null, gates: [], stopped: [], done: [], others: [], tasks: [task('t1'), task('t2')], unregistered: [], rc: { live: [], ended: [] } };
+
+test('a row that changed is written again; the one that did not keeps its node, and the list keeps its scroll', async () => {
+    const state = { home: M };
+    const b = boot('#/', state);
+    await settle();
+    const body = b.page.body;
+    const t1 = body.querySelector('[data-row="office/t1"]');
+    const t2 = body.querySelector('[data-row="office/t2"]');
+    assert.ok(t1 && t2, 'each card carries data-row');
+    body.scrollTop = 420;
+    const draws = b.page.draws;
+    state.home = Object.assign({}, M, { tasks: [task('t1'), task('t2', { task: 'task t2 renamed' })] });
+    await b.poll();
+    assert.equal(b.page.draws, draws, 'no whole redraw');
+    assert.equal(b.page.body, body, 'the scrolling list is the same element');
+    assert.equal(body.scrollTop, 420);
+    assert.equal(body.querySelector('[data-row="office/t1"]'), t1, 'the unchanged row is the same node');
+    assert.notEqual(body.querySelector('[data-row="office/t2"]'), t2);
+    assert.match(body.querySelector('[data-row="office/t2"]').html, /task t2 renamed/);
+});
+
+test('a session moving to 等你 rewrites the counts and the badge; the other row keeps its node and the list its scroll', async () => {
+    const state = { home: M };
+    const b = boot('#/', state);
+    await settle();
+    const body = b.page.body;
+    const t1 = body.querySelector('[data-row="office/t1"]');
+    body.scrollTop = 300;
+    const draws = b.page.draws;
+    assert.doesNotMatch(b.page.tabs.html, /tab-n/);
+    state.home = Object.assign({}, M, { tasks: [task('t1'), task('t2', { state: 'gate' })] });
+    await b.poll();
+    assert.equal(b.page.draws, draws, 'no whole redraw');
+    assert.match(b.page.tabs.html, /<b class="tab-n"[^>]*>1<\/b>/);
+    assert.equal(body.querySelector('[data-row="office/t1"]'), t1);
+    assert.equal(body.scrollTop, 300);
+});
+
+test('the same data read again writes nothing', async () => {
+    const state = { home: M };
+    const b = boot('#/', state);
+    await settle();
+    const before = b.page.body.querySelectorAll('[data-row]');
+    const draws = b.page.draws;
+    await b.poll();
+    assert.equal(b.page.draws, draws);
+    assert.deepEqual(b.page.body.querySelectorAll('[data-row]'), before);
+});
+```
+
+15. Run `node --test tests/station-mobile-refresh.test.js` — fails: `no whole redraw` (every poll still sets `app.innerHTML`).
+16. In `assets/station/mobile.js`, right above `function sameKey(p) {`, add:
+
+```js
+    // A list screen cut into what a refresh compares (Task 4, refreshing in place): its header, its
+    // scrolling body with every row left as a slot, its tab bar, the rest of the page, and each row's
+    // html by its data-row key. null when the html is not a list screen. A key seen twice stays inline.
+    function divEnd(h, from) {
+        var re = /<(\/?)div\b/g, depth = 1, x;
+        re.lastIndex = from;
+        while ((x = re.exec(h))) { depth += x[1] ? -1 : 1; if (!depth) return x.index; }
+        return -1;
+    }
+    function cut(html) {
+        var h = String(html || '');
+        var hd = /<header class="ab[^"]*">[\s\S]*?<\/header>/.exec(h);
+        var bo = /<div class="ha-body"[^>]*>/.exec(h);
+        var tb = /<nav class="tabbar"[\s\S]*?<\/nav>/.exec(h);
+        if (!hd || !bo || !tb || !(hd.index < bo.index && bo.index < tb.index)) return null;
+        var from = bo.index + bo[0].length;
+        var to = divEnd(h, from);
+        if (to < 0) return null;
+        var inner = h.slice(from, to);
+        var rows = {};
+        var body = '';
+        var at = 0;
+        var re = /<div [^>]*data-row="([^"]*)"[^>]*>/g, m;
+        while ((m = re.exec(inner))) {
+            var end = divEnd(inner, re.lastIndex);
+            if (end < 0) return null;
+            end += 6;
+            var k = m[1];
+            var row = inner.slice(m.index, end);
+            body += inner.slice(at, m.index) + (rows[k] === undefined ? '<i data-slot="' + k + '"></i>' : row);
+            if (rows[k] === undefined) rows[k] = row;
+            at = end;
+            re.lastIndex = end;
+        }
+        body += inner.slice(at);
+        return {
+            head: hd[0], body: body, tabs: tb[0], rows: rows,
+            rest: h.slice(0, hd.index) + '<header>' + h.slice(hd.index + hd[0].length, from) + '<body>' + h.slice(to, tb.index) + '<nav>' + h.slice(tb.index + tb[0].length),
+        };
+    }
+    // The screens a poll refreshes in place.
+    var LISTS = { home: true, ask: true, rc: true };
+
+```
+
+17. In `assets/station/mobile.js`, inside `function boot(win) {`, in `function draw() {`, the line `app.innerHTML = screen(st.M, R, Date.now(), st.ui, R.view === 'chat' && st.P && st.P.id === R.id ? st.P : null);` becomes the four lines below, and right after the closing `}` of `function draw() {` add `listKey`, `swap`, `refill` and `patchList` from the second block. Both blocks go into `assets/station/mobile.js`:
+
+```js
+            var html = screen(st.M, R, Date.now(), st.ui, R.view === 'chat' && st.P && st.P.id === R.id ? st.P : null);
+            app.innerHTML = html;
+            st.cut = LISTS[R.view] ? cut(html) : null;
+            st.listed = st.cut ? listKey(R) : null;
+```
+
+The second block, after `function draw() {` in `assets/station/mobile.js`:
+
+```js
+        // What a list screen's refresh must match to write in place: the screen, the computer picked,
+        // the sheet open or shut, the language. Anything else changing draws the page whole.
+        function listKey(R) { return [R.view, R.pick || '', st.ui.sheet ? 1 : 0, lang].join('|'); }
+        function swap(sel, html) { var el = d.querySelector ? d.querySelector(sel) : null; if (el) el.outerHTML = html; }
+        // The list's own element stays, so its scroll does; its rows are written again around the
+        // nodes of the ones that did not change, which are put back as they were.
+        function refill(body, next) {
+            var top = body.scrollTop;
+            var old = {};
+            Array.prototype.forEach.call(body.querySelectorAll('[data-row]'), function (el) { old[el.getAttribute('data-row')] = el; });
+            body.innerHTML = next.body;
+            Array.prototype.forEach.call(body.querySelectorAll('[data-slot]'), function (slot) {
+                var k = slot.getAttribute('data-slot');
+                if (old[k] && st.cut.rows[k] === next.rows[k]) slot.replaceWith(old[k]);
+                else slot.outerHTML = next.rows[k];
+            });
+            body.scrollTop = top;
+        }
+        // mobile.json read again on a list screen (the user's 2026-10-29 ask: a refresh must not reset
+        // the scroll): only what changed is written — the header and its counts, the tab bar and its
+        // badge, a row — and a row that did not change keeps its node. Anything else draws whole.
+        function patchList() {
+            var R = route();
+            var body = d.querySelector ? d.querySelector('.ha-body') : null;
+            if (!body || !st.cut || st.listed !== listKey(R) || st.ui.mode !== 'app') return draw();
+            var next = cut(screen(st.M, R, Date.now(), st.ui, null));
+            if (!next || next.rest !== st.cut.rest) return draw();
+            if (next.head !== st.cut.head) swap('header.ab', next.head);
+            if (next.tabs !== st.cut.tabs) swap('.tabbar', next.tabs);
+            if (next.body !== st.cut.body) refill(body, next);
+            else {
+                Object.keys(next.rows).forEach(function (k) {
+                    if (next.rows[k] === st.cut.rows[k]) return;
+                    var el = body.querySelector('[data-row="' + k + '"]');
+                    if (el) el.outerHTML = next.rows[k];
+                });
+            }
+            st.cut = next;
+        }
+```
+
+18. In `assets/station/mobile.js`, in `function load() {`, the `draw();` right after `if (route().view === 'chat') return loadChat();` becomes `patchList();`. Every other `draw()` stays: a tap, a hash change and a pairing screen still draw whole.
+19. Run `node --test tests/station-mobile-refresh.test.js tests/station-mobile-sources-list.test.js tests/station-mobile-page.test.js tests/station-mobile-shell.test.js tests/station-mobile-cards.test.js tests/station-mobile-rows.test.js` — passes.
+20. Hand back for commit `feat: /m lists every computer — unregistered group, filter chips, offline computers, RC tab; a refresh writes only what changed`.
 
 ## Task 5: 未登記 session 畫面、每台電腦一列的測站 sheet、經由這台讀別台
 
@@ -2059,6 +2319,7 @@ The new paragraphs for `docs/01-guide/tailscale-setup.md`:
 | 一台連不上時，列表顯示「最後連上時間」與它最後看到的 session，標為最後看到的狀態（`list-offline-note`、`list-machine-offline`）。 | Task 1（`was`、`seen`），Task 2（`poller` 保留最後一次答案），Task 4（`offNote`、`offView`；`askHtml`、`tabbar` 不數 `was` 的 gate） |
 | 測站 sheet 改為每台電腦一列：連上 / 離線 / 未配對（`machines-sheet`），原本的「重新配對」併進每列。 | Task 5（`machinesHtml`；未配對列改為就地輸入配對碼，見最上方「需要決定」），Task 6（指南的多台電腦段落） |
 | 底部 tab 增為 Session / 等你 / RC 對話 / 完成（`tabbar-rc`）。 | Task 4 |
+| 使用者 10-29 追加：手機版刷新只更新有變的元素，滑動後不重置（捲動與展開不變） | Task 4（`cut`、`patchList`，step 14-18；`tests/station-mobile-refresh.test.js`） |
 | RC 分頁（`account-rc`）列出所有已連線電腦上 `bridge` 為真的 session，分「連著」與「已結束」，每列標電腦名。 | Task 1（`rcLive`、`rc`），Task 1（`lib/rcseen.js` 記已結束），Task 4（`rcHtml`） |
 | 區塊底部寫明「只含有開 station 的電腦」，並外連 claude.ai/code。Anthropic 沒有帳號層級 RC 清單的 API（anthropics/claude-code#35607 未實作），所以這是能做到的上限。 | Task 4（`rcfoot`），Task 2（決策記錄寫明上限） |
 | 測試：`mobileModel` 收到一筆未登記 session 與另一台電腦的資料，兩筆都出現在輸出且各帶 `machine`——現在失敗。 | Task 1（`tests/mobile-sources.test.js` 第一個測試） |
