@@ -107,7 +107,9 @@ require which — both counted from `lib/requires.js`'s `requireGraph()` over
 every tracked `.js` file's relative `require` and static or dynamic
 `import` edges, and both
 truncated the way every other section below them is, by `lib/report.js`'s
-`section()`. It answers a different question than the tree does: not where a
+`section()`. Right after the most-required list it prints `largest:`, the
+five longest text files by line count (`lib/map.js`'s `largest()`; a file
+with a NUL byte is binary and skipped). It answers a different question than the tree does: not where a
 file lives, but who already reaches into it. Two sections follow `directories:`:
 `reading order — most required first:` numbers the non-test files by how many
 files require them (leaves first), and `import cycles:` names each group of
@@ -197,7 +199,7 @@ report where a real parser would cost a dependency this plugin does not have.
 - `lib/tracked.js:31` 是 `const args = ['ls-files', '-z', '--cached', '--others', '--exclude-standard'];`
 - `lib/docs.js:254` 是 `const listed = require('./tracked.js').trackedFiles(root);`
 - `lib/map.js:229` 是 `const found = trackedFiles(root);`
-- `lib/map.js:317` 是 `const found = trackedFiles(root);`
+- `lib/map.js:332` 是 `const found = trackedFiles(root);`
 - `lib/plantasks.js:335` 是 `const found = trackedFiles(root);`
 - `lib/settingsuggest.js:101` 是 `const listed = trackedFiles(projectDir);`
 - `scripts/docs-audit.js:428` 是 `const listed = trackedFiles(root);`
