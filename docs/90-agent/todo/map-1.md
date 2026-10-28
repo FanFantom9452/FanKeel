@@ -2,8 +2,13 @@
 label: map
 title: 專案地圖列最大檔
 description: 專案地圖在 most required: 之後加 largest: 五行（path 與行數），零依賴
-state: ready
+state: done
 link: lib/map.js
+done:
+  at: 2026-10-29
+  sha: b8007afc
+  disposition: done
+  session: 598148c3-467b-4a42-9cbe-55dda6fd46a6
 ---
 
 來源：docs/90-agent/judgements/2026-10-28-uncle-bob-measure-not-read.md「四件 take」#3。現況：station.js 6,939 行是被判決才看見的（docs/90-agent/todo/station-52.md:9），地圖沒有大小資訊。
@@ -13,3 +18,11 @@ link: lib/map.js
 第一個具體改動：在 `most required:` 之後加 `largest:`，列五個路徑與行數，零依賴，約 15 行 JS，另加一條 map 測試。
 
 完成條件：.fankeel/map.md 出現 largest: 五行，測試斷言五行且行數正確。
+
+## 完成紀錄
+
+專案地圖在 most required 之後多了 largest 一段，列行數最多的五個檔，二進位檔不算。詳見 [任務紀錄](../records/2026-10.md#r-2026-10-28-598148c3)
+
+- commit 656c5624
+- commit 033b1b59
+- commit b8007afc
