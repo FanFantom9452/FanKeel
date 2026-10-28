@@ -27,7 +27,7 @@ test('gates: every held gate still inside its wait, oldest first, waited from wh
     assert.equal(m.host, 'ymlab-pc');
     assert.equal(m.at, NOW);
     assert.deepEqual(m.gates.map((g) => g.id), ['a', 'b']);
-    assert.deepEqual(m.gates[0], { id: 'a', root: '/ws/fankeel', task: 't', project: 'fankeel', stage: 'design', route: ['survey', 'build'], questions: Q, since: NOW - 250e3, until: NOW + 60e3 });
+    assert.deepEqual(m.gates[0], { id: 'a', root: '/ws/fankeel', task: 't', project: 'fankeel', stage: 'design', route: ['survey', 'build'], questions: Q, since: NOW - 250e3, until: NOW + 60e3, machine: 'ymlab-pc' });
     assert.equal(m.gates[1].since, NOW - 60e3, 'no gateAt: the hook\'s own at');
 });
 
@@ -40,7 +40,7 @@ test('tasks: the running ones, newest first, each saying whether a gate waits', 
     ]), NOW, 'ymlab-pc');
     assert.deepEqual(m.tasks.map((x) => [x.id, x.gate, x.project]), [['new', false, 'sub'], ['old', true, 'fankeel']]);
     assert.equal(m.tasks[0].updated, NOW - 5e3);
-    assert.deepEqual(Object.keys(m.tasks[0]).sort(), ['attached', 'background', 'gate', 'holdUntil', 'id', 'last', 'project', 'root', 'route', 'stage', 'state', 'task', 'updated']);
+    assert.deepEqual(Object.keys(m.tasks[0]).sort(), ['attached', 'background', 'gate', 'holdUntil', 'id', 'last', 'machine', 'project', 'root', 'route', 'stage', 'state', 'task', 'updated']);
 });
 
 test('a row takes its state from the look it is given, and phoneModel answers one session', () => {
@@ -100,8 +100,9 @@ test('a project station.hide takes off the phone too, and nothing private rides 
     assert.deepEqual(m.tasks.map((g) => g.id), ['shown']);
     const text = JSON.stringify(m);
     assert.ok(!text.includes('lib/private.js') && !text.includes('"private"'), 'claims and notes stay on this machine');
-    assert.deepEqual(mobile.mobileModel({ registries: [] }, NOW, 'h'), { host: 'h', at: NOW, device: null, gates: [], tasks: [], stopped: [], done: [], others: [] });
-    assert.deepEqual(mobile.mobileModel(null, NOW, null), { host: '', at: NOW, device: null, gates: [], tasks: [], stopped: [], done: [], others: [] });
+    const self = (name) => [{ name, url: null, state: 'on', me: true, seen: NOW, paired: null, refused: false, n: 0 }];
+    assert.deepEqual(mobile.mobileModel({ registries: [] }, NOW, 'h'), { host: 'h', at: NOW, device: null, gates: [], tasks: [], stopped: [], done: [], others: [], unregistered: [], rc: { live: [], ended: [] }, machines: self('h') });
+    assert.deepEqual(mobile.mobileModel(null, NOW, null), { host: '', at: NOW, device: null, gates: [], tasks: [], stopped: [], done: [], others: [], unregistered: [], rc: { live: [], ended: [] }, machines: self('') });
 });
 
 test('the /m shell: the keel look, its manifest and icon, both stylesheets, the phone script', () => {
