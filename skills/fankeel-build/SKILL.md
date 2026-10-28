@@ -391,6 +391,7 @@ then asks this stage's gate.
      change touching a page or its styles, also check the chrome around it
      at a true 412-wide viewport: header and title not clipped (`.crumbs`
      scrollWidth <= clientWidth); a clipped title is a finding.
+     For a page task, name the real-page shot of every state the mockup draws; a state with only unit tests is a finding.
    Part 4 — cuts, over the lines this diff added and no others, in the
      format of the `## Cuts` section of your agent file. A cut is a finding.
 
@@ -408,8 +409,7 @@ then asks this stage's gate.
    Every line you return stays in a long-running parent context.
    ```
 
-   Give it the brief path and the range — never a paste of the session's
-   history. Dispatch it as `subagent_type: fankeel:fankeel-reviewer` — with the same `effort: "<the field>"` when the task's Dispatch line names one; the model
+   Dispatch it as `subagent_type: fankeel:fankeel-reviewer` — with the same `effort: "<the field>"` when the task's Dispatch line names one; the model
    comes from that agent file, not typed by hand here.
 
    Before dispatching, run `node <plugin>/scripts/lenses.js <BASE>..<sha>` and
@@ -427,7 +427,7 @@ then asks this stage's gate.
    `.fankeel/render.json` where the project has one — a page path otherwise.
    Its first line is `disposition: recapture`, `fix` or `ship`; anything but
    `ship` goes back to the implementer like the first reviewer's findings.
-   A page task runs it by default, every time. The exception is a task that is
+   The exception is a task that is
    one request of the tuning loop below: the render reviewer is skipped for
    that request, and a `fankeel-reviewer` alone reviews it. The user may also
    say, this session, to skip it (or to run it) for any page task; that is a
