@@ -142,7 +142,9 @@ test('serve injects without touching the file; request, wait and done round-trip
     assert.equal(ok.status, 0, ok.stderr);
     assert.match(fs.readFileSync(file, 'utf8'), /3 \/ 5 session/);
 
-    await new Promise((r) => setTimeout(r, 200));
+    for (let i = 0; i < 200 && !(/"type":"rejected","id":"r-0001"/.test(events.join('')) && /"type":"done","id":"r-0002"/.test(events.join(''))); i++) {
+        await new Promise((r) => setTimeout(r, 25));
+    }
     const seen = events.join('');
     assert.match(seen, /"type":"rejected","id":"r-0001","block":"now","touched":\["sessions"\]/);
     assert.match(seen, /"type":"done","id":"r-0002"/);
