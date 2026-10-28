@@ -107,10 +107,11 @@ require which — both counted from `lib/requires.js`'s `requireGraph()` over
 every tracked `.js` file's relative `require` and static or dynamic
 `import` edges, and both
 truncated the way every other section below them is, by `lib/report.js`'s
-`section()`. Right after the most-required list it prints `largest:`, the
-five longest text files by line count (`lib/map.js`'s `largest()`; a file
-with a NUL byte is binary and skipped). It answers a different question than the tree does: not where a
-file lives, but who already reaches into it. Two sections follow `directories:`:
+`section()`. It answers a different question than the tree does: not where a
+file lives, but who already reaches into it. Right after the most-required
+list it prints `largest:`, the five longest text files by line count
+(`lib/map.js`'s `largest()`; a file with a NUL byte is binary and skipped).
+Two sections follow `directories:`:
 `reading order — most required first:` numbers the non-test files by how many
 files require them (leaves first), and `import cycles:` names each group of
 files that require each other, with a lazy require call or dynamic import call inside a
