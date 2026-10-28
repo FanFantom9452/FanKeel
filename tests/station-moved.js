@@ -19,7 +19,22 @@ function blank(src) {
         let j = -1;
         if (c === '/' && d === '/') { j = src.indexOf('\n', i); if (j < 0) j = src.length; }
         else if (c === '/' && d === '*') { j = src.indexOf('*/', i) + 2; }
-        else if (c === '\'' || c === '"' || c === '`') {
+        else if (c === '`') {
+            // literal text is blanked, `${...}` bodies stay scannable
+            let p = i + 1;
+            out += ' ';
+            while (src[p] !== '`') {
+                if (src[p] === '\\') { out += '  '; p += 2; continue; }
+                if (src[p] === '$' && src[p + 1] === '{') {
+                    let q = p + 2, dep = 1;
+                    while (dep) { if (src[q] === '{') dep++; else if (src[q] === '}') dep--; q++; }
+                    out += '  ' + blank(src.slice(p + 2, q - 1)) + ' ';
+                    p = q; continue;
+                }
+                out += src[p] === '\n' ? '\n' : ' '; p++;
+            }
+            out += ' '; last = 'x'; i = p + 1; continue;
+        } else if (c === '\'' || c === '"') {
             j = i + 1;
             while (src[j] !== c) j += src[j] === '\\' ? 2 : 1;
             j++;
@@ -92,7 +107,7 @@ function freeIdents(mod) {
         if (pre.endsWith('.') && !pre.endsWith('..')) continue;
         if (/[{,]$/.test(pre) && /^\s*:(?!:)/.test(post) ) continue;
         if (/^\s*:/.test(post) && /\bcase$|\bdefault$/.test(pre + id)) continue;
-        if (declared.has(id) || id in globalThis || ['var', 'let', 'const', 'function', 'return', 'if', 'else', 'for', 'while', 'do', 'new', 'typeof', 'in', 'of', 'instanceof', 'case', 'default', 'switch', 'break', 'continue', 'try', 'catch', 'finally', 'throw', 'this', 'null', 'true', 'false', 'void', 'delete'].includes(id)) continue;
+        if (declared.has(id) || (id in globalThis && id !== 'process' && id !== 'require') || ['var', 'let', 'const', 'function', 'return', 'if', 'else', 'for', 'while', 'do', 'new', 'typeof', 'in', 'of', 'instanceof', 'case', 'default', 'switch', 'break', 'continue', 'try', 'catch', 'finally', 'throw', 'this', 'null', 'true', 'false', 'void', 'delete'].includes(id)) continue;
         free.add(id);
     }
     return free;
@@ -106,12 +121,17 @@ function moved(file, names) {
     const built = api.make(new Proxy({}, { get: () => function () {} }));
     for (const n of names) assert.equal(typeof built[n], 'function', file + ' make(K) returns ' + n);
     const keys = kKeys(shell, file);
-    for (const m of mod.matchAll(/\bK\.(\w+)/g)) assert.ok(keys.has(m[1]), 'station.js make({...}) for ' + file + ' lacks K.' + m[1]);
+    const code = blank(mod);
+    assert.doesNotMatch(code, /\bK\s*\[/, file + ' reads K by computed key');
+    assert.doesNotMatch(code, /=\s*K\s*[;,\n]|=\s*K\s*$/, file + ' aliases K');
+    assert.doesNotMatch(code, /\}\s*=\s*K\b/, file + ' destructures K');
+    for (const m of code.matchAll(/\bK\.(\w+)/g)) assert.ok(keys.has(m[1]), 'station.js make({...}) for ' + file + ' lacks K.' + m[1]);
     const free = [...freeIdents(mod)];
     assert.deepEqual(free, [], file + ' make body reads names nothing declares: ' + free.join(', '));
     const forwarder = (n) => new RegExp('function ' + n + '\\(\\) \\{ return \\w+\\(\\)\\.' + n + '\\.apply\\(null, arguments\\); \\}');
+    const shellCode = blank(shell);
     for (const n of names) {
-        const rest = blank(shell).replace(forwarder(n), '');
+        const rest = shellCode.replace(forwarder(n), '');
         const used = new RegExp('(?<![.\\w$])' + n + '\\b').test(rest.replace(new RegExp('^.*\\bfunction ' + n + '\\(.*$', 'm'), ''));
         if (used) assert.match(shell, forwarder(n), 'station.js keeps a forwarder for ' + n);
     }
