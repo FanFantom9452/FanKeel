@@ -57,7 +57,7 @@ test('every module has its script and its stylesheet, and sets its global when l
 test('the shell loads tip.js and the page modules after i18n.js and before the spend modules, each with its stylesheet', () => {
     for (const html of [fs.readFileSync(path.join(ASSETS, 'index.html'), 'utf8'), station.render()]) {
         const scripts = [...html.matchAll(/<script src="station\/([^"]+)"><\/script>/g)].map((m) => m[1]);
-        assert.deepEqual(scripts, ['i18n.js'].concat(BEFORE.map((n) => n + '.js'), ['talk-acts.js', 'diagram.js'], AFTER.map((n) => n + '.js'), SPEND, ['remote-card.js', 'list-state.js', 'fmt.js', 'chart.js', 'station.js']));
+        assert.deepEqual(scripts, ['i18n.js'].concat(BEFORE.map((n) => n + '.js'), ['talk-acts.js', 'diagram.js'], AFTER.map((n) => n + '.js'), SPEND, ['remote-card.js', 'list-state.js', 'fmt.js', 'chart.js', 'session-body.js', 'detail-html.js', 'station.js']));
         const sheets = [...html.matchAll(/<link rel="stylesheet" href="station\/([^"]+)">/g)].map((m) => m[1]);
         assert.deepEqual(sheets, ['station.css'].concat(PAGES.map((n) => n + '.css')).flatMap((n) => (n === 'docs-page.css' ? ['diagram.css', n] : [n])));
     }
