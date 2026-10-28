@@ -24,4 +24,6 @@ link: scripts/suite.js
 - scripts/suite.js：100% line
 - 有覆蓋率 20149 ms，無覆蓋率 20265 ms，比值 0.99
 
-結論：暫定接，待 --fast 全套量測。比值低於 1.5×，成本可忽略；但這是單檔量測，接進 verify 前要在真實 task 的 `--fast --coverage` 再量一次全套的比值。
+build 之後另在主樹跑過一次全套 `scripts/suite.js --fast --coverage`，覆蓋 lib/docs.js 99.24、lib/map.js 99.62、lib/suite.js 99.32、scripts/suite.js 100（line %）；那次沒有再跑不帶 --coverage 的全套，所以全套的時間比值仍未量，上面 0.99 只是單檔試跑的比值。
+
+結論：暫定接，全套帶 --coverage 已跑過，還缺的只有全套的時間比值。單檔比值低於 1.5×，成本可忽略；接進 verify 前要再量一次全套帶與不帶 --coverage 的比值。
