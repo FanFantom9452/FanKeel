@@ -438,7 +438,9 @@
     // The computers the phone lists: a station not paired yet is not one.
     function shown(m) { return ((m && m.machines) || []).filter(function (x) { return x.state !== 'unpaired'; }); }
     function many(m) { return shown(m).length > 1; }
-    function shash(m, x) { var h = (m && m.host) || ''; return x && x.machine && x.machine !== h ? '#/m/' + esc(x.machine) + '/' : '#/s/'; }
+    // Whether row x is this station's own: only those have a /f/<id> page or a hold this phone has.
+    function here(m, x) { return !(x && x.machine) || x.machine === ((m && m.host) || ''); }
+    function shash(m, x) { return here(m, x) ? '#/s/' : '#/m/' + esc(x.machine) + '/'; }
     function mtag(m, x, u) { return many(m) && !(u && u.pick) && x.machine ? '<span class="mtag">' + ic('server') + esc(x.machine) + '</span>' : ''; }
     // A list row's key, `<computer>/<id>`: the refresh (patchList) finds a row by it.
     function rowKey(m, x) { return esc(x.machine || (m && m.host) || '') + '/' + esc(x.id); }
@@ -699,7 +701,7 @@
     // Only an https url is a link; the server already vets it, this is the second lock.
     function sheetHtml(m, at, u) {
         var me = m.device || null;
-        var held = (m.tasks || []).filter(function (x) { return num(x.holdUntil) && x.holdUntil > at; })[0] || null;
+        var held = (m.tasks || []).filter(function (x) { return here(m, x) && num(x.holdUntil) && x.holdUntil > at; })[0] || null;
         var paired = me && num(me.paired) ? md(me.paired) : '';
         function row(key, icon, k, v, side, body) {
             var open = Boolean(u.open && u.open[key]);
@@ -969,7 +971,7 @@
     }
 
     // The desktop page for what the phone draws only a summary of.
-    function full(p, tab) { return '<a class="ov-link" href="/f/' + esc(p.id) + '/' + tab + '">' + ic('laptop') + t('ov.full') + '</a>'; }
+    function full(p, tab, m) { return here(m, p) ? '<a class="ov-link" href="/f/' + esc(p.id) + '/' + tab + '">' + ic('laptop') + t('ov.full') + '</a>' : ''; }
     function empty(key) { return '<p class="ov-empty">' + ic('info') + t(key) + '</p>'; }
     // One summary row of the list panes: an icon, a label over its time, the chevron; open, its details.
     function evRow(key, u, icon, label, time, side, more) {
@@ -986,7 +988,7 @@
     function overviewInner(p, m, at, u) {
         var rows = (m.done || []).filter(function (x) { return x.id === p.id && x.kind === 'stage'; }).sort(function (a, b) { return a.at - b.at; });
         var end = (m.done || []).filter(function (x) { return x.id === p.id && x.kind === 'end'; })[0];
-        if (!rows.length) return empty('ov.empty') + full(p, 'timeline');
+        if (!rows.length) return empty('ov.empty') + full(p, 'timeline', m);
         var total = 0;
         var top = 0;
         rows.forEach(function (x) { if (num(x.usd)) { total += x.usd; top = Math.max(top, x.usd); } });
@@ -1004,13 +1006,13 @@
         }).join('');
         return '<p class="ov-sum">' + ic('coins') + '<b class="usd">' + usd(total) + '</b><span>' + t('ov.sum', { n: rows.length, from: hm(rows[0].at), to: hm(rows[rows.length - 1].at) }) + '</span></p>'
             + '<ol class="ov-list">' + list + '</ol>'
-            + (end ? '<p class="ov-end"><span class="end">' + ic('flag') + t('done.end') + '</span><span>' + hm(end.at) + '</span></p>' : '') + full(p, 'timeline');
+            + (end ? '<p class="ov-end"><span class="end">' + ic('flag') + t('done.end') + '</span><span>' + hm(end.at) + '</span></p>' : '') + full(p, 'timeline', m);
     }
 
     // 計畫: phone.json carries no plan tasks, so the route — done, in progress, not yet — and the desktop plan page.
     function planInner(p, m, at, u) {
         var route = (p.route || []).filter(function (s) { return typeof s === 'string'; });
-        if (!route.length) return empty('pl.empty') + full(p, 'plan');
+        if (!route.length) return empty('pl.empty') + full(p, 'plan', m);
         var cur = route.indexOf(p.stage);
         var done = (m.done || []).filter(function (x) { return x.id === p.id && x.kind === 'stage'; });
         return '<ol class="ov-list">' + route.map(function (s, i) {
@@ -1018,17 +1020,17 @@
             var state = hit || (cur >= 0 && i < cur) ? 'done' : i === cur ? 'now' : 'todo';
             return evRow('pl:' + s, u, ic(state === 'done' ? 'cc' : state === 'now' ? 'activity' : 'clock'), stwI(s), t('pl.' + state), hit ? usd(hit.usd) : '',
                 dl([['cc', t('ov.at'), hit ? hm(hit.at) : t('pl.notyet')]]));
-        }).join('') + '</ol>' + full(p, 'plan');
+        }).join('') + '</ol>' + full(p, 'plan', m);
     }
 
     // 派工: the agents and shells still running in the background.
-    function dispatchInner(p, at, u) {
+    function dispatchInner(p, at, u, m) {
         var list = p.background || [];
-        if (!list.length) return empty('dp.empty') + full(p, 'dispatch');
+        if (!list.length) return empty('dp.empty') + full(p, 'dispatch', m);
         return '<ol class="ov-list">' + list.map(function (b, i) {
             return evRow('dp:' + (b.id || i), u, ic(b.type === 'shell' ? 'term' : 'bot'), esc(b.description || b.command), (num(b.since) ? esc(ago(at - b.since)) + ' · ' : '') + t('bg.run'), '',
                 dl([['layers', t('dp.kind'), esc(b.type || '')], b.command ? ['term', t('dp.cmd'), esc(b.command)] : null, num(b.since) ? ['clock', t('dp.start'), hm(b.since)] : null]));
-        }).join('') + '</ol>' + full(p, 'dispatch');
+        }).join('') + '</ol>' + full(p, 'dispatch', m);
     }
 
     // 事件: the conversation's tool steps, newest first.
@@ -1060,7 +1062,7 @@
     function paneInner(p, pane, at, u, m) {
         if (pane === 'timeline') return overviewInner(p, m || {}, at, u);
         if (pane === 'plan') return planInner(p, m || {}, at, u);
-        if (pane === 'dispatch') return dispatchInner(p, at, u);
+        if (pane === 'dispatch') return dispatchInner(p, at, u, m);
         if (pane === 'events') return eventsInner(p, at, u);
         if (pane === 'gate') return gateInner(p, at, u, m);
         return cvInner(p, at, u);
@@ -1152,13 +1154,14 @@
             + (o && o.description ? '<span class="opt-d">' + esc(o.description) + '</span>' : '') + '</label>';
     }
 
-    function doneRow(x) {
+    function doneRow(x, m) {
         var meta = x.kind === 'end'
             ? '<span class="end">' + ic('flag') + t('done.end') + '</span>'
             : stw(x.stage) + '<span class="dn">' + ic('cc') + t('done.dn') + '</span>';
-        return '<a class="row' + (x.kind === 'end' ? ' fin' : '') + '" href="/f/' + esc(x.id) + '/' + esc(x.stage || 'gate') + '">'
+        var tag = here(m, x) ? 'a' : 'div';
+        return '<' + tag + ' class="row' + (x.kind === 'end' ? ' fin' : '') + '"' + (tag === 'a' ? ' href="/f/' + esc(x.id) + '/' + esc(x.stage || 'gate') + '"' : '') + '>'
             + '<div class="r-l"><div class="r-meta">' + meta + '<span class="pj">' + esc(x.project) + '</span></div><p class="r-t">' + esc(x.task) + '</p></div>'
-            + '<div class="r-side"><span class="usd">' + usd(x.usd) + '</span><span class="ago">' + ic('clock') + hm(x.at) + '</span></div></a>';
+            + '<div class="r-side"><span class="usd">' + usd(x.usd) + '</span><span class="ago">' + ic('clock') + hm(x.at) + '</span></div></' + tag + '>';
     }
 
     function doneScreen(m, at, u) {
@@ -1183,7 +1186,7 @@
                 out += (open === null ? '' : '</div>') + '<div class="grp-h">' + ic('calclock') + head + '</div><div class="grp">';
                 open = day;
             }
-            out += doneRow(x);
+            out += doneRow(x, M);
         });
         return '<div class="body" data-block="tab-done">' + out + '</div></div>';
     }

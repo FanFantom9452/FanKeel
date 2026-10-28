@@ -103,6 +103,14 @@ test('peer route: refused from this machine without a phone, and 502 when lab re
     assert.equal((await request(port, '/station/peer/lab/station/phone.json?id=x', { headers: tailnet(f) })).status, 502);
 }));
 
+test('peer route: from the tailnet without a paired phone\'s cookie it is 401 and never passed on', async () => {
+    const calls = [];
+    await booted(async (o) => { calls.push(o); return { status: 200, headers: {}, body: Buffer.from('{}') }; }, async (port) => {
+        assert.equal((await request(port, '/station/peer/lab/station/phone.json?id=x', { headers: { host: NAME } })).status, 401);
+        assert.equal(calls.length, 0);
+    });
+});
+
 test('peer route: a body over 11 MB is answered 413 with connection close and never passed on', async () => {
     const calls = [];
     await booted(async (o) => { calls.push(o); return { status: 201, headers: {}, body: Buffer.from('ok') }; }, async (port, f) => {
