@@ -829,3 +829,13 @@ test('unfiledCount with no docs.json reads the detected preset; with nothing det
 test('unfiledOf is empty with no tree, the reading docs-audit always had', () => {
   assert.deepEqual(docs.unfiledOf(null, ['a/b.md']), []);
 });
+
+// .fankeel/ is settings: prose.md (0.129.0) sat in no bucket and failed
+// onboard.js's unfiled check. A .fankeel/ page a bucket claims keeps its role.
+test('a markdown file under .fankeel/ with no bucket is settings, not an unfiled page', () => {
+  const root = tree({ 'docs/guide.md': '# guide\n', '.fankeel/prose.md': '# prose\n', 'notes/a.md': '# a\n' });
+  docs.write(root, { buckets: [{ path: 'docs', role: 'reference' }, { path: '.fankeel/verify', role: 'reference' }] });
+  const t = docs.read(root).tree;
+  assert.deepEqual(docs.unfiledOf(t, ['docs/guide.md', '.fankeel/prose.md', 'notes/a.md']), ['notes/a.md']);
+  assert.equal(docs.roleOf(t, '.fankeel/verify/x.md'), 'reference');
+});
