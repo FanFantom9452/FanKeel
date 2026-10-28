@@ -962,7 +962,7 @@ async function serve(opts) {
             if (!machinesNow().some((x) => x.dnsName === dns)) return fail(404, 'no station named ' + dns + ' on this tailnet');
             const got = await peers.pairWith(configDir, dns, form.get('code') || '', hostName(), opts.peerSend, Date.now());
             if (!got.ok) return fail(got.status === 403 ? 403 : 502, got.reason);
-            poll.kick();
+            poll.kick(dns);
             return send(201, 'application/json; charset=utf-8', JSON.stringify({ name: got.name }), noStore);
         }
         if (req.method === 'GET' && url.pathname === '/station/health') {

@@ -5,7 +5,7 @@ last_verified: 2026-10-29
 
 # 手機只配對一台，由那台去拿其他電腦的 session（10-29）
 
-一句話：手機連著的那台 station 用自己的 device token 向 tailnet 上其他已配對的 station 取資料，合併成 `/m` 的一張列表，連同沒登記在 fankeel 的 Desktop/CLI session 與 RC 對話；手機仍然只配對一台、只跟一台說話。
+一句話：手機連著的那台 station 用自己的 device token 向 tailnet 上其他已配對的 station 取資料，合併成 `/m` 的一張列表。列表也帶沒登記在 fankeel 的 Desktop/CLI session 與 RC 對話；手機仍然只配對一台、只跟一台說話。
 
 設計在 [../90-agent/plans/2026-10-29-mobile-sources-design.md](../90-agent/plans/2026-10-29-mobile-sources-design.md)，計畫在 [../90-agent/plans/2026-10-29-mobile-sources.md](../90-agent/plans/2026-10-29-mobile-sources.md)。
 

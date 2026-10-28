@@ -55,12 +55,11 @@ const until = async (fn) => { for (let i = 0; i < 160; i++) { const v = await fn
 const was = process.cwd();
 test.after(() => process.chdir(was));
 
-async function booted(peerSend, f, seed) {
+async function booted(peerSend, f, seed, off) {
     const base = tmp('fankeel-station-peers-');
     const cfg = path.join(base, 'cfg');
     fs.mkdirSync(path.join(cfg, 'sessions'), { recursive: true });
-    assert.equal(profile.write(profile.machineFile(cfg), 'station.remote', 'true').ok, true);
-    if (seed) fs.writeFileSync(path.join(cfg, 'fankeel', 'peers.json'), JSON.stringify({ peers: seed }) + '\n');
+    if (!off) assert.equal(profile.write(profile.machineFile(cfg), 'station.remote', 'true').ok, true);    if (seed) fs.writeFileSync(path.join(cfg, 'fankeel', 'peers.json'), JSON.stringify({ peers: seed }) + '\n');
     process.chdir(base);
     const s = await serve({ configDir: cfg, port: 0, idleMs: 60e3, open: false, tailscaleRun: fake(), probeGet, peerSend });
     try { await f(Number(new URL(s.url).port), cfg); } finally { s.close(); }
@@ -96,6 +95,34 @@ test('pairing refuses a name the tailnet does not list as a station', () => boot
     const r = await post(port, '/station/peers/pair', new URLSearchParams({ nonce: await nonceOf(port), dnsName: 'evil.example.com', code: 'ABCD2345' }).toString());
     assert.equal(r.status, 404);
 }));
+
+const pairLab = async (port) => {
+    assert.ok(await until(async () => (await mobileJson(port)).machines.some((x) => x.name === 'lab' && x.state === 'unpaired')), 'lab is listed unpaired');
+    return post(port, '/station/peers/pair', new URLSearchParams({ nonce: await nonceOf(port), dnsName: LAB, code: 'ABCD2345' }).toString());
+};
+
+test('pairing: that computer refusing the code is 403 with its reason, and nothing is kept', () => booted(async () => ({ status: 403, headers: {}, body: Buffer.from('wrong pairing code\n') }), async (port, cfg) => {
+    const r = await pairLab(port);
+    assert.equal(r.status, 403);
+    assert.match(r.text, /wrong pairing code/);
+    assert.equal(fs.existsSync(path.join(cfg, 'fankeel', 'peers.json')), false);
+}));
+
+test('pairing: that computer out of reach is 502', () => booted(async () => { throw new Error('ECONNREFUSED'); }, async (port) => {
+    const r = await pairLab(port);
+    assert.equal(r.status, 502);
+    assert.match(r.text, /cannot reach lab\.t\.ts\.net/);
+}));
+
+test('pairing with remote off is 409 and asks no computer', async () => {
+    let n = 0;
+    await booted(async () => { n++; return { status: 201, headers: {}, body: Buffer.from('') }; }, async (port) => {
+        const r = await post(port, '/station/peers/pair', new URLSearchParams({ nonce: await nonceOf(port), dnsName: LAB, code: 'ABCD2345' }).toString());
+        assert.equal(r.status, 409);
+        assert.match(r.text, /remote is off/);
+        assert.equal(n, 0);
+    }, null, true);
+});
 
 test('a refused token marks that computer off and refused, and the page still answers', () => booted(async () => ({ status: 401, headers: {}, body: Buffer.from('pair this phone first') }), async (port) => {
     const m = await until(async () => {

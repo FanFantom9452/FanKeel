@@ -74,3 +74,59 @@ test('poller: a refused token is off and refused; a silent computer is off with 
     assert.deepEqual([m[0].state, m[0].refused, m[0].seen, m[0].body], ['off', false, T - 3600e3, last]);
     assert.deepEqual([m[1].state, m[1].refused], ['off', true]);
 });
+
+test('poller: a 200 with no JSON is off and named on stderr apart from no answer, once per reason', async () => {
+    const cfg = tmp('fankeel-peers-');
+    fs.mkdirSync(path.dirname(store(cfg)), { recursive: true });
+    fs.writeFileSync(store(cfg), JSON.stringify({ peers: [
+        { dnsName: LAB, name: 'lab', token: TOKEN, paired: T, seen: null, last: null },
+        { dnsName: 'ws2.t.ts.net', name: 'ws2', token: TOKEN, paired: T, seen: null, last: null },
+    ] }));
+    const lines = [];
+    const write = process.stderr.write;
+    process.stderr.write = (s) => { lines.push(String(s)); return true; };
+    try {
+        let n = 0;
+        const poll = peers.poller(cfg, async (o) => {
+            n++;
+            if (o.url.includes('ws2')) throw new Error('ECONNRESET');
+            return { status: 200, headers: {}, body: Buffer.from('<html>captive portal</html>') };
+        });
+        poll.machines([], T);
+        assert.ok(await until(() => n >= 2 && poll.machines([], T).every((x) => x.state === 'off')), 'first round');
+        poll.machines([], T + 10e3);
+        assert.ok(await until(() => n >= 4 && poll.machines([], T + 10e3).every((x) => x.state === 'off')), 'second round');
+        await new Promise((r) => setTimeout(r, 20));
+    } finally {
+        process.stderr.write = write;
+    }
+    assert.equal(lines.filter((l) => l.includes(LAB)).length, 1);
+    assert.match(lines.find((l) => l.includes(LAB)), /lab\.t\.ts\.net is off — answered 200 with no JSON/);
+    assert.match(lines.find((l) => l.includes('ws2')), /ws2\.t\.ts\.net is off — no answer: ECONNRESET/);
+});
+
+test('poller: kick(dnsName) after a re-pair forgets that computer\'s refusal at once', async () => {
+    const cfg = tmp('fankeel-peers-');
+    fs.mkdirSync(path.dirname(store(cfg)), { recursive: true });
+    const last = { host: 'lab', tasks: [{ id: 'old' }] };
+    fs.writeFileSync(store(cfg), JSON.stringify({ peers: [{ dnsName: LAB, name: 'lab', token: TOKEN, paired: T, seen: T - 60e3, last }] }));
+    let answer = 'refuse';
+    let release = null;
+    const poll = peers.poller(cfg, async () => {
+        if (answer === 'ok') return { status: 200, headers: {}, body: Buffer.from(JSON.stringify(last)) };
+        if (answer === 'hold') await new Promise((r) => { release = r; });
+        return { status: 401, headers: {}, body: Buffer.from('pair this phone first') };
+    });
+    poll.machines([], T);
+    assert.ok(await until(() => poll.machines([], T)[0].refused), 'refused first');
+    answer = 'hold';
+    poll.machines([], T + 10e3);
+    assert.ok(await until(() => release), 'a read with the old token is in flight');
+    poll.kick(LAB);
+    const now = poll.machines([], T + 10e3)[0];
+    assert.deepEqual([now.state, now.refused, now.body], ['wait', false, null]);
+    answer = 'ok';
+    release();
+    await new Promise((r) => setTimeout(r, 20));
+    assert.equal(poll.machines([], T + 10e3)[0].refused, false, 'the old token\'s 401 is dropped');
+});
