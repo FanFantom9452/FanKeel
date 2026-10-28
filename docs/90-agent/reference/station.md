@@ -219,11 +219,11 @@ an inline copy of the predicate rather than a `hiddenPkeys()` call, because
 that loop is keyed by the raw profiles directory rather than by pkey —
 `write()`'s detail-file loop described below, and `--json`'s own pass
 outside this file
-(`scripts/station.js:1400`, `r.sessions = r.sessions.filter((s) => !hidden.has(s.project ? r.root + '/' + s.project : r.root));`).
+(`scripts/station.js:1422`, `r.sessions = r.sessions.filter((s) => !hidden.has(s.project ? r.root + '/' + s.project : r.root));`).
 There is no trace on
 the page that a project was left out: no count, no note on the footer. `station.js`'s own text
 summary — not the served page — does print how many projects it excluded
-(`scripts/station.js:1508`, `hidden by station.hide`), but names none of
+(`scripts/station.js:1530`, `hidden by station.hide`), but names none of
 them; the terminal is the only place the fact surfaces at all.
 
 The last thing a row holds is the completion record `scripts/record.js write`
@@ -283,7 +283,7 @@ with 派工 and 對話 drawn by `assets/station/session-dispatch.js` and
 `assets/station/session-talk.js`; a 關卡 link joins them only while the
 session's `gateAt` is set, to `/f/<id>/gate` when served. `#/s/<id>/cost`
 opens 經過. 事件, 計畫 and 關卡 stay on the old page
-(`assets/station/station.js:2774`, `var SESSION_TABS = ['timeline', 'cost', 'dispatch', 'talk'];`),
+(`assets/station/station.js:1982`, `var SESSION_TABS = ['timeline', 'cost', 'dispatch', 'talk'];`),
 which also draws every tab when the module is missing. The rest of this
 section describes that old page. It had six tabs — 概覽,
 派工, 事件, 對話, 計畫 and 關卡 — and `#/s/<id>/<tab>` opens one directly, with `timeline`,
@@ -293,7 +293,7 @@ largest rises, plus the per-stage spend bar and the stage × model table that
 used to be 花費's own tab (see below). An old `#/s/<id>/cost` link still
 parses — `cost` stays a valid `TABS` value in `parseHash` — but now opens
 概覽 rather than a separate tab, since `tabsHtml`'s `TAB_SHOWN`
-(`assets/station/station.js:693`, `['timeline', 'dispatch', 'events', 'talk', 'plan', 'gate']`) maps
+(`assets/station/session-body.js:427`, `['timeline', 'dispatch', 'events', 'talk', 'plan', 'gate']`) maps
 `cost` back to `timeline`. 派工 gives
 every row its input and output tokens, read from `split`, and its dollars,
 read from `cost`; 事件 is the replay, each gate's row carrying how long it
@@ -412,12 +412,12 @@ table sits inside 概覽, under a `<details>` element titled "stage × model
 明細" (`assets/station/station.js:1394`, `<details class="csmore">`). Above
 it, when the session has a detail loaded, sits the timeline chart, which now
 also tints its background by stage; and above that sits `costShareHtml`
-(`assets/station/station.js:596`, `function costShareHtml(L, hi) {`), a bar
+(`assets/station/session-body.js:330`, `function costShareHtml(L, hi) {`), a bar
 with one segment per stage that has paid, each segment sized by its share of
 the session's total dollars — clicking a segment, or a row of the table under
 it, marks that stage on the timeline below (`data-hist`). 派工 also gets a
 small strip, `dispatchStagesHtml`
-(`assets/station/station.js:626`, `function dispatchStagesHtml(L, id, hi) {`),
+(`assets/station/session-body.js:360`, `function dispatchStagesHtml(L, id, hi) {`),
 linking each stage's agent dollars back to 概覽 with that stage marked. The
 table itself: a stage
 × model table summed from the session's `days`, with input, output,
@@ -752,11 +752,11 @@ A held gate can be answered in words as well as by a button. Under the gate's
 buttons the bell panel draws a free-text box, `gfree`
 (`assets/station/station.js:775`, `var id = 'gfree-' + s.id, draft = String(`), and,
 when the browser can listen, a mic button beside it
-(`assets/station/station.js:1332`, `data-mic`). A click on the mic starts
-`fkListen` and a second click stops it (`assets/station/station.js:4174`,
+(`assets/station/station.js:778`, `data-mic`). A click on the mic starts
+`fkListen` and a second click stops it (`assets/station/station.js:2429`,
 `if (fkRec) { fkRec.stop(); return; }`); what is heard goes into the box and
 the status line `gsay`, and nothing is sent until the send button is pressed
-(`assets/station/station.js:2872`, `Voice fills the box and never sends`). The
+(`assets/station/station.js:2080`, `Voice fills the box and never sends`). The
 gate page draws the same pair in `freeHtml`
 (`assets/station/gate-frame.js:105`, `function freeHtml(st) {`), toggled by
 `micToggle` (`assets/station/gate-frame.js:132`), which fills the box on
@@ -768,8 +768,8 @@ edge, 85dvh at most, with a grip, `.fkg`, and a 44px close button, `.fkx`
 `assets/station/station.css:1213`, `.fkg,.fkx{display:none}` hides both above
 that width). `fkClose` closes it, and when a gate is still held it sets
 `fk:shut` so the panel stays shut until the gate is gone
-(`assets/station/station.js:2865`, `function fkClose() {`;
-`assets/station/station.js:2869`, `if (heldNow) view.pg['fk:shut'] = true;`).
+(`assets/station/station.js:2073`, `function fkClose() {`;
+`assets/station/station.js:2077`, `if (heldNow) view.pg['fk:shut'] = true;`).
 The sheet hides the resize grip (`assets/station/station.css:1217`,
 `.fkr{display:none}`).
 
@@ -778,7 +778,7 @@ with the 24px resize grip `.fkr` at its bottom left
 (`assets/station/station.css:1123`, `width:min(560px,calc(100vw - 32px))`;
 `assets/station/station.css:1127`, `.fkr{position:sticky;bottom:0;display:block;width:24px;height:24px`).
 A size the person dragged to is still kept as `station.fkBox`
-(`assets/station/station.js:2818`, `var FK_BOX_KEY = 'station.fkBox';`).
+(`assets/station/station.js:2026`, `var FK_BOX_KEY = 'station.fkBox';`).
 
 On `/m` the three list screens — Session (`#/`), 等你 (`#/ask`) and 完成 (`#/done`) — share a bottom tab bar of 64px tabs padded by the home indicator, the 等你 tab carrying the number of held gates (`assets/station/mobile.js:453`, `function tabbar(view, m) {`; `assets/station/mobile.css:384`, `.tabbar{flex:none;display:grid;`); a session's own screen hides it. Each session is a card with its title, project, stage and one status line, and the latest line and background list behind its chevron (`assets/station/mobile.js:414`, `function card(x, at, u, kind) {`); a gate's card is the amber one, listed first, with the question and 去答. The host pill in each list screen's header opens the 測站 sheet: the connection, this phone (`device`), the session the phone holds and its time left (`holdUntil`), and re-pairing; unpairing stays on the desktop's 手機遠端 card, since `/station/remote/revoke` is this machine's only (`assets/station/mobile.js:515`, `function sheetHtml(m, at, u) {`). The header pads by the safe area (`assets/station/mobile.css:322`, `body.m .ab.ab2{display:grid;gap:0;min-height:0;padding:calc(6px + env(safe-area-inset-top)) 8px 8px 20px}`), and station.css's desktop `.pg` frame is cleared on the phone (`assets/station/mobile.css:368`, `body.m .scr>.pg{flex:1;min-height:0;margin:0;padding:0;border:0;border-radius:0;background:none}`). A session's screen, `#/s/<id>/<pane>`, holds a TokenBar — context against the compact line, the 5h and 7d limits with where the time says each should be, one line of three meters that opens to labelled rows in place without redrawing the composer — and six pane tabs, 對話 概覽 計畫 派工 事件 關卡, which a sideways swipe also moves between (`assets/station/mobile.js:887`, `function chatHtml(m, id, at, u, P, pane) {`; `assets/station/mobile.js:266`, `function swipeTo(pane, dx, dy) {`). 概覽 is the session's stages finished in `done`, 計畫 its route (phone.json carries no plan tasks; the row links the desktop plan page), 派工 its background items, 事件 its tool steps and 關卡 its held questions; every row opens on a tap. A chat
 whose session is at a gate pins the gate's question under the header, with a
@@ -827,13 +827,13 @@ the search box in the top bar matches task, project, session id, registry
 label, model, state, next, the files touched and its notes — AND-ed.
 
 The same box also opens a grouped-results popover about 200 ms after typing
-stops (`assets/station/station.js:4496`, `}, 200)`): `qGroups`
-(`assets/station/station.js:4412`, `function qGroups(q) {`) buckets what
+stops (`assets/station/station.js:2759`, `}, 200)`): `qGroups`
+(`assets/station/station.js:2675`, `function qGroups(q) {`) buckets what
 matches into Sessions, 專案 and 文件, up to five rows each with a 看全部 link
 when there are more, and `qDraw`
-(`assets/station/station.js:4453`, `function qDraw() {`) draws it with each
+(`assets/station/station.js:2716`, `function qDraw() {`) draws it with each
 match highlighted. `/` focuses the box from anywhere on the page
-(`assets/station/station.js:4541`, `if (e.key === '/')`), the arrow keys
+(`assets/station/station.js:2804`, `if (e.key === '/')`), the arrow keys
 move the selection, Enter opens what is picked and Esc closes the popover.
 文件 in this popover matches only the paths and buckets the page's own data
 carries. The page bodies are searched on 文件 itself — see
@@ -880,12 +880,12 @@ are one directory spelled two ways; `tests/station-view.test.js` carries both
 fixtures, the one that must merge and the nested root that must not. A nested
 root separates on its own and always did.
 
-`#/` and `#/live` both draw **進行中** now: `assets/station/station.js:3720`
+`#/` and `#/live` both draw **進行中** now: `assets/station/station.js:1975`
 (`VIEWS.now = function (r) { return w.FK_LIVE.page(S, modOpts()); };`)
 hand both routes to `FK_LIVE` in `assets/station/live-page.js`, described
 below. There is no `OLD.*` fallback, no old 現在 dashboard and no TODO panel
 on it any more; the spend cards (`dashByProj`, `dashTokens7`, `dashModels`)
-sit under the chart on 花費 (`daysPage`, `assets/station/station.js:3231`).
+sit under the chart on 花費 (`daysPage`, `assets/station/days-page.js:116`).
 
 The header shows the page title in `#side` (`pageTitle`, an `h1.ptitle`) in
 place of the old crumbs, and serve's state as an icon (`serveIconHtml`) whose
@@ -960,7 +960,7 @@ read with `stored()`'s try/catch so a `file:` page or private mode with no
 holds the three-state 跟隨系統/淺色/深色 button in the masthead's
 `div.appear` (`id="appear"`, drawn by `drawTheme`); a click cycles it and
 writes the new value
-(`assets/station/station.js:3033`, `store('station.theme', t === 'system' ? null : t);`), and the
+(`assets/station/station.js:2241`, `store('station.theme', t === 'system' ? null : t);`), and the
 stored value is read and set as `data-theme` on `<html>` before the page's
 first paint, so a reader on 深色 never sees a flash of light first
 (`assets/station/station.js:23`, `themeSet(stored('station.theme'));`).
@@ -1033,7 +1033,7 @@ row of its own, and every group's heading says how many such sessions it has
 and how many backward steps between them.
 
 **全部**, `#/sessions`, is `FK_SESSIONS` (`assets/station/sessions-page.js`,
-`assets/station/station.js:4347`): a now-strip linking to 進行中, four period
+`assets/station/station.js:1977`): a now-strip linking to 進行中, four period
 tiles (今天 / 近 7 天 / 近 30 天 / 全部) that are also the date filter, then one
 card with filters in its head and ten rows a page, sorted on last move, cost
 or elapsed, with the pager and the compare tray in its foot. `recentRows` — a
@@ -1064,7 +1064,7 @@ replaces sorted by it (`assets/station/station.js:1466`, `a sort key with no hea
 `updated` descending, so the page's first sort is the one it arrived in.
 
 **比較**, `#/cmp`, is now the 全部 list with its compare tray open
-(`assets/station/station.js:2771`, `VIEWS.cmp = function (r) { return w.FK_SESSIONS.page(S, modOpts({ tray: true })); };`):
+(`assets/station/station.js:1979`, `VIEWS.cmp = function (r) { return w.FK_SESSIONS.page(S, modOpts({ tray: true })); };`):
 ticking two or three rows there opens a compare dialog of the fields
 `lib/compare.js` returns, so the page is never empty. Tick two sessions on 清單 or a project page — only a
 session with a detail can be ticked, and a third tick drops the first — and
@@ -1274,14 +1274,14 @@ for the child cannot read the old url as the new one.
 `clearEntry` once per row so the checks are the same list rather than a
 second copy of them. A clean run redirects to `/?cleared=N`, and the reloaded
 page still carries that count
-(`assets/station/station.js:4817`, `w.STATION.cleared = S.cleared`); a
+(`assets/station/station.js:3080`, `w.STATION.cleared = S.cleared`); a
 refusal answers `409` with which rows it refused and why, since a redirect
 has nowhere to say it. It takes the same `force` tick and the same nonce as
 the single-row button. `clearStaleControl` in `assets/station/station.js`
 renders the form when the page is served, and prints the copyable command when
 it is not — a static file cannot post. The
 redesigned 可能停了 card carries one per stale row: `modOpts`
-(`assets/station/station.js:2765`) passes `clear: clearControl`, and `row` in
+(`assets/station/station.js:1973`) passes `clear: clearControl`, and `row` in
 `assets/station/live-page.js` draws it in a `lv-row-clear` beside the row's
 `<a>`, not inside it; without `opts.clear` the row is the bare link.
 
@@ -1568,7 +1568,7 @@ and the model took the hook's answer as the user's; `claude -p` offers no
 before. An answer file older than the wait is an earlier gate's and is not
 read. A file on disk cannot post, so it says to answer in the terminal.
 
-A press says it is on its way (`answerPost`, `assets/station/station.js:4702`, `function answerPost(id, box, line, cls, form, said, failed)`): while `POST /answer` is out the gate's buttons are disabled and its line reads 送出中…. A reply ok keeps them disabled; a refusal, a network error, or 10 seconds with no reply (`SEND_MS`, the fetch aborted through an `AbortController`) gives them back. A refusal shows `<status> — <the server's text>`, with no press-again wording; only a network error (…可以再按一次) and the timeout (還沒確認送到：可以再按一次) say it may be pressed again. The state lives in `view.pg['<id>:send']`, keyed to the gate's `pending.until`, so the poll's redraw draws it as it was and a new gate starts clean.
+A press says it is on its way (`answerPost`, `assets/station/station.js:2965`, `function answerPost(id, box, line, cls, form, said, failed)`): while `POST /answer` is out the gate's buttons are disabled and its line reads 送出中…. A reply ok keeps them disabled; a refusal, a network error, or 10 seconds with no reply (`SEND_MS`, the fetch aborted through an `AbortController`) gives them back. A refusal shows `<status> — <the server's text>`, with no press-again wording; only a network error (…可以再按一次) and the timeout (還沒確認送到：可以再按一次) say it may be pressed again. The state lives in `view.pg['<id>:send']`, keyed to the gate's `pending.until`, so the poll's redraw draws it as it was and a new gate starts clean.
 
 The bell sits in the masthead, last after 外觀, as a 36px chip like the serve chip; its panel hangs down from it, right edges aligned, and its height is limited to the space under the header. The panel can be resized and not dragged: the grip in its bottom-left corner (`nesw-resize` cursor), with a mouse or a finger (pointer events, `touch-action:none`; `fkBoxParse`, `fkBoxClamp` and the listeners after `drawFloat` in `assets/station/station.js`). Because the panel is right-anchored to the bell, dragging the grip left widens it and dragging down lengthens it, matching the cursor. Below 760px wide the brand shrinks to its glyph (`width:auto`) so the bell stays on screen. Its size is `{w, h}` in `localStorage` under `station.fkBox`, restored on reload, and its height is capped to what fits under the header (the window less 82px) and its width to the window less 64px — never smaller than 260 by 160 — while resizing, when the window shrinks, and when a saved size no longer fits. A saved `{x, y, w, h}` from before the move reads as its `w` and `h`. `floatHtml` writes the size into the panel's own `style`, so the 3-second repaint mid-resize draws it where it is; polling and 送出答案 are untouched.
 
