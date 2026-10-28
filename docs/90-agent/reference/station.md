@@ -770,7 +770,7 @@ that width). `fkClose` closes it, and when a gate is still held it sets
 `fk:shut` so the panel stays shut until the gate is gone
 (`assets/station/station.js:3810`, `function fkClose() {`;
 `assets/station/station.js:3814`, `if (heldNow) view.pg['fk:shut'] = true;`).
-The sheet hides the resize grip (`assets/station/station.css:1231`,
+The sheet hides the resize grip (`assets/station/station.css:1217`,
 `.fkr{display:none}`).
 
 On a desktop the panel opens wider than before, `min(560px, 100vw - 32px)`,
