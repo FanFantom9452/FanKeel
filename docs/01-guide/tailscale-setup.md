@@ -1,7 +1,7 @@
 ---
 status: current
-last_verified: 2026-10-28
-source_of_truth: lib/tailscale.js, lib/remote.js, scripts/station.js, assets/station/mobile.js, docs/01-guide/station.md, docs/01-guide/profile.md
+last_verified: 2026-10-29
+source_of_truth: lib/tailscale.js, lib/remote.js, lib/peers.js, scripts/station.js, assets/station/mobile.js, docs/01-guide/station.md, docs/01-guide/profile.md
 ---
 
 # 用自己的 Tailscale 開手機遠端
@@ -64,11 +64,11 @@ tailscale serve status
 
 ## 同一個 tailnet 有好幾台電腦
 
-每台電腦各自打開自己的手機遠端，手機也對每一台各配對一次，之後就能在手機上直接切換。要這樣做是因為配對記在瀏覽器的 cookie 裡，cookie 只屬於發出它的那一台（沒有 Domain，也不跨主機），所以一台電腦的配對不能替另一台作證。
+手機只要配對一台電腦。手機連著的那台監控站，會替手機去讀同一個 tailnet 上其他電腦的 session，合併成 `/m` 的一張列表；為此，那台要先跟其他每台各配對一次。手機的配對記在瀏覽器的 cookie 裡，cookie 只屬於發出它的那一台（沒有 Domain，也不跨主機），所以它不會被轉給別台；電腦之間用的是配對時對方另外發的一把 token，存在這台的設定目錄。
 
-配對完之後，在手機的 `/m` 點最上面的主機名稱膠囊，打開測站面板，裡面有「其他電腦 / Other computers」清單。清單列的是同一個 tailnet 裡、監控站有回應的電腦；點一台，就在同一個分頁打開那台的 `/m`。例如在 `https://desk-a.<tailnet 名>.ts.net/m` 點 `desk-b`，分頁會換成 `https://desk-b.<tailnet 名>.ts.net/m`。還沒和手機配對過的那台，會照常要你輸入它卡片上的配對碼。
+配對完之後，在手機的 `/m` 點最上面的主機名稱膠囊（有好幾台時寫著「N 台電腦」），打開測站面板，「電腦 / Computers」底下每台電腦一列：已連上、離線（寫著最後連上的時間），或還沒配對。點還沒配對的那一列，會展開一個輸入框：到那台電腦的 設定 › 手機遠端 卡片拿 8 字元配對碼，輸入後由手機連著的這台代為配對，約 5 秒後那台的 session 就會出現在列表裡，標題下也多一排依電腦篩選的按鈕。例如手機連著 `https://desk-a.<tailnet 名>.ts.net/m`，在 `desk-b` 那一列輸入 desk-b 卡片上的碼；之後 desk-b 的卡片上會多一台叫「電腦 desk-a」的裝置，跟手機一樣可以解除。已連上或離線的那一列點下去，會在同一個分頁打開那台自己的 `/m`；那台若還沒跟這支手機配對過，會照常要你輸入它的配對碼。
 
-一台電腦要同時符合三件事才會出現：它的監控站正在跑、遠端是開的、這台電腦在 tailnet 上在線。清單大約每分鐘更新一次，因為每次更新都要逐台探測，不想讓每次開面板都等；剛開好遠端的電腦，可能要等一分鐘才看得到。清單是方便你跳過去，不會改變誰能連進來，沒配對的手機仍然被擋。
+一台電腦要同時符合三件事才會出現：它的監控站正在跑、遠端是開的、這台電腦在 tailnet 上在線。清單大約每分鐘更新一次，因為每次更新都要逐台探測，不想讓每次開面板都等；剛開好遠端的電腦，可能要等一分鐘才看得到。清單本身不改變誰能連進來，沒配對的手機和電腦仍然被擋。
 
 ## 從手機回答 gate
 
