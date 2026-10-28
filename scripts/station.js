@@ -57,6 +57,8 @@ const { entriesOf, summarise } = require('../lib/usage.js');
 const todoCheck = require('./todo-check.js');
 const todoFiles = require('../lib/todo.js');
 const remote = require('../lib/remote.js');
+const peers = require('../lib/peers.js');
+const rcseen = require('../lib/rcseen.js');
 const tailscale = require('../lib/tailscale.js');
 const qr = require('../lib/qr.js');
 const os = require('node:os');
@@ -946,6 +948,23 @@ async function serve(opts) {
             if (!got.ok) return fail(403, got.reason);
             return send(201, 'application/json; charset=utf-8', JSON.stringify({ device: got.device }), Object.assign({ 'set-cookie': remote.cookieFor(got.token) }, noStore));
         }
+        // This station pairing with another one (decision (a) in
+        // docs/90-agent/plans/2026-10-29-mobile-sources.md): the code shown on
+        // that computer's 手機遠端 card, typed into the phone's 測站 sheet and
+        // redeemed there by this server as a device named for this machine.
+        // Only a computer the tailnet lists as a station, or one already
+        // paired, is asked — never a name the form makes up.
+        if (req.method === 'POST' && url.pathname === '/station/peers/pair') {
+            const form = await formOf();
+            if (!form) return;
+            if (!tailnet.on) return fail(409, 'remote is off: this station reads no other computer');
+            const dns = String(form.get('dnsName') || '').trim().toLowerCase();
+            if (!machinesNow().some((x) => x.dnsName === dns)) return fail(404, 'no station named ' + dns + ' on this tailnet');
+            const got = await peers.pairWith(configDir, dns, form.get('code') || '', hostName(), opts.peerSend, Date.now());
+            if (!got.ok) return fail(got.status === 403 ? 403 : 502, got.reason);
+            poll.kick();
+            return send(201, 'application/json; charset=utf-8', JSON.stringify({ name: got.name }), noStore);
+        }
         if (req.method === 'GET' && url.pathname === '/station/health') {
             // Read-only and identifies the process, nothing else — no nonce,
             // so `probe` above (and a `--detach` poll) can tell a live station
@@ -979,11 +998,16 @@ async function serve(opts) {
         }
         if (req.method === 'GET' && url.pathname === '/station/mobile.json') {
             // A few kilobytes the phone reads every 5 s — never station-data.js.
-            // The machine is named by its tailnet name's first label while the
-            // tailnet is on, by its hostname otherwise.
+            // `?own=1` is another station asking (lib/peers.js poller): this
+            // machine's rows only, so two stations reading each other never
+            // nest, and no reading of other computers starts for it.
             const model = sharedModel();
-            const host = (tailnet.on && tailnet.dnsName ? tailnet.dnsName.split('.')[0] : '') || os.hostname();
-            const body = mobile.mobileModel(model, Date.now(), host, station.hiddenPkeys(model), phone.snapshot, device, othersNow());
+            const host = hostName();
+            const hidden = station.hiddenPkeys(model);
+            const now = Date.now();
+            const own = url.searchParams.get('own') === '1';
+            const rcEnded = rcseen.note(configDir, mobile.rcLive(model, hidden, host), now);
+            const body = mobile.mobileModel(model, now, host, hidden, phone.snapshot, device, own ? [] : othersNow(), { peers: own ? [] : machinesNow(), rcEnded });
             return send(200, 'application/json', JSON.stringify(body), noStore);
         }
         if (req.method === 'GET' && url.pathname === '/station/phone.json') {
@@ -1275,6 +1299,13 @@ async function serve(opts) {
         }
         return cur.list;
     };
+    // The computers this station reads for the phone (docs/90-agent/plans/2026-10-29-mobile-sources.md
+    // Task 2, decision (a)): the paired ones polled in the background by lib/peers.js, the
+    // tailnet's other stations with no token here listed as unpaired. Never awaited by a request.
+    const poll = peers.poller(configDir, opts.peerSend);
+    const machinesNow = () => (tailnet.on ? poll.machines(othersNow(), Date.now()) : []);
+    // This machine's name on the phone: its tailnet name's first label while the tailnet is on.
+    const hostName = () => (tailnet.on && tailnet.dnsName ? tailnet.dnsName.split('.')[0] : '') || os.hostname();
     // The proxy this station made comes down with it (station-remote-1): when
     // `station.remote` is written off, when `close()` runs, and on the idle
     // exit. Never fatal — a failure is one stderr line and shutdown goes on.
