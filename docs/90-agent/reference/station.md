@@ -252,7 +252,7 @@ time: every row's strip fills the same width, so a ten-minute session and a
 ten-hour one look the same size — only their segments' own widths differ.
 
 No stages at all draws no strip and no table, just one line —
-`沒有分階段紀錄` (`assets/station/station.js:2824`, `沒有分階段紀錄`) — a
+`沒有分階段紀錄` (`assets/station/station.js:2258`, `沒有分階段紀錄`) — a
 session that has not crossed a stage boundary has nothing to proportion.
 
 Below the strip is the table it is drawn from — one row per stage, with the
@@ -261,7 +261,7 @@ stage's minutes went on a gate rather than on work. Neither carries a dollar
 figure any more; a stage's own cost surfaces in the per-route stage
 ledger on the old project page (the fallback when `project-page.js` is
 missing), and per stage and model inside the old session page's 概覽, under a `<details class="csmore">` element
-(`assets/station/station.js:2522`, `'<details class="csmore"><summary>'`) — not on this table's rows.
+(`assets/station/station.js:1956`, `'<details class="csmore"><summary>'`) — not on this table's rows.
 
 A stage's dollar figure needs `spend`, which `hooks/leave.js` writes once, at
 session end — a live session does not have it yet, and no session that ended
@@ -283,7 +283,7 @@ with 派工 and 對話 drawn by `assets/station/session-dispatch.js` and
 `assets/station/session-talk.js`; a 關卡 link joins them only while the
 session's `gateAt` is set, to `/f/<id>/gate` when served. `#/s/<id>/cost`
 opens 經過. 事件, 計畫 and 關卡 stay on the old page
-(`assets/station/station.js:4293`, `var SESSION_TABS = ['timeline', 'cost', 'dispatch', 'talk'];`),
+(`assets/station/station.js:3727`, `var SESSION_TABS = ['timeline', 'cost', 'dispatch', 'talk'];`),
 which also draws every tab when the module is missing. The rest of this
 section describes that old page. It had six tabs — 概覽,
 派工, 事件, 對話, 計畫 and 關卡 — and `#/s/<id>/<tab>` opens one directly, with `timeline`,
@@ -293,7 +293,7 @@ largest rises, plus the per-stage spend bar and the stage × model table that
 used to be 花費's own tab (see below). An old `#/s/<id>/cost` link still
 parses — `cost` stays a valid `TABS` value in `parseHash` — but now opens
 概覽 rather than a separate tab, since `tabsHtml`'s `TAB_SHOWN`
-(`assets/station/station.js:1266`, `['timeline', 'dispatch', 'events', 'talk', 'plan', 'gate']`) maps
+(`assets/station/station.js:700`, `['timeline', 'dispatch', 'events', 'talk', 'plan', 'gate']`) maps
 `cost` back to `timeline`. 派工 gives
 every row its input and output tokens, read from `split`, and its dollars,
 read from `cost`; 事件 is the replay, each gate's row carrying how long it
@@ -409,15 +409,15 @@ agent's return entered the main context.
 
 On the old page, where a stage's dollars live is no longer its own tab: the stage × model
 table sits inside 概覽, under a `<details>` element titled "stage × model
-明細" (`assets/station/station.js:2522`, `<details class="csmore">`). Above
+明細" (`assets/station/station.js:1956`, `<details class="csmore">`). Above
 it, when the session has a detail loaded, sits the timeline chart, which now
 also tints its background by stage; and above that sits `costShareHtml`
-(`assets/station/station.js:1169`, `function costShareHtml(L, hi) {`), a bar
+(`assets/station/station.js:603`, `function costShareHtml(L, hi) {`), a bar
 with one segment per stage that has paid, each segment sized by its share of
 the session's total dollars — clicking a segment, or a row of the table under
 it, marks that stage on the timeline below (`data-hist`). 派工 also gets a
 small strip, `dispatchStagesHtml`
-(`assets/station/station.js:1199`, `function dispatchStagesHtml(L, id, hi) {`),
+(`assets/station/station.js:633`, `function dispatchStagesHtml(L, id, hi) {`),
 linking each stage's agent dollars back to 概覽 with that stage marked. The
 table itself: a stage
 × model table summed from the session's `days`, with input, output,
@@ -750,13 +750,13 @@ and `workflow` running from an agent file's own first request to its last.
 
 A held gate can be answered in words as well as by a button. Under the gate's
 buttons the bell panel draws a free-text box, `gfree`
-(`assets/station/station.js:1902`, `var id = 'gfree-' + s.id, draft = String(`), and,
+(`assets/station/station.js:1336`, `var id = 'gfree-' + s.id, draft = String(`), and,
 when the browser can listen, a mic button beside it
 (`assets/station/station.js:1905`, `data-mic`). A click on the mic starts
 `fkListen` and a second click stops it (`assets/station/station.js:4829`,
 `if (fkRec) { fkRec.stop(); return; }`); what is heard goes into the box and
 the status line `gsay`, and nothing is sent until the send button is pressed
-(`assets/station/station.js:4391`, `Voice fills the box and never sends`). The
+(`assets/station/station.js:3825`, `Voice fills the box and never sends`). The
 gate page draws the same pair in `freeHtml`
 (`assets/station/gate-frame.js:105`, `function freeHtml(st) {`), toggled by
 `micToggle` (`assets/station/gate-frame.js:132`), which fills the box on
@@ -768,8 +768,8 @@ edge, 85dvh at most, with a grip, `.fkg`, and a 44px close button, `.fkx`
 `assets/station/station.css:1227`, `.fkg,.fkx{display:none}` hides both above
 that width). `fkClose` closes it, and when a gate is still held it sets
 `fk:shut` so the panel stays shut until the gate is gone
-(`assets/station/station.js:4384`, `function fkClose() {`;
-`assets/station/station.js:4388`, `if (heldNow) view.pg['fk:shut'] = true;`).
+(`assets/station/station.js:3818`, `function fkClose() {`;
+`assets/station/station.js:3822`, `if (heldNow) view.pg['fk:shut'] = true;`).
 The sheet hides the resize grip (`assets/station/station.css:1231`,
 `.fkr{display:none}`).
 
@@ -778,7 +778,7 @@ with the 24px resize grip `.fkr` at its bottom left
 (`assets/station/station.css:1137`, `width:min(560px,calc(100vw - 32px))`;
 `assets/station/station.css:1141`, `.fkr{position:sticky;bottom:0;display:block;width:24px;height:24px`).
 A size the person dragged to is still kept as `station.fkBox`
-(`assets/station/station.js:4337`, `var FK_BOX_KEY = 'station.fkBox';`).
+(`assets/station/station.js:3771`, `var FK_BOX_KEY = 'station.fkBox';`).
 
 On `/m` the three list screens — Session (`#/`), 等你 (`#/ask`) and 完成 (`#/done`) — share a bottom tab bar of 64px tabs padded by the home indicator, the 等你 tab carrying the number of held gates (`assets/station/mobile.js:453`, `function tabbar(view, m) {`; `assets/station/mobile.css:384`, `.tabbar{flex:none;display:grid;`); a session's own screen hides it. Each session is a card with its title, project, stage and one status line, and the latest line and background list behind its chevron (`assets/station/mobile.js:414`, `function card(x, at, u, kind) {`); a gate's card is the amber one, listed first, with the question and 去答. The host pill in each list screen's header opens the 測站 sheet: the connection, this phone (`device`), the session the phone holds and its time left (`holdUntil`), and re-pairing; unpairing stays on the desktop's 手機遠端 card, since `/station/remote/revoke` is this machine's only (`assets/station/mobile.js:515`, `function sheetHtml(m, at, u) {`). The header pads by the safe area (`assets/station/mobile.css:322`, `body.m .ab.ab2{display:grid;gap:0;min-height:0;padding:calc(6px + env(safe-area-inset-top)) 8px 8px 20px}`), and station.css's desktop `.pg` frame is cleared on the phone (`assets/station/mobile.css:368`, `body.m .scr>.pg{flex:1;min-height:0;margin:0;padding:0;border:0;border-radius:0;background:none}`). A session's screen, `#/s/<id>/<pane>`, holds a TokenBar — context against the compact line, the 5h and 7d limits with where the time says each should be, one line of three meters that opens to labelled rows in place without redrawing the composer — and six pane tabs, 對話 概覽 計畫 派工 事件 關卡, which a sideways swipe also moves between (`assets/station/mobile.js:887`, `function chatHtml(m, id, at, u, P, pane) {`; `assets/station/mobile.js:266`, `function swipeTo(pane, dx, dy) {`). 概覽 is the session's stages finished in `done`, 計畫 its route (phone.json carries no plan tasks; the row links the desktop plan page), 派工 its background items, 事件 its tool steps and 關卡 its held questions; every row opens on a tap. A chat
 whose session is at a gate pins the gate's question under the header, with a
@@ -822,7 +822,7 @@ is to change the profile and reload.
 
 The facets are on 清單, above its table — state and stage with a count on each
 button, registry with one button per root
-(`assets/station/station.js:2649`, `moved onto the page they narrow`) — and
+(`assets/station/station.js:2083`, `moved onto the page they narrow`) — and
 the search box in the top bar matches task, project, session id, registry
 label, model, state, next, the files touched and its notes — AND-ed.
 
@@ -846,14 +846,14 @@ above the list otherwise; it does not merely hide rows.
 A gone registry keeps its facet button, labelled `— gone`, rather than
 dropping off the row, so selecting one never returns a blank pane with nothing
 on the page saying why:
-`goneNote()` (`assets/station/station.js:2210`, `function goneNote(root)`) prints a
+`goneNote()` (`assets/station/station.js:1644`, `function goneNote(root)`) prints a
 card reading `gone — no sessions/ here any more` in its place, alongside the
 `--forget` that would drop it for good.
 
 A registry that is not gone gets its own card once it is the one selected on
 清單, and every project page carries the same card for its own registry no
 matter what is selected there: `registryNote()`
-(`assets/station/station.js:2227`, `function registryNote(root)`) prints its
+(`assets/station/station.js:1661`, `function registryNote(root)`) prints its
 own unreadable-session count, its `map.md` date — or `不存在` when there is
 none — and its build directories with each one's file count, or says there
 are none. The old page carried all three on a per-registry meta line; the
@@ -861,7 +861,7 @@ redesign dropped that line, and this card is where its contents live now. The
 footer's own unreadable count stays the total across every registry and is
 hidden only on 清單 once a registry there is selected: one that is not gone
 carries the same count on its own card
-(`assets/station/station.js:2883`, `a corrupt-entry count must`), and a gone
+(`assets/station/station.js:2317`, `a corrupt-entry count must`), and a gone
 one has no session files left to count
 (`lib/station.js:689`, `gone: true, unreadable: 0`); everywhere
 else — a project page included, whose own card shows only its registry's
@@ -940,16 +940,16 @@ Sessions subtabs strip above them (`subtabsHtml('live')`).
 
 The left nav (`navHtml`, `data-block="nav"`) no longer groups its links into
 three loose headings; `NAV_TREE`
-(`assets/station/station.js:1547`, `var NAV_TREE = [`) defines six ordered
+(`assets/station/station.js:981`, `var NAV_TREE = [`) defines six ordered
 entries instead, one level with no folds. 現在 is a single link, `#/`.
 Sessions links to `#/sessions` and carries four kids: 進行中 `#/live`, 最近 `#/sessions`, 全部清單
 `#/list` and 比較 `#/cmp`. 花費 links to `#/days` and carries two kids: 近 30 天
 `#/days` and 依專案 `#/projects`. 文件 is a single link, `#/docs`. 設定 and 導覽 are pinned under them: 設定 has one
 kid, 精靈 `#/settings`; 導覽 is a single link, `#/tour`, carrying `data-block="tour-nav"`. Every entry is a plain link, and `navHtml`
-(`assets/station/station.js:1579`, `function navHtml(active, c) {`) draws them
+(`assets/station/station.js:1013`, `function navHtml(active, c) {`) draws them
 through `navLinksHtml`. A page's kids are its filters: they
 appear as a subtabs strip under the page itself
-(`assets/station/station.js:1626`, `function subtabsHtml(active) {`) — the
+(`assets/station/station.js:1060`, `function subtabsHtml(active) {`) — the
 same list drives both the nav and the strip, so they can never list
 different pages. Only 現在 carries a badge: `navCounts` returns just
 `{ waiting }`, the number of live sessions waiting on you.
@@ -960,7 +960,7 @@ read with `stored()`'s try/catch so a `file:` page or private mode with no
 holds the three-state 跟隨系統/淺色/深色 button in the masthead's
 `div.appear` (`id="appear"`, drawn by `drawTheme`); a click cycles it and
 writes the new value
-(`assets/station/station.js:4552`, `store('station.theme', t === 'system' ? null : t);`), and the
+(`assets/station/station.js:3986`, `store('station.theme', t === 'system' ? null : t);`), and the
 stored value is read and set as `data-theme` on `<html>` before the page's
 first paint, so a reader on 深色 never sees a flash of light first
 (`assets/station/station.js:23`, `themeSet(stored('station.theme'));`).
@@ -1060,11 +1060,11 @@ rather than expanding the row, so two sessions can be compared without
 scrolling. Sorting is by task, stage, context, cost, state, started or last
 action, clicking twice to reverse — `started` keeps a column and header of its
 own so it stays reachable as a sort key, the same reason the page this
-replaces sorted by it (`assets/station/station.js:2594`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
+replaces sorted by it (`assets/station/station.js:2028`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
 `updated` descending, so the page's first sort is the one it arrived in.
 
 **比較**, `#/cmp`, is now the 全部 list with its compare tray open
-(`assets/station/station.js:4290`, `VIEWS.cmp = function (r) { return w.FK_SESSIONS.page(S, modOpts({ tray: true })); };`):
+(`assets/station/station.js:3724`, `VIEWS.cmp = function (r) { return w.FK_SESSIONS.page(S, modOpts({ tray: true })); };`):
 ticking two or three rows there opens a compare dialog of the fields
 `lib/compare.js` returns, so the page is never empty. Tick two sessions on 清單 or a project page — only a
 session with a detail can be ticked, and a third tick drops the first — and
@@ -1127,9 +1127,9 @@ and the eyebrow's cannot disagree.
 
 Both decisions are pure functions above the `module.exports` guard, so both
 are unit tested: what to say
-(`assets/station/station.js:1481`, `function serveLost(lastOkMs, nowMs, genAbs, genRel) {`)
+(`assets/station/station.js:915`, `function serveLost(lastOkMs, nowMs, genAbs, genRel) {`)
 and what the eyebrow reads
-(`assets/station/station.js:2057`, `function heroEyebrow(frozenAt) {`). The
+(`assets/station/station.js:1491`, `function heroEyebrow(frozenAt) {`). The
 fetch that feeds them, the bar they fill and the pill are the document half
 below the guard. The eyebrow is rendered rather than patched, so it takes a
 redraw — but only as the state flips, never on a poll that finds nothing
@@ -1281,7 +1281,7 @@ the single-row button. `clearStaleControl` in `assets/station/station.js`
 renders the form when the page is served, and prints the copyable command when
 it is not — a static file cannot post. The
 redesigned 可能停了 card carries one per stale row: `modOpts`
-(`assets/station/station.js:4284`) passes `clear: clearControl`, and `row` in
+(`assets/station/station.js:3718`) passes `clear: clearControl`, and `row` in
 `assets/station/live-page.js` draws it in a `lv-row-clear` beside the row's
 `<a>`, not inside it; without `opts.clear` the row is the bare link.
 
