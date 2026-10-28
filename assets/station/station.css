@@ -196,11 +196,8 @@ table.t{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
 .t th{font-weight:500;font-size:11.5px;color:var(--muted);text-align:left;padding:8px 10px;border-bottom:1px solid var(--rule2);white-space:nowrap}
 .t td{padding:8px 10px;border-bottom:1px solid var(--rule);vertical-align:middle;white-space:nowrap}
 .t th.r,.t td.r{text-align:right}
-.t tr.link{cursor:pointer}
-.t tr.link:hover td{background:var(--wash)}
 .t td.task{white-space:normal;min-width:240px;max-width:420px}
 .t td.task a{text-decoration:none;font-weight:500}
-.t tr.link:hover td.task a{text-decoration:underline}
 .t tfoot td{border-bottom:0;border-top:1px solid var(--rule2);font-weight:600}
 .t tr.sub td{background:var(--wash);font-weight:600}
 .t tr.child td:first-child{padding-left:26px}
@@ -238,13 +235,6 @@ table.t{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
 .hero-top{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap}
 .hero-title h1{font-size:28px;font-weight:300;font-stretch:87.5%;letter-spacing:-.01em;margin-top:2px}
 .hero-title h1 b{font-weight:600}
-.projrow{display:grid;grid-template-columns:minmax(0,1fr) 110px 78px 50px 76px;align-items:center;gap:14px;padding:12px 8px;border-bottom:1px solid var(--rule);text-decoration:none;border-radius:6px}
-.projrow:hover{background:var(--wash)}
-.projrow.head{color:var(--muted);font-size:11.5px;padding-top:4px;padding-bottom:8px;border-bottom-color:var(--rule2)}
-.projrow.head:hover{background:none}
-.projrow .nm{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px}
-.projrow .pth{color:var(--muted);font-size:11px;overflow-wrap:anywhere;line-height:1.35;margin-top:2px}
-.projrow .r{text-align:right;font-variant-numeric:tabular-nums}
 
 /* day panel */
 .btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--rule2);background:transparent;border-radius:7px;padding:4px 10px;text-decoration:none;font-size:12.5px;cursor:pointer;color:var(--ink2)}
@@ -275,9 +265,6 @@ table.t{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
 .note{color:var(--muted);font-size:12px;margin-top:10px}
 .sumline{display:flex;flex-wrap:wrap;gap:8px 28px;padding:12px 0 16px;border-bottom:1px solid var(--rule);margin-bottom:6px}
 .sumline div{font-size:12px;color:var(--ink2)} .sumline b{display:block;font-size:22px;font-weight:300;font-stretch:87.5%;color:var(--ink)}
-.mini-mix{display:inline-flex;width:72px;height:8px;gap:1px;vertical-align:middle}
-.mini-mix i{display:block;height:100%}
-.mini-mix i:first-child{border-radius:2px 0 0 2px} .mini-mix i:last-child{border-radius:0 2px 2px 0}
 
 @media (max-width:1240px){
   .ro{padding-right:18px;margin-right:18px}
@@ -325,7 +312,6 @@ table.t{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
 .chart .hit{fill:transparent;cursor:pointer}
 .chart .hit:hover{fill:var(--wash)}
 .seg button:disabled{opacity:.45;cursor:not-allowed}
-.projrow .pth{display:block}
 .tl .wf-toggle{fill:transparent}
 .tl .wf-toggle:hover{fill:var(--wash)}
 /* The timeline's stage columns, their names, and the reading under the pointer. */
@@ -1738,7 +1724,6 @@ a.spendline:hover .sl-go{color:var(--keel-deep);text-decoration-color:var(--keel
 :root[data-style=keel] .ksess .glyph.prog{width:24px;height:24px;flex:none}
 :root[data-style=keel] .ksess .t td.r{font:500 12px var(--f-mono)}
 :root[data-style=keel] .ksess .t td.c-state{overflow:hidden}
-:root[data-style=keel] .ksess .t tr.link:hover td{background:var(--wash)}
 
 /* ---- live: running sessions float as the film's file cards; maybe-stopped ones share one quiet card ---- */
 :root[data-style=keel] .lv.klv{max-width:none;gap:26px}

@@ -161,10 +161,10 @@ test('every class the three levels render has a rule', () => {
     const css = fs.readFileSync(CSS, 'utf8');
     const emitted = classTokens(shell() + fs.readFileSync(JS, 'utf8') + fs.readFileSync(path.join(path.dirname(JS), 'days-page.js'), 'utf8') + fs.readFileSync(path.join(path.dirname(JS), 'chart.js'), 'utf8') + fs.readFileSync(path.join(path.dirname(JS), 'fmt.js'), 'utf8'));
     const classes = ['mast', 'crumbs', 'search', 'foot', 'page', 'fixed', 'panel', 'eyebrow', 'h2', 'readouts', 'ro',
-        'hatchsw', 'controls', 'ctlgrp', 'seg', 'legend', 'sw', 'chart', 'hit', 'tbl-wrap', 't', 'link', 'chip',
-        'pchip', 'route', 'hero-top', 'projrow', 'pth', 'btn',
+        'hatchsw', 'controls', 'ctlgrp', 'seg', 'legend', 'sw', 'chart', 'hit', 'tbl-wrap', 't', 'chip',
+        'pchip', 'route', 'hero-top', 'btn',
         's-title', 's-meta', 'tabs',
-        'lane-legend', 'tl', 'note', 'sumline', 'mini-mix',
+        'lane-legend', 'tl', 'note', 'sumline',
         'card', 'phead', 'ctl', 'listwrap', 'det', 'sec', 'tally', 'seq', 'rp',
         'pill', 'delta', 'mute', 'rail', 'livetag', 'runn', 'stname', 'c-state', 'tkr', 'dhead', 'stc', 'axt', 'nowl', 'agdots', 'phl', 'phs', 'axw', 'axh', 'axl', 'lkb',
         'prm', 'retl', 'emptyd', 'gaprow'];
