@@ -6,7 +6,7 @@ state: blocked
 link: scripts/spend.js
 group: limits 記錄跨過一次 reset
 timing: after: `.fankeel/build/limits` 的 sevenResets 跨過一次 7d reset
-stamp: 2026-10-27
+stamp: 2026-10-29
 ---
 
 來源：6d8a5da5（2026-09-21）的額度校準報告 docs/90-agent/reports/2026-09-21-quota-calibration.md 第 3 節；5h 兩次讀數已按錢走，7d 兩個點卻差至少 4.7 倍，兩點共用不了同一個速率，兩點給不出原因。

@@ -6,7 +6,7 @@ state: blocked
 link: assets/station/station.js
 group: station 外殼拆完
 timing: after: 第四份 station-shell 計畫的 Task 2 把左欄搬進 nav.js
-stamp: 2026-10-28
+stamp: 2026-10-29
 ---
 
 來源：station-52 的計畫階段（2026-10-28）。docs/90-agent/plans/2026-10-28-station-shell-4.md 的 Task 2 把左欄搬進 nav.js，同時照搬 liveRail、saFamily、saShort、liveSubsHtml、liveLane、liveGate、liveRun、liveMaybe、liveIdle、nowHtml。這十個函式沒有執行期的呼叫者，只剩測試與 module.exports 在用。當時不刪，是因為刪它們要改 station.js 的 module.exports，超出那個任務能改的行號範圍；計畫說好在 land 記成 TODO。

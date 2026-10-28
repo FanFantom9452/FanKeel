@@ -6,7 +6,7 @@ state: blocked
 link: scripts/quota.js
 group: limits 記錄跨過一次 reset
 timing: after: `.fankeel/build/limits` 在一個 7 天視窗內 seven 累積動 10 點以上
-stamp: 2026-10-27
+stamp: 2026-10-29
 ---
 
 來源：2026-10-05 build 退回，在真實資料上實跑 quota.js --dry-run，exit 1：347 行中 81 行帶 seven_day_pct，涵蓋約 15 分鐘，各視窗內最多動 1 點。
