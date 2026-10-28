@@ -39,7 +39,7 @@ function boot() {
 const row = (over) => Object.assign({ id: 'k1', pkey: 'F:\ws\alpha', task: 'keel one', state: 'live', updated: NOW - 1000, started: NOW - 120000,
     route: ROUTE7, stage: 'build', busy: true, gateAt: null }, over);
 
-const recent = (V, r) => V.recentHtml([r], { names: {}, pkeys: [r.pkey] }, '');
+const recent = (V, r) => V.keelProgress(r);
 
 test('a live row worked on carries the live class on its glyph', () => {
     assert.match(recent(boot(), row({ days: [] })), /<svg class="glyph k-only prog live"/);

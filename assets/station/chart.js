@@ -6,13 +6,11 @@
     function make(K) {
         // One alias per name K carries, so the bodies below moved verbatim.
         var loc = K.loc, esc = K.esc, tokens = K.tokens, usd = K.usd, hours = K.hours, estMark = K.estMark, delta = K.delta;
-        var quotaDay = K.quotaDay, icon = K.icon, ago = K.ago, stamp = K.stamp, mins = K.mins, statePill = K.statePill;
-        var keelStage = K.keelStage, keelProgress = K.keelProgress, localDay = K.localDay, dimKey = K.dimKey;
+        var quotaDay = K.quotaDay, localDay = K.localDay, dimKey = K.dimKey;
         var tokenSum = K.tokenSum, orderKeys = K.orderKeys, niceTop = K.niceTop, metricText = K.metricText;
         var colorOf = K.colorOf, keyLabel = K.keyLabel, keyHint = K.keyHint, partEst = K.partEst;
-        var projectHash = K.projectHash, sessionHash = K.sessionHash, sessionTotals = K.sessionTotals, windowTotals = K.windowTotals;
-        var METRIC_LABEL = K.METRIC_LABEL, DIM_LABEL = K.DIM_LABEL, NO_TIME_TYPE = K.NO_TIME_TYPE;
-        var KIND_KEYS = K.KIND_KEYS, MODEL_KEYS = K.MODEL_KEYS;
+                var METRIC_LABEL = K.METRIC_LABEL, DIM_LABEL = K.DIM_LABEL, NO_TIME_TYPE = K.NO_TIME_TYPE;
+        var KIND_KEYS = K.KIND_KEYS;
         // One bar per day; a bar's total is added in the same pass as its parts,
         // so it is their sum and nothing else.
         function dayBars(sessions, metric, dim, days) {
@@ -323,44 +321,6 @@
                 }).join('') + '</ul>'
                 + '<div class="tt-sum">' + loc('shared.dayTotalLabel', '當天合計') + ' <b>' + metricText(o.metric, b.total, false, b.estimated) + '</b></div>';
         }
-        function projectsHtml(rows, o) {
-            return '<div class="h2">' + icon('projects') + loc('shared.projectsHeading', '專案 <small>近 30 天</small>') + '</div>'
-                + '<div class="projrow head"><span>' + loc('shared.thProject', '專案') + '</span><span>' + loc('shared.thDailyCost', '每日花費') + '</span><span class="r">' + loc('shared.cost', '花費') + '</span><span class="r">session</span>'
-                + '<span class="r">' + loc('shared.thLastActivity', '最後活動') + '</span></div>'
-                + (rows.length ? rows.map(function (r) {
-                    var c = colorOf('project', r.pkey, o.pkeys);
-                    return '<a class="projrow" href="' + projectHash(r.pkey) + '"><span style="min-width:0"><span class="nm"><i class="sw" style="background:'
-                        + c + '"></i>' + esc(o.names[r.pkey] || r.pkey) + '</span><span class="pth mono">' + esc(r.pkey) + '</span></span>'
-                        + '<span>' + spark(r.daily, c) + '</span><span class="r">' + usd(r.usd, true) + estMark(r) + '</span><span class="r">' + r.n + '</span>'
-                        + '<span class="r muted">' + ago(r.last) + '</span></a>';
-                }).join('') : '<p class="note">' + loc('shared.machineNoSessions', '這台機器上沒有 session') + '</p>');
-        }
-        // 最近 sessions (`#/sessions`): the film's header lockup — the title, a
-        // rule, the counts, `tabs` (the Sessions tab strip) and 看全部 on the
-        // right — over one line a row. A stage on the row's route is the film's
-        // glyph and `0N / 0M stage`; one the route does not name keeps its dots
-        // and its name (`stageNow`).
-        function recentHtml(list, o, tabs) {
-            var live = list.filter(function (s) { return s.state === 'live'; }).length;
-            return '<div class="phead khead" data-block="sessions-head"><h1>' + icon('sessions') + loc('shared.recentSessions', '最近 sessions') + '</h1>'
-                + '<p class="kcap"><span>' + loc('shared.capSessions', '<b>{n}</b>個 session', { n: list.length }) + '</span>'
-                + '<span>' + loc('shared.capLive', '<b>{n}</b>個 live', { n: live }) + '</span>'
-                + '<span>' + loc('shared.capByLast', '依最後動作，最新在上') + '</span></p>'
-                + '<span class="spacer"></span>' + (tabs || '') + '<a class="btn" href="#/list">' + loc('shared.seeAll', '看全部 →') + '</a></div>'
-                + '<section class="panel ksess" data-block="sessions"><div class="tbl-wrap"><table class="t">'
-                + '<colgroup><col><col style="width:150px"><col style="width:200px"><col style="width:84px"><col style="width:72px"><col style="width:168px"></colgroup>'
-                + '<thead><tr><th>' + loc('shared.thTask', '任務') + '</th><th>' + loc('shared.thProject', '專案') + '</th><th>stage</th><th class="r">' + loc('shared.cost', '花費') + '</th>'
-                + '<th class="r">token</th><th>' + loc('shared.thState', '狀態') + '</th></tr></thead><tbody>'
-                + list.map(function (s) {
-                    var t = sessionTotals(s);
-                    return '<tr class="link" data-href="' + sessionHash(s.id) + '"><td class="task"><a href="' + sessionHash(s.id) + '" title="' + esc(s.task || '') + '">'
-                        + esc(s.task || loc('shared.unnamed', '（未命名）')) + '</a></td><td><span class="pchip"><i class="sw" style="background:'
-                        + colorOf('project', s.pkey, o.pkeys) + '"></i>' + esc(o.names[s.pkey] || s.pkey) + '</span></td>'
-                        + '<td class="c-stage">' + (keelStage(s) ? '<span class="kstage">' + keelProgress(s) + keelStage(s) + '</span>' : stageNow(s)) + '</td>'
-                        + '<td class="r">' + usd(t.usd) + estMark(t) + '</td><td class="r muted">' + tokens(t.tokens) + '</td>'
-                        + '<td class="c-state">' + statePill(s) + runningTag(s) + '</td></tr>';
-                }).join('') + '</tbody></table></div></section>';
-        }
         // 導覽: the tour's own page in a frame. It is served from the plugin's
         // assets (scripts/station.js STATIC); the written file has no server.
         function tourPage(serve) {
@@ -368,85 +328,11 @@
             return '<section class="panel" data-block="tour"><p class="note">' + loc('shared.tourNeedsServe', '導覽要從 serve 開的頁面看：輸入 <code class="mono">/fankeel-station</code>，從它印出的網址開 <span class="mono">#/tour</span>。') + '</p></section>';
         }
 
-        function dayStart(day) {
-            return new Date(Number(day.slice(0, 4)), Number(day.slice(5, 7)) - 1, Number(day.slice(8, 10))).getTime();
-        }
-        function projectHead(sessions, pkey, days) {
-            var mine = sessions.filter(function (s) { return s.pkey === pkey; });
-            var t = windowTotals(mine, days), row = projectRows(mine, days)[0];
-            return { pkey: pkey, usd: t.usd, estimated: t.estimated, tokens: t.tokens, active: t.active, n: row ? row.n : 0 };
-        }
-        // A session's whole spend, at the moment it started.
-        function sessionPoints(sessions, metric, t0, t1) {
-            return sessions.map(function (s) {
-                var t = sessionTotals(s);
-                return { id: s.id, task: s.task, t: Date.parse(s.started), v: metric === 'usd' ? t.usd : t.tokens, estimated: metric === 'usd' && t.estimated };
-            }).filter(function (p) { return p.t >= t0 && p.t < t1; }).sort(function (a, b) { return a.t - b.t; });
-        }
-        // The 對照專案 line is a second series on the same axes, not a second chart.
-        function projectChart(series, o) {
-            var W = 1200, H = 340, L = 60, R = 24, T = 16, AX = 40, plotH = H - T - AX, base = T + plotH;
-            var X = function (t) { return (L + (t - o.t0) / ((o.t1 - o.t0) || 1) * (W - L - R)).toFixed(1); };
-            var all = [0];
-            series.forEach(function (s) { s.points.forEach(function (p) { all.push(p.v); }); });
-            var top = niceTop(Math.max.apply(null, all));
-            var Y = function (v) { return (base - v / top * plotH).toFixed(1); };
-            var out = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + loc('proj.perSessionByStart', '每個 session 的{metric}，依開始時間', { metric: METRIC_LABEL[o.metric] }) + '">';
-            [0, 0.25, 0.5, 0.75, 1].forEach(function (f) {
-                out += '<line class="' + (f ? 'gridl' : 'base') + '" x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(top * f) + '" y2="' + Y(top * f) + '"/>'
-                    + '<text class="tick" x="' + (L - 10) + '" y="' + (Number(Y(top * f)) + 4) + '" text-anchor="end">' + metricText(o.metric, top * f, true) + '</text>';
-            });
-            o.days.forEach(function (d, i) {
-                var x = X(dayStart(d) + 432e5);
-                if (i % 2 === 0 || d === o.today) out += '<text class="tick" x="' + x + '" y="' + (base + 17) + '" text-anchor="middle">' + Number(d.slice(8)) + '</text>';
-                if (d === o.today || d.slice(8) === '01' || i === 0) {
-                    out += '<text x="' + x + '" y="' + (base + 33) + '" text-anchor="middle">' + (d === o.today ? loc('proj.today', '今天') : loc('proj.monthN', '{n}月', { n: Number(d.slice(5, 7)) })) + '</text>';
-                }
-            });
-            series.forEach(function (s) {
-                if (!s.points.length) return;
-                out += '<polyline points="' + s.points.map(function (p) { return X(p.t) + ',' + Y(p.v); }).join(' ')
-                    + '" style="fill:none;stroke:' + s.colour + ';stroke-width:2;stroke-linejoin:round"/>';
-                s.points.forEach(function (p) {
-                    out += '<circle class="hit" data-href="' + sessionHash(p.id) + '" cx="' + X(p.t) + '" cy="' + Y(p.v) + '" r="5" style="fill:'
-                        + s.colour + ';stroke:var(--panel);stroke-width:2"><title>' + esc(s.name + ' · ' + (p.task || p.id) + ' · ' + stamp(p.t)
-                        + ' · ' + metricText(o.metric, p.v, false, p.estimated)) + '</title></circle>';
-                });
-            });
-            return out + '</svg>';
-        }
-        function miniMix(models, est) {
-            var keys = MODEL_KEYS.filter(function (k) { return models[k] > 0; });
-            var tot = keys.reduce(function (n, k) { return n + models[k]; }, 0);
-            if (!tot) return '<span class="muted">—</span>';
-            return '<span class="mini-mix" title="' + keys.map(function (k) { return k + ' ' + usd(models[k]) + estMark({ estimated: est && est[k] }); }).join(loc('proj.listSep', '、')) + '">'
-                + keys.map(function (k) {
-                    return '<i style="width:' + (models[k] / tot * 100).toFixed(2) + '%;background:var(--m-' + k + ')"></i>';
-                }).join('') + '</span>';
-        }
-        function projectSessionsHtml(list, picked) {
-            if (!list.length) return '<p class="note">' + loc('proj.noSessions30d', '這個專案近 30 天沒有 session') + '</p>';
-            return '<div class="tbl-wrap"><table class="t"><thead><tr><th aria-label="' + loc('proj.pickToCompare', '選來比較') + '"></th><th>' + loc('proj.thTask', '任務') + '</th><th>' + loc('proj.thStart', '開始') + '</th>'
-                + '<th class="r">' + loc('proj.thDuration', '時長') + '</th><th>' + loc('proj.thStageProgress', 'stage 進度') + '</th><th class="r">' + loc('proj.thCost', '花費') + '</th><th class="r">token</th><th>' + loc('proj.thModelMix', 'model 組成') + '</th></tr></thead><tbody>'
-                + list.map(function (s) {
-                    var t = sessionTotals(s), started = Date.parse(s.started);
-                    return '<tr class="link" data-href="' + sessionHash(s.id) + '"><td><input type="checkbox" data-cmp="' + esc(s.id)
-                        + '" aria-label="' + loc('proj.pickToCompare', '選來比較') + '"' + (picked.indexOf(s.id) >= 0 ? ' checked' : '')
-                        + (s.hasDetail ? '' : ' disabled title="' + loc('proj.noTranscriptToCompare', '沒有 transcript，沒有細節可比') + '"') + '></td>'
-                        + '<td class="task"><a href="' + sessionHash(s.id) + '">' + esc(s.task || loc('proj.unnamed', '（未命名）')) + '</a></td>'
-                        + '<td class="muted">' + stamp(started) + '</td><td class="r">' + mins((s.updated || started) - started) + '</td>'
-                        + '<td>' + routeDots(s) + ' <span class="muted">' + esc(s.stage || '—') + '</span></td>'
-                        + '<td class="r">' + usd(t.usd) + estMark(t) + '</td><td class="r muted">' + tokens(t.tokens) + '</td><td>' + miniMix(t.models, t.estModels) + '</td></tr>';
-                }).join('') + '</tbody></table></div>';
-        }
         return {
             dayBars: dayBars, projectRows: projectRows, roHtml: roHtml, kpiHtml: kpiHtml, spark: spark, routeDots: routeDots,
             stageNow: stageNow, runningTag: runningTag, segHtml: segHtml, histSvg: histSvg, paletteOf: paletteOf,
             legendOwn: legendOwn, legendRest: legendRest, shortLabel: shortLabel, legendHtml: legendHtml,
-            filterHtml: filterHtml, visibleBars: visibleBars, segTip: segTip, projectsHtml: projectsHtml,
-            recentHtml: recentHtml, tourPage: tourPage, dayStart: dayStart, projectHead: projectHead,
-            sessionPoints: sessionPoints, projectChart: projectChart, miniMix: miniMix,
-            projectSessionsHtml: projectSessionsHtml
+            filterHtml: filterHtml, visibleBars: visibleBars, segTip: segTip, tourPage: tourPage
         };
     }
     var api = { make: make };

@@ -90,37 +90,6 @@ test('histSvg time and token metrics never carry the mark', () => {
     }
 });
 
-test('projectsHtml marks a project\'s 30-day cost 估', () => {
-    const html = (R) => V.projectsHtml(V.projectRows(R, DAYS), O);
-    assert.match(html(EST), /<span class="r">\$4\.00 估<\/span><span class="r">1<\/span>/);
-    none(html(PLAIN));
-});
-
-test('recentHtml marks a session row\'s cost 估', () => {
-    const html = (R) => V.recentHtml(R, O, '');
-    assert.match(html(EST), /<td class="r">\$4\.00 估<\/td><td class="r muted">/);
-    none(html(PLAIN));
-});
-
-test('projectSessionsHtml marks the session cost cell and the estimated family in the model-mix tooltip', () => {
-    const html = (R) => V.projectSessionsHtml(R, []);
-    assert.match(html(EST), /<td class="r">\$4\.00 估<\/td><td class="r muted">/);
-    assert.match(html(EST), /title="opus \$1\.00、haiku \$3\.00 估"/);
-    none(html(PLAIN));
-});
-
-test('projectChart marks an estimated session point in its tooltip', () => {
-    const chart = (R) => V.projectChart([{ name: 'a', colour: '#123', points: V.sessionPoints(R, 'usd', NOW - 864e5, NOW + 864e5) }],
-        { metric: 'usd', t0: NOW - 864e5, t1: NOW + 864e5, days: DAYS, today: TODAY });
-    assert.match(chart(EST), /<title>[^<]*\$4\.00 估<\/title>/);
-    none(chart(PLAIN));
-});
-
-test('projectHead carries the estimate of the window it sums', () => {
-    assert.equal(V.projectHead(EST, 'F:\\ws\\a', DAYS).estimated, true);
-    assert.equal(V.projectHead(PLAIN, 'F:\\ws\\a', DAYS).estimated, false);
-});
-
 // ---- the session page --------------------------------------------------------
 const LOOPS = (est) => [{ stage: 'build', turns: 5, over: 2, overUsd: 0.5, estimated: est }];
 const costOnly = (R, est) => V.costHtml(V.costModel(R[0].days), { loops: LOOPS(est) });

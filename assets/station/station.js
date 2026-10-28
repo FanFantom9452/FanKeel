@@ -300,13 +300,6 @@
     function shortLabel() { return CHART().shortLabel.apply(null, arguments); }
     function stageNow() { return CHART().stageNow.apply(null, arguments); }
     function runningTag() { return CHART().runningTag.apply(null, arguments); }
-    function dayStart() { return CHART().dayStart.apply(null, arguments); }
-    function projectsHtml() { return CHART().projectsHtml.apply(null, arguments); }
-    function recentHtml() { return CHART().recentHtml.apply(null, arguments); }
-    function projectHead() { return CHART().projectHead.apply(null, arguments); }
-    function sessionPoints() { return CHART().sessionPoints.apply(null, arguments); }
-    function projectChart() { return CHART().projectChart.apply(null, arguments); }
-    function projectSessionsHtml() { return CHART().projectSessionsHtml.apply(null, arguments); }
 
     // ---- the session page -------------------------------------------------
     function clock(ms) { var d = new Date(ms); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
@@ -1576,9 +1569,8 @@
             pendingGateHtml: pendingGateHtml, pgAnswers: pgAnswers, todoEntry: todoEntry, riseTodo: riseTodo, backTodo: backTodo, todoSpot: todoSpot,
             localDay: localDay, lastDays: lastDays, parseHash: parseHash, family: family, modelKey: modelKey, modelLabel: modelLabel, sessionTotals: sessionTotals,
             windowTotals: windowTotals, dayBars: dayBars, projectRows: projectRows, kpiHtml: kpiHtml,
-            histSvg: histSvg, legendHtml: legendHtml, projectsHtml: projectsHtml, recentHtml: recentHtml,
-            dayStart: dayStart, projectHead: projectHead, sessionPoints: sessionPoints, projectChart: projectChart,
-            projectSessionsHtml: projectSessionsHtml,
+            histSvg: histSvg, legendHtml: legendHtml,
+            keelProgress: keelProgress, keelStage: keelStage, stageNow: stageNow, runningTag: runningTag,
             timelineModel: timelineModel, timelineSvg: timelineSvg, costModel: costModel, costHtml: costHtml,
             sessionHeadHtml: sessionHeadHtml, tabsHtml: tabsHtml, serveLost: serveLost, talkHtml: talkHtml, talkBody: talkBody,
             heroEyebrow: heroEyebrow, effortChip: effortChip, tourPage: tourPage,

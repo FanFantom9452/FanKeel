@@ -44,7 +44,7 @@ const live = (route, stage) => ({ id: 'k1', pkey: 'F:\\ws\\alpha', task: 'keel o
 const count = (s, re) => (s.match(re) || []).length;
 
 test('a live row carries the glyph filled to its stage and the film\'s 0N / 0M count, and no classic route dots', () => {
-    const html = boot().V.recentHtml([Object.assign(live(ROUTE7, 'build'), { days: [] })], { names: {}, pkeys: ['F:\\ws\\alpha'] }, '');
+    const html = ((V, r) => V.keelProgress(r) + V.keelStage(r))(boot().V, live(ROUTE7, 'build'));
     assert.equal(count(html, /class="gseg done"/g), 3);
     assert.equal(count(html, /class="gseg now"/g), 1);
     assert.equal(count(html, /class="gseg todo"/g), 2);
@@ -56,7 +56,7 @@ test('a live row carries the glyph filled to its stage and the film\'s 0N / 0M c
 });
 
 test('a stage the route skips is left out of the glyph, and a route with no land has no edge', () => {
-    const html = boot().V.recentHtml([Object.assign(live(['survey', 'build', 'verify'], 'verify'), { days: [] })], { names: {}, pkeys: ['F:\\ws\\alpha'] }, '');
+    const html = ((V, r) => V.keelProgress(r) + V.keelStage(r))(boot().V, live(['survey', 'build', 'verify'], 'verify'));
     assert.equal(count(html, /class="gseg /g), 3);
     assert.equal(count(html, /class="gedge /g), 0);
     assert.match(html, /<b>03<\/b><i>&nbsp;\/&nbsp;03<\/i><u>verify<\/u>/);

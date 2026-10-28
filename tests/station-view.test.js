@@ -503,10 +503,6 @@ test('the home builders print dollars from days and link every row to its level'
     assert.doesNotMatch(svg, /<title>/, 'no native tooltip: the card replaces it');
     assert.match(svg, /<rect class="hit" data-href="#\/d\/2026-09-14"/);
     assert.match(V.histSvg(V.dayBars(HOME, 'time', 'model', DAYS), O), /^<p class="note">時間沒有 model 可分/);
-    assert.match(V.projectsHtml(V.projectRows(HOME, DAYS), O), /href="#\/p\/F%3A%5Cws%5Calpha%2FBeta"/);
-    const recent = V.recentHtml(HOME.slice(0, 2), O);
-    assert.match(recent, /data-href="#\/s\/aaaa1111-0000"[\s\S]*?\$3\.75/);
-    assert.doesNotMatch(recent, /\$99|\$198/);
 });
 
 test('a kept v1 cache\'s single row counts its dollars and zero tokens, and breaks no home view', () => {
@@ -519,7 +515,6 @@ test('a kept v1 cache\'s single row counts its dollars and zero tokens, and brea
     assert.deepEqual([keptKind.days[i].total, keptKind.keys], [0, []], 'a null cost split gives kind nothing, not a crash');
     assert.deepEqual(V.sessionTotals(KEPT), { usd: 2.5, tokens: 0, active: 0, main: 0, wait: 0, models: { opus: 2.5 }, estModels: {}, estimated: false });
     assert.deepEqual(V.windowTotals([KEPT], DAYS), { usd: 2.5, tokens: 0, active: 0, main: 0, wait: 0, estimated: false });
-    assert.match(V.recentHtml([KEPT], O), /\$2\.50<\/td><td class="r muted">0<\/td>/);
     assert.equal(count(V.histSvg(V.dayBars([KEPT], 'tokens', 'model', DAYS), O), /<rect class="hit"/g), 30);
 });
 
@@ -668,39 +663,6 @@ test('a version split under 時間 comes from the spans, keeps the newest-first 
 });
 
 // --- the three levels: project -----------------------------------------------
-test('projectHead and sessionPoints take one project key\'s figures from days, one point per session start', () => {
-    assert.deepEqual(V.projectHead(HOME, 'F:\\ws\\alpha', DAYS),
-        { pkey: 'F:\\ws\\alpha', usd: 3.75, estimated: false, tokens: 35100, active: 6000000, n: 2 });
-    assert.equal(V.dayStart('2026-09-14'), new Date(2026, 8, 14).getTime());
-    const t0 = V.dayStart(DAYS[0]), t1 = V.dayStart(DAYS[29]) + 864e5;
-    const alpha = HOME.filter((s) => s.root === 'F:\\ws\\alpha');
-    assert.deepEqual(V.sessionPoints(alpha, 'usd', t0, t1).map((p) => [p.id, p.v]),
-        [['cccc3333-0000', 0], ['aaaa1111-0000', 3.75], ['bbbb2222-0000', 4.75]]);
-    assert.deepEqual(V.sessionPoints(HOME, 'tokens', t0, t1).map((p) => p.v), [0, 35100, 7605], 'last month\'s session is off the axis');
-});
-
-test('projectChart draws a line per project on one y axis, and every point links to its session', () => {
-    const t0 = V.dayStart(DAYS[0]), t1 = V.dayStart(DAYS[29]) + 864e5;
-    const of = (k) => V.sessionPoints(HOME.filter((s) => s.pkey === k), 'tokens', t0, t1);
-    const beta = { pkey: 'F:\\ws\\alpha/Beta', name: 'alpha / Beta', colour: 'var(--p-0)', points: of('F:\\ws\\alpha/Beta') };
-    const alpha = { pkey: 'F:\\ws\\alpha', name: 'alpha', colour: 'var(--p-1)', points: of('F:\\ws\\alpha') };
-    const o = { metric: 'tokens', t0, t1, days: DAYS, today: DAYS[29] };
-    const svg = V.projectChart([beta, alpha], o);
-    assert.equal(count(svg, /<polyline /g), 2);
-    assert.equal(count(svg, /<circle class="hit" data-href="#\/s\//g), 3);
-    assert.match(svg, /data-href="#\/s\/bbbb2222-0000"/);
-    assert.match(svg, />50k<\/text>/, 'alpha\'s 35k sets the shared axis');
-    assert.doesNotMatch(V.projectChart([beta], o), />50k<\/text>/, 'alone, Beta\'s 8k does not reach it');
-});
-
-test('the project sessions table ticks for 比較, and prints dollars and a model mix from days', () => {
-    const html = V.projectSessionsHtml(HOME.slice(0, 3), ['aaaa1111-0000']);
-    assert.match(html, /data-cmp="aaaa1111-0000" aria-label="選來比較" checked>/);
-    assert.match(html, /data-cmp="cccc3333-0000" aria-label="選來比較" disabled/);
-    assert.match(html, /data-href="#\/s\/aaaa1111-0000"[\s\S]*?\$3\.75[\s\S]*?<span class="mini-mix" title="opus \$3\.25、sonnet \$0\.50">/);
-    assert.doesNotMatch(html, /\$99/);
-});
-
 // --- the three levels: session -----------------------------------------------
 // A detail in the shape `serializeDetail()` writes from 2026-09-14 on: `points`
 // carry their model, `waits` their two moments, dispatch rows `from`, `to` and
@@ -1431,11 +1393,6 @@ test('quota share stays off text in a fixed box: ticks, bar totals, nav badge, c
         const hist = bare(V.histSvg(V.dayBars(HOME, 'usd', 'model', DAYS), O));
         assert.match(hist, /class="tick"[^>]*>\$/, 'the usd ticks are still there');
         assert.doesNotMatch(hist, /class="tick"[^>]*>[^<]*%\)/, 'no tick or bar total carries a share');
-        const t0 = V.dayStart(DAYS[0]), t1 = V.dayStart(DAYS[29]) + 864e5;
-        const pts = V.sessionPoints(HOME, 'usd', t0, t1);
-        const chart = V.projectChart([{ pkey: 'p', name: 'p', colour: 'var(--p-0)', points: pts }], { metric: 'usd', t0, t1, days: DAYS, today: DAYS[29] });
-        assert.match(bare(chart), /class="tick"[^>]*>\$/);
-        assert.doesNotMatch(bare(chart), /class="tick"[^>]*>[^<]*%\)/);
         const cs = V.costShareHtml(V.stageShare(STAGE_S, null), null);
         assert.doesNotMatch(cs.replace(/<tr[\s\S]*<\/tr>/g, '').replace(/<small>[\s\S]*?<\/small>/, ''), /%\) ·/, 'bar label and title read "$ · stage share%", not two percents');
         assert.match(V.sessionHeadHtml(HOME[0], DETAIL_X), /花費<\/div><div class="v">\$[\d.]+<\/div><div class="d">\([\d.]+%\) · /);
@@ -1478,17 +1435,6 @@ test('quota share stays off the event-page toc: the segment meta line is plain d
         const ms = toc.match(/<span class="m">[^<]*<\/span>/g) || [];
         assert.ok(ms.some((m) => /\$1500/.test(m)), 'a toc meta line carries the dollars');
         assert.doesNotMatch(ms.join(''), /%\)/);
-    } finally { S.profiles = undefined; }
-});
-
-test('quota share stays off the projects table cost cell', () => {
-    const S = global.window.STATION;
-    try {
-        S.profiles = { machine: { values: { 'quota.week': 20 } } };
-        const proj = V.projectsHtml(V.projectRows(HOME, DAYS), O);
-        const cells = proj.match(/<span class="r">\$[^<]*<\/span>/g) || [];
-        assert.ok(cells.length, 'a project cost cell is there');
-        assert.doesNotMatch(cells.join(''), /%\)/);
     } finally { S.profiles = undefined; }
 });
 
