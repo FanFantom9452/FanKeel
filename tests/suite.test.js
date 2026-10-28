@@ -489,3 +489,14 @@ test('suite.js --coverage says coverage: none where the entry claims no .js file
   assert.match(r.text, / — coverage: none \(no claimed \.js, or no table\)$/);
   assert.doesNotMatch(main(['--session', 'abcdef0123', '--root', dir]).text, /coverage/);
 });
+
+test('suite.js --coverage says coverage: N files in <suite.json> and records the line % of a claimed .js the run covers', () => {
+  const dir = repo();
+  fs.writeFileSync(path.join(dir, 'small.js'), 'module.exports = () => 1;\n');
+  fs.writeFileSync(path.join(dir, 'a.test.js'), "const test = require('node:test'); test('a', () => { require('./small.js')(); });\n");
+  const data = { ...DATA, claims: ['small.js'] };
+  registry.writeSession(dir, 'abcdef0123', data);
+  const r = main(['--session', 'abcdef0123', '--root', dir, '--coverage']);
+  assert.match(r.text, / — coverage: 1 files in .*suite\.json$/);
+  assert.equal(typeof suite.readRecord(dir, data).coverage['small.js'], 'number');
+});
