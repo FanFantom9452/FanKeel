@@ -435,3 +435,38 @@ test('waitLine names the live holder, says a stuck dead lock must be deleted by 
   h.out = now - 7 * 60000 - 5000;
   assert.equal(waitLine(h, 'x.lock', false, now), 'suite: waiting — pid 42 (session s) has run the suite in T since 09:05; last output 7 min ago; lock x.lock');
 });
+
+// node --test's coverage table nests a file under its directory rows, one
+// space of indent a level; a directory row has no percentages.
+const COVERAGE = [
+  '# pass 1',
+  '# start of coverage report',
+  '# ----------------------------------------------------------',
+  '# file      | line % | branch % | funcs % | uncovered lines',
+  '# ----------------------------------------------------------',
+  '# lib       |        |          |         | ',
+  '#  m.js     | 100.00 |    66.67 |  100.00 | ',
+  '#  x        |        |          |         | ',
+  '#   n.js    |  87.50 |   100.00 |  100.00 | 3-4',
+  '# top.js    |  50.00 |   100.00 |  100.00 | 2',
+  '# ----------------------------------------------------------',
+  '# all files |  80.00 |    75.00 |  100.00 | ',
+  '# ----------------------------------------------------------',
+  '# end of coverage report',
+].join('\n');
+
+test('parseCoverage reads line % per file out of the nested table, and null with no table', () => {
+  assert.deepEqual(suite.parseCoverage(COVERAGE), { 'lib/m.js': 100, 'lib/x/n.js': 87.5, 'top.js': 50 });
+  assert.equal(suite.parseCoverage('TAP version 13\n# pass 1\n'), null);
+});
+
+test('coverageFlags turns files into node --test coverage flags, and nothing for none', () => {
+  assert.equal(suite.coverageFlags(['lib/a.js']), ' --experimental-test-coverage --test-coverage-include="lib/a.js"');
+  assert.equal(suite.coverageFlags([]), '');
+  assert.equal(suite.coverageFlags(null), '');
+});
+
+test('coverageFiles keeps the touched JavaScript outside tests/', () => {
+  assert.deepEqual(suite.coverageFiles(['lib/a.js', 'tests/a.test.js', 'docs/x.md', 'scripts/b.mjs']), ['lib/a.js', 'scripts/b.mjs']);
+  assert.deepEqual(suite.coverageFiles(undefined), []);
+});

@@ -15,3 +15,13 @@ link: scripts/suite.js
 只做試跑：先在一個真實 task 跑一次，看有沒有 reviewer 漏掉的未覆蓋改動行；有才接進 verify，沒有就收回。照 graphify 判決的有界零成本試跑處理（2026-10-22:70）。
 
 完成條件：--coverage 可用且 suite.json 有每檔 line%；一次真實 task 的試跑結果記回本條，並寫明是否接進 verify。
+
+## 試跑 2026-10-28
+
+試跑環境：registry 條目在主樹，worktree 看不到，`scripts/suite.js --session … --fast --coverage` 回 no active entry，所以改直接呼叫 `runSuite`，指令是 `node --test tests/suite.test.js`（只跑這一檔，不是 test:fast 全套），涵蓋 `lib/suite.js` 與 `scripts/suite.js`；沒有寫 suite.json。
+
+- lib/suite.js：97.26% line
+- scripts/suite.js：100% line
+- 有覆蓋率 20149 ms，無覆蓋率 20265 ms，比值 0.99
+
+結論：接。比值低於 1.5×，成本可忽略；但這是單檔量測，接進 verify 前要在真實 task 的 `--fast --coverage` 再量一次全套的比值。

@@ -3,7 +3,7 @@
 // scripts/suite.js: run the suite once — the whole of it, or with --fast the set
 // without the tests named @slow — and record it for `task.js land`.
 //
-//   node scripts/suite.js --session <id> [--command "<test command>"] [--root <dir>] [--tree <dir>] [--check] [--fast]
+//   node scripts/suite.js --session <id> [--command "<test command>"] [--root <dir>] [--tree <dir>] [--check] [--fast] [--coverage]
 //
 // Prints one line — `suite: <pass> pass, <fail> fail @ <sha8>`, or `suite: ok @ <sha8>`
 // / `suite: red @ <sha8>` for a runner that is not node --test — writes
@@ -50,7 +50,7 @@ function waitLine(h, file, stuck, now = Date.now()) {
 function main(argv) {
     const { values } = parseArgs({
         args: argv, strict: false,
-        options: { session: { type: 'string' }, command: { type: 'string' }, root: { type: 'string' }, tree: { type: 'string' }, check: { type: 'boolean' }, fast: { type: 'boolean' } },
+        options: { session: { type: 'string' }, command: { type: 'string' }, root: { type: 'string' }, tree: { type: 'string' }, check: { type: 'boolean' }, fast: { type: 'boolean' }, coverage: { type: 'boolean' } },
     });
     if (!values.session) return { text: 'suite: --session <id> is required.', ok: false };
     if (values.tree !== undefined && typeof values.tree !== 'string') return { text: 'suite: --tree needs a directory.', ok: false };
@@ -84,7 +84,7 @@ function main(argv) {
     let result;
     try {
         const env = { FANKEEL_SUITE_HELD: lockAt };
-        const opts = { lock: held ? { file: lockAt, pid: held.pid, at: held.at } : null };
+        const opts = { lock: held ? { file: lockAt, pid: held.pid, at: held.at } : null, coverage: values.coverage ? suite.coverageFiles(registry.claimsOf(data)) : null };
         result = suite.retryOnce(tree, suite.runSuite(tree, command, env, opts), env, opts);
     } finally {
         // A lock left behind is cleared once this pid is gone; losing the record of a
@@ -101,7 +101,8 @@ function main(argv) {
     const retried = result.retried ? ' — retried ' + result.retriedFile + ' alone, passed: ' + result.retried.join('; ') : '';
     const noFast = values.fast && !values.command && !fast ? ' (no test:fast script — ran the whole suite)' : '';
     const tap = file && !result.ok && fs.existsSync(suite.tapPath(file)) ? ' — TAP: ' + suite.tapPath(file) : '';
-    return { text: line + retried + noFast + tap + (file ? '' : ' (not recorded: the entry has no started stamp)'), ok: result.ok };
+    const cov = result.coverage ? ' — coverage: ' + Object.keys(result.coverage).length + ' files in ' + file : '';
+    return { text: line + retried + noFast + tap + cov + (file ? '' : ' (not recorded: the entry has no started stamp)'), ok: result.ok };
 }
 
 if (require.main === module) {
