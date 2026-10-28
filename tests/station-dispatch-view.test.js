@@ -396,7 +396,7 @@ test('V.segmentsOf drops the loose bucket when every event lands inside a stage'
 });
 
 test('every replay block the mockup names is written literally in the source that draws it', () => {
-    const src = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+    const src = ['station.js', 'dispatch-table.js'].map((f) => fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', f), 'utf8')).join('\n');
     for (const n of ['cost-strip', 'toc', 'filter-bar', 'segment-header', 'gate-pair', 'agent-dispatch', 'tool-collapsed', 'tool-output']) {
         assert.ok(src.includes('data-block="' + n + '"'), n + ' is not written literally in assets/station/station.js');
     }
