@@ -31,7 +31,11 @@ const NOW = Date.UTC(2026, 9, 28, 6, 0);
 const html = P.screen({
     host: 'office-pc', at: NOW, device: { name: 'my phone', paired: NOW - 864e5 }, gates: [], done: [],
     tasks: [{ id: 't1', task: 'job', holdUntil: NOW + 6e5 }],
-    others: [{ name: 'lab', url: 'https://lab.t.ts.net/m' }, { name: 'home', url: 'https://home.t.ts.net/m' }],
+    machines: [
+        { name: 'office-pc', url: 'https://office-pc.t.ts.net/m', state: 'on', me: true, n: 1 },
+        { name: 'lab', url: 'https://lab.t.ts.net/m', state: 'on', paired: NOW - 864e5, n: 2 },
+        { name: 'home', url: 'https://home.t.ts.net/m', state: 'unpaired' },
+    ],
 }, P.parseRoute('#/'), NOW, { mode: 'app', open: { 'rs:me': true }, sheet: true });
 
 test('rows: .rs-row has 4 grid tracks and 4 direct children (icon, text, side, toggle)', () => {
@@ -41,4 +45,8 @@ test('rows: .rs-row has 4 grid tracks and 4 direct children (icon, text, side, t
 
 test('rows: .mm-row has as many direct children as grid tracks', () => {
     assert.equal(children(html, 'a', 'mm-row'), tracks('.mm-row'));
+});
+
+test('rows: an unpaired computer fold button.mm-row has as many direct children as grid tracks', () => {
+    assert.equal(children(html, 'button', 'mm-row'), tracks('.mm-row'));
 });
