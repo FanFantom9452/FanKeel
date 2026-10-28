@@ -259,3 +259,18 @@ table.v9-at tbody th{grid-column:1/-1;width:auto;padding:0 0 4px;border-top:0}
 table.v9-at td{padding:0;border-top:0}
 table.v9-at select{height:40px}
 }
+/* the custom prose editor under the prose step's custom option */
+.v9-prose{display:grid;gap:8px;max-width:820px;margin:12px 0 0;padding:0 0 0 48px}
+.v9-prose>label{font-size:12px;font-weight:600;color:var(--muted)}
+.v9-prose-h{margin:0;font-size:12px;line-height:1.5;color:var(--muted)}
+.v9-chips{display:flex;flex-wrap:wrap;gap:6px}
+.v9-chip{height:28px;padding:0 10px;border:0;border-radius:999px;background:var(--inset);box-shadow:inset 0 0 0 1px var(--rule);color:var(--ink);font:12px var(--f-ui);cursor:pointer}
+.v9-chip:hover{box-shadow:inset 0 0 0 1px var(--keel)}
+.v9-chip[aria-pressed="true"]{background:var(--keel-tint);box-shadow:inset 0 0 0 1px var(--keel);color:var(--keel-deep)}
+.v9-chip:focus-visible,.v9-prose textarea:focus-visible{outline:2px solid var(--keel);outline-offset:2px}
+.v9-prose textarea{width:100%;box-sizing:border-box;min-height:150px;padding:10px 12px;border:0;border-radius:7px;background:var(--inset);box-shadow:inset 0 0 0 1px var(--rule);color:var(--ink);font:13px/1.6 var(--f-mono);resize:vertical}
+.v9-prose-f{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.v9-prose-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.v9-prose-n.is-over,.v9-prose-n.is-max{color:var(--signal-ink)}
+.v9-prose-n.is-max{font-weight:600}
+@media (max-width:720px){.v9-prose{padding:0}}

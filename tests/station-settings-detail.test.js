@@ -294,3 +294,48 @@ test('every Chinese literal has its English', () => {
     const { D } = boot();
     assert.deepEqual(stringsLeft('settings-detail.js', plain(D.EN)), []);
 });
+
+// The custom prose editor: picking custom on the prose step loads
+// .fankeel/prose.md through station/prose, a rule chip adds and takes out its
+// text, typing updates the count, and 存 prose.md posts the text to /prose.
+test('custom on the prose step opens the prose.md editor: rules toggle, count warns, save posts', async () => {
+    const RULES = [{ id: 'one', zh: '一句一件事', en: 'One thing a sentence', text: 'One sentence says one thing.' }];
+    const calls = [];
+    const fetch = (url, opt) => {
+        calls.push({ url, opt });
+        if (url.startsWith('station/prose')) return Promise.resolve({ ok: true, json: () => Promise.resolve({ text: 'Be brief.', length: 9, suggested: 20, max: 40, rules: RULES }) });
+        if (url === 'prose') return Promise.resolve({ ok: true, text: () => Promise.resolve('{}') });
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({ front: true }) });
+    };
+    const { D, html } = boot('#/settings/detail/prose', false, { fetch });
+    assert.doesNotMatch(html(), /data-block="v9-prose"/, 'no editor before custom is picked');
+    pick(D, 'custom');
+    assert.match(html(), /正在讀 \.fankeel\/prose\.md/);
+    await tick();
+    let h = html();
+    assert.ok(calls.some((c) => c.url === 'station/prose?project=' + encodeURIComponent(DIR)));
+    assert.match(h, /<textarea id="v9i-prose" data-prose rows="8" spellcheck="false">Be brief\.<\/textarea>/);
+    assert.match(h, /data-rule="one" aria-pressed="false"[^>]*>一句一件事</);
+    assert.match(h, /data-prose-save disabled/, 'nothing to save yet');
+
+    D.onClick(ev('[data-rule]', { 'data-rule': 'one' }));
+    assert.equal(D.state().prose.text, 'Be brief.\nOne sentence says one thing.');
+    h = html();
+    assert.match(h, /data-rule="one" aria-pressed="true"/);
+    assert.match(h, /38 字元，超過建議的 20/);
+    D.onClick(ev('[data-rule]', { 'data-rule': 'one' }));
+    assert.equal(D.state().prose.text, 'Be brief.', 'a second click takes the rule out');
+
+    D.onInput(ev('[data-prose]', { 'data-prose': '', value: 'x'.repeat(41) }, 'change'));
+    assert.match(html(), /41 字元，超過上限 40：存不進去[\s\S]*data-prose-save disabled/);
+
+    D.onInput(ev('[data-prose]', { 'data-prose': '', value: 'Short.' }, 'change'));
+    D.onClick(ev('[data-prose-save]', { 'data-prose-save': '' }));
+    const sent = calls.find((c) => c.url === 'prose');
+    assert.equal(sent.opt.method, 'POST');
+    assert.equal(sent.opt.body.get('text'), 'Short.');
+    assert.equal(sent.opt.body.get('project'), DIR);
+    assert.equal(sent.opt.body.get('nonce'), 'n1');
+    await tick(); await tick();
+    assert.match(html(), /已存進 \.fankeel\/prose\.md。/);
+});

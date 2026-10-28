@@ -1503,6 +1503,16 @@ The 文件 and 設定 pages read three more paths: `GET /station/docs-health`
 otherwise) and `GET /station/suggest?project=<dir>` (the quick setup's
 recommendations, `404` for a directory the page does not list).
 
+詳細設定's 文字風格 step, with custom picked, opens an editor for the
+project's `.fankeel/prose.md`: `GET /station/prose?project=<dir>` answers the
+file's text, `lib/prose.js`'s `SUGGESTED` and `MAX`, and its `RULES` — one
+chip each, a click adding the rule's text and a second click taking it out.
+The count turns amber past `SUGGESTED` and refuses to save past `MAX`.
+存 prose.md posts `nonce`, `project` and `text` to `POST /prose`
+(`writeCustom`: trimmed, LF, `400` over `MAX`, `404` for a directory the page
+does not list). It writes only the file; `prose.style custom` is still the
+wizard's 寫入, through `POST /profile`.
+
 The page speaks 繁中 or English (`assets/station/i18n.js`). Every string
 `station.js` draws goes through `loc(key, zh, vars)`: the Chinese is written at
 the call, and `STRINGS.en[key]` replaces it when the language is English. The

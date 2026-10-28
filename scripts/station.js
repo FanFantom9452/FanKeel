@@ -656,6 +656,17 @@ async function serve(opts) {
             const out = require('../lib/settingsuggest.js').suggestFor(want, reg.root, configDir, Date.now());
             return send(200, 'application/json; charset=utf-8', JSON.stringify(out), noStore);
         }
+        if (req.method === 'GET' && url.pathname === '/station/prose') {
+            // The custom prose editor: .fankeel/prose.md of a project this page
+            // lists, its length against lib/prose.js's limits, and the rules it offers.
+            const want = path.resolve(url.searchParams.get('project') || '');
+            const known = modelNow().registries.some((r) => Object.keys(r.profiles || {}).some((p) => path.resolve(p) === want));
+            if (!known) return fail(404, 'no such project on this page');
+            const prose = require('../lib/prose.js');
+            const text = prose.readCustom(want).trim();
+            const out = { text, length: prose.length(text), suggested: prose.SUGGESTED, max: prose.MAX, rules: prose.RULES };
+            return send(200, 'application/json; charset=utf-8', JSON.stringify(out), noStore);
+        }
         if (req.method === 'GET' && url.pathname === '/station/spend') {
             // The 花費 page's range report (lib/spendrange.js): every
             // transcript under this server's config dir, chosen by
@@ -1157,6 +1168,17 @@ async function serve(opts) {
             }
             handoff.writeAnswer(handoff.answerPath(reg.root, mine, mine.stage), JSON.stringify({ answers }, null, 2) + '\n');
             return send(201, 'text/plain; charset=utf-8', 'answered ' + keys.length + ' question' + (keys.length === 1 ? '' : 's') + '\n');
+        }
+        if (req.method === 'POST' && url.pathname === '/prose') {
+            // Writes .fankeel/prose.md; `prose.style custom` stays POST /profile's.
+            const form = await formOf();
+            if (!form) return;
+            const want = path.resolve(form.get('project') || '');
+            const known = modelNow().registries.some((r) => Object.keys(r.profiles || {}).some((p) => path.resolve(p) === want));
+            if (!known) return fail(404, 'no such project on this page');
+            const out = require('../lib/prose.js').writeCustom(want, form.get('text') || '');
+            if (!out.ok) return fail(400, out.reason);
+            return send(200, 'application/json; charset=utf-8', JSON.stringify(out), noStore);
         }
         if (req.method === 'POST' && url.pathname === '/profile') {
             const form = await formOf();

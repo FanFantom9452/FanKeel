@@ -81,3 +81,25 @@ test('costLines says the size against SUGGESTED and MAX, and warns only over SUG
     const missing = prose.costLines(project(), 'custom', est);
     assert.match(missing[0], /missing or empty — using writer/);
 });
+
+test('RULES: unique ids, a zh and en label each, and every rule fits the suggested budget alone', () => {
+    const ids = prose.RULES.map((r) => r.id);
+    assert.equal(new Set(ids).size, ids.length);
+    for (const r of prose.RULES) {
+        assert.ok(r.zh && r.en && r.text, r.id);
+        assert.ok(prose.length(r.text) <= prose.SUGGESTED, r.id);
+    }
+});
+
+test('readCustom/writeCustom: trims, writes LF, empty writes an empty file, over MAX is refused and leaves the file', () => {
+    const d = project();
+    assert.equal(prose.readCustom(d), '');
+    assert.deepEqual(prose.writeCustom(d, '  a\r\nb  '), { ok: true, length: 3 });
+    assert.equal(prose.readCustom(d), 'a\nb\n');
+    assert.equal(prose.styleFor({ 'prose.style': 'custom' }, d).text, 'a\nb');
+    const big = prose.writeCustom(d, 'x'.repeat(prose.MAX + 1));
+    assert.equal(big.ok, false);
+    assert.equal(prose.readCustom(d), 'a\nb\n');
+    assert.deepEqual(prose.writeCustom(d, '   '), { ok: true, length: 0 });
+    assert.equal(prose.readCustom(d), '');
+});

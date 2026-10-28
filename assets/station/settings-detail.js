@@ -75,6 +75,17 @@
         'sd.err': 'Not written: {e}',
         'sd.noTable': 'The settings table has not loaded.',
         'sd.sugErr': 'Recommendations are unavailable, so the front-end steps are not asked.',
+        'sd.proseT': 'Your style, in .fankeel/prose.md',
+        'sd.proseRules': 'Suggested rules: click to add, click again to take out',
+        'sd.proseWait': 'Reading .fankeel/prose.md…',
+        'sd.proseLoadErr': 'Could not read .fankeel/prose.md.',
+        'sd.proseN': '{n} characters, {s} or fewer suggested',
+        'sd.proseOver': '{n} characters, over the suggested {s}: it saves, and every dispatch carries a little more',
+        'sd.proseMax': '{n} characters, over the {m} ceiling: it will not save',
+        'sd.proseSave': 'Save prose.md',
+        'sd.proseSaved': 'Saved to .fankeel/prose.md.',
+        'sd.proseErr': 'Not saved: {e}',
+        'sd.proseHint': 'Saving writes only .fankeel/prose.md; choosing custom takes effect when you press Write at the end.',
         'sd.unsetV': 'unset',
         'sd.def': 'Default',
         'sd.promptName': 'Extra prompt ({st})',
@@ -111,7 +122,8 @@
     var st, cx = null, last = null, bound = false;
     function reset() {
         st = { at: null, ans: {}, inp: {}, mc: '', mck: { 'station.remote': true }, hist: [],
-            wrote: 0, err: '', busy: false, over: {}, sug: null, sugErr: false, sugFor: '', hash: '', tip: '', rail: false, moving: false };
+            wrote: 0, err: '', busy: false, over: {}, sug: null, sugErr: false, sugFor: '', hash: '', tip: '', rail: false, moving: false,
+            prose: null, proseFor: '' };
         cx = null;
     }
     reset();
@@ -410,6 +422,80 @@
         var half = Math.ceil(ags.length / 2);
         return '<div class="v9-field v9-atab" data-field="table"><div class="v9-at2">' + table(ags.slice(0, half)) + table(ags.slice(half)) + '</div><p class="v9-at-n">' + esc(tb.note) + '</p></div>';
     }
+    // ---- the custom prose editor: .fankeel/prose.md through GET /station/prose and POST /prose ----
+    function isEn() { var I = w && w.FK_I18N; return !!(I && I.lang === 'en'); }
+    function plen(t) { return String(t || '').replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '_').length; }
+    function proseLoad() {
+        if (!cx.o.serve || !cx.dir || st.proseFor === cx.dir || typeof fetch !== 'function') return;
+        st.proseFor = cx.dir;
+        var dir = cx.dir, p = fetch('station/prose?project=' + encodeURIComponent(dir));
+        if (!p || typeof p.then !== 'function') return;
+        function fail() { if (st.proseFor === dir) { st.prose = { failed: true }; redraw(); } }
+        p.then(function (r) { return r && r.ok ? r.json() : null; }).then(function (j) {
+            if (st.proseFor !== dir) return;
+            if (!j) { fail(); return; }
+            st.prose = { text: j.text || '', saved: j.text || '', rules: j.rules || [], sug: j.suggested || 450, max: j.max || 1200, busy: false, ok: false, err: '' };
+            redraw();
+        }, fail);
+    }
+    function proseCount() {
+        var P = st.prose, n = plen(P.text);
+        var say = n > P.max ? loc('sd.proseMax', '{n} 字元，超過上限 {m}：存不進去', { n: n, m: P.max })
+            : n > P.sug ? loc('sd.proseOver', '{n} 字元，超過建議的 {s}：存得進去，每次派工多帶一點', { n: n, s: P.sug })
+                : loc('sd.proseN', '{n} 字元，建議 {s} 以內', { n: n, s: P.sug });
+        return { n: n, cls: n > P.max ? 'is-max' : n > P.sug ? 'is-over' : '', say: say, off: P.busy || n > P.max || P.text.trim() === P.saved.trim() };
+    }
+    function proseHtml() {
+        proseLoad();
+        var P = st.prose;
+        if (!P) return '<div class="v9-prose" data-block="v9-prose"><p class="v9-ev">' + esc(loc('sd.proseWait', '正在讀 .fankeel/prose.md……')) + '</p></div>';
+        if (P.failed) return '<div class="v9-prose" data-block="v9-prose"><p class="v9-ev is-warn">' + esc(loc('sd.proseLoadErr', '讀不到 .fankeel/prose.md。')) + '</p></div>';
+        var c = proseCount();
+        var chips = P.rules.map(function (r) {
+            var on = P.text.indexOf(r.text) >= 0;
+            return '<button type="button" class="v9-chip" data-rule="' + esc(r.id) + '" aria-pressed="' + on + '" title="' + esc(r.text) + '">' + esc(isEn() ? r.en : r.zh) + '</button>';
+        }).join('');
+        return '<div class="v9-prose" data-block="v9-prose"><label for="v9i-prose">' + esc(loc('sd.proseT', '你的風格，存在 .fankeel/prose.md')) + '</label>'
+            + '<p class="v9-prose-h">' + esc(loc('sd.proseRules', '建議規則：點一下加入，再點一下拿掉')) + '</p><div class="v9-chips">' + chips + '</div>'
+            + '<textarea id="v9i-prose" data-prose rows="8" spellcheck="false">' + esc(P.text) + '</textarea>'
+            + '<div class="v9-prose-f"><span class="v9-prose-n ' + c.cls + '" data-prose-n role="status">' + esc(c.say) + '</span>'
+            + '<button type="button" class="v9-btn" data-prose-save' + (c.off ? ' disabled' : '') + '>' + esc(loc('sd.proseSave', '存 prose.md')) + '</button></div>'
+            + (P.ok ? '<p class="v9-fin-ok" role="status">' + CHECK + '<span>' + esc(loc('sd.proseSaved', '已存進 .fankeel/prose.md。')) + '</span></p>' : '')
+            + (P.err ? '<p class="v9-ev is-warn" role="status">' + esc(loc('sd.proseErr', '沒存進去：{e}', { e: P.err })) + '</p>' : '')
+            + '<p class="v9-prose-h">' + esc(loc('sd.proseHint', '存檔只寫 .fankeel/prose.md；選 custom 要到最後按「寫入」才生效。')) + '</p></div>';
+    }
+    // Typing repaints only the count and the save button, so the caret stays put.
+    function proseTyped(text, full) {
+        var P = st.prose;
+        P.text = text; P.ok = false; P.err = '';
+        if (full) { redraw(); return; }
+        var c = proseCount(), n = doc && doc.querySelector ? doc.querySelector('[data-prose-n]') : null, b = doc && doc.querySelector ? doc.querySelector('[data-prose-save]') : null;
+        if (n) { n.textContent = c.say; n.className = 'v9-prose-n ' + c.cls; }
+        if (b) b.disabled = c.off;
+    }
+    function proseRule(id) {
+        var P = st.prose, r = P.rules.filter(function (x) { return x.id === id; })[0];
+        if (!r) return;
+        var t = P.text;
+        if (t.indexOf(r.text) >= 0) t = t.split(r.text).join('').replace(/[ \t]+\n/g, '\n').replace(/\n{2,}/g, '\n').trim();
+        else t = t.trim() ? t.replace(/\s+$/, '') + '\n' + r.text : r.text;
+        proseTyped(t, true);
+    }
+    function proseSave() {
+        var P = st.prose;
+        if (!P || P.busy || proseCount().off || typeof fetch !== 'function') return;
+        var form = new URLSearchParams();
+        form.set('nonce', cx.S.nonce || '');
+        form.set('project', cx.dir);
+        form.set('text', P.text);
+        P.busy = true; P.err = ''; P.ok = false;
+        redraw();
+        fetch('prose', { method: 'POST', body: form }).then(function (res) {
+            P.busy = false;
+            if (res && res.ok) { P.saved = P.text; P.ok = true; redraw(); return; }
+            return (res && typeof res.text === 'function' ? res.text() : Promise.resolve('')).then(function (e) { P.err = String(e || '').trim() || String(res && res.status); redraw(); });
+        }, function (e) { P.busy = false; P.err = String(e && e.message || e); redraw(); });
+    }
     function cardHtml(cv) {
         if (cv !== 'away') return '';
         var say = st.mc === 'yes' ? loc('sd.mcYes', '會寫進這台機器。') : st.mc === 'no' ? loc('sd.mcNo', '這台機器的設定不動；之後可以在「離開電腦時」再開。') : loc('sd.mcWait', '按確認或先不要，才能到下一步。');
@@ -430,7 +516,8 @@
         else if (s.slider) h += setp().sliderHtml(s.opts, cv, 'v9r-' + s.id, 'v9q-' + s.id);
         else {
             h += '<div class="v9-opts" role="' + (s.kind === 'multi' ? 'group' : 'radiogroup') + '" aria-labelledby="v9q-' + esc(s.id) + '">'
-                + s.opts.map(function (a, n) { return optHtml(s, a, n, cv, nv, dv, nr, P); }).join('') + '</div>' + fieldsHtml(s, cv, nv);
+                + s.opts.map(function (a, n) { return optHtml(s, a, n, cv, nv, dv, nr, P); }).join('') + '</div>' + fieldsHtml(s, cv, nv)
+                + (s.id === 'prose' && cv === 'custom' ? proseHtml() : '');
         }
         if (s.id === 'where') h += cardHtml(cv);
         if (s.note && val(P, 'stage.agents') === '') h += '<p class="v9-ev is-warn">' + esc(s.note) + '</p>';
@@ -594,6 +681,9 @@
         var qm = t.closest('[data-qm]');
         if (!qm && st.tip) { st.tip = ''; if (!inPage(t)) { redraw(); return; } }
         if (!inPage(t)) return;
+        var rb = t.closest('[data-rule]');
+        if (rb && st.prose && st.prose.rules) { proseRule(rb.getAttribute('data-rule')); return; }
+        if (t.closest('[data-prose-save]')) { proseSave(); return; }
         var b = t.closest('.v9-opt');
         if (b && st.at !== 'final') { choose(b.getAttribute('data-o')); return; }
         var m = t.closest('[data-mc]');
@@ -614,6 +704,7 @@
     function onInput(e) {
         var x = e && e.target;
         if (!cx || st.at === 'final' || !inPage(x)) return;
+        if (x.getAttribute('data-prose') !== null) { if (st.prose && st.prose.rules) proseTyped(String(x.value || ''), e.type === 'change'); return; }
         var mk = x.getAttribute('data-mk');
         if (mk) { if (e.type === 'change') { st.mck[mk] = !!x.checked; redraw(); } return; }
         if (x.getAttribute('data-slide') !== null) {

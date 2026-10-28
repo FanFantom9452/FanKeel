@@ -52,7 +52,8 @@ async function served(fn) {
     const { serve } = require('../scripts/station.js');
     const s = await serve({ configDir: f.cfg, port: 0, idleMs: 60e3, open: false });
     try {
-        await fn(f, (p) => request(s.url + p, { method: 'GET' }), (body) => request(s.url + 'profile', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' } }, body));
+        await fn(f, (p) => request(s.url + p, { method: 'GET' }), (body) => request(s.url + 'profile', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' } }, body),
+            (where, body) => request(s.url + where, { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' } }, body));
     } finally {
         s.close();
     }
@@ -128,4 +129,30 @@ test('POST /profile on an agent key answers 409 and leaves a hand-written agent 
     const r = await post(form({ scope: 'project', project: f.r1, key: 'agent.fankeel-reader.effort', value: 'high', nonce }));
     assert.equal(r.status, 409);
     assert.equal(fs.readFileSync(file, 'utf8'), '---\nname: mine\n---\nown\n');
+}));
+
+test('GET /station/prose reads prose.md with its limits and rules; POST /prose writes it and refuses over the ceiling', () => served(async (f, get, post, postTo) => {
+    const prose = require('../lib/prose.js');
+    fs.mkdirSync(path.join(f.r1, '.fankeel'), { recursive: true });
+    fs.writeFileSync(path.join(f.r1, '.fankeel', 'prose.md'), 'Be brief.\n');
+    const r = await get('station/prose?project=' + encodeURIComponent(f.r1));
+    assert.equal(r.status, 200);
+    const j = JSON.parse(r.text);
+    assert.equal(j.text, 'Be brief.');
+    assert.equal(j.suggested, prose.SUGGESTED);
+    assert.equal(j.max, prose.MAX);
+    assert.deepEqual(j.rules.map((x) => x.id), prose.RULES.map((x) => x.id));
+    assert.equal((await get('station/prose?project=' + encodeURIComponent(path.join(f.r1, 'nope')))).status, 404);
+
+    const nonce = /"nonce":"([^"]+)"/.exec((await get('station/station-data.js')).text)[1];
+    const write = (text) => postTo('prose', new URLSearchParams({ nonce, project: f.r1, text }).toString());
+    const saved = 'One sentence says one thing.\n';
+    const w = await write('  One sentence says one thing.\r\n');
+    assert.equal(w.status, 200);
+    assert.equal(fs.readFileSync(path.join(f.r1, '.fankeel', 'prose.md'), 'utf8'), saved);
+    const big = await write('x'.repeat(prose.MAX + 1));
+    assert.equal(big.status, 400);
+    assert.equal(fs.readFileSync(path.join(f.r1, '.fankeel', 'prose.md'), 'utf8'), saved, 'a refused write leaves the file');
+    assert.equal((await postTo('prose', new URLSearchParams({ nonce: 'wrong', project: f.r1, text: 'x' }).toString())).status, 403);
+    assert.equal((await postTo('prose', new URLSearchParams({ nonce, project: path.join(f.r1, 'nope'), text: 'x' }).toString())).status, 404);
 }));
