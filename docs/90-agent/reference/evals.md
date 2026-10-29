@@ -6,7 +6,7 @@ source_of_truth: scripts/eval.js, lib/eval.js, evals/route-typo/case.yaml
 
 # Behaviour evals
 
-Ten cases in the layout `claude plugin eval` reads, a runner beside it that
+Twelve cases in the layout `claude plugin eval` reads, a runner beside it that
 works without early access, and the six ways an operator's own machine can leak
 into a run.
 
@@ -42,6 +42,21 @@ into a run, contaminating the comparison. This runner's landing for each:
 | 4 | model version | `--model` has no default (`scripts/eval.js:61`, `: null`); missing it exits 1 before anything spawns (`scripts/eval.js:222`, `!a.model`) |
 | 5 | cost | `costOf()` (`lib/eval.js:91`, `costOf`) reads `total_cost_usd`/`usage` off the result message, printed per run (`scripts/eval.js:192`, `cost $`) and in `--json`; `--max-budget-usd` passes through to `claude` (`scripts/eval.js:149`, `--max-budget-usd`) |
 | 6 | tools | `--disallowedTools` (`scripts/eval.js:151`, `--disallowedTools`) |
+
+## Replay cases
+
+`replay-guard-always-true` and `replay-nothing-fired` are misses fankeel's own
+review let through, rebuilt small: revert 5e2e621d, and verify's eighth to
+eleventh returns of 2026-10-01
+([the report](../reports/2026-10-01-verify-eleven-returns.md)). Run both before
+and after a change to `agents/fankeel-reviewer.md`:
+
+    node scripts/eval.js evals/replay-guard-always-true --model sonnet
+    node scripts/eval.js evals/replay-nothing-fired --model sonnet
+
+A change that turns either from pass to fail is not kept. Their fixtures and
+graders are checked for free by the four `tests/eval-replay-*.test.js` files;
+only the reviewer's answer costs a run.
 
 ## Not run in CI
 
