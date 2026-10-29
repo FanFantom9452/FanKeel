@@ -2,8 +2,13 @@
 label: gate
 title: gate 標題顯示專案與站別
 description: AskUserQuestion 的 header 改成「現在站→建議站」，question 開頭帶專案與任務短名；格式使用者還要再調整
-state: ready
+state: done
 link: lib/handoff.js
+done:
+  at: 2026-10-30
+  sha: 50501780
+  disposition: done
+  session: 4c96ec5b-9532-460f-aeb4-eb8523845042
 ---
 
 來源：2026-10-29 手機 /m 多台合併任務收工後的討論。判官紀錄 docs/90-agent/judgements/2026-10-29-gate-question-custom.md 說明：gate 文字由 stage agent 或 controller 自己寫，程式只擋 header 超過 12 欄（中文字算 2 欄，lib/handoff.js 的 MAX_HEADER_WIDTH）、第一個選項要含站名或收工、一定要有暫停。
@@ -34,3 +39,18 @@ link: lib/handoff.js
 站名用英文、首字大寫（Survey、Design、Plan、Build、Verify、Audit、Land）。lib/handoff.js 的 gateProblem 目前要求選項一含站名或「收工」，`Go to Design` 含站名所以會過；land 的選項一要含 `收工` 或 `down`，寫法另定，例如 `Go to 收工 (Recommended)`。是否強制檢查仍未決定，此條保持 Ready。
 
 英文用字（2026-10-29，使用者同意）：站名寫全大寫（SURVEY、DESIGN、PLAN、BUILD、VERIFY、AUDIT、LAND），避免 `Stay in Land` 被讀成「留在陸地」。選項一寫 `Go to <站>`；退回寫 `Back to <站>`，當按鈕標籤可以，完整句子才寫 `Go back to`；留下寫 `Stay in <站>`。land 的選項一不寫 `Go to 收工`，改寫 `Wrap up — 收工`，標籤裡仍有「收工」，gateProblem 會過。
+
+## 完成紀錄
+
+gate 第一題的標頭、題目開頭和前兩個選項由 formatProblem 檢查，不合格式就退回；stage agent 交的 gate 和沒有 controller 的 gate 都會查。詳見 [任務紀錄](../records/2026-10.md#r-2026-10-29-4c96ec5b)
+
+- commit 92820ec8
+- commit a1f9b8b8
+- commit ae98880c
+- commit 5fe1fb46
+- commit aaa913ea
+- commit 50501780
+- commit c65d673f
+- commit fd3ec03e
+- commit 2c80ea4e
+- commit da9f33d9

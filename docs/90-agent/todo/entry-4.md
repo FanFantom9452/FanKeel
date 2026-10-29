@@ -11,3 +11,5 @@ build 2026-10-26 的 mermaid 圖（docs 閱讀框與 gate 頁標記 node）只�
 2026-10-28 verify：build-answer.md 只有 "verify (Recommended)" 一個答案，沒有 「標記：」 行，第二步仍未做，保持開著。
 
 2026-10-29 verify：build-answer 仍無 「標記：」 行，第二步（真 gate 標記 node、hooks/gate.js 收到答案）仍未做，保持開著。
+
+2026-10-30 land：10-29 第二輪盤點的任務 9 沒做成，build gate 是在終端機作答，沒有「標記：」行。另外發現 gate 頁在 session 有殼時會空白（`focusShell` 沒載入 nav.js），要先修好，真 gate 上才標得到。
