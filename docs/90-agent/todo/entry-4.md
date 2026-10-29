@@ -9,3 +9,5 @@ build 2026-10-26 的 mermaid 圖（docs 閱讀框與 gate 頁標記 node）只�
 2026-10-27 驗證：`render.js --act` 在真 station 的 #/docs 拍到 pipeline.md 閱讀框裡 mermaid 的拖拉前後（.fankeel/build/render/entry-4/before.png、after.png），圖向左平移約 24px（被平移邊界截住）；計畫的 `.df-row[data-dk-item]` 選擇器點不到含 mermaid 的文件，可用的步驟走搜尋框：`[{"type":"#dq","text":"The pipeline"},{"wait":1500},{"click":".dq-row[data-dk-hit=\"0\"]"},{"wait":2500},{"drag":"[data-mermaid][data-drawn] [data-dg-pan]","by":[0,0]},{"wait":300},{"shot":"before"},{"drag":"[data-mermaid][data-drawn] [data-dg-pan]","by":[-300,0]},{"shot":"after"}]`。第二步（在真 gate 標記 node、hooks/gate.js 收到答案）使用者這次跳過，仍未做。
 
 2026-10-28 verify：build-answer.md 只有 "verify (Recommended)" 一個答案，沒有 「標記：」 行，第二步仍未做，保持開著。
+
+2026-10-29 verify：build-answer 仍無 「標記：」 行，第二步（真 gate 標記 node、hooks/gate.js 收到答案）仍未做，保持開著。
