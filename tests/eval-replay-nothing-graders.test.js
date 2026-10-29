@@ -25,4 +25,5 @@ test('the miss grader passes the catch and fails clean or a wrong cause', () => 
     assert.equal(ev.grade(g, run(caught)).pass, true);
     assert.equal(ev.grade(g, run('clean')).pass, false);
     assert.equal(ev.grade(g, run('test/menu.test.js:4 — prefer strictEqual.')).pass, false);
+    assert.equal(ev.grade(g, run('the test never reaches the branch, deleting it stays green')).pass, false);
 });
