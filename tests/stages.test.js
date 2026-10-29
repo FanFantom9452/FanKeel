@@ -624,11 +624,11 @@ test('verify and audit rules say the chain is one workflow', () => {
 });
 
 // The dispatch clause shares a rule string with the one that predates it, and
-// only the dispatch half was pinned. `build` sits eighteen characters under the
-// injection cap, so this string is the first place anyone looks for room — and
+// only the dispatch half was pinned. `build` sits at the
+// injection cap (2400 of 2400), so this string is the first place anyone looks for room — and
 // rewriting it down to the dispatch clause alone would leave every test green
 // while deleting the only injected rule that asks for a failed
-// test to be named. The other three always-on rules are each pinned this way.
+// test or a thing you could not check to be named. The other three always-on rules are each pinned this way.
 test('the always-on block still asks for what was done, a failed test and what could not be checked', () => {
   const text = ALWAYS.join(' ');
   assert.match(text, /Say what you actually did/);

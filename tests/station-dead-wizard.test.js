@@ -9,6 +9,7 @@ const path = require('node:path');
 
 const ASSETS = path.join(__dirname, '..', 'assets', 'station');
 const JS = fs.readFileSync(path.join(ASSETS, 'station.js'), 'utf8');
+const FLOAT = fs.readFileSync(path.join(ASSETS, 'float.js'), 'utf8');
 const I18N = fs.readFileSync(path.join(ASSETS, 'i18n.js'), 'utf8');
 
 test('no docs-card or wizard function or table is declared in station.js', () => {
@@ -20,7 +21,7 @@ test('no docs-card or wizard function or table is declared in station.js', () =>
         assert.doesNotMatch(JS, new RegExp('var ' + v + '\\b'), v);
     }
     assert.match(JS, /^    \/\/ ---- 設定: the seven-step wizard/m);
-    assert.match(JS, /^    \/\/ ---- tune: a block changed -/m);
+    assert.match(FLOAT, /^ {8}\/\/ ---- tune: a block changed -/m);
 });
 
 test('station.js still loads under require and exports none of them', () => {

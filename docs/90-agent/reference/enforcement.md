@@ -68,7 +68,7 @@ Not in this table: the `INIT` rules of the `/fankeel` prompt (no stage yet), the
 | verify.when.security.local | security.local: run node {{SECURITY_LOCAL}} before | none — prose only | `scripts/security-local.js` | The security lens's first pass on a local model, when run. |
 | audit.0 | Run node {{DOCS_CHECK}} — dead | none — prose only | `scripts/docs-check.js` | — |
 | audit.1 | Run node {{RESIDUE}}, non-git too. | none — prose only | `scripts/residue.js` | — |
-| audit.2 | Every fortnight, node {{DOCS_AUDIT}} runs | none — prose only | `scripts/docs-audit.js` | `scripts/orient.js` prints an `audit:` line when the last run is over the window; nothing makes the deep pass run. |
+| audit.2 | Fortnightly, node {{DOCS_AUDIT}} runs the | none — prose only | `scripts/docs-audit.js` | `scripts/orient.js` prints an `audit:` line when the last run is over the window; nothing makes the deep pass run. |
 | audit.3 | package.json: fankeel? Its scripts, not | none — prose only | none | — |
 | audit.4 | One read-only adversary, one workflow | none — prose only | none | — |
 | audit.5 | Read the fankeel-audit skill on | none — prose only | `scripts/todo-check.js` | todo-check reports a TODO link a move left dead, when run. |
