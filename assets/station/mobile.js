@@ -622,9 +622,10 @@
         var sum = any && !(mc && mc.state === 'off') ? '<div class="ab-2"><p class="ha-sum"><span class="a">' + ic('ask') + t('sum.ask', { n: asks.length }) + '</span><span class="r">' + ic('activity') + t('sum.run', { n: live.length })
             + '</span><span class="i">' + ic('pause') + t('sum.idle', { n: idle.length }) + '</span>'
             + (unreg.length ? '<span class="u">' + ic('term') + t('sum.unreg', { n: unreg.length }) + '</span>' : '') + '</p></div>' : '';
+        var full = m.device ? '<a class="ghost ab-full" href="/?full=1#/settings">' + ic('laptop') + t('rs.full') + '</a>' : '';
         var n = tasks.length + unreg.length;
         return '<div class="pg" data-block="m-home-a"><header class="ab ab2"><div class="ab-1"><h1>' + t('home.title') + '</h1>' + (n ? '<span class="n">' + n + '</span>' : '')
-            + '<span class="sp"></span>' + hostHtml(m, u) + '</div>' + sum + filterHtml(m, u, 'home') + '</header>'
+            + '<span class="sp"></span>' + hostHtml(m, u) + '</div>' + sum + full + filterHtml(m, u, 'home') + '</header>'
             + '<div class="ha-body">' + body + '</div></div>' + tabbar('home', m);
     }
 
