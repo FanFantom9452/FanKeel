@@ -275,7 +275,7 @@
         if (!s) return '<main class="fm"><section class="panel"><p class="note">' + loc('focus.noSession', '這頁上沒有 session {id}', { id: esc(focus.id) }) + '</p></section></main>';
         var x = (details || {})[s.id] || { tasks: [], gate: null };
         var gate = focus.tab === 'gate';
-        // Background shells sit under the header (design §5), drawn by shellsHtml (defined in assets/station/station.js).
+        // Background shells sit under the header (design §5), drawn by shellsHtml (defined in assets/station/nav.js, forwarded from station.js).
         var shells = x.shells && x.shells.length ? shellsHtml(x.shells, Date.now()) : '';
         // The board pane fills its cache once per session, board and gate: its
         // load asks for a repaint even when the read fails, so loading on every
