@@ -775,6 +775,7 @@ is corrected by the next one, not by rewriting this.
 | 問題 | [90-agent/judgements/2026-10-29-gate-question-custom.md](90-agent/judgements/2026-10-29-gate-question-custom.md) — *judged 2026-10-29, fable* |
 | Brief: can the button style shown in the Claude desktop pane be changed? | [90-agent/judgements/2026-10-29-desktop-pane-button-style.md](90-agent/judgements/2026-10-29-desktop-pane-button-style.md) — *judged 2026-10-29, fable* |
 | Brief 44 — Anthropic's internal AI code-review practice: what should fankeel take? | [90-agent/judgements/2026-10-29-anthropic-review-practice.md](90-agent/judgements/2026-10-29-anthropic-review-practice.md) — *judged 2026-10-29, fable* |
+| Brief 45 — should fankeel support CI/CD or a Gitea nightly build? | [90-agent/judgements/2026-10-29-ci-cd-nightly.md](90-agent/judgements/2026-10-29-ci-cd-nightly.md) — *judged 2026-10-29, fable* |
 
 ## The five scanners
 
