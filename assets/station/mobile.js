@@ -429,7 +429,7 @@
         return '<span class="st run">' + ic('activity') + t('st.run') + '</span>';
     }
 
-    // design §2 (docs/90-agent/plans/2026-10-29-mobile-sources.md, Task 4): every row carries the
+    // design §2 (docs/99-archive/2026-10-29-mobile-sources.md, Task 4): every row carries the
     // computer it is on; this station's own rows carry m.host. A row from another computer links
     // through it, `#/m/<computer>/<id>`; the tag shows only while more than one computer is listed
     // and none is picked.

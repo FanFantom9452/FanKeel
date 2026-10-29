@@ -7,7 +7,7 @@ last_verified: 2026-10-29
 
 一句話：手機連著的那台 station 用自己的 device token 向 tailnet 上其他已配對的 station 取資料，合併成 `/m` 的一張列表。列表也帶沒登記在 fankeel 的 Desktop/CLI session 與 RC 對話；手機仍然只配對一台、只跟一台說話。
 
-設計在 [../90-agent/plans/2026-10-29-mobile-sources-design.md](../90-agent/plans/2026-10-29-mobile-sources-design.md)，計畫在 [../90-agent/plans/2026-10-29-mobile-sources.md](../90-agent/plans/2026-10-29-mobile-sources.md)。
+設計在 [../99-archive/2026-10-29-mobile-sources-design.md](../99-archive/2026-10-29-mobile-sources-design.md)，計畫在 [../99-archive/2026-10-29-mobile-sources.md](../99-archive/2026-10-29-mobile-sources.md)。
 
 ## 推翻了什麼
 

@@ -949,7 +949,7 @@ async function serve(opts) {
             return send(201, 'application/json; charset=utf-8', JSON.stringify({ device: got.device }), Object.assign({ 'set-cookie': remote.cookieFor(got.token) }, noStore));
         }
         // This station pairing with another one (decision (a) in
-        // docs/90-agent/plans/2026-10-29-mobile-sources.md): the code shown on
+        // docs/99-archive/2026-10-29-mobile-sources.md): the code shown on
         // that computer's 手機遠端 card, typed into the phone's 測站 sheet and
         // redeemed there by this server as a device named for this machine.
         // Only a computer the tailnet lists as a station, or one already
@@ -1010,7 +1010,7 @@ async function serve(opts) {
             const body = mobile.mobileModel(model, now, host, hidden, phone.snapshot, device, own ? [] : othersNow(), { peers: own ? [] : machinesNow(), rcEnded });
             return send(200, 'application/json', JSON.stringify(body), noStore);
         }
-        // (b) in docs/90-agent/plans/2026-10-29-mobile-sources.md: an unregistered
+        // (b) in docs/99-archive/2026-10-29-mobile-sources.md: an unregistered
         // session's read-only screen. Its transcript is found by session id in this
         // config dir's projects/ index (lib/detail.js transcriptOf) — the lookup the
         // 對話 tab already makes for a session no registry lists — never from its cwd.
@@ -1345,7 +1345,7 @@ async function serve(opts) {
         }
         return cur.list;
     };
-    // The computers this station reads for the phone (docs/90-agent/plans/2026-10-29-mobile-sources.md
+    // The computers this station reads for the phone (docs/99-archive/2026-10-29-mobile-sources.md
     // Task 2, decision (a)): the paired ones polled in the background by lib/peers.js, the
     // tailnet's other stations with no token here listed as unpaired. Never awaited by a request.
     const poll = peers.poller(configDir, opts.peerSend);
