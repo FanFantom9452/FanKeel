@@ -14,14 +14,15 @@ const ID = '11111111-2222-4333-8444-555555555555';
 const ROUTE = ['survey', 'plan', 'build'];
 
 function gateBlock(status, stage) {
-    const nextStage = ROUTE[ROUTE.indexOf(stage) + 1] || 'down';
+    const nextStage = ROUTE[ROUTE.indexOf(stage) + 1];
+    const STAGE = stage.toUpperCase();
     const gate = {
         questions: [{
-            header: stage,
-            question: '下一步？',
+            header: STAGE,
+            question: `${STAGE} -> ${nextStage ? nextStage.toUpperCase() : '收工'} | fankeel : drive test`,
             options: [
-                { label: nextStage, description: '進下一站。' },
-                { label: '留在本站', description: '沒有待決的事。' },
+                { label: nextStage ? `Go to ${nextStage.toUpperCase()}` : 'Wrap up — 收工', description: '進下一站。' },
+                { label: `Stay in ${STAGE}`, description: '沒有待決的事。' },
                 { label: '暫停', description: 'next 設為暫停。' },
             ],
             multiSelect: false,
@@ -107,14 +108,14 @@ test('lastJson: the last line that parses as an object', () => {
 
 test('drive stops on rounds when every answer relays', async () => {
     const { root, env } = setup();
-    const out = await drive(base(root, env, { maxRounds: 2 }), { spawn: fakeSpawn(root), sleep: answerer(root, () => '留在本站'), pollMs: 5 });
+    const out = await drive(base(root, env, { maxRounds: 2 }), { spawn: fakeSpawn(root), sleep: answerer(root, (q) => q.options[1].label), pollMs: 5 });
     assert.equal(out.stopped, 'rounds');
     assert.equal(out.rounds, 2);
 });
 
 test('drive stops on usd once less than half a dollar is left', async () => {
     const { root, env } = setup();
-    const out = await drive(base(root, env, { maxUsd: 1 }), { spawn: fakeSpawn(root, { usd: 0.6 }), sleep: answerer(root, () => '留在本站'), pollMs: 5 });
+    const out = await drive(base(root, env, { maxUsd: 1 }), { spawn: fakeSpawn(root, { usd: 0.6 }), sleep: answerer(root, (q) => q.options[1].label), pollMs: 5 });
     assert.equal(out.stopped, 'usd');
     assert.equal(out.rounds, 1);
     assert.equal(out.usd, 0.6);
@@ -122,14 +123,14 @@ test('drive stops on usd once less than half a dollar is left', async () => {
 
 test('drive stops on timeout when a stage outlives the deadline', async () => {
     const { root, env } = setup();
-    const out = await drive(base(root, env, { timeoutMs: 100 }), { spawn: fakeSpawn(root, { delayMs: 2000 }), sleep: answerer(root, () => '留在本站'), pollMs: 5 });
+    const out = await drive(base(root, env, { timeoutMs: 100 }), { spawn: fakeSpawn(root, { delayMs: 2000 }), sleep: answerer(root, (q) => q.options[1].label), pollMs: 5 });
     assert.equal(out.stopped, 'timeout');
     assert.equal(out.rounds, 1);
 });
 
 test('drive stops on status when the handoff carries none', async () => {
     const { root, env } = setup();
-    const out = await drive(base(root, env), { spawn: fakeSpawn(root, { status: null }), sleep: answerer(root, () => '留在本站'), pollMs: 5 });
+    const out = await drive(base(root, env), { spawn: fakeSpawn(root, { status: null }), sleep: answerer(root, (q) => q.options[1].label), pollMs: 5 });
     assert.equal(out.stopped, 'status');
     assert.equal(out.rounds, 1);
     assert.ok(out.handoff.endsWith('survey.md'));
@@ -156,7 +157,7 @@ test('drive stops on error, naming the cause, when claude cannot be spawned', as
         setTimeout(() => child.emit('error', Object.assign(new Error('spawn claude ENOENT'), { code: 'ENOENT' })), 0);
         return child;
     };
-    const out = await drive(base(root, env), { spawn, sleep: answerer(root, () => '留在本站'), pollMs: 5 });
+    const out = await drive(base(root, env), { spawn, sleep: answerer(root, (q) => q.options[1].label), pollMs: 5 });
     assert.equal(out.stopped, 'error');
     assert.match(out.detail, /ENOENT/);
 });
@@ -171,7 +172,7 @@ test('drive stops on error, not a rejection, when task.js refuses a move', async
 
 test('drive stops on error, naming total_cost_usd, when a round reports no cost', async () => {
     const { root, env } = setup();
-    const out = await drive(base(root, env), { spawn: fakeSpawn(root, { usd: null }), sleep: answerer(root, () => '留在本站'), pollMs: 5 });
+    const out = await drive(base(root, env), { spawn: fakeSpawn(root, { usd: null }), sleep: answerer(root, (q) => q.options[1].label), pollMs: 5 });
     assert.equal(out.stopped, 'error');
     assert.equal(out.rounds, 1);
     assert.match(out.detail, /total_cost_usd/);
@@ -251,7 +252,7 @@ test('drive over a root inside the plugin: worktree add before the first spawn, 
     const inner = fakeSpawn(root);
     const spawn = (cmd, argv, o) => { log.push('spawn ' + argv[argv.indexOf('--plugin-dir') + 1]); return inner(cmd, argv, o); };
     const git = (args) => { if (args[3] !== 'prune') log.push('git ' + args[3] + ' ' + args[5]); };
-    await drive(base(root, env, { maxRounds: 1 }), { spawn, git, plugin, sleep: answerer(root, () => '留在本站'), pollMs: 5 });
+    await drive(base(root, env, { maxRounds: 1 }), { spawn, git, plugin, sleep: answerer(root, (q) => q.options[1].label), pollMs: 5 });
     assert.equal(log.length, 3);
     assert.match(log[0], /^git add .*fankeel-drive-plugin-\d+-\d+$/);
     assert.match(log[1], /^spawn .*fankeel-drive-plugin-\d+-\d+$/);
@@ -262,7 +263,7 @@ test('drive over a root inside the plugin prunes stale worktrees before it adds 
     const { root, env } = setup();
     const seen = [];
     const git = (args) => { seen.push(args[3]); };
-    await drive(base(root, env, { maxRounds: 1 }), { spawn: fakeSpawn(root), git, plugin: path.dirname(root), sleep: answerer(root, () => '留在本站'), pollMs: 5 });
+    await drive(base(root, env, { maxRounds: 1 }), { spawn: fakeSpawn(root), git, plugin: path.dirname(root), sleep: answerer(root, (q) => q.options[1].label), pollMs: 5 });
     assert.ok(seen.indexOf('prune') >= 0 && seen.indexOf('prune') < seen.indexOf('add'));
 });
 
@@ -275,7 +276,7 @@ test('drive over a root inside the plugin: a failed worktree remove is reported 
     process.stderr.write = (s) => { written.push(String(s)); return true; };
     let out;
     try {
-        out = await drive(base(root, env, { maxRounds: 1 }), { spawn: fakeSpawn(root), git, plugin: path.dirname(root), sleep: answerer(root, () => '留在本站'), pollMs: 5 });
+        out = await drive(base(root, env, { maxRounds: 1 }), { spawn: fakeSpawn(root), git, plugin: path.dirname(root), sleep: answerer(root, (q) => q.options[1].label), pollMs: 5 });
     } finally {
         process.stderr.write = orig;
     }
@@ -288,7 +289,7 @@ test('drive over a root inside the plugin stops on error naming git when the cop
     const { root, env } = setup();
     let spawned = 0;
     const git = () => { throw new Error('fatal: worktree add refused'); };
-    const out = await drive(base(root, env), { spawn: () => { spawned++; }, git, plugin: path.dirname(root), sleep: answerer(root, () => '留在本站'), pollMs: 5 });
+    const out = await drive(base(root, env), { spawn: () => { spawned++; }, git, plugin: path.dirname(root), sleep: answerer(root, (q) => q.options[1].label), pollMs: 5 });
     assert.equal(out.stopped, 'error');
     assert.match(out.detail, /worktree add refused/);
     assert.equal(spawned, 0);
