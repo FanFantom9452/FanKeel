@@ -1050,6 +1050,33 @@ test('a poll finding no change does not redraw, and each state flip redraws once
     assert.equal(draws, atLoad + 2, 'a poll on a live server redrew the page');
 });
 
+// station-58 (5): a paired phone opens the full page through the tailnet, where
+// `station/health` answers 403 (this machine's route only). That answer proves the
+// server is up, so the page must not freeze and show the death banner after 15 s.
+test('a 403 from the health poll through the tailnet is an answer: the page does not freeze', async () => {
+    const vm = require('node:vm');
+    const { SRC: src } = require('./station-src.js');
+    let skew = 0, draws = 0, tick = null;
+    class Clock extends Date { static now() { return Date.now() + skew; } }
+    const el = () => ({ innerHTML: '', textContent: '', className: '', title: '', style: {}, hidden: false, setAttribute() {}, appendChild() {}, addEventListener() {} });
+    const page = el();
+    Object.defineProperty(page, 'innerHTML', { get() { return ''; }, set() { draws++; } });
+    const els = { page };
+    const doc = { getElementById: (id) => els[id] || (els[id] = el()), addEventListener() {}, createElement: el, head: { appendChild() {} },
+        querySelectorAll: () => [], querySelector: () => ({ parentNode: { insertBefore() {} }, nextSibling: null }) };
+    const win = { location: { hash: '#/settings', protocol: 'https:' }, addEventListener() {}, scrollTo() {}, setInterval: (fn) => { tick = fn; return 1; },
+        STATION: { generatedAt: new Date(2026, 8, 14, 21).toISOString(), configDir: 'C:\cfg', pricesVerified: '2026-09-04', serve: true,
+            projects: [], profiles: { machine: { values: {}, sources: {}, unreadable: [] }, projects: {} }, profileKeys: {}, classes: {}, sessions: [] } };
+    vm.runInNewContext(src, { window: win, document: doc, URLSearchParams, Date: Clock, fetch: () => Promise.resolve({ ok: false, status: 403 }) });
+    const settle = () => new Promise((r) => { setImmediate(r); });
+    const atLoad = draws;
+    assert.equal(typeof tick, 'function');
+    skew = 16000;
+    tick(); await settle(); await settle();
+    assert.equal(draws, atLoad, 'a 403 froze the page');
+    assert.equal(els.servedown && els.servedown.hidden, true, 'the serve-down pill showed');
+});
+
 const NAV_DAYS = ['2026-09-22', '2026-09-23'];
 const NAV_SESSIONS = [
     { id: 'n1', root: '/r', pkey: 'p', state: 'live', task: 'one', stage: 'build', updated: 30, days: [{ day: '2026-09-23', usd: 2, tokens: {} }] },

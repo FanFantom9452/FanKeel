@@ -125,6 +125,18 @@ test('/?full=1 stays the desktop page for a paired phone only; plain / still goe
     assert.equal(plain.headers.location, '/m');
 }));
 
+test('a paired phone link /?full=1 is the full page, every file it loads answers, and its health poll gets an answer, not a redirect (station-58)', () => served(true, async (s) => {
+    const p = Object.assign({ 'x-forwarded-for': '100.64.0.7', 'tailscale-user-login': 'me@example.com' }, phone(s.cfg));
+    const page = await get(s.port, '/?full=1', p);
+    assert.equal(page.status, 200);
+    assert.ok(page.text.includes('id="page"'), 'the full shell, not /m');
+    const files = [...page.text.matchAll(/(?:src|href)="(station[/][A-Za-z0-9._-]+)"/g)].map((m) => m[1]);
+    assert.ok(files.length > 10);
+    for (const f of files) assert.equal((await get(s.port, '/' + f, p)).status, 200, f);
+    const health = await get(s.port, '/station/health', p);
+    assert.equal(health.status, 403, 'the page poll sees 403; station.js treats it as the server being up');
+}));
+
 test('/m is lib/mobile.js\'s shell, open through the tailnet without a phone paired', () => served(true, async (s) => {
     const page = await get(s.port, '/m', TAILNET);
     assert.equal(page.status, 200);

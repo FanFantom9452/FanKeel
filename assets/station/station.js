@@ -2748,7 +2748,10 @@
         };
         var poll = function () {
             fetch('station/health').then(function (r) {
-                if (r && r.ok) lastOkMs = Date.now();
+                // A 403 is the tailnet's answer (lib/remote.js `LOCAL`: the health route is this
+                // machine's only): the server answered, which is all this poll asks. A paired phone
+                // opened here through /?full=1 would otherwise freeze 15 s after load.
+                if (r && (r.ok || r.status === 403)) lastOkMs = Date.now();
             }).catch(function () {}).then(function () {
                 var msg = serveLost(lastOkMs, Date.now(), stamp(NOW), ago(NOW));
                 if (msg) showDead(msg); else hideDead();
