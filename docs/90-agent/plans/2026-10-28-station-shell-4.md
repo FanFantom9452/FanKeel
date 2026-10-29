@@ -185,7 +185,7 @@ test('nav.js holds the left bar station.js used to write out', () => {
 | 只有測試與 export 用到、畫面已改由模組畫的：`nowHtml` 一串 | Task 2 |
 | 804-876 的 project helpers | struck — 照搬進 chart.js 不刪，同上 |
 | 純的先（fmt → records → gate-tab → detail → dispatch → chart → session-body），有狀態的後 | struck — 改照行號範圍排：純的在 1-4 份，有狀態的在 5-6 份，純的仍全在前 |
-| `tests/station-shell-size.test.js`（新）：station.js ≤ 1,500 行。 | `2026-10-28-station-shell-6.md` Task 3 |
+| `tests/station-shell-size.test.js`（新）：station.js ≤ 1,500 行。 | `2026-10-28-station-shell-7.md` Task 3 |
 | `npm test` 全綠；33 個 `require` 測試與 50 個 vm 測試除死碼斷言外不改。 | build 的父層每組跑 fast suite；verify 跑整套 |
 | 產物：served station 每個 `VIEWS` 路由 | verify（fankeel-render-reviewer） |
-| `docs/90-agent/reference/station.md:616-618` 的模組清單改成新清單。 | `2026-10-28-station-shell-6.md` Task 3 |
+| `docs/90-agent/reference/station.md:616-618` 的模組清單改成新清單。 | `2026-10-28-station-shell-7.md` Task 3 |
