@@ -253,6 +253,16 @@ test('the always-on block says what option two holds, not only option one', () =
   assert.match(ALWAYS.join(' '), /never unfinished work/);
 });
 
+// gate-19: the format the gate hook now refuses without has to be in the rule
+// every stage carries, or the first a model hears of it is a refusal.
+test('the always-on block carries the gate-19 format', () => {
+  const all = ALWAYS.join(' ');
+  assert.match(all, /Header: `THIS`; stem/);
+  assert.match(all, /THIS -> NEXT \| project : task/);
+  assert.match(all, /`Go to` it/);
+  assert.match(all, /Wrap up — 收工/);
+});
+
 test('option one is a token, so the route decides what it says', () => {
   const { RENDER_TOKENS } = require('../lib/stages.js');
   assert.ok(ALWAYS.join(' ').includes(RENDER_TOKENS.next),
@@ -613,7 +623,7 @@ test('verify and audit rules say the chain is one workflow', () => {
 // only the dispatch half was pinned. `build` sits eighteen characters under the
 // injection cap, so this string is the first place anyone looks for room — and
 // rewriting it down to the dispatch clause alone would leave every test green
-// while deleting the only injected rule that asks for a skipped step or a failed
+// while deleting the only injected rule that asks for a failed
 // test to be named. The other three always-on rules are each pinned this way.
 test('the always-on block still asks for what was skipped and what failed', () => {
   const text = ALWAYS.join(' ');
