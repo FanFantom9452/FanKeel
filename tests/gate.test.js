@@ -126,7 +126,7 @@ function handoff(root, gate) {
   const TICKS = '`'.repeat(3);
   fs.writeFileSync(file, '# report\n\n' + TICKS + 'json gate\n' + JSON.stringify(gate) + '\n' + TICKS + '\n');
 }
-const QUESTIONS = [{ question: 'survey 的結論可以進 design 嗎？', header: 'survey', multiSelect: false, options: [{ label: '進 design', description: 'a' }, { label: '暫停', description: 'b' }, { label: '再讀一輪', description: 'c' }] }];
+const QUESTIONS = [{ question: 'SURVEY -> DESIGN | fankeel : t　survey 的結論可以進 design 嗎？', header: 'SURVEY', multiSelect: false, options: [{ label: 'Go to DESIGN', description: 'a' }, { label: 'Stay in SURVEY', description: 'b' }, { label: '暫停', description: 'c' }] }];
 // What the controller now sends when it does its job correctly: an exact
 // copy of the handoff file's own `json gate` block, never a placeholder.
 const askOf = (questions) => ({ questions: JSON.parse(JSON.stringify(questions)) });
@@ -246,7 +246,7 @@ test('stage.agents: a gate asked with a multiSelect: false its file left out sti
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
   agentsOn(root);
-  const filed = [{ question: 'survey 的結論可以進 design 嗎？', header: '設計走向', options: [{ label: '進 design', description: 'a' }, { label: '暫停', description: 'b' }, { label: '再讀一輪', description: 'c' }] }];
+  const filed = [{ question: QUESTIONS[0].question, header: 'SURVEY', options: QUESTIONS[0].options }];
   const asked = [Object.assign({}, filed[0], { multiSelect: false })];
   handoff(root, { questions: filed, next: 'n' });
   brainStarts(root);
@@ -308,7 +308,7 @@ test('a brain dispatched for a stage stage.agents does not name: the gate hook s
 function verifyGate(root, label) {
   const file = path.join(root, '.fankeel', 'build', 'task-20260919T093012', 'verify.md');
   fs.mkdirSync(path.dirname(file), { recursive: true });
-  const questions = [{ question: 'verify 抓到兩條，怎麼辦？', header: 'verify', multiSelect: false, options: [{ label, description: 'a' }, { label: '暫停', description: 'b' }, { label: '再讀一輪', description: 'c' }] }];
+  const questions = [{ question: 'VERIFY -> AUDIT | fankeel : t　verify 抓到兩條，怎麼辦？', header: 'VERIFY', multiSelect: false, options: [{ label, description: 'a' }, { label: 'Stay in VERIFY', description: 'b' }, { label: '暫停', description: 'c' }] }];
   fs.writeFileSync(file, '# report\n\n' + '`'.repeat(3) + 'json gate\n' + JSON.stringify({ questions, next: 'n' }) + '\n' + '`'.repeat(3) + '\n');
   return questions;
 }
@@ -317,7 +317,7 @@ test('verify sending the work back to build on its own route is asked, not denie
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'verify', route: ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land'], started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
   fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': 'all' }));
-  const questions = verifyGate(root, '退回 build');
+  const questions = verifyGate(root, 'Back to BUILD');
   const out = run(GATE, root, { tool_input: askOf(questions) }).trim();
   assert.equal(out, '', 'a verbatim copy of a route-back gate is asked, not substituted or denied');
 });
@@ -326,7 +326,7 @@ test('a stage the route does not have is still denied', () => {
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'verify', route: ['build', 'verify', 'audit'], started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
   fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': 'all' }));
-  const questions = verifyGate(root, '退回 design');
+  const questions = verifyGate(root, 'Back to DESIGN');
   const out = JSON.parse(run(GATE, root, { tool_input: askOf(questions) }));
   assert.equal(out.hookSpecificOutput.permissionDecision, 'deny');
 });
@@ -359,7 +359,7 @@ test('a question headed with the stage that does not match the file word for wor
   agentsOn(root);
   handoff(root, { questions: QUESTIONS, next: 'n' });
   const paraphrased = JSON.parse(JSON.stringify(QUESTIONS));
-  paraphrased[0].question = '要不要繼續往 design 走？'; // same header, reworded question
+  paraphrased[0].question = 'SURVEY -> DESIGN | fankeel : t　要不要繼續往 design 走？'; // same header, reworded question
   const out = JSON.parse(run(GATE, root, { tool_input: { questions: paraphrased } }));
   assert.equal(out.hookSpecificOutput.permissionDecision, 'deny');
   assert.match(out.hookSpecificOutput.permissionDecisionReason, /survey\.md/);
@@ -382,10 +382,10 @@ test('the header match deciding whether a mismatch is an attempted gate copy is 
   seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
   agentsOn(root);
   handoff(root, { questions: QUESTIONS, next: 'n' });
-  const upper = JSON.parse(JSON.stringify(QUESTIONS));
-  upper[0].header = 'SURVEY';
-  const out = JSON.parse(run(GATE, root, { tool_input: { questions: upper } }));
-  assert.equal(out.hookSpecificOutput.permissionDecision, 'deny', 'SURVEY still reads as an attempt at the survey gate');
+  const lower = JSON.parse(JSON.stringify(QUESTIONS));
+  lower[0].header = 'survey';
+  const out = JSON.parse(run(GATE, root, { tool_input: { questions: lower } }));
+  assert.equal(out.hookSpecificOutput.permissionDecision, 'deny', 'survey still reads as an attempt at the SURVEY gate');
   assert.match(out.hookSpecificOutput.permissionDecisionReason, /word for word/);
 });
 
@@ -408,7 +408,9 @@ test('stage.agents at survey: a genuinely different question headed with the sta
 // gate-17: on 2026-10-21 a controlled build gate headed `build 完成` went out
 // with two of its file's three options. The header was not the stage's name,
 // so the mismatch was never read as a copy attempt and the hook only noted it.
-const OWN_HEAD = QUESTIONS.map((q) => Object.assign({}, q, { header: 'survey 完成' }));
+// Under gate-19 a filed header is a stage word, so a header that is not this
+// stage's is another stage's.
+const OWN_HEAD = QUESTIONS.map((q) => Object.assign({}, q, { header: 'BUILD', question: q.question.replace(/^SURVEY/, 'BUILD') }));
 
 test('a copy under the gate\'s own header that drops an option is denied, though the header is not the stage', () => {
   const root = tmp('fankeel-gate-');
@@ -427,7 +429,7 @@ test('a different question under the gate\'s own header still goes out as writte
   seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
   agentsOn(root);
   handoff(root, { questions: OWN_HEAD, next: 'n' });
-  const different = { questions: [{ header: 'survey 完成', question: '要不要先開一個新任務？', options: [{ label: '要', description: 'a' }, { label: '不要', description: 'b' }] }] };
+  const different = { questions: [{ header: 'BUILD', question: '要不要先開一個新任務？', options: [{ label: '要', description: 'a' }, { label: '不要', description: 'b' }] }] };
   const out = JSON.parse(run(GATE, root, { tool_input: different }));
   assert.equal(out.hookSpecificOutput, undefined, 'a low-overlap question under the gate header is not an attempted copy');
 });
@@ -558,7 +560,7 @@ test('stage.agents: a matching gate clears every mark on the record for this sta
 
 // gate answers: a question the user already answered at an earlier stage's
 // gate is denied when the controller asks it again.
-const DESIGN_GATE = [{ question: 'design 的結論可以進 plan 嗎？', header: 'design', multiSelect: false, options: [{ label: '進 plan', description: 'a' }, { label: '暫停', description: 'b' }, { label: '再讀一輪', description: 'c' }] }];
+const DESIGN_GATE = [{ question: 'DESIGN -> PLAN | fankeel : t　design 的結論可以進 plan 嗎？', header: 'DESIGN', multiSelect: false, options: [{ label: 'Go to PLAN', description: 'a' }, { label: 'Stay in DESIGN', description: 'b' }, { label: '暫停', description: 'c' }] }];
 const PALETTE = 'Which palette base should the ramp use?';
 const REASK = [{ question: PALETTE, header: 'Palette', multiSelect: false, options: [{ label: 'OKLCH', description: 'a' }, { label: 'sRGB', description: 'b' }] }];
 function reaskRoot() {
@@ -608,12 +610,12 @@ const LAP_ONE = '全套全綠、12 個 mutation 全紅，但有 10 處 listener�
 const LAP_TWO = '全套 3087 全綠、6 個 mutation 全紅，但 click handler 還有 3 個選擇器零測試，怎麼走？';
 // The same question with two numbers changed: 0.96 alike to LAP_TWO, past the 0.8 REPEAT_THRESHOLD.
 const LAP_TWO_NEAR = '全套 3092 全綠、7 個 mutation 全紅，但 click handler 還有 3 個選擇器零測試，怎麼走？';
-const VERIFY_GATE = [{ question: LAP_TWO, header: 'verify 結果', options: [{ label: 'land：收尾 (Recommended)', description: 'a' }, { label: '回 build：補測試', description: 'b' }, { label: '暫停', description: 'c' }] }];
+const VERIFY_GATE = [{ question: 'VERIFY -> LAND | fankeel : t　' + LAP_TWO, header: 'VERIFY', options: [{ label: 'Go to LAND：收尾 (Recommended)', description: 'a' }, { label: 'Back to BUILD：補測試', description: 'b' }, { label: '暫停', description: 'c' }] }];
 // The controller's copy differs from the filed gate (one option description is
 // reworded), so it is not the filed gate word for word and the hook does not
 // exit early: only the repeat check stands between it and the user. Its header
 // is neither the stage's nor the filed gate's (gate-17), so it is no copy attempt.
-const LAP_ASK = [Object.assign({}, VERIFY_GATE[0], { header: '再問一次', options: [VERIFY_GATE[0].options[0], Object.assign({}, VERIFY_GATE[0].options[1], { description: 'b, reworded' }), VERIFY_GATE[0].options[2]] })];
+const LAP_ASK = [Object.assign({}, VERIFY_GATE[0], { header: '再問一次', question: LAP_TWO, options: [VERIFY_GATE[0].options[0], Object.assign({}, VERIFY_GATE[0].options[1], { description: 'b, reworded' }), VERIFY_GATE[0].options[2]] })];
 function lapRoot(earlier, answered = LAP_ONE, questions = []) {
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'verify', started: '2026-09-19T09:30:12.345Z', route: ['build', 'verify', 'land'], moves: [['build', 1], ['verify', 2], ['build', 3], ['verify', 4]], configDir: tmp('fankeel-cfg-') });
@@ -713,12 +715,12 @@ test('stage.agents: a survey gate with no pause, or naming bounded on an archite
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'survey', floor: 'architectural', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
   agentsOn(root);
-  const noPause = [{ question: 'survey 的結論？', header: 'survey', multiSelect: false, options: [{ label: '進 design', description: 'a' }, { label: '再讀一輪', description: 'b' }] }];
+  const noPause = [{ question: 'SURVEY -> DESIGN | fankeel : t　survey 的結論？', header: 'SURVEY', multiSelect: false, options: [{ label: 'Go to DESIGN', description: 'a' }, { label: 'Stay in SURVEY', description: 'b' }] }];
   handoff(root, { questions: noPause, next: 'n' });
   const a = JSON.parse(run(GATE, root, { tool_input: askOf(noPause) }));
   assert.equal(a.hookSpecificOutput.permissionDecision, 'deny');
   assert.match(a.hookSpecificOutput.permissionDecisionReason, /`questions`: no option says pause/);
-  const lighter = [{ question: 'survey 的結論？', header: 'survey', multiSelect: false, options: [{ label: '進 design', description: 'a' }, { label: '改走 bounded', description: 'b' }, { label: '暫停', description: 'c' }] }];
+  const lighter = [{ question: 'SURVEY -> DESIGN | fankeel : t　survey 的結論？', header: 'SURVEY', multiSelect: false, options: [{ label: 'Go to DESIGN', description: 'a' }, { label: 'Stay in SURVEY，改走 bounded', description: 'b' }, { label: '暫停', description: 'c' }] }];
   handoff(root, { questions: lighter, next: 'n' });
   const b = JSON.parse(run(GATE, root, { tool_input: askOf(lighter) }));
   assert.equal(b.hookSpecificOutput.permissionDecision, 'deny');
@@ -729,7 +731,7 @@ test('a gate the hook refuses leaves no gateAt and no gateAsked, so the station 
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'survey', floor: 'architectural', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
   agentsOn(root);
-  const noPause = [{ question: 'survey 的結論？', header: 'survey', multiSelect: false, options: [{ label: '進 design', description: 'a' }, { label: '再讀一輪', description: 'b' }] }];
+  const noPause = [{ question: 'SURVEY -> DESIGN | fankeel : t　survey 的結論？', header: 'SURVEY', multiSelect: false, options: [{ label: 'Go to DESIGN', description: 'a' }, { label: 'Stay in SURVEY', description: 'b' }] }];
   handoff(root, { questions: noPause, next: 'n' });
   const invalid = JSON.parse(run(GATE, root, { tool_input: askOf(noPause) }));
   assert.equal(invalid.hookSpecificOutput.permissionDecision, 'deny', 'the invalid gate was refused');
@@ -754,7 +756,7 @@ test('a botched copy of the gate is refused with no gateAt, and the copy that go
 // docs/90-agent/plans/2026-10-10-workflow-gaps-design.md §11: off stage.agents
 // nothing compares a gate with a file, so the option count is the one thing
 // left to say — as a message, never a decision.
-const THIN = [{ question: 'build 做完了，進 verify 嗎？', header: 'build', multiSelect: false, options: [{ label: 'verify (Recommended)', description: 'a' }, { label: '暫停', description: 'b' }] }];
+const THIN = [{ question: 'BUILD -> VERIFY | fankeel : t　build 做完了，進 verify 嗎？', header: 'BUILD', multiSelect: false, options: [{ label: 'Go to VERIFY (Recommended)', description: 'a' }, { label: 'Stay in BUILD', description: 'b' }] }];
 const agentsAt = (root, value) => fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': value }));
 
 test('an uncontrolled stage: a two-option gate naming the next stage gets a message and no decision', () => {
@@ -782,21 +784,26 @@ test('an uncontrolled stage: three options, or a first option that names no next
   assert.equal(run(GATE, root, { tool_input: askOf(part) }).trim(), '', 'the stage name inside a longer word');
 });
 
+// Since gate-19 a gate told apart here is also held to the format, so a label
+// that names the stage in another case is seen by the refusal it earns.
 test('an uncontrolled stage: the next stage is matched whatever its case, and the last stage answers to down or 收工', () => {
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'build', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
   agentsAt(root, 'survey');
   const upper = JSON.parse(JSON.stringify(THIN));
   upper[0].options[0].label = '進 Verify';
-  assert.match(JSON.parse(run(GATE, root, { tool_input: askOf(upper) })).systemMessage, /this gate has 2 options/);
+  assert.match(JSON.parse(run(GATE, root, { tool_input: askOf(upper) })).hookSpecificOutput.permissionDecisionReason, /questions\[0\]\.options\[0\]\.label/);
   const last = tmp('fankeel-gate-');
   seed(last, MINE, { stage: 'land', route: ['survey', 'build', 'land'], started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
   agentsAt(last, 'survey');
-  for (const label of ['Down (Recommended)', '收工']) {
+  const landOf = (label) => {
     const ask = JSON.parse(JSON.stringify(THIN));
-    ask[0].options[0].label = label;
-    assert.match(JSON.parse(run(GATE, last, { tool_input: askOf(ask) })).systemMessage, /this gate has 2 options/, label);
-  }
+    Object.assign(ask[0], { header: 'LAND', question: 'LAND -> 收工 | fankeel : t　收工？' });
+    ask[0].options = [{ label, description: 'a' }, { label: 'Stay in LAND', description: 'b' }];
+    return ask;
+  };
+  assert.match(JSON.parse(run(GATE, last, { tool_input: askOf(landOf('Wrap up — 收工 (Recommended)')) })).systemMessage, /this gate has 2 options/);
+  assert.match(JSON.parse(run(GATE, last, { tool_input: askOf(landOf('Down (Recommended)')) })).hookSpecificOutput.permissionDecisionReason, /questions\[0\]\.options\[0\]\.label/);
   const other = JSON.parse(JSON.stringify(THIN));
   other[0].options[0].label = 'download the log';
   assert.equal(run(GATE, last, { tool_input: askOf(other) }).trim(), '', 'down inside a longer word');
@@ -809,6 +816,22 @@ test('an uncontrolled stage: the option count joins a gate-not-confirmed message
   const out = JSON.parse(run(GATE, root, { tool_input: askOf(THIN) }));
   assert.match(out.systemMessage, /^fankeel: gate not confirmed — .*as the controller wrote it\. fankeel: this gate has 2 options — three at least, never dropping the pause\.$/);
   assert.equal(out.hookSpecificOutput, undefined);
+});
+
+// gate-19: a gate the main session typed on an uncontrolled stage is held to
+// the format a stage agent's filed gate is.
+test('an uncontrolled stage: a gate not in the gate-19 format is denied, naming the field; one in it is not', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'plan', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  agentsAt(root, 'survey');
+  const good = [{ question: 'PLAN -> BUILD | fankeel : t　照這份計畫做？', header: 'PLAN', multiSelect: false, options: [{ label: 'Go to BUILD (Recommended)', description: 'a' }, { label: 'Stay in PLAN', description: 'b' }, { label: '暫停', description: 'c' }] }];
+  const bad = JSON.parse(JSON.stringify(good));
+  bad[0].header = '下一站';
+  const out = JSON.parse(run(GATE, root, { tool_input: askOf(bad) }));
+  assert.equal(out.hookSpecificOutput.permissionDecision, 'deny');
+  assert.match(out.hookSpecificOutput.permissionDecisionReason, /questions\[0\]\.header/);
+  const ok = run(GATE, root, { tool_input: askOf(good) }).trim();
+  assert.equal(ok ? JSON.parse(ok).hookSpecificOutput : undefined, undefined);
 });
 
 test('a controlled stage: the option count is not this check\'s to say', () => {
@@ -852,7 +875,10 @@ test('gate.away hint merges into an existing systemMessage without overwriting i
   assert.match(out.systemMessage, /^fankeel: gate not confirmed — .*survey\.md does not exist yet.* \/compact/);
 });
 
-const PLAN_Q = QUESTIONS.map((q) => Object.assign({}, q, { header: 'design', options: [Object.assign({}, q.options[0], { label: '進 plan' }), ...q.options.slice(1)] }));
+const PLAN_Q = QUESTIONS.map((q) => Object.assign({}, q, {
+  header: 'DESIGN', question: q.question.replace('SURVEY -> DESIGN', 'DESIGN -> PLAN'),
+  options: [Object.assign({}, q.options[0], { label: 'Go to PLAN' }), Object.assign({}, q.options[1], { label: 'Stay in DESIGN' }), ...q.options.slice(2)],
+}));
 test('gate.away ask at 250k returns updatedInput with the 離開 question appended and no permissionDecision', () => {
   const out = parsed(awayRun('ask', 250000).ask(PLAN_Q));
   assert.equal(out.hookSpecificOutput.permissionDecision, undefined);
@@ -867,7 +893,7 @@ test('gate.away ask at 150k and at exactly 200k adds no question', () => {
 });
 
 test('gate.away ask leaves a gate of four questions alone, but still hints', () => {
-  const four = [0, 1, 2, 3].map((i) => Object.assign({}, PLAN_Q[0], { question: 'q' + i + '?' }));
+  const four = [0, 1, 2, 3].map((i) => (i ? Object.assign({}, PLAN_Q[0], { question: 'q' + i + '?' }) : PLAN_Q[0]));
   const out = parsed(awayRun('ask', 250000).ask(four));
   assert.equal(out.hookSpecificOutput, undefined);
   assert.match(out.systemMessage, /\/compact/);

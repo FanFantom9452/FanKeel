@@ -28,8 +28,8 @@ function written(question) {
   const data = { task: 'fix one', stage: 'survey', route: ['survey', 'plan'], active: true,
     started: '2026-10-21T00:00:00.000Z', inflight: { stage: 'survey', at: 1758000000000, agentId: AGENT } };
   fs.writeFileSync(path.join(root, '.fankeel', 'sessions', MINE + '.json'), JSON.stringify(data));
-  const gate = { questions: [{ header: '下一站', question: question(entry), multiSelect: false,
-    options: [{ label: 'plan', description: 'a' }, { label: 'stay', description: 'b' }, { label: 'pause', description: 'c' }] }], next: 'plan' };
+  const gate = { questions: [{ header: 'SURVEY', question: 'SURVEY -> PLAN | fankeel : t　' + question(entry), multiSelect: false,
+    options: [{ label: 'Go to PLAN (Recommended)', description: 'a' }, { label: 'Stay in SURVEY', description: 'b' }, { label: 'pause', description: 'c' }] }], next: 'plan' };
   const file = handoffPath(root, data, 'survey');
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, 'report\n\n' + TICKS + 'json gate\n' + JSON.stringify(gate) + '\n' + TICKS + '\n');

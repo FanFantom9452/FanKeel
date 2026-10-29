@@ -50,10 +50,10 @@ function run(root, payload) {
 
 const TICKS = '`'.repeat(3);
 const QUESTIONS = [{
-  question: 'survey 的結論可以進 design 嗎？',
-  header: 'survey',
+  question: 'SURVEY -> DESIGN | fankeel : t　survey 的結論可以進 design 嗎？',
+  header: 'SURVEY',
   multiSelect: false,
-  options: [{ label: '進 design', description: 'a' }, { label: '暫停', description: 'b' }, { label: '再讀一輪', description: 'c' }],
+  options: [{ label: 'Go to DESIGN', description: 'a' }, { label: 'Stay in SURVEY', description: 'b' }, { label: '暫停', description: 'c' }],
 }];
 
 // Option one's label must name the next stage on the route (`design`, here),
@@ -72,7 +72,7 @@ test('a valid gate written to the session\'s own current-stage handoff produces 
   const data = seed(root, MINE, { inflight: MARK });
   const file = handoffPath(root, data, 'survey');
   fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, gateBlock('進 design'));
+  fs.writeFileSync(file, gateBlock('Go to DESIGN'));
 
   const out = run(root, { agent_id: AGENT, tool_input: { file_path: file } });
   assert.equal(out.trim(), '');
@@ -149,8 +149,9 @@ test('a gate naming a class below the task\'s floor is flagged when it is writte
   const file = handoffPath(root, data, 'survey');
   fs.mkdirSync(path.dirname(file), { recursive: true });
   const questions = JSON.parse(JSON.stringify(QUESTIONS));
-  questions[0].options.splice(1, 0, { label: '改走 bounded', description: 'c' });
+  questions[0].options.splice(2, 0, { label: '改走 bounded', description: 'c' });
   fs.writeFileSync(file, '# report\n\n' + TICKS + 'json gate\n' + JSON.stringify({ questions, next: 'design' }) + '\n' + TICKS + '\n');
   const out = JSON.parse(run(root, { agent_id: AGENT, tool_input: { file_path: file } }));
-  assert.match(out.hookSpecificOutput.additionalContext, /questions\[0\]\.options\[1\]\.label/);
+  assert.match(out.hookSpecificOutput.additionalContext, /questions\[0\]\.options\[2\]\.label/);
+  assert.match(out.hookSpecificOutput.additionalContext, /below this task's floor/);
 });

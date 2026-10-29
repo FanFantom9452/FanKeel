@@ -51,7 +51,7 @@ const registry = require('../lib/registry.js');
 const profileLib = require('../lib/profile.js');
 const { inspect, awayLine, AWAY_QUESTION } = require('../lib/context.js');
 const { controlling, nextStage, normaliseRoute, FULL_ROUTE } = require('../lib/stages.js');
-const { handoffPath, answerPath, pendingPath, answersSince, answeredOf, handedOffSince, writeAnswer, readGate, patrolEntries, reportProblem, skipReason, gateMatches, withCheckout } = require('../lib/handoff.js');
+const { handoffPath, answerPath, pendingPath, answersSince, answeredOf, handedOffSince, writeAnswer, readGate, patrolEntries, reportProblem, formatProblem, skipReason, gateMatches, withCheckout } = require('../lib/handoff.js');
 const { run, parse, refuse } = require('../lib/hook.js');
 const { askSlip } = require('../lib/cjk.js');
 
@@ -310,6 +310,18 @@ function main(raw) {
                 + '. Write ' + file + ' so every open entry has its line, then ask again.');
             return;
         }
+        // gate-19: a gate this session typed itself is held to the same format
+        // a stage agent's filed gate is (formatProblem, lib/handoff.js).
+        try {
+            const questions = payload.tool_input && payload.tool_input.questions;
+            if (values && !controlled && isGate(mine, questions)) {
+                const bad = formatProblem({ questions }, nextStage(mine.stage, mine.route), normaliseRoute(mine.route) || FULL_ROUTE);
+                if (bad) {
+                    refuse('fankeel: this gate cannot go out — `' + bad.at + '`: ' + bad.detail + '. Rewrite it in the gate-19 format and ask again.');
+                    return;
+                }
+            }
+        } catch (e) { /* housekeeping */ }
         const said = skip ? ['fankeel: gate not confirmed — ' + skip + '.'] : [];
         // `values` is null when the profile could not be read: nothing then
         // says whether the stage is controlled, so nothing is said about it.
