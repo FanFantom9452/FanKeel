@@ -1,10 +1,11 @@
 ---
 label: land
 title: 支援 Gitea 與 CI 專案
-description: 教授的專案放在 Gitea 並跑 CI：land 開 PR 不分 gh/tea、推送後不讀 CI、init 不看 workflow、非 Node 專案沒有測試指令 — [2026-10-29-ci-cd-nightly.md](docs/90-agent/judgements/2026-10-29-ci-cd-nightly.md).
+description: 教授的專案放在 Gitea 並跑 CI：land 開 PR 不分 gh/tea、推送後不讀 CI、init 不看 workflow、非 Node 專案沒有測試指令 — [skills/fankeel-land/SKILL.md](skills/fankeel-land/SKILL.md).
 state: blocked
-link: docs/90-agent/judgements/2026-10-29-ci-cd-nightly.md
-timing: after: 和教授確認 Gitea 環境（有沒有 tea 或 API token、CI runner 有沒有 Chrome、專案用什麼測試指令）
+link: skills/fankeel-land/SKILL.md
+group: 教授確認 Gitea 環境
+timing: after: 和教授確認 Gitea 環境（tea 或 API token、CI runner 有無 Chrome、測試指令）
 stamp: 2026-10-30
 ---
 
