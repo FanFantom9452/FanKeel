@@ -6,6 +6,7 @@
 // control that shows this test can see one.
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { SHELL_MODS } = require('./station-moved.js');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
@@ -25,7 +26,7 @@ const SECTIONS = [['the three levels: shared', 'shared'], ['the project page', '
     ['儀表板 (`#/`): four', 'dash'], ['the completion record', 'rec'], ['儀表板 (`#/`), again', 'dash'], ['the detail panel', 'det'], ['派工:', 'disp'], ['記成 TODO', 'todo'], ['比較', 'cmp'],
     ['the header search', 'q'], ['language:', 'mast'], ['live refresh', 'poll'], ['serve health polling', 'health']];
 // fmt.js, chart.js, session-body.js, detail-html.js and dispatch-table.js hold what left station.js, so they own several prefixes.
-const MOVED = ['fmt.js', 'chart.js', 'session-body.js', 'detail-html.js', 'gate-tab.js', 'dispatch-table.js'].map((n) => [n, fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', n), 'utf8').split('\n')]);
+const MOVED = SHELL_MODS.map((n) => [n, fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', n), 'utf8').split('\n')]);
 const PREFIX = (() => {
     const out = [];
     let p = 'fmt';
@@ -82,7 +83,7 @@ test('t: English by key with {vars} filled, Chinese otherwise, and set() stores 
 
 test('every CJK string literal in station.js, fmt.js, chart.js, session-body.js and detail-html.js is the Chinese of a loc() call (the extraction worklist)', () => {
     const left = [];
-    const FILES = [['station.js', LINES, (i) => PREFIX[i]]].concat(MOVED.map(([n, ls]) => [n, ls, () => 'shared/proj/ses/det']));
+    const FILES = [['station.js', LINES, (i) => PREFIX[i]]].concat(MOVED.map(([n, ls]) => [n, ls, () => 'shared/proj/ses/det/dash/rec/nav']));
     for (const [file, lines, prefixOf] of FILES) lines.forEach((text, i) => {
         if (/^\s*\/\//.test(text)) return;
         LIT.lastIndex = 0;
@@ -99,7 +100,7 @@ test('every CJK string literal in station.js, fmt.js, chart.js, session-body.js 
 test('each loc() key has its section\'s prefix, one Chinese string, and an English entry; every entry is used', () => {
     const zhOf = new Map();
     const bad = [];
-    const ENTRIES = [['station.js', LINES, (i) => [PREFIX[i]]]].concat(MOVED.map(([n, ls]) => [n, ls, () => ['shared', 'proj', 'ses', 'det', 'live', 'disp', 'todo']]));
+    const ENTRIES = [['station.js', LINES, (i) => [PREFIX[i]]]].concat(MOVED.map(([n, ls]) => [n, ls, () => ['shared', 'proj', 'ses', 'det', 'live', 'disp', 'todo', 'dash', 'rec', 'nav']]));
     for (const [file, lines, prefixesOf] of ENTRIES) lines.forEach((text, i) => {
         const prefixes = prefixesOf(i);
         KEYED.lastIndex = 0;

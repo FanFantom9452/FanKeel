@@ -173,4 +173,11 @@ function moved(file, names) {
         assert.doesNotMatch(shell, written, n + ' is still written out in station.js');
     }
 }
-module.exports = { moved };
+// The station-52 modules in page order: every script index.html loads between
+// list-state.js and station.js. Tests read the order here, so a move adds one
+// line to index.html and no test.
+const SHELL_MODS = (() => {
+    const order = [...read('index.html').matchAll(/<script src="station\/([^"]+)"><\/script>/g)].map((m) => m[1]);
+    return order.slice(order.indexOf('list-state.js') + 1, order.indexOf('station.js'));
+})();
+module.exports = { moved, SHELL_MODS };

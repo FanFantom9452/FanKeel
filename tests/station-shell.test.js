@@ -9,6 +9,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { SHELL_MODS } = require('./station-moved.js');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -159,7 +160,7 @@ function classTokens(source) {
 
 test('every class the three levels render has a rule', () => {
     const css = fs.readFileSync(CSS, 'utf8');
-    const emitted = classTokens(shell() + fs.readFileSync(JS, 'utf8') + fs.readFileSync(path.join(path.dirname(JS), 'days-page.js'), 'utf8') + fs.readFileSync(path.join(path.dirname(JS), 'chart.js'), 'utf8') + fs.readFileSync(path.join(path.dirname(JS), 'fmt.js'), 'utf8') + fs.readFileSync(path.join(path.dirname(JS), 'session-body.js'), 'utf8') + fs.readFileSync(path.join(path.dirname(JS), 'detail-html.js'), 'utf8') + fs.readFileSync(path.join(path.dirname(JS), 'gate-tab.js'), 'utf8') + fs.readFileSync(path.join(path.dirname(JS), 'dispatch-table.js'), 'utf8'));
+    const emitted = classTokens(shell() + fs.readFileSync(JS, 'utf8') + ['days-page.js'].concat(SHELL_MODS).map((n) => fs.readFileSync(path.join(path.dirname(JS), n), 'utf8')).join(''));
     const classes = ['mast', 'crumbs', 'search', 'foot', 'page', 'fixed', 'panel', 'eyebrow', 'h2', 'readouts', 'ro',
         'hatchsw', 'controls', 'ctlgrp', 'seg', 'legend', 'sw', 'chart', 'hit', 'tbl-wrap', 't', 'chip',
         'pchip', 'route', 'hero-top', 'btn',

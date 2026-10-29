@@ -5,6 +5,7 @@
 // report. The last test is the design's done line, end to end.
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { SHELL_MODS } = require('./station-moved.js');
 const fs = require('node:fs');
 const path = require('node:path');
 const http = require('node:http');
@@ -125,7 +126,7 @@ function focusDom() {
         setInterval: (fn) => ticks.push(fn), setTimeout: (fn, ms) => waits.push(ms), clearTimeout() {}, addEventListener() { listened.push('win'); } };
     // As focusShell loads them: the focus module, then station.js, in one page.
     const box = vm.createContext({ window: win, document: doc, URLSearchParams });
-    for (const n of ['focus-page.js', 'fmt.js', 'chart.js', 'session-body.js', 'detail-html.js', 'gate-tab.js', 'dispatch-table.js', 'station.js']) vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', n), 'utf8'), box);
+    for (const n of ['focus-page.js'].concat(SHELL_MODS, ['station.js'])) vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', n), 'utf8'), box);
     return { focus, asked, heads, ticks, listened, win, waits, clicks };
 }
 

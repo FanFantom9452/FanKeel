@@ -6,6 +6,7 @@
 // tests/station-remote-card.test.js's.
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { SHELL_MODS } = require('./station-moved.js');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
@@ -73,14 +74,8 @@ test('no other page draws the card', () => {
 test('the shell loads remote-card.js after the spend modules and before station.js', () => {
     for (const html of [fs.readFileSync(path.join(ASSETS, 'index.html'), 'utf8'), station.render()]) {
         const order = [...html.matchAll(/<script src="station\/([^"]+)"><\/script>/g)].map((m) => m[1]);
-        assert.equal(order.indexOf('remote-card.js'), order.indexOf('station.js') - 8, order.join(', '));
-        assert.equal(order.indexOf('list-state.js'), order.indexOf('station.js') - 7, order.join(', '));
-        assert.equal(order.indexOf('fmt.js'), order.indexOf('station.js') - 6, order.join(', '));
-        assert.equal(order.indexOf('chart.js'), order.indexOf('station.js') - 5, order.join(', '));
-        assert.equal(order.indexOf('session-body.js'), order.indexOf('station.js') - 4, order.join(', '));
-        assert.equal(order.indexOf('detail-html.js'), order.indexOf('station.js') - 3, order.join(', '));
-        assert.equal(order.indexOf('gate-tab.js'), order.indexOf('station.js') - 2, order.join(', '));
-        assert.equal(order.indexOf('dispatch-table.js'), order.indexOf('station.js') - 1, order.join(', '));
+        const tail = ['remote-card.js', 'list-state.js'].concat(SHELL_MODS);
+        tail.forEach((n, i) => assert.equal(order.indexOf(n), order.indexOf('station.js') - (tail.length - i), order.join(', ')));
         assert.ok(order.indexOf('spend-panel.js') < order.indexOf('remote-card.js'), order.join(', '));
     }
 });

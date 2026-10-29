@@ -5,6 +5,7 @@
 // four modules are served, loaded by the shell and written beside it.
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { SHELL_MODS } = require('./station-moved.js');
 const fs = require('node:fs');
 const path = require('node:path');
 const http = require('node:http');
@@ -89,7 +90,7 @@ test('the four modules are served byte for byte, and the shell loads them before
     const shell = fs.readFileSync(path.join(ASSETS, 'index.html'), 'utf8');
     const order = [...shell.matchAll(/<script src="station\/([^"]+)"><\/script>/g)].map((m) => m[1]);
     const PAGES = ['tip', 'live-page', 'sessions-page', 'projects-page', 'project-page', 'session-page', 'session-dispatch', 'session-talk', 'talk-acts', 'diagram', 'docs-page', 'settings-page', 'settings-steps', 'settings-detail', 'weekly-page', 'days-page'].map((n) => n + '.js');
-    assert.deepEqual(order, ['i18n.js'].concat(PAGES, MODULES, ['remote-card.js', 'list-state.js', 'fmt.js', 'chart.js', 'session-body.js', 'detail-html.js', 'gate-tab.js', 'dispatch-table.js', 'station.js']));
+    assert.deepEqual(order, ['i18n.js'].concat(PAGES, MODULES, ['remote-card.js', 'list-state.js'], SHELL_MODS, ['station.js']));
 }));
 
 test('the data file carries lib/prices.js\'s table, and a written copy carries the modules', () => {
