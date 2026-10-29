@@ -52,3 +52,12 @@ test('a gate with one option, or none, is refused at the option it lacks', () =>
     delete one.questions[0].options;
     assert.equal(formatProblem(one, 'build', ROUTE).at, 'questions[0].options[0].label');
 });
+
+test('option one goes to the next stage or back to an earlier one only', () => {
+    const at = (h, one, next) => (formatProblem(gate(h, h + ' -> BUILD | fankeel : x　？', one, 'Stay in ' + h), next, ROUTE) || {}).at;
+    assert.equal(at('PLAN', 'Go to LAND', 'build'), 'questions[0].options[0].label');
+    assert.equal(at('PLAN', 'Back to LAND', 'build'), 'questions[0].options[0].label');
+    assert.equal(at('PLAN', 'Back to PLAN', 'build'), 'questions[0].options[0].label');
+    assert.equal(at('VERIFY', 'Back to BUILD', 'land'), undefined);
+    assert.equal(at('VERIFY', 'Back to VERIFY', 'land'), 'questions[0].options[0].label');
+});
