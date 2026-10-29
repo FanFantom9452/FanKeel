@@ -47,7 +47,9 @@ function bodyNode() {
         return out;
     }
     const nodes = (slot) => body.items.filter((x) => typeof x === 'object' && x.slot === slot);
-    Object.defineProperty(body, 'innerHTML', { get: () => body.items.map((x) => (typeof x === 'string' ? x : x.html)).join(''), set: (v) => { body.items = parse(v); } });
+    Object.defineProperty(body, 'innerHTML', { get: () => body.items.map((x) => (typeof x === 'string' ? x : x.html)).join(''), set: (v) => { body.items = parse(v); body.scrollTop = 0; } });
+    // A browser clamps scrollTop to the content's height: the rows written as empty slots lay out at
+    // no height, so writing the list's innerHTML can drop the scroll to 0 — the fake always does.
     body.querySelectorAll = (sel) => (sel === '[data-row]' ? nodes(false) : sel === '[data-slot]' ? nodes(true) : []);
     body.querySelector = (sel) => { const m = /^\[data-row="([^"]*)"\]$/.exec(sel); return m ? nodes(false).find((x) => x.key === m[1]) || null : null; };
     return body;
@@ -142,4 +144,39 @@ test('the same data read again writes nothing', async () => {
     await b.poll();
     assert.equal(b.page.draws, draws);
     assert.deepEqual(b.page.body.querySelectorAll('[data-row]'), before);
+});
+
+test('a refresh that adds a row writes the list again and puts its scroll back', async () => {
+    const state = { home: M };
+    const b = boot('#/', state);
+    await settle();
+    const body = b.page.body;
+    const t1 = body.querySelector('[data-row="office/t1"]');
+    body.scrollTop = 250;
+    const draws = b.page.draws;
+    state.home = Object.assign({}, M, { tasks: [task('t1'), task('t2'), task('t3')] });
+    await b.poll();
+    assert.equal(b.page.draws, draws, 'no whole redraw');
+    assert.ok(body.querySelector('[data-row="office/t3"]'), 'the new row is in the list');
+    assert.equal(body.querySelector('[data-row="office/t1"]'), t1, 'the unchanged row is the same node');
+    assert.equal(body.scrollTop, 250);
+});
+
+test('two refreshes in a row compare with the last one: a row unchanged since it keeps its node', async () => {
+    const state = { home: Object.assign({}, M, { tasks: [task('t1'), task('t2'), task('t3')] }) };
+    const b = boot('#/', state);
+    await settle();
+    const body = b.page.body;
+    const row = (k) => body.querySelector('[data-row="office/' + k + '"]');
+    const t1 = row('t1'), t3 = row('t3');
+    state.home = Object.assign({}, M, { tasks: [task('t1'), task('t2', { task: 'task t2 renamed' }), task('t3')] });
+    await b.poll();
+    const t2 = row('t2');
+    assert.match(t2.html, /task t2 renamed/);
+    state.home = Object.assign({}, M, { tasks: [task('t1', { task: 'task t1 renamed' }), task('t2', { task: 'task t2 renamed' }), task('t3')] });
+    await b.poll();
+    assert.equal(row('t2'), t2, 'unchanged since the first refresh: same node');
+    assert.equal(row('t3'), t3, 'unchanged across both refreshes: same node');
+    assert.notEqual(row('t1'), t1);
+    assert.match(row('t1').html, /task t1 renamed/);
 });
