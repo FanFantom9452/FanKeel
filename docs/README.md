@@ -770,6 +770,7 @@ is corrected by the next one, not by rewriting this.
 | Brief — one phone, three PCs, one tailnet | [90-agent/judgements/2026-10-27-one-phone-three-pcs.md](90-agent/judgements/2026-10-27-one-phone-three-pcs.md) — *judged 2026-10-27, fable* |
 | Brief 42 — Uncle Bob's "don't read, measure hard": what should fankeel take? | [90-agent/judgements/2026-10-28-uncle-bob-measure-not-read.md](90-agent/judgements/2026-10-28-uncle-bob-measure-not-read.md) — *judged 2026-10-28, fable* |
 | 43 — writer 有沒有照「語意斷句」寫？要不要把這套規則放進 fankeel？ | [90-agent/judgements/2026-10-28-writer-segmentation-rules.md](90-agent/judgements/2026-10-28-writer-segmentation-rules.md) — *judged 2026-10-28, fable* |
+| 問題 | [90-agent/judgements/2026-10-29-gate-question-custom.md](90-agent/judgements/2026-10-29-gate-question-custom.md) — *judged 2026-10-29, fable* |
 
 ## The five scanners
 
