@@ -39,3 +39,12 @@ test('the miss grader fails a wrong cause that cites the file and uses generic w
     assert.equal(ev.grade(g, run('test/menu.test.js:5 — asserts nothing happened, so it stays green if the branch is removed.')).pass, true);
     assert.equal(ev.grade(g, run('test/menu.test.js:5 — it stays green when src/menu.js:3 is deleted.')).pass, true);
 });
+
+test('the miss grader passes each plausible phrasing of the vacuous test', () => {
+    const g = byName('names-the-miss');
+    for (const ok of [
+        'the assertion is never reached, so it cannot fail',
+        'does not exercise the filter; it would pass even with the filter deleted',
+        'forEach over empty array: no assertions run, the test is vacuous',
+    ]) assert.equal(ev.grade(g, run('menu.test.js:5 — ' + ok)).pass, true, ok);
+});

@@ -37,3 +37,21 @@ test('the cause grader fails a wrong cause that cites the file and uses generic 
     ]) assert.equal(ev.grade(g, run(wrong)).pass, false, wrong);
     assert.equal(ev.grade(g, run('inflight.js:4 — markInflight gives every mark a group, so the guard never spares the brain.')).pass, true);
 });
+
+test('the cause grader passes each plausible phrasing of the always-set cause', () => {
+    const g = byName('names-the-cause');
+    for (const ok of [
+        'o.group is set on every record, so the guard never discriminates',
+        'group is never unset, so the guard is always true',
+        'the group check is always satisfied since every inflight entry carries a group',
+        'every brain has a group so the condition is a tautology',
+        'markInflight always assigns a group',
+        'group is always truthy because markInflight always sets it',
+        'group is always defined once marked',
+    ]) assert.equal(ev.grade(g, run('inflight.js:11 — ' + ok)).pass, true, ok);
+});
+
+test('the cause grader fails the inverted claim that group is never set', () => {
+    const g = byName('names-the-cause');
+    assert.equal(ev.grade(g, run('inflight.js:11 — group is never set when the brain starts, so the guard skips it')).pass, false);
+});
