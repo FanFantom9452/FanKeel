@@ -27,3 +27,15 @@ test('the miss grader passes the catch and fails clean or a wrong cause', () => 
     assert.equal(ev.grade(g, run('test/menu.test.js:4 — prefer strictEqual.')).pass, false);
     assert.equal(ev.grade(g, run('the test never reaches the branch, deleting it stays green')).pass, false);
 });
+
+test('the miss grader fails a wrong cause that cites the file and uses generic words', () => {
+    const g = byName('names-the-miss');
+    for (const wrong of [
+        'test/menu.test.js:5 — the test does not cover the error message wording.',
+        'test/menu.test.js:8 — this helper never calls the logger and is not hit by other suites.',
+        'test/menu.test.js:3 — the suite passes, though removing the stale import would be cleaner.',
+        'test/menu.test.js:7 — it never reaches the network, so the suite is not exercised on CI.',
+    ]) assert.equal(ev.grade(g, run(wrong)).pass, false, wrong);
+    assert.equal(ev.grade(g, run('test/menu.test.js:5 — asserts nothing happened, so it stays green if the branch is removed.')).pass, true);
+    assert.equal(ev.grade(g, run('test/menu.test.js:5 — it stays green when src/menu.js:3 is deleted.')).pass, true);
+});

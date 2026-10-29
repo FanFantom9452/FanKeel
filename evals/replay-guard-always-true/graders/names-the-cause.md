@@ -1,7 +1,7 @@
 ---
 type: regex
 target: last_message
-pattern: (?=[\s\S]*inflight\.js:\d+)[\s\S]*(group[^\n]{0,160}(always|regardless|never (un)?set|every (mark|call|brain))|(always|regardless|every (mark|call|brain))[^\n]{0,160}group)
+pattern: (?=[\s\S]*inflight\.js:\d+)[\s\S]*(group[^\n]{0,60}\b(always|never)\b[^\n]{0,20}\b(set|present|defined|truthy|assigned)\b|(markInflight|every (mark|call|brain))[^\n]{0,80}\b(sets?|gives?|giving|assigns?|setting)\b[^\n]{0,40}group)
 flags: i
 match: contains
 ---

@@ -1,7 +1,7 @@
 ---
 type: regex
 target: last_message
-pattern: (?=[\s\S]*menu\.test\.js:\d+)[\s\S]*((green|pass(es)?)[^\n]{0,160}(delet|remov)|(delet|remov)[^\n]{0,160}(green|pass)|never (reach|call|exercise|hit)|(not|n't) (reach|exercise|cover|hit)|nothing (fired|happen|was called)|empty dataset)
+pattern: (?=[\s\S]*menu\.test\.js:\d+)[\s\S]*((delet|remov)[^\n]{0,60}(green|pass)|(green|pass\w*)[^\n]{0,60}\b(after|when|if)\b[^\n]{0,30}(delet|remov)|asserts? nothing|nothing (fired|happen\w*|was called)|empty dataset)
 flags: i
 match: contains
 ---
