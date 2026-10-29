@@ -24,3 +24,11 @@ link: lib/handoff.js
 - 如果選了強制，有測試證明不合格的 header 會被擋。
 
 進度（2026-10-29）：使用者看過範例後定案格式。header 填剛結束的那一站，英文大寫（SURVEY、BUILD、VERIFY、LAND），12 欄放得下 MAX_HEADER_WIDTH；question 開頭是 `<專案> | <現在站> → <下一站> | <任務短名>：`，後面接結果與問題。使用者認可的範例：`fankeel | SURVEY → PLAN | TODO 盤點：4 條可做，進 plan？`、`fankeel | BUILD → VERIFY | TODO 盤點：6 項都綠，進 verify？`、`fankeel | VERIFY → BUILD | /m 多台合併：兩項沒過，退回？`、`Waypoint | LAND → 收工 | 7d 色階：已合併，收工？`。「現在站→建議站」放不進 header（超過 12 欄），所以改放在 question 開頭。要不要強制檢查（lib/stages.js ALWAYS 加規則、lib/handoff.js gateProblem 加檢查）還沒決定，此條保持 Ready，這次沒改程式。
+
+改定（2026-10-29，取代上一段的 question 順序）：使用者說「什麼階段到什麼階段」最重要，要放最前面，選項也要先寫站名。新格式：
+- question 開頭是 `<現在站> -> <下一站> | <專案> : <任務名稱>`，後面接結果與問題。例如 `Survey -> Design | fankeel : TODO 盤點　4 條可做，照這個範圍設計？`。
+- 選項一的 label 寫 `Go to <下一站> (Recommended)`，例如 `Go to Design (Recommended)`；說明寫在 description。
+- 選項二的 label 寫 `Back to <站>`（退回前一站）或 `Stay in <現在站>`（留在這站）。
+- 暫停照舊。header 照上一段，仍填剛結束的那一站。
+
+站名用英文、首字大寫（Survey、Design、Plan、Build、Verify、Audit、Land）。lib/handoff.js 的 gateProblem 目前要求選項一含站名或「收工」，`Go to Design` 含站名所以會過；land 的選項一要含 `收工` 或 `down`，寫法另定，例如 `Go to 收工 (Recommended)`。是否強制檢查仍未決定，此條保持 Ready。
