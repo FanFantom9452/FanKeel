@@ -48,3 +48,23 @@ test('the miss grader passes each plausible phrasing of the vacuous test', () =>
         'forEach over empty array: no assertions run, the test is vacuous',
     ]) assert.equal(ev.grade(g, run('menu.test.js:5 — ' + ok)).pass, true, ok);
 });
+
+test('the miss grader fails a delete and a green that are about different things', () => {
+    const g = byName('names-the-miss');
+    for (const wrong of [
+        'menu.test.js:5 — delete the unused import; separately the CI is green',
+        'menu.test.js:5 — delete the unused import and the CI is green',
+    ]) assert.equal(ev.grade(g, run(wrong)).pass, false, wrong);
+});
+
+test('the miss grader fails an incidental delete next to a green test or check', () => {
+    const g = byName('names-the-miss');
+    for (const wrong of [
+        'delete the unused test helper and CI is green',
+        'delete the logging line and the test passes',
+        'delete a comment in the test and it stays green',
+        'remove the check from the test file and CI passes',
+        'stays green; delete the unused import',
+        'delete the unused import, the check is green',
+    ]) assert.equal(ev.grade(g, run('menu.test.js:5 — ' + wrong)).pass, false, wrong);
+});

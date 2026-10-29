@@ -55,3 +55,23 @@ test('the cause grader fails the inverted claim that group is never set', () => 
     const g = byName('names-the-cause');
     assert.equal(ev.grade(g, run('inflight.js:11 — group is never set when the brain starts, so the guard skips it')).pass, false);
 });
+
+test('the cause grader fails a negated always-set claim', () => {
+    const g = byName('names-the-cause');
+    for (const neg of [
+        'inflight.js:11 — group is not always set so the guard fails',
+        "inflight.js:11 — group isn't always set so the guard fails",
+    ]) assert.equal(ev.grade(g, run(neg)).pass, false, neg);
+});
+
+test('the cause grader fails a negation placed elsewhere in the always-set sentence', () => {
+    const g = byName('names-the-cause');
+    for (const neg of [
+        'group is not set on every record',
+        'group is not in every record',
+        'group is rarely always set',
+        'group is no longer always set',
+        'group cannot be always set',
+        'group is not guaranteed to be always set',
+    ]) assert.equal(ev.grade(g, run('inflight.js:11 — ' + neg)).pass, false, neg);
+});
