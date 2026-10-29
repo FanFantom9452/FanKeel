@@ -141,7 +141,7 @@
 .sq{display:flex;flex-direction:column;gap:14px;min-width:0}
 .sq-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding:10px;border-radius:var(--r);background:var(--panel)}
 /* the switch: two segments, the pressed one lifted onto the panel with a keel edge */
-.sq-seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;flex:0 0 340px;padding:4px;border-radius:10px;background:var(--inset);box-shadow:inset 0 0 0 1px var(--rule)}
+.sq-seg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));min-width:0;gap:4px;flex:0 0 340px;padding:4px;border-radius:10px;background:var(--inset);box-shadow:inset 0 0 0 1px var(--rule)}
 .sq-sb{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:1px;min-width:0;min-height:48px;padding:5px 14px;border:0;border-radius:7px;background:transparent;color:var(--ink2);font:inherit;text-align:left;cursor:pointer;transition:background-color .15s ease-out,box-shadow .15s ease-out}
 .sq-sb b{font:700 13px/18px var(--f-mono);letter-spacing:.06em}
 .sq-sb small{font-size:12px;line-height:16px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
@@ -192,7 +192,7 @@
 .sq-money span.sq-fn{font-size:12.5px;color:var(--ink2)}
 .sq .v9-foot code{font:12px var(--f-mono);color:var(--ink2);overflow-wrap:anywhere}
 @media (max-width:900px){
-  .sq-seg{flex:1 1 100%}
+  .sq-seg{flex:1 1 100%;min-width:0}
   .sq-pick,.sq-where{flex-basis:100%}
 }
 @media (max-width:640px){
