@@ -5,7 +5,7 @@ description: 第四份計畫把十個只剩測試與匯出在用的舊 live 函�
 state: blocked
 link: assets/station/station.js
 group: station 外殼拆完
-timing: after: 第四份 station-shell 計畫的 Task 2 把左欄搬進 nav.js
+timing: after: 第六份 station-shell 計畫落地，再由第七份計畫的 Task 2 刪除
 stamp: 2026-10-29
 ---
 
@@ -14,3 +14,5 @@ stamp: 2026-10-29
 應該變成：這十個函式從 nav.js 刪掉，station.js 裡它們的一行轉發和 module.exports 項目一起拿掉，只測它們的斷言（station-live-head、station-live-maybe、station-view、station-waiting 等測試裡的）刪除或改測仍在用的函式，連帶沒人讀的 i18n 鍵與 css 規則也清掉。做法照 chart.js 那次（adb7a8d0、b3e4b0ab）。
 
 完成的標準：grep 這十個名字在 assets/、lib/、scripts/、tests/ 都找不到；npm test 全綠；docs-check 沒有新的失效引用。
+
+2026-10-29 盤點：原條件已成立（第四份已落地，9a52cdaa）；刪除已排在 docs/90-agent/plans/2026-10-28-station-shell-7.md 的 Task 2，等第五、六份先落地。
