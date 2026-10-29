@@ -47,7 +47,7 @@ source_of_truth: .fankeel/build/task-20261029T113838/survey.md
 
 **Interfaces:**
 - Consumes: none
-- Produces: `SHELL_MODS: string[]`，從 `tests/station-moved.js` 匯出 —— index.html 在 `list-state.js` 與 `station.js` 之間載入的腳本，依頁面順序。
+- Produces: `SHELL_MODS`（`string[]`），從 `tests/station-moved.js` 匯出 —— index.html 在 `list-state.js` 與 `station.js` 之間載入的腳本，依頁面順序。
 
 **Dispatch:** implementer, sonnet — 計畫附上每處改法，照抄加跑測試。
 
@@ -147,7 +147,7 @@ const MOVED = SHELL_MODS.map((n) => [n, fs.readFileSync(path.join(__dirname, '..
 
 **Interfaces:**
 - Consumes: Task 1 的 `SHELL_MODS`（不直接用；Task 1 先落地，加 dash.js 才不會弄紅七個測試）；`tests/station-moved.js` 的 `moved(file, names)`
-- Produces: `window.FK_DASH = { make }`；station.js 的取得器 `DASH()`
+- Produces: `FK_DASH`（`window.FK_DASH = { make }`）；station.js 的取得器 `DASH()`
 
 **Dispatch:** implementer, sonnet, high — 自由名稱要讀函式體找出，漏一個只在被呼叫時才壞；`dispatchUi` 要判斷是只讀 `view` 還是對它賦值。
 
@@ -231,7 +231,7 @@ In `assets/station/index.html`:
 - Test: `tests/station-mod-nav.test.js`
 
 **Interfaces:**
-- Consumes: Task 1 的 `SHELL_MODS`（同 Task 2）；`moved(file, names)`
+- Consumes: Task 1 的 `SHELL_MODS`；Task 2 的 `FK_DASH` 已在 index.html（nav.js 排在它之後，兩個任務都寫 station.js）；`moved(file, names)`
 - Produces: `window.FK_NAV = { make }`；station.js 的取得器 `NAV()`
 
 **Dispatch:** implementer, sonnet, high — 330 行，自由名稱要讀函式體找出，漏一個只在被呼叫時才壞。
@@ -312,7 +312,7 @@ In `assets/station/index.html`:
 
 **Interfaces:**
 - Consumes: `readings(text) -> [{ at, pct, resetsAt }]`（lib/quota.js，秒）；`registry.rootFor({ cwd })`
-- Produces: `tagged(root) -> [{ session, at, pct, resetsAt }]`、`windows(list) -> [{ resets, rows, sessions }]`、`main(argv) -> { text, code }`，從 `scripts/limits-series.js` 匯出
+- Produces: `scripts/limits-series.js`；`tagged(root) -> [{ session, at, pct, resetsAt }]`、`windows(list) -> [{ resets, rows, sessions }]`、`main(argv) -> { text, code }`，從 `scripts/limits-series.js` 匯出
 
 **Dispatch:** implementer, sonnet — 程式與測試都在計畫裡，照抄加跑。
 
