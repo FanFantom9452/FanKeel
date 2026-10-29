@@ -32,7 +32,7 @@ what the gate asks — never something to settle first and report afterwards.
 
 | Looks like a finding | Why it is not |
 |---|---|
-| A commit with only one short paragraph of prose | `lib/stages.js:217` caps it there (`one paragraph only for what a bullet cannot hold`) — the bullets are the record; more prose is not owed. |
+| A commit with only one short paragraph of prose | `lib/stages.js:217` caps it there (`one paragraph for what a bullet cannot hold`) — the bullets are the record; more prose is not owed. |
 | A `做了什麼:` list that skips files the diff touched | It is one line per new capability, not one per file — `lib/stages.js:400` (`做了什麼: one line per thing someone can now do`) — a file with no capability of its own has nothing to add there. |
 | A landed plan still sitting on disk, not yet archived | `lib/stages.js:410` archives it only `then is archived, after asking` — a plan waiting on that answer is not forgotten, it is mid-step. |
 
@@ -137,7 +137,7 @@ node <plugin>/scripts/record.js write --session <id> <<'EOF'
   - <what someone can now do that they could not>
 為什麼這樣做: <the approach; what was given up>
 驗過・沒驗過: <checked; not checked>
-還剩什麼: <what is still not done>
+還剩什麼: <what is left>
 EOF
 ```
 
@@ -436,7 +436,7 @@ inlined in your brief.
 為什麼這樣做: <the approach; what was given up>
 驗過・沒驗過: <checked; not checked>
 花費: <from record.js>
-還剩什麼: <what is still not done>
+還剩什麼: <what is left>
 suite: <suite.js line>
 紀錄: <filed: line>
 then AskUserQuestion

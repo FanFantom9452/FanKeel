@@ -261,6 +261,10 @@ test('the always-on block carries the gate-19 format', () => {
   assert.match(all, /THIS -> NEXT \| project : task/);
   assert.match(all, /`Go to` it/);
   assert.match(all, /Wrap up — 收工/);
+  // lib/handoff.js formatProblem refuses a gate whose option two does not open
+  // "Stay in <STAGE>" or "Back to <STAGE>"; without this the first a model hears
+  // of it is the refusal.
+  assert.match(ALWAYS[0], /Option two names the open decision, or none — never unfinished work\. Label: `Stay in THIS`./);
 });
 
 test('option one is a token, so the route decides what it says', () => {
@@ -625,7 +629,7 @@ test('verify and audit rules say the chain is one workflow', () => {
 // rewriting it down to the dispatch clause alone would leave every test green
 // while deleting the only injected rule that asks for a failed
 // test to be named. The other three always-on rules are each pinned this way.
-test('the always-on block still asks for what was skipped and what failed', () => {
+test('the always-on block still asks for what was done, a failed test and what could not be checked', () => {
   const text = ALWAYS.join(' ');
   assert.match(text, /Say what you actually did/);
   assert.match(text, /a failed test/);
