@@ -32,3 +32,5 @@ link: lib/handoff.js
 - 暫停照舊。header 照上一段，仍填剛結束的那一站。
 
 站名用英文、首字大寫（Survey、Design、Plan、Build、Verify、Audit、Land）。lib/handoff.js 的 gateProblem 目前要求選項一含站名或「收工」，`Go to Design` 含站名所以會過；land 的選項一要含 `收工` 或 `down`，寫法另定，例如 `Go to 收工 (Recommended)`。是否強制檢查仍未決定，此條保持 Ready。
+
+英文用字（2026-10-29，使用者同意）：站名寫全大寫（SURVEY、DESIGN、PLAN、BUILD、VERIFY、AUDIT、LAND），避免 `Stay in Land` 被讀成「留在陸地」。選項一寫 `Go to <站>`；退回寫 `Back to <站>`，當按鈕標籤可以，完整句子才寫 `Go back to`；留下寫 `Stay in <站>`。land 的選項一不寫 `Go to 收工`，改寫 `Wrap up — 收工`，標籤裡仍有「收工」，gateProblem 會過。
