@@ -18,3 +18,5 @@ stamp: 2026-10-29
 ## 為什麼還開著
 
 程式面沒有缺口：`lib/quota.js` 的 `MIN_POINTS = 10` 就是要擋掉現在這種資料，所以 `scripts/quota.js` 在真實的 limits 記錄上拒絕是對的，不是 bug。05dd0250（2026-10-06）與 50753840、ac231715（2026-10-04）之後，成功路徑與成對寫入的還原仍只由合成資料測試證明，沒有一次真實資料的紀錄。要等 .fankeel/build/limits（hooks/pane-limits.ts 寫，`limitsText(root)` 與 `readings` 讀）累積出某個 7 天視窗內動了 10 點以上；到時先跑 `node scripts/quota.js --dry-run`，exit 0 並印出 `quota.week` 才真寫，真寫前複製 profile.json 備份，並把前後差異寫進報告。這次 dry-run 的 exit code 從 1 變 0，就是可以收掉的訊號。
+
+完成（2026-10-29）：真實資料上 `node scripts/quota.js --dry-run` exit 0（`quota.week 66`，11-05T04:00Z 視窗 20 點、$13.14），已備份機器設定檔後真寫，前後只多 `quota.week` 與 `quota.calibrated` 兩鍵。報告：docs/90-agent/reports/2026-10-29-quota-real-data.md。

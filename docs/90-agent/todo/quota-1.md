@@ -14,3 +14,5 @@ stamp: 2026-10-29
 要做成：hooks/pane-limits.ts 已把 5h／7d 讀數寫進 .fankeel/build/limits，`readings` 與 `limitsText(root)` 讀得到，所以只需等到序列跨過一次 7d reset，再用第三點以後的序列分辨 7d 的差距是讀數延遲，還是計算口徑不同。
 
 完成條件：.fankeel/build/limits 的記錄有跨過一次 7d reset 的真實讀數，序列分得出延遲或計別。
+
+完成（2026-10-29）：limits 記錄已跨過一次 7d reset（04:00Z 視窗 88% → 11-05T04:00Z 視窗 0% 起算）。同一時段看到兩條各自的 7d 表（`resets_at` 19:00Z 與 04:00Z 交替），不是讀數延遲；但 09-21 那兩點 4.7 倍的成因這份記錄沒有分出來，只排除了延遲這一項。報告：docs/90-agent/reports/2026-10-29-quota-real-data.md。
