@@ -699,7 +699,8 @@ test('a brain is told the gate shape and that option one names the next stage', 
   seed(root, { stage: 'survey', started: '2026-09-19T09:30:12.345Z' });
   const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
   assert.match(text, /carries `header` \(12 columns at most/);
-  assert.match(text, /option one's label names `design`/);
+  assert.match(text, /option one's label names `design`: `Go to DESIGN`/);
+  assert.match(text, /option two `Stay in SURVEY` \(or `Back to <STAGE>`\)/);
   // readGate refuses a gate with no pause option and a non-empty `next` is
   // required (lib/handoff.js ruleProblem); on 09-30 two verify gates were
   // refused for the pause because the brief never said so.
@@ -715,7 +716,7 @@ test('a last-stage brain is told the words option one needs, and to write and ch
   seedProfile(root, { 'stage.agents': ['land'] });
   seed(root, { stage: 'land', started: '2026-09-19T09:30:12.345Z' });
   const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
-  assert.match(text, /option one's label names `down` or `收工`/);
+  assert.match(text, /option one's label is `Wrap up — 收工`/);
   assert.match(text, /`context7 處置` is 13/);
   assert.match(text, /Write the file with Write, never a shell/);
   assert.match(text, /scripts\/gate-check\.js --session \S+ \S*land\.md` and return the path once it prints `gate ok`/);

@@ -132,6 +132,10 @@ test('option one names the next stage when one is given, or standing down at the
   g.questions[0].options[0].label = 'Wrap up — 收工';
   fs.writeFileSync(file, block(g));
   assert.deepEqual(readGate(file, null), g);
+  // `down` still names standing down, so the refusal is gate-19's, quoting the label to write.
+  g.questions[0].options[0].label = 'Stand down';
+  fs.writeFileSync(file, block(g));
+  assert.match(readGate(file, null).detail, /must read "Wrap up — 收工"/);
   g.questions[0].options[0].label = 'Go to AUDIT';
   fs.writeFileSync(file, block(g));
   assert.equal(readGate(file, null).invalid, 'questions[0].options[0].label');

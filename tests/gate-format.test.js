@@ -39,3 +39,16 @@ test('only the first question is held to it: a patrol side question keeps its ow
         { label: '本輪不做', description: 'd' }, { label: '本輪跑', description: 'd' }] });
     assert.equal(formatProblem(g, 'plan', ROUTE), null);
 });
+
+// A gate the main session typed reaches formatProblem unchecked for shape
+// (hooks/gate.js): a missing option is a refusal, never a throw the hook's
+// catch would let out.
+test('a gate with one option, or none, is refused at the option it lacks', () => {
+    const one = gate('PLAN', 'PLAN -> BUILD | fankeel : x　？', 'Go to BUILD', 'Stay in PLAN');
+    one.questions[0].options.splice(1);
+    assert.equal(formatProblem(one, 'build', ROUTE).at, 'questions[0].options[1].label');
+    one.questions[0].options = [];
+    assert.equal(formatProblem(one, 'build', ROUTE).at, 'questions[0].options[0].label');
+    delete one.questions[0].options;
+    assert.equal(formatProblem(one, 'build', ROUTE).at, 'questions[0].options[0].label');
+});

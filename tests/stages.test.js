@@ -1073,7 +1073,7 @@ test('land may dispatch the retro reviewer, and its skill runs it after every ex
   const rules = byName('land').rules;
   assert.ok(rules.includes('Gate: 收工, open, `record.js session` then retro, 暫停.'), 'the land rule does not give the four options in order');
   assert.ok(!rules.some((r) => /retro only after/.test(r)), 'the land rule still offers the retro after the export');
-  assert.match(land, /1\. `收工 \(Recommended\)`.*2\. .*3\. `匯出並回顧`.*4\. `暫停`/);
+  assert.match(land, /1\. `Wrap up — 收工 \(Recommended\)`.*2\. `Stay in LAND`.*3\. `匯出並回顧`.*4\. `暫停`/);
   assert.doesNotMatch(land, /retro, offered after it|its gate carries the offer|the retro is offered/);
   assert.match(land, /回顧這次哪裡可以改進/);
   assert.match(land, /nothing runs until the user picks `匯出並回顧`/);

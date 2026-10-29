@@ -804,6 +804,8 @@ test('an uncontrolled stage: the next stage is matched whatever its case, and th
   };
   assert.match(JSON.parse(run(GATE, last, { tool_input: askOf(landOf('Wrap up — 收工 (Recommended)')) })).systemMessage, /this gate has 2 options/);
   assert.match(JSON.parse(run(GATE, last, { tool_input: askOf(landOf('Down (Recommended)')) })).hookSpecificOutput.permissionDecisionReason, /questions\[0\]\.options\[0\]\.label/);
+  // `down` alone tells the gate: a route-back in the format that also says it is counted.
+  assert.match(JSON.parse(run(GATE, last, { tool_input: askOf(landOf('Back to BUILD, or stand down')) })).systemMessage, /this gate has 2 options/);
   const other = JSON.parse(JSON.stringify(THIN));
   other[0].options[0].label = 'download the log';
   assert.equal(run(GATE, last, { tool_input: askOf(other) }).trim(), '', 'down inside a longer word');
@@ -832,6 +834,17 @@ test('an uncontrolled stage: a gate not in the gate-19 format is denied, naming 
   assert.match(out.hookSpecificOutput.permissionDecisionReason, /questions\[0\]\.header/);
   const ok = run(GATE, root, { tool_input: askOf(good) }).trim();
   assert.equal(ok ? JSON.parse(ok).hookSpecificOutput : undefined, undefined);
+});
+
+test('an uncontrolled stage: a one-option gate is denied at the option it lacks, not let out', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'build', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  agentsAt(root, 'survey');
+  const one = JSON.parse(JSON.stringify(THIN));
+  one[0].options.splice(1);
+  const out = JSON.parse(run(GATE, root, { tool_input: askOf(one) }));
+  assert.equal(out.hookSpecificOutput.permissionDecision, 'deny');
+  assert.match(out.hookSpecificOutput.permissionDecisionReason, /questions\[0\]\.options\[1\]\.label/);
 });
 
 test('a controlled stage: the option count is not this check\'s to say', () => {
