@@ -1330,9 +1330,9 @@ test('#/live with nothing waiting says so in one line, and every block is writte
     assert.match(lvBlock(html, 'live-gate'), /沒有在等你的 gate/);
     assert.match(lvBlock(html, 'live-maybe'),
         /<form method="post" action="\/clear-stale">[\s\S]*name="root" value="F:\\ws\\beta"[\s\S]*clear 1 stale/);
-    const src = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+    const src = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'assets', 'station', 'nav.js'), 'utf8');
     for (const n of ['live-gate', 'live-run', 'live-maybe', 'live-idle']) {
-        assert.ok(src.includes('data-block="' + n + '"'), n + ' is not written literally in assets/station/station.js');
+        assert.ok(src.includes('data-block="' + n + '"'), n + ' is not written literally in assets/station/nav.js');
     }
     global.window.STATION.serve = false;
 });
