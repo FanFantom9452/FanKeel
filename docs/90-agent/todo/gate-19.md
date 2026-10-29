@@ -22,3 +22,5 @@ link: lib/handoff.js
 - 格式和使用者定案。
 - 接下來的 gate 都照新格式出現。
 - 如果選了強制，有測試證明不合格的 header 會被擋。
+
+進度（2026-10-29）：使用者看過範例後定案格式。header 填剛結束的那一站，英文大寫（SURVEY、BUILD、VERIFY、LAND），12 欄放得下 MAX_HEADER_WIDTH；question 開頭是 `<專案> | <現在站> → <下一站> | <任務短名>：`，後面接結果與問題。使用者認可的範例：`fankeel | SURVEY → PLAN | TODO 盤點：4 條可做，進 plan？`、`fankeel | BUILD → VERIFY | TODO 盤點：6 項都綠，進 verify？`、`fankeel | VERIFY → BUILD | /m 多台合併：兩項沒過，退回？`、`Waypoint | LAND → 收工 | 7d 色階：已合併，收工？`。「現在站→建議站」放不進 header（超過 12 欄），所以改放在 question 開頭。要不要強制檢查（lib/stages.js ALWAYS 加規則、lib/handoff.js gateProblem 加檢查）還沒決定，此條保持 Ready，這次沒改程式。
