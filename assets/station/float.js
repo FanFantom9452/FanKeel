@@ -401,8 +401,9 @@
         // connection) is given up on: the tag is dropped and `done(false)` runs,
         // so `busy` always clears and the next tick tries again rather than going
         // silent forever. `settled` keeps a late `onload` after that point from
-        // running `done` a second time. 4000 is a literal, not a `var`: the focus
-        // page calls this before any `var` down here is assigned.
+        // running `done` a second time. The focus page calls this too, so
+        // float.js must be loaded there (lib/station.js FOCUS_NEEDS) and FLOAT()'s K
+        // holds only getters and hoisted functions: no `var` of the full page is assigned.
         function reload(src, done) {
             var el = doc.createElement('script');
             var settled = false;

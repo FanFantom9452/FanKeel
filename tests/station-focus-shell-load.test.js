@@ -19,14 +19,14 @@ const HEAD = { plan: 'data-block="focus-header"', gate: 'data-block="gate-head"'
 
 // The scripts focusShell names, run in order in one context that has `window`
 // and `document` and nothing else a browser lacks; returns what #focus holds.
-function drawn(tab, shells) {
+function drawn(tab, shells, serve, ticks) {
     const html = station.focusShell(SID, tab);
     const names = [...html.matchAll(/<script src="\/station\/([^"]+)"><\/script>/g)].map((m) => m[1]).filter((n) => !n.startsWith('focus/'));
     const focus = { innerHTML: '', addEventListener() {}, classList: { toggle() {} } };
     const doc = { hidden: false, head: { appendChild() {} }, getElementById: () => focus, createElement: () => ({}), addEventListener() {}, querySelectorAll: () => [] };
-    const win = { STATION_FOCUS: { id: SID, tab }, STATION: { serve: false, pricesVerified: '2026-09-04', sessions: [ROW] },
+    const win = { STATION_FOCUS: { id: SID, tab }, STATION: { serve: !!serve, pricesVerified: '2026-09-04', sessions: [ROW] },
         STATION_DETAIL: { [SID]: { tasks: [], gate: null, shells } }, location: { hash: '' },
-        setInterval() {}, setTimeout() {}, clearTimeout() {}, addEventListener() {} };
+        setInterval(fn) { if (ticks) ticks.push(fn); }, setTimeout() {}, clearTimeout() {}, addEventListener() {} };
     const box = vm.createContext({ window: win, document: doc, URLSearchParams });
     for (const n of names) vm.runInContext(fs.readFileSync(path.join(ASSETS, n), 'utf8'), box, { filename: n });
     return focus.innerHTML;
@@ -44,6 +44,13 @@ for (const tab of station.FOCUS_TABS) {
         assert.ok(html.includes('node scripts/suite.js'), tab);
     });
 }
+
+test('the served focus page\'s poll tick reloads its script without throwing', () => {
+    const ticks = [];
+    drawn('plan', [], true, ticks);
+    assert.ok(ticks.length > 0);
+    for (const fn of ticks) assert.doesNotThrow(fn);
+});
 
 test('every script the focus shell loads is a module the station serves', () => {
     const html = station.focusShell(SID, 'gate');
