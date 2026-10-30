@@ -156,12 +156,18 @@ test('an ask human block adds the glance, a details per question and the wait li
     assert.ok(html.includes('data-block="glance"'));
     assert.ok(html.includes('data-block="ask-chart"'));
     assert.ok(html.includes('data-block="ask-human-pending"'));
-    assert.ok(html.includes('data-block="ask-q1" open>'), 'a pending question is not open');
+    assert.ok(html.includes('data-block="ask-q1" open>'), 'a pending question is open');
     assert.ok(html.includes('data-block="ask-q2" open>'));
     assert.ok(html.includes('還沒有：等你回答'));
     assert.ok(html.includes('還沒回答'));
     assert.ok(html.includes('<span class="tag">判官假設</span>'));
     assert.ok(!html.includes('你選的'), 'a pending page marks a pick');
+    assert.ok(html.includes('data-block="view-toggle"'));
+    assert.match(html, /<input class="vt vt-short" type="radio" name="view" id="view-short" checked>/);
+    assert.match(html, /<input class="vt vt-long" type="radio" name="view" id="view-long">/);
+    assert.ok(html.includes('<label class="l-short" for="view-short">簡短</label>'));
+    assert.ok(html.includes('<label class="l-long" for="view-long">詳細</label>'));
+    assert.ok(html.includes('data-block="record"'));
     const ids = [...html.matchAll(/ id="([^"]+)"/g)].map((m) => m[1]);
     assert.equal(new Set(ids).size, ids.length, 'ids repeat');
 });
@@ -178,8 +184,8 @@ test('an answered ask human page marks each answer row, tags 偏離假設 only o
     assert.equal((html.match(/<span class="tag you">你選的<\/span>/g) || []).length, 1);
     assert.equal((html.match(/<tr class="picked"><td class="opt"/g) || []).length, 1);
     assert.equal((html.match(/<tr class="picked offrow">/g) || []).length, 1);
-    assert.ok(html.includes('data-block="ask-q2" open>'), 'the off-assumed question is not open');
-    assert.ok(html.includes('data-block="ask-q1">'), 'the assumed question is open');
+    assert.ok(html.includes('data-block="ask-q2" open>'), 'the off-assumed question is open');
+    assert.ok(html.includes('data-block="ask-q1">'), 'the assumed question is closed');
 });
 
 test('each ask human question draws one flowchart, answered or not, and the page carries no script', async () => {
@@ -217,4 +223,81 @@ test('a chart that fails to draw falls back to a note, and the rest of the page 
     assert.equal((html.match(/<pre class="bad">這張圖畫不出來：壞了<\/pre>/g) || []).length, 2);
     assert.ok(html.includes('data-block="glance"'));
     assert.ok(html.includes('data-block="ask-q1"'));
+});
+
+// Runs pageOf with board.renderBoard recording every chart source it is handed.
+async function pageWithSources(text) {
+    const real = board.renderBoard;
+    const sources = [];
+    board.renderBoard = async (src) => { sources.push(src.split('\n').map((l) => JSON.parse(l))); return '<svg></svg>'; };
+    try {
+        return { html: await pageOf(text, {}), sources };
+    } finally {
+        board.renderBoard = real;
+    }
+}
+const chartFor = (sources, q) => sources.find((s) => s.some((l) => l.node === 'q' && l.label === q));
+const hot = (chart, id) => chart.find((l) => l.edge === id).strokeWidth === 2.5;
+const badgeIn = (html) => /<p class="human[^"]*" data-block="human-badge">.*?<\/p>/.exec(html)[0];
+
+test('an answer that matches no option reads 分支外 in the badge and summary, opens its details, and bolds no path', async () => {
+    const { html, sources } = await pageWithSources(answeredOf(ASK, ['自己寫的答案', '開、驗完關回'], '2026-10-30T07:12:40Z'));
+    assert.ok(badgeIn(html).includes('第 1 題是分支外的回答'));
+    assert.ok(html.includes('你的回答：自己寫的答案 · 分支外'));
+    assert.ok(html.includes('data-block="ask-q1" open>'));
+    const chart = chartFor(sources, '空白頁時，網址列是哪一頁？');
+    assert.ok(!chart.some((l) => l.strokeWidth === 2.5), 'a path is bold for an answer outside every option');
+});
+
+test('every answer the assumed one says 各題都照判官假設 in the badge', async () => {
+    const html = await pageOf(answeredOf(ASK, ['/gate 無紅字', '開、驗完關回'], '2026-10-30T07:12:40Z'), {});
+    assert.ok(badgeIn(html).includes('各題都照判官假設'));
+    assert.ok(!badgeIn(html).includes('走了分支'));
+});
+
+test('a board that fails its check shows the note with the first problem, for every question', async () => {
+    const real = board.checkBoard;
+    board.checkBoard = async () => ({ ok: false, problems: [{ message: '圖不合格' }] });
+    let html;
+    try {
+        html = await pageOf(ASK, {});
+    } finally {
+        board.checkBoard = real;
+    }
+    assert.equal((html.match(/<pre class="bad">這張圖畫不出來：圖不合格<\/pre>/g) || []).length, 2);
+});
+
+test('pick: in a question, pro, con or reason is set in code', async () => {
+    const text = ASK.replace('空白頁時，網址列是哪一頁？', '照 pick: 還是另選？').replace('直接修真正擋住畫面的錯', '比 pick: 直接').replace('多一輪查錯', '不如 pick: 快')
+        .replace('現場畫面只有你看過', '與 pick: 無關');
+    const html = await pageOf(text, {});
+    assert.ok(html.includes('照 <code>pick:</code> 還是另選？'));
+    assert.ok(html.includes('比 <code>pick:</code> 直接'));
+    assert.ok(html.includes('不如 <code>pick:</code> 快'));
+    assert.ok(html.includes('無路徑可答：與 <code>pick:</code> 無關'));
+});
+
+test('an answered chart is titled 你的回答走的路 and bolds the answered path, not the assumed one', async () => {
+    const q = '要不要暫開 <gate.station>？';
+    const answered = await pageWithSources(answeredOf(ASK, ['/gate 無紅字', '不開，改用 Playwright'], '2026-10-30T07:12:40Z'));
+    const a = chartFor(answered.sources, q);
+    assert.equal(a[0].title, '你的回答走的路');
+    assert.ok(hot(a, 'e1') && hot(a, 'f1'));
+    assert.ok(!hot(a, 'e0') && !hot(a, 'f0'));
+    const pending = await pageWithSources(ASK);
+    const p = chartFor(pending.sources, q);
+    assert.equal(p[0].title, '判官假設的路');
+    assert.ok(hot(p, 'e0') && !hot(p, 'e1'));
+});
+
+test('option label, branch and answer text reach the badge and summary escaped', async () => {
+    const text = ASK.replace('/gate 有紅字 → 先修那個錯誤', '<b>L</b> → <b>B</b>');
+    const off = await pageOf(answeredOf(text, ['<b>L</b>', '開、驗完關回'], '2026-10-30T07:12:40Z'), {});
+    assert.ok(badgeIn(off).includes('第 1 題走了分支：&lt;b&gt;B&lt;/b&gt;'));
+    assert.ok(off.includes('你的回答：&lt;b&gt;L&lt;/b&gt;'));
+    assert.ok(off.includes('<td class="opt" data-label="選項">&lt;b&gt;L&lt;/b&gt;'));
+    assert.ok(!off.includes('<b>'), 'markup from the fixture reached the page raw');
+    const out = await pageOf(answeredOf(ASK, ['<b>zz</b>', '開、驗完關回'], '2026-10-30T07:12:40Z'), {});
+    assert.ok(out.includes('你的回答：&lt;b&gt;zz&lt;/b&gt; · 分支外'));
+    assert.ok(!out.includes('<b>'));
 });
