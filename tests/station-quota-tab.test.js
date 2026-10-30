@@ -151,6 +151,21 @@ test('5h counts only the part of a bar inside its window: the rise and the spend
     assert.doesNotMatch(h, /\+6%|約佔 4%/);
 });
 
+test('5h counts only the part of a bar inside its window: the rise after the window end stays out', () => {
+    // The window runs 05:00–10:00 and the line carries a reading from 10:30, past its
+    // end. alpha runs 06:00–11:00: inside the window the line climbs 2 → 6; to alpha's
+    // own end it would also climb 6 → 9 at 10:30.
+    const acc = Object.assign({}, ACCOUNTS[0], { windows: [{ start: T(5), end: T(10), steps: [
+        { from: T(5), to: T(7), v: 2, gap: false }, { from: T(7), to: T(10, 30), v: 6, gap: false }, { from: T(10, 30), to: NOW, v: 9, gap: true }] }] });
+    const sess = [row('s1', 'alpha', '4 04:00', seg('alpha', T(6), T(11)), [[T(7), 1], [T(10, 30), 1]])];
+    const { D, ctx, html } = tab([acc], sess);
+    D.pick(bar('s1:0'), ctx);
+    const h = html('5h');
+    assert.match(h, /<span>10-30 05:00–10:00<\/span>/);
+    assert.match(h, /這段額度 \+4%，這個 task 約佔 4%/);
+    assert.doesNotMatch(h, /\+7%|約佔 7%/);
+});
+
 test('an account is named by its 7d reset, never by its key, uuid or email', () => {
     const named = [
         Object.assign({}, ACCOUNTS[0], { key: '0 23:55', wd: 0, hm: '23:55', uuid: '3f2a9c1e-uuid', email: 'me@example.com' }),

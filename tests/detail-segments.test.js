@@ -75,6 +75,18 @@ test('a segment\'s gates are the transcript\'s answered questions, asked to answ
     assert.deepEqual(d.segments.map((g) => [g.task, g.gates]), [['alpha', [{ start: at(10, 20), end: at(10, 25) }]]]);
 });
 
+test('a gate wait is clipped to each segment it crosses: asked before the start, answered after the end', () => {
+    // alpha runs 100–300, beta 300–500. One wait spans both and past either end; one
+    // straddles alpha's start, one beta's end.
+    const named = [{ verb: 'start', at: 100, task: 'alpha' }, { verb: 'task', at: 300, task: 'beta' }, { verb: 'down', at: 500, task: null }];
+    const waits = [{ askedAt: 50, answeredAt: 600 }, { askedAt: 80, answeredAt: 150 }, { askedAt: 450, answeredAt: 700 }];
+    const got = detail.segmentsOf(named, [], waits, 100, 900, '');
+    assert.deepEqual(got.map((g) => [g.task, g.start, g.end, g.gates]), [
+        ['alpha', 100, 300, [{ start: 100, end: 300 }, { start: 100, end: 150 }]],
+        ['beta', 300, 500, [{ start: 300, end: 500 }, { start: 450, end: 500 }]],
+    ]);
+});
+
 test('down closes the task; a transcript opening without start is one task under the entry\'s name from its first request', () => {
     const seq = [{ stage: 'build', at: 100, source: 'moves' }];
     assert.deepEqual(detail.segmentsOf([{ verb: 'down', at: 500, task: null }], seq, [{ askedAt: 200, answeredAt: 300 }], 50, 900, 'kept'),
