@@ -13,7 +13,7 @@ const gateCheck = require('../scripts/gate-check.js');
 
 const TICKS = '`'.repeat(3);
 const ROUTE = ['survey', 'plan', 'build', 'verify', 'land'];
-const GATE = { questions: [{ header: 'SURVEY', question: 'SURVEY -> PLAN | fankeel : t　plan?', multiSelect: false, options: [{ label: 'Go to PLAN (Recommended)', description: 'a' }, { label: 'Stay in SURVEY', description: 'b' }, { label: 'pause', description: 'c' }] }], next: 'plan' };
+const GATE = { questions: [{ header: 'Survey', question: 'Survey -> Plan | fankeel : t　plan?', multiSelect: false, options: [{ label: 'Go to Plan (Recommended)', description: 'a' }, { label: 'Stay in Survey', description: 'b' }, { label: 'pause', description: 'c' }] }], next: 'plan' };
 const ENTRIES = [{ id: 'flaky-3', title: '偶發三' }, { id: 'flaky-4', title: '偶發四' }, { id: 'flaky-5', title: '偶發五' }, { id: 'test-8', title: '認可上限' }];
 const SPLIT = /flaky-4, flaky-5 only share a line with another entry: one line counts for one entry, so split it, one line per entry \(一行只算一條，請拆開\)/;
 
@@ -58,8 +58,8 @@ test('a patrol gate naming an entry by its bare id is refused by the gate check 
     fs.writeFileSync(path.join(root, 'docs', 'todo', 'pane-17.md'), '---\nlabel: pane\ntitle: 窗格待辦\ndescription: d\nstate: ready\n---\n\nbody\n');
     const write = (label) => {
         const file = path.join(root, 'survey.md');
-        const questions = [{ header: 'SURVEY', question: 'SURVEY -> PLAN | fankeel : t　要進 plan 嗎？', multiSelect: false,
-            options: [{ label: 'Go to PLAN (Recommended)', description: 'd' }, { label: 'Stay in SURVEY', description: 'd' }, { label, description: 'd' }, { label: '暫停', description: 'd' }] }];
+        const questions = [{ header: 'Survey', question: 'Survey -> Plan | fankeel : t　要進 plan 嗎？', multiSelect: false,
+            options: [{ label: 'Go to Plan (Recommended)', description: 'd' }, { label: 'Stay in Survey', description: 'd' }, { label, description: 'd' }, { label: '暫停', description: 'd' }] }];
         fs.writeFileSync(file, '- 窗格待辦 — do now\n\n' + TICKS + 'json gate\n' + JSON.stringify({ questions, next: 'plan' }) + '\n' + TICKS + '\n');
         return file;
     };

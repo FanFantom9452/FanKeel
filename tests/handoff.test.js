@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const tmp = require('./tmp.js');
-const { handoffPath, commitPath, answerPath, readGate, writeAnswer, lapsUsed, readsOf, previousHandoff, ledgerCommitPath, newestCommit, skipReason, gateMatches, answersGate, liveMarks } = require('../lib/handoff.js');
+const { handoffPath, commitPath, answerPath, readGate, writeAnswer, lapsUsed, readsOf, previousHandoff, ledgerCommitPath, newestCommit, skipReason, gateMatches, answersGate, liveMarks, stageWord } = require('../lib/handoff.js');
 
 const DATA = { started: '2026-09-19T09:30:12.345Z' };
 const TICKS = '`'.repeat(3);
@@ -17,8 +17,8 @@ const gateOf = (s) => ({
 });
 // A gate-19 first question (lib/handoff.js formatProblem) at `from`, moving to `to`.
 const formatted = (g, from, to) => {
-  Object.assign(g.questions[0], { header: from, question: from + ' -> ' + to + ' | fankeel : t　？' });
-  g.questions[0].options[1].label = 'Stay in ' + from;
+  Object.assign(g.questions[0], { header: stageWord(from), question: stageWord(from) + ' -> ' + stageWord(to) + ' | fankeel : t　？' });
+  g.questions[0].options[1].label = 'Stay in ' + stageWord(from);
   return g;
 };
 const moved = (...stages) => Object.assign({}, DATA, { moves: stages.map((s, i) => [s, 1000 + i]) });
@@ -126,7 +126,7 @@ test('option one names the next stage when one is given, or standing down at the
   fs.writeFileSync(file, block(g));
   assert.equal(readGate(file, 'audit').invalid, 'questions[0].options[0].label');
   assert.deepEqual(readGate(file), g);
-  g.questions[0].options[0].label = 'Go to AUDIT'; // this test is about naming, not width
+  g.questions[0].options[0].label = 'Go to Audit'; // this test is about naming, not width
   fs.writeFileSync(file, block(g));
   assert.deepEqual(readGate(file, 'audit'), g);
   g.questions[0].options[0].label = 'Wrap up — 收工';
@@ -136,7 +136,7 @@ test('option one names the next stage when one is given, or standing down at the
   g.questions[0].options[0].label = 'Stand down';
   fs.writeFileSync(file, block(g));
   assert.match(readGate(file, null).detail, /must read "Wrap up — 收工"/);
-  g.questions[0].options[0].label = 'Go to AUDIT';
+  g.questions[0].options[0].label = 'Go to Audit';
   fs.writeFileSync(file, block(g));
   assert.equal(readGate(file, null).invalid, 'questions[0].options[0].label');
 });
@@ -146,7 +146,7 @@ test('option one names the next stage when one is given, or standing down at the
 test('option one may send the work back to any stage on the route, never one off it', () => {
   const file = path.join(tmp('fankeel-handoff-'), 'verify.md');
   const g = formatted(gateOf('v'), 'VERIFY', 'BUILD');
-  g.questions[0].options[0].label = 'Back to BUILD';
+  g.questions[0].options[0].label = 'Back to Build';
   fs.writeFileSync(file, block(g));
   assert.deepEqual(readGate(file, 'audit', ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land']), g);
   assert.equal(readGate(file, 'audit', ['survey', 'verify', 'audit']).invalid, 'questions[0].options[0].label');
@@ -485,8 +485,8 @@ test('readGate: a gate with an empty or missing next has no pause option and is 
 test('with rules, a gate with no pause is refused, and one naming a class below the floor is refused', () => {
   const file = path.join(tmp('fankeel-handoff-'), 'survey.md');
   const g = formatted(gateOf('s'), 'SURVEY', 'DESIGN');
-  g.questions[0].options[0].label = 'Go to DESIGN';
-  g.questions[0].options[1].label = 'Stay in SURVEY — 改走 bounded';
+  g.questions[0].options[0].label = 'Go to Design';
+  g.questions[0].options[1].label = 'Stay in Survey — 改走 bounded';
   fs.writeFileSync(file, block(g));
   assert.deepEqual(readGate(file, 'design'), g, 'without rules nothing new is asked');
   const paused = readGate(file, 'design', null, { pause: true });
@@ -508,15 +508,15 @@ test('with rules, a gate with no pause is refused, and one naming a class below 
 test('with rules, a first question with two options is refused, and a later question may keep two', () => {
   const file = path.join(tmp('fankeel-handoff-'), 'build.md');
   const g = formatted(gateOf('s'), 'BUILD', 'VERIFY');
-  g.questions[0].options[0].label = 'Go to VERIFY';
-  g.questions[0].options[1].label = 'Stay in BUILD — 暫停';
+  g.questions[0].options[0].label = 'Go to Verify';
+  g.questions[0].options[1].label = 'Stay in Build — 暫停';
   fs.writeFileSync(file, block(g));
   assert.deepEqual(readGate(file, 'verify'), g, 'without rules two options still pass');
   const two = readGate(file, 'verify', null, { pause: true });
   assert.equal(two.invalid, 'questions[0].options');
   assert.equal(two.detail, 'the first question has 2 options, 3 at least: the approval, the open decision or none, and the pause');
 
-  g.questions[0].options.splice(1, 0, { label: 'Back to BUILD', description: 'b' });
+  g.questions[0].options.splice(1, 0, { label: 'Back to Build', description: 'b' });
   g.questions.push({ question: 'entry?', header: 'entry', multiSelect: false, options: [{ label: 'now', description: 'a' }, { label: 'later', description: 'b' }] });
   fs.writeFileSync(file, block(g));
   assert.deepEqual(readGate(file, 'verify', null, { pause: true }), g, 'three on the first and two on the second pass');
