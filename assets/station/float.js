@@ -5,7 +5,7 @@
     'use strict';
     function make(K) {
         // One alias per name K carries, so the bodies below moved verbatim.
-        var loc = K.loc, esc = K.esc, dur = K.dur, w = K.w;
+        var loc = K.loc, esc = K.esc, dur = K.dur, w = K.w, doc = K.doc, store = K.store;
 
         // ---- tune: a block changed ----------------------------------------------
         // One project's queue can sit on several sessions' rows; an id is one
@@ -265,12 +265,174 @@
             return '<p class="mute" style="margin:4px 0 0">' + loc('proj.boardColon', '架構白板：')
                 + '<a href="' + esc(href) + '" target="_blank" rel="noopener">' + loc('proj.boardOpen', '開啟') + '</a></p>';
         }
+        // ---- floating panel drawing, gate posting, reload ----------------------
+        // The poll repaints this every few seconds; a box being typed in or a mic that is listening would
+        // lose its place, so only a click (`force`) repaints then.
+        function drawFloat(force) {
+            var fk = doc.getElementById('fk');
+            if (!fk) return;
+            var ae = doc.activeElement;
+            if (!force && (K.fkRec() || (ae && ae.getAttribute && ae.getAttribute('data-gfree') !== null))) return;
+            var held = K.S().sessions.some(function (s) { return s.pending && s.pending.questions && s.pending.questions.length; });
+            if (!held) delete K.view().pg['fk:shut'];
+            var old = doc.getElementById('fkp'), top = old ? old.scrollTop : 0;
+            fk.innerHTML = floatHtml(K.S().sessions, K.view().notes, K.view().fkOpen, K.S().serve ? Date.now() : K.NOW(), K.view().pg, w.Notification ? w.Notification.permission : 'denied', K.view().fkBox, K.view().gone);
+            var p = doc.getElementById('fkp'); if (p && top) p.scrollTop = top;
+            fk.className = 'fk' + (held ? ' hasgate' : '');
+        }
+        function fkFit(b) {
+            var vw = w.innerWidth, vh = w.innerHeight;
+            return vw && vh ? fkBoxClamp(b, vw, vh) : b;
+        }
+        function goneSave() { store(K.FK_GONE_KEY(), JSON.stringify(goneKeys(K.view().gone))); }
+        function fkApply() {
+            var p = doc.getElementById('fkp'), b = K.view().fkBox;
+            if (!p || !b) return;
+            p.style.width = Math.round(b.w) + 'px';
+            p.style.height = Math.round(b.h) + 'px';
+        }
+        // Close the panel, also when a held gate would keep it open: `fk:shut` stands until the gate is gone.
+        function fkClose() {
+            var heldNow = K.S().sessions.some(function (s) { return s.pending && s.pending.questions && s.pending.questions.length; });
+            if (K.view().fkOpen) K.view().notes = readAll(K.view().notes);
+            K.view().fkOpen = false;
+            if (heldNow) K.view().pg['fk:shut'] = true;
+            drawFloat(true);
+        }
+        // The answers the form holds right now, read off the DOM with `pgAnswers`,
+        // and the same read written back into `view.pg` so a redraw keeps them.
+        function pgRead(pgb, questions) {
+            var id = pgb.getAttribute('data-pg-id'), picks = {}, others = {};
+            questions.forEach(function (q, i) {
+                picks[i] = [].map.call(pgb.querySelectorAll('input[name="pg-' + i + '"]:checked'), function (el) { return el.value; });
+                var t = pgb.querySelector('[data-pg-other="' + i + '"]');
+                others[i] = t ? t.value : '';
+                K.view().pg[id + ':' + i] = picks[i];
+                K.view().pg[id + ':' + i + ':other'] = others[i];
+            });
+            return pgAnswers(questions, picks, others);
+        }
+        function pgSync(pgb) {
+            var who = K.S().sessions.filter(function (x) { return x.id === pgb.getAttribute('data-pg-id'); })[0];
+            var qs = (who && who.pending && who.pending.questions) || [];
+            var got = pgRead(pgb, qs), btn = pgb.querySelector('[data-answer]'), cnt = pgb.querySelector('.pgn');
+            var sent = K.view().pg[pgb.getAttribute('data-pg-id') + ':send'];
+            var sending = sent && who && who.pending && sent.gate === who.pending.until && (sent.busy || sent.cls === 'ok');
+            if (btn) btn.disabled = got.missing > 0 || !!sending;
+            if (cnt) cnt.textContent = (qs.length - got.missing) + ' / ' + qs.length;
+        }
+        // One POST /answer that says it is on its way. Every button in `box` is
+        // disabled and `line` reads 送出中… until the reply. A reply ok leaves
+        // them disabled; a refusal, a network error or no reply in SEND_MS gives
+        // them back — the server's own gate waits 60 seconds (`gate.station`),
+        // so 10 leaves room to press again. The state is kept in `view.pg` under
+        // `<id>:send` first, because the poll's redraw replaces `box` and draws
+        // from there (`gateCountdownHtml`, `pendingGateHtml`).
+        var SEND_MS = 10000;
+        function answerPost(id, box, line, cls, form, said, failed) {
+            var btns = box.querySelectorAll ? [].slice.call(box.querySelectorAll('[data-gop],[data-gho],[data-answer],[data-gfs]')) : [];
+            var who = K.S().sessions.filter(function (x) { return x.id === id; })[0], gate = who && who.pending ? who.pending.until : null;
+            var ac = typeof AbortController === 'function' ? new AbortController() : null, over = false, timer;
+            function show(busy, c, t) {
+                K.view().pg[id + ':send'] = { busy: busy, cls: c, text: t, gate: gate };
+                btns.forEach(function (b) { b.disabled = busy || c === 'ok'; });
+                if (!line) return;
+                line.className = cls + (c ? ' ' + c : '');
+                line.textContent = t;
+            }
+            function give(c, t) {
+                if (over) return;
+                over = true;
+                w.clearTimeout(timer);
+                show(false, c, t);
+            }
+            show(true, 'wait', loc('poll.sending', '送出中…'));
+            timer = w.setTimeout(function () {
+                give('bad', loc('poll.notConfirmedRetry', '還沒確認送到：可以再按一次'));
+                if (ac) ac.abort();
+            }, SEND_MS);
+            var init = { method: 'POST', body: form };
+            if (ac) init.signal = ac.signal;
+            fetch('answer', init).then(function (r) {
+                return r.text().then(function (t) {
+                    give(r.ok ? 'ok' : 'bad', (r.ok ? said : r.status + ' — ') + t.trim());
+                });
+            }, function () { give('bad', failed + loc('poll.pressAgain', '可以再按一次')); });
+        }
+        // One POST /answer from the floating icon: an option, or the hand-off.
+        function gatePost(gc, fill, said) {
+            var id = gc.getAttribute('data-pg-id');
+            var who = K.S().sessions.filter(function (x) { return x.id === id; })[0];
+            if (!who || !who.pending) return;
+            var form = new URLSearchParams();
+            form.set('nonce', K.S().nonce || '');
+            form.set('root', gc.getAttribute('data-pg-root'));
+            form.set('id', id);
+            fill(form, who);
+            answerPost(id, gc, gc.querySelector('.gend'), 'gend', form, said, loc('poll.couldNotSendServeRunning', '送不出去：serve 還在跑嗎？'));
+        }
+        // The countdown moves every second between re-reads, on `tickNow`'s tick.
+        function tickGates(now) {
+            [].forEach.call(doc.querySelectorAll('#fk .gc[data-until]'), function (g) {
+                var total = Number(g.getAttribute('data-total')) || 60;
+                var left = Math.max(0, Math.min(total, Math.round((Number(g.getAttribute('data-until')) - now) / 1000)));
+                var sec = g.querySelector('.gsec'), bar = g.querySelector('.gbar i');
+                if (sec) sec.textContent = gateClock(left);
+                if (bar) bar.style.width = (left / total * 100).toFixed(1) + '%';
+            });
+        }
+        // A settled tune request, kept as a note in the floating icon's panel
+        // and — with the tab in the background and permission given — said as a
+        // browser notification. The changed page reloads itself through tune's
+        // own overlay.
+        function tuneNotify(prev, next) {
+            var evs = tuneEvents(prev, next);
+            if (!evs.length) return;
+            K.view().notes = evs.concat(K.view().notes).slice(0, 20);
+            evs.forEach(function (ev) {
+                if (doc.hidden && w.Notification && w.Notification.permission === 'granted') {
+                    try { new w.Notification(toastText(ev)); } catch (err) { /* the browser refused it */ }
+                }
+            });
+            drawFloat();
+        }
+        // A few seconds — well under anything a healthy local server needs — past
+        // which a script that neither loaded nor errored (a hung server, a stuck
+        // connection) is given up on: the tag is dropped and `done(false)` runs,
+        // so `busy` always clears and the next tick tries again rather than going
+        // silent forever. `settled` keeps a late `onload` after that point from
+        // running `done` a second time. 4000 is a literal, not a `var`: the focus
+        // page calls this before any `var` down here is assigned.
+        function reload(src, done) {
+            var el = doc.createElement('script');
+            var settled = false;
+            var timer = w.setTimeout(function () {
+                if (settled) return;
+                settled = true;
+                if (el.parentNode) el.parentNode.removeChild(el);
+                done(false);
+            }, 4000);
+            var finish = function (ok) {
+                if (settled) return;
+                settled = true;
+                w.clearTimeout(timer);
+                if (el.parentNode) el.parentNode.removeChild(el);
+                done(ok);
+            };
+            el.onload = function () { finish(true); };
+            el.onerror = function () { finish(false); };
+            el.src = src + (src.indexOf('?') < 0 ? '?' : '&') + 't=' + Date.now();
+            doc.head.appendChild(el);
+        }
         return {
             tuneItems: tuneItems, tuneOpen: tuneOpen, tuneEvents: tuneEvents, toastText: toastText, floatNotes: floatNotes,
             readAll: readAll, dismissNote: dismissNote, clearNotes: clearNotes, goneKeys: goneKeys, goneParse: goneParse,
             noteHtml: noteHtml, gateClock: gateClock, micOk: micOk, gateFreeHtml: gateFreeHtml, gateCountdownHtml: gateCountdownHtml,
             fkBoxParse: fkBoxParse, fkBoxClamp: fkBoxClamp, fkBoxStyle: fkBoxStyle, floatHtml: floatHtml, pgAnswers: pgAnswers,
-            pendingGateHtml: pendingGateHtml, changedParts: changedParts, effortChip: effortChip, heroEyebrow: heroEyebrow, boardLinkHtml: boardLinkHtml
+            pendingGateHtml: pendingGateHtml,
+            drawFloat: drawFloat, fkFit: fkFit, goneSave: goneSave, fkApply: fkApply, fkClose: fkClose, pgRead: pgRead, pgSync: pgSync,
+            answerPost: answerPost, gatePost: gatePost, tickGates: tickGates, tuneNotify: tuneNotify, reload: reload,
+            changedParts: changedParts, effortChip: effortChip, heroEyebrow: heroEyebrow, boardLinkHtml: boardLinkHtml
         };
     }
     var api = { make: make };
