@@ -257,14 +257,15 @@ test('the always-on block says what option two holds, not only option one', () =
 // every stage carries, or the first a model hears of it is a refusal.
 test('the always-on block carries the gate-19 format', () => {
   const all = ALWAYS.join(' ');
-  assert.match(all, /Header: `THIS`; stem/);
-  assert.match(all, /THIS -> NEXT \| project : task/);
+  assert.match(all, /Header: `This`; stem/);
+  assert.match(all, /This -> Next \| project : task/);
   assert.match(all, /`Go to` it/);
   assert.match(all, /Wrap up — 收工/);
   // lib/handoff.js formatProblem refuses a gate whose option two does not open
-  // "Stay in <STAGE>" or "Back to <STAGE>"; without this the first a model hears
+  // "Stay in <Stage>" or "Back to <Stage>"; without this the first a model hears
   // of it is the refusal.
-  assert.match(ALWAYS[0], /Option two names the open decision, or none — never unfinished work\. Label: `Stay in THIS`./);
+  assert.match(ALWAYS[0], /Option two names the open decision, or none — never unfinished work\. Label: `Stay in This`./);
+  assert.match(ALWAYS[0], /initial capital/);
 });
 
 test('option one is a token, so the route decides what it says', () => {

@@ -699,8 +699,8 @@ test('a brain is told the gate shape and that option one names the next stage', 
   seed(root, { stage: 'survey', started: '2026-09-19T09:30:12.345Z' });
   const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
   assert.match(text, /carries `header` \(12 columns at most/);
-  assert.match(text, /option one's label names `design`: `Go to DESIGN`/);
-  assert.match(text, /option two `Stay in SURVEY` \(or `Back to <STAGE>`\)/);
+  assert.match(text, /option one's label names `design`: `Go to Design`/);
+  assert.match(text, /option two `Stay in Survey` \(or `Back to <Stage>`\)/);
   // readGate refuses a gate with no pause option and a non-empty `next` is
   // required (lib/handoff.js ruleProblem); on 09-30 two verify gates were
   // refused for the pause because the brief never said so.
