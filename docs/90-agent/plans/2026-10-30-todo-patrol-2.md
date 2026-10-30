@@ -6,7 +6,7 @@ last_verified: 2026-10-30
 # TODO 全表盤點（10-30 第二輪）Implementation Plan
 
 **Goal:** 這輪盤點 do now 的三件做完：station 拆模組收尾（刪十個舊 live 死碼、量殼的行數鎖上限）、為「拔掉 ntfy.sh 第三方通知」承諾過卻沒建立的 watch 補上條目；使用者在場時親手做的兩件——knip 6.44.0 重測、真 gate 上標記 node。
-**Architecture:** Task 1-3 是 `2026-10-28-station-shell-7.md` 的三個任務，照原文搬進本計畫並把行號換成今天（station.js 1962 行）的位置，依序執行：先刪只測死碼的測試，再刪死碼，最後量行數。Task 4 用 `todo.js new` 建一筆 watch。Task 5、6 是 `user` 任務，放最後，沒有任何 dispatched 任務依賴它們。「手機 gate 通知標題放題目」不建任務：使用者在 survey gate 選了關閉，land 階段以 `todo.js done` 收掉。
+**Architecture:** Task 1 先在 live-page.js 做回 subagent 列（使用者在 build 的停點選了「先做回來」）。Task 2-4 是 `2026-10-28-station-shell-7.md` 的三個任務，照原文搬進本計畫並把行號換成今天（station.js 1962 行）的位置，依序執行：先刪只測死碼的測試，再刪死碼，最後量行數。Task 5 用 `todo.js new` 建一筆 watch。Task 6、6 是 `user` 任務，放最後，沒有任何 dispatched 任務依賴它們。「手機 gate 通知標題放題目」不建任務：使用者在 survey gate 選了關閉，land 階段以 `todo.js done` 收掉。
 **Tech Stack:** Node `>=22.5`（package.json），零 runtime 依賴，無 build；測試用 `node --test` 與 `vm.runInNewContext`（tests/station-src.js 依 index.html 的 `<script>` 順序串接）。
 **Spec:** ../../../.fankeel/build/task-20261030T045338/survey.md
 
@@ -23,12 +23,179 @@ last_verified: 2026-10-30
 
 ## Risks
 
-- 刪掉的三個測試檔裡有一個 case 其實在測仍活著的行為（gate 列從 `gateAt` 計數、確認存活的 lane 才有 subagent 列），刪了就沒人測 —— Task 1 —— 刪之前先在 live-page.js 的測試裡找對應斷言，找不到就停下回報。
-- 十個名字之一在前六份之後有了新的呼叫者 —— Task 2 —— 先 `grep -rnw` 四個目錄，扣掉定義、轉發與匯出仍有命中就停下回報。今天的 grep：只在 nav.js、station.js:395-396 與 :516、:520、station-view.test.js:1275/1319/1355、station-mod-nav.test.js:7-8 與 Task 1 的三個檔。
-- 刪完後的行數高於 2,500（有哪份計畫少搬）—— Task 3 —— 量到超過 2,500 就停下回報，不定上限。今天是 1962 行，刪完應約 1,950。
-- knip 的 `npx` 在 subagent 被權限拒絕 —— Task 5 —— 所以排成 `user`，由使用者在自己的終端機跑。
+- 刪掉的三個測試檔裡有一個 case 其實在測仍活著的行為（gate 列從 `gateAt` 計數、確認存活的 lane 才有 subagent 列），刪了就沒人測 —— Task 2 —— 刪之前先在 live-page.js 的測試裡找對應斷言，找不到就停下回報。
+- 十個名字之一在前六份之後有了新的呼叫者 —— Task 3 —— 先 `grep -rnw` 四個目錄，扣掉定義、轉發與匯出仍有命中就停下回報。今天的 grep：只在 nav.js、station.js:395-396 與 :516、:520、station-view.test.js:1275/1319/1355、station-mod-nav.test.js:7-8 與 Task 2 的三個檔。
+- 刪完後的行數高於 2,500（有哪份計畫少搬）—— Task 4 —— 量到超過 2,500 就停下回報，不定上限。今天是 1962 行，刪完應約 1,950。
+- knip 的 `npx` 在 subagent 被權限拒絕 —— Task 6 —— 所以排成 `user`，由使用者在自己的終端機跑。
 
-## Task 1: 只測舊 live 死碼的三個測試檔
+## Task 1: #/live 確認存活的列下畫回 subagent 列
+
+**Files:**
+- Modify: `assets/station/live-page.js` — 新增 `saShort` `saFamily` `subs`，`row()` 在 wait、run 兩組把列包進 `.sx-wsubs`，EN 補五個鍵
+- Modify: `assets/station/live-page.css` — `.sx-subs` 縮排與分隔線
+- Read: `tests/station-module.js` — `page()` 與 `stringsLeft()` 測試工具
+- Test: `tests/station-live-subs.test.js`
+
+**Interfaces:**
+- Consumes: 每個 session 的 `state` `unknown` `stage` `model` `inflight`（`{stage, at, agentId}`，`lib/station.js` `inflightOf`）與 `subagents`（`runningAgents` 的 `{id, agentType, description, model, ranModel, effort, startedAt}`），`lib/station.js:969` 已送進 station-data
+- Produces: `FK_LIVE.page` 畫出 `data-block="live-subagents"`；Task 3 刪 nav.js 舊版後，這是唯一畫 subagent 列的地方
+
+**Dispatch:** implementer, sonnet
+
+規則照舊版（nav.js 的 liveSubsHtml 與 liveLane，Task 3 會刪；下面的程式已照它搬好，不必再開）：只有 `state === 'live'` 且不是 `unknown` 的列才畫；`inflight` 只在它的 `stage` 等於 session 的 `stage` 時算 stage agent，它的 `agentId` 不再出現在 subagent 列；新版不同的一點：什麼都沒在跑時**不畫**（新版的列是一行一個 session，多一行「主 session 自己在做」會讓每列變兩倍高）。`stop` 組（可能已經停了）不畫。
+
+1. Write `tests/station-live-subs.test.js`:
+
+In `tests/station-live-subs.test.js`:
+
+```js
+'use strict';
+// 進行中 draws what runs under a confirmed-live session again — the stage agent
+// in flight and the subagents mid-turn — the rows the old #/live drew in
+// nav.js's liveSubsHtml and the redesign dropped (station-63 survey, 2026-10-30).
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const { page, stringsLeft } = require('./station-module.js');
+
+const NOW = Date.parse('2026-10-30T09:00:00.000Z');
+const iso = (minAgo) => new Date(NOW - minAgo * 60000).toISOString();
+const base = (o) => Object.assign({ root: 'F:\\w', project: 'app', pkey: 'F:\\w/app', route: ['survey', 'build'], stage: 'build', state: 'live',
+    started: iso(60), updated: iso(1), usd: 1, agentUsd: 1, model: 'claude-opus-4-1', gateAt: null, stages: [], days: null, task: 'T' }, o);
+const AGENTS = [
+    { id: 'stage-1', agentType: 'fankeel:fankeel-brain', description: 'sonnet 5.5 · medium: build stage agent', ranModel: 'claude-sonnet-4-5', startedAt: NOW - 8 * 60000 },
+    { id: 'impl-2', agentType: 'fankeel:fankeel-implementer', description: 'sonnet 5.5 · medium: <Task 2>', ranModel: 'claude-sonnet-4-5', effort: 'medium', startedAt: NOW - 3 * 60000 },
+];
+const draw = (sessions, lang) => {
+    const { win } = page(['tip.js', 'live-page.js'], {});
+    if (lang) win.FK_I18N = { lang };
+    return win.FK_LIVE.page({ sessions }, { names: {}, now: NOW });
+};
+const block = (html) => {
+    const i = html.indexOf('data-block="live-subagents"');
+    return i < 0 ? null : html.slice(i, html.indexOf('</div></div>', i));
+};
+
+test('a live row lists the stage agent in flight once and every other subagent', () => {
+    const html = draw([base({ id: 'aaaaaaaa-1', inflight: { stage: 'build', at: NOW - 8 * 60000, agentId: 'stage-1' }, subagents: AGENTS })]);
+    const b = block(html);
+    assert.ok(b, 'the live-subagents block is drawn');
+    assert.equal((b.match(/<div class="sa inflight">/g) || []).length, 1);
+    assert.equal((b.match(/<div class="sa">/g) || []).length, 1, 'the stage agent is not listed again as a subagent');
+    assert.match(b, /stage agent 1 個 · subagent 1 個/);
+    assert.match(b, /fankeel:fankeel-implementer/);
+    assert.match(b, /&lt;Task 2&gt;/, 'the description is escaped and loses its model prefix');
+    assert.match(b, /<span class="sa-desc" title="[^"]*">&lt;Task 2&gt;<\/span>/, 'saShort cuts the title prefix from the visible text');
+    assert.match(b, /class="sa-for">3m</);
+});
+
+test('an inflight mark for another stage is not a stage agent row', () => {
+    const b = block(draw([base({ id: 'aaaaaaaa-1', inflight: { stage: 'survey', at: NOW, agentId: 'stage-1' }, subagents: AGENTS })]));
+    assert.ok(!b.includes('sa inflight'));
+    assert.equal((b.match(/<div class="sa">/g) || []).length, 2);
+});
+
+test('nothing running, a stale row, an unknown row and an ended row draw no subagent block', () => {
+    assert.equal(block(draw([base({ id: 'aaaaaaaa-1', subagents: [] })])), null);
+    assert.equal(block(draw([base({ id: 'bbbbbbbb-2', state: 'stale', updated: iso(300), subagents: AGENTS })])), null);
+    assert.equal(block(draw([base({ id: 'cccccccc-3', unknown: true, subagents: AGENTS })])), null);
+});
+
+test('a row with subagents stays one link, the block sits beside it inside .sx-wsubs', () => {
+    const html = draw([base({ id: 'aaaaaaaa-1', subagents: AGENTS.slice(1) })]);
+    assert.match(html, /<div class="sx-wsubs"><a class="hm-lv sxr"[\s\S]*?<\/a><div class="lane-subs sx-subs" data-block="live-subagents">/);
+});
+
+test('EN: the subagent block carries no CJK, and every string has an EN key', () => {
+    const b = block(draw([base({ id: 'aaaaaaaa-1', inflight: { stage: 'build', at: NOW - 60000, agentId: 'x' }, subagents: AGENTS.slice(1) })], 'en'));
+    assert.ok(!/[\u3400-\u9fff]/.test(b), b);
+    const { win } = page(['tip.js', 'live-page.js'], {});
+    assert.deepEqual(stringsLeft('live-page.js', win.FK_LIVE.EN), []);
+});
+```
+
+2. Run `node --test tests/station-live-subs.test.js` — fails: `the live-subagents block is drawn`.
+3. In `assets/station/live-page.js`, add these five entries to the end of the `EN` object (after `'lv.since': 'started {t}',`):
+
+In `assets/station/live-page.js`:
+
+```js
+        'lv.runningNow': 'Running now',
+        'lv.oneStage': '1 stage agent',
+        'lv.nSubs': '{n} subagent(s)',
+        'lv.sentAt': 'sent {t}, not back yet',
+        'lv.notBack': 'not back yet',
+```
+
+4. In `assets/station/live-page.js`, directly above `function row(s, kind, o) {`, add:
+
+In `assets/station/live-page.js`:
+
+```js
+    // What runs under a confirmed-live session now: the stage agent in flight
+    // (`inflight`, while it names the current stage) and every subagent
+    // `runningAgents` in lib/usage.js reads as mid-turn. The stage agent has a
+    // meta.json too, so its id is left out of the subagent rows. Nothing
+    // running draws nothing: a row is one line, and "the main session is
+    // doing it" on every row would double the page.
+    function saShort(d) { return String(d || '').replace(/^[^·:]*·[^:]*:\s*/, ''); }
+    function saFamily(a, s) {
+        var k = kit(), r = k.family(a.ranModel);
+        if (r !== 'other') return r;
+        var m = /^(fable|opus|sonnet|haiku)$/.exec(String(a.model || ''));
+        if (m) return m[1];
+        var d = /^(fable|opus|sonnet|haiku)\b/i.exec(String(a.description || ''));
+        return d ? d[1].toLowerCase() : k.family(s.model);
+    }
+    function subs(s, now) {
+        if (s.state !== 'live' || s.unknown) return '';
+        var k = kit(), mark = s.inflight && s.inflight.stage === s.stage ? s.inflight : null;
+        var list = (s.subagents || []).filter(function (a) { return !mark || a.id !== mark.agentId; });
+        if (!mark && !list.length) return '';
+        var head = [];
+        if (mark) head.push(loc('lv.oneStage', 'stage agent 1 個'));
+        if (list.length) head.push(loc('lv.nSubs', 'subagent {n} 個', { n: list.length }));
+        var sent = mark && isFinite(mark.at);
+        return '<div class="lane-subs sx-subs" data-block="live-subagents"><div class="sa-h"><b>' + loc('lv.runningNow', '現在在跑') + '</b><span>' + head.join(' · ') + '</span></div>'
+            + (mark ? '<div class="sa inflight"><span class="sa-type">stage agent</span><span class="chip"><i class="sw" style="background:var(--st-'
+                + esc(mark.stage) + ')"></i>' + esc(mark.stage) + '</span><span class="sa-desc">'
+                + (sent ? loc('lv.sentAt', '{t} 送出，還沒交回', { t: when(mark.at).slice(6) }) : loc('lv.notBack', '還沒交回'))
+                + '</span><span class="sa-for">' + (sent ? k.mins(now - mark.at) : '') + '</span></div>' : '')
+            + list.map(function (a) {
+                var fam = saFamily(a, s), type = a.agentType || 'agent', key = a.ranModel ? k.modelKey(a.ranModel) : 'other';
+                return '<div class="sa"><span class="sa-type" title="' + esc(type) + '">' + esc(type) + '</span>'
+                    + '<span class="chip"><i class="sw" style="background:var(--m-' + fam + ')"></i>'
+                    + (key !== 'other' ? esc(k.modelLabel(key)) : fam) + (a.effort ? ' · ' + esc(a.effort) : '') + '</span>'
+                    + '<span class="sa-desc" title="' + esc(a.description || '') + '">' + esc(saShort(a.description)) + '</span>'
+                    + '<span class="sa-for">' + k.mins(now - a.startedAt) + '</span></div>';
+            }).join('') + '</div>';
+    }
+```
+
+5. In `assets/station/live-page.js`, in `row()`, replace the last line `return kind === 'stop' && o.clear ? '<div class="lv-row">' + a + '<div class="lv-row-clear">' + o.clear(s) + '</div></div>' : a;` with:
+
+In `assets/station/live-page.js`:
+
+```js
+        if (kind === 'stop') return o.clear ? '<div class="lv-row">' + a + '<div class="lv-row-clear">' + o.clear(s) + '</div></div>' : a;
+        var sub = subs(s, o.now);
+        return sub ? '<div class="sx-wsubs">' + a + sub + '</div>' : a;
+```
+
+6. In `assets/station/live-page.css`, append:
+
+In `assets/station/live-page.css`:
+
+```css
+/* What runs under a confirmed-live row (live-subagents): station.css's .sa grid,
+   indented past the glyph so it reads as the row's own. */
+.sx-wsubs>.sx-subs{margin:0 0 6px 34px;padding:6px 0 2px;border-top:1px dashed var(--grid)}
+.dlist>.sx-wsubs:first-child>.hm-lv{border-top:0}
+```
+
+7. Run `node --test --require ./tests/subprocess-timeout.js tests/station-live-subs.test.js tests/station-live-redesign.test.js tests/station-live.test.js` — passes.
+8. `git add tests/station-live-subs.test.js`; hand back for commit `feat(station): #/live lists the stage agent and subagents under a live row again`.
+
+## Task 2: 只測舊 live 死碼的三個測試檔
 
 **Files:**
 - Modify: `tests/station-live-head.test.js` — 整檔刪除（`git rm`）
@@ -39,8 +206,8 @@ last_verified: 2026-10-30
 - Read: `tests/station-live-unregistered.test.js` — 同上
 
 **Interfaces:**
-- Consumes: none
-- Produces: `nowHtml` 與 `liveSubsHtml` 不再有這三個檔呼叫（只剩 station-view.test.js 的三個 case，Task 2 刪）
+- Consumes: Task 1 —— `tests/station-live-subs.test.js` 斷言新 #/live 的 subagent 列，「確認存活的 lane 才有 subagent 列」才有人測
+- Produces: `nowHtml` 與 `liveSubsHtml` 不再有這三個檔呼叫（只剩 station-view.test.js 的三個 case，Task 3 刪）
 
 **Dispatch:** implementer, sonnet
 
@@ -49,7 +216,7 @@ last_verified: 2026-10-30
 1. 確認仍活著的兩個行為在 live-page.js 的測試裡有斷言：
 
 ```
-grep -nE "gateAt|subagent|sa-desc" tests/station-live-redesign.test.js tests/station-live.test.js tests/station-live-unregistered.test.js
+grep -nE "gateAt|subagent|sa-desc|live-subagents" tests/station-live-redesign.test.js tests/station-live.test.js tests/station-live-unregistered.test.js tests/station-live-subs.test.js
 ```
 
 至少要各有一筆命中「gate 列從 `gateAt` 計數」與「確認存活的 lane 才有 subagent 列」。缺哪一個就停下，回報缺的是哪個、原本在哪個檔的哪一行。
@@ -57,7 +224,7 @@ grep -nE "gateAt|subagent|sa-desc" tests/station-live-redesign.test.js tests/sta
 3. Run `node --test --require ./tests/subprocess-timeout.js tests/station-live-redesign.test.js tests/station-live.test.js tests/station-live-unregistered.test.js` — passes.
 4. Hand back for commit `test: drop the three files that only tested the old live view (station-63)`.
 
-## Task 2: 刪 nav.js 的十個舊 live 函式
+## Task 3: 刪 nav.js 的十個舊 live 函式
 
 **Files:**
 - Modify: `assets/station/nav.js` — 刪十個函式與它們在 `make` 回傳物件裡的項目
@@ -67,7 +234,7 @@ grep -nE "gateAt|subagent|sa-desc" tests/station-live-redesign.test.js tests/sta
 - Test: `tests/station-mod-nav.test.js` — 從 `moved()` 名單拿掉十個名字
 
 **Interfaces:**
-- Consumes: Task 1 —— 三個舊測試檔已刪，否則它們會因 `V.nowHtml` 不存在而紅
+- Consumes: Task 2 —— 三個舊測試檔已刪，否則它們會因 `V.nowHtml` 不存在而紅
 - Produces: `module.exports` 少了 `nowHtml` `liveSubsHtml`；`FK_NAV` 少了十個函式
 
 **Dispatch:** implementer, sonnet
@@ -125,7 +292,7 @@ In `tests/station-mod-nav.test.js`:
 8. Run `node --test --require ./tests/subprocess-timeout.js tests/station-live-gone.test.js tests/station-view.test.js tests/station-mod-nav.test.js` — passes.
 9. `git add tests/station-live-gone.test.js`; hand back for commit `refactor: delete the old live builders from nav.js (station-63)`.
 
-## Task 3: 殼的行數上限與文件
+## Task 4: 殼的行數上限與文件
 
 **Files:**
 - Modify: `docs/90-agent/reference/station.md:612-624` — 模組清單換成 index.html 現在的清單
@@ -134,7 +301,7 @@ In `tests/station-mod-nav.test.js`:
 - Test: `tests/station-shell-size.test.js`
 
 **Interfaces:**
-- Consumes: Task 2 —— 刪完死碼後的殼，才量得到最後的行數
+- Consumes: Task 3 —— 刪完死碼後的殼，才量得到最後的行數
 - Produces: none
 
 **Dispatch:** implementer, sonnet
@@ -187,7 +354,7 @@ one — are copied the same way, and
 6. Run `node --test --require ./tests/subprocess-timeout.js tests/station-shell-size.test.js tests/station-doc.test.js` — passes.
 7. `git add tests/station-shell-size.test.js`; hand back for commit `test: station.js shell stays under its measured cap (station-52)`.
 
-## Task 4: 補上 watch「通知做回來，不走第三方」
+## Task 5: 補上 watch「通知做回來，不走第三方」
 
 **Files:**
 - Modify: `docs/90-agent/todo/notify-3.md` — `todo.js new` 建立
@@ -209,7 +376,7 @@ node scripts/todo.js new --id notify-3 --label notify --title "通知做回來�
 2. Run `node scripts/todo-check.js` — no finding names `notify-3`.
 3. Commit `docs/90-agent/todo/notify-3.md` with message `docs: watch for bringing phone notifications back without a third party`.
 
-## Task 5: knip 6.44.0 重測（「knip unused exports 未開」）
+## Task 6: knip 6.44.0 重測（「knip unused exports 未開」）
 
 **Files:**
 - Modify: `docs/90-agent/todo/build-1.md` — 重測結果加進來源段落，restamp 或改成 ready
@@ -231,18 +398,18 @@ npx knip@6.44.0 --trace-export clearBadge
 3. 結果找得到 import：本 session 停下，把輸出給使用者看，另開任務打開 `knip.json` 的 exports 一格——那是條目的完成條件，不在本計畫。
 4. Commit `docs/90-agent/todo/build-1.md` with message `docs: knip 6.44.0 still cannot trace clearBadge (build-1)`.
 
-## Task 6: 在真 gate 上標記、送出、確認 hooks/gate.js 收到（「station 圖需要真瀏覽器驗證」第二步）
+## Task 7: 在真 gate 上標記、送出、確認 hooks/gate.js 收到（「station 圖需要真瀏覽器驗證」第二步）
 
 **Files:**
 - Modify: `docs/90-agent/todo/entry-4.md` — 驗完後在檔尾加一行驗證紀錄
 
 **Interfaces:**
-- Consumes: Task 1-3 的 build 停在 build gate，或任何一個停在 gate、報告含 mermaid 圖的 session；gate 頁空白已由 `lib/station.js` 的 `FOCUS_NEEDS` 修好（含 nav.js、float.js）
+- Consumes: Task 2-4 的 build 停在 build gate，或任何一個停在 gate、報告含 mermaid 圖的 session；gate 頁空白已由 `lib/station.js` 的 `FOCUS_NEEDS` 修好（含 nav.js、float.js）
 - Produces: 該 stage 的 `<stage>-answer.md` 內有「標記：」行；entry-4.md 的一行紀錄
 
 **Dispatch:** user — 要在真瀏覽器點節點、按「送出答案」；沒有子 agent 能代按。
 
-1. 本 session 在 build 報告裡放一張 mermaid flowchart（Task 1→2→3→4 的順序），開 build gate 時把 `page:` 網址給使用者。
+1. 本 session 在 build 報告裡放一張 mermaid flowchart（Task 1→2→3→4→5 的順序），開 build gate 時把 `page:` 網址給使用者。
 2. 使用者在自己的瀏覽器開那個網址，點圖上一個節點，確認答案框出現 `標記：<id>「<label>」` 行，再按「送出答案」。
 3. 本 session 確認 hooks/gate.js 收到：
 
@@ -258,9 +425,10 @@ grep -n "標記：" .fankeel/build/task-20261030T045338/*-answer.md
 
 | promise | task |
 |---|---|
-| station-52 plan 7：刪十個舊 live 死碼 | Task 1、Task 2 |
-| station-63 併入 plan 7 的 Task 2 | Task 2 |
-| 搬完後重量 station.js，(b) 的上限改成實測值 | Task 3 |
-| 手機通知那條關閉並新增 watch「通知做回來，不走第三方」 | Task 4（新增）；關閉不是 build 任務：本任務以 `task.js start --todo notify-2` 開，`stage land` 印出它的 `todo.js done` 行，land 執行 |
-| knip 6.44.0 重測 | Task 5 |
-| entry-4 第二步 Dispatch user | Task 6 |
+| #/live 做回 subagent 列（build 停點，使用者選先做回來） | Task 1 |
+| station-52 plan 7：刪十個舊 live 死碼 | Task 2、Task 3 |
+| station-63 併入刪十個函式的任務 | Task 3 |
+| 搬完後重量 station.js，(b) 的上限改成實測值 | Task 4 |
+| 手機通知那條關閉並新增 watch「通知做回來，不走第三方」 | Task 5（新增）；關閉不是 build 任務：本任務以 `task.js start --todo notify-2` 開，`stage land` 印出它的 `todo.js done` 行，land 執行 |
+| knip 6.44.0 重測 | Task 6 |
+| entry-4 第二步 Dispatch user | Task 7 |
