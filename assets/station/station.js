@@ -277,7 +277,7 @@
     var CHART_;
     function CHART() {
         return CHART_ || (CHART_ = mod('FK_CHART', 'chart.js').make({
-            loc: loc, esc: esc, tokens: tokens, usd: usd, hours: hours, estMark: estMark, delta: delta,
+            loc: loc, esc: esc, tokens: tokens, usd: usd, hours: hours, delta: delta,
             icon: icon, ago: ago, stamp: stamp, mins: mins, statePill: statePill,
             keelStage: keelStage, keelProgress: keelProgress, localDay: localDay, dimKey: dimKey,
             tokenSum: tokenSum, orderKeys: orderKeys, niceTop: niceTop, metricText: metricText,

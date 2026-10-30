@@ -22,7 +22,7 @@ function helpers() {
         PAGES: ['live', 'sessions', 'projects', 'docs', 'weekly', 'settings', 'tour'],
         MODEL_KEYS: ['fable', 'opus', 'sonnet', 'haiku'], TOKEN_KEYS: ['input', 'output', 'cacheRead', 'cacheWrite5m', 'cacheWrite1h'],
         KIND_KEYS: ['input', 'output', 'cacheRead', 'cacheWrite1h', 'cacheWrite5m'], KIND_LABEL: {}, KIND_COLOR: {}, WHO_LABEL: { main: '主 session' }, S });
-    const C = M['chart.js'].make(Object.assign({}, F, { loc, esc, usd, tokens: String, hours: String, estMark: () => '', delta: () => '',
+    const C = M['chart.js'].make(Object.assign({}, F, { loc, esc, usd, tokens: String, hours: String, delta: () => '',
         METRIC_LABEL: { usd: '花費', tokens: 'token', time: '時間' }, DIM_LABEL: {}, NO_TIME_TYPE: 'no type',
         KIND_KEYS: [], MODEL_KEYS: ['fable', 'opus', 'sonnet', 'haiku'], S }));
     return { F, C };
