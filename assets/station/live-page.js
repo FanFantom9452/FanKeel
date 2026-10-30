@@ -42,6 +42,11 @@
         'lv.busy': 'Busy',
         'lv.idle': 'Idle',
         'lv.since': 'started {t}',
+        'lv.runningNow': 'Running now',
+        'lv.oneStage': '1 stage agent',
+        'lv.nSubs': '{n} subagent(s)',
+        'lv.sentAt': 'sent {t}, not back yet',
+        'lv.notBack': 'not back yet',
     };
     function loc(key, zh, vars) {
         var I = w && w.FK_I18N;
@@ -131,6 +136,44 @@
         L.push(['session', esc(String(s.id).slice(0, 8))]);
         return '<dl>' + L.map(function (l) { return '<dt>' + l[0] + '</dt><dd>' + l[1] + '</dd>'; }).join('') + '</dl>';
     }
+    // What runs under a confirmed-live session now: the stage agent in flight
+    // (`inflight`, while it names the current stage) and every subagent
+    // `runningAgents` in lib/usage.js reads as mid-turn. The stage agent has a
+    // meta.json too, so its id is left out of the subagent rows. Nothing
+    // running draws nothing: a row is one line, and "the main session is
+    // doing it" on every row would double the page.
+    function saShort(d) { return String(d || '').replace(/^[^·:]*·[^:]*:\s*/, ''); }
+    function saFamily(a, s) {
+        var k = kit(), r = k.family(a.ranModel);
+        if (r !== 'other') return r;
+        var m = /^(fable|opus|sonnet|haiku)$/.exec(String(a.model || ''));
+        if (m) return m[1];
+        var d = /^(fable|opus|sonnet|haiku)\b/i.exec(String(a.description || ''));
+        return d ? d[1].toLowerCase() : k.family(s.model);
+    }
+    function subs(s, now) {
+        if (s.state !== 'live' || s.unknown) return '';
+        var k = kit(), mark = s.inflight && s.inflight.stage === s.stage ? s.inflight : null;
+        var list = (s.subagents || []).filter(function (a) { return !mark || a.id !== mark.agentId; });
+        if (!mark && !list.length) return '';
+        var head = [];
+        if (mark) head.push(loc('lv.oneStage', 'stage agent 1 個'));
+        if (list.length) head.push(loc('lv.nSubs', 'subagent {n} 個', { n: list.length }));
+        var sent = mark && isFinite(mark.at);
+        return '<div class="lane-subs sx-subs" data-block="live-subagents"><div class="sa-h"><b>' + loc('lv.runningNow', '現在在跑') + '</b><span>' + head.join(' · ') + '</span></div>'
+            + (mark ? '<div class="sa inflight"><span class="sa-type">stage agent</span><span class="chip"><i class="sw" style="background:var(--st-'
+                + esc(mark.stage) + ')"></i>' + esc(mark.stage) + '</span><span class="sa-desc">'
+                + (sent ? loc('lv.sentAt', '{t} 送出，還沒交回', { t: when(mark.at).slice(6) }) : loc('lv.notBack', '還沒交回'))
+                + '</span><span class="sa-for">' + (sent ? k.mins(now - mark.at) : '') + '</span></div>' : '')
+            + list.map(function (a) {
+                var fam = saFamily(a, s), type = a.agentType || 'agent', key = a.ranModel ? k.modelKey(a.ranModel) : 'other';
+                return '<div class="sa"><span class="sa-type" title="' + esc(type) + '">' + esc(type) + '</span>'
+                    + '<span class="chip"><i class="sw" style="background:var(--m-' + fam + ')"></i>'
+                    + (key !== 'other' ? esc(k.modelLabel(key)) : fam) + (a.effort ? ' · ' + esc(a.effort) : '') + '</span>'
+                    + '<span class="sa-desc" title="' + esc(a.description || '') + '">' + esc(saShort(a.description)) + '</span>'
+                    + '<span class="sa-for">' + k.mins(now - a.startedAt) + '</span></div>';
+            }).join('') + '</div>';
+    }
     function row(s, kind, o) {
         var k = kit(), id8 = esc(String(s.id).slice(0, 8)), c = k.cost(s);
         var a = '<a class="hm-lv sxr' + (kind === 'stop' ? ' gone' : '') + '" href="' + esc(k.sessionHash(s.id)) + '" aria-describedby="pk-' + id8 + '">'
@@ -142,7 +185,9 @@
             + '<span class="hm-lv-r">' + since(lastOf(s), o.now) + '</span>'
             + '<div class="sx-pk" id="pk-' + id8 + '" role="tooltip">' + peek(s) + '</div></a>';
         // The clear control sits beside the link, never inside it: a form in an <a> is invalid and a click would follow the link.
-        return kind === 'stop' && o.clear ? '<div class="lv-row">' + a + '<div class="lv-row-clear">' + o.clear(s) + '</div></div>' : a;
+        if (kind === 'stop') return o.clear ? '<div class="lv-row">' + a + '<div class="lv-row-clear">' + o.clear(s) + '</div></div>' : a;
+        var sub = subs(s, o.now);
+        return sub ? '<div class="sx-wsubs">' + a + sub + '</div>' : a;
     }
     // Which fold is open, by group, so the poll's redraw keeps it open.
     var openUn = {}, bound = false;

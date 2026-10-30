@@ -120,3 +120,7 @@ a.sxr:focus-visible>.sx-pk{visibility:visible;opacity:1;transition:none}
   .hm-lv.sxr{grid-template-columns:22px minmax(0,1fr) 64px;grid-template-areas:"g p usd" "g t r" "g rm rm"}
   .hm-lv.sxu{grid-template-columns:22px minmax(0,1fr) auto;grid-template-areas:"g p st" "g t r" "g rm rm"}
 }
+/* What runs under a confirmed-live row (live-subagents): station.css's .sa grid,
+   indented past the glyph so it reads as the row's own. */
+.sx-wsubs>.sx-subs{margin:0 0 6px 34px;padding:6px 0 2px;border-top:1px dashed var(--grid)}
+.dlist>.sx-wsubs:first-child>.hm-lv{border-top:0}
