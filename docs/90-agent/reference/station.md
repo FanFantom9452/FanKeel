@@ -1004,6 +1004,11 @@ each family one hue from `--m-<family>`, the newest version that colour and
 each older one lighter; `family()` still colours everything else. Six
 cards sit under it. The first two are a lead: 全機花費 and session count
 (`assets/station/spend-range.js:74-76`). Each has a 前一段 comparison.
+Those two follow the range but not the search box; tokens, active time
+and waiting ratio follow both (`homeRows()`, `assets/station/list-page.js:78`).
+On a written copy, or while the range spend loads or has failed, the two
+become one `—` cell and only five cards show
+(`assets/station/spend-range.js:68-72`).
 Tokens, active time and waiting ratio follow, also compared with the
 previous range. The sixth does not compare windows at all: it
 names the option-one gate wording most often swapped for another answer,
@@ -1014,7 +1019,7 @@ An option offered as `verify (Recommended)` or `land（建議）` is counted as
 the bare `verify` or `land`: `bareLabel` strips that suffix from option one
 and from the answer before either is compared, so one option is one entry
 however it was dressed. Unlike the other
-five, it does not move with the range or the search box: it is
+five, which all follow the range, it does not move with the range or the search box: it is
 counted once, across every shown session's gate answers
 (`lib/station.js:962`, `gates: gateSummary(model, hidden),`), not from the
 filtered set that tokens, active time and waiting ratio sum. It walks the model rather than
