@@ -66,10 +66,8 @@ fankeel/
 │   ├── docs.js        docs.json: buckets, roles, and which pages may be out of date
 │   ├── onboard.js     the three cheap onboarding checks task.js start runs on a task's project
 │   ├── sensitive.js   the words in .fankeel/sensitive.txt, found in what a commit carries
-│   ├── station.js     the station's model: finding every registry, the rows, the data and detail scripts; detail.js takes one session apart, cached by its files' size and mtime; mobile.js and phone.js are the phone page's data and its channel to a session; board.js lists a task's Chartroom .board files and board-edit.js applies the gate page's edits to them, drawn by the vendored chartroom/ (core/ 6, geometry/ 7, dynamic import() only); weekly-*.js are the weekly report (git, collect, modules, render, store)
-│   ├── session-cost.js  what one session spent, its agents included, without a registry entry: the figure scripts/record.js costLine gives, read by the weekly report's 製作成本
-│   ├── weekly-reply.js  a reader's reply to a weekly report's question: saved to the archived <until>.json, the questions block redrawn, the reply editor injected, and the content security policy for that page
-│   ├── usage.js       what a transcript spent: requests, models, agents and every dispatch; replay.js is a session's events in time order, and one agent's own steps
+│   ├── station.js     the station's model: finding every registry, the rows, the data and detail scripts; detail.js takes one session apart, cached by its files' size and mtime; mobile.js and phone.js are the phone page's data and its channel to a session; board.js lists a task's Chartroom .board files and board-edit.js applies the gate page's edits to them, drawn by the vendored chartroom/ (core/ 6, geometry/ 7, dynamic import() only); weekly-*.js are the weekly report (git, collect, modules, render, store, and reply, which saves a reader's reply to a question into the archived <until>.json)
+│   ├── usage.js       what a transcript spent: requests, models, agents and every dispatch; session-cost.js is one session's spend with no registry entry, the figure record.js costLine gives, read by the weekly report's 製作成本; replay.js is a session's events in time order, and one agent's own steps
 │   ├── plantasks.js   a plan's tasks, and which of them may run at once
 │   ├── handoff.js     a stage agent's report and the user's answer, under .fankeel/build/task-<started>/
 │   └── profile.js     the project and machine profile: the standing answers to a gate
