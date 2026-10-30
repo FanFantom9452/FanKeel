@@ -10,7 +10,7 @@ link: docs/90-agent/reference/station.md
 
 應該變成：每個剩下的畫面各自成為一個 classic-script 的 FK_* 模組，沿用既有的 CJS guard；OLD.* 後備移除；station.js 縮到 1,500 行以內，只留路由、draw/diff、poll、事件與 loc/esc。不換 ESM、不引入框架，因為框架與 ESM 會弄壞 53 個 vm 測試與 file:// 形式。這個決策要寫成一份 docs/03-decisions 紀錄。另一個可選的後續（不是第三個條目）：station-data.js 先回答上一次的 memo，讓重複載入不再出現骨架，之後的 3 秒輪詢再取新資料。
 
-完成的標準：(a) 每個 VIEWS.* 都解析到 FK_* 模組，station.js:5732-5754 的 OLD.* 後備消失；(b) station.js 不超過約 1,500 行，只剩外殼；(c) assets/station/index.html、scripts/station.js:77 的 STATIC、lib/station.js:1127-1130 的 MODULES 列出同一組模組，並有測試斷言三者一致；(d) npm test 全綠，沒有測試換成新技術；(e) docs/03-decisions 有一段決策，寫明 vanilla classic scripts、零依賴、無 build，ESM 與框架因 vm 測試和 file:// 形式而不採用，並引用該判斷。
+完成的標準：(a) 每個 VIEWS.* 都解析到 FK_* 模組，station.js:5732-5754 的 OLD.* 後備消失；(b) station.js 只剩外殼（狀態、draw、VIEWS、監聽與輪詢、refresh），行數由 tests/station-shell-size.test.js 的 CAP 鎖住；(c) assets/station/index.html、scripts/station.js:77 的 STATIC、lib/station.js:1127-1130 的 MODULES 列出同一組模組，並有測試斷言三者一致；(d) npm test 全綠，沒有測試換成新技術；(e) docs/03-decisions 有一段決策，寫明 vanilla classic scripts、零依賴、無 build，ESM 與框架因 vm 測試和 file:// 形式而不採用，並引用該判斷。
 
 進度（2026-10-24）：(a)、(c)、(e) 已在 TODO 全表盤點 10-24 落地，`OLD.*` 後備已移除、三份模組清單由同一份來源讀出、決策紀錄已寫；舊儀表板與舊 TODO 面板直接刪除而非搬遷。(b) 尚未達成：station.js 從 7003 行降到 6393 行，docs、settings、days、list、focus 仍在檔內，要再開兩到三份計畫，每份最多兩個任務寫 station.js。詳見 docs/90-agent/reports/2026-10-24-todo-patrol-2.md。
 
@@ -23,3 +23,4 @@ link: docs/90-agent/reference/station.md
 進度（2026-10-27 Task 7 之後）：前端 `assets/station/station.js` 現為 5539 行（`wc -l`），標準 (b) 的 1,500 行仍未達成，條目保持開著。
 
 進度（2026-10-28）：session-body.js 與 detail-html.js 已搬出，前端 `assets/station/station.js` 降到 4021 行。設計關卡改了 (b)：監聽器留在外殼，1,500 行做不到，改成只剩外殼、行數由 tests/station-shell-size.test.js 的 CAP 鎖住（CAP 由最後一份計畫量測後訂）。還有第三到第七份計畫要做，條目保持開著。
+進度（2026-10-30 七份計畫之後）：station.js 1957 行，CAP 2000，標準 (b) 達成；1,500 行的估計沒算監聽，見 docs/90-agent/plans/2026-10-28-station-shell-design.md 的行數預估。

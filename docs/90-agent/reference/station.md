@@ -612,12 +612,15 @@ sees the shape it always had, is in [registry.md](registry.md).
 
 The page is an `index.html` and a directory. `index.html` is a shell with no session data in it,
 copied byte for byte from `assets/station/index.html`, at the top of
-`.fankeel/`; its twenty-seven sibling files live under `.fankeel/station/` —
-`station.css`, `station.js`, `i18n.js` and the five modules `spend-talk.js`,
-`spend-kinds.js`, `spend-range.js`, `spend-panel.js` and `remote-card.js`, and the
-redesigned pages' nine modules `tip`, `live-page`, `sessions-page`, `projects-page`,
-`project-page`, `session-page`, `session-dispatch`, `session-talk` and `gate-frame`, each
-a `.js` and a `.css` (eighteen files), are copied the same way, and `station-data.js`
+`.fankeel/`; its sibling files live under `.fankeel/station/` — `station.css`, `i18n.js`, and
+every module `assets/station/index.html` loads, in its order: `tip`, `live-page`,
+`sessions-page`, `projects-page`, `project-page`, `session-page`, `session-dispatch`,
+`session-talk`, `talk-acts`, `diagram`, `docs-page`, `settings-page`, `settings-steps`,
+`settings-detail`, `weekly-page`, `days-page`, `spend-talk`, `spend-kinds`,
+`spend-range`, `spend-panel`, `remote-card`, `list-state`, `fmt`, `chart`,
+`session-body`, `detail-html`, `gate-tab`, `dispatch-table`, `dash`, `nav`, `float`,
+`list-page`, `search` and `station` itself, each a `.js` with its `.css` where it has
+one — are copied the same way, and `station-data.js`
 is the only generated one, and holds `window.STATION` — the scan, and nothing
 else. The shell is copied rather than pointed at, because the plugin directory
 carries its version in its path and the copy under `<root>/.fankeel/` would
