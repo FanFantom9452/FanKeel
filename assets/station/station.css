@@ -118,6 +118,7 @@ h1,h2,h3{margin:0;font-weight:600}
 .ro .v .u{font-size:.5em;color:var(--muted);font-weight:400;margin-left:3px;letter-spacing:0}
 .ro .d{font-size:12px;color:var(--muted);white-space:nowrap}
 .ro .d .flat{color:var(--ink2)}
+.ro .d .ro-q{white-space:nowrap}
 .ro.sm .v{font-size:28px}
 .hatchsw{display:inline-block;width:16px;height:10px;border-radius:2px;background:var(--hatch-bg) repeating-linear-gradient(45deg,var(--hatch) 0 1.3px,transparent 1.3px 4.5px)}
 
