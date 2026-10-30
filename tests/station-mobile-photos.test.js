@@ -229,7 +229,7 @@ test('boot: the limits caption opens and stays open when the strip is drawn agai
 
 test('mobile.css: the strip, the ring, the hint, the caption, and a row of mic, field and send', () => {
     const css = fs.readFileSync(path.join(ASSETS, 'mobile.css'), 'utf8');
-    for (const r of ['.ph-strip{', '.ph{', '.ph-x{', '.ring{', '.ph-add{', '.ph-hint{', '.ph-meta{', '.ph-lim summary{', '.cmp-field{']) assert.ok(css.includes('\n' + r), r);
+    for (const r of ['.ph-strip{', '.ph-strip .ph{', '.ph-x{', '.ring{', '.ph-add{', '.ph-hint{', '.ph-meta{', '.ph-lim summary{', '.cmp-field{']) assert.ok(css.includes('\n' + r), r);
     assert.ok(css.includes('\n.cmp-row.v2{grid-template-columns:44px minmax(0,1fr) 44px}'));
     assert.ok(css.includes('\n.cmp-row.v2.no-mic{grid-template-columns:minmax(0,1fr) 44px}'));
     const all = fs.readFileSync(path.join(ASSETS, 'station.css'), 'utf8') + css;
