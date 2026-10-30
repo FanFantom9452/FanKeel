@@ -1,34 +1,13 @@
 'use strict';
-// lib/quota.js and scripts/quota.js: quota.week calibrated from two 7-day
-// readings in one window and what every transcript spent between them.
+// lib/quota.js: the 7-day readings, the limits files joined, and the newest window that moved enough.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const mkTmp = require('./tmp.js');
 const quota = require('../lib/quota.js');
-const prices = require('../lib/prices.js');
-const profile = require('../lib/profile.js');
-const { main } = require('../scripts/quota.js');
 
 const line = (at, pct, resetsAt) => JSON.stringify({ at, seven_day_pct: pct, seven_day_resets_at: resetsAt, five_hour_pct: null, cost_usd: null });
-
-function transcript(file, rows) {
-    fs.mkdirSync(path.dirname(file), { recursive: true });
-    fs.writeFileSync(file, rows.map(([id, ms, out]) => JSON.stringify({
-        type: 'assistant', isSidechain: file.includes('subagents'), requestId: id, timestamp: new Date(ms).toISOString(),
-        message: { model: 'claude-opus-5', usage: { input_tokens: 0, output_tokens: out } },
-    })).join('\n') + '\n');
-}
-
-// One main transcript and one agent's: 3M output tokens inside [100s, 400s),
-// 5M outside it on both sides.
-function account() {
-    const dir = mkTmp('fankeel-quota-');
-    transcript(path.join(dir, 'projects', 'p', 's1.jsonl'), [['r1', 50e3, 2e6], ['r2', 150e3, 1e6], ['r3', 500e3, 2e6]]);
-    transcript(path.join(dir, 'projects', 'p', 's1', 'subagents', 'agent-a1.jsonl'), [['r4', 300e3, 2e6], ['r5', 450e3, 1e6]]);
-    return dir;
-}
 
 test('readings keep only lines carrying a 7-day percent and reset, oldest first', () => {
     const text = [line(200, 12, 9000), '{"at":150,"seven_day_pct":null,"seven_day_resets_at":null}', 'torn{', line(100, 10, 9000)].join('\n');
@@ -60,167 +39,7 @@ test('span takes the newest window that moved MIN_POINTS or more, first reading 
     assert.equal(quota.span(quota.readings(line(100, 5, 9000) + '\n' + line(200, 5 + quota.MIN_POINTS - 1, 9000))), null);
 });
 
-test('perWeek is dollars per point times a hundred, and null for nothing spent', () => {
-    assert.equal(quota.perWeek(300, 10), 3000);
-    assert.equal(quota.perWeek(0, 10), null);
-});
-
-test('spentBetween prices main and agent transcripts inside the window only', () => {
-    const cost = quota.spentBetween(account(), 100e3, 400e3);
-    assert.ok(Math.abs(cost.usd - 3e6 * prices.rateFor('claude-opus-5').output / 1e6) < 1e-9, String(cost.usd));
-    assert.equal(quota.spentBetween(mkTmp('fankeel-quota-none-'), 100e3, 400e3), null);
-});
-
-test('quota.js writes quota.week and quota.calibrated to the machine profile; --dry-run writes nothing', () => {
-    const dir = account();
-    const log = path.join(dir, 'tokenbar-usage.jsonl');
-    fs.writeFileSync(log, [line(100, 10, 9000), line(400, 40, 9000)].join('\n') + '\n');
-    const week = Math.round(3e6 * prices.rateFor('claude-opus-5').output / 1e6 / 30 * 100);
-    const dry = main(['--claude-dir', dir, '--log', path.join(dir, 'tokenbar-usage.jsonl'), '--dry-run']);
-    assert.equal(dry.code, 0, dry.text);
-    assert.match(dry.text, new RegExp('^quota\\.week ' + week + ' \\(calibrated 1970-01-01'));
-    assert.equal(fs.existsSync(profile.machineFile(dir)), false);
-    const out = main(['--claude-dir', dir, '--log', path.join(dir, 'tokenbar-usage.jsonl')]);
-    assert.equal(out.code, 0, out.text);
-    const saved = JSON.parse(fs.readFileSync(profile.machineFile(dir), 'utf8'));
-    assert.deepEqual([saved['quota.week'], saved['quota.calibrated']], [week, '1970-01-01']);
-});
-
-test('quota.js with no log, or no window that moved enough, writes nothing and exits 1', () => {
-    const dir = account();
-    assert.equal(main(['--claude-dir', dir, '--log', path.join(dir, 'tokenbar-usage.jsonl')]).code, 1);
-    fs.writeFileSync(path.join(dir, 'tokenbar-usage.jsonl'), line(100, 10, 9000) + '\n');
-    assert.equal(main(['--claude-dir', dir, '--log', path.join(dir, 'tokenbar-usage.jsonl')]).code, 1);
-    assert.equal(fs.existsSync(profile.machineFile(dir)), false);
-    assert.equal(main(['--bogus']).code, 2);
-});
-
-test('spentBetween counts an unreadable transcript as skipped and quota.js warns', () => {
-    const dir = account();
-    const bad = path.join(dir, 'projects', 'p', 's1.jsonl');
-    const log = path.join(dir, 'l.jsonl');
-    fs.writeFileSync(log, [line(100, 10, 9000), line(400, 40, 9000)].join('\n'));
-    assert.equal(quota.spentBetween(dir, 100e3, 400e3).skipped, 0);
-    const real = fs.readFileSync;
-    fs.readFileSync = (f, ...a) => {
-        if (f === bad) throw new Error('EACCES');
-        return real(f, ...a);
-    };
-    try {
-        const cost = quota.spentBetween(dir, 100e3, 400e3);
-        assert.equal(cost.skipped, 1);
-        assert.ok(cost.usd > 0, 'the agent transcript still prices');
-        const dry = main(['--claude-dir', dir, '--log', log, '--dry-run']);
-        assert.equal(dry.code, 0);
-        assert.match(dry.text, /warning: 1 transcript/);
-        const wrote = main(['--claude-dir', dir, '--log', log]);
-        assert.equal(wrote.code, 0);
-        assert.match(wrote.text, /warning: 1 transcript[^\n]*\nwrote /);
-    } finally {
-        fs.readFileSync = real;
-    }
-});
-
-test('spentBetween does not throw when a project directory cannot be listed', () => {
-    const dir = account();
-    const bad = path.join(dir, 'projects', 'p');
-    const real = fs.readdirSync;
-    fs.readdirSync = (d, ...a) => {
-        if (d === bad) throw new Error('EACCES');
-        return real(d, ...a);
-    };
-    try {
-        assert.equal(quota.spentBetween(dir, 100e3, 400e3).skipped, 1);
-    } finally {
-        fs.readdirSync = real;
-    }
-});
-
-test('spentBetween counts an unlistable subagents directory as skipped, a missing one not', () => {
-    const dir = account();
-    const bad = path.join(dir, 'projects', 'p', 's1', 'subagents');
-    fs.mkdirSync(path.join(dir, 'projects', 'p', 's2'));
-    const real = fs.readdirSync;
-    fs.readdirSync = (d, ...a) => {
-        if (d === bad) throw Object.assign(new Error('EACCES'), { code: 'EACCES' });
-        return real(d, ...a);
-    };
-    try {
-        assert.equal(quota.spentBetween(dir, 100e3, 400e3).skipped, 1, 's2 has no subagents dir (ENOENT) and is not counted');
-    } finally {
-        fs.readdirSync = real;
-    }
-});
-
-test('quota.js restores the machine file when the second write fails, and removes it when there was none', () => {
-    const dir = account();
-    fs.writeFileSync(path.join(dir, 'tokenbar-usage.jsonl'), [line(100, 10, 9000), line(400, 40, 9000)].join('\n') + '\n');
-    const file = profile.machineFile(dir);
-    const realWrite = profile.write;
-    const failSecond = () => {
-        let n = 0;
-        profile.write = (...a) => (++n === 2 ? { ok: false, reason: 'disk full' } : realWrite(...a));
-    };
-    try {
-        failSecond();
-        const none = main(['--claude-dir', dir, '--log', path.join(dir, 'tokenbar-usage.jsonl')]);
-        assert.equal(none.code, 1);
-        assert.match(none.text, /disk full/);
-        assert.equal(fs.existsSync(file), false, 'no file before, none after');
-        const before = '{\n  "language": "x"\n}\n';
-        fs.writeFileSync(file, before);
-        failSecond();
-        assert.equal(main(['--claude-dir', dir, '--log', path.join(dir, 'tokenbar-usage.jsonl')]).code, 1);
-        assert.equal(fs.readFileSync(file, 'utf8'), before, 'byte-identical to before');
-    } finally {
-        profile.write = realWrite;
-    }
-});
-
-// An id the table lacks is priced from its family and counted in the dollars
-// the calibration turns into quota.week; both calibrate and the script line
-// must say so, as they already do for unpriced.
-function estimatedAccount() {
-    const dir = mkTmp('fankeel-quota-est-');
-    const file = path.join(dir, 'projects', 'p', 's1.jsonl');
-    fs.mkdirSync(path.dirname(file), { recursive: true });
-    fs.writeFileSync(file, JSON.stringify({
-        type: 'assistant', isSidechain: false, requestId: 'r1', timestamp: new Date(200e3).toISOString(),
-        message: { model: 'claude-opus-9', usage: { input_tokens: 0, output_tokens: 1e6 } },
-    }) + '\n');
-    fs.writeFileSync(path.join(dir, 'tokenbar-usage.jsonl'), [line(100, 10, 9000), line(400, 40, 9000)].join('\n') + '\n');
-    return dir;
-}
-
-test('calibrate returns the family-priced ids it counted as estimated', () => {
-    const dir = estimatedAccount();
-    const r = quota.calibrate(dir, fs.readFileSync(path.join(dir, 'tokenbar-usage.jsonl'), 'utf8'));
-    assert.deepEqual(r.estimated, ['claude-opus-9']);
-    assert.deepEqual(r.unpriced, []);
-});
-
-test('quota.js names the estimated ids in its calibration line', () => {
-    const d = estimatedAccount();
-    const out = main(['--claude-dir', d, '--log', path.join(d, 'tokenbar-usage.jsonl'), '--dry-run']);
-    assert.equal(out.code, 0, out.text);
-    assert.match(out.text, /\(calibrated [^)]*estimated: claude-opus-9\)/);
-});
-
-test('quota.js without --log calibrates from the project root\'s limits records', () => {
-    const d = estimatedAccount();
-    const root = mkTmp('fankeel-quota-root-');
-    const limits = path.join(root, '.fankeel', 'build', 'limits');
-    fs.mkdirSync(limits, { recursive: true });
-    const row = (ms, seven) => JSON.stringify({ at: new Date(ms).toISOString(), task: 't', stage: 's', five: 1, fiveResets: null, seven, sevenResets: new Date(9000e3).toISOString() });
-    fs.writeFileSync(path.join(limits, 'sid.jsonl'), [row(100e3, 10), row(400e3, 40)].join('\n') + '\n');
-    const prev = process.cwd();
-    process.chdir(root);
-    let out;
-    try {
-        out = main(['--claude-dir', d, '--dry-run']);
-    } finally {
-        process.chdir(prev);
-    }
-    assert.equal(out.code, 0, out.text);
-    assert.match(out.text, /calibrated [^)]*over 30 points/);
+test('the calibration is gone: no perWeek, spentBetween or calibrate, and no scripts/quota.js', () => {
+    for (const k of ['perWeek', 'spentBetween', 'calibrate']) assert.equal(quota[k], undefined, k);
+    assert.equal(fs.existsSync(path.join(__dirname, '..', 'scripts', 'quota.js')), false);
 });
