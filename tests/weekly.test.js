@@ -40,8 +40,9 @@ const RANGE = ['--since', '2025-12-30', '--until', '2026-01-02'];
 function events(did) {
     return {
         projects: { alpha: '查詢系統', beta: '介面服務' },
+        show: { daily: true },
         summary: [{ repo: 'alpha', title: '查詢頁上線', text: '可以依日期查詢。' }],
-        events: [{ title: '查詢頁', repo: 'alpha', status: 'done', point: '可以查了。', did, why: '使用者要求。', next: '補測試。', evidence: '完成紀錄 12/30', modules: ['n-src-a'] }],
+        events: [{ title: '查詢頁', repo: 'alpha', status: 'done', point: '可以查了。', did, why: '使用者要求。', next: '補測試。', evidence: '完成紀錄 12/30', modules: ['n-src-a'], facets: ['後端／資料'] }],
         architecture: {}, carry: [], next: [{ repo: 'alpha', text: '做完匯出。' }],
     };
 }

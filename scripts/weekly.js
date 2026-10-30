@@ -8,7 +8,7 @@
 // --out paths it is given — never into a repository.
 const fs = require('node:fs');
 const path = require('node:path');
-const { liveConfigDir } = require('../lib/live.js');
+const { liveConfigDir, envSession } = require('../lib/live.js');
 const profile = require('../lib/profile.js');
 const registry = require('../lib/registry.js');
 const sensitive = require('../lib/sensitive.js');
@@ -16,18 +16,19 @@ const { readServeRecord, probe } = require('../lib/serve.js');
 const git = require('../lib/weekly-git.js');
 const store = require('../lib/weekly-store.js');
 const { collect, defaultRange } = require('../lib/weekly-collect.js');
-const { render, guard, guardData, archiveOf } = require('../lib/weekly-render.js');
+const { render, guard, guardData, shapeHits, archiveOf, DEFAULT_FACETS } = require('../lib/weekly-render.js');
+const { sessionCost } = require('../lib/session-cost.js');
 
 const USAGE = 'usage: weekly.js scan [--since YYYY-MM-DD --until YYYY-MM-DD] [--roots dir1,dir2]\n'
     + '       weekly.js collect --repos dir1,dir2 [--since A --until B] --out data.json\n'
-    + '       weekly.js render --events events.json --data data.json [--out weekly.html]';
+    + '       weekly.js render --events events.json --data data.json [--out weekly.html] [--session <id>]';
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const ASSETS = path.join(__dirname, '..', 'assets');
 
 // Every flag weekly.js takes, each with a value. Written as a STRING_FLAGS
 // object because that is the shape lib/skills.js acceptedFlags reads, so
 // scripts/skills-check.js can hold the skill's commands to this table.
-const STRING_FLAGS = { since: 'YYYY-MM-DD', until: 'YYYY-MM-DD', roots: 'dirs', repos: 'dirs', out: 'file', events: 'file', data: 'file' };
+const STRING_FLAGS = { since: 'YYYY-MM-DD', until: 'YYYY-MM-DD', roots: 'dirs', repos: 'dirs', out: 'file', events: 'file', data: 'file', session: 'id' };
 
 function flags(args) {
     const o = {};
@@ -63,6 +64,30 @@ function rootsOf(f, cwd, configDir) {
     const set = profile.read(home, configDir).values['weekly.roots'];
     if (Array.isArray(set) && set.length) return { value: set };
     return { value: [path.dirname(home)] };
+}
+
+// The facet vocabulary: the profile's weekly.facets (`名稱:受眾` strings,
+// lib/profile.js parseFacets), else lib/weekly-render.js DEFAULT_FACETS.
+function facetsFor(cwd, configDir) {
+    const home = registry.findStateRoot(cwd) || cwd;
+    const set = profile.read(home, configDir).values['weekly.facets'];
+    if (!Array.isArray(set) || !set.length) return DEFAULT_FACETS;
+    return set.map((s) => {
+        const i = String(s).lastIndexOf(':');
+        return { name: String(s).slice(0, i), audience: String(s).slice(i + 1) };
+    });
+}
+
+// A report rendered again for the same end date keeps the replies the
+// station already saved into its archive (lib/weekly-reply.js), by question id.
+function keepReplies(events, prior) {
+    const old = prior && Array.isArray(prior.questions) ? prior.questions : [];
+    if (!events || !Array.isArray(events.questions) || !old.length) return events;
+    const byId = new Map(old.filter((q) => q && q.reply).map((q) => [q.id, q]));
+    const questions = events.questions.map((q) => (q && !q.reply && byId.has(q.id)
+        ? Object.assign({}, q, { reply: byId.get(q.id).reply, repliedAt: byId.get(q.id).repliedAt })
+        : q));
+    return Object.assign({}, events, { questions });
 }
 
 function writeOut(file, text) {
@@ -118,6 +143,7 @@ async function main(argv, opts) {
             err(e.message);
             return 1;
         }
+        data.facets = facetsFor(cwd, configDir);
         const out = path.resolve(cwd, f.out);
         writeOut(out, JSON.stringify(data, null, 1) + '\n');
         log('wrote: ' + out);
@@ -144,24 +170,42 @@ async function main(argv, opts) {
             }
             for (const w of list.words) if (!words.includes(w)) words.push(w);
         }
-        const hits = guard(events, words).concat(guardData(data, events, words));
+        const facets = facetsFor(cwd, configDir);
+        const hits = guard(events, words).concat(guardData(data, events, words), shapeHits(events, facets));
         if (hits.length) {
             for (const h of hits) err(h.where + ': ' + h.word);
             err('render refused: ' + hits.length + ' word(s) a report for outside readers must not carry; nothing written');
             return 1;
         }
+        // 製作成本 (design §4): the session that ran this, which is the one
+        // this shell names unless --session says otherwise. /fankeel-weekly's
+        // prompt injects no id, so the shell's own is the default.
+        let cost = null;
+        if (events && events.show && events.show.cost === true) {
+            const id = f.session || envSession(configDir, o.env || process.env);
+            if (!id) return usage('show.cost is on and this shell names no session: pass --session <id>');
+            cost = sessionCost(configDir, id);
+            if (!cost) {
+                err('no transcript for session ' + id + ' under ' + configDir + '; nothing written');
+                return 2;
+            }
+        }
         const generated = today();
-        const html = await render(data, events, {
+        const full = keepReplies(events, store.readArchive(configDir, data.until));
+        const html = await render(data, full, {
             stationCss: fs.readFileSync(path.join(ASSETS, 'station', 'station.css'), 'utf8'),
             reportCss: fs.readFileSync(path.join(ASSETS, 'weekly', 'report.css'), 'utf8'),
+            reportJs: fs.readFileSync(path.join(ASSETS, 'weekly', 'report.js'), 'utf8'),
             generated,
+            facets,
+            cost,
         });
         if (f.out) {
             const out = path.resolve(cwd, f.out);
             writeOut(out, html);
             log('wrote: ' + out);
         }
-        const saved = store.save(configDir, data.until, { json: archiveOf(data, events, generated), html });
+        const saved = store.save(configDir, data.until, { json: archiveOf(data, full, generated), html });
         log('wrote: ' + saved.html);
         const rec = readServeRecord(configDir);
         const alive = rec ? await probe(rec, 500) : false;
