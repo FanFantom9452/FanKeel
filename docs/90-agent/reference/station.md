@@ -187,7 +187,7 @@ or project profile, shipped to the page as `STATION.profiles.machine` and
 page appends plain text ` (x%)` after a dollar figure, where x is the amount
 divided by `quota.week`, except the figures that call `usd(n, true)` (chart y ticks, bar totals, nav days badge, cost-share bar, dispatch cost-strip segments, session hero Cost value), which stay plain dollars, and every figure on 花費 — the days view and its four tabs — where `usd()` sees the route is 花費 and leaves the ratio off: a range there runs over two accounts and any number of days, so a share of one week of one account's quota measures nothing; the hero sub-line begins `(x%) · ` and tooltips keep the ratio. Both are API-equivalent estimates, not a measured
 quota percentage, and with the key unset the page is unchanged.
-`kpiHtml` itself prints no spend readout (`assets/station/chart.js:102`, `function kpiHtml(cur, prev, lead) {`). 花費's 總覽 shows the range spend split by account, with no ratio and no ` · 週額度 <day> 校準` note. `quota.calibrated` is still written by `scripts/quota.js` but nothing on the page shows it. 明細 alone passes a `lead` of two readouts, 全機花費 and session count. Each carries a 前一段 comparison, so 明細 has a spend cell and a delta (`assets/station/spend-range.js:76-80`, `rep.prev.sessions`). The 7d and 5h 額度 tabs have no range-spend cell and no 前一段 delta. Their readouts are 7d 用量, 5h 用量 and 每 1% 額度 instead (`assets/station/days-page.js:303-305`, `q.perPoint`).
+`kpiHtml` itself prints no spend readout (`assets/station/chart.js:102`, `function kpiHtml(cur, prev, lead) {`). 花費's 總覽 shows the range spend split by account, with no ratio and no ` · 週額度 <day> 校準` note. `quota.calibrated` is still written by `scripts/quota.js` but nothing on the page shows it. 明細 alone passes a `lead` of two readouts, 全機花費 and session count. Each carries a 前一段 comparison, so 明細 has a spend cell and a delta (`assets/station/spend-range.js:74-76`, `rep.prev.sessions`). The 7d and 5h 額度 tabs have no range-spend cell and no 前一段 delta. Their readouts are 7d 用量, 5h 用量 and 每 1% 額度 instead (`assets/station/days-page.js:303-305`, `q.perPoint`).
 
 Every row also carries the registry it belongs to, as `root` on its session
 object (`lib/station.js:966`, `root: s.root`) — the raw path, not the
@@ -1001,10 +1001,11 @@ agent type, no task and no tokens to split into components. `version` is not one
 to the session rather than to the row, so it applies to a span as much as to a
 day. 依 model splits by version — `modelKey()`, `Opus 5.5` beside `Opus 5` —
 each family one hue from `--m-<family>`, the newest version that colour and
-each older one lighter; `family()` still colours everything else. Four
-cards sit under it. Three of them compare the range with the one before
-it — tokens, active time and waiting ratio; the range's spend is 總覽's
-figure — and the fourth does not compare windows at all: it
+each older one lighter; `family()` still colours everything else. Six
+cards sit under it. The first two are a lead: 全機花費 and session count
+(`assets/station/spend-range.js:74-76`). Each has a 前一段 comparison.
+Tokens, active time and waiting ratio follow, also compared with the
+previous range. The sixth does not compare windows at all: it
 names the option-one gate wording most often swapped for another answer,
 `最常被換掉`, with how many times out of how many it was asked beneath it
 (`lib/station.js:819`, `function gateSummary(model, hidden) {`;
@@ -1013,7 +1014,7 @@ An option offered as `verify (Recommended)` or `land（建議）` is counted as
 the bare `verify` or `land`: `bareLabel` strips that suffix from option one
 and from the answer before either is compared, so one option is one entry
 however it was dressed. Unlike the other
-three, it does not move with the range or the search box: it is
+five, it does not move with the range or the search box: it is
 counted once, across every shown session's gate answers
 (`lib/station.js:962`, `gates: gateSummary(model, hidden),`), not from the
 filtered set the other three sum. It walks the model rather than

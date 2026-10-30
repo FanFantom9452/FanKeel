@@ -392,7 +392,7 @@ then asks this stage's gate.
      at a true 412-wide viewport: header and title not clipped (`.crumbs`
      scrollWidth <= clientWidth); a clipped title is a finding.
      For a page task, name the real-page shot of every state the mockup draws; a state with only unit tests is a finding.
-     Where the diff is a docs page that says what a page shows or does, open the code lines it describes and check every claim, especially a "no X" or "only Y", against them: one the code contradicts is a finding. Run `node <plugin>/scripts/docs-check.js` on the range's pages: a sentence over its width limit is a finding.
+     Where the diff is a docs page that says what a page shows or does, open the code lines it describes and check every claim, especially a "no X" or "only Y", against them: one the code contradicts is a finding. Run `node <plugin>/scripts/docs-check.js` and read only the findings on the range's pages: a sentence over its width limit is a finding.
    Part 4 — cuts, over the lines this diff added and no others, in the
      format of the `## Cuts` section of your agent file. A cut is a finding.
 
