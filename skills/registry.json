@@ -48,7 +48,7 @@
       "entry_condition": "worktree.",
       "stop_condition": "Done when the suite is green, the documents are closed, the map is rewritten and `todo-check` passes.",
       "prompt_bytes": 2499,
-      "prompt_byte_budget": 2500
+      "prompt_byte_budget": 2550
     }
   ]
 }

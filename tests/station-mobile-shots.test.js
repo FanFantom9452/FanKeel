@@ -54,8 +54,8 @@ test('a peer session draws its thumbnails through that computer\'s prefix', () =
 
 test('forward passes GET /phone/img on to the paired computer', async () => {
     const peers = require('../lib/peers.js');
-    const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fk-img-'));
+    const fs = require('node:fs'), path = require('node:path');
+    const dir = require('./tmp.js')('fk-img-');
     fs.mkdirSync(path.join(dir, 'fankeel'));
     fs.writeFileSync(path.join(dir, 'fankeel', 'peers.json'), JSON.stringify({ peers: [{ dnsName: 'lab.ts.net', name: 'lab', token: 'T', paired: 1, seen: null, last: null }] }));
     const calls = [];

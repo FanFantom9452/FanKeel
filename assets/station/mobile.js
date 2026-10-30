@@ -1178,7 +1178,7 @@
             + '<a href="' + to + 'events"' + (pane === 'events' ? ' aria-current="page"' : '') + '>' + ic('zap') + '<span>' + t('pn.events') + '</span></a></nav></div>';
         var body = pane === 'events'
             ? '<div class="ov" data-block="m-pane-events" role="region" aria-label="' + t('pn.events') + '">' + eventsInner(p, at, u) + '</div>'
-            : '<div class="cv" role="log" aria-label="' + t('chat.log') + '" data-block="session-chat-unregistered"><p class="uwhy">' + ic('info') + '<span>' + t('ur.uwhy') + '</span></p>' + cvInner(p, at, u, peerPre(m, machine)) + '</div>';
+            : '<div class="cv" role="log" aria-label="' + t('chat.log') + '" data-block="session-chat-unregistered"><p class="uwhy">' + ic('info') + '<span>' + t('ur.uwhy') + '</span></p>' + cvInner(p, at, u, peerPre(m, r.machine)) + '</div>';
         var foot = '<div class="ufoot" data-block="session-foot-unregistered"><p>' + ic('eye') + '<span>' + t(p.bridge ? 'ur.footRc' : 'ur.foot') + '</span></p>'
             + (p.bridge ? '<a class="ghost" href="https://claude.ai/code" target="_blank" rel="noopener">' + ic('out') + t('ur.app') + '</a>' : '') + '</div>';
         return '<div class="pg dt" data-block="m-unreg">' + head + peerNote(u) + body + foot + '</div>';
