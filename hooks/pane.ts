@@ -13,7 +13,7 @@ import { bandRows } from './pane-band.ts'
 import type { Seg as BandSeg, BandInput } from './pane-band.ts'
 import { bandRow1Svg, bandRow2Svg, paneParts, altOf, SVG_MAX } from './pane-svg.ts'
 import { say, langAt } from './pane-lang.ts'
-import { limitRow, appendRow } from './pane-limits.ts'
+import { limitRow, appendRow, accountOf } from './pane-limits.ts'
 import type { Lang } from './pane-lang.ts'
 
 // The fankeel mod's two drawings: two rows above the prompt for what is always
@@ -106,6 +106,25 @@ async function findEntry($: EngineInterface, id: string): Promise<{ entry: Entry
   return null
 }
 
+// The account this session's readings belong to (hooks/pane-limits.ts accountOf): the
+// .claude.json in its config dir, else the one beside the home directory — where Claude
+// Code keeps it when no CLAUDE_CONFIG_DIR is set. null when neither reads, a `$` with no
+// `env` included: the row is written without an account rather than not at all.
+async function accountFor($: EngineInterface, entry: Entry): Promise<string | null> {
+  try {
+    const home = ((await $.env.get('HOME')) || (await $.env.get('USERPROFILE')) || '').replace(/[\\/]+$/, '')
+    const dir = await configDirOf($, entry)
+    for (const file of [dir ? `${dir}/.claude.json` : '', home ? `${home}/.claude.json` : '']) {
+      if (!file || !(await $.fs.exists(file))) continue
+      const id = accountOf(String(await $.fs.read(file)))
+      if (id) return id
+    }
+  } catch (err) {
+    return null
+  }
+  return null
+}
+
 // hooks/pane-limits.ts decides whether this tick is a new row; this writes it.
 // Only while the session owns a task; a write that fails is said once and the tick goes on.
 // The percentages are account-wide, so the last key is kept per session: a second session's opening row is not deduped away.
@@ -117,7 +136,8 @@ export async function recordLimits($: EngineInterface, root: string, id: string,
     if (!next) return
     const file = `${root}/.fankeel/build/limits/${id}.jsonl`
     const text = (await $.fs.exists(file)) ? String(await $.fs.read(file)) : ''
-    await $.fs.write(file, appendRow(text, next.row))
+    const account = await accountFor($, entry)
+    await $.fs.write(file, appendRow(text, account ? { ...next.row, account } : next.row))
     lastLimits.set(id, next.key)
   } catch (err) {
     logOnce($, logged, 'limits', `fankeel pane: limits row not written, ${String(err)}`)
