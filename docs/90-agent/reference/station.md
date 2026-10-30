@@ -177,22 +177,27 @@ of them — and the stage sums of `burn`,
 `spend`, `gates` — see [registry.md](registry.md). From `lib/prices.js`: the dollar figure, and the
 date the table was read. The dollar figure shown is one total: `cost(s)` in
 the browser adds the session's own `usd` and its agents' `agentUsd` together
-(`assets/station/station.js:99`, `(s.usd || 0) + (s.agentUsd || 0)`) rather
+(`assets/station/station.js:100`, `(s.usd || 0) + (s.agentUsd || 0)`) rather
 than printing them side by side — `agentCost` is `usage.subagents`, priced
 the same way as the session's own `usage`. Opening a row appends how many
 agents ran, as a bare count beside the total rather than a request count or a
-wall-clock of its own. When the profile key `quota.week` is set (machine
-or project profile, shipped to the page as `STATION.profiles.machine` and
-`STATION.profiles.projects`), `usd()` in the
-page appends plain text ` (x%)` after a dollar figure, where x is the amount
-divided by `quota.week`, except the figures that call `usd(n, true)` (chart y ticks, bar totals, nav days badge, cost-share bar, dispatch cost-strip segments, session hero Cost value), which stay plain dollars, and every figure on 花費 — the days view and its four tabs — where `usd()` sees the route is 花費 and leaves the ratio off: a range there runs over two accounts and any number of days, so a share of one week of one account's quota measures nothing; the hero sub-line begins `(x%) · ` and tooltips keep the ratio. Both are API-equivalent estimates, not a measured
-quota percentage, and with the key unset the page is unchanged.
-`kpiHtml` itself prints no spend readout (`assets/station/chart.js:102`, `function kpiHtml(cur, prev, lead) {`). 花費's 總覽 shows the range spend split by account, with no ratio and no ` · 週額度 <day> 校準` note. `quota.calibrated` is still written by `scripts/quota.js` but nothing on the page shows it. 明細 alone passes a `lead` of two readouts, 全機花費 and session count. Each carries a 前一段 comparison, so 明細 has a spend cell and a delta (`assets/station/spend-range.js:74-76`, `rep.prev.sessions`). The 7d and 5h 額度 tabs have no range-spend cell and no 前一段 delta. Their readouts are 7d 用量, 5h 用量 and 每 1% 額度 instead (`assets/station/days-page.js:303-305`, `q.perPoint`).
+wall-clock of its own. `usd()` in the page prints plain dollars and nothing after them. Beside the two
+amounts that belong to one session — the session hero's Cost sub-line
+(`sessionHeadHtml`, `assets/station/session-body.js`) and the cost cell of 全部
+sessions (`rowHtml`, `assets/station/sessions-page.js`) — the page adds that
+session's account's share, `≈ 週 x% · 5H y%`, from `quotaParts(n, account)` in
+`assets/station/station.js`, which divides the amount by the account's `pp7` and
+`pp5` (`FK_QSHARE.quotaShare`). Both are API-equivalent estimates, not a reading
+of the quota line, and carry the title 估算：API 價格 ÷ 這個帳號每 1% 額度的美元;
+a session with no account, or one whose account's line has not climbed
+`MIN_POINTS` (10) inside one window, shows none. A sum over sessions has no
+single account, so no other figure carries a share.
+`kpiHtml` itself prints no spend readout (`assets/station/chart.js:102`, `function kpiHtml(cur, prev, lead) {`). 花費's 總覽 shows the range spend split by account, with no ratio. 明細 alone passes a `lead` of two readouts, 全機花費 and session count. Each carries a 前一段 comparison, so 明細 has a spend cell and a delta (`assets/station/spend-range.js:74-76`, `rep.prev.sessions`). The 7d and 5h 額度 tabs have no range-spend cell and no 前一段 delta. Their readouts are 7d 用量, 5h 用量 and 每 1% 額度 instead (`assets/station/days-page.js:305-307`, `q.perPoint`).
 
 Every row also carries the registry it belongs to, as `root` on its session
-object (`lib/station.js:966`, `root: s.root`) — the raw path, not the
+object (`lib/station.js:985`, `root: s.root`) — the raw path, not the
 shortened label shown on the row — and `match()` filters on that same field
-(`assets/station/station.js:185`, `s.root !== f.project`) rather than a DOM
+(`assets/station/station.js:186`, `s.root !== f.project`) rather than a DOM
 attribute, because every row here is rebuilt from `window.STATION` in the
 browser instead of arriving as markup; see Filtering, and the two views
 below.
@@ -208,13 +213,13 @@ page's four groups — reads `flatten()`'s output rather than the model
 itself, so no view filters a second time. Every aggregation that walks
 `model.registries` instead carries its own check, and a new one has to:
 the live/stale/down counts `write()` returns for the terminal summary
-(`lib/station.js:1216`, `if (hidden.has(s.project ? r.root + '/' + s.project : r.root)) continue;`),
+(`lib/station.js:1235`, `if (hidden.has(s.project ? r.root + '/' + s.project : r.root)) continue;`),
 the sixth card's gate tally
 (`lib/station.js:828`, `if (hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))) continue;`),
 the `docs` list `serialize()` hands the page for the 文件 card
-(`lib/station.js:944`, `docs: (r.docs || []).filter((d) => !hidden.has(d.pkey)),`),
+(`lib/station.js:963`, `docs: (r.docs || []).filter((d) => !hidden.has(d.pkey)),`),
 the profile list `serialize()` hands the page
-(`lib/station.js:953`, `if (values && values['station.hide'] === true) continue;`) —
+(`lib/station.js:972`, `if (values && values['station.hide'] === true) continue;`) —
 an inline copy of the predicate rather than a `hiddenPkeys()` call, because
 that loop is keyed by the raw profiles directory rather than by pkey —
 `write()`'s detail-file loop described below, and `--json`'s own pass
@@ -261,7 +266,7 @@ stage's minutes went on a gate rather than on work. Neither carries a dollar
 figure any more; a stage's own cost surfaces in the per-route stage
 ledger on the old project page (the fallback when `project-page.js` is
 missing), and per stage and model inside the old session page's 概覽, under a `<details class="csmore">` element
-(`assets/station/station.js:676`, `'<details class="csmore"><summary>'`) — not on this table's rows.
+(`assets/station/station.js:677`, `'<details class="csmore"><summary>'`) — not on this table's rows.
 
 A stage's dollar figure needs `spend`, which `hooks/leave.js` writes once, at
 session end — a live session does not have it yet, and no session that ended
@@ -283,7 +288,7 @@ with 派工 and 對話 drawn by `assets/station/session-dispatch.js` and
 `assets/station/session-talk.js`; a 關卡 link joins them only while the
 session's `gateAt` is set, to `/f/<id>/gate` when served. `#/s/<id>/cost`
 opens 經過. 事件, 計畫 and 關卡 stay on the old page
-(`assets/station/station.js:962`, `var SESSION_TABS = ['timeline', 'cost', 'dispatch', 'talk'];`),
+(`assets/station/station.js:963`, `var SESSION_TABS = ['timeline', 'cost', 'dispatch', 'talk'];`),
 which also draws every tab when the module is missing. The rest of this
 section describes that old page. It had six tabs — 概覽,
 派工, 事件, 對話, 計畫 and 關卡 — and `#/s/<id>/<tab>` opens one directly, with `timeline`,
@@ -293,7 +298,7 @@ largest rises, plus the per-stage spend bar and the stage × model table that
 used to be 花費's own tab (see below). An old `#/s/<id>/cost` link still
 parses — `cost` stays a valid `TABS` value in `parseHash` — but now opens
 概覽 rather than a separate tab, since `tabsHtml`'s `TAB_SHOWN`
-(`assets/station/session-body.js:427`, `['timeline', 'dispatch', 'events', 'talk', 'plan', 'gate']`) maps
+(`assets/station/session-body.js:429`, `['timeline', 'dispatch', 'events', 'talk', 'plan', 'gate']`) maps
 `cost` back to `timeline`. 派工 gives
 every row its input and output tokens, read from `split`, and its dollars,
 read from `cost`; 事件 is the replay, each gate's row carrying how long it
@@ -409,15 +414,15 @@ agent's return entered the main context.
 
 On the old page, where a stage's dollars live is no longer its own tab: the stage × model
 table sits inside 概覽, under a `<details>` element titled "stage × model
-明細" (`assets/station/station.js:676`, `<details class="csmore">`). Above
+明細" (`assets/station/station.js:677`, `<details class="csmore">`). Above
 it, when the session has a detail loaded, sits the timeline chart, which now
 also tints its background by stage; and above that sits `costShareHtml`
-(`assets/station/session-body.js:330`, `function costShareHtml(L, hi) {`), a bar
+(`assets/station/session-body.js:331`, `function costShareHtml(L, hi) {`), a bar
 with one segment per stage that has paid, each segment sized by its share of
 the session's total dollars — clicking a segment, or a row of the table under
 it, marks that stage on the timeline below (`data-hist`). 派工 also gets a
 small strip, `dispatchStagesHtml`
-(`assets/station/session-body.js:360`, `function dispatchStagesHtml(L, id, hi) {`),
+(`assets/station/session-body.js:361`, `function dispatchStagesHtml(L, id, hi) {`),
 linking each stage's agent dollars back to 概覽 with that stage marked. The
 table itself: a stage
 × model table summed from the session's `days`, with input, output,
@@ -509,8 +514,7 @@ priced from its own per-kind counts — `workflow_agent.tokens` is one undivided
 number and cannot be priced — with the price table's `verified` date beside
 them and `unpriced` where the table does not know the model. A model id
 missing from the price table is priced from its family's newest row and marked
-`estimated` (shown as 估 / est.); the calibration in `scripts/quota.js` lists
-such ids too. Two more columns
+`estimated` (shown as 估 / est.). Two more columns
 follow the dollars: the largest context a single one of its requests carried,
 and how many requests it made — every band and the footer sum the request
 column the way they sum every other, while the peak column takes the largest
@@ -628,7 +632,7 @@ otherwise point outside the repository it sits in.
 
 Before `station-data.js` arrives the shell has nothing to draw, so
 `station.css` alone fills that wait
-(`assets/station/station.css:1008`, `first load`): CSS-only placeholders
+(`assets/station/station.css:1009`, `first load`): CSS-only placeholders
 stand in for the nav and the page, with a `計算中…` spinner beside where the
 side panel would sit, and the placeholders hold still rather than animate
 under `prefers-reduced-motion`.
@@ -759,7 +763,7 @@ when the browser can listen, a mic button beside it
 `fkListen` and a second click stops it (`assets/station/station.js:1372`,
 `if (fkRec) { fkRec.stop(); return; }`); what is heard goes into the box and
 the status line `gsay`, and nothing is sent until the send button is pressed
-(`assets/station/station.js:1027`, `Voice fills the box and never sends`). The
+(`assets/station/station.js:1028`, `Voice fills the box and never sends`). The
 gate page draws the same pair in `freeHtml`
 (`assets/station/gate-frame.js:105`, `function freeHtml(st) {`), toggled by
 `micToggle` (`assets/station/gate-frame.js:132`), which fills the box on
@@ -767,8 +771,8 @@ gate page draws the same pair in `freeHtml`
 
 On a phone (under 600px) the bell panel is a bottom sheet: fixed to the bottom
 edge, 85dvh at most, with a grip, `.fkg`, and a 44px close button, `.fkx`
-(`assets/station/station.css:1215`, `@media (max-width:599px){`;
-`assets/station/station.css:1213`, `.fkg,.fkx{display:none}` hides both above
+(`assets/station/station.css:1216`, `@media (max-width:599px){`;
+`assets/station/station.css:1214`, `.fkg,.fkx{display:none}` hides both above
 that width). `fkClose` closes it, and when a gate is still held it sets
 `fk:shut` so the panel stays shut until the gate is gone
 (`assets/station/float.js:287`, `function fkClose() {`;
@@ -778,10 +782,10 @@ The sheet hides the resize grip (`assets/station/station.css:1217`,
 
 On a desktop the panel opens wider than before, `min(560px, 100vw - 32px)`,
 with the 24px resize grip `.fkr` at its bottom left
-(`assets/station/station.css:1123`, `width:min(560px,calc(100vw - 32px))`;
-`assets/station/station.css:1127`, `.fkr{position:sticky;bottom:0;display:block;width:24px;height:24px`).
+(`assets/station/station.css:1124`, `width:min(560px,calc(100vw - 32px))`;
+`assets/station/station.css:1128`, `.fkr{position:sticky;bottom:0;display:block;width:24px;height:24px`).
 A size the person dragged to is still kept as `station.fkBox`
-(`assets/station/station.js:992`, `var FK_BOX_KEY = 'station.fkBox';`).
+(`assets/station/station.js:993`, `var FK_BOX_KEY = 'station.fkBox';`).
 
 On `/m` the four list screens — Session (`#/`), 等你 (`#/ask`), RC 對話 (`#/rc`) and 完成 (`#/done`) — share a bottom tab bar of 64px tabs padded by the home indicator, the 等你 tab carrying the number of held gates (`assets/station/mobile.js:581`, `function tabbar(view, m) {`; `assets/station/mobile.css:387`, `.tabbar{flex:none;display:grid;`); a session's own screen hides it. Each session is a card with its title, project, stage and one status line, and the latest line and background list behind its chevron (`assets/station/mobile.js:542`, `function card(x, at, u, kind, m) {`); a gate's card is the amber one, listed first, with the question and 去答. Every row carries the computer it is on (`machine`); while more than one computer is listed, Session and RC 對話 have filter chips under the title, 全部 then one a computer (a `?m=` on the Session or RC hash), an offline one with its icon, and each card a tag with its computer; under 全部 an offline computer's sessions are left out with one line saying so, and picking it shows when it was last reached and its rows as last seen (`assets/station/mobile.js:473`, `function filterHtml(m, u, view) {`; `assets/station/mobile.js:495`, `function offView(m, mc, rows, unreg, at, u) {`). Unregistered sessions are their own group, `未登記`, each card with Desktop or CLI, an RC dot while Remote Control is attached, its cwd and busy or idle (`assets/station/mobile.js:453`, `function urCard(m, x, at, u, o) {`). The RC 對話 tab lists every computer's sessions with Remote Control on, attached and ended, and says at its foot that only computers running a station are there, with a link to claude.ai/code (`assets/station/mobile.js:636`, `function rcHtml(m, at, u) {`). The host pill in each list screen's header — the machine's name, or `N 台電腦` with how many are offline — opens the 測站 sheet: the connection, this phone (`device`), the session the phone holds and its time left (`holdUntil`), and one row a computer, connected, offline with when it was last reached, `wait` while not read yet, refused (its token turned away, showing 被拒) or unpaired, the last two with a box for the code on that computer's 手機遠端 card; this computer's own row holds re-pairing this phone, and unpairing stays on the desktop's 手機遠端 card, since `/station/remote/revoke` is this machine's only (`assets/station/mobile.js:666`, `function machinesHtml(m, u) {`). The header pads by the safe area (`assets/station/mobile.css:325`, `body.m .ab.ab2{display:grid;gap:0;min-height:0;padding:calc(6px + env(safe-area-inset-top)) 8px 8px 20px}`), and station.css's desktop `.pg` frame is cleared on the phone (`assets/station/mobile.css:371`, `body.m .scr>.pg{flex:1;min-height:0;margin:0;padding:0;border:0;border-radius:0;background:none}`). A session's screen, `#/s/<id>/<pane>`, holds a TokenBar — context against the compact line, the 5h and 7d limits with where the time says each should be, one line of three meters that opens to labelled rows in place without redrawing the composer — and six pane tabs, 對話 概覽 計畫 派工 事件 關卡, which a sideways swipe also moves between (`assets/station/mobile.js:1125`, `function chatHtml(m, id, at, u, P, pane, machine) {`; `assets/station/mobile.js:314`, `function swipeTo(pane, dx, dy) {`). 概覽 is the session's stages finished in `done`, 計畫 its route (phone.json carries no plan tasks; the row links the desktop plan page), 派工 its background items, 事件 its tool steps and 關卡 its held questions; every row opens on a tap. An unregistered session's screen, `#/u/<computer>/<id>[/talk|events]`, is read only: its own header (Desktop or CLI, RC, the computer, busy or idle, cwd), the TokenBar, two pane tabs, 對話 and 事件, a line saying why the other four are not there, and a read-only foot that sends nothing, saying so, with a link to https://claude.ai/code when Remote Control is on (`assets/station/mobile.js:1162`, `function unregHtml(m, r, at, u, P) {`). A session on another computer, `#/m/<computer>/<id>` or `#/u/<computer>/<id>`, is read and acted on through `/station/peer/<computer>/…` (`assets/station/mobile.js:1405`, `function via(R) {`). A chat
 whose session is at a gate pins the gate's question under the header, with a
@@ -830,13 +834,13 @@ the search box in the top bar matches task, project, session id, registry
 label, model, state, next, the files touched and its notes — AND-ed.
 
 The same box also opens a grouped-results popover about 200 ms after typing
-stops (`assets/station/station.js:1663`, `}, 200)`): `qGroups`
+stops (`assets/station/station.js:1664`, `}, 200)`): `qGroups`
 (`assets/station/search.js:16`, `function qGroups(q) {`) buckets what
 matches into Sessions, 專案 and 文件, up to five rows each with a 看全部 link
 when there are more, and `qDraw`
 (`assets/station/search.js:50`, `function qDraw() {`) draws it with each
 match highlighted. `/` focuses the box from anywhere on the page
-(`assets/station/station.js:1708`, `if (e.key === '/')`), the arrow keys
+(`assets/station/station.js:1709`, `if (e.key === '/')`), the arrow keys
 move the selection, Enter opens what is picked and Esc closes the popover.
 文件 in this popover matches only the paths and buckets the page's own data
 carries. The page bodies are searched on 文件 itself — see
@@ -920,7 +924,7 @@ card says so in its head.
 
 The left nav (`navHtml`, `data-block="nav"`) no longer groups its links into
 three loose headings; `NAV_TREE`
-(`assets/station/station.js:375`, `var NAV_TREE = [`) defines six ordered
+(`assets/station/station.js:376`, `var NAV_TREE = [`) defines six ordered
 entries instead, one level with no folds. 現在 is a single link, `#/`.
 Sessions links to `#/sessions` and carries four kids: 進行中 `#/live`, 最近 `#/sessions`, 全部清單
 `#/list` and 比較 `#/cmp`. 花費 links to `#/days` and carries two kids: 近 30 天
@@ -940,7 +944,7 @@ read with `stored()`'s try/catch so a `file:` page or private mode with no
 holds the three-state 跟隨系統/淺色/深色 button in the masthead's
 `div.appear` (`id="appear"`, drawn by `drawTheme`); a click cycles it and
 writes the new value
-(`assets/station/station.js:1188`, `store('station.theme', t === 'system' ? null : t);`), and the
+(`assets/station/station.js:1189`, `store('station.theme', t === 'system' ? null : t);`), and the
 stored value is read and set as `data-theme` on `<html>` before the page's
 first paint, so a reader on 深色 never sees a flash of light first
 (`assets/station/station.js:23`, `themeSet(stored('station.theme'));`).
@@ -980,7 +984,10 @@ tasks running in it spent (`FK_QSHARE.shareOf`,
 `assets/station/quota-share.js`); a second click, or the blank, clears it.
 The data is `STATION.quota.accounts` — per account its key, the 7d reset's
 weekday and HH:MM, its 7d steps, its 5h windows, its forecast and the span
-the price of a point comes from (`quotaOf`, `lib/quota.js`) — and on each
+the price of a point comes from (`quotaOf`, `lib/quota.js`), and `pp7` and `pp5`, its dollars per 1% of the week and of its newest 5h
+window that climbed 10 points, from its own sessions' `bins` (`accountQuota`,
+`lib/station.js`; `perPoint` and `span5`, `assets/station/quota-share.js`) — the
+7d tab's 每 1% 額度 reads `pp7` rather than working it out again — and on each
 session its `account`, task `segments` and five-minute spend `bins`. Every
 row `hooks/pane.ts` appends to `.fankeel/build/limits/<session>.jsonl`
 carries `account`, the `oauthAccount.accountUuid` of the session's
@@ -1021,7 +1028,7 @@ and from the answer before either is compared, so one option is one entry
 however it was dressed. Unlike the other
 five, which all follow the range, it does not move with the range or the search box: it is
 counted once, across every shown session's gate answers
-(`lib/station.js:962`, `gates: gateSummary(model, hidden),`), not from the
+(`lib/station.js:981`, `gates: gateSummary(model, hidden),`), not from the
 filtered set that tokens, active time and waiting ratio sum. It walks the model rather than
 `flatten()`'s output, so it takes the hidden set as an argument and skips
 those sessions itself
@@ -1085,7 +1092,7 @@ replaces sorted by it (`assets/station/list-page.js:84`, `a sort key with no hea
 `updated` descending, so the page's first sort is the one it arrived in.
 
 **比較**, `#/cmp`, is now the 全部 list with its compare tray open
-(`assets/station/station.js:959`, `VIEWS.cmp = function (r) { return w.FK_SESSIONS.page(S, modOpts({ tray: true })); };`):
+(`assets/station/station.js:960`, `VIEWS.cmp = function (r) { return w.FK_SESSIONS.page(S, modOpts({ tray: true })); };`):
 ticking two or three rows there opens a compare dialog of the fields
 `lib/compare.js` returns, so the page is never empty. Tick two sessions on 清單 or a project page — only a
 session with a detail can be ticked, and a third tick drops the first — and
@@ -1148,10 +1155,10 @@ and the eyebrow's cannot disagree.
 
 What to say is a pure function above the `module.exports` guard, so it is
 unit tested
-(`assets/station/station.js:358`, `function serveLost(lastOkMs, nowMs, genAbs, genRel) {`).
+(`assets/station/station.js:359`, `function serveLost(lastOkMs, nowMs, genAbs, genRel) {`).
 The eyebrow is 花費's own: `days-page.js` prints `凍結於 {t}` from the view's
 `frozenAt`, its `q.frozenAt` string, and nothing when that is null
-(`assets/station/days-page.js:395`, `(C.frozenAt ? loc('q.frozenAt', '凍結於 {t}', { t: C.frozenAt }) : '')`). The
+(`assets/station/days-page.js:397`, `(C.frozenAt ? loc('q.frozenAt', '凍結於 {t}', { t: C.frozenAt }) : '')`). The
 fetch that feeds them, the bar they fill and the pill are the document half
 below the guard. The eyebrow is rendered rather than patched, so it takes a
 redraw — but only as the state flips, never on a poll that finds nothing
@@ -1186,7 +1193,7 @@ registry; the footer on both says when it was generated.
 A session under a hidden project produces no `station/detail/<id>.js`
 either, on every one of those four writes. `write()` walks
 `model.registries` directly for this loop rather than through `flatten()`,
-so it carries its own check (`lib/station.js:1292`, `hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))`):
+so it carries its own check (`lib/station.js:1311`, `hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))`):
 hiding a project after its sessions already had a detail file does not
 delete that file, it just stops being rewritten — nothing in `write()`
 removes a file it once wrote.
@@ -1296,14 +1303,14 @@ for the child cannot read the old url as the new one.
 `clearEntry` once per row so the checks are the same list rather than a
 second copy of them. A clean run redirects to `/?cleared=N`, and the reloaded
 page still carries that count
-(`assets/station/station.js:1820`, `w.STATION.cleared = S.cleared`); a
+(`assets/station/station.js:1821`, `w.STATION.cleared = S.cleared`); a
 refusal answers `409` with which rows it refused and why, since a redirect
 has nowhere to say it. It takes the same `force` tick and the same nonce as
 the single-row button. `clearStaleControl` in `assets/station/station.js`
 renders the form when the page is served, and prints the copyable command when
 it is not — a static file cannot post. The
 redesigned 可能停了 card carries one per stale row: `modOpts`
-(`assets/station/station.js:953`) passes `clear: clearControl`, and `row` in
+(`assets/station/station.js:954`) passes `clear: clearControl`, and `row` in
 `assets/station/live-page.js` draws it in a `lv-row-clear` beside the row's
 `<a>`, not inside it; without `opts.clear` the row is the bare link.
 
