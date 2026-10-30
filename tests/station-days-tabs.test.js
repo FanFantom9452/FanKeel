@@ -160,7 +160,7 @@ test('明細 on a served page has six kpi cells once the range spend arrives, �
         ['全機花費（usage-compare 規則）', 'session', 'token', 'active 時間', '等待佔比', '最常被換掉']);
 });
 
-// 明細's kpi row as [label, value, line under] per cell, so a second "—" cell or
+// 明細's kpi row as [label, value] per cell, so a second "—" cell or
 // a stray session cell changes the array the tests compare whole.
 const kpiCells = (html) => [...html.match(/<div class="readouts" data-block="kpi">([\s\S]*?)<\/section>/)[1]
     .matchAll(/<div class="ro"[^>]*><div class="l">(?:<i class="hatchsw"><\/i>)?([^<]+)<\/div><div class="v">([\s\S]*?)<\/div><div class="d">/g)]
