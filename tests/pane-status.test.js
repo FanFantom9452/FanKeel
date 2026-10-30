@@ -516,14 +516,13 @@ test('the agents block lists six roots and three under each, and folds the rest'
     assert.equal(block[block.length - 1], ' 還有 2 個');
 });
 
-test('the station is the foot\'s last row: a button and the whole url, or grey words when none is up, with a task or without', async () => {
+test('the station is the foot\'s last two rows: a button alone, then the whole url in grey, with a task or without', async () => {
     const m = await load();
     const url = 'http://127.0.0.1:28888/';
-    const on = [{ text: '開啟 station', press: 'station' }, { text: ' ' + url, color: SECOND }];
-    assert.deepEqual(body(status(m, { station: url }), 'foot').slice(-1), [on]);
-    assert.equal(text(status(m, { station: url }), 'foot')[1], ' 開啟 station ' + url);
+    const on = [[{ text: '開啟 station', press: 'station' }], [{ text: url, color: SECOND }]];
+    assert.deepEqual(body(status(m, { station: url }), 'foot').slice(-2), on);
     const empty = status(m, { entry: null, others: [], station: url });
-    assert.deepEqual(empty[empty.length - 1], { block: 'empty', segs: on });
+    assert.deepEqual(empty.slice(-2), on.map((segs) => ({ block: 'empty', segs })));
 });
 
 test('route and tasks open under a ▾ head and fold to it under ▸, the route head naming the stage', async () => {
@@ -544,7 +543,7 @@ test('route and tasks open under a ▾ head and fold to it under ▸, the route 
     assert.deepEqual(heads(status(m, { entry: Object.assign({}, entry, { stage: 'nowhere' }) })), []);
 });
 
-test('the TODO block is a fold head counting the open entries, then a Button a state with its count that opens the station on that state; no title is listed', async () => {
+test('the TODO block is a fold head counting the open entries, then a Button for each state that has entries, opening the station on that state; a state with none is not drawn and no title is listed', async () => {
     const m = await load();
     const url = 'http://127.0.0.1:28888/';
     const pkey = 'F:/ws/app';
@@ -554,14 +553,14 @@ test('the TODO block is a fold head counting the open entries, then a Button a s
     const sp = { text: ' ' };
     const keys = [
         { text: 'Ready 8', press: 'todo', to: at + 'state%3Aready' },
-        { text: 'Needs a decision 0', color: SECOND },
         { text: 'Blocked 1', press: 'todo', to: at + 'state%3Ablocked' },
         { text: 'Watch 1', press: 'todo', to: at + 'state%3Awatch' },
     ];
     const head = { text: '▾ TODO 10', color: SECOND, bold: true, press: 'fold', fold: 'todo' };
-    // Wide: the four counts share one row. Narrow: two rows of two.
-    assert.deepEqual(body(status(m, { station: url, todos, pkey, cols: 100 }), 'todo'), [[head], [keys[0], sp, keys[1], sp, keys[2], sp, keys[3]]]);
-    assert.deepEqual(body(status(m, { station: url, todos, pkey, cols: 41 }), 'todo'), [[head], [keys[0], sp, keys[1]], [keys[2], sp, keys[3]]]);
+    // Wide: the three counts share one row, and `Needs a decision 0` is not drawn. Narrow: rows of two.
+    assert.deepEqual(body(status(m, { station: url, todos, pkey, cols: 100 }), 'todo'), [[head], [keys[0], sp, keys[1], sp, keys[2]]]);
+    assert.deepEqual(body(status(m, { station: url, todos, pkey, cols: 30 }), 'todo'), [[head], [keys[0], sp, keys[1]], [keys[2]]]);
+    assert.ok(!text(status(m, { station: url, todos, pkey, cols: 100 }), 'todo').join('\n').includes('Needs a decision'));
     // Never more than the head and two count rows, and never a title, at any width or with any entries.
     for (const cols of [20, 30, 41, 60, 100]) {
         const rows = status(m, { station: url, todos, pkey, cols });
@@ -581,7 +580,8 @@ test('with no room the TODO block goes first, down to its head row', async () =>
     const todos = Array.from({ length: 3 }, (_, i) => ({ id: 'a-' + i, title: 'entry ' + i, state: 'ready' }));
     const rows = (room) => status(m, { station: 'http://127.0.0.1:28888/', todos, pkey: 'F:/ws', room });
     const full = rows(60).length;
-    assert.equal(drawn(rows(full), 'todo').length, 3);
+    // Only `ready` has entries, so the block is its head and one row of counts.
+    assert.equal(drawn(rows(full), 'todo').length, 2);
     assert.deepEqual(text(rows(full - 1), 'todo'), ['▌▾ TODO 3 · 列數不夠']);
     assert.deepEqual(blocksOf(rows(full - 1)), ['task', 'notes', 'todo', 'foot']);
     assert.deepEqual(blocksOf(rows(-9)), ['task', 'todo', 'foot']);

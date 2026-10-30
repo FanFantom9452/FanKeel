@@ -326,24 +326,22 @@ function tasksBlock(entry: Entry, plan: PlanInfo | null, agents: AgentNode[], in
   return rows
 }
 
-// The station, the foot's last row: a button that opens its page and the whole
-// url beside it, or grey words saying none is up. The terminal draws the
-// button as `[ label ]`, four cells wider than its label; a Pane narrower than
-// the url cuts the url's end.
-function stationRow(url: string | null | undefined, inner: number, lang?: Lang): Row {
-  if (!url) return row('foot', dim(cut(say(lang, 'status.noStation'), inner)))
-  const label = say(lang, 'status.open')
-  return row('foot', { text: label, press: 'station' }, dim(cut(` ${url}`, Math.max(4, inner - width(label) - 4))))
+// The station, the foot's last two rows: a button that opens its page alone on
+// its row, then the whole url in grey beneath it, cut to `inner`; or grey words
+// saying none is up. The button sits alone so the url never squeezes it.
+function stationRows(url: string | null | undefined, inner: number, lang?: Lang): Row[] {
+  if (!url) return [row('foot', dim(cut(say(lang, 'status.noStation'), inner)))]
+  return [row('foot', { text: say(lang, 'status.open'), press: 'station' }), row('foot', dim(cut(url, inner)))]
 }
 
 // lib/todo.js STATES, the four the TODO block has a Button for, in the station panel's order, each with its label.
 export const TODO_STATES: [string, string][] = [['ready', 'Ready'], ['decision', 'Needs a decision'], ['blocked', 'Blocked'], ['watch', 'Watch']]
 
 // The project's open TODO entries under a fold head that counts them, then the
-// four states each with its count: a state with entries is a Button opening the
-// station's TODO panel on that state's group (`todo/state:<state>`, the id
-// assets/station/station.js gives the group's heading), a state with none is grey
-// words. The counts share one row when they fit `inner` and fall to two rows of
+// each state that has entries as a Button with its count, opening the station's
+// TODO panel on that state's group (`todo/state:<state>`, the id
+// assets/station/station.js gives the group's heading); a state with none is not
+// drawn. The counts share one row when they fit `inner` and fall to rows of
 // two when they do not; no title is listed, so the block is three rows at most.
 // The terminal draws a Button four cells wider than its label. No entries, no block.
 function todoBlock(todos: TodoEntry[], pkey: string, inner: number, folded: boolean): Row[] {
@@ -351,15 +349,17 @@ function todoBlock(todos: TodoEntry[], pkey: string, inner: number, folded: bool
   const at = `#/p/${encodeURIComponent(pkey)}/todo`
   const rows = [row('todo', head('todo', folded, `TODO ${todos.length}`))]
   if (folded) return rows
-  const keys = TODO_STATES.map(([state, label]): Seg => {
+  // Only a state with entries is drawn: a grey zero between Buttons reads as a broken Button.
+  const keys = TODO_STATES.flatMap(([state, label]): Seg[] => {
     const n = todos.filter((t) => t.state === state).length
-    if (!n) return dim(`${label} 0`)
-    return { text: `${label} ${n}`, press: 'todo', to: `${at}/${encodeURIComponent(`state:${state}`)}` }
+    return n ? [{ text: `${label} ${n}`, press: 'todo', to: `${at}/${encodeURIComponent(`state:${state}`)}` }] : []
   })
   const gap: Seg = { text: ' ' }
-  const cells = keys.reduce((sum, k) => sum + width(k.text) + (k.press ? 4 : 0), 0) + 3
-  if (cells <= inner) rows.push(row('todo', keys[0], gap, keys[1], gap, keys[2], gap, keys[3]))
-  else rows.push(row('todo', keys[0], gap, keys[1]), row('todo', keys[2], gap, keys[3]))
+  const spread = (ks: Seg[]): Seg[] => ks.flatMap((k, i) => (i ? [gap, k] : [k]))
+  // The terminal draws a Button four cells wider than its label.
+  const cells = keys.reduce((sum, k) => sum + width(k.text) + 4, 0) + keys.length - 1
+  if (cells <= inner) rows.push(row('todo', ...spread(keys)))
+  else for (let i = 0; i < keys.length; i += 2) rows.push(row('todo', ...spread(keys.slice(i, i + 2))))
   return rows
 }
 
@@ -447,8 +447,8 @@ export function statusRows(input: StatusInput): Row[] {
     return [
       { block: 'empty', segs: [{ text: cut(say(lang, 'status.empty'), cols) }] },
       { block: 'empty', segs: [dim(cut(say(lang, 'status.start'), cols))] },
-      // The station row with its rail left off, as the two above have none.
-      { block: 'empty', segs: stationRow(input.station, cols, lang).segs.slice(1) },
+      // The station rows with their rail left off, as the two above have none.
+      ...stationRows(input.station, cols, lang).map((r): Row => ({ block: 'empty', segs: r.segs.slice(1) })),
     ]
   }
   // 1: the cell every drawn row opens with, its block's rail or the space under it.
@@ -474,7 +474,7 @@ export function statusRows(input: StatusInput): Row[] {
 
   // The probe is asked for by hand (hooks/pane.ts probeOf): it is drawn whole, in the block that never drops.
   const probed = input.probe ? wrap(input.probe, inner).map((text) => row('foot', dim(text))) : []
-  blocks.push([...probed, row('foot', dim(cut(say(lang, 'status.close', { id: id.slice(0, 8) }), inner))), stationRow(input.station, inner, lang)])
+  blocks.push([...probed, row('foot', dim(cut(say(lang, 'status.close', { id: id.slice(0, 8) }), inner))), ...stationRows(input.station, inner, lang)])
 
   // Every block but the first costs a blank row above it.
   const size = (): number => blocks.reduce((n, block) => n + block.length, blocks.length - 1)
