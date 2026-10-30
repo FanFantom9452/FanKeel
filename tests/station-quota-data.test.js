@@ -54,6 +54,18 @@ test('a session\'s segments and bins come from its detail, and a question still 
     assert.deepEqual(s.detail.segments[0].gates, [], 'the detail itself is not changed');
 });
 
+test('a session that died at a gate keeps its segments as they were', () => {
+    const { m, now } = setup();
+    const s = m.registries[0].sessions[0];
+    const seg = { task: 't', start: now - 3000e3, end: now - 600e3, stages: [{ stage: 'build', start: now - 3000e3, end: now - 600e3 }], gates: [] };
+    s.detail = { segments: [seg], bins: [], days: [], spans: [], events: [] };
+    s.gateAt = now - 300e3;
+    s.state = 'down';
+    delete s.ended;
+    const page = parse(station.serialize(m, {}));
+    assert.deepEqual(page.sessions[0].segments, [seg]);
+});
+
 test('a session with no detail has no segments and no bins', () => {
     const { m } = setup();
     m.registries[0].sessions[0].detail = null;
