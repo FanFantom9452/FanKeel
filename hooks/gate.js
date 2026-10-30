@@ -49,6 +49,7 @@ const fs = require('node:fs');
 const crypto = require('node:crypto');
 const registry = require('../lib/registry.js');
 const profileLib = require('../lib/profile.js');
+const askhuman = require('../lib/askhuman.js');
 const { inspect, awayLine, AWAY_QUESTION } = require('../lib/context.js');
 const { controlling, nextStage, normaliseRoute, FULL_ROUTE } = require('../lib/stages.js');
 const { handoffPath, answerPath, pendingPath, answersSince, answeredOf, handedOffSince, writeAnswer, readGate, patrolEntries, reportProblem, formatProblem, skipReason, gateMatches, withCheckout } = require('../lib/handoff.js');
@@ -79,6 +80,8 @@ function charOverlap(a, b) {
     }
     return shared / Math.max(a.length, b.length, 1);
 }
+// One question as a string — its text and option labels — for charOverlap.
+const textOf = (q) => (q && q.question || '') + '|' + (Array.isArray(q && q.options) ? q.options.map((o) => o && o.label).join('|') : '');
 // A paraphrase of the same gate question, keeping the same options, still
 // overlaps heavily; a genuinely different question sharing only the header
 // does not. Picked against tests/gate.test.js's own cases.
@@ -297,6 +300,25 @@ function main(raw) {
     // stage is not controlled. Silent before 2026-09-24, so a question that was
     // never checked left no trace of which condition failed. A message, not a
     // decision: the question still goes out.
+    // A judgement waiting on a person (`ask human:`, lib/askhuman.js): its
+    // questions go out verbatim or not at all. Checked before the gate, since a
+    // judgement question is not the stage gate and would be judged against it.
+    const judged = askhuman.pendingFor(root, payload.session_id);
+    if (judged) {
+        const asked = Array.isArray(payload.tool_input && payload.tool_input.questions) ? payload.tool_input.questions : [];
+        const same = asked.length === judged.questions.length && asked.every((q, i) => {
+            const want = judged.questions[i];
+            return q && q.question === want.question && Array.isArray(q.options) && q.options.length === want.options.length
+                && q.options.every((o, j) => o && o.label === want.options[j].label);
+        });
+        if (same) return emit({}, payload, root, mine, values);
+        if (charOverlap(asked.map(textOf).join(''), judged.questions.map(textOf).join('')) > ATTEMPT_THRESHOLD) {
+            refuse('fankeel: this question is not the judgement waiting on a person in ' + judged.file
+                + '. Ask its `questions` JSON verbatim — copy it word for word, do not retype or summarize it — then ask again.');
+            return;
+        }
+    }
+
     if (!gate) {
         // A patrol survey run in session owes the same line per entry as a
         // stage agent's, in a report it wrote itself at the handoff path.
@@ -368,7 +390,6 @@ function main(raw) {
         const askedHeader = headerOf(first);
         const headerMatches = askedHeader !== null
             && (askedHeader === String(mine.stage || '').toLowerCase() || askedHeader === headerOf(gateFirst));
-        const textOf = (q) => (q && q.question || '') + '|' + (Array.isArray(q && q.options) ? q.options.map((o) => o && o.label).join('|') : '');
         const looksLikeAttempt = headerMatches
             && charOverlap(textOf(first), textOf(gateFirst)) > ATTEMPT_THRESHOLD;
         if (looksLikeAttempt) {
