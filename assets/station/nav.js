@@ -4,8 +4,7 @@
 (function (w) {
     'use strict';
     function make(K) {
-        // One alias per name K carries, so the bodies below moved verbatim; the
-        // station.js vars that are assigned later (S, NOW) are read as K.<name>().
+        // One alias per name K carries: loc, esc, w, NAV_TREE, focusHref, mins.
         var loc = K.loc, esc = K.esc, w = K.w, NAV_TREE = K.NAV_TREE, focusHref = K.focusHref, mins = K.mins;
         // What 最近 sessions lists: anything that spent inside the window, and
         // anything still live whether or not it has spent yet. Newest first.

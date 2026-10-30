@@ -915,29 +915,6 @@ cost (main + agents) and the last move as an age — with a peek on hover or
 focus; two or more unnamed sessions in one card fold into one row. An empty
 card says so in its head.
 
-Without that module, `#/live` falls back to `nowHtml`, four blocks top to bottom, each writing its
-own `data-block`: `live-gate`, the sessions whose `s.pending.questions` is
-non-empty, one row each naming the question and how long it has waited, or
-the one line `沒有在等你的 gate` when none is; `live-run`, 正在跑, every
-`live` session whose liveness was measured, one lane each — project and
-root, task, the route as a line of stops with the current one ringed and
-its time in the stage, the last registry write and how long ago it
-started; under each confirmed-live lane, `data-block="live-subagents"` lists what is
-running for it now — the stage agent in flight (`inflight` on the record,
-while it names the current stage: when it was sent and how long it has been
-out) and each subagent `runningAgents` (`lib/usage.js`,
-`function runningAgents(sessionDir, now, opts) {`) reads as mid-turn, with
-its type, the model and effort it last ran (the family when none is recorded), description and age — or one line saying the main
-session is working alone. A subagent is finished when the last assistant or user line of its `agent-<id>.jsonl` is an assistant line with text and no tool_use — `agent-<id>.meta.json` is written once, at spawn, and carries no end, so the end is read off the transcript; measured 2026-09-27 on 290 finished agents in one project, 288 ending `end_turn` and 2 ending `stop_reason: null` with text alone. A file that has not moved in 20 minutes is a stopped agent and is dropped. Only a live row is read: `gather()` leaves `subagents` empty
-otherwise; `live-maybe`,
-可能已經停了, the `stale` sessions and the `live?`
-ones, the `live?` pill greyed, with each registry's `clearStaleControl` in
-the block's heading; and `live-idle`, every registry that is not `gone` and
-has neither, as one row of name chips linking to its project page. Only
-sessions under a registry that is not `gone` appear, and a session that is
-down has finished and is on 最近 sessions instead. `livePage` passes the
-Sessions subtabs strip above them (`subtabsHtml('live')`).
-
 The left nav (`navHtml`, `data-block="nav"`) no longer groups its links into
 three loose headings; `NAV_TREE`
 (`assets/station/station.js:374`, `var NAV_TREE = [`) defines six ordered

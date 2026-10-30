@@ -357,14 +357,11 @@
         return loc('live.frozenBelow', '底下所有數字與狀態都凍結在 {abs}（{rel}），不會再更新。每 5 秒重試一次。', { abs: genAbs, rel: genRel });
     }
 
-    // ---- the left bar and old live — assets/station/nav.js (FK_NAV) ----------
+    // ---- the left bar — assets/station/nav.js (FK_NAV) ----------
     var NAV_;
     function NAV() {
         return NAV_ || (NAV_ = mod('FK_NAV', 'nav.js').make({
-            loc: loc, esc: esc, w: w, NAV_TREE: NAV_TREE, focusHref: focusHref, family: family, mins: mins, clock: clock,
-            modelKey: modelKey, modelLabel: modelLabel, keelProgress: keelProgress, keelStage: keelStage, sessionHash: sessionHash,
-            projectHash: projectHash, ago: ago, statePill: statePill, msOf: msOf, clearStaleControl: clearStaleControl,
-            clearControl: clearControl, labels: labels, S: function () { return S; }, NOW: function () { return NOW; }
+            loc: loc, esc: esc, w: w, NAV_TREE: NAV_TREE, focusHref: focusHref, mins: mins
         }));
     }
     // Seven pages, one level, no folds (mockup 2026-10-21-station-home): 現在,
@@ -588,7 +585,6 @@
             DAYS: function () { return DAYS; }, NOW: function () { return NOW; }
         }));
     }
-    function msOf() { return DASH().msOf.apply(null, arguments); }
     function keelGlyph() { return DASH().keelGlyph.apply(null, arguments); }
     function keelProgress() { return DASH().keelProgress.apply(null, arguments); }
     function keelStage() { return DASH().keelStage.apply(null, arguments); }
