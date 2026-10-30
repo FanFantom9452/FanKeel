@@ -52,6 +52,8 @@ source_of_truth: docs/90-agent/reference/station.md, assets/station/station.js, 
 
 從站上開一份週報時，頁首會多一條導覽列：「← 回週報列表」回到 `#/weekly`，「上一份／下一份」跳到相鄰的週報。這條導覽列只在站上看得到，寄出去的檔案沒有它，教授看不到站的連結。
 
+週報有「本週想請教的問題」時，從站上打開，每題底下的回覆欄可以輸入，按「儲存」會寫回 `fankeel/weekly/<迄日>.json` 並重畫那份 html；存不成會在欄位旁寫出原因，文字留在框裡。寄出去的檔案與直接開檔時，回覆欄是唯讀的，只顯示已存的回覆或「尚未回覆」。之後要找某週問了什麼、回了什麼，用 `node <plugin>/scripts/weekly.js questions --grep <詞>`。
+
 掃哪些 repo 由 profile 的 `weekly.roots` 決定：一個或多個絕對路徑、逗號分隔，沒設就是 registry 根目錄的上一層；每個根目錄往下一層、再下一層，有 `.git` 的才算。見 [profile.md](profile.md)。
 
 ## 從手機看
