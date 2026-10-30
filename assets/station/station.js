@@ -74,7 +74,9 @@
     function usd(n, plain) {
         if (!n) return '—';
         var s = '$' + (n >= 100 ? n.toFixed(0) : n.toFixed(2));
-        var q = plain ? '' : quotaPct(n);
+        // 花費 sums ranges of any length over two accounts: a share of one week of one
+        // account's quota is no reading there (spend-quota design §2).
+        var q = plain || (route && route.view === 'days') ? '' : quotaPct(n);
         return q ? s + ' ' + q : s;
     }
     function ago(ms) {
@@ -298,6 +300,8 @@
     function tourPage() { return CHART().tourPage.apply(null, arguments); }
     function projectRows() { return CHART().projectRows.apply(null, arguments); }
     function shortLabel() { return CHART().shortLabel.apply(null, arguments); }
+    function quotaSvg() { return CHART().quotaSvg.apply(null, arguments); }
+    function ovBarsSvg() { return CHART().ovBarsSvg.apply(null, arguments); }
     function stageNow() { return CHART().stageNow.apply(null, arguments); }
     function runningTag() { return CHART().runningTag.apply(null, arguments); }
 
@@ -924,7 +928,8 @@
             H: { homeRows: homeRows, homeOpts: homeOpts, dayBars: dayBars, visibleBars: visibleBars, histSvg: histSvg, legendHtml: legendHtml,
                 filterHtml: filterHtml, windowTotals: windowTotals, kpiHtml: kpiHtml, segHtml: segHtml, subtabsHtml: subtabsHtml, icon: icon,
                 heroEyebrow: heroEyebrow, loc: loc, DIM_LABEL: DIM_LABEL, NO_TIME_TYPE: NO_TIME_TYPE, dashByProj: dashByProj,
-                dashTokens7: dashTokens7, dashModels: dashModels, segTip: segTip, legendRest: legendRest } };
+                dashTokens7: dashTokens7, dashModels: dashModels, segTip: segTip, legendRest: legendRest,
+                quotaSvg: quotaSvg, ovBarsSvg: ovBarsSvg, usd: usd, esc: esc } };
     }
     if (typeof module !== 'undefined' && module.exports) module.exports.daysCtx = daysCtx;
     VIEWS.days = function (r) { return w.FK_DAYS.page(r, daysCtx()); };
@@ -1213,6 +1218,13 @@
             if (q.select) q.select();
             return;
         }
+        // A quota task bar is role=button: Enter and Space pick it as a click does.
+        if ((e.key === 'Enter' || e.key === ' ') && route.view === 'days' && w.FK_DAYS && w.FK_DAYS.pick
+            && e.target && e.target.closest && e.target.closest('.qbar')) {
+            e.preventDefault();
+            w.FK_DAYS.pick(e.target, daysCtx());
+            return;
+        }
         if (!e.target || e.target.id !== 'jq') return;
         if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
             e.preventDefault();
@@ -1259,12 +1271,15 @@
         e.preventDefault();
         hiToggle(h);
     });
-    // Back, forward and every link on the page arrive here.
+    // Back, forward and every link on the page arrive here. 花費's four tabs are one
+    // page: moving between them keeps the scroll (spend-quota design §2).
     w.addEventListener('hashchange', function () {
         LS.sel = null;
+        var DAYS_HASH = /^#\/?days(\/|\?|$)/;
+        var stay = DAYS_HASH.test(String(drawnHash || '')) && DAYS_HASH.test(String(w.location.hash || ''));
         focusFor = w.location.hash;
         draw();
-        if (focusFor !== null) w.scrollTo(0, 0);
+        if (focusFor !== null && !stay) w.scrollTo(0, 0);
     });
     // The 繁中 / EN switch: registered ahead of the click handler below so a
     // harness that keeps only one listener per event type (this file's own
@@ -1522,6 +1537,8 @@
             drawSide();
             return;
         }
+        // 7d / 5h 額度: a task bar, the chart's blank, or ‹ › (FK_DAYS.pick redraws).
+        if (route.view === 'days' && w.FK_DAYS && w.FK_DAYS.pick && e.target.closest('.qplot, .qnav') && w.FK_DAYS.pick(e.target, daysCtx())) return;
         var sg = e.target.closest('[data-seg] button');
         if (sg) { view[sg.parentNode.getAttribute('data-seg')] = sg.getAttribute('data-v'); draw(); return; }
         // 清單's facet triggers: one opens its popover (and shuts any other),
