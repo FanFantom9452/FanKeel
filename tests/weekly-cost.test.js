@@ -5,6 +5,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const registry = require('../lib/registry.js');
 const wr = require('../lib/weekly-render.js');
 const ws = require('../lib/weekly-store.js');
 const profile = require('../lib/profile.js');
@@ -92,6 +93,34 @@ test('show.cost prices the session this shell names, and draws the block last, a
     assert.ok(html.indexOf('data-block="footer"') < html.indexOf('data-block="cost-footer"'));
     assert.ok(html.indexOf('data-block="cost-footer"') < html.indexOf('</main>'));
     assert.ok(html.includes('<p class="cost-quota">額度換算：量不到這個帳號的額度線</p>'), 'no registry, no limits readings: no account');
+});
+
+test('show.cost with an account on the quota line prints the session\'s share of that week', async () => {
+    const w = world();
+    const p = await prepared(w, events({ show: { cost: true } }));
+    const now = Date.now();
+    const base = Math.floor((now - 3600e3) / 300e3) * 300e3;
+    const reg = path.join(w.root, 'ws');
+    fs.mkdirSync(path.join(w.cfg, 'sessions'), { recursive: true });
+    registry.ensureLayout(reg);
+    registry.writeSession(reg, A, { task: 't', project: 'ws', stage: 'build', route: ['survey', 'build'], active: true, claims: [],
+        started: new Date(base).toISOString(), updated: new Date(now - 60e3).toISOString(), configDir: w.cfg });
+    fs.writeFileSync(path.join(w.cfg, 'sessions', process.pid + '.json'), JSON.stringify({
+        pid: process.pid, sessionId: A, cwd: reg, startedAt: new Date(base).toISOString(),
+        procStart: 0, version: '2.0.0', kind: 'interactive', entrypoint: 'cli', status: 'idle' }));
+    // two readings 20 minutes apart climbing 14 points, one request billed between them
+    const resets = new Date(now + 3 * 864e5).toISOString();
+    const rows = [[0, 20], [20, 34]].map(([min, seven]) => JSON.stringify({ at: new Date(base + min * 60e3).toISOString(), task: 't', stage: 'build',
+        five: 5, fiveResets: new Date(now + 3600e3).toISOString(), seven, sevenResets: resets, account: 'uuid-1' }));
+    fs.mkdirSync(path.join(reg, '.fankeel', 'build', 'limits'), { recursive: true });
+    fs.writeFileSync(path.join(reg, '.fankeel', 'build', 'limits', A + '.jsonl'), rows.join('\n') + '\n');
+    fs.appendFileSync(path.join(w.cfg, 'projects', 'p', A + '.jsonl'), JSON.stringify({ type: 'assistant', requestId: 'r2', timestamp: new Date(base + 7 * 60e3).toISOString(),
+        message: { role: 'assistant', model: 'claude-sonnet-5-5', usage: { input_tokens: 1000000, output_tokens: 0 }, content: [] } }) + '\n');
+    const r = await run(['render', '--events', p.file, '--data', p.data], w, ENV);
+    assert.equal(r.code, 0, r.err.join('\n'));
+    const html = fs.readFileSync(p.archived, 'utf8');
+    assert.match(html, /<p class="cost-quota">約佔週用量 \d+(\.\d)?%／5H /);
+    assert.doesNotMatch(html, /量不到這個帳號的額度線/);
 });
 
 test('--session names the session instead, and one with no transcript writes nothing', async () => {
