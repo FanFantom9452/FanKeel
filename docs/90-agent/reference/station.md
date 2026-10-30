@@ -261,7 +261,7 @@ stage's minutes went on a gate rather than on work. Neither carries a dollar
 figure any more; a stage's own cost surfaces in the per-route stage
 ledger on the old project page (the fallback when `project-page.js` is
 missing), and per stage and model inside the old session page's 概覽, under a `<details class="csmore">` element
-(`assets/station/station.js:679`, `'<details class="csmore"><summary>'`) — not on this table's rows.
+(`assets/station/station.js:673`, `'<details class="csmore"><summary>'`) — not on this table's rows.
 
 A stage's dollar figure needs `spend`, which `hooks/leave.js` writes once, at
 session end — a live session does not have it yet, and no session that ended
@@ -283,7 +283,7 @@ with 派工 and 對話 drawn by `assets/station/session-dispatch.js` and
 `assets/station/session-talk.js`; a 關卡 link joins them only while the
 session's `gateAt` is set, to `/f/<id>/gate` when served. `#/s/<id>/cost`
 opens 經過. 事件, 計畫 and 關卡 stay on the old page
-(`assets/station/station.js:964`, `var SESSION_TABS = ['timeline', 'cost', 'dispatch', 'talk'];`),
+(`assets/station/station.js:958`, `var SESSION_TABS = ['timeline', 'cost', 'dispatch', 'talk'];`),
 which also draws every tab when the module is missing. The rest of this
 section describes that old page. It had six tabs — 概覽,
 派工, 事件, 對話, 計畫 and 關卡 — and `#/s/<id>/<tab>` opens one directly, with `timeline`,
@@ -409,7 +409,7 @@ agent's return entered the main context.
 
 On the old page, where a stage's dollars live is no longer its own tab: the stage × model
 table sits inside 概覽, under a `<details>` element titled "stage × model
-明細" (`assets/station/station.js:679`, `<details class="csmore">`). Above
+明細" (`assets/station/station.js:673`, `<details class="csmore">`). Above
 it, when the session has a detail loaded, sits the timeline chart, which now
 also tints its background by stage; and above that sits `costShareHtml`
 (`assets/station/session-body.js:330`, `function costShareHtml(L, hi) {`), a bar
@@ -759,7 +759,7 @@ when the browser can listen, a mic button beside it
 `fkListen` and a second click stops it (`assets/station/station.js:1401`,
 `if (fkRec) { fkRec.stop(); return; }`); what is heard goes into the box and
 the status line `gsay`, and nothing is sent until the send button is pressed
-(`assets/station/station.js:1029`, `Voice fills the box and never sends`). The
+(`assets/station/station.js:1023`, `Voice fills the box and never sends`). The
 gate page draws the same pair in `freeHtml`
 (`assets/station/gate-frame.js:105`, `function freeHtml(st) {`), toggled by
 `micToggle` (`assets/station/gate-frame.js:132`), which fills the box on
@@ -781,7 +781,7 @@ with the 24px resize grip `.fkr` at its bottom left
 (`assets/station/station.css:1123`, `width:min(560px,calc(100vw - 32px))`;
 `assets/station/station.css:1127`, `.fkr{position:sticky;bottom:0;display:block;width:24px;height:24px`).
 A size the person dragged to is still kept as `station.fkBox`
-(`assets/station/station.js:994`, `var FK_BOX_KEY = 'station.fkBox';`).
+(`assets/station/station.js:988`, `var FK_BOX_KEY = 'station.fkBox';`).
 
 On `/m` the four list screens — Session (`#/`), 等你 (`#/ask`), RC 對話 (`#/rc`) and 完成 (`#/done`) — share a bottom tab bar of 64px tabs padded by the home indicator, the 等你 tab carrying the number of held gates (`assets/station/mobile.js:581`, `function tabbar(view, m) {`; `assets/station/mobile.css:387`, `.tabbar{flex:none;display:grid;`); a session's own screen hides it. Each session is a card with its title, project, stage and one status line, and the latest line and background list behind its chevron (`assets/station/mobile.js:542`, `function card(x, at, u, kind, m) {`); a gate's card is the amber one, listed first, with the question and 去答. Every row carries the computer it is on (`machine`); while more than one computer is listed, Session and RC 對話 have filter chips under the title, 全部 then one a computer (a `?m=` on the Session or RC hash), an offline one with its icon, and each card a tag with its computer; under 全部 an offline computer's sessions are left out with one line saying so, and picking it shows when it was last reached and its rows as last seen (`assets/station/mobile.js:473`, `function filterHtml(m, u, view) {`; `assets/station/mobile.js:495`, `function offView(m, mc, rows, unreg, at, u) {`). Unregistered sessions are their own group, `未登記`, each card with Desktop or CLI, an RC dot while Remote Control is attached, its cwd and busy or idle (`assets/station/mobile.js:453`, `function urCard(m, x, at, u, o) {`). The RC 對話 tab lists every computer's sessions with Remote Control on, attached and ended, and says at its foot that only computers running a station are there, with a link to claude.ai/code (`assets/station/mobile.js:636`, `function rcHtml(m, at, u) {`). The host pill in each list screen's header — the machine's name, or `N 台電腦` with how many are offline — opens the 測站 sheet: the connection, this phone (`device`), the session the phone holds and its time left (`holdUntil`), and one row a computer, connected, offline with when it was last reached, `wait` while not read yet, refused (its token turned away, showing 被拒) or unpaired, the last two with a box for the code on that computer's 手機遠端 card; this computer's own row holds re-pairing this phone, and unpairing stays on the desktop's 手機遠端 card, since `/station/remote/revoke` is this machine's only (`assets/station/mobile.js:666`, `function machinesHtml(m, u) {`). The header pads by the safe area (`assets/station/mobile.css:325`, `body.m .ab.ab2{display:grid;gap:0;min-height:0;padding:calc(6px + env(safe-area-inset-top)) 8px 8px 20px}`), and station.css's desktop `.pg` frame is cleared on the phone (`assets/station/mobile.css:371`, `body.m .scr>.pg{flex:1;min-height:0;margin:0;padding:0;border:0;border-radius:0;background:none}`). A session's screen, `#/s/<id>/<pane>`, holds a TokenBar — context against the compact line, the 5h and 7d limits with where the time says each should be, one line of three meters that opens to labelled rows in place without redrawing the composer — and six pane tabs, 對話 概覽 計畫 派工 事件 關卡, which a sideways swipe also moves between (`assets/station/mobile.js:1125`, `function chatHtml(m, id, at, u, P, pane, machine) {`; `assets/station/mobile.js:314`, `function swipeTo(pane, dx, dy) {`). 概覽 is the session's stages finished in `done`, 計畫 its route (phone.json carries no plan tasks; the row links the desktop plan page), 派工 its background items, 事件 its tool steps and 關卡 its held questions; every row opens on a tap. An unregistered session's screen, `#/u/<computer>/<id>[/talk|events]`, is read only: its own header (Desktop or CLI, RC, the computer, busy or idle, cwd), the TokenBar, two pane tabs, 對話 and 事件, a line saying why the other four are not there, and a read-only foot that sends nothing, saying so, with a link to https://claude.ai/code when Remote Control is on (`assets/station/mobile.js:1162`, `function unregHtml(m, r, at, u, P) {`). A session on another computer, `#/m/<computer>/<id>` or `#/u/<computer>/<id>`, is read and acted on through `/station/peer/<computer>/…` (`assets/station/mobile.js:1405`, `function via(R) {`). A chat
 whose session is at a gate pins the gate's question under the header, with a
@@ -830,13 +830,13 @@ the search box in the top bar matches task, project, session id, registry
 label, model, state, next, the files touched and its notes — AND-ed.
 
 The same box also opens a grouped-results popover about 200 ms after typing
-stops (`assets/station/station.js:1653`, `}, 200)`): `qGroups`
+stops (`assets/station/station.js:1647`, `}, 200)`): `qGroups`
 (`assets/station/search.js:16`, `function qGroups(q) {`) buckets what
 matches into Sessions, 專案 and 文件, up to five rows each with a 看全部 link
 when there are more, and `qDraw`
 (`assets/station/search.js:50`, `function qDraw() {`) draws it with each
 match highlighted. `/` focuses the box from anywhere on the page
-(`assets/station/station.js:1698`, `if (e.key === '/')`), the arrow keys
+(`assets/station/station.js:1692`, `if (e.key === '/')`), the arrow keys
 move the selection, Enter opens what is picked and Esc closes the popover.
 文件 in this popover matches only the paths and buckets the page's own data
 carries. The page bodies are searched on 文件 itself — see
@@ -904,7 +904,7 @@ all inside `data-block="live-page"`: a `data-block="live-head"` carrying the
 進行中 | 全部 switch with a count on each, then three cards plus a fourth, 未登記, each its own
 `data-block` — `live-wait`, 等你回答, every session with `gateAt` set that is
 not `down`; `live-run`, 正在跑, the `live` ones; `live-stop`, 可能停了, the
-`stale` ones (`assets/station/live-page.js:79`, `if (s.gateAt && s.state !== 'down') g.wait.push(s);`).
+`stale` ones (`assets/station/live-page.js:84`, `if (s.gateAt && s.state !== 'down') g.wait.push(s);`).
 The fourth, `live-unreg`, 未登記, lists each running session no registry
 lists, plus an ended registered session whose process still has Remote Control
 open; it is not drawn when that list is empty, its rows are not links, each
@@ -920,16 +920,16 @@ card says so in its head.
 
 The left nav (`navHtml`, `data-block="nav"`) no longer groups its links into
 three loose headings; `NAV_TREE`
-(`assets/station/station.js:374`, `var NAV_TREE = [`) defines six ordered
+(`assets/station/station.js:371`, `var NAV_TREE = [`) defines six ordered
 entries instead, one level with no folds. 現在 is a single link, `#/`.
 Sessions links to `#/sessions` and carries four kids: 進行中 `#/live`, 最近 `#/sessions`, 全部清單
 `#/list` and 比較 `#/cmp`. 花費 links to `#/days` and carries two kids: 近 30 天
 `#/days` and 依專案 `#/projects`. 文件 is a single link, `#/docs`. 設定 and 導覽 are pinned under them: 設定 has one
 kid, 精靈 `#/settings`; 導覽 is a single link, `#/tour`, carrying `data-block="tour-nav"`. Every entry is a plain link, and `navHtml`
-(`assets/station/nav.js:91`, `function navHtml(active, c) {`) draws them
+(`assets/station/nav.js:86`, `function navHtml(active, c) {`) draws them
 through `navLinksHtml`. A page's kids are its filters: they
 appear as a subtabs strip under the page itself
-(`assets/station/nav.js:138`, `function subtabsHtml(active) {`) — the
+(`assets/station/nav.js:133`, `function subtabsHtml(active) {`) — the
 same list drives both the nav and the strip, so they can never list
 different pages. Only 現在 carries a badge: `navCounts` returns just
 `{ waiting }`, the number of live sessions waiting on you.
@@ -940,7 +940,7 @@ read with `stored()`'s try/catch so a `file:` page or private mode with no
 holds the three-state 跟隨系統/淺色/深色 button in the masthead's
 `div.appear` (`id="appear"`, drawn by `drawTheme`); a click cycles it and
 writes the new value
-(`assets/station/station.js:1190`, `store('station.theme', t === 'system' ? null : t);`), and the
+(`assets/station/station.js:1184`, `store('station.theme', t === 'system' ? null : t);`), and the
 stored value is read and set as `data-theme` on `<html>` before the page's
 first paint, so a reader on 深色 never sees a flash of light first
 (`assets/station/station.js:23`, `themeSet(stored('station.theme'));`).
@@ -1044,7 +1044,7 @@ replaces sorted by it (`assets/station/list-page.js:84`, `a sort key with no hea
 `updated` descending, so the page's first sort is the one it arrived in.
 
 **比較**, `#/cmp`, is now the 全部 list with its compare tray open
-(`assets/station/station.js:961`, `VIEWS.cmp = function (r) { return w.FK_SESSIONS.page(S, modOpts({ tray: true })); };`):
+(`assets/station/station.js:955`, `VIEWS.cmp = function (r) { return w.FK_SESSIONS.page(S, modOpts({ tray: true })); };`):
 ticking two or three rows there opens a compare dialog of the fields
 `lib/compare.js` returns, so the page is never empty. Tick two sessions on 清單 or a project page — only a
 session with a detail can be ticked, and a third tick drops the first — and
@@ -1254,14 +1254,14 @@ for the child cannot read the old url as the new one.
 `clearEntry` once per row so the checks are the same list rather than a
 second copy of them. A clean run redirects to `/?cleared=N`, and the reloaded
 page still carries that count
-(`assets/station/station.js:1810`, `w.STATION.cleared = S.cleared`); a
+(`assets/station/station.js:1804`, `w.STATION.cleared = S.cleared`); a
 refusal answers `409` with which rows it refused and why, since a redirect
 has nowhere to say it. It takes the same `force` tick and the same nonce as
 the single-row button. `clearStaleControl` in `assets/station/station.js`
 renders the form when the page is served, and prints the copyable command when
 it is not — a static file cannot post. The
 redesigned 可能停了 card carries one per stale row: `modOpts`
-(`assets/station/station.js:955`) passes `clear: clearControl`, and `row` in
+(`assets/station/station.js:949`) passes `clear: clearControl`, and `row` in
 `assets/station/live-page.js` draws it in a `lv-row-clear` beside the row's
 `<a>`, not inside it; without `opts.clear` the row is the bare link.
 
