@@ -15,13 +15,13 @@ const ROUTE = ['survey', 'plan', 'build'];
 
 function gateBlock(status, stage) {
     const nextStage = ROUTE[ROUTE.indexOf(stage) + 1];
-    const STAGE = stage.toUpperCase();
+    const STAGE = handoff.stageWord(stage);
     const gate = {
         questions: [{
             header: STAGE,
-            question: `${STAGE} -> ${nextStage ? nextStage.toUpperCase() : '收工'} | fankeel : drive test`,
+            question: `${STAGE} -> ${nextStage ? handoff.stageWord(nextStage) : '收工'} | fankeel : drive test`,
             options: [
-                { label: nextStage ? `Go to ${nextStage.toUpperCase()}` : 'Wrap up — 收工', description: '進下一站。' },
+                { label: nextStage ? `Go to ${handoff.stageWord(nextStage)}` : 'Wrap up — 收工', description: '進下一站。' },
                 { label: `Stay in ${STAGE}`, description: '沒有待決的事。' },
                 { label: '暫停', description: 'next 設為暫停。' },
             ],
