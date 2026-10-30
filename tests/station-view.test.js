@@ -1279,106 +1279,44 @@ test('segTip lists the day\'s segments, marks the hovered one, and its parts add
     assert.equal(V.segTip(bars, O, '1999-01-01', null), '');
 });
 
-test('usd appends the share of the weekly quota when profile quota.week is set, and only then', () => {
+test('usd is plain dollars; quotaPct is the session account\'s estimate, or empty', () => {
     const S = global.window.STATION;
-    S.gates = undefined;
+    global.window.FK_QSHARE = require('../assets/station/quota-share.js');
     try {
-        S.profiles = { machine: { values: { 'quota.week': 2000 } } };
-        assert.equal(V.usd(20), '$20.00 (1%)');
-        assert.equal(V.usd(5.4), '$5.40 (0.27%)');
+        S.quota = { accounts: [{ key: 'A', pp7: 1.5, pp5: 0.25 }, { key: 'B', pp7: 2, pp5: null }, { key: 'C', pp7: null, pp5: null }] };
+        assert.equal(V.usd(20), '$20.00');
         assert.equal(V.usd(0), '—');
-        for (const none of [undefined, {}, { machine: {} }, { machine: { values: {} } }, { machine: { values: { 'quota.week': 0 } } }]) {
-            S.profiles = none;
-            assert.equal(V.usd(20), '$20.00');
-        }
-    } finally { S.profiles = undefined; }
+        assert.equal(V.quotaPct(3, 'A'), '≈ 週 2% · 5H 12%');
+        assert.deepEqual([...V.quotaParts(3, 'A')], ['週 2%', '5H 12%']);
+        assert.equal(V.quotaPct(4, 'B'), '≈ 週 2%');
+        for (const [n, acc] of [[3, 'C'], [3, 'Z'], [3, null], [0, 'A']]) assert.equal(V.quotaPct(n, acc), '', String(acc));
+    } finally { S.quota = undefined; }
 });
 
-test('quota share stays off text in a fixed box: ticks, bar totals, nav badge, cost-share bar; the session cost readout moves it to its sub-line', () => {
+test('the session cost readout puts its account\'s estimate, titled, before the dispatch share', () => {
     const S = global.window.STATION;
-    const bare = (h) => h.replace(/<title>[\s\S]*?<\/title>/g, '');
+    global.window.FK_QSHARE = require('../assets/station/quota-share.js');
     try {
-        S.profiles = { machine: { values: { 'quota.week': 2000 } } };
-        const hist = bare(V.histSvg(V.dayBars(HOME, 'usd', 'model', DAYS), O));
-        assert.match(hist, /class="tick"[^>]*>\$/, 'the usd ticks are still there');
-        assert.doesNotMatch(hist, /class="tick"[^>]*>[^<]*%\)/, 'no tick or bar total carries a share');
-        const cs = V.costShareHtml(V.stageShare(STAGE_S, null), null);
-        assert.doesNotMatch(cs.replace(/<tr[\s\S]*<\/tr>/g, '').replace(/<small>[\s\S]*?<\/small>/, ''), /%\) ·/, 'bar label and title read "$ · stage share%", not two percents');
-        assert.match(V.sessionHeadHtml(HOME[0], DETAIL_X), /花費<\/div><div class="v">\$[\d.]+<\/div><div class="d">\([\d.]+%\) · /);
-    } finally { S.profiles = undefined; }
+        S.quota = { accounts: [{ key: 'A', pp7: 0.01, pp5: 0.001 }] };
+        assert.match(V.sessionHeadHtml(Object.assign({}, HOME[0], { account: 'A' }), DETAIL_X),
+            /花費<\/div><div class="v">\$[\d.]+<\/div><div class="d"><span class="ro-q" title="估算：API 價格 ÷ 這個帳號每 1% 額度的美元">≈ 週 [\d.]+% · 5H [\d.]+%<\/span> · <span class="ro-q">派工佔 \d+%<\/span><\/div>/);
+        assert.match(V.sessionHeadHtml(HOME[0], DETAIL_X), /花費<\/div><div class="v">\$[\d.]+<\/div><div class="d"><span class="ro-q">派工佔 \d+%<\/span><\/div>/);
+    } finally { S.quota = undefined; }
 });
 
-test('quota share stays off the dispatch cost strip: track label and segment text are plain, only the hover title carries it', () => {
-    const S = global.window.STATION;
-    const stages = [{ stage: 'build', from: T0, to: T0 + 3000000, usd: 1500, burn: 1 }, { stage: 'verify', from: T0 + 3000000, to: T0 + 6000000, usd: 500, burn: 1 }];
-    try {
-        S.profiles = { machine: { values: { 'quota.week': 4000 } } };
-        const html = V.replayHtml(DETAIL_X, {}, { stages, burn: 2 });
-        const strip = html.match(/data-block="cost-strip">[\s\S]*?<p class="tally">/)[0];
-        const bare = strip.replace(/ title="[^"]*"/g, '');
-        assert.match(bare, /<span class="val">\$2000<\/span>/, 'the cost track label is the plain total');
-        assert.match(bare, /\$1500/, 'a segment text is there');
-        assert.doesNotMatch(bare, /%\)/, 'neither the label nor a segment text carries a share');
-        assert.match(strip, /title="[^"]*\$1500 \([\d.]+%\)"/, 'the hover title still does');
-    } finally { S.profiles = undefined; }
-});
-
-test('quota share stays off the dispatch stage-bar label: the bold total is plain, only the hover title carries it', () => {
-    const S = global.window.STATION;
-    try {
-        S.profiles = { machine: { values: { 'quota.week': 4000 } } };
-        const html = V.dispatchStagesHtml({ rows: [{ stage: 'build', agent: 1500 }, { stage: 'verify', agent: 500 }] }, 's1', null);
-        const bare = html.replace(/ title="[^"]*"/g, '');
-        const labels = bare.match(/<b>[^<]*<\/b>/g) || [];
-        assert.deepEqual(labels, ['<b>$1500</b>', '<b>$500</b>'], 'the bar labels are plain dollars');
-        assert.match(html, /title="[^"]*\$1500 \([\d.]+%\)/, 'the hover title still does');
-    } finally { S.profiles = undefined; }
-});
-
-test('quota share stays off the event-page toc: the segment meta line is plain dollars', () => {
-    const S = global.window.STATION;
-    const stages = [{ stage: 'build', from: T0, to: T0 + 3000000, usd: 1500, burn: 1 }, { stage: 'verify', from: T0 + 3000000, to: T0 + 6000000, usd: 500, burn: 1 }];
-    try {
-        S.profiles = { machine: { values: { 'quota.week': 4000 } } };
-        const toc = V.replayHtml(DETAIL_X, {}, { stages, burn: 2 }).match(/<nav class="rptoc"[\s\S]*?<\/nav>/)[0];
-        const ms = toc.match(/<span class="m">[^<]*<\/span>/g) || [];
-        assert.ok(ms.some((m) => /\$1500/.test(m)), 'a toc meta line carries the dollars');
-        assert.doesNotMatch(ms.join(''), /%\)/);
-    } finally { S.profiles = undefined; }
-});
-
-test('quota share stays off the sessions list cost cell', () => {
-    const d = mkDash([Object.assign({}, HOME[0], { id: 'cap-1', state: 'down' })]);
-    d.S.profiles = { machine: { values: { 'quota.week': 20 } }, projects: {} };
+test('the old list cost cell stays plain dollars, even for a session with an account', () => {
+    const d = mkDash([Object.assign({}, HOME[0], { id: 'cap-1', state: 'down', account: 'A' })]);
+    d.S.quota = { accounts: [{ key: 'A', pp7: 1, pp5: 1 }] };
     assert.equal(typeof V.drawList, 'function'); // tests/source.test.js counts an export as used only through V.<name>
     try {
         d.x.drawList();
     } catch (e) { /* drawDetail, run last, has no detail in this fixture; the list is written before it */ }
     const cell = (d.els.lb.innerHTML.match(/<td class="r num">[^<]*<\/td>/) || [''])[0];
     assert.match(cell, /\$[\d.]+/, 'the list cost cell is there');
-    assert.doesNotMatch(cell, /%\)/);
+    assert.doesNotMatch(cell, /≈/);
 });
 
-test('usd reads a project-level quota.week: wins over machine, first project wins, inherited or invalid falls back', () => {
-    const S = global.window.STATION;
-    const pj = (v, src) => ({ values: { 'quota.week': v }, sources: { 'quota.week': src } });
-    try {
-        S.profiles = { machine: {}, projects: { a: pj(2000, 'project') } };
-        assert.equal(V.usd(20), '$20.00 (1%)');
-        S.profiles = { machine: { values: { 'quota.week': 4000 } }, projects: { a: pj(2000, 'project') } };
-        assert.equal(V.usd(20), '$20.00 (1%)', 'project beats machine');
-        S.profiles = { machine: { values: { 'quota.week': 4000 } }, projects: { a: pj(2000, 'project'), b: pj(1000, 'project') } };
-        assert.equal(V.usd(20), '$20.00 (1%)', 'first project with a value wins');
-        S.profiles = { machine: { values: { 'quota.week': 4000 } }, projects: { a: pj(2000, 'machine') } };
-        assert.equal(V.usd(20), '$20.00 (0.5%)', 'an inherited entry does not override machine');
-        for (const bad of [pj(0, 'project'), { values: {}, sources: { 'quota.week': 'project' } }]) {
-            S.profiles = { machine: { values: { 'quota.week': 4000 } }, projects: { a: bad } };
-            assert.equal(V.usd(20), '$20.00 (0.5%)');
-        }
-    } finally { S.profiles = undefined; }
-});
-
-const tlStages = (est) => [{ stage: 'build', usd: 1.5, estimated: est }, { stage: 'verify', usd: 0.5, estimated: false }];
+const tlStages =(est) => [{ stage: 'build', usd: 1.5, estimated: est }, { stage: 'verify', usd: 0.5, estimated: false }];
 const tlSvg = (est) => V.timelineSvg(V.stageCost(V.timelineModel(DETAIL_X), { stages: tlStages(est) }), {});
 
 test('the timeline marks 估 in the stage column\'s own <title>, and only the estimated stage\'s', () => {

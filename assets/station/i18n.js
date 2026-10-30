@@ -13,6 +13,8 @@
             'fmt.unknownLiveness': "this session's config directory could not be read, so liveness could not be confirmed",
             'fmt.noCompare': 'no comparison',
             'fmt.noPriorData': 'no prior data',
+            'fmt.qWeek': 'wk {p}%',
+            'fmt.qEst': "Estimate: API prices ÷ this account's dollars per 1% of quota",
             // shared — the three levels (home, project, session pages)
             'shared.main': 'main session',
             'shared.agent': 'background agent',

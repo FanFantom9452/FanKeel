@@ -26,6 +26,7 @@
             sessionTotals = K.sessionTotals,
             roHtml = K.roHtml,
             quotaPct = K.quotaPct,
+            quotaTitle = K.quotaTitle,
             agentCounts = K.agentCounts,
             agentState = K.agentState,
             gateAt = K.gateAt,
@@ -411,7 +412,8 @@
             return '<div class="readouts">'
                 + roHtml(loc('ses.elapsed', '歷時'), m && m.t1 > m.t0 ? mins(m.t1 - m.t0) : '—', 'active ' + hours(t.active))
                 + roHtml('<i class="hatchsw"></i>' + loc('ses.waitingForYou', '等你回答'), mins(waited), m ? loc('ses.nGates', '{n} 次 gate', { n: m.waits.length }) : loc('ses.loadingDetail', '讀取細節…'))
-                + roHtml(loc('ses.cost', '花費'), usd(t.usd, true) + estMark(t), t.usd ? (quotaPct(t.usd) ? quotaPct(t.usd) + ' · ' : '') + loc('ses.dispatchShare', '派工佔 {p}%', { p: Math.round(agentUsd / t.usd * 100) }) : loc('ses.noDailyCost', '這個 session 沒有按日的花費'))
+                + roHtml(loc('ses.cost', '花費'), usd(t.usd, true) + estMark(t), t.usd ? (quotaPct(t.usd, s.account) ? '<span class="ro-q" title="' + esc(quotaTitle()) + '">' + quotaPct(t.usd, s.account) + '</span> · ' : '')
+                    + '<span class="ro-q">' + loc('ses.dispatchShare', '派工佔 {p}%', { p: Math.round(agentUsd / t.usd * 100) }) + '</span>' : loc('ses.noDailyCost', '這個 session 沒有按日的花費'))
                 + roHtml('token', tokens(t.tokens), x ? loc('ses.nMainSessionRequests', '{n} 次主 session 請求', { n: x.requests }) : '')
                 + roHtml(loc('ses.dispatch', '派工'), x ? x.rows.length + '<span class="u">agent</span>' : '—', x ? agentCounts(x, s) + loc('ses.nWorkflows', '{n} 個 workflow', { n: x.runs.length }) : '')
                 + roHtml(loc('ses.wakes', '叫醒'), wakes === null ? '—' : wakes + '<span class="u">' + loc('ses.times', '次') + '</span>', wakes === null ? '' : loc('ses.dispatchWokeMain', '派工回報叫醒主 session'))

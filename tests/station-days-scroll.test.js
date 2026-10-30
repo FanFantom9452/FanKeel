@@ -17,7 +17,7 @@ function boot(hash) {
         setInterval: () => 1, setTimeout: () => 1, clearTimeout() {}, navigator: { language: 'zh-TW' },
         localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
         STATION: { generatedAt: new Date().toISOString(), configDir: 'C:\\cfg', pricesVerified: '2026-09-24', serve: false, projects: [],
-            profiles: { machine: { values: { 'quota.week': 100 }, sources: {}, unreadable: [] }, projects: {} }, profileKeys: {}, classes: {}, sessions: [] } };
+            profiles: { machine: { values: {}, sources: {}, unreadable: [] }, projects: {} }, profileKeys: {}, classes: {}, sessions: [] } };
     const fallback = Object.assign(el(), { parentNode: { insertBefore() {} }, nextSibling: null, click() {}, getBoundingClientRect: () => ({ left: 0, top: 0, width: 0, height: 0 }) });
     const doc = { hidden: false, documentElement: el(), body: el(), title: '', getElementById: (id) => els[id] || (els[id] = el()),
         addEventListener() {}, createElement: el, querySelectorAll: () => [], querySelector: (sel) => (sel === 'dialog[open]' ? null : fallback), head: { appendChild() {} } };
@@ -26,12 +26,10 @@ function boot(hash) {
     return { V: box.module.exports, scrolls: () => scrolls, goto(to) { win.location.hash = to; (winListeners.hashchange || []).forEach((fn) => fn({})); } };
 }
 
-test('an amount carries (x%) of the weekly quota everywhere but on 花費', () => {
+test('an amount is plain dollars everywhere, 花費 included', () => {
     const b = boot('#/');
-    assert.equal(b.V.usd(50), '$50.00 (50%)');
-    b.goto('#/days');
     assert.equal(b.V.usd(50), '$50.00');
-    b.goto('#/days/quota7');
+    b.goto('#/days');
     assert.equal(b.V.usd(50), '$50.00');
 });
 

@@ -53,31 +53,32 @@
         return Math.floor(h / 24) + 'd' + (h % 24 ? (h % 24) + 'h' : '');
     }
     function hours(ms) { return (ms / 3.6e6).toFixed(ms >= 3.6e7 ? 0 : 1) + 'h'; }
-    function quotaWeek() {
-        var P = S.profiles || {}, ps = P.projects || {}, ks = Object.keys(ps);
-        for (var i = 0; i < ks.length; i++) {
-            var e = ps[ks[i]] || {}, v = e.values && e.values['quota.week'];
-            if (e.sources && e.sources['quota.week'] === 'project' && typeof v === 'number' && v > 0) return v;
-        }
-        var m = P.machine && P.machine.values;
-        return m && m['quota.week'];
+    // quota-share design §3: what `n` dollars is of `account`'s week and of its 5h window,
+    // from that account's pp7 and pp5 (lib/station.js accountQuota), as the parts the page
+    // prints — ['週 3%', '5H 12%'] — or [] with no account, an account the page has no
+    // series for, or no dollars-per-point yet. Only one session's amount has one account:
+    // a sum over sessions has no single denominator, so usd() adds nothing.
+    function quotaParts(n, account) {
+        var Q = w.FK_QSHARE, accs = (S.quota && S.quota.accounts) || [], a = null;
+        for (var i = 0; i < accs.length; i++) if (accs[i].key === account) a = accs[i];
+        var q = Q && a && n ? Q.quotaShare(n, a.pp7, a.pp5) : null;
+        if (!q) return [];
+        var out = [];
+        if (q.weekPct !== null) out.push(loc('fmt.qWeek', '週 {p}%', { p: q.weekPct }));
+        if (q.fiveHourPct !== null) out.push('5H ' + q.fiveHourPct + '%');
+        return out;
     }
-    // The share of the weekly quota, as '(N%)', or '' when no quota is set.
-    function quotaPct(n) {
-        var q = quotaWeek();
-        if (!n || typeof q !== 'number' || !(q > 0)) return '';
-        var p = n / q * 100;
-        return '(' + (p >= 10 ? Math.round(p) : +p.toFixed(2)) + '%)';
+    // The same parts as one line, '≈ 週 3% · 5H 12%', or ''.
+    function quotaPct(n, account) {
+        var p = quotaParts(n, account);
+        return p.length ? '≈ ' + p.join(' · ') : '';
     }
-    // `plain` drops the share: axis ticks, per-bar labels and text drawn inside
-    // a fixed-width box have no room for it.
-    function usd(n, plain) {
+    // The hover title every estimate carries.
+    function quotaTitle() { return loc('fmt.qEst', '估算：API 價格 ÷ 這個帳號每 1% 額度的美元'); }
+    // Plain dollars. A second argument some callers still pass is ignored.
+    function usd(n) {
         if (!n) return '—';
-        var s = '$' + (n >= 100 ? n.toFixed(0) : n.toFixed(2));
-        // 花費 sums ranges of any length over two accounts: a share of one week of one
-        // account's quota is no reading there (spend-quota design §2).
-        var q = plain || (route && route.view === 'days') ? '' : quotaPct(n);
-        return q ? s + ' ' + q : s;
+        return '$' + (n >= 100 ? n.toFixed(0) : n.toFixed(2));
     }
     function ago(ms) {
         if (!ms) return '—';
@@ -312,7 +313,7 @@
             w: w, loc: loc, esc: esc, tokens: tokens, cents: cents, family: family, niceTop: niceTop, niceStep: niceStep,
             downsample: downsample, mins: mins, hours: hours, usd: usd, estMark: estMark, stamp: stamp, comma: comma,
             colorOf: colorOf, icon: icon, sessionHash: sessionHash, sessionTotals: sessionTotals, roHtml: roHtml,
-            quotaPct: quotaPct, agentCounts: agentCounts, agentState: agentState, gateAt: gateAt, clockSec: clockSec,
+            quotaPct: quotaPct, quotaTitle: quotaTitle, agentCounts: agentCounts, agentState: agentState, gateAt: gateAt, clockSec: clockSec,
             agoText: agoText, tk: tk, ROUTE: ROUTE, KIND_KEYS: KIND_KEYS, KIND_COLOR: KIND_COLOR, KIND_LABEL: KIND_LABEL,
             S: function () { return S; }
         }));
@@ -485,7 +486,7 @@
     // hoisted declarations, so this one assign sees them even though some are
     // written further down; it sits above `if (!doc) return;` so a module test
     // under `require` has them too.
-    Object.assign(w.FK_KIT, { cost: cost, usd: usd, mins: mins, ago: ago, stamp: stamp, keelGlyph: keelGlyph, shortLabel: shortLabel,
+    Object.assign(w.FK_KIT, { cost: cost, usd: usd, quotaParts: quotaParts, quotaTitle: quotaTitle, mins: mins, ago: ago, stamp: stamp, keelGlyph: keelGlyph, shortLabel: shortLabel,
         projectHash: projectHash, family: family, modelKey: modelKey, modelLabel: modelLabel, icon: icon, loc: loc, ROUTE: ROUTE,
         // The focus page (assets/station/focus-page.js) draws with these too.
         keelProgress: keelProgress, stageNow: stageNow, planNewest: planNewest, gateTabHtml: gateTabHtml, shellsHtml: shellsHtml });
@@ -495,7 +496,7 @@
         module.exports = {
             knownPkey: knownPkey,
             boardLinkHtml: boardLinkHtml,
-            tokens: tokens, mins: mins, hours: hours, usd: usd, ago: ago, day: day,
+            tokens: tokens, mins: mins, hours: hours, usd: usd, quotaPct: quotaPct, quotaParts: quotaParts, ago: ago, day: day,
             stamp: stamp, esc: esc, cost: cost, labels: labels, delta: delta, match: match,
             statePill: statePill, clearStaleControl: clearStaleControl,
             openSections: openSections, downsample: downsample, lineChart: lineChart,

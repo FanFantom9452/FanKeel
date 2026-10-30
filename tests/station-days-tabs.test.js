@@ -196,14 +196,12 @@ test('明細 on a served page has five kpi cells once the range spend fails, by 
     assertFive(await servedDetail(() => Promise.reject(new Error('offline'))), '讀不到區間花費，重新整理再試');
 });
 
-test('總覽 shows no (x%) on its total or its split even with a weekly quota set', () => {
-    const profiles = { machine: { values: { 'quota.week': 10 }, sources: { 'quota.week': 'machine' }, unreadable: [] }, projects: {} };
-    const { D, ctx } = boot(null, { profiles });
-    assert.equal(ctx.H.usd(6.5), '$6.50 (65%)', 'the quota is read, so a dropped plain flag would show a share');
+test('總覽 shows no share on its total or its split', () => {
+    const { D, ctx } = boot();
     const head = D.page({ view: 'days', day: null }, ctx).match(/<div class="ovtotal">[\s\S]*?<\/p><\/div>/)[0];
     assert.match(head, /<div class="ovnum">\$6\.50<\/div>/);
     assert.match(head, /04:00 帳號 \$4\.00/);
-    assert.doesNotMatch(head, /%/);
+    assert.doesNotMatch(head, /%|≈/);
 });
 
 test('總覽\'s row for a task with no account is plain text with the reason, not a link', () => {
