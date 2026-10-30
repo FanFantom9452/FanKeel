@@ -2,8 +2,12 @@
 label: station
 title: station 留 vanilla、拆完模組
 description: station 維持 vanilla（零依賴、無 build），剩下的頁面拆成 FK_* 模組，station.js 縮成外殼
-state: ready
+state: done
 link: docs/90-agent/reference/station.md
+done:
+  at: 2026-10-30
+  sha: 4de37a38
+  disposition: done
 ---
 
 來源：同一份判斷 docs/90-agent/judgements/2026-10-23-station-skeleton-stack.md（Q2）。使用者問 STATION 前後端用什麼、能否兼具現在的風格、便利、長期發展與本地快速啟動。現況：伺服器是 scripts/station.js:28 與 :36 的 node:http，零依賴、無 build；前端是 classic script 加 window.FK_* 全域，station.js 有 6,939 行、519 KB。VIEWS 已把 live、sessions、projects、project、session 交給 FK_* 模組並保留 OLD.* 後備（assets/station/station.js:5732-5754），但 docs、settings、days、list、dash、tour、focus 與 TODO 面板還留在 station.js 裡。
@@ -24,3 +28,14 @@ link: docs/90-agent/reference/station.md
 
 進度（2026-10-28）：session-body.js 與 detail-html.js 已搬出，前端 `assets/station/station.js` 降到 4021 行。設計關卡改了 (b)：監聽器留在外殼，1,500 行做不到，改成只剩外殼、行數由 tests/station-shell-size.test.js 的 CAP 鎖住（CAP 由最後一份計畫量測後訂）。還有第三到第七份計畫要做，條目保持開著。
 進度（2026-10-30 七份計畫之後）：station.js 1957 行，CAP 2000，標準 (b) 達成；1,500 行的估計沒算監聽，見 docs/90-agent/plans/2026-10-28-station-shell-design.md 的行數預估。
+
+## 完成紀錄
+
+最後一份拆殼計畫落地：死碼刪完，station.js 外殼量得 1957 行，測試鎖上限 2000；拆殼計畫全部歸檔。詳見 [任務紀錄](../records/2026-10.md#r-2026-10-30-546aef3d)
+
+- commit ffc7b800
+- commit e4481270
+- commit 4de37a38
+- commit 8ae05fd8
+- commit a9c31155
+- commit a070139e
