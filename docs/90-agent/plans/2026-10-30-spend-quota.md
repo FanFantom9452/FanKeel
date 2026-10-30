@@ -2735,6 +2735,9 @@ git commit -m "feat(station): 花費 is one frame over 總覽, 7d 額度, 5h 額
 **Files:**
 - Modify: `docs/90-agent/reference/station.md:960-1667` — 只改 docs-check 指出位移的 `path:N` 引文，不動句子
 - Test: `node scripts/docs-check.js --role reference`
+n**Interfaces:**
+- Consumes: the line numbers `node scripts/docs-check.js --role reference` prints after Tasks 5–10 land
+- Produces: nothing other tasks read
 
 **Dispatch:** implementer, sonnet
 
