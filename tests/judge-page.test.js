@@ -10,6 +10,8 @@ const { execFileSync } = require('node:child_process');
 const registry = require('../lib/registry.js');
 const tmp = require('./tmp.js');
 const { plainOf, wantsHtml, mdToHtml, pageOf, PLAIN_MAX } = require('../lib/judgepage.js');
+const askhuman = require('../lib/askhuman.js');
+const board = require('../lib/board.js');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'judge.js');
 const A = 'aaaaaaaa-1111-2222-3333-444444444444';
@@ -126,4 +128,93 @@ test('judge.js html <file> writes the page for a record already filed', () => {
     assert.equal(r.code, 0, r.out);
     assert.ok(fs.existsSync(md.replace(/\.md$/, '.html')));
     assert.match(r.out, /judgement page: /);
+});
+
+// judge-asks-human: a record whose Answer holds an `ask human:` block.
+const ASK = '---\njudged: x\n---\n\n# Which ramp?\n\n## Answer\n\npick: a\nwhy: x\n\nask human:\n'
+    + '  - q: 空白頁時，網址列是哪一頁？\n'
+    + '    option: /gate 有紅字 → 先修那個錯誤\n      pro: 直接修真正擋住畫面的錯\n      con: 多一輪查錯\n'
+    + '    option: /gate 無紅字 (assumed)\n      pro: 原因已查清\n      con: 若沒開過 console 就不成立\n'
+    + '    reason: 現場畫面只有你看過\n'
+    + '  - q: 要不要暫開 <gate.station>？\n'
+    + '    option: 開、驗完關回 (assumed)\n      pro: 證據最直接\n      con: 要記得關回\n'
+    + '    option: 不開，改用 Playwright → 以 Playwright 證明\n      pro: profile 不動\n      con: 證明的是測試用的瀏覽器\n'
+    + '    reason: profile 是你釘的\n';
+
+// The filed answer, written by askhuman's own answersOf/sectionOf so the rows match what judge.js appends.
+function answeredOf(text, picks, at) {
+    const p = askhuman.parse(text);
+    const map = {};
+    askhuman.questionsOf(p).forEach((x, i) => { map[x.question] = picks[i]; });
+    const got = askhuman.answersOf(p, map);
+    return text + '\n' + askhuman.sectionOf(got.rows, got.decision, at);
+}
+
+test('an ask human block adds the glance, a details per question and the wait line while unanswered', async () => {
+    const html = await pageOf(ASK, {});
+    assert.ok(html.includes('判官要你回答 2 題'));
+    assert.ok(html.includes('data-block="glance"'));
+    assert.ok(html.includes('data-block="ask-chart"'));
+    assert.ok(html.includes('data-block="ask-human-pending"'));
+    assert.ok(html.includes('data-block="ask-q1" open>'), 'a pending question is not open');
+    assert.ok(html.includes('data-block="ask-q2" open>'));
+    assert.ok(html.includes('還沒有：等你回答'));
+    assert.ok(html.includes('還沒回答'));
+    assert.ok(html.includes('<span class="tag">判官假設</span>'));
+    assert.ok(!html.includes('你選的'), 'a pending page marks a pick');
+    const ids = [...html.matchAll(/ id="([^"]+)"/g)].map((m) => m[1]);
+    assert.equal(new Set(ids).size, ids.length, 'ids repeat');
+});
+
+test('an answered ask human page marks each answer row, tags 偏離假設 only on the off-assumed pick, and states the decision', async () => {
+    const text = answeredOf(ASK, ['/gate 無紅字', '不開，改用 Playwright'], '2026-10-30T07:12:40Z');
+    const html = await pageOf(text, {});
+    assert.ok(html.includes('data-block="ask-human"'));
+    assert.ok(html.includes('data-block="ask-decision"'));
+    assert.ok(html.includes('<span class="k">decision:</span>照 不開，改用 Playwright → 以 Playwright 證明'));
+    assert.ok(html.includes('answered: 2026-10-30T07:12:40Z'));
+    assert.ok(!html.includes('還沒有：等你回答'));
+    assert.equal((html.match(/你選的・偏離假設/g) || []).length, 1);
+    assert.equal((html.match(/<span class="tag you">你選的<\/span>/g) || []).length, 1);
+    assert.equal((html.match(/<tr class="picked"><td class="opt"/g) || []).length, 1);
+    assert.equal((html.match(/<tr class="picked offrow">/g) || []).length, 1);
+    assert.ok(html.includes('data-block="ask-q2" open>'), 'the off-assumed question is not open');
+    assert.ok(html.includes('data-block="ask-q1">'), 'the assumed question is open');
+});
+
+test('each ask human question draws one flowchart, answered or not, and the page carries no script', async () => {
+    const pending = await pageOf(ASK, {});
+    const answered = await pageOf(answeredOf(ASK, ['/gate 無紅字', '開、驗完關回'], '2026-10-30T07:12:40Z'), {});
+    for (const html of [pending, answered]) {
+        assert.equal((html.match(/<figure class="board"><svg/g) || []).length, 2);
+        assert.ok(!/<script/i.test(html), 'the page has a script');
+    }
+});
+
+test('a record with no ask human block, or with ask human: nothing, keeps the plain page with no view switch', async () => {
+    for (const text of ['# q\n\n## 白話\n\n選 a。\n\n## Answer\n\npick: a\n', '# q\n\n## Answer\n\npick: a\n\nask human: nothing\n']) {
+        const html = await pageOf(text, {});
+        assert.ok(!html.includes('data-block='), 'an ask human page appeared for a record without questions');
+        assert.ok(!html.includes('<input'), 'a view switch appeared');
+    }
+});
+
+test('a parsed value reaches the page escaped', async () => {
+    const html = await pageOf(ASK, {});
+    assert.ok(html.includes('要不要暫開 &lt;gate.station&gt;？'));
+    assert.ok(!html.includes('<gate.station>'));
+});
+
+test('a chart that fails to draw falls back to a note, and the rest of the page is still written', async () => {
+    const real = board.renderBoard;
+    board.renderBoard = async () => { throw new Error('壞了'); };
+    let html;
+    try {
+        html = await pageOf(ASK, {});
+    } finally {
+        board.renderBoard = real;
+    }
+    assert.equal((html.match(/<pre class="bad">這張圖畫不出來：壞了<\/pre>/g) || []).length, 2);
+    assert.ok(html.includes('data-block="glance"'));
+    assert.ok(html.includes('data-block="ask-q1"'));
 });
