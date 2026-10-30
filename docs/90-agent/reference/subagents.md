@@ -159,9 +159,14 @@ the judge aims for three rounds: it writes a checklist and, in that same
 response, sends at most eight `fankeel:fankeel-reader` (`dispatch.inflight`),
 giving related lines to one reader (sonnet, or opus when one
 figure or sentence decides the pick); it opens one cited `path:line` per reader
-in one more response; and it returns six fields, `delegated:` and `checklist:`
-among them, then a short plain-language `## 白話` that `judge.js record` prints
-back to the session, then a `## Summary` of any length. The other is "findings and conclusions, not a narration of what
+in one more response; and it returns seven fields, `delegated:`, `checklist:`
+and `ask human:` among them, then a short plain-language `## 白話` that `judge.js record` prints back to the session, then a `## Summary` of any length.
+`ask human:` is the one place it may put a question, 0–4 of them, and only for a
+fact that decides `pick:` and that no file, command or reader can produce — the
+user's preference, or what the user sees on their own screen. Each question
+carries 2–4 options, one marked `(assumed)`, and each other option names the
+branch `pick:` takes under it. The controller asks those once with
+`AskUserQuestion` and files the answer with `judge.js answered`. The other is "findings and conclusions, not a narration of what
 you read" (`RETURN_RULES[0]`), because it pulls against the judge's `## Summary`
 of what each reader found and what the spot-checks showed. It sends no
 `Workflow`: a subagent's tool list has none.
@@ -569,6 +574,8 @@ cost, not running a session at twice the rate. Worth typing when
   lookup — no amount of grepping settles it;
 - being wrong is expensive later, because something else gets built on top —
   an interface, a data shape, a migration;
+- the deciding unknown is in you — a preference, or what you see on your own
+  screen; the judge then puts it to you once through `ask human:`;
 - or the stage has genuinely stalled and the alternative is stopping to ask
   you, which costs a round of your attention either way.
 

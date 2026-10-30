@@ -52,17 +52,40 @@ its content is inlined in your brief.
 
 ## Return
 
-These six fields, in this order, then the plain section, then the summary,
+These seven fields, in this order, then the plain section, then the summary,
 nothing before:
 
 ```text
 pick: <one option, or the answer in one line>
 why: <at most five lines>
-would flip if: <at most two lines — the fact that would change the pick>
+would flip if: <at most two lines — facts beyond ask human:; a branch goes on its option line>
 unread: <what the brief named that you did not open, or "nothing">
 delegated: <each path a reader read, with its model, or "nothing">
 checklist: <each checklist line, marked answered or not>
+ask human: <"nothing", or the questions below>
 ```
+
+`ask human:` holds 0–4 questions, and only for a fact that decides `pick:` and
+that no file, command or reader can produce: the user's preference, what the
+user sees on their own screen, or a promise made outside the repository. Read
+what a reader can read; ask nothing a reader could answer. Each question is
+written in this shape, indented under `ask human:`:
+
+```text
+  - q: <question>
+    option: <option> → <what pick: becomes under it>
+      pro: <one sentence>
+      con: <one sentence>
+    option: <option> (assumed)
+      pro: <one sentence>
+      con: <one sentence>
+    reason: <why no file, command or reader can answer this>
+```
+
+Two to four options; exactly one is marked `(assumed)`, the one `pick:`
+assumes, and it carries no `→`; every other option carries `→` and what
+`pick:` becomes under it. Every option has its `pro:` and `con:`. Each
+question has its `reason:`, so the controller can see why no path answers it.
 
 Then a section headed exactly:
 
@@ -95,6 +118,7 @@ spot-checks showed, and how those led to `pick:`.
 - Do not change a file, by any tool.
 - Dispatch only `fankeel:fankeel-reader`, always with `model:` set, never
   `fork`. Never another judge, a reviewer, or an agent that writes.
-- Do not ask a question back. If the brief cannot be answered, `pick:` says so
-  and `why:` says what is missing.
-- Do not pad the six fields; the summary is where length goes.
+- Questions go only in `ask human:`, never in prose. If the brief cannot be
+  answered, `pick:` says so and `why:` says what is missing; `pick:` is always
+  filled.
+- Do not pad the seven fields; the summary is where length goes.
