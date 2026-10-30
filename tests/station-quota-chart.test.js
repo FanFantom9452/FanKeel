@@ -7,6 +7,8 @@ const { page } = require('./station-module.js');
 
 // The modules run in a vm context: their objects and arrays carry its prototypes.
 const plain = (v) => JSON.parse(JSON.stringify(v));
+// A JSON round trip drops undefined-valued keys, which would hide a key parseHash should not add.
+const own = (v) => Object.assign({}, v);
 
 const fill = (s, v) => String(s).replace(/\{(\w+)\}/g, (m, k) => (v && k in v ? String(v[k]) : m));
 const loc = (k, zh, v) => fill(zh, v);
@@ -36,12 +38,12 @@ const SESS = [
 
 test('parseHash reads 花費\'s tab and the account and task a row opens, and adds no key it was not given', () => {
     const { F } = helpers();
-    assert.deepEqual(plain(F.parseHash('#/days')), { view: 'days', day: null });
-    assert.deepEqual(plain(F.parseHash('#/days/quota7')), { view: 'days', day: null, tab: 'quota7' });
-    assert.deepEqual(plain(F.parseHash('#/days/quota7?acc=4%2004%3A00&task=s1%3A0')), { view: 'days', day: null, tab: 'quota7', acc: '4 04:00', task: 's1:0' });
-    assert.deepEqual(plain(F.parseHash('#/days/detail')), { view: 'days', day: null, tab: 'detail' });
-    assert.deepEqual(plain(F.parseHash('#/days/nope')), { view: 'days', day: null });
-    assert.deepEqual(plain(F.parseHash('#/d/2026-10-30')), { view: 'days', day: '2026-10-30' });
+    assert.deepEqual(own(F.parseHash('#/days')), { view: 'days', day: null });
+    assert.deepEqual(own(F.parseHash('#/days/quota7')), { view: 'days', day: null, tab: 'quota7' });
+    assert.deepEqual(own(F.parseHash('#/days/quota7?acc=4%2004%3A00&task=s1%3A0')), { view: 'days', day: null, tab: 'quota7', acc: '4 04:00', task: 's1:0' });
+    assert.deepEqual(own(F.parseHash('#/days/detail')), { view: 'days', day: null, tab: 'detail' });
+    assert.deepEqual(own(F.parseHash('#/days/nope')), { view: 'days', day: null });
+    assert.deepEqual(own(F.parseHash('#/d/2026-10-30')), { view: 'days', day: '2026-10-30' });
 });
 
 test('dayBars splits by account with unknown last, by task with none last, and time cannot split by task', () => {
