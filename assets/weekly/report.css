@@ -354,3 +354,205 @@ section { display: grid; gap: 14px; min-width: 0; }
   .cell { min-height: 26px; }
   .kpis, .timeline-panel, .carry, .next { break-inside: avoid; }
 }
+
+/* ---- facets, audience, questions and cost (docs/90-agent/plans/2026-10-30-weekly-facets-design.md) */
+
+/* audience colours: teal for 一般, violet for 技術, plum for 兩者.
+   Outlined, never filled: modules are filled blue squares, state pills are filled tints. */
+:root {
+  --aud-gen: #0f6f6a;
+  --aud-gen-line: rgba(15, 111, 106, .45);
+  --aud-tech: #55479a;
+  --aud-tech-line: rgba(85, 71, 154, .45);
+  --aud-both: #8e3a6c;
+  --aud-both-line: rgba(142, 58, 108, .45);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --aud-gen: #5fd0c9;
+    --aud-gen-line: rgba(95, 208, 201, .45);
+    --aud-tech: #a99de6;
+    --aud-tech-line: rgba(169, 157, 230, .45);
+    --aud-both: #df92c2;
+    --aud-both-line: rgba(223, 146, 194, .45);
+  }
+}
+:root[data-theme="dark"] {
+  --aud-gen: #5fd0c9;
+  --aud-gen-line: rgba(95, 208, 201, .45);
+  --aud-tech: #a99de6;
+  --aud-tech-line: rgba(169, 157, 230, .45);
+  --aud-both: #df92c2;
+  --aud-both-line: rgba(223, 146, 194, .45);
+}
+
+.seg button:focus-visible, .fchip:focus-visible, .q-reply textarea:focus-visible, .q-act .save:focus-visible {
+  outline: 2px solid var(--keel);
+  outline-offset: 2px;
+}
+
+/* header: the title on the left, the audience switch at the top right */
+.head-grid { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px 32px; align-items: start; }
+.head-main { min-width: 0; }
+.aud { display: grid; gap: 6px; justify-items: end; max-width: 30ch; }
+.aud-row { display: flex; align-items: center; gap: 10px; }
+.aud-k { font-size: 14px; font-weight: 700; color: var(--ink2); }
+.seg { display: inline-flex; padding: 3px; gap: 3px; background: var(--inset); border-radius: var(--r-sm); }
+.seg button {
+  min-height: 44px;
+  min-width: 72px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ink2);
+  font: 700 15px var(--f-ui);
+  cursor: pointer;
+  transition: background-color .18s ease-out, color .18s ease-out;
+}
+.seg button:hover { color: var(--ink); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--panel); }
+.aud-hint { font-size: 13px; line-height: 1.5; color: var(--muted); text-align: right; }
+
+/* the facet bar over the cards */
+.facet-bar { flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 0 2px; }
+.fb-k { font-size: 14px; font-weight: 700; color: var(--ink2); }
+.fgroup { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.fg-k { font-size: 13px; line-height: 1; color: var(--muted); }
+.fchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--rule2);
+  border-radius: var(--r-pill);
+  background: var(--panel);
+  color: var(--ink);
+  font: 600 14px var(--f-ui);
+  cursor: pointer;
+  transition: background-color .18s ease-out, color .18s ease-out, border-color .18s ease-out;
+}
+.fchip .n { font: 600 13px var(--f-mono); font-variant-numeric: tabular-nums; color: var(--muted); }
+.fchip.a-gen { border-color: var(--aud-gen-line); color: var(--aud-gen); }
+.fchip.a-tech { border-color: var(--aud-tech-line); color: var(--aud-tech); }
+.fchip.a-both { border-color: var(--aud-both-line); color: var(--aud-both); }
+.fchip:hover { border-color: var(--ink2); }
+.fchip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--panel); }
+.fchip[aria-pressed="true"] .n { color: var(--panel); }
+.fb-status { margin-left: auto; font-size: 13.5px; color: var(--muted); }
+@media (pointer: coarse) { .fchip { min-height: 44px; } }
+
+/* without the script (a mail client strips it) the bar and the switch would do nothing: hide them */
+.facet-bar, .aud { display: none; }
+.js .facet-bar { display: flex; }
+.js .aud { display: grid; }
+
+/* facet tags on each card: outlined pills, the audience colour on the line and the word */
+.event .facets { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; margin-top: -4px; }
+.facet {
+  padding: 0 10px;
+  border: 1px solid;
+  border-radius: var(--r-pill);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.7;
+  white-space: nowrap;
+}
+.facet.a-gen { color: var(--aud-gen); border-color: var(--aud-gen-line); }
+.facet.a-tech { color: var(--aud-tech); border-color: var(--aud-tech-line); }
+.facet.a-both { color: var(--aud-both); border-color: var(--aud-both-line); }
+
+/* the technical detail: shown when 技術 is on, or always without the script */
+.tech-detail { display: grid; gap: 12px; padding-top: 12px; border-top: 1px solid var(--rule); }
+.tech-detail .mods { border-top: 0; padding-top: 0; }
+.td-text { font-size: 15px; line-height: 1.65; color: var(--ink2); max-width: 68ch; }
+.td-k { display: block; font-size: 14.5px; font-weight: 700; color: var(--aud-tech); margin-bottom: 2px; }
+.js [data-aud="gen"] .tech-detail { display: none; }
+.js [data-aud="tech"] .tech-detail { animation: td-in .2s ease-out; }
+@keyframes td-in { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .js [data-aud="tech"] .tech-detail { animation: none; }
+  .seg button, .fchip { transition: none; }
+}
+.event[hidden], .fgroup[hidden], .fchip[hidden] { display: none; }
+
+/* questions: a row per question, the reply under it */
+.q-list { display: grid; padding: 6px 24px; }
+.q { display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 4px 20px; padding: 16px 0; border-top: 1px solid var(--rule); }
+.q:first-child { border-top: 0; }
+.q-who { min-width: 0; padding-top: 2px; }
+.q-body { display: grid; gap: 10px; min-width: 0; }
+.q-text { font-size: 16.5px; font-weight: 600; line-height: 1.6; max-width: 65ch; }
+.q-reply { display: grid; gap: 4px; padding: 10px 14px; background: var(--wash); border-radius: var(--r-sm); max-width: 72ch; }
+.q-reply .k { font-size: 13.5px; font-weight: 700; color: var(--muted); }
+.ans { font-size: 15.5px; line-height: 1.65; white-space: pre-line; }
+.ans.none { color: var(--muted); }
+.ans-meta { font-size: 13px; color: var(--muted); }
+/* the station's copy only: assets/weekly/reply.js turns .q-reply into .q-reply.edit */
+.q-reply.edit { background: transparent; padding: 0; gap: 6px; }
+.q-reply textarea {
+  width: 100%;
+  min-height: 72px;
+  padding: 10px 12px;
+  border: 1px solid var(--rule2);
+  border-radius: var(--r-sm);
+  background: var(--panel);
+  color: var(--ink);
+  font: 400 15.5px/1.6 var(--f-ui);
+  resize: vertical;
+}
+.q-act { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.q-act .save {
+  min-height: 44px;
+  padding: 0 20px;
+  border: 1px solid var(--ink2);
+  border-radius: var(--r-sm);
+  background: var(--panel);
+  color: var(--ink);
+  font: 700 15px var(--f-ui);
+  cursor: pointer;
+}
+.q-act .save:hover { background: var(--inset); }
+.q-st { font-size: 13.5px; color: var(--muted); }
+.q-st.saved { color: var(--pass-ink); }
+.q-st.err { color: var(--fail-ink); }
+
+/* cost: quiet, after the sources, no panel */
+.cost { display: grid; gap: 6px; padding: 12px 2px 0; border-top: 1px solid var(--rule); font-size: 13.5px; color: var(--muted); }
+.cost h2 { font-size: 14.5px; font-weight: 700; color: var(--ink2); }
+.cost-sum { max-width: 90ch; }
+.cost-tbl { display: grid; max-width: 760px; margin-top: 4px; }
+.ct-h, .ct-r { display: grid; grid-template-columns: minmax(0, 1.2fr) repeat(5, minmax(0, 1fr)); gap: 4px 16px; padding: 5px 0; }
+.ct-h { font-size: 13px; border-bottom: 1px solid var(--rule); }
+.ct-h span:not(:first-child), .ct-r span:not(:first-child) { text-align: right; }
+.ct-r span { font: 500 13.5px var(--f-mono); font-variant-numeric: tabular-nums; color: var(--ink2); }
+.ct-r .m { font: 600 13.5px var(--f-ui); }
+.ct-r i { display: none; font-style: normal; }
+.cost-quota { color: var(--muted); font-style: italic; }
+.cost-src { font-size: 13px; }
+
+@media (max-width: 760px) {
+  .head-grid { grid-template-columns: minmax(0, 1fr); }
+  .aud { justify-items: stretch; max-width: none; }
+  .aud-row { justify-content: space-between; }
+  .seg { flex: 1; max-width: 240px; }
+  .seg button { flex: 1; }
+  .aud-hint { text-align: left; }
+  .fb-k { flex-basis: 100%; }
+  .fb-status { margin-left: 0; flex-basis: 100%; }
+  .q-list { padding: 4px 16px; }
+  .q { grid-template-columns: minmax(0, 1fr); }
+  .ct-h { display: none; }
+  .ct-r { grid-template-columns: max-content minmax(0, 1fr); gap: 2px 16px; }
+  .ct-r .m { grid-column: 1 / -1; }
+  .ct-r span:not(:first-child) { display: contents; }
+  .ct-r i { display: inline; font: 400 13px var(--f-ui); color: var(--muted); text-align: left; }
+}
+
+/* on paper every card and its detail show, whatever the switch said */
+@media print {
+  .facet-bar, .aud { display: none !important; }
+  .event[hidden] { display: grid !important; }
+  .js [data-aud="gen"] .tech-detail { display: grid; }
+}

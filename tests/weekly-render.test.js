@@ -28,8 +28,8 @@ function events(extra) {
         projects: { demo: '示範專案' },
         summary: [{ repo: 'demo', title: '查詢頁上線', text: '新增查詢頁，可以依日期查。' }],
         events: [
-            { title: '查詢頁 <b>', repo: 'demo', status: 'done', point: '可以查了。', did: '新增查詢頁。', why: '使用者要求。', next: '補測試。', evidence: '程式提交 1/1', times: '1/1', modules: ['n-src-api'], count: 2 },
-            { title: '匯出', repo: 'demo', status: 'ongoing', point: '', did: '開始做匯出。', why: '會議決定。', next: '完成匯出。', evidence: '程式提交 1/2', modules: [] },
+            { title: '查詢頁 <b>', repo: 'demo', status: 'done', point: '可以查了。', did: '新增查詢頁。', why: '使用者要求。', next: '補測試。', evidence: '程式提交 1/1', times: '1/1', modules: ['n-src-api'], count: 2, facets: ['使用者介面'] },
+            { title: '匯出', repo: 'demo', status: 'ongoing', point: '', did: '開始做匯出。', why: '會議決定。', next: '完成匯出。', evidence: '程式提交 1/2', modules: [], facets: ['後端／資料'] },
         ],
         architecture: { demo: '改最多的是查詢介面。' },
         labels: { demo: { 'n-src-api': '查詢介面' } },
@@ -39,12 +39,13 @@ function events(extra) {
 }
 
 const opts = { stationCss, reportCss, generated: '2026-01-02' };
-const blocks = (html) => [...html.matchAll(/data-block="([a-z-]+)"/g)].map((m) => m[1]);
+const TOP = new Set(['page', 'header', 'summary', 'kpis', 'timeline', 'architecture', 'events', 'carry', 'next', 'questions', 'footer', 'cost-footer']);
+const blocks = (html) => [...html.matchAll(/data-block="([a-z-]+)"/g)].map((m) => m[1]).filter((b) => TOP.has(b));
 
 test('render writes every block in order, carry only when there is a previous report', async () => {
     const without = await wr.render(data(), events(), opts);
-    assert.deepEqual(blocks(without), ['page', 'header', 'summary', 'kpis', 'timeline', 'architecture', 'events', 'next', 'footer']);
-    const withPrev = await wr.render(data({ since: '2025-12-24', until: '2025-12-30', next: [] }), events(), opts);
+    assert.deepEqual(blocks(without), ['page', 'header', 'summary', 'kpis', 'architecture', 'events', 'next', 'footer'], 'show.daily is off by default: no timeline');
+    const withPrev = await wr.render(data({ since: '2025-12-24', until: '2025-12-30', next: [] }), events({ show: { daily: true } }), opts);
     assert.deepEqual(blocks(withPrev), ['page', 'header', 'summary', 'kpis', 'timeline', 'architecture', 'events', 'carry', 'next', 'footer']);
     assert.ok(withPrev.includes('<span class="pill made">做到</span>') && withPrev.includes('<span class="pill part">部分</span>'));
     assert.match(withPrev, /<p class="carry-tally"><span><b>1<\/b>做到<\/span><span><b>1<\/b>部分<\/span><span><b>0<\/b>沒做<\/span><\/p>/);
@@ -85,9 +86,9 @@ test('cards, chips and the architecture use the model\'s labels, with the module
 });
 
 test('a card resolves its modules by id only, because two frames can both have a 其他', async () => {
-    const byId = await wr.render(data(), events({ events: [{ title: '雜項', repo: 'demo', status: 'done', point: '', did: '整理。', why: '順手。', next: '無。', evidence: '程式提交 1/1', modules: ['n-src-other'] }] }), opts);
+    const byId = await wr.render(data(), events({ events: [{ title: '雜項', repo: 'demo', status: 'done', point: '', did: '整理。', why: '順手。', next: '無。', evidence: '程式提交 1/1', modules: ['n-src-other'], facets: ['維運／工具'] }] }), opts);
     assert.ok(byId.includes('<li class="mod h0">其他</li>'));
-    const byName = await wr.render(data(), events({ events: [{ title: '雜項', repo: 'demo', status: 'done', point: '', did: '整理。', why: '順手。', next: '無。', evidence: '程式提交 1/1', modules: ['其他', '查詢介面'] }] }), opts);
+    const byName = await wr.render(data(), events({ events: [{ title: '雜項', repo: 'demo', status: 'done', point: '', did: '整理。', why: '順手。', next: '無。', evidence: '程式提交 1/1', modules: ['其他', '查詢介面'], facets: ['維運／工具'] }] }), opts);
     assert.doesNotMatch(byName, /<div class="mods">/, 'a name or a label is not an id');
 });
 
