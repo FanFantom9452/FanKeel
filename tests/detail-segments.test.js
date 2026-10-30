@@ -61,6 +61,20 @@ test('a rename mid-transcript cuts two task segments, each with its own stages, 
     assert.ok(Math.abs(binned - d.usd) < 1e-4, binned + ' vs ' + d.usd);
 });
 
+test('a segment\'s gates are the transcript\'s answered questions, asked to answered, and a question with no answer yet is none', () => {
+    const ask = (id) => ({ type: 'tool_use', id, name: 'AskUserQuestion', input: { questions: [] } });
+    const cfg = onDisk([
+        said('m1', L(10, 0), [bash('b1', 'node scripts/task.js start --session s --task alpha --route build')]),
+        back(L(10, 0), 'b1'),
+        said('m2', L(10, 20), [ask('q1')]),
+        back(L(10, 25), 'q1'),
+        said('m3', L(10, 30)),
+        said('m4', L(10, 40), [ask('q2')]),
+    ]);
+    const d = detail.detailOf(cfg, SID, { route: ['build'], stage: 'build', task: 'alpha' }).detail;
+    assert.deepEqual(d.segments.map((g) => [g.task, g.gates]), [['alpha', [{ start: at(10, 20), end: at(10, 25) }]]]);
+});
+
 test('down closes the task; a transcript opening without start is one task under the entry\'s name from its first request', () => {
     const seq = [{ stage: 'build', at: 100, source: 'moves' }];
     assert.deepEqual(detail.segmentsOf([{ verb: 'down', at: 500, task: null }], seq, [{ askedAt: 200, answeredAt: 300 }], 50, 900, 'kept'),

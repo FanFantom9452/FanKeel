@@ -46,6 +46,12 @@ test('parseHash reads 花費\'s tab and the account and task a row opens, and ad
     assert.deepEqual(own(F.parseHash('#/d/2026-10-30')), { view: 'days', day: '2026-10-30' });
 });
 
+test('parseHash reads the 5h tab with the account a row opens', () => {
+    const { F } = helpers();
+    assert.deepEqual(own(F.parseHash('#/days/quota5h')), { view: 'days', day: null, tab: 'quota5h' });
+    assert.deepEqual(own(F.parseHash('#/days/quota5h?acc=4%2019%3A00')), { view: 'days', day: null, tab: 'quota5h', acc: '4 19:00' });
+});
+
 test('dayBars splits by account with unknown last, by task with none last, and time cannot split by task', () => {
     const { C } = helpers();
     const acc = C.dayBars(SESS, 'usd', 'account', [DAY]);

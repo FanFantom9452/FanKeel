@@ -47,6 +47,12 @@ test('a root hidden by station.hide leaves its limits readings out of the accoun
     assert.deepEqual(parse(station.serialize(m, {})).quota.accounts, []);
 });
 
+test('a registry marked gone leaves its limits readings out of the account series', () => {
+    const { m } = setup();
+    m.registries[0].gone = true;
+    assert.deepEqual(parse(station.serialize(m, {})).quota.accounts, []);
+});
+
 test('a session\'s segments and bins come from its detail, and a question still out is a gate up to now', () => {
     const { m, now } = setup();
     const s = m.registries[0].sessions[0];

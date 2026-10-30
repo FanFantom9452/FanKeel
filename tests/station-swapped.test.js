@@ -41,3 +41,12 @@ test('verify (Recommended) and verify are one swapped entry; picking option one 
         { label: 'land', lost: 1, total: 2 },
     ]);
 });
+
+test('with no transcript events the entry\'s own gates count the same way, (Recommended) stripped from option one and the pick', () => {
+    const m = model([]);
+    m.registries[0].sessions[0].gates = [
+        { labels: ['verify (Recommended)', 'build'], picked: 'verify (Recommended)' },
+        { labels: ['verify', 'build'], picked: 'build' },
+    ];
+    assert.deepEqual(parse(station.serialize(m, {})).gates.swapped, [{ label: 'verify', lost: 1, total: 2 }]);
+});

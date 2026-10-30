@@ -95,3 +95,23 @@ test('quotaOf gives each account its 7d steps, its 5h windows and its forecast, 
     assert.deepEqual(a.windows.map((x) => [x.end - x.start, x.steps[0].v]), [[5 * 3600e3, 10], [5 * 3600e3, 10]]);
     assert.equal(quota.resetKey(Date.parse(R04)), '4 04:00');
 });
+
+test('a 7d reset a few minutes off its mark names one account whichever way it wanders', () => {
+    const r = root({
+        s1: [row(T(30, 9), 20, new Date(2026, 10, 5, 4, 2, 0).toISOString())],
+        s2: [row(T(30, 10), 21, new Date(2026, 10, 5, 3, 58, 0).toISOString())],
+    });
+    const { accounts, bySession } = quota.accountsOf(quota.limitsRows([r]));
+    assert.deepEqual(accounts.map((x) => [x.key, x.rows.map((y) => y.seven)]), [['4 04:00', [20, 21]]]);
+    assert.deepEqual(bySession, { s1: '4 04:00', s2: '4 04:00' });
+});
+
+test('5h readings whose fiveResets wander a minute or two off one mark are one window ending on the mark', () => {
+    const mark = T(30, 13);
+    const r = root({ s1: [
+        row(T(30, 9), 20, R04, { five: 10, fiveResets: new Date(mark - 2 * 60e3).toISOString() }),
+        row(T(30, 10), 21, R04, { five: 14, fiveResets: new Date(mark + 80e3).toISOString() }),
+    ] });
+    const a = quota.quotaOf([r], T(30, 11)).accounts[0];
+    assert.deepEqual(a.windows.map((x) => [x.start, x.end, x.steps.map((s) => s.v)]), [[mark - 5 * 3600e3, mark, [10, 14]]]);
+});
