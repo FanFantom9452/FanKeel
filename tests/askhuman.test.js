@@ -117,6 +117,14 @@ test('problem rejects an option missing its pro line', () => {
     assert.match(nearMiss([question({ options: [opt('留著', { pro: null }), opt('拿掉', { assumed: true })] })]), /第1題.*留著.*缺 pro:/);
 });
 
+test('problem rejects two questions with the same q text, naming both', () => {
+    assert.match(nearMiss([Q1(), Q1()]), /第2題.*與第1題的問句重複/);
+});
+
+test('problem still accepts two different questions', () => {
+    assert.equal(nearMiss([Q1(), Q2()]), null);
+});
+
 test('problem rejects a question with no q or no reason, and names the second question', () => {
     assert.match(nearMiss([Q1(), question({ q: '', options: [opt('留著'), opt('拿掉', { assumed: true })] })]), /第2題.*缺 q:/);
     assert.match(nearMiss([question({ reason: null, options: [opt('留著'), opt('拿掉', { assumed: true })] })]), /第1題.*缺 reason:/);

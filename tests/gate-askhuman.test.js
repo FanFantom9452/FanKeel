@@ -156,6 +156,24 @@ test('identical question text with one option label altered is refused as a para
   assert.ok(refusal(ask(root, altered)), 'expected a refusal');
 });
 
+test('identical question and labels with a rewritten header is refused', () => {
+  const root = tmp('fankeel-gate-askhuman-');
+  seed(root);
+  judgement(root);
+  const altered = JSON.parse(JSON.stringify(VERBATIM));
+  altered[0].header = '請回答';
+  assert.ok(refusal(ask(root, altered)), 'expected a refusal');
+});
+
+test('identical question and labels with a rewritten option description is refused', () => {
+  const root = tmp('fankeel-gate-askhuman-');
+  seed(root);
+  judgement(root);
+  const altered = JSON.parse(JSON.stringify(VERBATIM));
+  altered[1].options[0].description = '偏暖的那組';
+  assert.ok(refusal(ask(root, altered)), 'expected a refusal');
+});
+
 test('a two-question judgement asked with one question dropped is refused', () => {
   const root = tmp('fankeel-gate-askhuman-');
   seed(root);
@@ -171,7 +189,8 @@ test('a pendingFor that throws falls through to the old behaviour, no crash', ()
   seed(bare);
   const out = ask(root, PARAPHRASE);
   assert.equal(refusal(out), null, out);
-  assert.equal(out, ask(bare, PARAPHRASE));
+  assert.equal(ask(bare, PARAPHRASE).trim(), '');
+  assert.match(JSON.parse(out).systemMessage, /judgement check skipped — .+/);
 });
 
 test('no pending judgement, or one already answered, lets a paraphrase fall through', () => {

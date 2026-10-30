@@ -300,13 +300,18 @@ function main(raw) {
     // questions go out verbatim or not at all. Checked before the gate, since a
     // judgement question is not the stage gate and would be judged against it.
     let judged = null;
-    try { judged = askhuman.pendingFor(root, payload.session_id); } catch (e) { /* housekeeping */ }
+    let judgeNote = null;
+    try { judged = askhuman.pendingFor(root, payload.session_id); } catch (e) { judgeNote = 'fankeel: judgement check skipped — ' + (e && e.message) + '.'; }
+    const withNote = (out) => {
+        if (judgeNote) out.systemMessage = [judgeNote, out.systemMessage].filter(Boolean).join(' ');
+        return out;
+    };
     if (judged) {
         const asked = Array.isArray(payload.tool_input && payload.tool_input.questions) ? payload.tool_input.questions : [];
         const same = asked.length === judged.questions.length && asked.every((q, i) => {
             const want = judged.questions[i];
-            return q && q.question === want.question && Array.isArray(q.options) && q.options.length === want.options.length
-                && q.options.every((o, j) => o && o.label === want.options[j].label);
+            return q && q.question === want.question && q.header === want.header && Array.isArray(q.options) && q.options.length === want.options.length
+                && q.options.every((o, j) => o && o.label === want.options[j].label && o.description === want.options[j].description);
         });
         if (same) return emit({}, payload, root, mine, values);
         const dropped = asked.some((q) => q && judged.questions.some((w) => w.question === q.question));
@@ -353,7 +358,7 @@ function main(raw) {
             const thin = values && !controlled ? thinGate(mine, payload.tool_input && payload.tool_input.questions) : null;
             if (thin) said.push(thin);
         } catch (e) { /* housekeeping */ }
-        return emit(said.length ? { systemMessage: said.join(' ') } : {}, payload, root, mine, values);
+        return emit(withNote(said.length ? { systemMessage: said.join(' ') } : {}), payload, root, mine, values);
     }
 
     // A gate AskUserQuestion would reject: the file's own gate must be
@@ -419,7 +424,7 @@ function main(raw) {
             return;
         }
         skip = skipReason({ stage: mine.stage, controlled, matches: false, agents, inflight: runningMark(mine, mine.stage), handoff: file });
-        return emit(skip ? { systemMessage: 'fankeel: gate not confirmed — ' + skip + '.' } : {}, payload, root, mine, values);
+        return emit(withNote(skip ? { systemMessage: 'fankeel: gate not confirmed — ' + skip + '.' } : {}), payload, root, mine, values);
     }
 
     // gate-2: the same stage, the same questions, and an answer written since
@@ -448,7 +453,7 @@ function main(raw) {
     try {
         registry.clearInflight(root, payload.session_id);
     } catch (e) { /* housekeeping */ }
-    return emit(idsWarning ? { systemMessage: 'fankeel: ' + idsWarning + '.' } : {}, payload, root, mine, values);
+    return emit(withNote(idsWarning ? { systemMessage: 'fankeel: ' + idsWarning + '.' } : {}), payload, root, mine, values);
 }
 
 // Deliberately silent. Whatever went wrong, the question still has to reach
