@@ -1,9 +1,9 @@
 ---
-status: design-intent
+status: current
 last_verified: 2026-10-30
 ---
 
-# TODO 全表盤點（10-30 第二輪）Implementation Plan
+# TODO 全表盤點（10-30 第三輪）Implementation Plan
 
 **Goal:** 這輪盤點 do now 的三件做完：station 拆模組收尾（刪十個舊 live 死碼、量殼的行數鎖上限）、為「拔掉 ntfy.sh 第三方通知」承諾過卻沒建立的 watch 補上條目；使用者在場時親手做的兩件——knip 6.44.0 重測、真 gate 上標記 node。
 **Architecture:** Task 1 先在 live-page.js 做回 subagent 列（使用者在 build 的停點選了「先做回來」）。Task 2-4 是 `2026-10-28-station-shell-7.md` 的三個任務，照原文搬進本計畫並把行號換成今天（station.js 1962 行）的位置，依序執行：先刪只測死碼的測試，再刪死碼，最後量行數。Task 5 用 `todo.js new` 建一筆 watch。Task 6、6 是 `user` 任務，放最後，沒有任何 dispatched 任務依賴它們。「手機 gate 通知標題放題目」不建任務：使用者在 survey gate 選了關閉，land 階段以 `todo.js done` 收掉。

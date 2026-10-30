@@ -519,6 +519,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | TODO 全表盤點（10-30）：做了什麼、沒做什麼 | [reports/2026-10-30-todo-patrol.md](90-agent/reports/2026-10-30-todo-patrol.md) — *繁體中文* |
 | 10-30 的計畫：gate 首字大寫、手機 gate 畫圖標記、對話縮圖、focus 殼補模組、design 手機寬度 | `docs/99-archive/2026-10-30-todo-patrol.md` — *built* |
 | 10-30 第二輪的計畫：search.js 與 float.js 搬完、pane 的 TODO 列與 station 列重排 | `docs/99-archive/2026-10-30-todo-patrol-2.md` — *built* |
+| TODO 全表盤點第三輪（10-30）：做了什麼、沒做什麼 | [reports/2026-10-30-todo-patrol-3.md](90-agent/reports/2026-10-30-todo-patrol-3.md) — *繁體中文* |
+| 10-30 第三輪的計畫：#/live 畫回 subagent 列、刪 nav.js 舊 live 死碼、外殼行數上限、knip 6.44.0 重測 | `docs/99-archive/2026-10-30-todo-patrol-3.md` — *built* |
 | 第三輪的 gate／talk 計畫：摺疊、自由輸入、跳回 talk、工具與子 agent 列、頁尾版本 | `docs/99-archive/2026-10-24-station-gate-talk.md` — *built, English* |
 | 第三輪的文件頁與設定頁計畫：FK_DOCS、FK_SETTINGS、FK_SETDETAIL，刪舊精靈 | `docs/99-archive/2026-10-24-station-docs-settings.md` — *built* |
 | 盤點三件（10-21）：做了什麼、沒做什麼 | [reports/2026-10-21-patrol-three.md](90-agent/reports/2026-10-21-patrol-three.md) — *繁體中文* |
@@ -564,11 +566,11 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 監控站單一 session 焦點頁（10-21）的 design：焦點頁、速度、首頁與導覽、chat 印出連結、背景 shell，以及巡查找到的五個修正 | `docs/99-archive/2026-10-21-station-focus-design.md` — *built, English* |
 | 那份設計的 20 個 task 的實作計畫 | `docs/99-archive/2026-10-21-station-focus.md` — *built, English* |
 | README quick start 的九個 task：layout.md 與 docs.json、concepts 範本、三張新指南頁、development 併入、測試改讀 layout、README 雙語重寫、索引四列 | `docs/99-archive/2026-10-21-readme-quickstart.md` — *built, English* |
-| 為什麼 station.js 只留外殼，其餘拆成 vanilla 的 `window.FK_*` 模組，用 `make(K)`、lazy getter 和一行轉發讓 `module.exports` 不變 | [2026-10-28-station-shell-design](90-agent/plans/2026-10-28-station-shell-design.md) — *design-intent, 繁體中文* |
+| 為什麼 station.js 只留外殼，其餘拆成 vanilla 的 `window.FK_*` 模組，用 `make(K)`、lazy getter 和一行轉發讓 `module.exports` 不變 | `docs/99-archive/2026-10-28-station-shell-design.md` — *built, 繁體中文* |
 | 第一份計畫：fmt.js 和 chart.js 搬出 station.js，後來連帶刪掉七個死函式 | `docs/99-archive/2026-10-28-station-shell-1.md` — *built, 繁體中文* |
 | 第二份計畫：session-body.js 和 detail-html.js 搬出 station.js，station.js 降到 4021 行 | `docs/99-archive/2026-10-28-station-shell-2.md` — *built, 繁體中文* |
 | 第三份計畫：gate-tab.js 和 dispatch-table.js 搬出 station.js，station.js 降到 3229 行 | `docs/99-archive/2026-10-28-station-shell-3.md` — *built, 繁體中文* |
-| 第四到第七份計畫：dash、nav、float、list-page、search，刪掉舊 live 函式，最後是量測行數上限的外殼測試 | [2026-10-28-station-shell-4](90-agent/plans/2026-10-28-station-shell-4.md)、[2026-10-28-station-shell-5](90-agent/plans/2026-10-28-station-shell-5.md)、`docs/99-archive/2026-10-28-station-shell-6.md`（已落地）、[2026-10-28-station-shell-7](90-agent/plans/2026-10-28-station-shell-7.md) — *design-intent, 繁體中文* |
+| 第四到第七份計畫：dash、nav、float、list-page、search，刪掉舊 live 函式，最後是量測行數上限的外殼測試 | `docs/99-archive/2026-10-28-station-shell-4.md`、`docs/99-archive/2026-10-28-station-shell-5.md`、`docs/99-archive/2026-10-28-station-shell-6.md`、`docs/99-archive/2026-10-28-station-shell-7.md` — *built, 繁體中文* |
 | 手機 /m 所有電腦的 session 放進一張列表（10-29）的設計：連著的那台用 device token 向其他已配對 station 取資料，合併未登記的 Desktop／CLI session 與 RC 對話 | `docs/99-archive/2026-10-29-mobile-sources-design.md` — *built, 繁體中文* |
 | 那份設計的實作計畫 | `docs/99-archive/2026-10-29-mobile-sources.md` — *built, 繁體中文* |
 | 真的 `claude -p` 巢狀派兩個 agent 量出來：`SubagentStart` 觸發當下 `agent-<id>.meta.json` 兩個 agent 都還沒帶 `spawnDepth`（`atHook`／`depthAtHook` 一致為 `false`／`null`），`nestedBrain()` 退回 fallback 分支，事後檔案才補齊且巢狀關係正確 | [reports/2026-09-28-spawndepth-timing.md](90-agent/reports/2026-09-28-spawndepth-timing.md) — *a dated snapshot, 繁體中文* |
