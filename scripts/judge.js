@@ -13,6 +13,7 @@ const registry = require('../lib/registry.js');
 const docs = require('../lib/docs.js');
 const { posix } = require('../lib/tracked.js');
 const page = require('../lib/judgepage.js');
+const askhuman = require('../lib/askhuman.js');
 
 const STATION_CSS = path.join(__dirname, '..', 'assets', 'station', 'station.css');
 
@@ -30,6 +31,8 @@ const OPTIONS = {
     model: { type: 'string' },
     root: { type: 'string' },
     project: { type: 'string' },
+    record: { type: 'string' },
+    answers: { type: 'string' },
 };
 
 function fail(msg) {
@@ -127,6 +130,10 @@ function record(opts) {
     // The judge's shape opens with `pick:` (agents/fankeel-judge.md); without it
     // what was piped is not the judgement, whatever else it says.
     if (!/^pick:/m.test(answer)) fail('The answer has no pick: line, so it is not what the judge answered. Pass --transcript <session>/subagents/agent-<id>.jsonl and record takes the SubagentHandback message, or the last assistant text where there is none.');
+    const asks = askhuman.parse(answer);
+    const askProblem = askhuman.problem(asks);
+    if (askProblem) fail('The ask human: block is malformed, so nothing was filed. ' + askProblem);
+    const human = asks.questions.length > 0;
     const judged = new Date().toISOString();
     const model = opts.model || 'fable';
     const { tree } = docs.read(projectRoot);
@@ -142,6 +149,7 @@ function record(opts) {
         'task: ' + JSON.stringify(mine.task || ''),
         'session: ' + opts.session,
         'stage: ' + (mine.stage || ''),
+        'human: ' + (human ? 'yes' : 'no'),
         '---',
         '',
         '# ' + firstLine(brief),
@@ -167,8 +175,40 @@ function record(opts) {
         indexed ? 'index row: ' + indexFile : 'no ## Judgements table in ' + indexFile + '; add the row by hand',
         plain ? 'plain:\n' + plain : 'plain: none — the answer has no ## 白話 section; the judgement is in the file',
     ];
-    if (!page.wantsHtml(brief)) return lines.join('\n');
-    return writePage(file).then((out) => lines.concat('html: ' + out).join('\n'));
+    // A judgement that asks a person is read on the page, so it is always paged.
+    if (human) lines.push('questions: ' + JSON.stringify(askhuman.questionsOf(asks)));
+    if (!human && !page.wantsHtml(brief)) return lines.join('\n');
+    return writePage(file).then((out) => lines.concat((human ? 'page: ' : 'html: ') + out).join('\n'));
+}
+
+// The answers the person gave AskUserQuestion, appended under `## 人類的回答`
+// once. A record that is already answered is never answered again: a second
+// question out of the same judgement is a second judgement (--record on a new one).
+function answered(opts) {
+    if (!opts.session) fail('--session <id> is required: the record names the session that asked.');
+    if (!opts.record || !opts.answers) fail('answered needs --record <judgement.md> and --answers <path|->.');
+    const file = path.resolve(opts.record);
+    if (!fs.existsSync(file)) fail('answered: no record at ' + file);
+    const text = fs.readFileSync(file, 'utf8');
+    const asks = askhuman.parse(text);
+    if (!asks.questions.length) fail('This record has no ask human: questions, so there is nothing to answer.');
+    if (askhuman.parseAnswered(text)) fail('This record already has ## 人類的回答; it is answered once.');
+    const fm = docs.frontmatter(text) || {};
+    if (fm.session !== opts.session) fail('This record belongs to session ' + (fm.session || 'unknown') + ', not ' + opts.session + '.');
+    let answers;
+    try {
+        answers = JSON.parse(readAnswer(opts.answers));
+    } catch (e) {
+        fail('--answers is not JSON: ' + e.message);
+    }
+    const { rows, decision, missing } = askhuman.answersOf(asks, answers);
+    if (missing.length) fail('No answer for: ' + missing.map((q) => '「' + q + '」').join('；') + '. Nothing was filed.');
+    const section = askhuman.sectionOf(rows, decision.replace('<path>', () => file), new Date().toISOString());
+    fs.writeFileSync(file, text.trimEnd() + '\n\n' + section + '\n');
+    const lines = ['decision: ' + decision];
+    const sidecar = file.replace(/\.md$/, '') + '.html';
+    if (!fs.existsSync(sidecar)) return lines.join('\n');
+    return writePage(file).then((out) => lines.concat('page: ' + out).join('\n'));
 }
 
 function main(argv) {
@@ -177,7 +217,8 @@ function main(argv) {
         if (!file || !fs.existsSync(file)) fail('judge.js html <judgement.md>: name a record that exists.');
         return writePage(path.resolve(file)).then((out) => 'fankeel — judgement page: ' + out);
     }
-    if (verb !== 'record') fail('judge.js record --session <id> --brief <path> (--answer <path|-> | --transcript <jsonl>) --slug <slug> [--model <m>] [--root <dir>] [--project <dir>]\njudge.js html <judgement.md>');
+    if (verb === 'answered') return answered(opts);
+    if (verb !== 'record') fail('judge.js record --session <id> --brief <path> (--answer <path|-> | --transcript <jsonl>) --slug <slug> [--model <m>] [--root <dir>] [--project <dir>]\njudge.js answered --session <id> --record <judgement.md> --answers <path|->\njudge.js html <judgement.md>');
     return record(opts);
 }
 

@@ -202,3 +202,128 @@ test('the judge writes a ## 白話 section, and the ask skill relays record\'s p
     const ref = fs.readFileSync(path.join(__dirname, '..', 'docs', '90-agent', 'reference', 'subagents.md'), 'utf8');
     assert.match(ref, /`## 白話` that `judge\.js record` prints/);
 });
+
+// The ask human: block of a judgement with two questions. The first has its
+// assumed option second, the second a branch on the non-assumed side.
+const TWO_QUESTIONS = [
+    'pick: b',
+    'why: fewer stops',
+    'ask human:',
+    '  - q: 用哪個坡度？',
+    '    option: 緩 → 走平路線',
+    '      pro: 好走',
+    '      con: 慢',
+    '    option: 陡 (assumed)',
+    '      pro: 快',
+    '      con: 累',
+    '    reason: 檔案沒有坡度資料',
+    '  - q: 要不要開放夜間？',
+    '    option: 要 (assumed)',
+    '      pro: 方便',
+    '      con: 吵',
+    '    option: 不要 → 只開白天',
+    '      pro: 安靜',
+    '      con: 少人',
+    '    reason: 沒有人流數據',
+    '',
+].join('\n');
+
+function writeFile(root, name, text) {
+    const file = path.join(root, name);
+    fs.writeFileSync(file, text);
+    return file;
+}
+
+function judgementFile(root) {
+    const dir = path.join(root, 'docs', 'judgements');
+    return path.join(dir, fs.readdirSync(dir).find((f) => f.endsWith('.md')));
+}
+
+function askedOf(out) {
+    const line = out.split('\n').find((l) => l.startsWith('questions: '));
+    return JSON.parse(line.slice('questions: '.length));
+}
+
+test('record 帶兩題 ask human: 印出 questions JSON 且 frontmatter human: yes；answered 附一次、第二次拒絕', () => {
+    const root = seed();
+    const answer = writeFile(root, 'two.md', TWO_QUESTIONS);
+    const rec = run(root, ['record', '--session', A, '--brief', path.join(root, 'brief.md'), '--answer', answer, '--slug', 'ramp']);
+    assert.equal(rec.code, 0, rec.out);
+    const asked = askedOf(rec.out);
+    assert.deepEqual(asked.map((q) => q.header), ['判官 1/2', '判官 2/2']);
+    const file = judgementFile(root);
+    assert.match(fs.readFileSync(file, 'utf8'), /^human: yes$/m);
+    const answers = writeFile(root, 'answers.json', JSON.stringify({ [asked[0].question]: '陡', [asked[1].question]: '不要' }));
+    const first = run(root, ['answered', '--session', A, '--record', file, '--answers', answers]);
+    assert.equal(first.code, 0, first.out);
+    assert.match(first.out, /^decision: 照 不要 → 只開白天$/m);
+    const text = fs.readFileSync(file, 'utf8');
+    assert.equal(text.split('## 人類的回答').length - 1, 1);
+    const second = run(root, ['answered', '--session', A, '--record', file, '--answers', answers]);
+    assert.equal(second.code, 1);
+    assert.match(second.out, /人類的回答/);
+});
+
+test('record rejects a malformed ask human: block, names the question, and files nothing', () => {
+    const root = seed();
+    const bad = TWO_QUESTIONS.replace('option: 緩 → 走平路線', 'option: 緩 (assumed)');
+    const answer = writeFile(root, 'bad.md', bad);
+    const out = run(root, ['record', '--session', A, '--brief', path.join(root, 'brief.md'), '--answer', answer, '--slug', 'ramp']);
+    assert.equal(out.code, 1);
+    assert.match(out.out, /第1題/);
+    assert.match(out.out, /assumed/);
+    assert.equal(fs.existsSync(path.join(root, 'docs', 'judgements')), false);
+});
+
+test('record with no ask human: block writes human: no and prints no questions line', () => {
+    const root = seed();
+    const out = run(root, ['record', '--session', A, '--brief', path.join(root, 'brief.md'), '--answer', path.join(root, 'answer.md'), '--slug', 'ramp']);
+    assert.equal(out.code, 0, out.out);
+    assert.match(fs.readFileSync(judgementFile(root), 'utf8'), /^human: no$/m);
+    assert.ok(!out.out.includes('questions:'));
+});
+
+test('answered refuses a record of another session, a missing answer, and a record with no questions', () => {
+    const root = seed();
+    const rec = run(root, ['record', '--session', A, '--brief', path.join(root, 'brief.md'), '--answer', writeFile(root, 'two.md', TWO_QUESTIONS), '--slug', 'ramp']);
+    const asked = askedOf(rec.out);
+    const file = judgementFile(root);
+    const all = writeFile(root, 'all.json', JSON.stringify({ [asked[0].question]: '陡', [asked[1].question]: '要' }));
+    const partial = writeFile(root, 'partial.json', JSON.stringify({ [asked[0].question]: '陡' }));
+    const wrong = run(root, ['answered', '--session', 'bbbbbbbb-1111-2222-3333-444444444444', '--record', file, '--answers', all]);
+    assert.equal(wrong.code, 1);
+    assert.match(wrong.out, /session/);
+    const short = run(root, ['answered', '--session', A, '--record', file, '--answers', partial]);
+    assert.equal(short.code, 1);
+    assert.match(short.out, /要不要開放夜間？/);
+    assert.ok(!fs.readFileSync(file, 'utf8').includes('## 人類的回答'));
+
+    const plainRoot = seed();
+    run(plainRoot, ['record', '--session', A, '--brief', path.join(plainRoot, 'brief.md'), '--answer', path.join(plainRoot, 'answer.md'), '--slug', 'plain']);
+    const none = run(plainRoot, ['answered', '--session', A, '--record', judgementFile(plainRoot), '--answers', all]);
+    assert.equal(none.code, 1);
+    assert.match(none.out, /ask human:/);
+});
+
+test('record writes the .html page when human: yes even without html: yes, and prints page:', () => {
+    const root = seed();
+    const answer = writeFile(root, 'two.md', TWO_QUESTIONS);
+    const out = run(root, ['record', '--session', A, '--brief', path.join(root, 'brief.md'), '--answer', answer, '--slug', 'ramp']);
+    assert.equal(out.code, 0, out.out);
+    assert.match(out.out, /^page: .+\.html$/m);
+    assert.equal(fs.existsSync(judgementFile(root).replace(/\.md$/, '.html')), true);
+});
+
+test('answered rewrites an existing <record>.html sidecar and prints page:', () => {
+    const root = seed();
+    const rec = run(root, ['record', '--session', A, '--brief', path.join(root, 'brief.md'), '--answer', writeFile(root, 'two.md', TWO_QUESTIONS), '--slug', 'ramp']);
+    const asked = askedOf(rec.out);
+    const file = judgementFile(root);
+    const sidecar = file.replace(/\.md$/, '.html');
+    fs.writeFileSync(sidecar, 'stale');
+    const answers = writeFile(root, 'answers.json', JSON.stringify({ [asked[0].question]: '陡', [asked[1].question]: '要' }));
+    const out = run(root, ['answered', '--session', A, '--record', file, '--answers', answers]);
+    assert.equal(out.code, 0, out.out);
+    assert.match(out.out, /^page: .+\.html$/m);
+    assert.notEqual(fs.readFileSync(sidecar, 'utf8'), 'stale');
+});
