@@ -1424,7 +1424,7 @@ player waits on `TOUR_PROMO30V5.ready` before the first frame.
 `tour.html`, `tour.css`, `tour.js` and every `tour-<name>.js` (any number of hyphenated
 segments, so `tour-reel-kit.js` and the like are served too). `SERVED` takes
 `diagram.js`, `diagram.css` and `vendor/pele.js` from `station.MODULES`
-(`const MODULES = modulesOf(SHELL)`, `lib/station.js:1160`). Any other name under the station path is a 404, so nothing else in the plugin directory is
+(`const MODULES = modulesOf(SHELL)`, `lib/station.js:1213`). Any other name under the station path is a 404, so nothing else in the plugin directory is
 reachable by url.
 
 The phone station has twelve routes of its own: five for the page, below, four for one session, in the next paragraph, and three for the other computers and the unregistered sessions, in the paragraph after that. `/m` is its page, the shell
