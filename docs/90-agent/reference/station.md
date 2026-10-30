@@ -185,7 +185,7 @@ wall-clock of its own. When the profile key `quota.week` is set (machine
 or project profile, shipped to the page as `STATION.profiles.machine` and
 `STATION.profiles.projects`), `usd()` in the
 page appends plain text ` (x%)` after a dollar figure, where x is the amount
-divided by `quota.week`, except the figures that call `usd(n, true)` (chart y ticks, bar totals, nav days badge, cost-share bar, dispatch cost-strip segments, session hero Cost value), which stay plain dollars; the hero sub-line begins `(x%) · ` and tooltips keep the ratio. Both are API-equivalent estimates, not a measured
+divided by `quota.week`, except the figures that call `usd(n, true)` (chart y ticks, bar totals, nav days badge, cost-share bar, dispatch cost-strip segments, session hero Cost value), which stay plain dollars, and every figure on 花費 — the days view and its four tabs — where `usd()` sees the route is 花費 and leaves the ratio off: a range there runs over two accounts and any number of days, so a share of one week of one account's quota measures nothing; the hero sub-line begins `(x%) · ` and tooltips keep the ratio. Both are API-equivalent estimates, not a measured
 quota percentage, and with the key unset the page is unchanged.
 When the machine profile also holds `quota.calibrated` and the quota in force is the machine's, the 30-day spend readout's sub-line ends with ` · 週額度 <day> 校準`, the day `scripts/quota.js` calibrated it; a quota set by hand, or a project's own, shows no day.
 
@@ -957,31 +957,66 @@ adds `live` when the session runs, no question is out (`gateAt`) and the row's
 `busy` is true — an `inflight` mark on the current stage under 20 minutes old,
 which `gather()` in `lib/station.js` computes. Otherwise the segment stands still.
 
-The 30-day histogram that used to open the page is now **近 30 天**,
-`#/days` — one bar per local day, today at the
+花費, `#/days`, is one frame over four tabs (`daysPage`,
+`assets/station/days-page.js`): 總覽, 7d 額度 (`#/days/quota7`), 5h 額度
+(`#/days/quota5h`) and 明細 (`#/days/detail`). The frame's top row is the
+tabs, with 近 30 天｜依專案 at its right end (above them on a phone); its
+second row is the range title and the range seg the four tabs share. Every
+draw renders all four panels and hides the three not chosen, and a hash
+change from one 花費 hash to another keeps the scroll, so moving between tabs
+does not move the page; a day in the hash, `#/d/<day>`, opens 明細. 總覽 is
+the range's spend as one figure with no `(x%)`, its sub-line each account's
+part and the sessions no account was found for (未知), the daily spend
+stacked by account (`ovBarsSvg`), and 最貴的 5 個 task: the task segments
+that spent most in the range, each row a link to 7d 額度 that picks its
+account and selects it (`?acc=<account>&task=<segment>`). 7d 額度 and 5h 額度
+draw one account at a time — one 帳號 seg serves both — as a step line over
+0–100%, faded where no reading fell for 30 minutes, above one bar per task
+segment on the same time axis, coloured by stage, hatched while a question
+waited, overlapping bars stacked in lanes (`quotaSvg`). Clicking a bar
+lights its span of the line and says how far the line rose there and how
+much of that rise its spend earns, each piece of the span split by what the
+tasks running in it spent (`FK_QSHARE.shareOf`,
+`assets/station/quota-share.js`); a second click, or the blank, clears it.
+The data is `STATION.quota.accounts` — per account its key, the 7d reset's
+weekday and HH:MM, its 7d steps, its 5h windows, its forecast and the span
+the price of a point comes from (`quotaOf`, `lib/quota.js`) — and on each
+session its `account`, task `segments` and five-minute spend `bins`. Every
+row `hooks/pane.ts` appends to `.fankeel/build/limits/<session>.jsonl`
+carries `account`, the `oauthAccount.accountUuid` of the session's
+`.claude.json`, when one reads; a reading with no account is grouped by its
+7d reset, and where the two disagree the reset wins.
+
+The 30-day histogram that used to open the page is 明細 now,
+`#/days/detail` — one bar per local day, today at the
 right — whose height switches between tokens, dollars and time and whose
 segments switch between model, project, stage, main session against agent,
 the plugin `version` that ran the session, the agent type — the main session
-and each agent type beside it — and the five cost components the cost tab
+and each agent type beside it — the five cost components the cost tab
 already splits — input, output, cache read and the two cache-write rates, 1h
-and 5m, kept apart. Three of those seven are disabled under time and say why:
+and 5m, kept apart — and the task each request ran under (依 task). Four of
+those eight are disabled under time and say why:
 a span records only a stage and who was running, so it carries no model, no
-agent type and no tokens to split into components. `version` is not one of them — it belongs
+agent type, no task and no tokens to split into components. `version` is not one of them — it belongs
 to the session rather than to the row, so it applies to a span as much as to a
 day. 依 model splits by version — `modelKey()`, `Opus 5.5` beside `Opus 5` —
 each family one hue from `--m-<family>`, the newest version that colour and
-each older one lighter; `family()` still colours everything else. Five
-cards sit above it. Four of them compare the last 30 days with the 30
-before them — the window's spend, tokens, active time and waiting ratio —
-and the fifth does not compare windows at all: it
+each older one lighter; `family()` still colours everything else. Four
+cards sit under it. Three of them compare the range with the one before
+it — tokens, active time and waiting ratio; the range's spend is 總覽's
+figure — and the fourth does not compare windows at all: it
 names the option-one gate wording most often swapped for another answer,
 `最常被換掉`, with how many times out of how many it was asked beneath it
 (`lib/station.js:814`, `function gateSummary(model, hidden) {`;
-`assets/station/chart.js:106`, `loc('shared.mostSwapped', '最常被換掉')`). Unlike the other
-four, it does not move with the 30-day window or the search box: it is
+`assets/station/chart.js:106`, `loc('shared.mostSwapped', '最常被換掉')`).
+An option offered as `verify (Recommended)` or `land（建議）` is counted as
+the bare `verify` or `land`: `bareLabel` strips that suffix from option one
+and from the answer before either is compared, so one option is one entry
+however it was dressed. Unlike the other
+three, it does not move with the range or the search box: it is
 counted once, across every shown session's gate answers
 (`lib/station.js:936`, `gates: gateSummary(model, hidden),`), not from the
-filtered set the other four sum. It walks the model rather than
+filtered set the other three sum. It walks the model rather than
 `flatten()`'s output, so it takes the hidden set as an argument and skips
 those sessions itself
 (`lib/station.js:823`, `if (hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))) continue;`).

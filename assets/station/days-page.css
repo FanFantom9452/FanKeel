@@ -2,6 +2,77 @@
    tabs, 總覽 and the two 額度 tabs. 明細's chart, legend and readouts keep their
    rules in station.css. */
 
+/* the frame (design §2): the tab strip on the ground, the chosen tab joined to the
+   range row under it, and the chosen panel joined under that — a page inside the page */
+.dtabs [hidden]{display:none!important}
+.dframe{display:grid;margin:0}
+.dstrip{display:flex;align-items:flex-end;justify-content:space-between;gap:8px 20px;padding:0 0 0 20px;min-width:0}
+.dtablist{display:flex;align-items:flex-end;gap:2px;min-width:0;padding:0 10px;margin:0 -10px;overflow-x:auto;scrollbar-width:none}
+.dtablist::-webkit-scrollbar{display:none}
+.dtablist a{position:relative;display:inline-flex;align-items:center;flex:none;min-height:42px;padding:0 22px;border-top:2px solid transparent;border-radius:var(--r) var(--r) 0 0;color:var(--ink2);font-size:14px;font-weight:500;text-decoration:none;white-space:nowrap;cursor:pointer;transition:background-color .15s ease-out,color .15s ease-out}
+.dtablist a:hover{color:var(--ink);background:var(--wash)}
+.dtablist a[aria-current="page"]{background:var(--panel);color:var(--ink);border-top-color:var(--keel)}
+/* the chosen tab flares into the range row, as a browser tab does */
+.dtablist a[aria-current="page"]::before,.dtablist a[aria-current="page"]::after{content:"";position:absolute;bottom:0;width:var(--r);height:var(--r);pointer-events:none}
+.dtablist a[aria-current="page"]::before{left:calc(var(--r) * -1);background:radial-gradient(circle at 0 0,transparent calc(var(--r) - .5px),var(--panel) var(--r))}
+.dtablist a[aria-current="page"]::after{right:calc(var(--r) * -1);background:radial-gradient(circle at 100% 0,transparent calc(var(--r) - .5px),var(--panel) var(--r))}
+.dtablist a:focus-visible{outline:2px solid var(--keel);outline-offset:-2px}
+/* 近 30 天｜依專案 sits at the strip's right end: it swaps the whole frame, not one tab */
+.dstrip .subtabs{margin:0 0 6px;flex:none;align-self:flex-end}
+.dframe .dbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 24px;padding:14px 26px;background:var(--panel);border-radius:var(--r) var(--r) 0 0;border-bottom:1px solid var(--rule)}
+.dbar .controls{margin:0}
+.vbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px}
+.dat{display:flex;align-items:center;gap:10px;min-width:0;color:var(--muted)}
+.dat .eyebrow{white-space:nowrap}
+.dat h1{margin:0;font-size:22px;font-weight:300;font-stretch:87.5%;letter-spacing:-.01em;line-height:1.2;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+.dat h1 b{font-weight:600}
+.dframe ~ .dpanel.panel,.dframe ~ .dpanel>.panel:first-child{margin-top:0;border-top-left-radius:0;border-top-right-radius:0;clip-path:inset(0 -48px -48px -48px)}
+.dpanel{scroll-margin-top:12px}
+
+/* 總覽 */
+.ov{display:grid;gap:18px}
+.ovhead{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:12px 28px}
+.ovtotal .l{font-size:12px;color:var(--ink2)}
+.ovnum{font-size:44px;font-weight:300;font-stretch:87.5%;letter-spacing:-.015em;line-height:1.05;font-variant-numeric:tabular-nums}
+.ovsplit{display:flex;flex-wrap:wrap;align-items:center;gap:2px 8px;margin:6px 0 0;font-size:13px;color:var(--ink2);font-variant-numeric:tabular-nums}
+.ovsplit>span{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.ovsplit .dot{color:var(--muted)}
+.ovgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,400px);gap:20px 36px;align-items:start}
+.ovchart .qnar{display:none}
+.ovsvg text{font-size:13px}
+.ovsvg .ovtoday{fill:var(--ink);font-weight:600}
+.ovsvg rect{transition:opacity .18s ease-out}
+.ovtop{display:grid;gap:8px;min-width:0}
+.ovtop .h2{flex-wrap:wrap;row-gap:2px}
+.ovt td.r{font-variant-numeric:tabular-nums}
+.ovt td.task{min-width:0}
+.ovt td.task a{color:var(--ink);text-decoration:none;border-radius:var(--r-sm)}
+.ovt td.task a:hover{text-decoration:underline}
+.ovt td.task a:focus-visible{outline:2px solid var(--keel);outline-offset:2px}
+
+/* 明細 */
+.dmain .qtools{margin-bottom:14px}
+.dmain .lstrip{margin-top:0}
+.dmain .readouts{margin-top:14px;padding-top:16px;border-top:1px solid var(--rule)}
+.dmain .chart .note{margin:0;padding:24px 0;min-height:120px}
+
+@media (prefers-reduced-motion:reduce){.ovsvg rect,.dtablist a{transition:none}}
+@media (max-width:1180px){.ovgrid{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:720px){
+  .ovchart .qwid{display:none}
+  .ovchart .qnar{display:block}
+  .ovnum{font-size:38px}
+  .ovhead{flex-direction:column}
+  .dstrip{flex-direction:column-reverse;align-items:stretch;gap:10px;padding:0}
+  .dstrip .subtabs{align-self:flex-start;margin:0}
+  .dstrip .subtabs a{display:inline-flex;align-items:center;min-height:44px;padding:0 14px}
+  .dtablist{margin:0;padding:0 10px}
+  .dtablist a{min-height:44px;padding:0 16px}
+  .dframe .dbar{padding:12px 16px}
+  .ovt th,.ovt td{white-space:normal;padding-left:6px;padding-right:6px}
+  .dmain .readouts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+}
+
 /* 7d / 5h 額度 (spend-quota design §3, §4) */
 .qtools{display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px}
 .qtools.controls{margin:0}

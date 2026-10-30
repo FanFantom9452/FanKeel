@@ -16,6 +16,26 @@
         'dash.byKind': 'by kind',
         'dash.noTimeByModel': 'time has no model to split by',
         'dash.noTimeByKind': 'time has no kind to split by',
+        'dash.byTask': 'by task',
+        'dash.noTask': 'no task',
+        'dash.noTimeByTask': 'time has no task to split by: spans record only the stage and who ran, not the task',
+        'q.tabs': 'Spend tabs',
+        'q.tabOverview': 'Overview',
+        'q.tab7': '7d quota',
+        'q.tab5': '5h quota',
+        'q.tabDetail': 'Detail',
+        'q.cost30': '30-day spend',
+        'q.allAcc': 'all accounts',
+        'q.all': 'All',
+        'q.unknownAcc': 'unknown',
+        'q.ovAria': 'Daily spend by account',
+        'q.today': 'today',
+        'q.top5': 'The 5 costliest tasks',
+        'q.top5Hint': 'click a row for 7d quota with it selected',
+        'q.colProject': 'Project',
+        'q.colCost': 'Spend',
+        'q.top5None': 'No task spent anything in this range.',
+        'q.noLink': 'a task with no known account is not on the quota chart',
         'q.clickToPutBack': 'Click to put it back on the chart',
         'q.clickToRemoveFirst': 'Click to take it off the chart first',
         'q.weekdays': 'Sun,Mon,Tue,Wed,Thu,Fri,Sat',
@@ -347,48 +367,115 @@
         }
         return true;
     }
-    // 近 30 天: the hero that used to open the home page. A day in the hash is
-    // marked on the chart; there is no day panel any more.
+    // 花費 (spend-quota design §2): one frame — the four tabs with 近 30 天｜依專案 at
+    // the strip's end, then the range title and the range seg all four share — over the
+    // four panels. All four are drawn on every draw and the three not chosen carry
+    // `hidden`, so a tab is a hash change and the page keeps its scroll. A day in the
+    // hash opens 明細 and is marked on its chart.
     function daysPage(r) {
-        var H = C.H, view = C.view, S = C.S;
-        var R = H.homeRows();
-        var RG = w.FK_RANGE || null;
-        // The range (assets/station/spend-range.js): 近 30 天 unless the
-        // reader picked another; without the module the page is as it was.
-        var rng = RG ? RG.rangeOf(view.range, C.NOW, view.rangeFrom, view.rangeTo) : { kind: '30d', days: C.DAYS, prev: C.PREV, from: C.DAYS[0], to: C.TODAY };
+        var H = C.H, view = C.view, S = C.S, RG = w.FK_RANGE || null;
+        var R = H.homeRows(), rng = rangeNow();
         var picked = RG && view.range === 'custom' ? 'custom' : rng.kind;
+        var tab = r.tab || (r.day ? 'detail' : 'overview');
+        applyHash(r);
+        var held = null;
+        if (RG) {
+            RG.listen(doc, function (a, b) { view.range = 'custom'; view.rangeFrom = a; view.rangeTo = b; C.draw(); });
+            held = S.serve ? RG.load(rng, function () { if (C.route.view === 'days') C.draw(); }) : RG.held(rng);
+        }
+        var tabs = [['overview', '#/days', loc('q.tabOverview', '總覽')], ['quota7', '#/days/quota7', loc('q.tab7', '7d 額度')],
+            ['quota5h', '#/days/quota5h', loc('q.tab5', '5h 額度')], ['detail', '#/days/detail', loc('q.tabDetail', '明細')]];
+        var shown = function (k) { return k === tab ? '' : ' hidden'; };
+        var panel = function (k, html) { return '<section class="panel dpanel" data-block="tab-' + k + '" data-panel="' + k + '"' + shown(k) + '>' + html + '</section>'; };
+        return '<div class="dtabs" data-block="days"><header class="dframe" data-block="days-head"><div class="dstrip">'
+            + '<nav class="dtablist" data-block="days-tabs" aria-label="' + loc('q.tabs', '花費分頁') + '">'
+            + tabs.map(function (t) { return '<a href="' + t[1] + '"' + (t[0] === tab ? ' aria-current="page"' : '') + '>' + t[2] + '</a>'; }).join('')
+            + '</nav>' + H.subtabsHtml('days') + '</div>'
+            + '<div class="dbar hero-top"><div class="dat"><div class="eyebrow">' + H.icon('days') + H.heroEyebrow(C.frozenAt) + '</div>'
+            + '<h1><b>' + rng.from.slice(5) + '</b> — <b>' + rng.to.slice(5) + '</b></h1></div>'
+            + '<div class="vbar controls">' + (RG ? RG.controlsHtml(picked, rng, view.rangeFrom, view.rangeTo) : '') + '</div></div></header>'
+            + panel('overview', overviewHtml(R, rng, picked))
+            + panel('quota7', quotaPanel('7d', rng)) + panel('quota5h', quotaPanel('5h', rng))
+            + '<div class="dpanel" data-block="tab-detail" data-panel="detail"' + shown('detail') + '>' + detailHtml(R, rng, held, r) + '</div></div>';
+    }
+    // 總覽 (design §2): how much the range cost and where — the total with no (x%), its
+    // sub-line each account's part and the sessions with none, the daily spend stacked
+    // by account, and the five task segments that spent most in the range, each a link
+    // to 7d 額度 with its account and itself chosen. The 帳號 seg (`view.ovacc`) puts
+    // one account's figure up, fades the others' bars and keeps its own tasks.
+    function overviewHtml(R, rng, picked) {
+        var H = C.H, view = C.view, S = C.S, Q = w.FK_QSHARE, RG = w.FK_RANGE || null;
+        var accounts = (S.quota && S.quota.accounts) || [];
+        var only = accounts.some(function (a) { return a.key === view.ovacc; }) ? view.ovacc : null;
+        var bars = H.dayBars(R, 'usd', 'account', rng.days) || {}, keys = bars.keys || [], sums = {}, total = 0;
+        (bars.days || []).forEach(function (b) {
+            keys.forEach(function (k) {
+                var v = (b.parts || {})[k] || 0;
+                sums[k] = (sums[k] || 0) + v;
+                total += v;
+            });
+        });
+        var names = { unknown: loc('q.unknownAcc', '未知') };
+        keys.forEach(function (k) { if (k !== 'unknown') names[k] = accShort(k); });
+        var split = keys.filter(function (k) { return sums[k]; })
+            .map(function (k) { return '<span>' + H.esc(names[k]) + ' ' + H.usd(sums[k], true) + '</span>'; })
+            .join('<span class="dot" aria-hidden="true">·</span>');
+        var label = (picked === '30d' || !RG ? loc('q.cost30', '30 天花費') : RG.costLabel()) + ' · ' + (only ? accShort(only) : loc('q.allAcc', '全部帳號'));
+        var oo = { dim: 'account', names: names, today: rng.to, only: only, L: { aria: loc('q.ovAria', '每日花費，依帳號分色'), today: loc('q.today', '今天') } };
+        var Rm = rangeMs(rng);
+        var top = !Q ? [] : allSegs(S).filter(function (g) { return !only || g.account === only; })
+            .map(function (g) { return { g: g, usd: Q.spendIn(g.bins, Math.max(g.start, Rm.a), Math.min(g.end, Rm.b)) }; })
+            .filter(function (x) { return x.usd > 0; })
+            .sort(function (a, b) { return b.usd - a.usd; }).slice(0, 5);
+        var rows = top.map(function (x) {
+            // 未知帳號的 task 不畫在額度圖上，所以這列不給連結
+            var cell = !x.g.account ? '<span title="' + H.esc(loc('q.noLink', '帳號未知的 task 不在額度圖上')) + '">' + H.esc(x.g.name) + '</span>'
+                : '<a href="#/days/quota7?acc=' + encodeURIComponent(x.g.account) + '&amp;task=' + encodeURIComponent(x.g.id) + '">' + H.esc(x.g.name) + '</a>';
+            return '<tr><td class="task">' + cell + '</td><td>' + H.esc(x.g.project) + '</td><td class="r">' + H.usd(x.usd, true) + '</td></tr>';
+        }).join('');
+        return '<div class="ov"><div class="ovhead"><div class="ovtotal"><div class="l">' + label + '</div>'
+            + '<div class="ovnum">' + H.usd(only ? sums[only] || 0 : total, true) + '</div><p class="ovsplit">' + split + '</p></div>'
+            + '<div class="qtools controls"><div class="ctlgrp"><label>' + loc('q.account', '帳號') + '</label>'
+            + H.segHtml('ovacc', [['all', loc('q.all', '全部')]].concat(accounts.map(function (a) { return [a.key, accName(a)]; })), only || 'all') + '</div></div></div>'
+            + '<div class="ovgrid"><div class="ovchart">' + H.ovBarsSvg(bars, oo) + H.ovBarsSvg(bars, Object.assign({ narrow: true }, oo)) + '</div>'
+            + '<div class="ovtop"><div class="h2">' + loc('q.top5', '最貴的 5 個 task') + ' <small>' + loc('q.top5Hint', '點一列，切到 7d 額度並選中它') + '</small></div>'
+            + (rows ? '<div class="tbl-wrap"><table class="t ovt"><thead><tr><th>task</th><th>' + loc('q.colProject', '專案') + '</th><th class="r">' + loc('q.colCost', '花費') + '</th></tr></thead>'
+                + '<tbody>' + rows + '</tbody></table></div>' : '<p class="note">' + loc('q.top5None', '這個區間沒有花到錢的 task。') + '</p>')
+            + '</div></div></div>';
+    }
+    // 明細 (design §2a): the page as it was, under the frame — 長條高度 and every split,
+    // plus 依 task, which time disables (a span records no task); the legend strip, the
+    // stacked bars, the readouts less spend (總覽 has it), 全機花費, the cost panel, the
+    // three cards and the component table. The one `.chart` on the page.
+    function detailHtml(R, rng, held, r) {
+        var H = C.H, view = C.view, S = C.S, RG = w.FK_RANGE || null;
         var sel = r.day && rng.days.indexOf(r.day) >= 0 ? r.day : null;
         var o = H.homeOpts(sel);
         o.days = rng.days;
         o.today = rng.to;
         o.off = chartOff[view.dim] || {};
         o.panel = chartPanel;
-        var all = H.dayBars(R, view.metric, view.dim, rng.days), bars = H.visibleBars(all, o);
+        var noTask = loc('dash.noTimeByTask', '時間沒有 task 可分：spans 只記 stage 與誰在跑，不記 task');
+        if (view.dim === 'task') {
+            o.dimLabel = loc('dash.byTask', '依 task');
+            o.names = { none: loc('dash.noTask', '沒有 task') };
+        }
+        var all = H.dayBars(R, view.metric, view.dim, rng.days, { task: noTask }), bars = H.visibleBars(all, o);
         chartBars = bars;
         chartOpts = o;
-        var held = null;
-        if (RG) {
-            RG.listen(doc, function (a, b) { view.range = 'custom'; view.rangeFrom = a; view.rangeTo = b; C.draw(); });
-            held = S.serve ? RG.load(rng, function () { if (C.route.view === 'days') C.draw(); }) : RG.held(rng);
-        }
-        return H.subtabsHtml('days') + '<section class="panel hero" data-block="days"><div class="hero-top"><div class="hero-title"><div class="eyebrow">' + H.icon('days')
-            + H.heroEyebrow(C.frozenAt) + '</div>'
-            + '<h1><b>' + rng.from.slice(5) + '</b> — <b>' + rng.to.slice(5) + '</b></h1></div>'
-            + H.kpiHtml(H.windowTotals(R, rng.days), H.windowTotals(R, rng.prev), picked === '30d' ? null : RG.costLabel()) + '</div>'
-            + (RG ? RG.kpiHtml(held, Boolean(S.serve)) : '')
-            + '<div class="controls">'
-            + (RG ? RG.controlsHtml(picked, rng, view.rangeFrom, view.rangeTo) : '')
+        return '<section class="panel dmain"><div class="qtools controls">'
             + '<div class="ctlgrp"><label>' + loc('dash.barHeight', '長條高度') + '</label>'
             + H.segHtml('metric', [['tokens', 'token'], ['usd', loc('dash.cost', '花費')], ['time', loc('dash.time', '時間')]], view.metric) + '</div>'
             + '<div class="ctlgrp"><label>' + loc('dash.splitBy', '分段') + '</label>'
             + H.segHtml('dim', [['model', loc('dash.byModel', '依 model')], ['project', loc('dash.byProject', '依專案')], ['stage', loc('dash.byStage', '依 stage')], ['who', loc('dash.mainVsAgent', '主 session 對 agent')],
-                ['type', H.DIM_LABEL.type], ['version', loc('dash.byVersion', '依版本')], ['kind', loc('dash.byKind', '依成分')]],
-                view.dim, view.metric === 'time' ? { model: loc('dash.noTimeByModel', '時間沒有 model 可分'), kind: loc('dash.noTimeByKind', '時間沒有成分可分'), type: H.NO_TIME_TYPE } : null) + '</div></div>'
-            // The legend has a strip of its own, one line high: however many
-            // series a dim has, the switches above and the chart below stay
-            // where they are. What does not fit scrolls; 篩選 lists everything.
+                ['type', H.DIM_LABEL.type], ['version', loc('dash.byVersion', '依版本')], ['kind', loc('dash.byKind', '依成分')], ['task', loc('dash.byTask', '依 task')]],
+                view.dim, view.metric === 'time' ? { model: loc('dash.noTimeByModel', '時間沒有 model 可分'), kind: loc('dash.noTimeByKind', '時間沒有成分可分'), type: H.NO_TIME_TYPE, task: noTask } : null) + '</div></div>'
+            // The legend has a strip of its own, one line high: however many series a
+            // dim has, the switches above and the chart below stay where they are.
             + '<div class="lstrip"><div class="legend">' + H.legendHtml(all, o) + '</div>' + H.filterHtml(all, o) + '</div>'
-            + '<div class="chart">' + H.histSvg(bars, o) + '</div></section>'
+            + '<div class="chart">' + H.histSvg(bars, o) + '</div>'
+            + H.kpiHtml(H.windowTotals(R, rng.days), H.windowTotals(R, rng.prev), null, true)
+            + (RG ? RG.kpiHtml(held, Boolean(S.serve)) : '') + '</section>'
             + (w.FK_PANEL ? w.FK_PANEL.html(held, S.prices, Boolean(S.serve)) : '')
             + '<div class="dash kdash pcards" data-block="spend-cards"><div class="dcol" data-col="main">' + H.dashByProj(R) + H.dashTokens7(R)
             + '</div><div class="dcol" data-col="side">' + H.dashModels(R) + '</div></div>'
