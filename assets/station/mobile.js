@@ -24,7 +24,7 @@
             'home.go': '去答', 'home.left': '剩 {t}', 'home.more': '+{n} 個', 'home.stopped': '停下來了，沒有在跑的工作',
             'chat.back': '回 Session 清單', 'chat.log': '對話', 'chat.gone': '這個 session 不在了',
             'who.pc': '電腦', 'who.ph': '手機', 'who.ai': 'Claude',
-            'chat.sent': '已送進 session', 'chat.queued': '等這回合跑完就送進去', 'chat.work': 'Claude 正在做…',
+            'chat.sent': '已送進 session', 'chat.shot': '傳來的圖片', 'chat.queued': '等這回合跑完就送進去', 'chat.work': 'Claude 正在做…',
             'give': '交還電腦', 'ro': '只能看',
             'att.go': '接上這個 session', 'att.run': '下一回合結束時改由手機接手，電腦會顯示它在手機上。', 'att.bg': '背景跑完、Claude 接著做完那一回合時，改由手機接手。',
             'bg.label': '背景工作', 'bg.still': '還在跑', 'bg.head': '背景工作 {n} 個', 'bg.start': '{kind} · {t} 開始', 'bg.run': '跑中',
@@ -95,7 +95,7 @@
             'home.go': 'Answer', 'home.left': '{t} left', 'home.more': '+{n} more', 'home.stopped': 'Stopped, nothing running',
             'chat.back': 'Back to sessions', 'chat.log': 'Conversation', 'chat.gone': 'This session is gone',
             'who.pc': 'Desktop', 'who.ph': 'Phone', 'who.ai': 'Claude',
-            'chat.sent': 'Sent to the session', 'chat.queued': 'Goes in when this turn ends', 'chat.work': 'Claude is working…',
+            'chat.sent': 'Sent to the session', 'chat.shot': 'Photo sent', 'chat.queued': 'Goes in when this turn ends', 'chat.work': 'Claude is working…',
             'give': 'Back to desktop', 'ro': 'Read only',
             'att.go': 'Take over this session', 'att.run': 'The phone takes over when this turn ends; the desktop shows it is on the phone.', 'att.bg': 'The phone takes over once the background work ends and Claude finishes that turn.',
             'bg.label': 'Background work', 'bg.still': 'Still running', 'bg.head': '{n} background jobs', 'bg.start': '{kind} · started {t}', 'bg.run': 'running',
@@ -749,7 +749,28 @@
         return { label: t(kind === 'agent-message' ? 'hx.agent' : kind === 'task-notification' ? 'hx.note' : 'hx.sys'), body: body.trim() };
     }
 
-    function bubble(role, text, at, sent, fold) {
+    // A phone message's "[圖片] <saved path>" lines are the photos it carried (say() in the composer).
+    // Only a name shaped like what /phone/upload saves counts; any other line stays text.
+    var SHOT_LINE = /^\[圖片\] (.+)$/;
+    var SHOT_NAME = /^\d+-[0-9a-f]{6}\.(?:png|jpeg|gif|webp)$/;
+    function shotsOf(text) {
+        var names = [];
+        var rest = String(text).split('\n').filter(function (line) {
+            var m = SHOT_LINE.exec(line);
+            var name = m ? m[1].trim().split(/[\\/]/).pop() : '';
+            if (!SHOT_NAME.test(name)) return true;
+            names.push(name);
+            return false;
+        }).join('\n').trim();
+        return names.length ? { text: rest, names: names } : { text: String(text), names: names };
+    }
+    function shotsHtml(names, img) {
+        return '<span class="shots">' + names.map(function (n) {
+            return '<img class="shot" loading="lazy" alt="' + t('chat.shot') + '" src="/phone/img?root=' + encodeURIComponent(img.root) + '&amp;id=' + encodeURIComponent(img.id) + '&amp;name=' + encodeURIComponent(n) + '">';
+        }).join('') + '</span>';
+    }
+
+    function bubble(role, text, at, sent, fold, img) {
         var when = num(at) ? ' <time>' + hm(at) + '</time>' : '';
         var hx = role === 'desktop' ? harness(text) : null;
         if (hx) {
@@ -762,8 +783,11 @@
             return '<div class="msg ai' + (fold ? ' rep' + (fold.open ? ' open' : '') : '') + '"><span class="who">' + t('who.ai') + when + '</span><div class="bub">' + prose(text) + '</div>' + more + '</div>';
         }
         var pc = role === 'desktop';
+        var got = img ? shotsOf(text) : { text: String(text), names: [] };
         return '<div class="msg me ' + (pc ? 'pc' : 'ph') + '"><span class="who">' + ic(pc ? 'laptop' : 'phone') + t(pc ? 'who.pc' : 'who.ph') + when + '</span>'
-            + '<p class="bub">' + esc(text) + '</p>' + (sent ? '<span class="sent">' + sent + '</span>' : '') + '</div>';
+            + (got.text || !got.names.length ? '<p class="bub">' + esc(got.text) + '</p>' : '')
+            + (got.names.length ? shotsHtml(got.names, img) : '')
+            + (sent ? '<span class="sent">' + sent + '</span>' : '') + '</div>';
     }
 
     function stepRow(s, at) {
@@ -838,7 +862,7 @@
         var out = turns.map(function (g, i) {
             if (g.kind === 'steps') return stepsHtml(g, openLast && i === turns.length - 1, at, u.open);
             if (g.role !== 'desktop' && g.role !== 'phone' && g.role !== 'assistant') return '';
-            return bubble(g.role, g.text, g.at, i === lastPhone ? ic('check') + t('chat.sent') : '', fold(i));
+            return bubble(g.role, g.text, g.at, i === lastPhone ? ic('check') + t('chat.sent') : '', fold(i), { root: p.root, id: p.id });
         }).join('');
         if (p.state === 'running' && !openLast) {
             var start = null;
@@ -846,7 +870,7 @@
             out += '<div class="work" role="status"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><b>' + t('chat.work') + '</b>'
                 + (start !== null ? '<span class="mono">' + esc(ago(at - start)) + '</span>' : '') + '</div>';
         }
-        if (p.waiting) out += bubble('phone', p.waiting.text, p.waiting.at, t('chat.queued'));
+        if (p.waiting) out += bubble('phone', p.waiting.text, p.waiting.at, t('chat.queued'), null, { root: p.root, id: p.id });
         if (p.state === 'background') out += bgPanel(p.background || [], at);
         if (p.state === 'idle') out += '<p class="ev"><span>' + ic('pause') + t('home.stopped') + '</span></p>';
         if (p.state === 'gate') out += gateCard(p, at, u);
@@ -1660,13 +1684,14 @@
                 offline();
             }).then(null, rethrow);
         }
-        // A refusal or a lost station says so under the conversation; the draft stays.
-        function act(url, fields, done) {
+        // A refusal or a lost station says so under the conversation; `undo` gives back what the
+        // caller took out of the page before sending.
+        function act(url, fields, done, undo) {
             st.ui.note = '';
             return post(url, fields).then(function (r) {
                 if (r.ok) { if (done) done(); return talking(route()) ? loadChat() : load(); }
-                return r.text().then(function (text) { st.ui.note = t('gate.refused', { code: r.status, why: String(text || '').trim() }); draw(); });
-            }, function () { st.ui.note = t('gate.failed'); draw(); });
+                return r.text().then(function (text) { if (undo) undo(); st.ui.note = t('gate.refused', { code: r.status, why: String(text || '').trim() }); draw(); });
+            }, function () { if (undo) undo(); st.ui.note = t('gate.failed'); draw(); });
         }
         // phone.json first: a conversation never reads mobile.json again, so
         // its gates still hold the gate before this one for the same session.
@@ -1700,12 +1725,16 @@
             var list = st.ui.photos || [];
             if (!p || (!text && !list.length) || pending(st.ui) >= 0) return;
             var body = [text].concat(list.map(function (x) { return '[圖片] ' + x.path; })).filter(Boolean).join('\n');
-            st.ui.draft = text;
+            // Out of the field the moment it is queued, so no redraw can put it back; a refusal or a
+            // lost station gives it back in front of whatever was typed since.
+            st.ui.draft = '';
+            if (box) box.value = '';
             act('/phone/say', { root: p.root, id: p.id, text: body }, function () {
-                st.ui.draft = '';
                 list.forEach(function (x) { drop(x.key); });
                 st.ui.over = false;
                 st.P = null;
+            }, function () {
+                st.ui.draft = st.ui.draft ? text + '\n' + st.ui.draft : text;
             });
         }
         d.addEventListener('submit', function (e) {
