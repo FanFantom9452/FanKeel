@@ -51,7 +51,7 @@ test('agentTypeOf reads the meta.json beside an agent transcript', () => {
     assert.equal(usage.agentTypeOf(path.join(f.sub, 'agent-d4.jsonl')), 'unknown');
 });
 
-test('a session\'s days rows are filed by agent type, two spellings of one type in one row, at VERSION 10', () => {
+test('a session\'s days rows are filed by agent type, two spellings of one type in one row, at VERSION 11', () => {
     const f = fixture();
     const got = detail.detailOf(f.cfg, SID, {});
     assert.equal(got.detail.v, 11);
