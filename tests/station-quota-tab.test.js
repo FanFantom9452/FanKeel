@@ -30,8 +30,8 @@ const ACCOUNTS = [
         forecast: { at: T(9, 40), pct: 18, resets: T(9) + 6 * 864e5, perHour: 0, out: null } },
     { key: '4 19:00', wd: 4, hm: '19:00', span: null, steps7: [{ from: T(8), to: NOW, v: 40, gap: true }], windows: [], forecast: null },
 ];
-function tab(accounts) {
-    const { V, M } = page([], { generatedAt: new Date(NOW).toISOString(), sessions: SESS, quota: { accounts: accounts || ACCOUNTS } });
+function tab(accounts, sessions) {
+    const { V, M } = page([], { generatedAt: new Date(NOW).toISOString(), sessions: sessions || SESS, quota: { accounts: accounts || ACCOUNTS } });
     const ctx = V.daysCtx();
     let draws = 0;
     ctx.draw = () => { draws++; };
@@ -117,6 +117,49 @@ test('the account seg picks whose line is drawn; every Chinese string has Englis
     assert.equal((h.match(/<g class="qbar/g) || []).length, 0);
     assert.match(h, /資料不足/);
     assert.deepEqual(stringsLeft('days-page.js', D.EN), []);
+});
+
+// One account's 7d line alone, `steps7` its only field that differs.
+const only7 = (steps7) => [Object.assign({}, ACCOUNTS[0], { steps7 })];
+
+test('7d notes under the chart that the range has no reading before the axis starts, and only then', () => {
+    const h = tab().html('7d');
+    const note = h.indexOf('<p class="qnote">'), plot = h.indexOf('<div class="qplot">');
+    assert.ok(plot >= 0 && note > plot, 'the note sits under the chart');
+    assert.match(h.slice(note), /^<p class="qnote">區間 \d\d-\d\d 到 10-30；這個帳號第一筆讀數在 10-30 09:00，時間軸從那裡開始，之前沒有讀數不畫。/);
+    assert.match(h, /aria-label="04:00 帳號 7d 用量，10-30 09:00 到/, 'the axis opens at the first reading');
+    // A reading from before the range carried into it: the line covers the range's start.
+    const held = tab(only7([{ from: T(9) - 60 * 864e5, to: NOW, v: 5, gap: true }])).html('7d');
+    assert.doesNotMatch(held, /之前沒有讀數不畫/);
+});
+
+test('5h counts only the part of a bar inside its window: the rise and the spend before the window start stay out', () => {
+    // The window opens at 09:00; alpha runs from 08:00, beta from 09:15, and the line
+    // carries a reading from 08:30. Inside the window the line climbs 6 → 10 after
+    // beta joins, split 1:1; from 08:00 it would also climb 4 → 6 at 09:00, alpha's alone.
+    const acc = Object.assign({}, ACCOUNTS[0], { windows: [{ start: T(9), end: T(14), steps: [
+        { from: T(8, 30), to: T(9), v: 4, gap: false }, { from: T(9), to: T(9, 30), v: 6, gap: false }, { from: T(9, 30), to: NOW, v: 10, gap: true }] }] });
+    const sess = [
+        row('s1', 'alpha', '4 04:00', seg('alpha', T(8), T(10)), [[T(8, 30), 9], [T(9, 40), 1]]),
+        row('s2', 'beta', '4 04:00', seg('beta', T(9, 15), T(10)), [[T(9, 40), 1]]),
+    ];
+    const { D, ctx, html } = tab([acc], sess);
+    D.pick(bar('s1:0'), ctx);
+    const h = html('5h');
+    assert.match(h, /<svg class="qsvg qwid" data-cur="s1:0"/);
+    assert.match(h, /這段額度 \+4%，這個 task 約佔 2%/);
+    assert.doesNotMatch(h, /\+6%|約佔 4%/);
+});
+
+test('an account is named by its 7d reset, never by its key, uuid or email', () => {
+    const named = [
+        Object.assign({}, ACCOUNTS[0], { key: '0 23:55', wd: 0, hm: '23:55', uuid: '3f2a9c1e-uuid', email: 'me@example.com' }),
+        Object.assign({}, ACCOUNTS[1], { key: '6 04:00', wd: 6, hm: '04:00' }),
+    ];
+    const h = tab(named).html('7d');
+    const names = [...h.matchAll(/data-seg="qacc">(.*?)<\/div>/g)].map((m) => [...m[1].matchAll(/>([^<]*)<\/button>/g)].map((b) => b[1]));
+    assert.deepEqual(names, [['週日 23:55 重置', '週六 04:00 重置']]);
+    assert.doesNotMatch(h, /3f2a9c1e|me@example\.com/);
 });
 
 // station.js's own document listeners, booted as tests/station-days-scroll.test.js does,
