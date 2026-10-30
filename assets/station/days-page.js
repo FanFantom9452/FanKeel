@@ -421,7 +421,7 @@
         var names = { unknown: loc('q.unknownAcc', '未知') };
         keys.forEach(function (k) { if (k !== 'unknown') names[k] = accShort(k); });
         var split = keys.filter(function (k) { return sums[k]; })
-            .map(function (k) { return '<span>' + H.esc(names[k]) + ' ' + H.usd(sums[k], true) + mark(k) + '</span>'; })
+            .map(function (k) { return '<span><i class="sw" style="background:' + H.colorOf('account', k, keys) + '"></i>' + H.esc(names[k]) + ' ' + H.usd(sums[k], true) + mark(k) + '</span>'; })
             .join('<span class="dot" aria-hidden="true">·</span>');
         var label = (picked === '30d' || !RG ? loc('q.cost30', '30 天花費') : RG.costLabel()) + ' · ' + (only ? accShort(only) : loc('q.allAcc', '全部帳號'));
         var oo = { dim: 'account', names: names, today: rng.to, only: only, L: { aria: loc('q.ovAria', '每日花費，依帳號分色'), today: loc('q.today', '今天') } };

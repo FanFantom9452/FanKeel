@@ -98,8 +98,8 @@ test('總覽 marks 估 on the total, on the account whose rows are estimated and
     const { D, ctx } = boot(est);
     const ov = between(D.page({ view: 'days', day: null }, ctx), 'data-panel="overview"', 'data-panel="quota7"');
     assert.match(ov, /<div class="ovnum">\$6\.50 估<\/div>/);
-    assert.match(ov, /19:00 帳號 \$2\.00 估/);
-    assert.match(ov, /04:00 帳號 \$4\.00(?! 估)/);
+    assert.match(ov, /<\/i>19:00 帳號 \$2\.00 估<\/span>/);
+    assert.match(ov, /<\/i>04:00 帳號 \$4\.00<\/span>/);
     assert.match(ov, /<title>2026-10-30 合計 \$6\.50 估；[^<]*19:00 帳號 \$2\.00 估/);
     const plain = boot();
     assert.doesNotMatch(between(plain.D.page({ view: 'days', day: null }, plain.ctx), 'data-panel="overview"', 'data-panel="quota7"'), /估/);
@@ -119,4 +119,49 @@ test('明細 has one kpi row, 全機花費 first and 最常被換掉 marked, and
 test('總覽\'s bar chart lets the panel show through its hover columns, so the gridlines show', () => {
     const css = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'assets', 'station', 'days-page.css'), 'utf8');
     assert.match(css, /\.ovsvg \.hit\{fill:transparent/);
+});
+
+test('總覽\'s split under the total gives each account the swatch its bars are filled with', () => {
+    const { D, ctx } = boot();
+    const ov = between(D.page({ view: 'days', day: null }, ctx), 'data-panel="overview"', 'data-panel="quota7"');
+    const split = ov.match(/<p class="ovsplit">([\s\S]*?)<\/p>/)[1];
+    const sw = [...split.matchAll(/<span><i class="sw" style="background:([^"]+)"><\/i>([^<]+?) \$/g)].map((m) => [m[2], m[1]]);
+    assert.deepEqual(sw.map((p) => p[0]), ['04:00 帳號', '19:00 帳號', '未知']);
+    const bar = ov.match(/<title>2026-10-30 [^<]*<\/title><\/rect><g class="bar">([\s\S]*?)<\/g>/)[1];
+    assert.deepEqual(sw.map((p) => p[1]), [...bar.matchAll(/style="fill:([^";]+)/g)].map((m) => m[1]));
+});
+
+test('總覽\'s bar axis names the month under the first day, wide and narrow', () => {
+    const { D, ctx } = boot();
+    const ov = between(D.page({ view: 'days', day: null }, ctx), 'data-panel="overview"', 'data-panel="quota7"');
+    for (const cls of ['qwid', 'qnar']) {
+        const svg = ov.match(new RegExp('<svg class="ovsvg ' + cls + '"[\\s\\S]*?</svg>'))[0];
+        const m = svg.match(/<text class="tick" x="([\d.]+)" y="[\d.]+" text-anchor="middle">1<\/text><text class="tick" x="([\d.]+)" y="([\d.]+)" text-anchor="middle">10月<\/text>/);
+        assert.ok(m, cls + ' has 10月 under day 1');
+        assert.equal(m[1], m[2]);
+        assert.ok(Number(m[3]) < Number(svg.match(/viewBox="0 0 \d+ ([\d.]+)"/)[1]), cls + ' 10月 sits inside the drawing');
+        assert.equal(svg.split('10月').length, 2, cls + ' names the month once');
+    }
+});
+
+test('明細 on a served page has six kpi cells once the range spend arrives, 全機花費 and session leading', async () => {
+    const rep = { usd: 12.5, sessions: 4, prev: { usd: 0, sessions: 0 } };
+    const { V, M, win } = page([], { generatedAt: new Date(NOW).toISOString(), serve: true, sessions: SESS, quota: { accounts: ACCOUNTS } },
+        { fetch: () => Promise.resolve({ ok: true, json: () => rep }) });
+    win.FK_PANEL = null; // its tables want a whole /station/spend report; this test reads only the kpi row
+    const ctx = V.daysCtx();
+    ctx.draw = () => {};
+    const D = M['days-page.js'];
+    D.page({ view: 'days', day: null, tab: 'detail' }, ctx);
+    await new Promise((r) => setImmediate(r));
+    const html = D.page({ view: 'days', day: null, tab: 'detail' }, ctx);
+    const row = html.match(/<div class="readouts" data-block="kpi">([\s\S]*?)<\/section>/)[1];
+    assert.deepEqual([...row.matchAll(/<div class="ro"[^>]*><div class="l">(?:<i class="hatchsw"><\/i>)?([^<]+)<\/div>/g)].map((m) => m[1]),
+        ['全機花費（usage-compare 規則）', 'session', 'token', 'active 時間', '等待佔比', '最常被換掉']);
+});
+
+test('明細\'s kpi labels wrap on a phone rather than run into the next cell', () => {
+    const css = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'assets', 'station', 'days-page.css'), 'utf8');
+    const phone = css.slice(css.indexOf('@media (max-width:720px)'));
+    assert.match(phone, /\.dmain \.readouts \.ro \.l,\.dmain \.readouts \.ro \.d\{white-space:normal\}/);
 });

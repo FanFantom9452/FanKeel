@@ -74,6 +74,8 @@
   .dframe .dbar{padding:12px 16px}
   .ovt th,.ovt td{white-space:normal;padding-left:6px;padding-right:6px}
   .dmain .readouts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .dmain .readouts .ro{border-right:0;margin-right:0;padding-right:0}
+  .dmain .readouts .ro .l,.dmain .readouts .ro .d{white-space:normal}
 }
 
 /* 7d / 5h 額度 (spend-quota design §3, §4) */

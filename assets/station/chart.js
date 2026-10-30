@@ -375,8 +375,12 @@
                 if (i === n - 1) {
                     out += '<text class="tick ovtoday" x="' + f1(nar ? cx + slot / 2 : cx) + '" y="' + f1(B + FS * 1.3) + '" text-anchor="' + (nar ? 'end' : 'middle') + '">'
                         + esc(b.day === o.today ? o.L.today : b.day.slice(5)) + '</text>';
-                } else if (i % every === 0) {
-                    out += '<text class="tick" x="' + f1(cx) + '" y="' + f1(B + FS * 1.3) + '" text-anchor="middle">' + Number(b.day.slice(8)) + '</text>';
+                } else {
+                    if (i % every === 0) out += '<text class="tick" x="' + f1(cx) + '" y="' + f1(B + FS * 1.3) + '" text-anchor="middle">' + Number(b.day.slice(8)) + '</text>';
+                    if (i === 0 || b.day.slice(8) === '01') {
+                        out += '<text class="tick" x="' + f1(cx) + '" y="' + f1(B + FS * 2.5) + '" text-anchor="middle">'
+                            + loc('shared.monthN', '{n}月', { n: Number(b.day.slice(5, 7)) }) + '</text>';
+                    }
                 }
             });
             return out + '</svg>';

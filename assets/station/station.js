@@ -929,7 +929,7 @@
                 filterHtml: filterHtml, windowTotals: windowTotals, kpiHtml: kpiHtml, segHtml: segHtml, subtabsHtml: subtabsHtml, icon: icon,
                 loc: loc, DIM_LABEL: DIM_LABEL, NO_TIME_TYPE: NO_TIME_TYPE, dashByProj: dashByProj,
                 dashTokens7: dashTokens7, dashModels: dashModels, segTip: segTip, legendRest: legendRest,
-                quotaSvg: quotaSvg, ovBarsSvg: ovBarsSvg, usd: usd, estMark: estMark, esc: esc } };
+                quotaSvg: quotaSvg, ovBarsSvg: ovBarsSvg, colorOf: colorOf, usd: usd, estMark: estMark, esc: esc } };
     }
     if (typeof module !== 'undefined' && module.exports) module.exports.daysCtx = daysCtx;
     VIEWS.days = function (r) { return w.FK_DAYS.page(r, daysCtx()); };
