@@ -54,7 +54,7 @@ test('agentTypeOf reads the meta.json beside an agent transcript', () => {
 test('a session\'s days rows are filed by agent type, two spellings of one type in one row, at VERSION 10', () => {
     const f = fixture();
     const got = detail.detailOf(f.cfg, SID, {});
-    assert.equal(got.detail.v, 10);
+    assert.equal(got.detail.v, 11);
     const rows = got.detail.days.map((r) => [r.who, r.type, r.tokens.input]).sort((a, b) => String(a[1]).localeCompare(String(b[1])));
     assert.deepEqual(rows, [['agent', 'implementer', 500], ['main', null, 1], ['agent', 'reviewer', 100], ['agent', 'unknown', 400]]);
 });
