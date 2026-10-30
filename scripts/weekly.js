@@ -18,6 +18,8 @@ const store = require('../lib/weekly-store.js');
 const { collect, defaultRange } = require('../lib/weekly-collect.js');
 const { render, guard, guardData, shapeHits, archiveOf, DEFAULT_FACETS } = require('../lib/weekly-render.js');
 const { sessionCost } = require('../lib/session-cost.js');
+const station = require('../lib/station.js');
+const { quotaShare } = require('../assets/station/quota-share.js');
 
 const USAGE = 'usage: weekly.js scan [--since YYYY-MM-DD --until YYYY-MM-DD] [--roots dir1,dir2]\n'
     + '       weekly.js collect --repos dir1,dir2 [--since A --until B] --out data.json\n'
@@ -223,6 +225,12 @@ async function main(argv, opts) {
                 err('no transcript for session ' + id + ' under ' + configDir + '; nothing written');
                 return 2;
             }
+            // quota-share design §4: the account this session's limits readings carry,
+            // and that account's dollars per 1% of its week and of its newest 5h window
+            // (lib/station.js accountQuota, the figures serialize ships to the station).
+            const q = station.accountQuota(station.gather({ configDir }));
+            const acc = q.accounts.find((a) => a.key === q.bySession[id]);
+            cost.share = acc ? quotaShare(cost.usd, acc.pp7, acc.pp5) : null;
         }
         const generated = today();
         const full = keepReplies(events, store.readArchive(configDir, data.until));

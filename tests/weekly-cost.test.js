@@ -23,15 +23,24 @@ test('modelLabel says a model the way a reader would', () => {
     assert.equal(wr.modelLabel('gpt-x'), 'gpt-x');
 });
 
-test('costSection: a row per model, both cache writes in one column, US$ here, the quota line left blank', () => {
+test('costSection: a row per model, both cache writes in one column, US$ here, no share without an account', () => {
     const html = wr.costSection({ usd: 1.836116, requests: 30, verified: '2026-10-08', models: [OPUS, { id: 'gpt-x', usd: null, input: 1, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 }] });
     assert.match(html, /^<aside class="cost" data-block="cost-footer" aria-labelledby="h-cost">/);
     assert.ok(html.includes('產生這份週報共用 <span class="mono">3,257,919</span> tokens（<span class="mono">30</span> 次請求），依 API 公開價格換算約 <span class="mono">US$1.84</span>。'));
     assert.ok(html.includes('<span class="m" role="rowheader">Opus 5.5</span>'));
     assert.ok(html.includes('<span role="cell"><i>cache 寫入</i>95,634</span>'));
     assert.ok(html.includes('<span role="cell"><i>API 等價</i>未定價</span>'));
-    assert.ok(html.includes('<p class="cost-quota">約佔週用量 —%／5H —%（待額度換算接上）</p>'));
+    assert.ok(html.includes('<p class="cost-quota">額度換算：量不到這個帳號的額度線</p>'));
+    assert.doesNotMatch(html, /待額度換算接上/);
     assert.ok(html.includes('價格取 2026-10-08 讀到的 API 公開價目'));
+});
+
+test('costSection: a share reads as the estimated percent of the week and of 5h', () => {
+    const html = wr.costSection({ usd: 3, requests: 1, verified: '2026-10-08', models: [OPUS], share: { weekPct: 2, fiveHourPct: 12, estimated: true } });
+    assert.ok(html.includes('<p class="cost-quota">約佔週用量 2%／5H 12%（估算）</p>'));
+    const half = wr.costSection({ usd: 3, requests: 1, verified: '2026-10-08', models: [OPUS], share: { weekPct: 2, fiveHourPct: null, estimated: true } });
+    assert.ok(half.includes('<p class="cost-quota">約佔週用量 2%／5H —%（估算）</p>'));
+    assert.doesNotMatch(html + half, /待額度換算接上/);
 });
 
 function world() {
@@ -82,6 +91,7 @@ test('show.cost prices the session this shell names, and draws the block last, a
     assert.ok(html.includes('US$2.00'));
     assert.ok(html.indexOf('data-block="footer"') < html.indexOf('data-block="cost-footer"'));
     assert.ok(html.indexOf('data-block="cost-footer"') < html.indexOf('</main>'));
+    assert.ok(html.includes('<p class="cost-quota">額度換算：量不到這個帳號的額度線</p>'), 'no registry, no limits readings: no account');
 });
 
 test('--session names the session instead, and one with no transcript writes nothing', async () => {
