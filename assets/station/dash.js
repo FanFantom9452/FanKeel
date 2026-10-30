@@ -96,7 +96,7 @@
             var notes = w.FK_KINDS ? w.FK_KINDS.notes(K.S().prices) : {};
             dashParts(bars).forEach(function (r) { kind[r.k] = r.v; });
             var tot = list.reduce(function (n, b) { return n + b.total; }, 0);
-            return '<section class="dcard" data-block="dash-tokens7">' + dashHead('barv', loc('dash.cardTokens7', '近 7 天 token'), '#/days')
+            return '<section class="dcard" data-block="dash-tokens7">' + dashHead('barv', loc('dash.cardTokens7', '近 7 天 token'), '#/days/detail')
                 + '<div class="dbig">' + tokens(tot) + '</div>'
                 + '<div class="xc-cols" role="img" aria-label="' + esc(loc('dash.cardTokens7', '近 7 天 token')) + '">' + list.map(function (b) {
                     return '<i title="' + esc(b.day + ' ' + tokens(b.total)) + '" style="--h:' + (b.total / mx * 100).toFixed(1) + '%"></i>';
@@ -109,7 +109,7 @@
             var rows = dashParts(dayBars(R, 'usd', 'model', K.DAYS())), tot = rows.reduce(function (n, r) { return n + r.v; }, 0);
             var pct = function (r) { return Math.round(r.v / tot * 100) + '%'; };
             var c = function (r) { return 'var(--m-' + (r.k === 'other' ? 'other' : r.k.split('-')[0]) + ')'; };
-            return '<section class="dcard" data-block="dash-models">' + dashHead('pie', loc('dash.cardModels', '模型用量分布'), '#/days')
+            return '<section class="dcard" data-block="dash-models">' + dashHead('pie', loc('dash.cardModels', '模型用量分布'), '#/days/detail')
                 + (rows.length ? '<div class="xc-stack">' + rows.map(function (r) {
                     return '<i title="' + esc(modelLabel(r.k)) + '" style="--w:' + (r.v / tot * 100).toFixed(1) + '%;--c:' + c(r) + '"></i>';
                 }).join('') + '</div><ul class="xc-key">' + rows.map(function (r) {

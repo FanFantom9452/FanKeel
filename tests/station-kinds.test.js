@@ -62,12 +62,6 @@ test('the type legend names and colours the main session as everywhere else, and
     assert.match(html, /未記類型/);
 });
 
-test('the cost readout takes a range\'s label, and keeps 30 天花費 without one', () => {
-    const t = { usd: 1, tokens: 1, active: 1, main: 1, wait: 0, estimated: false };
-    assert.match(V.kpiHtml(t, t, '區間花費'), /<div class="l">區間花費<\/div>/);
-    assert.match(V.kpiHtml(t, t), /<div class="l">30 天花費<\/div>/);
-});
-
 test('the kit carries the helpers and the five kinds, and usd2 prints to the cent', () => {
     const K = global.window.FK_KIT;
     for (const k of ['esc', 'tokens', 'usd2', 'comma', 'delta', 'roHtml', 'segHtml', 'sessionHash', 'localDay', 'lastDays', 'fillVars']) assert.equal(typeof K[k], 'function', k);

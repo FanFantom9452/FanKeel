@@ -100,20 +100,6 @@ test('serveLost stays quiet with no baseline or inside the grace window, and sta
     assert.match(msg, /每 5 秒重試一次/);
 });
 
-test('heroEyebrow carries the frozen moment, and says only 近 30 天 while the server answers', () => {
-    // Mockup screen 3's hero reads 「近 30 天 · 凍結於 06:12」, so a reader who
-    // has scrolled past the bar still sees the page is not live. The hh:mm is
-    // the caller's, off the same `stamp()` the bar's absolute time comes from
-    // — one clock read in two places rather than two clocks.
-    assert.equal(V.heroEyebrow(null), '近 30 天');
-    assert.equal(V.heroEyebrow(''), '近 30 天');
-    assert.equal(V.heroEyebrow('06:12'), '近 30 天 · 凍結於 06:12');
-    // The real call shape, so a slice off by one cannot pass: `stamp()`
-    // returns `YYYY-MM-DD hh:mm` and the eyebrow wants its last five.
-    assert.equal(V.heroEyebrow(V.stamp(Date.parse('2026-09-14T06:12:00Z')).slice(11)),
-        '近 30 天 · 凍結於 06:12');
-});
-
 test('labels give each root the shortest tail nothing else shares', () => {
     const out = V.labels(['/a/b/datapacks', '/c/d/datapacks', '/e/notes']);
     assert.equal(out['/e/notes'], 'notes');
@@ -435,10 +421,10 @@ test('頁面對帳：a day\'s bar total equals its day panel total equals that d
     }
 });
 
-test('windowTotals and the five readouts: thirty days against the thirty before, waiting over main plus wait', () => {
+test('windowTotals and the four readouts: thirty days against the thirty before, waiting over main plus wait', () => {
     // `S.gates` (the module-scoped `global.window.STATION` object `kpiHtml`
     // closes over) carries nothing here, on purpose: this test is about the
-    // first four readouts, and the fifth — 最常被換掉 — prints its em-dash
+    // first three readouts, and the fourth — 最常被換掉 — prints its em-dash
     // placeholder rather than disappearing, which is what the assertions
     // below check for.
     global.window.STATION.gates = undefined;
@@ -447,33 +433,29 @@ test('windowTotals and the five readouts: thirty days against the thirty before,
     assert.deepEqual(cur, { usd: 8.5, tokens: 42705, active: 8700000, main: 7800000, wait: 1800000, estimated: false });
     assert.deepEqual(prev, { usd: 8, tokens: 23400, active: 7200000, main: 7200000, wait: 7200000, estimated: false });
     const html = V.kpiHtml(cur, prev);
-    assert.match(html, /\$8\.50/);
-    assert.doesNotMatch(html, /\$99|\$198/);
     assert.match(html, /18\.8<span class="u">%<\/span>/);
     assert.match(html, /-31\.3 pt/);
     const cells = [...html.matchAll(/<div class="ro"(?: data-block="[a-z-]+")?><div class="l">(.*?)<\/div><div class="v">(.*?)<\/div><div class="d">(.*?)<\/div><\/div>/g)];
     assert.deepEqual(cells.map((m) => m[1]),
-        ['30 天花費', 'token', 'active 時間', '<i class="hatchsw"></i>等待佔比', '最常被換掉'],
+        ['token', 'active 時間', '<i class="hatchsw"></i>等待佔比', '最常被換掉'],
         'every readout carries its own label, and nothing else, in the label cell');
     assert.deepEqual(cells.map((m) => [/class="delta/.test(m[2]), /class="delta/.test(m[3])]),
-        [[false, true], [false, true], [false, true], [false, true], [false, false]],
+        [[false, true], [false, true], [false, true], [false, false]],
         'each one keeps the figure in the value cell and the comparison in the line under it; the gate cell has no window to compare against');
-    assert.match(html, /30 天花費<\/div><div class="v">\$8\.50<\/div><div class="d">/,
-        'the spend readout puts the figure in the value cell and the comparison under it');
     assert.match(html, /token<\/div><div class="v">43k<\/div>/, 'the token readout reads this window, not the one before it');
     assert.match(html, /active 時間<\/div><div class="v">2\.4h<\/div>/, 'so does active 時間');
     assert.match(html, /等待佔比<\/div><div class="v">18\.8<span class="u">%<\/span><\/div><div class="d">[^<]*<span class="delta[^>]*>[^<]*-31\.3 pt/,
         'so does the waiting share');
     assert.match(html, /最常被換掉<\/div><div class="v">—<\/div><div class="d"><\/div>/,
-        'with no gate data, the fifth readout prints an em dash rather than dropping out of the row');
+        'with no gate data, the gate readout prints an em dash rather than dropping out of the row');
     const none = V.kpiHtml(cur, V.windowTotals(HOME, V.lastDays(NOW - 60 * 864e5, 30)));
-    assert.equal(count(none, /前期無資料/g), 4);
+    assert.equal(count(none, /前期無資料/g), 3);
 });
 
-test('kpiHtml reads S.gates.swapped[0] for the fifth readout: which option one loses most, and how often', () => {
+test('kpiHtml reads S.gates.swapped[0] for the gate readout: which option one loses most, and how often', () => {
     // Mutation that reddens this: in `kpiHtml()`, drop the `var top = ...`
     // line and the `out += roHtml('最常被換掉', ...)` line that follows it —
-    // the output then has only four `ro` cells and neither `最常被換掉` nor
+    // the output then has only three `ro` cells and neither `最常被換掉` nor
     // `進 build` nor `3 / 5` appears anywhere in it.
     global.window.STATION.gates = { swapped: [{ label: '進 build', lost: 3, total: 5 }] };
     const cur = V.windowTotals(HOME, DAYS);
@@ -1300,19 +1282,14 @@ test('segTip lists the day\'s segments, marks the hovered one, and its parts add
 test('usd appends the share of the weekly quota when profile quota.week is set, and only then', () => {
     const S = global.window.STATION;
     S.gates = undefined;
-    const html = () => V.kpiHtml(V.windowTotals(HOME, DAYS), V.windowTotals(HOME, PREV));
     try {
         S.profiles = { machine: { values: { 'quota.week': 2000 } } };
         assert.equal(V.usd(20), '$20.00 (1%)');
         assert.equal(V.usd(5.4), '$5.40 (0.27%)');
         assert.equal(V.usd(0), '—');
-        const m = html().match(/30 天花費<\/div><div class="v">\$(\d+\.\d+) \((\d+(?:\.\d+)?)%\)/);
-        assert.ok(m, 'the spend readout carries its percent');
-        assert.ok(Math.abs(Number(m[2]) * 2000 / 100 - Number(m[1])) < 2000 * 0.005 / 100, 'percent times quota is the amount on the same row');
         for (const none of [undefined, {}, { machine: {} }, { machine: { values: {} } }, { machine: { values: { 'quota.week': 0 } } }]) {
             S.profiles = none;
             assert.equal(V.usd(20), '$20.00');
-            assert.doesNotMatch(html(), /%\)/);
         }
     } finally { S.profiles = undefined; }
 });
@@ -1398,23 +1375,6 @@ test('usd reads a project-level quota.week: wins over machine, first project win
             S.profiles = { machine: { values: { 'quota.week': 4000 } }, projects: { a: bad } };
             assert.equal(V.usd(20), '$20.00 (0.5%)');
         }
-    } finally { S.profiles = undefined; }
-});
-
-test('the 30-day spend readout names the day quota.week was calibrated, only for the machine quota quota.js wrote', () => {
-    const S = global.window.STATION;
-    S.gates = undefined;
-    const html = () => V.kpiHtml(V.windowTotals(HOME, DAYS), V.windowTotals(HOME, PREV));
-    try {
-        S.profiles = { machine: { values: { 'quota.week': 3000, 'quota.calibrated': '2026-09-23' } } };
-        assert.match(html(), /週額度 2026-09-23 校準/);
-        S.profiles = { machine: { values: { 'quota.week': 3000 } } };
-        assert.doesNotMatch(html(), /校準/);
-        S.profiles = { machine: { values: { 'quota.calibrated': '2026-09-23' } } };
-        assert.doesNotMatch(html(), /校準/);
-        S.profiles = { machine: { values: { 'quota.week': 3000, 'quota.calibrated': '2026-09-23' } },
-            projects: { p: { values: { 'quota.week': 500 }, sources: { 'quota.week': 'project' } } } };
-        assert.doesNotMatch(html(), /校準/, 'a project\'s own quota carries no calibration day');
     } finally { S.profiles = undefined; }
 });
 

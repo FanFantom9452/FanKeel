@@ -15,7 +15,6 @@ const V = require('../assets/station/station.js');
 
 const NOW = Date.now();
 const DAYS = V.lastDays(NOW, 30);
-const PREV = V.lastDays(NOW - 30 * 864e5, 30);
 const TODAY = V.localDay(NOW);
 const tok = { input: 1000, output: 100, cacheRead: 4000, cacheWrite5m: 500, cacheWrite1h: 250 };
 const costOf = (u) => ({ input: u / 4, output: u / 2, cacheRead: u / 8, cacheWrite5m: u / 16, cacheWrite1h: u / 16 });
@@ -32,12 +31,6 @@ const EST = [sess('est', EST_DAYS)];
 const PLAIN = [sess('plain', PLAIN_DAYS)];
 const O = { metric: 'usd', dim: 'model', sel: null, today: TODAY, days: DAYS, names: { 'F:\\ws\\a': 'a' }, pkeys: ['F:\\ws\\a'] };
 const none = (html) => assert.doesNotMatch(html, /估/, 'nothing estimated, nothing marked');
-
-test('kpiHtml marks the 30-day cost 估 only when an estimated row is in the window', () => {
-    const k = (R) => V.kpiHtml(V.windowTotals(R, DAYS), V.windowTotals(R, PREV));
-    assert.match(k(EST), /<div class="l">30 天花費<\/div><div class="v">\$4\.00 估<\/div>/);
-    none(k(PLAIN));
-});
 
 const hist = (R) => V.histSvg(V.dayBars(R, 'usd', 'model', DAYS), O);
 test('histSvg marks the day total in a column\'s label 估', () => {

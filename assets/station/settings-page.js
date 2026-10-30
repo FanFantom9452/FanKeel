@@ -145,7 +145,7 @@
         'sq.gHoldDef': '30 minutes', 'sq.gHoldDefE': 'Unset, it is 1800 seconds', 'sq.gHold10': '10 minutes', 'sq.gHold10E': 'Step away longer and the computer takes over',
         'sq.gHoldCustom': 'Your own seconds', 'sq.gHoldCustomE': '1 to 1800 seconds', 'sq.gHoldSecs': 'Seconds, 1 to 1800',
         'sq.gQuotaT': 'What does one week of your quota come to in US dollars?',
-        'sq.gQuotaY': 'Once set, the station adds a share after most amounts. node scripts/quota.js can calibrate it from the pane\'s recorded limits readings and writes this very key. A project file that sets it wins.',
+        'sq.gQuotaY': 'Once set, the station adds a share after amounts on every page but the spend page, which shows plain amounts. node scripts/quota.js can calibrate it from the pane\'s recorded limits readings and writes this very key. A project file that sets it wins.',
         'sq.gQuotaPh': 'e.g. 3000', 'sq.gQuotaFn': 'Empty is unset: no share after amounts',
         'sq.gLangT': 'What language should the station and panels use?',
         'sq.gLangY': 'The same setting as the globe at the top right; either one changes both. Panels and the band switch on their next update.',
@@ -668,7 +668,7 @@
                     O('600', loc('sq.gHold10', '10 分鐘'), loc('sq.gHold10E', '走開久一點，電腦就接回去'), null, W('phone.hold', '600')),
                     O('custom', loc('sq.gHoldCustom', '自訂秒數'), loc('sq.gHoldCustomE', '1 到 1800 秒'), null, W('phone.hold', '$in'))] },
             { id: 'quota', k: 'quota.week', n: loc('sq.nQuota', '一週額度'), title: loc('sq.gQuotaT', '你一週的額度等於多少美元？'), money: true,
-                why: loc('sq.gQuotaY', '填了之後，監控站在多數金額後面接上佔比。node scripts/quota.js 能從 pane 記下的額度讀數自動校準，寫的就是這一項。專案檔也設了時，以專案為準。') },
+                why: loc('sq.gQuotaY', '填了之後，監控站在花費頁以外的金額後面接上佔比；花費頁只顯示金額。node scripts/quota.js 能從 pane 記下的額度讀數自動校準，寫的就是這一項。專案檔也設了時，以專案為準。') },
             { id: 'lang', k: 'ui.lang', n: loc('sq.nUiLang', '介面語言'), only: true, title: loc('sq.gLangT', '監控站和面板用什麼語言？'),
                 why: loc('sq.gLangY', '跟右上角地球是同一個設定，改哪邊都一樣；面板和 band 下一次更新就換過去。'), opts: [
                     O('zh', loc('sq.gLangZh', '中文'), loc('sq.gLangZhE', '不管瀏覽器，一律中文'), null, W('ui.lang', 'zh')),

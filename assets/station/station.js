@@ -278,7 +278,7 @@
     function CHART() {
         return CHART_ || (CHART_ = mod('FK_CHART', 'chart.js').make({
             loc: loc, esc: esc, tokens: tokens, usd: usd, hours: hours, estMark: estMark, delta: delta,
-            quotaDay: quotaDay, icon: icon, ago: ago, stamp: stamp, mins: mins, statePill: statePill,
+            icon: icon, ago: ago, stamp: stamp, mins: mins, statePill: statePill,
             keelStage: keelStage, keelProgress: keelProgress, localDay: localDay, dimKey: dimKey,
             tokenSum: tokenSum, orderKeys: orderKeys, niceTop: niceTop, metricText: metricText,
             colorOf: colorOf, keyLabel: keyLabel, keyHint: keyHint, partEst: partEst,
@@ -434,7 +434,6 @@
     function reload() { return FLOAT().reload.apply(null, arguments); }
     function changedParts() { return FLOAT().changedParts.apply(null, arguments); }
     function effortChip() { return FLOAT().effortChip.apply(null, arguments); }
-    function heroEyebrow() { return FLOAT().heroEyebrow.apply(null, arguments); }
     function boardLinkHtml() { return FLOAT().boardLinkHtml.apply(null, arguments); }
     // ---- the focus page: /f/<id>/<tab>, one session's plan or gate alone ----
     // docs/90-agent/plans/2026-10-21-station-focus-design.md §1. lib/station.js
@@ -510,7 +509,7 @@
             keelProgress: keelProgress, keelStage: keelStage, stageNow: stageNow, runningTag: runningTag,
             timelineModel: timelineModel, timelineSvg: timelineSvg, costModel: costModel, costHtml: costHtml,
             sessionHeadHtml: sessionHeadHtml, tabsHtml: tabsHtml, serveLost: serveLost, talkHtml: talkHtml, talkBody: talkBody,
-            heroEyebrow: heroEyebrow, effortChip: effortChip, tourPage: tourPage,
+            effortChip: effortChip, tourPage: tourPage,
             railHtml: railHtml, liveTag: liveTag,
             navHtml: navHtml, navCounts: navCounts, recentRows: recentRows,
             segTip: segTip,
@@ -1957,15 +1956,6 @@
             });
         };
         w.setInterval(poll, 5000);
-    }
-
-    // spend-1: the day scripts/quota.js calibrated the quota in force, or null
-    // for a quota set by hand or a project's own, which carry no day.
-    function quotaDay() {
-        var m = S.profiles && S.profiles.machine && S.profiles.machine.values;
-        var d = m && m['quota.calibrated'];
-        var q = quotaWeek();
-        return typeof d === 'string' && q && q === m['quota.week'] ? d : null;
     }
 
     draw();

@@ -30,8 +30,8 @@ const ACCOUNTS = [
         forecast: { at: T(9, 40), pct: 18, resets: T(9) + 6 * 864e5, perHour: 0, out: null } },
     { key: '4 19:00', wd: 4, hm: '19:00', span: null, steps7: [{ from: T(8), to: NOW, v: 40, gap: true }], windows: [], forecast: null },
 ];
-function tab() {
-    const { V, M } = page([], { generatedAt: new Date(NOW).toISOString(), sessions: SESS, quota: { accounts: ACCOUNTS } });
+function tab(accounts) {
+    const { V, M } = page([], { generatedAt: new Date(NOW).toISOString(), sessions: SESS, quota: { accounts: accounts || ACCOUNTS } });
     const ctx = V.daysCtx();
     let draws = 0;
     ctx.draw = () => { draws++; };
@@ -54,6 +54,26 @@ test('7d draws the first account\'s line over its own bars, counts the bar with 
     assert.match(h, /重置前用不完/);
     assert.match(h, /≈ \$0\.50/, '$4 spent over the 8 points of the span');
     assert.doesNotMatch(h, /class="chart|class="[^"]* chart[ "]/);
+});
+
+// The first account with its forecast swapped for `f`.
+const withForecast = (f) => [Object.assign({}, ACCOUNTS[0], { forecast: Object.assign({}, ACCOUNTS[0].forecast, f) })].concat(ACCOUNTS.slice(1));
+
+test('7d says when it runs out at the last 24 hours pace, and warns', () => {
+    const h = tab(withForecast({ at: T(11), out: T(20, 15) })).html('7d');
+    assert.match(h, /<div class="d qwarn">照近 24 小時速度 10-30 20:15 用完<\/div>/);
+    assert.doesNotMatch(h, /重置前用不完/);
+});
+
+test('a 7d reading over 6 hours old shows its reading time, not a forecast', () => {
+    const h = tab(withForecast({ at: T(5), out: T(20, 15) })).html('7d');
+    assert.match(h, /<div class="d">讀數時間 10-30 05:00<\/div>/);
+    assert.doesNotMatch(h, /用完|重置前用不完/);
+});
+
+test('7d names where its axis starts when the range opens before the first reading of the account', () => {
+    const h = tab().html('7d');
+    assert.match(h, /區間 \d\d-\d\d 到 10-30；這個帳號第一筆讀數在 10-30 09:00，時間軸從那裡開始/);
 });
 
 test('a click on a bar selects it and calls its share; again, or on the blank, clears it', () => {

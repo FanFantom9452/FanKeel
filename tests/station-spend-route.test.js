@@ -18,7 +18,7 @@ const { serve } = require('../scripts/station.js');
 const tmp = require('./tmp.js');
 
 const ASSETS = path.join(__dirname, '..', 'assets', 'station');
-const MODULES = ['spend-talk.js', 'spend-kinds.js', 'spend-range.js', 'spend-panel.js'];
+const MODULES = ['spend-talk.js', 'spend-kinds.js', 'spend-range.js', 'spend-panel.js', 'quota-share.js'];
 const SID = 'ffffffff-6666-4666-8666-666666666666';
 const at = (d, h, m) => new Date(2026, 9, d, h, m || 0).toISOString();
 const call = (id, t, w1h, read) => JSON.stringify({ type: 'assistant', requestId: id, timestamp: t,
@@ -80,7 +80,7 @@ test('the talk route carries the break records beside the turns', () => served(a
     assert.ok(Math.abs(page.spend.total - page.spend.sessionUsd) < 1e-9);
 }));
 
-test('the four modules are served byte for byte, and the shell loads them before station.js', () => served(async (s) => {
+test('the five spend modules are served byte for byte, and the shell loads them before station.js', () => served(async (s) => {
     for (const name of MODULES) {
         const res = await get(s.url + 'station/' + name);
         assert.equal(res.status, 200, name);

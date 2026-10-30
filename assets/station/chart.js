@@ -5,8 +5,8 @@
     'use strict';
     function make(K) {
         // One alias per name K carries, so the bodies below moved verbatim.
-        var loc = K.loc, esc = K.esc, tokens = K.tokens, usd = K.usd, hours = K.hours, estMark = K.estMark, delta = K.delta;
-        var quotaDay = K.quotaDay, localDay = K.localDay, dimKey = K.dimKey;
+        var loc = K.loc, esc = K.esc, tokens = K.tokens, usd = K.usd, hours = K.hours, delta = K.delta;
+        var localDay = K.localDay, dimKey = K.dimKey;
         var tokenSum = K.tokenSum, orderKeys = K.orderKeys, niceTop = K.niceTop, metricText = K.metricText;
         var colorOf = K.colorOf, keyLabel = K.keyLabel, keyHint = K.keyHint, partEst = K.partEst;
         var METRIC_LABEL = K.METRIC_LABEL, DIM_LABEL = K.DIM_LABEL, NO_TIME_TYPE = K.NO_TIME_TYPE;
@@ -96,13 +96,12 @@
         function roHtml(l, v, d, block) {
             return '<div class="ro"' + (block ? ' data-block="' + block + '"' : '') + '><div class="l">' + l + '</div><div class="v">' + v + '</div><div class="d">' + d + '</div></div>';
         }
-        // `noCost` leaves the spend readout out: 花費's 總覽 shows that figure by account
-        // (spend-quota design §2a), and 明細 keeps the other four. `lead` is readouts that
-        // open the row: 明細's 全機花費 sits in it rather than in a row of its own.
-        function kpiHtml(cur, prev, label, noCost, lead) {
+        // No spend readout: 花費's 總覽 shows that figure by account (spend-quota
+        // design §2a). `lead` is readouts that open the row: 明細's 全機花費 sits in it
+        // rather than in a row of its own.
+        function kpiHtml(cur, prev, lead) {
             var share = function (t) { return t.main + t.wait ? t.wait / (t.main + t.wait) : 0; };
             var out = '<div class="readouts" data-block="kpi">' + (lead || '')
-                + (noCost ? '' : roHtml(label || loc('shared.cost30d', '30 天花費'), usd(cur.usd) + estMark(cur), delta(cur.usd, prev.usd) + (quotaDay() ? ' · ' + loc('shared.quotaCalibrated', '週額度 {d} 校準', { d: quotaDay() }) : '')))
                 + roHtml('token', tokens(cur.tokens), delta(cur.tokens, prev.tokens))
                 + roHtml(loc('shared.activeTime', 'active 時間'), hours(cur.active), delta(cur.active, prev.active))
                 + roHtml('<i class="hatchsw"></i>' + loc('shared.waitShare', '等待佔比'), Math.round(share(cur) * 1000) / 10 + '<span class="u">%</span>',

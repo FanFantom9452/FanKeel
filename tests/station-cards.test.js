@@ -50,3 +50,11 @@ test('模型用量分布 splits the spend by model', () => {
     assert.match(html, /Opus 4\.1 <b>75%<\/b>/);
     assert.match(html, /Sonnet 4\.5 <b>25%<\/b>/);
 });
+
+test('近 7 天 token and 模型用量分布 link to 明細, where they sit, and parseHash opens that tab', () => {
+    const t = TODAY();
+    const R = [{ id: 'a', days: [{ day: t, usd: 1, model: 'claude-opus-4-1', tokens: { input: 1, output: 0, cacheRead: 0, cacheWrite5m: 0 } }] }];
+    const V = page(R);
+    for (const html of [V.dashTokens7(R), V.dashModels(R)]) assert.match(html, /<a class="dmore" href="#\/days\/detail">/);
+    assert.equal(V.parseHash('#/days/detail').tab, 'detail');
+});

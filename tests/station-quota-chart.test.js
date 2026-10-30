@@ -23,7 +23,7 @@ function helpers() {
         MODEL_KEYS: ['fable', 'opus', 'sonnet', 'haiku'], TOKEN_KEYS: ['input', 'output', 'cacheRead', 'cacheWrite5m', 'cacheWrite1h'],
         KIND_KEYS: ['input', 'output', 'cacheRead', 'cacheWrite1h', 'cacheWrite5m'], KIND_LABEL: {}, KIND_COLOR: {}, WHO_LABEL: { main: '主 session' }, S });
     const C = M['chart.js'].make(Object.assign({}, F, { loc, esc, usd, tokens: String, hours: String, estMark: () => '', delta: () => '',
-        quotaDay: () => null, METRIC_LABEL: { usd: '花費', tokens: 'token', time: '時間' }, DIM_LABEL: {}, NO_TIME_TYPE: 'no type',
+        METRIC_LABEL: { usd: '花費', tokens: 'token', time: '時間' }, DIM_LABEL: {}, NO_TIME_TYPE: 'no type',
         KIND_KEYS: [], MODEL_KEYS: ['fable', 'opus', 'sonnet', 'haiku'], S }));
     return { F, C };
 }
@@ -55,11 +55,10 @@ test('dayBars splits by account with unknown last, by task with none last, and t
     assert.equal(C.dayBars(SESS, 'time', 'task', [DAY], { task: 'no task in a span' }).disabled, 'no task in a span');
 });
 
-test('kpiHtml can leave the spend readout out; histSvg names a dim it has no label for by the one it is given', () => {
+test('kpiHtml opens the row with the lead it is given; histSvg names a dim it has no label for by the one it is given', () => {
     const { C } = helpers();
     const t = { usd: 5, tokens: 10, active: 3600e3, main: 3600e3, wait: 0 };
-    assert.match(C.kpiHtml(t, t), /30 天花費/);
-    assert.doesNotMatch(C.kpiHtml(t, t, null, true), /30 天花費/);
+    assert.match(C.kpiHtml(t, t, '<div class="ro">LEAD</div>'), /^<div class="readouts" data-block="kpi"><div class="ro">LEAD<\/div><div class="ro"><div class="l">token</);
     const bars = C.dayBars(SESS, 'usd', 'task', [DAY]);
     assert.match(C.histSvg(bars, { metric: 'usd', dim: 'task', dimLabel: '依 task', today: DAY, names: { none: '沒有 task' } }), /aria-label="近 1 天每日花費，依 task"/);
 });

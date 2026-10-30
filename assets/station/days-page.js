@@ -477,7 +477,7 @@
             // dim has, the switches above and the chart below stay where they are.
             + '<div class="lstrip"><div class="legend">' + H.legendHtml(all, o) + '</div>' + H.filterHtml(all, o) + '</div>'
             + '<div class="chart">' + H.histSvg(bars, o) + '</div>'
-            + H.kpiHtml(H.windowTotals(R, rng.days), H.windowTotals(R, rng.prev), null, true,
+            + H.kpiHtml(H.windowTotals(R, rng.days), H.windowTotals(R, rng.prev),
                 RG ? RG.kpiHtml(held, Boolean(S.serve)).replace(/^<div class="readouts"[^>]*>|<\/div>$/g, '') : '') + '</section>'
             + (w.FK_PANEL ? w.FK_PANEL.html(held, S.prices, Boolean(S.serve)) : '')
             + '<div class="dash kdash pcards" data-block="spend-cards"><div class="dcol" data-col="main">' + H.dashByProj(R) + H.dashTokens7(R)

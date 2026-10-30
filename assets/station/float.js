@@ -243,14 +243,6 @@
             return effort ? '<span class="chip" title="' + loc('tune.effortHint', '主 session 最後一次請求的 effort') + '">effort <span class="mono">' + esc(effort) + '</span></span>' : '';
         }
 
-        // The hero's eyebrow carries the frozen moment too, so a reader who has
-        // scrolled past the bar is not reading numbers they take for live. The
-        // hh:mm is the caller's, off the same `stamp()` the bar's absolute time
-        // comes from: two places on the page, one clock read.
-        function heroEyebrow(frozenAt) {
-            return frozenAt ? loc('tune.last30dFrozenAt', '近 30 天 · 凍結於 {t}', { t: frozenAt }) : loc('tune.last30d', '近 30 天');
-        }
-
         // ---- the project page, again: its board link ------------------------------
         // The project card's line to its architecture board. Only a served page
         // has the `/chartroom/` route (a file:// copy has none), and only a registry
@@ -433,7 +425,7 @@
             pendingGateHtml: pendingGateHtml,
             drawFloat: drawFloat, fkFit: fkFit, goneSave: goneSave, fkApply: fkApply, fkClose: fkClose, pgRead: pgRead, pgSync: pgSync,
             answerPost: answerPost, gatePost: gatePost, tickGates: tickGates, tuneNotify: tuneNotify, reload: reload,
-            changedParts: changedParts, effortChip: effortChip, heroEyebrow: heroEyebrow, boardLinkHtml: boardLinkHtml
+            changedParts: changedParts, effortChip: effortChip, boardLinkHtml: boardLinkHtml
         };
     }
     var api = { make: make };
