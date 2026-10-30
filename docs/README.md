@@ -516,6 +516,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 10-28 第五輪的計畫：overlay 備註上限、判決白話摘要與 HTML 頁 | `docs/99-archive/2026-10-28-todo-patrol-5.md` — *built* |
 | TODO 全表盤點第二輪（10-29）：做了什麼、沒做什麼 | [reports/2026-10-29-todo-patrol-2.md](90-agent/reports/2026-10-29-todo-patrol-2.md) — *繁體中文* |
 | 10-29 第二輪的計畫：gate 頁按鈕、設定頁窄螢幕、gate 標題格式由程式擋、float.js 與 list-page.js | `docs/99-archive/2026-10-29-todo-patrol-2.md` — *built* |
+| 額度在真實 limits 記錄上（10-29）：7d 讀數差距的成因、quota.js 成功路徑 | [reports/2026-10-29-quota-real-data.md](90-agent/reports/2026-10-29-quota-real-data.md) — *繁體中文* |
 | TODO 全表盤點（10-30）：做了什麼、沒做什麼 | [reports/2026-10-30-todo-patrol.md](90-agent/reports/2026-10-30-todo-patrol.md) — *繁體中文* |
 | 10-30 的計畫：gate 首字大寫、手機 gate 畫圖標記、對話縮圖、focus 殼補模組、design 手機寬度 | `docs/99-archive/2026-10-30-todo-patrol.md` — *built* |
 | 10-30 第二輪的計畫：search.js 與 float.js 搬完、pane 的 TODO 列與 station 列重排 | `docs/99-archive/2026-10-30-todo-patrol-2.md` — *built* |
@@ -575,6 +576,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 那份設計的實作計畫 | `docs/99-archive/2026-10-29-mobile-sources.md` — *built, 繁體中文* |
 | 週報每日量開關、面向與受眾篩選、提問與回覆、製作成本（10-30）的設計 | `docs/99-archive/2026-10-30-weekly-facets-design.md` — *built, 繁體中文* |
 | 那份設計的實作計畫 | `docs/99-archive/2026-10-30-weekly-facets.md` — *built, 繁體中文* |
+| 花費頁四個分頁與依帳號的額度折線（10-30）的設計 | `docs/99-archive/2026-10-30-spend-quota-design.md` — *built, 繁體中文* |
+| 那份設計的實作計畫 | `docs/99-archive/2026-10-30-spend-quota.md` — *built, 繁體中文* |
 | 真的 `claude -p` 巢狀派兩個 agent 量出來：`SubagentStart` 觸發當下 `agent-<id>.meta.json` 兩個 agent 都還沒帶 `spawnDepth`（`atHook`／`depthAtHook` 一致為 `false`／`null`），`nestedBrain()` 退回 fallback 分支，事後檔案才補齊且巢狀關係正確 | [reports/2026-09-28-spawndepth-timing.md](90-agent/reports/2026-09-28-spawndepth-timing.md) — *a dated snapshot, 繁體中文* |
 | 真的 `claude -p` 派 `isolation: "worktree"` 的 subagent 量出來：回傳文字裡沒有路徑也沒有分支（`pathInResult`／`branchInResult` 皆 `false`），readable: no——brain 拿不到路徑可以直接寫進 commit file，`task.js` 的 `openWorktree` 退路還要 design 定義；留下的 worktree 開在 repo 根目錄之內，`lib/guard.js` 的 `relPath` 對不回主樹路徑 | [reports/2026-09-28-worktree-probe.md](90-agent/reports/2026-09-28-worktree-probe.md) — *a dated snapshot, 繁體中文* |
 | 本地 `moondream` 判斷十張 fankeel 測站截圖（五正常五破壞）：正常圖 5/5 判對、壞圖只抓到 1/5（全透明文字那張），平均 0.24 秒；`UI-TARS-1.5-7B-GGUF` 卡在下載時被擋跨主機 redirect，座標題沒問成 | [reports/2026-09-28-local-judge-trial.md](90-agent/reports/2026-09-28-local-judge-trial.md) — *a dated snapshot, 繁體中文* |
@@ -680,6 +683,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 - [週報 skill：選區間與 repo，收紀錄，畫成一頁給教授的 HTML（10-27）](03-decisions/2026-10-27-weekly-skill.md)
 - [週報：每日量開關、面向與受眾篩選、提問與回覆、製作成本（10-30）](03-decisions/2026-10-30-weekly-facets.md)
 - [手機只配對一台，由那台去拿其他電腦的 session（10-29）：/m 合併其他已配對電腦與未登記的 Desktop／CLI／RC session，取代 10-27 one-phone-three-pcs「不合併」那一半](03-decisions/2026-10-29-mobile-sources.md)
+- [花費頁分成總覽、7d 額度、5h 額度、明細四個分頁（10-31）：依帳號畫 5h／7d 額度折線與 task 條，金額不接 (x%)](03-decisions/2026-10-31-spend-quota-tabs.md)
 - [任務的圖由 station 畫成 SVG（10-20）](03-decisions/2026-10-20-task-boards-as-svg.md)
 - [retro 讀整份遮蔽過的 session 包（10-20）](03-decisions/2026-10-20-retro-bundle.md)
 - [沒派過的 agent 怎麼處理（10-15）：effort 改在派工時傳，六個複本刪掉](03-decisions/2026-10-15-unused-agents.md)
