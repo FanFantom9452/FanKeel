@@ -945,8 +945,10 @@ test('gate.away ask skips the question when the station already answered', async
   assert.match(out.systemMessage, /\/compact/);
 });
 
-test("the committed profile keeps gate waits in Desktop, never the station, and asks when away", () => {
+// gate.away went off on 2026-10-30 (8ec4d9f3), the user's own choice: a gate
+// waits in Desktop and nothing asks when the user is away.
+test("the committed profile keeps gate waits in Desktop, never the station, and never asks when away", () => {
   const profile = JSON.parse(execFileSync("git", ["show", "HEAD:.fankeel/profile.json"], { cwd: ROOT, encoding: "utf8" }));
   assert.equal(profile["gate.station"], "off");
-  assert.equal(profile["gate.away"], "ask");
+  assert.equal(profile["gate.away"], "off");
 });
