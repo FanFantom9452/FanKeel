@@ -100,7 +100,7 @@ test('every CJK string literal in station.js, fmt.js, chart.js, session-body.js 
 test('each loc() key has its section\'s prefix, one Chinese string, and an English entry; every entry is used', () => {
     const zhOf = new Map();
     const bad = [];
-    const ENTRIES = [['station.js', LINES, (i) => [PREFIX[i]]]].concat(MOVED.map(([n, ls]) => [n, ls, () => ['shared', 'proj', 'ses', 'det', 'live', 'disp', 'todo', 'dash', 'rec', 'nav', 'tune']]));
+    const ENTRIES = [['station.js', LINES, (i) => [PREFIX[i]]]].concat(MOVED.map(([n, ls]) => [n, ls, () => ['shared', 'proj', 'ses', 'det', 'live', 'disp', 'todo', 'dash', 'rec', 'nav', 'tune', 'poll', 'q', 'mast']]));
     for (const [file, lines, prefixesOf] of ENTRIES) lines.forEach((text, i) => {
         const prefixes = prefixesOf(i);
         KEYED.lastIndex = 0;
