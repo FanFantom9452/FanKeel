@@ -114,16 +114,13 @@ it does not approve it.
    it also prints `html: <path>`; `node <plugin>/scripts/judge.js html
    <judgement.md>` draws that page again for a record already filed.
 
-   **3b. If record prints `questions:`**, the judge asked the user, and the
-   answer is `ask human:`, not a guess. Open the printed `page:` first, in the
-   browser pane, so the user reads the choices there. Then `AskUserQuestion`
-   once, with the `questions` JSON copied verbatim — the gate refuses a
-   paraphrase. Then pipe the `answers` map to `node <plugin>/scripts/judge.js
-   answered --session <id> --record <path> --answers -`, and follow the
-   `decision:` line it prints: the assumed option means `pick:`; another option
-   means its `→` branch; a free-text answer, or one outside every branch, is the
-   only case for a second `/fankeel-ask`, which takes `--record <path>` (a rule
-   the skill follows, not one the hook enforces).
+   **3b. If record prints `questions:`**, open the printed `page:` in the
+   browser pane, then `AskUserQuestion` once with the `questions` copied
+   verbatim — the gate refuses a paraphrase. Pipe the
+   `answers` map to `node <plugin>/scripts/judge.js answered --session <id>
+   --record <path> --answers -` and follow its `decision:` line: the assumed
+   option means `pick:`, another its `→` branch; only a free-text or
+   off-branch answer earns a second `/fankeel-ask`, with `--record <path>`.
 
 4. **Say what the stage accepted, in one line, and carry on.** Name the file
    the record landed in. At the next gate, option one's description names it
