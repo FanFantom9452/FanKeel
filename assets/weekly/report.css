@@ -489,7 +489,7 @@ section { display: grid; gap: 14px; min-width: 0; }
 .ans { font-size: 15.5px; line-height: 1.65; white-space: pre-line; }
 .ans.none { color: var(--muted); }
 .ans-meta { font-size: 13px; color: var(--muted); }
-/* the station's copy only: assets/weekly/reply.js turns .q-reply into .q-reply.edit */
+/* the station's copy only: its reply editor will turn .q-reply into .q-reply.edit */
 .q-reply.edit { background: transparent; padding: 0; gap: 6px; }
 .q-reply textarea {
   width: 100%;

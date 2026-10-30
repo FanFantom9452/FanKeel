@@ -177,3 +177,98 @@ test('archiveOf keeps show and the questions, so a reply has somewhere to go', (
     assert.deepEqual(got.questions, [{ id: 'q1', repo: 'demo', text: 'x' }]);
     assert.deepEqual(wr.archiveOf(data(), events(), '2026-01-02').show, { daily: false, cost: false });
 });
+
+test('shapeHits names a question that is not an object, at its place in the file', async () => {
+    const ev = events({ questions: ['帳號開好了嗎？', { id: 'q1', repo: 'demo', text: 'a' }, null, ['x']] });
+    assert.deepEqual(wr.shapeHits(ev, wr.DEFAULT_FACETS), [
+        { where: 'questions[0]', word: '題目不是物件' },
+        { where: 'questions[2]', word: '題目不是物件' },
+        { where: 'questions[3]', word: '題目不是物件' },
+    ]);
+    await assert.rejects(wr.render(data(), ev, opts), /questions\[0\]: 題目不是物件/);
+});
+
+// No DOM in node --test: a stub document built from the rendered <main>, just
+// enough of the DOM (the selectors report.js uses) to press its buttons.
+function stubDocument(html) {
+    const main = html.slice(html.indexOf('<main'), html.indexOf('</main>') + 7);
+    const VOID = new Set(['meta', 'br', 'img', 'input', 'hr', 'link', 'col', 'wbr', 'area', 'source']);
+    const all = (n) => [n, ...n.children.flatMap(all)];
+    const one = (n, part) => {
+        const tag = /^[a-z0-9]*/.exec(part)[0];
+        if (tag && n.tagName !== tag) return false;
+        for (const m of part.slice(tag.length).matchAll(/\.([\w-]+)|\[([\w-]+)\]|:not\(\[([\w-]+)\]\)/g)) {
+            if (m[1] && !n.classList.contains(m[1])) return false;
+            if (m[2] && !(m[2] in n.attrs)) return false;
+            if (m[3] && m[3] in n.attrs) return false;
+        }
+        return true;
+    };
+    const matches = (n, sel) => {
+        const parts = sel.trim().split(/\s+/);
+        if (!one(n, parts.pop())) return false;
+        for (let d = n.parent; parts.length && d; d = d.parent) if (one(d, parts[parts.length - 1])) parts.pop();
+        return !parts.length;
+    };
+    const node = (tag, attrs, parent) => {
+        const n = {
+            tagName: tag, attrs, parent, children: [], text: '', listeners: [],
+            getAttribute: (k) => (k in attrs ? attrs[k] : null),
+            setAttribute: (k, v) => { attrs[k] = String(v); },
+            get hidden() { return 'hidden' in attrs; },
+            set hidden(v) { if (v) attrs.hidden = ''; else delete attrs.hidden; },
+            get textContent() { return n.text + n.children.map((c) => c.textContent).join(''); },
+            set textContent(v) { n.text = String(v); n.children = []; },
+            classList: {
+                add: (c) => { attrs.class = ((attrs.class || '') + ' ' + c).trim(); },
+                contains: (c) => (attrs.class || '').split(/\s+/).includes(c),
+            },
+            get previousElementSibling() { return parent ? parent.children[parent.children.indexOf(n) - 1] || null : null; },
+            querySelectorAll: (sel) => all(n).filter((d) => d !== n && matches(d, sel)),
+            querySelector: (sel) => n.querySelectorAll(sel)[0] || null,
+            closest: (sel) => { for (let d = n; d; d = d.parent) if (matches(d, sel)) return d; return null; },
+            addEventListener: (type, fn) => { n.listeners.push({ type, fn }); },
+        };
+        return n;
+    };
+    const root = node('#root', {}, null);
+    let cur = root;
+    let at = 0;
+    for (const m of main.matchAll(/<(\/?)([a-zA-Z0-9]+)((?:[^>"]|"[^"]*")*)>/g)) {
+        cur.text += main.slice(at, m.index);
+        at = m.index + m[0].length;
+        const tag = m[2].toLowerCase();
+        if (m[1]) {
+            while (cur !== root && cur.tagName !== tag) cur = cur.parent;
+            if (cur !== root) cur = cur.parent;
+            continue;
+        }
+        const attrs = {};
+        for (const a of m[3].matchAll(/([\w:-]+)(?:="([^"]*)")?/g)) attrs[a[1]] = a[2] === undefined ? '' : a[2];
+        const child = node(tag, attrs, cur);
+        cur.children.push(child);
+        if (!VOID.has(tag) && !m[3].trim().endsWith('/')) cur = child;
+    }
+    return { documentElement: node('html', {}, null), querySelector: (sel) => root.querySelector(sel) };
+}
+
+test('report.js: pressing 技術 flips the switch, pressing a facet chip hides the cards without it', async () => {
+    const document = stubDocument(await wr.render(data(), events(), opts));
+    vm.runInNewContext(reportJs, { document });
+    assert.ok(document.documentElement.classList.contains('js'));
+    const page = document.querySelector('main.page');
+    const click = (target) => page.listeners.filter((l) => l.type === 'click').forEach((l) => l.fn({ target }));
+    const seg = page.querySelectorAll('.seg button');
+    const pressed = () => seg.map((b) => b.getAttribute('data-aud') + ':' + b.getAttribute('aria-pressed'));
+    assert.deepEqual(pressed(), ['gen:true', 'tech:false']);
+    click(seg.find((b) => b.getAttribute('data-aud') === 'tech'));
+    assert.deepEqual(pressed(), ['gen:false', 'tech:true']);
+    assert.equal(page.getAttribute('data-aud'), 'tech');
+    const cards = page.querySelectorAll('.event');
+    const hidden = () => cards.map((c) => c.hidden);
+    assert.deepEqual(hidden(), [false, false, false]);
+    const chip = page.querySelectorAll('.fchip').find((c) => c.getAttribute('data-facet') === 'f4');
+    click(chip.querySelector('.n'));
+    assert.deepEqual(hidden(), [true, true, false], 'only the 後端／資料 card (進行中, drawn last) stays');
+    assert.equal(chip.getAttribute('aria-pressed'), 'true');
+});
