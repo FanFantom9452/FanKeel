@@ -21,7 +21,7 @@ const BEFORE = ['tip', 'live-page', 'sessions-page', 'projects-page', 'project-p
 const AFTER = ['docs-page', 'settings-page', 'settings-steps', 'settings-detail', 'weekly-page', 'days-page'];
 const PAGES = BEFORE.concat(AFTER);
 const ALL = PAGES.concat(['gate-frame', 'diagram']);
-const SPEND = ['spend-talk.js', 'spend-kinds.js', 'spend-range.js', 'spend-panel.js'];
+const SPEND = ['spend-talk.js', 'spend-kinds.js', 'spend-range.js', 'spend-panel.js', 'quota-share.js'];
 const GLOBAL = { tip: 'FK_TIP', 'live-page': 'FK_LIVE', 'sessions-page': 'FK_SESSIONS', 'projects-page': 'FK_PROJECTS', 'project-page': 'FK_PROJECT',
     'session-page': 'FK_SESSION', 'session-dispatch': 'FK_SDISP', 'session-talk': 'FK_STALK', 'gate-frame': 'FK_GATE', diagram: 'FK_DIAGRAM',
     'docs-page': 'FK_DOCS', 'settings-page': 'FK_SETTINGS', 'settings-steps': 'FK_SETSTEPS', 'settings-detail': 'FK_SETDETAIL', 'weekly-page': 'FK_WEEKLY', 'days-page': 'FK_DAYS' };
