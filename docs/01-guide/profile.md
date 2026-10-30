@@ -41,7 +41,7 @@ profile 是 gate 的常備答案：先寫好，fankeel 就不再問那一題。g
 | `judge.model` | 判官（/fankeel-ask）用哪個模型 | `sonnet`、`opus`、`fable`、`haiku`；內建 `fable` | 不設，維持內建 |
 | `design.mockup` | 有前端的專案，design 站先做頁面時用哪個模型；auto 前端工作不問就畫、畫完開頁面；false 不做 | `false`、`auto`、`sonnet`、`opus`、`fable`；內建 `false` | 不設，維持內建 |
 | `design.skill` | mockup 另外載入哪些 design skill，可多選（逗號分隔）；fankeel 指南一律載入 | `taste-skill:taste-skill`、`taste-skill:soft-skill`、`taste-skill:minimalist-skill`、`frontend-design:frontend-design`、`ui-ux-pro-max:ui-ux-pro-max`、`impeccable:impeccable` | 不設 |
-| `quota.week` | 一週額度等於多少美元（如 Max 20x），監控站在每筆花費旁顯示佔比 |  | 不設 |
+| `quota.week` | 一週額度等於多少美元（如 Max 20x），監控站在每筆花費旁顯示佔比；花費頁只顯示純金額 |  | 不設 |
 | `station.hide` | 這個專案要不要從監控站隱藏 | `true`、`false`；內建 `false` | 不設，維持內建 |
 | `gate.station` | gate 發出後，等監控站作答幾秒；off 不等，逾時照常在 terminal 問 | `off`、`60`、`120`、`300`；內建 `off` | 不設，維持內建 |
 | `phone.hold` | 手機接上 session 時，每回合結束後 Stop hook 等手機下一句最多幾秒；逾時把 session 交還電腦 | 1 到 1800 的秒數；內建 `1800` | 不設，維持內建 |
@@ -94,13 +94,13 @@ node <plugin>/scripts/task.js profile set prose.style custom
 
 `.fankeel/prose.md` 也可以在監控站裡編。到「設定」→「逐步設定」→「報告與文字」→「文字風格」，選 custom，下面就會出現這個檔案的內容。上方是一排建議規則，點一下把那條規則加進文字，再點一下拿掉。規則取自三種內建風格，另加兩條從字幕斷句借來的：「每句單獨看也懂」和「不拆名稱與數字單位」。框下的字數超過建議的 450 字會變色提醒，超過 1200 字就存不進去。按「存 prose.md」只寫這個檔案；要讓 custom 生效，還要走到最後一頁按「寫入」。這樣分開，是因為規則可以先寫好、放著不用，等確定了再切換。
 
-`quota.week` 也是自由填的值，但填的是數字：你的 Max 20x 一週額度等於多少美元（以 API 價格換算的估算值）。填了之後，監控站在多數金額後面會接上「(x%)」，也就是那筆金額除以這個數字。但日直方圖與專案圖的縱軸刻度和每根長條的合計、花費佔比條的標籤、派工花費條的各段文字，以及 session 頁花費讀數本身都只顯示純金額。session 頁的花費讀數把比例放在下方說明行開頭，滑鼠停留的提示文字則仍保留比例。沒填就不顯示比例。它沒有內建值，因為 transcript 與 registry 裡都沒有百分比欄位可以讀，所以只能自己量。校準報告（`docs/90-agent/reports/2026-09-21-quota-calibration.md`）量到的區間約 $2,619–4,584，而且那份報告也指出累積讀數與固定費率互相矛盾，這個區間只能當起點。值必須是大於 0 的數字。專案層（不加 --default）與機器層都可設，同一個 key 兩層都有時專案層優先，多個專案各設不同值時取登錄順序第一個有設的專案。例：
+`quota.week` 也是自由填的值，但填的是數字：你的 Max 20x 一週額度等於多少美元（以 API 價格換算的估算值）。填了之後，監控站在多數金額後面會接上「(x%)」，也就是那筆金額除以這個數字。但日直方圖與專案圖的縱軸刻度和每根長條的合計、花費佔比條的標籤、派工花費條的各段文字，以及 session 頁花費讀數本身都只顯示純金額；花費頁上的所有金額也都是純金額，不接「(x%)」。session 頁的花費讀數把比例放在下方說明行開頭，滑鼠停留的提示文字則仍保留比例。沒填就不顯示比例。它沒有內建值，因為 transcript 與 registry 裡都沒有百分比欄位可以讀，所以只能自己量。校準報告（`docs/90-agent/reports/2026-09-21-quota-calibration.md`）量到的區間約 $2,619–4,584，而且那份報告也指出累積讀數與固定費率互相矛盾，這個區間只能當起點。值必須是大於 0 的數字。專案層（不加 --default）與機器層都可設，同一個 key 兩層都有時專案層優先，多個專案各設不同值時取登錄順序第一個有設的專案。例：
 
 ```
 node <plugin>/scripts/task.js profile set quota.week 3000
 ```
 
-`quota.calibrated` 是 `quota.week` 最近一次自動校準的日期（YYYY-MM-DD），由 `node <plugin>/scripts/quota.js` 寫進機器層，平常不用手填。這支腳本讀 pane hook 寫在專案 `.fankeel/build/limits/*.jsonl` 的額度記錄，只讀目前專案那一份，所以要在要讀其記錄的那個專案裡執行（`seven` 的百分比與 `sevenResets` 重置時間）；`--log <檔>` 可改讀 TokenBar 的 tokenbar-usage.jsonl。在最新一個動了 10 個百分點以上的 7 天視窗裡，它拿頭尾兩筆讀數之間全機所有 transcript 的 API 等價花費，除以動了的百分點再乘 100，寫成 `quota.week`。只用同一視窗內的差值，不用讀數的絕對水位，因為絕對水位與 transcript 花費對不上（見 2026-09-21 的額度校準報告）。沒有 limits 記錄、或沒有夠大的視窗時，它什麼都不寫，`quota.week` 維持手填的值。要重新校準就再跑一次；加 `--dry-run` 只印結果、不寫。監控站在 30 天花費下方的說明行註明用的是哪一天的校準。例：
+`quota.calibrated` 是 `quota.week` 最近一次自動校準的日期（YYYY-MM-DD），由 `node <plugin>/scripts/quota.js` 寫進機器層，平常不用手填。這支腳本讀 pane hook 寫在專案 `.fankeel/build/limits/*.jsonl` 的額度記錄，只讀目前專案那一份，所以要在要讀其記錄的那個專案裡執行（`seven` 的百分比與 `sevenResets` 重置時間）；`--log <檔>` 可改讀 TokenBar 的 tokenbar-usage.jsonl。在最新一個動了 10 個百分點以上的 7 天視窗裡，它拿頭尾兩筆讀數之間全機所有 transcript 的 API 等價花費，除以動了的百分點再乘 100，寫成 `quota.week`。只用同一視窗內的差值，不用讀數的絕對水位，因為絕對水位與 transcript 花費對不上（見 2026-09-21 的額度校準報告）。沒有 limits 記錄、或沒有夠大的視窗時，它什麼都不寫，`quota.week` 維持手填的值。要重新校準就再跑一次；加 `--dry-run` 只印結果、不寫。例：
 
 ```
 node <plugin>/scripts/quota.js --dry-run
