@@ -1007,19 +1007,19 @@ it — tokens, active time and waiting ratio; the range's spend is 總覽's
 figure — and the fourth does not compare windows at all: it
 names the option-one gate wording most often swapped for another answer,
 `最常被換掉`, with how many times out of how many it was asked beneath it
-(`lib/station.js:814`, `function gateSummary(model, hidden) {`;
-`assets/station/chart.js:106`, `loc('shared.mostSwapped', '最常被換掉')`).
+(`lib/station.js:819`, `function gateSummary(model, hidden) {`;
+`assets/station/chart.js:112`, `loc('shared.mostSwapped', '最常被換掉')`).
 An option offered as `verify (Recommended)` or `land（建議）` is counted as
 the bare `verify` or `land`: `bareLabel` strips that suffix from option one
 and from the answer before either is compared, so one option is one entry
 however it was dressed. Unlike the other
 three, it does not move with the range or the search box: it is
 counted once, across every shown session's gate answers
-(`lib/station.js:936`, `gates: gateSummary(model, hidden),`), not from the
+(`lib/station.js:961`, `gates: gateSummary(model, hidden),`), not from the
 filtered set the other three sum. It walks the model rather than
 `flatten()`'s output, so it takes the hidden set as an argument and skips
 those sessions itself
-(`lib/station.js:823`, `if (hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))) continue;`).
+(`lib/station.js:828`, `if (hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))) continue;`).
 While a session's transcript is still there, its source is `lib/detail.js`'s
 own replay; once the transcript is gone, `gateSummary()` falls back to the
 entry's own `gates` (see [registry.md](registry.md)), so this denominator no
@@ -1079,7 +1079,7 @@ replaces sorted by it (`assets/station/list-page.js:84`, `a sort key with no hea
 `updated` descending, so the page's first sort is the one it arrived in.
 
 **比較**, `#/cmp`, is now the 全部 list with its compare tray open
-(`assets/station/station.js:955`, `VIEWS.cmp = function (r) { return w.FK_SESSIONS.page(S, modOpts({ tray: true })); };`):
+(`assets/station/station.js:960`, `VIEWS.cmp = function (r) { return w.FK_SESSIONS.page(S, modOpts({ tray: true })); };`):
 ticking two or three rows there opens a compare dialog of the fields
 `lib/compare.js` returns, so the page is never empty. Tick two sessions on 清單 or a project page — only a
 session with a detail can be ticked, and a third tick drops the first — and
@@ -1142,7 +1142,7 @@ and the eyebrow's cannot disagree.
 
 Both decisions are pure functions above the `module.exports` guard, so both
 are unit tested: what to say
-(`assets/station/station.js:354`, `function serveLost(lastOkMs, nowMs, genAbs, genRel) {`)
+(`assets/station/station.js:358`, `function serveLost(lastOkMs, nowMs, genAbs, genRel) {`)
 and what the eyebrow reads
 (`assets/station/float.js:250`, `function heroEyebrow(frozenAt) {`). The
 fetch that feeds them, the bar they fill and the pill are the document half
@@ -1179,7 +1179,7 @@ registry; the footer on both says when it was generated.
 A session under a hidden project produces no `station/detail/<id>.js`
 either, on every one of those four writes. `write()` walks
 `model.registries` directly for this loop rather than through `flatten()`,
-so it carries its own check (`lib/station.js:1260`, `hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))`):
+so it carries its own check (`lib/station.js:1291`, `hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))`):
 hiding a project after its sessions already had a detail file does not
 delete that file, it just stops being rewritten — nothing in `write()`
 removes a file it once wrote.
@@ -1289,14 +1289,14 @@ for the child cannot read the old url as the new one.
 `clearEntry` once per row so the checks are the same list rather than a
 second copy of them. A clean run redirects to `/?cleared=N`, and the reloaded
 page still carries that count
-(`assets/station/station.js:1804`, `w.STATION.cleared = S.cleared`); a
+(`assets/station/station.js:1821`, `w.STATION.cleared = S.cleared`); a
 refusal answers `409` with which rows it refused and why, since a redirect
 has nowhere to say it. It takes the same `force` tick and the same nonce as
 the single-row button. `clearStaleControl` in `assets/station/station.js`
 renders the form when the page is served, and prints the copyable command when
 it is not — a static file cannot post. The
 redesigned 可能停了 card carries one per stale row: `modOpts`
-(`assets/station/station.js:949`) passes `clear: clearControl`, and `row` in
+(`assets/station/station.js:954`) passes `clear: clearControl`, and `row` in
 `assets/station/live-page.js` draws it in a `lv-row-clear` beside the row's
 `<a>`, not inside it; without `opts.clear` the row is the bare link.
 
