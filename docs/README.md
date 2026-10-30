@@ -220,7 +220,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 那份設計的六個 task | `docs/99-archive/2026-10-02-worktree-habit.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-02）定了什麼、沒做什麼：`lib/json.js` 加 `readObject` 收掉重複的 JSON 讀檔、刪掉沒人用的 `WIZ_FE_*`、四條 TODO 了結、文件行號引用重指 | [reports/patrols/2026-10-02-todo-patrol.md](90-agent/reports/patrols/2026-10-02-todo-patrol.md) — *繁體中文* |
 | 落地它的 task | `docs/99-archive/2026-10-02-todo-patrol.md` — *built, 繁體中文* |
-| TODO 全表盤點（10-04）定了什麼、沒做什麼：程式碼可刪項做掉大半、`scripts/quota.js` 自動校準週額度、子 session 兩臂探測原因不成立、stage-agents 九條量測或轉交使用者 | [reports/patrols/2026-10-04-todo-patrol-five.md](90-agent/reports/patrols/2026-10-04-todo-patrol-five.md) — *繁體中文* |
+| TODO 全表盤點（10-04）定了什麼、沒做什麼：程式碼可刪項做掉大半、scripts/quota.js（已刪）自動校準週額度、子 session 兩臂探測原因不成立、stage-agents 九條量測或轉交使用者 | [reports/patrols/2026-10-04-todo-patrol-five.md](90-agent/reports/patrols/2026-10-04-todo-patrol-five.md) — *繁體中文* |
 | 落地它的 task | `docs/99-archive/2026-10-04-todo-patrol-five.md` — *built, 繁體中文* |
 | TODO 全表盤點（10-07）定了什麼、沒做什麼：全套測試並行的固定暫存路徑收掉、前後兩段用量比對、受控階段當場寫 TODO、Pane 與 station 頁共用 gate 的草稿；brief-3 沒動 | [reports/patrols/2026-10-07-todo-patrol-seven.md](90-agent/reports/patrols/2026-10-07-todo-patrol-seven.md) — *繁體中文* |
 | TODO 全表盤點（10-07）的 plan：全套測試並行的固定暫存路徑、受控階段當場寫 TODO、前後兩段用量比對腳本、Pane gate design 草稿、compact 文件改判準、監控站白板的方向、拆 shots-v3 junction | `docs/99-archive/2026-10-07-todo-patrol-seven.md` — *built, 繁體中文* |

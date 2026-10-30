@@ -189,8 +189,8 @@ session's account's share, `≈ 週 x% · 5H y%`, from `quotaParts(n, account)` 
 `assets/station/station.js`, which divides the amount by the account's `pp7` and
 `pp5` (`FK_QSHARE.quotaShare`). Both are API-equivalent estimates, not a reading
 of the quota line, and carry the title 估算：API 價格 ÷ 這個帳號每 1% 額度的美元;
-a session with no account, or one whose account's line has not climbed
-`MIN_POINTS` (10) inside one window, shows none. A sum over sessions has no
+a session with no account shows none, and a part whose line has not climbed
+`MIN_POINTS` (10) inside one window is left out (both left out, nothing shows). A sum over sessions has no
 single account, so no other figure carries a share.
 `kpiHtml` itself prints no spend readout (`assets/station/chart.js:102`, `function kpiHtml(cur, prev, lead) {`). 花費's 總覽 shows the range spend split by account, with no ratio. 明細 alone passes a `lead` of two readouts, 全機花費 and session count. Each carries a 前一段 comparison, so 明細 has a spend cell and a delta (`assets/station/spend-range.js:74-76`, `rep.prev.sessions`). The 7d and 5h 額度 tabs have no range-spend cell and no 前一段 delta. Their readouts are 7d 用量, 5h 用量 and 每 1% 額度 instead (`assets/station/days-page.js:305-307`, `q.perPoint`).
 
