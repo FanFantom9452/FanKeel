@@ -516,6 +516,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 10-28 第五輪的計畫：overlay 備註上限、判決白話摘要與 HTML 頁 | `docs/99-archive/2026-10-28-todo-patrol-5.md` — *built* |
 | TODO 全表盤點第二輪（10-29）：做了什麼、沒做什麼 | [reports/2026-10-29-todo-patrol-2.md](90-agent/reports/2026-10-29-todo-patrol-2.md) — *繁體中文* |
 | 10-29 第二輪的計畫：gate 頁按鈕、設定頁窄螢幕、gate 標題格式由程式擋、float.js 與 list-page.js | `docs/99-archive/2026-10-29-todo-patrol-2.md` — *built* |
+| TODO 全表盤點（10-30）：做了什麼、沒做什麼 | [reports/2026-10-30-todo-patrol.md](90-agent/reports/2026-10-30-todo-patrol.md) — *繁體中文* |
+| 10-30 的計畫：gate 首字大寫、手機 gate 畫圖標記、對話縮圖、focus 殼補模組、design 手機寬度 | `docs/99-archive/2026-10-30-todo-patrol.md` — *built* |
 | 第三輪的 gate／talk 計畫：摺疊、自由輸入、跳回 talk、工具與子 agent 列、頁尾版本 | `docs/99-archive/2026-10-24-station-gate-talk.md` — *built, English* |
 | 第三輪的文件頁與設定頁計畫：FK_DOCS、FK_SETTINGS、FK_SETDETAIL，刪舊精靈 | `docs/99-archive/2026-10-24-station-docs-settings.md` — *built* |
 | 盤點三件（10-21）：做了什麼、沒做什麼 | [reports/2026-10-21-patrol-three.md](90-agent/reports/2026-10-21-patrol-three.md) — *繁體中文* |
