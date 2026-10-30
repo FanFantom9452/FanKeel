@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # Weekly report: show switches, facets and audience, questions and replies, cost — Implementation Plan
