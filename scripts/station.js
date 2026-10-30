@@ -1068,6 +1068,24 @@ async function serve(opts) {
             got.limits = mobile.limitsOf(contextLib.readTail(path.join(got.root, '.fankeel', 'build', 'limits', got.id + '.jsonl'), 16 * 1024));
             return send(200, 'application/json', JSON.stringify(got), noStore);
         }
+        // The photo a phone message carried, back to the bubble that shows it (station-67). The name
+        // is only the shape /phone/upload saves under, and the directory is the session's own, so
+        // nothing outside <phone dir>/uploads can be asked for.
+        if (req.method === 'GET' && url.pathname === '/phone/img') {
+            const reg = modelNow().registries.find((r) => r.root === path.resolve(url.searchParams.get('root') || ''));
+            const id = url.searchParams.get('id') || '';
+            const name = url.searchParams.get('name') || '';
+            const dir = reg && reg.sessions.find((x) => x.sessionId === id) ? phone.dirOf(reg.root, id) : null;
+            const kind = /^\d+-[0-9a-f]{6}\.(png|jpeg|gif|webp)$/.exec(name);
+            if (!dir || !kind) return fail(404, 'no such photo on this station');
+            let bytes;
+            try {
+                bytes = fs.readFileSync(path.join(dir, 'uploads', name));
+            } catch (e) {
+                return fail(404, 'no such photo on this station');
+            }
+            return send(200, 'image/' + kind[1], bytes, { 'cache-control': 'private, max-age=86400', 'x-content-type-options': 'nosniff' });
+        }
         // A photo from the phone's answer box: the raw body, saved under the
         // session's phone directory, answered with its path — the box puts
         // that path in its text, and the session reads the file.

@@ -1481,6 +1481,7 @@ absolute path. The composer takes up to four photos a message (`multiple`), each
 first bytes must match it; 401 unpaired, 403 loopback without the nonce, 404 not
 on this station, 413 too large (answered with `connection: close`), 415 not an
 image, another type, or bytes that do not match the type.
+`GET /phone/img?root=&id=&name=` answers a saved photo back to the page that sent it: `name` must be the saved file's own shape (`<ms>-<6 hex>.<png|jpeg|gif|webp>`), the directory is the session's `uploads/`, and anything else — another session, a path, an unknown name — is 404 `no such photo on this station`; a paired phone's cookie is needed through the tailnet (`remote.policy` default), none on this machine. The conversation draws each `[圖片] <path>` line of a phone message as a thumbnail from this route instead of the path.
 `mobile.json`'s task rows carry the same `state`, `attached`, `background` and
 `last`, `look` being `lib/phone.js`'s `snapshot`.
 
