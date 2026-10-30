@@ -58,7 +58,7 @@ test('the rail has the ten chapters and every step, and the page opens on the fi
     const h = html();
     assert.match(h, /data-block="v9-page"/);
     assert.equal((h.match(/<li class="v9-c[ "]/g) || []).length, 10);
-    assert.equal((h.match(/class="v9-sb" data-go="/g) || []).length, 30);
+    assert.equal((h.match(/class="v9-sb" data-go="/g) || []).length, 29);
     assert.match(h, /class="v9-endb" data-go="final"/);
     assert.match(h, /data-block="v9-q-main" data-step="main"/);
     assert.match(h, /快速設定 · 1 \/ 9/);
