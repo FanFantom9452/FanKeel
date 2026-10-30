@@ -160,6 +160,42 @@ test('明細 on a served page has six kpi cells once the range spend arrives, �
         ['全機花費（usage-compare 規則）', 'session', 'token', 'active 時間', '等待佔比', '最常被換掉']);
 });
 
+// 明細's kpi row as [label, value, line under] per cell, so a second "—" cell or
+// a stray session cell changes the array the tests compare whole.
+const kpiCells = (html) => [...html.match(/<div class="readouts" data-block="kpi">([\s\S]*?)<\/section>/)[1]
+    .matchAll(/<div class="ro"[^>]*><div class="l">(?:<i class="hatchsw"><\/i>)?([^<]+)<\/div><div class="v">([\s\S]*?)<\/div><div class="d">/g)]
+    .map((m) => [m[1], m[2]]);
+const FIVE = ['全機花費（usage-compare 規則）', 'token', 'active 時間', '等待佔比', '最常被換掉'];
+async function servedDetail(fetch) {
+    const { V, M } = page([], { generatedAt: new Date(NOW).toISOString(), serve: true, sessions: SESS, quota: { accounts: ACCOUNTS } }, { fetch });
+    const ctx = V.daysCtx();
+    ctx.draw = () => {};
+    const D = M['days-page.js'];
+    D.page({ view: 'days', day: null, tab: 'detail' }, ctx);
+    await new Promise((r) => setImmediate(r));
+    return D.page({ view: 'days', day: null, tab: 'detail' }, ctx);
+}
+function assertFive(html, why) {
+    const cells = kpiCells(html);
+    assert.deepEqual(cells.map((c) => c[0]), FIVE);
+    assert.equal(cells[0][1], '—');
+    assert.ok(html.includes(why), why);
+}
+
+test('明細 on a static page has five kpi cells, 全機花費 alone at "—" and no session cell', () => {
+    const { D, ctx } = boot();
+    assertFive(D.page({ view: 'days', day: null, tab: 'detail' }, ctx), '要從 serve 開的頁面才算得到');
+});
+
+test('明細 on a served page has five kpi cells while the range spend is still loading', async () => {
+    assertFive(await servedDetail(() => new Promise(() => {})), '計算中…');
+});
+
+test('明細 on a served page has five kpi cells once the range spend fails, by a bad status or a rejected fetch', async () => {
+    assertFive(await servedDetail(() => Promise.resolve({ ok: false, status: 500 })), '讀不到區間花費，重新整理再試');
+    assertFive(await servedDetail(() => Promise.reject(new Error('offline'))), '讀不到區間花費，重新整理再試');
+});
+
 test('總覽 shows no (x%) on its total or its split even with a weekly quota set', () => {
     const profiles = { machine: { values: { 'quota.week': 10 }, sources: { 'quota.week': 'machine' }, unreadable: [] }, projects: {} };
     const { D, ctx } = boot(null, { profiles });
