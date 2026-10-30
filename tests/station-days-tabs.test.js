@@ -26,8 +26,8 @@ const ACCOUNTS = [
         windows: [{ start: T(9), end: T(14), steps: [{ from: T(9), to: NOW, v: 12, gap: true }] }] },
     { key: '4 19:00', wd: 4, hm: '19:00', span: null, forecast: null, steps7: [{ from: T(10), to: NOW, v: 40, gap: true }], windows: [] },
 ];
-function boot(sessions) {
-    const { V, M } = page([], { generatedAt: new Date(NOW).toISOString(), sessions: sessions || SESS, quota: { accounts: ACCOUNTS } });
+function boot(sessions, more) {
+    const { V, M } = page([], Object.assign({ generatedAt: new Date(NOW).toISOString(), sessions: sessions || SESS, quota: { accounts: ACCOUNTS } }, more));
     const ctx = V.daysCtx();
     ctx.draw = () => {};
     return { V, D: M['days-page.js'], ctx };
@@ -158,6 +158,47 @@ test('明細 on a served page has six kpi cells once the range spend arrives, �
     const row = html.match(/<div class="readouts" data-block="kpi">([\s\S]*?)<\/section>/)[1];
     assert.deepEqual([...row.matchAll(/<div class="ro"[^>]*><div class="l">(?:<i class="hatchsw"><\/i>)?([^<]+)<\/div>/g)].map((m) => m[1]),
         ['全機花費（usage-compare 規則）', 'session', 'token', 'active 時間', '等待佔比', '最常被換掉']);
+});
+
+test('總覽 shows no (x%) on its total or its split even with a weekly quota set', () => {
+    const profiles = { machine: { values: { 'quota.week': 10 }, sources: { 'quota.week': 'machine' }, unreadable: [] }, projects: {} };
+    const { D, ctx } = boot(null, { profiles });
+    assert.equal(ctx.H.usd(6.5), '$6.50 (65%)', 'the quota is read, so a dropped plain flag would show a share');
+    const head = D.page({ view: 'days', day: null }, ctx).match(/<div class="ovtotal">[\s\S]*?<\/p><\/div>/)[0];
+    assert.match(head, /<div class="ovnum">\$6\.50<\/div>/);
+    assert.match(head, /04:00 帳號 \$4\.00/);
+    assert.doesNotMatch(head, /%/);
+});
+
+test('總覽\'s row for a task with no account is plain text with the reason, not a link', () => {
+    const { D, ctx } = boot();
+    const ov = between(D.page({ view: 'days', day: null }, ctx), 'data-panel="overview"', 'data-panel="quota7"');
+    assert.ok(ov.includes('<td class="task"><span title="帳號未知的 task 不在額度圖上">delta</span></td>'));
+    assert.doesNotMatch(ov, /<a [^>]*>delta<\/a>/);
+});
+
+test('總覽\'s 帳號 seg keeps one account: its total, its tasks only, the others\' bars faded', () => {
+    const { D, ctx } = boot();
+    let ov = between(D.page({ view: 'days', day: null }, ctx), 'data-panel="overview"', 'data-panel="quota7"');
+    assert.match(ov, /data-seg="ovacc"[\s\S]*?<button type="button" data-v="4 19:00"/);
+    ctx.view.ovacc = '4 19:00';
+    ov = between(D.page({ view: 'days', day: null }, ctx), 'data-panel="overview"', 'data-panel="quota7"');
+    assert.match(ov, /<div class="ovnum">\$2\.00<\/div>/);
+    assert.deepEqual([...ov.matchAll(/<td class="task">(?:<a href="[^"]+">|<span title="[^"]+">)([^<]+)</g)].map((m) => m[1]), ['gamma']);
+    const bar = ov.match(/<title>2026-10-30 [^<]*<\/title><\/rect><g class="bar">([\s\S]*?)<\/g>/)[1];
+    assert.deepEqual([...bar.matchAll(/style="fill:[^";]+(;opacity:\.16)?"/g)].map((m) => Boolean(m[1])), [true, false, true]);
+});
+
+test('總覽\'s bars, wide and narrow, give each account its own colour, the one its swatch shows', () => {
+    const { D, ctx } = boot();
+    const ov = between(D.page({ view: 'days', day: null }, ctx), 'data-panel="overview"', 'data-panel="quota7"');
+    const sw = [...ov.match(/<p class="ovsplit">([\s\S]*?)<\/p>/)[1].matchAll(/background:([^"]+)"/g)].map((m) => m[1]);
+    assert.equal(new Set(sw).size, 3, 'two accounts and the unknown, three colours');
+    for (const cls of ['qwid', 'qnar']) {
+        const svg = ov.match(new RegExp('<svg class="ovsvg ' + cls + '"[\\s\\S]*?</svg>'))[0];
+        const today = svg.match(/<title>2026-10-30 [^<]*<\/title><\/rect><g class="bar">([\s\S]*?)<\/g>/)[1];
+        assert.deepEqual([...today.matchAll(/style="fill:([^";]+)/g)].map((m) => m[1]), sw, cls);
+    }
 });
 
 test('明細\'s kpi labels wrap on a phone rather than run into the next cell', () => {
