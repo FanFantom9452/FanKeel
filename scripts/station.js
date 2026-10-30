@@ -694,7 +694,8 @@ async function serve(opts) {
         if (req.method === 'GET' && url.pathname === '/station/weekly') {
             // The 週報 page's list (lib/weekly-store.js): every report archived
             // under <configDir>/fankeel/weekly/, newest end date first. The
-            // station writes no report — it has no model — it only lists them.
+            // station writes no report — it has no model; the one thing it
+            // writes into one is a reply, below.
             const weekly = require('../lib/weekly-store.js');
             return send(200, 'application/json; charset=utf-8', JSON.stringify({ reports: weekly.list(configDir) }), noStore);
         }
@@ -703,13 +704,26 @@ async function serve(opts) {
             // One archived report, with the weekly-nav bar put at the top of
             // <body>: back to #/weekly, and the neighbouring end dates. Only
             // this answer carries it — the file on disk is the copy that is
-            // mailed, and a professor has no station to go back to. No script
-            // runs in it: the SVG routes' policy allows inline style only.
+            // mailed, and a professor has no station to go back to. A report
+            // with questions also gets the reply editor (lib/weekly-reply.js);
+            // the policy lets exactly this answer's inline scripts run, by hash.
             const weekly = require('../lib/weekly-store.js');
+            const replies = require('../lib/weekly-reply.js');
             const file = weekly.htmlPath(configDir, wk[1]);
             if (!file) return fail(404, 'no weekly report ends on ' + wk[1]);
-            const html = weekly.injectNav(fs.readFileSync(file, 'utf8'), weekly.navBar(weekly.neighbours(configDir, wk[1])));
-            return send(200, 'text/html; charset=utf-8', html, Object.assign({}, SVG_CSP, noStore));
+            let html = weekly.injectNav(fs.readFileSync(file, 'utf8'), weekly.navBar(weekly.neighbours(configDir, wk[1])));
+            if (html.includes('data-block="questions"')) html = replies.injectEditor(html, { until: wk[1], nonce: kind === 'loopback' ? nonce : '' });
+            return send(200, 'text/html; charset=utf-8', html, Object.assign({}, replies.cspFor(html), noStore));
+        }
+        const wkReply = /^\/station\/weekly\/(\d{4}-\d{2}-\d{2})\/reply$/.exec(url.pathname);
+        if (req.method === 'POST' && wkReply) {
+            // A reply to one of that report's questions (design §3): the nonce
+            // or, through the tailnet, a paired phone, like every other POST.
+            const form = await formOf();
+            if (!form) return;
+            const out = require('../lib/weekly-reply.js').setReply(configDir, wkReply[1], form.get('id') || '', form.get('reply') || '', Date.now());
+            if (out.error) return fail(out.code, out.error);
+            return send(200, 'application/json; charset=utf-8', JSON.stringify({ ok: true, id: out.question.id, repliedAt: out.question.repliedAt || null }), noStore);
         }
         const talk = /^\/station\/talk\/([0-9A-Za-z-]+)(?:\/(agents)|\/agent\/([0-9a-f]+))?$/.exec(url.pathname);
         if (req.method === 'GET' && talk) {
