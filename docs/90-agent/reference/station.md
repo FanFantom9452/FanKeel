@@ -756,7 +756,7 @@ buttons the bell panel draws a free-text box, `gfree`
 (`assets/station/float.js:95`, `var id = 'gfree-' + s.id, draft = String(`), and,
 when the browser can listen, a mic button beside it
 (`assets/station/float.js:98`, `data-mic`). A click on the mic starts
-`fkListen` and a second click stops it (`assets/station/station.js:1401`,
+`fkListen` and a second click stops it (`assets/station/station.js:1372`,
 `if (fkRec) { fkRec.stop(); return; }`); what is heard goes into the box and
 the status line `gsay`, and nothing is sent until the send button is pressed
 (`assets/station/station.js:1023`, `Voice fills the box and never sends`). The
@@ -883,7 +883,7 @@ are one directory spelled two ways; `tests/station-view.test.js` carries both
 fixtures, the one that must merge and the nested root that must not. A nested
 root separates on its own and always did.
 
-`#/` and `#/live` both draw **進行中** now: `assets/station/station.js:944`
+`#/` and `#/live` both draw **進行中** now: `assets/station/station.js:951`
 (`VIEWS.now = function (r) { return w.FK_LIVE.page(S, modOpts()); };`)
 hand both routes to `FK_LIVE` in `assets/station/live-page.js`, described
 below. There is no `OLD.*` fallback, no old 現在 dashboard and no TODO panel
@@ -1013,7 +1013,7 @@ row of its own, and every group's heading says how many such sessions it has
 and how many backward steps between them.
 
 **全部**, `#/sessions`, is `FK_SESSIONS` (`assets/station/sessions-page.js`,
-`assets/station/station.js:946`): a now-strip linking to 進行中, four period
+`assets/station/station.js:953`): a now-strip linking to 進行中, four period
 tiles (今天 / 近 7 天 / 近 30 天 / 全部) that are also the date filter, then one
 card with filters in its head and ten rows a page, sorted on last move, cost
 or elapsed, with the pager and the compare tray in its foot. `recentRows` — a
