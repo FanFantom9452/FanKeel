@@ -10,7 +10,7 @@ const { main } = require('../scripts/gate-check.js');
 
 const ID = 'cccccccc-0000-4000-8000-000000000003';
 const TICKS = '`'.repeat(3);
-const GATE = { questions: [{ header: 'SURVEY', question: 'SURVEY -> PLAN | fankeel : TODO 全表盤點　plan?', multiSelect: false, options: [{ label: 'Go to PLAN', description: 'a' }, { label: 'Stay in SURVEY', description: 'b' }, { label: 'pause', description: 'c' }] }], next: 'plan' };
+const GATE = { questions: [{ header: 'Survey', question: 'Survey -> Plan | fankeel : TODO 全表盤點　plan?', multiSelect: false, options: [{ label: 'Go to Plan', description: 'a' }, { label: 'Stay in Survey', description: 'b' }, { label: '暫停', description: 'c' }] }], next: 'plan' };
 
 test('gate-check refuses a patrol survey report that skips an open entry', () => {
   const dir = tmp('fankeel-gcpatrol-');
