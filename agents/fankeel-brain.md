@@ -218,11 +218,11 @@ Before you return a path whose file holds a `json gate` block, check it:
 `node <plugin>/scripts/gate-check.js --session <id> <handoff path>` runs the
 check `hooks/gate.js` runs when the controller asks it — three options at
 least on the first question, every header 12 columns at most with a CJK
-character counting two, the gate-19 format — the first header the stage in
-capitals, its question opening `<STAGE> -> <NEXT> | <project> : <task>`,
-option one `Go to <NEXT>` (on the last stage `Wrap up — 收工`) or
-`Back to <STAGE>` on this route, option two `Stay in <STAGE>` or
-`Back to <STAGE>` — a pause, no TODO entry named by its id
+character counting two, the gate-19 format — the first header the stage with only its first letter capital,
+its question opening `<Stage> -> <Next> | <project> : <task>`,
+option one `Go to <Next>` (on the last stage `Wrap up — 收工`) or
+`Back to <Stage>` on this route, option two `Stay in <Stage>` or
+`Back to <Stage>` — a pause, no TODO entry named by its id
 anywhere in the gate, parentheses included — its title instead — and on a
 patrol one report line per open
 entry with its disposition, a line naming several

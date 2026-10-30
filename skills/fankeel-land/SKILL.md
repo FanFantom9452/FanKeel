@@ -264,9 +264,9 @@ above.
 After `record.js write`, the gate carries exactly these (land-8):
 
 1. `Wrap up — 收工 (Recommended)` — stands the task down; its description
-   names the month file and anchor. Header `LAND`, question opens
-   `LAND -> 收工 | <project> : <task>` (`formatProblem`).
-2. `Stay in LAND` — option two as every gate has it.
+   names the month file and anchor. Header `Land`, question opens
+   `Land -> 收工 | <project> : <task>` (`formatProblem`).
+2. `Stay in Land` — option two as every gate has it.
 3. `匯出並回顧` — its description says
    「匯出這次的對話，接著回顧這次哪裡可以改進，把建議列給你核准」, that the
    whole session passes through one opus context, tens of thousands of

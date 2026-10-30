@@ -362,10 +362,10 @@ The shape is the same every time, so it can be recognised without being read:
 
 | field | holds | length |
 |---|---|---|
-| header | the finished stage in capitals — `PLAN` | 12 columns, CJK counts two |
-| question | `THIS -> NEXT \| project : task`, then the decision only | ~40 characters after it, 20 if CJK |
-| option 1 | `Go to <NEXT>` — the next stage in capitals, `Back to <STAGE>` sending work back, or `Wrap up — 收工` at the route's end. **Its description is where the approval happens**: say what accepting it accepts. `hooks/gate.js` refuses a gate without it. | one sentence |
-| option 2 | `Stay in <STAGE>` or `Back to <STAGE>`. It names the decision still open — never unfinished work. **With nothing open it says so**, a complete option two: a finished stage has no open decision, and inventing one to fill the slot is how the gate becomes a treadmill. | one sentence |
+| header | the finished stage with only its first letter capital — `Plan` | 12 columns, CJK counts two |
+| question | `This -> Next \| project : task`, then the decision only (`Init -> Survey`, `Land -> 收工`) | ~40 characters after it, 20 if CJK |
+| option 1 | `Go to <Next>` — the next stage with only its first letter capital, `Back to <Stage>` sending work back, or `Wrap up — 收工` at the route's end. **Its description is where the approval happens**: say what accepting it accepts. `hooks/gate.js` refuses a gate without it. | one sentence |
+| option 2 | `Stay in <Stage>` or `Back to <Stage>`. It names the decision still open — never unfinished work. **With nothing open it says so**, a complete option two: a finished stage has no open decision, and inventing one to fill the slot is how the gate becomes a treadmill. | one sentence |
 | option 3 | pause. The description says what `next` will be set to. | one sentence |
 
 Three is the floor, not a quota — which is why the rule says *at least*. Dropping
