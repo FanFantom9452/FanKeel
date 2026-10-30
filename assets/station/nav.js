@@ -1,5 +1,4 @@
-// 左欄與舊 live 視圖 (FK_NAV): moved out of station.js (station-52). The old
-// live widgets are dead at runtime and wait for station-63 to delete them.
+// 左欄 (FK_NAV): moved out of station.js (station-52).
 // station.js calls make(K) once, on first use, handing it the helpers these
 // bodies name; everything here only computes or builds strings.
 (function (w) {
@@ -7,10 +6,7 @@
     function make(K) {
         // One alias per name K carries, so the bodies below moved verbatim; the
         // station.js vars that are assigned later (S, NOW) are read as K.<name>().
-        var loc = K.loc, esc = K.esc, w = K.w, NAV_TREE = K.NAV_TREE, focusHref = K.focusHref, family = K.family, mins = K.mins,
-            clock = K.clock, modelKey = K.modelKey, modelLabel = K.modelLabel, keelProgress = K.keelProgress, keelStage = K.keelStage,
-            sessionHash = K.sessionHash, projectHash = K.projectHash, ago = K.ago, statePill = K.statePill, msOf = K.msOf,
-            clearStaleControl = K.clearStaleControl, clearControl = K.clearControl, labels = K.labels;
+        var loc = K.loc, esc = K.esc, w = K.w, NAV_TREE = K.NAV_TREE, focusHref = K.focusHref, mins = K.mins;
         // What 最近 sessions lists: anything that spent inside the window, and
         // anything still live whether or not it has spent yet. Newest first.
         function recentRows(sessions, days) {
@@ -142,80 +138,6 @@
                 return '<a href="' + k[1] + '"' + (k[0] === active ? ' aria-current="page"' : '') + '>' + k[2] + '</a>';
             }).join('') + '</nav>';
         }
-        // 現在 (進行中, `#/live`), four blocks top to bottom: the gates waiting on
-        // the user, the sessions confirmed running, the ones the registry still
-        // marks in progress but whose process could not be confirmed (`live?`) or
-        // is gone (`stale`), and one line of chips for every registry with neither.
-        // A session that is down has finished and is on 最近 sessions instead.
-        // `tabs` is the Sessions tab strip. Each block writes its `data-block`
-        // literally, so the tune proxy can find it in this file.
-        //
-        // The route as a line of stops for one lane: every stop before the current
-        // one filled and titled with its time on the registry's clock, the current
-        // one ringed — pulsing only while `live` is measured — with its time so
-        // far, the rest hollow. A stage the route does not name is drawn as the
-        // only stop, so a lane always shows where it is.
-        function liveRail(s, live, now) {
-            var route = (s.route || []).slice(), at = route.indexOf(s.stage);
-            if (at < 0) { route = [s.stage || '—']; at = 0; }
-            var win = {};
-            (s.stages || []).forEach(function (w) { win[w.stage] = w; });
-            var took = function (k, open) {
-                var w = win[k], m = w && isFinite(w.from) ? mins((open ? now : w.to) - w.from) : '—';
-                return m === '—' ? '' : m;
-            };
-            return '<ol class="lrail" aria-label="route ' + esc(route.join(' → ')) + esc(loc('nav.liveRailAt', '；{now}{stage}，第 {n} 站，共 {total} 站',
-                { now: live ? loc('nav.liveRailNowAt', '現在在 ') : loc('nav.liveRailStoppedAt', '停在 '), stage: route[at], n: at + 1, total: route.length }))
-                + '">' + route.map(function (k, i) {
-                    var c = ' style="--c:var(--st-' + esc(k) + ')"', t;
-                    if (i < at) {
-                        t = took(k, false);
-                        return '<li class="done"' + c + (t ? ' title="' + esc(k) + ' ' + t + '"' : '') + '><i></i><span>' + esc(k) + '</span></li>';
-                    }
-                    if (i === at) {
-                        t = took(k, live);
-                        return '<li class="now' + (live ? ' live' : '') + '"' + c + ' aria-current="step"><i></i><span>' + esc(k) + '</span>'
-                            + (t ? '<em>' + t + '</em>' : '') + '</li>';
-                    }
-                    return '<li class="todo"><i></i><span>' + esc(k) + '</span></li>';
-                }).join('') + '</ol>';
-        }
-        // What is running for one live session now: the stage agent in flight
-        // (`inflight`, while it names the current stage) and every subagent
-        // `runningAgents` in lib/usage.js reads as mid-turn. The stage agent has a
-        // meta.json too, so its id is left out of the subagent rows.
-        function saFamily(a, s) {
-            var r = family(a.ranModel);
-            if (r !== 'other') return r;
-            var m = /^(fable|opus|sonnet|haiku)$/.exec(String(a.model || ''));
-            if (m) return m[1];
-            var d = /^(fable|opus|sonnet|haiku)\b/i.exec(String(a.description || ''));
-            return d ? d[1].toLowerCase() : family(s.model);
-        }
-        // "opus 5.5 · inherit: station batch mockup" reads as its last part.
-        function saShort(desc) { return String(desc || '').replace(/^[^·:]*·[^:]*:\s*/, ''); }
-        function liveSubsHtml(s, now) {
-            var mark = s.inflight && s.inflight.stage === s.stage ? s.inflight : null;
-            var subs = (s.subagents || []).filter(function (a) { return !mark || a.id !== mark.agentId; });
-            var open = '<div class="lane-subs" data-block="live-subagents">';
-            if (!mark && !subs.length) return open + '<p class="sa-none">' + loc('nav.noStageOrSubagent', '沒有 stage agent 或 subagent 在跑，主 session 自己在做。') + '</p></div>';
-            var head = [];
-            if (mark) head.push(loc('nav.oneStageAgent', 'stage agent 1 個'));
-            if (subs.length) head.push(loc('nav.nSubagents', 'subagent {n} 個', { n: subs.length }));
-            return open + '<div class="sa-h"><b>' + loc('nav.runningNow', '現在在跑') + '</b><span>' + head.join(' · ') + '</span></div>'
-                + (mark ? '<div class="sa inflight"><span class="sa-type">stage agent</span><span class="chip"><i class="sw" style="background:var(--st-'
-                    + esc(mark.stage) + ')"></i>' + esc(mark.stage) + '</span><span class="sa-desc">'
-                    + (isFinite(mark.at) ? loc('nav.sentNotReturned', '{t} 送出，還沒交回', { t: clock(mark.at) }) : loc('nav.notReturnedYet', '還沒交回')) + '</span><span class="sa-for">' + mins(now - mark.at) + '</span></div>' : '')
-                + subs.map(function (a) {
-                    var fam = saFamily(a, s), type = a.agentType || 'agent';
-                    return '<div class="sa"><span class="sa-type" title="' + esc(type) + '">' + esc(type) + '</span>'
-                        + '<span class="chip"><i class="sw" style="background:var(--m-' + fam + ')"></i>'
-                        + (a.ranModel && modelKey(a.ranModel) !== 'other' ? esc(modelLabel(modelKey(a.ranModel))) : fam)
-                        + (a.effort ? ' · ' + esc(a.effort) : '') + '</span>'
-                        + '<span class="sa-desc" title="' + esc(a.description || '') + '">' + esc(saShort(a.description)) + '</span>'
-                        + '<span class="sa-for">' + mins(now - a.startedAt) + '</span></div>';
-                }).join('') + '</div>';
-        }
         // A session's background shells (lib/shells.js shellsOf, already cut to
         // three, running first), on the subagent rows' grid: the shell's id, a pill
         // for running or how it ended (red for a non-zero exit), the command, and
@@ -238,97 +160,9 @@
                         + '<span class="sa-for">' + (isFinite(t) ? mins(now - t) : '—') + '</span></div>';
                 }).join('') + '</div>';
         }
-        // One session: who (project, else the registry's short label, and the
-        // root), the task, the rail, and when. A lane that is not confirmed live
-        // carries its state pill instead of how long it has been open.
-        function liveLane(s, name, now) {
-            var sure = s.state === 'live' && !s.unknown;
-            return '<a class="lane ' + (sure ? 'live wsubs' : 'unsure') + '" data-state="' + esc(s.state) + '" href="' + sessionHash(s.id) + '">' + keelProgress(s) + keelStage(s)
-                + '<div class="lane-who"><b>' + esc(name(s)) + '</b><span class="mono" title="' + esc(s.root) + '">' + esc(s.root) + '</span></div>'
-                + '<div class="lane-task" title="' + esc(s.task || '') + '">' + esc(s.task || loc('nav.unnamed', '（未命名）')) + '</div>'
-                + liveRail(s, sure, now)
-                + '<div class="lane-when"><b class="mono">' + ago(s.updated) + '</b>'
-                + (sure ? '<small>' + loc('nav.lastWritten', '最後一次寫入') + '</small><small>' + loc('nav.openFor', '開了 {t}', { t: mins(now - msOf(s.started)) }) + '</small>' : statePill(s)) + '</div>'
-                + (sure ? liveSubsHtml(s, now) : '') + '</a>';
-        }
-        // Waiting is what `pendingGateHtml` answers: a pending file with questions.
-        // The wait runs from `gateAt`, stamped when the question went out
-        // (`gateOpen` in lib/registry.js), else the pending file's `at`, else the
-        // session's last registry write.
-        function liveGate(rows, name, now) {
-            var at = rows.filter(function (s) { return s.pending && s.pending.questions && s.pending.questions.length; });
-            if (!at.length) {
-                return '<section class="lv-gate is-empty" data-block="live-gate" aria-label="' + loc('nav.gatesWaitingOnYou', '等你回答的 gate') + '">' + icon('check')
-                    + '<span>' + loc('nav.noGatesWaiting', '沒有在等你的 gate') + '</span></section>';
-            }
-            return '<section class="lv-gate" data-block="live-gate" aria-labelledby="h-gate"><div class="lv-h"><h2 id="h-gate">' + loc('nav.waitingOnYou', '等你回答') + '</h2>'
-                + '<span class="lv-n mono">' + at.length + '</span></div>' + at.map(function (s) {
-                    var since = msOf(s.gateAt || s.pending.at || s.updated), q = s.pending.questions[0];
-                    var left = isFinite(s.pending.until) ? ' · ' + loc('nav.timeLeft', '還剩 {t}', { t: mins(Math.max(0, s.pending.until - now)) }) : '';
-                    return '<a class="gate-row" href="' + sessionHash(s.id) + '"><span class="pill gate">' + icon('gate') + 'gate</span>'
-                        + '<b class="gate-p">' + esc(name(s)) + '</b><span class="gate-q">' + esc(q.header || q.question || s.task || '') + '</span>'
-                        + '<span class="gate-t mono">' + loc('nav.waitedFor', '等了 {t}', { t: isFinite(since) ? mins(now - since) : '—' }) + left + '</span>'
-                        + '<span class="btn">' + loc('nav.goAnswer', '去回答') + '</span></a>';
-                }).join('') + '</section>';
-        }
-        function liveRun(run, name, now) {
-            return '<section class="lv-grp" data-block="live-run" aria-labelledby="h-run"><div class="lv-h"><h2 id="h-run">' + loc('nav.running', '正在跑') + '</h2>'
-                + '<span class="lv-n mono">' + run.length + '</span><span class="lv-note">' + loc('nav.registryFoundProcess', 'registry 標著進行中，process 也找得到') + '</span></div>'
-                + (run.length ? run.map(function (s) { return liveLane(s, name, now); }).join('')
-                    : '<p class="lv-empty">' + loc('nav.noSessionRunning', '現在沒有 session 在跑。在任一個專案裡輸入 <code class="mono">/fankeel</code> 開始一個，它會出現在這裡。') + '</p>')
-                + '</section>';
-        }
-        // `stale` and `live?` together: the registry says in progress and nothing
-        // confirms it. Each registry with a stale row gets its clear control in the
-        // heading, titled with its root so two of them read apart.
-        function liveMaybe(maybe, open, name, now) {
-            if (!maybe.length) return '';
-            var clears = open.map(function (p) {
-                var c = clearStaleControl(p, maybe.filter(function (s) { return s.root === p.root; }));
-                return c ? '<span class="lv-clear" title="' + esc(p.root) + '">' + c + '</span>' : '';
-            }).join('');
-            return '<section class="lv-grp" data-block="live-maybe" aria-labelledby="h-maybe"><div class="lv-h"><h2 id="h-maybe">' + loc('nav.mayHaveStopped', '可能已經停了') + '</h2>'
-                + '<span class="lv-n mono">' + maybe.length + '</span><span class="lv-note">' + loc('nav.registryUnconfirmedProcess', 'registry 還標著進行中，但確認不了 process 還在') + '</span>'
-                + (clears ? '<span class="spacer"></span>' + clears : '') + '</div>'
-                + '<div class="lv-card">' + maybe.map(function (s) {
-                    return '<div class="lv-row">' + liveLane(s, name, now) + '<div class="lv-row-clear">' + clearControl(s) + '</div></div>';
-                }).join('') + '</div></section>';
-        }
-        function liveIdle(idle, lab) {
-            if (!idle.length) return '';
-            return '<section class="lv-idle" data-block="live-idle" aria-labelledby="h-idle"><h2 id="h-idle">' + loc('nav.registriesNoSessions', '沒有 session 的 registry')
-                + ' <span class="lv-n mono">' + idle.length + '</span></h2><ul>' + idle.map(function (p) {
-                    return '<li><a href="' + projectHash(p.root) + '" title="' + esc(p.root) + '">' + esc(lab[p.root] || p.root) + '</a></li>';
-                }).join('') + '</ul></section>';
-        }
-        function nowHtml(projects, sessions, tabs) {
-            var open = projects.filter(function (p) { return !p.gone; });
-            var lab = labels(open.map(function (p) { return p.root; }));
-            var inOpen = {};
-            open.forEach(function (p) { inOpen[p.root] = true; });
-            var rows = sessions.filter(function (s) {
-                return inOpen[s.root] && (s.state === 'live' || s.state === 'stale');
-            }).sort(function (a, b) { return (b.updated || 0) - (a.updated || 0); });
-            var run = rows.filter(function (s) { return s.state === 'live' && !s.unknown; });
-            var maybe = rows.filter(function (s) { return !(s.state === 'live' && !s.unknown); });
-            var idle = open.filter(function (p) { return !rows.some(function (s) { return s.root === p.root; }); });
-            var now = K.S().serve || !isFinite(K.NOW()) ? Date.now() : K.NOW();
-            var name = function (s) { return s.project || lab[s.root] || s.root; };
-            var gates = rows.filter(function (s) { return s.pending && s.pending.questions && s.pending.questions.length; }).length;
-            return '<div class="phead khead" data-block="live-head"><h1>' + icon('now') + loc('nav.now', '現在') + '</h1>'
-                + '<p class="kcap"><span>' + loc('nav.capRunning', '正在跑<b>{n}</b>', { n: run.length }) + '</span>'
-                + '<span>' + (maybe.length ? '<a class="kcap-go" href="#/live" data-jump="h-maybe">' + loc('nav.capMaybe', '可能已經停了<b>{n}</b>', { n: maybe.length }) + '</a>'
-                    : loc('nav.capMaybe', '可能已經停了<b>{n}</b>', { n: maybe.length })) + '</span>'
-                + '<span' + (gates ? '' : ' class="ok"') + '>' + (gates ? loc('nav.capGates', '<b>{n}</b>個 gate 在等你', { n: gates }) : loc('nav.capNoGates', '沒有 gate 在等你')) + '</span></p>'
-                + '<span class="spacer"></span>' + (tabs || '') + '</div><div class="lv klv" data-block="now">'
-                + (open.length ? liveGate(rows, name, now) + liveRun(run, name, now) + liveMaybe(maybe, open, name, now) + liveIdle(idle, lab)
-                    : '<p class="mute">' + loc('nav.noRegistry', '沒有 registry') + '</p>') + '</div>';
-        }
         return { recentRows: recentRows, navCounts: navCounts, icon: icon, navOn: navOn, navGroup: navGroup, navTop: navTop,
             themeBtnHtml: themeBtnHtml, navHtml: navHtml, navLinksHtml: navLinksHtml, jumpHtml: jumpHtml, jumpHits: jumpHits,
-            jumpListHtml: jumpListHtml, subtabsHtml: subtabsHtml, shellsHtml: shellsHtml, liveRail: liveRail, saFamily: saFamily,
-            saShort: saShort, liveSubsHtml: liveSubsHtml, liveLane: liveLane, liveGate: liveGate, liveRun: liveRun, liveMaybe: liveMaybe,
-            liveIdle: liveIdle, nowHtml: nowHtml };
+            jumpListHtml: jumpListHtml, subtabsHtml: subtabsHtml, shellsHtml: shellsHtml };
     }
     var api = { make: make };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;

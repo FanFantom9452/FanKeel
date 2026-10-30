@@ -392,8 +392,6 @@
     function jumpListHtml() { return NAV().jumpListHtml.apply(null, arguments); }
     function subtabsHtml() { return NAV().subtabsHtml.apply(null, arguments); }
     function shellsHtml() { return NAV().shellsHtml.apply(null, arguments); }
-    function liveSubsHtml() { return NAV().liveSubsHtml.apply(null, arguments); }
-    function nowHtml() { return NAV().nowHtml.apply(null, arguments); }
     // ---- 設定: the seven-step wizard ----------------------------------------
 
     // ---- tune float, pending gate, board link: assets/station/float.js (FK_FLOAT) ----
@@ -513,11 +511,11 @@
             sessionHeadHtml: sessionHeadHtml, tabsHtml: tabsHtml, serveLost: serveLost, talkHtml: talkHtml, talkBody: talkBody,
             heroEyebrow: heroEyebrow, effortChip: effortChip, tourPage: tourPage,
             railHtml: railHtml, liveTag: liveTag,
-            navHtml: navHtml, navCounts: navCounts, recentRows: recentRows, nowHtml: nowHtml,
+            navHtml: navHtml, navCounts: navCounts, recentRows: recentRows,
             segTip: segTip,
             tk: tk,
             stageShare: stageShare, costShareHtml: costShareHtml, subtabsHtml: subtabsHtml,
-            liveSubsHtml: liveSubsHtml, shellsHtml: shellsHtml,
+            shellsHtml: shellsHtml,
             NAV_TREE: NAV_TREE,
             tuneOpen: tuneOpen, tuneEvents: tuneEvents, toastText: toastText, floatHtml: floatHtml, fkBoxParse: fkBoxParse, fkBoxClamp: fkBoxClamp, gateCountdownHtml: gateCountdownHtml, noteHtml: noteHtml, floatNotes: floatNotes, clock: gateClock,
             readAll: readAll, dismissNote: dismissNote, clearNotes: clearNotes, goneParse: goneParse, goneKeys: goneKeys,
