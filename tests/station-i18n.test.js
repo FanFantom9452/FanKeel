@@ -97,10 +97,22 @@ test('every CJK string literal in station.js, fmt.js, chart.js, session-body.js 
     assert.deepEqual(left, [], left.length + ' literals left (line, key prefix, literal):\n' + left.join('\n'));
 });
 
+const MOD_PREFIXES = {
+    'board-edit.js': ['bd'], 'chart.js': ['shared'], 'dash.js': ['dash', 'rec'], 'days-page.js': ['dash', 'q'],
+    'detail-html.js': ['det'], 'diagram.js': ['dg'], 'dispatch-table.js': ['det', 'disp', 'todo'], 'docs-page.js': ['dk'],
+    'float.js': ['poll', 'proj', 'tune'], 'fmt.js': ['shared'], 'focus-page.js': ['focus'], 'gate-frame.js': ['gf'],
+    'gate-tab.js': ['det'], 'list-page.js': ['dash', 'tune'], 'live-page.js': ['lv'], 'nav.js': ['nav'],
+    'project-page.js': ['pp'], 'projects-page.js': ['pj'], 'remote-card.js': ['rm'], 'search.js': ['mast', 'q'],
+    'session-body.js': ['live', 'ses'], 'session-dispatch.js': ['sdisp'], 'session-page.js': ['spage'],
+    'session-talk.js': ['stalk'], 'sessions-page.js': ['ss'], 'settings-detail.js': ['sd'], 'settings-page.js': ['sq'],
+    'settings-steps.js': ['ss'], 'spend-kinds.js': ['kinds'], 'spend-panel.js': ['panel'], 'spend-range.js': ['range'],
+    'spend-talk.js': ['talk'], 'talk-acts.js': ['tact'], 'weekly-page.js': ['wk'],
+};
 test('each loc() key has its section\'s prefix, one Chinese string, and an English entry; every entry is used', () => {
     const zhOf = new Map();
     const bad = [];
-    const ENTRIES = [['station.js', LINES, (i) => [PREFIX[i]]]].concat(MOVED.map(([n, ls]) => [n, ls, () => ['shared', 'proj', 'ses', 'det', 'live', 'disp', 'todo', 'dash', 'rec', 'nav', 'tune', 'poll', 'q', 'mast']]));
+    for (const n of SHELL_MODS) if (!MOD_PREFIXES[n]) bad.push(n + ' is in SHELL_MODS but has no MOD_PREFIXES entry');
+    const ENTRIES = [['station.js', LINES, (i) => [PREFIX[i]]]].concat(MOVED.map(([n, ls]) => [n, ls, () => MOD_PREFIXES[n] || []]));
     for (const [file, lines, prefixesOf] of ENTRIES) lines.forEach((text, i) => {
         const prefixes = prefixesOf(i);
         KEYED.lastIndex = 0;

@@ -7,9 +7,14 @@ const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'flo
 
 test('drawFloat reads #fkp scrollTop before the rebuild and writes it back after', () => {
     const at = SRC.indexOf('function drawFloat(');
-    const rest = SRC.slice(at + 1);
-    const next = rest.search(/\n\s+function /);
-    const body = next < 0 ? SRC.slice(at) : SRC.slice(at, at + 1 + next);
+    const open = SRC.indexOf('{', SRC.indexOf(')', at));
+    let depth = 0, end = -1;
+    for (let i = open; i < SRC.length && end < 0; i++) {
+        if (SRC[i] === '{') depth++;
+        else if (SRC[i] === '}' && --depth === 0) end = i + 1;
+    }
+    assert.ok(end > open, 'drawFloat body has a balanced end');
+    const body = SRC.slice(at, end);
     const read = body.search(/getElementById\('fkp'\)[\s\S]*?scrollTop/);
     const write = body.indexOf('fk.innerHTML');
     assert.ok(read > -1 && read < write, 'scrollTop is read before innerHTML is replaced');
