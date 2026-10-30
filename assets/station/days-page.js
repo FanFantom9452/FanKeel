@@ -299,7 +299,9 @@
         var d5 = !last5 ? noData : left > 0
             ? loc('q.resetIn', '{hm} 重置，還有 {h} 小時 {m} 分', { hm: hm(last5.end), h: Math.floor(left / 3600e3), m: Math.floor(left % 3600e3 / 60e3) })
             : loc('q.resetDone', '{hm} 已重置', { hm: hm(last5.end) });
-        var pp = Q.perPoint(acc.span, (S.sessions || []).filter(function (s) { return s.account === acc.key; }).map(function (s) { return s.bins || []; }));
+        // The account's dollars per 1% of its week, worked out once on the server
+        // (lib/station.js accountQuota) so every page that shows it reads one figure.
+        var pp = typeof acc.pp7 === 'number' ? acc.pp7 : null;
         var r7 = ro(loc('q.use7', '7d 用量'), pct(f && f.pct), d7, f && f.out && !stale);
         var r5 = ro(loc('q.use5', '5h 用量'), pct(v5), d5);
         var r1 = ro(loc('q.perPoint', '每 1% 額度'), pp === null ? noData : '≈ ' + H.usd(pp, true),

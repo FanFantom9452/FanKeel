@@ -21,7 +21,7 @@ const SESS = [
     row('s3', 'gamma', null, seg('gamma', T(9), T(11)), [[T(9), 5]]),
 ];
 const ACCOUNTS = [
-    { key: '4 04:00', wd: 4, hm: '04:00', span: { from: T(9), to: T(10, 30), points: 8 },
+    { key: '4 04:00', wd: 4, hm: '04:00', span: { from: T(9), to: T(10, 30), points: 8 }, pp7: 0.5,
         steps7: [{ from: T(9), to: T(9, 40), v: 10, gap: false }, { from: T(9, 40), to: NOW, v: 18, gap: true }],
         windows: [
             { start: T(4), end: T(9), steps: [{ from: T(5), to: T(9), v: 30, gap: true }] },
@@ -222,4 +222,10 @@ test('station.js hands a click inside .qplot or on .qnav to FK_DAYS.pick', () =>
     const before = b.picked.length;
     b.fire('click', { target: node({}), button: 0 });
     assert.equal(b.picked.length, before, 'a click outside the quota chart never reaches pick');
+});
+
+test('每 1% 額度 is the account\'s pp7 from the server, not worked out again from its span', () => {
+    const one = (o) => [Object.assign({}, ACCOUNTS[0], o)].concat(ACCOUNTS.slice(1));
+    assert.match(tab(one({ pp7: 2 })).html('7d'), /≈ \$2\.00/);
+    assert.match(tab(one({ pp7: null })).html('7d'), /每 1% 額度<\/div><div class="v">資料不足/);
 });

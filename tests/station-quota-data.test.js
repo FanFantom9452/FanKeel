@@ -12,7 +12,7 @@ const tmp = require('./tmp.js');
 
 const SID = 'cccccccc-1111-4111-8111-111111111111';
 const parse = (js) => JSON.parse(js.replace(/^window\.STATION = /, '').replace(/;\n$/, ''));
-function setup() {
+function setup(sevens, fives) {
     const base = tmp('fankeel-quota-data-');
     const cfg = path.join(base, 'cfg');
     const r = path.join(base, 'ws');
@@ -25,8 +25,8 @@ function setup() {
         pid: process.pid, sessionId: SID, cwd: r, startedAt: new Date(now - 3600e3).toISOString(),
         procStart: 0, version: '2.0.0', kind: 'interactive', entrypoint: 'cli', status: 'idle' }));
     const resets = new Date(now + 3 * 864e5).toISOString();
-    const rows = [20, 24].map((seven, i) => JSON.stringify({ at: new Date(now - (2 - i) * 600e3).toISOString(), task: 't', stage: 'build',
-        five: 5 + i, fiveResets: new Date(now + 3600e3).toISOString(), seven, sevenResets: resets, account: 'uuid-1' }));
+    const rows = (sevens || [20, 24]).map((seven, i) => JSON.stringify({ at: new Date(now - (2 - i) * 600e3).toISOString(), task: 't', stage: 'build',
+        five: (fives || [5, 6])[i], fiveResets: new Date(now + 3600e3).toISOString(), seven, sevenResets: resets, account: 'uuid-1' }));
     fs.mkdirSync(path.join(r, '.fankeel', 'build', 'limits'), { recursive: true });
     fs.writeFileSync(path.join(r, '.fankeel', 'build', 'limits', SID + '.jsonl'), rows.join('\n') + '\n');
     return { m: station.gather({ configDir: cfg }), now, resets };
@@ -84,4 +84,23 @@ test('a session with no detail has no segments and no bins', () => {
     m.registries[0].sessions[0].detail = null;
     const page = parse(station.serialize(m, {}));
     assert.deepEqual([page.sessions[0].segments, page.sessions[0].bins], [null, null]);
+});
+
+test('each account carries pp7 and pp5: its own sessions\' spend between the readings over the points climbed', () => {
+    const { m, now } = setup([20, 34], [5, 17]);
+    m.registries[0].sessions[0].detail = { segments: [], bins: [[now - 900e3, 7], [now - 60e3, 100]], days: [], spans: [], events: [] };
+    const a = parse(station.serialize(m, {})).quota.accounts[0];
+    assert.equal(a.pp7, 0.5, '$7 between the readings over 14 points; the $100 after the last reading is outside');
+    assert.equal(a.pp5, 7 / 12);
+    const q = station.accountQuota(m);
+    assert.equal(q.accounts[0].pp7, 0.5);
+    assert.equal(q.bySession[SID], q.accounts[0].key);
+});
+
+test('an account whose lines climbed under MIN_POINTS has pp7 and pp5 null', () => {
+    const { m, now } = setup();
+    m.registries[0].sessions[0].detail = { segments: [], bins: [[now - 900e3, 7]], days: [], spans: [], events: [] };
+    const a = parse(station.serialize(m, {})).quota.accounts[0];
+    assert.equal(a.pp7, null);
+    assert.equal(a.pp5, null);
 });
