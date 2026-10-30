@@ -80,11 +80,30 @@ test('GET /phone/img answers the uploaded photo to a paired phone, and refuses e
         assert.equal(ok.status, 200);
         assert.equal(ok.headers['content-type'], 'image/png');
         assert.deepEqual(ok.body, png);
+        // Real decoys: one file a directory above uploads, one inside uploads under a name the saved shape never has.
+        const phoneDir = require('../lib/phone.js').dirOf(f.r1, SID);
+        fs.writeFileSync(path.join(phoneDir, 'x.png'), png);
+        fs.writeFileSync(path.join(phoneDir, 'uploads', 'evil.png'), png);
+        assert.equal((await request(s.url + 'phone/img' + q('../x.png'), { headers: as })).status, 404, 'one directory up');
+        assert.equal((await request(s.url + 'phone/img' + q('evil.png'), { headers: as })).status, 404, 'a name the saved shape never has');
         for (const bad of ['../../../registry.json', '..%2Fx.png', 'a.txt', '1-abc123.svg', '123-abc12.png', '123-ABCDEF.png', '999-abcdef.png', '']) {
             assert.equal((await request(s.url + 'phone/img' + q(bad), { headers: as })).status, 404, bad);
         }
         assert.equal((await request(s.url + 'phone/img' + q(name, 'nope'), { headers: as })).status, 404, 'another session');
         assert.equal((await request(s.url + 'phone/img?root=' + encodeURIComponent(path.join(f.r1, '..')) + '&id=' + SID + '&name=' + name, { headers: as })).status, 404, 'another root');
+    } finally {
+        s.close();
+    }
+});
+
+test('GET /phone/img answers 500, not 404, when a saved photo cannot be read', async () => {
+    const f = fixture();
+    const s = await start(f, fakeTailscale());
+    try {
+        const dir = require('../lib/phone.js').dirOf(f.r1, SID);
+        fs.mkdirSync(path.join(dir, 'uploads', '123-abcdef.png'), { recursive: true });
+        const r = await request(s.url + 'phone/img?root=' + encodeURIComponent(f.r1) + '&id=' + SID + '&name=123-abcdef.png');
+        assert.equal(r.status, 500);
     } finally {
         s.close();
     }

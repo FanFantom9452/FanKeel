@@ -1082,7 +1082,7 @@ async function serve(opts) {
             try {
                 bytes = fs.readFileSync(path.join(dir, 'uploads', name));
             } catch (e) {
-                return fail(404, 'no such photo on this station');
+                return e.code === 'ENOENT' ? fail(404, 'no such photo on this station') : fail(500, 'the photo could not be read');
             }
             return send(200, 'image/' + kind[1], bytes, { 'cache-control': 'private, max-age=86400', 'x-content-type-options': 'nosniff' });
         }
