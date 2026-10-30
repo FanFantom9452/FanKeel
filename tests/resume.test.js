@@ -332,7 +332,7 @@ test('renderResume stays a readable size across every route and profile', (t) =>
 });
 
 const SURVEY_DIR = (root) => path.join(root, '.fankeel', 'build', 'task-20260919T093012');
-const GATE_QUESTIONS = [{ question: 'SURVEY -> DESIGN | fankeel : t　survey 的結論可以進 design 嗎？', header: 'SURVEY', multiSelect: false, options: [{ label: 'Go to DESIGN', description: 'a' }, { label: 'Stay in SURVEY', description: 'b' }] }];
+const GATE_QUESTIONS = [{ question: 'Survey -> Design | fankeel : t　survey 的結論可以進 design 嗎？', header: 'Survey', multiSelect: false, options: [{ label: 'Go to Design', description: 'a' }, { label: 'Stay in Survey', description: 'b' }] }];
 
 function surveyWithGate(root, filed = GATE_QUESTIONS) {
   seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
