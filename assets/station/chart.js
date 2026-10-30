@@ -13,7 +13,10 @@
         var KIND_KEYS = K.KIND_KEYS;
         // One bar per day; a bar's total is added in the same pass as its parts,
         // so it is their sum and nothing else.
-        function dayBars(sessions, metric, dim, days) {
+        function dayBars(sessions, metric, dim, days, notes) {
+            // A dim the caller says time cannot split by, in the caller's own words —
+            // 依 task (spend-quota design §2a): a span records no task.
+            if (metric === 'time' && notes && notes[dim]) return { days: [], keys: [], max: 0, disabled: notes[dim] };
             if (metric === 'time' && dim === 'model') {
                 return { days: [], keys: [], max: 0, disabled: loc('shared.noTimeByModel', '時間沒有 model 可分：spans 只記 stage 與誰在跑，不記 model') };
             }
@@ -93,10 +96,12 @@
         function roHtml(l, v, d) {
             return '<div class="ro"><div class="l">' + l + '</div><div class="v">' + v + '</div><div class="d">' + d + '</div></div>';
         }
-        function kpiHtml(cur, prev, label) {
+        // `noCost` leaves the spend readout out: 花費's 總覽 shows that figure by account
+        // (spend-quota design §2a), and 明細 keeps the other four.
+        function kpiHtml(cur, prev, label, noCost) {
             var share = function (t) { return t.main + t.wait ? t.wait / (t.main + t.wait) : 0; };
             var out = '<div class="readouts">'
-                + roHtml(label || loc('shared.cost30d', '30 天花費'), usd(cur.usd) + estMark(cur), delta(cur.usd, prev.usd) + (quotaDay() ? ' · ' + loc('shared.quotaCalibrated', '週額度 {d} 校準', { d: quotaDay() }) : ''))
+                + (noCost ? '' : roHtml(label || loc('shared.cost30d', '30 天花費'), usd(cur.usd) + estMark(cur), delta(cur.usd, prev.usd) + (quotaDay() ? ' · ' + loc('shared.quotaCalibrated', '週額度 {d} 校準', { d: quotaDay() }) : '')))
                 + roHtml('token', tokens(cur.tokens), delta(cur.tokens, prev.tokens))
                 + roHtml(loc('shared.activeTime', 'active 時間'), hours(cur.active), delta(cur.active, prev.active))
                 + roHtml('<i class="hatchsw"></i>' + loc('shared.waitShare', '等待佔比'), Math.round(share(cur) * 1000) / 10 + '<span class="u">%</span>',
@@ -154,7 +159,7 @@
             var n = bars.days.length || 1, slot = (W - L - R) / n, bw = Math.min(24, slot * 0.6);
             var top = niceTop(bars.max), y = function (v) { return v / top * plotH; }, pal = paletteOf(bars, o);
             var out = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="'
-                + loc('shared.dailyOverDays', '近 {n} 天每日{metric}，{dim}', { n: n, metric: METRIC_LABEL[o.metric], dim: DIM_LABEL[o.dim] }) + '">';
+                + loc('shared.dailyOverDays', '近 {n} 天每日{metric}，{dim}', { n: n, metric: METRIC_LABEL[o.metric], dim: o.dimLabel || DIM_LABEL[o.dim] }) + '">';
             [0, 0.25, 0.5, 0.75, 1].forEach(function (f) {
                 var yy = (base - f * plotH).toFixed(1);
                 out += '<line class="' + (f ? 'gridl' : 'base') + '" x1="' + L + '" x2="' + (W - R) + '" y1="' + yy + '" y2="' + yy + '"/>'
@@ -197,7 +202,7 @@
         // afresh. With nothing off it is the list the chart always used.
         function paletteOf(bars, o) {
             var off = o.off || {};
-            return ((o.dim === 'version' || o.dim === 'model' || o.dim === 'type') ? bars.keys : o.pkeys || []).filter(function (k) { return !off[k]; });
+            return ((o.dim === 'version' || o.dim === 'model' || o.dim === 'type' || o.dim === 'task' || o.dim === 'account') ? bars.keys : o.pkeys || []).filter(function (k) { return !off[k]; });
         }
         // The shown keys that get a legend entry of their own; the rest share
         // 其他 N 個. Pass an `o` without `off` for the unfiltered grouping.
@@ -321,6 +326,143 @@
                 }).join('') + '</ul>'
                 + '<div class="tt-sum">' + loc('shared.dayTotalLabel', '當天合計') + ' <b>' + metricText(o.metric, b.total, false, b.estimated) + '</b></div>';
         }
+        // Rough text width for the quota bars' labels: a CJK character one em, anything
+        // else 0.56 em — the mockup's measure, close enough to cut a name before it runs on.
+        function textW(t, size) {
+            return String(t || '').split('').reduce(function (a, ch) { return a + (/[\u2e80-\uffff]/.test(ch) ? size : size * 0.56); }, 0);
+        }
+        // `name` cut to `width` with an ellipsis, or '' when not even two characters fit.
+        function fitText(name, width, size) {
+            var s = String(name || '');
+            if (textW(s, size) <= width) return s;
+            var cs = s.split('');
+            while (cs.length && textW(cs.join('') + '\u2026', size) > width) cs.pop();
+            return cs.length >= 2 ? cs.join('') + '\u2026' : '';
+        }
+        // 總覽's daily spend by account (spend-quota design §2): `bars` from dayBars(…,
+        // 'usd', 'account', days). Every column has a <title> with its total and each
+        // account; a column part of another account than `o.only` is drawn at .16. Not
+        // under `.chart`: the 明細 chart's hover reads the first `.chart svg` on the page.
+        // `o.narrow` is the phone's 360-wide drawing. All text arrives in `o.L` and `o.names`.
+        function ovBarsSvg(bars, o) {
+            var nar = Boolean(o.narrow), W = nar ? 360 : 760, L = nar ? 42 : 50, R = nar ? 356 : 756, B = nar ? 150 : 286, top = nar ? 10 : 12, FS = 13;
+            var f1 = function (v) { return (Math.round(v * 10) / 10).toString(); };
+            var list = bars.days || [], n = list.length || 1, slot = (R - L) / n, bw = slot * (nar ? 0.66 : 0.62);
+            var mx = niceTop(bars.max), KY = (B - top) / mx, pal = paletteOf(bars, o);
+            var out = '<svg class="ovsvg ' + (nar ? 'qnar' : 'qwid') + '" viewBox="0 0 ' + W + ' ' + f1(B + FS * 2.6) + '" role="img" aria-label="' + esc(o.L.aria) + '">';
+            (nar ? [0, 0.5, 1] : [0, 0.25, 0.5, 0.75, 1]).forEach(function (f) {
+                var y = f1(B - f * mx * KY);
+                out += '<line class="' + (f ? 'gridl' : 'base') + '" x1="' + L + '" x2="' + R + '" y1="' + y + '" y2="' + y + '"/>'
+                    + '<text class="tick" x="' + (L - 8) + '" y="' + f1(Number(y) + FS * 0.35) + '" text-anchor="end">' + metricText('usd', mx * f, true) + '</text>';
+            });
+            var every = Math.max(1, Math.ceil(n / (nar ? 4 : 15)));
+            list.forEach(function (b, i) {
+                var cx = L + slot * (i + 0.5), y = B;
+                var label = loc('shared.dayTotal', '{day} 合計 {total}', { day: b.day, total: metricText('usd', b.total) })
+                    + bars.keys.filter(function (k) { return b.parts[k]; })
+                        .map(function (k) { return loc('shared.dayTotalSeg', '；{key} {v}', { key: keyLabel('account', k, o.names), v: metricText('usd', b.parts[k]) }); }).join('');
+                out += '<rect class="hit" x="' + f1(cx - slot / 2) + '" y="' + top + '" width="' + f1(slot) + '" height="' + (B - top) + '"><title>' + esc(label) + '</title></rect><g class="bar">';
+                bars.keys.forEach(function (k) {
+                    var v = b.parts[k];
+                    if (!v) return;
+                    var h = v * KY;
+                    y -= h;
+                    out += '<rect x="' + f1(cx - bw / 2) + '" y="' + f1(y) + '" width="' + f1(bw) + '" height="' + f1(Math.max(0.5, h - (nar ? 0.6 : 1)))
+                        + '" style="fill:' + colorOf('account', k, pal) + (o.only && o.only !== k ? ';opacity:.16' : '') + '"/>';
+                });
+                out += '</g>';
+                if (i === n - 1) {
+                    out += '<text class="tick ovtoday" x="' + f1(nar ? cx + slot / 2 : cx) + '" y="' + f1(B + FS * 1.3) + '" text-anchor="' + (nar ? 'end' : 'middle') + '">'
+                        + esc(b.day === o.today ? o.L.today : b.day.slice(5)) + '</text>';
+                } else if (i % every === 0) {
+                    out += '<text class="tick" x="' + f1(cx) + '" y="' + f1(B + FS * 1.3) + '" text-anchor="middle">' + Number(b.day.slice(8)) + '</text>';
+                }
+            });
+            return out + '</svg>';
+        }
+        // The quota tabs' chart (spend-quota design §3, §4): the step line over 0–100%
+        // above, the task lanes below on the same time axis (ms). Only the selected bar
+        // gets the overlay — its band, the line re-drawn bright inside it, its two end
+        // points, its outline and the callout — since a click redraws the page. A gate is
+        // hatched over the stage colours. Text arrives in q.L, q.ticks, q.resets, q.call
+        // and each seg's name and title: chart.js holds no Chinese of its own.
+        function quotaSvg(q, o) {
+            var f1 = function (v) { return (Math.round(v * 10) / 10).toString(); };
+            var FS = o.fs, nar = Boolean(o.narrow), k = (o.R - o.L) / Math.max(1, q.t1 - q.t0);
+            var X = function (t) { return o.L + (Math.max(q.t0, Math.min(q.t1, t)) - q.t0) * k; };
+            var Y = function (v) { return o.bot - Math.max(0, Math.min(100, v)) / 100 * (o.bot - o.top); };
+            var lanesBot = o.laneTop + Math.max(1, q.lanes) * o.pitch, Hh = lanesBot + FS * (nar ? 2.4 : 1.2);
+            var sel = q.segs.filter(function (s) { return s.id === q.sel; })[0] || null;
+            var out = ['<svg class="qsvg ' + (nar ? 'qnar' : 'qwid') + '" data-cur="' + esc(sel ? sel.id : 'none') + '" viewBox="0 0 ' + o.W + ' ' + f1(Hh)
+                + '" role="img" aria-label="' + esc(q.L.aria) + '">'];
+            out.push('<defs><pattern id="hatch-' + o.id + '" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">'
+                + '<rect width="5" height="5" style="fill:var(--hatch-bg)"/><line x1="0" y1="0" x2="0" y2="5" style="stroke:var(--hatch);stroke-width:1.6"/></pattern>'
+                + (sel ? '<clipPath id="band-' + o.id + '"><rect x="' + f1(X(sel.start)) + '" y="0" width="' + f1(X(sel.end) - X(sel.start)) + '" height="' + f1(Hh) + '"/></clipPath>' : '')
+                + '</defs>');
+            if (sel) out.push('<rect class="qband" x="' + f1(X(sel.start)) + '" y="' + o.top + '" width="' + f1(X(sel.end) - X(sel.start)) + '" height="' + f1(lanesBot - o.top) + '"/>');
+            [0, 25, 50, 75, 100].forEach(function (v) {
+                out.push('<line class="' + (v ? 'gridl' : 'base') + '" x1="' + o.L + '" x2="' + o.R + '" y1="' + f1(Y(v)) + '" y2="' + f1(Y(v)) + '"/>');
+                if (!nar || v % 50 === 0) out.push('<text class="tick" x="' + (o.L - 7) + '" y="' + f1(Y(v) + FS * 0.35) + '" text-anchor="end">' + v + '%</text>');
+            });
+            q.ticks.forEach(function (t) {
+                var x = X(t.t);
+                out.push('<line class="qday" x1="' + f1(x) + '" x2="' + f1(x) + '" y1="' + o.top + '" y2="' + f1(lanesBot) + '"/>'
+                    + '<text class="tick' + (t.today ? ' qtoday' : '') + '" x="' + f1(x + 4) + '" y="' + f1(o.bot + FS * 1.35) + '" text-anchor="start">' + esc(t.text) + '</text>');
+            });
+            q.resets.forEach(function (r) {
+                var x = X(r.t), end = r.t >= q.t1;
+                out.push('<line class="q7r" x1="' + f1(x) + '" x2="' + f1(x) + '" y1="' + o.top + '" y2="' + o.bot + '"><title>' + esc(r.text) + '</title></line>'
+                    + '<text class="q7rt" x="' + f1(end ? x - 4 : x + 4) + '" y="' + f1(o.top + FS) + '" text-anchor="' + (end ? 'end' : 'start') + '">' + esc(r.text) + '</text>');
+            });
+            if (q.now >= q.t0 && q.now <= q.t1) out.push('<line class="qnow" x1="' + f1(X(q.now)) + '" x2="' + f1(X(q.now)) + '" y1="' + o.top + '" y2="' + f1(lanesBot) + '"/>');
+            var solid = '', faded = '';
+            q.steps.forEach(function (s, i) {
+                if (s.to < q.t0 || s.from > q.t1) return;
+                var h = 'M' + f1(X(s.from)) + ' ' + f1(Y(s.v)) + 'H' + f1(X(s.to));
+                if (s.gap) faded += h; else solid += h;
+                var nx = q.steps[i + 1];
+                if (nx && nx.v !== s.v && nx.from >= q.t0 && nx.from <= q.t1) solid += 'M' + f1(X(nx.from)) + ' ' + f1(Y(s.v)) + 'V' + f1(Y(nx.v));
+            });
+            out.push('<g class="qline qbase" id="line-' + o.id + '"><path class="qfade" d="' + faded + '"/><path class="qsolid" d="' + solid + '"/></g>');
+            var last = q.steps.filter(function (s) { return s.from <= q.t1; }).pop();
+            if (last) out.push('<text class="qend" x="' + f1(X(last.to) + 6) + '" y="' + f1(Y(last.v) + FS * 0.35) + '" text-anchor="start">' + last.v + '%</text>');
+            var barY = function (s) { return o.laneTop + s.lane * o.pitch + o.pitch - o.barH - 4; };
+            q.segs.forEach(function (s) {
+                var y0 = o.laneTop + s.lane * o.pitch, by = barY(s), x0 = X(s.start), x1 = X(s.end), on = s === sel;
+                var fill = function (g, paint) {
+                    return '<rect x="' + f1(X(g.start)) + '" y="' + f1(by) + '" width="' + f1(Math.max(0.6, X(g.end) - X(g.start))) + '" height="' + o.barH + '" style="fill:' + paint + '"/>';
+                };
+                out.push('<g class="qbar' + (on ? ' sel' : '') + '" data-task="' + esc(s.id) + '" role="button" tabindex="0" aria-pressed="' + on + '"><title>' + esc(s.title) + '</title>'
+                    + '<rect class="qhit" x="' + f1(x0) + '" y="' + f1(y0) + '" width="' + f1(Math.max(6, x1 - x0)) + '" height="' + o.pitch + '"/>'
+                    + '<clipPath id="bar-' + o.id + '-' + s.n + '"><rect x="' + f1(x0) + '" y="' + f1(by) + '" width="' + f1(Math.max(2, x1 - x0)) + '" height="' + o.barH + '" rx="3"/></clipPath>'
+                    + '<g clip-path="url(#bar-' + o.id + '-' + s.n + ')">'
+                    + s.stages.map(function (g) { return fill(g, 'var(--st-' + esc(g.stage) + ')'); }).join('')
+                    + s.gates.map(function (g) { return fill(g, 'url(#hatch-' + o.id + ')'); }).join('') + '</g>');
+                var lbl = nar ? '' : fitText(s.name, x1 - x0, FS * 0.93);
+                if (lbl) out.push('<text class="qbl" x="' + f1(x0) + '" y="' + f1(by - 4) + '" text-anchor="start">' + esc(lbl) + '</text>');
+                out.push('</g>');
+            });
+            if (sel) {
+                var by = barY(sel), x0 = X(sel.start), x1 = X(sel.end);
+                out.push('<g class="qov on" data-task="' + esc(sel.id) + '"><use href="#line-' + o.id + '" class="qhi" clip-path="url(#band-' + o.id + ')"/>');
+                if (q.call) out.push('<circle class="qpt" cx="' + f1(X(q.call.a0)) + '" cy="' + f1(Y(q.call.v0)) + '" r="3.5"/><circle class="qpt" cx="' + f1(X(q.call.a1)) + '" cy="' + f1(Y(q.call.v1)) + '" r="3.5"/>');
+                out.push('<rect class="qselo" x="' + f1(x0 - 1.5) + '" y="' + f1(by - 1.5) + '" width="' + f1(x1 - x0 + 3) + '" height="' + (o.barH + 3) + '" rx="4"/>');
+                var name = fitText(sel.name, Math.max(x1 - x0 + 160, 200), FS * 0.93);
+                out.push('<text class="qbl qbls" x="' + f1(Math.min(x0, o.R - textW(name, FS * 0.93))) + '" y="' + f1(by - 4) + '" text-anchor="start">' + esc(name) + '</text>');
+                if (q.call) {
+                    var txt = q.call.text, one = txt.join(q.L.join);
+                    var cw = nar ? Math.max(textW(txt[0], FS), textW(txt[1], FS)) + 16 : textW(one, FS) + 20, ch = nar ? FS * 2.9 : FS * 2;
+                    var cx = x0 + 6;
+                    if (cx + cw > o.R) cx = Math.max(o.L + 4, x1 - cw - 6);
+                    var cy = o.top + FS * 1.6;
+                    out.push('<g class="qcall"><rect x="' + f1(cx) + '" y="' + f1(cy) + '" width="' + f1(cw) + '" height="' + f1(ch) + '" rx="6"/>'
+                        + (nar ? '<text x="' + f1(cx + 8) + '" y="' + f1(cy + FS * 1.25) + '">' + esc(txt[0]) + '</text><text x="' + f1(cx + 8) + '" y="' + f1(cy + FS * 2.45) + '">' + esc(txt[1]) + '</text>'
+                            : '<text x="' + f1(cx + 10) + '" y="' + f1(cy + FS * 1.35) + '">' + esc(one) + '</text>') + '</g>');
+                }
+                out.push('</g>');
+            }
+            return out.join('') + '</svg>';
+        }
         // 導覽: the tour's own page in a frame. It is served from the plugin's
         // assets (scripts/station.js STATIC); the written file has no server.
         function tourPage(serve) {
@@ -332,7 +474,7 @@
             dayBars: dayBars, projectRows: projectRows, roHtml: roHtml, kpiHtml: kpiHtml, spark: spark, routeDots: routeDots,
             stageNow: stageNow, runningTag: runningTag, segHtml: segHtml, histSvg: histSvg, paletteOf: paletteOf,
             legendOwn: legendOwn, legendRest: legendRest, shortLabel: shortLabel, legendHtml: legendHtml,
-            filterHtml: filterHtml, visibleBars: visibleBars, segTip: segTip, tourPage: tourPage
+            filterHtml: filterHtml, visibleBars: visibleBars, segTip: segTip, ovBarsSvg: ovBarsSvg, quotaSvg: quotaSvg, tourPage: tourPage
         };
     }
     var api = { make: make };

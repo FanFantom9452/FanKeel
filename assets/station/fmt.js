@@ -32,6 +32,18 @@
             var p = String(hash || '').replace(/^#\/?/, '').split('/');
             var dec = function (v) { try { return decodeURIComponent(v); } catch (e) { return null; } };
             if (p[0] === 'd' && /^\d{4}-\d{2}-\d{2}$/.test(p[1] || '')) return { view: 'days', day: p[1] };
+            // 花費's tabs and the hash a 最貴的 5 個 task row opens (spend-quota design §2):
+            // `#/days/<tab>?acc=<account>&task=<segment>`, each key only when the hash has it.
+            var dq = /^#?\/?days(?:\/(quota7|quota5h|detail))?(?:\?(.*))?$/.exec(String(hash || ''));
+            if (dq) {
+                var dv = { view: 'days', day: null };
+                if (dq[1]) dv.tab = dq[1];
+                (dq[2] || '').split('&').forEach(function (kv) {
+                    var i = kv.indexOf('='), k = i > 0 ? kv.slice(0, i) : '', v = i > 0 ? dec(kv.slice(i + 1)) : null;
+                    if ((k === 'acc' || k === 'task') && v) dv[k] = v;
+                });
+                return dv;
+            }
             if (p[0] === 'days') return { view: 'days', day: null };
             var seg = p[0] === 'p' && p[1] ? p.slice(1) : [], todo;
             if (seg.length > 1 && seg[seg.length - 1] === 'todo') { todo = ''; seg = seg.slice(0, -1); }
@@ -81,6 +93,8 @@
             if (dim === 'stage') return r.stage || 'none';
             if (dim === 'version') return s.version || 'none';
             if (dim === 'type') return r.who === 'main' ? 'main' : (r.type || 'unknown');
+            if (dim === 'task') return r.task || 'none';
+            if (dim === 'account') return s.account || 'unknown';
             return r.who;
         }
         // Versions parsed as dotted numbers and compared newest first; a version
@@ -115,6 +129,13 @@
                 var real = keys.filter(function (k) { return k !== 'none'; }).sort(verCmp).reverse();
                 return seen['none'] ? real.concat(['none']) : real;
             }
+            // Accounts by key (Thursday 04:00 before Thursday 19:00), tasks by size; the
+            // bucket with no account or no task last, like version's 'none'.
+            if (dim === 'account') return keys.filter(function (k) { return k !== 'unknown'; }).sort().concat(seen.unknown ? ['unknown'] : []);
+            if (dim === 'task') {
+                return keys.filter(function (k) { return k !== 'none'; })
+                    .sort(function (a, b) { return seen[b] - seen[a] || (a < b ? -1 : 1); }).concat(seen.none ? ['none'] : []);
+            }
             if (!fixed) return keys.sort(function (a, b) { return seen[b] - seen[a] || (a < b ? -1 : 1); });
             return fixed.filter(function (k) { return seen[k]; })
                 .concat(keys.filter(function (k) { return fixed.indexOf(k) < 0; }).sort());
@@ -144,6 +165,7 @@
             if (dim === 'kind') return 'var(' + (KIND_COLOR[key] || '--st-none') + ')';
             if (dim === 'type' && key === 'main') return 'var(--s-main)';
             if (dim === 'version' && key === 'none') return 'var(--st-none)';
+            if ((dim === 'account' && key === 'unknown') || (dim === 'task' && key === 'none')) return 'var(--st-none)';
             var i = (pkeys || []).indexOf(key);
             return 'var(--p-' + (i < 0 ? 5 : Math.min(i, 5)) + ')';
         }
@@ -155,6 +177,7 @@
             if (dim === 'type') return key === 'main' ? WHO_LABEL.main : key === 'unknown' ? loc('shared.typeUnknown', '未記類型') : key;
             if (dim === 'version') return key === 'none' ? loc('shared.noVersionRecorded', '未記版本') : key;
             if (dim === 'model') return modelLabel(key);
+            if (dim === 'account' || dim === 'task') return (names && names[key]) || key;
             return key;
         }
         // One key so far needs more than its label. `version`'s `'none'` is drawn
