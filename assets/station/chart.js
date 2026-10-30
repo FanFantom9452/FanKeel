@@ -93,14 +93,15 @@
             return list.sort(function (a, b) { return b.usd - a.usd || b.last - a.last; });
         }
         // One readout: its label, its value and the line under it.
-        function roHtml(l, v, d) {
-            return '<div class="ro"><div class="l">' + l + '</div><div class="v">' + v + '</div><div class="d">' + d + '</div></div>';
+        function roHtml(l, v, d, block) {
+            return '<div class="ro"' + (block ? ' data-block="' + block + '"' : '') + '><div class="l">' + l + '</div><div class="v">' + v + '</div><div class="d">' + d + '</div></div>';
         }
         // `noCost` leaves the spend readout out: 花費's 總覽 shows that figure by account
-        // (spend-quota design §2a), and 明細 keeps the other four.
-        function kpiHtml(cur, prev, label, noCost) {
+        // (spend-quota design §2a), and 明細 keeps the other four. `lead` is readouts that
+        // open the row: 明細's 全機花費 sits in it rather than in a row of its own.
+        function kpiHtml(cur, prev, label, noCost, lead) {
             var share = function (t) { return t.main + t.wait ? t.wait / (t.main + t.wait) : 0; };
-            var out = '<div class="readouts">'
+            var out = '<div class="readouts" data-block="kpi">' + (lead || '')
                 + (noCost ? '' : roHtml(label || loc('shared.cost30d', '30 天花費'), usd(cur.usd) + estMark(cur), delta(cur.usd, prev.usd) + (quotaDay() ? ' · ' + loc('shared.quotaCalibrated', '週額度 {d} 校準', { d: quotaDay() }) : '')))
                 + roHtml('token', tokens(cur.tokens), delta(cur.tokens, prev.tokens))
                 + roHtml(loc('shared.activeTime', 'active 時間'), hours(cur.active), delta(cur.active, prev.active))
@@ -108,7 +109,7 @@
                     (prev.main + prev.wait ? delta(share(cur), share(prev), 'pt') : '<span class="delta flat">' + loc('shared.noPriorData', '前期無資料') + '</span>')
                     + ' · ' + loc('shared.waitedFor', '{t} 等', { t: hours(cur.wait) }));
             var top = K.S().gates && K.S().gates.swapped && K.S().gates.swapped.length ? K.S().gates.swapped[0] : null;
-            out += roHtml(loc('shared.mostSwapped', '最常被換掉'), top ? esc(top.label) : '—', top ? top.lost + ' / ' + top.total : '');
+            out += roHtml(loc('shared.mostSwapped', '最常被換掉'), top ? esc(top.label) : '—', top ? top.lost + ' / ' + top.total : '', 'most-swapped');
             return out + '</div>';
         }
         function spark(values, colour) {
@@ -358,9 +359,9 @@
             var every = Math.max(1, Math.ceil(n / (nar ? 4 : 15)));
             list.forEach(function (b, i) {
                 var cx = L + slot * (i + 0.5), y = B;
-                var label = loc('shared.dayTotal', '{day} 合計 {total}', { day: b.day, total: metricText('usd', b.total) })
+                var label = loc('shared.dayTotal', '{day} 合計 {total}', { day: b.day, total: metricText('usd', b.total, false, b.estimated) })
                     + bars.keys.filter(function (k) { return b.parts[k]; })
-                        .map(function (k) { return loc('shared.dayTotalSeg', '；{key} {v}', { key: keyLabel('account', k, o.names), v: metricText('usd', b.parts[k]) }); }).join('');
+                        .map(function (k) { return loc('shared.dayTotalSeg', '；{key} {v}', { key: keyLabel('account', k, o.names), v: metricText('usd', b.parts[k], false, partEst(b, k)) }); }).join('');
                 out += '<rect class="hit" x="' + f1(cx - slot / 2) + '" y="' + top + '" width="' + f1(slot) + '" height="' + (B - top) + '"><title>' + esc(label) + '</title></rect><g class="bar">';
                 bars.keys.forEach(function (k) {
                     var v = b.parts[k];

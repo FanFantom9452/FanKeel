@@ -26,8 +26,8 @@ const ACCOUNTS = [
         windows: [{ start: T(9), end: T(14), steps: [{ from: T(9), to: NOW, v: 12, gap: true }] }] },
     { key: '4 19:00', wd: 4, hm: '19:00', span: null, forecast: null, steps7: [{ from: T(10), to: NOW, v: 40, gap: true }], windows: [] },
 ];
-function boot() {
-    const { V, M } = page([], { generatedAt: new Date(NOW).toISOString(), sessions: SESS, quota: { accounts: ACCOUNTS } });
+function boot(sessions) {
+    const { V, M } = page([], { generatedAt: new Date(NOW).toISOString(), sessions: sessions || SESS, quota: { accounts: ACCOUNTS } });
     const ctx = V.daysCtx();
     ctx.draw = () => {};
     return { V, D: M['days-page.js'], ctx };
@@ -91,4 +91,32 @@ test('明細 keeps every split and adds 依 task, which time disables with the r
     assert.ok(html.includes('<button type="button" data-v="task" aria-pressed="true" disabled title="' + why + '">依 task</button>'));
     assert.ok(html.includes('<p class="note">' + why + '</p>'));
     assert.deepEqual(stringsLeft('days-page.js', D.EN), []);
+});
+
+test('總覽 marks 估 on the total, on the account whose rows are estimated and on that day\'s bar, and nowhere when none is', () => {
+    const est = SESS.map((s) => s.id === 's3' ? Object.assign({}, s, { days: [Object.assign(day(2), { estimated: true })] }) : s);
+    const { D, ctx } = boot(est);
+    const ov = between(D.page({ view: 'days', day: null }, ctx), 'data-panel="overview"', 'data-panel="quota7"');
+    assert.match(ov, /<div class="ovnum">\$6\.50 估<\/div>/);
+    assert.match(ov, /19:00 帳號 \$2\.00 估/);
+    assert.match(ov, /04:00 帳號 \$4\.00(?! 估)/);
+    assert.match(ov, /<title>2026-10-30 合計 \$6\.50 估；[^<]*19:00 帳號 \$2\.00 估/);
+    const plain = boot();
+    assert.doesNotMatch(between(plain.D.page({ view: 'days', day: null }, plain.ctx), 'data-panel="overview"', 'data-panel="quota7"'), /估/);
+});
+
+test('明細 has one kpi row, 全機花費 first and 最常被換掉 marked, and the frame title has no 近 30 天 of its own', () => {
+    const { D, ctx } = boot();
+    const html = D.page({ view: 'days', day: null, tab: 'detail' }, ctx);
+    const row = html.match(/<div class="readouts" data-block="kpi">([\s\S]*?)<\/section>/);
+    assert.ok(row, 'the readouts row is data-block="kpi"');
+    assert.equal([...html.slice(html.indexOf('data-panel="detail"')).matchAll(/class="readouts/g)].length, 1,'全機花費 sits inside the kpi row, not in a row of its own');
+    assert.match(row[1], /^<div class="ro"><div class="l">全機花費/);
+    assert.match(row[1], /<div class="ro" data-block="most-swapped"><div class="l">最常被換掉<\/div>/);
+    assert.doesNotMatch(between(html, '<div class="dbar', '</h1>'), /近 30 天/);
+});
+
+test('總覽\'s bar chart lets the panel show through its hover columns, so the gridlines show', () => {
+    const css = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'assets', 'station', 'days-page.css'), 'utf8');
+    assert.match(css, /\.ovsvg \.hit\{fill:transparent/);
 });

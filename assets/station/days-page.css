@@ -42,6 +42,9 @@
 .ovsvg text{font-size:13px}
 .ovsvg .ovtoday{fill:var(--ink);font-weight:600}
 .ovsvg rect{transition:opacity .18s ease-out}
+/* not under .chart, so .chart .hit's transparent fill misses it and SVG's default black covers the grid */
+.ovsvg .hit{fill:transparent}
+.ovsvg .hit:hover{fill:var(--wash)}
 .ovtop{display:grid;gap:8px;min-width:0}
 .ovtop .h2{flex-wrap:wrap;row-gap:2px}
 .ovt td.r{font-variant-numeric:tabular-nums}

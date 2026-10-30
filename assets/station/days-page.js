@@ -36,6 +36,7 @@
         'q.colCost': 'Spend',
         'q.top5None': 'No task spent anything in this range.',
         'q.noLink': 'a task with no known account is not on the quota chart',
+        'q.frozenAt': 'frozen at {t}',
         'q.clickToPutBack': 'Click to put it back on the chart',
         'q.clickToRemoveFirst': 'Click to take it off the chart first',
         'q.weekdays': 'Sun,Mon,Tue,Wed,Thu,Fri,Sat',
@@ -391,7 +392,7 @@
             + '<nav class="dtablist" data-block="days-tabs" aria-label="' + loc('q.tabs', '花費分頁') + '">'
             + tabs.map(function (t) { return '<a href="' + t[1] + '"' + (t[0] === tab ? ' aria-current="page"' : '') + '>' + t[2] + '</a>'; }).join('')
             + '</nav>' + H.subtabsHtml('days') + '</div>'
-            + '<div class="dbar hero-top"><div class="dat"><div class="eyebrow">' + H.icon('days') + H.heroEyebrow(C.frozenAt) + '</div>'
+            + '<div class="dbar hero-top"><div class="dat"><div class="eyebrow">' + H.icon('days') + (C.frozenAt ? loc('q.frozenAt', '凍結於 {t}', { t: C.frozenAt }) : '') + '</div>'
             + '<h1><b>' + rng.from.slice(5) + '</b> — <b>' + rng.to.slice(5) + '</b></h1></div>'
             + '<div class="vbar controls">' + (RG ? RG.controlsHtml(picked, rng, view.rangeFrom, view.rangeTo) : '') + '</div></div></header>'
             + panel('overview', overviewHtml(R, rng, picked))
@@ -407,18 +408,20 @@
         var H = C.H, view = C.view, S = C.S, Q = w.FK_QSHARE, RG = w.FK_RANGE || null;
         var accounts = (S.quota && S.quota.accounts) || [];
         var only = accounts.some(function (a) { return a.key === view.ovacc; }) ? view.ovacc : null;
-        var bars = H.dayBars(R, 'usd', 'account', rng.days) || {}, keys = bars.keys || [], sums = {}, total = 0;
+        var bars = H.dayBars(R, 'usd', 'account', rng.days) || {}, keys = bars.keys || [], sums = {}, total = 0, est = {}, estAll = false;
         (bars.days || []).forEach(function (b) {
             keys.forEach(function (k) {
                 var v = (b.parts || {})[k] || 0;
                 sums[k] = (sums[k] || 0) + v;
                 total += v;
+                if (v && b.est && b.est[k]) est[k] = estAll = true;
             });
         });
+        var mark = function (k) { return H.estMark({ estimated: Boolean(est[k]) }); };
         var names = { unknown: loc('q.unknownAcc', '未知') };
         keys.forEach(function (k) { if (k !== 'unknown') names[k] = accShort(k); });
         var split = keys.filter(function (k) { return sums[k]; })
-            .map(function (k) { return '<span>' + H.esc(names[k]) + ' ' + H.usd(sums[k], true) + '</span>'; })
+            .map(function (k) { return '<span>' + H.esc(names[k]) + ' ' + H.usd(sums[k], true) + mark(k) + '</span>'; })
             .join('<span class="dot" aria-hidden="true">·</span>');
         var label = (picked === '30d' || !RG ? loc('q.cost30', '30 天花費') : RG.costLabel()) + ' · ' + (only ? accShort(only) : loc('q.allAcc', '全部帳號'));
         var oo = { dim: 'account', names: names, today: rng.to, only: only, L: { aria: loc('q.ovAria', '每日花費，依帳號分色'), today: loc('q.today', '今天') } };
@@ -434,7 +437,7 @@
             return '<tr><td class="task">' + cell + '</td><td>' + H.esc(x.g.project) + '</td><td class="r">' + H.usd(x.usd, true) + '</td></tr>';
         }).join('');
         return '<div class="ov"><div class="ovhead"><div class="ovtotal"><div class="l">' + label + '</div>'
-            + '<div class="ovnum">' + H.usd(only ? sums[only] || 0 : total, true) + '</div><p class="ovsplit">' + split + '</p></div>'
+            + '<div class="ovnum">' + H.usd(only ? sums[only] || 0 : total, true) + (only ? mark(only) : H.estMark({ estimated: estAll })) + '</div><p class="ovsplit">' + split + '</p></div>'
             + '<div class="qtools controls"><div class="ctlgrp"><label>' + loc('q.account', '帳號') + '</label>'
             + H.segHtml('ovacc', [['all', loc('q.all', '全部')]].concat(accounts.map(function (a) { return [a.key, accName(a)]; })), only || 'all') + '</div></div></div>'
             + '<div class="ovgrid"><div class="ovchart">' + H.ovBarsSvg(bars, oo) + H.ovBarsSvg(bars, Object.assign({ narrow: true }, oo)) + '</div>'
@@ -474,8 +477,8 @@
             // dim has, the switches above and the chart below stay where they are.
             + '<div class="lstrip"><div class="legend">' + H.legendHtml(all, o) + '</div>' + H.filterHtml(all, o) + '</div>'
             + '<div class="chart">' + H.histSvg(bars, o) + '</div>'
-            + H.kpiHtml(H.windowTotals(R, rng.days), H.windowTotals(R, rng.prev), null, true)
-            + (RG ? RG.kpiHtml(held, Boolean(S.serve)) : '') + '</section>'
+            + H.kpiHtml(H.windowTotals(R, rng.days), H.windowTotals(R, rng.prev), null, true,
+                RG ? RG.kpiHtml(held, Boolean(S.serve)).replace(/^<div class="readouts"[^>]*>|<\/div>$/g, '') : '') + '</section>'
             + (w.FK_PANEL ? w.FK_PANEL.html(held, S.prices, Boolean(S.serve)) : '')
             + '<div class="dash kdash pcards" data-block="spend-cards"><div class="dcol" data-col="main">' + H.dashByProj(R) + H.dashTokens7(R)
             + '</div><div class="dcol" data-col="side">' + H.dashModels(R) + '</div></div>'

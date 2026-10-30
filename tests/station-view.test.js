@@ -451,7 +451,7 @@ test('windowTotals and the five readouts: thirty days against the thirty before,
     assert.doesNotMatch(html, /\$99|\$198/);
     assert.match(html, /18\.8<span class="u">%<\/span>/);
     assert.match(html, /-31\.3 pt/);
-    const cells = [...html.matchAll(/<div class="ro"><div class="l">(.*?)<\/div><div class="v">(.*?)<\/div><div class="d">(.*?)<\/div><\/div>/g)];
+    const cells = [...html.matchAll(/<div class="ro"(?: data-block="[a-z-]+")?><div class="l">(.*?)<\/div><div class="v">(.*?)<\/div><div class="d">(.*?)<\/div><\/div>/g)];
     assert.deepEqual(cells.map((m) => m[1]),
         ['30 天花費', 'token', 'active 時間', '<i class="hatchsw"></i>等待佔比', '最常被換掉'],
         'every readout carries its own label, and nothing else, in the label cell');
