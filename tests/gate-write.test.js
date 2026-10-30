@@ -50,10 +50,10 @@ function run(root, payload) {
 
 const TICKS = '`'.repeat(3);
 const QUESTIONS = [{
-  question: 'SURVEY -> DESIGN | fankeel : t　survey 的結論可以進 design 嗎？',
-  header: 'SURVEY',
+  question: 'Survey -> Design | fankeel : t　survey 的結論可以進 design 嗎？',
+  header: 'Survey',
   multiSelect: false,
-  options: [{ label: 'Go to DESIGN', description: 'a' }, { label: 'Stay in SURVEY', description: 'b' }, { label: '暫停', description: 'c' }],
+  options: [{ label: 'Go to Design', description: 'a' }, { label: 'Stay in Survey', description: 'b' }, { label: '暫停', description: 'c' }],
 }];
 
 // Option one's label must name the next stage on the route (`design`, here),
@@ -72,7 +72,7 @@ test('a valid gate written to the session\'s own current-stage handoff produces 
   const data = seed(root, MINE, { inflight: MARK });
   const file = handoffPath(root, data, 'survey');
   fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, gateBlock('Go to DESIGN'));
+  fs.writeFileSync(file, gateBlock('Go to Design'));
 
   const out = run(root, { agent_id: AGENT, tool_input: { file_path: file } });
   assert.equal(out.trim(), '');
