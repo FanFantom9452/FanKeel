@@ -43,8 +43,8 @@ mockup：`.fankeel/build/2026-10-30-spend-quota/mockup.html`（未提交）。
 
 ## 2a. 明細
 
-- 分段鈕：依 model／專案／stage／task（預設 model）；下面是現有的堆疊長條與對應表格。
-- 其餘現有 KPI（token、active、等待佔比、最常被換掉）與現有三張表放在這個 TAB，堆疊長條之下。
+- 分段鈕：現有的全部分項——依 model／專案／stage／session 與 agent／agent 類型／版本——再加依 task（預設 model）；現有的長條高度切換照留。下面是現有的堆疊長條與對應表格。
+- 其餘現有 KPI（token、active、等待佔比、最常被換掉）、全機花費，與現有三張表放在這個 TAB，堆疊長條之下。這個 TAB 不拿掉現有頁面的任何分項或數字。
 
 ## 3. 7d 額度與 5h 額度
 
