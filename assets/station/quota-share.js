@@ -71,7 +71,39 @@
         (binsList || []).forEach(function (bins) { usd += spendIn(bins, span.from, span.to); });
         return usd > 0 ? usd / span.points : null;
     }
-    var api = { riseOf: riseOf, spendIn: spendIn, shareOf: shareOf, lanesOf: lanesOf, perPoint: perPoint };
+    // lib/quota.js MIN_POINTS: a reading is a whole percent, so under ten points the
+    // error is more than a tenth of the answer. Copied rather than required, since this
+    // file loads in the page too; tests/quota-share.test.js holds the two equal.
+    var MIN_POINTS = 10;
+    // The 5h counterpart of lib/quota.js span(): the newest of `windows` (windowsOf,
+    // oldest first) whose line climbed MIN_POINTS or more from its first reading to its
+    // last, as the `{ from, to, points }` perPoint reads; null when none did.
+    function span5(windows) {
+        var list = windows || [];
+        for (var i = list.length - 1; i >= 0; i--) {
+            var st = list[i].steps || [];
+            if (st.length < 2) continue;
+            var a = st[0], b = st[st.length - 1];
+            if (b.v - a.v >= MIN_POINTS) return { from: a.from, to: b.from, points: b.v - a.v };
+        }
+        return null;
+    }
+    // One share in percent: from 1 up a whole number, under 1 one decimal; null with
+    // nothing spent or no dollars-per-point.
+    function pctOf(usd, pp) {
+        if (!(usd > 0) || !(pp > 0)) return null;
+        var p = usd / pp;
+        return p >= 1 ? Math.round(p) : Math.round(p * 10) / 10;
+    }
+    // What `usd` is of one account's week and of its 5h window, from its dollars per 1%
+    // of each (perPoint over span, and over span5). Always an estimate: API prices over
+    // a dollars-per-point, not a reading of the quota line. null when neither is known.
+    function quotaShare(usd, pp7, pp5) {
+        var week = pctOf(usd, pp7), five = pctOf(usd, pp5);
+        return week === null && five === null ? null : { weekPct: week, fiveHourPct: five, estimated: true };
+    }
+    var api = { riseOf: riseOf, spendIn: spendIn, shareOf: shareOf, lanesOf: lanesOf, perPoint: perPoint,
+        span5: span5, quotaShare: quotaShare, MIN_POINTS: MIN_POINTS };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     if (w) w.FK_QSHARE = api;
 }(typeof window !== 'undefined' ? window : null));

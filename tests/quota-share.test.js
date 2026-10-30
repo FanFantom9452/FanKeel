@@ -40,3 +40,22 @@ test('the price of a point is what the account spent in the span over the points
     assert.equal(Q.perPoint(span, [[]]), null);
     assert.equal(Q.spendIn([[0, 1], [5 * M, 2]], 0, 5 * M), 1);
 });
+
+test('span5 is the newest 5h window that climbed MIN_POINTS or more, its first reading to its last', () => {
+    const win = (vs) => ({ start: 0, end: 300 * M, steps: vs.map((v, i) => ({ from: i * 10 * M, to: (i + 1) * 10 * M, v, gap: false })) });
+    assert.deepEqual(Q.span5([win([0, 12]), win([3, 8, 13])]), { from: 0, to: 20 * M, points: 10 });
+    assert.deepEqual(Q.span5([win([0, 12]), win([3, 8])]), { from: 0, to: 10 * M, points: 12 }, 'the newer one climbed 5: the older one is used');
+    assert.equal(Q.span5([win([4, 4 + Q.MIN_POINTS - 1])]), null, 'nine points is not enough');
+    assert.equal(Q.span5([win([7])]), null);
+    assert.equal(Q.span5([]), null);
+    assert.equal(Q.span5(undefined), null);
+    assert.equal(Q.MIN_POINTS, require('../lib/quota.js').MIN_POINTS);
+});
+
+test('quotaShare is the amount over each dollars-per-point, always an estimate; null when neither can be said', () => {
+    assert.deepEqual(Q.quotaShare(3, 1.5, 0.25), { weekPct: 2, fiveHourPct: 12, estimated: true });
+    assert.deepEqual(Q.quotaShare(3, 1.5, null), { weekPct: 2, fiveHourPct: null, estimated: true });
+    assert.deepEqual(Q.quotaShare(0.3, 1, null), { weekPct: 0.3, fiveHourPct: null, estimated: true }, 'under 1% keeps one decimal');
+    assert.equal(Q.quotaShare(3, null, null), null);
+    assert.equal(Q.quotaShare(0, 1.5, 0.25), null);
+});
