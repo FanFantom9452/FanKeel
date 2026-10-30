@@ -10,7 +10,7 @@
   ],
   "guard": "deny",
   "gate.station": "off",
-  "gate.away": "ask",
+  "gate.away": "off",
   "model.lang": "繁體中文",
   "agent.fankeel-mutator.model": "haiku",
   "agent.fankeel-mover.model": "haiku",
