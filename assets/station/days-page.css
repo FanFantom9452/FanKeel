@@ -1,2 +1,62 @@
-/* assets/station/days-page.css — the 近 30 天 page `#/days` (days-page.js).
-   Its rules stay in station.css (station.js already routes to FK_DAYS). */
+/* assets/station/days-page.css — 花費 `#/days` (days-page.js): the frame, its four
+   tabs, 總覽 and the two 額度 tabs. 明細's chart, legend and readouts keep their
+   rules in station.css. */
+
+/* 7d / 5h 額度 (spend-quota design §3, §4) */
+.qtools{display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px}
+.qtools.controls{margin:0}
+.qv{display:grid;gap:14px}
+.qacc{display:grid;gap:12px}
+.qrow{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px 22px}
+.qfc{align-items:flex-start;row-gap:4px}
+.qfc .ro .v{font-size:24px;font-weight:400}
+.qfc .ro .d{white-space:normal;max-width:46ch}
+.qfc .ro .d.qwarn{color:var(--signal-ink)}
+.qplot .qnar{display:none}
+.qsvg text{font-size:14px}
+.qsvg.qnar text{font-size:13px}
+.qsvg .qband{fill:var(--keel-tint)}
+.qsvg .qday{stroke:var(--rule2);stroke-width:1;shape-rendering:crispEdges}
+.qsvg .qtoday{fill:var(--ink);font-weight:600}
+.qsvg .qnow{stroke:var(--ink2);stroke-width:1;stroke-dasharray:3 4}
+.qsvg .q7r{stroke:var(--keel);stroke-width:1.5;opacity:.75}
+.qsvg .q7rt{fill:var(--keel-deep)}
+.qsvg .qline path{fill:none;stroke:var(--keel);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.qsvg .qline .qfade{opacity:.38}
+.qsvg:not([data-cur=none]) .qbase{opacity:.4}
+.qsvg .qhi{opacity:1}
+.qsvg .qpt{fill:var(--keel);stroke:var(--panel);stroke-width:1.5}
+.qsvg .qend{fill:var(--ink);font-weight:600}
+.qsvg .qcall rect{fill:var(--panel);stroke:var(--keel);stroke-width:1}
+.qsvg .qcall text{fill:var(--ink);font-weight:600}
+.qsvg .qov{pointer-events:none}
+.qsvg .qhit{fill:transparent}
+.qsvg .qbar{cursor:pointer;transition:opacity .15s ease-out}
+.qsvg:not([data-cur=none]) .qbar{opacity:.38}
+.qsvg .qbar.sel{opacity:1}
+.qsvg .qbar.sel .qbl{visibility:hidden}
+.qsvg .qbar:focus-visible{outline:2px solid var(--keel);outline-offset:2px}
+.qsvg .qbl{fill:var(--ink2)}
+.qsvg .qbls{fill:var(--ink);font-weight:600}
+.qsvg.qnar .qbl{font-size:12.5px}
+.qsvg .qselo{fill:none;stroke:var(--ink);stroke-width:1.5}
+.qkey{display:flex;flex-wrap:wrap;align-items:center;gap:4px 16px;margin:0;padding:0;list-style:none;font-size:12px;color:var(--ink2)}
+.qkey li{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.qsw{display:inline-block;width:16px;height:2px;border-radius:1px;background:var(--keel);flex:none}
+.qsw.faded{opacity:.38}
+.qnote{margin:0;max-width:96ch;font-size:12px;line-height:1.5;color:var(--muted)}
+.qwin{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink);font-variant-numeric:tabular-nums}
+.qnav{display:inline-grid;place-items:center;width:30px;height:30px;border:0;border-radius:var(--r-sm);background:var(--inset);color:var(--ink);font-size:16px;cursor:pointer}
+.qnav:disabled{opacity:.4;cursor:not-allowed}
+.qnav:focus-visible{outline:2px solid var(--keel);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.qsvg .qbar{transition:none}}
+@media (max-width:720px){
+  .qplot .qwid{display:none}
+  .qplot .qnar{display:block}
+  .qfc{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+  .qfc .ro{border-right:0;margin-right:0;padding-right:0;padding-bottom:10px;border-bottom:1px solid var(--rule)}
+  .qfc .ro:last-child{border-bottom:0;padding-bottom:0}
+  .qfc .ro .d{max-width:none}
+  .qtools .seg button{min-height:44px;padding:4px 8px}
+  .qnav{width:44px;height:44px}
+}
