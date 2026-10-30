@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-10-19
+last_verified: 2026-10-30
 source_of_truth: lib/stages.js, hooks/gate.js, hooks/gate-write.js, lib/handoff.js, lib/plain.js, scripts/gate-check.js, scripts/task.js, scripts/ledger.js, lib/plantasks.js, scripts/commit.js, scripts/land.js, lib/suite.js
 ---
 
