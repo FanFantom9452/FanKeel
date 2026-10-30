@@ -128,6 +128,19 @@ the agent returned in the browser (`start` on Windows, `open` on macOS,
 `xdg-open` elsewhere). Work that puts nothing on a screen draws nothing,
 whatever the value.
 
+**Widths follow the project.** Not every project has a phone screen, so the
+mockup is drawn at the desktop width alone unless the project declared a
+phone: `.fankeel/render.json` holds a page whose `viewport` is 480 pixels
+wide or less (fankeel's own file lists `412,900`). The session dispatching
+the mockup asks once, before it writes the prompt:
+`node -e "const f='.fankeel/render.json',fs=require('fs');console.log(fs.existsSync(f)&&require('<plugin>/lib/shots.js').mobileDeclared(fs.readFileSync(f,'utf8')))"`
+and writes the answer into the prompt, because no profile value or file
+reaches a subagent: `true` becomes "also draw a phone frame at the declared
+viewport width", `false` becomes "desktop only; draw no phone frame". A
+project with no `render.json` answers `false`. A task that is itself about
+the phone screen is the exception only when the user says so at the gate;
+say which way you decided, as for `class`.
+
 Then the path goes on the `spec:` line, and option one's description points at
 the page. The gate approves the page, not the paragraph.
 

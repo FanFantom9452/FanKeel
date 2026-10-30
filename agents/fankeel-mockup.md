@@ -75,6 +75,19 @@ or a `text`, each with `points` in page coordinates — beside the item's
 `scroll` and `viewport`. Read them as where on the page the note points,
 and in what order for steps; never draw them into the mockup.
 
+## Widths
+
+Draw one frame at the desktop width, and a second frame at a phone width only
+when the prompt says "also draw a phone frame" and gives the width. A prompt
+that says "desktop only", or says nothing about width, gets no phone frame:
+the catalogue's `ui` and `ix` entries that mention phones, columns or
+breakpoints (`in-ui-grid`, `in-ix-nav-choice`) are not a reason to draw one.
+The guide's rules on narrow fallbacks and touch targets are CSS only, written
+into the page's own `<style>` for the blocks it changes; they never add a
+second frame. A phone frame, when asked for, is the same `data-block` names
+inside a second wrapper, so the tune overlay and the render reviewer point at
+the same names.
+
 ## Check it served
 
 The page is checked where the user will open it: through a server, never a
