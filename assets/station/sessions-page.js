@@ -253,6 +253,14 @@
             + '<span>' + esc(kit().shortLabel(names[s.pkey] || s.pkey || '')) + '</span><span class="id">' + esc(String(s.id).slice(0, 8)) + '</span></span>';
     }
     function titleOf(s) { return s.task ? esc(s.task) : loc('ss.unnamed', '（未命名）'); }
+    // The session account's estimated share of its week and of its 5h window under the
+    // cost (quota-share design §3, mockup sessions-cost): one span a part, so the narrow
+    // table can stack them; nothing with no account or no reading yet.
+    function quotaHtml(k, c, account) {
+        var parts = c && account && k.quotaParts ? k.quotaParts(c, account) : [];
+        if (!parts.length) return '';
+        return '<small class="ss-q" title="' + esc(k.quotaTitle()) + '"><span>≈ ' + parts.join('</span><span class="sep"> · </span><span>') + '</span></small>';
+    }
     function rowHtml(s, names, colours) {
         var k = kit(), on = st.picked.indexOf(s.id) >= 0, c = k.cost(s);
         var dis = !s.hasDetail ? ' disabled title="' + esc(loc('ss.noDetail', '沒有 transcript，沒有可比的')) + '"' : !on && st.picked.length >= 3 ? ' disabled' : '';
@@ -260,7 +268,7 @@
             + '<td><label class="ss-ck"><span class="hm-sr">' + loc('ss.pick', '勾選來比較') + '</span><input type="checkbox" data-ss-tick="' + esc(s.id) + '"' + (on ? ' checked' : '') + dis + '></label></td>'
             + '<td><a class="ss-task' + (s.task ? '' : ' un') + '" href="' + esc(k.sessionHash(s.id)) + '">' + titleOf(s) + '</a>' + sub(s, names, colours) + '</td>'
             + '<td>' + result(s) + '</td>'
-            + '<td class="r' + (c ? '' : ' z') + '">' + k.usd(c, true) + '</td>'
+            + '<td class="r ss-usd' + (c ? '' : ' z') + '">' + k.usd(c, true) + quotaHtml(k, c, s.account) + '</td>'
             + '<td class="m c-at">' + when(lastOf(s)) + '</td>'
             + '<td class="r c-ck' + (s.clock ? '' : ' z') + '">' + k.mins(s.clock || null) + '</td></tr>';
     }

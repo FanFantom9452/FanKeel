@@ -47,7 +47,7 @@
 .ss-scroll{position:relative;flex:1 1 auto;min-height:0;overflow:auto;scrollbar-gutter:stable}
 @media (max-height:700px),(max-width:999px){.ss-scroll{overflow:visible}}
 .ss-t{width:100%;border-collapse:collapse;table-layout:fixed;font-variant-numeric:tabular-nums}
-.ss-t col.ck{width:44px}.ss-t col.res{width:244px}.ss-t col.usd{width:88px}.ss-t col.at{width:108px}.ss-t col.ck2{width:72px}
+.ss-t col.ck{width:44px}.ss-t col.res{width:244px}.ss-t col.usd{width:136px}.ss-t col.at{width:108px}.ss-t col.ck2{width:72px}
 .ss-t thead th{position:sticky;top:0;z-index:1;height:34px;padding:0 10px;background:var(--panel);box-shadow:inset 0 -1px 0 var(--rule);
   text-align:left;font:500 12px var(--f-ui);color:var(--muted);white-space:nowrap}
 .ss-t thead th:first-child{padding-left:18px}
@@ -67,6 +67,7 @@
 .ss-t td.r{text-align:right;font:500 12.5px var(--f-mono);color:var(--ink);white-space:nowrap}
 .ss-t td.m{font:12px var(--f-mono);color:var(--ink2);white-space:nowrap}
 .ss-t td.r.z{color:var(--faint)}
+.ss-t td.ss-usd .ss-q{display:block;margin-top:2px;font:12px var(--f-mono);color:var(--muted);white-space:nowrap}
 .ss-t input[type=checkbox]{width:16px;height:16px;margin:0;accent-color:var(--keel);cursor:pointer}
 .ss-t input[type=checkbox]:disabled{cursor:not-allowed;opacity:.35}
 .ss-ck{display:grid;place-items:center;width:28px;height:28px;margin-left:-6px;border-radius:6px}
@@ -86,7 +87,7 @@
 .ss-empty{padding:56px 18px;text-align:center;font-size:13px;color:var(--ink2)}
 .ss-empty button{margin-top:10px;height:30px;padding:0 12px;border:0;border-radius:7px;background:transparent;box-shadow:inset 0 0 0 1px var(--rule2);font:600 12.5px var(--f-ui);color:var(--ink);cursor:pointer}
 @media (max-width:999px){.ss-t col.ck2,.ss-t .c-ck{display:none}}
-@media (max-width:720px){.ss-t col.res{width:150px}.ss-t col.at,.ss-t .c-at{display:none}}
+@media (max-width:720px){.ss-t col.res{width:150px}.ss-t col.usd{width:88px}.ss-t col.at,.ss-t .c-at{display:none}.ss-t td.ss-usd .ss-q span{display:block}.ss-t td.ss-usd .ss-q .sep{display:none}}
 
 /* the filters */
 .ss-filter{margin:0 0 0 auto;display:flex;flex-wrap:wrap;gap:8px;align-items:center}

@@ -76,7 +76,7 @@ test('a row shows cost as usd + agentUsd, and sorts on cost both ways', () => {
     const S = { sessions: [ses(1), ses(5), ses(3)] };
     const o = { names: {}, now: NOW, redraw() {} };
     let html = P.page(S, o);
-    assert.ok(html.includes('<td class="r">$6.00</td>'), 'id 5: 5 + 1');
+    assert.ok(html.includes('<td class="r ss-usd">$6.00</td>'), 'id 5: 5 + 1');
     click(P, { 'data-ss-sort': 'usd' });
     html = P.page(S, o);
     const order = (h) => [...h.matchAll(/data-ss-row="([^"]+)"/g)].map((m) => m[1]);
@@ -236,4 +236,14 @@ test('English comes from the module table, and every string has it', () => {
     const html = P.page({ sessions: [ses(1)] }, { names: {}, now: NOW, redraw() {} });
     assert.ok(html.includes('Last 30 days'));
     assert.deepEqual(stringsLeft('sessions-page.js', P.EN), []);
+});
+
+test('a row with an account shows its estimated share of the week and 5h under the cost; one without shows none', () => {
+    const { win } = page(['tip.js', 'sessions-page.js'], { quota: { accounts: [{ key: 'A', pp7: 1.5, pp5: 0.25 }] } });
+    win.FK_SESSIONS.reset();
+    const html = win.FK_SESSIONS.page({ sessions: [ses(3, { account: 'A', agentUsd: 0 }), ses(4, { agentUsd: 0 })] }, { names: {}, now: NOW, redraw() {} });
+    const row = (id) => (html.match(new RegExp('<tr data-ss-row="' + id + '"[\\s\\S]*?</tr>')) || [''])[0];
+    assert.ok(row('id000003-x').includes('<td class="r ss-usd">$3.00<small class="ss-q" title="估算：API 價格 ÷ 這個帳號每 1% 額度的美元"><span>≈ 週 2%</span><span class="sep"> · </span><span>5H 12%</span></small></td>'), row('id000003-x'));
+    assert.ok(row('id000004-x').includes('<td class="r ss-usd">$4.00</td>'), row('id000004-x'));
+    assert.doesNotMatch(row('id000004-x'), /≈ 週/);
 });
