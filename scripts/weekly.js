@@ -86,12 +86,13 @@ function facetsFor(cwd, configDir) {
 }
 
 // A report rendered again for the same end date keeps the replies the
-// station already saved into its archive (lib/weekly-reply.js), by question id.
+// station already saved into its archive (lib/weekly-reply.js), by question id
+// and only while the text is the same: a reworded question is a new one.
 function keepReplies(events, prior) {
     const old = prior && Array.isArray(prior.questions) ? prior.questions : [];
     if (!events || !Array.isArray(events.questions) || !old.length) return events;
     const byId = new Map(old.filter((q) => q && q.reply).map((q) => [q.id, q]));
-    const questions = events.questions.map((q) => (q && !q.reply && byId.has(q.id)
+    const questions = events.questions.map((q) => (q && !q.reply && byId.has(q.id) && byId.get(q.id).text === q.text
         ? Object.assign({}, q, { reply: byId.get(q.id).reply, repliedAt: byId.get(q.id).repliedAt })
         : q));
     return Object.assign({}, events, { questions });
@@ -211,8 +212,8 @@ async function main(argv, opts) {
             return 1;
         }
         // 製作成本 (design §4): the session that ran this, which is the one
-        // this shell names unless --session says otherwise. /fankeel-weekly's
-        // prompt injects no id, so the shell's own is the default.
+        // this shell names unless --session says otherwise: CLAUDE_CODE_SESSION_ID
+        // through live.envSession, the same id /fankeel-weekly's own shell carries.
         let cost = null;
         if (events && events.show && events.show.cost === true) {
             const id = f.session || envSession(configDir, o.env || process.env);

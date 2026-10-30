@@ -151,4 +151,8 @@ test('render inlines the filter script, and a second render for the same end dat
     assert.deepEqual(again.questions[0], { id: 'q1', repo: 'alpha', text: '帳號開好了嗎？', reply: '開好了。', repliedAt: '2026-01-03T06:05:00.000Z' });
     assert.deepEqual(again.questions[1], qs[1]);
     assert.ok(fs.readFileSync(p.archived, 'utf8').includes('<p class="ans">開好了。</p>'));
+    const reworded = events({ questions: [{ id: 'q1', repo: 'alpha', text: '帳號什麼時候開？' }] });
+    fs.writeFileSync(p.file, JSON.stringify(reworded));
+    assert.equal((await run(['render', '--events', p.file, '--data', p.data], w)).code, 0);
+    assert.deepEqual(ws.readArchive(w.cfg, '2026-01-02').questions[0], reworded.questions[0], 'a reworded question drops the old reply');
 });

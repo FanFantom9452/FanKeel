@@ -58,10 +58,12 @@ test('show.daily off or missing: no timeline, and no card prints its dates, the 
         const ongoing = cardsOf(html).find((c) => c.includes('進行中'));
         assert.ok(ongoing, 'the ongoing card is drawn');
         assert.doesNotMatch(ongoing, /class="times"|至今/);
+        assert.doesNotMatch(html, /依據：[^<]*\d+\/\d+/, 'no evidence prints a date');
     }
     const on = await wr.render(data(), events({ show: { daily: true } }), opts);
     assert.match(on, /data-block="timeline"/);
     assert.ok(on.includes('<span class="times">1/2 至今</span>'));
+    assert.ok(on.includes('<p class="evidence">依據：程式提交 1/2</p>'));
 });
 
 test('a facet outside the vocabulary, or a card with none, is refused by render and named by shapeHits', async () => {
@@ -112,7 +114,7 @@ test('a card lists its facets general first, and keeps tech, module chips and ev
     const detail = /<div class="tech-detail" data-block="tech-detail">[\s\S]*<\/div>\n<\/li>/.exec(first)[0];
     assert.ok(detail.includes('<p class="td-text"><span class="td-k">技術細節</span>查詢介面改成分頁讀取。</p>'));
     assert.ok(detail.includes('<div class="mods">'));
-    assert.ok(detail.includes('<p class="evidence">依據：程式提交 1/1</p>'));
+    assert.ok(detail.includes('<p class="evidence">依據：程式提交</p>'), 'show.daily off: the date leaves the evidence');
     assert.doesNotMatch(second, /td-text/, 'no tech, no paragraph');
 });
 
