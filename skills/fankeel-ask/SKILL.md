@@ -18,13 +18,18 @@ to the user and filed with `judge.js answered`, and one line has said what the
 stage accepted. That list runs out. A second question to the judge in the same
 stage is not more diligence — it is what the one-shot shape exists to stop.
 
-- **One path, never a search.** Resolve every script this skill names against
-  `<plugin>`, two directories up from this file — except where the registry
-  root's `package.json` names `fankeel`: then the working tree's scripts, since
-  the installed copy lags it by a release. **No fallback path**: never the
-  working directory, a home directory, a global skill root, or a copy found by
-  name. **A missing script stops this, named**: say which path you resolved and
-  that it is not in this install; never guess where it moved.
+- **One path, never a search.** `<plugin>` is two directories up from this
+  file; resolve every script this skill names against that root and nowhere
+  else. One exception, and it is a different root rather than a search for
+  one: where the registry root's own `package.json` names `fankeel`, the
+  scripts to run are the working tree's, because the installed copy lags it
+  by a release.
+- **No fallback path.** Never the working directory, a home directory, a
+  global skill root, or another copy found by name — that one path resolves,
+  or none does.
+- **A missing script stops this, named.** Say which path you resolved and
+  that it is not in this plugin install — never a guess at where it moved,
+  never a workaround.
 
 ## Nothing advertises this
 
@@ -41,7 +46,7 @@ So **you do not reach for this on your own.** It runs when the user types it.
 | The judge answered and the session proceeded without asking the user | That is the shape. A judgement is input the stage acts on, not a second question the user has to sit through — the gate is still at the end of the stage. |
 | The controller asked the user once after the judge answered | `ask human:` is the flow: the judge sends its questions there and the controller asks them once. A gate refusal of a paraphrased question is the check working. |
 | One question, then the stage carries on with others unanswered | One-shot means one. A second question in the same stage is a second `/fankeel-ask`, typed by the user, not a follow-up message to the same judge. |
-| No active task, and this refused | `scripts/judge.js` refuses to file against a session with no active entry; the refusal names the session and the registry root. |
+| No active task, and this refused | `<plugin>/scripts/judge.js` refuses to file against a session with no active entry; the refusal names the session and the registry root. |
 
 ## It interrupts; it does not run alongside
 
