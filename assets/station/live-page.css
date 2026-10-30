@@ -126,4 +126,4 @@ a.sxr:focus-visible>.sx-pk{visibility:visible;opacity:1;transition:none}
 .dlist>.sx-wsubs:first-child>.hm-lv{border-top:0}
 
 .sx-subs .sa{grid-template-columns:minmax(0,196px) minmax(0,170px) minmax(0,1fr) 52px}
-@media (max-width:560px){.sx-subs .sa{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"ty ch" "de de"}.sx-subs .sa>:nth-child(1){grid-area:ty}.sx-subs .sa>:nth-child(2){grid-area:ch}.sx-subs .sa>:nth-child(3){grid-area:de}.sx-subs .sa>:nth-child(4){display:none}}
+@media (max-width:560px){.sx-subs .sa{grid-template-columns:minmax(0,1fr) auto auto;grid-template-areas:"ty ch fo" "de de de"}.sx-subs .sa>:nth-child(1){grid-area:ty}.sx-subs .sa>:nth-child(2){grid-area:ch}.sx-subs .sa>:nth-child(3){grid-area:de}.sx-subs .sa>:nth-child(4){grid-area:fo}}
