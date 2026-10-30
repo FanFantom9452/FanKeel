@@ -21,20 +21,27 @@ const { sessionCost } = require('../lib/session-cost.js');
 
 const USAGE = 'usage: weekly.js scan [--since YYYY-MM-DD --until YYYY-MM-DD] [--roots dir1,dir2]\n'
     + '       weekly.js collect --repos dir1,dir2 [--since A --until B] --out data.json\n'
-    + '       weekly.js render --events events.json --data data.json [--out weekly.html] [--session <id>]';
+    + '       weekly.js render --events events.json --data data.json [--out weekly.html] [--session <id>]\n'
+    + '       weekly.js questions [--repo R] [--near YYYY-MM-DD] [--grep 詞] [--answered]';
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const ASSETS = path.join(__dirname, '..', 'assets');
 
 // Every flag weekly.js takes, each with a value. Written as a STRING_FLAGS
 // object because that is the shape lib/skills.js acceptedFlags reads, so
 // scripts/skills-check.js can hold the skill's commands to this table.
-const STRING_FLAGS = { since: 'YYYY-MM-DD', until: 'YYYY-MM-DD', roots: 'dirs', repos: 'dirs', out: 'file', events: 'file', data: 'file', session: 'id' };
+const STRING_FLAGS = { since: 'YYYY-MM-DD', until: 'YYYY-MM-DD', roots: 'dirs', repos: 'dirs', out: 'file', events: 'file', data: 'file', session: 'id', repo: 'name', near: 'YYYY-MM-DD', grep: 'word' };
+// The one flag that takes no value.
+const BOOL_FLAGS = new Set(['--answered']);
 
 function flags(args) {
     const o = {};
     for (let i = 0; i < args.length; i++) {
         const k = args[i];
         if (!k.startsWith('--')) return { error: 'unexpected argument: ' + k };
+        if (BOOL_FLAGS.has(k)) {
+            o[k.slice(2)] = true;
+            continue;
+        }
         if (!Object.prototype.hasOwnProperty.call(STRING_FLAGS, k.slice(2))) return { unknown: k };
         const v = args[i + 1];
         if (v === undefined || v.startsWith('--')) return { error: k + ' needs a value' };
@@ -88,6 +95,32 @@ function keepReplies(events, prior) {
         ? Object.assign({}, q, { reply: byId.get(q.id).reply, repliedAt: byId.get(q.id).repliedAt })
         : q));
     return Object.assign({}, events, { questions });
+}
+
+// Every archived question that passes the filters, newest report first
+// (design §3): `--near D` keeps a report whose range, widened a week each
+// way, holds D. A report archived before questions existed has none.
+const NEAR_MS = 7 * 86400e3;
+const dayMs = (d) => Date.parse(d + 'T00:00:00Z');
+const oneLine = (s) => String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
+function questionsOf(configDir, f) {
+    const want = f.grep ? f.grep.toLowerCase() : null;
+    const out = [];
+    for (const r of store.list(configDir)) {
+        if (f.near) {
+            const t = dayMs(f.near);
+            if (t < dayMs(r.since || r.until) - NEAR_MS || t > dayMs(r.until) + NEAR_MS) continue;
+        }
+        const a = store.readArchive(configDir, r.until);
+        for (const q of (a && Array.isArray(a.questions) ? a.questions : [])) {
+            if (!q || typeof q.text !== 'string') continue;
+            if (f.repo && String(q.repo).toLowerCase() !== f.repo.toLowerCase()) continue;
+            if (f.answered && !q.reply) continue;
+            if (want && !(q.text + '\n' + (q.reply || '')).toLowerCase().includes(want)) continue;
+            out.push([r.until, oneLine(q.repo), oneLine(q.text), q.reply ? oneLine(q.reply) : '尚未回覆'].join('\t'));
+        }
+    }
+    return out;
 }
 
 function writeOut(file, text) {
@@ -210,6 +243,14 @@ async function main(argv, opts) {
         const rec = readServeRecord(configDir);
         const alive = rec ? await probe(rec, 500) : false;
         log('open: ' + (alive ? rec.url + 'station/weekly/' + data.until + '.html' : saved.html));
+        return 0;
+    }
+
+    if (verb === 'questions') {
+        if (f.near && !DAY.test(f.near)) return usage('--near is YYYY-MM-DD');
+        const rows = questionsOf(configDir, f);
+        if (!rows.length) log('沒有符合的問題');
+        for (const row of rows) log(row);
         return 0;
     }
 
