@@ -636,22 +636,11 @@ test('suggest offers class.default once three class records agree by a majority,
     assert.equal(profile.suggest(d).values['class.default'], undefined, 'no registry, no class records');
 });
 
-test('quota.week takes a number above zero, and stays off the wizard', () => {
-    assert.equal(profile.parseValue('quota.week', ' 2000 ').value, 2000);
-    assert.equal(profile.parseValue('quota.week', 2000).value, 2000);
-    for (const bad of ['0', '-5', 'abc', '', 'NaN', 'Infinity']) {
-        assert.ok(profile.parseValue('quota.week', bad).error, JSON.stringify(bad));
+test('quota.week and quota.calibrated are gone: parseValue calls them unknown keys', () => {
+    for (const k of ['quota.week', 'quota.calibrated']) {
+        assert.match(profile.parseValue(k, '2000').error, /^unknown key: /, k);
+        assert.equal(profile.KEYS[k], undefined, k);
     }
-    assert.ok(!Object.keys(profile.WIZARD_KEYS).includes('quota.week'));
-});
-
-test('quota.calibrated takes a real YYYY-MM-DD day, and stays off the wizard', () => {
-    assert.equal(profile.parseValue('quota.calibrated', ' 2026-10-04 ').value, '2026-10-04');
-    for (const bad of ['2026-02-30', '2026-13-01', '10-04', '', 'yesterday', '2026-10-4']) {
-        assert.ok(profile.parseValue('quota.calibrated', bad).error, JSON.stringify(bad));
-    }
-    assert.ok(profile.KEYS['quota.calibrated']);
-    assert.ok(!Object.keys(profile.WIZARD_KEYS).includes('quota.calibrated'));
 });
 
 // docs/90-agent/plans/2026-10-15-init-quick-setup-design.md §2.
