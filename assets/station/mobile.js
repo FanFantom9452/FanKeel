@@ -768,7 +768,7 @@
     }
     function shotsHtml(names, img) {
         return '<span class="shots">' + names.map(function (n) {
-            return '<img class="shot" loading="lazy" alt="' + t('chat.shot') + '" src="/phone/img?root=' + encodeURIComponent(img.root) + '&amp;id=' + encodeURIComponent(img.id) + '&amp;name=' + encodeURIComponent(n) + '">';
+            return '<img class="shot" loading="lazy" alt="' + t('chat.shot') + '" src="' + (img.via || '') + '/phone/img?root=' + encodeURIComponent(img.root) + '&amp;id=' + encodeURIComponent(img.id) + '&amp;name=' + encodeURIComponent(n) + '">';
         }).join('') + '</span>';
     }
 
@@ -870,7 +870,7 @@
 
     // What .cv holds: the conversation, the steps, and the state's own last
     // card — the one part a poll redraws while the bar below stays.
-    function cvInner(p, at, u) {
+    function cvInner(p, at, u, pre) {
         var turns = turnsOf(p.chat);
         var live = p.state === 'running' || p.state === 'gate';
         var lastPhone = -1;
@@ -882,7 +882,7 @@
         var out = turns.map(function (g, i) {
             if (g.kind === 'steps') return stepsHtml(g, openLast && i === turns.length - 1, at, u.open);
             if (g.role !== 'desktop' && g.role !== 'phone' && g.role !== 'assistant') return '';
-            return bubble(g.role, g.text, g.at, i === lastPhone ? ic('check') + t('chat.sent') : '', fold(i), { root: p.root, id: p.id });
+            return bubble(g.role, g.text, g.at, i === lastPhone ? ic('check') + t('chat.sent') : '', fold(i), { root: p.root, id: p.id, via: pre });
         }).join('');
         if (p.state === 'running' && !openLast) {
             var start = null;
@@ -890,7 +890,7 @@
             out += '<div class="work" role="status"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><b>' + t('chat.work') + '</b>'
                 + (start !== null ? '<span class="mono">' + esc(ago(at - start)) + '</span>' : '') + '</div>';
         }
-        if (p.waiting) out += bubble('phone', p.waiting.text, p.waiting.at, t('chat.queued'), null, { root: p.root, id: p.id });
+        if (p.waiting) out += bubble('phone', p.waiting.text, p.waiting.at, t('chat.queued'), null, { root: p.root, id: p.id, via: pre });
         if (p.state === 'background') out += bgPanel(p.background || [], at);
         if (p.state === 'idle') out += '<p class="ev"><span>' + ic('pause') + t('home.stopped') + '</span></p>';
         if (p.state === 'gate') out += diagramsHtml(p) + gateCard(p, at, u);
@@ -1121,7 +1121,8 @@
 
     // One session: its header, the TokenBar and the pane tabs on top, then the pane; 對話 keeps
     // the gate pin, the composer or the attach / idle card. No tab bar: it is a drill-down.
-    function chatHtml(m, id, at, u, P, pane) {
+    function peerPre(m, machine) { return here(m, { machine: machine }) ? '' : '/station/peer/' + encodeURIComponent(machine); }
+    function chatHtml(m, id, at, u, P, pane, machine) {
         var row = (m.tasks || []).concat(m.stopped || []).filter(function (x) { return x.id === id; })[0];
         // Until its phone.json arrives, the session's mobile.json row stands in.
         var p = P || (row ? Object.assign({}, row, { chat: row.last ? [row.last] : [], waiting: null, gate: null }) : null);
@@ -1144,7 +1145,7 @@
                     + t(p.state === 'background' ? 'att.bg' : 'att.run') + '</p></div>';
             }
             body = (p.state === 'gate' && p.gate ? gpinHtml(p, at, u) : '')
-                + '<div class="cv" role="log" aria-label="' + t('chat.log') + '">' + cvInner(p, at, u) + '</div>'
+                + '<div class="cv" role="log" aria-label="' + t('chat.log') + '">' + cvInner(p, at, u, peerPre(m, machine)) + '</div>'
                 + (u.note ? '<p class="note" role="status">' + esc(u.note) + '</p>' : '') + bottom;
         } else {
             body = '<div class="ov" data-block="m-pane-' + pane + '" role="region" aria-label="' + t('pn.' + pane) + '">' + paneInner(p, pane, at, u, m) + '</div>';
@@ -1177,7 +1178,7 @@
             + '<a href="' + to + 'events"' + (pane === 'events' ? ' aria-current="page"' : '') + '>' + ic('zap') + '<span>' + t('pn.events') + '</span></a></nav></div>';
         var body = pane === 'events'
             ? '<div class="ov" data-block="m-pane-events" role="region" aria-label="' + t('pn.events') + '">' + eventsInner(p, at, u) + '</div>'
-            : '<div class="cv" role="log" aria-label="' + t('chat.log') + '" data-block="session-chat-unregistered"><p class="uwhy">' + ic('info') + '<span>' + t('ur.uwhy') + '</span></p>' + cvInner(p, at, u) + '</div>';
+            : '<div class="cv" role="log" aria-label="' + t('chat.log') + '" data-block="session-chat-unregistered"><p class="uwhy">' + ic('info') + '<span>' + t('ur.uwhy') + '</span></p>' + cvInner(p, at, u, peerPre(m, machine)) + '</div>';
         var foot = '<div class="ufoot" data-block="session-foot-unregistered"><p>' + ic('eye') + '<span>' + t(p.bridge ? 'ur.footRc' : 'ur.foot') + '</span></p>'
             + (p.bridge ? '<a class="ghost" href="https://claude.ai/code" target="_blank" rel="noopener">' + ic('out') + t('ur.app') + '</a>' : '') + '</div>';
         return '<div class="pg dt" data-block="m-unreg">' + head + peerNote(u) + body + foot + '</div>';
@@ -1268,7 +1269,7 @@
         var m = M || {};
         var r = R || parseRoute('');
         var at = num(now) ? now : Date.now();
-        if (r.view === 'chat') return chatHtml(m, r.id, at, u, P, r.pane || 'talk');
+        if (r.view === 'chat') return chatHtml(m, r.id, at, u, P, r.pane || 'talk', r.machine);
         if (r.view === 'unreg') return unregHtml(m, r, at, u, P);
         var v = Object.assign({}, u, { pick: r.pick || null });
         var sheet = u.sheet ? sheetHtml(m, at, v) : '';
@@ -1626,7 +1627,7 @@
             var talk = !R.pane || R.pane === 'talk';
             var end = c.scrollHeight - c.scrollTop - c.clientHeight < 48;
             var keep = keepOpen(c);
-            c.innerHTML = talk ? cvInner(st.P, at, st.ui) : paneInner(st.P, R.pane, at, st.ui, st.M);
+            c.innerHTML = talk ? cvInner(st.P, at, st.ui, peerPre(st.M, R.machine)) : paneInner(st.P, R.pane, at, st.ui, st.M);
             keep(c);
             if (talk) drawDiagrams();
             var tk = d.querySelector('.tkb');

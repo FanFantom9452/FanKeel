@@ -46,3 +46,20 @@ test('English labels the thumbnail', () => {
         assert.ok(html.includes('alt="Photo sent"'));
     } finally { P.setLang('zh'); }
 });
+
+test('a peer session draws its thumbnails through that computer\'s prefix', () => {
+    const html = P.screen(HOME, P.parseRoute('#/m/lab/aaaaaaaa-5'), NOW, { mode: 'app', open: {} }, sess({ machine: 'lab', chat: [{ role: 'phone', text: '[圖片] ' + POSIX, at: NOW }] }));
+    assert.ok(html.includes('src="/station/peer/lab/phone/img?root=%2Fw&amp;id=aaaaaaaa-5&amp;name='), html.slice(html.indexOf('<img')));
+});
+
+test('forward passes GET /phone/img on to the paired computer', async () => {
+    const peers = require('../lib/peers.js');
+    const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fk-img-'));
+    fs.mkdirSync(path.join(dir, 'fankeel'));
+    fs.writeFileSync(path.join(dir, 'fankeel', 'peers.json'), JSON.stringify({ peers: [{ dnsName: 'lab.ts.net', name: 'lab', token: 'T', paired: 1, seen: null, last: null }] }));
+    const calls = [];
+    const got = await peers.forward(dir, 'lab', 'GET', '/phone/img?root=%2Fw&id=a&name=b.png', {}, null, async (o) => { calls.push(o); return { status: 200, headers: { 'content-type': 'image/png' }, body: Buffer.from('x') }; });
+    assert.equal(got.status, 200);
+    assert.equal(calls.length, 1);
+});
