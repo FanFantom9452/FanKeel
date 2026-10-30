@@ -296,14 +296,11 @@ function main(raw) {
         if (!gate) skip = skipReason({ stage: mine.stage, controlled, agents, inflight: runningMark(mine, mine.stage), handoff: file });
     } catch (e) { /* housekeeping */ }
 
-    // No file gate to check against at all — missing file, unreadable, or the
-    // stage is not controlled. Silent before 2026-09-24, so a question that was
-    // never checked left no trace of which condition failed. A message, not a
-    // decision: the question still goes out.
     // A judgement waiting on a person (`ask human:`, lib/askhuman.js): its
     // questions go out verbatim or not at all. Checked before the gate, since a
     // judgement question is not the stage gate and would be judged against it.
-    const judged = askhuman.pendingFor(root, payload.session_id);
+    let judged = null;
+    try { judged = askhuman.pendingFor(root, payload.session_id); } catch (e) { /* housekeeping */ }
     if (judged) {
         const asked = Array.isArray(payload.tool_input && payload.tool_input.questions) ? payload.tool_input.questions : [];
         const same = asked.length === judged.questions.length && asked.every((q, i) => {
@@ -312,13 +309,18 @@ function main(raw) {
                 && q.options.every((o, j) => o && o.label === want.options[j].label);
         });
         if (same) return emit({}, payload, root, mine, values);
-        if (charOverlap(asked.map(textOf).join(''), judged.questions.map(textOf).join('')) > ATTEMPT_THRESHOLD) {
+        const dropped = asked.some((q) => q && judged.questions.some((w) => w.question === q.question));
+        if (dropped || charOverlap(asked.map(textOf).join(''), judged.questions.map(textOf).join('')) > ATTEMPT_THRESHOLD) {
             refuse('fankeel: this question is not the judgement waiting on a person in ' + judged.file
                 + '. Ask its `questions` JSON verbatim — copy it word for word, do not retype or summarize it — then ask again.');
             return;
         }
     }
 
+    // No file gate to check against at all — missing file, unreadable, or the
+    // stage is not controlled. Silent before 2026-09-24, so a question that was
+    // never checked left no trace of which condition failed. A message, not a
+    // decision: the question still goes out.
     if (!gate) {
         // A patrol survey run in session owes the same line per entry as a
         // stage agent's, in a report it wrote itself at the handoff path.

@@ -147,6 +147,33 @@ test('a question unrelated to the judgement falls through to the old behaviour',
   assert.equal(out, ask(bare, UNRELATED));
 });
 
+test('identical question text with one option label altered is refused as a paraphrase', () => {
+  const root = tmp('fankeel-gate-askhuman-');
+  seed(root);
+  judgement(root);
+  const altered = JSON.parse(JSON.stringify(VERBATIM));
+  altered[0].options[0].label = '保留';
+  assert.ok(refusal(ask(root, altered)), 'expected a refusal');
+});
+
+test('a two-question judgement asked with one question dropped is refused', () => {
+  const root = tmp('fankeel-gate-askhuman-');
+  seed(root);
+  judgement(root);
+  assert.ok(refusal(ask(root, [VERBATIM[0]])), 'expected a refusal');
+});
+
+test('a pendingFor that throws falls through to the old behaviour, no crash', () => {
+  const root = tmp('fankeel-gate-askhuman-');
+  seed(root);
+  fs.mkdirSync(path.join(root, 'docs', 'judgements', 'broken.md'), { recursive: true });
+  const bare = tmp('fankeel-gate-askhuman-bare-');
+  seed(bare);
+  const out = ask(root, PARAPHRASE);
+  assert.equal(refusal(out), null, out);
+  assert.equal(out, ask(bare, PARAPHRASE));
+});
+
 test('no pending judgement, or one already answered, lets a paraphrase fall through', () => {
   const none = tmp('fankeel-gate-askhuman-');
   seed(none);
