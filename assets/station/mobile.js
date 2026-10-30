@@ -45,6 +45,7 @@
             'gpin.go': '看選項', 'rep.more': '展開完整報告', 'rep.less': '收起報告',
             'gate.pick': '選一個答案', 'gate.pickMany': '可以選幾個', 'gate.own': '自己寫答案…', 'gate.rec': '建議', 'gate.send': '送出答案',
             'gate.sending': '送出中…', 'gate.sent': '送出了，等 Claude 接著做', 'gate.needAll': '每一題都要有答案',
+            'dg.label': '報告裡的流程圖', 'dg.hint': '點圖上的方塊標記它，標記會寫進下面「自己寫答案」', 'dg.marked': '標記：',
             'ph.list': '要附上的照片', 'ph.alt': '第 {n} 張照片', 'ph.x': '拿掉第 {n} 張', 'ph.add': '加照片，還能加 {n} 張', 'ph.over': '最多 {n} 張：多選的沒有加進來',
             'ph.lim': '最多 {n} 張 · 自動縮到 {px}px', 'ph.limWhy': '每張在手機上先縮成長邊 {px}px 的 JPEG（品質 {q}），通常 300–600 KB。這是 Claude 讀圖的大小，再大只多花上傳時間和 token。單張上傳上限 10 MB。',
             'ph.pick': '加照片，一次可選多張', 'ph.up': '上傳中 {n}%', 'ph.wait': '第 {n} 張還在上傳，傳完才能送出',
@@ -116,6 +117,7 @@
             'gpin.go': 'See options', 'rep.more': 'Show the full report', 'rep.less': 'Collapse the report',
             'gate.pick': 'Pick one answer', 'gate.pickMany': 'Pick any number', 'gate.own': 'Write your own answer…', 'gate.rec': 'Recommended', 'gate.send': 'Send answer',
             'gate.sending': 'Sending…', 'gate.sent': 'Sent; Claude carries on', 'gate.needAll': 'Every question needs an answer',
+            'dg.label': 'Diagrams in the report', 'dg.hint': 'Tap a box on the diagram to mark it; the marks go into "Write your own answer" below', 'dg.marked': 'Marked: ',
             'ph.list': 'Photos to attach', 'ph.alt': 'Photo {n}', 'ph.x': 'Remove photo {n}', 'ph.add': 'Add photos, {n} more allowed', 'ph.over': 'Up to {n} photos: the extra ones were not added',
             'ph.lim': 'Up to {n} · shrunk to {px}px', 'ph.limWhy': 'Each photo is shrunk on the phone to a {px}px long edge as JPEG (quality {q}), usually 300-600 KB. That is the size Claude reads images at; larger only costs upload time and tokens. One upload is capped at 10 MB.',
             'ph.pick': 'Add photos, several at once', 'ph.up': 'Uploading {n}%', 'ph.wait': 'Photo {n} is still uploading; send once it is done',
@@ -831,6 +833,24 @@
             }).join('') + '</ol><p class="bgp-f">' + ic('cc') + t('bg.foot') + '</p></section>';
     }
 
+    // diagram.js (FK_DIAGRAM): the window global on the page, the file beside this one under node's tests.
+    function DG() {
+        var dg = w && w.FK_DIAGRAM ? w.FK_DIAGRAM : typeof require === 'function' ? require('./diagram.js') : null;
+        // diagram.js words its buttons from FK_I18N.lang; this page loads no i18n.js, so the language is ours.
+        if (w && dg) w.FK_I18N = { lang: lang };
+        return dg;
+    }
+
+    // The gate report's mermaid diagrams (phone.json `diagrams`, lib/mobile.js), over the gate card:
+    // drawn after the page is written (drawDiagrams), a tap on a node marks it into the card's own box.
+    function diagramsHtml(p) {
+        var list = (p.diagrams || []).filter(function (x) { return x && typeof x.code === 'string'; });
+        var dg = DG();
+        if (!list.length || !dg) return '';
+        return '<section class="gc-dg" data-block="m-gate-diagrams" aria-label="' + t('dg.label') + '"><p class="gc-dgh">' + ic('gate') + t('dg.hint') + '</p>'
+            + list.map(function (x) { return dg.fence(x.code, x.line); }).join('') + '</section>';
+    }
+
     function gateCard(p, at, u) {
         var g = p.gate || {};
         var body = (g.questions || []).map(function (q, qi) {
@@ -873,7 +893,7 @@
         if (p.waiting) out += bubble('phone', p.waiting.text, p.waiting.at, t('chat.queued'), null, { root: p.root, id: p.id });
         if (p.state === 'background') out += bgPanel(p.background || [], at);
         if (p.state === 'idle') out += '<p class="ev"><span>' + ic('pause') + t('home.stopped') + '</span></p>';
-        if (p.state === 'gate') out += gateCard(p, at, u);
+        if (p.state === 'gate') out += diagramsHtml(p) + gateCard(p, at, u);
         return out;
     }
 
@@ -1514,6 +1534,31 @@
                 Array.prototype.forEach.call(to && to.querySelectorAll ? to.querySelectorAll('details') : [], function (x) { if (opened[x.getAttribute('data-k')]) x.setAttribute('open', ''); });
             };
         }
+        // The one 標記 line the marks own in question 1's own box, as the desktop gate page writes it
+        // (assets/station/gate-frame.js markLine); the reader's other lines stay, and no marks removes the line.
+        function markText(text, list) {
+            var lines = String(text || '').split('\n'), at = -1, head = t('dg.marked');
+            var line = list.length ? head + list.map(function (m) { return m.id + '「' + m.label + '」'; }).join('、') : null;
+            lines.forEach(function (l, i) { if (at < 0 && (l.indexOf('標記：') === 0 || l.indexOf('Marked: ') === 0)) at = i; });
+            if (at >= 0 && line === null) lines.splice(at, 1);
+            else if (at >= 0) lines[at] = line;
+            else if (line !== null) return text + (text && !/\n$/.test(text) ? '\n' : '') + line;
+            return lines.join('\n');
+        }
+        function writeMarks(list) {
+            var own = d.querySelector ? d.querySelector('#gc-own0') : null;
+            if (!own) return;
+            own.value = markText(own.value, list);
+            typed({ target: own, type: 'input' });
+        }
+        // After .cv is written: the figures over the gate card drawn, with the nodes this gate had marked put back.
+        function drawDiagrams() {
+            var dg = DG(), root = d.querySelector ? d.querySelector('.gc-dg') : null;
+            if (!dg || !root) return;
+            var marks = st.ui.marks || [];
+            dg.draw(root, { mark: true, marked: marks, onMark: function (list) { st.ui.marks = list; writeMarks(list); } });
+            if (marks.length) writeMarks(marks);
+        }
         function draw() {
             stopScan();
             if (st.rec) st.rec.stop();
@@ -1521,13 +1566,14 @@
             // Rows are kept only while the same session stays on screen.
             var keep = c && R.view === 'chat' && st.shown === R.id ? keepOpen(c) : null;
             var gk = gateKey(R.view === 'chat' ? current() : null);
-            if (gk !== st.gk) { st.ui.pin = false; st.gk = gk; }
+            if (gk !== st.gk) { st.ui.pin = false; st.ui.marks = []; st.gk = gk; }
             var html = screen(st.M, R, Date.now(), st.ui, talking(R) && st.P && st.P.id === R.id ? st.P : null);
             app.innerHTML = html;
             st.cut = LISTS[R.view] ? cut(html) : null;
             st.listed = st.cut ? listKey(R) : null;
             st.shown = R.view === 'chat' ? R.id : null;
             if (keep) keep(cv());
+            drawDiagrams();
             if (st.ui.mode === 'pair') scan();
             if (talking(R) && R.pane === 'talk') toEnd();
         }
@@ -1582,6 +1628,7 @@
             var keep = keepOpen(c);
             c.innerHTML = talk ? cvInner(st.P, at, st.ui) : paneInner(st.P, R.pane, at, st.ui, st.M);
             keep(c);
+            if (talk) drawDiagrams();
             var tk = d.querySelector('.tkb');
             if (tk) tk.innerHTML = tokenInner(st.P, at, st.ui);
             if (end && talk) toEnd();
