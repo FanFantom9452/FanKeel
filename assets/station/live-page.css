@@ -124,3 +124,6 @@ a.sxr:focus-visible>.sx-pk{visibility:visible;opacity:1;transition:none}
    indented past the glyph so it reads as the row's own. */
 .sx-wsubs>.sx-subs{margin:0 0 6px 34px;padding:6px 0 2px;border-top:1px dashed var(--grid)}
 .dlist>.sx-wsubs:first-child>.hm-lv{border-top:0}
+
+.sx-subs .sa{grid-template-columns:minmax(0,196px) minmax(0,170px) minmax(0,1fr) 52px}
+@media (max-width:560px){.sx-subs .sa{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"ty ch" "de de"}.sx-subs .sa>:nth-child(1){grid-area:ty}.sx-subs .sa>:nth-child(2){grid-area:ch}.sx-subs .sa>:nth-child(3){grid-area:de}.sx-subs .sa>:nth-child(4){display:none}}
