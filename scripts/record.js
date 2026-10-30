@@ -12,9 +12,7 @@ const { parseArgs: parseArgv } = require('node:util');
 const registry = require('../lib/registry.js');
 const docs = require('../lib/docs.js');
 const plain = require('../lib/plain.js');
-const usage = require('../lib/usage.js');
-const detail = require('../lib/detail.js');
-const prices = require('../lib/prices.js');
+const { sessionCost } = require('../lib/session-cost.js');
 const live = require('../lib/live.js');
 const bundle = require('../lib/bundle.js');
 const sensitive = require('../lib/sensitive.js');
@@ -92,17 +90,11 @@ const short = (id) => String(id).replace(/^claude-/, '');
 // the same transcript, plus the time since the task started.
 function costLine(data, sessionId, configDir, now) {
     const time = duration(now - Date.parse(data.started));
-    const file = detail.transcriptOf(configDir, sessionId);
-    const seen = file ? usage.summariseTree(file) : null;
+    const seen = sessionCost(configDir, sessionId);
     if (!seen) return '對話紀錄找不到，金額沒算；從開始到現在 ' + time + '。';
-    const own = prices.costOf(seen.usage.models);
-    const sub = seen.usage.subagents || null;
-    const theirs = sub && sub.models ? prices.costOf(sub.models) : null;
-    const usd = (own.priced.length ? own.usd : 0) + (theirs && theirs.priced.length ? theirs.usd : 0);
-    const agents = sub ? sub.agents || 0 : 0;
-    const models = sub && sub.models ? Object.keys(sub.models).map(short) : [];
+    const models = seen.agentModels.map(short);
     const who = seen.model ? '主 session ' + short(seen.model) + (models.length ? '，agent 用 ' + models.join('、') : '') : '';
-    return '$' + usd.toFixed(2) + '，' + time + '，' + agents + ' 個 agent' + (who ? '（' + who + '）' : '') + '。';
+    return '$' + seen.usd.toFixed(2) + '，' + time + '，' + seen.agents + ' 個 agent' + (who ? '（' + who + '）' : '') + '。';
 }
 
 function section(title, day, anchor, fields, corrected) {
