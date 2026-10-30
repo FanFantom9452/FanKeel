@@ -209,7 +209,7 @@ itself, so no view filters a second time. Every aggregation that walks
 `model.registries` instead carries its own check, and a new one has to:
 the live/stale/down counts `write()` returns for the terminal summary
 (`lib/station.js:1216`, `if (hidden.has(s.project ? r.root + '/' + s.project : r.root)) continue;`),
-the fourth card's gate tally
+the sixth card's gate tally
 (`lib/station.js:828`, `if (hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))) continue;`),
 the `docs` list `serialize()` hands the page for the 文件 card
 (`lib/station.js:944`, `docs: (r.docs || []).filter((d) => !hidden.has(d.pkey)),`),
@@ -1017,7 +1017,7 @@ however it was dressed. Unlike the other
 five, it does not move with the range or the search box: it is
 counted once, across every shown session's gate answers
 (`lib/station.js:962`, `gates: gateSummary(model, hidden),`), not from the
-filtered set the other three sum. It walks the model rather than
+filtered set that tokens, active time and waiting ratio sum. It walks the model rather than
 `flatten()`'s output, so it takes the hidden set as an argument and skips
 those sessions itself
 (`lib/station.js:828`, `if (hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))) continue;`).
