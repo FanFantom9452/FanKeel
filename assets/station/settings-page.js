@@ -131,7 +131,7 @@
         'sq.railH': 'Quick setup', 'sq.railS': '5 groups · about 1 minute', 'sq.railIx': 'Groups of the quick setup',
         'sq.nChg': '{n} changes', 'sq.noChg': 'No changes', 'sq.proj': 'Project',
         'sq.noProject': 'No project to set up yet: start a fankeel task in a project first.', 'sq.noDetail': 'The detailed settings are not loaded.',
-        'sq.nHold': 'Phone wait', 'sq.nQuota': 'Weekly quota', 'sq.nUiLang': 'Interface language', 'sq.scopeG': 'GLOBAL', 'sq.scopeP': 'PROJECT', 'sq.scopeAria': 'What the settings apply to', 'sq.gSub': 'This machine · {n} items', 'sq.pSub': '{n} projects',
+        'sq.nHold': 'Phone wait', 'sq.nUiLang': 'Interface language', 'sq.scopeG': 'GLOBAL', 'sq.scopeP': 'PROJECT', 'sq.scopeAria': 'What the settings apply to', 'sq.gSub': 'This machine · {n} items', 'sq.pSub': '{n} projects',
         'sq.pq': 'Find a project: any part of the path', 'sq.pqAria': 'Find a project', 'sq.projList': 'Projects',
         'sq.pqNone': 'No project path has that text; clear the box to list them all.',
         'sq.gWhere': 'Written to this machine; every project reads it', 'sq.gRailS': '{n} items · one screen', 'sq.gIx': 'Settings of this machine',
@@ -144,9 +144,6 @@
         'sq.gHoldY': 'After each turn the Stop hook waits this long for the phone\'s next message; past it, the session goes back to the computer.',
         'sq.gHoldDef': '30 minutes', 'sq.gHoldDefE': 'Unset, it is 1800 seconds', 'sq.gHold10': '10 minutes', 'sq.gHold10E': 'Step away longer and the computer takes over',
         'sq.gHoldCustom': 'Your own seconds', 'sq.gHoldCustomE': '1 to 1800 seconds', 'sq.gHoldSecs': 'Seconds, 1 to 1800',
-        'sq.gQuotaT': 'What does one week of your quota come to in US dollars?',
-        'sq.gQuotaY': 'Once set, the station adds a share after amounts on every page but the spend page, which shows plain amounts. node scripts/quota.js can calibrate it from the pane\'s recorded limits readings and writes this very key. A project file that sets it wins.',
-        'sq.gQuotaPh': 'e.g. 3000', 'sq.gQuotaFn': 'Empty is unset: no share after amounts',
         'sq.gLangT': 'What language should the station and panels use?',
         'sq.gLangY': 'The same setting as the globe at the top right; either one changes both. Panels and the band switch on their next update.',
         'sq.gLangZh': 'Chinese', 'sq.gLangZhE': 'Whatever the browser says, Chinese', 'sq.gLangEnE': 'Station, panels and band all in English',
@@ -160,7 +157,7 @@
     }
     function esc(s) { return kit().esc(s); }
 
-    var MACHINE = ['station.remote', 'phone.hold', 'ui.lang', 'quota.week'];
+    var MACHINE = ['station.remote', 'phone.hold', 'ui.lang'];
     var AUTHOR = { main: 'merge', push: 'false', sessions: 'some', inflight: '8', ctx: 'rw', lang: 'en', gates: 'survey', floor: 'sonnet', screen: 'opus', where: 'term' };
     // model.lang's value is the language's own name, written untranslated; spelt in code points
     // because a Chinese literal outside loc() fails stringsLeft (tests/station-module.js).
@@ -654,7 +651,7 @@
             + (g ? '<p class="sq-where"><span>' + loc('sq.gWhere', '寫進這台機器，每個專案都讀得到') + '</span><code>' + esc(machineFile(o)) + '</code></p>' : dirs.length ? pickHtml(dirs) : '') + '</div>';
     }
 
-    // ---- GLOBAL: the four MACHINE keys, one screen ----
+    // ---- GLOBAL: the three MACHINE keys, one screen ----
     function gqs() {
         var W = function (k, v) { var r = {}; r[k] = v; return r; };
         return [
@@ -667,8 +664,6 @@
                     O('', loc('sq.gHoldDef', '30 分鐘'), loc('sq.gHoldDefE', '不設時就是 1800 秒'), null, W('phone.hold', '')),
                     O('600', loc('sq.gHold10', '10 分鐘'), loc('sq.gHold10E', '走開久一點，電腦就接回去'), null, W('phone.hold', '600')),
                     O('custom', loc('sq.gHoldCustom', '自訂秒數'), loc('sq.gHoldCustomE', '1 到 1800 秒'), null, W('phone.hold', '$in'))] },
-            { id: 'quota', k: 'quota.week', n: loc('sq.nQuota', '一週額度'), title: loc('sq.gQuotaT', '你一週的額度等於多少美元？'), money: true,
-                why: loc('sq.gQuotaY', '填了之後，監控站在花費頁以外的金額後面接上佔比；花費頁只顯示金額。node scripts/quota.js 能從 pane 記下的額度讀數自動校準，寫的就是這一項。專案檔也設了時，以專案為準。') },
             { id: 'lang', k: 'ui.lang', n: loc('sq.nUiLang', '介面語言'), only: true, title: loc('sq.gLangT', '監控站和面板用什麼語言？'),
                 why: loc('sq.gLangY', '跟右上角地球是同一個設定，改哪邊都一樣；面板和 band 下一次更新就換過去。'), opts: [
                     O('zh', loc('sq.gLangZh', '中文'), loc('sq.gLangZhE', '不管瀏覽器，一律中文'), null, W('ui.lang', 'zh')),
@@ -679,7 +674,6 @@
     function gval(S, k) { return has(view.g, k) ? view.g[k] : cur(S, null, k); }
     function gOk(k, v) {
         if (k === 'phone.hold') { var secs = /^\d+$/.test(v) && Number(v) >= 1 && Number(v) <= 1800; return view.hc ? secs : v === '' || secs; }
-        if (k === 'quota.week') return v === '' || (/^\d+(\.\d+)?$/.test(v) && Number(v) > 0);
         if (k === 'station.remote') return v === 'true' || v === 'false';
         return v === '' || v === 'zh' || v === 'en';
     }
@@ -694,7 +688,6 @@
     function gNow(S, k) {
         var v = cur(S, null, k);
         if (k === 'phone.hold') return v === '' ? loc('sq.gHoldDef', '30 分鐘') : v === '600' ? loc('sq.gHold10', '10 分鐘') : v;
-        if (k === 'quota.week') return v === '' ? loc('sq.unset', '未設') : '$' + v;
         if (k === 'ui.lang') return v === 'zh' ? loc('sq.gLangZh', '中文') : v === 'en' ? 'English' : loc('sq.gLangAuto', '不設');
         return lab(k, v);
     }
@@ -702,15 +695,10 @@
         return view.busy ? loc('sq.writing', '寫入中⋯') : view.wrote && !n ? loc('sq.wroteAll', '已寫入') : n ? loc('sq.writeN', '寫入 {n} 項', { n: n }) : loc('sq.nothing', '沒有要寫的');
     }
     function gQHtml(S, q) {
-        var sel = gSel(S, q), body;
-        if (q.money) {
-            body = '<div class="sq-money"><span class="v9-in"><span aria-hidden="true">$</span><input id="sqgi-quota" data-gin="quota.week" inputmode="decimal" aria-labelledby="sqgq-quota" value="' + esc(gval(S, q.k))
-                + '" placeholder="' + esc(loc('sq.gQuotaPh', '例如 3000')) + '" autocomplete="off"></span><span class="sq-fn">' + loc('sq.gQuotaFn', '空著就是不設：金額後面不接佔比') + '</span></div>';
-        } else {
-            body = optHtml(q, sel, null, null, 'sqg') + (sel === 'custom' && q.k === 'phone.hold'
-                ? '<div class="sq-money"><span class="v9-in"><input id="sqgi-hold" data-gin="phone.hold" inputmode="numeric" value="' + esc(gval(S, q.k)) + '" aria-label="' + esc(loc('sq.gHoldSecs', '秒數，1 到 1800'))
-                    + '" autocomplete="off"></span><span class="sq-fn">' + loc('sq.gHoldSecs', '秒數，1 到 1800') + '</span></div>' : '');
-        }
+        var sel = gSel(S, q);
+        var body = optHtml(q, sel, null, null, 'sqg') + (sel === 'custom' && q.k === 'phone.hold'
+            ? '<div class="sq-money"><span class="v9-in"><input id="sqgi-hold" data-gin="phone.hold" inputmode="numeric" value="' + esc(gval(S, q.k)) + '" aria-label="' + esc(loc('sq.gHoldSecs', '秒數，1 到 1800'))
+                + '" autocomplete="off"></span><span class="sq-fn">' + loc('sq.gHoldSecs', '秒數，1 到 1800') + '</span></div>' : '');
         return '<div class="qk-q sq-q" data-block="global-q-' + q.id + '" id="sqg-' + q.id + '" data-gq="' + q.k + '"><div class="qk-qh"><h3 class="qk-qt" id="sqgq-' + q.id + '">' + esc(q.title) + '</h3>'
             + (q.only ? '<span class="sq-only">' + loc('sq.gOnly', '只讀這台機器') + '</span>' : '') + helpHtml('sqgh-' + q.id, esc(q.why), loc('sq.whyAsk', '為什麼問這題')) + '</div>'
             + body + (q.note ? '<p class="sq-note">' + esc(q.note) + '</p>' : '') + '</div>';

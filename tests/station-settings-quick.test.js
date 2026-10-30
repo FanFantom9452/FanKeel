@@ -353,10 +353,10 @@ test('#/settings/detail goes to FK_SETDETAIL', () => {
 test('the shared table: ten questions in screen order, key names, labels, the merged value as a string', () => {
     const { Q, S } = boot();
     assert.deepEqual([...Q.questions().map((q) => q.id)], ['main', 'push', 'sessions', 'inflight', 'ctx', 'lang', 'gates', 'floor', 'screen', 'where']);
-    assert.deepEqual([...Q.MACHINE], ['station.remote', 'phone.hold', 'ui.lang', 'quota.week']);
+    assert.deepEqual([...Q.MACHINE], ['station.remote', 'phone.hold', 'ui.lang']);
     assert.equal(Q.NAME('land.push'), '推不推遠端');
     assert.equal(Q.NAME['land.push'], '推不推遠端');
-    assert.equal(Q.NAME('quota.week'), 'quota.week');
+    assert.equal(Q.NAME('weekly.roots'), 'weekly.roots');
     assert.equal(Q.lab('land.push', ''), '每次問');
     assert.equal(Q.lab('guard', 'deny'), '擋下');
     assert.equal(Q.lab('commit.format', ''), '未設');

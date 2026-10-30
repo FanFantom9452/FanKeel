@@ -136,13 +136,14 @@ test('the trigger is disabled while a write is in flight, so a switch cannot dro
     await tick(); await tick(); await tick();
 });
 
-test('GLOBAL draws the four machine questions and not the quick setup', () => {
+test('GLOBAL draws the three machine questions and not the quick setup', () => {
     const b = boot();
     click(b.Q, [{ 'data-sq-scope': 'global' }]);
     assert.equal(b.Q.view().scope, 'global');
     const h = b.html();
     assert.match(h, /data-block="settings-scope-global"/);
-    for (const q of ['remote', 'hold', 'quota', 'lang']) assert.ok(h.includes('data-block="global-q-' + q + '"'), q);
+    for (const q of ['remote', 'hold', 'lang']) assert.ok(h.includes('data-block="global-q-' + q + '"'), q);
+    assert.ok(!h.includes('global-q-quota') && !h.includes('quota.week'), 'no weekly-quota question');
     assert.match(h, /data-gq="station.remote"[\s\S]*?aria-checked="true"[^>]*data-o="true"/, 'the machine value is the answer on');
     assert.match(h, /C:\\cfg\\fankeel\\profile\.json/);
     assert.doesNotMatch(h, /data-block="quick-page"|data-write/);

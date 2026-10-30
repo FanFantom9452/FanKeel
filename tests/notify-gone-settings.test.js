@@ -14,8 +14,8 @@ test('no settings module names notify.*, ntfy or station.chartroom', () => {
     }
 });
 
-test('the machine keys the quick page writes are the four left', () => {
+test('the machine keys the quick page writes are the three left', () => {
     global.window = undefined;
     const Q = require('../assets/station/settings-page.js');
-    assert.deepEqual([...Q.MACHINE], ['station.remote', 'phone.hold', 'ui.lang', 'quota.week']);
+    assert.deepEqual([...Q.MACHINE], ['station.remote', 'phone.hold', 'ui.lang']);
 });
