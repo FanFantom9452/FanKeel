@@ -1,9 +1,9 @@
 ---
 label: spend
 title: quota.js 真實資料成功路徑
-description: limits 記錄還沒有任何 7 天視窗內動 10 點以上，quota.js 只走到拒絕路徑；成功路徑與還原僅由合成資料測試證明 — [scripts/quota.js](scripts/quota.js).
+description: limits 記錄還沒有任何 7 天視窗內動 10 點以上，quota.js 只走到拒絕路徑；成功路徑與還原僅由合成資料測試證明 — [lib/quota.js](lib/quota.js).
 state: done
-link: scripts/quota.js
+link: lib/quota.js
 group: limits 記錄跨過一次 reset
 timing: after: `.fankeel/build/limits` 在一個 7 天視窗內 seven 累積動 10 點以上
 stamp: 2026-10-29
