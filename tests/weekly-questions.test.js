@@ -65,11 +65,11 @@ test('a bad --near, or --answered given a value, is a usage error; the flags are
     for (const k of ['--repo', '--near', '--grep', '--answered', '--session']) assert.ok(got.has(k), k);
 });
 
-test('INIT points a past report\'s question at weekly.js questions and into start --task, inside the init cap', () => {
+test('INIT points a past report\'s question at weekly.js questions and into start, inside the init cap', () => {
     const line = INIT.find((r) => r.includes('weekly.js questions'));
     assert.ok(line, 'no INIT line names weekly.js questions');
     assert.match(line, /某週週報/);
-    assert.match(line, /start --task/);
+    assert.match(line, /give it to `start`/);
     const out = renderInit({ sessionId: 'aaaaaaaa-1111-2222-3333-444444444444' });
     assert.ok(out.includes('<plugin>/scripts/weekly.js questions'));
     assert.ok(sizeAtReference(out) < 1400, 'init block is ' + sizeAtReference(out));

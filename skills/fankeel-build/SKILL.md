@@ -36,9 +36,9 @@ say so, then ask.
 
 | Looks like a finding | Why it is not |
 |---|---|
-| Dead code left in the diff, not deleted | Only dead code this change created gets removed — `lib/stages.js:312` (`Remove what your own change orphaned`); an orphan predating this task stays, named. |
-| A new ask from mid-build routed to a TODO entry instead of built | That is the routing rule working, not the ask dropped — `lib/stages.js:309` (`is one TODO entry at the detail`), not silence. |
-| A ruling recorded instead of a fifth stopper firing | `lib/stages.js:311` names deciding as the normal outcome (`Decide`) — only irreversible, security-sensitive, out-of-workspace or every-path-a-guess stop the loop. |
+| Dead code left in the diff, not deleted | Only dead code this change created gets removed — `lib/stages.js:313` (`Remove what your own change orphaned`); an orphan predating this task stays, named. |
+| A new ask from mid-build routed to a TODO entry instead of built | That is the routing rule working, not the ask dropped — `lib/stages.js:310` (`is one TODO entry at the detail`), not silence. |
+| A ruling recorded instead of a fifth stopper firing | `lib/stages.js:312` names deciding as the normal outcome (`Decide`) — only irreversible, security-sensitive, out-of-workspace or every-path-a-guess stop the loop. |
 
 Why each rule is what it is, under the same headings: [rationale.md](rationale.md).
 
