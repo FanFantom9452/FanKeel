@@ -565,7 +565,7 @@ async function look($: EngineInterface, cache: Cache, logged: Logged): Promise<S
   } catch (err) {
     logOnce($, logged, 'model', `fankeel pane: session model unreadable, ${String(err)}`)
   }
-  return { id, entry, others, pending, context, limits, plan, remote, probe, agents, shells: [], station, pkey, todos, model, effort: null, lang: 'zh' }
+  return { id, entry, init: false, others, pending, context, limits, plan, remote, probe, agents, shells: [], station, pkey, todos, model, effort: null, lang: 'zh' }
 }
 
 // How often the running shells' output files are read again: `$.fs.read` takes a file whole, and a suite's output grows every tick.
@@ -619,7 +619,7 @@ async function shellsOf($: EngineInterface, state: State, id: string, now: numbe
 type State = {
   seen: Seen
   print: string
-  // Whether a task or an init was there the last time the opens and closes for it went through.
+  // Whether a task or an init was there the last time the open for it went through.
   edge: { task: boolean }
   // Ticks in a row the registry file was unreadable.
   bad: number
