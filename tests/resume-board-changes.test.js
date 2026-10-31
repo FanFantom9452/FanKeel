@@ -25,7 +25,7 @@ function seed() {
     return { root, dir, file };
 }
 
-const GATE = [{ question: 'Survey -> Design | fankeel : t　可以進 design 嗎？', header: 'Survey', multiSelect: false, options: [{ label: 'Go to Design (Recommended)', description: 'a' }, { label: 'Stay in Survey', description: 'b' }, { label: '暫停', description: 'c' }] }];
+const GATE = [{ question: 'Survey -> Design | fankeel : t　可以進 design 嗎？', header: '→Design', multiSelect: false, options: [{ label: 'Go to Design (Recommended)', description: 'a' }, { label: 'Stay in Survey', description: 'b' }, { label: '暫停', description: 'c' }] }];
 
 // The survey handoff the controller files its answer beside; `block` false
 // leaves a handoff with no gate block, which takes the unchecked path.

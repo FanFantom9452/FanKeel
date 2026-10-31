@@ -51,7 +51,7 @@ function run(root, payload) {
 const TICKS = '`'.repeat(3);
 const QUESTIONS = [{
   question: 'Survey -> Design | fankeel : t　survey 的結論可以進 design 嗎？',
-  header: 'Survey',
+  header: '→Design',
   multiSelect: false,
   options: [{ label: 'Go to Design', description: 'a' }, { label: 'Stay in Survey', description: 'b' }, { label: '暫停', description: 'c' }],
 }];

@@ -17,7 +17,7 @@ const { handoffPath } = require('../lib/handoff.js');
 const GATE = path.join(__dirname, '..', 'hooks', 'gate.js');
 const MINE = 'eeeeeeee-0000-4000-8000-000000000005';
 const TICKS = '`'.repeat(3);
-const QUESTIONS = [{ header: 'Survey', question: 'Survey -> Plan | fankeel : t　plan?', multiSelect: false, options: [
+const QUESTIONS = [{ header: 'Survey→Plan', question: 'Survey -> Plan | fankeel : t　plan?', multiSelect: false, options: [
   { label: 'Go to Plan (Recommended)', description: 'a' }, { label: 'Stay in Survey', description: 'b' }, { label: '暫停', description: 'c' }] }];
 
 function patrol() {

@@ -28,7 +28,7 @@ function written(question) {
   const data = { task: 'fix one', stage: 'survey', route: ['survey', 'plan'], active: true,
     started: '2026-10-21T00:00:00.000Z', inflight: { stage: 'survey', at: 1758000000000, agentId: AGENT } };
   fs.writeFileSync(path.join(root, '.fankeel', 'sessions', MINE + '.json'), JSON.stringify(data));
-  const gate = { questions: [{ header: 'Survey', question: 'Survey -> Plan | fankeel : t　' + question(entry), multiSelect: false,
+  const gate = { questions: [{ header: 'Survey→Plan', question: 'Survey -> Plan | fankeel : t　' + question(entry), multiSelect: false,
     options: [{ label: 'Go to Plan (Recommended)', description: 'a' }, { label: 'Stay in Survey', description: 'b' }, { label: 'pause', description: 'c' }] }], next: 'plan' };
   const file = handoffPath(root, data, 'survey');
   fs.mkdirSync(path.dirname(file), { recursive: true });

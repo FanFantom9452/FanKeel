@@ -8,7 +8,7 @@ const todo = require('../lib/todo.js');
 const { readGate, isPatrol, patrolEntries, patrolProblem, reportProblem } = require('../lib/handoff.js');
 
 const TICKS = '`'.repeat(3);
-const GATE = { questions: [{ header: 'Survey', question: 'Survey -> Plan | fankeel : t　plan?', multiSelect: false, options: [{ label: 'Go to Plan (Recommended)', description: 'a' }, { label: 'Stay in Survey', description: 'b' }, { label: 'pause', description: 'c' }] }], next: 'plan' };
+const GATE = { questions: [{ header: 'Survey→Plan', question: 'Survey -> Plan | fankeel : t　plan?', multiSelect: false, options: [{ label: 'Go to Plan (Recommended)', description: 'a' }, { label: 'Stay in Survey', description: 'b' }, { label: 'pause', description: 'c' }] }], next: 'plan' };
 const ROUTE = ['survey', 'plan', 'build', 'verify', 'land'];
 const ENTRIES = [{ id: 'docs-1', title: '流程圖' }, { id: 'docs-12', title: '另一頁' }, { id: 'test-8', title: '認可上限' }];
 const file = (report) => {

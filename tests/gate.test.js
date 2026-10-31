@@ -57,7 +57,7 @@ test('a gate typed in the old all-capitals form is refused with the new form nam
   const old = [{ question: 'SURVEY -> DESIGN | fankeel : t　survey 的結論？', header: 'SURVEY', multiSelect: false, options: [{ label: 'Go to DESIGN', description: 'a' }, { label: 'Stay in SURVEY', description: 'b' }, { label: '暫停', description: 'c' }] }];
   const { formatProblem } = require('../lib/handoff.js');
   const bad = formatProblem({ questions: old }, 'design', ['survey', 'design']);
-  assert.equal(bad.at, 'questions[0].header');
+  assert.equal(bad.at, 'questions[0].question');
   assert.match(bad.detail, /first letter capital/);
 });
 
@@ -134,7 +134,7 @@ function handoff(root, gate) {
   const TICKS = '`'.repeat(3);
   fs.writeFileSync(file, '# report\n\n' + TICKS + 'json gate\n' + JSON.stringify(gate) + '\n' + TICKS + '\n');
 }
-const QUESTIONS = [{ question: 'Survey -> Design | fankeel : t　survey 的結論可以進 design 嗎？', header: 'Survey', multiSelect: false, options: [{ label: 'Go to Design', description: 'a' }, { label: 'Stay in Survey', description: 'b' }, { label: '暫停', description: 'c' }] }];
+const QUESTIONS = [{ question: 'Survey -> Design | fankeel : t　survey 的結論可以進 design 嗎？', header: '→Design', multiSelect: false, options: [{ label: 'Go to Design', description: 'a' }, { label: 'Stay in Survey', description: 'b' }, { label: '暫停', description: 'c' }] }];
 // What the controller now sends when it does its job correctly: an exact
 // copy of the handoff file's own `json gate` block, never a placeholder.
 const askOf = (questions) => ({ questions: JSON.parse(JSON.stringify(questions)) });
@@ -254,7 +254,7 @@ test('stage.agents: a gate asked with a multiSelect: false its file left out sti
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
   agentsOn(root);
-  const filed = [{ question: QUESTIONS[0].question, header: 'Survey', options: QUESTIONS[0].options }];
+  const filed = [{ question: QUESTIONS[0].question, header: '→Design', options: QUESTIONS[0].options }];
   const asked = [Object.assign({}, filed[0], { multiSelect: false })];
   handoff(root, { questions: filed, next: 'n' });
   brainStarts(root);
@@ -316,7 +316,7 @@ test('a brain dispatched for a stage stage.agents does not name: the gate hook s
 function verifyGate(root, label) {
   const file = path.join(root, '.fankeel', 'build', 'task-20260919T093012', 'verify.md');
   fs.mkdirSync(path.dirname(file), { recursive: true });
-  const questions = [{ question: 'Verify -> Audit | fankeel : t　verify 抓到兩條，怎麼辦？', header: 'Verify', multiSelect: false, options: [{ label, description: 'a' }, { label: 'Stay in Verify', description: 'b' }, { label: '暫停', description: 'c' }] }];
+  const questions = [{ question: 'Verify -> Audit | fankeel : t　verify 抓到兩條，怎麼辦？', header: 'Verify→Audit', multiSelect: false, options: [{ label, description: 'a' }, { label: 'Stay in Verify', description: 'b' }, { label: '暫停', description: 'c' }] }];
   fs.writeFileSync(file, '# report\n\n' + '`'.repeat(3) + 'json gate\n' + JSON.stringify({ questions, next: 'n' }) + '\n' + '`'.repeat(3) + '\n');
   return questions;
 }
@@ -418,7 +418,7 @@ test('stage.agents at survey: a genuinely different question headed with the sta
 // so the mismatch was never read as a copy attempt and the hook only noted it.
 // Under gate-19 a filed header is a stage word, so a header that is not this
 // stage's is another stage's.
-const OWN_HEAD = QUESTIONS.map((q) => Object.assign({}, q, { header: 'Build', question: q.question.replace(/^Survey/, 'Build') }));
+const OWN_HEAD = QUESTIONS.map((q) => Object.assign({}, q, { header: 'Build→Design', question: q.question.replace(/^Survey/, 'Build') }));
 
 test('a copy under the gate\'s own header that drops an option is denied, though the header is not the stage', () => {
   const root = tmp('fankeel-gate-');
@@ -568,7 +568,7 @@ test('stage.agents: a matching gate clears every mark on the record for this sta
 
 // gate answers: a question the user already answered at an earlier stage's
 // gate is denied when the controller asks it again.
-const DESIGN_GATE = [{ question: 'Design -> Plan | fankeel : t　design 的結論可以進 plan 嗎？', header: 'Design', multiSelect: false, options: [{ label: 'Go to Plan', description: 'a' }, { label: 'Stay in Design', description: 'b' }, { label: '暫停', description: 'c' }] }];
+const DESIGN_GATE = [{ question: 'Design -> Plan | fankeel : t　design 的結論可以進 plan 嗎？', header: 'Design→Plan', multiSelect: false, options: [{ label: 'Go to Plan', description: 'a' }, { label: 'Stay in Design', description: 'b' }, { label: '暫停', description: 'c' }] }];
 const PALETTE = 'Which palette base should the ramp use?';
 const REASK = [{ question: PALETTE, header: 'Palette', multiSelect: false, options: [{ label: 'OKLCH', description: 'a' }, { label: 'sRGB', description: 'b' }] }];
 function reaskRoot() {
@@ -618,7 +618,7 @@ const LAP_ONE = '全套全綠、12 個 mutation 全紅，但有 10 處 listener�
 const LAP_TWO = '全套 3087 全綠、6 個 mutation 全紅，但 click handler 還有 3 個選擇器零測試，怎麼走？';
 // The same question with two numbers changed: 0.96 alike to LAP_TWO, past the 0.8 REPEAT_THRESHOLD.
 const LAP_TWO_NEAR = '全套 3092 全綠、7 個 mutation 全紅，但 click handler 還有 3 個選擇器零測試，怎麼走？';
-const VERIFY_GATE = [{ question: 'Verify -> Land | fankeel : t　' + LAP_TWO, header: 'Verify', options: [{ label: 'Go to Land：收尾 (Recommended)', description: 'a' }, { label: 'Back to Build：補測試', description: 'b' }, { label: '暫停', description: 'c' }] }];
+const VERIFY_GATE = [{ question: 'Verify -> Land | fankeel : t　' + LAP_TWO, header: 'Verify→Land', options: [{ label: 'Go to Land：收尾 (Recommended)', description: 'a' }, { label: 'Back to Build：補測試', description: 'b' }, { label: '暫停', description: 'c' }] }];
 // The controller's copy differs from the filed gate (one option description is
 // reworded), so it is not the filed gate word for word and the hook does not
 // exit early: only the repeat check stands between it and the user. Its header
@@ -723,12 +723,12 @@ test('stage.agents: a survey gate with no pause, or naming bounded on an archite
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'survey', floor: 'architectural', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
   agentsOn(root);
-  const noPause = [{ question: 'Survey -> Design | fankeel : t　survey 的結論？', header: 'Survey', multiSelect: false, options: [{ label: 'Go to Design', description: 'a' }, { label: 'Stay in Survey', description: 'b' }] }];
+  const noPause = [{ question: 'Survey -> Design | fankeel : t　survey 的結論？', header: '→Design', multiSelect: false, options: [{ label: 'Go to Design', description: 'a' }, { label: 'Stay in Survey', description: 'b' }] }];
   handoff(root, { questions: noPause, next: 'n' });
   const a = JSON.parse(run(GATE, root, { tool_input: askOf(noPause) }));
   assert.equal(a.hookSpecificOutput.permissionDecision, 'deny');
   assert.match(a.hookSpecificOutput.permissionDecisionReason, /`questions`: no option says pause/);
-  const lighter = [{ question: 'Survey -> Design | fankeel : t　survey 的結論？', header: 'Survey', multiSelect: false, options: [{ label: 'Go to Design', description: 'a' }, { label: 'Stay in Survey，改走 bounded', description: 'b' }, { label: '暫停', description: 'c' }] }];
+  const lighter = [{ question: 'Survey -> Design | fankeel : t　survey 的結論？', header: '→Design', multiSelect: false, options: [{ label: 'Go to Design', description: 'a' }, { label: 'Stay in Survey，改走 bounded', description: 'b' }, { label: '暫停', description: 'c' }] }];
   handoff(root, { questions: lighter, next: 'n' });
   const b = JSON.parse(run(GATE, root, { tool_input: askOf(lighter) }));
   assert.equal(b.hookSpecificOutput.permissionDecision, 'deny');
@@ -739,7 +739,7 @@ test('a gate the hook refuses leaves no gateAt and no gateAsked, so the station 
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'survey', floor: 'architectural', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
   agentsOn(root);
-  const noPause = [{ question: 'Survey -> Design | fankeel : t　survey 的結論？', header: 'Survey', multiSelect: false, options: [{ label: 'Go to Design', description: 'a' }, { label: 'Stay in Survey', description: 'b' }] }];
+  const noPause = [{ question: 'Survey -> Design | fankeel : t　survey 的結論？', header: '→Design', multiSelect: false, options: [{ label: 'Go to Design', description: 'a' }, { label: 'Stay in Survey', description: 'b' }] }];
   handoff(root, { questions: noPause, next: 'n' });
   const invalid = JSON.parse(run(GATE, root, { tool_input: askOf(noPause) }));
   assert.equal(invalid.hookSpecificOutput.permissionDecision, 'deny', 'the invalid gate was refused');
@@ -764,7 +764,7 @@ test('a botched copy of the gate is refused with no gateAt, and the copy that go
 // docs/90-agent/plans/2026-10-10-workflow-gaps-design.md §11: off stage.agents
 // nothing compares a gate with a file, so the option count is the one thing
 // left to say — as a message, never a decision.
-const THIN = [{ question: 'Build -> Verify | fankeel : t　build 做完了，進 verify 嗎？', header: 'Build', multiSelect: false, options: [{ label: 'Go to Verify (Recommended)', description: 'a' }, { label: 'Stay in Build', description: 'b' }] }];
+const THIN = [{ question: 'Build -> Verify | fankeel : t　build 做完了，進 verify 嗎？', header: 'Build→Verify', multiSelect: false, options: [{ label: 'Go to Verify (Recommended)', description: 'a' }, { label: 'Stay in Build', description: 'b' }] }];
 const agentsAt = (root, value) => fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': value }));
 
 test('an uncontrolled stage: a two-option gate naming the next stage gets a message and no decision', () => {
@@ -806,7 +806,7 @@ test('an uncontrolled stage: the next stage is matched whatever its case, and th
   agentsAt(last, 'survey');
   const landOf = (label) => {
     const ask = JSON.parse(JSON.stringify(THIN));
-    Object.assign(ask[0], { header: 'Land', question: 'Land -> 收工 | fankeel : t　收工？' });
+    Object.assign(ask[0], { header: 'Land→收工', question: 'Land -> 收工 | fankeel : t　收工？' });
     ask[0].options = [{ label, description: 'a' }, { label: 'Stay in Land', description: 'b' }];
     return ask;
   };
@@ -834,7 +834,7 @@ test('an uncontrolled stage: a gate not in the gate-19 format is denied, naming 
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'plan', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
   agentsAt(root, 'survey');
-  const good = [{ question: 'Plan -> Build | fankeel : t　照這份計畫做？', header: 'Plan', multiSelect: false, options: [{ label: 'Go to Build (Recommended)', description: 'a' }, { label: 'Stay in Plan', description: 'b' }, { label: '暫停', description: 'c' }] }];
+  const good = [{ question: 'Plan -> Build | fankeel : t　照這份計畫做？', header: 'Plan→Build', multiSelect: false, options: [{ label: 'Go to Build (Recommended)', description: 'a' }, { label: 'Stay in Plan', description: 'b' }, { label: '暫停', description: 'c' }] }];
   const bad = JSON.parse(JSON.stringify(good));
   bad[0].header = '下一站';
   const out = JSON.parse(run(GATE, root, { tool_input: askOf(bad) }));
@@ -897,7 +897,7 @@ test('gate.away hint merges into an existing systemMessage without overwriting i
 });
 
 const PLAN_Q = QUESTIONS.map((q) => Object.assign({}, q, {
-  header: 'Design', question: q.question.replace('Survey -> Design', 'Design -> Plan'),
+  header: 'Design→Plan', question: q.question.replace('Survey -> Design', 'Design -> Plan'),
   options: [Object.assign({}, q.options[0], { label: 'Go to Plan' }), Object.assign({}, q.options[1], { label: 'Stay in Design' }), ...q.options.slice(2)],
 }));
 test('gate.away ask at 250k returns updatedInput with the 離開 question appended and no permissionDecision', () => {

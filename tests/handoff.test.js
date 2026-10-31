@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const tmp = require('./tmp.js');
-const { handoffPath, commitPath, answerPath, readGate, writeAnswer, lapsUsed, readsOf, previousHandoff, ledgerCommitPath, newestCommit, skipReason, gateMatches, answersGate, liveMarks, stageWord } = require('../lib/handoff.js');
+const { handoffPath, commitPath, answerPath, readGate, writeAnswer, lapsUsed, readsOf, previousHandoff, ledgerCommitPath, newestCommit, skipReason, gateMatches, answersGate, liveMarks, stageWord, gateHeader } = require('../lib/handoff.js');
 
 const DATA = { started: '2026-09-19T09:30:12.345Z' };
 const TICKS = '`'.repeat(3);
@@ -17,7 +17,7 @@ const gateOf = (s) => ({
 });
 // A gate-19 first question (lib/handoff.js formatProblem) at `from`, moving to `to`.
 const formatted = (g, from, to) => {
-  Object.assign(g.questions[0], { header: stageWord(from), question: stageWord(from) + ' -> ' + stageWord(to) + ' | fankeel : t　？' });
+  Object.assign(g.questions[0], { header: gateHeader(from, to), question: stageWord(from) + ' -> ' + stageWord(to) + ' | fankeel : t　？' });
   g.questions[0].options[1].label = 'Stay in ' + stageWord(from);
   return g;
 };

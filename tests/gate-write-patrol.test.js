@@ -12,7 +12,7 @@ const HOOK = path.join(__dirname, '..', 'hooks', 'gate-write.js');
 const MINE = 'dddddddd-0000-4000-8000-000000000004';
 const AGENT = 'b7e1d0';
 const TICKS = '`'.repeat(3);
-const GATE = { questions: [{ header: 'Survey', question: 'Survey -> Plan | fankeel : t　plan?', multiSelect: false, options: [{ label: 'Go to Plan', description: 'a' }, { label: 'Stay in Survey', description: 'b' }, { label: 'pause', description: 'c' }] }], next: 'plan' };
+const GATE = { questions: [{ header: 'Survey→Plan', question: 'Survey -> Plan | fankeel : t　plan?', multiSelect: false, options: [{ label: 'Go to Plan', description: 'a' }, { label: 'Stay in Survey', description: 'b' }, { label: 'pause', description: 'c' }] }], next: 'plan' };
 
 test('a patrol stage agent writing a report that skips an entry hears which one', () => {
   const root = tmp('fankeel-gwpatrol-');

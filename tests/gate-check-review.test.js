@@ -28,7 +28,7 @@ function project(stage) {
 
 function handoff(root, line) {
     const file = path.join(root, 'verify.md');
-    const questions = [{ header: 'Verify', question: 'Verify -> Land | fankeel : t　要進下一站嗎？', options: LABELS.map((label) => ({ label, description: 'd' })) }];
+    const questions = [{ header: 'Verify→Land', question: 'Verify -> Land | fankeel : t　要進下一站嗎？', options: LABELS.map((label) => ({ label, description: 'd' })) }];
     fs.writeFileSync(file, '# verify\n\n- claim — held\n' + line + '\n\n' + TICKS + 'json gate\n' + JSON.stringify({ questions, next: 'pause here' }) + '\n' + TICKS + '\n');
     return file;
 }
@@ -64,7 +64,7 @@ test('an adversary line with a result, even one quoting "pending", passes', () =
 test('only a verify gate is held to it', () => {
     const root = project('plan');
     const file = handoff(root, '- adversary: 寫報告時未回傳');
-    const questions = [{ header: 'Plan', question: 'Plan -> Build | fankeel : t　要進下一站嗎？', options: ['Go to Build (Recommended)', 'Stay in Plan', '暫停'].map((label) => ({ label, description: 'd' })) }];
+    const questions = [{ header: 'Plan→Build', question: 'Plan -> Build | fankeel : t　要進下一站嗎？', options: ['Go to Build (Recommended)', 'Stay in Plan', '暫停'].map((label) => ({ label, description: 'd' })) }];
     fs.writeFileSync(file, '# plan\n\n- adversary: 寫報告時未回傳\n\n' + TICKS + 'json gate\n' + JSON.stringify({ questions, next: 'pause here' }) + '\n' + TICKS + '\n');
     assert.deepEqual(check(root, file), { text: 'gate ok', code: 0 });
 });

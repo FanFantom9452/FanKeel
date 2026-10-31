@@ -394,9 +394,12 @@ function main(raw) {
         // the header alone: two gates in one house style overlap past 0.5
         // (REPEAT_THRESHOLD's note), so the overlap test below still decides.
         const headerOf = (q) => (q && typeof q.header === 'string' ? q.header.toLowerCase() : null);
+        // A move header (`survey→plan`) is the stage's own too: lib/handoff.js
+        // gateHeader, 2026-10-31.
+        const stageHead = String(mine.stage || '').toLowerCase();
         const askedHeader = headerOf(first);
         const headerMatches = askedHeader !== null
-            && (askedHeader === String(mine.stage || '').toLowerCase() || askedHeader === headerOf(gateFirst));
+            && (askedHeader === stageHead || askedHeader.startsWith(stageHead + '→') || askedHeader === headerOf(gateFirst));
         const looksLikeAttempt = headerMatches
             && charOverlap(textOf(first), textOf(gateFirst)) > ATTEMPT_THRESHOLD;
         if (looksLikeAttempt) {
