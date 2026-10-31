@@ -60,6 +60,22 @@ deferred: <heading> — <TODO entry, or omit this line>
 then AskUserQuestion
 ```
 
+## 指令
+
+| 指令 | 做什麼 |
+|---|---|
+| `/fankeel` | 開始、接續、接手或收掉 task |
+| `/fankeel-station` | 重開監控站 |
+| `/fankeel-phone` | 把這個 session 交給手機 |
+| `/fankeel-audit` | 文件與程式碼的整套稽核 |
+| `/fankeel-ask` | 把卡住的一題交給更強的模型判 |
+| `/fankeel-init` | 第一次在一個專案使用時的導入 |
+| `/fankeel-explain` | 簡報、報告、進度同步 |
+| `/fankeel-upgrade` | 舊專案升級到新版的設定 |
+| `/fankeel-retro-all` | 回顧所有匯出的 session |
+| `/fankeel-weekly` | 給教授的區間週報：收紀錄與 git、確認清單、畫一頁 HTML |
+| `/fankeel-panel` | 開關側邊的 Pane |
+
 ## registry
 
 registry 是專案裡的 `.fankeel/sessions/` 目錄（`.fankeel/` 本身還放 map.md、docs.json、profile.json 等其他檔），每個 session 一個檔：
