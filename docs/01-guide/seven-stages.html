@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>fankeel 七段實例：一個任務從頭到尾</title>
+<style>
+:root{
+  color-scheme:light dark;
+  --ground:#e3e7e1; --panel:#f5f6f2; --inset:#eaede7;
+  --ink:#161c1a; --ink2:#4a5451; --muted:#66706d; --faint:#8d9793;
+  --rule:#d6dbd5; --rule2:#c3cac3;
+  --wait:#b7791f; --wait-bg:rgba(183,121,31,.16); --wait-ink:#7a4f0f;
+  --st-init:#8d9793; --st-survey:#3578b8; --st-design:#cc9225; --st-plan:#af4a88; --st-build:#58994a;
+  --st-verify:#6959ae; --st-audit:#c04d42; --st-land:#14938d;
+  --s-main:#4a5954; --s-agent:#dc932e; --s-workflow:#bc4c31;
+  --f-ui:"Bahnschrift","Microsoft JhengHei UI","Microsoft JhengHei","PingFang TC","Noto Sans TC",system-ui,sans-serif;
+  --f-mono:"Cascadia Mono","Cascadia Code",Consolas,"SF Mono",ui-monospace,monospace;
+  --r:10px; --r-sm:6px;
+}
+@media(prefers-color-scheme:dark){:root{
+  --ground:#0e1311; --panel:#161c1a; --inset:#1e2522;
+  --ink:#e8ece6; --ink2:#a9b3ae; --muted:#8a9590; --faint:#65706b;
+  --rule:#29312e; --rule2:#36403c;
+  --wait:#e0a53a; --wait-bg:rgba(224,165,58,.16); --wait-ink:#e0a53a;
+  --st-init:#65706b; --st-survey:#488acb; --st-design:#bf860c; --st-plan:#c35c9b; --st-build:#5e9f50;
+  --st-verify:#8071c8; --st-audit:#d15d51; --st-land:#209993;
+  --s-main:#93a39d; --s-agent:#bf8b1f; --s-workflow:#c9553c;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font:15px/1.6 var(--f-ui)}
+main{max-width:1080px;margin:0 auto;padding:32px 20px 48px;display:grid;gap:20px}
+section{background:var(--panel);border:1px solid var(--rule);border-radius:var(--r);padding:20px 22px}
+h1{font-size:26px;line-height:1.3;margin:0 0 6px}
+h2{font-size:17px;margin:0 0 14px}
+h3{font-size:14px;margin:18px 0 8px;color:var(--ink2)}
+.eyebrow{font:600 12px/1 var(--f-mono);letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+.mono{font-family:var(--f-mono)}
+.note{color:var(--muted);font-size:13px;margin:10px 0 0}
+.wait-fill{background:repeating-linear-gradient(135deg,var(--wait) 0 3px,var(--wait-bg) 3px 7px)}
+
+/* header */
+.hero .cls{display:inline-block;font:600 12px/1 var(--f-mono);padding:5px 9px;border-radius:999px;
+  background:var(--inset);border:1px solid var(--rule2);color:var(--ink2);margin-top:6px}
+.totals{display:grid;grid-template-columns:1.6fr 1fr 1fr;gap:12px;margin-top:20px}
+.total{background:var(--inset);border-radius:var(--r-sm);padding:14px 16px}
+.total .k{font-size:13px;color:var(--muted)}
+.total .v{font:600 24px/1.2 var(--f-mono);margin-top:4px}
+.total.waited{background:var(--wait-bg);border:1px solid var(--wait)}
+.total.waited .k{color:var(--wait-ink);font-weight:600}
+.total.waited .v{font-size:40px;color:var(--wait-ink)}
+.split{display:flex;height:12px;border-radius:999px;overflow:hidden;margin-top:14px;background:var(--inset)}
+.split .work{background:var(--ink2)}
+
+/* bars */
+.legend{display:flex;gap:16px;font-size:13px;color:var(--ink2);margin-bottom:12px;flex-wrap:wrap}
+.legend i{display:inline-block;width:14px;height:10px;border-radius:2px;vertical-align:-1px;margin-right:6px}
+.bars{display:grid;grid-template-columns:72px 1fr 150px;gap:8px 12px;align-items:center}
+.bars .name{font:600 12px/1 var(--f-mono);color:var(--ink2)}
+.track{position:relative;height:20px;background:var(--inset);border-radius:4px;overflow:hidden;display:flex}
+.track span{height:100%;min-width:0}
+.track span.nz{min-width:2px}
+.bars .val{font:12px/1.3 var(--f-mono);color:var(--muted);text-align:right}
+.bars .val b{color:var(--ink);font-weight:600}
+.axis{grid-column:2;display:flex;justify-content:space-between;font:11px/1 var(--f-mono);color:var(--muted)}
+
+/* stage cards */
+.route{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;background:none;border:0;padding:0}
+.stage{position:relative;padding:18px 18px 16px;border-top:4px solid var(--c)}
+.stage .top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.stage .nm{font:700 15px/1 var(--f-mono);letter-spacing:.06em;color:var(--c)}
+.stage .idx{font:12px/1 var(--f-mono);color:var(--muted)}
+.stage .sub{font-size:13px;color:var(--muted);margin:4px 0 10px}
+.stage .does{margin:0 0 10px;font-size:14px}
+.stage .sample{margin:0;font-size:13px;color:var(--ink2);background:var(--inset);border-radius:var(--r-sm);padding:8px 10px}
+.stage .sample::before{content:"白板任務｜";color:var(--muted)}
+.stage .meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;font:12px/1 var(--f-mono);color:var(--muted)}
+.stage .meta span{padding:4px 7px;border:1px solid var(--rule2);border-radius:999px}
+.stage .meta .w{border-color:var(--wait);color:var(--wait-ink)}
+.stage.wide{grid-column:1/-1}
+
+/* swimlanes */
+.lanes{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.lane{background:var(--inset);border-radius:var(--r-sm);padding:12px 14px}
+.lane h4{margin:0 0 2px;font-size:14px}
+.lane .tag{font:12px/1.5 var(--f-mono);color:var(--muted);margin:0 0 10px}
+.sw{display:grid;grid-template-columns:64px repeat(12,1fr);gap:4px 2px;align-items:center}
+.sw .who{font-size:12px;color:var(--ink2)}
+.sw .b{height:20px;border-radius:3px;font:11px/20px var(--f-mono);text-align:center;color:var(--ink);background:color-mix(in srgb,var(--x) 26%,var(--panel));border-left:3px solid var(--x);white-space:nowrap;overflow:hidden}
+.sw .impl{--x:var(--s-agent)}
+.sw .rev{--x:var(--st-verify)}
+.sw .main{--x:var(--s-main)}
+.sw .cmt{--x:var(--st-build)}
+.sw .wf{--x:var(--s-workflow)}
+.sw .cut{background:none;border:1.5px dashed var(--st-audit);color:var(--ink)}
+.lane ul{margin:10px 0 0;padding-left:18px;font-size:13px;color:var(--ink2)}
+
+/* depth */
+.depth{display:grid;grid-template-columns:1fr 1.4fr;gap:14px}
+.chain{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.chain .t{font:600 12px/1 var(--f-mono);padding:8px 10px;border-radius:var(--r-sm);background:color-mix(in srgb,var(--st-build) 26%,var(--panel));border-left:3px solid var(--st-build);color:var(--ink)}
+.chain .t small{display:block;font-weight:400;opacity:.85;margin-top:3px}
+.chain .ar{color:var(--muted)}
+.groups{display:grid;grid-template-columns:72px 1fr 56px;gap:8px 10px;align-items:center;font-size:12px}
+.groups .row{display:flex;gap:3px}
+.groups .row i{display:block;height:18px;flex:0 0 calc((100% - 42px)/15);border-radius:3px;background:var(--st-build)}
+.groups .row.seq i{background:var(--faint)}
+.groups .n{font:600 13px/1 var(--f-mono);text-align:right}
+
+footer{text-align:center;color:var(--muted);font-size:13px}
+footer a{color:var(--ink)}
+@media(max-width:760px){
+  .totals,.lanes,.depth{grid-template-columns:1fr}
+  .bars{grid-template-columns:60px 1fr}
+  .bars .val{grid-column:2;text-align:left;margin-top:-4px}
+  .axis{grid-column:2}
+}
+</style>
+</head>
+<body>
+<main>
+
+<section class="hero" aria-labelledby="t">
+  <div class="eyebrow">fankeel · 一個任務走完七段</div>
+  <h1 id="t">—</h1>
+  <span class="cls" id="cls"></span>
+  <div class="totals">
+    <div class="total waited"><div class="k">等使用者</div><div class="v" id="t-waited"></div></div>
+    <div class="total"><div class="k">牆鐘</div><div class="v" id="t-wall"></div></div>
+    <div class="total"><div class="k">做事</div><div class="v" id="t-work"></div></div>
+  </div>
+  <div class="split" id="split" role="img"></div>
+  <p class="note">時間大多花在等人，不是等機器。</p>
+  <noscript><p class="note">這頁的數字由頁內的腳本畫出，請開啟 JavaScript。</p></noscript>
+</section>
+
+<section aria-labelledby="bars-h">
+  <h2 id="bars-h">每段的牆鐘：做事與等使用者</h2>
+  <div class="legend">
+    <span><i style="background:var(--ink2)"></i>做事</span>
+    <span><i class="wait-fill"></i>等使用者（關卡）</span>
+    <span>長度同一比例尺，BUILD 照實畫</span>
+  </div>
+  <div class="bars" id="bars"></div>
+</section>
+
+<section class="route" aria-label="八段">
+  <section class="stage" data-stage="init" data-sub="還沒開始任務之前"></section>
+  <section class="stage" data-stage="survey" data-sub="現在已經有什麼"></section>
+  <section class="stage" data-stage="design" data-sub="決定怎麼做"></section>
+  <section class="stage" data-stage="plan" data-sub="拆成任務"></section>
+  <section class="stage wide" data-stage="build" data-sub="動手做">
+    <h3>派送方式：多個 Agent 與 Workflow（示意）</h3>
+    <div class="lanes">
+      <div class="lane">
+        <h4>多個 Agent</h4>
+        <p class="tag">主控坐鎮、一份一份收</p>
+        <div class="sw" aria-label="多個 Agent 泳道">
+          <span class="who">主控</span>
+          <span class="b main" style="grid-column:2/3">派</span>
+          <span class="b main" style="grid-column:5/6">收</span>
+          <span class="b cmt" style="grid-column:6/7">提交</span>
+          <span class="b main" style="grid-column:8/9">收</span>
+          <span class="b cmt" style="grid-column:9/10">提交</span>
+          <span class="b main" style="grid-column:11/12">收</span>
+          <span class="b cmt" style="grid-column:12/14">提交</span>
+          <span class="who">實作者 A</span>
+          <span class="b impl" style="grid-column:2/5">實作</span>
+          <span class="who">實作者 B</span>
+          <span class="b impl" style="grid-column:2/8">實作</span>
+          <span class="who">實作者 C</span>
+          <span class="b impl" style="grid-column:2/7">實作</span>
+          <span class="b cut" style="grid-column:7/8" title="衝突就重派">重派</span>
+          <span class="b impl" style="grid-column:8/11">實作</span>
+          <span class="who">reviewer</span>
+          <span class="b rev" style="grid-column:5/6">審</span>
+          <span class="b rev" style="grid-column:8/9">審</span>
+          <span class="b rev" style="grid-column:11/12">審</span>
+        </div>
+        <ul>
+          <li>每份回傳都進主控 context，逐份讀</li>
+          <li>回來一個提交一個</li>
+          <li>能插手：衝突就重派、怪就停</li>
+        </ul>
+      </div>
+      <div class="lane">
+        <h4>Workflow</h4>
+        <p class="tag">整組打包丟出去、只收彙總</p>
+        <div class="sw" aria-label="Workflow 泳道">
+          <span class="who">主控</span>
+          <span class="b main" style="grid-column:2/3">開</span>
+          <span class="b main" style="grid-column:11/12">彙總</span>
+          <span class="b cmt" style="grid-column:12/14">提交</span>
+          <span class="who">任務 1</span>
+          <span class="b impl" style="grid-column:3/6">實作</span>
+          <span class="b rev" style="grid-column:6/7">審</span>
+          <span class="who">任務 2</span>
+          <span class="b impl" style="grid-column:3/8">實作</span>
+          <span class="b rev" style="grid-column:8/9">審</span>
+          <span class="who">任務 3</span>
+          <span class="b impl" style="grid-column:3/9">實作</span>
+          <span class="b rev" style="grid-column:9/10">審</span>
+          <span class="who">腳本</span>
+          <span class="b wf" style="grid-column:3/11">implement → review，中間產物留在腳本裡</span>
+        </div>
+        <ul>
+          <li>腳本內每任務一條 implement→review，不等別人</li>
+          <li>只回彙總，省主控 context</li>
+          <li>跑完前不提交，也不回主控、停不了</li>
+        </ul>
+      </div>
+    </div>
+    <h3>依賴深度決定分幾組</h3>
+    <div class="depth">
+      <div class="lane">
+        <h4>白板任務</h4>
+        <p class="tag" id="d-chain-tag"></p>
+        <div class="chain" id="d-chain"></div>
+        <p class="note">一條依賴鏈：平行機制都在，依賴決定它用不上。</p>
+      </div>
+      <div class="lane">
+        <h4>盤點任務</h4>
+        <p class="tag" id="d-patrol-tag"></p>
+        <div class="groups" id="d-patrol"></div>
+        <p class="note">每格一組；同一深度的任務彼此不衝突，可一起跑。</p>
+      </div>
+    </div>
+  </section>
+  <section class="stage" data-stage="verify" data-sub="拿證據"></section>
+  <section class="stage" data-stage="audit" data-sub="還有什麼不再是真的"></section>
+  <section class="stage" data-stage="land" data-sub="收尾"></section>
+</section>
+
+<footer>每段的流程圖、步驟表與完整的例子：<a href="design.md">詳細設計</a></footer>
+
+</main>
+<script>
+const RUN = {
+    task: '監控站掛上另一個專案的白板',
+    cls: 'architectural',
+    total: { wall: '6 時 30 分', waited: '5 時 24 分', work: '約 1 時 6 分' },
+    stages: [
+        { id: 'init', name: 'INIT', wallMin: 0, waitMin: 0, does: '看現場、看別人、問一題、登記任務', sample: '任務來自 TODO 的「待決定」，使用者在選單選它' },
+        { id: 'survey', name: 'SURVEY', wallMin: 10, waitMin: 8, does: '讀地圖、掃描、記事實、分類', sample: '掃 2075 檔，找到 3 個事實、3 件不知道，分類 architectural' },
+        { id: 'design', name: 'DESIGN', wallMin: 19, waitMin: 16, does: '一個做法、檔案表、會失敗的完成標準', sample: '3 筆裁定、6 列檔案表、判斷不畫 mockup' },
+        { id: 'plan', name: 'PLAN', wallMin: 16, waitMin: 1, does: '拆任務、產生約束、分組、lint、審計畫', sample: '3 個任務一條依賴鏈；reviewer 抓到 2 個缺口並修好' },
+        { id: 'build', name: 'BUILD', wallMin: 322, waitMin: 290, does: '派實作者、逐任務審、提交、文件跟上、全套測試', sample: '3 組依序；修 15 條文件引用；3686 項 1 項搶埠失敗' },
+        { id: 'verify', name: 'VERIFY', wallMin: 11, waitMin: 5, does: '宣稱對證據、平行 verifier、突變、對手審查', sample: '3 個 verifier 全過；對手抓到 2 點；先紅再綠未檢查' },
+        { id: 'audit', name: 'AUDIT', wallMin: 5.5, waitMin: 4, does: 'docs-check、殘留、死碼、docs-audit、真的去讀', sample: '索引缺 2 頁、來源 TODO 還寫待決定；舊帳分開列' },
+        { id: 'land', name: 'LAND', wallMin: 6, waitMin: 0.5, does: '全綠、TODO 結案、封存、重寫地圖、整合', sample: '3685 過、1 略過、0 失敗；merge 不推送' },
+    ],
+    tokens: { survey: '3k', design: '13k', plan: '9k', build: '66k', verify: '2k', audit: '4k' },
+    depth: { chain: { tasks: 3, groups: 3 }, patrol: { tasks: 15, sequential: 15, byDepth: 6 } },
+};
+
+const $ = (id) => document.getElementById(id);
+const el = (tag, cls, text) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+};
+const fmt = (m) => m >= 60 ? Math.floor(m / 60) + ' 時 ' + (m % 60) + ' 分' : m + ' 分';
+
+$('t').textContent = RUN.task;
+$('cls').textContent = RUN.cls;
+$('t-waited').textContent = RUN.total.waited;
+$('t-wall').textContent = RUN.total.wall;
+$('t-work').textContent = RUN.total.work;
+
+// Total split drawn from the per-stage sums, so it shares one source with the bars below.
+const sumWall = RUN.stages.reduce((a, s) => a + s.wallMin, 0);
+const sumWait = RUN.stages.reduce((a, s) => a + s.waitMin, 0);
+const split = $('split');
+const sw = el('span', 'work'); sw.style.width = ((sumWall - sumWait) / sumWall * 100) + '%';
+const sv = el('span', 'wait-fill'); sv.style.width = (sumWait / sumWall * 100) + '%';
+split.append(sw, sv);
+split.setAttribute('aria-label', '做事 ' + RUN.total.work + '，等使用者 ' + RUN.total.waited);
+
+const max = Math.max(...RUN.stages.map((s) => s.wallMin));
+const bars = $('bars');
+for (const s of RUN.stages) {
+    const work = s.wallMin - s.waitMin;
+    bars.append(el('span', 'name', s.name));
+    const track = el('div', 'track');
+    track.setAttribute('role', 'img');
+    track.setAttribute('aria-label', s.name + '：做事 ' + fmt(work) + '，等使用者 ' + fmt(s.waitMin));
+    const w = el('span', work > 0 ? 'nz' : ''); w.style.width = (work / max * 100) + '%';
+    w.style.background = 'var(--st-' + s.id + ')';
+    const v = el('span', 'wait-fill' + (s.waitMin > 0 ? ' nz' : '')); v.style.width = (s.waitMin / max * 100) + '%';
+    track.append(w, v);
+    bars.append(track);
+    const val = el('span', 'val');
+    val.append(el('b', '', fmt(s.wallMin)), document.createTextNode(' · 等 ' + fmt(s.waitMin)));
+    bars.append(val);
+}
+const axis = el('div', 'axis');
+for (const m of [0, max / 2, max]) axis.append(el('span', '', fmt(m)));
+bars.append(el('span'), axis);
+
+RUN.stages.forEach((s, i) => {
+    const card = document.querySelector('.stage[data-stage="' + s.id + '"]');
+    card.style.setProperty('--c', 'var(--st-' + s.id + ')');
+    const head = el('div', 'top');
+    head.append(el('span', 'nm', s.name), el('span', 'idx', String(i).padStart(2, '0')));
+    const meta = el('div', 'meta');
+    meta.append(el('span', '', '牆鐘 ' + fmt(s.wallMin)), el('span', 'w', '等 ' + fmt(s.waitMin)));
+    if (RUN.tokens[s.id]) meta.append(el('span', '', RUN.tokens[s.id] + ' token'));
+    card.prepend(head, el('div', 'sub', card.dataset.sub), el('p', 'does', s.does), el('p', 'sample', s.sample), meta);
+});
+
+const c = RUN.depth.chain;
+$('d-chain-tag').textContent = c.tasks + ' 個任務 → ' + c.groups + ' 組，依序';
+const chain = $('d-chain');
+for (let i = 1; i <= c.tasks; i++) {
+    if (i > 1) chain.append(el('span', 'ar', '→'));
+    const t = el('span', 't', '任務 ' + i);
+    t.append(el('small', '', '第 ' + i + ' 組'));
+    chain.append(t);
+}
+
+const p = RUN.depth.patrol;
+$('d-patrol-tag').textContent = p.tasks + ' 個任務：依序 ' + p.sequential + ' 組，依深度 ' + p.byDepth + ' 組';
+const groups = $('d-patrol');
+for (const [label, n, cls] of [['依序', p.sequential, 'row seq'], ['依深度', p.byDepth, 'row']]) {
+    groups.append(el('span', '', label));
+    const row = el('div', cls);
+    for (let i = 0; i < n; i++) row.append(el('i'));
+    groups.append(row, el('span', 'n', n + ' 組'));
+}
+</script>
+</body>
+</html>
