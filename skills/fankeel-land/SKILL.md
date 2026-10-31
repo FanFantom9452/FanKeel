@@ -1,7 +1,7 @@
 ---
 name: fankeel-land
 description: The land stage — a green suite, the documents closed, the map rewritten, and the integration decision left to the user. Use for the land stage of a fankeel task, finishing a development branch, deciding between merge and PR, or cleaning up a worktree when work is complete.
-version: 0.143.2
+version: 0.144.0
 status: current
 last_verified: 2026-10-18
 source_of_truth: lib/stages.js, scripts/todo-check.js, scripts/map.js, hooks/carry.js, scripts/land.js, lib/suite.js
@@ -33,8 +33,8 @@ what the gate asks — never something to settle first and report afterwards.
 | Looks like a finding | Why it is not |
 |---|---|
 | A commit with only one short paragraph of prose | `lib/stages.js:218` caps it there (`one paragraph for what a bullet cannot hold`) — the bullets are the record; more prose is not owed. |
-| A `做了什麼:` list that skips files the diff touched | It is one line per new capability, not one per file — `lib/stages.js:401` (`做了什麼: one line per thing someone can now do`) — a file with no capability of its own has nothing to add there. |
-| A landed plan still sitting on disk, not yet archived | `lib/stages.js:411` archives it only `then is archived, after asking` — a plan waiting on that answer is not forgotten, it is mid-step. |
+| A `做了什麼:` list that skips files the diff touched | It is one line per new capability, not one per file — `lib/stages.js:402` (`做了什麼: one line per thing someone can now do`) — a file with no capability of its own has nothing to add there. |
+| A landed plan still sitting on disk, not yet archived | `lib/stages.js:412` archives it only `then is archived, after asking` — a plan waiting on that answer is not forgotten, it is mid-step. |
 
 ## 1. The full suite, on the tree you are about to integrate
 
