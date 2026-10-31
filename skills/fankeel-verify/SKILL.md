@@ -34,7 +34,7 @@ around this one.
 
 | Looks like a finding | Why it is not |
 |---|---|
-| A defeated row sent to `build` instead of fixed here | `lib/stages.js:334` requires exactly that (`Anything half-built sends this back to build`) — a fix with its own review range is build's commit, never verify's. |
+| A defeated row sent to `build` instead of fixed here | `lib/stages.js:334` requires it (`Half-built or needing a test`) — only a page false in docs/ or README is fixed here. |
 | An adversary returning only the rows it defeated | Its charter is that scope alone — `lib/stages.js:337` (`keep only what it defeats`) — a clean pass elsewhere is not it skipping anything. |
 | A coverage line reading `9 of 21`, not every page | `lib/stages.js:336` requires the denominator stated, not every page read (`nine of twenty-one pages`) — that is the complete claim, not a shortfall. |
 
@@ -121,11 +121,12 @@ A renamed export, a changed default, a removed flag, a moved file — each has a
 page somewhere that still says the old thing, and every reference in it still
 resolves. Name the page and the line.
 
-A false page with nothing else to fix is a fix with no test cycle of its own:
-dispatch `subagent_type: fankeel:fankeel-fixer` with the page and the exact
-correction, never more than two files at once. It returns which lines
-changed, and this stage re-runs `docs-check` itself once it returns — a code
-fix that needs its own red-then-green cycle is `build`'s, not this agent's.
+A page false only in `docs/` or README, two files at most and no test, is
+fixed here: dispatch `subagent_type: fankeel:fankeel-fixer` with the page and
+the exact correction. It returns which lines changed, this stage re-runs
+`docs-check` itself, and writes the commit file its brief names. `skills/`,
+`agents/`, code, comments, layout and any fix needing a red-then-green cycle
+are `build`'s.
 
 A change that is correct and leaves three pages describing the old behaviour has
 been half verified.
@@ -324,12 +325,12 @@ sharing the adversary's model shares its blind spots.
 ## Half-built sends it back
 
 Verify is not where the bar gets lowered. Anything unfinished returns to
-`build` — and so does every fix. **This stage commits nothing.** A defeated
-row, a test that should have reddened and did not, a page found false: each is
-routed to `build` at the gate, where the fix gets BASE, the parent's commit,
-one reviewer over its range and a `Fix:` line in the ledger. On 2026-09-06 five
-fix commits landed during this stage with no reviewer, and the next lap's
-findings were theirs.
+`build` — and so does every fix but one. **The only commit this stage makes is
+the one docs-only `Fix:`** (docs/ or README, two files at most, no test), by the
+controller from the commit file. A defeated row, a test that should have
+reddened and did not, any other page found false: each is routed to `build` at
+the gate, where the fix gets BASE, one reviewer over its range and a `Fix:`
+line. On 2026-09-06 five unreviewed fixes landed here.
 
 Record what this stage verified that a later stage will need again, one fact a
 line: `node <plugin>/scripts/context.js add "<fact>" --at <path:line> --session <id>`.
@@ -346,6 +347,7 @@ $ <command>
 ```
 - <what you claimed> — held / did not hold
 - docs: <page:line that is now false, or "none">
+- fixed here: <page:line>, <docs-check>
 - adversary: <the claim it defeated → build, or "nothing">
 then AskUserQuestion
 ```

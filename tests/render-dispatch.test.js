@@ -65,6 +65,13 @@ test('renderBrief: an architectural plan brain and verify brain carry the clause
     assert.match(verify, /fankeel-mutator` on model `opus`/);
 });
 
+test('renderBrief: verify brief lists fankeel-fixer and the verify commit file', () => {
+    const verify = brief('verify', 'architectural');
+    assert.match(verify, /docs\/ or README page[^\n]*fankeel-fixer/);
+    assert.match(verify, /commit file[^\n]*verify[^\n]*only when a fixer fixed/);
+    assert.doesNotMatch(brief('build', 'architectural'), /only when a fixer fixed/);
+});
+
 test('renderBrief: the mover runs on opus for architectural and on the profile floor for bounded', () => {
     assert.match(brief('audit', 'architectural'), /fankeel-mover` on model `opus`/);
     assert.match(brief('audit', 'bounded'), /fankeel-mover` on model `sonnet`/);

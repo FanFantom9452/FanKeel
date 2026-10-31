@@ -1282,8 +1282,8 @@ test('fankeel-verify: a cost or count figure requires one unpiped command output
 test('fankeel-verify: a false page with no test of its own goes to fankeel-fixer', () => {
   const flat = read('fankeel-verify').replace(/\s+/g, ' ');
   assert.match(flat, /subagent_type: fankeel:fankeel-fixer/);
-  assert.match(flat, /never more than two files at once/);
-  assert.match(flat, /re-runs `docs-check` itself once it returns/);
+  assert.match(flat, /two files at most and no test/);
+  assert.match(flat, /this stage re-runs `docs-check` itself/);
 });
 
 test('fankeel-audit: a dead reference with no test of its own goes to fankeel-fixer', () => {

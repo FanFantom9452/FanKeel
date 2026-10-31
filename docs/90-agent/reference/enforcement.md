@@ -59,7 +59,7 @@ Not in this table: the `INIT` rules of the `/fankeel` prompt (no stage yet), the
 | build.6 | Output: one line per file, | none — prose only | none | — |
 | verify.0 | Run node {{SUITE}} --session <id> | none — prose only | none | Not at verify: land.8's refusal is what a skipped or red suite meets later. |
 | verify.1 | Check that what you claimed | none — prose only | none | — |
-| verify.2 | Anything half-built sends this back | none — prose only | none | — |
+| verify.2 | Half-built or needing a test: | none — prose only | none | — |
 | verify.3 | Run node {{DOCS_CHECK}} and name | none — prose only | `scripts/docs-check.js` | Reports dead references when run; naming the page this change made false is judgement. |
 | verify.4 | A coverage claim states its | none — prose only | none | — |
 | verify.5 | Before the question, one read-only | none — prose only | `scripts/gate-check.js` | Exits 1 when the first `adversary:` line says it has not returned; a keyword match on that one line, so an adversary that was never dispatched is not caught. |
