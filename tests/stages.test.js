@@ -257,7 +257,7 @@ test('the always-on block says what option two holds, not only option one', () =
 // every stage carries, or the first a model hears of it is a refusal.
 test('the always-on block carries the gate-19 format', () => {
   const all = ALWAYS.join(' ');
-  assert.match(all, /Header: `This`; stem/);
+  assert.match(all, /Header: `This→Next`, `→Next` past 12 columns; stem/);
   assert.match(all, /This -> Next \| project : task/);
   assert.match(all, /`Go to` it/);
   assert.match(all, /Wrap up — 收工/);

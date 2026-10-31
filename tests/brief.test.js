@@ -701,6 +701,7 @@ test('a brain is told the gate shape and that option one names the next stage', 
   assert.match(text, /carries `header` \(12 columns at most/);
   assert.match(text, /option one's label names `design`: `Go to Design`/);
   assert.match(text, /option two `Stay in Survey` \(or `Back to <Stage>`\)/);
+  assert.match(text, /first: `→Design`/);
   // readGate refuses a gate with no pause option and a non-empty `next` is
   // required (lib/handoff.js ruleProblem); on 09-30 two verify gates were
   // refused for the pause because the brief never said so.
@@ -718,6 +719,7 @@ test('a last-stage brain is told the words option one needs, and to write and ch
   const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
   assert.match(text, /option one's label is `Wrap up — 收工`/);
   assert.match(text, /`context7 處置` is 13/);
+  assert.match(text, /first: `Land→收工`/);
   assert.match(text, /Write the file with Write, never a shell/);
   assert.match(text, /scripts\/gate-check\.js --session \S+ \S*land\.md` and return the path once it prints `gate ok`/);
 });
