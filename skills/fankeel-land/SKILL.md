@@ -264,7 +264,7 @@ above.
 After `record.js write`, the gate carries exactly these (land-8):
 
 1. `Wrap up — 收工 (Recommended)` — stands the task down; its description
-   names the month file and anchor. Header `Land`, question opens
+   names the month file and anchor. Header `Land→收工`, question opens
    `Land -> 收工 | <project> : <task>` (`formatProblem`).
 2. `Stay in Land` — option two as every gate has it.
 3. `匯出並回顧` — its description says

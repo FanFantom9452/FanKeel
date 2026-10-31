@@ -218,7 +218,7 @@ Before you return a path whose file holds a `json gate` block, check it:
 `node <plugin>/scripts/gate-check.js --session <id> <handoff path>` runs the
 check `hooks/gate.js` runs when the controller asks it — three options at
 least on the first question, every header 12 columns at most with a CJK
-character counting two, the gate-19 format — the first header the stage with only its first letter capital,
+character counting two, the gate-19 format — the first header the move, `<Stage>→<Next>`, or `→<Next>` past 12 columns,
 its question opening `<Stage> -> <Next> | <project> : <task>`,
 option one `Go to <Next>` (on the last stage `Wrap up — 收工`) or
 `Back to <Stage>` on this route, option two `Stay in <Stage>` or
