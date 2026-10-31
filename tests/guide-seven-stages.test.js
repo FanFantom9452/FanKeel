@@ -18,7 +18,8 @@ test('the page has one section per stage, in route order', () => {
 
 test('the page loads nothing from outside itself', () => {
     const text = fs.readFileSync(PAGE, 'utf8');
-    assert.doesNotMatch(text, /(src|href)="https?:/);
+    assert.doesNotMatch(text, /(src|href)\s*=\s*["']?(https?:)?\/\//i);
+    assert.doesNotMatch(text, /url\(\s*["']?(https?:)?\/\//i);
     assert.doesNotMatch(text, /@import/);
 });
 
