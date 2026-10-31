@@ -326,12 +326,17 @@ function tasksBlock(entry: Entry, plan: PlanInfo | null, agents: AgentNode[], in
   return rows
 }
 
-// The station, the foot's last two rows: a button that opens its page alone on
-// its row, then the whole url in grey beneath it, cut to `inner`; or grey words
-// saying none is up. The button sits alone so the url never squeezes it.
-function stationRows(url: string | null | undefined, inner: number, lang?: Lang): Row[] {
+// The station, the foot's last rows: a button that opens its page alone on
+// its row, a second that opens this session's page, then the whole url in grey
+// beneath them, cut to `inner`; or grey words saying none is up. The buttons sit
+// alone so the url never squeezes them.
+function stationRows(url: string | null | undefined, inner: number, id: string, lang?: Lang): Row[] {
   if (!url) return [row('foot', dim(cut(say(lang, 'status.noStation'), inner)))]
-  return [row('foot', { text: say(lang, 'status.open'), press: 'station' }), row('foot', dim(cut(url, inner)))]
+  return [
+    row('foot', { text: say(lang, 'status.open'), press: 'station' }),
+    row('foot', { text: say(lang, 'status.session'), press: 'todo', to: `#/s/${encodeURIComponent(id)}` }),
+    row('foot', dim(cut(url, inner))),
+  ]
 }
 
 // lib/todo.js STATES, the four the TODO block has a Button for, in the station panel's order, each with its label.
@@ -448,7 +453,7 @@ export function statusRows(input: StatusInput): Row[] {
       { block: 'empty', segs: [{ text: cut(say(lang, 'status.empty'), cols) }] },
       { block: 'empty', segs: [dim(cut(say(lang, 'status.start'), cols))] },
       // The station rows with their rail left off, as the two above have none.
-      ...stationRows(input.station, cols, lang).map((r): Row => ({ block: 'empty', segs: r.segs.slice(1) })),
+      ...stationRows(input.station, cols, id, lang).map((r): Row => ({ block: 'empty', segs: r.segs.slice(1) })),
     ]
   }
   // 1: the cell every drawn row opens with, its block's rail or the space under it.
@@ -474,7 +479,7 @@ export function statusRows(input: StatusInput): Row[] {
 
   // The probe is asked for by hand (hooks/pane.ts probeOf): it is drawn whole, in the block that never drops.
   const probed = input.probe ? wrap(input.probe, inner).map((text) => row('foot', dim(text))) : []
-  blocks.push([...probed, row('foot', dim(cut(say(lang, 'status.close', { id: id.slice(0, 8) }), inner))), ...stationRows(input.station, inner, lang)])
+  blocks.push([...probed, row('foot', dim(cut(say(lang, 'status.close', { id: id.slice(0, 8) }), inner))), ...stationRows(input.station, inner, id, lang)])
 
   // Every block but the first costs a blank row above it.
   const size = (): number => blocks.reduce((n, block) => n + block.length, blocks.length - 1)

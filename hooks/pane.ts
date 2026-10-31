@@ -17,8 +17,8 @@ import { limitRow, appendRow, accountOf } from './pane-limits.ts'
 import type { Lang } from './pane-lang.ts'
 
 // The fankeel mod's two drawings: two rows above the prompt for what is always
-// wanted, and the Pane for what is looked up. The Pane opens itself while the
-// session owns a task; /fankeel-panel toggles it. docs/90-agent/plans/2026-10-12-pane-band-design.md
+// wanted, and the Pane for what is looked up. The Pane opens itself when the
+// session starts /fankeel init or owns a task, and is never closed by the mod; /fankeel-panel toggles it. docs/90-agent/plans/2026-10-12-pane-band-design.md
 // is the design. Nothing here runs unless the module was enabled, and nothing
 // outside it depends on it.
 export const PANE = 'fankeel'
@@ -31,6 +31,8 @@ const PLACES = ['terminal', 'desktop']
 type Seen = {
   id: string
   entry: Entry | null
+  // Whether the session ran /fankeel init and has no task yet: the Pane opens for it, with the blank view.
+  init: boolean
   others: Other[]
   pending: Pending | null
   context: Context | null
@@ -62,7 +64,7 @@ type Seen = {
 // session's own registry file, the pending file and the ledger are read every tick.
 type Cache = Map<string, { stamp: string; value: unknown }>
 
-const blank = (id: string): Seen => ({ id, entry: null, others: [], pending: null, context: null, limits: [], plan: null, remote: false, probe: null, agents: [], shells: [], station: null, pkey: '', todos: [], model: null, effort: null, lang: 'zh' })
+const blank = (id: string): Seen => ({ id, entry: null, init: false, others: [], pending: null, context: null, limits: [], plan: null, remote: false, probe: null, agents: [], shells: [], station: null, pkey: '', todos: [], model: null, effort: null, lang: 'zh' })
 
 // The last message each silent catch logged: the tick runs four times a second, and a failure that stays is said once.
 type Logged = { context: string; plan: string; open: string; registry: string; neighbour: string; gate: string; live: string; remote: string; bandSvg: string; paneSvg: string; agents: string; station: string; todo: string; model: string; shells: string; lang: string; limits: string }
@@ -494,7 +496,10 @@ async function look($: EngineInterface, cache: Cache, logged: Logged): Promise<S
   const id = await $.session.id()
   if (!SESSION_ID.test(id)) return blank(id)
   const found = await findEntry($, id)
-  if (!found || !isActive(found.entry)) return { ...blank(id), station: await stationOf($, null, logged) }
+  if (!found || !isActive(found.entry)) {
+    const init = !!found && found.entry.active === true && found.entry.stage === 'init'
+    return { ...blank(id), station: await stationOf($, null, logged), init }
+  }
   const entry = found.entry as Entry
 
   const alive = await liveOf($, found.root, logged)
@@ -614,9 +619,7 @@ async function shellsOf($: EngineInterface, state: State, id: string, now: numbe
 type State = {
   seen: Seen
   print: string
-  // Whether the pane up now is the mod's, opened for the task, and so the mod's to close when the task ends.
-  mine: false | 'task'
-  // Whether a task was there the last time the opens and closes for it went through.
+  // Whether a task or an init was there the last time the opens and closes for it went through.
   edge: { task: boolean }
   // Ticks in a row the registry file was unreadable.
   bad: number
@@ -668,17 +671,10 @@ async function tick($: EngineInterface, state: State): Promise<void> {
     // one is met again next tick as the same edge, while `seen` and the redraw below never wait on them.
     try {
       // Asked here, after `look`: /fankeel-panel may have opened or closed the pane while it read files.
-      // A task appears: the pane opens, once; a pane the user then closes stays closed. No toast: the band shows the task.
-      if (!state.edge.task && next.entry && !(await isOpen($))) {
-        await $.ui.open({ id: PANE, title: 'fankeel' })
-        state.mine = 'task'
-      }
-      if (state.edge.task && !next.entry && state.mine) {
-        // Not asked whether it is open: a pane registered but not placed (a narrow terminal) is still the mod's to close.
-        await $.ui.close({ id: PANE })
-        state.mine = false
-      }
-      state.edge = { task: !!next.entry }
+      // An init or a task appears: the pane opens, once; a pane the user then closes stays closed, and the mod never closes one: /fankeel-panel does. No toast: the band shows the task.
+      const here = !!next.entry || next.init
+      if (!state.edge.task && here && !(await isOpen($))) await $.ui.open({ id: PANE, title: 'fankeel' })
+      state.edge = { task: here }
       state.logged.open = ''
     } catch (err) {
       logOnce($, state.logged, 'open', `fankeel pane: pane not opened or closed, ${String(err)}`)
@@ -697,7 +693,7 @@ async function tick($: EngineInterface, state: State): Promise<void> {
 
 export const register: Register = (on) => {
   const state: State = {
-    seen: blank(''), print: '', mine: false, edge: { task: false }, bad: 0, busy: false, cache: new Map(),
+    seen: blank(''), print: '', edge: { task: false }, bad: 0, busy: false, cache: new Map(),
     logged: { context: '', plan: '', open: '', registry: '', neighbour: '', gate: '', live: '', remote: '', bandSvg: '', paneSvg: '', agents: '', station: '', todo: '', model: '', shells: '', lang: '', limits: '' },
     folded: {}, shells: [], shellAt: 0, tasksDir: '',
   }
@@ -729,7 +725,6 @@ export const register: Register = (on) => {
   })
 
   on('command.run', { command: COMMAND }, async ($) => {
-    state.mine = false
     const lang = state.seen.lang
     if (await isOpen($)) {
       await $.ui.close({ id: PANE })

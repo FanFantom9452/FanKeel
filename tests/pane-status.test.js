@@ -516,13 +516,13 @@ test('the agents block lists six roots and three under each, and folds the rest'
     assert.equal(block[block.length - 1], ' 還有 2 個');
 });
 
-test('the station is the foot\'s last two rows: a button alone, then the whole url in grey, with a task or without', async () => {
+test('the station is the foot\'s last three rows: two buttons alone, then the whole url in grey, with a task or without', async () => {
     const m = await load();
     const url = 'http://127.0.0.1:28888/';
-    const on = [[{ text: '開啟 station', press: 'station' }], [{ text: url, color: SECOND }]];
-    assert.deepEqual(body(status(m, { station: url }), 'foot').slice(-2), on);
+    const on = [[{ text: '開啟 station', press: 'station' }], [{ text: '在 station 看本 session', press: 'todo', to: '#/s/' + ID }], [{ text: url, color: SECOND }]];
+    assert.deepEqual(body(status(m, { station: url }), 'foot').slice(-3), on);
     const empty = status(m, { entry: null, others: [], station: url });
-    assert.deepEqual(empty.slice(-2), on.map((segs) => ({ block: 'empty', segs })));
+    assert.deepEqual(empty.slice(-3), on.map((segs) => ({ block: 'empty', segs })));
 });
 
 test('route and tasks open under a ▾ head and fold to it under ▸, the route head naming the stage', async () => {
