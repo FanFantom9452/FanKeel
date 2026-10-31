@@ -185,7 +185,7 @@ the shape of the question: a reader is asked what a file says, a reviewer
 is asked what a diff, a table or the tree gets wrong — or, when the brief asks
 for cuts, what it could lose — and it returns only what it defeats and those
 cuts. It is one of several dispatches where nobody types a model at all —
-`fankeel-verifier` is another: `skills/fankeel-verify/SKILL.md:190`, `not typed by hand`,
+`fankeel-verifier` is another: `skills/fankeel-verify/SKILL.md:191`, `not typed by hand`,
 and it was added on the same branch as this sentence; the stage agent `fankeel-brain` and `fankeel-fixer` type none either —
 so the file's pin is the only floor — the literal `sonnet`, not `dispatch.floor`,
 which no reader or reviewer agent file and no hook reads to pin a model — only the
@@ -602,7 +602,7 @@ empty list is refused with, in the shape every other bad profile value takes
 (`lib/profile.js:212`, `'stage.agents is one of: false, true, all, or a comma-separated list of: '`).
 `controlling()` and `controlFor()` in `lib/stages.js` read that array
 straight off the profile's `values` rather than off a fixed list only that
-file could change (`lib/stages.js:736`, `const raw = values && values['stage.agents'];`),
+file could change (`lib/stages.js:737`, `const raw = values && values['stage.agents'];`),
 so which stages are controlled is a profile answer, not a constant. Put a
 stage on that list and it is run by a stage agent instead of by the session:
 
@@ -785,7 +785,7 @@ newest 40, dropping an exact duplicate and replacing a fact read again at a
 new sha. `context.js show` marks a line whose sha is not HEAD `(舊)`. The
 ordinary brief inlines the file's content — `renderBrief` and `renderBrainBrief`
 in `lib/render.js` paste it in whole under `BRIEF_MAX`; over it `fit()` keeps the
-newest facts and names the file for the rest (`lib/render.js:776`, `' older ' + (n === 1 ? 'fact' : 'facts')`) — so a
+newest facts and names the file for the rest (`lib/render.js:780`, `' older ' + (n === 1 ? 'fact' : 'facts')`) — so a
 subagent no longer has to `Read` the file itself before using what it holds.
 Every stage and every dispatched agent writes its verified facts there.
 
