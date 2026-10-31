@@ -524,8 +524,8 @@ then asks this stage's gate.
    Where `.fankeel/render.json` gives a page `src`, it is not recorded at all:
    it is refused unless a `Ruling: render skipped — <why>` covers the task.
 
-**A fix that came back from `verify` is a row of this loop.** `verify` commits
-nothing; a defeated row is routed here at its gate, and here it gets what a
+**A fix that came back from `verify` is a row of this loop.** `verify` fixes only
+doc-only pages (<=2 files); any other defeated row is routed here at its gate, where it gets what a
 task gets: BASE taken immediately before its commit, the implementer resumed
 or the fix made in-session, the parent's commit, one reviewer on the template
 above over `BASE..<sha>`, and then

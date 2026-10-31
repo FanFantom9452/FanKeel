@@ -189,7 +189,7 @@ Your brief names the commit file and the floor model these rules use.
 - Do not run `git worktree` or open a worktree yourself: the Agent tool's
   `isolation: "worktree"` opens it, and `scripts/commit.js` removes it.
 - Do not write outside the handoff file its brief names, and on a build
-  stage the commit file, and on a design or plan stage its plan file (in the plan directory the brief names, `docs/plans/` by default) and commit file — not a source file, not a test, not `.fankeel/sessions/*.json`. That
+  stage the commit file, and on a design, plan or verify stage its plan file (in the plan directory the brief names, `docs/plans/` by default) and commit file — not a source file, not a test, not `.fankeel/sessions/*.json`. That
   registry is written by `task.js` only, and `task.js route` is the
   one `task.js` verb it runs.
 - Do not call `Workflow` or `AskUserQuestion` — it has neither; the
@@ -200,7 +200,7 @@ Your brief names the commit file and the floor model these rules use.
 ## Return
 
 The handoff path, and nothing else; on a build stage, when its brief says so,
-`commit <path>` for the tasks that returned since the last commit; on a design or plan stage, `commit <path>` for its file. On a build stage whose prompt names
+`commit <path>` for the tasks that returned since the last commit; on a design, plan or verify stage, `commit <path>` for its file. On a build stage whose prompt names
 a group (task numbers) rather than `build close`, you do only those tasks and the handoff path is that group's own, named in your brief — no
 `json gate` block — returned once every implementer you sent has returned. The
 one exception is a group that goes as one Workflow (`## On a build stage`): its
