@@ -583,6 +583,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 每帳號額度改用實測 perPoint、單一 session 金額旁標週用量與 5H 估算（10-31）的設計 | `docs/99-archive/2026-10-31-quota-share-design.md` — *built, 繁體中文* |
 | 那份設計的實作計畫 | `docs/99-archive/2026-10-31-quota-share.md` — *built, 繁體中文* |
 | 關卡 header 改寫成這一站→下一站（10-31）的實作計畫 | `docs/99-archive/2026-10-31-gate-header-move.md` — *built, 繁體中文* |
+| 七段詳細設計頁、去識別化實例單頁與 README 精簡（11-01）的實作計畫；設計在對話裡逐段確認 | `docs/99-archive/2026-11-01-seven-stage-design.md` — *built, 繁體中文* |
 | 真的 `claude -p` 巢狀派兩個 agent 量出來：`SubagentStart` 觸發當下 `agent-<id>.meta.json` 兩個 agent 都還沒帶 `spawnDepth`（`atHook`／`depthAtHook` 一致為 `false`／`null`），`nestedBrain()` 退回 fallback 分支，事後檔案才補齊且巢狀關係正確 | [reports/2026-09-28-spawndepth-timing.md](90-agent/reports/2026-09-28-spawndepth-timing.md) — *a dated snapshot, 繁體中文* |
 | 真的 `claude -p` 派 `isolation: "worktree"` 的 subagent 量出來：回傳文字裡沒有路徑也沒有分支（`pathInResult`／`branchInResult` 皆 `false`），readable: no——brain 拿不到路徑可以直接寫進 commit file，`task.js` 的 `openWorktree` 退路還要 design 定義；留下的 worktree 開在 repo 根目錄之內，`lib/guard.js` 的 `relPath` 對不回主樹路徑 | [reports/2026-09-28-worktree-probe.md](90-agent/reports/2026-09-28-worktree-probe.md) — *a dated snapshot, 繁體中文* |
 | 本地 `moondream` 判斷十張 fankeel 測站截圖（五正常五破壞）：正常圖 5/5 判對、壞圖只抓到 1/5（全透明文字那張），平均 0.24 秒；`UI-TARS-1.5-7B-GGUF` 卡在下載時被擋跨主機 redirect，座標題沒問成 | [reports/2026-09-28-local-judge-trial.md](90-agent/reports/2026-09-28-local-judge-trial.md) — *a dated snapshot, 繁體中文* |
