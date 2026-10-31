@@ -677,7 +677,7 @@ async function tick($: EngineInterface, state: State): Promise<void> {
       state.edge = { task: here }
       state.logged.open = ''
     } catch (err) {
-      logOnce($, state.logged, 'open', `fankeel pane: pane not opened or closed, ${String(err)}`)
+      logOnce($, state.logged, 'open', `fankeel pane: pane not opened, ${String(err)}`)
     }
     state.seen = next
     if (now !== state.print) {

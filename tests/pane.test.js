@@ -849,7 +849,7 @@ test('an open that keeps rejecting does not keep the band off the screen', async
     assert.ok(log.invalidated >= 1, 'nothing was invalidated');
     await log.ticks[0].fn();
     await log.ticks[0].fn();
-    assert.equal(log.logs.filter((m) => /pane not opened or closed, .*busy/.test(m)).length, 1, JSON.stringify(log.logs));
+    assert.equal(log.logs.filter((m) => /pane not opened, .*busy/.test(m)).length, 1, JSON.stringify(log.logs));
 });
 
 test('a registry file that stays unreadable is logged once and, after twenty ticks, is no task', async () => {
