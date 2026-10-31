@@ -1,7 +1,7 @@
 ---
 name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, moving to the next stage, or the station — "show all sessions", "which sessions are still open", "clean up old sessions", "監控站". Runs a task through a route it picks from survey, design, plan, build, verify, audit and land, and warns — optionally blocks — when another live session shares your files.
-version: 0.143.2
+version: 0.144.0
 status: current
 last_verified: 2026-10-18
 source_of_truth: lib/stages.js, lib/registry.js, lib/live.js, scripts/task.js, lib/guard.js, docs/90-agent/reference/collisions.md, docs/90-agent/reference/registry.md, docs/90-agent/reference/station.md, docs/90-agent/reference/statusline.md
@@ -1044,7 +1044,7 @@ One exception, behind a profile key. Each stage `stage.agents` names goes
 to a `fankeel:fankeel-brain` stage agent and this session gets the
 controller's block in place of the stage's: the brief carries the stage's
 rules and shape, the report and its gate come back as a file under
-`.fankeel/build/` (on `build`, `design` and `plan`, a commit request comes back first — on `build` each time
+`.fankeel/build/` (on `build`, `design`, `plan` and `verify`, a commit request comes back first — on `build` each time
 none of its implementers is still running, never per task — and this session relays it), and the gate is still asked here: this session copies that file's
 gate word for word, and `hooks/gate.js` only checks the copy. [docs/subagents.md](../../docs/90-agent/reference/subagents.md) has how.
 
