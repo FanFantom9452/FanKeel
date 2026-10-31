@@ -5,7 +5,7 @@ description: task-worktree.test.js「without the key, start opens no worktree」
 state: watch
 group: 整套再紅一次
 timing: if: 整套測試再出現一次重跑不見的失敗
-stamp: 2026-10-16
+stamp: 2026-11-01
 link: tests/task-worktree.test.js
 ---
 

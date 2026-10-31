@@ -5,7 +5,7 @@ description: reviewcheck.test.js「the three tables…」在乾淨 worktree 的�
 state: watch
 group: 整套再紅一次
 timing: if: 整套測試再出現一次重跑不見的失敗
-stamp: 2026-10-16
+stamp: 2026-11-01
 link: tests/reviewcheck.test.js
 ---
 

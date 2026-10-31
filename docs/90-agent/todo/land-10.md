@@ -6,7 +6,7 @@ state: blocked
 link: skills/fankeel-land/SKILL.md
 group: 教授確認 Gitea 環境
 timing: after: 和教授確認 Gitea 環境（tea 或 API token、CI runner 有無 Chrome、測試指令）
-stamp: 2026-10-30
+stamp: 2026-11-01
 ---
 
 來源：2026-10-29 的判官判定（選 A，不加）假設只有使用者一人在用；使用者說之後要把 fankeel 交給教授，教授習慣在 Gitea 上走 CI/CD，判定的「would flip if」成立。同日的 survey 盤點了四個缺口，那份報告在 .fankeel/build 下沒進版控，清單抄在這裡。

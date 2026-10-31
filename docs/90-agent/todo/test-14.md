@@ -6,7 +6,7 @@ state: watch
 link: tests/station-chartroom.test.js
 group: 全套 suite 再紅
 timing: if: 這兩個測試之一在全套 suite 再紅一次
-stamp: 2026-10-21
+stamp: 2026-11-01
 ---
 
 來源：2026-10-21 TODO 全表盤點（session b7a7d8d4）land 站的 retro 讀完整段對話後列為 backlog，使用者在 land gate 選「全記成 TODO」。

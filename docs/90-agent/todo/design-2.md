@@ -6,7 +6,7 @@ state: watch
 link: docs/90-agent/reference/improvement-brief.md#41-design-階段的-mockup-步驟前端任務
 group: 下一個前端任務
 timing: if: 下一個前端任務出現
-stamp: 2026-09-26
+stamp: 2026-11-01
 ---
 
 來源：根目錄 TODO.md 第 156 行的條目（2026-09-26 記），改成逐條的 todo 檔。

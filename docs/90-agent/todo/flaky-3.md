@@ -5,7 +5,7 @@ description: inject.test.js「a file dirty before the task started is not claime
 state: watch
 group: 整套再紅一次
 timing: if: 整套測試再出現一次重跑不見的失敗
-stamp: 2026-10-16
+stamp: 2026-11-01
 link: tests/inject.test.js
 ---
 

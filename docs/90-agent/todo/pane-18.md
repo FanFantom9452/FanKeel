@@ -6,7 +6,7 @@ state: watch
 link: hooks/pane.ts
 group: 引擎開背景清單 API
 timing: if: $.tasks.list() 出現，或 background_tasks 進 ui.render 或 $.session
-stamp: 2026-10-21
+stamp: 2026-11-01
 ---
 
 來源：2026-10-21 /fankeel-ask 判官對「Pane 能不能像官方一樣列 background task」的答覆，見 [判決](../judgements/2026-10-20-pane-bg-list.md)。

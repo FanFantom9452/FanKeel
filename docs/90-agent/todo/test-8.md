@@ -6,7 +6,7 @@ state: watch
 link: README.md
 group: 認可量耗盡再發生
 timing: if: 整套測試再出現 VirtualAlloc failed、0xC0000409 或 0xC000012D
-stamp: 2026-10-18
+stamp: 2026-11-01
 ---
 
 來源：2026-10-16 同時啟動兩組 `node --test` 完整測試（FANKEEL_BROWSER 設為 Chrome 完整路徑），分別失敗 17 與 13 項；同一個 commit b4281f84 單跑 `scripts/suite.js` 為 4397 通過、0 失敗。紀錄：C:\Users\user\AppData\Roaming\Claude\side-session-notes\local_b1fea4fc-ed8a-4178-900b-a3fe8095588a\runA.txt 與 runB.txt。

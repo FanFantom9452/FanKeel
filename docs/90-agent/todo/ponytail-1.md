@@ -6,7 +6,7 @@ state: watch
 link: agents/fankeel-reviewer.md
 group: 下一個 Ponytail 借鏡出現
 timing: if: reviewer 回報難以逐條指認，或解除安裝後有殘留事故
-stamp: 2026-10-23
+stamp: 2026-11-01
 ---
 
 來源：2026-10-23 使用者看完 Ponytail 4.9.0 到 5.3.2 的比較表後說留著記在 todo。完整比較表在 docs/90-agent/judgements/2026-10-22-ponytail-5-diff.md:125-139。依 docs/03-decisions/2026-09-24-optimise-own-first.md:15，四個候選目前都對不到 TODO 或事故，先記在這裡。

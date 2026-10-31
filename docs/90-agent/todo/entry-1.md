@@ -5,7 +5,7 @@ state: watch
 link: docs/90-agent/reference/improvement-brief.md
 group: 第二個平台的使用者
 timing: if: 出現第二個 host（Gemini CLI、Codex CLI 等）的使用者或 issue
-stamp: 2026-09-29
+stamp: 2026-11-01
 ---
 
 來源：47059a63（2026-09-08）把簡報收進 docs/ 時列出這一條，起因是簡報 §2.7 比較 caveman 的 compile.mjs 與 SEPIA 用 symlink 支援四平台；hook 對等只查過 Gemini CLI 的 BeforeAgent 與 Codex CLI 的 UserPromptSubmit 兩個，這項查證出自 2026-09-18 的檢查（docs/90-agent/reference/improvement-brief.md 後記）。

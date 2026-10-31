@@ -6,7 +6,7 @@ state: watch
 link: agents/fankeel-render-reviewer.md
 group: sonnet 花費成瓶頸或要離線
 timing: if: 渲染審查的 sonnet 花費成了瓶頸，或需要離線跑
-stamp: 2026-09-26
+stamp: 2026-11-01
 ---
 
 來源：根目錄 TODO.md 第 176 行的條目（2026-09-26 記），改成逐條的 todo 檔。

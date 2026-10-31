@@ -6,7 +6,7 @@ state: watch
 link: scripts/survey.js
 group: 需要第十一種語言
 timing: if: a repository needs an eleventh language
-stamp: 2026-09-29
+stamp: 2026-11-01
 ---
 
 來源：c860156c（2026-08-21，close the deferred list）把這行寫進 TODO.md：survey.js 目前認得十種語言，其餘退回只比對檔名，等真有專案需要再加一列；2af15939 起改述為列入 `skipped.noPattern` 交人看。

@@ -6,7 +6,7 @@ state: watch
 link: scripts/survey.js
 group: 程式碼大到要查結構
 timing: if: 某個專案的程式碼大到 grep 加 read 找不到跨檔關係
-stamp: 2026-09-29
+stamp: 2026-11-01
 ---
 
 來源：2163ed9b（2026-09-27，graphify／orbit 分析的七條）把這行放進 TODO.md：graphify 可接為查詢工具，但獨立實測未穩定省錢，接之前要先解決它的 PreToolUse hook 擋 Read 與 guard 衝突，以及 Windows 上 hook 靜默失效（其 issue #140）。
