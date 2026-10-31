@@ -392,7 +392,7 @@ function renderMain(narrow) {
     const st = RUN.stages;
     const maxWait = Math.max(...st.map((s) => s.waitMin));
     const W = narrow ? 348 : 1194;
-    const svg = mkSvg($('flow'), W, '七段主線、等使用者的關卡、退回', narrow, 'm-');
+    const svg = mkSvg($('flow'), W, '八段主線、等使用者的關卡、退回', narrow, 'm-');
     const nw = narrow ? 70 : 112, nh = narrow ? 100 : 98, ny0 = narrow ? 30 : 32;
     const pos = (i) => narrow
         ? { x: 10 + (i < 4 ? i : 7 - i) * 86, y: ny0 + (i < 4 ? 0 : 130) }
@@ -402,7 +402,7 @@ function renderMain(narrow) {
         return narrow ? [wall, tok] : [wall + ' · ' + tok];
     };
     const zh = narrow ? 272 : 150;
-    zone(svg, 1, 0, W - 2, zh, '01 / 七段主線');
+    zone(svg, 1, 0, W - 2, zh, '01 / 八段主線');
     st.forEach((s, i) => {
         node(svg, { ...pos(i), w: nw, h: nh, c: 'var(--st-' + s.id + ')', name: s.name, aria: s.name + '：' + s.product + '，牆鐘 ' + mins(s.wallMin) + '，token ' + (RUN.tokens[s.id] || '—'), lines: wrap(s.product, narrow ? 6 : 8),
             tags: tagsOf(s), id: 'stage-' + s.id, nameY: narrow ? 18 : 20, lineY: narrow ? 34 : 39, lineStep: narrow ? 12 : 14, tagFs: narrow ? 9.5 : 10.5 });
@@ -446,7 +446,7 @@ function renderMain(narrow) {
         node(svg, { x: mx(i), y: my, w: nw, h: mh, c: 'var(--st-' + st[i].id + ')', name: st[i].name, aria: st[i].name + '：' + st[i].product + '，牆鐘 ' + mins(st[i].wallMin) + '，token ' + (RUN.tokens[st[i].id] || '—') + '（' + sub + '）', lines: [sub], id: 'stage-' + st[i].id, nameY: 18, lineY: 33 });
     }
     const cb = mx(bi) + nw / 2, cv = mx(vi) + nw / 2, yb = my + mh, p = RUN.depth.patrol;
-    arrow(svg, 'M' + cv + ' ' + yb + 'V' + (yb + 28) + 'H' + cb + 'V' + yb, 'fail', '盤點任務數 ' + p.sequential + '→' + p.tasks, (cb + cv) / 2, yb + 46);
+    arrow(svg, 'M' + cv + ' ' + yb + 'V' + (yb + 28) + 'H' + cb + 'V' + yb, 'fail', '盤點 ' + p.tasks + ' 個任務', (cb + cv) / 2, yb + 46);
     done(svg, z3 + z3h + 6);
 }
 
