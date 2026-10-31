@@ -431,8 +431,8 @@ test('stage.agents at survey: a genuinely different question headed with the sta
 // gate-17: on 2026-10-21 a controlled build gate headed `build 完成` went out
 // with two of its file's three options. The header was not the stage's name,
 // so the mismatch was never read as a copy attempt and the hook only noted it.
-// Under gate-19 a filed header is a stage word, so a header that is not this
-// stage's is another stage's.
+// Under the move header a filed header is `<Stage>→<Next>`, so one whose first
+// stage is not this stage's belongs to another stage.
 const OWN_HEAD = QUESTIONS.map((q) => Object.assign({}, q, { header: 'Build→Design', question: q.question.replace(/^Survey/, 'Build') }));
 
 test('a copy under the gate\'s own header that drops an option is denied, though the header is not the stage', () => {

@@ -26,7 +26,7 @@ function project(stage, extra) {
 
 function handoff(root, labels, from = 'Plan', to = 'Build') {
     const file = path.join(root, 'report.md');
-    const questions = [{ header: from, question: from + ' -> ' + to + ' | fankeel : t　要進下一站嗎？', options: labels.map((label) => ({ label, description: 'd' })) }];
+    const questions = [{ header: from + '→' + to, question: from + ' -> ' + to + ' | fankeel : t　要進下一站嗎？', options: labels.map((label) => ({ label, description: 'd' })) }];
     fs.writeFileSync(file, '# report\n\n' + TICKS + 'json gate\n' + JSON.stringify({ questions, next: 'pause here' }) + '\n' + TICKS + '\n');
     return file;
 }

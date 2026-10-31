@@ -18,7 +18,7 @@ function gateBlock(status, stage) {
     const STAGE = handoff.stageWord(stage);
     const gate = {
         questions: [{
-            header: STAGE,
+            header: handoff.gateHeader(stage, nextStage || '收工'),
             question: `${STAGE} -> ${nextStage ? handoff.stageWord(nextStage) : '收工'} | fankeel : drive test`,
             options: [
                 { label: nextStage ? `Go to ${handoff.stageWord(nextStage)}` : 'Wrap up — 收工', description: '進下一站。' },

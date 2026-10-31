@@ -119,7 +119,7 @@ also in progress:
 
 <plugin> = C:/Users/you/.claude/plugins/cache/fankeel/fankeel/0.31.0
 stage rules:
-  - Never end a stage silently or in prose. Use AskUserQuestion, 3 at least, never dropping the pause. Header: `This→Next`, `→Next` past 12 columns; stem `This -> Next | project : task`, initial capital. Option one is the approval: verify — `Go to` it or `Wrap up — 收工`; mark it `(Recommended)` rather than moving it. Option two names the open decision, or none — never unfinished work. Label: `Stay in This`.
+  - Never end a stage silently or in prose. Use AskUserQuestion, 3 at least, never dropping the pause. Header: `This→Next`, `→Next` past 12 columns; stem `This -> Next | project : task`, initial capital. Option one is the approval: verify — `Go to` it or `Wrap up — 收工`; mark it `(Recommended)`, never moved. Option two names the open decision, or none — never unfinished work. Label: `Stay in This`.
   - Background belongs in the option descriptions, never in the stem, which is one line.
   - Say what you actually did (a failed test, a thing you could not check) and a dispatch before it goes: how many, which model. If rule and shape conflict, the constraint wins and the shape stays.
   - Write CJK characters directly in tool input. Name a code concept in code — `overdue`, not a translation of it.
@@ -204,7 +204,7 @@ class: architectural — a new subsystem, or a change to an interface something 
 
 <plugin> = C:/Users/you/.claude/plugins/cache/fankeel/fankeel/0.31.0
 stage rules:
-  - Never end a stage silently or in prose. Use AskUserQuestion, 3 at least, never dropping the pause. Header: `This→Next`, `→Next` past 12 columns; stem `This -> Next | project : task`, initial capital. Option one is the approval: verify — `Go to` it or `Wrap up — 收工`; mark it `(Recommended)` rather than moving it. Option two names the open decision, or none — never unfinished work. Label: `Stay in This`.
+  - Never end a stage silently or in prose. Use AskUserQuestion, 3 at least, never dropping the pause. Header: `This→Next`, `→Next` past 12 columns; stem `This -> Next | project : task`, initial capital. Option one is the approval: verify — `Go to` it or `Wrap up — 收工`; mark it `(Recommended)`, never moved. Option two names the open decision, or none — never unfinished work. Label: `Stay in This`.
   - Background belongs in the option descriptions, never in the stem, which is one line.
   - Say what you actually did (a failed test, a thing you could not check) and a dispatch before it goes: how many, which model. If rule and shape conflict, the constraint wins and the shape stays.
   - Write CJK characters directly in tool input. Name a code concept in code — `overdue`, not a translation of it.

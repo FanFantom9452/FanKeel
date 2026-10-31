@@ -314,7 +314,7 @@ test('the background sits in the descriptions, not in the stem', () => {
 // in conflict.
 test('the recommendation is a label, never a position', () => {
   const text = ALWAYS.join(' ');
-  assert.match(text, /`\(Recommended\)` rather than moving it/);
+  assert.match(text, /`\(Recommended\)`, never moved/);
   assert.equal(/recommended option first/i.test(text), false,
     'an ordering rule is back, and it collides with option one being the approval');
 });
