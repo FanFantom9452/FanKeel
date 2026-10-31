@@ -1017,12 +1017,12 @@ test('stage.agents true still means survey only, once other stages are controlla
   assert.equal(controlling('build', { 'stage.agents': trueValue }), false);
 });
 
-test('a controlled design and plan relay a commit like build; the other controlled stages do not', () => {
+test('a controlled design, plan and verify relay a commit like build; the other controlled stages do not', () => {
   const { controlFor } = require('../lib/stages.js');
   const values = { 'stage.agents': ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land'] };
   const carries = (stage) => controlFor(stage, values, {}).rules.some((r) => r.includes('commit <file>'));
-  for (const stage of ['design', 'plan', 'build']) assert.equal(carries(stage), true, stage);
-  for (const stage of ['survey', 'verify', 'audit', 'land']) assert.equal(carries(stage), false, stage);
+  for (const stage of ['design', 'plan', 'build', 'verify']) assert.equal(carries(stage), true, stage);
+  for (const stage of ['survey', 'audit', 'land']) assert.equal(carries(stage), false, stage);
 });
 
 test('a controlled stage\'s dispatch prompt is the stage name, plus one line when the user just gave a new instruction', () => {

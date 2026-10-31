@@ -771,7 +771,7 @@ test('stage.agents true at survey: the controller\'s block replaces the stage\'s
   }
 });
 
-test('a controlled build tells its controller to run commit.js on `commit <file>`, and no other controlled stage does', () => {
+test('a controlled build and verify tell their controller to run commit.js on `commit <file>`, and survey does not', () => {
   const { renderResume } = require('../lib/render.js');
   const on = { values: { 'stage.agents': ['survey', 'build', 'verify'] }, sources: {}, unreadable: [] };
   const at = (stage) => entry(MINE, { stage, started: '2026-09-19T09:30:12.345Z' });
@@ -780,7 +780,11 @@ test('a controlled build tells its controller to run commit.js on `commit <file>
     assert.equal(out.includes('{{'), false);
     assert.ok(sizeAtReference(out) < 2400, 'a controlled build block is ' + sizeAtReference(out) + ' chars at a real plugin root');
   }
-  for (const stage of ['survey', 'verify']) {
+  for (const out of [render({ mine: at('verify'), others: [], now: NOW, root: '/r', profile: on }), renderResume({ mine: at('verify'), profile: on, root: '/r' })]) {
+    assert.match(out, /On `commit <file>`, run `node <plugin>\/scripts\/commit\.js "<file>"` in its paths' repo; SendMessage it what that printed, exactly\. No gate; wait\./);
+    assert.ok(sizeAtReference(out) < 2400, 'a controlled verify block is ' + sizeAtReference(out) + ' chars at a real plugin root');
+  }
+  for (const stage of ['survey']) {
     assert.doesNotMatch(render({ mine: at(stage), others: [], now: NOW, root: '/r', profile: on }), /commit <file>/, stage);
   }
 });
