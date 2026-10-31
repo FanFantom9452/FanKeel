@@ -797,6 +797,7 @@ is corrected by the next one, not by rewriting this.
 | Brief 44 — Anthropic's internal AI code-review practice: what should fankeel take? | [90-agent/judgements/2026-10-29-anthropic-review-practice.md](90-agent/judgements/2026-10-29-anthropic-review-practice.md) — *judged 2026-10-29, fable* |
 | Brief 45 — should fankeel support CI/CD or a Gitea nightly build? | [90-agent/judgements/2026-10-29-ci-cd-nightly.md](90-agent/judgements/2026-10-29-ci-cd-nightly.md) — *judged 2026-10-29, fable* |
 | 判官要和人類確認時，/fankeel-ask 該怎麼設計 | [90-agent/judgements/2026-10-30-judge-asks-human.md](90-agent/judgements/2026-10-30-judge-asks-human.md) — *judged 2026-10-30, fable* |
+| Brief 46 — verify 回跳 build：小修正為什麼不就地修完 | [90-agent/judgements/2026-10-31-verify-bounce-small-fix.md](90-agent/judgements/2026-10-31-verify-bounce-small-fix.md) — *judged 2026-10-31, fable* |
 
 ## The five scanners
 
