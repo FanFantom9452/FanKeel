@@ -6,8 +6,8 @@ source_of_truth: this file is the index; each page below is its own source
 
 # FanKeel documentation
 
-Twenty-six pages, one question each. The front page has install, update and
-uninstall, the two diagrams and a short introduction to each of these;
+Twenty-seven pages, one question each. The front page has install, update and
+uninstall and a short introduction; the detailed design is design.md;
 everything that needs more than a paragraph is here. For a person who is not
 running a session, the station's 文件 page (`#/docs`) turns each project's own
 `.fankeel/map.md` into a card; see [station.md](90-agent/reference/station.md).
@@ -16,6 +16,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 |---|---|
 | 第一次用：安裝、第一次 `/fankeel`、選 task、走完一條 route、看監控站 | [getting-started.md](01-guide/getting-started.md) |
 | 七站各產出什麼、三種類別、gate 怎麼答、registry 是什麼（給人讀的短版） | [concepts.md](01-guide/concepts.md) |
+| 一件真實任務逐段怎麼走：每段做什麼、平行派工、Agent 與 Workflow 差在哪（詳細設計） | [design.md](01-guide/design.md) |
+| 同一件任務畫成一頁：八段時間軸、等待與做事、派工泳道 | [seven-stages.html](01-guide/seven-stages.html) |
 | 每個 profile key 的意思與建議值，以及在站頁精靈怎麼套 | [profile.md](01-guide/profile.md) |
 | 監控站每個 view 看什麼、數字怎麼讀 | [station.md](01-guide/station.md) |
 | 用自己的 Tailscale 開手機遠端：準備、打開、配對、從手機答 gate | [tailscale-setup.md](01-guide/tailscale-setup.md) |
