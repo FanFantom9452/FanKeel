@@ -580,6 +580,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 那份設計的實作計畫 | `docs/99-archive/2026-10-30-spend-quota.md` — *built, 繁體中文* |
 | 每帳號額度改用實測 perPoint、單一 session 金額旁標週用量與 5H 估算（10-31）的設計 | `docs/99-archive/2026-10-31-quota-share-design.md` — *built, 繁體中文* |
 | 那份設計的實作計畫 | `docs/99-archive/2026-10-31-quota-share.md` — *built, 繁體中文* |
+| 關卡 header 改寫成這一站→下一站（10-31）的實作計畫 | `docs/99-archive/2026-10-31-gate-header-move.md` — *built, 繁體中文* |
 | 真的 `claude -p` 巢狀派兩個 agent 量出來：`SubagentStart` 觸發當下 `agent-<id>.meta.json` 兩個 agent 都還沒帶 `spawnDepth`（`atHook`／`depthAtHook` 一致為 `false`／`null`），`nestedBrain()` 退回 fallback 分支，事後檔案才補齊且巢狀關係正確 | [reports/2026-09-28-spawndepth-timing.md](90-agent/reports/2026-09-28-spawndepth-timing.md) — *a dated snapshot, 繁體中文* |
 | 真的 `claude -p` 派 `isolation: "worktree"` 的 subagent 量出來：回傳文字裡沒有路徑也沒有分支（`pathInResult`／`branchInResult` 皆 `false`），readable: no——brain 拿不到路徑可以直接寫進 commit file，`task.js` 的 `openWorktree` 退路還要 design 定義；留下的 worktree 開在 repo 根目錄之內，`lib/guard.js` 的 `relPath` 對不回主樹路徑 | [reports/2026-09-28-worktree-probe.md](90-agent/reports/2026-09-28-worktree-probe.md) — *a dated snapshot, 繁體中文* |
 | 本地 `moondream` 判斷十張 fankeel 測站截圖（五正常五破壞）：正常圖 5/5 判對、壞圖只抓到 1/5（全透明文字那張），平均 0.24 秒；`UI-TARS-1.5-7B-GGUF` 卡在下載時被擋跨主機 redirect，座標題沒問成 | [reports/2026-09-28-local-judge-trial.md](90-agent/reports/2026-09-28-local-judge-trial.md) — *a dated snapshot, 繁體中文* |
@@ -687,6 +688,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 - [手機只配對一台，由那台去拿其他電腦的 session（10-29）：/m 合併其他已配對電腦與未登記的 Desktop／CLI／RC session，取代 10-27 one-phone-three-pcs「不合併」那一半](03-decisions/2026-10-29-mobile-sources.md)
 - [花費頁分成總覽、7d 額度、5h 額度、明細四個分頁（10-31）：依帳號畫 5h／7d 額度折線與 task 條，金額不接 (x%)](03-decisions/2026-10-31-spend-quota-tabs.md)
 - [每帳號額度改用實測 perPoint（10-31）：刪 quota.week，單一 session 金額旁標週用量與 5H 估算](03-decisions/2026-10-31-quota-share.md)
+- [關卡問題的 header 改寫成這一站→下一站（10-31）：超過 12 欄只留目的地](03-decisions/2026-10-31-gate-header-move.md)
 - [任務的圖由 station 畫成 SVG（10-20）](03-decisions/2026-10-20-task-boards-as-svg.md)
 - [retro 讀整份遮蔽過的 session 包（10-20）](03-decisions/2026-10-20-retro-bundle.md)
 - [沒派過的 agent 怎麼處理（10-15）：effort 改在派工時傳，六個複本刪掉](03-decisions/2026-10-15-unused-agents.md)
