@@ -13,7 +13,8 @@
   --wait:#b7791f; --wait-bg:rgba(183,121,31,.16); --wait-ink:#7a4f0f;
   --st-init:#8d9793; --st-survey:#3578b8; --st-design:#cc9225; --st-plan:#af4a88; --st-build:#58994a;
   --st-verify:#6959ae; --st-audit:#c04d42; --st-land:#14938d;
-  --s-main:#4a5954; --s-agent:#dc932e; --s-workflow:#bc4c31;
+  --s-agent:#dc932e; --s-workflow:#bc4c31;
+  --ok:#2f8a3e; --fail:#c04d42; --grid:rgba(22,28,26,.07); --gate-ink:#fff;
   --f-ui:"Bahnschrift","Microsoft JhengHei UI","Microsoft JhengHei","PingFang TC","Noto Sans TC",system-ui,sans-serif;
   --f-mono:"Cascadia Mono","Cascadia Code",Consolas,"SF Mono",ui-monospace,monospace;
   --r:10px; --r-sm:6px;
@@ -25,18 +26,18 @@
   --wait:#e0a53a; --wait-bg:rgba(224,165,58,.16); --wait-ink:#e0a53a;
   --st-init:#65706b; --st-survey:#488acb; --st-design:#bf860c; --st-plan:#c35c9b; --st-build:#5e9f50;
   --st-verify:#8071c8; --st-audit:#d15d51; --st-land:#209993;
-  --s-main:#93a39d; --s-agent:#bf8b1f; --s-workflow:#c9553c;
+  --s-agent:#bf8b1f; --s-workflow:#c9553c;
+  --ok:#5fbf6e; --fail:#e0675b; --grid:rgba(255,255,255,.05); --gate-ink:#1a1405;
 }}
 *{box-sizing:border-box}
 body{margin:0;background:var(--ground);color:var(--ink);font:15px/1.6 var(--f-ui)}
-main{max-width:1080px;margin:0 auto;padding:32px 20px 48px;display:grid;gap:20px}
+main{max-width:1200px;margin:0 auto;padding:32px 20px 48px;display:grid;gap:20px}
 section{background:var(--panel);border:1px solid var(--rule);border-radius:var(--r);padding:20px 22px}
 h1{font-size:26px;line-height:1.3;margin:0 0 6px}
 h2{font-size:17px;margin:0 0 14px}
 h3{font-size:14px;margin:18px 0 8px;color:var(--ink2)}
 .eyebrow{font:600 12px/1 var(--f-mono);letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
 .hero .eyebrow{margin-bottom:12px}
-.mono{font-family:var(--f-mono)}
 .note{color:var(--muted);font-size:13px;margin:10px 0 0}
 .wait-fill{background:repeating-linear-gradient(135deg,var(--wait) 0 3px,var(--wait-bg) 3px 7px)}
 
@@ -80,25 +81,59 @@ h3{font-size:14px;margin:18px 0 8px;color:var(--ink2)}
 .stage .meta .w{border-color:var(--wait);color:var(--wait-ink)}
 .stage.wide{grid-column:1/-1}
 
-/* swimlanes */
-.lanes{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+/* flow diagrams */
+html{scroll-behavior:auto}
+@media(prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+.flow{background:color-mix(in srgb,var(--panel) 60%,transparent)}
+.dgbox{background-color:var(--ground);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:24px 24px;border:1px solid var(--rule);border-radius:var(--r-sm);padding:10px}
+.dg{display:block;width:100%;height:auto;overflow:visible}
+.dg text{font-family:var(--f-ui);fill:var(--ink)}
+.dg .zn{fill:none;stroke:var(--rule2);stroke-dasharray:5 4}
+.dg .zt{font:600 11px var(--f-mono);fill:var(--muted);letter-spacing:.06em}
+.dg .nbox{fill:var(--panel);stroke:var(--c);stroke-width:1.6}
+.dg .ghost{fill:var(--panel);stroke:var(--c);stroke-width:1.2;opacity:.55}
+.dg .nn{font:700 13px var(--f-mono)}
+.dg .nl{font-size:11.5px;fill:var(--ink2)}
+.dg.sm .nn{font-size:11px}
+.dg.sm .nl{font-size:10px}
+.dg .tg{fill:var(--inset);stroke:var(--rule2)}
+.dg .tt{font:10.5px var(--f-mono);fill:var(--muted)}
+.dg.sm .tt{font-size:9.5px}
+.dg .ar{fill:none;stroke-width:1.8}
+.dg .ar.ok{stroke:var(--ok)}
+.dg .ar.wait{stroke:var(--wait);stroke-dasharray:6 4}
+.dg .ar.hold{stroke:var(--ink2);stroke-dasharray:2 4}
+.dg .ar.fail{stroke:var(--fail);stroke-dasharray:6 4}
+.dg .mk.ok{fill:var(--ok)}
+.dg .mk.wait{fill:var(--wait)}
+.dg .mk.hold{fill:var(--ink2)}
+.dg .mk.fail{fill:var(--fail)}
+.dg .al{font:600 11px var(--f-mono);paint-order:stroke;stroke:var(--ground);stroke-width:4px;stroke-linejoin:round}
+.dg .al.ok{fill:var(--ok)}
+.dg .al.wait{fill:var(--wait-ink)}
+.dg .al.hold{fill:var(--ink2)}
+.dg .al.fail{fill:var(--fail)}
+.dg .gate rect{fill:var(--wait-bg);stroke:var(--wait);stroke-dasharray:4 3;stroke-width:1.4}
+.dg .gate text{font:600 12px var(--f-mono);fill:var(--wait-ink)}
+.dg .gate.zero{opacity:.55}
+.dg .gate.big rect{fill:var(--wait);stroke:var(--wait);stroke-dasharray:none;stroke-width:2}
+.dg .gate.big text{font-size:18px;font-weight:700;fill:var(--gate-ink)}
+.dg.sm .gate.big text{font-size:14px}
+.dg .link{cursor:pointer}
+.dg .link:hover .nbox{fill:var(--inset)}
+.dg .link:focus-visible{outline:3px solid var(--ink);outline-offset:3px;border-radius:8px}
+.dg .link:focus-visible .nbox{stroke-width:3.5}
+.legend .ln{display:inline-block;width:28px;height:0;border-top:2px solid var(--ok);vertical-align:3px;margin-right:6px}
+.legend .ln.wait{border-top:2px dashed var(--wait)}
+.legend .ln.hold{border-top:2px dotted var(--ink2)}
+.legend .ln.fail{border-top:2px dashed var(--fail)}
+.legend .bx{display:inline-block;width:16px;height:11px;border:1.5px solid var(--st-build);border-radius:3px;vertical-align:-1px;margin-right:6px;background:var(--panel)}
+.flow .legend{margin:12px 0 0}
+
+/* depth */
 .lane{background:var(--inset);border-radius:var(--r-sm);padding:12px 14px}
 .lane h4{margin:0 0 2px;font-size:14px}
 .lane .tag{font:12px/1.5 var(--f-mono);color:var(--muted);margin:0 0 10px}
-.sw{display:grid;grid-template-columns:84px repeat(12,1fr);gap:4px 2px;align-items:center}
-/* Pinned to column 1 so each label opens a new row; auto-placed it landed in whatever column the cursor held. */
-.sw .who{grid-column:1;font-size:13px;color:var(--ink2);white-space:nowrap}
-.sw .b{min-height:24px;padding:2px 1px;border-radius:3px;font:12px/1.3 var(--f-mono);display:flex;align-items:center;justify-content:center;text-align:center;color:var(--ink);background:color-mix(in srgb,var(--x) 26%,var(--panel));border-left:3px solid var(--x);white-space:nowrap;overflow:hidden}
-.sw .b.wf{white-space:normal;padding:3px 6px}
-.sw .impl{--x:var(--s-agent)}
-.sw .rev{--x:var(--st-verify)}
-.sw .main{--x:var(--s-main)}
-.sw .cmt{--x:var(--st-build)}
-.sw .wf{--x:var(--s-workflow)}
-.sw .cut{background:none;border:1.5px dashed var(--st-audit);color:var(--ink)}
-.lane ul{margin:10px 0 0;padding-left:18px;font-size:13px;color:var(--ink2)}
-
-/* depth */
 .depth{display:grid;grid-template-columns:1fr 1.4fr;gap:14px}
 .chain{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .chain .t{font:600 12px/1 var(--f-mono);padding:8px 10px;border-radius:var(--r-sm);background:color-mix(in srgb,var(--st-build) 26%,var(--panel));border-left:3px solid var(--st-build);color:var(--ink)}
@@ -113,13 +148,14 @@ h3{font-size:14px;margin:18px 0 8px;color:var(--ink2)}
 footer{text-align:center;color:var(--muted);font-size:13px}
 footer a{color:var(--ink)}
 @media(max-width:760px){
-  .totals,.lanes,.depth{grid-template-columns:1fr}
+  .totals,.depth{grid-template-columns:1fr}
   .bars{grid-template-columns:60px 1fr}
   .bars .val{grid-column:2;text-align:left;margin-top:-4px}
   .axis{grid-column:2}
-  .sw{grid-template-columns:0 repeat(12,1fr);gap:4px 2px}
-  .sw .who{grid-column:1/-1;margin-top:4px}
-  .sw .b{font-size:11px}
+  main{padding-left:12px;padding-right:12px}
+  .flow{padding:10px 8px}
+  .dgbox{padding:4px}
+  .stage.wide{padding-left:10px;padding-right:10px}
 }
 </style>
 </head>
@@ -140,6 +176,12 @@ footer a{color:var(--ink)}
   <noscript><p class="note">這頁的數字由頁內的腳本畫出，請開啟 JavaScript。</p></noscript>
 </section>
 
+<section class="flow" aria-labelledby="flow-h">
+  <h2 id="flow-h">一個任務怎麼走：點節點跳到那一段</h2>
+  <div class="dgbox" id="flow"></div>
+  <div class="legend" data-legend></div>
+</section>
+
 <section aria-labelledby="bars-h">
   <h2 id="bars-h">每段的牆鐘：做事與等使用者</h2>
   <div class="legend">
@@ -151,71 +193,14 @@ footer a{color:var(--ink)}
 </section>
 
 <section class="route" aria-label="八段">
-  <section class="stage" data-stage="init" data-sub="還沒開始任務之前"></section>
-  <section class="stage" data-stage="survey" data-sub="現在已經有什麼"></section>
-  <section class="stage" data-stage="design" data-sub="決定怎麼做"></section>
-  <section class="stage" data-stage="plan" data-sub="拆成任務"></section>
-  <section class="stage wide" data-stage="build" data-sub="動手做">
-    <h3>派送方式：多個 Agent 與 Workflow（示意）</h3>
-    <div class="lanes">
-      <div class="lane">
-        <h4>多個 Agent</h4>
-        <p class="tag">主控坐鎮、一份一份收</p>
-        <div class="sw" aria-label="多個 Agent 泳道">
-          <span class="who">主控</span>
-          <span class="b main" style="grid-column:2/3">派</span>
-          <span class="b main" style="grid-column:5/6">收</span>
-          <span class="b cmt" style="grid-column:6/7">提交</span>
-          <span class="b main" style="grid-column:8/9">收</span>
-          <span class="b cmt" style="grid-column:9/10">提交</span>
-          <span class="b main" style="grid-column:11/12">收</span>
-          <span class="b cmt" style="grid-column:12/14">提交</span>
-          <span class="who">實作者 A</span>
-          <span class="b impl" style="grid-column:2/5">實作</span>
-          <span class="who">實作者 B</span>
-          <span class="b impl" style="grid-column:2/8">實作</span>
-          <span class="who">實作者 C</span>
-          <span class="b impl" style="grid-column:2/7">實作</span>
-          <span class="b cut" style="grid-column:7/8" title="衝突就重派">重派</span>
-          <span class="b impl" style="grid-column:8/11">實作</span>
-          <span class="who">reviewer</span>
-          <span class="b rev" style="grid-column:5/6">審</span>
-          <span class="b rev" style="grid-column:8/9">審</span>
-          <span class="b rev" style="grid-column:11/12">審</span>
-        </div>
-        <ul>
-          <li>每份回傳都進主控 context，逐份讀</li>
-          <li>回來一個提交一個</li>
-          <li>能插手：衝突就重派、怪就停</li>
-        </ul>
-      </div>
-      <div class="lane">
-        <h4>Workflow</h4>
-        <p class="tag">整組打包丟出去、只收彙總</p>
-        <div class="sw" aria-label="Workflow 泳道">
-          <span class="who">主控</span>
-          <span class="b main" style="grid-column:2/3">開</span>
-          <span class="b main" style="grid-column:11/12">彙總</span>
-          <span class="b cmt" style="grid-column:12/14">提交</span>
-          <span class="who">任務 1</span>
-          <span class="b impl" style="grid-column:3/6">實作</span>
-          <span class="b rev" style="grid-column:6/7">審</span>
-          <span class="who">任務 2</span>
-          <span class="b impl" style="grid-column:3/8">實作</span>
-          <span class="b rev" style="grid-column:8/9">審</span>
-          <span class="who">任務 3</span>
-          <span class="b impl" style="grid-column:3/9">實作</span>
-          <span class="b rev" style="grid-column:9/10">審</span>
-          <span class="who">腳本</span>
-          <span class="b wf" style="grid-column:3/11">implement → review，中間產物留在腳本裡</span>
-        </div>
-        <ul>
-          <li>腳本內每任務一條 implement→review，不等別人</li>
-          <li>只回彙總，省主控 context</li>
-          <li>跑完前不提交，也不回主控、停不了</li>
-        </ul>
-      </div>
-    </div>
+  <section class="stage" id="stage-init" data-stage="init" data-sub="還沒開始任務之前"></section>
+  <section class="stage" id="stage-survey" data-stage="survey" data-sub="現在已經有什麼"></section>
+  <section class="stage" id="stage-design" data-stage="design" data-sub="決定怎麼做"></section>
+  <section class="stage" id="stage-plan" data-stage="plan" data-sub="拆成任務"></section>
+  <section class="stage wide" id="stage-build" data-stage="build" data-sub="動手做">
+    <h3>BUILD 的裡面：任務怎麼被派出去、收回來</h3>
+    <div class="dgbox" id="flow2"></div>
+    <div class="legend" data-legend style="margin:12px 0 0"></div>
     <h3>依賴深度決定分幾組</h3>
     <div class="depth">
       <div class="lane">
@@ -232,9 +217,9 @@ footer a{color:var(--ink)}
       </div>
     </div>
   </section>
-  <section class="stage" data-stage="verify" data-sub="拿證據"></section>
-  <section class="stage" data-stage="audit" data-sub="還有什麼不再是真的"></section>
-  <section class="stage" data-stage="land" data-sub="收尾"></section>
+  <section class="stage" id="stage-verify" data-stage="verify" data-sub="拿證據"></section>
+  <section class="stage" id="stage-audit" data-stage="audit" data-sub="還有什麼不再是真的"></section>
+  <section class="stage" id="stage-land" data-stage="land" data-sub="收尾"></section>
 </section>
 
 <footer>每段的流程圖、步驟表與完整的例子：<a href="design.md">詳細設計</a></footer>
@@ -246,14 +231,14 @@ const RUN = {
     cls: 'architectural',
     total: { wall: '6 時 30 分', waited: '5 時 24 分', work: '約 1 時 6 分' },
     stages: [
-        { id: 'init', name: 'INIT', wallMin: 0, waitMin: 0, does: '看現場、看別人、問一題、登記任務', sample: '任務來自 TODO 的「待決定」，使用者在選單選它' },
-        { id: 'survey', name: 'SURVEY', wallMin: 10, waitMin: 8, does: '讀地圖、掃描、記事實、分類', sample: '掃 2075 檔，找到 3 個事實、3 件不知道，分類 architectural' },
-        { id: 'design', name: 'DESIGN', wallMin: 19, waitMin: 16, does: '一個做法、檔案表、會失敗的完成標準', sample: '3 筆裁定、6 列檔案表、判斷不畫 mockup' },
-        { id: 'plan', name: 'PLAN', wallMin: 16, waitMin: 1, does: '拆任務、產生約束、分組、lint、審計畫', sample: '3 個任務一條依賴鏈；reviewer 抓到 2 個缺口並修好' },
-        { id: 'build', name: 'BUILD', wallMin: 322, waitMin: 290, does: '派實作者、逐任務審、提交、文件跟上、全套測試', sample: '3 組依序；修 15 條文件引用；3686 項 1 項搶埠失敗' },
-        { id: 'verify', name: 'VERIFY', wallMin: 11, waitMin: 5, does: '宣稱對證據、平行 verifier、突變、對手審查', sample: '3 個 verifier 全過；對手抓到 2 點；先紅再綠未檢查' },
-        { id: 'audit', name: 'AUDIT', wallMin: 5.5, waitMin: 4, does: 'docs-check、殘留、死碼、docs-audit、真的去讀', sample: '索引缺 2 頁、來源 TODO 還寫待決定；舊帳分開列' },
-        { id: 'land', name: 'LAND', wallMin: 6, waitMin: 0.5, does: '全綠、TODO 結案、封存、重寫地圖、整合', sample: '3685 過、1 略過、0 失敗；merge 不推送' },
+        { id: 'init', product: '登記好的任務', hand: '任務', name: 'INIT', wallMin: 0, waitMin: 0, does: '看現場、看別人、問一題、登記任務', sample: '任務來自 TODO 的「待決定」，使用者在選單選它' },
+        { id: 'survey', product: '一份現況事實', hand: '事實', name: 'SURVEY', wallMin: 10, waitMin: 8, does: '讀地圖、掃描、記事實、分類', sample: '掃 2075 檔，找到 3 個事實、3 件不知道，分類 architectural' },
+        { id: 'design', product: '一個你同意的做法', hand: '做法', name: 'DESIGN', wallMin: 19, waitMin: 16, does: '一個做法、檔案表、會失敗的完成標準', sample: '3 筆裁定、6 列檔案表、判斷不畫 mockup' },
+        { id: 'plan', product: '分好組的任務', hand: '任務表', name: 'PLAN', wallMin: 16, waitMin: 1, does: '拆任務、產生約束、分組、lint、審計畫', sample: '3 個任務一條依賴鏈；reviewer 抓到 2 個缺口並修好' },
+        { id: 'build', product: '提交好的成品', hand: '成品', name: 'BUILD', wallMin: 322, waitMin: 290, does: '派實作者、逐任務審、提交、文件跟上、全套測試', sample: '3 組依序；修 15 條文件引用；3686 項 1 項搶埠失敗' },
+        { id: 'verify', product: '對過的證據', hand: '證據', name: 'VERIFY', wallMin: 11, waitMin: 5, does: '宣稱對證據、平行 verifier、突變、對手審查', sample: '3 個 verifier 全過；對手抓到 2 點；先紅再綠未檢查' },
+        { id: 'audit', product: '一份殘留清單', hand: '清單', name: 'AUDIT', wallMin: 5.5, waitMin: 4, does: 'docs-check、殘留、死碼、docs-audit、真的去讀', sample: '索引缺 2 頁、來源 TODO 還寫待決定；舊帳分開列' },
+        { id: 'land', product: '已整合的成果', hand: '', name: 'LAND', wallMin: 6, waitMin: 0.5, does: '全綠、TODO 結案、封存、重寫地圖、整合', sample: '3685 過、1 略過、0 失敗；merge 不推送' },
     ],
     tokens: { survey: '3k', design: '13k', plan: '9k', build: '66k', verify: '2k', audit: '4k' },
     depth: { chain: { tasks: 3, groups: 3 }, patrol: { tasks: 23, sequential: 15, byDepth: 6 } },
@@ -334,6 +319,213 @@ for (const [label, n, cls] of [['依序', p.sequential, 'row seq'], ['依深度'
     for (let i = 0; i < n; i++) row.append(el('i'));
     groups.append(row, el('span', 'n', n + ' 組'));
 }
+
+// ---- flow diagrams: drawn from RUN, layout chosen from the window width ----
+const NS = 'http://www.w3.org/2000/svg';
+const S = (tag, attrs, parent, text) => {
+    const n = document.createElementNS(NS, tag);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    if (text !== undefined) n.textContent = text;
+    if (parent) parent.append(n);
+    return n;
+};
+const tw = (s, fs) => [...s].reduce((a, ch) => a + (ch.charCodeAt(0) > 255 ? 1 : 0.6), 0) * fs;
+const wrap = (s, max) => {
+    const a = [...s];
+    if (a.length <= max) return [s];
+    const h = Math.ceil(a.length / 2);
+    return [a.slice(0, h).join(''), a.slice(h).join('')];
+};
+const mins = (m) => m + ' 分';
+
+function mkSvg(box, W, label, narrow, pfx) {
+    const svg = S('svg', { class: 'dg' + (narrow ? ' sm' : ''), role: 'group', 'aria-label': label });
+    const defs = S('defs', {}, svg);
+    for (const k of ['ok', 'wait', 'fail', 'hold']) {
+        const m = S('marker', { id: pfx + k, markerWidth: 9, markerHeight: 9, refX: 8, refY: 4.5, orient: 'auto', markerUnits: 'userSpaceOnUse' }, defs);
+        S('path', { d: 'M0 0L9 4.5L0 9z', class: 'mk ' + k }, m);
+    }
+    svg.dataset.w = W;
+    svg.dataset.pfx = pfx;
+    box.replaceChildren(svg);
+    return svg;
+}
+const done = (svg, H) => svg.setAttribute('viewBox', '0 0 ' + svg.dataset.w + ' ' + H);
+
+function zone(svg, x, y, w, h, label) {
+    S('rect', { class: 'zn', x, y, width: w, height: h, rx: 10 }, svg);
+    S('text', { class: 'zt', x: x + 12, y: y + 18 }, svg, label);
+}
+
+// o: x y w h c name lines tags id ghost nameY lineY lineStep tagFs
+function node(svg, o) {
+    const g = o.id ? S('a', { href: '#' + o.id, class: 'link' }, svg) : S('g', {}, svg);
+    g.style.setProperty('--c', o.c);
+    if (o.id) g.setAttribute('aria-label', (o.aria || o.name) + '，跳到詳細段落');
+    if (o.ghost) for (const d of [10, 5]) S('rect', { class: 'ghost', x: o.x + d, y: o.y + d, width: o.w, height: o.h, rx: 8 }, g);
+    S('rect', { class: 'nbox', x: o.x, y: o.y, width: o.w, height: o.h, rx: 8 }, g);
+    const cx = o.x + o.w / 2;
+    S('text', { class: 'nn', x: cx, y: o.y + (o.nameY || 20), 'text-anchor': 'middle' }, g, o.name);
+    (o.lines || []).forEach((l, i) => S('text', { class: 'nl', x: cx, y: o.y + (o.lineY || 39) + i * (o.lineStep || 14), 'text-anchor': 'middle' }, g, l));
+    const tags = o.tags || [];
+    const top = o.y + o.h - 8 - tags.length * 16 - (tags.length - 1) * 4;
+    tags.forEach((s, i) => {
+        const w = tw(s, o.tagFs || 10.5) + 14;
+        S('rect', { class: 'tg', x: cx - w / 2, y: top + i * 20, width: w, height: 16, rx: 8 }, g);
+        S('text', { class: 'tt', x: cx, y: top + i * 20 + 11.5, 'text-anchor': 'middle' }, g, s);
+    });
+    return g;
+}
+
+function arrow(svg, d, kind, label, lx, ly, anchor) {
+    S('path', { class: 'ar ' + kind, d, 'marker-end': 'url(#' + svg.dataset.pfx + kind + ')' }, svg);
+    if (label) S('text', { class: 'al ' + kind, x: lx, y: ly, 'text-anchor': anchor || 'middle' }, svg, label);
+}
+
+function gate(svg, cx, y, w, h, text, o) {
+    const g = S('g', { class: 'gate' + (o.big ? ' big' : '') + (o.zero ? ' zero' : '') }, svg);
+    S('rect', { x: cx - w / 2, y, width: w, height: h, rx: 6 }, g);
+    S('text', { x: cx, y: y + h / 2 + (o.big ? 6 : 4.2), 'text-anchor': 'middle' }, g, text);
+}
+
+function renderMain(narrow) {
+    const st = RUN.stages;
+    const maxWait = Math.max(...st.map((s) => s.waitMin));
+    const W = narrow ? 348 : 1194;
+    const svg = mkSvg($('flow'), W, '七段主線、等使用者的關卡、退回', narrow, 'm-');
+    const nw = narrow ? 70 : 112, nh = narrow ? 100 : 98, ny0 = narrow ? 30 : 32;
+    const pos = (i) => narrow
+        ? { x: 10 + (i < 4 ? i : 7 - i) * 86, y: ny0 + (i < 4 ? 0 : 130) }
+        : { x: 16 + i * 150, y: ny0 };
+    const tagsOf = (s) => {
+        const wall = mins(s.wallMin), tok = RUN.tokens[s.id] || '—';
+        return narrow ? [wall, tok] : [wall + ' · ' + tok];
+    };
+    const zh = narrow ? 272 : 150;
+    zone(svg, 1, 0, W - 2, zh, '01 / 七段主線');
+    st.forEach((s, i) => {
+        node(svg, { ...pos(i), w: nw, h: nh, c: 'var(--st-' + s.id + ')', name: s.name, aria: s.name + '：' + s.product + '，牆鐘 ' + mins(s.wallMin) + '，token ' + (RUN.tokens[s.id] || '—'), lines: wrap(s.product, narrow ? 6 : 8),
+            tags: tagsOf(s), id: 'stage-' + s.id, nameY: narrow ? 18 : 20, lineY: narrow ? 34 : 39, lineStep: narrow ? 12 : 14, tagFs: narrow ? 9.5 : 10.5 });
+    });
+    for (let i = 0; i < st.length - 1; i++) {
+        const a = pos(i), b = pos(i + 1), lab = st[i].hand, y = a.y + nh / 2;
+        if (narrow && i === 3) {
+            arrow(svg, 'M' + (a.x + nw / 2) + ' ' + (a.y + nh) + 'V' + b.y, 'ok', lab, a.x + nw / 2 + 7, (a.y + nh + b.y) / 2 + 4, 'start');
+        } else if (narrow && i > 3) {
+            arrow(svg, 'M' + a.x + ' ' + y + 'H' + (b.x + nw), 'ok');
+        } else {
+            arrow(svg, 'M' + (a.x + nw) + ' ' + y + 'H' + b.x, 'ok', narrow ? '' : lab, (a.x + nw + b.x) / 2, y - 7);
+        }
+    }
+
+    const z2 = zh + 20, z2h = narrow ? 192 : 130;
+    zone(svg, 1, z2, W - 2, z2h, '02 / 等你的地方');
+    st.forEach((s, i) => {
+        const big = s.waitMin === maxWait, zero = s.waitMin === 0;
+        if (narrow) {
+            const row = i < 4 ? 0 : 1, x = 10 + (i % 4) * 86, cy0 = z2 + 30 + row * 80;
+            const g = S('g', {}, svg); g.style.setProperty('--c', 'var(--st-' + s.id + ')');
+            S('rect', { class: 'nbox', x, y: cy0, width: nw, height: 18, rx: 5 }, g);
+            S('text', { class: 'nn', x: x + nw / 2, y: cy0 + 13, 'text-anchor': 'middle', style: 'font-size:10px' }, g, s.name);
+            const gy = cy0 + 36, gh = big ? 34 : 26;
+            if (!zero) arrow(svg, 'M' + (x + nw / 2) + ' ' + (cy0 + 18) + 'V' + gy, 'wait');
+            gate(svg, x + nw / 2, gy, nw, gh, mins(s.waitMin), { big, zero });
+        } else {
+            const p = pos(i), cx = p.x + nw / 2, gw = big ? 104 : 64, gh = big ? 52 : 32, gy = big ? z2 + 54 : z2 + 62;
+            if (!zero) arrow(svg, 'M' + cx + ' ' + (p.y + nh) + 'V' + gy, 'wait');
+            gate(svg, cx, gy, gw, gh, mins(s.waitMin), { big, zero });
+        }
+    });
+
+    const z3 = z2 + z2h + 20, z3h = narrow ? 130 : 134;
+    zone(svg, 1, z3, W - 2, z3h, '03 / 退回');
+    const bi = st.findIndex((s) => s.id === 'build'), vi = bi + 1;
+    const my = z3 + 32, mh = 44;
+    const mx = (i) => narrow ? W / 2 - 100 + (i - bi) * 100 : pos(i).x;
+    for (const [i, sub] of [[bi, '補做'], [vi, '發現缺口']]) {
+        node(svg, { x: mx(i), y: my, w: nw, h: mh, c: 'var(--st-' + st[i].id + ')', name: st[i].name, aria: st[i].name + '：' + st[i].product + '，牆鐘 ' + mins(st[i].wallMin) + '，token ' + (RUN.tokens[st[i].id] || '—') + '（' + sub + '）', lines: [sub], id: 'stage-' + st[i].id, nameY: 18, lineY: 33 });
+    }
+    const cb = mx(bi) + nw / 2, cv = mx(vi) + nw / 2, yb = my + mh, p = RUN.depth.patrol;
+    arrow(svg, 'M' + cv + ' ' + yb + 'V' + (yb + 28) + 'H' + cb + 'V' + yb, 'fail', '盤點任務數 ' + p.sequential + '→' + p.tasks, (cb + cv) / 2, yb + 46);
+    done(svg, z3 + z3h + 6);
+}
+
+function renderBuild(narrow) {
+    const p = RUN.depth.patrol;
+    const W = narrow ? 348 : 1194;
+    const svg = mkSvg($('flow2'), W, 'BUILD 的裡面：Agent 路徑與 Workflow 路徑', narrow, 'b-');
+    const C = { plan: 'var(--st-plan)', build: 'var(--st-build)', rev: 'var(--st-verify)', land: 'var(--st-land)', ag: 'var(--s-agent)', wf: 'var(--s-workflow)' };
+    const n1 = [
+        { c: C.plan, name: '計畫任務', lines: ['PLAN 拆好的任務'], tags: ['盤點 ' + p.tasks + ' 個'] },
+        { c: C.plan, name: '依深度分組', lines: ['同深度彼此不衝突'], tags: ['依序 ' + p.sequential + ' → 依深度 ' + p.byDepth] },
+        { c: C.ag, name: '滑動視窗', lines: ['dispatch.inflight', '限制同時在跑的數量'], tags: ['不一次全放'] },
+        { c: C.build, name: '多個 Agent', lines: ['各領一個任務', '同時實作'], tags: ['平行'], ghost: !narrow },
+        { c: C.rev, name: '逐任務審', lines: ['reviewer 一個審一個'], tags: ['不過就重派'] },
+        { c: C.land, name: '提交', lines: ['主控收一份', '提交一份'], tags: ['一個一個'] },
+    ];
+    const l1 = ['依賴', '放行', '派出', '回傳', '通過'];
+    const aRow = [
+        { c: C.ag, name: '主控派出', lines: ['一個任務交給一個 Agent', '不足 3 個或階段 agent'], tags: ['多個 Agent'] },
+        { c: C.ag, name: '主控逐份收', lines: ['每份回傳都進', '主控 context'], tags: [narrow ? '能插手，衝突重派' : '能插手'] },
+        { c: C.land, name: '回來一個提交一個', lines: ['提交的節奏由主控決定'], tags: ['逐個提交'] },
+    ];
+    const wRow = [
+        { c: C.wf, name: '整組打包', lines: ['整組任務一次', '交給 Workflow 腳本'], tags: ['3 個以上才走'] },
+        { c: C.wf, name: '腳本內每任務', lines: ['implement → review', '不等別人'], tags: ['中間產物留腳本'] },
+        { c: C.wf, name: '回傳每任務結果', lines: ['不進主控逐份讀', '省主控 context'], tags: [narrow ? '跑時不能插手' : '跑時主控不能插手'] },
+        { c: C.land, name: '跑完依序提交', lines: ['跑完前不提交', '依組內順序'], tags: ['一任務一個 commit'] },
+    ];
+    const aL = ['回傳', '通過'], wL = ['交棒', '待回', '彙總'], wK = ['ok', 'hold', 'ok'];
+    let H;
+    if (!narrow) {
+        const w = 160, h = 96, y = 44;
+        zone(svg, 1, 0, W - 2, 156, '01 / 多個 Agent：任務怎麼被做完');
+        const xs = n1.map((_, i) => 16 + i * 200);
+        n1.forEach((o, i) => node(svg, { ...o, x: xs[i], y, w, h, nameY: 22, lineY: 40, lineStep: 14 }));
+        l1.forEach((l, i) => arrow(svg, 'M' + (xs[i] + w) + ' ' + (y + h / 2) + 'H' + xs[i + 1], 'ok', l, xs[i + 1] - 20, y + h / 2 - 7));
+        arrow(svg, 'M' + (xs[4] + w / 2) + ' ' + y + 'V30H' + (xs[3] + w / 2) + 'V' + y, 'fail', '審不過或衝突就重派', (xs[3] + xs[4] + w) / 2, 25);
+        const z2 = 176, rw = 220, rh = 84, ra = z2 + 52, rb = ra + 108, rx = (i) => 176 + i * 260;
+        zone(svg, 1, z2, W - 2, 248, '02 / 在這裡分岔：Agent 或 Workflow');
+        const sy = (ra + rb + rh) / 2 - 36;
+        node(svg, { x: 16, y: sy, w: 110, h: 72, c: C.plan, name: '這一組任務', lines: ['分好組之後', '選一條路'], nameY: 22, lineY: 42 });
+        for (const y2 of [ra, rb]) arrow(svg, 'M126 ' + (sy + 36) + 'H150V' + (y2 + rh / 2) + 'H' + rx(0), 'ok');
+        aRow.forEach((o, i) => node(svg, { ...o, x: rx(i), y: ra, w: rw, h: rh, nameY: 20, lineY: 37, lineStep: 13 }));
+        wRow.forEach((o, i) => node(svg, { ...o, x: rx(i), y: rb, w: rw, h: rh, nameY: 20, lineY: 37, lineStep: 13 }));
+        aL.forEach((l, i) => arrow(svg, 'M' + (rx(i) + rw) + ' ' + (ra + rh / 2) + 'H' + rx(i + 1), 'ok', l, rx(i + 1) - 20, ra + rh / 2 - 7));
+        wL.forEach((l, i) => arrow(svg, 'M' + (rx(i) + rw) + ' ' + (rb + rh / 2) + 'H' + rx(i + 1), wK[i], l, rx(i + 1) - 20, rb + rh / 2 - 7));
+        arrow(svg, 'M' + (rx(1) + rw / 2) + ' ' + ra + 'V' + (ra - 12) + 'H' + (rx(0) + rw / 2) + 'V' + ra, 'fail', '衝突就重派', rx(0) + rw / 2 + 130, ra - 17);
+        H = z2 + 248 + 6;
+    } else {
+        const x = 10, w = 290, h = 76, gap = 28;
+        const z1h = 32 + 6 * h + 5 * gap + 12;
+        zone(svg, 1, 0, W - 2, z1h, '01 / 多個 Agent');
+        const ys = n1.map((_, i) => 32 + i * (h + gap));
+        n1.forEach((o, i) => node(svg, { ...o, x, y: ys[i], w, h, nameY: 20, lineY: 37, lineStep: 12, lines: [o.lines.join(' ')] }));
+        l1.forEach((l, i) => arrow(svg, 'M' + (x + w / 2) + ' ' + (ys[i] + h) + 'V' + ys[i + 1], 'ok', l, x + w / 2 + 7, ys[i] + h + 18, 'start'));
+        const m4 = ys[4] + h / 2, m3 = ys[3] + h / 2;
+        arrow(svg, 'M' + (x + w) + ' ' + m4 + 'H326V' + m3 + 'H' + (x + w), 'fail', '重派', 322, (m4 + m3) / 2 + 3, 'end');
+        const z2 = z1h + 20, cw = 158, rh = 76, rg = 24, gx = [10, 180], r0 = z2 + 100;
+        const z2h = 100 + 4 * rh + 3 * rg + 24;
+        zone(svg, 1, z2, W - 2, z2h, '02 / 在這裡分岔');
+        node(svg, { x: 10, y: z2 + 30, w: 328, h: 48, c: C.plan, name: '這一組任務', lines: ['分好組之後，選一條路'], nameY: 18, lineY: 35 });
+        ['Agent', 'Workflow ≥3 個'].forEach((l, k) => arrow(svg, 'M' + (gx[k] + cw / 2) + ' ' + (z2 + 78) + 'V' + r0, 'ok', l, gx[k] + cw / 2 + (k ? -7 : 7), z2 + 94, k ? 'end' : 'start'));
+        [aRow, wRow].forEach((rows, k) => {
+            rows.forEach((o, i) => node(svg, { ...o, x: gx[k], y: r0 + i * (rh + rg), w: cw, h: rh, nameY: 18, lineY: 34, lineStep: 12, tagFs: 9.5 }));
+            (k ? wL : aL).forEach((l, i) => arrow(svg, 'M' + (gx[k] + cw / 2) + ' ' + (r0 + i * (rh + rg) + rh) + 'V' + (r0 + (i + 1) * (rh + rg)), k ? wK[i] : 'ok', l, gx[k] + cw / 2 + 7, r0 + i * (rh + rg) + rh + 16, 'start'));
+        });
+        H = z2 + z2h + 6;
+    }
+    done(svg, H);
+}
+
+const LEGEND = [['<i class="ln"></i>', '主線：做完交棒'], ['<i class="ln wait"></i>', '等使用者'], ['<i class="ln hold"></i>', '腳本執行中，等結果回來'], ['<i class="ln fail"></i>', '退回、重派'], ['<i class="bx"></i>', '節點：名稱、產物、牆鐘與 token']];
+for (const lg of document.querySelectorAll('[data-legend]')) {
+    for (const [mark, text] of LEGEND) { const s = el('span'); s.innerHTML = mark + text; lg.append(s); }
+}
+const mq = window.matchMedia('(max-width:760px)');
+const renderAll = () => { renderMain(mq.matches); renderBuild(mq.matches); };
+renderAll();
+mq.addEventListener('change', renderAll);
 </script>
 </body>
 </html>
