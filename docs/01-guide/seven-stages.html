@@ -115,7 +115,7 @@ html{scroll-behavior:auto}
 .dg .al.fail{fill:var(--fail)}
 .dg .gate rect{fill:var(--wait-bg);stroke:var(--wait);stroke-dasharray:4 3;stroke-width:1.4}
 .dg .gate text{font:600 12px var(--f-mono);fill:var(--wait-ink)}
-.dg .gate.zero{opacity:.55}
+.dg .gate.zero{opacity:.85}
 .dg .gate.big rect{fill:var(--wait);stroke:var(--wait);stroke-dasharray:none;stroke-width:2}
 .dg .gate.big text{font-size:18px;font-weight:700;fill:var(--gate-ink)}
 .dg.sm .gate.big text{font-size:14px}
@@ -200,7 +200,7 @@ footer a{color:var(--ink)}
   <section class="stage wide" id="stage-build" data-stage="build" data-sub="動手做">
     <h3>BUILD 的裡面：任務怎麼被派出去、收回來</h3>
     <div class="dgbox" id="flow2"></div>
-    <div class="legend" data-legend style="margin:12px 0 0"></div>
+    <div class="legend" data-legend="build" style="margin:12px 0 0"></div>
     <h3>依賴深度決定分幾組</h3>
     <div class="depth">
       <div class="lane">
@@ -520,9 +520,9 @@ function renderBuild(narrow) {
 
 const LEGEND = [['<i class="ln"></i>', '主線：做完交棒'], ['<i class="ln wait"></i>', '等使用者'], ['<i class="ln hold"></i>', '腳本執行中，等結果回來'], ['<i class="ln fail"></i>', '退回、重派'], ['<i class="bx"></i>', '節點：名稱、產物、牆鐘與 token']];
 for (const lg of document.querySelectorAll('[data-legend]')) {
-    for (const [mark, text] of LEGEND) { const s = el('span'); s.innerHTML = mark + text; lg.append(s); }
+    for (const [mark, text] of LEGEND) { if (text.startsWith('腳本') && lg.dataset.legend !== 'build') continue; const s = el('span'); s.innerHTML = mark + text; lg.append(s); }
 }
-const mq = window.matchMedia('(max-width:760px)');
+const mq = window.matchMedia('(max-width:1010px)');
 const renderAll = () => { renderMain(mq.matches); renderBuild(mq.matches); };
 renderAll();
 mq.addEventListener('change', renderAll);
