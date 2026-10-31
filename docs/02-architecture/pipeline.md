@@ -297,8 +297,8 @@ The phone hold is separate. With a phone attached, the hook waits up to the prof
 
 That column is what a stage is graded on, which is not the same question as what
 it has you do. The second question is answered stage by stage in
-[Inside each stage](#inside-each-stage) below, and in one line each on the
-[front page](../../README.md).
+[Inside each stage](#inside-each-stage) below, and walked through on one real task in
+[design.md](../01-guide/design.md).
 
 ### Another plugin's process skill, for the same stage
 
@@ -405,8 +405,8 @@ copies of one shape — `build` is a loop, `verify` is a lookup from claim to
 evidence, `land` is a sequence that stops dead on a red suite — and the shape is
 most of what there is to know about a stage.
 
-Every one of them ends at the same gate, so the gate is drawn once, on the
-[front page](../../README.md), and left off all seven here.
+Every one of them ends at the same gate, so the gate is described once, in
+[concepts.md](../01-guide/concepts.md), and left off all seven here.
 
 ### survey
 
