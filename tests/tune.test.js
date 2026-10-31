@@ -55,6 +55,29 @@ test('an edit outside every block says so', () => {
     assert.deepEqual(outside(PAGE, after, 'now'), { ok: false, touched: ['(區塊外)'] });
 });
 
+// A phone frame reuses the desktop frame's block names, so one name can carry
+// two elements. Request r-0073 on 2026-11-01 moved `quick-recs` in both frames
+// and was put back, because only the first copy was cut out before comparing.
+const FRAMES = [
+    '<div data-block="desk"><p data-block="recs">R</p><p data-block="q">Q</p><p data-block="foot">F</p></div>',
+    '<div data-block="phone"><p data-block="recs">R</p><p data-block="q">Q</p><p data-block="foot">F</p></div>',
+].join('\n');
+
+test('a block named in two frames may be edited in both', () => {
+    const after = FRAMES.split('<p data-block="recs">R</p>').join('<p data-block="recs">R2</p>');
+    assert.deepEqual(outside(FRAMES, after, 'recs'), { ok: true, touched: [] });
+});
+
+test('a block named in two frames may move in both', () => {
+    const moved = (frame) => frame.replace('<p data-block="recs">R</p><p data-block="q">Q</p>', '<p data-block="q">Q</p><p data-block="recs">R</p>');
+    assert.deepEqual(outside(FRAMES, FRAMES.split('\n').map(moved).join('\n'), 'recs'), { ok: true, touched: [] });
+});
+
+test('editing one copy of a twice-named block still catches a neighbour in the other frame', () => {
+    const after = FRAMES.replace(/(data-block="phone">.*?data-block="q">)Q/, '$1Q2');
+    assert.deepEqual(outside(FRAMES, after, 'recs'), { ok: false, touched: ['q'] });
+});
+
 test('diffLines shows only the changed middle', () => {
     assert.equal(diffLines('a\nb\nc\n', 'a\nB\nc\n'), '- b\n+ B\n');
 });

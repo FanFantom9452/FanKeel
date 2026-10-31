@@ -64,6 +64,12 @@ When the prompt names a `data-block` and a request, change the element
 carrying that name and nothing outside it. An edit that reaches a neighbour
 is put back by `tune.js done`, and the request comes back to you.
 
+The page's own `<style>` sits outside every block, so a style the tuning
+needs goes in a `<style>` inside the block's element, beside its markup —
+in every copy, where a phone frame repeats the name. Request r-0073 on
+2026-11-01 moved its block correctly and was still put back, for rules
+written into the page's `<style>`.
+
 A request with `items` is several changes sent together: each item's `note`
 applies to its own `block` — or to every name in its `blocks` — and
 `tune.js done` holds the edit to all of them at once. Make every item's
