@@ -192,7 +192,7 @@ const RUN = {
         { id: 'land', name: 'LAND', wallMin: 6, waitMin: 0.5, does: '全綠、TODO 結案、封存、重寫地圖、整合', sample: '3685 過、1 略過、0 失敗；merge 不推送' },
     ],
     tokens: { survey: '3k', design: '13k', plan: '9k', build: '66k', verify: '2k', audit: '4k' },
-    depth: { chain: { tasks: 3, groups: 3 }, patrol: { tasks: 15, sequential: 15, byDepth: 6 } },
+    depth: { chain: { tasks: 3, groups: 3 }, patrol: { tasks: 23, sequential: 15, byDepth: 6 } },
 };
 ```
 
@@ -201,7 +201,7 @@ The page holds, top to bottom, each block a `<section>`:
    - a horizontal bar per stage, split into 做事（`wallMin - waitMin`）and 等使用者（`waitMin`）, build drawn to scale;
    - eight `<section data-stage="<id>">` cards in route order, each with its name, `does`, `sample` and, where `tokens` has it, the token count;
    - inside the `build` card: two swimlanes, 多個 Agent（主控逐份收、回來一個提交一個、能插手）and Workflow（腳本內 implement→review、只回彙總、跑完前不提交）;
-   - inside the `build` card: the depth comparison, 白板任務 3 tasks → 3 groups in a line, 盤點任務 15 tasks → 15 sequential vs 6 by depth;
+   - inside the `build` card: the depth comparison, 白板任務 3 tasks → 3 groups in a line, 盤點任務 23 tasks → 15 sequential vs 6 by depth;
    - a footer line linking `design.md` for the full write-up.
 
 4. Run it and watch it pass: `node --test tests/guide-seven-stages.test.js`.
