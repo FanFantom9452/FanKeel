@@ -27,6 +27,7 @@ test('past twelve columns the header is the destination alone', () => {
   assert.equal(formatProblem(gate('Survey→Design', 'Survey -> Design | fankeel : t', 'Go to Design'), 'design', route).at, 'questions[0].header');
 });
 
-test('a question that does not open with a stage word is reported on the question', () => {
-  assert.equal(formatProblem(gate('Survey→Plan', 'SURVEY -> PLAN | fankeel : t', 'Go to Plan'), 'plan', ['survey', 'plan']).at, 'questions[0].question');
+test('the question is checked before the header, so a gate wrong on both is reported on the question', () => {
+  const both = formatProblem(gate('Survey', 'SURVEY -> PLAN | fankeel : t', 'Go to Plan'), 'plan', ['survey', 'plan']);
+  assert.equal(both.at, 'questions[0].question');
 });
