@@ -14,5 +14,5 @@ test('the global/project switch can shrink below its labels', () => {
     assert.match(seg, /grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
     assert.match(seg, /min-width:0/);
     const narrow = css.slice(css.indexOf('@media (max-width:900px)'));
-    assert.match(narrow, /\.sq-seg\{flex:1 1 100%;min-width:0\}/);
+    assert.match(narrow, /\.sq \.sq-seg\{flex:1 1 100%;min-width:0\}/);
 });

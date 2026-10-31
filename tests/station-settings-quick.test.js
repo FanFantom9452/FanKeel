@@ -372,6 +372,14 @@ test('settings-page.css is the quick mockup\'s own rules, no <style> tags', () =
     for (const rule of ['.qk-src.is-rec{', '.qk-recs{', '.qk-mc{', '.qk-extra{', '.sq-bar{']) assert.ok(css.includes(rule), rule);
 });
 
+test('the settings css carries the scaled-up sizes', () => {
+    const dir = path.join(__dirname, '..', 'assets', 'station');
+    const css = ['settings-page.css', 'settings-detail.css'].map((f) => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n');
+    assert.match(css, /\.v9 \.v9-opt\{[^}]*min-height:60px/, 'option rows are 60px');
+    assert.match(css, /\.qk \.qk-qt\{[^}]*font-size:19px/, 'question title is 19px');
+    assert.match(css, /\.v9 \.v9-opts\{[^}]*max-width:960px/, 'content max-width is 960px');
+});
+
 // A stand-in range input: value, the question around it, the readout box beside it.
 function slider(value) {
     const readout = { textContent: '' }, effect = { textContent: '' }, attrs = {};

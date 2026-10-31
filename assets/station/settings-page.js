@@ -590,7 +590,7 @@
         var tail = c ? loc('sq.stripBack', '按右邊的按鈕全部改回推薦') : st.at === 'final' ? loc('sq.stripFinal', '下面是照推薦會改的') : loc('sq.stripHover', '滑過標籤看根據');
         return '<div class="qk-recs" data-block="quick-recs"><p class="qk-rt"><b>' + esc(c ? loc('sq.stripMine', '你改了 {n} 題推薦', { n: c }) : loc('sq.stripAll', '每題都先選好推薦了')) + '</b>'
             + '<span>' + esc(loc('sq.stripSub', '{r} 題依你的紀錄，{a} 題作者推薦；{tail}', { r: nr, a: na, tail: tail })) + '</span></p>'
-            + '<button type="button" class="v9-btn pri qk-all" data-all' + (off ? ' disabled aria-pressed="true"' : '') + '>' + (off ? loc('sq.allDone', '已套用推薦') : loc('sq.all', '全部套用推薦')) + '</button></div>';
+            + '<button type="button" class="v9-btn qk-all" data-all' + (off ? ' disabled aria-pressed="true"' : '') + '>' + (off ? loc('sq.allDone', '已套用推薦') : loc('sq.all', '全部套用推薦')) + '</button></div>';
     }
     function footHtml(S, qs, B) {
         var i = ORDER.indexOf(st.at), n = total(S, qs), fin = st.at === 'final';
@@ -620,8 +620,8 @@
             var qs = questions(), B = blocks(), b = null;
             for (var i = 0; i < B.length; i++) if (B[i].id === st.at) b = B[i];
             body = '<div class="st v9 qk" data-block="quick-page">' + railHtml(S, qs, B)
-                + '<section class="dcard v9-wiz qk-wiz" data-block="quick-wizard" aria-label="' + esc(loc('sq.railH', '快速設定')) + '">' + stripHtml(qs)
-                + (b ? screenHtml(S, o, qs, b) : finalHtml(S, o, qs)) + footHtml(S, qs, B) + '</section></div>';
+                + '<section class="dcard v9-wiz qk-wiz" data-block="quick-wizard" aria-label="' + esc(loc('sq.railH', '快速設定')) + '">'
+                + (b ? screenHtml(S, o, qs, b) : finalHtml(S, o, qs)) + stripHtml(qs) + footHtml(S, qs, B) + '</section></div>';
         }
         return '<div class="sq" data-block="settings-scope-' + view.scope + '" data-sq>' + barHtml(o, dirs) + body + '</div>';
     }

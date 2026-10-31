@@ -4,7 +4,7 @@
    screen. Every chapter ends on 到這裡就好 / 繼續. Each answer is a label and one effect line;
    why a question is asked sits behind its 「?」, the keys an answer writes behind a hover tip.
    The left index is the progress: chapter → step, done / current / remaining. */
-.st.v9{display:grid;grid-template-columns:268px minmax(0,1fr);column-gap:20px;align-items:start}
+.st.v9{display:grid;grid-template-columns:300px minmax(0,1fr);column-gap:28px;align-items:start}
 .v9 code{font-family:var(--f-mono)}
 .v9 button:focus-visible,.v9 input:focus-visible,.v9 select:focus-visible,.v9 [tabindex]:focus-visible{outline:2px solid var(--keel);outline-offset:2px}
 .v9 [hidden]{display:none !important}
@@ -187,30 +187,80 @@
 .v9-fin-ok{display:flex;align-items:center;gap:8px;margin:14px 0 0;padding:9px 12px;border-radius:var(--r);background:var(--pass-tint);color:var(--pass-ink);font-size:13px;max-width:820px}
 .v9-fin-ok svg{flex:none;width:16px;height:16px}
 
-@media (max-width:1180px){.st.v9{grid-template-columns:236px minmax(0,1fr)}.v9-opt{grid-template-columns:18px minmax(0,240px) minmax(0,1fr)}}
+/* 2026-11-01 settings scale-up: titles 24 / questions 19 / labels 15 / descriptions 13.5, controls 44, option rows 60.
+   Every selector stays under .v9 / .qk / .sq, so the shared mast, side nav and body 13px are untouched. */
+:root[data-style=keel] .v9 .dcard.v9-wiz{padding:24px 40px 0}
+:root[data-style=keel] .v9 .dcard.v9-rail{padding:18px 12px 12px}
+.v9 .v9-btn{gap:8px;height:44px;padding:0 20px;font-size:15px}
+.v9 .v9-btn .ico{width:18px;height:18px}
+.v9 .v9-link{min-height:44px;padding:8px 6px;font-size:14.5px}
+.v9 .v9-rh{margin:0 0 10px;padding:0 14px}
+.v9 .v9-rh b{font-size:15px}
+.v9 .v9-rh span{font-size:13.5px}
+.v9 .v9-cm{width:28px;height:28px;font-size:13px}
+.v9 .v9-cm svg{width:14px;height:14px}
+.v9 .v9-qm{width:30px;height:30px;font-size:15px}
+.v9 .v9-tip{width:380px;padding:12px 14px;font-size:14px}
+.v9 .v9-tip code,.v9 .v9-tip small{font-size:13px}
+.v9 .v9-step{min-height:460px}
+.v9 .v9-qh{gap:12px;margin:0 0 24px}
+.v9 .v9-q{font-size:24px;line-height:1.3}
+.v9 .v9-opts{gap:10px;max-width:960px;container:v9opts/inline-size}
+.v9 .v9-opt{grid-template-columns:20px minmax(0,340px) minmax(0,1fr);column-gap:18px;row-gap:4px;min-height:60px;padding:14px 20px}
+@container v9opts (max-width:640px){
+  .v9 .v9-opt{grid-template-columns:20px minmax(0,1fr)}
+  .v9 .v9-oe{grid-column:2}
+}
+.v9 .v9-radio,.v9 .v9-box{width:20px;height:20px}
+.v9 [aria-checked=true]>.v9-radio{box-shadow:inset 0 0 0 5px var(--panel),0 0 0 2px var(--keel)}
+.v9 .v9-ot{gap:4px 10px;font-size:15px;line-height:22px;font-weight:600}
+.v9 .v9-oe{font-size:13.5px;line-height:20px}
+.v9 .v9-tag{padding:0 8px;font-size:12.5px;line-height:22px}
+.v9 .v9-risk{gap:5px;padding:0 8px 0 6px;font-size:12.5px;line-height:22px}
+.v9 .v9-risk .ico{width:14px;height:14px}
+.v9 .v9-foot{gap:16px;margin:32px -40px 0;padding:16px 40px}
+.v9 .v9-pos{font-size:14px}
+.v9 .v9-cb{grid-template-columns:28px minmax(0,1fr) auto;column-gap:14px;min-height:46px;padding:6px 14px}
+.v9 .v9-cn{gap:8px;font-size:15px;line-height:22px}
+.v9 .v9-cc{font-size:13px}
+.v9 .v9-mtag{padding:0 6px;font-size:12.5px;line-height:20px}
+.v9 .v9-cut{margin:8px 14px 4px;padding-top:10px;font-size:13px}
+.v9 .v9-sl{margin:4px 0 8px !important;padding:0 !important}
+.v9 .v9-sl::before{left:27.25px}
+.v9 .v9-sb{grid-template-columns:16px minmax(0,1fr) auto;column-gap:20px;min-height:38px;padding:4px 14px 4px 20px}
+.v9 .v9-sm{width:16px;height:16px;margin-left:0}
+.v9 .v9-sm::before{width:8px;height:8px}
+.v9 .v9-s.is-now .v9-sm::before{width:10px;height:10px}
+.v9 .v9-sm svg{width:14px;height:14px}
+.v9 .v9-st{font-size:14px;line-height:20px}
+.v9 .v9-sa{max-width:110px;font-size:13px}
+.v9 .v9-rail-end{margin:10px 2px 0;padding-top:10px}
+.v9 .v9-endb{grid-template-columns:28px minmax(0,1fr) auto;column-gap:14px;min-height:52px;padding:8px 14px;font-size:15px}
+.v9 .v9-endb .ico{width:20px;height:20px}
+.v9 .v9-endb b{font-size:13px}
+
+@media (max-width:1180px){.st.v9{grid-template-columns:260px minmax(0,1fr);column-gap:20px}}
 @media (max-width:900px){
-  .st.v9{grid-template-columns:minmax(0,1fr);row-gap:12px}
+  .st.v9{grid-template-columns:minmax(0,1fr);row-gap:16px}
   :root[data-style=keel] .dcard.v9-rail{position:static;max-height:none;padding:8px}
   .v9-rh{display:none}
-  .v9-rtog{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:4px 10px;border:0;border-radius:7px;background:transparent;color:var(--ink);font:600 13px var(--f-ui);text-align:left;cursor:pointer}
-  .v9-rtog span{margin-left:auto;font-weight:500;font-size:12px;color:var(--muted)}
-  .v9-rtog svg{width:14px;height:14px;color:var(--muted);transition:transform .18s ease-out}
+  .v9-rtog{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:6px 14px;border:0;border-radius:7px;background:transparent;color:var(--ink);font:700 16px/22px var(--f-ui);text-align:left;cursor:pointer}
+  .v9-rtog span{margin-left:auto;font-weight:500;font-size:14px;color:var(--muted)}
+  .v9-rtog svg{width:18px;height:18px;color:var(--muted);transition:transform .18s ease-out}
   .v9-rail[data-open=true] .v9-rtog svg{transform:rotate(180deg)}
   .v9-rail:not([data-open=true]) .v9-ix,.v9-rail:not([data-open=true]) .v9-rail-end{display:none}
   .v9-cb,.v9-endb{min-height:44px}
-  .v9-sb{min-height:40px}
   .v9-step{min-height:0}
 }
 @media (max-width:640px){
-  :root[data-style=keel] .dcard.v9-wiz{padding:18px 16px 0}
-  .v9-q{font-size:18px}
+  :root[data-style=keel] .v9 .dcard.v9-wiz,:root[data-style=keel] .v9 .dcard.v9-wiz.qk-wiz{padding:22px 18px 0}
+  .v9 .v9-q{font-size:21px}
   .v9-qh{margin-bottom:14px}
-  .v9-opt{grid-template-columns:18px minmax(0,1fr);row-gap:2px;padding:11px 14px}
-  .v9-oe{grid-column:2}
+  .v9 .v9-opt{padding:14px 16px;column-gap:14px}
   .v9-field{padding-left:0}
   .v9-field.two{grid-template-columns:minmax(0,1fr)}
-  .v9-foot{flex-wrap:wrap;gap:8px;margin:18px -16px 0;padding:10px 16px}
-  .v9-pos{flex-basis:100%;order:-1}
+  .v9 .v9-foot{flex-wrap:wrap;gap:10px;margin:28px -18px 0;padding:14px 18px}
+  .v9 .v9-pos{flex-basis:100%;order:-1}
   .v9-foot [data-next],.v9-foot [data-cont]{margin-left:auto}
   .v9-fin-l{grid-template-columns:minmax(0,1fr)}
   .v9-chg{max-width:170px}
