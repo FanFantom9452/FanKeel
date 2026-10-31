@@ -1,7 +1,7 @@
 ---
 label: gate header
 title: gate header 順序測試太弱
-description: tests/gate-header-move.test.js 第 4 個測試換成 header 檢查順序有差時會變紅的案例
+description: gate-header-move 測試的第 4 案換成 header 檢查順序有差時會變紅的案例
 state: ready
 ---
 
