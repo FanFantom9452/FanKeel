@@ -397,6 +397,21 @@ test('the header match deciding whether a mismatch is an attempted gate copy is 
   assert.match(out.hookSpecificOutput.permissionDecisionReason, /word for word/);
 });
 
+test('a copy under a move header of the stage that differs from the filed gate\'s header is denied', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  agentsOn(root);
+  const filed = JSON.parse(JSON.stringify(QUESTIONS));
+  filed[0].header = '→Design';
+  handoff(root, { questions: filed, next: 'n' });
+  const moved = JSON.parse(JSON.stringify(filed));
+  moved[0].header = 'Survey→Plan';
+  moved[0].options.pop();
+  const out = JSON.parse(run(GATE, root, { tool_input: { questions: moved } }));
+  assert.equal(out.hookSpecificOutput.permissionDecision, 'deny');
+  assert.match(out.hookSpecificOutput.permissionDecisionReason, /word for word/);
+});
+
 // Header equality alone used to deny this: every question asked during a
 // controlled stage carries the stage's own header by convention, gate or
 // not, so a genuinely different question — different `question` text,
