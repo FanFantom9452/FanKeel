@@ -1,9 +1,9 @@
 ---
 name: fankeel-retro-all
-description: Review every exported session bundle for problems that recur across tasks — this machine's and other users' — and propose skill, agent or stage-rule edits only for what recurs. Use for /fankeel-retro-all, "跑全部 retro", "回顧所有 session", or after pulling bundles another user committed.
+description: Review every exported session bundle for problems that recur across tasks — this machine's and other users' — and propose skill, agent or stage-rule edits only for what recurs. Use for /fankeel-retro-all, "跑全部 retro", "回顧所有 session", or after importing a retro ZIP another user sent back.
 version: 0.147.0
 status: current
-last_verified: 2026-10-20
+last_verified: 2026-11-02
 source_of_truth: scripts/record.js, agents/fankeel-retro.md
 ---
 
@@ -59,8 +59,21 @@ Nothing recurring: just `clean`.
 ## 4. File, then the gate
 
 Pipe the report to `node <plugin>/scripts/record.js retro --cross`, which files
-it as its own section of the month's records file. Then ask with
-`AskUserQuestion`: approve the hunks, which go to one
+it as its own section of the month's records file; keep the `#x-<date>` anchor
+it prints. Then ask with `AskUserQuestion`: approve the hunks, which go to one
 `fankeel:fankeel-fixer` per file; turn the `backlog:` lines into TODO entries
-with `todo.js new --state decision`; or neither. Nothing is applied before
-the answer.
+with `todo.js new --state decision`; 匯出 ZIP 回傳; or neither. Nothing is
+applied before the answer.
+
+On 匯出 ZIP 回傳, one more `AskUserQuestion` with `multiSelect: true` and
+neither box preselected: 記錄全域 Node 套件 adds `--global-packages`;
+保留原路徑（不換 [HOME]） adds `--keep-home`. Then run
+`node <plugin>/scripts/record.js export --cross <anchor> --bundles <id8,...>`
+with the bundles step 1 picked, and give the user its `export:` path and its
+last line. Nothing is pushed.
+
+## 5. 收到 ZIP
+
+`node <plugin>/scripts/record.js import <zip>` checks every entry against its
+CRC and the manifest's sha256, puts the bundles in `.fankeel/bundles/` (a name
+already there is skipped) and the report in `.fankeel/imports/`. Then step 1.
