@@ -7,9 +7,12 @@
 // the registry entry, for the station, and in the month's file, for git.
 
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
+const zlib = require('node:zlib');
+const crypto = require('node:crypto');
 const { parseArgs: parseArgv } = require('node:util');
-const { execFileSync } = require('node:child_process');
+const { execFileSync, execSync } = require('node:child_process');
 const registry = require('../lib/registry.js');
 const docs = require('../lib/docs.js');
 const plain = require('../lib/plain.js');
@@ -17,6 +20,7 @@ const { sessionCost } = require('../lib/session-cost.js');
 const live = require('../lib/live.js');
 const bundle = require('../lib/bundle.js');
 const sensitive = require('../lib/sensitive.js');
+const zip = require('../lib/zip.js');
 
 // The literal table `lib/skills.js` reads a script's flags from.
 const OPTIONS = {
@@ -29,6 +33,9 @@ const OPTIONS = {
     transcript: { type: 'string' },
     cross: { type: 'boolean' },
     bundle: { type: 'string' },
+    bundles: { type: 'string' },
+    'global-packages': { type: 'boolean' },
+    'keep-home': { type: 'boolean' },
 };
 
 // Field name as the user reads it, and as the registry stores it.
@@ -311,6 +318,212 @@ function fileCross(opts) {
     process.stdout.write('filed: ' + rel + '#' + anchor + '\n');
 }
 
+// docs/90-agent/plans/2026-11-02-retro-zip-design.md: a retro-all run goes back
+// as one ZIP sent privately instead of a push — the report, the bundles it read
+// and a whitelisted manifest of the machine it ran on.
+const BUNDLE_NAME = /^\d{4}-\d{2}-\d{2}-[0-9a-f]{8}\.jsonl\.gz$/;
+const sha256 = (buf) => crypto.createHash('sha256').update(buf).digest('hex');
+
+// The section `anchor` opens in any month file under `dir`, up to the next anchor.
+function sectionIn(dir, anchor) {
+    let names = [];
+    try { names = fs.readdirSync(dir).filter((n) => n.endsWith('.md')).sort(); } catch (e) { return null; }
+    for (const n of names) {
+        const text = fs.readFileSync(path.join(dir, n), 'utf8');
+        const at = text.indexOf('<a id="' + anchor + '"></a>');
+        if (at < 0) continue;
+        const next = text.indexOf('\n<a id="', at + 1);
+        return text.slice(at, next < 0 ? text.length : next + 1).replace(/\n*$/, '\n');
+    }
+    return null;
+}
+
+// The `<details>` block of a bundle's retro: filed on its own by `retro
+// --bundle`, or under a task's record by `retro --session`.
+function retroBlock(months, id8) {
+    const at = months.indexOf('<summary>retro ' + id8 + ' ');
+    if (at < 0) return null;
+    const end = months.indexOf('</details>', at);
+    return months.slice(months.lastIndexOf('<details>', at), end < 0 ? months.length : end + '</details>'.length);
+}
+
+// os.homedir() as a transcript spells it: native, with forward slashes, and as
+// Git Bash's /c/Users/<name>. Windows paths match in any case; the lookahead
+// keeps C:\Users\ann from matching inside C:\Users\anna.
+function homePattern(home) {
+    const forms = new Set([home, home.split('\\').join('/')]);
+    const drive = /^([A-Za-z]):[\\/](.*)$/.exec(home);
+    if (drive) forms.add('/' + drive[1].toLowerCase() + '/' + drive[2].split('\\').join('/'));
+    const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const alts = [...forms].sort((a, b) => b.length - a.length).map(esc).join('|');
+    return new RegExp('(?:' + alts + ')(?![\\w.-])', process.platform === 'win32' ? 'gi' : 'g');
+}
+
+function mapStrings(value, fn) {
+    if (typeof value === 'string') return fn(value);
+    if (Array.isArray(value)) return value.map((v) => mapStrings(v, fn));
+    if (value && typeof value === 'object') {
+        const out = {};
+        for (const k of Object.keys(value)) out[k] = mapStrings(value[k], fn);
+        return out;
+    }
+    return value;
+}
+
+// A bundle as it goes into the ZIP: every string's home directory turned into
+// [HOME] unless `re` is null, the head line kept as written, gzip'd again; the
+// file in .fankeel/bundles/ is not touched. Also the Claude Code versions its
+// entries carry, for the manifest.
+function maskBundle(buf, re) {
+    const lines = zlib.gunzipSync(buf).toString('utf8').split('\n').filter(Boolean);
+    const versions = new Set();
+    const out = [lines[0]];
+    for (const raw of lines.slice(1)) {
+        let row;
+        try { row = JSON.parse(raw); } catch (e) { out.push(re ? raw.replace(re, '[HOME]') : raw); continue; }
+        if (row && row.e && typeof row.e.version === 'string') versions.add(row.e.version);
+        out.push(re ? JSON.stringify(mapStrings(row, (s) => s.replace(re, '[HOME]'))) : raw);
+    }
+    return { gz: re ? zlib.gzipSync(out.join('\n') + '\n') : buf, versions };
+}
+
+// Null for a file that is missing or does not parse, and for a buffer that does not.
+function readJson(file) {
+    try { return JSON.parse(Buffer.isBuffer(file) ? file.toString('utf8') : fs.readFileSync(file, 'utf8')); } catch (e) { return null; }
+}
+
+// Names and versions only. npm exits non-zero over an extraneous package and
+// still prints the JSON, so stdout is read from the failure too.
+function globalPackages() {
+    let text;
+    try {
+        text = execSync('npm ls -g --depth=0 --json', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 30000, windowsHide: true });
+    } catch (e) {
+        text = e && e.stdout;
+        if (!text) return 'unavailable: ' + (String((e && (e.stderr || e.message)) || e).trim().split(/\r?\n/)[0] || 'npm failed');
+    }
+    try {
+        const deps = JSON.parse(text).dependencies || {};
+        const out = {};
+        for (const k of Object.keys(deps)) out[k] = deps[k].version || null;
+        return out;
+    } catch (e) { return 'unavailable: npm printed no JSON'; }
+}
+
+function exportZip(opts, cross) {
+    if (!opts.cross || !cross) fail('record.js export --cross <anchor> --bundles <id8,...>: the anchor is the #x-<date> `retro --cross` printed.');
+    const anchor = String(cross).replace(/^.*#/, '');
+    const ids = String(opts.bundles || '').split(',').map((s) => s.trim()).filter(Boolean);
+    if (!ids.length) fail('Nothing written: --bundles <id8,...> names the bundles this retro read.');
+    const root = opts.root ? path.resolve(opts.root) : registry.rootFor({ cwd: process.cwd() });
+    const projectRoot = opts.project ? path.resolve(opts.project) : root;
+    const list = sensitive.readList(projectRoot);
+    if (list.error) fail('Nothing written: .fankeel/sensitive.txt exists but could not be read (' + list.error + '), so the manifest could not be masked against it.');
+    const records = recordsRel(projectRoot);
+    const recordsDir = path.join(projectRoot, ...records.split('/'));
+    const missing = [];
+    const report = sectionIn(recordsDir, anchor);
+    if (!report) missing.push('#' + anchor + ' in ' + records);
+    const found = [];
+    for (const id8 of ids) {
+        let hit = null;
+        for (const dir of ['.fankeel/bundles', records + '/sessions']) {
+            let names = [];
+            try { names = fs.readdirSync(path.join(projectRoot, ...dir.split('/'))).filter((n) => BUNDLE_NAME.test(n) && n.slice(11, 19) === id8).sort(); } catch (e) { continue; }
+            if (names.length) hit = path.join(projectRoot, ...dir.split('/'), names[names.length - 1]);
+        }
+        if (hit) found.push({ id8, file: hit });
+        else missing.push('bundle ' + id8);
+    }
+    if (missing.length) fail('Nothing written: not found — ' + missing.join(', ') + '.');
+    const re = opts['keep-home'] ? null : homePattern(os.homedir());
+    const months = monthsText(recordsDir);
+    const versions = new Set();
+    const bundles = [];
+    for (const b of found) {
+        let masked;
+        try { masked = maskBundle(fs.readFileSync(b.file), re); } catch (e) { fail('Nothing written: ' + path.basename(b.file) + ' is not a gzip\'d bundle (' + (e.code || e.message) + ').'); }
+        for (const v of masked.versions) versions.add(v);
+        bundles.push({ id8: b.id8, name: path.basename(b.file), gz: masked.gz });
+    }
+    const text = [report.trim(), ...bundles.map((b) => '## retro ' + b.id8 + '\n\n' + (retroBlock(months, b.id8) || '（月檔裡沒有這個包的 retro）'))].join('\n\n') + '\n';
+    const working = readJson(path.join(root, 'package.json'));
+    const installed = readJson(path.join(__dirname, '..', 'package.json')) || {};
+    const project = readJson(path.join(projectRoot, 'package.json')) || {};
+    let gitHead = null;
+    try { gitHead = execFileSync('git', ['-C', projectRoot, 'rev-parse', '--short', 'HEAD'], { stdio: ['ignore', 'pipe', 'ignore'], encoding: 'utf8', timeout: 15000, windowsHide: true }).trim() || null; } catch (e) { /* not a repository */ }
+    const manifest = {
+        export: 1,
+        created: new Date().toISOString(),
+        fankeel: { working: working && working.name === 'fankeel' ? working.version : null, installed: installed.version || null },
+        node: process.version,
+        engines: installed.engines || null,
+        platform: process.platform,
+        arch: process.arch,
+        osRelease: os.release(),
+        claudeCode: [...versions].sort(),
+        gitHead,
+        packages: { dependencies: project.dependencies || {}, devDependencies: project.devDependencies || {} },
+        homeMasked: Boolean(re),
+    };
+    if (opts['global-packages']) manifest.globalPackages = globalPackages();
+    manifest.bundles = bundles.map((b) => ({ name: b.name, bytes: b.gz.length, sha256: sha256(b.gz) }));
+    const body = zip.write([
+        { name: 'manifest.json', data: Buffer.from(JSON.stringify(sensitive.redact(manifest, list.words, {}), null, 2) + '\n') },
+        { name: 'report.md', data: Buffer.from(text) },
+        ...bundles.map((b) => ({ name: 'bundles/' + b.name, data: b.gz })),
+    ]);
+    const rel = '.fankeel/exports/retro-' + manifest.created.slice(0, 10) + '-' + sha256(text).slice(0, 8) + '.zip';
+    registry.ensureIgnored(projectRoot, ['exports/']);
+    const file = path.join(projectRoot, ...rel.split('/'));
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, body);
+    process.stdout.write(['export: ' + rel, 'size: ' + (body.length / 1048576).toFixed(1) + ' MB，' + bundles.length + ' bundles，homeMasked: ' + manifest.homeMasked,
+        '把這個檔案用私下管道傳回去，不要上傳到 Gitea。'].join('\n') + '\n');
+}
+
+function importZip(opts, zipFile) {
+    if (!zipFile) fail('record.js import <zip>: name the ZIP to read.');
+    const root = opts.root ? path.resolve(opts.root) : registry.rootFor({ cwd: process.cwd() });
+    const projectRoot = opts.project ? path.resolve(opts.project) : root;
+    let entries;
+    try { entries = zip.read(fs.readFileSync(zipFile)); } catch (e) { fail('Nothing written: ' + zipFile + ' — ' + (e.code || e.message) + '.'); }
+    const byName = new Map(entries.map((e) => [e.name, e.data]));
+    const manifest = byName.has('manifest.json') ? readJson(byName.get('manifest.json')) : null;
+    if (!manifest || manifest.export !== 1 || !Array.isArray(manifest.bundles)) fail('Nothing written: ' + zipFile + ' holds no export manifest.json, so it is not a retro export.');
+    const bad = [];
+    for (const b of manifest.bundles) {
+        const data = byName.get('bundles/' + b.name);
+        if (!BUNDLE_NAME.test(String(b.name))) bad.push(b.name + ' is not a bundle name');
+        else if (!data) bad.push(b.name + ' is missing');
+        else if (sha256(data) !== b.sha256) bad.push(b.name + ' does not match its sha256');
+    }
+    if (bad.length) fail('Nothing written: ' + bad.join('; ') + '.');
+    registry.ensureIgnored(projectRoot, ['bundles/', 'imports/']);
+    const dir = path.join(projectRoot, '.fankeel', 'bundles');
+    fs.mkdirSync(dir, { recursive: true });
+    const written = [];
+    const skipped = [];
+    for (const b of manifest.bundles) {
+        const target = path.join(dir, b.name);
+        if (fs.existsSync(target)) { skipped.push(b.name); continue; }
+        fs.writeFileSync(target, byName.get('bundles/' + b.name));
+        written.push(b.name);
+    }
+    const stem = path.basename(zipFile).replace(/\.zip$/i, '');
+    const into = path.join(projectRoot, '.fankeel', 'imports', stem);
+    fs.mkdirSync(into, { recursive: true });
+    fs.writeFileSync(path.join(into, 'manifest.json'), byName.get('manifest.json'));
+    if (byName.has('report.md')) fs.writeFileSync(path.join(into, 'report.md'), byName.get('report.md'));
+    const fk = manifest.fankeel || {};
+    const out = ['imported: ' + written.length + ' bundles into .fankeel/bundles/'];
+    if (skipped.length) out.push('skipped: ' + skipped.join(', ') + ' (already here, not overwritten)');
+    out.push('report: .fankeel/imports/' + stem + '/report.md',
+        'manifest: fankeel ' + (fk.installed || fk.working || '?') + ' · node ' + manifest.node + ' · ' + manifest.platform + ' ' + manifest.osRelease
+        + ' · Claude Code ' + ((manifest.claudeCode || []).join(', ') || '?') + ' · ' + manifest.bundles.length + ' bundles');
+    process.stdout.write(out.join('\n') + '\n');
+}
+
 // docs/90-agent/plans/2026-11-01-professor-ci-tiers-design.md §7, after the
 // 2026-11-01 shared-session-state judgement (option A): the state of a stage in
 // progress stays on this machine, but its conclusion goes into version control
@@ -352,7 +565,9 @@ function main(argv) {
     if (verb === 'session') return exportSession(values);
     if (verb === 'sessions' && values.list) return listBundles(values);
     if (verb === 'retro') return values.cross ? fileCross(values) : values.bundle ? fileBundleRetro(values) : fileRetro(values);
-    fail('record.js write|session|retro|sessions --list --session <id> [--commit] [--transcript <jsonl>] [--cross] [--bundle <id8>] [--root <dir>] [--project <dir>] [--config-dir <dir>]');
+    if (verb === 'export') return exportZip(values, positionals[1]);
+    if (verb === 'import') return importZip(values, positionals[1]);
+    fail('record.js write|session|retro|sessions --list|export --cross <anchor> --bundles <id8,...>|import <zip> --session <id> [--commit] [--transcript <jsonl>] [--cross] [--bundle <id8>] [--global-packages] [--keep-home] [--root <dir>] [--project <dir>] [--config-dir <dir>]');
 }
 
 if (require.main === module) main(process.argv.slice(2));
