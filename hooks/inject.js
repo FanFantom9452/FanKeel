@@ -272,6 +272,14 @@ function main(raw) {
     const back = !notice && typeof mine.awayAt === 'number';
     const BACK = 'fankeel: the user is back. Before anything else, ask again with AskUserQuestion the question held while they were away.';
 
+    // §6: the station's serve.json, for the gate page and phone lines. A file
+    // read, never a probe; `FANKEEL_SERVE=off` (the tests) reads none.
+    let serve = null;
+    try {
+        const cfgDir = process.env.FANKEEL_SERVE === 'off' ? null : profileLib.configDirOf();
+        if (cfgDir) serve = require('../lib/serve.js').readServeRecord(cfgDir);
+    } catch (e) { /* housekeeping: no links */ }
+
     // Output first, side effects after. A failure while refreshing a timestamp or
     // writing a statusline flag must not cost the injection, which is the only
     // reason this process was started. The scan above is not a side effect: it
@@ -279,7 +287,7 @@ function main(raw) {
     process.stdout.write(JSON.stringify({
         hookSpecificOutput: {
             hookEventName: 'UserPromptSubmit',
-            additionalContext: render({ mine: { sessionId, data: mine }, others: alive, now, root, launch, transcript: payload.transcript_path, unclaimed, profile }) + (back ? '\n' + BACK : ''),
+            additionalContext: render({ mine: { sessionId, data: mine }, others: alive, now, root, launch, transcript: payload.transcript_path, unclaimed, profile, serve }) + (back ? '\n' + BACK : ''),
         },
     }));
 
