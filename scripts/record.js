@@ -578,4 +578,4 @@ function main(argv) {
 
 if (require.main === module) main(process.argv.slice(2));
 
-module.exports = { parse, problems, appendUnder, fileStageReport };
+module.exports = { parse, problems, appendUnder, fileStageReport, homePattern };

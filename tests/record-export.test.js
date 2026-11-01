@@ -9,6 +9,7 @@ const crypto = require('node:crypto');
 const { execFileSync } = require('node:child_process');
 const zip = require('../lib/zip.js');
 const tmp = require('./tmp.js');
+const { homePattern } = require('../scripts/record.js');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'record.js');
 const WIN = process.platform === 'win32';
@@ -223,4 +224,12 @@ test('import refuses a ZIP whose name leaves no folder under .fankeel/imports/, 
     assert.equal(r.code, 1);
     assert.match(r.out, /Nothing written: .*no folder under \.fankeel\/imports\//);
     assert.equal(fs.existsSync(path.join(other, '.fankeel')), false);
+});
+
+test('homePattern masks a Windows home spelled with single, doubled or quadrupled backslashes, and not a longer name', () => {
+    const mask = (s) => s.replace(homePattern('C:\\Users\\ann'), '[HOME]');
+    assert.equal(mask('C:\\Users\\ann\\x'), '[HOME]\\x');
+    assert.equal(mask('C:\\\\Users\\\\ann\\\\x'), '[HOME]\\\\x');
+    assert.equal(mask('C:\\\\\\\\Users\\\\\\\\ann\\\\\\\\x'), '[HOME]\\\\\\\\x');
+    assert.equal(mask('C:\\Users\\anna\\x'), 'C:\\Users\\anna\\x');
 });
