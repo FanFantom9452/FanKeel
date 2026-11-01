@@ -50,6 +50,50 @@ read the tasks out of order.
 committed. It becomes `status: current` when the work lands and is archived after
 that — an unarchived plan gets read as current.
 
+## Splitting a plan that will not fit
+
+Split it, before any task is written, when either holds:
+
+- the design's file table falls into two or more groups that share no file,
+  and any one group runs to more than 8 tasks;
+- a `context:` line has appeared during this plan stage — `contextLine`
+  (`lib/context.js`) prints one once `BUSY` (400000) tokens are in play or
+  anything has been dropped.
+
+The shape is an index plus one ordinary plan per group:
+
+- `<plan bucket>/<stem>-index.md` — the same frontmatter and `**Spec:**`
+  line, one table, then a `build order:` line saying which groups run at once
+  and which wait for which:
+
+  ```markdown
+  | group | plan file | spec sections | files | interface it exposes | depends on |
+  |---|---|---|---|---|---|
+  | A suite | [<stem>-a-suite.md](<stem>-a-suite.md) | §1 | `lib/suite.js`, `tests/suite-tiers.test.js` | `declared(tree) → { daily, nightly } \| null` | none |
+  ```
+
+- `<plan bucket>/<stem>-<group>.md` per row — header, Global Constraints,
+  Risks, tasks and a Coverage of its own spec sections, so
+  `ledger.js --plan <group file>` reads it unchanged and keeps it a ledger of
+  its own (`ledgerPath`, `lib/ledger.js`, keys on the basename). Two groups
+  naming one `Modify:` or `Test:` path are one group.
+
+**Each group has its own writer.** The session holding the plan stage writes
+the index, every interface cell filled — a signature, a file format, a
+command and the line it prints — then dispatches one fresh agent per group,
+in one response. Its prompt is the index path, its row, its spec sections by
+number and the plan path to write; no conclusion crosses between groups
+except through the interface column. It returns one line:
+`<plan path> — <n> tasks — lint: <count, all other-group | the ones it could not fix>`.
+A group's lint lists the other groups' promises, and only those lines may
+stay. A writer stopped at the budget cap leaves a `relay-<id>.md`: a fresh
+writer, the same prompt plus that path.
+
+Then one reviewer per group plan, in one response, the index path added to
+its brief, and `task.js intends` once, on the design — each call replaces the
+last (`setIntends`, `lib/registry.js`). The gate names the index and the sum
+of the tasks; build takes the group plans in the index's build order.
+
 ## The header
 
 Every plan starts with it:

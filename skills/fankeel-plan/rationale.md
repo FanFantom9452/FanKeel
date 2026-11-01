@@ -10,6 +10,26 @@ The reasons behind the rules in [SKILL.md](SKILL.md), under the same headings.
 Read the skill for what to do; read this when a rule looks wrong and you want
 to know what it cost to learn it.
 
+## Splitting a plan that will not fit
+
+On 2026-11-01 a professor reported a frontend-refactor plan that grew to
+about 350K tokens and was compacted while it was still being written, and a
+design that did not fit one context (TODO 「plan 超過 context 時的拆組」).
+Two finished entries sit next to this and are not redone: build already
+sends a plan's independent groups at once (「brain 模式照相依圖派組」), and
+an agent stopped at the budget cap already hands off through a relay file
+(「stage brain 撞上限沒規則」). Neither keeps one writer from carrying the
+whole plan — a relay writer re-reads all of it. Splitting along the design's
+file groups does, because a group's writer needs only the index and its own
+spec sections.
+
+The interface column is the only channel between groups so that what one
+writer had to conclude is written where the next can read it, rather than
+assumed by a writer that never saw it. 8 tasks is the design's own number
+(`docs/90-agent/plans/2026-11-01-professor-ci-tiers-design.md` §5), and the
+first index written to this shape is
+`docs/90-agent/plans/2026-11-02-professor-index.md`.
+
 ## Global Constraints is generated, not remembered
 
 Every task's requirements implicitly include this section, which is why a
