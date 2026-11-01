@@ -1,7 +1,7 @@
 ---
 name: fankeel-weekly
 description: The weekly report for the professors — pick a date range and the repositories, collect fankeel's records, session records and git history for it, write what was done as a list the user confirms, then render one self-contained HTML page archived under the config dir. Use for /fankeel-weekly, "週報", "寫這週的週報", or after the station's 週報 page copied the command.
-version: 0.145.1
+version: 0.146.0
 status: current
 last_verified: 2026-10-30
 source_of_truth: scripts/weekly.js, lib/weekly-collect.js, lib/weekly-render.js, lib/weekly-store.js, lib/weekly-reply.js, lib/session-cost.js

@@ -524,6 +524,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 10-30 第二輪的計畫：search.js 與 float.js 搬完、pane 的 TODO 列與 station 列重排 | `docs/99-archive/2026-10-30-todo-patrol-2.md` — *built* |
 | TODO 全表盤點第三輪（10-30）：做了什麼、沒做什麼 | [reports/2026-10-30-todo-patrol-3.md](90-agent/reports/2026-10-30-todo-patrol-3.md) — *繁體中文* |
 | 10-30 第三輪的計畫：#/live 畫回 subagent 列、刪 nav.js 舊 live 死碼、外殼行數上限、knip 6.44.0 重測 | `docs/99-archive/2026-10-30-todo-patrol-3.md` — *built* |
+| 七段流程頁與整體架構圖重畫（11-01）：做了什麼、沒做什麼 | [reports/2026-11-01-project-diagrams.md](90-agent/reports/2026-11-01-project-diagrams.md) — *繁體中文* |
+| 11-01 圖重畫的計畫：seven-stages.html 步驟卡、layout.md 架構 mermaid | `docs/99-archive/2026-11-01-project-diagrams.md` — *built* |
 | 第三輪的 gate／talk 計畫：摺疊、自由輸入、跳回 talk、工具與子 agent 列、頁尾版本 | `docs/99-archive/2026-10-24-station-gate-talk.md` — *built, English* |
 | 第三輪的文件頁與設定頁計畫：FK_DOCS、FK_SETTINGS、FK_SETDETAIL，刪舊精靈 | `docs/99-archive/2026-10-24-station-docs-settings.md` — *built* |
 | 盤點三件（10-21）：做了什麼、沒做什麼 | [reports/2026-10-21-patrol-three.md](90-agent/reports/2026-10-21-patrol-three.md) — *繁體中文* |
