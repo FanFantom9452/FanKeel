@@ -86,6 +86,18 @@ test('a ZIP compressed again with DEFLATE reads, its directory entry skipped', (
     assert.ok(back[0].data.equals(data));
 });
 
+test('a deflated entry whose stream is corrupt or longer than its declared size fails its CRC check', () => {
+    const data = zlib.gzipSync('{"bundle":1}\n'.repeat(50));
+    const corrupt = deflated(BUNDLE, data);
+    // 0xff sets BTYPE to 11, a reserved block type, so inflate itself throws.
+    corrupt[corrupt.indexOf(BUNDLE) + BUNDLE.length] = 0xff;
+    assert.throws(() => zip.read(corrupt), /CRC/);
+    const short = deflated(BUNDLE, data);
+    const cd = short.readUInt32LE(short.length - 6);
+    short.writeUInt32LE(data.length - 1, cd + 46 + 'bundles/'.length + 24);
+    assert.throws(() => zip.read(short), /CRC/);
+});
+
 test('ZIP64, encryption, a split ZIP and a buffer that is not a ZIP are refused by name', () => {
     const empty = zip.write([]);
     empty.writeUInt16LE(0xffff, 10);
