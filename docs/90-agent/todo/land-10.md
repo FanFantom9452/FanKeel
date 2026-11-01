@@ -18,7 +18,11 @@ stamp: 2026-11-01
 4. init 問推送：偵測到 origin 是 Gitea 或 GitHub 時，問一次「是否推送並開 PR」，寫入 `land.integration pr`、`land.push true`；不改 preset。
 5. 前提：新增 `suite.command` profile key，lib/suite.js:78 優先讀它，非 Node 專案（pytest、Makefile）才有測試指令可跑；和第 3 點配合。
 
+6. nightly build：不是 fankeel 去排程，而是 CI 那邊用排程觸發的 workflow（Gitea Actions 的 `on: schedule`）每晚跑整套；fankeel 只用第 2 點的 `ci-status.js` 讀那次的狀態，不自己開跑、不等結果。
+
 完成條件：在一個 Gitea remote 的測試專案上，init 會建議測試指令並問推送，land 能開出 PR，報告多一行 `ci:`。
+
+2026-11-01 教授談話（語音 261101_151532.txt L670–L686、L970–L981）確認：教授要的是 land 推送之後自動觸發 CI/CD，另外每晚跑一次 nightly build。談話沒有定下 tea 或 token、runner 有沒有 Chrome、測試指令，所以條目維持 blocked。
 
 ## 為什麼還開著
 
