@@ -1188,7 +1188,14 @@ function cmdNext(root, opts) {
     // `show` and a new window tell this entry from an abandoned one.
     const handoff = opts.handoff === true;
     if (handoff && !text.trim()) fail('A hand-off needs a next line: give it, or --from-gate.');
-    if (!registry.setNext(root, id, text, handoff ? now() : undefined)) fail('No entry for this session under ' + root);
+    // SPIKE (throwaway): HEAD at hand-off, null when git cannot say.
+    let sha = null;
+    if (handoff) {
+        try {
+            sha = execFileSync('git', ['rev-parse', 'HEAD'], { windowsHide: true, cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim() || null;
+        } catch (e) { sha = null; }
+    }
+    if (!registry.setNext(root, id, text, handoff ? now() : undefined, sha)) fail('No entry for this session under ' + root);
     if (!text.trim()) return 'fankeel — next cleared.';
     const out = 'fankeel — next: ' + registry.nextOf(registry.readSession(root, id));
     return handoff ? out + NL + 'handed off: in a new terminal, /fankeel offers Adopt first.' : out;
@@ -1528,6 +1535,24 @@ function cmdAdopt(root, opts) {
 
     const lines = ['fankeel — adopted: ' + (data.task || 'untitled') + ' @ ' + data.stage];
     lines.push('  ' + from + ' is now stood down.');
+    // SPIKE (throwaway): which of the claims moved since the hand-off.
+    const sinceSha = registry.handoffShaOf(source);
+    if (sinceSha && claims.length) {
+        let changed = null;
+        try {
+            changed = execFileSync('git', ['diff', '--name-only', sinceSha, 'HEAD'], { windowsHide: true, cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
+                .split(/\r?\n/).filter(Boolean);
+        } catch (e) { changed = null; }
+        if (changed) {
+            const hit = claims.filter((c) => changed.some((f) => f === c || f.startsWith(c + '/')));
+            if (hit.length) {
+                lines.push('  claims changed since handoff ' + sinceSha.slice(0, 8) + ':');
+                for (const c of hit) lines.push('    - ' + c);
+            } else {
+                lines.push('  no claim changed since handoff ' + sinceSha.slice(0, 8) + '.');
+            }
+        }
+    }
     lines.push('');
     for (const line of describe(root, id, data)) lines.push('  ' + line);
     return lines.join('\n');
