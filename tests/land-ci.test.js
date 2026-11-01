@@ -24,6 +24,6 @@ test('fankeel-land reads CI once after a push and never waits on it', () => {
 
 test('the land report carries the ci line beside suite', () => {
     const out = flat.slice(flat.indexOf('## Output'));
-    assert.match(out, /suite: <suite\.js line> ci: <ci-status\.js line, after a push>/);
+    assert.match(out, /suite: <suite\.js line> ci: <ci-status\.js line>/);
     assert.match(out, /`ci:` from step 7 when this land pushed; no push, no line/);
 });

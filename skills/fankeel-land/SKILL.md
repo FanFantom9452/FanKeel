@@ -448,7 +448,7 @@ inlined in your brief.
 花費: <from record.js>
 還剩什麼: <what is left>
 suite: <suite.js line>
-ci: <ci-status.js line, after a push>
+ci: <ci-status.js line>
 紀錄: <filed: line>
 then AskUserQuestion
 ```

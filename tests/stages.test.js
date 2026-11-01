@@ -1262,9 +1262,11 @@ test('every controlled stage prints await\'s page: line beside the path', () => 
 // gate tab §3: land's report carries the six record fields in order, then
 // suite and the record link; the clear rule gave up its reason
 // (skills/fankeel-land/SKILL.md keeps it) so the land block stays under its
-// 2400-character cap.
-test('the land template lists the six record fields in order, then suite and the record link', () => {
-  assert.match(templateFor('land'), /\n要求: [^\n]+\n做了什麼:\n  - [^\n]+\n為什麼這樣做: [^\n]+\n驗過・沒驗過: [^\n]+\n花費: [^\n]+\n還剩什麼: [^\n]+\nsuite: [^\n]+\n紀錄: [^\n]+\nthen AskUserQuestion$/);
+// 2400-character cap. The ci line (2026-11-01-professor-ci-tiers-design.md §2)
+// was paid for by the Output rule's "record to `record.js write`", which the
+// TODO-closing rule already names.
+test('the land template lists the six record fields in order, then suite, ci and the record link', () => {
+  assert.match(templateFor('land'), /\n要求: [^\n]+\n做了什麼:\n  - [^\n]+\n為什麼這樣做: [^\n]+\n驗過・沒驗過: [^\n]+\n花費: [^\n]+\n還剩什麼: [^\n]+\nsuite: [^\n]+\nci: [^\n]+\n紀錄: [^\n]+\nthen AskUserQuestion$/);
   const text = byName('land').rules.join(' ');
   assert.doesNotMatch(text, /new id leaves the entry active/);
 });
