@@ -586,6 +586,10 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 那份設計的實作計畫 | `docs/99-archive/2026-10-31-quota-share.md` — *built, 繁體中文* |
 | 關卡 header 改寫成這一站→下一站（10-31）的實作計畫 | `docs/99-archive/2026-10-31-gate-header-move.md` — *built, 繁體中文* |
 | 七段詳細設計頁、去識別化實例單頁與 README 精簡（11-01）的實作計畫；設計在對話裡逐段確認 | `docs/99-archive/2026-11-01-seven-stage-design.md` — *built, 繁體中文* |
+| 教授 11-01 三項（11-01）的設計：suite.json 分 daily／nightly 兩層、推送後讀 CI、test-audit 盤點、plan 太大拆組 | `docs/99-archive/2026-11-01-professor-ci-tiers-design.md` — *built, 繁體中文* |
+| 那份設計的 plan 索引：五組的介面與相依，build 順序 A、C、E、B、D | `docs/99-archive/2026-11-02-professor-index.md` — *built, 繁體中文* |
+| 五組各自的 plan：suite 分層、CI 與 ci-status、test-audit、plan 拆組、關卡報告 | `docs/99-archive/2026-11-02-professor-a-suite.md`、`docs/99-archive/2026-11-02-professor-b-ci.md`、`docs/99-archive/2026-11-02-professor-c-test-audit.md`、`docs/99-archive/2026-11-02-professor-d-plan-split.md`、`docs/99-archive/2026-11-02-professor-e-gate.md` — *built, 繁體中文* |
+| 教授 11-01 功能那個任務各站的報告：build、verify、第二輪 build 與 verify、audit，換站時由 `task.js stage` 提交 | [build](90-agent/records/task-20261101T152419/build.md)、[verify](90-agent/records/task-20261101T152419/verify.md)、[build-2](90-agent/records/task-20261101T152419/build-2.md)、[verify-2](90-agent/records/task-20261101T152419/verify-2.md)、[audit](90-agent/records/task-20261101T152419/audit.md) — *a dated snapshot, 繁體中文* |
 | 真的 `claude -p` 巢狀派兩個 agent 量出來：`SubagentStart` 觸發當下 `agent-<id>.meta.json` 兩個 agent 都還沒帶 `spawnDepth`（`atHook`／`depthAtHook` 一致為 `false`／`null`），`nestedBrain()` 退回 fallback 分支，事後檔案才補齊且巢狀關係正確 | [reports/2026-09-28-spawndepth-timing.md](90-agent/reports/2026-09-28-spawndepth-timing.md) — *a dated snapshot, 繁體中文* |
 | 真的 `claude -p` 派 `isolation: "worktree"` 的 subagent 量出來：回傳文字裡沒有路徑也沒有分支（`pathInResult`／`branchInResult` 皆 `false`），readable: no——brain 拿不到路徑可以直接寫進 commit file，`task.js` 的 `openWorktree` 退路還要 design 定義；留下的 worktree 開在 repo 根目錄之內，`lib/guard.js` 的 `relPath` 對不回主樹路徑 | [reports/2026-09-28-worktree-probe.md](90-agent/reports/2026-09-28-worktree-probe.md) — *a dated snapshot, 繁體中文* |
 | 本地 `moondream` 判斷十張 fankeel 測站截圖（五正常五破壞）：正常圖 5/5 判對、壞圖只抓到 1/5（全透明文字那張），平均 0.24 秒；`UI-TARS-1.5-7B-GGUF` 卡在下載時被擋跨主機 redirect，座標題沒問成 | [reports/2026-09-28-local-judge-trial.md](90-agent/reports/2026-09-28-local-judge-trial.md) — *a dated snapshot, 繁體中文* |
@@ -694,6 +698,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 - [花費頁分成總覽、7d 額度、5h 額度、明細四個分頁（10-31）：依帳號畫 5h／7d 額度折線與 task 條，金額不接 (x%)](03-decisions/2026-10-31-spend-quota-tabs.md)
 - [每帳號額度改用實測 perPoint（10-31）：刪 quota.week，單一 session 金額旁標週用量與 5H 估算](03-decisions/2026-10-31-quota-share.md)
 - [關卡問題的 header 改寫成這一站→下一站（10-31）：超過 12 欄只留目的地](03-decisions/2026-10-31-gate-header-move.md)
+- [測試分兩層、推送後讀 CI、plan 太大就拆組（11-02）：suite.json 宣告 daily／nightly，ci-status 只讀一次不擋 land，關卡前先寫報告](03-decisions/2026-11-02-ci-tiers.md)
 - [任務的圖由 station 畫成 SVG（10-20）](03-decisions/2026-10-20-task-boards-as-svg.md)
 - [retro 讀整份遮蔽過的 session 包（10-20）](03-decisions/2026-10-20-retro-bundle.md)
 - [沒派過的 agent 怎麼處理（10-15）：effort 改在派工時傳，六個複本刪掉](03-decisions/2026-10-15-unused-agents.md)
