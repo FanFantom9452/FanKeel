@@ -78,6 +78,20 @@ Then, whichever answer, two keys that carry this repository's own evidence:
   `land.js merge` writes `merge: <task>`, so a pattern without `merge` refuses
   `land.js merge` until the user adds it. Write nothing the user did not pick.
 
+Where the scout drafted `land pr`, and `task.js profile show` does not already
+read `land.integration` `pr` with `land.push` `true`, one `AskUserQuestion`:
+**推送並開 PR** (recommended) or **照現在的設定**. The first runs
+`node <plugin>/scripts/task.js profile set land.integration pr --project <name>`
+and `node <plugin>/scripts/task.js profile set land.push true --project <name>`;
+the second writes nothing. A rerun that finds both set does not ask again.
+
+Where the scout drafted `suite` lines, show its `.fankeel/suite.json` draft and
+write `<project>/.fankeel/suite.json` only after the user approves it, as
+approved. Where the draft has a `nightly` tier, name
+`<plugin>/assets/ci/nightly.yml`: a Gitea Actions schedule for that tier, which
+the user copies into `.gitea/workflows/` if they want one — fankeel never writes
+it into a project.
+
 One more question belongs to the machine, not to the profile, and is asked on
 its own after the preset, whatever the scout's `profile` row says:
 
