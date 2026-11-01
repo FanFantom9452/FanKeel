@@ -55,8 +55,8 @@ h3{font-size:14px;margin:18px 0 8px;color:var(--ink2)}
 .split .work{background:var(--ink2)}
 
 /* bars */
-.legend{display:flex;gap:16px;font-size:13px;color:var(--ink2);margin-bottom:12px;flex-wrap:wrap}
-.legend i{display:inline-block;width:14px;height:10px;border-radius:2px;vertical-align:-1px;margin-right:6px}
+.key{display:flex;gap:16px;font-size:13px;color:var(--ink2);margin-bottom:12px;flex-wrap:wrap}
+.key i{display:inline-block;width:14px;height:10px;border-radius:2px;vertical-align:-1px;margin-right:6px}
 .bars{display:grid;grid-template-columns:72px 1fr 200px;gap:8px 12px;align-items:center}
 .bars .name{font:600 12px/1 var(--f-mono);color:var(--ink2)}
 .track{position:relative;height:20px;background:var(--inset);border-radius:4px;overflow:hidden;display:flex}
@@ -84,51 +84,77 @@ h3{font-size:14px;margin:18px 0 8px;color:var(--ink2)}
 /* flow diagrams */
 html{scroll-behavior:auto}
 @media(prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
-.flow{background:color-mix(in srgb,var(--panel) 60%,transparent)}
-.dgbox{background-color:var(--ground);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:24px 24px;border:1px solid var(--rule);border-radius:var(--r-sm);padding:10px}
+/* panels: tone, no full box */
+.panel{background:var(--panel);border-radius:var(--r);padding:22px}
+.panel h2{font-size:17px;line-height:1.4;margin:0 0 4px}
+.lede{color:var(--ink2);font-size:14px;margin:0 0 14px;max-width:72ch}
+
+/* the diagram canvas: the incumbent grid ground, no border */
+.canvas{background-color:var(--ground);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:24px 24px;border-radius:var(--r-sm);padding:14px 0}
 .dg{display:block;width:100%;height:auto;overflow:visible}
+.dg-narrow{display:none}
 .dg text{font-family:var(--f-ui);fill:var(--ink)}
-.dg .zn{fill:none;stroke:var(--rule2);stroke-dasharray:5 4}
-.dg .zt{font:600 11px var(--f-mono);fill:var(--muted);letter-spacing:.06em}
-.dg .nbox{fill:var(--panel);stroke:var(--c);stroke-width:1.6}
-.dg .ghost{fill:var(--panel);stroke:var(--c);stroke-width:1.2;opacity:.55}
-.dg .nn{font:700 13px var(--f-mono)}
-.dg .nl{font-size:11.5px;fill:var(--ink2)}
-.dg.sm .nn{font-size:11px}
-.dg.sm .nl{font-size:10px}
-.dg .tg{fill:var(--inset);stroke:var(--rule2)}
-.dg .tt{font:10.5px var(--f-mono);fill:var(--muted)}
-.dg.sm .tt{font-size:9.5px}
+.dg .nb{fill:var(--panel);stroke:var(--c);stroke-width:1.8}
+.dg .nb.dash{stroke-dasharray:5 4}
+.dg .nn{font:700 13.5px var(--f-mono);fill:var(--c)}
+.dg .nl{font-size:13px;fill:var(--ink2)}
+.dg .nl.mono{font:12.5px var(--f-mono)}
+.dg .nt{font-size:12.5px;fill:var(--muted)}
+.dg .lane{font:600 13px var(--f-ui);fill:var(--ink2)}
+.dg .guide{stroke:var(--rule2);stroke-dasharray:2 5;stroke-width:1}
 .dg .ar{fill:none;stroke-width:1.8}
 .dg .ar.ok{stroke:var(--ok)}
-.dg .ar.wait{stroke:var(--wait);stroke-dasharray:6 4}
-.dg .ar.hold{stroke:var(--ink2);stroke-dasharray:2 4}
 .dg .ar.fail{stroke:var(--fail);stroke-dasharray:6 4}
 .dg .mk.ok{fill:var(--ok)}
-.dg .mk.wait{fill:var(--wait)}
-.dg .mk.hold{fill:var(--ink2)}
 .dg .mk.fail{fill:var(--fail)}
-.dg .al{font:600 11px var(--f-mono);paint-order:stroke;stroke:var(--ground);stroke-width:4px;stroke-linejoin:round}
-.dg .al.ok{fill:var(--ok)}
-.dg .al.wait{fill:var(--wait-ink)}
-.dg .al.hold{fill:var(--ink2)}
+.dg .mk.wait{fill:var(--wait)}
+.dg .al{font:600 12.5px var(--f-ui);fill:var(--ink2);paint-order:stroke;stroke:var(--ground);stroke-width:4px;stroke-linejoin:round}
 .dg .al.fail{fill:var(--fail)}
-.dg .gate rect{fill:var(--wait-bg);stroke:var(--wait);stroke-dasharray:4 3;stroke-width:1.4}
-.dg .gate text{font:600 12px var(--f-mono);fill:var(--wait-ink)}
-.dg .gate.zero{opacity:.85}
-.dg .gate.big rect{fill:var(--wait);stroke:var(--wait);stroke-dasharray:none;stroke-width:2}
-.dg .gate.big text{font-size:18px;font-weight:700;fill:var(--gate-ink)}
-.dg.sm .gate.big text{font-size:14px}
-.dg .link{cursor:pointer}
-.dg .link:hover .nbox{fill:var(--inset)}
-.dg .link:focus-visible{outline:3px solid var(--ink);outline-offset:3px;border-radius:8px}
-.dg .link:focus-visible .nbox{stroke-width:3.5}
-.legend .ln{display:inline-block;width:28px;height:0;border-top:2px solid var(--ok);vertical-align:3px;margin-right:6px}
-.legend .ln.wait{border-top:2px dashed var(--wait)}
-.legend .ln.hold{border-top:2px dotted var(--ink2)}
-.legend .ln.fail{border-top:2px dashed var(--fail)}
-.legend .bx{display:inline-block;width:16px;height:11px;border:1.5px solid var(--st-build);border-radius:3px;vertical-align:-1px;margin-right:6px;background:var(--panel)}
-.flow .legend{margin:12px 0 0}
+.gt{fill:var(--wait-bg);stroke:var(--wait);stroke-width:1.6}
+.dg .origin{stroke:var(--st-init);stroke-width:3;stroke-linecap:round}
+.dg .ln{fill:none;stroke-linecap:round}
+.dg .ln.architectural{stroke:var(--ink);stroke-width:5}
+.dg .ln.bounded{stroke:var(--ink2);stroke-width:3}
+.dg .ln.spike{stroke:var(--muted);stroke-width:3;stroke-dasharray:8 5}
+.dg .cap{stroke:var(--ink2);stroke-width:2.5;stroke-linecap:round}
+.dg .stop{fill:var(--c);stroke:var(--panel);stroke-width:3}
+.dg .cn{font:600 13px var(--f-mono);fill:var(--ink)}
+.dg .cs{font-size:12.5px;fill:var(--muted)}
+.dg .lk{cursor:pointer}
+.dg .lk:hover .nb{fill:var(--inset)}
+.dg .lk:focus-visible{outline:none}
+.dg .lk:focus-visible .nb{stroke-width:3.5;stroke:var(--ink)}
+
+/* legend */
+.legend{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:8px 32px;margin-top:16px;font-size:14px}
+.classes{margin:0;display:grid;gap:8px}
+.classes div{display:grid;grid-template-columns:150px minmax(0,1fr);gap:12px;align-items:baseline}
+.classes dt{display:flex;align-items:center;gap:8px}
+.classes dd{margin:0;color:var(--ink2)}
+.sw{display:inline-block;width:28px;height:0;border-top:3px solid var(--ink2);flex:none}
+.sw.architectural{border-top:5px solid var(--ink)}
+.sw.spike{border-top:3px dashed var(--muted)}
+.marks{list-style:none;margin:0;padding:0;display:grid;gap:8px;color:var(--ink2);align-content:start}
+.marks li{display:flex;align-items:center;gap:8px}
+.marks svg{width:20px;height:20px;flex:none}
+.lnk{display:inline-block;width:28px;height:0;border-top:2px solid var(--ok);flex:none}
+.lnk.fail{border-top:2px dashed var(--fail)}
+.rule{grid-column:1/-1;margin:4px 0 0;color:var(--muted);font-size:13px}
+
+/* build inside */
+.sub{margin-top:8px}
+
+code{font:.92em var(--f-mono)}
+.fr{container-type:inline-size}
+@container (max-width:760px){
+  .dg-wide{display:none}
+  .dg-narrow{display:block}
+  .panel{padding:16px 12px}
+  .canvas{padding:10px 0}
+  .legend{grid-template-columns:minmax(0,1fr)}
+  .classes div{grid-template-columns:minmax(0,1fr);gap:2px}
+}
+.dg [style*="st-init"] .nn{fill:var(--ink2)}
 
 /* depth */
 .lane{background:var(--inset);border-radius:var(--r-sm);padding:12px 14px}
@@ -153,8 +179,6 @@ footer a{color:var(--ink)}
   .bars .val{grid-column:2;text-align:left;margin-top:-4px}
   .axis{grid-column:2}
   main{padding-left:12px;padding-right:12px}
-  .flow{padding:10px 8px}
-  .dgbox{padding:4px}
   .stage.wide{padding-left:10px;padding-right:10px}
 }
 </style>
@@ -176,15 +200,65 @@ footer a{color:var(--ink)}
   <noscript><p class="note">這頁的數字由頁內的腳本畫出，請開啟 JavaScript。</p></noscript>
 </section>
 
-<section class="flow" aria-labelledby="flow-h">
-  <h2 id="flow-h">一個任務怎麼走：點節點跳到那一段</h2>
-  <div class="dgbox" id="flow"></div>
-  <div class="legend" data-legend></div>
+<div class="fr">
+<section class="panel" aria-label="七段流程">
+  <h2>一件任務怎麼走：點節點跳到那一段</h2>
+  <p class="lede">上排是八個停靠點，每段結束都停在關卡問你；下面三條線是三種分類，各只停它路線上的段。</p>
+  <div class="canvas" data-block="stages-main"><svg class="dg dg-wide" viewBox="0 0 1096 314" role="img" aria-labelledby="mwd-t"><title id="mwd-t">七段主線：每段結束都停在關卡；三種分類各走一條線；VERIFY 發現缺口退回 BUILD</title><defs><marker id="mwd-ok" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0L9 4.5L0 9z" class="mk ok"/></marker><marker id="mwd-fail" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0L9 4.5L0 9z" class="mk fail"/></marker><marker id="mwd-wait" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0L9 4.5L0 9z" class="mk wait"/></marker></defs><line class="guide" x1="320" y1="134" x2="320" y2="288"/><line class="guide" x1="430" y1="134" x2="430" y2="288"/><line class="guide" x1="540" y1="134" x2="540" y2="288"/><line class="guide" x1="650" y1="134" x2="650" y2="288"/><line class="guide" x1="760" y1="134" x2="760" y2="288"/><line class="guide" x1="870" y1="134" x2="870" y2="288"/><line class="guide" x1="980" y1="134" x2="980" y2="288"/><path class="ar fail" d="M760 56V30H650V54" marker-end="url(#mwd-fail)"/><text class="al fail" x="705" y="22" text-anchor="middle">發現缺口：退回 BUILD 補做</text><a href="#d-stage-init" class="lk" aria-label="INIT：第 0 步，還沒有任務，登記好就進 SURVEY；跳到它的 6 個步驟" style="--c:var(--st-init)"><rect class="nb dash" x="168" y="56" width="84" height="78" rx="8"/><text class="nn" x="210" y="77" text-anchor="middle">INIT</text><text class="nl" x="210" y="96" text-anchor="middle">第 0 步</text><text class="nl" x="210" y="113" text-anchor="middle">6 個步驟</text></a><path class="ar ok" d="M252 95H274" marker-end="url(#mwd-ok)"/><a href="#d-stage-survey" class="lk" aria-label="SURVEY：一份現況事實，跳到它的 6 個步驟" style="--c:var(--st-survey)"><rect class="nb" x="276" y="56" width="88" height="78" rx="8"/><text class="nn" x="320" y="77" text-anchor="middle">SURVEY</text><text class="nl" x="320" y="96" text-anchor="middle">一份現況事實</text><text class="nl" x="320" y="113" text-anchor="middle">6 個步驟</text></a><line class="ar ok" x1="364" y1="95" x2="367" y2="95"/><rect class="gt" x="369.5" y="89.5" width="11" height="11" rx="2" transform="rotate(45 375 95)"/><path class="ar ok" d="M383 95H384" marker-end="url(#mwd-ok)"/><a href="#d-stage-design" class="lk" aria-label="DESIGN：你同意的做法，跳到它的 7 個步驟" style="--c:var(--st-design)"><rect class="nb" x="386" y="56" width="88" height="78" rx="8"/><text class="nn" x="430" y="77" text-anchor="middle">DESIGN</text><text class="nl" x="430" y="96" text-anchor="middle">你同意的做法</text><text class="nl" x="430" y="113" text-anchor="middle">7 個步驟</text></a><line class="ar ok" x1="474" y1="95" x2="477" y2="95"/><rect class="gt" x="479.5" y="89.5" width="11" height="11" rx="2" transform="rotate(45 485 95)"/><path class="ar ok" d="M493 95H494" marker-end="url(#mwd-ok)"/><a href="#d-stage-plan" class="lk" aria-label="PLAN：分好組的任務，跳到它的 7 個步驟" style="--c:var(--st-plan)"><rect class="nb" x="496" y="56" width="88" height="78" rx="8"/><text class="nn" x="540" y="77" text-anchor="middle">PLAN</text><text class="nl" x="540" y="96" text-anchor="middle">分好組的任務</text><text class="nl" x="540" y="113" text-anchor="middle">7 個步驟</text></a><line class="ar ok" x1="584" y1="95" x2="587" y2="95"/><rect class="gt" x="589.5" y="89.5" width="11" height="11" rx="2" transform="rotate(45 595 95)"/><path class="ar ok" d="M603 95H604" marker-end="url(#mwd-ok)"/><a href="#d-stage-build" class="lk" aria-label="BUILD：提交好的成品，中途不停下來問，跳到它的 7 個步驟" style="--c:var(--st-build)"><rect class="nb" x="606" y="56" width="88" height="78" rx="8"/><text class="nn" x="650" y="77" text-anchor="middle">BUILD</text><text class="nl" x="650" y="96" text-anchor="middle">提交好的成品</text><text class="nl" x="650" y="113" text-anchor="middle">7 個步驟</text></a><line class="ar ok" x1="694" y1="95" x2="697" y2="95"/><rect class="gt" x="699.5" y="89.5" width="11" height="11" rx="2" transform="rotate(45 705 95)"/><path class="ar ok" d="M713 95H714" marker-end="url(#mwd-ok)"/><a href="#d-stage-verify" class="lk" aria-label="VERIFY：對過的證據，跳到它的 7 個步驟" style="--c:var(--st-verify)"><rect class="nb" x="716" y="56" width="88" height="78" rx="8"/><text class="nn" x="760" y="77" text-anchor="middle">VERIFY</text><text class="nl" x="760" y="96" text-anchor="middle">對過的證據</text><text class="nl" x="760" y="113" text-anchor="middle">7 個步驟</text></a><line class="ar ok" x1="804" y1="95" x2="807" y2="95"/><rect class="gt" x="809.5" y="89.5" width="11" height="11" rx="2" transform="rotate(45 815 95)"/><path class="ar ok" d="M823 95H824" marker-end="url(#mwd-ok)"/><a href="#d-stage-audit" class="lk" aria-label="AUDIT：一份殘留清單，跳到它的 7 個步驟" style="--c:var(--st-audit)"><rect class="nb" x="826" y="56" width="88" height="78" rx="8"/><text class="nn" x="870" y="77" text-anchor="middle">AUDIT</text><text class="nl" x="870" y="96" text-anchor="middle">一份殘留清單</text><text class="nl" x="870" y="113" text-anchor="middle">7 個步驟</text></a><line class="ar ok" x1="914" y1="95" x2="917" y2="95"/><rect class="gt" x="919.5" y="89.5" width="11" height="11" rx="2" transform="rotate(45 925 95)"/><path class="ar ok" d="M933 95H934" marker-end="url(#mwd-ok)"/><a href="#d-stage-land" class="lk" aria-label="LAND：已整合的成果，跳到它的 7 個步驟" style="--c:var(--st-land)"><rect class="nb" x="936" y="56" width="88" height="78" rx="8"/><text class="nn" x="980" y="77" text-anchor="middle">LAND</text><text class="nl" x="980" y="96" text-anchor="middle">已整合的成果</text><text class="nl" x="980" y="113" text-anchor="middle">7 個步驟</text></a><line class="ar ok" x1="1024" y1="95" x2="1027" y2="95"/><rect class="gt" x="1029.5" y="89.5" width="11" height="11" rx="2" transform="rotate(45 1035 95)"/><text class="al" x="1050" y="100">收工</text><text class="nt" x="650" y="152" text-anchor="middle">中途不停下來問</text><line class="origin" x1="210" y1="134" x2="210" y2="274"/><text class="cn" x="0" y="187">architectural</text><text class="cs" x="0" y="205">新子系統或改介面 · 7 段</text><line class="ln architectural" x1="210" y1="190" x2="998" y2="190"/><line class="cap" x1="998" y1="182" x2="998" y2="198"/><circle class="stop" data-class="architectural" cx="320" cy="190" r="7" style="--c:var(--st-survey)"/><circle class="stop" data-class="architectural" cx="430" cy="190" r="7" style="--c:var(--st-design)"/><circle class="stop" data-class="architectural" cx="540" cy="190" r="7" style="--c:var(--st-plan)"/><circle class="stop" data-class="architectural" cx="650" cy="190" r="7" style="--c:var(--st-build)"/><circle class="stop" data-class="architectural" cx="760" cy="190" r="7" style="--c:var(--st-verify)"/><circle class="stop" data-class="architectural" cx="870" cy="190" r="7" style="--c:var(--st-audit)"/><circle class="stop" data-class="architectural" cx="980" cy="190" r="7" style="--c:var(--st-land)"/><text class="cn" x="0" y="229">bounded</text><text class="cs" x="0" y="247">既有流程內的修改 · 5 段</text><line class="ln bounded" x1="210" y1="232" x2="998" y2="232"/><line class="cap" x1="998" y1="224" x2="998" y2="240"/><circle class="stop" data-class="bounded" cx="320" cy="232" r="7" style="--c:var(--st-survey)"/><circle class="stop" data-class="bounded" cx="430" cy="232" r="7" style="--c:var(--st-design)"/><circle class="stop" data-class="bounded" cx="650" cy="232" r="7" style="--c:var(--st-build)"/><circle class="stop" data-class="bounded" cx="760" cy="232" r="7" style="--c:var(--st-verify)"/><circle class="stop" data-class="bounded" cx="980" cy="232" r="7" style="--c:var(--st-land)"/><text class="cn" x="0" y="271">spike</text><text class="cs" x="0" y="289">可行性問題 · 2 段</text><line class="ln spike" x1="210" y1="274" x2="668" y2="274"/><line class="cap" x1="668" y1="266" x2="668" y2="282"/><circle class="stop" data-class="spike" cx="320" cy="274" r="7" style="--c:var(--st-survey)"/><circle class="stop" data-class="spike" cx="650" cy="274" r="7" style="--c:var(--st-build)"/><text class="nt" x="676" y="278">得到答案，成品標為可丟</text></svg><svg class="dg dg-narrow" viewBox="0 0 364 748" role="img" aria-labelledby="mnd-t"><title id="mnd-t">七段主線，由上往下：每段結束都停在關卡；左側三條線是三種分類；VERIFY 發現缺口退回 BUILD</title><defs><marker id="mnd-ok" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0L9 4.5L0 9z" class="mk ok"/></marker><marker id="mnd-fail" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0L9 4.5L0 9z" class="mk fail"/></marker><marker id="mnd-wait" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0L9 4.5L0 9z" class="mk wait"/></marker></defs><line class="guide" x1="10" y1="140" x2="104" y2="140"/><line class="guide" x1="10" y1="226" x2="104" y2="226"/><line class="guide" x1="10" y1="312" x2="104" y2="312"/><line class="guide" x1="10" y1="398" x2="104" y2="398"/><line class="guide" x1="10" y1="484" x2="104" y2="484"/><line class="guide" x1="10" y1="570" x2="104" y2="570"/><line class="guide" x1="10" y1="656" x2="104" y2="656"/><text class="cn" x="10" y="18">architectural</text><line class="ln architectural" x1="18" y1="26" x2="18" y2="672"/><line class="cap" x1="10" y1="672" x2="26" y2="672"/><circle class="stop" data-class="architectural" cx="18" cy="140" r="7" style="--c:var(--st-survey)"/><circle class="stop" data-class="architectural" cx="18" cy="226" r="7" style="--c:var(--st-design)"/><circle class="stop" data-class="architectural" cx="18" cy="312" r="7" style="--c:var(--st-plan)"/><circle class="stop" data-class="architectural" cx="18" cy="398" r="7" style="--c:var(--st-build)"/><circle class="stop" data-class="architectural" cx="18" cy="484" r="7" style="--c:var(--st-verify)"/><circle class="stop" data-class="architectural" cx="18" cy="570" r="7" style="--c:var(--st-audit)"/><circle class="stop" data-class="architectural" cx="18" cy="656" r="7" style="--c:var(--st-land)"/><text class="cn" x="34" y="40">bounded</text><line class="ln bounded" x1="42" y1="48" x2="42" y2="672"/><line class="cap" x1="34" y1="672" x2="50" y2="672"/><circle class="stop" data-class="bounded" cx="42" cy="140" r="7" style="--c:var(--st-survey)"/><circle class="stop" data-class="bounded" cx="42" cy="226" r="7" style="--c:var(--st-design)"/><circle class="stop" data-class="bounded" cx="42" cy="398" r="7" style="--c:var(--st-build)"/><circle class="stop" data-class="bounded" cx="42" cy="484" r="7" style="--c:var(--st-verify)"/><circle class="stop" data-class="bounded" cx="42" cy="656" r="7" style="--c:var(--st-land)"/><text class="cn" x="58" y="62">spike</text><line class="ln spike" x1="66" y1="70" x2="66" y2="414"/><line class="cap" x1="58" y1="414" x2="74" y2="414"/><circle class="stop" data-class="spike" cx="66" cy="140" r="7" style="--c:var(--st-survey)"/><circle class="stop" data-class="spike" cx="66" cy="398" r="7" style="--c:var(--st-build)"/><a href="#d-stage-init" class="lk" aria-label="INIT：第 0 步，還沒有任務，登記好就進 SURVEY；跳到它的 6 個步驟" style="--c:var(--st-init)"><rect class="nb dash" x="104" y="30" width="196" height="56" rx="8"/><text class="nn" x="202" y="54" text-anchor="middle">INIT · 第 0 步</text><text class="nl" x="202" y="74" text-anchor="middle">6 個步驟</text></a><path class="ar ok" d="M202 86V110" marker-end="url(#mnd-ok)"/><a href="#d-stage-survey" class="lk" aria-label="SURVEY：一份現況事實，跳到它的 6 個步驟" style="--c:var(--st-survey)"><rect class="nb" x="104" y="112" width="196" height="56" rx="8"/><text class="nn" x="202" y="136" text-anchor="middle">SURVEY  一份現況事實</text><text class="nl" x="202" y="156" text-anchor="middle">6 個步驟</text></a><line class="ar ok" x1="202" y1="168" x2="202" y2="175"/><rect class="gt" x="196.5" y="177.5" width="11" height="11" rx="2" transform="rotate(45 202 183)"/><path class="ar ok" d="M202 191V196" marker-end="url(#mnd-ok)"/><a href="#d-stage-design" class="lk" aria-label="DESIGN：你同意的做法，跳到它的 7 個步驟" style="--c:var(--st-design)"><rect class="nb" x="104" y="198" width="196" height="56" rx="8"/><text class="nn" x="202" y="222" text-anchor="middle">DESIGN  你同意的做法</text><text class="nl" x="202" y="242" text-anchor="middle">7 個步驟</text></a><line class="ar ok" x1="202" y1="254" x2="202" y2="261"/><rect class="gt" x="196.5" y="263.5" width="11" height="11" rx="2" transform="rotate(45 202 269)"/><path class="ar ok" d="M202 277V282" marker-end="url(#mnd-ok)"/><a href="#d-stage-plan" class="lk" aria-label="PLAN：分好組的任務，跳到它的 7 個步驟" style="--c:var(--st-plan)"><rect class="nb" x="104" y="284" width="196" height="56" rx="8"/><text class="nn" x="202" y="308" text-anchor="middle">PLAN  分好組的任務</text><text class="nl" x="202" y="328" text-anchor="middle">7 個步驟</text></a><line class="ar ok" x1="202" y1="340" x2="202" y2="347"/><rect class="gt" x="196.5" y="349.5" width="11" height="11" rx="2" transform="rotate(45 202 355)"/><path class="ar ok" d="M202 363V368" marker-end="url(#mnd-ok)"/><a href="#d-stage-build" class="lk" aria-label="BUILD：提交好的成品，中途不停下來問，跳到它的 7 個步驟" style="--c:var(--st-build)"><rect class="nb" x="104" y="370" width="196" height="56" rx="8"/><text class="nn" x="202" y="394" text-anchor="middle">BUILD  提交好的成品</text><text class="nl" x="202" y="414" text-anchor="middle">7 個步驟</text></a><line class="ar ok" x1="202" y1="426" x2="202" y2="433"/><rect class="gt" x="196.5" y="435.5" width="11" height="11" rx="2" transform="rotate(45 202 441)"/><path class="ar ok" d="M202 449V454" marker-end="url(#mnd-ok)"/><text class="nt" x="216" y="446">中途不停下來問</text><a href="#d-stage-verify" class="lk" aria-label="VERIFY：對過的證據，跳到它的 7 個步驟" style="--c:var(--st-verify)"><rect class="nb" x="104" y="456" width="196" height="56" rx="8"/><text class="nn" x="202" y="480" text-anchor="middle">VERIFY  對過的證據</text><text class="nl" x="202" y="500" text-anchor="middle">7 個步驟</text></a><line class="ar ok" x1="202" y1="512" x2="202" y2="519"/><rect class="gt" x="196.5" y="521.5" width="11" height="11" rx="2" transform="rotate(45 202 527)"/><path class="ar ok" d="M202 535V540" marker-end="url(#mnd-ok)"/><a href="#d-stage-audit" class="lk" aria-label="AUDIT：一份殘留清單，跳到它的 7 個步驟" style="--c:var(--st-audit)"><rect class="nb" x="104" y="542" width="196" height="56" rx="8"/><text class="nn" x="202" y="566" text-anchor="middle">AUDIT  一份殘留清單</text><text class="nl" x="202" y="586" text-anchor="middle">7 個步驟</text></a><line class="ar ok" x1="202" y1="598" x2="202" y2="605"/><rect class="gt" x="196.5" y="607.5" width="11" height="11" rx="2" transform="rotate(45 202 613)"/><path class="ar ok" d="M202 621V626" marker-end="url(#mnd-ok)"/><a href="#d-stage-land" class="lk" aria-label="LAND：已整合的成果，跳到它的 7 個步驟" style="--c:var(--st-land)"><rect class="nb" x="104" y="628" width="196" height="56" rx="8"/><text class="nn" x="202" y="652" text-anchor="middle">LAND  已整合的成果</text><text class="nl" x="202" y="672" text-anchor="middle">7 個步驟</text></a><line class="ar ok" x1="202" y1="684" x2="202" y2="691"/><rect class="gt" x="196.5" y="693.5" width="11" height="11" rx="2" transform="rotate(45 202 699)"/><text class="al" x="202" y="730" text-anchor="middle">收工</text><path class="ar fail" d="M300 484H334V398H302" marker-end="url(#mnd-fail)"/><text class="al fail" x="350" y="420" text-anchor="middle">退</text><text class="al fail" x="350" y="435" text-anchor="middle">回</text><text class="al fail" x="350" y="450" text-anchor="middle">補</text><text class="al fail" x="350" y="465" text-anchor="middle">做</text></svg></div>
+  <div class="legend" data-block="stages-legend">
+    <dl class="classes">
+      <div><dt><i class="sw architectural"></i><code>architectural</code></dt><dd>新子系統，或改到別處依賴的介面。七段全走；白板任務走這條。</dd></div>
+      <div><dt><i class="sw bounded"></i><code>bounded</code></dt><dd>既有流程裡的範圍內修改。design 在對話裡完成，不寫 spec 或 plan，只留 handoff。</dd></div>
+      <div><dt><i class="sw spike"></i><code>spike</code></dt><dd>可行性問題，產出是一個答案；做出來的東西標為可丟。</dd></div>
+    </dl>
+    <ul class="marks">
+      <li><svg viewBox="0 0 20 20" aria-hidden="true"><rect class="gt" x="5" y="5" width="10" height="10" rx="2" transform="rotate(45 10 10)"/></svg>關卡：段落結束，用選項問你下一步</li>
+      <li><i class="lnk fail"></i>退回：VERIFY 發現缺口，回 BUILD 補做</li>
+      <li><i class="lnk ok"></i>主線：做完交棒</li>
+    </ul>
+    <p class="rule">分類只升不降：途中發現比想的複雜，就用 <code>task.js route</code> 換到較重的線，並說出來。</p>
+  </div>
+  <div class="sub" data-block="stages-build-inside">
+    <style>
+  .stg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:14px 0 0}
+  .stc{background:var(--inset);border-radius:var(--r-sm);position:relative;overflow:hidden;padding:15px 14px 14px;display:flex;flex-direction:column;scroll-margin-top:16px}
+  .stc::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--c)}
+  .stc:target{outline:2px solid var(--ink);outline-offset:2px}
+  .stc h4{margin:0;font-size:14px;line-height:1.35;font-weight:600;color:var(--ink2)}
+  .stc h4 span{font:700 14px var(--f-mono);color:var(--ink);margin-right:4px}
+  .stc-on{margin:2px 0 10px;font-size:12.5px;color:var(--muted)}
+  .stc-on code{font-size:12px}
+  .steps{margin:0;padding:0;list-style:none;counter-reset:st;display:grid;gap:9px;align-content:start;flex:1}
+  .steps li{counter-increment:st;display:grid;grid-template-columns:16px minmax(0,1fr);column-gap:6px;font-size:13px;line-height:1.45}
+  .steps li::before{content:counter(st);grid-row:1/3;font:12px/1.55 var(--f-mono);color:var(--muted)}
+  .steps b{font-weight:600;color:var(--ink);overflow-wrap:anywhere}
+  .steps b code{font-size:12.5px}
+  .steps span{color:var(--ink2)}
+  .steps span code{font-size:12px;overflow-wrap:anywhere}
+  .stc-end{margin:12px 0 0;padding-top:10px;border-top:1px solid var(--rule);font-size:13px;color:var(--muted)}
+  .stc-gate{display:flex;gap:6px;align-items:flex-start;color:var(--wait-ink);font-weight:600}
+  .stc-gate svg{width:18px;height:18px;flex:none;margin-top:1px}
+  .stg-key{color:var(--ink2);font-size:13px;margin:0;max-width:80ch}
+  .stg-close{color:var(--muted);font-size:13px;margin:12px 0 0;max-width:80ch}
+  .sub h3+.stg-key{margin-top:2px}
+  .sub .sub-build{margin-top:32px}
+  @container (max-width:1000px){.stg{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @container (max-width:760px){.stg{grid-template-columns:minmax(0,1fr)}.stc{padding:15px 12px 12px}}
+</style>
+    <h3>每一段的裡面：跑哪支腳本、派哪個代理</h3>
+    <p class="stg-key">以 <code>.js</code> 結尾的是 <code>scripts/</code> 的腳本，<code>fankeel-</code> 開頭的是子代理，<code>hooks/</code> 底下的是 hook；沒有程式名的那步，是主 session 自己做或問你。</p>
+    <div class="stg"><article class="stc" id="d-stage-init" style="--c:var(--st-init)" aria-labelledby="d-stage-init-h"><h4 id="d-stage-init-h"><span>INIT</span> 第 0 步</h4><p class="stc-on">每件任務都從這裡進</p><ol class="steps"><li><b><code>hooks/inject.js</code></b><span>每則提示注入 session id、監控站網址與規則</span></li><li><b><code>orient.js</code></b><span>看現場：專案、分支、髒檔、TODO 摘要，什麼都不寫</span></li><li><b><code>task.js show</code></b><span>自己有沒有任務、別人在做什麼、有沒有交接</span></li><li><b>問你</b><span>用選項問要做哪件，選項取自 TODO 標題；講清楚了就跳過</span></li><li><b><code>task.js start</code></b><span>寫進 registry 與狀態列；<code>--todo</code> 綁定 TODO 條目</span></li><li><b><code>fankeel-init</code></b><span>只在第一次用、印出 <code>onboard:</code> 時跑：整理 docs、TODO、CLAUDE.md</span></li></ol><p class="stc-end">不設關卡：登記好就在同一回合進 SURVEY</p></article><article class="stc" id="d-stage-survey" style="--c:var(--st-survey)" aria-labelledby="d-stage-survey-h"><h4 id="d-stage-survey-h"><span>SURVEY</span> 一份現況事實</h4><p class="stc-on">走這段：<code>architectural</code>、<code>bounded</code>、<code>spike</code></p><ol class="steps"><li><b><code>map.js</code></b><span>先讀專案自己的文件地圖：哪些現行、計畫了沒做、已退役</span></li><li><b><code>survey.js &lt;詞&gt;</code></b><span>直接讀工作樹找命中，每筆附 path:line</span></li><li><b><code>fankeel-reader</code></b><span>範圍大才派：一題一位，同一則送出</span></li><li><b><code>context.js add</code></b><span>記下事實、path:line 與 commit，後段不再重查</span></li><li><b><code>task.js route</code></b><span>分類 spike／bounded／architectural，只升不降</span></li><li><b>寫報告</b><span>發現、計畫未做、沒找到、不知道、跳過，各一欄</span></li></ol><p class="stc-end stc-gate"><svg viewBox="0 0 20 20" aria-hidden="true"><rect class="gt" x="5" y="5" width="10" height="10" rx="2" transform="rotate(45 10 10)"/></svg><span>關卡：要進 DESIGN 嗎？</span></p></article><article class="stc" id="d-stage-design" style="--c:var(--st-design)" aria-labelledby="d-stage-design-h"><h4 id="d-stage-design-h"><span>DESIGN</span> 你同意的做法</h4><p class="stc-on">走這段：<code>architectural</code>、<code>bounded</code></p><ol class="steps"><li><b>一次問一題</b><span>目的、限制、成功標準；能給選項就給選項</span></li><li><b>一個做法</b><span>附取捨；先問不需要？已經有？標準庫或平台有？</span></li><li><b><code>fankeel-mockup</code></b><span>會上畫面才派：用專案的 CSS 畫一頁，<code>render.js</code> 截圖、<code>design-lint.js</code> 掃樣式</span></li><li><b><code>tune.js serve</code></b><span>開這頁讓你點一塊寫一句，代理只改那一塊</span></li><li><b>完成標準</b><span>一條現在會失敗、做完會通過的檢查</span></li><li><b><code>.fankeel/map.md</code></b><span>對照地圖：碰到哪頁文件、有沒有矛盾</span></li><li><b>spec</b><span>architectural 才寫進計畫目錄；bounded 只在對話裡講</span></li></ol><p class="stc-end stc-gate"><svg viewBox="0 0 20 20" aria-hidden="true"><rect class="gt" x="5" y="5" width="10" height="10" rx="2" transform="rotate(45 10 10)"/></svg><span>關卡：核准這個做法（選項一寫明內容）</span></p></article><article class="stc" id="d-stage-plan" style="--c:var(--st-plan)" aria-labelledby="d-stage-plan-h"><h4 id="d-stage-plan-h"><span>PLAN</span> 分好組的任務</h4><p class="stc-on">走這段：<code>architectural</code></p><ol class="steps"><li><b><code>## Task N</code></b><span>固定模板：讀哪些、改哪些、先寫的測試、Dispatch</span></li><li><b>約束</b><span>從 map、CONTRIBUTING、package.json 產生，不靠記</span></li><li><b><code>ledger.js groups</code></b><span>依深度分組：同一層彼此不衝突，可一起派</span></li><li><b>Coverage 表</b><span>設計的每條承諾都對到一個任務</span></li><li><b><code>ledger.js lint</code></b><span>模板有沒有空格、有沒有佔位字</span></li><li><b><code>fankeel-reviewer</code></b><span>專挑毛病：沒有任務的承諾、Files 對不上</span></li><li><b><code>task.js intends</code></b><span>宣告要改的檔，看別的 session 有沒有在改</span></li></ol><p class="stc-end stc-gate"><svg viewBox="0 0 20 20" aria-hidden="true"><rect class="gt" x="5" y="5" width="10" height="10" rx="2" transform="rotate(45 10 10)"/></svg><span>關卡：核准計畫，開始 BUILD？</span></p></article><article class="stc" id="d-stage-build" style="--c:var(--st-build)" aria-labelledby="d-stage-build-h"><h4 id="d-stage-build-h"><span>BUILD</span> 提交好的成品</h4><p class="stc-on">走這段：<code>architectural</code>、<code>bounded</code>、<code>spike</code>；中途不停下來問</p><ol class="steps"><li><b><code>hooks/guard.js</code></b><span>範圍守衛：別的 session 佔用的檔就擋或問</span></li><li><b><code>ledger.js ready</code></b><span>列出現在能開工的組與任務</span></li><li><b><code>fankeel-implementer</code></b><span>一任務一個 worktree：先寫測試，再寫最少的程式</span></li><li><b><code>fankeel-reviewer</code></b><span>逐任務審 diff；有畫面再加 <code>fankeel-render-reviewer</code></span></li><li><b><code>commit.js</code></b><span>提交一個任務；<code>ledger.js complete &lt;n&gt;</code> 記進帳本</span></li><li><b><code>docs-moved.js</code></b><span>修好行號移動的引用，剩下的交 <code>fankeel-fixer</code></span></li><li><b><code>suite.js --fast</code></b><span>全套跑一次，只回報決定成敗的兩行</span></li></ol><p class="stc-end stc-gate"><svg viewBox="0 0 20 20" aria-hidden="true"><rect class="gt" x="5" y="5" width="10" height="10" rx="2" transform="rotate(45 10 10)"/></svg><span>關卡：要進 VERIFY 嗎？BUILD 只問這一次</span></p></article><article class="stc" id="d-stage-verify" style="--c:var(--st-verify)" aria-labelledby="d-stage-verify-h"><h4 id="d-stage-verify-h"><span>VERIFY</span> 對過的證據</h4><p class="stc-on">走這段：<code>architectural</code>、<code>bounded</code></p><ol class="steps"><li><b>證據表</b><span>設計與計畫的每條承諾一行，標 held／failed／未檢查</span></li><li><b><code>fankeel-verifier</code></b><span>每任務一位、平行派；證據寫進檔案，只回路徑</span></li><li><b><code>suite.js --fast</code></b><span>build、test、lint 有宣告的都跑，貼真實輸出</span></li><li><b><code>docs-check.js</code></b><span>這次改動讓哪些文件不再正確</span></li><li><b><code>fankeel-mutator</code></b><span>故意改壞一行，看測試變紅，再還原</span></li><li><b><code>fankeel-render-reviewer</code></b><span>有畫面時，截圖對照核准的 mockup</span></li><li><b><code>fankeel-reviewer</code></b><span>當反方：專挑證據沒證到的地方，含資安</span></li></ol><p class="stc-end stc-gate"><svg viewBox="0 0 20 20" aria-hidden="true"><rect class="gt" x="5" y="5" width="10" height="10" rx="2" transform="rotate(45 10 10)"/></svg><span>關卡：證據夠了？不夠就退回 BUILD</span></p></article><article class="stc" id="d-stage-audit" style="--c:var(--st-audit)" aria-labelledby="d-stage-audit-h"><h4 id="d-stage-audit-h"><span>AUDIT</span> 一份殘留清單</h4><p class="stc-on">走這段：<code>architectural</code></p><ol class="steps"><li><b><code>docs-check.js</code></b><span>斷連結、超出檔尾、宣告不存在、引文變了</span></li><li><b><code>residue.js</code></b><span>沒人決定的檔、沒清的 worktree 與分支、空目錄</span></li><li><b><code>docs-audit.js</code></b><span>落後的頁、做完沒封存的計畫、索引缺漏、孤兒頁</span></li><li><b><code>memory-check.js</code></b><span>Claude Code 的記憶還指向真的東西嗎</span></li><li><b><code>input-check.js</code></b><span>每個 session 都載入的檔有多大、哪些能砍</span></li><li><b>knip／deptry</b><span>沒用到的依賴與匯出；沒裝就寫「沒跑」</span></li><li><b><code>fankeel-reader</code></b><span>候選真的打開來讀；斷參照交 <code>fankeel-fixer</code> 修</span></li></ol><p class="stc-end stc-gate"><svg viewBox="0 0 20 20" aria-hidden="true"><rect class="gt" x="5" y="5" width="10" height="10" rx="2" transform="rotate(45 10 10)"/></svg><span>關卡：要清哪些檔？選項一寫明，不擅自搬或刪</span></p></article><article class="stc" id="d-stage-land" style="--c:var(--st-land)" aria-labelledby="d-stage-land-h"><h4 id="d-stage-land-h"><span>LAND</span> 已整合的成果</h4><p class="stc-on">走這段：<code>architectural</code>、<code>bounded</code></p><ol class="steps"><li><b><code>suite.js --check</code></b><span>全套必須全綠，而且是這棵樹上跑的紀錄</span></li><li><b><code>skills-check.js</code></b><span>skill 提到的腳本與旗標都還存在</span></li><li><b><code>record.js write</code></b><span>先寫完成紀錄：要求、交付、花費</span></li><li><b><code>todo.js done</code></b><span>關閉來源條目，附紀錄與 commit；再跑 <code>todo-check.js</code></span></li><li><b><code>version.js</code></b><span>只有你說這是一次發版，才改版號</span></li><li><b><code>map.js</code></b><span>重寫地圖，下一件任務從這裡開始</span></li><li><b><code>task.js land</code></b><span>依 <code>land.integration</code> 合併、開 PR 或保留分支；沒設就給你選單</span></li></ol><p class="stc-end stc-gate"><svg viewBox="0 0 20 20" aria-hidden="true"><rect class="gt" x="5" y="5" width="10" height="10" rx="2" transform="rotate(45 10 10)"/></svg><span>關卡：收工、開新任務，或匯出並回顧</span></p></article></div>
+    <p class="stg-close">每段收尾都一樣：<code>fankeel-brain</code> 把報告寫進 <code>.fankeel/build/task-*/</code>，主 session 用 <code>await.js</code> 在背景等它，關卡問句逐字照抄（<code>hooks/gate.js</code> 核對），你答完才 <code>task.js stage</code> 進下一段。</p>
+    <h3 class="sub-build">BUILD 的裡面：分組、派出、收回，最後才問一次</h3>
+    <div class="canvas"><svg class="dg dg-wide" viewBox="0 0 1110 356" role="img" aria-labelledby="bwd-t"><title id="bwd-t">BUILD 的裡面：ledger.js ready 列出能開工的組，走 Agent 或 Workflow，每個任務實作、審查、提交；還有下一組就回去，全部做完才 build close，只在最後問一次</title><defs><marker id="bwd-ok" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0L9 4.5L0 9z" class="mk ok"/></marker><marker id="bwd-fail" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0L9 4.5L0 9z" class="mk fail"/></marker><marker id="bwd-wait" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0L9 4.5L0 9z" class="mk wait"/></marker></defs><g style="--c:var(--st-plan)"><rect class="nb" x="0" y="128" width="136" height="72" rx="8"/><text class="nn" x="68" y="149" text-anchor="middle">計畫任務</text><text class="nl" x="68" y="172" text-anchor="middle">PLAN 拆好的任務</text></g><path class="ar ok" d="M136 164H158" marker-end="url(#bwd-ok)"/><g style="--c:var(--st-plan)"><rect class="nb" x="160" y="116" width="156" height="96" rx="8"/><text class="nn" x="238" y="137" text-anchor="middle">能開工的組</text><text class="nl mono" x="238" y="156" text-anchor="middle">ledger.js ready</text><text class="nl" x="238" y="173" text-anchor="middle">依深度分組</text><text class="nl" x="238" y="190" text-anchor="middle">同一層彼此不衝突</text></g><path class="ar ok" d="M316 164H332"/><path class="ar ok" d="M332 164V82H350" marker-end="url(#bwd-ok)"/><path class="ar ok" d="M332 164V246H350" marker-end="url(#bwd-ok)"/><text class="lane" x="352" y="24">Agent：任務不足 3 個，或由階段代理派</text><text class="lane" x="352" y="188">Workflow：一組 3 個以上，主 session 有 Workflow 工具</text><g style="--c:var(--s-agent)"><rect class="nb" x="352" y="34" width="170" height="96" rx="8"/><text class="nn" x="437" y="55" text-anchor="middle">implementer</text><text class="nl" x="437" y="74" text-anchor="middle">各自 worktree 同一 HEAD</text><text class="nl" x="437" y="91" text-anchor="middle">先寫測試，再寫程式</text><text class="nl" x="437" y="108" text-anchor="middle">上限 dispatch.inflight</text></g><g style="--c:var(--st-verify)"><rect class="nb" x="546" y="34" width="170" height="96" rx="8"/><text class="nn" x="631" y="55" text-anchor="middle">reviewer 逐任務審</text><text class="nl" x="631" y="74" text-anchor="middle">對照計畫審 diff</text><text class="nl" x="631" y="91" text-anchor="middle">有畫面再對 mockup 截圖</text><text class="nl" x="631" y="108" text-anchor="middle">審不過就重派</text></g><g style="--c:var(--st-land)"><rect class="nb" x="740" y="34" width="170" height="96" rx="8"/><text class="nn" x="825" y="55" text-anchor="middle">commit.js 提交</text><text class="nl" x="825" y="74" text-anchor="middle">回一個提交一個</text><text class="nl mono" x="825" y="91" text-anchor="middle">ledger.js complete</text><text class="nl" x="825" y="108" text-anchor="middle">記進帳本</text></g><path class="ar ok" d="M522 82H544" marker-end="url(#bwd-ok)"/><path class="ar ok" d="M716 82H738" marker-end="url(#bwd-ok)"/><g style="--c:var(--s-workflow)"><rect class="nb" x="352" y="198" width="170" height="96" rx="8"/><text class="nn" x="437" y="219" text-anchor="middle">交給 Workflow 腳本</text><text class="nl mono" x="437" y="238" text-anchor="middle">ledger.js 產腳本</text><text class="nl" x="437" y="255" text-anchor="middle">整組打包</text><text class="nl" x="437" y="272" text-anchor="middle">主控不逐份讀</text></g><g style="--c:var(--s-workflow)"><rect class="nb" x="546" y="198" width="170" height="96" rx="8"/><text class="nn" x="631" y="219" text-anchor="middle">腳本內逐任務</text><text class="nl mono" x="631" y="238" text-anchor="middle">implement → review</text><text class="nl" x="631" y="255" text-anchor="middle">每任務各自 worktree</text><text class="nl" x="631" y="272" text-anchor="middle">跑的時候主控不插手</text></g><g style="--c:var(--st-land)"><rect class="nb" x="740" y="198" width="170" height="96" rx="8"/><text class="nn" x="825" y="219" text-anchor="middle">依組內順序提交</text><text class="nl mono" x="825" y="238" text-anchor="middle">commit.js</text><text class="nl" x="825" y="255" text-anchor="middle">一任務一個 commit</text><text class="nl mono" x="825" y="272" text-anchor="middle">ledger.js complete</text></g><path class="ar ok" d="M522 246H544" marker-end="url(#bwd-ok)"/><path class="ar ok" d="M716 246H738" marker-end="url(#bwd-ok)"/><path class="ar fail" d="M631 130V146H437V132" marker-end="url(#bwd-fail)"/><text class="al fail" x="534" y="162" text-anchor="middle">審不過就重派</text><path class="ar ok" d="M910 82H922V246H910"/><path class="ar ok" d="M922 246V320H238V214" marker-end="url(#bwd-ok)"/><text class="al" x="580" y="338" text-anchor="middle">還有下一組：回到 ledger.js ready</text><path class="ar ok" d="M922 164H938" marker-end="url(#bwd-ok)"/><text class="nt" x="1006" y="108" text-anchor="middle">沒有組可派了</text><g style="--c:var(--st-build)"><rect class="nb" x="940" y="116" width="132" height="96" rx="8"/><text class="nn" x="1006" y="137" text-anchor="middle">build close</text><text class="nl mono" x="1006" y="156" text-anchor="middle">docs-moved.js</text><text class="nl mono" x="1006" y="173" text-anchor="middle">fankeel-fixer</text><text class="nl mono" x="1006" y="190" text-anchor="middle">suite.js --fast</text></g><line class="ar ok" x1="1072" y1="164" x2="1084" y2="164"/><rect class="gt" x="1088.5" y="158.5" width="11" height="11" rx="2" transform="rotate(45 1094 164)"/><text class="nt" x="1006" y="232" text-anchor="middle">關卡：只問這一次</text></svg><svg class="dg dg-narrow" viewBox="0 0 364 746" role="img" aria-labelledby="bnd-t"><title id="bnd-t">BUILD 的裡面，由上往下：ledger.js ready 列出能開工的組，走 Agent 或 Workflow，每個任務實作、審查、提交；全部做完才 build close，只在最後問一次</title><defs><marker id="bnd-ok" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0L9 4.5L0 9z" class="mk ok"/></marker><marker id="bnd-fail" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0L9 4.5L0 9z" class="mk fail"/></marker><marker id="bnd-wait" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0L9 4.5L0 9z" class="mk wait"/></marker></defs><g style="--c:var(--st-plan)"><rect class="nb" x="16" y="0" width="332" height="52" rx="8"/><text class="nn" x="182" y="21" text-anchor="middle">計畫任務</text><text class="nl" x="182" y="40" text-anchor="middle">PLAN 拆好的任務</text></g><path class="ar ok" d="M182 52V70" marker-end="url(#bnd-ok)"/><g style="--c:var(--st-plan)"><rect class="nb" x="16" y="72" width="332" height="76" rx="8"/><text class="nn" x="182" y="93" text-anchor="middle">能開工的組</text><text class="nl mono" x="182" y="112" text-anchor="middle">ledger.js ready</text><text class="nl" x="182" y="129" text-anchor="middle">依深度分組，同一層彼此不衝突</text></g><path class="ar ok" d="M182 148V164"/><path class="ar ok" d="M182 164H94V200" marker-end="url(#bnd-ok)"/><path class="ar ok" d="M182 164H270V200" marker-end="url(#bnd-ok)"/><text class="lane" x="94" y="218" text-anchor="middle">Agent：不足 3 個</text><text class="lane" x="270" y="218" text-anchor="middle">Workflow：3 個以上</text><g style="--c:var(--s-agent)"><rect class="nb" x="16" y="230" width="156" height="92" rx="8"/><text class="nn" x="94" y="252" text-anchor="middle">implementer</text><text class="nl" x="94" y="272" text-anchor="middle">各自 worktree</text><text class="nl" x="94" y="289" text-anchor="middle">先寫測試再寫程式</text><text class="nl" x="94" y="306" text-anchor="middle">上限 dispatch.inflight</text></g><g style="--c:var(--st-verify)"><rect class="nb" x="16" y="342" width="156" height="92" rx="8"/><text class="nn" x="94" y="364" text-anchor="middle">reviewer 逐個審</text><text class="nl" x="94" y="384" text-anchor="middle">對照計畫審 diff</text><text class="nl" x="94" y="401" text-anchor="middle">有畫面再對截圖</text><text class="nl" x="94" y="418" text-anchor="middle">審不過就重派</text></g><g style="--c:var(--st-land)"><rect class="nb" x="16" y="454" width="156" height="92" rx="8"/><text class="nn" x="94" y="476" text-anchor="middle">commit.js</text><text class="nl" x="94" y="496" text-anchor="middle">回一個提交一個</text><text class="nl mono" x="94" y="513" text-anchor="middle">ledger.js complete</text></g><path class="ar ok" d="M94 322V340" marker-end="url(#bnd-ok)"/><path class="ar ok" d="M94 434V452" marker-end="url(#bnd-ok)"/><g style="--c:var(--s-workflow)"><rect class="nb" x="192" y="230" width="156" height="92" rx="8"/><text class="nn" x="270" y="252" text-anchor="middle">整組交給腳本</text><text class="nl mono" x="270" y="272" text-anchor="middle">ledger.js 產腳本</text><text class="nl" x="270" y="289" text-anchor="middle">主控不逐份讀</text></g><g style="--c:var(--s-workflow)"><rect class="nb" x="192" y="342" width="156" height="92" rx="8"/><text class="nn" x="270" y="364" text-anchor="middle">腳本內逐任務</text><text class="nl mono" x="270" y="384" text-anchor="middle">implement → review</text><text class="nl" x="270" y="401" text-anchor="middle">各自 worktree</text><text class="nl" x="270" y="418" text-anchor="middle">跑時主控不插手</text></g><g style="--c:var(--st-land)"><rect class="nb" x="192" y="454" width="156" height="92" rx="8"/><text class="nn" x="270" y="476" text-anchor="middle">跑完依序提交</text><text class="nl mono" x="270" y="496" text-anchor="middle">commit.js</text><text class="nl" x="270" y="513" text-anchor="middle">一任務一 commit</text></g><path class="ar ok" d="M270 322V340" marker-end="url(#bnd-ok)"/><path class="ar ok" d="M270 434V452" marker-end="url(#bnd-ok)"/><path class="ar fail" d="M16 388H6V276H14" marker-end="url(#bnd-fail)"/><path class="ar ok" d="M94 546V568H270V546"/><path class="ar ok" d="M182 568V608" marker-end="url(#bnd-ok)"/><text class="nt" x="192" y="590">還有下一組就回 ledger.js ready</text><g style="--c:var(--st-build)"><rect class="nb" x="76" y="610" width="212" height="96" rx="8"/><text class="nn" x="182" y="631" text-anchor="middle">build close</text><text class="nl mono" x="182" y="652" text-anchor="middle">docs-moved.js 修行號</text><text class="nl mono" x="182" y="669" text-anchor="middle">fankeel-fixer 補文件</text><text class="nl mono" x="182" y="686" text-anchor="middle">suite.js --fast</text></g><line class="ar ok" x1="182" y1="706" x2="182" y2="720"/><rect class="gt" x="176.5" y="724.5" width="11" height="11" rx="2" transform="rotate(45 182 730)"/><text class="nt" x="200" y="735">關卡：BUILD 只問這一次</text></svg></div>
+    <p class="note">每個就緒的組派一個 build 代理（<code>build group &lt;n&gt;</code>）；沒有組可派、任務都完成時，再派一個 <code>build close</code> 修文件、跑全套測試並寫關卡。</p>
+  </div>
 </section>
+</div>
 
 <section aria-labelledby="bars-h">
   <h2 id="bars-h">每段的牆鐘：做事與等使用者</h2>
-  <div class="legend">
+  <div class="key">
     <span><i style="background:var(--ink2)"></i>做事</span>
     <span><i class="wait-fill"></i>等使用者（關卡）</span>
     <span>長度同一比例尺，BUILD 照實畫</span>
@@ -198,9 +272,6 @@ footer a{color:var(--ink)}
   <section class="stage" id="stage-design" data-stage="design" data-sub="決定怎麼做"></section>
   <section class="stage" id="stage-plan" data-stage="plan" data-sub="拆成任務"></section>
   <section class="stage wide" id="stage-build" data-stage="build" data-sub="動手做">
-    <h3>BUILD 的裡面：任務怎麼被派出去、收回來</h3>
-    <div class="dgbox" id="flow2"></div>
-    <div class="legend" data-legend="build" style="margin:12px 0 0"></div>
     <h3>依賴深度決定分幾組</h3>
     <div class="depth">
       <div class="lane">
@@ -319,213 +390,6 @@ for (const [label, n, cls] of [['依序', p.sequential, 'row seq'], ['依深度'
     for (let i = 0; i < n; i++) row.append(el('i'));
     groups.append(row, el('span', 'n', n + ' 組'));
 }
-
-// ---- flow diagrams: drawn from RUN, layout chosen from the window width ----
-const NS = 'http://www.w3.org/2000/svg';
-const S = (tag, attrs, parent, text) => {
-    const n = document.createElementNS(NS, tag);
-    for (const k in attrs) n.setAttribute(k, attrs[k]);
-    if (text !== undefined) n.textContent = text;
-    if (parent) parent.append(n);
-    return n;
-};
-const tw = (s, fs) => [...s].reduce((a, ch) => a + (ch.charCodeAt(0) > 255 ? 1 : 0.6), 0) * fs;
-const wrap = (s, max) => {
-    const a = [...s];
-    if (a.length <= max) return [s];
-    const h = Math.ceil(a.length / 2);
-    return [a.slice(0, h).join(''), a.slice(h).join('')];
-};
-const mins = (m) => m + ' 分';
-
-function mkSvg(box, W, label, narrow, pfx) {
-    const svg = S('svg', { class: 'dg' + (narrow ? ' sm' : ''), role: 'group', 'aria-label': label });
-    const defs = S('defs', {}, svg);
-    for (const k of ['ok', 'wait', 'fail', 'hold']) {
-        const m = S('marker', { id: pfx + k, markerWidth: 9, markerHeight: 9, refX: 8, refY: 4.5, orient: 'auto', markerUnits: 'userSpaceOnUse' }, defs);
-        S('path', { d: 'M0 0L9 4.5L0 9z', class: 'mk ' + k }, m);
-    }
-    svg.dataset.w = W;
-    svg.dataset.pfx = pfx;
-    box.replaceChildren(svg);
-    return svg;
-}
-const done = (svg, H) => svg.setAttribute('viewBox', '0 0 ' + svg.dataset.w + ' ' + H);
-
-function zone(svg, x, y, w, h, label) {
-    S('rect', { class: 'zn', x, y, width: w, height: h, rx: 10 }, svg);
-    S('text', { class: 'zt', x: x + 12, y: y + 18 }, svg, label);
-}
-
-// o: x y w h c name lines tags id ghost nameY lineY lineStep tagFs
-function node(svg, o) {
-    const g = o.id ? S('a', { href: '#' + o.id, class: 'link' }, svg) : S('g', {}, svg);
-    g.style.setProperty('--c', o.c);
-    if (o.id) g.setAttribute('aria-label', (o.aria || o.name) + '，跳到詳細段落');
-    if (o.ghost) for (const d of [10, 5]) S('rect', { class: 'ghost', x: o.x + d, y: o.y + d, width: o.w, height: o.h, rx: 8 }, g);
-    S('rect', { class: 'nbox', x: o.x, y: o.y, width: o.w, height: o.h, rx: 8 }, g);
-    const cx = o.x + o.w / 2;
-    S('text', { class: 'nn', x: cx, y: o.y + (o.nameY || 20), 'text-anchor': 'middle' }, g, o.name);
-    (o.lines || []).forEach((l, i) => S('text', { class: 'nl', x: cx, y: o.y + (o.lineY || 39) + i * (o.lineStep || 14), 'text-anchor': 'middle' }, g, l));
-    const tags = o.tags || [];
-    const top = o.y + o.h - 8 - tags.length * 16 - (tags.length - 1) * 4;
-    tags.forEach((s, i) => {
-        const w = tw(s, o.tagFs || 10.5) + 14;
-        S('rect', { class: 'tg', x: cx - w / 2, y: top + i * 20, width: w, height: 16, rx: 8 }, g);
-        S('text', { class: 'tt', x: cx, y: top + i * 20 + 11.5, 'text-anchor': 'middle' }, g, s);
-    });
-    return g;
-}
-
-function arrow(svg, d, kind, label, lx, ly, anchor) {
-    S('path', { class: 'ar ' + kind, d, 'marker-end': 'url(#' + svg.dataset.pfx + kind + ')' }, svg);
-    if (label) S('text', { class: 'al ' + kind, x: lx, y: ly, 'text-anchor': anchor || 'middle' }, svg, label);
-}
-
-function gate(svg, cx, y, w, h, text, o) {
-    const g = S('g', { class: 'gate' + (o.big ? ' big' : '') + (o.zero ? ' zero' : '') }, svg);
-    S('rect', { x: cx - w / 2, y, width: w, height: h, rx: 6 }, g);
-    S('text', { x: cx, y: y + h / 2 + (o.big ? 6 : 4.2), 'text-anchor': 'middle' }, g, text);
-}
-
-function renderMain(narrow) {
-    const st = RUN.stages;
-    const maxWait = Math.max(...st.map((s) => s.waitMin));
-    const W = narrow ? 348 : 1194;
-    const svg = mkSvg($('flow'), W, '八段主線、等使用者的關卡、退回', narrow, 'm-');
-    const nw = narrow ? 70 : 112, nh = narrow ? 100 : 98, ny0 = narrow ? 30 : 32;
-    const pos = (i) => narrow
-        ? { x: 10 + (i < 4 ? i : 7 - i) * 86, y: ny0 + (i < 4 ? 0 : 130) }
-        : { x: 16 + i * 150, y: ny0 };
-    const tagsOf = (s) => {
-        const wall = mins(s.wallMin), tok = RUN.tokens[s.id] || '—';
-        return narrow ? [wall, tok] : [wall + ' · ' + tok];
-    };
-    const zh = narrow ? 272 : 150;
-    zone(svg, 1, 0, W - 2, zh, '01 / 八段主線');
-    st.forEach((s, i) => {
-        node(svg, { ...pos(i), w: nw, h: nh, c: 'var(--st-' + s.id + ')', name: s.name, aria: s.name + '：' + s.product + '，牆鐘 ' + mins(s.wallMin) + '，token ' + (RUN.tokens[s.id] || '—'), lines: wrap(s.product, narrow ? 6 : 8),
-            tags: tagsOf(s), id: 'stage-' + s.id, nameY: narrow ? 18 : 20, lineY: narrow ? 34 : 39, lineStep: narrow ? 12 : 14, tagFs: narrow ? 9.5 : 10.5 });
-    });
-    for (let i = 0; i < st.length - 1; i++) {
-        const a = pos(i), b = pos(i + 1), lab = st[i].hand, y = a.y + nh / 2;
-        if (narrow && i === 3) {
-            arrow(svg, 'M' + (a.x + nw / 2) + ' ' + (a.y + nh) + 'V' + b.y, 'ok', lab, a.x + nw / 2 + 7, (a.y + nh + b.y) / 2 + 4, 'start');
-        } else if (narrow && i > 3) {
-            arrow(svg, 'M' + a.x + ' ' + y + 'H' + (b.x + nw), 'ok');
-        } else {
-            arrow(svg, 'M' + (a.x + nw) + ' ' + y + 'H' + b.x, 'ok', narrow ? '' : lab, (a.x + nw + b.x) / 2, y - 7);
-        }
-    }
-
-    const z2 = zh + 20, z2h = narrow ? 192 : 130;
-    zone(svg, 1, z2, W - 2, z2h, '02 / 等你的地方');
-    st.forEach((s, i) => {
-        const big = s.waitMin === maxWait, zero = s.waitMin === 0;
-        if (narrow) {
-            const row = i < 4 ? 0 : 1, x = 10 + (i % 4) * 86, cy0 = z2 + 30 + row * 80;
-            const g = S('g', {}, svg); g.style.setProperty('--c', 'var(--st-' + s.id + ')');
-            S('rect', { class: 'nbox', x, y: cy0, width: nw, height: 18, rx: 5 }, g);
-            S('text', { class: 'nn', x: x + nw / 2, y: cy0 + 13, 'text-anchor': 'middle', style: 'font-size:10px' }, g, s.name);
-            const gy = cy0 + 36, gh = big ? 34 : 26;
-            if (!zero) arrow(svg, 'M' + (x + nw / 2) + ' ' + (cy0 + 18) + 'V' + gy, 'wait');
-            gate(svg, x + nw / 2, gy, nw, gh, mins(s.waitMin), { big, zero });
-        } else {
-            const p = pos(i), cx = p.x + nw / 2, gw = big ? 104 : 64, gh = big ? 52 : 32, gy = big ? z2 + 54 : z2 + 62;
-            if (!zero) arrow(svg, 'M' + cx + ' ' + (p.y + nh) + 'V' + gy, 'wait');
-            gate(svg, cx, gy, gw, gh, mins(s.waitMin), { big, zero });
-        }
-    });
-
-    const z3 = z2 + z2h + 20, z3h = narrow ? 130 : 134;
-    zone(svg, 1, z3, W - 2, z3h, '03 / 退回');
-    const bi = st.findIndex((s) => s.id === 'build'), vi = bi + 1;
-    const my = z3 + 32, mh = 44;
-    const mx = (i) => narrow ? W / 2 - 100 + (i - bi) * 100 : pos(i).x;
-    for (const [i, sub] of [[bi, '補做'], [vi, '發現缺口']]) {
-        node(svg, { x: mx(i), y: my, w: nw, h: mh, c: 'var(--st-' + st[i].id + ')', name: st[i].name, aria: st[i].name + '：' + st[i].product + '，牆鐘 ' + mins(st[i].wallMin) + '，token ' + (RUN.tokens[st[i].id] || '—') + '（' + sub + '）', lines: [sub], id: 'stage-' + st[i].id, nameY: 18, lineY: 33 });
-    }
-    const cb = mx(bi) + nw / 2, cv = mx(vi) + nw / 2, yb = my + mh, p = RUN.depth.patrol;
-    arrow(svg, 'M' + cv + ' ' + yb + 'V' + (yb + 28) + 'H' + cb + 'V' + yb, 'fail', '盤點 ' + p.tasks + ' 個任務', (cb + cv) / 2, yb + 46);
-    done(svg, z3 + z3h + 6);
-}
-
-function renderBuild(narrow) {
-    const p = RUN.depth.patrol;
-    const W = narrow ? 348 : 1194;
-    const svg = mkSvg($('flow2'), W, 'BUILD 的裡面：Agent 路徑與 Workflow 路徑', narrow, 'b-');
-    const C = { plan: 'var(--st-plan)', build: 'var(--st-build)', rev: 'var(--st-verify)', land: 'var(--st-land)', ag: 'var(--s-agent)', wf: 'var(--s-workflow)' };
-    const n1 = [
-        { c: C.plan, name: '計畫任務', lines: ['PLAN 拆好的任務'], tags: ['盤點 ' + p.tasks + ' 個'] },
-        { c: C.plan, name: '依深度分組', lines: ['同深度彼此不衝突'], tags: ['依序 ' + p.sequential + ' → 依深度 ' + p.byDepth] },
-        { c: C.ag, name: '滑動視窗', lines: ['dispatch.inflight', '限制同時在跑的數量'], tags: ['不一次全放'] },
-        { c: C.build, name: '多個 Agent', lines: ['各領一個任務', '同時實作'], tags: ['平行'], ghost: !narrow },
-        { c: C.rev, name: '逐任務審', lines: ['reviewer 一個審一個'], tags: ['不過就重派'] },
-        { c: C.land, name: '提交', lines: ['主控收一份', '提交一份'], tags: ['一個一個'] },
-    ];
-    const l1 = ['依賴', '放行', '派出', '回傳', '通過'];
-    const aRow = [
-        { c: C.ag, name: '主控派出', lines: ['一個任務交給一個 Agent', '不足 3 個或階段 agent'], tags: ['多個 Agent'] },
-        { c: C.ag, name: '主控逐份收', lines: ['每份回傳都進', '主控 context'], tags: [narrow ? '能插手，衝突重派' : '能插手'] },
-        { c: C.land, name: '回來一個提交一個', lines: ['提交的節奏由主控決定'], tags: ['逐個提交'] },
-    ];
-    const wRow = [
-        { c: C.wf, name: '整組打包', lines: ['整組任務一次', '交給 Workflow 腳本'], tags: ['3 個以上才走'] },
-        { c: C.wf, name: '腳本內每任務', lines: ['implement → review', '不等別人'], tags: ['中間產物留腳本'] },
-        { c: C.wf, name: '回傳每任務結果', lines: ['不進主控逐份讀', '省主控 context'], tags: [narrow ? '跑時不能插手' : '跑時主控不能插手'] },
-        { c: C.land, name: '跑完依序提交', lines: ['跑完前不提交', '依組內順序'], tags: ['一任務一個 commit'] },
-    ];
-    const aL = ['回傳', '通過'], wL = ['交棒', '待回', '彙總'], wK = ['ok', 'hold', 'ok'];
-    let H;
-    if (!narrow) {
-        const w = 160, h = 96, y = 44;
-        zone(svg, 1, 0, W - 2, 156, '01 / 多個 Agent：任務怎麼被做完');
-        const xs = n1.map((_, i) => 16 + i * 200);
-        n1.forEach((o, i) => node(svg, { ...o, x: xs[i], y, w, h, nameY: 22, lineY: 40, lineStep: 14 }));
-        l1.forEach((l, i) => arrow(svg, 'M' + (xs[i] + w) + ' ' + (y + h / 2) + 'H' + xs[i + 1], 'ok', l, xs[i + 1] - 20, y + h / 2 - 7));
-        arrow(svg, 'M' + (xs[4] + w / 2) + ' ' + y + 'V30H' + (xs[3] + w / 2) + 'V' + y, 'fail', '審不過或衝突就重派', (xs[3] + xs[4] + w) / 2, 25);
-        const z2 = 176, rw = 220, rh = 84, ra = z2 + 52, rb = ra + 108, rx = (i) => 176 + i * 260;
-        zone(svg, 1, z2, W - 2, 248, '02 / 在這裡分岔：Agent 或 Workflow');
-        const sy = (ra + rb + rh) / 2 - 36;
-        node(svg, { x: 16, y: sy, w: 110, h: 72, c: C.plan, name: '這一組任務', lines: ['分好組之後', '選一條路'], nameY: 22, lineY: 42 });
-        for (const y2 of [ra, rb]) arrow(svg, 'M126 ' + (sy + 36) + 'H150V' + (y2 + rh / 2) + 'H' + rx(0), 'ok');
-        aRow.forEach((o, i) => node(svg, { ...o, x: rx(i), y: ra, w: rw, h: rh, nameY: 20, lineY: 37, lineStep: 13 }));
-        wRow.forEach((o, i) => node(svg, { ...o, x: rx(i), y: rb, w: rw, h: rh, nameY: 20, lineY: 37, lineStep: 13 }));
-        aL.forEach((l, i) => arrow(svg, 'M' + (rx(i) + rw) + ' ' + (ra + rh / 2) + 'H' + rx(i + 1), 'ok', l, rx(i + 1) - 20, ra + rh / 2 - 7));
-        wL.forEach((l, i) => arrow(svg, 'M' + (rx(i) + rw) + ' ' + (rb + rh / 2) + 'H' + rx(i + 1), wK[i], l, rx(i + 1) - 20, rb + rh / 2 - 7));
-        arrow(svg, 'M' + (rx(1) + rw / 2) + ' ' + ra + 'V' + (ra - 12) + 'H' + (rx(0) + rw / 2) + 'V' + ra, 'fail', '衝突就重派', rx(0) + rw / 2 + 130, ra - 17);
-        H = z2 + 248 + 6;
-    } else {
-        const x = 10, w = 290, h = 76, gap = 28;
-        const z1h = 32 + 6 * h + 5 * gap + 12;
-        zone(svg, 1, 0, W - 2, z1h, '01 / 多個 Agent');
-        const ys = n1.map((_, i) => 32 + i * (h + gap));
-        n1.forEach((o, i) => node(svg, { ...o, x, y: ys[i], w, h, nameY: 20, lineY: 37, lineStep: 12, lines: [o.lines.join(' ')] }));
-        l1.forEach((l, i) => arrow(svg, 'M' + (x + w / 2) + ' ' + (ys[i] + h) + 'V' + ys[i + 1], 'ok', l, x + w / 2 + 7, ys[i] + h + 18, 'start'));
-        const m4 = ys[4] + h / 2, m3 = ys[3] + h / 2;
-        arrow(svg, 'M' + (x + w) + ' ' + m4 + 'H326V' + m3 + 'H' + (x + w), 'fail', '重派', 322, (m4 + m3) / 2 + 3, 'end');
-        const z2 = z1h + 20, cw = 158, rh = 76, rg = 24, gx = [10, 180], r0 = z2 + 100;
-        const z2h = 100 + 4 * rh + 3 * rg + 24;
-        zone(svg, 1, z2, W - 2, z2h, '02 / 在這裡分岔');
-        node(svg, { x: 10, y: z2 + 30, w: 328, h: 48, c: C.plan, name: '這一組任務', lines: ['分好組之後，選一條路'], nameY: 18, lineY: 35 });
-        ['Agent', 'Workflow ≥3 個'].forEach((l, k) => arrow(svg, 'M' + (gx[k] + cw / 2) + ' ' + (z2 + 78) + 'V' + r0, 'ok', l, gx[k] + cw / 2 + (k ? -7 : 7), z2 + 94, k ? 'end' : 'start'));
-        [aRow, wRow].forEach((rows, k) => {
-            rows.forEach((o, i) => node(svg, { ...o, x: gx[k], y: r0 + i * (rh + rg), w: cw, h: rh, nameY: 18, lineY: 34, lineStep: 12, tagFs: 9.5 }));
-            (k ? wL : aL).forEach((l, i) => arrow(svg, 'M' + (gx[k] + cw / 2) + ' ' + (r0 + i * (rh + rg) + rh) + 'V' + (r0 + (i + 1) * (rh + rg)), k ? wK[i] : 'ok', l, gx[k] + cw / 2 + 7, r0 + i * (rh + rg) + rh + 16, 'start'));
-        });
-        H = z2 + z2h + 6;
-    }
-    done(svg, H);
-}
-
-const LEGEND = [['<i class="ln"></i>', '主線：做完交棒'], ['<i class="ln wait"></i>', '等使用者'], ['<i class="ln hold"></i>', '腳本執行中，等結果回來'], ['<i class="ln fail"></i>', '退回、重派'], ['<i class="bx"></i>', '節點：名稱、產物、牆鐘與 token']];
-for (const lg of document.querySelectorAll('[data-legend]')) {
-    for (const [mark, text] of LEGEND) { if (text.startsWith('腳本') && lg.dataset.legend !== 'build') continue; const s = el('span'); s.innerHTML = mark + text; lg.append(s); }
-}
-const mq = window.matchMedia('(max-width:1010px)');
-const renderAll = () => { renderMain(mq.matches); renderBuild(mq.matches); };
-renderAll();
-mq.addEventListener('change', renderAll);
 </script>
 </body>
 </html>
