@@ -417,9 +417,9 @@ Report the URL. **Keep the worktree** — PR feedback gets fixed there.
 **After any push** — a PR, or a merge the profile pushes — run
 `node <plugin>/scripts/ci-status.js <sha>` once, `<sha>` the commit pushed. It
 prints one line, `ci: success`, `failure`, `pending`, `none` or
-`unknown <Actions URL>`, and exits 0: it never waits, and land never stops on it.
-A Gitea origin reads `GITEA_TOKEN`, else `git credential fill` for that host;
-neither is written or printed.
+`unknown <Actions URL>[ (token refused)]`, and exits 0: it never waits, and land never stops on it.
+An https Gitea origin reads `GITEA_TOKEN` (only for `GITEA_URL`'s host when
+set), else `git credential fill`; neither is written or printed.
 
 **Keep:** say where the branch and worktree are.
 

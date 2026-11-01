@@ -110,6 +110,71 @@ test('a fetch that throws reads as unknown, never as an error', async () => {
     assert.equal(out.code, 0);
 });
 
+test('an http origin gets no request and no credential fill, token or not', async () => {
+    const g = fakeGit('http://10.0.0.5:3000/lab/rh.git', { username: 'fan', password: 'pw' });
+    const f = fakeFetch(() => combined('success', 1));
+    const out = await main([SHA], { git: g.git, gh: noGh, fetch: f.fetch, env: { GITEA_TOKEN: 't0k' } });
+    assert.equal(out.text, 'ci: unknown http://10.0.0.5:3000/lab/rh/actions');
+    assert.deepEqual(f.calls, []);
+    assert.ok(!g.calls.some((c) => c.args === 'credential fill'));
+});
+
+test('GITEA_URL naming another host keeps GITEA_TOKEN away from the origin', async () => {
+    const g = fakeGit(GITEA, null);
+    const f = fakeFetch(() => combined('success', 1));
+    const out = await main([SHA], { git: g.git, gh: noGh, fetch: f.fetch, env: { GITEA_TOKEN: 't0k', GITEA_URL: 'https://git.example.org:8443/' } });
+    assert.equal(out.text, 'ci: unknown https://git.example.org/lab/rh/actions');
+    assert.deepEqual(f.calls, []);
+    const bad = await main([SHA], { git: g.git, gh: noGh, fetch: f.fetch, env: { GITEA_TOKEN: 't0k', GITEA_URL: 'not a url' } });
+    assert.equal(bad.text, 'ci: unknown https://git.example.org/lab/rh/actions');
+    assert.deepEqual(f.calls, []);
+});
+
+test('GITEA_URL naming the origin host sends the token', async () => {
+    const f = fakeFetch(() => combined('success', 1));
+    const out = await main([SHA], { git: fakeGit(GITEA, null).git, gh: noGh, fetch: f.fetch, env: { GITEA_TOKEN: 't0k', GITEA_URL: 'https://Git.Example.org:443/' } });
+    assert.equal(out.text, 'ci: success');
+    assert.deepEqual(f.calls, [{ url: STATUS_URL, auth: 'token t0k' }]);
+});
+
+test('a known non-Gitea forge gets no request and no credential fill', async () => {
+    const origins = {
+        'https://gitlab.com/o/r.git': 'https://gitlab.com/o/r/actions',
+        'git@bitbucket.org:o/r.git': 'https://bitbucket.org/o/r/actions',
+        'https://dev.azure.com/org/proj/_git/r': 'https://dev.azure.com/org/proj/_git/r/actions',
+        'git@ssh.dev.azure.com:v3/org/proj/r': 'https://ssh.dev.azure.com/v3/org/proj/r/actions',
+        'https://org.visualstudio.com/proj/_git/r': 'https://org.visualstudio.com/proj/_git/r/actions',
+        'https://GitLab.com/o/r': 'https://GitLab.com/o/r/actions',
+        'ssh://git@ssh.github.com:443/o/r': 'https://ssh.github.com/o/r/actions',
+        'https://gitlab.com./o/r': 'https://gitlab.com./o/r/actions',
+    };
+    for (const [origin, actions] of Object.entries(origins)) {
+        const g = fakeGit(origin, { username: 'fan', password: 'pw' });
+        const f = fakeFetch(() => combined('success', 1));
+        const out = await main([SHA], { git: g.git, gh: noGh, fetch: f.fetch, env: { GITEA_TOKEN: 't0k' } });
+        assert.equal(out.text, 'ci: unknown ' + actions, origin);
+        assert.equal(parseOrigin(origin).kind, 'other', origin);
+        assert.deepEqual(f.calls, [], origin);
+        assert.ok(!g.calls.some((c) => c.args === 'credential fill'), origin);
+    }
+    assert.equal(parseOrigin('https://gitlab.example.org/o/r').kind, 'gitea');
+});
+
+test('a token refused by every attempt says so; any other failure does not', async () => {
+    const run = async (cred, answer) => (await main([SHA], { git: fakeGit(GITEA, cred).git, gh: noGh, fetch: fakeFetch(answer).fetch, env: { GITEA_TOKEN: 't' } })).text;
+    const plain = 'ci: unknown https://git.example.org/lab/rh/actions';
+    const cred = { username: 'fan', password: 'pw' };
+    assert.equal(await run(null, () => 401), plain + ' (token refused)');
+    assert.equal(await run(cred, () => 403), plain + ' (token refused)');
+    assert.equal(await run(cred, (auth) => (auth === 'token t' ? 401 : 404)), plain);
+    assert.equal(await run(null, () => 404), plain);
+    assert.equal(await run(null, () => 500), plain);
+    const f = fakeFetch((auth) => (auth === 'token t' ? 401 : combined('success', 1)));
+    const out = await main([SHA], { git: fakeGit(GITEA, cred).git, gh: noGh, fetch: f.fetch, env: { GITEA_TOKEN: 't' } });
+    assert.equal(out.text, 'ci: success');
+    assert.equal(f.calls.length, 2);
+});
+
 test('a github.com origin is read through gh api and never through fetch', async () => {
     const calls = [];
     const gh = (args) => {
@@ -119,6 +184,19 @@ test('a github.com origin is read through gh api and never through fetch', async
     const out = await main([SHA], { git: fakeGit('git@github.com:FanFantom9452/FanKeel.git', null).git, gh, fetch: noFetch, env: {} });
     assert.equal(out.text, 'ci: success');
     assert.deepEqual(calls, ['api repos/FanFantom9452/FanKeel/commits/' + SHA + '/status']);
+});
+
+test('a trailing-dot github.com. origin is still read through gh, never through fetch', async () => {
+    const calls = [];
+    const gh = (args) => {
+        calls.push(args.join(' '));
+        return { status: 0, stdout: JSON.stringify(combined('success', 1)), stderr: '' };
+    };
+    const g = fakeGit('git@github.com.:o/r.git', { username: 'fan', password: 'pw' });
+    const out = await main([SHA], { git: g.git, gh, fetch: noFetch, env: { GITEA_TOKEN: 't0k' } });
+    assert.equal(out.text, 'ci: success');
+    assert.deepEqual(calls, ['api repos/o/r/commits/' + SHA + '/status']);
+    assert.ok(!g.calls.some((c) => c.args === 'credential fill'));
 });
 
 test('gh failing prints unknown with the GitHub Actions page', async () => {

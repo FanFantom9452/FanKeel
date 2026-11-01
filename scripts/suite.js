@@ -85,7 +85,7 @@ function lineOf(result) {
 }
 
 // --nightly: the nightly tier of .fankeel/suite.json, for a CI schedule
-// (group B's nightly CI template). It needs no session and writes no record —
+// (the nightly CI template under assets/ci/). It needs no session and writes no record —
 // land judges the daily tier — and runs in --tree, else the working directory.
 // --command still wins over the file.
 function nightly(values) {

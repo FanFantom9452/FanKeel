@@ -4,16 +4,18 @@
 //
 //   node scripts/ci-status.js <sha> [--root <dir>]
 //
-// Prints one line — `ci: success|failure|pending|none`, or `ci: unknown <url>`
-// naming the Actions page to look at by hand — and exits 0 whatever CI said:
-// land reads it after a push and never waits on it
-// (docs/90-agent/plans/2026-11-01-professor-ci-tiers-design.md §2).
-// The origin's host decides the API: github.com is read through `gh api`, any
-// other host is taken to be Gitea and read over HTTPS at /api/v1. Gitea's
-// credential is GITEA_TOKEN, else `git credential fill` for that host, asked
-// at run time and never written or printed. `deps` is the seam the tests
-// fake — git, gh, fetch, env; without one the real ones run, five seconds a
-// call at most.
+// Prints one line — `ci: success|failure|pending|none`, `ci: unknown <url>`
+// naming the Actions page to look at by hand (` (token refused)` appended when
+// every credential tried got a 401/403), or a bare `ci: unknown` with no
+// origin — and exits 0 whatever CI said: land reads it after a push and never
+// waits on it (docs/90-agent/plans/2026-11-01-professor-ci-tiers-design.md §2).
+// github.com is read through `gh api`. GitLab, Bitbucket and Azure DevOps are
+// not read at all. Any other host is taken to be Gitea, read at /api/v1 over
+// https only — an http origin gets no request, so no credential crosses in
+// plaintext. Gitea's credential is GITEA_TOKEN — sent only to GITEA_URL's
+// host:port when that is set — else `git credential fill` for that host,
+// never written or printed. `deps` is the seam the tests fake — git, gh,
+// fetch, env; without one the real ones run, five seconds a call at most.
 const { spawnSync } = require('node:child_process');
 const { parseArgs } = require('node:util');
 
@@ -27,6 +29,17 @@ function spawnRun(bin) {
         if (r.error) return { status: null, stdout: '', stderr: String(r.error.message || r.error) };
         return { status: r.status, stdout: r.stdout || '', stderr: r.stderr || '' };
     };
+}
+
+// ssh.github.com is GitHub's ssh-over-443 host: never Gitea, so never sent a credential.
+const OTHER_FORGES = new Set(['gitlab.com', 'bitbucket.org', 'dev.azure.com', 'ssh.dev.azure.com', 'ssh.github.com']);
+
+// A fully-qualified `github.com.` is the same host; without the strip it would read as Gitea and get a request.
+function kindOf(host) {
+    host = host.toLowerCase().replace(/\.$/, '');
+    if (host === 'github.com') return 'github';
+    if (OTHER_FORGES.has(host) || host.endsWith('.visualstudio.com')) return 'other';
+    return 'gitea';
 }
 
 // `https://[user@]host[:port]/[prefix/]owner/repo[.git]`, `ssh://git@host[:port]/owner/repo`
@@ -61,7 +74,7 @@ function parseOrigin(url) {
     const base = scheme + '://' + host + port + prefix;
     return {
         host, hostport: host + port, scheme, owner, repo,
-        kind: host.toLowerCase() === 'github.com' ? 'github' : 'gitea',
+        kind: kindOf(host),
         base, actions: base + '/' + owner + '/' + repo + '/actions',
     };
 }
@@ -105,9 +118,12 @@ function credential(o, ctx) {
     return 'Basic ' + Buffer.from((field('username') || '') + ':' + password).toString('base64');
 }
 
+const REFUSED = Symbol('refused');
+
 async function getJson(ctx, url, auth) {
     try {
         const res = await ctx.fetch(url, { headers: { Accept: 'application/json', Authorization: auth }, signal: AbortSignal.timeout(TIMEOUT_MS) });
+        if (res.status === 401 || res.status === 403) return REFUSED;
         if (!res.ok) return null;
         return await res.json();
     } catch (e) {
@@ -115,19 +131,37 @@ async function getJson(ctx, url, auth) {
     }
 }
 
+// GITEA_TOKEN goes to GITEA_URL's host:port only, when that is set; an
+// unparseable GITEA_URL matches nothing.
+function tokenFor(o, env) {
+    if (!env.GITEA_TOKEN) return null;
+    if (!env.GITEA_URL) return 'token ' + env.GITEA_TOKEN;
+    try {
+        return new URL(env.GITEA_URL).host === new URL(o.base).host ? 'token ' + env.GITEA_TOKEN : null;
+    } catch (e) {
+        return null;
+    }
+}
+
+// A state word, 'refused' when every credential tried got a 401/403, or null.
 async function gitea(o, sha, ctx) {
     const url = o.base + '/api/v1/repos/' + encodeURIComponent(o.owner) + '/' + encodeURIComponent(o.repo) + '/commits/' + encodeURIComponent(sha) + '/status';
-    const tries = [
-        () => (ctx.env.GITEA_TOKEN ? 'token ' + ctx.env.GITEA_TOKEN : null),
-        () => credential(o, ctx),
-    ];
+    const tries = [() => tokenFor(o, ctx.env), () => credential(o, ctx)];
+    let asked = 0;
+    let refused = 0;
     for (const next of tries) {
         const auth = next();
         if (!auth) continue;
-        const state = stateOf(await getJson(ctx, url, auth));
+        asked++;
+        const body = await getJson(ctx, url, auth);
+        if (body === REFUSED) {
+            refused++;
+            continue;
+        }
+        const state = stateOf(body);
         if (state) return state;
     }
-    return null;
+    return asked > 0 && refused === asked ? 'refused' : null;
 }
 
 async function main(argv, deps) {
@@ -146,7 +180,10 @@ async function main(argv, deps) {
     if (!o) return { text: 'ci: unknown', code: 0 };
     const rev = ctx.git(['rev-parse', '--verify', parsed.positionals[0] + '^{commit}'], { cwd });
     const sha = rev.status === 0 ? rev.stdout.trim() : parsed.positionals[0];
-    const state = o.kind === 'github' ? github(o, sha, ctx) : await gitea(o, sha, ctx);
+    let state = null;
+    if (o.kind === 'github') state = github(o, sha, ctx);
+    else if (o.kind === 'gitea' && o.scheme === 'https') state = await gitea(o, sha, ctx);
+    if (state === 'refused') return { text: 'ci: unknown ' + o.actions + ' (token refused)', code: 0 };
     return { text: state ? 'ci: ' + state : 'ci: unknown ' + o.actions, code: 0 };
 }
 
