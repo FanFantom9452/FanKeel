@@ -89,7 +89,7 @@ function github(o, sha, ctx) {
     }
 }
 
-// Asked only when the token is missing or refused. Prompts are off so a
+// Asked only when the token is missing, refused, or its answer was unusable. Prompts are off so a
 // missing helper fails in milliseconds instead of waiting on a terminal or a
 // Credential Manager dialog nobody is looking at.
 function credential(o, ctx) {

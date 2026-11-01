@@ -339,6 +339,7 @@ function fileStageReport({ projectRoot, report, slug, stage }) {
         git(['commit', '-o', '-m', 'docs: ' + slug + ' ' + stage + ' conclusion\n\n- ' + stage + '\'s report, masked — ' + rel, '--', rel]);
         return 'record: ' + rel + ' committed';
     } catch (e) {
+        try { git(['reset', '-q', '--', rel]); } catch (e2) { /* best effort */ }
         const why = String((e && (e.stderr || e.message)) || e).trim().split(/\r?\n/)[0];
         return 'record: ' + rel + ' written, not committed — ' + (why || 'git failed') + '.';
     }
