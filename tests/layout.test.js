@@ -81,3 +81,18 @@ test('layout reads --root with residue\'s parser, the one copy both scripts shar
   assert.match(src, /require\('\.\/residue\.js'\)/);
   assert.doesNotMatch(src, /function parseArgs/);
 });
+
+test('the architecture diagram names the guard, the stage agent and the registry, and chartroom hangs off the body', () => {
+  const md = fs.readFileSync(path.join(__dirname, '..', 'docs', '02-architecture', 'layout.md'), 'utf8');
+  const block = (md.match(/```mermaid\n([\s\S]*?)\n```/) || [])[1];
+  assert.ok(block, 'layout.md has no mermaid block');
+  for (const name of ['guard.js', 'fankeel-brain', '.fankeel/sessions']) {
+    assert.ok(block.includes(name), 'the diagram does not mention ' + name);
+  }
+  const chart = [...block.matchAll(/^\s*(\w+)\s*\[[^\n]*chartroom/gm)].map((m) => m[1]);
+  assert.ok(chart.length >= 1, 'no node labelled chartroom');
+  const edge = /^\s*(\w+)\s*(?:--\s*"[^"]*"\s*-->|-\.\s*"[^"]*"\s*\.->|-->|-\.->)\s*(\w+)\s*$/gm;
+  const edges = [...block.matchAll(edge)].map((m) => [m[1], m[2]]);
+  const outward = edges.filter(([a, b]) => (chart.includes(a) !== chart.includes(b)));
+  assert.ok(outward.length >= 1, 'a chartroom node has no edge to a node outside chartroom');
+});

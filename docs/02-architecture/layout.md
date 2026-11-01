@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-10-27
+last_verified: 2026-11-01
 source_of_truth: .claude-plugin/plugin.json, hooks/hooks.json, lib/map.js, scripts/layout.js
 ---
 
@@ -18,22 +18,84 @@ them call.
 right-hand column is the half it cannot.
 
 ```mermaid
-flowchart LR
-  U[user] --> SK[skills: fankeel and one per stage]
-  SK --> BR[stage agent]
-  BR --> RD[readers, implementers, reviewers]
-  RD --> HO[handoff report]
-  HO --> GT[gate question]
-  GT --> U
-  HK[hooks] -. inject rules, guard edits .-> RD
-  HK --> LIB[lib]
-  SC[scripts] --> LIB
-  SK --> SC
-  LIB --> ST[station page and server]
-  ST --> U
-  ST --> CR[lib/chartroom]
-  LIB --> WK[weekly report]
-  WK --> CR
+%%{init: {"flowchart": {"rankSpacing": 30, "nodeSpacing": 24}}}%%
+flowchart TB
+  U(["使用者"])
+
+  subgraph CC["主 session（Claude Code）"]
+    CTL["控制者<br/>派出 · 轉述路徑 · 問關卡"]
+    GATE{"關卡<br/>AskUserQuestion"}
+  end
+
+  subgraph HK["hooks/：Claude Code 在事件上呼叫"]
+    hRule["inject.js · resume.js<br/>每則提示、答完關卡都注入規則"]
+    hGate["gate.js<br/>關卡計時、核對問句逐字"]
+    hGuard["guard.js<br/>範圍守衛、唯讀代理"]
+    hBrief["brief.js<br/>子代理的開場簡報"]
+    hRec["touch.js · leave.js<br/>碰過的檔、結束記帳"]
+    hPane["pane.ts<br/>側欄面板"]
+  end
+
+  subgraph SK["skills/：規則與流程"]
+    sk0["fankeel<br/>路線 · 登記"]
+    sk7["七段 skill<br/>survey · design · plan · build<br/>verify · audit · land"]
+    skx["ask · explain · init · weekly<br/>retro-all · phone · station · upgrade"]
+  end
+
+  subgraph AG["agents/：子代理"]
+    brain["fankeel-brain<br/>階段代理"]
+    agr["reader · reviewer · judge<br/>verifier · render-reviewer · mockup"]
+    agw["implementer · fixer · writer<br/>mutator · mover"]
+    agm["retro · slimmer · init-scout"]
+  end
+
+  subgraph SC["scripts/：指令列"]
+    task["task.js"]
+    await["await.js"]
+    commit["commit.js"]
+    sc2["survey.js · docs-check.js<br/>todo.js · weekly.js"]
+  end
+
+  LIB["lib/<br/>stages.js · render.js · handoff.js · registry.js"]
+  REG[(".fankeel/sessions/<br/>registry")]
+  HO[".fankeel/build/task-*/<br/>handoff 報告與 json gate"]
+
+  subgraph STN["監控站"]
+    station["station.js<br/>頁面與伺服器"]
+    wk["週報<br/>weekly-render.js"]
+    chart["lib/chartroom<br/>經 board.js 動態載入"]
+  end
+
+  U -- "/fankeel" --> CTL
+  hRule -. "規則" .-> CTL
+  CTL -- "讀" --> sk0
+  sk0 --> sk7
+  CTL -- "派出" --> brain
+  hBrief -. "任務背景" .-> brain
+  brain -- "照規則做" --> sk7
+  brain -- "派出" --> agr
+  brain -- "派出" --> agw
+  skx -. "派出" .-> agm
+  hGuard -. "擋越界寫入" .-> agw
+  agw -- "commit 檔" --> commit
+  brain -- "寫報告" --> HO
+  CTL -- "背景等待" --> await
+  await -- "等到" --> HO
+  HO -- "gate 逐字抄" --> GATE
+  hGate -. "核對" .-> GATE
+  GATE -- "問，答完回控制者" --> U
+  CTL -- "stage · down" --> task
+  task --> REG
+  hRec --> REG
+  sk7 -. "執行" .-> sc2
+  SC --> LIB
+  HK --> LIB
+  REG --> station
+  sc2 --> wk
+  station --> chart
+  wk --> chart
+  station -- "網頁" --> U
+  hPane -. "側欄" .-> U
 ```
 
 ```
