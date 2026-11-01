@@ -24,9 +24,10 @@ source_of_truth: scripts/record.js, lib/bundle.js, lib/sensitive.js, skills/fank
 
 ## 3. 家目錄遮蔽
 
-- 預設把每個包裡所有字串值中的家目錄換成 `[HOME]`：`os.homedir()`、它的正斜線寫法、Git Bash 的 `/c/Users/<name>` 寫法；Windows 上不分大小寫。
+- 預設把每個包裡所有字串值，加上 manifest 和 report.md，中的家目錄換成 `[HOME]`：`os.homedir()`、它的正斜線寫法、Git Bash 的 `/c/Users/<name>` 寫法；Windows 上不分大小寫。
+- JSON 跳脫寫法也一併遮蔽：反斜線變成兩個，如 `C:\\Users\\name`。字串裡內嵌的 JSON 和 `{f, raw}` 列都會比對到。
 - 遮蔽是解開包、逐行改字串、再 gzip 回去，產生新的包放進 ZIP；`.fankeel/bundles/` 裡原本的包不動。
-- 匯出者勾選「保留原路徑」時不換，manifest 的 `homeMasked` 記 `false`。
+- 匯出者勾選「保留原路徑」時不換，manifest 的 `homeMasked` 記 `false`。`homeMasked` 描述整個 ZIP（包、manifest、report.md）。
 
 ## 4. 匯出：`record.js export`
 
