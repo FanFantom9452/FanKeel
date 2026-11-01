@@ -86,6 +86,15 @@ recollection.
 A ledger whose header names a different plan is another plan's progress. Leave it
 where it is; `init` starts your own beside it.
 
+**A plan that a `<stem>-index.md` beside it links is one group of a split
+plan** (fankeel-plan, `## Splitting a plan that will not fit`). Take its
+group plans in the order the index's `build order:` line gives, one group
+plan at a time: `show`, `init` and the task loop under
+`ledger.js --plan <group file>`, then the next file, groups the line runs at
+once included. What an earlier group built reaches a later one only through
+the index's `interface it exposes` cell — read that row, not the earlier
+group's plan or ledger. A route with no plan file has no index either.
+
 The commit message shape is `land`'s `COMMIT` rule; step 4 carries its skeleton.
 
 **With no plan file there is no ledger and nothing to `init`.** The rows of
