@@ -66,7 +66,7 @@ not skipped for a quarter.
 
 `--record` writes `.fankeel/audit.json` — `{ "last": "<date>" }`, committed —
 and `orient`'s `todo:` block says `audit: N 天未跑` once that is more than 14
-days old. That line is the whole reminder: no cron, no routine.
+days old. That line is the whole reminder.
 
 **The verification map, reconciled.** Where `.fankeel/verify/` holds
 feature files, the same fortnightly pass runs
@@ -84,9 +84,8 @@ It returns one line: `clean` when every command, route and flag the file
 names is still in that source; `changed` with the step and the `path:line`
 that moved; or `blocked` with what it could not read. A `changed` file is
 fixed the way a dead reference is, by a `fankeel:fankeel-fixer` given the file
-and the correction. The fix also rewrites `status` and `last_checked`. These
-readers only read source and never drive the feature. The live pass, which
-does drive it, is not part of this audit yet.
+and the correction. The fix also rewrites `status` and `last_checked`. The
+live pass, which drives the feature, is not part of this audit yet.
 
 Quote what came back. A description of what a scanner said is not what it said.
 
@@ -262,6 +261,7 @@ directory — a reviewer holding a third of the tree cannot see the caller in
 another third, which is [docs/subagents.md](../../docs/90-agent/reference/subagents.md)'s case
 against slicing. Rank what comes back by its `net:` line and offer it at the
 gate beside the documentation findings; never apply a cut unasked. `node <plugin>/scripts/css-dead.js <dir>` lists unused CSS classes as `delete:` cuts.
+`node <plugin>/scripts/test-audit.js [--root <dir>]` lists stale and duplicate tests, deleting none.
 
 **Where the host opens it, the chain is one workflow.** Pair readers then an
 adversary is the same shape. The pairs come from `docs-audit.js` first, run

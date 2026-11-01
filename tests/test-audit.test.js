@@ -134,3 +134,13 @@ test('the CLI on a root that does not exist exits 2 with a stderr line, not a cl
     assert.match(r.stderr, /test-audit: cannot read .*no-such-dir/);
     assert.equal(r.stdout, '');
 });
+
+// The audit skill's code half is where an optional scanner is named — css-dead.js
+// is the precedent — on a line of its own, so `--root` is checked against this
+// script's options rather than attributed to no script.
+test('the audit skill names test-audit.js in its code half, on its own line', () => {
+    const skill = fs.readFileSync(path.join(ROOT, 'skills', 'fankeel-audit', 'SKILL.md'), 'utf8');
+    const half = /The code half of the same fortnightly pass[\s\S]*?(?=\r?\n\r?\n\*\*Where the host opens it)/.exec(skill);
+    assert.ok(half, 'the code-half paragraph is not where this test looks for it');
+    assert.match(half[0], /\n`node <plugin>\/scripts\/test-audit\.js \[--root <dir>\]` lists stale and duplicate tests, deleting none\.$/);
+});
