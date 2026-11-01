@@ -800,6 +800,9 @@ is corrected by the next one, not by rewriting this.
 | Brief 45 — should fankeel support CI/CD or a Gitea nightly build? | [90-agent/judgements/2026-10-29-ci-cd-nightly.md](90-agent/judgements/2026-10-29-ci-cd-nightly.md) — *judged 2026-10-29, fable* |
 | 判官要和人類確認時，/fankeel-ask 該怎麼設計 | [90-agent/judgements/2026-10-30-judge-asks-human.md](90-agent/judgements/2026-10-30-judge-asks-human.md) — *judged 2026-10-30, fable* |
 | Brief 46 — verify 回跳 build：小修正為什麼不就地修完 | [90-agent/judgements/2026-10-31-verify-bounce-small-fix.md](90-agent/judgements/2026-10-31-verify-bounce-small-fix.md) — *judged 2026-10-31, fable* |
+| 判官題：多人協作時，進行中的 session 狀態要不要進共用層 | [90-agent/judgements/2026-11-01-shared-session-state.md](90-agent/judgements/2026-11-01-shared-session-state.md) — *judged 2026-11-01, fable* |
+| Brief 1 — kg-into-fankeel | [90-agent/judgements/2026-11-01-kg-into-fankeel.md](90-agent/judgements/2026-11-01-kg-into-fankeel.md) — *judged 2026-11-01, fable* |
+| Brief 47 — vercel-labs/agent-desktop: is it any use to fankeel? | [90-agent/judgements/2026-11-01-agent-desktop.md](90-agent/judgements/2026-11-01-agent-desktop.md) — *judged 2026-11-01, fable* |
 
 ## The five scanners
 
@@ -832,7 +835,7 @@ is explained, and it is the one thing to know before adding a page here.
 | `docs/90-agent/reports/evidence/` | fixture | n/a — the raw output a report cites rather than a page about the system, so it is not expected in this index either |
 | `docs/99-archive/` | archive | that is the point of it |
 | `docs/90-agent/judgements/` | report | it is what `fankeel-judge` answered on that day, filed verbatim by `scripts/judge.js` |
-| `docs/90-agent/records/` | report | the completion record every task leaves at land, one month file each, written by `scripts/record.js` and never edited after |
+| `docs/90-agent/records/` | report | the completion record every task leaves at land, one month file each, written by `scripts/record.js` and never edited after; also each stage's handoff report, masked, copied to `<task-slug>/<stage>.md` by `fileStageReport` and committed alone when `task.js stage` changes stage |
 | `docs/90-agent/todo/` | todo | n/a — one TODO entry per file, current, checked for links and line numbers only; its date is its own `stamp` |
 | `lib/chartroom/` | reference | no — the drawing code copied for the monitor station's whiteboard |
 | `skills/` | reference | no |

@@ -423,4 +423,6 @@ then AskUserQuestion
 ```
 
 Under 120 words of your own; a patrol's entry list is findings and does not count toward them. Option one on the question is the approval: say what
-accepting the classification accepts, not just which stage comes next.
+accepting the classification accepts, not just which stage comes next. Before asking, write this report to
+`.fankeel/build/task-<started>/survey.md` ending in a ```` ```json gate ```` block
+holding the exact questions; `hooks/gate.js` refuses the gate otherwise.

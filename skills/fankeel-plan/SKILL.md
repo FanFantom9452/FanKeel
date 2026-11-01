@@ -445,3 +445,4 @@ then AskUserQuestion
 
 Under 100 words of your own. The file is the output. Option one on the question
 approves the plan and starts `build` — say that, rather than naming the stage.
+Run in session, plan writes this report to `.fankeel/build/task-<started>/plan.md`, ending in a ```json gate``` block with the exact questions, before its AskUserQuestion.

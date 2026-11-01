@@ -264,8 +264,8 @@ design still has to reach build: where the route goes from design straight to
 build and the profile's `stage.agents` names build and not design, the stage's
 rules name `.fankeel/build/task-<started>/design.md`. Write the approved output
 shape there before the gate and put that path on `spec:` — build's agent opens
-that file first and never sees this chat. With `plan` on the route, write
-nothing there: the plan is what build reads.
+that file first and never sees this chat. With `plan` on the route, design.md
+is still written as design's gate report, but build reads the newer plan.md.
 
 ### 8. Self-review, then a person reads it
 
@@ -278,7 +278,8 @@ nothing there: the plan is what build reads.
 Record what this stage read that plan and build will need again, one fact a
 line: `node <plugin>/scripts/context.js add "<fact>" --at <path:line> --session <id>`.
 
-Then ask the user to read it, and wait.
+Then ask the user to read it, and wait. Write design.md, ending in
+its ```json gate``` block, before AskUserQuestion; the gate refuses otherwise.
 
 ## Output
 

@@ -90,8 +90,8 @@ record — add `--tree <that worktree>`: the suite runs there, `suite.json`
 keeps the path, and `task.js land` checks the record against that tree's HEAD
 for as long as the directory exists.
 
-The full run executes the project's test command — `package.json`'s `test` script, or
-`--command "<cmd>"` — prints `suite: <pass> pass, <fail> fail @ <sha>`, and
+The full run executes `--command "<cmd>"`, else `.fankeel/suite.json`'s `daily` tier (each entry in order, its dir as cwd, stopping at the first red), else `package.json`'s `test` —
+prints `suite: <pass> pass, <fail> fail @ <sha>` (or `suite: ok|red @ <sha>`, plus ` — red at <dir>: <run>`), and
 records that beside the task's handoffs. **Red stops everything**, and since
 2026-10-09 that is a refusal rather than a sentence: `task.js land` in step
 6 will not record an integration without a green record at a sha no code
@@ -392,7 +392,7 @@ into the branch the main checkout is on with `--no-ff`, the message
 `merge: <task>` and two trailers, `Fankeel-Task` and `Fankeel-Class`, and no
 tag, and prints `<base>..<sha>`. Uncommitted files in the worktree, a subject
 `commit.format` refuses, or `conflict <paths>` stop it with nothing merged and
-both left in place. Re-run the suite on the merged result with the project's own test command (package.json's `test` script) from the main checkout, because `suite.js --session` runs in the worktree while it stands — or in the tree `--tree` named, for an entry with no worktree of its own — and its record is the gate before the merge, not after. That run takes no machine lock — only `suite.js` does — so start it when no `suite: waiting` or other suite is running here; only when that is
+both left in place. Re-run the suite on the merged result with the same suite land recorded (`node <plugin>/scripts/suite.js`) from the main checkout, because `suite.js --session` runs in the worktree while it stands — or in the tree `--tree` named, for an entry with no worktree of its own — and its record is the gate before the merge, not after. That run takes no machine lock — only `suite.js` does — so start it when no `suite: waiting` or other suite is running here; only when that is
 green run `node <plugin>/scripts/land.js clean --session <id>`: it removes the
 worktree and runs `git branch -d fk/<id8>`, and a `-d` refusal is printed as
 git said it — never retried with `-D`. A red suite leaves both in place, as
@@ -409,17 +409,17 @@ Only what the sweep kept gets `git branch -D <name>` by hand.
 
 **PR:** push, then open it against the base by the origin's host
 (`git remote get-url origin`): `github.com` → `gh pr create --base <base> --head <branch> --fill`;
-any other host is Gitea → `tea pulls create --base <base> --head <branch> --title "<subject>"`
-when `tea` is on PATH, else print
+any other host but gitlab.com, bitbucket.org, dev.azure.com or `*.visualstudio.com` is Gitea →
+`tea pulls create --base <base> --head <branch> --title "<subject>"` when `tea` is on PATH; else (and for those forges) print
 `https://<host>/<owner>/<repo>/compare/<base>...<branch>` for the user to open.
 Report the URL. **Keep the worktree** — PR feedback gets fixed there.
 
 **After any push** — a PR, or a merge the profile pushes — run
 `node <plugin>/scripts/ci-status.js <sha>` once, `<sha>` the commit pushed. It
-prints one line, `ci: success`, `failure`, `pending`, `none` or
-`unknown <Actions URL>[ (token refused)]`, and exits 0: it never waits, and land never stops on it.
-An https Gitea origin reads `GITEA_TOKEN` (only for `GITEA_URL`'s host when
-set), else `git credential fill`; neither is written or printed.
+prints one line, `ci: success`, `failure`, `pending`, `none`,
+`unknown <Actions URL>[ (token refused)]`, or a bare `ci: unknown` with no usable origin, and exits 0: it never waits, and land never stops on it.
+An https Gitea origin reads `GITEA_TOKEN` (only when host:port matches `GITEA_URL`'s, if
+set), and tries `git credential fill` when there is none or it is refused; neither is written or printed.
 
 **Keep:** say where the branch and worktree are.
 

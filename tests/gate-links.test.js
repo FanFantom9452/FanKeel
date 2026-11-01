@@ -2,7 +2,8 @@
 
 // docs/90-agent/plans/2026-11-01-professor-ci-tiers-design.md §6: the block a
 // stage run in the session gets names its gate page on this machine and on
-// the phone, and says option one's description copies them.
+// the phone, and says to print them in the reply before AskUserQuestion,
+// never inside an option (the user's correction, 2026-11-02).
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -22,8 +23,9 @@ test('gateLinks names the desktop and phone gate pages, then the rule', () => {
     assert.deepEqual(gateLinks(SERVE, ID), [
         'gate page: http://127.0.0.1:28888/f/' + ID + '/gate',
         'phone: https://box.tail1.ts.net/m#/s/' + ID + '/gate',
-        "Option one's description copies the gate page: and phone: lines word for word: the question box is all that shows when it pops up.",
+        'Print the gate page: and phone: lines in your reply just before AskUserQuestion; never put them inside an option.',
     ]);
+    assert.doesNotMatch(gateLinks(SERVE, ID)[2], /description copies/);
 });
 
 test('no tailnet url: the desktop line alone, with the rule', () => {

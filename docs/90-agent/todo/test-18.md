@@ -1,7 +1,7 @@
 ---
 label: test
 title: test-audit 跳不跳 bench/
-description: scripts/test-audit.js 把 bench/ 刻意複製的對照組報成 10 筆重複，要跳過 bench/ 還是照報未定 — [scripts/test-audit.js](scripts/test-audit.js).
+description: test-audit 把 bench/ 刻意複製的對照組報成 10 筆重複，要跳過 bench/ 還是照報未定 — [scripts/test-audit.js](scripts/test-audit.js).
 state: decision
 link: scripts/test-audit.js
 ---

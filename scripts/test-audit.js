@@ -115,6 +115,25 @@ function skip(src, i) {
     return i;
 }
 
+// `text` with its whitespace removed except inside a string, template or regex
+// literal, where `'  '` and `''` are different tests. `js` false reads quotes
+// only, for Python, where `/` and `//` are division.
+function squash(text, js) {
+    let out = '';
+    for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        const j = js || c === '"' || c === '\'' ? skip(text, i) : i;
+        if (j !== i) {
+            const span = text.slice(i, j + 1);
+            out += c === '/' && (text[i + 1] === '/' || text[i + 1] === '*') ? span.replace(/\s+/g, '') : span;
+            i = j;
+        } else if (!/\s/.test(c)) {
+            out += c;
+        }
+    }
+    return out;
+}
+
 // Every position in `src` that is code and not the middle of a name.
 function codeStarts(src) {
     const out = [];
@@ -186,7 +205,7 @@ function readJs(root, rel, src, stale, bodies) {
         if (!c) continue;
         const args = argsOf(src, CALL.lastIndex - 1);
         if (!args || args.length < 2) continue;
-        const flat = args[args.length - 1].replace(/\s+/g, '');
+        const flat = squash(args[args.length - 1], true);
         const head = HEAD.exec(flat);
         const body = head ? flat.slice(head[0].length, -1) : flat.replace(/^(?:async)?(?:\([^)]*\)|[\w$]+)=>/, '');
         if (body) bodies.push({ key: 'js:' + body, file: rel, line: lineAt(src, at) });
@@ -255,7 +274,7 @@ function readPy(root, rel, src, stale, bodies) {
             if (lines[j].trim() && lines[j].length - lines[j].trimStart().length <= indent) break;
             body.push(lines[j]);
         }
-        const flat = body.join('').replace(/\s+/g, '');
+        const flat = squash(body.join('\n'), false);
         if (flat) bodies.push({ key: 'py:' + flat, file: rel, line: i + 1 });
     }
 }

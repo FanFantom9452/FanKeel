@@ -181,11 +181,10 @@ Global Constraints would be and the brief's footer rules said in the dispatch;
 and a return contract in place of a report path: a status line — `done`,
 `partial: <what>` or `blocked: <why>` — the paths written, one line on the tests
 and one per new test naming the mutation that reddens it, with no report file. A
-no-plan route keeps one file on disk and no more: the approved file table, at
-`.fankeel/build/task-<started>/design.md`. Where build runs as a controlled
-stage agent and design does not, design wrote it by rule before its gate
-([docs/subagents.md](../../docs/90-agent/reference/subagents.md)'s `DESIGN_TO_BUILD`); on every other
-move from design to build, `task.js stage build` prints
+no-plan route keeps its approved file table in
+`.fankeel/build/task-<started>/design.md`, the report design wrote before its
+gate ([docs/subagents.md](../../docs/90-agent/reference/subagents.md)'s `DESIGN_TO_BUILD`);
+if a controlled design agent left no table there, `task.js stage build` prints
 `design.md is missing` with the path, and the table is written there before
 the first row is built. After a compaction, read the denominator back from
 that file, never from the summary. The implementer does not commit; step 4 stages the paths in the row's `file` cell, which may name
@@ -735,5 +734,6 @@ then AskUserQuestion
 ```
 
 Under 80 words. The diff is the output; prose is for what a diff cannot show.
+Run in session, build writes this report to `.fankeel/build/task-<started>/build.md`, ending in a ```json gate``` block with the exact questions, before its AskUserQuestion.
 
 `done:` is copied from the `done <n> of <m>` line that `node <plugin>/scripts/ledger.js --plan <plan> show` prints, `<m>` being the plan's own task count — never a count of `progress.md` made by hand. With no plan there is no ledger, and the rows of the file table are the count.

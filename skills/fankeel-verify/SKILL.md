@@ -354,4 +354,6 @@ then AskUserQuestion
 
 Filter the run. Never paste some fifty thousand characters to report twenty-four
 — measured 2026-08-26, and stated rounded because a suite that grows falsifies an
-exact figure with the next test anyone adds.
+exact figure with the next test anyone adds. Before asking, write this report
+to `.fankeel/build/task-<started>/verify.md` ending in a ```` ```json gate ````
+block holding the exact questions; `hooks/gate.js` refuses the gate otherwise.

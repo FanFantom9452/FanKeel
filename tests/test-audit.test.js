@@ -117,6 +117,41 @@ test('a call or an import inside a string, or a paren inside a regex, is not rea
     });
 });
 
+test('whitespace inside a string literal tells two bodies apart, indentation does not', () => {
+    const dir = project('fankeel-test-audit-literal-', {
+        'tests/lit.test.js': [
+            "const test = require('node:test');",
+            "test('two spaces', () => { same('  '); });",
+            "test('empty', () => { same(''); });",
+            "test('tpl a', () => { same(`a b`); });",
+            "test('tpl b', () => { same(`ab`); });",
+            "test('indented', () => {",
+            '        same(1);',
+            '});',
+            "test('flat', () => { same(1); });",
+            '',
+        ].join('\n'),
+        'tests/test_lit.py': [
+            'def test_a():',
+            "    assert f(' ') == 1",
+            '',
+            'def test_b():',
+            "    assert f('') == 1",
+            '',
+            'def test_c():',
+            '    assert   g() == 1',
+            '',
+            'def test_d():',
+            '    assert g() == 1',
+            '',
+        ].join('\n'),
+    });
+    assert.deepEqual(scan(dir).duplicate, [
+        { file: 'tests/lit.test.js', line: 9, of: 'tests/lit.test.js:6' },
+        { file: 'tests/test_lit.py', line: 10, of: 'tests/test_lit.py:7' },
+    ]);
+});
+
 test('in a git repository the files come from git, so an ignored test is not read', () => {
     const dir = project('fankeel-test-audit-git-', {
         '.gitignore': 'ignored/\n',
