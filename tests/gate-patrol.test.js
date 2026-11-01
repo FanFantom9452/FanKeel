@@ -89,7 +89,8 @@ test('an in-session patrol gate with no report file is denied, naming the path',
 });
 
 test('an in-session patrol gate over a report naming every entry goes out', () => {
-  const { out } = inSession(([first, second]) => '- ' + first.id + ' — do now\n- ' + second.id + ' — keep\n');
+  const { out } = inSession(([first, second]) => '- ' + first.id + ' — do now\n- ' + second.id + ' — keep\n\n'
+    + TICKS + 'json gate\n' + JSON.stringify({ questions: QUESTIONS, next: 'plan' }) + '\n' + TICKS + '\n');
   assert.equal(out.hookSpecificOutput && out.hookSpecificOutput.permissionDecision, undefined, JSON.stringify(out));
 });
 

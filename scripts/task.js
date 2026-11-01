@@ -806,6 +806,12 @@ function controllerLines(root, id, data, values) {
 function openingLines(root, id, data, values) {
     const controller = controllerLines(root, id, data, values);
     const lines = (controller || rulesLines(data, { values }, { root, sessionId: id })).slice();
+    // §6: the report a stage run in this session owes the station's gate
+    // page (lib/stages.js gateReportRule), said once here because the
+    // per-prompt block has no room for it.
+    const report = handoffPath(root, data, data.stage);
+    const owed = require('../lib/stages.js').gateReportRule(data.stage, values, report ? posix(path.relative(baseFor(root, data), report)) : null);
+    if (owed) lines.push('', 'gate report: ' + owed);
     if (data.stage === 'build') {
         const hands = handsLines(root, data);
         if (hands) lines.push(...hands);

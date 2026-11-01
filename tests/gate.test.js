@@ -296,13 +296,13 @@ test('stage.agents: a question the controller asked on its own writes nothing, i
   }
 });
 
-test('stage.agents at survey with no handoff yet: the gate hook says why it confirmed nothing', () => {
+test('stage.agents at survey with no handoff yet: the gate is refused until the stage agent returns its path', () => {
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
   agentsOn(root);
   const out = JSON.parse(run(GATE, root, { tool_input: askOf(QUESTIONS) }));
-  assert.match(out.systemMessage, /^fankeel: gate not confirmed — .*survey\.md does not exist yet/);
-  assert.equal(out.hookSpecificOutput, undefined);
+  assert.equal(out.hookSpecificOutput.permissionDecision, 'deny');
+  assert.match(out.hookSpecificOutput.permissionDecisionReason, /survey\.md does not exist\. Wait for the stage agent to return that path/);
 });
 
 test('a brain dispatched for a stage stage.agents does not name: the gate hook says so by name', () => {
@@ -781,11 +781,32 @@ test('a botched copy of the gate is refused with no gateAt, and the copy that go
 // left to say — as a message, never a decision.
 const THIN = [{ question: 'Build -> Verify | fankeel : t　build 做完了，進 verify 嗎？', header: 'Build→Verify', multiSelect: false, options: [{ label: 'Go to Verify (Recommended)', description: 'a' }, { label: 'Stay in Build', description: 'b' }] }];
 const agentsAt = (root, value) => fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': value }));
+// A report whose gate block does not parse: on a controlled stage the gate
+// is then not confirmed, said in a message, rather than refused.
+function brokenReport(root) {
+  const { handoffPath } = require('../lib/handoff.js');
+  const data = readEntry(root, MINE);
+  const file = handoffPath(root, data, data.stage);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const TICKS = '`'.repeat(3);
+  fs.writeFileSync(file, '# report\n\n' + TICKS + 'json gate\nnot json\n' + TICKS + '\n');
+}
+// §6 (docs/90-agent/plans/2026-11-01-professor-ci-tiers-design.md): a stage
+// gate owes its report at the handoff path first.
+function reportFor(root) {
+  const { handoffPath } = require('../lib/handoff.js');
+  const data = readEntry(root, MINE);
+  const file = handoffPath(root, data, data.stage);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const TICKS = '`'.repeat(3);
+  fs.writeFileSync(file, '# report\n\n' + TICKS + 'json gate\n' + JSON.stringify({ questions: QUESTIONS, next: 'n' }) + '\n' + TICKS + '\n');
+}
 
 test('an uncontrolled stage: a two-option gate naming the next stage gets a message and no decision', () => {
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'build', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
   agentsAt(root, 'survey');
+  reportFor(root);
   const out = JSON.parse(run(GATE, root, { tool_input: askOf(THIN) }));
   assert.equal(out.systemMessage, 'fankeel: this gate has 2 options — three at least, never dropping the pause.');
   assert.equal(out.hookSpecificOutput, undefined, 'a message, not a deny');
@@ -796,6 +817,7 @@ test('an uncontrolled stage: three options, or a first option that names no next
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'build', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
   agentsAt(root, 'survey');
+  reportFor(root);
   const three = JSON.parse(JSON.stringify(THIN));
   three[0].options.push({ label: '再做一輪', description: 'c' });
   assert.equal(run(GATE, root, { tool_input: askOf(three) }).trim(), '', 'three options');
@@ -813,12 +835,14 @@ test('an uncontrolled stage: the next stage is matched whatever its case, and th
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'build', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
   agentsAt(root, 'survey');
+  reportFor(root);
   const upper = JSON.parse(JSON.stringify(THIN));
   upper[0].options[0].label = '進 Verify';
   assert.match(JSON.parse(run(GATE, root, { tool_input: askOf(upper) })).hookSpecificOutput.permissionDecisionReason, /questions\[0\]\.options\[0\]\.label/);
   const last = tmp('fankeel-gate-');
   seed(last, MINE, { stage: 'land', route: ['survey', 'build', 'land'], started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
   agentsAt(last, 'survey');
+  reportFor(last);
   const landOf = (label) => {
     const ask = JSON.parse(JSON.stringify(THIN));
     Object.assign(ask[0], { header: 'Land→收工', question: 'Land -> 收工 | fankeel : t　收工？' });
@@ -838,6 +862,7 @@ test('an uncontrolled stage: the option count joins a gate-not-confirmed message
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'build', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-'), inflight: { stage: 'build', at: 1758000000000, agentId: 'b1' } });
   agentsAt(root, 'survey');
+  reportFor(root);
   const out = JSON.parse(run(GATE, root, { tool_input: askOf(THIN) }));
   assert.match(out.systemMessage, /^fankeel: gate not confirmed — .*as the controller wrote it\. fankeel: this gate has 2 options — three at least, never dropping the pause\.$/);
   assert.equal(out.hookSpecificOutput, undefined);
@@ -849,6 +874,7 @@ test('an uncontrolled stage: a gate not in the gate-19 format is denied, naming 
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'plan', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
   agentsAt(root, 'survey');
+  reportFor(root);
   const good = [{ question: 'Plan -> Build | fankeel : t　照這份計畫做？', header: 'Plan→Build', multiSelect: false, options: [{ label: 'Go to Build (Recommended)', description: 'a' }, { label: 'Stay in Plan', description: 'b' }, { label: '暫停', description: 'c' }] }];
   const bad = JSON.parse(JSON.stringify(good));
   bad[0].header = '下一站';
@@ -863,6 +889,7 @@ test('an uncontrolled stage: a one-option gate is denied at the option it lacks,
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'build', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
   agentsAt(root, 'survey');
+  reportFor(root);
   const one = JSON.parse(JSON.stringify(THIN));
   one[0].options.splice(1);
   const out = JSON.parse(run(GATE, root, { tool_input: askOf(one) }));
@@ -874,8 +901,9 @@ test('a controlled stage: the option count is not this check\'s to say', () => {
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'build', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
   agentsAt(root, 'survey,build');
+  brokenReport(root);
   const out = JSON.parse(run(GATE, root, { tool_input: askOf(THIN) }));
-  assert.match(out.systemMessage, /^fankeel: gate not confirmed — .*build\.md does not exist yet\.$/);
+  assert.match(out.systemMessage, /^fankeel: gate not confirmed — .*build\.md holds no readable `json gate` block .*\.$/);
   assert.doesNotMatch(out.systemMessage, /this gate has/);
   assert.equal(out.hookSpecificOutput, undefined);
 });
@@ -892,6 +920,11 @@ const awayRun = (mode, total, over) => {
   return { root, ask };
 };
 const parsed = (out) => (out ? JSON.parse(out) : {});
+const awayAsk = (questions) => {
+  const away = awayRun('ask', 250000);
+  reportFor(away.root);
+  return parsed(away.ask(questions));
+};
 
 test('gate.away hint (the builtin): 250k in play prints a systemMessage naming /compact; 200k and 150k print nothing', () => {
   assert.match(parsed(awayRun(null, 250000).ask(QUESTIONS)).systemMessage, /\/compact/);
@@ -907,8 +940,9 @@ test('gate.away off is silent even at 250k, and hint adds no updatedInput', () =
 test('gate.away hint merges into an existing systemMessage without overwriting it', () => {
   const { root, ask } = awayRun('hint', 250000, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
   fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'gate.away': 'hint', 'stage.agents': 'true' }));
+  brokenReport(root);
   const out = parsed(ask(QUESTIONS));
-  assert.match(out.systemMessage, /^fankeel: gate not confirmed — .*survey\.md does not exist yet.* \/compact/);
+  assert.match(out.systemMessage, /^fankeel: gate not confirmed — .*survey\.md holds no readable `json gate` block.* \/compact/);
 });
 
 const PLAN_Q = QUESTIONS.map((q) => Object.assign({}, q, {
@@ -916,7 +950,7 @@ const PLAN_Q = QUESTIONS.map((q) => Object.assign({}, q, {
   options: [Object.assign({}, q.options[0], { label: 'Go to Plan' }), Object.assign({}, q.options[1], { label: 'Stay in Design' }), ...q.options.slice(2)],
 }));
 test('gate.away ask at 250k returns updatedInput with the 離開 question appended and no permissionDecision', () => {
-  const out = parsed(awayRun('ask', 250000).ask(PLAN_Q));
+  const out = awayAsk(PLAN_Q);
   assert.equal(out.hookSpecificOutput.permissionDecision, undefined);
   const qs = out.hookSpecificOutput.updatedInput.questions;
   assert.equal(qs.length, 2);
@@ -930,7 +964,7 @@ test('gate.away ask at 150k and at exactly 200k adds no question', () => {
 
 test('gate.away ask leaves a gate of four questions alone, but still hints', () => {
   const four = [0, 1, 2, 3].map((i) => (i ? Object.assign({}, PLAN_Q[0], { question: 'q' + i + '?' }) : PLAN_Q[0]));
-  const out = parsed(awayRun('ask', 250000).ask(four));
+  const out = awayAsk(four);
   assert.equal(out.hookSpecificOutput, undefined);
   assert.match(out.systemMessage, /\/compact/);
 });
@@ -947,6 +981,7 @@ test('gate.away ask skips the question when the station already answered', async
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'design', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
   fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'gate.away': 'ask', 'gate.station': 5 }));
+  reportFor(root);
   const transcript = path.join(root, 't.jsonl');
   fs.writeFileSync(transcript, usageRow(250000) + '\n');
   const pending = path.join(taskDir(root), 'design-pending.json');

@@ -11,9 +11,11 @@
 // responding — this pipeline's gate is a tool call, so Stop never fires at one.
 //
 // Same two rules as guard.js: exit 0 on every path, and cost nothing for a
-// session that is not in the mode. It writes a permission decision in two
+// session that is not in the mode. It writes a permission decision in three
 // cases only: a stage agent's gate that AskUserQuestion would reject is
-// denied, naming the field; and a question that looks like an attempted copy
+// denied, naming the field; a stage gate whose report is not at its handoff
+// path with a `json gate` block is denied, so the station's gate page is never
+// blank; and a question that looks like an attempted copy
 // of that gate (headed with the stage's name or the file gate's own first header) but does not match it word for
 // word is denied too, pointing the controller back at the file. Otherwise
 // `updatedInput` alone is not a decision — the probe behind this found that a
@@ -255,6 +257,16 @@ function isGate(mine, questions) {
     return named ? options : null;
 }
 
+// docs/90-agent/plans/2026-11-01-professor-ci-tiers-design.md §6: why a stage
+// gate has no report for the station's gate page, or null. lib/gatereport.js
+// draws that page from the handoff file and its last `json gate` block, so a
+// file with no block is as blank there as no file.
+function reportMissing(file) {
+    let text;
+    try { text = fs.readFileSync(file, 'utf8'); } catch (e) { return file + ' does not exist'; }
+    return /`{3}json gate/.test(text) ? null : file + ' holds no `json gate` block';
+}
+
 function main(raw) {
     const payload = parse(raw);
     if (!payload) return;
@@ -339,6 +351,18 @@ function main(raw) {
                 + '. Write ' + file + ' so every open entry has its line, then ask again.');
             return;
         }
+        // §6: the report first, so the station's gate page has what the user
+        // is about to be asked — controlled or not. Only on the stage's gate
+        // (`isGate`): a question mid-stage owes no report.
+        try {
+            const why = values && file && isGate(mine, payload.tool_input && payload.tool_input.questions) ? reportMissing(file) : null;
+            if (why) {
+                refuse('fankeel: this gate cannot go out — ' + why + '. ' + (controlled
+                    ? 'Wait for the stage agent to return that path, then copy its `json gate` block word for word.'
+                    : 'Write this stage\'s report there, ending in a `json gate` block holding these questions (the station\'s gate page reads it), then ask again.'));
+                return;
+            }
+        } catch (e) { /* housekeeping */ }
         // gate-19: a gate this session typed itself is held to the same format
         // a stage agent's filed gate is (formatProblem, lib/handoff.js).
         try {
