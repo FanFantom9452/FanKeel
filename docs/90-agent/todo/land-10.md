@@ -2,11 +2,16 @@
 label: land
 title: 支援 Gitea 與 CI 專案
 description: 教授的專案放在 Gitea 並跑 CI：land 開 PR 不分 gh/tea、推送後不讀 CI、init 不看 workflow、非 Node 專案沒有測試指令 — [skills/fankeel-land/SKILL.md](skills/fankeel-land/SKILL.md).
-state: blocked
+state: done
 link: skills/fankeel-land/SKILL.md
 group: 教授確認 Gitea 環境
 timing: after: 和教授確認 Gitea 環境（tea 或 API token、CI runner 有無 Chrome、測試指令）
 stamp: 2026-11-01
+done:
+  at: 2026-11-02
+  sha: caeb62dd
+  disposition: done
+  session: 56cbbc34-06e8-4768-a2a1-7741e5d6a847
 ---
 
 來源：2026-10-29 的判官判定（選 A，不加）假設只有使用者一人在用；使用者說之後要把 fankeel 交給教授，教授習慣在 Gitea 上走 CI/CD，判定的「would flip if」成立。同日的 survey 盤點了四個缺口，那份報告在 .fankeel/build 下沒進版控，清單抄在這裡。
@@ -27,3 +32,19 @@ stamp: 2026-11-01
 ## 為什麼還開著
 
 等使用者和教授確認實際的 Gitea 環境：有沒有 `tea` CLI 或 API token、CI runner 有沒有 Chrome、專案用什麼測試指令。這些決定第 1、2、5 點怎麼做，沒有 Gitea 可測時做出來的只是猜測。
+
+## 完成紀錄
+
+專案可以在 .fankeel/suite.json 宣告測試，推送後讀一次 Gitea 或 GitHub 的 CI 結果，init 會從 CI 設定草擬 suite.json. 詳見 [任務紀錄](../records/2026-11.md#r-2026-11-01-56cbbc34)
+
+- commit 06e0061d
+- commit 9dea9b22
+- commit 8afc776d
+- commit 8f9bae01
+- commit f16a10da
+- commit 68906d82
+- commit 98e0932a
+- commit 1d7d3195
+- commit 62a6af9d
+- commit ea52ccfb
+- commit 929eefe6
