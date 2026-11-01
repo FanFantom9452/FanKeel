@@ -9,6 +9,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { parseArgs: parseArgv } = require('node:util');
+const { execFileSync } = require('node:child_process');
 const registry = require('../lib/registry.js');
 const docs = require('../lib/docs.js');
 const plain = require('../lib/plain.js');
@@ -310,6 +311,39 @@ function fileCross(opts) {
     process.stdout.write('filed: ' + rel + '#' + anchor + '\n');
 }
 
+// docs/90-agent/plans/2026-11-01-professor-ci-tiers-design.md §7, after the
+// 2026-11-01 shared-session-state judgement (option A): the state of a stage in
+// progress stays on this machine, but its conclusion goes into version control
+// at the stage change rather than at land. `report` is the handoff file the
+// stage left; it is copied, masked the way a session bundle is, to
+// `<records>/<slug>/<its name>` and committed alone with `git commit -o`, so
+// whatever else is staged stays staged. Never throws: a stage change must not
+// fail over a record. Returns the line `task.js stage` prints, or null when
+// the stage left no report.
+function fileStageReport({ projectRoot, report, slug, stage }) {
+    let text;
+    try { text = fs.readFileSync(report, 'utf8'); } catch (e) { return null; }
+    const list = sensitive.readList(projectRoot);
+    if (list.error) return 'record: not copied — .fankeel/sensitive.txt could not be read (' + list.error + '), so nothing could be masked against it.';
+    const rel = recordsRel(projectRoot) + '/' + slug + '/' + path.basename(report);
+    try {
+        const file = path.join(projectRoot, ...rel.split('/'));
+        fs.mkdirSync(path.dirname(file), { recursive: true });
+        fs.writeFileSync(file, sensitive.redact(text, list.words, {}));
+    } catch (e) {
+        return 'record: not copied — ' + ((e && e.code) || 'write failed') + '.';
+    }
+    const git = (args) => execFileSync('git', ['-C', projectRoot, ...args], { stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8', timeout: 15000, windowsHide: true });
+    try {
+        git(['add', '--', rel]);
+        git(['commit', '-o', '-m', 'docs: ' + slug + ' ' + stage + ' conclusion\n\n- ' + stage + '\'s report, masked — ' + rel, '--', rel]);
+        return 'record: ' + rel + ' committed';
+    } catch (e) {
+        const why = String((e && (e.stderr || e.message)) || e).trim().split(/\r?\n/)[0];
+        return 'record: ' + rel + ' written, not committed — ' + (why || 'git failed') + '.';
+    }
+}
+
 function main(argv) {
     const { values, positionals } = parseArgv({ args: argv, options: OPTIONS, allowPositionals: true });
     const verb = positionals[0];
@@ -322,4 +356,4 @@ function main(argv) {
 
 if (require.main === module) main(process.argv.slice(2));
 
-module.exports = { parse, problems, appendUnder };
+module.exports = { parse, problems, appendUnder, fileStageReport };

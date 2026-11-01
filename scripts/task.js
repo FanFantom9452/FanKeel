@@ -953,6 +953,7 @@ function cmdStage(root, opts) {
     let data = null;
     let from = null;
     let route = null;
+    let leaving = null;
     const wrote = registry.update(root, id, (d) => {
         if (d.active !== true) { refuse = 'No active entry for this session under ' + root; return false; }
 
@@ -976,6 +977,9 @@ function cmdStage(root, opts) {
         // route and liveness checks, so the change and its timestamp are one
         // write. Leaving it to the hook put the boundary at the next prompt
         // instead — minutes later, and the per-stage cost split with it.
+        // The report the stage being left wrote, named before the stamp:
+        // its lap is counted from `moves`, which the stamp extends.
+        if (d.stage && d.stage !== name) leaving = handoffPath(root, d, d.stage);
         registry.stampEntry(d, name);
         // A record from before `checkout`: the worktree this runs in.
         if (!d.checkout) {
@@ -1038,6 +1042,16 @@ function cmdStage(root, opts) {
             line += NL + 'design.md is missing — Write the approved file table to ' + posix(path.relative(baseFor(root, data), shape))
                 + ' before building; build reads its denominator there after a compaction.';
         }
+    }
+    // §7: the stage just left files its conclusion in the records bucket and
+    // commits it alone (scripts/record.js fileStageReport). Said, never
+    // blocking: no git, no repo, a hook that refuses — the stage still changes.
+    if (leaving) {
+        try {
+            const projectRoot = docs.projectRootsFor(root, data.project ? [data.project] : [])[0] || root;
+            const filed = require('./record.js').fileStageReport({ projectRoot, report: leaving, slug: path.basename(path.dirname(leaving)), stage: from });
+            if (filed) line += NL + filed;
+        } catch (e) { /* housekeeping: the stage has changed */ }
     }
     line += NL + effortHint(data.class || classForRoute(route), name);
     // The answer that sent the session here fired `resume.js` while the old stage
