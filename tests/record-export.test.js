@@ -21,10 +21,14 @@ const B = '2026-11-02-bbbbbbbb.jsonl.gz';
 const REPORT = 'recurring: mover commits — 2/2 bundles — evidence: aaaaaaaa turn 3, bbbbbbbb turn 5';
 const sha256 = (buf) => crypto.createHash('sha256').update(buf).digest('hex');
 
-// A bundle the way lib/bundle.js packs one: the head line, then { f, e } rows.
+// A bundle the way lib/bundle.js packs one: the head line, then { f, e } rows,
+// and { f, raw } for a line that did not parse. A path inside JSON held in a
+// string spells the home directory with its backslashes doubled.
 function gz(id) {
     const head = JSON.stringify({ bundle: 1, sessions: [id], files: [id + '.jsonl'], redacted: {} });
     const rows = SPELLINGS.map((p) => JSON.stringify({ f: id + '.jsonl', e: { type: 'user', version: '2.1.0', cwd: SPELLINGS[0], message: { role: 'user', content: 'open ' + p } } }));
+    rows.push(JSON.stringify({ f: id + '.jsonl', e: { type: 'user', message: { role: 'user', content: JSON.stringify({ cwd: SPELLINGS[0] }) } } }));
+    rows.push(JSON.stringify({ f: id + '.jsonl', raw: JSON.stringify({ cwd: SPELLINGS[0] }).slice(0, -1) }));
     return zlib.gzipSync(head + '\n' + rows.join('\n') + '\n');
 }
 
@@ -144,5 +148,79 @@ test('import refuses a bundle whose sha256 is not the manifest\'s, and writes no
     const r = run(other, ['import', bad]);
     assert.equal(r.code, 1);
     assert.match(r.out, /does not match its sha256/);
+    assert.equal(fs.existsSync(path.join(other, '.fankeel')), false);
+});
+
+test('a home directory in package.json or in the cross report is masked in the manifest and report.md too', () => {
+    const s = seed();
+    fs.writeFileSync(path.join(s.root, 'package.json'), JSON.stringify({ name: 'proj', devDependencies: { tool: 'file:' + SPELLINGS[0] } }));
+    const cross = run(s.root, ['retro', '--cross'], 'recurring: cwd ' + SPELLINGS[0] + ' — 1/1 bundles — evidence: aaaaaaaa turn 1');
+    assert.equal(cross.code, 0, cross.out);
+    const r = run(s.root, ['export', '--cross', /#(x-\S+)/.exec(cross.out)[1], '--bundles', 'aaaaaaaa']);
+    assert.equal(r.code, 0, r.out);
+    const got = entries(exported(s.root, r.out));
+    const m = got.get('manifest.json').toString('utf8');
+    assert.equal(JSON.parse(m).packages.devDependencies.tool, 'file:[HOME]' + SPELLINGS[0].slice(HOME.length));
+    const report = got.get('report.md').toString('utf8');
+    assert.ok(report.includes('recurring: cwd [HOME]'), report);
+    assert.ok(!/zedtester/i.test(m + report), 'the manifest or report.md names the home directory');
+});
+
+test('a bundle filed under <records>/sessions is exported like one in .fankeel/bundles', () => {
+    const s = seed();
+    const sessions = path.join(s.root, 'docs', '90-agent', 'records', 'sessions');
+    fs.mkdirSync(sessions, { recursive: true });
+    fs.renameSync(path.join(s.root, '.fankeel', 'bundles', A), path.join(sessions, A));
+    const r = run(s.root, ['export', '--cross', s.anchor, '--bundles', 'aaaaaaaa']);
+    assert.equal(r.code, 0, r.out);
+    assert.deepEqual([...entries(exported(s.root, r.out)).keys()], ['manifest.json', 'report.md', 'bundles/' + A]);
+});
+
+// An export's ZIP passed through `change`, imported into an empty root: the
+// result, and whether anything was written there.
+function importChanged(change) {
+    const s = seed();
+    const zipFile = exported(s.root, run(s.root, ['export', '--cross', s.anchor, '--bundles', 'aaaaaaaa']).out);
+    const bad = path.join(tmp('fankeel-rimp-'), 'bad.zip');
+    fs.writeFileSync(bad, change(fs.readFileSync(zipFile)));
+    const other = tmp('fankeel-rimp-');
+    return { r: run(other, ['import', bad]), wrote: fs.existsSync(path.join(other, '.fankeel')) };
+}
+
+test('import refuses a ZIP with no manifest.json, and writes nothing', () => {
+    const { r, wrote } = importChanged((buf) => zip.write(zip.read(buf).filter((e) => e.name !== 'manifest.json')));
+    assert.equal(r.code, 1);
+    assert.match(r.out, /Nothing written: \S+ holds no export manifest\.json/);
+    assert.equal(wrote, false);
+});
+
+test('import refuses a manifest that names a bundle the ZIP does not hold, and writes nothing', () => {
+    const { r, wrote } = importChanged((buf) => zip.write(zip.read(buf).filter((e) => !e.name.startsWith('bundles/'))));
+    assert.equal(r.code, 1);
+    assert.match(r.out, new RegExp(A.replace(/\./g, '\\.') + ' is missing'));
+    assert.equal(wrote, false);
+});
+
+test('import refuses an entry that fails its CRC check, and writes nothing', () => {
+    const { r, wrote } = importChanged((buf) => {
+        const at = buf.indexOf('recurring: ');
+        assert.ok(at > 0);
+        buf[at] ^= 1;
+        return buf;
+    });
+    assert.equal(r.code, 1);
+    assert.match(r.out, /report\.md fails its CRC check/);
+    assert.equal(wrote, false);
+});
+
+test('import refuses a ZIP whose name leaves no folder under .fankeel/imports/, and writes nothing', () => {
+    const s = seed();
+    const zipFile = exported(s.root, run(s.root, ['export', '--cross', s.anchor, '--bundles', 'aaaaaaaa']).out);
+    const dots = path.join(tmp('fankeel-rimp-'), '...zip');
+    fs.copyFileSync(zipFile, dots);
+    const other = tmp('fankeel-rimp-');
+    const r = run(other, ['import', dots]);
+    assert.equal(r.code, 1);
+    assert.match(r.out, /Nothing written: .*no folder under \.fankeel\/imports\//);
     assert.equal(fs.existsSync(path.join(other, '.fankeel')), false);
 });

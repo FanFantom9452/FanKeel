@@ -349,12 +349,14 @@ function retroBlock(months, id8) {
 
 // os.homedir() as a transcript spells it: native, with forward slashes, and as
 // Git Bash's /c/Users/<name>. Windows paths match in any case; the lookahead
-// keeps C:\Users\ann from matching inside C:\Users\anna.
+// keeps C:\Users\ann from matching inside C:\Users\anna. A backslash matches a
+// run of them: JSON held in a string, and a { f, raw } row's line, spell
+// C:\Users\ann as C:\\Users\\ann, or C:\\\\Users\\\\ann once more inside.
 function homePattern(home) {
     const forms = new Set([home, home.split('\\').join('/')]);
     const drive = /^([A-Za-z]):[\\/](.*)$/.exec(home);
     if (drive) forms.add('/' + drive[1].toLowerCase() + '/' + drive[2].split('\\').join('/'));
-    const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').split('\\\\').join('\\\\+');
     const alts = [...forms].sort((a, b) => b.length - a.length).map(esc).join('|');
     return new RegExp('(?:' + alts + ')(?![\\w.-])', process.platform === 'win32' ? 'gi' : 'g');
 }
@@ -437,6 +439,8 @@ function exportZip(opts, cross) {
     }
     if (missing.length) fail('Nothing written: not found — ' + missing.join(', ') + '.');
     const re = opts['keep-home'] ? null : homePattern(os.homedir());
+    // The manifest and report.md too, so homeMasked speaks for the whole ZIP.
+    const mask = (s) => (re ? s.replace(re, '[HOME]') : s);
     const months = monthsText(recordsDir);
     const versions = new Set();
     const bundles = [];
@@ -446,7 +450,7 @@ function exportZip(opts, cross) {
         for (const v of masked.versions) versions.add(v);
         bundles.push({ id8: b.id8, name: path.basename(b.file), gz: masked.gz });
     }
-    const text = [report.trim(), ...bundles.map((b) => '## retro ' + b.id8 + '\n\n' + (retroBlock(months, b.id8) || '（月檔裡沒有這個包的 retro）'))].join('\n\n') + '\n';
+    const text = mask([report.trim(), ...bundles.map((b) => '## retro ' + b.id8 + '\n\n' + (retroBlock(months, b.id8) || '（月檔裡沒有這個包的 retro）'))].join('\n\n') + '\n');
     const working = readJson(path.join(root, 'package.json'));
     const installed = readJson(path.join(__dirname, '..', 'package.json')) || {};
     const project = readJson(path.join(projectRoot, 'package.json')) || {};
@@ -469,7 +473,7 @@ function exportZip(opts, cross) {
     if (opts['global-packages']) manifest.globalPackages = globalPackages();
     manifest.bundles = bundles.map((b) => ({ name: b.name, bytes: b.gz.length, sha256: sha256(b.gz) }));
     const body = zip.write([
-        { name: 'manifest.json', data: Buffer.from(JSON.stringify(sensitive.redact(manifest, list.words, {}), null, 2) + '\n') },
+        { name: 'manifest.json', data: Buffer.from(JSON.stringify(sensitive.redact(mapStrings(manifest, mask), list.words, {}), null, 2) + '\n') },
         { name: 'report.md', data: Buffer.from(text) },
         ...bundles.map((b) => ({ name: 'bundles/' + b.name, data: b.gz })),
     ]);
@@ -499,6 +503,9 @@ function importZip(opts, zipFile) {
         else if (sha256(data) !== b.sha256) bad.push(b.name + ' does not match its sha256');
     }
     if (bad.length) fail('Nothing written: ' + bad.join('; ') + '.');
+    // `...zip` leaves `..`, which would put manifest.json in .fankeel/ itself.
+    const stem = path.basename(zipFile).replace(/\.zip$/i, '');
+    if (/^\.*$|[\\/]/.test(stem)) fail('Nothing written: ' + JSON.stringify(path.basename(zipFile)) + ' leaves no folder under .fankeel/imports/ to file it in; rename it, e.g. retro-<date>.zip.');
     registry.ensureIgnored(projectRoot, ['bundles/', 'imports/']);
     const dir = path.join(projectRoot, '.fankeel', 'bundles');
     fs.mkdirSync(dir, { recursive: true });
@@ -510,7 +517,6 @@ function importZip(opts, zipFile) {
         fs.writeFileSync(target, byName.get('bundles/' + b.name));
         written.push(b.name);
     }
-    const stem = path.basename(zipFile).replace(/\.zip$/i, '');
     const into = path.join(projectRoot, '.fankeel', 'imports', stem);
     fs.mkdirSync(into, { recursive: true });
     fs.writeFileSync(path.join(into, 'manifest.json'), byName.get('manifest.json'));
