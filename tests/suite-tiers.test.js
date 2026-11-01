@@ -82,3 +82,74 @@ test('blocker: a daily tier with no record is a suite to run; a suite.json that 
   const nightlyOnly = project({ nightly: [{ dir: '.', run: OK }] });
   assert.equal(suite.blocker(nightlyOnly, DATA, nightlyOnly), null);
 });
+
+const registry = require('../lib/registry.js');
+const { main } = require('../scripts/suite.js');
+
+// spec 2026-11-01 證明完成: a project with only .fankeel/suite.json said `no test command`.
+test('suite.js on a project with only .fankeel/suite.json runs daily and reports red naming the red entry', () => {
+  const dir = project({ daily: [{ dir: 'a', run: MARK }, { dir: 'b', run: RED }] }, ['a', 'b']);
+  registry.writeSession(dir, 'abcdef0201', { ...DATA });
+  const r = main(['--session', 'abcdef0201', '--root', dir]);
+  assert.equal(r.ok, false, r.text);
+  assert.match(r.text, /^suite: red @ (no repo|[0-9a-f]{8}) — red at b: node -e "process\.exit\(1\)"$/);
+  assert.ok(fs.existsSync(path.join(dir, 'a', 'ran')), 'a did not run first, in a/');
+  const rec = suite.readRecord(dir, DATA);
+  assert.equal(rec.ok, false);
+  assert.equal(rec.command, '.fankeel/suite.json daily');
+  assert.deepEqual(rec.redAt, { dir: 'b', run: RED });
+});
+
+test('--fast with a daily tier runs it and records fast: true, with no word about test:fast', () => {
+  const dir = project({ daily: [{ dir: 'a', run: OK }] }, ['a']);
+  registry.writeSession(dir, 'abcdef0202', { ...DATA });
+  const r = main(['--session', 'abcdef0202', '--root', dir, '--fast']);
+  assert.equal(r.ok, true, r.text);
+  assert.match(r.text, /^suite: ok @ (no repo|[0-9a-f]{8})$/);
+  assert.equal(suite.readRecord(dir, DATA).fast, true);
+  assert.match(suite.blocker(dir, DATA, dir), /^suite ran the fast set/);
+});
+
+test('--command wins over .fankeel/suite.json, even one that does not parse', () => {
+  const dir = project('{');
+  registry.writeSession(dir, 'abcdef0203', { ...DATA });
+  const r = main(['--session', 'abcdef0203', '--root', dir, '--command', OK]);
+  assert.equal(r.ok, true, r.text);
+  assert.equal(suite.readRecord(dir, DATA).command, OK);
+});
+
+test('a .fankeel/suite.json that does not parse is refused by name and nothing is recorded', () => {
+  const dir = project('{');
+  registry.writeSession(dir, 'abcdef0204', { ...DATA });
+  const r = main(['--session', 'abcdef0204', '--root', dir]);
+  assert.equal(r.ok, false);
+  assert.equal(r.text, 'suite: .fankeel/suite.json does not parse — fix it or pass --command "<cmd>".');
+  assert.equal(suite.readRecord(dir, DATA), null);
+});
+
+test('an empty daily tier leaves package.json in charge, as with no suite.json', () => {
+  const dir = project({ nightly: [{ dir: '.', run: RED }] });
+  fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ name: 'x', scripts: { test: OK } }));
+  registry.writeSession(dir, 'abcdef0205', { ...DATA });
+  const r = main(['--session', 'abcdef0205', '--root', dir]);
+  assert.equal(r.ok, true, r.text);
+  assert.equal(suite.readRecord(dir, DATA).command, OK);
+});
+
+test('--nightly runs the nightly tier in --tree with no session and records nothing', () => {
+  const dir = project({ daily: [{ dir: 'a', run: RED }], nightly: [{ dir: 'a', run: OK }, { dir: 'n', run: RED }] }, ['a', 'n']);
+  const r = main(['--nightly', '--tree', dir]);
+  assert.equal(r.ok, false, r.text);
+  assert.match(r.text, /^suite: red @ (no repo|[0-9a-f]{8}) — red at n: node -e "process\.exit\(1\)" \(nightly: not recorded\)$/);
+  assert.ok(!fs.existsSync(path.join(dir, '.fankeel', 'build')), 'nightly wrote a record');
+});
+
+test('--nightly needs a suite.json with a nightly tier, and --command still wins', () => {
+  const none = tmp('fankeel-tiers-');
+  assert.deepEqual(main(['--nightly', '--tree', none]), { text: 'suite: --nightly needs .fankeel/suite.json in ' + none, ok: false });
+  const daily = project({ daily: [{ dir: '.', run: OK }] });
+  assert.deepEqual(main(['--nightly', '--tree', daily]), { text: 'suite: .fankeel/suite.json has no nightly entries', ok: false });
+  const r = main(['--nightly', '--tree', none, '--command', OK]);
+  assert.equal(r.ok, true, r.text);
+  assert.match(r.text, / \(nightly: not recorded\)$/);
+});

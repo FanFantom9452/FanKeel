@@ -4,6 +4,7 @@
 // without the tests named @slow — and record it for `task.js land`.
 //
 //   node scripts/suite.js --session <id> [--command "<test command>"] [--root <dir>] [--tree <dir>] [--check] [--fast] [--coverage]
+//   node scripts/suite.js --nightly [--tree <dir>] [--command "<test command>"]
 //
 // Prints one line — `suite: <pass> pass, <fail> fail @ <sha8>`, or `suite: ok @ <sha8>`
 // / `suite: red @ <sha8>` for a runner that is not node --test — writes
@@ -26,6 +27,13 @@
 // lock while another suite.js holds it, keeps that lock's `out` fresh while its
 // suite prints, and gives its command
 // FANKEEL_SUITE_HELD so a suite.js inside that run takes no lock.
+// A tree holding .fankeel/suite.json with a non-empty `daily` (lib/suite.js
+// declared) runs that tier instead of package.json's test or test:fast: each
+// entry in order with its dir as cwd, red at the first red entry, which the line
+// names as ` — red at <dir>: <run>`. --fast runs the same tier and still records
+// fast: true; --command still wins; a file that does not parse is refused.
+// --nightly runs the `nightly` tier for a CI schedule: no session, no record,
+// in --tree or else the working directory.
 const fs = require('node:fs');
 const path = require('node:path');
 const { parseArgs } = require('node:util');
@@ -47,11 +55,62 @@ function waitLine(h, file, stuck, now = Date.now()) {
     return 'suite: waiting — pid ' + h.pid + (h.session ? ' (session ' + h.session + ')' : '') + ' has run the suite in ' + (h.tree || '?') + ' since ' + since + printed + '; lock ' + file;
 }
 
+const DAILY = '.fankeel/suite.json daily';
+const NIGHTLY = '.fankeel/suite.json nightly';
+
+// Run fn under lib/suitelock.js's machine-wide lock — unless FANKEEL_SUITE_HELD
+// says the suite that spawned this one holds it — with the env and lock that
+// runSuite takes. A lock left behind is cleared once this pid is gone; losing
+// the record of a suite that already ran is worse, so a failed release is said
+// and not thrown.
+function withLock(owner, fn) {
+    const lockAt = lock.lockFile();
+    const held = process.env.FANKEEL_SUITE_HELD === lockAt ? null
+        : lock.acquire({ file: lockAt, owner, onWait: (h, stuck) => process.stdout.write(waitLine(h, lockAt, stuck) + '\n') });
+    try {
+        return fn({ FANKEEL_SUITE_HELD: lockAt }, held ? { file: lockAt, pid: held.pid, at: held.at } : null);
+    } finally {
+        try { if (held) held.release(); } catch (e) { process.stderr.write('suite: could not remove the lock ' + lockAt + ' (' + e.code + ')\n'); }
+    }
+}
+
+// The run's one line: node --test's totals where it gave them, else ok or red;
+// for a suite.json tier, the entry that was red.
+function lineOf(result) {
+    const sha = result.sha ? result.sha.slice(0, 8) : 'no repo';
+    const head = result.pass != null
+        ? 'suite: ' + result.pass + ' pass, ' + result.fail + ' fail @ ' + sha
+        : 'suite: ' + (result.ok ? 'ok' : 'red') + ' @ ' + sha;
+    return head + (result.redAt ? ' — red at ' + result.redAt.dir + ': ' + result.redAt.run : '');
+}
+
+// --nightly: the nightly tier of .fankeel/suite.json, for a CI schedule
+// (group B's assets/ci/nightly.yml). It needs no session and writes no record —
+// land judges the daily tier — and runs in --tree, else the working directory.
+// --command still wins over the file.
+function nightly(values) {
+    if (values.tree !== undefined && typeof values.tree !== 'string') return { text: 'suite: --tree needs a directory.', ok: false };
+    const tree = path.resolve(values.tree || process.cwd());
+    if (!fs.existsSync(tree)) return { text: 'suite: --tree ' + values.tree + ' does not exist', ok: false };
+    let decl = null;
+    if (!values.command) {
+        decl = suite.declared(tree);
+        if (!decl) return { text: 'suite: --nightly needs .fankeel/suite.json in ' + tree, ok: false };
+        if (decl.error) return { text: 'suite: ' + decl.error, ok: false };
+        if (!decl.nightly.length) return { text: 'suite: .fankeel/suite.json has no nightly entries', ok: false };
+    }
+    const result = withLock({ tree, command: values.command || NIGHTLY }, (env, held) => (decl
+        ? suite.runDeclared(tree, 'nightly', decl.nightly, env, { lock: held })
+        : suite.runSuite(tree, values.command, env, { lock: held })));
+    return { text: lineOf(result) + ' (nightly: not recorded)', ok: result.ok };
+}
+
 function main(argv) {
     const { values } = parseArgs({
         args: argv, strict: false,
-        options: { session: { type: 'string' }, command: { type: 'string' }, root: { type: 'string' }, tree: { type: 'string' }, check: { type: 'boolean' }, fast: { type: 'boolean' }, coverage: { type: 'boolean' } },
+        options: { session: { type: 'string' }, command: { type: 'string' }, root: { type: 'string' }, tree: { type: 'string' }, check: { type: 'boolean' }, fast: { type: 'boolean' }, coverage: { type: 'boolean' }, nightly: { type: 'boolean' } },
     });
+    if (values.nightly) return nightly(values);
     if (!values.session) return { text: 'suite: --session <id> is required.', ok: false };
     if (values.tree !== undefined && typeof values.tree !== 'string') return { text: 'suite: --tree needs a directory.', ok: false };
     const root = registry.resolveRoot(values.root || undefined);
@@ -71,38 +130,33 @@ function main(argv) {
     if (given && !suite.sameRepo(given, projectRoot)) return { text: 'suite: --tree ' + values.tree + ' is not a checkout of ' + projectRoot, ok: false };
     const tree = given || suite.treeFor(root, data, projectRoot);
     if (!given && wt && !fs.existsSync(tree)) return { text: 'suite: ' + wt.path + ' is not a worktree any more', ok: false };
-    const fastCmd = values.fast && !values.command ? suite.testCommand(tree, 'test:fast') : null;
+    // --command wins, so the file is not even read under it.
+    const decl = values.command ? null : suite.declared(tree);
+    if (decl && decl.error) return { text: 'suite: ' + decl.error + ' — fix it or pass --command "<cmd>".', ok: false };
+    const tiered = Boolean(decl && decl.daily.length);
+    const fastCmd = values.fast && !values.command && !tiered ? suite.testCommand(tree, 'test:fast') : null;
     if (fastCmd && fastCmd.error) return { text: 'suite: ' + fastCmd.error + ' — fix it or pass --command "<cmd>".', ok: false };
     const fast = typeof fastCmd === 'string';
-    const found = values.command || fast ? null : suite.testCommand(tree);
+    const found = values.command || fast || tiered ? null : suite.testCommand(tree);
     if (found && found.error) return { text: 'suite: ' + found.error + ' — fix it or pass --command "<cmd>".', ok: false };
     const command = values.command || fastCmd || found;
-    if (!command) return { text: 'suite: no test command — package.json has no scripts.test; pass --command "<cmd>".', ok: false };
-    const lockAt = lock.lockFile();
-    const held = process.env.FANKEEL_SUITE_HELD === lockAt ? null
-        : lock.acquire({ file: lockAt, owner: { session: values.session, tree, command }, onWait: (h, stuck) => process.stdout.write(waitLine(h, lockAt, stuck) + '\n') });
-    let result;
-    try {
-        const env = { FANKEEL_SUITE_HELD: lockAt };
-        const opts = { lock: held ? { file: lockAt, pid: held.pid, at: held.at } : null, coverage: values.coverage ? suite.coverageFiles(registry.claimsOf(data)) : null };
-        result = suite.retryOnce(tree, suite.runSuite(tree, command, env, opts), env, opts);
-    } finally {
-        // A lock left behind is cleared once this pid is gone; losing the record of a
-        // suite that already ran is worse, so a failed release is said and not thrown.
-        try { if (held) held.release(); } catch (e) { process.stderr.write('suite: could not remove the lock ' + lockAt + ' (' + e.code + ')\n'); }
-    }
-    if (fast) result.fast = true;
+    if (!command && !tiered) return { text: 'suite: no test command — package.json has no scripts.test; pass --command "<cmd>".', ok: false };
+    const coverage = values.coverage ? suite.coverageFiles(registry.claimsOf(data)) : null;
+    const result = withLock({ session: values.session, tree, command: command || DAILY }, (env, held) => {
+        const opts = { lock: held, coverage };
+        return tiered
+            ? suite.runDeclared(tree, 'daily', decl.daily, env, opts)
+            : suite.retryOnce(tree, suite.runSuite(tree, command, env, opts), env, opts);
+    });
+    // spec §1: --fast over a tier runs daily and still records fast, so land's check is unchanged.
+    if (fast || (values.fast && tiered)) result.fast = true;
     if (given) result.tree = given;
     const file = suite.record(root, data, result);
-    const sha = result.sha ? result.sha.slice(0, 8) : 'no repo';
-    const line = result.pass != null
-        ? 'suite: ' + result.pass + ' pass, ' + result.fail + ' fail @ ' + sha
-        : 'suite: ' + (result.ok ? 'ok' : 'red') + ' @ ' + sha;
     const retried = result.retried ? ' — retried ' + result.retriedFile + ' alone, passed: ' + result.retried.join('; ') : '';
-    const noFast = values.fast && !values.command && !fast ? ' (no test:fast script — ran the whole suite)' : '';
+    const noFast = values.fast && !values.command && !fast && !tiered ? ' (no test:fast script — ran the whole suite)' : '';
     const tap = file && !result.ok && fs.existsSync(suite.tapPath(file)) ? ' — TAP: ' + suite.tapPath(file) : '';
     const cov = result.coverage ? ' — coverage: ' + Object.keys(result.coverage).length + ' files in ' + file : values.coverage ? ' — coverage: none (no claimed .js, or no table)' : '';
-    return { text: line + retried + noFast + tap + cov + (file ? '' : ' (not recorded: the entry has no started stamp)'), ok: result.ok };
+    return { text: lineOf(result) + retried + noFast + tap + cov + (file ? '' : ' (not recorded: the entry has no started stamp)'), ok: result.ok };
 }
 
 if (require.main === module) {

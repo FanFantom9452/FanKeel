@@ -36,6 +36,16 @@ Build and verify run `node scripts/suite.js --session <id> --fast`, which
 records `fast: true`; land runs `suite.js` without it, and both its `--check`
 and `task.js land` refuse a fast record.
 
+A project whose tests run in more than one directory declares them in
+`.fankeel/suite.json` — `{ "daily": [{ "dir": "apps/api", "run": "npm test" }], "nightly": [ … ] }`.
+With a non-empty `daily`, `suite.js` runs that tier instead of package.json's
+`test`: each entry in order with its `dir` as working directory, stopping at the
+first red one, which the line names (`— red at <dir>: <run>`). `--fast` runs the
+same tier and still records `fast: true`; `--command` still wins; a file that
+does not parse is refused by name. `suite.js --nightly` runs the `nightly` tier
+for a CI schedule, needs no `--session`, and records nothing. With no
+`.fankeel/suite.json`, or an empty `daily`, nothing above changes.
+
 A run that is red in exactly one test file is not the end of it: `suite.js` runs
 that one file again, alone, and when it passes the record is green with
 `retried` (the test names) and `retriedFile`; the line reads
