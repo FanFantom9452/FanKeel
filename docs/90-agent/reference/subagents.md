@@ -602,7 +602,7 @@ empty list is refused with, in the shape every other bad profile value takes
 (`lib/profile.js:212`, `'stage.agents is one of: false, true, all, or a comma-separated list of: '`).
 `controlling()` and `controlFor()` in `lib/stages.js` read that array
 straight off the profile's `values` rather than off a fixed list only that
-file could change (`lib/stages.js:737`, `const raw = values && values['stage.agents'];`),
+file could change (`lib/stages.js:750`, `const raw = values && values['stage.agents'];`),
 so which stages are controlled is a profile answer, not a constant. Put a
 stage on that list and it is run by a stage agent instead of by the session:
 
@@ -785,7 +785,7 @@ newest 40, dropping an exact duplicate and replacing a fact read again at a
 new sha. `context.js show` marks a line whose sha is not HEAD `(舊)`. The
 ordinary brief inlines the file's content — `renderBrief` and `renderBrainBrief`
 in `lib/render.js` paste it in whole under `BRIEF_MAX`; over it `fit()` keeps the
-newest facts and names the file for the rest (`lib/render.js:780`, `' older ' + (n === 1 ? 'fact' : 'facts')`) — so a
+newest facts and names the file for the rest (`lib/render.js:806`, `' older ' + (n === 1 ? 'fact' : 'facts')`) — so a
 subagent no longer has to `Read` the file itself before using what it holds.
 Every stage and every dispatched agent writes its verified facts there.
 
@@ -875,10 +875,10 @@ Setting the key prints what it costs: the estimated tokens the injected line
 adds per prompt, and each stage's remaining room under the reference-root
 2400-character cap with the profile as it now reads — a warning, never a
 refusal, since the cap belongs to the tests and the sentence belongs to the
-user (`scripts/task.js:1268`, `set anyway; this is a warning, not a refusal`)
+user (`scripts/task.js:1295`, `set anyway; this is a warning, not a refusal`)
 — computed in `cmdProfile`'s `set` branch off `input-check.js`'s
 `estimateTokens` and `lib/render.js`'s `blockSizes`
-(`scripts/task.js:1261`, `const n = estimateTokens('\n  - ' + out.value);`).
+(`scripts/task.js:1288`, `const n = estimateTokens('\n  - ' + out.value);`).
 
 ## What a controlled `build` and `verify` were run through
 
