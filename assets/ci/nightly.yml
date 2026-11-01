@@ -1,0 +1,32 @@
+# fankeel's nightly tier as a Gitea Actions workflow — a template.
+#
+# fankeel never writes this file into a project. Copy it to
+# .gitea/workflows/nightly.yml yourself, then add the install steps your daily
+# workflow already has (setup-python, poetry install, npm ci, browsers) where
+# the comment below says. `suite.js --nightly` runs every `nightly` entry of
+# .fankeel/suite.json in order, each in its own `dir`, stops at the first red
+# one, needs no fankeel session and writes no record.
+name: Nightly
+
+on:
+  schedule:
+    - cron: "0 18 * * *"   # 18:00 UTC = 02:00 Asia/Taipei
+  workflow_dispatch:
+
+jobs:
+  nightly:
+    name: Nightly tier
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Fetch fankeel
+        run: git clone --depth 1 https://github.com/FanFantom9452/FanKeel.git "$RUNNER_TEMP/fankeel"
+      # Add this project's install steps here, copied from its daily workflow.
+      - name: Run the nightly tier
+        run: node "$RUNNER_TEMP/fankeel/scripts/suite.js" --nightly
