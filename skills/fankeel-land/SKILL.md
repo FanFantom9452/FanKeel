@@ -407,8 +407,19 @@ sweeps them (`residue.js --sweep`): it removes a clean spent worktree, runs
 touched in two hours, any branch holding commits HEAD lacks.
 Only what the sweep kept gets `git branch -D <name>` by hand.
 
-**PR:** push, open it against the base, report the URL. **Keep the worktree** —
-PR feedback gets fixed there.
+**PR:** push, then open it against the base by the origin's host
+(`git remote get-url origin`): `github.com` → `gh pr create --base <base> --head <branch> --fill`;
+any other host is Gitea → `tea pulls create --base <base> --head <branch> --title "<subject>"`
+when `tea` is on PATH, else print
+`https://<host>/<owner>/<repo>/compare/<base>...<branch>` for the user to open.
+Report the URL. **Keep the worktree** — PR feedback gets fixed there.
+
+**After any push** — a PR, or a merge the profile pushes — run
+`node <plugin>/scripts/ci-status.js <sha>` once, `<sha>` the commit pushed. It
+prints one line, `ci: success`, `failure`, `pending`, `none` or
+`unknown <Actions URL>`, and exits 0: it never waits, and land never stops on it.
+A Gitea origin reads `GITEA_TOKEN`, else `git credential fill` for that host;
+neither is written or printed.
 
 **Keep:** say where the branch and worktree are.
 
@@ -437,13 +448,14 @@ inlined in your brief.
 花費: <from record.js>
 還剩什麼: <what is left>
 suite: <suite.js line>
+ci: <ci-status.js line, after a push>
 紀錄: <filed: line>
 then AskUserQuestion
 ```
 
 The report above the gate is the commit line, the six lines as `record.js`
-printed them (step 2.0), `suite:` from step 1, and `紀錄:` with the `filed:`
-value. `做了什麼:` is one line per thing someone can now do that they could not,
+printed them (step 2.0), `suite:` from step 1, `ci:` from step 7 when this
+land pushed; no push, no line, and `紀錄:` with the `filed:` value. `做了什麼:` is one line per thing someone can now do that they could not,
 not a tour of the diff. Option one's
 description names the month file and anchor.
 
