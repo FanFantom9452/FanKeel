@@ -179,7 +179,7 @@ only when this session holds the file too:
   that both reached it cannot block each other into a stalemate.
 
 A task never blocking itself is a separate mechanism, and it runs before
-`blockers()` ever sees the other side: `hooks/guard.js:188` filters `others`
+`blockers()` ever sees the other side: `hooks/guard.js:195` filters `others`
 down to entries whose `sessionId` is not this one's, so every rule above is
 already between *sessions* by the time it runs. A subagent inherits its
 parent's session id, so two implementers dispatched by one session are
@@ -197,10 +197,10 @@ them at once.
 ## What the guard does not watch
 
 The scope guard's collision check is wired to one matcher: `.claude-plugin/plugin.json:126` reads `"matcher": "Edit|Write|NotebookEdit"`.
-Inside it, `hooks/guard.js:185` calls `targetOf(payload)`, which reads only
+Inside it, `hooks/guard.js:192` calls `targetOf(payload)`, which reads only
 `tool_input.file_path` and `tool_input.notebook_path`, and `hooks/guard.js:193` is the whole branch for anything else: `if (!file) return;`.
 The same hook has a second entry, `.claude-plugin/plugin.json:148` `"matcher": "Bash|PowerShell"`, and it stops short of that check:
-`hooks/guard.js:80` `if (shell) {` — where `hooks/guard.js:74` `const shell = SHELL_TOOLS.has(payload.tool_name);` sets it (`SHELL_TOOLS` at `hooks/guard.js:35` also holds `Monitor`, since Claude Code 2.1.314 sends a Monitor's shell command to the Bash matcher) — ends in a `return` of its own, and
+`hooks/guard.js:80` `if (shell) {` — where `hooks/guard.js:74` `const shell = SHELL_TOOLS.has(payload.tool_name);` sets it (`SHELL_TOOLS` at `hooks/guard.js:35` also holds `Monitor`, since Claude Code 2.1.314 sends a Monitor's shell command to the Bash matcher; unobserved: the matcher is still `Bash|PowerShell`, the claim is from the changelog only, and `tests/guard-monitor.test.js` feeds a hand-made Monitor payload) — ends in a `return` of its own, and
 `hooks/guard.js:88` `if (payload.agent_id && readOnlyAgentType(payload.agent_type) && writesFiles(command)) {` denies only when there is an `agent_id` — a session with none, the main thread of an `--agent` session, is not a subagent and passes — and the type is a read-only one and the command writes; one more refusal follows it, for the main thread's writing command while the task's stage is a controlled one ([subagents.md](subagents.md)), and every other call falls through to `emitCommit` and the `return` after it. Both fields are checked because `agent_type` alone is a trap: it is set inside a subagent and on the main thread of an `--agent` session alike, and only `agent_id` tells those two apart — see [subagents.md](subagents.md).
 So a `Bash` or `PowerShell` call never reaches `blockers()` — and on this machine
 that is two tools, not one: Windows hands a subagent a `PowerShell` the collision

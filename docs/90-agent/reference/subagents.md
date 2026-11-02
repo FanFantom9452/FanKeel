@@ -591,7 +591,7 @@ when what you want is a second opinion on something you have already decided.
 Everything above holds with the profile's `stage.agents` at its default,
 `false` — nothing is controlled (`lib/profile.js:61`, `'stage.agents': { values: ['false', 'true', 'all'], builtin: 'false',`).
 `parseStageAgents` in `lib/profile.js` reads the key as one of four forms:
-`false` controls no stage (`lib/profile.js:203`, `if (s === 'false' || s === '') return { value: [] };`);
+`false` controls no stage (`lib/profile.js:210`, `if (s === 'false' || s === '') return { value: [] };`);
 `true` controls `survey` alone — kept for that one meaning rather than "the
 route's first stage" because every existing doc and the 2026-09-20 A/B
 already mean survey by `true` (`lib/profile.js:211`, `if (s === 'true') return { value: ['survey'] };`);
@@ -684,7 +684,7 @@ here (above), so the switch buys nothing. What 2.1.314 did change is that a
 hook matching `Bash` also runs on a Monitor's shell command and can only
 block or ask: `hooks/guard.js` takes `Monitor` as a shell call for its two
 refusals (a read-only agent's write, and the controller's write in a
-controlled stage) and skips its commit scan. Reopen this if the observation
+controlled stage) and skips its commit scan. This routing is unobserved: it comes from the changelog only, `.claude-plugin/plugin.json:148` still matches `Bash|PowerShell`, and `tests/guard-monitor.test.js` feeds a hand-made Monitor payload. Reopen this if the observation
 above finds that a background Bash exit does not start a controller turn.
 
 A stage agent's or a judge's own readers go the other way: each goes out

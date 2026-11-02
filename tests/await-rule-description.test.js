@@ -13,6 +13,6 @@ test('every controlled stage tells the background await to carry a description a
         const rule = rules.find((r) => r.startsWith('After the dispatch, each SendMessage'));
         assert.ok(rule, stage + ': no await rule');
         assert.ok(rule.includes('never poll. '), stage + ': ' + rule);
-        assert.match(rule, /`description` `await: survey stage agent`, no `cd`\.$/, stage + ': ' + rule);
+        assert.ok(rule.endsWith("`description` `await: " + stage + " stage agent`, no `cd`."), stage + ": " + rule);
     }
 });

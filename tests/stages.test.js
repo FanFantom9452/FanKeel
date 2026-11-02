@@ -1091,13 +1091,13 @@ test('land may dispatch the retro reviewer, and its skill runs it after every ex
 test('an in-flight mark for the stage says to SendMessage the running agent; one for another stage, or none, says nothing', () => {
   const { controlFor } = require('../lib/stages.js');
   const values = { 'stage.agents': ['survey', 'build'] };
-  const line = (c) => c.rules.find((r) => r.includes('already running'));
+  const line = (c) => c.rules.find((r) => r.includes('is running'));
   const on = controlFor('build', values, {}, { stage: 'build', at: 1, agentId: 'a3f9c2' });
-  assert.equal(line(on), 'A build stage agent is already running (`a3f9c2`): SendMessage it the user\'s new line; wait. Dispatch no other unless SendMessage says it is gone.');
+  assert.equal(line(on), 'A build stage agent is running (`a3f9c2`): SendMessage it the user\'s line; wait. Dispatch no other unless SendMessage says it\'s gone.');
   assert.ok(on.rules.indexOf(line(on)) < on.rules.findIndex((r) => r.startsWith('Dispatch one Agent')), 'the line comes before the dispatch line');
   assert.equal(line(controlFor('build', values, {}, { stage: 'survey', at: 1, agentId: 'a3f9c2' })), undefined);
   assert.equal(line(controlFor('build', values, {})), undefined);
-  assert.match(line(controlFor('survey', values, {}, { stage: 'survey', at: 1 })), /^A survey stage agent is already running: SendMessage/);
+  assert.match(line(controlFor('survey', values, {}, { stage: 'survey', at: 1 })), /^A survey stage agent is running: SendMessage/);
 });
 
 test('the controller is told to copy the handoff\'s own gate verbatim, never a placeholder', () => {
@@ -1138,10 +1138,10 @@ test('build\'s controller block adds the group-parallel dispatch rule; no other 
   const values = { 'stage.agents': ['survey', 'build'] };
   const subs = { ledger: '<plugin>/scripts/ledger.js', await: '<plugin>/scripts/await.js', session: 'sid' };
   const build = controlFor('build', values, subs).rules;
-  assert.ok(build.some((r) => r.includes('Build only: one Agent per ready `<plugin>/scripts/ledger.js groups` group')), build.join('\n'));
-  assert.ok(build.some((r) => r.includes('prompt `build close`, runs the suite and writes the gate')));
+  assert.ok(build.some((r) => r.includes('One Agent per ready `<plugin>/scripts/ledger.js groups` group')), build.join('\n'));
+  assert.ok(build.some((r) => r.includes('prompt `build close`, runs the suite, writes the gate')));
   const survey = controlFor('survey', values, subs).rules;
-  assert.equal(survey.some((r) => r.includes('Build only:')), false);
+  assert.equal(survey.some((r) => r.includes('per ready')), false);
 });
 
 test('two marks for build each get their own SendMessage line, naming their group', () => {
@@ -1149,9 +1149,9 @@ test('two marks for build each get their own SendMessage line, naming their grou
   const values = { 'stage.agents': ['build'] };
   const marks = [{ stage: 'build', at: 1, agentId: 'g1', group: 1 }, { stage: 'build', at: 1, agentId: 'g2', group: 2 }];
   const rules = controlFor('build', values, {}, marks).rules;
-  const lines = rules.filter((r) => r.includes('already running'));
+  const lines = rules.filter((r) => r.includes('is running'));
   assert.equal(lines.length, 2);
-  assert.equal(lines[0], 'A build stage agent is already running for group 1 (`g1`): SendMessage it the user\'s new line; wait. Dispatch no other for that group unless SendMessage says it is gone.');
+  assert.equal(lines[0], 'A build stage agent is running for group 1 (`g1`): SendMessage it the user\'s line; wait. Dispatch no other for that group unless SendMessage says it\'s gone.');
   assert.match(lines[1], /for group 2 \(`g2`\)/);
 });
 
@@ -1216,7 +1216,7 @@ test('a close mark never names a group, even when it carries one', () => {
   const { controlFor } = require('../lib/stages.js');
   const values = { 'stage.agents': ['build'] };
   const rules = controlFor('build', values, {}, [{ stage: 'build', at: 1, agentId: 'c1', group: 3, kind: 'close' }]).rules;
-  assert.equal(rules.find((r) => r.includes('already running')), 'A build stage agent is already running (`c1`): SendMessage it the user\'s new line; wait. Dispatch no other unless SendMessage says it is gone.');
+  assert.equal(rules.find((r) => r.includes('is running')), 'A build stage agent is running (`c1`): SendMessage it the user\'s line; wait. Dispatch no other unless SendMessage says it\'s gone.');
 });
 
 // 2026-10-10 decisions-human: a landed plan writes a decision record only when

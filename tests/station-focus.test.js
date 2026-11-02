@@ -96,7 +96,7 @@ test('focusShell loads the focus script and never station-data.js; any other tab
 // tests/station-shells.test.js machine(): a config dir holding this session's
 // transcript with one background shell, and its output file under a temp dir
 // that withTemp makes os.tmpdir() for the call.
-function shellFixture(active) {
+function shellFixture(active, description) {
     const f = fixture({ active });
     const cfg = path.join(f.root, 'cfg');
     const proj = path.join(cfg, 'projects', 'ws-slug');
@@ -105,7 +105,7 @@ function shellFixture(active) {
     const line = (o) => JSON.stringify(o) + '\n';
     const when = new Date(Date.now() - 60000).toISOString();
     fs.writeFileSync(path.join(proj, SID + '.jsonl'), line({ type: 'assistant', timestamp: when,
-        message: { content: [{ type: 'tool_use', id: 'u1', name: 'Bash', input: { command: 'sleep 60', run_in_background: true } }] } })
+        message: { content: [{ type: 'tool_use', id: 'u1', name: 'Bash', input: Object.assign({ command: 'sleep 60', run_in_background: true }, description ? { description } : {}) }] } })
         + line({ type: 'user', timestamp: when, message: { content: [{ type: 'tool_result', tool_use_id: 'u1', content: 'running in background' }] },
             toolUseResult: { stdout: '', stderr: '', interrupted: false, backgroundTaskId: 'b1' } }));
     const temp = path.join(f.root, 'temp');
@@ -138,12 +138,19 @@ test('focusOf gives an inactive session no shells, even with shells in its trans
 test('an active session\'s shells reach detail.shells and STATION_DETAIL[id].shells', () => {
     const s = shellFixture(true);
     const got = withTemp(s.temp, () => station.focusOf(s.root, SID, {}));
-    const want = [{ id: 'b1', command: 'sleep 60', state: 'running', code: null, startedAt: s.when }];
+    const want = [{ id: 'b1', command: 'sleep 60', label: 'sleep 60', state: 'running', code: null, startedAt: s.when }];
     assert.deepEqual(got.detail.shells, want);
     const box = { window: {} };
     vm.runInNewContext(station.serializeFocus(s.root, got, {}), box);
     // Through JSON: the vm context's arrays are not this realm's, which deepEqual tells apart.
     assert.deepEqual(JSON.parse(JSON.stringify(box.window.STATION_DETAIL[SID].shells)), want);
+});
+
+test('a shell that carries a description shows it as the row label, the command kept apart', () => {
+    const s = shellFixture(true, 'wait for the build');
+    const got = withTemp(s.temp, () => station.focusOf(s.root, SID, {}));
+    assert.equal(got.detail.shells[0].label, 'wait for the build');
+    assert.equal(got.detail.shells[0].command, 'sleep 60');
 });
 
 test('a memo hit reads the shells again: a shell that ended since is shown ended', () => {

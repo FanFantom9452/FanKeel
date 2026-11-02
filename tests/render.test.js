@@ -831,7 +831,7 @@ test('a record carrying an in-flight mark for its stage gets the SendMessage lin
   const on = { values: { 'stage.agents': ['build'] }, sources: {}, unreadable: [] };
   const mine = entry(MINE, { stage: 'build', started: '2026-09-19T09:30:12.345Z', inflight: { stage: 'build', at: 1, agentId: 'a3f9c2' } });
   for (const out of [render({ mine, others: [], now: NOW, root: '/r', profile: on }), renderResume({ mine, profile: on, root: '/r' })]) {
-    assert.ok(out.includes('A build stage agent is already running (`a3f9c2`)'), out);
+    assert.ok(out.includes('A build stage agent is running (`a3f9c2`)'), out);
     assert.ok(sizeAtReference(out) < 2460, 'a controlled build block with the mark is ' + sizeAtReference(out) + ' chars');
   }
 });
