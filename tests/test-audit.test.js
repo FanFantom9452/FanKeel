@@ -162,6 +162,18 @@ test('in a git repository the files come from git, so an ignored test is not rea
     assert.deepEqual(scan(dir).stale, [{ file: 'tests/a.test.js', line: 1, why: './gone.js resolves to nothing' }]);
 });
 
+test('bench/ holds deliberate control copies, so it is skipped with git and without', () => {
+    const files = {
+        'bench/a/pass/x.test.js': "require('./gone.js');\n",
+        'tests/a.test.js': "require('./gone.js');\n",
+    };
+    const plain = project('fankeel-test-audit-bench-', files);
+    assert.deepEqual(scan(plain).stale.map((s) => s.file), ['tests/a.test.js']);
+    const repo = project('fankeel-test-audit-bench-git-', files);
+    execFileSync('git', ['init', '-q', repo]);
+    assert.deepEqual(scan(repo).stale.map((s) => s.file), ['tests/a.test.js']);
+});
+
 test('the CLI on a root that does not exist exits 2 with a stderr line, not a clean zero', () => {
     const dir = path.join(tmp('fankeel-test-audit-missing-'), 'no-such-dir');
     const r = spawnSync(process.execPath, [SCRIPT, '--root', dir], { encoding: 'utf8' });

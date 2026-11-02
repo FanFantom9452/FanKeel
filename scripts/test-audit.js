@@ -10,6 +10,7 @@
 // --cached --others --exclude-standard` when the root is in a repository, and
 // otherwise from a walk that skips `node_modules` and every directory whose
 // name starts with a dot.
+// A top-level bench/ is skipped either way: it is fixture, duplicated on purpose.
 //
 // Stale: a relative `require`/`import` (JS) that resolves to no file, or a
 // Python import of a local module that is not on disk — every relative
@@ -46,6 +47,11 @@ const isDir = (p) => {
     }
 };
 
+// bench/ is fixture (docs/README.md files it so): its control and treatment
+// copies are identical on purpose, tests/bench.test.js compares the two sides,
+// so reading them reported ten duplicates nobody should delete (TODO test-18).
+const SKIP_TOP = new Set(['bench']);
+
 function kindOf(rel) {
     const base = rel.split('/').pop();
     if (base.endsWith('.test.js') || /\.spec\.(?:[cm]?[jt]s|[jt]sx)$/.test(base)) return 'js';
@@ -63,7 +69,7 @@ function walk(root, rel, out) {
     for (const e of entries) {
         const r = rel ? rel + '/' + e.name : e.name;
         if (e.isDirectory()) {
-            if (e.name !== 'node_modules' && !e.name.startsWith('.')) walk(root, r, out);
+            if (e.name !== 'node_modules' && !e.name.startsWith('.') && !(rel === '' && SKIP_TOP.has(e.name))) walk(root, r, out);
         } else if (e.isFile()) {
             out.push(r);
         }
@@ -74,7 +80,7 @@ function walk(root, rel, out) {
 function listFiles(root) {
     const r = spawnSync('git', ['ls-files', '-z', '--cached', '--others', '--exclude-standard'], { cwd: root, encoding: 'utf8', windowsHide: true, maxBuffer: 64 * 1024 * 1024 });
     if (r.error || r.status !== 0) return walk(root, '', []);
-    return r.stdout.split('\0').filter((rel) => rel && !rel.split('/').includes('node_modules') && isFile(path.join(root, rel)));
+    return r.stdout.split('\0').filter((rel) => rel && !rel.split('/').includes('node_modules') && !SKIP_TOP.has(rel.split('/')[0]) && isFile(path.join(root, rel)));
 }
 
 const lineAt = (src, at) => src.slice(0, at).split('\n').length;
