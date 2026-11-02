@@ -224,11 +224,11 @@ an inline copy of the predicate rather than a `hiddenPkeys()` call, because
 that loop is keyed by the raw profiles directory rather than by pkey —
 `write()`'s detail-file loop described below, and `--json`'s own pass
 outside this file
-(`scripts/station.js:1531`, `r.sessions = r.sessions.filter((s) => !hidden.has(s.project ? r.root + '/' + s.project : r.root));`).
+(`scripts/station.js:1530`, `r.sessions = r.sessions.filter((s) => !hidden.has(s.project ? r.root + '/' + s.project : r.root));`).
 There is no trace on
 the page that a project was left out: no count, no note on the footer. `station.js`'s own text
 summary — not the served page — does print how many projects it excluded
-(`scripts/station.js:1639`, `hidden by station.hide`), but names none of
+(`scripts/station.js:1638`, `hidden by station.hide`), but names none of
 them; the terminal is the only place the fact surfaces at all.
 
 The last thing a row holds is the completion record `scripts/record.js write`
