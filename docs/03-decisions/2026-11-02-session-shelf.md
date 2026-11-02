@@ -18,6 +18,17 @@ last_verified: 2026-11-02
 - 讀者要帶 `readAll(root, { shelf: true })` 才會讀架子，不帶時行為和以前一樣。adopt 在本地找不到條目時，會先從架子搬回再接手。
 - 不會自動執行，hook 不會呼叫它。
 
+## 為什麼
+
+- 舊條目塞滿 `.fankeel/sessions/`，每個讀 registry 的畫面都要逐筆讀；但不變式 4 不准刪 session 檔，所以只能搬，不能刪。
+- 放在機器層級而不是 repo 裡，是因為搬出 repo 才能讓 repo 變小，而同一台機器的 station 與週報仍讀得到。
+
+## 放棄了什麼
+
+- 直接刪舊條目：違反不變式 4，也會讓週報和 spend 少算。
+- 壓縮存檔：省空間，但每個讀者都要先解壓。
+- 自動在 hook 裡搬：搬移要比對兩個磁碟，放在每個 prompt 太慢。
+
 ## 沒做的
 
 - `lib/spend.js:120` 還沒帶 `{ shelf: true }`，因為那個檔案被「移除 station tour」的 session 佔著，它的測試先標成 `todo`。`scripts/render.js:263` 的 22.5 註解也是同樣原因沒改。
