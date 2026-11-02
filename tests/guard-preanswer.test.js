@@ -66,6 +66,12 @@ test('each of the four kinds is caught, and ordinary work is not', () => {
     assert.equal(kind('bash -c "rm -rf x"'), 'delete');
     assert.equal(kind('powershell -Command "Remove-Item -Recurse x"'), 'delete');
     assert.equal(kind('cmd /c "del f"'), 'delete');
+    assert.equal(kind('powershell -ExecutionPolicy Bypass -Command "Remove-Item x"'), 'delete');
+    assert.equal(kind('bash --login -c "rm x"'), 'delete');
+    assert.equal(kind('bash --noprofile -c "rm x"'), 'delete');
+    assert.equal(kind('cmd.exe /d /s /c "del f"'), 'delete');
+    assert.equal(kind('bash script.sh'), null);
+    assert.equal(kind('ssh host'), null);
     assert.equal(kind('bash -c "echo hi"'), null);
     assert.equal(kind('npm test'), null);
     assert.equal(kind('node --test tests/guard-preanswer.test.js'), null);
