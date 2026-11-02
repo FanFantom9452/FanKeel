@@ -887,7 +887,7 @@ are one directory spelled two ways; `tests/station-view.test.js` carries both
 fixtures, the one that must merge and the nested root that must not. A nested
 root separates on its own and always did.
 
-`#/` and `#/live` both draw **進行中** now: `assets/station/station.js:948`
+`#/` and `#/live` both draw **進行中** now: `assets/station/station.js:953`
 (`VIEWS.now = function (r) { return w.FK_LIVE.page(S, modOpts()); };`)
 hand both routes to `FK_LIVE` in `assets/station/live-page.js`, described
 below. There is no `OLD.*` fallback, no old 現在 dashboard and no TODO panel
@@ -1061,7 +1061,7 @@ row of its own, and every group's heading says how many such sessions it has
 and how many backward steps between them.
 
 **全部**, `#/sessions`, is `FK_SESSIONS` (`assets/station/sessions-page.js`,
-`assets/station/station.js:950`): a now-strip linking to 進行中, four period
+`assets/station/station.js:955`): a now-strip linking to 進行中, four period
 tiles (今天 / 近 7 天 / 近 30 天 / 全部) that are also the date filter, then one
 card with filters in its head and ten rows a page, sorted on last move, cost
 or elapsed, with the pager and the compare tray in its foot. `recentRows` — a
@@ -1412,7 +1412,7 @@ The station has no 導覽 page. `#/tour`, the films it played (`reel`, `promo30`
 `diagram.js` and `diagram.css`, the vendored `vendor/pele.js` (pele 1.10.0, MIT, pinned by sha256 in
 `tests/station-diagram.test.js`; `vendor/PELE-LICENSE` beside it is not served), and the phone page's `mobile.js` and `mobile.css`.
 `SERVED` takes `diagram.js`, `diagram.css` and `vendor/pele.js` from `station.MODULES`
-(`const MODULES = modulesOf(SHELL)`, `lib/station.js:1213`). Any other name under the station path is a 404, so nothing else in the plugin directory is
+(`const MODULES = modulesOf(SHELL)`, `lib/station.js:1264`). Any other name under the station path is a 404, so nothing else in the plugin directory is
 reachable by url.
 
 The phone station has twelve routes of its own: five for the page, below, four for one session, in the next paragraph, and three for the other computers and the unregistered sessions, in the paragraph after that. `/m` is its page, the shell
