@@ -1,7 +1,7 @@
 ---
 label: worktree
 title: worktree 不放在 repo 裡
-description: Claude Code 的 worktree 預設建在 repo 的 .claude/worktrees/，本機目錄 marketplace 做 plugin update 時會把整個資料夾連同 worktree 一起複製進快取，複製到一半有 worktree 被刪掉就失敗
+description: Claude Code 的 worktree 預設建在 repo 內 .claude 底下的 worktrees 資料夾，本機目錄 marketplace 做 plugin update 時會把整個資料夾連同 worktree 一起複製進快取，複製到一半有 worktree 被刪掉就失敗
 state: ready
 link: .claude/worktrees
 ---
