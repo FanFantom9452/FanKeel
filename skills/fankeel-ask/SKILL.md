@@ -77,8 +77,8 @@ it does not approve it.
    profile show` prints it. Say how many and on which model in the response
    that sends it — one judge, on whatever `judge.model` answered. The judge
    writes a checklist, sends as many `fankeel:fankeel-reader` as `dispatch.inflight` allows
-   in that same response (ask passes `inflight: <value>` in the judge brief
-   beside `judge.model`; the judge decides grouping), related lines to one reader,
+   in that same response (the judge's brief carries `inflight: <value>` (the
+   hook adds it from the profile); the judge decides grouping), related lines to one reader,
    on sonnet, or opus where one figure decides the pick, and returns seven
    fields, `ask human:` last (`nothing` when it asks none), then a `## 白話`
    of at most 600 characters, then a `## Summary` of any length; `delegated:`

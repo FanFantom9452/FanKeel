@@ -37,7 +37,7 @@ const PAGES = {
   },
   'skills/fankeel-ask/SKILL.md': {
     gone: [/plus up to four readers/, /sends at most four `fankeel:fankeel-reader`/, /plus up to eight readers/, /sends at most eight `fankeel:fankeel-reader`/],
-    now: [/plus the readers its profile allows \(`dispatch\.inflight`\)/, /sends as many `fankeel:fankeel-reader` as `dispatch\.inflight` allows/, /passes `inflight: <value>` in the judge brief/],
+    now: [/plus the readers its profile allows \(`dispatch\.inflight`\)/, /sends as many `fankeel:fankeel-reader` as `dispatch\.inflight` allows/, /the judge's brief carries `inflight: <value>` \(the hook adds it from the profile\)/],
   },
   'agents/fankeel-judge.md': {
     gone: [/at most four in that response/, /default four; a fifth/, /at most eight in that response/, /default eight; a ninth/],
@@ -62,7 +62,7 @@ test('the judge pages cap readers by profile, not by a number', () => {
   for (const f of ['agents/fankeel-judge.md', 'skills/fankeel-ask/SKILL.md', 'docs/90-agent/reference/subagents.md']) {
     assert.doesNotMatch(flat(f), cap, f + ' caps the judge readers at a number');
   }
-  assert.match(flat('skills/fankeel-ask/SKILL.md'), /passes `inflight: <value>` in the judge brief/);
+  assert.match(flat('skills/fankeel-ask/SKILL.md'), /the judge's brief carries `inflight: <value>` \(the hook adds it from the profile\)/);
   assert.match(flat('agents/fankeel-judge.md'), /task.js profile show`/);
   assert.match(flat('agents/fankeel-judge.md'), /`unlimited` means no cap/);
 });
