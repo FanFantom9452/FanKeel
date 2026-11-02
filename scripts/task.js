@@ -1124,6 +1124,10 @@ function cmdTask(root, opts) {
         // of them behind is how the set quietly stops agreeing.
         delete d.spend;
         delete d.gateAt;
+        // A pre-answer is this task's, never the next one's
+        // (docs/03-decisions/2026-11-03-preanswered-gate.md).
+        delete d.preanswer;
+        delete d.preanswered;
         const route = normaliseRoute(d.route) || FULL_ROUTE.slice();
         d.route = route;
         d.stage = route[0];
@@ -1390,6 +1394,7 @@ function cmdDown(root, opts) {
         data = d;
         if (d.active !== true) { already = true; return false; }
         d.active = false;
+        delete d.preanswer;
         return true;
     });
     if (!data) fail('No entry for this session under ' + root);
@@ -1758,6 +1763,31 @@ function cmdLand(root, opts) {
     return 'fankeel — land: ' + (landedOn ? 'direct (already on ' + landedOn + ', nothing to merge)' : verb) + (opts.push === true ? ', push' : opts.push === false ? ', no push' : '') + reds;
 }
 
+// docs/03-decisions/2026-11-03-preanswered-gate.md: the answers this task's
+// later gates take while the user is away, one `<stage>=<label>` per stage —
+// the next stage's word (`verify=Land`), or `land=收工`. Written on this
+// record only; hooks/gate.js reads it, lib/guard.js stops PREANSWER_STOPS
+// while it is set, and `task` and `down` clear it.
+function cmdPreanswer(root, opts) {
+    const id = requireSession(opts);
+    const current = registry.readSession(root, id);
+    if (!current || current.active !== true) fail('No active entry for this session under ' + root);
+    const route = normaliseRoute(current.route) || FULL_ROUTE;
+    const answers = {};
+    for (const word of opts.positional) {
+        const at = word.indexOf('=');
+        const stage = at > 0 ? word.slice(0, at).trim().toLowerCase() : '';
+        const label = at > 0 ? word.slice(at + 1).trim() : '';
+        if (!stage || !label) fail('preanswer takes <stage>=<label>, one per stage: ' + word);
+        if (!route.includes(stage)) fail('`' + stage + '` is not on this task\'s route (' + route.join(',') + ').');
+        answers[stage] = label;
+    }
+    if (!Object.keys(answers).length) fail('Give one <stage>=<label> per pre-answered gate, e.g. verify=Land land=收工');
+    if (!registry.setPreanswer(root, id, answers)) fail('Could not write the entry.');
+    return 'fankeel — preanswer: ' + Object.entries(answers).map(([s, l]) => s + '=' + l).join(' ')
+        + NL + 'hard stops while set: ' + registry.PREANSWER_STOPS.join(', ');
+}
+
 // The files this task means to edit, set as `intends` and compared with every
 // live neighbour's effective claims and intends. A plan is read through its
 // Files blocks (Modify and Test); a `-design.md` through its file table. A
@@ -1818,6 +1848,7 @@ const COMMANDS = {
     clear: cmdClear,
     release: cmdRelease,
     land: cmdLand,
+    preanswer: cmdPreanswer,
     intends: cmdIntends,
 };
 
@@ -1841,6 +1872,8 @@ const USAGE = [
     '                                    machine file, --project <dir> picks a project under the root; --confirm lets station.remote true through',
     '  land <merge|pr|keep|direct> [--push|--no-push]',
     '                                    record the integration this task actually took',
+    '  preanswer <stage>=<label>...      this task\'s answers for its later gates; push, deletions,',
+    '                                    land\'s merge and launching programs still ask',
     '  intends <plan-or-design>          the files it names become this task\'s intends;',
     '                                    warn/note per live neighbour already in them',
     '  down                              stand the task down; never deletes',
