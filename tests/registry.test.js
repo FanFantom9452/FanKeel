@@ -214,7 +214,7 @@ test('writing an entry lays down .fankeel/.gitignore so only sessions/ is exclud
   const root = tmpRoot();
   registry.writeSession(root, SID, task());
   const ignore = path.join(root, '.fankeel', '.gitignore');
-  assert.equal(fs.readFileSync(ignore, 'utf8'), 'sessions/\nstation.bat\nstation.sh\n');
+  assert.equal(fs.readFileSync(ignore, 'utf8'), 'sessions/\nstation.bat\nstation.sh\nimports/\n');
 });
 
 test('an existing .fankeel/.gitignore is never overwritten', () => {
@@ -225,7 +225,7 @@ test('an existing .fankeel/.gitignore is never overwritten', () => {
   const ignore = path.join(root, '.fankeel', '.gitignore');
   fs.writeFileSync(ignore, 'sessions/\nscratch/\n');
   registry.writeSession(root, SID, task());
-  assert.equal(fs.readFileSync(ignore, 'utf8'), 'sessions/\nscratch/\nstation.bat\nstation.sh\n');
+  assert.equal(fs.readFileSync(ignore, 'utf8'), 'sessions/\nscratch/\nstation.bat\nstation.sh\nimports/\n');
 });
 
 // lib/launchers.js rides on the layout: every registry gets the two station
@@ -237,7 +237,7 @@ test('ensureLayout writes the station launchers and keeps them out of git', () =
     assert.ok(fs.existsSync(path.join(root, '.fankeel', name)), name);
   }
   assert.equal(fs.readFileSync(path.join(root, '.fankeel', '.gitignore'), 'utf8'),
-    'sessions/\nstation.bat\nstation.sh\n');
+    'sessions/\nstation.bat\nstation.sh\nimports/\n');
 });
 
 // A launcher is a convenience; the session write it rides on is not. A

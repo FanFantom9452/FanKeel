@@ -83,3 +83,19 @@ test('a pre-answer naming the pause option passes: stopping is always safe', () 
     report(root, LAND);
     assert.deepEqual(ask(root, LAND).hookSpecificOutput.updatedInput.answers, { [LAND[0].question]: '暫停' });
 });
+
+test('a two-question gate is asked even with a pre-answer stored', () => {
+    const root = seed(PRE);
+    const two = LAND.concat(LAND);
+    report(root, two);
+    assert.equal(ask(root, two).hookSpecificOutput, undefined);
+    assert.equal(entry(root).preanswered, undefined);
+});
+
+test('a pre-answered gate goes out answered for an away user instead of held', () => {
+    const root = seed(Object.assign({ leavingAt: Date.now() - 1000 }, PRE));
+    report(root, LAND);
+    const out = ask(root, LAND).hookSpecificOutput;
+    assert.equal(out.permissionDecision, 'allow');
+    assert.equal(entry(root).awayAt, undefined);
+});
