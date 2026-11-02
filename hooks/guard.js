@@ -49,7 +49,7 @@ function asksBrief(root, file) {
 // docs/90-agent/plans/2026-09-30-init-design.md §2c: every `git commit` that
 // passes through Claude Code, in a task or not. A regex on the command is all
 // any other shell call pays; git runs only for a commit.
-function emitCommit(root, mine, payload) {
+function emitCommit(root, mine, payload, stop) {
     if (payload.tool_name === 'Monitor') return;
     const command = (payload.tool_input && payload.tool_input.command) || '';
     if (!isCommit(command)) return;
@@ -63,6 +63,8 @@ function emitCommit(root, mine, payload) {
         verdict = commitVerdict({ cwd: payload.cwd || root, command, mode });
     } catch (e) { /* housekeeping: the commit goes ahead unscanned */ }
     if (!verdict) return false;
+    // A warn-mode verdict carries no decision and must not swallow the pre-answer ask: one output holds both.
+    if (stop && !verdict.permissionDecision) verdict = Object.assign({}, verdict, { permissionDecision: 'ask', permissionDecisionReason: stop });
     process.stdout.write(JSON.stringify({ hookSpecificOutput: verdict }));
     return true;
 }
@@ -141,7 +143,7 @@ function main(raw) {
                 return;
             }
         }
-        if (!emitCommit(root, mine, payload) && stop) {
+        if (!emitCommit(root, mine, payload, stop) && stop) {
             process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'ask', permissionDecisionReason: stop } }));
         }
         return;

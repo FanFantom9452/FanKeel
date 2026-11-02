@@ -107,3 +107,18 @@ test('a sensitive-scan verdict on a commit beats the pre-answer ask, chained wit
     assert.match(out.permissionDecisionReason, /plan\.md:1/);
     assert.equal(shell(root, 'git push origin main').hookSpecificOutput.permissionDecision, 'ask');
 });
+
+test('a warn-mode sensitive verdict keeps its warning and does not swallow the pre-answer ask', () => {
+    const root = seed(PRE);
+    const git = (...a) => execFileSync('git', a, { cwd: root, encoding: 'utf8' });
+    git('init', '-q');
+    fs.writeFileSync(path.join(root, '.fankeel', '.gitignore'), 'sessions/\nsensitive.txt\nprofile.json\n');
+    fs.writeFileSync(path.join(root, '.fankeel', 'sensitive.txt'), 'ACME\n');
+    fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'sensitive.mode': 'warn' }));
+    fs.writeFileSync(path.join(root, 'plan.md'), 'ship it to acme\n');
+    git('add', 'plan.md');
+    const out = shell(root, 'git commit -m plan && git push origin main').hookSpecificOutput;
+    assert.equal(out.permissionDecision, 'ask');
+    assert.match(out.permissionDecisionReason, /pre-answered/);
+    assert.match(out.additionalContext, /plan\.md:1/);
+});
