@@ -1,7 +1,7 @@
 ---
 label: judge
 title: 判官 reader 數讀 profile
-description: agents/fankeel-judge.md:31、skills/fankeel-ask/SKILL.md:54/79 寫死 eight；改成讀 dispatch.inflight，由 agent 自己決定哪些組成 workflow、哪些分開成 group
+description: 判官與 fankeel-ask 寫死一次 8 個 reader；改成讀 dispatch.inflight，由 agent 自己決定哪些組成 workflow、哪些分開成 group
 state: ready
 link: agents/fankeel-judge.md
 ---
