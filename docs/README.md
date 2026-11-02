@@ -526,6 +526,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 10-30 第三輪的計畫：#/live 畫回 subagent 列、刪 nav.js 舊 live 死碼、外殼行數上限、knip 6.44.0 重測 | `docs/99-archive/2026-10-30-todo-patrol-3.md` — *built* |
 | 七段流程頁與整體架構圖重畫（11-01）：做了什麼、沒做什麼 | [reports/2026-11-01-project-diagrams.md](90-agent/reports/2026-11-01-project-diagrams.md) — *繁體中文* |
 | 11-01 圖重畫的計畫：seven-stages.html 步驟卡、layout.md 架構 mermaid | `docs/99-archive/2026-11-01-project-diagrams.md` — *built* |
+| 11-02 TODO 全表盤點的計畫：commit.js 清 scratch、sweep 刪孤兒目錄、hand-off 記 HEAD 轉正、test-audit 跳過 bench/ | `docs/99-archive/2026-11-02-todo-patrol.md` — *built, 繁體中文* |
 | 第三輪的 gate／talk 計畫：摺疊、自由輸入、跳回 talk、工具與子 agent 列、頁尾版本 | `docs/99-archive/2026-10-24-station-gate-talk.md` — *built, English* |
 | 第三輪的文件頁與設定頁計畫：FK_DOCS、FK_SETTINGS、FK_SETDETAIL，刪舊精靈 | `docs/99-archive/2026-10-24-station-docs-settings.md` — *built* |
 | 盤點三件（10-21）：做了什麼、沒做什麼 | [reports/2026-10-21-patrol-three.md](90-agent/reports/2026-10-21-patrol-three.md) — *繁體中文* |
@@ -560,6 +561,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | TODO 全表盤點（10-22 第二次）定了什麼、沒做什麼：station 兩個小尾巴收掉，export 檢查進快速測試並認 vm 載入，mockup 五頁看了兩頁定稿，四條結案、七條新開 | [reports/patrols/2026-10-22-todo-patrol-two.md](90-agent/reports/patrols/2026-10-22-todo-patrol-two.md) — *繁體中文* |
 | TODO 全表盤點（10-22 第三次）的 plan：Stop 背景待回、手機重複氣泡、chat.jsonl 鎖、vm 斷言、Tailscale 警告、gate 摺疊、訂閱按鈕、停住的待答、離站沒事實就警告、explain 派 writer，十二個 task | `docs/99-archive/2026-10-22-todo-patrol.md` — *built* |
 | TODO 全表盤點（10-22 第三次）定了什麼、沒做什麼：十個修補落地、九條結案，gate 摺疊等瀏覽器確認，文件頁與設定頁 mockup 定稿只剩移植 | [reports/patrols/2026-10-23-todo-patrol.md](90-agent/reports/patrols/2026-10-23-todo-patrol.md) — *繁體中文* |
+| TODO 全表盤點（11-02）：worktree 殘留修好、hand-off 記 HEAD 轉正、test-audit 跳過 bench/，station 圖移 Watch，集中歸檔另開 | [reports/patrols/2026-11-02-todo-patrol.md](90-agent/reports/patrols/2026-11-02-todo-patrol.md) — *繁體中文* |
 | TODO 全表盤點（10-21 第二次）的 plan：land 結案順序、brain gate 自查、gate-write 帶 id 清單、await 印 questions | `docs/99-archive/2026-10-21-patrol-four.md` — *built, 繁體中文* |
 | Haiku 角色題庫、平行執行器與長任務飄移 2×2 的 design：每角色十二題分三層、`check.sh` 標出失敗類別、`bench.js role` 用 `--jobs` 平行跑、`drift` 量 haiku／sonnet × PostToolUse 重注入 | `docs/99-archive/2026-10-09-haiku-bank-drift-design.md` — *built, 繁體中文* |
 | 那份設計的十二個 task：失敗類別與共用判分、四組題庫、平行執行器、逐步檢查與重注入、報告產生器，以及使用者親手跑的付費批次 | `docs/99-archive/2026-10-09-haiku-bank-drift.md` — *built, 繁體中文* |
@@ -810,6 +812,7 @@ is corrected by the next one, not by rewriting this.
 | 判官題：多人協作時，進行中的 session 狀態要不要進共用層 | [90-agent/judgements/2026-11-01-shared-session-state.md](90-agent/judgements/2026-11-01-shared-session-state.md) — *judged 2026-11-01, fable* |
 | Brief 1 — kg-into-fankeel | [90-agent/judgements/2026-11-01-kg-into-fankeel.md](90-agent/judgements/2026-11-01-kg-into-fankeel.md) — *judged 2026-11-01, fable* |
 | Brief 47 — vercel-labs/agent-desktop: is it any use to fankeel? | [90-agent/judgements/2026-11-01-agent-desktop.md](90-agent/judgements/2026-11-01-agent-desktop.md) — *judged 2026-11-01, fable* |
+| 48 — Claude Code 2.1.316：哪些對 fankeel 有用；ultrathink 能不能帶進 ask skill | [90-agent/judgements/2026-11-02-cc-2-1-316.md](90-agent/judgements/2026-11-02-cc-2-1-316.md) — *judged 2026-11-02, fable* |
 | Brief 48 — googleapis/mcp-toolbox: useful to fankeel's workflow when a project has a database? | [90-agent/judgements/2026-11-02-mcp-toolbox-db.md](90-agent/judgements/2026-11-02-mcp-toolbox-db.md) — *judged 2026-11-02, fable* |
 
 ## The five scanners
