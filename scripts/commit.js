@@ -136,18 +136,18 @@ function commitPaths(git, dir, paths, message) {
     }
 }
 
-// A `worktree <path>` block: commit its paths in that worktree with `commit -o`,
-// then cherry-pick the commit onto this repository's HEAD. A conflict is
-// aborted, so HEAD and the working tree are as they were, and the worktree is
-// kept for the task's re-dispatch. On success the worktree and its branch go;
-// untracked scratch is cleaned first, so only a tracked edit outside the block —
-// or a remove Windows refuses twice — keeps the worktree, and that is said.
 // A worktree remove that Windows refused because a file was still open gets one
 // more try after this long; a second refusal is kept and said.
 const REMOVE_RETRY_MS = 1000;
 function sleepMs(ms) {
     Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 }
+// A `worktree <path>` block: commit its paths in that worktree with `commit -o`,
+// then cherry-pick the commit onto this repository's HEAD. A conflict is
+// aborted, so HEAD and the working tree are as they were, and the worktree is
+// kept for the task's re-dispatch. On success the worktree and its branch go;
+// untracked scratch is cleaned first, so only a tracked edit outside the block —
+// or a remove Windows refuses twice — keeps the worktree, and that is said.
 function landWorktree(top, block, run, oneLine) {
     const wt = path.resolve(top, block.worktree);
     let real = null;
