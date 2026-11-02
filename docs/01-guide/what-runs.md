@@ -47,7 +47,7 @@ source_of_truth: .claude-plugin/plugin.json, hooks/mod.ts, hooks/pane.ts
 
 - **band**：有 task 時在 prompt 上方畫兩行——站名、route 圓點、時間，以及 context 與配額的長條。
 - **Pane**：/fankeel init 時就開、之後不自己關，關閉只靠 `/fankeel-panel`；列出 task、plan 的每個 task、subagent 樹、筆記與 TODO。
-- **compact**：context 到 profile 的 `compact.at`（預設 350k tokens）時自動壓縮。
+- **compact**：context 到 profile 的 `compact.at`（預設 350k tokens）時自動壓縮。Desktop 與 VS Code 上，Claude Code 2.1.314 起會在 200K 以上的對話閒置、cache 過期時先自己壓縮（`/config` 的 Idle compaction 可關），所以 `compact.at` 設 350k 以上時，只在你沒離開時才輪到它。
 
 Claude Desktop 跑的是安裝當下的快照，新版要 `claude plugin update fankeel@fankeel` 之後才看得到。
 

@@ -12,7 +12,7 @@ const { skillFiles, main } = require('../scripts/input-check.js');
 // it is a decision, made by raising it here. One per skill: a shared fallback
 // let the smallest skill grow fifteen-fold unnoticed.
 const CAPS = {
-    'fankeel': 65800,
+    'fankeel': 66100,
     'fankeel-build': 43100,
     'fankeel-survey': 24000,
     'fankeel-land': 25600,

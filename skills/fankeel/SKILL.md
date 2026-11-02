@@ -829,6 +829,8 @@ session's own context, and the session is the thing changing. Say it once when
 the line first appears, and again when its wording hardens. Repeating it every
 turn is nagging, and nagging gets ignored exactly when it stops being nagging.
 
+Claude Code 2.1.314 compacts a 200K+ conversation by itself once idle past the cache expiry (`/config` → Idle compaction), so a `compact.at` of 350000 or more waits its turn, and an account without 1M never reaches it before the host does.
+
 A `gate:` line, in the block that comes back after an answered question, means
 the record carried no `gateAt` when the answer arrived: `hooks/gate.js` did not
 run before the question went out, so `waited` will stay empty for as long as

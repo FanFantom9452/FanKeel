@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-10-21
+last_verified: 2026-11-02
 source_of_truth: lib/profile.js, docs/90-agent/reference/station.md, docs/90-agent/reference/registry.md, scripts/task.js
 ---
 
@@ -63,6 +63,8 @@ profile 是 gate 的常備答案：先寫好，fankeel 就不再問那一題。g
 | `weekly.facets` | 週報卡片的面向詞表與各自的受眾；不設就用預設六個 | 逗號分隔的 名稱:受眾，受眾是 general、both 或 tech | 不設 |
 | `prose.style` | 站 agent 與 writer 寫給人看的文字用哪種風格：writer 先結論再附例子、plain 白話短句、sepia 長短句交錯、custom 讀 .fankeel/prose.md | `writer`、`plain`、`sepia`、`custom`；內建 `writer` | 不設，維持內建 |
 <!-- PROFILE_TABLE:END -->
+
+`compact.at` 不是唯一會壓縮的東西。Claude Code 2.1.314 起，Desktop 與 VS Code 在 200K 以上的對話閒置、prompt cache 過期時，會先用摘要壓縮，可在 `/config` 關掉 Idle compaction；2.1.302 的 auto mode 過長壓縮與 2.1.311 的 200K 壓縮續跑也是外部觸發。所以 `compact.at` 設 `350000` 以上時，只在你沒離開的時候才輪到 fankeel 自己壓；你離開到 cache 過期，由 Claude Code 先壓，時機不由 fankeel 決定。沒有 1M 的帳號，`compact.at` 在 `350000` 以上永遠不會先觸發。要讓 fankeel 決定壓縮的時機，就在 `/config` 關掉 Idle compaction；接受它也可以，代價是離開期間壓縮的內容不由 fankeel 挑。`gate.away` 只在 gate 問到且你答要離開時動作，不替閒置壓縮擋任何事。（[判決](../90-agent/judgements/2026-11-02-cc-2-1-300-316.md)）
 
 `station.remote` 只讀機器層 profile：專案的 `.fankeel/profile.json` 設了也不算數，所以 clone 下來的 repo 沒辦法替你打開手機遠端。2026-10-26 起 fankeel 不再用 ntfy 推播（[判決](../90-agent/judgements/2026-10-26-remove-ntfy.md)），舊的 `notify.*` 鍵與 `station.chartroom` 留在機器 profile 裡不會被讀，想清掉可以手動刪。
 
