@@ -887,7 +887,7 @@ are one directory spelled two ways; `tests/station-view.test.js` carries both
 fixtures, the one that must merge and the nested root that must not. A nested
 root separates on its own and always did.
 
-`#/` and `#/live` both draw **進行中** now: `assets/station/station.js:951`
+`#/` and `#/live` both draw **進行中** now: `assets/station/station.js:948`
 (`VIEWS.now = function (r) { return w.FK_LIVE.page(S, modOpts()); };`)
 hand both routes to `FK_LIVE` in `assets/station/live-page.js`, described
 below. There is no `OLD.*` fallback, no old 現在 dashboard and no TODO panel
@@ -924,16 +924,16 @@ card says so in its head.
 
 The left nav (`navHtml`, `data-block="nav"`) no longer groups its links into
 three loose headings; `NAV_TREE`
-(`assets/station/station.js:376`, `var NAV_TREE = [`) defines six ordered
+(`assets/station/station.js:375`, `var NAV_TREE = [`) defines six ordered
 entries instead, one level with no folds. 現在 is a single link, `#/`.
 Sessions links to `#/sessions` and carries four kids: 進行中 `#/live`, 最近 `#/sessions`, 全部清單
 `#/list` and 比較 `#/cmp`. 花費 links to `#/days` and carries two kids: 近 30 天
-`#/days` and 依專案 `#/projects`. 文件 is a single link, `#/docs`. 設定 and 導覽 are pinned under them: 設定 has one
-kid, 精靈 `#/settings`; 導覽 is a single link, `#/tour`, carrying `data-block="tour-nav"`. Every entry is a plain link, and `navHtml`
-(`assets/station/nav.js:86`, `function navHtml(active, c) {`) draws them
+`#/days` and 依專案 `#/projects`. 文件 is a single link, `#/docs`. 週報 is a single link, `#/weekly`. 設定 is pinned under them and has one
+kid, 精靈 `#/settings`. Every entry is a plain link, and `navHtml`
+(`assets/station/nav.js:85`, `function navHtml(active, c) {`) draws them
 through `navLinksHtml`. A page's kids are its filters: they
 appear as a subtabs strip under the page itself
-(`assets/station/nav.js:133`, `function subtabsHtml(active) {`) — the
+(`assets/station/nav.js:132`, `function subtabsHtml(active) {`) — the
 same list drives both the nav and the strip, so they can never list
 different pages. Only 現在 carries a badge: `navCounts` returns just
 `{ waiting }`, the number of live sessions waiting on you.
@@ -944,7 +944,7 @@ read with `stored()`'s try/catch so a `file:` page or private mode with no
 holds the three-state 跟隨系統/淺色/深色 button in the masthead's
 `div.appear` (`id="appear"`, drawn by `drawTheme`); a click cycles it and
 writes the new value
-(`assets/station/station.js:1189`, `store('station.theme', t === 'system' ? null : t);`), and the
+(`assets/station/station.js:1186`, `store('station.theme', t === 'system' ? null : t);`), and the
 stored value is read and set as `data-theme` on `<html>` before the page's
 first paint, so a reader on 深色 never sees a flash of light first
 (`assets/station/station.js:23`, `themeSet(stored('station.theme'));`).
@@ -1061,7 +1061,7 @@ row of its own, and every group's heading says how many such sessions it has
 and how many backward steps between them.
 
 **全部**, `#/sessions`, is `FK_SESSIONS` (`assets/station/sessions-page.js`,
-`assets/station/station.js:953`): a now-strip linking to 進行中, four period
+`assets/station/station.js:950`): a now-strip linking to 進行中, four period
 tiles (今天 / 近 7 天 / 近 30 天 / 全部) that are also the date filter, then one
 card with filters in its head and ten rows a page, sorted on last move, cost
 or elapsed, with the pager and the compare tray in its foot. `recentRows` — a
@@ -1075,7 +1075,7 @@ default) that drives every figure on both tabs. 總覽 is one row a project,
 grouped 需要注意 and 其他; 分析 is five angles, at
 `#/projects/analysis/<angle>`.
 
-**文件**, `#/docs`, is `FK_DOCS` (`assets/station/docs-page.js`). A head card holds the 找文件 box (see [Search, the tour and the served files](#search-the-tour-and-the-served-files)). Under it, `docs-health` is a matrix with one row per project — its name opens the project dialog, with the number of markdown files and the newest one's date beside it — and six columns: drift (a page older than the code it cites), landed (a plan whose work has landed), index (an index row that is dead or missing), diagram (a diagram that leaves out part of its directory), broken (every `scripts/docs-check.js` finding) and unfiled (pages no declared bucket holds; grey, and `—` where the project declares no tree). A zero is a tick; a number is a button, `data-cell="<pkey> <kind>"`, that fills the `docs-findings` card beside the matrix with what that kind means and how to fix it, one row per item (at most 50: path, line, tag, note), and the command that lists them all. The figures come once per visit from `GET /station/docs-health`, which `scripts/docs-health.js` answers by running `scripts/docs-audit.js`'s `sweep` and `scripts/docs-check.js`'s `scan` over every project `lib/docsearch.js`'s `searchDirs` names, keeping the answer ten minutes; 重新檢查 asks again with `?fresh=1`. A row of the findings card opens the `docs-reader` dialog: one page from `GET /station/doc?pkey=<pkey>&path=<rel>`, rendered from its markdown with the frontmatter's `status` and `last_verified` as chips and the cited line marked, ← and → walking the cell's items. The `docs-project` dialog draws what `parseMapCard` (`lib/station.js`) read off the project's `.fankeel/map.md` — the split by status, `planned, not built` and the filing table — from `projects[].docs`. Both dialogs hang off `document.body`, outside `#page`, so the 3 s redraw leaves them open. The matrix draws no relation graph. The file `/fankeel` writes has no server to ask, so there the page says to open it from `serve`.
+**文件**, `#/docs`, is `FK_DOCS` (`assets/station/docs-page.js`). A head card holds the 找文件 box (see [Search and the served files](#search-and-the-served-files)). Under it, `docs-health` is a matrix with one row per project — its name opens the project dialog, with the number of markdown files and the newest one's date beside it — and six columns: drift (a page older than the code it cites), landed (a plan whose work has landed), index (an index row that is dead or missing), diagram (a diagram that leaves out part of its directory), broken (every `scripts/docs-check.js` finding) and unfiled (pages no declared bucket holds; grey, and `—` where the project declares no tree). A zero is a tick; a number is a button, `data-cell="<pkey> <kind>"`, that fills the `docs-findings` card beside the matrix with what that kind means and how to fix it, one row per item (at most 50: path, line, tag, note), and the command that lists them all. The figures come once per visit from `GET /station/docs-health`, which `scripts/docs-health.js` answers by running `scripts/docs-audit.js`'s `sweep` and `scripts/docs-check.js`'s `scan` over every project `lib/docsearch.js`'s `searchDirs` names, keeping the answer ten minutes; 重新檢查 asks again with `?fresh=1`. A row of the findings card opens the `docs-reader` dialog: one page from `GET /station/doc?pkey=<pkey>&path=<rel>`, rendered from its markdown with the frontmatter's `status` and `last_verified` as chips and the cited line marked, ← and → walking the cell's items. The `docs-project` dialog draws what `parseMapCard` (`lib/station.js`) read off the project's `.fankeel/map.md` — the split by status, `planned, not built` and the filing table — from `projects[].docs`. Both dialogs hang off `document.body`, outside `#page`, so the 3 s redraw leaves them open. The matrix draws no relation graph. The file `/fankeel` writes has no server to ask, so there the page says to open it from `serve`.
 
 **週報**, `#/weekly`, is `FK_WEEKLY` (`assets/station/weekly-page.js`; design `docs/99-archive/2026-10-27-weekly-skill-design.md`, 監控站整合). The station writes no report — it has no model — so the page holds two blocks. `weekly-copy` shows the `/fankeel-weekly` command with a button that copies it (selecting it instead where the browser gives no clipboard) and says where the next range starts: the day after the newest archived report's end date, or last Friday when there is none. `weekly-list` is the archive, read once a visit from `GET /station/weekly` (below): one row per report, newest end date first, with its range and day count, done and ongoing counts and the projects it covers; a row opens `station/weekly/<until>.html` in the same tab, which the server answers with the bar that leads back here. A written station cannot read the archive, so unserved the list says it needs serve.
 
@@ -1092,7 +1092,7 @@ replaces sorted by it (`assets/station/list-page.js:84`, `a sort key with no hea
 `updated` descending, so the page's first sort is the one it arrived in.
 
 **比較**, `#/cmp`, is now the 全部 list with its compare tray open
-(`assets/station/station.js:960`, `VIEWS.cmp = function (r) { return w.FK_SESSIONS.page(S, modOpts({ tray: true })); };`):
+(`assets/station/station.js:957`, `VIEWS.cmp = function (r) { return w.FK_SESSIONS.page(S, modOpts({ tray: true })); };`):
 ticking two or three rows there opens a compare dialog of the fields
 `lib/compare.js` returns, so the page is never empty. Tick two sessions on 清單 or a project page — only a
 session with a detail can be ticked, and a third tick drops the first — and
@@ -1155,7 +1155,7 @@ and the eyebrow's cannot disagree.
 
 What to say is a pure function above the `module.exports` guard, so it is
 unit tested
-(`assets/station/station.js:359`, `function serveLost(lastOkMs, nowMs, genAbs, genRel) {`).
+(`assets/station/station.js:358`, `function serveLost(lastOkMs, nowMs, genAbs, genRel) {`).
 The eyebrow is 花費's own: `days-page.js` prints `凍結於 {t}` from the view's
 `frozenAt`, its `q.frozenAt` string, and nothing when that is null
 (`assets/station/days-page.js:397`, `(C.frozenAt ? loc('q.frozenAt', '凍結於 {t}', { t: C.frozenAt }) : '')`). The
@@ -1303,14 +1303,14 @@ for the child cannot read the old url as the new one.
 `clearEntry` once per row so the checks are the same list rather than a
 second copy of them. A clean run redirects to `/?cleared=N`, and the reloaded
 page still carries that count
-(`assets/station/station.js:1821`, `w.STATION.cleared = S.cleared`); a
+(`assets/station/station.js:1818`, `w.STATION.cleared = S.cleared`); a
 refusal answers `409` with which rows it refused and why, since a redirect
 has nowhere to say it. It takes the same `force` tick and the same nonce as
 the single-row button. `clearStaleControl` in `assets/station/station.js`
 renders the form when the page is served, and prints the copyable command when
 it is not — a static file cannot post. The
 redesigned 可能停了 card carries one per stale row: `modOpts`
-(`assets/station/station.js:954`) passes `clear: clearControl`, and `row` in
+(`assets/station/station.js:951`) passes `clear: clearControl`, and `row` in
 `assets/station/live-page.js` draws it in a `lv-row-clear` beside the row's
 `<a>`, not inside it; without `opts.clear` the row is the bare link.
 
@@ -1358,7 +1358,7 @@ Both routes call the same `clearEntry`, which writes `active: false` and
 nothing else, so a session cleared by mistake can be adopted back with its
 notes and its `next` intact.
 
-## Search, the tour and the served files
+## Search and the served files
 
 Full-text search is 文件's 找文件 box (`#/docs`, in the head card above `docs-health`). Typing asks `GET /station/search?q=<text>` (`scripts/station.js`, `url.pathname === '/station/search'`) and paints the hits straight into the `#dq-pop` popover under the box, not into `#page`, so the box keeps its caret through the 3 s redraw; a hit opens its page in the reader. `lib/docsearch.js` answers it: `searchDirs(model)` takes every registry root that is not `gone` and every project under it that a session names, minus the projects `station.hide` removes (`hiddenPkeys`); `search(dirs, q)` reads each project's `.fankeel/docs.json` — or the preset `docs.detect` recognises when there is none — and opens only the markdown pages whose role is `reference` or `decision`. `plan`, `report`, `archive` and `fixture` pages are not searched: they record a moment, and a hit in one reads as current when it is not. A `reference` page in a bucket whose `audience` is `human` is labelled `guide`. The match is a case-insensitive substring of the page body with its frontmatter removed; pages sort by how often it occurs, and the answer carries the total `n` and the first 20, each with 60 characters either side of the first hit. The file `/fankeel` writes has no server to ask, so there the box is a note saying to open the page from `serve`.
 
@@ -1401,66 +1401,7 @@ on this machine.
 
 `GET /station/weekly` is the 週報 page's list (`scripts/station.js`, the `/station/weekly` branch; `list` in `lib/weekly-store.js`): `{ reports }`, one row per `<until>.json` archived under `<configDir>/fankeel/weekly/` — `until`, `since`, `done`, `ongoing`, `projects`, `html` — newest end date first, and `[]` when nothing is archived. `GET /station/weekly/<YYYY-MM-DD>.html` answers that archived report with a `weekly-nav` bar (`navBar`, `injectNav`) put right after `<body>`: 「← 回週報列表」 to `/#/weekly`, and 「上一份／下一份」 to the neighbouring end dates, a disabled label where there is none. The bar exists only in the answer — the archived file, the one that is mailed, never carries it — and a report with a questions block (`data-block="questions"`) also gets the reply editor (`injectEditor`, `lib/weekly-reply.js`). The answer goes out under `cspFor(html)` (`lib/weekly-reply.js`), not the SVG routes' policy: the page's inline scripts run, allowed by hash, with `connect-src 'self'`, so `assets/weekly/report.js` (inlined by the render) and `assets/weekly/reply.js` (injected with the editor) run in it (`scripts/station.js`, the `/station/weekly/<until>.html` branch). `POST /station/weekly/<YYYY-MM-DD>/reply` takes the form fields `id` and `reply`, under the same nonce, or paired phone through the tailnet, as every other POST, and saves that reader's reply with `setReply` (`lib/weekly-reply.js`) into `<until>.json` and redraws the report's questions block; it answers `{ ok, id, repliedAt }`, or the error and code `setReply` returns (`scripts/station.js`, the `wkReply` branch). Any other name under `/station/weekly/` is a 404. The station writes no report; `/fankeel-weekly` does (`scripts/weekly.js render`).
 
-導覽 (`#/tour`) frames `station/tour.html`, the tour's own page
-(`assets/station/tour.html`). Only a served page can show it; the written file
-says so instead. The three-second re-read skips `#/tour`, as it skips
-`#/settings`: a redraw would restart the film.
-
-The film is `reel` (`assets/station/tour-reel.js`, `tour-reel-stages.js` and
-`tour-reel-kit.js`): sixty seconds at 60 fps, thirteen shots — hook, logo,
-route, the seven stages two bars each, clash, numbers, outro — each starting
-on a bar line of a 120 BPM score. The score is `assets/station/tour-music.js`,
-synthesised in the page on the first press of play and never stored as a
-file; the button at the end of the player's bar mutes it. The film speaks
-the station's language, `FK_I18N.lang`, unless the page's url says
-`?lang=zh` or `?lang=en`. `node scripts/tour-record.js reel --lang zh|en`
-records one language to reel-zh.mp4 or reel-en.mp4 under .fankeel/build/tour
-with the score muxed in as AAC, and exits 1 unless ffprobe reads 3600 frames
-and exactly one audio stream of 60 seconds.
-
-A second film, `promo30` (`assets/station/tour-keel.js`), runs 30 seconds
-— 1800 frames — as the keel metaphor: a rib per stage beside the component
-that stage works on. `tour.html#promo30@<frame>` plays it, `#/tour` still
-plays `reel`, and `node scripts/tour-record.js promo30 [--lang zh|en]` records
-it to `.fankeel/build/tour/promo30-<lang>.mp4`. The score is the same
-`tour-music.js`, its length taken from the timeline.
-
-A third film, `promo30v3` (`assets/station/tour-ring.js`, a new module), is
-also 30 seconds — 1800 frames. Its left side is a honeycomb ring, and it
-reuses the captions of the first film. `tour.html#promo30v3@<frame>` plays it
-(`tour.html` loads `tour-ring.js`, which registers the timeline), and
-`node scripts/tour-record.js promo30v3 [--lang zh|en]` records it to
-`.fankeel/build/tour/promo30v3-<lang>.mp4`, exiting 1 unless the MP4 has 1800
-frames and one audio stream of 30 seconds. `promo30` (v2) is untouched.
-
-A fourth film, `promo30v4` (also in `assets/station/tour-ring.js`), runs 60
-seconds — 3600 frames: hook 300, route 240, seven stage shots of 360 each,
-outro 540. It keeps v3's beats, re-timed and held, not sped up. Each stage
-shot opens with a 60-frame stage entry in v1's style (a colour flood, a large
-`0N / 07`, the stage word); after that a counter, the stage word and a
-seven-dot rail sit under the ring — done dots in stage colours, the current one
-pulsing, todo dots hollow, the done count equal to the ring's filled cells.
-`tour.html#promo30v4@<frame>` plays it, and
-`node scripts/tour-record.js promo30v4 [--lang zh|en]` records it to
-`.fankeel/build/tour/promo30v4-<lang>.mp4`, exiting 1 unless the MP4 has 3600
-frames and 60 seconds of audio. Its videos go to `F:/ymlab/fankeel-videos/v4/`.
-`promo30` (v2) and `promo30v3` render byte-identically.
-
-A fifth film, `promo30v5` (also in `assets/station/tour-ring.js`), runs 74
-seconds — 4440 frames — as a guided tour drawn from approved styleframes: a
-hook of 0-11 s (a generic project's file tree grows and `grep` misses files),
-an intro, seven stages, and an outro to 74 s. The stages start at 14, 20, 26,
-32, 42, 50 and 60 s and last 6 s (survey, design, plan, land), 10 s (build,
-audit) and 8 s (verify); the outro runs 66-74 s. A header at the top left — the
-glyph, the wordmark, `0N / 07` and the stage word — replaces the rail, the
-pills, the statusline and the big left glyph, and one centred caption line
-carries the words. File-type icons are Material Icon Theme 5.38.1 (MIT), kept
-in `assets/station/icons/` with its `LICENSE.txt` and inlined as data URIs; the
-player waits on `TOUR_PROMO30V5.ready` before the first frame.
-`tour.html#promo30v5@<frame>` plays it, and
-`node scripts/tour-record.js promo30v5 [--lang zh|en]` records it by default to
-`F:/ymlab/fankeel-videos/v5/` (`FANKEEL_VIDEOS_V5` and `--out` override), keeping the MP4 only (the wav is deleted).
-`promo30`, `promo30v3` and `promo30v4` render byte-identically.
+The station has no 導覽 page. `#/tour`, the films it played (`reel`, `promo30` to `promo30v5`), their score and the recorder that wrote them to MP4 were removed on 2026-11-02, to be rebuilt later as TODO `tour-2`. The decisions behind the films stay in [promo30](../../03-decisions/2026-09-29-promo30.md); the first two designs are in `docs/99-archive/`.
 
 `serve` answers a fixed list of files from `assets/station/` — `STATIC` in
 `scripts/station.js`: `station.js`, `station.css`, `i18n.js`, the five spend modules
@@ -1469,10 +1410,8 @@ player waits on `TOUR_PROMO30V5.ready` before the first frame.
 `<name>.css` (`tip`, `live-page`, `sessions-page`, `projects-page`, `project-page`,
 `session-page`, `session-dispatch`, `session-talk` and `gate-frame`), the diagram module's
 `diagram.js` and `diagram.css`, the vendored `vendor/pele.js` (pele 1.10.0, MIT, pinned by sha256 in
-`tests/station-diagram.test.js`; `vendor/PELE-LICENSE` beside it is not served), the phone page's `mobile.js` and `mobile.css`,
-`tour.html`, `tour.css`, `tour.js` and every `tour-<name>.js` (any number of hyphenated
-segments, so `tour-reel-kit.js` and the like are served too). `SERVED` takes
-`diagram.js`, `diagram.css` and `vendor/pele.js` from `station.MODULES`
+`tests/station-diagram.test.js`; `vendor/PELE-LICENSE` beside it is not served), and the phone page's `mobile.js` and `mobile.css`.
+`SERVED` takes `diagram.js`, `diagram.css` and `vendor/pele.js` from `station.MODULES`
 (`const MODULES = modulesOf(SHELL)`, `lib/station.js:1213`). Any other name under the station path is a 404, so nothing else in the plugin directory is
 reachable by url.
 
