@@ -135,7 +135,7 @@ function parseArgs(argv) {
 
 // A `#`/`?` suffix on a non-http(s) target is a URL fragment or query, not
 // part of the filesystem path — `path.resolve` does not know that and folds
-// it into the literal path it resolves, so `tour.html#quickstart@330` used
+// it into the literal path it resolves, so `page.html#quickstart@330` used
 // to become a file that does not exist. Split the suffix off before
 // resolving, then re-append it to the resulting file:// URL untouched. A
 // target with neither character behaves exactly as before.

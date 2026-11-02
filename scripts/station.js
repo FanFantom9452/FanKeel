@@ -71,12 +71,11 @@ const PLUGIN = path.resolve(__dirname, '..');
 const ASSETS = path.join(PLUGIN, 'assets', 'station');
 
 // The files `serve` answers from ASSETS, by name: the page's own two, the
-// language table, the phone page's two, every module lib/station.js reads
-// off index.html (`station.MODULES`), and the tour (`tour.html` and what it
-// loads). A list, so nothing else under the plugin directory is reachable
-// by url.
+// language table, the phone page's two and every module lib/station.js reads
+// off index.html (`station.MODULES`). A list, so nothing else under the plugin
+// directory is reachable by url.
 const SERVED = ['station.js', 'i18n.js', 'station.css', 'mobile.js', 'mobile.css', ...station.MODULES];
-const STATIC = new RegExp('^/station/(' + SERVED.map((n) => n.replace(/\./g, '\\.')).join('|') + '|tour(?:-[a-z]+)*\\.(?:js|css|html))$');
+const STATIC = new RegExp('^/station/(' + SERVED.map((n) => n.replace(/\./g, '\\.')).join('|') + ')$');
 const TYPES = { '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.html': 'text/html; charset=utf-8' };
 const CHARTROOM = /^\/chartroom\/([^/?#]+)(.*)$/;
 const SVG_CSP = { 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'" };

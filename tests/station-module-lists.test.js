@@ -20,6 +20,6 @@ test('MODULES is index.html\'s scripts and stylesheets, then gate-frame and focu
 
 test('serve answers every module by name, and nothing it does not list', () => {
     for (const n of station.MODULES) assert.ok(STATIC.test('/station/' + n), n);
-    for (const n of ['station.js', 'i18n.js', 'station.css', 'mobile.js', 'mobile.css', 'tour.html', 'tour-keel.js']) assert.ok(STATIC.test('/station/' + n), n);
+    for (const n of ['station.js', 'i18n.js', 'station.css', 'mobile.js', 'mobile.css']) assert.ok(STATIC.test('/station/' + n), n);
     for (const n of ['nope.js', 'station-data.js.map', '../package.json', 'spend-evil.js']) assert.ok(!STATIC.test('/station/' + n), n);
 });

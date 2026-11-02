@@ -1,7 +1,7 @@
 'use strict';
 // serve()'s shared gather and its file list (design §5): station-data.js
 // requests inside two seconds share one gather(), a POST drops it, and the
-// static files are a fixed list that now includes the tour and i18n.js.
+// static files are a fixed list that includes i18n.js.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -91,12 +91,12 @@ test('a POST drops the shared model, even one the nonce refuses', async (t) => {
     }
 });
 
-test('the tour files and i18n.js are on the list, byte for byte, with their content types', async () => {
+test('the page files and i18n.js are on the list, byte for byte, with their content types', async () => {
     const f = fixture();
     const s = await serve({ configDir: f.cfg, port: 0, idleMs: 60e3, open: false });
     try {
-        for (const [name, type] of [['tour.js', /text\/javascript/], ['tour.html', /text\/html/], ['tour.css', /text\/css/],
-            ['tour-player.js', /text\/javascript/], ['station.js', /text\/javascript/], ['station.css', /text\/css/]]) {
+        for (const [name, type] of [['i18n.js', /text\/javascript/], ['station.js', /text\/javascript/], ['station.css', /text\/css/],
+            ['mobile.js', /text\/javascript/], ['mobile.css', /text\/css/]]) {
             const res = await get(s.url + 'station/' + name);
             assert.equal(res.status, 200, name);
             assert.match(res.headers['content-type'], type, name);
@@ -108,27 +108,11 @@ test('the tour files and i18n.js are on the list, byte for byte, with their cont
     }
 });
 
-test('every script tour.html loads, including the multi-hyphen reel files, is served', async () => {
-    const html = fs.readFileSync(path.join(ASSETS, 'tour.html'), 'utf8');
-    const names = [...html.matchAll(/<script src="([^"]+)"><\/script>/g)].map((m) => m[1]);
-    assert.ok(names.includes('tour-reel-kit.js'), names.join(', '));
-    const f = fixture();
-    const s = await serve({ configDir: f.cfg, port: 0, idleMs: 60e3, open: false });
-    try {
-        for (const name of names) {
-            const res = await get(s.url + 'station/' + name);
-            assert.equal(res.status, 200, name);
-        }
-    } finally {
-        s.close();
-    }
-});
-
 test('a name off the list is a 404, whatever sits in the assets directory', async () => {
     const f = fixture();
     const s = await serve({ configDir: f.cfg, port: 0, idleMs: 60e3, open: false });
     try {
-        for (const name of ['index.html', 'tour.json', 'Tour.js', 'tour_x.js', '..%2F..%2Fpackage.json', 'station-x.js']) {
+        for (const name of ['index.html', 'nope.json', 'Station.js', 'station_x.js', '..%2F..%2Fpackage.json', 'station-x.js']) {
             assert.equal((await get(s.url + 'station/' + name)).status, 404, name);
         }
     } finally {

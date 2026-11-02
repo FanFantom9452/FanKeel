@@ -18,18 +18,18 @@ const CLI = path.join(__dirname, '..', 'scripts', 'render.js');
 
 // A `#`/`?` suffix on a non-http(s) target is a fragment or query, not part
 // of the filesystem path. `path.resolve` does not know that, so a target
-// like `assets/station/tour.html#quickstart@330` used to resolve to a file
-// literally named `tour.html%3Fquickstart...` (see toUrl()'s own comment).
+// like `assets/station/page.html#quickstart@330` used to resolve to a file
+// literally named `page.html%3Fquickstart...` (see toUrl()'s own comment).
 // This proves the fragment survives intact and the path still resolves to
 // the right file, by parsing the result as a URL rather than string-matching
 // the whole thing — a `new URL()` parse also proves the value is a
 // well-formed URL, which a naive string match would not.
 test('toUrl keeps a #fragment off a Windows-style path intact', () => {
-    const target = 'C:\\repo\\assets\\station\\tour.html#quickstart@330';
+    const target = 'C:\\repo\\assets\\station\\page.html#quickstart@330';
     const url = new URL(toUrl(target));
     assert.equal(url.protocol, 'file:');
     assert.equal(url.hash, '#quickstart@330');
-    assert.equal(decodeURIComponent(url.pathname).replace(/^\//, ''), 'C:/repo/assets/station/tour.html');
+    assert.equal(decodeURIComponent(url.pathname).replace(/^\//, ''), 'C:/repo/assets/station/page.html');
 });
 
 test('toUrl keeps a ?query off a plain relative path intact', () => {
