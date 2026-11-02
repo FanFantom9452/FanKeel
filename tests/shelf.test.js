@@ -87,3 +87,73 @@ test('eligible wants inactive, ended and older than the threshold', () => {
     assert.equal(shelf.eligible({ active: false, ended: old, updated: new Date(NOW).toISOString() }, NOW, 14), false);
     assert.equal(shelf.DAYS, 14);
 });
+
+const OLD = { active: false, ended: '2026-10-01T09:00:00.000Z', updated: '2026-10-01T09:00:00.000Z' };
+
+test('a copy that throws midway leaves no partial copy and the run goes on', (t) => {
+    const shelf = require('../lib/shelf.js');
+    const { root, sessions } = fixture();
+    fs.writeFileSync(path.join(sessions, 'aaaaaaaa-0005.json'), JSON.stringify({ ...OLD, task: 'broken', started: '2026-09-01T08:00:00.000Z' }));
+    const real = fs.cpSync;
+    t.mock.method(fs, 'cpSync', (src, dst, o) => {
+        if (!String(src).endsWith('aaaaaaaa-0005.json')) return real(src, dst, o);
+        fs.writeFileSync(dst, 'part');
+        throw new Error('disk full');
+    });
+    const r = shelf.run(root, { now: NOW });
+    assert.equal(r.sessions, 1);
+    assert.deepEqual(r.kept, [path.join(sessions, 'aaaaaaaa-0005.json')]);
+    assert.equal(fs.existsSync(path.join(shelf.shelfDir(root), 'sessions', 'aaaaaaaa-0005.json')), false);
+    assert.equal(fs.existsSync(path.join(sessions, 'aaaaaaaa-0005.json')), true);
+    assert.equal(shelf.find('old').length, 1);
+});
+
+test('restore whose build copy fails leaves the entry on the shelf', (t) => {
+    const shelf = require('../lib/shelf.js');
+    const { root, sessions, build } = fixture();
+    shelf.run(root, { now: NOW });
+    const real = fs.cpSync;
+    t.mock.method(fs, 'cpSync', (src, dst, o) => {
+        if (path.resolve(String(dst)) === path.resolve(build)) throw new Error('disk full');
+        return real(src, dst, o);
+    });
+    assert.equal(shelf.restore(root, 'aaaaaaaa-0003'), false);
+    assert.equal(fs.existsSync(path.join(sessions, 'aaaaaaaa-0003.json')), false);
+    assert.equal(fs.existsSync(build), false);
+    assert.deepEqual(shelf.readShelved(root).map((e) => e.sessionId), ['aaaaaaaa-0003']);
+    assert.equal(shelf.find('old').length, 1);
+});
+
+test('restore whose index delete fails says so on stderr', (t) => {
+    const shelf = require('../lib/shelf.js');
+    const { root, sessions } = fixture();
+    shelf.run(root, { now: NOW });
+    fs.writeFileSync(path.join(shelf.shelfRoot(), 'index.sqlite'), 'not a database '.repeat(64));
+    const lines = [];
+    t.mock.method(process.stderr, 'write', (s) => { lines.push(String(s)); return true; });
+    const ok = shelf.restore(root, 'aaaaaaaa-0003');
+    t.mock.restoreAll();
+    assert.equal(ok, true);
+    assert.equal(fs.existsSync(path.join(sessions, 'aaaaaaaa-0003.json')), true);
+    assert.equal(lines.length, 1);
+    assert.match(lines[0], /index/);
+});
+
+test('a shelf sessions path that cannot be read is an error, a missing one is empty', () => {
+    const shelf = require('../lib/shelf.js');
+    const { root } = fixture();
+    assert.deepEqual(shelf.readShelved(root), []);
+    fs.mkdirSync(shelf.shelfDir(root), { recursive: true });
+    fs.writeFileSync(path.join(shelf.shelfDir(root), 'sessions'), 'not a dir');
+    assert.throws(() => shelf.readShelved(root), { code: 'ENOTDIR' });
+});
+
+test('dry run counts a build directory two going entries share once, as a real run does', () => {
+    const shelf = require('../lib/shelf.js');
+    const { root, sessions } = fixture();
+    fs.writeFileSync(path.join(sessions, 'aaaaaaaa-0006.json'), JSON.stringify({ ...OLD, task: 'twin', started: '2026-10-01T08:00:00.000Z' }));
+    const dry = shelf.run(root, { now: NOW, dryRun: true });
+    const real = shelf.run(root, { now: NOW });
+    assert.deepEqual([dry.sessions, dry.builds], [2, 1]);
+    assert.deepEqual([real.sessions, real.builds], [2, 1]);
+});
