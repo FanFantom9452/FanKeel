@@ -39,5 +39,6 @@ test('dry run, run, find and restore', () => {
 test('bad --days and a missing command are usage errors', () => {
     const { sh } = setup();
     assert.equal(sh('run', '--days', 'x').status, 2);
+    assert.equal(sh('run', '--days', '').status, 2);
     assert.equal(sh().status, 2);
 });
