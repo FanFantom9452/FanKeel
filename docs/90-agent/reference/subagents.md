@@ -653,8 +653,10 @@ to do next, so the controller's rule only says to run it: with that rule a
 controlled build block is within 40 characters of its 2400. Nothing loops: `awaitHandoff` in
 `lib/handoff.js` wakes on `fs.watch` of the handoff directory and on a timer
 set for the moment the agent would count as lost, which re-arms every `idleMs`
-(or until `busyMs` falls due) while a tool call is out. Whether a background Bash
-exit wakes the controller the way a hand-back does has not been observed.
+(or until `busyMs` falls due) while a tool call is out. Observed on 2026-11-02, Claude Code 2.1.316: a background Bash exit starts a
+controller turn by itself, so the line `await.js` prints on exit is the wake
+it was built to be. A foreground call that reached its timeout came back as
+`Command did not complete within its 5s timeout and was moved to the background (ID: <id>).`, and the shell went on.
 
 The unit tests above were all this had until the first live run: on `build`
 the brain wrote every commit file to `.fankeel/build/<plan file's basename>/`
@@ -675,8 +677,8 @@ line is an event, a `timeout_ms` capped at 1800000, and a notification to
 Claude when it exits or expires. `await.js` already is that until-loop and
 prints one line, then exits, so a Monitor would carry the same single event
 with a deadline equal to `await.js`'s own thirty minutes and a re-arm step
-added; the five states are decided in `awaitState`, not by whatever launches
-the script. Nothing in the changelog says a Monitor event wakes the
+added; the states are decided in `awaitState` and `awaitHandoff`
+(`lib/handoff.js`), not by whatever launches the script. Nothing in the changelog says a Monitor event wakes the
 controller better than a background Bash exit, and neither has been observed
 here (above), so the switch buys nothing. What 2.1.314 did change is that a
 hook matching `Bash` also runs on a Monitor's shell command and can only
