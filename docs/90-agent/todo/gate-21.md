@@ -7,3 +7,5 @@ link: hooks/dispatch-gate.js
 ---
 
 來源：judgement docs/90-agent/judgements/2026-11-02-cc-2-1-300-316.md。2.1.304 changelog :530、:531：mod tool.check 新增 decider: "person"（只有人能批，沒人就拒）與 e.isReadOnly。hooks/dispatch-gate.js:143 現在回 'ask'，auto mode 下可能被分類器代答。影響 hooks/dispatch-gate.js、hooks/wrap-up.js:12、hooks/mod.ts。要做成：dispatch gate 改走 mod tool.check 並用 decider person 強制人答。完成條件：auto mode 下 dispatch gate 一定由人回答，測試涵蓋沒人在時拒絕。
+
+2026-11-02 實測（Claude Code 2.1.316，profile {"dispatch.inflight": 1}，%TEMP%\fk-gate）：headless（claude -p … --permission-mode auto）d8e5ad4f 之前兩個 Agent 呼叫都放行，因為 hook 當下 transcript 還沒有 assistant 項目、positionOf 回 1；改成 marker 檔計數（d8e5ad4f、6fb6f598）後第二個 Agent 呼叫被拒，模型看到 reason「fankeel: this is Agent call 2 in one response, past dispatch.inflight (1). …」，reason 一致。互動 auto mode：第二個呼叫的 PreToolUse 輸出 ask、同一段 reason，權限對話框有出現；使用者 6.6 秒後接受，transcript 記 permissionDecision {"decision":"accept","source":"user_temporary","reasonCode":"hook:PreToolUse"}，不是分類器代答（C:/Users/user/.claude/projects/C--Users-user-AppData-Local-Temp-fk-gate/f862d94a-0206-4855-ba4d-753f388c3c99.jsonl 第 36-37 行）。
