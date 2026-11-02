@@ -15,7 +15,6 @@ Every fankeel session on this machine, shown on one page. The page is served fro
 - The page lists every session of every registry the station knows: the full list is at the `#/sessions` route, the dashboard shows the five most recent, and the footer count `<n> sessions` totals them. Each row opens a detail panel, served as `/station/detail/<sessionId>.js`.
 - The POST routes behind the page's buttons: `/clear`, `/clear-stale`, `/todo`, `/answer`, `/profile`. Each one needs the per-run nonce the page carries.
 - Doc search (`/station/search`) and the conversation view (`/station/talk/<sessionId>`).
-- The tour, `/station/tour.html`, served from `assets/station/` with the scripts it loads.
 - `/station/health`: read-only, answers `station`, `pid`, `started` and `fingerprint`.
 - `/chartroom/<name>/`: only when the profile sets `station.chartroom`, and a 404 otherwise.
 - The static form: run with no verb, it writes `<configDir>/fankeel/index.html` and, when it makes one, a copy whose path its `copy at` line names.
@@ -36,8 +35,7 @@ Every fankeel session on this machine, shown on one page. The page is served fro
 5. Take one row's `sessionId` from step 1. GET `<url>station/detail/<sessionId>.js` answers 200; a 404 `no detail for that session` means that session has no detail to read, so pick another row.
 6. POST `<url>clear` with no nonce answers 403 `wrong nonce`: the guard holds. The other half: GET `<url>station/station-data.js` answers 200 and its body carries the per-run nonce (`scripts/station.js` passes it as the `nonce` option of `station.serialize`, which writes `out.nonce`). The nonce is read from there. A POST with it is not driven here, because `/clear` changes the registry.
 7. Run the same `serve` command again with the same `CLAUDE_CONFIG_DIR`. It prints the first server's url and binds no port of its own: this is the join.
-8. GET `<url>station/tour.html` answers 200.
-9. Cleanup: kill the pid recorded in `serve.json`, then delete the temporary config directory. Keep the evidence from step 3.
+8. Cleanup: kill the pid recorded in `serve.json`, then delete the temporary config directory. Keep the evidence from step 3.
 
 ## Gotchas
 
