@@ -121,10 +121,28 @@ its own after the preset, whatever the scout's `profile` row says:
   alone (`off`, an earlier init's `compact-window.declined` marker), the
   `compact window: not synced` line and the restart it asks for are in
   [profile.md](../../docs/01-guide/profile.md), and the descriptions say
-  that 350000, 600000 and 1000000 have not been measured. The answer runs
+  that 350000, 600000 and 1000000 have not been measured. The descriptions
+  also say that on Claude Desktop and VS Code, Claude Code 2.1.314 compacts an
+  idle 200K+ conversation on its own once the prompt cache expires, so 350000
+  and above only act while the user stays; an account without a 1M window
+  never reaches 350000 and above first; and `/config` → Idle compaction turns
+  the host's one off. No answer to this question turns Idle compaction on or
+  off. The answer runs
   `node <plugin>/scripts/task.js profile set compact.at <value> --default`.
   No answer writes nothing, and `task.js start` then leaves the machine's
   window as it is.
+
+- `/auto-mode-setup` (Claude Code 2.1.304) — the command that reads the
+  project and recent sessions and teaches auto mode this environment. Asked last in
+  step 1, whatever the scout's rows say. One `AskUserQuestion`, two options in
+  this order: **現在跑** — the user types `/auto-mode-setup` in this session and
+  says when it is done (no subagent can run a slash command), and the
+  description says why: a build's writes under `.fankeel/build/**` rest on an
+  allow rule in `.claude/settings.local.json`, and auto mode has still answered
+  `no verdict` to them (`docs/90-agent/todo/stage-agents-10.md`); **下次再說** —
+  writes nothing. Nothing goes into the profile and the skill never runs the
+  command itself. Whether it helped is recorded by the re-test that TODO
+  already holds, not here.
 
 ## 2. The gate
 
