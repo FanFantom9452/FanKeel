@@ -51,7 +51,7 @@ So **you do not reach for this on your own.** It runs when the user types it.
 ## It interrupts; it does not run alongside
 
 Not a background helper. It stops what the stage was doing, spends one judge
-dispatch plus up to eight readers, and the stage resumes on the answer.
+dispatch plus the readers its profile allows (`dispatch.inflight`), and the stage resumes on the answer.
 
 **It never opens the gate.** The gate stays at the end of the stage, asked of
 the user with `AskUserQuestion`. A judgement changes what the stage produces;
@@ -76,8 +76,9 @@ it does not approve it.
    every other dispatch in this plugin carries. `node <plugin>/scripts/task.js
    profile show` prints it. Say how many and on which model in the response
    that sends it — one judge, on whatever `judge.model` answered. The judge
-   writes a checklist, sends at most eight `fankeel:fankeel-reader`
-   (`dispatch.inflight`) in that same response, related lines to one reader,
+   writes a checklist, sends as many `fankeel:fankeel-reader` as `dispatch.inflight` allows
+   in that same response (ask passes `inflight: <value>` in the judge brief
+   beside `judge.model`; the judge decides grouping), related lines to one reader,
    on sonnet, or opus where one figure decides the pick, and returns seven
    fields, `ask human:` last (`nothing` when it asks none), then a `## 白話`
    of at most 600 characters, then a `## Summary` of any length; `delegated:`

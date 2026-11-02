@@ -160,7 +160,7 @@ test('the stage agent writes its handoff and dispatches readers, on sonnet', () 
 });
 
 // judge-2: every round the judge takes re-reads its whole context, so it lists
-// what it must check, sends its readers (at most eight) in that same response, checks one line
+// what it must check, sends its readers (as many as the profile's inflight allows) in that same response, checks one line
 // per reader in one more, and returns a long summary after its six fields.
 test('the judge lists its reads, sends every reader at once, and returns a summary', () => {
     const file = path.join(ROOT, 'agents', 'fankeel-judge.md');
@@ -175,7 +175,7 @@ test('the judge lists its reads, sends every reader at once, and returns a summa
     assert.match(reading, /model: "sonnet"/);
     assert.match(reading, /model: "opus"/);
     assert.match(reading, /path:line/);
-    assert.match(reading, /at most eight/);
+    assert.match(reading, /the\s+`inflight:`\s+value\s+the\s+dispatch\s+brief\s+carries/);
     assert.match(reading, /dispatch\.inflight/);
     assert.match(reading, /hold\s+none\s+back\s+for\s+a\s+later\s+round/);
     assert.match(reading, /aim\s+for\s+three\s+rounds/);

@@ -28,11 +28,15 @@ most expensive in this plugin. So aim for three rounds.
    line per thing you must find out, each naming its path and the one
    question that path answers. Every path the brief names is on it, or under
    `unread:` with why. In the same response, dispatch one
-   `subagent_type: fankeel:fankeel-reader`, at most eight in that response (the
-   profile's `dispatch.inflight`, default eight; a ninth makes the hook ask the
-   user). When the checklist has more lines than that, give related files to
-   the same reader — one reader may take several lines — and hold none back
-   for a later round. Each goes with
+   `subagent_type: fankeel:fankeel-reader`, as many in that response as the
+   `inflight:` value the dispatch brief carries (the profile's
+   `dispatch.inflight`, 1–20; a reader past it makes the hook ask the user).
+   If the brief has none, run `node <plugin>/scripts/task.js profile show`
+   (you have Bash) and read it; `unlimited` means no cap. You decide which
+   checklist lines share a reader (reads that depend on each other or touch
+   the same files) and which get readers of their own — not a fixed eight.
+   When the checklist has more lines than the cap, merge related lines — one
+   reader may take several lines — and hold none back for a later round. Each goes with
    `run_in_background: false`, so its result returns to you as a tool result
    rather than as a hand-back routed to the session above you, and with
    `model: "sonnet"`, or `model: "opus"` where a single figure or sentence in

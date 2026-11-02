@@ -36,12 +36,12 @@ const PAGES = {
     now: [/\(eight by default\)/],
   },
   'skills/fankeel-ask/SKILL.md': {
-    gone: [/plus up to four readers/, /sends at most four `fankeel:fankeel-reader`/],
-    now: [/plus up to eight readers/, /sends at most eight `fankeel:fankeel-reader`/],
+    gone: [/plus up to four readers/, /sends at most four `fankeel:fankeel-reader`/, /plus up to eight readers/, /sends at most eight `fankeel:fankeel-reader`/],
+    now: [/plus the readers its profile allows \(`dispatch\.inflight`\)/, /sends as many `fankeel:fankeel-reader` as `dispatch\.inflight` allows/, /passes `inflight: <value>` in the judge brief/],
   },
   'agents/fankeel-judge.md': {
-    gone: [/at most four in that response/, /default four; a fifth/],
-    now: [/at most eight in that response/, /default eight; a ninth/],
+    gone: [/at most four in that response/, /default four; a fifth/, /at most eight in that response/, /default eight; a ninth/],
+    now: [/the `inflight:` value the dispatch brief carries/, /`unlimited` means no cap/, /not a fixed eight/],
   },
   'agents/fankeel-brain.md': {
     gone: [/\(four by default\)/],
@@ -52,8 +52,8 @@ const PAGES = {
     now: [/dispatch\.inflight in one response, eight by default/, /dispatch\.inflight, eight by default; dispatch\.floor/],
   },
   'docs/90-agent/reference/subagents.md': {
-    gone: [/sends at most four `fankeel:fankeel-reader`/, /Four in one response is the default/, /past four you are guessing/, /a builtin of 4,/],
-    now: [/sends at most eight `fankeel:fankeel-reader`/, /Eight in one response is the default/, /past eight you are guessing/, /a builtin of 8,/],
+    gone: [/sends at most four `fankeel:fankeel-reader`/, /sends at most eight `fankeel:fankeel-reader`/, /Four in one response is the default/, /past four you are guessing/, /a builtin of 4,/],
+    now: [/sends as many `fankeel:fankeel-reader` as `dispatch.inflight` allows/, /unlimited means no cap/, /Eight in one response is the default/, /past eight you are guessing/, /a builtin of 8,/],
   },
 };
 

@@ -156,7 +156,7 @@ when `payload.agent_type` is `fankeel-judge`: *answer once; the parent will
 not message you again.* It leaves out two return rules for the judge only. One is "You do not
 dispatch subagents of your own" (`RETURN_RULES[2]`), because
 the judge aims for three rounds: it writes a checklist and, in that same
-response, sends at most eight `fankeel:fankeel-reader` (`dispatch.inflight`),
+response, sends as many `fankeel:fankeel-reader` as `dispatch.inflight` allows (the cap is passed in the brief; unlimited means no cap),
 giving related lines to one reader (sonnet, or opus when one
 figure or sentence decides the pick); it opens one cited `path:line` per reader
 in one more response; and it returns seven fields, `delegated:`, `checklist:`
