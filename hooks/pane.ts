@@ -714,11 +714,12 @@ export const register: Register = (on) => {
   // `backgroundTaskId`, and the shells block lists it from here (shellsOf). Every other call passes untouched.
   on('tool.call', async ($, e, next) => {
     const out = await next(e)
-    const call = e as unknown as { tool?: string; command?: unknown }
+    const call = e as unknown as { tool?: string; command?: unknown; description?: unknown }
     const result = (out as unknown as { result?: { backgroundTaskId?: unknown } }).result
     const task = result && typeof result === 'object' ? result.backgroundTaskId : undefined
     if ((call.tool === 'Bash' || call.tool === 'PowerShell') && typeof task === 'string' && task && typeof call.command === 'string') {
-      state.shells = remember(state.shells, { id: task, command: call.command, at: await $.clock.now(), end: null, code: null })
+      const description = typeof call.description === 'string' && call.description.trim() ? call.description : undefined
+      state.shells = remember(state.shells, { id: task, command: call.command, description, at: await $.clock.now(), end: null, code: null })
       state.shellAt = 0
     }
     return out

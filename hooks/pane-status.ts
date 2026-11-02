@@ -7,7 +7,7 @@ import { WHERE, FLAG, GUARD, TODO, claimsOf } from './pane-band.ts'
 import { str, list, width, cut, WIDE, DIM, minutes } from './pane-bar.ts'
 import { tokenLabel } from './pane-agents.ts'
 import type { AgentNode } from './pane-agents.ts'
-import { cutShells, commandLine, KEEP_MS } from './pane-shell.ts'
+import { cutShells, shellLabel, KEEP_MS } from './pane-shell.ts'
 import type { Shell } from './pane-shell.ts'
 import { say } from './pane-lang.ts'
 import type { Lang } from './pane-lang.ts'
@@ -433,7 +433,7 @@ export function shellsBlock(shells: Shell[], inner: number, now: number, folded:
     const ended = s.end !== null
     const after = ` · ${say(lang, 'status.min', { n: mins((s.end ?? now) - s.at) })}${ended ? ' · ' : ''}`
     const exit = !ended ? '' : s.code === null ? say(lang, 'status.ended') : `exit ${s.code}`
-    const name = cut(commandLine(s.command), Math.max(4, inner - 2 - width(after) - width(exit)))
+    const name = cut(shellLabel(s.command, s.description), Math.max(4, inner - 2 - width(after) - width(exit)))
     if (!ended) rows.push(row('shells', { text: '○', color: OUT }, { text: ` ${name}`, bold: true }, dim(after)))
     else rows.push(row('shells', { text: '●', color: DONE }, dim(` ${name}${after}`), s.code === null || s.code === 0 ? dim(exit) : { text: exit, color: FLAG }))
   }

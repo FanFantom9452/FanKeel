@@ -1614,6 +1614,19 @@ test('a shell whose output file vanishes is listed as ended with no code', async
     assert.ok(lines.includes(' ● sleep 30 · 0 分 · 結束'), lines.join('\n'));
 });
 
+test('a background Bash call carrying a description is listed by it; without one, by the command without its cd', async () => {
+    const hooks = await wired();
+    const { $, log } = fake({ files: Object.assign(entryFile(live), { [OUTPUT]: 'working\n', [TEMP + '/claude/F--proj/' + ID + '/tasks/b2.output']: 'working\n' }), env: { TEMP } });
+    log.now = Date.now();
+    await hooks['session.start']($, {}, passed);
+    await hooks['tool.call']($, Object.assign(background('cd F:/proj && node F:/proj/scripts/await.js --session s'), { description: 'await: survey stage agent' }), answered('b1'));
+    await hooks['tool.call']($, background('cd F:/proj && node F:/proj/scripts/suite.js --fast'), answered('b2'));
+    await log.ticks[0].fn();
+    const lines = paneLines(await hooks['ui.render']($, PANE));
+    assert.ok(lines.some((l) => l.startsWith(' ○ await: survey stage agent · ')), lines.join('\n'));
+    assert.ok(lines.some((l) => l.startsWith(' ○ suite.js --fast · ')), lines.join('\n'));
+});
+
 test('two ticks within the shell poll read the output file once; a new background call reads it again at once', async () => {
     const hooks = await wired();
     const { $, log } = fake({ files: Object.assign(entryFile(live), { [OUTPUT]: 'working\n' }), env: { TEMP } });

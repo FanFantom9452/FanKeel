@@ -641,8 +641,8 @@ test('the shells block sits under agents: running first, then the newest ended, 
     assert.deepEqual(text(rows, 'shells'), [
         '▌▾ shells  2 在跑 · 2 結束',
         ' ○ node --test · 1 分',
-        ' ○ node scripts/tune.js serve · 4 分',
-        ' ● node scripts/render.js · 9 分 · exit 1',
+        ' ○ tune.js serve · 4 分',
+        ' ● render.js · 9 分 · exit 1',
     ]);
     // A non-zero exit is the flag's red; the running mark is OUT's, the ended one DONE's.
     const shown = body(rows, 'shells');
@@ -662,6 +662,18 @@ test('the shells block: exit 0 is dim, a shell with no code says 結束, folded 
     // A long command is cut to the row.
     const long = status(m, { shells: [shellOf('b9', 'node '.repeat(40), NOW - MIN)], cols: 41 });
     assert.ok(text(long, 'shells')[1].endsWith('… · 1 分'));
+});
+
+test('a shell row shows the description when there is one, else the command without its cd and script path', async () => {
+    const m = await load();
+    const rows = status(m, { agents: oneAgent, cols: 60, shells: [
+        { id: 'b1', command: 'cd F:/ymlab/fankeel && node F:/ymlab/fankeel/scripts/await.js --session s', description: 'await: survey stage agent', at: NOW - MIN, end: null, code: null },
+        { id: 'b2', command: 'cd F:/ymlab/fankeel && node F:/ymlab/fankeel/scripts/suite.js --fast', at: NOW - MIN, end: null, code: null },
+    ] });
+    const lines = text(rows, 'shells');
+    assert.ok(lines.some((l) => l.includes('await: survey stage agent')), lines.join('\n'));
+    assert.ok(lines.some((l) => l.includes('suite.js --fast')), lines.join('\n'));
+    assert.ok(!lines.some((l) => l.includes('cd F:')), lines.join('\n'));
 });
 
 test('with no room the shells block goes down to its head row before agents loses a row', async () => {
