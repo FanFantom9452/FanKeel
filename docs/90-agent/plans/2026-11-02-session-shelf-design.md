@@ -40,7 +40,7 @@ last_verified: 2026-11-02
 
 ## 5. 文件
 
-- docs/90-agent/reference/registry.md 寫明條目可能在架上、`readAll` 的選項，以及不變式 4「不刪條目」改讀成「搬走不算刪除」。
+- docs/90-agent/reference/registry.md 寫明條目可能在架上與 `readAll` 的選項；skills/fankeel/SKILL.md 的不變式 4「Never delete a session file」補一句搬到架上不算刪除。
 - lib/registry.js:155 那段「這就是整個 workspace 的歷史」的註解跟著改。
 
 ## 成功條件
