@@ -810,8 +810,8 @@ function sessionFiles(repo) {
 
 **Files:**
 - Modify: `docs/90-agent/reference/registry.md` — 新增「架子」一節
-- Modify: `skills/fankeel-land/SKILL.md` — 收尾清單加一行 shelf 指令
-- Modify: `skills/fankeel/SKILL.md` — 不變式 4 補一句架子
+- Modify: `skills/fankeel-land/SKILL.md:398-412` — 收尾清單加一行 shelf 指令
+- Modify: `skills/fankeel/SKILL.md:226-232` — 不變式 4 補一句架子
 - Read: `docs/90-agent/plans/2026-11-02-session-shelf-design.md` — 內容來源
 - Test: `tests/shelf-docs.test.js`
 
