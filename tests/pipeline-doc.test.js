@@ -109,3 +109,18 @@ test('the build block on the page carries every build rule and every build templ
     .map((x) => x.line + ' — ' + x.count + ' on the page, need 2');
   assert.deepEqual(short, []);
 });
+
+test('the stages section opens with one whole-route flowchart and one hooks timeline, and every script they name exists', () => {
+  const md = fs.readFileSync(PIPELINE, 'utf8');
+  const from = md.indexOf('\n# Stages, and the route through them');
+  const to = md.indexOf("\n### Another plugin's process skill, for the same stage");
+  assert.ok(from > 0 && to > from, 'both headings found');
+  const blocks = [...md.slice(from, to).matchAll(/```mermaid\n([\s\S]*?)```/g)].map((m) => m[1]);
+  assert.equal(blocks.length, 2);
+  assert.match(blocks[0], /subgraph S\["① survey/);
+  assert.match(blocks[1], /SessionStart/);
+  const root = path.join(__dirname, '..');
+  for (const name of new Set(blocks.join('\n').match(/[a-z][a-z-]*\.js/g))) {
+    assert.ok(['scripts', 'hooks'].some((d) => fs.existsSync(path.join(root, d, name))), name);
+  }
+});

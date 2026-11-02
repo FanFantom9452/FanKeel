@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-10-30
+last_verified: 2026-11-02
 source_of_truth: lib/stages.js, lib/render.js, lib/profile.js, skills/fankeel-survey/SKILL.md, skills/fankeel-design/SKILL.md, skills/fankeel-plan/SKILL.md, skills/fankeel-build/SKILL.md, skills/fankeel-verify/SKILL.md, skills/fankeel-audit/SKILL.md, skills/fankeel-land/SKILL.md, scripts/residue.js, hooks/carry.js, scripts/orient.js
 ---
 
@@ -299,6 +299,77 @@ That column is what a stage is graded on, which is not the same question as what
 it has you do. The second question is answered stage by stage in
 [Inside each stage](#inside-each-stage) below, and walked through on one real task in
 [design.md](../01-guide/design.md).
+
+Drawn once on a single page, the whole route is below: which script each stage calls, and what it reads or writes. A script marked `(?)` is placed by inference, not by a call site the stage's own skill names.
+
+```mermaid
+flowchart TB
+  U([/fankeel]) --> INIT
+  subgraph INIT["進場 init"]
+    i1["orient.js — 盤點專案、目錄、TODO"]
+    i2["task.js start — 寫 registry，定 class 與 route"]
+    i3["onboard.js — 有 onboard: 才跑；docs 樹、CLAUDE.md 是否就緒"]
+  end
+  INIT --> S
+  subgraph S["① survey — 已經有什麼"]
+    s1["map.js — 寫 .fankeel/map.md：各目錄用途"]
+    s2["survey.js 詞 — 掃檔名、宣告、markdown 標題"]
+    s3["todo.js list、layout.js — 相關 TODO、目錄結構"]
+    s4["task.js route — 依 class 調整路線"]
+  end
+  S -->|gate| D
+  subgraph D["② design — 同意的做法"]
+    d1["render.js、tune.js — 前端才有：mockup 截圖、逐塊微調"]
+    d2["board.js check (?) — 交出前檢查 .board"]
+  end
+  D -->|gate| P
+  subgraph P["③ plan — 無脈絡也能執行的拆解"]
+    p1["ledger.js --plan — 檢查每項需求都有 task 覆蓋"]
+    p2["task.js intends — 預告會碰哪些檔"]
+  end
+  P -->|gate| B
+  subgraph B["④ build — 改動本身"]
+    b1["ledger.js groups/ready/complete — 帳本：哪些可並行、做到哪"]
+    b2["commit.js — 每個 task 一個 commit"]
+    b3["review-check.js (?)、lenses.js — 逐 task 審查"]
+    b4["suite.js、docs-check.js — gate 前：全套測試、文件引用"]
+  end
+  B -->|gate| V
+  subgraph V["⑤ verify — 證據，不是信心"]
+    v1["ledger.js ranges — 每列需求派一個 verifier"]
+    v3["verify-map.js --range — 改了的程式對到哪些測試"]
+    v4["security-local.js --range — 本地安全掃描"]
+    v5["suite.js、docs-check.js — 全套測試；這次改動讓哪些文件變假"]
+  end
+  V -->|gate| A
+  subgraph A["⑥ audit — 什麼不再為真"]
+    a1["docs-check.js、residue.js — 死連結、殘留檔"]
+    a2["memory-check.js、input-check.js — 記憶、每回合讀入量"]
+    a3["docs-audit.js — 約兩週一次：drift、已落地的 plan、索引"]
+    a4["knip、deptry — 沒用到的程式與相依"]
+  end
+  A -->|gate| L
+  subgraph L["⑦ land — 不比你來時更髒"]
+    l1["suite.js — 合併前後各一次"]
+    l2["todo-check.js、version.js、archive.js — TODO 仍真、版號、封存 plan"]
+    l3["map.js — 重寫地圖"]
+    l4["land.js merge/clean — 合併、清 worktree"]
+    l5["record.js、conversation.js — 紀錄、retro bundle"]
+  end
+  L --> E([task.js land → 收工])
+```
+
+The hooks do not belong to one stage. They fire on Claude Code's own events, in this order, around every stage above.
+
+```mermaid
+flowchart LR
+  SS["SessionStart<br/>carry.js：/clear 後接回 task"] --> UP["UserPromptSubmit<br/>inject.js：注入本站規則"]
+  UP --> PRE["PreToolUse<br/>guard.js 撞檔／唯讀<br/>gate.js 檢查 gate<br/>title.js、dispatch-gate.js 派工<br/>relay-cap.js、wrap-up.js"]
+  PRE --> SUB["SubagentStart/Stop<br/>brief.js 給脈絡<br/>agent-end.js 回傳上限"]
+  PRE --> POST["PostToolUse<br/>touch.js 記 claims<br/>resume.js gate 答完重注入<br/>gate-write.js、budget.js"]
+  POST --> ST["Stop<br/>stop.js：擋提早停"]
+  ST --> SE["SessionEnd<br/>leave.js：記花費、重產 station"]
+```
 
 ### Another plugin's process skill, for the same stage
 
