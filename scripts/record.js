@@ -36,6 +36,7 @@ const OPTIONS = {
     bundles: { type: 'string' },
     'global-packages': { type: 'boolean' },
     'keep-home': { type: 'boolean' },
+    'project-card': { type: 'boolean' },
     closed: { type: 'boolean' },
 };
 
@@ -418,6 +419,35 @@ function globalPackages() {
     } catch (e) { return 'unavailable: npm printed no JSON'; }
 }
 
+const CARD_MAP_LINES = 120;
+const CARD_CLAUDE_LINES = 60;
+
+// 專案卡: what a reader who has never seen this project needs in order to
+// judge a finding about its architecture — the map, CLAUDE.md's headings and
+// bullets, and the route and record of the task each bundle came from. Null
+// when there is no map. Unmasked: the caller masks the home directory and
+// redacts the sensitive words, as it does the report.
+function projectCard(root, projectRoot, ids) {
+    const read = (rel) => { try { return fs.readFileSync(path.join(projectRoot, ...rel.split('/')), 'utf8'); } catch (e) { return null; } };
+    const map = read('.fankeel/map.md');
+    if (!map) return null;
+    const out = ['# 專案卡', '', '## 地圖（.fankeel/map.md）', '', map.split(/\r?\n/).slice(0, CARD_MAP_LINES).join('\n'), ''];
+    const claude = read('CLAUDE.md');
+    const picked = claude ? claude.split(/\r?\n/).filter((l) => /^(#{1,3} |\s*[-*] )/.test(l)).slice(0, CARD_CLAUDE_LINES) : [];
+    if (picked.length) out.push('## CLAUDE.md 重點', '', picked.join('\n'), '');
+    const tasks = registry.readAll(root).entries.filter((e) => ids.some((id8) => e.sessionId.slice(0, 8) === id8
+        || (Array.isArray(e.data.sessions) && e.data.sessions.some((s) => String(s).slice(0, 8) === id8))));
+    if (tasks.length) {
+        out.push('## 這次任務', '');
+        for (const { data } of tasks) {
+            out.push('- ' + (data.task || '（無名）') + '：路線 ' + (Array.isArray(data.route) ? data.route.join(' → ') : '?')
+                + (data.record && data.record.file ? '，紀錄 ' + data.record.file + '#' + data.record.anchor : ''));
+        }
+        out.push('');
+    }
+    return out.join('\n');
+}
+
 function exportZip(opts, cross) {
     if (opts.cross && !cross) fail('record.js export --cross <anchor> --bundles <id8,...>: the anchor is the #x-<date> `retro --cross` printed.');
     const anchor = opts.cross ? String(cross).replace(/^.*#/, '') : null;
@@ -458,6 +488,12 @@ function exportZip(opts, cross) {
         bundles.push({ id8: b.id8, name: path.basename(b.file), gz: masked.gz });
     }
     const text = sensitive.redact(mask([report.trim(), ...bundles.map((b) => '## retro ' + b.id8 + '\n\n' + (retroBlock(months, b.id8) || '（月檔裡沒有這個包的 retro）'))].filter(Boolean).join('\n\n') + '\n'), list.words, {});
+    let card = null;
+    if (opts['project-card']) {
+        const raw = projectCard(root, projectRoot, ids);
+        if (!raw) fail('Nothing written: --project-card needs .fankeel/map.md; run node scripts/map.js first.');
+        card = sensitive.redact(mask(raw), list.words, {});
+    }
     const working = readJson(path.join(root, 'package.json'));
     const installed = readJson(path.join(__dirname, '..', 'package.json')) || {};
     const project = readJson(path.join(projectRoot, 'package.json')) || {};
@@ -482,6 +518,7 @@ function exportZip(opts, cross) {
     const body = zip.write([
         { name: 'manifest.json', data: Buffer.from(JSON.stringify(sensitive.redact(mapStrings(manifest, mask), list.words, {}), null, 2) + '\n') },
         { name: 'report.md', data: Buffer.from(text) },
+        ...(card ? [{ name: 'project.md', data: Buffer.from(card) }] : []),
         ...bundles.map((b) => ({ name: 'bundles/' + b.name, data: b.gz })),
     ]);
     const rel = '.fankeel/exports/retro-' + manifest.created.slice(0, 10) + '-' + sha256(text).slice(0, 8) + '.zip';
@@ -490,6 +527,7 @@ function exportZip(opts, cross) {
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, body);
     process.stdout.write(['export: ' + rel, 'size: ' + (body.length / 1048576).toFixed(1) + ' MB，' + bundles.length + ' bundles，homeMasked: ' + manifest.homeMasked,
+        ...(card ? ['project.md: attached'] : []),
         '把這個檔案用私下管道傳回去，不要上傳到 Gitea。'].join('\n') + '\n');
 }
 
@@ -580,7 +618,7 @@ function main(argv) {
     if (verb === 'retro') return values.cross ? fileCross(values) : values.bundle ? fileBundleRetro(values) : fileRetro(values);
     if (verb === 'export') return exportZip(values, positionals[1]);
     if (verb === 'import') return importZip(values, positionals[1]);
-    fail('record.js write|session [--closed]|retro|sessions --list|export [--cross <anchor>] --bundles <id8,...>|import <zip> --session <id> [--commit] [--transcript <jsonl>] [--cross] [--bundle <id8>] [--global-packages] [--keep-home] [--root <dir>] [--project <dir>] [--config-dir <dir>]');
+    fail('record.js write|session [--closed]|retro|sessions --list|export [--cross <anchor>] --bundles <id8,...>|import <zip> --session <id> [--commit] [--transcript <jsonl>] [--cross] [--bundle <id8>] [--global-packages] [--keep-home] [--project-card] [--root <dir>] [--project <dir>] [--config-dir <dir>]');
 }
 
 if (require.main === module) main(process.argv.slice(2));
