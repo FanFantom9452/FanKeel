@@ -18,3 +18,4 @@ stamp: 2026-11-01
 2026-10-27 決定：再量一週。session 數 4307 → 475、subagent 佔比 33% → 57%，分母變了，前後兩週不能直接比。2026-11-03 用同一個 usage-compare 指令再量，--before 2026-10-13..2026-10-19、--after 2026-10-27..2026-11-02。
 
 - 2026-11-02 CC 2.1.314 Desktop／VS Code 已自帶閒置壓縮（200K+ 對話閒置、cache 過期即摘要，changelog :66），「要不要加閒置壓縮」部分 CC 已做；分工見 compact-8 （judgement: docs/90-agent/judgements/2026-11-02-cc-2-1-300-316.md）
+- 2026-11-02 分工寫進 docs/01-guide/profile.md：compact.at 設 350000 以上時只在使用者沒離開時輪到 fankeel，離開到 cache 過期由 CC 先壓；沒有 1M 的帳號 350000 以上永遠不會先觸發。「要不要加閒置壓縮」這半不必再自己做，剩下要決定的是離開前壓縮與回報長度上限（compact-8）
