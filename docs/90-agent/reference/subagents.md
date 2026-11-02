@@ -679,8 +679,9 @@ prints one line, then exits, so a Monitor would carry the same single event
 with a deadline equal to `await.js`'s own thirty minutes and a re-arm step
 added; the states are decided in `awaitState` and `awaitHandoff`
 (`lib/handoff.js`), not by whatever launches the script. Nothing in the changelog says a Monitor event wakes the
-controller better than a background Bash exit, and neither has been observed
-here (above), so the switch buys nothing. What 2.1.314 did change is that a
+controller better than a background Bash exit; a background Bash exit has been
+observed to wake the controller (above) while a Monitor event has not been
+observed, so the switch buys nothing. What 2.1.314 did change is that a
 hook matching `Bash` also runs on a Monitor's shell command and can only
 block or ask: `hooks/guard.js` takes `Monitor` as a shell call for its two
 refusals (a read-only agent's write, and the controller's write in a
