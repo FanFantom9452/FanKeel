@@ -21,6 +21,11 @@ claude plugin marketplace update fankeel
 claude plugin update fankeel@fankeel
 ```
 
+**開發機**——marketplace 不要指向正在開發的工作目錄：本機目錄來源會把整個資料夾連同 `.claude/worktrees/`、`.fankeel/build/` 一起複製進快取，複製到一半有 worktree 被刪掉就失敗。改指向一份只拿來發版的 clone，發版前先 pull：
+
+    git clone F:/ymlab/fankeel F:/ymlab/fankeel-dist
+    git -C F:/ymlab/fankeel-dist pull --ff-only
+
 **移除**——先跑 `uninstall.js` 清掉專案外的檔（加 `--dry-run` 只列不刪），再移除插件。
 `<plugin>` 在 `~/.claude/plugins/cache/fankeel/fankeel/<版本>/`；專案裡的 `.fankeel/` 會留著。
 
