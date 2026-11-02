@@ -243,7 +243,7 @@
         KIND_KEYS: KIND_KEYS, KIND_LABEL: KIND_LABEL, KIND_COLOR: KIND_COLOR };
     var METRIC_LABEL = { usd: loc('shared.cost', '花費'), tokens: 'token', time: loc('shared.time', '時間') };
     // ---- the shared formatters — assets/station/fmt.js (FK_FMT) ------------
-    var PAGES = ['live', 'sessions', 'projects', 'docs', 'weekly', 'settings', 'tour'];
+    var PAGES = ['live', 'sessions', 'projects', 'docs', 'weekly', 'settings'];
     var FMT_;
     function FMT() {
         return FMT_ || (FMT_ = mod('FK_FMT', 'fmt.js').make({
@@ -298,7 +298,6 @@
     function filterHtml() { return CHART().filterHtml.apply(null, arguments); }
     function segTip() { return CHART().segTip.apply(null, arguments); }
     function legendRest() { return CHART().legendRest.apply(null, arguments); }
-    function tourPage() { return CHART().tourPage.apply(null, arguments); }
     function projectRows() { return CHART().projectRows.apply(null, arguments); }
     function shortLabel() { return CHART().shortLabel.apply(null, arguments); }
     function quotaSvg() { return CHART().quotaSvg.apply(null, arguments); }
@@ -370,7 +369,7 @@
         }));
     }
     // Seven pages, one level, no folds (mockup 2026-10-21-station-home): 現在,
-    // Sessions, 花費, 文件 and 週報 (2026-10-27), then 設定 and 導覽 pinned under them (`pin`).
+    // Sessions, 花費, 文件 and 週報 (2026-10-27), then 設定 pinned under them (`pin`).
     // `kids` are a page's filters — the strip on each of its pages
     // (`subtabsHtml`) — so the strip, the title and the lit entry agree.
     var NAV_TREE = [
@@ -381,7 +380,6 @@
         { ico: 'docs', label: loc('nav.docs', '文件'), v: 'docs', href: '#/docs' },
         { ico: 'calendar', label: loc('nav.weekly', '週報'), v: 'weekly', href: '#/weekly' },
         { ico: 'settings', label: loc('nav.settings', '設定'), v: 'settings', href: '#/settings', pin: true, kids: [['settings', '#/settings', loc('nav.wizard', '精靈')]] },
-        { ico: 'tour', label: loc('nav.tour', '導覽'), v: 'tour', href: '#/tour', pin: true, block: 'tour-nav', title: loc('nav.tourTitle', 'fankeel 怎麼跑一個任務，一段動畫看完') },
     ];
     function recentRows() { return NAV().recentRows.apply(null, arguments); }
     function navCounts() { return NAV().navCounts.apply(null, arguments); }
@@ -510,7 +508,7 @@
             keelProgress: keelProgress, keelStage: keelStage, stageNow: stageNow, runningTag: runningTag,
             timelineModel: timelineModel, timelineSvg: timelineSvg, costModel: costModel, costHtml: costHtml,
             sessionHeadHtml: sessionHeadHtml, tabsHtml: tabsHtml, serveLost: serveLost, talkHtml: talkHtml, talkBody: talkBody,
-            effortChip: effortChip, tourPage: tourPage,
+            effortChip: effortChip,
             railHtml: railHtml, liveTag: liveTag,
             navHtml: navHtml, navCounts: navCounts, recentRows: recentRows,
             segTip: segTip,
@@ -940,7 +938,6 @@
     // 週報 is FK_WEEKLY (assets/station/weekly-page.js): the copy button for
     // /fankeel-weekly and the archive under <configDir>/fankeel/weekly/.
     VIEWS.weekly = function (r) { return w.FK_WEEKLY.page(S, modOpts()); };
-    VIEWS.tour = function () { return tourPage(Boolean(S.serve)); };
     VIEWS.list = listPage;
     // 設定 is FK_SETTINGS (assets/station/settings-page.js, 快速設定), which
     // hands #/settings/detail[/<step>] to FK_SETDETAIL itself; parseHash sends
@@ -1802,7 +1799,7 @@
         // landed: two round trips in a row were most of a re-read's wait. Which
         // detail is read off the list as it stood; a session that went down in
         // between costs one read more, and the next tick asks for none.
-        var on = doc.hidden || route.view === 'settings' || route.view === 'tour' ? null : watched();
+        var on = doc.hidden || route.view === 'settings' ? null : watched();
         var left = on && on.state === 'live' && on.hasDetail ? 2 : 1;
         var fresh = false;
         var landed = function () {
@@ -1811,7 +1808,7 @@
             if (!fresh || doc.hidden) return;
             // The settings wizard reads nothing live; a redraw there would only
             // throw away what the reader has open. The masthead still moves.
-            if (route.view === 'settings' || route.view === 'tour') { drawFloat(); doc.getElementById('gen').textContent = genText(); return; }
+            if (route.view === 'settings') { drawFloat(); doc.getElementById('gen').textContent = genText(); return; }
             repaint();
         };
         reload('station/station-data.js', function (ok) {

@@ -5,8 +5,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const vm = require('node:vm');
 
-// The page booted whole in a fresh vm context, the way tests/station-docs-tour.test.js
-// boots it, on `hash`. Of the ids `todo` and `todo-<id>` only those in `present`
+// The page booted whole in a fresh vm context, on `hash`. Of the ids `todo` and `todo-<id>` only those in `present`
 // are on the page; every element records being scrolled to, and the window its scrollTo.
 // The elements are of the vm's realm, so what they record is compared as plain strings.
 const { SRC } = require('./station-src.js');

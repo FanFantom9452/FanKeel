@@ -28,7 +28,6 @@ test('station.js still loads under require and exports none of them', () => {
     global.window = { STATION: {} };
     const V = require('../assets/station/station.js');
     for (const n of ['docsCardHtml', 'docsSearchHtml', 'WIZ_STEPS', 'wizLoad', 'wizApply', 'wizChanges', 'wizHtml']) assert.equal(n in V, false, n);
-    assert.equal(typeof V.tourPage, 'function');
     assert.equal(typeof V.parseHash, 'function');
 });
 
