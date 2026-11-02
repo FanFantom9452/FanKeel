@@ -21,7 +21,7 @@
 // `updatedInput` alone is not a decision — the probe behind this found that a
 // PreToolUse hook returning only `updatedInput` still lets the user pick — and
 // the only one this file writes is gate.away's extra 離開 question (and the
-// station answers), never a substitution of the gate: on a controlled stage, the controller
+// station's or this task's pre-answered answers), never a substitution of the gate: on a controlled stage, the controller
 // itself reads the handoff file's own gate and types the real AskUserQuestion
 // call, word for word, so there is nothing left to substitute. This file's
 // job is validation, not substitution.
@@ -54,7 +54,7 @@ const profileLib = require('../lib/profile.js');
 const askhuman = require('../lib/askhuman.js');
 const { inspect, awayLine, AWAY_QUESTION } = require('../lib/context.js');
 const { controlling, nextStage, normaliseRoute, FULL_ROUTE } = require('../lib/stages.js');
-const { handoffPath, answerPath, pendingPath, answersSince, answeredOf, handedOffSince, writeAnswer, readGate, patrolEntries, reportProblem, formatProblem, skipReason, gateMatches, withCheckout } = require('../lib/handoff.js');
+const { handoffPath, answerPath, pendingPath, answersSince, answeredOf, handedOffSince, writeAnswer, readGate, patrolEntries, reportProblem, formatProblem, PAUSE, skipReason, gateMatches, withCheckout } = require('../lib/handoff.js');
 const { run, parse, refuse } = require('../lib/hook.js');
 const { askSlip } = require('../lib/cjk.js');
 
@@ -172,6 +172,28 @@ function holdsForAway(mine, values) {
     return !(Number.isInteger(wait) && wait > 0);
 }
 
+// docs/03-decisions/2026-11-03-preanswered-gate.md: this task's own answer to
+// the gate in hand (`task.js preanswer`), as the `answers` AskUserQuestion
+// takes, or null. Only this stage's gate (`isGate`), only a one-question
+// gate, and only when the stored label is option one's — the approval the
+// stage itself recommends — or a pause option's. A pre-answer landing on any
+// other option means the stage's report disagrees with what was answered in
+// advance, and that is the gate a person has to see. Null is asked as usual.
+const RECOMMENDED = /\s*\(Recommended\)\s*$/i;
+function preanswerFor(mine, questions) {
+    const pre = registry.preanswerOf(mine);
+    const raw = pre ? pre.answers[mine.stage] : null;
+    const want = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
+    if (!want || !Array.isArray(questions) || questions.length !== 1) return null;
+    const options = isGate(mine, questions);
+    if (!options) return null;
+    const hit = options.findIndex((o) => String((o && o.label) || '').replace(RECOMMENDED, '').toLowerCase().includes(want));
+    if (hit < 0) return null;
+    const label = options[hit].label;
+    if (hit !== 0 && !PAUSE.test(label)) return null;
+    return { label, answers: { [questions[0].question]: label } };
+}
+
 // What this hook has to say, once the station has had its chance: an answer
 // that arrived in time goes out as an allowed call carrying `answers`.
 //
@@ -181,24 +203,33 @@ function holdsForAway(mine, values) {
 // gate still waiting on the station's gate tab and waiting cards. It is stamped
 // before `stationAnswers` waits, so the page sees the gate for that wait too.
 function emit(out, payload, root, mine, values) {
+    const asked = payload.tool_input && payload.tool_input.questions;
+    // A pre-answer is read first, so a gate this task already answered is
+    // neither held for an away user nor left waiting on the station.
+    let pre = null;
+    try { pre = preanswerFor(mine, asked); } catch (e) { /* housekeeping: asked as usual */ }
     try {
-        if (holdsForAway(mine, values) && registry.setAway(root, payload.session_id)) {
+        if (!pre && holdsForAway(mine, values) && registry.setAway(root, payload.session_id)) {
             refuse(HOLD);
             return;
         }
     } catch (e) { /* housekeeping: the question goes out as it was */ }
     try {
-        registry.gateOpen(root, payload.session_id, { stage: mine.stage, hash: hashOf(payload.tool_input && payload.tool_input.questions) });
+        registry.gateOpen(root, payload.session_id, { stage: mine.stage, hash: hashOf(asked) });
     } catch (e) { /* housekeeping */ }
-    let answers = null;
-    try {
-        answers = stationAnswers(root, mine, values, payload.tool_input && payload.tool_input.questions);
-    } catch (e) { /* housekeeping: the question goes to the terminal */ }
+    let answers = pre ? pre.answers : null;
+    if (pre) {
+        try { registry.markPreanswered(root, payload.session_id, mine.stage, pre.label); } catch (e) { /* housekeeping */ }
+    } else {
+        try {
+            answers = stationAnswers(root, mine, values, asked);
+        } catch (e) { /* housekeeping: the question goes to the terminal */ }
+    }
     if (answers) {
         out.hookSpecificOutput = {
             hookEventName: 'PreToolUse',
             permissionDecision: 'allow',
-            permissionDecisionReason: 'fankeel: answered on the station',
+            permissionDecisionReason: pre ? 'fankeel: pre-answered for this task (task.js preanswer): ' + pre.label : 'fankeel: answered on the station',
             updatedInput: Object.assign({}, payload.tool_input, { answers }),
         };
     }
@@ -209,7 +240,6 @@ function emit(out, payload, root, mine, values) {
         const line = mode === 'hint' || mode === 'ask' ? awayLine(inspect(payload.transcript_path)) : null;
         if (line) {
             out.systemMessage = out.systemMessage ? out.systemMessage + ' ' + line : line;
-            const asked = payload.tool_input && payload.tool_input.questions;
             if (mode === 'ask' && !answers && Array.isArray(asked) && asked.length < 4 && isGate(mine, asked)) {
                 out.hookSpecificOutput = {
                     hookEventName: 'PreToolUse',
