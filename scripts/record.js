@@ -349,7 +349,8 @@ function retroBlock(months, id8) {
 
 // os.homedir() as a transcript spells it: native, with forward slashes, and as
 // Git Bash's /c/Users/<name>. Windows paths match in any case; the lookahead
-// keeps C:\Users\ann from matching inside C:\Users\anna. A backslash matches a
+// keeps C:\Users\ann from matching inside C:\Users\anna or C:\Users\ann.bob,
+// yet still masks it before a sentence-ending dot. A backslash matches a
 // run of them: JSON held in a string, and a { f, raw } row's line, spell
 // C:\Users\ann as C:\\Users\\ann, or C:\\\\Users\\\\ann once more inside.
 function homePattern(home) {
@@ -358,7 +359,7 @@ function homePattern(home) {
     if (drive) forms.add('/' + drive[1].toLowerCase() + '/' + drive[2].split('\\').join('/'));
     const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').split('\\\\').join('\\\\+');
     const alts = [...forms].sort((a, b) => b.length - a.length).map(esc).join('|');
-    return new RegExp('(?:' + alts + ')(?![\\w.-])', process.platform === 'win32' ? 'gi' : 'g');
+    return new RegExp('(?:' + alts + ')(?![\\w-]|\\.\\w)', process.platform === 'win32' ? 'gi' : 'g');
 }
 
 function mapStrings(value, fn) {

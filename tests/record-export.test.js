@@ -232,4 +232,8 @@ test('homePattern masks a Windows home spelled with single, doubled or quadruple
     assert.equal(mask('C:\\\\Users\\\\ann\\\\x'), '[HOME]\\\\x');
     assert.equal(mask('C:\\\\\\\\Users\\\\\\\\ann\\\\\\\\x'), '[HOME]\\\\\\\\x');
     assert.equal(mask('C:\\Users\\anna\\x'), 'C:\\Users\\anna\\x');
+    assert.equal(mask('open C:\\Users\\ann.'), 'open [HOME].');
+    assert.equal(mask('C:\\Users\\ann, then'), '[HOME], then');
+    assert.equal(mask('C:\\Users\\ann.bob'), 'C:\\Users\\ann.bob');
+    assert.equal(mask('C:\\Users\\anna'), 'C:\\Users\\anna');
 });
