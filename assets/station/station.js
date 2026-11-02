@@ -368,7 +368,7 @@
             loc: loc, esc: esc, w: w, NAV_TREE: NAV_TREE, focusHref: focusHref, mins: mins
         }));
     }
-    // Seven pages, one level, no folds (mockup 2026-10-21-station-home): 現在,
+    // Six pages, one level, no folds (mockup 2026-10-21-station-home): 現在,
     // Sessions, 花費, 文件 and 週報 (2026-10-27), then 設定 pinned under them (`pin`).
     // `kids` are a page's filters — the strip on each of its pages
     // (`subtabsHtml`) — so the strip, the title and the lit entry agree.

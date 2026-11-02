@@ -1069,7 +1069,7 @@ const NAV_SESSIONS = [
 test('navHtml lights the page a view belongs to and links all five', () => {
     const out = V.navHtml('days', { waiting: 0 });
     assert.match(out, /<a href="#\/days" aria-current="page">/);
-    for (const h of ['#/', '#/sessions', '#/days', '#/docs', '#/settings'])assert.ok(out.includes('<a href="' + h + '"'), h);
+    for (const h of ['#/', '#/sessions', '#/days', '#/docs', '#/settings']) assert.ok(out.includes('<a href="' + h + '"'), h);
     assert.match(out, /data-block="nav"/);
     assert.match(V.navHtml('project', { waiting: 0 }), /<a href="#\/days" aria-current="page">/);
     assert.match(V.navHtml('session', { waiting: 0 }), /<a href="#\/sessions" aria-current="page">/);
