@@ -18,7 +18,7 @@ const CAPS = {
     'fankeel-land': 25600,
     'fankeel-audit': 20800,
     'fankeel-plan': 21900,
-    'fankeel-verify': 19800,
+    'fankeel-verify': 20100,
     'fankeel-design': 17100,
     'fankeel-init': 14000,
     'fankeel-ask': 9000,

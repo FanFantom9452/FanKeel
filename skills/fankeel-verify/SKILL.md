@@ -268,7 +268,10 @@ like any other.
 
 Before dispatching, run `node <plugin>/scripts/lenses.js <the base>..HEAD` over
 that same whole range and put what it printed in the brief too: `none`, or the
-`## Silent failure` lens and the `## Comment` lens by name, whichever it named.
+`## Silent failure` lens and the `## Comment` lens by name, whichever it named,
+and, when it printed `## Blast radius`, that block as it stands — a changed file
+that `verify.blast` (`task.js profile show`) or more files require, with the
+callers listed. Tell the adversary to read those callers against the change.
 
 Where the project's profile says `sensitive.review` is `true`
 (`task.js profile show`), the adversary's brief also asks for the
