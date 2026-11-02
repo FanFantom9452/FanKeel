@@ -1,7 +1,10 @@
 ---
 title: station 圖需要真瀏覽器驗證
-description: mermaid 圖與 gate 標記只用假 DOM 測過，尚缺真瀏覽器驗證
-state: ready
+description: mermaid 圖與 gate 標記只用假 DOM 測過；第 1 步已在真 station 拍到，第 2 步等有人在真 gate 上標記
+state: watch
+group: 真 gate 上有人標記
+timing: if: 有人在真 gate 頁上標記 node 並送出
+stamp: 2026-11-02
 ---
 
 build 2026-10-26 的 mermaid 圖（docs 閱讀框與 gate 頁標記 node）只用假 DOM 測過，render reviewer 因 scripts/render.js 只收 URL、無法開閱讀框或點 node 而回 recapture。要補：一條可驅動點擊的截圖路徑，並在真 gate 跑一次 標記→送出→hooks/gate.js 收到。完成標準：真 station 上拍到寬圖可拖拉、標記後答案框有內容。
@@ -13,3 +16,5 @@ build 2026-10-26 的 mermaid 圖（docs 閱讀框與 gate 頁標記 node）只�
 2026-10-29 verify：build-answer 仍無 「標記：」 行，第二步（真 gate 標記 node、hooks/gate.js 收到答案）仍未做，保持開著。
 
 2026-10-30 land：10-29 第二輪盤點的任務 9 沒做成，build gate 是在終端機作答，沒有「標記：」行。另外發現 gate 頁在 session 有殼時會空白（`focusShell` 沒載入 nav.js），要先修好，真 gate 上才標得到。
+
+2026-11-02 盤點：使用者選「移到 Watch」。空白 gate 頁已由 commit 1b2999ed 修掉；第 2 步不再主動排，等下一次有人實際在 gate 頁標記 node 時，看答案檔有沒有「標記：」行、hooks/gate.js 有沒有收到。
