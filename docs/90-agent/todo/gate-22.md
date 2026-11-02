@@ -2,7 +2,7 @@
 label: gate
 title: 先問完、剩下自己跑
 description: plan 或 design 結束時一次預答後面幾站的 gate（只對這個 task），之後 verify／land 照寫報告但標已預答；不可逆動作、啟動外部程式、spec 沒列的手段仍硬停
-state: decision
+state: ready
 link: hooks/gate.js
 ---
 
@@ -19,3 +19,5 @@ link: hooks/gate.js
 - 與 10-19 決定的去重、handoff 逐字複製、resume 三條流程怎麼共存。
 
 完成的樣子：使用者選定上述四點，另開 design 任務改 hooks/gate.js 與其測試；或決定不做，把理由補進 2026-10-19 決策紀錄後關閉本條。
+
+2026-11-02 盤點（task-20261102T121659）：使用者在 survey gate 選「重開該決定」，依 docs/03-decisions/2026-10-19-no-unattended-gate.md:29 以 10-21 夜的案例重議。下一步是開一個 design 任務，把上面「要決定的」四點（預答在哪一站問、已預答的 gate 怎麼過 hooks/gate.js、硬停清單、與 10-19 決定及 handoff／resume 的共存）在 design gate 定下來，再改 hooks/gate.js 與其測試。
