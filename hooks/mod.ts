@@ -19,8 +19,7 @@ type Verdict = { decision: string; reason?: string; decider?: string; [k: string
 // refuses it with the hook's reason. Every other verdict passes as it came.
 export function personDecides(out: Verdict): Verdict {
   if (!out || out.decision !== 'ask' || typeof out.reason !== 'string' || !out.reason.startsWith(GATE_PREFIX)) return out
-  const answer: Verdict = { ...out, decider: 'person' }
-  return answer
+  return { ...out, decider: 'person' }
 }
 
 // The registry root the way hooks/pane.ts findEntry finds it, written again: the
