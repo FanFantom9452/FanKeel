@@ -148,6 +148,19 @@ test('a shelf sessions path that cannot be read is an error, a missing one is em
     assert.throws(() => shelf.readShelved(root), { code: 'ENOTDIR' });
 });
 
+test('restore of an id that also exists locally moves nothing back', () => {
+    const shelf = require('../lib/shelf.js');
+    const { root, sessions, build } = fixture();
+    shelf.run(root, { now: NOW });
+    const local = path.join(sessions, 'aaaaaaaa-0003.json');
+    fs.writeFileSync(local, JSON.stringify({ task: 'local twin', active: true }));
+    assert.equal(shelf.restore(root, 'aaaaaaaa-0003'), false);
+    assert.equal(fs.existsSync(build), false);
+    assert.equal(fs.existsSync(path.join(shelf.shelfDir(root), 'build', 'task-20261001T080000', 'plan.md')), true);
+    assert.equal(JSON.parse(fs.readFileSync(local, 'utf8')).task, 'local twin');
+    assert.deepEqual(shelf.readShelved(root).map((e) => e.sessionId), ['aaaaaaaa-0003']);
+});
+
 test('dry run counts a build directory two going entries share once, as a real run does', () => {
     const shelf = require('../lib/shelf.js');
     const { root, sessions } = fixture();
