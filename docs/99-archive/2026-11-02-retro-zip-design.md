@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 last_verified: 2026-11-02
 source_of_truth: scripts/record.js, lib/bundle.js, lib/sensitive.js, skills/fankeel-retro-all/SKILL.md
 ---
