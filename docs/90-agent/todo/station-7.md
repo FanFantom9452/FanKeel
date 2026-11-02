@@ -1,7 +1,7 @@
 ---
 label: station
 title: source.test 擋 tour-keel
-description: source.test.js 的「every exported name is imported」因 tour-keel.js 匯出失敗（18fa2368／a45bb6fa）；該檔屬另一個進行中的 session，勿在此改 — [tour-keel.js](assets/station/tour-keel.js).
+description: source.test.js 的「every exported name is imported」因 tour-keel.js 匯出失敗（18fa2368／a45bb6fa）；該檔屬另一個進行中的 session，勿在此改 — tour-keel.js（station tour 已移除，見 git 歷史）.
 state: done
 link: assets/station/tour-keel.js
 group: promo30 v3 收工
