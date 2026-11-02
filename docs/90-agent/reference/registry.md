@@ -638,6 +638,6 @@ refuses the whole list when one path is not held.
 
 `run` 印一行 `shelf: moved <n> session(s), <n> build dir(s), <n> file(s) → <架子目錄>`；加 `--dry-run` 時是 `shelf: would move <n> session(s), <n> build dir(s) → <架子目錄>`，什麼都不搬。`--days N` 換掉 14 天的門檻。留在原處的（複本比對不合、目的地已經存在，或複製失敗），每筆一行 `  kept, the copy did not match: <路徑>`，結束碼是 1；索引寫不進去時印 `  index not written: <原因>`，搬移照算。`find <詞>` 每筆印 `<id>  <stage>  <task>  <檔案>`，查無時印 `shelf: nothing on the shelf matches <詞>`。`restore <id>` 把條目搬回並印 `shelf: restored <id>`，架上沒有時結束碼 2。
 
-要看整段歷史的讀者呼叫 `readAll(root, { shelf: true })`：station 歷史頁、spend、profile、settingsuggest、`task.js show --all`。週報的 `sessionFiles` 也讀架子。`adopt` 在本地找不到條目時，先把它從架上搬回再接手。搬到架上不是刪除，skills/fankeel/SKILL.md 的不變式 4 照舊成立。
+要看整段歷史的讀者呼叫 `readAll(root, { shelf: true })`：station 歷史頁、profile、settingsuggest、`task.js show --all`。`spend` 尚未讀架子，等 lib/spend.js 第 120 行補上 `{ shelf: true }` 後才會（TODO，待「移除 station tour」落地）。週報的 `sessionFiles` 也讀架子。`adopt` 在本地找不到條目時，先把它從架上搬回再接手。搬到架上不是刪除，skills/fankeel/SKILL.md 的不變式 4 照舊成立。
 
 [Back to the index](../../README.md) · [Back to the front page](../../../README.md)
