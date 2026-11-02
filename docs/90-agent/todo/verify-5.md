@@ -1,7 +1,7 @@
 ---
 label: verify
 title: verify 加 blast-radius lens
-description: lib/lenses.js 算 base..HEAD 改到的每個檔被幾個檔案 require／import，超過門檻就把呼叫者列進對手審查員的簡報
+description: lenses 算 base..HEAD 改到的每個檔被幾個檔案 require／import，超過門檻就把呼叫者列進對手審查員的簡報
 state: ready
 link: lib/lenses.js
 ---
