@@ -57,6 +57,16 @@ const PAGES = {
   },
 };
 
+test('the judge pages cap readers by profile, not by a number', () => {
+  const cap = /(?:at most|up to|no more than) (?:eight|8|four|4|twelve|\d+) (?:`?fankeel:fankeel-reader`?|readers)/;
+  for (const f of ['agents/fankeel-judge.md', 'skills/fankeel-ask/SKILL.md', 'docs/90-agent/reference/subagents.md']) {
+    assert.doesNotMatch(flat(f), cap, f + ' caps the judge readers at a number');
+  }
+  assert.match(flat('skills/fankeel-ask/SKILL.md'), /passes `inflight: <value>` in the judge brief/);
+  assert.match(flat('agents/fankeel-judge.md'), /task.js profile show`/);
+  assert.match(flat('agents/fankeel-judge.md'), /`unlimited` means no cap/);
+});
+
 test('the pages that state the dispatch.inflight default say eight', () => {
   for (const [file, { gone, now }] of Object.entries(PAGES)) {
     const text = flat(file);
