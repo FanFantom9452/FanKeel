@@ -36,3 +36,5 @@ Bash guard 那半一個數字都沒有：timing 報告通篇沒提 guard，`.cla
 - commit 2b4cbc9e
 - commit ceb9e994
 - commit cd6f2955
+
+- 2026-11-02 CC 2.1.300 transcript 變大（changelog :793），hook 解析變慢，各解析器要跳過 API 請求紀錄；與 inject-2 同一條 （judgement: docs/90-agent/judgements/2026-11-02-cc-2-1-300-316.md）

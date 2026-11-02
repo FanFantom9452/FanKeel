@@ -39,3 +39,5 @@ session 82155bbc 的 transcript（2026-10-14）：一個子 agent 對 `docs/90-a
 要做成：報告那半已在 10-08 補完；剩下的是 no verdict 再發生時，在同一個 session 裡用 `claude --debug` 查判定走到哪一步。
 
 完成條件：no verdict 再發生時，當場用 `claude --debug` 看規則有沒有被讀到、判定有沒有走到 classifier，並寫進報告；或確認不再發生後關掉此條。
+
+- 2026-11-02 CC 2.1.314 修了 auto mode 安全檢查無判定時回報 blocked（changelog :97）；2.1.316 重跑本條再現條件，不再發生就關 TODO。另可評估 /auto-mode-setup（見 init-4）（judgement: docs/90-agent/judgements/2026-11-02-cc-2-1-300-316.md）

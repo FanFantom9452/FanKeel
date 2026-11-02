@@ -16,3 +16,5 @@ done:
 ## 完成紀錄（2026-10-17）
 
 使用者選了「brief 搬最小一步」：brief 本身留在 hooks/brief.js，因為 brain brief 要用 profile、stages、handoff 這些 lib/ 模組，mod 引擎 require 不到 lib/。835fffb7 讓 hooks/mod.ts 在 agent.spawn 拿到 agentId 後，把 prompt 第一行（最多 200 字元）、subagentType、parentAgentId 寫進 .fankeel/build/spawn/<agentId>.json。1ca28b3c 讓 hooks/brief.js 的 promptOfAgent 與 nestedBrain 先讀這個檔，讀不到才照舊讀 transcript 與 meta；mod 沒載入時沒有這個檔，行為與之前一樣。tests/brief.test.js 的新測試在沒有 transcript、也沒有 meta 時靠這個檔判成巢狀；把讀檔那段拿掉測試就會紅。真機上這個檔在 SubagentStart 跑的時候是不是已經寫好，這次沒驗到，另開 brief-7。
+
+- 2026-11-02 CC 2.1.300 agent.spawn mod hook 可改寫 Workflow agent 的 prompt、model（changelog :738）；Workflow 子 agent 也能在 spawn 收 brief，是 brief-6 最小一步之外的另一條路 （judgement: docs/90-agent/judgements/2026-11-02-cc-2-1-300-316.md）

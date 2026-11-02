@@ -9,3 +9,5 @@ done:
   sha: 4c5470489bd440b7eff963548ee2d9dd0ffd239f
   disposition: measured-no-change
 ---
+
+- 2026-11-02 CC 2.1.300 本機 transcript 同時記每次 API 請求的 system prompt、tools、參數（changelog :793），transcript 變大，確認 hooks/inject.js:317 等解析器跳過請求紀錄 （judgement: docs/90-agent/judgements/2026-11-02-cc-2-1-300-316.md）

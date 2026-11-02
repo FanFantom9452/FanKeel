@@ -21,3 +21,5 @@ Pane 上的 gate 介面草稿交由使用者逐項裁定五個未決事項。裁
 
 - commit 58ed890c
 - commit bfbd1eed
+
+- 2026-11-02 CC 2.1.304 mod tool.check 新增 decider person（changelog :530，見新 TODO gate 走 decider）；2.1.301 :720 tree 在 Desktop／手機可含 Markdown、48 列，gate 介面可在問題框上畫更多 （judgement: docs/90-agent/judgements/2026-11-02-cc-2-1-300-316.md）

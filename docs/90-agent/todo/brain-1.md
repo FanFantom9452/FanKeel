@@ -27,3 +27,5 @@ done:
 - commit 2e04995e
 - commit 12c040db
 - commit 3cd41603
+
+- 2026-11-02 CC 2.1.311 SubagentStop 改為結束才跑一次（原約每分鐘兩次，changelog :236）；重量一次次數後本條檢查可簡化 （judgement: docs/90-agent/judgements/2026-11-02-cc-2-1-300-316.md）
