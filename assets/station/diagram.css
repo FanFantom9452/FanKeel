@@ -11,7 +11,10 @@
 .dg .btn:focus-visible,.dg .perseg button:focus-visible{outline:2px solid var(--keel);outline-offset:1px}
 /* a fixed height the page does not jump around in, drag-resizable; pele pans and zooms the drawing inside it */
 .dg-pan{position:relative;height:320px;min-height:160px;resize:vertical;display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--panel);touch-action:pan-y}
-.gt-frame .dg-pan{height:460px}
+/* gate page: the figure is as wide as the drawing needs, up to the window less 24px a side, and breaks out of the 1440px column, centred on it;
+   its pan is as tall as the drawing opens at (diagram.js writes --dg-w and --dg-ph), 180px to 85vh. A hand-dragged height still wins. */
+.gt-frame .dg{--dg-want:min(calc(100vw - 48px),calc(var(--dg-w,0px) + 24px));width:max(100%,var(--dg-want));margin-inline:calc((100% - max(100%,var(--dg-want)))/2);position:relative;z-index:1}
+.gt-frame .dg-pan{height:min(max(var(--dg-ph,460px),180px),85vh)}
 .dg-pan>svg{display:block;width:auto;height:auto;max-width:100%;max-height:100%}
 .dg-pan>svg:focus-visible{outline:2px solid var(--keel);outline-offset:-2px}
 .dg-pan .pele-node{cursor:default}

@@ -223,3 +223,31 @@ test('clearMarks unmarks the drawn figures without calling onMark, so the next c
     f.handlers.click({ target: f.nodes[1] });
     assert.deepEqual(got, [['B']]);
 });
+
+test('the gate page frame follows the drawing: --dg-w is its natural width, --dg-ph its height at the opening scale, floor 0.8', () => {
+    const D = loaded();
+    const size = (width, height, boxW) => {
+        const f = fake(), props = {};
+        f.fig.style = { setProperty: (k, v) => { props[k] = v; } };
+        f.pan.clientWidth = boxW;
+        f.pele.render = () => ({ svg: '<svg></svg>', width, height });
+        D.draw(f.root, { pele: f.pele });
+        return props;
+    };
+    const tall = size(600, 1500, 624);
+    assert.equal(tall['--dg-w'], '600px');
+    assert.ok(parseFloat(tall['--dg-ph']) > 460, tall['--dg-ph']);
+    const wide = size(1500, 200, 1344);
+    assert.equal(wide['--dg-w'], '1500px');
+    assert.ok(parseFloat(wide['--dg-ph']) < 300, wide['--dg-ph']);
+    const squeezed = size(1500, 200, 600);
+    assert.equal(parseFloat(squeezed['--dg-ph']), Math.ceil(200 * 0.8) + 16);
+});
+
+test('diagram.css sizes the gate frame from those properties, no longer fixes it at 460px, and leaves the phone box alone', () => {
+    const css = fs.readFileSync(path.join(ASSETS, 'diagram.css'), 'utf8');
+    assert.doesNotMatch(css, /\.gt-frame \.dg-pan\{height:460px\}/);
+    assert.match(css, /\.gt-frame \.dg-pan\{height:min\(max\(var\(--dg-ph,460px\),180px\),85vh\)\}/);
+    assert.match(css, /\.gt-frame \.dg\{[^}]*width:max\(100%,var\(--dg-want\)\)/);
+    assert.doesNotMatch(fs.readFileSync(path.join(ASSETS, 'mobile.css'), 'utf8'), /--dg-/);
+});

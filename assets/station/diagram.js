@@ -154,6 +154,14 @@
         fig.setAttribute('data-drawn', '1');
         fig.setAttribute('data-view', 'diagram');
         [].forEach.call(fig.querySelectorAll('[data-dg-view]'), function (x) { x.setAttribute('aria-pressed', String(x.getAttribute('data-dg-view') === 'diagram')); });
+        // The frame follows the drawing (gate page, diagram.css): --dg-w widens the figure, then the pan's own width says what scale the
+        // drawing opens at, floor FLOOR, and --dg-ph is that scale times its natural height. Measured here, after the figure is shown:
+        // a pan that is still display:none has no width.
+        if (fig.style && fig.style.setProperty && r.width > 0 && r.height > 0) {
+            fig.style.setProperty('--dg-w', r.width + 'px');
+            var open = Math.max(FLOOR, Math.min(1, (pan.clientWidth || r.width) / r.width));
+            fig.style.setProperty('--dg-ph', Math.ceil(r.height * open) + 16 + 'px');
+        }
         if (o.mark) fig.setAttribute('data-mark', '1');
         // pele falls back to fit whenever its box resizes; put the reader's scale back unless they asked for the whole drawing
         if (w.ResizeObserver) {
