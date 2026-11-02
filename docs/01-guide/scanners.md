@@ -6,7 +6,7 @@ source_of_truth: scripts/docs-check.js, scripts/docs-audit.js, scripts/residue.j
 
 # 五支掃描器
 
-fankeel 帶五支掃描器，它們只回報，會改檔案的只有 `residue.js --sweep`（移除用完的 agent worktree 與分支）和 audit 對這次執行的紀錄（`.fankeel/audit.json`）。它們只回報機械上能判斷的事，不會判斷兩份文件互相矛盾——那要人讀。`/fankeel-audit` 一次跑完五支、讀它們的清單，最後才提議清理。
+fankeel 帶五支掃描器，它們只回報，會改檔案的只有 `residue.js --sweep`（移除用完的 agent worktree 與分支，也刪 `.claude/worktrees/` 下沒登記的 `agent-*` 目錄）和 audit 對這次執行的紀錄（`.fankeel/audit.json`）。它們只回報機械上能判斷的事，不會判斷兩份文件互相矛盾——那要人讀。`/fankeel-audit` 一次跑完五支、讀它們的清單，最後才提議清理。
 
 `<plugin>` 是插件安裝的目錄；在這個 repo 裡就是 `.`。
 
@@ -35,6 +35,7 @@ node <plugin>/scripts/residue.js [--sweep]
 ```
 
 列出沒追蹤也沒忽略的檔、分支已合併的 worktree、空目錄、被忽略的大東西。只列不刪；`--sweep` 才清掉用完的 agent worktree 與分支。
+`--sweep` 也刪 `.claude/worktrees/` 下沒有 worktree 指向的 `agent-*` 目錄，但只刪兩小時沒動過的。
 
 ## memory-check：Claude Code 的記憶還對嗎
 

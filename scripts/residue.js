@@ -405,10 +405,11 @@ function report(result) {
 // Every worktree-agent-* branch whose commits HEAD already has, with its
 // worktree when one is checked out and clean, is removed; anything holding
 // uncommitted files or a commit HEAD lacks is kept and said, never forced
-// (TODO agent 分支與 worktree 殘留). An agent-* directory under .claude/worktrees/
-// that no worktree entry names is deleted under the same quiet rule. A worktree in use by a live session, or
-// whose directory or any file under it, outside .git and node_modules, was modified within the last two
-// hours, may be an agent still running and is kept.
+// (TODO agent 分支與 worktree 殘留). An agent-* directory under
+// .claude/worktrees/ that no worktree entry names is deleted under the same
+// quiet rule. A worktree in use by a live session, or whose directory or any
+// file under it, outside .git and node_modules, was modified within the last
+// two hours, may be an agent still running and is kept.
 const SWEEP_QUIET_MS = 2 * 3600000;
 
 // The first path under `dir` modified after `after`, `.git` and node_modules
