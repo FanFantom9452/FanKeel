@@ -1188,7 +1188,7 @@ function cmdNext(root, opts) {
     // `show` and a new window tell this entry from an abandoned one.
     const handoff = opts.handoff === true;
     if (handoff && !text.trim()) fail('A hand-off needs a next line: give it, or --from-gate.');
-    // SPIKE (throwaway): HEAD at hand-off, null when git cannot say.
+    // HEAD at hand-off, so adopt can say which claims moved since; null when git cannot say.
     let sha = null;
     if (handoff) {
         try {
@@ -1535,7 +1535,7 @@ function cmdAdopt(root, opts) {
 
     const lines = ['fankeel — adopted: ' + (data.task || 'untitled') + ' @ ' + data.stage];
     lines.push('  ' + from + ' is now stood down.');
-    // SPIKE (throwaway): which of the claims moved since the hand-off.
+    // Which of the claims moved since the hand-off: the new session's first reading list.
     const sinceSha = registry.handoffShaOf(source);
     if (sinceSha && claims.length) {
         let changed = null;

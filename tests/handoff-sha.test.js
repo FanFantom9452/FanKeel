@@ -1,6 +1,6 @@
 'use strict';
 
-// SPIKE (throwaway): hand-off records HEAD, adopt lists claims changed since.
+// Hand-off records HEAD; adopt lists the claims changed since.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -66,4 +66,13 @@ test('next without --handoff leaves no handoffSha', () => {
   const r = task(p, A, ['next', 'plain']);
   assert.equal(r.code, 0, r.out);
   assert.equal(registry.readSession(p.dir, A).handoffSha, undefined);
+});
+
+test('hand-off HEAD is documented beside the hand-off mark and carries no spike label', () => {
+  const root = path.join(__dirname, '..');
+  const doc = fs.readFileSync(path.join(root, 'docs', '90-agent', 'reference', 'registry.md'), 'utf8');
+  assert.match(doc, /`handoffSha`/);
+  for (const rel of ['lib/registry.js', 'scripts/task.js']) {
+    assert.doesNotMatch(fs.readFileSync(path.join(root, rel), 'utf8'), /SPIKE \(throwaway\)/, rel);
+  }
 });

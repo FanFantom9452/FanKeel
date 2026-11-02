@@ -531,6 +531,11 @@ step.
 A hand-off on purpose leaves a mark. `task.js next --handoff` (with
 `--from-gate` for the stage agent's own line) stamps `handoff` beside `next`;
 any later `next` without the flag takes it back, and `adopt` does not carry it.
+The same flag records `handoffSha`, the project's `HEAD` at that moment, and
+it is taken back with the mark. `adopt` diffs it against the current `HEAD`
+and prints `claims changed since handoff <sha8>:` with each claimed path that
+moved, or `no claim changed since handoff <sha8>.` — the files the new
+session should re-read before trusting its notes.
 `task.js show` lists such an entry first, under `handed off`, whether or not
 its session still runs, and `hooks/carry.js` — on `startup` as well as `clear`
 and `fork` — puts it in front of a new window. Adopting still waits for the
