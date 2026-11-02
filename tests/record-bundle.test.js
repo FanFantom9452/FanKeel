@@ -166,6 +166,14 @@ test('session refuses a closed task, and --closed packs it with the same masking
     assert.ok(!text.includes(KEY) && text.includes('[REDACTED:key]') && text.includes('[REDACTED:word]'));
 });
 
+test('--closed on an active task behaves like session without it', () => {
+    const s = seed();
+    run(s, ['write', '--session', A], GOOD);
+    const r = run(s, ['session', '--session', A, '--closed']);
+    assert.equal(r.code, 0, r.out);
+    assert.equal(fs.readdirSync(path.join(s.root, '.fankeel', 'bundles')).length, 1);
+});
+
 test('--closed still refuses a session the registry does not know', () => {
     const s = seed();
     const r = run(s, ['session', '--session', 'ffffffff-0000-0000-0000-000000000000', '--closed']);

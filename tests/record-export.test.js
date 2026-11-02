@@ -264,3 +264,13 @@ test('report.md goes through the sensitive list too', () => {
     const report = entries(exported(s.root, r.out)).get('report.md').toString('utf8');
     assert.ok(!/mover/i.test(report) && report.includes('[REDACTED:word]'), report);
 });
+
+test('a single-bundle ZIP exported without --cross imports into a fresh root', () => {
+    const s = seed();
+    const zipFile = exported(s.root, run(s.root, ['export', '--bundles', 'aaaaaaaa']).out);
+    const other = tmp('fankeel-rimp1-');
+    const r = run(other, ['import', zipFile]);
+    assert.equal(r.code, 0, r.out);
+    assert.match(r.out, /imported: 1 bundles/);
+    assert.match(run(other, ['sessions', '--list']).out, /\.fankeel\/bundles\/2026-11-01-aaaaaaaa\.jsonl\.gz/);
+});
