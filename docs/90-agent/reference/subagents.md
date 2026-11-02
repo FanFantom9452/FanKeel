@@ -969,6 +969,10 @@ section records them.
   block; `commit.js` commits the listed paths there with `commit -o`,
   cherry-picks the commit onto HEAD, prints `<base>..<sha>`, and removes the
   worktree and its branch, or prints `kept <path> — <why>` when git will not.
+  Before removing, it cleans untracked scratch in the worktree (only when no
+  tracked file is edited) and retries the removal once on Windows. A `kept ...
+  unregistered` line means git dropped the worktree but its directory is still
+  on disk because a shell remains in it.
   A cherry-pick conflict is aborted — HEAD and the working tree unchanged,
   earlier blocks kept, the worktree kept — and printed as `conflict <paths>`
   with exit 1; the brain re-dispatches that task once on the new HEAD without

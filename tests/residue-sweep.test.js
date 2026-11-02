@@ -115,3 +115,25 @@ test('sweep keeps an orphaned agent directory touched within two hours @slow', (
     assert.equal(fs.existsSync(orphan), true);
     assert.ok(result.kept.some((k) => k.name === path.normalize(orphan)));
 });
+
+test('sweep deletes no agent directory when git worktree list fails @slow', () => {
+    const r = repo();
+    const live = agent(r, 'agent-live', 'live.txt');
+    const cp = require('node:child_process');
+    const real = cp.execFileSync;
+    const resolved = require.resolve('../scripts/residue.js');
+    const saved = require.cache[resolved];
+    cp.execFileSync = (cmd, args, ...rest) => {
+        if (cmd === 'git' && args[0] === 'worktree' && args[1] === 'list') throw new Error('list failed');
+        return real(cmd, args, ...rest);
+    };
+    delete require.cache[resolved];
+    try {
+        const result = require('../scripts/residue.js').sweep(r.root, { now: Date.now() + 3 * HOUR });
+        assert.deepEqual(result.orphans, []);
+        assert.equal(fs.existsSync(live.where), true, 'a registered worktree survives a failed list');
+    } finally {
+        cp.execFileSync = real;
+        require.cache[resolved] = saved;
+    }
+});

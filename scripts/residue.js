@@ -490,10 +490,14 @@ function sweep(root, { now = Date.now() } = {}) {
     // .claude/worktrees/<name> — and only once quiet for two hours, like the rest.
     const orphans = [];
     const norm = (p) => (process.platform === 'win32' ? path.resolve(p).toLowerCase() : path.resolve(p));
-    const registered = new Set(listed.map((w) => norm(w.path)));
+    // Unfiltered: `listed` drops the main and the current worktree, and is empty when
+    // the call fails, which would make every registered directory an orphan.
+    const raw = git(root, ['worktree', 'list', '--porcelain']);
+    const registered = new Set((raw || []).filter((l) => l.startsWith('worktree ')).map((l) => norm(l.slice('worktree '.length))));
     const base = path.join(root, '.claude', 'worktrees');
     let names2 = [];
-    try { names2 = fs.readdirSync(base, { withFileTypes: true }); } catch (e) { /* no worktrees directory */ }
+    if (raw === null) kept.push({ name: root, why: 'git worktree list failed' });
+    else try { names2 = fs.readdirSync(base, { withFileTypes: true }); } catch (e) { /* no worktrees directory */ }
     for (const d of names2) {
         if (!d.isDirectory() || !d.name.startsWith('agent-')) continue;
         const where = path.normalize(path.join(base, d.name));

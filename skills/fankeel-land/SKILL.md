@@ -400,12 +400,11 @@ above. `scripts/residue.js` lists that worktree as in use, not spent, for as
 long as the task's record is active.
 
 **Agent branches.** `node <plugin>/scripts/residue.js` lists spent agent branches
-(`worktree-agent-*`); commit.js landed
-them by cherry-pick, so `-d` refuses them. `node <plugin>/scripts/land.js clean`
-sweeps them (`residue.js --sweep`): it removes a clean spent worktree, runs
-`git branch -D` on its branch, and prints what it kept — a dirty worktree, one
-touched in two hours, any branch holding commits HEAD lacks.
-Only what the sweep kept gets `git branch -D <name>` by hand.
+(`worktree-agent-*`).
+`node <plugin>/scripts/land.js clean` (`residue.js --sweep`) removes a clean
+spent worktree and branch, and deletes orphaned `agent-*` directories under
+`.claude/worktrees/` no worktree entry names. It keeps what is dirty, touched
+in two hours, or holds commits HEAD lacks; only that gets `git branch -D` by hand.
 
 **PR:** push, then open it against the base by the origin's host
 (`git remote get-url origin`): `github.com` → `gh pr create --base <base> --head <branch> --fill`;
