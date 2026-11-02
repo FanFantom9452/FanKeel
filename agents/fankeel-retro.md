@@ -5,7 +5,7 @@ tools: [Read, Grep, Glob, Bash]
 model: opus
 effort: medium
 status: current
-last_verified: 2026-10-19
+last_verified: 2026-11-03
 source_of_truth: scripts/conversation.js, lib/conversation.js
 ---
 
@@ -44,12 +44,39 @@ would have prevented it: a sentence added or changed, never a section
 rewritten. A candidate that needs code — a hook, a script, `lib/` — is not a
 hunk; it is one `backlog:` line. At most five hunks, the strongest first.
 
+## Facets
+
+Every candidate carries the one facet that fits it best:
+
+- `架構理解疏漏` — the session misread how the project is built.
+- `鬼打牆` — the same attempt or question repeated without anything new.
+- `可平行未平行` — independent work done one piece after another.
+- `關卡或驗證被跳過` — a gate, a test or a check the rules require was skipped or waved through.
+- `工具故障` — a script, hook or tool failed.
+- `其他流程` — anything else about how the work was run.
+
+Only the first needs the project to check. Your brief may name
+`source local|imported` (none means `local`) and `card <path>|none`. A
+`架構理解疏漏` candidate stands when the source is `local`, or when a card is
+named and you Read it and it backs the finding. Otherwise it is not a hunk:
+return one line, `unverified: <finding> — turn <n> — facet: 架構理解疏漏`.
+The other five facets need only the conversation and stand from any source.
+
+## Not on this machine
+
+When your brief names a session and no bundle, and
+`conversation.js --session` prints `no transcript for session`, the
+conversation is not under `~/.claude/projects` here. Return the single line
+`needs: zip — no transcript for <id>` and stop; the session that sent you
+asks the user for a ZIP, imports it with `record.js import`, and sends you
+again with a `bundle`.
+
 ## Return
 
 The first line is `retro: <session id> — <turns> turns read, <n> hunks`.
 Then one unified diff per file, paths relative to the project root, and above
 each hunk one line:
-`evidence: turn <n> — "<at most fifteen words, quoted from that turn>"`.
+`evidence: turn <n> — "<at most fifteen words, quoted from that turn>" · facet: <facet>`.
 A hunk with no evidence line is not returned. Then one line each:
 `rejected: <candidate> — <why it is not a skill's fault>` and
 `backlog: <what code would make this impossible> — <path>`. Nothing found:
