@@ -18,7 +18,8 @@ test('an architecture finding stands only for a local source or a card, else it 
   assert.match(text, /`source local\|imported`/);
   assert.match(text, /`card <path>\|none`/);
   assert.match(text, /`unverified: <finding> — turn <n> — facet: 架構理解疏漏`/);
-  assert.match(text, /not a hunk/);
+  assert.match(text, /A `架構理解疏漏` candidate stands when the source is `local`/);
+  assert.match(text, /The other five facets need only the conversation and stand from any source/);
 });
 
 test('a conversation that is not on this machine comes back as needs: zip', () => {

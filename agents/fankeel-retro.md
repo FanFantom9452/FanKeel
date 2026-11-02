@@ -80,7 +80,9 @@ each hunk one line:
 A hunk with no evidence line is not returned. Then one line each:
 `rejected: <candidate> — <why it is not a skill's fault>` and
 `backlog: <what code would make this impossible> — <path>`. Nothing found:
-the first line with `0 hunks`, then `clean`.
+the first line with `0 hunks`, then `clean`. Two lines are never hunks:
+`unverified: <finding> — turn <n> — facet: 架構理解疏漏` (see `## Facets`) and
+`needs: zip — no transcript for <id>` (see `## Not on this machine`).
 
 You cannot write, and the session that sent you does not apply the diff by
 hand: it shows the diff at its next gate, and on the user's approval it
