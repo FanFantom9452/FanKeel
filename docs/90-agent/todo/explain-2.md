@@ -3,7 +3,7 @@ label: explain
 title: 發版時做講解影片
 description: Karpathy 的第四層：為題目做 3Blue1Brown 風格的講解影片，旁白用本機免費 TTS；先放 Watch
 state: watch
-link: docs/03-decisions/2026-09-29-promo30.md
+link: docs/90-agent/reference/station.md
 group: 需要講解影片
 timing: if: 發版或對外展示需要一條講解影片
 stamp: 2026-11-01
