@@ -467,18 +467,12 @@
             }
             return out.join('') + '</svg>';
         }
-        // 導覽: the tour's own page in a frame. It is served from the plugin's
-        // assets (scripts/station.js STATIC); the written file has no server.
-        function tourPage(serve) {
-            if (serve) return '<div class="tour" data-block="tour"><iframe class="tour-frame" src="station/tour.html" title="' + loc('shared.tourTitle', 'fankeel 導覽') + '"></iframe></div>';
-            return '<section class="panel" data-block="tour"><p class="note">' + loc('shared.tourNeedsServe', '導覽要從 serve 開的頁面看：輸入 <code class="mono">/fankeel-station</code>，從它印出的網址開 <span class="mono">#/tour</span>。') + '</p></section>';
-        }
 
         return {
             dayBars: dayBars, projectRows: projectRows, roHtml: roHtml, kpiHtml: kpiHtml, spark: spark, routeDots: routeDots,
             stageNow: stageNow, runningTag: runningTag, segHtml: segHtml, histSvg: histSvg, paletteOf: paletteOf,
             legendOwn: legendOwn, legendRest: legendRest, shortLabel: shortLabel, legendHtml: legendHtml,
-            filterHtml: filterHtml, visibleBars: visibleBars, segTip: segTip, ovBarsSvg: ovBarsSvg, quotaSvg: quotaSvg, tourPage: tourPage
+            filterHtml: filterHtml, visibleBars: visibleBars, segTip: segTip, ovBarsSvg: ovBarsSvg, quotaSvg: quotaSvg
         };
     }
     var api = { make: make };

@@ -60,8 +60,6 @@
             'shared.selectNone': 'Select none',
             'shared.dayShare': '{p} of the day',
             'shared.dayTotalLabel': 'Day total',
-            'shared.tourTitle': 'fankeel tour',
-            'shared.tourNeedsServe': 'The tour needs a page opened by serve: run <code class="mono">/fankeel-station</code> and open <span class="mono">#/tour</span> from the URL it prints.',
             // proj — the project page
             'proj.boardColon': 'Architecture board: ',
             'proj.boardOpen': 'open',
@@ -177,8 +175,6 @@
             'nav.weekly': 'Weekly',
             'nav.settings': 'Settings',
             'nav.wizard': 'Wizard',
-            'nav.tour': 'Tour',
-            'nav.tourTitle': 'fankeel: how a task runs, in one short animation',
             'nav.themeSystem': 'Follow system',
             'nav.themeLight': 'Light',
             'nav.themeDark': 'Dark',

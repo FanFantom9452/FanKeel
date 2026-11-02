@@ -42,7 +42,6 @@
         // Glyphs drawn on Lucide's 24 grid; `.sidenav .ico.g24` in station.css
         // keeps their stroke at the bar's 1.5-on-16 weight.
         var ICONS24 = {
-            tour: '<circle cx="12" cy="12" r="10"/><path d="m10 8 6 4-6 4Z"/>',
             files: '<path d="M20 7h-3a2 2 0 0 1-2-2V2"/><path d="M9 18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l4 4v10a2 2 0 0 1-2 2Z"/><path d="M3 7.6v12.8A1.6 1.6 0 0 0 4.6 22h9.8"/>',
             barh: '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M7 16h8"/><path d="M7 11h12"/><path d="M7 6h3"/>',
             barv: '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',

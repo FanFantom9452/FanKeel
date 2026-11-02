@@ -19,7 +19,7 @@ function helpers() {
     const S = () => ({});
     const F = M['fmt.js'].make({ w: {}, loc, tokens: String, hours: String, usd, estMark: () => '', labels: () => ({}),
         ROUTE: ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land'], TABS: ['timeline'],
-        PAGES: ['live', 'sessions', 'projects', 'docs', 'weekly', 'settings', 'tour'],
+        PAGES: ['live', 'sessions', 'projects', 'docs', 'weekly', 'settings'],
         MODEL_KEYS: ['fable', 'opus', 'sonnet', 'haiku'], TOKEN_KEYS: ['input', 'output', 'cacheRead', 'cacheWrite5m', 'cacheWrite1h'],
         KIND_KEYS: ['input', 'output', 'cacheRead', 'cacheWrite1h', 'cacheWrite5m'], KIND_LABEL: {}, KIND_COLOR: {}, WHO_LABEL: { main: '主 session' }, S });
     const C = M['chart.js'].make(Object.assign({}, F, { loc, esc, usd, tokens: String, hours: String, delta: () => '',
