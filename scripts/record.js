@@ -239,12 +239,26 @@ function monthsText(recordsDir) {
     return months;
 }
 
+// The bundles this machine received rather than made: name -> its intake.json.
+function importedBundles(projectRoot) {
+    const base = path.join(projectRoot, '.fankeel', 'imports');
+    const out = new Map();
+    let dirs = [];
+    try { dirs = fs.readdirSync(base); } catch (e) { return out; }
+    for (const d of dirs) {
+        const intake = readJson(path.join(base, d, 'intake.json'));
+        if (intake && intake.source === 'imported' && Array.isArray(intake.bundles)) for (const n of intake.bundles) out.set(n, intake);
+    }
+    return out;
+}
+
 function listBundles(opts) {
     const root = opts.root ? path.resolve(opts.root) : registry.rootFor({ cwd: process.cwd() });
     const projectRoot = opts.project ? path.resolve(opts.project) : root;
     const records = recordsRel(projectRoot);
     const recordsDir = path.join(projectRoot, ...records.split('/'));
     const months = monthsText(recordsDir);
+    const imported = importedBundles(projectRoot);
     const rows = [];
     for (const [dir, where] of [['.fankeel/bundles', 'local'], [records + '/sessions', 'committed']]) {
         let names = [];
@@ -252,7 +266,9 @@ function listBundles(opts) {
         for (const n of names) {
             const bytes = fs.statSync(path.join(projectRoot, ...dir.split('/'), n)).size;
             const filed = months.includes('<summary>retro ' + n.slice(11, 19) + ' ');
-            rows.push(dir + '/' + n + '  ' + (bytes / 1048576).toFixed(1) + ' MB  ' + where + '  retro: ' + (filed ? 'filed' : 'none'));
+            const intake = where === 'local' ? imported.get(n) : null;
+            rows.push(dir + '/' + n + '  ' + (bytes / 1048576).toFixed(1) + ' MB  ' + (intake ? 'imported' : where) + '  retro: ' + (filed ? 'filed' : 'none')
+                + (intake ? '  card: ' + (intake.projectCard ? 'yes' : 'no') + '  fankeel ' + (intake.fankeelVersion || '?') : ''));
         }
     }
     process.stdout.write((rows.length ? rows.join('\n') : 'no bundles') + '\n');
@@ -539,10 +555,19 @@ function importZip(opts, zipFile) {
     try { entries = zip.read(fs.readFileSync(zipFile)); } catch (e) { fail('Nothing written: ' + zipFile + ' — ' + (e.code || e.message) + '.'); }
     const byName = new Map(entries.map((e) => [e.name, e.data]));
     const manifest = byName.has('manifest.json') ? readJson(byName.get('manifest.json')) : null;
-    if (!manifest || manifest.export !== 1 || !Array.isArray(manifest.bundles)) fail('Nothing written: ' + zipFile + ' holds no export manifest.json, so it is not a retro export.');
+    const formal = Boolean(manifest) && manifest.export === 1 && Array.isArray(manifest.bundles);
+    // An informal ZIP is what somebody zipped by hand: bundles at its top level
+    // and perhaps a retro.md, no manifest. One with `bundles/` and no manifest
+    // is a damaged export, and stays refused.
+    const topLevel = entries.map((e) => e.name).filter((n) => BUNDLE_NAME.test(n));
+    if (!formal && (byName.has('manifest.json') || !topLevel.length)) {
+        fail('Nothing written: ' + zipFile + ' holds no export manifest.json and no <date>-<id8>.jsonl.gz at its top level, so it is not a retro export.');
+    }
+    const listed = formal ? manifest.bundles : topLevel.map((name) => ({ name, sha256: sha256(byName.get(name)) }));
+    const dataOf = (b) => byName.get((formal ? 'bundles/' : '') + b.name);
     const bad = [];
-    for (const b of manifest.bundles) {
-        const data = byName.get('bundles/' + b.name);
+    for (const b of listed) {
+        const data = dataOf(b);
         if (!BUNDLE_NAME.test(String(b.name))) bad.push(b.name + ' is not a bundle name');
         else if (!data) bad.push(b.name + ' is missing');
         else if (sha256(data) !== b.sha256) bad.push(b.name + ' does not match its sha256');
@@ -556,22 +581,35 @@ function importZip(opts, zipFile) {
     fs.mkdirSync(dir, { recursive: true });
     const written = [];
     const skipped = [];
-    for (const b of manifest.bundles) {
+    for (const b of listed) {
         const target = path.join(dir, b.name);
         if (fs.existsSync(target)) { skipped.push(b.name); continue; }
-        fs.writeFileSync(target, byName.get('bundles/' + b.name));
+        fs.writeFileSync(target, dataOf(b));
         written.push(b.name);
     }
     const into = path.join(projectRoot, '.fankeel', 'imports', stem);
     fs.mkdirSync(into, { recursive: true });
-    fs.writeFileSync(path.join(into, 'manifest.json'), byName.get('manifest.json'));
-    if (byName.has('report.md')) fs.writeFileSync(path.join(into, 'report.md'), byName.get('report.md'));
-    const fk = manifest.fankeel || {};
+    if (formal) fs.writeFileSync(path.join(into, 'manifest.json'), byName.get('manifest.json'));
+    const report = byName.get('report.md') || byName.get('retro.md');
+    if (report) fs.writeFileSync(path.join(into, 'report.md'), report);
+    const card = byName.get('project.md');
+    if (card) fs.writeFileSync(path.join(into, 'project.md'), card);
+    const fk = (formal && manifest.fankeel) || {};
+    const version = fk.installed || fk.working || null;
+    // A name this ZIP skipped because an earlier import of the same ZIP wrote it
+    // stays imported; one already here from this machine's own export does not.
+    const before = readJson(path.join(into, 'intake.json'));
+    const kept = before && Array.isArray(before.bundles) ? before.bundles.filter((n) => skipped.includes(n)) : [];
+    const intake = { source: 'imported', imported: new Date().toISOString(), informal: !formal, projectCard: Boolean(card), fankeelVersion: version, bundles: written.concat(kept) };
+    fs.writeFileSync(path.join(into, 'intake.json'), JSON.stringify(intake, null, 2) + '\n');
     const out = ['imported: ' + written.length + ' bundles into .fankeel/bundles/'];
     if (skipped.length) out.push('skipped: ' + skipped.join(', ') + ' (already here, not overwritten)');
     out.push('report: .fankeel/imports/' + stem + '/report.md',
-        'manifest: fankeel ' + (fk.installed || fk.working || '?') + ' · node ' + manifest.node + ' · ' + manifest.platform + ' ' + manifest.osRelease
-        + ' · Claude Code ' + ((manifest.claudeCode || []).join(', ') || '?') + ' · ' + manifest.bundles.length + ' bundles');
+        formal
+            ? 'manifest: fankeel ' + (version || '?') + ' · node ' + manifest.node + ' · ' + manifest.platform + ' ' + manifest.osRelease
+                + ' · Claude Code ' + ((manifest.claudeCode || []).join(', ') || '?') + ' · ' + manifest.bundles.length + ' bundles'
+            : 'manifest: none — informal ZIP, ' + listed.length + ' bundles',
+        'intake: imported · ' + (formal ? 'manifest' : 'informal') + ' · project card ' + (card ? 'yes' : 'no') + ' · fankeel ' + (version || '?'));
     process.stdout.write(out.join('\n') + '\n');
 }
 

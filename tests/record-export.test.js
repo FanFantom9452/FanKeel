@@ -121,7 +121,7 @@ test('import puts the bundles where sessions --list reads them, files the report
     assert.match(r.out, /imported: 2 bundles/);
     assert.match(r.out, /manifest: fankeel \S+ · node v\d+/);
     const list = run(other, ['sessions', '--list']).out;
-    assert.match(list, /\.fankeel\/bundles\/2026-11-01-aaaaaaaa\.jsonl\.gz\s+[\d.]+ MB\s+local/);
+    assert.match(list, /\.fankeel\/bundles\/2026-11-01-aaaaaaaa\.jsonl\.gz\s+[\d.]+ MB\s+imported/);
     assert.match(list, /\.fankeel\/bundles\/2026-11-02-bbbbbbbb\.jsonl\.gz/);
     const stem = path.basename(zipFile, '.zip');
     for (const n of ['manifest.json', 'report.md']) assert.ok(fs.existsSync(path.join(other, '.fankeel', 'imports', stem, n)), n);
