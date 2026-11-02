@@ -140,7 +140,14 @@ function commitPaths(git, dir, paths, message) {
 // then cherry-pick the commit onto this repository's HEAD. A conflict is
 // aborted, so HEAD and the working tree are as they were, and the worktree is
 // kept for the task's re-dispatch. On success the worktree and its branch go;
-// a worktree git will not remove (files outside the block) is kept and said.
+// untracked scratch is cleaned first, so only a tracked edit outside the block —
+// or a remove Windows refuses twice — keeps the worktree, and that is said.
+// A worktree remove that Windows refused because a file was still open gets one
+// more try after this long; a second refusal is kept and said.
+const REMOVE_RETRY_MS = 1000;
+function sleepMs(ms) {
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
 function landWorktree(top, block, run, oneLine) {
     const wt = path.resolve(top, block.worktree);
     let real = null;
@@ -181,9 +188,25 @@ function landWorktree(top, block, run, oneLine) {
         if (empty) return { conflict: block.paths };
         return { error: 'git cherry-pick failed: ' + oneLine(pick.stderr || pick.stdout) };
     }
-    const removed = run(top, ['worktree', 'remove', wt]);
+    // The block has landed, so untracked files left in the worktree are an agent's
+    // scratch — but only when no tracked file is edited: that is someone's work, and
+    // the worktree is kept whole for it. Ignored files are left; they do not block
+    // the remove.
+    const tracked = run(wt, ['status', '--porcelain', '--untracked-files=no']);
+    if (tracked.status === 0 && !tracked.stdout.trim()) run(wt, ['clean', '-fdq']);
+    let removed = run(top, ['worktree', 'remove', wt]);
+    if (removed.status !== 0 && process.platform === 'win32') {
+        sleepMs(REMOVE_RETRY_MS);
+        removed = run(top, ['worktree', 'remove', wt]);
+    }
     if (removed.status !== 0) return { kept: block.worktree + ' — ' + oneLine(removed.stderr) };
+    // Windows can unregister the worktree and still leave its directory behind a
+    // locked file — a shell no git command lists again (TODO worktree remove 失敗堆積).
+    if (fs.existsSync(wt)) {
+        try { fs.rmSync(wt, { recursive: true, force: true, maxRetries: 3 }); } catch (e) { /* said below */ }
+    }
     if (branch.status === 0 && branch.stdout.trim()) run(top, ['branch', '-D', branch.stdout.trim()]);
+    if (fs.existsSync(wt)) return { kept: block.worktree + ' — unregistered, but its directory is still on disk' };
     return {};
 }
 

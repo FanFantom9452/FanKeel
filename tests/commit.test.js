@@ -354,6 +354,30 @@ test('a worktree block commits there, cherry-picks onto HEAD, and removes the wo
     assert.equal(git(dir, 'status', '--porcelain'), '');
 });
 
+test('a worktree holding untracked scratch is cleaned and removed after its block lands', () => {
+    const { dir, wt } = worktreeRepo();
+    setLine(path.join(wt, 'a.txt'), 9, 'worktree 9');
+    fs.writeFileSync(path.join(wt, 'scratch.txt'), 'left by an agent\n');
+    fs.mkdirSync(path.join(wt, 'out'));
+    fs.writeFileSync(path.join(wt, 'out', 'run.log'), 'x\n');
+    const res = commit.main([requestFile('worktree ' + wt + '\na.txt\n\nfeat: line 9\n')], dir);
+    assert.ok(!res.code, res.text);
+    assert.doesNotMatch(res.text, /^kept /m);
+    assert.equal(fs.existsSync(wt), false, 'the worktree is removed');
+    assert.equal(git(dir, 'branch', '--list', 'wt1'), '', 'its branch is deleted');
+});
+
+test('a worktree with a tracked edit outside its block is kept and said', () => {
+    const { dir, wt } = worktreeRepo();
+    setLine(path.join(wt, 'a.txt'), 9, 'worktree 9');
+    fs.writeFileSync(path.join(wt, 'b.txt'), 'someone else\n');
+    fs.writeFileSync(path.join(wt, 'scratch.txt'), 'scratch\n');
+    const res = commit.main([requestFile('worktree ' + wt + '\na.txt\n\nfeat: line 9\n')], dir);
+    assert.ok(!res.code, res.text);
+    assert.match(res.text, /^kept /m);
+    assert.equal(fs.existsSync(path.join(wt, 'scratch.txt')), true, 'nothing is cleaned beside a tracked edit');
+});
+
 test('a worktree block that conflicts is aborted: HEAD, the tree and the worktree stay as they were', () => {
     const { dir, wt } = worktreeRepo();
     setLine(path.join(dir, 'a.txt'), 5, 'main 5');
