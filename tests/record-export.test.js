@@ -252,7 +252,7 @@ test('several bundles still need --cross', () => {
     const s = seed();
     const r = run(s.root, ['export', '--bundles', 'aaaaaaaa,bbbbbbbb']);
     assert.equal(r.code, 1);
-    assert.match(r.out, /--cross/);
+    assert.match(r.out, /several bundles need --cross/);
     assert.equal(fs.existsSync(path.join(s.root, '.fankeel', 'exports')), false);
 });
 
