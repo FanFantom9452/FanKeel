@@ -32,7 +32,7 @@ source_of_truth: lib/plain.js, lib/prose.js
 
 每個任務 land 時都寫一份完成紀錄，不論有沒有 TODO 條目。用 `scripts/record.js write` 寫，六欄：要求、做了什麼、為什麼這樣做、驗過・沒驗過、花費、還剩什麼。
 
-- 花費由程式算，自己寫的會被丟掉。
+- 花費由程式算，自己寫的會被丟掉。主 session 與 subagent 分開列金額，例如「合計 $21.95，2 小時 20 分；主 session（opus-5-5）$12.30；subagent 43 個（sonnet-5-5）$9.65。」
 - 紀錄存在兩處：registry 條目給監控站讀，`docs/90-agent/records` 的月檔給 git 留底。
 - 紀錄不寫 `path:line`，免得程式改動後 todo 的行號檢查誤報。
 - 紀錄寫好就不再改。

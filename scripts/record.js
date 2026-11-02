@@ -100,9 +100,11 @@ function costLine(data, sessionId, configDir, now) {
     const time = duration(now - Date.parse(data.started));
     const seen = sessionCost(configDir, sessionId);
     if (!seen) return '對話紀錄找不到，金額沒算；從開始到現在 ' + time + '。';
+    const usd = (n) => '$' + n.toFixed(2);
     const models = seen.agentModels.map(short);
-    const who = seen.model ? '主 session ' + short(seen.model) + (models.length ? '，agent 用 ' + models.join('、') : '') : '';
-    return '$' + seen.usd.toFixed(2) + '，' + time + '，' + seen.agents + ' 個 agent' + (who ? '（' + who + '）' : '') + '。';
+    const main = '主 session' + (seen.model ? '（' + short(seen.model) + '）' : '') + usd(seen.mainUsd);
+    const sub = seen.agents ? 'subagent ' + seen.agents + ' 個' + (models.length ? '（' + models.join('、') + '）' : '') + usd(seen.agentUsd) : '沒有派 subagent';
+    return '合計 ' + usd(seen.usd) + '，' + time + '；' + main + '；' + sub + '。';
 }
 
 function section(title, day, anchor, fields, corrected) {

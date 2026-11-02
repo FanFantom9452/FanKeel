@@ -75,7 +75,7 @@ test('a complete record lands on the registry and as one section of the month fi
     const seen = usage.summariseTree(s.transcript);
     const usd = prices.costOf(seen.usage.models).usd;
     assert.equal(usd, 2);
-    assert.match(rec.fields.cost, /^\$2\.00，/);
+    assert.match(rec.fields.cost, /^合計 \$2\.00，/);
     assert.match(rec.fields.cost, /1 小時 30 分/);
     const file = path.join(recordsDir(s.root), month() + '.md');
     const text = fs.readFileSync(file, 'utf8');
@@ -133,5 +133,23 @@ test('agent transcripts name their models in 花費', () => {
         message: { role: 'assistant', model: 'claude-haiku-4-5', usage: { input_tokens: 1000, output_tokens: 0 }, content: [] } }) + '\n');
     const out = run(s, GOOD);
     assert.equal(out.code, 0, out.out);
-    assert.match(registry.readSession(s.root, A).record.fields.cost, /，1 個 agent（主 session sonnet-5-5，agent 用 haiku-4-5）。$/);
+    assert.match(registry.readSession(s.root, A).record.fields.cost, /^合計 \$\d+\.\d\d，[^；]+；主 session（sonnet-5-5）\$\d+\.\d\d；subagent 1 個（haiku-4-5）\$\d+\.\d\d。$/);
+});
+
+test('花費 splits the main session from its subagents, and the two add up', () => {
+    const s = seed();
+    const dir = path.join(s.transcript.slice(0, -'.jsonl'.length), 'subagents');
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'agent-abc123.jsonl'), JSON.stringify({ type: 'assistant', requestId: 'r2', isSidechain: true, timestamp: new Date().toISOString(),
+        message: { role: 'assistant', model: 'claude-haiku-4-5', usage: { input_tokens: 1000000, output_tokens: 0 }, content: [] } }) + '\n');
+    assert.equal(run(s, GOOD).code, 0);
+    const [total, main, sub] = registry.readSession(s.root, A).record.fields.cost.match(/\$\d+\.\d\d/g).map((x) => Number(x.slice(1)));
+    assert.ok(sub > 0, 'the subagent is priced on its own');
+    assert.ok(Math.abs(total - main - sub) <= 0.01, total + ' = ' + main + ' + ' + sub);
+});
+
+test('a session with no subagents says so', () => {
+    const s = seed();
+    assert.equal(run(s, GOOD).code, 0);
+    assert.match(registry.readSession(s.root, A).record.fields.cost, /；主 session（sonnet-5-5）\$\d+\.\d\d；沒有派 subagent。$/);
 });
