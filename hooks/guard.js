@@ -28,6 +28,12 @@ const { isCommit, commitVerdict } = require('../lib/sensitive.js');
 // each read better than seven `===`s repeated at every call site.
 const WRITE_TOOLS = new Set(['Edit', 'Write', 'NotebookEdit']);
 
+// The tools whose `tool_input.command` is a shell command. Monitor is here
+// since Claude Code 2.1.314 runs a hook matching Bash on its commands too
+// (await-18); it can only block or ask there, which is all the two refusals
+// below do.
+const SHELL_TOOLS = new Set(['Bash', 'PowerShell', 'Monitor']);
+
 // /fankeel-ask's first step is the controller writing its brief, and a judge
 // is asked from whatever stage the user is in — controlled ones included. So
 // the one directory the brief goes to is let through, and nothing outside it:
@@ -44,6 +50,7 @@ function asksBrief(root, file) {
 // passes through Claude Code, in a task or not. A regex on the command is all
 // any other shell call pays; git runs only for a commit.
 function emitCommit(root, mine, payload) {
+    if (payload.tool_name === 'Monitor') return;
     const command = (payload.tool_input && payload.tool_input.command) || '';
     if (!isCommit(command)) return;
     let mode = 'warn';
@@ -64,7 +71,7 @@ function main(raw) {
 
     const root = registry.rootFor(payload);
     const mine = registry.readSession(root, payload.session_id);
-    const shell = payload.tool_name === 'Bash' || payload.tool_name === 'PowerShell';
+    const shell = SHELL_TOOLS.has(payload.tool_name);
     const command = (payload.tool_input && payload.tool_input.command) || '';
     // A second matcher, `Bash|PowerShell`, checked before the collision guard
     // below: seven named read-only agent types (READ_ONLY_AGENTS) are denied a command that writes,
