@@ -54,9 +54,9 @@ matcher `Bash|PowerShell`, and it denies a command that writes files —
 `fankeel-reader`, `fankeel-reviewer`, `fankeel-judge`, `fankeel-render-reviewer`, `fankeel-slimmer`, `fankeel-init-scout` or `fankeel-retro`; it also denies the main thread's writing command (no `agent_id`) while the task's stage is a controlled one. The id is the half that
 says this is a subagent at all: the main thread of a session started with
 `--agent` carries the type without it and must be able to write, so the id is
-checked in the same condition as the type (`hooks/guard.js:81`, `if (payload.agent_id && readOnlyAgentType(payload.agent_type) && writesFiles(command)) {`).
+checked in the same condition as the type (`hooks/guard.js:88`, `if (payload.agent_id && readOnlyAgentType(payload.agent_type) && writesFiles(command)) {`).
 Before any of that, `hooks/guard.js` stops unless the dispatching session has an
-active registry entry (`hooks/guard.js:90`, `if (!mine || mine.active !== true) {`; the block only lets a commit through).
+active registry entry (`hooks/guard.js:97`, `if (!mine || mine.active !== true) {`; the block only lets a commit through).
 The return applies only to a session with no active entry at all, one that never
 sent `/fankeel`; a session that has sent it has an active `init` entry
 (`hooks/inject.js` writes it), so its read-only subagents are denied.
@@ -74,17 +74,17 @@ load the design skill its prompt names.
 just described: when `agent_id` is absent — the main thread, read the same
 way the `Bash|PowerShell` matcher above reads it — and the task's own stage
 is on `stage.agents`'s list, an `Edit`, `Write` or `NotebookEdit` from the
-controller is denied outright (`hooks/guard.js:150`, `if (!payload.agent_id && WRITE_TOOLS.has(payload.tool_name) && !asksBrief(root, targetOf(payload))) {`),
+controller is denied outright (`hooks/guard.js:157`, `if (!payload.agent_id && WRITE_TOOLS.has(payload.tool_name) && !asksBrief(root, targetOf(payload))) {`),
 ahead of both `guard` mode and the collision guard below it. That ordering is
 deliberate: the check runs before `guardMode(mine)` is even read
-(`hooks/guard.js:183`, `if (!guardMode(mine)) return;`), so a controller set
+(`hooks/guard.js:190`, `if (!guardMode(mine)) return;`), so a controller set
 to `guard: off` is not exempt from it. `Bash` and `PowerShell` are
 deliberately left out of the set it tests, since a read-only command must pass (`hooks/guard.js:29`, `const WRITE_TOOLS = new Set(['Edit', 'Write', 'NotebookEdit']);`):
 the controller still has to run `scripts/task.js` to dispatch, relay a path
 and ask — and, on `build`, `design`, `plan` and `verify`, `scripts/commit.js` — and those run through `Bash`;
 the matcher above, not this one, governs them, and refuses the controller's command only when it writes.
 A `fankeel-brain` `Write` under `.fankeel/build/task-*/` is checked too
-(`hooks/guard.js:134`, `if (payload.tool_name === 'Write') {`): when the task directory it targets is not the
+(`hooks/guard.js:141`, `if (payload.tool_name === 'Write') {`): when the task directory it targets is not the
 one `handoff.dirFor` gives for its own session's record, it is denied, and the
 reason names both directories (`lib/guard.js:404`, `return 'fankeel: a fankeel-brain writes only under its own session\'s task directory. '`).
 
@@ -591,15 +591,15 @@ Everything above holds with the profile's `stage.agents` at its default,
 `false` controls no stage (`lib/profile.js:203`, `if (s === 'false' || s === '') return { value: [] };`);
 `true` controls `survey` alone — kept for that one meaning rather than "the
 route's first stage" because every existing doc and the 2026-09-20 A/B
-already mean survey by `true` (`lib/profile.js:204`, `if (s === 'true') return { value: ['survey'] };`);
+already mean survey by `true` (`lib/profile.js:211`, `if (s === 'true') return { value: ['survey'] };`);
 `all` controls every stage in `lib/stages.js`'s `FULL_ROUTE`
-(`lib/profile.js:206`, `if (s === 'all') return { value: canon.slice() };`);
+(`lib/profile.js:213`, `if (s === 'all') return { value: canon.slice() };`);
 and anything else is a comma-separated list of stage names, lowercased,
 deduped and reordered to `FULL_ROUTE`'s own order regardless of what order or
 how many repeats they arrived in, so two profiles naming the same set always
 compare equal — an unknown name in that list is refused with the one message an
 empty list is refused with, in the shape every other bad profile value takes
-(`lib/profile.js:212`, `'stage.agents is one of: false, true, all, or a comma-separated list of: '`).
+(`lib/profile.js:219`, `'stage.agents is one of: false, true, all, or a comma-separated list of: '`).
 `controlling()` and `controlFor()` in `lib/stages.js` read that array
 straight off the profile's `values` rather than off a fixed list only that
 file could change (`lib/stages.js:750`, `const raw = values && values['stage.agents'];`),
@@ -856,7 +856,7 @@ so a task with both set carries two extra rule lines, not one
 (`lib/render.js:129`, `function promptRules(values, stage) {`). `parsePrompt`
 in `lib/profile.js` holds it to one line and 200 characters — trimmed but not
 lowercased, and refused if it is empty, carries a newline, or runs long
-(`lib/profile.js:287`, `key + ' is one line of 1 to ' + PROMPT_MAX + ' characters' };`).
+(`lib/profile.js:305`, `key + ' is one line of 1 to ' + PROMPT_MAX + ' characters' };`).
 `promptRules` is called once, inside `rulesLines`
 (`lib/render.js:195`, `.concat(promptRules(values, data && data.stage));`),
 and by `controlBlock` for a controlled stage's own block
