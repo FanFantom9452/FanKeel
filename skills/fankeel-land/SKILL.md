@@ -407,6 +407,8 @@ sweeps them (`residue.js --sweep`): it removes a clean worktree, runs
 touched in two hours, or a branch with commits HEAD lacks. Only what it kept
 gets `git branch -D <name>` by hand.
 
+- 已結束超過 14 天的 session 可以用 `node <plugin>/scripts/shelf.js run` 搬到 config 目錄的架子；先加 `--dry-run` 看會搬幾筆。不自動執行，使用者要求才跑。
+
 **PR:** push, then open it against the base by the origin's host
 (`git remote get-url origin`): `github.com` → `gh pr create --base <base> --head <branch> --fill`;
 any other host but gitlab.com, bitbucket.org, dev.azure.com or `*.visualstudio.com` is Gitea →

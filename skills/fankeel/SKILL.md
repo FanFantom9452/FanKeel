@@ -227,7 +227,8 @@ worse than none because people stop reading it.
    record of where this task actually went, so a path put there by hand is a
    claim on a file nobody touched, and it blocks a neighbour over nothing.
    `release` is the one exception, and only for paths the user named.
-4. **Never delete a session file.** Standing down sets `active: false`.
+4. **Never delete a session file.** Standing down sets `active: false`;
+   moving an ended entry to the shelf (`scripts/shelf.js`) is not deleting it.
 5. **Never advance `stage` without saying so.** The stage decides which rules
    are injected, so a wrong stage silently swaps the discipline.
 6. **Never set or clear `guard` on your own.** It decides whether an edit gets
