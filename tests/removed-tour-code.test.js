@@ -11,3 +11,7 @@ const read = (f) => fs.readFileSync(path.join(__dirname, '..', 'assets', 'statio
 test('chart.js, nav.js and i18n.js hold no tour page, glyph or string', () => {
     for (const f of ['chart.js', 'nav.js', 'i18n.js']) assert.doesNotMatch(read(f), /tour/i, f);
 });
+
+test('station.css, dash.js and fmt.js no longer name the tour film or its frame', () => {
+    for (const f of ['station.css', 'dash.js', 'fmt.js']) assert.doesNotMatch(read(f), /tour/i, f);
+});

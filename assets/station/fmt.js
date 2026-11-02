@@ -23,7 +23,7 @@
         }
         // `#/` is 儀表板 (the `now` view); `#/live` (what `#/` used to be, 現在),
         // `#/days`, `#/d/<day>`, `#/sessions`, `#/projects`, `#/docs`, `#/settings`,
-        // `#/tour`, `#/list` and `#/cmp` are the other pages the left bar opens;
+        // `#/list` and `#/cmp` are the other pages the left bar opens;
         // `#/p/<pkey>` and `#/s/<id>[/<tab>]` are opened from rows. A hash is what
         // a page opened from file:// can go back through. `#/p/<pkey>/todo` and
         // `#/p/<pkey>/todo/<id>` are the project page with its TODO panel, or that

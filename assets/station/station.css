@@ -1278,9 +1278,8 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
   .sa{grid-template-columns:minmax(0,160px) 84px minmax(0,1fr) 48px;column-gap:10px}
 }
 
-/* tour-nav: the Lucide circle-play glyph is drawn on a 24 grid; this keeps its stroke at the bar's 1.5-on-16 weight. */
+/* Glyphs drawn on a 24 grid (nav.js ICONS24): this keeps their stroke at the bar's 1.5-on-16 weight. */
 .sidenav .ico.g24{stroke-width:2.25}
-.tour-frame{display:block;width:100%;height:calc(100vh - 120px);min-height:640px;border:0;border-radius:var(--r-sm)}
 
 /* TODO panel — the 2026-09-29 mockup's todo-head, todo-open, todo-done; tokens only. */
 .td{container-type:inline-size}
@@ -1319,8 +1318,8 @@ a.td-rf:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-rad
 }
 
 /* ==== keel: the promo film's look, as station tokens ==========================
-   Palette: tour-keel.js `C` (the styleframes' palette block), which promo30v5
-   in tour-ring.js draws with. Dark: the film's own terminal card (C.ink ground,
+   Palette: the promo film's styleframes, kept in docs/03-decisions/2026-09-29-promo30.md.
+   Dark: the film's own terminal card (C.ink ground,
    C.term text, termRule, termDot, termGood, termBad, dotLit). */
 :root[data-style=keel]{
   --ground:#f2f4f3; --panel:#fbfcfc; --inset:#eaeef1;
@@ -1363,7 +1362,7 @@ a.td-rf:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-rad
   --lift:0 1px 0 rgba(201,209,220,.04) inset,0 14px 30px -10px rgba(0,0,0,.6);
 }
 
-/* ---- the film's ground: dot paper, 22px pitch (tour-ring.js ground(), 11 film units) ---- */
+/* ---- the film's ground: dot paper, 22px pitch (11 film units) ---- */
 :root[data-style=keel] body{background:var(--ground) radial-gradient(circle,var(--dot) 1.2px,transparent 1.7px) 11px 11px/22px 22px}
 :root[data-style=keel] .shell{grid-template-columns:236px minmax(0,1fr)}
 :root[data-style=keel] :focus-visible{outline-color:var(--keel)}

@@ -18,8 +18,8 @@
                 + '<span class="spacer"></span>'
                 + '<a class="dmore" href="' + href + '">' + loc('dash.seeAll', '查看全部 →') + '</a></div>';
         }
-        // The promo film's v5 glyph (assets/station/tour-ring.js promo30v5 `glyph`,
-        // its small branch; ported from .fankeel/build/2026-10-01-station-redesign/
+        // The promo film's v5 glyph (promo30v5 `glyph`, its small branch; ported
+        // from .fankeel/build/2026-10-01-station-redesign/
         // gen.js) as an SVG string: six segments survey..audit, the edge land, the
         // core the task. `o.seg(i)` and `o.edge` give each part's state — 'done',
         // 'now', 'todo' — or null to leave it out (`o.edge` undefined is 'done');
