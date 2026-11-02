@@ -295,3 +295,37 @@ test('headless, an unwritable marker dir counts every call as the first and does
         assert.equal(gate(file, 'toolu_b'), null);
     });
 });
+
+test('headless, a call decided again before a later one does not take a later place', () => {
+    const dir = tmp('fankeel-dispatch-gate-');
+    withTmp(path.join(dir, 'm'), () => {
+        const file = headless(dir);
+        assert.equal(gate(file, 'toolu_a'), null);
+        assert.equal(gate(file, 'toolu_a'), null);
+        assert.match(gate(file, 'toolu_b').reason, CALL2);
+    });
+});
+
+test('headless, a subagent of the same session has its own marker: its first call is call 1', () => {
+    const dir = tmp('fankeel-dispatch-gate-');
+    withTmp(path.join(dir, 'm'), () => {
+        const main = headless(dir);
+        gate(main, 'toolu_a');
+        assert.match(gate(main, 'toolu_b').reason, CALL2);
+        const own = path.join(dir, SID, 'subagents');
+        fs.mkdirSync(own, { recursive: true });
+        fs.writeFileSync(path.join(own, 'agent-sub1.jsonl'), JSON.stringify({ type: 'user', uuid: 'u1', message: { content: 'go' } }) + '\n');
+        const sub = { ...payload(main, 'toolu_c'), session_id: 'S1', agent_id: 'sub1' };
+        assert.equal(decideAt(sub, { limit: 1, data: null, evidenceRoot: '' }), null);
+    });
+});
+
+test('headless, a payload without session_id counts every call as the first', () => {
+    const dir = tmp('fankeel-dispatch-gate-');
+    withTmp(path.join(dir, 'm'), () => {
+        const file = headless(dir);
+        const bare = (id) => { const p = { ...payload(file, id) }; delete p.session_id; return decideAt(p, { limit: 1, data: null, evidenceRoot: '' }); };
+        assert.equal(bare('toolu_a'), null);
+        assert.equal(bare('toolu_b'), null);
+    });
+});

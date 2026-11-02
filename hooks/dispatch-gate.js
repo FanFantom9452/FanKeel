@@ -71,7 +71,9 @@ const markFile = (payload) => path.join(os.tmpdir(), 'fankeel-dispatch-gate',
     safe(payload.session_id) + (payload.agent_id ? '-' + safe(payload.agent_id) : '') + '.log');
 
 // Append first (the race-safe step), then read: the order of ids under one
-// anchor is the order the hooks ran in.
+// anchor is the order the hooks ran in. The append is race-safe; the 64KB
+// truncation is not: a wipe mid-response resets that response's count
+// (accepted, rare).
 function markIn(file) {
     return (anchor, id) => {
         try {
