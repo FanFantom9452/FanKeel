@@ -75,7 +75,8 @@ it does not approve it.
    from the profile's `judge.model` — **never inherited**, the same discipline
    every other dispatch in this plugin carries. `node <plugin>/scripts/task.js
    profile show` prints it. Say how many and on which model in the response
-   that sends it — one judge, on whatever `judge.model` answered. The judge
+   that sends it — one judge, on whatever `judge.model` answered.
+   The judge's agent file pins `effort: xhigh`, so the dispatch carries no `effort:` and the brief no `ultrathink`. The judge
    writes a checklist, sends as many `fankeel:fankeel-reader` as `dispatch.inflight` allows
    in that same response (the judge's brief carries `inflight: <value>` (the
    hook adds it from the profile); the judge decides grouping), related lines to one reader,

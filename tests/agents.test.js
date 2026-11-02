@@ -627,3 +627,9 @@ test('the workflow script reviewer prompt asks for the numbered N. path:line for
     assert.match(script, /numbered N\. in one sequence/);
     assert.match(script, /as N\. path:line -- <the problem>/);
 });
+
+test('the ask skill says the judge already runs at xhigh, so no effort: and no ultrathink', () => {
+    const ask = fs.readFileSync(path.join(ROOT, 'skills', 'fankeel-ask', 'SKILL.md'), 'utf8');
+    assert.match(ask, /effort: xhigh/);
+    assert.match(ask, /ultrathink/);
+});
