@@ -122,3 +122,16 @@ test('a dispatch carrying effort titles with it, over the agent file\'s', () => 
     assert.equal(ask(w, { subagent_type: 'general-purpose', effort: 'high', description: 'x' }), 'opus 5.5 · high');
     assert.equal(ask(w, { subagent_type: 'fankeel:fankeel-reader', effort: '', description: 'x' }), 'sonnet · medium');
 });
+
+test('CLAUDE_CODE_SUBAGENT_EFFORT fills in when neither the call nor the agent file names an effort', () => {
+    const w = world();
+    fs.mkdirSync(path.join(w.configDir, 'agents'), { recursive: true });
+    fs.writeFileSync(path.join(w.configDir, 'agents', 'bare.md'), '---\nname: bare\nmodel: haiku\n---\n');
+    const withEnv = (toolInput, env) => prefixFor({ toolInput, pluginRoot: w.plugin, projectDir: w.projectDir,
+        configDir: w.configDir, transcriptPath: w.transcriptPath, env });
+    const env = { CLAUDE_CODE_SUBAGENT_EFFORT: 'xhigh' };
+    assert.equal(withEnv({ subagent_type: 'bare', description: 'x' }, env), 'haiku · xhigh');
+    assert.equal(withEnv({ subagent_type: 'bare', description: 'x' }, {}), 'haiku · inherit');
+    assert.equal(withEnv({ subagent_type: 'bare', effort: 'low', description: 'x' }, env), 'haiku · low');
+    assert.equal(withEnv({ subagent_type: 'fankeel:fankeel-reader', description: 'x' }, env), 'sonnet · medium');
+});
