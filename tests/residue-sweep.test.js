@@ -87,3 +87,31 @@ test('sweep keeps a worktree it cannot stat @slow', () => {
         assert.match(result.kept[0].why, /cannot stat/);
     } finally { fs.statSync = real; }
 });
+
+test('sweep deletes an agent directory no worktree points at, and leaves desktop and fresh ones @slow', () => {
+    const r = repo();
+    const base = path.join(r.root, '.claude', 'worktrees');
+    const orphan = path.join(base, 'agent-dead');
+    fs.mkdirSync(path.join(orphan, 'sub'), { recursive: true });
+    fs.writeFileSync(path.join(orphan, 'sub', 'left.txt'), 'x');
+    const desktop = path.join(base, 'my-feature');
+    fs.mkdirSync(desktop, { recursive: true });
+    fs.writeFileSync(path.join(desktop, 'keep.txt'), 'x');
+    const live = agent(r, 'agent-live', 'live.txt');
+    const result = sweep(r.root, { now: Date.now() + 3 * HOUR });
+    assert.deepEqual(result.orphans, [path.normalize(orphan)]);
+    assert.equal(fs.existsSync(orphan), false, 'the orphan is gone');
+    assert.equal(fs.existsSync(desktop), true, 'a non-agent directory is never touched');
+    assert.equal(fs.existsSync(live.where), true, 'a registered worktree is not an orphan');
+});
+
+test('sweep keeps an orphaned agent directory touched within two hours @slow', () => {
+    const r = repo();
+    const orphan = path.join(r.root, '.claude', 'worktrees', 'agent-fresh');
+    fs.mkdirSync(orphan, { recursive: true });
+    fs.writeFileSync(path.join(orphan, 'x.txt'), 'x');
+    const result = sweep(r.root, { now: Date.now() });
+    assert.deepEqual(result.orphans, []);
+    assert.equal(fs.existsSync(orphan), true);
+    assert.ok(result.kept.some((k) => k.name === path.normalize(orphan)));
+});

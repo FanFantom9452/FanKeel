@@ -405,7 +405,8 @@ function report(result) {
 // Every worktree-agent-* branch whose commits HEAD already has, with its
 // worktree when one is checked out and clean, is removed; anything holding
 // uncommitted files or a commit HEAD lacks is kept and said, never forced
-// (TODO agent 分支與 worktree 殘留). A worktree in use by a live session, or
+// (TODO agent 分支與 worktree 殘留). An agent-* directory under .claude/worktrees/
+// that no worktree entry names is deleted under the same quiet rule. A worktree in use by a live session, or
 // whose directory or any file under it, outside .git and node_modules, was modified within the last two
 // hours, may be an agent still running and is kept.
 const SWEEP_QUIET_MS = 2 * 3600000;
@@ -482,12 +483,34 @@ function sweep(root, { now = Date.now() } = {}) {
         if (git(root, ['worktree', 'remove', w.path]) === null) { kept.push({ name: path.normalize(w.path), why: 'git worktree remove failed' }); continue; }
         removed.push(path.normalize(w.path));
     }
-    return { removed, kept };
+    // A directory under .claude/worktrees/ named agent-* that no `git worktree list`
+    // entry points at: Windows unregistered it and a locked file kept the directory
+    // (TODO worktree remove 失敗堆積). Only agent-* — a desktop session's worktree is
+    // .claude/worktrees/<name> — and only once quiet for two hours, like the rest.
+    const orphans = [];
+    const norm = (p) => (process.platform === 'win32' ? path.resolve(p).toLowerCase() : path.resolve(p));
+    const registered = new Set(listed.map((w) => norm(w.path)));
+    const base = path.join(root, '.claude', 'worktrees');
+    let names2 = [];
+    try { names2 = fs.readdirSync(base, { withFileTypes: true }); } catch (e) { /* no worktrees directory */ }
+    for (const d of names2) {
+        if (!d.isDirectory() || !d.name.startsWith('agent-')) continue;
+        const where = path.normalize(path.join(base, d.name));
+        if (registered.has(norm(where))) continue;
+        let quiet = null;
+        try { quiet = now - fs.statSync(where).mtimeMs >= SWEEP_QUIET_MS ? touchedSince(where, now - SWEEP_QUIET_MS) : where; } catch (e) { quiet = where; }
+        if (quiet) { kept.push({ name: where, why: 'orphaned agent directory modified in the last two hours' }); continue; }
+        try { fs.rmSync(where, { recursive: true, force: true, maxRetries: 3 }); } catch (e) { /* checked below */ }
+        if (fs.existsSync(where)) { kept.push({ name: where, why: 'orphaned agent directory could not be deleted' }); continue; }
+        orphans.push(where);
+    }
+    return { removed, kept, orphans };
 }
 
 function sweepLines(result) {
     const lines = [];
     if (result.removed.length) lines.push('swept ' + result.removed.length + ' spent agent branch(es): ' + result.removed.join(', '));
+    if (result.orphans && result.orphans.length) lines.push('deleted ' + result.orphans.length + ' orphaned agent directory(ies): ' + result.orphans.join(', '));
     for (const k of result.kept) lines.push('kept ' + k.name + ' — ' + k.why);
     return lines;
 }
