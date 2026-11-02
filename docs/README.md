@@ -593,6 +593,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 五組各自的 plan：suite 分層、CI 與 ci-status、test-audit、plan 拆組、關卡報告 | `docs/99-archive/2026-11-02-professor-a-suite.md`、`docs/99-archive/2026-11-02-professor-b-ci.md`、`docs/99-archive/2026-11-02-professor-c-test-audit.md`、`docs/99-archive/2026-11-02-professor-d-plan-split.md`、`docs/99-archive/2026-11-02-professor-e-gate.md` — *built, 繁體中文* |
 | retro-all 匯出 ZIP（11-02）的設計：報告、session 包、環境清單打成 ZIP 回傳，家目錄換 [HOME] | `docs/99-archive/2026-11-02-retro-zip-design.md` — *built, 繁體中文* |
 | 那份設計的 3 個 task | `docs/99-archive/2026-11-02-retro-zip.md` — *built, 繁體中文* |
+| 移除 station 導覽、畫七階段總覽（11-02）的 12 個 task：刪 tour、pipeline.md 加兩張 mermaid、gate 圖框放寬 | `docs/99-archive/2026-11-02-remove-tour-pipeline-overview.md` — *built, 繁體中文* |
 | 真的 `claude -p` 巢狀派兩個 agent 量出來：`SubagentStart` 觸發當下 `agent-<id>.meta.json` 兩個 agent 都還沒帶 `spawnDepth`（`atHook`／`depthAtHook` 一致為 `false`／`null`），`nestedBrain()` 退回 fallback 分支，事後檔案才補齊且巢狀關係正確 | [reports/2026-09-28-spawndepth-timing.md](90-agent/reports/2026-09-28-spawndepth-timing.md) — *a dated snapshot, 繁體中文* |
 | 真的 `claude -p` 派 `isolation: "worktree"` 的 subagent 量出來：回傳文字裡沒有路徑也沒有分支（`pathInResult`／`branchInResult` 皆 `false`），readable: no——brain 拿不到路徑可以直接寫進 commit file，`task.js` 的 `openWorktree` 退路還要 design 定義；留下的 worktree 開在 repo 根目錄之內，`lib/guard.js` 的 `relPath` 對不回主樹路徑 | [reports/2026-09-28-worktree-probe.md](90-agent/reports/2026-09-28-worktree-probe.md) — *a dated snapshot, 繁體中文* |
 | 本地 `moondream` 判斷十張 fankeel 測站截圖（五正常五破壞）：正常圖 5/5 判對、壞圖只抓到 1/5（全透明文字那張），平均 0.24 秒；`UI-TARS-1.5-7B-GGUF` 卡在下載時被擋跨主機 redirect，座標題沒問成 | [reports/2026-09-28-local-judge-trial.md](90-agent/reports/2026-09-28-local-judge-trial.md) — *a dated snapshot, 繁體中文* |
@@ -704,6 +705,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 - [retro-all 改成匯出 ZIP 回傳，不 push（11-02）：報告、session 包與環境清單打成一個 ZIP，家目錄預設換成 [HOME]](03-decisions/2026-11-02-retro-zip.md)
 - [測試分兩層、推送後讀 CI、plan 太大就拆組（11-02）：suite.json 宣告 daily／nightly，ci-status 只讀一次不擋 land，關卡前先寫報告](03-decisions/2026-11-02-ci-tiers.md)
 - [已結束的 session 搬到架子，不刪（11-02）：shelf.js run 把結束 14 天以上的條目和 build 目錄搬到 config 目錄，node:sqlite 索引，讀者帶 { shelf: true }](03-decisions/2026-11-02-session-shelf.md)
+- [station 導覽整組拿掉、pipeline.md 加七階段總覽、gate 圖框放寬（11-02）：tour 之後重做，總覽圖列每站呼叫的腳本，圖框高度依圖比例](03-decisions/2026-11-02-remove-tour-pipeline-overview.md)
 - [任務的圖由 station 畫成 SVG（10-20）](03-decisions/2026-10-20-task-boards-as-svg.md)
 - [retro 讀整份遮蔽過的 session 包（10-20）](03-decisions/2026-10-20-retro-bundle.md)
 - [沒派過的 agent 怎麼處理（10-15）：effort 改在派工時傳，六個複本刪掉](03-decisions/2026-10-15-unused-agents.md)
