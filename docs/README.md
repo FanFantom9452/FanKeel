@@ -810,6 +810,7 @@ is corrected by the next one, not by rewriting this.
 | 判官題：多人協作時，進行中的 session 狀態要不要進共用層 | [90-agent/judgements/2026-11-01-shared-session-state.md](90-agent/judgements/2026-11-01-shared-session-state.md) — *judged 2026-11-01, fable* |
 | Brief 1 — kg-into-fankeel | [90-agent/judgements/2026-11-01-kg-into-fankeel.md](90-agent/judgements/2026-11-01-kg-into-fankeel.md) — *judged 2026-11-01, fable* |
 | Brief 47 — vercel-labs/agent-desktop: is it any use to fankeel? | [90-agent/judgements/2026-11-01-agent-desktop.md](90-agent/judgements/2026-11-01-agent-desktop.md) — *judged 2026-11-01, fable* |
+| Brief 48 — googleapis/mcp-toolbox: useful to fankeel's workflow when a project has a database? | [90-agent/judgements/2026-11-02-mcp-toolbox-db.md](90-agent/judgements/2026-11-02-mcp-toolbox-db.md) — *judged 2026-11-02, fable* |
 
 ## The five scanners
 
