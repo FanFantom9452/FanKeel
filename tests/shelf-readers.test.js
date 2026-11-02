@@ -23,7 +23,7 @@ function setup() {
     return { root, sh };
 }
 
-test('spend counts shelved entries', { todo: 'lib/spend.js held by neighbour session' }, () => {
+test('spend counts shelved entries', () => {
     const { root } = setup();
     const spend = require('../lib/spend.js');
     const r = spend.sessionsOf([root]);

@@ -260,7 +260,7 @@ function runLogin(args) {
 // `--act <file>` (entry-4): the page driven before it is shot. The browser
 // is started with `--remote-debugging-port=0` on a profile of its own and
 // writes the port it picked to DevToolsActivePort in that profile; Node's own
-// WebSocket (22.4 and later, so on the 22.5 floor) carries the DevTools
+// WebSocket (22.4 and later, so on the 22.13 floor) carries the DevTools
 // Protocol to the page. No dependency, like everything else here.
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
