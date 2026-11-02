@@ -876,6 +876,17 @@ test('prompt.all rides every stage\'s block and the stage agent\'s brief; prompt
   assert.equal(render({ mine: verify, others: [], now: NOW, root: '/r', profile: { values: { 'prompt.design': 'x' }, sources: {}, unreadable: [] } }), none, 'another stage\'s prompt adds nothing');
 });
 
+test('a judge\'s brief carries the profile\'s dispatch.inflight as `inflight: <value>`; no other agent type\'s does', () => {
+  const { renderBrief } = require('../lib/render.js');
+  const mine = entry(MINE, { stage: 'plan', started: '2026-09-19T09:30:12.345Z' });
+  const brief = (type, values) => renderBrief({ mine, agentType: 'fankeel:' + type, root: '/r', profile: values && { values, sources: {}, unreadable: [] } });
+  assert.ok(brief('fankeel-judge', { 'dispatch.inflight': 12 }).includes('\n  - inflight: 12 '));
+  assert.ok(brief('fankeel-judge', { 'dispatch.inflight': 'unlimited' }).includes('\n  - inflight: unlimited '));
+  assert.ok(brief('fankeel-judge', {}).includes('\n  - inflight: 8 '));
+  assert.ok(brief('fankeel-judge').includes('\n  - inflight: 8 '), 'no profile at all');
+  assert.ok(!brief('fankeel-reader', { 'dispatch.inflight': 12 }).includes('inflight:'));
+});
+
 // TODO 〔stage〕: the brief is English and a stage agent followed it, writing
 // report and gate in English to a user who writes Traditional Chinese. The
 // profile's `model.lang` names the language; unset, the brief says nothing.
