@@ -817,6 +817,7 @@ is corrected by the next one, not by rewriting this.
 | Brief 47 — vercel-labs/agent-desktop: is it any use to fankeel? | [90-agent/judgements/2026-11-01-agent-desktop.md](90-agent/judgements/2026-11-01-agent-desktop.md) — *judged 2026-11-01, fable* |
 | 48 — Claude Code 2.1.316：哪些對 fankeel 有用；ultrathink 能不能帶進 ask skill | [90-agent/judgements/2026-11-02-cc-2-1-316.md](90-agent/judgements/2026-11-02-cc-2-1-316.md) — *judged 2026-11-02, fable* |
 | Brief 48 — googleapis/mcp-toolbox: useful to fankeel's workflow when a project has a database? | [90-agent/judgements/2026-11-02-mcp-toolbox-db.md](90-agent/judgements/2026-11-02-mcp-toolbox-db.md) — *judged 2026-11-02, fable* |
+| Brief: a video's account of pstack — what it adds beyond the 10-18 judgement, and what fankeel should take now | [90-agent/judgements/2026-11-02-pstack-video-summary.md](90-agent/judgements/2026-11-02-pstack-video-summary.md) — *judged 2026-11-02, fable* |
 
 ## The five scanners
 
