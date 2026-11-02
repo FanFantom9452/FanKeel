@@ -363,8 +363,9 @@ nothing else:
 
 Every reader here but one filters on `active === true`, and nothing deletes an
 entry — `down` and `clear` both deactivate, so a claim put down by mistake can
-still be adopted back with its notes intact. The two together mean the registry holds
-every task the workspace has ever run while no view showed any of them: 53 of 54
+still be adopted back with its notes intact. The two together mean the registry, with
+the shelf ended entries move to (the 架子 section), holds every task the workspace
+has ever run — and before this flag no view showed any of them: 53 of 54
 entries on this repository the day the flag below was written, 26 of them
 carrying a `burn` figure nothing could print.
 

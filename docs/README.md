@@ -703,6 +703,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 - [關卡問題的 header 改寫成這一站→下一站（10-31）：超過 12 欄只留目的地](03-decisions/2026-10-31-gate-header-move.md)
 - [retro-all 改成匯出 ZIP 回傳，不 push（11-02）：報告、session 包與環境清單打成一個 ZIP，家目錄預設換成 [HOME]](03-decisions/2026-11-02-retro-zip.md)
 - [測試分兩層、推送後讀 CI、plan 太大就拆組（11-02）：suite.json 宣告 daily／nightly，ci-status 只讀一次不擋 land，關卡前先寫報告](03-decisions/2026-11-02-ci-tiers.md)
+- [已結束的 session 搬到架子，不刪（11-02）：shelf.js run 把結束 14 天以上的條目和 build 目錄搬到 config 目錄，node:sqlite 索引，讀者帶 { shelf: true }](03-decisions/2026-11-02-session-shelf.md)
 - [任務的圖由 station 畫成 SVG（10-20）](03-decisions/2026-10-20-task-boards-as-svg.md)
 - [retro 讀整份遮蔽過的 session 包（10-20）](03-decisions/2026-10-20-retro-bundle.md)
 - [沒派過的 agent 怎麼處理（10-15）：effort 改在派工時傳，六個複本刪掉](03-decisions/2026-10-15-unused-agents.md)

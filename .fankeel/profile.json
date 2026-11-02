@@ -16,5 +16,6 @@
   "agent.fankeel-mover.model": "haiku",
   "agent.fankeel-implementer.model": "haiku",
   "agent.fankeel-reader.model": "sonnet",
-  "compact.at": "350000"
+  "compact.at": "350000",
+  "dispatch.inflight": "unlimited"
 }

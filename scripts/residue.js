@@ -63,7 +63,7 @@ function sizeOf(dir, cap) {
     const stack = [dir];
     while (stack.length && seen < limit) {
         // Held in a binding rather than read back off the entry. It was written
-        // before package.json's engine floor (Node 22.5) guaranteed
+        // before package.json's engine floor (Node 22.13) guaranteed
         // `Dirent.parentPath` (Node 20.12), and the binding still needs nothing
         // of the entry but its name — the wrong parent silently sizes the
         // wrong directory.
