@@ -812,6 +812,11 @@ function openingLines(root, id, data, values) {
     const report = handoffPath(root, data, data.stage);
     const owed = require('../lib/stages.js').gateReportRule(data.stage, values, report ? posix(path.relative(baseFor(root, data), report)) : null);
     if (owed) lines.push('', 'gate report: ' + owed);
+    // docs/03-decisions/2026-11-03-preanswered-gate.md: the pre-answer
+    // question at plan (design, with no plan), or how a pre-answered gate
+    // passes — once here, for the same reason as the report rule above.
+    const pre = require('../lib/stages.js').preanswerRule(data, __filename, id);
+    if (pre) lines.push('', 'preanswer: ' + pre);
     if (data.stage === 'build') {
         const hands = handsLines(root, data);
         if (hands) lines.push(...hands);
