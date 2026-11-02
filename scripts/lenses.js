@@ -10,12 +10,14 @@
 //   node scripts/lenses.js <range> [--root <dir>]
 //
 // Prints one lens name per line — `silent-failure`, `comment`, both, or
-// neither — and `none` when lensesFor found nothing. Exit 0 whatever it
+// neither — then, when a changed file has `verify.blast` or more requirers, a
+// `## Blast radius` block listing them; `none` when nothing fired. Exit 0 whatever it
 // finds; 1 when `git diff` fails; 2 on a usage error.
 
 const { execFileSync } = require('node:child_process');
 const util = require('node:util');
-const { lensesFor } = require('../lib/lenses.js');
+const { lensesFor, blastFor } = require('../lib/lenses.js');
+const profile = require('../lib/profile.js');
 
 const USAGE = 'usage: lenses.js <range> [--root <dir>]';
 
@@ -47,7 +49,25 @@ function main(argv) {
         return 1;
     }
     const lenses = lensesFor(diff);
-    process.stdout.write((lenses.length ? lenses.join('\n') : 'none') + '\n');
+    // verify-5: the profile's fan-in threshold; a range that changed no file
+    // anything else requires prints nothing here.
+    let blast = [];
+    try {
+        const names = execFileSync('git', ['diff', '--name-only', '--no-renames', args.range], { windowsHide: true, cwd: args.root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
+        const threshold = profile.read(args.root, profile.configDirOf()).values['verify.blast'];
+        blast = blastFor(args.root, names.split(/\r?\n/).filter(Boolean), threshold);
+    } catch (e) {
+        process.stderr.write('blast radius skipped in ' + args.root + ': ' + String(e.stderr || e.message).trim() + '\n');
+    }
+    const lines = [...lenses];
+    if (blast.length) {
+        lines.push('## Blast radius');
+        for (const b of blast) {
+            lines.push(b.file + ' — ' + b.callers.length + ' callers');
+            for (const c of b.callers) lines.push('  ' + c);
+        }
+    }
+    process.stdout.write((lines.length ? lines.join('\n') : 'none') + '\n');
     return 0;
 }
 
