@@ -62,7 +62,9 @@ function emitCommit(root, mine, payload) {
     try {
         verdict = commitVerdict({ cwd: payload.cwd || root, command, mode });
     } catch (e) { /* housekeeping: the commit goes ahead unscanned */ }
-    if (verdict) process.stdout.write(JSON.stringify({ hookSpecificOutput: verdict }));
+    if (!verdict) return false;
+    process.stdout.write(JSON.stringify({ hookSpecificOutput: verdict }));
+    return true;
 }
 
 function main(raw) {
@@ -116,12 +118,11 @@ function main(raw) {
         // docs/03-decisions/2026-11-03-preanswered-gate.md: a pre-answered
         // task's hard stops ask, whichever agent runs them — a subagent's
         // payload carries its parent's session_id, so `mine` is that task.
+        // The ask is written last: a controlled-stage deny and the sensitive
+        // scan's verdict both beat it.
+        let stop = null;
         try {
-            const stop = preanswerStop(mine, command);
-            if (stop) {
-                process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'ask', permissionDecisionReason: stop } }));
-                return;
-            }
+            stop = preanswerStop(mine, command);
         } catch (e) { /* housekeeping: the command goes to the user's own rules */ }
         // docs/90-agent/plans/2026-10-10-workflow-gaps-design.md §12: the shell
         // half of the controlled-stage rule below. The controller's Edit and
@@ -140,7 +141,9 @@ function main(raw) {
                 return;
             }
         }
-        emitCommit(root, mine, payload);
+        if (!emitCommit(root, mine, payload) && stop) {
+            process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'ask', permissionDecisionReason: stop } }));
+        }
         return;
     }
 

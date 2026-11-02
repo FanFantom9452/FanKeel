@@ -63,6 +63,10 @@ test('each of the four kinds is caught, and ordinary work is not', () => {
     assert.equal(kind('powershell -Command "New-Object -ComObject Word.Application"'), 'launch');
     assert.equal(kind('Start-Process notepad'), 'launch');
     assert.equal(kind('cmd /c start report.html'), 'launch');
+    assert.equal(kind('bash -c "rm -rf x"'), 'delete');
+    assert.equal(kind('powershell -Command "Remove-Item -Recurse x"'), 'delete');
+    assert.equal(kind('cmd /c "del f"'), 'delete');
+    assert.equal(kind('bash -c "echo hi"'), null);
     assert.equal(kind('npm test'), null);
     assert.equal(kind('node --test tests/guard-preanswer.test.js'), null);
     assert.equal(kind('git commit -m "rm the old flag"'), null);
@@ -72,4 +76,28 @@ test('each of the four kinds is caught, and ordinary work is not', () => {
 test('no pre-answer, or an empty command, says nothing', () => {
     assert.equal(preanswerStop({}, 'git push'), null);
     assert.equal(preanswerStop(PRE, ''), null);
+});
+
+test('at a controlled stage a shell write is denied, not asked, even when it is also a delete', () => {
+    const root = seed(PRE);
+    fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': 'survey,build,verify' }));
+    const out = shell(root, 'rm docs/x.md').hookSpecificOutput;
+    assert.equal(out.permissionDecision, 'deny');
+    assert.match(out.permissionDecisionReason, /controlled stage/);
+});
+
+test('a sensitive-scan verdict on a commit beats the pre-answer ask, chained with git push too', () => {
+    const root = seed(PRE);
+    const git = (...a) => execFileSync('git', a, { cwd: root, encoding: 'utf8' });
+    git('init', '-q');
+    fs.writeFileSync(path.join(root, '.fankeel', '.gitignore'), 'sessions/\nsensitive.txt\nprofile.json\n');
+    fs.writeFileSync(path.join(root, '.fankeel', 'sensitive.txt'), 'ACME\n');
+    fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'sensitive.mode': 'block' }));
+    fs.writeFileSync(path.join(root, 'plan.md'), 'ship it to acme\n');
+    git('add', 'plan.md');
+    const out = shell(root, 'git commit -m plan && git push origin main').hookSpecificOutput;
+    assert.equal(out.permissionDecision, 'deny');
+    assert.doesNotMatch(out.permissionDecisionReason, /pre-answered/);
+    assert.match(out.permissionDecisionReason, /plan\.md:1/);
+    assert.equal(shell(root, 'git push origin main').hookSpecificOutput.permissionDecision, 'ask');
 });
