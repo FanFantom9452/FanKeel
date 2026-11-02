@@ -73,3 +73,24 @@ test('commandLine is the first line, with runs of space as one', async () => {
     assert.equal(m.commandLine('node  scripts/suite.js\t--fast\nsecond line'), 'node scripts/suite.js --fast');
     assert.equal(m.commandLine('  cd F:/ws &&  npm test  '), 'cd F:/ws && npm test');
 });
+
+test('shellLabel: a description wins; without one, a leading cd goes and node <path>/scripts/<name>.js becomes <name>.js', async () => {
+    const m = await load();
+    assert.equal(m.shellLabel('cd F:/ws && node x.js', '  Run the\nfast suite '), 'Run the');
+    assert.equal(m.shellLabel('cd F:/ws && node x.js', '   '), 'node x.js');
+    assert.equal(m.shellLabel('cd F:/ymlab/fankeel && node F:/ymlab/fankeel/scripts/suite.js --fast'), 'suite.js --fast');
+    assert.equal(m.shellLabel('node C:\\Users\\u\\plugins\\fankeel\\scripts\\await.js --session s1'), 'await.js --session s1');
+    assert.equal(m.shellLabel('node scripts/todo.js new'), 'todo.js new');
+    assert.equal(m.shellLabel('cd /d F:\\ws && npm test'), 'npm test');
+    assert.equal(m.shellLabel('cd "C:/a b" && npm test'), 'npm test');
+    assert.equal(m.shellLabel('Set-Location F:/ws; node scripts/x.js'), 'x.js');
+});
+
+test('shellLabel leaves what it does not recognise as it was', async () => {
+    const m = await load();
+    assert.equal(m.shellLabel('node --test'), 'node --test');
+    assert.equal(m.shellLabel('node --test scripts/x.js'), 'node --test scripts/x.js');
+    assert.equal(m.shellLabel('cd F:/ws'), 'cd F:/ws');
+    assert.equal(m.shellLabel('cd F:/ws &&'), 'cd F:/ws &&');
+    assert.equal(m.shellLabel('npm  test\nsecond'), 'npm test');
+});

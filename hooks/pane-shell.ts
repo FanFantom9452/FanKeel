@@ -7,7 +7,7 @@
 // line is a shell still running. Design: docs/90-agent/plans/2026-10-21-station-focus-design.md section 5.
 
 // `at` is when the observer saw the call return; `end` when a tick first saw it ended, null while it runs.
-export type Shell = { id: string; command: string; at: number; end: number | null; code: number | null }
+export type Shell = { id: string; command: string; description?: string; at: number; end: number | null; code: number | null }
 
 // Characters kept from the end of an output file: the marker and the note after it fit.
 export const TAIL = 256
@@ -53,4 +53,18 @@ export function remember(list: Shell[], shell: Shell): Shell[] {
 
 export function commandLine(command: string): string {
   return command.trim().split(/\r?\n/, 1)[0].replace(/\s+/g, ' ').trim()
+}
+
+// A leading `cd <path> &&` (or `;`, `cd /d`, Set-Location) only says where the command ran, not what it is.
+const CD_PREFIX = /^(?:cd|chdir|set-location)\s+(?:\/d\s+)?(?:"[^"]*"|'[^']*'|[^\s&;|]+)\s*(?:&&|;)\s*/i
+// `node <anything>/scripts/<name>.js` is `<name>.js`: the plugin's scripts are named by their file.
+const NODE_SCRIPT = /\bnode\s+"?(?:\S*[\\/])?scripts[\\/]([\w.-]+\.js)"?/
+
+// What a shell row shows: the Bash `description` when the call carried one, else the command made short.
+export function shellLabel(command: string, description?: string): string {
+  const said = (description ?? '').trim().split(/\r?\n/, 1)[0].replace(/\s+/g, ' ').trim()
+  if (said) return said
+  const line = commandLine(command)
+  const bare = line.replace(CD_PREFIX, '')
+  return (bare || line).replace(NODE_SCRIPT, '$1')
 }
