@@ -2,8 +2,13 @@
 label: verify
 title: verify 加 blast-radius lens
 description: lenses 算 base..HEAD 改到的每個檔被幾個檔案 require／import，超過門檻就把呼叫者列進對手審查員的簡報
-state: ready
+state: done
 link: lib/lenses.js
+done:
+  at: 2026-11-03
+  sha: 0f1d097a
+  disposition: done
+  session: f24ff948-4dec-44d0-b10a-03bc5e3e9f45
 ---
 
 來源：docs/90-agent/judgements/2026-11-02-pstack-video-summary.md 的 pick A（之後因使用者回答改走 B，見 gate-22；這條仍是判官認定的唯一缺口）。pstack 的 `blast-radius` skill 在 10-18 由 opus 讀者讀過，但比較表沒有它的列（docs/90-agent/judgements/2026-10-18-cursor-plugins-pstack.md:110 只在 delegated 名單出現），所以依風險分級審查從沒被判過。
@@ -13,3 +18,11 @@ link: lib/lenses.js
 第一個具體改動：lib/lenses.js 對 range 內每個改到的檔，用 `git grep` 數 require／import 它的檔案數，超過 profile 門檻就輸出 `## Blast radius` 與呼叫者清單；skills/fankeel-verify/SKILL.md:269-271 在 Silent failure／Comment 旁點名它。先開 lib/lenses.js 確認沒有同名功能（判官未讀，would flip if）。
 
 完成條件：tests/ 一條測試——改一個被 N 個檔引用的檔時 lens 觸發並列出 N 個呼叫者，現在失敗、改完通過。
+
+## 完成紀錄
+
+verify 對被很多檔案引用的檔印出影響範圍，門檻在 profile 的 verify.blast。 詳見 [任務紀錄](../records/2026-11.md#r-2026-11-02-f24ff948)
+
+- commit ad02f78a
+- commit 34c05b96
+- commit 0f1d097a
