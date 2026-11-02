@@ -310,6 +310,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 其他四道 gate 附 station 關卡頁（10-18）定了什麼：四道共用一個關卡 tab、報告照範本拆欄、land 加白話、只認 gateAt 或 pending 為在等；放棄了什麼 | [decisions/2026-10-18-gate-tab.md](03-decisions/2026-10-18-gate-tab.md) — *繁體中文* |
 | 判官先列清單、讀者一次派出（10-19）定了什麼：三輪為目標、每則最多四位讀者、略過兩條回傳規則、Summary 放長文；放棄了什麼 | [decisions/2026-10-19-judge-checklist.md](03-decisions/2026-10-19-judge-checklist.md) — *繁體中文* |
 | 不讓常備答案代答 gate（10-19）定了什麼：離開時 gate 仍問人，不加代答的 profile 鍵；放棄了什麼 | [decisions/2026-10-19-no-unattended-gate.md](03-decisions/2026-10-19-no-unattended-gate.md) — *繁體中文* |
+| 先問完、剩下自己跑（11-03）定了什麼：plan 結束時一次預答後面幾站，只存在這個 task；預答的 gate 帶答案過、標 preanswered，push、刪除、merge、啟動外部程式照停；放棄了什麼 | [decisions/2026-11-03-preanswered-gate.md](03-decisions/2026-11-03-preanswered-gate.md) — *繁體中文* |
 | ilsbench 探針設每週成本上限（10-19）定了什麼：探針可再跑、改用 sonnet、每週 100 美元；放棄了什麼 | [decisions/2026-10-19-ilsbench-probe-cap.md](03-decisions/2026-10-19-ilsbench-probe-cap.md) — *繁體中文* |
 | 任務的圖由 station 畫成 SVG（10-20）定了什麼：任務 build 目錄裡的 .board 由 station 畫成 SVG 掛在卡片上，只複製 Chartroom 的繪圖部分；放棄了什麼 | [decisions/2026-10-20-task-boards-as-svg.md](03-decisions/2026-10-20-task-boards-as-svg.md) — *繁體中文* |
 | retro 讀整份遮蔽過的 session 包（10-20）定了什麼：land 每次問匯出、遮蔽敏感字、retro 在 opus 讀包、retro-all 只改重複出現的問題；放棄了什麼 | [decisions/2026-10-20-retro-bundle.md](03-decisions/2026-10-20-retro-bundle.md) — *繁體中文* |
@@ -708,6 +709,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 - [測試分兩層、推送後讀 CI、plan 太大就拆組（11-02）：suite.json 宣告 daily／nightly，ci-status 只讀一次不擋 land，關卡前先寫報告](03-decisions/2026-11-02-ci-tiers.md)
 - [已結束的 session 搬到架子，不刪（11-02）：shelf.js run 把結束 14 天以上的條目和 build 目錄搬到 config 目錄，node:sqlite 索引，讀者帶 { shelf: true }](03-decisions/2026-11-02-session-shelf.md)
 - [station 導覽整組拿掉、pipeline.md 加七階段總覽、gate 圖框放寬（11-02）：tour 之後重做，總覽圖列每站呼叫的腳本，圖框高度依圖比例](03-decisions/2026-11-02-remove-tour-pipeline-overview.md)
+- [先問完、剩下自己跑（11-03）：plan 結束時一次預答後面幾站，只存在這個 task，四類動作仍停下等人](03-decisions/2026-11-03-preanswered-gate.md)
 - [任務的圖由 station 畫成 SVG（10-20）](03-decisions/2026-10-20-task-boards-as-svg.md)
 - [retro 讀整份遮蔽過的 session 包（10-20）](03-decisions/2026-10-20-retro-bundle.md)
 - [沒派過的 agent 怎麼處理（10-15）：effort 改在派工時傳，六個複本刪掉](03-decisions/2026-10-15-unused-agents.md)
