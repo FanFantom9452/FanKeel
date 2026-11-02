@@ -364,8 +364,8 @@ The hooks do not belong to one stage. They fire on Claude Code's own events, in 
 ```mermaid
 flowchart LR
   SS["SessionStart<br/>carry.js：/clear 後接回 task"] --> UP["UserPromptSubmit<br/>inject.js：注入本站規則"]
-  UP --> PRE["PreToolUse<br/>guard.js 撞檔／唯讀<br/>gate.js 檢查 gate<br/>title.js、dispatch-gate.js 派工<br/>relay-cap.js、wrap-up.js"]
-  PRE --> SUB["SubagentStart/Stop<br/>brief.js 給脈絡<br/>agent-end.js 回傳上限"]
+  UP --> PRE["PreToolUse<br/>guard.js 撞檔／唯讀<br/>gate.js 檢查 gate<br/>title.js、dispatch-gate.js 派工<br/>relay-cap.js、wrap-up.js<br/>budget.js"]
+  PRE --> SUB["SubagentStart/Stop<br/>brief.js 給脈絡<br/>agent-end.js 回傳上限（SubagentStart、SubagentStop 都註冊）"]
   PRE --> POST["PostToolUse<br/>touch.js 記 claims<br/>resume.js gate 答完重注入<br/>gate-write.js、budget.js"]
   POST --> ST["Stop<br/>stop.js：擋提早停"]
   ST --> SE["SessionEnd<br/>leave.js：記花費、重產 station"]

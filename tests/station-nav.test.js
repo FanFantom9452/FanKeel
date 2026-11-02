@@ -39,14 +39,14 @@ function boot(hash, serve) {
     return { V: box.module.exports, els, win, fire, get: doc.getElementById };
 }
 
-test('the bar is one level: 現在, Sessions, 花費, 文件, 週報, then 設定 and 導覽 pinned, and no fold anywhere', () => {
+test('the bar is one level: 現在, Sessions, 花費, 文件, 週報, then 設定 pinned, and no fold anywhere', () => {
     const { els } = boot('#/');
     const nav = els.nav.innerHTML;
     assert.match(nav, /^<nav class="sidenav hm-flat" data-block="nav" aria-label="功能"><div class="navbox"><div class="jump" data-block="jump">/);
     const main = nav.slice(nav.indexOf('<ul class="navmain">'), nav.indexOf('<ul class="navpin">'));
     const pin = nav.slice(nav.indexOf('<ul class="navpin">'));
     assert.deepEqual([...main.matchAll(/<span>([^<]+)<\/span>/g)].map((m) => m[1]), ['現在', 'Sessions', '花費', '文件', '週報']);
-    assert.deepEqual([...pin.matchAll(/<span>([^<]+)<\/span>/g)].map((m) => m[1]), ['設定', '導覽']);
+    assert.deepEqual([...pin.matchAll(/<span>([^<]+)<\/span>/g)].map((m) => m[1]), ['設定']);
     assert.doesNotMatch(nav, /data-navfold|navkids|navchev|<button/);
     assert.match(nav, /<a href="#\/" aria-current="page">[\s\S]*?<span>現在<\/span><span class="nb wait" title="1 個 session 在等你回答">1<\/span><\/a>/);
     assert.equal((nav.match(/class="nb/g) || []).length, 1, 'only 現在 carries a count');
