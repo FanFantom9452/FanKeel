@@ -535,7 +535,7 @@ function cmdShow(root, opts) {
     // session id so two runs render the same lines; a person scanning a month of
     // finished tasks wants the recent end, and the id says nothing about when.
     if (opts.all === true) {
-        const { entries, unreadable } = registry.readAll(root);
+        const { entries, unreadable } = registry.readAll(root, { shelf: true });
         // Not named `live`: that is the module holding `isLive`, and shadowing it
         // inside a function that measures liveness twenty lines above is a trap
         // for whoever edits this next. These are active entries, which is a
@@ -1415,7 +1415,11 @@ function cmdAdopt(root, opts) {
     if (!from) fail('Give the session id to adopt from.');
     if (from === id) fail('That is this session.');
 
-    const source = registry.readSession(root, from);
+    let source = registry.readSession(root, from);
+    // An ended entry may be on the shelf (lib/shelf.js); bring it and its build
+    // directory back first, so the rest of adopt reads and writes it where it
+    // always did.
+    if (!source && require('../lib/shelf.js').restore(root, from)) source = registry.readSession(root, from);
     if (!source) fail('No entry for ' + from + ' under ' + root);
 
     if (source.stage === 'init' && !source.task) fail(from + ' is still at init: it has no task to adopt.');
