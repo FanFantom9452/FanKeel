@@ -57,6 +57,7 @@ profile 是 gate 的常備答案：先寫好，fankeel 就不再問那一題。g
 | `init.skip` | 跳過首次使用的 init 整理；true 時 task.js start 不再印 onboard: 行 | `true`、`false`；內建 `false` | 不設，維持內建 |
 | `sensitive.mode` | commit 帶到 .fankeel/sensitive.txt 的詞時：warn 只提醒、block 擋下 | `warn`、`block`；內建 `warn` | 不設，維持內建 |
 | `sensitive.review` | reviewer 審查時要不要多跑 ## Sensitive lens，確認敏感資料沒寫進去 | `true`、`false`；內建 `false` | 不設，維持內建 |
+| `verify.blast` | verify 派對手審查員前，改到的檔被這麼多個檔以上 require／import，就把呼叫者列進簡報（## Blast radius）；off 不算 | `off`，或 1 到 1000 的整數；內建 `10` | 不設，維持內建 |
 | `commit.format` | commit.js 提交前，每則訊息第一行要符合的正規式；不設就不檢查 | 一個 JavaScript 正規式，比對訊息第一行 | 不設 |
 | `weekly.roots` | 週報（/fankeel-weekly）掃描 repo 的根目錄；不設就用 registry root 的上一層 | 逗號分隔的絕對路徑目錄 | 不設 |
 | `weekly.facets` | 週報卡片的面向詞表與各自的受眾；不設就用預設六個 | 逗號分隔的 名稱:受眾，受眾是 general、both 或 tech | 不設 |
