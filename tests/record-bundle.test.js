@@ -150,3 +150,25 @@ test('--commit keeps a bundle over the size cap local and says so', () => {
     assert.equal(fs.existsSync(path.join(s.root, 'docs', '90-agent', 'records', 'sessions')), false);
     assert.equal(registry.readSession(s.root, A).record.bundle.committed, false);
 });
+
+test('session refuses a closed task, and --closed packs it with the same masking', () => {
+    const s = seed();
+    run(s, ['write', '--session', A], GOOD);
+    registry.update(s.root, A, (d) => { d.active = false; });
+    const refused = run(s, ['session', '--session', A]);
+    assert.equal(refused.code, 1);
+    assert.match(refused.out, /No active entry/);
+    assert.equal(fs.existsSync(path.join(s.root, '.fankeel', 'bundles')), false);
+    const r = run(s, ['session', '--session', A, '--closed']);
+    assert.equal(r.code, 0, r.out);
+    const dir = path.join(s.root, '.fankeel', 'bundles');
+    const text = zlib.gunzipSync(fs.readFileSync(path.join(dir, fs.readdirSync(dir)[0]))).toString('utf8');
+    assert.ok(!text.includes(KEY) && text.includes('[REDACTED:key]') && text.includes('[REDACTED:word]'));
+});
+
+test('--closed still refuses a session the registry does not know', () => {
+    const s = seed();
+    const r = run(s, ['session', '--session', 'ffffffff-0000-0000-0000-000000000000', '--closed']);
+    assert.equal(r.code, 1);
+    assert.match(r.out, /No active entry/);
+});

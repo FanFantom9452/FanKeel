@@ -288,7 +288,8 @@ nothing. Ask it as its own question headed `改進建議`; an approved hunk
 goes to one `fankeel:fankeel-fixer` per file. Then
 `node <plugin>/scripts/record.js retro --session <id> --transcript <session>/subagents/agent-<id>.jsonl`,
 the disposition on stdin, and stand down. A land brain sends it only when
-its brief says the user picked `匯出並回顧`.
+its brief says the user picked `匯出並回顧`. After `收工`, the same command with
+`--closed` packs it later, masked alike.
 
 The commit is the same three parts every time, and `build` commits one task at a
 time with the same skeleton — injected here, and read from step 4 of its own

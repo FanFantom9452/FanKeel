@@ -237,3 +237,30 @@ test('homePattern masks a Windows home spelled with single, doubled or quadruple
     assert.equal(mask('C:\\Users\\ann.bob'), 'C:\\Users\\ann.bob');
     assert.equal(mask('C:\\Users\\anna'), 'C:\\Users\\anna');
 });
+
+test('one bundle exports without --cross, and report.md holds only that bundle\'s retro', () => {
+    const s = seed();
+    const r = run(s.root, ['export', '--bundles', 'aaaaaaaa']);
+    assert.equal(r.code, 0, r.out);
+    assert.match(r.out, /1 bundles/);
+    const report = entries(exported(s.root, r.out)).get('report.md').toString('utf8');
+    assert.ok(report.startsWith('## retro aaaaaaaa') && report.includes('<summary>retro aaaaaaaa '), report);
+    assert.ok(!report.includes(REPORT), 'the cross report leaked in');
+});
+
+test('several bundles still need --cross', () => {
+    const s = seed();
+    const r = run(s.root, ['export', '--bundles', 'aaaaaaaa,bbbbbbbb']);
+    assert.equal(r.code, 1);
+    assert.match(r.out, /--cross/);
+    assert.equal(fs.existsSync(path.join(s.root, '.fankeel', 'exports')), false);
+});
+
+test('report.md goes through the sensitive list too', () => {
+    const s = seed();
+    fs.writeFileSync(path.join(s.root, '.fankeel', 'sensitive.txt'), 'mover\n');
+    const r = run(s.root, ['export', '--cross', s.anchor, '--bundles', 'aaaaaaaa,bbbbbbbb']);
+    assert.equal(r.code, 0, r.out);
+    const report = entries(exported(s.root, r.out)).get('report.md').toString('utf8');
+    assert.ok(!/mover/i.test(report) && report.includes('[REDACTED:word]'), report);
+});

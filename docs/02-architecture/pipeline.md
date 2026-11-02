@@ -894,8 +894,10 @@ gate carries four options in this order — `收工`, what is still open,
 `匯出並回顧` and `暫停` (`skills/fankeel-land/SKILL.md`, land-8). `匯出並回顧`
 exports the session (`record.js session` writes a masked bundle, under
 `.fankeel/bundles/` only when the bundle is not committed,
-`scripts/record.js:208`) and then always sends the retro on that bundle, with
-no second question; the user reads it as 「回顧這次哪裡可以改進」.
+`scripts/record.js:210`) and then always sends the retro on that bundle, with
+no second question; the user reads it as 「回顧這次哪裡可以改進」. A task
+already closed with `收工` is packed later by `record.js session --closed`,
+through the same masking.
 
 **The commit body is that list rewritten for the next session.** `init` and
 `survey` read `git log` before they read any code, so the subject says what

@@ -69,7 +69,7 @@ On 匯出 ZIP 回傳, one more `AskUserQuestion` with `multiSelect: true` and
 neither box preselected: 記錄全域 Node 套件 adds `--global-packages`;
 保留原路徑（不換 [HOME]） adds `--keep-home`. Then run
 `node <plugin>/scripts/record.js export --cross <anchor> --bundles <id8,...>`
-with the bundles step 1 picked, and give the user its `export:` path and its
+with the bundles step 1 picked (one bundle: no `--cross`), and give the user its `export:` path and its
 last line. Nothing is pushed.
 
 ## 5. 收到 ZIP

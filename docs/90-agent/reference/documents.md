@@ -178,8 +178,8 @@ report where a real parser would cost a dependency this plugin does not have.
 | `index.html`、`station/` | 否 | 這台機器的 station 副本，每次 prompt 重寫 |
 | `worktrees/<id8>/` | 否 | profile `worktree: true` 時 `task.js start` 為一個 session 開的 git worktree，分支 `fk/<id8>`；land 合併、測試全綠後 `git worktree remove` |
 | `sensitive.txt` | 否 | 敏感詞表，一行一詞；詞表本身就是敏感資料，所以不進版控，每台機器各一份（init 的可見度那一步建立） |
-| `bundles/<day>-<id8>.jsonl.gz` | 否 | land 時答應匯出才由 `record.js session` 寫，`record.js import` 收到 ZIP 時也把附的對話寫進來：這個 session 與它 adopt 來源的全部對話，敏感字已遮蔽；不清理。`--commit` 且 2 MB 以內的改寫到紀錄目錄的 `sessions/` 跟著提交，不在這裡 |
-| `exports/retro-<day>-<hash>.zip` | 否 | `record.js export` 打包的 retro ZIP：報告與敏感字遮蔽後的對話；不清理 |
+| `bundles/<day>-<id8>.jsonl.gz` | 否 | land 時答應匯出才由 `record.js session` 寫（已收工的任務加 `--closed` 事後補打，遮蔽相同），`record.js import` 收到 ZIP 時也把附的對話寫進來：這個 session 與它 adopt 來源的全部對話，敏感字已遮蔽；不清理。`--commit` 且 2 MB 以內的改寫到紀錄目錄的 `sessions/` 跟著提交，不在這裡 |
+| `exports/retro-<day>-<hash>.zip` | 否 | `record.js export` 打包的 retro ZIP：報告與敏感字遮蔽後的對話；只有一個包時可不給 `--cross`，報告就只放該包的 retro；不清理 |
 | `imports/<名稱>/` | 否 | `record.js import` 解開的 ZIP：`report.md` 與驗過 CRC、sha256 的內容；不清理 |
 | `station.bat`、`station.sh` | 否 | station 啟動檔，內容是這台機器的外掛絕對路徑；`registry.ensureLayout` 每個 hook 檢查一次，內容不同才重寫，所以外掛升級後自動跟上（`lib/launchers.js`） |
 | `docs/judgements/`（預設；`docs.json` 的 judgements 桶會改掉它，本倉庫是 `docs/90-agent/judgements/`；不在 `.fankeel/`） | 是 | `fankeel-judge` 的判斷，寫完不改（`report`） |

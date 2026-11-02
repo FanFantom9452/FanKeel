@@ -36,6 +36,7 @@ const OPTIONS = {
     bundles: { type: 'string' },
     'global-packages': { type: 'boolean' },
     'keep-home': { type: 'boolean' },
+    closed: { type: 'boolean' },
 };
 
 // Field name as the user reads it, and as the registry stores it.
@@ -124,11 +125,13 @@ function section(title, day, anchor, fields, corrected) {
 // gzips to tens of MB (docs/90-agent/judgements/2026-10-20-retro-land-vs-skill.md).
 const BUNDLE_MAX = 2 * 1024 * 1024;
 
-function activeEntry(opts) {
+// `closed` lets a task that stood down (active=false) through: land only
+// flips that flag, so its record, configDir and sessions are all still there.
+function activeEntry(opts, closed) {
     if (!opts.session) fail('--session <id> is required: the record belongs to one task.');
     const root = opts.root ? path.resolve(opts.root) : registry.rootFor({ cwd: process.cwd() });
     const mine = registry.readSession(root, opts.session);
-    if (!mine || mine.active !== true) fail('No active entry for ' + opts.session + ' under ' + root);
+    if (!mine || (mine.active !== true && !closed)) fail('No active entry for ' + opts.session + ' under ' + root);
     const projectRoot = docs.projectRootsFor(root, opts.project ? [opts.project] : (mine.project ? [mine.project] : []))[0] || root;
     return { root, mine, projectRoot };
 }
@@ -195,7 +198,7 @@ function write(opts) {
 }
 
 function exportSession(opts) {
-    const { root, mine, projectRoot } = activeEntry(opts);
+    const { root, mine, projectRoot } = activeEntry(opts, opts.closed);
     if (!mine.record) fail('No record for ' + opts.session + ' yet: run `record.js write` first, so the bundle has an entry to hang under.');
     const list = sensitive.readList(projectRoot);
     if (list.error) fail('Nothing written: .fankeel/sensitive.txt exists but could not be read (' + list.error + '), so nothing could be masked against it.');
@@ -416,10 +419,11 @@ function globalPackages() {
 }
 
 function exportZip(opts, cross) {
-    if (!opts.cross || !cross) fail('record.js export --cross <anchor> --bundles <id8,...>: the anchor is the #x-<date> `retro --cross` printed.');
-    const anchor = String(cross).replace(/^.*#/, '');
+    if (opts.cross && !cross) fail('record.js export --cross <anchor> --bundles <id8,...>: the anchor is the #x-<date> `retro --cross` printed.');
+    const anchor = opts.cross ? String(cross).replace(/^.*#/, '') : null;
     const ids = String(opts.bundles || '').split(',').map((s) => s.trim()).filter(Boolean);
     if (!ids.length) fail('Nothing written: --bundles <id8,...> names the bundles this retro read.');
+    if (!anchor && ids.length > 1) fail('Nothing written: several bundles need --cross <anchor>, the report that ties them together; one bundle goes without.');
     const root = opts.root ? path.resolve(opts.root) : registry.rootFor({ cwd: process.cwd() });
     const projectRoot = opts.project ? path.resolve(opts.project) : root;
     const list = sensitive.readList(projectRoot);
@@ -427,8 +431,8 @@ function exportZip(opts, cross) {
     const records = recordsRel(projectRoot);
     const recordsDir = path.join(projectRoot, ...records.split('/'));
     const missing = [];
-    const report = sectionIn(recordsDir, anchor);
-    if (!report) missing.push('#' + anchor + ' in ' + records);
+    const report = anchor ? sectionIn(recordsDir, anchor) : '';
+    if (anchor && !report) missing.push('#' + anchor + ' in ' + records);
     const found = [];
     for (const id8 of ids) {
         let hit = null;
@@ -453,7 +457,7 @@ function exportZip(opts, cross) {
         for (const v of masked.versions) versions.add(v);
         bundles.push({ id8: b.id8, name: path.basename(b.file), gz: masked.gz });
     }
-    const text = mask([report.trim(), ...bundles.map((b) => '## retro ' + b.id8 + '\n\n' + (retroBlock(months, b.id8) || '（月檔裡沒有這個包的 retro）'))].join('\n\n') + '\n');
+    const text = sensitive.redact(mask([report.trim(), ...bundles.map((b) => '## retro ' + b.id8 + '\n\n' + (retroBlock(months, b.id8) || '（月檔裡沒有這個包的 retro）'))].filter(Boolean).join('\n\n') + '\n'), list.words, {});
     const working = readJson(path.join(root, 'package.json'));
     const installed = readJson(path.join(__dirname, '..', 'package.json')) || {};
     const project = readJson(path.join(projectRoot, 'package.json')) || {};
@@ -576,7 +580,7 @@ function main(argv) {
     if (verb === 'retro') return values.cross ? fileCross(values) : values.bundle ? fileBundleRetro(values) : fileRetro(values);
     if (verb === 'export') return exportZip(values, positionals[1]);
     if (verb === 'import') return importZip(values, positionals[1]);
-    fail('record.js write|session|retro|sessions --list|export --cross <anchor> --bundles <id8,...>|import <zip> --session <id> [--commit] [--transcript <jsonl>] [--cross] [--bundle <id8>] [--global-packages] [--keep-home] [--root <dir>] [--project <dir>] [--config-dir <dir>]');
+    fail('record.js write|session [--closed]|retro|sessions --list|export [--cross <anchor>] --bundles <id8,...>|import <zip> --session <id> [--commit] [--transcript <jsonl>] [--cross] [--bundle <id8>] [--global-packages] [--keep-home] [--root <dir>] [--project <dir>] [--config-dir <dir>]');
 }
 
 if (require.main === module) main(process.argv.slice(2));
