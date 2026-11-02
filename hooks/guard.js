@@ -14,7 +14,7 @@
 const path = require('node:path');
 const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
-const { decide, guardMode, targetOf, readOnlyAgentType, writesFiles, brainWriteReason } = require('../lib/guard.js');
+const { decide, guardMode, targetOf, readOnlyAgentType, writesFiles, preanswerStop, brainWriteReason } = require('../lib/guard.js');
 const profileLib = require('../lib/profile.js');
 const { controlling } = require('../lib/stages.js');
 const { baseAgent } = require('../lib/agentfile.js');
@@ -113,6 +113,16 @@ function main(raw) {
     // the node process this hook already is, which is why the gate moved rather
     // than grew.
     if (shell) {
+        // docs/03-decisions/2026-11-03-preanswered-gate.md: a pre-answered
+        // task's hard stops ask, whichever agent runs them — a subagent's
+        // payload carries its parent's session_id, so `mine` is that task.
+        try {
+            const stop = preanswerStop(mine, command);
+            if (stop) {
+                process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'ask', permissionDecisionReason: stop } }));
+                return;
+            }
+        } catch (e) { /* housekeeping: the command goes to the user's own rules */ }
         // docs/90-agent/plans/2026-10-10-workflow-gaps-design.md §12: the shell
         // half of the controlled-stage rule below. The controller's Edit and
         // Write are refused there; a `sed -i` or a redirect is the same write
