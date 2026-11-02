@@ -3,7 +3,7 @@ name: fankeel-retro-all
 description: Review every exported session bundle for problems that recur across tasks — this machine's and other users' — and propose skill, agent or stage-rule edits only for what recurs. Use for /fankeel-retro-all, "跑全部 retro", "回顧所有 session", or after importing a retro ZIP another user sent back.
 version: 0.153.0
 status: current
-last_verified: 2026-11-02
+last_verified: 2026-11-03
 source_of_truth: scripts/record.js, agents/fankeel-retro.md
 ---
 
@@ -26,6 +26,8 @@ recurring problems are ranked with their evidence, the report is filed with
 `node <plugin>/scripts/record.js sessions --list` prints one row per bundle:
 its path, size, `local` or `committed`, and `retro: filed` or `retro: none`.
 Ask which to read — all, or a date range — with `AskUserQuestion`.
+A bundle from another machine reads `imported`, then `card: yes|no` and
+`fankeel <version>`, which `record.js import` recorded.
 
 ## 2. Read
 
@@ -33,17 +35,23 @@ A `retro: filed` bundle costs nothing: read its `<details>` block from
 the month file under `docs/90-agent/records/`, found by `<summary>retro <id8>`.
 
 A `retro: none` bundle gets one `subagent_type: fankeel:fankeel-retro`,
-on the opus its file pins, prompt `session <id8>`, `bundle <path>` and
-`<plugin>`. Send at most `dispatch.inflight` in one response (eight by
+on the opus its file pins, prompt `session <id8>`, `bundle <path>`, `<plugin>`, `source local|imported` as the
+list says, and `card <path>` — the `project.md` beside that import's
+`intake.json` in the import folder under .fankeel — or `card none`. Send at most `dispatch.inflight` in one response (eight by
 default), saying how many and on which model. Only the
 returns reach this context. Pipe each to
 `node <plugin>/scripts/record.js retro --bundle <id8>`: the next list shows `filed`.
 
 ## 3. Rank
 
-A problem is **recurring** when two or more bundles carry evidence for it.
-Only a recurring problem gets a hunk — five at most, by bundles —
-touching `skills/`, `agents/`, `lib/stages.js` or
+A problem is **recurring** when two or more bundles carry evidence for it, by
+its facet. `鬼打牆`, `可平行未平行`, `關卡或驗證被跳過`, `工具故障` and `其他流程`
+count from any source. `架構理解疏漏` counts only from a `local` bundle or one
+with a card; the retro returns the rest as `unverified:` lines, listed in the
+report and never counted toward "two or more bundles". A bundle whose
+`fankeel` is older than this plugin's gets `（fankeel <version> 較舊）` after
+its evidence: the problem may be fixed. Only a recurring problem gets a hunk —
+five at most, by bundles — touching `skills/`, `agents/`, `lib/stages.js` or
 `CLAUDE.md`. A problem seen once is a `once:` line, no hunk: one session is no evidence. A fix that needs code is a `backlog:`
 line.
 
@@ -52,6 +60,7 @@ The report, in this order:
     recurring: <problem> — <k>/<n> bundles — evidence: <id8> turn <t>, <id8> turn <t>
     <unified diff for it>
     once: <problem> — <id8> turn <t>
+    unverified: <problem> — <id8> turn <t>
     backlog: <what code would make it impossible> — <path>
 
 Nothing recurring: just `clean`.
@@ -66,8 +75,9 @@ with `todo.js new --state decision`; 匯出 ZIP 回傳; or neither. Nothing is
 applied before the answer.
 
 On 匯出 ZIP 回傳, one more `AskUserQuestion` with `multiSelect: true` and
-neither box preselected: 記錄全域 Node 套件 adds `--global-packages`;
-保留原路徑（不換 [HOME]） adds `--keep-home`. Then run
+no box preselected: 記錄全域 Node 套件 adds `--global-packages`;
+保留原路徑（不換 [HOME]） adds `--keep-home`; 附上專案地圖 adds `--project-card`,
+a masked `project.md` the reader needs to check architecture findings. Then run
 `node <plugin>/scripts/record.js export --cross <anchor> --bundles <id8,...>`
 with the bundles step 1 picked (one bundle: no `--cross`), and give the user its `export:` path and its
 last line. Nothing is pushed.
@@ -77,3 +87,8 @@ last line. Nothing is pushed.
 `node <plugin>/scripts/record.js import <zip>` checks every entry against its
 CRC and the manifest's sha256, puts the bundles in `.fankeel/bundles/` (a name
 already there is skipped) and the report in `.fankeel/imports/`. Then step 1.
+A conversation that is not under `~/.claude/projects` on this machine — a retro
+that returned `needs: zip`, or an older session from another computer — is asked of the
+user as a ZIP. Either an export or an informal one will do: `<date>-<id8>.jsonl.gz`
+at its top level, with or without a `retro.md`. Run `record.js import` on it,
+then step 1; `conversation.js --bundle <file.jsonl.gz>` also reads one directly.
