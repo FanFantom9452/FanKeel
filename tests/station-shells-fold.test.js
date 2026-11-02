@@ -24,3 +24,11 @@ test('with none running the count is 0 in the tooltip and nowhere on the page', 
     assert.ok(!/<b>shells<\/b>/.test(html));
     assert.equal(V.shellsHtml([], NOW), '');
 });
+
+test('the row text is the label, the tooltip the whole command; an old row without a label shows its command', () => {
+    const { V } = page();
+    const a = V.shellsHtml([{ id: 'b1', command: 'cd F:/ws && node F:/ws/scripts/suite.js', label: 'suite.js', state: 'running', code: null, startedAt: '2026-10-21T00:56:00.000Z' }], NOW);
+    assert.match(a, /<span class="sa-desc" title="cd F:\/ws &amp;&amp; node F:\/ws\/scripts\/suite\.js">suite\.js<\/span>/);
+    const b = V.shellsHtml(ONE, NOW);
+    assert.match(b, /<span class="sa-desc" title="node --test">node --test<\/span>/);
+});

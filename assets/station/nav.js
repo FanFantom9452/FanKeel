@@ -154,7 +154,7 @@
                         : '<span class="delta ' + (known && x.code !== 0 ? 'dn' : 'flat') + '">' + loc('nav.shellEnded', '結束')
                             + (known ? ' · exit ' + esc(x.code) : '') + '</span>';
                     return '<div class="sa"><span class="sa-type">' + esc(x.id) + '</span>' + st
-                        + '<span class="sa-desc" title="' + esc(x.command) + '">' + esc(x.command) + '</span>'
+                        + '<span class="sa-desc" title="' + esc(x.command) + '">' + esc(x.label || x.command) + '</span>'
                         + '<span class="sa-for">' + (isFinite(t) ? mins(now - t) : '—') + '</span></div>';
                 }).join('') + '</div>';
         }

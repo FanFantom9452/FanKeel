@@ -69,8 +69,8 @@ test('a live row carries its background shells, running first, and serialize and
     const row = model.registries.flatMap((r) => r.sessions).find((s) => s.sessionId === SID);
     assert.equal(row.state, 'live');
     const want = [
-        { id: 'b2', command: 'npm test', state: 'running', code: null, startedAt: m.second },
-        { id: 'b1', command: 'sleep 60', state: 'ended', code: 0, startedAt: m.first },
+        { id: 'b2', command: 'npm test', label: 'npm test', state: 'running', code: null, startedAt: m.second },
+        { id: 'b1', command: 'sleep 60', label: 'sleep 60', state: 'ended', code: 0, startedAt: m.first },
     ];
     assert.deepEqual(row.shells, want);
     const data = JSON.parse(station.serialize(model).slice('window.STATION = '.length, -2));
@@ -97,7 +97,7 @@ test('shellsHtml draws nothing for no shells, and one .sa row a shell: running w
     assert.equal(require('../assets/station/station.js').shellsHtml([], now), '');
     assert.equal(V.shellsHtml(undefined, now), '');
     const html = V.shellsHtml([
-        { id: 'b2', command: 'node --test 2>&1 | tail -40', state: 'running', code: null, startedAt: '2026-10-21T00:56:00.000Z' },
+        { id: 'b2', command: 'node --test 2>&1 | tail -40', label: 'node --test 2>&1 | tail -40', state: 'running', code: null, startedAt: '2026-10-21T00:56:00.000Z' },
         { id: 'b1', command: 'node scripts/render.js', state: 'ended', code: 1, startedAt: '2026-10-21T00:51:00.000Z' },
         { id: 'b0', command: 'git log', state: 'ended', code: 0, startedAt: '2026-10-21T00:48:00.000Z' },
     ], now);

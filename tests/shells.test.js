@@ -64,9 +64,9 @@ test('shellsOf: running first, then the newest two ended; a vanished output is e
         b3: 'x'.repeat(5000) + '\n[exited with code 1]\nShell cwd was reset to F:\\ws\n',
     });
     assert.deepEqual(shells.shellsOf(s.transcript, s.tasks), [
-        { id: 'b2', command: 'node scripts/suite.js', state: 'running', code: null, startedAt: at(2) },
-        { id: 'b4', command: 'gone', state: 'ended', code: null, startedAt: at(4) },
-        { id: 'b3', command: 'npm test', state: 'ended', code: 1, startedAt: at(3) },
+        { id: 'b2', command: 'node scripts/suite.js', label: 'suite.js', state: 'running', code: null, startedAt: at(2) },
+        { id: 'b4', command: 'gone', label: 'gone', state: 'ended', code: null, startedAt: at(4) },
+        { id: 'b3', command: 'npm test', label: 'npm test', state: 'ended', code: 1, startedAt: at(3) },
     ]);
 });
 
@@ -105,7 +105,32 @@ test('a shell whose output gains its exit line is read as ended on the next call
     const s = session([['u1', 'b1', 'sleep 5', 1]], { b1: 'working\n' });
     assert.equal(shells.shellsOf(s.transcript, s.tasks)[0].state, 'running');
     fs.appendFileSync(path.join(s.tasks, 'b1.output'), '[exited with code 3]\n');
-    assert.deepEqual(shells.shellsOf(s.transcript, s.tasks)[0], { id: 'b1', command: 'sleep 5', state: 'ended', code: 3, startedAt: at(1) });
+    assert.deepEqual(shells.shellsOf(s.transcript, s.tasks)[0], { id: 'b1', command: 'sleep 5', label: 'sleep 5', state: 'ended', code: 3, startedAt: at(1) });
+});
+
+test('a launch carries its description into label; without one, label is the command without its cd and script path', () => {
+    const withDesc = launch('u1', 'cd F:/ws && node F:/ws/scripts/await.js --session s', at(1)).replace('"run_in_background":true', '"run_in_background":true,"description":"await: survey stage agent"');
+    const s = session([], {});
+    fs.writeFileSync(s.transcript, withDesc + started('u1', 'b1', at(1)) + launch('u2', 'cd F:/ws && node F:/ws/scripts/suite.js --fast', at(2)) + started('u2', 'b2', at(2)));
+    fs.writeFileSync(path.join(s.tasks, 'b1.output'), 'x\n');
+    fs.writeFileSync(path.join(s.tasks, 'b2.output'), 'x\n');
+    const rows = shells.shellsOf(s.transcript, s.tasks);
+    assert.deepEqual(rows.map((r) => [r.id, r.label]), [['b2', 'suite.js --fast'], ['b1', 'await: survey stage agent']]);
+    assert.equal(rows[0].command, 'cd F:/ws && node F:/ws/scripts/suite.js --fast');
+});
+
+test('shellLabelOf leaves what it does not recognise as it was', () => {
+    const l = shells.shellLabelOf;
+    assert.equal(l('node --test'), 'node --test');
+    assert.equal(l('node --test scripts/x.js'), 'node --test scripts/x.js');
+    assert.equal(l('cd F:/ws'), 'cd F:/ws');
+    assert.equal(l('cd F:/ws &&'), 'cd F:/ws &&');
+    assert.equal(l('cd /d F:\\ws && npm test'), 'npm test');
+    assert.equal(l('cd "C:/a b" && npm test'), 'npm test');
+    assert.equal(l('Set-Location F:/ws; node scripts/x.js'), 'x.js');
+    assert.equal(l('node C:\\Users\\u\\plugins\\fankeel\\scripts\\await.js --session s1'), 'await.js --session s1');
+    assert.equal(l('cd F:/ws && node x.js', '  Run the\nfast suite '), 'Run the');
+    assert.equal(l('npm  test\nsecond'), 'npm test');
 });
 
 test('no transcript is no shells', () => {
