@@ -7,9 +7,12 @@
 // Code writes one transcript line per content block, so one message's calls
 // are the assistant lines sharing `message.id` — the grouping `pendingTool`
 // in lib/handoff.js uses. Within the limit it writes nothing, so those calls
-// reach the user's own permission rules untouched. Exits 0 on every path.
+// reach the user's own permission rules untouched. Headless the transcript may
+// not hold the in-flight message yet, so the position then comes from a marker
+// file. Exits 0 on every path.
 
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 const { run, parse } = require('../lib/hook.js');
 const registry = require('../lib/registry.js');
@@ -32,7 +35,7 @@ const sameMessage = (a, b) => a === b || Boolean(a.message && b.message && a.mes
 // its own id where the transcript holds it already; otherwise it is the next
 // block of the message still being written, or the first of a new message
 // when a user line has come after the last assistant line.
-function positionOf(entries, toolUseId) {
+function positionOf(entries, toolUseId, mark) {
     const assistant = entries.filter((e) => e && e.type === 'assistant');
     const owner = toolUseId ? assistant.find((e) => callsIn(e).some((b) => b.id === toolUseId)) : null;
     if (owner) {
@@ -41,8 +44,49 @@ function positionOf(entries, toolUseId) {
     }
     let last = -1;
     entries.forEach((e, i) => { if (e && e.type === 'assistant') last = i; });
-    if (last < 0 || entries.slice(last + 1).some((e) => e && e.type === 'user')) return 1;
+    if (last < 0 || entries.slice(last + 1).some((e) => e && e.type === 'user')) {
+        if (typeof mark === 'function' && toolUseId) {
+            const a = anchorOf(entries);
+            if (a) return mark(a, toolUseId);
+        }
+        return 1;
+    }
     return assistant.filter((e) => sameMessage(e, entries[last])).flatMap(callsIn).length + 1;
+}
+
+// The newest user or assistant line names the response in flight: lines
+// appended between two sibling hooks (attachments, api-request) leave it be.
+function anchorOf(entries) {
+    for (let i = entries.length - 1; i >= 0; i--) {
+        const e = entries[i];
+        if (!e || (e.type !== 'user' && e.type !== 'assistant')) continue;
+        if (typeof e.uuid === 'string') return e.uuid;
+        return typeof e.timestamp === 'string' ? e.timestamp : null;
+    }
+    return null;
+}
+
+const safe = (s) => String(s).replace(/[^\w.-]/g, '_');
+const markFile = (payload) => path.join(os.tmpdir(), 'fankeel-dispatch-gate',
+    safe(payload.session_id) + (payload.agent_id ? '-' + safe(payload.agent_id) : '') + '.log');
+
+// Append first (the race-safe step), then read: the order of ids under one
+// anchor is the order the hooks ran in.
+function markIn(file) {
+    return (anchor, id) => {
+        try {
+            fs.mkdirSync(path.dirname(file), { recursive: true });
+            try { if (fs.statSync(file).size > 65536) fs.writeFileSync(file, ''); } catch (e) { /* not there yet */ }
+            fs.appendFileSync(file, anchor + '\t' + id + '\n');
+            const ids = [];
+            for (const line of fs.readFileSync(file, 'utf8').split('\n')) {
+                const [a, i] = line.split('\t');
+                if (a === anchor && i && !ids.includes(i)) ids.push(i);
+            }
+            const at = ids.indexOf(id);
+            return at < 0 ? 1 : at + 1;
+        } catch (e) { return 1; }
+    };
 }
 
 // The transcript the calls are in: a subagent's own file when a subagent
@@ -113,7 +157,8 @@ function decide(payload, opts) {
     if (!payload || !DISPATCH.has(payload.tool_name)) return null;
     const file = transcriptFor(payload);
     if (!file) return null;
-    const n = positionOf(tailEntries(file) || [], payload.tool_use_id);
+    const mark = typeof payload.session_id === 'string' && payload.session_id ? markIn(markFile(payload)) : null;
+    const n = positionOf(tailEntries(file) || [], payload.tool_use_id, mark);
     const limit = (opts && opts.limit) || DEFAULT;
     if (n <= limit) return null;
     const input = payload.tool_input && typeof payload.tool_input === 'object' ? payload.tool_input : {};

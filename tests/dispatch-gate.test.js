@@ -233,3 +233,65 @@ test('with no limit given the line is dispatch.inflight 8: the eighth call is qu
     assert.equal(decideAt(payload(file, 'toolu_8'), opts), null);
     assert.match(decideAt(payload(file, 'toolu_9'), opts).reason, /Agent call 9 in one response, past dispatch\.inflight \(8\)/);
 });
+
+// Headless `claude -p`: the hook runs before the message's assistant line is
+// written, so the transcript tail holds the prompt and no tool_use.
+const headless = (dir, extra) => transcript(dir, [{ type: 'user', uuid: 'u1', message: { content: 'go' } }, { type: 'attachment' }, { type: 'api-request' }].concat(extra || []));
+const withTmp = (dir, fn) => {
+    const keys = ['TMPDIR', 'TEMP', 'TMP'];
+    const saved = keys.map((k) => process.env[k]);
+    keys.forEach((k) => { process.env[k] = dir; });
+    try { return fn(); } finally { keys.forEach((k, i) => { if (saved[i] === undefined) delete process.env[k]; else process.env[k] = saved[i]; }); }
+};
+const gate = (file, id, sid) => decideAt({ ...payload(file, id), session_id: sid || 'S1' }, { limit: 1, data: null, evidenceRoot: '' });
+const CALL2 = /^fankeel: this is Agent call 2 in one response, past dispatch\.inflight \(1\)/;
+
+test('headless, with no assistant line yet, the marker file counts the second call of a response', () => {
+    const dir = tmp('fankeel-dispatch-gate-');
+    withTmp(path.join(dir, 'm'), () => {
+        const file = headless(dir);
+        assert.equal(gate(file, 'toolu_a'), null);
+        assert.match(gate(file, 'toolu_b').reason, CALL2);
+    });
+});
+
+test('headless, the same call decided twice is still the same position', () => {
+    const dir = tmp('fankeel-dispatch-gate-');
+    withTmp(path.join(dir, 'm'), () => {
+        const file = headless(dir);
+        gate(file, 'toolu_a');
+        assert.match(gate(file, 'toolu_b').reason, CALL2);
+        assert.match(gate(file, 'toolu_b').reason, CALL2);
+        assert.equal(gate(file, 'toolu_a'), null);
+    });
+});
+
+test('headless, a new user line starts the count again', () => {
+    const dir = tmp('fankeel-dispatch-gate-');
+    withTmp(path.join(dir, 'm'), () => {
+        gate(headless(dir), 'toolu_a');
+        assert.match(gate(headless(dir), 'toolu_b').reason, CALL2);
+        const next = headless(dir, [{ type: 'user', uuid: 'u2', message: { content: [{ type: 'tool_result', tool_use_id: 'toolu_a', content: 'ok' }] } }]);
+        assert.equal(gate(next, 'toolu_c'), null);
+    });
+});
+
+test('headless, an attachment line between two calls does not reset the count', () => {
+    const dir = tmp('fankeel-dispatch-gate-');
+    withTmp(path.join(dir, 'm'), () => {
+        gate(headless(dir), 'toolu_a');
+        const file = headless(dir, [{ type: 'attachment' }, { type: 'api-request' }]);
+        assert.match(gate(file, 'toolu_b').reason, CALL2);
+    });
+});
+
+test('headless, an unwritable marker dir counts every call as the first and does not throw', () => {
+    const dir = tmp('fankeel-dispatch-gate-');
+    const blocker = path.join(dir, 'file');
+    fs.writeFileSync(blocker, 'x');
+    withTmp(blocker, () => {
+        const file = headless(dir);
+        assert.equal(gate(file, 'toolu_a'), null);
+        assert.equal(gate(file, 'toolu_b'), null);
+    });
+});
