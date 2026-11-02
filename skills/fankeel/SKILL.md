@@ -939,6 +939,16 @@ the leftovers without a subagent** — and there are exactly two ways:
 
 Everything else is a dispatch, and several of them go out in one response.
 
+**Where the result lands depends on the host, not on `run_in_background`.**
+The desktop app and VS Code run every subagent the main conversation
+dispatches in the background (Claude Code 2.1.302), so there a dispatch
+returns at once and its result arrives as a notification whatever the call
+said; a subagent's own `Agent` calls run in the foreground by default in
+`claude -p`, the Agent SDK, the desktop app and VS Code, so a stage agent or
+a judge hears its readers back as tool results. Write no plan or rule that
+needs the main conversation's `run_in_background` to take effect. The runs are
+in [docs/subagents.md](../../docs/90-agent/reference/subagents.md), `### How the controller waits`.
+
 A user who has said, this session, not to dispatch is not a third way: nothing
 removes the leftovers, and the work stays here — for this session, and written
 down as this session's. The plan writes `in-session — the user said so this

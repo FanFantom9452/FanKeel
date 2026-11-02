@@ -309,7 +309,7 @@ could not see coming; the **description is the title alone**, and `hooks/title.j
 the model (call `model`, agent file `model:`, `CLAUDE_CODE_SUBAGENT_MODEL`,
 then the session's), the version — parsed from a full id, else read off the
 newest real `message.model` of that family in the project's subagent
-transcripts — and the effort off the call's `effort`, else the agent file's `effort:`, else `inherit`, and
+transcripts — and the effort off the call's `effort`, else the agent file's `effort:`, else `CLAUDE_CODE_SUBAGENT_EFFORT`, else `inherit`, and
 writes nothing for another plugin's agent or an unreadable agent file,
 because it is the title a background agent runs under and the
 one place the user sees what is spending while it runs — computed, since a
@@ -344,7 +344,10 @@ holds the list, and it holds the join.
 
 The number is profile `dispatch.inflight`, a whole number from 1 to 20 (or `unlimited`) with a
 builtin of 8, and `hooks/dispatch-gate.js` reads it: the call past it asks the
-user. It guards API spend, the main context's residue and collisions in a shared
+user. Where the mod is loaded, `hooks/mod.ts` hands that ask to the person
+(`tool.check` with `decider: "person"`, Claude Code 2.1.304), so the auto-mode
+classifier cannot answer it and a session with nobody to ask refuses the call
+with the gate's reason; without the mod it is a plain ask. It guards API spend, the main context's residue and collisions in a shared
 checkout, not CPU. 20 is the key's maximum, by decision. Measured 2026-10-16
 on a 64-core machine: 24 readers took 167 seconds at 4 and 118 at 8, for the
 same cost. Agents that each run the whole suite are a different limit: four
@@ -633,7 +636,7 @@ gated `handoff` line may carry a second, `page:`, below):
 the report rewritten after `--since`, which defaults to the stage's answer
 file; `lost <id>`, neither, and no `agent-*.jsonl` in the session's
 `subagents/` directory has moved for three minutes, unless a transcript ends
-in an unanswered `tool_use`, which is not lost until 11 minutes (`BUSY_MS`); or `timeout` after thirty. The fifth, `stalled <id>`, is the same idle with the brain's own transcript having launched background children (`launched`, `lib/handoff.js` — only a background `Agent` launch counts: a foreground result also ends in `agentId:` and is not a child still running, so a brain that ran only a foreground implementer reads `lost`): it says it waits and nothing moves. The line names the children and their `.claude/worktrees/agent-<id>` directories, and the fixed response — SendMessage once; stalled again, stop it and dispatch a fresh one listing the commits since the stage began and those worktrees (await-16). Its mark stays. On `survey`, `design`, `plan`, `build` and `land`, a `handoff` line is followed by a second, `page: <url>f/<id>/<plan|gate>` — `plan` at the plan stage, `gate` at the other four — when the station recorded in `<configDir>/fankeel/serve.json` answers `lib/serve.js`'s `probe` within half a second: that session's 計畫 or 關卡 tab drawn alone on the station's focus page (docs/90-agent/reference/station.md), and the `handoff` line itself then ends `` Open its `page:` line below in a browser pane first, if you have one. `` When the handoff file's last `json gate` block passes `readGate` (`lib/handoff.js`), a last line follows, `questions: <the gate's questions as one line of JSON>` — CRLF gone, `multiSelect` filled the way `hooks/gate.js` compares it — and the `handoff` line also says `` Its `questions:` line below is that gate's questions, as AskUserQuestion takes them. ``; a group brain's report and a workflow hand-over get none. A gate that is missing or fails `readGate`'s own checks is read once more after `GATE_SETTLE_MS` (300 ms), since `fs.watch` can fire while the file is still being written; still not, and the last line is `no questions: <why> — read the last \`json gate\` block in that file yourself and ask its questions exactly as written.` instead, never nothing (await-13). Every controlled block prints the page line beside the path. A group brain's report, a workflow hand-over, `verify` and `audit` get no second line. No record, or no answer, and there is no second line. A second await on the same handoff while the first still waits prints `already awaiting <id>` and exits 0 at once: the first writes `<handoff>.await` with its pid and removes it when it exits, and a marker whose pid is dead counts as none (controller-1). Two more lines can end it: `stale <id> — that agent already reported`, an old waiter timing out after its agent already reported, which writes no failure handoff; and `stale <handoff> — already asked`, a handoff whose gate was already asked, with no `page:` line. A `lost`, `stalled` or `timeout` writes `<handoff>-failed.md`, and a later `handoff` deletes it.
+in an unanswered `tool_use`, or in a shell result saying the command still runs in the background (`backgroundedShell`, `lib/handoff.js`), which is not lost until 11 minutes (`BUSY_MS`); or `timeout` after thirty. The fifth, `stalled <id>`, is the same idle with the brain's own transcript having launched background children (`launched`, `lib/handoff.js` — only a background `Agent` launch counts: a foreground result also ends in `agentId:` and is not a child still running, so a brain that ran only a foreground implementer reads `lost`): it says it waits and nothing moves. The line names the children and their `.claude/worktrees/agent-<id>` directories, and the fixed response — SendMessage once; stalled again, stop it and dispatch a fresh one listing the commits since the stage began and those worktrees (await-16). Its mark stays. On `survey`, `design`, `plan`, `build` and `land`, a `handoff` line is followed by a second, `page: <url>f/<id>/<plan|gate>` — `plan` at the plan stage, `gate` at the other four — when the station recorded in `<configDir>/fankeel/serve.json` answers `lib/serve.js`'s `probe` within half a second: that session's 計畫 or 關卡 tab drawn alone on the station's focus page (docs/90-agent/reference/station.md), and the `handoff` line itself then ends `` Open its `page:` line below in a browser pane first, if you have one. `` When the handoff file's last `json gate` block passes `readGate` (`lib/handoff.js`), a last line follows, `questions: <the gate's questions as one line of JSON>` — CRLF gone, `multiSelect` filled the way `hooks/gate.js` compares it — and the `handoff` line also says `` Its `questions:` line below is that gate's questions, as AskUserQuestion takes them. ``; a group brain's report and a workflow hand-over get none. A gate that is missing or fails `readGate`'s own checks is read once more after `GATE_SETTLE_MS` (300 ms), since `fs.watch` can fire while the file is still being written; still not, and the last line is `no questions: <why> — read the last \`json gate\` block in that file yourself and ask its questions exactly as written.` instead, never nothing (await-13). Every controlled block prints the page line beside the path. A group brain's report, a workflow hand-over, `verify` and `audit` get no second line. No record, or no answer, and there is no second line. A second await on the same handoff while the first still waits prints `already awaiting <id>` and exits 0 at once: the first writes `<handoff>.await` with its pid and removes it when it exits, and a marker whose pid is dead counts as none (controller-1). Two more lines can end it: `stale <id> — that agent already reported`, an old waiter timing out after its agent already reported, which writes no failure handoff; and `stale <handoff> — already asked`, a handoff whose gate was already asked, with no `page:` line. A `lost`, `stalled` or `timeout` writes `<handoff>-failed.md`, and a later `handoff` deletes it.
 The whole directory rather than the agent's own file, because a brain waiting
 on a child makes no tool call — 52 seconds in
 [the 2026-09-23 run](../reports/2026-09-23-brain-wakeup.md). A second, different
@@ -666,15 +669,40 @@ candidates, and on `build` `await.js` watches both `commitPath()` and
 `ledgerCommitPath()` (the same plan-stem directory) at once — whichever one a
 stage agent actually writes to still wakes the controller.
 
+**Monitor does not replace the background Bash (await-18, decided 2026-11-02).**
+Claude Code 2.1.310 added a `Monitor` tool: a `command` whose every stdout
+line is an event, a `timeout_ms` capped at 1800000, and a notification to
+Claude when it exits or expires. `await.js` already is that until-loop and
+prints one line, then exits, so a Monitor would carry the same single event
+with a deadline equal to `await.js`'s own thirty minutes and a re-arm step
+added; the five states are decided in `awaitState`, not by whatever launches
+the script. Nothing in the changelog says a Monitor event wakes the
+controller better than a background Bash exit, and neither has been observed
+here (above), so the switch buys nothing. What 2.1.314 did change is that a
+hook matching `Bash` also runs on a Monitor's shell command and can only
+block or ask: `hooks/guard.js` takes `Monitor` as a shell call for its two
+refusals (a read-only agent's write, and the controller's write in a
+controlled stage) and skips its commit scan. Reopen this if the observation
+above finds that a background Bash exit does not start a controller turn.
+
 A stage agent's or a judge's own readers go the other way: each goes out
 with `run_in_background: false` (`agents/fankeel-judge.md`'s `## Reading`,
 `agents/fankeel-brain.md`'s `## Tools`), so its result comes back as the
-dispatching agent's own tool result. On 2026-10-19 a judge sent a reader in
-the background, and the reader's hand-back reached the top session rather
-than the judge, which was left with nothing to judge. The design-stage judge
-of the same day sent six readers in the foreground and all six returned to
-it. Whether a background `/fankeel-ask` judge with foreground readers gets
-them all back is not yet observed.
+dispatching agent's own tool result. Claude Code 2.1.302 made that the
+default for a subagent's own `Agent` calls in `claude -p`, the Agent SDK,
+the desktop app and VS Code, and in the same release made the desktop app and
+VS Code run every subagent the main conversation dispatches in the
+background: a `run_in_background` on the controller's dispatch changes
+nothing there, the dispatch returns at once and the result arrives as a
+notification. On 2026-10-19 a judge sent a reader in the background, and the
+reader's hand-back reached the top session rather than the judge, which was
+left with nothing to judge; a nested call is foreground by default, so that
+reader went to the background only because the judge asked for it. The
+design-stage judge of the same day sent six readers in the foreground and all
+six returned to it. Observed on 2026-11-02: the `/fankeel-ask` judge of that
+day ran in the background, as the desktop app runs every subagent of the main
+conversation, and its eight foreground readers all returned to it. So a
+background judge with foreground readers does get them back.
 
 **A hand-back waits for the agents it sent.** `hooks/budget.js` refuses a
 subagent's `SubagentHandback` while an agent that subagent dispatched has not
@@ -925,6 +953,11 @@ section records them.
   A stopped agent's transcript ends in a tool call that never got its result,
   and `awaitState` waits ten minutes and one more for such a call before it says
   `lost`, because a foreground Bash call may run that long with nothing written.
+  Since Claude Code 2.1.311 a foreground call that reaches its timeout is
+  answered with the output so far and a line saying it still runs in the
+  background; `backgroundedShell` (`lib/handoff.js`) reads such a result, until
+  the shell's `<task-notification>` arrives, as a call still out, so `lost`
+  waits the same eleven minutes for it (await-17).
   That wait stays. No `SubagentStop` hook clears a mark: whether it fires when a
   stage agent ends its turn with `waiting` has not been measured, and clearing
   the mark of an agent that is only waiting would let the controller send a
