@@ -12,7 +12,7 @@ claude plugin marketplace add FanFantom9452/FanKeel
 claude plugin install fankeel@fankeel
 ```
 
-裝完重開 Claude Code。不用裝別的套件，Node 22.5 以上即可。
+裝完重開 Claude Code。不用裝別的套件，Node 22.13 以上即可。
 
 **更新**——先更新 marketplace，再更新插件，然後重開：
 

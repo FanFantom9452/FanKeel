@@ -5,7 +5,7 @@
   "description": "Claude Code plugin: per-session task registry and development discipline.",
   "license": "MIT",
   "engines": {
-    "node": ">=22.5"
+    "node": ">=22.13"
   },
   "scripts": {
     "test": "node --test --test-timeout=300000 --test-force-exit --require ./tests/subprocess-timeout.js",
