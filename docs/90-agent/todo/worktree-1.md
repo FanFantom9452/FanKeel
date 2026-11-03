@@ -2,8 +2,13 @@
 label: worktree
 title: worktree 不放在 repo 裡
 description: Claude Code 的 worktree 預設建在 repo 內 .claude 底下的 worktrees 資料夾，本機目錄 marketplace 做 plugin update 時會把整個資料夾連同 worktree 一起複製進快取，複製到一半有 worktree 被刪掉就失敗
-state: ready
+state: done
 link: .claude/worktrees
+done:
+  at: 2026-11-03
+  sha: 8493f1ab
+  disposition: done
+  session: f86aee7a-16c4-4112-b257-261ff65fe0ec
 ---
 
 使用者 2026-11-03 指定：很重要、優先做。
@@ -19,3 +24,9 @@ link: .claude/worktrees
 - 快取舊版本的清理
 
 完成條件：有 worktree 存在、甚至有子代理正在建或刪 worktree 時，跑 plugin update 也會成功，而且快取裡不會出現 .claude/worktrees。
+
+## 完成紀錄
+
+marketplace 改指只拿來發版的乾淨 clone F:/ymlab/fankeel-dist，工作目錄裡放著 worktree 時 update 照樣成功，快取不再帶進 worktree。詳見 [任務紀錄](../records/2026-11.md#r-2026-11-03-f86aee7a)
+
+- commit 8493f1ab
