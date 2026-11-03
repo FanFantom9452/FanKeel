@@ -2,7 +2,12 @@
 label: record
 title: 跨機回顧：專案卡與來源分級
 description: 別人的對話包經 ZIP 送來時，附上專案卡、記下來源，retro-all 按分析面向決定一項發現能不能算數，而不是整份降權。
-state: ready
+state: done
+done:
+  at: 2026-11-03
+  sha: 9f1c9505
+  disposition: done
+  session: f86aee7a-16c4-4112-b257-261ff65fe0ec
 ---
 
 使用者原話：「我們的 SKILL 應該要假設 使用者電腦是獨立的 需要跨網路 跨電腦設備 給我們資料 所以我才需要 ZIP 包」。2026-11-03 又說：對方的專案在做什麼我不知道，參考權重應比較低；自己的專案都知道在做什麼，權重可以高一些。
@@ -31,3 +36,15 @@ retro-all 要看的面向（使用者列的）：架構理解有沒有疏漏、�
 - retro 與 retro-all 依面向決定發現算不算數。
 - import 接受非正式 ZIP，或另有收件指令；相關 skill 寫明本機找不到對話時請使用者給 ZIP。
 - .fankeel/imports/ 加進 gitignore。
+
+## 完成紀錄
+
+跨機回顧會分開本機與他人匯入的對話、帶上專案卡、替每條發現標上面向，非正式 ZIP 也能匯入。詳見 [任務紀錄](../records/2026-11.md#r-2026-11-03-f86aee7a)
+
+- commit ed47b287
+- commit c7b96173
+- commit f2bf11cb
+- commit ecba5507
+- commit 44f0a445
+- commit 01f61881
+- commit 9f1c9505

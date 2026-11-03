@@ -2,8 +2,13 @@
 label: gate
 title: 先問完、剩下自己跑
 description: plan 或 design 結束時一次預答後面幾站的 gate（只對這個 task），之後 verify／land 照寫報告但標已預答；不可逆動作、啟動外部程式、spec 沒列的手段仍硬停
-state: ready
+state: done
 link: hooks/gate.js
+done:
+  at: 2026-11-03
+  sha: 9f1c9505
+  disposition: done
+  session: f86aee7a-16c4-4112-b257-261ff65fe0ec
 ---
 
 來源：docs/90-agent/judgements/2026-11-02-pstack-video-summary.md。判官原選 A（blast-radius lens，見 verify-5），使用者答「過夜／離開時仍要跑的案子常發生」，依 judge.js answered 改走 B：照 docs/03-decisions/2026-10-19-no-unattended-gate.md:29「有具體案例再開新條目重議」重開 gate-13 的問題。
@@ -21,3 +26,20 @@ link: hooks/gate.js
 完成的樣子：使用者選定上述四點，另開 design 任務改 hooks/gate.js 與其測試；或決定不做，把理由補進 2026-10-19 決策紀錄後關閉本條。
 
 2026-11-02 盤點（task-20261102T121659）：使用者在 survey gate 選「重開該決定」，依 docs/03-decisions/2026-10-19-no-unattended-gate.md:29 以 10-21 夜的案例重議。下一步是開一個 design 任務，把上面「要決定的」四點（預答在哪一站問、已預答的 gate 怎麼過 hooks/gate.js、硬停清單、與 10-19 決定及 handoff／resume 的共存）在 design gate 定下來，再改 hooks/gate.js 與其測試。
+
+## 完成紀錄
+
+計畫結尾可一次先答完後面的關卡，之後自動照答案走，只在推送、刪除、合併、啟動外部程式與計畫沒列的手段時停下來問。詳見 [任務紀錄](../records/2026-11.md#r-2026-11-03-f86aee7a)
+
+- commit 4855d4cf
+- commit deb45955
+- commit eb2b6a52
+- commit ba912f99
+- commit 3b110c8d
+- commit 41d0083c
+- commit e419422b
+- commit 4cd6214e
+- commit 466ef137
+- commit 980f2e84
+- commit c3afd5ec
+- commit 9f1c9505
